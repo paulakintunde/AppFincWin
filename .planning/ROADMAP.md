@@ -45,7 +45,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
 ### Phase 0: Foundation
 **Goal**: A signed-in user has a working authenticated cloud connection, and the app has the engine boundary, design system and store-enrolment machinery in place before any feature work begins.
 **Depends on**: Nothing (first phase)
-**Requirements**: FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, FND-08, ENV-01, ENV-02, ENV-03, ENV-04, ENV-05, ENV-06, ENV-07, ENV-08, ENV-09, ENV-10, ENV-13, ACC-01, ACC-02, ACC-03, ACC-04, ACC-05, DSG-02, DSG-03, DSG-04
+**Requirements**: FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, FND-08, ENV-01, ENV-02, ENV-03, ENV-04, ENV-05, ENV-06, ENV-07, ENV-08, ENV-09, ENV-10, ENV-13, ENV-14, ANL-01, ANL-02, ANL-03, ANL-04, ACC-01, ACC-02, ACC-03, ACC-04, ACC-05, DSG-02, DSG-03, DSG-04
 **Success Criteria** (what must be TRUE):
   1. Developer can run the app on a local Android emulator from Windows, on Expo SDK 57 with TypeScript strict and Expo Router pinned to `~57.x`. Apple Developer Program enrolment is submitted on day one. A signed iOS development build installs on the iPhone XR via EAS Build — *this criterion alone may lag the rest of the phase while enrolment clears; it does not block Phase 1.*
   2. A user can create an account with Sign in with Apple or Google Sign-In; a household-of-one and its RLS policies are auto-provisioned invisibly on first sign-in; Apple's name/email are captured only on that first authorization and persisted immediately; the user stays signed in across app restarts.
@@ -53,6 +53,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
   4. A user can switch live, without reload, between any of 4 accent colours and 4 font pairings, using only colours from the documented token set; every visible string renders from a typed i18n catalogue; and layout adapts to the device's safe-area insets.
   5. Animations collapse to near-zero duration when the OS reports reduce-motion enabled.
   6. Every external dependency is either provisioned and verified working, or recorded in the dependency register as deferred with its blocker and the phase it must land by. No secret appears in a tracked file, and `.env.example` documents every key.
+  7. Analytics reach PostHog's EU host only after the user opts in, identify the user solely by Supabase UUID, and cannot carry an amount, payee, account name or free text; session replay is absent from production builds.
 **Plans**: TBD
 **Research flag**: EAS provisioning and credentials from Windows are unproven for this project. Trigger the first iOS EAS Build on day one — provisioning surprises are cheaper in week one than week ten.
 
@@ -67,27 +68,30 @@ Four distinct "first builds", in the order they become possible. Only one of the
 | **Apple Developer Program** | Sign in with Apple, iOS device builds, TestFlight, submission | **Yes — days to weeks** | **Defer iOS-dependent work, not the enrolment.** Submit on day one. Android proceeds at full speed meanwhile; Sign in with Apple (ENV-07) and iOS builds wait |
 | Google Play Console | Play submission, IAP products | Yes — ~48h review, one-off fee | Defer to Phase 11, but register by Phase 9 so IAP products exist for testing |
 | RevenueCat | Subscriptions | No, but depends on store accounts | Defer to Phase 9. Blocked transitively by Apple and Play accounts |
-| Sentry | Error reporting | No | Defer freely. Nothing depends on it |
+| Sentry | Error reporting | No | Defer freely. Nothing depends on it. Evaluate in Phase 0 whether PostHog error tracking covers React Native well enough to drop Sentry |
+| PostHog | Product analytics | No — minutes, free tier | **Provision in Phase 0.** No cost, no clock. Events are added phase by phase |
+| open.er-api | FX fallback and second source | No — no key, no account | Nothing to provision. Attribution must be shown in-app |
 
 **Rule:** anything with no external clock and no cost gets provisioned in Phase 0 regardless of when it is first used — the cost of doing it early is minutes, and the cost of discovering it late is a blocked phase. Anything gated on a third party's timeline gets started in Phase 0 and *consumed* later.
 
 ### Phase 1: Money Core
 **Goal**: The money and data-layer foundation is correct and complete, so Record has somewhere to write on day one.
 **Depends on**: Phase 0
-**Requirements**: MON-01, MON-02, MON-03, MON-04, MON-05, MON-06, MON-07, MON-08, MON-09, SYN-01, SYN-02, SYN-06
+**Requirements**: MON-01, MON-02, MON-03, MON-04, MON-05, MON-06, MON-07, MON-08, MON-09, MON-10, MON-11, MON-12, SYN-01, SYN-02, SYN-06
 **Success Criteria** (what must be TRUE):
   1. Every amount is stored and computed as integer minor units, parsed from user input without `parseFloat`, on every path.
   2. Splitting an amount across members always produces shares that sum exactly to the original total, using largest-remainder rounding.
   3. A user can set a home currency (or add a custom one); a transaction in another currency records the FX rate applied at write time, refreshed daily from Frankfurter v2 into the project's own store, with that rate's publication date shown wherever a converted figure appears.
   4. Every record is created with a client-generated UUID primary key before the write leaves the device, and carries an integer `version` that increments server-side on write.
   5. With no network connection, previously loaded data remains browsable, new writes queue locally and are visibly marked as queued, and flush automatically on reconnect.
+  6. With Frankfurter unreachable, rates still refresh from open.er-api with its attribution shown; a currency whose latest rate exceeds its staleness limit raises an alert; and a simulated overnight move beyond ~10% is held rather than stored until a second source confirms it.
 **Plans**: TBD
 **UI hint**: no (data layer and engine work; no screens ship in this phase)
 
 ### Phase 2: Record
 **Goal**: A user can log and manage their real financial activity against a live backend.
 **Depends on**: Phase 1
-**Requirements**: REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08, REC-09, REC-10, REC-11, REC-12, ACT-01, ACT-02, ACT-03, ACT-04, ACT-05
+**Requirements**: REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08, REC-09, REC-10, REC-11, REC-12, ACT-01, ACT-02, ACT-03, ACT-04, ACT-05, ANL-05
 **Success Criteria** (what must be TRUE):
   1. A user can log an expense or income with amount, category, account and date; edit or delete any transaction they created; and see a balance per account they define, using categories they can create, rename and colour.
   2. A user can mark a transaction as recurring on a schedule, have it generate entries without re-typing, and skip or end a single occurrence without deleting the series.
@@ -126,7 +130,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
 ### Phase 5: Decide UI
 **Goal**: A user gets a trustworthy, explained affordability verdict computed from their own logged months.
 **Depends on**: Phase 4 (engine), Phase 1 (data layer to source the snapshot)
-**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09
+**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09, ANL-06
 **Success Criteria** (what must be TRUE):
   1. A user can get a cash answer from just an item and a price without entering the multi-step flow, and can work through the five steps — item, price and payment, impact, alternatives, decision — for the full picture.
   2. A user can leave a check open, return to it later and see its verdict recomputed against current figures, or abandon it.
@@ -139,13 +143,14 @@ Four distinct "first builds", in the order they become possible. Only one of the
 ### Phase 6: Grow
 **Goal**: A user can track savings goals, investments and debt payoff against their real numbers.
 **Depends on**: Phase 3 (Shell provides the navigation these screens live in)
-**Requirements**: GRW-01, GRW-02, GRW-03, GRW-04, GRW-05, GRW-06, GRW-07, GRW-08, GRW-09
+**Requirements**: GRW-01, GRW-02, GRW-03, GRW-04, GRW-05, GRW-06, GRW-07, GRW-08, GRW-09, GRW-10
 **Success Criteria** (what must be TRUE):
   1. A user can create a savings goal with a target amount or leave it open-ended, flag exactly one goal as their emergency fund, and set an automatic contribution to any goal.
   2. A user can record investment holdings across the supported account types, with cost-basis lots — buys, sells, dividends, fees — against each holding.
   3. A user can see gain or loss per holding and in total.
   4. A user can record loans and revolving credit with balance, rate and minimum, then compare avalanche and snowball payoff strategies with an optional extra payment.
   5. A user can see a projected payoff date and total interest for their chosen strategy.
+  6. A user records a holding's market value by hand, and its as-of date appears wherever that value is shown — no live price feed exists in v1.
 **Plans**: TBD
 **UI hint**: yes
 
@@ -179,7 +184,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
 ### Phase 9: Tiers & Onboarding
 **Goal**: The app reveals its depth gradually and converts to a paid subscription cleanly.
 **Depends on**: Phase 3 (Shell), Phase 0 (RevenueCat identity anchors to the Supabase user id from first sign-in)
-**Requirements**: TIER-01, TIER-02, TIER-03, TIER-04, TIER-05, TIER-06, TIER-07, TIER-08, TIER-09, TIER-10, ENV-12
+**Requirements**: TIER-01, TIER-02, TIER-03, TIER-04, TIER-05, TIER-06, TIER-07, TIER-08, TIER-09, TIER-10, ENV-12, ANL-07, ANL-08
 **Success Criteria** (what must be TRUE):
   1. A new user answers an 11-question flow that sets a starting feature level, and features appear or stay hidden according to the current level.
   2. A user can change their level at any time after onboarding, and re-run the onboarding flow.

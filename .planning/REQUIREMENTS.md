@@ -35,6 +35,20 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [ ] **ENV-11**: Google Play Console developer account is active and an app entry exists — *deferrable to Phase 11*
 - [ ] **ENV-12**: RevenueCat project exists with iOS and Android API keys, and products are configured in both stores — *deferrable to Phase 9; store products depend on ENV-10 and ENV-11*
 - [ ] **ENV-13**: Sentry project exists and its DSN is wired in — *deferrable; non-blocking for every other phase*
+- [ ] **ENV-14**: PostHog project exists on the EU host, with its project key wired in through the environment
+
+### Analytics
+
+Product analytics exist to measure the two risks research flagged — manual-entry drop-off and onboarding misclassification — without ever observing a user's money.
+
+- [ ] **ANL-01**: App sends product analytics to PostHog's EU host, identifying users only by their Supabase UUID, never by email or name
+- [ ] **ANL-02**: No analytics event leaves the device until the user has opted in, and the user can change that choice in settings at any time
+- [ ] **ANL-03**: Every event is drawn from a typed catalogue whose properties cannot carry amounts, payee names, account names or free text
+- [ ] **ANL-04**: Session replay is excluded from production builds
+- [ ] **ANL-05**: Drop-off from signup through first entry and first CSV import is measurable
+- [ ] **ANL-06**: Checks started, completed, their verdict state and decisions recorded are measurable, with no amounts attached
+- [ ] **ANL-07**: Onboarding asks for analytics consent once, in plain language
+- [ ] **ANL-08**: The level onboarding assigns, and any later change the user makes to it, is measurable
 
 ### Account & Access
 
@@ -60,6 +74,9 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [ ] **MON-07**: A rate's own publication date is visible wherever a converted figure is shown, rather than implied to be current
 - [ ] **MON-08**: Every record carries a client-generated UUID primary key assigned before the write leaves the device
 - [ ] **MON-09**: Every mutable record carries an integer version that increments server-side on write
+- [ ] **MON-10**: An alert fires when any currency's latest stored rate is older than its staleness limit
+- [ ] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it
+- [ ] **MON-12**: When Frankfurter cannot be reached, rates refresh from open.er-api instead, and its required attribution is shown in the app
 
 ### Offline & Sync
 
@@ -141,6 +158,7 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [ ] **GRW-07**: User can record loans and revolving credit with balance, rate and minimum
 - [ ] **GRW-08**: User can compare avalanche and snowball payoff strategies with an optional extra payment
 - [ ] **GRW-09**: User can see a projected payoff date and total interest for their chosen strategy
+- [ ] **GRW-10**: User records a holding's market value by hand, and its as-of date is shown wherever that value appears
 
 ### Insights
 
@@ -230,6 +248,11 @@ Deferred to a future release. Tracked, not in the current roadmap.
 - **FEED-01**: User can connect a bank account and have transactions import automatically
 - **FEED-02**: User can connect a brokerage and have holdings import automatically
 - **FEED-03**: User can enable round-ups from purchases into a goal
+- **FEED-04**: Holdings are valued from live security prices, sourced through the brokerage link or a feed licensed for display to end users
+
+### Analytics Expansion
+
+- **ANLX-01**: Session replay in production, with every amount rendered through a `<Money>` component that always carries `ph-no-capture`, and a CI check that no amount renders outside it
 
 ### Widgets
 
@@ -261,6 +284,9 @@ Explicitly excluded. Documented to prevent scope creep.
 | Trading, order execution, brokerage transactions | The app is a record-keeping tool. Executing anything would trigger the licensed-institution requirement |
 | Lending, credit offers, APR marketing | No loans are offered. The Decide card path models a loan the user is considering elsewhere |
 | Real-time market data | Central-bank reference rates only. Tick data would make it resemble a trading app |
+| Live security prices from free APIs | Every free tier checked is licensed for internal or personal use only; showing prices to app users needs a separate redistribution licence. Tiingo's own pricing page confirms even its $50/month plan is internal-only |
+| Session replay in production v1 | Replay masks text inputs and images by default but not displayed text, so balances, amounts and payee names would be recorded. Not worth the risk before there is a specific need |
+| Feature flags controlling paid access | Flags are evaluated on the device and can be tampered with. Entitlement stays with RevenueCat; flags are for rollouts only |
 | Prescriptive advice language anywhere | "Advice", "recommendation", "you should" are excluded by policy, not by preference |
 
 ## Traceability
@@ -290,6 +316,15 @@ Populated during roadmap creation.
 | ENV-11 | Phase 11 - Compliance & Release | Pending |
 | ENV-12 | Phase 9 - Tiers & Onboarding | Pending |
 | ENV-13 | Phase 0 - Foundation | Pending |
+| ENV-14 | Phase 0 - Foundation | Pending |
+| ANL-01 | Phase 0 - Foundation | Pending |
+| ANL-02 | Phase 0 - Foundation | Pending |
+| ANL-03 | Phase 0 - Foundation | Pending |
+| ANL-04 | Phase 0 - Foundation | Pending |
+| ANL-05 | Phase 2 - Record | Pending |
+| ANL-06 | Phase 5 - Decide UI | Pending |
+| ANL-07 | Phase 9 - Tiers & Onboarding | Pending |
+| ANL-08 | Phase 9 - Tiers & Onboarding | Pending |
 | ACC-01 | Phase 0 - Foundation | Pending |
 | ACC-02 | Phase 0 - Foundation | Pending |
 | ACC-03 | Phase 0 - Foundation | Pending |
@@ -309,6 +344,9 @@ Populated during roadmap creation.
 | MON-07 | Phase 1 - Money Core | Pending |
 | MON-08 | Phase 1 - Money Core | Pending |
 | MON-09 | Phase 1 - Money Core | Pending |
+| MON-10 | Phase 1 - Money Core | Pending |
+| MON-11 | Phase 1 - Money Core | Pending |
+| MON-12 | Phase 1 - Money Core | Pending |
 | SYN-01 | Phase 1 - Money Core | Pending |
 | SYN-02 | Phase 1 - Money Core | Pending |
 | SYN-03 | Phase 10 - System | Pending |
@@ -369,6 +407,7 @@ Populated during roadmap creation.
 | GRW-07 | Phase 6 - Grow | Pending |
 | GRW-08 | Phase 6 - Grow | Pending |
 | GRW-09 | Phase 6 - Grow | Pending |
+| GRW-10 | Phase 6 - Grow | Pending |
 | INS-01 | Phase 7 - Insights | Pending |
 | INS-02 | Phase 7 - Insights | Pending |
 | INS-03 | Phase 7 - Insights | Pending |
@@ -424,10 +463,10 @@ Populated during roadmap creation.
 | CMP-11 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 153 total
-- Mapped to phases: 153
+- v1 requirements: 166 total
+- Mapped to phases: 166
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-09-21 after roadmap review — added ENV category (13 dependency-provisioning requirements), moved DSG-01 to Compliance. 153/153 v1 requirements mapped across 12 phases (0-11), 100% coverage, no orphans*
+*Last updated: 2026-09-21 after adding PostHog analytics (opt-in, no replay), FX fallback and monitoring, and manual investment valuations. 166/166 v1 requirements mapped across 12 phases*

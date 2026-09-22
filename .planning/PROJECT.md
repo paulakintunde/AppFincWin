@@ -36,6 +36,7 @@ All of these are hypotheses until shipped.
 - [ ] Multi-currency with FX rates cached from Frankfurter v2, rate stored per transaction and per settlement
 - [ ] Client-generated UUID primary keys, and a single integer `version` column backing optimistic concurrency, Realtime reconciliation and undo
 - [ ] Data layer: TanStack Query v5 cached reads with a persister, and paused mutations as the offline write queue
+- [ ] FX resilience: staleness alerts per currency, a plausibility hold on day-on-day moves beyond ~10%, and open.er-api as a fallback source with in-app attribution
 
 **Record**
 - [ ] User can log income and expenses against accounts, categories and a date
@@ -56,7 +57,7 @@ All of these are hypotheses until shipped.
 
 **Grow**
 - [ ] Goals with targets, open-ended goals, auto-contributions, one flagged as the emergency fund
-- [ ] Investments with holdings, 14 account types, cost-basis lots, per-holding history, gain/loss
+- [ ] Investments with holdings, 14 account types, cost-basis lots, per-holding history, gain/loss — valued by hand with an as-of date, no live price feed
 - [ ] Debt with loans, revolving cards, avalanche and snowball strategies, extra payment, payoff projection
 
 **Insights**
@@ -87,6 +88,10 @@ All of these are hypotheses until shipped.
 - [ ] Extended import beyond transactions — goals, debt, investments and accounts
 - [ ] Month archive with restore, CSV export, and in-app account deletion that actually purges
 
+**Analytics**
+- [ ] PostHog product analytics on the EU host, opt-in only, identifying users by Supabase UUID and never recording amounts, payees, account names or free text
+- [ ] Funnels for activation (signup → first entry → first import), Decide usage, and onboarding level assignment versus later changes
+
 **Compliance & release**
 - [ ] Privacy manifest, App Privacy answers, Play Financial features declaration, Data safety form
 - [ ] Privacy policy and terms at real URLs; not-financial-advice disclaimer present and findable
@@ -109,6 +114,8 @@ All of these are hypotheses until shipped.
 - Local-first architecture — deliberately rejected in favour of cloud-first; see Key Decisions
 - `expo-sqlite` and Drizzle ORM — removed with local-first
 - Expo Router `unstable-native-tabs` — would replace the bespoke tab bar with the platform's, losing the brand
+- Live security prices from free APIs — every free tier checked is licensed for internal use only; displaying prices to app users needs a redistribution licence. Prices arrive in 1.1 through the brokerage link or a properly licensed feed
+- Session replay in production — PostHog masks text inputs and images by default but not displayed text, so balances and payees would be recorded
 
 ## Context
 
@@ -165,6 +172,12 @@ All of these are hypotheses until shipped.
 | `engine/money/` hand-rolled, no third-party money library | The operations needed are narrow, and `dinero.js` has an ambiguous alpha-versus-latest tag split with no activity since March 2026. A dependency sits badly against a near-100% branch coverage requirement | — Pending |
 | Engine boundary enforced by two tools, not one | Bare `no-restricted-imports` — which the brief specifies — catches only direct imports. An engine file importing a helper that itself imports React passes straight through. `eslint-plugin-boundaries` for feedback, `dependency-cruiser` as the CI gate | — Pending |
 | Recurring transactions added to v1, in Record | `dmoney`'s income steadiness and the bills-due alert both need them, and with no bank feed there is nothing to infer recurrence from | — Pending |
+| PostHog for product analytics, opt-in, EU host | Measures the two risks research flagged — manual-entry drop-off and onboarding misclassification. Opt-in is the defensible position under the GDPR-everywhere standard. Identity is the Supabase UUID only | — Pending |
+| Session replay off in v1 | Replay records displayed text by default, which here means balances, amounts and payee names. A `<Money>` masking component could make it safe later; no need justifies the risk yet | — Pending |
+| Analytics events carry no money | A typed event catalogue makes amounts, payees, account names and free text unrepresentable, rather than relying on discipline | — Pending |
+| Feature flags never control paid access | Flags are evaluated on the device. RevenueCat stays the only source of entitlement | — Pending |
+| open.er-api as FX fallback, with staleness and plausibility checks | Stored per-transaction rates mean an outage never alters history, but volatile currencies can move 40–50% overnight during one. The larger risk is a refresh failing silently, which only monitoring catches. Costs: in-app attribution, and its no-redistribution clause | — Pending |
+| Investments valued by hand with an as-of date | Holdings in the prototype are values, not share counts, and many account types (property, private equity, pensions) have no ticker. Free price APIs forbid display to end users | — Pending |
 | CSV import moved early, into Record | It is an activation feature, not a utility: Decide needs months of history to say anything useful, and manual entry is the friction that causes churn before users accumulate any | — Pending |
 | Supabase-direct with a persisted query cache and a write queue; no SQLite, no Drizzle, no sync engine | Postgres is the schema; the same data path web inherits in 1.1. Avoids owning a bidirectional sync engine | — Pending |
 | Offline tolerance via cached reads and queued writes, not local-first | A money app gets opened on planes and in basements; a blank screen there is a one-star review. The prototype already models the queue | — Pending |
@@ -196,6 +209,7 @@ All of these are hypotheses until shipped.
 | What sits in the on-device cache, and does it need encrypting? | Reframed by the cloud-first decision — no longer a SQLCipher-versus-platform-encryption question about a local database, but a narrower one about cached financial data and `expo-secure-store` for tokens. Also determines the `ITSAppUsesNonExemptEncryption` answer |
 | Does the Realtime reconciliation state machine actually hold? | The optimistic-update / write-queue / Realtime-echo design is synthesised from documented primitives, not a documented Supabase recipe. Needs a dedicated spike in the Household phase — two simulated clients, one taken offline mid-edit — before it is trusted |
 | What happens when a household settlement expires unresolved? | The prototype specifies an expiry window but not the outcome. No competitor precedent to borrow from, so it is a design decision for the Household phase |
+| Can PostHog error tracking replace Sentry? | Not verified for React Native. Evaluate in Phase 0; one fewer SDK is worth having if it holds up |
 | How is prescriptive language kept out of Coach output? | Prompt instructions alone do not reliably control LLM output. A server-side post-filter against "should", "recommend" and similar is the suggested mitigation — scoped with the rest of the Coach decision in Tiers |
 
 ## Evolution
@@ -216,4 +230,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-21 after research — SDK 57 correction, passkeys dropped, build order revised, recurring transactions and early CSV import added*
+*Last updated: 2026-09-21 after adding PostHog analytics, FX fallback and monitoring, and manual investment valuations*
