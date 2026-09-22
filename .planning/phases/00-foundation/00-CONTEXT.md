@@ -26,7 +26,7 @@ Not in this phase: the five-tab shell (Phase 3), onboarding questions (Phase 9),
 - **D-06:** A company website already exists, but nobody knows whether it meets Apple's enrolment bar (real content about the company, contact route, not parked or a placeholder). Phase 0 includes an **audit of the existing site against Apple's criteria**, and remediation if it falls short. The same site later hosts privacy, terms and support pages.
 - **D-07:** Work email on the domain = **Cloudflare Email Routing for inbound** (forwarding to the user's inbox) + **Resend for outbound** (SPF/DKIM/DMARC records added in Cloudflare). Caveat to handle in the plan: routing only forwards mail. Replying *as* the domain address needs Resend SMTP configured in the mail client, or Gmail "send mail as". Apple's verification emails only need inbound to work.
 - **D-08:** Service accounts (Expo/EAS, Supabase, PostHog, Google Cloud, Apple, Resend, Play) use the **user's personal login, with a company organisation/team created inside each service**, so assets belong to the org, not the personal account.
-- **D-09:** Repo hosting: the user believes a remote exists, but **no git remote is configured locally**. The only branch is `master`, and the `main` the tooling expects doesn't exist. Phase 0 connects the remote (the user supplies the URL, GitHub assumed, since CI runs on GitHub Actions) and settles the default branch name.
+- **D-09:** Repo hosting: **GitHub, `https://github.com/paulakintunde/AppFincWin`**, added locally as `origin` on 2026-09-22. The remote is empty (no branches yet). The local branch is `master`, while GSD tooling expects `main`. Phase 0 settles the default branch name (rename to `main` recommended) and does the first push. Pushing needs the user's approval, per workspace rules.
 
 ### Sign-in and first launch
 - **D-10:** First launch shows a **full-screen welcome + sign-in** screen, not a dismissible sheet, since the account is required. Base the layout on the prototype's signed-out screen (`FincWin United.dc.html` ~line 2941): canvas `#FBFAF7`, FincWin wordmark in the display face at 34px, one line of body copy, then the pill buttons. The prototype's account sheet (lines ~3181–3205, logic ~6437–6451) drops its email/password fields entirely.
@@ -98,7 +98,7 @@ Not in this phase: the five-tab shell (Phase 3), onboarding questions (Phase 9),
 - None in code yet. Phase 0 *establishes* the patterns every later phase follows: `engine/` purity, theme context with tokens, typed i18n catalogue, env-driven config, migrations-only schema changes.
 
 ### Integration Points
-- No git remote configured. The only local branch is `master` (see D-09).
+- Git remote `origin` = `https://github.com/paulakintunde/AppFincWin` (empty). Local branch is `master` (see D-09).
 - Supabase CLI local stack (Docker) for development. A free cloud project for on-device testing. Production is a separate project (moves to Pro in Phase 2, ENV-16).
 
 </code_context>
