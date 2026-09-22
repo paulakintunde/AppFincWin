@@ -105,7 +105,7 @@ Plans:
 | **Domain, website and work email** | Apple organisation enrolment | Yes — days, plus writing real content | **Cannot defer.** Apple rejects registrar placeholder pages and sites with minimal content. Build it while D-U-N-S is pending; it later hosts the policy, terms and support pages |
 | **D-U-N-S number** | Organisation enrolment with both Apple and Google | **Yes — can be ~28 days if not already issued** | **Check on day one.** It is the first link in the longest chain in the project |
 | **Apple Developer Program (organisation)** | Sign in with Apple, iOS device builds, TestFlight, submission | **Yes — after D-U-N-S, then days to weeks** | **Defer iOS-dependent work, not the enrolment.** Enrol as the company, not as an individual (Guideline 5.1.1(ix)). Android proceeds at full speed meanwhile; Sign in with Apple (ENV-07) and iOS builds wait |
-| Google Play Console (organisation) | Play submission, IAP products | Yes — verification against D-U-N-S; $25 one-off | Defer to Phase 11, but register by Phase 9 so IAP products exist for testing. Same D-U-N-S number as Apple |
+| Google Play Console (organisation) | Play submission, IAP products | Yes — verification against D-U-N-S; $25 one-off | **Register in Phase 0** (D-04) using the same D-U-N-S as Apple. Products and first upload still land by Phase 9/11. |
 | Supabase production on Pro | Backups for real user data | No — $25/month | Development stays on Free. Production moves to Pro before the first real data (ENV-16, Phase 2) |
 | APNs and FCM push credentials | Server-sent alerts | APNs waits on Apple enrolment | Needed by Phase 10 (ENV-19) |
 | RevenueCat | Subscriptions | No, but depends on store accounts | Defer to Phase 9. Blocked transitively by Apple and Play accounts |
