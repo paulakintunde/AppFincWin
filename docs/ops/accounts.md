@@ -34,7 +34,10 @@ app's support contact, which Apple checks at review.
 Create a company team, add the domain, and put the SPF and DKIM records it
 gives you into Cloudflare DNS. Add a `_dmarc` TXT record with
 `v=DMARC1; p=none; rua=mailto:hello@<domain>`. Wait for Verified.
-The API key is not needed in Phase 0 — leave it out of `.env.local` for now.
+Nothing in Phase 0 sends email, so the API key can wait, but the domain still
+has to reach Verified here — SPF and DKIM propagation is slow and later phases
+depend on it.
+→ `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
 
 ### D-U-N-S number — plan 00-07
 Look the company up at https://developer.apple.com/enroll/duns-lookup/. The
