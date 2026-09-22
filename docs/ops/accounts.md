@@ -7,6 +7,24 @@ account. This file tracks *status only* — never write a secret into it.
 Per D-08, every account is created under Paul's personal login, with a company
 organisation or team inside it. No shared logins.
 
+## Two entities
+
+**Lead Strategy Canada Inc** is the legal entity. It owns both store accounts,
+holds the D-U-N-S number, signs the developer agreements, and is the data
+controller in the privacy policy. Its own domain and website are what Apple
+checks during organisation enrolment, and the enrolment contact email must be
+on that domain.
+
+**FincWin** is the product. Its domain carries the marketing site, the support
+page and the support email, and it is what users see in the store listing.
+
+Both domains need DNS and email set up, and the D-U-N-S request covers the
+entity only. In `.env.local`, `COMPANY_*` is the entity and `APP_*` is the
+product — the two must not be crossed.
+
+Plans 00-01 and 00-07 were written assuming a single domain. They now cover
+two: the entity domain for enrolment, the product domain for the listing.
+
 ## Status
 
 | Account | Cost | Blocks | Status |
