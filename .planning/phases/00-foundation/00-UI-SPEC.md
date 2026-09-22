@@ -60,7 +60,11 @@ created: 2026-09-22
 | pill-pad-v | 15–16px | Vertical padding inside all pill buttons (sign-in CTAs, consent buttons) |
 | touch-target-min | 44px | Minimum tappable height for icon-only controls (back button, dismiss ×) — standard accessibility exception, applies regardless of visual size |
 
-Exceptions: 22px and 30px are canonical prototype values, not 4-multiples — kept exactly per Design Fidelity (DSG-02/03/04). No other exceptions.
+Exceptions: 22, 30, 18, 14–16, 9 and 15–16px are canonical prototype values, not 4-multiples — kept exactly per Design Fidelity (DSG-02/03/04). No other exceptions.
+
+**Accessibility:** every icon-only control (back button, dismiss ×) carries an `accessibilityLabel` from the i18n catalogue and an `accessibilityRole="button"`; the 44px touch-target-min applies regardless of glyph size.
+
+**Focal point:** on the welcome screen the wordmark is the single visual anchor, followed by the one-line tagline, then the sign-in pill buttons. Nothing else competes on that screen. On the update-required screen, the heading is the anchor and "Update now" is the only action.
 
 ---
 
