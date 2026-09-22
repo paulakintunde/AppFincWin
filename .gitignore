@@ -14,3 +14,17 @@ GoogleService-Info.plist
 node_modules/
 .expo/
 dist/
+
+# Continuous Native Generation: native folders are regenerated, never committed
+/android
+/ios
+
+coverage/
+*.tsbuildinfo
+expo-env.d.ts
+web-build/
+.env.production.local
+src/**/__gate_probe__*
+src/__gate_probe_shared__/
+supabase/.temp/
+supabase/.branches/
