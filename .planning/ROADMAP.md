@@ -33,7 +33,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
 |---|---|---|
 | **Android emulator, app boots** | Phase 0, first plan | Nothing. No account, no fee, no approval. This is the first thing that happens |
 | **Android emulator, signed in against real Supabase** | Phase 0 | Supabase project — minutes to create |
-| **iOS dev build on the iPhone XR** | Phase 0, whenever enrolment clears | **Apple Developer Program — days to weeks.** Submit on day one so the clock runs during Phase 0 rather than after it |
+| **iOS dev build on the iPhone XR** | Phase 0, whenever enrolment clears | **D-U-N-S number, then organisation enrolment.** If the company has no D-U-N-S yet, this can take a month or more — start it on day one so the clock runs during Phase 0 rather than after it |
 | **Something worth showing someone** | End of Phase 2 | Phases 0–2. This is the first build with real data in it: log a month, see it in Activity, undo a mistake, import a CSV |
 
 **The honest answer:** the app boots on an Android emulator within the first plan of Phase 0. It becomes *interesting* at the end of Phase 2, which is the first dogfoodable build. iOS on real hardware is the only milestone gated by someone else's timetable, which is exactly why enrolment is a day-one task rather than a Phase 11 task.
@@ -45,7 +45,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
 ### Phase 0: Foundation
 **Goal**: A signed-in user has a working authenticated cloud connection, and the app has the engine boundary, design system and store-enrolment machinery in place before any feature work begins.
 **Depends on**: Nothing (first phase)
-**Requirements**: FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, FND-08, ENV-01, ENV-02, ENV-03, ENV-04, ENV-05, ENV-06, ENV-07, ENV-08, ENV-09, ENV-10, ENV-13, ENV-14, ANL-01, ANL-02, ANL-03, ANL-04, ACC-01, ACC-02, ACC-03, ACC-04, ACC-05, DSG-02, DSG-03, DSG-04
+**Requirements**: FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, FND-08, ENV-01, ENV-02, ENV-03, ENV-04, ENV-05, ENV-06, ENV-07, ENV-08, ENV-09, ENV-10, ENV-13, ENV-14, ANL-01, ANL-02, ANL-03, ANL-04, ACC-01, ACC-02, ACC-03, ACC-04, ACC-05, DSG-02, DSG-03, DSG-04, FND-09, FND-11, FND-12, ENV-15, ENV-17, ENV-18, ACC-12
 **Success Criteria** (what must be TRUE):
   1. Developer can run the app on a local Android emulator from Windows, on Expo SDK 57 with TypeScript strict and Expo Router pinned to `~57.x`. Apple Developer Program enrolment is submitted on day one. A signed iOS development build installs on the iPhone XR via EAS Build — *this criterion alone may lag the rest of the phase while enrolment clears; it does not block Phase 1.*
   2. A user can create an account with Sign in with Apple or Google Sign-In; a household-of-one and its RLS policies are auto-provisioned invisibly on first sign-in; Apple's name/email are captured only on that first authorization and persisted immediately; the user stays signed in across app restarts.
@@ -54,6 +54,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
   5. Animations collapse to near-zero duration when the OS reports reduce-motion enabled.
   6. Every external dependency is either provisioned and verified working, or recorded in the dependency register as deferred with its blocker and the phase it must land by. No secret appears in a tracked file, and `.env.example` documents every key.
   7. Analytics reach PostHog's EU host only after the user opts in, identify the user solely by Supabase UUID, and cannot carry an amount, payee, account name or free text; session replay is absent from production builds.
+  8. Development and production run on separate Supabase projects in a deliberately chosen region, changed only through migrations in git; CI proves one user cannot touch another user's or household's rows; the auth session is stored encrypted; and an app below the minimum supported version shows an update-required screen.
 **Plans**: TBD
 **Research flag**: EAS provisioning and credentials from Windows are unproven for this project. Trigger the first iOS EAS Build on day one — provisioning surprises are cheaper in week one than week ten.
 
@@ -65,8 +66,11 @@ Four distinct "first builds", in the order they become possible. Only one of the
 | EAS account + profiles | All builds | No — minutes | **Cannot defer.** Free tier is sufficient to start |
 | Google OAuth client IDs | Google Sign-In | No — same day | **Cannot defer past Phase 0.** No cost, no waiting |
 | Frankfurter | FX rates | No — no key, no account | **Cannot defer.** Public API, nothing to provision |
-| **Apple Developer Program** | Sign in with Apple, iOS device builds, TestFlight, submission | **Yes — days to weeks** | **Defer iOS-dependent work, not the enrolment.** Submit on day one. Android proceeds at full speed meanwhile; Sign in with Apple (ENV-07) and iOS builds wait |
-| Google Play Console | Play submission, IAP products | Yes — ~48h review, one-off fee | Defer to Phase 11, but register by Phase 9 so IAP products exist for testing |
+| **D-U-N-S number** | Organisation enrolment with both Apple and Google | **Yes — can be ~28 days if not already issued** | **Check on day one.** It is the first link in the longest chain in the project |
+| **Apple Developer Program (organisation)** | Sign in with Apple, iOS device builds, TestFlight, submission | **Yes — after D-U-N-S, then days to weeks** | **Defer iOS-dependent work, not the enrolment.** Enrol as the company, not as an individual (Guideline 5.1.1(ix)). Android proceeds at full speed meanwhile; Sign in with Apple (ENV-07) and iOS builds wait |
+| Google Play Console (organisation) | Play submission, IAP products | Yes — verification against D-U-N-S; $25 one-off | Defer to Phase 11, but register by Phase 9 so IAP products exist for testing. Same D-U-N-S number as Apple |
+| Supabase production on Pro | Backups for real user data | No — $25/month | Development stays on Free. Production moves to Pro before the first real data (ENV-16, Phase 2) |
+| APNs and FCM push credentials | Server-sent alerts | APNs waits on Apple enrolment | Needed by Phase 10 (ENV-19) |
 | RevenueCat | Subscriptions | No, but depends on store accounts | Defer to Phase 9. Blocked transitively by Apple and Play accounts |
 | Sentry | Error reporting | No | Defer freely. Nothing depends on it. Evaluate in Phase 0 whether PostHog error tracking covers React Native well enough to drop Sentry |
 | PostHog | Product analytics | No — minutes, free tier | **Provision in Phase 0.** No cost, no clock. Events are added phase by phase |
@@ -77,7 +81,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
 ### Phase 1: Money Core
 **Goal**: The money and data-layer foundation is correct and complete, so Record has somewhere to write on day one.
 **Depends on**: Phase 0
-**Requirements**: MON-01, MON-02, MON-03, MON-04, MON-05, MON-06, MON-07, MON-08, MON-09, MON-10, MON-11, MON-12, SYN-01, SYN-02, SYN-06
+**Requirements**: MON-01, MON-02, MON-03, MON-04, MON-05, MON-06, MON-07, MON-08, MON-09, MON-10, MON-11, MON-12, SYN-01, SYN-02, SYN-06, FND-10, MON-13, MON-14, SYN-07, DSG-06
 **Success Criteria** (what must be TRUE):
   1. Every amount is stored and computed as integer minor units, parsed from user input without `parseFloat`, on every path.
   2. Splitting an amount across members always produces shares that sum exactly to the original total, using largest-remainder rounding.
@@ -85,13 +89,14 @@ Four distinct "first builds", in the order they become possible. Only one of the
   4. Every record is created with a client-generated UUID primary key before the write leaves the device, and carries an integer `version` that increments server-side on write.
   5. With no network connection, previously loaded data remains browsable, new writes queue locally and are visibly marked as queued, and flush automatically on reconnect.
   6. With Frankfurter unreachable, rates still refresh from open.er-api with its attribution shown; a currency whose latest rate exceeds its staleness limit raises an alert; and a simulated overnight move beyond ~10% is held rather than stored until a second source confirms it.
+  7. A JPY amount has no decimal places and a KWD amount has three; a transaction entered at 23:30 local time stays in that local month; amounts and dates follow the device locale; and the offline cache is unreadable without the key in secure storage.
 **Plans**: TBD
 **UI hint**: no (data layer and engine work; no screens ship in this phase)
 
 ### Phase 2: Record
 **Goal**: A user can log and manage their real financial activity against a live backend.
 **Depends on**: Phase 1
-**Requirements**: REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08, REC-09, REC-10, REC-11, REC-12, ACT-01, ACT-02, ACT-03, ACT-04, ACT-05, ANL-05
+**Requirements**: REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08, REC-09, REC-10, REC-11, REC-12, ACT-01, ACT-02, ACT-03, ACT-04, ACT-05, ANL-05, ENV-16
 **Success Criteria** (what must be TRUE):
   1. A user can log an expense or income with amount, category, account and date; edit or delete any transaction they created; and see a balance per account they define, using categories they can create, rename and colour.
   2. A user can mark a transaction as recurring on a schedule, have it generate entries without re-typing, and skip or end a single occurrence without deleting the series.
@@ -104,7 +109,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
 ### Phase 3: Shell
 **Goal**: The app's navigation chrome matches the design system exactly.
 **Depends on**: Phase 2
-**Requirements**: NAV-01, NAV-02, NAV-03, NAV-04, NAV-05, NAV-06
+**Requirements**: NAV-01, NAV-02, NAV-03, NAV-04, NAV-05, NAV-06, DSG-07
 **Success Criteria** (what must be TRUE):
   1. A user can move between five tabs with the bespoke SVG glyphs, and the slide direction matches the direction of travel.
   2. A user can go back through up to 8 previous screens across tabs and detail screens; detail screens push in over the current screen and dismiss back to it.
@@ -170,13 +175,14 @@ Four distinct "first builds", in the order they become possible. Only one of the
 ### Phase 8: Household
 **Goal**: Multiple people can share one household's money, live, on top of the RLS foundation Phase 0 already laid.
 **Depends on**: Phase 0 (schema/RLS foundation), Phase 3 (Shell for the UI this phase adds)
-**Requirements**: HH-01, HH-02, HH-03, HH-04, HH-05, HH-06, HH-07, HH-08, HH-09, HH-10, HH-11, HH-12
+**Requirements**: HH-01, HH-02, HH-03, HH-04, HH-05, HH-06, HH-07, HH-08, HH-09, HH-10, HH-11, HH-12, HH-13, HH-14, HH-15
 **Success Criteria** (what must be TRUE):
   1. A user can invite another person with an expiring link and code; the invited person joins by signing in and gains access only to that household's shared records.
   2. A user can assign members a colour, a role (including custom roles) and a weight; mark a transaction as shared and have it split by even/weight/amount/mine-only rules, with a default rule set per category.
   3. A user can see what each member owes or is owed, and settle up with a member so the matching record appears on their side.
   4. A user can toggle between their own figures and the household's, and hide real names from other members with a colour-name fallback.
   5. A shared record created by one member appears on another member's device without a manual refresh, and a user can share a read-only household summary as an expiring link.
+  6. A member can leave, be removed, or receive ownership; deleting an account follows the documented rule and leaves the remaining members' balances correct; and guessing invite codes is rate-limited to futility.
 **Plans**: TBD
 **UI hint**: yes
 **Research flag**: The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe. Budget a dedicated spike — two simulated clients, one taken offline mid-edit — before trusting it in production. Also resolve explicitly what happens when a settlement's expiry window lapses unresolved; the prototype specifies the window but not the outcome.
@@ -198,20 +204,21 @@ Four distinct "first builds", in the order they become possible. Only one of the
 ### Phase 10: System
 **Goal**: The app is secure, resilient offline, and lets a user manage their own data completely.
 **Depends on**: Phase 0 (auth), Phase 1 (write queue mechanism), Phases 2-9 (features being hardened, alerted on, imported and exported)
-**Requirements**: ACC-06, ACC-07, ACC-08, ACC-09, ACC-10, SYN-03, SYN-04, SYN-05, ALR-01, ALR-02, ALR-03, ALR-04, ALR-05, DAT-01, DAT-02, DAT-03, DAT-04
+**Requirements**: ACC-06, ACC-07, ACC-08, ACC-09, ACC-10, SYN-03, SYN-04, SYN-05, ALR-01, ALR-02, ALR-03, ALR-04, ALR-05, DAT-01, DAT-02, DAT-03, DAT-04, ENV-19, ACC-11, ACC-13, DAT-05, DAT-06, ALR-06, DSG-08
 **Success Criteria** (what must be TRUE):
   1. A user can see every device where their account is signed in with the current device marked, and sign out of one device or all devices at once.
   2. A user can unlock the app with Face ID, Touch ID or Android biometrics, or a PIN.
   3. A queued write that is retried never produces a duplicate record; the write queue survives a force-quit and resumes on next launch; and it is bounded, with the user told when it cannot grow further.
   4. A user can enable alerts for bills due, over cap, goal reached, large transactions and low balance, with a threshold per kind, instant or digest delivery, quiet hours, and a log of alerts already raised.
   5. A user can archive a month and restore it, export their data as CSV, import goals/debts/investments/accounts from CSV, and delete their account in-app in a way that actually purges their data from Supabase, with a clear choice about any locally cached data.
+  6. A household member's large expense arrives on another member's phone as a push notification; balances are hidden in the app switcher; a backup has been restored into a non-production project and verified; and a store reviewer can sign in through an allow-listed account.
 **Plans**: TBD
 **UI hint**: no (not in the flagged UI-heavy set; ships mostly settings/security surfaces on top of existing shell patterns)
 
 ### Phase 11: Compliance & Release
 **Goal**: The app is truthfully described and ready for store submission.
 **Depends on**: Phases 0-10 (final verification gate)
-**Requirements**: CMP-01, CMP-02, CMP-03, CMP-04, CMP-05, CMP-06, CMP-07, CMP-08, CMP-09, CMP-10, CMP-11, DSG-01, DSG-05, ENV-11
+**Requirements**: CMP-01, CMP-02, CMP-03, CMP-04, CMP-05, CMP-06, CMP-07, CMP-08, CMP-09, CMP-10, CMP-11, DSG-01, DSG-05, ENV-11, CMP-12, CMP-13
 **Success Criteria** (what must be TRUE):
   1. A findable disclaimer states the app is not financial advice and involves no institution, and no user-facing string claims data stays on the device or is not sent anywhere.
   2. The App Privacy questionnaire, the Play Data safety form and the Play Financial features declaration are completed, match actual data handling, and are filed before first internal-testing upload.
@@ -219,6 +226,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
   4. Subscription products are correctly attached to the submitted version with required disclosure copy present, and Guideline 3.2.1(viii) has been re-read against live text with the positioning argument reconfirmed.
   5. A TestFlight build is installed and exercised on the physical iPhone, an internal-testing build on physical Android, and the store listing carries screenshots for all required device sizes plus a 1024×1024 icon.
   6. Rendered screens match the prototype's screenshots within tolerance on both platforms — the final visual-fidelity gate, verifiable here because every screen now exists.
+  7. The review account opens onto months of sample data where Decide returns real verdicts, its credentials are filed with both stores, and a working support URL and in-app contact route exist.
 **Plans**: TBD
 **UI hint**: no (store assets and copy audit; no new app screens)
 **Research flag**: Guideline 3.2.1(viii) must be re-read against live text; its wording changed since the brief was written. Separately, correct the brief's mis-citation — the 36% APR / 60-day loan cap is 3.2.2(ix), not 3.2.1(viii), and does not apply here regardless.

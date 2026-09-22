@@ -147,7 +147,8 @@ All of these are hypotheses until shipped.
 
 - **Development environment**: Windows 11, no Mac, no Xcode — the single most important architectural driver. Expo managed with config plugins plus EAS is the only path that builds, signs and submits an iOS app from Windows. Expo Go is unusable because Plaid, RevenueCat, Face ID and biometrics all need custom native code; use a development build throughout.
 - **iOS test device**: an iPhone XR. Covers Face ID, real haptics and real push, none of which a simulator reproduces. But it is A12, so it tops out at iOS 18 — anything iOS 26-specific needs EAS Simulator. Mostly moot, since native tabs and Liquid Glass are already ruled out.
-- **Apple Developer Program**: not yet enrolled. Blocks TestFlight and submission entirely, and enrolment takes days to weeks. Starting it is a day-one task in phase 0, ahead of any code.
+- **Apple Developer Program**: not yet enrolled. Enrol **as an organisation under the user's company**, not as an individual — Guideline 5.1.1(ix) says apps in financial services, or that require sensitive user information, *"should be submitted by a legal entity that provides the services, and not by an individual developer."* Organisation enrolment needs a D-U-N-S number, which can take around 28 days to issue if the company doesn't already have one; the same number also serves Google Play's organisation account. Checking for it is a day-one task, ahead of any code.
+- **App Review access**: an account is required and the only sign-in methods are Apple and Google, but Guideline 2.1 requires demo account details for any app with a login. A sign-in path restricted to allow-listed review accounts, pre-filled with sample data, is therefore a launch requirement rather than a convenience.
 - **Tech stack**: settled in `BUILD-PROMPT.md` §3 as amended by Key Decisions below. Do not re-derive it.
 - **Architecture**: nothing in `engine/` may import from `db/`, `state/`, `services/`, `ui/` or `react`. This is the most important line in the codebase — it is what lets the financial maths be tested exhaustively and reviewed in isolation. Enforced by lint and by CI.
 - **Money**: integer minor units everywhere, with explicit rounding rules. Never floats.
@@ -178,6 +179,13 @@ All of these are hypotheses until shipped.
 | Feature flags never control paid access | Flags are evaluated on the device. RevenueCat stays the only source of entitlement | — Pending |
 | open.er-api as FX fallback, with staleness and plausibility checks | Stored per-transaction rates mean an outage never alters history, but volatile currencies can move 40–50% overnight during one. The larger risk is a refresh failing silently, which only monitoring catches. Costs: in-app attribution, and its no-redistribution clause | — Pending |
 | Investments valued by hand with an as-of date | Holdings in the prototype are values, not share counts, and many account types (property, private equity, pensions) have no ticker. Free price APIs forbid display to end users | — Pending |
+| Enrol with Apple and Google as an organisation, under the company | Guideline 5.1.1(ix) expects financial-services apps, and apps requiring sensitive information, from a legal entity. One D-U-N-S number serves both stores | — Pending |
+| Production Supabase on Pro from the first real user data | Free projects pause after a week of inactivity and have no backups. With cloud-first, Supabase holds the only copy of every user's finances | — Pending |
+| Separate development and production projects, migrations in git | Changing production by hand is the fastest way to lose data nobody else has a copy of | — Pending |
+| Migrations stay compatible with the oldest supported app version, backed by a minimum-version gate | Users cannot be forced to update, and a cloud-first app talks to one shared schema | — Pending |
+| Session and offline cache both encrypted, key in secure storage | Resolves the cache-encryption question. Expo's secure storage caps values at 2048 bytes, so data is encrypted with a key stored there — the pattern Supabase's own Expo guide uses for the session | — Pending |
+| Currency decimal places from ISO 4217 | Integer minor units only work if the exponent is right: 0 for JPY, 3 for KWD. Assuming two decimals corrupts amounts by 100× or 10× | — Pending |
+| Transactions store local date plus time zone | A transaction happens on a calendar day. UTC timestamps move late-evening entries into the wrong month and drift recurring schedules across clock changes | — Pending |
 | CSV import moved early, into Record | It is an activation feature, not a utility: Decide needs months of history to say anything useful, and manual entry is the friction that causes churn before users accumulate any | — Pending |
 | Supabase-direct with a persisted query cache and a write queue; no SQLite, no Drizzle, no sync engine | Postgres is the schema; the same data path web inherits in 1.1. Avoids owning a bidirectional sync engine | — Pending |
 | Offline tolerance via cached reads and queued writes, not local-first | A money app gets opened on planes and in basements; a blank screen there is a one-star review. The prototype already models the queue | — Pending |
@@ -206,11 +214,32 @@ All of these are hypotheses until shipped.
 
 | Question | Where it lands |
 |----------|----------------|
-| What sits in the on-device cache, and does it need encrypting? | Reframed by the cloud-first decision — no longer a SQLCipher-versus-platform-encryption question about a local database, but a narrower one about cached financial data and `expo-secure-store` for tokens. Also determines the `ITSAppUsesNonExemptEncryption` answer |
 | Does the Realtime reconciliation state machine actually hold? | The optimistic-update / write-queue / Realtime-echo design is synthesised from documented primitives, not a documented Supabase recipe. Needs a dedicated spike in the Household phase — two simulated clients, one taken offline mid-edit — before it is trusted |
 | What happens when a household settlement expires unresolved? | The prototype specifies an expiry window but not the outcome. No competitor precedent to borrow from, so it is a design decision for the Household phase |
 | Can PostHog error tracking replace Sentry? | Not verified for React Native. Evaluate in Phase 0; one fewer SDK is worth having if it holds up |
 | How is prescriptive language kept out of Coach output? | Prompt instructions alone do not reliably control LLM output. A server-side post-filter against "should", "recommend" and similar is the suggested mitigation — scoped with the rest of the Coach decision in Tiers |
+
+## Running Costs
+
+Verified 2026-09-22 against each provider's pricing page.
+
+| Item | Cost | When it starts |
+|---|---|---|
+| Apple Developer Program | $99 a year | Enrolment, Phase 0 |
+| Google Play Console | $25 once | Registration, by Phase 9 |
+| D-U-N-S number | Free through Apple's lookup | Phase 0 |
+| Supabase — development | Free (2 active projects; pauses after a week idle) | Phase 0 |
+| Supabase — production | $25 a month (Pro, one Micro compute, daily backups kept 7 days) | Before first real user data, Phase 2 |
+| Supabase point-in-time recovery | $100 a month per 7 days of retention | Optional, when user numbers justify it |
+| EAS | Free: 15 Android + 15 iOS builds a month, low-priority queue, updates to 1,000 users. Starter $19 a month (+ usage) for the fast queue and 3,000 update users | Free from Phase 0; Starter when build waits start costing time |
+| RevenueCat | Free to $2,500 monthly revenue, then 1% of all gross revenue | Phase 9 |
+| PostHog | Free: 1M events, 1M flag requests, 100K exceptions a month | Phase 0 |
+| Sentry | Not yet priced — may be replaced by PostHog error tracking | Phase 0 decision |
+| Frankfurter, open.er-api | Free | Phase 0–1 |
+| Coach LLM | Unknown until the Phase 9 decision — per-token, metered by the daily quota | Phase 9 |
+| Domain and site for privacy policy, terms, support | Not yet priced | By Phase 11 |
+
+**Fixed floor before revenue:** about $99 a year plus $25 once, while everything else stays free. Once real users arrive the floor becomes roughly $25 a month more for Supabase Pro, with EAS Starter likely.
 
 ## Evolution
 
@@ -230,4 +259,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-21 after adding PostHog analytics, FX fallback and monitoring, and manual investment valuations*
+*Last updated: 2026-09-22 after gap review — organisation enrolment, review access, backups and environments, version compatibility, encryption, currency and date correctness, running costs*

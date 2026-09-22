@@ -17,6 +17,10 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 - [ ] **FND-06**: App applies any of 4 accent colours and any of 4 font pairings live, without a reload
 - [ ] **FND-07**: All animations collapse to near-zero duration when the OS reports reduce-motion enabled
 - [ ] **FND-08**: Apple Developer Program enrolment is submitted before any store-dependent work begins
+- [ ] **FND-09**: App checks a minimum supported version on launch and shows an update-required screen when it is below it
+- [ ] **FND-10**: Every database migration is checked for compatibility with the oldest supported app version before it is deployed
+- [ ] **FND-11**: Over-the-air updates follow a runtime-version policy that separates JS-only fixes from native releases, and a bad update can be rolled back
+- [ ] **FND-12**: CI runs tests proving a user cannot read or write another user's rows or another household's rows
 
 ### Environment & Credentials
 
@@ -31,11 +35,16 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [ ] **ENV-07**: Sign in with Apple is configured with its Service ID and key, and completes end to end — *deferrable, blocked on ENV-10*
 - [ ] **ENV-08**: Frankfurter rate-refresh Edge Function is deployed and populating the `fx_rates` table on schedule
 - [ ] **ENV-09**: A dependency status register is maintained listing every external service as provisioned, pending or deferred, with its blocker and the phase it must land by
-- [ ] **ENV-10**: Apple Developer Program membership is active — *external clock, days to weeks; gates ENV-07, iOS device builds, TestFlight and submission*
-- [ ] **ENV-11**: Google Play Console developer account is active and an app entry exists — *deferrable to Phase 11*
-- [ ] **ENV-12**: RevenueCat project exists with iOS and Android API keys, and products are configured in both stores — *deferrable to Phase 9; store products depend on ENV-10 and ENV-11*
+- [ ] **ENV-10**: Apple Developer Program membership is active **as an organisation, under the company** (Guideline 5.1.1(ix)) — *external clock: D-U-N-S then enrolment; gates ENV-07, iOS device builds, TestFlight and submission*
+- [ ] **ENV-11**: Google Play Console organisation account is active under the company and an app entry exists — *deferrable to Phase 11; uses the same D-U-N-S number as ENV-10*
+- [ ] **ENV-12**: RevenueCat project exists with iOS and Android API keys, and products are configured in both stores, with the App Store Paid Apps Agreement, banking and tax forms completed — *deferrable to Phase 9; store products depend on ENV-10 and ENV-11*
 - [ ] **ENV-13**: Sentry project exists and its DSN is wired in — *deferrable; non-blocking for every other phase*
 - [ ] **ENV-14**: PostHog project exists on the EU host, with its project key wired in through the environment
+- [ ] **ENV-15**: The company's D-U-N-S number is confirmed or requested on day one, since it gates both Apple and Google organisation enrolment
+- [ ] **ENV-16**: Production Supabase runs on the Pro plan with daily backups before the first real user data is stored
+- [ ] **ENV-17**: Development and production use separate Supabase projects, and schema changes reach either only through migrations tracked in git
+- [ ] **ENV-18**: The Supabase region is chosen deliberately at project creation, with the reasoning recorded, since it cannot easily move later
+- [ ] **ENV-19**: Push credentials exist for APNs and FCM — *APNs blocked on ENV-10*
 
 ### Analytics
 
@@ -62,6 +71,9 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **ACC-08**: User can unlock the app with Face ID, Touch ID or Android biometrics
 - [ ] **ACC-09**: User can set and use a PIN as an alternative to biometrics
 - [ ] **ACC-10**: User can delete their account in-app, and doing so purges their data from Supabase
+- [ ] **ACC-11**: A sign-in method restricted to allow-listed store-review accounts exists, so reviewers can enter an app that otherwise offers only Apple and Google
+- [ ] **ACC-12**: The auth session is stored encrypted, with its key held in secure storage, working around secure storage's 2048-byte limit
+- [ ] **ACC-13**: Server-side functions enforce per-user rate limits
 
 ### Money & Data Integrity
 
@@ -77,6 +89,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **MON-10**: An alert fires when any currency's latest stored rate is older than its staleness limit
 - [ ] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it
 - [ ] **MON-12**: When Frankfurter cannot be reached, rates refresh from open.er-api instead, and its required attribution is shown in the app
+- [ ] **MON-13**: Each currency's decimal places come from ISO 4217 — 0 for JPY, KRW and VND, 3 for KWD, BHD and OMR — and a custom currency declares its own
+- [ ] **MON-14**: A transaction stores its local calendar date and time zone, so its month and any recurring schedule never shift across time zones or clock changes
 
 ### Offline & Sync
 
@@ -86,6 +100,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **SYN-04**: The write queue survives a force-quit and resumes on next launch
 - [ ] **SYN-05**: The write queue is bounded, and the user is told when it cannot grow further
 - [ ] **SYN-06**: User sees whether the app is offline and how many changes are waiting
+- [ ] **SYN-07**: The persisted offline cache is encrypted at rest, with its key held in secure storage
 
 ### Recording
 
@@ -183,6 +198,9 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **HH-10**: User can hide real names from other members, falling back to colour names
 - [ ] **HH-11**: A shared record created by one member appears on another member's device without a manual refresh
 - [ ] **HH-12**: User can share a read-only household summary as a link that expires
+- [ ] **HH-13**: A member can leave a household, the owner can remove a member, and ownership can be transferred
+- [ ] **HH-14**: Deleting an account follows a documented rule for shared records that satisfies erasure while keeping the remaining members' balances correct
+- [ ] **HH-15**: Invite codes are long enough not to be guessed, and redemption attempts are rate-limited
 
 ### Tiers & Onboarding
 
@@ -204,6 +222,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **ALR-03**: User can choose instant alerts or a digest
 - [ ] **ALR-04**: User can set quiet hours during which no alert is delivered
 - [ ] **ALR-05**: User can see a log of alerts already raised
+- [ ] **ALR-06**: Alerts caused by server-side events — another member's large expense, over cap, digests — arrive as push notifications
 
 ### Data Management
 
@@ -211,6 +230,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DAT-02**: User can export their data as CSV
 - [ ] **DAT-03**: User can import goals, debts, investments and accounts from CSV
 - [ ] **DAT-04**: Deleting the account offers a clearly-labelled choice about any locally cached data
+- [ ] **DAT-05**: A restore from backup has been rehearsed into a non-production project and the restored data verified
+- [ ] **DAT-06**: User can generate a diagnostic export and choose to send it to support, since analytics deliberately contain no amounts
 
 ### Design Fidelity
 
@@ -219,6 +240,9 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DSG-03**: Layout adapts to device safe-area insets rather than assuming a fixed height
 - [ ] **DSG-04**: All user-facing strings are served from a typed i18n catalogue
 - [ ] **DSG-05**: No user-facing string claims data stays on the device or is not sent anywhere
+- [ ] **DSG-06**: Amounts, numbers and dates are formatted for the user's locale
+- [ ] **DSG-07**: Text scales with the OS text-size setting up to a defined maximum without breaking layouts
+- [ ] **DSG-08**: Balances are hidden in the app-switcher snapshot when the app goes to the background
 
 ### Compliance & Release
 
@@ -233,6 +257,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **CMP-09**: `ITSAppUsesNonExemptEncryption` is answered correctly for the shipped build
 - [ ] **CMP-10**: A TestFlight build is installed and exercised on a physical iPhone, and an internal-testing build on a physical Android
 - [ ] **CMP-11**: Guideline 3.2.1(viii) is re-read against live text before submission, and the positioning argument confirmed against its current wording
+- [ ] **CMP-12**: The store-review account is pre-filled with months of sample data so Decide returns real verdicts, and its credentials are filed with both stores
+- [ ] **CMP-13**: A working support URL and an in-app contact route exist
 
 ## v2 Requirements
 
@@ -303,6 +329,10 @@ Populated during roadmap creation.
 | FND-06 | Phase 0 - Foundation | Pending |
 | FND-07 | Phase 0 - Foundation | Pending |
 | FND-08 | Phase 0 - Foundation | Pending |
+| FND-09 | Phase 0 - Foundation | Pending |
+| FND-10 | Phase 1 - Money Core | Pending |
+| FND-11 | Phase 0 - Foundation | Pending |
+| FND-12 | Phase 0 - Foundation | Pending |
 | ENV-01 | Phase 0 - Foundation | Pending |
 | ENV-02 | Phase 0 - Foundation | Pending |
 | ENV-03 | Phase 0 - Foundation | Pending |
@@ -317,6 +347,11 @@ Populated during roadmap creation.
 | ENV-12 | Phase 9 - Tiers & Onboarding | Pending |
 | ENV-13 | Phase 0 - Foundation | Pending |
 | ENV-14 | Phase 0 - Foundation | Pending |
+| ENV-15 | Phase 0 - Foundation | Pending |
+| ENV-16 | Phase 2 - Record | Pending |
+| ENV-17 | Phase 0 - Foundation | Pending |
+| ENV-18 | Phase 0 - Foundation | Pending |
+| ENV-19 | Phase 10 - System | Pending |
 | ANL-01 | Phase 0 - Foundation | Pending |
 | ANL-02 | Phase 0 - Foundation | Pending |
 | ANL-03 | Phase 0 - Foundation | Pending |
@@ -335,6 +370,9 @@ Populated during roadmap creation.
 | ACC-08 | Phase 10 - System | Pending |
 | ACC-09 | Phase 10 - System | Pending |
 | ACC-10 | Phase 10 - System | Pending |
+| ACC-11 | Phase 10 - System | Pending |
+| ACC-12 | Phase 0 - Foundation | Pending |
+| ACC-13 | Phase 10 - System | Pending |
 | MON-01 | Phase 1 - Money Core | Pending |
 | MON-02 | Phase 1 - Money Core | Pending |
 | MON-03 | Phase 1 - Money Core | Pending |
@@ -347,12 +385,15 @@ Populated during roadmap creation.
 | MON-10 | Phase 1 - Money Core | Pending |
 | MON-11 | Phase 1 - Money Core | Pending |
 | MON-12 | Phase 1 - Money Core | Pending |
+| MON-13 | Phase 1 - Money Core | Pending |
+| MON-14 | Phase 1 - Money Core | Pending |
 | SYN-01 | Phase 1 - Money Core | Pending |
 | SYN-02 | Phase 1 - Money Core | Pending |
 | SYN-03 | Phase 10 - System | Pending |
 | SYN-04 | Phase 10 - System | Pending |
 | SYN-05 | Phase 10 - System | Pending |
 | SYN-06 | Phase 1 - Money Core | Pending |
+| SYN-07 | Phase 1 - Money Core | Pending |
 | REC-01 | Phase 2 - Record | Pending |
 | REC-02 | Phase 2 - Record | Pending |
 | REC-03 | Phase 2 - Record | Pending |
@@ -426,6 +467,9 @@ Populated during roadmap creation.
 | HH-10 | Phase 8 - Household | Pending |
 | HH-11 | Phase 8 - Household | Pending |
 | HH-12 | Phase 8 - Household | Pending |
+| HH-13 | Phase 8 - Household | Pending |
+| HH-14 | Phase 8 - Household | Pending |
+| HH-15 | Phase 8 - Household | Pending |
 | TIER-01 | Phase 9 - Tiers & Onboarding | Pending |
 | TIER-02 | Phase 9 - Tiers & Onboarding | Pending |
 | TIER-03 | Phase 9 - Tiers & Onboarding | Pending |
@@ -441,15 +485,21 @@ Populated during roadmap creation.
 | ALR-03 | Phase 10 - System | Pending |
 | ALR-04 | Phase 10 - System | Pending |
 | ALR-05 | Phase 10 - System | Pending |
+| ALR-06 | Phase 10 - System | Pending |
 | DAT-01 | Phase 10 - System | Pending |
 | DAT-02 | Phase 10 - System | Pending |
 | DAT-03 | Phase 10 - System | Pending |
 | DAT-04 | Phase 10 - System | Pending |
+| DAT-05 | Phase 10 - System | Pending |
+| DAT-06 | Phase 10 - System | Pending |
 | DSG-01 | Phase 11 - Compliance & Release | Pending |
 | DSG-02 | Phase 0 - Foundation | Pending |
 | DSG-03 | Phase 0 - Foundation | Pending |
 | DSG-04 | Phase 0 - Foundation | Pending |
 | DSG-05 | Phase 11 - Compliance & Release | Pending |
+| DSG-06 | Phase 1 - Money Core | Pending |
+| DSG-07 | Phase 3 - Shell | Pending |
+| DSG-08 | Phase 10 - System | Pending |
 | CMP-01 | Phase 11 - Compliance & Release | Pending |
 | CMP-02 | Phase 11 - Compliance & Release | Pending |
 | CMP-03 | Phase 11 - Compliance & Release | Pending |
@@ -461,12 +511,14 @@ Populated during roadmap creation.
 | CMP-09 | Phase 11 - Compliance & Release | Pending |
 | CMP-10 | Phase 11 - Compliance & Release | Pending |
 | CMP-11 | Phase 11 - Compliance & Release | Pending |
+| CMP-12 | Phase 11 - Compliance & Release | Pending |
+| CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 166 total
-- Mapped to phases: 166
+- v1 requirements: 192 total
+- Mapped to phases: 192
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-09-21 after adding PostHog analytics (opt-in, no replay), FX fallback and monitoring, and manual investment valuations. 166/166 v1 requirements mapped across 12 phases*
+*Last updated: 2026-09-22 after gap review — organisation enrolment, reviewer access, backups, environments, version compatibility, currency decimals, dates, RLS tests, encryption, push, household lifecycle, locale, text scaling, support. 192/192 v1 requirements mapped*
