@@ -1,0 +1,16 @@
+
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+
+# Build
+node_modules/
+.expo/
+dist/

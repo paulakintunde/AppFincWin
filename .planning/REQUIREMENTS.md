@@ -18,6 +18,24 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 - [ ] **FND-07**: All animations collapse to near-zero duration when the OS reports reduce-motion enabled
 - [ ] **FND-08**: Apple Developer Program enrolment is submitted before any store-dependent work begins
 
+### Environment & Credentials
+
+Every external dependency is provisioned to a working state, or explicitly deferred with a recorded blocker and a phase it must land by. No secret is ever committed to source.
+
+- [ ] **ENV-01**: All runtime configuration is read from environment variables and EAS secrets, with a committed `.env.example` documenting every key and its purpose
+- [ ] **ENV-02**: `.env` and any local secret file are gitignored, and CI fails if a credential pattern appears in a tracked file
+- [ ] **ENV-03**: Supabase project is provisioned, with its URL and publishable key wired in and a connection verified from the running app
+- [ ] **ENV-04**: Supabase service-role key is stored as an EAS secret and used only by Edge Functions, never shipped to the client
+- [ ] **ENV-05**: EAS project is initialised with development, preview and production build profiles
+- [ ] **ENV-06**: Google OAuth client IDs exist for iOS, Android and Web, and Google Sign-In completes end to end
+- [ ] **ENV-07**: Sign in with Apple is configured with its Service ID and key, and completes end to end — *deferrable, blocked on ENV-10*
+- [ ] **ENV-08**: Frankfurter rate-refresh Edge Function is deployed and populating the `fx_rates` table on schedule
+- [ ] **ENV-09**: A dependency status register is maintained listing every external service as provisioned, pending or deferred, with its blocker and the phase it must land by
+- [ ] **ENV-10**: Apple Developer Program membership is active — *external clock, days to weeks; gates ENV-07, iOS device builds, TestFlight and submission*
+- [ ] **ENV-11**: Google Play Console developer account is active and an app entry exists — *deferrable to Phase 11*
+- [ ] **ENV-12**: RevenueCat project exists with iOS and Android API keys, and products are configured in both stores — *deferrable to Phase 9; store products depend on ENV-10 and ENV-11*
+- [ ] **ENV-13**: Sentry project exists and its DSN is wired in — *deferrable; non-blocking for every other phase*
+
 ### Account & Access
 
 - [ ] **ACC-01**: User can create an account with Sign in with Apple
@@ -251,13 +269,165 @@ Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| *(pending roadmap)* | — | Pending |
+| FND-01 | Phase 0 - Foundation | Pending |
+| FND-02 | Phase 0 - Foundation | Pending |
+| FND-03 | Phase 0 - Foundation | Pending |
+| FND-04 | Phase 0 - Foundation | Pending |
+| FND-05 | Phase 0 - Foundation | Pending |
+| FND-06 | Phase 0 - Foundation | Pending |
+| FND-07 | Phase 0 - Foundation | Pending |
+| FND-08 | Phase 0 - Foundation | Pending |
+| ENV-01 | Phase 0 - Foundation | Pending |
+| ENV-02 | Phase 0 - Foundation | Pending |
+| ENV-03 | Phase 0 - Foundation | Pending |
+| ENV-04 | Phase 0 - Foundation | Pending |
+| ENV-05 | Phase 0 - Foundation | Pending |
+| ENV-06 | Phase 0 - Foundation | Pending |
+| ENV-07 | Phase 0 - Foundation | Pending |
+| ENV-08 | Phase 0 - Foundation | Pending |
+| ENV-09 | Phase 0 - Foundation | Pending |
+| ENV-10 | Phase 0 - Foundation | Pending |
+| ENV-11 | Phase 11 - Compliance & Release | Pending |
+| ENV-12 | Phase 9 - Tiers & Onboarding | Pending |
+| ENV-13 | Phase 0 - Foundation | Pending |
+| ACC-01 | Phase 0 - Foundation | Pending |
+| ACC-02 | Phase 0 - Foundation | Pending |
+| ACC-03 | Phase 0 - Foundation | Pending |
+| ACC-04 | Phase 0 - Foundation | Pending |
+| ACC-05 | Phase 0 - Foundation | Pending |
+| ACC-06 | Phase 10 - System | Pending |
+| ACC-07 | Phase 10 - System | Pending |
+| ACC-08 | Phase 10 - System | Pending |
+| ACC-09 | Phase 10 - System | Pending |
+| ACC-10 | Phase 10 - System | Pending |
+| MON-01 | Phase 1 - Money Core | Pending |
+| MON-02 | Phase 1 - Money Core | Pending |
+| MON-03 | Phase 1 - Money Core | Pending |
+| MON-04 | Phase 1 - Money Core | Pending |
+| MON-05 | Phase 1 - Money Core | Pending |
+| MON-06 | Phase 1 - Money Core | Pending |
+| MON-07 | Phase 1 - Money Core | Pending |
+| MON-08 | Phase 1 - Money Core | Pending |
+| MON-09 | Phase 1 - Money Core | Pending |
+| SYN-01 | Phase 1 - Money Core | Pending |
+| SYN-02 | Phase 1 - Money Core | Pending |
+| SYN-03 | Phase 10 - System | Pending |
+| SYN-04 | Phase 10 - System | Pending |
+| SYN-05 | Phase 10 - System | Pending |
+| SYN-06 | Phase 1 - Money Core | Pending |
+| REC-01 | Phase 2 - Record | Pending |
+| REC-02 | Phase 2 - Record | Pending |
+| REC-03 | Phase 2 - Record | Pending |
+| REC-04 | Phase 2 - Record | Pending |
+| REC-05 | Phase 2 - Record | Pending |
+| REC-06 | Phase 2 - Record | Pending |
+| REC-07 | Phase 2 - Record | Pending |
+| REC-08 | Phase 2 - Record | Pending |
+| REC-09 | Phase 2 - Record | Pending |
+| REC-10 | Phase 2 - Record | Pending |
+| REC-11 | Phase 2 - Record | Pending |
+| REC-12 | Phase 2 - Record | Pending |
+| ACT-01 | Phase 2 - Record | Pending |
+| ACT-02 | Phase 2 - Record | Pending |
+| ACT-03 | Phase 2 - Record | Pending |
+| ACT-04 | Phase 2 - Record | Pending |
+| ACT-05 | Phase 2 - Record | Pending |
+| ACT-06 | Phase 7 - Insights | Pending |
+| NAV-01 | Phase 3 - Shell | Pending |
+| NAV-02 | Phase 3 - Shell | Pending |
+| NAV-03 | Phase 3 - Shell | Pending |
+| NAV-04 | Phase 3 - Shell | Pending |
+| NAV-05 | Phase 3 - Shell | Pending |
+| NAV-06 | Phase 3 - Shell | Pending |
+| DEC-01 | Phase 4 - Decide Engine | Pending |
+| DEC-02 | Phase 4 - Decide Engine | Pending |
+| DEC-03 | Phase 4 - Decide Engine | Pending |
+| DEC-04 | Phase 4 - Decide Engine | Pending |
+| DEC-05 | Phase 4 - Decide Engine | Pending |
+| DEC-06 | Phase 4 - Decide Engine | Pending |
+| DEC-07 | Phase 4 - Decide Engine | Pending |
+| DEC-08 | Phase 4 - Decide Engine | Pending |
+| DEC-09 | Phase 4 - Decide Engine | Pending |
+| DEC-10 | Phase 4 - Decide Engine | Pending |
+| DEC-11 | Phase 4 - Decide Engine | Pending |
+| DEC-12 | Phase 4 - Decide Engine | Pending |
+| DCU-01 | Phase 5 - Decide UI | Pending |
+| DCU-02 | Phase 5 - Decide UI | Pending |
+| DCU-03 | Phase 5 - Decide UI | Pending |
+| DCU-04 | Phase 5 - Decide UI | Pending |
+| DCU-05 | Phase 5 - Decide UI | Pending |
+| DCU-06 | Phase 5 - Decide UI | Pending |
+| DCU-07 | Phase 5 - Decide UI | Pending |
+| DCU-08 | Phase 5 - Decide UI | Pending |
+| DCU-09 | Phase 5 - Decide UI | Pending |
+| GRW-01 | Phase 6 - Grow | Pending |
+| GRW-02 | Phase 6 - Grow | Pending |
+| GRW-03 | Phase 6 - Grow | Pending |
+| GRW-04 | Phase 6 - Grow | Pending |
+| GRW-05 | Phase 6 - Grow | Pending |
+| GRW-06 | Phase 6 - Grow | Pending |
+| GRW-07 | Phase 6 - Grow | Pending |
+| GRW-08 | Phase 6 - Grow | Pending |
+| GRW-09 | Phase 6 - Grow | Pending |
+| INS-01 | Phase 7 - Insights | Pending |
+| INS-02 | Phase 7 - Insights | Pending |
+| INS-03 | Phase 7 - Insights | Pending |
+| INS-04 | Phase 7 - Insights | Pending |
+| INS-05 | Phase 7 - Insights | Pending |
+| INS-06 | Phase 7 - Insights | Pending |
+| HH-01 | Phase 8 - Household | Pending |
+| HH-02 | Phase 8 - Household | Pending |
+| HH-03 | Phase 8 - Household | Pending |
+| HH-04 | Phase 8 - Household | Pending |
+| HH-05 | Phase 8 - Household | Pending |
+| HH-06 | Phase 8 - Household | Pending |
+| HH-07 | Phase 8 - Household | Pending |
+| HH-08 | Phase 8 - Household | Pending |
+| HH-09 | Phase 8 - Household | Pending |
+| HH-10 | Phase 8 - Household | Pending |
+| HH-11 | Phase 8 - Household | Pending |
+| HH-12 | Phase 8 - Household | Pending |
+| TIER-01 | Phase 9 - Tiers & Onboarding | Pending |
+| TIER-02 | Phase 9 - Tiers & Onboarding | Pending |
+| TIER-03 | Phase 9 - Tiers & Onboarding | Pending |
+| TIER-04 | Phase 9 - Tiers & Onboarding | Pending |
+| TIER-05 | Phase 9 - Tiers & Onboarding | Pending |
+| TIER-06 | Phase 9 - Tiers & Onboarding | Pending |
+| TIER-07 | Phase 9 - Tiers & Onboarding | Pending |
+| TIER-08 | Phase 9 - Tiers & Onboarding | Pending |
+| TIER-09 | Phase 9 - Tiers & Onboarding | Pending |
+| TIER-10 | Phase 9 - Tiers & Onboarding | Pending |
+| ALR-01 | Phase 10 - System | Pending |
+| ALR-02 | Phase 10 - System | Pending |
+| ALR-03 | Phase 10 - System | Pending |
+| ALR-04 | Phase 10 - System | Pending |
+| ALR-05 | Phase 10 - System | Pending |
+| DAT-01 | Phase 10 - System | Pending |
+| DAT-02 | Phase 10 - System | Pending |
+| DAT-03 | Phase 10 - System | Pending |
+| DAT-04 | Phase 10 - System | Pending |
+| DSG-01 | Phase 11 - Compliance & Release | Pending |
+| DSG-02 | Phase 0 - Foundation | Pending |
+| DSG-03 | Phase 0 - Foundation | Pending |
+| DSG-04 | Phase 0 - Foundation | Pending |
+| DSG-05 | Phase 11 - Compliance & Release | Pending |
+| CMP-01 | Phase 11 - Compliance & Release | Pending |
+| CMP-02 | Phase 11 - Compliance & Release | Pending |
+| CMP-03 | Phase 11 - Compliance & Release | Pending |
+| CMP-04 | Phase 11 - Compliance & Release | Pending |
+| CMP-05 | Phase 11 - Compliance & Release | Pending |
+| CMP-06 | Phase 11 - Compliance & Release | Pending |
+| CMP-07 | Phase 11 - Compliance & Release | Pending |
+| CMP-08 | Phase 11 - Compliance & Release | Pending |
+| CMP-09 | Phase 11 - Compliance & Release | Pending |
+| CMP-10 | Phase 11 - Compliance & Release | Pending |
+| CMP-11 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 140 total
-- Mapped to phases: 0
-- Unmapped: 140 ⚠️ — resolved by roadmap creation
+- v1 requirements: 153 total
+- Mapped to phases: 153
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-09-21 after initialization*
+*Last updated: 2026-09-21 after roadmap review — added ENV category (13 dependency-provisioning requirements), moved DSG-01 to Compliance. 153/153 v1 requirements mapped across 12 phases (0-11), 100% coverage, no orphans*
