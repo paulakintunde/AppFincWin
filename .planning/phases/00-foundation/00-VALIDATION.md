@@ -2,7 +2,7 @@
 phase: 0
 slug: foundation
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-09-22
 ---
@@ -87,11 +87,11 @@ Task IDs are filled in by the planner; the requirement → command mapping below
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 90s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify (exception: 00-20, manual-only by nature)
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 90s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-09-22 (plan-checker: every auto/tdd task has an automated verify; the one sampling-continuity exception is 00-20, whose Tasks 1 and 3 are Apple-portal and physical-device steps listed under Manual-Only Verifications)

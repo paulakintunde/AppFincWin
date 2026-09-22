@@ -718,22 +718,25 @@ Deliberate design note: fail **open** (allow launch) if the version check itself
 | A4 | Recommended Windows install method for the Supabase CLI (`scoop install supabase`) | Common Pitfalls (Pitfall 6), Environment Availability | LOW — Scoop is Supabase's documented Windows path per general knowledge, but was not independently re-verified via WebSearch in this session; `npm install -g supabase` is a viable fallback if Scoop isn't already set up on this machine |
 | A5 | `expo-apple-authentication`'s exact `nonce` parameter behavior (whether it accepts the hash directly as shown, or needs a different field) | Pattern 1 | MEDIUM — the SHA-256-then-native-SDK-then-raw-to-Supabase flow is the consistently documented pattern across all sources found, but the exact Expo API surface (`AppleAuthentication.signInAsync({ nonce: ... })`) should be checked against the currently-installed `expo-apple-authentication` version's types |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Exact PostHog error-tracking maturity for React Native, for D-19's spike**
    - What we know: PostHog documents source-map upload and EAS-build symbolication for React Native error tracking, and describes it as a supported path (not clearly labelled beta/experimental in the docs surfaced).
    - What's unclear: Real-world maturity/reliability relative to Sentry specifically for React Native's Hermes-bytecode stack traces — no independent third-party account of a production RN app using PostHog error tracking (vs. Sentry) was found in this session's searches, only PostHog's own documentation.
    - Recommendation: Treat D-19's spike as genuinely necessary, not a formality — budget it as its own small task early in the phase (mint a test error in a dev build, confirm a symbolicated stack trace appears in the PostHog dashboard) before committing to dropping Sentry.
+   - **RESOLVED:** operationalised by plan 00-16 Task 2 (spike-and-decide checkpoint).
 
 2. **Windows-specific EAS credential mechanics for Apple**
    - What we know: EAS Build handles provisioning-profile generation and Apple Developer Portal interaction identically regardless of the developer's OS — the CLI talks to Apple's APIs directly, not through Xcode.
    - What's unclear: No Windows-specific gotcha beyond the already-documented general EAS credential-staleness pitfall (Pitfall 3 above) was found — this may genuinely be a non-issue, or it may be under-documented because most EAS users are on macOS and Windows-specific friction goes unreported.
    - Recommendation: Treat the first `eas build --profile development --platform ios` (once Apple enrolment clears) as the actual test of this, per ROADMAP's existing "trigger the first iOS EAS Build on day one" instruction — this phase's D-U-N-S/enrolment critical path already delays that first iOS build regardless, so there's a natural window to discover Windows-specific friction early without it blocking anything else.
+   - **RESOLVED:** operationalised by plan 00-20 Task 2 (first real `eas build --platform ios`).
 
 3. **`@react-native-google-signin/google-signin` current major version and its exact nonce-parameter API**
    - What we know: The library supports passing a custom nonce (unlike its free-tier predecessor limitation mentioned in search results).
    - What's unclear: The exact current major version and whether `nonce` is a top-level `signIn()` option or set via a separate `configure()`-time field — this session's searches surfaced the *concept* but not a verbatim current-version code sample.
    - Recommendation: Run `npm view @react-native-google-signin/google-signin version` and check its README/type definitions directly at implementation time before writing the real integration — do not copy the Code Examples section's Google snippet verbatim without that check.
+   - **RESOLVED:** operationalised by plan 00-15 Task 1 (read the installed package's `.d.ts` before writing the integration).
 
 ## Environment Availability
 

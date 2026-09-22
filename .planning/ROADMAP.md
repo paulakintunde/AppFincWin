@@ -55,7 +55,43 @@ Four distinct "first builds", in the order they become possible. Only one of the
   6. Every external dependency is either provisioned and verified working, or recorded in the dependency register as deferred with its blocker and the phase it must land by. No secret appears in a tracked file, and `.env.example` documents every key.
   7. Analytics reach PostHog's EU host only after the user opts in, identify the user solely by Supabase UUID, and cannot carry an amount, payee, account name or free text; session replay is absent from production builds.
   8. Development and production run on separate Supabase projects in a deliberately chosen region, changed only through migrations in git; CI proves one user cannot touch another user's or household's rows; the auth session is stored encrypted; and an app below the minimum supported version shows an update-required screen.
-**Plans**: TBD
+**Plans**: 20 plans in 8 waves
+Plans:
+**Wave 1**
+- [ ] 00-01-PLAN.md — Day-one enrolment kickoff: dependency register, D-U-N-S lookup, work email (W1)
+- [ ] 00-02-PLAN.md — App identifier decision + Expo SDK 57 / Router scaffold with full Phase 0 deps (W1)
+- [ ] 00-03-PLAN.md — Supabase CLI toolchain, dev + prod projects in us-east-1, local stack (W1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 00-04-PLAN.md — Android toolchain + first dev build on the emulator (W2)
+- [ ] 00-05-PLAN.md — Engine-purity lint/depcruise, D-21 coverage gates with self-test, typed env config (W2)
+- [ ] 00-06-PLAN.md — Household-of-one, profiles, app_config migrations + pgTAP + [BLOCKING] dev push (W2)
+- [ ] 00-07-PLAN.md — Website audit, Apple org enrolment submission, Play Console registration (W2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 00-08-PLAN.md — GitHub Actions CI (checks, gitleaks, RLS) + required checks on main (W3)
+- [ ] 00-09-PLAN.md — fx_rates + Frankfurter v2 fx-sync Edge Function + pg_cron + [BLOCKING] dev push (W3)
+- [ ] 00-10-PLAN.md — Supabase client on encrypted LargeSecureStore, wipe registry, connection check (W3)
+- [ ] 00-11-PLAN.md — Design tokens, 4 accents / 4 pairings live theme, reduce-motion, safe-area, DSG-02 guard (W3)
+- [ ] 00-12-PLAN.md — Typed i18n catalogue with D-16 placeholders and D-20 drafts (W3)
+- [ ] 00-13-PLAN.md — Consent-gated PostHog EU analytics, typed event catalogue, no replay (W3)
+- [ ] 00-14-PLAN.md — EAS project, profiles, env secrets, fingerprint OTA policy + rollback rehearsal (W3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 00-15-PLAN.md — Apple/Google sign-in services, first-auth profile capture, AuthProvider, Google OAuth (W4)
+- [ ] 00-16-PLAN.md — D-19 error-tracking spike: PostHog vs Sentry, scrubbed consent-independent reporting (W4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 00-17-PLAN.md — Root layout, welcome screen, min-version gate + update-required screen (W5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 00-18-PLAN.md — Consent screen, You screen, theme profile sync, sign-out wipe flow (W6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 00-19-PLAN.md — Android acceptance, register consolidation, approved prod push (W7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 00-20-PLAN.md — iOS: Sign in with Apple config, first EAS iOS build on iPhone XR (W8, waits on enrolment)
 **Research flag**: EAS provisioning and credentials from Windows are unproven for this project. Trigger the first iOS EAS Build on day one — provisioning surprises are cheaper in week one than week ten.
 
 **Dependency provisioning — what blocks on what:**
@@ -240,7 +276,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4* → 5 → 6 → 7 �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 0/TBD | Not started | - |
+| 0. Foundation | 0/20 | Planned | - |
 | 1. Money Core | 0/TBD | Not started | - |
 | 2. Record | 0/TBD | Not started | - |
 | 3. Shell | 0/TBD | Not started | - |
