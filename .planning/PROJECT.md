@@ -23,20 +23,26 @@ The existing files in this repo are a **design prototype handoff**, not shipped 
 All of these are hypotheses until shipped.
 
 **Foundation**
-- [ ] Expo SDK 55 project on TypeScript strict, Expo Router v7, building to Android emulator and to iOS via EAS
-- [ ] `engine/` purity boundary enforced by ESLint `no-restricted-imports` and by CI
+- [ ] Expo SDK 57 project on TypeScript strict, Expo Router (SDK-tracked `~57.x`), building to Android emulator and to iOS via EAS
+- [ ] `engine/` purity boundary enforced by **two** tools: `eslint-plugin-boundaries` for editor feedback and `dependency-cruiser` as the non-bypassable CI gate
+- [ ] Supabase project provisioned, with Sign in with Apple and Google, and a "household of one" schema plus RLS model auto-provisioned on signup
+- [ ] Sign in with Apple name/email captured on **first authorization only** and persisted immediately — it is never returned again
 - [ ] Design tokens ported exactly: the §2 palette, 4 selectable accents, 4 selectable font pairings, live switching without reload
 - [ ] Reduced-motion honoured via `AccessibilityInfo.isReduceMotionEnabled()`
 
 **Money core**
-- [ ] `Money` type on integer minor units — no floats, no `parseFloat` on user input, anywhere
+- [ ] `Money` type on integer minor units — no floats, no `parseFloat` on user input, anywhere. Hand-rolled in `engine/money/`, no third-party dependency
+- [ ] Largest-remainder rounding for splits, with a property test asserting shares always sum back to the original total
 - [ ] Multi-currency with FX rates cached from Frankfurter v2, rate stored per transaction and per settlement
-- [ ] Supabase Postgres schema with RLS, normalised from the prototype's flat key dump
+- [ ] Client-generated UUID primary keys, and a single integer `version` column backing optimistic concurrency, Realtime reconciliation and undo
+- [ ] Data layer: TanStack Query v5 cached reads with a persister, and paused mutations as the offline write queue
 
 **Record**
 - [ ] User can log income and expenses against accounts, categories and a date
+- [ ] **Recurring transactions as a first-class entity** — rent, salary, subscriptions. `dmoney`'s income steadiness and the bills-due alert both depend on it, and with no bank feed there is nothing else to infer recurrence from
+- [ ] **CSV import, early** — the answer to Decide's cold-start problem. A new user brings existing history rather than waiting months to earn a useful verdict
 - [ ] Activity list with month switcher, search, filter, bulk select and bulk delete
-- [ ] Toast with inline Undo, 12 deep, implemented as compensating writes
+- [ ] Toast with inline Undo, 12 deep, as compensating writes — every mutation defines its inverse in `engine/`
 
 **Shell**
 - [ ] Five tabs with the bespoke SVG glyphs, directional slide animation, 8-deep back-history stack
@@ -69,15 +75,16 @@ All of these are hypotheses until shipped.
 - [ ] 11-question onboarding flow setting a starting level
 - [ ] Four levels gating ~50 features, each with area and minimum level, with per-feature contextual offers
 - [ ] Sharing capability modelled as an orthogonal flag, not a level (the prototype's level-9 marker)
+- [ ] **Level is user-changeable after onboarding, and onboarding is re-runnable** — the prototype already supports both (`setLevel` at 3668, `onbRerun` at 6429); making it explicit removes the misclassification risk of one-time tier assignment
 - [ ] RevenueCat entitlements and the prototype's own Pro gate sheet design
+- [ ] **Pro cancellation as frictionless as account deletion** — the FTC's 2025 action against a direct category competitor covered hard-to-cancel subscriptions alongside deceptive claims
 
 **System**
-- [ ] Account required at onboarding via Sign in with Apple, Google and passkeys
 - [ ] Active-session list showing where the user is signed in, with a this-device marker and sign-out-everywhere
 - [ ] Alerts: five kinds, amount thresholds, instant or digest, quiet hours, alert log
 - [ ] Face ID / biometrics and PIN lock screen
-- [ ] Offline tolerance: cached reads, queued writes flushed on reconnect
-- [ ] CSV-style import for expenses, income, goals, debt, investments and accounts
+- [ ] Offline queue hardening: idempotency keys, bounded queue growth, durable persistence across force-quit, and correct replay when a target row has moved
+- [ ] Extended import beyond transactions — goals, debt, investments and accounts
 - [ ] Month archive with restore, CSV export, and in-app account deletion that actually purges
 
 **Compliance & release**
@@ -88,6 +95,7 @@ All of these are hypotheses until shipped.
 ### Out of Scope
 
 **Deferred to v1.1**
+- **Passkeys** — cut after research. Supabase's `signInWithPasskey()` calls the browser-only `navigator.credentials.get()`, and Supabase documents passkey support only for Flutter and Swift natively. The alternatives were building custom WebAuthn against an Edge Function, or fronting Supabase with Clerk and redesigning the schema around string user IDs — both disproportionate for one auth method when Apple and Google are already one-tap
 - Web app — decided to ship mobile first, but build cloud-first and platform-agnostic so web is additive rather than a rewrite
 - iOS Widgets and Android Glance widgets — require WidgetKit in Swift and Glance in Kotlin, iterated through slow cloud builds with no Mac; they are already the deepest feature tier, so deferring costs little
 - Plaid bank feeds and brokerage linking — per-account cost, support burden and extra store scrutiny; ship the manual path behind a provider abstraction and turn feeds on when paying users justify it
@@ -138,6 +146,9 @@ All of these are hypotheses until shipped.
 - **Money**: integer minor units everywhere, with explicit rounding rules. Never floats.
 - **Quality gate**: an engine change that drops branch coverage below threshold fails CI. No exceptions.
 - **Compliance**: positioned as personal record-keeping and planning. Never "advice", "recommendation" or "you should" in verdict copy — hold the prototype's declarative-not-prescriptive voice. In-app account deletion is mandatory and must actually purge. Sign in with Apple is mandatory because Google sign-in is offered.
+- **Compliance caveat — re-verify, do not assume**: the brief's positioning rests on Guideline 3.2.1(viii) applying *"where the app performs those services."* Fetched live on 2026-09-21, the current text no longer carries that qualifier. Dozens of budgeting apps ship as non-institution developers, so practical risk looks low — but the argument must be re-checked against live guideline text at the Compliance phase rather than treated as settled. Separately, the brief miscites the 36% APR / 60-day loan cap as 3.2.1(viii); it is **3.2.2(ix)**, and it does not apply here regardless.
+- **Submission hygiene outranks content framing**: the one detailed 2026 rejection account found in this category failed on mechanical IAP issues — subscription not attached to the version (2.1(b)), missing disclosure copy (3.1.2(c)), a bad support URL (1.5) — and then again because the demo video showed Restore Purchases rather than a fresh purchase. Directional rather than proven, but it should shape where the Compliance phase spends its effort.
+- **EAS Simulator is still waitlist-only** as of September 2026, with no GA announcement. Plan the iOS loop around the iPhone XR plus the Android emulator as the *certain* path; treat the simulator as a bonus if access arrives.
 - **Data residency and privacy**: global from day one, built to GDPR as the standard everywhere — right to erasure, data portability, DPA.
 - **Design fidelity**: the §2 token set is the complete palette and type scale. No gradients, no extra shadows, no additional colours, no substituted icon set. The prototype's restraint is deliberate.
 
@@ -146,7 +157,15 @@ All of these are hypotheses until shipped.
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Cloud-first with Supabase as source of truth, rejecting local-first | Unified cross-platform footprint across web, iOS and Android; eliminates anonymous-to-authenticated migration and conflict resolution; anchors identity for cross-platform entitlements | — Pending |
-| Account required at onboarding, via Sign in with Apple, Google and passkeys | One-tap standards neutralise traditional signup friction; a single cloud source of truth from second one | — Pending |
+| Account required at onboarding, via Sign in with Apple and Google | One-tap standards neutralise traditional signup friction; a single cloud source of truth from second one. Sign in with Apple is mandatory anyway once Google is offered | — Pending |
+| Passkeys dropped, not deferred as a build task | Research verified `signInWithPasskey()` is browser-only on the JS SDK; native support exists only for Flutter and Swift. Building custom WebAuthn or adopting Clerk are both disproportionate for one method when Apple and Google already deliver one-tap | — Pending |
+| **Expo SDK 57**, not SDK 55 as the brief states | SDK 55 is two majors behind as of September 2026; 58 is preview-only. Verified live against npm: `expo@57.0.24`, `expo-router@57.0.22` — Router now tracks the SDK number rather than its own v7 scheme | — Pending |
+| Supabase provisioning, Auth and a household-of-one RLS model move into Foundation | With no local database, every phase from Record onward is hard-blocked on an authenticated, RLS-protected connection. Household then shrinks to genuinely new work: multi-member semantics, invite RPCs and Realtime conflict handling | — Pending |
+| Client-generated UUID primary keys, plus one integer `version` column | The optimistic local row *is* the final row, so there is no server-id swap to reconcile — only a status flipping pending to synced. One version column then backs optimistic concurrency, Realtime reconciliation and undo, collapsing three mechanisms into one | — Pending |
+| `engine/money/` hand-rolled, no third-party money library | The operations needed are narrow, and `dinero.js` has an ambiguous alpha-versus-latest tag split with no activity since March 2026. A dependency sits badly against a near-100% branch coverage requirement | — Pending |
+| Engine boundary enforced by two tools, not one | Bare `no-restricted-imports` — which the brief specifies — catches only direct imports. An engine file importing a helper that itself imports React passes straight through. `eslint-plugin-boundaries` for feedback, `dependency-cruiser` as the CI gate | — Pending |
+| Recurring transactions added to v1, in Record | `dmoney`'s income steadiness and the bills-due alert both need them, and with no bank feed there is nothing to infer recurrence from | — Pending |
+| CSV import moved early, into Record | It is an activation feature, not a utility: Decide needs months of history to say anything useful, and manual entry is the friction that causes churn before users accumulate any | — Pending |
 | Supabase-direct with a persisted query cache and a write queue; no SQLite, no Drizzle, no sync engine | Postgres is the schema; the same data path web inherits in 1.1. Avoids owning a bidirectional sync engine | — Pending |
 | Offline tolerance via cached reads and queued writes, not local-first | A money app gets opened on planes and in basements; a blank screen there is a one-star review. The prototype already models the queue | — Pending |
 | Mobile v1, web in 1.1, built platform-agnostic | Web parity is a real architectural phase, not a build flag — `expo-sqlite`, `expo-local-authentication`, FlashList and `@gorhom/bottom-sheet` all have uneven web stories. Building cloud-first keeps web additive | — Pending |
@@ -175,6 +194,9 @@ All of these are hypotheses until shipped.
 | Question | Where it lands |
 |----------|----------------|
 | What sits in the on-device cache, and does it need encrypting? | Reframed by the cloud-first decision — no longer a SQLCipher-versus-platform-encryption question about a local database, but a narrower one about cached financial data and `expo-secure-store` for tokens. Also determines the `ITSAppUsesNonExemptEncryption` answer |
+| Does the Realtime reconciliation state machine actually hold? | The optimistic-update / write-queue / Realtime-echo design is synthesised from documented primitives, not a documented Supabase recipe. Needs a dedicated spike in the Household phase — two simulated clients, one taken offline mid-edit — before it is trusted |
+| What happens when a household settlement expires unresolved? | The prototype specifies an expiry window but not the outcome. No competitor precedent to borrow from, so it is a design decision for the Household phase |
+| How is prescriptive language kept out of Coach output? | Prompt instructions alone do not reliably control LLM output. A server-side post-filter against "should", "recommend" and similar is the suggested mitigation — scoped with the rest of the Coach decision in Tiers |
 
 ## Evolution
 
@@ -194,4 +216,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-21 after initialization*
+*Last updated: 2026-09-21 after research — SDK 57 correction, passkeys dropped, build order revised, recurring transactions and early CSV import added*
