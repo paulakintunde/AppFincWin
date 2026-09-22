@@ -181,6 +181,8 @@ All of these are hypotheses until shipped.
 | Investments valued by hand with an as-of date | Holdings in the prototype are values, not share counts, and many account types (property, private equity, pensions) have no ticker. Free price APIs forbid display to end users | — Pending |
 | Enrol with Apple and Google as an organisation, under the company | Guideline 5.1.1(ix) expects financial-services apps, and apps requiring sensitive information, from a legal entity. One D-U-N-S number serves both stores | — Pending |
 | Production Supabase on Pro from the first real user data | Free projects pause after a week of inactivity and have no backups. With cloud-first, Supabase holds the only copy of every user's finances | — Pending |
+| Supabase Cloud Pro for production; not self-hosted, not the free tier | Self-hosted Supabase has no managed backups or point-in-time recovery, runs one project per install, is community-supported, and makes the operator responsible for patching, backups and uptime for the only copy of users' finances. The free tier pauses after a week and has no backups. The self-hosted instance stays as an exit route and restore-test target, since Supabase is open source | — Pending |
+| Local development through the Supabase CLI | Runs the full stack in Docker at no cost, never pauses, and keeps migrations in git. A free cloud project covers on-device testing, since a phone cannot easily reach the laptop | — Pending |
 | Separate development and production projects, migrations in git | Changing production by hand is the fastest way to lose data nobody else has a copy of | — Pending |
 | Migrations stay compatible with the oldest supported app version, backed by a minimum-version gate | Users cannot be forced to update, and a cloud-first app talks to one shared schema | — Pending |
 | Session and offline cache both encrypted, key in secure storage | Resolves the cache-encryption question. Expo's secure storage caps values at 2048 bytes, so data is encrypted with a key stored there — the pattern Supabase's own Expo guide uses for the session | — Pending |
@@ -237,7 +239,7 @@ Verified 2026-09-22 against each provider's pricing page.
 | Sentry | Not yet priced — may be replaced by PostHog error tracking | Phase 0 decision |
 | Frankfurter, open.er-api | Free | Phase 0–1 |
 | Coach LLM | Unknown until the Phase 9 decision — per-token, metered by the daily quota | Phase 9 |
-| Domain and site for privacy policy, terms, support | Not yet priced | By Phase 11 |
+| Domain, website and domain email | Not yet priced | **Phase 0 — Apple organisation enrolment requires a functional public website and a work email on the company's domain** |
 
 **Fixed floor before revenue:** about $99 a year plus $25 once, while everything else stays free. Once real users arrive the floor becomes roughly $25 a month more for Supabase Pro, with EAS Starter likely.
 

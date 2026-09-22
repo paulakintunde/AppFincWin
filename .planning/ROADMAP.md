@@ -45,7 +45,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
 ### Phase 0: Foundation
 **Goal**: A signed-in user has a working authenticated cloud connection, and the app has the engine boundary, design system and store-enrolment machinery in place before any feature work begins.
 **Depends on**: Nothing (first phase)
-**Requirements**: FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, FND-08, ENV-01, ENV-02, ENV-03, ENV-04, ENV-05, ENV-06, ENV-07, ENV-08, ENV-09, ENV-10, ENV-13, ENV-14, ANL-01, ANL-02, ANL-03, ANL-04, ACC-01, ACC-02, ACC-03, ACC-04, ACC-05, DSG-02, DSG-03, DSG-04, FND-09, FND-11, FND-12, ENV-15, ENV-17, ENV-18, ACC-12
+**Requirements**: FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, FND-08, ENV-01, ENV-02, ENV-03, ENV-04, ENV-05, ENV-06, ENV-07, ENV-08, ENV-09, ENV-10, ENV-13, ENV-14, ANL-01, ANL-02, ANL-03, ANL-04, ACC-01, ACC-02, ACC-03, ACC-04, ACC-05, DSG-02, DSG-03, DSG-04, FND-09, FND-11, FND-12, ENV-15, ENV-17, ENV-18, ACC-12, ENV-20
 **Success Criteria** (what must be TRUE):
   1. Developer can run the app on a local Android emulator from Windows, on Expo SDK 57 with TypeScript strict and Expo Router pinned to `~57.x`. Apple Developer Program enrolment is submitted on day one. A signed iOS development build installs on the iPhone XR via EAS Build — *this criterion alone may lag the rest of the phase while enrolment clears; it does not block Phase 1.*
   2. A user can create an account with Sign in with Apple or Google Sign-In; a household-of-one and its RLS policies are auto-provisioned invisibly on first sign-in; Apple's name/email are captured only on that first authorization and persisted immediately; the user stays signed in across app restarts.
@@ -66,6 +66,7 @@ Four distinct "first builds", in the order they become possible. Only one of the
 | EAS account + profiles | All builds | No — minutes | **Cannot defer.** Free tier is sufficient to start |
 | Google OAuth client IDs | Google Sign-In | No — same day | **Cannot defer past Phase 0.** No cost, no waiting |
 | Frankfurter | FX rates | No — no key, no account | **Cannot defer.** Public API, nothing to provision |
+| **Domain, website and work email** | Apple organisation enrolment | Yes — days, plus writing real content | **Cannot defer.** Apple rejects registrar placeholder pages and sites with minimal content. Build it while D-U-N-S is pending; it later hosts the policy, terms and support pages |
 | **D-U-N-S number** | Organisation enrolment with both Apple and Google | **Yes — can be ~28 days if not already issued** | **Check on day one.** It is the first link in the longest chain in the project |
 | **Apple Developer Program (organisation)** | Sign in with Apple, iOS device builds, TestFlight, submission | **Yes — after D-U-N-S, then days to weeks** | **Defer iOS-dependent work, not the enrolment.** Enrol as the company, not as an individual (Guideline 5.1.1(ix)). Android proceeds at full speed meanwhile; Sign in with Apple (ENV-07) and iOS builds wait |
 | Google Play Console (organisation) | Play submission, IAP products | Yes — verification against D-U-N-S; $25 one-off | Defer to Phase 11, but register by Phase 9 so IAP products exist for testing. Same D-U-N-S number as Apple |

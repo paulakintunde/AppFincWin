@@ -42,9 +42,10 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [ ] **ENV-14**: PostHog project exists on the EU host, with its project key wired in through the environment
 - [ ] **ENV-15**: The company's D-U-N-S number is confirmed or requested on day one, since it gates both Apple and Google organisation enrolment
 - [ ] **ENV-16**: Production Supabase runs on the Pro plan with daily backups before the first real user data is stored
-- [ ] **ENV-17**: Development and production use separate Supabase projects, and schema changes reach either only through migrations tracked in git
+- [ ] **ENV-17**: Development runs locally through the Supabase CLI plus a free cloud project for on-device testing, production is a separate Cloud Pro project, and schema changes reach any of them only through migrations tracked in git
 - [ ] **ENV-18**: The Supabase region is chosen deliberately at project creation, with the reasoning recorded, since it cannot easily move later
 - [ ] **ENV-19**: Push credentials exist for APNs and FCM — *APNs blocked on ENV-10*
+- [ ] **ENV-20**: The company has a public, functional website on its own domain and a work email on that domain — *required by Apple for organisation enrolment, so it gates ENV-10; the same site later hosts the privacy policy, terms and support pages*
 
 ### Analytics
 
@@ -352,6 +353,7 @@ Populated during roadmap creation.
 | ENV-17 | Phase 0 - Foundation | Pending |
 | ENV-18 | Phase 0 - Foundation | Pending |
 | ENV-19 | Phase 10 - System | Pending |
+| ENV-20 | Phase 0 - Foundation | Pending |
 | ANL-01 | Phase 0 - Foundation | Pending |
 | ANL-02 | Phase 0 - Foundation | Pending |
 | ANL-03 | Phase 0 - Foundation | Pending |
@@ -515,10 +517,10 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 192 total
-- Mapped to phases: 192
+- v1 requirements: 193 total
+- Mapped to phases: 193
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-09-22 after gap review — organisation enrolment, reviewer access, backups, environments, version compatibility, currency decimals, dates, RLS tests, encryption, push, household lifecycle, locale, text scaling, support. 192/192 v1 requirements mapped*
+*Last updated: 2026-09-22 after Apple organisation-enrolment check (website and domain email) and Supabase hosting decision. 193/193 v1 requirements mapped*
