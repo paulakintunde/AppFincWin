@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 Phase: 00 (foundation) — EXECUTING
 Plan: 1 of 20
 Status: Executing Phase 00
-Last activity: 2026-09-22 -- Phase 00 execution started
+Last activity: 2026-09-22 -- Completed quick task 260922-s7g: Supabase project-selection guardrails
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -77,6 +77,12 @@ None yet.
 - [Phase 9] Two blocking decisions are still open per PROJECT.md and must resolve before this phase starts: which of the ~50 features are Free vs. Pro, and whether the Coach ships as a real LLM (and on what terms, including a prescriptive-language post-filter)
 - [Phase 11] Guideline 3.2.1(viii)'s live wording no longer carries the qualifier the brief assumed — re-verify positioning at this phase rather than treating it as settled; the brief also mis-cites the 36% APR / 60-day loan cap as 3.2.1(viii) when it is actually 3.2.2(ix)
 - [PROJECT.md] Passkey implementation path (native WebAuthn + Edge Function vs. Clerk) remains unresolved and deferred out of v1 entirely per current scope — carried as "Out of Scope: Deferred to v1.1" in PROJECT.md, not a Phase 0 task
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260922-s7g | Supabase project-selection guardrails | 2026-09-22 | 1342926 | [260922-s7g-supabase-project-selection-guardrails](./quick/260922-s7g-supabase-project-selection-guardrails/) |
 
 ## Deferred Items
 
