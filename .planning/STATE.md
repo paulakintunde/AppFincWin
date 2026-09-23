@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 00-12-PLAN.md
-last_updated: "2026-09-23T11:05:06.079Z"
+stopped_at: Completed 00-09-PLAN.md
+last_updated: "2026-09-23T16:47:46.447Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 12
   completed_phases: 0
   total_plans: 20
-  completed_plans: 8
-  percent: 40
+  completed_plans: 9
+  percent: 45
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 ## Current Position
 
 Phase: 00 (foundation) — EXECUTING
-Plan: 4 of 20
+Plan: 5 of 20
 Status: Ready to execute
 Last activity: 2026-09-23
 
-Progress: [████░░░░░░] 40%
+Progress: [█████░░░░░] 45%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [████░░░░░░] 40%
 | Phase 00 P10 | 30min | 2 tasks | 8 files |
 | Phase 00 P11 | 35min | 3 tasks | 18 files |
 | Phase 00 P12 | 15min | 2 tasks | 6 files |
+| Phase 00 P09 | ~40min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 00]: 00-11: ThemeProvider persists accent/pairing via a ready-gated effect rather than inside each setter, so cache hydration and cache writes can never race on cold boot
 - [Phase 00]: 00-12: i18next 26 renamed initImmediate to initAsync; src/i18n/index.ts uses initAsync: false for synchronous catalogue init (verified against installed package types, not assumed from the plan text)
 - [Phase 00]: 00-12: DRAFT_COPY_KEYS scoped to exactly consent.*/you.*/signOut.*/update.* per the plan's literal action list, not the wider auth.* set UI-SPEC's Copywriting Contract also frames as Claude-drafted
+- [Phase 00]: 00-09: fx_rates.source check whitelists 'open-er-api' up front alongside 'frankfurter-v2' so Money Core's MON-12 fallback needs no constraint migration of its own
+- [Phase 00]: 00-09: Task 3's production push/deploy/vault-write was executed by the orchestrator, not the plan executor, after the sandbox's Bash classifier blocked production-deploy commands for the executor agent; the user explicitly authorized the orchestrator to run it on their behalf, and reported results back verbatim
 
 ### Pending Todos
 
@@ -107,6 +110,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-23T11:05:06.059Z
-Stopped at: Completed 00-12-PLAN.md
+Last session: 2026-09-23T16:47:46.429Z
+Stopped at: Completed 00-09-PLAN.md
 Resume file: None

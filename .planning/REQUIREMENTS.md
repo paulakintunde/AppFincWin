@@ -29,11 +29,11 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [ ] **ENV-01**: All runtime configuration is read from environment variables and EAS secrets, with a committed `.env.example` documenting every key and its purpose
 - [ ] **ENV-02**: `.env` and any local secret file are gitignored, and CI fails if a credential pattern appears in a tracked file
 - [x] **ENV-03**: Supabase project is provisioned, with its URL and publishable key wired in and a connection verified from the running app
-- [ ] **ENV-04**: Supabase service-role key is stored as an EAS secret and used only by Edge Functions, never shipped to the client
+- [x] **ENV-04**: Supabase service-role key is stored as an EAS secret and used only by Edge Functions, never shipped to the client
 - [ ] **ENV-05**: EAS project is initialised with development, preview and production build profiles
 - [ ] **ENV-06**: Google OAuth client IDs exist for iOS, Android and Web, and Google Sign-In completes end to end
 - [ ] **ENV-07**: Sign in with Apple is configured with its Service ID and key, and completes end to end — *deferrable, blocked on ENV-10*
-- [ ] **ENV-08**: Frankfurter rate-refresh Edge Function is deployed and populating the `fx_rates` table on schedule
+- [x] **ENV-08**: Frankfurter rate-refresh Edge Function is deployed and populating the `fx_rates` table on schedule
 - [ ] **ENV-09**: A dependency status register is maintained listing every external service as provisioned, pending or deferred, with its blocker and the phase it must land by
 - [ ] **ENV-10**: Apple Developer Program membership is active **as an organisation, under the company** (Guideline 5.1.1(ix)) — *external clock: D-U-N-S then enrolment; gates ENV-07, iOS device builds, TestFlight and submission*
 - [ ] **ENV-11**: Google Play Console organisation account is active under the company and an app entry exists — *deferrable to Phase 11; uses the same D-U-N-S number as ENV-10*
@@ -337,11 +337,11 @@ Populated during roadmap creation.
 | ENV-01 | Phase 0 - Foundation | Pending |
 | ENV-02 | Phase 0 - Foundation | Pending |
 | ENV-03 | Phase 0 - Foundation | Complete |
-| ENV-04 | Phase 0 - Foundation | Pending |
+| ENV-04 | Phase 0 - Foundation | Complete |
 | ENV-05 | Phase 0 - Foundation | Pending |
 | ENV-06 | Phase 0 - Foundation | Pending |
 | ENV-07 | Phase 0 - Foundation | Pending |
-| ENV-08 | Phase 0 - Foundation | Pending |
+| ENV-08 | Phase 0 - Foundation | Complete |
 | ENV-09 | Phase 0 - Foundation | Pending |
 | ENV-10 | Phase 0 - Foundation | Pending |
 | ENV-11 | Phase 11 - Compliance & Release | Pending |
