@@ -194,7 +194,16 @@ Use these entry points:
 Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
 <!-- GSD:workflow-end -->
 
+## Supabase access
 
+**Do not use the Supabase MCP connector on this project.** It is authorized against a different Supabase account — org `Ealchapp`, project ref `ogbothupjcivwruesgsu` — and cannot see the FincWin project. Verified live: the two accounts' project lists are disjoint. Any read or write through it lands on an unrelated database.
+
+**Use the Supabase CLI / Management API instead**, authenticated with `SUPABASE_ACCESS_TOKEN` from `.env.local`. That path is verified working against this project.
+
+- The one live project is `Fincwin United`, ref `cohmcbdfgqmiwykztrdg`. The repo pins it in `supabase/config.toml`.
+- Dev ref lives in `SUPABASE_DEV_PROJECT_REF`; prod ref in `SUPABASE_PROD_PROJECT_REF`. Both in `.env.local`, which is gitignored and never committed.
+- `fincwin-prod` does not exist yet — `SUPABASE_PROD_PROJECT_REF` is intentionally empty.
+- Never run migrations against prod by hand. Run `npm run supabase:preflight` before any `supabase db push`, or use `npm run supabase:db:push`, which chains the check.
 
 <!-- GSD:profile-start -->
 ## Developer Profile
