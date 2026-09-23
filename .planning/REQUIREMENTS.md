@@ -239,7 +239,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DSG-01**: Rendered screens match the prototype's screenshots within tolerance on both platforms
 - [x] **DSG-02**: Colours used are drawn only from the documented token set
 - [x] **DSG-03**: Layout adapts to device safe-area insets rather than assuming a fixed height
-- [ ] **DSG-04**: All user-facing strings are served from a typed i18n catalogue
+- [x] **DSG-04**: All user-facing strings are served from a typed i18n catalogue
 - [ ] **DSG-05**: No user-facing string claims data stays on the device or is not sent anywhere
 - [ ] **DSG-06**: Amounts, numbers and dates are formatted for the user's locale
 - [ ] **DSG-07**: Text scales with the OS text-size setting up to a defined maximum without breaking layouts
@@ -497,7 +497,7 @@ Populated during roadmap creation.
 | DSG-01 | Phase 11 - Compliance & Release | Pending |
 | DSG-02 | Phase 0 - Foundation | Complete |
 | DSG-03 | Phase 0 - Foundation | Complete |
-| DSG-04 | Phase 0 - Foundation | Pending |
+| DSG-04 | Phase 0 - Foundation | Complete |
 | DSG-05 | Phase 11 - Compliance & Release | Pending |
 | DSG-06 | Phase 1 - Money Core | Pending |
 | DSG-07 | Phase 3 - Shell | Pending |

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 00-11-PLAN.md
-last_updated: "2026-09-23T10:54:27.422Z"
+stopped_at: Completed 00-12-PLAN.md
+last_updated: "2026-09-23T11:05:06.079Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 12
   completed_phases: 0
   total_plans: 20
-  completed_plans: 7
-  percent: 35
+  completed_plans: 8
+  percent: 40
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 ## Current Position
 
 Phase: 00 (foundation) — EXECUTING
-Plan: 3 of 20
+Plan: 4 of 20
 Status: Ready to execute
 Last activity: 2026-09-23
 
-Progress: [████░░░░░░] 35%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [████░░░░░░] 35%
 *Updated after each plan completion*
 | Phase 00 P10 | 30min | 2 tasks | 8 files |
 | Phase 00 P11 | 35min | 3 tasks | 18 files |
+| Phase 00 P12 | 15min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - [Phase 00]: 00-11: Space Grotesk and IBM Plex Sans font pairings map weight 800 to their heaviest available face (700), since neither ships an 800 weight
 - [Phase 00]: 00-11: all four font pairings load at boot via one useFonts() call, so live switching has no async gap and no reload
 - [Phase 00]: 00-11: ThemeProvider persists accent/pairing via a ready-gated effect rather than inside each setter, so cache hydration and cache writes can never race on cold boot
+- [Phase 00]: 00-12: i18next 26 renamed initImmediate to initAsync; src/i18n/index.ts uses initAsync: false for synchronous catalogue init (verified against installed package types, not assumed from the plan text)
+- [Phase 00]: 00-12: DRAFT_COPY_KEYS scoped to exactly consent.*/you.*/signOut.*/update.* per the plan's literal action list, not the wider auth.* set UI-SPEC's Copywriting Contract also frames as Claude-drafted
 
 ### Pending Todos
 
@@ -104,6 +107,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-23T10:54:27.405Z
-Stopped at: Completed 00-11-PLAN.md
+Last session: 2026-09-23T11:05:06.059Z
+Stopped at: Completed 00-12-PLAN.md
 Resume file: None
