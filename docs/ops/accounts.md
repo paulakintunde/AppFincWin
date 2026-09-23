@@ -79,7 +79,7 @@ us-west-2 database lawful for users worldwide. Do not use the Supabase MCP
 connector on this project — see `## Supabase access` in `CLAUDE.md`. Save
 the database password in a password manager, since Supabase shows it once.
 → `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROD_PROJECT_REF`,
-`SUPABASE_PROD_DB_PASSWORD`, `EXPO_PUBLIC_SUPABASE_URL`,
+`SUPABASE_DB_PASSWORD`, `EXPO_PUBLIC_SUPABASE_URL`,
 `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — the last
 keeps its legacy name but holds a new-style secret key.
 
