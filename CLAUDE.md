@@ -200,10 +200,9 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 
 **Use the Supabase CLI / Management API instead**, authenticated with `SUPABASE_ACCESS_TOKEN` from `.env.local`. That path is verified working against this project.
 
-- The one live project is `Fincwin United`, ref `cohmcbdfgqmiwykztrdg`. The repo pins it in `supabase/config.toml`.
-- Dev ref lives in `SUPABASE_DEV_PROJECT_REF`; prod ref in `SUPABASE_PROD_PROJECT_REF`. Both in `.env.local`, which is gitignored and never committed.
-- `fincwin-prod` does not exist yet — `SUPABASE_PROD_PROJECT_REF` is intentionally empty.
-- Never run migrations against prod by hand. Run `npm run supabase:preflight` before any `supabase db push`, or use `npm run supabase:db:push`, which chains the check.
+- There is one Supabase project, `Fincwin United`, ref `cohmcbdfgqmiwykztrdg`, and it is production. The repo pins it in `supabase/config.toml`.
+- Its ref lives in `SUPABASE_PROD_PROJECT_REF` in `.env.local`, which is gitignored and never committed. There is no dev ref.
+- `supabase db push` targets production. Run `npm run supabase:preflight` first, or use `npm run supabase:db:push`, which chains the check. The preflight asserts that `config.toml`'s `project_id` matches `SUPABASE_PROD_PROJECT_REF`.
 
 <!-- GSD:profile-start -->
 ## Developer Profile
