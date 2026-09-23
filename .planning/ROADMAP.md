@@ -65,12 +65,12 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 00-04-PLAN.md — Android toolchain + first dev build on the emulator (W2)
 - [ ] 00-05-PLAN.md — Engine-purity lint/depcruise, D-21 coverage gates with self-test, typed env config (W2)
-- [ ] 00-06-PLAN.md — Household-of-one, profiles, app_config migrations + pgTAP + [BLOCKING] dev push (W2)
+- [ ] 00-06-PLAN.md — Household-of-one, profiles, app_config migrations + pgTAP + [BLOCKING] production push (W2)
 - [ ] 00-07-PLAN.md — Website audit, Apple org enrolment submission, Play Console registration (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 00-08-PLAN.md — GitHub Actions CI (checks, gitleaks, RLS) + required checks on main (W3)
-- [ ] 00-09-PLAN.md — fx_rates + Frankfurter v2 fx-sync Edge Function + pg_cron + [BLOCKING] dev push (W3)
+- [ ] 00-09-PLAN.md — fx_rates + Frankfurter v2 fx-sync Edge Function + pg_cron + [BLOCKING] production push (W3)
 - [ ] 00-10-PLAN.md — Supabase client on encrypted LargeSecureStore, wipe registry, connection check (W3)
 - [ ] 00-11-PLAN.md — Design tokens, 4 accents / 4 pairings live theme, reduce-motion, safe-area, DSG-02 guard (W3)
 - [ ] 00-12-PLAN.md — Typed i18n catalogue with D-16 placeholders and D-20 drafts (W3)
