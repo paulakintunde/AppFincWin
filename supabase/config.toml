@@ -1,5 +1,6 @@
-# Pinned by hand -- the Supabase CLI is not installed yet.
-# Run `supabase link --project-ref cohmcbdfgqmiwykztrdg` once the CLI is
-# available, to reconcile this file with what the CLI expects.
 # Project: "Fincwin United" (us-west-2) -- the only live FincWin project.
+# CLI installed (pinned devDependency, invoke via `npx supabase`), and the
+# repo is linked: `npx supabase link --project-ref cohmcbdfgqmiwykztrdg`.
+# See docs/decisions/supabase-environments.md for the environment map and
+# the migrations-only rule.
 project_id = "cohmcbdfgqmiwykztrdg"

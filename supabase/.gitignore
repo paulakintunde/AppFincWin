@@ -1,0 +1,6 @@
+# Local Supabase CLI artifacts. Already matched by the root .gitignore
+# (supabase/.temp/, supabase/.branches/, .env*), kept here for clarity
+# when browsing this directory in isolation.
+.branches
+.temp
+.env
