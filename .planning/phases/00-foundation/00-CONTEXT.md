@@ -45,7 +45,7 @@ Not in this phase: the five-tab shell (Phase 3), onboarding questions (Phase 9),
 
 ### Quality gates and infrastructure
 - **D-21:** `engine/` branch-coverage thresholds: **100% on `engine/money/`, `engine/decide/`, `engine/payoff/`, `engine/split/`**, and **95% on the rest of `engine/`**. Any uncovered branch in the 100% folders needs an explicit, reviewed ignore comment giving a reason. CI fails below threshold (FND-05).
-- **D-22:** **Supabase region: US East**, because launch users are mostly North American. Record this as the ENV-18 reasoning. GDPR-everywhere still applies: rely on Supabase's DPA and SCCs for EU users, and say so in the privacy policy.
+- **D-22:** **Supabase region: US West (us-west-2)**, because launch users are mostly North American. Record this as the ENV-18 reasoning. GDPR-everywhere still applies: rely on Supabase's DPA and SCCs for EU users, and say so in the privacy policy.
 - **D-23:** **PostHog stays on its EU host** despite the US database. The split geography is accepted, and it keeps the stronger consent story for European users.
 - **D-24:** CI split: **GitHub Actions** runs lint, typecheck, dependency-cruiser, Jest with coverage gates, the RLS isolation tests (FND-12) against a Supabase CLI stack in Docker, and the credential scan (ENV-02). **EAS Build/Workflows** handles native builds and OTA updates only.
 - **D-25:** Minimum supported version (FND-09) lives in a **Supabase `app_config` table**, readable before sign-in through a public read-only RLS policy and changed only through migrations or controlled updates. Not a PostHog flag: analytics is off until opt-in, and flags never gate critical access.

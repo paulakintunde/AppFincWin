@@ -37,7 +37,7 @@
 
 **Quality gates and infrastructure**
 - D-21: `engine/` branch-coverage thresholds: **100% on `engine/money/`, `engine/decide/`, `engine/payoff/`, `engine/split/`**, **95% on the rest of `engine/`**. Uncovered branches in 100% folders need an explicit, reviewed ignore comment. CI fails below threshold.
-- D-22: **Supabase region: US East** (launch users mostly North American). Record as ENV-18 reasoning. GDPR-everywhere still applies via Supabase's DPA/SCCs.
+- D-22: **Supabase region: US West (us-west-2)** (launch users mostly North American). Record as ENV-18 reasoning. GDPR-everywhere still applies via Supabase's DPA/SCCs.
 - D-23: **PostHog stays on its EU host** despite the US database — split geography accepted for the stronger EU consent story.
 - D-24: **CI split**: GitHub Actions runs lint, typecheck, dependency-cruiser, Jest with coverage gates, RLS isolation tests (FND-12) against a Supabase CLI stack in Docker, and the credential scan (ENV-02). **EAS Build/Workflows handles native builds and OTA only.**
 - D-25: Minimum supported version (FND-09) lives in a **Supabase `app_config` table**, readable pre-sign-in through a public read-only RLS policy, changed only through migrations/controlled updates. Not a PostHog flag.
@@ -84,7 +84,7 @@
 | ENV-14 | PostHog project on EU host, key wired in | Standard Stack — posthog-react-native config |
 | ENV-15 | D-U-N-S confirmed/requested day one | Dependency Provisioning table |
 | ENV-17 | Local via Supabase CLI + free cloud project; prod separate; migrations via git | Architecture Patterns — Supabase CLI migrations workflow |
-| ENV-18 | Supabase region deliberate, reasoning recorded | D-22 — US East |
+| ENV-18 | Supabase region deliberate, reasoning recorded | D-22 — US West (us-west-2) |
 | ENV-20 | Company website + work email, gates ENV-10 | Dependency Provisioning table; D-06/D-07 |
 | ANL-01 | PostHog EU host, identify by Supabase UUID only | Standard Stack — posthog-react-native |
 | ANL-02 | No event before opt-in, changeable later | Code Examples — consent gating pattern |
@@ -223,7 +223,7 @@ npm install -D dependency-cruiser eslint-plugin-boundaries jest@^30 @testing-lib
 └───────────────────────────────────────────────────────────────────┬─┘  │
                                                                       │   │
 ┌─────────────────────────────────────────────────────────────────┐ │   │
-│  Supabase (remote, source of truth) — US East region (D-22)      │ │   │
+│  Supabase (remote, source of truth) — US West region (D-22)      │ │   │
 │                                                                    │ │   │
 │  Auth (GoTrue) ◄──────────────────────────────────────────────────┼─┘   │
 │     │ verifies id_token + nonce against Apple/Google's public     │     │

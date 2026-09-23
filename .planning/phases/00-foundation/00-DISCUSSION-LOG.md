@@ -67,6 +67,8 @@
 | PostHog host given US DB | Keep EU host / Move to US host | Keep EU host |
 | Region reasoning | North American users / US company / Both | North American users |
 
+*Revised 2026-09-22: D-22 was changed to US West (us-west-2). The project was created in that region and the decision was ratified. The row above records the original choice.*
+
 ---
 
 ## Claude's Discretion
