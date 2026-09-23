@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 Phase: 00 (foundation) — EXECUTING
 Plan: 1 of 20
 Status: Executing Phase 00
-Last activity: 2026-09-22 -- Completed quick task 260922-sml: Correct Supabase details in accounts.md
+Last activity: 2026-09-22 -- Completed quick task 260922-sz4: Repoint Supabase guardrails to single prod project
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -84,6 +84,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260922-s7g | Supabase project-selection guardrails | 2026-09-22 | 1342926 | [260922-s7g-supabase-project-selection-guardrails](./quick/260922-s7g-supabase-project-selection-guardrails/) |
 | 260922-sml | Correct Supabase details in accounts.md | 2026-09-22 | e591399 | [260922-sml-correct-supabase-details-in-accounts-md](./quick/260922-sml-correct-supabase-details-in-accounts-md/) |
+| 260922-sz4 | Repoint Supabase guardrails to single prod project | 2026-09-22 | 99b4142 | [260922-sz4-repoint-supabase-guardrails-to-single-pr](./quick/260922-sz4-repoint-supabase-guardrails-to-single-pr/) |
 
 ## Deferred Items
 
