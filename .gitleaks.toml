@@ -1,0 +1,27 @@
+title = "FincWin gitleaks config"
+[extend]
+useDefault = true
+
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase secret API key"
+regex = '''sb_secret_[A-Za-z0-9_\-]{20,}'''
+
+[[rules]]
+id = "supabase-service-role-jwt"
+description = "JWT whose payload carries role=service_role"
+regex = '''eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]*InJvbGUiOiJzZXJ2aWNlX3JvbGUi[A-Za-z0-9_\-]*\.[A-Za-z0-9_\-]+'''
+
+[[rules]]
+id = "supabase-access-token"
+description = "Supabase personal access token"
+regex = '''sbp_[a-f0-9]{40}'''
+
+[[rules]]
+id = "posthog-personal-api-key"
+description = "PostHog personal API key"
+regex = '''phx_[A-Za-z0-9]{30,}'''
+
+[allowlist]
+description = "Documentation of key names only"
+paths = ['''\.env\.example$''']
