@@ -27,6 +27,7 @@ describe('wipe registry', () => {
   afterEach(async () => {
     await AsyncStorage.clear();
     (SecureStore as unknown as { __store: Map<string, string> }).__store.clear();
+    jest.clearAllMocks();
   });
 
   describe('getPendingWriteCount', () => {
@@ -136,6 +137,31 @@ describe('wipe registry', () => {
 
       unregisterGood();
       unregisterBad();
+    });
+  });
+
+  describe('wipeDeviceData error resilience', () => {
+    it('collects a SecureStore deletion failure and keeps running remaining steps', async () => {
+      await registerSecureKey('will-fail.k');
+      (SecureStore.deleteItemAsync as jest.Mock).mockRejectedValueOnce(new Error('keychain error'));
+      await AsyncStorage.setItem(`${STORAGE_PREFIX}auth`, 'x');
+
+      await expect(wipeDeviceData()).rejects.toBeInstanceOf(AggregateError);
+
+      expect(await AsyncStorage.getItem(`${STORAGE_PREFIX}auth`)).toBeNull();
+    });
+
+    it('collects an AsyncStorage read/remove failure without throwing synchronously', async () => {
+      (AsyncStorage.getAllKeys as jest.Mock).mockRejectedValueOnce(new Error('storage error'));
+
+      await expect(wipeDeviceData()).rejects.toBeInstanceOf(AggregateError);
+    });
+
+    it('treats a corrupted secure-key index as empty rather than throwing', async () => {
+      await AsyncStorage.setItem(`${STORAGE_PREFIX}secure-key-index`, 'not-json{{');
+
+      await expect(wipeDeviceData()).resolves.toBeUndefined();
+      expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
     });
   });
 

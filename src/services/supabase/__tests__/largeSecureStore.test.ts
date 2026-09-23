@@ -1,12 +1,15 @@
 // react-native-get-random-values falls back to a native module that doesn't exist under
-// Jest; define global.crypto from Node's webcrypto before the module under test (which
-// imports react-native-get-random-values for its side effect) is required.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-global.crypto = require('crypto').webcrypto;
+// Jest. Babel hoists `import` statements above any other top-level code, so this assignment
+// cannot run before the module-under-test's own `import 'react-native-get-random-values'`
+// side effect fires by source position alone — it exists as defense in depth for
+// environments where Node's own global.crypto.getRandomValues isn't already present.
+/* eslint-disable import/first, @typescript-eslint/no-require-imports */
+globalThis.crypto = require('crypto').webcrypto;
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { LargeSecureStore } from '../largeSecureStore';
+/* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 jest.mock('expo-secure-store', () => {
   const store = new Map<string, string>();
@@ -92,6 +95,17 @@ describe('LargeSecureStore', () => {
 
     expect(await AsyncStorage.getItem('session')).toBeNull();
     expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('session.k');
+  });
+
+  it('returns null and removes the blob when decryption fails for a well-formed blob', async () => {
+    const store = new LargeSecureStore();
+    await store.setItem('session', 'value');
+    (SecureStore.getItemAsync as jest.Mock).mockRejectedValueOnce(new Error('keychain read error'));
+
+    const result = await store.getItem('session');
+
+    expect(result).toBeNull();
+    expect(await AsyncStorage.getItem('session')).toBeNull();
   });
 
   it('returns null and removes a corrupted blob (bad format) rather than throwing', async () => {
