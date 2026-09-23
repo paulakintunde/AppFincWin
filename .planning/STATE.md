@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 00-09-PLAN.md
-last_updated: "2026-09-23T16:47:46.447Z"
+stopped_at: Completed 00-08-PLAN.md
+last_updated: "2026-09-23T17:01:29.838Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 12
   completed_phases: 0
   total_plans: 20
-  completed_plans: 9
-  percent: 45
+  completed_plans: 10
+  percent: 50
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 ## Current Position
 
 Phase: 00 (foundation) — EXECUTING
-Plan: 5 of 20
+Plan: 6 of 20
 Status: Ready to execute
 Last activity: 2026-09-23
 
-Progress: [█████░░░░░] 45%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [█████░░░░░] 45%
 | Phase 00 P11 | 35min | 3 tasks | 18 files |
 | Phase 00 P12 | 15min | 2 tasks | 6 files |
 | Phase 00 P09 | ~40min | 3 tasks | 8 files |
+| Phase 00 P08 | 25min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,8 @@ Recent decisions affecting current work:
 - [Phase 00]: 00-12: DRAFT_COPY_KEYS scoped to exactly consent.*/you.*/signOut.*/update.* per the plan's literal action list, not the wider auth.* set UI-SPEC's Copywriting Contract also frames as Claude-drafted
 - [Phase 00]: 00-09: fx_rates.source check whitelists 'open-er-api' up front alongside 'frankfurter-v2' so Money Core's MON-12 fallback needs no constraint migration of its own
 - [Phase 00]: 00-09: Task 3's production push/deploy/vault-write was executed by the orchestrator, not the plan executor, after the sandbox's Bash classifier blocked production-deploy commands for the executor agent; the user explicitly authorized the orchestrator to run it on their behalf, and reported results back verbatim
+- [Phase 00]: 00-08: CI workflow proven green (run 35890330292) but branch protection deferred — GitHub Free plan on a private repo 403s the required-status-checks API; user accepted CI-advisory-only rather than upgrading to Pro or making the repo public
+- [Phase 00]: 00-08: gitleaks pinned to v8.30.1 (verified latest v8 tag at execution time), not the plan's v8.28.0 placeholder; npm ci runs with --legacy-peer-deps in CI to match the locally installed dependency graph
 
 ### Pending Todos
 
@@ -89,6 +92,7 @@ None yet.
 - [Phase 9] Two blocking decisions are still open per PROJECT.md and must resolve before this phase starts: which of the ~50 features are Free vs. Pro, and whether the Coach ships as a real LLM (and on what terms, including a prescriptive-language post-filter)
 - [Phase 11] Guideline 3.2.1(viii)'s live wording no longer carries the qualifier the brief assumed — re-verify positioning at this phase rather than treating it as settled; the brief also mis-cites the 36% APR / 60-day loan cap as 3.2.1(viii) when it is actually 3.2.2(ix)
 - [PROJECT.md] Passkey implementation path (native WebAuthn + Edge Function vs. Clerk) remains unresolved and deferred out of v1 entirely per current scope — carried as "Out of Scope: Deferred to v1.1" in PROJECT.md, not a Phase 0 task
+- [Phase 0] 00-08: GitHub branch protection on `main` cannot be set — `PUT .../branches/main/protection` returns 403 ("Upgrade to GitHub Pro or make this repository public") because `AppFincWin` is a private repo on the GitHub Free plan. CI itself is live and green (`checks`/`secret-scan`/`rls`, run 35890330292), but a red check currently cannot block a merge to `main` — FND-04/FND-05's "non-bypassable" intent is not met. User accepted CI-advisory-only for now rather than upgrading to GitHub Pro or making the repo public; declined rulesets as a substitute. Unblock: GitHub Pro ($4/mo), then re-run the `gh api -X PUT .../protection` call from 00-08-PLAN.md Task 2. Tracked in `docs/dependency-register.md`
 
 ### Quick Tasks Completed
 
@@ -110,6 +114,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-23T16:47:46.429Z
-Stopped at: Completed 00-09-PLAN.md
+Last session: 2026-09-23T17:01:29.798Z
+Stopped at: Completed 00-08-PLAN.md
 Resume file: None

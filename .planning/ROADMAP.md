@@ -69,7 +69,7 @@ Plans:
 - [ ] 00-07-PLAN.md — Website audit, Apple org enrolment submission, Play Console registration (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 00-08-PLAN.md — GitHub Actions CI (checks, gitleaks, RLS) + required checks on main (W3)
+- [x] 00-08-PLAN.md — GitHub Actions CI (checks, gitleaks, RLS) + required checks on main (W3) — *branch protection deferred, CI advisory-only; see SUMMARY*
 - [x] 00-09-PLAN.md — fx_rates + Frankfurter v2 fx-sync Edge Function + pg_cron + [BLOCKING] production push (W3)
 - [x] 00-10-PLAN.md — Supabase client on encrypted LargeSecureStore, wipe registry, connection check (W3)
 - [x] 00-11-PLAN.md — Design tokens, 4 accents / 4 pairings live theme, reduce-motion, safe-area, DSG-02 guard (W3)
@@ -276,7 +276,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4* → 5 → 6 → 7 �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 0/20 | Planned | - |
+| 0. Foundation | 9/20 | In Progress|  |
 | 1. Money Core | 0/TBD | Not started | - |
 | 2. Record | 0/TBD | Not started | - |
 | 3. Shell | 0/TBD | Not started | - |
