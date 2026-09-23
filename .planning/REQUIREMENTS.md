@@ -14,8 +14,8 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 - [ ] **FND-03**: Developer can install a signed iOS development build on a physical device via EAS Build, from Windows
 - [ ] **FND-04**: CI fails any change where a file under `engine/` imports from `db/`, `state/`, `services/`, `ui/` or `react`, including transitively
 - [ ] **FND-05**: CI fails any change that drops `engine/` branch coverage below the agreed threshold
-- [ ] **FND-06**: App applies any of 4 accent colours and any of 4 font pairings live, without a reload
-- [ ] **FND-07**: All animations collapse to near-zero duration when the OS reports reduce-motion enabled
+- [x] **FND-06**: App applies any of 4 accent colours and any of 4 font pairings live, without a reload
+- [x] **FND-07**: All animations collapse to near-zero duration when the OS reports reduce-motion enabled
 - [ ] **FND-08**: Apple Developer Program enrolment is submitted before any store-dependent work begins
 - [ ] **FND-09**: App checks a minimum supported version on launch and shows an update-required screen when it is below it
 - [ ] **FND-10**: Every database migration is checked for compatibility with the oldest supported app version before it is deployed
@@ -237,8 +237,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 ### Design Fidelity
 
 - [ ] **DSG-01**: Rendered screens match the prototype's screenshots within tolerance on both platforms
-- [ ] **DSG-02**: Colours used are drawn only from the documented token set
-- [ ] **DSG-03**: Layout adapts to device safe-area insets rather than assuming a fixed height
+- [x] **DSG-02**: Colours used are drawn only from the documented token set
+- [x] **DSG-03**: Layout adapts to device safe-area insets rather than assuming a fixed height
 - [ ] **DSG-04**: All user-facing strings are served from a typed i18n catalogue
 - [ ] **DSG-05**: No user-facing string claims data stays on the device or is not sent anywhere
 - [ ] **DSG-06**: Amounts, numbers and dates are formatted for the user's locale
@@ -327,8 +327,8 @@ Populated during roadmap creation.
 | FND-03 | Phase 0 - Foundation | Pending |
 | FND-04 | Phase 0 - Foundation | Pending |
 | FND-05 | Phase 0 - Foundation | Pending |
-| FND-06 | Phase 0 - Foundation | Pending |
-| FND-07 | Phase 0 - Foundation | Pending |
+| FND-06 | Phase 0 - Foundation | Complete |
+| FND-07 | Phase 0 - Foundation | Complete |
 | FND-08 | Phase 0 - Foundation | Pending |
 | FND-09 | Phase 0 - Foundation | Pending |
 | FND-10 | Phase 1 - Money Core | Pending |
@@ -495,8 +495,8 @@ Populated during roadmap creation.
 | DAT-05 | Phase 10 - System | Pending |
 | DAT-06 | Phase 10 - System | Pending |
 | DSG-01 | Phase 11 - Compliance & Release | Pending |
-| DSG-02 | Phase 0 - Foundation | Pending |
-| DSG-03 | Phase 0 - Foundation | Pending |
+| DSG-02 | Phase 0 - Foundation | Complete |
+| DSG-03 | Phase 0 - Foundation | Complete |
 | DSG-04 | Phase 0 - Foundation | Pending |
 | DSG-05 | Phase 11 - Compliance & Release | Pending |
 | DSG-06 | Phase 1 - Money Core | Pending |
