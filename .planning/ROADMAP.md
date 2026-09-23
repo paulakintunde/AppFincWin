@@ -63,7 +63,7 @@ Plans:
 - [x] 00-03-PLAN.md — Supabase CLI toolchain, production project in us-west-2, local stack (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 00-04-PLAN.md — Android toolchain + first dev build on the emulator (W2)
+- [x] 00-04-PLAN.md — Android toolchain + first dev build on the emulator (W2)
 - [x] 00-05-PLAN.md — Engine-purity lint/depcruise, D-21 coverage gates with self-test, typed env config (W2)
 - [x] 00-06-PLAN.md — Household-of-one, profiles, app_config migrations + pgTAP + [BLOCKING] production push (W2)
 - [ ] 00-07-PLAN.md — Website audit, Apple org enrolment submission, Play Console registration (W2)

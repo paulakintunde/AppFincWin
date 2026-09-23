@@ -10,7 +10,7 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 ### Platform & Foundation
 
 - [ ] **FND-01**: Project builds and runs on Expo SDK 57 with TypeScript `strict: true` and Expo Router pinned to `~57.x`
-- [ ] **FND-02**: Developer can run the app on a local Android emulator with a development build
+- [x] **FND-02**: Developer can run the app on a local Android emulator with a development build
 - [ ] **FND-03**: Developer can install a signed iOS development build on a physical device via EAS Build, from Windows
 - [ ] **FND-04**: CI fails any change where a file under `engine/` imports from `db/`, `state/`, `services/`, `ui/` or `react`, including transitively — *the CI job itself is live and proven (00-08); left pending because "CI fails" alone doesn't satisfy this requirement's intent without a non-bypassable merge gate — see FND-05 note*
 - [ ] **FND-05**: CI fails any change that drops `engine/` branch coverage below the agreed threshold — *the CI job itself is live and proven (00-08: `checks`/`secret-scan`/`rls` all green on main, gate self-test passes), but GitHub branch protection requiring these checks on `main` returned 403 ("Upgrade to GitHub Pro or make this repository public") — `AppFincWin` is a private repo on the Free plan. User accepted this as CI-advisory-only for now rather than upgrading or changing repo visibility (00-08 Task 2 deviation). A failing check currently cannot block a merge to `main`; re-run the branch-protection call from 00-08-PLAN.md once the account moves to Pro/Team. Tracked in `docs/dependency-register.md`*
@@ -323,7 +323,7 @@ Populated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FND-01 | Phase 0 - Foundation | Pending |
-| FND-02 | Phase 0 - Foundation | Pending |
+| FND-02 | Phase 0 - Foundation | Complete |
 | FND-03 | Phase 0 - Foundation | Pending |
 | FND-04 | Phase 0 - Foundation | Pending |
 | FND-05 | Phase 0 - Foundation | Pending |
