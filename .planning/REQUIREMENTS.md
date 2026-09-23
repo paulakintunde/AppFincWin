@@ -66,14 +66,14 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **ACC-02**: User can create an account with Google Sign-In
 - [ ] **ACC-03**: User's name and email from Sign in with Apple are captured on first authorization and persisted immediately
 - [ ] **ACC-04**: A new account is auto-provisioned with a household-of-one and its RLS policies, with no setup step visible to the user
-- [ ] **ACC-05**: User stays signed in across app restarts
+- [x] **ACC-05**: User stays signed in across app restarts
 - [ ] **ACC-06**: User can see every device where their account is signed in, with the current device marked
 - [ ] **ACC-07**: User can sign out of one listed device, or all devices at once
 - [ ] **ACC-08**: User can unlock the app with Face ID, Touch ID or Android biometrics
 - [ ] **ACC-09**: User can set and use a PIN as an alternative to biometrics
 - [ ] **ACC-10**: User can delete their account in-app, and doing so purges their data from Supabase
 - [ ] **ACC-11**: A sign-in method restricted to allow-listed store-review accounts exists, so reviewers can enter an app that otherwise offers only Apple and Google
-- [ ] **ACC-12**: The auth session is stored encrypted, with its key held in secure storage, working around secure storage's 2048-byte limit
+- [x] **ACC-12**: The auth session is stored encrypted, with its key held in secure storage, working around secure storage's 2048-byte limit
 - [ ] **ACC-13**: Server-side functions enforce per-user rate limits
 
 ### Money & Data Integrity
@@ -366,14 +366,14 @@ Populated during roadmap creation.
 | ACC-02 | Phase 0 - Foundation | Pending |
 | ACC-03 | Phase 0 - Foundation | Pending |
 | ACC-04 | Phase 0 - Foundation | Pending |
-| ACC-05 | Phase 0 - Foundation | Pending |
+| ACC-05 | Phase 0 - Foundation | Complete |
 | ACC-06 | Phase 10 - System | Pending |
 | ACC-07 | Phase 10 - System | Pending |
 | ACC-08 | Phase 10 - System | Pending |
 | ACC-09 | Phase 10 - System | Pending |
 | ACC-10 | Phase 10 - System | Pending |
 | ACC-11 | Phase 10 - System | Pending |
-| ACC-12 | Phase 0 - Foundation | Pending |
+| ACC-12 | Phase 0 - Foundation | Complete |
 | ACC-13 | Phase 10 - System | Pending |
 | MON-01 | Phase 1 - Money Core | Pending |
 | MON-02 | Phase 1 - Money Core | Pending |

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 0 UI-SPEC approved
-last_updated: "2026-09-22T14:05:11.708Z"
-last_activity: 2026-09-22 -- Phase 00 execution started
+stopped_at: Completed 00-10-PLAN.md
+last_updated: "2026-09-23T10:32:55.762Z"
+last_activity: 2026-09-23
 progress:
   total_phases: 12
   completed_phases: 0
   total_plans: 20
-  completed_plans: 0
-  percent: 0
+  completed_plans: 6
+  percent: 30
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 ## Current Position
 
 Phase: 00 (foundation) — EXECUTING
-Plan: 1 of 20
-Status: Executing Phase 00
-Last activity: 2026-09-22 -- Completed quick task 260922-us3: Align all docs to single prod Supabase project
+Plan: 2 of 20
+Status: Ready to execute
+Last activity: 2026-09-23
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 00 P10 | 30min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,7 @@ Recent decisions affecting current work:
 - Roadmap: Decide engine (Phase 4) has zero data-layer dependency by design and is flagged as parallel-eligible with Phases 1-3 (Money Core, Record, Shell)
 - Roadmap: Design Fidelity requirements (DSG-01 to DSG-04) filed under Foundation as standards established day one; DSG-05 (no on-device-storage claims in copy) filed under Compliance & Release since it feeds the App Privacy questionnaire's accuracy
 - Roadmap: Offline & Sync split across two phases — basic browse/edit/queue-indicator (SYN-01, SYN-02, SYN-06) in Money Core; hardening (idempotency, force-quit durability, bounded growth — SYN-03, SYN-04, SYN-05) in System
+- [Phase ?]: 00-10: checkConnection falls back to the real Supabase client via a lazy dynamic import rather than a static default-parameter reference, so unit tests never trigger client.ts's eager getEnv() call
 
 ### Pending Todos
 
@@ -98,6 +100,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-22T09:59:17.758Z
-Stopped at: Phase 0 UI-SPEC approved
-Resume file: .planning/phases/00-foundation/00-UI-SPEC.md
+Last session: 2026-09-23T10:32:55.747Z
+Stopped at: Completed 00-10-PLAN.md
+Resume file: None
