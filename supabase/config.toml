@@ -4,3 +4,8 @@
 # See docs/decisions/supabase-environments.md for the environment map and
 # the migrations-only rule.
 project_id = "cohmcbdfgqmiwykztrdg"
+
+# fx-sync (ENV-08): authenticated by a shared secret header, not a user
+# JWT, since it is invoked by pg_cron/net.http_post, not by clients.
+[functions.fx-sync]
+verify_jwt = false
