@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { colors } from '@/theme';
 
 const WORDMARK = 'FincWin';
 
@@ -15,11 +16,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FBFAF7',
+    backgroundColor: colors.canvas,
   },
   wordmark: {
     fontSize: 34,
     fontWeight: '600',
-    color: '#111111',
+    color: colors.ink,
   },
 });
