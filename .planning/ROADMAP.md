@@ -54,13 +54,13 @@ Four distinct "first builds", in the order they become possible. Only one of the
   5. Animations collapse to near-zero duration when the OS reports reduce-motion enabled.
   6. Every external dependency is either provisioned and verified working, or recorded in the dependency register as deferred with its blocker and the phase it must land by. No secret appears in a tracked file, and `.env.example` documents every key.
   7. Analytics reach PostHog's EU host only after the user opts in, identify the user solely by Supabase UUID, and cannot carry an amount, payee, account name or free text; session replay is absent from production builds.
-  8. Development and production run on separate Supabase projects in a deliberately chosen region, changed only through migrations in git; CI proves one user cannot touch another user's or household's rows; the auth session is stored encrypted; and an app below the minimum supported version shows an update-required screen.
+  8. The Supabase project runs in a deliberately chosen region and is changed only through migrations in git; CI proves one user cannot touch another user's or household's rows; the auth session is stored encrypted; and an app below the minimum supported version shows an update-required screen.
 **Plans**: 20 plans in 8 waves
 Plans:
 **Wave 1**
 - [ ] 00-01-PLAN.md — Day-one enrolment kickoff: dependency register, D-U-N-S lookup, work email (W1)
 - [x] 00-02-PLAN.md — App identifier decision + Expo SDK 57 / Router scaffold with full Phase 0 deps (W1)
-- [ ] 00-03-PLAN.md — Supabase CLI toolchain, dev + prod projects in us-east-1, local stack (W1)
+- [ ] 00-03-PLAN.md — Supabase CLI toolchain, production project in us-west-2, local stack (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 00-04-PLAN.md — Android toolchain + first dev build on the emulator (W2)
