@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 Phase: 00 (foundation) — EXECUTING
 Plan: 1 of 20
 Status: Executing Phase 00
-Last activity: 2026-09-22 -- Completed quick task 260922-tsn: Collapse phase-00 plans to single prod Supabase project
+Last activity: 2026-09-22 -- Completed quick task 260922-us3: Align all docs to single prod Supabase project
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -86,6 +86,7 @@ None yet.
 | 260922-sml | Correct Supabase details in accounts.md | 2026-09-22 | e591399 | [260922-sml-correct-supabase-details-in-accounts-md](./quick/260922-sml-correct-supabase-details-in-accounts-md/) |
 | 260922-sz4 | Repoint Supabase guardrails to single prod project | 2026-09-22 | 99b4142 | [260922-sz4-repoint-supabase-guardrails-to-single-pr](./quick/260922-sz4-repoint-supabase-guardrails-to-single-pr/) |
 | 260922-tsn | Collapse phase-00 plans to single prod Supabase project | 2026-09-22 | f90689b | [260922-tsn-collapse-phase-00-plans-to-single-prod-s](./quick/260922-tsn-collapse-phase-00-plans-to-single-prod-s/) |
+| 260922-us3 | Align all docs to single prod Supabase project | 2026-09-22 | 07ef5f6 | [260922-us3-align-all-docs-to-single-prod-supabase-p](./quick/260922-us3-align-all-docs-to-single-prod-supabase-p/) |
 
 ## Deferred Items
 
