@@ -28,7 +28,7 @@ Every external dependency is provisioned to a working state, or explicitly defer
 
 - [ ] **ENV-01**: All runtime configuration is read from environment variables and EAS secrets, with a committed `.env.example` documenting every key and its purpose
 - [ ] **ENV-02**: `.env` and any local secret file are gitignored, and CI fails if a credential pattern appears in a tracked file
-- [ ] **ENV-03**: Supabase project is provisioned, with its URL and publishable key wired in and a connection verified from the running app
+- [x] **ENV-03**: Supabase project is provisioned, with its URL and publishable key wired in and a connection verified from the running app
 - [ ] **ENV-04**: Supabase service-role key is stored as an EAS secret and used only by Edge Functions, never shipped to the client
 - [ ] **ENV-05**: EAS project is initialised with development, preview and production build profiles
 - [ ] **ENV-06**: Google OAuth client IDs exist for iOS, Android and Web, and Google Sign-In completes end to end
@@ -42,8 +42,8 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [ ] **ENV-14**: PostHog project exists on the EU host, with its project key wired in through the environment
 - [ ] **ENV-15**: The company's D-U-N-S number is confirmed or requested on day one, since it gates both Apple and Google organisation enrolment
 - [ ] **ENV-16**: Production Supabase runs on the Pro plan with daily backups before the first real user data is stored
-- [ ] **ENV-17**: Development runs locally through the Supabase CLI plus a free cloud project for on-device testing, production is a separate Cloud Pro project, and schema changes reach any of them only through migrations tracked in git
-- [ ] **ENV-18**: The Supabase region is chosen deliberately at project creation, with the reasoning recorded, since it cannot easily move later
+- [x] **ENV-17**: Development runs locally through the Supabase CLI plus a free cloud project for on-device testing, production is a separate Cloud Pro project, and schema changes reach any of them only through migrations tracked in git
+- [x] **ENV-18**: The Supabase region is chosen deliberately at project creation, with the reasoning recorded, since it cannot easily move later
 - [ ] **ENV-19**: Push credentials exist for APNs and FCM — *APNs blocked on ENV-10*
 - [ ] **ENV-20**: The company has a public, functional website on its own domain and a work email on that domain — *required by Apple for organisation enrolment, so it gates ENV-10; the same site later hosts the privacy policy, terms and support pages*
 
@@ -336,7 +336,7 @@ Populated during roadmap creation.
 | FND-12 | Phase 0 - Foundation | Pending |
 | ENV-01 | Phase 0 - Foundation | Pending |
 | ENV-02 | Phase 0 - Foundation | Pending |
-| ENV-03 | Phase 0 - Foundation | Pending |
+| ENV-03 | Phase 0 - Foundation | Complete |
 | ENV-04 | Phase 0 - Foundation | Pending |
 | ENV-05 | Phase 0 - Foundation | Pending |
 | ENV-06 | Phase 0 - Foundation | Pending |
@@ -350,8 +350,8 @@ Populated during roadmap creation.
 | ENV-14 | Phase 0 - Foundation | Pending |
 | ENV-15 | Phase 0 - Foundation | Pending |
 | ENV-16 | Phase 2 - Record | Pending |
-| ENV-17 | Phase 0 - Foundation | Pending |
-| ENV-18 | Phase 0 - Foundation | Pending |
+| ENV-17 | Phase 0 - Foundation | Complete |
+| ENV-18 | Phase 0 - Foundation | Complete |
 | ENV-19 | Phase 10 - System | Pending |
 | ENV-20 | Phase 0 - Foundation | Pending |
 | ANL-01 | Phase 0 - Foundation | Pending |
