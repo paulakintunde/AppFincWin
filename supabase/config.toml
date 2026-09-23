@@ -1,0 +1,5 @@
+# Pinned by hand -- the Supabase CLI is not installed yet.
+# Run `supabase link --project-ref cohmcbdfgqmiwykztrdg` once the CLI is
+# available, to reconcile this file with what the CLI expects.
+# Project: "Fincwin United" (us-west-2) -- the only live FincWin project.
+project_id = "cohmcbdfgqmiwykztrdg"
