@@ -2,22 +2,25 @@
 // Supabase project-ref preflight.
 //
 // Confirms that the project ref pinned in supabase/config.toml matches the
-// dev ref in .env.local before any `supabase db push` is allowed to run.
-// This exists because the Supabase MCP connector available in Claude
+// production ref in .env.local before any `supabase db push` is allowed to
+// run. This exists because the Supabase MCP connector available in Claude
 // sessions is authorized against a *different* Supabase account and cannot
 // see this project at all -- see the "Supabase access" section in
 // CLAUDE.md. The CLI / Management API path, gated by this script, is the
 // only path verified to work against the real FincWin project.
 //
+// There is one Supabase project, and it is production. This script asserts
+// the two refs match; it does not add a confirmation gate.
+//
 // Node builtins only. No dependencies, so it runs on a fresh clone before
 // any `npm install`.
 //
-// Secret hygiene: this script reads exactly two keys out of the env file --
-// SUPABASE_DEV_PROJECT_REF and SUPABASE_PROD_PROJECT_REF -- and prints
-// nothing else from it. It must never read or print the CLI access token,
-// any service-role key, or any DB password env var. Project refs are not
-// secret (they appear inside EXPO_PUBLIC_SUPABASE_URL), so printing the two
-// compared refs on failure is correct and required for a useful error.
+// Secret hygiene: this script reads exactly one key out of the env file --
+// SUPABASE_PROD_PROJECT_REF -- and prints nothing else from it. It must
+// never read or print the CLI access token, any service-role key, or any DB
+// password env var. Project refs are not secret (they appear inside
+// EXPO_PUBLIC_SUPABASE_URL), so printing both compared refs on failure is
+// correct and required for a useful error.
 
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
@@ -60,14 +63,12 @@ function main() {
   const configTomlPath = resolve(cwd, "supabase/config.toml");
 
   let envMap = {};
-  let devRef = null;
   let prodRef = null;
 
   if (!existsSync(envFilePath)) {
     problems.push(`env file not found: ${envFilePath}`);
   } else {
     envMap = parseEnvFile(readFileSync(envFilePath, "utf8"));
-    devRef = envMap.SUPABASE_DEV_PROJECT_REF ?? null;
     prodRef = envMap.SUPABASE_PROD_PROJECT_REF ?? null;
   }
 
@@ -87,34 +88,27 @@ function main() {
     }
   }
 
-  if (!devRef) {
+  if (!prodRef) {
     if (existsSync(envFilePath)) {
       problems.push(
-        `${envFilePath}: SUPABASE_DEV_PROJECT_REF is missing or empty`
+        `${envFilePath}: SUPABASE_PROD_PROJECT_REF is missing or empty`
       );
     }
-  } else if (!REF_PATTERN.test(devRef)) {
+  } else if (!REF_PATTERN.test(prodRef)) {
     problems.push(
-      `${envFilePath}: SUPABASE_DEV_PROJECT_REF "${devRef}" is not a valid 20-character project ref`
+      `${envFilePath}: SUPABASE_PROD_PROJECT_REF "${prodRef}" is not a valid 20-character project ref`
     );
   }
 
-  if (configRef && devRef && REF_PATTERN.test(configRef) && REF_PATTERN.test(devRef)) {
-    if (configRef !== devRef) {
+  if (
+    configRef &&
+    prodRef &&
+    REF_PATTERN.test(configRef) &&
+    REF_PATTERN.test(prodRef)
+  ) {
+    if (configRef !== prodRef) {
       problems.push(
-        `project ref mismatch: supabase/config.toml has project_id="${configRef}", ${envFilePath} has SUPABASE_DEV_PROJECT_REF="${devRef}"`
-      );
-    }
-  }
-
-  if (prodRef) {
-    if (!REF_PATTERN.test(prodRef)) {
-      problems.push(
-        `${envFilePath}: SUPABASE_PROD_PROJECT_REF "${prodRef}" looks like placeholder text, not a project ref`
-      );
-    } else if (configRef && prodRef === configRef) {
-      problems.push(
-        `supabase/config.toml is pinned to the PRODUCTION project - refusing (project_id="${configRef}" equals SUPABASE_PROD_PROJECT_REF)`
+        `project ref mismatch: supabase/config.toml has project_id="${configRef}", ${envFilePath} has SUPABASE_PROD_PROJECT_REF="${prodRef}"`
       );
     }
   }
@@ -129,7 +123,7 @@ function main() {
 
   console.log(
     `Supabase preflight OK: project ref "${configRef}" matches ` +
-      `supabase/config.toml (project_id) and ${envFilePath} (SUPABASE_DEV_PROJECT_REF).`
+      `supabase/config.toml (project_id) and ${envFilePath} (SUPABASE_PROD_PROJECT_REF).`
   );
   process.exit(0);
 }
