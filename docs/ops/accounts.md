@@ -34,7 +34,7 @@ two: the entity domain for enrolment, the product domain for the listing.
 | Cloudflare Email Routing | free | 00-01 | Not started |
 | Resend | free tier | 00-01 | Not started |
 | D&B / D-U-N-S number | free | 00-07 Apple enrolment | Not started |
-| Supabase org "FincWin United" | Free plan | 00-03 and everything after | Dev project live; prod not created |
+| Supabase org "FincWin United" | Free plan | 00-03 and everything after | Production project live |
 | Expo / EAS org `fincwin` | free tier | 00-14, 00-20 | Not started |
 | PostHog EU Cloud | free tier | 00-13, 00-16 | Not started |
 | Google Cloud + Play Console | Play: $25 once | 00-07, 00-15 | Not started |
@@ -67,24 +67,21 @@ before submitting. A new request can take up to about 28 days.
 The organisation exists and one Free project is live: `Fincwin United`, ref
 `cohmcbdfgqmiwykztrdg`, in us-west-2. That region was chosen over an EU one
 because most users are in North America, and it is permanent — Supabase fixes
-a project's region at creation. It serves as dev, but renaming it to
-`fincwin-dev` is still outstanding, and `fincwin-prod` has not been created,
-so the two-project split PROJECT.md calls for is only half done. The access
-token is generated and verified against the Management API; the CLI and Docker
-Desktop are still outstanding — install the CLI with Scoop, as
-`npm install -g supabase` is unsupported. Keys are the new `sb_publishable_`
-and `sb_secret_` style, and the legacy `anon` and `service_role` JWTs are
-deprecated at the end of 2026, so do not mint them. Accept the Supabase DPA
-while you are in the dashboard: it carries the Standard Contractual Clauses
-and the UK addendum, which is what makes a us-west-2 database lawful for users
-worldwide. Do not use the Supabase MCP connector on this project — see
-`## Supabase access` in `CLAUDE.md`. Save each database password in a password
-manager, since Supabase shows it once.
-→ `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DEV_PROJECT_REF`,
-`SUPABASE_PROD_PROJECT_REF`, `SUPABASE_PROD_DB_PASSWORD`,
-`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
-`SUPABASE_SERVICE_ROLE_KEY` — the last keeps its legacy name but holds a
-new-style secret key.
+a project's region at creation. It is the production project, and the only
+one. The access token is generated and verified against the Management API;
+the CLI and Docker Desktop are still outstanding — install the CLI with
+Scoop, as `npm install -g supabase` is unsupported. Keys are the new
+`sb_publishable_` and `sb_secret_` style, and the legacy `anon` and
+`service_role` JWTs are deprecated at the end of 2026, so do not mint them.
+Accept the Supabase DPA while you are in the dashboard: it carries the
+Standard Contractual Clauses and the UK addendum, which is what makes a
+us-west-2 database lawful for users worldwide. Do not use the Supabase MCP
+connector on this project — see `## Supabase access` in `CLAUDE.md`. Save
+the database password in a password manager, since Supabase shows it once.
+→ `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROD_PROJECT_REF`,
+`SUPABASE_PROD_DB_PASSWORD`, `EXPO_PUBLIC_SUPABASE_URL`,
+`EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — the last
+keeps its legacy name but holds a new-style secret key.
 
 ### Expo / EAS — plan 00-14
 Create the `fincwin` organisation at https://expo.dev. `eas init` prints the
