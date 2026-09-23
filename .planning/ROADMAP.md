@@ -60,7 +60,7 @@ Plans:
 **Wave 1**
 - [x] 00-01-PLAN.md — Day-one enrolment kickoff: dependency register, D-U-N-S lookup, work email (W1)
 - [x] 00-02-PLAN.md — App identifier decision + Expo SDK 57 / Router scaffold with full Phase 0 deps (W1)
-- [ ] 00-03-PLAN.md — Supabase CLI toolchain, production project in us-west-2, local stack (W1)
+- [x] 00-03-PLAN.md — Supabase CLI toolchain, production project in us-west-2, local stack (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 00-04-PLAN.md — Android toolchain + first dev build on the emulator (W2)
