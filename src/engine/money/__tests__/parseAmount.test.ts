@@ -10,6 +10,17 @@ describe('localeSeparators', () => {
   it('derives de-DE decimal and group characters (swapped vs en-US)', () => {
     expect(localeSeparators('de-DE')).toEqual({ decimal: ',', group: '.' });
   });
+
+  it('falls back to "." and "," when Intl reports no decimal/group part tokens', () => {
+    const spy = jest.spyOn(Intl.NumberFormat.prototype, 'formatToParts').mockReturnValue([
+      { type: 'integer', value: '1234567' },
+    ]);
+    try {
+      expect(localeSeparators('en-US')).toEqual({ decimal: '.', group: ',' });
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });
 
 describe('parseDecimalString', () => {
@@ -89,6 +100,21 @@ describe('parseAmount: ar-KW Arabic-Indic digits', () => {
       ok: true,
       value: 12500,
     });
+  });
+});
+
+describe('parseAmount: Extended Arabic-Indic digits (Persian/Urdu, U+06F0-U+06F9)', () => {
+  it('normalizes Extended Arabic-Indic digits the same as ASCII digits', () => {
+    expect(parseAmount('۱۲.۵', { locale: 'en-US', exponent: 2 })).toEqual({
+      ok: true,
+      value: 1250,
+    });
+  });
+});
+
+describe('parseAmount: zero', () => {
+  it('parses a fully-zero amount to zero', () => {
+    expect(parseAmount('0.00', { locale: 'en-US', exponent: 2 })).toEqual({ ok: true, value: 0 });
   });
 });
 
