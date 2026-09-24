@@ -134,11 +134,11 @@ Plans:
 - [x] 01-02-PLAN.md — Money schema: custom currencies, money prefs, accounts, transactions with RLS, versions, server-only stamp columns (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 01-03-PLAN.md — Engine parse/format: strict region-aware amount parsing, D-23 amount and date formatting (W2)
-- [ ] 01-04-PLAN.md — Engine split + time: largest-remainder allocate, local date/time zone and month maths (W2)
-- [ ] 01-05-PLAN.md — Server FX stamping: SQL money mirror, stamp_fx_rate trigger, restamp, generated mirror pgTAP (W2)
-- [ ] 01-07-PLAN.md — Query client, encrypted persister, NetInfo/AppState bridges (W2)
-- [ ] 01-09-PLAN.md — Sync bookkeeping: typed DB errors, write classification, failed list, useSyncStatus (W2)
+- [x] 01-03-PLAN.md — Engine parse/format: strict region-aware amount parsing, D-23 amount and date formatting (W2)
+- [x] 01-04-PLAN.md — Engine split + time: largest-remainder allocate, local date/time zone and month maths (W2)
+- [x] 01-05-PLAN.md — Server FX stamping: SQL money mirror, stamp_fx_rate trigger, restamp, generated mirror pgTAP (W2)
+- [x] 01-07-PLAN.md — Query client, encrypted persister, NetInfo/AppState bridges (W2)
+- [x] 01-09-PLAN.md — Sync bookkeeping: typed DB errors, write classification, failed list, useSyncStatus (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 01-06-PLAN.md — FND-10 migration compatibility gate, self-test, mirror check in CI, PR checklist (W3)
