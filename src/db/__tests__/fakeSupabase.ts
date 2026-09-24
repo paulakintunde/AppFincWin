@@ -3,6 +3,8 @@
 // db function called and resolve to a queued response, so tests never touch the real
 // client (and never trigger @/services/supabase's eager getEnv() call).
 
+import type { DbClient } from '../rows';
+
 export interface FakeResponse {
   data: unknown;
   error: { message: string; code?: string } | null;
@@ -103,6 +105,9 @@ export class FakeSupabase {
   };
 }
 
-export function createFakeSupabase(): FakeSupabase {
-  return new FakeSupabase();
+// db/*.ts functions type their first parameter as the real DbClient (= SupabaseClient),
+// per this plan's <interfaces> contract -- this cast is the one place a test's fake stands
+// in for that concrete class, so every call site elsewhere stays fully typed.
+export function createFakeSupabase(): FakeSupabase & DbClient {
+  return new FakeSupabase() as unknown as FakeSupabase & DbClient;
 }
