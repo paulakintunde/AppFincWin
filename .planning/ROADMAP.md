@@ -127,7 +127,24 @@ Plans:
   5. With no network connection, previously loaded data remains browsable, new writes queue locally and are visibly marked as queued, and flush automatically on reconnect.
   6. With Frankfurter unreachable, rates still refresh from open.er-api with its attribution shown; a currency whose latest rate exceeds its staleness limit raises an alert; and a simulated overnight move beyond ~10% is held rather than stored until a second source confirms it.
   7. A JPY amount has no decimal places and a KWD amount has three; a transaction entered at 23:30 local time stays in that local month; amounts and dates follow the device locale; and the offline cache is unreadable without the key in secure storage.
-**Plans**: TBD
+**Plans**: 16 plans
+Plans:
+- [ ] 01-01-PLAN.md — Engine money core: deps install, MinorUnits, half-up rounding, EUR-routed BigInt conversion, ISO exponents, shared fixture (W1)
+- [ ] 01-02-PLAN.md — Money schema: custom currencies, money prefs, accounts, transactions with RLS, versions, server-only stamp columns (W1)
+- [ ] 01-03-PLAN.md — Engine parse/format: strict region-aware amount parsing, D-23 amount and date formatting (W2)
+- [ ] 01-04-PLAN.md — Engine split + time: largest-remainder allocate, local date/time zone and month maths (W2)
+- [ ] 01-05-PLAN.md — Server FX stamping: SQL money mirror, stamp_fx_rate trigger, restamp, generated mirror pgTAP (W2)
+- [ ] 01-07-PLAN.md — Query client, encrypted persister, NetInfo/AppState bridges (W2)
+- [ ] 01-09-PLAN.md — Sync bookkeeping: typed DB errors, write classification, failed list, useSyncStatus (W2)
+- [ ] 01-06-PLAN.md — FND-10 migration compatibility gate, self-test, mirror check in CI, PR checklist (W3)
+- [ ] 01-08-PLAN.md — FX ingest: open.er-api fallback, plausibility holds, second-source confirm, currency metadata (W3)
+- [ ] 01-10-PLAN.md — DB access layer, query keys, read hooks, device locale service (W3)
+- [ ] 01-11-PLAN.md — resolve-rate backfill + fx-monitor staleness/auto-accept/Resend digest, runbook (W4)
+- [ ] 01-12-PLAN.md — Offline write queue: mutation defaults, provisional FX, conflicts, QueryProvider (W4)
+- [ ] 01-14-PLAN.md — RateAttribution, SyncStatusLine, money formatter hook, catalogue keys (W4)
+- [ ] 01-13-PLAN.md — Money prefs, custom currencies and currency options hooks (W5)
+- [ ] 01-15-PLAN.md — Wire QueryProvider, failure reporting, sync line, credits and dev probe into the app (W6; needs Phase 0 00-16/17/18)
+- [ ] 01-16-PLAN.md — Production rollout: schema push [BLOCKING], function deploy, live smoke, device check (W7)
 **UI hint**: no (data layer and engine work; no screens ship in this phase)
 
 ### Phase 2: Record
