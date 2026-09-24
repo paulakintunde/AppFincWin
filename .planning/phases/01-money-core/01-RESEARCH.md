@@ -654,22 +654,22 @@ export function parseOpenErApiRates(json: unknown, requestedDate: string): FxRow
 
 **If this table is empty:** N/A — see entries above.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Exact mechanism for the missing-history backfill (D-17's explicit ask)**
    - What we know: a trigger cannot synchronously call Frankfurter's historical endpoint; the client must trigger a follow-up `resolve-rate` call after any write that comes back `rate_pending`.
    - What's unclear: whether `resolve-rate` should be a plain Edge Function invoked once per affected row (simple, but N calls for N old transactions entered in a batch/CSV-import-like flow) or should support batching multiple pending row IDs in one call (more efficient, more complex). Phase 1 has no CSV import yet (that's Phase 2), so single-row is likely sufficient for now.
-   - Recommendation: build single-row `resolve-rate` for Phase 1; flag batching as a Phase 2 (CSV import) follow-up when the volume of pending rows in one flush becomes realistic.
+   - RESOLVED (plan 01-11): single-row `resolve-rate`. Recommendation: build single-row `resolve-rate` for Phase 1; flag batching as a Phase 2 (CSV import) follow-up when the volume of pending rows in one flush becomes realistic.
 
 2. **Whether `fx-sync` and the open.er-api fallback should be one function or two (explicitly Claude's Discretion in CONTEXT.md)**
    - What we know: both need to write into the same `fx_rates` table with a different `source` value, and the plausibility check needs to run against whichever source is being ingested.
    - What's unclear: whether Supabase Edge Function cold-start cost or code-sharing is a meaningful factor at this scale (a single household's worth of traffic, one daily cron trigger).
-   - Recommendation: one function (`fx-sync`) that tries Frankfurter first and falls back to open.er-api internally, sharing the plausibility-check logic as one internal function called from both branches — simpler deployment, one cron job, and the existing `fx-sync` function is already the natural home per its own file header comment ("Extend it (or add a sibling) for the fallback").
+   - RESOLVED (plan 01-08): one `fx-sync` function with an internal fallback branch. Recommendation: one function (`fx-sync`) that tries Frankfurter first and falls back to open.er-api internally, sharing the plausibility-check logic as one internal function called from both branches — simpler deployment, one cron job, and the existing `fx-sync` function is already the natural home per its own file header comment ("Extend it (or add a sibling) for the fallback").
 
 3. **SQL/TypeScript rounding fixture format (D-16's "shared fixture set")**
    - What we know: both a Jest test and a pgTAP test need to assert the same input/output pairs.
    - What's unclear: the exact file format that both a Node test runner and a `psql`-invoked pgTAP script can consume without a shared parser. A JSON file is easy for Jest (`JSON.parse`) but pgTAP/plpgsql has no native JSON-file-import ergonomics in a `.sql` test file without extra tooling.
-   - Recommendation: keep the canonical case list as a small TypeScript const array (`fixtures/moneyRoundingCases.ts`) exported for Jest, and hand-transcribe the same cases into the pgTAP test's literal `INSERT`/`SELECT` statements with a comment referencing the TS file and its case count — a lightweight CI check (or just PR review discipline) that the two case counts match is enough given the fixture set is small (a few dozen boundary cases, not hundreds).
+   - RESOLVED (plans 01-01, 01-05): canonical JSON fixture `supabase/tests/fixtures/money-conversion-cases.json` consumed by Jest, with a generated pgTAP mirror checked in CI. Original recommendation: keep the canonical case list as a small TypeScript const array (`fixtures/moneyRoundingCases.ts`) exported for Jest, and hand-transcribe the same cases into the pgTAP test's literal `INSERT`/`SELECT` statements with a comment referencing the TS file and its case count — a lightweight CI check (or just PR review discipline) that the two case counts match is enough given the fixture set is small (a few dozen boundary cases, not hundreds).
 
 ## Environment Availability
 
