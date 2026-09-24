@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 1 context gathered
-last_updated: "2026-09-24T11:50:00.475Z"
-last_activity: 2026-09-24 -- Phase 1 planning complete
+last_updated: "2026-09-24T16:14:47.033Z"
+last_activity: 2026-09-24 -- Phase 01 execution started
 progress:
   total_phases: 12
   completed_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 00 — foundation
+**Current focus:** Phase 01 — money-core
 
 ## Current Position
 
-Phase: 00 (foundation) — EXECUTING
-Plan: 8 of 20
-Status: Ready to execute
-Last activity: 2026-09-24 -- Phase 1 planning complete
+Phase: 01 (money-core) — EXECUTING
+Plan: 1 of 16
+Status: Executing Phase 01
+Last activity: 2026-09-24 -- Phase 01 execution started
 
 Progress: [██████░░░░] 60%
 
