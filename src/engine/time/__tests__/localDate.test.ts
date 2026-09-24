@@ -51,11 +51,23 @@ describe('isValidLocalDate', () => {
   it('rejects a non-padded date string', () => {
     expect(isValidLocalDate('2026-9-1')).toBe(false);
   });
+
+  it('rejects a month outside 01-12', () => {
+    expect(isValidLocalDate('2026-13-01')).toBe(false);
+  });
+
+  it('rejects a day outside 01-31', () => {
+    expect(isValidLocalDate('2026-01-32')).toBe(false);
+  });
 });
 
 describe('monthOf', () => {
   it('derives the month from a local date string', () => {
     expect(monthOf(localDateIn(new Date('2026-10-01T06:30:00Z'), 'America/Vancouver'))).toBe('2026-09');
+  });
+
+  it('throws RangeError on an invalid local date', () => {
+    expect(() => monthOf('2026-02-29')).toThrow(RangeError);
   });
 });
 
