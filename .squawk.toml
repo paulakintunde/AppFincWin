@@ -1,0 +1,55 @@
+# FND-10 / D-27: squawk is scoped to backward-compatibility with the oldest
+# supported app version, not general lock-safety or style hygiene. A single
+# small production project with no read replicas and low write volume does
+# not need require-concurrent-index-*, require-*-timeout, prefer-* style
+# rules, etc. -- and several of those would flag Phase 0/1 migrations that
+# already shipped safely. Kept rules are exactly the ones that can silently
+# break an app version still running against this schema: dropping/renaming
+# a column or table, narrowing a column's type, adding a required column
+# without a default, or a database/table drop.
+#
+# Kept (NOT excluded, i.e. absent from the list below): banning a dropped
+# column, table or database; renaming a column or table; changing a column's
+# type; adding a required or not-nullable field; and truncate-cascade.
+#
+# Verified against the live rule list at https://squawkhq.com/docs/rules
+# (squawk-cli 2.66.0) on 2026-09-24. Every rule below is excluded.
+excluded_rules = [
+  "adding-field-with-default",
+  "adding-foreign-key-constraint",
+  "adding-serial-primary-key-field",
+  "ban-char-field",
+  "ban-concurrent-index-creation-in-transaction",
+  "ban-drop-not-null",
+  "constraint-missing-not-valid",
+  "disallowed-unique-constraint",
+  "prefer-bigint-over-int",
+  "prefer-bigint-over-smallint",
+  "prefer-identity",
+  "prefer-robust-stmts",
+  "prefer-text-field",
+  "prefer-timestamptz",
+  "require-concurrent-index-creation",
+  "require-concurrent-index-deletion",
+  "transaction-nesting",
+  "ban-create-domain-with-constraint",
+  "ban-alter-domain-with-add-constraint",
+  "require-timeout-settings",
+  "require-lock-timeout",
+  "require-statement-timeout",
+  "ban-uncommitted-transaction",
+  "require-enum-value-ordering",
+  "require-table-schema",
+  "identifier-too-long",
+  "require-concurrent-partition-detach",
+  "require-concurrent-reindex",
+  "prefer-repack",
+  "ban-duplicate-column-assignments",
+]
+
+# Supabase Postgres major version (supabase/config.toml has no explicit
+# [db] major_version override, so the Supabase CLI default of 17 applies).
+pg_version = "17.0"
+
+# Supabase runs each migration file in its own transaction.
+assume_in_transaction = true

@@ -84,7 +84,10 @@
     "verify:gates": "node scripts/verify-gates.mjs",
     "check:ignores": "node scripts/check-coverage-ignores.mjs",
     "supabase:preflight": "node scripts/supabase-preflight.mjs",
-    "supabase:db:push": "node scripts/supabase-preflight.mjs && supabase db push"
+    "supabase:db:push": "node scripts/supabase-preflight.mjs && supabase db push",
+    "lint:migrations": "node scripts/check-migration-compat.mjs",
+    "verify:migrations": "node scripts/verify-migration-gate.mjs",
+    "check:money-mirror": "node scripts/gen-money-mirror-test.mjs --check"
   },
   "private": true
 }

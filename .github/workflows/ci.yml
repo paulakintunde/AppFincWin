@@ -23,6 +23,12 @@ jobs:
       - run: npm run check:ignores
       - run: npm run test:coverage
       - run: npm run verify:gates
+      - name: Migration compatibility (FND-10)
+        run: npm run lint:migrations
+      - name: Migration gate self-test (FND-10)
+        run: npm run verify:migrations
+      - name: SQL rounding mirror matches the shared fixture (D-16)
+        run: npm run check:money-mirror
       - name: Service-role key never referenced by client code (ENV-04)
         run: "! grep -rnE 'SERVICE_ROLE|service_role|sb_secret_' src app"
   secret-scan:
