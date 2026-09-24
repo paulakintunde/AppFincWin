@@ -69,7 +69,7 @@ Plans:
 - [ ] 00-07-PLAN.md — Website audit, Apple org enrolment submission, Play Console registration (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [x] 00-08-PLAN.md — GitHub Actions CI (checks, gitleaks, RLS) + required checks on main (W3) — *branch protection deferred, CI advisory-only; see SUMMARY*
+- [x] 00-08-PLAN.md — GitHub Actions CI (checks, gitleaks, RLS) + required checks on main (W3) — *branch protection on since 2026-09-23 (repo public); owner bypass still open, see FND-04/05*
 - [x] 00-09-PLAN.md — fx_rates + Frankfurter v2 fx-sync Edge Function + pg_cron + [BLOCKING] production push (W3)
 - [x] 00-10-PLAN.md — Supabase client on encrypted LargeSecureStore, wipe registry, connection check (W3)
 - [x] 00-11-PLAN.md — Design tokens, 4 accents / 4 pairings live theme, reduce-motion, safe-area, DSG-02 guard (W3)
