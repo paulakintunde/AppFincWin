@@ -43,7 +43,9 @@ const FLOOR_INSERT_RE =
   /insert\s+into\s+public\.app_config\s*\([^)]*\)\s*values\s*\(\s*'min_supported_version'\s*,\s*'(\d+\.\d+\.\d+)'\s*\)/gi;
 const FLOOR_UPDATE_RE =
   /update\s+public\.app_config\s+set\s+value\s*=\s*'(\d+\.\d+\.\d+)'\s+where\s+key\s*=\s*'min_supported_version'/gi;
-const SQUAWK_IGNORE_RE = /--\s*squawk-ignore\s+([a-z0-9,\s-]+)/gi;
+// [^\r\n]+ (not \s, which also matches newlines) so the capture stops at
+// end of line -- a squawk-ignore comment names rules on one line only.
+const SQUAWK_IGNORE_RE = /--\s*squawk-ignore\s+([^\r\n]+)/gi;
 const CONTRACT_OK_RE = /--\s*contract-ok:\s*min_version\s*>=\s*(\d+\.\d+\.\d+)/gi;
 
 function parseSemver(v) {
