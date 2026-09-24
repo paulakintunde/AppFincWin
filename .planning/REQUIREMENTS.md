@@ -39,7 +39,7 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [ ] **ENV-11**: Google Play Console organisation account is active under the company and an app entry exists — *deferrable to Phase 11; uses the same D-U-N-S number as ENV-10*
 - [ ] **ENV-12**: RevenueCat project exists with iOS and Android API keys, and products are configured in both stores, with the App Store Paid Apps Agreement, banking and tax forms completed — *deferrable to Phase 9; store products depend on ENV-10 and ENV-11*
 - [ ] **ENV-13**: Sentry project exists and its DSN is wired in — *deferrable; non-blocking for every other phase*
-- [ ] **ENV-14**: PostHog project exists on the EU host, with its project key wired in through the environment
+- [x] **ENV-14**: PostHog project exists on the EU host, with its project key wired in through the environment
 - [ ] **ENV-15**: The company's D-U-N-S number is confirmed or requested on day one, since it gates both Apple and Google organisation enrolment
 - [ ] **ENV-16**: Production Supabase runs on the Pro plan with daily backups before the first real user data is stored
 - [x] **ENV-17**: Development runs locally through the Supabase CLI plus a free cloud project for on-device testing, production is a separate Cloud Pro project, and schema changes reach any of them only through migrations tracked in git
@@ -51,10 +51,10 @@ Every external dependency is provisioned to a working state, or explicitly defer
 
 Product analytics exist to measure the two risks research flagged — manual-entry drop-off and onboarding misclassification — without ever observing a user's money.
 
-- [ ] **ANL-01**: App sends product analytics to PostHog's EU host, identifying users only by their Supabase UUID, never by email or name
-- [ ] **ANL-02**: No analytics event leaves the device until the user has opted in, and the user can change that choice in settings at any time
-- [ ] **ANL-03**: Every event is drawn from a typed catalogue whose properties cannot carry amounts, payee names, account names or free text
-- [ ] **ANL-04**: Session replay is excluded from production builds
+- [x] **ANL-01**: App sends product analytics to PostHog's EU host, identifying users only by their Supabase UUID, never by email or name
+- [x] **ANL-02**: No analytics event leaves the device until the user has opted in, and the user can change that choice in settings at any time
+- [x] **ANL-03**: Every event is drawn from a typed catalogue whose properties cannot carry amounts, payee names, account names or free text
+- [x] **ANL-04**: Session replay is excluded from production builds
 - [ ] **ANL-05**: Drop-off from signup through first entry and first CSV import is measurable
 - [ ] **ANL-06**: Checks started, completed, their verdict state and decisions recorded are measurable, with no amounts attached
 - [ ] **ANL-07**: Onboarding asks for analytics consent once, in plain language
@@ -347,17 +347,17 @@ Populated during roadmap creation.
 | ENV-11 | Phase 11 - Compliance & Release | Pending |
 | ENV-12 | Phase 9 - Tiers & Onboarding | Pending |
 | ENV-13 | Phase 0 - Foundation | Pending |
-| ENV-14 | Phase 0 - Foundation | Pending |
+| ENV-14 | Phase 0 - Foundation | Complete |
 | ENV-15 | Phase 0 - Foundation | Pending |
 | ENV-16 | Phase 2 - Record | Pending |
 | ENV-17 | Phase 0 - Foundation | Complete |
 | ENV-18 | Phase 0 - Foundation | Complete |
 | ENV-19 | Phase 10 - System | Pending |
 | ENV-20 | Phase 0 - Foundation | Pending |
-| ANL-01 | Phase 0 - Foundation | Pending |
-| ANL-02 | Phase 0 - Foundation | Pending |
-| ANL-03 | Phase 0 - Foundation | Pending |
-| ANL-04 | Phase 0 - Foundation | Pending |
+| ANL-01 | Phase 0 - Foundation | Complete |
+| ANL-02 | Phase 0 - Foundation | Complete |
+| ANL-03 | Phase 0 - Foundation | Complete |
+| ANL-04 | Phase 0 - Foundation | Complete |
 | ANL-05 | Phase 2 - Record | Pending |
 | ANL-06 | Phase 5 - Decide UI | Pending |
 | ANL-07 | Phase 9 - Tiers & Onboarding | Pending |

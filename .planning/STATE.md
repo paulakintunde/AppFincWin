@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 00-04-PLAN.md
-last_updated: "2026-09-23T18:07:56.769Z"
-last_activity: 2026-09-23
+stopped_at: Completed 00-13-PLAN.md
+last_updated: "2026-09-24T01:21:05.521Z"
+last_activity: 2026-09-24
 progress:
   total_phases: 12
   completed_phases: 0
   total_plans: 20
-  completed_plans: 11
-  percent: 55
+  completed_plans: 12
+  percent: 60
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 ## Current Position
 
 Phase: 00 (foundation) — EXECUTING
-Plan: 7 of 20
+Plan: 8 of 20
 Status: Ready to execute
-Last activity: 2026-09-23
+Last activity: 2026-09-24
 
-Progress: [██████░░░░] 55%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [██████░░░░] 55%
 | Phase 00 P09 | ~40min | 3 tasks | 8 files |
 | Phase 00 P08 | 25min | 2 tasks | 2 files |
 | Phase 00 P04 | 55min | 2 tasks | 1 files |
+| Phase 00 P13 | 25min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 00]: 00-08: gitleaks pinned to v8.30.1 (verified latest v8 tag at execution time), not the plan's v8.28.0 placeholder; npm ci runs with --legacy-peer-deps in CI to match the locally installed dependency graph
 - [Phase 00]: 00-04: expo run:android --device expects the AVD/device name, not the adb serial (--device Pixel_8_API_36, not emulator-5554); use adb -s <serial> emu avd name to look it up when multiple devices are attached
 - [Phase 00]: 00-04: adb shell screencap/screenrecord return blank/black frames on this machine's WHPX-accelerated AVD regardless of capture method; use adb shell uiautomator dump (accessibility tree) plus logcat's ReactNativeJS Running main as the verification fallback
+- [Phase 00-foundation]: 00-13: first POSTHOG_PERSONAL_API_KEY pasted was a phs_ project secret key, not a phx_ personal API key -- returned HTTP 401 from the PostHog EU projects endpoint until replaced with the correct phx_ key, which verified with HTTP 200
+- [Phase 00-foundation]: 00-13: analytics service keeps its own independent enabled boolean in front of every PostHog capture() call, not relying solely on the SDK's own defaultOptIn/optOut state, so an SDK-level consent bug still cannot leak an event
 
 ### Pending Todos
 
@@ -117,6 +120,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-23T18:07:56.541Z
-Stopped at: Completed 00-04-PLAN.md
+Last session: 2026-09-24T01:21:05.344Z
+Stopped at: Completed 00-13-PLAN.md
 Resume file: None
