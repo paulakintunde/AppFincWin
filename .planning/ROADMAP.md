@@ -141,9 +141,9 @@ Plans:
 - [x] 01-09-PLAN.md — Sync bookkeeping: typed DB errors, write classification, failed list, useSyncStatus (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 01-06-PLAN.md — FND-10 migration compatibility gate, self-test, mirror check in CI, PR checklist (W3)
-- [ ] 01-08-PLAN.md — FX ingest: open.er-api fallback, plausibility holds, second-source confirm, currency metadata (W3)
-- [ ] 01-10-PLAN.md — DB access layer, query keys, read hooks, device locale service (W3)
+- [x] 01-06-PLAN.md — FND-10 migration compatibility gate, self-test, mirror check in CI, PR checklist (W3)
+- [x] 01-08-PLAN.md — FX ingest: open.er-api fallback, plausibility holds, second-source confirm, currency metadata (W3)
+- [x] 01-10-PLAN.md — DB access layer, query keys, read hooks, device locale service (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 01-11-PLAN.md — resolve-rate backfill + fx-monitor staleness/auto-accept/Resend digest, runbook (W4)
