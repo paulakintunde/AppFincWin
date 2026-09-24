@@ -130,8 +130,8 @@ Plans:
 **Plans**: 16 plans
 Plans:
 **Wave 1**
-- [ ] 01-01-PLAN.md — Engine money core: deps install, MinorUnits, half-up rounding, EUR-routed BigInt conversion, ISO exponents, shared fixture (W1)
-- [ ] 01-02-PLAN.md — Money schema: custom currencies, money prefs, accounts, transactions with RLS, versions, server-only stamp columns (W1)
+- [x] 01-01-PLAN.md — Engine money core: deps install, MinorUnits, half-up rounding, EUR-routed BigInt conversion, ISO exponents, shared fixture (W1)
+- [x] 01-02-PLAN.md — Money schema: custom currencies, money prefs, accounts, transactions with RLS, versions, server-only stamp columns (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 01-03-PLAN.md — Engine parse/format: strict region-aware amount parsing, D-23 amount and date formatting (W2)
