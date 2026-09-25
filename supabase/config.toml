@@ -9,3 +9,13 @@ project_id = "cohmcbdfgqmiwykztrdg"
 # JWT, since it is invoked by pg_cron/net.http_post, not by clients.
 [functions.fx-sync]
 verify_jwt = false
+
+# resolve-rate: client-invoked with the caller's JWT (verified by the
+# gateway and again via a user-scoped read under RLS, T-01-11-01).
+[functions.resolve-rate]
+verify_jwt = true
+
+# fx-monitor (MON-10): authenticated by the same shared secret as fx-sync,
+# not a user JWT, since it is invoked by pg_cron/net.http_post.
+[functions.fx-monitor]
+verify_jwt = false
