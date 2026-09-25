@@ -9,6 +9,8 @@ export interface FakeResponse {
   data: unknown;
   error: { message: string; code?: string } | null;
   status: number;
+  /** Set when the query asked for `count` (WR-A12's month read). */
+  count?: number | null;
 }
 
 export interface RecordedCall {
@@ -51,8 +53,8 @@ export class FakeSupabase {
         record('update', [patch]);
         return builder;
       },
-      select: (columns?: string) => {
-        record('select', [columns]);
+      select: (columns?: string, opts?: unknown) => {
+        record('select', opts === undefined ? [columns] : [columns, opts]);
         return builder;
       },
       eq: (column: string, value: unknown) => {
@@ -77,6 +79,10 @@ export class FakeSupabase {
       },
       limit: (count: number) => {
         record('limit', [count]);
+        return builder;
+      },
+      range: (from: number, to: number) => {
+        record('range', [from, to]);
         return builder;
       },
       single: () => resolve('single'),
