@@ -2,7 +2,6 @@ import { DbError, NotFoundError, VersionConflictError } from '../errors';
 import type { CustomCurrencyRow, MoneyPrefsRow } from '../rows';
 import {
   CUSTOM_CURRENCY_INSERT_KEYS,
-  CUSTOM_CURRENCY_PATCH_KEYS,
   fetchCustomCurrencies,
   fetchCustomCurrency,
   insertCustomCurrency,

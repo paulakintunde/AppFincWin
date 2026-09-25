@@ -13,3 +13,11 @@ export * from './arithmetic';
 export * from './parseAmount';
 export * from './formatAmount';
 export * from './formatDate';
+export { validateCustomCurrency } from './customCurrency';
+export type {
+  CustomCurrencyError,
+  CustomCurrencyInput,
+  ValidateCustomCurrencyContext,
+  ValidateCustomCurrencyResult,
+  ValidatedCustomCurrency,
+} from './customCurrency';
