@@ -1,15 +1,17 @@
 // D-18, D-19, T-00-16-02: crash/error reporting must be a separate client from analytics
-// (src/services/analytics/posthog.ts), independent of consent, never identifying anyone, and
-// every event must be scrubbed before it leaves the device. These tests inject a fake client —
-// exactly like src/services/analytics/__tests__/consentGate.test.ts — so nothing here touches
-// the real getEnv()/PostHog singleton.
+// (the product-analytics PostHog service), independent of consent, never identifying anyone,
+// and every event must be scrubbed before it leaves the device. Sentry was chosen over PostHog
+// after the D-19 spike — see docs/decisions/error-tracking.md. These tests inject a fake Sentry
+// module — exactly like src/services/analytics/__tests__/consentGate.test.ts injects a fake
+// PostHog client — so nothing here touches the real getEnv()/Sentry singleton.
 import fs from 'fs';
 import path from 'path';
 import { initErrorReporting, captureError } from '../errorReporter';
 import type { ClientEnv } from '@/config/env';
 
-function makeFakeClient() {
+function makeFakeSentry() {
   return {
+    init: jest.fn(),
     captureException: jest.fn(),
   };
 }
@@ -21,9 +23,9 @@ function makeEnv(overrides: Partial<ClientEnv> = {}): ClientEnv {
     supabasePublishableKey: 'anon-key',
     googleWebClientId: 'web-client-id',
     appleSignInEnabled: false,
-    posthogKey: 'phc_test_key',
     posthogHost: 'https://eu.i.posthog.com',
-    errorTracking: 'posthog',
+    errorTracking: 'sentry',
+    sentryDsn: 'https://examplePublicKey@o0.ingest.de.sentry.io/0',
     ...overrides,
   };
 }
@@ -34,120 +36,121 @@ describe('errorReporter source (D-18 independence)', () => {
     expect(source).not.toMatch(/services\/analytics/);
   });
 
-  it('never calls identify() or optOut() — anonymous and always-on (D-18)', () => {
+  it('never calls setUser() — anonymous and always-on (D-18)', () => {
     const source = fs.readFileSync(path.resolve(__dirname, '../errorReporter.ts'), 'utf8');
-    expect(source).not.toMatch(/\bidentify\(/);
-    expect(source).not.toMatch(/\boptOut\(/);
+    expect(source).not.toMatch(/\bsetUser\(/);
   });
 });
 
 describe('initErrorReporting', () => {
-  it('constructs its own PostHog client with personProfiles never, session replay off, and lifecycle autocapture off', () => {
-    const client = makeFakeClient();
-    const factory = jest.fn().mockReturnValue(client);
+  it('initialises Sentry with the DSN, sendDefaultPii false, and native crash handling on', () => {
+    const sentry = makeFakeSentry();
 
-    initErrorReporting(factory, makeEnv());
+    initErrorReporting(makeEnv(), sentry);
 
-    expect(factory).toHaveBeenCalledTimes(1);
-    const [apiKey, options] = factory.mock.calls[0] as [string, Record<string, unknown>];
-    expect(apiKey).toBe('phc_test_key');
-    expect(options.host).toBe('https://eu.i.posthog.com');
-    expect(options.personProfiles).toBe('never');
-    expect(options.enableSessionReplay).toBe(false);
-    expect(options.captureAppLifecycleEvents).toBe(false);
+    expect(sentry.init).toHaveBeenCalledTimes(1);
+    const [options] = sentry.init.mock.calls[0] as [Record<string, unknown>];
+    expect(options.dsn).toBe('https://examplePublicKey@o0.ingest.de.sentry.io/0');
+    expect(options.sendDefaultPii).toBe(false);
+    expect(options.enableNativeCrashHandling).toBe(true);
   });
 
-  it('enables uncaught-exception and unhandled-rejection autocapture', () => {
-    const client = makeFakeClient();
-    const factory = jest.fn().mockReturnValue(client);
+  it('is a no-op with no Sentry DSN configured', () => {
+    const sentry = makeFakeSentry();
 
-    initErrorReporting(factory, makeEnv());
-
-    const [, options] = factory.mock.calls[0] as [string, { errorTracking?: { autocapture?: { uncaughtExceptions?: boolean; unhandledRejections?: boolean } } }];
-    expect(options.errorTracking?.autocapture?.uncaughtExceptions).toBe(true);
-    expect(options.errorTracking?.autocapture?.unhandledRejections).toBe(true);
-  });
-
-  it('is a no-op with no PostHog key configured', () => {
-    const factory = jest.fn();
-
-    initErrorReporting(factory, makeEnv({ posthogKey: undefined }));
+    initErrorReporting(makeEnv({ sentryDsn: undefined }), sentry);
     expect(() => captureError(new Error('boom'))).not.toThrow();
 
-    expect(factory).not.toHaveBeenCalled();
+    expect(sentry.init).not.toHaveBeenCalled();
   });
 
-  // Found live during the D-19 spike (Task 2): initErrorReporting() previously took
-  // `env: ClientEnv = getEnv()` as a default parameter. getEnv() validates the *whole*
-  // environment and throws when ANY required var is missing — including ones this module has
-  // nothing to do with (e.g. EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, owned by 00-15). Because default
-  // parameters are evaluated before a function's own try/catch can run, that throw crashed the
-  // entire app at boot (app/_layout.tsx calls this at module scope). Error reporting must never
-  // crash the app it exists to protect. Called with no env argument here so getEnv() itself
-  // runs and throws against Jest's unset process.env — proving the function's own internal
-  // try/catch, not just a well-behaved caller, is what survives it.
-  it('never throws, even when resolving the real environment itself throws', () => {
-    const factory = jest.fn();
+  it('is a no-op when errorTracking is not sentry', () => {
+    const sentry = makeFakeSentry();
 
-    expect(() => initErrorReporting(factory)).not.toThrow();
-    expect(factory).not.toHaveBeenCalled();
+    initErrorReporting(makeEnv({ errorTracking: 'posthog' }), sentry);
+
+    expect(sentry.init).not.toHaveBeenCalled();
+  });
+
+  // Found live during the D-19 PostHog spike (Task 2), and kept true for the Sentry
+  // implementation: initErrorReporting() must never take getEnv()'s default-parameter throw
+  // (or any other init failure) down with it. getEnv() validates the *whole* environment and
+  // throws when ANY required var is missing — including ones this module has nothing to do
+  // with. Called with no env argument here so the real getEnv() runs and throws against Jest's
+  // unset process.env, proving the function's own internal try/catch — not just a well-behaved
+  // caller — is what survives it.
+  it('never throws, even when resolving the real environment itself throws', () => {
+    const sentry = makeFakeSentry();
+
+    expect(() => initErrorReporting(undefined, sentry)).not.toThrow();
+    expect(sentry.init).not.toHaveBeenCalled();
     expect(() => captureError(new Error('after a failed init'))).not.toThrow();
   });
 });
 
 describe('captureError', () => {
-  it('forwards a caught error to the client with its context area', () => {
-    const client = makeFakeClient();
-    const factory = jest.fn().mockReturnValue(client);
-    initErrorReporting(factory, makeEnv());
+  it('forwards a caught error to Sentry with its context area as a tag', () => {
+    const sentry = makeFakeSentry();
+    initErrorReporting(makeEnv(), sentry);
 
     const error = new Error('x 42');
     captureError(error, { area: 'sync' });
 
-    expect(client.captureException).toHaveBeenCalledWith(error, { area: 'sync' });
+    expect(sentry.captureException).toHaveBeenCalledWith(error, { tags: { area: 'sync' } });
+  });
+
+  it('forwards with no hint when no context is given', () => {
+    const sentry = makeFakeSentry();
+    initErrorReporting(makeEnv(), sentry);
+
+    const error = new Error('no context');
+    captureError(error);
+
+    expect(sentry.captureException).toHaveBeenCalledWith(error, undefined);
   });
 
   it('wraps a non-Error throw in an Error before forwarding', () => {
-    const client = makeFakeClient();
-    const factory = jest.fn().mockReturnValue(client);
-    initErrorReporting(factory, makeEnv());
+    const sentry = makeFakeSentry();
+    initErrorReporting(makeEnv(), sentry);
 
     captureError('a plain string throw');
 
-    const [forwarded] = client.captureException.mock.calls[0] as [Error];
+    const [forwarded] = sentry.captureException.mock.calls[0] as [Error];
     expect(forwarded).toBeInstanceOf(Error);
   });
 
-  it('is a no-op before initErrorReporting is called with a real key', () => {
-    const client = makeFakeClient();
-    const factory = jest.fn().mockReturnValue(client);
-    initErrorReporting(factory, makeEnv({ posthogKey: undefined }));
+  it('is a no-op before initErrorReporting has built a client', () => {
+    const sentry = makeFakeSentry();
+    initErrorReporting(makeEnv({ sentryDsn: undefined }), sentry);
 
     expect(() => captureError(new Error('never sent'))).not.toThrow();
-    expect(client.captureException).not.toHaveBeenCalled();
+    expect(sentry.captureException).not.toHaveBeenCalled();
   });
 });
 
-describe('before_send scrubbing (T-00-16-01)', () => {
-  it('scrubs the exception message and drops stack-frame locals before the event is sent', () => {
-    const client = makeFakeClient();
-    const factory = jest.fn().mockReturnValue(client);
-    initErrorReporting(factory, makeEnv());
+describe('beforeSend scrubbing (T-00-16-01)', () => {
+  function initAndGetOptions(sentry: ReturnType<typeof makeFakeSentry>) {
+    initErrorReporting(makeEnv(), sentry);
+    return sentry.init.mock.calls[0][0] as {
+      beforeSend: (event: unknown) => {
+        message?: string;
+        exception?: { values?: { value?: string; stacktrace?: { frames?: Record<string, unknown>[] } }[] };
+      };
+      beforeBreadcrumb: (breadcrumb: unknown) => { message?: string; data?: unknown };
+    };
+  }
 
-    const [, options] = factory.mock.calls[0] as [
-      string,
-      { before_send: (event: unknown) => { properties: { $exception_list: { value?: string; stacktrace?: { frames?: Record<string, unknown>[] } }[] } } },
-    ];
+  it('scrubs an exception message and drops stack-frame locals before the event is sent', () => {
+    const sentry = makeFakeSentry();
+    const { beforeSend } = initAndGetOptions(sentry);
 
     const rawEvent = {
-      event: '$exception',
-      properties: {
-        $exception_list: [
+      exception: {
+        values: [
           {
             type: 'Error',
             value: 'Invalid amount 123.45 for "Tesco Metro"',
             stacktrace: {
-              type: 'raw',
               frames: [
                 {
                   filename: 'index.android.bundle',
@@ -163,12 +166,12 @@ describe('before_send scrubbing (T-00-16-01)', () => {
       },
     };
 
-    const scrubbed = options.before_send(rawEvent);
-    const exception = scrubbed.properties.$exception_list[0]!;
+    const scrubbed = beforeSend(rawEvent);
+    const exception = scrubbed.exception?.values?.[0];
 
-    expect(exception.value).toBe('Invalid amount <n> for <str>');
-    expect(exception.stacktrace?.frames?.[0]).not.toHaveProperty('vars');
-    expect(exception.stacktrace?.frames?.[0]).toMatchObject({
+    expect(exception?.value).toBe('Invalid amount <n> for <str>');
+    expect(exception?.stacktrace?.frames?.[0]).not.toHaveProperty('vars');
+    expect(exception?.stacktrace?.frames?.[0]).toMatchObject({
       filename: 'index.android.bundle',
       function: 'renderDecideVerdict',
       lineno: 42,
@@ -176,23 +179,36 @@ describe('before_send scrubbing (T-00-16-01)', () => {
     });
   });
 
-  it('passes non-exception events through unchanged', () => {
-    const client = makeFakeClient();
-    const factory = jest.fn().mockReturnValue(client);
-    initErrorReporting(factory, makeEnv());
+  it('scrubs a top-level event message', () => {
+    const sentry = makeFakeSentry();
+    const { beforeSend } = initAndGetOptions(sentry);
 
-    const [, options] = factory.mock.calls[0] as [string, { before_send: (event: unknown) => unknown }];
-
-    const event = { event: '$pageview', properties: { url: 'app://home' } };
-    expect(options.before_send(event)).toEqual(event);
+    const scrubbed = beforeSend({ message: 'user jane@example.com failed' });
+    expect(scrubbed.message).toBe('user <email> failed');
   });
 
-  it('passes a null event through unchanged (a before_send hook may receive null)', () => {
-    const client = makeFakeClient();
-    const factory = jest.fn().mockReturnValue(client);
-    initErrorReporting(factory, makeEnv());
+  it('passes a null event through unchanged (a beforeSend hook may receive null)', () => {
+    const sentry = makeFakeSentry();
+    const { beforeSend } = initAndGetOptions(sentry);
+    expect(beforeSend(null as never)).toBeNull();
+  });
 
-    const [, options] = factory.mock.calls[0] as [string, { before_send: (event: unknown) => unknown }];
-    expect(options.before_send(null)).toBeNull();
+  it('scrubs a breadcrumb message and drops its data entirely', () => {
+    const sentry = makeFakeSentry();
+    const { beforeBreadcrumb } = initAndGetOptions(sentry);
+
+    const scrubbed = beforeBreadcrumb({
+      message: 'charged $3.50 twice',
+      data: { amount: 350, payee: 'Tesco Metro' },
+    });
+
+    expect(scrubbed.message).toBe('charged <n> twice');
+    expect(scrubbed).not.toHaveProperty('data');
+  });
+
+  it('passes a null breadcrumb through unchanged', () => {
+    const sentry = makeFakeSentry();
+    const { beforeBreadcrumb } = initAndGetOptions(sentry);
+    expect(beforeBreadcrumb(null as never)).toBeNull();
   });
 });
