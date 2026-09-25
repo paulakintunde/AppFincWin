@@ -9,8 +9,19 @@
  * Copy ownership (see copyStatus.ts):
  * - AWAITING USER COPY (D-16): welcome-screen copy the user has not supplied yet. Ships as
  *   a clearly marked placeholder so the screen renders and is swappable later.
- * - Everything else in consent.*, you.*, signOut.*, update.* is Claude-drafted in the
- *   prototype's voice (D-20) and awaits user review before being treated as final.
+ * - Everything else in consent.*, you.*, signOut.*, update.*, money.*, sync.* is
+ *   Claude-drafted in the prototype's voice (D-20) and awaits user review before being
+ *   treated as final, except money.rate.attribution and credits.exchangeRateApi, which are
+ *   third-party-mandated text (D-13) and must not be paraphrased.
+ * - money.fxNote.converted/kept, money.homeCurrency.title/note, money.customCurrency.title,
+ *   money.customCurrency.error.codeMissing/codeExists, money.settings.showCents,
+ *   sync.offlineQueued_one/other and sync.syncedMinutes_one/other are ported verbatim from
+ *   the prototype (with placeholders replacing its inline values).
+ * - money.customCurrency.note and .error.valueInvalid adapt the prototype's "worth in USD"
+ *   wording to the user's own chosen reference currency (D-07) rather than hard-pinning USD.
+ * - money.settings.showCentsHint changes from the prototype's "Two decimals everywhere" to
+ *   "Decimals on every amount" because JPY has no decimal places and KWD has three (MON-13),
+ *   so "two" is not universally true.
  *
  * Compliance (CLAUDE.md): never "advice", "recommendation", "you should", and never a
  * claim that data stays on the device — FincWin is cloud-first (D-15).
@@ -92,6 +103,73 @@ const en = {
     heading: 'Update needed',
     body: 'This version is behind. Update FincWin to keep using it.',
     cta: 'Update now',
+  },
+  money: {
+    rate: {
+      asOf: 'Rate of {{date}}',
+      customAsOf: 'Your rate, set {{date}}',
+      pending: 'Rate pending',
+      attribution: 'Rates By Exchange Rate API',
+    },
+    fxNote: {
+      converted:
+        'Saves as {{home}} in {{homeCode}} at {{unit}} = {{rate}}. The original {{original}} stays on the record.',
+      kept: 'Kept in {{code}}. Totals convert at {{unit}} = {{rate}}.',
+    },
+    homeCurrency: {
+      title: 'Home currency',
+      note: 'Every total converts into this. Foreign lines keep their own amount and show both.',
+    },
+    customCurrency: {
+      title: 'Add a currency',
+      note: 'Code, symbol and what one unit is worth in {{reference}}. It is selected for this entry straight away.',
+      error: {
+        codeMissing: 'Give the currency a code.',
+        codeInvalid: 'Use 2 to 4 letters or digits for the code.',
+        codeExists: '{{code}} already exists.',
+        symbolInvalid: 'Keep the symbol to 4 characters.',
+        decimalsInvalid: 'Choose 0 to 4 decimal places.',
+        referenceInvalid: 'Pick a currency to value it against.',
+        valueInvalid: 'Enter what one unit is worth in {{reference}}.',
+      },
+    },
+    amountInput: {
+      invalid: 'That isn’t an amount.',
+      tooManyDecimals_zero: '{{code}} has no decimal places.',
+      tooManyDecimals_one: '{{code}} takes {{count}} decimal place.',
+      tooManyDecimals_other: '{{code}} takes {{count}} decimal places.',
+      tooLarge: 'That amount is too large.',
+    },
+    settings: {
+      showCents: 'Show cents',
+      showCentsHint: 'Decimals on every amount',
+      leadFigure: 'Lead with',
+      leadHome: 'Home currency',
+      leadOriginal: 'Original currency',
+    },
+  },
+  sync: {
+    offline: 'offline',
+    offlineQueued_one: 'offline · {{count}} change queued',
+    offlineQueued_other: 'offline · {{count}} changes queued',
+    queued_one: '{{count}} change queued',
+    queued_other: '{{count}} changes queued',
+    syncedJustNow: 'synced just now',
+    syncedMinutes_one: 'synced {{count}} minute ago',
+    syncedMinutes_other: 'synced {{count}} minutes ago',
+    syncedHours_one: 'synced {{count}} hour ago',
+    syncedHours_other: 'synced {{count}} hours ago',
+    syncedDays_one: 'synced {{count}} day ago',
+    syncedDays_other: 'synced {{count}} days ago',
+    neverSynced: 'not synced yet',
+    failed_one: '{{count}} change couldn’t save',
+    failed_other: '{{count}} changes couldn’t save',
+    conflict_one: '{{count}} edit couldn’t save — changed elsewhere',
+    conflict_other: '{{count}} edits couldn’t save — changed elsewhere',
+    pendingRow: 'queued',
+  },
+  credits: {
+    exchangeRateApi: 'Rates By Exchange Rate API',
   },
   a11y: {
     close: 'Close',
