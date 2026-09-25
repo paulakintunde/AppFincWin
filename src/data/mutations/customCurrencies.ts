@@ -7,6 +7,8 @@ import type { QueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import {
   formatRate,
+  MAX_UNIT_VALUE,
+  MIN_UNIT_VALUE,
   parseDecimalString,
   parseRate,
   RATE_SCALE,
@@ -220,7 +222,10 @@ function normalizeUnitValue(raw: string, locale: string | undefined, separators?
     decimal = parsed.value;
   }
   try {
-    return formatRate(parseRate(decimal));
+    const scaled = parseRate(decimal);
+    // IN-A02: the same bounds add enforces through validateCustomCurrency.
+    if (scaled < parseRate(MIN_UNIT_VALUE) || scaled > parseRate(MAX_UNIT_VALUE)) return null;
+    return formatRate(scaled);
   } catch {
     return null;
   }

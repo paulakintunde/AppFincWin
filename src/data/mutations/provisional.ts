@@ -81,8 +81,13 @@ function resolvePerEur(
   if (custom) {
     const ref = resolvePerEur(custom.reference_currency, rates, customs, onDate, new Set([...seen, code]));
     if (!ref) return null;
+    const rate = customPerEur(ref.rate, parseRate(custom.unit_value));
+    // IN-A02: a very large unit value rounds the per-EUR rate to 0 at 10 dp. A zero rate
+    // breaks the ScaledRate invariant -- as the target leg it would silently convert to 0 --
+    // so it counts as "no usable rate" and the row stays fully pending.
+    if (rate <= 0n) return null;
     return {
-      rate: customPerEur(ref.rate, parseRate(custom.unit_value)),
+      rate,
       rateDate: earlierDate(ref.rateDate, custom.as_of),
       source: 'custom',
     };
@@ -198,6 +203,7 @@ function computeProvisionalStamp(
 
   const homeAmount = convertMinor(minorUnits(amount), orig.rate, origExponent, home.rate, homeExponent);
   const rate = crossRate(orig.rate, home.rate);
+  if (rate <= 0n) return PENDING_UNRESOLVED_STAMP; // IN-A02: never a zero cross rate
 
   return {
     home_amount: homeAmount,

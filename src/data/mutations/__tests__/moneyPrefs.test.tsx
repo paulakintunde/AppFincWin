@@ -325,6 +325,11 @@ describe('useEditCustomCurrency', () => {
       ok: false,
       errors: ['value-invalid'],
     });
+    // IN-A02: outside the unit-value bounds.
+    expect(result.current.edit({ id: 'c1', expectedVersion: 1, patch: { unit_value: '5000000' } })).toEqual({
+      ok: false,
+      errors: ['value-invalid'],
+    });
     expect(result.current.edit({ id: 'c1', expectedVersion: 1, patch: { unit_value: 'x' } }, { locale: 'en-US' })).toEqual({
       ok: false,
       errors: ['value-invalid'],

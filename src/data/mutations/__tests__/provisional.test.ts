@@ -122,6 +122,21 @@ describe('provisionalStamp', () => {
     expect(stamp.rate_date).toBe('2026-09-18');
   });
 
+  it('IN-A02: a custom per-EUR rate that rounds to 0 is no rate at all -- never a silent zero conversion into it', () => {
+    const huge: CustomCurrencyRow = { ...GLD_CUSTOM, unit_value: '99999999999999.0000000000' };
+    // USD -> GLD: GLD would be the target leg, where a 0 rate converts everything to 0.
+    expect(provisionalStamp({ amount: 1000, currency: 'USD', homeCurrency: 'GLD' }, [USD_RATE], [huge])).toEqual(
+      PENDING_UNRESOLVED_STAMP
+    );
+  });
+
+  it('IN-A02: a cross rate that rounds to 0 leaves the row fully pending', () => {
+    const tinyHome: FxLatestRow = { quote: 'XXX', rate: '99999999999999', rate_date: '2026-09-21', source: 'frankfurter-v2' };
+    expect(provisionalStamp({ amount: 1, currency: 'XXX', homeCurrency: 'USD' }, [USD_RATE, tinyHome], [])).toEqual(
+      PENDING_UNRESOLVED_STAMP
+    );
+  });
+
   it('open-er-api cached source propagates as rate_source open-er-api', () => {
     const stamp = provisionalStamp(
       { amount: 1000, currency: 'JPY', homeCurrency: 'USD' },
