@@ -23,10 +23,19 @@
 --
 -- restamp_transaction() is the service-role-only path used after backfill.
 -- It sets the transaction-local GUC fincwin.system_restamp = 'on', which
--- both stamp_fx_rate() (to accept a rate older than 7 days) and
--- bump_version() (to avoid counting a system restamp as a user edit) read.
--- A client cannot set a GUC through PostgREST table writes, so this cannot
--- be spoofed from the outside.
+-- both stamp_fx_rate() (to force a re-rate) and bump_version() (to avoid
+-- counting a system restamp as a user edit) read, and
+-- fincwin.restamp_relax_quotes to the quotes the backfill actually stored:
+-- only those legs may accept a rate older than 7 days (WR-B01). A client
+-- cannot set a GUC through PostgREST table writes, so this cannot be
+-- spoofed from the outside.
+--
+-- A transaction dated more than one day after the server's current_date
+-- (one day of slack covers every time zone ahead of UTC) is never stamped
+-- exact: its own day's rate does not exist yet, so it stays rate_pending
+-- until fx_restamp_pending() (20260924000700_fx_monitor_jobs.sql, run
+-- daily by fx-monitor) re-stamps it after its day arrives. local_date must
+-- fall between 1900-01-01 and one year after current_date.
 
 -- 1. Pure functions mirroring engine/money/rounding.ts and rates.ts.
 -- `div()` on numeric truncates toward zero, and both operands here are
@@ -135,16 +144,20 @@ $$;
 -- otherwise ISO: nearest earlier fx_rates row within the 7-day exact
 --   window (D-02), frankfurter-v2 preferred over a same-date duplicate;
 --   else the nearest later row as a provisional value (D-17, exact=false);
---   else, only when p_any_earlier was not already set, the nearest earlier
---   row beyond the 7-day window (also provisional); else nulls.
--- p_any_earlier (set only by restamp_transaction) widens the earlier-rate
--- window past 7 days, since a Frankfurter historical backfill returns the
--- last publication on or before the needed date regardless of age.
+--   else, only when this quote's window was not already relaxed, the
+--   nearest earlier row beyond the 7-day window (also provisional); else
+--   nulls.
+-- p_relax_quotes (set only through restamp_transaction) lists the quotes
+-- the resolve-rate backfill just stored for this transaction's date. For
+-- those quotes alone the earlier-rate window widens past 7 days, since a
+-- Frankfurter historical backfill returns the last publication on or
+-- before the needed date regardless of age. Any other quote keeps the
+-- 7-day window (WR-B01).
 create or replace function public.per_eur_rate(
   p_code text,
   p_on date,
   p_owner uuid,
-  p_any_earlier boolean default false,
+  p_relax_quotes text[] default null,
   out rate numeric,
   out rate_date date,
   out source text,
@@ -159,6 +172,7 @@ as $$
 declare
   c public.custom_currencies%rowtype;
   ref record;
+  relax boolean := p_code = any(coalesce(p_relax_quotes, '{}'::text[]));
 begin
   exact := false;
 
@@ -169,7 +183,7 @@ begin
 
   select * into c from public.custom_currencies where owner_id = p_owner and code = p_code;
   if found then
-    select * into ref from public.per_eur_rate(c.reference_currency, p_on, p_owner, p_any_earlier);
+    select * into ref from public.per_eur_rate(c.reference_currency, p_on, p_owner, p_relax_quotes);
     if ref.rate is null then
       rate := null; rate_date := null; source := null; exact := false;
       return;
@@ -185,7 +199,7 @@ begin
   select r.rate, r.rate_date, r.source into rate, rate_date, source
     from public.fx_rates r
    where r.base = 'EUR' and r.quote = p_code and r.rate_date <= p_on
-     and (p_any_earlier or r.rate_date >= p_on - 7)
+     and (relax or r.rate_date >= p_on - 7)
    order by r.rate_date desc, (r.source = 'frankfurter-v2') desc
    limit 1;
   if found then
@@ -206,7 +220,7 @@ begin
 
   -- Fallback: an older-than-7-days earlier row, only when this call did
   -- not already relax the window itself.
-  if not p_any_earlier then
+  if not relax then
     select r.rate, r.rate_date, r.source into rate, rate_date, source
       from public.fx_rates r
      where r.base = 'EUR' and r.quote = p_code and r.rate_date <= p_on
@@ -257,13 +271,24 @@ as $$
 declare
   o record;
   h record;
-  any_earlier boolean := coalesce(current_setting('fincwin.system_restamp', true), '') = 'on';
+  system_restamp boolean := coalesce(current_setting('fincwin.system_restamp', true), '') = 'on';
+  relax_quotes text[] := case when coalesce(current_setting('fincwin.system_restamp', true), '') = 'on'
+    then string_to_array(nullif(coalesce(current_setting('fincwin.restamp_relax_quotes', true), ''), ''), ',')
+    end;
   owner uuid;
   needs_rerate boolean;
   o_exp int;
   h_exp int;
 begin
   owner := coalesce(new.created_by, (select auth.uid()));
+
+  -- WR-B01: a plausible calendar date. One year ahead covers planned
+  -- entries; 1900 only rules out typos, since same-currency rows need no
+  -- rate at all.
+  if (tg_op = 'INSERT' or new.local_date is distinct from old.local_date)
+     and (new.local_date < date '1900-01-01' or new.local_date > current_date + 366) then
+    raise exception 'local_date % is out of range', new.local_date using errcode = '23514';
+  end if;
 
   if tg_op = 'INSERT' then
     select p.home_currency into new.home_currency from public.profiles p where p.id = owner;
@@ -278,7 +303,7 @@ begin
     or new.local_date is distinct from old.local_date
     or new.original_currency is distinct from old.original_currency
     or old.rate_pending
-    or any_earlier;
+    or system_restamp;
 
   if needs_rerate then
     if new.original_currency = new.home_currency then
@@ -292,8 +317,8 @@ begin
       return new;
     end if;
 
-    select * into o from public.per_eur_rate(new.original_currency, new.local_date, owner, any_earlier);
-    select * into h from public.per_eur_rate(new.home_currency, new.local_date, owner, any_earlier);
+    select * into o from public.per_eur_rate(new.original_currency, new.local_date, owner, relax_quotes);
+    select * into h from public.per_eur_rate(new.home_currency, new.local_date, owner, relax_quotes);
 
     if o.rate is null or h.rate is null then
       new.rate := null;
@@ -322,7 +347,9 @@ begin
       when o.source = 'custom' or h.source = 'custom' then 'custom'
       else 'frankfurter-v2'
     end;
-    new.rate_pending := not (o.exact and h.exact);
+    -- A row dated after tomorrow (server time) is never exact: its own
+    -- day's rate cannot exist yet (WR-B01).
+    new.rate_pending := not (o.exact and h.exact) or new.local_date > current_date + 1;
     new.home_amount := public.convert_minor(new.original_amount, o.rate, o_exp, h.rate, h_exp);
   else
     -- Amount-only or note/account edit: keep every stamp column (D-04).
@@ -361,12 +388,14 @@ revoke execute on function public.stamp_fx_rate() from public, anon, authenticat
 
 -- 6. restamp_transaction(): called only by the resolve-rate Edge Function
 -- (plan 01-11) after it has verified household membership with the
--- caller's JWT and backfilled fx_rates. With p_any_earlier the row accepts
--- the backfilled rate even though it may be older than 7 days (Frankfurter
--- returns the last publication on or before the date). Guarded to only
--- touch rows that are actually still rate_pending, and does not bump
--- version (see bump_version() above).
-create or replace function public.restamp_transaction(p_id uuid)
+-- caller's JWT and backfilled fx_rates. p_relax_quotes names the quotes
+-- that backfill actually stored; for those legs alone the row accepts the
+-- backfilled rate even though it may be older than 7 days (Frankfurter
+-- returns the last publication on or before the date). Every other leg
+-- keeps the 7-day window (WR-B01). Guarded to only touch rows that are
+-- actually still rate_pending, and does not bump version (see
+-- bump_version() above).
+create or replace function public.restamp_transaction(p_id uuid, p_relax_quotes text[] default null)
 returns public.transactions
 language plpgsql
 security definer
@@ -376,8 +405,10 @@ declare
   r public.transactions;
 begin
   perform set_config('fincwin.system_restamp', 'on', true);
+  perform set_config('fincwin.restamp_relax_quotes', coalesce(array_to_string(p_relax_quotes, ','), ''), true);
   update public.transactions set updated_at = now() where id = p_id and rate_pending returning * into r;
   perform set_config('fincwin.system_restamp', '', true);
+  perform set_config('fincwin.restamp_relax_quotes', '', true);
   if r.id is null then
     select * into r from public.transactions where id = p_id;
   end if;
@@ -385,8 +416,8 @@ begin
 end;
 $$;
 
-revoke execute on function public.restamp_transaction(uuid) from public, anon, authenticated;
-grant execute on function public.restamp_transaction(uuid) to service_role;
+revoke execute on function public.restamp_transaction(uuid, text[]) from public, anon, authenticated;
+grant execute on function public.restamp_transaction(uuid, text[]) to service_role;
 
 -- 7. Grants. The pure maths functions (div_half_up, convert_minor,
 -- cross_rate, custom_per_eur) take no user data and stay callable by
@@ -412,5 +443,5 @@ grant execute on function public.custom_per_eur(numeric, numeric) to authenticat
 revoke execute on function public.currency_exponent(text, uuid) from public, anon, authenticated;
 grant execute on function public.currency_exponent(text, uuid) to service_role;
 
-revoke execute on function public.per_eur_rate(text, date, uuid, boolean) from public, anon, authenticated;
-grant execute on function public.per_eur_rate(text, date, uuid, boolean) to service_role;
+revoke execute on function public.per_eur_rate(text, date, uuid, text[]) from public, anon, authenticated;
+grant execute on function public.per_eur_rate(text, date, uuid, text[]) to service_role;

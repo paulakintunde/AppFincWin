@@ -95,7 +95,7 @@ describe('resolveRate', () => {
 
     expect(fetchJson).toHaveBeenCalledWith(`${FRANKFURTER_V2_RATES_URL}?date=2020-01-15&base=EUR&quotes=JPY,USD`);
     expect(upsertRates).toHaveBeenCalledWith(expectedRows);
-    expect(restamp).toHaveBeenCalledWith(VALID_ID);
+    expect(restamp).toHaveBeenCalledWith(VALID_ID, ['JPY', 'USD']);
     expect(result).toEqual({ status: 200, body: { ok: true, pending: false, row: restamped } });
   });
 
@@ -128,7 +128,7 @@ describe('resolveRate', () => {
     const result = await resolveRate(deps, { transactionId: VALID_ID });
 
     expect(fetchJson).not.toHaveBeenCalled();
-    expect(restamp).toHaveBeenCalledWith(VALID_ID);
+    expect(restamp).toHaveBeenCalledWith(VALID_ID, []);
     expect(result).toEqual({ status: 200, body: { ok: true, pending: false, row: { id: VALID_ID, rate_pending: false } } });
   });
 
@@ -235,6 +235,35 @@ describe('resolveRate', () => {
 
       expect(upsertRates).not.toHaveBeenCalled();
       expect(upsertHolds).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('restamp window (WR-B01: only backfilled quotes may use a rate older than 7 days)', () => {
+    it('relaxes only the quotes whose backfilled row was actually stored, never a held or missing one', async () => {
+      const fetchJson = jest.fn(async () => [
+        { base: 'EUR', quote: 'JPY', rate: 163.5, date: '2020-01-15' },
+        { base: 'EUR', quote: 'USD', rate: 1.5, date: '2020-01-15' }, // held: >10% from the stored prior
+      ]);
+      const storedRatesAround = jest.fn(async (quote: string) =>
+        quote === 'USD' ? [{ quote: 'USD', rate: '1.1', date: '2019-12-01' }] : []
+      );
+      const restamp = jest.fn(async () => ({ id: VALID_ID, rate_pending: true }));
+      const deps = makeDeps({ readPending: jest.fn(async () => pendingRow()), fetchJson, storedRatesAround, restamp });
+
+      const result = await resolveRate(deps, { transactionId: VALID_ID });
+
+      expect(restamp).toHaveBeenCalledWith(VALID_ID, ['JPY']);
+      expect(result).toMatchObject({ status: 200, body: { ok: true, pending: true } });
+    });
+
+    it('relaxes nothing for a leg Frankfurter did not return at all', async () => {
+      const fetchJson = jest.fn(async () => [{ base: 'EUR', quote: 'USD', rate: 1.11, date: '2020-01-15' }]);
+      const restamp = jest.fn(async () => ({ id: VALID_ID, rate_pending: true }));
+      const deps = makeDeps({ readPending: jest.fn(async () => pendingRow()), fetchJson, restamp });
+
+      await resolveRate(deps, { transactionId: VALID_ID });
+
+      expect(restamp).toHaveBeenCalledWith(VALID_ID, ['USD']);
     });
   });
 });

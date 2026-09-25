@@ -58,6 +58,11 @@ Deno.serve(async (req) => {
       if (error) throw new Error(error.message);
       return (data ?? []).length;
     },
+    async restampPending() {
+      const { data, error } = await admin.rpc('fx_restamp_pending');
+      if (error) throw new Error(error.message);
+      return Number(data ?? 0);
+    },
     async pendingRowsCount() {
       const { data, error } = await admin.rpc('fx_pending_rows_count');
       if (error) throw new Error(error.message);

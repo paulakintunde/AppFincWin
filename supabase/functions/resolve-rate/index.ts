@@ -137,8 +137,8 @@ Deno.serve(async (req) => {
         );
       if (error) throw new Error(error.message);
     },
-    async restamp(id) {
-      const { data, error } = await admin.rpc('restamp_transaction', { p_id: id });
+    async restamp(id, relaxQuotes) {
+      const { data, error } = await admin.rpc('restamp_transaction', { p_id: id, p_relax_quotes: relaxQuotes });
       if (error) throw new Error(error.message);
       return (data ?? {}) as Record<string, unknown>;
     },

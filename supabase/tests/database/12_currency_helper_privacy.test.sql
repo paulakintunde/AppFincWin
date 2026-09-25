@@ -58,7 +58,7 @@ reset role;
 
 -- 3. Privilege catalogue: no client role holds EXECUTE; service_role does.
 select extensions.ok(
-  not has_function_privilege('authenticated', 'public.per_eur_rate(text, date, uuid, boolean)', 'execute'),
+  not has_function_privilege('authenticated', 'public.per_eur_rate(text, date, uuid, text[])', 'execute'),
   'authenticated has no EXECUTE on per_eur_rate'
 );
 select extensions.ok(
@@ -74,7 +74,7 @@ select extensions.ok(
   'anon has no EXECUTE on currency_exponent'
 );
 select extensions.ok(
-  has_function_privilege('service_role', 'public.per_eur_rate(text, date, uuid, boolean)', 'execute'),
+  has_function_privilege('service_role', 'public.per_eur_rate(text, date, uuid, text[])', 'execute'),
   'service_role keeps EXECUTE on per_eur_rate'
 );
 

@@ -85,6 +85,7 @@ function makeDeps(overrides: Partial<MonitorDeps> = {}): MonitorDeps {
     currencies: jest.fn(async () => []),
     insertAlerts: jest.fn(async () => undefined),
     autoAcceptHolds: jest.fn(async () => 0),
+    restampPending: jest.fn(async () => 0),
     pendingRowsCount: jest.fn(async () => 0),
     unsentAlerts: jest.fn(async () => []),
     markEmailed: jest.fn(async () => undefined),
@@ -116,6 +117,24 @@ describe('runFxMonitor', () => {
 
     expect(autoAcceptHolds).toHaveBeenCalled();
     expect(result.autoAccepted).toBe(2);
+  });
+
+  it('re-stamps due pending rows before counting the ones still stuck (WR-B01)', async () => {
+    const order: string[] = [];
+    const restampPending = jest.fn(async () => {
+      order.push('restamp');
+      return 4;
+    });
+    const pendingRowsCount = jest.fn(async () => {
+      order.push('count');
+      return 1;
+    });
+    const deps = makeDeps({ restampPending, pendingRowsCount });
+
+    const result = await runFxMonitor(deps);
+
+    expect(order).toEqual(['restamp', 'count']);
+    expect(result.restamped).toBe(4);
   });
 
   it('inserts one pending-rows alert only when the count is greater than zero', async () => {

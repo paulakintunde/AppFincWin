@@ -46,6 +46,8 @@ export interface MonitorDeps {
   currencies(): Promise<CurrencyRow[]>;
   insertAlerts(alerts: AlertInsert[]): Promise<void>;
   autoAcceptHolds(): Promise<number>;
+  /** rpc('fx_restamp_pending'): re-stamps pending rows whose date has arrived; returns how many were re-stamped. */
+  restampPending(): Promise<number>;
   pendingRowsCount(): Promise<number>;
   unsentAlerts(): Promise<UnsentAlert[]>;
   markEmailed(ids: number[]): Promise<void>;
@@ -56,6 +58,7 @@ export interface MonitorResult {
   ok: true;
   stale: number;
   autoAccepted: number;
+  restamped: number;
   pendingRows: number;
   emailed: number;
 }
@@ -126,6 +129,11 @@ export async function runFxMonitor(deps: MonitorDeps): Promise<MonitorResult> {
 
   const autoAccepted = await deps.autoAcceptHolds();
 
+  // WR-B01: a future-dated row stays rate_pending until its own day. Re-stamp
+  // every due pending row first, so the pending-rows count below only
+  // reports rows that are genuinely stuck.
+  const restamped = await deps.restampPending();
+
   const pendingRows = await deps.pendingRowsCount();
   if (pendingRows > 0) {
     await deps.insertAlerts([{ kind: 'pending-rows', detail: { count: pendingRows } }]);
@@ -140,5 +148,5 @@ export async function runFxMonitor(deps: MonitorDeps): Promise<MonitorResult> {
     emailed = unsent.length;
   }
 
-  return { ok: true, stale: stale.length, autoAccepted, pendingRows, emailed };
+  return { ok: true, stale: stale.length, autoAccepted, restamped, pendingRows, emailed };
 }

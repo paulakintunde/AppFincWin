@@ -51,8 +51,12 @@ export interface ResolveDeps {
   upsertHolds(rows: Classification['hold']): Promise<void>;
   /** Admin: fx_alerts insert. */
   insertAlerts(alerts: Array<{ kind: string; quote?: string; detail?: Record<string, unknown> }>): Promise<void>;
-  /** Admin: rpc('restamp_transaction', { p_id: id }). */
-  restamp(id: string): Promise<Record<string, unknown>>;
+  /**
+   * Admin: rpc('restamp_transaction', { p_id: id, p_relax_quotes }). Only
+   * the quotes in relaxQuotes -- the ones this backfill actually stored --
+   * may use a rate older than 7 days (WR-B01).
+   */
+  restamp(id: string, relaxQuotes: string[]): Promise<Record<string, unknown>>;
 }
 
 export type ResolveResult =
@@ -104,13 +108,13 @@ async function quarantineAndStore(
   fxRows: FxRow[],
   quotesToFetch: Set<string>,
   localDate: string
-): Promise<void> {
+): Promise<string[]> {
   const requested = fxRows.filter((r) => r.base === 'EUR' && quotesToFetch.has(r.quote) && r.date <= localDate);
-  if (requested.length === 0) return;
+  if (requested.length === 0) return [];
 
   const blocked = await deps.blockedHolds([...quotesToFetch].sort());
   const candidates = requested.filter((r) => !blocked.some((h) => h.quote === r.quote && h.heldDate === r.date));
-  if (candidates.length === 0) return;
+  if (candidates.length === 0) return [];
 
   const history = (await Promise.all(candidates.map((r) => deps.storedRatesAround(r.quote, r.date)))).flat();
   const classified = classifyRates(candidates, history, [], BACKFILL_SOURCE);
@@ -134,6 +138,8 @@ async function quarantineAndStore(
       }))
     );
   }
+
+  return [...new Set(classified.accept.map((r) => r.quote))].sort();
 }
 
 export async function resolveRate(deps: ResolveDeps, input: unknown): Promise<ResolveResult> {
@@ -153,6 +159,10 @@ export async function resolveRate(deps: ResolveDeps, input: unknown): Promise<Re
   await resolveQuote(deps, row.created_by, row.original_currency, quotesToFetch);
   await resolveQuote(deps, row.created_by, row.home_currency, quotesToFetch);
 
+  // WR-B01: the quotes whose backfilled row actually reached fx_rates. Only
+  // these legs may be stamped exact from a rate older than 7 days; a leg
+  // Frankfurter did not return, or whose row was held, keeps the window.
+  let relaxQuotes: string[] = [];
   if (quotesToFetch.size > 0) {
     const quotes = [...quotesToFetch].sort().join(',');
     const url = `${FRANKFURTER_V2_RATES_URL}?date=${row.local_date}&base=EUR&quotes=${quotes}`;
@@ -165,10 +175,10 @@ export async function resolveRate(deps: ResolveDeps, input: unknown): Promise<Re
       return { status: 502, body: { ok: false, error: 'upstream' } };
     }
 
-    await quarantineAndStore(deps, fxRows, quotesToFetch, row.local_date);
+    relaxQuotes = await quarantineAndStore(deps, fxRows, quotesToFetch, row.local_date);
   }
 
-  const restamped = await deps.restamp(transactionId);
+  const restamped = await deps.restamp(transactionId, relaxQuotes);
   return {
     status: 200,
     body: { ok: true, pending: Boolean((restamped as { rate_pending?: boolean }).rate_pending), row: restamped },
