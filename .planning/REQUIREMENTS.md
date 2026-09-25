@@ -81,7 +81,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **MON-01**: All monetary values are stored and computed as integer minor units, with no float arithmetic on any path
 - [ ] **MON-02**: User input of an amount is parsed to minor units without passing through `parseFloat`
 - [ ] **MON-03**: Splitting an amount across members always produces shares that sum exactly to the original, using largest-remainder rounding
-- [ ] **MON-04**: User can set a home currency from the supported list or add a custom currency
+- [x] **MON-04**: User can set a home currency from the supported list or add a custom currency
 - [ ] **MON-05**: A transaction in a non-home currency records the FX rate applied at the time it was written
 - [ ] **MON-06**: FX rates refresh daily from Frankfurter v2 into the project's own store, and the app reads only that store
 - [ ] **MON-07**: A rate's own publication date is visible wherever a converted figure is shown, rather than implied to be current
@@ -90,7 +90,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **MON-10**: An alert fires when any currency's latest stored rate is older than its staleness limit
 - [ ] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it
 - [ ] **MON-12**: When Frankfurter cannot be reached, rates refresh from open.er-api instead, and its required attribution is shown in the app
-- [ ] **MON-13**: Each currency's decimal places come from ISO 4217 — 0 for JPY, KRW and VND, 3 for KWD, BHD and OMR — and a custom currency declares its own
+- [x] **MON-13**: Each currency's decimal places come from ISO 4217 — 0 for JPY, KRW and VND, 3 for KWD, BHD and OMR — and a custom currency declares its own
 - [ ] **MON-14**: A transaction stores its local calendar date and time zone, so its month and any recurring schedule never shift across time zones or clock changes
 
 ### Offline & Sync
@@ -241,7 +241,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DSG-03**: Layout adapts to device safe-area insets rather than assuming a fixed height
 - [x] **DSG-04**: All user-facing strings are served from a typed i18n catalogue
 - [ ] **DSG-05**: No user-facing string claims data stays on the device or is not sent anywhere
-- [ ] **DSG-06**: Amounts, numbers and dates are formatted for the user's locale
+- [x] **DSG-06**: Amounts, numbers and dates are formatted for the user's locale
 - [ ] **DSG-07**: Text scales with the OS text-size setting up to a defined maximum without breaking layouts
 - [ ] **DSG-08**: Balances are hidden in the app-switcher snapshot when the app goes to the background
 
@@ -378,7 +378,7 @@ Populated during roadmap creation.
 | MON-01 | Phase 1 - Money Core | Pending |
 | MON-02 | Phase 1 - Money Core | Pending |
 | MON-03 | Phase 1 - Money Core | Pending |
-| MON-04 | Phase 1 - Money Core | Pending |
+| MON-04 | Phase 1 - Money Core | Complete |
 | MON-05 | Phase 1 - Money Core | Pending |
 | MON-06 | Phase 1 - Money Core | Pending |
 | MON-07 | Phase 1 - Money Core | Pending |
@@ -387,7 +387,7 @@ Populated during roadmap creation.
 | MON-10 | Phase 1 - Money Core | Pending |
 | MON-11 | Phase 1 - Money Core | Pending |
 | MON-12 | Phase 1 - Money Core | Pending |
-| MON-13 | Phase 1 - Money Core | Pending |
+| MON-13 | Phase 1 - Money Core | Complete |
 | MON-14 | Phase 1 - Money Core | Pending |
 | SYN-01 | Phase 1 - Money Core | Pending |
 | SYN-02 | Phase 1 - Money Core | Pending |
@@ -499,7 +499,7 @@ Populated during roadmap creation.
 | DSG-03 | Phase 0 - Foundation | Complete |
 | DSG-04 | Phase 0 - Foundation | Complete |
 | DSG-05 | Phase 11 - Compliance & Release | Pending |
-| DSG-06 | Phase 1 - Money Core | Pending |
+| DSG-06 | Phase 1 - Money Core | Complete |
 | DSG-07 | Phase 3 - Shell | Pending |
 | DSG-08 | Phase 10 - System | Pending |
 | CMP-01 | Phase 11 - Compliance & Release | Pending |

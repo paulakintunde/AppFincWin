@@ -151,7 +151,7 @@ Plans:
 - [x] 01-14-PLAN.md — RateAttribution, SyncStatusLine, money formatter hook, catalogue keys (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 01-13-PLAN.md — Money prefs, custom currencies and currency options hooks (W5)
+- [x] 01-13-PLAN.md — Money prefs, custom currencies and currency options hooks (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 01-15-PLAN.md — Wire QueryProvider, failure reporting, sync line, credits and dev probe into the app (W6; needs Phase 0 00-16/17/18)

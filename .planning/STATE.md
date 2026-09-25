@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 context gathered
-last_updated: "2026-09-24T16:14:47.033Z"
-last_activity: 2026-09-24 -- Phase 01 execution started
+stopped_at: Completed 01-13-PLAN.md
+last_updated: "2026-09-25T02:22:22.426Z"
+last_activity: 2026-09-25
 progress:
   total_phases: 12
   completed_phases: 0
   total_plans: 36
-  completed_plans: 12
-  percent: 33
+  completed_plans: 26
+  percent: 72
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 ## Current Position
 
 Phase: 01 (money-core) — EXECUTING
-Plan: 1 of 16
-Status: Executing Phase 01
-Last activity: 2026-09-24 -- Phase 01 execution started
+Plan: 2 of 16
+Status: Ready to execute
+Last activity: 2026-09-25
 
-Progress: [██████░░░░] 60%
+Progress: [███████░░░] 72%
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Progress: [██████░░░░] 60%
 | Phase 00 P08 | 25min | 2 tasks | 2 files |
 | Phase 00 P04 | 55min | 2 tasks | 1 files |
 | Phase 00 P13 | 25min | 3 tasks | 6 files |
+| Phase 01 P13 | 50min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,9 @@ Recent decisions affecting current work:
 - [Phase 00]: 00-04: adb shell screencap/screenrecord return blank/black frames on this machine's WHPX-accelerated AVD regardless of capture method; use adb shell uiautomator dump (accessibility tree) plus logcat's ReactNativeJS Running main as the verification fallback
 - [Phase 00-foundation]: 00-13: first POSTHOG_PERSONAL_API_KEY pasted was a phs_ project secret key, not a phx_ personal API key -- returned HTTP 401 from the PostHog EU projects endpoint until replaced with the correct phx_ key, which verified with HTTP 200
 - [Phase 00-foundation]: 00-13: analytics service keeps its own independent enabled boolean in front of every PostHog capture() call, not relying solely on the SDK's own defaultOptIn/optOut state, so an SDK-level consent bug still cannot leak an event
+- [Phase 01]: 01-13: a code shorter than 2 chars always classifies as code-missing, never code-invalid, to distinguish nothing-typed-yet from something-typed-wrong
+- [Phase 01]: 01-13: profile money-preference writes (db/profile.ts, mutations/moneyPrefs.ts) are deliberately not version-conditional -- a settings row is a user's own, never contended, unlike a D-18 shared record
+- [Phase 01]: 01-13: useAddCustomCurrency derives its validation context from useCurrencyOptions/the cached custom list only when the caller omits ctx, so Record's add-currency sheet can call add(input) with no boilerplate
 
 ### Pending Todos
 
@@ -120,6 +124,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-24T10:24:26.589Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-money-core/01-CONTEXT.md
+Last session: 2026-09-25T02:22:22.408Z
+Stopped at: Completed 01-13-PLAN.md
+Resume file: None
