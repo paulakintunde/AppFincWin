@@ -7,7 +7,7 @@
 // D-18 keeps crash reports on regardless of analytics consent (legitimate interest, disclosed
 // in the privacy policy; re-verified at Compliance).
 import * as Sentry from '@sentry/react-native';
-import { getEnv, type ClientEnv } from '@/config/env';
+import { getErrorTrackingEnv, type ErrorTrackingEnv } from '@/config/env';
 import { scrubMessage, scrubStackFrame } from './scrub';
 
 export type ErrorArea = 'auth' | 'theme' | 'sync' | 'boot' | 'unknown';
@@ -84,28 +84,116 @@ function scrubBreadcrumb<B extends ScrubbableBreadcrumb | null>(breadcrumb: B): 
 
 let activeSentry: SentryModule | undefined;
 
+// Minimal shape of React Native's global ErrorUtils, injectable for tests.
+type GlobalErrorHandler = (error: unknown, isFatal?: boolean) => void;
+interface ErrorUtilsLike {
+  getGlobalHandler(): GlobalErrorHandler;
+  setGlobalHandler(handler: GlobalErrorHandler): void;
+}
+
+/**
+ * How long a fatal JS error's teardown is held back so the native Sentry SDK can persist (and
+ * usually send) the event first. Found live 2026-09-25 (build f81838b1, logcat): Sentry's global
+ * handler awaits its JS flush and then calls the previous handler, but on Android the JS flush
+ * resolves as soon as sentry-java has *enqueued* the envelope — AsyncHttpTransport.send() submits
+ * it to a single-thread executor and only EnvelopeSender.run() writes it to disk. React Native's
+ * default handler then crashed the process (via expo-updates' error recovery) ~25ms later, while
+ * that executor was still busy with another upload, and the fatal event was never written to disk.
+ * iOS stores fatal envelopes synchronously upstream (sentry-react-native PR 3031); Android has no
+ * equivalent as of @sentry/react-native 8.28. Bounded, not a completion signal: a very slow
+ * in-flight upload can still outlast it. Crashing apps sit on a frozen screen for this long.
+ */
+export const FATAL_PERSIST_DELAY_MS = 3000;
+const DELAY_MARKER = '__fincwinFatalPersistDelay';
+
+/**
+ * Wraps the CURRENT global JS error handler so that, for fatal errors only, it runs after
+ * `delayMs`. Must be installed before Sentry.init(): Sentry captures whatever handler exists at
+ * init as its "default" and calls it after flushing, so the delay lands exactly between Sentry's
+ * capture and the process teardown. Non-fatal errors pass straight through. Idempotent.
+ * Returns whether it installed.
+ */
+export function installFatalPersistDelay(
+  errorUtils: ErrorUtilsLike | undefined,
+  delayMs: number,
+  schedule: (callback: () => void, ms: number) => unknown = setTimeout
+): boolean {
+  if (!errorUtils || delayMs <= 0) return false;
+  const previous = errorUtils.getGlobalHandler();
+  if ((previous as unknown as Record<string, unknown>)[DELAY_MARKER]) return false;
+
+  const delayed: GlobalErrorHandler = (error, isFatal) => {
+    if (!isFatal) {
+      previous(error, isFatal);
+      return;
+    }
+    schedule(() => previous(error, isFatal), delayMs);
+  };
+  (delayed as unknown as Record<string, unknown>)[DELAY_MARKER] = true;
+  errorUtils.setGlobalHandler(delayed);
+  return true;
+}
+
+function globalErrorUtils(): ErrorUtilsLike | undefined {
+  return (globalThis as { ErrorUtils?: ErrorUtilsLike }).ErrorUtils;
+}
+
+export interface InitErrorReportingOptions {
+  errorUtils?: ErrorUtilsLike;
+  /** Defaults to {@link FATAL_PERSIST_DELAY_MS} in release builds and 0 (off) under __DEV__. */
+  fatalPersistDelayMs?: number;
+}
+
+/** Outcome of {@link initErrorReporting}, returned so a skipped init is never silent. */
+export type ErrorReportingStatus = 'enabled' | 'disabled-not-sentry' | 'disabled-no-dsn' | 'failed';
+
+// Once-per-launch, value-free diagnostic (visible in Metro and in `adb logcat` as ReactNativeJS).
+// Never includes the DSN or any env value — only a reason code and, on failure, an error name.
+function warnSkipped(reason: string): void {
+  console.warn(`[errors] Sentry error reporting is OFF for this launch: ${reason}`);
+}
+
 /**
  * Initialises the always-on error-reporting client. `env` and `sentry` are injectable for
  * tests; production code calls this with no arguments once, at app boot.
  *
- * Never throws. Error reporting exists to survive when something else in the app is broken —
- * including a misconfigured/incomplete environment unrelated to error tracking itself (e.g. a
- * different feature's required var not set yet). getEnv() validates the *whole* environment and
- * throws collectively on any missing required var, so it is deliberately not a default
- * parameter (default-parameter evaluation runs before this function's own try/catch could ever
- * see it) — it is resolved inside the try block below instead. A crash in error-reporting init
- * crashing the app it is meant to protect is exactly the failure mode this guards against —
- * found live during the D-19 spike (see docs/decisions/error-tracking.md).
+ * Reads ONLY the error-tracking keys (getErrorTrackingEnv), never the whole-app getEnv(): crash
+ * reporting must stay up when an unrelated var is missing or malformed. Before this fix, a
+ * quoted EXPO_PUBLIC_SUPABASE_URL in every EAS environment made getEnv() throw, the catch below
+ * swallowed it, and Sentry was never initialised on any build (see
+ * docs/decisions/error-tracking.md, "Delivery fix").
+ *
+ * Also holds back fatal-error teardown so the event is persisted first — see
+ * {@link FATAL_PERSIST_DELAY_MS}.
+ *
+ * Never throws. A crash in error-reporting init crashing the app it is meant to protect is
+ * exactly the failure mode this guards against — found live during the D-19 spike (see
+ * docs/decisions/error-tracking.md). Any skip or failure is reported via console.warn once.
  */
-export function initErrorReporting(env?: ClientEnv, sentry: SentryModule = defaultSentryModule): void {
+export function initErrorReporting(
+  env?: ErrorTrackingEnv,
+  sentry: SentryModule = defaultSentryModule,
+  options: InitErrorReportingOptions = {}
+): ErrorReportingStatus {
+  activeSentry = undefined;
   try {
-    const resolvedEnv = env ?? getEnv();
+    const resolvedEnv = env ?? getErrorTrackingEnv();
 
-    if (resolvedEnv.errorTracking !== 'sentry' || !resolvedEnv.sentryDsn) {
-      // No Sentry DSN configured yet — stay a no-op rather than init with an empty DSN.
-      activeSentry = undefined;
-      return;
+    if (resolvedEnv.errorTracking !== 'sentry') {
+      warnSkipped(`EXPO_PUBLIC_ERROR_TRACKING selects ${resolvedEnv.errorTracking}`);
+      return 'disabled-not-sentry';
     }
+    if (!resolvedEnv.sentryDsn) {
+      // No Sentry DSN configured — stay a no-op rather than init with an empty DSN.
+      warnSkipped('EXPO_PUBLIC_SENTRY_DSN is not set in this bundle');
+      return 'disabled-no-dsn';
+    }
+
+    // Before sentry.init(), so Sentry's handler wraps the delaying one (see the function's docs).
+    installFatalPersistDelay(
+      options.errorUtils ?? globalErrorUtils(),
+      options.fatalPersistDelayMs ?? (__DEV__ ? 0 : FATAL_PERSIST_DELAY_MS)
+    );
 
     sentry.init({
       dsn: resolvedEnv.sentryDsn,
@@ -121,9 +209,13 @@ export function initErrorReporting(env?: ClientEnv, sentry: SentryModule = defau
       beforeBreadcrumb: (breadcrumb) => scrubBreadcrumb(breadcrumb as unknown as ScrubbableBreadcrumb) as never,
     });
     activeSentry = sentry;
-  } catch {
-    // Swallow: an app-config problem elsewhere must never take crash reporting down with it.
+    return 'enabled';
+  } catch (error) {
+    // Swallow (never crash the app), but never silently: name the error type, not its message,
+    // since env error messages can echo configuration values.
     activeSentry = undefined;
+    warnSkipped(`init failed (${error instanceof Error ? error.name : typeof error})`);
+    return 'failed';
   }
 }
 

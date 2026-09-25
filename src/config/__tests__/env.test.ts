@@ -1,4 +1,4 @@
-import { readClientEnv, EnvError } from '../env';
+import { readClientEnv, readErrorTrackingEnv, EnvError } from '../env';
 
 const VALID: Record<string, string | undefined> = {
   EXPO_PUBLIC_APP_ENV: 'development',
@@ -133,5 +133,37 @@ describe('readClientEnv', () => {
       const envError = error as EnvError;
       expect(envError.problems.length).toBeGreaterThanOrEqual(2);
     }
+  });
+});
+
+// Sentry-delivery debug (2026-09-25): error reporting must read ONLY the keys it needs. Every
+// EAS environment had EXPO_PUBLIC_SUPABASE_URL stored with literal wrapping quotes, so the
+// whole-env readClientEnv() threw and silently took Sentry init down with it.
+describe('readErrorTrackingEnv', () => {
+  const DSN = 'https://examplePublicKey@o0.ingest.us.sentry.io/0';
+
+  it('returns sentry + DSN even when unrelated required keys are missing', () => {
+    expect(readErrorTrackingEnv({ EXPO_PUBLIC_SENTRY_DSN: DSN })).toEqual({
+      errorTracking: 'sentry',
+      sentryDsn: DSN,
+    });
+  });
+
+  it('returns sentry + DSN when an unrelated key is malformed (quoted Supabase URL)', () => {
+    const src = { ...VALID, EXPO_PUBLIC_ERROR_TRACKING: undefined, EXPO_PUBLIC_SUPABASE_URL: '"https://abcxyz.supabase.co"', EXPO_PUBLIC_SENTRY_DSN: DSN };
+    expect(() => readClientEnv(src)).toThrow(EnvError);
+    expect(readErrorTrackingEnv(src)).toEqual({ errorTracking: 'sentry', sentryDsn: DSN });
+  });
+
+  it('treats an empty DSN as unset', () => {
+    expect(readErrorTrackingEnv({ EXPO_PUBLIC_SENTRY_DSN: '' }).sentryDsn).toBeUndefined();
+  });
+
+  it('honours EXPO_PUBLIC_ERROR_TRACKING=posthog', () => {
+    expect(readErrorTrackingEnv({ EXPO_PUBLIC_ERROR_TRACKING: 'posthog' }).errorTracking).toBe('posthog');
+  });
+
+  it('throws EnvError naming only the key (never the value) for an unknown tracker', () => {
+    expect(() => readErrorTrackingEnv({ EXPO_PUBLIC_ERROR_TRACKING: 'bugsnag' })).toThrow(EnvError);
   });
 });

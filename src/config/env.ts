@@ -113,6 +113,35 @@ export function readClientEnv(src: Record<string, string | undefined>): ClientEn
   };
 }
 
+/** The only config error reporting needs — see {@link readErrorTrackingEnv}. */
+export type ErrorTrackingEnv = Pick<ClientEnv, 'errorTracking' | 'sentryDsn'>;
+
+/**
+ * Reads ONLY the error-tracking keys. Deliberately independent of {@link readClientEnv}: crash
+ * reporting must survive a misconfigured environment elsewhere in the app. Found live
+ * 2026-09-25 — every EAS environment stored EXPO_PUBLIC_SUPABASE_URL with literal wrapping
+ * quotes, the whole-env reader threw, and Sentry was silently never initialised. Throws
+ * EnvError only for an unrecognised EXPO_PUBLIC_ERROR_TRACKING value.
+ */
+export function readErrorTrackingEnv(src: Record<string, string | undefined>): ErrorTrackingEnv {
+  const errorTrackingRaw = src.EXPO_PUBLIC_ERROR_TRACKING;
+  if (errorTrackingRaw && !isErrorTracking(errorTrackingRaw)) {
+    throw new EnvError([`EXPO_PUBLIC_ERROR_TRACKING must be one of ${ERROR_TRACKERS.join('|')}`]);
+  }
+  return {
+    errorTracking: isErrorTracking(errorTrackingRaw) ? errorTrackingRaw : 'sentry', // D-19
+    sentryDsn: src.EXPO_PUBLIC_SENTRY_DSN || undefined,
+  };
+}
+
+/** Literal-access entry point for {@link readErrorTrackingEnv} (see getEnv() on inlining). */
+export function getErrorTrackingEnv(): ErrorTrackingEnv {
+  return readErrorTrackingEnv({
+    EXPO_PUBLIC_ERROR_TRACKING: process.env.EXPO_PUBLIC_ERROR_TRACKING,
+    EXPO_PUBLIC_SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  });
+}
+
 let cached: ClientEnv | undefined;
 
 /**
