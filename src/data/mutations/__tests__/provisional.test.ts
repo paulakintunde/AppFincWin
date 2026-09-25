@@ -91,6 +91,37 @@ describe('provisionalStamp', () => {
     expect(stamp.rate_pending).toBe(true);
   });
 
+  it('IN-A01: a same-currency row is dated its own local_date, as the server does', () => {
+    const stamp = provisionalStamp({ amount: 500, currency: 'USD', homeCurrency: 'USD', localDate: '2026-09-24' }, [], []);
+    expect(stamp.rate_date).toBe('2026-09-24');
+  });
+
+  it('IN-A01: the EUR leg is dated local_date, so rate_date is least(leg dates) like per_eur_rate()', () => {
+    // A backdated entry: the cached USD rate is newer than the transaction.
+    const backdated = provisionalStamp(
+      { amount: 1000, currency: 'EUR', homeCurrency: 'USD', localDate: '2026-09-15' },
+      [USD_RATE],
+      []
+    );
+    expect(backdated.rate_date).toBe('2026-09-15');
+    const current = provisionalStamp(
+      { amount: 1000, currency: 'USD', homeCurrency: 'EUR', localDate: '2026-09-24' },
+      [USD_RATE],
+      []
+    );
+    expect(current.rate_date).toBe('2026-09-21');
+  });
+
+  it('IN-A01: a custom currency referencing EUR takes least(local_date, as_of)', () => {
+    const eurRef: CustomCurrencyRow = { ...GLD_CUSTOM, reference_currency: 'EUR', as_of: '2026-09-20' };
+    const stamp = provisionalStamp(
+      { amount: 10, currency: 'GLD', homeCurrency: 'USD', localDate: '2026-09-18' },
+      [USD_RATE],
+      [eurRef]
+    );
+    expect(stamp.rate_date).toBe('2026-09-18');
+  });
+
   it('open-er-api cached source propagates as rate_source open-er-api', () => {
     const stamp = provisionalStamp(
       { amount: 1000, currency: 'JPY', homeCurrency: 'USD' },

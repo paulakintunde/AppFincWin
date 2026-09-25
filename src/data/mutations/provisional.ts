@@ -27,7 +27,10 @@ export type ProvisionalStamp = Pick<
 
 interface PerEurResult {
   readonly rate: ScaledRate;
-  /** '' for EUR itself, which has no publication date of its own. */
+  /**
+   * IN-A01: EUR's own leg is dated the transaction's local_date, as per_eur_rate() does
+   * server-side (`rate_date := p_on`); '' when no local date was given, which never wins.
+   */
   readonly rateDate: string;
   readonly source: RateSource | null;
 }
@@ -66,16 +69,17 @@ function resolvePerEur(
   code: string,
   rates: readonly FxLatestRow[],
   customs: readonly CustomCurrencyRow[],
+  onDate: string,
   seen: ReadonlySet<string> = new Set()
 ): PerEurResult | null {
   if (code === 'EUR') {
-    return { rate: EUR_PER_EUR, rateDate: '', source: null };
+    return { rate: EUR_PER_EUR, rateDate: onDate, source: null };
   }
   if (seen.has(code)) return null; // guards a malformed reference cycle
 
   const custom = findCustom(code, customs);
   if (custom) {
-    const ref = resolvePerEur(custom.reference_currency, rates, customs, new Set([...seen, code]));
+    const ref = resolvePerEur(custom.reference_currency, rates, customs, onDate, new Set([...seen, code]));
     if (!ref) return null;
     return {
       rate: customPerEur(ref.rate, parseRate(custom.unit_value)),
@@ -104,7 +108,7 @@ function combineSource(origSource: RateSource | null, homeSource: RateSource | n
  * pending stamp -- the server stamps the row properly once the write lands (D-16).
  */
 export function provisionalStamp(
-  input: { amount: number; currency: string; homeCurrency: string },
+  input: { amount: number; currency: string; homeCurrency: string; localDate?: string },
   rates: readonly FxLatestRow[],
   customs: readonly CustomCurrencyRow[]
 ): ProvisionalStamp {
@@ -140,15 +144,16 @@ export function editStamp(
 ): ProvisionalStamp {
   const amount = patch.original_amount ?? row.original_amount;
   const currency = patch.original_currency ?? row.original_currency;
-  const reRates = currency !== row.original_currency || (patch.local_date ?? row.local_date) !== row.local_date;
+  const localDate = patch.local_date ?? row.local_date;
+  const reRates = currency !== row.original_currency || localDate !== row.local_date;
 
-  if (reRates) return provisionalStamp({ amount, currency, homeCurrency: row.home_currency }, rates, customs);
+  if (reRates) return provisionalStamp({ amount, currency, homeCurrency: row.home_currency, localDate }, rates, customs);
   if (amount === row.original_amount) return keepStamp(row);
 
   if (row.rate_source === 'same-currency') return { ...keepStamp(row), home_amount: amount };
   if (row.orig_per_eur === null || row.home_per_eur === null) {
     // Never resolved yet (fully pending): nothing stored to reuse, so estimate from the cache.
-    return provisionalStamp({ amount, currency, homeCurrency: row.home_currency }, rates, customs);
+    return provisionalStamp({ amount, currency, homeCurrency: row.home_currency, localDate }, rates, customs);
   }
   try {
     const homeAmount = convertMinor(
@@ -165,11 +170,11 @@ export function editStamp(
 }
 
 function computeProvisionalStamp(
-  input: { amount: number; currency: string; homeCurrency: string },
+  input: { amount: number; currency: string; homeCurrency: string; localDate?: string },
   rates: readonly FxLatestRow[],
   customs: readonly CustomCurrencyRow[]
 ): ProvisionalStamp {
-  const { amount, currency, homeCurrency } = input;
+  const { amount, currency, homeCurrency, localDate } = input;
 
   if (currency === homeCurrency) {
     return {
@@ -177,14 +182,15 @@ function computeProvisionalStamp(
       rate: formatRate(EUR_PER_EUR),
       orig_per_eur: null,
       home_per_eur: null,
-      rate_date: null,
+      // IN-A01: the server dates a same-currency row with its own local_date.
+      rate_date: localDate ?? null,
       rate_source: 'same-currency',
       rate_pending: false,
     };
   }
 
-  const orig = resolvePerEur(currency, rates, customs);
-  const home = resolvePerEur(homeCurrency, rates, customs);
+  const orig = resolvePerEur(currency, rates, customs, localDate ?? '');
+  const home = resolvePerEur(homeCurrency, rates, customs, localDate ?? '');
   if (!orig || !home) return PENDING_UNRESOLVED_STAMP;
 
   const origExponent = resolveExponent(currency, findCustom(currency, customs)?.decimals);

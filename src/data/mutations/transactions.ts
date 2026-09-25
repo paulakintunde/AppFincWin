@@ -143,6 +143,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
           amount: vars.row.original_amount,
           currency: vars.row.original_currency,
           homeCurrency: vars.optimistic.homeCurrency,
+          localDate: vars.row.local_date,
         },
         rates,
         customs
