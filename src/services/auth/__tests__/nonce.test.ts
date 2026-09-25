@@ -4,6 +4,8 @@
 // to it, so the assertion is never circular (it doesn't just re-call the mock to check itself).
 import { createHash } from 'crypto';
 
+import { createNonce } from '../nonce';
+
 jest.mock('expo-crypto', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const nodeCrypto = require('crypto');
@@ -14,8 +16,6 @@ jest.mock('expo-crypto', () => {
       nodeCrypto.createHash('sha256').update(data).digest('hex'),
   };
 });
-
-import { createNonce } from '../nonce';
 
 describe('createNonce', () => {
   it('returns a raw value whose SHA-256 hash equals hashed', async () => {

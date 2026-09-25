@@ -5,8 +5,10 @@
 // retryPendingFirstAuthProfile().
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { persistFirstAuthProfile, retryPendingFirstAuthProfile } from '../firstAuthProfile';
+
 let mockUpdateError: { message: string } | null = null;
-const mockUpdateCalls: Array<{ patch: unknown; userId: unknown }> = [];
+const mockUpdateCalls: { patch: unknown; userId: unknown }[] = [];
 const mockUpdateUserCalls: unknown[] = [];
 
 jest.mock('@/services/supabase', () => ({
@@ -27,8 +29,6 @@ jest.mock('@/services/supabase', () => ({
     },
   },
 }));
-
-import { persistFirstAuthProfile, retryPendingFirstAuthProfile } from '../firstAuthProfile';
 
 const PENDING_KEY = 'fincwin:pending-apple-profile';
 
@@ -109,5 +109,14 @@ describe('retryPendingFirstAuthProfile', () => {
     await retryPendingFirstAuthProfile();
 
     expect(await AsyncStorage.getItem(PENDING_KEY)).not.toBeNull();
+  });
+
+  it('discards an unparseable pending payload rather than retrying it forever', async () => {
+    await AsyncStorage.setItem(PENDING_KEY, 'not-json{');
+
+    await retryPendingFirstAuthProfile();
+
+    expect(mockUpdateCalls).toHaveLength(0);
+    expect(await AsyncStorage.getItem(PENDING_KEY)).toBeNull();
   });
 });

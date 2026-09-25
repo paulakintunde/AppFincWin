@@ -5,6 +5,8 @@
 //
 // jest.mock() factories may only reference out-of-scope variables prefixed with `mock`
 // (case-insensitive) -- every jest.fn() below follows that naming for exactly that reason.
+import { signInWithApple } from '../apple';
+
 let mockPlatformOS: 'ios' | 'android' = 'ios';
 jest.mock('react-native', () => ({
   Platform: {
@@ -19,7 +21,7 @@ const mockSignInWithIdToken = jest.fn();
 const mockSignInWithOAuth = jest.fn();
 const mockExchangeCodeForSession = jest.fn();
 const mockOpenAuthSessionAsync = jest.fn();
-const mockPersistFirstAuthProfile = jest.fn(async () => undefined);
+const mockPersistFirstAuthProfile = jest.fn(async (..._args: unknown[]) => undefined);
 const mockCreateNonce = jest.fn(async () => ({ raw: 'RAW_NONCE', hashed: 'HASHED_NONCE' }));
 
 jest.mock('expo-apple-authentication', () => ({
@@ -38,6 +40,7 @@ jest.mock('expo-linking', () => ({
     const queryParams: Record<string, string> = {};
     for (const pair of query.split('&').filter(Boolean)) {
       const [key, value] = pair.split('=');
+      if (!key) continue;
       queryParams[key] = decodeURIComponent(value ?? '');
     }
     return { queryParams };
@@ -58,8 +61,6 @@ jest.mock('../nonce', () => ({ createNonce: () => mockCreateNonce() }));
 jest.mock('../firstAuthProfile', () => ({
   persistFirstAuthProfile: (...args: unknown[]) => mockPersistFirstAuthProfile(...args),
 }));
-
-import { signInWithApple } from '../apple';
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -112,6 +113,31 @@ describe('signInWithApple on iOS', () => {
     expect(result).toEqual({ status: 'cancelled' });
     expect(mockSignInWithIdToken).not.toHaveBeenCalled();
   });
+
+  it('rethrows a non-cancellation error from the native ceremony', async () => {
+    mockSignInAsync.mockRejectedValue(new Error('device error'));
+
+    await expect(signInWithApple()).rejects.toThrow('device error');
+  });
+
+  it('throws when Apple returns no identity token', async () => {
+    mockSignInAsync.mockResolvedValue({ identityToken: null, fullName: null, email: null });
+
+    await expect(signInWithApple()).rejects.toThrow('did not return an identity token');
+    expect(mockSignInWithIdToken).not.toHaveBeenCalled();
+  });
+
+  it('throws when Supabase rejects the ID token exchange', async () => {
+    mockSignInAsync.mockResolvedValue({
+      identityToken: 'apple-id-token',
+      fullName: null,
+      email: null,
+    });
+    mockSignInWithIdToken.mockResolvedValue({ data: null, error: new Error('nonce mismatch') });
+
+    await expect(signInWithApple()).rejects.toThrow('nonce mismatch');
+    expect(mockPersistFirstAuthProfile).not.toHaveBeenCalled();
+  });
 });
 
 describe('signInWithApple on Android', () => {
@@ -150,5 +176,27 @@ describe('signInWithApple on Android', () => {
     mockOpenAuthSessionAsync.mockResolvedValue({ type: 'success', url: 'fincwin://auth-callback' });
 
     await expect(signInWithApple()).rejects.toThrow();
+  });
+
+  it('throws when Supabase rejects starting the OAuth flow', async () => {
+    mockSignInWithOAuth.mockResolvedValue({ data: null, error: new Error('provider not configured') });
+
+    await expect(signInWithApple()).rejects.toThrow('provider not configured');
+    expect(mockOpenAuthSessionAsync).not.toHaveBeenCalled();
+  });
+
+  it('throws on an unexpected web browser result type', async () => {
+    mockSignInWithOAuth.mockResolvedValue({ data: { url: 'https://provider/authorize' }, error: null });
+    mockOpenAuthSessionAsync.mockResolvedValue({ type: 'locked' });
+
+    await expect(signInWithApple()).rejects.toThrow('Unexpected Apple web OAuth result');
+  });
+
+  it('throws when exchanging the code for a session fails', async () => {
+    mockSignInWithOAuth.mockResolvedValue({ data: { url: 'https://provider/authorize' }, error: null });
+    mockOpenAuthSessionAsync.mockResolvedValue({ type: 'success', url: 'fincwin://auth-callback?code=abc' });
+    mockExchangeCodeForSession.mockResolvedValue({ data: null, error: new Error('exchange failed') });
+
+    await expect(signInWithApple()).rejects.toThrow('exchange failed');
   });
 });
