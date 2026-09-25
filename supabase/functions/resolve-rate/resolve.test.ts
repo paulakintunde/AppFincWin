@@ -266,4 +266,46 @@ describe('resolveRate', () => {
       expect(restamp).toHaveBeenCalledWith(VALID_ID, ['USD']);
     });
   });
+
+  describe('internal errors (IN-B01: always the {ok:false} shape the client classifier expects)', () => {
+    it('returns 500 internal when the user-scoped read throws', async () => {
+      const deps = makeDeps({
+        readPending: jest.fn(async () => {
+          throw new Error('JWT expired');
+        }),
+      });
+      expect(await resolveRate(deps, { transactionId: VALID_ID })).toEqual({
+        status: 500,
+        body: { ok: false, error: 'internal' },
+      });
+    });
+
+    it('returns 500 internal when an admin write throws', async () => {
+      const fetchJson = jest.fn(async () => [{ base: 'EUR', quote: 'JPY', rate: 163.5, date: '2020-01-15' }]);
+      const deps = makeDeps({
+        readPending: jest.fn(async () => pendingRow()),
+        fetchJson,
+        upsertRates: jest.fn(async () => {
+          throw new Error('db down');
+        }),
+      });
+      expect(await resolveRate(deps, { transactionId: VALID_ID })).toEqual({
+        status: 500,
+        body: { ok: false, error: 'internal' },
+      });
+    });
+
+    it('returns 500 internal when the restamp throws', async () => {
+      const deps = makeDeps({
+        readPending: jest.fn(async () => pendingRow({ original_currency: 'EUR', home_currency: 'EUR' })),
+        restamp: jest.fn(async () => {
+          throw new Error('rpc failed');
+        }),
+      });
+      expect(await resolveRate(deps, { transactionId: VALID_ID })).toEqual({
+        status: 500,
+        body: { ok: false, error: 'internal' },
+      });
+    });
+  });
 });

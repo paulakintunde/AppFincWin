@@ -61,7 +61,7 @@ export interface ResolveDeps {
 
 export type ResolveResult =
   | { status: 200; body: { ok: true; pending: boolean; row: Record<string, unknown> | null } }
-  | { status: 400 | 404 | 502; body: { ok: false; error: string } };
+  | { status: 400 | 404 | 500 | 502; body: { ok: false; error: string } };
 
 function invalidInput(): ResolveResult {
   return { status: 400, body: { ok: false, error: 'invalid-input' } };
@@ -148,6 +148,18 @@ export async function resolveRate(deps: ResolveDeps, input: unknown): Promise<Re
   const { transactionId } = input as Record<string, unknown>;
   if (typeof transactionId !== 'string' || !UUID_RE.test(transactionId)) return invalidInput();
 
+  // IN-B01: any DB or RPC failure (including a read with an anon-key JWT)
+  // answers with the same {ok:false} shape as every other failure, never a
+  // bare 500 the client's D-19 classifier cannot read. The underlying
+  // message is not echoed back.
+  try {
+    return await resolvePending(deps, transactionId);
+  } catch {
+    return { status: 500, body: { ok: false, error: 'internal' } };
+  }
+}
+
+async function resolvePending(deps: ResolveDeps, transactionId: string): Promise<ResolveResult> {
   const row = await deps.readPending(transactionId);
   if (row === null) return { status: 404, body: { ok: false, error: 'not-found' } };
 
