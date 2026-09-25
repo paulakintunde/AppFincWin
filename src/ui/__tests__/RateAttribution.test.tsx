@@ -85,6 +85,23 @@ describe('RateAttribution', () => {
     expect(queryByText(/Rate of/)).toBeNull();
   });
 
+  it('renders "Rate pending", never "Rate of " with no date, when the date is missing', async () => {
+    const { getByText, queryByText, queryByRole } = await renderWithTheme(
+      <RateAttribution rateDate={null} rateSource="open-er-api" ratePending={false} />
+    );
+    expect(getByText('Rate pending')).toBeTruthy();
+    expect(queryByText(/Rate of/)).toBeNull();
+    expect(queryByRole('link')).toBeNull();
+  });
+
+  it('renders "Rate pending" when the source is missing', async () => {
+    const { getByText, queryByText } = await renderWithTheme(
+      <RateAttribution rateDate="2026-09-21" rateSource={null} ratePending={false} />
+    );
+    expect(getByText('Rate pending')).toBeTruthy();
+    expect(queryByText(/Rate of/)).toBeNull();
+  });
+
   it('renders nothing for a same-currency figure', async () => {
     const { toJSON } = await renderWithTheme(
       <RateAttribution rateDate={null} rateSource="same-currency" ratePending={false} />

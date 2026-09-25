@@ -30,14 +30,17 @@ export function RateAttribution({ rateDate, rateSource, ratePending }: RateAttri
     return null;
   }
 
-  const formattedDate = rateDate ? formatLocalDate(rateDate, locale) : '';
-  const dateText = ratePending
+  // IN-C03: a stored row can't be stamped without both a date and a source (DB check
+  // constraint), but optimistic and cached rows aren't bound by it. Without both, show
+  // 'Rate pending' rather than 'Rate of ' with an empty date.
+  const pending = ratePending || !rateDate || !rateSource;
+  const dateText = pending
     ? t('money.rate.pending')
     : rateSource === 'custom'
-      ? t('money.rate.customAsOf', { date: formattedDate })
-      : t('money.rate.asOf', { date: formattedDate });
+      ? t('money.rate.customAsOf', { date: formatLocalDate(rateDate, locale) })
+      : t('money.rate.asOf', { date: formatLocalDate(rateDate, locale) });
 
-  const showAttribution = !ratePending && rateSource === 'open-er-api';
+  const showAttribution = !pending && rateSource === 'open-er-api';
   const attributionText = t('money.rate.attribution');
 
   const handlePress = () => {
