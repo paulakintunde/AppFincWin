@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { QueryClient } from '@tanstack/react-query';
+import { registerWipeHandler } from '@/services/storage/wipe';
 
 // D-15: a sync timestamp is not sensitive, so it lives in plain AsyncStorage rather than
 // behind LargeSecureStore's encryption (contrast with failedWrites.ts, whose payloads can
@@ -48,6 +49,18 @@ export async function hydrateLastSynced(): Promise<void> {
   }
   notify();
 }
+
+// IN-A03: the AsyncStorage key is already swept by the wipe's fincwin: prefix, but the
+// in-memory value is not -- without this the next user on the device would see the
+// previous user's "synced N minutes ago" until their own first sync.
+registerWipeHandler({
+  id: 'last-synced',
+  wipe: async () => {
+    lastSyncedAt = null;
+    notify();
+    await AsyncStorage.removeItem(LAST_SYNCED_KEY);
+  },
+});
 
 /**
  * Marks synced whenever any query fetch or mutation in the given QueryClient succeeds --

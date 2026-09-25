@@ -9,7 +9,15 @@ import { QueryClient, QueryClientProvider, onlineManager, useMutation } from '@t
 import { renderHook, waitFor, act } from '@testing-library/react-native';
 import { useSyncStatus } from '../useSyncStatus';
 import { recordFailedWrite, dismissFailedWrite, getFailedWrites } from '../failedWrites';
-import { markSynced, getLastSyncedAt, hydrateLastSynced, trackSyncActivity, LAST_SYNCED_KEY } from '../lastSynced';
+import {
+  markSynced,
+  getLastSyncedAt,
+  hydrateLastSynced,
+  subscribeLastSynced,
+  trackSyncActivity,
+  LAST_SYNCED_KEY,
+} from '../lastSynced';
+import { wipeDeviceData } from '@/services/storage/wipe';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 jest.mock('expo-secure-store', () => {
@@ -208,6 +216,19 @@ describe('lastSynced', () => {
       expect(getLastSyncedAt()).toBe(afterMutation);
 
       untrack();
+    });
+
+    it('IN-A03: the sign-out wipe resets the in-memory last-synced time and tells subscribers', async () => {
+      markSynced(123);
+      const listener = jest.fn();
+      const unsubscribe = subscribeLastSynced(listener);
+
+      await wipeDeviceData();
+
+      expect(getLastSyncedAt()).toBeNull();
+      expect(listener).toHaveBeenCalled();
+      expect(await AsyncStorage.getItem(LAST_SYNCED_KEY)).toBeNull();
+      unsubscribe();
     });
 
     it('WR-A07: a local optimistic setQueryData never counts as a sync', async () => {
