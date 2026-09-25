@@ -43,6 +43,18 @@ Deno.serve(async (req) => {
   };
 
   const deps: ResolveDeps = {
+    // RD-05: per-user throttle (~60/hour), enforced by the fx_resolve_calls-backed SQL
+    // function (service-role, atomic increment). The caller's id comes from their own JWT
+    // (already verified by the platform gateway), never from client-supplied input.
+    async checkRateLimit() {
+      const { data: userData, error: userError } = await userClient.auth.getUser();
+      if (userError || !userData?.user) return false;
+      const { data, error } = await admin.rpc('fx_resolve_rate_check_limit', {
+        p_user_id: userData.user.id,
+      });
+      if (error) throw new Error(error.message);
+      return Boolean(data);
+    },
     async readPending(id) {
       const { data, error } = await userClient
         .from('transactions')

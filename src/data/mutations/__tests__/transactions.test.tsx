@@ -17,6 +17,7 @@ import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupaba
 import { mutationKeys, queryKeys } from '@/data/keys';
 import { MAX_SERVER_ERROR_RETRIES } from '@/data/sync/writeErrors';
 import { clearVersionChains } from '@/data/sync/versionChain';
+import { noteResolveRateThrottled, resetResolveRateBackoffForTests } from '@/data/sync/resolveRateBackoff';
 import { registerMutationDefaults } from '../index';
 import { useAddTransaction, useEditTransaction, type AddTransactionVars } from '../transactions';
 import { useAddAccount, useEditAccount } from '../accounts';
@@ -90,6 +91,7 @@ beforeEach(() => {
   recordFailedWrite.mockClear();
   onlineManager.setOnline(true);
   clearVersionChains();
+  resetResolveRateBackoffForTests(); // RD-05
 });
 
 describe('useAddTransaction', () => {
@@ -205,6 +207,44 @@ describe('useAddTransaction', () => {
     expect(rows?.[0]?.home_amount).toBe(635);
     expect(rows?.[0]).not.toHaveProperty('pending', true);
     expect(fake.calls.filter((c) => c.method === 'functions.invoke')).toHaveLength(1);
+  });
+
+  it('RD-05: skips the resolve-rate follow-up entirely while the client-side throttle backoff is active', async () => {
+    noteResolveRateThrottled(); // simulates a very recent 429 from resolve-rate
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    const pendingRow = serverTransaction({
+      original_currency: 'JPY',
+      original_amount: 1000,
+      home_amount: null,
+      rate: null,
+      rate_pending: true,
+    });
+    fake.respondWith({ data: pendingRow, error: null, status: 201 });
+    // Only one response is queued (the insert) -- if the follow-up called functions.invoke
+    // anyway, fakeSupabase.next() would run out of responses and throw.
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.fxLatest(), [USD_RATE, JPY_RATE]);
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 1000 as never,
+      currency: 'JPY',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => {
+      const rows = qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+      expect(rows?.[0]?.rate_pending).toBe(true);
+    });
+
+    expect(fake.calls.filter((c) => c.method === 'functions.invoke')).toHaveLength(0);
   });
 
   it('add rejected with a permanent DbError removes the optimistic row and records a failed write', async () => {

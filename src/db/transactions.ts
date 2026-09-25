@@ -4,8 +4,9 @@
 // imports the real Supabase client (src/services/supabase), so its tests never trigger
 // that module's eager getEnv() call and can run against a fake client instead.
 
-import { FunctionsFetchError } from '@supabase/supabase-js';
+import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
 import { monthRange } from '@/engine/time';
+import { noteResolveRateThrottled } from '@/data/sync/resolveRateBackoff';
 import { DbError, NotFoundError, VersionConflictError, toDbError } from './errors';
 import {
   assertAllowedKeys,
@@ -185,6 +186,13 @@ export async function requestRateResolution(client: DbClient, transactionId: str
 
   if (error) {
     if (error instanceof FunctionsFetchError) throw error;
+    // RD-05: a 429 from resolve-rate's own per-user throttle is never a permanent failure
+    // (the row simply stays rate_pending -- same as any other HTTP-layer error here), but
+    // the client notes it so a burst of other pending writes does not keep calling an
+    // endpoint that has already asked it to slow down (see resolveRateBackoff.ts).
+    if (error instanceof FunctionsHttpError && (error.context as { status?: number } | undefined)?.status === 429) {
+      noteResolveRateThrottled();
+    }
     return null;
   }
 
