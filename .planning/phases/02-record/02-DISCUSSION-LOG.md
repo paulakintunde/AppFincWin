@@ -78,3 +78,13 @@ Activity list mechanics (search, amount filter, bulk select), account UI and for
 ## Deferred Ideas
 
 Receipt attachments; bank CSV presets; own-format lossless import; payee rename rules; field-level undo merge; autopay; RRULE schedules; tax flag (dropped).
+
+## Follow-up (2026-09-25, after context was written)
+
+| Question | Options | Selected |
+|---|---|---|
+| "Tax" starter category | Keep as plain label · Rename · Drop from seed | Keep as plain label; Out of Scope wording clarified to mean tax calculation, flags and reports |
+| Where ENV-16 moves | Phase 10 System · Phase 11 Compliance · Phase 3 Shell | Phase 10 System |
+| Supabase Pro vs AWS | Undecided, method TBD likely AWS · Drop Pro, AWS only · Keep Pro later + AWS copy | Undecided: method TBD, likely AWS |
+
+**Notes:** The user said backups will be done later, most likely with AWS. Recorded risks: no production backups while dogfooding, and a Free-plan project pausing after a week idle.

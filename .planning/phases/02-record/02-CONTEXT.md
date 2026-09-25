@@ -6,9 +6,9 @@
 <domain>
 ## Phase Boundary
 
-A user can log and manage their real financial activity against the live Supabase backend. That covers income and expense entry with edit and delete, per-account balances, user-owned categories, recurring series that generate entries, CSV import (during onboarding or later) with preview and column mapping, the Activity month list with switching, search, filter and bulk delete, and a 12-deep undo built from compensating writes, reachable from the toast and a History screen. Also in scope: ANL-05 (a signup → first entry → first CSV import funnel) and ENV-16 (Supabase Pro plan with daily backups before the first real user data).
+A user can log and manage their real financial activity against the live Supabase backend. That covers income and expense entry with edit and delete, per-account balances, user-owned categories, recurring series that generate entries, CSV import (during onboarding or later) with preview and column mapping, the Activity month list with switching, search, filter and bulk delete, and a 12-deep undo built from compensating writes, reachable from the toast and a History screen. Also in scope: ANL-05 (a signup → first entry → first CSV import funnel). ENV-16 (production backups) was moved out to Phase 10 on 2026-09-25.
 
-Requirements: REC-01…REC-12, ACT-01…ACT-05, ANL-05, ENV-16.
+Requirements: REC-01…REC-12, ACT-01…ACT-05, ANL-05.
 
 Not in this phase: transfers between accounts, household sharing and settlements (Phase 8), archiving and restoring months (DAT-01, later), level gating, Pro/Free tiering, and receipts.
 
@@ -59,7 +59,7 @@ Decision numbers are local to this phase. "Phase 1 D-xx" refers to `.planning/ph
 
 ### Categories and entry fields
 - **D-33:** **Categories are per user**, RLS-scoped to the user and not the household. Transactions reference a `category_id`. For shared household transactions in Phase 8, each member sees the row under their own category via a per-member override. Record builds only the per-user tables and leaves the household design open.
-- **D-34:** **Built-in categories are seeded per user at provisioning and are fully editable**: rename, recolour, archive. Transfer and Settlement are system-owned and cannot be edited, because the engine relies on them. The seed set is the prototype's `Component.COL` list (line 3217): Housing, Utilities, Groceries, Transport, Insurance, Health, Subscriptions, Debt, Savings, Business, Tax, Dining and Income. Whether "Tax" is renamed or dropped from the seed, given that tax framing is cut, is for the planner to raise with the user or settle by copy review. Built-in names are i18n keys until the user renames them.
+- **D-34:** **Built-in categories are seeded per user at provisioning and are fully editable**: rename, recolour, archive. Transfer and Settlement are system-owned and cannot be edited, because the engine relies on them. The seed set is the prototype's `Component.COL` list (line 3217): Housing, Utilities, Groceries, Transport, Insurance, Health, Subscriptions, Debt, Savings, Business, Tax, Dining and Income. **"Tax" stays in the seed as a plain label** (decided 2026-09-25): it records money already paid, such as a tax bill or an accountant's fee, and behaves exactly like any other category. It must never gain tax-specific behaviour (no tax flag, no tax totals or reports, no liability estimate, no copy about what is owed). The Out of Scope wording in REQUIREMENTS.md and PROJECT.md was clarified to match. Built-in names are i18n keys until the user renames them.
 - **D-35:** **Colours come only from the prototype's existing category swatch pairs** (colour plus tint, as in `Component.COL` / `Component.TINT` at lines 3217–3218), which is 7 distinct pairs. There is no free colour picker, per the design-fidelity rule.
 - **D-36:** **Removing a category that is in use gives two choices: merge its transactions into another category** (one undo step), **or archive it**, which hides it from pickers but keeps its history. Rows are never orphaned.
 - **D-37:** **New transaction fields: `name` (payee or line title) and `payment_type`.** The name is required for search (ACT-03), import descriptions and recurring detection. Payment type uses the prototype's `PTYPE` list (line 3357): Card, Bank transfer, Direct debit, Standing order and Cash for money out; Direct deposit, Invoice, Transfer, Card payout and Cash for money in. It is descriptive only.
@@ -70,7 +70,6 @@ Decision numbers are local to this phase. "Phase 1 D-xx" refers to `.planning/ph
 - **Accounts (REC-08):** the create/edit account UI and how a balance is shown for an account in a foreign currency (in the account's own currency, with a home-currency figure alongside).
 - **Server mechanics:** how occurrences are materialised (pg_cron plus a SQL function, or an Edge Function); table, column and enum names; the category-guess keyword list; the thresholds for duplicate and recurrence similarity.
 - **ANL-05:** event names and properties for the signup → first entry → first import funnel, with no amounts, payees or free text, per Phase 0 D-18.
-- **ENV-16:** the Supabase Pro upgrade with daily backups must be done and verified **before any real user data exists**. The planner makes it an early, operator-run task that checks the backup status.
 - Whether a hand-entered transaction dated in the future defaults to pending.
 
 </decisions>
@@ -82,7 +81,7 @@ Decision numbers are local to this phase. "Phase 1 D-xx" refers to `.planning/ph
 
 ### Product scope and locked decisions
 - `.planning/PROJECT.md`: Core Value, the Key Decisions table (undo as compensating writes in `engine/`, CSV import moved early, local date plus time zone, one household in v1, tax framing cut), and the compliance voice rules.
-- `.planning/REQUIREMENTS.md`: REC-01…12, ACT-01…06 (ACT-06 is **not** in this phase), ANL-05, ENV-16, DAT-01 (a later phase), and the Out of Scope table (tax categorisation).
+- `.planning/REQUIREMENTS.md`: REC-01…12, ACT-01…06 (ACT-06 is **not** in this phase), ANL-05, ENV-16 (moved to Phase 10: not in this phase), DAT-01 (a later phase), and the Out of Scope table (tax categorisation).
 - `.planning/ROADMAP.md` § Phase 2: Record, for the goal and the five success criteria.
 - `BUILD-PROMPT.md` §2 (design tokens: no extra colours), §5 (feature-area map with prototype line numbers), §6 (architecture, the `state/` undoStack, normalised tables including `categories` and `undo_snapshots`), §8 (roadmap row 2).
 
@@ -147,6 +146,7 @@ Decision numbers are local to this phase. "Phase 1 D-xx" refers to `.planning/ph
 - **Autopay auto-mark-paid**: not chosen. Pending rows are never assumed paid.
 - **RRULE-style schedules** ("last Friday of the month"): not chosen.
 - **Tax-relevant flag**: dropped under the existing Out of Scope decision. Not coming back without a PROJECT.md change.
+- **Production backups (ENV-16)**: moved to Phase 10 on 2026-09-25, method TBD, likely AWS. Phase 2 dogfooding runs on production without backups, as an accepted risk. Nothing in this phase may assume a restore is possible.
 
 </deferred>
 
