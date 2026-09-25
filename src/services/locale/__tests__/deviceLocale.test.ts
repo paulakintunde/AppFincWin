@@ -82,6 +82,62 @@ describe('WR-A11: region, not language, decides number format', () => {
   });
 });
 
+describe('RD-02: region precedence -- override > device region > time zone tiebreak', () => {
+  const englishInGermany = {
+    languageTag: 'en-US',
+    languageCode: 'en',
+    languageScriptCode: null,
+    regionCode: 'DE',
+    decimalSeparator: ',',
+    digitGroupingSeparator: '.',
+  };
+
+  it('an explicit override wins over the device region for both the tag and the separators', () => {
+    mockGetLocales.mockReturnValue([englishInGermany]);
+    mockGetCalendars.mockReturnValue([{ timeZone: 'Europe/Berlin' }]);
+
+    expect(getDeviceLocale('US')).toBe('en-US');
+    // en-US separators (',' group, '.' decimal) are the *opposite* of the device's own
+    // (Germany types ',' as the decimal mark) -- proof this comes from Intl for the
+    // override region, not from the device's decimalSeparator/digitGroupingSeparator.
+    expect(getDeviceSeparators('US')).toEqual({ decimal: '.', group: ',' });
+  });
+
+  it('no override: the device region still wins over any time zone tiebreak', () => {
+    mockGetLocales.mockReturnValue([englishInGermany]);
+    mockGetCalendars.mockReturnValue([{ timeZone: 'America/Vancouver' }]); // would tiebreak to CA
+    expect(getDeviceLocale(null)).toBe('en-DE');
+    expect(getDeviceSeparators(undefined)).toEqual({ decimal: ',', group: '.' });
+  });
+
+  it('time zone tiebreak only fires when the device reports no region at all', () => {
+    mockGetLocales.mockReturnValue([{ languageTag: 'en-US', languageCode: 'en', languageScriptCode: null, regionCode: null }]);
+    mockGetCalendars.mockReturnValue([{ timeZone: 'Europe/Berlin' }]);
+
+    expect(getDeviceLocale()).toBe('en-DE');
+  });
+
+  it('an unmapped time zone with no device region falls back to the plain language tag', () => {
+    mockGetLocales.mockReturnValue([{ languageTag: 'en-US', languageCode: 'en', languageScriptCode: null, regionCode: null }]);
+    mockGetCalendars.mockReturnValue([{ timeZone: 'Pacific/Kiritimati' }]); // not in the tiebreak table
+    expect(getDeviceLocale()).toBe('en-US');
+  });
+
+  it('an invalid override (not two letters) is ignored, falling through to the device region', () => {
+    mockGetLocales.mockReturnValue([englishInGermany]);
+    mockGetCalendars.mockReturnValue([{ timeZone: 'Europe/Berlin' }]);
+    expect(getDeviceLocale('not-a-region')).toBe('en-DE');
+  });
+
+  it('useDeviceLocale applies the same override precedence', async () => {
+    mockUseLocales.mockReturnValue([englishInGermany]);
+    mockUseCalendars.mockReturnValue([{ timeZone: 'Europe/Berlin' }]);
+    const { result } = await renderHook(() => useDeviceLocale('US'));
+    expect(result.current.locale).toBe('en-US');
+    expect(result.current.separators).toEqual({ decimal: '.', group: ',' });
+  });
+});
+
 describe('getDeviceTimeZone', () => {
   it('returns the first calendar entry timeZone', () => {
     mockGetCalendars.mockReturnValue([{ timeZone: 'Europe/Warsaw' }]);
@@ -101,7 +157,10 @@ describe('getDeviceTimeZone', () => {
 
 describe('useDeviceLocale', () => {
   it('composes useLocales/useCalendars into { locale, timeZone }', async () => {
-    mockUseLocales.mockReturnValue([{ languageTag: 'fr-CA' }]);
+    // languageCode/regionCode are set here (as a real expo-localization Locale always
+    // provides them) so this stays a plain composition test, distinct from the RD-02
+    // override/tiebreak cases covered below.
+    mockUseLocales.mockReturnValue([{ languageTag: 'fr-CA', languageCode: 'fr', regionCode: 'CA' }]);
     mockUseCalendars.mockReturnValue([{ timeZone: 'America/Toronto' }]);
 
     const { result } = await renderHook(() => useDeviceLocale());

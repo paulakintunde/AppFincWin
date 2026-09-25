@@ -7,11 +7,12 @@ import type { MoneyPrefsRow } from '@/db/rows';
 import { supabase } from '@/services/supabase';
 import { queryKeys } from '../keys';
 
-/** The same 'USD'/false/'home' placeholder the profiles migration defaults new rows to. */
+/** The same 'USD'/false/'home'/null placeholder the profiles migration defaults new rows to. */
 export const DEFAULT_MONEY_PREFS: MoneyPrefsRow = {
   home_currency: 'USD',
   show_cents: false,
   lead_figure: 'home',
+  region: null,
 };
 
 export function useMoneyPrefs(userId?: string): { prefs: MoneyPrefsRow; loading: boolean } {

@@ -8,7 +8,7 @@
 import { toDbError } from './errors';
 import { assertAllowedKeys, type DbClient, type MoneyPrefsRow } from './rows';
 
-export const MONEY_PREFS_COLUMNS = 'home_currency, show_cents, lead_figure';
+export const MONEY_PREFS_COLUMNS = 'home_currency, show_cents, lead_figure, region';
 
 export type MoneyPrefsPatch = Partial<MoneyPrefsRow>;
 
@@ -18,6 +18,7 @@ export const MONEY_PREFS_PATCH_KEYS = [
   'home_currency',
   'show_cents',
   'lead_figure',
+  'region',
 ] as const satisfies readonly (keyof MoneyPrefsRow)[];
 
 export async function fetchMoneyPrefs(client: DbClient, userId: string): Promise<MoneyPrefsRow | null> {

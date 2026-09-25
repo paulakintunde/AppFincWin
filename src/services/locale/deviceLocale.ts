@@ -10,11 +10,24 @@
 // tag is rebuilt from languageCode (+ script) + regionCode, and the region's own decimal and
 // grouping marks -- which the native decimal keypad types -- are exposed separately for the
 // amount parser (parseAmount's `separators` option).
+//
+// RD-02: region precedence is explicit in-app override > device region > time zone tiebreak
+// (resolveRegion.ts, pure, no IP geolocation). When the resolved region differs from what the
+// device itself reports -- an override is set, or the device reports no region and the time
+// zone tiebreak fired -- the locale tag and separators can no longer be read off the device's
+// own keyboard (that reflects the *device's* region, not an arbitrary override one), so both
+// are derived from Intl for the resolved region instead.
 import { getCalendars, getLocales, useCalendars, useLocales, type Locale } from 'expo-localization';
 import type { LocaleSeparators } from '@/engine/money';
+import { resolveRegion } from './resolveRegion';
 
 const FALLBACK_LOCALE = 'en-US';
 const FALLBACK_TIME_ZONE = 'UTC';
+
+/** The device's own reported time zone, defensively tolerant of an unmocked/empty read. */
+function deviceTimeZone(): string | undefined {
+  return (getCalendars() ?? [])[0]?.timeZone ?? undefined;
+}
 
 /** languageCode[-script]-regionCode when the device reports a region, else languageTag. */
 function regionLocaleTag(locale: Locale | undefined): string {
@@ -40,16 +53,70 @@ function regionSeparators(locale: Locale | undefined): LocaleSeparators | undefi
   return { decimal, group };
 }
 
-export function getDeviceLocale(): string {
-  return regionLocaleTag(getLocales()[0]);
+/** languageCode[-script]-region for an arbitrary *resolved* region, not necessarily the device's own. */
+function overrideLocaleTag(locale: Locale | undefined, region: string): string {
+  const languageCode = locale?.languageCode || 'en';
+  const tag = [languageCode, locale?.languageScriptCode, region].filter(Boolean).join('-');
+  try {
+    const [canonical] = Intl.getCanonicalLocales(tag);
+    if (canonical) return canonical;
+  } catch {
+    // Falls through to the plain tag below.
+  }
+  return tag;
 }
 
-export function getDeviceSeparators(): LocaleSeparators | undefined {
-  return regionSeparators(getLocales()[0]);
+/**
+ * RD-02: an override (or time-zone-tiebroken) region's own separators, derived from Intl --
+ * never read off the device's own keyboard, since that reflects the *device's* region, which
+ * this may not be.
+ */
+function overrideSeparators(locale: Locale | undefined, region: string): LocaleSeparators | undefined {
+  const languageCode = locale?.languageCode || 'en';
+  try {
+    const parts = new Intl.NumberFormat(`${languageCode}-${region}`, { useGrouping: true }).formatToParts(1234.5);
+    const decimal = parts.find((p) => p.type === 'decimal')?.value;
+    const group = parts.find((p) => p.type === 'group')?.value;
+    if (!decimal || !group || decimal === group) return undefined;
+    return { decimal, group };
+  } catch {
+    return undefined;
+  }
+}
+
+interface ResolvedLocale {
+  tag: string;
+  separators: LocaleSeparators | undefined;
+}
+
+/**
+ * RD-02's precedence, applied once: if the resolved region differs from the device's own (an
+ * override won, or the time-zone tiebreak fired because the device reported none), both the
+ * tag and the separators are derived for that resolved region via Intl. Otherwise every
+ * existing WR-A11 device-native behaviour is unchanged.
+ */
+function resolveLocale(locale: Locale | undefined, timeZone: string | undefined, override: string | null | undefined): ResolvedLocale {
+  const deviceRegion = locale?.regionCode ?? undefined;
+  const region = resolveRegion({ override, deviceRegion, timeZone });
+
+  if (region && region !== deviceRegion) {
+    return { tag: overrideLocaleTag(locale, region), separators: overrideSeparators(locale, region) };
+  }
+  return { tag: regionLocaleTag(locale), separators: regionSeparators(locale) };
+}
+
+/** @param regionOverride RD-02: the user's own in-app region preference (profiles.region), when set. */
+export function getDeviceLocale(regionOverride?: string | null): string {
+  return resolveLocale(getLocales()[0], deviceTimeZone(), regionOverride).tag;
+}
+
+/** @param regionOverride RD-02: the user's own in-app region preference (profiles.region), when set. */
+export function getDeviceSeparators(regionOverride?: string | null): LocaleSeparators | undefined {
+  return resolveLocale(getLocales()[0], deviceTimeZone(), regionOverride).separators;
 }
 
 export function getDeviceTimeZone(): string {
-  return getCalendars()[0]?.timeZone ?? FALLBACK_TIME_ZONE;
+  return deviceTimeZone() ?? FALLBACK_TIME_ZONE;
 }
 
 export interface DeviceLocale {
@@ -59,13 +126,16 @@ export interface DeviceLocale {
   separators?: LocaleSeparators;
 }
 
-/** Reactive counterpart of getDeviceLocale/getDeviceTimeZone -- rerenders if the OS region changes. */
-export function useDeviceLocale(): DeviceLocale {
+/**
+ * Reactive counterpart of getDeviceLocale/getDeviceTimeZone -- rerenders if the OS region
+ * changes. @param regionOverride RD-02: the user's own in-app region preference
+ * (profiles.region), when set; undefined/null defers to the device region / time zone
+ * tiebreak.
+ */
+export function useDeviceLocale(regionOverride?: string | null): DeviceLocale {
   const locales = useLocales();
   const calendars = useCalendars();
-  return {
-    locale: regionLocaleTag(locales[0]),
-    timeZone: calendars[0]?.timeZone ?? FALLBACK_TIME_ZONE,
-    separators: regionSeparators(locales[0]),
-  };
+  const timeZone = calendars[0]?.timeZone ?? FALLBACK_TIME_ZONE;
+  const { tag, separators } = resolveLocale(locales[0], timeZone, regionOverride);
+  return { locale: tag, timeZone, separators };
 }
