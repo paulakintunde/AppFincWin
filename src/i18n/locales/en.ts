@@ -23,6 +23,11 @@
  * - money.settings.showCentsHint changes from the prototype's "Two decimals everywhere" to
  *   "Decimals on every amount" because JPY has no decimal places and KWD has three (MON-13),
  *   so "two" is not universally true.
+ * - money.amountInput.error.* covers every `parseAmount` error code (src/ui/money/
+ *   useAmountParser.ts is the only caller). `ambiguousSeparator`'s `{{example}}` is not a
+ *   fixed string: it is the caller's resolved locale formatting a fixed probe amount, so the
+ *   shown example always matches the region whose separators rejected the input (WR-A10,
+ *   RD-02) rather than a hardcoded '.'/',' convention.
  *
  * Compliance (CLAUDE.md): never "advice", "recommendation", "you should", and never a
  * claim that data stays on the device — FincWin is cloud-first (D-15).
@@ -137,11 +142,15 @@ const en = {
       },
     },
     amountInput: {
-      invalid: 'That isn’t an amount.',
-      tooManyDecimals_zero: '{{code}} has no decimal places.',
-      tooManyDecimals_one: '{{code}} takes {{count}} decimal place.',
-      tooManyDecimals_other: '{{code}} takes {{count}} decimal places.',
-      tooLarge: 'That amount is too large.',
+      error: {
+        empty: 'Type an amount.',
+        invalid: 'That isn’t an amount.',
+        ambiguousSeparator: 'That doesn’t match how amounts are written here — try {{example}}.',
+        tooManyDecimals_zero: 'No decimal places here.',
+        tooManyDecimals_one: 'Up to {{count}} decimal place here.',
+        tooManyDecimals_other: 'Up to {{count}} decimal places here.',
+        tooLarge: 'That amount is too large.',
+      },
     },
     settings: {
       showCents: 'Show cents',
