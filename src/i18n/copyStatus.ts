@@ -6,9 +6,11 @@
  * must see this list empty before shipping — a non-empty AWAITING_COPY_KEYS blocks
  * release.
  *
- * DRAFT_COPY_KEYS: consent/settings/sign-out/update copy Claude drafted in the
+ * DRAFT_COPY_KEYS: consent/settings/sign-out/update/money/sync copy Claude drafted in the
  * prototype's voice (D-20). It is live and shippable now, but awaits user review before
- * being treated as final — not release-blocking like AWAITING_COPY_KEYS.
+ * being treated as final — not release-blocking like AWAITING_COPY_KEYS. Excludes
+ * money.rate.attribution and credits.exchangeRateApi, which are third-party-mandated text
+ * (D-13), not Claude's own drafting.
  */
 
 export const AWAITING_COPY_KEYS = ['auth.welcome.tagline'] as const;
@@ -52,4 +54,48 @@ export const DRAFT_COPY_KEYS = [
   'update.heading',
   'update.body',
   'update.cta',
+  'money.rate.asOf',
+  'money.rate.customAsOf',
+  'money.rate.pending',
+  'money.fxNote.converted',
+  'money.fxNote.kept',
+  'money.homeCurrency.title',
+  'money.homeCurrency.note',
+  'money.customCurrency.title',
+  'money.customCurrency.note',
+  'money.customCurrency.error.codeMissing',
+  'money.customCurrency.error.codeInvalid',
+  'money.customCurrency.error.codeExists',
+  'money.customCurrency.error.symbolInvalid',
+  'money.customCurrency.error.decimalsInvalid',
+  'money.customCurrency.error.referenceInvalid',
+  'money.customCurrency.error.valueInvalid',
+  'money.amountInput.invalid',
+  'money.amountInput.tooManyDecimals_zero',
+  'money.amountInput.tooManyDecimals_one',
+  'money.amountInput.tooManyDecimals_other',
+  'money.amountInput.tooLarge',
+  'money.settings.showCents',
+  'money.settings.showCentsHint',
+  'money.settings.leadFigure',
+  'money.settings.leadHome',
+  'money.settings.leadOriginal',
+  'sync.offline',
+  'sync.offlineQueued_one',
+  'sync.offlineQueued_other',
+  'sync.queued_one',
+  'sync.queued_other',
+  'sync.syncedJustNow',
+  'sync.syncedMinutes_one',
+  'sync.syncedMinutes_other',
+  'sync.syncedHours_one',
+  'sync.syncedHours_other',
+  'sync.syncedDays_one',
+  'sync.syncedDays_other',
+  'sync.neverSynced',
+  'sync.failed_one',
+  'sync.failed_other',
+  'sync.conflict_one',
+  'sync.conflict_other',
+  'sync.pendingRow',
 ] as const;
