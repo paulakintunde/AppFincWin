@@ -81,11 +81,22 @@ Server/schema changes must stay compatible with the oldest app version still in 
 The EAS-managed Android development-profile keystore's SHA-1, used to register the corresponding Google OAuth Android client (00-15):
 
 ```
-EAS_ANDROID_DEV_KEYSTORE_SHA1_PLACEHOLDER
+0C:D1:82:F5:0B:1A:C9:C7:14:F0:06:B6:00:B3:D9:CC:53:01:B6:3B
 ```
 
-(Recorded by plan 00-14, Task 3, from `eas credentials -p android`.)
+(Recorded by plan 00-14, Task 3: extracted from the first development build's signed APK with `apksigner verify --print-certs`, since `eas credentials -p android` is an interactive-only command with no non-interactive/JSON output and no terminal was available to drive it. The APK's V2 signing certificate is the same EAS-managed keystore `eas build` used, confirmed via `eas credentials:configure-build -p android -e development`, which reported the same default keystore (`Build Credentials YtgRmMpKrz`) already in use for the profile. Build id `fd9507cd-c285-454b-925e-582ae57766c8`.)
 
 ## OTA rollback rehearsal log (00-14, Task 3)
 
-Rehearsed on the `preview` channel only — production was never touched. See the plan's SUMMARY for the three `eas update` group IDs and timestamps (rehearsal A, rehearsal B "bad", and the republish-to-A rollback), and the confirming `eas update:list --branch preview` output showing "rollback to A" as the latest entry.
+Rehearsed on the `preview` channel only — production was never touched. `eas update` publishes one update group per runtime version present in the project (iOS and Android currently have different fingerprints), so each rehearsal step below produced two groups.
+
+| Step | Platform | Runtime version (fingerprint) | Update group ID | Published |
+|---|---|---|---|---|
+| A: `eas update --channel preview --environment preview --message "ota rehearsal A"` | iOS | `a174a964a565615a210545c5ba600a516b6265f0` | `fce7ed96-383e-4154-881f-a8669f2d885b` | 2026-09-25 08:01 UTC |
+| A | Android | `fd79e9f41968c777aabe6dde888595cab674463d` | `b81a6c20-8f95-471d-9c4d-d900cdfe5a10` | 2026-09-25 08:01 UTC |
+| B (bad): `eas update --channel preview --environment preview --message "ota rehearsal B (bad)"` | iOS | `a174a964a565615a210545c5ba600a516b6265f0` | `2903787c-3a46-46b8-9a55-b08e5720ca41` | 2026-09-25 08:03 UTC |
+| B (bad) | Android | `fd79e9f41968c777aabe6dde888595cab674463d` | `96e1149e-31b2-4ecf-b045-ffb4ba05909c` | 2026-09-25 08:03 UTC |
+| Rollback: `eas update:republish --group <A> --message "rollback to A"` | iOS | `a174a964a565615a210545c5ba600a516b6265f0` | `2b314aab-b6c3-4911-8153-750c2792a496` | 2026-09-25 08:05 UTC |
+| Rollback | Android | `fd79e9f41968c777aabe6dde888595cab674463d` | `17cb2042-7a44-4e88-bb4d-51edd89b6335` | 2026-09-25 08:05 UTC |
+
+Confirmed with `eas update:list --branch preview --json --non-interactive`: the most recent entry on each platform is `"rollback to A"`, published after the deliberately-bad `"ota rehearsal B (bad)"` update — proving a bad update on this channel can always be superseded by republishing the last known-good group.
