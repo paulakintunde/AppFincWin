@@ -360,6 +360,45 @@ try {
     }
   );
 
+  // WR-C03: the app calls Postgres functions and views directly, so
+  // dropping or renaming one breaks an installed app just like a dropped
+  // column. squawk does not see these; the gate's own contract rules do.
+  const contractBreaks = [
+    ['P30: drop function', 'drop function public.convert_minor(bigint, numeric, integer, numeric, integer);\n', 'drop-routine'],
+    ['P31: drop view', 'drop view if exists public.x;\n', 'drop-view'],
+    ['P32: drop materialized view', 'drop materialized view public.x;\n', 'drop-view'],
+    ['P33: drop type', 'drop type public.rate_source;\n', 'drop-type'],
+    ['P34: rename a function', 'alter function public.convert_minor(bigint) rename to convert_minor_old;\n', 'rename-object'],
+    [
+      'P35: drop function inside a DO block',
+      "do $$ begin execute 'drop function public.convert_minor(bigint)'; end $$;\n",
+      'drop-routine',
+    ],
+  ];
+  for (const [name, sql, rule] of contractBreaks) {
+    runProbe(name, [['29990101000100_probe_contract.sql', sql]], (result) => {
+      expect('gate fails', result.status !== 0);
+      expect(`output names ${rule}`, result.output.includes(rule));
+    });
+  }
+
+  runProbe(
+    'P36: marked drop function after a floor raise',
+    [
+      [
+        '29990101000100_probe_floor.sql',
+        "update public.app_config set value = '9.0.0' where key = 'min_supported_version';\n",
+      ],
+      [
+        '29990101000200_probe_contract.sql',
+        '-- contract-ok: min_version >= 9.0.0\ndrop function public.convert_minor(bigint, numeric, integer, numeric, integer);\n',
+      ],
+    ],
+    (result) => {
+      expect('gate passes', result.status === 0);
+    }
+  );
+
   // CR-C04: a filename must never reach a shell. These names inject a
   // command under cmd.exe (`&`) and /bin/sh (`;` + `#`) respectively when a
   // shell joins the argument list; both must be rejected, not skipped.

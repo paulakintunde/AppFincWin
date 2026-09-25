@@ -18,6 +18,25 @@ against every file in `supabase/migrations/` with only nine rules kept:
 - adding a required or not-nullable field
 - `truncate ... cascade`
 
+The gate script adds its own contract rules for what squawk cannot see.
+The app is Supabase-direct: it calls Postgres functions (RPCs) and reads
+views directly, so these break an installed app just like a dropped
+column:
+
+- `drop function` / `procedure` / `routine` / `aggregate`
+  (`contract:drop-routine`)
+- `drop view` / `drop materialized view` (`contract:drop-view`)
+- `drop type` / `drop domain` (`contract:drop-type`)
+- `drop schema` (`contract:drop-schema`)
+- `alter function|procedure|view|type|domain|schema ... rename`
+  (`contract:rename-object`)
+- `alter type ... drop|alter attribute` (`contract:alter-type-attribute`)
+
+These are matched against each whole statement, including `do $$ ... $$`
+bodies and `execute '...'` strings, so a drop run dynamically is caught
+too. A match needs the same `contract-ok` marker directly above the
+statement (no `squawk-ignore`, since squawk never flags it).
+
 Every other squawk rule (statement/lock timeouts, concurrent index
 creation, style preferences like `prefer-text-field`) is excluded. Those
 rules matter for high-traffic multi-replica Postgres, which this project
@@ -113,6 +132,10 @@ same way a failing test does.
 ## Not caught by the linter
 
 Squawk parses SQL syntax; it cannot see RLS policy changes, grant changes,
-or anything evaluated at query time rather than DDL time. The PR template's
-migration checklist covers that gap by asking the author to confirm it by
-hand.
+or anything evaluated at query time rather than DDL time. The gate's own
+contract rules catch dropped or renamed functions, views and types, but no
+linter can tell whether a `create or replace function` changed an argument
+list, a return shape or a view's columns in a way an installed app depends
+on, or whether a dynamic `execute` drops a column or table. The PR
+template's migration checklist covers that gap by asking the author to
+confirm it by hand.

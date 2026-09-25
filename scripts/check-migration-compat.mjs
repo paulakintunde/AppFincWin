@@ -247,6 +247,25 @@ function findSquawkDirectives(comments) {
   return directives;
 }
 
+// WR-C03: contract breaks squawk cannot see. The app calls Postgres
+// functions (RPCs) and reads views directly, so dropping or renaming one
+// breaks an installed app exactly like a dropped column. Matched against
+// each whole statement with comments stripped -- including dollar-quoted
+// bodies and strings, so a drop run through `do $$ ... execute '...' $$`
+// is caught too (fail closed). Each match needs a contract-ok marker
+// directly above the statement, validated like any other.
+const CONTRACT_PATTERNS = [
+  ['contract:drop-routine', /\bdrop\s+(?:function|procedure|routine|aggregate)\b/i],
+  ['contract:drop-view', /\bdrop\s+(?:materialized\s+)?view\b/i],
+  ['contract:drop-type', /\bdrop\s+(?:type|domain)\b/i],
+  ['contract:drop-schema', /\bdrop\s+schema\b/i],
+  [
+    'contract:rename-object',
+    /\balter\s+(?:function|procedure|routine|aggregate|(?:materialized\s+)?view|type|domain|schema)\b[\s\S]*?\brename\b/i,
+  ],
+  ['contract:alter-type-attribute', /\balter\s+type\b[\s\S]*?\b(?:drop|alter)\s+attribute\b/i],
+];
+
 function isEnforcedRule(rule) {
   return KEPT_COMPAT_RULES.has(rule) || !RULE_NAME_RE.test(rule);
 }
@@ -419,6 +438,9 @@ function main() {
         if (d.fileLevel || !inStatement(d.comment)) continue;
         const enforced = d.rules.length === 0 ? ['<every rule>'] : d.rules.filter(isEnforcedRule);
         if (enforced.length > 0) reasons.push(`squawk-ignore ${enforced.join(', ')}`);
+      }
+      for (const [name, re] of CONTRACT_PATTERNS) {
+        if (re.test(stmt.text)) reasons.push(name);
       }
       if (reasons.length === 0) continue;
 
