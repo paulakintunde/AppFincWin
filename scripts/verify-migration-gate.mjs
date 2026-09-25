@@ -143,6 +143,51 @@ try {
       expect('output names adding-required-field', result.output.includes('adding-required-field'));
     }
   );
+
+  // CR-C01: squawk honours `squawk-ignore-file` (with or without a rule
+  // list), which silences every matching statement in the file. A file-level
+  // ignore of an enforced rule is rejected outright -- ignores are per
+  // statement, each with its own contract-ok marker.
+  runProbe(
+    'P7: squawk-ignore-file of an enforced rule',
+    [
+      [
+        '29990101000100_probe_drop.sql',
+        '-- squawk-ignore-file ban-drop-column\nalter table public.transactions drop column note;\n',
+      ],
+    ],
+    (result) => {
+      expect('gate fails', result.status !== 0);
+      expect('output names squawk-ignore-file', result.output.includes('squawk-ignore-file'));
+    }
+  );
+
+  runProbe(
+    'P8: bare squawk-ignore-file (ignores every rule)',
+    [['29990101000100_probe_drop.sql', '-- squawk-ignore-file\nalter table public.transactions drop column note;\n']],
+    (result) => {
+      expect('gate fails', result.status !== 0);
+      expect('output names squawk-ignore-file', result.output.includes('squawk-ignore-file'));
+    }
+  );
+
+  runProbe(
+    'P9: squawk-ignore-file even with a raised floor and a marker',
+    [
+      [
+        '29990101000100_probe_floor.sql',
+        "update public.app_config set value = '9.0.0' where key = 'min_supported_version';\n",
+      ],
+      [
+        '29990101000200_probe_drop.sql',
+        '-- contract-ok: min_version >= 9.0.0\n-- squawk-ignore-file ban-drop-column\nalter table public.transactions drop column note;\n',
+      ],
+    ],
+    (result) => {
+      expect('gate fails', result.status !== 0);
+      expect('output names squawk-ignore-file', result.output.includes('squawk-ignore-file'));
+    }
+  );
 } finally {
   // Belt-and-braces: confirm no probe file was ever written into the real
   // migrations directory (every probe above wrote only into a temp copy).

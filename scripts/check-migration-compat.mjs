@@ -43,10 +43,98 @@ const FLOOR_INSERT_RE =
   /insert\s+into\s+public\.app_config\s*\([^)]*\)\s*values\s*\(\s*'min_supported_version'\s*,\s*'(\d+\.\d+\.\d+)'\s*\)/gi;
 const FLOOR_UPDATE_RE =
   /update\s+public\.app_config\s+set\s+value\s*=\s*'(\d+\.\d+\.\d+)'\s+where\s+key\s*=\s*'min_supported_version'/gi;
-// [^\r\n]+ (not \s, which also matches newlines) so the capture stops at
-// end of line -- a squawk-ignore comment names rules on one line only.
-const SQUAWK_IGNORE_RE = /--\s*squawk-ignore\s+([^\r\n]+)/gi;
 const CONTRACT_OK_RE = /--\s*contract-ok:\s*min_version\s*>=\s*(\d+\.\d+\.\d+)/gi;
+// Matches both squawk's statement-level `squawk-ignore` and its file-level
+// `squawk-ignore-file` directive, anywhere inside a real SQL comment.
+const SQUAWK_DIRECTIVE_RE = /squawk-ignore(-file)?/i;
+
+/**
+ * Minimal PostgreSQL lexer: finds every real comment (`--` line comments and
+ * nestable block comments), skipping over string literals, quoted
+ * identifiers and dollar-quoted bodies so that comment-like text inside them
+ * is not mistaken for a comment. Throws on an unterminated construct so the
+ * gate fails closed rather than guessing.
+ */
+function lexSql(content) {
+  const comments = [];
+  const n = content.length;
+  let i = 0;
+  const isIdentChar = (c) => c !== undefined && /[A-Za-z0-9_$]/.test(c);
+  while (i < n) {
+    const c = content[i];
+    const next = content[i + 1];
+    if (c === '-' && next === '-') {
+      let end = content.indexOf('\n', i);
+      if (end === -1) end = n;
+      comments.push({ kind: 'line', start: i, end, text: content.slice(i, end), body: content.slice(i + 2, end) });
+      i = end;
+    } else if (c === '/' && next === '*') {
+      const start = i;
+      let depth = 1;
+      i += 2;
+      while (i < n && depth > 0) {
+        if (content[i] === '/' && content[i + 1] === '*') {
+          depth += 1;
+          i += 2;
+        } else if (content[i] === '*' && content[i + 1] === '/') {
+          depth -= 1;
+          i += 2;
+        } else {
+          i += 1;
+        }
+      }
+      if (depth > 0) throw new Error(`unterminated block comment at offset ${start}`);
+      comments.push({ kind: 'block', start, end: i, text: content.slice(start, i), body: content.slice(start + 2, i - 2) });
+    } else if (c === "'") {
+      const start = i;
+      const backslashEscapes = (content[i - 1] === 'E' || content[i - 1] === 'e') && !isIdentChar(content[i - 2]);
+      i += 1;
+      let closed = false;
+      while (i < n) {
+        if (backslashEscapes && content[i] === '\\') {
+          i += 2;
+        } else if (content[i] === "'" && content[i + 1] === "'") {
+          i += 2;
+        } else if (content[i] === "'") {
+          i += 1;
+          closed = true;
+          break;
+        } else {
+          i += 1;
+        }
+      }
+      if (!closed) throw new Error(`unterminated string literal at offset ${start}`);
+    } else if (c === '"') {
+      const start = i;
+      i += 1;
+      let closed = false;
+      while (i < n) {
+        if (content[i] === '"' && content[i + 1] === '"') {
+          i += 2;
+        } else if (content[i] === '"') {
+          i += 1;
+          closed = true;
+          break;
+        } else {
+          i += 1;
+        }
+      }
+      if (!closed) throw new Error(`unterminated quoted identifier at offset ${start}`);
+    } else if (c === '$' && !isIdentChar(content[i - 1])) {
+      const tag = /^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/.exec(content.slice(i));
+      if (tag) {
+        const close = content.indexOf(tag[0], i + tag[0].length);
+        if (close === -1) throw new Error(`unterminated dollar-quoted string ${tag[0]} at offset ${i}`);
+        i = close + tag[0].length;
+      } else {
+        i += 1;
+      }
+    } else {
+      i += 1;
+    }
+  }
+  return { comments };
+}
 
 function parseSemver(v) {
   const parts = v.split('.').map((n) => Number.parseInt(n, 10));
@@ -72,17 +160,22 @@ function findFloorBumps(content) {
   return bumps;
 }
 
-function findSquawkIgnoredRules(content) {
-  const rules = new Set();
-  SQUAWK_IGNORE_RE.lastIndex = 0;
-  let m;
-  while ((m = SQUAWK_IGNORE_RE.exec(content)) !== null) {
-    for (const rule of m[1].split(',')) {
-      const trimmed = rule.trim();
-      if (trimmed) rules.add(trimmed);
-    }
+// Returns every squawk directive found in a real comment:
+// { fileLevel: boolean, rules: string[] } -- `rules` empty means "no rule
+// list", which squawk treats as "every rule" for squawk-ignore-file.
+function findSquawkDirectives(comments) {
+  const directives = [];
+  for (const comment of comments) {
+    const m = SQUAWK_DIRECTIVE_RE.exec(comment.body);
+    if (!m) continue;
+    const rest = comment.body.slice(m.index + m[0].length);
+    const rules = rest
+      .split(',')
+      .map((r) => r.trim())
+      .filter(Boolean);
+    directives.push({ fileLevel: m[1] !== undefined, rules });
   }
-  return rules;
+  return directives;
 }
 
 function findContractOkMarkers(content) {
@@ -155,7 +248,32 @@ function main() {
     const content = readFileSync(filePath, 'utf8');
     const fileName = filePath.split(/[\\/]/).pop();
 
-    const ignoredRules = findSquawkIgnoredRules(content);
+    let lexed;
+    try {
+      lexed = lexSql(content);
+    } catch (err) {
+      errors.push(`${fileName}: could not tokenize (${err.message}); the gate fails closed`);
+      continue;
+    }
+
+    const directives = findSquawkDirectives(lexed.comments);
+    const ignoredRules = new Set();
+    for (const d of directives) {
+      if (d.fileLevel) {
+        // CR-C01: squawk honours squawk-ignore-file for the whole file (and
+        // a bare one ignores every rule). A file-level ignore of an enforced
+        // rule is never allowed -- ignore per statement, each with its own
+        // contract-ok marker.
+        const enforced = d.rules.length === 0 ? ['<every rule>'] : d.rules.filter((r) => KEPT_COMPAT_RULES.has(r));
+        if (enforced.length > 0) {
+          errors.push(
+            `${fileName}: squawk-ignore-file of enforced rule(s) ${enforced.join(', ')} is not allowed; use a per-statement squawk-ignore with a contract-ok marker`
+          );
+        }
+      } else {
+        for (const r of d.rules) ignoredRules.add(r);
+      }
+    }
     const markers = findContractOkMarkers(content);
 
     // Every squawk-ignore of a KEPT compatibility rule needs a contract-ok
