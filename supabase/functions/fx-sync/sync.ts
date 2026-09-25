@@ -16,6 +16,7 @@ import {
 
 export interface FxSyncDb {
   recentRates(sinceDate: string): Promise<StoredRate[]>; // fx_rates base EUR, rate::text, rate_date >= sinceDate
+  latestRatesOnOrBefore(date: string): Promise<StoredRate[]>; // rpc fx_latest_rates(p_on_or_before): one row per quote, no age window
   holds(): Promise<OpenHold[]>; // fx_rate_holds where status in ('held', 'dropped') -- a dropped tuple is terminal (CR-B02)
   upsertRates(rows: FxRow[], source: string): Promise<void>; // onConflict base,quote,rate_date,source
   upsertHolds(rows: Classification['hold']): Promise<void>; // onConflict quote,held_rate_date,source, ignoreDuplicates (never overwrites an existing hold)
@@ -37,8 +38,6 @@ export interface FxSyncResult {
   confirmed: number;
   currencies: number;
 }
-
-const HISTORY_WINDOW_DAYS = 14;
 
 function minusDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
@@ -79,7 +78,14 @@ async function fetchRates(
 export async function runFxSync({ fetchJson, db }: FxSyncDeps): Promise<FxSyncResult> {
   const { rows, source } = await fetchRates(fetchJson, db);
 
-  const history = await db.recentRates(minusDays(earliestDate(rows), HISTORY_WINDOW_DAYS));
+  // History for the plausibility check (WR-B04): every stored row from the
+  // batch's earliest date on (same-date idempotency and in-batch priors),
+  // plus each quote's latest stored rate before that date, however old.
+  // "No prior" then only ever means the quote was never stored before --
+  // a sporadic publisher, or any quote after a long fx-sync outage, is
+  // still compared rather than accepted unchecked.
+  const earliest = earliestDate(rows);
+  const history = [...(await db.recentRates(earliest)), ...(await db.latestRatesOnOrBefore(minusDays(earliest, 1)))];
   const holds = await db.holds();
 
   const classified = classifyRates(rows, history, holds, source);

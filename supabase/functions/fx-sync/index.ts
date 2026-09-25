@@ -45,6 +45,15 @@ Deno.serve(async (req) => {
       if (error) throw new Error(error.message);
       return (data ?? []).map((r) => ({ quote: r.quote, rate: String(r.rate), date: r.rate_date }));
     },
+    async latestRatesOnOrBefore(date) {
+      const { data, error } = await admin.rpc('fx_latest_rates', { p_on_or_before: date });
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as Array<{ quote: string; rate: string; rate_date: string }>).map((r) => ({
+        quote: r.quote,
+        rate: String(r.rate),
+        date: r.rate_date,
+      }));
+    },
     async holds() {
       const { data, error } = await admin
         .from('fx_rate_holds')

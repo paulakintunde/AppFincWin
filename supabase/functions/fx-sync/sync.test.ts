@@ -30,6 +30,7 @@ interface FakeDb extends FxSyncDb {
 
 function createFakeDb(opts: {
   recentRates?: FxSyncDb['recentRates'];
+  latestRatesOnOrBefore?: FxSyncDb['latestRatesOnOrBefore'];
   holdsSequence?: Array<Awaited<ReturnType<FxSyncDb['holds']>>>;
 } = {}): FakeDb {
   const calls: FakeDb['calls'] = {
@@ -44,6 +45,7 @@ function createFakeDb(opts: {
 
   return {
     recentRates: opts.recentRates ?? (async () => []),
+    latestRatesOnOrBefore: opts.latestRatesOnOrBefore ?? (async () => []),
     holds: async () => {
       const index = Math.min(calls.holdsCallCount, holdsSequence.length - 1);
       calls.holdsCallCount += 1;
@@ -278,5 +280,23 @@ describe('runFxSync', () => {
     expect(db.calls.upsertRates).toEqual([
       { rows: [{ base: 'EUR', quote: 'USD', rate: '1.15', date: '2026-09-24' }], source: 'frankfurter-v2' },
     ]);
+  });
+
+  it('compares against the last stored rate however old it is, never waving a move through as "no prior" (WR-B04)', async () => {
+    const recentRates = jest.fn(async () => []);
+    const latestRatesOnOrBefore = jest.fn(async () => [{ quote: 'USD', rate: '1.00', date: '2026-08-01' }]);
+    const db = createFakeDb({ recentRates, latestRatesOnOrBefore });
+    const fetchJson = createFetchJson({
+      [FRANKFURTER_RATES_URL]: [{ date: '2026-09-24', base: 'EUR', quote: 'USD', rate: 1.5 }],
+      [OPEN_ER_API_FETCH_URL]: { ...OPEN_ER_FIXTURE, rates: { EUR: 1, USD: 1.01 } },
+      [FRANKFURTER_V2_CURRENCIES_URL]: CURRENCIES_FIXTURE,
+    });
+
+    const result = await runFxSync({ fetchJson, db });
+
+    expect(latestRatesOnOrBefore).toHaveBeenCalledWith('2026-09-23');
+    expect(recentRates).toHaveBeenCalledWith('2026-09-24');
+    expect(result).toMatchObject({ accepted: 0, held: 1 });
+    expect(db.calls.upsertRates).toEqual([]);
   });
 });
