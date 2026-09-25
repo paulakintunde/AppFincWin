@@ -8,7 +8,7 @@
 // missing squawk (P22-P24). Every probe runs against a temp copy of the
 // real migrations -- supabase/migrations is never written to.
 
-import { mkdtempSync, mkdirSync, readdirSync, copyFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readdirSync, readFileSync, copyFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -464,6 +464,17 @@ try {
     } finally {
       rmSync(isolatedRoot, { recursive: true, force: true });
     }
+  }
+
+  // WR-C05: CI's rls job must run the same Supabase CLI as package.json.
+  console.log('Check: CI Supabase CLI version matches package.json');
+  {
+    const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+    const pinned = pkg.devDependencies?.supabase ?? pkg.dependencies?.supabase;
+    const ci = readFileSync(join(ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
+    const m = /supabase\/setup-cli@\S+\s*\n\s*with:\s*\{\s*version:\s*([^\s}]+)\s*\}/.exec(ci);
+    expect('package.json pins supabase to an exact version', typeof pinned === 'string' && /^\d+\.\d+\.\d+$/.test(pinned));
+    expect(`ci.yml setup-cli version (${m?.[1]}) equals package.json (${pinned})`, m !== null && m[1] === pinned);
   }
 } finally {
   // Belt-and-braces: confirm no probe file was ever written into the real
