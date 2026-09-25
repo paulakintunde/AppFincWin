@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 // FND-10 self-test: proves scripts/check-migration-compat.mjs (backed by
 // squawk) actually fails on a destructive probe migration and passes on a
-// correctly-marked one, so the gate cannot silently rot. Every probe runs
-// against a temp copy of the real migrations -- supabase/migrations is
-// never written to.
+// correctly-marked one, so the gate cannot silently rot. Beyond the basic
+// cases (P1-P6) it carries a probe for every bypass found in review:
+// file-level ignores (P7-P9), loosely-parsed ignore lists (P10-P15), fake
+// floor bumps (P16-P21), the same-file rule (P25), hostile filenames and a
+// missing squawk (P22-P24). Every probe runs against a temp copy of the
+// real migrations -- supabase/migrations is never written to.
 
 import { mkdtempSync, mkdirSync, readdirSync, copyFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -264,6 +267,22 @@ try {
     ],
     (result) => {
       expect('gate passes', result.status === 0);
+    }
+  );
+
+  // WR-C01: docs/ops/migration-compatibility.md's "never the same file's
+  // own bump" rule -- a bump and the drop it authorises in ONE file fails.
+  runProbe(
+    'P25: floor bump and marked drop in the same file',
+    [
+      [
+        '29990101000100_probe_same_file.sql',
+        `update public.app_config set value = '9.0.0' where key = 'min_supported_version';\n${MARKED_DROP}`,
+      ],
+    ],
+    (result) => {
+      expect('gate fails', result.status !== 0);
+      expect('output names the floor', result.output.includes('floor'));
     }
   );
 
