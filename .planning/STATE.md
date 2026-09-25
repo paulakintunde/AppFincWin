@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-13-PLAN.md
-last_updated: "2026-09-25T10:30:21.682Z"
+stopped_at: Phase 2 context gathered
+last_updated: "2026-09-25T12:54:46.750Z"
 last_activity: 2026-09-25
 progress:
   total_phases: 12
@@ -90,6 +90,8 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-13: a code shorter than 2 chars always classifies as code-missing, never code-invalid, to distinguish nothing-typed-yet from something-typed-wrong
 - [Phase 01]: 01-13: profile money-preference writes (db/profile.ts, mutations/moneyPrefs.ts) are deliberately not version-conditional -- a settings row is a user's own, never contended, unlike a D-18 shared record
 - [Phase 01]: 01-13: useAddCustomCurrency derives its validation context from useCurrencyOptions/the cached custom list only when the caller omits ctx, so Record's add-currency sheet can call add(input) with no boilerplate
+- [Phase 02]: discuss follow-up (2026-09-25): "Tax" stays a seeded starter category as a plain label for money already paid. The Out of Scope item is clarified to mean tax calculation, flags and reports only
+- [Phase 02]: discuss follow-up (2026-09-25): ENV-16 (production backups) moved from Phase 2 to Phase 10, method TBD, likely AWS
 - [Phase 00-foundation]: 00-14: EXPO_PUBLIC_APP_ENV takes each EAS environment's own name (development/preview/production) rather than one shared value for development+preview
 - [Phase 00-foundation]: 00-14: committed .npmrc (legacy-peer-deps=true) so EAS cloud npm ci resolves peer deps the same way CI (00-08) already does
 - [Phase 00-foundation]: 00-14: Android keystore SHA-1 was extracted from the built APK via apksigner rather than eas credentials -p android, which is interactive-only and this sandbox has no controllable TTY
@@ -100,6 +102,7 @@ None yet.
 
 ### Blockers/Concerns
 
+- [Phase 10] ENV-16 moved from Phase 2 on 2026-09-25: production has **no backups** until then (method TBD, likely AWS, e.g. a daily dump to S3). Supabase Pro is no longer assumed, so a Free-plan production project also **pauses after a week with no activity**, taking the live app offline. That needs its own answer (upgrade, keep-alive, or accept) before real users arrive
 - [Phase 0] EAS provisioning and credentials from Windows are unproven for this project — trigger the first iOS EAS Build on day one so provisioning surprises surface in week one, not week ten
 - [Phase 8] The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe — needs a dedicated two-client offline-mid-edit spike before it is trusted
 - [Phase 8] What happens when a household settlement's expiry window lapses unresolved is undefined in the prototype and needs an explicit product decision during this phase
@@ -128,6 +131,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-25T02:22:22.408Z
-Stopped at: Completed 01-13-PLAN.md
-Resume file: None
+Last session: 2026-09-25T12:54:46.599Z
+Stopped at: Phase 2 context gathered
+Resume file: .planning/phases/02-record/02-CONTEXT.md
