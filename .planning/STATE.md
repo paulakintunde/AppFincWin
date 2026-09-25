@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 2 context gathered
-last_updated: "2026-09-25T12:54:46.750Z"
+last_updated: "2026-09-25T17:19:52.494Z"
 last_activity: 2026-09-25
 progress:
   total_phases: 12
   completed_phases: 0
   total_plans: 36
-  completed_plans: 27
-  percent: 75
+  completed_plans: 28
+  percent: 78
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 2 of 16
 Status: Ready to execute
 Last activity: 2026-09-25 - Completed quick task 260925-8bi: Replace placeholder app icons with FincWin F logo
 
-Progress: [████████░░] 75%
+Progress: [████████░░] 78%
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ Progress: [████████░░] 75%
 | Phase 00 P13 | 25min | 3 tasks | 6 files |
 | Phase 01 P13 | 50min | 2 tasks | 12 files |
 | Phase 00 P14 | 55min | 2 tasks | 4 files |
+| Phase 00 P15 | 120min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,8 @@ Recent decisions affecting current work:
 - [Phase 00-foundation]: 00-14: EXPO_PUBLIC_APP_ENV takes each EAS environment's own name (development/preview/production) rather than one shared value for development+preview
 - [Phase 00-foundation]: 00-14: committed .npmrc (legacy-peer-deps=true) so EAS cloud npm ci resolves peer deps the same way CI (00-08) already does
 - [Phase 00-foundation]: 00-14: Android keystore SHA-1 was extracted from the built APK via apksigner rather than eas credentials -p android, which is interactive-only and this sandbox has no controllable TTY
+- [Phase 00-foundation]: 00-15: Google client-id verification uses the Web client ID as the primary audience with iOS/Android as additional accepted client IDs, matching google.ts's webClientId-as-serverClientId configuration
+- [Phase 00-foundation]: 00-15: Supabase's external_google_additional_client_ids Management API field merges into external_google_client_id at write time and always reads back empty on GET -- verified live, not assumed; re-PATCH the full list on any client-ID change
 
 ### Pending Todos
 
@@ -110,6 +113,7 @@ None yet.
 - [Phase 11] Guideline 3.2.1(viii)'s live wording no longer carries the qualifier the brief assumed — re-verify positioning at this phase rather than treating it as settled; the brief also mis-cites the 36% APR / 60-day loan cap as 3.2.1(viii) when it is actually 3.2.2(ix)
 - [PROJECT.md] Passkey implementation path (native WebAuthn + Edge Function vs. Clerk) remains unresolved and deferred out of v1 entirely per current scope — carried as "Out of Scope: Deferred to v1.1" in PROJECT.md, not a Phase 0 task
 - [Phase 0] 00-08: GitHub branch protection on `main` is now ON (2026-09-23, after the user made `AppFincWin` public): required checks `checks`/`secret-scan`/`rls`, strict. `enforce_admins` is false, so the owner's direct pushes to `main` still bypass the checks — FND-04/FND-05 stay pending until the user decides between `enforce_admins: true` with a PR-based flow, or accepting owner bypass. Tracked in `docs/dependency-register.md`
+- [Phase 0] 00-15: second Android Google OAuth client (for whichever of the two SHA-1s the one existing client doesn't cover) still needs creating in Google Cloud Console; tracked in docs/ops/auth-providers.md, not code-blocking
 
 ### Quick Tasks Completed
 
