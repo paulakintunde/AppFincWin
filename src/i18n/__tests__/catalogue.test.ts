@@ -49,8 +49,8 @@ describe('en catalogue', () => {
 });
 
 describe('copyStatus keys resolve in en', () => {
-  it.each(AWAITING_COPY_KEYS)('AWAITING_COPY_KEYS key "%s" resolves to a string', (key) => {
-    expect(typeof getByPath(en, key)).toBe('string');
+  it('has no copy still awaiting the user (release blocker when non-empty)', () => {
+    expect(AWAITING_COPY_KEYS).toEqual([]);
   });
 
   it.each(DRAFT_COPY_KEYS)('DRAFT_COPY_KEYS key "%s" resolves to a string', (key) => {
