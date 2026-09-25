@@ -60,4 +60,4 @@ Code wiring, tests, EAS environment variables (all three environments), and this
 
 **Open items for a human with Sentry dashboard access:**
 1. Confirm the `FINCWIN_SPIKE_ERROR 12345` event from build `00838470` actually appears in the Sentry issues list, scrubbed and symbolicated as expected (`docs/decisions/error-tracking.md`'s Sentry live proof section above has everything needed to find it: release `com.fincwin.app@0.1.0+1`, ~2026-09-25T05:41 local).
-2. Decide whether to keep the Sentry org on the US region or create a new EU-region org (no in-place migration exists) — see the Decision section's Region note.
+2. ~~Decide whether to keep the Sentry org on the US region or create a new EU-region org.~~ **Decided 2026-09-25 by the account owner: keep US.** Reports are scrubbed (no PII, amounts or IPs; `sendDefaultPii: false`); the transfer rests on Sentry's DPA/SCCs, the same argument used for Supabase's US-hosted database. The privacy policy and the Compliance phase must list Sentry as a US sub-processor and re-verify this.
