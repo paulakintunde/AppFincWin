@@ -30,32 +30,60 @@ const listeners = new Set<() => void>();
 let reporter: FailureReporter | null = null;
 const store = new LargeSecureStore();
 
+// WR-A08: the in-flight hydration read, if any. Writers await it first, so a failure recorded
+// while boot hydration is still reading can neither be overwritten in memory by the disk copy
+// nor overwrite the older disk entries with a one-item list.
+let hydrating: Promise<void> = Promise.resolve();
+// WR-A08: every persist runs strictly after the previous one, so an older snapshot's slower
+// encrypt-then-write can never land after a newer one.
+let persistChain: Promise<void> = Promise.resolve();
+// Bumped by the sign-out wipe, so a hydration read that started before the wipe cannot merge
+// the previous user's entries back in after it.
+let generation = 0;
+
 function notify(): void {
   for (const listener of listeners) listener();
 }
 
-async function persist(): Promise<void> {
-  await store.setItem(FAILED_WRITES_KEY, JSON.stringify(entries));
+function persist(): Promise<void> {
+  const next = persistChain.then(() => store.setItem(FAILED_WRITES_KEY, JSON.stringify(entries)));
+  // A failed write must not wedge every later persist behind a rejected promise.
+  persistChain = next.catch(() => undefined);
+  return next;
+}
+
+async function readStored(): Promise<FailedWrite[]> {
+  try {
+    const raw = await store.getItem(FAILED_WRITES_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as FailedWrite[]) : [];
+  } catch {
+    return [];
+  }
 }
 
 /**
  * Reads the persisted failed-writes list into memory (e.g. on app boot). A corrupt or
  * missing stored value falls back to an empty list rather than throwing -- this must never
  * crash app boot (mirrors src/theme/themeCache.ts's corrupt-data handling).
+ *
+ * WR-A08: the stored list is merged with anything already in memory (never replaces it), and
+ * the merged list is written back if memory held entries the disk did not.
  */
-export async function hydrateFailedWrites(): Promise<void> {
-  try {
-    const raw = await store.getItem(FAILED_WRITES_KEY);
-    if (!raw) {
-      entries = [];
-    } else {
-      const parsed: unknown = JSON.parse(raw);
-      entries = Array.isArray(parsed) ? (parsed as FailedWrite[]) : [];
-    }
-  } catch {
-    entries = [];
-  }
-  notify();
+export function hydrateFailedWrites(): Promise<void> {
+  const startedAt = generation;
+  const run = hydrating.then(async () => {
+    const stored = await readStored();
+    if (startedAt !== generation) return; // a wipe ran meanwhile; the stored list is gone
+    const storedIds = new Set(stored.map((e) => e.id));
+    const memoryOnly = entries.filter((e) => !storedIds.has(e.id));
+    entries = [...stored, ...memoryOnly];
+    notify();
+    if (memoryOnly.length > 0) await persist();
+  });
+  hydrating = run.catch(() => undefined);
+  return run;
 }
 
 /**
@@ -69,6 +97,7 @@ export async function recordFailedWrite(entry: Omit<FailedWrite, 'id' | 'at'>): 
     id: Crypto.randomUUID(),
     at: new Date().toISOString(),
   };
+  await hydrating;
   entries = [...entries, full];
   notify();
   await persist();
@@ -83,6 +112,7 @@ export async function recordFailedWrite(entry: Omit<FailedWrite, 'id' | 'at'>): 
 }
 
 export async function dismissFailedWrite(id: string): Promise<void> {
+  await hydrating;
   entries = entries.filter((entry) => entry.id !== id);
   notify();
   await persist();
@@ -113,8 +143,11 @@ export function setFailureReporter(fn: FailureReporter | null): void {
 registerWipeHandler({
   id: 'failed-writes',
   wipe: async () => {
+    generation += 1;
     entries = [];
     notify();
+    // Let any queued persist land first, so it cannot re-create the key after the removal.
+    await persistChain;
     await store.removeItem(FAILED_WRITES_KEY);
   },
 });
