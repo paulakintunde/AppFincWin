@@ -9,8 +9,12 @@ see.
 
 ## The rule set
 
-`.squawk.toml` runs [squawk](https://squawkhq.com/docs/rules) (2.66.0)
-against every file in `supabase/migrations/` with only nine rules kept:
+`.squawk.toml` runs [squawk](https://squawkhq.com/docs/rules)
+(`squawk-cli` pinned exactly at 2.66.0 in `package.json`) against every
+file in `supabase/migrations/` with only nine rules kept. Its
+`excluded_rules` list is the single source of truth: the gate script reads
+it, and ignoring any rule not in it (including a rule a future squawk
+adds) needs a `contract-ok` marker. The kept rules are:
 
 - dropping a column, table or the database
 - renaming a column or table

@@ -31,20 +31,43 @@ import { createRequire } from 'node:module';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
-// Compatibility rules kept in .squawk.toml (i.e. NOT in excluded_rules).
-// A squawk-ignore of any other rule needs no contract-ok marker -- it isn't
-// a compatibility rule this gate cares about.
-const KEPT_COMPAT_RULES = new Set([
-  'ban-drop-column',
-  'ban-drop-table',
-  'ban-drop-database',
-  'renaming-column',
-  'renaming-table',
-  'changing-column-type',
-  'adding-required-field',
-  'adding-not-nullable-field',
-  'ban-truncate-cascade',
-]);
+// WR-C04: .squawk.toml is the single source of truth. Every rule NOT in its
+// excluded_rules is enforced by squawk, so ignoring it needs a contract-ok
+// marker -- including rules a future squawk release adds and rules nobody
+// has heard of. Only an excluded rule may be ignored freely. The file is
+// parsed strictly; anything unexpected fails the gate.
+function loadExcludedRules(tomlPath) {
+  let text;
+  try {
+    text = readFileSync(tomlPath, 'utf8');
+  } catch (err) {
+    throw new Error(`cannot read ${tomlPath}: ${err.message}`);
+  }
+  const block = /^excluded_rules\s*=\s*\[([^\]]*)\]/m.exec(text);
+  if (!block) throw new Error(`no excluded_rules array in ${tomlPath}`);
+  const body = block[1].replace(/#[^\n]*/g, '');
+  const items = body
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const rules = new Set();
+  for (const item of items) {
+    const m = /^"([a-z][a-z0-9-]*)"$/.exec(item);
+    if (!m) throw new Error(`unparseable excluded_rules entry ${item} in ${tomlPath}`);
+    rules.add(m[1]);
+  }
+  if (rules.size === 0) throw new Error(`excluded_rules in ${tomlPath} is empty`);
+  return rules;
+}
+
+const SQUAWK_CONFIG = join(ROOT, '.squawk.toml');
+let EXCLUDED_RULES;
+try {
+  EXCLUDED_RULES = loadExcludedRules(SQUAWK_CONFIG);
+} catch (err) {
+  console.error(`MIGRATION COMPAT FAILED: ${err.message}`);
+  process.exit(1);
+}
 
 // Anchored: matched against one whole statement (comments stripped,
 // whitespace collapsed, no trailing semicolon).
@@ -228,8 +251,6 @@ function parseRuleList(text) {
     .filter(Boolean);
 }
 
-const RULE_NAME_RE = /^[a-z][a-z0-9-]*$/;
-
 // Returns every squawk directive found in a real comment:
 // { fileLevel: boolean, rules: string[] } -- `rules` empty means "no rule
 // list", which squawk treats as "every rule" for squawk-ignore-file.
@@ -267,7 +288,7 @@ const CONTRACT_PATTERNS = [
 ];
 
 function isEnforcedRule(rule) {
-  return KEPT_COMPAT_RULES.has(rule) || !RULE_NAME_RE.test(rule);
+  return !EXCLUDED_RULES.has(rule);
 }
 
 // Every real comment that mentions contract-ok. `version` is null when the
@@ -330,12 +351,11 @@ function resolveSquawkBinary() {
 
 function runSquawk(files) {
   if (files.length === 0) return { status: 0, output: '' };
-  const configPath = join(ROOT, '.squawk.toml');
   const resolved = resolveSquawkBinary();
   if (!resolved.bin) {
     return { status: 1, output: `squawk-cli is not installed (run npm ci): ${resolved.error}` };
   }
-  const args = ['--config', configPath, ...files];
+  const args = ['--config', SQUAWK_CONFIG, ...files];
   const result = spawnSync(resolved.bin, args, { cwd: ROOT, encoding: 'utf8', shell: false });
   if (result.error) {
     return { status: 1, output: `failed to spawn squawk: ${result.error.message}` };

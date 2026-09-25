@@ -399,6 +399,32 @@ try {
     }
   );
 
+  // WR-C04: the enforced set is "every rule not in .squawk.toml's
+  // excluded_rules" -- read from the config, never a second hard-coded list.
+  // A rule name the script has never heard of is enforced; an excluded one
+  // is not.
+  runProbe(
+    'P37: ignoring a rule that is not excluded needs a marker',
+    [['29990101000100_probe_ignore.sql', '-- squawk-ignore some-future-rule\nselect 1;\n']],
+    (result) => {
+      expect('gate fails', result.status !== 0);
+      expect('output names the missing contract-ok marker', result.output.includes('contract-ok'));
+    }
+  );
+
+  runProbe(
+    'P38: ignoring an excluded rule needs no marker',
+    [
+      [
+        '29990101000100_probe_ignore.sql',
+        '-- squawk-ignore prefer-text-field\nalter table public.accounts add column probe varchar(10);\n',
+      ],
+    ],
+    (result) => {
+      expect('gate passes', result.status === 0);
+    }
+  );
+
   // CR-C04: a filename must never reach a shell. These names inject a
   // command under cmd.exe (`&`) and /bin/sh (`;` + `#`) respectively when a
   // shell joins the argument list; both must be rejected, not skipped.
