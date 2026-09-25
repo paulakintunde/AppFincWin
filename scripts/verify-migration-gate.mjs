@@ -5,7 +5,7 @@
 // against a temp copy of the real migrations -- supabase/migrations is
 // never written to.
 
-import { mkdtempSync, readdirSync, copyFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readdirSync, copyFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +19,10 @@ const CHECK_SCRIPT = join(__dirname, 'check-migration-compat.mjs');
 const failures = [];
 
 function freshMigrationsCopy() {
-  const dir = mkdtempSync(join(tmpdir(), 'fincwin-migration-gate-'));
+  // CR-C04: the space in the prefix is deliberate -- every probe runs from a
+  // path containing a space, so the passing probes prove squawk is spawned
+  // without a shell and with correctly separated arguments.
+  const dir = mkdtempSync(join(tmpdir(), 'fincwin migration gate-'));
   for (const f of readdirSync(REAL_MIGRATIONS_DIR)) {
     if (f.endsWith('.sql')) {
       copyFileSync(join(REAL_MIGRATIONS_DIR, f), join(dir, f));
@@ -263,6 +266,47 @@ try {
       expect('gate passes', result.status === 0);
     }
   );
+
+  // CR-C04: a filename must never reach a shell. These names inject a
+  // command under cmd.exe (`&`) and /bin/sh (`;` + `#`) respectively when a
+  // shell joins the argument list; both must be rejected, not skipped.
+  for (const [name, fileName] of [
+    ['P22: filename with cmd.exe metacharacters', '29990101000100_x&ver&rem .sql'],
+    ['P23: filename with /bin/sh metacharacters', '29990101000100_x;true #.sql'],
+  ]) {
+    runProbe(name, [[fileName, 'alter table public.transactions drop column note;\n']], (result) => {
+      expect('gate fails', result.status !== 0);
+      expect('output names the bad filename', result.output.includes('filename'));
+    });
+  }
+
+  // CR-C04 / WR-C01: with squawk-cli absent the gate must fail closed, not
+  // fall back to downloading an unpinned squawk or silently skip the lint.
+  console.log('Probe: P24: squawk-cli not installed');
+  {
+    const isolatedRoot = mkdtempSync(join(tmpdir(), 'fincwin no squawk-'));
+    try {
+      mkdirSync(join(isolatedRoot, 'scripts'));
+      copyFileSync(CHECK_SCRIPT, join(isolatedRoot, 'scripts', 'check-migration-compat.mjs'));
+      copyFileSync(join(ROOT, '.squawk.toml'), join(isolatedRoot, '.squawk.toml'));
+      const migrations = join(isolatedRoot, 'migrations');
+      mkdirSync(migrations);
+      for (const f of readdirSync(REAL_MIGRATIONS_DIR)) {
+        if (f.endsWith('.sql')) copyFileSync(join(REAL_MIGRATIONS_DIR, f), join(migrations, f));
+      }
+      const env = { ...process.env, PATH: '', Path: '', NODE_PATH: '' };
+      const result = spawnSync(
+        process.execPath,
+        [join(isolatedRoot, 'scripts', 'check-migration-compat.mjs'), migrations],
+        { cwd: isolatedRoot, encoding: 'utf8', env }
+      );
+      const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+      expect('gate fails', (result.status ?? 1) !== 0);
+      expect('output says squawk-cli is not installed', output.includes('squawk-cli is not installed'));
+    } finally {
+      rmSync(isolatedRoot, { recursive: true, force: true });
+    }
+  }
 } finally {
   // Belt-and-braces: confirm no probe file was ever written into the real
   // migrations directory (every probe above wrote only into a temp copy).

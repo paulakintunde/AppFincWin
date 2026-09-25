@@ -78,7 +78,14 @@ npm run check:money-mirror # SQL/TypeScript rounding mirror still matches the sh
 resolves the migration file list itself and spawns squawk with explicit
 paths -- `npm run lint:migrations -- 'supabase/migrations/*.sql'` style
 glob expansion is not shell-independent on Windows, so the script never
-relies on it.
+relies on it. Squawk's native binary is resolved through the installed
+`squawk-cli` package and spawned with no shell, so a filename can never be
+run as a command and a checkout path with spaces works. If `squawk-cli` is
+not installed the gate fails; there is no `npx` download fallback.
+
+Every migration filename must match `^\d{14}_[a-z0-9_]+\.sql$`
+(timestamp, underscore, lower-case snake name). Anything else fails the
+gate.
 
 ## CI
 

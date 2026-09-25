@@ -4,8 +4,10 @@
 //
 //   1. squawk-cli, run against the resolved file list directly (not a shell
 //      glob -- cmd.exe on Windows does not expand `*.sql`, so this script
-//      resolves the file list itself and spawns squawk with explicit paths,
-//      making `npm run lint:migrations` shell-independent).
+//      resolves the file list itself). squawk's native binary is spawned
+//      with an argv array and no shell, so filenames are never parsed as
+//      commands; every filename must also match MIGRATION_FILENAME_RE.
+//      A missing squawk-cli fails the gate.
 //   2. The project's own `-- contract-ok: min_version >= X.Y.Z` convention:
 //      any squawk-ignore'd *kept* compatibility rule must be paired with a
 //      contract-ok marker whose X.Y.Z is already satisfied by
@@ -17,9 +19,10 @@
 // Exit 1 on any error. Prints `MIGRATION COMPAT OK (<n> files, floor <v>)` on success.
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { join, resolve, dirname } from 'node:path';
+import { join, resolve, dirname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -45,7 +48,8 @@ const FLOOR_INSERT_RE =
   /^insert into public\.app_config ?\( ?key ?, ?value ?\) ?values ?\( ?'min_supported_version' ?, ?'(\d+\.\d+\.\d+)' ?\)(?: on conflict ?\( ?key ?\) do update set value ?= ?excluded\.value)?$/i;
 const FLOOR_UPDATE_RE =
   /^update public\.app_config set value ?= ?'(\d+\.\d+\.\d+)' where key ?= ?'min_supported_version'$/i;
-const CONTRACT_OK_RE = /--\s*contract-ok:\s*min_version\s*>=\s*(\d+\.\d+\.\d+)/gi;
+const MIGRATION_FILENAME_RE = /^\d{14}_[a-z0-9_]+\.sql$/;
+const CONTRACT_OK_RE =/--\s*contract-ok:\s*min_version\s*>=\s*(\d+\.\d+\.\d+)/gi;
 // Matches both squawk's statement-level `squawk-ignore` and its file-level
 // `squawk-ignore-file` directive, anywhere inside a real SQL comment.
 const SQUAWK_DIRECTIVE_RE = /squawk-ignore(-file)?/i;
@@ -244,24 +248,33 @@ function findContractOkMarkers(content) {
   return markers;
 }
 
+// CR-C04: resolve squawk's native binary through the installed squawk-cli
+// package (its own getBinaryPath() picks the platform package) and spawn it
+// directly -- no shell, no .cmd shim, no npx fallback. Arguments go to the
+// process as an argv array, so a filename can never be parsed as a command
+// and paths containing spaces stay one argument. If squawk-cli is not
+// installed the gate fails closed (WR-C01).
 function resolveSquawkBinary() {
-  const winBin = join(ROOT, 'node_modules', '.bin', 'squawk.cmd');
-  const posixBin = join(ROOT, 'node_modules', '.bin', 'squawk');
-  if (process.platform === 'win32' && existsSync(winBin)) return winBin;
-  if (existsSync(posixBin)) return posixBin;
-  return null; // fall back to `npx squawk-cli`
+  try {
+    const requireFromRoot = createRequire(join(ROOT, 'package.json'));
+    const { getBinaryPath } = requireFromRoot('squawk-cli/js/index.js');
+    const bin = getBinaryPath();
+    if (!isAbsolute(bin) || !existsSync(bin)) throw new Error(`resolved path is not an existing file: ${bin}`);
+    return { bin };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 function runSquawk(files) {
   if (files.length === 0) return { status: 0, output: '' };
   const configPath = join(ROOT, '.squawk.toml');
-  const bin = resolveSquawkBinary();
+  const resolved = resolveSquawkBinary();
+  if (!resolved.bin) {
+    return { status: 1, output: `squawk-cli is not installed (run npm ci): ${resolved.error}` };
+  }
   const args = ['--config', configPath, ...files];
-  // shell: true is required on Windows to execute a .cmd shim directly
-  // (spawnSync otherwise fails with EINVAL); it is harmless on POSIX.
-  const result = bin
-    ? spawnSync(bin, args, { cwd: ROOT, encoding: 'utf8', shell: true })
-    : spawnSync('npx', ['--yes', 'squawk-cli', ...args], { cwd: ROOT, encoding: 'utf8', shell: true });
+  const result = spawnSync(resolved.bin, args, { cwd: ROOT, encoding: 'utf8', shell: false });
   if (result.error) {
     return { status: 1, output: `failed to spawn squawk: ${result.error.message}` };
   }
@@ -288,7 +301,18 @@ function main() {
   const errors = [];
   const warnings = [];
 
-  // 1. squawk, run directly against the resolved file list (no shell glob).
+  // CR-C04: enforce the migration naming convention. Supabase CLI applies
+  // any `<digits>_<anything>.sql`, so a hostile or accidental name (shell
+  // metacharacters, spaces, upper case) is rejected here rather than linted
+  // and shipped.
+  for (const filePath of files) {
+    const fileName = filePath.split(/[\\/]/).pop();
+    if (!MIGRATION_FILENAME_RE.test(fileName)) {
+      errors.push(`${JSON.stringify(fileName)}: invalid migration filename; must match ${MIGRATION_FILENAME_RE}`);
+    }
+  }
+
+  // 1. squawk, spawned directly (no shell) against the resolved file list.
   const squawkResult = runSquawk(files);
   if (squawkResult.status !== 0) {
     errors.push(`squawk reported violations:\n${squawkResult.output}`);
