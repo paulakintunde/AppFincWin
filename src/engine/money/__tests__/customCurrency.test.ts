@@ -1,6 +1,4 @@
 import {
-  MAX_UNIT_VALUE,
-  MIN_UNIT_VALUE,
   validateCustomCurrency,
   type CustomCurrencyInput,
   type ValidateCustomCurrencyContext,
@@ -112,16 +110,31 @@ describe('validateCustomCurrency', () => {
       expect(result).toEqual({ ok: false, errors: expect.arrayContaining(['value-invalid']) });
     });
 
-    it.each(['1000000.0000000001', '5000000', '0.0000009', '0.0000000001'])(
-      'IN-A02: %p is outside the unit-value bounds and is value-invalid',
+    it('RD-01: 11 fraction digits is still value-invalid (numeric(24,10) precision, not a value bound)', () => {
+      const result = validateCustomCurrency(input({ unitValueRaw: '1000000.00000000001' }), ctx());
+      expect(result).toEqual({ ok: false, errors: ['value-invalid'] });
+    });
+
+    // RD-01: no upper or lower bound on unit_value -- a legitimate investment can be worth
+    // 100M-1B+ reference units, and a value the old MIN_UNIT_VALUE would have rejected
+    // (e.g. 0.0000009) is a perfectly valid fractional unit. The only guard left is that the
+    // *derived per-EUR rate* neither rounds to zero nor overflows numeric(24,10) --
+    // engine/money/rates.ts's customPerEur (exercised end to end via provisionalStamp /
+    // useAddCustomCurrency, and server-side by guard_custom_currency_rate), not this
+    // validator, is the single source of truth for that.
+    it.each(['60000', '5000000', '0.0000009', '0.0000000001', '1000000000', '99999999999999'])(
+      'RD-01: %p has no static bound and is accepted',
       (raw) => {
-        const result = validateCustomCurrency(input({ unitValueRaw: raw }), ctx());
-        expect(result).toEqual({ ok: false, errors: ['value-invalid'] });
+        expect(validateCustomCurrency(input({ unitValueRaw: raw }), ctx()).ok).toBe(true);
       }
     );
 
-    it.each([MIN_UNIT_VALUE, MAX_UNIT_VALUE, '60000'])('IN-A02: %p is within bounds', (raw) => {
-      expect(validateCustomCurrency(input({ unitValueRaw: raw }), ctx()).ok).toBe(true);
+    it('RD-01: a 1,000,000,000-unit value (e.g. a high-value investment) validates end to end with a canonical 10dp unit value', () => {
+      const result = validateCustomCurrency(input({ unitValueRaw: '1000000000' }), ctx());
+      expect(result).toEqual({
+        ok: true,
+        value: expect.objectContaining({ unitValue: '1000000000.0000000000' }),
+      });
     });
 
     it('WR-A11: explicit region separators win over the locale tag', () => {
