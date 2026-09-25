@@ -85,18 +85,23 @@ export function classifyRates(
       continue;
     }
 
-    const openHold = openHolds.find((h) => isOpen(h) && h.quote === row.quote);
-    if (openHold) {
-      const isWitness = openHold.source !== source || row.date > openHold.heldDate;
-      if (isWitness && ratioOf(row.rate, openHold.heldRate) <= CONFIRM_TOLERANCE + EPSILON) {
-        confirm.push({
-          holdId: openHold.id,
-          row: { base: row.base, quote: openHold.quote, rate: openHold.heldRate, date: openHold.heldDate },
-          source: openHold.source,
-        });
-        accept.push(row);
-        continue;
-      }
+    // Every open hold for the quote is a candidate, not just the first one
+    // the DB happened to return (WR-B03).
+    const confirmed = openHolds.find(
+      (h) =>
+        isOpen(h) &&
+        h.quote === row.quote &&
+        (h.source !== source || row.date > h.heldDate) &&
+        ratioOf(row.rate, h.heldRate) <= CONFIRM_TOLERANCE + EPSILON
+    );
+    if (confirmed) {
+      confirm.push({
+        holdId: confirmed.id,
+        row: { base: row.base, quote: confirmed.quote, rate: confirmed.heldRate, date: confirmed.heldDate },
+        source: confirmed.source,
+      });
+      accept.push(row);
+      continue;
     }
 
     const prior = history

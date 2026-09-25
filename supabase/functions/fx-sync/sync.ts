@@ -122,23 +122,32 @@ export async function runFxSync({ fetchJson, db }: FxSyncDeps): Promise<FxSyncRe
   if (source === 'frankfurter-v2' && classified.hold.length > 0) {
     try {
       const witnessRows = parseOpenErApiRates(await fetchJson(`${OPEN_ER_API_URL}/EUR`));
-      const heldQuotes = new Set(classified.hold.map((h) => h.quote));
       const freshHolds = (await db.holds()).filter((h) => (h.status ?? 'held') === 'held');
 
-      const confirmedRows: FxRow[] = [];
+      // Match each hold this run just created by its exact (quote, date,
+      // source), never by quote alone: an older hold for the same quote --
+      // possibly an open.er-api one from a fallback day, which an
+      // open.er-api witness must not "confirm" -- could otherwise be picked
+      // (WR-B03). The confirmed row is written under the hold's own source.
+      const confirmedBySrc = new Map<string, FxRow[]>();
       const confirmedIds: number[] = [];
-      for (const witness of witnessRows) {
-        if (!heldQuotes.has(witness.quote)) continue;
-        const held = freshHolds.find((h) => h.quote === witness.quote);
-        if (!held) continue;
+      for (const created of classified.hold) {
+        const held = freshHolds.find(
+          (h) => h.quote === created.quote && h.heldDate === created.date && h.source === created.source
+        );
+        const witness = witnessRows.find((w) => w.quote === created.quote);
+        if (!held || !witness) continue;
         if (Math.abs(Number(witness.rate) / Number(held.heldRate) - 1) <= CONFIRM_TOLERANCE + 1e-9) {
-          confirmedRows.push({ base: witness.base, quote: held.quote, rate: held.heldRate, date: held.heldDate });
+          const row: FxRow = { base: witness.base, quote: held.quote, rate: held.heldRate, date: held.heldDate };
+          confirmedBySrc.set(held.source, [...(confirmedBySrc.get(held.source) ?? []), row]);
           confirmedIds.push(held.id);
         }
       }
 
-      if (confirmedRows.length > 0) {
-        await db.upsertRates(confirmedRows, source); // source === 'frankfurter-v2' here: the held row's own source
+      if (confirmedIds.length > 0) {
+        for (const [heldSource, rows] of confirmedBySrc) {
+          await db.upsertRates(rows, heldSource);
+        }
         await db.confirmHolds(confirmedIds);
         confirmedBySecondSource = confirmedIds.length;
       }

@@ -253,4 +253,30 @@ describe('runFxSync', () => {
     expect(db.calls.upsertRates).toEqual([]);
     expect(db.calls.insertAlerts).toEqual([]);
   });
+
+  it('confirms exactly the hold this run created, not an older hold for the same quote (WR-B03)', async () => {
+    const db = createFakeDb({
+      recentRates: async () => [{ quote: 'USD', rate: '1.00', date: '2026-09-23' }],
+      holdsSequence: [
+        [],
+        [
+          // An older open.er-api hold from a fallback day, listed first by the DB.
+          { id: 7, quote: 'USD', heldRate: '1.16', heldDate: '2026-09-20', source: 'open-er-api' },
+          { id: 99, quote: 'USD', heldRate: '1.15', heldDate: '2026-09-24', source: 'frankfurter-v2' },
+        ],
+      ],
+    });
+    const fetchJson = createFetchJson({
+      [FRANKFURTER_RATES_URL]: [{ date: '2026-09-24', base: 'EUR', quote: 'USD', rate: 1.15 }],
+      [OPEN_ER_API_FETCH_URL]: { ...OPEN_ER_FIXTURE, rates: { EUR: 1, USD: 1.16 } },
+      [FRANKFURTER_V2_CURRENCIES_URL]: CURRENCIES_FIXTURE,
+    });
+
+    await runFxSync({ fetchJson, db });
+
+    expect(db.calls.confirmHolds).toEqual([[99]]);
+    expect(db.calls.upsertRates).toEqual([
+      { rows: [{ base: 'EUR', quote: 'USD', rate: '1.15', date: '2026-09-24' }], source: 'frankfurter-v2' },
+    ]);
+  });
 });
