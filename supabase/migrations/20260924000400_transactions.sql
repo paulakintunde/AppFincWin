@@ -31,6 +31,8 @@ create table public.transactions (
   rate numeric(24,10) check (rate is null or rate > 0),               -- display cross rate: home units per 1 original unit
   orig_per_eur numeric(24,10) check (orig_per_eur is null or orig_per_eur > 0), -- D-05: stored EUR base for post-switch re-conversion
   home_per_eur numeric(24,10) check (home_per_eur is null or home_per_eur > 0),
+  orig_exp smallint check (orig_exp is null or orig_exp between 0 and 4), -- WR-B08: minor-unit exponents stamped at write time, so an edit never
+  home_exp smallint check (home_exp is null or home_exp between 0 and 4), -- re-derives them from a custom definition that may since be gone
   rate_date date,                                                     -- MON-07: publication date of the rate used
   rate_source text check (rate_source is null or rate_source in ('same-currency', 'frankfurter-v2', 'open-er-api', 'custom')),
   rate_pending boolean not null default true,                         -- true until the server stamp (01-05) finds an exact rate (D-17)
@@ -86,6 +88,7 @@ grant select on public.transactions to authenticated;
 grant insert (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, note) on public.transactions to authenticated;
 grant update (account_id, original_amount, original_currency, local_date, time_zone, note) on public.transactions to authenticated;
 -- Every stamp column (rate, rate_date, rate_source, home_amount,
--- home_currency, orig_per_eur, home_per_eur, rate_pending) is server-only
+-- home_currency, orig_per_eur, home_per_eur, orig_exp, home_exp,
+-- rate_pending) is server-only
 -- (D-16); a client payload naming one fails with 42501 before any trigger
 -- runs.

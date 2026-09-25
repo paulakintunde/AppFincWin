@@ -358,6 +358,24 @@ begin
     new.home_currency := old.home_currency; -- D-05: fixed at write time, never changes
   end if;
 
+  -- WR-B08: the minor-unit exponents are stamped at write time and reused
+  -- afterwards. Re-deriving them on a later edit would read the author's
+  -- custom currencies again; if the author's account is gone (created_by
+  -- nulled, custom currencies cascaded away) that silently falls back to 2
+  -- and corrupts home_amount by up to 10^4. Only a change of
+  -- original_currency re-derives orig_exp; home_currency never changes.
+  if tg_op = 'INSERT' then
+    new.orig_exp := public.currency_exponent(new.original_currency, owner);
+    new.home_exp := public.currency_exponent(new.home_currency, owner);
+  else
+    new.home_exp := coalesce(old.home_exp, public.currency_exponent(new.home_currency, owner));
+    if new.original_currency is distinct from old.original_currency then
+      new.orig_exp := public.currency_exponent(new.original_currency, owner);
+    else
+      new.orig_exp := coalesce(old.orig_exp, public.currency_exponent(new.original_currency, owner));
+    end if;
+  end if;
+
   needs_rerate := tg_op = 'INSERT'
     or new.local_date is distinct from old.local_date
     or new.original_currency is distinct from old.original_currency
@@ -390,8 +408,8 @@ begin
       return new;
     end if;
 
-    o_exp := public.currency_exponent(new.original_currency, owner);
-    h_exp := public.currency_exponent(new.home_currency, owner);
+    o_exp := new.orig_exp;
+    h_exp := new.home_exp;
 
     new.orig_per_eur := o.rate;
     new.home_per_eur := h.rate;
@@ -426,9 +444,9 @@ begin
         new.home_amount := public.convert_minor(
           new.original_amount,
           old.orig_per_eur,
-          public.currency_exponent(new.original_currency, owner),
+          new.orig_exp,
           old.home_per_eur,
-          public.currency_exponent(new.home_currency, owner)
+          new.home_exp
         );
       end if;
     else
