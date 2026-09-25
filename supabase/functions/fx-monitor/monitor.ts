@@ -112,6 +112,22 @@ export function buildDigest(alerts: UnsentAlert[]): { subject: string; text: str
   return { subject, text };
 }
 
+/**
+ * The daily heartbeat sent when there is nothing to report (IN-B03). The
+ * operator gets one email every day either way, so a day with no email at
+ * all means fx-monitor itself failed (bad config, Resend rejecting the key,
+ * the cron job not firing) rather than that all was quiet.
+ */
+export function buildAllClear(
+  today: string,
+  counts: { autoAccepted: number; restamped: number; pendingRows: number }
+): { subject: string; text: string } {
+  return {
+    subject: 'FincWin FX: all clear',
+    text: `${today}: no FX alerts. auto-accepted ${counts.autoAccepted}, re-stamped ${counts.restamped}, pending rows ${counts.pendingRows}.`,
+  };
+}
+
 export async function runFxMonitor(deps: MonitorDeps): Promise<MonitorResult> {
   const today = deps.today();
   const [latest, currencies] = await Promise.all([deps.latestRates(), deps.currencies()]);
@@ -146,6 +162,9 @@ export async function runFxMonitor(deps: MonitorDeps): Promise<MonitorResult> {
     await deps.sendEmail(subject, text); // a non-2xx throw here propagates, and markEmailed is never reached (retried next day)
     await deps.markEmailed(unsent.map((a) => a.id));
     emailed = unsent.length;
+  } else {
+    const { subject, text } = buildAllClear(today, { autoAccepted, restamped, pendingRows });
+    await deps.sendEmail(subject, text);
   }
 
   return { ok: true, stale: stale.length, autoAccepted, restamped, pendingRows, emailed };

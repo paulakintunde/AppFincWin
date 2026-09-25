@@ -106,8 +106,20 @@ falls back to the global default inside `fx-monitor`'s `findStale()`.
 | Function | Auth | Env vars | Vault rows (production, created at deploy time — plan 01-16, never in git) |
 |---|---|---|---|
 | `fx-sync` | shared secret (`x-fx-sync-secret`) | `FX_SYNC_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | `fx_sync_url`, `fx_sync_secret` |
-| `fx-monitor` | shared secret (`x-fx-sync-secret`, reuses `FX_SYNC_SECRET`) | `FX_SYNC_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `FX_ALERT_TO_EMAIL` | `fx_monitor_url`, `fx_sync_secret` (shared with fx-sync) |
+| `fx-monitor` | its own shared secret (`x-fx-monitor-secret`), never fx-sync's | `FX_MONITOR_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `FX_ALERT_TO_EMAIL` | `fx_monitor_url`, `fx_monitor_secret` |
 | `resolve-rate` | caller's JWT (`verify_jwt = true`) | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | none (not pg_cron-invoked) |
+
+`FX_MONITOR_SECRET` and the `fx_monitor_secret` Vault row must hold the same
+value, and it must differ from `FX_SYNC_SECRET`. fx-monitor can auto-accept
+holds and re-stamp transactions, so one leaked secret must not authorise
+both functions.
+
+fx-monitor emails every day. With alerts pending, it sends the digest; with
+none, it sends a one-line `FincWin FX: all clear` heartbeat with the day's
+auto-accepted, re-stamped and pending counts. A day with **no** email means
+fx-monitor itself failed (missing config, Resend rejecting the key, or the
+cron job not firing). Check the `fx-monitor` Edge Function logs and
+`cron.job_run_details`.
 
 `fx-monitor`'s cron job (`fx-monitor-daily`, 17:00 UTC — 30 minutes after
 `fx-sync-daily`) runs locally too and fails harmlessly, since

@@ -172,14 +172,20 @@ describe('runFxMonitor', () => {
     expect(result.emailed).toBe(2);
   });
 
-  it('sends no email when there are no unsent alerts', async () => {
+  it('sends a daily all-clear heartbeat when there are no unsent alerts, so a missing email means fx-monitor failed (IN-B03)', async () => {
     const sendEmail = jest.fn(async () => undefined);
     const markEmailed = jest.fn(async () => undefined);
-    const deps = makeDeps({ unsentAlerts: jest.fn(async () => []), sendEmail, markEmailed });
+    const deps = makeDeps({
+      unsentAlerts: jest.fn(async () => []),
+      restampPending: jest.fn(async () => 2),
+      sendEmail,
+      markEmailed,
+    });
 
     const result = await runFxMonitor(deps);
 
-    expect(sendEmail).not.toHaveBeenCalled();
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    expect(sendEmail).toHaveBeenCalledWith('FincWin FX: all clear', expect.stringContaining('2026-09-29'));
     expect(markEmailed).not.toHaveBeenCalled();
     expect(result.emailed).toBe(0);
   });

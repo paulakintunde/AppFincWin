@@ -106,9 +106,11 @@ grant execute on function public.fx_restamp_pending(integer) to service_role;
 
 -- Daily monitor schedule: 30 minutes after fx-sync-daily (16:30 UTC) so
 -- today's holds and fallbacks are already in place before the digest reads
--- them. Same trust model as fx-sync-daily: reuses the fx_sync_secret shared
--- secret (pg_cron is the only caller); the fx_monitor_url Vault row is
--- created at deploy time (plan 01-16), never in git. Locally the job runs,
+-- them. Same trust model as fx-sync-daily (pg_cron is the only caller), but
+-- with its own shared secret: fx-monitor auto-accepts holds and re-stamps
+-- transactions, so a leaked fx-sync secret must not also authorise it
+-- (IN-B03). The fx_monitor_url and fx_monitor_secret Vault rows are created
+-- at deploy time (plan 01-16), never in git. Locally the job runs,
 -- finds null secrets in vault.decrypted_secrets, and fails harmlessly.
 select cron.schedule(
   'fx-monitor-daily',
@@ -118,7 +120,7 @@ select cron.schedule(
     url := (select decrypted_secret from vault.decrypted_secrets where name = 'fx_monitor_url'),
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'x-fx-sync-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'fx_sync_secret')),
+      'x-fx-monitor-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'fx_monitor_secret')),
     body := '{}'::jsonb,
     timeout_milliseconds := 30000
   );

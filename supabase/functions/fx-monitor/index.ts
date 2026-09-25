@@ -1,15 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 import { runFxMonitor, type MonitorDeps } from './monitor.ts';
-
-// Constant-time comparison so a shared-secret check never leaks timing
-// information about how many leading bytes matched -- same mitigation as
-// fx-sync/index.ts (T-00-09-01, T-01-11-03).
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
+import { isAuthorized } from './auth.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -19,10 +10,11 @@ Deno.serve(async (req) => {
 
   // Auth is a shared secret (compared in constant time), not a user JWT --
   // this function is invoked by pg_cron via net.http_post, not by clients.
-  // Reuses the fx_sync_secret shared secret; same trust model as fx-sync.
-  const expected = Deno.env.get('FX_SYNC_SECRET');
-  const got = req.headers.get('x-fx-sync-secret');
-  if (!expected || !got || !safeEqual(expected, got)) return json({ ok: false, error: 'forbidden' }, 403);
+  // Its own secret (FX_MONITOR_SECRET / x-fx-monitor-secret), not fx-sync's
+  // (IN-B03).
+  if (!isAuthorized((name) => Deno.env.get(name), (name) => req.headers.get(name))) {
+    return json({ ok: false, error: 'forbidden' }, 403);
+  }
 
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
   const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL');
