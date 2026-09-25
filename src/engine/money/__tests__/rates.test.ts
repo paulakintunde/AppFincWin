@@ -5,8 +5,10 @@ import {
   parseRate,
   formatRate,
   convertMinor,
+  convertMinorExact,
   crossRate,
   customPerEur,
+  type ConversionLeg,
 } from '../rates';
 import { minorUnits } from '../types';
 
@@ -94,6 +96,69 @@ describe('convertMinor', () => {
     expect(() => convertMinor(minorUnits(100), parseRate('1'), 2, parseRate('1'), -1)).toThrow(
       RangeError
     );
+  });
+});
+
+describe('convertMinorExact (RD-03)', () => {
+  function leg(perEur: string, customUnitValue: string | null, customRefPerEur: string | null): ConversionLeg {
+    return {
+      perEur: parseRate(perEur),
+      custom:
+        customUnitValue !== null && customRefPerEur !== null
+          ? { unitValue: parseRate(customUnitValue), referencePerEur: parseRate(customRefPerEur) }
+          : undefined,
+    };
+  }
+
+  it.each(fixtures.convertExact)(
+    '$name',
+    ({ amount, fromPerEur, fromExponent, fromCustomUnitValue, fromCustomRefPerEur, toPerEur, toExponent, toCustomUnitValue, toCustomRefPerEur, expected }) => {
+      const result = convertMinorExact(
+        minorUnits(amount),
+        leg(fromPerEur, fromCustomUnitValue, fromCustomRefPerEur),
+        fromExponent,
+        leg(toPerEur, toCustomUnitValue, toCustomRefPerEur),
+        toExponent
+      );
+      expect(result).toBe(expected);
+    }
+  );
+
+  it('WR-B07: fixes the drift convertMinor+customPerEur has for a high-value custom unit (59,999.90 vs the exact 60,000.00)', () => {
+    // The same GOLD (1 GOLD = 60,000 USD) scenario the review found, computed the *old* way
+    // first to prove the fixture case above is not a coincidence.
+    const goldPerEur = customPerEur(parseRate('1.1734'), parseRate('60000'));
+    const old = convertMinor(minorUnits(100), goldPerEur, 2, parseRate('1.1734'), 2);
+    expect(old).toBe(5999990); // the WR-B07 drift, unchanged -- convertMinor itself is untouched
+
+    const exact = convertMinorExact(
+      minorUnits(100),
+      leg('1.1734', '60000', '1.1734'),
+      2,
+      leg('1.1734', null, null),
+      2
+    );
+    expect(exact).toBe(6000000);
+  });
+
+  it('throws RangeError when the result exceeds Number.MAX_SAFE_INTEGER', () => {
+    expect(() =>
+      convertMinorExact(
+        minorUnits(9_000_000_000_000),
+        leg('1', null, null),
+        0,
+        leg('1000000000000', null, null),
+        0
+      )
+    ).toThrow(RangeError);
+  });
+
+  it('throws RangeError for an out-of-range fromExponent', () => {
+    expect(() => convertMinorExact(minorUnits(100), leg('1', null, null), 5, leg('1', null, null), 2)).toThrow(RangeError);
+  });
+
+  it('throws RangeError for an out-of-range toExponent', () => {
+    expect(() => convertMinorExact(minorUnits(100), leg('1', null, null), 2, leg('1', null, null), -1)).toThrow(RangeError);
   });
 });
 

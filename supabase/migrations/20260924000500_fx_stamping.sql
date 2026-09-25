@@ -74,6 +74,40 @@ as $$
     (from_per_eur * 10000000000) * power(10::numeric, from_exp))
 $$;
 
+-- convert_minor_exact(): RD-03's exact conversion. convert_minor above quantises a custom
+-- currency's per-EUR rate to 10dp *before* converting (via custom_per_eur), which loses
+-- precision for a high-value unit -- 1 GOLD = 60,000 USD converts to 59,999.90, not
+-- 60,000.00 (WR-B07). This instead takes each leg's raw stamp: a plain leg's own per_eur (no
+-- different from convert_minor), or, when that leg's rate came from a custom currency, the
+-- reference currency's per-EUR rate actually used plus the custom currency's own unit_value
+-- (transactions.orig_custom_ref_per_eur/orig_custom_unit_value and the home_ equivalents --
+-- stamped by stamp_fx_rate() below from per_eur_rate()'s new out params). Substituting those
+-- directly into the single conversion ratio -- rather than pre-rounding a per-EUR rate for
+-- the custom leg and then rounding *again* on convert -- means only one div_half_up ever
+-- runs, at the very end. The four `*_custom_unit_value`/`*_custom_ref_per_eur` params are
+-- null for a plain leg, in which case each `coalesce` reduces this to exactly the same ratio
+-- convert_minor computes (proven by the shared fixture's convertExact cases where both are
+-- null). Not `strict`, unlike convert_minor: a null custom_unit_value/custom_ref_per_eur is
+-- the normal "this leg isn't custom" case, not a missing-argument error.
+create or replace function public.convert_minor_exact(
+  amount bigint,
+  from_per_eur numeric, from_exp int, from_custom_unit_value numeric, from_custom_ref_per_eur numeric,
+  to_per_eur numeric, to_exp int, to_custom_unit_value numeric, to_custom_ref_per_eur numeric
+)
+returns bigint
+language sql
+immutable
+parallel safe
+set search_path = ''
+as $$
+  select public.div_half_up(
+    amount::numeric
+      * (coalesce(to_custom_ref_per_eur, to_per_eur) * 10000000000) * power(10::numeric, to_exp)
+      * coalesce(from_custom_unit_value, 1),
+    (coalesce(from_custom_ref_per_eur, from_per_eur) * 10000000000) * power(10::numeric, from_exp)
+      * coalesce(to_custom_unit_value, 1))
+$$;
+
 create or replace function public.cross_rate(from_per_eur numeric, to_per_eur numeric)
 returns numeric(24,10)
 language sql
@@ -217,7 +251,13 @@ create or replace function public.per_eur_rate(
   out rate numeric,
   out rate_date date,
   out source text,
-  out exact boolean
+  out exact boolean,
+  -- RD-03: the raw custom-currency stamp behind `rate`, when this leg resolved through a
+  -- custom currency -- null otherwise. `rate` itself stays the rounded custom_per_eur value
+  -- (used for the display cross rate/orig_per_eur/home_per_eur, unchanged); these two are
+  -- what convert_minor_exact substitutes directly so home_amount never rounds twice.
+  out custom_unit_value numeric,
+  out custom_ref_per_eur numeric
 )
 returns record
 language plpgsql
@@ -251,6 +291,12 @@ begin
     -- (MON-12, D-13, WR-B02).
     source := case when ref.source = 'open-er-api' then 'open-er-api' else 'custom' end;
     exact := ref.exact;
+    -- RD-03: the raw stamp convert_minor_exact needs. ref.rate is the reference currency's
+    -- own per-EUR rate as resolved for this call (itself never a custom leg -- a custom
+    -- currency's reference must be ISO, WR-B06), so it carries no further rounding of its
+    -- own; only custom_per_eur's 10dp quantisation above is what this avoids passing on.
+    custom_unit_value := c.unit_value;
+    custom_ref_per_eur := ref.rate;
     return;
   end if;
 
@@ -387,6 +433,10 @@ begin
       new.rate := 1;
       new.orig_per_eur := null;
       new.home_per_eur := null;
+      new.orig_custom_unit_value := null;
+      new.orig_custom_ref_per_eur := null;
+      new.home_custom_unit_value := null;
+      new.home_custom_ref_per_eur := null;
       new.rate_date := new.local_date;
       new.rate_source := 'same-currency';
       new.rate_pending := false;
@@ -401,6 +451,10 @@ begin
       new.rate := null;
       new.orig_per_eur := null;
       new.home_per_eur := null;
+      new.orig_custom_unit_value := null;
+      new.orig_custom_ref_per_eur := null;
+      new.home_custom_unit_value := null;
+      new.home_custom_ref_per_eur := null;
       new.rate_date := null;
       new.rate_source := null;
       new.home_amount := null;
@@ -413,6 +467,13 @@ begin
 
     new.orig_per_eur := o.rate;
     new.home_per_eur := h.rate;
+    -- RD-03: the raw stamp behind each leg, null for a plain (ISO) leg --
+    -- convert_minor_exact below substitutes these instead of the rounded
+    -- orig_per_eur/home_per_eur above (WR-B07).
+    new.orig_custom_unit_value := o.custom_unit_value;
+    new.orig_custom_ref_per_eur := o.custom_ref_per_eur;
+    new.home_custom_unit_value := h.custom_unit_value;
+    new.home_custom_ref_per_eur := h.custom_ref_per_eur;
     new.rate := public.cross_rate(o.rate, h.rate);
     new.rate_date := least(o.rate_date, h.rate_date);
     -- Attribution must never be lost (MON-12): open-er-api beats custom
@@ -427,12 +488,20 @@ begin
     -- A row dated after tomorrow (server time) is never exact: its own
     -- day's rate cannot exist yet (WR-B01).
     new.rate_pending := not (o.exact and h.exact) or new.local_date > current_date + 1;
-    new.home_amount := public.convert_minor(new.original_amount, o.rate, o_exp, h.rate, h_exp);
+    new.home_amount := public.convert_minor_exact(
+      new.original_amount,
+      o.rate, o_exp, o.custom_unit_value, o.custom_ref_per_eur,
+      h.rate, h_exp, h.custom_unit_value, h.custom_ref_per_eur
+    );
   else
     -- Amount-only or note/account edit: keep every stamp column (D-04).
     new.rate := old.rate;
     new.orig_per_eur := old.orig_per_eur;
     new.home_per_eur := old.home_per_eur;
+    new.orig_custom_unit_value := old.orig_custom_unit_value;
+    new.orig_custom_ref_per_eur := old.orig_custom_ref_per_eur;
+    new.home_custom_unit_value := old.home_custom_unit_value;
+    new.home_custom_ref_per_eur := old.home_custom_ref_per_eur;
     new.rate_date := old.rate_date;
     new.rate_source := old.rate_source;
     new.rate_pending := old.rate_pending;
@@ -441,12 +510,10 @@ begin
       if old.rate_source = 'same-currency' then
         new.home_amount := new.original_amount;
       else
-        new.home_amount := public.convert_minor(
+        new.home_amount := public.convert_minor_exact(
           new.original_amount,
-          old.orig_per_eur,
-          new.orig_exp,
-          old.home_per_eur,
-          new.home_exp
+          old.orig_per_eur, new.orig_exp, old.orig_custom_unit_value, old.orig_custom_ref_per_eur,
+          old.home_per_eur, new.home_exp, old.home_custom_unit_value, old.home_custom_ref_per_eur
         );
       end if;
     else
@@ -497,11 +564,12 @@ revoke execute on function public.restamp_transaction(uuid, text[]) from public,
 grant execute on function public.restamp_transaction(uuid, text[]) to service_role;
 
 -- 7. Grants. The pure maths functions (div_half_up, convert_minor,
--- cross_rate, custom_per_eur) take no user data and stay callable by
--- authenticated and service_role. The lookups that take an owner UUID
--- (currency_exponent, per_eur_rate) are SECURITY DEFINER and would let any
--- signed-in user read another user's custom currency (decimals, unit value,
--- reference) past the owner-only RLS on custom_currencies (CR-B03). Only
+-- convert_minor_exact, cross_rate, custom_per_eur) take no user data and
+-- stay callable by authenticated and service_role. The lookups that take an
+-- owner UUID (currency_exponent, per_eur_rate) are SECURITY DEFINER and
+-- would let any signed-in user read another user's custom currency
+-- (decimals, unit value, reference) past the owner-only RLS on
+-- custom_currencies (CR-B03). Only
 -- the definer triggers call them, so they are service_role-only. The
 -- trigger functions themselves (stamp_fx_rate, bump_version) are never
 -- called directly by any role -- they only fire via the triggers above.
@@ -510,6 +578,9 @@ grant execute on function public.div_half_up(numeric, numeric) to authenticated,
 
 revoke execute on function public.convert_minor(bigint, numeric, int, numeric, int) from public, anon;
 grant execute on function public.convert_minor(bigint, numeric, int, numeric, int) to authenticated, service_role;
+
+revoke execute on function public.convert_minor_exact(bigint, numeric, int, numeric, numeric, numeric, int, numeric, numeric) from public, anon;
+grant execute on function public.convert_minor_exact(bigint, numeric, int, numeric, numeric, numeric, int, numeric, numeric) to authenticated, service_role;
 
 revoke execute on function public.cross_rate(numeric, numeric) from public, anon;
 grant execute on function public.cross_rate(numeric, numeric) to authenticated, service_role;

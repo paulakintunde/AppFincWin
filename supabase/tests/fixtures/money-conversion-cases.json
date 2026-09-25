@@ -44,6 +44,50 @@
     { "name": "largest safe result (Number.MAX_SAFE_INTEGER)", "amount": 9007199254740991, "fromPerEur": "1", "fromExponent": 2, "toPerEur": "1", "toExponent": 2, "expected": 9007199254740991 },
     { "name": "negative largest safe result", "amount": -9007199254740991, "fromPerEur": "1", "fromExponent": 2, "toPerEur": "1", "toExponent": 2, "expected": -9007199254740991 }
   ],
+  "convertExact": [
+    {
+      "name": "RD-03: 1.00 GOLD (unit_value 60000 USD) to USD -- exact 60,000.00, no 10dp drift (WR-B07)",
+      "amount": 100, "fromPerEur": "1.1734", "fromExponent": 2, "fromCustomUnitValue": "60000", "fromCustomRefPerEur": "1.1734",
+      "toPerEur": "1.1734", "toExponent": 2, "toCustomUnitValue": null, "toCustomRefPerEur": null,
+      "expected": 6000000
+    },
+    {
+      "name": "RD-03: -1.00 GOLD to USD -- negative amount stays exact",
+      "amount": -100, "fromPerEur": "1.1734", "fromExponent": 2, "fromCustomUnitValue": "60000", "fromCustomRefPerEur": "1.1734",
+      "toPerEur": "1.1734", "toExponent": 2, "toCustomUnitValue": null, "toCustomRefPerEur": null,
+      "expected": -6000000
+    },
+    {
+      "name": "RD-03: 6,000,000.00 USD to GOLD -- the home leg is the custom one (inverse of the first case)",
+      "amount": 600000000, "fromPerEur": "1.1734", "fromExponent": 2, "fromCustomUnitValue": null, "fromCustomRefPerEur": null,
+      "toPerEur": "1.1734", "toExponent": 2, "toCustomUnitValue": "60000", "toCustomRefPerEur": "1.1734",
+      "expected": 10000
+    },
+    {
+      "name": "RD-03: 1e9-unit asset (0dp, 1 unit = 1,000,000,000 JPY) to USD",
+      "amount": 1, "fromPerEur": "180.7", "fromExponent": 0, "fromCustomUnitValue": "1000000000", "fromCustomRefPerEur": "180.7",
+      "toPerEur": "1.1483", "toExponent": 2, "toCustomUnitValue": null, "toCustomRefPerEur": null,
+      "expected": 635473160
+    },
+    {
+      "name": "RD-03: both legs custom, same USD reference (1 GOLD = 60000 USD, 1 SILVER = 1000 USD) -- 1 GOLD = 60 SILVER exactly",
+      "amount": 1, "fromPerEur": "1.1734", "fromExponent": 0, "fromCustomUnitValue": "60000", "fromCustomRefPerEur": "1.1734",
+      "toPerEur": "1.1734", "toExponent": 0, "toCustomUnitValue": "1000", "toCustomRefPerEur": "1.1734",
+      "expected": 60
+    },
+    {
+      "name": "RD-03: 3-decimal custom leg (1.500 units, 1 unit = 2.5 USD) to a 0-decimal ISO currency (JPY)",
+      "amount": 1500, "fromPerEur": "1.1483", "fromExponent": 3, "fromCustomUnitValue": "2.5", "fromCustomRefPerEur": "1.1483",
+      "toPerEur": "180.7", "toExponent": 0, "toCustomUnitValue": null, "toCustomRefPerEur": null,
+      "expected": 590
+    },
+    {
+      "name": "RD-03: neither leg custom -- degenerates to exactly convertMinor's own USD 10.00 to JPY case",
+      "amount": 1000, "fromPerEur": "1.1483", "fromExponent": 2, "fromCustomUnitValue": null, "fromCustomRefPerEur": null,
+      "toPerEur": "180.7", "toExponent": 0, "toCustomUnitValue": null, "toCustomRefPerEur": null,
+      "expected": 1574
+    }
+  ],
   "customPerEur": [
     { "name": "USD ref, 1 unit = 2.5 USD", "referencePerEur": "1.1483", "unitValue": "2.5", "expected": "0.4593200000" },
     { "name": "1/3 truncates below half", "referencePerEur": "1", "unitValue": "3", "expected": "0.3333333333" },

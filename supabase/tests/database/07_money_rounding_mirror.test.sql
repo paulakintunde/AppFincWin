@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(80);
+select extensions.plan(87);
 
 select extensions.is(public.div_half_up(5::numeric, 2::numeric), 3::bigint, 'halfUp 5/2');
 select extensions.is(public.div_half_up(-5::numeric, 2::numeric), -3::bigint, 'halfUp -5/2');
@@ -45,6 +45,13 @@ select extensions.is(public.convert_minor(375::bigint, '1.1483'::numeric, 2, '0.
 select extensions.is(public.convert_minor(10000000000000::bigint, '1'::numeric, 2, '1.1483'::numeric, 2), 11483000000000::bigint, 'convert: max original amount (MAX_ABS_AMOUNT_MINOR) EUR to USD');
 select extensions.is(public.convert_minor(9007199254740991::bigint, '1'::numeric, 2, '1'::numeric, 2), 9007199254740991::bigint, 'convert: largest safe result (Number.MAX_SAFE_INTEGER)');
 select extensions.is(public.convert_minor(-9007199254740991::bigint, '1'::numeric, 2, '1'::numeric, 2), -9007199254740991::bigint, 'convert: negative largest safe result');
+select extensions.is(public.convert_minor_exact(100::bigint, '1.1734'::numeric, 2, '60000'::numeric, '1.1734'::numeric, '1.1734'::numeric, 2, null, null), 6000000::bigint, 'convertExact: RD-03: 1.00 GOLD (unit_value 60000 USD) to USD -- exact 60,000.00, no 10dp drift (WR-B07)');
+select extensions.is(public.convert_minor_exact(-100::bigint, '1.1734'::numeric, 2, '60000'::numeric, '1.1734'::numeric, '1.1734'::numeric, 2, null, null), -6000000::bigint, 'convertExact: RD-03: -1.00 GOLD to USD -- negative amount stays exact');
+select extensions.is(public.convert_minor_exact(600000000::bigint, '1.1734'::numeric, 2, null, null, '1.1734'::numeric, 2, '60000'::numeric, '1.1734'::numeric), 10000::bigint, 'convertExact: RD-03: 6,000,000.00 USD to GOLD -- the home leg is the custom one (inverse of the first case)');
+select extensions.is(public.convert_minor_exact(1::bigint, '180.7'::numeric, 0, '1000000000'::numeric, '180.7'::numeric, '1.1483'::numeric, 2, null, null), 635473160::bigint, 'convertExact: RD-03: 1e9-unit asset (0dp, 1 unit = 1,000,000,000 JPY) to USD');
+select extensions.is(public.convert_minor_exact(1::bigint, '1.1734'::numeric, 0, '60000'::numeric, '1.1734'::numeric, '1.1734'::numeric, 0, '1000'::numeric, '1.1734'::numeric), 60::bigint, 'convertExact: RD-03: both legs custom, same USD reference (1 GOLD = 60000 USD, 1 SILVER = 1000 USD) -- 1 GOLD = 60 SILVER exactly');
+select extensions.is(public.convert_minor_exact(1500::bigint, '1.1483'::numeric, 3, '2.5'::numeric, '1.1483'::numeric, '180.7'::numeric, 0, null, null), 590::bigint, 'convertExact: RD-03: 3-decimal custom leg (1.500 units, 1 unit = 2.5 USD) to a 0-decimal ISO currency (JPY)');
+select extensions.is(public.convert_minor_exact(1000::bigint, '1.1483'::numeric, 2, null, null, '180.7'::numeric, 0, null, null), 1574::bigint, 'convertExact: RD-03: neither leg custom -- degenerates to exactly convertMinor''s own USD 10.00 to JPY case');
 select extensions.is(public.custom_per_eur('1.1483'::numeric, '2.5'::numeric)::text, '0.4593200000', 'customPerEur: USD ref, 1 unit = 2.5 USD');
 select extensions.is(public.custom_per_eur('1'::numeric, '3'::numeric)::text, '0.3333333333', 'customPerEur: 1/3 truncates below half');
 select extensions.is(public.custom_per_eur('2'::numeric, '3'::numeric)::text, '0.6666666667', 'customPerEur: 2/3 rounds up');
