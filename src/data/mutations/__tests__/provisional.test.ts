@@ -5,7 +5,7 @@
 // stamp is authoritative (D-16, D-17).
 
 import type { CustomCurrencyRow, FxLatestRow } from '@/db/rows';
-import { provisionalStamp } from '../provisional';
+import { PENDING_UNRESOLVED_STAMP, provisionalStamp } from '../provisional';
 
 const USD_RATE: FxLatestRow = {
   quote: 'USD',
@@ -98,6 +98,26 @@ describe('provisionalStamp', () => {
       []
     );
     expect(stamp.rate_source).toBe('open-er-api');
+  });
+
+  it('WR-A03: a malformed cached rate or unit_value degrades to the pending stamp instead of throwing', () => {
+    expect(
+      provisionalStamp({ amount: 1000, currency: 'JPY', homeCurrency: 'USD' }, [USD_RATE, { ...JPY_RATE, rate: 'NaN' }], [])
+    ).toEqual(PENDING_UNRESOLVED_STAMP);
+    expect(
+      provisionalStamp({ amount: 10, currency: 'GLD', homeCurrency: 'USD' }, [USD_RATE], [{ ...GLD_CUSTOM, unit_value: '2,5' }])
+    ).toEqual(PENDING_UNRESOLVED_STAMP);
+  });
+
+  it('WR-A03: a custom per-EUR rate that rounds to zero, or a result past MAX_SAFE_INTEGER, degrades instead of throwing', () => {
+    const huge: CustomCurrencyRow = { ...GLD_CUSTOM, unit_value: '99999999999999.0000000000' };
+    // GLD -> USD: GLD per EUR rounds to 0 at 10 dp, so the conversion's denominator is 0.
+    expect(provisionalStamp({ amount: 10, currency: 'GLD', homeCurrency: 'USD' }, [USD_RATE], [huge])).toEqual(
+      PENDING_UNRESOLVED_STAMP
+    );
+    expect(
+      provisionalStamp({ amount: Number.MAX_SAFE_INTEGER, currency: 'EUR', homeCurrency: 'JPY' }, [JPY_RATE], [])
+    ).toEqual(PENDING_UNRESOLVED_STAMP);
   });
 
   it('missing rate for either side: home_amount null, all rate fields null, still pending', () => {

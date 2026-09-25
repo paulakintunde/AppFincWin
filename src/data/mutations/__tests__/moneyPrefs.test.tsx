@@ -265,6 +265,46 @@ describe('useEditCustomCurrency', () => {
     });
   });
 
+  it('WR-A03: normalizes a hand-edited unit_value to the canonical 10-dp form, region-aware when given a locale', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: [customRow({ id: 'c1', version: 2, unit_value: '3.2500000000' })], error: null, status: 200 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.customCurrencies('user-1'), [customRow({ id: 'c1', version: 1 })]);
+    const { result } = await renderHook(() => useEditCustomCurrency('user-1'), { wrapper: wrapper(qc) });
+
+    const outcome = result.current.edit({ id: 'c1', expectedVersion: 1, patch: { unit_value: '3,25' } }, { locale: 'de-DE' });
+    expect(outcome).toEqual({ ok: true });
+
+    await waitFor(() => expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ unit_value: '3.2500000000' }));
+  });
+
+  it('WR-A03: rejects a malformed unit_value before it reaches the cache or the queue', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.customCurrencies('user-1'), [customRow({ id: 'c1', version: 1 })]);
+    const { result } = await renderHook(() => useEditCustomCurrency('user-1'), { wrapper: wrapper(qc) });
+
+    expect(result.current.edit({ id: 'c1', expectedVersion: 1, patch: { unit_value: 'abc' } })).toEqual({
+      ok: false,
+      errors: ['value-invalid'],
+    });
+    expect(result.current.edit({ id: 'c1', expectedVersion: 1, patch: { unit_value: '0' } })).toEqual({
+      ok: false,
+      errors: ['value-invalid'],
+    });
+    expect(result.current.edit({ id: 'c1', expectedVersion: 1, patch: { unit_value: 'x' } }, { locale: 'en-US' })).toEqual({
+      ok: false,
+      errors: ['value-invalid'],
+    });
+    expect(qc.getMutationCache().getAll()).toHaveLength(0);
+    const rows = qc.getQueryData<WithPending<CustomCurrencyRow>[]>(queryKeys.customCurrencies('user-1'));
+    expect(rows?.[0]?.unit_value).toBe('2.5000000000');
+  });
+
   it('a version conflict parks the attempt as kind conflict and keeps the server row', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;

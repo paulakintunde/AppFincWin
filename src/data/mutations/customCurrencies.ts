@@ -6,6 +6,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import {
+  formatRate,
+  parseDecimalString,
+  parseRate,
+  RATE_SCALE,
   validateCustomCurrency,
   type CustomCurrencyError,
   type CustomCurrencyInput,
@@ -186,8 +190,33 @@ export function useAddCustomCurrency(userId: string): {
   };
 }
 
+export type EditCustomCurrencyResult = { ok: true } | { ok: false; errors: CustomCurrencyError[] };
+
+/**
+ * WR-A03: normalizes a hand-edited unit value to the same canonical 10-dp string add stores,
+ * so a malformed value never reaches the optimistic cache (where the provisional stamp would
+ * read it) or the server. With `locale`, the raw text is read region-aware exactly as add
+ * reads it; without one it must already be a plain ASCII decimal ('2.5').
+ */
+function normalizeUnitValue(raw: string, locale: string | undefined): string | null {
+  let decimal = raw.trim();
+  if (locale !== undefined) {
+    const parsed = parseDecimalString(raw, { locale, maxFractionDigits: RATE_SCALE });
+    if (!parsed.ok) return null;
+    decimal = parsed.value;
+  }
+  try {
+    return formatRate(parseRate(decimal));
+  } catch {
+    return null;
+  }
+}
+
 export function useEditCustomCurrency(userId: string): {
-  edit(vars: { id: string; expectedVersion: number; patch: CustomCurrencyPatch }): void;
+  edit(
+    vars: { id: string; expectedVersion: number; patch: CustomCurrencyPatch },
+    opts?: { locale?: string }
+  ): EditCustomCurrencyResult;
 } {
   const mutation = useMutation<CustomCurrencyRow, unknown, EditCustomCurrencyVars>({
     mutationKey: mutationKeys.editCustomCurrency,
@@ -195,8 +224,18 @@ export function useEditCustomCurrency(userId: string): {
   });
 
   return {
-    edit(vars: { id: string; expectedVersion: number; patch: CustomCurrencyPatch }): void {
-      mutation.mutate({ ...vars, userId });
+    edit(
+      vars: { id: string; expectedVersion: number; patch: CustomCurrencyPatch },
+      opts?: { locale?: string }
+    ): EditCustomCurrencyResult {
+      const patch: CustomCurrencyPatch = { ...vars.patch };
+      if (patch.unit_value !== undefined) {
+        const unitValue = normalizeUnitValue(patch.unit_value, opts?.locale);
+        if (unitValue === null) return { ok: false, errors: ['value-invalid'] };
+        patch.unit_value = unitValue;
+      }
+      mutation.mutate({ ...vars, patch, userId });
+      return { ok: true };
     },
   };
 }

@@ -32,7 +32,7 @@ interface PerEurResult {
   readonly source: RateSource | null;
 }
 
-const PENDING_UNRESOLVED_STAMP: ProvisionalStamp = {
+export const PENDING_UNRESOLVED_STAMP: ProvisionalStamp = {
   home_amount: null,
   rate: null,
   orig_per_eur: null,
@@ -96,7 +96,26 @@ function combineSource(origSource: RateSource | null, homeSource: RateSource | n
   return 'frankfurter-v2';
 }
 
+/**
+ * WR-A03: never throws. The stamp is a display-only estimate computed inside a write's
+ * onMutate, and a throw there aborts the real write before it is ever sent (query-core runs
+ * onMutate before the retryer starts). A malformed cached rate or unit_value, a rate that
+ * rounds to zero, or a result beyond MAX_SAFE_INTEGER therefore degrades to the fully
+ * pending stamp -- the server stamps the row properly once the write lands (D-16).
+ */
 export function provisionalStamp(
+  input: { amount: number; currency: string; homeCurrency: string },
+  rates: readonly FxLatestRow[],
+  customs: readonly CustomCurrencyRow[]
+): ProvisionalStamp {
+  try {
+    return computeProvisionalStamp(input, rates, customs);
+  } catch {
+    return PENDING_UNRESOLVED_STAMP;
+  }
+}
+
+function computeProvisionalStamp(
   input: { amount: number; currency: string; homeCurrency: string },
   rates: readonly FxLatestRow[],
   customs: readonly CustomCurrencyRow[]

@@ -370,6 +370,32 @@ describe('useAddTransaction', () => {
     expect(rows ?? []).toHaveLength(0);
   });
 
+  it('WR-A03: a malformed cached rate cannot abort the write -- the insert is still sent with a pending stamp', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: serverTransaction({ original_currency: 'JPY', rate_pending: true }), error: null, status: 201 });
+    fake.respondWith({ data: null, error: null, status: 200 }); // resolve-rate follow-up
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.fxLatest(), [USD_RATE, { ...JPY_RATE, rate: 'not-a-rate' }]);
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 1000 as never,
+      currency: 'JPY',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'insert')).toBe(true));
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'));
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+  });
+
   it('a duplicate-id (23505) insert is treated as success via the fetch-existing path, no rollback', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
