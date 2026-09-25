@@ -13,7 +13,14 @@
 # type; adding a required or not-nullable field; and truncate-cascade.
 #
 # Verified against the live rule list at https://squawkhq.com/docs/rules
-# (squawk-cli 2.66.0) on 2026-09-24. Every rule below is excluded.
+# (squawk-cli 2.66.0, pinned exactly in package.json) on 2026-09-24. Every
+# rule below is excluded.
+#
+# This list is the single source of truth for scripts/check-migration-
+# compat.mjs too: it reads excluded_rules from here and treats ignoring ANY
+# other rule name as ignoring an enforced rule (contract-ok required). Keep
+# it a plain one-string-per-entry array; the gate fails on anything it
+# cannot parse.
 excluded_rules = [
   "adding-field-with-default",
   "adding-foreign-key-constraint",

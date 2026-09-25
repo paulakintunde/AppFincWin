@@ -45,7 +45,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # WR-C05: pinned to the same Supabase CLI as package.json's `supabase`
+      # devDependency, so pgTAP (incl. the D-16 rounding mirror) runs on the
+      # same CLI and Postgres image locally and in CI. Bump both together.
       - uses: supabase/setup-cli@v1
-        with: { version: latest }
+        with: { version: 2.117.0 }
       - run: supabase db start
       - run: supabase test db
