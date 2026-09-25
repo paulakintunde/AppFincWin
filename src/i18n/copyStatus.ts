@@ -13,7 +13,7 @@
  * (D-13), not Claude's own drafting.
  */
 
-export const AWAITING_COPY_KEYS = ['auth.welcome.tagline'] as const;
+export const AWAITING_COPY_KEYS: readonly string[] = [];
 
 export const DRAFT_COPY_KEYS = [
   'consent.heading',
@@ -70,11 +70,13 @@ export const DRAFT_COPY_KEYS = [
   'money.customCurrency.error.decimalsInvalid',
   'money.customCurrency.error.referenceInvalid',
   'money.customCurrency.error.valueInvalid',
-  'money.amountInput.invalid',
-  'money.amountInput.tooManyDecimals_zero',
-  'money.amountInput.tooManyDecimals_one',
-  'money.amountInput.tooManyDecimals_other',
-  'money.amountInput.tooLarge',
+  'money.amountInput.error.empty',
+  'money.amountInput.error.invalid',
+  'money.amountInput.error.ambiguousSeparator',
+  'money.amountInput.error.tooManyDecimals_zero',
+  'money.amountInput.error.tooManyDecimals_one',
+  'money.amountInput.error.tooManyDecimals_other',
+  'money.amountInput.error.tooLarge',
   'money.settings.showCents',
   'money.settings.showCentsHint',
   'money.settings.leadFigure',
