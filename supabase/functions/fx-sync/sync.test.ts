@@ -32,6 +32,11 @@ function createFakeDb(opts: {
   recentRates?: FxSyncDb['recentRates'];
   latestRatesOnOrBefore?: FxSyncDb['latestRatesOnOrBefore'];
   holdsSequence?: Array<Awaited<ReturnType<FxSyncDb['holds']>>>;
+  // RD-07: defaults treat every synced code as newly-seen (an empty `currencies` table) and
+  // no code as already shadowing a custom currency, so existing tests need not know about
+  // either unless they specifically test this behaviour.
+  newCurrencyCodes?: FxSyncDb['newCurrencyCodes'];
+  shadowedCustomCodes?: FxSyncDb['shadowedCustomCodes'];
 } = {}): FakeDb {
   const calls: FakeDb['calls'] = {
     upsertRates: [],
@@ -66,6 +71,8 @@ function createFakeDb(opts: {
     upsertCurrencies: async (meta) => {
       calls.upsertCurrencies.push(meta);
     },
+    newCurrencyCodes: opts.newCurrencyCodes ?? (async (codes) => codes),
+    shadowedCustomCodes: opts.shadowedCustomCodes ?? (async () => []),
     calls,
   };
 }
@@ -234,6 +241,64 @@ describe('runFxSync', () => {
     expect(db.calls.upsertCurrencies).toEqual([
       [{ code: 'USD', isoNumeric: '840', name: 'United States Dollar', symbol: '$', startDate: '1792-01-01', endDate: '2026-09-24' }],
     ]);
+  });
+
+  describe('RD-07: ISO 4217 shadow list seeded from the currency-metadata sync', () => {
+    it('alerts when a newly-synced code shadows an existing custom currency, and keeps its definition (does not fail the sync)', async () => {
+      const newCurrencyCodes = jest.fn(async (codes: string[]) => codes); // USD never seen before
+      const shadowedCustomCodes = jest.fn(async (codes: string[]) => codes.filter((c) => c === 'USD'));
+      const db = createFakeDb({
+        recentRates: async () => [{ quote: 'USD', rate: '1.08', date: '2026-09-23' }],
+        newCurrencyCodes,
+        shadowedCustomCodes,
+      });
+      const fetchJson = createFetchJson({
+        [FRANKFURTER_RATES_URL]: FRANKFURTER_FIXTURE,
+        [FRANKFURTER_V2_CURRENCIES_URL]: CURRENCIES_FIXTURE,
+      });
+
+      const result = await runFxSync({ fetchJson, db });
+
+      expect(newCurrencyCodes).toHaveBeenCalledWith(['USD']);
+      expect(shadowedCustomCodes).toHaveBeenCalledWith(['USD']);
+      expect(db.calls.insertAlerts).toEqual(
+        expect.arrayContaining([expect.objectContaining({ kind: 'custom-shadowed', quote: 'USD' })])
+      );
+      // The metadata sync itself still succeeds -- a shadow is an operator notice, not a failure.
+      expect(result.currencies).toBe(1);
+      expect(db.calls.upsertCurrencies).toHaveLength(1);
+    });
+
+    it('does not alert for a code the currencies table already carried before this sync', async () => {
+      const newCurrencyCodes = jest.fn(async () => [] as string[]); // USD already known
+      const shadowedCustomCodes = jest.fn(async (codes: string[]) => codes);
+      const db = createFakeDb({
+        recentRates: async () => [{ quote: 'USD', rate: '1.08', date: '2026-09-23' }],
+        newCurrencyCodes,
+        shadowedCustomCodes,
+      });
+      const fetchJson = createFetchJson({
+        [FRANKFURTER_RATES_URL]: FRANKFURTER_FIXTURE,
+        [FRANKFURTER_V2_CURRENCIES_URL]: CURRENCIES_FIXTURE,
+      });
+
+      await runFxSync({ fetchJson, db });
+
+      expect(shadowedCustomCodes).not.toHaveBeenCalled();
+      expect(db.calls.insertAlerts).toEqual([]);
+    });
+
+    it('does not alert when a newly-synced code matches no custom currency', async () => {
+      const db = createFakeDb({ recentRates: async () => [{ quote: 'USD', rate: '1.08', date: '2026-09-23' }] });
+      const fetchJson = createFetchJson({
+        [FRANKFURTER_RATES_URL]: FRANKFURTER_FIXTURE,
+        [FRANKFURTER_V2_CURRENCIES_URL]: CURRENCIES_FIXTURE,
+      });
+
+      await runFxSync({ fetchJson, db });
+
+      expect(db.calls.insertAlerts).toEqual([]);
+    });
   });
 
   it('does not revive an operator-dropped hold: no hold upsert, no held alert, no fx_rates row (CR-B02)', async () => {

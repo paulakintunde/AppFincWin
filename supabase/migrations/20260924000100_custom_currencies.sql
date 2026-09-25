@@ -109,9 +109,17 @@ set search_path = ''
 as $$
 begin
   if tg_op = 'INSERT' then
-    -- Shadowing: the static ISO 4217 list plus whatever fx_rates carries
-    -- today (WR-B06).
-    if public.is_iso_currency(new.code) or public.is_iso4217_code(new.code) then
+    -- Shadowing: the static ISO 4217 list (the floor -- WR-B06) plus
+    -- whatever fx_rates carries today, plus public.currencies -- the
+    -- fx-sync daily currency-metadata sync (20260924000600_fx_monitoring.sql,
+    -- supabase/functions/fx-sync/currencies.ts). RD-07: a code Frankfurter
+    -- starts publishing metadata for (even one with no fx_rates quote yet)
+    -- is automatically reserved from that day forward, without anyone
+    -- having to hand-maintain the static list. This only blocks *new*
+    -- inserts -- a custom currency created before its code was ever synced
+    -- keeps working (this check never runs on UPDATE).
+    if public.is_iso_currency(new.code) or public.is_iso4217_code(new.code)
+       or exists (select 1 from public.currencies c where c.code = new.code) then
       raise exception 'custom currency % shadows an ISO currency', new.code using errcode = '23514';
     end if;
     if not public.is_iso_currency(new.reference_currency) then

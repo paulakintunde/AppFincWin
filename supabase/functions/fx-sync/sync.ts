@@ -23,6 +23,10 @@ export interface FxSyncDb {
   confirmHolds(ids: number[]): Promise<void>; // status 'confirmed', resolved_at now()
   insertAlerts(alerts: Array<{ kind: string; quote?: string; detail?: Record<string, unknown> }>): Promise<void>;
   upsertCurrencies(meta: CurrencyMeta[]): Promise<void>; // onConflict code; iso_numeric,name,symbol,start_date,end_date,synced_at
+  /** RD-07: the subset of `codes` not already present in the `currencies` table -- i.e. first seen by this sync. */
+  newCurrencyCodes(codes: string[]): Promise<string[]>;
+  /** RD-07: the subset of `codes` that some custom_currencies row (any owner) already uses. */
+  shadowedCustomCodes(codes: string[]): Promise<string[]>;
 }
 
 export interface FxSyncDeps {
@@ -191,8 +195,31 @@ async function ingest(
   let currencies = 0;
   try {
     const meta = parseFrankfurterCurrencies(await fetchJson(FRANKFURTER_V2_CURRENCIES_URL));
+    const codes = meta.map((m) => m.code);
+
+    // RD-07: a code this sync has never seen before, seeded into the shadow
+    // check the moment it lands (see guard_custom_currency() in
+    // 20260924000100_custom_currencies.sql). Checked *before* the upsert,
+    // since upsertCurrencies is what makes a code "seen" from now on.
+    const newCodes = await db.newCurrencyCodes(codes);
+
     await db.upsertCurrencies(meta);
     currencies = meta.length;
+
+    if (newCodes.length > 0) {
+      const shadowed = await db.shadowedCustomCodes(newCodes);
+      if (shadowed.length > 0) {
+        await db.insertAlerts(
+          shadowed.map((code) => ({
+            kind: 'custom-shadowed',
+            quote: code,
+            detail: {
+              reason: 'a newly-synced ISO currency code matches an existing custom currency; the custom definition keeps working',
+            },
+          }))
+        );
+      }
+    }
   } catch {
     // no-op: metadata sync is best-effort
   }
