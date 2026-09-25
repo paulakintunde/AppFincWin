@@ -54,8 +54,12 @@ $$;
 
 revoke execute on function public.is_iso_currency(text) from public, anon;
 grant execute on function public.is_iso_currency(text) to authenticated, service_role;
-revoke execute on function public.is_known_currency(text, uuid) from public, anon;
-grant execute on function public.is_known_currency(text, uuid) to authenticated, service_role;
+-- CR-B03: is_known_currency takes an arbitrary user id and runs as the
+-- definer, so a client could use it to probe another user's custom codes
+-- past the owner-only RLS below. Only definer triggers call it, so no
+-- client role gets EXECUTE.
+revoke execute on function public.is_known_currency(text, uuid) from public, anon, authenticated;
+grant execute on function public.is_known_currency(text, uuid) to service_role;
 
 -- Guard trigger: a custom code cannot shadow an ISO code, the reference
 -- currency must itself be a real ISO currency, and code/decimals are

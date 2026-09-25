@@ -388,10 +388,15 @@ $$;
 revoke execute on function public.restamp_transaction(uuid) from public, anon, authenticated;
 grant execute on function public.restamp_transaction(uuid) to service_role;
 
--- 7. Grants on the pure/lookup functions: authenticated and service_role
--- only. The trigger functions themselves (stamp_fx_rate, bump_version) are
--- never called directly by any role -- they only fire via the triggers
--- above.
+-- 7. Grants. The pure maths functions (div_half_up, convert_minor,
+-- cross_rate, custom_per_eur) take no user data and stay callable by
+-- authenticated and service_role. The lookups that take an owner UUID
+-- (currency_exponent, per_eur_rate) are SECURITY DEFINER and would let any
+-- signed-in user read another user's custom currency (decimals, unit value,
+-- reference) past the owner-only RLS on custom_currencies (CR-B03). Only
+-- the definer triggers call them, so they are service_role-only. The
+-- trigger functions themselves (stamp_fx_rate, bump_version) are never
+-- called directly by any role -- they only fire via the triggers above.
 revoke execute on function public.div_half_up(numeric, numeric) from public, anon;
 grant execute on function public.div_half_up(numeric, numeric) to authenticated, service_role;
 
@@ -404,8 +409,8 @@ grant execute on function public.cross_rate(numeric, numeric) to authenticated, 
 revoke execute on function public.custom_per_eur(numeric, numeric) from public, anon;
 grant execute on function public.custom_per_eur(numeric, numeric) to authenticated, service_role;
 
-revoke execute on function public.currency_exponent(text, uuid) from public, anon;
-grant execute on function public.currency_exponent(text, uuid) to authenticated, service_role;
+revoke execute on function public.currency_exponent(text, uuid) from public, anon, authenticated;
+grant execute on function public.currency_exponent(text, uuid) to service_role;
 
-revoke execute on function public.per_eur_rate(text, date, uuid, boolean) from public, anon;
-grant execute on function public.per_eur_rate(text, date, uuid, boolean) to authenticated, service_role;
+revoke execute on function public.per_eur_rate(text, date, uuid, boolean) from public, anon, authenticated;
+grant execute on function public.per_eur_rate(text, date, uuid, boolean) to service_role;
