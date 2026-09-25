@@ -9,7 +9,7 @@
 // inside the component body or an effect.
 import type { ReactNode } from 'react';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { persistOptions, resumeRestoredMutations } from './cache/persister';
+import { persistOptions, resumeRestoredMutations, trackServerFetches } from './cache/persister';
 import { queryClient } from './queryClient';
 import { startOnlineManager } from './onlineManager';
 import { registerMutationDefaults } from './mutations';
@@ -19,6 +19,7 @@ import { hydrateLastSynced, trackSyncActivity } from './sync/lastSynced';
 registerMutationDefaults(queryClient);
 startOnlineManager();
 trackSyncActivity(queryClient);
+trackServerFetches(queryClient); // IN-A05
 void hydrateFailedWrites();
 void hydrateLastSynced();
 

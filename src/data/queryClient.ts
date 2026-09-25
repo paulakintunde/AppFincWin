@@ -3,7 +3,7 @@
 // persisted copy.
 import { QueryClient } from '@tanstack/react-query';
 import { registerWipeHandler } from '@/services/storage/wipe';
-import { persister } from './cache/persister';
+import { clearServerFetchTimes, persister } from './cache/persister';
 import { bumpSessionEpoch } from './sync/sessionEpoch';
 
 export const queryClient = new QueryClient({
@@ -44,6 +44,7 @@ registerWipeHandler({
     bumpSessionEpoch();
     queryClient.getMutationCache().clear();
     queryClient.clear();
+    clearServerFetchTimes(); // IN-A05
     await persister.removeClient();
   },
   async pendingWriteCount() {
