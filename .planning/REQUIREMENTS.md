@@ -19,18 +19,18 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 - [ ] **FND-08**: Apple Developer Program enrolment is submitted before any store-dependent work begins
 - [ ] **FND-09**: App checks a minimum supported version on launch and shows an update-required screen when it is below it
 - [ ] **FND-10**: Every database migration is checked for compatibility with the oldest supported app version before it is deployed
-- [ ] **FND-11**: Over-the-air updates follow a runtime-version policy that separates JS-only fixes from native releases, and a bad update can be rolled back
+- [x] **FND-11**: Over-the-air updates follow a runtime-version policy that separates JS-only fixes from native releases, and a bad update can be rolled back
 - [x] **FND-12**: CI runs tests proving a user cannot read or write another user's rows or another household's rows
 
 ### Environment & Credentials
 
 Every external dependency is provisioned to a working state, or explicitly deferred with a recorded blocker and a phase it must land by. No secret is ever committed to source.
 
-- [ ] **ENV-01**: All runtime configuration is read from environment variables and EAS secrets, with a committed `.env.example` documenting every key and its purpose
+- [x] **ENV-01**: All runtime configuration is read from environment variables and EAS secrets, with a committed `.env.example` documenting every key and its purpose
 - [x] **ENV-02**: `.env` and any local secret file are gitignored, and CI fails if a credential pattern appears in a tracked file
 - [x] **ENV-03**: Supabase project is provisioned, with its URL and publishable key wired in and a connection verified from the running app
 - [x] **ENV-04**: Supabase service-role key is stored as an EAS secret and used only by Edge Functions, never shipped to the client
-- [ ] **ENV-05**: EAS project is initialised with development, preview and production build profiles
+- [x] **ENV-05**: EAS project is initialised with development, preview and production build profiles
 - [ ] **ENV-06**: Google OAuth client IDs exist for iOS, Android and Web, and Google Sign-In completes end to end
 - [ ] **ENV-07**: Sign in with Apple is configured with its Service ID and key, and completes end to end — *deferrable, blocked on ENV-10*
 - [x] **ENV-08**: Frankfurter rate-refresh Edge Function is deployed and populating the `fx_rates` table on schedule
@@ -332,13 +332,13 @@ Populated during roadmap creation.
 | FND-08 | Phase 0 - Foundation | Pending |
 | FND-09 | Phase 0 - Foundation | Pending |
 | FND-10 | Phase 1 - Money Core | Pending |
-| FND-11 | Phase 0 - Foundation | Pending |
+| FND-11 | Phase 0 - Foundation | Complete |
 | FND-12 | Phase 0 - Foundation | Complete |
-| ENV-01 | Phase 0 - Foundation | Pending |
+| ENV-01 | Phase 0 - Foundation | Complete |
 | ENV-02 | Phase 0 - Foundation | Complete |
 | ENV-03 | Phase 0 - Foundation | Complete |
 | ENV-04 | Phase 0 - Foundation | Complete |
-| ENV-05 | Phase 0 - Foundation | Pending |
+| ENV-05 | Phase 0 - Foundation | Complete |
 | ENV-06 | Phase 0 - Foundation | Pending |
 | ENV-07 | Phase 0 - Foundation | Pending |
 | ENV-08 | Phase 0 - Foundation | Complete |

@@ -75,7 +75,7 @@ Plans:
 - [x] 00-11-PLAN.md — Design tokens, 4 accents / 4 pairings live theme, reduce-motion, safe-area, DSG-02 guard (W3)
 - [x] 00-12-PLAN.md — Typed i18n catalogue with D-16 placeholders and D-20 drafts (W3)
 - [x] 00-13-PLAN.md — Consent-gated PostHog EU analytics, typed event catalogue, no replay (W3)
-- [ ] 00-14-PLAN.md — EAS project, profiles, env secrets, fingerprint OTA policy + rollback rehearsal (W3)
+- [x] 00-14-PLAN.md — EAS project, profiles, env secrets, fingerprint OTA policy + rollback rehearsal (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 00-15-PLAN.md — Apple/Google sign-in services, first-auth profile capture, AuthProvider, Google OAuth (W4)

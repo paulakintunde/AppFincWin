@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Completed 01-13-PLAN.md
-last_updated: "2026-09-25T02:22:22.426Z"
+last_updated: "2026-09-25T08:27:40.426Z"
 last_activity: 2026-09-25
 progress:
   total_phases: 12
   completed_phases: 0
   total_plans: 36
-  completed_plans: 26
-  percent: 72
+  completed_plans: 27
+  percent: 75
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 2 of 16
 Status: Ready to execute
 Last activity: 2026-09-25
 
-Progress: [███████░░░] 72%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [███████░░░] 72%
 | Phase 00 P04 | 55min | 2 tasks | 1 files |
 | Phase 00 P13 | 25min | 3 tasks | 6 files |
 | Phase 01 P13 | 50min | 2 tasks | 12 files |
+| Phase 00 P14 | 55min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,9 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-13: a code shorter than 2 chars always classifies as code-missing, never code-invalid, to distinguish nothing-typed-yet from something-typed-wrong
 - [Phase 01]: 01-13: profile money-preference writes (db/profile.ts, mutations/moneyPrefs.ts) are deliberately not version-conditional -- a settings row is a user's own, never contended, unlike a D-18 shared record
 - [Phase 01]: 01-13: useAddCustomCurrency derives its validation context from useCurrencyOptions/the cached custom list only when the caller omits ctx, so Record's add-currency sheet can call add(input) with no boilerplate
+- [Phase 00-foundation]: 00-14: EXPO_PUBLIC_APP_ENV takes each EAS environment's own name (development/preview/production) rather than one shared value for development+preview
+- [Phase 00-foundation]: 00-14: committed .npmrc (legacy-peer-deps=true) so EAS cloud npm ci resolves peer deps the same way CI (00-08) already does
+- [Phase 00-foundation]: 00-14: Android keystore SHA-1 was extracted from the built APK via apksigner rather than eas credentials -p android, which is interactive-only and this sandbox has no controllable TTY
 
 ### Pending Todos
 
