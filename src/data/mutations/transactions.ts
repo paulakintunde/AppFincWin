@@ -18,7 +18,12 @@ import type { CustomCurrencyRow, DbClient, FxLatestRow, NewTransaction, Transact
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
-import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
+import {
+  classifySettledWriteError,
+  settledWriteErrorCode,
+  shouldRetryWrite,
+  writeRetryDelay,
+} from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
@@ -77,10 +82,6 @@ async function followUpIfRatePending(qc: QueryClient, householdId: string, month
   }
 }
 
-function errorCode(err: unknown): string {
-  return err instanceof Error && 'code' in err ? String((err as { code: unknown }).code) : '';
-}
-
 export function registerTransactionMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.addTransaction, {
     mutationFn: async (vars: AddTransactionVars) => insertTransaction(await writeClient(), vars.row),
@@ -135,8 +136,8 @@ export function registerTransactionMutations(qc: QueryClient): void {
       await followUpIfRatePending(qc, vars.row.household_id, vars.optimistic.month, row);
     },
     onError: async (err: unknown, vars: AddTransactionVars) => {
-      const cls = classifyWriteError(err);
-      if (cls !== 'rejected' && cls !== 'not-found') return; // transient retries; a duplicate-id insert already resolved to success in db/
+      const cls = classifySettledWriteError(err);
+      if (cls !== 'rejected' && cls !== 'not-found') return; // an insert never conflicts; a duplicate-id insert already resolved to success in db/
       patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) =>
         rows.filter((r) => r.id !== vars.row.id)
       );
@@ -144,7 +145,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
         entity: 'transactions',
         entityId: vars.row.id,
         kind: cls,
-        code: errorCode(err),
+        code: settledWriteErrorCode(err),
         attempted: { ...vars.row },
       });
     },
@@ -196,7 +197,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
       await followUpIfRatePending(qc, vars.householdId, vars.month, row);
     },
     onError: async (err: unknown, vars: EditTransactionVars) => {
-      const cls = classifyWriteError(err);
+      const cls = classifySettledWriteError(err);
       if (cls === 'conflict' && err instanceof VersionConflictError) {
         const serverRow = err.serverRow as TransactionRow;
         patchMonthCache(qc, vars.householdId, vars.month, (rows) => rows.map((r) => (r.id === vars.id ? serverRow : r)));
@@ -216,7 +217,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
           entity: 'transactions',
           entityId: vars.id,
           kind: cls,
-          code: errorCode(err),
+          code: settledWriteErrorCode(err),
           attempted: vars.patch,
         });
       }

@@ -7,7 +7,12 @@ import type { QueryClient } from '@tanstack/react-query';
 import { updateMoneyPrefs, type MoneyPrefsPatch } from '@/db/profile';
 import type { MoneyPrefsRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
-import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
+import {
+  classifySettledWriteError,
+  settledWriteErrorCode,
+  shouldRetryWrite,
+  writeRetryDelay,
+} from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
 import { DEFAULT_MONEY_PREFS } from '@/data/queries/moneyPrefs';
@@ -22,10 +27,6 @@ interface MutationContext {
 }
 
 // WR-A01: writes go through ./writeClient (lazy require + session check).
-
-function errorCode(err: unknown): string {
-  return err instanceof Error && 'code' in err ? String((err as { code: unknown }).code) : '';
-}
 
 export function registerMoneyPrefsMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.updateMoneyPrefs, {
@@ -47,8 +48,8 @@ export function registerMoneyPrefsMutations(qc: QueryClient): void {
       qc.setQueryData(queryKeys.moneyPrefs(vars.userId), row);
     },
     onError: async (err: unknown, vars: UpdateMoneyPrefsVars, context: unknown) => {
-      const cls = classifyWriteError(err);
-      if (cls !== 'rejected' && cls !== 'not-found') return; // transient retries
+      const cls = classifySettledWriteError(err);
+      if (cls !== 'rejected' && cls !== 'not-found') return; // prefs are unconditional, never conflict
 
       const previous = (context as MutationContext | undefined)?.previous;
       if (previous) {
@@ -61,7 +62,7 @@ export function registerMoneyPrefsMutations(qc: QueryClient): void {
         entity: 'profiles',
         entityId: vars.userId,
         kind: cls,
-        code: errorCode(err),
+        code: settledWriteErrorCode(err),
         attempted: { ...vars.patch },
       });
     },

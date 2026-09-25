@@ -14,9 +14,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { AccountRow, DbClient, TransactionRow } from '@/db/rows';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
-import { queryKeys } from '@/data/keys';
+import { mutationKeys, queryKeys } from '@/data/keys';
+import { MAX_SERVER_ERROR_RETRIES } from '@/data/sync/writeErrors';
 import { registerMutationDefaults } from '../index';
-import { useAddTransaction, useEditTransaction } from '../transactions';
+import { useAddTransaction, useEditTransaction, type AddTransactionVars } from '../transactions';
 import { useAddAccount, useEditAccount } from '../accounts';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
@@ -335,6 +336,39 @@ describe('useAddTransaction', () => {
     await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'), { timeout: 5000 });
     expect(recordFailedWrite).not.toHaveBeenCalled();
   }, 10_000);
+
+  it('WR-A02: a write that always gets a 5xx is retried a bounded number of times, then parked as failed so the queue moves on', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    for (let i = 0; i <= MAX_SERVER_ERROR_RETRIES; i++) {
+      fake.respondWith({ data: null, error: { message: 'trigger raised', code: 'XX000' }, status: 500 });
+    }
+
+    const qc = newClient();
+    const vars: AddTransactionVars = {
+      row: {
+        id: 'tx-500',
+        household_id: 'h1',
+        account_id: 'acc1',
+        original_amount: 500,
+        original_currency: 'USD',
+        local_date: '2026-09-24',
+        time_zone: 'UTC',
+        note: null,
+      },
+      optimistic: { homeCurrency: 'USD', createdBy: 'user-1', month: '2026-09' },
+    };
+    // Same registered defaults, with the backoff removed so the test does not wait minutes.
+    const mutation = qc.getMutationCache().build(qc, { mutationKey: mutationKeys.addTransaction, retryDelay: 0 });
+    await expect(mutation.execute(vars)).rejects.toMatchObject({ status: 500 });
+
+    expect(fake.calls.filter((c) => c.method === 'insert')).toHaveLength(MAX_SERVER_ERROR_RETRIES + 1);
+    expect(recordFailedWrite).toHaveBeenCalledWith(
+      expect.objectContaining({ entity: 'transactions', entityId: 'tx-500', kind: 'rejected', code: 'retry-exhausted' })
+    );
+    const rows = qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+    expect(rows ?? []).toHaveLength(0);
+  });
 
   it('a duplicate-id (23505) insert is treated as success via the fetch-existing path, no rollback', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;

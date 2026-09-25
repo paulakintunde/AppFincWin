@@ -8,7 +8,12 @@ import { insertAccount, updateAccount } from '@/db/accounts';
 import type { AccountPatch, AccountRow, NewAccount } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
-import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
+import {
+  classifySettledWriteError,
+  settledWriteErrorCode,
+  shouldRetryWrite,
+  writeRetryDelay,
+} from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
@@ -34,10 +39,6 @@ function patchAccountsCache(
   updater: (rows: AccountList) => AccountList
 ): void {
   qc.setQueryData<AccountList>(queryKeys.accounts(householdId), (old) => updater(old ?? []));
-}
-
-function errorCode(err: unknown): string {
-  return err instanceof Error && 'code' in err ? String((err as { code: unknown }).code) : '';
 }
 
 export function registerAccountMutations(qc: QueryClient): void {
@@ -71,14 +72,14 @@ export function registerAccountMutations(qc: QueryClient): void {
       patchAccountsCache(qc, vars.row.household_id, (rows) => rows.map((r) => (r.id === row.id ? row : r)));
     },
     onError: async (err: unknown, vars: AddAccountVars) => {
-      const cls = classifyWriteError(err);
+      const cls = classifySettledWriteError(err);
       if (cls !== 'rejected' && cls !== 'not-found') return;
       patchAccountsCache(qc, vars.row.household_id, (rows) => rows.filter((r) => r.id !== vars.row.id));
       await recordFailedWrite({
         entity: 'accounts',
         entityId: vars.row.id,
         kind: cls,
-        code: errorCode(err),
+        code: settledWriteErrorCode(err),
         attempted: { ...vars.row },
       });
     },
@@ -106,7 +107,7 @@ export function registerAccountMutations(qc: QueryClient): void {
       patchAccountsCache(qc, vars.householdId, (rows) => rows.map((r) => (r.id === row.id ? row : r)));
     },
     onError: async (err: unknown, vars: EditAccountVars) => {
-      const cls = classifyWriteError(err);
+      const cls = classifySettledWriteError(err);
       if (cls === 'conflict' && err instanceof VersionConflictError) {
         const serverRow = err.serverRow as AccountRow;
         patchAccountsCache(qc, vars.householdId, (rows) => rows.map((r) => (r.id === vars.id ? serverRow : r)));
@@ -125,7 +126,7 @@ export function registerAccountMutations(qc: QueryClient): void {
           entity: 'accounts',
           entityId: vars.id,
           kind: cls,
-          code: errorCode(err),
+          code: settledWriteErrorCode(err),
           attempted: vars.patch,
         });
       }

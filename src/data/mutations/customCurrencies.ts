@@ -16,7 +16,12 @@ import { VersionConflictError } from '@/db/errors';
 import type { CustomCurrencyRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
-import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
+import {
+  classifySettledWriteError,
+  settledWriteErrorCode,
+  shouldRetryWrite,
+  writeRetryDelay,
+} from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
@@ -44,10 +49,6 @@ function patchCustomCurrenciesCache(
   updater: (rows: CustomCurrencyList) => CustomCurrencyList
 ): void {
   qc.setQueryData<CustomCurrencyList>(queryKeys.customCurrencies(userId), (old) => updater(old ?? []));
-}
-
-function errorCode(err: unknown): string {
-  return err instanceof Error && 'code' in err ? String((err as { code: unknown }).code) : '';
 }
 
 export function registerCustomCurrencyMutations(qc: QueryClient): void {
@@ -81,14 +82,14 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
       patchCustomCurrenciesCache(qc, vars.userId, (rows) => rows.map((r) => (r.id === row.id ? row : r)));
     },
     onError: async (err: unknown, vars: AddCustomCurrencyVars) => {
-      const cls = classifyWriteError(err);
-      if (cls !== 'rejected' && cls !== 'not-found') return; // transient retries; a duplicate-id insert already resolved to success in db/
+      const cls = classifySettledWriteError(err);
+      if (cls !== 'rejected' && cls !== 'not-found') return; // an insert never conflicts; a duplicate-id insert already resolved to success in db/
       patchCustomCurrenciesCache(qc, vars.userId, (rows) => rows.filter((r) => r.id !== vars.row.id));
       await recordFailedWrite({
         entity: 'custom_currencies',
         entityId: vars.row.id,
         kind: cls,
-        code: errorCode(err),
+        code: settledWriteErrorCode(err),
         attempted: { ...vars.row },
       });
     },
@@ -116,7 +117,7 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
       patchCustomCurrenciesCache(qc, vars.userId, (rows) => rows.map((r) => (r.id === row.id ? row : r)));
     },
     onError: async (err: unknown, vars: EditCustomCurrencyVars) => {
-      const cls = classifyWriteError(err);
+      const cls = classifySettledWriteError(err);
       if (cls === 'conflict' && err instanceof VersionConflictError) {
         const serverRow = err.serverRow as CustomCurrencyRow;
         patchCustomCurrenciesCache(qc, vars.userId, (rows) => rows.map((r) => (r.id === vars.id ? serverRow : r)));
@@ -135,7 +136,7 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
           entity: 'custom_currencies',
           entityId: vars.id,
           kind: cls,
-          code: errorCode(err),
+          code: settledWriteErrorCode(err),
           attempted: vars.patch,
         });
       }

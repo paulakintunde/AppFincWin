@@ -76,13 +76,56 @@ export function classifyWriteError(err: unknown): WriteErrorClass {
 }
 
 /**
- * True for 'transient' and 'auth' errors. Retries are unbounded here because TanStack Query
- * pauses the mutation entirely while offline (it never actually retries while
- * disconnected) — failureCount is accepted only to match the shape retry callbacks expect.
+ * WR-A02: how many times a write that got an HTTP answer (5xx/408/429) is retried before it
+ * is parked as failed. Every mutation shares one scope (WRITE_SCOPE), so a write that always
+ * fails server-side (a trigger error surfacing as a 500, a PostgREST bug on one payload)
+ * would otherwise block every later write forever. With writeRetryDelay's backoff this is
+ * roughly six and a half minutes of trying.
  */
-export function shouldRetryWrite(_failureCount: number, err: unknown): boolean {
+export const MAX_SERVER_ERROR_RETRIES = 10;
+
+/** The failed-write code recorded when WR-A02's retry budget runs out. */
+export const RETRY_EXHAUSTED_CODE = 'retry-exhausted';
+
+/** A connectivity failure: the request never got an HTTP answer at all. */
+function isConnectivityError(err: unknown): boolean {
+  if (err instanceof DbError) return isConnectivityFailure(err);
+  return classifyWriteError(err) === 'transient';
+}
+
+/**
+ * Retry policy for every queued write:
+ * - connectivity failures ('transient' with no HTTP answer) and 'auth' retry without bound.
+ *   TanStack Query pauses the mutation entirely while offline, so this never spins while
+ *   disconnected, and an auth wait ends when the session is refreshed or sign-out wipes.
+ * - server answers (5xx/408/429) retry at most MAX_SERVER_ERROR_RETRIES times (WR-A02).
+ * - everything else is permanent and never retried.
+ * `failureCount` is query-core's count of failures before this one (0 on the first).
+ */
+export function shouldRetryWrite(failureCount: number, err: unknown): boolean {
   const cls = classifyWriteError(err);
-  return cls === 'transient' || cls === 'auth';
+  if (cls === 'auth') return true;
+  if (cls !== 'transient') return false;
+  if (isConnectivityError(err)) return true;
+  return failureCount < MAX_SERVER_ERROR_RETRIES;
+}
+
+/**
+ * For a mutation's onError, where retrying has already stopped. A 'transient' or 'auth'
+ * error can only get there once shouldRetryWrite gave up (WR-A02's bounded server-error
+ * budget), so it is reported as a rejected write with the RETRY_EXHAUSTED_CODE reason rather
+ * than being dropped. Every other class passes through unchanged.
+ */
+export function classifySettledWriteError(err: unknown): Exclude<WriteErrorClass, 'transient' | 'auth'> {
+  const cls = classifyWriteError(err);
+  return cls === 'transient' || cls === 'auth' ? 'rejected' : cls;
+}
+
+/** The code recorded with a settled failure: the error's own code, or RETRY_EXHAUSTED_CODE. */
+export function settledWriteErrorCode(err: unknown): string {
+  const cls = classifyWriteError(err);
+  if (cls === 'transient' || cls === 'auth') return RETRY_EXHAUSTED_CODE;
+  return err instanceof Error && 'code' in err ? String((err as { code: unknown }).code) : '';
 }
 
 /** Exponential backoff, capped at 60 seconds. */

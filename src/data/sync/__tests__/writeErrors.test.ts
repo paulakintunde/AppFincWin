@@ -1,5 +1,13 @@
 import { DbError, VersionConflictError, NotFoundError, SessionUnavailableError, toDbError } from '@/db/errors';
-import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '../writeErrors';
+import {
+  classifySettledWriteError,
+  classifyWriteError,
+  MAX_SERVER_ERROR_RETRIES,
+  RETRY_EXHAUSTED_CODE,
+  settledWriteErrorCode,
+  shouldRetryWrite,
+  writeRetryDelay,
+} from '../writeErrors';
 
 describe('classifyWriteError', () => {
   it('classifies a VersionConflictError as conflict (D-18: never retried, never last-write-wins)', () => {
@@ -84,6 +92,40 @@ describe('shouldRetryWrite', () => {
 
   it('does not retry a conflict', () => {
     expect(shouldRetryWrite(0, new VersionConflictError('transactions', '1', {}))).toBe(false);
+  });
+
+  it('WR-A02: a server error (5xx/408/429) is retried at most MAX_SERVER_ERROR_RETRIES times', () => {
+    const serverError = new DbError('trigger raised', 'XX000', 500);
+    expect(shouldRetryWrite(0, serverError)).toBe(true);
+    expect(shouldRetryWrite(MAX_SERVER_ERROR_RETRIES - 1, serverError)).toBe(true);
+    expect(shouldRetryWrite(MAX_SERVER_ERROR_RETRIES, serverError)).toBe(false);
+    expect(shouldRetryWrite(MAX_SERVER_ERROR_RETRIES, new DbError('rate limited', '', 429))).toBe(false);
+  });
+
+  it('WR-A02: connectivity failures and auth waits stay unbounded', () => {
+    expect(shouldRetryWrite(1000, toDbError({ message: 'TypeError: Network request failed', code: '' }, 0))).toBe(true);
+    expect(shouldRetryWrite(1000, new DbError('x', '', null))).toBe(true);
+    expect(shouldRetryWrite(1000, new TypeError('Network request failed'))).toBe(true);
+    expect(shouldRetryWrite(1000, new DbError('JWT expired', 'PGRST303', 401))).toBe(true);
+  });
+});
+
+describe('classifySettledWriteError / settledWriteErrorCode (WR-A02)', () => {
+  it('reports an exhausted server-error retry as rejected with the retry-exhausted code', () => {
+    const serverError = new DbError('trigger raised', 'XX000', 500);
+    expect(classifySettledWriteError(serverError)).toBe('rejected');
+    expect(settledWriteErrorCode(serverError)).toBe(RETRY_EXHAUSTED_CODE);
+    expect(classifySettledWriteError(new SessionUnavailableError())).toBe('rejected');
+    expect(settledWriteErrorCode(new SessionUnavailableError())).toBe(RETRY_EXHAUSTED_CODE);
+  });
+
+  it('passes every other class and code through unchanged', () => {
+    expect(classifySettledWriteError(new DbError('x', '23514', 400))).toBe('rejected');
+    expect(settledWriteErrorCode(new DbError('x', '23514', 400))).toBe('23514');
+    expect(classifySettledWriteError(new NotFoundError('accounts', '1'))).toBe('not-found');
+    expect(settledWriteErrorCode(new NotFoundError('accounts', '1'))).toBe('not-found');
+    expect(classifySettledWriteError(new VersionConflictError('transactions', '1', {}))).toBe('conflict');
+    expect(settledWriteErrorCode('boom')).toBe('');
   });
 });
 
