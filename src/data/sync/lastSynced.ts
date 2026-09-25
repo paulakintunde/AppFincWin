@@ -52,10 +52,14 @@ export async function hydrateLastSynced(): Promise<void> {
 /**
  * Marks synced whenever any query fetch or mutation in the given QueryClient succeeds --
  * never on error. Returns a combined unsubscribe function.
+ *
+ * WR-A07: `setQueryData` also dispatches a query 'success' action, flagged `manual: true`.
+ * Every optimistic cache patch goes through it, including while offline, so manual updates
+ * are ignored -- only a real fetch that came back from the server counts as a sync.
  */
 export function trackSyncActivity(queryClient: QueryClient): () => void {
   const unsubscribeQueries = queryClient.getQueryCache().subscribe((event) => {
-    if (event.type === 'updated' && event.action.type === 'success') markSynced();
+    if (event.type === 'updated' && event.action.type === 'success' && !event.action.manual) markSynced();
   });
   const unsubscribeMutations = queryClient.getMutationCache().subscribe((event) => {
     if (event.type === 'updated' && event.action.type === 'success') markSynced();

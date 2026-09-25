@@ -209,5 +209,20 @@ describe('lastSynced', () => {
 
       untrack();
     });
+
+    it('WR-A07: a local optimistic setQueryData never counts as a sync', async () => {
+      const queryClient = new QueryClient();
+      const before = getLastSyncedAt();
+      const untrack = trackSyncActivity(queryClient);
+
+      await act(() => {
+        onlineManager.setOnline(false);
+      });
+      queryClient.setQueryData(['transactions', 'h1', '2026-09'], [{ id: 'optimistic' }]);
+      queryClient.setQueryData(['transactions', 'h1', '2026-09'], (old: unknown[] | undefined) => [...(old ?? []), { id: 'x' }]);
+
+      expect(getLastSyncedAt()).toBe(before);
+      untrack();
+    });
   });
 });
