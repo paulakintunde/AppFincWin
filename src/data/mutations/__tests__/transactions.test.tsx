@@ -1,19 +1,24 @@
 // Task 2 (RED): setMutationDefaults-backed transaction/account mutations -- client UUIDs
 // before mutate() (MON-08), optimistic pending rows, the resolve-rate follow-up, and D-18/
 // D-19 conflict/rejection handling. '@/services/supabase' is mocked to a mutable client so
-// each test controls exactly what the (dynamically imported) mutationFn talks to.
+// each test controls exactly what the (lazily required) write function talks to.
+//
+// react-native-get-random-values (imported transitively) falls back to a native module that
+// doesn't exist under Jest; Babel hoists imports above other top-level code, so this exists
+// as defense in depth (mirrors src/data/sync/__tests__/failedWrites.test.ts).
+/* eslint-disable import/first, @typescript-eslint/no-require-imports */
 globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto);
 
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
-import type { DbClient } from '@/db/rows';
-import type { AccountRow, TransactionRow } from '@/db/rows';
+import type { AccountRow, DbClient, TransactionRow } from '@/db/rows';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { queryKeys } from '@/data/keys';
 import { registerMutationDefaults } from '../index';
 import { useAddTransaction, useEditTransaction } from '../transactions';
 import { useAddAccount, useEditAccount } from '../accounts';
+/* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 let mockActiveClient: unknown;
 let mockUuidCounter = 0;
