@@ -5,11 +5,13 @@
 import React from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react-native';
 
+import { AuthProvider, useAuth } from '../AuthProvider';
+
 const mockGetSession = jest.fn();
 const mockOnAuthStateChange = jest.fn();
 const mockUnsubscribe = jest.fn();
 const mockConfigureGoogle = jest.fn();
-const mockRetryPendingFirstAuthProfile = jest.fn(async () => undefined);
+const mockRetryPendingFirstAuthProfile = jest.fn(async (..._args: unknown[]) => undefined);
 const mockSignInWithApple = jest.fn();
 const mockSignInWithGoogle = jest.fn();
 
@@ -33,8 +35,6 @@ jest.mock('@/services/auth', () => ({
   signInWithApple: (...args: unknown[]) => mockSignInWithApple(...args),
   signInWithGoogle: (...args: unknown[]) => mockSignInWithGoogle(...args),
 }));
-
-import { AuthProvider, useAuth } from '../AuthProvider';
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return <AuthProvider>{children}</AuthProvider>;
@@ -103,13 +103,13 @@ describe('AuthProvider', () => {
     await waitFor(() => expect(result.current.status).toBe('signedOut'));
 
     const session = { user: { id: 'user-2' } };
-    act(() => {
+    await act(async () => {
       mockAuthStateCallback?.('SIGNED_IN', session);
     });
     await waitFor(() => expect(result.current.status).toBe('signedIn'));
     expect(result.current.user?.id).toBe('user-2');
 
-    act(() => {
+    await act(async () => {
       mockAuthStateCallback?.('SIGNED_OUT', null);
     });
     await waitFor(() => expect(result.current.status).toBe('signedOut'));
@@ -130,7 +130,7 @@ describe('AuthProvider', () => {
     const { result, unmount } = await renderHook(() => useAuth(), { wrapper });
     await waitFor(() => expect(result.current.status).toBe('signedOut'));
 
-    unmount();
+    await unmount();
 
     expect(mockUnsubscribe).toHaveBeenCalledTimes(1);
   });
