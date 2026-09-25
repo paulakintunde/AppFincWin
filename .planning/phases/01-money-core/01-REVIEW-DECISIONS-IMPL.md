@@ -293,3 +293,53 @@ in place — RD-07 only adds the live feed on top of it, per the decision.
 - Every commit in this pass is `feat(01): RD-0x …` (or a small same-decision `fix(01):` /
   `docs(01):` follow-up), one decision (or a decision plus its docs) per commit, each with its
   own regression tests written and run against the pre-fix code first.
+
+---
+
+## Follow-up: offline estimate
+
+RD-03 landed the exact server-side conversion (`convert_minor_exact()` / `convertMinorExact()`)
+but left one client path on the old rounded-per-EUR-intermediate conversion:
+`src/data/mutations/provisional.ts`'s offline estimate (`provisionalStamp` /
+`computeProvisionalStamp`) still called `convertMinor` for custom-currency legs, so an offline
+entry of a high-value custom unit (e.g. 1.00 GOLD at 1 GOLD = 60,000 USD) displayed the same
+59,999.90 drift RD-03 fixed server-side, until the server's own stamp (D-16) landed and
+corrected it.
+
+**Commit:** `56cff29 feat(01): RD-03 exact conversion in offline provisional stamp` (test
+commit `06333ae` first, per the failing-first requirement).
+
+**What changed:**
+- `src/data/mutations/provisional.ts`: `resolvePerEur`'s custom-currency branch now also
+  returns the leg's raw stamp (`custom: { unitValue, referencePerEur }` — the currency's own
+  declared `unit_value` plus its reference currency's resolved per-EUR rate), alongside the
+  existing rounded `customPerEur` value still used for `orig_per_eur`/`home_per_eur`/`rate`
+  display. `computeProvisionalStamp` builds a `ConversionLeg` per side and calls
+  `convertMinorExact` instead of `convertMinor`, mirroring `stamp_fx_rate()`'s use of
+  `convert_minor_exact()` in the FX migration.
+- `editStamp`'s amount-only-edit fallback (D-04) is unchanged and still calls `convertMinor`
+  against the row's stored `orig_per_eur`/`home_per_eur`: `TransactionRow` does not expose the
+  raw custom-leg columns (`orig_custom_unit_value`/`orig_custom_ref_per_eur` and their `home_`
+  equivalents) to the client, so there is nothing exact to substitute there. This path already
+  re-derives through `provisionalStamp` (and so gets the exact conversion) whenever the edit
+  actually re-rates (a currency or date change); only the pure amount-edit-at-the-stored-rate
+  case keeps the rounded intermediate, same as before this change.
+- No changes to `src/engine/**` — `convertMinorExact` already existed from RD-03.
+
+**Tests:**
+- `src/data/mutations/__tests__/provisional.test.ts`: a new `RD-03: exact conversion for
+  custom-currency legs` block, written and run against the pre-fix code first (RED: the two
+  GOLD-leg cases failed with `5999990`/`-5999990` instead of `6000000`/`-6000000`, matching the
+  WR-B07 drift exactly). Cases mirror `supabase/tests/fixtures/money-conversion-cases.json`'s
+  `convertExact` fixture: 1.00 GOLD → USD (the required exact-not-rounded case), a negative
+  amount, the inverse direction (home leg custom), a 1e9-unit-value asset (0dp), both legs
+  custom against the same reference, and a 3-decimal custom leg into a 0-decimal ISO currency.
+  All pre-existing `provisionalStamp`/`editStamp` cases (same-currency, non-custom legs, the
+  zero/overflow-rate pending fallback, `rate_date`/`rate_source` semantics) pass unchanged.
+
+**Verification:** `npx jest src/data` (15 suites, 173 tests), full `npx jest` (57 suites, 1015
+tests), `npm run lint` (0 errors, the same 20 pre-existing `fast-check`/`i18next` warnings),
+`npm run typecheck`, `npm run depcruise` (no violations, 109 modules/272 dependencies) — all
+pass.
+
+**Anything needing the user:** none.
