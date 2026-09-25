@@ -343,3 +343,74 @@ tests), `npm run lint` (0 errors, the same 20 pre-existing `fast-check`/`i18next
 pass.
 
 **Anything needing the user:** none.
+
+---
+
+## Follow-up: offline amount-only edits
+
+The previous follow-up fixed `provisionalStamp` (a brand-new offline entry). It left
+`editStamp`'s D-04 amount-only-edit fallback on the rounded path, since `TransactionRow` did
+not expose the raw custom-leg columns RD-03's stamp trigger writes. This closes that gap: an
+offline amount-only edit of an *already-stamped* custom-currency transaction (e.g. changing
+1.00 GOLD to 2.00 GOLD, 1 GOLD = 60,000 USD) now also converts exactly instead of drifting
+through the same 59,999.90-style rounding WR-B07 found.
+
+**Commits:** `8fc9efc test(01): RD-03 follow-up failing-first exact offline amount-only edits`,
+`50febe8 feat(01): RD-03 exact offline amount-only edits for custom-currency rows`.
+
+**What changed:**
+- `supabase/migrations/20260924000400_transactions.sql`: doc-only comment. The table's
+  `grant select on public.transactions to authenticated` (no column list, unlike the
+  insert/update grants) already covered `orig_custom_unit_value`/`orig_custom_ref_per_eur`/
+  `home_custom_unit_value`/`home_custom_ref_per_eur` — a whole-table `GRANT SELECT` in
+  PostgreSQL applies to every column, present or future, unless a column-scoped grant is used
+  instead. Nothing needed to change in the grant itself; the comment now says so explicitly,
+  so a future reader does not assume these four columns need a new grant statement the way
+  the insert/update lists would.
+- `src/db/rows.ts`: `TransactionRow` gains the four columns as `string | null` (RD-03's own
+  numeric(24,10) stamp columns, cast to text like every other rate column so a value never
+  crosses into JS as a float, MON-01). Server-written only — still absent from
+  `TRANSACTION_INSERT_KEYS`/`TRANSACTION_PATCH_KEYS`.
+- `src/db/transactions.ts`: `TRANSACTION_COLUMNS` selects all four, each cast `::text`.
+- `src/data/mutations/transactions.ts`: `useAddTransaction`'s optimistic insert row sets all
+  four to `null` — an insert's optimistic stamp is only ever `provisionalStamp`'s own
+  (already-exact, per the previous follow-up) estimate; the raw columns are unknown until the
+  server's own stamp lands (D-16), exactly as `rate_pending` was already `true` in the interim.
+- `src/data/mutations/provisional.ts`: `editStamp`'s amount-only-edit fallback (previously the
+  one path RD-03 explicitly left unchanged) now builds a `ConversionLeg` per side via a new
+  `legFromRow` helper — the row's own `orig_per_eur`/`home_per_eur` plus, when both raw
+  columns for that side are present, the `custom` stamp — and calls `convertMinorExact`
+  instead of `convertMinor`. Mirrors `stamp_fx_rate()`'s own amount-only-edit branch, which
+  already reuses these same stored columns via `convert_minor_exact()`. A row with no raw
+  stamp (a plain ISO leg on either side, or a row written before this raw stamp existed) still
+  falls back to exactly the previous `convertMinor`-equivalent ratio — `legFromRow` returns a
+  plain leg, and `convertMinorExact` with no `custom` on either side reduces to the same
+  ratio `convertMinor` always computed, so this path is unchanged in every case it already
+  covered.
+- No changes to `src/engine/**` — `convertMinorExact` already existed from RD-03.
+
+**Tests:**
+- `src/data/mutations/__tests__/provisional.test.ts`: a new `RD-03 follow-up` block under
+  `editStamp`, written and run against the pre-fix code first (RED: 1.00 → 2.00 GOLD gave
+  11,999,980, not the exact 12,000,000 — the same WR-B07 drift, doubled). Cases: the required
+  exact amount-only edit, a negative amount, a non-custom row (both raw columns null)
+  confirming the existing D-04 path is unchanged, and a row whose raw columns are null despite
+  otherwise being a custom-currency row (simulating a pre-existing/never-stamped-with-the-raw-
+  columns row) falling back safely to the old rounded result rather than throwing.
+- `src/db/__tests__/transactions.test.ts`: `TRANSACTION_COLUMNS` casts all four new columns to
+  text; all four stay absent from `TRANSACTION_INSERT_KEYS`/`TRANSACTION_PATCH_KEYS`.
+- New pgTAP assertions in `supabase/tests/database/05_accounts_transactions.test.sql`
+  (extending the existing D-16 grant test, plan 20 → 23): `authenticated` can `select` all
+  four raw custom-leg stamp columns for its own household's row; inserting or updating any one
+  of them still fails `42501`, unchanged from every other stamp column.
+
+**Verification:** full pgTAP on a fresh `supabase db reset --local` (24 files, 339 tests, all
+passing), full `npx jest` (57 suites, 1021 tests), `npm run lint` (0 errors, the same 20
+pre-existing `fast-check`/`i18next` warnings), `npm run typecheck`, `npm run depcruise` (no
+violations, 109 modules/272 dependencies), `npm run lint:migrations` / `npm run
+verify:migrations` (both OK), `npm run check:money-mirror` (up to date), `npm run verify:gates`
+and `npm run check:ignores` (both OK), and a targeted coverage run confirming `engine/money`
+and `engine/split` are still 100% statements/branches/functions/lines (untouched by this pass,
+per the objective's constraint).
+
+**Anything needing the user:** none.
