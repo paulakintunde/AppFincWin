@@ -48,7 +48,7 @@ jobs:
       # WR-C05: pinned to the same Supabase CLI as package.json's `supabase`
       # devDependency, so pgTAP (incl. the D-16 rounding mirror) runs on the
       # same CLI and Postgres image locally and in CI. Bump both together.
-      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3 (v1)
+      - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v1.7.3 (v1)
         with: { version: 2.117.0 }
       - run: supabase db start
       - run: supabase test db
