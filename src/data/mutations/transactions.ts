@@ -28,7 +28,7 @@ import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
 import { upsertRow } from './cacheRows';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
-import { provisionalStamp } from './provisional';
+import { editStamp, provisionalStamp } from './provisional';
 
 export interface AddTransactionVars {
   row: NewTransaction;
@@ -41,7 +41,12 @@ export interface EditTransactionVars {
   month: string;
   expectedVersion: number;
   patch: TransactionPatch;
-  homeCurrency: string;
+  /**
+   * @deprecated Ignored. WR-A06/D-05: an edit's optimistic stamp uses the row's own
+   * `home_currency` (the server pins it on update), never the current preference. Kept
+   * optional so existing callers still type-check.
+   */
+  homeCurrency?: string;
 }
 
 type TransactionList = WithPending<TransactionRow>[];
@@ -210,26 +215,12 @@ export function registerTransactionMutations(qc: QueryClient): void {
         ?.find((r) => r.id === vars.id);
       if (!current) return;
 
-      const recomputesRate =
-        vars.patch.original_amount !== undefined ||
-        vars.patch.original_currency !== undefined ||
-        vars.patch.local_date !== undefined;
-
-      let patched: WithPending<TransactionRow> = { ...current, ...vars.patch, pending: true };
-      if (recomputesRate) {
-        const rates = qc.getQueryData<FxLatestRow[]>(queryKeys.fxLatest()) ?? [];
-        const customs = qc.getQueryData<CustomCurrencyRow[]>(queryKeys.customCurrencies(current.created_by ?? '')) ?? [];
-        const stamp = provisionalStamp(
-          {
-            amount: patched.original_amount,
-            currency: patched.original_currency,
-            homeCurrency: vars.homeCurrency,
-          },
-          rates,
-          customs
-        );
-        patched = { ...patched, ...stamp };
-      }
+      // WR-A06: mirror the server's D-04/D-05 rules (keep the row's own home currency; an
+      // amount-only edit keeps the stored rate) instead of re-rating at today's rate.
+      const rates = qc.getQueryData<FxLatestRow[]>(queryKeys.fxLatest()) ?? [];
+      const customs = qc.getQueryData<CustomCurrencyRow[]>(queryKeys.customCurrencies(current.created_by ?? '')) ?? [];
+      const stamp = editStamp(current, vars.patch, rates, customs);
+      const patched: WithPending<TransactionRow> = { ...current, ...vars.patch, ...stamp, pending: true };
       placeRowInMonth(qc, vars.householdId, patched, [vars.month]);
     },
     onSuccess: async (row: TransactionRow, vars: EditTransactionVars) => {

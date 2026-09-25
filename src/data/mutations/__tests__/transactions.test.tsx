@@ -505,6 +505,39 @@ describe('useEditTransaction', () => {
     expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-11'))).toBeUndefined();
   });
 
+  it('WR-A06: an offline amount-only edit keeps the row\'s own home currency and stored rate', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+
+    const qc = newClient();
+    const stamped = serverTransaction({
+      id: 'tx-6',
+      original_currency: 'JPY',
+      original_amount: 1000,
+      home_currency: 'USD',
+      home_amount: 640,
+      rate: '0.0064000000',
+      orig_per_eur: '180.0000000000',
+      home_per_eur: '1.1520000000',
+      rate_date: '2026-09-10',
+      rate_source: 'frankfurter-v2',
+      rate_pending: false,
+    });
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [stamped]);
+    qc.setQueryData(queryKeys.fxLatest(), [USD_RATE, JPY_RATE, { quote: 'GBP', rate: '0.85', rate_date: '2026-09-21', source: 'frankfurter-v2' }]);
+    const { result } = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+
+    // The user has since switched their home currency preference to GBP.
+    result.current.edit({ id: 'tx-6', householdId: 'h1', month: '2026-09', expectedVersion: 1, patch: { original_amount: 2000 }, homeCurrency: 'GBP' });
+
+    await waitFor(() => {
+      const row = qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'))?.[0];
+      expect(row).toMatchObject({ home_currency: 'USD', home_amount: 1280, rate: '0.0064000000', rate_date: '2026-09-10', rate_pending: false });
+    });
+    qc.getMutationCache().clear();
+  });
+
   it('a version conflict keeps the server row, invalidates the household transactions, and records the conflict', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;

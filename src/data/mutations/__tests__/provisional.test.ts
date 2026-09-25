@@ -4,8 +4,8 @@
 // rate_pending: true for any non-same-currency conversion, since only the server's own
 // stamp is authoritative (D-16, D-17).
 
-import type { CustomCurrencyRow, FxLatestRow } from '@/db/rows';
-import { PENDING_UNRESOLVED_STAMP, provisionalStamp } from '../provisional';
+import type { CustomCurrencyRow, FxLatestRow, TransactionRow } from '@/db/rows';
+import { editStamp, PENDING_UNRESOLVED_STAMP, provisionalStamp } from '../provisional';
 
 const USD_RATE: FxLatestRow = {
   quote: 'USD',
@@ -131,5 +131,107 @@ describe('provisionalStamp', () => {
       rate_source: null,
       rate_pending: true,
     });
+  });
+});
+
+describe('editStamp (WR-A06)', () => {
+  const GBP_RATE: FxLatestRow = { quote: 'GBP', rate: '0.8500000000', rate_date: '2026-09-21', source: 'frankfurter-v2' };
+  const stampedJpyRow: TransactionRow = {
+    id: 'tx-1',
+    household_id: 'h1',
+    account_id: 'acc1',
+    created_by: 'user-1',
+    original_amount: 1000,
+    original_currency: 'JPY',
+    home_currency: 'USD',
+    home_amount: 640,
+    rate: '0.0064000000',
+    orig_per_eur: '180.0000000000',
+    home_per_eur: '1.1520000000',
+    rate_date: '2026-09-10',
+    rate_source: 'frankfurter-v2',
+    rate_pending: false,
+    local_date: '2026-09-10',
+    time_zone: 'UTC',
+    note: null,
+    version: 1,
+    created_at: '2026-09-10T00:00:00.000Z',
+    updated_at: '2026-09-10T00:00:00.000Z',
+  };
+
+  it('D-04: an amount-only edit keeps the stored rate, date, source and pending flag, recomputing home_amount from them', () => {
+    const stamp = editStamp(stampedJpyRow, { original_amount: 2000 }, [USD_RATE, JPY_RATE], []);
+    // 2000 JPY * 1.152 / 180 = 12.80 USD -- the stored rate, not today's cached 1.1483/180.7.
+    expect(stamp).toEqual({
+      home_amount: 1280,
+      rate: '0.0064000000',
+      orig_per_eur: '180.0000000000',
+      home_per_eur: '1.1520000000',
+      rate_date: '2026-09-10',
+      rate_source: 'frankfurter-v2',
+      rate_pending: false,
+    });
+  });
+
+  it("D-05: a re-rating edit converts into the row's own home currency, not the current preference", () => {
+    const gbpRow: TransactionRow = { ...stampedJpyRow, home_currency: 'GBP', home_per_eur: '0.8500000000' };
+    const stamp = editStamp(gbpRow, { local_date: '2026-09-12' }, [USD_RATE, JPY_RATE, GBP_RATE], []);
+    expect(stamp.home_per_eur).toBe('0.8500000000');
+    // 1000 JPY * 0.85 / 180.7 = 4.70 GBP
+    expect(stamp.home_amount).toBe(470);
+    expect(stamp.rate_pending).toBe(true);
+  });
+
+  it('a currency change re-rates against the cache', () => {
+    const stamp = editStamp(stampedJpyRow, { original_currency: 'EUR' }, [USD_RATE, JPY_RATE], []);
+    expect(stamp.orig_per_eur).toBe('1.0000000000');
+    expect(stamp.home_amount).toBe(1148);
+  });
+
+  it('a same-currency row copies the new amount', () => {
+    const same: TransactionRow = {
+      ...stampedJpyRow,
+      original_currency: 'USD',
+      home_amount: 500,
+      rate: '1.0000000000',
+      orig_per_eur: null,
+      home_per_eur: null,
+      rate_date: null,
+      rate_source: 'same-currency',
+    };
+    expect(editStamp(same, { original_amount: 750 }, [], [])).toMatchObject({
+      home_amount: 750,
+      rate_source: 'same-currency',
+      rate: '1.0000000000',
+    });
+  });
+
+  it('an edit that touches neither amount, currency nor date (or repeats them) keeps the whole stamp', () => {
+    const kept = {
+      home_amount: 640,
+      rate: '0.0064000000',
+      orig_per_eur: '180.0000000000',
+      home_per_eur: '1.1520000000',
+      rate_date: '2026-09-10',
+      rate_source: 'frankfurter-v2',
+      rate_pending: false,
+    };
+    expect(editStamp(stampedJpyRow, {}, [], [])).toEqual(kept);
+    expect(
+      editStamp(stampedJpyRow, { original_amount: 1000, local_date: '2026-09-10', original_currency: 'JPY' }, [], [])
+    ).toEqual(kept);
+  });
+
+  it('an amount-only edit of a never-resolved row falls back to a cached estimate', () => {
+    const unresolved: TransactionRow = { ...stampedJpyRow, ...PENDING_UNRESOLVED_STAMP };
+    const stamp = editStamp(unresolved, { original_amount: 2000 }, [USD_RATE, JPY_RATE], []);
+    expect(stamp.home_amount).toBe(1271);
+    expect(stamp.rate_pending).toBe(true);
+  });
+
+  it('never throws: a stored rate that cannot be parsed degrades to the pending stamp', () => {
+    expect(editStamp({ ...stampedJpyRow, orig_per_eur: 'bad' }, { original_amount: 5 }, [], [])).toEqual(
+      PENDING_UNRESOLVED_STAMP
+    );
   });
 });

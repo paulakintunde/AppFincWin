@@ -115,6 +115,55 @@ export function provisionalStamp(
   }
 }
 
+function keepStamp(row: TransactionRow): ProvisionalStamp {
+  const { home_amount, rate, orig_per_eur, home_per_eur, rate_date, rate_source, rate_pending } = row;
+  return { home_amount, rate, orig_per_eur, home_per_eur, rate_date, rate_source, rate_pending };
+}
+
+/**
+ * WR-A06: the optimistic stamp for an edit, mirroring what the server trigger will do rather
+ * than re-rating everything at today's rate:
+ * - D-05: the row's own `home_currency` is kept (the trigger pins it on update), never the
+ *   user's current preference.
+ * - D-04: an amount-only edit keeps the stored rate. `home_amount` is recomputed from the
+ *   row's own `orig_per_eur`/`home_per_eur` (or copied for a same-currency row), and
+ *   `rate`, `rate_date`, `rate_source` and `rate_pending` stay as they were.
+ * - A date or currency change is a genuine re-rate: provisionalStamp against the cached rates.
+ * - An edit touching none of amount/currency/date keeps the whole stamp.
+ * Like provisionalStamp, it never throws.
+ */
+export function editStamp(
+  row: TransactionRow,
+  patch: { original_amount?: number; original_currency?: string; local_date?: string },
+  rates: readonly FxLatestRow[],
+  customs: readonly CustomCurrencyRow[]
+): ProvisionalStamp {
+  const amount = patch.original_amount ?? row.original_amount;
+  const currency = patch.original_currency ?? row.original_currency;
+  const reRates = currency !== row.original_currency || (patch.local_date ?? row.local_date) !== row.local_date;
+
+  if (reRates) return provisionalStamp({ amount, currency, homeCurrency: row.home_currency }, rates, customs);
+  if (amount === row.original_amount) return keepStamp(row);
+
+  if (row.rate_source === 'same-currency') return { ...keepStamp(row), home_amount: amount };
+  if (row.orig_per_eur === null || row.home_per_eur === null) {
+    // Never resolved yet (fully pending): nothing stored to reuse, so estimate from the cache.
+    return provisionalStamp({ amount, currency, homeCurrency: row.home_currency }, rates, customs);
+  }
+  try {
+    const homeAmount = convertMinor(
+      minorUnits(amount),
+      parseRate(row.orig_per_eur),
+      resolveExponent(currency, findCustom(currency, customs)?.decimals),
+      parseRate(row.home_per_eur),
+      resolveExponent(row.home_currency, findCustom(row.home_currency, customs)?.decimals)
+    );
+    return { ...keepStamp(row), home_amount: homeAmount };
+  } catch {
+    return PENDING_UNRESOLVED_STAMP;
+  }
+}
+
 function computeProvisionalStamp(
   input: { amount: number; currency: string; homeCurrency: string },
   rates: readonly FxLatestRow[],
