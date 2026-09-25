@@ -42,7 +42,11 @@ export function RateAttribution({ rateDate, rateSource, ratePending }: RateAttri
   const attributionText = t('money.rate.attribution');
 
   const handlePress = () => {
-    void Linking.openURL(ATTRIBUTION_URL);
+    // WR-C06: openURL rejects when no handler exists (no browser, restricted
+    // device or work profile). The attribution text stays on screen either
+    // way, so there is nothing further to show; swallow it rather than
+    // surfacing an unhandled rejection.
+    Linking.openURL(ATTRIBUTION_URL).catch(() => undefined);
   };
 
   const labelStyle = {

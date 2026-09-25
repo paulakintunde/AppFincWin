@@ -34,6 +34,23 @@ describe('RateAttribution', () => {
     await waitFor(() => expect(openURLSpy).toHaveBeenCalledWith('https://www.exchangerate-api.com'));
   });
 
+  it('handles an openURL rejection (no browser available) without an unhandled rejection', async () => {
+    const unhandled = jest.fn();
+    process.on('unhandledRejection', unhandled);
+    try {
+      const openURLSpy = jest.spyOn(Linking, 'openURL').mockRejectedValue(new Error('No Activity found'));
+      const { getByRole } = await renderWithTheme(
+        <RateAttribution rateDate="2026-09-21" rateSource="open-er-api" ratePending={false} />
+      );
+      fireEvent.press(getByRole('link'));
+      await waitFor(() => expect(openURLSpy).toHaveBeenCalled());
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
+  });
+
   it('renders "Your rate, set <date>" for a custom rate', async () => {
     const { getByText } = await renderWithTheme(
       <RateAttribution rateDate="2026-09-20" rateSource="custom" ratePending={false} />
