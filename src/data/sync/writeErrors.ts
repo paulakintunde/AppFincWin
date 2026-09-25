@@ -1,4 +1,4 @@
-import { DbError, VersionConflictError, NotFoundError } from '@/db/errors';
+import { DbError, VersionConflictError, NotFoundError, SessionUnavailableError } from '@/db/errors';
 
 /**
  * How a failed write is handled downstream:
@@ -9,6 +9,11 @@ import { DbError, VersionConflictError, NotFoundError } from '@/db/errors';
  *   malformed input, or anything this module does not recognise). Stops retrying
  *   immediately so nothing loops forever on something it can never fix by retrying.
  * - 'transient': network failure or a 5xx/408/429 response. Safe to retry.
+ * - 'auth': WR-A01. The session was missing or expired (HTTP 401, PostgREST's JWT codes
+ *   PGRST301/302/303, or the pre-send session check found no session). Nothing is wrong with
+ *   the write itself: it waits and retries, and every retry runs the session check again,
+ *   which is where supabase-js refreshes the token. Never parked as failed -- sign-out wipes
+ *   the queue explicitly (D-15) if the user is really signed out.
  *
  * CR-A03: there is deliberately no "already applied" class. A duplicate client-generated
  * UUID (23505 on the primary key -- an earlier attempt landed and its response was lost) is
@@ -17,7 +22,7 @@ import { DbError, VersionConflictError, NotFoundError } from '@/db/errors';
  * different unique constraint (e.g. custom_currencies' (owner_id, code)) and is a permanent
  * rejection the user must be told about (D-19), never a silent drop.
  */
-export type WriteErrorClass = 'transient' | 'conflict' | 'rejected' | 'not-found';
+export type WriteErrorClass = 'transient' | 'auth' | 'conflict' | 'rejected' | 'not-found';
 
 // D-19: permanent rejections. 42501 RLS denial, 23514 check violation, 23503 FK violation,
 // 23502 not-null violation, 22P02 invalid text representation, PGRST204 PostgREST
@@ -31,6 +36,10 @@ const REJECTED_CODES = new Set(['42501', '23514', '23503', '23502', '22P02', 'PG
 // node_modules/@supabase/postgrest-js/dist/index.cjs, the `res.catch((fetchError) => ...)`
 // branch). Status 0 therefore means "the request never got an HTTP answer" -- a
 // connectivity failure, always safe to retry.
+// WR-A01: PostgREST's JWT errors -- PGRST301 (invalid/undecodable JWT), PGRST302 (anonymous
+// access disabled / no JWT), PGRST303 (claims validation failed, e.g. expired).
+const AUTH_CODES = new Set(['PGRST301', 'PGRST302', 'PGRST303']);
+
 function isConnectivityFailure(err: DbError): boolean {
   return err.status === 0 || (err.code === '' && err.status === null);
 }
@@ -49,9 +58,11 @@ function isTransientStatus(status: number | null): boolean {
 export function classifyWriteError(err: unknown): WriteErrorClass {
   if (err instanceof VersionConflictError) return 'conflict';
   if (err instanceof NotFoundError) return 'not-found';
+  if (err instanceof SessionUnavailableError) return 'auth';
 
   if (err instanceof DbError) {
     if (isConnectivityFailure(err)) return 'transient';
+    if (err.status === 401 || AUTH_CODES.has(err.code)) return 'auth';
     if (REJECTED_CODES.has(err.code)) return 'rejected';
     if (isTransientStatus(err.status)) return 'transient';
     return 'rejected';
@@ -65,12 +76,13 @@ export function classifyWriteError(err: unknown): WriteErrorClass {
 }
 
 /**
- * True only for 'transient' errors. Retries are unbounded here because TanStack Query
+ * True for 'transient' and 'auth' errors. Retries are unbounded here because TanStack Query
  * pauses the mutation entirely while offline (it never actually retries while
  * disconnected) — failureCount is accepted only to match the shape retry callbacks expect.
  */
 export function shouldRetryWrite(_failureCount: number, err: unknown): boolean {
-  return classifyWriteError(err) === 'transient';
+  const cls = classifyWriteError(err);
+  return cls === 'transient' || cls === 'auth';
 }
 
 /** Exponential backoff, capped at 60 seconds. */

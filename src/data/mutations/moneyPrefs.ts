@@ -5,10 +5,11 @@
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { updateMoneyPrefs, type MoneyPrefsPatch } from '@/db/profile';
-import type { DbClient, MoneyPrefsRow } from '@/db/rows';
+import type { MoneyPrefsRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { writeClient } from './writeClient';
 import { DEFAULT_MONEY_PREFS } from '@/data/queries/moneyPrefs';
 
 export interface UpdateMoneyPrefsVars {
@@ -20,13 +21,7 @@ interface MutationContext {
   previous: MoneyPrefsRow | undefined;
 }
 
-// See transactions.ts's lazySupabaseClient for why require() (not the plan-literal
-// `await import(...)`) is used here -- dynamic import() throws under this project's Jest
-// config the moment it actually runs (01-12 Deviation 1).
-function lazySupabaseClient(): DbClient {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return (require('@/services/supabase') as typeof import('@/services/supabase')).supabase;
-}
+// WR-A01: writes go through ./writeClient (lazy require + session check).
 
 function errorCode(err: unknown): string {
   return err instanceof Error && 'code' in err ? String((err as { code: unknown }).code) : '';
@@ -34,7 +29,7 @@ function errorCode(err: unknown): string {
 
 export function registerMoneyPrefsMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.updateMoneyPrefs, {
-    mutationFn: (vars: UpdateMoneyPrefsVars) => updateMoneyPrefs(lazySupabaseClient(), vars.userId, vars.patch),
+    mutationFn: async (vars: UpdateMoneyPrefsVars) => updateMoneyPrefs(await writeClient(), vars.userId, vars.patch),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,

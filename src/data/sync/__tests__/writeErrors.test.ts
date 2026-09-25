@@ -1,4 +1,4 @@
-import { DbError, VersionConflictError, NotFoundError, toDbError } from '@/db/errors';
+import { DbError, VersionConflictError, NotFoundError, SessionUnavailableError, toDbError } from '@/db/errors';
 import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '../writeErrors';
 
 describe('classifyWriteError', () => {
@@ -20,6 +20,16 @@ describe('classifyWriteError', () => {
   it('CR-A03: a 23505 that escapes db/ (not the row id -- that case resolves to the existing row there) is rejected, never swallowed', () => {
     expect(classifyWriteError(new DbError('duplicate key value violates unique constraint', '23505', 409))).toBe('rejected');
     expect(shouldRetryWrite(0, new DbError('duplicate key', '23505', 409))).toBe(false);
+  });
+
+  it('WR-A01: an expired/missing session is auth (retried), not rejected', () => {
+    expect(classifyWriteError(new DbError('JWT expired', 'PGRST303', 401))).toBe('auth');
+    expect(classifyWriteError(new DbError('JWSError', 'PGRST301', 401))).toBe('auth');
+    expect(classifyWriteError(new DbError('anonymous access disabled', 'PGRST302', 401))).toBe('auth');
+    expect(classifyWriteError(new DbError('unauthorized', '', 401))).toBe('auth');
+    expect(classifyWriteError(new SessionUnavailableError())).toBe('auth');
+    expect(shouldRetryWrite(3, new DbError('JWT expired', 'PGRST303', 401))).toBe(true);
+    expect(shouldRetryWrite(3, new SessionUnavailableError())).toBe(true);
   });
 
   it('classifies a network TypeError as transient', () => {

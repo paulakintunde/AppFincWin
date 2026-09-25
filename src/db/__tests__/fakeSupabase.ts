@@ -97,6 +97,17 @@ export class FakeSupabase {
     };
   }
 
+  /** WR-A01: what auth.getSession() reports. A signed-in session by default; tests set null. */
+  session: { access_token: string } | null = { access_token: 'fake-token' };
+  sessionError: { message: string } | null = null;
+
+  auth = {
+    getSession: async () => {
+      this.calls.push({ method: 'auth.getSession', args: [] });
+      return { data: { session: this.session }, error: this.sessionError };
+    },
+  };
+
   functions = {
     invoke: (name: string, opts?: unknown): Promise<FakeResponse> => {
       this.calls.push({ method: 'functions.invoke', args: [name, opts] });

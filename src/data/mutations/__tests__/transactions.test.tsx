@@ -275,6 +275,67 @@ describe('useAddTransaction', () => {
     expect(recordFailedWrite).not.toHaveBeenCalled();
   }, 10_000);
 
+  it('WR-A01: with no usable session the write is held (never sent under the anon key) and lands once the session is back', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.session = null; // token expired and the refresh failed
+    fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.failureCount).toBe(1));
+    expect(fake.calls.some((c) => c.method === 'insert')).toBe(false);
+    expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('pending');
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+
+    fake.session = { access_token: 'refreshed' };
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'insert')).toBe(true), { timeout: 5000 });
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'));
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+  }, 10_000);
+
+  it('WR-A01: a 401 JWT-expired response is retried, not rolled back into the failed list', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'JWT expired', code: 'PGRST303' }, status: 401 });
+    fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.failureCount).toBe(1));
+    expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('pending');
+    const rows = qc.getQueryData<(TransactionRow & { pending?: boolean })[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+    expect(rows?.[0]).toMatchObject({ id: 'uuid-0', pending: true });
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'), { timeout: 5000 });
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+  }, 10_000);
+
   it('a duplicate-id (23505) insert is treated as success via the fetch-existing path, no rollback', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;

@@ -20,6 +20,7 @@ import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { writeClient } from './writeClient';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { provisionalStamp } from './provisional';
 
@@ -82,7 +83,7 @@ function errorCode(err: unknown): string {
 
 export function registerTransactionMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.addTransaction, {
-    mutationFn: (vars: AddTransactionVars) => insertTransaction(lazySupabaseClient(), vars.row),
+    mutationFn: async (vars: AddTransactionVars) => insertTransaction(await writeClient(), vars.row),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
@@ -153,7 +154,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
     mutationFn: async (vars: EditTransactionVars) => {
       // CR-A02: an earlier queued edit of this same row may already have bumped its version.
       const expected = resolveExpectedVersion('transactions', vars.id, vars.expectedVersion);
-      const row = await updateTransaction(lazySupabaseClient(), vars.id, expected, vars.patch);
+      const row = await updateTransaction(await writeClient(), vars.id, expected, vars.patch);
       recordWrittenVersion('transactions', vars.id, [vars.expectedVersion, expected], row.version);
       return row;
     },

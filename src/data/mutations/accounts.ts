@@ -5,11 +5,12 @@ import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { VersionConflictError } from '@/db/errors';
 import { insertAccount, updateAccount } from '@/db/accounts';
-import type { AccountPatch, AccountRow, DbClient, NewAccount } from '@/db/rows';
+import type { AccountPatch, AccountRow, NewAccount } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { writeClient } from './writeClient';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 
 export interface AddAccountVars {
@@ -25,12 +26,7 @@ export interface EditAccountVars {
 
 type AccountList = WithPending<AccountRow>[];
 
-// See transactions.ts's lazySupabaseClient for why require() replaces the plan's originally
-// specified `await import(...)` (Rule 3 -- dynamic import throws under this Jest config).
-function lazySupabaseClient(): DbClient {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return (require('@/services/supabase') as typeof import('@/services/supabase')).supabase;
-}
+// WR-A01: writes go through ./writeClient (lazy require + session check).
 
 function patchAccountsCache(
   qc: QueryClient,
@@ -46,7 +42,7 @@ function errorCode(err: unknown): string {
 
 export function registerAccountMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.addAccount, {
-    mutationFn: (vars: AddAccountVars) => insertAccount(lazySupabaseClient(), vars.row),
+    mutationFn: async (vars: AddAccountVars) => insertAccount(await writeClient(), vars.row),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
@@ -92,7 +88,7 @@ export function registerAccountMutations(qc: QueryClient): void {
     mutationFn: async (vars: EditAccountVars) => {
       // CR-A02: an earlier queued edit of this same row may already have bumped its version.
       const expected = resolveExpectedVersion('accounts', vars.id, vars.expectedVersion);
-      const row = await updateAccount(lazySupabaseClient(), vars.id, expected, vars.patch);
+      const row = await updateAccount(await writeClient(), vars.id, expected, vars.patch);
       recordWrittenVersion('accounts', vars.id, [vars.expectedVersion, expected], row.version);
       return row;
     },

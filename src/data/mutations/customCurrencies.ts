@@ -13,11 +13,12 @@ import {
 } from '@/engine/money';
 import { insertCustomCurrency, updateCustomCurrency, type CustomCurrencyPatch, type NewCustomCurrency } from '@/db/customCurrencies';
 import { VersionConflictError } from '@/db/errors';
-import type { CustomCurrencyRow, DbClient } from '@/db/rows';
+import type { CustomCurrencyRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { writeClient } from './writeClient';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 
@@ -35,13 +36,7 @@ export interface EditCustomCurrencyVars {
 
 type CustomCurrencyList = WithPending<CustomCurrencyRow>[];
 
-// See transactions.ts's lazySupabaseClient for why require() (not the plan-literal
-// `await import(...)`) is used here -- dynamic import() throws under this project's Jest
-// config the moment it actually runs (01-12 Deviation 1).
-function lazySupabaseClient(): DbClient {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return (require('@/services/supabase') as typeof import('@/services/supabase')).supabase;
-}
+// WR-A01: writes go through ./writeClient (lazy require + session check).
 
 function patchCustomCurrenciesCache(
   qc: QueryClient,
@@ -57,7 +52,7 @@ function errorCode(err: unknown): string {
 
 export function registerCustomCurrencyMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.addCustomCurrency, {
-    mutationFn: (vars: AddCustomCurrencyVars) => insertCustomCurrency(lazySupabaseClient(), vars.row),
+    mutationFn: async (vars: AddCustomCurrencyVars) => insertCustomCurrency(await writeClient(), vars.row),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
@@ -103,7 +98,7 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
     mutationFn: async (vars: EditCustomCurrencyVars) => {
       // CR-A02: an earlier queued edit of this same row may already have bumped its version.
       const expected = resolveExpectedVersion('custom_currencies', vars.id, vars.expectedVersion);
-      const row = await updateCustomCurrency(lazySupabaseClient(), vars.id, expected, vars.patch);
+      const row = await updateCustomCurrency(await writeClient(), vars.id, expected, vars.patch);
       recordWrittenVersion('custom_currencies', vars.id, [vars.expectedVersion, expected], row.version);
       return row;
     },
