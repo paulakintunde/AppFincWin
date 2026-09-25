@@ -10,12 +10,13 @@
 globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto);
 
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { AccountRow, DbClient, TransactionRow } from '@/db/rows';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { mutationKeys, queryKeys } from '@/data/keys';
 import { MAX_SERVER_ERROR_RETRIES } from '@/data/sync/writeErrors';
+import { clearVersionChains } from '@/data/sync/versionChain';
 import { registerMutationDefaults } from '../index';
 import { useAddTransaction, useEditTransaction, type AddTransactionVars } from '../transactions';
 import { useAddAccount, useEditAccount } from '../accounts';
@@ -87,6 +88,8 @@ const serverTransaction = (overrides: Partial<TransactionRow> = {}): Transaction
 beforeEach(() => {
   mockUuidCounter = 0;
   recordFailedWrite.mockClear();
+  onlineManager.setOnline(true);
+  clearVersionChains();
 });
 
 describe('useAddTransaction', () => {
@@ -457,6 +460,49 @@ describe('useEditTransaction', () => {
 
     const updateCall = fake.calls.find((c) => c.method === 'update');
     expect(updateCall?.args[0]).toEqual({ original_amount: 1000 });
+  });
+
+  it('WR-A05: moving a transaction\'s date into another month moves it between the month caches', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+
+    const qc = newClient();
+    const sep = queryKeys.transactionsMonth('h1', '2026-09');
+    const oct = queryKeys.transactionsMonth('h1', '2026-10');
+    qc.setQueryData(sep, [serverTransaction({ id: 'tx-1', local_date: '2026-09-24' })]);
+    qc.setQueryData(oct, [serverTransaction({ id: 'tx-oct', local_date: '2026-10-05' })]);
+    const { result } = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.edit({
+      id: 'tx-1',
+      householdId: 'h1',
+      month: '2026-09',
+      expectedVersion: 1,
+      patch: { local_date: '2026-10-02' },
+      homeCurrency: 'USD',
+    });
+
+    await waitFor(() => {
+      expect(qc.getQueryData<TransactionRow[]>(sep)?.map((r) => r.id)).toEqual([]);
+      expect(qc.getQueryData<(TransactionRow & { pending?: boolean })[]>(oct)?.find((r) => r.id === 'tx-1')).toMatchObject({
+        local_date: '2026-10-02',
+        pending: true,
+      });
+    });
+
+    fake.respondWith({ data: [serverTransaction({ id: 'tx-1', local_date: '2026-10-02', version: 2 })], error: null, status: 200 });
+    onlineManager.setOnline(true);
+    await qc.resumePausedMutations();
+
+    await waitFor(() => {
+      const octRows = qc.getQueryData<(TransactionRow & { pending?: boolean })[]>(oct);
+      expect(octRows?.find((r) => r.id === 'tx-1')).toMatchObject({ version: 2 });
+      expect(octRows?.find((r) => r.id === 'tx-1')?.pending).toBeUndefined();
+    });
+    expect(qc.getQueryData<TransactionRow[]>(sep)?.some((r) => r.id === 'tx-1')).toBe(false);
+    // A month that was never loaded is never fabricated as a one-row list.
+    expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-11'))).toBeUndefined();
   });
 
   it('a version conflict keeps the server row, invalidates the household transactions, and records the conflict', async () => {

@@ -70,6 +70,42 @@ function patchMonthCache(
   qc.setQueryData<TransactionList>(queryKeys.transactionsMonth(householdId, month), (old) => updater(old ?? []));
 }
 
+function patchMonthCacheIfLoaded(
+  qc: QueryClient,
+  householdId: string,
+  month: string,
+  updater: (rows: TransactionList) => TransactionList
+): void {
+  // Never creates a month list that was not loaded: a one-row list would pass for the whole
+  // month (status success, fresh dataUpdatedAt) and show wrong totals.
+  if (qc.getQueryData<TransactionList>(queryKeys.transactionsMonth(householdId, month)) === undefined) return;
+  patchMonthCache(qc, householdId, month, updater);
+}
+
+/** The month an edit leaves the row in: the patched local_date's month, else the original. */
+function targetMonth(vars: EditTransactionVars): string {
+  return vars.patch.local_date !== undefined ? monthOf(vars.patch.local_date) : vars.month;
+}
+
+/**
+ * WR-A05: puts `row` into the month its own local_date belongs to (replacing it in place if
+ * it is already there) and removes it from every other month in `fromMonths`. An edit that
+ * moves a transaction's date across a month boundary would otherwise leave it in the old
+ * month's list and missing from the new one, so both months' totals are wrong.
+ */
+function placeRowInMonth(
+  qc: QueryClient,
+  householdId: string,
+  row: WithPending<TransactionRow>,
+  fromMonths: readonly string[]
+): void {
+  const month = monthOf(row.local_date);
+  for (const from of new Set(fromMonths)) {
+    if (from !== month) patchMonthCacheIfLoaded(qc, householdId, from, (rows) => rows.filter((r) => r.id !== row.id));
+  }
+  patchMonthCacheIfLoaded(qc, householdId, month, (rows) => upsertRow(rows, row, 'start'));
+}
+
 /** After a write comes back rate_pending, calls resolve-rate and writes the restamped row in. */
 async function followUpIfRatePending(qc: QueryClient, householdId: string, month: string, row: TransactionRow): Promise<void> {
   if (!row.rate_pending) return;
@@ -163,44 +199,54 @@ export function registerTransactionMutations(qc: QueryClient): void {
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: async (vars: EditTransactionVars) => {
-      const monthKey = queryKeys.transactionsMonth(vars.householdId, vars.month);
-      await qc.cancelQueries({ queryKey: monthKey });
+      const toMonth = targetMonth(vars);
+      await qc.cancelQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) });
+      if (toMonth !== vars.month) {
+        await qc.cancelQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, toMonth) });
+      }
+
+      const current = qc
+        .getQueryData<TransactionList>(queryKeys.transactionsMonth(vars.householdId, vars.month))
+        ?.find((r) => r.id === vars.id);
+      if (!current) return;
 
       const recomputesRate =
         vars.patch.original_amount !== undefined ||
         vars.patch.original_currency !== undefined ||
         vars.patch.local_date !== undefined;
 
-      patchMonthCache(qc, vars.householdId, vars.month, (rows) =>
-        rows.map((r) => {
-          if (r.id !== vars.id) return r;
-          const patched: WithPending<TransactionRow> = { ...r, ...vars.patch, pending: true };
-          if (!recomputesRate) return patched;
-
-          const rates = qc.getQueryData<FxLatestRow[]>(queryKeys.fxLatest()) ?? [];
-          const customs = qc.getQueryData<CustomCurrencyRow[]>(queryKeys.customCurrencies(r.created_by ?? '')) ?? [];
-          const stamp = provisionalStamp(
-            {
-              amount: patched.original_amount,
-              currency: patched.original_currency,
-              homeCurrency: vars.homeCurrency,
-            },
-            rates,
-            customs
-          );
-          return { ...patched, ...stamp };
-        })
-      );
+      let patched: WithPending<TransactionRow> = { ...current, ...vars.patch, pending: true };
+      if (recomputesRate) {
+        const rates = qc.getQueryData<FxLatestRow[]>(queryKeys.fxLatest()) ?? [];
+        const customs = qc.getQueryData<CustomCurrencyRow[]>(queryKeys.customCurrencies(current.created_by ?? '')) ?? [];
+        const stamp = provisionalStamp(
+          {
+            amount: patched.original_amount,
+            currency: patched.original_currency,
+            homeCurrency: vars.homeCurrency,
+          },
+          rates,
+          customs
+        );
+        patched = { ...patched, ...stamp };
+      }
+      placeRowInMonth(qc, vars.householdId, patched, [vars.month]);
     },
     onSuccess: async (row: TransactionRow, vars: EditTransactionVars) => {
-      patchMonthCache(qc, vars.householdId, vars.month, (rows) => rows.map((r) => (r.id === row.id ? row : r)));
-      await followUpIfRatePending(qc, vars.householdId, vars.month, row);
+      const toMonth = targetMonth(vars);
+      placeRowInMonth(qc, vars.householdId, row, [vars.month, toMonth]);
+      if (toMonth !== vars.month || monthOf(row.local_date) !== toMonth) {
+        // WR-A05: the row changed months; refetch both so their totals come from the server.
+        await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) });
+        await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, monthOf(row.local_date)) });
+      }
+      await followUpIfRatePending(qc, vars.householdId, monthOf(row.local_date), row);
     },
     onError: async (err: unknown, vars: EditTransactionVars) => {
       const cls = classifySettledWriteError(err);
       if (cls === 'conflict' && err instanceof VersionConflictError) {
         const serverRow = err.serverRow as TransactionRow;
-        patchMonthCache(qc, vars.householdId, vars.month, (rows) => rows.map((r) => (r.id === vars.id ? serverRow : r)));
+        placeRowInMonth(qc, vars.householdId, serverRow, [vars.month, targetMonth(vars)]);
         await qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
         await recordFailedWrite({
           entity: 'transactions',
@@ -213,6 +259,9 @@ export function registerTransactionMutations(qc: QueryClient): void {
       }
       if (cls === 'rejected' || cls === 'not-found') {
         await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) });
+        if (targetMonth(vars) !== vars.month) {
+          await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, targetMonth(vars)) });
+        }
         await recordFailedWrite({
           entity: 'transactions',
           entityId: vars.id,
