@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 Phase: 01 (money-core) — EXECUTING
 Plan: 2 of 16
 Status: Ready to execute
-Last activity: 2026-09-25
+Last activity: 2026-09-25 - Completed quick task 260925-8bi: Replace placeholder app icons with FincWin F logo
 
 Progress: [████████░░] 75%
 
@@ -120,6 +120,7 @@ None yet.
 | 260922-sz4 | Repoint Supabase guardrails to single prod project | 2026-09-22 | 99b4142 | [260922-sz4-repoint-supabase-guardrails-to-single-pr](./quick/260922-sz4-repoint-supabase-guardrails-to-single-pr/) |
 | 260922-tsn | Collapse phase-00 plans to single prod Supabase project | 2026-09-22 | f90689b | [260922-tsn-collapse-phase-00-plans-to-single-prod-s](./quick/260922-tsn-collapse-phase-00-plans-to-single-prod-s/) |
 | 260922-us3 | Align all docs to single prod Supabase project | 2026-09-22 | 07ef5f6 | [260922-us3-align-all-docs-to-single-prod-supabase-p](./quick/260922-us3-align-all-docs-to-single-prod-supabase-p/) |
+| 260925-8bi | Replace placeholder app icons with FincWin F logo | 2026-09-25 | 3020470 | [260925-8bi-replace-placeholder-app-icons-with-fincw](./quick/260925-8bi-replace-placeholder-app-icons-with-fincw/) |
 
 ## Deferred Items
 
