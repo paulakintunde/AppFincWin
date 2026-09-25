@@ -190,7 +190,10 @@ begin
     end if;
     rate := public.custom_per_eur(ref.rate, c.unit_value);
     rate_date := least(ref.rate_date, c.as_of);
-    source := 'custom';
+    -- Keep the reference rate's open.er-api attribution: it outranks
+    -- 'custom' in stamp_fx_rate()'s precedence and must never be lost
+    -- (MON-12, D-13, WR-B02).
+    source := case when ref.source = 'open-er-api' then 'open-er-api' else 'custom' end;
     exact := ref.exact;
     return;
   end if;
