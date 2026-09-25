@@ -1,8 +1,8 @@
 ---
 phase: 2
 slug: record
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-09-25
 ---
@@ -80,11 +80,11 @@ Filled in by the planner and executor as tasks are created. Baseline mapping fro
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-09-25 (plan checker: 0 blockers; TDD plans write their failing tests first, so Wave 0 test files land during execution)

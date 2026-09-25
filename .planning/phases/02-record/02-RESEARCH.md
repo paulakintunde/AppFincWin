@@ -511,22 +511,25 @@ create policy "owner reads own categories" on public.categories for select to au
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Direction of a transaction: a `direction` enum column, or infer income/expense from the sign of `original_amount`?**
    - What we know: `original_amount` is already `bigint ... check (original_amount <> 0 ...)`, signed, outflow negative (per the `transactions.sql` comment read this session). REC-01/REC-02 need "expense" vs "income" as a UI concept and D-37 ties `payment_type`'s two lists (`in`/`out`) to a direction.
    - What's unclear: whether the sign of `original_amount` alone is sufficient (an income row is always positive, an expense always negative) or whether a separate `direction` column is needed for clarity/indexing (e.g. a transfer or settlement in Phase 8 might not map cleanly to a simple sign).
    - Recommendation: derive direction from the sign of `original_amount` (no new column) for Record's scope (expense/income only, transfers explicitly out of scope this phase per CONTEXT.md's Phase Boundary), and let Phase 8 add a `direction`/`transfer` concept explicitly when transfers arrive, rather than guessing that shape now.
+   - RESOLVED: direction is derived from the sign of `original_amount`, with no new column (02-06 `directionOf`).
 
 2. **Exact `pg_cron` schedule time and horizon-recompute trigger for recurring materialisation.**
    - What we know: the project's existing FX jobs run at 16:30/17:00 UTC daily; materialisation horizon is "through the end of next month" (D-03), which only needs to advance once a month, not daily — but skipped/edited occurrences and newly created series need same-day visibility.
    - What's unclear: whether materialisation should run daily (cheap, simple, matches the existing FX-job cadence) or only be triggered on series create/edit (event-driven, more complex, no pg_cron needed for the common case).
    - Recommendation: run daily via `pg_cron` for horizon maintenance (catches month-boundary advancement automatically) **and** call the same function synchronously (or via a lightweight RPC) immediately after a series is created or "this and future" edited, so a new bill shows its first pending row without waiting for the next cron tick.
+   - RESOLVED: both. A daily pg_cron job plus an immediate call after a series is created or edited (02-08).
 
 3. **Bulk-select across months for ACT-05.**
    - What we know: ACT-05 says "select multiple transactions and delete them in one action"; the UI-SPEC's bulk-select bar is described per-screen (Activity, one month at a time).
    - What's unclear: whether bulk-select is scoped to the currently viewed month only, or can span a cross-month search result set (relevant once ACT-03 search returns results from multiple months).
    - Recommendation: scope bulk-select to whatever list is currently rendered (a single month, or a single search-result list) — the undo step ("Deleted N transactions") already handles an arbitrary set of ids regardless of which months they belong to, so this is a UI-scoping decision, not an architectural one.
+   - RESOLVED: bulk selection applies to whatever list is on screen (02-23).
 
 ---
 
