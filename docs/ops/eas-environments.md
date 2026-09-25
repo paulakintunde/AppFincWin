@@ -14,8 +14,13 @@ All three EAS environments (`development`, `preview`, `production`) point at the
 | `EXPO_PUBLIC_SUPABASE_URL` | development, preview, production (same value) | plaintext | Client — Supabase client init |
 | `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | development, preview, production (same value) | plaintext | Client — Supabase client init (RLS is the real security boundary, not this key) |
 | `EXPO_PUBLIC_APPLE_SIGNIN_ENABLED` | development, preview, production (`false` until 00-20) | plaintext | Client — shows the Apple button disabled until enrolment clears |
-| `EXPO_PUBLIC_POSTHOG_HOST` | development, preview, production (`https://eu.i.posthog.com`) | plaintext | Client — PostHog SDK init, EU host only (D-23) |
+| `EXPO_PUBLIC_POSTHOG_HOST` | development, preview, production (`https://eu.i.posthog.com`) | plaintext | Client — PostHog SDK init, EU host only (D-23). Analytics only as of D-19 — PostHog no longer carries error tracking |
 | `EXPO_PUBLIC_POSTHOG_KEY` | development, preview, production (same value) | plaintext | Client — PostHog SDK init |
+| `EXPO_PUBLIC_ERROR_TRACKING` | development, preview, production (`sentry`) | plaintext | Client — selects the error-tracking provider read by `src/config/env.ts`; `sentry` since D-19 |
+| `EXPO_PUBLIC_SENTRY_DSN` | development, preview, production (same value) | plaintext | Client — `Sentry.init()` in `src/services/errors/errorReporter.ts` (D-19). A DSN is not a secret — it is designed to be public, like a PostHog project key |
+| `SENTRY_AUTH_TOKEN` | development, preview, production (same value) | **secret** | Build-time only — read by the `@sentry/react-native/expo` config plugin's generated `sentry.properties` (never passed as a plugin prop, so it's never written into the app package) to upload Hermes source maps during the Android Gradle build (D-19) |
+| `SENTRY_ORG` | development, preview, production (same value) | plaintext | Build-time only — `app.config.ts` passes it to the `@sentry/react-native/expo` plugin |
+| `SENTRY_PROJECT` | development, preview, production (same value) | plaintext | Build-time only — `app.config.ts` passes it to the `@sentry/react-native/expo` plugin |
 | `EAS_PROJECT_ID` | development, preview, production | plaintext | Build-time only — `app.config.ts` reads it to set `updates.url` and `extra.eas.projectId`; never inlined under an `EXPO_PUBLIC_` name |
 | `EXPO_OWNER` | development, preview, production | plaintext | Build-time only — `app.config.ts` reads it for the Expo/EAS owner slug |
 | `SUPABASE_SERVICE_ROLE_KEY` | development, preview, production (same value) | **secret** | Not read by any app/client code. Held on the EAS side so EAS Workflows can deploy Supabase Edge Functions later without the key ever living only on one machine. CI's `checks` job (00-08) greps the repo to prove no client code reads it |
