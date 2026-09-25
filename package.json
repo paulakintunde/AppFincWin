@@ -59,7 +59,7 @@
     "@types/react": "~19.2.2",
     "babel-preset-expo": "~57.0.12",
     "dependency-cruiser": "^18.4.0",
-    "eslint": "9.39.5",
+    "eslint": "10.11.0",
     "eslint-config-expo": "~57.0.2",
     "eslint-import-resolver-typescript": "^4.4.5",
     "eslint-plugin-boundaries": "^7.2.0",
