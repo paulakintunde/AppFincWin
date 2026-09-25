@@ -21,6 +21,7 @@ in the body.
 | `auto-accepted` | fx-monitor | A held rate sat unconfirmed for more than 2 days and was accepted into `fx_rates` on the operator's behalf (D-12). This is the alert that most warrants a manual look — see "Dropping a bad rate" below. |
 | `pending-rows` | fx-monitor | How many transactions have sat `rate_pending = true` for more than a day (Pitfall 2 — a stuck backfill must never be silent). Before counting, fx-monitor runs `fx_restamp_pending()`, which re-stamps every pending row whose date has arrived under the normal 7-day window. So a planned, future-dated row (kept pending until its own day) resolves on its own once fx-sync stores that day's rate, and only genuinely stuck rows are counted. A non-zero count that persists across several days' digests means `resolve-rate` isn't being called for those rows, is failing, or is finding its backfilled rate held; check Edge Function logs for `resolve-rate` and `fx_rate_holds`. |
 | `fallback-used` | fx-sync | Frankfurter v2 was unreachable or returned something unparsable for that day's sync, and open.er-api served the rates instead (MON-12). Check `docs/dependency-register.md`'s Frankfurter row and Frankfurter's own status if this repeats. |
+| `hold-dropped` | `fx_drop_hold()` | The operator dropped a hold. `detail` records the hold's previous status, whether a served `fx_rates` row was removed (`rateRemoved`), and how many transactions were re-stamped (`restamped`). |
 | `sync-failed` | fx-sync | Both Frankfurter and the open.er-api fallback failed in the same run — nothing was written. Rates stay at their last known values (still individually dated and visible per MON-07); investigate immediately, since two consecutive failed days approaches the staleness limit. |
 
 ## Inspecting holds
@@ -45,19 +46,30 @@ backfilled rate for a held or dropped `(quote, date)` is discarded, and an
 implausible one becomes a new hold whose `held` alert carries
 `"via": "resolve-rate"`.
 
-## Dropping a bad held or auto-accepted rate
+## Dropping a bad held, confirmed or auto-accepted rate
 
 `public.fx_drop_hold(<id>)` is the runbook function (service_role-only,
-`supabase/migrations/20260924000600_fx_monitoring.sql`). If the hold was
-already auto-accepted, it also removes that row from `fx_rates`; if it's
-still merely `held`, it marks it `dropped`. A dropped `(quote, date,
-source)` is never re-evaluated. Later publications on other dates are
-checked normally. Any transaction already stamped from a
-dropped auto-accepted rate keeps its stamp — a stamp is a historical fact,
-not a live pointer — restamp an individual affected row with
-`select public.restamp_transaction('<transaction-id>');` only if it is still
-`rate_pending`. Called without a second argument, it re-stamps under the
-normal 7-day window. `resolve-rate` passes the quotes its backfill stored as
+`supabase/migrations/20260924000600_fx_monitoring.sql`). Whatever the hold's
+status (`held`, `confirmed` or `auto-accepted`), it removes any `fx_rates`
+row with the same `(quote, date, source)` and marks the hold `dropped`. A
+dropped `(quote, date, source)` is never re-evaluated. Later publications on
+other dates are checked normally.
+
+When a served rate was removed, `fx_drop_hold` also calls
+`fx_restamp_by_rate(<quote>, <date>)`. That re-stamps every transaction that
+could have been stamped from the rate, including rows that are no longer
+`rate_pending`: rows with that quote on either leg (directly, or as the
+reference of the author's custom currency) that are pending, carry that
+`rate_date`, or are dated within the 7 days the rate served. Re-stamped rows
+take the best remaining rate under the normal 7-day window. If none exists,
+they go back to `rate_pending` for `resolve-rate` or the daily
+`fx_restamp_pending()` to resolve. `version` is not bumped. The function
+returns the re-stamped count, which the `hold-dropped` alert also records.
+`fx_restamp_by_rate` can be run on its own for a rate removed some other way.
+
+`select public.restamp_transaction('<transaction-id>');` still re-stamps a
+single row, but only if it is still `rate_pending`. Called without a second
+argument, it re-stamps under the normal 7-day window. `resolve-rate` passes the quotes its backfill stored as
 `p_relax_quotes`, and only those legs may use an older rate. A row dated more
 than a day ahead of the server date always stays pending.
 
@@ -69,10 +81,10 @@ production database operation is:
 npx supabase db query --linked "select public.fx_drop_hold(<hold-id>);"
 ```
 
-Acting fast matters here: `fx_drop_hold` only prevents a *future* digest
-misreporting a dropped rate as still live — it does not undo any conversion
-already computed and shown from an auto-accepted rate before you dropped it.
-The 2-day auto-accept window (D-12) is the actual time budget to act in.
+Acting fast still matters. The repair re-stamps stored rows, but any figure
+a user already saw or acted on while the bad rate was served cannot be
+recalled. The 2-day auto-accept window (D-12) is the actual time budget to
+act in.
 
 ## Setting a per-currency staleness override
 
