@@ -38,6 +38,10 @@ jest.mock('@/data/sync/failedWrites', () => ({
   recordFailedWrite: jest.fn(async () => undefined),
 }));
 
+jest.mock('@/services/locale/deviceLocale', () => ({
+  getDeviceTimeZone: jest.fn(() => 'UTC'),
+}));
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { recordFailedWrite } = require('@/data/sync/failedWrites') as { recordFailedWrite: jest.Mock };
 
@@ -220,6 +224,31 @@ describe('useAddCustomCurrency', () => {
     const insertCall = fake.calls.find((c) => c.method === 'insert');
     expect((insertCall?.args[0] as { id: string }).id).toBe('uuid-0');
     expect(insertCall?.args[0]).toMatchObject({ code: 'GLD', symbol: 'GLD', unit_value: '2.5000000000' });
+  });
+
+  it('WR-A14: as_of is the local calendar day in the device time zone, not the UTC day', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: customRow(), error: null, status: 201 });
+    // Whichever of UTC+14 / UTC-11 is on a different calendar day from UTC right now.
+    const zone = new Date().getUTCHours() >= 10 ? 'Pacific/Kiritimati' : 'Pacific/Pago_Pago';
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    (require('@/services/locale/deviceLocale') as { getDeviceTimeZone: jest.Mock }).getDeviceTimeZone.mockReturnValue(zone);
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddCustomCurrency('user-1'), { wrapper: wrapper(qc) });
+    result.current.add(
+      { code: 'GLD', symbol: '', decimals: 0, referenceCurrency: 'USD', unitValueRaw: '2.5', locale: 'en-US' },
+      ctx
+    );
+
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'insert')).toBe(true));
+    const sent = fake.calls.find((c) => c.method === 'insert')?.args[0] as { as_of: string };
+    const expected = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(
+      new Date()
+    );
+    expect(sent.as_of).toBe(expected);
+    expect(sent.as_of).not.toBe(new Date().toISOString().slice(0, 10));
   });
 
   it('CR-A03: a (owner_id, code) unique clash from another device is recorded as a failed write and the optimistic row removed', async () => {

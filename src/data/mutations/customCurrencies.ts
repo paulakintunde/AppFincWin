@@ -16,6 +16,8 @@ import {
   type CustomCurrencyInput,
   type ValidateCustomCurrencyContext,
 } from '@/engine/money';
+import { localDateIn } from '@/engine/time';
+import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { insertCustomCurrency, updateCustomCurrency, type CustomCurrencyPatch, type NewCustomCurrency } from '@/db/customCurrencies';
 import { VersionConflictError } from '@/db/errors';
 import type { CustomCurrencyRow } from '@/db/rows';
@@ -193,7 +195,8 @@ export function useAddCustomCurrency(userId: string): {
         decimals: result.value.decimals,
         reference_currency: result.value.referenceCurrency,
         unit_value: result.value.unitValue,
-        as_of: new Date().toISOString().slice(0, 10),
+        // WR-A14 / MON-14: the user's own calendar day, never the UTC one.
+        as_of: localDateIn(new Date(), getDeviceTimeZone()),
       };
       mutation.mutate({ userId, row });
       return { ok: true, id };
