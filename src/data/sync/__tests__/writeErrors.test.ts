@@ -1,4 +1,4 @@
-import { DbError, VersionConflictError, NotFoundError } from '@/db/errors';
+import { DbError, VersionConflictError, NotFoundError, toDbError } from '@/db/errors';
 import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '../writeErrors';
 
 describe('classifyWriteError', () => {
@@ -37,6 +37,17 @@ describe('classifyWriteError', () => {
 
   it('classifies DbError with empty code and null status as transient', () => {
     expect(classifyWriteError(new DbError('x', '', null))).toBe('transient');
+  });
+
+  it('CR-A01: classifies the real postgrest-js fetch-failure shape (status 0, code "") as transient', () => {
+    // postgrest-js 2.x resolves (never rejects) a failed fetch as
+    // { error: { message: 'TypeError: Network request failed', code: '' }, status: 0 }.
+    expect(classifyWriteError(toDbError({ message: 'TypeError: Network request failed', code: '' }, 0))).toBe(
+      'transient'
+    );
+    expect(classifyWriteError(toDbError({ message: 'AbortError: The operation was aborted', code: '' }, 0))).toBe(
+      'transient'
+    );
   });
 
   it('classifies an unrecognized DbError code/status combination as rejected', () => {

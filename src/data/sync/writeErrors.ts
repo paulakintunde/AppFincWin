@@ -20,6 +20,16 @@ export type WriteErrorClass = 'transient' | 'already-applied' | 'conflict' | 're
 // column-not-found. None of these are fixed by retrying the same write again.
 const REJECTED_CODES = new Set(['42501', '23514', '23503', '23502', '22P02', 'PGRST204']);
 
+// CR-A01: postgrest-js 2.x never rejects on a fetch failure (radio drop, DNS failure,
+// timeout/abort). It catches the error and resolves `{ error: { message: 'TypeError:
+// Network request failed', code: '' }, status: 0 }` instead (see
+// node_modules/@supabase/postgrest-js/dist/index.cjs, the `res.catch((fetchError) => ...)`
+// branch). Status 0 therefore means "the request never got an HTTP answer" -- a
+// connectivity failure, always safe to retry.
+function isConnectivityFailure(err: DbError): boolean {
+  return err.status === 0 || (err.code === '' && err.status === null);
+}
+
 function isTransientStatus(status: number | null): boolean {
   if (status === null) return false;
   return status >= 500 || status === 408 || status === 429;
@@ -36,10 +46,10 @@ export function classifyWriteError(err: unknown): WriteErrorClass {
   if (err instanceof NotFoundError) return 'not-found';
 
   if (err instanceof DbError) {
+    if (isConnectivityFailure(err)) return 'transient';
     if (err.code === '23505') return 'already-applied';
     if (REJECTED_CODES.has(err.code)) return 'rejected';
     if (isTransientStatus(err.status)) return 'transient';
-    if (err.code === '' && err.status === null) return 'transient';
     return 'rejected';
   }
 

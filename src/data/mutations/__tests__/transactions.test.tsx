@@ -233,6 +233,48 @@ describe('useAddTransaction', () => {
     );
   });
 
+  it('CR-A01: a real postgrest-js network failure (status 0, code "") keeps the row and retries, never parks it as failed', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    // The exact shape postgrest-js 2.x resolves when fetch itself rejects.
+    fake.respondWith({ data: null, error: { message: 'TypeError: Network request failed', code: '' }, status: 0 });
+    fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.failureCount).toBe(1));
+    const mutation = qc.getMutationCache().getAll()[0];
+    expect(mutation?.state.status).toBe('pending');
+    const rows = qc.getQueryData<(TransactionRow & { pending?: boolean })[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+    expect(rows?.[0]).toMatchObject({ id: 'uuid-0', pending: true });
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+
+    // The retry (after writeRetryDelay's backoff) lands the write.
+    await waitFor(
+      () => {
+        const settled = qc.getQueryData<(TransactionRow & { pending?: boolean })[]>(
+          queryKeys.transactionsMonth('h1', '2026-09')
+        );
+        expect(settled?.[0]?.pending).toBeUndefined();
+      },
+      { timeout: 5000 }
+    );
+    expect(fake.calls.filter((c) => c.method === 'insert')).toHaveLength(2);
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+  }, 10_000);
+
   it('a duplicate-id (23505) insert is treated as success via the fetch-existing path, no rollback', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
