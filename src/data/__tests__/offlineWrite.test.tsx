@@ -15,6 +15,7 @@ import { queryKeys } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { registerMutationDefaults } from '@/data/mutations';
 import { useAddTransaction, useEditTransaction } from '@/data/mutations/transactions';
+import { clearVersionChains } from '@/data/sync/versionChain';
 
 let mockActiveClient: unknown;
 let mockUuidCounter = 0;
@@ -36,6 +37,9 @@ jest.mock('@/services/locale/deviceLocale', () => ({
 jest.mock('@/data/sync/failedWrites', () => ({
   recordFailedWrite: jest.fn(async () => undefined),
 }));
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { recordFailedWrite } = require('@/data/sync/failedWrites') as { recordFailedWrite: jest.Mock };
 
 function wrapper(client: QueryClient) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -90,6 +94,8 @@ const serverTransaction = (overrides: Partial<TransactionRow> = {}): Transaction
 beforeEach(() => {
   mockUuidCounter = 0;
   onlineManager.setOnline(true);
+  recordFailedWrite.mockClear();
+  clearVersionChains();
 });
 
 afterEach(() => {
@@ -177,6 +183,72 @@ describe('offline write queue (SYN-02)', () => {
 
     const updateCall = fake.calls.find((c) => c.method === 'eq' && c.args[0] === 'version');
     expect(updateCall?.args).toEqual(['version', 1]);
+  });
+
+  it('CR-A02: two queued edits to the same row both apply -- the second chains onto the first one\'s new version', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [serverTransaction({ id: 'tx-1', version: 1 })]);
+    const editHook = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+
+    // Both edits read expectedVersion from the same cached row (still version 1).
+    for (const note of ['first', 'second']) {
+      const cached = qc.getQueryData<WithPending<TransactionRow>[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+      editHook.result.current.edit({
+        id: 'tx-1',
+        householdId: 'h1',
+        month: '2026-09',
+        expectedVersion: cached?.[0]?.version ?? 0,
+        patch: { note },
+        homeCurrency: 'USD',
+      });
+    }
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()).toHaveLength(2));
+    await waitFor(() => {
+      expect(qc.getMutationCache().getAll().every((m) => m.state.isPaused)).toBe(true);
+    });
+
+    fake.respondWith({ data: [serverTransaction({ id: 'tx-1', note: 'first', version: 2 })], error: null, status: 200 });
+    fake.respondWith({ data: [serverTransaction({ id: 'tx-1', note: 'second', version: 3 })], error: null, status: 200 });
+
+    onlineManager.setOnline(true);
+    await qc.resumePausedMutations();
+
+    const versionFilters = fake.calls.filter((c) => c.method === 'eq' && c.args[0] === 'version').map((c) => c.args[1]);
+    expect(versionFilters).toEqual([1, 2]);
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      const rows = qc.getQueryData<WithPending<TransactionRow>[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+      expect(rows?.[0]).toMatchObject({ note: 'second', version: 3 });
+    });
+  });
+
+  it('CR-A02: a genuine edit from another device still conflicts (the chain only follows this device\'s writes)', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [serverTransaction({ id: 'tx-9', version: 1 })]);
+    const editHook = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+
+    fake.respondWith({ data: [], error: null, status: 200 }); // zero rows: server is at version 5
+    fake.respondWith({ data: serverTransaction({ id: 'tx-9', note: 'other device', version: 5 }), error: null, status: 200 });
+
+    editHook.result.current.edit({
+      id: 'tx-9',
+      householdId: 'h1',
+      month: '2026-09',
+      expectedVersion: 1,
+      patch: { note: 'mine' },
+      homeCurrency: 'USD',
+    });
+
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledWith(expect.objectContaining({ kind: 'conflict' })));
   });
 
   it('restart: an offline add survives dehydrate/rehydrate into a brand-new QueryClient and still flushes with the same UUID', async () => {

@@ -18,6 +18,7 @@ import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 
 export interface AddCustomCurrencyVars {
@@ -99,8 +100,13 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
   });
 
   qc.setMutationDefaults(mutationKeys.editCustomCurrency, {
-    mutationFn: (vars: EditCustomCurrencyVars) =>
-      updateCustomCurrency(lazySupabaseClient(), vars.id, vars.expectedVersion, vars.patch),
+    mutationFn: async (vars: EditCustomCurrencyVars) => {
+      // CR-A02: an earlier queued edit of this same row may already have bumped its version.
+      const expected = resolveExpectedVersion('custom_currencies', vars.id, vars.expectedVersion);
+      const row = await updateCustomCurrency(lazySupabaseClient(), vars.id, expected, vars.patch);
+      recordWrittenVersion('custom_currencies', vars.id, [vars.expectedVersion, expected], row.version);
+      return row;
+    },
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,

@@ -20,6 +20,7 @@ import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { provisionalStamp } from './provisional';
 
 export interface AddTransactionVars {
@@ -149,7 +150,13 @@ export function registerTransactionMutations(qc: QueryClient): void {
   });
 
   qc.setMutationDefaults(mutationKeys.editTransaction, {
-    mutationFn: (vars: EditTransactionVars) => updateTransaction(lazySupabaseClient(), vars.id, vars.expectedVersion, vars.patch),
+    mutationFn: async (vars: EditTransactionVars) => {
+      // CR-A02: an earlier queued edit of this same row may already have bumped its version.
+      const expected = resolveExpectedVersion('transactions', vars.id, vars.expectedVersion);
+      const row = await updateTransaction(lazySupabaseClient(), vars.id, expected, vars.patch);
+      recordWrittenVersion('transactions', vars.id, [vars.expectedVersion, expected], row.version);
+      return row;
+    },
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,

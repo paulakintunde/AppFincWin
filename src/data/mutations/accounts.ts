@@ -10,6 +10,7 @@ import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 
 export interface AddAccountVars {
   row: NewAccount;
@@ -88,7 +89,13 @@ export function registerAccountMutations(qc: QueryClient): void {
   });
 
   qc.setMutationDefaults(mutationKeys.editAccount, {
-    mutationFn: (vars: EditAccountVars) => updateAccount(lazySupabaseClient(), vars.id, vars.expectedVersion, vars.patch),
+    mutationFn: async (vars: EditAccountVars) => {
+      // CR-A02: an earlier queued edit of this same row may already have bumped its version.
+      const expected = resolveExpectedVersion('accounts', vars.id, vars.expectedVersion);
+      const row = await updateAccount(lazySupabaseClient(), vars.id, expected, vars.patch);
+      recordWrittenVersion('accounts', vars.id, [vars.expectedVersion, expected], row.version);
+      return row;
+    },
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
