@@ -160,6 +160,21 @@ function findFloorBumps(content) {
   return bumps;
 }
 
+// CR-C02: parse a squawk-ignore rule list at least as loosely as squawk
+// does. Squawk drops a trailing `-- ...` and splits on commas; this also
+// splits on whitespace and lower-cases, so every name squawk could possibly
+// honour is seen. Anything that is not a plausible rule name is kept as-is
+// and, never matching an excluded rule, is treated as enforced (fail closed).
+function parseRuleList(text) {
+  const withoutTrailingComment = text.split('--')[0];
+  return withoutTrailingComment
+    .toLowerCase()
+    .split(/[\s,]+/)
+    .filter(Boolean);
+}
+
+const RULE_NAME_RE = /^[a-z][a-z0-9-]*$/;
+
 // Returns every squawk directive found in a real comment:
 // { fileLevel: boolean, rules: string[] } -- `rules` empty means "no rule
 // list", which squawk treats as "every rule" for squawk-ignore-file.
@@ -168,12 +183,7 @@ function findSquawkDirectives(comments) {
   for (const comment of comments) {
     const m = SQUAWK_DIRECTIVE_RE.exec(comment.body);
     if (!m) continue;
-    const rest = comment.body.slice(m.index + m[0].length);
-    const rules = rest
-      .split(',')
-      .map((r) => r.trim())
-      .filter(Boolean);
-    directives.push({ fileLevel: m[1] !== undefined, rules });
+    directives.push({ fileLevel: m[1] !== undefined, rules: parseRuleList(comment.body.slice(m.index + m[0].length)) });
   }
   return directives;
 }
@@ -279,7 +289,7 @@ function main() {
     // Every squawk-ignore of a KEPT compatibility rule needs a contract-ok
     // marker in this same file, checked against the floor BEFORE this file's
     // own floor bumps are applied.
-    const compatIgnores = [...ignoredRules].filter((r) => KEPT_COMPAT_RULES.has(r));
+    const compatIgnores = [...ignoredRules].filter((r) => KEPT_COMPAT_RULES.has(r) || !RULE_NAME_RE.test(r));
     for (const rule of compatIgnores) {
       if (markers.length === 0) {
         errors.push(`${fileName}: squawk-ignore '${rule}' has no '-- contract-ok: min_version >= X.Y.Z' marker`);

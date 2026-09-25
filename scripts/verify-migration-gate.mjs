@@ -188,6 +188,26 @@ try {
       expect('output names squawk-ignore-file', result.output.includes('squawk-ignore-file'));
     }
   );
+
+  // CR-C02: squawk strips a trailing `-- ...` from the rule list and still
+  // honours the rule; the gate must parse the list at least as loosely.
+  const ignoreVariants = [
+    ['P10: trailing -- comment after the rule', '-- squawk-ignore ban-drop-column -- reason: legacy'],
+    ['P11: block-comment ignore', '/* squawk-ignore ban-drop-column */'],
+    ['P12: no space after --', '--squawk-ignore ban-drop-column'],
+    ['P13: comma list with a leading unknown name', '-- squawk-ignore foo, ban-drop-column'],
+    ['P14: whitespace-separated list', '-- squawk-ignore ban-drop-table ban-drop-column'],
+    ['P15: upper-case rule name', '-- squawk-ignore BAN-DROP-COLUMN'],
+  ];
+  for (const [name, ignoreLine] of ignoreVariants) {
+    runProbe(
+      name,
+      [['29990101000100_probe_drop.sql', `${ignoreLine}\nalter table public.transactions drop column note;\n`]],
+      (result) => {
+        expect('gate fails', result.status !== 0);
+      }
+    );
+  }
 } finally {
   // Belt-and-braces: confirm no probe file was ever written into the real
   // migrations directory (every probe above wrote only into a temp copy).
