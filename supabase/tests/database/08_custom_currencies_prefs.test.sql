@@ -167,8 +167,8 @@ select extensions.lives_ok(
 );
 select extensions.throws_ok(
   $$update public.profiles set region = 'DEU' where id = '22222222-2222-2222-2222-222222222222'$$,
-  '23514', null,
-  'a 3-letter region code violates the ISO 3166-1 alpha-2 check constraint'
+  '22001', null,
+  'a 3-letter region code is rejected by char(2) itself (value too long), before the check constraint even runs'
 );
 select extensions.throws_ok(
   $$update public.profiles set region = 'de' where id = '22222222-2222-2222-2222-222222222222'$$,
