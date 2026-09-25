@@ -109,7 +109,7 @@ All of these are hypotheses until shipped.
 - Stripe billing for web entitlements — arrives with the web app
 
 **Cut outright**
-- Tax pack and all tax framing — anything computing a liability is regulated advice; users can already flag and export through general export, so the framing buys risk without buying capability
+- Tax pack and all tax framing — anything computing a liability is regulated advice; users can already flag and export through general export, so the framing buys risk without buying capability. **Clarified 2026-09-25:** this excludes tax *calculation*, tax flags and tax reports. A plain spending category named "Tax" (a label for money already paid, such as a tax bill or an accountant's fee, behaving exactly like any other category) is in scope and is seeded in Phase 2.
 - Licence keys, seats and device transfer — RevenueCat anchors entitlement to the Apple ID or Google account, and the stores already handle device coverage, Family Sharing and restore; the prototype's entire licence surface is orphaned by that choice
 - Local-first architecture — deliberately rejected in favour of cloud-first; see Key Decisions
 - `expo-sqlite` and Drizzle ORM — removed with local-first
@@ -180,7 +180,7 @@ All of these are hypotheses until shipped.
 | open.er-api as FX fallback, with staleness and plausibility checks | Stored per-transaction rates mean an outage never alters history, but volatile currencies can move 40–50% overnight during one. The larger risk is a refresh failing silently, which only monitoring catches. Costs: in-app attribution, and its no-redistribution clause | — Pending |
 | Investments valued by hand with an as-of date | Holdings in the prototype are values, not share counts, and many account types (property, private equity, pensions) have no ticker. Free price APIs forbid display to end users | — Pending |
 | Enrol with Apple and Google as an organisation, under the company | Guideline 5.1.1(ix) expects financial-services apps, and apps requiring sensitive information, from a legal entity. One D-U-N-S number serves both stores | — Pending |
-| Production Supabase on Pro from the first real user data | Free projects pause after a week of inactivity and have no backups. With cloud-first, Supabase holds the only copy of every user's finances | — Pending |
+| Production Supabase on Pro from the first real user data | Free projects pause after a week of inactivity and have no backups. With cloud-first, Supabase holds the only copy of every user's finances | ⚠️ Revisit — 2026-09-25: backups deferred to Phase 10 (ENV-16), method TBD, likely AWS; Pro no longer assumed. The Free-plan inactivity pause still needs its own answer |
 | Supabase Cloud Pro for production; not self-hosted, not the free tier | Self-hosted Supabase has no managed backups or point-in-time recovery, runs one project per install, is community-supported, and makes the operator responsible for patching, backups and uptime for the only copy of users' finances. The free tier pauses after a week and has no backups. The self-hosted instance stays as an exit route and restore-test target, since Supabase is open source | — Pending |
 | Local development through the Supabase CLI | Runs the full stack in Docker at no cost, never pauses, and keeps migrations in git. The single production project covers on-device testing, since a phone cannot easily reach the laptop | — Pending |
 | One Supabase project, migrations in git | There is a single project, Fincwin United (us-west-2), and it is production. The safety property is the migration path, not a second project: schema reaches the database only through supabase/migrations/*.sql in git, guarded by the supabase:preflight ref check. No dashboard SQL edits to schema, ever | — Pending |
@@ -231,7 +231,8 @@ Verified 2026-09-22 against each provider's pricing page.
 | Google Play Console | $25 once | Registration, by Phase 9 |
 | D-U-N-S number | Free through Apple's lookup | Phase 0 |
 | Supabase — development | Free (2 active projects; pauses after a week idle) | Phase 0 |
-| Supabase — production | $25 a month (Pro, one Micro compute, daily backups kept 7 days) | Before first real user data, Phase 2 |
+| Supabase — production | Free today. Pro ($25 a month, daily backups kept 7 days) is no longer assumed | Revisit with ENV-16 |
+| Production backups | TBD — likely AWS (S3 storage for a daily dump; typically a few dollars a month at this scale) | Phase 10 (ENV-16) |
 | Supabase point-in-time recovery | $100 a month per 7 days of retention | Optional, when user numbers justify it |
 | EAS | Free: 15 Android + 15 iOS builds a month, low-priority queue, updates to 1,000 users. Starter $19 a month (+ usage) for the fast queue and 3,000 update users | Free from Phase 0; Starter when build waits start costing time |
 | RevenueCat | Free to $2,500 monthly revenue, then 1% of all gross revenue | Phase 9 |
