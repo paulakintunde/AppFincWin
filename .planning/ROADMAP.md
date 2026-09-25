@@ -146,9 +146,9 @@ Plans:
 - [x] 01-10-PLAN.md — DB access layer, query keys, read hooks, device locale service (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 01-11-PLAN.md — resolve-rate backfill + fx-monitor staleness/auto-accept/Resend digest, runbook (W4)
-- [ ] 01-12-PLAN.md — Offline write queue: mutation defaults, provisional FX, conflicts, QueryProvider (W4)
-- [ ] 01-14-PLAN.md — RateAttribution, SyncStatusLine, money formatter hook, catalogue keys (W4)
+- [x] 01-11-PLAN.md — resolve-rate backfill + fx-monitor staleness/auto-accept/Resend digest, runbook (W4)
+- [x] 01-12-PLAN.md — Offline write queue: mutation defaults, provisional FX, conflicts, QueryProvider (W4)
+- [x] 01-14-PLAN.md — RateAttribution, SyncStatusLine, money formatter hook, catalogue keys (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 01-13-PLAN.md — Money prefs, custom currencies and currency options hooks (W5)
