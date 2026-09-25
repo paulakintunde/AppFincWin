@@ -39,10 +39,12 @@ const KEPT_COMPAT_RULES = new Set([
   'ban-truncate-cascade',
 ]);
 
+// Anchored: matched against one whole statement (comments stripped,
+// whitespace collapsed, no trailing semicolon).
 const FLOOR_INSERT_RE =
-  /insert\s+into\s+public\.app_config\s*\([^)]*\)\s*values\s*\(\s*'min_supported_version'\s*,\s*'(\d+\.\d+\.\d+)'\s*\)/gi;
+  /^insert into public\.app_config ?\( ?key ?, ?value ?\) ?values ?\( ?'min_supported_version' ?, ?'(\d+\.\d+\.\d+)' ?\)(?: on conflict ?\( ?key ?\) do update set value ?= ?excluded\.value)?$/i;
 const FLOOR_UPDATE_RE =
-  /update\s+public\.app_config\s+set\s+value\s*=\s*'(\d+\.\d+\.\d+)'\s+where\s+key\s*=\s*'min_supported_version'/gi;
+  /^update public\.app_config set value ?= ?'(\d+\.\d+\.\d+)' where key ?= ?'min_supported_version'$/i;
 const CONTRACT_OK_RE = /--\s*contract-ok:\s*min_version\s*>=\s*(\d+\.\d+\.\d+)/gi;
 // Matches both squawk's statement-level `squawk-ignore` and its file-level
 // `squawk-ignore-file` directive, anywhere inside a real SQL comment.
@@ -57,6 +59,7 @@ const SQUAWK_DIRECTIVE_RE = /squawk-ignore(-file)?/i;
  */
 function lexSql(content) {
   const comments = [];
+  const semicolons = [];
   const n = content.length;
   let i = 0;
   const isIdentChar = (c) => c !== undefined && /[A-Za-z0-9_$]/.test(c);
@@ -129,11 +132,41 @@ function lexSql(content) {
       } else {
         i += 1;
       }
+    } else if (c === ';') {
+      semicolons.push(i);
+      i += 1;
     } else {
       i += 1;
     }
   }
-  return { comments };
+
+  // `code` is the file with every comment blanked to spaces (newlines kept,
+  // offsets unchanged), so statement text never includes comment text.
+  const chars = content.split('');
+  for (const comment of comments) {
+    for (let k = comment.start; k < comment.end; k += 1) {
+      if (chars[k] !== '\n' && chars[k] !== '\r') chars[k] = ' ';
+    }
+  }
+  const code = chars.join('');
+
+  // Top-level statements, split on semicolons outside strings, quoted
+  // identifiers, dollar bodies and comments. `segmentStart` is where the
+  // segment begins (just after the previous `;`); `start` is the first
+  // non-blank character of real code, or -1 for a comment-only tail.
+  const statements = [];
+  let segmentStart = 0;
+  for (const end of [...semicolons, n]) {
+    const segment = code.slice(segmentStart, end);
+    const lead = segment.search(/\S/);
+    if (lead !== -1) {
+      statements.push({ segmentStart, start: segmentStart + lead, end, text: segment.trim() });
+    } else if (end === n) {
+      statements.push({ segmentStart, start: -1, end, text: '' });
+    }
+    segmentStart = end + 1;
+  }
+  return { comments, code, statements };
 }
 
 function parseSemver(v) {
@@ -148,13 +181,26 @@ function semverGte(a, b) {
   return a.patch >= b.patch;
 }
 
-function findFloorBumps(content) {
+// CR-C03: a floor bump is recognised only as a whole top-level statement
+// (comments already stripped by the lexer) in one of exactly two forms:
+//   update public.app_config set value = 'X.Y.Z' where key = 'min_supported_version';
+//   insert into public.app_config (key, value) values ('min_supported_version', 'X.Y.Z')
+//     [on conflict (key) do update set value = excluded.value];
+// Anything else that mentions min_supported_version -- a DO block, an extra
+// predicate, `on conflict do nothing` (a no-op once the row exists) -- does
+// NOT raise the floor, and is reported as a warning so the author notices.
+function findFloorBumps(statements, fileName, warnings) {
   const bumps = [];
-  for (const re of [FLOOR_INSERT_RE, FLOOR_UPDATE_RE]) {
-    re.lastIndex = 0;
-    let m;
-    while ((m = re.exec(content)) !== null) {
+  for (const stmt of statements) {
+    if (stmt.start === -1) continue;
+    const text = stmt.text.replace(/\s+/g, ' ');
+    const m = FLOOR_UPDATE_RE.exec(text) ?? FLOOR_INSERT_RE.exec(text);
+    if (m) {
       bumps.push(m[1]);
+    } else if (/min_supported_version/i.test(text)) {
+      warnings.push(
+        `${fileName}: statement mentions min_supported_version but is not a recognised floor bump, so it does not raise the floor: ${text.slice(0, 120)}`
+      );
     }
   }
   return bumps;
@@ -313,7 +359,7 @@ function main() {
 
     // Apply this file's own floor bumps AFTER evaluating its markers, so
     // they only affect files that come later.
-    for (const bump of findFloorBumps(content)) {
+    for (const bump of findFloorBumps(lexed.statements, fileName, warnings)) {
       floor = bump;
     }
   }

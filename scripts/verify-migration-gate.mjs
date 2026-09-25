@@ -208,6 +208,61 @@ try {
       }
     );
   }
+
+  // CR-C03: the floor comes only from real, executed statements. A floor
+  // statement in a comment, a no-op upsert, or one buried in a DO block
+  // does not raise it.
+  const MARKED_DROP =
+    '-- contract-ok: min_version >= 9.0.0\n-- squawk-ignore ban-drop-column\nalter table public.transactions drop column note;\n';
+  const fakeFloors = [
+    [
+      'P16: floor update only inside a -- comment',
+      "-- TODO later: update public.app_config set value = '9.0.0' where key = 'min_supported_version';\nselect 1;\n",
+    ],
+    [
+      'P17: floor update only inside a block comment',
+      "/*\nupdate public.app_config set value = '9.0.0' where key = 'min_supported_version';\n*/\nselect 1;\n",
+    ],
+    [
+      'P18: insert ... on conflict do nothing (a no-op, the row exists)',
+      "insert into public.app_config (key, value) values ('min_supported_version', '9.0.0') on conflict do nothing;\n",
+    ],
+    [
+      'P19: floor update inside a DO block',
+      "do $$ begin if false then update public.app_config set value = '9.0.0' where key = 'min_supported_version'; end if; end $$;\n",
+    ],
+    [
+      'P20: floor update with an extra predicate',
+      "update public.app_config set value = '9.0.0' where key = 'min_supported_version' and false;\n",
+    ],
+  ];
+  for (const [name, floorSql] of fakeFloors) {
+    runProbe(
+      name,
+      [
+        ['29990101000100_probe_floor.sql', floorSql],
+        ['29990101000200_probe_drop.sql', MARKED_DROP],
+      ],
+      (result) => {
+        expect('gate fails', result.status !== 0);
+        expect('output names the floor', result.output.includes('floor'));
+      }
+    );
+  }
+
+  runProbe(
+    'P21: upsert that really sets the value raises the floor',
+    [
+      [
+        '29990101000100_probe_floor.sql',
+        "insert into public.app_config (key, value) values ('min_supported_version', '9.0.0')\n  on conflict (key) do update set value = excluded.value;\n",
+      ],
+      ['29990101000200_probe_drop.sql', MARKED_DROP],
+    ],
+    (result) => {
+      expect('gate passes', result.status === 0);
+    }
+  );
 } finally {
   // Belt-and-braces: confirm no probe file was ever written into the real
   // migrations directory (every probe above wrote only into a temp copy).

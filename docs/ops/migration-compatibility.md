@@ -34,6 +34,16 @@ a column that no supported app version reads anymore. To ship one:
    update public.app_config set value = '1.2.0' where key = 'min_supported_version';
    ```
    (Or the seeding `insert` in the very first `app_config` migration.)
+
+   The gate recognises a floor bump only as a whole, real statement in
+   exactly this `update` form, or as
+   `insert into public.app_config (key, value) values ('min_supported_version', 'X.Y.Z')`
+   optionally followed by `on conflict (key) do update set value = excluded.value`.
+   Comments are stripped first, so a commented-out bump does not count.
+   `on conflict do nothing` (a no-op once the row exists), a bump inside a
+   `do $$ ... $$` block, or an `update` with any extra predicate does not
+   raise the floor either; the gate prints a warning for any statement that
+   mentions `min_supported_version` without being a recognised bump.
 2. In the migration that makes the destructive change, mark it -- **in this
    order**, `contract-ok` above `squawk-ignore`:
    ```sql
