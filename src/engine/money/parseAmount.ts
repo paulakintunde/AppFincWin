@@ -2,12 +2,16 @@
  * Region-aware, float-free amount input parsing (MON-02, D-24).
  *
  * D-24: the user's region decides how their own keystrokes are read back. The
- * region's decimal mark is authoritative and its grouping mark is ignored
- * wherever it legally appears -- so '12.5' means twelve-and-a-half in en-US
- * but one hundred twenty-five in de-DE, where '.' is the group mark. This is
- * deliberate, not a bug: Record echoes the parsed amount back to the user
- * before it is ever saved (T-01-03-02), so a region mismatch is caught by
- * the user, not silently miscomputed.
+ * region's decimal mark is authoritative, and its grouping mark is accepted
+ * only where the region itself would put it.
+ *
+ * WR-A10: a group mark in any other position is rejected as
+ * 'ambiguous-separator', never silently dropped. '12,50' in en-US or '12.5'
+ * in de-DE almost always means the user typed the other convention's decimal
+ * mark (a European user on an en-US device, a figure pasted from elsewhere);
+ * dropping the mark would store 100x or 10x the intended amount. Refusing is
+ * the only safe answer -- the parser never guesses which convention was meant.
+ * Well-placed grouping ('1,234.56', en-IN '12,34,567.5') is still accepted.
  *
  * The whole pipeline is pure string manipulation. Neither of JavaScript's
  * float-parsing built-ins (the one for a leading numeric prefix, or the one
@@ -36,7 +40,47 @@ export function localeSeparators(locale: string): LocaleSeparators {
   return { decimal, group };
 }
 
-export type ParseError = 'empty' | 'invalid' | 'too-many-decimals' | 'too-large';
+/**
+ * WR-A10: how many digits a locale puts in each group, read from the same
+ * formatToParts probe as the separators: `primary` is the size of the group
+ * next to the decimal mark (3 almost everywhere), `secondary` the size of
+ * every group further left (3, or 2 for the Indian lakh/crore system).
+ */
+export interface LocaleGrouping {
+  primary: number;
+  secondary: number;
+}
+
+const DEFAULT_GROUPING: LocaleGrouping = { primary: 3, secondary: 3 };
+
+export function localeGrouping(locale: string): LocaleGrouping {
+  const integers = new Intl.NumberFormat(locale)
+    .formatToParts(1234567.5)
+    .filter((p) => p.type === 'integer')
+    .map((p) => p.value.length);
+  // No grouping at all in this locale's rendering: fall back to the common 3/3.
+  if (integers.length < 2) return DEFAULT_GROUPING;
+  const primary = integers[integers.length - 1] as number;
+  const secondary = integers.length >= 3 ? (integers[integers.length - 2] as number) : primary;
+  return { primary, secondary };
+}
+
+/**
+ * WR-A10: true when the whole-part digit groups (split at every group mark)
+ * sit where `grouping` puts them. Every group must be non-empty, the last one
+ * exactly `primary` long, every middle one exactly `secondary` long, and the
+ * leading one 1..`secondary` digits.
+ */
+function isWellGrouped(groups: readonly string[], grouping: LocaleGrouping): boolean {
+  const last = groups.length - 1;
+  return groups.every((g, i) => {
+    if (i === last) return g.length === grouping.primary;
+    if (i === 0) return g.length >= 1 && g.length <= grouping.secondary;
+    return g.length === grouping.secondary;
+  });
+}
+
+export type ParseError = 'empty' | 'invalid' | 'ambiguous-separator' | 'too-many-decimals' | 'too-large';
 
 export type ParseDecimalResult = { ok: true; value: string } | { ok: false; error: ParseError };
 
@@ -93,12 +137,19 @@ export function parseDecimalString(
   let fraction = '';
   let inFraction = false;
   let seenDecimal = false;
+  // WR-A10: the whole part's digit groups, split at each group mark, so their
+  // placement can be checked once the whole part is complete.
+  const groups: string[] = [''];
 
   for (const ch of trimmed) {
     const digit = normalizeDigit(ch);
     if (digit !== undefined) {
-      if (inFraction) fraction += digit;
-      else whole += digit;
+      if (inFraction) {
+        fraction += digit;
+      } else {
+        whole += digit;
+        groups[groups.length - 1] += digit;
+      }
       continue;
     }
 
@@ -114,6 +165,7 @@ export function parseDecimalString(
       // part. One appearing after the decimal mark is not a legal grouping
       // -- reject rather than silently drop it.
       if (inFraction) return { ok: false, error: 'invalid' };
+      groups.push('');
       continue;
     }
 
@@ -125,6 +177,10 @@ export function parseDecimalString(
 
   // Covers '.', a group-mark-only string, and any input with no digits.
   if (whole === '' && fraction === '') return { ok: false, error: 'invalid' };
+
+  if (groups.length > 1 && !isWellGrouped(groups, localeGrouping(opts.locale))) {
+    return { ok: false, error: 'ambiguous-separator' };
+  }
 
   if (fraction.length > opts.maxFractionDigits) return { ok: false, error: 'too-many-decimals' };
 
