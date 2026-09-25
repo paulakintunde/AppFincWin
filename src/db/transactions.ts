@@ -6,7 +6,7 @@
 
 import { FunctionsFetchError } from '@supabase/supabase-js';
 import { monthRange } from '@/engine/time';
-import { NotFoundError, VersionConflictError, toDbError } from './errors';
+import { DbError, NotFoundError, VersionConflictError, toDbError } from './errors';
 import {
   assertAllowedKeys,
   type DbClient,
@@ -62,6 +62,16 @@ export async function fetchTransaction(client: DbClient, id: string): Promise<Tr
   return (data as TransactionRow | null) ?? null;
 }
 
+/**
+ * WR-A12: rows per request when reading a month. Matches PostgREST's hosted default
+ * `max_rows` (1000). The loop below does not rely on it being exact: it pages until the
+ * exact row count reported with the first page has been read.
+ */
+export const MONTH_PAGE_SIZE = 1000;
+
+/** WR-A12: a month read returned fewer rows than the server said exist. */
+export const TRUNCATED_READ = 'read-truncated';
+
 export async function fetchTransactionsForMonth(
   client: DbClient,
   householdId: string,
@@ -69,17 +79,39 @@ export async function fetchTransactionsForMonth(
 ): Promise<TransactionRow[]> {
   const { start, endExclusive } = monthRange(month);
 
-  const { data, error, status } = await client
-    .from('transactions')
-    .select(TRANSACTION_COLUMNS)
-    .eq('household_id', householdId)
-    .gte('local_date', start)
-    .lt('local_date', endExclusive)
-    .order('local_date', { ascending: false })
-    .order('created_at', { ascending: false });
+  // WR-A12: an unpaged read is silently capped at PostgREST's max_rows, which would
+  // truncate every total derived from the month (and Decide's inputs) with no error. Pages
+  // are requested until the exact count from the first page is reached; `id` is the final
+  // sort key so the page boundaries are stable when local_date and created_at tie.
+  const rows: TransactionRow[] = [];
+  let total: number | null = null;
+  for (let from = 0; ; from += MONTH_PAGE_SIZE) {
+    const { data, error, status, count } = await client
+      .from('transactions')
+      .select(TRANSACTION_COLUMNS, from === 0 ? { count: 'exact' } : undefined)
+      .eq('household_id', householdId)
+      .gte('local_date', start)
+      .lt('local_date', endExclusive)
+      .order('local_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, from + MONTH_PAGE_SIZE - 1);
 
-  if (error) throw toDbError(error, status);
-  return (data as TransactionRow[] | null) ?? [];
+    if (error) throw toDbError(error, status);
+    const page = (data as TransactionRow[] | null) ?? [];
+    if (from === 0) total = count ?? null;
+    rows.push(...page);
+
+    const done = total === null ? page.length < MONTH_PAGE_SIZE : rows.length >= total || page.length === 0;
+    if (done) break;
+  }
+
+  if (total !== null && rows.length < total) {
+    // Rows were removed between pages (or the server capped a page below our page size and
+    // then returned nothing). Fail the read rather than serve a short month as complete.
+    throw new DbError(`month read incomplete: ${rows.length} of ${total} rows`, TRUNCATED_READ, null);
+  }
+  return rows;
 }
 
 export async function insertTransaction(client: DbClient, tx: NewTransaction): Promise<TransactionRow> {
@@ -96,6 +128,9 @@ export async function insertTransaction(client: DbClient, tx: NewTransaction): P
   if (error.code === UNIQUE_VIOLATION) {
     const existing = await fetchTransaction(client, tx.id);
     if (existing) return existing;
+    // CR-A03: the violated constraint is not this row's id (e.g. a (owner_id, code) clash
+    // from another device). Rethrown as a 23505 DbError, which classifyWriteError treats as
+    // a permanent rejection so the write is parked in the failed list, never dropped.
   }
 
   throw toDbError(error, status);
@@ -136,9 +171,16 @@ export async function updateTransaction(
  * it; any HTTP-layer failure the function itself returned is swallowed to `null` -- the
  * row stays `rate_pending` and a later call (or the background restamp path) can retry.
  */
+/**
+ * WR-A15: upper bound on one resolve-rate call. The call is best-effort (a row that stays
+ * rate_pending is picked up later), so a slow upstream backfill must never hang a caller.
+ */
+export const RATE_RESOLUTION_TIMEOUT_MS = 15_000;
+
 export async function requestRateResolution(client: DbClient, transactionId: string): Promise<TransactionRow | null> {
   const { data, error } = await client.functions.invoke('resolve-rate', {
     body: { transactionId },
+    timeout: RATE_RESOLUTION_TIMEOUT_MS,
   });
 
   if (error) {

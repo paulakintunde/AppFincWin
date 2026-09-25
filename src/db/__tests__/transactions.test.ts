@@ -2,7 +2,10 @@ import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
 import { DbError, NotFoundError, VersionConflictError } from '../errors';
 import type { NewTransaction, TransactionPatch, TransactionRow } from '../rows';
 import {
+  MONTH_PAGE_SIZE,
+  RATE_RESOLUTION_TIMEOUT_MS,
   TRANSACTION_COLUMNS,
+  TRUNCATED_READ,
   fetchTransaction,
   fetchTransactionsForMonth,
   insertTransaction,
@@ -84,6 +87,58 @@ describe('fetchTransactionsForMonth', () => {
     const orderCalls = client.calls.filter((c) => c.method === 'order');
     expect(orderCalls[0]?.args).toEqual(['local_date', { ascending: false }]);
     expect(orderCalls[1]?.args).toEqual(['created_at', { ascending: false }]);
+  });
+
+  it('WR-A12: pages past PostgREST max_rows until the exact count is read -- a big month is never truncated', async () => {
+    const client = createFakeSupabase();
+    const page1 = Array.from({ length: MONTH_PAGE_SIZE }, (_, i) => row({ id: `a${i}` }));
+    const page2 = Array.from({ length: 5 }, (_, i) => row({ id: `b${i}` }));
+    client.respondWith({ data: page1, error: null, status: 206, count: MONTH_PAGE_SIZE + 5 });
+    client.respondWith({ data: page2, error: null, status: 206 });
+
+    const result = await fetchTransactionsForMonth(client, 'h1', '2026-09');
+
+    expect(result).toHaveLength(MONTH_PAGE_SIZE + 5);
+    expect(client.calls.filter((c) => c.method === 'range').map((c) => c.args)).toEqual([
+      [0, MONTH_PAGE_SIZE - 1],
+      [MONTH_PAGE_SIZE, 2 * MONTH_PAGE_SIZE - 1],
+    ]);
+    const selects = client.calls.filter((c) => c.method === 'select');
+    expect(selects[0]?.args).toEqual([TRANSACTION_COLUMNS, { count: 'exact' }]);
+    expect(selects[1]?.args).toEqual([TRANSACTION_COLUMNS]);
+    expect(client.calls.filter((c) => c.method === 'order')[2]?.args).toEqual(['id', { ascending: true }]);
+  });
+
+  it('WR-A12: keeps paging when the server caps pages below our page size', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [row({ id: 'x1' }), row({ id: 'x2' })], error: null, status: 206, count: 3 });
+    client.respondWith({ data: [row({ id: 'x3' })], error: null, status: 206 });
+
+    await expect(fetchTransactionsForMonth(client, 'h1', '2026-09')).resolves.toHaveLength(3);
+  });
+
+  it('WR-A12: throws rather than serving a short month as complete', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [row()], error: null, status: 206, count: 4 });
+    client.respondWith({ data: [], error: null, status: 206 });
+
+    await expect(fetchTransactionsForMonth(client, 'h1', '2026-09')).rejects.toMatchObject({
+      name: 'DbError',
+      code: TRUNCATED_READ,
+    });
+  });
+
+  it('surfaces a page error as a DbError', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'boom', code: 'XX000' }, status: 500 });
+    await expect(fetchTransactionsForMonth(client, 'h1', '2026-09')).rejects.toMatchObject({ code: 'XX000', status: 500 });
+  });
+
+  it('with an exact count of zero, returns an empty month after one request', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [], error: null, status: 200, count: 0 });
+    await expect(fetchTransactionsForMonth(client, 'h1', '2026-09')).resolves.toEqual([]);
+    expect(client.calls.filter((c) => c.method === 'range')).toHaveLength(1);
   });
 });
 
@@ -191,7 +246,7 @@ describe('requestRateResolution', () => {
     expect(result).toEqual(resolved);
     expect(client.calls.find((c) => c.method === 'functions.invoke')?.args).toEqual([
       'resolve-rate',
-      { body: { transactionId: 't1' } },
+      { body: { transactionId: 't1' }, timeout: RATE_RESOLUTION_TIMEOUT_MS },
     ]);
   });
 

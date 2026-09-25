@@ -10,13 +10,15 @@
 globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto);
 
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { AccountRow, DbClient, TransactionRow } from '@/db/rows';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
-import { queryKeys } from '@/data/keys';
+import { mutationKeys, queryKeys } from '@/data/keys';
+import { MAX_SERVER_ERROR_RETRIES } from '@/data/sync/writeErrors';
+import { clearVersionChains } from '@/data/sync/versionChain';
 import { registerMutationDefaults } from '../index';
-import { useAddTransaction, useEditTransaction } from '../transactions';
+import { useAddTransaction, useEditTransaction, type AddTransactionVars } from '../transactions';
 import { useAddAccount, useEditAccount } from '../accounts';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
@@ -86,6 +88,8 @@ const serverTransaction = (overrides: Partial<TransactionRow> = {}): Transaction
 beforeEach(() => {
   mockUuidCounter = 0;
   recordFailedWrite.mockClear();
+  onlineManager.setOnline(true);
+  clearVersionChains();
 });
 
 describe('useAddTransaction', () => {
@@ -233,6 +237,168 @@ describe('useAddTransaction', () => {
     );
   });
 
+  it('CR-A01: a real postgrest-js network failure (status 0, code "") keeps the row and retries, never parks it as failed', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    // The exact shape postgrest-js 2.x resolves when fetch itself rejects.
+    fake.respondWith({ data: null, error: { message: 'TypeError: Network request failed', code: '' }, status: 0 });
+    fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.failureCount).toBe(1));
+    const mutation = qc.getMutationCache().getAll()[0];
+    expect(mutation?.state.status).toBe('pending');
+    const rows = qc.getQueryData<(TransactionRow & { pending?: boolean })[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+    expect(rows?.[0]).toMatchObject({ id: 'uuid-0', pending: true });
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+
+    // The retry (after writeRetryDelay's backoff) lands the write.
+    await waitFor(
+      () => {
+        const settled = qc.getQueryData<(TransactionRow & { pending?: boolean })[]>(
+          queryKeys.transactionsMonth('h1', '2026-09')
+        );
+        expect(settled?.[0]?.pending).toBeUndefined();
+      },
+      { timeout: 5000 }
+    );
+    expect(fake.calls.filter((c) => c.method === 'insert')).toHaveLength(2);
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+  }, 10_000);
+
+  it('WR-A01: with no usable session the write is held (never sent under the anon key) and lands once the session is back', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.session = null; // token expired and the refresh failed
+    fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.failureCount).toBe(1));
+    expect(fake.calls.some((c) => c.method === 'insert')).toBe(false);
+    expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('pending');
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+
+    fake.session = { access_token: 'refreshed' };
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'insert')).toBe(true), { timeout: 5000 });
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'));
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+  }, 10_000);
+
+  it('WR-A01: a 401 JWT-expired response is retried, not rolled back into the failed list', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'JWT expired', code: 'PGRST303' }, status: 401 });
+    fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.failureCount).toBe(1));
+    expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('pending');
+    const rows = qc.getQueryData<(TransactionRow & { pending?: boolean })[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+    expect(rows?.[0]).toMatchObject({ id: 'uuid-0', pending: true });
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'), { timeout: 5000 });
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+  }, 10_000);
+
+  it('WR-A02: a write that always gets a 5xx is retried a bounded number of times, then parked as failed so the queue moves on', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    for (let i = 0; i <= MAX_SERVER_ERROR_RETRIES; i++) {
+      fake.respondWith({ data: null, error: { message: 'trigger raised', code: 'XX000' }, status: 500 });
+    }
+
+    const qc = newClient();
+    const vars: AddTransactionVars = {
+      row: {
+        id: 'tx-500',
+        household_id: 'h1',
+        account_id: 'acc1',
+        original_amount: 500,
+        original_currency: 'USD',
+        local_date: '2026-09-24',
+        time_zone: 'UTC',
+        note: null,
+      },
+      optimistic: { homeCurrency: 'USD', createdBy: 'user-1', month: '2026-09' },
+    };
+    // Same registered defaults, with the backoff removed so the test does not wait minutes.
+    const mutation = qc.getMutationCache().build(qc, { mutationKey: mutationKeys.addTransaction, retryDelay: 0 });
+    await expect(mutation.execute(vars)).rejects.toMatchObject({ status: 500 });
+
+    expect(fake.calls.filter((c) => c.method === 'insert')).toHaveLength(MAX_SERVER_ERROR_RETRIES + 1);
+    expect(recordFailedWrite).toHaveBeenCalledWith(
+      expect.objectContaining({ entity: 'transactions', entityId: 'tx-500', kind: 'rejected', code: 'retry-exhausted' })
+    );
+    const rows = qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+    expect(rows ?? []).toHaveLength(0);
+  });
+
+  it('WR-A03: a malformed cached rate cannot abort the write -- the insert is still sent with a pending stamp', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: serverTransaction({ original_currency: 'JPY', rate_pending: true }), error: null, status: 201 });
+    fake.respondWith({ data: null, error: null, status: 200 }); // resolve-rate follow-up
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.fxLatest(), [USD_RATE, { ...JPY_RATE, rate: 'not-a-rate' }]);
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 1000 as never,
+      currency: 'JPY',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'insert')).toBe(true));
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'));
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+  });
+
   it('a duplicate-id (23505) insert is treated as success via the fetch-existing path, no rollback', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
@@ -294,6 +460,82 @@ describe('useEditTransaction', () => {
 
     const updateCall = fake.calls.find((c) => c.method === 'update');
     expect(updateCall?.args[0]).toEqual({ original_amount: 1000 });
+  });
+
+  it('WR-A05: moving a transaction\'s date into another month moves it between the month caches', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+
+    const qc = newClient();
+    const sep = queryKeys.transactionsMonth('h1', '2026-09');
+    const oct = queryKeys.transactionsMonth('h1', '2026-10');
+    qc.setQueryData(sep, [serverTransaction({ id: 'tx-1', local_date: '2026-09-24' })]);
+    qc.setQueryData(oct, [serverTransaction({ id: 'tx-oct', local_date: '2026-10-05' })]);
+    const { result } = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.edit({
+      id: 'tx-1',
+      householdId: 'h1',
+      month: '2026-09',
+      expectedVersion: 1,
+      patch: { local_date: '2026-10-02' },
+      homeCurrency: 'USD',
+    });
+
+    await waitFor(() => {
+      expect(qc.getQueryData<TransactionRow[]>(sep)?.map((r) => r.id)).toEqual([]);
+      expect(qc.getQueryData<(TransactionRow & { pending?: boolean })[]>(oct)?.find((r) => r.id === 'tx-1')).toMatchObject({
+        local_date: '2026-10-02',
+        pending: true,
+      });
+    });
+
+    fake.respondWith({ data: [serverTransaction({ id: 'tx-1', local_date: '2026-10-02', version: 2 })], error: null, status: 200 });
+    onlineManager.setOnline(true);
+    await qc.resumePausedMutations();
+
+    await waitFor(() => {
+      const octRows = qc.getQueryData<(TransactionRow & { pending?: boolean })[]>(oct);
+      expect(octRows?.find((r) => r.id === 'tx-1')).toMatchObject({ version: 2 });
+      expect(octRows?.find((r) => r.id === 'tx-1')?.pending).toBeUndefined();
+    });
+    expect(qc.getQueryData<TransactionRow[]>(sep)?.some((r) => r.id === 'tx-1')).toBe(false);
+    // A month that was never loaded is never fabricated as a one-row list.
+    expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-11'))).toBeUndefined();
+  });
+
+  it('WR-A06: an offline amount-only edit keeps the row\'s own home currency and stored rate', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+
+    const qc = newClient();
+    const stamped = serverTransaction({
+      id: 'tx-6',
+      original_currency: 'JPY',
+      original_amount: 1000,
+      home_currency: 'USD',
+      home_amount: 640,
+      rate: '0.0064000000',
+      orig_per_eur: '180.0000000000',
+      home_per_eur: '1.1520000000',
+      rate_date: '2026-09-10',
+      rate_source: 'frankfurter-v2',
+      rate_pending: false,
+    });
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [stamped]);
+    qc.setQueryData(queryKeys.fxLatest(), [USD_RATE, JPY_RATE, { quote: 'GBP', rate: '0.85', rate_date: '2026-09-21', source: 'frankfurter-v2' }]);
+    const { result } = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+
+    // The user has since switched their home currency preference to GBP.
+    result.current.edit({ id: 'tx-6', householdId: 'h1', month: '2026-09', expectedVersion: 1, patch: { original_amount: 2000 }, homeCurrency: 'GBP' });
+
+    await waitFor(() => {
+      const row = qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'))?.[0];
+      expect(row).toMatchObject({ home_currency: 'USD', home_amount: 1280, rate: '0.0064000000', rate_date: '2026-09-10', rate_pending: false });
+    });
+    qc.getMutationCache().clear();
   });
 
   it('a version conflict keeps the server row, invalidates the household transactions, and records the conflict', async () => {

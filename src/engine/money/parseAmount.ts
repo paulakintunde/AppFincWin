@@ -2,12 +2,16 @@
  * Region-aware, float-free amount input parsing (MON-02, D-24).
  *
  * D-24: the user's region decides how their own keystrokes are read back. The
- * region's decimal mark is authoritative and its grouping mark is ignored
- * wherever it legally appears -- so '12.5' means twelve-and-a-half in en-US
- * but one hundred twenty-five in de-DE, where '.' is the group mark. This is
- * deliberate, not a bug: Record echoes the parsed amount back to the user
- * before it is ever saved (T-01-03-02), so a region mismatch is caught by
- * the user, not silently miscomputed.
+ * region's decimal mark is authoritative, and its grouping mark is accepted
+ * only where the region itself would put it.
+ *
+ * WR-A10: a group mark in any other position is rejected as
+ * 'ambiguous-separator', never silently dropped. '12,50' in en-US or '12.5'
+ * in de-DE almost always means the user typed the other convention's decimal
+ * mark (a European user on an en-US device, a figure pasted from elsewhere);
+ * dropping the mark would store 100x or 10x the intended amount. Refusing is
+ * the only safe answer -- the parser never guesses which convention was meant.
+ * Well-placed grouping ('1,234.56', en-IN '12,34,567.5') is still accepted.
  *
  * The whole pipeline is pure string manipulation. Neither of JavaScript's
  * float-parsing built-ins (the one for a leading numeric prefix, or the one
@@ -36,7 +40,47 @@ export function localeSeparators(locale: string): LocaleSeparators {
   return { decimal, group };
 }
 
-export type ParseError = 'empty' | 'invalid' | 'too-many-decimals' | 'too-large';
+/**
+ * WR-A10: how many digits a locale puts in each group, read from the same
+ * formatToParts probe as the separators: `primary` is the size of the group
+ * next to the decimal mark (3 almost everywhere), `secondary` the size of
+ * every group further left (3, or 2 for the Indian lakh/crore system).
+ */
+export interface LocaleGrouping {
+  primary: number;
+  secondary: number;
+}
+
+const DEFAULT_GROUPING: LocaleGrouping = { primary: 3, secondary: 3 };
+
+export function localeGrouping(locale: string): LocaleGrouping {
+  const integers = new Intl.NumberFormat(locale)
+    .formatToParts(1234567.5)
+    .filter((p) => p.type === 'integer')
+    .map((p) => p.value.length);
+  // No grouping at all in this locale's rendering: fall back to the common 3/3.
+  if (integers.length < 2) return DEFAULT_GROUPING;
+  const primary = integers[integers.length - 1] as number;
+  const secondary = integers.length >= 3 ? (integers[integers.length - 2] as number) : primary;
+  return { primary, secondary };
+}
+
+/**
+ * WR-A10: true when the whole-part digit groups (split at every group mark)
+ * sit where `grouping` puts them. Every group must be non-empty, the last one
+ * exactly `primary` long, every middle one exactly `secondary` long, and the
+ * leading one 1..`secondary` digits.
+ */
+function isWellGrouped(groups: readonly string[], grouping: LocaleGrouping): boolean {
+  const last = groups.length - 1;
+  return groups.every((g, i) => {
+    if (i === last) return g.length === grouping.primary;
+    if (i === 0) return g.length >= 1 && g.length <= grouping.secondary;
+    return g.length === grouping.secondary;
+  });
+}
+
+export type ParseError = 'empty' | 'invalid' | 'ambiguous-separator' | 'too-many-decimals' | 'too-large';
 
 export type ParseDecimalResult = { ok: true; value: string } | { ok: false; error: ParseError };
 
@@ -56,10 +100,21 @@ function buildGroupCharSet(groupChar: string): ReadonlySet<string> {
   return WHITESPACE_GROUP_CHARS.has(groupChar) ? WHITESPACE_GROUP_CHARS : new Set([groupChar]);
 }
 
-// Maps a single character to its ASCII digit if it is an ASCII, Arabic-Indic
-// (U+0660-U+0669) or Extended Arabic-Indic (U+06F0-U+06F9) digit; otherwise
-// undefined. This is the only place digit characters are interpreted, and it
-// only ever produces one of '0'-'9'.
+// IN-A04: the zero code point of every decimal-digit block (Unicode Nd, ten
+// consecutive code points 0-9) that Intl renders for a locale's default or
+// `-u-nu-` numbering system, so a user typing on a native keyboard can enter
+// amounts: ASCII, Arabic-Indic, Extended Arabic-Indic (Persian/Urdu), N'Ko,
+// Devanagari, Bengali, Gurmukhi, Gujarati, Oriya, Tamil, Telugu, Kannada,
+// Malayalam, Sinhala Lith, Thai, Lao, Tibetan, Myanmar, Myanmar Shan, Khmer,
+// Mongolian and fullwidth digits. All are in the BMP, so one UTF-16 code unit.
+const DIGIT_BLOCK_ZEROS: readonly number[] = [
+  0x0030, 0x0660, 0x06f0, 0x07c0, 0x0966, 0x09e6, 0x0a66, 0x0ae6, 0x0b66, 0x0be6, 0x0c66, 0x0ce6,
+  0x0d66, 0x0de6, 0x0e50, 0x0ed0, 0x0f20, 0x1040, 0x1090, 0x17e0, 0x1810, 0xff10,
+];
+
+// Maps a single character to its ASCII digit if it is a digit in one of the
+// blocks above; otherwise undefined. This is the only place digit characters
+// are interpreted, and it only ever produces one of '0'-'9'.
 function normalizeDigit(ch: string): string | undefined {
   // `ch` always comes from iterating a non-empty string one character at a
   // time (see the for-of loop below), so index 0 always exists --
@@ -67,10 +122,8 @@ function normalizeDigit(ch: string): string | undefined {
   // there is no spurious "undefined index" branch to cover: every character
   // this function is ever called with has a real code unit at position 0.
   const code = ch.charCodeAt(0);
-  if (code >= 0x30 && code <= 0x39) return ch;
-  if (code >= 0x0660 && code <= 0x0669) return String.fromCharCode(0x30 + (code - 0x0660));
-  if (code >= 0x06f0 && code <= 0x06f9) return String.fromCharCode(0x30 + (code - 0x06f0));
-  return undefined;
+  const zero = DIGIT_BLOCK_ZEROS.find((z) => code >= z && code <= z + 9);
+  return zero === undefined ? undefined : String.fromCharCode(0x30 + (code - zero));
 }
 
 /**
@@ -81,24 +134,35 @@ function normalizeDigit(ch: string): string | undefined {
  */
 export function parseDecimalString(
   raw: string,
-  opts: { locale: string; maxFractionDigits: number }
+  opts: { locale: string; maxFractionDigits: number; separators?: LocaleSeparators }
 ): ParseDecimalResult {
   const trimmed = raw.trim();
   if (trimmed === '') return { ok: false, error: 'empty' };
 
-  const { decimal, group } = localeSeparators(opts.locale);
+  // WR-A11: the device's own region separators, when the caller has them, win
+  // over the ones derived from the locale tag -- the tag is the preferred
+  // *language* and can disagree with the region (language English, region
+  // Germany), and the native decimal keypad types the region's mark.
+  const { decimal, group } = opts.separators ?? localeSeparators(opts.locale);
   const groupChars = buildGroupCharSet(group);
 
   let whole = '';
   let fraction = '';
   let inFraction = false;
   let seenDecimal = false;
+  // WR-A10: the whole part's digit groups, split at each group mark, so their
+  // placement can be checked once the whole part is complete.
+  const groups: string[] = [''];
 
   for (const ch of trimmed) {
     const digit = normalizeDigit(ch);
     if (digit !== undefined) {
-      if (inFraction) fraction += digit;
-      else whole += digit;
+      if (inFraction) {
+        fraction += digit;
+      } else {
+        whole += digit;
+        groups[groups.length - 1] += digit;
+      }
       continue;
     }
 
@@ -114,6 +178,7 @@ export function parseDecimalString(
       // part. One appearing after the decimal mark is not a legal grouping
       // -- reject rather than silently drop it.
       if (inFraction) return { ok: false, error: 'invalid' };
+      groups.push('');
       continue;
     }
 
@@ -125,6 +190,10 @@ export function parseDecimalString(
 
   // Covers '.', a group-mark-only string, and any input with no digits.
   if (whole === '' && fraction === '') return { ok: false, error: 'invalid' };
+
+  if (groups.length > 1 && !isWellGrouped(groups, localeGrouping(opts.locale))) {
+    return { ok: false, error: 'ambiguous-separator' };
+  }
 
   if (fraction.length > opts.maxFractionDigits) return { ok: false, error: 'too-many-decimals' };
 
@@ -145,18 +214,19 @@ function stripLeadingZeros(digits: string): string {
  * region-aware, per MON-02/D-24. `exponent` is the target currency's ISO
  * 4217 (or custom-currency, MON-13) minor-unit exponent -- a caller passing
  * an out-of-range exponent has a programming bug, not a user-input problem,
- * so that case throws rather than returning a result.
+ * so that case throws rather than returning a result. `separators` (WR-A11)
+ * are the device region's own marks; pass them whenever they are known.
  */
 export function parseAmount(
   raw: string,
-  opts: { locale: string; exponent: number }
+  opts: { locale: string; exponent: number; separators?: LocaleSeparators }
 ): ParseAmountResult {
-  const { locale, exponent } = opts;
+  const { locale, exponent, separators } = opts;
   if (!Number.isInteger(exponent) || exponent < 0 || exponent > 4) {
     throw new RangeError(`parseAmount: exponent ${exponent} must be an integer between 0 and 4`);
   }
 
-  const parsed = parseDecimalString(raw, { locale, maxFractionDigits: exponent });
+  const parsed = parseDecimalString(raw, { locale, maxFractionDigits: exponent, separators });
   if (!parsed.ok) {
     return { ok: false, error: parsed.error, maxDecimals: exponent };
   }

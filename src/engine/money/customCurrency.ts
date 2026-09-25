@@ -9,7 +9,7 @@
  * Stays pure per the engine/ boundary: only engine/money's own rate parser (parseRate/
  * formatRate) and amount parser (parseDecimalString) are used, no db/data/services/ui/react.
  */
-import { parseDecimalString } from './parseAmount';
+import { parseDecimalString, type LocaleSeparators } from './parseAmount';
 import { formatRate, parseRate, RATE_SCALE } from './rates';
 
 export type CustomCurrencyError =
@@ -28,6 +28,8 @@ export interface CustomCurrencyInput {
   referenceCurrency: string;
   unitValueRaw: string;
   locale: string;
+  /** WR-A11: the device region's own decimal/group marks, when known. */
+  separators?: LocaleSeparators;
 }
 
 export interface ValidatedCustomCurrency {
@@ -52,6 +54,14 @@ export interface ValidateCustomCurrencyContext {
 // "invalid" -- there is nothing to correct, only something to type.
 const CODE_PATTERN = /^[A-Z0-9]{2,4}$/;
 const MAX_SYMBOL_LENGTH = 4;
+
+// IN-A02: bounds on what one custom unit may be worth in its reference currency. Outside
+// them the 10-dp per-EUR rate either rounds to zero (a huge unit value -- every conversion
+// into the currency would then be 0, and out of it a division by zero) or overflows the
+// stored numeric(24,10) (a tiny one against a high-per-EUR reference such as IDR or VND).
+// Mirrors the bound review finding WR-B07 proposes for the column itself.
+export const MIN_UNIT_VALUE = '0.000001';
+export const MAX_UNIT_VALUE = '1000000';
 
 export function validateCustomCurrency(
   input: CustomCurrencyInput,
@@ -89,6 +99,7 @@ export function validateCustomCurrency(
   const parsedDecimal = parseDecimalString(input.unitValueRaw, {
     locale: input.locale,
     maxFractionDigits: RATE_SCALE,
+    separators: input.separators,
   });
   if (!parsedDecimal.ok) {
     errors.push('value-invalid');
@@ -97,7 +108,12 @@ export function validateCustomCurrency(
       // Canonical 10-dp string, the same shape every other stored rate takes (D-16's SQL
       // mirror expects numeric(24,10)). parseRate rejects zero/negative values, which is
       // exactly what "must be > 0" (prototype) means here.
-      unitValue = formatRate(parseRate(parsedDecimal.value));
+      const scaled = parseRate(parsedDecimal.value);
+      if (scaled < parseRate(MIN_UNIT_VALUE) || scaled > parseRate(MAX_UNIT_VALUE)) {
+        errors.push('value-invalid');
+      } else {
+        unitValue = formatRate(scaled);
+      }
     } catch {
       errors.push('value-invalid');
     }

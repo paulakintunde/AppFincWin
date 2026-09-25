@@ -53,6 +53,21 @@ export class NotFoundError extends Error {
 }
 
 /**
+ * WR-A01: a write was about to be sent with no usable session (the access token expired and
+ * supabase-js could not refresh it yet, e.g. the refresh call itself hit a flaky network).
+ * Sending anyway would go out under the anon key and fail the column grants with a 42501
+ * that looks permanent. The write queue waits and retries instead of rejecting.
+ */
+export class SessionUnavailableError extends Error {
+  readonly code = 'session-unavailable';
+
+  constructor(reason?: string) {
+    super(reason ? `No usable auth session: ${reason}` : 'No usable auth session');
+    this.name = 'SessionUnavailableError';
+  }
+}
+
+/**
  * Normalizes a PostgREST-shaped error object (message + optional code) plus an optional
  * HTTP status into a DbError. `code` and `status` both default to their "unknown" values
  * (empty string, null) rather than throwing when absent, since not every failure path

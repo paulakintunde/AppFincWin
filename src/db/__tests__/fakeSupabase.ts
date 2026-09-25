@@ -9,6 +9,8 @@ export interface FakeResponse {
   data: unknown;
   error: { message: string; code?: string } | null;
   status: number;
+  /** Set when the query asked for `count` (WR-A12's month read). */
+  count?: number | null;
 }
 
 export interface RecordedCall {
@@ -51,8 +53,8 @@ export class FakeSupabase {
         record('update', [patch]);
         return builder;
       },
-      select: (columns?: string) => {
-        record('select', [columns]);
+      select: (columns?: string, opts?: unknown) => {
+        record('select', opts === undefined ? [columns] : [columns, opts]);
         return builder;
       },
       eq: (column: string, value: unknown) => {
@@ -79,6 +81,10 @@ export class FakeSupabase {
         record('limit', [count]);
         return builder;
       },
+      range: (from: number, to: number) => {
+        record('range', [from, to]);
+        return builder;
+      },
       single: () => resolve('single'),
       maybeSingle: () => resolve('maybeSingle'),
       then: <T>(onFulfilled: (value: FakeResponse) => T, onRejected?: (reason: unknown) => T) => {
@@ -97,10 +103,28 @@ export class FakeSupabase {
     };
   }
 
+  /** WR-A01: what auth.getSession() reports. A signed-in session by default; tests set null. */
+  session: { access_token: string } | null = { access_token: 'fake-token' };
+  sessionError: { message: string } | null = null;
+  /** When set, getSession() waits for it -- lets a test hold a write mid-flight. */
+  sessionGate: Promise<void> | null = null;
+
+  auth = {
+    getSession: async () => {
+      this.calls.push({ method: 'auth.getSession', args: [] });
+      if (this.sessionGate) await this.sessionGate;
+      return { data: { session: this.session }, error: this.sessionError };
+    },
+  };
+
+  /** When set, functions.invoke() waits for it -- lets a test hold an Edge Function call. */
+  invokeGate: Promise<void> | null = null;
+
   functions = {
-    invoke: (name: string, opts?: unknown): Promise<FakeResponse> => {
+    invoke: async (name: string, opts?: unknown): Promise<FakeResponse> => {
       this.calls.push({ method: 'functions.invoke', args: [name, opts] });
-      return Promise.resolve(this.next());
+      if (this.invokeGate) await this.invokeGate;
+      return this.next();
     },
   };
 }

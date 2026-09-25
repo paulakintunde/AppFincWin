@@ -64,6 +64,9 @@ export async function insertAccount(client: DbClient, account: NewAccount): Prom
   if (error.code === UNIQUE_VIOLATION) {
     const existing = await fetchAccount(client, account.id);
     if (existing) return existing;
+    // CR-A03: the violated constraint is not this row's id (e.g. a (owner_id, code) clash
+    // from another device). Rethrown as a 23505 DbError, which classifyWriteError treats as
+    // a permanent rejection so the write is parked in the failed list, never dropped.
   }
 
   throw toDbError(error, status);

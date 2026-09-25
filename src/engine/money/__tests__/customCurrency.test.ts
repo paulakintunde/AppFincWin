@@ -1,4 +1,10 @@
-import { validateCustomCurrency, type CustomCurrencyInput, type ValidateCustomCurrencyContext } from '../customCurrency';
+import {
+  MAX_UNIT_VALUE,
+  MIN_UNIT_VALUE,
+  validateCustomCurrency,
+  type CustomCurrencyInput,
+  type ValidateCustomCurrencyContext,
+} from '../customCurrency';
 
 const ISO_CODES = new Set(['USD', 'EUR', 'JPY', 'GBP']);
 
@@ -104,6 +110,26 @@ describe('validateCustomCurrency', () => {
     it('an empty string is value-invalid', () => {
       const result = validateCustomCurrency(input({ unitValueRaw: '' }), ctx());
       expect(result).toEqual({ ok: false, errors: expect.arrayContaining(['value-invalid']) });
+    });
+
+    it.each(['1000000.0000000001', '5000000', '0.0000009', '0.0000000001'])(
+      'IN-A02: %p is outside the unit-value bounds and is value-invalid',
+      (raw) => {
+        const result = validateCustomCurrency(input({ unitValueRaw: raw }), ctx());
+        expect(result).toEqual({ ok: false, errors: ['value-invalid'] });
+      }
+    );
+
+    it.each([MIN_UNIT_VALUE, MAX_UNIT_VALUE, '60000'])('IN-A02: %p is within bounds', (raw) => {
+      expect(validateCustomCurrency(input({ unitValueRaw: raw }), ctx()).ok).toBe(true);
+    });
+
+    it('WR-A11: explicit region separators win over the locale tag', () => {
+      const result = validateCustomCurrency(
+        input({ unitValueRaw: '2,5', locale: 'en-US', separators: { decimal: ',', group: '.' } }),
+        ctx()
+      );
+      expect(result).toEqual({ ok: true, value: expect.objectContaining({ unitValue: '2.5000000000' }) });
     });
 
     it('a de-DE comma decimal parses correctly per the given locale', () => {

@@ -5,10 +5,17 @@
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { updateMoneyPrefs, type MoneyPrefsPatch } from '@/db/profile';
-import type { DbClient, MoneyPrefsRow } from '@/db/rows';
+import type { MoneyPrefsRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
-import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
+import {
+  classifySettledWriteError,
+  settledWriteErrorCode,
+  shouldRetryWrite,
+  writeRetryDelay,
+} from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { writeClient } from './writeClient';
+import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { DEFAULT_MONEY_PREFS } from '@/data/queries/moneyPrefs';
 
 export interface UpdateMoneyPrefsVars {
@@ -20,25 +27,16 @@ interface MutationContext {
   previous: MoneyPrefsRow | undefined;
 }
 
-// See transactions.ts's lazySupabaseClient for why require() (not the plan-literal
-// `await import(...)`) is used here -- dynamic import() throws under this project's Jest
-// config the moment it actually runs (01-12 Deviation 1).
-function lazySupabaseClient(): DbClient {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return (require('@/services/supabase') as typeof import('@/services/supabase')).supabase;
-}
-
-function errorCode(err: unknown): string {
-  return err instanceof Error && 'code' in err ? String((err as { code: unknown }).code) : '';
-}
+// WR-A01: writes go through ./writeClient (lazy require + session check).
 
 export function registerMoneyPrefsMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.updateMoneyPrefs, {
-    mutationFn: (vars: UpdateMoneyPrefsVars) => updateMoneyPrefs(lazySupabaseClient(), vars.userId, vars.patch),
+    mutationFn: (vars: UpdateMoneyPrefsVars) => guardSession(vars, async () => updateMoneyPrefs(await writeClient(), vars.userId, vars.patch)),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: async (vars: UpdateMoneyPrefsVars): Promise<MutationContext> => {
+      markSession(vars); // WR-A09
       const key = queryKeys.moneyPrefs(vars.userId);
       await qc.cancelQueries({ queryKey: key });
 
@@ -52,8 +50,8 @@ export function registerMoneyPrefsMutations(qc: QueryClient): void {
       qc.setQueryData(queryKeys.moneyPrefs(vars.userId), row);
     },
     onError: async (err: unknown, vars: UpdateMoneyPrefsVars, context: unknown) => {
-      const cls = classifyWriteError(err);
-      if (cls !== 'rejected' && cls !== 'not-found') return; // transient retries
+      const cls = classifySettledWriteError(err);
+      if (cls !== 'rejected' && cls !== 'not-found') return; // prefs are unconditional, never conflict
 
       const previous = (context as MutationContext | undefined)?.previous;
       if (previous) {
@@ -66,7 +64,7 @@ export function registerMoneyPrefsMutations(qc: QueryClient): void {
         entity: 'profiles',
         entityId: vars.userId,
         kind: cls,
-        code: errorCode(err),
+        code: settledWriteErrorCode(err),
         attempted: { ...vars.patch },
       });
     },

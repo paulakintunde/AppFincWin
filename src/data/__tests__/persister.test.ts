@@ -11,9 +11,13 @@ import { persistQueryClientRestore, persistQueryClientSave } from '@tanstack/rea
 import {
   CACHE_MAX_AGE_MS,
   CACHE_SCHEMA_VERSION,
+  clearServerFetchTimes,
   createEncryptedPersister,
+  deserializeWithFetchTimes,
+  lastServerFetchAt,
   persistOptions,
   QUERY_CACHE_KEY,
+  trackServerFetches,
 } from '../cache/persister';
 import { queryClient } from '../queryClient';
 import { wipeDeviceData } from '@/services/storage/wipe';
@@ -132,6 +136,67 @@ describe('encrypted query cache persister', () => {
 
     expect(fresh.getQueryData(staleKey)).toBeUndefined();
     expect(fresh.getQueryData(TX_KEY)).toEqual(TX_DATA);
+  });
+
+  it('IN-A05: optimistic writes do not extend the 30-day window -- it runs from the last server fetch', async () => {
+    const client = new QueryClient();
+    const untrack = trackServerFetches(client);
+    const monthKey = ['transactions', 'h1', '2026-08'];
+    const DAY = 24 * 60 * 60 * 1000;
+    const realNow = Date.now();
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(realNow - 31 * DAY);
+    try {
+      await client.fetchQuery({ queryKey: monthKey, queryFn: async () => [{ id: 'server' }] });
+    } finally {
+      nowSpy.mockRestore();
+    }
+    // Offline ever since: only optimistic writes have touched the month.
+    client.setQueryData(monthKey, [{ id: 'optimistic', pending: true }, { id: 'server' }]);
+    client.setQueryData(TX_KEY, TX_DATA);
+    expect(lastServerFetchAt(client.getQueryCache().find({ queryKey: monthKey })!)).toBe(realNow - 31 * DAY);
+
+    await saveWith(client);
+    untrack();
+    const fresh = new QueryClient();
+    await persistQueryClientRestore({
+      queryClient: fresh,
+      persister: createEncryptedPersister(),
+      maxAge: CACHE_MAX_AGE_MS,
+      buster: CACHE_SCHEMA_VERSION,
+    });
+
+    expect(fresh.getQueryData(monthKey)).toBeUndefined();
+    expect(fresh.getQueryData(TX_KEY)).toEqual(TX_DATA);
+  });
+
+  it('IN-A05: server fetch times survive a restart inside the persisted blob', async () => {
+    clearServerFetchTimes();
+    const client = new QueryClient();
+    const untrack = trackServerFetches(client);
+    await client.fetchQuery({ queryKey: TX_KEY, queryFn: async () => TX_DATA });
+    const fetchedAt = lastServerFetchAt(client.getQueryCache().find({ queryKey: TX_KEY })!);
+    await saveWith(client);
+    untrack();
+    client.clear(); // 'removed' events drop the in-memory record
+
+    const fresh = new QueryClient();
+    await persistQueryClientRestore({
+      queryClient: fresh,
+      persister: createEncryptedPersister(),
+      maxAge: CACHE_MAX_AGE_MS,
+      buster: CACHE_SCHEMA_VERSION,
+    });
+    fresh.setQueryData(TX_KEY, [...TX_DATA, { id: 'optimistic' }]);
+    expect(lastServerFetchAt(fresh.getQueryCache().find({ queryKey: TX_KEY })!)).toBe(fetchedAt);
+  });
+
+  it('IN-A05: an old blob without fetch times still deserializes', () => {
+    const client = deserializeWithFetchTimes(JSON.stringify({ timestamp: 1, buster: '1', clientState: { queries: [], mutations: [] } }));
+    expect(client).toEqual({ timestamp: 1, buster: '1', clientState: { queries: [], mutations: [] } });
+    const withJunk = deserializeWithFetchTimes(
+      JSON.stringify({ timestamp: 1, buster: '1', clientState: { queries: [], mutations: [] }, fincwinServerFetchedAt: { h: 'x' } })
+    );
+    expect(withJunk).not.toHaveProperty('fincwinServerFetchedAt');
   });
 
   it('the registered wipe handler removes the persisted blob and clears the in-memory cache', async () => {

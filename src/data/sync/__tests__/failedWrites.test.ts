@@ -5,7 +5,7 @@
 /* eslint-disable import/first, @typescript-eslint/no-require-imports */
 globalThis.crypto = require('crypto').webcrypto;
 
-import { wipeDeviceData } from '@/services/storage/wipe';
+import { getPendingWriteCount, wipeDeviceData } from '@/services/storage/wipe';
 import {
   FAILED_WRITES_KEY,
   hydrateFailedWrites,
@@ -199,6 +199,67 @@ describe('failedWrites', () => {
 
     await expect(recordFailedWrite(baseEntry)).resolves.toBeUndefined();
     expect(getFailedWrites()).toHaveLength(1);
+  });
+
+  it('WR-A08: a failure recorded while boot hydration is still reading loses neither the new nor the older entries', async () => {
+    await recordFailedWrite({ ...baseEntry, entityId: 'older' });
+
+    let inMemory: string[] = [];
+    let afterRestart: string[] = [];
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const fresh = require('../failedWrites') as typeof import('../failedWrites');
+      // Boot: hydration starts (not awaited, as in QueryProvider) and a resumed mutation is
+      // rejected before its read finishes.
+      const hydration = fresh.hydrateFailedWrites();
+      const recording = fresh.recordFailedWrite({ ...baseEntry, entityId: 'newer' });
+      await Promise.all([hydration, recording]);
+      inMemory = fresh.getFailedWrites().map((e) => e.entityId);
+    });
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const fresh = require('../failedWrites') as typeof import('../failedWrites');
+      await fresh.hydrateFailedWrites();
+      afterRestart = fresh.getFailedWrites().map((e) => e.entityId);
+    });
+
+    expect(inMemory).toEqual(['older', 'newer']);
+    expect(afterRestart).toEqual(['older', 'newer']);
+  });
+
+  it('WR-A08: persists are serialized -- a slow older write can never land after a newer one', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const AsyncStorage = require('@react-native-async-storage/async-storage') as { setItem: jest.Mock };
+    const original = AsyncStorage.setItem.getMockImplementation() as (k: string, v: string) => Promise<void>;
+    let failedWritesWrites = 0;
+    AsyncStorage.setItem.mockImplementation(async (key: string, value: string) => {
+      if (key === FAILED_WRITES_KEY && failedWritesWrites++ === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 30));
+      }
+      return original(key, value);
+    });
+
+    try {
+      await Promise.all([recordFailedWrite({ ...baseEntry, entityId: 'a' }), recordFailedWrite({ ...baseEntry, entityId: 'b' })]);
+    } finally {
+      AsyncStorage.setItem.mockImplementation(original);
+    }
+
+    let persisted: string[] = [];
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const fresh = require('../failedWrites') as typeof import('../failedWrites');
+      await fresh.hydrateFailedWrites();
+      persisted = fresh.getFailedWrites().map((e) => e.entityId);
+    });
+    expect(persisted).toEqual(['a', 'b']);
+  });
+
+  it('WR-A09: parked failed entries count toward the unsynced-changes warning before a wipe', async () => {
+    expect(await getPendingWriteCount()).toBe(0);
+    await recordFailedWrite(baseEntry);
+    await recordFailedWrite({ ...baseEntry, entityId: 'tx-2' });
+    expect(await getPendingWriteCount()).toBe(2);
   });
 
   it('is cleared by wipeDeviceData via the registered "failed-writes" handler', async () => {

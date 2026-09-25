@@ -9,7 +9,7 @@
 // inside the component body or an effect.
 import type { ReactNode } from 'react';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { persistOptions } from './cache/persister';
+import { persistOptions, resumeRestoredMutations, trackServerFetches } from './cache/persister';
 import { queryClient } from './queryClient';
 import { startOnlineManager } from './onlineManager';
 import { registerMutationDefaults } from './mutations';
@@ -19,6 +19,7 @@ import { hydrateLastSynced, trackSyncActivity } from './sync/lastSynced';
 registerMutationDefaults(queryClient);
 startOnlineManager();
 trackSyncActivity(queryClient);
+trackServerFetches(queryClient); // IN-A05
 void hydrateFailedWrites();
 void hydrateLastSynced();
 
@@ -30,7 +31,8 @@ export function QueryProvider({ children }: { children: ReactNode }) {
       onSuccess={() => {
         // The persisted cache has been restored; every mutation key now has real code to
         // resume with (registered above), so it's safe to replay the write queue in order.
-        void queryClient.resumePausedMutations().then(() => queryClient.invalidateQueries());
+        // WR-A13: every restored pending write, not only the paused ones.
+        void resumeRestoredMutations(queryClient).then(() => queryClient.invalidateQueries());
       }}
     >
       {children}

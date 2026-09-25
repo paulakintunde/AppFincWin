@@ -6,18 +6,36 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import {
+  formatRate,
+  MAX_UNIT_VALUE,
+  MIN_UNIT_VALUE,
+  parseDecimalString,
+  parseRate,
+  RATE_SCALE,
   validateCustomCurrency,
   type CustomCurrencyError,
+  type LocaleSeparators,
   type CustomCurrencyInput,
   type ValidateCustomCurrencyContext,
 } from '@/engine/money';
+import { localDateIn } from '@/engine/time';
+import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { insertCustomCurrency, updateCustomCurrency, type CustomCurrencyPatch, type NewCustomCurrency } from '@/db/customCurrencies';
 import { VersionConflictError } from '@/db/errors';
-import type { CustomCurrencyRow, DbClient } from '@/db/rows';
+import type { CustomCurrencyRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
-import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '@/data/sync/writeErrors';
+import {
+  classifySettledWriteError,
+  settledWriteErrorCode,
+  shouldRetryWrite,
+  writeRetryDelay,
+} from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { writeClient } from './writeClient';
+import { guardSession, markSession } from '@/data/sync/sessionEpoch';
+import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
+import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 
 export interface AddCustomCurrencyVars {
@@ -34,13 +52,7 @@ export interface EditCustomCurrencyVars {
 
 type CustomCurrencyList = WithPending<CustomCurrencyRow>[];
 
-// See transactions.ts's lazySupabaseClient for why require() (not the plan-literal
-// `await import(...)`) is used here -- dynamic import() throws under this project's Jest
-// config the moment it actually runs (01-12 Deviation 1).
-function lazySupabaseClient(): DbClient {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return (require('@/services/supabase') as typeof import('@/services/supabase')).supabase;
-}
+// WR-A01: writes go through ./writeClient (lazy require + session check).
 
 function patchCustomCurrenciesCache(
   qc: QueryClient,
@@ -50,17 +62,14 @@ function patchCustomCurrenciesCache(
   qc.setQueryData<CustomCurrencyList>(queryKeys.customCurrencies(userId), (old) => updater(old ?? []));
 }
 
-function errorCode(err: unknown): string {
-  return err instanceof Error && 'code' in err ? String((err as { code: unknown }).code) : '';
-}
-
 export function registerCustomCurrencyMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.addCustomCurrency, {
-    mutationFn: (vars: AddCustomCurrencyVars) => insertCustomCurrency(lazySupabaseClient(), vars.row),
+    mutationFn: (vars: AddCustomCurrencyVars) => guardSession(vars, async () => insertCustomCurrency(await writeClient(), vars.row)),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: async (vars: AddCustomCurrencyVars) => {
+      markSession(vars); // WR-A09
       const key = queryKeys.customCurrencies(vars.userId);
       await qc.cancelQueries({ queryKey: key });
 
@@ -82,17 +91,18 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
       patchCustomCurrenciesCache(qc, vars.userId, (rows) => [...rows, optimisticRow]);
     },
     onSuccess: (row: CustomCurrencyRow, vars: AddCustomCurrencyVars) => {
-      patchCustomCurrenciesCache(qc, vars.userId, (rows) => rows.map((r) => (r.id === row.id ? row : r)));
+      // WR-A04: upsert, not replace -- a refetch may have dropped the optimistic row.
+      patchCustomCurrenciesCache(qc, vars.userId, (rows) => upsertRow(rows, row, 'end'));
     },
     onError: async (err: unknown, vars: AddCustomCurrencyVars) => {
-      const cls = classifyWriteError(err);
-      if (cls !== 'rejected' && cls !== 'not-found') return; // transient retries; already-applied is a success path
+      const cls = classifySettledWriteError(err);
+      if (cls !== 'rejected' && cls !== 'not-found') return; // an insert never conflicts; a duplicate-id insert already resolved to success in db/
       patchCustomCurrenciesCache(qc, vars.userId, (rows) => rows.filter((r) => r.id !== vars.row.id));
       await recordFailedWrite({
         entity: 'custom_currencies',
         entityId: vars.row.id,
         kind: cls,
-        code: errorCode(err),
+        code: settledWriteErrorCode(err),
         attempted: { ...vars.row },
       });
     },
@@ -100,11 +110,22 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
 
   qc.setMutationDefaults(mutationKeys.editCustomCurrency, {
     mutationFn: (vars: EditCustomCurrencyVars) =>
-      updateCustomCurrency(lazySupabaseClient(), vars.id, vars.expectedVersion, vars.patch),
+      guardSession(vars, async () => {
+        // CR-A02: an earlier queued edit of this same row may already have bumped its version.
+        const expected = resolveExpectedVersion('custom_currencies', vars.id, vars.expectedVersion);
+        const client = await writeClient();
+        // WR-A13: a replayed edit that already landed resolves as applied, not a conflict.
+        const row = await updateCustomCurrency(client, vars.id, expected, vars.patch).catch((err: unknown) =>
+          acceptIfAlreadyApplied<CustomCurrencyRow>(err, vars.patch)
+        );
+        recordWrittenVersion('custom_currencies', vars.id, [vars.expectedVersion, expected], row.version);
+        return row;
+      }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: async (vars: EditCustomCurrencyVars) => {
+      markSession(vars); // WR-A09
       const key = queryKeys.customCurrencies(vars.userId);
       await qc.cancelQueries({ queryKey: key });
       patchCustomCurrenciesCache(qc, vars.userId, (rows) =>
@@ -115,7 +136,7 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
       patchCustomCurrenciesCache(qc, vars.userId, (rows) => rows.map((r) => (r.id === row.id ? row : r)));
     },
     onError: async (err: unknown, vars: EditCustomCurrencyVars) => {
-      const cls = classifyWriteError(err);
+      const cls = classifySettledWriteError(err);
       if (cls === 'conflict' && err instanceof VersionConflictError) {
         const serverRow = err.serverRow as CustomCurrencyRow;
         patchCustomCurrenciesCache(qc, vars.userId, (rows) => rows.map((r) => (r.id === vars.id ? serverRow : r)));
@@ -134,7 +155,7 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
           entity: 'custom_currencies',
           entityId: vars.id,
           kind: cls,
-          code: errorCode(err),
+          code: settledWriteErrorCode(err),
           attempted: vars.patch,
         });
       }
@@ -176,7 +197,8 @@ export function useAddCustomCurrency(userId: string): {
         decimals: result.value.decimals,
         reference_currency: result.value.referenceCurrency,
         unit_value: result.value.unitValue,
-        as_of: new Date().toISOString().slice(0, 10),
+        // WR-A14 / MON-14: the user's own calendar day, never the UTC one.
+        as_of: localDateIn(new Date(), getDeviceTimeZone()),
       };
       mutation.mutate({ userId, row });
       return { ok: true, id };
@@ -184,8 +206,36 @@ export function useAddCustomCurrency(userId: string): {
   };
 }
 
+export type EditCustomCurrencyResult = { ok: true } | { ok: false; errors: CustomCurrencyError[] };
+
+/**
+ * WR-A03: normalizes a hand-edited unit value to the same canonical 10-dp string add stores,
+ * so a malformed value never reaches the optimistic cache (where the provisional stamp would
+ * read it) or the server. With `locale`, the raw text is read region-aware exactly as add
+ * reads it; without one it must already be a plain ASCII decimal ('2.5').
+ */
+function normalizeUnitValue(raw: string, locale: string | undefined, separators?: LocaleSeparators): string | null {
+  let decimal = raw.trim();
+  if (locale !== undefined) {
+    const parsed = parseDecimalString(raw, { locale, maxFractionDigits: RATE_SCALE, separators });
+    if (!parsed.ok) return null;
+    decimal = parsed.value;
+  }
+  try {
+    const scaled = parseRate(decimal);
+    // IN-A02: the same bounds add enforces through validateCustomCurrency.
+    if (scaled < parseRate(MIN_UNIT_VALUE) || scaled > parseRate(MAX_UNIT_VALUE)) return null;
+    return formatRate(scaled);
+  } catch {
+    return null;
+  }
+}
+
 export function useEditCustomCurrency(userId: string): {
-  edit(vars: { id: string; expectedVersion: number; patch: CustomCurrencyPatch }): void;
+  edit(
+    vars: { id: string; expectedVersion: number; patch: CustomCurrencyPatch },
+    opts?: { locale?: string; separators?: LocaleSeparators }
+  ): EditCustomCurrencyResult;
 } {
   const mutation = useMutation<CustomCurrencyRow, unknown, EditCustomCurrencyVars>({
     mutationKey: mutationKeys.editCustomCurrency,
@@ -193,8 +243,18 @@ export function useEditCustomCurrency(userId: string): {
   });
 
   return {
-    edit(vars: { id: string; expectedVersion: number; patch: CustomCurrencyPatch }): void {
-      mutation.mutate({ ...vars, userId });
+    edit(
+      vars: { id: string; expectedVersion: number; patch: CustomCurrencyPatch },
+      opts?: { locale?: string; separators?: LocaleSeparators }
+    ): EditCustomCurrencyResult {
+      const patch: CustomCurrencyPatch = { ...vars.patch };
+      if (patch.unit_value !== undefined) {
+        const unitValue = normalizeUnitValue(patch.unit_value, opts?.locale, opts?.separators);
+        if (unitValue === null) return { ok: false, errors: ['value-invalid'] };
+        patch.unit_value = unitValue;
+      }
+      mutation.mutate({ ...vars, patch, userId });
+      return { ok: true };
     },
   };
 }

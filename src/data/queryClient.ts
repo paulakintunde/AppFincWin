@@ -3,7 +3,8 @@
 // persisted copy.
 import { QueryClient } from '@tanstack/react-query';
 import { registerWipeHandler } from '@/services/storage/wipe';
-import { persister } from './cache/persister';
+import { clearServerFetchTimes, persister } from './cache/persister';
+import { bumpSessionEpoch } from './sync/sessionEpoch';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,8 +39,12 @@ export const QUERY_WIPE_HANDLER_ID = 'query-cache';
 registerWipeHandler({
   id: QUERY_WIPE_HANDLER_ID,
   async wipe() {
+    // WR-A09: first, so any write still in flight or in retry backoff settles as discarded
+    // instead of writing the previous user's rows back into the cleared cache.
+    bumpSessionEpoch();
     queryClient.getMutationCache().clear();
     queryClient.clear();
+    clearServerFetchTimes(); // IN-A05
     await persister.removeClient();
   },
   async pendingWriteCount() {

@@ -1,5 +1,13 @@
-import { DbError, VersionConflictError, NotFoundError } from '@/db/errors';
-import { classifyWriteError, shouldRetryWrite, writeRetryDelay } from '../writeErrors';
+import { DbError, VersionConflictError, NotFoundError, SessionUnavailableError, toDbError } from '@/db/errors';
+import {
+  classifySettledWriteError,
+  classifyWriteError,
+  MAX_SERVER_ERROR_RETRIES,
+  RETRY_EXHAUSTED_CODE,
+  settledWriteErrorCode,
+  shouldRetryWrite,
+  writeRetryDelay,
+} from '../writeErrors';
 
 describe('classifyWriteError', () => {
   it('classifies a VersionConflictError as conflict (D-18: never retried, never last-write-wins)', () => {
@@ -10,15 +18,26 @@ describe('classifyWriteError', () => {
     expect(classifyWriteError(new NotFoundError('accounts', '1'))).toBe('not-found');
   });
 
-  it.each(['42501', '23514', '23503', '23502', '22P02', 'PGRST204'])(
+  it.each(['42501', '23514', '23503', '23502', '22P02', 'PGRST204', '23505'])(
     'classifies DbError code %s as rejected (D-19: permanent, stop retrying)',
     (code) => {
       expect(classifyWriteError(new DbError('x', code, 400))).toBe('rejected');
     }
   );
 
-  it('classifies DbError code 23505 as already-applied (duplicate client UUID)', () => {
-    expect(classifyWriteError(new DbError('duplicate key', '23505', 409))).toBe('already-applied');
+  it('CR-A03: a 23505 that escapes db/ (not the row id -- that case resolves to the existing row there) is rejected, never swallowed', () => {
+    expect(classifyWriteError(new DbError('duplicate key value violates unique constraint', '23505', 409))).toBe('rejected');
+    expect(shouldRetryWrite(0, new DbError('duplicate key', '23505', 409))).toBe(false);
+  });
+
+  it('WR-A01: an expired/missing session is auth (retried), not rejected', () => {
+    expect(classifyWriteError(new DbError('JWT expired', 'PGRST303', 401))).toBe('auth');
+    expect(classifyWriteError(new DbError('JWSError', 'PGRST301', 401))).toBe('auth');
+    expect(classifyWriteError(new DbError('anonymous access disabled', 'PGRST302', 401))).toBe('auth');
+    expect(classifyWriteError(new DbError('unauthorized', '', 401))).toBe('auth');
+    expect(classifyWriteError(new SessionUnavailableError())).toBe('auth');
+    expect(shouldRetryWrite(3, new DbError('JWT expired', 'PGRST303', 401))).toBe(true);
+    expect(shouldRetryWrite(3, new SessionUnavailableError())).toBe(true);
   });
 
   it('classifies a network TypeError as transient', () => {
@@ -37,6 +56,17 @@ describe('classifyWriteError', () => {
 
   it('classifies DbError with empty code and null status as transient', () => {
     expect(classifyWriteError(new DbError('x', '', null))).toBe('transient');
+  });
+
+  it('CR-A01: classifies the real postgrest-js fetch-failure shape (status 0, code "") as transient', () => {
+    // postgrest-js 2.x resolves (never rejects) a failed fetch as
+    // { error: { message: 'TypeError: Network request failed', code: '' }, status: 0 }.
+    expect(classifyWriteError(toDbError({ message: 'TypeError: Network request failed', code: '' }, 0))).toBe(
+      'transient'
+    );
+    expect(classifyWriteError(toDbError({ message: 'AbortError: The operation was aborted', code: '' }, 0))).toBe(
+      'transient'
+    );
   });
 
   it('classifies an unrecognized DbError code/status combination as rejected', () => {
@@ -62,6 +92,40 @@ describe('shouldRetryWrite', () => {
 
   it('does not retry a conflict', () => {
     expect(shouldRetryWrite(0, new VersionConflictError('transactions', '1', {}))).toBe(false);
+  });
+
+  it('WR-A02: a server error (5xx/408/429) is retried at most MAX_SERVER_ERROR_RETRIES times', () => {
+    const serverError = new DbError('trigger raised', 'XX000', 500);
+    expect(shouldRetryWrite(0, serverError)).toBe(true);
+    expect(shouldRetryWrite(MAX_SERVER_ERROR_RETRIES - 1, serverError)).toBe(true);
+    expect(shouldRetryWrite(MAX_SERVER_ERROR_RETRIES, serverError)).toBe(false);
+    expect(shouldRetryWrite(MAX_SERVER_ERROR_RETRIES, new DbError('rate limited', '', 429))).toBe(false);
+  });
+
+  it('WR-A02: connectivity failures and auth waits stay unbounded', () => {
+    expect(shouldRetryWrite(1000, toDbError({ message: 'TypeError: Network request failed', code: '' }, 0))).toBe(true);
+    expect(shouldRetryWrite(1000, new DbError('x', '', null))).toBe(true);
+    expect(shouldRetryWrite(1000, new TypeError('Network request failed'))).toBe(true);
+    expect(shouldRetryWrite(1000, new DbError('JWT expired', 'PGRST303', 401))).toBe(true);
+  });
+});
+
+describe('classifySettledWriteError / settledWriteErrorCode (WR-A02)', () => {
+  it('reports an exhausted server-error retry as rejected with the retry-exhausted code', () => {
+    const serverError = new DbError('trigger raised', 'XX000', 500);
+    expect(classifySettledWriteError(serverError)).toBe('rejected');
+    expect(settledWriteErrorCode(serverError)).toBe(RETRY_EXHAUSTED_CODE);
+    expect(classifySettledWriteError(new SessionUnavailableError())).toBe('rejected');
+    expect(settledWriteErrorCode(new SessionUnavailableError())).toBe(RETRY_EXHAUSTED_CODE);
+  });
+
+  it('passes every other class and code through unchanged', () => {
+    expect(classifySettledWriteError(new DbError('x', '23514', 400))).toBe('rejected');
+    expect(settledWriteErrorCode(new DbError('x', '23514', 400))).toBe('23514');
+    expect(classifySettledWriteError(new NotFoundError('accounts', '1'))).toBe('not-found');
+    expect(settledWriteErrorCode(new NotFoundError('accounts', '1'))).toBe('not-found');
+    expect(classifySettledWriteError(new VersionConflictError('transactions', '1', {}))).toBe('conflict');
+    expect(settledWriteErrorCode('boom')).toBe('');
   });
 });
 
