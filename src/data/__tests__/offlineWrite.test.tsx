@@ -17,6 +17,7 @@ import { registerMutationDefaults } from '@/data/mutations';
 import { useAddTransaction, useEditTransaction } from '@/data/mutations/transactions';
 import { clearVersionChains } from '@/data/sync/versionChain';
 import { bumpSessionEpoch } from '@/data/sync/sessionEpoch';
+import { persistOptions, resumeRestoredMutations } from '@/data/cache/persister';
 
 let mockActiveClient: unknown;
 let mockUuidCounter = 0;
@@ -319,6 +320,74 @@ describe('offline write queue (SYN-02)', () => {
 
     expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-09'))).toBeUndefined();
     expect(recordFailedWrite).not.toHaveBeenCalled();
+  });
+
+  it('WR-A13: a write that was mid-attempt (not paused) when the app died is persisted, restored and replayed', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.sessionGate = new Promise<void>(() => undefined); // the first attempt never finishes
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+    const id = result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'auth.getSession')).toBe(true));
+    const inFlight = qc.getMutationCache().getAll()[0];
+    expect(inFlight?.state).toMatchObject({ status: 'pending', isPaused: false });
+
+    const backing = new Map<string, string>();
+    const testPersister = createAsyncStoragePersister({ storage: memoryStorage(backing), key: 'test-cache', throttleTime: 0 });
+    await persistQueryClientSave({
+      queryClient: qc,
+      persister: testPersister,
+      buster: 'test',
+      dehydrateOptions: persistOptions.dehydrateOptions,
+    });
+
+    const restarted = newClient();
+    await persistQueryClientRestore({ queryClient: restarted, persister: testPersister, buster: 'test' });
+    expect(restarted.getMutationCache().getAll()).toHaveLength(1);
+
+    const replay = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = replay;
+    replay.respondWith({ data: serverTransaction({ id }), error: null, status: 201 });
+    await resumeRestoredMutations(restarted);
+
+    const insertCall = replay.calls.find((c) => c.method === 'insert');
+    expect((insertCall?.args[0] as { id: string }).id).toBe(id);
+    await waitFor(() => {
+      const rows = restarted.getQueryData<WithPending<TransactionRow>[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+      expect(rows?.[0]?.id).toBe(id);
+      expect(rows?.[0]?.pending).toBeUndefined();
+    });
+  });
+
+  it('WR-A13: a replayed edit that already landed resolves as applied, not as a conflict', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [serverTransaction({ id: 'tx-r', version: 1 })]);
+    const editHook = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+
+    fake.respondWith({ data: [], error: null, status: 200 }); // version 1 no longer matches
+    fake.respondWith({ data: serverTransaction({ id: 'tx-r', note: 'done', version: 2 }), error: null, status: 200 });
+
+    editHook.result.current.edit({ id: 'tx-r', householdId: 'h1', month: '2026-09', expectedVersion: 1, patch: { note: 'done' } });
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'));
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+    expect(qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'))?.[0]).toMatchObject({
+      note: 'done',
+      version: 2,
+    });
   });
 
   it('restart: an offline add survives dehydrate/rehydrate into a brand-new QueryClient and still flushes with the same UUID', async () => {

@@ -3,7 +3,7 @@
 // SecureStore (WHEN_UNLOCKED_THIS_DEVICE_ONLY) — no new crypto code, per Don't Hand-Roll.
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import type { Persister, PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
-import type { Mutation, Query } from '@tanstack/react-query';
+import type { Mutation, Query, QueryClient } from '@tanstack/react-query';
 import { LargeSecureStore } from '@/services/supabase/largeSecureStore';
 
 // Kept under the fincwin: prefix so wipeDeviceData's AsyncStorage sweep (src/services/storage/wipe.ts)
@@ -36,8 +36,26 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
     // D-15: browsable for 30 days WITHOUT a successful refetch. dataUpdatedAt only moves on
     // success, so a query older than that is simply not persisted and is gone on the next boot.
     shouldDehydrateQuery: (q: Query) => q.state.status === 'success' && Date.now() - q.state.dataUpdatedAt < CACHE_MAX_AGE_MS,
-    // Explicit rather than relying on the library default (RESEARCH Assumption A5): paused
-    // writes must survive a restart so a queued offline mutation is not lost on relaunch.
-    shouldDehydrateMutation: (m: Mutation) => m.state.isPaused,
+    // WR-A13: every unfinished write survives a restart, not only paused ones. A write that
+    // was mid-attempt or waiting out a retry backoff when the app was killed has
+    // `isPaused: false`; persisting only paused writes left its optimistic row on disk with
+    // nothing behind it, and the next refetch then dropped the entry silently.
+    // resumeRestoredMutations (below) replays them; inserts are idempotent through the
+    // duplicate-id path and a replayed edit that already landed resolves as applied.
+    shouldDehydrateMutation: (m: Mutation) => m.state.status === 'pending',
   },
 };
+
+/**
+ * WR-A13: replays every restored, still-pending write in its original order. query-core's
+ * resumePausedMutations only picks up `isPaused` mutations, so a write that was in flight
+ * when the app died would otherwise sit restored-but-idle forever. Mutation.continue() runs
+ * a restored pending mutation again without re-running onMutate.
+ */
+export function resumeRestoredMutations(queryClient: QueryClient): Promise<void> {
+  const pending = queryClient
+    .getMutationCache()
+    .getAll()
+    .filter((m) => m.state.status === 'pending');
+  return Promise.all(pending.map((m) => m.continue().catch(() => undefined))).then(() => undefined);
+}

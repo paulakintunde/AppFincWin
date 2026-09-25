@@ -17,7 +17,7 @@ import {
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
-import { upsertRow } from './cacheRows';
+import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 
 export interface AddAccountVars {
@@ -94,7 +94,11 @@ export function registerAccountMutations(qc: QueryClient): void {
       guardSession(vars, async () => {
         // CR-A02: an earlier queued edit of this same row may already have bumped its version.
         const expected = resolveExpectedVersion('accounts', vars.id, vars.expectedVersion);
-        const row = await updateAccount(await writeClient(), vars.id, expected, vars.patch);
+        const client = await writeClient();
+        // WR-A13: a replayed edit that already landed resolves as applied, not a conflict.
+        const row = await updateAccount(client, vars.id, expected, vars.patch).catch((err: unknown) =>
+          acceptIfAlreadyApplied<AccountRow>(err, vars.patch)
+        );
         recordWrittenVersion('accounts', vars.id, [vars.expectedVersion, expected], row.version);
         return row;
       }),
