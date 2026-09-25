@@ -16,6 +16,7 @@ import {
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
+import { upsertRow } from './cacheRows';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 
 export interface AddAccountVars {
@@ -69,7 +70,8 @@ export function registerAccountMutations(qc: QueryClient): void {
       patchAccountsCache(qc, vars.row.household_id, (rows) => [...rows, optimisticRow]);
     },
     onSuccess: (row: AccountRow, vars: AddAccountVars) => {
-      patchAccountsCache(qc, vars.row.household_id, (rows) => rows.map((r) => (r.id === row.id ? row : r)));
+      // WR-A04: upsert, not replace -- a refetch may have dropped the optimistic row.
+      patchAccountsCache(qc, vars.row.household_id, (rows) => upsertRow(rows, row, 'end'));
     },
     onError: async (err: unknown, vars: AddAccountVars) => {
       const cls = classifySettledWriteError(err);

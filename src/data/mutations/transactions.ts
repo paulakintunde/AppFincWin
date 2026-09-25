@@ -26,6 +26,7 @@ import {
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
+import { upsertRow } from './cacheRows';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { provisionalStamp } from './provisional';
 
@@ -130,9 +131,8 @@ export function registerTransactionMutations(qc: QueryClient): void {
       patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) => [optimisticRow, ...rows]);
     },
     onSuccess: async (row: TransactionRow, vars: AddTransactionVars) => {
-      patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) =>
-        rows.map((r) => (r.id === row.id ? row : r))
-      );
+      // WR-A04: upsert, not replace -- a refetch may have dropped the optimistic row.
+      patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) => upsertRow(rows, row, 'start'));
       await followUpIfRatePending(qc, vars.row.household_id, vars.optimistic.month, row);
     },
     onError: async (err: unknown, vars: AddTransactionVars) => {

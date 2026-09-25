@@ -28,6 +28,7 @@ import {
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
+import { upsertRow } from './cacheRows';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 
@@ -83,7 +84,8 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
       patchCustomCurrenciesCache(qc, vars.userId, (rows) => [...rows, optimisticRow]);
     },
     onSuccess: (row: CustomCurrencyRow, vars: AddCustomCurrencyVars) => {
-      patchCustomCurrenciesCache(qc, vars.userId, (rows) => rows.map((r) => (r.id === row.id ? row : r)));
+      // WR-A04: upsert, not replace -- a refetch may have dropped the optimistic row.
+      patchCustomCurrenciesCache(qc, vars.userId, (rows) => upsertRow(rows, row, 'end'));
     },
     onError: async (err: unknown, vars: AddCustomCurrencyVars) => {
       const cls = classifySettledWriteError(err);

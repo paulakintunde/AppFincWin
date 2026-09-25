@@ -251,6 +251,40 @@ describe('offline write queue (SYN-02)', () => {
     await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledWith(expect.objectContaining({ kind: 'conflict' })));
   });
 
+  it('WR-A04: a queued add whose optimistic row was dropped by a refetch is re-inserted when the write lands', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+    const id = result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.isPaused).toBe(true));
+
+    // A reconnect refetch lands first and replaces the month with the server's list, which
+    // does not have the row yet.
+    const other = serverTransaction({ id: 'other', note: 'from server' });
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [other]);
+
+    fake.respondWith({ data: serverTransaction({ id }), error: null, status: 201 });
+    onlineManager.setOnline(true);
+    await qc.resumePausedMutations();
+
+    await waitFor(() => {
+      const rows = qc.getQueryData<WithPending<TransactionRow>[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+      expect(rows?.map((r) => r.id)).toEqual([id, 'other']);
+    });
+  });
+
   it('restart: an offline add survives dehydrate/rehydrate into a brand-new QueryClient and still flushes with the same UUID', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
