@@ -76,6 +76,23 @@ describe('initErrorReporting', () => {
 
     expect(factory).not.toHaveBeenCalled();
   });
+
+  // Found live during the D-19 spike (Task 2): initErrorReporting() previously took
+  // `env: ClientEnv = getEnv()` as a default parameter. getEnv() validates the *whole*
+  // environment and throws when ANY required var is missing — including ones this module has
+  // nothing to do with (e.g. EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, owned by 00-15). Because default
+  // parameters are evaluated before a function's own try/catch can run, that throw crashed the
+  // entire app at boot (app/_layout.tsx calls this at module scope). Error reporting must never
+  // crash the app it exists to protect. Called with no env argument here so getEnv() itself
+  // runs and throws against Jest's unset process.env — proving the function's own internal
+  // try/catch, not just a well-behaved caller, is what survives it.
+  it('never throws, even when resolving the real environment itself throws', () => {
+    const factory = jest.fn();
+
+    expect(() => initErrorReporting(factory)).not.toThrow();
+    expect(factory).not.toHaveBeenCalled();
+    expect(() => captureError(new Error('after a failed init'))).not.toThrow();
+  });
 });
 
 describe('captureError', () => {

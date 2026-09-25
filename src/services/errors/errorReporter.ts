@@ -62,38 +62,50 @@ let client: ErrorClientLike | undefined;
 /**
  * Builds the always-on error-reporting client. `factory` and `env` are injectable for tests;
  * production code calls this with no arguments once, at app boot.
+ *
+ * Never throws. Error reporting exists to survive when something else in the app is broken —
+ * including a misconfigured/incomplete environment unrelated to error tracking itself (e.g. a
+ * different feature's required var not set yet). getEnv() validates the *whole* environment and
+ * throws collectively on any missing required var, so it is deliberately not a default
+ * parameter (default-parameter evaluation runs before this function's own try/catch could ever
+ * see it) — it is resolved inside the try block below instead. A crash in error-reporting init
+ * crashing the app it is meant to protect is exactly the failure mode this guards against.
  */
-export function initErrorReporting(
-  factory: ErrorClientFactory = defaultFactory,
-  env: ClientEnv = getEnv()
-): void {
-  if (env.errorTracking !== 'posthog') {
-    // Sentry branch added in Task 3 only if the D-19 spike selects Sentry.
-    client = undefined;
-    return;
-  }
-  if (!env.posthogKey) {
-    // No PostHog project key configured yet — stay a no-op rather than construct a client
-    // that can never send anything.
-    client = undefined;
-    return;
-  }
+export function initErrorReporting(factory: ErrorClientFactory = defaultFactory, env?: ClientEnv): void {
+  try {
+    const resolvedEnv = env ?? getEnv();
 
-  client = factory(env.posthogKey, {
-    host: env.posthogHost,
-    // D-18: never build a person profile for this client — crash reports are anonymous.
-    personProfiles: 'never',
-    enableSessionReplay: false,
-    captureAppLifecycleEvents: false,
-    errorTracking: {
-      autocapture: {
-        uncaughtExceptions: true,
-        unhandledRejections: true,
-        console: [],
+    if (resolvedEnv.errorTracking !== 'posthog') {
+      // Sentry branch added in Task 3 only if the D-19 spike selects Sentry.
+      client = undefined;
+      return;
+    }
+    if (!resolvedEnv.posthogKey) {
+      // No PostHog project key configured yet — stay a no-op rather than construct a client
+      // that can never send anything.
+      client = undefined;
+      return;
+    }
+
+    client = factory(resolvedEnv.posthogKey, {
+      host: resolvedEnv.posthogHost,
+      // D-18: never build a person profile for this client — crash reports are anonymous.
+      personProfiles: 'never',
+      enableSessionReplay: false,
+      captureAppLifecycleEvents: false,
+      errorTracking: {
+        autocapture: {
+          uncaughtExceptions: true,
+          unhandledRejections: true,
+          console: [],
+        },
       },
-    },
-    before_send: scrubCaptureEvent,
-  });
+      before_send: scrubCaptureEvent,
+    });
+  } catch {
+    // Swallow: an app-config problem elsewhere must never take crash reporting down with it.
+    client = undefined;
+  }
 }
 
 /**
