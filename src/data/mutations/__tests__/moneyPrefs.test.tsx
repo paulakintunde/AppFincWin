@@ -221,6 +221,32 @@ describe('useAddCustomCurrency', () => {
     expect((insertCall?.args[0] as { id: string }).id).toBe('uuid-0');
     expect(insertCall?.args[0]).toMatchObject({ code: 'GLD', symbol: 'GLD', unit_value: '2.5000000000' });
   });
+
+  it('CR-A03: a (owner_id, code) unique clash from another device is recorded as a failed write and the optimistic row removed', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({
+      data: null,
+      error: { message: 'duplicate key value violates unique constraint "custom_currencies_owner_id_code_key"', code: '23505' },
+      status: 409,
+    });
+    fake.respondWith({ data: null, error: null, status: 200 }); // fetch by our id finds nothing
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddCustomCurrency('user-1'), { wrapper: wrapper(qc) });
+
+    result.current.add(
+      { code: 'GLD', symbol: '', decimals: 0, referenceCurrency: 'USD', unitValueRaw: '2.5', locale: 'en-US' },
+      ctx
+    );
+
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(1));
+    expect(recordFailedWrite).toHaveBeenCalledWith(
+      expect.objectContaining({ entity: 'custom_currencies', entityId: 'uuid-0', kind: 'rejected', code: '23505' })
+    );
+    const rows = qc.getQueryData<WithPending<CustomCurrencyRow>[]>(queryKeys.customCurrencies('user-1'));
+    expect(rows ?? []).toHaveLength(0);
+  });
 });
 
 describe('useEditCustomCurrency', () => {

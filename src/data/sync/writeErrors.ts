@@ -5,20 +5,25 @@ import { DbError, VersionConflictError, NotFoundError } from '@/db/errors';
  * - 'conflict': D-18. Optimistic concurrency lost — expected_version no longer matched.
  *   The server copy wins. Never retried, never resolved as last-write-wins.
  * - 'not-found': the target row no longer exists (deleted elsewhere).
- * - 'already-applied': Postgres unique-violation (23505) on the client-generated UUID —
- *   an earlier attempt already succeeded and its response was lost. Not a failure to
- *   surface to the user; full SYN-03 idempotency handling stays in Phase 10.
  * - 'rejected': D-19. A permanent failure (RLS denial, check/FK/not-null violation,
  *   malformed input, or anything this module does not recognise). Stops retrying
  *   immediately so nothing loops forever on something it can never fix by retrying.
  * - 'transient': network failure or a 5xx/408/429 response. Safe to retry.
+ *
+ * CR-A03: there is deliberately no "already applied" class. A duplicate client-generated
+ * UUID (23505 on the primary key -- an earlier attempt landed and its response was lost) is
+ * resolved inside the db/ insert functions themselves: they re-fetch by id and return the
+ * existing row as a success. So any 23505 that still reaches this classifier came from a
+ * different unique constraint (e.g. custom_currencies' (owner_id, code)) and is a permanent
+ * rejection the user must be told about (D-19), never a silent drop.
  */
-export type WriteErrorClass = 'transient' | 'already-applied' | 'conflict' | 'rejected' | 'not-found';
+export type WriteErrorClass = 'transient' | 'conflict' | 'rejected' | 'not-found';
 
 // D-19: permanent rejections. 42501 RLS denial, 23514 check violation, 23503 FK violation,
 // 23502 not-null violation, 22P02 invalid text representation, PGRST204 PostgREST
-// column-not-found. None of these are fixed by retrying the same write again.
-const REJECTED_CODES = new Set(['42501', '23514', '23503', '23502', '22P02', 'PGRST204']);
+// column-not-found, 23505 unique violation on a constraint other than the row's own id
+// (CR-A03, see above). None of these are fixed by retrying the same write again.
+const REJECTED_CODES = new Set(['42501', '23514', '23503', '23502', '22P02', 'PGRST204', '23505']);
 
 // CR-A01: postgrest-js 2.x never rejects on a fetch failure (radio drop, DNS failure,
 // timeout/abort). It catches the error and resolves `{ error: { message: 'TypeError:
@@ -47,7 +52,6 @@ export function classifyWriteError(err: unknown): WriteErrorClass {
 
   if (err instanceof DbError) {
     if (isConnectivityFailure(err)) return 'transient';
-    if (err.code === '23505') return 'already-applied';
     if (REJECTED_CODES.has(err.code)) return 'rejected';
     if (isTransientStatus(err.status)) return 'transient';
     return 'rejected';

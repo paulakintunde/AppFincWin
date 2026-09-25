@@ -105,6 +105,18 @@ describe('insertCustomCurrency', () => {
     await expect(insertCustomCurrency(client, NEW_CUSTOM)).resolves.toEqual(customRow());
   });
 
+  it('CR-A03: a 23505 from another constraint ((owner_id, code)) -- no row with this id exists -- rethrows the 23505 DbError', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({
+      data: null,
+      error: { message: 'duplicate key value violates unique constraint "custom_currencies_owner_id_code_key"', code: '23505' },
+      status: 409,
+    });
+    client.respondWith({ data: null, error: null, status: 200 }); // fetch by id: not ours
+
+    await expect(insertCustomCurrency(client, NEW_CUSTOM)).rejects.toMatchObject({ name: 'DbError', code: '23505', status: 409 });
+  });
+
   it('on a 23514 guard-trigger rejection (ISO shadow), throws a DbError carrying that code', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: null, error: { message: 'shadows an ISO currency', code: '23514' }, status: 400 });

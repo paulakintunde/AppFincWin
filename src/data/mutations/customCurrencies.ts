@@ -87,7 +87,7 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
     },
     onError: async (err: unknown, vars: AddCustomCurrencyVars) => {
       const cls = classifyWriteError(err);
-      if (cls !== 'rejected' && cls !== 'not-found') return; // transient retries; already-applied is a success path
+      if (cls !== 'rejected' && cls !== 'not-found') return; // transient retries; a duplicate-id insert already resolved to success in db/
       patchCustomCurrenciesCache(qc, vars.userId, (rows) => rows.filter((r) => r.id !== vars.row.id));
       await recordFailedWrite({
         entity: 'custom_currencies',

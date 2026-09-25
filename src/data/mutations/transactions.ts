@@ -135,7 +135,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
     },
     onError: async (err: unknown, vars: AddTransactionVars) => {
       const cls = classifyWriteError(err);
-      if (cls !== 'rejected' && cls !== 'not-found') return; // transient retries; already-applied is a success path
+      if (cls !== 'rejected' && cls !== 'not-found') return; // transient retries; a duplicate-id insert already resolved to success in db/
       patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) =>
         rows.filter((r) => r.id !== vars.row.id)
       );

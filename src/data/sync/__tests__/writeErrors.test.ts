@@ -10,15 +10,16 @@ describe('classifyWriteError', () => {
     expect(classifyWriteError(new NotFoundError('accounts', '1'))).toBe('not-found');
   });
 
-  it.each(['42501', '23514', '23503', '23502', '22P02', 'PGRST204'])(
+  it.each(['42501', '23514', '23503', '23502', '22P02', 'PGRST204', '23505'])(
     'classifies DbError code %s as rejected (D-19: permanent, stop retrying)',
     (code) => {
       expect(classifyWriteError(new DbError('x', code, 400))).toBe('rejected');
     }
   );
 
-  it('classifies DbError code 23505 as already-applied (duplicate client UUID)', () => {
-    expect(classifyWriteError(new DbError('duplicate key', '23505', 409))).toBe('already-applied');
+  it('CR-A03: a 23505 that escapes db/ (not the row id -- that case resolves to the existing row there) is rejected, never swallowed', () => {
+    expect(classifyWriteError(new DbError('duplicate key value violates unique constraint', '23505', 409))).toBe('rejected');
+    expect(shouldRetryWrite(0, new DbError('duplicate key', '23505', 409))).toBe(false);
   });
 
   it('classifies a network TypeError as transient', () => {
