@@ -10,7 +10,7 @@ describe('classifyRates', () => {
   it('accepts a quote with no prior history', () => {
     const incoming: FxRow[] = [{ base: 'EUR', quote: 'USD', rate: '1.15', date: '2026-09-24' }];
     const result = classifyRates(incoming, [], [], 'frankfurter-v2');
-    expect(result).toEqual({ accept: incoming, hold: [], confirm: [] });
+    expect(result).toEqual({ accept: incoming, hold: [], confirm: [], skipped: [] });
   });
 
   it('accepts a move within 10%', () => {
@@ -104,5 +104,51 @@ describe('classifyRates', () => {
       priorDate: '2026-09-23',
       source: 'open-er-api',
     });
+  });
+
+  describe('dropped and already-held tuples are terminal (CR-B02)', () => {
+    const history: StoredRate[] = [{ quote: 'JPY', rate: '160', date: '2026-09-24' }];
+
+    it('skips an incoming row whose (quote, date, source) was dropped by the operator -- never re-held, never accepted', () => {
+      const incoming: FxRow[] = [{ base: 'EUR', quote: 'JPY', rate: '200', date: '2026-09-25' }];
+      const holds: OpenHold[] = [
+        { id: 3, quote: 'JPY', heldRate: '200', heldDate: '2026-09-25', source: 'frankfurter-v2', status: 'dropped' },
+      ];
+      const result = classifyRates(incoming, history, holds, 'frankfurter-v2');
+      expect(result).toEqual({ accept: [], hold: [], confirm: [], skipped: incoming });
+    });
+
+    it('skips an incoming row that re-reports an already-held (quote, date, source), so no duplicate hold or alert', () => {
+      const incoming: FxRow[] = [{ base: 'EUR', quote: 'JPY', rate: '200', date: '2026-09-25' }];
+      const holds: OpenHold[] = [
+        { id: 3, quote: 'JPY', heldRate: '200', heldDate: '2026-09-25', source: 'frankfurter-v2', status: 'held' },
+      ];
+      const result = classifyRates(incoming, history, holds, 'frankfurter-v2');
+      expect(result).toEqual({ accept: [], hold: [], confirm: [], skipped: incoming });
+    });
+
+    it('never confirms a dropped hold, even when a different-source witness agrees with it', () => {
+      const incoming: FxRow[] = [{ base: 'EUR', quote: 'JPY', rate: '199', date: '2026-09-25' }];
+      const holds: OpenHold[] = [
+        { id: 3, quote: 'JPY', heldRate: '200', heldDate: '2026-09-25', source: 'frankfurter-v2', status: 'dropped' },
+      ];
+      const result = classifyRates(incoming, history, holds, 'open-er-api');
+      expect(result.confirm).toEqual([]);
+      // The open.er-api witness is judged on its own merits: 199 vs 160 is a >10% move.
+      expect(result.hold).toHaveLength(1);
+      expect(result.hold[0]).toMatchObject({ quote: 'JPY', source: 'open-er-api' });
+    });
+  });
+
+  it('checks every open hold for the quote, not just the first one (WR-B03)', () => {
+    const incoming: FxRow[] = [{ base: 'EUR', quote: 'USD', rate: '1.30', date: '2026-09-24' }];
+    const openHolds: OpenHold[] = [
+      { id: 5, quote: 'USD', heldRate: '2.00', heldDate: '2026-09-10', source: 'frankfurter-v2' },
+      { id: 7, quote: 'USD', heldRate: '1.32', heldDate: '2026-09-24', source: 'frankfurter-v2' },
+    ];
+    const result = classifyRates(incoming, [], openHolds, 'open-er-api');
+    expect(result.confirm).toEqual([
+      { holdId: 7, row: { base: 'EUR', quote: 'USD', rate: '1.32', date: '2026-09-24' }, source: 'frankfurter-v2' },
+    ]);
   });
 });

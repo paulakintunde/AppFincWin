@@ -27,7 +27,7 @@ declare
 begin
   for h in
     select * from public.fx_rate_holds
-     where status = 'held' and held_at < now() - p_older_than
+     where status = 'held' and resolved_at is null and held_at < now() - p_older_than -- CR-B02: never a resolved (e.g. dropped) hold
      order by id
   loop
     insert into public.fx_rates (base, quote, rate, rate_date, source)
@@ -69,11 +69,48 @@ $$;
 revoke execute on function public.fx_pending_rows_count(interval) from public, anon, authenticated;
 grant execute on function public.fx_pending_rows_count(interval) to service_role;
 
+-- fx_restamp_pending(): re-stamps rate_pending rows whose date has
+-- arrived (local_date no later than tomorrow, server time), oldest first,
+-- under the normal 7-day window -- no quote is relaxed. This is how a
+-- future-dated row, which stamp_fx_rate() keeps pending until its own day
+-- (WR-B01), picks up that day's rate once fx-sync has stored it; a row
+-- whose rates still don't exist simply stays pending. A system restamp, so
+-- version is not bumped. Returns how many rows were re-stamped (not how
+-- many resolved). Called daily by fx-monitor before it counts pending rows.
+create or replace function public.fx_restamp_pending(p_limit integer default 1000)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  n integer;
+begin
+  perform set_config('fincwin.system_restamp', 'on', true);
+  perform set_config('fincwin.restamp_relax_quotes', '', true);
+  with due as (
+    select t.id from public.transactions t
+     where t.rate_pending and t.local_date <= current_date + 1
+     order by t.created_at
+     limit p_limit
+  )
+  update public.transactions t set updated_at = now() from due where t.id = due.id;
+  get diagnostics n = row_count;
+  perform set_config('fincwin.system_restamp', '', true);
+  return n;
+end;
+$$;
+
+revoke execute on function public.fx_restamp_pending(integer) from public, anon, authenticated;
+grant execute on function public.fx_restamp_pending(integer) to service_role;
+
 -- Daily monitor schedule: 30 minutes after fx-sync-daily (16:30 UTC) so
 -- today's holds and fallbacks are already in place before the digest reads
--- them. Same trust model as fx-sync-daily: reuses the fx_sync_secret shared
--- secret (pg_cron is the only caller); the fx_monitor_url Vault row is
--- created at deploy time (plan 01-16), never in git. Locally the job runs,
+-- them. Same trust model as fx-sync-daily (pg_cron is the only caller), but
+-- with its own shared secret: fx-monitor auto-accepts holds and re-stamps
+-- transactions, so a leaked fx-sync secret must not also authorise it
+-- (IN-B03). The fx_monitor_url and fx_monitor_secret Vault rows are created
+-- at deploy time (plan 01-16), never in git. Locally the job runs,
 -- finds null secrets in vault.decrypted_secrets, and fails harmlessly.
 select cron.schedule(
   'fx-monitor-daily',
@@ -83,7 +120,7 @@ select cron.schedule(
     url := (select decrypted_secret from vault.decrypted_secrets where name = 'fx_monitor_url'),
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'x-fx-sync-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'fx_sync_secret')),
+      'x-fx-monitor-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'fx_monitor_secret')),
     body := '{}'::jsonb,
     timeout_milliseconds := 30000
   );

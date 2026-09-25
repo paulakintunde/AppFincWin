@@ -83,8 +83,10 @@ function makeDeps(overrides: Partial<MonitorDeps> = {}): MonitorDeps {
     today: () => '2026-09-29',
     latestRates: jest.fn(async () => []),
     currencies: jest.fn(async () => []),
+    recentStaleAlerts: jest.fn(async () => []),
     insertAlerts: jest.fn(async () => undefined),
     autoAcceptHolds: jest.fn(async () => 0),
+    restampPending: jest.fn(async () => 0),
     pendingRowsCount: jest.fn(async () => 0),
     unsentAlerts: jest.fn(async () => []),
     markEmailed: jest.fn(async () => undefined),
@@ -108,6 +110,28 @@ describe('runFxMonitor', () => {
     ]);
   });
 
+  it('does not repeat a stale alert while the same stale rate persists, but alerts again for a new stale episode (IN-B04)', async () => {
+    const insertAlerts = jest.fn(async () => undefined);
+    const deps = makeDeps({
+      latestRates: jest.fn(async () => [
+        { quote: 'ARS', rate_date: '2026-09-20' }, // already alerted for this rate_date
+        { quote: 'TRY', rate_date: '2026-09-22' }, // alerted before, but for an older rate_date
+      ]),
+      recentStaleAlerts: jest.fn(async () => [
+        { quote: 'ARS', rateDate: '2026-09-20' },
+        { quote: 'TRY', rateDate: '2026-09-01' },
+      ]),
+      insertAlerts,
+    });
+
+    const result = await runFxMonitor(deps);
+
+    expect(insertAlerts).toHaveBeenCalledWith([
+      { kind: 'stale', quote: 'TRY', detail: { rateDate: '2026-09-22', ageDays: 7, limitDays: 4 } },
+    ]);
+    expect(result.stale).toBe(2);
+  });
+
   it('calls auto-accept and reports its count', async () => {
     const autoAcceptHolds = jest.fn(async () => 2);
     const deps = makeDeps({ autoAcceptHolds });
@@ -116,6 +140,24 @@ describe('runFxMonitor', () => {
 
     expect(autoAcceptHolds).toHaveBeenCalled();
     expect(result.autoAccepted).toBe(2);
+  });
+
+  it('re-stamps due pending rows before counting the ones still stuck (WR-B01)', async () => {
+    const order: string[] = [];
+    const restampPending = jest.fn(async () => {
+      order.push('restamp');
+      return 4;
+    });
+    const pendingRowsCount = jest.fn(async () => {
+      order.push('count');
+      return 1;
+    });
+    const deps = makeDeps({ restampPending, pendingRowsCount });
+
+    const result = await runFxMonitor(deps);
+
+    expect(order).toEqual(['restamp', 'count']);
+    expect(result.restamped).toBe(4);
   });
 
   it('inserts one pending-rows alert only when the count is greater than zero', async () => {
@@ -153,14 +195,20 @@ describe('runFxMonitor', () => {
     expect(result.emailed).toBe(2);
   });
 
-  it('sends no email when there are no unsent alerts', async () => {
+  it('sends a daily all-clear heartbeat when there are no unsent alerts, so a missing email means fx-monitor failed (IN-B03)', async () => {
     const sendEmail = jest.fn(async () => undefined);
     const markEmailed = jest.fn(async () => undefined);
-    const deps = makeDeps({ unsentAlerts: jest.fn(async () => []), sendEmail, markEmailed });
+    const deps = makeDeps({
+      unsentAlerts: jest.fn(async () => []),
+      restampPending: jest.fn(async () => 2),
+      sendEmail,
+      markEmailed,
+    });
 
     const result = await runFxMonitor(deps);
 
-    expect(sendEmail).not.toHaveBeenCalled();
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    expect(sendEmail).toHaveBeenCalledWith('FincWin FX: all clear', expect.stringContaining('2026-09-29'));
     expect(markEmailed).not.toHaveBeenCalled();
     expect(result.emailed).toBe(0);
   });

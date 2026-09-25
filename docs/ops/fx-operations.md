@@ -16,12 +16,13 @@ in the body.
 
 | Kind | Raised by | Meaning |
 |---|---|---|
-| `stale` | fx-monitor | A currency's latest stored rate is older than its staleness limit — the per-currency override (`currencies.staleness_limit_days`) if set, else the global default of about 4 calendar days (D-10). Check whether `fx-sync-daily` actually ran; Frankfurter/ECB publish nothing on weekends, so isolated staleness on a Monday for every currency is expected, but one currency stale on its own usually means that currency stopped publishing or the sync silently regressed for it. |
+| `stale` | fx-monitor | A currency's latest stored rate is older than its staleness limit — the per-currency override (`currencies.staleness_limit_days`) if set, else the global default of about 4 calendar days (D-10). Check whether `fx-sync-daily` actually ran; Frankfurter/ECB publish nothing on weekends, so isolated staleness on a Monday for every currency is expected, but one currency stale on its own usually means that currency stopped publishing or the sync silently regressed for it. A currency is reported once per stale episode (its latest `rateDate`), not every day it stays stale; it alerts again only after a newer rate arrives and that one goes stale too. |
 | `held` | fx-sync | A day-on-day move over ~10% was quarantined into `fx_rate_holds` instead of being written to `fx_rates` (D-11, MON-11). The last confirmed rate keeps serving conversions until this is confirmed or auto-accepted. |
 | `auto-accepted` | fx-monitor | A held rate sat unconfirmed for more than 2 days and was accepted into `fx_rates` on the operator's behalf (D-12). This is the alert that most warrants a manual look — see "Dropping a bad rate" below. |
-| `pending-rows` | fx-monitor | How many transactions have sat `rate_pending = true` for more than a day (Pitfall 2 — a stuck backfill must never be silent). A non-zero count that persists across several days' digests means `resolve-rate` isn't being called for those rows, or is failing; check Edge Function logs for `resolve-rate`. |
+| `pending-rows` | fx-monitor | How many transactions have sat `rate_pending = true` for more than a day (Pitfall 2 — a stuck backfill must never be silent). Before counting, fx-monitor runs `fx_restamp_pending()`, which re-stamps every pending row whose date has arrived under the normal 7-day window. So a planned, future-dated row (kept pending until its own day) resolves on its own once fx-sync stores that day's rate, and only genuinely stuck rows are counted. A non-zero count that persists across several days' digests means `resolve-rate` isn't being called for those rows, is failing, or is finding its backfilled rate held; check Edge Function logs for `resolve-rate` and `fx_rate_holds`. |
 | `fallback-used` | fx-sync | Frankfurter v2 was unreachable or returned something unparsable for that day's sync, and open.er-api served the rates instead (MON-12). Check `docs/dependency-register.md`'s Frankfurter row and Frankfurter's own status if this repeats. |
-| `sync-failed` | fx-sync | Both Frankfurter and the open.er-api fallback failed in the same run — nothing was written. Rates stay at their last known values (still individually dated and visible per MON-07); investigate immediately, since two consecutive failed days approaches the staleness limit. |
+| `hold-dropped` | `fx_drop_hold()` | The operator dropped a hold. `detail` records the hold's previous status, whether a served `fx_rates` row was removed (`rateRemoved`), and how many transactions were re-stamped (`restamped`). |
+| `sync-failed` | fx-sync | Both Frankfurter and the open.er-api fallback failed in the same run, so nothing was written. Or, with `"stage": "ingest"` in `detail`, the fetch worked but a later step failed (reading history or holds, writing rates, holds or alerts); some writes from that run may have landed. Either way rates stay at their last known values (still individually dated and visible per MON-07). Investigate immediately, since two consecutive failed days approach the staleness limit. |
 
 ## Inspecting holds
 
@@ -34,17 +35,43 @@ auto-accepting. `status` moves `held` → `confirmed` (a second source or a
 later refresh landed near it) or `held` → `auto-accepted` (2 days elapsed
 unconfirmed) → optionally `dropped` (see below).
 
-## Dropping a bad held or auto-accepted rate
+A resolved hold is terminal. `dropped` never changes again, and
+`confirmed`/`auto-accepted` can only move to `dropped`. A guard trigger on
+`fx_rate_holds` discards any other update, and `fx-sync` skips an incoming
+rate whose `(quote, date, source)` is already held or dropped. So a
+Frankfurter feed that keeps re-reporting a value you dropped never revives
+it, and `fx_auto_accept_holds()` only ever accepts rows that were never
+resolved. `resolve-rate` backfills go through the same quarantine: a
+backfilled rate for a held or dropped `(quote, date)` is discarded, and an
+implausible one becomes a new hold whose `held` alert carries
+`"via": "resolve-rate"`.
+
+## Dropping a bad held, confirmed or auto-accepted rate
 
 `public.fx_drop_hold(<id>)` is the runbook function (service_role-only,
-`supabase/migrations/20260924000600_fx_monitoring.sql`). If the hold was
-already auto-accepted, it also removes that row from `fx_rates`; if it's
-still merely `held`, it just marks it `dropped` so a later refresh can
-re-evaluate the pair from scratch. Any transaction already stamped from a
-dropped auto-accepted rate keeps its stamp — a stamp is a historical fact,
-not a live pointer — restamp an individual affected row with
-`select public.restamp_transaction('<transaction-id>');` only if it is still
-`rate_pending`.
+`supabase/migrations/20260924000600_fx_monitoring.sql`). Whatever the hold's
+status (`held`, `confirmed` or `auto-accepted`), it removes any `fx_rates`
+row with the same `(quote, date, source)` and marks the hold `dropped`. A
+dropped `(quote, date, source)` is never re-evaluated. Later publications on
+other dates are checked normally.
+
+When a served rate was removed, `fx_drop_hold` also calls
+`fx_restamp_by_rate(<quote>, <date>)`. That re-stamps every transaction that
+could have been stamped from the rate, including rows that are no longer
+`rate_pending`: rows with that quote on either leg (directly, or as the
+reference of the author's custom currency) that are pending, carry that
+`rate_date`, or are dated within the 7 days the rate served. Re-stamped rows
+take the best remaining rate under the normal 7-day window. If none exists,
+they go back to `rate_pending` for `resolve-rate` or the daily
+`fx_restamp_pending()` to resolve. `version` is not bumped. The function
+returns the re-stamped count, which the `hold-dropped` alert also records.
+`fx_restamp_by_rate` can be run on its own for a rate removed some other way.
+
+`select public.restamp_transaction('<transaction-id>');` still re-stamps a
+single row, but only if it is still `rate_pending`. Called without a second
+argument, it re-stamps under the normal 7-day window. `resolve-rate` passes the quotes its backfill stored as
+`p_relax_quotes`, and only those legs may use an older rate. A row dated more
+than a day ahead of the server date always stays pending.
 
 Run it against the linked (production) project with the Supabase CLI, not
 the dashboard SQL editor, so the action is logged the same way every other
@@ -54,10 +81,10 @@ production database operation is:
 npx supabase db query --linked "select public.fx_drop_hold(<hold-id>);"
 ```
 
-Acting fast matters here: `fx_drop_hold` only prevents a *future* digest
-misreporting a dropped rate as still live — it does not undo any conversion
-already computed and shown from an auto-accepted rate before you dropped it.
-The 2-day auto-accept window (D-12) is the actual time budget to act in.
+Acting fast still matters. The repair re-stamps stored rows, but any figure
+a user already saw or acted on while the bad rate was served cannot be
+recalled. The 2-day auto-accept window (D-12) is the actual time budget to
+act in.
 
 ## Setting a per-currency staleness override
 
@@ -79,8 +106,20 @@ falls back to the global default inside `fx-monitor`'s `findStale()`.
 | Function | Auth | Env vars | Vault rows (production, created at deploy time — plan 01-16, never in git) |
 |---|---|---|---|
 | `fx-sync` | shared secret (`x-fx-sync-secret`) | `FX_SYNC_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | `fx_sync_url`, `fx_sync_secret` |
-| `fx-monitor` | shared secret (`x-fx-sync-secret`, reuses `FX_SYNC_SECRET`) | `FX_SYNC_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `FX_ALERT_TO_EMAIL` | `fx_monitor_url`, `fx_sync_secret` (shared with fx-sync) |
+| `fx-monitor` | its own shared secret (`x-fx-monitor-secret`), never fx-sync's | `FX_MONITOR_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `FX_ALERT_TO_EMAIL` | `fx_monitor_url`, `fx_monitor_secret` |
 | `resolve-rate` | caller's JWT (`verify_jwt = true`) | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | none (not pg_cron-invoked) |
+
+`FX_MONITOR_SECRET` and the `fx_monitor_secret` Vault row must hold the same
+value, and it must differ from `FX_SYNC_SECRET`. fx-monitor can auto-accept
+holds and re-stamp transactions, so one leaked secret must not authorise
+both functions.
+
+fx-monitor emails every day. With alerts pending, it sends the digest; with
+none, it sends a one-line `FincWin FX: all clear` heartbeat with the day's
+auto-accepted, re-stamped and pending counts. A day with **no** email means
+fx-monitor itself failed (missing config, Resend rejecting the key, or the
+cron job not firing). Check the `fx-monitor` Edge Function logs and
+`cron.job_run_details`.
 
 `fx-monitor`'s cron job (`fx-monitor-daily`, 17:00 UTC — 30 minutes after
 `fx-sync-daily`) runs locally too and fails harmlessly, since

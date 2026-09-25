@@ -23,10 +23,19 @@
 --
 -- restamp_transaction() is the service-role-only path used after backfill.
 -- It sets the transaction-local GUC fincwin.system_restamp = 'on', which
--- both stamp_fx_rate() (to accept a rate older than 7 days) and
--- bump_version() (to avoid counting a system restamp as a user edit) read.
--- A client cannot set a GUC through PostgREST table writes, so this cannot
--- be spoofed from the outside.
+-- both stamp_fx_rate() (to force a re-rate) and bump_version() (to avoid
+-- counting a system restamp as a user edit) read, and
+-- fincwin.restamp_relax_quotes to the quotes the backfill actually stored:
+-- only those legs may accept a rate older than 7 days (WR-B01). A client
+-- cannot set a GUC through PostgREST table writes, so this cannot be
+-- spoofed from the outside.
+--
+-- A transaction dated more than one day after the server's current_date
+-- (one day of slack covers every time zone ahead of UTC) is never stamped
+-- exact: its own day's rate does not exist yet, so it stays rate_pending
+-- until fx_restamp_pending() (20260924000700_fx_monitor_jobs.sql, run
+-- daily by fx-monitor) re-stamps it after its day arrives. local_date must
+-- fall between 1900-01-01 and one year after current_date.
 
 -- 1. Pure functions mirroring engine/money/rounding.ts and rates.ts.
 -- `div()` on numeric truncates toward zero, and both operands here are
@@ -76,16 +85,70 @@ as $$
   select (public.div_half_up((to_per_eur * 10000000000) * 10000000000, from_per_eur * 10000000000)::numeric / 10000000000)::numeric(24,10)
 $$;
 
+-- custom_per_eur raises 22003 when the result rounds to zero (a unit so
+-- valuable that 10 decimal places cannot represent its per-EUR rate, which
+-- would make every later convert_minor divide by zero) and, through the
+-- numeric(24,10) cast, when it overflows. The TS mirror throws RangeError
+-- in both cases (WR-B07).
 create or replace function public.custom_per_eur(reference_per_eur numeric, unit_value numeric)
 returns numeric(24,10)
-language sql
+language plpgsql
 immutable
 strict
 parallel safe
 set search_path = ''
 as $$
-  select (public.div_half_up((reference_per_eur * 10000000000) * 10000000000, unit_value * 10000000000)::numeric / 10000000000)::numeric(24,10)
+declare
+  r numeric(24,10);
+begin
+  r := (public.div_half_up((reference_per_eur * 10000000000) * 10000000000, unit_value * 10000000000)::numeric / 10000000000)::numeric(24,10);
+  if r <= 0 then
+    raise exception 'custom_per_eur: the per-EUR rate rounds to zero at 10 decimal places' using errcode = '22003';
+  end if;
+  return r;
+end
 $$;
+
+-- guard_custom_currency_rate(): a custom currency whose per-EUR rate would
+-- round to zero or overflow against its reference's latest stored rate is
+-- rejected when it is declared or revalued (23514), rather than failing
+-- the first transaction that uses it (WR-B07). A reference with no stored
+-- rate yet is not checked here; stamping then leaves the row pending.
+create or replace function public.guard_custom_currency_rate()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  ref_rate numeric;
+begin
+  if new.reference_currency = 'EUR' then
+    ref_rate := 1;
+  else
+    select r.rate into ref_rate
+      from public.fx_rates r
+     where r.base = 'EUR' and r.quote = new.reference_currency
+     order by r.rate_date desc, (r.source = 'frankfurter-v2') desc
+     limit 1;
+  end if;
+
+  if ref_rate is not null then
+    begin
+      perform public.custom_per_eur(ref_rate, new.unit_value);
+    exception when numeric_value_out_of_range then
+      raise exception 'unit value % is out of range against %', new.unit_value, new.reference_currency using errcode = '23514';
+    end;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger guard_custom_currency_rate
+  before insert or update of unit_value, reference_currency on public.custom_currencies
+  for each row execute function public.guard_custom_currency_rate();
+
+revoke execute on function public.guard_custom_currency_rate() from public, anon, authenticated;
 
 -- 2. Currency exponent (MON-13). Keep in lockstep with
 -- src/engine/money/currencyExponents.ts; 07_money_rounding_mirror asserts
@@ -130,21 +193,27 @@ $$;
 -- held rate can never be served (D-11).
 --
 -- p_code = 'EUR' -> rate 1, exact.
--- a custom currency owned by p_owner -> recurse through its ISO reference
---   currency, then apply custom_per_eur and the custom rate_source (D-07).
+-- a custom currency owned by p_owner -> look up its ISO reference currency
+--   (with no owner, so the lookup can never recurse into another custom
+--   definition -- WR-B06), then apply custom_per_eur and the custom
+--   rate_source (D-07).
 -- otherwise ISO: nearest earlier fx_rates row within the 7-day exact
 --   window (D-02), frankfurter-v2 preferred over a same-date duplicate;
 --   else the nearest later row as a provisional value (D-17, exact=false);
---   else, only when p_any_earlier was not already set, the nearest earlier
---   row beyond the 7-day window (also provisional); else nulls.
--- p_any_earlier (set only by restamp_transaction) widens the earlier-rate
--- window past 7 days, since a Frankfurter historical backfill returns the
--- last publication on or before the needed date regardless of age.
+--   else, only when this quote's window was not already relaxed, the
+--   nearest earlier row beyond the 7-day window (also provisional); else
+--   nulls.
+-- p_relax_quotes (set only through restamp_transaction) lists the quotes
+-- the resolve-rate backfill just stored for this transaction's date. For
+-- those quotes alone the earlier-rate window widens past 7 days, since a
+-- Frankfurter historical backfill returns the last publication on or
+-- before the needed date regardless of age. Any other quote keeps the
+-- 7-day window (WR-B01).
 create or replace function public.per_eur_rate(
   p_code text,
   p_on date,
   p_owner uuid,
-  p_any_earlier boolean default false,
+  p_relax_quotes text[] default null,
   out rate numeric,
   out rate_date date,
   out source text,
@@ -159,6 +228,7 @@ as $$
 declare
   c public.custom_currencies%rowtype;
   ref record;
+  relax boolean := p_code = any(coalesce(p_relax_quotes, '{}'::text[]));
 begin
   exact := false;
 
@@ -169,14 +239,17 @@ begin
 
   select * into c from public.custom_currencies where owner_id = p_owner and code = p_code;
   if found then
-    select * into ref from public.per_eur_rate(c.reference_currency, p_on, p_owner, p_any_earlier);
+    select * into ref from public.per_eur_rate(c.reference_currency, p_on, null, p_relax_quotes);
     if ref.rate is null then
       rate := null; rate_date := null; source := null; exact := false;
       return;
     end if;
     rate := public.custom_per_eur(ref.rate, c.unit_value);
     rate_date := least(ref.rate_date, c.as_of);
-    source := 'custom';
+    -- Keep the reference rate's open.er-api attribution: it outranks
+    -- 'custom' in stamp_fx_rate()'s precedence and must never be lost
+    -- (MON-12, D-13, WR-B02).
+    source := case when ref.source = 'open-er-api' then 'open-er-api' else 'custom' end;
     exact := ref.exact;
     return;
   end if;
@@ -185,7 +258,7 @@ begin
   select r.rate, r.rate_date, r.source into rate, rate_date, source
     from public.fx_rates r
    where r.base = 'EUR' and r.quote = p_code and r.rate_date <= p_on
-     and (p_any_earlier or r.rate_date >= p_on - 7)
+     and (relax or r.rate_date >= p_on - 7)
    order by r.rate_date desc, (r.source = 'frankfurter-v2') desc
    limit 1;
   if found then
@@ -206,7 +279,7 @@ begin
 
   -- Fallback: an older-than-7-days earlier row, only when this call did
   -- not already relax the window itself.
-  if not p_any_earlier then
+  if not relax then
     select r.rate, r.rate_date, r.source into rate, rate_date, source
       from public.fx_rates r
      where r.base = 'EUR' and r.quote = p_code and r.rate_date <= p_on
@@ -257,13 +330,24 @@ as $$
 declare
   o record;
   h record;
-  any_earlier boolean := coalesce(current_setting('fincwin.system_restamp', true), '') = 'on';
+  system_restamp boolean := coalesce(current_setting('fincwin.system_restamp', true), '') = 'on';
+  relax_quotes text[] := case when coalesce(current_setting('fincwin.system_restamp', true), '') = 'on'
+    then string_to_array(nullif(coalesce(current_setting('fincwin.restamp_relax_quotes', true), ''), ''), ',')
+    end;
   owner uuid;
   needs_rerate boolean;
   o_exp int;
   h_exp int;
 begin
   owner := coalesce(new.created_by, (select auth.uid()));
+
+  -- WR-B01: a plausible calendar date. One year ahead covers planned
+  -- entries; 1900 only rules out typos, since same-currency rows need no
+  -- rate at all.
+  if (tg_op = 'INSERT' or new.local_date is distinct from old.local_date)
+     and (new.local_date < date '1900-01-01' or new.local_date > current_date + 366) then
+    raise exception 'local_date % is out of range', new.local_date using errcode = '23514';
+  end if;
 
   if tg_op = 'INSERT' then
     select p.home_currency into new.home_currency from public.profiles p where p.id = owner;
@@ -274,11 +358,29 @@ begin
     new.home_currency := old.home_currency; -- D-05: fixed at write time, never changes
   end if;
 
+  -- WR-B08: the minor-unit exponents are stamped at write time and reused
+  -- afterwards. Re-deriving them on a later edit would read the author's
+  -- custom currencies again; if the author's account is gone (created_by
+  -- nulled, custom currencies cascaded away) that silently falls back to 2
+  -- and corrupts home_amount by up to 10^4. Only a change of
+  -- original_currency re-derives orig_exp; home_currency never changes.
+  if tg_op = 'INSERT' then
+    new.orig_exp := public.currency_exponent(new.original_currency, owner);
+    new.home_exp := public.currency_exponent(new.home_currency, owner);
+  else
+    new.home_exp := coalesce(old.home_exp, public.currency_exponent(new.home_currency, owner));
+    if new.original_currency is distinct from old.original_currency then
+      new.orig_exp := public.currency_exponent(new.original_currency, owner);
+    else
+      new.orig_exp := coalesce(old.orig_exp, public.currency_exponent(new.original_currency, owner));
+    end if;
+  end if;
+
   needs_rerate := tg_op = 'INSERT'
     or new.local_date is distinct from old.local_date
     or new.original_currency is distinct from old.original_currency
     or old.rate_pending
-    or any_earlier;
+    or system_restamp;
 
   if needs_rerate then
     if new.original_currency = new.home_currency then
@@ -292,8 +394,8 @@ begin
       return new;
     end if;
 
-    select * into o from public.per_eur_rate(new.original_currency, new.local_date, owner, any_earlier);
-    select * into h from public.per_eur_rate(new.home_currency, new.local_date, owner, any_earlier);
+    select * into o from public.per_eur_rate(new.original_currency, new.local_date, owner, relax_quotes);
+    select * into h from public.per_eur_rate(new.home_currency, new.local_date, owner, relax_quotes);
 
     if o.rate is null or h.rate is null then
       new.rate := null;
@@ -306,8 +408,8 @@ begin
       return new;
     end if;
 
-    o_exp := public.currency_exponent(new.original_currency, owner);
-    h_exp := public.currency_exponent(new.home_currency, owner);
+    o_exp := new.orig_exp;
+    h_exp := new.home_exp;
 
     new.orig_per_eur := o.rate;
     new.home_per_eur := h.rate;
@@ -322,7 +424,9 @@ begin
       when o.source = 'custom' or h.source = 'custom' then 'custom'
       else 'frankfurter-v2'
     end;
-    new.rate_pending := not (o.exact and h.exact);
+    -- A row dated after tomorrow (server time) is never exact: its own
+    -- day's rate cannot exist yet (WR-B01).
+    new.rate_pending := not (o.exact and h.exact) or new.local_date > current_date + 1;
     new.home_amount := public.convert_minor(new.original_amount, o.rate, o_exp, h.rate, h_exp);
   else
     -- Amount-only or note/account edit: keep every stamp column (D-04).
@@ -340,9 +444,9 @@ begin
         new.home_amount := public.convert_minor(
           new.original_amount,
           old.orig_per_eur,
-          public.currency_exponent(new.original_currency, owner),
+          new.orig_exp,
           old.home_per_eur,
-          public.currency_exponent(new.home_currency, owner)
+          new.home_exp
         );
       end if;
     else
@@ -361,12 +465,14 @@ revoke execute on function public.stamp_fx_rate() from public, anon, authenticat
 
 -- 6. restamp_transaction(): called only by the resolve-rate Edge Function
 -- (plan 01-11) after it has verified household membership with the
--- caller's JWT and backfilled fx_rates. With p_any_earlier the row accepts
--- the backfilled rate even though it may be older than 7 days (Frankfurter
--- returns the last publication on or before the date). Guarded to only
--- touch rows that are actually still rate_pending, and does not bump
--- version (see bump_version() above).
-create or replace function public.restamp_transaction(p_id uuid)
+-- caller's JWT and backfilled fx_rates. p_relax_quotes names the quotes
+-- that backfill actually stored; for those legs alone the row accepts the
+-- backfilled rate even though it may be older than 7 days (Frankfurter
+-- returns the last publication on or before the date). Every other leg
+-- keeps the 7-day window (WR-B01). Guarded to only touch rows that are
+-- actually still rate_pending, and does not bump version (see
+-- bump_version() above).
+create or replace function public.restamp_transaction(p_id uuid, p_relax_quotes text[] default null)
 returns public.transactions
 language plpgsql
 security definer
@@ -376,8 +482,10 @@ declare
   r public.transactions;
 begin
   perform set_config('fincwin.system_restamp', 'on', true);
+  perform set_config('fincwin.restamp_relax_quotes', coalesce(array_to_string(p_relax_quotes, ','), ''), true);
   update public.transactions set updated_at = now() where id = p_id and rate_pending returning * into r;
   perform set_config('fincwin.system_restamp', '', true);
+  perform set_config('fincwin.restamp_relax_quotes', '', true);
   if r.id is null then
     select * into r from public.transactions where id = p_id;
   end if;
@@ -385,13 +493,18 @@ begin
 end;
 $$;
 
-revoke execute on function public.restamp_transaction(uuid) from public, anon, authenticated;
-grant execute on function public.restamp_transaction(uuid) to service_role;
+revoke execute on function public.restamp_transaction(uuid, text[]) from public, anon, authenticated;
+grant execute on function public.restamp_transaction(uuid, text[]) to service_role;
 
--- 7. Grants on the pure/lookup functions: authenticated and service_role
--- only. The trigger functions themselves (stamp_fx_rate, bump_version) are
--- never called directly by any role -- they only fire via the triggers
--- above.
+-- 7. Grants. The pure maths functions (div_half_up, convert_minor,
+-- cross_rate, custom_per_eur) take no user data and stay callable by
+-- authenticated and service_role. The lookups that take an owner UUID
+-- (currency_exponent, per_eur_rate) are SECURITY DEFINER and would let any
+-- signed-in user read another user's custom currency (decimals, unit value,
+-- reference) past the owner-only RLS on custom_currencies (CR-B03). Only
+-- the definer triggers call them, so they are service_role-only. The
+-- trigger functions themselves (stamp_fx_rate, bump_version) are never
+-- called directly by any role -- they only fire via the triggers above.
 revoke execute on function public.div_half_up(numeric, numeric) from public, anon;
 grant execute on function public.div_half_up(numeric, numeric) to authenticated, service_role;
 
@@ -404,8 +517,8 @@ grant execute on function public.cross_rate(numeric, numeric) to authenticated, 
 revoke execute on function public.custom_per_eur(numeric, numeric) from public, anon;
 grant execute on function public.custom_per_eur(numeric, numeric) to authenticated, service_role;
 
-revoke execute on function public.currency_exponent(text, uuid) from public, anon;
-grant execute on function public.currency_exponent(text, uuid) to authenticated, service_role;
+revoke execute on function public.currency_exponent(text, uuid) from public, anon, authenticated;
+grant execute on function public.currency_exponent(text, uuid) to service_role;
 
-revoke execute on function public.per_eur_rate(text, date, uuid, boolean) from public, anon;
-grant execute on function public.per_eur_rate(text, date, uuid, boolean) to authenticated, service_role;
+revoke execute on function public.per_eur_rate(text, date, uuid, text[]) from public, anon, authenticated;
+grant execute on function public.per_eur_rate(text, date, uuid, text[]) to service_role;

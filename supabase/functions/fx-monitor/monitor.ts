@@ -40,12 +40,21 @@ export interface UnsentAlert {
   created_at: string;
 }
 
+export interface StaleAlertKey {
+  quote: string;
+  rateDate: string;
+}
+
 export interface MonitorDeps {
   today(): string;
   latestRates(): Promise<LatestRateRow[]>;
   currencies(): Promise<CurrencyRow[]>;
+  /** (quote, detail.rateDate) of recent 'stale' alerts, to avoid repeating one daily while the same rate stays stale. */
+  recentStaleAlerts(): Promise<StaleAlertKey[]>;
   insertAlerts(alerts: AlertInsert[]): Promise<void>;
   autoAcceptHolds(): Promise<number>;
+  /** rpc('fx_restamp_pending'): re-stamps pending rows whose date has arrived; returns how many were re-stamped. */
+  restampPending(): Promise<number>;
   pendingRowsCount(): Promise<number>;
   unsentAlerts(): Promise<UnsentAlert[]>;
   markEmailed(ids: number[]): Promise<void>;
@@ -56,6 +65,7 @@ export interface MonitorResult {
   ok: true;
   stale: number;
   autoAccepted: number;
+  restamped: number;
   pendingRows: number;
   emailed: number;
 }
@@ -109,14 +119,41 @@ export function buildDigest(alerts: UnsentAlert[]): { subject: string; text: str
   return { subject, text };
 }
 
+/**
+ * The daily heartbeat sent when there is nothing to report (IN-B03). The
+ * operator gets one email every day either way, so a day with no email at
+ * all means fx-monitor itself failed (bad config, Resend rejecting the key,
+ * the cron job not firing) rather than that all was quiet.
+ */
+export function buildAllClear(
+  today: string,
+  counts: { autoAccepted: number; restamped: number; pendingRows: number }
+): { subject: string; text: string } {
+  return {
+    subject: 'FincWin FX: all clear',
+    text: `${today}: no FX alerts. auto-accepted ${counts.autoAccepted}, re-stamped ${counts.restamped}, pending rows ${counts.pendingRows}.`,
+  };
+}
+
 export async function runFxMonitor(deps: MonitorDeps): Promise<MonitorResult> {
   const today = deps.today();
-  const [latest, currencies] = await Promise.all([deps.latestRates(), deps.currencies()]);
+  const [latest, currencies, alreadyAlerted] = await Promise.all([
+    deps.latestRates(),
+    deps.currencies(),
+    deps.recentStaleAlerts(),
+  ]);
 
   const stale = findStale(latest, currencies, today);
-  if (stale.length > 0) {
+  // IN-B04: one alert per stale episode. While a quote's latest rate is the
+  // same stale rate already reported, don't queue it again every day; a
+  // quote that recovers and later goes stale again (new rate_date) alerts
+  // afresh. The result's `stale` count still reports every stale quote.
+  const newlyStale = stale.filter(
+    (s) => !alreadyAlerted.some((a) => a.quote === s.quote && a.rateDate === s.rateDate)
+  );
+  if (newlyStale.length > 0) {
     await deps.insertAlerts(
-      stale.map((s) => ({
+      newlyStale.map((s) => ({
         kind: 'stale',
         quote: s.quote,
         detail: { rateDate: s.rateDate, ageDays: s.ageDays, limitDays: s.limitDays },
@@ -125,6 +162,11 @@ export async function runFxMonitor(deps: MonitorDeps): Promise<MonitorResult> {
   }
 
   const autoAccepted = await deps.autoAcceptHolds();
+
+  // WR-B01: a future-dated row stays rate_pending until its own day. Re-stamp
+  // every due pending row first, so the pending-rows count below only
+  // reports rows that are genuinely stuck.
+  const restamped = await deps.restampPending();
 
   const pendingRows = await deps.pendingRowsCount();
   if (pendingRows > 0) {
@@ -138,7 +180,10 @@ export async function runFxMonitor(deps: MonitorDeps): Promise<MonitorResult> {
     await deps.sendEmail(subject, text); // a non-2xx throw here propagates, and markEmailed is never reached (retried next day)
     await deps.markEmailed(unsent.map((a) => a.id));
     emailed = unsent.length;
+  } else {
+    const { subject, text } = buildAllClear(today, { autoAccepted, restamped, pendingRows });
+    await deps.sendEmail(subject, text);
   }
 
-  return { ok: true, stale: stale.length, autoAccepted, pendingRows, emailed };
+  return { ok: true, stale: stale.length, autoAccepted, restamped, pendingRows, emailed };
 }

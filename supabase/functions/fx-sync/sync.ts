@@ -16,9 +16,10 @@ import {
 
 export interface FxSyncDb {
   recentRates(sinceDate: string): Promise<StoredRate[]>; // fx_rates base EUR, rate::text, rate_date >= sinceDate
-  openHolds(): Promise<OpenHold[]>; // fx_rate_holds where status = 'held'
+  latestRatesOnOrBefore(date: string): Promise<StoredRate[]>; // rpc fx_latest_rates(p_on_or_before): one row per quote, no age window
+  holds(): Promise<OpenHold[]>; // fx_rate_holds where status in ('held', 'dropped') -- a dropped tuple is terminal (CR-B02)
   upsertRates(rows: FxRow[], source: string): Promise<void>; // onConflict base,quote,rate_date,source
-  upsertHolds(rows: Classification['hold']): Promise<void>; // onConflict quote,held_rate_date,source
+  upsertHolds(rows: Classification['hold']): Promise<void>; // onConflict quote,held_rate_date,source, ignoreDuplicates (never overwrites an existing hold)
   confirmHolds(ids: number[]): Promise<void>; // status 'confirmed', resolved_at now()
   insertAlerts(alerts: Array<{ kind: string; quote?: string; detail?: Record<string, unknown> }>): Promise<void>;
   upsertCurrencies(meta: CurrencyMeta[]): Promise<void>; // onConflict code; iso_numeric,name,symbol,start_date,end_date,synced_at
@@ -37,8 +38,6 @@ export interface FxSyncResult {
   confirmed: number;
   currencies: number;
 }
-
-const HISTORY_WINDOW_DAYS = 14;
 
 function minusDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
@@ -79,10 +78,42 @@ async function fetchRates(
 export async function runFxSync({ fetchJson, db }: FxSyncDeps): Promise<FxSyncResult> {
   const { rows, source } = await fetchRates(fetchJson, db);
 
-  const history = await db.recentRates(minusDays(earliestDate(rows), HISTORY_WINDOW_DAYS));
-  const openHolds = await db.openHolds();
+  // IN-B02: a failure after the fetch (reading history or holds, writing
+  // rates, holds or alerts) used to surface only as a 502 to pg_net, which
+  // nobody reads -- the operator would find out days later from staleness.
+  // Leave a best-effort sync-failed alert first; an error writing the alert
+  // itself is swallowed so the original error is what propagates.
+  try {
+    return await ingest({ fetchJson, db }, rows, source);
+  } catch (error) {
+    try {
+      await db.insertAlerts([
+        { kind: 'sync-failed', detail: { error: (error as Error).message, stage: 'ingest', source } },
+      ]);
+    } catch {
+      // best-effort only
+    }
+    throw error;
+  }
+}
 
-  const classified = classifyRates(rows, history, openHolds, source);
+async function ingest(
+  { fetchJson, db }: FxSyncDeps,
+  rows: FxRow[],
+  source: 'frankfurter-v2' | 'open-er-api'
+): Promise<FxSyncResult> {
+
+  // History for the plausibility check (WR-B04): every stored row from the
+  // batch's earliest date on (same-date idempotency and in-batch priors),
+  // plus each quote's latest stored rate before that date, however old.
+  // "No prior" then only ever means the quote was never stored before --
+  // a sporadic publisher, or any quote after a long fx-sync outage, is
+  // still compared rather than accepted unchecked.
+  const earliest = earliestDate(rows);
+  const history = [...(await db.recentRates(earliest)), ...(await db.latestRatesOnOrBefore(minusDays(earliest, 1)))];
+  const holds = await db.holds();
+
+  const classified = classifyRates(rows, history, holds, source);
 
   if (classified.accept.length > 0) {
     await db.upsertRates(classified.accept, source);
@@ -122,23 +153,32 @@ export async function runFxSync({ fetchJson, db }: FxSyncDeps): Promise<FxSyncRe
   if (source === 'frankfurter-v2' && classified.hold.length > 0) {
     try {
       const witnessRows = parseOpenErApiRates(await fetchJson(`${OPEN_ER_API_URL}/EUR`));
-      const heldQuotes = new Set(classified.hold.map((h) => h.quote));
-      const freshHolds = await db.openHolds();
+      const freshHolds = (await db.holds()).filter((h) => (h.status ?? 'held') === 'held');
 
-      const confirmedRows: FxRow[] = [];
+      // Match each hold this run just created by its exact (quote, date,
+      // source), never by quote alone: an older hold for the same quote --
+      // possibly an open.er-api one from a fallback day, which an
+      // open.er-api witness must not "confirm" -- could otherwise be picked
+      // (WR-B03). The confirmed row is written under the hold's own source.
+      const confirmedBySrc = new Map<string, FxRow[]>();
       const confirmedIds: number[] = [];
-      for (const witness of witnessRows) {
-        if (!heldQuotes.has(witness.quote)) continue;
-        const held = freshHolds.find((h) => h.quote === witness.quote);
-        if (!held) continue;
+      for (const created of classified.hold) {
+        const held = freshHolds.find(
+          (h) => h.quote === created.quote && h.heldDate === created.date && h.source === created.source
+        );
+        const witness = witnessRows.find((w) => w.quote === created.quote);
+        if (!held || !witness) continue;
         if (Math.abs(Number(witness.rate) / Number(held.heldRate) - 1) <= CONFIRM_TOLERANCE + 1e-9) {
-          confirmedRows.push({ base: witness.base, quote: held.quote, rate: held.heldRate, date: held.heldDate });
+          const row: FxRow = { base: witness.base, quote: held.quote, rate: held.heldRate, date: held.heldDate };
+          confirmedBySrc.set(held.source, [...(confirmedBySrc.get(held.source) ?? []), row]);
           confirmedIds.push(held.id);
         }
       }
 
-      if (confirmedRows.length > 0) {
-        await db.upsertRates(confirmedRows, source); // source === 'frankfurter-v2' here: the held row's own source
+      if (confirmedIds.length > 0) {
+        for (const [heldSource, rows] of confirmedBySrc) {
+          await db.upsertRates(rows, heldSource);
+        }
         await db.confirmHolds(confirmedIds);
         confirmedBySecondSource = confirmedIds.length;
       }

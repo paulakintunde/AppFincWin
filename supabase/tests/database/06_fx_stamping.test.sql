@@ -233,7 +233,7 @@ insert into public.fx_rates (base, quote, rate, rate_date, source) values
 
 set local role service_role;
 select extensions.lives_ok(
-  $$select public.restamp_transaction('b4111111-1111-1111-1111-111111111111')$$,
+  $$select public.restamp_transaction('b4111111-1111-1111-1111-111111111111', array['JPY', 'USD'])$$,
   'service_role can call restamp_transaction'
 );
 reset role;
