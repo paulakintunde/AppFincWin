@@ -204,6 +204,27 @@ describe('parseAmount: Extended Arabic-Indic digits (Persian/Urdu, U+06F0-U+06F9
   });
 });
 
+describe('parseAmount: other native digit systems (IN-A04)', () => {
+  it.each([
+    ['bn-BD', '১২,৩৪,৫৬৭.৫০'],
+    ['my-MM', '၁,၂၃၄,၅၆၇.၅၀'],
+    ['hi-IN-u-nu-deva', '१२,३४,५६७.५०'],
+    ['th-TH-u-nu-thai', '๑,๒๓๔,๕๖๗.๕๐'],
+    ['fa-IR', '۱٬۲۳۴٬۵۶۷٫۵۰'],
+  ])('parses %s native digits', (locale, raw) => {
+    expect(parseAmount(raw, { locale, exponent: 2 })).toEqual({ ok: true, value: 123456750 });
+  });
+
+  it('parses fullwidth digits', () => {
+    expect(parseAmount('１２３.４５', { locale: 'ja-JP', exponent: 2 })).toEqual({ ok: true, value: 12345 });
+  });
+
+  it('still rejects characters just outside a digit block', () => {
+    // U+0E5A (Thai character angkhankhu) follows the Thai digits U+0E50-U+0E59.
+    expect(parseAmount('๚', { locale: 'th-TH', exponent: 2 })).toEqual({ ok: false, error: 'invalid', maxDecimals: 2 });
+  });
+});
+
 describe('parseAmount: zero', () => {
   it('parses a fully-zero amount to zero', () => {
     expect(parseAmount('0.00', { locale: 'en-US', exponent: 2 })).toEqual({ ok: true, value: 0 });
@@ -296,7 +317,7 @@ describe('parseAmount: round-trip property (fast-check)', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 0, max: MAX_ABS_AMOUNT_MINOR }),
-        fc.constantFrom('en-US', 'en-GB', 'de-DE', 'fr-FR', 'ja-JP', 'ar-KW', 'en-IN'),
+        fc.constantFrom('en-US', 'en-GB', 'de-DE', 'fr-FR', 'ja-JP', 'ar-KW', 'en-IN', 'bn-BD', 'my-MM', 'fa-IR', 'th-TH-u-nu-thai'),
         fc.constantFrom(0, 2, 3),
         (n, locale, exponent) => {
           const decimalStr = decimalStringFromMinor(n, exponent);

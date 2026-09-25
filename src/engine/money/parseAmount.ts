@@ -100,10 +100,21 @@ function buildGroupCharSet(groupChar: string): ReadonlySet<string> {
   return WHITESPACE_GROUP_CHARS.has(groupChar) ? WHITESPACE_GROUP_CHARS : new Set([groupChar]);
 }
 
-// Maps a single character to its ASCII digit if it is an ASCII, Arabic-Indic
-// (U+0660-U+0669) or Extended Arabic-Indic (U+06F0-U+06F9) digit; otherwise
-// undefined. This is the only place digit characters are interpreted, and it
-// only ever produces one of '0'-'9'.
+// IN-A04: the zero code point of every decimal-digit block (Unicode Nd, ten
+// consecutive code points 0-9) that Intl renders for a locale's default or
+// `-u-nu-` numbering system, so a user typing on a native keyboard can enter
+// amounts: ASCII, Arabic-Indic, Extended Arabic-Indic (Persian/Urdu), N'Ko,
+// Devanagari, Bengali, Gurmukhi, Gujarati, Oriya, Tamil, Telugu, Kannada,
+// Malayalam, Sinhala Lith, Thai, Lao, Tibetan, Myanmar, Myanmar Shan, Khmer,
+// Mongolian and fullwidth digits. All are in the BMP, so one UTF-16 code unit.
+const DIGIT_BLOCK_ZEROS: readonly number[] = [
+  0x0030, 0x0660, 0x06f0, 0x07c0, 0x0966, 0x09e6, 0x0a66, 0x0ae6, 0x0b66, 0x0be6, 0x0c66, 0x0ce6,
+  0x0d66, 0x0de6, 0x0e50, 0x0ed0, 0x0f20, 0x1040, 0x1090, 0x17e0, 0x1810, 0xff10,
+];
+
+// Maps a single character to its ASCII digit if it is a digit in one of the
+// blocks above; otherwise undefined. This is the only place digit characters
+// are interpreted, and it only ever produces one of '0'-'9'.
 function normalizeDigit(ch: string): string | undefined {
   // `ch` always comes from iterating a non-empty string one character at a
   // time (see the for-of loop below), so index 0 always exists --
@@ -111,10 +122,8 @@ function normalizeDigit(ch: string): string | undefined {
   // there is no spurious "undefined index" branch to cover: every character
   // this function is ever called with has a real code unit at position 0.
   const code = ch.charCodeAt(0);
-  if (code >= 0x30 && code <= 0x39) return ch;
-  if (code >= 0x0660 && code <= 0x0669) return String.fromCharCode(0x30 + (code - 0x0660));
-  if (code >= 0x06f0 && code <= 0x06f9) return String.fromCharCode(0x30 + (code - 0x06f0));
-  return undefined;
+  const zero = DIGIT_BLOCK_ZEROS.find((z) => code >= z && code <= z + 9);
+  return zero === undefined ? undefined : String.fromCharCode(0x30 + (code - zero));
 }
 
 /**
