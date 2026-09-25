@@ -20,7 +20,8 @@ Every external service FincWin depends on. Status is one of provisioned / pendin
 | Google OAuth client IDs (Web/Android/iOS) | Google Sign-In | pending | company org in Google Cloud | Android SHA-1s need the app identifier (00-02) and EAS keystore (00-14) | Phase 0 | 2026-09-22 | plan 00-15 |
 | Sign in with Apple (Services ID + key) | Apple sign-in on iOS and Android | deferred | Apple org account | Apple Developer Program (ENV-10) | when enrolment clears | 2026-09-22 | plan 00-20; client secret JWT expires every 6 months |
 | Frankfurter v2 | FX rates | pending | none (no key) | — | Phase 0 | 2026-09-22 | Pin v2 (`https://api.frankfurter.dev/v2`); plan 00-09 |
-| open.er-api | FX fallback | deferred | none (no key) | — | Phase 1 (MON-12) | 2026-09-22 | Attribution required in-app |
+| open.er-api | FX fallback | provisioned | none (no key) | — | Phase 1 (MON-12) | 2026-09-24 | Attribution required in-app (`OPEN_ER_API_ATTRIBUTION`, docs/ops/fx-operations.md); wired into `fx-sync` in plan 01-08, latest-only (no historical/backfill mode) |
+| Resend (FX operator digest) | fx-monitor's daily stale/held/auto-accepted/pending-rows email (MON-10, D-09, D-12) | pending | company team in Resend (same account as outbound support mail) | production `RESEND_API_KEY`/Vault rows not yet created (plan 01-16) | Phase 1 (MON-10) | 2026-09-24 | Server-only `RESEND_API_KEY`; sends from `RESEND_FROM_EMAIL` (no-reply@fincwin.com) to `FX_ALERT_TO_EMAIL` (operator only, never a user); plan 01-11 |
 | PostHog (EU host) | product analytics | pending | company org in PostHog | — | Phase 0 | 2026-09-22 | EU host kept despite US DB (D-23); plan 00-13 |
 | Sentry | error reporting | pending | — | D-19 spike outcome | Phase 0 decision | 2026-09-22 | Dropped if PostHog error tracking holds up (D-19); plan 00-16 |
 | APNs + FCM push credentials | server-sent alerts | deferred | Apple org / Firebase | APNs waits on ENV-10 | Phase 10 (ENV-19) | 2026-09-22 | |
