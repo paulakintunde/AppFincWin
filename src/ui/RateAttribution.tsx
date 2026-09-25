@@ -11,6 +11,7 @@ import type { RateSource } from '@/db/rows';
 import { useT } from '@/i18n';
 import { useDeviceLocale } from '@/services/locale/deviceLocale';
 import { useTheme } from '@/theme/ThemeProvider';
+import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 
 // T-01-14-01: hard-coded constant, never built from data.
@@ -55,19 +56,37 @@ export function RateAttribution({ rateDate, rateSource, ratePending }: RateAttri
     color: colors.inkMuted,
   };
 
-  const accessibilityLabel = showAttribution ? `${dateText}. ${attributionText}` : dateText;
-
+  // WR-C07: no label on the row. On iOS a label on a non-accessible View is
+  // ignored, and on Android it becomes a focusable contentDescription that
+  // makes TalkBack read the attribution twice. The date Text and the link
+  // are each their own accessible element.
   return (
-    <View style={styles.row} accessibilityLabel={accessibilityLabel}>
+    <View style={styles.row}>
       <Text style={labelStyle}>{dateText}</Text>
       {showAttribution ? (
-        <Pressable onPress={handlePress} accessibilityRole="link" accessibilityLabel={attributionText}>
+        <Pressable
+          onPress={handlePress}
+          accessibilityRole="link"
+          accessibilityLabel={attributionText}
+          hitSlop={LINK_HIT_SLOP}
+        >
           <Text style={[labelStyle, styles.attribution, { color: colors.inkFaint }]}>{attributionText}</Text>
         </Pressable>
       ) : null}
     </View>
   );
 }
+
+// WR-C07: the link is one line of meta text (~13pt), far below the 44pt
+// minimum. Extend the tap target vertically to at least space.touchMin and
+// horizontally by the small gap, without changing the visual layout.
+const LINK_VERTICAL_SLOP = Math.ceil((space.touchMin - fontSize.meta) / 2);
+const LINK_HIT_SLOP = {
+  top: LINK_VERTICAL_SLOP,
+  bottom: LINK_VERTICAL_SLOP,
+  left: space.gapSm,
+  right: space.gapSm,
+};
 
 const styles = StyleSheet.create({
   row: {
