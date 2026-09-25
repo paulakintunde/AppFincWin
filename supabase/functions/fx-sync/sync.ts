@@ -78,6 +78,31 @@ async function fetchRates(
 export async function runFxSync({ fetchJson, db }: FxSyncDeps): Promise<FxSyncResult> {
   const { rows, source } = await fetchRates(fetchJson, db);
 
+  // IN-B02: a failure after the fetch (reading history or holds, writing
+  // rates, holds or alerts) used to surface only as a 502 to pg_net, which
+  // nobody reads -- the operator would find out days later from staleness.
+  // Leave a best-effort sync-failed alert first; an error writing the alert
+  // itself is swallowed so the original error is what propagates.
+  try {
+    return await ingest({ fetchJson, db }, rows, source);
+  } catch (error) {
+    try {
+      await db.insertAlerts([
+        { kind: 'sync-failed', detail: { error: (error as Error).message, stage: 'ingest', source } },
+      ]);
+    } catch {
+      // best-effort only
+    }
+    throw error;
+  }
+}
+
+async function ingest(
+  { fetchJson, db }: FxSyncDeps,
+  rows: FxRow[],
+  source: 'frankfurter-v2' | 'open-er-api'
+): Promise<FxSyncResult> {
+
   // History for the plausibility check (WR-B04): every stored row from the
   // batch's earliest date on (same-date idempotency and in-batch priors),
   // plus each quote's latest stored rate before that date, however old.

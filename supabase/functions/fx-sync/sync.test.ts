@@ -299,4 +299,31 @@ describe('runFxSync', () => {
     expect(result).toMatchObject({ accepted: 0, held: 1 });
     expect(db.calls.upsertRates).toEqual([]);
   });
+
+  it('leaves a sync-failed alert and rethrows when a step after the fetch fails (IN-B02)', async () => {
+    const db = createFakeDb({
+      recentRates: async () => {
+        throw new Error('fx_rates read failed');
+      },
+    });
+    const fetchJson = createFetchJson({ [FRANKFURTER_RATES_URL]: FRANKFURTER_FIXTURE });
+
+    await expect(runFxSync({ fetchJson, db })).rejects.toThrow('fx_rates read failed');
+    expect(db.calls.insertAlerts).toEqual([
+      { kind: 'sync-failed', detail: { error: 'fx_rates read failed', stage: 'ingest', source: 'frankfurter-v2' } },
+    ]);
+  });
+
+  it('still rethrows the original error when the sync-failed alert itself cannot be written (IN-B02)', async () => {
+    const db = createFakeDb();
+    db.upsertRates = async () => {
+      throw new Error('upsert failed');
+    };
+    db.insertAlerts = async () => {
+      throw new Error('alerts table unavailable');
+    };
+    const fetchJson = createFetchJson({ [FRANKFURTER_RATES_URL]: FRANKFURTER_FIXTURE });
+
+    await expect(runFxSync({ fetchJson, db })).rejects.toThrow('upsert failed');
+  });
 });
