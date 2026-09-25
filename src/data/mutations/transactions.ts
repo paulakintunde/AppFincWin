@@ -173,10 +173,12 @@ export function registerTransactionMutations(qc: QueryClient): void {
       };
       patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) => [optimisticRow, ...rows]);
     },
-    onSuccess: async (row: TransactionRow, vars: AddTransactionVars) => {
+    onSuccess: (row: TransactionRow, vars: AddTransactionVars) => {
       // WR-A04: upsert, not replace -- a refetch may have dropped the optimistic row.
       patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) => upsertRow(rows, row, 'start'));
-      await followUpIfRatePending(qc, vars.row.household_id, vars.optimistic.month, row);
+      // WR-A15: not awaited. query-core awaits onSuccess before releasing WRITE_SCOPE, so an
+      // awaited Edge Function call would hold every later queued write behind it.
+      void followUpIfRatePending(qc, vars.row.household_id, vars.optimistic.month, row);
     },
     onError: async (err: unknown, vars: AddTransactionVars) => {
       const cls = classifySettledWriteError(err);
@@ -239,7 +241,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
         await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) });
         await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, monthOf(row.local_date)) });
       }
-      await followUpIfRatePending(qc, vars.householdId, monthOf(row.local_date), row);
+      void followUpIfRatePending(qc, vars.householdId, monthOf(row.local_date), row); // WR-A15: not awaited
     },
     onError: async (err: unknown, vars: EditTransactionVars) => {
       const cls = classifySettledWriteError(err);

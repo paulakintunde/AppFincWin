@@ -171,9 +171,16 @@ export async function updateTransaction(
  * it; any HTTP-layer failure the function itself returned is swallowed to `null` -- the
  * row stays `rate_pending` and a later call (or the background restamp path) can retry.
  */
+/**
+ * WR-A15: upper bound on one resolve-rate call. The call is best-effort (a row that stays
+ * rate_pending is picked up later), so a slow upstream backfill must never hang a caller.
+ */
+export const RATE_RESOLUTION_TIMEOUT_MS = 15_000;
+
 export async function requestRateResolution(client: DbClient, transactionId: string): Promise<TransactionRow | null> {
   const { data, error } = await client.functions.invoke('resolve-rate', {
     body: { transactionId },
+    timeout: RATE_RESOLUTION_TIMEOUT_MS,
   });
 
   if (error) {

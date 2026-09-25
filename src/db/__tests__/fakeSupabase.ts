@@ -117,10 +117,14 @@ export class FakeSupabase {
     },
   };
 
+  /** When set, functions.invoke() waits for it -- lets a test hold an Edge Function call. */
+  invokeGate: Promise<void> | null = null;
+
   functions = {
-    invoke: (name: string, opts?: unknown): Promise<FakeResponse> => {
+    invoke: async (name: string, opts?: unknown): Promise<FakeResponse> => {
       this.calls.push({ method: 'functions.invoke', args: [name, opts] });
-      return Promise.resolve(this.next());
+      if (this.invokeGate) await this.invokeGate;
+      return this.next();
     },
   };
 }

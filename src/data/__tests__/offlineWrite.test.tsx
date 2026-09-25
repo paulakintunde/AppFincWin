@@ -486,9 +486,43 @@ describe('offline write queue (SYN-02)', () => {
     onlineManager.setOnline(true);
     await qc.resumePausedMutations();
 
+    // WR-A15: the follow-up is fire-and-forget, so it may still be settling here.
+    await waitFor(() => expect(fake.calls.filter((c) => c.method === 'functions.invoke')).toHaveLength(1));
     const invokeCalls = fake.calls.filter((c) => c.method === 'functions.invoke');
-    expect(invokeCalls).toHaveLength(1);
-    expect(invokeCalls[0]?.args).toEqual(['resolve-rate', { body: { transactionId: id } }]);
+    expect(invokeCalls[0]?.args).toEqual(['resolve-rate', { body: { transactionId: id }, timeout: 15_000 }]);
+  });
+
+  it('WR-A15: a hanging resolve-rate call does not hold the write queue', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+    fake.invokeGate = new Promise<void>(() => undefined); // the Edge Function never answers
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [serverTransaction({ id: 'tx-q', version: 1 })]);
+    const addHook = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+    const editHook = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+
+    const id = addHook.result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 1000 as never,
+      currency: 'JPY',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+    editHook.result.current.edit({ id: 'tx-q', householdId: 'h1', month: '2026-09', expectedVersion: 1, patch: { note: 'next' } });
+    await waitFor(() => expect(qc.getMutationCache().getAll().every((m) => m.state.isPaused)).toBe(true));
+
+    fake.respondWith({ data: serverTransaction({ id, original_currency: 'JPY', rate_pending: true }), error: null, status: 201 });
+    fake.respondWith({ data: [serverTransaction({ id: 'tx-q', note: 'next', version: 2 })], error: null, status: 200 });
+    onlineManager.setOnline(true);
+    await qc.resumePausedMutations();
+
+    await waitFor(() => expect(qc.getMutationCache().getAll().map((m) => m.state.status)).toEqual(['success', 'success']));
+    expect(fake.calls.filter((c) => c.method === 'update')).toHaveLength(1);
   });
 
   it('status: after the flush, no mutation is left in a pending (queued) state', async () => {

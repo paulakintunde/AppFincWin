@@ -3,6 +3,7 @@ import { DbError, NotFoundError, VersionConflictError } from '../errors';
 import type { NewTransaction, TransactionPatch, TransactionRow } from '../rows';
 import {
   MONTH_PAGE_SIZE,
+  RATE_RESOLUTION_TIMEOUT_MS,
   TRANSACTION_COLUMNS,
   TRUNCATED_READ,
   fetchTransaction,
@@ -245,7 +246,7 @@ describe('requestRateResolution', () => {
     expect(result).toEqual(resolved);
     expect(client.calls.find((c) => c.method === 'functions.invoke')?.args).toEqual([
       'resolve-rate',
-      { body: { transactionId: 't1' } },
+      { body: { transactionId: 't1' }, timeout: RATE_RESOLUTION_TIMEOUT_MS },
     ]);
   });
 
