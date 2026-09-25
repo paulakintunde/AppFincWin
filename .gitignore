@@ -28,3 +28,6 @@ src/**/__gate_probe__*
 src/__gate_probe_shared__/
 supabase/.temp/
 supabase/.branches/
+
+# Agent worktrees (Claude Code isolation)
+.claude/worktrees/
