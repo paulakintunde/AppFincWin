@@ -64,6 +64,69 @@ Deno.serve(async (req) => {
       return data?.reference_currency ?? null;
     },
     fetchJson,
+    async blockedHolds(quotes) {
+      if (quotes.length === 0) return [];
+      const { data, error } = await admin
+        .from('fx_rate_holds')
+        .select('quote, held_rate_date')
+        .in('quote', quotes)
+        .in('status', ['held', 'dropped']);
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((h) => ({ quote: h.quote, heldDate: h.held_rate_date }));
+    },
+    async storedRatesAround(quote, date) {
+      const sameDate = await admin
+        .from('fx_rates')
+        .select('quote, rate, rate_date')
+        .eq('base', 'EUR')
+        .eq('quote', quote)
+        .eq('rate_date', date);
+      if (sameDate.error) throw new Error(sameDate.error.message);
+      // Nearest earlier publication with no age window (WR-B04): a quote
+      // whose last stored rate is months old must still be compared, never
+      // waved through as "no prior".
+      const prior = await admin
+        .from('fx_rates')
+        .select('quote, rate, rate_date')
+        .eq('base', 'EUR')
+        .eq('quote', quote)
+        .lt('rate_date', date)
+        .order('rate_date', { ascending: false })
+        .limit(1);
+      if (prior.error) throw new Error(prior.error.message);
+      return [...(sameDate.data ?? []), ...(prior.data ?? [])].map((r) => ({
+        quote: r.quote,
+        rate: String(r.rate),
+        date: r.rate_date,
+      }));
+    },
+    async upsertHolds(rows) {
+      if (rows.length === 0) return;
+      const { error } = await admin.from('fx_rate_holds').upsert(
+        rows.map((r) => ({
+          base: r.base,
+          quote: r.quote,
+          held_rate: r.rate,
+          held_rate_date: r.date,
+          source: r.source,
+          prior_rate: r.priorRate,
+          prior_rate_date: r.priorDate,
+          change_ratio: r.changeRatio,
+          status: 'held',
+        })),
+        // An existing hold (held, confirmed, auto-accepted or dropped) is
+        // never overwritten -- a dropped hold stays dropped (CR-B02).
+        { onConflict: 'quote,held_rate_date,source', ignoreDuplicates: true }
+      );
+      if (error) throw new Error(error.message);
+    },
+    async insertAlerts(alerts) {
+      if (alerts.length === 0) return;
+      const { error } = await admin
+        .from('fx_alerts')
+        .insert(alerts.map((a) => ({ kind: a.kind, quote: a.quote ?? null, detail: a.detail ?? {} })));
+      if (error) throw new Error(error.message);
+    },
     async upsertRates(rows: FxRow[]) {
       if (rows.length === 0) return;
       const { error } = await admin

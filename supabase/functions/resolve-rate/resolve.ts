@@ -9,7 +9,16 @@
 // readPending must be backed by a user-scoped client reading under RLS, so a
 // transaction id the caller's own household cannot see returns null here
 // before any admin (service-role) action ever runs.
+//
+// Backfilled rows go through the same quarantine as fx-sync (MON-11, D-11,
+// CR-B01): only rows for a quote this call asked for, dated on or before the
+// transaction's local_date, with no open or dropped hold on the same
+// (quote, date), and passing fx-sync's own classifyRates plausibility check
+// against the nearest stored prior may enter the served fx_rates. A row that
+// fails plausibility goes to fx_rate_holds (with a 'held' alert), exactly as
+// an fx-sync hold would -- never to fx_rates.
 import { FRANKFURTER_V2_RATES_URL, parseFrankfurterRates, type FxRow } from '../fx-sync/parse.ts';
+import { classifyRates, type Classification, type StoredRate } from '../fx-sync/plausibility.ts';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -28,8 +37,20 @@ export interface ResolveDeps {
   /** Admin: custom_currencies.reference_currency for (ownerId, code), or null if code isn't a registered custom currency for that owner. */
   customReference(ownerId: string | null, code: string): Promise<string | null>;
   fetchJson(url: string): Promise<unknown>;
+  /** Admin: (quote, held_rate_date) of every fx_rate_holds row with status 'held' or 'dropped' for these quotes, any source. */
+  blockedHolds(quotes: string[]): Promise<Array<{ quote: string; heldDate: string }>>;
+  /**
+   * Admin: stored EUR-based fx_rates rows for `quote` dated exactly `date`,
+   * plus the single latest one dated strictly before `date` (no age window),
+   * as classifyRates' history input.
+   */
+  storedRatesAround(quote: string, date: string): Promise<StoredRate[]>;
   /** Admin, source 'frankfurter-v2', ignoreDuplicates. */
   upsertRates(rows: FxRow[]): Promise<void>;
+  /** Admin: fx_rate_holds insert, ignoreDuplicates (an existing hold's status is never overwritten). */
+  upsertHolds(rows: Classification['hold']): Promise<void>;
+  /** Admin: fx_alerts insert. */
+  insertAlerts(alerts: Array<{ kind: string; quote?: string; detail?: Record<string, unknown> }>): Promise<void>;
   /** Admin: rpc('restamp_transaction', { p_id: id }). */
   restamp(id: string): Promise<Record<string, unknown>>;
 }
@@ -68,6 +89,53 @@ async function resolveQuote(
   quotesToFetch.add(code);
 }
 
+const BACKFILL_SOURCE = 'frankfurter-v2';
+
+/**
+ * CR-B01: the backfill must never bypass the MON-11/D-11 quarantine.
+ * Drops rows for an unrequested quote, rows dated after the transaction's
+ * local_date, and rows whose (quote, date) already has an open or dropped
+ * hold; then classifies the rest with fx-sync's classifyRates against the
+ * nearest stored prior. No open holds are passed in, so a backfill can
+ * never *confirm* a hold -- that stays fx-sync's and the operator's job.
+ */
+async function quarantineAndStore(
+  deps: ResolveDeps,
+  fxRows: FxRow[],
+  quotesToFetch: Set<string>,
+  localDate: string
+): Promise<void> {
+  const requested = fxRows.filter((r) => r.base === 'EUR' && quotesToFetch.has(r.quote) && r.date <= localDate);
+  if (requested.length === 0) return;
+
+  const blocked = await deps.blockedHolds([...quotesToFetch].sort());
+  const candidates = requested.filter((r) => !blocked.some((h) => h.quote === r.quote && h.heldDate === r.date));
+  if (candidates.length === 0) return;
+
+  const history = (await Promise.all(candidates.map((r) => deps.storedRatesAround(r.quote, r.date)))).flat();
+  const classified = classifyRates(candidates, history, [], BACKFILL_SOURCE);
+
+  if (classified.accept.length > 0) {
+    await deps.upsertRates(classified.accept);
+  }
+  if (classified.hold.length > 0) {
+    await deps.upsertHolds(classified.hold);
+    await deps.insertAlerts(
+      classified.hold.map((h) => ({
+        kind: 'held',
+        quote: h.quote,
+        detail: {
+          heldRate: h.rate,
+          priorRate: h.priorRate,
+          changeRatio: h.changeRatio,
+          source: h.source,
+          via: 'resolve-rate',
+        },
+      }))
+    );
+  }
+}
+
 export async function resolveRate(deps: ResolveDeps, input: unknown): Promise<ResolveResult> {
   if (input === null || typeof input !== 'object') return invalidInput();
 
@@ -97,7 +165,7 @@ export async function resolveRate(deps: ResolveDeps, input: unknown): Promise<Re
       return { status: 502, body: { ok: false, error: 'upstream' } };
     }
 
-    await deps.upsertRates(fxRows);
+    await quarantineAndStore(deps, fxRows, quotesToFetch, row.local_date);
   }
 
   const restamped = await deps.restamp(transactionId);

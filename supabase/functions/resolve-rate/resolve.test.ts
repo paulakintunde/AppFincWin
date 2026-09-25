@@ -9,6 +9,10 @@ function makeDeps(overrides: Partial<ResolveDeps> = {}): ResolveDeps {
     customReference: jest.fn(async () => null),
     fetchJson: jest.fn(async () => []),
     upsertRates: jest.fn(async () => undefined),
+    blockedHolds: jest.fn(async () => []),
+    storedRatesAround: jest.fn(async () => []),
+    upsertHolds: jest.fn(async () => undefined),
+    insertAlerts: jest.fn(async () => undefined),
     restamp: jest.fn(async () => ({ id: VALID_ID, rate_pending: false })),
     ...overrides,
   };
@@ -150,5 +154,87 @@ describe('resolveRate', () => {
 
     expect(result).toEqual({ status: 502, body: { ok: false, error: 'upstream' } });
     expect(restamp).not.toHaveBeenCalled();
+  });
+
+  describe('backfill quarantine (CR-B01: resolve-rate goes through the same plausibility/hold path as fx-sync)', () => {
+    it('drops rows for a quote that was not requested, or dated after the transaction local_date', async () => {
+      const fetchJson = jest.fn(async () => [
+        { base: 'EUR', quote: 'JPY', rate: 163.5, date: '2020-01-15' },
+        { base: 'EUR', quote: 'USD', rate: 1.11, date: '2020-01-16' }, // after local_date
+        { base: 'EUR', quote: 'GBP', rate: 0.85, date: '2020-01-15' }, // never requested
+      ]);
+      const upsertRates = jest.fn(async () => undefined);
+      const deps = makeDeps({ readPending: jest.fn(async () => pendingRow()), fetchJson, upsertRates });
+
+      await resolveRate(deps, { transactionId: VALID_ID });
+
+      expect(upsertRates).toHaveBeenCalledWith([{ base: 'EUR', quote: 'JPY', rate: '163.5', date: '2020-01-15' }]);
+    });
+
+    it('never serves a row whose (quote, date) has an open or dropped hold', async () => {
+      const fetchJson = jest.fn(async () => [
+        { base: 'EUR', quote: 'JPY', rate: 163.5, date: '2020-01-15' },
+        { base: 'EUR', quote: 'USD', rate: 1.11, date: '2020-01-15' },
+      ]);
+      const blockedHolds = jest.fn(async () => [{ quote: 'USD', heldDate: '2020-01-15' }]);
+      const upsertRates = jest.fn(async () => undefined);
+      const deps = makeDeps({ readPending: jest.fn(async () => pendingRow()), fetchJson, blockedHolds, upsertRates });
+
+      await resolveRate(deps, { transactionId: VALID_ID });
+
+      expect(blockedHolds).toHaveBeenCalledWith(['JPY', 'USD']);
+      expect(upsertRates).toHaveBeenCalledWith([{ base: 'EUR', quote: 'JPY', rate: '163.5', date: '2020-01-15' }]);
+    });
+
+    it('quarantines a >10% move against the nearest stored prior into fx_rate_holds, not fx_rates, and alerts', async () => {
+      const fetchJson = jest.fn(async () => [
+        { base: 'EUR', quote: 'JPY', rate: 163.5, date: '2020-01-15' },
+        { base: 'EUR', quote: 'USD', rate: 1.5, date: '2020-01-15' },
+      ]);
+      const storedRatesAround = jest.fn(async (quote: string) =>
+        quote === 'USD' ? [{ quote: 'USD', rate: '1.1', date: '2019-12-01' }] : []
+      );
+      const upsertRates = jest.fn(async () => undefined);
+      const upsertHolds = jest.fn(async () => undefined);
+      const insertAlerts = jest.fn(async () => undefined);
+      const deps = makeDeps({
+        readPending: jest.fn(async () => pendingRow()),
+        fetchJson,
+        storedRatesAround,
+        upsertRates,
+        upsertHolds,
+        insertAlerts,
+      });
+
+      await resolveRate(deps, { transactionId: VALID_ID });
+
+      expect(storedRatesAround).toHaveBeenCalledWith('USD', '2020-01-15');
+      expect(upsertRates).toHaveBeenCalledWith([{ base: 'EUR', quote: 'JPY', rate: '163.5', date: '2020-01-15' }]);
+      expect(upsertHolds).toHaveBeenCalledWith([
+        expect.objectContaining({ quote: 'USD', rate: '1.5', date: '2020-01-15', priorRate: '1.1', source: 'frankfurter-v2' }),
+      ]);
+      expect(insertAlerts).toHaveBeenCalledWith([
+        expect.objectContaining({ kind: 'held', quote: 'USD', detail: expect.objectContaining({ via: 'resolve-rate' }) }),
+      ]);
+    });
+
+    it('writes nothing to fx_rates when every returned row is filtered or held', async () => {
+      const fetchJson = jest.fn(async () => [{ base: 'EUR', quote: 'USD', rate: 1.11, date: '2020-01-15' }]);
+      const blockedHolds = jest.fn(async () => [{ quote: 'USD', heldDate: '2020-01-15' }]);
+      const upsertRates = jest.fn(async () => undefined);
+      const upsertHolds = jest.fn(async () => undefined);
+      const deps = makeDeps({
+        readPending: jest.fn(async () => pendingRow({ original_currency: 'USD', home_currency: 'EUR' })),
+        fetchJson,
+        blockedHolds,
+        upsertRates,
+        upsertHolds,
+      });
+
+      await resolveRate(deps, { transactionId: VALID_ID });
+
+      expect(upsertRates).not.toHaveBeenCalled();
+      expect(upsertHolds).not.toHaveBeenCalled();
+    });
   });
 });
