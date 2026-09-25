@@ -41,7 +41,7 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [ ] **ENV-13**: Sentry project exists and its DSN is wired in — *deferrable; non-blocking for every other phase*
 - [x] **ENV-14**: PostHog project exists on the EU host, with its project key wired in through the environment
 - [ ] **ENV-15**: The company's D-U-N-S number is confirmed or requested on day one, since it gates both Apple and Google organisation enrolment
-- [ ] **ENV-16**: Production Supabase runs on the Pro plan with daily backups before the first real user data is stored
+- [ ] **ENV-16**: Production data is backed up daily, and a restore has been rehearsed into a non-production project, before public launch — *method TBD, likely AWS (e.g. a scheduled database dump to S3); moved from Phase 2 to Phase 10 on 2026-09-25. Supabase Pro is no longer assumed; until this lands, production runs without backups (accepted risk for dogfooding)*
 - [x] **ENV-17**: Development runs locally through the Supabase CLI plus a free cloud project for on-device testing, production is a separate Cloud Pro project, and schema changes reach any of them only through migrations tracked in git
 - [x] **ENV-18**: The Supabase region is chosen deliberately at project creation, with the reasoning recorded, since it cannot easily move later
 - [ ] **ENV-19**: Push credentials exist for APNs and FCM — *APNs blocked on ENV-10*
@@ -301,7 +301,7 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| Tax pack, tax liability, tax categorisation | Computing a liability is regulated advice. Flag-and-export is already served by general export, so the framing buys risk without capability |
+| Tax pack, tax liability, tax categorisation | Computing a liability is regulated advice. Flag-and-export is already served by general export, so the framing buys risk without capability. **Clarified 2026-09-25:** this excludes tax *calculation*, tax flags and tax reports. A plain spending category named "Tax" (a label for money already paid, such as a tax bill or an accountant's fee, behaving exactly like any other category) is in scope and is seeded in Phase 2. |
 | Licence keys, seats, device transfer codes | RevenueCat anchors entitlement to the store account, and the stores already handle device coverage, Family Sharing and restore. Apple generally requires IAP for in-app digital unlocks |
 | Local-first architecture, on-device database | Deliberately rejected. Cloud-first gives one source of truth, no anonymous-to-authenticated migration, and an entitlement anchor across platforms |
 | `expo-sqlite`, Drizzle ORM, SQLCipher | Removed with local-first |
@@ -349,7 +349,7 @@ Populated during roadmap creation.
 | ENV-13 | Phase 0 - Foundation | Pending |
 | ENV-14 | Phase 0 - Foundation | Complete |
 | ENV-15 | Phase 0 - Foundation | Pending |
-| ENV-16 | Phase 2 - Record | Pending |
+| ENV-16 | Phase 10 - System | Pending |
 | ENV-17 | Phase 0 - Foundation | Complete |
 | ENV-18 | Phase 0 - Foundation | Complete |
 | ENV-19 | Phase 10 - System | Pending |
