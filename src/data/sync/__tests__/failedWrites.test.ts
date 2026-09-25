@@ -5,7 +5,7 @@
 /* eslint-disable import/first, @typescript-eslint/no-require-imports */
 globalThis.crypto = require('crypto').webcrypto;
 
-import { wipeDeviceData } from '@/services/storage/wipe';
+import { getPendingWriteCount, wipeDeviceData } from '@/services/storage/wipe';
 import {
   FAILED_WRITES_KEY,
   hydrateFailedWrites,
@@ -253,6 +253,13 @@ describe('failedWrites', () => {
       persisted = fresh.getFailedWrites().map((e) => e.entityId);
     });
     expect(persisted).toEqual(['a', 'b']);
+  });
+
+  it('WR-A09: parked failed entries count toward the unsynced-changes warning before a wipe', async () => {
+    expect(await getPendingWriteCount()).toBe(0);
+    await recordFailedWrite(baseEntry);
+    await recordFailedWrite({ ...baseEntry, entityId: 'tx-2' });
+    expect(await getPendingWriteCount()).toBe(2);
   });
 
   it('is cleared by wipeDeviceData via the registered "failed-writes" handler', async () => {

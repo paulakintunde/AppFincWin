@@ -1,4 +1,5 @@
 import { DbError, VersionConflictError, NotFoundError, SessionUnavailableError } from '@/db/errors';
+import { SessionWipedError } from './sessionEpoch';
 
 /**
  * How a failed write is handled downstream:
@@ -9,6 +10,8 @@ import { DbError, VersionConflictError, NotFoundError, SessionUnavailableError }
  *   malformed input, or anything this module does not recognise). Stops retrying
  *   immediately so nothing loops forever on something it can never fix by retrying.
  * - 'transient': network failure or a 5xx/408/429 response. Safe to retry.
+ * - 'discarded': WR-A09. The write belonged to a session that sign-out has since wiped. It
+ *   is dropped silently: never retried, never recorded, never written into the cache.
  * - 'auth': WR-A01. The session was missing or expired (HTTP 401, PostgREST's JWT codes
  *   PGRST301/302/303, or the pre-send session check found no session). Nothing is wrong with
  *   the write itself: it waits and retries, and every retry runs the session check again,
@@ -22,7 +25,7 @@ import { DbError, VersionConflictError, NotFoundError, SessionUnavailableError }
  * different unique constraint (e.g. custom_currencies' (owner_id, code)) and is a permanent
  * rejection the user must be told about (D-19), never a silent drop.
  */
-export type WriteErrorClass = 'transient' | 'auth' | 'conflict' | 'rejected' | 'not-found';
+export type WriteErrorClass = 'transient' | 'auth' | 'conflict' | 'rejected' | 'not-found' | 'discarded';
 
 // D-19: permanent rejections. 42501 RLS denial, 23514 check violation, 23503 FK violation,
 // 23502 not-null violation, 22P02 invalid text representation, PGRST204 PostgREST
@@ -58,6 +61,7 @@ function isTransientStatus(status: number | null): boolean {
 export function classifyWriteError(err: unknown): WriteErrorClass {
   if (err instanceof VersionConflictError) return 'conflict';
   if (err instanceof NotFoundError) return 'not-found';
+  if (err instanceof SessionWipedError) return 'discarded';
   if (err instanceof SessionUnavailableError) return 'auth';
 
   if (err instanceof DbError) {

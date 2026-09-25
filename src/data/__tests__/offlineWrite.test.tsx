@@ -16,6 +16,7 @@ import type { WithPending } from '@/data/types';
 import { registerMutationDefaults } from '@/data/mutations';
 import { useAddTransaction, useEditTransaction } from '@/data/mutations/transactions';
 import { clearVersionChains } from '@/data/sync/versionChain';
+import { bumpSessionEpoch } from '@/data/sync/sessionEpoch';
 
 let mockActiveClient: unknown;
 let mockUuidCounter = 0;
@@ -283,6 +284,41 @@ describe('offline write queue (SYN-02)', () => {
       const rows = qc.getQueryData<WithPending<TransactionRow>[]>(queryKeys.transactionsMonth('h1', '2026-09'));
       expect(rows?.map((r) => r.id)).toEqual([id, 'other']);
     });
+  });
+
+  it('WR-A09: a write still in flight when sign-out wipes settles as discarded -- nothing is written back into the cleared cache or failed list', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    let releaseSession: () => void = () => undefined;
+    fake.sessionGate = new Promise<void>((resolve) => {
+      releaseSession = resolve;
+    });
+    fake.respondWith({ data: serverTransaction({ id: 'uuid-0' }), error: null, status: 201 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+    await waitFor(() => expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-09'))).toBeDefined());
+
+    // Sign-out wipe, exactly as src/data/queryClient.ts's handler does it.
+    bumpSessionEpoch();
+    qc.getMutationCache().clear();
+    qc.clear();
+
+    releaseSession();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-09'))).toBeUndefined();
+    expect(recordFailedWrite).not.toHaveBeenCalled();
   });
 
   it('restart: an offline add survives dehydrate/rehydrate into a brand-new QueryClient and still flushes with the same UUID', async () => {

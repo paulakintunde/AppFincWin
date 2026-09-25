@@ -26,6 +26,7 @@ import {
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
+import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { upsertRow } from './cacheRows';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { editStamp, provisionalStamp } from './provisional';
@@ -126,11 +127,12 @@ async function followUpIfRatePending(qc: QueryClient, householdId: string, month
 
 export function registerTransactionMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.addTransaction, {
-    mutationFn: async (vars: AddTransactionVars) => insertTransaction(await writeClient(), vars.row),
+    mutationFn: (vars: AddTransactionVars) => guardSession(vars, async () => insertTransaction(await writeClient(), vars.row)),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: async (vars: AddTransactionVars) => {
+      markSession(vars); // WR-A09
       const monthKey = queryKeys.transactionsMonth(vars.row.household_id, vars.optimistic.month);
       await qc.cancelQueries({ queryKey: monthKey });
 
@@ -193,17 +195,19 @@ export function registerTransactionMutations(qc: QueryClient): void {
   });
 
   qc.setMutationDefaults(mutationKeys.editTransaction, {
-    mutationFn: async (vars: EditTransactionVars) => {
-      // CR-A02: an earlier queued edit of this same row may already have bumped its version.
-      const expected = resolveExpectedVersion('transactions', vars.id, vars.expectedVersion);
-      const row = await updateTransaction(await writeClient(), vars.id, expected, vars.patch);
-      recordWrittenVersion('transactions', vars.id, [vars.expectedVersion, expected], row.version);
-      return row;
-    },
+    mutationFn: (vars: EditTransactionVars) =>
+      guardSession(vars, async () => {
+        // CR-A02: an earlier queued edit of this same row may already have bumped its version.
+        const expected = resolveExpectedVersion('transactions', vars.id, vars.expectedVersion);
+        const row = await updateTransaction(await writeClient(), vars.id, expected, vars.patch);
+        recordWrittenVersion('transactions', vars.id, [vars.expectedVersion, expected], row.version);
+        return row;
+      }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: async (vars: EditTransactionVars) => {
+      markSession(vars); // WR-A09
       const toMonth = targetMonth(vars);
       await qc.cancelQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) });
       if (toMonth !== vars.month) {

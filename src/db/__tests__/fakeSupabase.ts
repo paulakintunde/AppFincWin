@@ -100,10 +100,13 @@ export class FakeSupabase {
   /** WR-A01: what auth.getSession() reports. A signed-in session by default; tests set null. */
   session: { access_token: string } | null = { access_token: 'fake-token' };
   sessionError: { message: string } | null = null;
+  /** When set, getSession() waits for it -- lets a test hold a write mid-flight. */
+  sessionGate: Promise<void> | null = null;
 
   auth = {
     getSession: async () => {
       this.calls.push({ method: 'auth.getSession', args: [] });
+      if (this.sessionGate) await this.sessionGate;
       return { data: { session: this.session }, error: this.sessionError };
     },
   };

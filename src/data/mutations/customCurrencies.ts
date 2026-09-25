@@ -28,6 +28,7 @@ import {
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
+import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { upsertRow } from './cacheRows';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
@@ -58,11 +59,12 @@ function patchCustomCurrenciesCache(
 
 export function registerCustomCurrencyMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.addCustomCurrency, {
-    mutationFn: async (vars: AddCustomCurrencyVars) => insertCustomCurrency(await writeClient(), vars.row),
+    mutationFn: (vars: AddCustomCurrencyVars) => guardSession(vars, async () => insertCustomCurrency(await writeClient(), vars.row)),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: async (vars: AddCustomCurrencyVars) => {
+      markSession(vars); // WR-A09
       const key = queryKeys.customCurrencies(vars.userId);
       await qc.cancelQueries({ queryKey: key });
 
@@ -102,17 +104,19 @@ export function registerCustomCurrencyMutations(qc: QueryClient): void {
   });
 
   qc.setMutationDefaults(mutationKeys.editCustomCurrency, {
-    mutationFn: async (vars: EditCustomCurrencyVars) => {
-      // CR-A02: an earlier queued edit of this same row may already have bumped its version.
-      const expected = resolveExpectedVersion('custom_currencies', vars.id, vars.expectedVersion);
-      const row = await updateCustomCurrency(await writeClient(), vars.id, expected, vars.patch);
-      recordWrittenVersion('custom_currencies', vars.id, [vars.expectedVersion, expected], row.version);
-      return row;
-    },
+    mutationFn: (vars: EditCustomCurrencyVars) =>
+      guardSession(vars, async () => {
+        // CR-A02: an earlier queued edit of this same row may already have bumped its version.
+        const expected = resolveExpectedVersion('custom_currencies', vars.id, vars.expectedVersion);
+        const row = await updateCustomCurrency(await writeClient(), vars.id, expected, vars.patch);
+        recordWrittenVersion('custom_currencies', vars.id, [vars.expectedVersion, expected], row.version);
+        return row;
+      }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: async (vars: EditCustomCurrencyVars) => {
+      markSession(vars); // WR-A09
       const key = queryKeys.customCurrencies(vars.userId);
       await qc.cancelQueries({ queryKey: key });
       patchCustomCurrenciesCache(qc, vars.userId, (rows) =>

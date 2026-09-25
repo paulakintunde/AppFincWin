@@ -16,6 +16,7 @@ import {
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
+import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { upsertRow } from './cacheRows';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 
@@ -44,11 +45,12 @@ function patchAccountsCache(
 
 export function registerAccountMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.addAccount, {
-    mutationFn: async (vars: AddAccountVars) => insertAccount(await writeClient(), vars.row),
+    mutationFn: (vars: AddAccountVars) => guardSession(vars, async () => insertAccount(await writeClient(), vars.row)),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: async (vars: AddAccountVars) => {
+      markSession(vars); // WR-A09
       const key = queryKeys.accounts(vars.row.household_id);
       await qc.cancelQueries({ queryKey: key });
 
@@ -88,17 +90,19 @@ export function registerAccountMutations(qc: QueryClient): void {
   });
 
   qc.setMutationDefaults(mutationKeys.editAccount, {
-    mutationFn: async (vars: EditAccountVars) => {
-      // CR-A02: an earlier queued edit of this same row may already have bumped its version.
-      const expected = resolveExpectedVersion('accounts', vars.id, vars.expectedVersion);
-      const row = await updateAccount(await writeClient(), vars.id, expected, vars.patch);
-      recordWrittenVersion('accounts', vars.id, [vars.expectedVersion, expected], row.version);
-      return row;
-    },
+    mutationFn: (vars: EditAccountVars) =>
+      guardSession(vars, async () => {
+        // CR-A02: an earlier queued edit of this same row may already have bumped its version.
+        const expected = resolveExpectedVersion('accounts', vars.id, vars.expectedVersion);
+        const row = await updateAccount(await writeClient(), vars.id, expected, vars.patch);
+        recordWrittenVersion('accounts', vars.id, [vars.expectedVersion, expected], row.version);
+        return row;
+      }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: async (vars: EditAccountVars) => {
+      markSession(vars); // WR-A09
       const key = queryKeys.accounts(vars.householdId);
       await qc.cancelQueries({ queryKey: key });
       patchAccountsCache(qc, vars.householdId, (rows) =>

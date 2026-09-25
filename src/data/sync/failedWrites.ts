@@ -2,6 +2,7 @@ import * as Crypto from 'expo-crypto';
 import { LargeSecureStore } from '@/services/supabase/largeSecureStore';
 import { registerWipeHandler } from '@/services/storage/wipe';
 import type { WriteEntity } from '@/db/errors';
+import { bumpSessionEpoch } from './sessionEpoch';
 
 /**
  * D-19: every permanently failed or conflicting write is kept here with its reason and the
@@ -142,7 +143,15 @@ export function setFailureReporter(fn: FailureReporter | null): void {
 // regardless of which screens have mounted (T-01-09-01).
 registerWipeHandler({
   id: 'failed-writes',
+  // WR-A09: the unsynced-changes warning must also count the parked entries this wipe deletes.
+  pendingWriteCount: async () => {
+    await hydrating;
+    return entries.length;
+  },
   wipe: async () => {
+    // WR-A09: wipe handlers run in registration order, so this one may run before the query
+    // cache's; bumping here too stops an in-flight write from recording into the wiped list.
+    bumpSessionEpoch();
     generation += 1;
     entries = [];
     notify();

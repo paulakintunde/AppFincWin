@@ -15,6 +15,7 @@ import {
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
+import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { DEFAULT_MONEY_PREFS } from '@/data/queries/moneyPrefs';
 
 export interface UpdateMoneyPrefsVars {
@@ -30,11 +31,12 @@ interface MutationContext {
 
 export function registerMoneyPrefsMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.updateMoneyPrefs, {
-    mutationFn: async (vars: UpdateMoneyPrefsVars) => updateMoneyPrefs(await writeClient(), vars.userId, vars.patch),
+    mutationFn: (vars: UpdateMoneyPrefsVars) => guardSession(vars, async () => updateMoneyPrefs(await writeClient(), vars.userId, vars.patch)),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: async (vars: UpdateMoneyPrefsVars): Promise<MutationContext> => {
+      markSession(vars); // WR-A09
       const key = queryKeys.moneyPrefs(vars.userId);
       await qc.cancelQueries({ queryKey: key });
 
