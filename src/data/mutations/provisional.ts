@@ -9,6 +9,7 @@
 // JS numeric conversion.
 import {
   convertMinor,
+  convertMinorExact,
   crossRate,
   customPerEur,
   EUR_PER_EUR,
@@ -16,6 +17,8 @@ import {
   minorUnits,
   parseRate,
   resolveExponent,
+  type ConversionLeg,
+  type CustomLegRate,
   type ScaledRate,
 } from '@/engine/money';
 import type { CustomCurrencyRow, FxLatestRow, RateSource, TransactionRow } from '@/db/rows';
@@ -33,6 +36,15 @@ interface PerEurResult {
    */
   readonly rateDate: string;
   readonly source: RateSource | null;
+  /**
+   * RD-03: the raw custom-currency stamp behind `rate` (the reference currency's own per-EUR
+   * rate plus this custom currency's declared unit_value), present only when this leg resolved
+   * through a custom currency. `rate` itself stays the rounded customPerEur value used for
+   * display (orig_per_eur/home_per_eur/rate); convertMinorExact substitutes this raw stamp
+   * instead so home_amount never rounds twice, mirroring per_eur_rate()'s
+   * custom_unit_value/custom_ref_per_eur out params.
+   */
+  readonly custom?: CustomLegRate;
 }
 
 export const PENDING_UNRESOLVED_STAMP: ProvisionalStamp = {
@@ -81,7 +93,8 @@ function resolvePerEur(
   if (custom) {
     const ref = resolvePerEur(custom.reference_currency, rates, customs, onDate, new Set([...seen, code]));
     if (!ref) return null;
-    const rate = customPerEur(ref.rate, parseRate(custom.unit_value));
+    const unitValue = parseRate(custom.unit_value);
+    const rate = customPerEur(ref.rate, unitValue);
     // IN-A02: a very large unit value rounds the per-EUR rate to 0 at 10 dp. A zero rate
     // breaks the ScaledRate invariant -- as the target leg it would silently convert to 0 --
     // so it counts as "no usable rate" and the row stays fully pending.
@@ -90,6 +103,11 @@ function resolvePerEur(
       rate,
       rateDate: earlierDate(ref.rateDate, custom.as_of),
       source: 'custom',
+      // RD-03: ref.rate is the reference currency's own per-EUR rate as resolved for this
+      // call -- itself never a custom leg (WR-B06: a custom currency's reference must be
+      // ISO) -- so it carries no further rounding of its own beyond customPerEur's 10dp
+      // quantisation above, which this raw stamp avoids passing on to convertMinorExact.
+      custom: { unitValue, referencePerEur: ref.rate },
     };
   }
 
@@ -201,7 +219,12 @@ function computeProvisionalStamp(
   const origExponent = resolveExponent(currency, findCustom(currency, customs)?.decimals);
   const homeExponent = resolveExponent(homeCurrency, findCustom(homeCurrency, customs)?.decimals);
 
-  const homeAmount = convertMinor(minorUnits(amount), orig.rate, origExponent, home.rate, homeExponent);
+  // RD-03: substitute each leg's raw custom stamp (when it has one) instead of the rounded
+  // per-EUR rate, so a high-value custom unit converts exactly -- mirroring the server's
+  // convert_minor_exact() (stamp_fx_rate() in the FX migration).
+  const origLeg: ConversionLeg = { perEur: orig.rate, custom: orig.custom };
+  const homeLeg: ConversionLeg = { perEur: home.rate, custom: home.custom };
+  const homeAmount = convertMinorExact(minorUnits(amount), origLeg, origExponent, homeLeg, homeExponent);
   const rate = crossRate(orig.rate, home.rate);
   if (rate <= 0n) return PENDING_UNRESOLVED_STAMP; // IN-A02: never a zero cross rate
 
