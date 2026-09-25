@@ -2,6 +2,7 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 const APP_ID = 'com.fincwin.app'; // decided in 00-02 Task 1; permanent after first store registration
 const googleIosUrlScheme = process.env.GOOGLE_IOS_URL_SCHEME; // reversed iOS OAuth client ID, set in 00-15
+const SENTRY_EU_URL = 'https://de.sentry.io/'; // D-19: Sentry EU region, matches D-23's EU-host precedent for PostHog
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -26,11 +27,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-apple-authentication',
     'expo-web-browser',
     'expo-localization',
-    // D-19: wires the Hermes JS source-map upload into the native build (Gradle on Android)
-    // so captureException()'s stack frames can be symbolicated back to real .ts/.tsx files and
-    // line numbers. Reads POSTHOG_CLI_API_KEY/POSTHOG_CLI_PROJECT_ID/POSTHOG_CLI_HOST from the
-    // build environment (set as secret-visibility EAS env vars) — see docs/decisions/error-tracking.md.
-    'posthog-react-native/expo',
+    // D-19: wires the Hermes JS source-map upload into the native build (Gradle on Android) so
+    // captureException()'s stack frames symbolicate back to real .ts/.tsx files and line
+    // numbers. authToken is deliberately NOT passed here — the plugin falls back to reading
+    // SENTRY_AUTH_TOKEN from the build environment itself (secret-visibility EAS env var),
+    // which keeps it out of the generated sentry.properties file entirely. See
+    // docs/decisions/error-tracking.md.
+    [
+      '@sentry/react-native/expo',
+      { organization: process.env.SENTRY_ORG, project: process.env.SENTRY_PROJECT, url: SENTRY_EU_URL },
+    ],
     ['expo-splash-screen', { backgroundColor: '#FBFAF7', image: './assets/splash-icon.png', imageWidth: 160 }],
     ...(googleIosUrlScheme
       ? ([['@react-native-google-signin/google-signin', { iosUrlScheme: googleIosUrlScheme }]] as [string, unknown][])
