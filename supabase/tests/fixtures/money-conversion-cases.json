@@ -33,7 +33,16 @@
     { "name": "zero", "amount": 0, "fromPerEur": "1.1483", "fromExponent": 2, "toPerEur": "180.7", "toExponent": 0, "expected": 0 },
     { "name": "custom GLD 10 (0dp, 1 GLD = 2.5 USD) to USD", "amount": 10, "fromPerEur": "0.45932", "fromExponent": 0, "toPerEur": "1.1483", "toExponent": 2, "expected": 2500 },
     { "name": "JPY 2000 to USD at 09-18 rates", "amount": 2000, "fromPerEur": "170", "fromExponent": 0, "toPerEur": "1.15", "toExponent": 2, "expected": 1353 },
-    { "name": "JPY 1000 to USD at 09-18 rates", "amount": 1000, "fromPerEur": "170", "fromExponent": 0, "toPerEur": "1.15", "toExponent": 2, "expected": 676 }
+    { "name": "JPY 1000 to USD at 09-18 rates", "amount": 1000, "fromPerEur": "170", "fromExponent": 0, "toPerEur": "1.15", "toExponent": 2, "expected": 676 },
+    { "name": "CLF 1.0000 (4dp) to USD", "amount": 10000, "fromPerEur": "0.0290", "fromExponent": 4, "toPerEur": "1.1483", "toExponent": 2, "expected": 3960 },
+    { "name": "USD 10.00 to CLF (4dp)", "amount": 1000, "fromPerEur": "1.1483", "fromExponent": 2, "toPerEur": "0.0290", "toExponent": 4, "expected": 2525 },
+    { "name": "negative KWD -1.234 (3dp) to JPY (0dp)", "amount": -1234, "fromPerEur": "0.3512", "fromExponent": 3, "toPerEur": "180.7", "toExponent": 0, "expected": -635 },
+    { "name": "negative JPY -1000 (0dp) to KWD (3dp)", "amount": -1000, "fromPerEur": "180.7", "fromExponent": 0, "toPerEur": "0.3512", "toExponent": 3, "expected": -1944 },
+    { "name": "custom 3dp unit (1 unit = 2.5 USD) 1.500 to USD", "amount": 1500, "fromPerEur": "0.45932", "fromExponent": 3, "toPerEur": "1.1483", "toExponent": 2, "expected": 375 },
+    { "name": "USD 3.75 to custom 3dp unit (1 unit = 2.5 USD)", "amount": 375, "fromPerEur": "1.1483", "fromExponent": 2, "toPerEur": "0.45932", "toExponent": 3, "expected": 1500 },
+    { "name": "max original amount (MAX_ABS_AMOUNT_MINOR) EUR to USD", "amount": 10000000000000, "fromPerEur": "1", "fromExponent": 2, "toPerEur": "1.1483", "toExponent": 2, "expected": 11483000000000 },
+    { "name": "largest safe result (Number.MAX_SAFE_INTEGER)", "amount": 9007199254740991, "fromPerEur": "1", "fromExponent": 2, "toPerEur": "1", "toExponent": 2, "expected": 9007199254740991 },
+    { "name": "negative largest safe result", "amount": -9007199254740991, "fromPerEur": "1", "fromExponent": 2, "toPerEur": "1", "toExponent": 2, "expected": -9007199254740991 }
   ],
   "customPerEur": [
     { "name": "USD ref, 1 unit = 2.5 USD", "referencePerEur": "1.1483", "unitValue": "2.5", "expected": "0.4593200000" },
@@ -52,6 +61,13 @@
     { "code": "KWD", "exponent": 3 }, { "code": "BHD", "exponent": 3 }, { "code": "OMR", "exponent": 3 },
     { "code": "JOD", "exponent": 3 }, { "code": "TND", "exponent": 3 },
     { "code": "CLF", "exponent": 4 },
-    { "code": "USD", "exponent": 2 }, { "code": "EUR", "exponent": 2 }, { "code": "GBP", "exponent": 2 }, { "code": "CAD", "exponent": 2 }
+    { "code": "BIF", "exponent": 0 }, { "code": "DJF", "exponent": 0 }, { "code": "GNF", "exponent": 0 },
+    { "code": "KMF", "exponent": 0 }, { "code": "PYG", "exponent": 0 }, { "code": "RWF", "exponent": 0 },
+    { "code": "UGX", "exponent": 0 }, { "code": "UYI", "exponent": 0 }, { "code": "VUV", "exponent": 0 },
+    { "code": "XAF", "exponent": 0 }, { "code": "XOF", "exponent": 0 }, { "code": "XPF", "exponent": 0 },
+    { "code": "IQD", "exponent": 3 }, { "code": "LYD", "exponent": 3 },
+    { "code": "UYW", "exponent": 4 },
+    { "code": "USD", "exponent": 2 }, { "code": "EUR", "exponent": 2 }, { "code": "GBP", "exponent": 2 }, { "code": "CAD", "exponent": 2 },
+    { "code": "CHF", "exponent": 2 }, { "code": "INR", "exponent": 2 }, { "code": "UYU", "exponent": 2 }, { "code": "IDR", "exponent": 2 }
   ]
 }

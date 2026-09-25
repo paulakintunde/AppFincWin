@@ -75,6 +75,15 @@ describe('convertMinor', () => {
     ).toThrow(RangeError);
   });
 
+  // Mirrors the transactions.home_amount check (23514) in SQL: 10^13 USD
+  // cents is the largest original amount, and into IDR it overflows
+  // MAX_SAFE_INTEGER (supabase/tests/database/19_money_bounds.test.sql).
+  it('throws RangeError for the largest original amount converted into IDR (WR-B09)', () => {
+    expect(() =>
+      convertMinor(minorUnits(10_000_000_000_000), parseRate('1.1483'), 2, parseRate('18000'), 2)
+    ).toThrow(RangeError);
+  });
+
   it('throws RangeError for an out-of-range fromExponent', () => {
     expect(() => convertMinor(minorUnits(100), parseRate('1'), 5, parseRate('1'), 2)).toThrow(
       RangeError
