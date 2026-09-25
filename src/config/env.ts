@@ -107,7 +107,7 @@ export function readClientEnv(src: Record<string, string | undefined>): ClientEn
     appleSignInEnabled: src.EXPO_PUBLIC_APPLE_SIGNIN_ENABLED === 'true',
     posthogKey: src.EXPO_PUBLIC_POSTHOG_KEY || undefined,
     posthogHost: EU_POSTHOG_HOST,
-    errorTracking: isErrorTracking(errorTrackingRaw) ? errorTrackingRaw : 'posthog',
+    errorTracking: isErrorTracking(errorTrackingRaw) ? errorTrackingRaw : 'sentry', // D-19
     sentryDsn: src.EXPO_PUBLIC_SENTRY_DSN || undefined,
     iosAppStoreId: src.EXPO_PUBLIC_IOS_APP_STORE_ID || undefined,
   };
