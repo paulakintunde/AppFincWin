@@ -8,7 +8,6 @@
 // string is only ever handed to engine/money's own BigInt parser, never to a float-producing
 // JS numeric conversion.
 import {
-  convertMinor,
   convertMinorExact,
   crossRate,
   customPerEur,
@@ -142,6 +141,21 @@ export function provisionalStamp(
   }
 }
 
+/**
+ * RD-03 follow-up: builds a ConversionLeg from a stored row's own stamp columns for the
+ * amount-only-edit fallback -- `perEurCol` plus, when both custom-leg columns are present
+ * (this leg resolved through a custom currency, D-07), the raw `custom` stamp
+ * convertMinorExact substitutes instead of the rounded per-EUR intermediate (WR-B07). Both
+ * custom columns are null together (a plain ISO leg) or non-null together (stamp_fx_rate()
+ * always writes them as a pair); a row stamped before this raw stamp existed also reads as
+ * both-null and falls back to today's convertMinor-equivalent ratio, unchanged.
+ */
+function legFromRow(perEurCol: string, unitValueCol: string | null, refPerEurCol: string | null): ConversionLeg {
+  const perEur = parseRate(perEurCol);
+  if (unitValueCol === null || refPerEurCol === null) return { perEur };
+  return { perEur, custom: { unitValue: parseRate(unitValueCol), referencePerEur: parseRate(refPerEurCol) } };
+}
+
 function keepStamp(row: TransactionRow): ProvisionalStamp {
   const { home_amount, rate, orig_per_eur, home_per_eur, rate_date, rate_source, rate_pending } = row;
   return { home_amount, rate, orig_per_eur, home_per_eur, rate_date, rate_source, rate_pending };
@@ -179,11 +193,19 @@ export function editStamp(
     return provisionalStamp({ amount, currency, homeCurrency: row.home_currency, localDate }, rates, customs);
   }
   try {
-    const homeAmount = convertMinor(
+    // RD-03 follow-up: substitute each leg's raw custom stamp (orig_custom_unit_value/
+    // orig_custom_ref_per_eur and the home_ equivalents) when the stored row has one, so an
+    // offline amount-only edit of a high-value custom-currency row converts exactly instead
+    // of through the rounded orig_per_eur/home_per_eur intermediate -- mirroring
+    // stamp_fx_rate()'s own amount-only-edit branch, which already reuses these same columns
+    // via convert_minor_exact().
+    const origLeg = legFromRow(row.orig_per_eur, row.orig_custom_unit_value, row.orig_custom_ref_per_eur);
+    const homeLeg = legFromRow(row.home_per_eur, row.home_custom_unit_value, row.home_custom_ref_per_eur);
+    const homeAmount = convertMinorExact(
       minorUnits(amount),
-      parseRate(row.orig_per_eur),
+      origLeg,
       resolveExponent(currency, findCustom(currency, customs)?.decimals),
-      parseRate(row.home_per_eur),
+      homeLeg,
       resolveExponent(row.home_currency, findCustom(row.home_currency, customs)?.decimals)
     );
     return { ...keepStamp(row), home_amount: homeAmount };
