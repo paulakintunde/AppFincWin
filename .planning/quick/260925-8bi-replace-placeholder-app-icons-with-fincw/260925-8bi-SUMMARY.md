@@ -106,3 +106,7 @@ The reviewable contact-sheet preview lives at `.planning/quick/260925-8bi-replac
 ---
 *Quick task: 260925-8bi*
 *Completed: 2026-09-25*
+
+## Follow-up (2026-09-25): colours changed by the user
+
+The user changed the brand colours after this task landed: the block is now green `#076D46` (was coral `#FF6F61`) and the tile is white `#FFFFFF` (was cream `#F7F4E9`). Navy `#172A4F` is unchanged. The generator's constants were renamed `ACCENT`/`TILE`, the master SVGs were updated, and every PNG was regenerated from the script. These are still brand-asset colours only; no in-app token uses them.
