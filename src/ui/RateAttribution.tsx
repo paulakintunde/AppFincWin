@@ -9,13 +9,11 @@ import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatLocalDate } from '@/engine/money';
 import type { RateSource } from '@/db/rows';
 import { useT } from '@/i18n';
+import { EXCHANGE_RATE_API_URL } from '@/i18n/mandatedCopy';
 import { useDeviceLocale } from '@/services/locale/deviceLocale';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
-
-// T-01-14-01: hard-coded constant, never built from data.
-const ATTRIBUTION_URL = 'https://www.exchangerate-api.com';
 
 export interface RateAttributionProps {
   rateDate: string | null;
@@ -47,7 +45,7 @@ export function RateAttribution({ rateDate, rateSource, ratePending }: RateAttri
     // device or work profile). The attribution text stays on screen either
     // way, so there is nothing further to show; swallow it rather than
     // surfacing an unhandled rejection.
-    Linking.openURL(ATTRIBUTION_URL).catch(() => undefined);
+    Linking.openURL(EXCHANGE_RATE_API_URL).catch(() => undefined);
   };
 
   const labelStyle = {

@@ -12,7 +12,8 @@
  * - Everything else in consent.*, you.*, signOut.*, update.*, money.*, sync.* is
  *   Claude-drafted in the prototype's voice (D-20) and awaits user review before being
  *   treated as final, except money.rate.attribution and credits.exchangeRateApi, which are
- *   third-party-mandated text (D-13) and must not be paraphrased.
+ *   third-party-mandated text (D-13) and must not be paraphrased. Both read the single
+ *   constant in ../mandatedCopy.ts, cross-checked against fx-sync's copy by a test.
  * - money.fxNote.converted/kept, money.homeCurrency.title/note, money.customCurrency.title,
  *   money.customCurrency.error.codeMissing/codeExists, money.settings.showCents,
  *   sync.offlineQueued_one/other and sync.syncedMinutes_one/other are ported verbatim from
@@ -26,6 +27,8 @@
  * Compliance (CLAUDE.md): never "advice", "recommendation", "you should", and never a
  * claim that data stays on the device — FincWin is cloud-first (D-15).
  */
+import { EXCHANGE_RATE_API_ATTRIBUTION } from '../mandatedCopy';
+
 const en = {
   auth: {
     welcome: {
@@ -109,7 +112,7 @@ const en = {
       asOf: 'Rate of {{date}}',
       customAsOf: 'Your rate, set {{date}}',
       pending: 'Rate pending',
-      attribution: 'Rates By Exchange Rate API',
+      attribution: EXCHANGE_RATE_API_ATTRIBUTION,
     },
     fxNote: {
       converted:
@@ -169,7 +172,7 @@ const en = {
     pendingRow: 'queued',
   },
   credits: {
-    exchangeRateApi: 'Rates By Exchange Rate API',
+    exchangeRateApi: EXCHANGE_RATE_API_ATTRIBUTION,
   },
   a11y: {
     close: 'Close',
