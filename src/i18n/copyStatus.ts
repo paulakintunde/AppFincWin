@@ -13,7 +13,7 @@
  * (D-13), not Claude's own drafting.
  */
 
-export const AWAITING_COPY_KEYS = ['auth.welcome.tagline'] as const;
+export const AWAITING_COPY_KEYS: readonly string[] = [];
 
 export const DRAFT_COPY_KEYS = [
   'consent.heading',

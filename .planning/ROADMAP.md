@@ -106,7 +106,7 @@ Plans:
 | **D-U-N-S number** | Organisation enrolment with both Apple and Google | **Yes — can be ~28 days if not already issued** | **Check on day one.** It is the first link in the longest chain in the project |
 | **Apple Developer Program (organisation)** | Sign in with Apple, iOS device builds, TestFlight, submission | **Yes — after D-U-N-S, then days to weeks** | **Defer iOS-dependent work, not the enrolment.** Enrol as the company, not as an individual (Guideline 5.1.1(ix)). Android proceeds at full speed meanwhile; Sign in with Apple (ENV-07) and iOS builds wait |
 | Google Play Console (organisation) | Play submission, IAP products | Yes — verification against D-U-N-S; $25 one-off | **Register in Phase 0** (D-04) using the same D-U-N-S as Apple. Products and first upload still land by Phase 9/11. |
-| Supabase production on Pro | Backups for real user data | No — $25/month | Development stays on Free. Production moves to Pro before the first real data (ENV-16, Phase 2) |
+| Production backups | Backups for real user data | No | Method TBD, likely AWS (e.g. a scheduled dump to S3). Deferred from Phase 2 to Phase 10 (ENV-16) on 2026-09-25; Supabase Pro no longer assumed. Until then production has no backups: accepted risk while dogfooding. Separately, a Free-plan project pauses after a week idle — see STATE.md Blockers |
 | APNs and FCM push credentials | Server-sent alerts | APNs waits on Apple enrolment | Needed by Phase 10 (ENV-19) |
 | RevenueCat | Subscriptions | No, but depends on store accounts | Defer to Phase 9. Blocked transitively by Apple and Play accounts |
 | Sentry | Error reporting | No | Defer freely. Nothing depends on it. Evaluate in Phase 0 whether PostHog error tracking covers React Native well enough to drop Sentry |
@@ -163,7 +163,7 @@ Plans:
 ### Phase 2: Record
 **Goal**: A user can log and manage their real financial activity against a live backend.
 **Depends on**: Phase 1
-**Requirements**: REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08, REC-09, REC-10, REC-11, REC-12, ACT-01, ACT-02, ACT-03, ACT-04, ACT-05, ANL-05, ENV-16
+**Requirements**: REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08, REC-09, REC-10, REC-11, REC-12, ACT-01, ACT-02, ACT-03, ACT-04, ACT-05, ANL-05
 **Success Criteria** (what must be TRUE):
   1. A user can log an expense or income with amount, category, account and date; edit or delete any transaction they created; and see a balance per account they define, using categories they can create, rename and colour.
   2. A user can mark a transaction as recurring on a schedule, have it generate entries without re-typing, and skip or end a single occurrence without deleting the series.
@@ -271,7 +271,7 @@ Plans:
 ### Phase 10: System
 **Goal**: The app is secure, resilient offline, and lets a user manage their own data completely.
 **Depends on**: Phase 0 (auth), Phase 1 (write queue mechanism), Phases 2-9 (features being hardened, alerted on, imported and exported)
-**Requirements**: ACC-06, ACC-07, ACC-08, ACC-09, ACC-10, SYN-03, SYN-04, SYN-05, ALR-01, ALR-02, ALR-03, ALR-04, ALR-05, DAT-01, DAT-02, DAT-03, DAT-04, ENV-19, ACC-11, ACC-13, DAT-05, DAT-06, ALR-06, DSG-08
+**Requirements**: ACC-06, ACC-07, ACC-08, ACC-09, ACC-10, SYN-03, SYN-04, SYN-05, ALR-01, ALR-02, ALR-03, ALR-04, ALR-05, DAT-01, DAT-02, DAT-03, DAT-04, ENV-19, ACC-11, ACC-13, DAT-05, DAT-06, ALR-06, DSG-08, ENV-16
 **Success Criteria** (what must be TRUE):
   1. A user can see every device where their account is signed in with the current device marked, and sign out of one device or all devices at once.
   2. A user can unlock the app with Face ID, Touch ID or Android biometrics, or a PIN.
