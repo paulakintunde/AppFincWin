@@ -24,7 +24,8 @@ create table public.custom_currencies (
   version integer not null default 1,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (owner_id, code)
+  unique (owner_id, code),
+  constraint custom_currencies_no_self_reference check (reference_currency <> code) -- WR-B06: per_eur_rate would recurse forever
 );
 create index custom_currencies_owner_id_idx on public.custom_currencies (owner_id);
 create trigger set_version before update on public.custom_currencies for each row execute function public.bump_version();
@@ -61,6 +62,42 @@ grant execute on function public.is_iso_currency(text) to authenticated, service
 revoke execute on function public.is_known_currency(text, uuid) from public, anon, authenticated;
 grant execute on function public.is_known_currency(text, uuid) to service_role;
 
+-- is_iso4217_code(): a static ISO 4217 list -- every active code plus the
+-- withdrawn ones a rate feed may still carry -- so the custom-currency
+-- shadow check does not depend on what fx_rates happens to hold yet (on a
+-- young database fx_rates may not even carry USD) (WR-B06). Pure data, no
+-- user input beyond the code, so it is safe for any role.
+create or replace function public.is_iso4217_code(p_code text)
+returns boolean
+language sql
+immutable
+parallel safe
+set search_path = ''
+as $$
+  select p_code = any (array[
+    -- active (ISO 4217, 2025)
+    'AED', 'AFN', 'ALL', 'AMD', 'AOA', 'ARS', 'AUD', 'AWG', 'AZN', 'BAM', 'BBD', 'BDT', 'BGN', 'BHD', 'BIF', 'BMD',
+    'BND', 'BOB', 'BOV', 'BRL', 'BSD', 'BTN', 'BWP', 'BYN', 'BZD', 'CAD', 'CDF', 'CHE', 'CHF', 'CHW', 'CLF', 'CLP',
+    'CNY', 'COP', 'COU', 'CRC', 'CUP', 'CVE', 'CZK', 'DJF', 'DKK', 'DOP', 'DZD', 'EGP', 'ERN', 'ETB', 'EUR', 'FJD',
+    'FKP', 'GBP', 'GEL', 'GHS', 'GIP', 'GMD', 'GNF', 'GTQ', 'GYD', 'HKD', 'HNL', 'HTG', 'HUF', 'IDR', 'ILS', 'INR',
+    'IQD', 'IRR', 'ISK', 'JMD', 'JOD', 'JPY', 'KES', 'KGS', 'KHR', 'KMF', 'KPW', 'KRW', 'KWD', 'KYD', 'KZT', 'LAK',
+    'LBP', 'LKR', 'LRD', 'LSL', 'LYD', 'MAD', 'MDL', 'MGA', 'MKD', 'MMK', 'MNT', 'MOP', 'MRU', 'MUR', 'MVR', 'MWK',
+    'MXN', 'MXV', 'MYR', 'MZN', 'NAD', 'NGN', 'NIO', 'NOK', 'NPR', 'NZD', 'OMR', 'PAB', 'PEN', 'PGK', 'PHP', 'PKR',
+    'PLN', 'PYG', 'QAR', 'RON', 'RSD', 'RUB', 'RWF', 'SAR', 'SBD', 'SCR', 'SDG', 'SEK', 'SGD', 'SHP', 'SLE', 'SOS',
+    'SRD', 'SSP', 'STN', 'SVC', 'SYP', 'SZL', 'THB', 'TJS', 'TMT', 'TND', 'TOP', 'TRY', 'TTD', 'TWD', 'TZS', 'UAH',
+    'UGX', 'USD', 'USN', 'UYI', 'UYU', 'UYW', 'UZS', 'VED', 'VES', 'VND', 'VUV', 'WST', 'XAF', 'XAG', 'XAU', 'XBA',
+    'XBB', 'XBC', 'XBD', 'XCD', 'XCG', 'XDR', 'XOF', 'XPD', 'XPF', 'XPT', 'XSU', 'XTS', 'XUA', 'XXX', 'YER', 'ZAR',
+    'ZMW', 'ZWG',
+    -- withdrawn, still seen in historical feeds
+    'ADP', 'AFA', 'ANG', 'ATS', 'AZM', 'BEF', 'BGL', 'BYR', 'CSD', 'CUC', 'CYP', 'DEM', 'EEK', 'ESP', 'FIM', 'FRF',
+    'GHC', 'GRD', 'HRK', 'IEP', 'ITL', 'LTL', 'LUF', 'LVL', 'MGF', 'MRO', 'MTL', 'MZM', 'NLG', 'PTE', 'ROL', 'SDD',
+    'SIT', 'SKK', 'SLL', 'STD', 'TMM', 'TRL', 'VEB', 'VEF', 'XEU', 'YUM', 'ZMK', 'ZWD', 'ZWL'
+  ]::text[])
+$$;
+
+revoke execute on function public.is_iso4217_code(text) from public, anon;
+grant execute on function public.is_iso4217_code(text) to authenticated, service_role;
+
 -- Guard trigger: a custom code cannot shadow an ISO code, the reference
 -- currency must itself be a real ISO currency, and code/decimals are
 -- immutable once set (D-07).
@@ -72,7 +109,9 @@ set search_path = ''
 as $$
 begin
   if tg_op = 'INSERT' then
-    if public.is_iso_currency(new.code) then
+    -- Shadowing: the static ISO 4217 list plus whatever fx_rates carries
+    -- today (WR-B06).
+    if public.is_iso_currency(new.code) or public.is_iso4217_code(new.code) then
       raise exception 'custom currency % shadows an ISO currency', new.code using errcode = '23514';
     end if;
     if not public.is_iso_currency(new.reference_currency) then

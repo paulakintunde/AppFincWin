@@ -139,8 +139,10 @@ $$;
 -- held rate can never be served (D-11).
 --
 -- p_code = 'EUR' -> rate 1, exact.
--- a custom currency owned by p_owner -> recurse through its ISO reference
---   currency, then apply custom_per_eur and the custom rate_source (D-07).
+-- a custom currency owned by p_owner -> look up its ISO reference currency
+--   (with no owner, so the lookup can never recurse into another custom
+--   definition -- WR-B06), then apply custom_per_eur and the custom
+--   rate_source (D-07).
 -- otherwise ISO: nearest earlier fx_rates row within the 7-day exact
 --   window (D-02), frankfurter-v2 preferred over a same-date duplicate;
 --   else the nearest later row as a provisional value (D-17, exact=false);
@@ -183,7 +185,7 @@ begin
 
   select * into c from public.custom_currencies where owner_id = p_owner and code = p_code;
   if found then
-    select * into ref from public.per_eur_rate(c.reference_currency, p_on, p_owner, p_relax_quotes);
+    select * into ref from public.per_eur_rate(c.reference_currency, p_on, null, p_relax_quotes);
     if ref.rate is null then
       rate := null; rate_date := null; source := null; exact := false;
       return;
