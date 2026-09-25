@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 import { SyncStatusLine } from '../SyncStatusLine';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
@@ -73,5 +73,49 @@ describe('SyncStatusLine', () => {
     const { queryByText } = await renderWithTheme(<SyncStatusLine />);
     expect(queryByText(/couldn’t save/)).toBeNull();
     expect(queryByText(/changed elsewhere/)).toBeNull();
+  });
+
+  describe('30-second refresh (IN-C04)', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+      jest.useRealTimers();
+    });
+
+    it('advances "minutes ago" on its own, and clears its interval on unmount', async () => {
+      jest.useFakeTimers({ now: new Date('2026-09-24T12:00:00Z') });
+      const setIntervalSpy = jest.spyOn(global, 'setInterval');
+      const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+      mockUseSyncStatus.mockReturnValue({
+        isOnline: true,
+        queued: 0,
+        failed: 0,
+        conflicts: 0,
+        lastSyncedAt: Date.now(),
+      });
+
+      const { getByText, unmount } = await renderWithTheme(<SyncStatusLine />);
+      expect(getByText('synced just now')).toBeTruthy();
+
+      await act(async () => {
+        jest.advanceTimersByTime(60_000);
+      });
+      expect(getByText('synced 1 minute ago')).toBeTruthy();
+
+      await act(async () => {
+        jest.advanceTimersByTime(60_000);
+      });
+      expect(getByText('synced 2 minutes ago')).toBeTruthy();
+
+      // React schedules its own timers, so jest.getTimerCount() is noisy; check the
+      // component's own 30s interval id is the one cleared on unmount instead.
+      const intervalIds = setIntervalSpy.mock.calls
+        .map((call, i) => ({ ms: call[1], id: setIntervalSpy.mock.results[i]?.value }))
+        .filter((c) => c.ms === 30_000)
+        .map((c) => c.id);
+      expect(intervalIds).toHaveLength(1);
+      expect(clearIntervalSpy).not.toHaveBeenCalledWith(intervalIds[0]);
+      await unmount();
+      expect(clearIntervalSpy).toHaveBeenCalledWith(intervalIds[0]);
+    });
   });
 });
