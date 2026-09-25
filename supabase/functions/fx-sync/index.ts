@@ -45,11 +45,11 @@ Deno.serve(async (req) => {
       if (error) throw new Error(error.message);
       return (data ?? []).map((r) => ({ quote: r.quote, rate: String(r.rate), date: r.rate_date }));
     },
-    async openHolds() {
+    async holds() {
       const { data, error } = await admin
         .from('fx_rate_holds')
-        .select('id, quote, held_rate, held_rate_date, source')
-        .eq('status', 'held');
+        .select('id, quote, held_rate, held_rate_date, source, status')
+        .in('status', ['held', 'dropped']);
       if (error) throw new Error(error.message);
       return (data ?? []).map((h) => ({
         id: h.id,
@@ -57,6 +57,7 @@ Deno.serve(async (req) => {
         heldRate: String(h.held_rate),
         heldDate: h.held_rate_date,
         source: h.source,
+        status: h.status,
       }));
     },
     async upsertRates(rows, source) {
@@ -85,7 +86,10 @@ Deno.serve(async (req) => {
             change_ratio: r.changeRatio,
             status: 'held',
           })),
-          { onConflict: 'quote,held_rate_date,source' }
+          // ignoreDuplicates: an existing hold -- above all one the
+          // operator dropped -- is never overwritten back to 'held'
+          // (CR-B02). The table's guard trigger enforces the same rule.
+          { onConflict: 'quote,held_rate_date,source', ignoreDuplicates: true }
         );
       if (error) throw new Error(error.message);
     },

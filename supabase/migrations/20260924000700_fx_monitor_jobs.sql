@@ -27,7 +27,7 @@ declare
 begin
   for h in
     select * from public.fx_rate_holds
-     where status = 'held' and held_at < now() - p_older_than
+     where status = 'held' and resolved_at is null and held_at < now() - p_older_than -- CR-B02: never a resolved (e.g. dropped) hold
      order by id
   loop
     insert into public.fx_rates (base, quote, rate, rate_date, source)

@@ -34,13 +34,25 @@ auto-accepting. `status` moves `held` → `confirmed` (a second source or a
 later refresh landed near it) or `held` → `auto-accepted` (2 days elapsed
 unconfirmed) → optionally `dropped` (see below).
 
+A resolved hold is terminal. `dropped` never changes again, and
+`confirmed`/`auto-accepted` can only move to `dropped`. A guard trigger on
+`fx_rate_holds` discards any other update, and `fx-sync` skips an incoming
+rate whose `(quote, date, source)` is already held or dropped. So a
+Frankfurter feed that keeps re-reporting a value you dropped never revives
+it, and `fx_auto_accept_holds()` only ever accepts rows that were never
+resolved. `resolve-rate` backfills go through the same quarantine: a
+backfilled rate for a held or dropped `(quote, date)` is discarded, and an
+implausible one becomes a new hold whose `held` alert carries
+`"via": "resolve-rate"`.
+
 ## Dropping a bad held or auto-accepted rate
 
 `public.fx_drop_hold(<id>)` is the runbook function (service_role-only,
 `supabase/migrations/20260924000600_fx_monitoring.sql`). If the hold was
 already auto-accepted, it also removes that row from `fx_rates`; if it's
-still merely `held`, it just marks it `dropped` so a later refresh can
-re-evaluate the pair from scratch. Any transaction already stamped from a
+still merely `held`, it marks it `dropped`. A dropped `(quote, date,
+source)` is never re-evaluated. Later publications on other dates are
+checked normally. Any transaction already stamped from a
 dropped auto-accepted rate keeps its stamp — a stamp is a historical fact,
 not a live pointer — restamp an individual affected row with
 `select public.restamp_transaction('<transaction-id>');` only if it is still

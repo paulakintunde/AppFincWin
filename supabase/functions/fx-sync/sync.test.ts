@@ -24,13 +24,13 @@ interface FakeDb extends FxSyncDb {
     confirmHolds: number[][];
     insertAlerts: Array<{ kind: string; quote?: string; detail?: Record<string, unknown> }>;
     upsertCurrencies: unknown[][];
-    openHoldsCallCount: number;
+    holdsCallCount: number;
   };
 }
 
 function createFakeDb(opts: {
   recentRates?: FxSyncDb['recentRates'];
-  openHoldsSequence?: Array<Awaited<ReturnType<FxSyncDb['openHolds']>>>;
+  holdsSequence?: Array<Awaited<ReturnType<FxSyncDb['holds']>>>;
 } = {}): FakeDb {
   const calls: FakeDb['calls'] = {
     upsertRates: [],
@@ -38,16 +38,16 @@ function createFakeDb(opts: {
     confirmHolds: [],
     insertAlerts: [],
     upsertCurrencies: [],
-    openHoldsCallCount: 0,
+    holdsCallCount: 0,
   };
-  const openHoldsSequence = opts.openHoldsSequence ?? [[]];
+  const holdsSequence = opts.holdsSequence ?? [[]];
 
   return {
     recentRates: opts.recentRates ?? (async () => []),
-    openHolds: async () => {
-      const index = Math.min(calls.openHoldsCallCount, openHoldsSequence.length - 1);
-      calls.openHoldsCallCount += 1;
-      return openHoldsSequence[index];
+    holds: async () => {
+      const index = Math.min(calls.holdsCallCount, holdsSequence.length - 1);
+      calls.holdsCallCount += 1;
+      return holdsSequence[index];
     },
     upsertRates: async (rows, source) => {
       calls.upsertRates.push({ rows, source });
@@ -154,7 +154,7 @@ describe('runFxSync', () => {
   it('holds a >10% move, alerts held, and confirms it against a within-3% open.er-api witness in the same run', async () => {
     const db = createFakeDb({
       recentRates: async () => [{ quote: 'USD', rate: '1.00', date: '2026-09-23' }],
-      openHoldsSequence: [
+      holdsSequence: [
         [], // primary classification: no pre-existing holds
         [{ id: 99, quote: 'USD', heldRate: '1.15', heldDate: '2026-09-24', source: 'frankfurter-v2' }], // after upsertHolds, for the second-source check
       ],
@@ -187,7 +187,7 @@ describe('runFxSync', () => {
   it('leaves the hold status as held when the second-source witness disagrees beyond 3%', async () => {
     const db = createFakeDb({
       recentRates: async () => [{ quote: 'USD', rate: '1.00', date: '2026-09-23' }],
-      openHoldsSequence: [
+      holdsSequence: [
         [],
         [{ id: 99, quote: 'USD', heldRate: '1.15', heldDate: '2026-09-24', source: 'frankfurter-v2' }],
       ],
@@ -232,5 +232,25 @@ describe('runFxSync', () => {
     expect(db.calls.upsertCurrencies).toEqual([
       [{ code: 'USD', isoNumeric: '840', name: 'United States Dollar', symbol: '$', startDate: '1792-01-01', endDate: '2026-09-24' }],
     ]);
+  });
+
+  it('does not revive an operator-dropped hold: no hold upsert, no held alert, no fx_rates row (CR-B02)', async () => {
+    const db = createFakeDb({
+      recentRates: async () => [{ quote: 'USD', rate: '1.00', date: '2026-09-23' }],
+      holdsSequence: [
+        [{ id: 42, quote: 'USD', heldRate: '1.15', heldDate: '2026-09-24', source: 'frankfurter-v2', status: 'dropped' }],
+      ],
+    });
+    const fetchJson = createFetchJson({
+      [FRANKFURTER_RATES_URL]: [{ date: '2026-09-24', base: 'EUR', quote: 'USD', rate: 1.15 }],
+      [FRANKFURTER_V2_CURRENCIES_URL]: CURRENCIES_FIXTURE,
+    });
+
+    const result = await runFxSync({ fetchJson, db });
+
+    expect(result).toMatchObject({ accepted: 0, held: 0, confirmed: 0 });
+    expect(db.calls.upsertHolds).toEqual([]);
+    expect(db.calls.upsertRates).toEqual([]);
+    expect(db.calls.insertAlerts).toEqual([]);
   });
 });

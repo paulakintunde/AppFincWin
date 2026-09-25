@@ -44,6 +44,34 @@ create table public.fx_rate_holds (
 create index fx_rate_holds_status_held_at_idx on public.fx_rate_holds (status, held_at);
 comment on table public.fx_rate_holds is 'D-11 quarantine for a >10% day-on-day FX move (MON-11). Never read by per_eur_rate() (20260924000500_fx_stamping.sql) -- a held rate can never be served to a conversion, only a confirmed or auto-accepted one, and only once it has been upserted into fx_rates.';
 
+-- A resolved hold is terminal (CR-B02). held -> confirmed / auto-accepted /
+-- dropped, and confirmed / auto-accepted -> dropped (the operator's
+-- fx_drop_hold) are the only transitions. Any other update to a resolved
+-- row -- above all fx-sync re-upserting the same (quote, date, source) as
+-- 'held' after the operator dropped it -- is silently discarded rather than
+-- raised, so one stale tuple never fails a whole ingest batch.
+create or replace function public.guard_fx_rate_hold_status()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if old.status = 'dropped' then
+    return old;
+  end if;
+  if old.status <> 'held' and new.status is distinct from 'dropped' then
+    return old;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger guard_fx_rate_hold_status
+  before update on public.fx_rate_holds
+  for each row execute function public.guard_fx_rate_hold_status();
+
+revoke execute on function public.guard_fx_rate_hold_status() from public, anon, authenticated;
+
 alter table public.fx_rate_holds enable row level security;
 -- No policy for authenticated on purpose (D-11): a held row must never be
 -- client-visible, so there is nothing an RLS `using` clause could safely

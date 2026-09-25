@@ -16,9 +16,9 @@ import {
 
 export interface FxSyncDb {
   recentRates(sinceDate: string): Promise<StoredRate[]>; // fx_rates base EUR, rate::text, rate_date >= sinceDate
-  openHolds(): Promise<OpenHold[]>; // fx_rate_holds where status = 'held'
+  holds(): Promise<OpenHold[]>; // fx_rate_holds where status in ('held', 'dropped') -- a dropped tuple is terminal (CR-B02)
   upsertRates(rows: FxRow[], source: string): Promise<void>; // onConflict base,quote,rate_date,source
-  upsertHolds(rows: Classification['hold']): Promise<void>; // onConflict quote,held_rate_date,source
+  upsertHolds(rows: Classification['hold']): Promise<void>; // onConflict quote,held_rate_date,source, ignoreDuplicates (never overwrites an existing hold)
   confirmHolds(ids: number[]): Promise<void>; // status 'confirmed', resolved_at now()
   insertAlerts(alerts: Array<{ kind: string; quote?: string; detail?: Record<string, unknown> }>): Promise<void>;
   upsertCurrencies(meta: CurrencyMeta[]): Promise<void>; // onConflict code; iso_numeric,name,symbol,start_date,end_date,synced_at
@@ -80,9 +80,9 @@ export async function runFxSync({ fetchJson, db }: FxSyncDeps): Promise<FxSyncRe
   const { rows, source } = await fetchRates(fetchJson, db);
 
   const history = await db.recentRates(minusDays(earliestDate(rows), HISTORY_WINDOW_DAYS));
-  const openHolds = await db.openHolds();
+  const holds = await db.holds();
 
-  const classified = classifyRates(rows, history, openHolds, source);
+  const classified = classifyRates(rows, history, holds, source);
 
   if (classified.accept.length > 0) {
     await db.upsertRates(classified.accept, source);
@@ -123,7 +123,7 @@ export async function runFxSync({ fetchJson, db }: FxSyncDeps): Promise<FxSyncRe
     try {
       const witnessRows = parseOpenErApiRates(await fetchJson(`${OPEN_ER_API_URL}/EUR`));
       const heldQuotes = new Set(classified.hold.map((h) => h.quote));
-      const freshHolds = await db.openHolds();
+      const freshHolds = (await db.holds()).filter((h) => (h.status ?? 'held') === 'held');
 
       const confirmedRows: FxRow[] = [];
       const confirmedIds: number[] = [];
