@@ -6,11 +6,11 @@ Run:
 
 Outputs (written under assets/, relative to the repo root):
     assets/icon.png                      1024x1024 RGB   (no alpha, App Store icon)
-    assets/android-icon-background.png   1024x1024 RGBA  (opaque cream)
-    assets/android-icon-foreground.png   1024x1024 RGBA  (transparent, navy/coral glyph)
+    assets/android-icon-background.png   1024x1024 RGBA  (opaque white)
+    assets/android-icon-foreground.png   1024x1024 RGBA  (transparent, navy/green glyph)
     assets/android-icon-monochrome.png   1024x1024 RGBA  (transparent, white glyph)
-    assets/splash-icon.png               1024x1024 RGBA  (transparent, navy/coral glyph)
-    assets/favicon.png                   48x48 RGBA      (cream rounded tile + glyph)
+    assets/splash-icon.png               1024x1024 RGBA  (transparent, navy/green glyph)
+    assets/favicon.png                   48x48 RGBA      (white rounded tile + glyph)
 
 The geometry constants below (STEM, ARM, BLOCK, RADIUS, GLYPH_UNITS) mirror the
 paths in assets/brand/fincwin-mark.svg and assets/brand/fincwin-app-icon.svg
@@ -32,8 +32,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 # -- Brand colours -----------------------------------------------------------
 NAVY = "#172A4F"
-CORAL = "#FF6F61"
-CREAM = "#F7F4E9"
+ACCENT = "#076D46"
+TILE = "#FFFFFF"
 WHITE = "#FFFFFF"
 
 # -- Glyph geometry: normalised 480-unit box ---------------------------------
@@ -59,7 +59,7 @@ def hex_to_rgba(hex_color: str, alpha: int = 255) -> tuple[int, int, int, int]:
 
 def render_glyph(
     size_px: int,
-    colours: tuple[str, str, str] = (NAVY, NAVY, CORAL),
+    colours: tuple[str, str, str] = (NAVY, NAVY, ACCENT),
 ) -> Image.Image:
     """Render the F glyph at size_px x size_px, transparent background.
 
@@ -98,12 +98,12 @@ def compose(
     glyph_px: int,
     bg: tuple[int, int, int, int] | None = None,
     tile_radius: int | None = None,
-    glyph_colours: tuple[str, str, str] = (NAVY, NAVY, CORAL),
+    glyph_colours: tuple[str, str, str] = (NAVY, NAVY, ACCENT),
 ) -> Image.Image:
     """Build a canvas_px square canvas with the glyph centred at glyph_px.
 
     bg=None -> transparent canvas. bg=<rgba tuple> -> flat opaque fill.
-    tile_radius set -> draw an antialiased cream rounded-square tile instead
+    tile_radius set -> draw an antialiased white rounded-square tile instead
     of a flat fill (used for favicon.png).
     """
     if tile_radius is not None:
@@ -111,7 +111,7 @@ def compose(
         big = canvas_px * ss
         tile = Image.new("RGBA", (big, big), (0, 0, 0, 0))
         tile_draw = ImageDraw.Draw(tile)
-        tile_draw.rounded_rectangle((0, 0, big - 1, big - 1), radius=tile_radius * ss, fill=hex_to_rgba(CREAM))
+        tile_draw.rounded_rectangle((0, 0, big - 1, big - 1), radius=tile_radius * ss, fill=hex_to_rgba(TILE))
         canvas = tile.resize((canvas_px, canvas_px), Image.LANCZOS)
     elif bg is not None:
         canvas = Image.new("RGBA", (canvas_px, canvas_px), bg)
@@ -274,10 +274,10 @@ def main() -> None:
     assets_dir = ROOT / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
 
-    icon = compose(1024, 480, bg=hex_to_rgba(CREAM))
+    icon = compose(1024, 480, bg=hex_to_rgba(TILE))
     save_asset(icon.convert("RGB"), assets_dir / "icon.png")
 
-    background = Image.new("RGBA", (1024, 1024), hex_to_rgba(CREAM))
+    background = Image.new("RGBA", (1024, 1024), hex_to_rgba(TILE))
     save_asset(background, assets_dir / "android-icon-background.png")
 
     foreground = compose(1024, 340, bg=None)
