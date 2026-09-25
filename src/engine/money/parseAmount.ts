@@ -125,12 +125,16 @@ function normalizeDigit(ch: string): string | undefined {
  */
 export function parseDecimalString(
   raw: string,
-  opts: { locale: string; maxFractionDigits: number }
+  opts: { locale: string; maxFractionDigits: number; separators?: LocaleSeparators }
 ): ParseDecimalResult {
   const trimmed = raw.trim();
   if (trimmed === '') return { ok: false, error: 'empty' };
 
-  const { decimal, group } = localeSeparators(opts.locale);
+  // WR-A11: the device's own region separators, when the caller has them, win
+  // over the ones derived from the locale tag -- the tag is the preferred
+  // *language* and can disagree with the region (language English, region
+  // Germany), and the native decimal keypad types the region's mark.
+  const { decimal, group } = opts.separators ?? localeSeparators(opts.locale);
   const groupChars = buildGroupCharSet(group);
 
   let whole = '';
@@ -201,18 +205,19 @@ function stripLeadingZeros(digits: string): string {
  * region-aware, per MON-02/D-24. `exponent` is the target currency's ISO
  * 4217 (or custom-currency, MON-13) minor-unit exponent -- a caller passing
  * an out-of-range exponent has a programming bug, not a user-input problem,
- * so that case throws rather than returning a result.
+ * so that case throws rather than returning a result. `separators` (WR-A11)
+ * are the device region's own marks; pass them whenever they are known.
  */
 export function parseAmount(
   raw: string,
-  opts: { locale: string; exponent: number }
+  opts: { locale: string; exponent: number; separators?: LocaleSeparators }
 ): ParseAmountResult {
-  const { locale, exponent } = opts;
+  const { locale, exponent, separators } = opts;
   if (!Number.isInteger(exponent) || exponent < 0 || exponent > 4) {
     throw new RangeError(`parseAmount: exponent ${exponent} must be an integer between 0 and 4`);
   }
 
-  const parsed = parseDecimalString(raw, { locale, maxFractionDigits: exponent });
+  const parsed = parseDecimalString(raw, { locale, maxFractionDigits: exponent, separators });
   if (!parsed.ok) {
     return { ok: false, error: parsed.error, maxDecimals: exponent };
   }

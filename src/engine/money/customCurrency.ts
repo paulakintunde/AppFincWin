@@ -9,7 +9,7 @@
  * Stays pure per the engine/ boundary: only engine/money's own rate parser (parseRate/
  * formatRate) and amount parser (parseDecimalString) are used, no db/data/services/ui/react.
  */
-import { parseDecimalString } from './parseAmount';
+import { parseDecimalString, type LocaleSeparators } from './parseAmount';
 import { formatRate, parseRate, RATE_SCALE } from './rates';
 
 export type CustomCurrencyError =
@@ -28,6 +28,8 @@ export interface CustomCurrencyInput {
   referenceCurrency: string;
   unitValueRaw: string;
   locale: string;
+  /** WR-A11: the device region's own decimal/group marks, when known. */
+  separators?: LocaleSeparators;
 }
 
 export interface ValidatedCustomCurrency {
@@ -89,6 +91,7 @@ export function validateCustomCurrency(
   const parsedDecimal = parseDecimalString(input.unitValueRaw, {
     locale: input.locale,
     maxFractionDigits: RATE_SCALE,
+    separators: input.separators,
   });
   if (!parsedDecimal.ok) {
     errors.push('value-invalid');

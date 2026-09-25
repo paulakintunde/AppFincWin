@@ -12,6 +12,7 @@ import {
   RATE_SCALE,
   validateCustomCurrency,
   type CustomCurrencyError,
+  type LocaleSeparators,
   type CustomCurrencyInput,
   type ValidateCustomCurrencyContext,
 } from '@/engine/money';
@@ -204,10 +205,10 @@ export type EditCustomCurrencyResult = { ok: true } | { ok: false; errors: Custo
  * read it) or the server. With `locale`, the raw text is read region-aware exactly as add
  * reads it; without one it must already be a plain ASCII decimal ('2.5').
  */
-function normalizeUnitValue(raw: string, locale: string | undefined): string | null {
+function normalizeUnitValue(raw: string, locale: string | undefined, separators?: LocaleSeparators): string | null {
   let decimal = raw.trim();
   if (locale !== undefined) {
-    const parsed = parseDecimalString(raw, { locale, maxFractionDigits: RATE_SCALE });
+    const parsed = parseDecimalString(raw, { locale, maxFractionDigits: RATE_SCALE, separators });
     if (!parsed.ok) return null;
     decimal = parsed.value;
   }
@@ -221,7 +222,7 @@ function normalizeUnitValue(raw: string, locale: string | undefined): string | n
 export function useEditCustomCurrency(userId: string): {
   edit(
     vars: { id: string; expectedVersion: number; patch: CustomCurrencyPatch },
-    opts?: { locale?: string }
+    opts?: { locale?: string; separators?: LocaleSeparators }
   ): EditCustomCurrencyResult;
 } {
   const mutation = useMutation<CustomCurrencyRow, unknown, EditCustomCurrencyVars>({
@@ -232,11 +233,11 @@ export function useEditCustomCurrency(userId: string): {
   return {
     edit(
       vars: { id: string; expectedVersion: number; patch: CustomCurrencyPatch },
-      opts?: { locale?: string }
+      opts?: { locale?: string; separators?: LocaleSeparators }
     ): EditCustomCurrencyResult {
       const patch: CustomCurrencyPatch = { ...vars.patch };
       if (patch.unit_value !== undefined) {
-        const unitValue = normalizeUnitValue(patch.unit_value, opts?.locale);
+        const unitValue = normalizeUnitValue(patch.unit_value, opts?.locale, opts?.separators);
         if (unitValue === null) return { ok: false, errors: ['value-invalid'] };
         patch.unit_value = unitValue;
       }

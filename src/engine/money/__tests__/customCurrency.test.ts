@@ -106,6 +106,14 @@ describe('validateCustomCurrency', () => {
       expect(result).toEqual({ ok: false, errors: expect.arrayContaining(['value-invalid']) });
     });
 
+    it('WR-A11: explicit region separators win over the locale tag', () => {
+      const result = validateCustomCurrency(
+        input({ unitValueRaw: '2,5', locale: 'en-US', separators: { decimal: ',', group: '.' } }),
+        ctx()
+      );
+      expect(result).toEqual({ ok: true, value: expect.objectContaining({ unitValue: '2.5000000000' }) });
+    });
+
     it('a de-DE comma decimal parses correctly per the given locale', () => {
       const result = validateCustomCurrency(input({ unitValueRaw: '2,5', locale: 'de-DE' }), ctx());
       expect(result).toEqual({

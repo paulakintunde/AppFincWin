@@ -1,6 +1,6 @@
 import { getCalendars, getLocales, useCalendars, useLocales } from 'expo-localization';
 import { renderHook } from '@testing-library/react-native';
-import { getDeviceLocale, getDeviceTimeZone, useDeviceLocale } from '../deviceLocale';
+import { getDeviceLocale, getDeviceSeparators, getDeviceTimeZone, useDeviceLocale } from '../deviceLocale';
 
 jest.mock('expo-localization', () => ({
   getLocales: jest.fn(),
@@ -23,6 +23,62 @@ describe('getDeviceLocale', () => {
   it('falls back to en-US when the locales array is empty', () => {
     mockGetLocales.mockReturnValue([]);
     expect(getDeviceLocale()).toBe('en-US');
+  });
+});
+
+describe('WR-A11: region, not language, decides number format', () => {
+  const englishInGermany = {
+    languageTag: 'en-US',
+    languageCode: 'en',
+    languageScriptCode: null,
+    regionCode: 'DE',
+    decimalSeparator: ',',
+    digitGroupingSeparator: '.',
+  };
+
+  it('builds the locale tag from languageCode + regionCode', () => {
+    mockGetLocales.mockReturnValue([englishInGermany]);
+    expect(getDeviceLocale()).toBe('en-DE');
+    expect(new Intl.NumberFormat(getDeviceLocale()).format(1234.5)).toBe('1.234,5');
+  });
+
+  it('keeps the script code when there is one', () => {
+    mockGetLocales.mockReturnValue([{ languageTag: 'zh-Hans-CN', languageCode: 'zh', languageScriptCode: 'Hans', regionCode: 'TW' }]);
+    expect(getDeviceLocale()).toBe('zh-Hans-TW');
+  });
+
+  it('falls back to languageTag when the combination is malformed or the region is unknown', () => {
+    mockGetLocales.mockReturnValue([{ languageTag: 'en-GB', languageCode: 'en', languageScriptCode: null, regionCode: '!!' }]);
+    expect(getDeviceLocale()).toBe('en-GB');
+    mockGetLocales.mockReturnValue([{ languageTag: 'en-GB', languageCode: 'en', languageScriptCode: null, regionCode: null }]);
+    expect(getDeviceLocale()).toBe('en-GB');
+    mockGetLocales.mockReturnValue([{ languageTag: '', languageCode: null, regionCode: null }]);
+    expect(getDeviceLocale()).toBe('en-US');
+  });
+
+  it('exposes the region\'s own separators for the amount parser', () => {
+    mockGetLocales.mockReturnValue([englishInGermany]);
+    expect(getDeviceSeparators()).toEqual({ decimal: ',', group: '.' });
+  });
+
+  it('reports no separators when the device gives none, or an unusable pair', () => {
+    mockGetLocales.mockReturnValue([]);
+    expect(getDeviceSeparators()).toBeUndefined();
+    mockGetLocales.mockReturnValue([{ ...englishInGermany, digitGroupingSeparator: null }]);
+    expect(getDeviceSeparators()).toBeUndefined();
+    mockGetLocales.mockReturnValue([{ ...englishInGermany, decimalSeparator: '.', digitGroupingSeparator: '.' }]);
+    expect(getDeviceSeparators()).toBeUndefined();
+  });
+
+  it('useDeviceLocale carries the region tag and separators', async () => {
+    mockUseLocales.mockReturnValue([englishInGermany]);
+    mockUseCalendars.mockReturnValue([{ timeZone: 'Europe/Berlin' }]);
+    const { result } = await renderHook(() => useDeviceLocale());
+    expect(result.current).toEqual({
+      locale: 'en-DE',
+      timeZone: 'Europe/Berlin',
+      separators: { decimal: ',', group: '.' },
+    });
   });
 });
 

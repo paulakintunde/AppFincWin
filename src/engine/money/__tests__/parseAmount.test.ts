@@ -124,6 +124,28 @@ describe('parseAmount: group-mark placement (WR-A10)', () => {
   });
 });
 
+describe('explicit region separators (WR-A11)', () => {
+  const germanRegion = { decimal: ',', group: '.' };
+
+  it('reads the region decimal mark even when the locale tag is en-US', () => {
+    expect(parseAmount('12,50', { locale: 'en-US', exponent: 2, separators: germanRegion })).toEqual({
+      ok: true,
+      value: 1250,
+    });
+    expect(parseAmount('1.234,56', { locale: 'en-US', exponent: 2, separators: germanRegion })).toEqual({
+      ok: true,
+      value: 123456,
+    });
+  });
+
+  it('parseDecimalString honours them too', () => {
+    expect(parseDecimalString('2,5', { locale: 'en-US', maxFractionDigits: 10, separators: germanRegion })).toEqual({
+      ok: true,
+      value: '2.5',
+    });
+  });
+});
+
 describe('localeGrouping', () => {
   it('reads 3/3 for en-US and 3/2 for en-IN', () => {
     expect(localeGrouping('en-US')).toEqual({ primary: 3, secondary: 3 });
