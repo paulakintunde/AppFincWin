@@ -133,6 +133,19 @@ Deno.serve(async (req) => {
       );
       if (error) throw new Error(error.message);
     },
+    async newCurrencyCodes(codes) {
+      if (codes.length === 0) return [];
+      const { data, error } = await admin.from('currencies').select('code').in('code', codes);
+      if (error) throw new Error(error.message);
+      const known = new Set((data ?? []).map((r) => r.code as string));
+      return codes.filter((c) => !known.has(c));
+    },
+    async shadowedCustomCodes(codes) {
+      if (codes.length === 0) return [];
+      const { data, error } = await admin.from('custom_currencies').select('code').in('code', codes);
+      if (error) throw new Error(error.message);
+      return [...new Set((data ?? []).map((r) => r.code as string))];
+    },
   };
 
   try {

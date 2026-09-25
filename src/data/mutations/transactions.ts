@@ -25,6 +25,7 @@ import {
   writeRetryDelay,
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { isResolveRateThrottled } from '@/data/sync/resolveRateBackoff';
 import { writeClient } from './writeClient';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
@@ -115,6 +116,11 @@ function placeRowInMonth(
 /** After a write comes back rate_pending, calls resolve-rate and writes the restamped row in. */
 async function followUpIfRatePending(qc: QueryClient, householdId: string, month: string, row: TransactionRow): Promise<void> {
   if (!row.rate_pending) return;
+  // RD-05: resolve-rate's own per-user throttle already answered 429 recently -- skip this
+  // call entirely rather than adding to the pile; the row stays rate_pending and a later
+  // write's follow-up (once the cooldown passes), or the daily background restamp, resolves
+  // it instead.
+  if (isResolveRateThrottled()) return;
   try {
     const resolved = await requestRateResolution(lazySupabaseClient(), row.id);
     if (resolved) {

@@ -75,6 +75,8 @@ export function useUpdateMoneyPrefs(userId: string): {
   setHomeCurrency(code: string): void;
   setShowCents(on: boolean): void;
   setLeadFigure(figure: 'home' | 'original'): void;
+  /** RD-02: the user's own explicit in-app region override; null clears it back to "unset". */
+  setRegion(region: string | null): void;
 } {
   const mutation = useMutation<MoneyPrefsRow, unknown, UpdateMoneyPrefsVars, MutationContext>({
     mutationKey: mutationKeys.updateMoneyPrefs,
@@ -90,6 +92,9 @@ export function useUpdateMoneyPrefs(userId: string): {
     },
     setLeadFigure(figure: 'home' | 'original'): void {
       mutation.mutate({ userId, patch: { lead_figure: figure } });
+    },
+    setRegion(region: string | null): void {
+      mutation.mutate({ userId, patch: { region } });
     },
   };
 }

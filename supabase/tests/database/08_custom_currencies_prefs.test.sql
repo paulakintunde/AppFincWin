@@ -7,12 +7,13 @@
 -- privileged writer). Proves profiles.home_currency only accepts a known
 -- currency (ISO or the user's own custom one), a household-of-one's
 -- reporting_currency tracks its owner's home_currency, and show_cents/
--- lead_figure default and validate correctly.
+-- lead_figure/region default and validate correctly (RD-02: region is the
+-- explicit in-app override, nullable ISO 3166-1 alpha-2, client-writable).
 
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(20);
+select extensions.plan(25);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -150,6 +151,35 @@ select extensions.throws_ok(
   '23514', null,
   'lead_figure foo violates the check constraint'
 );
+
+-- 9b. RD-02: profiles.region -- nullable ISO 3166-1 alpha-2 override,
+-- client-writable, defaults unset.
+select extensions.is(
+  (select region from public.profiles where id = '22222222-2222-2222-2222-222222222222'),
+  null,
+  'region defaults null (unset -- defers to device region / time zone tiebreak)'
+);
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
+select extensions.lives_ok(
+  $$update public.profiles set region = 'DE' where id = '22222222-2222-2222-2222-222222222222'$$,
+  'a user can set their own explicit region override'
+);
+select extensions.throws_ok(
+  $$update public.profiles set region = 'DEU' where id = '22222222-2222-2222-2222-222222222222'$$,
+  '22001', null,
+  'a 3-letter region code is rejected by char(2) itself (value too long), before the check constraint even runs'
+);
+select extensions.throws_ok(
+  $$update public.profiles set region = 'de' where id = '22222222-2222-2222-2222-222222222222'$$,
+  '23514', null,
+  'a lower-case region code violates the check constraint (upper-case only)'
+);
+select extensions.lives_ok(
+  $$update public.profiles set region = null where id = '22222222-2222-2222-2222-222222222222'$$,
+  'region can be cleared back to null (unset)'
+);
+reset role;
 
 -- 10. is_known_currency is hardened the same way every other security
 -- definer helper in this codebase is (pinned search_path).

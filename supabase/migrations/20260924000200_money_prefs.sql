@@ -13,14 +13,20 @@
 alter table public.profiles
   add column home_currency text not null default 'USD' check (home_currency ~ '^[A-Z0-9]{2,4}$'),
   add column show_cents boolean not null default false,                       -- D-25
-  add column lead_figure text not null default 'home' check (lead_figure in ('home', 'original')); -- D-01: display preference only
+  add column lead_figure text not null default 'home' check (lead_figure in ('home', 'original')), -- D-01: display preference only
+  -- RD-02: the user's own explicit in-app region override for number
+  -- formatting (resolveRegion's top precedence -- src/services/locale/
+  -- resolveRegion.ts). Nullable: unset means "defer to the device region /
+  -- time zone tiebreak", not "no region". ISO 3166-1 alpha-2 only -- never
+  -- populated from IP geolocation, here or anywhere else.
+  add column region char(2) check (region is null or region ~ '^[A-Z]{2}$');
 
 alter table public.households
   add column reporting_currency text not null default 'USD' check (reporting_currency ~ '^[A-Z0-9]{2,4}$'); -- D-06
 
 -- Extends, not replaces, the profiles column grant from
 -- 20260922000100_household_of_one.sql -- that earlier grant stays in force.
-grant update (home_currency, show_cents, lead_figure) on public.profiles to authenticated;
+grant update (home_currency, show_cents, lead_figure, region) on public.profiles to authenticated;
 
 -- home_currency must resolve through is_known_currency() -- an ISO code the
 -- fx store carries, EUR, or one of the user's own custom currencies.

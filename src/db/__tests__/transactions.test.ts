@@ -1,4 +1,5 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
+import { isResolveRateThrottled, resetResolveRateBackoffForTests } from '@/data/sync/resolveRateBackoff';
 import { DbError, NotFoundError, VersionConflictError } from '../errors';
 import type { NewTransaction, TransactionPatch, TransactionRow } from '../rows';
 import {
@@ -270,5 +271,37 @@ describe('requestRateResolution', () => {
     client.respondWith({ data: null, error: httpError, status: 500 });
 
     await expect(requestRateResolution(client, 't1')).resolves.toBeNull();
+  });
+
+  describe('RD-05: rate-limited (429) response', () => {
+    beforeEach(() => resetResolveRateBackoffForTests());
+    afterEach(() => resetResolveRateBackoffForTests());
+
+    it('returns null (never throws) on a 429 from resolve-rate\'s own throttle', async () => {
+      const client = createFakeSupabase();
+      const httpError = new FunctionsHttpError({ status: 429 });
+      client.respondWith({ data: null, error: httpError, status: 429 });
+
+      await expect(requestRateResolution(client, 't1')).resolves.toBeNull();
+    });
+
+    it('notes the client-side backoff so a later caller can skip the follow-up entirely', async () => {
+      const client = createFakeSupabase();
+      const httpError = new FunctionsHttpError({ status: 429 });
+      client.respondWith({ data: null, error: httpError, status: 429 });
+
+      expect(isResolveRateThrottled()).toBe(false);
+      await requestRateResolution(client, 't1');
+      expect(isResolveRateThrottled()).toBe(true);
+    });
+
+    it('a plain 500 (not rate-limited) never triggers the backoff', async () => {
+      const client = createFakeSupabase();
+      const httpError = new FunctionsHttpError({ status: 500 });
+      client.respondWith({ data: null, error: httpError, status: 500 });
+
+      await requestRateResolution(client, 't1');
+      expect(isResolveRateThrottled()).toBe(false);
+    });
   });
 });

@@ -73,6 +73,67 @@ export function convertMinor(
   return minorUnits(Number(result));
 }
 
+/** RD-03: the custom-currency stamp actually used for one leg of an exact conversion. */
+export interface CustomLegRate {
+  /** The custom currency's own declared unit_value (one custom unit is worth this many reference units). */
+  unitValue: ScaledRate;
+  /** The reference currency's own per-EUR rate actually used to resolve this leg. */
+  referencePerEur: ScaledRate;
+}
+
+/** One side of convertMinorExact: a plain per-EUR rate, or a custom currency's raw stamp. */
+export interface ConversionLeg {
+  perEur: ScaledRate;
+  custom?: CustomLegRate;
+}
+
+/**
+ * RD-03: converts amount minor units exactly, with exactly one half-up rounding at the end --
+ * no rounded 10dp intermediate. Fixes WR-B07's high-value drift: convertMinor (and its SQL
+ * mirror) round a custom currency's per-EUR rate to 10dp (customPerEur) before converting,
+ * which loses precision for a high-value unit (1 GOLD = 60,000 USD converts to 59,999.90, not
+ * 60,000.00). This instead substitutes a custom leg's *raw* unit_value and reference per-EUR
+ * rate directly into the single conversion ratio, so the only rounding that ever happens is
+ * the one div_half_up at the very end -- mirrored exactly by SQL's convert_minor_exact().
+ *
+ * A plain (non-custom) leg behaves identically to convertMinor: `custom` absent on both sides
+ * reduces this to exactly the same ratio convertMinor computes (verified by the shared
+ * fixture, money-conversion-cases.json's `convert` cases, which every convertExact case also
+ * satisfies).
+ */
+export function convertMinorExact(
+  amount: MinorUnits,
+  from: ConversionLeg,
+  fromExponent: number,
+  to: ConversionLeg,
+  toExponent: number
+): MinorUnits {
+  assertValidExponent(fromExponent, 'fromExponent');
+  assertValidExponent(toExponent, 'toExponent');
+
+  // Each leg contributes exactly one per-EUR-scaled term either way (its own perEur when
+  // plain, or its custom reference's raw per-EUR rate when custom), plus an extra unit_value
+  // factor on the *other* side of the ratio when that leg is custom. EUR_PER_EUR (scaled
+  // "1") is the correct multiplicative identity for a plain leg's missing unit_value term --
+  // not an unscaled 1n -- because both the numerator and the denominator otherwise carry the
+  // same RATE_SCALE factor from their per-EUR term, which only cancels when the unit_value
+  // term is scaled the same way.
+  const toRefPerEur = to.custom ? to.custom.referencePerEur : to.perEur;
+  const fromRefPerEur = from.custom ? from.custom.referencePerEur : from.perEur;
+  const fromUnitValue = from.custom ? from.custom.unitValue : EUR_PER_EUR;
+  const toUnitValue = to.custom ? to.custom.unitValue : EUR_PER_EUR;
+
+  const numerator = BigInt(amount) * toRefPerEur * 10n ** BigInt(toExponent) * fromUnitValue;
+  const denominator = fromRefPerEur * 10n ** BigInt(fromExponent) * toUnitValue;
+  const result = divideHalfUp(numerator, denominator);
+
+  const maxSafe = BigInt(Number.MAX_SAFE_INTEGER);
+  if (result > maxSafe || result < -maxSafe) {
+    throw new RangeError('convertMinorExact: result exceeds Number.MAX_SAFE_INTEGER');
+  }
+  return minorUnits(Number(result));
+}
+
 export function crossRate(fromPerEur: ScaledRate, toPerEur: ScaledRate): ScaledRate {
   return divideHalfUp(toPerEur * 10n ** BigInt(RATE_SCALE), fromPerEur) as ScaledRate;
 }

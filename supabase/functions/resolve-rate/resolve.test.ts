@@ -5,6 +5,7 @@ const VALID_ID = '11111111-1111-1111-1111-111111111111';
 
 function makeDeps(overrides: Partial<ResolveDeps> = {}): ResolveDeps {
   return {
+    checkRateLimit: jest.fn(async () => true),
     readPending: jest.fn(async () => null),
     customReference: jest.fn(async () => null),
     fetchJson: jest.fn(async () => []),
@@ -49,6 +50,26 @@ describe('resolveRate', () => {
       status: 400,
       body: { ok: false, error: 'invalid-input' },
     });
+  });
+
+  it('RD-05: returns 429 rate-limited and performs no read/fetch/write when the caller is over the throttle', async () => {
+    const checkRateLimit = jest.fn(async () => false);
+    const readPending = jest.fn(async () => pendingRow());
+    const deps = makeDeps({ checkRateLimit, readPending });
+
+    const result = await resolveRate(deps, { transactionId: VALID_ID });
+
+    expect(result).toEqual({ status: 429, body: { ok: false, error: 'rate-limited' } });
+    expect(readPending).not.toHaveBeenCalled();
+    expect(deps.fetchJson).not.toHaveBeenCalled();
+    expect(deps.restamp).not.toHaveBeenCalled();
+  });
+
+  it('RD-05: an invalid-input request is rejected before the rate limit is even checked', async () => {
+    const checkRateLimit = jest.fn(async () => true);
+    const deps = makeDeps({ checkRateLimit });
+    await resolveRate(deps, { transactionId: 'not-a-uuid' });
+    expect(checkRateLimit).not.toHaveBeenCalled();
   });
 
   it('returns 404 and performs no fetch or admin write when readPending finds nothing', async () => {

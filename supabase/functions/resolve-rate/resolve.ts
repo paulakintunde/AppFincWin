@@ -32,6 +32,13 @@ export interface PendingTransaction {
 }
 
 export interface ResolveDeps {
+  /**
+   * RD-05: per-user throttle (~60/hour), backed by fx_resolve_calls
+   * (service-role, atomic increment -- 20260924000600_fx_monitoring.sql).
+   * true = under the limit, this call counts against it; false = over the
+   * limit, reject with 429 before any other work runs.
+   */
+  checkRateLimit(): Promise<boolean>;
   /** User-scoped read (RLS decides visibility) -- the IDOR mitigation. */
   readPending(id: string): Promise<PendingTransaction | null>;
   /** Admin: custom_currencies.reference_currency for (ownerId, code), or null if code isn't a registered custom currency for that owner. */
@@ -61,7 +68,7 @@ export interface ResolveDeps {
 
 export type ResolveResult =
   | { status: 200; body: { ok: true; pending: boolean; row: Record<string, unknown> | null } }
-  | { status: 400 | 404 | 500 | 502; body: { ok: false; error: string } };
+  | { status: 400 | 404 | 429 | 500 | 502; body: { ok: false; error: string } };
 
 function invalidInput(): ResolveResult {
   return { status: 400, body: { ok: false, error: 'invalid-input' } };
@@ -160,6 +167,13 @@ export async function resolveRate(deps: ResolveDeps, input: unknown): Promise<Re
 }
 
 async function resolvePending(deps: ResolveDeps, transactionId: string): Promise<ResolveResult> {
+  // RD-05: checked before any other work. Any well-formed call to this function counts
+  // against the caller's budget, whether or not the transaction turns out to be pending or
+  // even visible to them -- the throttle is about outbound Frankfurter fetches and admin
+  // writes this function can trigger, not about which rows exist.
+  const allowed = await deps.checkRateLimit();
+  if (!allowed) return { status: 429, body: { ok: false, error: 'rate-limited' } };
+
   const row = await deps.readPending(transactionId);
   if (row === null) return { status: 404, body: { ok: false, error: 'not-found' } };
 

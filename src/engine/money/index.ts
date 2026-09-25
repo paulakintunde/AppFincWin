@@ -13,7 +13,7 @@ export * from './arithmetic';
 export * from './parseAmount';
 export * from './formatAmount';
 export * from './formatDate';
-export { MAX_UNIT_VALUE, MIN_UNIT_VALUE, validateCustomCurrency } from './customCurrency';
+export { validateCustomCurrency } from './customCurrency';
 export type {
   CustomCurrencyError,
   CustomCurrencyInput,

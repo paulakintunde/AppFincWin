@@ -81,7 +81,11 @@ revoke all on public.fx_rate_holds from anon, authenticated;
 
 create table public.fx_alerts (
   id bigint generated always as identity primary key,
-  kind text not null check (kind in ('stale', 'held', 'auto-accepted', 'pending-rows', 'fallback-used', 'sync-failed', 'hold-dropped')),
+  -- RD-07: 'custom-shadowed' -- a code newly seen in the fx-sync currency
+  -- feed collides with a custom currency some user already registered
+  -- before that code was ever synced. Their definition keeps working (the
+  -- shadow check only runs on insert); this is purely an operator notice.
+  kind text not null check (kind in ('stale', 'held', 'auto-accepted', 'pending-rows', 'fallback-used', 'sync-failed', 'hold-dropped', 'custom-shadowed')),
   quote text,
   detail jsonb not null default '{}',
   created_at timestamptz not null default now(),
@@ -218,3 +222,54 @@ $$;
 
 revoke execute on function public.fx_drop_hold(bigint) from public, anon, authenticated;
 grant execute on function public.fx_drop_hold(bigint) to service_role;
+
+-- RD-05: a small per-user throttle for the resolve-rate Edge Function
+-- (IN-B01 -- any signed-in user could otherwise trigger unlimited outbound
+-- Frankfurter fetches). One row per (user, hour); fx_resolve_rate_check_limit
+-- atomically increments the current hour's count via the unique constraint's
+-- row lock and reports whether the caller is still under the limit. Never
+-- client-readable or writable -- resolve-rate's admin (service-role) client
+-- is the only caller. Old rows are small (one per active user per hour) and
+-- are left for ops to prune later; nothing here depends on cleanup running.
+create table public.fx_resolve_calls (
+  user_id uuid not null,
+  window_start timestamptz not null,
+  count integer not null default 0,
+  primary key (user_id, window_start)
+);
+
+alter table public.fx_resolve_calls enable row level security;
+-- No policy for authenticated on purpose, same as fx_rate_holds above: a
+-- per-user call count is never something a client role should read or
+-- tamper with, and this table backs a rate *limit*, not a display feature.
+revoke all on public.fx_resolve_calls from anon, authenticated;
+
+-- fx_resolve_rate_check_limit(): true when this call keeps the caller at or
+-- under p_limit calls in the current UTC hour (default 60/hour, documented
+-- in docs/ops/fx-operations.md); false when it pushes them over. Every call
+-- counts, whether or not it ends up allowed -- there is no separate "peek"
+-- path, so a caller already over the limit cannot burn extra budget probing
+-- it. The insert-or-increment is a single statement, so concurrent calls
+-- from the same user serialize on the row's unique constraint rather than
+-- racing a read-then-write.
+create or replace function public.fx_resolve_rate_check_limit(p_user_id uuid, p_limit integer default 60)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_count integer;
+begin
+  insert into public.fx_resolve_calls (user_id, window_start, count)
+  values (p_user_id, date_trunc('hour', now()), 1)
+  on conflict (user_id, window_start) do update
+    set count = public.fx_resolve_calls.count + 1
+  returning count into current_count;
+
+  return current_count <= p_limit;
+end;
+$$;
+
+revoke execute on function public.fx_resolve_rate_check_limit(uuid, integer) from public, anon, authenticated;
+grant execute on function public.fx_resolve_rate_check_limit(uuid, integer) to service_role;

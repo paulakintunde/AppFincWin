@@ -86,6 +86,8 @@ export interface MoneyPrefsRow {
   home_currency: string;
   show_cents: boolean;
   lead_figure: 'home' | 'original';
+  /** RD-02: explicit in-app region override (ISO 3166-1 alpha-2), or null when unset. */
+  region: string | null;
 }
 
 export interface NewTransaction {

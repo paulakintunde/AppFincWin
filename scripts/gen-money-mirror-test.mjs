@@ -34,11 +34,13 @@ function sqlString(s) {
 function generate(fixture) {
   const halfUp = fixture.halfUp ?? [];
   const convert = fixture.convert ?? [];
+  const convertExact = fixture.convertExact ?? [];
   const customPerEur = fixture.customPerEur ?? [];
   const crossRate = fixture.crossRate ?? [];
   const exponents = fixture.exponents ?? [];
 
-  const total = halfUp.length + convert.length + customPerEur.length + crossRate.length + exponents.length;
+  const total =
+    halfUp.length + convert.length + convertExact.length + customPerEur.length + crossRate.length + exponents.length;
 
   const lines = [];
   lines.push(
@@ -61,6 +63,16 @@ function generate(fixture) {
   for (const c of convert) {
     lines.push(
       `select extensions.is(public.convert_minor(${c.amount}::bigint, ${sqlString(c.fromPerEur)}::numeric, ${c.fromExponent}, ${sqlString(c.toPerEur)}::numeric, ${c.toExponent}), ${c.expected}::bigint, ${sqlLiteral(`convert: ${c.name}`)});`
+    );
+  }
+
+  // RD-03: convert_minor_exact's four extra params are nullable numeric -- null for a plain
+  // (non-custom) leg, matching per_eur_rate()'s own custom_unit_value/custom_ref_per_eur out
+  // params, which are null except for a custom currency's leg.
+  const numOrNull = (v) => (v === null ? 'null' : `${sqlString(v)}::numeric`);
+  for (const c of convertExact) {
+    lines.push(
+      `select extensions.is(public.convert_minor_exact(${c.amount}::bigint, ${sqlString(c.fromPerEur)}::numeric, ${c.fromExponent}, ${numOrNull(c.fromCustomUnitValue)}, ${numOrNull(c.fromCustomRefPerEur)}, ${sqlString(c.toPerEur)}::numeric, ${c.toExponent}, ${numOrNull(c.toCustomUnitValue)}, ${numOrNull(c.toCustomRefPerEur)}), ${c.expected}::bigint, ${sqlLiteral(`convertExact: ${c.name}`)});`
     );
   }
 

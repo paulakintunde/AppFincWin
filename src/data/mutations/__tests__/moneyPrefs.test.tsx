@@ -61,6 +61,7 @@ const prefsRow = (overrides: Partial<MoneyPrefsRow> = {}): MoneyPrefsRow => ({
   home_currency: 'USD',
   show_cents: false,
   lead_figure: 'home',
+  region: null,
   ...overrides,
 });
 
@@ -179,6 +180,44 @@ describe('useUpdateMoneyPrefs', () => {
     await qc.resumePausedMutations();
 
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'update')).toBe(true));
+  });
+
+  it('RD-02: setRegion updates the cache optimistically and sends exactly { region }', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: prefsRow({ region: 'DE' }), error: null, status: 200 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.moneyPrefs('user-1'), prefsRow());
+    const { result } = await renderHook(() => useUpdateMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
+
+    result.current.setRegion('DE');
+
+    await waitFor(() => {
+      expect(qc.getQueryData<MoneyPrefsRow>(queryKeys.moneyPrefs('user-1'))?.region).toBe('DE');
+    });
+
+    const updateCall = fake.calls.find((c) => c.method === 'update');
+    expect(updateCall?.args[0]).toEqual({ region: 'DE' });
+  });
+
+  it('RD-02: setRegion(null) clears the override back to "unset"', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: prefsRow({ region: null }), error: null, status: 200 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.moneyPrefs('user-1'), prefsRow({ region: 'DE' }));
+    const { result } = await renderHook(() => useUpdateMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
+
+    result.current.setRegion(null);
+
+    const updateCall = await waitFor(() => {
+      const call = fake.calls.find((c) => c.method === 'update');
+      if (!call) throw new Error('not yet called');
+      return call;
+    });
+    expect(updateCall.args[0]).toEqual({ region: null });
   });
 });
 
@@ -325,8 +364,10 @@ describe('useEditCustomCurrency', () => {
       ok: false,
       errors: ['value-invalid'],
     });
-    // IN-A02: outside the unit-value bounds.
-    expect(result.current.edit({ id: 'c1', expectedVersion: 1, patch: { unit_value: '5000000' } })).toEqual({
+    // RD-01: 11 fraction digits is still value-invalid (numeric(24,10) precision), but a
+    // large *value* like 5000000 is not -- there is no static bound any more (see
+    // engine/money/__tests__/customCurrency.test.ts).
+    expect(result.current.edit({ id: 'c1', expectedVersion: 1, patch: { unit_value: '1.00000000001' } })).toEqual({
       ok: false,
       errors: ['value-invalid'],
     });

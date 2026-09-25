@@ -40,7 +40,7 @@ const NEW_CUSTOM: NewCustomCurrency = {
 };
 
 function prefsRow(overrides: Partial<MoneyPrefsRow> = {}): MoneyPrefsRow {
-  return { home_currency: 'USD', show_cents: false, lead_figure: 'home', ...overrides };
+  return { home_currency: 'USD', show_cents: false, lead_figure: 'home', region: null, ...overrides };
 }
 
 describe('CUSTOM_CURRENCY_COLUMNS', () => {
@@ -165,8 +165,8 @@ describe('updateCustomCurrency', () => {
 });
 
 describe('MONEY_PREFS_COLUMNS', () => {
-  it('selects exactly home_currency, show_cents, lead_figure', () => {
-    expect(MONEY_PREFS_COLUMNS).toBe('home_currency, show_cents, lead_figure');
+  it('selects exactly home_currency, show_cents, lead_figure, region', () => {
+    expect(MONEY_PREFS_COLUMNS).toBe('home_currency, show_cents, lead_figure, region');
   });
 });
 
@@ -190,7 +190,7 @@ describe('fetchMoneyPrefs', () => {
 });
 
 describe('updateMoneyPrefs', () => {
-  it('sends only the 3 granted keys, with no version condition', async () => {
+  it('sends only the 4 granted keys, with no version condition', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: prefsRow({ home_currency: 'JPY' }), error: null, status: 200 });
 
@@ -199,7 +199,7 @@ describe('updateMoneyPrefs', () => {
     expect(result.home_currency).toBe('JPY');
     expect(client.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ home_currency: 'JPY' });
     expect(client.calls.some((c) => c.method === 'eq' && c.args[0] === 'version')).toBe(false);
-    expect(MONEY_PREFS_PATCH_KEYS).toEqual(['home_currency', 'show_cents', 'lead_figure']);
+    expect(MONEY_PREFS_PATCH_KEYS).toEqual(['home_currency', 'show_cents', 'lead_figure', 'region']);
   });
 
   it('throws a TypeError before any network call for a non-granted column', async () => {

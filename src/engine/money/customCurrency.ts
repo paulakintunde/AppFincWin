@@ -55,13 +55,15 @@ export interface ValidateCustomCurrencyContext {
 const CODE_PATTERN = /^[A-Z0-9]{2,4}$/;
 const MAX_SYMBOL_LENGTH = 4;
 
-// IN-A02: bounds on what one custom unit may be worth in its reference currency. Outside
-// them the 10-dp per-EUR rate either rounds to zero (a huge unit value -- every conversion
-// into the currency would then be 0, and out of it a division by zero) or overflows the
-// stored numeric(24,10) (a tiny one against a high-per-EUR reference such as IDR or VND).
-// Mirrors the bound review finding WR-B07 proposes for the column itself.
-export const MIN_UNIT_VALUE = '0.000001';
-export const MAX_UNIT_VALUE = '1000000';
+// RD-01: no static upper (or lower) bound on what one custom unit may be worth in its
+// reference currency -- a legitimate investment can be worth 100M-1B+ reference units. The
+// only invariant that must hold is that the *derived per-EUR rate* neither rounds to zero
+// (a unit so valuable 10dp cannot represent its per-EUR rate) nor overflows numeric(24,10)
+// (a unit so cheap against a high-per-EUR reference such as IDR or VND that the rate
+// exceeds the column). That single check lives in customPerEur (engine/money/rates.ts) and
+// its SQL mirror custom_per_eur()/guard_custom_currency_rate -- the rate guard is the one
+// source of truth (IN-A02, WR-B07), not a static bound here that cannot see the reference
+// currency's actual rate anyway.
 
 export function validateCustomCurrency(
   input: CustomCurrencyInput,
@@ -106,14 +108,14 @@ export function validateCustomCurrency(
   } else {
     try {
       // Canonical 10-dp string, the same shape every other stored rate takes (D-16's SQL
-      // mirror expects numeric(24,10)). parseRate rejects zero/negative values, which is
-      // exactly what "must be > 0" (prototype) means here.
+      // mirror expects numeric(24,10)). parseRate rejects zero/negative values and anything
+      // beyond numeric(24,10)'s 14 integer digits, which is exactly what "must be > 0"
+      // (prototype) and the column's own precision mean here. RD-01: no other bound --
+      // whether *this* value's derived per-EUR rate is usable depends on the reference
+      // currency's own rate, which is only known at declare/revalue time (the
+      // guard_custom_currency_rate trigger) or conversion time (customPerEur), not here.
       const scaled = parseRate(parsedDecimal.value);
-      if (scaled < parseRate(MIN_UNIT_VALUE) || scaled > parseRate(MAX_UNIT_VALUE)) {
-        errors.push('value-invalid');
-      } else {
-        unitValue = formatRate(scaled);
-      }
+      unitValue = formatRate(scaled);
     } catch {
       errors.push('value-invalid');
     }

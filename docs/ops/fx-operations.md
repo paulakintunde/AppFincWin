@@ -23,6 +23,7 @@ in the body.
 | `fallback-used` | fx-sync | Frankfurter v2 was unreachable or returned something unparsable for that day's sync, and open.er-api served the rates instead (MON-12). Check `docs/dependency-register.md`'s Frankfurter row and Frankfurter's own status if this repeats. |
 | `hold-dropped` | `fx_drop_hold()` | The operator dropped a hold. `detail` records the hold's previous status, whether a served `fx_rates` row was removed (`rateRemoved`), and how many transactions were re-stamped (`restamped`). |
 | `sync-failed` | fx-sync | Both Frankfurter and the open.er-api fallback failed in the same run, so nothing was written. Or, with `"stage": "ingest"` in `detail`, the fetch worked but a later step failed (reading history or holds, writing rates, holds or alerts); some writes from that run may have landed. Either way rates stay at their last known values (still individually dated and visible per MON-07). Investigate immediately, since two consecutive failed days approach the staleness limit. |
+| `custom-shadowed` | fx-sync | RD-07: the daily currency-metadata sync (`currencies` table) saw a code for the first time, and it matches a code some user already registered as a custom currency before that code was ever synced. No action required — the custom currency keeps resolving exactly as before (the shadow check only blocks a *new* registration of that code); this is purely informational. |
 
 ## Inspecting holds
 
@@ -113,6 +114,29 @@ falls back to the global default inside `fx-monitor`'s `findStale()`.
 value, and it must differ from `FX_SYNC_SECRET`. fx-monitor can auto-accept
 holds and re-stamp transactions, so one leaked secret must not authorise
 both functions.
+
+## resolve-rate's per-user rate limit (RD-05)
+
+`resolve-rate` throttles each caller to ~60 calls/hour, tracked in
+`fx_resolve_calls` (one row per `(user_id, current UTC hour)`, incremented
+atomically by the service-role-only `fx_resolve_rate_check_limit()`). A
+caller over the limit gets `HTTP 429 {"ok":false,"error":"rate-limited"}`
+before any read, fetch or write happens — the row simply stays
+`rate_pending` until a later call (or the next day's `fx_restamp_pending()`
+sweep) resolves it. This is not a failure to page on: it means one user's
+device is calling `resolve-rate` unusually often (a burst of offline writes
+flushing at once is the normal case, not abuse). Only investigate if
+`pending-rows` (above) stays non-zero for the *same* household across
+several digests, which would suggest the client-side backoff
+(`src/data/sync/resolveRateBackoff.ts`) or the 60/hour limit itself needs
+tuning.
+
+```sql
+-- Calls in the current hour, by user, closest to the limit first.
+select user_id, count from public.fx_resolve_calls
+ where window_start = date_trunc('hour', now())
+ order by count desc;
+```
 
 fx-monitor emails every day. With alerts pending, it sends the digest; with
 none, it sends a one-line `FincWin FX: all clear` heartbeat with the day's

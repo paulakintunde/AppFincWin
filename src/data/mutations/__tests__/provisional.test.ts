@@ -91,6 +91,18 @@ describe('provisionalStamp', () => {
     expect(stamp.rate_pending).toBe(true);
   });
 
+  it('RD-01: a 1,000,000,000 unit_value (e.g. a high-value investment) resolves a real provisional rate, not pending-unresolved', () => {
+    // RD-01 removed the client's static unit_value bound; this only proves the provisional
+    // estimate still resolves (a real, non-pending-unresolved rate) at that scale. RD-03
+    // covers the estimate's *precision* (see provisional's own exact-conversion tests).
+    const bigUnit: CustomCurrencyRow = { ...GLD_CUSTOM, unit_value: '1000000000.0000000000' };
+    const stamp = provisionalStamp({ amount: 1, currency: 'GLD', homeCurrency: 'USD' }, [USD_RATE], [bigUnit]);
+    expect(stamp.rate_source).toBe('custom');
+    expect(stamp.rate_pending).toBe(true);
+    expect(stamp.home_amount).not.toBeNull();
+    expect(stamp.orig_per_eur).not.toBeNull();
+  });
+
   it('IN-A01: a same-currency row is dated its own local_date, as the server does', () => {
     const stamp = provisionalStamp({ amount: 500, currency: 'USD', homeCurrency: 'USD', localDate: '2026-09-24' }, [], []);
     expect(stamp.rate_date).toBe('2026-09-24');
