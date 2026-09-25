@@ -472,7 +472,7 @@ try {
     const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
     const pinned = pkg.devDependencies?.supabase ?? pkg.dependencies?.supabase;
     const ci = readFileSync(join(ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
-    const m = /supabase\/setup-cli@\S+\s*\n\s*with:\s*\{\s*version:\s*([^\s}]+)\s*\}/.exec(ci);
+    const m = /supabase\/setup-cli@\S+[ \t]*(?:#[^\n]*)?\n\s*with:\s*\{\s*version:\s*([^\s}]+)\s*\}/.exec(ci);
     expect('package.json pins supabase to an exact version', typeof pinned === 'string' && /^\d+\.\d+\.\d+$/.test(pinned));
     expect(`ci.yml setup-cli version (${m?.[1]}) equals package.json (${pinned})`, m !== null && m[1] === pinned);
   }
