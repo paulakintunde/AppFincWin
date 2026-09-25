@@ -17,6 +17,28 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    # Expo-managed packages move only as a set, via `npx expo install --fix`
+    # during a deliberate SDK upgrade (CLAUDE.md: stay on SDK 57; SDK 58 is
+    # preview-only). Bumped one at a time they come out SDK-mismatched.
+    ignore:
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "babel-preset-expo"
+      - dependency-name: "eslint-config-expo"
+      - dependency-name: "jest-expo"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-*"
+      - dependency-name: "@react-native/*"
+      - dependency-name: "@react-native-*/*"
+      - dependency-name: "@sentry/react-native"
+      # jest-expo pins Jest's major; TypeScript majors need a deliberate upgrade.
+      - dependency-name: "jest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types:
