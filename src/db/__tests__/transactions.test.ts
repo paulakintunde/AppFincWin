@@ -6,6 +6,8 @@ import {
   MONTH_PAGE_SIZE,
   RATE_RESOLUTION_TIMEOUT_MS,
   TRANSACTION_COLUMNS,
+  TRANSACTION_INSERT_KEYS,
+  TRANSACTION_PATCH_KEYS,
   TRUNCATED_READ,
   fetchTransaction,
   fetchTransactionsForMonth,
@@ -28,6 +30,10 @@ function row(overrides: Partial<TransactionRow> = {}): TransactionRow {
     rate: '1',
     orig_per_eur: '1.1',
     home_per_eur: '1.1',
+    orig_custom_unit_value: null,
+    orig_custom_ref_per_eur: null,
+    home_custom_unit_value: null,
+    home_custom_ref_per_eur: null,
     rate_date: '2026-09-01',
     rate_source: 'frankfurter-v2',
     rate_pending: false,
@@ -57,6 +63,25 @@ describe('TRANSACTION_COLUMNS', () => {
     expect(TRANSACTION_COLUMNS).toContain('rate:rate::text');
     expect(TRANSACTION_COLUMNS).toContain('orig_per_eur:orig_per_eur::text');
     expect(TRANSACTION_COLUMNS).toContain('home_per_eur:home_per_eur::text');
+  });
+
+  it('RD-03 follow-up: casts the four raw custom-leg stamp columns to text too', () => {
+    expect(TRANSACTION_COLUMNS).toContain('orig_custom_unit_value:orig_custom_unit_value::text');
+    expect(TRANSACTION_COLUMNS).toContain('orig_custom_ref_per_eur:orig_custom_ref_per_eur::text');
+    expect(TRANSACTION_COLUMNS).toContain('home_custom_unit_value:home_custom_unit_value::text');
+    expect(TRANSACTION_COLUMNS).toContain('home_custom_ref_per_eur:home_custom_ref_per_eur::text');
+  });
+
+  it('RD-03 follow-up: the four raw custom-leg stamp columns stay out of both write-key lists', () => {
+    for (const col of [
+      'orig_custom_unit_value',
+      'orig_custom_ref_per_eur',
+      'home_custom_unit_value',
+      'home_custom_ref_per_eur',
+    ]) {
+      expect(TRANSACTION_INSERT_KEYS).not.toContain(col);
+      expect(TRANSACTION_PATCH_KEYS).not.toContain(col);
+    }
   });
 });
 

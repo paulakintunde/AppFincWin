@@ -5,12 +5,15 @@
 -- between two real users, the composite FK that stops a transaction
 -- pointing at another household's account, the column-level grants that
 -- make every FX stamp column server-only, and the required-date/timezone
--- and non-zero-amount shape checks.
+-- and non-zero-amount shape checks. Also proves RD-03 follow-up's four raw
+-- custom-leg stamp columns are SELECT-readable (the table's own
+-- whole-table grant) yet still write-excluded, same as every other stamp
+-- column.
 
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(20);
+select extensions.plan(23);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -65,6 +68,27 @@ select extensions.throws_ok(
   $$update public.transactions set rate = 1.5 where id = 'b1111111-1111-1111-1111-111111111111'$$,
   '42501', null,
   'A cannot update rate (D-16 grant)'
+);
+
+-- 4b. RD-03 follow-up: the four raw custom-leg stamp columns (orig_custom_unit_value,
+-- orig_custom_ref_per_eur, home_custom_unit_value, home_custom_ref_per_eur) are readable --
+-- covered by the table's whole-table `grant select` like every other column -- but stay
+-- excluded from the insert/update column grants exactly like every other stamp column.
+select extensions.lives_ok(
+  $$select orig_custom_unit_value, orig_custom_ref_per_eur, home_custom_unit_value, home_custom_ref_per_eur
+      from public.transactions where id = 'b1111111-1111-1111-1111-111111111111'$$,
+  'A can select the four raw custom-leg stamp columns (RD-03 follow-up SELECT grant)'
+);
+select extensions.throws_ok(
+  $$insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, orig_custom_unit_value)
+    values ('71111111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -100, 'USD', '2026-09-22', 'America/Vancouver', 60000)$$,
+  '42501', null,
+  'A cannot insert orig_custom_unit_value (RD-03 follow-up: server-only)'
+);
+select extensions.throws_ok(
+  $$update public.transactions set home_custom_ref_per_eur = 1.1734 where id = 'b1111111-1111-1111-1111-111111111111'$$,
+  '42501', null,
+  'A cannot update home_custom_ref_per_eur (RD-03 follow-up: server-only)'
 );
 
 -- 5. Version bumps on every update (MON-09), twice.

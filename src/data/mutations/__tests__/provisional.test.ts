@@ -297,6 +297,10 @@ describe('editStamp (WR-A06)', () => {
     rate: '0.0064000000',
     orig_per_eur: '180.0000000000',
     home_per_eur: '1.1520000000',
+    orig_custom_unit_value: null,
+    orig_custom_ref_per_eur: null,
+    home_custom_unit_value: null,
+    home_custom_ref_per_eur: null,
     rate_date: '2026-09-10',
     rate_source: 'frankfurter-v2',
     rate_pending: false,
@@ -382,5 +386,80 @@ describe('editStamp (WR-A06)', () => {
     expect(editStamp({ ...stampedJpyRow, orig_per_eur: 'bad' }, { original_amount: 5 }, [], [])).toEqual(
       PENDING_UNRESOLVED_STAMP
     );
+  });
+
+  describe('RD-03 follow-up: exact offline amount-only edits for custom-currency rows', () => {
+    // 1 GOLD = 60,000 USD (the same WR-B07/RD-03 scenario, matching
+    // supabase/tests/database/24_exact_custom_conversion.test.sql and
+    // src/engine/money/__tests__/rates.test.ts's own WR-B07 regression case): the row already
+    // carries the server's D-16 stamp, including the raw orig_custom_unit_value/
+    // orig_custom_ref_per_eur pair stamp_fx_rate() writes for a custom-currency leg.
+    // orig_per_eur ('0.0000195567') is customPerEur's own rounded quantisation of the same
+    // 1.1734/60000 ratio -- kept for display (D-04 never touches it) but no longer what
+    // home_amount is computed from once the raw stamp is present.
+    const GOLD_ROW: TransactionRow = {
+      id: 'tx-gold',
+      household_id: 'h1',
+      account_id: 'acc1',
+      created_by: 'user-1',
+      original_amount: 100, // 1.00 GOLD
+      original_currency: 'GOLD',
+      home_currency: 'USD',
+      home_amount: 6000000, // 60,000.00 USD -- the server's own exact stamp (RD-03)
+      rate: '0.0000195567',
+      orig_per_eur: '0.0000195567',
+      home_per_eur: '1.1734000000',
+      orig_custom_unit_value: '60000.0000000000',
+      orig_custom_ref_per_eur: '1.1734000000',
+      home_custom_unit_value: null,
+      home_custom_ref_per_eur: null,
+      rate_date: '2026-09-21',
+      rate_source: 'custom',
+      rate_pending: false,
+      local_date: '2026-09-22',
+      time_zone: 'UTC',
+      note: null,
+      version: 1,
+      created_at: '2026-09-20T00:00:00.000Z',
+      updated_at: '2026-09-20T00:00:00.000Z',
+    };
+
+    it('1.00 -> 2.00 GOLD (unit 60000 USD, home USD): exactly 12,000,000 minor units, not the old rounded 11,999,980', () => {
+      const stamp = editStamp(GOLD_ROW, { original_amount: 200 }, [], []);
+      expect(stamp.home_amount).toBe(12000000);
+      expect(stamp.rate_pending).toBe(false);
+      // D-04: the display fields (orig_per_eur, rate, rate_date, rate_source) are kept as-is,
+      // only home_amount is recomputed.
+      expect(stamp.orig_per_eur).toBe('0.0000195567');
+      expect(stamp.rate_source).toBe('custom');
+    });
+
+    it('1.00 -> -2.00 GOLD: a negative amount stays exact too', () => {
+      const stamp = editStamp(GOLD_ROW, { original_amount: -200 }, [], []);
+      expect(stamp.home_amount).toBe(-12000000);
+    });
+
+    it('a non-custom row (both raw columns null) still uses the plain convertMinor-equivalent path unchanged', () => {
+      // stampedJpyRow (JPY -> USD, no custom leg anywhere) is exactly the pre-existing D-04
+      // test's row: legFromRow returns a plain leg for both sides, so convertMinorExact
+      // reduces to precisely the same ratio convertMinor always computed here.
+      const stamp = editStamp(stampedJpyRow, { original_amount: 2000 }, [USD_RATE, JPY_RATE], []);
+      expect(stamp.home_amount).toBe(1280);
+    });
+
+    it('null raw stamp columns on an otherwise-custom row fall back safely to the rounded per-EUR path, never throwing', () => {
+      // A row stamped before this raw stamp existed (or any other reason the pair is absent)
+      // degrades to exactly the old convertMinor-through-customPerEur drift (WR-B07) rather
+      // than throwing or silently producing a different wrong answer.
+      const preRawStampRow: TransactionRow = {
+        ...GOLD_ROW,
+        orig_custom_unit_value: null,
+        orig_custom_ref_per_eur: null,
+      };
+      const stamp = editStamp(preRawStampRow, { original_amount: 200 }, [], []);
+      expect(stamp.home_amount).toBe(11999980);
+      expect(stamp.home_amount).not.toBe(12000000);
+      expect(stamp.rate_pending).toBe(false);
+    });
   });
 });

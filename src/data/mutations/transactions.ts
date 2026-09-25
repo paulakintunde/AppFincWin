@@ -167,6 +167,13 @@ export function registerTransactionMutations(qc: QueryClient): void {
         rate: stamp.rate,
         orig_per_eur: stamp.orig_per_eur,
         home_per_eur: stamp.home_per_eur,
+        // RD-03 follow-up: the raw custom-leg stamp is server-only and unknown until the
+        // server's own stamp lands (D-16) -- an insert's optimistic row never has one yet,
+        // same as it never had a real rate_pending: false before now.
+        orig_custom_unit_value: null,
+        orig_custom_ref_per_eur: null,
+        home_custom_unit_value: null,
+        home_custom_ref_per_eur: null,
         rate_date: stamp.rate_date,
         rate_source: stamp.rate_source,
         rate_pending: stamp.rate_pending,

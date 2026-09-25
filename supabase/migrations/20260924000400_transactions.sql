@@ -125,4 +125,11 @@ grant update (account_id, original_amount, original_currency, local_date, time_z
 -- orig_custom_ref_per_eur, home_custom_unit_value, home_custom_ref_per_eur,
 -- orig_exp, home_exp, rate_pending) is server-only
 -- (D-16); a client payload naming one fails with 42501 before any trigger
--- runs.
+-- runs. This applies to insert/update only: the `grant select` above is a
+-- whole-table grant (no column list), so it already covers every column,
+-- including these -- RD-03 follow-up relies on that to let the client read
+-- orig_custom_unit_value/orig_custom_ref_per_eur/home_custom_unit_value/
+-- home_custom_ref_per_eur for its own offline amount-only-edit conversion
+-- (src/data/mutations/provisional.ts's editStamp), without granting it any
+-- way to write them -- the stamp trigger (stamp_fx_rate() in
+-- 20260924000500_fx_stamping.sql) remains the only writer.

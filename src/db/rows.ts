@@ -27,6 +27,19 @@ export interface TransactionRow {
   rate: string | null;
   orig_per_eur: string | null;
   home_per_eur: string | null;
+  /**
+   * RD-03 follow-up: the raw custom-currency stamp behind orig_per_eur/home_per_eur, when
+   * that leg resolved through a custom currency -- null for a plain (ISO) leg or a row the
+   * server has not yet stamped. Server-written only (the stamp trigger is the sole writer,
+   * supabase/migrations/20260924000500_fx_stamping.sql); readable via the table's existing
+   * whole-table SELECT grant but absent from every insert/update column-grant list, so it can
+   * never be set from a client payload. editStamp's amount-only-edit fallback substitutes
+   * these into convertMinorExact instead of the rounded orig_per_eur/home_per_eur (WR-B07).
+   */
+  orig_custom_unit_value: string | null;
+  orig_custom_ref_per_eur: string | null;
+  home_custom_unit_value: string | null;
+  home_custom_ref_per_eur: string | null;
   rate_date: string | null;
   rate_source: RateSource | null;
   rate_pending: boolean;

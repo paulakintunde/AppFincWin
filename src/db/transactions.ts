@@ -18,9 +18,13 @@ import {
 
 // Mirrors supabase/migrations/20260924000400_transactions.sql's insert/update grants
 // exactly. Every FX stamp column (rate, rate_date, rate_source, home_amount,
-// home_currency, orig_per_eur, home_per_eur, rate_pending) is server-only (D-16) and
-// excluded from both lists -- a client payload naming one fails 42501 before any trigger
-// runs, and assertAllowedKeys rejects it here first.
+// home_currency, orig_per_eur, home_per_eur, orig_custom_unit_value,
+// orig_custom_ref_per_eur, home_custom_unit_value, home_custom_ref_per_eur, rate_pending)
+// is server-only (D-16) and excluded from both lists -- a client payload naming one fails
+// 42501 before any trigger runs, and assertAllowedKeys rejects it here first. The four
+// custom-leg stamp columns ARE included in TRANSACTION_COLUMNS below (RD-03 follow-up):
+// they are readable under the table's existing whole-table SELECT grant even though they
+// stay absent from both write-key lists above -- server-written, client-read-only.
 export const TRANSACTION_INSERT_KEYS = [
   'id',
   'household_id',
@@ -41,11 +45,11 @@ export const TRANSACTION_PATCH_KEYS = [
   'note',
 ] as const satisfies readonly (keyof TransactionPatch)[];
 
-// Casting rate/orig_per_eur/home_per_eur to text keeps them out of JS float arithmetic on
-// the way in from Postgres's `numeric` type (MON-01) -- callers parse the string
-// themselves via engine/money, never `parseFloat`.
+// Casting rate/orig_per_eur/home_per_eur/the four custom-leg stamp columns to text keeps
+// them out of JS float arithmetic on the way in from Postgres's `numeric` type (MON-01) --
+// callers parse the string themselves via engine/money, never `parseFloat`.
 export const TRANSACTION_COLUMNS =
-  'id, household_id, account_id, created_by, original_amount, original_currency, home_currency, home_amount, rate:rate::text, orig_per_eur:orig_per_eur::text, home_per_eur:home_per_eur::text, rate_date, rate_source, rate_pending, local_date, time_zone, note, version, created_at, updated_at';
+  'id, household_id, account_id, created_by, original_amount, original_currency, home_currency, home_amount, rate:rate::text, orig_per_eur:orig_per_eur::text, home_per_eur:home_per_eur::text, orig_custom_unit_value:orig_custom_unit_value::text, orig_custom_ref_per_eur:orig_custom_ref_per_eur::text, home_custom_unit_value:home_custom_unit_value::text, home_custom_ref_per_eur:home_custom_ref_per_eur::text, rate_date, rate_source, rate_pending, local_date, time_zone, note, version, created_at, updated_at';
 
 const ENTITY = 'transactions' as const;
 
