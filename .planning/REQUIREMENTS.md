@@ -31,7 +31,7 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [x] **ENV-03**: Supabase project is provisioned, with its URL and publishable key wired in and a connection verified from the running app
 - [x] **ENV-04**: Supabase service-role key is stored as an EAS secret and used only by Edge Functions, never shipped to the client
 - [x] **ENV-05**: EAS project is initialised with development, preview and production build profiles
-- [ ] **ENV-06**: Google OAuth client IDs exist for iOS, Android and Web, and Google Sign-In completes end to end
+- [x] **ENV-06**: Google OAuth client IDs exist for iOS, Android and Web, and Google Sign-In completes end to end
 - [ ] **ENV-07**: Sign in with Apple is configured with its Service ID and key, and completes end to end — *deferrable, blocked on ENV-10*
 - [x] **ENV-08**: Frankfurter rate-refresh Edge Function is deployed and populating the `fx_rates` table on schedule
 - [ ] **ENV-09**: A dependency status register is maintained listing every external service as provisioned, pending or deferred, with its blocker and the phase it must land by
@@ -62,9 +62,9 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 ### Account & Access
 
-- [ ] **ACC-01**: User can create an account with Sign in with Apple
-- [ ] **ACC-02**: User can create an account with Google Sign-In
-- [ ] **ACC-03**: User's name and email from Sign in with Apple are captured on first authorization and persisted immediately
+- [x] **ACC-01**: User can create an account with Sign in with Apple
+- [x] **ACC-02**: User can create an account with Google Sign-In
+- [x] **ACC-03**: User's name and email from Sign in with Apple are captured on first authorization and persisted immediately
 - [ ] **ACC-04**: A new account is auto-provisioned with a household-of-one and its RLS policies, with no setup step visible to the user
 - [x] **ACC-05**: User stays signed in across app restarts
 - [ ] **ACC-06**: User can see every device where their account is signed in, with the current device marked
@@ -339,7 +339,7 @@ Populated during roadmap creation.
 | ENV-03 | Phase 0 - Foundation | Complete |
 | ENV-04 | Phase 0 - Foundation | Complete |
 | ENV-05 | Phase 0 - Foundation | Complete |
-| ENV-06 | Phase 0 - Foundation | Pending |
+| ENV-06 | Phase 0 - Foundation | Complete |
 | ENV-07 | Phase 0 - Foundation | Pending |
 | ENV-08 | Phase 0 - Foundation | Complete |
 | ENV-09 | Phase 0 - Foundation | Pending |
@@ -362,9 +362,9 @@ Populated during roadmap creation.
 | ANL-06 | Phase 5 - Decide UI | Pending |
 | ANL-07 | Phase 9 - Tiers & Onboarding | Pending |
 | ANL-08 | Phase 9 - Tiers & Onboarding | Pending |
-| ACC-01 | Phase 0 - Foundation | Pending |
-| ACC-02 | Phase 0 - Foundation | Pending |
-| ACC-03 | Phase 0 - Foundation | Pending |
+| ACC-01 | Phase 0 - Foundation | Complete |
+| ACC-02 | Phase 0 - Foundation | Complete |
+| ACC-03 | Phase 0 - Foundation | Complete |
 | ACC-04 | Phase 0 - Foundation | Pending |
 | ACC-05 | Phase 0 - Foundation | Complete |
 | ACC-06 | Phase 10 - System | Pending |
