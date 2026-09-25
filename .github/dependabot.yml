@@ -1,0 +1,24 @@
+version: 2
+updates:
+  # RD-09: keep GitHub Actions pinned-by-SHA versions current. Dependabot
+  # opens a PR bumping both the SHA and the trailing version comment when a
+  # new release ships; the SHA still has to be re-verified against upstream
+  # before merge (Dependabot does this correctly, but treat it as a diff to
+  # read, not an auto-merge).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Public repo (RD-09): keep npm dependencies patched against known
+  # vulnerabilities without flooding the PR queue.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
