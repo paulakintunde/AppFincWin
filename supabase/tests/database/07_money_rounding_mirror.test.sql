@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(50);
+select extensions.plan(52);
 
 select extensions.is(public.div_half_up(5::numeric, 2::numeric), 3::bigint, 'halfUp 5/2');
 select extensions.is(public.div_half_up(-5::numeric, 2::numeric), -3::bigint, 'halfUp -5/2');
@@ -39,6 +39,8 @@ select extensions.is(public.convert_minor(1000::bigint, '170'::numeric, 0, '1.15
 select extensions.is(public.custom_per_eur('1.1483'::numeric, '2.5'::numeric)::text, '0.4593200000', 'customPerEur: USD ref, 1 unit = 2.5 USD');
 select extensions.is(public.custom_per_eur('1'::numeric, '3'::numeric)::text, '0.3333333333', 'customPerEur: 1/3 truncates below half');
 select extensions.is(public.custom_per_eur('2'::numeric, '3'::numeric)::text, '0.6666666667', 'customPerEur: 2/3 rounds up');
+select extensions.is(public.custom_per_eur('1.1734'::numeric, '60000'::numeric)::text, '0.0000195567', 'customPerEur: high-value unit, 1 GOLD = 60000 USD (smallest representable magnitude, WR-B07)');
+select extensions.is(public.custom_per_eur('0.0001'::numeric, '2000000'::numeric)::text, '0.0000000001', 'customPerEur: smallest non-zero result rounds half-up to 1e-10');
 select extensions.is(public.cross_rate('1.1483'::numeric, '180.7'::numeric)::text, '157.3630584342', 'crossRate: 1 USD in JPY');
 select extensions.is(public.cross_rate('180.7'::numeric, '1.1483'::numeric)::text, '0.0063547316', 'crossRate: 1 JPY in USD');
 select extensions.is(public.currency_exponent('JPY', null), 0, 'exponent JPY');

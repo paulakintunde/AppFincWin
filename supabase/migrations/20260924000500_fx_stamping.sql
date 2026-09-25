@@ -85,16 +85,70 @@ as $$
   select (public.div_half_up((to_per_eur * 10000000000) * 10000000000, from_per_eur * 10000000000)::numeric / 10000000000)::numeric(24,10)
 $$;
 
+-- custom_per_eur raises 22003 when the result rounds to zero (a unit so
+-- valuable that 10 decimal places cannot represent its per-EUR rate, which
+-- would make every later convert_minor divide by zero) and, through the
+-- numeric(24,10) cast, when it overflows. The TS mirror throws RangeError
+-- in both cases (WR-B07).
 create or replace function public.custom_per_eur(reference_per_eur numeric, unit_value numeric)
 returns numeric(24,10)
-language sql
+language plpgsql
 immutable
 strict
 parallel safe
 set search_path = ''
 as $$
-  select (public.div_half_up((reference_per_eur * 10000000000) * 10000000000, unit_value * 10000000000)::numeric / 10000000000)::numeric(24,10)
+declare
+  r numeric(24,10);
+begin
+  r := (public.div_half_up((reference_per_eur * 10000000000) * 10000000000, unit_value * 10000000000)::numeric / 10000000000)::numeric(24,10);
+  if r <= 0 then
+    raise exception 'custom_per_eur: the per-EUR rate rounds to zero at 10 decimal places' using errcode = '22003';
+  end if;
+  return r;
+end
 $$;
+
+-- guard_custom_currency_rate(): a custom currency whose per-EUR rate would
+-- round to zero or overflow against its reference's latest stored rate is
+-- rejected when it is declared or revalued (23514), rather than failing
+-- the first transaction that uses it (WR-B07). A reference with no stored
+-- rate yet is not checked here; stamping then leaves the row pending.
+create or replace function public.guard_custom_currency_rate()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  ref_rate numeric;
+begin
+  if new.reference_currency = 'EUR' then
+    ref_rate := 1;
+  else
+    select r.rate into ref_rate
+      from public.fx_rates r
+     where r.base = 'EUR' and r.quote = new.reference_currency
+     order by r.rate_date desc, (r.source = 'frankfurter-v2') desc
+     limit 1;
+  end if;
+
+  if ref_rate is not null then
+    begin
+      perform public.custom_per_eur(ref_rate, new.unit_value);
+    exception when numeric_value_out_of_range then
+      raise exception 'unit value % is out of range against %', new.unit_value, new.reference_currency using errcode = '23514';
+    end;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger guard_custom_currency_rate
+  before insert or update of unit_value, reference_currency on public.custom_currencies
+  for each row execute function public.guard_custom_currency_rate();
+
+revoke execute on function public.guard_custom_currency_rate() from public, anon, authenticated;
 
 -- 2. Currency exponent (MON-13). Keep in lockstep with
 -- src/engine/money/currencyExponents.ts; 07_money_rounding_mirror asserts

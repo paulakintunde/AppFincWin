@@ -38,7 +38,9 @@
   "customPerEur": [
     { "name": "USD ref, 1 unit = 2.5 USD", "referencePerEur": "1.1483", "unitValue": "2.5", "expected": "0.4593200000" },
     { "name": "1/3 truncates below half", "referencePerEur": "1", "unitValue": "3", "expected": "0.3333333333" },
-    { "name": "2/3 rounds up", "referencePerEur": "2", "unitValue": "3", "expected": "0.6666666667" }
+    { "name": "2/3 rounds up", "referencePerEur": "2", "unitValue": "3", "expected": "0.6666666667" },
+    { "name": "high-value unit, 1 GOLD = 60000 USD (smallest representable magnitude, WR-B07)", "referencePerEur": "1.1734", "unitValue": "60000", "expected": "0.0000195567" },
+    { "name": "smallest non-zero result rounds half-up to 1e-10", "referencePerEur": "0.0001", "unitValue": "2000000", "expected": "0.0000000001" }
   ],
   "crossRate": [
     { "name": "1 USD in JPY", "fromPerEur": "1.1483", "toPerEur": "180.7", "expected": "157.3630584342" },

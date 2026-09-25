@@ -100,4 +100,21 @@ describe('customPerEur', () => {
       expected
     );
   });
+
+  // WR-B07: mirrors custom_per_eur()'s 22003 in SQL -- a per-EUR rate that
+  // rounds to zero would make every later conversion divide by zero, and one
+  // beyond numeric(24,10) cannot be stored.
+  it('throws RangeError when the per-EUR rate rounds to zero', () => {
+    expect(() => customPerEur(parseRate('0.0001'), parseRate('99999999999999'))).toThrow(RangeError);
+  });
+
+  it('throws RangeError when the per-EUR rate overflows numeric(24,10)', () => {
+    expect(() => customPerEur(parseRate('99999'), parseRate('0.0000000001'))).toThrow(RangeError);
+  });
+
+  it('accepts the largest per-EUR rate numeric(24,10) can hold', () => {
+    expect(formatRate(customPerEur(parseRate('99999999999999.9999999999'), parseRate('1')))).toBe(
+      '99999999999999.9999999999'
+    );
+  });
 });

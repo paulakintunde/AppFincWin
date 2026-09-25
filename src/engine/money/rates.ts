@@ -77,6 +77,25 @@ export function crossRate(fromPerEur: ScaledRate, toPerEur: ScaledRate): ScaledR
   return divideHalfUp(toPerEur * 10n ** BigInt(RATE_SCALE), fromPerEur) as ScaledRate;
 }
 
+// Largest value numeric(24,10) can hold, as a ScaledRate: 14 integer digits
+// and 10 fraction digits.
+const MAX_SCALED_RATE = 10n ** 24n - 1n;
+
+/**
+ * Units of a custom currency per 1 EUR: the reference currency's per-EUR
+ * rate divided by how many reference units one custom unit is worth (D-07).
+ * Throws RangeError when the result rounds to zero (a unit so valuable
+ * that 10 decimal places cannot represent it -- every later conversion
+ * would divide by zero) or exceeds numeric(24,10). This mirrors SQL
+ * custom_per_eur(), which raises 22003 in both cases (WR-B07).
+ */
 export function customPerEur(referencePerEur: ScaledRate, unitValue: ScaledRate): ScaledRate {
-  return divideHalfUp(referencePerEur * 10n ** BigInt(RATE_SCALE), unitValue) as ScaledRate;
+  const rate = divideHalfUp(referencePerEur * 10n ** BigInt(RATE_SCALE), unitValue);
+  if (rate <= 0n) {
+    throw new RangeError('customPerEur: the per-EUR rate rounds to zero at 10 decimal places');
+  }
+  if (rate > MAX_SCALED_RATE) {
+    throw new RangeError('customPerEur: the per-EUR rate exceeds numeric(24,10)');
+  }
+  return rate as ScaledRate;
 }
