@@ -7,8 +7,8 @@
  * Typographic apostrophes (’) throughout, never a straight apostrophe (').
  *
  * Copy ownership (see copyStatus.ts):
- * - AWAITING USER COPY (D-16): welcome-screen copy the user has not supplied yet. Ships as
- *   a clearly marked placeholder so the screen renders and is swappable later.
+ * - AWAITING USER COPY (D-16): none outstanding (welcome tagline supplied 2026-09-25). Any
+ *   future awaiting key ships as a marked placeholder and is listed in AWAITING_COPY_KEYS.
  * - Everything else in consent.*, you.*, signOut.*, update.*, money.*, sync.* is
  *   Claude-drafted in the prototype's voice (D-20) and awaits user review before being
  *   treated as final, except money.rate.attribution and credits.exchangeRateApi, which are
@@ -38,8 +38,8 @@ const en = {
   auth: {
     welcome: {
       wordmark: 'FincWin',
-      // AWAITING USER COPY (D-16): placeholder only, do not invent final copy.
-      tagline: '[one line under the wordmark — user to supply]',
+      // User-supplied (D-16), 2026-09-25.
+      tagline: 'Money with a purpose. Win every month.',
     },
     apple: {
       cta: 'Sign in with Apple',
