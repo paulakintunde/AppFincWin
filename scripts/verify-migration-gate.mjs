@@ -286,6 +286,80 @@ try {
     }
   );
 
+  // WR-C02: a marker must cite a floor that an earlier migration actually
+  // raised (strictly above the floor before the most recent raise), and
+  // each destructive statement needs its own marker directly above it.
+  runProbe(
+    'P26: marker citing the never-raised baseline floor',
+    [
+      [
+        '29990101000100_probe_drop.sql',
+        '-- contract-ok: min_version >= 0.1.0\n-- squawk-ignore ban-drop-table\ndrop table public.accounts;\n',
+      ],
+    ],
+    (result) => {
+      expect('gate fails', result.status !== 0);
+      expect('output names the floor', result.output.includes('floor'));
+    }
+  );
+
+  runProbe(
+    'P27: marker citing a floor older than the most recent raise',
+    [
+      [
+        '29990101000100_probe_floor.sql',
+        "update public.app_config set value = '1.0.0' where key = 'min_supported_version';\n",
+      ],
+      [
+        '29990101000200_probe_floor.sql',
+        "update public.app_config set value = '9.0.0' where key = 'min_supported_version';\n",
+      ],
+      [
+        '29990101000300_probe_drop.sql',
+        '-- contract-ok: min_version >= 1.0.0\n-- squawk-ignore ban-drop-column\nalter table public.transactions drop column note;\n',
+      ],
+    ],
+    (result) => {
+      expect('gate fails', result.status !== 0);
+      expect('output names the floor', result.output.includes('floor'));
+    }
+  );
+
+  runProbe(
+    'P28: one marker, two destructive statements',
+    [
+      [
+        '29990101000100_probe_floor.sql',
+        "update public.app_config set value = '9.0.0' where key = 'min_supported_version';\n",
+      ],
+      [
+        '29990101000200_probe_drop.sql',
+        `${MARKED_DROP}-- squawk-ignore ban-drop-column\nalter table public.transactions drop column category;\n`,
+      ],
+    ],
+    (result) => {
+      expect('gate fails', result.status !== 0);
+      expect('output names the missing contract-ok marker', result.output.includes('contract-ok'));
+    }
+  );
+
+  runProbe(
+    'P29: two destructive statements, each with its own marker',
+    [
+      [
+        '29990101000100_probe_floor.sql',
+        "update public.app_config set value = '9.0.0' where key = 'min_supported_version';\n",
+      ],
+      [
+        '29990101000200_probe_drop.sql',
+        `${MARKED_DROP}-- contract-ok: min_version >= 9.0.0\n-- squawk-ignore ban-drop-column\nalter table public.transactions drop column category;\n`,
+      ],
+    ],
+    (result) => {
+      expect('gate passes', result.status === 0);
+    }
+  );
+
   // CR-C04: a filename must never reach a shell. These names inject a
   // command under cmd.exe (`&`) and /bin/sh (`;` + `#`) respectively when a
   // shell joins the argument list; both must be rejected, not skipped.

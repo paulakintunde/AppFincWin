@@ -9,11 +9,15 @@
 //      commands; every filename must also match MIGRATION_FILENAME_RE.
 //      A missing squawk-cli fails the gate.
 //   2. The project's own `-- contract-ok: min_version >= X.Y.Z` convention:
-//      any squawk-ignore'd *kept* compatibility rule must be paired with a
-//      contract-ok marker whose X.Y.Z is already satisfied by
-//      app_config.min_supported_version as declared by every EARLIER
-//      migration file (in filename order). A floor bump and the destructive
-//      change it authorizes must ship in separate migrations, bump first.
+//      every statement that squawk-ignores an enforced compatibility rule
+//      must carry its own contract-ok marker directly above it (marker,
+//      then squawk-ignore, then statement). X.Y.Z must already be satisfied
+//      by app_config.min_supported_version as raised by EARLIER migration
+//      files (in filename order), and must be strictly above the floor that
+//      was in effect before the most recent raise (see checkMarker). A floor
+//      bump and the destructive change it authorizes ship in separate
+//      migrations, bump first. File-level squawk-ignore of an enforced rule
+//      is rejected outright.
 //
 // Usage: node scripts/check-migration-compat.mjs [dir]  (default: supabase/migrations)
 // Exit 1 on any error. Prints `MIGRATION COMPAT OK (<n> files, floor <v>)` on success.
@@ -49,7 +53,8 @@ const FLOOR_INSERT_RE =
 const FLOOR_UPDATE_RE =
   /^update public\.app_config set value ?= ?'(\d+\.\d+\.\d+)' where key ?= ?'min_supported_version'$/i;
 const MIGRATION_FILENAME_RE = /^\d{14}_[a-z0-9_]+\.sql$/;
-const CONTRACT_OK_RE =/--\s*contract-ok:\s*min_version\s*>=\s*(\d+\.\d+\.\d+)/gi;
+// Matched against one whole line comment (trailing whitespace trimmed).
+const CONTRACT_OK_RE = /^--\s*contract-ok:\s*min_version\s*>=\s*(\d+\.\d+\.\d+)$/i;
 // Matches both squawk's statement-level `squawk-ignore` and its file-level
 // `squawk-ignore-file` directive, anywhere inside a real SQL comment.
 const SQUAWK_DIRECTIVE_RE = /squawk-ignore(-file)?/i;
@@ -233,19 +238,57 @@ function findSquawkDirectives(comments) {
   for (const comment of comments) {
     const m = SQUAWK_DIRECTIVE_RE.exec(comment.body);
     if (!m) continue;
-    directives.push({ fileLevel: m[1] !== undefined, rules: parseRuleList(comment.body.slice(m.index + m[0].length)) });
+    directives.push({
+      comment,
+      fileLevel: m[1] !== undefined,
+      rules: parseRuleList(comment.body.slice(m.index + m[0].length)),
+    });
   }
   return directives;
 }
 
-function findContractOkMarkers(content) {
+function isEnforcedRule(rule) {
+  return KEPT_COMPAT_RULES.has(rule) || !RULE_NAME_RE.test(rule);
+}
+
+// Every real comment that mentions contract-ok. `version` is null when the
+// comment is not exactly a well-formed `-- contract-ok: min_version >= X.Y.Z`
+// line comment (reported as an error, never silently ignored).
+function findContractOkMarkers(comments) {
   const markers = [];
-  CONTRACT_OK_RE.lastIndex = 0;
-  let m;
-  while ((m = CONTRACT_OK_RE.exec(content)) !== null) {
-    markers.push(m[1]);
+  for (const comment of comments) {
+    if (!/contract-ok/i.test(comment.body)) continue;
+    const m = comment.kind === 'line' ? CONTRACT_OK_RE.exec(comment.text.trimEnd()) : null;
+    markers.push({ comment, version: m ? m[1] : null });
   }
   return markers;
+}
+
+function semverGt(a, b) {
+  return !semverGte(b, a);
+}
+
+// WR-C02: a marker `min_version >= X` is valid only when
+//   floorBeforeLastRaise < X <= floor
+// where `floor` is the floor after every EARLIER file and
+// `floorBeforeLastRaise` is the floor just before the most recent raise.
+// The upper bound means the floor already excludes every app version below
+// X. The lower bound means X cites a floor that an earlier migration really
+// raised -- a marker at the seed floor (never raised) or at a stale older
+// floor is a self-signed waiver, not expand/contract, and is rejected.
+function checkMarker(version, floorState) {
+  const required = parseSemver(version);
+  const { floor, floorBeforeLastRaise } = floorState;
+  if (floor === null || !semverGte(parseSemver(floor), required)) {
+    return `needs min_supported_version >= ${version} but the floor at that point is ${floor ?? 'unset'}`;
+  }
+  if (floorBeforeLastRaise === null) {
+    return `contract-ok: min_version >= ${version} cites a floor that no earlier migration has raised (floor is still its seed value ${floor}); raise the floor in an earlier migration first`;
+  }
+  if (!semverGt(required, parseSemver(floorBeforeLastRaise))) {
+    return `contract-ok: min_version >= ${version} must be above ${floorBeforeLastRaise}, the floor before the most recent raise (to ${floor}); cite the raised floor`;
+  }
+  return null;
 }
 
 // CR-C04: resolve squawk's native binary through the installed squawk-cli
@@ -322,7 +365,10 @@ function main() {
   // markers are checked against the floor as it stood after all EARLIER
   // files -- a floor bump and the destructive change it authorizes must be
   // separate migrations, bump first.
-  let floor = null; // null until the first floor-setting statement is seen anywhere
+  // floor: null until the first floor-setting statement is seen anywhere.
+  // floorBeforeLastRaise: the floor just before the most recent strict raise
+  // (null until the floor has been raised at least once past its seed).
+  const floorState = { floor: null, floorBeforeLastRaise: null };
 
   for (const filePath of files) {
     const content = readFileSync(filePath, 'utf8');
@@ -336,55 +382,78 @@ function main() {
       continue;
     }
 
+    const lineOf = (offset) => content.slice(0, offset).split('\n').length;
+
+    // CR-C01: squawk honours squawk-ignore-file for the whole file (and a
+    // bare one ignores every rule). A file-level ignore of an enforced rule
+    // is never allowed -- ignore per statement, each with its own marker.
     const directives = findSquawkDirectives(lexed.comments);
-    const ignoredRules = new Set();
-    for (const d of directives) {
-      if (d.fileLevel) {
-        // CR-C01: squawk honours squawk-ignore-file for the whole file (and
-        // a bare one ignores every rule). A file-level ignore of an enforced
-        // rule is never allowed -- ignore per statement, each with its own
-        // contract-ok marker.
-        const enforced = d.rules.length === 0 ? ['<every rule>'] : d.rules.filter((r) => KEPT_COMPAT_RULES.has(r));
-        if (enforced.length > 0) {
-          errors.push(
-            `${fileName}: squawk-ignore-file of enforced rule(s) ${enforced.join(', ')} is not allowed; use a per-statement squawk-ignore with a contract-ok marker`
-          );
-        }
-      } else {
-        for (const r of d.rules) ignoredRules.add(r);
+    for (const d of directives.filter((x) => x.fileLevel)) {
+      const enforced = d.rules.length === 0 ? ['<every rule>'] : d.rules.filter(isEnforcedRule);
+      if (enforced.length > 0) {
+        errors.push(
+          `${fileName}:${lineOf(d.comment.start)}: squawk-ignore-file of enforced rule(s) ${enforced.join(', ')} is not allowed; use a per-statement squawk-ignore with a contract-ok marker`
+        );
       }
     }
-    const markers = findContractOkMarkers(content);
 
-    // Every squawk-ignore of a KEPT compatibility rule needs a contract-ok
-    // marker in this same file, checked against the floor BEFORE this file's
-    // own floor bumps are applied.
-    const compatIgnores = [...ignoredRules].filter((r) => KEPT_COMPAT_RULES.has(r) || !RULE_NAME_RE.test(r));
-    for (const rule of compatIgnores) {
-      if (markers.length === 0) {
-        errors.push(`${fileName}: squawk-ignore '${rule}' has no '-- contract-ok: min_version >= X.Y.Z' marker`);
+    const markers = findContractOkMarkers(lexed.comments);
+    for (const bad of markers.filter((mk) => mk.version === null)) {
+      errors.push(
+        `${fileName}:${lineOf(bad.comment.start)}: malformed contract-ok marker; expected exactly '-- contract-ok: min_version >= X.Y.Z'`
+      );
+    }
+    const usedMarkers = new Set();
+
+    // WR-C02: pair markers with statements, not files. Every statement that
+    // squawk-ignores an enforced rule (in its leading comments or inside it)
+    // needs its OWN valid contract-ok marker among its leading comments --
+    // marker, then squawk-ignore, then the statement.
+    for (const stmt of lexed.statements) {
+      if (stmt.start === -1) continue; // comment-only tail: suppresses nothing
+      const inLeading = (c) => c.start >= stmt.segmentStart && c.start < stmt.start;
+      const inStatement = (c) => c.start >= stmt.segmentStart && c.start < stmt.end;
+
+      const reasons = [];
+      for (const d of directives) {
+        if (d.fileLevel || !inStatement(d.comment)) continue;
+        const enforced = d.rules.length === 0 ? ['<every rule>'] : d.rules.filter(isEnforcedRule);
+        if (enforced.length > 0) reasons.push(`squawk-ignore ${enforced.join(', ')}`);
+      }
+      if (reasons.length === 0) continue;
+
+      const where = `${fileName}:${lineOf(stmt.start)}`;
+      const stmtMarkers = markers.filter((mk) => mk.version !== null && inLeading(mk.comment));
+      if (stmtMarkers.length === 0) {
+        errors.push(
+          `${where}: ${reasons.join('; ')} has no '-- contract-ok: min_version >= X.Y.Z' marker directly above the statement`
+        );
         continue;
       }
-      for (const markerVersion of markers) {
-        const required = parseSemver(markerVersion);
-        if (floor === null || !semverGte(parseSemver(floor), required)) {
-          errors.push(
-            `${fileName} needs min_supported_version >= ${markerVersion} but the floor at that point is ${floor ?? 'unset'}`
-          );
-        }
+      for (const mk of stmtMarkers) {
+        usedMarkers.add(mk);
+        const problem = checkMarker(mk.version, floorState);
+        if (problem) errors.push(`${where}: ${problem}`);
       }
     }
 
-    // A contract-ok marker with no matching squawk-ignore is a no-op --
-    // allowed, but flagged so a stale/copy-pasted marker doesn't go unnoticed.
-    if (markers.length > 0 && compatIgnores.length === 0) {
-      warnings.push(`${fileName}: contract-ok marker present but no kept-rule squawk-ignore found (no-op)`);
+    // A contract-ok marker that authorises nothing is a no-op -- allowed, but
+    // flagged so a stale or copy-pasted marker doesn't go unnoticed.
+    for (const mk of markers) {
+      if (mk.version !== null && !usedMarkers.has(mk)) {
+        warnings.push(
+          `${fileName}:${lineOf(mk.comment.start)}: contract-ok marker is not directly above a statement that needs one (no-op)`
+        );
+      }
     }
 
     // Apply this file's own floor bumps AFTER evaluating its markers, so
     // they only affect files that come later.
     for (const bump of findFloorBumps(lexed.statements, fileName, warnings)) {
-      floor = bump;
+      if (floorState.floor !== null && semverGt(parseSemver(bump), parseSemver(floorState.floor))) {
+        floorState.floorBeforeLastRaise = floorState.floor;
+      }
+      floorState.floor = bump;
     }
   }
 
@@ -396,7 +465,7 @@ function main() {
     process.exit(1);
   }
 
-  console.log(`MIGRATION COMPAT OK (${files.length} files, floor ${floor ?? 'unset'})`);
+  console.log(`MIGRATION COMPAT OK (${files.length} files, floor ${floorState.floor ?? 'unset'})`);
   process.exit(0);
 }
 

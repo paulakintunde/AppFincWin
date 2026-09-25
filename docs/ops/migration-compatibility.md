@@ -57,14 +57,31 @@ warning when it is the comment line **directly above** the statement it
 covers. `contract-ok` goes above it so the ignore stays adjacent to the
 statement.
 
-`scripts/check-migration-compat.mjs` then checks, independent of squawk,
-that every `squawk-ignore` of a kept rule has a `contract-ok` marker in the
-same file, and that the required version is already covered by
-`app_config.min_supported_version` as raised by every **earlier** file (by
-filename order) -- never the same file's own bump. The floor bump and the
-destructive change it authorizes are always two separate migrations, bump
-first. This is expand/contract: expand (raise the floor, wait for old
-clients to update) before contract (make the breaking change).
+`scripts/check-migration-compat.mjs` then checks, independent of squawk:
+
+- **One marker per statement.** Every statement that `squawk-ignore`s an
+  enforced rule needs its own `contract-ok` marker among the comments
+  directly above it. One marker never covers a second destructive
+  statement later in the file.
+- **The floor already covers it.** `X.Y.Z` must be `<=`
+  `app_config.min_supported_version` as raised by every **earlier** file
+  (by filename order) -- never the same file's own bump.
+- **The marker cites a real raise.** `X.Y.Z` must be strictly greater
+  than the floor that was in effect before the most recent raise. A marker
+  at the seed floor (`0.1.0`, never raised) or at a stale older floor is a
+  self-signed waiver, not expand/contract, and fails. In practice: cite the
+  version the latest floor bump raised to.
+- **No file-level ignores.** `-- squawk-ignore-file` naming an enforced
+  rule (or naming no rule, which squawk treats as every rule) fails.
+- Ignore lists are parsed at least as loosely as squawk parses them:
+  trailing `-- ...` text dropped, split on commas and whitespace,
+  case-insensitive. Any name that is not an excluded rule counts as
+  enforced. A malformed `contract-ok` comment is an error.
+
+The floor bump and the destructive change it authorizes are always two
+separate migrations, bump first. This is expand/contract: expand (raise the
+floor, wait for old clients to update) before contract (make the breaking
+change).
 
 ## Local commands
 
