@@ -26,6 +26,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-apple-authentication',
     'expo-web-browser',
     'expo-localization',
+    // D-19: wires the Hermes JS source-map upload into the native build (Gradle on Android)
+    // so captureException()'s stack frames can be symbolicated back to real .ts/.tsx files and
+    // line numbers. Reads POSTHOG_CLI_API_KEY/POSTHOG_CLI_PROJECT_ID/POSTHOG_CLI_HOST from the
+    // build environment (set as secret-visibility EAS env vars) — see docs/decisions/error-tracking.md.
+    'posthog-react-native/expo',
     ['expo-splash-screen', { backgroundColor: '#FBFAF7', image: './assets/splash-icon.png', imageWidth: 160 }],
     ...(googleIosUrlScheme
       ? ([['@react-native-google-signin/google-signin', { iosUrlScheme: googleIosUrlScheme }]] as [string, unknown][])

@@ -50,6 +50,7 @@
   },
   "devDependencies": {
     "@fast-check/jest": "^2.3.0",
+    "@posthog/cli": "^0.18.7",
     "@react-native/jest-preset": "0.86.3",
     "@testing-library/react-native": "^14.0.1",
     "@types/aes-js": "^3.1.4",
