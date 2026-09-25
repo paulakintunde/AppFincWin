@@ -18,7 +18,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ? { url: `https://u.expo.dev/${process.env.EAS_PROJECT_ID}`, checkAutomatically: 'ON_LOAD', fallbackToCacheTimeout: 0 }
     : undefined,
   ios: { bundleIdentifier: APP_ID, supportsTablet: false, usesAppleSignIn: true },
-  android: { package: APP_ID }, // edgeToEdgeEnabled removed from @expo/config-types in SDK 57: edge-to-edge is mandatory/always-on, no opt-in flag remains
+  android: {
+    package: APP_ID,
+    adaptiveIcon: {
+      foregroundImage: './assets/android-icon-foreground.png',
+      backgroundImage: './assets/android-icon-background.png',
+      monochromeImage: './assets/android-icon-monochrome.png',
+    },
+  }, // edgeToEdgeEnabled removed from @expo/config-types in SDK 57: edge-to-edge is mandatory/always-on, no opt-in flag remains
   plugins: [
     'expo-router',
     'expo-secure-store',
