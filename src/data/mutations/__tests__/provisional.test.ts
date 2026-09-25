@@ -178,6 +178,97 @@ describe('provisionalStamp', () => {
     ).toEqual(PENDING_UNRESOLVED_STAMP);
   });
 
+  describe('RD-03: exact conversion for custom-currency legs (mirrors convert_minor_exact, no rounded 10dp intermediate)', () => {
+    // Same per-EUR rates and expected outputs as supabase/tests/fixtures/money-conversion-cases.json's
+    // `convertExact` cases -- the provisional (offline) stamp must land on exactly the same
+    // home_amount the server's exact path would, not the old rounded-per-EUR-intermediate value.
+    const USD_RATE_RD03: FxLatestRow = { quote: 'USD', rate: '1.1734000000', rate_date: '2026-09-21', source: 'frankfurter-v2' };
+    const JPY_RATE_RD03: FxLatestRow = { quote: 'JPY', rate: '180.7000000000', rate_date: '2026-09-21', source: 'frankfurter-v2' };
+    const USD_RATE_1483: FxLatestRow = { quote: 'USD', rate: '1.1483000000', rate_date: '2026-09-21', source: 'frankfurter-v2' };
+    const GOLD_CUSTOM: CustomCurrencyRow = {
+      id: 'custom-gold',
+      owner_id: 'user-1',
+      code: 'GOLD',
+      symbol: 'G',
+      decimals: 2,
+      reference_currency: 'USD',
+      unit_value: '60000.0000000000',
+      as_of: '2026-09-20',
+      version: 1,
+      created_at: '2026-09-20T00:00:00.000Z',
+      updated_at: '2026-09-20T00:00:00.000Z',
+    };
+
+    it('1.00 GOLD (unit_value 60000 USD) -> USD: exactly 6,000,000 minor units, not the rounded 5,999,990', () => {
+      const stamp = provisionalStamp({ amount: 100, currency: 'GOLD', homeCurrency: 'USD' }, [USD_RATE_RD03], [GOLD_CUSTOM]);
+      expect(stamp.home_amount).toBe(6000000);
+      expect(stamp.rate_source).toBe('custom');
+      expect(stamp.rate_pending).toBe(true);
+    });
+
+    it('-1.00 GOLD -> USD: a negative amount stays exact', () => {
+      const stamp = provisionalStamp({ amount: -100, currency: 'GOLD', homeCurrency: 'USD' }, [USD_RATE_RD03], [GOLD_CUSTOM]);
+      expect(stamp.home_amount).toBe(-6000000);
+    });
+
+    it('6,000,000.00 USD -> GOLD: the home leg is the custom one (inverse of the first case)', () => {
+      const stamp = provisionalStamp(
+        { amount: 600000000, currency: 'USD', homeCurrency: 'GOLD' },
+        [USD_RATE_RD03],
+        [GOLD_CUSTOM]
+      );
+      expect(stamp.home_amount).toBe(10000);
+    });
+
+    it('1e9-unit asset (0dp, 1 unit = 1,000,000,000 JPY) -> USD', () => {
+      const megaAsset: CustomCurrencyRow = {
+        ...GOLD_CUSTOM,
+        id: 'custom-mega',
+        code: 'MEGA',
+        decimals: 0,
+        reference_currency: 'JPY',
+        unit_value: '1000000000.0000000000',
+      };
+      const stamp = provisionalStamp(
+        { amount: 1, currency: 'MEGA', homeCurrency: 'USD' },
+        [JPY_RATE_RD03, USD_RATE_1483],
+        [megaAsset]
+      );
+      expect(stamp.home_amount).toBe(635473160);
+    });
+
+    it('both legs custom, same USD reference (1 GOLD = 60000 USD, 1 SILVER = 1000 USD): 1 GOLD = 60 SILVER exactly', () => {
+      const gold0dp: CustomCurrencyRow = { ...GOLD_CUSTOM, decimals: 0 };
+      const silver: CustomCurrencyRow = {
+        ...GOLD_CUSTOM,
+        id: 'custom-silver',
+        code: 'SILVER',
+        decimals: 0,
+        reference_currency: 'USD',
+        unit_value: '1000.0000000000',
+      };
+      const stamp = provisionalStamp(
+        { amount: 1, currency: 'GOLD', homeCurrency: 'SILVER' },
+        [USD_RATE_RD03],
+        [gold0dp, silver]
+      );
+      expect(stamp.home_amount).toBe(60);
+    });
+
+    it('a 3-decimal custom leg (1.500 units, 1 unit = 2.5 USD) -> a 0-decimal ISO currency (JPY)', () => {
+      const unit: CustomCurrencyRow = {
+        ...GOLD_CUSTOM,
+        id: 'custom-unit',
+        code: 'UNIT',
+        decimals: 3,
+        reference_currency: 'USD',
+        unit_value: '2.5000000000',
+      };
+      const stamp = provisionalStamp({ amount: 1500, currency: 'UNIT', homeCurrency: 'JPY' }, [USD_RATE_1483, JPY_RATE_RD03], [unit]);
+      expect(stamp.home_amount).toBe(590);
+    });
+  });
+
   it('missing rate for either side: home_amount null, all rate fields null, still pending', () => {
     const stamp = provisionalStamp({ amount: 1000, currency: 'GBP', homeCurrency: 'USD' }, [USD_RATE], []);
     expect(stamp).toEqual({
