@@ -40,10 +40,17 @@ export interface UnsentAlert {
   created_at: string;
 }
 
+export interface StaleAlertKey {
+  quote: string;
+  rateDate: string;
+}
+
 export interface MonitorDeps {
   today(): string;
   latestRates(): Promise<LatestRateRow[]>;
   currencies(): Promise<CurrencyRow[]>;
+  /** (quote, detail.rateDate) of recent 'stale' alerts, to avoid repeating one daily while the same rate stays stale. */
+  recentStaleAlerts(): Promise<StaleAlertKey[]>;
   insertAlerts(alerts: AlertInsert[]): Promise<void>;
   autoAcceptHolds(): Promise<number>;
   /** rpc('fx_restamp_pending'): re-stamps pending rows whose date has arrived; returns how many were re-stamped. */
@@ -130,12 +137,23 @@ export function buildAllClear(
 
 export async function runFxMonitor(deps: MonitorDeps): Promise<MonitorResult> {
   const today = deps.today();
-  const [latest, currencies] = await Promise.all([deps.latestRates(), deps.currencies()]);
+  const [latest, currencies, alreadyAlerted] = await Promise.all([
+    deps.latestRates(),
+    deps.currencies(),
+    deps.recentStaleAlerts(),
+  ]);
 
   const stale = findStale(latest, currencies, today);
-  if (stale.length > 0) {
+  // IN-B04: one alert per stale episode. While a quote's latest rate is the
+  // same stale rate already reported, don't queue it again every day; a
+  // quote that recovers and later goes stale again (new rate_date) alerts
+  // afresh. The result's `stale` count still reports every stale quote.
+  const newlyStale = stale.filter(
+    (s) => !alreadyAlerted.some((a) => a.quote === s.quote && a.rateDate === s.rateDate)
+  );
+  if (newlyStale.length > 0) {
     await deps.insertAlerts(
-      stale.map((s) => ({
+      newlyStale.map((s) => ({
         kind: 'stale',
         quote: s.quote,
         detail: { rateDate: s.rateDate, ageDays: s.ageDays, limitDays: s.limitDays },

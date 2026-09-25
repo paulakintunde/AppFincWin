@@ -38,6 +38,18 @@ Deno.serve(async (req) => {
       if (error) throw new Error(error.message);
       return data ?? [];
     },
+    async recentStaleAlerts() {
+      const since = new Date(Date.now() - 90 * 86_400_000).toISOString();
+      const { data, error } = await admin
+        .from('fx_alerts')
+        .select('quote, detail')
+        .eq('kind', 'stale')
+        .gte('created_at', since);
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as Array<{ quote: string | null; detail: { rateDate?: unknown } | null }>)
+        .filter((a) => a.quote !== null && typeof a.detail?.rateDate === 'string')
+        .map((a) => ({ quote: a.quote as string, rateDate: a.detail?.rateDate as string }));
+    },
     async insertAlerts(alerts) {
       if (alerts.length === 0) return;
       const { error } = await admin

@@ -72,6 +72,31 @@ create trigger guard_transaction_currency
   before insert or update of original_currency on public.transactions
   for each row execute function public.guard_transaction_currency();
 
+-- MON-14 / IN-B04: time_zone must be a real IANA zone name the database
+-- knows (e.g. America/Vancouver, UTC), not any 1-64 character string. Only
+-- checked when the zone is written, so the pg_timezone_names lookup never
+-- runs on amount or note edits.
+create or replace function public.guard_transaction_time_zone()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  -- null is left to the column's not-null constraint (23502).
+  if new.time_zone is not null
+     and not exists (select 1 from pg_catalog.pg_timezone_names z where z.name = new.time_zone) then
+    raise exception 'unknown time zone %', new.time_zone using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger guard_transaction_time_zone
+  before insert or update of time_zone on public.transactions
+  for each row execute function public.guard_transaction_time_zone();
+
+revoke execute on function public.guard_transaction_time_zone() from public, anon, authenticated;
+
 alter table public.transactions enable row level security;
 
 create policy "members read household transactions" on public.transactions for select to authenticated
