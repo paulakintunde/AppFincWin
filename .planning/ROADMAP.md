@@ -86,7 +86,7 @@ Plans:
 - [x] 00-17-PLAN.md — Root layout, welcome screen, min-version gate + update-required screen (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 00-18-PLAN.md — Consent screen, You screen, theme profile sync, sign-out wipe flow (W6)
+- [x] 00-18-PLAN.md — Consent screen, You screen, theme profile sync, sign-out wipe flow (W6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 - [ ] 00-19-PLAN.md — Android acceptance, register consolidation, approved prod push (W7)
