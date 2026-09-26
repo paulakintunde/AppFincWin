@@ -34,7 +34,7 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [x] **ENV-06**: Google OAuth client IDs exist for iOS, Android and Web, and Google Sign-In completes end to end
 - [ ] **ENV-07**: Sign in with Apple is configured with its Service ID and key, and completes end to end — *deferrable, blocked on ENV-10*
 - [x] **ENV-08**: Frankfurter rate-refresh Edge Function is deployed and populating the `fx_rates` table on schedule
-- [ ] **ENV-09**: A dependency status register is maintained listing every external service as provisioned, pending or deferred, with its blocker and the phase it must land by
+- [x] **ENV-09**: A dependency status register is maintained listing every external service as provisioned, pending or deferred, with its blocker and the phase it must land by
 - [ ] **ENV-10**: Apple Developer Program membership is active **as an organisation, under the company** (Guideline 5.1.1(ix)) — *external clock: D-U-N-S then enrolment; gates ENV-07, iOS device builds, TestFlight and submission*
 - [ ] **ENV-11**: Google Play Console organisation account is active under the company and an app entry exists — *deferrable to Phase 11; uses the same D-U-N-S number as ENV-10*
 - [ ] **ENV-12**: RevenueCat project exists with iOS and Android API keys, and products are configured in both stores, with the App Store Paid Apps Agreement, banking and tax forms completed — *deferrable to Phase 9; store products depend on ENV-10 and ENV-11*
@@ -82,14 +82,14 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **MON-02**: User input of an amount is parsed to minor units without passing through `parseFloat`
 - [ ] **MON-03**: Splitting an amount across members always produces shares that sum exactly to the original, using largest-remainder rounding
 - [x] **MON-04**: User can set a home currency from the supported list or add a custom currency
-- [ ] **MON-05**: A transaction in a non-home currency records the FX rate applied at the time it was written
-- [ ] **MON-06**: FX rates refresh daily from Frankfurter v2 into the project's own store, and the app reads only that store
+- [x] **MON-05**: A transaction in a non-home currency records the FX rate applied at the time it was written
+- [x] **MON-06**: FX rates refresh daily from Frankfurter v2 into the project's own store, and the app reads only that store
 - [ ] **MON-07**: A rate's own publication date is visible wherever a converted figure is shown, rather than implied to be current
 - [ ] **MON-08**: Every record carries a client-generated UUID primary key assigned before the write leaves the device
-- [ ] **MON-09**: Every mutable record carries an integer version that increments server-side on write
-- [ ] **MON-10**: An alert fires when any currency's latest stored rate is older than its staleness limit
-- [ ] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it
-- [ ] **MON-12**: When Frankfurter cannot be reached, rates refresh from open.er-api instead, and its required attribution is shown in the app
+- [x] **MON-09**: Every mutable record carries an integer version that increments server-side on write
+- [x] **MON-10**: An alert fires when any currency's latest stored rate is older than its staleness limit
+- [x] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it
+- [x] **MON-12**: When Frankfurter cannot be reached, rates refresh from open.er-api instead, and its required attribution is shown in the app
 - [x] **MON-13**: Each currency's decimal places come from ISO 4217 — 0 for JPY, KRW and VND, 3 for KWD, BHD and OMR — and a custom currency declares its own
 - [ ] **MON-14**: A transaction stores its local calendar date and time zone, so its month and any recurring schedule never shift across time zones or clock changes
 
@@ -101,7 +101,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **SYN-04**: The write queue survives a force-quit and resumes on next launch
 - [ ] **SYN-05**: The write queue is bounded, and the user is told when it cannot grow further
 - [x] **SYN-06**: User sees whether the app is offline and how many changes are waiting
-- [ ] **SYN-07**: The persisted offline cache is encrypted at rest, with its key held in secure storage
+- [x] **SYN-07**: The persisted offline cache is encrypted at rest, with its key held in secure storage
 
 ### Recording
 
@@ -357,7 +357,7 @@ Populated during roadmap creation.
 | ENV-06 | Phase 0 - Foundation | Complete |
 | ENV-07 | Phase 0 - Foundation | Pending |
 | ENV-08 | Phase 0 - Foundation | Complete |
-| ENV-09 | Phase 0 - Foundation | Pending |
+| ENV-09 | Phase 0 - Foundation | Complete |
 | ENV-10 | Phase 0 - Foundation | Pending |
 | ENV-11 | Phase 11 - Compliance & Release | Pending |
 | ENV-12 | Phase 9 - Tiers & Onboarding | Pending |
@@ -394,14 +394,14 @@ Populated during roadmap creation.
 | MON-02 | Phase 1 - Money Core | Pending |
 | MON-03 | Phase 1 - Money Core | Pending |
 | MON-04 | Phase 1 - Money Core | Complete |
-| MON-05 | Phase 1 - Money Core | Pending |
-| MON-06 | Phase 1 - Money Core | Pending |
+| MON-05 | Phase 1 - Money Core | Complete |
+| MON-06 | Phase 1 - Money Core | Complete |
 | MON-07 | Phase 1 - Money Core | Pending |
 | MON-08 | Phase 1 - Money Core | Pending |
-| MON-09 | Phase 1 - Money Core | Pending |
-| MON-10 | Phase 1 - Money Core | Pending |
-| MON-11 | Phase 1 - Money Core | Pending |
-| MON-12 | Phase 1 - Money Core | Pending |
+| MON-09 | Phase 1 - Money Core | Complete |
+| MON-10 | Phase 1 - Money Core | Complete |
+| MON-11 | Phase 1 - Money Core | Complete |
+| MON-12 | Phase 1 - Money Core | Complete |
 | MON-13 | Phase 1 - Money Core | Complete |
 | MON-14 | Phase 1 - Money Core | Pending |
 | SYN-01 | Phase 1 - Money Core | Complete |
@@ -410,7 +410,7 @@ Populated during roadmap creation.
 | SYN-04 | Phase 10 - System | Pending |
 | SYN-05 | Phase 10 - System | Pending |
 | SYN-06 | Phase 1 - Money Core | Complete |
-| SYN-07 | Phase 1 - Money Core | Pending |
+| SYN-07 | Phase 1 - Money Core | Complete |
 | REC-01 | Phase 2 - Record | Pending |
 | REC-02 | Phase 2 - Record | Pending |
 | REC-03 | Phase 2 - Record | Pending |

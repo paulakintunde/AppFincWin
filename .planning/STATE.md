@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-09-26T06:15:37.540Z"
+last_updated: "2026-09-26T23:02:58.291Z"
 last_activity: 2026-09-25 -- Phase 02 planning complete
 progress:
   total_phases: 13
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 67
-  completed_plans: 32
-  percent: 48
+  completed_plans: 34
+  percent: 51
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 2 of 16
 Status: Ready to execute
 Last activity: 2026-09-25 -- Phase 02 planning complete
 
-Progress: [█████░░░░░] 45%
+Progress: [█████░░░░░] 51%
 
 ## Performance Metrics
 
@@ -65,6 +65,8 @@ Progress: [█████░░░░░] 45%
 | Phase 00 P17 | ~2h | 3 tasks | 18 files |
 | Phase 00-foundation P18 | ~2h | 3 tasks | 17 files |
 | Phase 01 P15 | 90min | 2 tasks | 7 files |
+| Phase 00 P19 | 90min | 3 tasks | 6 files |
+| Phase 01 P16 | 3h | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -112,6 +114,10 @@ Recent decisions affecting current work:
 - [Phase 00-foundation]: 00-18: AccentSwitcher/FontPairingSwitcher are driven by the live theme (theme.accent/theme.pairing), not the persisted profile row, so a press is visible in the same render tree before the Supabase write resolves (FND-06)
 - [Phase 01]: 01-15: DevSyncProbe is stubbed in YouScreen.test.tsx via jest.mock; its own hook wiring (create-if-absent vs reuse-existing account, foreign-currency amount) is proven in a dedicated DevSyncProbe.test.tsx instead
 - [Phase 01]: 01-15: app/_layout.tsx's setFailureReporter uses area: 'sync' directly -- ErrorArea already included 'sync' before this plan started (00-16 PR #19 rework), no substitution needed
+- [Phase 00]: 00-19: Android acceptance ran on a physical Pixel 9 instead of the planned Pixel_8_API_36 emulator, which segfaulted twice on boot (GPU and swiftshader paths) on this machine's Intel Iris Xe graphics
+- [Phase 00]: 00-19: the dependency register's 'Supabase dev project' row is marked deferred rather than deleted -- it was collapsed into the single production project by quick task 260922-tsn on 2026-09-22, and the register should record that history
+- [Phase 00]: 00-19: website-audit.md verdict moves from REMEDIATE (9 items) to READY pending two items (D-U-N-S name match, an explicit 'registered in Canada' line) after live curl re-verification of both domains, not from the user's remediation report alone
+- [Phase 01]: 01-16: Task 3's device check ran on the same Pixel 9 session as 00-19 Task 2 (combined for one fresh dev-client rebuild); DSG-06 (locale formatting) is accepted on the existing Hermes unit-test suite rather than a visual check, since no shipped screen renders a formatted amount before Phase 2 (Record)
 
 ### Pending Todos
 
