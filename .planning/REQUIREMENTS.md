@@ -95,12 +95,12 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 ### Offline & Sync
 
-- [ ] **SYN-01**: User can browse previously loaded data with no network connection
-- [ ] **SYN-02**: User can create and edit records with no network connection, and those writes flush automatically on reconnect
+- [x] **SYN-01**: User can browse previously loaded data with no network connection
+- [x] **SYN-02**: User can create and edit records with no network connection, and those writes flush automatically on reconnect
 - [ ] **SYN-03**: A queued write that is retried does not produce a duplicate record
 - [ ] **SYN-04**: The write queue survives a force-quit and resumes on next launch
 - [ ] **SYN-05**: The write queue is bounded, and the user is told when it cannot grow further
-- [ ] **SYN-06**: User sees whether the app is offline and how many changes are waiting
+- [x] **SYN-06**: User sees whether the app is offline and how many changes are waiting
 - [ ] **SYN-07**: The persisted offline cache is encrypted at rest, with its key held in secure storage
 
 ### Recording
@@ -402,12 +402,12 @@ Populated during roadmap creation.
 | MON-12 | Phase 1 - Money Core | Pending |
 | MON-13 | Phase 1 - Money Core | Complete |
 | MON-14 | Phase 1 - Money Core | Pending |
-| SYN-01 | Phase 1 - Money Core | Pending |
-| SYN-02 | Phase 1 - Money Core | Pending |
+| SYN-01 | Phase 1 - Money Core | Complete |
+| SYN-02 | Phase 1 - Money Core | Complete |
 | SYN-03 | Phase 10 - System | Pending |
 | SYN-04 | Phase 10 - System | Pending |
 | SYN-05 | Phase 10 - System | Pending |
-| SYN-06 | Phase 1 - Money Core | Pending |
+| SYN-06 | Phase 1 - Money Core | Complete |
 | SYN-07 | Phase 1 - Money Core | Pending |
 | REC-01 | Phase 2 - Record | Pending |
 | REC-02 | Phase 2 - Record | Pending |

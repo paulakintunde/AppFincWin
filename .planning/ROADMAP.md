@@ -155,7 +155,7 @@ Plans:
 - [x] 01-13-PLAN.md — Money prefs, custom currencies and currency options hooks (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 01-15-PLAN.md — Wire QueryProvider, failure reporting, sync line, credits and dev probe into the app (W6; needs Phase 0 00-16/17/18)
+- [x] 01-15-PLAN.md — Wire QueryProvider, failure reporting, sync line, credits and dev probe into the app (W6; needs Phase 0 00-16/17/18)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 - [ ] 01-16-PLAN.md — Production rollout: schema push [BLOCKING], function deploy, live smoke, device check (W7)
