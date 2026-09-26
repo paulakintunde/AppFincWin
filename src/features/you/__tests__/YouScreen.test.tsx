@@ -3,7 +3,7 @@
 // ring/indicator updates in the same render tree via the real ThemeProvider), the analytics
 // toggle reflecting/updating consent, ConnectionStatus's three states, and the D-15 sign-out
 // flow (silent when nothing pending, Alert-gated and only proceeding on confirm otherwise).
-import { Alert } from 'react-native';
+import { Alert, AppState } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { YouScreen } from '../YouScreen';
@@ -100,12 +100,10 @@ beforeEach(() => {
   mockCheckConnection.mockResolvedValue({ ok: true, latencyMs: 42 });
   mockRequestSignOut.mockResolvedValue({ needsConfirm: false });
   appStateCallback = undefined;
-  jest.spyOn(require('react-native').AppState, 'addEventListener').mockImplementation(
-    (_event: string, cb: (state: string) => void) => {
-      appStateCallback = cb;
-      return { remove: jest.fn() };
-    }
-  );
+  jest.spyOn(AppState, 'addEventListener').mockImplementation((..._args: unknown[]) => {
+    appStateCallback = _args[1] as (state: string) => void;
+    return { remove: jest.fn() } as ReturnType<typeof AppState.addEventListener>;
+  });
 });
 
 describe('YouScreen identity', () => {
