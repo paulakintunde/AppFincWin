@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-09-25T21:04:58.866Z"
+last_updated: "2026-09-26T04:00:30.918Z"
 last_activity: 2026-09-25 -- Phase 02 planning complete
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 0
   total_plans: 67
-  completed_plans: 28
-  percent: 42
+  completed_plans: 29
+  percent: 43
 ---
 
 # Project State
@@ -64,6 +64,10 @@ Progress: [████████░░] 78%
 | Phase 00 P15 | 120min | 3 tasks | 12 files |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 2.1 inserted after Phase 2: PDF statement import: text PDFs, generic parser with balance reconciliation, server worker and privacy decision (split from Record's import extension, 2026-09-25)
 
 ### Decisions
 
