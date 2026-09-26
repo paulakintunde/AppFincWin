@@ -76,4 +76,56 @@ migration.
 
 ## Task 2: Deploy Edge Functions, set secrets and Vault, smoke-test live
 
-_(recorded below once complete)_
+**Date:** 2026-09-26
+
+### Deploy
+
+```
+npx supabase functions deploy fx-sync --no-verify-jwt      -> Deployed (777 kB)
+npx supabase functions deploy fx-monitor --no-verify-jwt   -> Deployed (763 kB)
+npx supabase functions deploy resolve-rate                 -> Deployed (774 kB), verify_jwt=true (per config.toml)
+```
+
+### Secrets
+
+Checked existing Edge Function secrets first (`npx supabase secrets list`,
+names/digests only, no plaintext ever shown): `FX_SYNC_SECRET` and
+`FX_MONITOR_SECRET` were **already present** (per the plan's context
+update — `FX_MONITOR_SECRET` created 2026-09-25, distinct from
+`FX_SYNC_SECRET`) — neither was recreated or overwritten.
+
+Wrote a temp env file (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`,
+`FX_ALERT_TO_EMAIL`, values read from `.env.local` by a Node script that
+never echoes them) into the session scratchpad (never the repo), ran
+`npx supabase secrets set --env-file <tmp>` (`"count":3,"message":"Finished
+supabase secrets set."`), then deleted the temp file immediately —
+confirmed gone.
+
+### Vault
+
+Checked `select name from vault.secrets` first: `fx_monitor_secret`,
+`fx_sync_secret`, `fx_sync_url` already existed; `fx_monitor_url` did
+**not**. Created it via the Management API (`vault.create_secret(...,
+'fx_monitor_url')`) → HTTP 201. Re-checked afterward: all four rows now
+present (`fx_monitor_secret`, `fx_monitor_url`, `fx_sync_secret`,
+`fx_sync_url`).
+
+### Live smoke tests (status codes and non-secret fields only)
+
+| Check | Result |
+|---|---|
+| `POST fx-sync` with correct `x-fx-sync-secret` | `200 {"ok":true,"source":"frankfurter-v2",...}` |
+| `POST fx-sync` with wrong secret | `403 {"ok":false,"error":"forbidden"}` |
+| `POST fx-monitor` with correct `x-fx-monitor-secret` | `200 {"ok":true,"stale":0,"autoAccepted":0,"restamped":0,"pendingRows":0,"emailed":0}` — `emailed:0` means no alert rows were queued (nothing stale/held/pending); the Resend call still fired for the daily "all clear" heartbeat, and did not throw |
+| `POST fx-monitor` with wrong secret | `403 {"ok":false,"error":"forbidden"}` |
+| `POST resolve-rate` with no `Authorization` header | `401 {"code":"UNAUTHORIZED_NO_AUTH_HEADER","message":"Missing authorization header"}` |
+| `select count(*) from public.currencies` | **166** (> 100) |
+| `select max(rate_date) from public.fx_rates` | **2026-09-26** (0 days old, within the 4-day staleness window) |
+| `select count(*) from public.fx_rate_holds` | **0** |
+| `select jobname, schedule from cron.job` | `fx-monitor-daily` → `0 17 * * *`; `fx-sync-daily` → `30 16 * * *` |
+
+All three Edge Functions are live and verified against production. No
+secret value was echoed, logged or committed at any point; `git status
+--porcelain` after this task shows no temp secrets file, and `.env.local`
+remains untracked (`git ls-files | grep '^\.env'` shows only
+`.env.example`).
