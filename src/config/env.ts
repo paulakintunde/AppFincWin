@@ -41,6 +41,19 @@ function isErrorTracking(value: string | undefined): value is ErrorTracking {
   return ERROR_TRACKERS.includes(value as ErrorTracking);
 }
 
+/**
+ * Found live 2026-09-25: every EAS environment had EXPO_PUBLIC_SUPABASE_URL (and, it turned out,
+ * other EXPO_PUBLIC_ values) stored with literal wrapping quotes — a paste/CLI-quoting mistake,
+ * not a real https:// URL. Detected generically so any EXPO_PUBLIC_ var gets the same clear,
+ * value-free error rather than whatever downstream validation happens to trip first.
+ */
+function isQuotedValue(value: string | undefined): boolean {
+  if (!value || value.length < 2) return false;
+  const first = value[0];
+  const last = value[value.length - 1];
+  return (first === '"' && last === '"') || (first === "'" && last === "'");
+}
+
 function isValidSupabaseUrl(url: string, appEnv: string | undefined): boolean {
   if (url.startsWith('https://')) return true;
   return appEnv === 'development' && DEV_LOOPBACK_HOSTS.some((host) => url.startsWith(host));
@@ -54,8 +67,19 @@ function isValidSupabaseUrl(url: string, appEnv: string | undefined): boolean {
 export function readClientEnv(src: Record<string, string | undefined>): ClientEnv {
   const problems: string[] = [];
 
+  // Quote detection runs first and before every other check below, so a quoted value gets the
+  // one helpful, specific message instead of (or ahead of) a confusing downstream validation
+  // failure — see isQuotedValue()'s docs. Never echoes the value itself.
+  const quotedKeys = new Set<string>();
+  for (const [key, value] of Object.entries(src)) {
+    if (key.startsWith('EXPO_PUBLIC_') && isQuotedValue(value)) {
+      quotedKeys.add(key);
+      problems.push(`${key} is wrapped in literal quotes — remove them in EAS/.env`);
+    }
+  }
+
   const appEnvRaw = src.EXPO_PUBLIC_APP_ENV;
-  if (!isAppEnv(appEnvRaw)) {
+  if (!quotedKeys.has('EXPO_PUBLIC_APP_ENV') && !isAppEnv(appEnvRaw)) {
     problems.push(
       `EXPO_PUBLIC_APP_ENV must be one of ${APP_ENVS.join('|')} (got ${JSON.stringify(appEnvRaw)})`
     );
@@ -68,27 +92,39 @@ export function readClientEnv(src: Record<string, string | undefined>): ClientEn
     'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID',
   ] as const;
   for (const key of requiredKeys) {
-    if (!src[key]) {
+    if (!src[key] && !quotedKeys.has(key)) {
       problems.push(`${key} is required and was not set`);
     }
   }
 
   const supabaseUrl = src.EXPO_PUBLIC_SUPABASE_URL ?? '';
-  if (supabaseUrl && !isValidSupabaseUrl(supabaseUrl, appEnvRaw)) {
+  if (
+    supabaseUrl &&
+    !quotedKeys.has('EXPO_PUBLIC_SUPABASE_URL') &&
+    !isValidSupabaseUrl(supabaseUrl, appEnvRaw)
+  ) {
     problems.push(
       `EXPO_PUBLIC_SUPABASE_URL must start with https:// (loopback/emulator hosts are only allowed when EXPO_PUBLIC_APP_ENV=development), got ${JSON.stringify(supabaseUrl)}`
     );
   }
 
   const posthogHostRaw = src.EXPO_PUBLIC_POSTHOG_HOST;
-  if (posthogHostRaw && posthogHostRaw !== EU_POSTHOG_HOST) {
+  if (
+    posthogHostRaw &&
+    !quotedKeys.has('EXPO_PUBLIC_POSTHOG_HOST') &&
+    posthogHostRaw !== EU_POSTHOG_HOST
+  ) {
     problems.push(
       `EXPO_PUBLIC_POSTHOG_HOST must be ${EU_POSTHOG_HOST} (D-23), got ${JSON.stringify(posthogHostRaw)}`
     );
   }
 
   const errorTrackingRaw = src.EXPO_PUBLIC_ERROR_TRACKING;
-  if (errorTrackingRaw && !isErrorTracking(errorTrackingRaw)) {
+  if (
+    errorTrackingRaw &&
+    !quotedKeys.has('EXPO_PUBLIC_ERROR_TRACKING') &&
+    !isErrorTracking(errorTrackingRaw)
+  ) {
     problems.push(
       `EXPO_PUBLIC_ERROR_TRACKING must be one of ${ERROR_TRACKERS.join('|')}, got ${JSON.stringify(errorTrackingRaw)}`
     );
@@ -111,6 +147,61 @@ export function readClientEnv(src: Record<string, string | undefined>): ClientEn
     sentryDsn: src.EXPO_PUBLIC_SENTRY_DSN || undefined,
     iosAppStoreId: src.EXPO_PUBLIC_IOS_APP_STORE_ID || undefined,
   };
+}
+
+/** Why {@link readErrorTrackingEnv} left `sentryDsn` unset for this launch. */
+export type SentryDsnDisabledReason = 'quoted-value';
+
+/** The only config error reporting needs — see {@link readErrorTrackingEnv}. */
+export type ErrorTrackingEnv = Pick<ClientEnv, 'errorTracking' | 'sentryDsn'> & {
+  /**
+   * EXPO_PUBLIC_APP_ENV, tagged onto every Sentry event as `environment` so events can be split
+   * by build channel. Tolerant by design: a missing or unrecognised value leaves this undefined
+   * rather than throwing or defaulting — error reporting must never fail because of it.
+   */
+  environment?: AppEnv;
+  /** Set only when `sentryDsn` above is undefined because the raw value was quoted (see below). */
+  sentryDsnDisabledReason?: SentryDsnDisabledReason;
+};
+
+/**
+ * Reads ONLY the error-tracking keys. Deliberately independent of {@link readClientEnv}: crash
+ * reporting must survive a misconfigured environment elsewhere in the app. Found live
+ * 2026-09-25 — every EAS environment stored EXPO_PUBLIC_SUPABASE_URL with literal wrapping
+ * quotes, the whole-env reader threw, and Sentry was silently never initialised. Throws
+ * EnvError only for an unrecognised EXPO_PUBLIC_ERROR_TRACKING value.
+ *
+ * A quoted EXPO_PUBLIC_SENTRY_DSN (the same class of mistake) is deliberately NOT thrown here —
+ * it is treated as no DSN configured (`sentryDsnDisabledReason: 'quoted-value'`) so error
+ * reporting degrades to an observable no-op rather than taking the whole env down with it.
+ */
+export function readErrorTrackingEnv(src: Record<string, string | undefined>): ErrorTrackingEnv {
+  const errorTrackingRaw = src.EXPO_PUBLIC_ERROR_TRACKING;
+  if (errorTrackingRaw && !isErrorTracking(errorTrackingRaw)) {
+    throw new EnvError([`EXPO_PUBLIC_ERROR_TRACKING must be one of ${ERROR_TRACKERS.join('|')}`]);
+  }
+
+  const appEnvRaw = src.EXPO_PUBLIC_APP_ENV;
+  const environment: AppEnv | undefined = isAppEnv(appEnvRaw) ? appEnvRaw : undefined;
+
+  const sentryDsnRaw = src.EXPO_PUBLIC_SENTRY_DSN;
+  const sentryDsnQuoted = isQuotedValue(sentryDsnRaw);
+
+  return {
+    errorTracking: isErrorTracking(errorTrackingRaw) ? errorTrackingRaw : 'sentry', // D-19
+    sentryDsn: sentryDsnQuoted ? undefined : sentryDsnRaw || undefined,
+    ...(sentryDsnQuoted ? { sentryDsnDisabledReason: 'quoted-value' as const } : {}),
+    ...(environment ? { environment } : {}),
+  };
+}
+
+/** Literal-access entry point for {@link readErrorTrackingEnv} (see getEnv() on inlining). */
+export function getErrorTrackingEnv(): ErrorTrackingEnv {
+  return readErrorTrackingEnv({
+    EXPO_PUBLIC_APP_ENV: process.env.EXPO_PUBLIC_APP_ENV,
+    EXPO_PUBLIC_ERROR_TRACKING: process.env.EXPO_PUBLIC_ERROR_TRACKING,
+    EXPO_PUBLIC_SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  });
 }
 
 let cached: ClientEnv | undefined;
