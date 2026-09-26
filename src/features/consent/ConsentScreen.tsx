@@ -19,14 +19,14 @@ export function ConsentScreen() {
 
   const handleShare = useCallback(async () => {
     setStatus('busy');
-    await grant();
-    setStatus('done');
+    // Only leave the screen once the answer is saved (and so already visible to the (app)
+    // layout's gate) -- redirecting on a failed write would bounce straight back here.
+    setStatus((await grant()) ? 'done' : 'idle');
   }, [grant]);
 
   const handleDecline = useCallback(async () => {
     setStatus('busy');
-    await decline();
-    setStatus('done');
+    setStatus((await decline()) ? 'done' : 'idle');
   }, [decline]);
 
   if (status === 'done') {
