@@ -1,7 +1,7 @@
 # Phase 2: Record - Context
 
 **Gathered:** 2026-09-25
-**Extended:** 2026-09-25 — statement import extension (D-39…D-52). Plans written before this date need revising; see "Plan impact of the import extension" below.
+**Extended:** 2026-09-25 — statement import extension (D-39…D-52), refined after research (D-53…D-56). Plans written before this date need revising; see "Plan impact of the import extension" below.
 **Status:** Ready for planning (revision of affected plans required before execution)
 
 <domain>
@@ -98,6 +98,12 @@ Context: import is the answer to Decide's cold-start problem (PROJECT.md), and D
 - **D-51:** **The add/edit sheet gains a Transfer type** alongside expense and income, with from-account and to-account fields. Deleting either leg deletes both. Editing the pair's date or amount edits both legs (the planner defines the rules for cross-currency amounts).
 - **D-52:** **Import detects transfers and suggests them; nothing is linked silently.** After conversion, the import looks for rows on another of the user's accounts, either already stored or in the same import, with the opposite sign and a matching amount within a few days (card payments take one to three days to land), and weighs payment-like descriptions ("PAYMENT – THANK YOU", "TRANSFER TO"). A match is offered in the preview: "Looks like a payment from Current account to Visa. Link as a transfer?" Accepting links the pair and moves both to Transfer. An unmatched payment-like row is offered as a Transfer with the other account left for the user to pick. Matching is pure and lives in `engine/`.
 
+**Refinements after research (confirmed with the user, 2026-09-25)**
+- **D-53 (amends D-41):** **The target account's type decides what the balance column means**: current or savings means money held, and a credit card means amount owed. Research showed that a running-balance check can't separate "the signs are flipped" from "the balance means the opposite", because both readings always reconcile. With the balance meaning fixed by the account the user chose (D-12), reconciliation settles the sign convention on its own. The user is asked only when that still leaves it ambiguous, for example a file with no balances and no telling labels. An "available credit" column is recognised by its label and converted per D-44.
+- **D-54 (amends D-47):** **Cross-format duplicate matching allows ±2 days.** When comparing against rows imported from a *different* file format (a CSV transaction date against an OFX posting date), a date within ±2 days counts as a match. Same-format matching stays exact-date. Matching counts occurrences (flag min(k, m)) and never compares rows within the same file. `FITID` is not treated as unique, since banks reuse and regenerate it, and FITID matching is switched off for a file that contains conflicting FITIDs.
+- **D-55:** **An imported row that looks like the payment of a pending recurring occurrence is offered as "mark paid".** The preview shows: "Looks like this pays the pending Netflix bill. Mark it paid?" Accepting marks the pending row paid, with the imported date and amount, instead of adding a second row. Nothing happens silently. It is part of the import's single undo step.
+- **D-56:** **Recurring transfers are not in Phase 2.** Transfers are one-off only. A recurring series stays expense or income, and recurring transfers (such as a standing order to savings) are deferred.
+
 ### Claude's Discretion
 - **Activity list (ACT-01…05):** the planner chooses the search mechanics (server-side `ilike` or full-text, against the cached month for instant results), how the amount filter works (range, or above/below), and the bulk-select interactions, following the prototype's Activity screen (~line 198, bulk actions ~line 5086). Since DAT-01 (archiving) arrives later, ACT-02's "including into archived months" is met in this phase by the month switcher reaching every month that has data. The planner should keep the switcher compatible with a later `archive_months` concept.
 - **Accounts (REC-08):** the create/edit account UI and how a balance is shown for an account in a foreign currency (in the account's own currency, with a home-currency figure alongside).
@@ -187,6 +193,7 @@ Context: import is the answer to Decide's cold-start problem (PROJECT.md), and D
 - **Production backups (ENV-16)**: moved to Phase 10 on 2026-09-25, method TBD, likely AWS. Phase 2 dogfooding runs on production without backups, as an accepted risk. Nothing in this phase may assume a restore is possible.
 - **PDF statements → Phase 2.1** (inserted 2026-09-25). It carries these open questions: a server-side worker (which breaks D-17's "never uploaded", so it needs its own privacy copy, retention choice defaulting to delete-after-import, purge on account deletion, and Sentry scrubbing of statement text); a generic text-PDF parser gated by D-46 reconciliation; parsers for particular banks only for the institutions users actually upload; OCR for scanned statements; and an opt-in LLM fallback for unrecognised layouts, never the source of confirmed figures, which needs a DPA and a privacy disclosure.
 - **XLSX import**: not chosen for Phase 2 (2026-09-25). A small adapter into the D-40 pipeline whenever it's wanted.
+- **Recurring transfers** (standing orders between own accounts): deferred by D-56.
 - **Overdrawn / over-limit alerts** (push): out of scope here. They sit naturally with the later bills-due and over-cap alerts.
 
 </deferred>
