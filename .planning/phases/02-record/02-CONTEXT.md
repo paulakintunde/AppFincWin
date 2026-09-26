@@ -1,16 +1,19 @@
 # Phase 2: Record - Context
 
 **Gathered:** 2026-09-25
-**Status:** Ready for planning
+**Extended:** 2026-09-25 — statement import extension (D-39…D-52). Plans written before this date need revising; see "Plan impact of the import extension" below.
+**Status:** Ready for planning (revision of affected plans required before execution)
 
 <domain>
 ## Phase Boundary
 
-A user can log and manage their real financial activity against the live Supabase backend. That covers income and expense entry with edit and delete, per-account balances, user-owned categories, recurring series that generate entries, CSV import (during onboarding or later) with preview and column mapping, the Activity month list with switching, search, filter and bulk delete, and a 12-deep undo built from compensating writes, reachable from the toast and a History screen. Also in scope: ANL-05 (a signup → first entry → first CSV import funnel). ENV-16 (production backups) was moved out to Phase 10 on 2026-09-25.
+A user can log and manage their real financial activity against the live Supabase backend. That covers income and expense entry with edit and delete, per-account balances, user-owned categories, recurring series that generate entries, CSV import (during onboarding or later) with preview and column mapping, the Activity month list with switching, search, filter and bulk delete, and a 12-deep undo built from compensating writes, reachable from the toast and a History screen. Also in scope: ANL-05 (a signup → first entry → first import funnel). ENV-16 (production backups) was moved out to Phase 10 on 2026-09-25.
 
-Requirements: REC-01…REC-12, ACT-01…ACT-05, ANL-05.
+**Import extension (2026-09-25):** statement import also accepts OFX/QFX, reads each file's format (sign convention, balance meaning, limits) before converting it, reconciles against statement balances where the file has them, and never treats an overdrawn or over-limit account as an error. Accounts carry an overdraft or credit limit and show their standing. **Transfers between the user's own accounts are now in scope**, including detecting both sides of a card payment on import. PDF statements are Phase 2.1.
 
-Not in this phase: transfers between accounts, household sharing and settlements (Phase 8), archiving and restoring months (DAT-01, later), level gating, Pro/Free tiering, and receipts.
+Requirements: REC-01…REC-18, ACT-01…ACT-05, ANL-05.
+
+Not in this phase: PDF statements (Phase 2.1), household sharing and settlements (Phase 8), archiving and restoring months (DAT-01, later), level gating, Pro/Free tiering, and receipts.
 
 </domain>
 
@@ -65,12 +68,43 @@ Decision numbers are local to this phase. "Phase 1 D-xx" refers to `.planning/ph
 - **D-37:** **New transaction fields: `name` (payee or line title) and `payment_type`.** The name is required for search (ACT-03), import descriptions and recurring detection. Payment type uses the prototype's `PTYPE` list (line 3357): Card, Bank transfer, Direct debit, Standing order and Cash for money out; Direct deposit, Invoice, Transfer, Card payout and Cash for money in. It is descriptive only.
 - **D-38:** **There is no tax-relevant flag.** "Tax categorisation" is Out of Scope in REQUIREMENTS.md, and tax framing is cut in PROJECT.md. **Receipt attachments are deferred** (see Deferred Ideas).
 
+### Statement import extension (added 2026-09-25)
+
+Context: import is the answer to Decide's cold-start problem (PROJECT.md), and Decide is the one place where a wrong number harms a real person's finances. Banks and card issuers present the same activity with different sign conventions, and accounts are routinely overdrawn or over their limits. Reading a file wrongly reverses payments and spending, so the importer must understand a file's format before converting it. Decisions below were confirmed with the user on 2026-09-25: CSV + OFX/QFX in this phase, PDF in Phase 2.1, limits and standing in this phase, and full transfer pairing in this phase.
+
+**Formats and pipeline**
+- **D-39:** **Phase 2 imports CSV and OFX/QFX.** QFX is treated as OFX. Both OFX 1.x (SGML) and 2.x (XML) are read. Both formats are parsed on the device by pure code in `engine/`, and the raw file is never uploaded (D-17 unchanged). OFX's `FITID` is used as an exact duplicate key, and `LEDGERBAL`/`AVAILBAL` feed reconciliation (D-46) and limits (D-48). XLSX is not in this phase. **PDF statements are Phase 2.1.**
+- **D-40:** **One pipeline for every format:** format adapter → format profile (D-41) → conversion into Phase 1's existing transaction rows → reconciliation (D-46) → duplicate check (D-47) → transfer detection (D-52) → preview → commit. Adapters only produce rows in the existing model; there is no second transaction model. PDF (Phase 2.1) and bank feeds (FEED-01) later become further adapters into the same pipeline.
+
+**Reading the format first**
+- **D-41:** **Every import builds a format profile before any conversion.** The profile records: the account type; what a positive amount means (money in, or money spent); what the balance column shows (money held, amount owed, or available credit); and any overdraft or card limit the file states. It is decided from labels first (separate Withdrawals/Deposits columns, "Payment – thank you", "Credit limit", "Available credit", `DR`/`CR`, `OD`), then from the numbers: the running-balance check (D-46) is run under each candidate sign convention, and the one that reconciles wins. If none or more than one reconciles, the app asks the user.
+- **D-42:** **The preview states the reading in plain words, with one example row, and the user can flip it.** Example: "We read this as a credit card statement. Purchases are shown as positive and payments as negative. The balance is what you owe: £1,250, which is over your £1,000 limit." An import whose profile is still ambiguous cannot be committed. A confirmed profile is remembered per file layout (header signature plus account), so the next file from the same bank is read the same way without asking.
+- **D-43:** **Amount notation is read, but never decides the sign on its own.** The strict parser (Phase 1 D-24, still no `parseFloat`) is extended to read leading and trailing minus signs, parentheses, `DR`/`CR` suffixes or columns, `OD` markers, and separate debit and credit columns. The format profile decides what the resulting sign means.
+- **D-44:** **One stored sign rule, whatever the source.** Money out is negative and money in is positive. An account balance is positive when money is held and negative when money is owed. On a card account, a purchase is negative and a payment to the card is positive. "Available credit" figures are converted: owed = limit − available. Available credit at or below zero means the card is at or over its limit.
+- **D-45:** **The bank's original values are kept alongside the converted ones**: the raw amount string and raw balance string, in addition to the raw description (D-20). This is import provenance for tracing and re-converting a misread row. It is not shown by default.
+
+**Reconciliation**
+- **D-46:** **When a file carries balances, the import checks them.** Sources are a running-balance column, OFX `LEDGERBAL`, or a stated opening and closing balance. The check is opening balance + rows = closing balance, plus each running balance in turn. A match shows "Balances check out." A mismatch highlights the rows that can't be verified, and the user reviews them before committing. A file without balances imports with the note "Couldn't check this file against a balance", which is not an error. **A negative opening, running or closing balance is normal and is never flagged.**
+
+**Duplicates (amends D-13)**
+- **D-47:** **Amends D-13.** Matching against existing rows is unchanged: flagged and unticked. **Identical rows within the same file are no longer flagged**, because two identical same-day purchases are both real. Matching counts occurrences: if the file holds two identical rows and the account already has one, exactly one is flagged. An OFX `FITID` is an exact duplicate key when present. Overlapping files, such as a CSV and then an OFX for the same month, are caught by the same account + date + amount + description match.
+
+**Overdraft and credit limits**
+- **D-48:** **Accounts gain an optional `overdraft_limit` (checking and savings) and `credit_limit` (credit),** stored as non-negative minor units in the account's currency, by additive migration (Phase 1 D-26/D-27, FND-10). Import can fill a limit from the statement, which the user confirms in the preview.
+- **D-49:** **Account standing is a pure `engine/` function.** Checking and savings: in credit; overdrawn within the overdraft; overdrawn beyond the overdraft (including when no overdraft is set). Credit: in credit (after a refund); owing within the limit; over the limit. Loan: owing. Tests cover zero, exactly at the limit, and one minor unit over. **Overdrawn and over-limit are states, never errors or validation failures**, in the database, the engine, import or the UI. Standing shows on the account list and detail with the minus sign always visible, locale formatting (DSG-06), and existing tokens only (no new colours). Copy is declarative: "Overdrawn by £240, within a £500 overdraft." "£120 over the £1,000 limit."
+
+**Transfers (moved into scope)**
+- **D-50:** **Transfers between the user's own accounts are in Phase 2.** A transfer is two linked rows (money out of one account, money into the other), created together, sharing a transfer link, and filed under the system Transfer category (D-34). Transfers count in account balances but are **excluded from income and spending totals** (month totals now, and Decide and Insights later). A cross-currency transfer keeps each leg in its own account's currency, each stamped through the Phase 1 FX path; the two amounts are what the user or the statements say, not derived from each other. Creating, editing or deleting a transfer is one undo step covering both legs.
+- **D-51:** **The add/edit sheet gains a Transfer type** alongside expense and income, with from-account and to-account fields. Deleting either leg deletes both. Editing the pair's date or amount edits both legs (the planner defines the rules for cross-currency amounts).
+- **D-52:** **Import detects transfers and suggests them; nothing is linked silently.** After conversion, the import looks for rows on another of the user's accounts, either already stored or in the same import, with the opposite sign and a matching amount within a few days (card payments take one to three days to land), and weighs payment-like descriptions ("PAYMENT – THANK YOU", "TRANSFER TO"). A match is offered in the preview: "Looks like a payment from Current account to Visa. Link as a transfer?" Accepting links the pair and moves both to Transfer. An unmatched payment-like row is offered as a Transfer with the other account left for the user to pick. Matching is pure and lives in `engine/`.
+
 ### Claude's Discretion
 - **Activity list (ACT-01…05):** the planner chooses the search mechanics (server-side `ilike` or full-text, against the cached month for instant results), how the amount filter works (range, or above/below), and the bulk-select interactions, following the prototype's Activity screen (~line 198, bulk actions ~line 5086). Since DAT-01 (archiving) arrives later, ACT-02's "including into archived months" is met in this phase by the month switcher reaching every month that has data. The planner should keep the switcher compatible with a later `archive_months` concept.
 - **Accounts (REC-08):** the create/edit account UI and how a balance is shown for an account in a foreign currency (in the account's own currency, with a home-currency figure alongside).
 - **Server mechanics:** how occurrences are materialised (pg_cron plus a SQL function, or an Edge Function); table, column and enum names; the category-guess keyword list; the thresholds for duplicate and recurrence similarity.
 - **ANL-05:** event names and properties for the signup → first entry → first import funnel, with no amounts, payees or free text, per Phase 0 D-18.
 - Whether a hand-entered transaction dated in the future defaults to pending.
+- **Import extension (D-39…D-52):** where remembered format profiles live (a per-user table or an account column); the header-signature scheme; column names for the raw amount and balance strings and for the transfer link; the transfer-match window (a starting point of three days) and amount tolerance for cross-currency legs; which OFX library, if any (a small pure parser in `engine/` is preferred over a dependency); and the edit rules for a cross-currency transfer pair.
 
 </decisions>
 
@@ -81,7 +115,7 @@ Decision numbers are local to this phase. "Phase 1 D-xx" refers to `.planning/ph
 
 ### Product scope and locked decisions
 - `.planning/PROJECT.md`: Core Value, the Key Decisions table (undo as compensating writes in `engine/`, CSV import moved early, local date plus time zone, one household in v1, tax framing cut), and the compliance voice rules.
-- `.planning/REQUIREMENTS.md`: REC-01…12, ACT-01…06 (ACT-06 is **not** in this phase), ANL-05, ENV-16 (moved to Phase 10: not in this phase), DAT-01 (a later phase), and the Out of Scope table (tax categorisation).
+- `.planning/REQUIREMENTS.md`: REC-01…18 (REC-13…18 added 2026-09-25 for the import extension), ACT-01…06 (ACT-06 is **not** in this phase), ANL-05, ENV-16 (moved to Phase 10: not in this phase), DAT-01 (a later phase), and the Out of Scope table (tax categorisation).
 - `.planning/ROADMAP.md` § Phase 2: Record, for the goal and the five success criteria.
 - `BUILD-PROMPT.md` §2 (design tokens: no extra colours), §5 (feature-area map with prototype line numbers), §6 (architecture, the `state/` undoStack, normalised tables including `categories` and `undo_snapshots`), §8 (roadmap row 2).
 
@@ -132,6 +166,10 @@ Decision numbers are local to this phase. "Phase 1 D-xx" refers to `.planning/ph
 - Undo refusal copy names who changed what and what the record is, in the declarative voice ("Sam edited Groceries after this, so it can't be undone"), never prescriptive.
 - Recurring suggestion copy after import: "Looks like Netflix, £10.99 monthly. Make it recurring?"
 - Import privacy line in the prototype's style: the file is read on this device and never uploaded.
+- Format read-back in the preview: "We read this as a credit card statement. Purchases are shown as positive and payments as negative. The balance is what you owe: £1,250, which is over your £1,000 limit."
+- Account standing copy: "Overdrawn by £240, within a £500 overdraft." / "£120 over the £1,000 limit." Never "you should".
+- Transfer suggestion copy: "Looks like a payment from Current account to Visa. Link as a transfer?"
+- Before planning the import screens, collect a few real, redacted statements (CSV and OFX), including a card that has gone over its limit and an overdrawn current account, to confirm how those banks show available credit and signs.
 
 </specifics>
 
@@ -147,8 +185,33 @@ Decision numbers are local to this phase. "Phase 1 D-xx" refers to `.planning/ph
 - **RRULE-style schedules** ("last Friday of the month"): not chosen.
 - **Tax-relevant flag**: dropped under the existing Out of Scope decision. Not coming back without a PROJECT.md change.
 - **Production backups (ENV-16)**: moved to Phase 10 on 2026-09-25, method TBD, likely AWS. Phase 2 dogfooding runs on production without backups, as an accepted risk. Nothing in this phase may assume a restore is possible.
+- **PDF statements → Phase 2.1** (inserted 2026-09-25). It carries these open questions: a server-side worker (which breaks D-17's "never uploaded", so it needs its own privacy copy, retention choice defaulting to delete-after-import, purge on account deletion, and Sentry scrubbing of statement text); a generic text-PDF parser gated by D-46 reconciliation; parsers for particular banks only for the institutions users actually upload; OCR for scanned statements; and an opt-in LLM fallback for unrecognised layouts, never the source of confirmed figures, which needs a DPA and a privacy disclosure.
+- **XLSX import**: not chosen for Phase 2 (2026-09-25). A small adapter into the D-40 pipeline whenever it's wanted.
+- **Overdrawn / over-limit alerts** (push): out of scope here. They sit naturally with the later bills-due and over-cap alerts.
 
 </deferred>
+
+<plan_impact>
+## Plan impact of the import extension (2026-09-25)
+
+The 31 plans were written before D-39…D-52. None had executed when this was added. The planner must revise the plans below (and add new ones where needed) before Phase 2 executes. **The UI-SPEC also needs a revision pass** for the Transfer entry type, the account-standing display, and the import's format-confirmation and reconciliation states.
+
+| Plan | What changes |
+|---|---|
+| 02-02, 02-03 (CSV engine) | Notation reading (D-43), balance-column role detection, sign handling via the format profile (D-41/D-44); raw strings kept (D-45) |
+| **New engine plan(s)** | OFX/QFX parser (D-39); format-profile inference and running-balance reconciliation (D-41, D-46); account standing (D-49); transfer matching (D-52). All pure, property-tested, in `engine/` |
+| 02-04 (import intelligence) | Duplicate detection counts occurrences and uses `FITID` (D-47); transfer matching lives here or in the new plan |
+| 02-06 (view maths) | Month totals exclude transfers (D-50); standing surfaced for accounts |
+| 02-07 (schema) | Transfer link column, raw amount/balance provenance columns, account limit columns (D-45, D-48, D-50), plus remembered format profiles (D-42). All additive (FND-10) |
+| 02-09, 02-13 (server undo, RPCs) | Transfer create/edit/delete is one step over both legs (D-50) |
+| 02-10, 02-11, 02-14, 02-15, 02-17 (contracts, db, hooks, mutations) | Transfer mutations and reads; account limit fields; ANL-05 events renamed "first import", with the format as a property and no amounts |
+| 02-20 (entry sheet) | Adds the Transfer type (D-51); "expense and income only in this phase" no longer holds |
+| 02-24 (accounts UI) | Limit fields, standing display, negative opening balance entry (D-48/D-49) |
+| 02-26, 02-27 (import pipeline and screens) | OFX file pick, the D-40 pipeline, the format-confirmation step (D-42), reconciliation results (D-46), transfer suggestions (D-52) |
+| 02-30 (onboarding) | Copy says "statement" instead of "CSV" |
+| 02-31 (rollout) | Device walkthrough adds: a card statement over its limit, an overdrawn current account, an OFX file, and a card payment linked as a transfer |
+
+</plan_impact>
 
 ---
 

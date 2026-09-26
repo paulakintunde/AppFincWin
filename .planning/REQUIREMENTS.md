@@ -55,7 +55,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **ANL-02**: No analytics event leaves the device until the user has opted in, and the user can change that choice in settings at any time
 - [x] **ANL-03**: Every event is drawn from a typed catalogue whose properties cannot carry amounts, payee names, account names or free text
 - [x] **ANL-04**: Session replay is excluded from production builds
-- [ ] **ANL-05**: Drop-off from signup through first entry and first CSV import is measurable
+- [ ] **ANL-05**: Drop-off from signup through first entry and first statement import is measurable
 - [ ] **ANL-06**: Checks started, completed, their verdict state and decisions recorded are measurable, with no amounts attached
 - [ ] **ANL-07**: Onboarding asks for analytics consent once, in plain language
 - [ ] **ANL-08**: The level onboarding assigns, and any later change the user makes to it, is measurable
@@ -113,10 +113,16 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **REC-06**: User can skip or end a single occurrence of a recurring transaction without deleting the series
 - [ ] **REC-07**: User can create, rename and colour their own categories beyond the built-in set
 - [ ] **REC-08**: User can create accounts and see a balance per account
-- [ ] **REC-09**: User can import transactions from a CSV file during onboarding or later
+- [ ] **REC-09**: User can import transactions from a statement file (CSV or OFX/QFX; PDF in Phase 2.1) during onboarding or later
 - [ ] **REC-10**: Import shows what will be created and lets the user correct column mapping before committing
 - [ ] **REC-11**: User can undo any of their last 12 changes from the toast or the history screen
 - [ ] **REC-12**: Undo is refused with an explanation when another household member has since changed the same record
+- [ ] **REC-13**: Before converting a statement, import works out its format (what a positive amount means, what the balance column shows — money held, amount owed or available credit — and any stated limit), shows that reading in plain words for the user to confirm or flip, asks when the file is ambiguous, and remembers a confirmed reading for the same file layout
+- [ ] **REC-14**: Import reads every common amount notation (leading or trailing minus, parentheses, DR/CR, OD, separate debit and credit columns) and stores every row under one sign rule, keeping the bank's original values alongside
+- [ ] **REC-15**: When a statement carries balances, import checks that the opening balance plus the rows equals the closing balance and highlights rows it cannot verify before committing; a negative balance is never treated as an error
+- [ ] **REC-16**: Re-importing the same or an overlapping statement does not create duplicates, while identical genuine transactions within one file are all kept
+- [ ] **REC-17**: User can set an overdraft limit on a current or savings account and a credit limit on a card, and each account shows its standing — in credit, overdrawn within or beyond its overdraft, owing within or over its card limit — without treating overdrawn or over-limit as an error
+- [ ] **REC-18**: User can record a transfer between their own accounts as one linked pair, import suggests matching transfer pairs such as card payments, and transfers are excluded from income and spending totals
 
 ### Activity
 
@@ -126,6 +132,13 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **ACT-04**: User can filter the list by category, account and amount
 - [ ] **ACT-05**: User can select multiple transactions and delete them in one action
 - [ ] **ACT-06**: User can view the month as a week breakdown, a split view, a balance view and a calendar
+
+### Statement Import (PDF)
+
+- [ ] **IMP-01**: User can import a text-based PDF statement, with the same format reading, preview, duplicate check and transfer suggestions as other statement files
+- [ ] **IMP-02**: A PDF import is committed only after its balances reconcile or the user has reviewed every row that could not be verified
+- [ ] **IMP-03**: An uploaded statement file is deleted after a successful import unless the user chooses to keep it, a kept file is removed on account deletion, and statement content never appears in logs or error reports
+- [ ] **IMP-04**: Privacy copy states plainly where a PDF statement is processed and how long the file is kept
 
 ### Shell & Navigation
 
@@ -408,12 +421,22 @@ Populated during roadmap creation.
 | REC-10 | Phase 2 - Record | Pending |
 | REC-11 | Phase 2 - Record | Pending |
 | REC-12 | Phase 2 - Record | Pending |
+| REC-13 | Phase 2 - Record | Pending |
+| REC-14 | Phase 2 - Record | Pending |
+| REC-15 | Phase 2 - Record | Pending |
+| REC-16 | Phase 2 - Record | Pending |
+| REC-17 | Phase 2 - Record | Pending |
+| REC-18 | Phase 2 - Record | Pending |
 | ACT-01 | Phase 2 - Record | Pending |
 | ACT-02 | Phase 2 - Record | Pending |
 | ACT-03 | Phase 2 - Record | Pending |
 | ACT-04 | Phase 2 - Record | Pending |
 | ACT-05 | Phase 2 - Record | Pending |
 | ACT-06 | Phase 7 - Insights | Pending |
+| IMP-01 | Phase 2.1 - PDF statement import | Pending |
+| IMP-02 | Phase 2.1 - PDF statement import | Pending |
+| IMP-03 | Phase 2.1 - PDF statement import | Pending |
+| IMP-04 | Phase 2.1 - PDF statement import | Pending |
 | NAV-01 | Phase 3 - Shell | Pending |
 | NAV-02 | Phase 3 - Shell | Pending |
 | NAV-03 | Phase 3 - Shell | Pending |
@@ -517,10 +540,10 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 193 total
-- Mapped to phases: 193
+- v1 requirements: 203 total
+- Mapped to phases: 203
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-09-22 after Apple organisation-enrolment check (website and domain email) and Supabase hosting decision. 193/193 v1 requirements mapped*
+*Last updated: 2026-09-25 after the statement import extension: REC-13…18 added to Phase 2, IMP-01…04 added for inserted Phase 2.1, REC-09 and ANL-05 widened beyond CSV. 203/203 v1 requirements mapped*

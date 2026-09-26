@@ -88,3 +88,16 @@ Receipt attachments; bank CSV presets; own-format lossless import; payee rename 
 | Supabase Pro vs AWS | Undecided, method TBD likely AWS · Drop Pro, AWS only · Keep Pro later + AWS copy | Undecided: method TBD, likely AWS |
 
 **Notes:** The user said backups will be done later, most likely with AWS. Recorded risks: no production backups while dogfooding, and a Free-plan project pausing after a week idle.
+
+## Follow-up (2026-09-25): statement import extension
+
+Raised by the user after planning: import should not be CSV-only; accounts can be overdrawn or over their limits; card statements use different sign conventions, so the format must be understood before conversion.
+
+| Question | Options | Selected |
+|---|---|---|
+| Formats in Phase 2 | CSV + OFX/QFX · CSV + OFX/QFX + XLSX · Keep CSV only | CSV + OFX/QFX |
+| Where PDF goes | New Phase 2.1 after Record · Fold into Phase 10 · Backlog | New Phase 2.1 (inserted) |
+| Overdraft and card limits | Limits and standing in Phase 2 · Limits only, standing later · Defer | Limits and standing in Phase 2 |
+| Card payments / transfers | Tag as Transfer category · Full transfer pairing now · Leave as is | Full transfer pairing now |
+
+**Notes:** Recorded as D-39…D-52 in 02-CONTEXT.md, with D-47 amending D-13 (identical rows within one file are no longer flagged as duplicates). Requirements REC-13…REC-18 added; REC-09 and ANL-05 widened beyond CSV; IMP-01…IMP-04 created for Phase 2.1. Already covered before this follow-up: historical FX for imported rows (D-19), separate debit/credit columns (D-11), on-device parsing with the file never uploaded (D-17). The 31 existing plans predate this and must be revised before execution (02-CONTEXT.md "Plan impact"); UI-SPEC needs a revision pass for the Transfer type, account standing and the import format-confirmation step.
