@@ -17,7 +17,7 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 - [x] **FND-06**: App applies any of 4 accent colours and any of 4 font pairings live, without a reload
 - [x] **FND-07**: All animations collapse to near-zero duration when the OS reports reduce-motion enabled
 - [ ] **FND-08**: Apple Developer Program enrolment is submitted before any store-dependent work begins
-- [ ] **FND-09**: App checks a minimum supported version on launch and shows an update-required screen when it is below it
+- [x] **FND-09**: App checks a minimum supported version on launch and shows an update-required screen when it is below it
 - [ ] **FND-10**: Every database migration is checked for compatibility with the oldest supported app version before it is deployed
 - [x] **FND-11**: Over-the-air updates follow a runtime-version policy that separates JS-only fixes from native releases, and a bad update can be rolled back
 - [x] **FND-12**: CI runs tests proving a user cannot read or write another user's rows or another household's rows
@@ -330,7 +330,7 @@ Populated during roadmap creation.
 | FND-06 | Phase 0 - Foundation | Complete |
 | FND-07 | Phase 0 - Foundation | Complete |
 | FND-08 | Phase 0 - Foundation | Pending |
-| FND-09 | Phase 0 - Foundation | Pending |
+| FND-09 | Phase 0 - Foundation | Complete |
 | FND-10 | Phase 1 - Money Core | Pending |
 | FND-11 | Phase 0 - Foundation | Complete |
 | FND-12 | Phase 0 - Foundation | Complete |

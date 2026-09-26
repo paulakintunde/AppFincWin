@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-09-25T21:04:58.866Z"
+last_updated: "2026-09-26T04:04:30.696Z"
 last_activity: 2026-09-25 -- Phase 02 planning complete
 progress:
   total_phases: 12
   completed_phases: 0
   total_plans: 67
-  completed_plans: 28
-  percent: 42
+  completed_plans: 30
+  percent: 45
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 2 of 16
 Status: Ready to execute
 Last activity: 2026-09-25 -- Phase 02 planning complete
 
-Progress: [████████░░] 78%
+Progress: [█████░░░░░] 45%
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Progress: [████████░░] 78%
 | Phase 01 P13 | 50min | 2 tasks | 12 files |
 | Phase 00 P14 | 55min | 2 tasks | 4 files |
 | Phase 00 P15 | 120min | 3 tasks | 12 files |
+| Phase 00 P17 | ~2h | 3 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,8 @@ Recent decisions affecting current work:
 - [Phase 00-foundation]: 00-14: Android keystore SHA-1 was extracted from the built APK via apksigner rather than eas credentials -p android, which is interactive-only and this sandbox has no controllable TTY
 - [Phase 00-foundation]: 00-15: Google client-id verification uses the Web client ID as the primary audience with iOS/Android as additional accepted client IDs, matching google.ts's webClientId-as-serverClientId configuration
 - [Phase 00-foundation]: 00-15: Supabase's external_google_additional_client_ids Management API field merges into external_google_client_id at write time and always reads back empty on GET -- verified live, not assumed; re-PATCH the full list on any client-ID change
+- [Phase 00-foundation]: 00-17: Google's live sign-in button asset was redesigned since the brief (a masked gradient-blob G, not a flat four-colour one); the react-native-svg filter+mask reproduction passed Jest but rendered nothing on a real Android device, so GoogleMark uses Google's own official pre-rasterised PNG mark instead
+- [Phase 00-foundation]: 00-17: app/index.tsx reads the root layout's already-resolved route via a RouteContext rather than re-running useMinVersionGate()/useAuth() itself, avoiding a duplicate version-gate network call and a possible blank-screen flash on cold boot
 
 ### Pending Todos
 
