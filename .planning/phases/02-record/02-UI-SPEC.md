@@ -1,10 +1,11 @@
 ---
 phase: 2
 slug: 02-record
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-09-25
+revised: 2026-09-25
 ---
 
 # Phase 2 — UI Design Contract
@@ -13,7 +14,18 @@ created: 2026-09-25
 
 **Platform note:** FincWin is React Native / Expo SDK 57 (iOS + Android). There is no CSS, no Tailwind, no shadcn — styling is `StyleSheet` + the typed theme context already built in Phase 0 (`src/theme/*`). All "Design System" template fields that assume a web/shadcn stack are **N/A** and answered with the RN-equivalent, exactly as `00-UI-SPEC.md` established. Colour, type and layout tokens are pulled verbatim from `BUILD-PROMPT.md` §2 / `FincWin United.dc.html`, already encoded in `src/theme/tokens.ts`, `layout.ts` and `typography.ts` — this document reuses those, adding only the tokens and screens Phase 2 introduces.
 
-**Phase 2 UI surface (per 02-CONTEXT.md):** the add/edit transaction sheet (expense + income only — no transfer, no household split, no receipt attachment in this phase); the recurring "This one / This and future" and skip/end-series prompts; the Activity month screen (list view only — week/split/balance/calendar views are ACT-06, Phase 7) with search, filter chips, bulk-select bar and the pending/paid "still to come" split; the account list/detail and create-account sheet; the category list/detail and create/rename/recolour/archive/merge sheets; the CSV import flow (pick file → column-mapping preview → duplicate/category review → commit → recurring-suggestion prompts); the Undo toast; and the History screen. Shell (Phase 3) has not landed yet — these ship as plain Expo Router routes/sheets that Phase 3 later wraps in tab/FAB/back-stack chrome; **do not build bespoke navigation chrome in this phase.**
+> ## Revision 2026-09-25 — import extension
+>
+> `02-CONTEXT.md` was extended the same day with D-39…D-52 (statement import: OFX/QFX, format reading, reconciliation, account limits and standing, transfers). Nothing already approved below changes. This revision **adds**:
+> - **Transfer entry type** (D-50/D-51): a third dir option in the entry sheet, from/to account fields, Activity-row rendering of both legs, delete-both/edit-both copy, cross-currency display — see new "Transfers" section.
+> - **Account limits and standing** (D-48/D-49): `overdraft_limit`/`credit_limit` fields on the account sheet, a negative-opening-balance control, and a standing line on the account list/detail using existing tokens only — see new "Account Limits & Standing" section.
+> - **Import additions** (D-39…D-47, D-52): an OFX/QFX file-picker option, a format-confirmation step, three reconciliation result states, transfer-pair suggestion cards, and a limit-from-statement confirmation — see new "Import: Format & Reconciliation" section. **PDF is out of scope here — Phase 2.1.**
+> - Copywriting rows for all of the above, and accessibility notes for the new states.
+> - Two generalisations to existing copy: the CSV-only "Import CSV" entry point becomes **"Import statement"**, and every "CSV-import…" colour/copy reference below now reads as "statement-import…" since the pipeline is format-agnostic (D-40).
+>
+> No new colours, radii, spacing tokens or type sizes were needed. One previously-unused existing token (`warn1` `#8A5A1B`) is put to use for the first time in this document — see Color.
+
+**Phase 2 UI surface (per 02-CONTEXT.md, as extended 2026-09-25):** the add/edit transaction sheet (expense, income **and transfer** — no household split, no receipt attachment in this phase); the recurring "This one / This and future" and skip/end-series prompts; the Activity month screen (list view only — week/split/balance/calendar views are ACT-06, Phase 7) with search, filter chips (including a Transfers filter), bulk-select bar and the pending/paid "still to come" split; the account list/detail and create/edit account sheet (now with overdraft/credit limit fields and a standing line); the category list/detail and create/rename/recolour/archive/merge sheets; the statement import flow (pick a CSV, OFX or QFX file → format-confirmation → column-mapping preview for CSV → reconciliation result → duplicate/category review → transfer-pair suggestions → commit → recurring-suggestion prompts); the Undo toast; and the History screen. Shell (Phase 3) has not landed yet — these ship as plain Expo Router routes/sheets that Phase 3 later wraps in tab/FAB/back-stack chrome; **do not build bespoke navigation chrome in this phase.**
 
 ---
 
@@ -24,7 +36,7 @@ created: 2026-09-25
 | Tool | none — shadcn is not applicable to React Native. No `components.json` exists or is expected (confirmed: none found in repo). |
 | Preset | not applicable |
 | Component library | none as a package. Reuse existing RN primitives from Phase 0/1: `src/ui/Screen.tsx`, `src/ui/RateAttribution.tsx`, `src/ui/SyncStatusLine.tsx`, `src/ui/money/useAmountParser.ts`, `src/ui/money/useMoneyFormatter.ts`. This phase adds the first data-list and sheet-form primitives (`Row`, `Pill`, `Chip`, `SwatchDot`, `SheetHeader`, `AmountDisplay`) per `BUILD-PROMPT.md` §6 — build them once, reuse across every Record screen rather than re-styling per screen. |
-| Icon library | none required yet. Bespoke SVG tab glyphs arrive with Shell (Phase 3). Phase 2's only glyphs are the **category glyph tiles** (11px-radius squares, `Component.COL`/`Component.TINT`-tinted, first-letter or a simple bespoke SVG mark per category — planner/executor discretion on which, since the prototype uses a plain letter glyph in the tile) and the chevron/back-caret/checkmark micro-glyphs already used in Phase 0 forms (small rotated-border spans, not an icon font — keep that convention, do not introduce `react-native-vector-icons` or similar). |
+| Icon library | none required yet. Bespoke SVG tab glyphs arrive with Shell (Phase 3). Phase 2's only glyphs are the **category glyph tiles** (11px-radius squares, `Component.COL`/`Component.TINT`-tinted, first-letter or a simple bespoke SVG mark per category — planner/executor discretion on which, since the prototype uses a plain letter glyph in the tile) and the chevron/back-caret/checkmark micro-glyphs already used in Phase 0 forms (small rotated-border spans, not an icon font — keep that convention, do not introduce `react-native-vector-icons` or similar). **New in this revision:** the transfer amount-figure prefix is the plain text character `↔` (prototype `addAmtFig`, line ~5653) — a character, not an icon asset, so it needs no new glyph or SVG. |
 | Font | Whatever pairing/accent the user has live-selected (Phase 0 `ThemeProvider`) — Record screens must resolve type and colour through `useTheme()`/`textRole()`, never hardcode the default "Bold" pairing or green accent. |
 
 ---
@@ -41,25 +53,29 @@ created: 2026-09-25
 | sheet-pad-bottom | 30px | Bottom padding on every bottom sheet in this phase |
 | sheet-corner-pad | 22px | Sheet's own top/side interior padding |
 | group-gap | 18px | Vertical gap above section headings (e.g. "DATA" group on account/category list) |
-| row-pad | 13–15px | Vertical padding inside entry-sheet field rows (13px) and settings-style rows (15px) — both prototype-verified, use 13px for dense field-picker rows (Category, Account, Payment type, Repeats, Due day) and 15px for spaced action rows, matching source lines ~2170–2230 |
-| gap-sm | 8px | Icon-to-label gaps, chip gaps, filter-row gaps |
+| row-pad | 13–15px | Vertical padding inside entry-sheet field rows (13px) and settings-style rows (15px) — both prototype-verified, use 13px for dense field-picker rows (Category, Account, Payment type, Repeats, Due day, **and the new From account / To account transfer rows**) and 15px for spaced action rows, matching source lines ~2170–2230 |
+| gap-sm | 8px | Icon-to-label gaps, chip gaps, filter-row gaps, **and the gap between an account's balance figure and its standing sub-line** |
 | gap-md | 10–12px | Row internal element gaps, bulk-bar button gaps |
 | pill-pad-v | 15px | Vertical padding inside pill CTAs (toast Undo, sheet primary actions) |
-| touch-target-min | 44px | Minimum tappable height — **applies to every entry-sheet Status pill, bulk-bar action, and the swatch-dot picker row**, not just icon-only controls |
+| touch-target-min | 44px | Minimum tappable height — **applies to every entry-sheet Status pill, bulk-bar action, and the swatch-dot picker row**, not just icon-only controls. **Also applies to** the format-confirmation "Flip the reading" control, the reconciliation "Can't verify" row tag when it is tappable (to open the row detail), and both actions on a transfer-pair suggestion card. |
 
 **New in this phase:**
 
 | Token | Value | Usage |
 |-------|-------|-------|
 | sheet-top-radius | 28px | Top-left/top-right corner radius on every bottom sheet (entry sheet, category sheet, account sheet, import sheet). Confirmed as a hard-coded literal across **25 separate sheet instances** in the prototype (`border-radius:28px 28px 0 0`) — it is a real, repeated design value, not a one-off, even though `BUILD-PROMPT.md` §2's "Shape" section only lists card/pill/glyph-tile radii. Record it here as the sheet-container radius token so it isn't lost or re-derived inconsistently per screen. If `src/theme/layout.ts`'s `radii` object doesn't yet have a `sheetTop: 28` entry, the plan should add one rather than hardcoding 28 per sheet file. |
-| toggle-track | 46×28px, thumb 22×22px | Any on/off switch row reused from the entry sheet pattern (none needed for Record's core fields per D-37/D-38, but the recurring-suggestion accept/dismiss and duplicate-row tick-boxes in CSV import reuse this control shape at row height) |
-| amount-display | 44px font, weight 500, letter-spacing -0.04em | The large amount figure at the top of the entry sheet (`{{ addAmtFig }}` in the prototype) — this is a **display-figure exception** to the phase's 4-size type scale (see Typography below), matching the existing `netWorth`/`healthScore` precedent already in `src/theme/typography.ts`'s `fontSize` map |
+| toggle-track | 46×28px, thumb 22×22px | Any on/off switch row reused from the entry sheet pattern. Reused by: the recurring-suggestion accept/dismiss and duplicate-row tick-boxes in statement import (unchanged from the original spec); **and, new this revision, the account sheet's "in credit / overdrawn" and "I owe this / I'm in credit" standing toggles** (see Account Limits & Standing) — same segmented-pill shape as the entry sheet's Expense/Income/Transfer dir chips, not the switch-track shape; both share the `toggle-track` sizing budget for touch-target purposes even though one renders as a track-and-thumb and the other as a two/three-way pill |
+| amount-display | 44px font, weight 500, letter-spacing -0.04em | The large amount figure at the top of the entry sheet (`{{ addAmtFig }}` in the prototype) — this is a **display-figure exception** to the phase's 4-size type scale (see Typography below), matching the existing `netWorth`/`healthScore` precedent already in `src/theme/typography.ts`'s `fontSize` map. **Transfer variant, unchanged size/weight:** renders `↔ {symbol}{amount}` in `inkDim` `#5C5A50` instead of `ink`/`accent`, per the prototype's `addFg` mapping (`E.dir==='tf'?'#5C5A50':…`) — no new colour, `inkDim` is already in `src/theme/tokens.ts`. |
 
 Exceptions: 28px sheet-top-radius and the 44px amount-display figure are canonical prototype values carried into this phase; both should be added to `src/theme/layout.ts` / `src/theme/typography.ts` rather than re-declared locally, so DSG-02's no-raw-literal check doesn't flag them as new colours (they aren't colours, but keep the same "declare once, reuse" discipline the checker expects).
 
 **Accessibility:** every icon-only control (back button, dismiss ×, month-switcher chevron) carries an `accessibilityLabel` from the i18n catalogue and `accessibilityRole="button"`; 44px touch-target-min applies regardless of visual glyph size; bulk-select row checkboxes and the recurring-suggestion accept/dismiss controls must be reachable and labelled for a screen reader (NAV-06 lands in Phase 3, but nothing built here should need retrofitting for it).
 
-**Focal point:** on **Activity**, the transaction list itself — grouped by paid/pending with the "still to come" total — is the single visual anchor; search, filter chips and the bulk-select toggle are secondary chrome that sits above it and must never carry more visual weight (size, colour saturation) than the list rows or the totals line. On **Accounts**, each row's balance figure is the anchor per card; the account name, currency and institution-style meta text are secondary and rendered smaller/muted beside it. On **Categories**, the category name paired with its glyph tile/colour swatch is the anchor per row; usage count and the archive/merge affordance are secondary, surfaced on interaction (swipe or a detail screen) rather than competing for attention at rest.
+**New in this revision — accessibility for the import-extension and standing states** (see also the dedicated "Accessibility for New States" section near the end of this document):
+- An account's standing sub-line always carries an `accessibilityLabel` equal to its full declarative sentence (e.g. `"Overdrawn by £240, within a £500 overdraft."`), so a screen-reader user gets the same information a sighted user gets from the sentence plus the `warn1` accent — colour is never the only carrier of the state.
+- The format-confirmation screen's plain-words paragraph, each reconciliation result state, and each transfer-pair suggestion card are exposed as read-through text blocks (not icon-only), and the "Flip the reading" / "Link as transfer" / "Not a transfer" / "Pick the other account" controls each carry a label naming the accounts or the reading involved, not a bare "Flip"/"Link"/"Dismiss".
+
+**Focal point:** on **Activity**, the transaction list itself — grouped by paid/pending with the "still to come" total — is the single visual anchor; search, filter chips and the bulk-select toggle are secondary chrome that sits above it and must never carry more visual weight (size, colour saturation) than the list rows or the totals line. On **Accounts**, each row's balance figure is the anchor per card; the account name, currency, institution-style meta text **and the new standing sub-line** are secondary and rendered smaller/muted beside it — the standing sub-line never outweighs the balance figure itself, even in its `warn1` tier. On **Categories**, the category name paired with its glyph tile/colour swatch is the anchor per row; usage count and the archive/merge affordance are secondary, surfaced on interaction (swipe or a detail screen) rather than competing for attention at rest.
 
 ---
 
@@ -74,43 +90,58 @@ Reuse `src/theme/typography.ts`'s `textRole()` resolver — do not hand-roll new
 | Body (row labels, category/account names, list rows) | 15px | 500 | 1.5 |
 | Label (meta text, section headers, sub-labels, filter chips) | 13px | 600 | 1.4 |
 
-**Declared exception — amount-display figure:** the entry sheet's live amount readout renders at **44px**, weight 500, letter-spacing -0.04em — larger than the phase's 4-size ceiling. This mirrors the already-approved `netWorth` (42px) and `healthScore` (32px) precedents in `src/theme/typography.ts`'s `fontSize` map, which the checker should treat as a continuation of an established display-figure pattern, not a new violation. Do not introduce any other size beyond these five (26, 16, 15, 13, 44).
+**Declared exception — amount-display figure:** the entry sheet's live amount readout renders at **44px**, weight 500, letter-spacing -0.04em — larger than the phase's 4-size ceiling. This mirrors the already-approved `netWorth` (42px) and `healthScore` (32px) precedents in `src/theme/typography.ts`'s `fontSize` map, which the checker should treat as a continuation of an established display-figure pattern, not a new violation. Do not introduce any other size beyond these five (26, 16, 15, 13, 44) — **this revision introduces no sixth size.** The account standing sub-line, the format-confirmation paragraph, the reconciliation result headings, and transfer-suggestion card text all use the existing **Label** (13px) or **Body** (15px) roles below; no new size or weight was needed for any part of the import extension.
 
 **Meta sizes reused from the existing scale (not new):** `fontSize.meta` (12.5px) for row sub-labels (account currency note, category usage count) and `fontSize.eyebrow` (11.5px) for the smallest helper text (e.g. "Most recent" in History) — both already declared in `src/theme/typography.ts`, reused rather than re-declared.
+
+**New in this revision — role assignments (no new roles, just usage):**
+
+| Element | Role | Notes |
+|---|---|---|
+| Account standing sub-line (list and detail) | Label (13px/600) | Same role already used for other sub-labels (currency note, usage count) — a standing line is treated as another sub-label, not a new heading tier |
+| Format-confirmation plain-words paragraph | Body (15px/500) | Reads as ordinary sheet copy, not a heading — the format itself ("credit card statement") may be emphasised only via weight already inside the 400/500/600/700/800 closed set (see 00-UI-SPEC's typography exception note), never via a new colour |
+| Format-confirmation example row | Label (13px/600), `inkMuted` | Styled like any other row sub-label, distinguishing it as illustrative rather than a real committed row |
+| Reconciliation result heading ("Balances check out." etc.) | Body (15px/500) | Not a Heading-role banner — keeps the declarative, non-celebratory register the copy demands |
+| Transfer-suggestion card body | Body (15px/500) | Same treatment as the existing recurring-suggestion card ("Looks like Netflix…") this phase already specifies |
 
 ---
 
 ## Color
 
-Reuse `src/theme/tokens.ts` and `src/theme/accents.ts` exactly — no new hex values. Category colours use the existing `categoryColor`/`categoryTint` maps verbatim (15 keys, including the seeded 13-category set from `02-CONTEXT.md` D-34 plus system-owned `Transfer`/`Settlement`).
+Reuse `src/theme/tokens.ts` and `src/theme/accents.ts` exactly — no new hex values. Category colours use the existing `categoryColor`/`categoryTint` maps verbatim (15 keys, including the seeded 13-category set from `02-CONTEXT.md` D-34 plus system-owned `Transfer`/`Settlement` — **the Transfer entry type added in this revision uses the `Transfer` key that was already reserved in the map before the extension landed**).
 
 | Role | Value | Usage |
 |------|-------|-------|
 | Dominant (60%) | `canvas` `#FBFAF7` | Activity, Accounts, Categories screen backgrounds |
 | Secondary (30%) | `surface` `#FFFFFF` | Entry/category/account/import sheets, list-row cards, month-switcher popover |
-| Accent (10%) | `accent` (user-selected, default `#1B4D3E`) | Reserved **only** for: the entry-sheet primary CTA ("Save expense" / "Save income" / "Save changes") and status-pill active state, the CSV-import primary commit button, the "Mark paid" bulk-action fill when it is the primary bar action, the connected-currency/FX-attribution accent already established in Phase 0/1, and the focus ring |
-| Destructive | `danger` `#B4472A` | Reserved **only** for: the Delete button (entry-sheet detail, bulk-bar), the undo-refusal toast/History "can't undo" text, negative account balances, the CSV-import row-count-exceeded message |
-| Category colour/tint | `categoryColor[key]` / `categoryTint[key]` | The category glyph tile (colour) and its background chip (tint) everywhere a category renders — entry sheet, list rows, category management screen. Never substitute a category's own colour with `accent` or `danger` |
-| Fill / muted | `fill1` `#F1EFE8`, `inkMuted` `#6E6A5E`, `inkFaint` `#767161` | Filter-chip inactive background, bulk-bar dark surface text (`rgba(255,255,255,.14)` fills reused from prototype bulk-bar), row meta text, disabled/placeholder states |
+| Accent (10%) | `accent` (user-selected, default `#1B4D3E`) | Reserved **only** for: the entry-sheet primary CTA ("Save expense" / "Save income" / "Save changes" / **"Add transfer"**) and status-pill active state, the **statement-import** primary commit button (was "CSV-import" — generalised, same token, same rule), the "Mark paid" bulk-action fill when it is the primary bar action, the connected-currency/FX-attribution accent already established in Phase 0/1, and the focus ring |
+| Destructive | `danger` `#B4472A` | Reserved **only** for: the Delete button (entry-sheet detail, bulk-bar, **and the transfer delete-both confirmation**), the undo-refusal toast/History "can't undo" text, **negative account balances that are not a declared, understood standing** (see the new Standing row below — this is a narrowing, not a widening, of the original "negative account balances" wording), and the statement-import row-count-exceeded message |
+| **Standing (new this revision)** | `warn1` `#8A5A1B` (already declared in `src/theme/tokens.ts`, previously unused in this document) | Reserved **only** for: an account's standing text and its accompanying dot/underline when the account is **beyond its overdraft** or **over its credit limit** — the one tier D-49 calls out as worth a visual nudge without calling it an error. Chosen over `danger` deliberately: `danger` is this document's error/destructive colour, and D-49 is explicit that "overdrawn and over-limit are states, never errors or validation failures … in the UI." `warn1` is already in the token set (unused until now) and the prototype itself uses it for exactly this register — "adjust"/"variable"/"waiting", attention-worthy but not a failure (`FincWin United.dc.html` lines 4213, 4258, 4421, 4671, 4761/4767/4776) — so this is a continuation of an established semantic pattern, not a new one. Every other standing tier (in credit, overdrawn within the overdraft, owing within the limit) renders in plain `ink`/`inkMuted` text with no colour-coding at all, because those are the ordinary, expected states |
+| Category colour/tint | `categoryColor[key]` / `categoryTint[key]` | The category glyph tile (colour) and its background chip (tint) everywhere a category renders — entry sheet, list rows, category management screen, **and the Transfer category's own tile/tint (`#5A6472` / `#EDEAE1`) wherever a transfer row renders in Activity or category management**. Never substitute a category's own colour with `accent` or `danger` |
+| Fill / muted | `fill1` `#F1EFE8`, `inkMuted` `#6E6A5E`, `inkFaint` `#767161`, `inkDim` `#5C5A50` | Filter-chip inactive background, bulk-bar dark surface text (`rgba(255,255,255,.14)` fills reused from prototype bulk-bar), row meta text, disabled/placeholder states. **`inkDim` is new to this document's usage list** (already in `src/theme/tokens.ts`): it colours the transfer variant of the amount-display figure (`addFg` in the prototype) and nothing else — not a general-purpose muted text colour, a specific reuse of an existing token for one specific figure |
 
-Accent reserved for: entry-sheet primary CTA ("Save expense" / "Save income" / "Save changes"), CSV-import commit button, "Mark paid" primary bulk action, focus ring, FX/connection accent indicators already established. Never for category glyphs (those keep their own mapped colour), never for the Delete/destructive path, never as a decorative fill.
+Accent reserved for: entry-sheet primary CTA ("Save expense" / "Save income" / "Save changes" / "Add transfer"), statement-import commit button, "Mark paid" primary bulk action, focus ring, FX/connection accent indicators already established. Never for category glyphs (those keep their own mapped colour), never for the Delete/destructive path, never as a decorative fill, and **never for account standing** — standing uses plain text or, for the one exceeded tier, `warn1`, so that a user's choice of accent colour (which is themeable) never accidentally reads as a financial-health signal.
+
+**Reconciliation result colour (new this revision):** none. "Balances check out.", "Some rows can't be checked against the balance." and "Couldn't check this file against a balance." all render as plain `ink`/`inkMuted` Body text with no icon and no accent/warn/danger colour-coding — the declarative sentence itself carries the meaning, and a cheerful green tick on a balance check would read as more reassurance than the copy voice allows (CLAUDE.md's declarative-not-prescriptive rule). A per-row "Can't verify" tag (for rows that fail the check) reuses the exact visual treatment already specified for the "Possible duplicate" tag in the original spec below — same `fill1` chip, same `inkMuted` Label text, distinguished only by its own words, not a different colour, which also satisfies "must not be conveyed by colour alone."
 
 ---
 
 ## Copywriting Contract
 
-Voice: declarative, not prescriptive — never "advice", "recommendation", "you should" (CLAUDE.md, project-wide). British-ish spelling, typographic apostrophes. **Explicitly forbidden, carried from Phase 0:** any "stays on this device" / "kept on this device" framing — FincWin is cloud-first via Supabase; several prototype lines quoted below (e.g. "Kept on this device", "Changes kept on this device", local-only reset-demo-data copy) use that framing and **must be rewritten**, not ported verbatim, when adapted into this phase's screens.
+Voice: declarative, not prescriptive — never "advice", "recommendation", "you should" (CLAUDE.md, project-wide). British-ish spelling, typographic apostrophes. **Explicitly forbidden, carried from Phase 0:** any "stays on this device" / "kept on this device" framing — FincWin is cloud-first via Supabase; several prototype lines quoted below (e.g. "Kept on this device", "Changes kept on this device", local-only reset-demo-data copy) use that framing and **must be rewritten**, not ported verbatim, when adapted into this phase's screens. The one narrow exception, unchanged by this revision, is the import privacy line below, which is true as written because parsing genuinely happens on-device (D-17).
 
 | Element | Copy |
 |---------|------|
 | Entry sheet title — new expense | "New expense" |
 | Entry sheet title — new income | "New income" |
+| Entry sheet title — new transfer (new) | "New transfer" |
 | Entry sheet title — edit | "Edit transaction" |
 | Entry sheet amount placeholder | "What is it for?" (name field, ported verbatim — prototype line ~2166) |
 | Entry sheet cancel | "Cancel" |
 | Entry sheet primary CTA — new expense (Claude-drafted, awaiting review) | "Save expense" (not bare "Save" — mirrors the sheet title it appears under) |
 | Entry sheet primary CTA — new income (Claude-drafted, awaiting review) | "Save income" |
-| Entry sheet primary CTA — edit (Claude-drafted, awaiting review) | "Save changes" |
+| Entry sheet primary CTA — new transfer (new, ported from prototype `saveLabel`) | "Add transfer" |
+| Entry sheet primary CTA — edit | "Save changes" |
 | Recurring — set on existing row (D-09) | "Repeats" field label; on save: "Made recurring · {n}" (draft) |
 | Recurring — edit scope prompt (D-07) | Heading: "Edit this one, or this and future?" Actions: "This one" / "This and future" |
 | Recurring — skip occurrence (D-08) | "Skip this one" row action; confirmation not required (non-destructive, reversible via undo) |
@@ -131,27 +162,122 @@ Voice: declarative, not prescriptive — never "advice", "recommendation", "you 
 | Activity — bulk select toggle | "Select" / "Done" |
 | Activity — bulk bar, no selection attempted | "Select some rows first." |
 | Activity — bulk delete confirmation | "Delete {n} transaction{s}? Cancel / Delete" |
+| Activity — filter option (new) | "Transfers" — added to the existing filter row (`All` / `Money out` / `Money in` / `Transfers` / `Unpaid only`), ported verbatim from the prototype's own filter list |
+| Activity — transfer row, outgoing leg (new) | Row name: "Transfer to {account}" |
+| Activity — transfer row, incoming leg (new) | Row name: "Transfer from {account}" |
 | Account — balance label | "Balance now" |
 | Account — create CTA | "Add account" |
 | Account — empty state | "No accounts yet." Body: "Add one to start logging money in and out." |
+| Account — overdraft limit field (new, checking/savings) | Label: "Overdraft limit". Helper: "Optional — leave blank if you don't have one." |
+| Account — credit limit field (new, credit) | Label: "Credit limit". Helper: "Add it to see how close you are to your limit." |
+| Account — opening balance standing control, checking/savings (new) | Two-option pill beside the amount field: "In credit" (default) / "Overdrawn" |
+| Account — opening balance standing control, credit (new) | Two-option pill: "I owe this" (default) / "I'm in credit" |
+| Account — opening balance, loan (new) | No control — field label reads "Amount owed" plainly; a loan is always owing (D-49), so there is nothing to toggle |
+| Account standing — in credit, checking/savings (new) | "In credit." |
+| Account standing — overdrawn within overdraft (new, verbatim D-49) | "Overdrawn by £240, within a £500 overdraft." |
+| Account standing — overdrawn beyond overdraft, overdraft set (new) | "£140 beyond your £500 overdraft." |
+| Account standing — overdrawn, no overdraft set (new) | "Overdrawn by £240. No overdraft set." |
+| Account standing — credit, in credit/refund (new) | "In credit by £15." |
+| Account standing — credit, owing within limit (new) | "Owing £320 of your £1,000 limit." |
+| Account standing — credit, over limit (new, verbatim D-49) | "£120 over the £1,000 limit." |
+| Account standing — loan (new) | "Owing £4,500." |
 | Category — create CTA | "Add category" |
 | Category — remove-in-use choice (D-36) | "{Category} is used by {n} transactions. Merge them into another category, or archive {category} and keep its history. Cancel / Merge / Archive" |
 | Category — empty (no custom categories yet) | Not applicable — the seed set (D-34) means Categories is never empty in this phase |
-| CSV import — entry point (D-22) | "Bring your history" / "Start fresh" (onboarding); "Import CSV" (later, from You/account detail) |
-| CSV import — privacy line (D-17, specifics) | "This file is read on your device and never uploaded." |
-| CSV import — column-mapping preview heading | "Check the columns" |
-| CSV import — duplicate flag | "Possible duplicate" tag on a row; unticked by default per D-13 |
-| CSV import — size ceiling (D-18) | "This file has more than 5,000 rows. Split it into smaller files and import them one at a time." |
-| CSV import — commit CTA | "Import {n} transaction{s}" |
-| CSV import — success toast | "Imported {n} lines" (one undo step, D-16) |
-| CSV import — recurring suggestion (D-21, specifics) | "Looks like {name}, {amount} {frequency}. Make it recurring?" Actions: "Make recurring" / "Not now" |
+| Statement import — entry point (was "CSV import", generalised D-39) | "Bring your history" / "Start fresh" (onboarding); **"Import statement"** (later, from You/account detail — replaces "Import CSV") |
+| Statement import — file picker helper (new) | "CSV, OFX or QFX — up to 5,000 rows (about 2MB)." |
+| Statement import — privacy line (D-17, unchanged) | "This file is read on your device and never uploaded." |
+| Statement import — format-confirmation heading (new, D-42) | "Check how we read this" |
+| Statement import — format-confirmation body (new, verbatim D-42 example) | "We read this as a credit card statement. Purchases are shown as positive and payments as negative. The balance is what you owe: £1,250, which is over your £1,000 limit." |
+| Statement import — format-confirmation flip control (new) | "Doesn't look right? Flip the reading" |
+| Statement import — format ambiguous, blocks commit (new, D-41) | "We can't tell how this file reads its amounts. Choose how it should be read before importing." — followed by the candidate readings as selectable rows |
+| Statement import — remembered format profile (new, D-42) | "Read the same way as your last statement from this account." (shown as a quiet note on the next screen; the whole confirmation step is skipped, not re-asked) |
+| Statement import — column-mapping preview heading (CSV only, unchanged) | "Check the columns" |
+| Statement import — duplicate flag (D-13, unchanged) | "Possible duplicate" tag on a row; unticked by default |
+| Statement import — reconciliation, balances match (new, verbatim D-46) | "Balances check out." |
+| Statement import — reconciliation, mismatch heading (new) | "Some rows can't be checked against the balance" |
+| Statement import — reconciliation, mismatch body (new) | "Review them before importing. The rest reconciled." |
+| Statement import — reconciliation, row tag (new) | "Can't verify" tag on a row, same visual treatment as "Possible duplicate" |
+| Statement import — reconciliation, no balance in file (new, verbatim D-46) | "Couldn't check this file against a balance." (a note, not an error — never styled as a warning) |
+| Statement import — limit found in statement (new, D-48) | "This statement shows a {limit} limit. Add it to {account}?" Actions: "Add limit" / "Skip" |
+| Statement import — transfer suggestion, matched pair (new, verbatim D-52) | "Looks like a payment from {account A} to {account B}. Link as a transfer?" Actions: "Link as transfer" / "Not a transfer" |
+| Statement import — transfer suggestion, unmatched leg (new, D-52) | "Looks like a transfer, but we can't tell where it went. Pick the other account." — followed by an inline account picker; dismiss: "Not a transfer" |
+| Statement import — size ceiling (D-18, unchanged) | "This file has more than 5,000 rows. Split it into smaller files and import them one at a time." |
+| Statement import — commit CTA | "Import {n} transaction{s}" |
+| Statement import — success toast | "Imported {n} lines" (one undo step, D-16) |
+| Statement import — recurring suggestion (D-21, specifics) | "Looks like {name}, {amount} {frequency}. Make it recurring?" Actions: "Make recurring" / "Not now" |
+| Transfer — from-account field label (new, D-51) | "From account" |
+| Transfer — to-account field label (new, D-51) | "To account" |
+| Transfer — cash note (new, verbatim prototype) | "Transfers move money between your own accounts. They never count as income or spending, so the totals and the savings rate stay honest." |
+| Transfer — cross-currency note (new, D-50) | "Recorded as {amountA} from {accountA} and {amountB} to {accountB} — each in its own currency." (shown only when the two legs' currencies differ) |
+| Transfer — edit-both note (new, D-51) | "Editing a transfer updates both sides." (non-blocking note beneath the amount/date fields on edit) |
+| Transfer — delete-both confirmation (new, D-50) | "Delete this transfer? Both linked entries — {from account} and {to account} — will be removed. Cancel / Delete" |
 | Error state — generic save failure (reuse Phase 1 pattern) | "Couldn't save. Try again." |
 | Error state — write conflict (Phase 1 D-18/D-19 pattern, reused for undo per D-29) | "Couldn't save — changed elsewhere." |
 | Destructive confirmation — bulk delete | "Delete {n} transaction{s}? Cancel / Delete" |
 | Destructive confirmation — end recurring series | See "End series" row above |
 | Destructive confirmation — delete single transaction | "Delete this transaction? Cancel / Delete" |
+| Destructive confirmation — delete transfer | See "Transfer — delete-both confirmation" row above |
 
-**Status:** all rows above marked "(Claude-drafted)" or unmarked are draft copy in the prototype's voice, awaiting user review before being treated as final — same convention as Phase 0's `copyStatus.ts` draft-key marking. Rows explicitly cited as "ported verbatim" from the prototype are lower-risk but still route through the typed i18n catalogue (DSG-04), not inline strings. **No primary CTA in this phase uses a bare generic label ("Save", "OK", "Submit") — every primary action names what it does or what it is attached to** (e.g. "Save expense", not "Save"; "Import {n} transactions", not "Submit"; "End series", not "OK").
+**Status:** all rows above marked "(Claude-drafted)" or unmarked are draft copy in the prototype's voice, awaiting user review before being treated as final — same convention as Phase 0's `copyStatus.ts` draft-key marking. Rows explicitly cited as "ported verbatim" from the prototype or 02-CONTEXT.md are lower-risk but still route through the typed i18n catalogue (DSG-04), not inline strings. **No primary CTA in this phase uses a bare generic label ("Save", "OK", "Submit") — every primary action names what it does or what it is attached to** (e.g. "Save expense", not "Save"; "Add transfer", not "Save"; "Import {n} transactions", not "Submit"; "End series", not "OK"). None of the new copy in this revision uses "advice", "recommendation" or "you should" — account standing and reconciliation copy state facts only ("Overdrawn by…", "£120 over…", "Balances check out.") and never suggest an action the user "should" take.
+
+---
+
+## Transfers (new section, D-50/D-51/D-52)
+
+**Entry sheet.** The dir-selector pill row gains a third option, "Transfer", alongside "Expense" and "Income" (matches the prototype's `addDirs` exactly, gated on the feature being live per that prototype's `has('transfer')` — in FincWin this feature is simply always on from Phase 2, no gate). Selecting it swaps the account row for two rows, "From account" and "To account" (D-51), removes the Category row (the transaction is filed under the system `Transfer` category automatically, D-34/D-50, and is not user-editable), and changes the amount-display figure to the `↔ {symbol}{amount}` / `inkDim` treatment described in Spacing → New tokens above. The Repeats, Link and Share rows are hidden for a transfer (a transfer cannot be recurring, linked to a goal, or split in this phase, consistent with the prototype's `showFreqRow`/`showLinkRow`/`showShareRow` gating pattern already reused elsewhere in this document).
+
+**Cross-currency transfers.** When the from- and to-account currencies differ, the entry sheet shows both amount fields (one per leg) rather than a single figure with a computed conversion, and the cross-currency note above appears beneath them. This matches D-50: "each leg in its own account's currency… the two amounts are what the user or the statements say, not derived from each other" — there is no FX-conversion display here the way there is for a foreign-currency expense (`entryConverted`), because a transfer's two figures are independently entered/read, not one converted from the other.
+
+**Activity list rendering.** A transfer is rendered as **two ordinary rows**, one per leg, each using the existing Row primitive — not a new "spanning" card component. This is a researcher's-discretion call: the data model already stores a transfer as two linked transaction rows (D-50), Activity already renders a flat list of transaction rows, and a combined two-account card would be a new list-item shape this phase's component set doesn't otherwise need. Each leg shows: the `Transfer` category's grey glyph tile/tint, a row name of "Transfer to {account}" or "Transfer from {account}", and a signed amount using the unified sign rule (D-44) — negative on the paying account's leg, positive on the receiving account's leg. When Activity is filtered to a single account, only that account's own leg appears, which falls out of the existing per-account filter with no special-casing. Both legs share a transfer-link id so that editing or deleting either one operates on the pair (edit-both/delete-both copy above) — this is a data/mutation concern, not a rendering one.
+
+**Totals.** Transfers are excluded from the month's income/spending totals (D-50) but still count in each account's own balance. No new copy is needed in the totals line itself for this — the totals simply omit `Transfer`-category rows, the same way any category-based total already would.
+
+---
+
+## Account Limits & Standing (new section, D-48/D-49)
+
+**Create/edit account sheet.** Two additive fields appear conditionally by account type, both optional per D-48:
+- Checking or Savings: "Overdraft limit" (amount field, account's own currency, reuses the same amount-entry component and `useAmountParser` as every other amount field in this phase).
+- Credit: "Credit limit" (same component).
+- Loan: neither field applies — a loan's standing is always "owing" (D-49), so there is nothing to configure beyond the balance itself.
+
+**Negative opening balance — chosen approach: a segmented sign control, not a typed minus sign.** Every amount field in this app (including the entry sheet's own amount figure) is unsigned; direction is always chosen through a separate control (the entry sheet's Expense/Income/Transfer pill row is the existing precedent), and the shared strict amount parser (`useAmountParser`/Phase 1 D-24) does not accept a leading minus sign for ordinary entry — extending it to do so for one field would be an inconsistency, not a simplification. The account sheet therefore gets its own small two-option pill beside the opening-balance amount field, styled like the entry sheet's dir chips: "In credit" (default) / "Overdrawn" for checking and savings, "I owe this" (default) / "I'm in credit" for credit. Defaults are chosen because most real starting balances for a bank account are in credit and most real starting balances for a card are owed; either can be flipped before saving. A loan's opening balance has no control at all — it is always an amount owed, labelled "Amount owed" rather than "Opening balance", since D-49 defines loan standing as invariant.
+
+**Standing line — always rendered, never conditional.** Every account, in every state, shows a standing sub-line beneath its balance figure, on both the account list row and the account detail screen — not only when something is unusual. This is deliberate: a user relying on a screen reader would otherwise get no standing information at all for a perfectly ordinary account, and a sighted user benefits from the same "In credit." confirmation as a quiet, low-weight line rather than a state that only appears when something needs attention. The Label role (13px/600) is used throughout; plain `ink`/`inkMuted` for every tier except "beyond overdraft" and "over limit", which use `warn1` per the Color section above. The minus sign is always shown on a negative balance figure itself (never parentheses, never colour-only), per D-49 and DSG-06's locale-formatting rule — `warn1`/plain-text tiering on the standing line is a second, independent signal, not a replacement for the sign.
+
+**Copy examples** are in the Copywriting Contract table above (Account standing — … rows), covering all seven states across the three account kinds: checking/savings in-credit, overdrawn-within, overdrawn-beyond (with and without an overdraft set); credit in-credit, owing-within, over-limit; loan owing.
+
+---
+
+## Import: Format & Reconciliation (new section, D-39…D-47, D-52)
+
+**Scope note:** this section covers CSV and OFX/QFX only. PDF statements are Phase 2.1 and are explicitly out of scope of this document.
+
+**Pipeline as it reaches the UI** (D-40): file pick → format-confirmation (D-41/D-42, both formats) → column-mapping preview (CSV only — OFX's fields are already structured, so this step is skipped for OFX/QFX files) → reconciliation result (D-46, both formats) → duplicate/category review (D-13/D-14/D-47, both formats, largely unchanged from the original spec) → transfer-pair suggestions (D-52, both formats) → commit.
+
+**File picker.** The existing "Bring your history"/"Import statement" entry points now open a picker accepting `.csv`, `.ofx` and `.qfx` (QFX is treated as OFX, D-39). The helper line beneath the picker button states the size ceiling generically ("CSV, OFX or QFX — up to 5,000 rows (about 2MB)"), not CSV-specifically.
+
+**Format-confirmation screen.** A new screen/step, shown before any preview, stating the read-back in plain words with one example row (D-42), matching the exact structure of the CONTEXT.md example: which statement type was detected, what a positive amount means, what the balance means, and any limit found. The example row sits beneath the paragraph in a muted, clearly-labelled "Example row" treatment (Label role, `inkMuted`) so it reads as illustrative, not as a real, already-committed line. A "Doesn't look right? Flip the reading" control lets the user swap the sign convention live, updating the paragraph and example row in place. If the format is genuinely ambiguous (no candidate reconciles, or more than one does), the screen instead shows the candidate readings as selectable rows (reusing the existing swatch-dot/menu-row selection pattern already used elsewhere in this document for pickers) and the commit action is disabled until one is chosen — commit can never be pressed from an unresolved ambiguous state. When a stored profile already matches the file's header signature and account, this whole screen is skipped, and a quiet note ("Read the same way as your last statement from this account.") appears on the next screen instead, so a repeat import from the same bank costs no extra step.
+
+**Reconciliation result.** Shown once conversion and the running-balance check (D-46) have run, as a single Body-role line, never an icon-only or colour-coded banner (see Color, above, for why): "Balances check out." on a clean match; on a mismatch, a heading ("Some rows can't be checked against the balance") plus a body line ("Review them before importing. The rest reconciled.") and each affected row carries the same "Can't verify" tag treatment already used for "Possible duplicate"; when the file carries no balance information at all, a quiet note reads "Couldn't check this file against a balance." — worded and styled identically to any other informational note, never as a warning. **A negative balance anywhere in this flow is never treated as a mismatch or an error** — only a genuine arithmetic discrepancy (opening + rows ≠ closing, or a running-balance row that doesn't add up) triggers the mismatch state.
+
+**Limit-from-statement.** When the format profile detects a stated overdraft or credit limit (D-48), a single confirmation row appears in the same review step as the duplicate/category review: "This statement shows a {limit} limit. Add it to {account}?" with "Add limit" / "Skip" actions — this never blocks the rest of the import.
+
+**Transfer-pair suggestions.** After conversion, matched pairs are offered using the same visual card treatment as the existing recurring-suggestion card (Body-role text, two actions at the card's foot), with the exact copy from D-52: "Looks like a payment from {account A} to {account B}. Link as a transfer?", accept ("Link as transfer") or dismiss ("Not a transfer"). An unmatched payment-like row is offered the same way but with an inline account picker in place of a named second account: "Looks like a transfer, but we can't tell where it went. Pick the other account." — reusing the same account-picker row pattern already specified for the entry sheet's From/To account fields, not a new picker component.
+
+**Duplicates (D-47).** Unchanged visually from the original spec's "Possible duplicate" tag and un-ticked-by-default behaviour, with one behavioural note worth stating for the executor even though it has no new visual: identical rows within the same file are **not** tagged (D-47 amends D-13) — only a genuine cross-file or existing-data match gets the tag. No new UI is needed for this; it is purely a difference in which rows the existing tag applies to.
+
+---
+
+## Accessibility for New States
+
+- **Account standing.** The standing sub-line's text is the accessibility label verbatim (e.g. `"£120 over the £1,000 limit."`) — a screen reader announces the same sentence a sighted user reads, not an abbreviated "warning" or "danger" cue. The `warn1` colour on the exceeded tiers is a visual reinforcement only; removing it (e.g. under a colour-blind or high-contrast setting) must not remove any information, because the sentence itself already states the state in words. This satisfies "must not be conveyed by colour alone."
+- **Reconciliation results.** Each of the three result states is a plain text block (see above), so it is read by a screen reader exactly as any other paragraph — no icon-only state exists to translate. The per-row "Can't verify" tag carries an `accessibilityLabel` of "Can't verify against the balance" so it isn't read as a bare, ambiguous "verify" fragment.
+- **Format-confirmation.** The "Flip the reading" control's accessible name states what it does ("Flip the reading — read purchases as negative instead"), not a bare "Flip", so a screen-reader user can act on it without first reading the surrounding paragraph.
+- **Transfer suggestions.** Each card's accessible name states both accounts in full ("Suggested transfer: Current account to Visa. Link as a transfer?"), and the unmatched case's account picker is labelled "Pick the other account for this transfer" rather than a bare "Account".
+- **Transfer entry/edit.** The From account/To account rows and the delete-both/edit-both notes route through the typed i18n catalogue like every other row in this document (DSG-04), and the delete-both confirmation names both accounts in its body text so a screen-reader user hears the full consequence before confirming, not just "Delete this transfer?".
+- **General:** every new interactive element introduced by this revision meets the existing 44px `touch-target-min` and `accessibilityRole="button"` conventions already established in the Spacing Scale section — nothing here needed a bespoke exception.
 
 ---
 
@@ -168,11 +294,11 @@ Not applicable. React Native/Expo project — no shadcn registry, no `components
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-09-25 (gsd-ui-checker re-verification after the import-extension revision: 6/6 PASS; non-blocking note that the typography and spacing exceptions are pre-existing, documented project conventions)
