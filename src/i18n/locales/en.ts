@@ -9,11 +9,13 @@
  * Copy ownership (see copyStatus.ts):
  * - AWAITING USER COPY (D-16): none outstanding (welcome tagline supplied 2026-09-25). Any
  *   future awaiting key ships as a marked placeholder and is listed in AWAITING_COPY_KEYS.
- * - Everything else in consent.*, you.*, signOut.*, update.*, money.*, sync.* is
+ * - Everything else in consent.*, you.*, signOut.*, update.*, money.*, sync.*, dev.* is
  *   Claude-drafted in the prototype's voice (D-20) and awaits user review before being
  *   treated as final, except money.rate.attribution and credits.exchangeRateApi, which are
  *   third-party-mandated text (D-13) and must not be paraphrased. Both read the single
  *   constant in ../mandatedCopy.ts, cross-checked against fx-sync's copy by a test.
+ * - dev.syncProbe.label is a development-build-only row (01-15); it never ships visible in a
+ *   release build, but still lives in the typed catalogue like every other string.
  * - money.fxNote.converted/kept, money.homeCurrency.title/note, money.customCurrency.title,
  *   money.customCurrency.error.codeMissing/codeExists, money.settings.showCents,
  *   sync.offlineQueued_one/other and sync.syncedMinutes_one/other are ported verbatim from
@@ -182,6 +184,11 @@ const en = {
   },
   credits: {
     exchangeRateApi: EXCHANGE_RATE_API_ATTRIBUTION,
+  },
+  dev: {
+    syncProbe: {
+      label: 'Queue a test entry (dev)',
+    },
   },
   a11y: {
     close: 'Close',

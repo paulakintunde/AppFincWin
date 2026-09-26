@@ -11,6 +11,9 @@ export const queryKeys = {
   customCurrencies: (userId: string) => ['custom-currencies', userId] as const,
   fxLatest: () => ['fx-latest'] as const,
   moneyPrefs: (userId: string) => ['money-prefs', userId] as const,
+  // The signed-in user's own profiles row (identity, theme, analytics consent) -- one shared
+  // cache entry, so the (app) layout's consent gate and every screen read the same copy.
+  profile: (userId: string) => ['profile', userId] as const,
 };
 
 export const mutationKeys = {

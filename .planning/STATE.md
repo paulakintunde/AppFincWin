@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 2 replanned for import extension (40 plans, checker passed)
-last_updated: "2026-09-26T05:42:21.574Z"
+last_updated: "2026-09-26T09:00:00.000Z"
 last_activity: 2026-09-25 -- Phase 02 planning complete
 progress:
   total_phases: 13
   completed_phases: 0
   total_plans: 76
-  completed_plans: 29
-  percent: 38
+  completed_plans: 32
+  percent: 42
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 2 of 16
 Status: Ready to execute
 Last activity: 2026-09-25 -- Phase 02 planning complete
 
-Progress: [████████░░] 78%
+Progress: [█████░░░░░] 45%
 
 ## Performance Metrics
 
@@ -62,6 +62,9 @@ Progress: [████████░░] 78%
 | Phase 01 P13 | 50min | 2 tasks | 12 files |
 | Phase 00 P14 | 55min | 2 tasks | 4 files |
 | Phase 00 P15 | 120min | 3 tasks | 12 files |
+| Phase 00 P17 | ~2h | 3 tasks | 18 files |
+| Phase 00-foundation P18 | ~2h | 3 tasks | 17 files |
+| Phase 01 P15 | 90min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -102,6 +105,13 @@ Recent decisions affecting current work:
 - [Phase 00-foundation]: 00-14: Android keystore SHA-1 was extracted from the built APK via apksigner rather than eas credentials -p android, which is interactive-only and this sandbox has no controllable TTY
 - [Phase 00-foundation]: 00-15: Google client-id verification uses the Web client ID as the primary audience with iOS/Android as additional accepted client IDs, matching google.ts's webClientId-as-serverClientId configuration
 - [Phase 00-foundation]: 00-15: Supabase's external_google_additional_client_ids Management API field merges into external_google_client_id at write time and always reads back empty on GET -- verified live, not assumed; re-PATCH the full list on any client-ID change
+- [Phase 00-foundation]: 00-17: Google's live sign-in button asset was redesigned since the brief (a masked gradient-blob G, not a flat four-colour one); the react-native-svg filter+mask reproduction passed Jest but rendered nothing on a real Android device, so GoogleMark uses Google's own official pre-rasterised PNG mark instead
+- [Phase 00-foundation]: 00-17: app/index.tsx reads the root layout's already-resolved route via a RouteContext rather than re-running useMinVersionGate()/useAuth() itself, avoiding a duplicate version-gate network call and a possible blank-screen flash on cold boot
+- [Phase 00-foundation]: 00-18: useConsent also exposes the underlying profile loading state and folds it into needsPrompt (!loading && consent === null), so the (app) layout never misreads a still-fetching profile as needing the D-17 prompt and briefly redirects an already-answered user back to /consent
+- [Phase 00-foundation]: 00-18: signOut.ts resolves the real Supabase client via a lazy dynamic import (mirrors 00-10's connection.ts), never a static top-level import, so importing signOut.ts never requires Supabase env vars under Jest
+- [Phase 00-foundation]: 00-18: AccentSwitcher/FontPairingSwitcher are driven by the live theme (theme.accent/theme.pairing), not the persisted profile row, so a press is visible in the same render tree before the Supabase write resolves (FND-06)
+- [Phase 01]: 01-15: DevSyncProbe is stubbed in YouScreen.test.tsx via jest.mock; its own hook wiring (create-if-absent vs reuse-existing account, foreign-currency amount) is proven in a dedicated DevSyncProbe.test.tsx instead
+- [Phase 01]: 01-15: app/_layout.tsx's setFailureReporter uses area: 'sync' directly -- ErrorArea already included 'sync' before this plan started (00-16 PR #19 rework), no substitution needed
 
 ### Pending Todos
 
@@ -129,6 +139,7 @@ None yet.
 | 260922-tsn | Collapse phase-00 plans to single prod Supabase project | 2026-09-22 | f90689b | [260922-tsn-collapse-phase-00-plans-to-single-prod-s](./quick/260922-tsn-collapse-phase-00-plans-to-single-prod-s/) |
 | 260922-us3 | Align all docs to single prod Supabase project | 2026-09-22 | 07ef5f6 | [260922-us3-align-all-docs-to-single-prod-supabase-p](./quick/260922-us3-align-all-docs-to-single-prod-supabase-p/) |
 | 260925-8bi | Replace placeholder app icons with FincWin F logo | 2026-09-25 | 3020470 | [260925-8bi-replace-placeholder-app-icons-with-fincw](./quick/260925-8bi-replace-placeholder-app-icons-with-fincw/) |
+| 260926-0mn | Launch positioning into Phase 5, "A · Refine" navy icon, pricing advisory | 2026-09-26 | 414920d | [260926-0mn-launch-positioning-phase5-pricing-adviso](./quick/260926-0mn-launch-positioning-phase5-pricing-adviso/) |
 
 ## Deferred Items
 

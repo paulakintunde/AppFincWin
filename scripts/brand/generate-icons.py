@@ -6,11 +6,11 @@ Run:
 
 Outputs (written under assets/, relative to the repo root):
     assets/icon.png                      1024x1024 RGB   (no alpha, App Store icon)
-    assets/android-icon-background.png   1024x1024 RGBA  (opaque white)
-    assets/android-icon-foreground.png   1024x1024 RGBA  (transparent, navy/green glyph)
+    assets/android-icon-background.png   1024x1024 RGBA  (opaque navy)
+    assets/android-icon-foreground.png   1024x1024 RGBA  (transparent, canvas/green glyph)
     assets/android-icon-monochrome.png   1024x1024 RGBA  (transparent, white glyph)
     assets/splash-icon.png               1024x1024 RGBA  (transparent, navy/green glyph)
-    assets/favicon.png                   48x48 RGBA      (white rounded tile + glyph)
+    assets/favicon.png                   48x48 RGBA      (navy rounded tile + glyph)
 
 The geometry constants below (STEM, ARM, BLOCK, RADIUS, GLYPH_UNITS) mirror the
 paths in assets/brand/fincwin-mark.svg and assets/brand/fincwin-app-icon.svg
@@ -33,8 +33,16 @@ ROOT = Path(__file__).resolve().parents[2]
 # -- Brand colours -----------------------------------------------------------
 NAVY = "#172A4F"
 ACCENT = "#076D46"
-TILE = "#FFFFFF"
+CANVAS = "#FBFAF7"
+# Lighter green for the block on the navy tile: #076D46 is only 2.22:1 against
+# navy, this is 4.25:1. Brand-only, like the rest of this table.
+ACCENT_ON_DARK = "#1FA06B"
+TILE = NAVY
 WHITE = "#FFFFFF"
+
+# The "A · Refine" icon (quick 260926-0mn): canvas stem and arm with a green
+# block on a navy tile. The splash keeps the navy/green glyph on canvas.
+ON_TILE = (CANVAS, CANVAS, ACCENT_ON_DARK)
 
 # -- Glyph geometry: normalised 480-unit box ---------------------------------
 GLYPH_UNITS = 480
@@ -274,13 +282,13 @@ def main() -> None:
     assets_dir = ROOT / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
 
-    icon = compose(1024, 480, bg=hex_to_rgba(TILE))
+    icon = compose(1024, 480, bg=hex_to_rgba(TILE), glyph_colours=ON_TILE)
     save_asset(icon.convert("RGB"), assets_dir / "icon.png")
 
     background = Image.new("RGBA", (1024, 1024), hex_to_rgba(TILE))
     save_asset(background, assets_dir / "android-icon-background.png")
 
-    foreground = compose(1024, 340, bg=None)
+    foreground = compose(1024, 340, bg=None, glyph_colours=ON_TILE)
     save_asset(foreground, assets_dir / "android-icon-foreground.png")
 
     monochrome = compose(1024, 340, bg=None, glyph_colours=(WHITE, WHITE, WHITE))
@@ -289,7 +297,7 @@ def main() -> None:
     splash = compose(1024, 800, bg=None)
     save_asset(splash, assets_dir / "splash-icon.png")
 
-    favicon = compose(48, round(0.47 * 48), tile_radius=round(0.22 * 48))
+    favicon = compose(48, round(0.47 * 48), tile_radius=round(0.22 * 48), glyph_colours=ON_TILE)
     save_asset(favicon, assets_dir / "favicon.png")
 
     verify_outputs(assets_dir)

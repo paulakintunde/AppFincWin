@@ -11,12 +11,33 @@ export interface ScreenProps {
 }
 
 /**
- * Safe-area-aware screen container (DSG-03). Top padding is always
+ * Safe-area-aware screen container (DSG-03). The first header block's top offset is always
  * `insets.top + space.headerExtra`, never a hardcoded value.
+ *
+ * In scroll mode the `insets.top` part is applied to a fixed canvas-coloured band OUTSIDE the
+ * ScrollView, so the scroll viewport itself starts below the status bar and scrolled content is
+ * clipped there rather than drawn beneath it (Android forced edge-to-edge). Only `headerExtra`
+ * stays as content padding, so the resting layout is identical to the non-scroll case.
  */
 export function Screen({ children, scroll = false, style }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useScreenInsets();
+
+  if (scroll) {
+    return (
+      <View style={[styles.base, { backgroundColor: colors.canvas, paddingTop: insets.top }]}>
+        <ScrollView
+          style={[styles.base, { backgroundColor: colors.canvas }]}
+          contentContainerStyle={[
+            { paddingTop: space.headerExtra, paddingBottom: insets.bottom, paddingHorizontal: space.screenH },
+            style,
+          ]}
+        >
+          {children}
+        </ScrollView>
+      </View>
+    );
+  }
 
   const paddingStyle: ViewStyle = {
     backgroundColor: colors.canvas,
@@ -24,17 +45,6 @@ export function Screen({ children, scroll = false, style }: ScreenProps) {
     paddingBottom: insets.bottom,
     paddingHorizontal: space.screenH,
   };
-
-  if (scroll) {
-    return (
-      <ScrollView
-        style={[styles.base, { backgroundColor: colors.canvas }]}
-        contentContainerStyle={[paddingStyle, style]}
-      >
-        {children}
-      </ScrollView>
-    );
-  }
 
   return <View style={[styles.base, paddingStyle, style]}>{children}</View>;
 }

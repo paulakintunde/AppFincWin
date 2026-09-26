@@ -17,7 +17,7 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 - [x] **FND-06**: App applies any of 4 accent colours and any of 4 font pairings live, without a reload
 - [x] **FND-07**: All animations collapse to near-zero duration when the OS reports reduce-motion enabled
 - [ ] **FND-08**: Apple Developer Program enrolment is submitted before any store-dependent work begins
-- [ ] **FND-09**: App checks a minimum supported version on launch and shows an update-required screen when it is below it
+- [x] **FND-09**: App checks a minimum supported version on launch and shows an update-required screen when it is below it
 - [ ] **FND-10**: Every database migration is checked for compatibility with the oldest supported app version before it is deployed
 - [x] **FND-11**: Over-the-air updates follow a runtime-version policy that separates JS-only fixes from native releases, and a bad update can be rolled back
 - [x] **FND-12**: CI runs tests proving a user cannot read or write another user's rows or another household's rows
@@ -95,12 +95,12 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 ### Offline & Sync
 
-- [ ] **SYN-01**: User can browse previously loaded data with no network connection
-- [ ] **SYN-02**: User can create and edit records with no network connection, and those writes flush automatically on reconnect
+- [x] **SYN-01**: User can browse previously loaded data with no network connection
+- [x] **SYN-02**: User can create and edit records with no network connection, and those writes flush automatically on reconnect
 - [ ] **SYN-03**: A queued write that is retried does not produce a duplicate record
 - [ ] **SYN-04**: The write queue survives a force-quit and resumes on next launch
 - [ ] **SYN-05**: The write queue is bounded, and the user is told when it cannot grow further
-- [ ] **SYN-06**: User sees whether the app is offline and how many changes are waiting
+- [x] **SYN-06**: User sees whether the app is offline and how many changes are waiting
 - [ ] **SYN-07**: The persisted offline cache is encrypted at rest, with its key held in secure storage
 
 ### Recording
@@ -175,6 +175,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-07**: User can record a decision and later compare what they estimated against what actually happened
 - [ ] **DCU-08**: Date selection refuses past dates and offers quick offsets
 - [ ] **DCU-09**: No verdict copy uses "advice", "recommendation" or "you should"
+- [ ] **DCU-10**: A new user gets a first verdict in their first session, before any months are logged. It is labelled as a first read, says what it rests on, and is superseded by imported or logged history. Whether it may rest on the user's rough monthly figures or must use sample data is decided at Phase 5 discuss-phase (see `research/LAUNCH-POSITIONING.md`)
+- [ ] **DCU-11**: The verdict card, impact warnings and alternatives table stay legible when captured as phone store screenshots from the App Review demo account's sample scenario, with the verdict line visible without scrolling
 
 ### Grow
 
@@ -343,7 +345,7 @@ Populated during roadmap creation.
 | FND-06 | Phase 0 - Foundation | Complete |
 | FND-07 | Phase 0 - Foundation | Complete |
 | FND-08 | Phase 0 - Foundation | Pending |
-| FND-09 | Phase 0 - Foundation | Pending |
+| FND-09 | Phase 0 - Foundation | Complete |
 | FND-10 | Phase 1 - Money Core | Pending |
 | FND-11 | Phase 0 - Foundation | Complete |
 | FND-12 | Phase 0 - Foundation | Complete |
@@ -402,12 +404,12 @@ Populated during roadmap creation.
 | MON-12 | Phase 1 - Money Core | Pending |
 | MON-13 | Phase 1 - Money Core | Complete |
 | MON-14 | Phase 1 - Money Core | Pending |
-| SYN-01 | Phase 1 - Money Core | Pending |
-| SYN-02 | Phase 1 - Money Core | Pending |
+| SYN-01 | Phase 1 - Money Core | Complete |
+| SYN-02 | Phase 1 - Money Core | Complete |
 | SYN-03 | Phase 10 - System | Pending |
 | SYN-04 | Phase 10 - System | Pending |
 | SYN-05 | Phase 10 - System | Pending |
-| SYN-06 | Phase 1 - Money Core | Pending |
+| SYN-06 | Phase 1 - Money Core | Complete |
 | SYN-07 | Phase 1 - Money Core | Pending |
 | REC-01 | Phase 2 - Record | Pending |
 | REC-02 | Phase 2 - Record | Pending |
@@ -464,6 +466,8 @@ Populated during roadmap creation.
 | DCU-07 | Phase 5 - Decide UI | Pending |
 | DCU-08 | Phase 5 - Decide UI | Pending |
 | DCU-09 | Phase 5 - Decide UI | Pending |
+| DCU-10 | Phase 5 - Decide UI | Pending |
+| DCU-11 | Phase 5 - Decide UI | Pending |
 | GRW-01 | Phase 6 - Grow | Pending |
 | GRW-02 | Phase 6 - Grow | Pending |
 | GRW-03 | Phase 6 - Grow | Pending |
@@ -540,10 +544,10 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 203 total
-- Mapped to phases: 203
+- v1 requirements: 205 total
+- Mapped to phases: 205
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-09-25 after the statement import extension: REC-13…18 added to Phase 2, IMP-01…04 added for inserted Phase 2.1, REC-09 and ANL-05 widened beyond CSV. 203/203 v1 requirements mapped*
+*Last updated: 2026-09-26 after the launch-positioning audit: DCU-10 (first verdict before history) and DCU-11 (store-screenshot legibility) added to Phase 5. 205/205 v1 requirements mapped*
