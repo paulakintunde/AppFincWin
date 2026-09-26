@@ -10,6 +10,10 @@ import { getAnalytics } from '@/services/analytics';
 
 export interface UseConsentResult {
   consent: 'granted' | 'declined' | null;
+  /** True once the underlying profile fetch has settled — see useProfile's `loading`. The
+   * (app) route group's layout gates the D-17 redirect on this, so a profile still loading
+   * is never misread as "no consent on record" and briefly redirected to /consent. */
+  loading: boolean;
   needsPrompt: boolean;
   grant(): Promise<void>;
   decline(): Promise<void>;
@@ -18,9 +22,11 @@ export interface UseConsentResult {
 
 export function useConsent(): UseConsentResult {
   const { user } = useAuth();
-  const { profile, refresh } = useProfile();
+  const { profile, loading, refresh } = useProfile();
   const consent = profile?.analytics_consent ?? null;
-  const needsPrompt = consent === null;
+  // Only "no consent on record" once the profile has actually loaded — otherwise a still-
+  // loading profile (consent momentarily null) would falsely read as needing the prompt.
+  const needsPrompt = !loading && consent === null;
 
   const writeConsent = useCallback(
     async (value: 'granted' | 'declined') => {
@@ -71,5 +77,5 @@ export function useConsent(): UseConsentResult {
     }
   }, [consent, user]);
 
-  return { consent, needsPrompt, grant, decline, setEnabled };
+  return { consent, loading, needsPrompt, grant, decline, setEnabled };
 }
