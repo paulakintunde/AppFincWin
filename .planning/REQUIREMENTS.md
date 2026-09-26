@@ -163,6 +163,10 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DEC-10**: Engine determines card eligibility for an item, distinguishing blocked, capped and permitted
 - [ ] **DEC-11**: Engine decides whether a debt is secured by reading a field on the record, not by matching its name
 - [ ] **DEC-12**: Engine runs with no React, no I/O and no database access, taking a snapshot in and returning a verdict out
+- [ ] **DEC-13**: Engine produces the options list in order: affordable price (bisected), longer term, cut a named expense line, earn more, save first, do without
+- [ ] **DEC-14**: Engine computes the four-way alternatives (as planned, cheaper, wait and save, skip), each with its outcome, and suppresses and labels any row whose money is not genuinely spare
+- [ ] **DEC-15**: Engine applies the four setbacks (unexpected expense, income drops, job or client loss, invoices pay late) to a plan and re-assesses it
+- [ ] **DEC-16**: With no full month of history, engine returns a cash-level first read from a balance and rough monthly figures (cash covers it, month closes), marked as resting on the user's figures
 
 ### Decide — Experience
 
@@ -175,7 +179,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-07**: User can record a decision and later compare what they estimated against what actually happened
 - [ ] **DCU-08**: Date selection refuses past dates and offers quick offsets
 - [ ] **DCU-09**: No verdict copy uses "advice", "recommendation" or "you should"
-- [ ] **DCU-10**: A new user gets a first verdict in their first session, before any months are logged. It is labelled as a first read, says what it rests on, and is superseded by imported or logged history. Whether it may rest on the user's rough monthly figures or must use sample data is decided at Phase 5 discuss-phase (see `research/LAUNCH-POSITIONING.md`)
+- [ ] **DCU-10**: A new user gets a first verdict in their first session, before any months are logged. It is labelled as a first read, says what it rests on, and is superseded by imported or logged history. Settled 2026-09-26 (04-CONTEXT D-11): rough figures give a cash-level first read only, computed by DEC-16; the full verdict needs one real full month
 - [ ] **DCU-11**: The verdict card, impact warnings and alternatives table stay legible when captured as phone store screenshots from the App Review demo account's sample scenario, with the verdict line visible without scrolling
 
 ### Grow
@@ -457,6 +461,10 @@ Populated during roadmap creation.
 | DEC-10 | Phase 4 - Decide Engine | Pending |
 | DEC-11 | Phase 4 - Decide Engine | Pending |
 | DEC-12 | Phase 4 - Decide Engine | Pending |
+| DEC-13 | Phase 4 - Decide Engine | Pending |
+| DEC-14 | Phase 4 - Decide Engine | Pending |
+| DEC-15 | Phase 4 - Decide Engine | Pending |
+| DEC-16 | Phase 4 - Decide Engine | Pending |
 | DCU-01 | Phase 5 - Decide UI | Pending |
 | DCU-02 | Phase 5 - Decide UI | Pending |
 | DCU-03 | Phase 5 - Decide UI | Pending |
@@ -544,10 +552,10 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 205 total
-- Mapped to phases: 205
+- v1 requirements: 209 total
+- Mapped to phases: 209
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-09-26 after the launch-positioning audit: DCU-10 (first verdict before history) and DCU-11 (store-screenshot legibility) added to Phase 5. 205/205 v1 requirements mapped*
+*Last updated: 2026-09-26 after Phase 4 discuss-phase: DEC-13…16 (options, alternatives, setbacks, first read) added to Phase 4. 209/209 v1 requirements mapped*
