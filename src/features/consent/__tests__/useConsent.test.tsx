@@ -110,8 +110,13 @@ describe('useConsent shared across consumers', () => {
     });
 
     // Both consumers flip — the layout's copy is not left behind reading "no consent".
-    expect(getByTestId('screen').props.children).toBe('false|false|granted');
-    expect(getByTestId('layout').props.children).toBe('false|false|granted');
+    // waitFor, not a bare expect: the write's background refetch can land inside or after
+    // act() depending on runner speed (flaked once on CI); both consumers must still settle
+    // on granted.
+    await waitFor(() => {
+      expect(getByTestId('screen').props.children).toBe('false|false|granted');
+      expect(getByTestId('layout').props.children).toBe('false|false|granted');
+    });
     expect(mockEnable).toHaveBeenCalledWith(USER_ID);
   });
 
