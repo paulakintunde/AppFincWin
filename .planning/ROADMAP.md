@@ -14,7 +14,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 0: Foundation** - Expo project, engine purity CI gates, Apple/Google auth, household-of-one schema and RLS, design tokens
 - [ ] **Phase 1: Money Core** - Integer-money engine, client UUID keys, FX rate storage, TanStack Query data layer with the offline write queue
-- [ ] **Phase 2: Record** - Transactions, recurring entries, CSV import, Activity list, compensating-write undo
+- [ ] **Phase 2: Record** - Transactions, recurring entries, transfers, statement import (CSV, OFX/QFX), account limits and standing, Activity list, compensating-write undo
+- [ ] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy
 - [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB
 - [ ] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
@@ -163,14 +164,16 @@ Plans:
 ### Phase 2: Record
 **Goal**: A user can log and manage their real financial activity against a live backend.
 **Depends on**: Phase 1
-**Requirements**: REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08, REC-09, REC-10, REC-11, REC-12, ACT-01, ACT-02, ACT-03, ACT-04, ACT-05, ANL-05
+**Requirements**: REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07, REC-08, REC-09, REC-10, REC-11, REC-12, REC-13, REC-14, REC-15, REC-16, REC-17, REC-18, ACT-01, ACT-02, ACT-03, ACT-04, ACT-05, ANL-05
 **Success Criteria** (what must be TRUE):
   1. A user can log an expense or income with amount, category, account and date; edit or delete any transaction they created; and see a balance per account they define, using categories they can create, rename and colour.
   2. A user can mark a transaction as recurring on a schedule, have it generate entries without re-typing, and skip or end a single occurrence without deleting the series.
-  3. A user can import transactions from a CSV file — during onboarding or later — previewing what will be created and correcting the column mapping before committing.
+  3. A user can import transactions from a CSV or OFX/QFX statement — during onboarding or later — seeing how the file was read (signs, what the balance means, any limit), confirming or correcting that reading and the column mapping, and seeing whether the balances check out, before committing.
   4. A user can view all of a month's transactions in a list, switch months including into archived ones, search across all months, filter by category/account/amount, and bulk-select and delete transactions in one action.
   5. A user can undo any of their last 12 changes from the toast or the history screen as a compensating write, and is refused with an explanation when another household member has since changed the same record.
-**Plans**: 31 plans
+  6. An account can be overdrawn, beyond its overdraft, or over its card limit, and the app shows that standing plainly rather than treating it as an error; card statements that show purchases as positive or balances as available credit import with the correct signs.
+  7. A user can record a transfer between their own accounts, import suggests matching pairs such as a card payment, and transfers never count as income or spending.
+**Plans**: 31 plans (written before the 2026-09-25 import extension; affected plans must be revised before execution — see 02-CONTEXT.md "Plan impact")
 Plans:
 **Wave 1**
 - [ ] 02-01-PLAN.md — Engine: recurring schedule maths + shared TS/SQL fixture (W1)
@@ -229,6 +232,22 @@ Plans:
 **Wave 13** *(blocked on Wave 12 completion)*
 - [ ] 02-31-PLAN.md — Production rollout: schema push [BLOCKING], live checks, device walkthrough (W13; needs 01-16)
 **UI hint**: yes
+
+### Phase 02.1: PDF statement import (INSERTED)
+
+**Goal:** A user can import a text-based PDF bank or card statement through the same import pipeline as CSV and OFX, with figures that are only committed once they reconcile or the user has reviewed them.
+**Requirements**: IMP-01, IMP-02, IMP-03, IMP-04
+**Depends on:** Phase 2 (the D-40 import pipeline, format profile, reconciliation, transfers)
+**Success Criteria** (what must be TRUE):
+  1. A text-based PDF statement from a supported layout imports with the same format read-back, preview, duplicate check and transfer suggestions as a CSV or OFX file.
+  2. Nothing from a PDF is committed unless its balances reconcile or the user has reviewed each row that could not be verified.
+  3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
+  4. The privacy copy says where the PDF is processed and how long it is kept.
+**Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 02.1 to break down)
 
 ### Phase 3: Shell
 **Goal**: The app's navigation chrome matches the design system exactly.

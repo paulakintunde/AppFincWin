@@ -7,7 +7,7 @@ stopped_at: Phase 2 UI-SPEC approved
 last_updated: "2026-09-26T04:04:30.696Z"
 last_activity: 2026-09-25 -- Phase 02 planning complete
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 0
   total_plans: 67
   completed_plans: 30
@@ -65,6 +65,10 @@ Progress: [█████░░░░░] 45%
 | Phase 00 P17 | ~2h | 3 tasks | 18 files |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 2.1 inserted after Phase 2: PDF statement import: text PDFs, generic parser with balance reconciliation, server worker and privacy decision (split from Record's import extension, 2026-09-25)
 
 ### Decisions
 
