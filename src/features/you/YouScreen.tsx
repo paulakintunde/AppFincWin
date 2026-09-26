@@ -4,12 +4,14 @@
 // sign-out row. The destructive colour stays reserved for the confirm-dialog copy only — the
 // row label itself is plain ink (00-UI-SPEC.md Color).
 import { useCallback } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Screen } from '@/ui/Screen';
 import { space } from '@/theme/layout';
 import { fontSize } from '@/theme/typography';
+import { SyncStatusLine } from '@/ui/SyncStatusLine';
+import { EXCHANGE_RATE_API_URL } from '@/i18n/mandatedCopy';
 import { useConsent } from '@/features/consent/useConsent';
 import { requestSignOut, performSignOut } from '@/features/auth/signOut';
 import { useProfile } from './useProfile';
@@ -18,6 +20,7 @@ import { AccentSwitcher } from './components/AccentSwitcher';
 import { FontPairingSwitcher } from './components/FontPairingSwitcher';
 import { AnalyticsToggle } from './components/AnalyticsToggle';
 import { ConnectionStatus } from './components/ConnectionStatus';
+import { DevSyncProbe } from './components/DevSyncProbe';
 
 export function YouScreen() {
   const t = useT();
@@ -106,6 +109,7 @@ export function YouScreen() {
 
       <SettingsGroup title={t('you.section.connection')}>
         <ConnectionStatus />
+        <SyncStatusLine />
       </SettingsGroup>
 
       <SettingsGroup title={t('you.section.account')}>
@@ -119,7 +123,20 @@ export function YouScreen() {
             {t('you.signOut')}
           </Text>
         </Pressable>
+        {__DEV__ ? <DevSyncProbe /> : null}
       </SettingsGroup>
+
+      <Pressable
+        accessibilityRole="link"
+        onPress={() => {
+          Linking.openURL(EXCHANGE_RATE_API_URL).catch(() => undefined);
+        }}
+        style={styles.credits}
+      >
+        <Text style={[styles.creditsText, { fontFamily: fonts.body[500], color: colors.inkFaint }]}>
+          {t('credits.exchangeRateApi')}
+        </Text>
+      </Pressable>
     </Screen>
   );
 }
@@ -174,5 +191,13 @@ const styles = StyleSheet.create({
   hint: {
     marginTop: 2,
     fontSize: fontSize.label,
+  },
+  credits: {
+    marginTop: space.groupGap,
+    alignSelf: 'center',
+  },
+  creditsText: {
+    fontSize: fontSize.meta,
+    textDecorationLine: 'underline',
   },
 });
