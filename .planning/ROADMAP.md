@@ -80,10 +80,10 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [x] 00-15-PLAN.md — Apple/Google sign-in services, first-auth profile capture, AuthProvider, Google OAuth (W4)
-- [ ] 00-16-PLAN.md — D-19 error-tracking spike: PostHog vs Sentry, scrubbed consent-independent reporting (W4)
+- [x] 00-16-PLAN.md — D-19 error-tracking spike: PostHog vs Sentry, scrubbed consent-independent reporting (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 00-17-PLAN.md — Root layout, welcome screen, min-version gate + update-required screen (W5)
+- [x] 00-17-PLAN.md — Root layout, welcome screen, min-version gate + update-required screen (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 00-18-PLAN.md — Consent screen, You screen, theme profile sync, sign-out wipe flow (W6)
