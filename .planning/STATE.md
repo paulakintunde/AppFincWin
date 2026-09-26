@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-09-26T04:04:30.696Z"
+last_updated: "2026-09-26T05:04:57.281Z"
 last_activity: 2026-09-25 -- Phase 02 planning complete
 progress:
   total_phases: 13
@@ -63,6 +63,7 @@ Progress: [█████░░░░░] 45%
 | Phase 00 P14 | 55min | 2 tasks | 4 files |
 | Phase 00 P15 | 120min | 3 tasks | 12 files |
 | Phase 00 P17 | ~2h | 3 tasks | 18 files |
+| Phase 00-foundation P18 | ~2h | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,9 @@ Recent decisions affecting current work:
 - [Phase 00-foundation]: 00-15: Supabase's external_google_additional_client_ids Management API field merges into external_google_client_id at write time and always reads back empty on GET -- verified live, not assumed; re-PATCH the full list on any client-ID change
 - [Phase 00-foundation]: 00-17: Google's live sign-in button asset was redesigned since the brief (a masked gradient-blob G, not a flat four-colour one); the react-native-svg filter+mask reproduction passed Jest but rendered nothing on a real Android device, so GoogleMark uses Google's own official pre-rasterised PNG mark instead
 - [Phase 00-foundation]: 00-17: app/index.tsx reads the root layout's already-resolved route via a RouteContext rather than re-running useMinVersionGate()/useAuth() itself, avoiding a duplicate version-gate network call and a possible blank-screen flash on cold boot
+- [Phase 00-foundation]: 00-18: useConsent also exposes the underlying profile loading state and folds it into needsPrompt (!loading && consent === null), so the (app) layout never misreads a still-fetching profile as needing the D-17 prompt and briefly redirects an already-answered user back to /consent
+- [Phase 00-foundation]: 00-18: signOut.ts resolves the real Supabase client via a lazy dynamic import (mirrors 00-10's connection.ts), never a static top-level import, so importing signOut.ts never requires Supabase env vars under Jest
+- [Phase 00-foundation]: 00-18: AccentSwitcher/FontPairingSwitcher are driven by the live theme (theme.accent/theme.pairing), not the persisted profile row, so a press is visible in the same render tree before the Supabase write resolves (FND-06)
 
 ### Pending Todos
 
