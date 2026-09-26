@@ -139,6 +139,7 @@ None yet.
 | 260922-tsn | Collapse phase-00 plans to single prod Supabase project | 2026-09-22 | f90689b | [260922-tsn-collapse-phase-00-plans-to-single-prod-s](./quick/260922-tsn-collapse-phase-00-plans-to-single-prod-s/) |
 | 260922-us3 | Align all docs to single prod Supabase project | 2026-09-22 | 07ef5f6 | [260922-us3-align-all-docs-to-single-prod-supabase-p](./quick/260922-us3-align-all-docs-to-single-prod-supabase-p/) |
 | 260925-8bi | Replace placeholder app icons with FincWin F logo | 2026-09-25 | 3020470 | [260925-8bi-replace-placeholder-app-icons-with-fincw](./quick/260925-8bi-replace-placeholder-app-icons-with-fincw/) |
+| 260926-0mn | Launch positioning into Phase 5, "A · Refine" navy icon, pricing advisory | 2026-09-26 | 414920d | [260926-0mn-launch-positioning-phase5-pricing-adviso](./quick/260926-0mn-launch-positioning-phase5-pricing-adviso/) |
 
 ## Deferred Items
 
