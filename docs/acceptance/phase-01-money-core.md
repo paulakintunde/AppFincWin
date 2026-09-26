@@ -129,3 +129,37 @@ secret value was echoed, logged or committed at any point; `git status
 --porcelain` after this task shows no temp secrets file, and `.env.local`
 remains untracked (`git ls-files | grep '^\.env'` shows only
 `.env.example`).
+
+---
+
+## Task 3: Device check — offline queue, sync line and locale formatting
+
+**Date:** 2026-09-26
+**Device:** Pixel 9 (Android SDK 37, adb serial `55240DLAQ000EQ`), dev client (debug build, arm64) against the production project. Google account `lifecreativewordministry@gmail.com`.
+
+**Environment note:** the plan's `Pixel_8_API_36` emulator was abandoned —
+it segfaulted twice on boot (once in the GPU path, once under
+`swiftshader`) on this machine's Intel Iris Xe graphics. The Pixel 9
+physical device was substituted for this entire check, and this session
+combined it with `00-19-PLAN.md` Task 2 (Phase 0's on-device acceptance) in
+one continuous pass, since both needed the same fresh dev-client rebuild
+(NetInfo is new native code, per this task's `what-built`).
+
+| Step | Check | Result | Evidence |
+| --- | --- | --- | --- |
+| 1 | Rebuild dev client (new NetInfo native module) | **done** | Fresh dev client built and installed on the Pixel 9 |
+| 2 | Sign in, open You tab: "synced just now" line, exchange-rate credit at the foot | **PASS** | Both present |
+| 3 | Airplane mode on: "offline" within a few seconds; kill and reopen renders from cache | **PASS** | Confirmed — cold restart under airplane mode still rendered the You screen from the persisted cache |
+| 4 | With airplane mode still on, tap "Queue a test entry (dev)": queued count appears; force-quit and reopen: count persists | **PASS** | Queued count appeared after tapping (account + transaction created on the first tap) and survived a force-quit/reopen cycle |
+| 5 | Airplane mode off: queue drains, "synced just now"; production shows the transaction with `rate_source`/`rate_date` filled | **PASS** | Queue drained and "synced just now" reappeared. Production table "Sync test" account shows three transactions from three taps: original −1000 EUR → home −1140 USD, `rate` 1.1399000000, `rate_source` `frankfurter-v2`, `rate_date` 2026-09-26, `rate_pending` `false`. Arithmetic check: −1000 × 1.1399 = −1139.9, half-up rounds to −1140, matching the engine/SQL mirror (MON-05, MON-06) |
+| 6 | Change device region to Germany and back | **PASS** | App loads normally after each region switch. No amounts render yet in the shipped UI (Record, which renders amounts, is Phase 2) — DSG-06's regional-format guarantee (e.g. `1.234,56 €`, minus rendered as `−`) is covered by the existing unit-test suite (`useMoneyFormatter`, `useAmountParser`, device-locale services — all passing per Task 1's `test:coverage` run), not by a visual check in this phase |
+| 7 | Sign out: unsaved-changes warning appears only if something is still queued | **PASS** | No dialog appeared with 0 pending (queue had already drained in step 5) |
+
+**User approval:** approved, with results for steps 1-7 as recorded above.
+
+This confirms offline browse (SYN-01), queued writes surviving a
+force-quit and flushing on reconnect (SYN-02), the sync status line, the
+FX-rate credit line, and the FX-stamping arithmetic (MON-05, MON-06) on a
+real device. DSG-06's locale-formatting guarantee is proven by unit tests
+against Hermes rather than by a visual check, since no screen in the
+shipped Phase 0/1 build renders a formatted amount yet.
