@@ -5,14 +5,18 @@
 // is built on top of this hook. Analytics tracking is a no-op unless the user has consented
 // (src/services/analytics's own enabled gate), so calling track() unconditionally here is safe.
 //
-// react-hooks/set-state-in-effect: mirrors useMinVersionGate.ts's shape — the effect calls a
-// synchronous wrapper (refresh) that never itself calls a state setter; every setState call
-// happens inside the query's own `.then()` callback, one async boundary away from the effect.
-import { useCallback, useEffect, useRef, useState } from 'react';
+// The row lives in ONE TanStack Query cache entry (queryKeys.profile), not per-hook state.
+// Every caller -- the (app) layout's consent gate, ConsentScreen, YouScreen -- reads the same
+// copy, so a write seen by one is seen by all in the same render. Per-instance state here was
+// the cause of the Phase 0 /you <-> /consent redirect loop: grant() refreshed only the
+// consent screen's copy while the layout's copy kept reading "no consent".
+import { useCallback, useEffect, useState } from 'react';
+import { useIsRestoring, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { getAnalytics } from '@/services/analytics';
+import { queryKeys } from '@/data/keys';
 import type { AccentKey } from '@/theme/accents';
 import type { FontPairingKey } from '@/theme/fonts';
 
@@ -28,94 +32,123 @@ export interface Profile {
 
 export interface UseProfileResult {
   profile: Profile | null;
+  /** True only while there is no settled answer yet: the persisted cache is still being
+   * restored, or the first fetch is actively in flight. A failed, missing-row or paused
+   * (offline) fetch settles to false with profile null -- never an indefinite wait. */
   loading: boolean;
+  /** True while a server fetch for the row is in flight (including background refetches). */
+  fetching: boolean;
+  /** True when the cached row was fetched or written during this app session; false when it
+   * is only a copy restored from the persisted cache of an earlier session. */
+  fresh: boolean;
   saveError: boolean;
   setAccent(key: AccentKey): Promise<void>;
   setPairing(key: FontPairingKey): Promise<void>;
+  /** Refetches the shared row (every caller sees the result). */
   refresh(): Promise<void>;
+  /** Patches the shared cached row in place, for a write that has already succeeded. */
+  patchCached(patch: Partial<Profile>): void;
 }
 
 const PROFILE_COLUMNS = 'id, full_name, email, accent, font_pairing, analytics_consent, analytics_consent_at';
 
+/** Anything the cache holds with an older timestamp was restored from a previous app session. */
+const SESSION_STARTED_AT = Date.now();
+
+// Guards theme.applyRemote() to once per signed-in user id across every useProfile caller,
+// so a later fetch or a newly mounted screen never re-applies and clobbers an in-flight local
+// selection, but a genuinely different user (or the same user after a sign-out, which resets
+// the theme) gets their saved theme applied again.
+let appliedThemeUserId: string | null = null;
+
+async function fetchProfile(userId: string): Promise<Profile> {
+  const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).single();
+  if (error || !data) {
+    throw new Error(`profile fetch failed: ${(error as { code?: string } | null)?.code ?? 'no row'}`);
+  }
+  return data as Profile;
+}
+
 export function useProfile(): UseProfileResult {
   const { user } = useAuth();
   const theme = useTheme();
-  // react-hooks/refs: writing a ref during render is disallowed — reflect the latest theme
-  // into the ref from an effect (runs after every render) instead, so refresh()/setAccent()/
-  // setPairing() (invoked later, from a query callback or an event handler) still always see
-  // the current theme context value without re-creating those callbacks on every render.
-  const themeRef = useRef(theme);
-  useEffect(() => {
-    themeRef.current = theme;
+  const queryClient = useQueryClient();
+  const isRestoring = useIsRestoring();
+  const userId = user?.id ?? null;
+
+  const query = useQuery({
+    queryKey: queryKeys.profile(userId ?? ''),
+    queryFn: () => fetchProfile(userId as string),
+    enabled: userId !== null,
   });
 
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState(false);
-  // Guards theme.applyRemote() to once per signed-in user id, so a later refresh() (e.g.
-  // after a successful consent/theme write) never re-applies and clobbers an in-flight local
-  // selection, but a genuinely different user signing in on the same device gets their own
-  // saved theme applied again.
-  const appliedThemeUserIdRef = useRef<string | null>(null);
 
-  const refresh = useCallback((): Promise<void> => {
-    if (!user) return Promise.resolve();
-    return Promise.resolve(
-      supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', user.id).single()
-    ).then(({ data, error }) => {
-      if (!error && data) {
-        const next = data as Profile;
-        setProfile(next);
-        if (appliedThemeUserIdRef.current !== next.id) {
-          themeRef.current.applyRemote(next.accent, next.font_pairing);
-          appliedThemeUserIdRef.current = next.id;
-        }
-      }
-      setLoading(false);
-    });
-  }, [user]);
+  const profile = userId !== null && query.data?.id === userId ? query.data : null;
 
+  const { applyRemote } = theme;
   useEffect(() => {
-    if (!user) return;
-    void refresh();
-  }, [user, refresh]);
+    if (!userId) {
+      appliedThemeUserId = null;
+      return;
+    }
+    if (profile && appliedThemeUserId !== profile.id) {
+      applyRemote(profile.accent, profile.font_pairing);
+      appliedThemeUserId = profile.id;
+    }
+  }, [userId, profile, applyRemote]);
 
-  // Derived, not stored: a signed-out user always reads as no profile / not loading, with no
-  // separate setState call needed for that branch (see the file-header note above).
-  const effectiveProfile = user ? profile : null;
-  const effectiveLoading = user ? loading : false;
+  const refresh = useCallback(async (): Promise<void> => {
+    if (!userId) return;
+    await queryClient.invalidateQueries({ queryKey: queryKeys.profile(userId) });
+  }, [queryClient, userId]);
+
+  const patchCached = useCallback(
+    (patch: Partial<Profile>) => {
+      if (!userId) return;
+      queryClient.setQueryData<Profile>(queryKeys.profile(userId), (prev) => (prev ? { ...prev, ...patch } : prev));
+    },
+    [queryClient, userId]
+  );
 
   const setAccent = useCallback(
     async (key: AccentKey) => {
-      themeRef.current.setAccent(key);
+      theme.setAccent(key);
       setSaveError(false);
-      if (!user) return;
-      const { error } = await supabase.from('profiles').update({ accent: key }).eq('id', user.id);
+      if (!userId) return;
+      const { error } = await supabase.from('profiles').update({ accent: key }).eq('id', userId);
       if (error) {
         setSaveError(true);
         return;
       }
-      setProfile((prev) => (prev ? { ...prev, accent: key } : prev));
+      patchCached({ accent: key });
       getAnalytics().track('theme_accent_changed', { accent: key });
     },
-    [user]
+    [theme, userId, patchCached]
   );
 
   const setPairing = useCallback(
     async (key: FontPairingKey) => {
-      themeRef.current.setPairing(key);
+      theme.setPairing(key);
       setSaveError(false);
-      if (!user) return;
-      const { error } = await supabase.from('profiles').update({ font_pairing: key }).eq('id', user.id);
+      if (!userId) return;
+      const { error } = await supabase.from('profiles').update({ font_pairing: key }).eq('id', userId);
       if (error) {
         setSaveError(true);
         return;
       }
-      setProfile((prev) => (prev ? { ...prev, font_pairing: key } : prev));
+      patchCached({ font_pairing: key });
       getAnalytics().track('theme_font_changed', { pairing: key });
     },
-    [user]
+    [theme, userId, patchCached]
   );
 
-  return { profile: effectiveProfile, loading: effectiveLoading, saveError, setAccent, setPairing, refresh };
+  // Signed out: always no profile / not loading. Signed in: loading only while the persisted
+  // cache restores or the very first fetch is actually running -- a 'paused' (offline) or
+  // errored fetch is a settled "no profile", so nothing that gates on this can hang.
+  const loading = userId !== null && (isRestoring || (query.isPending && query.fetchStatus === 'fetching'));
+  const fetching = userId !== null && query.fetchStatus === 'fetching';
+  const fresh = profile !== null && query.dataUpdatedAt >= SESSION_STARTED_AT;
+
+  return { profile, loading, fetching, fresh, saveError, setAccent, setPairing, refresh, patchCached };
 }

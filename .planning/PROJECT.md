@@ -209,8 +209,8 @@ All of these are hypotheses until shipped.
 
 | Question | Why it is open |
 |----------|----------------|
-| **Which of the ~50 features are Free and which are Pro?** | `Component.FEATS` carries levels but not price tiers, and the architecture decision removed cloud sync and tax export from the paywall's five rows — leaving forecast, Coach and import. Needs a pricing decision before any gating is implemented. Everything built before then stays tier-agnostic behind a single entitlement check |
-| **Is the Coach a real LLM, and on what terms?** | Decided in principle as a real LLM behind a Supabase Edge Function so keys never ship in the client, with the quota as real metering. Still needs prompt design, cost modelling, abuse limits, and non-advisory output framing that survives Apple 3.2.1 review |
+| **Which of the ~50 features are Free and which are Pro?** | `Component.FEATS` carries levels but not price tiers, and the architecture decision removed cloud sync and tax export from the paywall's five rows — leaving forecast, Coach and import. Needs a pricing decision before any gating is implemented. Everything built before then stays tier-agnostic behind a single entitlement check. **Advisory (2026-09-26, `research/PRICING.md`):** freemium with one Pro per household at $7.99 / $59.99 (US), a 14-day trial and a price pledge. The quick check and CSV/OFX/QFX import stay free; the alternatives table, forecast, payoff scenarios and PDF import go to Pro. Bank Sync is a separate v1.1 plan at $11.99 / $89.99, capped at 3 bank logins. Not yet adopted |
+| **Is the Coach a real LLM, and on what terms?** | Decided in principle as a real LLM behind a Supabase Edge Function so keys never ship in the client, with the quota as real metering. Still needs prompt design, cost modelling, abuse limits, and non-advisory output framing that survives Apple 3.2.1 review. Cost model in `research/PRICING.md` §4: Haiku 4.5 is about $0.005 a question; the prototype's 20-a-day cap is worth up to $3 a month per heavy user, 5 a day about $0.75 |
 
 ### Deferred to phase discussion
 
@@ -235,7 +235,7 @@ Verified 2026-09-22 against each provider's pricing page.
 | Production backups | TBD — likely AWS (S3 storage for a daily dump; typically a few dollars a month at this scale) | Phase 10 (ENV-16) |
 | Supabase point-in-time recovery | $100 a month per 7 days of retention | Optional, when user numbers justify it |
 | EAS | Free: 15 Android + 15 iOS builds a month, low-priority queue, updates to 1,000 users. Starter $19 a month (+ usage) for the fast queue and 3,000 update users | Free from Phase 0; Starter when build waits start costing time |
-| RevenueCat | Free to $2,500 monthly revenue, then 1% of all gross revenue | Phase 9 |
+| RevenueCat | Free to $2,500 monthly tracked revenue, then 1% of revenue above $2,500 (corrected 2026-09-26 against revenuecat.com/pricing) | Phase 9 |
 | PostHog | Free: 1M events, 1M flag requests, 100K exceptions a month | Phase 0 |
 | Sentry | Not yet priced — may be replaced by PostHog error tracking | Phase 0 decision |
 | Frankfurter, open.er-api | Free | Phase 0–1 |
