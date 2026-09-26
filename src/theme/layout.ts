@@ -26,6 +26,7 @@ export const space = {
 } as const;
 
 export interface ScreenInsets {
+  top: number;
   headerTop: number;
   bottom: number;
   left: number;
@@ -39,5 +40,5 @@ export interface ScreenInsets {
  */
 export function useScreenInsets(): ScreenInsets {
   const i = useSafeAreaInsets();
-  return { headerTop: i.top + space.headerExtra, bottom: i.bottom, left: i.left, right: i.right };
+  return { top: i.top, headerTop: i.top + space.headerExtra, bottom: i.bottom, left: i.left, right: i.right };
 }

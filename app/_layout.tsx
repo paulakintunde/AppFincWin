@@ -12,6 +12,7 @@ import { resolveRoute, type Route } from '@/features/system/routeDecision';
 import { initErrorReporting, captureError } from '@/services/errors';
 import { QueryProvider } from '@/data/QueryProvider';
 import { setFailureReporter } from '@/data/sync/failedWrites';
+import { AppStatusBar } from '@/ui/AppStatusBar';
 
 // D-18: always-on, independent of analytics consent — initialised unconditionally at boot,
 // before anything else can throw.
@@ -89,6 +90,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
+        <AppStatusBar />
         <ThemeProvider>
           <QueryProvider>
             <AuthProvider>
