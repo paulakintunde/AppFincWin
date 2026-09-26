@@ -5,13 +5,13 @@ milestone_name: milestone
 status: executing
 stopped_at: Phase 4 context gathered
 last_updated: "2026-09-26T23:47:30.046Z"
-last_activity: 2026-09-25 -- Phase 02 planning complete
+last_activity: 2026-09-26 -- Phase 1 complete (00-19/01-16 acceptance closed); Phase 4 context gathered
 progress:
   total_phases: 13
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 76
-  completed_plans: 32
-  percent: 42
+  completed_plans: 34
+  percent: 45
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 2 of 16
 Status: Ready to execute
 Last activity: 2026-09-25 -- Phase 02 planning complete
 
-Progress: [█████░░░░░] 45%
+Progress: [█████░░░░░] 51%
 
 ## Performance Metrics
 
@@ -65,6 +65,8 @@ Progress: [█████░░░░░] 45%
 | Phase 00 P17 | ~2h | 3 tasks | 18 files |
 | Phase 00-foundation P18 | ~2h | 3 tasks | 17 files |
 | Phase 01 P15 | 90min | 2 tasks | 7 files |
+| Phase 00 P19 | 90min | 3 tasks | 6 files |
+| Phase 01 P16 | 3h | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -112,6 +114,10 @@ Recent decisions affecting current work:
 - [Phase 00-foundation]: 00-18: AccentSwitcher/FontPairingSwitcher are driven by the live theme (theme.accent/theme.pairing), not the persisted profile row, so a press is visible in the same render tree before the Supabase write resolves (FND-06)
 - [Phase 01]: 01-15: DevSyncProbe is stubbed in YouScreen.test.tsx via jest.mock; its own hook wiring (create-if-absent vs reuse-existing account, foreign-currency amount) is proven in a dedicated DevSyncProbe.test.tsx instead
 - [Phase 01]: 01-15: app/_layout.tsx's setFailureReporter uses area: 'sync' directly -- ErrorArea already included 'sync' before this plan started (00-16 PR #19 rework), no substitution needed
+- [Phase 00]: 00-19: Android acceptance ran on a physical Pixel 9 instead of the planned Pixel_8_API_36 emulator, which segfaulted twice on boot (GPU and swiftshader paths) on this machine's Intel Iris Xe graphics
+- [Phase 00]: 00-19: the dependency register's 'Supabase dev project' row is marked deferred rather than deleted -- it was collapsed into the single production project by quick task 260922-tsn on 2026-09-22, and the register should record that history
+- [Phase 00]: 00-19: website-audit.md verdict moves from REMEDIATE (9 items) to READY pending two items (D-U-N-S name match, an explicit 'registered in Canada' line) after live curl re-verification of both domains, not from the user's remediation report alone
+- [Phase 01]: 01-16: Task 3's device check ran on the same Pixel 9 session as 00-19 Task 2 (combined for one fresh dev-client rebuild); DSG-06 (locale formatting) is accepted on the existing Hermes unit-test suite rather than a visual check, since no shipped screen renders a formatted amount before Phase 2 (Record)
 
 ### Pending Todos
 
@@ -127,7 +133,7 @@ None yet.
 - [Phase 11] Guideline 3.2.1(viii)'s live wording no longer carries the qualifier the brief assumed — re-verify positioning at this phase rather than treating it as settled; the brief also mis-cites the 36% APR / 60-day loan cap as 3.2.1(viii) when it is actually 3.2.2(ix)
 - [PROJECT.md] Passkey implementation path (native WebAuthn + Edge Function vs. Clerk) remains unresolved and deferred out of v1 entirely per current scope — carried as "Out of Scope: Deferred to v1.1" in PROJECT.md, not a Phase 0 task
 - [Phase 0] 00-08: GitHub branch protection on `main` is now ON (2026-09-23, after the user made `AppFincWin` public): required checks `checks`/`secret-scan`/`rls`, strict. `enforce_admins` is false, so the owner's direct pushes to `main` still bypass the checks — FND-04/FND-05 stay pending until the user decides between `enforce_admins: true` with a PR-based flow, or accepting owner bypass. Tracked in `docs/dependency-register.md`
-- [Phase 0] 00-15: second Android Google OAuth client (for whichever of the two SHA-1s the one existing client doesn't cover) still needs creating in Google Cloud Console; tracked in docs/ops/auth-providers.md, not code-blocking
+- ~~[Phase 0] 00-15: second Android Google OAuth client still needs creating~~ — resolved 2026-09-26: both Android clients exist and production Supabase accepts all four Google client IDs (docs/ops/auth-providers.md)
 
 ### Quick Tasks Completed
 

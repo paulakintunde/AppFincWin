@@ -13,7 +13,7 @@ FincWin ships in build order dictated by one architectural fact: local-first was
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 0: Foundation** - Expo project, engine purity CI gates, Apple/Google auth, household-of-one schema and RLS, design tokens
-- [ ] **Phase 1: Money Core** - Integer-money engine, client UUID keys, FX rate storage, TanStack Query data layer with the offline write queue
+- [x] **Phase 1: Money Core** - Integer-money engine, client UUID keys, FX rate storage, TanStack Query data layer with the offline write queue (completed 2026-09-26)
 - [ ] **Phase 2: Record** - Transactions, recurring entries, transfers, statement import (CSV, OFX/QFX), account limits and standing, Activity list, compensating-write undo
 - [ ] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy
 - [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB
@@ -89,7 +89,7 @@ Plans:
 - [x] 00-18-PLAN.md — Consent screen, You screen, theme profile sync, sign-out wipe flow (W6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 00-19-PLAN.md — Android acceptance, register consolidation, approved prod push (W7)
+- [x] 00-19-PLAN.md — Android acceptance, register consolidation, approved prod push (W7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
 - [ ] 00-20-PLAN.md — iOS: Sign in with Apple config, first EAS iOS build on iPhone XR (W8, waits on enrolment)
@@ -158,7 +158,7 @@ Plans:
 - [x] 01-15-PLAN.md — Wire QueryProvider, failure reporting, sync line, credits and dev probe into the app (W6; needs Phase 0 00-16/17/18)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 01-16-PLAN.md — Production rollout: schema push [BLOCKING], function deploy, live smoke, device check (W7)
+- [x] 01-16-PLAN.md — Production rollout: schema push [BLOCKING], function deploy, live smoke, device check (W7)
 **UI hint**: no (data layer and engine work; no screens ship in this phase)
 
 ### Phase 2: Record
@@ -397,8 +397,8 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4* → 5 → 6 → 7 �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 14/20 | In Progress | - |
-| 1. Money Core | 14/16 | In Progress (01-15, 01-16 blocked on Phase 0) | - |
+| 0. Foundation | 18/20 | In Progress | - |
+| 1. Money Core | 16/16 | Complete | 2026-09-26 |
 | 2. Record | 0/TBD | Not started | - |
 | 3. Shell | 0/TBD | Not started | - |
 | 4. Decide Engine | 0/TBD | Not started | - |

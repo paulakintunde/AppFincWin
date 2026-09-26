@@ -114,3 +114,47 @@ plainly). Passes: 3 (entity HTTPS/domain; product bank/lender/adviser voice;
 product privacy/terms/support infrastructure).
 
 Verdict: REMEDIATE (9 items)
+
+## Re-audit — 2026-09-26
+
+Re-checked live against the same criteria, via `curl -sL --compressed` on both
+domains (following redirects, decompressing gzip) rather than `curl -sI`
+alone, so page bodies — not just headers — were inspected this time.
+
+### Method
+
+```
+curl -sL --compressed https://leadstrategy.ca/                -> 200, body inspected
+curl -sL --compressed https://leadstrategy.ca/contact/         -> 301 -> 200, body inspected
+curl -sL --compressed https://www.fincwin.com/                 -> 200, body inspected
+curl -sI  https://www.fincwin.com/privacy                       -> 200
+curl -sI  https://www.fincwin.com/terms                         -> 200
+curl -sI  https://leadstrategy.ca/privacy                        -> 301 (redirects; not built on this domain, as before — not required here)
+curl -sL --compressed https://www.fincwin.com/pricing           -> 200, body inspected for checkout placeholders
+```
+
+### Findings
+
+| # | Original finding (2026-09-23) | Result today | Evidence |
+| --- | --- | --- | --- |
+| 1 | Entity site never mentions FincWin | **fixed** | `leadstrategy.ca` body now contains "Lead Strategy Canada Inc also builds and publishes FincWin..." linking to `fincwin.com` |
+| 2 | Entity site: three visible placeholder admissions (photography, case-study figures, chart data) | **fixed** | No occurrence of "placeholder", "illustrative" or "being configured" anywhere in the fetched home page or contact page body. The only remaining string containing "placeholder" is the HTML `placeholder=` attribute on the contact form's input fields (e.g. `placeholder="First and last"`) — an input hint, not visible admission text |
+| 3 | Entity contact page: "Online delivery is being configured" system message | **fixed** | No "being configured" or "online delivery" string found on `/contact/`; the working contact form and `mailto:` route remain |
+| 4 | Entity site: no "registered in Canada" statement | **partial, unchanged** | Footer still reads only "Lead Strategy Canada Inc. 2026. All rights reserved."; structured data carries `"areaServed":"Canada"` and body copy says "A Canadian technology company..." but no literal "registered in Canada" sentence exists yet. Recommend adding it to the footer before enrolment |
+| 5 | Legal-name vs D&B match | **pending, unchanged** | Still blocked on the D-U-N-S itself (not yet issued); cannot be confirmed until it lands |
+| 6 | Product site: "locked to your device" / "stays local" claims | **fixed** | Neither string (nor any close variant) appears anywhere in the fetched `fincwin.com` home page body |
+| 7 | Sites never cross-reference each other | **fixed** | `fincwin.com` body now contains "Lead Strategy Canada Inc" (footer/legal line); `leadstrategy.ca` body now contains "FincWin" with a link to `fincwin.com` — the cross-reference now runs both ways |
+| 8 | Product site: `REPLACE_WITH_LS_PRO_ANNUAL_CHECKOUT_URL` / `REPLACE_WITH_LS_LIFETIME_CHECKOUT_URL` placeholder checkout URLs in page source | **fixed** | No `REPLACE_WITH_` string found on the home page or the `/pricing` page source |
+| 9 | No privacy/terms pages on the entity site | **not required for enrolment, unchanged** | Still not present on `leadstrategy.ca`; the audit's original note stands — Apple's org-enrolment bar does not live-check for a privacy policy on the entity domain specifically, since the product domain already carries one (`fincwin.com/privacy`, `/terms`, both still 200) |
+
+### Updated verdict
+
+**READY, pending two items:** (1) the legal-name-vs-D&B-record match, which cannot
+be confirmed until the D-U-N-S is issued (ETA 2026-10-13), and (2) an explicit
+"registered in Canada" line on the entity site's footer, which is a five-minute
+copy fix and recommended before submitting enrolment but does not, on its own,
+read as a placeholder or parked-site signal the way the original nine findings
+did. All six fail-graded findings and the "online delivery" partial from the
+2026-09-23 audit are confirmed fixed live. Re-verify once more immediately
+before the actual Apple enrolment submission, per the standing instruction to
+re-check live text rather than treat any audit as permanently settled.

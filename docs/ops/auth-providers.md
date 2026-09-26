@@ -11,13 +11,13 @@ session logs rather than a UI click nobody recorded).
 One Google Cloud project ("FincWin", company org, D-08), OAuth consent screen
 External, app name FincWin, scopes `openid`/`email`/`profile`.
 
-Three OAuth clients:
+Four OAuth clients (web, iOS, two Android):
 
 | Client | Type | Identifier | Notes |
 |---|---|---|---|
 | FincWin Supabase | Web application | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (`.env.local`) | Authorized redirect URI: `https://cohmcbdfgqmiwykztrdg.supabase.co/auth/v1/callback`. Configured in `google.ts` as `GoogleSignin.configure({ webClientId })` — the Google Sign-In SDK issues both iOS's and Android's ID token audienced to this client, so this is the *primary* client ID Supabase's Google provider validates against |
 | FincWin iOS | iOS | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` (`.env.local`) | Bundle ID `com.fincwin.app`. Drives the native iOS presentation; `GOOGLE_IOS_URL_SCHEME` (`.env.local`) is its reversed-DNS form, wired into `app.config.ts`'s iOS URL scheme |
-| FincWin Android | Android | `GOOGLE_ANDROID_CLIENT_IDS` (`.env.local`) — **one client created so far** | Package `com.fincwin.app`. Registered against one of the two SHA-1s below; **a second Android client for the other SHA-1 is still pending** (see below) |
+| FincWin Android (×2) | Android | `GOOGLE_ANDROID_CLIENT_IDS` (`.env.local`, comma-separated) — **both clients created** | Package `com.fincwin.app`, one client per SHA-1 below |
 
 ### Android signing fingerprints (not secret)
 
@@ -27,16 +27,14 @@ client registration is keyed to package + SHA-1, one client per certificate):
 - **Debug** (local `expo run:android`): `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25` (`docs/dev-setup.md`)
 - **EAS development-profile keystore**: `0C:D1:82:F5:0B:1A:C9:C7:14:F0:06:B6:00:B3:D9:CC:53:01:B6:3B` (`docs/ops/ota-policy.md`)
 
-**Status: one Android OAuth client exists, covering one of the two SHA-1s above
-(not confirmed which in this record — see the TODO comment next to
-`GOOGLE_ANDROID_CLIENT_IDS` in `.env.local`). The client for the other SHA-1 is
-still pending** — create it in Google Cloud Console (same package, the
-not-yet-covered SHA-1), then append its client ID to `GOOGLE_ANDROID_CLIENT_IDS`
-in `.env.local` (comma-separated) and re-run the Supabase auth PATCH below with
-the updated `external_google_additional_client_ids` value. Until then, Google
-sign-in on whichever build variant used the not-yet-registered SHA-1 will fail
-at the OAuth consent step (a `DEVELOPER_ERROR`/`10` from the native SDK, not a
-Supabase-side failure).
+**Status (2026-09-26): both Android OAuth clients exist**, one per SHA-1 above.
+Both IDs are in `GOOGLE_ANDROID_CLIENT_IDS` (`.env.local`), and the production
+Supabase Google provider was re-PATCHed to accept all four client IDs (web as
+primary; iOS + both Android as additional). Verified by GET: 4 accepted IDs,
+provider enabled, redirect allow-list and secret unchanged. Google sign-in was
+exercised on a debug (debug-keystore) build on a Pixel 9 in the 00-19 acceptance.
+If a client is ever added or rotated, re-send the FULL list — the Management API
+merges `external_google_additional_client_ids` into one stored field.
 
 ## Supabase Google provider (production)
 
