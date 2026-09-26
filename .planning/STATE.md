@@ -133,7 +133,7 @@ None yet.
 - [Phase 11] Guideline 3.2.1(viii)'s live wording no longer carries the qualifier the brief assumed — re-verify positioning at this phase rather than treating it as settled; the brief also mis-cites the 36% APR / 60-day loan cap as 3.2.1(viii) when it is actually 3.2.2(ix)
 - [PROJECT.md] Passkey implementation path (native WebAuthn + Edge Function vs. Clerk) remains unresolved and deferred out of v1 entirely per current scope — carried as "Out of Scope: Deferred to v1.1" in PROJECT.md, not a Phase 0 task
 - [Phase 0] 00-08: GitHub branch protection on `main` is now ON (2026-09-23, after the user made `AppFincWin` public): required checks `checks`/`secret-scan`/`rls`, strict. `enforce_admins` is false, so the owner's direct pushes to `main` still bypass the checks — FND-04/FND-05 stay pending until the user decides between `enforce_admins: true` with a PR-based flow, or accepting owner bypass. Tracked in `docs/dependency-register.md`
-- [Phase 0] 00-15: second Android Google OAuth client (for whichever of the two SHA-1s the one existing client doesn't cover) still needs creating in Google Cloud Console; tracked in docs/ops/auth-providers.md, not code-blocking
+- ~~[Phase 0] 00-15: second Android Google OAuth client still needs creating~~ — resolved 2026-09-26: both Android clients exist and production Supabase accepts all four Google client IDs (docs/ops/auth-providers.md)
 
 ### Quick Tasks Completed
 
