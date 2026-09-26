@@ -78,7 +78,7 @@ Plans:
 - [x] 00-14-PLAN.md — EAS project, profiles, env secrets, fingerprint OTA policy + rollback rehearsal (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 00-15-PLAN.md — Apple/Google sign-in services, first-auth profile capture, AuthProvider, Google OAuth (W4)
+- [x] 00-15-PLAN.md — Apple/Google sign-in services, first-auth profile capture, AuthProvider, Google OAuth (W4)
 - [ ] 00-16-PLAN.md — D-19 error-tracking spike: PostHog vs Sentry, scrubbed consent-independent reporting (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
@@ -363,7 +363,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4* → 5 → 6 → 7 �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 13/20 | In Progress | - |
+| 0. Foundation | 14/20 | In Progress | - |
 | 1. Money Core | 14/16 | In Progress (01-15, 01-16 blocked on Phase 0) | - |
 | 2. Record | 0/TBD | Not started | - |
 | 3. Shell | 0/TBD | Not started | - |

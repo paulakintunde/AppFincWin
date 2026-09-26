@@ -13,8 +13,8 @@ jobs:
     name: checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (v4)
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (v4)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4.4.0 (v4)
         with: { node-version: 24, cache: npm }
       - run: npm ci --legacy-peer-deps
       - run: npm run lint
@@ -35,7 +35,7 @@ jobs:
     name: secret-scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (v4)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
         with: { fetch-depth: 0 }
       - name: gitleaks (full history)
         run: |
@@ -44,11 +44,11 @@ jobs:
     name: rls
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (v4)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
       # WR-C05: pinned to the same Supabase CLI as package.json's `supabase`
       # devDependency, so pgTAP (incl. the D-16 rounding mirror) runs on the
       # same CLI and Postgres image locally and in CI. Bump both together.
-      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3 (v1)
+      - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v1.7.3 (v1)
         with: { version: 2.117.0 }
       - run: supabase db start
       - run: supabase test db
