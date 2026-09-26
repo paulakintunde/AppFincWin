@@ -10,11 +10,18 @@ import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { useMinVersionGate } from '@/features/system/useMinVersionGate';
 import { resolveRoute, type Route } from '@/features/system/routeDecision';
 import { initErrorReporting, captureError } from '@/services/errors';
+import { QueryProvider } from '@/data/QueryProvider';
+import { setFailureReporter } from '@/data/sync/failedWrites';
 
 // D-18: always-on, independent of analytics consent — initialised unconditionally at boot,
 // before anything else can throw.
 initErrorReporting();
 SplashScreen.preventAutoHideAsync();
+
+// T-01-15-01: every permanently failed or conflicting write is reported as a scrubbed
+// entity/kind/code event only -- no amounts, ids or notes ever leave the device via this
+// path. 00-16's Sentry beforeSend scrubber runs on top of this as a second layer.
+setFailureReporter((f) => captureError(new Error(`write-failed:${f.entity}:${f.kind}:${f.code}`), { area: 'sync' }));
 
 // T-00-17-03: a hard timeout so a stuck theme-cache/fonts/version-gate promise can never
 // leave the splash screen up forever — render into whatever route is current and report it,
@@ -83,10 +90,12 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <AuthProvider>
-            <ReducedMotionConfig mode={ReduceMotion.System} />
-            <Gate />
-          </AuthProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <ReducedMotionConfig mode={ReduceMotion.System} />
+              <Gate />
+            </AuthProvider>
+          </QueryProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
