@@ -120,6 +120,64 @@ describe('readClientEnv', () => {
     ).toThrow(EnvError);
   });
 
+  // Sentry-delivery debug (2026-09-25): root cause was EAS values stored with literal wrapping
+  // quotes (e.g. `"https://abcxyz.supabase.co"` instead of `https://abcxyz.supabase.co`).
+  describe('quoted-value detection', () => {
+    it.each(['"https://abcxyz.supabase.co"', "'https://abcxyz.supabase.co'"])(
+      'throws a specific, value-free message for a quoted EXPO_PUBLIC_SUPABASE_URL (%s)',
+      (quoted) => {
+        try {
+          readClientEnv({ ...VALID, EXPO_PUBLIC_SUPABASE_URL: quoted });
+          throw new Error('expected readClientEnv to throw');
+        } catch (error) {
+          expect(error).toBeInstanceOf(EnvError);
+          const message = (error as EnvError).problems.join(' ');
+          expect(message).toContain(
+            'EXPO_PUBLIC_SUPABASE_URL is wrapped in literal quotes — remove them in EAS/.env'
+          );
+          expect(message).not.toContain(quoted);
+        }
+      }
+    );
+
+    it('reports the quoted-value message instead of the generic https:// message (the helpful one wins)', () => {
+      try {
+        readClientEnv({ ...VALID, EXPO_PUBLIC_SUPABASE_URL: '"https://abcxyz.supabase.co"' });
+        throw new Error('expected readClientEnv to throw');
+      } catch (error) {
+        const problems = (error as EnvError).problems;
+        expect(problems).toEqual(
+          expect.arrayContaining([expect.stringContaining('wrapped in literal quotes')])
+        );
+        expect(problems.some((p) => p.includes('must start with https://'))).toBe(false);
+      }
+    });
+
+    it('detects a quoted value on any EXPO_PUBLIC_ key, not just the Supabase URL', () => {
+      try {
+        readClientEnv({ ...VALID, EXPO_PUBLIC_APP_ENV: '"development"' });
+        throw new Error('expected readClientEnv to throw');
+      } catch (error) {
+        const problems = (error as EnvError).problems;
+        expect(problems).toEqual(
+          expect.arrayContaining([
+            expect.stringContaining('EXPO_PUBLIC_APP_ENV is wrapped in literal quotes'),
+          ])
+        );
+        expect(problems.some((p) => p.includes('must be one of'))).toBe(false);
+      }
+    });
+
+    it('does not flag a normal, unquoted value', () => {
+      expect(() => readClientEnv(VALID)).not.toThrow();
+    });
+
+    it('does not flag a single leading or trailing quote (not a matched pair)', () => {
+      const env = readClientEnv({ ...VALID, EXPO_PUBLIC_POSTHOG_KEY: '"phc_test' });
+      expect(env.posthogKey).toBe('"phc_test');
+    });
+  });
+
   it('collects every problem before throwing once, rather than failing on the first', () => {
     try {
       readClientEnv({
@@ -152,7 +210,11 @@ describe('readErrorTrackingEnv', () => {
   it('returns sentry + DSN when an unrelated key is malformed (quoted Supabase URL)', () => {
     const src = { ...VALID, EXPO_PUBLIC_ERROR_TRACKING: undefined, EXPO_PUBLIC_SUPABASE_URL: '"https://abcxyz.supabase.co"', EXPO_PUBLIC_SENTRY_DSN: DSN };
     expect(() => readClientEnv(src)).toThrow(EnvError);
-    expect(readErrorTrackingEnv(src)).toEqual({ errorTracking: 'sentry', sentryDsn: DSN });
+    expect(readErrorTrackingEnv(src)).toEqual({
+      errorTracking: 'sentry',
+      sentryDsn: DSN,
+      environment: 'development',
+    });
   });
 
   it('treats an empty DSN as unset', () => {
@@ -165,5 +227,42 @@ describe('readErrorTrackingEnv', () => {
 
   it('throws EnvError naming only the key (never the value) for an unknown tracker', () => {
     expect(() => readErrorTrackingEnv({ EXPO_PUBLIC_ERROR_TRACKING: 'bugsnag' })).toThrow(EnvError);
+  });
+
+  // Sentry environment tag: EXPO_PUBLIC_APP_ENV is tagged onto every Sentry event.
+  it.each(['development', 'preview', 'production'] as const)(
+    'passes through EXPO_PUBLIC_APP_ENV=%s as environment',
+    (appEnv) => {
+      expect(
+        readErrorTrackingEnv({ EXPO_PUBLIC_SENTRY_DSN: DSN, EXPO_PUBLIC_APP_ENV: appEnv }).environment
+      ).toBe(appEnv);
+    }
+  );
+
+  it('leaves environment undefined (not a default, not a throw) when EXPO_PUBLIC_APP_ENV is missing', () => {
+    const env = readErrorTrackingEnv({ EXPO_PUBLIC_SENTRY_DSN: DSN });
+    expect(env.environment).toBeUndefined();
+    expect(env).not.toHaveProperty('environment');
+  });
+
+  it('leaves environment undefined when EXPO_PUBLIC_APP_ENV is an unrecognised value', () => {
+    const env = readErrorTrackingEnv({ EXPO_PUBLIC_SENTRY_DSN: DSN, EXPO_PUBLIC_APP_ENV: 'staging' });
+    expect(env.environment).toBeUndefined();
+  });
+
+  // Sentry-delivery debug (2026-09-25): same class of mistake as the Supabase URL, but the DSN
+  // is read by the error-tracking-only reader, which must never throw over it.
+  describe('quoted DSN', () => {
+    it('treats a quoted DSN as unset with reason code quoted-value, without throwing', () => {
+      const env = readErrorTrackingEnv({ EXPO_PUBLIC_SENTRY_DSN: `"${DSN}"` });
+      expect(env.sentryDsn).toBeUndefined();
+      expect(env.sentryDsnDisabledReason).toBe('quoted-value');
+    });
+
+    it('does not set sentryDsnDisabledReason for a normal DSN', () => {
+      const env = readErrorTrackingEnv({ EXPO_PUBLIC_SENTRY_DSN: DSN });
+      expect(env.sentryDsnDisabledReason).toBeUndefined();
+      expect(env).not.toHaveProperty('sentryDsnDisabledReason');
+    });
   });
 });

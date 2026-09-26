@@ -55,6 +55,29 @@ describe('initErrorReporting', () => {
     expect(options.enableNativeCrashHandling).toBe(true);
   });
 
+  // Sentry environment tag: EXPO_PUBLIC_APP_ENV is tagged onto every event via sentry.init().
+  it.each(['development', 'preview', 'production'] as const)(
+    'passes environment=%s through to sentry.init()',
+    (environment) => {
+      const sentry = makeFakeSentry();
+
+      initErrorReporting({ errorTracking: 'sentry', sentryDsn: makeEnv().sentryDsn, environment }, sentry);
+
+      const [options] = sentry.init.mock.calls[0] as [Record<string, unknown>];
+      expect(options.environment).toBe(environment);
+    }
+  );
+
+  it('omits the environment key entirely (never passes it as undefined) when EXPO_PUBLIC_APP_ENV is unavailable', () => {
+    const sentry = makeFakeSentry();
+
+    initErrorReporting({ errorTracking: 'sentry', sentryDsn: makeEnv().sentryDsn }, sentry);
+
+    expect(sentry.init).toHaveBeenCalledTimes(1);
+    const [options] = sentry.init.mock.calls[0] as [Record<string, unknown>];
+    expect(options).not.toHaveProperty('environment');
+  });
+
   it('is a no-op with no Sentry DSN configured', () => {
     const sentry = makeFakeSentry();
 
@@ -62,6 +85,24 @@ describe('initErrorReporting', () => {
     expect(() => captureError(new Error('boom'))).not.toThrow();
 
     expect(sentry.init).not.toHaveBeenCalled();
+  });
+
+  // Sentry-delivery debug (2026-09-25): a quoted DSN is disabled, not thrown — warns with a
+  // specific, still value-free reason rather than the generic "not set" message.
+  it('warns with a quoted-value-specific reason (never the DSN) when sentryDsnDisabledReason is quoted-value', () => {
+    const sentry = makeFakeSentry();
+    const warn: jest.SpyInstance = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const status = initErrorReporting(
+      { errorTracking: 'sentry', sentryDsn: undefined, sentryDsnDisabledReason: 'quoted-value' },
+      sentry
+    );
+
+    expect(status).toBe('disabled-no-dsn');
+    expect(sentry.init).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/wrapped in literal quotes/);
+    warn.mockRestore();
   });
 
   it('is a no-op when errorTracking is not sentry', () => {
@@ -220,7 +261,12 @@ describe('beforeSend scrubbing (T-00-16-01)', () => {
 // var (EXPO_PUBLIC_SUPABASE_URL) was stored with literal quotes, and initErrorReporting()
 // swallowed it silently — Sentry was never initialised and no event ever arrived.
 describe('initErrorReporting resolving the real environment', () => {
-  const KEYS = ['EXPO_PUBLIC_SENTRY_DSN', 'EXPO_PUBLIC_ERROR_TRACKING', 'EXPO_PUBLIC_SUPABASE_URL'] as const;
+  const KEYS = [
+    'EXPO_PUBLIC_SENTRY_DSN',
+    'EXPO_PUBLIC_ERROR_TRACKING',
+    'EXPO_PUBLIC_SUPABASE_URL',
+    'EXPO_PUBLIC_APP_ENV',
+  ] as const;
   const saved: Record<string, string | undefined> = {};
   let warn: jest.SpyInstance;
 
@@ -250,6 +296,31 @@ describe('initErrorReporting resolving the real environment', () => {
     captureError(new Error('reaches sentry'), { area: 'boot' });
     expect(sentry.captureException).toHaveBeenCalledTimes(1);
     expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('reads EXPO_PUBLIC_APP_ENV from the real environment and tags it onto sentry.init()', () => {
+    process.env.EXPO_PUBLIC_SENTRY_DSN = 'https://examplePublicKey@o0.ingest.us.sentry.io/0';
+    process.env.EXPO_PUBLIC_APP_ENV = 'preview';
+    delete process.env.EXPO_PUBLIC_ERROR_TRACKING;
+    const sentry = makeFakeSentry();
+
+    expect(initErrorReporting(undefined, sentry)).toBe('enabled');
+
+    const [options] = sentry.init.mock.calls[0] as [Record<string, unknown>];
+    expect(options.environment).toBe('preview');
+  });
+
+  it('reads a quoted EXPO_PUBLIC_SENTRY_DSN from the real environment as disabled, not thrown', () => {
+    process.env.EXPO_PUBLIC_SENTRY_DSN = '"https://examplePublicKey@o0.ingest.us.sentry.io/0"';
+    delete process.env.EXPO_PUBLIC_ERROR_TRACKING;
+    const sentry = makeFakeSentry();
+
+    expect(initErrorReporting(undefined, sentry)).toBe('disabled-no-dsn');
+
+    expect(sentry.init).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/wrapped in literal quotes/);
+    expect(String(warn.mock.calls[0][0])).not.toMatch(/examplePublicKey/);
   });
 
   it('warns observably (naming the reason, never the DSN) when no DSN is configured', () => {
