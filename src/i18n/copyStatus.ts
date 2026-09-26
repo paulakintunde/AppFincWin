@@ -100,4 +100,5 @@ export const DRAFT_COPY_KEYS = [
   'sync.conflict_one',
   'sync.conflict_other',
   'sync.pendingRow',
+  'dev.syncProbe.label',
 ] as const;

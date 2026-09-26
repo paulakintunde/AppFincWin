@@ -3,7 +3,7 @@
 // ring/indicator updates in the same render tree via the real ThemeProvider), the analytics
 // toggle reflecting/updating consent, ConnectionStatus's three states, and the D-15 sign-out
 // flow (silent when nothing pending, Alert-gated and only proceeding on confirm otherwise).
-import { Alert, AppState } from 'react-native';
+import { Alert, AppState, Linking } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { YouScreen } from '../YouScreen';
@@ -79,6 +79,21 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 47, bottom: 12, left: 0, right: 0 }),
 }));
 
+// SYN-06 (01-15): SyncStatusLine reads useSyncStatus() directly -- mocked here so this
+// screen-level test never needs a real QueryClient/TanStack mutation cache.
+let mockSyncStatus = { isOnline: false, queued: 3, failed: 0, conflicts: 0, lastSyncedAt: null as number | null };
+jest.mock('@/data/sync/useSyncStatus', () => ({
+  useSyncStatus: () => mockSyncStatus,
+}));
+
+// 01-15: DevSyncProbe has its own dedicated test file covering its hook wiring (useAuth,
+// useHouseholdId, useMoneyPrefs, useAccounts, useAddAccount, useAddTransaction). Stubbed out
+// here so this screen-level test never needs AuthProvider/QueryClientProvider wrapping just
+// to satisfy a dev-only row unrelated to what this file verifies.
+jest.mock('../components/DevSyncProbe', () => ({
+  DevSyncProbe: () => null,
+}));
+
 async function renderScreen() {
   return render(
     <ThemeProvider>
@@ -97,6 +112,7 @@ beforeEach(() => {
     email: 'ada@example.com',
   };
   mockConsent = 'declined';
+  mockSyncStatus = { isOnline: false, queued: 3, failed: 0, conflicts: 0, lastSyncedAt: null };
   mockCheckConnection.mockResolvedValue({ ok: true, latencyMs: 42 });
   mockRequestSignOut.mockResolvedValue({ needsConfirm: false });
   appStateCallback = undefined;
@@ -260,5 +276,27 @@ describe('YouScreen sign out', () => {
 
     buttons?.[1]?.onPress?.();
     expect(mockPerformSignOut).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('YouScreen sync status', () => {
+  it("shows 'offline · 3 changes queued' in the Connection section", async () => {
+    const { getByText } = await renderScreen();
+    expect(getByText('offline · 3 changes queued')).toBeTruthy();
+  });
+});
+
+describe('YouScreen credits', () => {
+  it('renders the open.er-api credit line and opens its URL when pressed', async () => {
+    const openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+
+    const { getByText, getByRole } = await renderScreen();
+    expect(getByText('Rates By Exchange Rate API')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(getByRole('link'));
+    });
+
+    expect(openURLSpy).toHaveBeenCalledWith('https://www.exchangerate-api.com');
   });
 });
