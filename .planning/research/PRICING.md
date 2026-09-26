@@ -169,7 +169,41 @@ Each option is scored 1–5 on six criteria: conversion, goodwill, margin, low r
 5. Coach cap of 5 a day, and Coach included in Pro.
 6. For v1.1, get a Plaid quote before fixing the Bank Sync price, and cap sync at 3 bank logins per household.
 7. Enrol in the Apple Small Business Program before launch.
-8. Correct PROJECT.md's RevenueCat line.
+8. Correct PROJECT.md's RevenueCat line. (Done 2026-09-26.)
+
+---
+
+## 8. Build notes for Phase 9
+
+These apply whichever model is adopted. Items 1–4 assume model A.
+
+1. **Household-wide Pro needs a server-side entitlement.**
+   - App Store and Play subscriptions belong to the purchaser's store account, so RevenueCat grants the entitlement to one person, not the household.
+   - Mirror it to the household: a RevenueCat webhook (INITIAL_PURCHASE, RENEWAL, CANCELLATION, EXPIRATION, BILLING_ISSUE) calls a Supabase Edge Function. The function verifies the webhook's auth header and writes a `household_entitlements` row (household id, plan, expires_at, source purchaser), protected by row-level security (RLS).
+   - The app checks "does my household have Pro". It uses the purchaser's own RevenueCat entitlement only as an offline fallback.
+   - Feature flags never grant paid access (PROJECT.md).
+2. **When the purchaser leaves the household,** Pro leaves with them. Say so on the paywall and in the household screen. Settle the edge cases at Phase 8 and 9 discuss: a member who already pays alone joins a Pro household; two members both subscribe.
+3. **Gating:** one entitlement check per feature, keyed to the Free and Pro split in §2. Everything built before Phase 9 stays tier-agnostic behind that single check.
+4. **Paywall** (the prototype's Pro sheet, html:5299):
+   - Add the 3.1.2(c) lines: price, period, what's included, auto-renewal terms, and links to the terms and privacy policy.
+   - Highlight the annual plan.
+   - Show the price pledge.
+   - Present the trial through the store's introductory offer, not a custom timer.
+5. **Store products:** one subscription group, "FincWin Pro", with monthly and annual products, and later a "Pro + Bank Sync" group, with prices set per storefront (§1). Give the products keyword-bearing display names (see `LAUNCH-POSITIONING.md`), and attach them to the submitted app version.
+6. **Lifecycle:**
+   - Send a trial-end push 2 days before conversion.
+   - Link to the store's subscription management from the You screen.
+   - Use the grace period and billing-retry states from RevenueCat. Google Play loses 31% of cancellations to billing failure.
+7. **Bank Sync (v1.1):**
+   - Count Items per household and enforce the cap of 3 when linking.
+   - On expiration or cancellation, the webhook queues `/item/remove` for every Item in the household.
+   - Put the provider behind the existing abstraction, so Plaid and Teller can be swapped per country.
+8. **Coach (if built):**
+   - Enforce the 5-a-day cap server-side in the Edge Function, counted per user per local day.
+   - Pad or structure the prompt above 4,096 tokens only if caching on Haiku is worth it.
+9. **Analytics (money-free, per ANL rules):**
+   - Track: paywall shown (with its trigger feature), trial started, converted, cancelled, and which Pro feature was first used.
+   - Never send the price the user paid, only the plan id.
 
 ## Sources
 - Pricing and services:
