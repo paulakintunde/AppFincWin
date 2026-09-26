@@ -173,64 +173,75 @@ Plans:
   5. A user can undo any of their last 12 changes from the toast or the history screen as a compensating write, and is refused with an explanation when another household member has since changed the same record.
   6. An account can be overdrawn, beyond its overdraft, or over its card limit, and the app shows that standing plainly rather than treating it as an error; card statements that show purchases as positive or balances as available credit import with the correct signs.
   7. A user can record a transfer between their own accounts, import suggests matching pairs such as a card payment, and transfers never count as income or spending.
-**Plans**: 31 plans (written before the 2026-09-25 import extension; affected plans must be revised before execution — see 02-CONTEXT.md "Plan impact")
+**Plans**: 40 plans in 14 waves (31 original plans revised in place for the 2026-09-25 import extension, plus 02-32…02-40)
 Plans:
 **Wave 1**
 - [ ] 02-01-PLAN.md — Engine: recurring schedule maths + shared TS/SQL fixture (W1)
-- [ ] 02-02-PLAN.md — Engine: RFC-4180 CSV tokenizer, 5,000-row ceiling, date/decimal inference (W1)
-- [ ] 02-05-PLAN.md — Engine: undo steps, inverses, bulk planner, rollback, refusal descriptor (W1)
-- [ ] 02-06-PLAN.md — Engine: month totals, filters/search, status rules, balances, built-in categories (W1)
-- [ ] 02-07-PLAN.md — Schema: categories + seeding, transaction record fields, transactions_active view, trigram index (W1)
-- [ ] 02-10-PLAN.md — Phase 2 copy catalogue, ANL-05 events, swatch/sheet/amount tokens (W1)
+- [ ] 02-05-PLAN.md — Engine: undo steps, inverses (incl. transfer labels, import inverse at post-link versions), bulk planner, rollback, refusal descriptor (W1)
+- [ ] 02-06-PLAN.md — Engine: month totals (transfers excluded), filters/search, status rules, balances, built-in categories (W1)
+- [ ] 02-07-PLAN.md — Schema: categories + seeding, transaction record fields incl. import provenance and transfer_id, account limits, transactions_active, trigram index (W1)
+- [ ] 02-10-PLAN.md — Phase 2 copy catalogue (statement, transfers, standing, format, reconciliation), widened ANL-05 events, tokens (W1)
+- [ ] 02-32-PLAN.md — Engine: parseNotatedAmount, StatementDraft/FormatProfile contracts, byte decoder (CP1252), format sniffing (W1)
+- [ ] 02-37-PLAN.md — Engine: transfer matching and pair rules, account standing (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 02-03-PLAN.md — Engine: CSV column detection and row mapping via strict parseAmount (W2)
+- [ ] 02-02-PLAN.md — Engine: RFC-4180 CSV tokenizer, 5,000-row ceiling, date and number-notation inference (W2)
 - [ ] 02-08-PLAN.md — Schema: recurring series, materialiser + cron, series RPCs, mirror test (W2)
-- [ ] 02-11-PLAN.md — DB layer: row types, view reads, search, batch insert, Phase 2 keys (W2)
+- [ ] 02-11-PLAN.md — DB layer: row types (provenance, transfer, limits, import profiles), view reads, search, transfer reads, batch insert, keys (W2)
 - [ ] 02-19-PLAN.md — UI primitives: Sheet, Row, Pill, Chip, SwatchDot, glyph, toast, empty state (W2)
+- [ ] 02-33-PLAN.md — Engine: OFX header split, linear tokenizer with budgets, tree builder; coverage bucket extension (W2)
+- [ ] 02-35-PLAN.md — Engine: conversion to the stored sign rule, bigint running-balance reconciliation (W2)
+- [ ] 02-38-PLAN.md — Schema: deferred transfer pair trigger, import_profiles table (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 02-04-PLAN.md — Engine: category guessing, duplicate detection, recurring suggestions (W3)
-- [ ] 02-09-PLAN.md — Schema: undo_log, apply_patches, undo/rollback RPCs, tombstone purge, read RPCs (W3)
+- [ ] 02-03-PLAN.md — Engine: CSV column detection (balance/direction/limit) and sign-free StatementDraft mapping (W3)
+- [ ] 02-09-PLAN.md — Schema: undo_log, apply_patches (transfer/limit keys), undo/rollback RPCs, tombstone purge, read RPCs (W3)
 - [ ] 02-12-PLAN.md — DB layer: categories and recurring-series RPC wrappers (W3)
+- [ ] 02-34-PLAN.md — Engine: OFX dates, amounts and statement extraction + synthetic fixtures (W3)
+- [ ] 02-36-PLAN.md — Engine: format-profile inference anchored on account kind, flip (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 02-13-PLAN.md — DB layer: apply_patches, undo log, balances/months/member reads (W4)
+- [ ] 02-04-PLAN.md — Engine: category guessing, occurrence-count duplicates (FITID, ±2-day cross-format), pending-bill match, recurring suggestions (W4)
+- [ ] 02-13-PLAN.md — DB layer: apply_patches, undo log, balances/months/member reads, import profiles (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 02-14-PLAN.md — Read hooks: month view with projections, months, search, balances, categories, history (W5)
-- [ ] 02-15-PLAN.md — Mutations: transaction fields, soft delete, mark paid, skip, import chunks, undo capture, toast store (W5)
+- [ ] 02-14-PLAN.md — Read hooks: month view (transfer-aware), months, search, balances with standing, categories, history (W5)
+- [ ] 02-15-PLAN.md — Mutations: transaction fields, soft delete, mark paid, skip, import chunks + finalize (links, mark-paid, limit, post-link undo step), toast store (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 02-16-PLAN.md — Mutations: bulk delete/mark paid/unpaid, undo and rollback (W6)
-- [ ] 02-20-PLAN.md — Transaction sheet: add/edit/delete expense and income (W6)
+- [ ] 02-16-PLAN.md — Mutations: bulk delete (transfer partners)/mark paid/unpaid, undo and rollback (W6)
+- [ ] 02-40-PLAN.md — Mutations: transfer create/edit/delete as one pair and one undo step (W6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 02-17-PLAN.md — Mutations: categories (add/edit/archive/merge), account undo capture (W7)
-- [ ] 02-22-PLAN.md — Activity: month list, switcher, totals, projections, mark paid (W7)
+- [ ] 02-17-PLAN.md — Mutations: categories (add/edit/archive/merge), account undo capture with limits (W7)
+- [ ] 02-20-PLAN.md — Transaction sheet: add/edit/delete expense, income and transfer (W7)
 - [ ] 02-28-PLAN.md — Undo toast host and History screen (W7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
 - [ ] 02-18-PLAN.md — Mutations: recurring series create/edit-from/end (W8)
-- [ ] 02-23-PLAN.md — Activity: search across months, filters, bulk select (W8)
-- [ ] 02-24-PLAN.md — Accounts: list, detail, create/edit sheet, balances (W8)
+- [ ] 02-22-PLAN.md — Activity: month list, switcher, totals, projections, mark paid, transfer legs (W8)
 - [ ] 02-25-PLAN.md — Categories: manage, swatches, merge-or-archive (W8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 02-21-PLAN.md — Entry sheet recurring controls: Repeats, this one/this and future, skip, end (W9)
-- [ ] 02-26-PLAN.md — CSV import pipeline: on-device read, preview model, commit, suggestions, funnel (W9)
+- [ ] 02-23-PLAN.md — Activity: search across months, filters (incl. Transfers), bulk select (W9)
+- [ ] 02-24-PLAN.md — Accounts: list, detail, create/edit sheet with limits and sign control, balances and standing (W9)
+- [ ] 02-26-PLAN.md — Statement import pipeline: CSV/OFX/QFX byte read, one D-40 pipeline, preview, commit input (W9)
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 02-27-PLAN.md — CSV import screens: account/file, mapping, review, suggestions (W10)
+- [ ] 02-39-PLAN.md — Statement import state machine: format confirmation, mapping, review, matches, commit, funnel (W10)
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 02-29-PLAN.md — Routes for Record screens + app-wide Undo toast host (W11; needs Phase 0 00-17/00-18 and 01-15)
+- [ ] 02-27-PLAN.md — Statement import screens: account/file, format step, mapping, review with reconciliation, matches, suggestions (W11)
 
 **Wave 12** *(blocked on Wave 11 completion)*
-- [ ] 02-30-PLAN.md — Onboarding first account + Bring your history, You entry points, Activity landing (W12)
+- [ ] 02-29-PLAN.md — Routes for Record screens + app-wide Undo toast host (W12; needs Phase 0 00-17/00-18 and 01-15)
 
 **Wave 13** *(blocked on Wave 12 completion)*
-- [ ] 02-31-PLAN.md — Production rollout: schema push [BLOCKING], live checks, device walkthrough (W13; needs 01-16)
+- [ ] 02-30-PLAN.md — Onboarding first account + Bring your history (statement), You entry points, Activity landing (W13)
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [ ] 02-31-PLAN.md — Production rollout: schema push [BLOCKING], live checks, device walkthrough incl. OFX, standing and transfers (W14; needs 01-16)
 **UI hint**: yes
 
 ### Phase 02.1: PDF statement import (INSERTED)

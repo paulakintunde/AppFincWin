@@ -1182,7 +1182,7 @@ export function accountStanding(a: { kind: AccountKind; balance: MinorUnits; ove
 | E8 | The expo-document-picker cache copy needs manual deletion | A9 | A statement copy lingering in the app cache. Low severity, since it's on the device. |
 | E9 | Offering to set `opening_balance` from the first import is in scope | A1, A4 | Scope creep. Planner or user confirm. |
 
-### Extension open questions
+### Extension open questions (RESOLVED — D-54, D-55, D-56 and UI-SPEC copy, 2026-09-25)
 
 1. **Direction column, revisited.** RESOLVED here: keep direction derived from the sign (Open Question 1 above). A transfer is identified by `transfer_id` and not by a direction value, so no `direction` column is needed. Open Question 1's reasoning that "transfers explicitly out of scope" is outdated, but its conclusion still holds.
 2. **Cross-format duplicate date window.** D-47 says "date + amount + description". A CSV transaction date and an OFX posting date can differ by one to three days.

@@ -23,6 +23,8 @@ revised: 2026-09-25
 > - Copywriting rows for all of the above, and accessibility notes for the new states.
 > - Two generalisations to existing copy: the CSV-only "Import CSV" entry point becomes **"Import statement"**, and every "CSV-import…" colour/copy reference below now reads as "statement-import…" since the pipeline is format-agnostic (D-40).
 >
+> - **Copy-only addendum (planner, 2026-09-25, after research):** three Copywriting Contract rows added and nothing else changed — (a) the reconciliation state where a file has only an opening and a closing balance and they don't match (rows can't be pinpointed, so "The rest reconciled." would be false; research open question 5); (b) a credit card with a zero balance (research §A7 flagged no string for it); (c) the D-55 "mark paid" suggestion for an imported row that pays a pending recurring occurrence.
+>
 > No new colours, radii, spacing tokens or type sizes were needed. One previously-unused existing token (`warn1` `#8A5A1B`) is put to use for the first time in this document — see Color.
 
 **Phase 2 UI surface (per 02-CONTEXT.md, as extended 2026-09-25):** the add/edit transaction sheet (expense, income **and transfer** — no household split, no receipt attachment in this phase); the recurring "This one / This and future" and skip/end-series prompts; the Activity month screen (list view only — week/split/balance/calendar views are ACT-06, Phase 7) with search, filter chips (including a Transfers filter), bulk-select bar and the pending/paid "still to come" split; the account list/detail and create/edit account sheet (now with overdraft/credit limit fields and a standing line); the category list/detail and create/rename/recolour/archive/merge sheets; the statement import flow (pick a CSV, OFX or QFX file → format-confirmation → column-mapping preview for CSV → reconciliation result → duplicate/category review → transfer-pair suggestions → commit → recurring-suggestion prompts); the Undo toast; and the History screen. Shell (Phase 3) has not landed yet — these ship as plain Expo Router routes/sheets that Phase 3 later wraps in tab/FAB/back-stack chrome; **do not build bespoke navigation chrome in this phase.**
@@ -181,6 +183,7 @@ Voice: declarative, not prescriptive — never "advice", "recommendation", "you 
 | Account standing — credit, owing within limit (new) | "Owing £320 of your £1,000 limit." |
 | Account standing — credit, over limit (new, verbatim D-49) | "£120 over the £1,000 limit." |
 | Account standing — loan (new) | "Owing £4,500." |
+| Account standing — credit, zero balance (new, planner addendum) | "Nothing owing." (plain `ink`/`inkMuted`, like every other ordinary tier) |
 | Category — create CTA | "Add category" |
 | Category — remove-in-use choice (D-36) | "{Category} is used by {n} transactions. Merge them into another category, or archive {category} and keep its history. Cancel / Merge / Archive" |
 | Category — empty (no custom categories yet) | Not applicable — the seed set (D-34) means Categories is never empty in this phase |
@@ -198,10 +201,12 @@ Voice: declarative, not prescriptive — never "advice", "recommendation", "you 
 | Statement import — reconciliation, mismatch heading (new) | "Some rows can't be checked against the balance" |
 | Statement import — reconciliation, mismatch body (new) | "Review them before importing. The rest reconciled." |
 | Statement import — reconciliation, row tag (new) | "Can't verify" tag on a row, same visual treatment as "Possible duplicate" |
+| Statement import — reconciliation, only opening and closing balances and they don't match (new, planner addendum) | Heading: "The opening and closing balances don't add up" Body: "The rows between them can't be checked one by one. Review them before importing." (every row carries the "Can't verify" tag; the "The rest reconciled." line is never shown in this state) |
 | Statement import — reconciliation, no balance in file (new, verbatim D-46) | "Couldn't check this file against a balance." (a note, not an error — never styled as a warning) |
 | Statement import — limit found in statement (new, D-48) | "This statement shows a {limit} limit. Add it to {account}?" Actions: "Add limit" / "Skip" |
 | Statement import — transfer suggestion, matched pair (new, verbatim D-52) | "Looks like a payment from {account A} to {account B}. Link as a transfer?" Actions: "Link as transfer" / "Not a transfer" |
 | Statement import — transfer suggestion, unmatched leg (new, D-52) | "Looks like a transfer, but we can't tell where it went. Pick the other account." — followed by an inline account picker; dismiss: "Not a transfer" |
+| Statement import — pays a pending bill (new, planner addendum, verbatim D-55) | "Looks like this pays the pending {name} bill. Mark it paid?" Actions: "Mark paid" / "Keep both" — e.g. "Looks like this pays the pending Netflix bill. Mark it paid?" Same card treatment as the transfer and recurring suggestion cards; accessible name "Suggested match: this line pays the pending {name} bill. Mark it paid?" |
 | Statement import — size ceiling (D-18, unchanged) | "This file has more than 5,000 rows. Split it into smaller files and import them one at a time." |
 | Statement import — commit CTA | "Import {n} transaction{s}" |
 | Statement import — success toast | "Imported {n} lines" (one undo step, D-16) |
@@ -231,7 +236,7 @@ Voice: declarative, not prescriptive — never "advice", "recommendation", "you 
 
 **Activity list rendering.** A transfer is rendered as **two ordinary rows**, one per leg, each using the existing Row primitive — not a new "spanning" card component. This is a researcher's-discretion call: the data model already stores a transfer as two linked transaction rows (D-50), Activity already renders a flat list of transaction rows, and a combined two-account card would be a new list-item shape this phase's component set doesn't otherwise need. Each leg shows: the `Transfer` category's grey glyph tile/tint, a row name of "Transfer to {account}" or "Transfer from {account}", and a signed amount using the unified sign rule (D-44) — negative on the paying account's leg, positive on the receiving account's leg. When Activity is filtered to a single account, only that account's own leg appears, which falls out of the existing per-account filter with no special-casing. Both legs share a transfer-link id so that editing or deleting either one operates on the pair (edit-both/delete-both copy above) — this is a data/mutation concern, not a rendering one.
 
-**Totals.** Transfers are excluded from the month's income/spending totals (D-50) but still count in each account's own balance. No new copy is needed in the totals line itself for this — the totals simply omit `Transfer`-category rows, the same way any category-based total already would.
+**Totals.** Transfers are excluded from the month's income/spending totals (D-50) but still count in each account's own balance. No new copy is needed in the totals line itself for this — the totals simply omit rows that carry a `transfer_id` (linked transfer legs — identified by the link, not by category, so Phase 8 per-member category overrides cannot break it), the same way any category-based total already would.
 
 ---
 
