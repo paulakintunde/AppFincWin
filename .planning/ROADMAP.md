@@ -276,13 +276,14 @@ Plans:
 ### Phase 4: Decide Engine
 **Goal**: The affordability engine computes correct verdicts in complete isolation, before any UI exists.
 **Depends on**: Nothing (pure TypeScript, zero data-layer dependency — parallel-eligible with Phases 1-3)
-**Requirements**: DEC-01, DEC-02, DEC-03, DEC-04, DEC-05, DEC-06, DEC-07, DEC-08, DEC-09, DEC-10, DEC-11, DEC-12
+**Requirements**: DEC-01, DEC-02, DEC-03, DEC-04, DEC-05, DEC-06, DEC-07, DEC-08, DEC-09, DEC-10, DEC-11, DEC-12, DEC-13, DEC-14, DEC-15, DEC-16
 **Success Criteria** (what must be TRUE — test-suite observable, no UI in this phase):
   1. The engine computes an amortised monthly payment for any principal/APR/term including the zero-rate case, and future value of a monthly contribution plus a seed including the zero-rate case.
   2. A credit card at 22.9% APR with a 1% minimum payment is correctly reported as never clearing, via an explicit payment-vs-interest check rather than inference from hitting the simulation's month cap.
   3. The engine resolves paid-in-full, deposit-plus-loan, instalment-plan and credit-card payment methods into a comparable plan, flags a plan incomplete when its terms are unspecified, and returns a verdict of fits/adjust/no/missing with up to five warnings ordered by shortfall size.
   4. The engine derives income steadiness from the coefficient of variation across logged months (not a user-stated answer), computes a household's cost share under the active split rule, finds the largest affordable price by bisection (handling both "nothing is affordable" and "the full price already fits"), and determines card eligibility as blocked/capped/permitted.
   5. The full engine suite is green at the agreed branch-coverage threshold, runs with no React, no I/O and no database access, and `dsecured` reads a boolean field on the loan record rather than matching its name.
+  6. The engine produces the options list, the four-way alternatives (suppressing and labelling rows whose money is not genuinely spare) and setback re-assessments, and returns a cash-level first read from rough figures when no full month exists — all as codes and numbers, with no English strings (04-CONTEXT D-11, D-19, D-21).
 **Plans**: TBD
 **UI hint**: no (pure TypeScript engine; deliverable is a green suite and a coverage report)
 
@@ -298,7 +299,7 @@ Plans:
   5. No verdict copy anywhere uses "advice", "recommendation" or "you should".
   6. A brand-new user reaches a first verdict within their first session, in roughly a minute, without having logged or imported a month, and the verdict says plainly what it rests on and how an import sharpens it.
   7. Store screenshots 1–3 (verdict, what breaks, alternatives) can be captured from the App Review demo account's sample scenario with nothing staged outside the real app.
-**Launch inputs** (from `research/LAUNCH-POSITIONING.md`, 2026-09-26): the store name is *FincWin: Can I Afford It?*, so the quick check is the product's public promise and stays in the free tier (see `research/PRICING.md`). Discuss-phase must settle whether a first verdict may rest on rough monthly figures (a Core Value question) and the demo-account scenario (sofa $1,800 in a household of two; car $14,500 on a loan). Onboarding order — welcome, consent, one account, rough month, first check, then "Bring your history" — is shared with Phase 2 (02-30) and Phase 9, where the level questions move after the first verdict.
+**Launch inputs** (from `research/LAUNCH-POSITIONING.md`, 2026-09-26): the store name is *FincWin: Can I Afford It?*, so the quick check is the product's public promise and stays in the free tier (see `research/PRICING.md`). The first-read question is settled (04-CONTEXT D-11: rough figures give a cash-level answer only, via DEC-16). Discuss-phase must still settle the demo-account scenario (sofa $1,800 in a household of two; car $14,500 on a loan). Onboarding order — welcome, consent, one account, rough month, first check, then "Bring your history" — is shared with Phase 2 (02-30) and Phase 9, where the level questions move after the first verdict.
 **Plans**: TBD
 **UI hint**: yes — this phase should carry the deepest testing and design-iteration budget in the roadmap; it is the product's actual moat.
 
