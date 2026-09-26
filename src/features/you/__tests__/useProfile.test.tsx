@@ -10,7 +10,7 @@ const mockSelectEq = jest.fn(() => ({ single: mockSingle }));
 const mockSelect = jest.fn(() => ({ eq: mockSelectEq }));
 const mockUpdateEq = jest.fn();
 const mockUpdate = jest.fn(() => ({ eq: mockUpdateEq }));
-const mockFrom = jest.fn(() => ({ select: mockSelect, update: mockUpdate }));
+const mockFrom = jest.fn((..._args: unknown[]) => ({ select: mockSelect, update: mockUpdate }));
 
 jest.mock('@/services/supabase', () => ({
   supabase: { from: (...args: unknown[]) => mockFrom(...args) },
@@ -56,7 +56,7 @@ beforeEach(() => {
 
 describe('useProfile', () => {
   it('selects the own profile row and applies the saved theme once loaded', async () => {
-    const { result } = renderHook(() => useProfile());
+    const { result } = await renderHook(() => useProfile());
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -67,7 +67,7 @@ describe('useProfile', () => {
   });
 
   it('setAccent updates the theme immediately, persists the changed column, and tracks the event', async () => {
-    const { result } = renderHook(() => useProfile());
+    const { result } = await renderHook(() => useProfile());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
@@ -84,7 +84,7 @@ describe('useProfile', () => {
 
   it('a failed setAccent keeps the local theme choice and surfaces saveError', async () => {
     mockUpdateEq.mockResolvedValue({ error: { message: 'network error' } });
-    const { result } = renderHook(() => useProfile());
+    const { result } = await renderHook(() => useProfile());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
@@ -100,7 +100,7 @@ describe('useProfile', () => {
   });
 
   it('setPairing updates the theme immediately, persists the changed column, and tracks the event', async () => {
-    const { result } = renderHook(() => useProfile());
+    const { result } = await renderHook(() => useProfile());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
@@ -115,7 +115,7 @@ describe('useProfile', () => {
 
   it('does not query or apply a theme when signed out', async () => {
     mockUser = null;
-    const { result } = renderHook(() => useProfile());
+    const { result } = await renderHook(() => useProfile());
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(mockFrom).not.toHaveBeenCalled();
