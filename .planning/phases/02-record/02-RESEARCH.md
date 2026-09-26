@@ -641,3 +641,581 @@ create policy "owner reads own categories" on public.categories for select to au
 
 **Research date:** 2026-09-25
 **Valid until:** 30 days (stable domain — no fast-moving external dependency drives this phase; the CLAUDE.md SDK-57 staleness table governs the underlying Expo/RN versions and was last verified 2026-09-21, applies unchanged here)
+
+
+---
+
+## Import Extension Addendum (2026-09-25)
+
+**Researched:** 2026-09-25 (same day as the extension to CONTEXT.md)
+**Scope:** D-39…D-52, REC-13…REC-18, plus the wider REC-09 and ANL-05. Everything above this heading still holds except where this addendum says otherwise. Where they conflict, the addendum wins. The conflicts are Open Question 1 (resolved there: direction still comes from sign, and transfers are identified by `transfer_id`), the D-13 duplicate rule (replaced by D-47), and plan 02-03's `parseSignedAmount` (see §A3).
+**Confidence:** MEDIUM-HIGH. The engine design is grounded in this repo's code (HIGH). OFX format facts are cross-checked against the ofxtools reference parser and several secondary sources (MEDIUM-HIGH). Real-bank quirk frequency is MEDIUM: each quirk is documented somewhere, but none was tested against a real statement. CONTEXT.md's "Specific Ideas" asks for real redacted statements before the screens are planned, and that still stands.
+
+### Extension requirements map
+
+| ID | Description (REQUIREMENTS.md) | Research support |
+|----|------|------|
+| REC-09 (widened) | Import from a statement file (CSV or OFX/QFX) during onboarding or later | §A1 (OFX adapter, byte decoding, file picking), §A0 (one pipeline) |
+| REC-13 | Work out the format first, state it in plain words, allow a flip, ask when ambiguous, remember per file layout | §A2 (profile inference; the sign/balance "product ambiguity" and how the target account breaks it), §A6 (`import_profiles` table) |
+| REC-14 | Read every amount notation, store one sign rule, keep the originals | §A3 (`parseNotatedAmount` beside `parseAmount`, which stays unchanged), §A6 (`raw_amount`/`raw_balance`) |
+| REC-15 | Reconcile against balances, highlight what can't be checked, never flag negatives | §A4 (link-level reconciliation, BigInt sums, orientation detection, sparse balances) |
+| REC-16 | No duplicates on re-import, but keep identical genuine rows | §A5.1 (occurrence-count multiset matching, FITID rules) |
+| REC-17 | Limits and standing, never an error | §A6 (additive limit columns), §A7 (`accountStanding`) |
+| REC-18 | Transfers as one linked pair, import suggestions, excluded from totals | §A5.2 (matcher), §A5.3 (schema, pair constraint, undo, FX) |
+| ANL-05 (widened) | Funnel through "first statement import" | §Security (extension): add a literal `format` property (`'csv'`, `'ofx'` or `'qfx'`), and nothing else new |
+
+### A0. Pipeline shape (D-40) mapped onto modules
+
+```
+bytes (expo-file-system File.bytes())                                  [services/files, impure]
+  └─▶ engine/statement/decodeText      BOM → UTF-8 (strict) → CP1252 fallback
+        └─▶ sniffFormat                'ofx' | 'csv' | 'unknown'
+              ├─▶ engine/ofx/parse     → StatementDraft (rows + ledger/avail balances + acct type + currency)
+              └─▶ engine/csv/*         → StatementDraft (rows + raw cells + optional balance column)
+                    └─▶ engine/statement/profile     inferProfile(draft, targetAccountKind, remembered?)
+                          └─▶ engine/statement/convert     rows → stored sign rule (D-44), raw strings kept (D-45)
+                                └─▶ engine/statement/reconcile   (D-46) per-link verification
+                                      └─▶ engine/statement/duplicates  (D-47) occurrence-count + FITID
+                                            └─▶ engine/transfer/match     (D-52) suggestions only
+                                                  └─▶ preview (features/record/import) → commit (existing importChunk path)
+```
+
+- **`StatementDraft` is the adapter contract.** Both adapters produce it, and Phase 2.1's PDF adapter will too. It holds pre-sign rows (`magnitude`, `marker`, `rawAmount`, `rawBalance?`, `balanceMagnitude?`/`balanceMarker?`, `localDate`, `description`, `externalId?`, `trnType?`), plus file-level facts: `statedOpening?`, `statedClosing?` (with as-of date), `available?`, `statedLimit?`, `currency?`, `accountHint?` (`'bank' | 'card'`, without the account number), and a `layoutSignature`. Adapters **never apply a sign meaning**. That is D-43's "notation never decides the sign on its own", made structural. `[VERIFIED: design derived from 02-CONTEXT.md D-40/D-43 and plan 02-03's CandidateRow]`
+- **Directories.** `src/engine/statement/` holds the format-agnostic steps. `src/engine/ofx/` is the adapter. `src/engine/transfer/` and `src/engine/accounts/` hold matching and standing. `parseNotatedAmount` goes in `src/engine/money/` so it inherits the 100% coverage bucket.
+
+### A1. OFX/QFX parsing on-device
+
+**Recommendation: hand-write a small OFX tokenizer and extractor in `src/engine/ofx/` and add no dependency.** This matches CONTEXT's stated preference, and the evidence below supports it.
+
+| Candidate | Verdict | Evidence |
+|---|---|---|
+| `ofx-js` 1.1.1 (MIT, zero deps, rewritten 2026-05) | **Reject** | `[VERIFIED: npm pack + source read]` The SGML→XML fallback, which is the path every OFX 1.x file takes, applies `/<([A-Z0-9_]*)+\.+([A-Z0-9_]*)>([^<]+)/g`. That is a nested quantifier with catastrophic backtracking. Measured under Node on this machine: a 20-char dotless tag took 82 ms, 24 chars 1.24 s and 26 chars 4.9 s, roughly ×4 for every 2 characters. A malformed or hostile file freezes the JS thread. It also returns every value as a raw string, so all the semantics (dates, amounts, signs) would still be ours to write. It ships ESM-only `.ts`/`.js`, which needs `transformIgnorePatterns` work in jest-expo. |
+| `ofx-data-extractor` 1.5.0 | **Reject** | `[VERIFIED: npm pack + grep]` Minified-only dist (unauditable). It references `Buffer` and `FileReader` (Node/browser APIs) and makes 21 `Number(` calls, which is float parsing of amounts and breaks MON-01. |
+| `ofx`, `node-ofx-parser`, `ofx-parser`, `banking`, `ofx4js` | **Reject** | `[VERIFIED: npm view]` Last published between 2022 and 2024. All depend on `xml2js`/`xml2json`/`sax`/`fast-xml-parser@3`, which bring Node stream/events assumptions into Hermes, and some pull in `debug` or `assert`. |
+
+The reference behaviour to copy comes from `ofxtools` (Python, widely used). Its tokenizer rule is that **a start tag followed by text is a leaf element and is closed implicitly, whether or not an end tag follows**. Aggregates must be closed explicitly, and a mismatched close is a parse error. `[CITED: raw.githubusercontent.com/csingley/ofxtools/master/ofxtools/Parser.py]`
+
+**Hand-written parser design (~250 lines, linear time, no regex backtracking):**
+1. **Header split.** Find the first `<OFX>`, matched case-insensitively. Earlier matchers only accepted the upper-case form. Everything before it is the header:
+   - 1.x: `KEY:VALUE` lines such as `OFXHEADER:100`, `DATA:OFXSGML`, `VERSION:102`, `ENCODING:USASCII`, `CHARSET:1252`.
+   - 2.x: `<?xml …?>` followed by `<?OFX OFXHEADER="200" VERSION="220" …?>`.
+
+   Record `VERSION` and `CHARSET`. They are hints only: many banks send headers that don't match the body. `[CITED: ofxtools docs; ASSUMED: header/body mismatch frequency]`
+2. **Tokenize with a single hand-written character scan**, like `parseAmount`'s loop. It emits `open(tag)`, `close(tag)` and `text(value)`. Tag names are `[A-Za-z0-9._]+`, upper-cased. Keep dotted proprietary tags such as `INTU.BID` and `INTU.USERID` (QFX) as-is and ignore them. Decode entities `&amp; &lt; &gt; &quot; &apos;` and `&#NNN;`, and leave a bare `&` alone, because SGML files often contain unescaped `&`. Support `<![CDATA[…]]>` (ofxtools issue #141). Skip `<!-- -->` comments.
+3. **Tree build with a stack.** An `open` followed by non-whitespace `text` is a leaf: attach the value and swallow a matching `close` if it comes next. An `open` followed by another tag is an aggregate: push it. On `close(X)`, pop to X. If X is not on the stack, record a `malformed` warning and ignore it rather than throwing, because real bank files have stray closes. Unclosed aggregates at EOF are closed implicitly with a warning.
+4. **Budget guards.** Stop at 5 MB of input, 20,000 elements or a 64-deep stack, and return `{ ok: false, error: 'too-large' | 'too-deep' }`. This mirrors the D-18 row ceiling and makes a hostile file cost O(n).
+5. **Extraction.** Walk to each `STMTTRS` (inside `BANKMSGSRSV1`/`STMTTRNRS`) or `CCSTMTRS` (inside `CREDITCARDMSGSRSV1`/`CCSTMTTRNRS`). **One file can hold several statements, for several accounts.** D-12 requires one target account per import, so the preview must list them and have the user pick one. `INVSTMTMSGSRSV1` (investment) and `LOANMSGSRSV1` return `unsupported-statement`.
+   - Per statement: `CURDEF`; `BANKACCTFROM/ACCTTYPE` (`CHECKING|SAVINGS|MONEYMRKT|CREDITLINE|CD`), or `CCACCTFROM` meaning a card; `BANKTRANLIST/DTSTART,DTEND`; each `STMTTRN`; `LEDGERBAL/BALAMT,DTASOF`; `AVAILBAL/BALAMT,DTASOF`.
+   - Per `STMTTRN`: `TRNTYPE`, `DTPOSTED` (required), `DTUSER` (optional), `TRNAMT`, `FITID`, `NAME` or the `PAYEE/NAME` aggregate, `MEMO`, `CHECKNUM`, `REFNUM`, and `CURRENCY`/`ORIGCURRENCY` (a foreign-currency purchase; `TRNAMT` is still in `CURDEF`).
+   - **Never extract or keep `ACCTID`, `BANKID` or `BRANCHID`.** They are account numbers, and the layout signature doesn't need them (see Security).
+6. **Description.** Use `NAME`, plus ` · MEMO` when the memo adds text not already in the name. OFX 1.x caps `NAME` at 32 characters, so the useful payee text is often in `MEMO`. Trim to `MAX_NAME_LENGTH` (200, per plan 02-03). `[ASSUMED: 32-char NAME limit from OFX 1.x spec memory, MEDIUM]`
+
+**Dates (`DTPOSTED`).** The format is `YYYYMMDD[HHMMSS[.XXX]][[gmt offset[:tz name]]]`, for example `20260912120000.000[-5:EST]`. Offsets can be fractional (`[+5.30:IST]`) or bare (`[-3]`). ofxtools treats a missing offset as GMT, which is the spec reading. `[CITED: ofxtools Types.py DateTime; CITED: FNB OFX spec summary via search]`
+- **Take `localDate` from the first 8 characters, as written. Never convert through an instant.** Plenty of banks write `20260912000000` with no offset and mean their own local midnight. Read as GMT and converted to `America/Vancouver`, that becomes 11 September, which puts rows in the wrong day and sometimes the wrong month. MON-14 already says a transaction happens on a day, not at a timestamp. Validate with `isValidLocalDate` from `engine/time`. Parse the time and offset only to reject malformed input. `[VERIFIED: engine/time/localDate exports isValidLocalDate]`
+- Use `DTPOSTED`, not `DTUSER`, for `local_date`. It is required, and it is the date the bank's balance progression uses. Keep `DTUSER` out of v1 storage.
+
+**Amounts (`TRNAMT`, `BALAMT`).** The spec says signed decimal with `.` as the mark. In practice:
+- Some European banks send `,`; ofxtools falls back to it explicitly.
+- Some add a leading `+`.
+- Some pad to four decimals (`-12.5000`).
+
+Parse with a dedicated `parseOfxAmount`: accept `^[+\-]?\d+([.,]\d+)?$` (no grouping), **strip trailing zeros beyond the currency exponent and reject non-zero excess** (never round), then build minor units the same way `parseAmount` does, with an integer string and BigInt bound check against `MAX_ABS_AMOUNT_MINOR`. `[CITED: ofxtools Types.py Decimal comma fallback]` A `TRNAMT` of 0 is a real quirk (information-only lines, zero-interest lines). Give it the row issue `zero-amount` and leave it unticked, because the DB check `original_amount <> 0` would reject it. `[VERIFIED: 20260924000400_transactions.sql]`
+
+**Sign convention in OFX.** The spec is written from the account holder's side: credits to the account are positive and debits negative, **for credit-card statements too**. So a purchase is negative and a payment positive. That already matches D-44's stored rule. `[CITED: multiple secondary sources; MEDIUM]` Known deviations, which is why OFX still goes through the profile step (§A2) and is not trusted blindly:
+- Some issuers send card purchases as positive.
+- `LEDGERBAL` on card statements is inconsistent. Some send it negative (spec view), many send the amount owed as a positive number.
+- `TRNTYPE` can disagree with the sign, for example `DEBIT` with a positive `TRNAMT`.
+
+Use a `TRNTYPE`/sign disagreement across most rows as strong evidence of an inverted file. `[ASSUMED: prevalence, from community reports; MEDIUM]`
+
+**What OFX can and can't reconcile.** OFX carries **no opening balance**, only `LEDGERBAL` as of `DTASOF`. `DTASOF` is often the download time, not `DTEND`, and it may include rows posted after the list closed. So D-46's "opening + rows = closing" cannot be checked from the file alone. OFX reconciliation therefore means one of:
+- (a) checking the account's stored FincWin balance just before `DTSTART`, plus the rows, against `LEDGERBAL`, but only when the account already has history covering that date;
+- (b) otherwise, the note "Couldn't check this file against a balance". This is honest.
+
+On a first import into an empty account, **offer to set the account's `opening_balance`** so the FincWin balance ends at `LEDGERBAL`. That is one confirm and one undo step. It gives users the "matches my bank" moment D-10 is aiming for. `[VERIFIED: design reasoning against D-10/D-46; the offer itself is ASSUMED product scope — planner confirm]`
+
+**Limits from OFX (D-48).**
+- **Card:** `limit = owed + AVAILBAL`, where owed is `LEDGERBAL` read under the confirmed profile.
+- **Bank:** `AVAILBAL − LEDGERBAL` *may* be an overdraft limit, but it also absorbs holds and uncleared items.
+
+Only ever offer the figure through the "This statement shows a {limit} limit. Add it to {account}?" confirm. Never write it silently. Don't offer a bank overdraft figure derived this way unless it is a round number. `[ASSUMED: heuristic; LOW-MEDIUM]`
+
+**QFX** is Intuit-branded OFX. Treat it the same, ignore `INTU.*` tags and set `format: 'qfx'` for analytics only. `[CITED: ofxtools notes proprietary INTU.* tags are dropped]`
+
+**FITID** is supposed to be unique and stable per account. Real-world violations are documented:
+- Some banks reuse one FITID for several same-day entries (Banco do Brasil).
+- Some change the FITID when a transaction moves from pending to posted (US Bank).
+- Discover once regenerated a daily serial inside the FITID.
+- One open-source importer had to keep rows that share a FITID but differ in amount.
+
+`[CITED: HomeBank bug 1942379; Infinite Kind/MoneyDance support threads; PocketSense "Scrubbing Statements"; securo-finance PR #998; quinthar.com FITID blog]` The rules that follow are in §A5.1.
+
+**Byte decoding, which matters for CSV as well as OFX.** `File.text()` decodes as UTF-8. OFX 1.x files commonly declare `CHARSET:1252`, and many UK and EU bank CSVs are Windows-1252, where `£` is `0xA3` and becomes U+FFFD under UTF-8. **Expo's `TextDecoder` polyfill is UTF-8 only and throws `RangeError` for any other label.** `[VERIFIED: node_modules/expo/src/winter/TextDecoder.ts]` So:
+- Read bytes with `new File(uri).bytes()`. `[VERIFIED: expo-file-system src/internal/NativeFileSystem.types.ts: bytes(): Promise<Uint8Array>]`
+- Decode in a pure `engine/statement/decodeText.ts`:
+  1. Honour a BOM (UTF-8 `EF BB BF`, UTF-16LE `FF FE`, UTF-16BE `FE FF`; UTF-16 is common in Excel "Unicode text" exports).
+  2. Otherwise run a strict UTF-8 validator.
+  3. On the first invalid sequence, fall back to CP1252, which is Latin-1 identity plus a 27-entry table for `0x80–0x9F`.
+
+  This replaces plan 02-26's `f.text()` call. `[VERIFIED: 02-26-PLAN.md line 74 uses File.text()]`
+
+**File picking.** Add OFX/QFX MIME types to the picker list in plan 02-26: `application/x-ofx`, `application/ofx`, `application/vnd.intu.qfx` and `application/x-qfx`. iOS may grey out `.ofx`/`.qfx` if no UTType is registered for them, so fall back to `*/*` and **sniff content**: OFX if it starts with `OFXHEADER:`, or contains `<OFX>` within the first 4 KB, or starts with `<?xml` followed by `<?OFX`. Extension and MIME are hints only. `[ASSUMED: iOS UTType greying behaviour — verify on the iPhone XR]`
+
+### A2. Card sign conventions and format-profile inference (D-41, D-42, D-44)
+
+**How statements present the same activity** `[CITED: search results incl. Arden (Chase export guide), Koody, Lunch Money CSV docs, bankxlsx Citi guide; MEDIUM]`:
+
+| Presentation | Purchase | Payment to card | Balance column |
+|---|---|---|---|
+| Account-holder view (OFX spec; Chase card CSV) | negative | positive | often negative when owing, sometimes positive "owed" |
+| Issuer view (common card CSVs, e.g. Amex-style; many UK card CSVs) | positive | negative | positive = owed |
+| Debit/credit columns (Citi-style, Capital One-style) | in Debit column | in Credit column | varies |
+| Type column ("Sale"/"Payment"/"Return", "DEBIT"/"CREDIT") + unsigned amount | type-labelled | type-labelled | varies |
+| Available-credit balance | — | — | available = limit − owed |
+
+**The key finding for the planner: running-balance reconciliation cannot tell sign convention from balance meaning.** With `s ∈ {+1 (positive = money in), −1 (positive = spent)}` and `k ∈ {+1 (balance = held or available), −1 (balance = owed)}`, every running-balance link checks `bal[i] − bal[i−1] = s·k·raw[i]`. Only the product `s·k` is observable, so the reading `(s, k)` and its mirror `(−s, −k)` **both reconcile, always**. As written, D-41's "the one that reconciles wins; if more than one, ask" would ask on every file with a balance column. `[VERIFIED: algebra; this is a property the tests must encode]`
+
+Two more facts:
+- "Available credit" can't be told from "held" by differences either, because Δavailable = −Δowed = Δheld in cardholder view. Only the level and the label separate them.
+- A running-balance file where both readings reconcile is only ambiguous about the *label*. The converted amounts are the same either way. The ambiguity that changes stored values is `s` itself.
+
+**Recommended resolution order.** This keeps D-41's "labels first, then numbers" and adds the fixed evidence the user has already supplied:
+1. **Target account kind (D-12: the user picks or creates it before preview) fixes the balance family.** `checking|savings|cash` gives `k = +1` (held). `credit` gives owed or available (`k = −1` or available). `loan` gives owed. This is not a guess: the user said what the account is. With `k` known, the running-balance check determines `s` uniquely.
+2. **Labels decide between owed and available on a card**, and act as independent evidence for `s`:
+   - Headers containing "available" mean available credit. "credit limit"/"limit" are a stated limit. "owed", "balance due" and "statement balance" mean owed.
+   - Separate debit/credit (paid out / paid in, withdrawals / deposits) columns decide `s` outright.
+   - A `DR`/`CR` marker on a row: `DR` is money out and `CR` is money in, on bank and card statements alike. Debits to a deposit account are withdrawals, and debits to a card account are purchases, so this reads the same from the account holder's side.
+   - A payment-like description ("PAYMENT – THANK YOU", "PAYMENT RECEIVED", "DIRECT DEBIT PAYMENT") on a card account is money in, so its raw sign reveals `s`. On a bank account, "SALARY", "PAYROLL" and "INTEREST PAID" play the same role.
+   - `OD` on a balance means overdrawn (held, negative).
+
+   `[ASSUMED: DR/CR customer-side consistency is standard banking usage — HIGH in practice, not verified against a spec]`
+3. **Numbers.** Run §A4 under `s = +1` and `s = −1` with `k` from step 1. Exactly one reconciles → decided. Both or neither → go to step 4.
+4. **Weak priors, which may pre-select a candidate but never allow commit without confirmation:**
+   - The majority of rows are money out on both card and bank statements, so the majority sign is probably "spent". Do not use this alone.
+   - Card balance level: under "owed", balances are mostly ≥ 0 and rise with purchases.
+5. **Otherwise the profile is `ambiguous`.** The preview shows the candidate readings and commit stays blocked (D-42).
+
+**Ambiguity cases to encode as example tests:**
+
+| Case | Outcome |
+|---|---|
+| No balance column, no labels, signed amounts all one sign | `ambiguous`. A file that is all one sign is usually a card statement with no payment in the period, or an export filtered to one direction. |
+| No balance column, mixed signs, a payment-like row present on a card | decided from that row's sign |
+| One-row file, with or without a balance | nothing to reconcile. Decide by labels or kind if possible, otherwise `ambiguous`. |
+| Running balance present on only some rows (end-of-day balances) | still decisive; see §A4 segment checks |
+| Balance column is available credit, no limit stated | converted amounts are still correct, since only differences are used. D-44's owed = limit − available needs a limit, so without one the standing figure waits until the user enters a limit. Do not invent one. |
+| Remembered profile exists for this `layoutSignature` + account | apply it, show "Read the same way as your last statement from this account.", and **still run reconciliation**. If the remembered reading fails to reconcile a file that has balances, drop back to the confirmation step. Banks do change exports. |
+
+**Profile object (engine type, also the JSON stored per D-42):**
+```typescript
+export interface FormatProfile {
+  version: 1;
+  source: 'csv' | 'ofx';
+  accountFamily: 'deposit' | 'card' | 'loan';          // from target account kind
+  positiveMeans: 'money-in' | 'money-spent';            // s
+  balanceMeans: 'held' | 'owed' | 'available' | 'none'; // k (+ available)
+  statedLimit: MinorUnits | null;                        // offered, never auto-applied (D-48)
+  decidedBy: 'labels' | 'reconciliation' | 'remembered' | 'user';
+}
+export type ProfileResult =
+  | { kind: 'decided'; profile: FormatProfile; evidence: ProfileEvidence[] }
+  | { kind: 'ambiguous'; candidates: FormatProfile[]; evidence: ProfileEvidence[] };
+```
+`evidence` holds enum codes such as `'debit-credit-columns'`, `'payment-row-sign'`, `'dr-cr-markers'`, `'running-balance'` and `'trntype-agrees'`, never cell text. The preview sentence ("We read this as a credit card statement…") is assembled in UI i18n from `profile` plus one example row. `[VERIFIED: design; copy per 02-UI-SPEC lines 190–194]`
+
+**Layout signature (Claude's discretion).**
+- CSV: normalised header cells (the lower-case, diacritic-stripped form plan 02-03 already uses) joined with `|`, plus the delimiter and decimal mark.
+- OFX: `ofx|bank|CHECKING` or `ofx|card`.
+
+Store it as plain text (≤ 500 chars). Hashing adds nothing: column titles are not personal data, and the key is scoped to user plus account. Don't include account numbers.
+
+### A3. Amount notation (D-43) against the existing strict parser
+
+**What the code does today:**
+- `parseAmount` and `parseDecimalString` reject every sign character, including U+2212 and `+`. The only characters they accept are digits (22 Unicode digit blocks), the decimal mark and the group mark. `[VERIFIED: src/engine/money/parseAmount.ts]` That is correct for the entry sheet, where direction comes from the Expense/Income/Transfer toggle, and it is under the 100% coverage bucket.
+- `useAmountParser` is the UI-only wrapper for typed input. `[VERIFIED: src/ui/money/useAmountParser.ts]` Import runs in `engine/`, so it can't use a hook and doesn't need one.
+
+**Recommendation: leave `parseAmount` exactly as it is and add `parseNotatedAmount` in `src/engine/money/`, composed on top of it.** This "extends the strict parser" (D-43) without changing entry-sheet behaviour or its tests.
+
+```typescript
+export type AmountMarker = 'none' | 'plus' | 'minus' | 'parens' | 'dr' | 'cr' | 'od';
+export type NotatedAmountResult =
+  | { ok: true; magnitude: MinorUnits /* >= 0 */; marker: AmountMarker }
+  | { ok: false; error: ParseError | 'conflicting-markers' };
+export interface NumberNotation {           // inferred once per file
+  decimal: '.' | ',';
+  group: ',' | '.' | ' ' | '’' | "'" | null;
+  grouping: 'western' | 'indian';           // chooses the locale handed to parseAmount
+}
+export function parseNotatedAmount(raw: string, n: NumberNotation, exponent: number): NotatedAmountResult;
+```
+
+**Plan 02-03 must change.** Its `parseSignedAmount` has "`CR` suffix forces positive" and "`DR` → negative" built in, and returns a value with the sign already applied. That is the notation deciding the sign. It should return `{ magnitude, marker }` and let `convert` apply the profile (D-43/D-44). `[VERIFIED: 02-03-PLAN.md Task 2]`
+
+Notation rules, all string scanning with no `parseFloat`:
+- **Strip:** surrounding whitespace, including NBSP (U+00A0), narrow NBSP (U+202F) and zero-width characters; a spreadsheet wrapper `="…"`; currency symbols (`/\p{Sc}/u`) at either end or between the sign and the digits (`-£12.50`, `£-12.50`, `(£12.50)`); a leading or trailing ISO code (`GBP 12.50`, `12.50 EUR`).
+- **Markers:**
+  - Leading `-`, U+2212 or en dash U+2013 (Excel exports sometimes use it) → `minus`.
+  - Trailing `-` (SAP and German exports) → `minus`.
+  - `(…)` → `parens`, which counts as minus-like.
+  - Suffix or prefix `DR`, `Dr`, `D` (word-bounded) → `dr`.
+  - `CR`, `Cr`, `C` → `cr`.
+  - `OD` → `od` (balances only).
+  - Leading `+` → `plus`.
+  - Two markers that disagree (`-12.50 CR`) → `conflicting-markers`, a row issue. Never pick one.
+- **Separators — two traps in today's code for file input:**
+  1. Plan 02-02's `separatorsFor(',')` returns `{decimal: ',', group: '.'}`, so a French/Nordic file with space grouping (`1 234,56`) comes back `invalid`. `parseAmount` does accept whitespace groups when the group char *is* whitespace. So `NumberNotation.group` must be inferred from samples: `.`, `,`, space-like, or apostrophe (Swiss `1'234.50` and `1’234.50`). `[VERIFIED: parseAmount WHITESPACE_GROUP_CHARS; 02-02-PLAN separatorsFor]`
+  2. `parseAmount`'s group-placement check reads the grouping from `opts.locale`. Passing the **device** locale is wrong for a file. An `en-IN` user importing a UK CSV (`1,234,567.00`) would get `ambiguous-separator`. A UK user importing an Indian bank CSV (`12,34,567.00`) would get the same. Pass a **file-neutral locale chosen by `NumberNotation.grouping`**: `'en-US'` for western, `'en-IN'` for Indian. Infer grouping from samples, and treat a mix as a file-level issue. `[VERIFIED: parseAmount.ts isWellGrouped/localeGrouping read opts.locale]`
+- **Excess decimals:** `12.500` in a 2-exponent currency, or `1200.00` in JPY (exponent 0). Strip trailing zeros beyond the exponent before calling `parseAmount`. Non-zero excess stays `too-many-decimals` (a row issue), and is **never rounded**.
+- **Debit/credit column pairs** are read by `parseNotatedAmount` per cell. The adapter turns them into `marker: 'dr' | 'cr'` according to which column held the value. When both cells are filled, the net is `credit − debit` (plan 02-03 already has this) with the marker derived from the result's sign. A value that is already signed inside a debit column (`-12.50` under "Paid out") is a known quirk. Treat the column as authoritative and the inner sign as `conflicting-markers` only when it contradicts.
+- **A direction/type column** ("Type": DEBIT/CREDIT, Sale/Payment/Return) is a seventh role for plan 02-03's `detectColumns`. Its values map to `dr`/`cr` markers through a small keyword table, and it counts as label evidence in §A2.
+
+**Conversion to the stored rule (D-44), in `engine/statement/convert.ts`:**
+
+| Evidence | Rule |
+|---|---|
+| Markers `minus`/`parens`/`dr` | raw sign = −1 |
+| Markers `none`/`plus`/`cr` | raw sign = +1 |
+| Stored amount (signed amount column) | `stored = s × rawSign × magnitude`, with `s` from the profile |
+| Stored amount (DR/CR or debit/credit input) | `dr → −magnitude`, `cr → +magnitude`, independent of `s`. The profile only confirms the evidence. |
+| Stored balance, `held` | `balance` |
+| Stored balance, `owed` | `−balance`. A `cr` marker on an owed card balance means in credit, so the result is positive. |
+| Stored balance, `available` | `−(limit − available)` when the limit is known, otherwise differences only |
+
+Keep `raw_amount`/`raw_balance` as the **trimmed original cell text**, capped at 64 characters (D-45).
+
+### A4. Running-balance reconciliation (D-46)
+
+**Algorithm, pure, in `engine/statement/reconcile.ts`:**
+1. **Orientation.** Don't sort by date. Stable-sorting a newest-first file keeps the reversed same-day order, which breaks the balance chain. Try the file order and its reverse, and count the links that verify under each. Choose the orientation with more verified links, and the date-ascending one on a tie. Newest-first exports are common.
+2. **Links, not a cumulative sum.** For consecutive rows `i−1, i` that both carry a balance, check `B[i] − B[i−1] = amt[i]` in the stored sign rule. Each link stands alone, so one bad or missing row flags one link and the check re-anchors on `B[i]`. This is what produces UI-SPEC's "The rest reconciled." `[VERIFIED: 02-UI-SPEC line 199]`
+3. **Sparse balances** (end-of-day only, or blank on pending rows). Check segments instead: for balanced rows `i < j` with only unbalanced rows between them, `B[j] − B[i] = Σ amt(i+1..j)`. Every row in a passing segment is verified.
+4. **Same-day order jitter.** If a segment fails but the whole same-date block's boundary balances satisfy `B_end − B_start = Σ block`, mark the block `verified-as-group`. Some banks compute the running balance in a different intra-day order from the export order.
+5. **Stated opening and closing** (CSV footer or header lines such as "Opening balance", "Balance brought forward", "Closing balance"; OFX `LEDGERBAL` with §A1's caveats). Check `opening + Σ amt = closing` as one extra segment. **These summary lines must be detected and removed from the row set, never imported as transactions.** They have a balance and no amount, or a description matching `/^(opening|closing) balance|balance (brought|carried) forward/i`.
+6. **Result per row:** `verified | verified-as-group | cannot-verify | no-balance`. **Per file:** `all-verified | partial | none-in-file`, which maps onto the three UI states (UI-SPEC lines 197–201). When only an opening and closing exist and they fail, individual rows can't be pinpointed. Every row becomes `cannot-verify`, and the heading copy needs a variant that says so. Flag this to the UI-SPEC owner, because the current body "The rest reconciled." would be false in that case.
+
+**Integer and overflow safety.** Amounts are safe integers up to 1e13 (`MAX_ABS_AMOUNT_MINOR`). Summed over 5,000 rows that reaches 5e16, which is **above `Number.MAX_SAFE_INTEGER` (≈9.007e15)**. Accumulate in `bigint` (the money core already uses BigInt in `rounding`/`rates`) and compare as bigint. `[VERIFIED: types.ts MAX_ABS_AMOUNT_MINOR; arithmetic]`
+
+**Negative balances are normal (D-46/D-49).** There must be no `B >= 0` check anywhere in reconcile, convert, standing or the DB. Test it with property generators whose opening balances cross zero in both directions.
+
+**Partial statements** (a date-filtered export) are checked only for internal consistency. The derived opening `B[0] − amt[0]` is whatever it is. Comparing it with the stored FincWin balance is optional extra information, not part of D-46. Offer the opening-balance set-up only when the account has no rows.
+
+**What reconciliation cannot catch — document for users and planner.** A missing row at the very start or end of a file with no stated opening or closing, and a row whose amount and balance are both wrong in a consistent way.
+
+### A5. Duplicates, transfer matching, and how they land in the schema
+
+#### A5.1 Duplicates (D-47, amends D-13 and plan 02-04's `findDuplicates`)
+
+Plan 02-04 flags "two identical candidates in the file → second flagged" and keys on `date|amount`. **Both must change.** `[VERIFIED: 02-04-PLAN.md findDuplicates behaviour]`
+
+**Multiset matching:**
+- Group candidates by `(localDate, amount)` against existing *active* rows in the **same account**. The fetch is `transactions_active` filtered by account and the file's date range ±1 day. Include `pending` rows only for the occurrence-matching question noted below.
+- Within each group, pair each file row with at most one existing row. Go greedily by `nameSimilarity` descending (keep 02-04's Jaccard ≥ 0.6 rule), and never reuse an existing row. The rows flagged equal `min(fileCount, existingCount)` among the similar-named rows.
+- **Rows in the same file are never compared with each other.**
+
+**FITID** (stored in a new `external_id` column; see §A6):
+1. If this file itself contains the same FITID on rows with **different amounts or dates**, the bank's FITIDs are unreliable. **Ignore FITID for the whole file** and use multiset matching.
+2. Otherwise, a file row whose `(account, external_id)` matches an existing row **with the same amount** is a certain duplicate, even when the date differs (pending→posted date shift).
+3. The same FITID with a different amount is *not* a duplicate (securo PR #998). Fall through to multiset matching.
+4. No FITID match does not prove a row is new, because banks regenerate FITIDs. Still run multiset matching.
+
+**Cross-format overlap** (a CSV then an OFX for the same month). The CSV may carry the *transaction* date while OFX `DTPOSTED` is the *posting* date, one to three days later, so exact-date matching misses it. **Open Question 2 below.** The recommendation is a ±2-day window, only against existing rows whose `import_batch_id` came from a different source format. A false positive here just leaves a row unticked, while a false negative double-counts real money in Decide.
+
+#### A5.2 Transfer-pair matching (D-52), in `engine/transfer/match.ts`
+
+**Inputs:**
+- The converted import rows, all on the target account.
+- Existing active, unlinked rows (`transfer_id is null`) on the **other** accounts in the household, from `min(date) − 3` to `max(date) + 3`.
+- Account metadata (kind, currency, name).
+- Latest EUR-based rates as `ScaledRate` values for cross-currency comparison.
+
+Pairs within the same import are impossible, because one import has one target account (D-12) and a transfer between two rows on one account isn't a transfer. `[VERIFIED: D-12]`
+
+**Hard constraints:** different accounts; opposite stored signs; `|Δdays| ≤ 3`; and amounts that satisfy one of:
+- same currency: exact magnitude match (a fee arrives as its own row);
+- cross-currency: convert the out-leg to the in-leg's currency with `convertMinor` and require `|conv − |in|| × 10000 ≤ tolBps × |in|`.
+
+`tolBps` defaults to 500 (5%). Integer maths throughout, with no float percentage. `[VERIFIED: engine/money/rates.ts exports convertMinor/crossRate/ScaledRate]`
+
+**Score (for ranking only):**
+
+| Factor | Points |
+|---|---|
+| Date proximity | 0 days = 3, 1 = 2, 2–3 = 1 |
+| Payment-like description on either side | +2. Keywords such as `PAYMENT`, `THANK YOU`, `TRANSFER TO/FROM`, `TFR`, `XFER`, `CARD PAYMENT`, `DIRECT DEBIT` + card, OFX `TRNTYPE` `XFER`/`PAYMENT`, and `payment_type` = transfer |
+| Description mentions the other account's name | +2 |
+| Deposit→card with the card leg positive (the classic card payment) | +1 |
+
+**Assignment:** one-to-one and greedy by score. Ties go to the smaller Δdays, then the smaller absolute amount difference, then a stable id order, so **the result does not depend on input order** (a property test). Where two candidates tie on every key, don't pick one: return `{ kind: 'choose', options }` and let the preview list both.
+
+**Unmatched payment-like rows** become `{ kind: 'orphan-transfer', row }`. The preview offers "Transfer" with the other account left for the user to pick (D-52).
+- **Same currency:** the counter-leg amount is the exact negation.
+- **Cross-currency:** the user types the counter-leg amount. D-50 says the legs are "what the user or the statements say, not derived", so don't prefill a converted estimate as if it were a fact. `[ASSUMED: Claude's-discretion reading of D-50 — planner confirm]`
+
+#### A5.3 Transfers against the actual schema, FX, undo and RLS
+
+**Shape: a nullable `transfer_id uuid` column on `transactions`, shared by both legs, with no separate table.** Why:
+- Each leg stays an ordinary row, so the `stamp_fx_rate` trigger, `guard_transaction_currency`, the household RLS policies, `transactions_active`, `account_balances` and the undo machinery all apply unchanged. `[VERIFIED: 20260924000400/0500 migrations; 02-07/02-09 plans]`
+- A cross-currency pair gets **two independent FX stamps**, each at its own date and currency. The difference between the two legs' `home_amount` is real FX or fee effect. Since transfers are excluded from income and spending, it never shows as spending. Later net-worth views will show it, which is correct.
+
+**Pair integrity: a deferred constraint trigger, not an application rule.** On `insert or update of transfer_id, deleted_at, account_id, original_amount`, a `deferrable initially deferred` constraint trigger checks the group for both `old.transfer_id` and `new.transfer_id` at commit. The rule: **count of active rows (`deleted_at is null`) with that `transfer_id` ∈ {0, 2}**, and when there are 2: different `account_id`, opposite signs, same `household_id`.
+- Make it `security definer` with `set search_path = ''` (house style), so it sees every row sharing the id rather than an RLS-filtered subset.
+- Raise `23514` so `classifyWriteError` treats it as a permanent rejection (a parked failed write), consistent with the existing guards. `[VERIFIED: guard_* functions use errcode 23514; 02-03 plan notes classifyWriteError on 23505]`
+- Deferral matters. A transfer created from the entry sheet goes through **one** `insertTransactionsBatch` call with two rows, which is one INSERT statement and so atomic. Linking two existing rows goes through **one** `apply_patches` RPC call, which is all-or-nothing by plan 02-09. Either way the group is 2 at commit and never a visible singleton. `[VERIFIED: 02-11 insertTransactionsBatch = one upsert; 02-09 apply_patches all-or-nothing]`
+
+**Grants and columns:**
+- Add `transfer_id` to the insert and update column grants and to `TRANSACTION_INSERT_KEYS`/`PATCH_KEYS`/`COLUMNS`.
+- Add a partial index `(transfer_id) where transfer_id is not null`.
+- The Transfer category stays the per-user system category (D-34), set on both legs by the client.
+- **Totals exclude on `transfer_id is not null`, never on category.** Categories are per user (D-33), and Phase 8 adds per-member category overrides. The structural link is the stable fact.
+- Plan 02-06's month-total maths and plan 02-09's server reads must use the same predicate. The per-account balance **includes** transfer legs.
+
+**Undo (D-50: one step covering both legs):**
+
+| Action | Inverse ops |
+|---|---|
+| Create | soft-delete both legs at `expected_version = 1` (one `apply_patches` list) |
+| Delete | clear `deleted_at` on both |
+| Edit | patch both legs back, with both expected versions |
+
+All of these go through the existing all-or-nothing `apply_patches`, so a conflict on either leg refuses the whole step (D-26). No new conflict code is needed.
+
+**Import that links a stored row: the pitfall that needs a plan task.** Committing an import runs:
+1. `importChunk` inserts, with the new rows carrying no `transfer_id`.
+2. **A linking `apply_patches` call** that sets `transfer_id` and the Transfer category on the new leg *and* on the already-stored leg, with the stored leg's expected version.
+3. **One** undo step, recorded after the link.
+
+That step's inverse ops must contain:
+- soft-deletes of the imported ids at their *post-link* versions (2, not 1);
+- a patch returning the stored leg to `transfer_id = null` and its previous `category_id`, at its post-link version.
+
+If the stored leg is left linked when its partner is soft-deleted, the pair constraint (one active row) **refuses the undo at the database**. Plan 02-15's current `inverseOfInserts … at version 1` is wrong for linked rows. `[VERIFIED: 02-15-PLAN line 145]`
+
+**RLS.** No new policy is needed. Both legs belong to the same household, and the existing insert policy `household_id in user_household_ids() and created_by = auth.uid()` already covers them. The pair trigger's same-household check blocks linking to a row in another household by guessing a `transfer_id`.
+
+**Recurring transfers** (a standing order to savings). D-02's series template has no to-account. Treat them as out of scope unless the planner chooses to widen `recurring_series`. See Open Question 3.
+
+### A6. Additive migration shape (FND-10 / squawk / D-45 / D-48 / D-42)
+
+Ground rules from `docs/ops/migration-compatibility.md`: only nine squawk rules are enforced. Nullable `add column` and `add constraint … check` are both allowed. Dropping, renaming, a type change and a NOT NULL column without a default are all blocked. `[VERIFIED: docs/ops/migration-compatibility.md]` Everything below is nullable or new, so no `contract-ok` marker is needed. Name files after plan 02-07's `20260926…` sequence, as one or two new migrations placed after 02-07/02-09's.
+
+```sql
+-- accounts: limits (D-48). Nullable, non-negative, same bound as money columns.
+alter table public.accounts
+  add column overdraft_limit bigint check (overdraft_limit is null or (overdraft_limit >= 0 and overdraft_limit <= 10000000000000)),
+  add column credit_limit    bigint check (credit_limit    is null or (credit_limit    >= 0 and credit_limit    <= 10000000000000));
+grant update (overdraft_limit, credit_limit) on public.accounts to authenticated;
+grant insert (overdraft_limit, credit_limit) on public.accounts to authenticated;
+-- No kind-coupled check (e.g. "overdraft only on checking"): kind is updatable, and a coupled
+-- check would turn a kind change into a rejected write. The engine ignores the irrelevant limit.
+
+-- transactions: provenance (D-45), FITID (D-39/D-47), transfer link (D-50)
+alter table public.transactions
+  add column raw_amount  text check (raw_amount  is null or char_length(raw_amount)  <= 64),
+  add column raw_balance text check (raw_balance is null or char_length(raw_balance) <= 64),
+  add column external_id text check (external_id is null or char_length(external_id) <= 255), -- OFX FITID (A-255)
+  add column transfer_id uuid;
+create index transactions_external_id_idx on public.transactions (account_id, external_id) where external_id is not null;
+create index transactions_transfer_id_idx on public.transactions (transfer_id) where transfer_id is not null;
+-- NOT unique on (account_id, external_id): real banks reuse FITIDs (§A1).
+grant insert (raw_amount, raw_balance, external_id, transfer_id) on public.transactions to authenticated;
+grant update (transfer_id) on public.transactions to authenticated;
+-- raw_* and external_id are insert-only: provenance must not drift from the original file.
+
+-- remembered format profiles (D-42): per-user, custom_currencies RLS pattern
+create table public.import_profiles (
+  id uuid primary key,
+  owner_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  account_id uuid not null references public.accounts(id) on delete cascade,
+  layout_signature text not null check (char_length(layout_signature) between 1 and 500),
+  profile jsonb not null check (jsonb_typeof(profile) = 'object' and pg_column_size(profile) <= 2048),
+  version integer not null default 1,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (owner_id, account_id, layout_signature)
+);
+-- + bump_version trigger, RLS enable, three owner_id = (select auth.uid()) policies, column grants,
+--   and the account must be in one of the caller's households (check via user_household_ids()).
+```
+
+**Compatibility and client code:**
+- **Old installed apps are unaffected.** They send only their own column lists (`TRANSACTION_INSERT_KEYS`, `ACCOUNT_INSERT_KEYS`) and select explicit column lists (`TRANSACTION_COLUMNS`, `ACCOUNT_COLUMNS`). `[VERIFIED: src/db/transactions.ts, src/db/accounts.ts]`
+- The pair constraint trigger is new DDL, not a contract change. It can only reject writes that old apps never make, since old apps never set `transfer_id`.
+- Update in step: `src/db/rows.ts` (`AccountRow`, `NewAccount`, `AccountPatch`, `TransactionRow`, `NewTransaction`), `ACCOUNT_INSERT_KEYS`/`PATCH_KEYS`/`COLUMNS`, and the transaction key lists. Leave `raw_*`/`external_id` out of `TRANSACTION_PATCH_KEYS` so `assertAllowedKeys` catches mistakes before the server does.
+- `opening_balance` already allows negatives (`abs(...) <= 1e13`), so UI-SPEC's "Overdrawn"/"I owe this" control needs no migration. It just stores a negative number. `[VERIFIED: 20260924000300_accounts.sql]`
+- Where the profile lives (Claude's discretion): a per-user table rather than an account column. One account can receive several layouts (CSV and OFX), and a per-user table keeps one member's remembered reading from silently applying to another member's differently-laid-out export in Phase 8.
+
+### A7. Account standing (D-49), in `engine/accounts/standing.ts`
+
+```typescript
+export type Standing =
+  | { kind: 'in-credit'; balance: MinorUnits }                                            // deposit, balance >= 0
+  | { kind: 'overdrawn-within'; overdrawnBy: MinorUnits; limit: MinorUnits }              // 0 < od <= limit
+  | { kind: 'overdrawn-beyond'; overdrawnBy: MinorUnits; limit: MinorUnits; beyondBy: MinorUnits }
+  | { kind: 'overdrawn-no-limit'; overdrawnBy: MinorUnits }                               // limit null or 0
+  | { kind: 'card-in-credit'; creditBy: MinorUnits }                                      // card balance > 0 (refund)
+  | { kind: 'owing-within'; owed: MinorUnits; limit: MinorUnits | null }                 // owed <= limit, or no limit
+  | { kind: 'over-limit'; owed: MinorUnits; limit: MinorUnits; overBy: MinorUnits }       // owed > limit
+  | { kind: 'loan-owing'; owed: MinorUnits } | { kind: 'loan-in-credit'; creditBy: MinorUnits }
+  | { kind: 'plain' };                                                                    // cash/investment/other: no sentence
+export function accountStanding(a: { kind: AccountKind; balance: MinorUnits; overdraftLimit: MinorUnits | null; creditLimit: MinorUnits | null }): Standing;
+```
+
+- **Inputs are in the account's own currency**, with the balance taken from `account_balances` (opening + paid, D-10), never the home-currency figure. A limit is always in the account currency (D-48).
+- **Boundaries** (D-49's test list):
+  - Exactly at the limit is *within* (`<=`), and one minor unit over is *beyond* or *over*.
+  - A deposit balance of 0 is `in-credit`.
+  - A card balance of 0 is `owing-within` with `owed: 0`. The UI may choose quieter copy. Flag this for UI-SPEC, which has no zero-balance string.
+  - An overdraft limit of `0` is treated as `null`, since "£140 beyond your £0 overdraft" reads badly and UI-SPEC's "No overdraft set" is the honest reading.
+- **Never throws and never returns an error kind.** Overdrawn is a state (D-49). Money maths uses `subtract`/`compare` from `engine/money/arithmetic`, and `beyondBy = overdrawnBy − limit`, computed as integers.
+- Copy is assembled in the UI from the discriminant and the UI-SPEC strings (lines 176–183). The engine returns numbers only, so formatting (DSG-06, minus sign always visible) stays in `useMoneyFormatter`.
+
+### Validation Architecture (extension)
+
+**Framework:** unchanged (Jest via jest-expo, fast-check / `@fast-check/jest`, pgTAP). **Coverage:** add `ofx`, `statement`, `transfer` and `accounts` to `jest.config.js`'s `FULL` list, alongside the four folders recommended above (`recurring`, `csv`, `categorize`, `undo`). `parseNotatedAmount` sits in `engine/money`, which is already FULL. Wrong sign, balance or pair logic moves real money the wrong way. `[VERIFIED: jest.config.js FULL list]`
+
+| Req | Module | Property tests (fast-check) | Example tests |
+|---|---|---|---|
+| REC-09 | `statement/decodeText` | any JS string → UTF-8 bytes (±BOM) → decode = original; UTF-16LE/BE with BOM round-trip; any byte array → never throws, output length ≤ bytes | CP1252 `0xA3` → `£`; `0x80` → `€`; invalid UTF-8 mid-file → CP1252 fallback |
+| REC-09 | `ofx/tokenize`, `ofx/parse` | generated statement model → serialised as (a) SGML with unclosed leaves, (b) SGML with closed leaves, (c) XML 2.x, (d) single-line, (e) CRLF/LF, (f) random inter-tag whitespace → parse = model; **arbitrary strings up to 1 MB → never throws, finishes in time linear in the input** (a regression guard for the ReDoS class; assert a wall-clock bound on a 200 KB adversarial input such as long dotless tags) | multi-statement file → list; `CCSTMTRS` → card; investment → `unsupported-statement`; stray `</X>` → warning and not an error; bare `&` preserved; CDATA; `INTU.BID` ignored; redacted real-bank fixtures under `src/engine/ofx/__tests__/fixtures/` (commit only synthetic or scrubbed files) |
+| REC-09 | `ofx/date`, `ofx/amount` | valid date string → `localDate` = first 8 chars for every offset form; int `a`, exponent `e` → render with `.`/`,` and extra zero padding → parse = `a` | `[-5:EST]`, `[+5.30:IST]`, `[0:GMT]`, no offset, month 13 → error; `-12.5000` ok; `-12.5001` → too-many-decimals; `+0.00` → zero-amount issue |
+| REC-14 | `money/parseNotatedAmount` | int magnitude `m`, any renderer from {leading/trailing minus, U+2212, en dash, parens, DR/CR prefix/suffix, ±currency symbol or code, western/Indian/space/apostrophe grouping, NBSP} → parse = `(m, marker)`; applying the marker sign reproduces the signed input | `-12.50 CR` → conflicting-markers; `="12.50"`; `12.500` exp 2 → 1250; `1,234,567.00` with Indian grouping → ambiguous-separator; entry-sheet `parseAmount` tests **unchanged and still green** |
+| REC-13 | `statement/profile` | generate a true ledger (opening any sign, rows) → render under random (s, balance meaning, order) and target kind → `inferProfile` recovers `s`; **the mirror pair (−s, −k) is never offered as a second candidate once kind is fixed**; no balance and no labels and all one sign → `ambiguous` | card over limit (issuer view, positive owed 1,250 vs limit 1,000); overdrawn current account (negative running balance); debit/credit columns; payment-row sign; one-row file; remembered profile that stops reconciling → back to confirm |
+| REC-15 | `statement/reconcile` | consistent ledger (either orientation) → all verified; perturb one amount by δ ≠ 0 → exactly one link fails and the rest verify; delete one row → one link fails; blank random balances → still verified by segments; shuffle within same-date blocks → `verified-as-group`; amounts near 1e13 × 5,000 rows → no precision loss (bigint) | negative opening, closing and running balances all verify with no flag; opening/closing summary lines removed; opening+closing only and failing → all `cannot-verify` |
+| REC-14 | `statement/convert` | for any decided profile, Σ converted = stored closing − stored opening; available-balance files: differences match held-view differences | card `CR` balance → positive stored balance |
+| REC-16 | `statement/duplicates` (rewritten `csv/duplicates`) | file with k identical rows, account with m similar → exactly `min(k, m)` flagged; rows in the same file never flag each other; result independent of row order | FITID exact → dup even across a date shift; the same FITID on different amounts in one file → FITID disabled for the file; the same FITID with a different amount vs existing → not a dup; CSV then OFX overlap per the Open Question 2 decision |
+| REC-18 | `transfer/match` | every pair one-to-one, different accounts, opposite signs, `|Δd| ≤ 3`, same-currency amounts equal; output invariant under input permutation; no suggestion for rows already linked | card payment 2 days later; two equal payments in a week → closest dates pair; cross-currency within 5%, not at 6%; exact tie → `choose`; payment-like row with no partner → `orphan-transfer` |
+| REC-18 | view maths (02-06) | adding any transfer pair leaves month income and spending unchanged and moves each account balance by its leg | pending transfer leg is excluded from the balance per D-10 |
+| REC-18 | `undo` (02-05) | inverse(create pair) then apply → both legs deleted; inverse(import-with-link) restores the stored leg's link state | versions captured post-link (2, not 1) |
+| REC-17 | `accounts/standing` | for any balance and limit: exactly one kind; `beyondBy + limit = overdrawnBy`; never throws | 0; −limit; −limit−1; limit null vs 0; card +15 (refund); loan; cash → plain |
+
+**pgTAP additions** (continue the numbering after plans 02-07…02-09 claim theirs):
+- `accounts_limits.test.sql`:
+  - limits nullable, and 0 accepted;
+  - −1 → 23514;
+  - above 1e13 → 23514;
+  - member can update limits;
+  - anon can't;
+  - a negative `opening_balance` is accepted (an explicit "overdrawn is not an error" assertion);
+  - changing `kind` with a limit set is accepted.
+- `transactions_import_provenance.test.sql`:
+  - insert with `raw_amount`/`raw_balance`/`external_id` ok;
+  - update of any of them → 42501;
+  - a 65-character `raw_amount` → 23514;
+  - duplicate `(account_id, external_id)` **accepted** (not unique);
+  - index exists.
+- `transfer_pairs.test.sql`:
+  - a two-row insert in one statement ok;
+  - a lone leg rejected at commit (23514);
+  - three rows rejected;
+  - same account rejected;
+  - same sign rejected;
+  - a leg in another household rejected;
+  - soft-deleting both in one statement ok, soft-deleting one rejected;
+  - clearing `transfer_id` on both ok;
+  - the stamp trigger stamps each leg in its own currency;
+  - user B can't read A's legs.
+- `import_profiles.test.sql`: owner-only RLS (select/insert/update); unique triple; cascade on account delete; profile size cap; a profile can't reference an account outside the caller's households.
+- The account-balance RPC (02-09) includes transfer legs, and any server month-total RPC excludes them.
+
+**Wave 0 gaps (extension):** create the test files listed above under `src/engine/{ofx,statement,transfer,accounts}/__tests__/` and `src/engine/money/__tests__/parseNotatedAmount.test.ts`, plus the four pgTAP files. Build a small **synthetic** OFX/CSV fixture set: bank SGML, card SGML with positive purchases, XML 2.x, a multi-statement file, a newest-first CSV with an end-of-day balance, a card CSV over its limit, and an overdrawn current account. Add the redacted real statements the user collects. No new tooling is needed.
+
+### Security (extension)
+
+| ASVS / area | Addition |
+|---|---|
+| V5 Input validation | The OFX parser is linear-time with explicit budgets (5 MB, 20k elements, depth 64) and no backtracking regex, **because the one candidate library shows measured catastrophic backtracking** (§A1). The notation parser rejects rather than guesses. `raw_*` ≤ 64 characters, `external_id` ≤ 255, profile JSON ≤ 2 KB. All DB-checked. |
+| V4 Access control | The transfer pair trigger is `security definer`, `set search_path = ''`, and checks the same household. `import_profiles` uses the per-user `custom_currencies` RLS pattern plus an account-in-household check. `raw_*`/`external_id` are insert-only by column grant. |
+| V8 Data protection / privacy | **The raw file never leaves the device (D-17 unchanged).** `raw_amount`/`raw_balance` are as sensitive as `original_amount`. They are covered by the existing account-deletion purge (row delete) and must be included in the GDPR export. **Don't extract or store `ACCTID`/`BANKID`/`BRANCHID`**, and never put the picked file's *name* anywhere (bank filenames often contain account numbers). Delete the picker's cache copy (`copyToCacheDirectory: true`) after reading. `[ASSUMED: cache-copy cleanup is manual — verify in expo-document-picker behaviour]` |
+| V7 Logging / Sentry | **`scrubMessage` does not make statement text safe.** Running a copy of its exact regexes: `"bad amount 12,50 for TESCO STORES row 12"` came through **unchanged**, `"Missing closing tag for NAME: DR JONES PHARMACY"` came through unchanged, and `"balance 1 234,56 OD at ACME LTD"` came through unchanged. It redacts only quoted substrings, emails, currency-symbol amounts, dotted decimals and digit runs of 4 or more. Comma decimals, space-grouped numbers and unquoted payee names all pass. `[VERIFIED: node reproduction of src/services/errors/scrub.ts regexes]` **Rule for every new engine and import module:** never `throw new Error(...)` or `console.*` with cell, tag or description content. Return typed result unions carrying enum codes and row indexes only, as `parseAmount` already does. Add a unit test that parses a fixture of known sensitive strings with the parser in a failure mode and asserts that no thrown error or returned message contains them. Optionally widen `scrubMessage`, for example by redacting any `\d[\d\s.,']*\d` run, but treat that as a second layer and not the control. |
+| Failed-writes list | Import chunk failures already record `{ import_batch_id, rows: n }` with no amounts or payees (02-15). Keep linking-patch failures the same: ids and counts only. |
+| Analytics (ANL-05) | Only literal properties: `format: 'csv' \| 'ofx' \| 'qfx'`, the existing size band, and `profile_decided_by` and `reconciliation` as enum values. No bank name, header text, file name, amounts or row counts beyond the band (Phase 0 D-18). |
+| Undo log | Import steps store ids, versions and field patches only. Never put `raw_*` or descriptions into `undo_log` payloads beyond what the patch strictly needs (the stored leg's previous `category_id` is an id, which is fine). |
+
+**Threat patterns (extension):**
+
+| Pattern | STRIDE | Mitigation |
+|---|---|---|
+| Crafted OFX with long or nested tags hangs the UI thread | DoS | Hand-written linear tokenizer, budgets, adversarial property test with a time bound |
+| Misread sign convention stores spending as income | Tampering (integrity) | Profile step with kind-anchored inference, reconciliation, a mandatory confirm when ambiguous, a flip control, and raw strings kept for re-conversion |
+| Linking a transfer leg to another household's row | Elevation / Tampering | Definer pair trigger with a same-household check; RLS unchanged |
+| Statement text leaking to Sentry | Information disclosure | Typed errors with codes only, plus a regression test (above) |
+| An account number stored or sent inadvertently | Information disclosure | Never extracted by the adapter; the layout signature excludes it |
+
+### Extension pitfalls (add to Common Pitfalls)
+
+1. **Two readings that both reconcile.** Covered in §A2. Without anchoring on the target account's kind, every card file with balances comes out "ambiguous", or the code picks one silently and gets half of them backwards.
+2. **Sorting before reconciling.** A newest-first file stable-sorted by date keeps the reversed same-day order and breaks the chain. Choose orientation first (§A4).
+3. **Float or overflow in balance sums.** 5,000 rows × 1e13 exceeds `MAX_SAFE_INTEGER`. Use bigint accumulators.
+4. **Converting OFX dates through an instant.** This shifts rows a day early for users west of GMT (§A1).
+5. **Treating FITID as unique.** A unique index would reject real imports. Treating FITID as authoritative would drop genuine rows or double-import after regeneration (§A5.1).
+6. **Summary lines imported as transactions** ("Opening balance", "Balance brought forward"). Detect and remove them (§A4).
+7. **Undoing an import that linked a stored row.** Unless the inverse unlinks the stored leg at post-link versions, the pair trigger refuses the undo (§A5.3).
+8. **Device locale used for file grouping.** `en-IN` versus a UK file, or the reverse (§A3).
+9. **UTF-8-only decoding** mangles `£` in CP1252 files. Expo's `TextDecoder` can't help (§A1).
+10. **Month totals keyed on the Transfer category** instead of `transfer_id`. This breaks once Phase 8's per-member category overrides land.
+
+### Changes to existing plans (supplements the CONTEXT plan-impact table)
+
+| Plan | Change grounded in this research |
+|---|---|
+| 02-02 | Add `decodeText` (bytes to string) and `sniffFormat`. Infer `NumberNotation` (group char, including space and apostrophe; western vs Indian grouping) instead of `separatorsFor(mark)` alone. |
+| 02-03 | Replace `parseSignedAmount`'s sign application with `parseNotatedAmount` (`{magnitude, marker}`). Add a `balance` column role (today "balance" headers are explicitly excluded; D-46 now needs them) and a `direction` column role. Remove the `negate` toggle in favour of the profile flip. |
+| 02-04 | Rewrite `findDuplicates` as §A5.1. The in-file flagging test case is inverted. |
+| 02-11 | Replace `f.text()` with `File.bytes()` plus `decodeText`. New columns go in the key lists. |
+| 02-15 | Import undo inverse versions after linking; linking `apply_patches` after the chunks; transfer create/edit/delete mutations reuse `insertTransactionsBatch` (2 rows) and `apply_patches`. |
+| 02-26 | OFX MIME types plus `*/*` fallback and content sniffing; multi-statement OFX picker; profile, reconcile, duplicates and transfer stages; opening-balance offer on first import into an empty account. |
+| New engine plans | `engine/ofx`, `engine/statement/{profile,convert,reconcile,duplicates}`, `engine/transfer/match`, `engine/accounts/standing`, `engine/money/parseNotatedAmount`. All TDD, all FULL coverage. |
+| New schema plan (or 02-07 extension) | §A6 migrations plus the four pgTAP files. |
+
+### Extension assumptions log
+
+| # | Claim | Section | Risk if wrong |
+|---|---|---|---|
+| E1 | `DR`/`CR` markers mean money out / money in from the account holder's side on both bank and card statements | A2, A3 | A card file using DR/CR from another angle would be read backwards. Mitigated: reconciliation and the confirm step still apply. |
+| E2 | Card OFX from some issuers sends purchases positive and/or `LEDGERBAL` positive-when-owed | A1, A2 | Low. The profile step handles both readings either way. |
+| E3 | OFX 1.x `NAME` is capped at 32 characters, so `MEMO` often carries the payee | A1 | Description quality only |
+| E4 | iOS greys out `.ofx`/`.qfx` without a registered UTType, needing `*/*` | A1 | Users can't pick OFX on iOS. Verify on the iPhone XR early. |
+| E5 | 3-day window and 5% cross-currency tolerance are good defaults for card payments and FX transfers | A5.2 | Missed or spurious suggestions. Suggestions are never applied silently (D-52). |
+| E6 | Cross-currency orphan transfers should require a typed counter-leg rather than a prefilled estimate | A5.2 | UX friction vs. a figure that was never confirmed |
+| E7 | A bank overdraft limit can sometimes be inferred from `AVAILBAL − LEDGERBAL` | A1 | A wrong limit offered. Always behind a user confirm. |
+| E8 | The expo-document-picker cache copy needs manual deletion | A9 | A statement copy lingering in the app cache. Low severity, since it's on the device. |
+| E9 | Offering to set `opening_balance` from the first import is in scope | A1, A4 | Scope creep. Planner or user confirm. |
+
+### Extension open questions
+
+1. **Direction column, revisited.** RESOLVED here: keep direction derived from the sign (Open Question 1 above). A transfer is identified by `transfer_id` and not by a direction value, so no `direction` column is needed. Open Question 1's reasoning that "transfers explicitly out of scope" is outdated, but its conclusion still holds.
+2. **Cross-format duplicate date window.** D-47 says "date + amount + description". A CSV transaction date and an OFX posting date can differ by one to three days.
+   - Recommendation: ±2 days only against existing rows from a different source format. Otherwise exact date.
+   - Needs a user decision, because it amends D-47's literal wording.
+3. **Recurring transfers** (a standing order to savings).
+   - Recommendation: out of scope for Phase 2, with a note on D-02's template. Materialising paired pending legs needs the pair trigger to handle pending status too, and it already does, since the constraint counts active rows regardless of status. The work is small but it is new surface.
+4. **Imported rows that pay a materialised pending occurrence** (Netflix pending, plus Netflix imported as paid). Today the pending row keeps counting in "still to come".
+   - Recommendation: a follow-on suggestion ("This looks like the Netflix bill due 3 Sep. Mark it paid with this line?") or a deferred idea. Flag it to the user, because it affects the cleanliness of the numbers Decide reads.
+5. **Reconciliation copy when only opening and closing exist and they fail.** Rows can't be pinpointed, so UI-SPEC's "The rest reconciled." would be false. Ask for a copy variant.
+
+### Extension sources
+
+**Primary (HIGH):**
+- In-repo reads this session:
+  - `src/engine/money/{parseAmount,types,index,rates}.ts`, `src/ui/money/useAmountParser.ts`
+  - `src/db/transactions.ts`, `src/db/rows.ts`
+  - `supabase/migrations/20260924000300_accounts.sql`, `…0400_transactions.sql`
+  - `docs/ops/migration-compatibility.md`, `.dependency-cruiser.cjs`, `jest.config.js`
+  - `src/services/errors/{scrub,errorReporter}.ts`
+  - `node_modules/expo/src/winter/TextDecoder.ts`, `node_modules/expo-file-system/src/internal/NativeFileSystem.types.ts`
+  - plans 02-02, 02-03, 02-04, 02-07, 02-09, 02-11, 02-13, 02-15, 02-26; 02-UI-SPEC.md
+- `npm view` and `npm pack` of `ofx-js@1.1.1` and `ofx-data-extractor@1.5.0`, plus metadata for `ofx`, `node-ofx-parser`, `ofx-parser`, `banking` and `ofx4js`. Source read and a backtracking timing test on this machine.
+- The `scrubMessage` behaviour reproduction (node, the file's exact regexes).
+
+**Secondary (MEDIUM):**
+- [ofxtools Parser.py](https://raw.githubusercontent.com/csingley/ofxtools/master/ofxtools/Parser.py): implicit leaf closing, mismatched-tag errors
+- [ofxtools Types.py](https://raw.githubusercontent.com/csingley/ofxtools/master/ofxtools/Types.py): date regex, missing offset treated as GMT, comma-decimal fallback
+- [ofxtools parser docs](https://ofxtools.readthedocs.io/en/latest/parser.html): `INTU.*` proprietary tags dropped
+- FITID instability: [HomeBank bug 1942379](https://bugs.launchpad.net/homebank/+bug/1942379), [securo PR #998](https://github.com/securo-finance/securo/pull/998), [Infinite Kind support thread](https://infinitekind.tenderapp.com/discussions/problems/11086-importing-data-sometimes-brings-in-duplicate-transactions), [PocketSense: Scrubbing Statements](https://sites.google.com/site/pocketsense/home/msmoneyfixp1/Bad-Statements), [quinthar.com FITID blog](http://blog.quinthar.com/2008/12/ofx-fitids-not-as-permanent-as-you.html)
+- Card CSV sign conventions: [Arden Chase export guide](https://ardenmoney.com/guide/export-csv/chase/), [Koody credit-card CSV import](https://koody.com/credit-card-csv-import), [Lunch Money CSV import](https://support.lunchmoney.app/importing-transactions/import-via-csv), [bankxlsx Citi debit/credit columns](https://bankxlsx.com/blog/can-i-export-citi-citibank-credit-card-transactions-to-csv-or-excel)
+- OFX sign and date summaries: [FNB OFX file layout spec](https://www.online.fnb.co.za/rhelp_0_15/OBE_SA_Downloads/assets/docs/Statement_Type_-_OFX.pdf) (search summary only; the PDF could not be rendered here), [bankxlsx OFX format explainer](https://bankxlsx.com/blog/ofx-file-format-explained-tags-structure)
+
+**Tertiary (LOW), flagged in the assumptions log:** iOS UTType greying for `.ofx`; how often card issuers use positive purchases or positive `LEDGERBAL`; the 32-character OFX 1.x `NAME` cap (from memory of the spec, not re-read).
+
+**Addendum valid until:** 30 days. The OFX format is stable. Re-check the library landscape only if the planner reopens "use a dependency".
