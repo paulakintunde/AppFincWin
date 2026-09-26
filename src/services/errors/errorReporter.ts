@@ -184,8 +184,14 @@ export function initErrorReporting(
       return 'disabled-not-sentry';
     }
     if (!resolvedEnv.sentryDsn) {
-      // No Sentry DSN configured — stay a no-op rather than init with an empty DSN.
-      warnSkipped('EXPO_PUBLIC_SENTRY_DSN is not set in this bundle');
+      // No Sentry DSN configured — stay a no-op rather than init with an empty DSN. A quoted
+      // value (the exact class of mistake this whole debug session traced) gets a more specific,
+      // still value-free, reason than a plain "not set".
+      warnSkipped(
+        resolvedEnv.sentryDsnDisabledReason === 'quoted-value'
+          ? 'EXPO_PUBLIC_SENTRY_DSN is wrapped in literal quotes — remove them in EAS/.env'
+          : 'EXPO_PUBLIC_SENTRY_DSN is not set in this bundle'
+      );
       return 'disabled-no-dsn';
     }
 
@@ -197,6 +203,10 @@ export function initErrorReporting(
 
     sentry.init({
       dsn: resolvedEnv.sentryDsn,
+      // Tags every event with the build channel (development|preview|production) so Sentry's
+      // dashboard can be filtered by it. Omitted entirely (not passed as undefined) when
+      // EXPO_PUBLIC_APP_ENV is missing or unrecognised — see ErrorTrackingEnv['environment'].
+      ...(resolvedEnv.environment ? { environment: resolvedEnv.environment } : {}),
       // D-18: no email/IP/device-name auto-attached; identity is never linked to this client.
       sendDefaultPii: false,
       // Native crash handling is what the D-19 spike found PostHog's JS-only fire-and-forget
