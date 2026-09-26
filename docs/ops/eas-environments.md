@@ -23,7 +23,6 @@ All three EAS environments (`development`, `preview`, `production`) point at the
 | `SENTRY_PROJECT` | development, preview, production (same value) | plaintext | Build-time only — `app.config.ts` passes it to the `@sentry/react-native/expo` plugin |
 | `EAS_PROJECT_ID` | development, preview, production | plaintext | Build-time only — `app.config.ts` reads it to set `updates.url` and `extra.eas.projectId`; never inlined under an `EXPO_PUBLIC_` name |
 | `EXPO_OWNER` | development, preview, production | plaintext | Build-time only — `app.config.ts` reads it for the Expo/EAS owner slug |
-| `SUPABASE_SERVICE_ROLE_KEY` | development, preview, production (same value) | **secret** | Not read by any app/client code. Held on the EAS side so EAS Workflows can deploy Supabase Edge Functions later without the key ever living only on one machine. CI's `checks` job (00-08) greps the repo to prove no client code reads it |
 
 Google client IDs (`EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`, `GOOGLE_IOS_URL_SCHEME`) are added in plan 00-15, once the Google Cloud OAuth clients exist. They follow the same environment/visibility pattern: the two `EXPO_PUBLIC_*` values as plaintext, none as secret (they are not sensitive — OAuth client IDs are not secrets).
 
@@ -43,6 +42,10 @@ eas env:list --environment production --non-interactive
 
 Add `--include-sensitive` only when a human explicitly needs to see a `sensitive`-visibility value; it is never used for `secret`-visibility values, which EAS never displays back through the CLI regardless of the flag.
 
-## Why `SUPABASE_SERVICE_ROLE_KEY` lives in EAS at all
+## `SUPABASE_SERVICE_ROLE_KEY` removed from EAS (2026-09-25)
 
-No client bundle ever reads it — `EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are all the app needs, and RLS enforces access from there. The service-role key is stored as a `secret`-visibility EAS environment variable purely so the EAS side of the project (EAS Workflows, run from the cloud rather than a laptop) can deploy Supabase Edge Functions without a second, separately-managed copy of the same secret. `secret` visibility means EAS itself never displays the value back through the CLI or dashboard after it is set, matching the "no EXPO_PUBLIC_ prefix, never inlined" mitigation in this plan's threat register (T-00-14-01).
+The owner removed `SUPABASE_SERVICE_ROLE_KEY` from all three EAS environments on 2026-09-25. No build reads it — `EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are all the app needs, and RLS enforces access from there — and Edge Functions get the service-role key directly from Supabase (it is injected into the Edge Function runtime automatically) rather than from a second, separately-managed EAS copy. Removing it is a least-privilege cleanup: a secret with no reader anywhere in this project's build or deploy path is pure exposure with no offsetting benefit.
+
+## Root cause of the Sentry delivery outage (PR #19)
+
+Separately, on 2026-09-25 the owner re-set `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_ERROR_TRACKING` and `EXPO_PUBLIC_SENTRY_DSN` in all three EAS environments without the literal wrapping quotes they had previously been stored with — that quoting was the root cause of PR #19 (the whole-env reader threw on the quoted Supabase URL, which silently took Sentry initialisation down with it). `src/config/env.ts` now also detects and reports quoted `EXPO_PUBLIC_` values by name rather than failing confusingly downstream.

@@ -6,7 +6,7 @@
 // PostHog client — so nothing here touches the real getEnv()/Sentry singleton.
 import fs from 'fs';
 import path from 'path';
-import { initErrorReporting, captureError } from '../errorReporter';
+import { initErrorReporting, captureError, installFatalPersistDelay } from '../errorReporter';
 import type { ClientEnv } from '@/config/env';
 
 function makeFakeSentry() {
@@ -55,6 +55,29 @@ describe('initErrorReporting', () => {
     expect(options.enableNativeCrashHandling).toBe(true);
   });
 
+  // Sentry environment tag: EXPO_PUBLIC_APP_ENV is tagged onto every event via sentry.init().
+  it.each(['development', 'preview', 'production'] as const)(
+    'passes environment=%s through to sentry.init()',
+    (environment) => {
+      const sentry = makeFakeSentry();
+
+      initErrorReporting({ errorTracking: 'sentry', sentryDsn: makeEnv().sentryDsn, environment }, sentry);
+
+      const [options] = sentry.init.mock.calls[0] as [Record<string, unknown>];
+      expect(options.environment).toBe(environment);
+    }
+  );
+
+  it('omits the environment key entirely (never passes it as undefined) when EXPO_PUBLIC_APP_ENV is unavailable', () => {
+    const sentry = makeFakeSentry();
+
+    initErrorReporting({ errorTracking: 'sentry', sentryDsn: makeEnv().sentryDsn }, sentry);
+
+    expect(sentry.init).toHaveBeenCalledTimes(1);
+    const [options] = sentry.init.mock.calls[0] as [Record<string, unknown>];
+    expect(options).not.toHaveProperty('environment');
+  });
+
   it('is a no-op with no Sentry DSN configured', () => {
     const sentry = makeFakeSentry();
 
@@ -62,6 +85,24 @@ describe('initErrorReporting', () => {
     expect(() => captureError(new Error('boom'))).not.toThrow();
 
     expect(sentry.init).not.toHaveBeenCalled();
+  });
+
+  // Sentry-delivery debug (2026-09-25): a quoted DSN is disabled, not thrown — warns with a
+  // specific, still value-free reason rather than the generic "not set" message.
+  it('warns with a quoted-value-specific reason (never the DSN) when sentryDsnDisabledReason is quoted-value', () => {
+    const sentry = makeFakeSentry();
+    const warn: jest.SpyInstance = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const status = initErrorReporting(
+      { errorTracking: 'sentry', sentryDsn: undefined, sentryDsnDisabledReason: 'quoted-value' },
+      sentry
+    );
+
+    expect(status).toBe('disabled-no-dsn');
+    expect(sentry.init).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/wrapped in literal quotes/);
+    warn.mockRestore();
   });
 
   it('is a no-op when errorTracking is not sentry', () => {
@@ -73,18 +114,21 @@ describe('initErrorReporting', () => {
   });
 
   // Found live during the D-19 PostHog spike (Task 2), and kept true for the Sentry
-  // implementation: initErrorReporting() must never take getEnv()'s default-parameter throw
-  // (or any other init failure) down with it. getEnv() validates the *whole* environment and
-  // throws when ANY required var is missing — including ones this module has nothing to do
-  // with. Called with no env argument here so the real getEnv() runs and throws against Jest's
-  // unset process.env, proving the function's own internal try/catch — not just a well-behaved
-  // caller — is what survives it.
-  it('never throws, even when resolving the real environment itself throws', () => {
+  // implementation: initErrorReporting() must never throw. Called with no env argument here so
+  // the real (error-tracking-only) env reader runs against Jest's process.env.
+  it('never throws when resolving the real environment', () => {
     const sentry = makeFakeSentry();
-
-    expect(() => initErrorReporting(undefined, sentry)).not.toThrow();
-    expect(sentry.init).not.toHaveBeenCalled();
-    expect(() => captureError(new Error('after a failed init'))).not.toThrow();
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const saved = process.env.EXPO_PUBLIC_SENTRY_DSN;
+    delete process.env.EXPO_PUBLIC_SENTRY_DSN;
+    try {
+      expect(() => initErrorReporting(undefined, sentry)).not.toThrow();
+      expect(sentry.init).not.toHaveBeenCalled();
+      expect(() => captureError(new Error('after a skipped init'))).not.toThrow();
+    } finally {
+      if (saved !== undefined) process.env.EXPO_PUBLIC_SENTRY_DSN = saved;
+      warn.mockRestore();
+    }
   });
 });
 
@@ -210,5 +254,212 @@ describe('beforeSend scrubbing (T-00-16-01)', () => {
     const sentry = makeFakeSentry();
     const { beforeBreadcrumb } = initAndGetOptions(sentry);
     expect(beforeBreadcrumb(null as never)).toBeNull();
+  });
+});
+
+// Sentry-delivery debug (2026-09-25): on every EAS build, getEnv() threw because an unrelated
+// var (EXPO_PUBLIC_SUPABASE_URL) was stored with literal quotes, and initErrorReporting()
+// swallowed it silently — Sentry was never initialised and no event ever arrived.
+describe('initErrorReporting resolving the real environment', () => {
+  const KEYS = [
+    'EXPO_PUBLIC_SENTRY_DSN',
+    'EXPO_PUBLIC_ERROR_TRACKING',
+    'EXPO_PUBLIC_SUPABASE_URL',
+    'EXPO_PUBLIC_APP_ENV',
+  ] as const;
+  const saved: Record<string, string | undefined> = {};
+  let warn: jest.SpyInstance;
+
+  beforeEach(() => {
+    for (const key of KEYS) saved[key] = process.env[key];
+    warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+  afterEach(() => {
+    for (const key of KEYS) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+    warn.mockRestore();
+  });
+
+  it('initialises Sentry from the DSN alone, even when the rest of the environment is invalid', () => {
+    process.env.EXPO_PUBLIC_SENTRY_DSN = 'https://examplePublicKey@o0.ingest.us.sentry.io/0';
+    process.env.EXPO_PUBLIC_SUPABASE_URL = '"https://abcxyz.supabase.co"';
+    delete process.env.EXPO_PUBLIC_ERROR_TRACKING;
+    const sentry = makeFakeSentry();
+
+    expect(initErrorReporting(undefined, sentry)).toBe('enabled');
+
+    expect(sentry.init).toHaveBeenCalledTimes(1);
+    const [options] = sentry.init.mock.calls[0] as [Record<string, unknown>];
+    expect(options.dsn).toBe('https://examplePublicKey@o0.ingest.us.sentry.io/0');
+    captureError(new Error('reaches sentry'), { area: 'boot' });
+    expect(sentry.captureException).toHaveBeenCalledTimes(1);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('reads EXPO_PUBLIC_APP_ENV from the real environment and tags it onto sentry.init()', () => {
+    process.env.EXPO_PUBLIC_SENTRY_DSN = 'https://examplePublicKey@o0.ingest.us.sentry.io/0';
+    process.env.EXPO_PUBLIC_APP_ENV = 'preview';
+    delete process.env.EXPO_PUBLIC_ERROR_TRACKING;
+    const sentry = makeFakeSentry();
+
+    expect(initErrorReporting(undefined, sentry)).toBe('enabled');
+
+    const [options] = sentry.init.mock.calls[0] as [Record<string, unknown>];
+    expect(options.environment).toBe('preview');
+  });
+
+  it('reads a quoted EXPO_PUBLIC_SENTRY_DSN from the real environment as disabled, not thrown', () => {
+    process.env.EXPO_PUBLIC_SENTRY_DSN = '"https://examplePublicKey@o0.ingest.us.sentry.io/0"';
+    delete process.env.EXPO_PUBLIC_ERROR_TRACKING;
+    const sentry = makeFakeSentry();
+
+    expect(initErrorReporting(undefined, sentry)).toBe('disabled-no-dsn');
+
+    expect(sentry.init).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/wrapped in literal quotes/);
+    expect(String(warn.mock.calls[0][0])).not.toMatch(/examplePublicKey/);
+  });
+
+  it('warns observably (naming the reason, never the DSN) when no DSN is configured', () => {
+    delete process.env.EXPO_PUBLIC_SENTRY_DSN;
+    delete process.env.EXPO_PUBLIC_ERROR_TRACKING;
+    const sentry = makeFakeSentry();
+
+    expect(initErrorReporting(undefined, sentry)).toBe('disabled-no-dsn');
+
+    expect(sentry.init).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/EXPO_PUBLIC_SENTRY_DSN/);
+  });
+
+  it('never throws and warns with the error name when EXPO_PUBLIC_ERROR_TRACKING is invalid', () => {
+    process.env.EXPO_PUBLIC_SENTRY_DSN = 'https://examplePublicKey@o0.ingest.us.sentry.io/0';
+    process.env.EXPO_PUBLIC_ERROR_TRACKING = 'bugsnag';
+    const sentry = makeFakeSentry();
+
+    expect(initErrorReporting(undefined, sentry)).toBe('failed');
+
+    expect(sentry.init).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).not.toMatch(/examplePublicKey/);
+  });
+});
+
+describe('initErrorReporting status', () => {
+  let warn: jest.SpyInstance;
+  beforeEach(() => {
+    warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+  afterEach(() => warn.mockRestore());
+
+  it('returns failed, never throws, and warns when Sentry.init itself throws', () => {
+    const sentry = makeFakeSentry();
+    sentry.init.mockImplementation(() => {
+      throw new TypeError('native module missing');
+    });
+
+    expect(initErrorReporting(makeEnv(), sentry)).toBe('failed');
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(() => captureError(new Error('after failed init'))).not.toThrow();
+    expect(sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it('returns disabled-not-sentry when another tracker is selected', () => {
+    expect(initErrorReporting(makeEnv({ errorTracking: 'posthog' }), makeFakeSentry())).toBe('disabled-not-sentry');
+  });
+});
+
+// Sentry-delivery debug (2026-09-25), H2: on Android, Sentry's global handler calls the previous
+// handler as soon as its JS flush resolves, but sentry-java only *enqueues* the envelope on a
+// single-thread executor (AsyncHttpTransport.send) and writes it to disk later — so the RN default
+// handler / expo-updates crashed the process first and every fatal JS event was lost (logcat,
+// build f81838b1). The fix delays the ORIGINAL handler on fatals, installed before Sentry.init so
+// Sentry wraps it.
+describe('fatal persist delay', () => {
+  type Handler = (error: unknown, isFatal?: boolean) => void;
+  function makeFakeErrorUtils(initial: Handler) {
+    let handler = initial;
+    return {
+      getGlobalHandler: jest.fn(() => handler),
+      setGlobalHandler: jest.fn((next: Handler) => {
+        handler = next;
+      }),
+      current: () => handler,
+    };
+  }
+
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  it('delays the original handler for a fatal error by the given window', () => {
+    const original = jest.fn();
+    const errorUtils = makeFakeErrorUtils(original);
+
+    expect(installFatalPersistDelay(errorUtils, 3000)).toBe(true);
+    const error = new Error('fatal');
+    errorUtils.current()(error, true);
+
+    expect(original).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(2999);
+    expect(original).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(1);
+    expect(original).toHaveBeenCalledWith(error, true);
+  });
+
+  it('passes a non-fatal error straight through', () => {
+    const original = jest.fn();
+    const errorUtils = makeFakeErrorUtils(original);
+    installFatalPersistDelay(errorUtils, 3000);
+
+    const error = new Error('soft');
+    errorUtils.current()(error, false);
+
+    expect(original).toHaveBeenCalledWith(error, false);
+  });
+
+  it('is idempotent — a second install does not stack another delay', () => {
+    const errorUtils = makeFakeErrorUtils(jest.fn());
+    installFatalPersistDelay(errorUtils, 3000);
+    expect(installFatalPersistDelay(errorUtils, 3000)).toBe(false);
+    expect(errorUtils.setGlobalHandler).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing without ErrorUtils or with a zero window', () => {
+    expect(installFatalPersistDelay(undefined, 3000)).toBe(false);
+    const errorUtils = makeFakeErrorUtils(jest.fn());
+    expect(installFatalPersistDelay(errorUtils, 0)).toBe(false);
+    expect(errorUtils.setGlobalHandler).not.toHaveBeenCalled();
+  });
+
+  it('is installed BEFORE Sentry.init, so Sentry wraps the delaying handler', () => {
+    const original = jest.fn();
+    const errorUtils = makeFakeErrorUtils(original);
+    let handlerSeenBySentry: Handler | undefined;
+    const sentry = makeFakeSentry();
+    sentry.init.mockImplementation(() => {
+      handlerSeenBySentry = errorUtils.getGlobalHandler();
+    });
+
+    initErrorReporting(makeEnv(), sentry, { errorUtils, fatalPersistDelayMs: 3000 });
+
+    expect(handlerSeenBySentry).toBeDefined();
+    expect(handlerSeenBySentry).not.toBe(original);
+    handlerSeenBySentry?.(new Error('fatal'), true);
+    expect(original).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(3000);
+    expect(original).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not touch the global handler when Sentry is not being enabled', () => {
+    const errorUtils = makeFakeErrorUtils(jest.fn());
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    initErrorReporting(makeEnv({ sentryDsn: undefined }), makeFakeSentry(), { errorUtils, fatalPersistDelayMs: 3000 });
+
+    expect(errorUtils.setGlobalHandler).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });
