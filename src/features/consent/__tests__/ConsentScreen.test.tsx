@@ -43,8 +43,8 @@ async function renderScreen() {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGrant.mockResolvedValue(undefined);
-  mockDecline.mockResolvedValue(undefined);
+  mockGrant.mockResolvedValue(true);
+  mockDecline.mockResolvedValue(true);
 });
 
 describe('ConsentScreen', () => {
@@ -103,5 +103,18 @@ describe('ConsentScreen', () => {
     expect(mockDecline).toHaveBeenCalledTimes(1);
     expect(mockGrant).not.toHaveBeenCalled();
     await waitFor(() => expect(getByText('/you')).toBeTruthy());
+  });
+
+  it('stays on the prompt (no redirect) when the answer fails to save', async () => {
+    mockGrant.mockResolvedValue(false);
+    const { getByTestId, queryByTestId } = await renderScreen();
+
+    await act(async () => {
+      fireEvent.press(getByTestId('consent-share'));
+    });
+
+    expect(mockGrant).toHaveBeenCalledTimes(1);
+    expect(queryByTestId('redirect')).toBeNull();
+    expect(getByTestId('consent-share').props.accessibilityState?.disabled).not.toBe(true);
   });
 });
