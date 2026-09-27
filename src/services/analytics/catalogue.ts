@@ -16,6 +16,32 @@ export type EventCatalogue = {
   analytics_opted_in: Record<string, never>;
   signed_out: { had_pending_writes: boolean };
   update_required_shown: Record<string, never>;
+  // ANL-05 widened: funnel = first sign_in_completed -> first transaction_added -> first
+  // statement import (import_committed, any format); no amounts, payees, bank names, file
+  // names or free text.
+  account_created: { context: 'onboarding' | 'later' };
+  onboarding_history_choice: { choice: 'import' | 'fresh' };
+  transaction_added: { kind: 'expense' | 'income' | 'transfer'; recurring: boolean };
+  import_started: { entry: 'onboarding' | 'you' | 'account' };
+  import_file_rejected: {
+    reason: 'too_many_rows' | 'unreadable' | 'no_rows' | 'too_big' | 'unsupported_format' | 'unsupported_statement';
+  };
+  import_format_confirmed: {
+    format: 'csv' | 'ofx' | 'qfx';
+    decided_by: 'labels' | 'reconciliation' | 'remembered' | 'user';
+    flipped: boolean;
+  };
+  import_mapping_confirmed: { corrected: boolean };
+  import_committed: {
+    entry: 'onboarding' | 'you' | 'account';
+    size: '1-50' | '51-500' | '501-5000';
+    format: 'csv' | 'ofx' | 'qfx';
+    reconciliation: 'all_verified' | 'partial' | 'none_in_file' | 'ends_only_mismatch';
+  };
+  import_abandoned: { stage: 'pick' | 'format' | 'mapping' | 'review' | 'matches' };
+  recurring_suggestion_answered: { accepted: boolean };
+  transfer_suggestion_answered: { accepted: boolean; kind: 'pair' | 'orphan' };
+  pay_match_answered: { accepted: boolean };
 };
 
 export type EventName = keyof EventCatalogue;

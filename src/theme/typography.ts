@@ -13,6 +13,8 @@ export const fontSize = {
   healthScore: 32,
   netWorth: 42,
   display: 34,
+  /** Entry-sheet amount figure — a display-figure exception alongside netWorth/healthScore. */
+  amountDisplay: 44,
 } as const;
 
 export type TextRole = 'display' | 'heading' | 'body' | 'label';
