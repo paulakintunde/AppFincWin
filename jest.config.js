@@ -15,8 +15,9 @@ process.env.EXPO_PUBLIC_USE_RN_FETCH = '1';
 
 // D-21: engine/ branch-coverage thresholds are per-directory, but jest errors if a
 // threshold path matches no files. Only add a threshold for a folder once it has real
-// source, so the 100% folders (money/decide/payoff/split) can arrive in later phases
-// without anyone needing to remember to edit this config.
+// source, so the 100% folders (money/decide/payoff/split, and Phase 2's
+// recurring/csv/categorize/undo/activity) can arrive in later phases without anyone
+// needing to remember to edit this config.
 const isSource = (f) => /\.(ts|tsx)$/.test(f) && !/\.test\.tsx?$/.test(f) && !/\.d\.ts$/.test(f);
 function hasSource(dir) {
   if (!fs.existsSync(dir)) return false;
@@ -32,7 +33,7 @@ const REST = { branches: 95, functions: 95, lines: 95, statements: 95 };
 
 const coverageThreshold = {};
 if (hasSource('src/engine')) coverageThreshold['./src/engine/'] = REST; // D-21: 95% on the rest of engine/
-for (const f of ['money', 'decide', 'payoff', 'split']) {
+for (const f of ['money', 'decide', 'payoff', 'split', 'recurring', 'csv', 'categorize', 'undo', 'activity']) {
   // D-21: 100% folders
   if (hasSource(`src/engine/${f}`)) coverageThreshold[`./src/engine/${f}/`] = FULL;
 }
@@ -44,7 +45,16 @@ module.exports = {
   // native module (see node_modules/react-native-worklets/jest/resolver.js).
   resolver: 'react-native-worklets/jest/resolver',
   setupFiles: ['./jest.setup.ts'],
-  testMatch: ['<rootDir>/src/**/*.test.ts?(x)', '<rootDir>/supabase/functions/**/*.test.ts'],
+  // Deviation (Rule 3 - blocking): plain '<rootDir>/...' patterns break when rootDir sits
+  // under a dot-prefixed directory (e.g. a Claude Code worktree at .claude/worktrees/<id>).
+  // jest-config's testMatch normalization escapes rootDir for glob-safety, then
+  // jest-util's replacePathSepForGlob deliberately skips converting a backslash that is
+  // followed by a regex-special char -- including '.' -- so 'C:\...\.claude\...' keeps one
+  // literal backslash before '.claude' and the resulting glob matches nothing (verified via
+  // `npx jest --showConfig`: testMatch printed with mixed / and \ separators, 0 matches
+  // against 241 candidate files). Anchoring with '**/' instead of '<rootDir>/' sidesteps the
+  // rootDir substitution entirely; testPathIgnorePatterns still excludes node_modules.
+  testMatch: ['**/src/**/*.test.ts?(x)', '**/supabase/functions/**/*.test.ts'],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/__tests__/**', '!src/**/*.d.ts', '!src/**/*.typecheck.ts'],
   coverageThreshold,
 };
