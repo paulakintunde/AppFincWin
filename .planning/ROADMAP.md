@@ -270,7 +270,37 @@ Plans:
   3. A user can drag any of the ~14 bottom sheets down to dismiss it.
   4. The FAB's action changes to match the current tab, and it hides during sheets, bulk select, onboarding and step flows.
   5. A user can navigate and read every screen with a screen reader on both platforms.
-**Plans**: TBD
+**Plans**: 16 plans in 7 waves
+Plans:
+**Wave 1**
+- [ ] 03-01-PLAN.md — Foundations: bottom-sheet/haptics/blur deps, predictive back off, haptics wrapper, shell tokens, lint boundary, Reanimated/worklets doc fix
+- [ ] 03-02-PLAN.md — Pure back-history core (8-deep history, transition classification, back decision, nav-state -> location) (TDD)
+- [ ] 03-03-PLAN.md — Pure tab order/availability/slide direction, FAB hide rule, quick-action order (TDD)
+- [ ] 03-04-PLAN.md — Shell copy in the typed i18n catalogue
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 03-05-PLAN.md — DSG-07 text scaling: capped Text primitive, root font-scale provider, import migration + lint rule
+- [ ] 03-06-PLAN.md — Shell state: BackHistoryProvider, sheet stack, Android back handler, layout measurements, focus helper, test harness
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 03-07-PLAN.md — Context-aware FAB: registration API, hide wiring, quick actions, haptics, rise and lift above toast
+- [ ] 03-08-PLAN.md — Tab bar: bespoke glyphs, availability, accessibility, re-tap, directional slide options
+- [ ] 03-09-PLAN.md — Sheet container on @gorhom/bottom-sheet with drag-to-dismiss and the discard guard
+- [ ] 03-10-PLAN.md — Header pieces: tab header, compact header, detail header, avatar, back chevron, problem-only sync line
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 03-11-PLAN.md — Screen scaffolds: TabRootScreen / DetailScreen, large-to-compact header, pull-to-refresh, title focus
+- [ ] 03-12-PLAN.md — FAB long-press quick menu + dev-only test sheet on You
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 03-13-PLAN.md — Route wiring: outer stack + providers, JS Tabs, per-tab stacks, landing on Home, router-level back tests
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 03-14-PLAN.md — Prototype-deviation record (D-01 for DSG-01) + Android device acceptance (checkpoint)
+- [ ] 03-15-PLAN.md — Record integration: Activity as the tab root, FAB default action and quick actions (requires Phase 2 executed)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 03-16-PLAN.md — Record integration: sheets on SheetContainer, entry dirty guard, toast slot + device check (checkpoint)
 **UI hint**: yes — heaviest design-fidelity phase in the roadmap: bespoke SVG tab glyphs, sheet infrastructure, seven named animations.
 
 ### Phase 4: Decide Engine
@@ -400,7 +430,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4* → 5 → 6 → 7 �
 | 0. Foundation | 18/20 | In Progress | - |
 | 1. Money Core | 16/16 | Complete | 2026-09-26 |
 | 2. Record | 0/TBD | Not started | - |
-| 3. Shell | 0/TBD | Not started | - |
+| 3. Shell | 0/16 | Planned | - |
 | 4. Decide Engine | 0/TBD | Not started | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |

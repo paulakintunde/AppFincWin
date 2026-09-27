@@ -479,17 +479,19 @@ export function shouldHideFab(state: {
 
 **If this table is empty:** N/A — see rows above.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Exact behaviour of `usePreventRemove`/back-gesture interaction on the *outer* Stack's detail routes, given D-13's separate sheet-guard mechanism**
    - What we know: React Navigation's own docs note "known issues with `usePreventRemove` and the back gesture" and recommend using it sparingly.
    - What's unclear: Whether any detail screen in this app (not just sheets) will ever need its own unsaved-changes guard via `usePreventRemove`, given Record's screens (Phase 2) are described as "plain routes or sheets" — if a future detail screen needs this, the interaction with D-07's native edge-swipe needs a dedicated check.
    - Recommendation: Not blocking for Phase 3 itself (no detail screen in this phase's own scope has unsaved-changes state) — flag for whichever later phase first pushes a detail screen with its own draft state.
+   - RESOLVED: deferred by design. No Phase 3 detail screen holds draft state, and sheets use the D-13 dismiss-then-re-present guard (03-09). The first later phase to push a detail screen with draft state must check `usePreventRemove` against the D-07 edge swipe.
 
 2. **Whether the SDK-57-pinned `expo-blur` version (`~57.0.3`) renders an acceptable blur on the Android emulator this project uses for testing**
    - What we know: `expo-blur` wraps native blur APIs that have historically had weaker Android support (falling back to a translucent overlay on older Android versions/emulators without hardware blur support).
    - What's unclear: Whether the specific Android emulator image in use renders a visible blur or a flat translucent fallback.
    - Recommendation: Verify visually during implementation; UI-SPEC's `tabBar` token already includes a plain `rgba(251,250,247,.94)` fallback colour, so a flat-fallback outcome is not a blocker, just a visual-parity note for DSG-01.
+   - RESOLVED: 03-08 renders the tab bar over the flat `tabBar` token with blur layered on top. Whatever the emulator shows is recorded in `docs/design/prototype-deviations.md` by 03-14.
 
 ## Environment Availability
 
