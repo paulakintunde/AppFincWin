@@ -12,13 +12,13 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 - [ ] **FND-01**: Project builds and runs on Expo SDK 57 with TypeScript `strict: true` and Expo Router pinned to `~57.x`
 - [x] **FND-02**: Developer can run the app on a local Android emulator with a development build
 - [ ] **FND-03**: Developer can install a signed iOS development build on a physical device via EAS Build, from Windows
-- [ ] **FND-04**: CI fails any change where a file under `engine/` imports from `db/`, `state/`, `services/`, `ui/` or `react`, including transitively — *CI job live (00-08); branch protection is ON since 2026-09-23 (repo made public): `checks`/`secret-scan`/`rls` required, strict. Still pending only because `enforce_admins` is false, so the owner can push to `main` past a red check; closes when the user chooses `enforce_admins: true` (PR-based flow) or explicitly accepts owner bypass. Tracked in `docs/dependency-register.md`*
-- [ ] **FND-05**: CI fails any change that drops `engine/` branch coverage below the agreed threshold — *CI job live (00-08); branch protection is ON since 2026-09-23 (repo made public): `checks`/`secret-scan`/`rls` required, strict. Still pending only because `enforce_admins` is false, so the owner can push to `main` past a red check; closes when the user chooses `enforce_admins: true` (PR-based flow) or explicitly accepts owner bypass. Tracked in `docs/dependency-register.md`*
+- [x] **FND-04**: CI fails any change where a file under `engine/` imports from `db/`, `state/`, `services/`, `ui/` or `react`, including transitively — *met 2026-09-26: the required `checks` job runs `npm run lint` and `npm run depcruise` (rule `engine-only-internal-src`) plus `npm run test:coverage` (engine/ 95%, listed modules 100%) and `npm run verify:gates`; branch protection on `main` requires `checks`/`secret-scan`/`rls`, strict, with `enforce_admins: true`, so no push or merge — including the owner's — lands on red*
+- [x] **FND-05**: CI fails any change that drops `engine/` branch coverage below the agreed threshold — *met 2026-09-26: the required `checks` job runs `npm run lint` and `npm run depcruise` (rule `engine-only-internal-src`) plus `npm run test:coverage` (engine/ 95%, listed modules 100%) and `npm run verify:gates`; branch protection on `main` requires `checks`/`secret-scan`/`rls`, strict, with `enforce_admins: true`, so no push or merge — including the owner's — lands on red*
 - [x] **FND-06**: App applies any of 4 accent colours and any of 4 font pairings live, without a reload
 - [x] **FND-07**: All animations collapse to near-zero duration when the OS reports reduce-motion enabled
 - [ ] **FND-08**: Apple Developer Program enrolment is submitted before any store-dependent work begins
 - [x] **FND-09**: App checks a minimum supported version on launch and shows an update-required screen when it is below it
-- [ ] **FND-10**: Every database migration is checked for compatibility with the oldest supported app version before it is deployed
+- [x] **FND-10**: Every database migration is checked for compatibility with the oldest supported app version before it is deployed
 - [x] **FND-11**: Over-the-air updates follow a runtime-version policy that separates JS-only fixes from native releases, and a bad update can be rolled back
 - [x] **FND-12**: CI runs tests proving a user cannot read or write another user's rows or another household's rows
 
@@ -78,20 +78,20 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 ### Money & Data Integrity
 
-- [ ] **MON-01**: All monetary values are stored and computed as integer minor units, with no float arithmetic on any path
-- [ ] **MON-02**: User input of an amount is parsed to minor units without passing through `parseFloat`
-- [ ] **MON-03**: Splitting an amount across members always produces shares that sum exactly to the original, using largest-remainder rounding
+- [x] **MON-01**: All monetary values are stored and computed as integer minor units, with no float arithmetic on any path
+- [x] **MON-02**: User input of an amount is parsed to minor units without passing through `parseFloat`
+- [x] **MON-03**: Splitting an amount across members always produces shares that sum exactly to the original, using largest-remainder rounding
 - [x] **MON-04**: User can set a home currency from the supported list or add a custom currency
 - [x] **MON-05**: A transaction in a non-home currency records the FX rate applied at the time it was written
 - [x] **MON-06**: FX rates refresh daily from Frankfurter v2 into the project's own store, and the app reads only that store
-- [ ] **MON-07**: A rate's own publication date is visible wherever a converted figure is shown, rather than implied to be current
-- [ ] **MON-08**: Every record carries a client-generated UUID primary key assigned before the write leaves the device
+- [x] **MON-07**: A rate's own publication date is visible wherever a converted figure is shown, rather than implied to be current
+- [x] **MON-08**: Every record carries a client-generated UUID primary key assigned before the write leaves the device
 - [x] **MON-09**: Every mutable record carries an integer version that increments server-side on write
 - [x] **MON-10**: An alert fires when any currency's latest stored rate is older than its staleness limit
 - [x] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it
 - [x] **MON-12**: When Frankfurter cannot be reached, rates refresh from open.er-api instead, and its required attribution is shown in the app
 - [x] **MON-13**: Each currency's decimal places come from ISO 4217 — 0 for JPY, KRW and VND, 3 for KWD, BHD and OMR — and a custom currency declares its own
-- [ ] **MON-14**: A transaction stores its local calendar date and time zone, so its month and any recurring schedule never shift across time zones or clock changes
+- [x] **MON-14**: A transaction stores its local calendar date and time zone, so its month and any recurring schedule never shift across time zones or clock changes
 
 ### Offline & Sync
 
@@ -344,13 +344,13 @@ Populated during roadmap creation.
 | FND-01 | Phase 0 - Foundation | Pending |
 | FND-02 | Phase 0 - Foundation | Complete |
 | FND-03 | Phase 0 - Foundation | Pending |
-| FND-04 | Phase 0 - Foundation | Pending |
-| FND-05 | Phase 0 - Foundation | Pending |
+| FND-04 | Phase 0 - Foundation | Complete |
+| FND-05 | Phase 0 - Foundation | Complete |
 | FND-06 | Phase 0 - Foundation | Complete |
 | FND-07 | Phase 0 - Foundation | Complete |
 | FND-08 | Phase 0 - Foundation | Pending |
 | FND-09 | Phase 0 - Foundation | Complete |
-| FND-10 | Phase 1 - Money Core | Pending |
+| FND-10 | Phase 1 - Money Core | Complete |
 | FND-11 | Phase 0 - Foundation | Complete |
 | FND-12 | Phase 0 - Foundation | Complete |
 | ENV-01 | Phase 0 - Foundation | Complete |
@@ -394,20 +394,20 @@ Populated during roadmap creation.
 | ACC-11 | Phase 10 - System | Pending |
 | ACC-12 | Phase 0 - Foundation | Complete |
 | ACC-13 | Phase 10 - System | Pending |
-| MON-01 | Phase 1 - Money Core | Pending |
-| MON-02 | Phase 1 - Money Core | Pending |
-| MON-03 | Phase 1 - Money Core | Pending |
+| MON-01 | Phase 1 - Money Core | Complete |
+| MON-02 | Phase 1 - Money Core | Complete |
+| MON-03 | Phase 1 - Money Core | Complete |
 | MON-04 | Phase 1 - Money Core | Complete |
 | MON-05 | Phase 1 - Money Core | Complete |
 | MON-06 | Phase 1 - Money Core | Complete |
-| MON-07 | Phase 1 - Money Core | Pending |
-| MON-08 | Phase 1 - Money Core | Pending |
+| MON-07 | Phase 1 - Money Core | Complete |
+| MON-08 | Phase 1 - Money Core | Complete |
 | MON-09 | Phase 1 - Money Core | Complete |
 | MON-10 | Phase 1 - Money Core | Complete |
 | MON-11 | Phase 1 - Money Core | Complete |
 | MON-12 | Phase 1 - Money Core | Complete |
 | MON-13 | Phase 1 - Money Core | Complete |
-| MON-14 | Phase 1 - Money Core | Pending |
+| MON-14 | Phase 1 - Money Core | Complete |
 | SYN-01 | Phase 1 - Money Core | Complete |
 | SYN-02 | Phase 1 - Money Core | Complete |
 | SYN-03 | Phase 10 - System | Pending |
@@ -558,4 +558,4 @@ Populated during roadmap creation.
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-09-26 after Phase 4 discuss-phase: DEC-13…16 (options, alternatives, setbacks, first read) added to Phase 4. 209/209 v1 requirements mapped*
+*Last updated: 2026-09-26 — Phase 1 closed: FND-10, MON-01, MON-02, MON-03, MON-07, MON-08, MON-14 ticked on 01-VERIFICATION.md evidence; FND-04/FND-05 ticked (enforce_admins on). 203/203 v1 requirements mapped*

@@ -5,7 +5,7 @@ milestone_name: milestone
 status: executing
 stopped_at: Phase 3 context gathered
 last_updated: "2026-09-27T00:29:38.929Z"
-last_activity: 2026-09-25 -- Phase 02 planning complete
+last_activity: 2026-09-26 -- Phase 1 verified and closed; Phase 0 code review (2 critical) and security audit (2 open, none high) recorded; Phase 3 and Phase 4 context gathered
 progress:
   total_phases: 13
   completed_phases: 1
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 01 — money-core
+**Current focus:** Phase 02 — record (planned, 40 plans, ready to execute); Phase 00 closing out (00-07, 00-20 wait on D-U-N-S / Apple)
 
 ## Current Position
 
-Phase: 01 (money-core) — EXECUTING
-Plan: 2 of 16
-Status: Ready to execute
-Last activity: 2026-09-25 -- Phase 02 planning complete
-
-Progress: [█████░░░░░] 51%
+Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
+Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
+Phase 02 (record): planned (40 plans, 14 waves, checker passed); not started.
+Phase 02.1 (PDF statement import): inserted, not discussed. Phase 04 (decide-engine): context gathered, not planned.
+Status: Ready to execute Phase 02
+Last activity: 2026-09-26 -- Phase 1 closed; Phase 0 review and security audit recorded
 
 ## Performance Metrics
 
@@ -121,7 +121,11 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+- **Phase 0 verification** — run the gsd-verifier for Phase 00 once 00-07 and 00-20 have SUMMARY files (triggered by the D-U-N-S number, ETA 2026-10-13, then Apple enrolment).
+- **Phase 0 code review fixes** — `00-REVIEW.md`: 2 critical (CR-01 a malformed `min_supported_version` blanks the app for every user; CR-02 the device is only wiped on the sign-out button, not when a session ends another way) and 20 warnings. Run `/gsd-code-review-fix 0`.
+- **Phase 0 security** — `00-SECURITY.md`: 2 open, neither high (T-00-01-03 no DMARC on fincwin.com; T-00-03-04 DB password shorter than declared). Add the DMARC record and rotate or accept, then re-run `/gsd-secure-phase 0`. Also: remove leftover `POSTHOG_CLI_*` vars from the EAS preview env and revoke that key; disable the unused Supabase email provider and fix `site_url` (still localhost); purge production test accounts before launch (AR-11 drift).
+- **Public repo privacy** — a personal test Gmail address is committed in `docs/acceptance/phase-00-android.md` and `docs/acceptance/phase-01-money-core.md`; the repo is public.
+- **Phase 1 human UAT** — 3 items in `01-HUMAN-UAT.md` (region separators on device, RateAttribution mounted by Phase 2, FX hold/ISO list product review).
 
 ### Blockers/Concerns
 
@@ -132,7 +136,7 @@ None yet.
 - [Phase 9] Two blocking decisions are still open per PROJECT.md and must resolve before this phase starts: which of the ~50 features are Free vs. Pro, and whether the Coach ships as a real LLM (and on what terms, including a prescriptive-language post-filter)
 - [Phase 11] Guideline 3.2.1(viii)'s live wording no longer carries the qualifier the brief assumed — re-verify positioning at this phase rather than treating it as settled; the brief also mis-cites the 36% APR / 60-day loan cap as 3.2.1(viii) when it is actually 3.2.2(ix)
 - [PROJECT.md] Passkey implementation path (native WebAuthn + Edge Function vs. Clerk) remains unresolved and deferred out of v1 entirely per current scope — carried as "Out of Scope: Deferred to v1.1" in PROJECT.md, not a Phase 0 task
-- [Phase 0] 00-08: GitHub branch protection on `main` is now ON (2026-09-23, after the user made `AppFincWin` public): required checks `checks`/`secret-scan`/`rls`, strict. `enforce_admins` is false, so the owner's direct pushes to `main` still bypass the checks — FND-04/FND-05 stay pending until the user decides between `enforce_admins: true` with a PR-based flow, or accepting owner bypass. Tracked in `docs/dependency-register.md`
+- ~~[Phase 0] 00-08: branch protection owner bypass~~ — resolved 2026-09-26: `enforce_admins: true`; FND-04/FND-05 marked complete
 - ~~[Phase 0] 00-15: second Android Google OAuth client still needs creating~~ — resolved 2026-09-26: both Android clients exist and production Supabase accepts all four Google client IDs (docs/ops/auth-providers.md)
 
 ### Quick Tasks Completed
