@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { minorUnits } from '../../money';
-import { balanceMeansFor, candidateProfiles, flipProfile, inferProfile } from '../profile';
+import { balanceMeansFor, candidateProfiles, flipProfile, inferProfile, PAYMENT_LIKE_CARD, INCOME_LIKE_DEPOSIT } from '../profile';
 import type { AccountKind, DraftRow, FormatProfile, ProfileResult, StatementDraft } from '../types';
 import { arbLedger, renderDraft } from './fixtures/ledgers';
 
@@ -105,6 +105,15 @@ describe('balanceMeansFor', () => {
     const draft = makeDraft({ rows: [makeRow(0)] });
     expect(balanceMeansFor('checking', draft)).toBe('none');
     expect(balanceMeansFor('credit', draft)).toBe('none');
+  });
+});
+
+describe('PAYMENT_LIKE_CARD / INCOME_LIKE_DEPOSIT', () => {
+  it('carry the exact phrases RESEARCH.md §A2 specifies', () => {
+    expect(PAYMENT_LIKE_CARD).toContain('PAYMENT - THANK YOU');
+    expect(PAYMENT_LIKE_CARD).toContain('PAYMENT RECEIVED');
+    expect(PAYMENT_LIKE_CARD).toContain('DIRECT DEBIT PAYMENT');
+    expect(INCOME_LIKE_DEPOSIT).toEqual(['SALARY', 'PAYROLL', 'INTEREST PAID', 'WAGES']);
   });
 });
 
@@ -440,5 +449,231 @@ describe('property: every returned candidate has balanceMeans consistent with th
         }
       )
     );
+  });
+});
+
+describe('inferProfile: ambiguity table (RESEARCH.md §A2) -- available-credit balance, no limit stated', () => {
+  it('converted amounts are still correct via availableDelta; statedLimit stays null', () => {
+    const draft = makeDraft({
+      balanceLabel: 'available',
+      rows: [
+        makeRow(0, { magnitude: minorUnits(1000), marker: 'none', balanceMagnitude: minorUnits(9000), balanceMarker: 'none' }),
+        makeRow(1, { magnitude: minorUnits(1000), marker: 'none', balanceMagnitude: minorUnits(1000), balanceMarker: 'none' }),
+        makeRow(2, { magnitude: minorUnits(3000), marker: 'none', balanceMagnitude: minorUnits(4000), balanceMarker: 'none' }),
+      ],
+    });
+    const result = inferProfile(draft, { kind: 'credit', limit: null }, null);
+    const { profile } = asDecided(result);
+    expect(profile.balanceMeans).toBe('available');
+    expect(profile.positiveMeans).toBe('money-in');
+    expect(profile.statedLimit).toBeNull();
+  });
+
+  it('one-row file with a balance but no stated opening -> ambiguous (nothing to verify against)', () => {
+    const draft = makeDraft({
+      rows: [makeRow(0, { magnitude: minorUnits(1000), marker: 'none', balanceMagnitude: minorUnits(5000), balanceMarker: 'none' })],
+    });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, null);
+    expect(result.kind).toBe('ambiguous');
+  });
+});
+
+describe('inferProfile: bank overdraft limit derived from AVAILBAL - LEDGERBAL', () => {
+  it('a whole multiple of 10,000 -> offered as statedLimit', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(50000), marker: 'none', asOf: null, raw: '500.00' },
+      available: { magnitude: minorUnits(70000), marker: 'none', asOf: null, raw: '700.00' },
+      rows: [makeRow(0, { magnitude: minorUnits(1000), marker: 'none' })],
+    });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, null);
+    const profile = result.kind === 'decided' ? result.profile : result.candidates[0];
+    expect(profile?.statedLimit).toBe(20000);
+  });
+
+  it('not a whole multiple of 10,000 -> never invented, statedLimit null', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(50000), marker: 'none', asOf: null, raw: '500.00' },
+      available: { magnitude: minorUnits(65500), marker: 'none', asOf: null, raw: '655.00' },
+      rows: [makeRow(0, { magnitude: minorUnits(1000), marker: 'none' })],
+    });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, null);
+    const profile = result.kind === 'decided' ? result.profile : result.candidates[0];
+    expect(profile?.statedLimit).toBeNull();
+  });
+
+  it('available at or below the ledger balance -> never invents an overdraft limit', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(50000), marker: 'none', asOf: null, raw: '500.00' },
+      available: { magnitude: minorUnits(50000), marker: 'none', asOf: null, raw: '500.00' },
+      rows: [makeRow(0, { magnitude: minorUnits(1000), marker: 'none' })],
+    });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, null);
+    const profile = result.kind === 'decided' ? result.profile : result.candidates[0];
+    expect(profile?.statedLimit).toBeNull();
+  });
+});
+
+describe('inferProfile: remembered profile applied directly when the file has no balances at all', () => {
+  it('decided via remembered, evidence is [remembered] only (no running-balance)', () => {
+    const draft = makeDraft({ rows: [makeRow(0, { magnitude: minorUnits(500), marker: 'none' })] });
+    const remembered = makeProfile({ positiveMeans: 'money-spent', balanceMeans: 'held', accountFamily: 'deposit', source: 'csv' });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, remembered);
+    const { profile, evidence } = asDecided(result);
+    expect(profile.decidedBy).toBe('remembered');
+    expect(evidence).toEqual(['remembered']);
+  });
+});
+
+describe('inferProfile: remembered profile ignored when source or accountFamily differ', () => {
+  it('different source -> never applied, falls through', () => {
+    const draft = makeDraft({
+      source: 'csv',
+      rows: [makeRow(0, { magnitude: minorUnits(500), marker: 'none' })],
+    });
+    const remembered = makeProfile({ source: 'ofx', accountFamily: 'deposit', positiveMeans: 'money-spent' });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, remembered);
+    if (result.kind === 'decided') {
+      expect(result.profile.decidedBy).not.toBe('remembered');
+    }
+  });
+
+  it('different accountFamily -> never applied, falls through', () => {
+    const draft = makeDraft({
+      source: 'csv',
+      rows: [makeRow(0, { magnitude: minorUnits(500), marker: 'none' })],
+    });
+    const remembered = makeProfile({ source: 'csv', accountFamily: 'card', positiveMeans: 'money-spent' });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, remembered);
+    if (result.kind === 'decided') {
+      expect(result.profile.decidedBy).not.toBe('remembered');
+    }
+  });
+});
+
+describe('inferProfile: OFX TRNTYPE disagreeing on most rows', () => {
+  it('is strong evidence for the inverted s', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      rows: [
+        makeRow(0, { magnitude: minorUnits(5000), marker: 'minus', trnType: 'CREDIT' }),
+        makeRow(1, { magnitude: minorUnits(3000), marker: 'none', trnType: 'DEBIT' }),
+        makeRow(2, { magnitude: minorUnits(2000), marker: 'none', trnType: 'DEBIT' }),
+      ],
+    });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, null);
+    const { profile, evidence } = asDecided(result);
+    expect(profile.positiveMeans).toBe('money-spent');
+    expect(evidence).toContain('trntype-agrees');
+  });
+
+  it('an exact tie decides nothing from trntype, falling through', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      rows: [
+        makeRow(0, { magnitude: minorUnits(100), marker: 'none', trnType: 'CREDIT' }),
+        makeRow(1, { magnitude: minorUnits(100), marker: 'none', trnType: 'DEBIT' }),
+      ],
+    });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, null);
+    expect(result.kind).toBe('ambiguous');
+  });
+
+  it('an unrecognised trnType is skipped, not counted', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      rows: [
+        makeRow(0, { magnitude: minorUnits(1000), marker: 'none', trnType: 'OTHER' }),
+        makeRow(1, { magnitude: minorUnits(5000), marker: 'none', trnType: 'CREDIT' }),
+        makeRow(2, { magnitude: minorUnits(3000), marker: 'minus', trnType: 'DEBIT' }),
+        makeRow(3, { magnitude: minorUnits(2000), marker: 'minus', trnType: 'DEBIT' }),
+      ],
+    });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, null);
+    const { profile, evidence } = asDecided(result);
+    expect(evidence).toContain('trntype-agrees');
+    expect(profile.positiveMeans).toBe('money-in');
+  });
+});
+
+describe('inferProfile: reconciliation ties when neither candidate is distinguishable', () => {
+  it('falls through to ambiguous (a zero-amount row verifies identically under both candidates)', () => {
+    const draft = makeDraft({
+      statedOpening: { magnitude: minorUnits(1000), marker: 'none', asOf: null, raw: '10.00' },
+      rows: [makeRow(0, { magnitude: minorUnits(0), marker: 'none', balanceMagnitude: minorUnits(1000), balanceMarker: 'none' })],
+    });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, null);
+    expect(result.kind).toBe('ambiguous');
+  });
+});
+
+describe('inferProfile: reconciliation decides money-spent via strictly-more-verified-links (not all-verified)', () => {
+  it('the moneySpent candidate wins when it alone reconciles the one checkable link', () => {
+    const draft = makeDraft({
+      balanceLabel: 'available',
+      rows: [
+        makeRow(0, { magnitude: minorUnits(1000), marker: 'none', balanceMagnitude: minorUnits(9000), balanceMarker: 'none' }),
+        makeRow(1, { magnitude: minorUnits(1000), marker: 'none', balanceMagnitude: minorUnits(1000), balanceMarker: 'none' }),
+        makeRow(2, { magnitude: minorUnits(3000), marker: 'minus', balanceMagnitude: minorUnits(4000), balanceMarker: 'none' }),
+      ],
+    });
+    const result = inferProfile(draft, { kind: 'credit', limit: null }, null);
+    const { profile } = asDecided(result);
+    expect(profile.positiveMeans).toBe('money-spent');
+  });
+});
+
+describe('inferProfile: income-row-sign on a deposit account', () => {
+  it('a SALARY row decides s from its own sign', () => {
+    const draft = makeDraft({
+      rows: [
+        makeRow(0, { description: 'TESCO', magnitude: minorUnits(1000), marker: 'minus' }),
+        makeRow(1, { description: 'SALARY', magnitude: minorUnits(200000), marker: 'none' }),
+      ],
+    });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, null);
+    const { profile, evidence } = asDecided(result);
+    expect(evidence).toContain('income-row-sign');
+    expect(profile.positiveMeans).toBe('money-in');
+  });
+});
+
+describe('inferProfile: a CSV limit-label column value is copied verbatim, never re-derived', () => {
+  it('draft.statedLimit already set -> profile.statedLimit equals it', () => {
+    const draft = makeDraft({
+      statedLimit: minorUnits(150000),
+      rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
+    });
+    const result = inferProfile(draft, { kind: 'credit', limit: null }, null);
+    const { profile } = asDecided(result);
+    expect(profile.statedLimit).toBe(150000);
+  });
+});
+
+describe('inferProfile: OFX card limit derivation edge cases', () => {
+  it('owed exactly offsets available -> statedLimit 0 (normalizeZero true branch)', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(25000), marker: 'none', asOf: null, raw: '250.00' },
+      available: { magnitude: minorUnits(25000), marker: 'minus', asOf: null, raw: '-250.00' },
+      rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
+    });
+    const result = inferProfile(draft, { kind: 'credit', limit: null }, null);
+    const { profile } = asDecided(result);
+    expect(profile.statedLimit).toBe(0);
+  });
+
+  it('a negative computed figure is never offered as a limit', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(25000), marker: 'none', asOf: null, raw: '250.00' },
+      available: { magnitude: minorUnits(40000), marker: 'minus', asOf: null, raw: '-400.00' },
+      rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
+    });
+    const result = inferProfile(draft, { kind: 'credit', limit: null }, null);
+    const { profile } = asDecided(result);
+    expect(profile.statedLimit).toBeNull();
   });
 });
