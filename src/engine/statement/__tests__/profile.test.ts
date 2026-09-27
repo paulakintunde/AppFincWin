@@ -423,7 +423,8 @@ describe('property: with balances present, inferProfile recovers s; the mirror r
             expect(result.profile.positiveMeans).toBe(s === 1 ? 'money-in' : 'money-spent');
           }
         }
-      )
+      ),
+      { numRuns: 500 }
     );
   });
 });
