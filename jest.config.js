@@ -44,7 +44,16 @@ module.exports = {
   // native module (see node_modules/react-native-worklets/jest/resolver.js).
   resolver: 'react-native-worklets/jest/resolver',
   setupFiles: ['./jest.setup.ts'],
-  testMatch: ['<rootDir>/src/**/*.test.ts?(x)', '<rootDir>/supabase/functions/**/*.test.ts'],
+  // Deviation (Rule 3 - blocking): plain '<rootDir>/...' patterns break when rootDir sits
+  // under a dot-prefixed directory (e.g. a Claude Code worktree at .claude/worktrees/<id>).
+  // jest-config's testMatch normalization escapes rootDir for glob-safety, then
+  // jest-util's replacePathSepForGlob deliberately skips converting a backslash that is
+  // followed by a regex-special char -- including '.' -- so 'C:\...\.claude\...' keeps one
+  // literal backslash before '.claude' and the resulting glob matches nothing (verified via
+  // `npx jest --showConfig`: testMatch printed with mixed / and \ separators, 0 matches
+  // against 241 candidate files). Anchoring with '**/' instead of '<rootDir>/' sidesteps the
+  // rootDir substitution entirely; testPathIgnorePatterns still excludes node_modules.
+  testMatch: ['**/src/**/*.test.ts?(x)', '**/supabase/functions/**/*.test.ts'],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/__tests__/**', '!src/**/*.d.ts', '!src/**/*.typecheck.ts'],
   coverageThreshold,
 };
