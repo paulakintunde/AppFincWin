@@ -12,8 +12,8 @@ Requirements for initial release. Each maps to exactly one roadmap phase.
 - [ ] **FND-01**: Project builds and runs on Expo SDK 57 with TypeScript `strict: true` and Expo Router pinned to `~57.x`
 - [x] **FND-02**: Developer can run the app on a local Android emulator with a development build
 - [ ] **FND-03**: Developer can install a signed iOS development build on a physical device via EAS Build, from Windows
-- [ ] **FND-04**: CI fails any change where a file under `engine/` imports from `db/`, `state/`, `services/`, `ui/` or `react`, including transitively — *CI job live (00-08); branch protection is ON since 2026-09-23 (repo made public): `checks`/`secret-scan`/`rls` required, strict. Still pending only because `enforce_admins` is false, so the owner can push to `main` past a red check; closes when the user chooses `enforce_admins: true` (PR-based flow) or explicitly accepts owner bypass. Tracked in `docs/dependency-register.md`*
-- [ ] **FND-05**: CI fails any change that drops `engine/` branch coverage below the agreed threshold — *CI job live (00-08); branch protection is ON since 2026-09-23 (repo made public): `checks`/`secret-scan`/`rls` required, strict. Still pending only because `enforce_admins` is false, so the owner can push to `main` past a red check; closes when the user chooses `enforce_admins: true` (PR-based flow) or explicitly accepts owner bypass. Tracked in `docs/dependency-register.md`*
+- [x] **FND-04**: CI fails any change where a file under `engine/` imports from `db/`, `state/`, `services/`, `ui/` or `react`, including transitively — *met 2026-09-26: the required `checks` job runs `npm run lint` and `npm run depcruise` (rule `engine-only-internal-src`) plus `npm run test:coverage` (engine/ 95%, listed modules 100%) and `npm run verify:gates`; branch protection on `main` requires `checks`/`secret-scan`/`rls`, strict, with `enforce_admins: true`, so no push or merge — including the owner's — lands on red*
+- [x] **FND-05**: CI fails any change that drops `engine/` branch coverage below the agreed threshold — *met 2026-09-26: the required `checks` job runs `npm run lint` and `npm run depcruise` (rule `engine-only-internal-src`) plus `npm run test:coverage` (engine/ 95%, listed modules 100%) and `npm run verify:gates`; branch protection on `main` requires `checks`/`secret-scan`/`rls`, strict, with `enforce_admins: true`, so no push or merge — including the owner's — lands on red*
 - [x] **FND-06**: App applies any of 4 accent colours and any of 4 font pairings live, without a reload
 - [x] **FND-07**: All animations collapse to near-zero duration when the OS reports reduce-motion enabled
 - [ ] **FND-08**: Apple Developer Program enrolment is submitted before any store-dependent work begins
@@ -344,8 +344,8 @@ Populated during roadmap creation.
 | FND-01 | Phase 0 - Foundation | Pending |
 | FND-02 | Phase 0 - Foundation | Complete |
 | FND-03 | Phase 0 - Foundation | Pending |
-| FND-04 | Phase 0 - Foundation | Pending |
-| FND-05 | Phase 0 - Foundation | Pending |
+| FND-04 | Phase 0 - Foundation | Complete |
+| FND-05 | Phase 0 - Foundation | Complete |
 | FND-06 | Phase 0 - Foundation | Complete |
 | FND-07 | Phase 0 - Foundation | Complete |
 | FND-08 | Phase 0 - Foundation | Pending |
