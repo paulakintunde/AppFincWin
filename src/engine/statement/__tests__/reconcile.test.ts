@@ -249,3 +249,81 @@ describe('no-leak', () => {
     }
   });
 });
+
+describe('reconcile: coverage edges', () => {
+  it('ends-only path with a null amount present never falsely claims a match', () => {
+    const rows: ReconcileRow[] = [
+      { amount: 100, balance: null, localDate: '2026-01-01' },
+      { amount: null, balance: null, localDate: '2026-01-02' },
+      { amount: 55, balance: null, localDate: '2026-01-03' },
+    ];
+    const result = reconcile(rows, { opening: 1000, closing: 1155 });
+    expect(result.file).toBe('ends-only-mismatch');
+    expect(result.rows.every((s) => s === 'cannot-verify')).toBe(true);
+  });
+
+  it('a same-date block that already verifies normally is left alone (no group upgrade attempted)', () => {
+    const { rows, closing } = buildDenseLedger({
+      opening: 100,
+      amounts: [10, 20, 30],
+      dates: ['2026-04-01', '2026-04-01', '2026-04-01'],
+    });
+    const result = reconcile(rows, { opening: 100, closing });
+    expect(result.file).toBe('all-verified');
+    expect(result.rows).toEqual(['verified', 'verified', 'verified']);
+  });
+
+  it('a failing same-date block at the very start of the file, with no stated opening, cannot be upgraded (no boundary value before it)', () => {
+    const { rows } = buildDenseLedger({
+      opening: 0,
+      amounts: [10, 20, 30],
+      dates: ['2026-05-01', '2026-05-01', '2026-05-01'],
+    });
+    // row0's own balance is never checkable (no stated.opening, no preceding anchor).
+    // Perturb row2's amount so the row1->row2 link fails; the block cannot be
+    // rescued because there is no boundary value before the block (start === 0
+    // and stated.opening is null).
+    const broken = rows.map((r, i) => (i === 2 ? { ...r, amount: (r.amount as number) + 1 } : r));
+    const result = reconcile(broken, { opening: null, closing: null });
+    expect(result.rows[0]).toBe('no-balance');
+    expect(result.rows[2]).toBe('cannot-verify');
+    expect(result.file).toBe('partial');
+  });
+
+  it('a failing same-date block that starts after another row uses the preceding row\'s own balance as its boundary', () => {
+    const { rows } = buildDenseLedger({
+      opening: 100,
+      amounts: [5, 10, 20, 30],
+      dates: ['2026-02-01', '2026-02-02', '2026-02-02', '2026-02-02'],
+    });
+    // row0 is outside the block (a different date); swap the two interior rows
+    // of the 3-row same-date block that follows it.
+    const shuffled = [rows[0] as ReconcileRow, rows[2] as ReconcileRow, rows[1] as ReconcileRow, rows[3] as ReconcileRow];
+    const result = reconcile(shuffled, { opening: 100, closing: 165 });
+    expect(result.file).toBe('all-verified');
+    expect(result.rows[0]).toBe('verified');
+    expect(result.rows.slice(1)).toEqual(['verified-as-group', 'verified-as-group', 'verified-as-group']);
+  });
+
+  it('a failing same-date block whose own last row has no balance cannot be upgraded (no boundary value after it)', () => {
+    const rows: ReconcileRow[] = [
+      { amount: 10, balance: 110, localDate: '2026-07-01' },
+      { amount: 21, balance: 130, localDate: '2026-07-01' }, // true amount is 20; perturbed so this link fails
+      { amount: 5, balance: null, localDate: '2026-07-01' },
+    ];
+    const result = reconcile(rows, { opening: 100, closing: null });
+    expect(result.orientation).toBe('as-is');
+    expect(result.rows).toEqual(['verified', 'cannot-verify', 'no-balance']);
+    expect(result.file).toBe('partial');
+  });
+
+  it('the date tie-break alone can select reversed when link counts tie at zero', () => {
+    const rows: ReconcileRow[] = [
+      { amount: 5, balance: null, localDate: '2026-06-05' },
+      { amount: 7, balance: null, localDate: '2026-06-01' },
+    ];
+    // forward dates descend (not non-decreasing); reversed dates ascend.
+    const result = reconcile(rows, { opening: null, closing: null });
+    expect(result.orientation).toBe('reversed');
+  });
+});

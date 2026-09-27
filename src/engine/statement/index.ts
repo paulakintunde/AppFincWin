@@ -8,3 +8,4 @@ export * from './types';
 export * from './decodeText';
 export * from './sniffFormat';
 export * from './convert';
+export * from './reconcile';
