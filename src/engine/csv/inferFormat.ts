@@ -124,7 +124,7 @@ function assembleFromParts(
     for (let i = 0; i < 3; i += 1) {
       const value = parts[i] as string;
       if (!isAllDigits(value)) return null;
-      values[roles[i]] = digitsToInt(value);
+      values[roles[i] as DateRole] = digitsToInt(value);
     }
   }
 

@@ -28,7 +28,6 @@ export type TokenizeResult =
   | { ok: true; rows: string[][]; delimiter: Delimiter }
   | { ok: false; error: TokenizeError; line: number };
 
-const BOM = '﻿';
 const DELIMITER_ORDER: readonly Delimiter[] = [',', ';', '\t'];
 
 function stripBom(text: string): string {
