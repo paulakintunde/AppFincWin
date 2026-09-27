@@ -180,6 +180,62 @@ describe('useConsent cold start', () => {
     expect(result.current.needsPrompt).toBe(false);
   });
 
+  it('a persisted stale "granted" never enables analytics when the server now says declined (CR-01)', async () => {
+    mockServerConsent = 'declined';
+    let release: () => void = () => undefined;
+    mockSelectResult = () =>
+      new Promise((resolve) => {
+        release = () => resolve({ data: row(mockServerConsent), error: null });
+      });
+    const client = newClient();
+    client.setQueryData(queryKeys.profile(USER_ID), row('granted'), { updatedAt: 1 });
+
+    const { result } = await renderHook(() => useConsent(), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+
+    // Restored copy only: no $identify before the server has answered.
+    expect(result.current.consent).toBe('granted');
+    expect(mockEnable).not.toHaveBeenCalled();
+
+    await act(async () => {
+      release();
+    });
+    await waitFor(() => expect(result.current.consent).toBe('declined'));
+    expect(mockEnable).not.toHaveBeenCalled();
+  });
+
+  it('a persisted "granted" enables analytics once the fresh fetch confirms it', async () => {
+    mockServerConsent = 'granted';
+    const client = newClient();
+    client.setQueryData(queryKeys.profile(USER_ID), row('granted'), { updatedAt: 1 });
+
+    await renderHook(() => useConsent(), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+
+    await waitFor(() => expect(mockEnable).toHaveBeenCalledWith(USER_ID));
+    expect(mockEnable).toHaveBeenCalledTimes(1);
+  });
+
+  it('a later fresh fetch that is no longer granted turns analytics off (CR-01)', async () => {
+    mockServerConsent = 'granted';
+    const client = newClient();
+    const { result } = await renderHook(() => useConsent(), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+    await waitFor(() => expect(mockEnable).toHaveBeenCalledTimes(1));
+
+    // Withdrawn elsewhere (another device / support); the next refetch brings it in.
+    mockServerConsent = 'declined';
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: queryKeys.profile(USER_ID) });
+    });
+
+    await waitFor(() => expect(result.current.consent).toBe('declined'));
+    expect(mockDisable).toHaveBeenCalledTimes(1);
+  });
+
   it('a failed profile fetch settles (loading false) without prompting', async () => {
     mockSelectResult = () => Promise.resolve({ data: null, error: { message: 'boom', code: '500' } });
     const client = newClient();

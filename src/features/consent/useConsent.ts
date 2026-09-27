@@ -37,6 +37,8 @@ export function useConsent(): UseConsentResult {
   const loading = profileLoading || awaitingFresh;
   const needsPrompt = !loading && profile !== null && consent === null;
 
+  const enabledOnceRef = useRef(false);
+
   const writeConsent = useCallback(
     async (value: 'granted' | 'declined'): Promise<boolean> => {
       if (!user) return false;
@@ -60,6 +62,7 @@ export function useConsent(): UseConsentResult {
     const ok = await writeConsent('granted');
     if (!ok) return false;
     getAnalytics().enable(user.id);
+    enabledOnceRef.current = true;
     getAnalytics().track('analytics_opted_in', {});
     return true;
   }, [user, writeConsent]);
@@ -68,24 +71,31 @@ export function useConsent(): UseConsentResult {
     const ok = await writeConsent('declined');
     if (!ok) return false;
     await getAnalytics().disable();
+    enabledOnceRef.current = false;
     return true;
   }, [writeConsent]);
 
   const setEnabled = useCallback((on: boolean) => (on ? grant() : decline()), [grant, decline]);
 
   // On sign-in with a stored 'granted' consent, enable() runs exactly once — not on every
-  // render, and not again after grant()/decline() already called it directly.
-  const enabledOnceRef = useRef(false);
+  // render, and not again after grant()/decline() already called it directly. Only a row
+  // fetched or written this session counts (CR-01): a persisted 'granted' from an earlier
+  // session may since have been withdrawn on another device, so it never enables analytics
+  // on its own. A fresh answer that is no longer 'granted' turns analytics back off.
   useEffect(() => {
     if (!user) {
       enabledOnceRef.current = false;
       return;
     }
+    if (!fresh) return;
     if (consent === 'granted' && !enabledOnceRef.current) {
       getAnalytics().enable(user.id);
       enabledOnceRef.current = true;
+    } else if (consent !== 'granted' && enabledOnceRef.current) {
+      enabledOnceRef.current = false;
+      void getAnalytics().disable();
     }
-  }, [consent, user]);
+  }, [consent, user, fresh]);
 
   return { consent, loading, needsPrompt, grant, decline, setEnabled };
 }
