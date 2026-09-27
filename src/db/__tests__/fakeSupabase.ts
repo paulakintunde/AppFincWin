@@ -53,6 +53,10 @@ export class FakeSupabase {
         record('update', [patch]);
         return builder;
       },
+      upsert: (rows: unknown, opts?: unknown) => {
+        record('upsert', [rows, opts]);
+        return builder;
+      },
       select: (columns?: string, opts?: unknown) => {
         record('select', opts === undefined ? [columns] : [columns, opts]);
         return builder;
@@ -61,12 +65,32 @@ export class FakeSupabase {
         record('eq', [column, value]);
         return builder;
       },
+      neq: (column: string, value: unknown) => {
+        record('neq', [column, value]);
+        return builder;
+      },
       is: (column: string, value: unknown) => {
         record('is', [column, value]);
         return builder;
       },
+      in: (column: string, values: unknown) => {
+        record('in', [column, values]);
+        return builder;
+      },
+      ilike: (column: string, pattern: string) => {
+        record('ilike', [column, pattern]);
+        return builder;
+      },
+      not: (column: string, operator: string, value: unknown) => {
+        record('not', [column, operator, value]);
+        return builder;
+      },
       gte: (column: string, value: unknown) => {
         record('gte', [column, value]);
+        return builder;
+      },
+      lte: (column: string, value: unknown) => {
+        record('lte', [column, value]);
         return builder;
       },
       lt: (column: string, value: unknown) => {

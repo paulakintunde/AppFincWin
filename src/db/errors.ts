@@ -3,7 +3,15 @@
 // creating a cycle.
 
 /** The write-carrying tables the app currently mutates through db/data. */
-export type WriteEntity = 'transactions' | 'accounts' | 'custom_currencies' | 'profiles';
+export type WriteEntity =
+  | 'transactions'
+  | 'accounts'
+  | 'custom_currencies'
+  | 'profiles'
+  | 'categories'
+  | 'recurring_series'
+  | 'undo_log'
+  | 'import_profiles';
 
 /**
  * A PostgREST/Postgres error normalized into a typed shape. `code` is the Postgres or

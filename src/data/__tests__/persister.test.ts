@@ -113,7 +113,8 @@ describe('encrypted query cache persister', () => {
       queryClient: fresh,
       persister: createEncryptedPersister(),
       maxAge: CACHE_MAX_AGE_MS,
-      buster: '2',
+      // A buster guaranteed different from whatever CACHE_SCHEMA_VERSION currently is (D-15).
+      buster: `not-${CACHE_SCHEMA_VERSION}`,
     });
 
     expect(fresh.getQueryData(TX_KEY)).toBeUndefined();

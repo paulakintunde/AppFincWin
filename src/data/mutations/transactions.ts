@@ -180,6 +180,22 @@ export function registerTransactionMutations(qc: QueryClient): void {
         local_date: vars.row.local_date,
         time_zone: vars.row.time_zone,
         note: vars.row.note,
+        // Record (Phase 2): mirror what the insert actually sent; server-only columns
+        // (recurring_series_id, occurrence_date, updated_by) start null on an optimistic row.
+        name: vars.row.name ?? null,
+        category_id: vars.row.category_id ?? null,
+        payment_type: vars.row.payment_type ?? null,
+        status: vars.row.status ?? 'paid', // D-01: hand-entered rows default to paid
+        deleted_at: null,
+        import_batch_id: vars.row.import_batch_id ?? null,
+        recurring_series_id: null,
+        occurrence_date: null,
+        updated_by: null,
+        raw_amount: vars.row.raw_amount ?? null,
+        raw_balance: vars.row.raw_balance ?? null,
+        external_id: vars.row.external_id ?? null,
+        import_format: vars.row.import_format ?? null,
+        transfer_id: vars.row.transfer_id ?? null,
         version: 1,
         created_at: now,
         updated_at: now,
