@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { markerSign, minorUnits, type AmountMarker, type MinorUnits } from '../../money';
+import { markerSign, minorUnits, type AmountMarker } from '../../money';
 import { convertAmount, convertBalance, convertDraft, signOfPositive } from '../convert';
 import type { DraftRow, FormatProfile, StatementDraft } from '../types';
 
@@ -96,6 +96,40 @@ describe('convertAmount: DR/CR rows, independent of positiveMeans', () => {
   });
   it('(1250, cr) -> +1250 under money-spent', () => {
     expect(convertAmount(minorUnits(1250), 'cr', makeProfile({ positiveMeans: 'money-spent' }))).toBe(1250);
+  });
+});
+
+describe('a zero amount or balance is never -0', () => {
+  it('convertAmount: dr with magnitude 0', () => {
+    expect(Object.is(convertAmount(minorUnits(0), 'dr', makeProfile()), 0)).toBe(true);
+  });
+  it('convertAmount: the s*rawSign*magnitude path with magnitude 0', () => {
+    expect(Object.is(convertAmount(minorUnits(0), 'none', makeProfile({ positiveMeans: 'money-spent' })), 0)).toBe(
+      true
+    );
+  });
+  it('convertBalance: held with magnitude 0', () => {
+    expect(
+      Object.is(convertBalance({ magnitude: minorUnits(0), marker: 'minus' }, makeProfile({ balanceMeans: 'held' }), null), 0)
+    ).toBe(true);
+  });
+  it('convertBalance: owed with magnitude 0 (the originally-reported case)', () => {
+    expect(
+      Object.is(
+        convertBalance(
+          { magnitude: minorUnits(0), marker: 'none' },
+          makeProfile({ balanceMeans: 'owed', accountFamily: 'card', positiveMeans: 'money-spent' }),
+          null
+        ),
+        0
+      )
+    ).toBe(true);
+  });
+  it('convertBalance: available with limit exactly equal to the read amount', () => {
+    const profile = makeProfile({ balanceMeans: 'available', accountFamily: 'card', positiveMeans: 'money-spent' });
+    expect(Object.is(convertBalance({ magnitude: minorUnits(500), marker: 'none' }, profile, minorUnits(500)), 0)).toBe(
+      true
+    );
   });
 });
 
@@ -380,7 +414,7 @@ describe('property: available-credit files without a limit -- consecutive differ
           const draft = makeDraft({ rows });
           const converted = convertDraft(draft, profile, { limit: null });
 
-          const heldView: Array<number | null> = balanceReadings.map((r) =>
+          const heldView: (number | null)[] = balanceReadings.map((r) =>
             r === null ? null : markerSign(r.marker) * r.magnitude
           );
 
@@ -388,7 +422,8 @@ describe('property: available-credit files without a limit -- consecutive differ
             expect(row.balance).toBeNull();
             const prev = i > 0 ? heldView[i - 1] : null;
             const cur = heldView[i];
-            const expected = cur === null || prev === null || prev === undefined ? null : cur - prev;
+            const expected =
+              cur === null || cur === undefined || prev === null || prev === undefined ? null : cur - prev;
             expect(row.availableDelta).toBe(expected);
           });
         }

@@ -47,12 +47,20 @@ export function signOfPositive(profile: FormatProfile): 1 | -1 {
   return profile.positiveMeans === 'money-in' ? 1 : -1;
 }
 
+// A zero amount or balance is never negative -- IEEE-754 negation/multiplication
+// of a zero magnitude can produce -0, which is numerically equal to 0 but fails
+// strict identity and has no meaning under D-44's sign rule. Normalise before
+// handing a result to `minorUnits`.
+function noNegativeZero(n: number): number {
+  return n === 0 ? 0 : n;
+}
+
 export function convertAmount(magnitude: MinorUnits, marker: AmountMarker, profile: FormatProfile): MinorUnits {
-  if (marker === 'dr') return minorUnits(-magnitude);
+  if (marker === 'dr') return minorUnits(noNegativeZero(-magnitude));
   if (marker === 'cr') return minorUnits(magnitude);
   const s = signOfPositive(profile);
   const rawSign = markerSign(marker);
-  return minorUnits(s * rawSign * magnitude);
+  return minorUnits(noNegativeZero(s * rawSign * magnitude));
 }
 
 export function convertBalance(
@@ -63,19 +71,19 @@ export function convertBalance(
   if (profile.balanceMeans === 'available') {
     if (limit === null) return null;
     const sign = markerSign(b.marker);
-    return minorUnits(-(limit - sign * b.magnitude));
+    return minorUnits(noNegativeZero(-(limit - sign * b.magnitude)));
   }
-  if (b.marker === 'dr') return minorUnits(-b.magnitude);
+  if (b.marker === 'dr') return minorUnits(noNegativeZero(-b.magnitude));
   if (b.marker === 'cr') return minorUnits(b.magnitude);
   const sign = markerSign(b.marker);
-  if (profile.balanceMeans === 'held') return minorUnits(sign * b.magnitude);
-  if (profile.balanceMeans === 'owed') return minorUnits(-(sign * b.magnitude));
+  if (profile.balanceMeans === 'held') return minorUnits(noNegativeZero(sign * b.magnitude));
+  if (profile.balanceMeans === 'owed') return minorUnits(noNegativeZero(-(sign * b.magnitude)));
   return null; // balanceMeans 'none': nothing to convert
 }
 
 function heldSignedValue(magnitude: MinorUnits | null, marker: AmountMarker): MinorUnits | null {
   if (magnitude === null) return null;
-  return minorUnits(markerSign(marker) * magnitude);
+  return minorUnits(noNegativeZero(markerSign(marker) * magnitude));
 }
 
 function convertRow(
@@ -92,7 +100,7 @@ function convertRow(
   if (profile.balanceMeans === 'available' && limit === null) {
     const curHeld = heldSignedValue(row.balanceMagnitude, row.balanceMarker);
     const prevHeld = prevRow ? heldSignedValue(prevRow.balanceMagnitude, prevRow.balanceMarker) : null;
-    availableDelta = curHeld !== null && prevHeld !== null ? minorUnits(curHeld - prevHeld) : null;
+    availableDelta = curHeld !== null && prevHeld !== null ? minorUnits(noNegativeZero(curHeld - prevHeld)) : null;
   } else if (row.balanceMagnitude !== null) {
     balance = convertBalance({ magnitude: row.balanceMagnitude, marker: row.balanceMarker }, profile, limit);
   }
