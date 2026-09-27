@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 planned (12 plans, checker passed after 1 revision)
-last_updated: "2026-09-27T16:30:00.000Z"
-last_activity: 2026-09-27 -- Phase 4 planning complete (12 plans); Phase 02.1 planning complete (12 plans) and Phase 3 planning complete (16 plans); earlier: Phase 1 closed, Phase 0 review and security audit recorded, Phase 2.1/3/4 context and Phase 2.1/3 UI-SPECs approved
+stopped_at: Phase 3 UI-SPEC approved
+last_updated: "2026-09-27T16:33:06.717Z"
+last_activity: 2026-09-27 -- Phase 02 execution started
 progress:
   total_phases: 13
   completed_phases: 1
-  total_plans: 104
+  total_plans: 116
   completed_plans: 34
-  percent: 33
+  percent: 29
 ---
 
 # Project State
@@ -21,16 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 02 — record (planned, 40 plans, ready to execute); Phase 00 closing out (00-07, 00-20 wait on D-U-N-S / Apple)
+**Current focus:** Phase 02 — record
 
 ## Current Position
 
+Phase: 02 (record) — EXECUTING
+Plan: 1 of 40
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): planned (40 plans, 14 waves, checker passed); not started.
 Phase 02.1 (PDF statement import): planned (12 plans, 7 waves, checker passed); not started. Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
-Status: Ready to execute
-Last activity: 2026-09-27 -- Phase 4, Phase 02.1 and Phase 3 planning complete
+Status: Executing Phase 02
+Last activity: 2026-09-27 -- Phase 02 execution started
 
 ## Performance Metrics
 
