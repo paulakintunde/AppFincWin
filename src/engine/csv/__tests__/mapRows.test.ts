@@ -140,6 +140,26 @@ describe('csvToDraft: single signed-amount column', () => {
     );
     expect(draft.rows[0]?.issues).toEqual(['bad-amount']);
   });
+
+  it('flags bad-date rather than crashing when no date column is mapped at all', () => {
+    const draft = csvToDraft(
+      ['Description', 'Amount'],
+      [['Tesco', '-12.50']],
+      baseOpts({ mapping: mapping({ date: null, description: 0, amount: 1 }) })
+    );
+    expect(draft.rows[0]?.localDate).toBeNull();
+    expect(draft.rows[0]?.issues).toEqual(expect.arrayContaining(['bad-date']));
+  });
+
+  it('flags empty-description rather than crashing when no description column is mapped at all', () => {
+    const draft = csvToDraft(
+      ['Date', 'Amount'],
+      [['2026-09-01', '-12.50']],
+      baseOpts({ mapping: mapping({ description: null, date: 0, amount: 1 }) })
+    );
+    expect(draft.rows[0]?.description).toBe('');
+    expect(draft.rows[0]?.issues).toEqual(expect.arrayContaining(['empty-description']));
+  });
 });
 
 describe('csvToDraft: debit/credit columns', () => {
@@ -178,6 +198,12 @@ describe('csvToDraft: debit/credit columns', () => {
     expect(draft.rows[0]?.issues).toEqual(['zero-amount']);
   });
 
+  it('flags zero-amount for a single-filled zero-valued debit cell', () => {
+    const draft = csvToDraft(header, [['2026-09-01', 'Wash', '0.00', '']], opts);
+    expect(draft.rows[0]).toMatchObject({ magnitude: 0, marker: 'dr' });
+    expect(draft.rows[0]?.issues).toEqual(['zero-amount']);
+  });
+
   it('treats the debit column as authoritative when an inner minus agrees', () => {
     const draft = csvToDraft(header, [['2026-09-01', 'Tesco', '-12.50', '']], opts);
     expect(draft.rows[0]).toMatchObject({ magnitude: 1250, marker: 'dr' });
@@ -209,6 +235,18 @@ describe('csvToDraft: debit/credit columns', () => {
   it('applies the debit-credit-columns label', () => {
     const draft = csvToDraft(header, [['2026-09-01', 'Tesco', '12.50', '']], opts);
     expect(draft.labels).toContain('debit-credit-columns');
+  });
+
+  it('resolves an amount from a debit-only mapping with no credit column at all', () => {
+    const debitOnlyOpts = baseOpts({ mapping: mapping({ amount: null, debit: 2, credit: null }) });
+    const draft = csvToDraft(['Date', 'Description', 'Debit'], [['2026-09-01', 'Tesco', '12.50']], debitOnlyOpts);
+    expect(draft.rows[0]).toMatchObject({ magnitude: 1250, marker: 'dr' });
+  });
+
+  it('resolves an amount from a credit-only mapping with no debit column at all', () => {
+    const creditOnlyOpts = baseOpts({ mapping: mapping({ amount: null, debit: null, credit: 2 }) });
+    const draft = csvToDraft(['Date', 'Description', 'Credit'], [['2026-09-01', 'Salary', '2000.00']], creditOnlyOpts);
+    expect(draft.rows[0]).toMatchObject({ magnitude: 200000, marker: 'cr' });
   });
 });
 
@@ -306,6 +344,16 @@ describe('csvToDraft: balance column', () => {
   it('leaves balanceLabel null when no balance column is mapped', () => {
     const draft = csvToDraft(['Date', 'Description', 'Amount'], [['2026-09-01', 'Tesco', '-12.50']], baseOpts());
     expect(draft.balanceLabel).toBeNull();
+  });
+
+  it('never crashes when the balance column index is out of the header bounds', () => {
+    const draft = csvToDraft(
+      ['Date', 'Description', 'Amount'],
+      [['2026-09-01', 'Tesco', '-12.50']],
+      baseOpts({ mapping: mapping({ balance: 9 }) })
+    );
+    expect(draft.balanceLabel).toBeNull();
+    expect(draft.rows[0]?.balanceMagnitude).toBeNull();
   });
 });
 

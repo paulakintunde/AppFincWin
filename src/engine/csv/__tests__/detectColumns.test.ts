@@ -114,6 +114,49 @@ describe('detectColumns', () => {
     expect(confidence).toBe('low');
   });
 
+  it('leaves date and amount null when content sniffing finds no plausible column', () => {
+    const { mapping } = detectColumns(['col1', 'col2'], [['hello', 'world']]);
+    expect(mapping.date).toBeNull();
+    expect(mapping.amount).toBeNull();
+    expect(mapping.description).not.toBeNull();
+  });
+
+  it('leaves description null when every column is already used', () => {
+    const { mapping } = detectColumns(['Date', 'Amount'], [['2026-09-01', '12.50']]);
+    expect(mapping.description).toBeNull();
+  });
+
+  it('skips an already-used column and a blank-sample column while sniffing for a date', () => {
+    const { mapping } = detectColumns(['Amount', 'Filler', 'RealDate'], [['12.50', '', '2026-09-01']]);
+    expect(mapping.amount).toBe(0);
+    expect(mapping.date).toBe(2);
+  });
+
+  it('skips an already-used column and a blank-sample column while sniffing for an amount', () => {
+    const { mapping } = detectColumns(['Date', 'Filler', 'RealAmount'], [['2026-09-01', '', '12.50']]);
+    expect(mapping.date).toBe(0);
+    expect(mapping.amount).toBe(2);
+  });
+
+  it('skips already-used columns and a blank-sample column while sniffing for a description', () => {
+    const { mapping } = detectColumns(
+      ['Date', 'Amount', 'Blank', 'FreeText'],
+      [['2026-09-01', '12.50', '', 'Some free text here']]
+    );
+    expect(mapping.description).toBe(3);
+  });
+
+  it('tolerates a sample row shorter than the header, and rejects a direction column with no readable content', () => {
+    const { mapping } = detectColumns(
+      ['Date', 'Description', 'Amount', 'Type'],
+      [
+        ['2026-09-01', 'Coffee'], // short row -- Amount and Type cells are missing entirely
+        ['2026-09-02', 'Salary', '2000.00', ''],
+      ]
+    );
+    expect(mapping.direction).toBeNull();
+  });
+
   it('never lets a header match consume the same column for two roles', () => {
     const { mapping } = detectColumns(['Date', 'Description', 'Amount', 'Balance'], [
       ['2026-09-01', 'Tesco', '-12.50', '987.65'],

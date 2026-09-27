@@ -6,3 +6,4 @@
 export * from './tokenize';
 export * from './inferFormat';
 export * from './detectColumns';
+export * from './mapRows';

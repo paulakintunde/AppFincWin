@@ -98,8 +98,10 @@ function wordsOf(s: string): string[] {
   return s.split(/[^a-z0-9]+/).filter((w) => w.length > 0);
 }
 
+// Every keyword in HEADER_KEYWORDS is a non-empty word or phrase, so
+// phraseWords always has at least one entry here -- there is no empty-phrase
+// case to guard against.
 function containsPhrase(headerWords: readonly string[], phraseWords: readonly string[]): boolean {
-  if (phraseWords.length === 0) return false;
   for (let i = 0; i + phraseWords.length <= headerWords.length; i += 1) {
     let match = true;
     for (let j = 0; j < phraseWords.length; j += 1) {
