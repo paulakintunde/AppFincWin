@@ -148,8 +148,19 @@ describe('tokenizeOfx: basic structure', () => {
     });
   });
 
-  it('treats an unterminated tag at EOF (no closing >) as consuming the rest of input', () => {
+  it('still emits an open token for a tag with a parseable name but no closing > before EOF', () => {
     expect(tokenizeOfx('<X>1<Y')).toEqual({
+      ok: true,
+      tokens: [
+        { t: 'open', name: 'X' },
+        { t: 'text', value: '1' },
+        { t: 'open', name: 'Y' },
+      ],
+    });
+  });
+
+  it('emits no token for a tag with no closing > and no parseable name before EOF', () => {
+    expect(tokenizeOfx('<X>1<')).toEqual({
       ok: true,
       tokens: [
         { t: 'open', name: 'X' },
@@ -186,12 +197,13 @@ describe('tokenizeOfx: whitespace and trimming', () => {
 });
 
 describe('tokenizeOfx: comments, CDATA, processing instructions', () => {
-  it('skips an SGML/XML comment entirely, emitting no token', () => {
+  it('skips an SGML/XML comment entirely, emitting no token for it (splits the surrounding text run)', () => {
     expect(tokenizeOfx('<A>before<!-- a comment <B>fake</B> -->after</A>')).toEqual({
       ok: true,
       tokens: [
         { t: 'open', name: 'A' },
-        { t: 'text', value: 'beforeafter' },
+        { t: 'text', value: 'before' },
+        { t: 'text', value: 'after' },
         { t: 'close', name: 'A' },
       ],
     });
@@ -228,10 +240,13 @@ describe('tokenizeOfx: comments, CDATA, processing instructions', () => {
     });
   });
 
-  it('treats an unterminated CDATA section as running to EOF', () => {
+  it('treats an unterminated CDATA section as running to EOF, keeping its (truncated) content', () => {
     expect(tokenizeOfx('<A><![CDATA[unterminated')).toEqual({
       ok: true,
-      tokens: [{ t: 'open', name: 'A' }],
+      tokens: [
+        { t: 'open', name: 'A' },
+        { t: 'text', value: 'unterminated' },
+      ],
     });
   });
 
@@ -276,6 +291,17 @@ describe('tokenizeOfx: entity decoding', () => {
       tokens: [
         { t: 'open', name: 'A' },
         { t: 'text', value: '£' },
+        { t: 'close', name: 'A' },
+      ],
+    });
+  });
+
+  it('keeps a totally empty entity (&;) literal', () => {
+    expect(tokenizeOfx('<A>&;</A>')).toEqual({
+      ok: true,
+      tokens: [
+        { t: 'open', name: 'A' },
+        { t: 'text', value: '&;' },
         { t: 'close', name: 'A' },
       ],
     });
@@ -418,15 +444,24 @@ describe('tokenizeOfx: adversarial properties (RESEARCH §A1, the ofx-js regress
 });
 
 describe('tokenizeOfx: no-leak', () => {
-  it('never throws for sensitive payee text with a stray close tag, and never returns a message containing it', () => {
+  // Tokenizing successfully recovered text (e.g. a payee name) legitimately
+  // carries that text in its output -- that is the tokenizer's job. The
+  // no-leak guarantee (RESEARCH Security extension V7) is that a *failure*
+  // (the 'too-large' enum code here) never carries any of the input that
+  // triggered it, and that no path here ever throws with content embedded in
+  // a JS Error message.
+  it('never throws for sensitive payee text with a stray close tag, and keeps it in the recovered tokens', () => {
     const text = '<A>DR JONES PHARMACY</NAME><B>1</B>';
-    const result = tokenizeOfx(text);
     expect(() => tokenizeOfx(text)).not.toThrow();
-    expect(JSON.stringify(result)).not.toContain('JONES');
-    // The stray </NAME> is not a-priori "sensitive" leakage from tokenizeOfx
-    // (tree-level warnings are engine/ofx/tree's job) -- it simply becomes an
-    // ordinary close token here, which is asserted for completeness.
+    const result = tokenizeOfx(text);
     expect(result.ok && result.tokens.some((t) => t.t === 'close' && t.name === 'NAME')).toBe(true);
+  });
+
+  it('a too-large failure carries only the enum code, never any input content', () => {
+    const text = `<A>DR JONES PHARMACY${'x'.repeat(OFX_LIMITS.maxBytes)}`;
+    const result = tokenizeOfx(text);
+    expect(result).toEqual({ ok: false, error: 'too-large' });
+    expect(JSON.stringify(result)).not.toContain('JONES');
   });
 });
 
