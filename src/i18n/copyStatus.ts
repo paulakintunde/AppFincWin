@@ -26,6 +26,7 @@ export const DRAFT_COPY_KEYS = [
   'consent.neverSent.identity',
   'consent.share',
   'consent.decline',
+  'consent.saveFailed',
   'you.title',
   'you.section.appearance',
   'you.section.privacy',
