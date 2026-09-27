@@ -18,8 +18,8 @@ import {
 } from '../index';
 
 function daysBetween(a: string, b: string): number {
-  const [ay, am, ad] = a.split('-').map(Number);
-  const [by, bm, bd] = b.split('-').map(Number);
+  const [ay, am, ad] = a.split('-').map(Number) as [number, number, number];
+  const [by, bm, bd] = b.split('-').map(Number) as [number, number, number];
   const ta = Date.UTC(ay, am - 1, ad);
   const tb = Date.UTC(by, bm - 1, bd);
   return Math.round((tb - ta) / 86_400_000);
@@ -222,7 +222,7 @@ describe('properties', () => {
         (year, month, day, freq, n) => {
           const anchor = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const result = occurrenceDate(anchor, freq, n);
-          const [ry, rm] = result.split('-').map(Number);
+          const [ry, rm] = result.split('-').map(Number) as [number, number];
           const rd = Number(result.slice(8, 10));
           const maxDay = daysInMonth(ry, rm);
           expect(rd).toBeLessThanOrEqual(maxDay);
