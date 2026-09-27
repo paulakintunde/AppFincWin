@@ -6,6 +6,7 @@
 // or attaches a user id, and stays active even after the analytics service is disabled, because
 // D-18 keeps crash reports on regardless of analytics consent (legitimate interest, disclosed
 // in the privacy policy; re-verified at Compliance).
+import { Platform } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import { getErrorTrackingEnv, type ErrorTrackingEnv } from '@/config/env';
 import { scrubMessage, scrubStackFrame } from './scrub';
@@ -107,6 +108,15 @@ export const FATAL_PERSIST_DELAY_MS = 3000;
 const DELAY_MARKER = '__fincwinFatalPersistDelay';
 
 /**
+ * The delay used when initErrorReporting() is not given one: {@link FATAL_PERSIST_DELAY_MS} on
+ * Android release builds only. iOS already persists fatal envelopes synchronously, so a delay
+ * there would only freeze every crash for nothing (WR-06); __DEV__ keeps the red-box immediate.
+ */
+export function defaultFatalPersistDelayMs(): number {
+  return !__DEV__ && Platform.OS === 'android' ? FATAL_PERSIST_DELAY_MS : 0;
+}
+
+/**
  * Wraps the CURRENT global JS error handler so that, for fatal errors only, it runs after
  * `delayMs`. Must be installed before Sentry.init(): Sentry captures whatever handler exists at
  * init as its "default" and calls it after flushing, so the delay lands exactly between Sentry's
@@ -140,7 +150,7 @@ function globalErrorUtils(): ErrorUtilsLike | undefined {
 
 export interface InitErrorReportingOptions {
   errorUtils?: ErrorUtilsLike;
-  /** Defaults to {@link FATAL_PERSIST_DELAY_MS} in release builds and 0 (off) under __DEV__. */
+  /** Defaults to {@link defaultFatalPersistDelayMs}: 3000 ms on Android release builds, else 0 (off). */
   fatalPersistDelayMs?: number;
 }
 
@@ -200,7 +210,7 @@ export function initErrorReporting(
     const previousHandler = errorUtils?.getGlobalHandler();
     const delayInstalled = installFatalPersistDelay(
       errorUtils,
-      options.fatalPersistDelayMs ?? (__DEV__ ? 0 : FATAL_PERSIST_DELAY_MS)
+      options.fatalPersistDelayMs ?? defaultFatalPersistDelayMs()
     );
 
     try {

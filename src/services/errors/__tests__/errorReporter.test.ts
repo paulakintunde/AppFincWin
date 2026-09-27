@@ -6,7 +6,14 @@
 // PostHog client — so nothing here touches the real getEnv()/Sentry singleton.
 import fs from 'fs';
 import path from 'path';
-import { initErrorReporting, captureError, installFatalPersistDelay } from '../errorReporter';
+import { Platform } from 'react-native';
+import {
+  initErrorReporting,
+  captureError,
+  installFatalPersistDelay,
+  defaultFatalPersistDelayMs,
+  FATAL_PERSIST_DELAY_MS,
+} from '../errorReporter';
 import type { ClientEnv } from '@/config/env';
 
 function makeFakeSentry() {
@@ -469,6 +476,53 @@ describe('fatal persist delay', () => {
     errorUtils.current()(error, true);
     expect(original).toHaveBeenCalledWith(error, true); // immediately, no timer
     warn.mockRestore();
+  });
+
+  // WR-06: iOS persists fatal envelopes synchronously upstream, so only Android release builds
+  // pay the frozen-screen cost.
+  describe('default window per platform', () => {
+    const globals = globalThis as { __DEV__?: boolean };
+    const wasDev = globals.__DEV__;
+    afterEach(() => {
+      globals.__DEV__ = wasDev;
+      jest.restoreAllMocks();
+    });
+
+    it.each([
+      ['android', false, FATAL_PERSIST_DELAY_MS],
+      ['ios', false, 0],
+      ['android', true, 0],
+      ['ios', true, 0],
+    ] as const)('on %s with __DEV__=%s defaults to %i ms', (os, dev, expected) => {
+      jest.replaceProperty(Platform, 'OS', os);
+      globals.__DEV__ = dev;
+      expect(defaultFatalPersistDelayMs()).toBe(expected);
+    });
+
+    it('initErrorReporting leaves the global handler alone on an iOS release build', () => {
+      jest.replaceProperty(Platform, 'OS', 'ios');
+      globals.__DEV__ = false;
+      const errorUtils = makeFakeErrorUtils(jest.fn());
+
+      initErrorReporting(makeEnv(), makeFakeSentry(), { errorUtils });
+
+      expect(errorUtils.setGlobalHandler).not.toHaveBeenCalled();
+    });
+
+    it('initErrorReporting installs the delay on an Android release build', () => {
+      jest.replaceProperty(Platform, 'OS', 'android');
+      globals.__DEV__ = false;
+      const original = jest.fn();
+      const errorUtils = makeFakeErrorUtils(original);
+
+      initErrorReporting(makeEnv(), makeFakeSentry(), { errorUtils });
+
+      expect(errorUtils.setGlobalHandler).toHaveBeenCalledTimes(1);
+      errorUtils.current()(new Error('fatal'), true);
+      expect(original).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(FATAL_PERSIST_DELAY_MS);
+      expect(original).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('does not touch the global handler when Sentry is not being enabled', () => {
