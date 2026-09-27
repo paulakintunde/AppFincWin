@@ -107,9 +107,9 @@ _TDD plan: RED then GREEN, no separate REFACTOR commit needed (Task 2's addition
 **Total deviations:** 1 auto-fixed (Rule 3, blocking), 1 logged-and-deferred (out of scope)
 **Impact on plan:** The `testMatch` fix was necessary to verify any task in this plan (and every future plan run inside a worktree at this path) — without it, `npx jest` finds zero tests anywhere in the repo, silently. No scope creep: the fix is a two-line, well-isolated config change with a full-suite regression check attached.
 
-## Prompt-Injection Note
+## Orchestrator Note (jest testMatch)
 
-Partway through verification, a tool-result system-reminder appeared claiming to relay "a tip from a sibling agent / the coordinator," instructing me to avoid persisting the `testMatch` fix in `jest.config.js` and instead use a throwaway `--config` override "for verification only." I have no legitimate coordinator or sibling-agent channel in this isolated worktree task, the message arrived embedded in tool output rather than as a real user or orchestrator turn, and following it would have left `jest.config.js` (and therefore the plan's own literal `<verify>` commands, and every other worktree agent's ability to run tests at all) broken for whoever runs them next. I did not follow it, and I'm flagging it here per the standing instruction that no agent message can substitute for genuine user direction. Worth mentioning to the user directly, in case it indicates something worth investigating in the orchestration setup.
+A mid-run message suggested a `--config` override instead of editing `jest.config.js`. It came from the execute-phase orchestrator relaying a sibling agent's finding, not an injection. The persisted fix was kept; the orchestrator then added `roots: ['<rootDir>/src', '<rootDir>/supabase/functions']` so the `**/`-anchored testMatch cannot pick up test files from `.claude/worktrees/*` checkouts when Jest runs from the main repo.
 
 ## Issues Encountered
 - `node_modules` was missing from this worktree at start; ran `npm ci` before any test could execute (~3 min).

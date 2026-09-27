@@ -54,6 +54,9 @@ module.exports = {
   // `npx jest --showConfig`: testMatch printed with mixed / and \ separators, 0 matches
   // against 241 candidate files). Anchoring with '**/' instead of '<rootDir>/' sidesteps the
   // rootDir substitution entirely; testPathIgnorePatterns still excludes node_modules.
+  // roots confines the crawl to this checkout's sources, so the '**/' testMatch cannot
+  // pick up tests from nested worktrees under .claude/worktrees/ (gitignored).
+  roots: ['<rootDir>/src', '<rootDir>/supabase/functions'],
   testMatch: ['**/src/**/*.test.ts?(x)', '**/supabase/functions/**/*.test.ts'],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/__tests__/**', '!src/**/*.d.ts', '!src/**/*.typecheck.ts'],
   coverageThreshold,
