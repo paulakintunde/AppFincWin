@@ -69,6 +69,8 @@ export function nextMonth(month: string): string {
 export function monthsForSwitcher(dataMonths: readonly string[], today: string): string[] {
   const current = monthOf(today);
   const next = nextMonth(current);
+  // A Set already guarantees every entry is distinct, so a two-way comparator
+  // (never an a === b tie) is sufficient here.
   const months = new Set<string>([...dataMonths, current, next]);
-  return [...months].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+  return [...months].sort((a, b) => (a < b ? 1 : -1));
 }

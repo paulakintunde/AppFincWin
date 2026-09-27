@@ -94,6 +94,10 @@ describe('monthsForSwitcher', () => {
   it('still includes the current and next month when there is no data at all', () => {
     expect(monthsForSwitcher([], '2026-09-25')).toEqual(['2026-10', '2026-09']);
   });
+
+  it('sorts correctly even when the data months arrive already newest-first', () => {
+    expect(monthsForSwitcher(['2026-09', '2026-07'], '2026-09-25')).toEqual(['2026-10', '2026-09', '2026-07']);
+  });
 });
 
 describe('monthTotals', () => {
