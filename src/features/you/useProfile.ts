@@ -17,6 +17,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { getAnalytics } from '@/services/analytics';
 import { queryKeys } from '@/data/keys';
+import { registerWipeHandler } from '@/services/storage/wipe';
 import type { AccentKey } from '@/theme/accents';
 import type { FontPairingKey } from '@/theme/fonts';
 
@@ -58,8 +59,19 @@ const SESSION_STARTED_AT = Date.now();
 // Guards theme.applyRemote() to once per signed-in user id across every useProfile caller,
 // so a later fetch or a newly mounted screen never re-applies and clobbers an in-flight local
 // selection, but a genuinely different user (or the same user after a sign-out, which resets
-// the theme) gets their saved theme applied again.
+// the theme) gets their saved theme applied again. Only a row fetched or written this session
+// can satisfy it (WR-03): a copy restored from the persisted cache may predate a change made
+// on another device, and the ThemeProvider's own theme cache already covers the cold start.
 let appliedThemeUserId: string | null = null;
+
+// Cleared by the sign-out wipe rather than relying on a mounted useProfile caller rendering
+// once with no user -- the (app) group that hosts every caller unmounts when auth flips.
+registerWipeHandler({
+  id: 'profile-theme-guard',
+  wipe: async () => {
+    appliedThemeUserId = null;
+  },
+});
 
 async function fetchProfile(userId: string): Promise<Profile> {
   const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).single();
@@ -86,17 +98,19 @@ export function useProfile(): UseProfileResult {
 
   const profile = userId !== null && query.data?.id === userId ? query.data : null;
 
+  const fresh = profile !== null && query.dataUpdatedAt >= SESSION_STARTED_AT;
+
   const { applyRemote } = theme;
   useEffect(() => {
     if (!userId) {
       appliedThemeUserId = null;
       return;
     }
-    if (profile && appliedThemeUserId !== profile.id) {
+    if (profile && fresh && appliedThemeUserId !== profile.id) {
       applyRemote(profile.accent, profile.font_pairing);
       appliedThemeUserId = profile.id;
     }
-  }, [userId, profile, applyRemote]);
+  }, [userId, profile, fresh, applyRemote]);
 
   const refresh = useCallback(async (): Promise<void> => {
     if (!userId) return;
@@ -148,7 +162,6 @@ export function useProfile(): UseProfileResult {
   // errored fetch is a settled "no profile", so nothing that gates on this can hang.
   const loading = userId !== null && (isRestoring || (query.isPending && query.fetchStatus === 'fetching'));
   const fetching = userId !== null && query.fetchStatus === 'fetching';
-  const fresh = profile !== null && query.dataUpdatedAt >= SESSION_STARTED_AT;
 
   return { profile, loading, fetching, fresh, saveError, setAccent, setPairing, refresh, patchCached };
 }

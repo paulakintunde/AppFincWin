@@ -20,6 +20,11 @@ jest.mock('../useConsent', () => ({
   }),
 }));
 
+const mockCaptureError = jest.fn();
+jest.mock('@/services/errors', () => ({
+  captureError: (...args: unknown[]) => mockCaptureError(...args),
+}));
+
 jest.mock('expo-router', () => ({
   Redirect: ({ href }: { href: string }) => {
     const { Text } = jest.requireActual('react-native');
@@ -116,5 +121,36 @@ describe('ConsentScreen', () => {
     expect(mockGrant).toHaveBeenCalledTimes(1);
     expect(queryByTestId('redirect')).toBeNull();
     expect(getByTestId('consent-share').props.accessibilityState?.disabled).not.toBe(true);
+  });
+
+  it('shows an inline error when the answer fails to save, and clears it on a saved retry (WR-02)', async () => {
+    mockDecline.mockResolvedValueOnce(false);
+    const { getByTestId, getByText, queryByTestId } = await renderScreen();
+
+    await act(async () => {
+      fireEvent.press(getByTestId('consent-decline'));
+    });
+    expect(getByText('Your choice didn’t save. Try again.')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(getByTestId('consent-decline'));
+    });
+    expect(queryByTestId('consent-save-failed')).toBeNull();
+    await waitFor(() => expect(getByText('/you')).toBeTruthy());
+  });
+
+  it('never leaves both choices disabled when grant() throws (WR-02)', async () => {
+    mockGrant.mockRejectedValue(new Error('boom'));
+    const { getByTestId, queryByTestId } = await renderScreen();
+
+    await act(async () => {
+      fireEvent.press(getByTestId('consent-share'));
+    });
+
+    expect(queryByTestId('redirect')).toBeNull();
+    expect(getByTestId('consent-save-failed')).toBeTruthy();
+    expect(getByTestId('consent-share').props.accessibilityState?.disabled).not.toBe(true);
+    expect(getByTestId('consent-decline').props.accessibilityState?.disabled).not.toBe(true);
+    expect(mockCaptureError).toHaveBeenCalledTimes(1);
   });
 });

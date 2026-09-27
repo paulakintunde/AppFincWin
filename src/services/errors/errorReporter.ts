@@ -6,6 +6,7 @@
 // or attaches a user id, and stays active even after the analytics service is disabled, because
 // D-18 keeps crash reports on regardless of analytics consent (legitimate interest, disclosed
 // in the privacy policy; re-verified at Compliance).
+import { Platform } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import { getErrorTrackingEnv, type ErrorTrackingEnv } from '@/config/env';
 import { scrubMessage, scrubStackFrame } from './scrub';
@@ -107,6 +108,15 @@ export const FATAL_PERSIST_DELAY_MS = 3000;
 const DELAY_MARKER = '__fincwinFatalPersistDelay';
 
 /**
+ * The delay used when initErrorReporting() is not given one: {@link FATAL_PERSIST_DELAY_MS} on
+ * Android release builds only. iOS already persists fatal envelopes synchronously, so a delay
+ * there would only freeze every crash for nothing (WR-06); __DEV__ keeps the red-box immediate.
+ */
+export function defaultFatalPersistDelayMs(): number {
+  return !__DEV__ && Platform.OS === 'android' ? FATAL_PERSIST_DELAY_MS : 0;
+}
+
+/**
  * Wraps the CURRENT global JS error handler so that, for fatal errors only, it runs after
  * `delayMs`. Must be installed before Sentry.init(): Sentry captures whatever handler exists at
  * init as its "default" and calls it after flushing, so the delay lands exactly between Sentry's
@@ -140,7 +150,7 @@ function globalErrorUtils(): ErrorUtilsLike | undefined {
 
 export interface InitErrorReportingOptions {
   errorUtils?: ErrorUtilsLike;
-  /** Defaults to {@link FATAL_PERSIST_DELAY_MS} in release builds and 0 (off) under __DEV__. */
+  /** Defaults to {@link defaultFatalPersistDelayMs}: 3000 ms on Android release builds, else 0 (off). */
   fatalPersistDelayMs?: number;
 }
 
@@ -196,28 +206,37 @@ export function initErrorReporting(
     }
 
     // Before sentry.init(), so Sentry's handler wraps the delaying one (see the function's docs).
-    installFatalPersistDelay(
-      options.errorUtils ?? globalErrorUtils(),
-      options.fatalPersistDelayMs ?? (__DEV__ ? 0 : FATAL_PERSIST_DELAY_MS)
+    const errorUtils = options.errorUtils ?? globalErrorUtils();
+    const previousHandler = errorUtils?.getGlobalHandler();
+    const delayInstalled = installFatalPersistDelay(
+      errorUtils,
+      options.fatalPersistDelayMs ?? defaultFatalPersistDelayMs()
     );
 
-    sentry.init({
-      dsn: resolvedEnv.sentryDsn,
-      // Tags every event with the build channel (development|preview|production) so Sentry's
-      // dashboard can be filtered by it. Omitted entirely (not passed as undefined) when
-      // EXPO_PUBLIC_APP_ENV is missing or unrecognised — see ErrorTrackingEnv['environment'].
-      ...(resolvedEnv.environment ? { environment: resolvedEnv.environment } : {}),
-      // D-18: no email/IP/device-name auto-attached; identity is never linked to this client.
-      sendDefaultPii: false,
-      // Native crash handling is what the D-19 spike found PostHog's JS-only fire-and-forget
-      // flush could not reliably beat: Sentry writes a fatal event to disk on the crashing
-      // thread and uploads it on the *next* launch, rather than racing an in-flight network
-      // call against the OS tearing the process down.
-      enableNativeCrashHandling: true,
-      enableAutoSessionTracking: true,
-      beforeSend: (event) => scrubSentryEvent(event as unknown as ScrubbableSentryEvent) as never,
-      beforeBreadcrumb: (breadcrumb) => scrubBreadcrumb(breadcrumb as unknown as ScrubbableBreadcrumb) as never,
-    });
+    try {
+      sentry.init({
+        dsn: resolvedEnv.sentryDsn,
+        // Tags every event with the build channel (development|preview|production) so Sentry's
+        // dashboard can be filtered by it. Omitted entirely (not passed as undefined) when
+        // EXPO_PUBLIC_APP_ENV is missing or unrecognised — see ErrorTrackingEnv['environment'].
+        ...(resolvedEnv.environment ? { environment: resolvedEnv.environment } : {}),
+        // D-18: no email/IP/device-name auto-attached; identity is never linked to this client.
+        sendDefaultPii: false,
+        // Native crash handling is what the D-19 spike found PostHog's JS-only fire-and-forget
+        // flush could not reliably beat: Sentry writes a fatal event to disk on the crashing
+        // thread and uploads it on the *next* launch, rather than racing an in-flight network
+        // call against the OS tearing the process down.
+        enableNativeCrashHandling: true,
+        enableAutoSessionTracking: true,
+        beforeSend: (event) => scrubSentryEvent(event as unknown as ScrubbableSentryEvent) as never,
+        beforeBreadcrumb: (breadcrumb) => scrubBreadcrumb(breadcrumb as unknown as ScrubbableBreadcrumb) as never,
+      });
+    } catch (error) {
+      // WR-05: with no Sentry to flush, the delay would only freeze every fatal crash for
+      // nothing, so put the original handler back before the outer catch reports the failure.
+      if (delayInstalled && errorUtils && previousHandler) errorUtils.setGlobalHandler(previousHandler);
+      throw error;
+    }
     activeSentry = sentry;
     return 'enabled';
   } catch (error) {

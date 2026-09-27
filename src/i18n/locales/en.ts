@@ -67,6 +67,7 @@ const en = {
     },
     share: 'Share usage',
     decline: 'Not now',
+    saveFailed: 'Your choice didn’t save. Try again.',
   },
   you: {
     title: 'You',

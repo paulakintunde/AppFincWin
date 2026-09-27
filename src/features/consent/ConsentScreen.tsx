@@ -9,6 +9,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space, radii } from '@/theme/layout';
 import { fontSize } from '@/theme/typography';
 import { Screen } from '@/ui/Screen';
+import { captureError } from '@/services/errors';
 import { useConsent } from './useConsent';
 
 export function ConsentScreen() {
@@ -16,18 +17,27 @@ export function ConsentScreen() {
   const { colors, fonts } = useTheme();
   const { grant, decline } = useConsent();
   const [status, setStatus] = useState<'idle' | 'busy' | 'done'>('idle');
+  const [saveFailed, setSaveFailed] = useState(false);
 
-  const handleShare = useCallback(async () => {
+  // Only leave the screen once the answer is saved (and so already visible to the (app)
+  // layout's gate) -- redirecting on a failed write would bounce straight back here. A failed
+  // or thrown write always returns to idle with an inline error, so neither choice can stay
+  // disabled (WR-02).
+  const choose = useCallback(async (answer: () => Promise<boolean>) => {
     setStatus('busy');
-    // Only leave the screen once the answer is saved (and so already visible to the (app)
-    // layout's gate) -- redirecting on a failed write would bounce straight back here.
-    setStatus((await grant()) ? 'done' : 'idle');
-  }, [grant]);
+    setSaveFailed(false);
+    let saved = false;
+    try {
+      saved = await answer();
+    } catch (e) {
+      captureError(e, { area: 'unknown' });
+    }
+    setSaveFailed(!saved);
+    setStatus(saved ? 'done' : 'idle');
+  }, []);
 
-  const handleDecline = useCallback(async () => {
-    setStatus('busy');
-    setStatus((await decline()) ? 'done' : 'idle');
-  }, [decline]);
+  const handleShare = useCallback(() => choose(grant), [choose, grant]);
+  const handleDecline = useCallback(() => choose(decline), [choose, decline]);
 
   if (status === 'done') {
     return <Redirect href="/you" />;
@@ -91,6 +101,16 @@ export function ConsentScreen() {
           </Text>
         </Pressable>
       </View>
+
+      {saveFailed ? (
+        <Text
+          testID="consent-save-failed"
+          accessibilityRole="alert"
+          style={[styles.error, { fontFamily: fonts.body[600], color: colors.danger }]}
+        >
+          {t('consent.saveFailed')}
+        </Text>
+      ) : null}
     </Screen>
   );
 }
@@ -142,5 +162,10 @@ const styles = StyleSheet.create({
   },
   pillLabel: {
     fontSize: fontSize.body,
+  },
+  error: {
+    marginTop: space.gapMd,
+    fontSize: fontSize.label,
+    textAlign: 'center',
   },
 });
