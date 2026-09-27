@@ -48,6 +48,7 @@ Decision numbers are local to this phase. "Phase 0 D-21" and "Phase 1 D-21" refe
   - Where a default is unavoidable, it comes from a small per-market table (US, CA, UK) passed into the engine as input. It is not a constant in engine code.
 - **D-06:** **The default projection return is 0%**, replacing the prototype's 6.5%. It applies to wait-and-save and to investing projections. Money set aside earns nothing unless the user enters a rate. This avoids implying a market return, which could read as a promise or as advice.
 - **D-07:** **Card APR is never invented.** If a card payment has no APR (no card on record, or the card record has no rate), the plan is `missing` with a reason code. The prototype's 22.9% default is removed.
+  - **Refined 2026-09-26 (user, at plan-check):** a card cleared in full at the next statement charges no interest, so it needs no APR. The APR is required, and `missing` with `card_apr_missing` returned when it is absent, only for the `months` and `minimum` payoff plans. No rate is ever invented.
 
 ### What a month means
 - **D-08:** **Spending comes from the average of recent full months**, not the current month (the prototype used `this.items`, the current month only). The average/worst basis the prototype offers for income is mirrored for spending, where "worst" means the highest-spending month.

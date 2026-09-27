@@ -255,10 +255,35 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 0 plans
+**Plans:** 12 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 02.1 to break down)
+
+**Wave 1** *(Phase-2-independent server work and fixtures run first; engine/copy plans precondition-check Phase 2)*
+- [ ] 02.1-01-PLAN.md — Synthetic PDF statement fixtures, generator, expected ledgers, unpdf smoke (W1)
+- [ ] 02.1-02-PLAN.md — Private statement-uploads bucket + owner-folder RLS, hourly purge via Storage API, pgTAP 35 (W1)
+- [ ] 02.1-03-PLAN.md — read-pdf-statement pure core: wire contract, caps, delete-after-read, metadata-only logs (W1)
+- [ ] 02.1-04-PLAN.md — Engine foundation: 'pdf' source + uncertain-row codes, applyUncertainRows, balance delta, dates/years (W1)
+- [ ] 02.1-05-PLAN.md — PDF copy (server variant) + privacy line, analytics fingerprint event, decision record, privacy-policy draft (W1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 02.1-06-PLAN.md — unpdf binding + Deno glue, real-parser Deno test (passwords, deletion), extraction snapshots, CI job (W2)
+- [ ] 02.1-07-PLAN.md — Generic layout reader: lines/columns, rows/figures/sections, response validation, fingerprint, contract guard (W2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 02.1-08-PLAN.md — pdfToDrafts adapter + real-fixture flow through Phase 2's engine + no-leak test (W3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 02.1-09-PLAN.md — PDF sniff + picker, statementPdf read service (offline refusal), pipeline PDF branches + review gate (W4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 02.1-10-PLAN.md — useStatementImport PDF branch: notice, password, sections, year, closing balance, checked-rows gate (W5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 02.1-11-PLAN.md — Screens: reading progress, password sheet, closing-balance prompt, notice, section/year, checked-rows gate (W6)
+
+**Wave 7** *(blocked on Wave 6 completion; after Phase 2's 02-31 push)*
+- [ ] 02.1-12-PLAN.md — Production rollout: schema push [BLOCKING], deploy both functions, live checks, worst-case timing, device walkthrough (W7)
 
 ### Phase 3: Shell
 **Goal**: The app's navigation chrome matches the design system exactly.
@@ -314,7 +339,31 @@ Plans:
   4. The engine derives income steadiness from the coefficient of variation across logged months (not a user-stated answer), computes a household's cost share under the active split rule, finds the largest affordable price by bisection (handling both "nothing is affordable" and "the full price already fits"), and determines card eligibility as blocked/capped/permitted.
   5. The full engine suite is green at the agreed branch-coverage threshold, runs with no React, no I/O and no database access, and `dsecured` reads a boolean field on the loan record rather than matching its name.
   6. The engine produces the options list, the four-way alternatives (suppressing and labelling rows whose money is not genuinely spare) and setback re-assessments, and returns a cash-level first read from rough figures when no full month exists — all as codes and numbers, with no English strings (04-CONTEXT D-11, D-19, D-21).
-**Plans**: TBD
+**Plans**: 12 plans in 6 waves
+Plans:
+**Wave 1**
+- [ ] 04-01-PLAN.md — payoff foundation: Percent type, amortise (DEC-01), futureValue (DEC-02)
+- [ ] 04-02-PLAN.md — card eligibility by item type, secured by field, household share under four split rules (DEC-08/10/11)
+- [ ] 04-03-PLAN.md — golden-fixture harness evaluating the prototype's own Decide code (D-22)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 04-04-PLAN.md — simulateMinimum with explicit never-clears (DEC-03, SC-2), payoff barrel, payoff parity
+- [ ] 04-05-PLAN.md — Decide contracts, behaviour constants, per-market defaults (US/CA/CA-QC/UK), deriveMoney (DEC-07)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 04-06-PLAN.md — resolvePlan for cash/loan/instalment/card/invest with missing reason codes (DEC-04/05/10)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 04-07-PLAN.md — prepareContext + assess: five ledgers, ordered warnings, user-derived limits (DEC-06)
+- [ ] 04-08-PLAN.md — cash-level first read from rough figures (DEC-16)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 04-09-PLAN.md — exact integer bisection and the ordered options list (DEC-09/13)
+- [ ] 04-10-PLAN.md — four-way alternatives with suppression, setbacks (DEC-14/15)
+- [ ] 04-11-PLAN.md — decide golden parity and D-02/D-08/D-12 deviation tests (D-22)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 04-12-PLAN.md — public barrel, codes-only guard, phase gate (DEC-12)
 **UI hint**: no (pure TypeScript engine; deliverable is a green suite and a coverage report)
 
 ### Phase 5: Decide UI
