@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 UI-SPEC approved
+stopped_at: Phase 02.1 planned (12 plans, 7 waves, checker passed)
 last_updated: "2026-09-27T03:22:29.121Z"
-last_activity: 2026-09-27 -- Phase 02.1 planning complete
+last_activity: 2026-09-27 -- Phase 02.1 planning complete (12 plans) and Phase 3 planning complete (16 plans); earlier: Phase 1 closed, Phase 0 review and security audit recorded, Phase 2.1/3/4 context and Phase 2.1/3 UI-SPECs approved
 progress:
   total_phases: 13
   completed_phases: 1
-  total_plans: 88
+  total_plans: 104
   completed_plans: 34
-  percent: 39
+  percent: 33
 ---
 
 # Project State
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): planned (40 plans, 14 waves, checker passed); not started.
-Phase 02.1 (PDF statement import): inserted, not discussed. Phase 04 (decide-engine): context gathered, not planned.
+Phase 02.1 (PDF statement import): planned (12 plans, 7 waves, checker passed); not started. Phase 04 (decide-engine): context gathered, not planned.
 Status: Ready to execute
-Last activity: 2026-09-27 -- Phase 02.1 planning complete
+Last activity: 2026-09-27 -- Phase 02.1 and Phase 3 planning complete
 
 ## Performance Metrics
 
