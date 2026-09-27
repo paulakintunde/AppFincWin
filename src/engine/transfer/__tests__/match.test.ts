@@ -290,6 +290,96 @@ describe('matchTransfers', () => {
     expect(result).toEqual([]);
   });
 
+  it('scores a description that mentions the other account name higher', () => {
+    const withName = matchTransfers({
+      imported: [
+        imported({ index: 0, accountId: 'visa', localDate: '2026-09-05', amount: 5000, name: 'To Savings account' }),
+      ],
+      existing: [existing({ id: 'e1', accountId: 'savings', localDate: '2026-09-05', amount: -5000 })],
+      accounts: ACCOUNTS,
+      perEur: new Map<string, ScaledRate>([['GBP', parseRate('1')]]),
+    });
+    const withoutName = matchTransfers({
+      imported: [imported({ index: 0, accountId: 'visa', localDate: '2026-09-05', amount: 5000, name: 'Groceries' })],
+      existing: [existing({ id: 'e1', accountId: 'savings', localDate: '2026-09-05', amount: -5000 })],
+      accounts: ACCOUNTS,
+      perEur: new Map<string, ScaledRate>([['GBP', parseRate('1')]]),
+    });
+
+    const withNameScore = (withName[0] as { kind: 'pair'; score: number }).score;
+    const withoutNameScore = (withoutName[0] as { kind: 'pair'; score: number }).score;
+    expect(withNameScore).toBe(withoutNameScore + 2);
+  });
+
+  it('skips a cross-currency candidate whose account is missing from the accounts list, and never throws', () => {
+    expect(() =>
+      matchTransfers({
+        imported: [
+          imported({ index: 0, accountId: 'unknown-eur', localDate: '2026-09-05', amount: 11500, currency: 'EUR', name: 'X' }),
+        ],
+        existing: [
+          existing({ id: 'e1', accountId: 'current', localDate: '2026-09-04', amount: -10000, currency: 'GBP' }),
+        ],
+        accounts: ACCOUNTS, // 'unknown-eur' deliberately absent
+        perEur: new Map<string, ScaledRate>([
+          ['GBP', parseRate('1')],
+          ['EUR', parseRate('1.17')],
+        ]),
+      })
+    ).not.toThrow();
+
+    const result = matchTransfers({
+      imported: [
+        imported({ index: 0, accountId: 'unknown-eur', localDate: '2026-09-05', amount: 11500, currency: 'EUR', name: 'X' }),
+      ],
+      existing: [
+        existing({ id: 'e1', accountId: 'current', localDate: '2026-09-04', amount: -10000, currency: 'GBP' }),
+      ],
+      accounts: ACCOUNTS,
+      perEur: new Map<string, ScaledRate>([
+        ['GBP', parseRate('1')],
+        ['EUR', parseRate('1.17')],
+      ]),
+    });
+    expect(result).toEqual([]);
+  });
+
+  it('breaks a tie in score and Δdays by the smaller amount difference', () => {
+    const result = matchTransfers({
+      imported: [
+        imported({ index: 0, accountId: 'eur-acc', localDate: '2026-09-05', amount: 11500, currency: 'EUR', name: 'X' }),
+      ],
+      existing: [
+        existing({ id: 'e-close', accountId: 'current', localDate: '2026-09-05', amount: -10000, currency: 'GBP' }),
+        existing({ id: 'e-far-amount', accountId: 'current', localDate: '2026-09-05', amount: -10050, currency: 'GBP' }),
+      ],
+      accounts: ACCOUNTS,
+      // 10000 GBP -> 11700 EUR (diff 200); 10050 GBP -> 11758.5 -> 11759 EUR (diff 259). Same
+      // score and Δdays for both candidates, so the smaller amount difference should win outright
+      // rather than being reported as a tie.
+      perEur: new Map<string, ScaledRate>([
+        ['GBP', parseRate('1')],
+        ['EUR', parseRate('1.17')],
+      ]),
+    });
+
+    expect(result).toEqual([{ kind: 'pair', importIndex: 0, existingId: 'e-close', score: expect.any(Number) }]);
+  });
+
+  it('breaks a full tie between two imports competing for the same existing leg by importIndex', () => {
+    const result = matchTransfers({
+      imported: [
+        imported({ index: 0, accountId: 'visa', localDate: '2026-09-05', amount: 5000, name: 'Groceries' }),
+        imported({ index: 1, accountId: 'visa', localDate: '2026-09-05', amount: 5000, name: 'Groceries' }),
+      ],
+      existing: [existing({ id: 'e1', accountId: 'current', localDate: '2026-09-05', amount: -5000 })],
+      accounts: ACCOUNTS,
+      perEur: new Map<string, ScaledRate>([['GBP', parseRate('1')]]),
+    });
+
+    expect(result).toEqual([{ kind: 'pair', importIndex: 0, existingId: 'e1', score: expect.any(Number) }]);
+  });
+
   it('sorts output by importIndex', () => {
     const result = matchTransfers({
       imported: [
