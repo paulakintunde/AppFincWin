@@ -1,5 +1,22 @@
 import fc from 'fast-check';
 import { tokenize, detectDelimiter, MAX_IMPORT_ROWS, type Delimiter } from '../tokenize';
+import * as csvBarrel from '../index';
+
+describe('engine/csv barrel', () => {
+  it('re-exports tokenize, detectDelimiter and MAX_IMPORT_ROWS', () => {
+    expect(csvBarrel.tokenize).toBe(tokenize);
+    expect(csvBarrel.detectDelimiter).toBe(detectDelimiter);
+    expect(csvBarrel.MAX_IMPORT_ROWS).toBe(MAX_IMPORT_ROWS);
+  });
+
+  it('re-exports the inferFormat functions', () => {
+    expect(typeof csvBarrel.inferDateFormat).toBe('function');
+    expect(typeof csvBarrel.inferDecimalMark).toBe('function');
+    expect(typeof csvBarrel.inferNumberNotation).toBe('function');
+    expect(typeof csvBarrel.parseCsvDate).toBe('function');
+    expect(typeof csvBarrel.notationFor).toBe('function');
+  });
+});
 
 describe('detectDelimiter', () => {
   it('detects comma when comma is most frequent on the first line', () => {
@@ -52,6 +69,18 @@ describe('tokenize: basic shape', () => {
       rows: [
         ['x, y', 'say "hi"'],
         ['line\nbreak', '3'],
+      ],
+      delimiter: ',',
+    });
+  });
+
+  it('keeps an embedded CRLF verbatim inside a quoted field as one unit', () => {
+    const input = '"line\r\nbreak",3\nx,4';
+    expect(tokenize(input)).toEqual({
+      ok: true,
+      rows: [
+        ['line\r\nbreak', '3'],
+        ['x', '4'],
       ],
       delimiter: ',',
     });
@@ -182,6 +211,16 @@ describe('tokenize: row ceiling (D-18)', () => {
     });
     const ok = tokenize(buildFile(2), { maxDataRows: 2 });
     expect(ok.ok).toBe(true);
+  });
+
+  it('reports too-many-rows immediately when the offending row is followed by a trailing newline', () => {
+    // buildFile has no trailing newline, so its last row is only ever finished at EOF.
+    // This case forces the error to surface from the mid-scan unquoted-newline path instead.
+    expect(tokenize(`${buildFile(3)}\n`, { maxDataRows: 2 })).toEqual({
+      ok: false,
+      error: 'too-many-rows',
+      line: 4,
+    });
   });
 
   it('exports MAX_IMPORT_ROWS as 5000', () => {

@@ -4,3 +4,4 @@
  * files directly.
  */
 export * from './tokenize';
+export * from './inferFormat';

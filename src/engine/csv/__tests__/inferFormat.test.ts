@@ -34,6 +34,10 @@ describe('parseCsvDate', () => {
     expect(parseCsvDate('13-September-2026', 'DMY')).toBe('2026-09-13');
   });
 
+  it('returns null when a remaining part beside a month name is not all-digits', () => {
+    expect(parseCsvDate('ab-Sep-2026', 'DMY')).toBeNull();
+  });
+
   it('returns null for unparseable input', () => {
     expect(parseCsvDate('hello', 'DMY')).toBeNull();
     expect(parseCsvDate('', 'DMY')).toBeNull();
@@ -65,6 +69,12 @@ describe('inferDateFormat', () => {
 
   it('is certain DMY when a day exceeds 12', () => {
     expect(inferDateFormat(['13/09/2026', '01/09/2026'])).toEqual({ kind: 'certain', format: 'DMY' });
+  });
+
+  it('prefers YMD even when a DMY reading of the same 2-digit-year sample also parses', () => {
+    // '13/09/26': YMD reads year=2013 (valid); DMY reads day=13,year=2026 (also valid);
+    // MDY reads month=13 (invalid). Two candidates remain and YMD wins the tie-break.
+    expect(inferDateFormat(['13/09/26'])).toEqual({ kind: 'certain', format: 'YMD' });
   });
 
   it('is certain MDY when a "day" position exceeds 12 under DMY reading', () => {
@@ -118,6 +128,45 @@ describe('inferDecimalMark', () => {
 
   it('is ambiguous on a tie between conflicting single-separator samples', () => {
     expect(inferDecimalMark(['12.5', '12,5'])).toEqual({ kind: 'ambiguous' });
+  });
+});
+
+describe('inferDecimalMark: cleanSample decoration stripping, every kind', () => {
+  it('strips a leading DR/CR word marker', () => {
+    expect(inferDecimalMark(['DR 1,234.56'])).toEqual({ kind: 'certain', mark: '.' });
+    expect(inferDecimalMark(['CR12.50'])).toEqual({ kind: 'certain', mark: '.' });
+  });
+
+  it('strips a bare trailing minus sign', () => {
+    expect(inferDecimalMark(['12.50-'])).toEqual({ kind: 'certain', mark: '.' });
+  });
+
+  it('strips a leading ISO currency code', () => {
+    expect(inferDecimalMark(['GBP 12.50'])).toEqual({ kind: 'certain', mark: '.' });
+  });
+
+  it('strips a trailing ISO currency code', () => {
+    expect(inferDecimalMark(['12.50 EUR'])).toEqual({ kind: 'certain', mark: '.' });
+  });
+
+  it('strips a trailing currency symbol', () => {
+    expect(inferDecimalMark(['12.50£'])).toEqual({ kind: 'certain', mark: '.' });
+  });
+
+  it('finds no evidence in a bare leading ISO-shaped code with nothing after it', () => {
+    expect(inferDecimalMark(['GBP'])).toEqual({ kind: 'ambiguous' });
+  });
+
+  it('finds no evidence in a bare trailing ISO-shaped code with nothing before it', () => {
+    expect(inferDecimalMark(['EUR'])).toEqual({ kind: 'ambiguous' });
+  });
+
+  it('finds no evidence when a sample strips down to nothing but decorations', () => {
+    expect(inferDecimalMark(['()'])).toEqual({ kind: 'ambiguous' });
+  });
+
+  it('finds no evidence when non-digit content remains after the mark', () => {
+    expect(inferDecimalMark(['12.5x'])).toEqual({ kind: 'ambiguous' });
   });
 });
 
@@ -188,6 +237,43 @@ describe('inferNumberNotation', () => {
 
   it('ignores sign/currency/DR-CR/parentheses decorations during inference', () => {
     expect(inferNumberNotation(['(£1,234.56) DR', '12.50'])).toEqual({
+      kind: 'certain',
+      notation: { decimal: '.', group: ',', grouping: 'western' },
+    });
+  });
+
+  it('defaults the group to "." when the decimal is "," and no grouping evidence exists', () => {
+    expect(inferNumberNotation(['12,50'])).toEqual({
+      kind: 'certain',
+      notation: { decimal: ',', group: '.', grouping: 'western' },
+    });
+  });
+
+  it('treats a malformed non-3-digit trailing group as no grouping-shape evidence', () => {
+    expect(inferNumberNotation(['1,23.50'])).toEqual({
+      kind: 'certain',
+      notation: { decimal: '.', group: ',', grouping: 'western' },
+    });
+  });
+
+  it('skips a sample that strips down to nothing but decorations', () => {
+    expect(inferNumberNotation(['()', '12.50'])).toEqual({
+      kind: 'certain',
+      notation: { decimal: '.', group: ',', grouping: 'western' },
+    });
+  });
+
+  it('skips a sample whose integer part is empty (a bare leading decimal mark)', () => {
+    expect(inferNumberNotation(['.50', '12.50'])).toEqual({
+      kind: 'certain',
+      notation: { decimal: '.', group: ',', grouping: 'western' },
+    });
+  });
+
+  it('reads the whole cleaned sample as the integer part when it has no decimal mark at all', () => {
+    // '1234' contributed no decimal-mark vote on its own, but the notation loop still
+    // walks every sample -- it must not find a decimal mark to slice at (lastIndexOf -1).
+    expect(inferNumberNotation(['1234', '12.50'])).toEqual({
       kind: 'certain',
       notation: { decimal: '.', group: ',', grouping: 'western' },
     });
