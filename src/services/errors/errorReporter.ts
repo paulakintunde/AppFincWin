@@ -196,28 +196,37 @@ export function initErrorReporting(
     }
 
     // Before sentry.init(), so Sentry's handler wraps the delaying one (see the function's docs).
-    installFatalPersistDelay(
-      options.errorUtils ?? globalErrorUtils(),
+    const errorUtils = options.errorUtils ?? globalErrorUtils();
+    const previousHandler = errorUtils?.getGlobalHandler();
+    const delayInstalled = installFatalPersistDelay(
+      errorUtils,
       options.fatalPersistDelayMs ?? (__DEV__ ? 0 : FATAL_PERSIST_DELAY_MS)
     );
 
-    sentry.init({
-      dsn: resolvedEnv.sentryDsn,
-      // Tags every event with the build channel (development|preview|production) so Sentry's
-      // dashboard can be filtered by it. Omitted entirely (not passed as undefined) when
-      // EXPO_PUBLIC_APP_ENV is missing or unrecognised — see ErrorTrackingEnv['environment'].
-      ...(resolvedEnv.environment ? { environment: resolvedEnv.environment } : {}),
-      // D-18: no email/IP/device-name auto-attached; identity is never linked to this client.
-      sendDefaultPii: false,
-      // Native crash handling is what the D-19 spike found PostHog's JS-only fire-and-forget
-      // flush could not reliably beat: Sentry writes a fatal event to disk on the crashing
-      // thread and uploads it on the *next* launch, rather than racing an in-flight network
-      // call against the OS tearing the process down.
-      enableNativeCrashHandling: true,
-      enableAutoSessionTracking: true,
-      beforeSend: (event) => scrubSentryEvent(event as unknown as ScrubbableSentryEvent) as never,
-      beforeBreadcrumb: (breadcrumb) => scrubBreadcrumb(breadcrumb as unknown as ScrubbableBreadcrumb) as never,
-    });
+    try {
+      sentry.init({
+        dsn: resolvedEnv.sentryDsn,
+        // Tags every event with the build channel (development|preview|production) so Sentry's
+        // dashboard can be filtered by it. Omitted entirely (not passed as undefined) when
+        // EXPO_PUBLIC_APP_ENV is missing or unrecognised — see ErrorTrackingEnv['environment'].
+        ...(resolvedEnv.environment ? { environment: resolvedEnv.environment } : {}),
+        // D-18: no email/IP/device-name auto-attached; identity is never linked to this client.
+        sendDefaultPii: false,
+        // Native crash handling is what the D-19 spike found PostHog's JS-only fire-and-forget
+        // flush could not reliably beat: Sentry writes a fatal event to disk on the crashing
+        // thread and uploads it on the *next* launch, rather than racing an in-flight network
+        // call against the OS tearing the process down.
+        enableNativeCrashHandling: true,
+        enableAutoSessionTracking: true,
+        beforeSend: (event) => scrubSentryEvent(event as unknown as ScrubbableSentryEvent) as never,
+        beforeBreadcrumb: (breadcrumb) => scrubBreadcrumb(breadcrumb as unknown as ScrubbableBreadcrumb) as never,
+      });
+    } catch (error) {
+      // WR-05: with no Sentry to flush, the delay would only freeze every fatal crash for
+      // nothing, so put the original handler back before the outer catch reports the failure.
+      if (delayInstalled && errorUtils && previousHandler) errorUtils.setGlobalHandler(previousHandler);
+      throw error;
+    }
     activeSentry = sentry;
     return 'enabled';
   } catch (error) {

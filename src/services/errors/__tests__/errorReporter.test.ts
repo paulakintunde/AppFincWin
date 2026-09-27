@@ -453,6 +453,24 @@ describe('fatal persist delay', () => {
     expect(original).toHaveBeenCalledTimes(1);
   });
 
+  it('restores the original handler when Sentry.init throws, so fatals are not delayed for nothing (WR-05)', () => {
+    const original = jest.fn();
+    const errorUtils = makeFakeErrorUtils(original);
+    const sentry = makeFakeSentry();
+    sentry.init.mockImplementation(() => {
+      throw new TypeError('native module missing');
+    });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    expect(initErrorReporting(makeEnv(), sentry, { errorUtils, fatalPersistDelayMs: 3000 })).toBe('failed');
+
+    expect(errorUtils.current()).toBe(original);
+    const error = new Error('fatal');
+    errorUtils.current()(error, true);
+    expect(original).toHaveBeenCalledWith(error, true); // immediately, no timer
+    warn.mockRestore();
+  });
+
   it('does not touch the global handler when Sentry is not being enabled', () => {
     const errorUtils = makeFakeErrorUtils(jest.fn());
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
