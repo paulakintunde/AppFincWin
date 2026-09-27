@@ -185,13 +185,13 @@ Plans:
 - [x] 02-37-PLAN.md — Engine: transfer matching and pair rules, account standing (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 02-02-PLAN.md — Engine: RFC-4180 CSV tokenizer, 5,000-row ceiling, date and number-notation inference (W2)
-- [ ] 02-08-PLAN.md — Schema: recurring series, materialiser + cron, series RPCs, mirror test (W2)
-- [ ] 02-11-PLAN.md — DB layer: row types (provenance, transfer, limits, import profiles), view reads, search, transfer reads, batch insert, keys (W2)
-- [ ] 02-19-PLAN.md — UI primitives: Sheet, Row, Pill, Chip, SwatchDot, glyph, toast, empty state (W2)
-- [ ] 02-33-PLAN.md — Engine: OFX header split, linear tokenizer with budgets, tree builder; coverage bucket extension (W2)
-- [ ] 02-35-PLAN.md — Engine: conversion to the stored sign rule, bigint running-balance reconciliation (W2)
-- [ ] 02-38-PLAN.md — Schema: deferred transfer pair trigger, import_profiles table (W2)
+- [x] 02-02-PLAN.md — Engine: RFC-4180 CSV tokenizer, 5,000-row ceiling, date and number-notation inference (W2)
+- [x] 02-08-PLAN.md — Schema: recurring series, materialiser + cron, series RPCs, mirror test (W2)
+- [x] 02-11-PLAN.md — DB layer: row types (provenance, transfer, limits, import profiles), view reads, search, transfer reads, batch insert, keys (W2)
+- [x] 02-19-PLAN.md — UI primitives: Sheet, Row, Pill, Chip, SwatchDot, glyph, toast, empty state (W2)
+- [x] 02-33-PLAN.md — Engine: OFX header split, linear tokenizer with budgets, tree builder; coverage bucket extension (W2)
+- [x] 02-35-PLAN.md — Engine: conversion to the stored sign rule, bigint running-balance reconciliation (W2)
+- [x] 02-38-PLAN.md — Schema: deferred transfer pair trigger, import_profiles table (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 02-03-PLAN.md — Engine: CSV column detection (balance/direction/limit) and sign-free StatementDraft mapping (W3)
@@ -255,7 +255,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 7/40 plans executed
+**Plans:** 14/40 plans executed
 
 Plans:
 
