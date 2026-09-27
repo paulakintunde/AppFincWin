@@ -8,6 +8,7 @@ import { supabase } from '@/services/supabase';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/you/useProfile';
 import { getAnalytics } from '@/services/analytics';
+import { registerWipeHandler } from '@/services/storage/wipe';
 
 export interface UseConsentResult {
   consent: 'granted' | 'declined' | null;
@@ -19,11 +20,23 @@ export interface UseConsentResult {
   /** True only when a loaded profile row genuinely has no consent recorded. A failed or
    * missing profile fetch never prompts (the prompt is re-offered once a fetch succeeds). */
   needsPrompt: boolean;
-  /** Resolves true once the answer is saved; false if the write failed (nothing changes). */
+  /** Resolves true once the answer is saved; false if the write failed (nothing changes on the
+   * server; decline() still turns analytics off on this device). */
   grant(): Promise<boolean>;
   decline(): Promise<boolean>;
   setEnabled(on: boolean): Promise<boolean>;
 }
+
+// WR-01: a user who declined on this device this session, even if the server write failed and
+// the stored row still reads 'granted'. Module-level so no other useConsent consumer (or a
+// later mount) re-enables analytics from that stale row; cleared by a successful grant().
+let declinedLocallyUserId: string | null = null;
+registerWipeHandler({
+  id: 'consent-declined-locally',
+  wipe: async () => {
+    declinedLocallyUserId = null;
+  },
+});
 
 export function useConsent(): UseConsentResult {
   const { user } = useAuth();
@@ -61,19 +74,21 @@ export function useConsent(): UseConsentResult {
     if (!user) return false;
     const ok = await writeConsent('granted');
     if (!ok) return false;
+    declinedLocallyUserId = null;
     getAnalytics().enable(user.id);
     enabledOnceRef.current = true;
     getAnalytics().track('analytics_opted_in', {});
     return true;
   }, [user, writeConsent]);
 
+  // WR-01: withdrawal takes effect on this device first, whatever happens to the server write
+  // (GDPR Art. 7(3)); a false result still tells the caller the answer was not saved.
   const decline = useCallback(async (): Promise<boolean> => {
-    const ok = await writeConsent('declined');
-    if (!ok) return false;
-    await getAnalytics().disable();
+    declinedLocallyUserId = user?.id ?? null;
     enabledOnceRef.current = false;
-    return true;
-  }, [writeConsent]);
+    await getAnalytics().disable();
+    return writeConsent('declined');
+  }, [user, writeConsent]);
 
   const setEnabled = useCallback((on: boolean) => (on ? grant() : decline()), [grant, decline]);
 
@@ -88,7 +103,7 @@ export function useConsent(): UseConsentResult {
       return;
     }
     if (!fresh) return;
-    if (consent === 'granted' && !enabledOnceRef.current) {
+    if (consent === 'granted' && !enabledOnceRef.current && declinedLocallyUserId !== user.id) {
       getAnalytics().enable(user.id);
       enabledOnceRef.current = true;
     } else if (consent !== 'granted' && enabledOnceRef.current) {

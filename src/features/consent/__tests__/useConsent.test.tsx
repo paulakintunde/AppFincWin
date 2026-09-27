@@ -11,6 +11,7 @@ import { Text } from 'react-native';
 import { render, renderHook, waitFor, act } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { queryKeys } from '@/data/keys';
+import { wipeDeviceData } from '@/services/storage/wipe';
 import { useConsent, type UseConsentResult } from '../useConsent';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
@@ -68,7 +69,9 @@ function newClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  // Clears useConsent's module-level "declined on this device" flag (as sign-out does).
+  await wipeDeviceData();
   jest.clearAllMocks();
   mockUser = { id: USER_ID };
   mockServerConsent = null;
@@ -137,6 +140,43 @@ describe('useConsent shared across consumers', () => {
     expect(result.current.consent).toBeNull();
     expect(result.current.needsPrompt).toBe(true);
     expect(mockEnable).not.toHaveBeenCalled();
+  });
+
+  it('decline() turns analytics off on the device even when the server write fails (WR-01)', async () => {
+    mockServerConsent = 'granted';
+    const client = newClient();
+    let remount = false;
+    function Probe() {
+      const c = useConsent();
+      return <Text testID="probe">{c.consent}</Text>;
+    }
+    const { result, rerender } = await renderHook(() => useConsent(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={client}>
+          {children}
+          {remount ? <Probe /> : null}
+        </QueryClientProvider>
+      ),
+    });
+    await waitFor(() => expect(mockEnable).toHaveBeenCalledTimes(1));
+
+    mockUpdateEq.mockResolvedValue({ error: { message: 'network error' } });
+    let ok: boolean | undefined;
+    await act(async () => {
+      ok = await result.current.decline();
+    });
+
+    expect(ok).toBe(false);
+    expect(mockDisable).toHaveBeenCalledTimes(1);
+    expect(result.current.consent).toBe('granted'); // the server still says granted
+
+    // A consumer mounting later must not re-enable from the stale 'granted' row.
+    remount = true;
+    await rerender({});
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: queryKeys.profile(USER_ID) });
+    });
+    expect(mockEnable).toHaveBeenCalledTimes(1);
   });
 });
 
