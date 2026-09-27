@@ -255,10 +255,35 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 0 plans
+**Plans:** 12 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 02.1 to break down)
+
+**Wave 1** *(Phase-2-independent server work and fixtures run first; engine/copy plans precondition-check Phase 2)*
+- [ ] 02.1-01-PLAN.md — Synthetic PDF statement fixtures, generator, expected ledgers, unpdf smoke (W1)
+- [ ] 02.1-02-PLAN.md — Private statement-uploads bucket + owner-folder RLS, hourly purge via Storage API, pgTAP 35 (W1)
+- [ ] 02.1-03-PLAN.md — read-pdf-statement pure core: wire contract, caps, delete-after-read, metadata-only logs (W1)
+- [ ] 02.1-04-PLAN.md — Engine foundation: 'pdf' source + uncertain-row codes, applyUncertainRows, balance delta, dates/years (W1)
+- [ ] 02.1-05-PLAN.md — PDF copy (server variant) + privacy line, analytics fingerprint event, decision record, privacy-policy draft (W1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 02.1-06-PLAN.md — unpdf binding + Deno glue, real-parser Deno test (passwords, deletion), extraction snapshots, CI job (W2)
+- [ ] 02.1-07-PLAN.md — Generic layout reader: lines/columns, rows/figures/sections, response validation, fingerprint, contract guard (W2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 02.1-08-PLAN.md — pdfToDrafts adapter + real-fixture flow through Phase 2's engine + no-leak test (W3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 02.1-09-PLAN.md — PDF sniff + picker, statementPdf read service (offline refusal), pipeline PDF branches + review gate (W4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 02.1-10-PLAN.md — useStatementImport PDF branch: notice, password, sections, year, closing balance, checked-rows gate (W5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 02.1-11-PLAN.md — Screens: reading progress, password sheet, closing-balance prompt, notice, section/year, checked-rows gate (W6)
+
+**Wave 7** *(blocked on Wave 6 completion; after Phase 2's 02-31 push)*
+- [ ] 02.1-12-PLAN.md — Production rollout: schema push [BLOCKING], deploy both functions, live checks, worst-case timing, device walkthrough (W7)
 
 ### Phase 3: Shell
 **Goal**: The app's navigation chrome matches the design system exactly.
