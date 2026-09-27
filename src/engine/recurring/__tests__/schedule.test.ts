@@ -12,7 +12,10 @@ import {
   RECURRING_FREQS,
   type RecurringFreq,
   type RecurringSchedule,
-} from '../schedule';
+  // Imported via the barrel (not '../schedule' directly) so `index.ts`'s
+  // re-export statement is exercised too -- it has no logic of its own to
+  // test, only coverage to earn, exactly like every other engine/ barrel.
+} from '../index';
 
 function daysBetween(a: string, b: string): number {
   const [ay, am, ad] = a.split('-').map(Number);
@@ -145,6 +148,14 @@ describe('occurrencesBetween', () => {
 
   it('returns an empty array when from is after to', () => {
     expect(occurrencesBetween(monthlySchedule, '2026-12-31', '2026-01-01')).toEqual([]);
+  });
+
+  it('throws RangeError for an invalid fromInclusive date', () => {
+    expect(() => occurrencesBetween(monthlySchedule, '2026-02-30', '2026-12-31')).toThrow(RangeError);
+  });
+
+  it('throws RangeError for an invalid toInclusive date', () => {
+    expect(() => occurrencesBetween(monthlySchedule, '2026-01-01', '2026-02-30')).toThrow(RangeError);
   });
 
   it('skips dates before fromInclusive without iterating from the anchor', () => {
