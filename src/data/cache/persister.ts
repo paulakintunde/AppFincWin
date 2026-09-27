@@ -17,7 +17,9 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // D-15: bump this whenever any cached row shape changes. persistQueryClient compares this
 // against the buster stored alongside the persisted blob and discards on mismatch, so an
 // app upgrade never hydrates the client with a shape it no longer expects.
-export const CACHE_SCHEMA_VERSION = '1';
+// Phase 2 added transaction fields (including import provenance and transfer links) and new
+// query shapes -- bumped 1 -> 2 (D-15 buster).
+export const CACHE_SCHEMA_VERSION = '2';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's

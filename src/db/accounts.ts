@@ -19,6 +19,8 @@ export const ACCOUNT_INSERT_KEYS = [
   'kind',
   'currency',
   'opening_balance',
+  'overdraft_limit',
+  'credit_limit',
 ] as const satisfies readonly (keyof NewAccount)[];
 
 export const ACCOUNT_PATCH_KEYS = [
@@ -26,10 +28,12 @@ export const ACCOUNT_PATCH_KEYS = [
   'kind',
   'opening_balance',
   'archived_at',
+  'overdraft_limit',
+  'credit_limit',
 ] as const satisfies readonly (keyof AccountPatch)[];
 
 export const ACCOUNT_COLUMNS =
-  'id, household_id, created_by, name, kind, currency, opening_balance, archived_at, version, created_at, updated_at';
+  'id, household_id, created_by, name, kind, currency, opening_balance, archived_at, updated_by, overdraft_limit, credit_limit, version, created_at, updated_at';
 
 const ENTITY = 'accounts' as const;
 
@@ -55,7 +59,11 @@ export async function fetchAccounts(client: DbClient, householdId: string): Prom
 
 export async function insertAccount(client: DbClient, account: NewAccount): Promise<AccountRow> {
   const row: Record<string, unknown> = {};
-  for (const key of ACCOUNT_INSERT_KEYS) row[key] = account[key];
+  // An old caller never sets overdraft_limit/credit_limit -- skip undefined so it never sends
+  // them at all, rather than sending an explicit null it never asked for.
+  for (const key of ACCOUNT_INSERT_KEYS) {
+    if (account[key] !== undefined) row[key] = account[key];
+  }
 
   const { data, error, status } = await client.from('accounts').insert(row).select(ACCOUNT_COLUMNS).single();
 
