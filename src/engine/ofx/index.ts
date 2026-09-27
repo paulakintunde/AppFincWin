@@ -4,3 +4,6 @@
  */
 export * from './tokenize';
 export * from './tree';
+export * from './date';
+export * from './amount';
+export * from './parse';
