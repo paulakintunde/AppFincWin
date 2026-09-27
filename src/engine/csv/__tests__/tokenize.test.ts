@@ -257,7 +257,14 @@ describe('tokenize: round-trip property (fast-check)', () => {
         fc
           .array(fc.array(fc.string(), { minLength: 1, maxLength: 6 }), { minLength: 1, maxLength: 20 })
           .map(toRectangular)
-          .filter((matrix) => matrix.every((row) => row.some((cell) => cell.trim() !== ''))),
+          .filter(
+            (matrix) =>
+              matrix.every((row) => row.some((cell) => cell.trim() !== '')) &&
+              // tokenize strips a *leading* BOM defensively (any caller's raw text may carry
+              // one) -- exclude the one case where that would rewrite user content: the very
+              // first cell of the first row itself starting with a literal BOM character.
+              !(matrix[0] as string[])[0]?.startsWith('﻿')
+          ),
         fc.constantFrom<Delimiter>(',', ';', '\t'),
         fc.constantFrom('\n', '\r\n', '\r'),
         (matrix, delimiter, lineEnding) => {
