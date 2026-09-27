@@ -176,13 +176,13 @@ Plans:
 **Plans**: 40 plans in 14 waves (31 original plans revised in place for the 2026-09-25 import extension, plus 02-32…02-40)
 Plans:
 **Wave 1**
-- [ ] 02-01-PLAN.md — Engine: recurring schedule maths + shared TS/SQL fixture (W1)
-- [ ] 02-05-PLAN.md — Engine: undo steps, inverses (incl. transfer labels, import inverse at post-link versions), bulk planner, rollback, refusal descriptor (W1)
-- [ ] 02-06-PLAN.md — Engine: month totals (transfers excluded), filters/search, status rules, balances, built-in categories (W1)
-- [ ] 02-07-PLAN.md — Schema: categories + seeding, transaction record fields incl. import provenance and transfer_id, account limits, transactions_active, trigram index (W1)
-- [ ] 02-10-PLAN.md — Phase 2 copy catalogue (statement, transfers, standing, format, reconciliation), widened ANL-05 events, tokens (W1)
-- [ ] 02-32-PLAN.md — Engine: parseNotatedAmount, StatementDraft/FormatProfile contracts, byte decoder (CP1252), format sniffing (W1)
-- [ ] 02-37-PLAN.md — Engine: transfer matching and pair rules, account standing (W1)
+- [x] 02-01-PLAN.md — Engine: recurring schedule maths + shared TS/SQL fixture (W1)
+- [x] 02-05-PLAN.md — Engine: undo steps, inverses (incl. transfer labels, import inverse at post-link versions), bulk planner, rollback, refusal descriptor (W1)
+- [x] 02-06-PLAN.md — Engine: month totals (transfers excluded), filters/search, status rules, balances, built-in categories (W1)
+- [x] 02-07-PLAN.md — Schema: categories + seeding, transaction record fields incl. import provenance and transfer_id, account limits, transactions_active, trigram index (W1)
+- [x] 02-10-PLAN.md — Phase 2 copy catalogue (statement, transfers, standing, format, reconciliation), widened ANL-05 events, tokens (W1)
+- [x] 02-32-PLAN.md — Engine: parseNotatedAmount, StatementDraft/FormatProfile contracts, byte decoder (CP1252), format sniffing (W1)
+- [x] 02-37-PLAN.md — Engine: transfer matching and pair rules, account standing (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 02-02-PLAN.md — Engine: RFC-4180 CSV tokenizer, 5,000-row ceiling, date and number-notation inference (W2)
@@ -255,7 +255,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 12 plans
+**Plans:** 7/40 plans executed
 
 Plans:
 
