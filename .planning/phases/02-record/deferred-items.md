@@ -14,3 +14,13 @@ task's changes).
   flaky render timeout under load (the sandbox's full-suite run took over
   five minutes across 77 suites). Not fixed here — out of scope for this
   plan. Re-run in isolation or raise the test's timeout if it recurs.
+
+## From 02-33 (OFX header split, tokenizer and tree)
+
+- **Recurred:** `src/features/you/__tests__/YouScreen.test.tsx`'s same test
+  (`YouScreen identity › renders the user's full name and email sub-label`)
+  timed out again in this plan's `npm run test:coverage` full-suite run
+  (2866/2867 passing otherwise, the one failure being this test). Not
+  modified by this plan, and unrelated to `engine/ofx`. Confirms the 02-01
+  entry above: this is a flaky render timeout under full-suite load, not a
+  regression introduced here.
