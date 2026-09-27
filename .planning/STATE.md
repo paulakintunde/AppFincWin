@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 planned (16 plans, checker passed with 3 warnings)
-last_updated: "2026-09-27T03:17:31.105Z"
-last_activity: 2026-09-27 -- Phase 3 planning complete (16 plans); earlier: Phase 1 closed, Phase 0 review and security audit recorded, Phase 2.1/3/4 context and Phase 2.1/3 UI-SPECs approved
+stopped_at: Phase 3 UI-SPEC approved
+last_updated: "2026-09-27T07:15:44.654Z"
+last_activity: 2026-09-27 -- Phase 02 execution started
 progress:
   total_phases: 13
   completed_phases: 1
@@ -21,16 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 02 — record (planned, 40 plans, ready to execute); Phase 00 closing out (00-07, 00-20 wait on D-U-N-S / Apple)
+**Current focus:** Phase 02 — record
 
 ## Current Position
 
+Phase: 02 (record) — EXECUTING
+Plan: 1 of 40
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): planned (40 plans, 14 waves, checker passed); not started.
 Phase 02.1 (PDF statement import): inserted, not discussed. Phase 04 (decide-engine): context gathered, not planned.
-Status: Ready to execute
-Last activity: 2026-09-27 -- Phase 3 planning complete
+Status: Executing Phase 02
+Last activity: 2026-09-27 -- Phase 02 execution started
 
 ## Performance Metrics
 
