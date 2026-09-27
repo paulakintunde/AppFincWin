@@ -1,3 +1,6 @@
+// D-18, WR-04: must stay the FIRST import -- it initialises error reporting as a side effect,
+// before any later import (e.g. AuthProvider -> services/supabase) can throw at load time.
+import '@/services/errors/boot';
 import '@/i18n';
 import { createContext, useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
@@ -9,14 +12,11 @@ import { ThemeProvider, useTheme, useThemeFonts } from '@/theme';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { useMinVersionGate } from '@/features/system/useMinVersionGate';
 import { resolveRoute, type Route } from '@/features/system/routeDecision';
-import { initErrorReporting, captureError } from '@/services/errors';
+import { captureError } from '@/services/errors';
 import { QueryProvider } from '@/data/QueryProvider';
 import { setFailureReporter } from '@/data/sync/failedWrites';
 import { AppStatusBar } from '@/ui/AppStatusBar';
 
-// D-18: always-on, independent of analytics consent — initialised unconditionally at boot,
-// before anything else can throw.
-initErrorReporting();
 SplashScreen.preventAutoHideAsync();
 
 // T-01-15-01: every permanently failed or conflicting write is reported as a scrubbed
