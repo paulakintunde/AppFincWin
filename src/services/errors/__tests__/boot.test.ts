@@ -31,6 +31,7 @@ beforeEach(() => {
 describe('error-reporting boot module (WR-04)', () => {
   it('initialises error reporting as a side effect of being imported', () => {
     jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       require('../boot');
     });
     expect(mockEvents).toEqual(['initErrorReporting']);
@@ -39,6 +40,7 @@ describe('error-reporting boot module (WR-04)', () => {
   it('runs before any root-layout import that calls getEnv() at load time', () => {
     jest.isolateModules(() => {
       // The misconfigured env makes the layout's own import chain throw, as it would at boot.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       expect(() => require('../../../../app/_layout')).toThrow(/EnvError/);
     });
     expect(mockEvents[0]).toBe('initErrorReporting');
