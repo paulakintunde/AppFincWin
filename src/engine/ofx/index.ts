@@ -3,3 +3,4 @@
  * extraction) import from here, not from the individual files directly.
  */
 export * from './tokenize';
+export * from './tree';

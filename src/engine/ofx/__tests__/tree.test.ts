@@ -101,10 +101,18 @@ describe('buildOfxTree: warnings', () => {
 });
 
 describe('buildOfxTree: budgets', () => {
-  it('rejects more than 20,000 elements with too-large', () => {
+  it('rejects more than 20,000 leaf elements with too-large', () => {
     const tokens: OfxToken[] = [];
     for (let i = 0; i < 20_001; i += 1) {
       tokens.push({ t: 'open', name: 'X' }, { t: 'text', value: '1' });
+    }
+    expect(buildOfxTree(tokens)).toEqual({ ok: false, error: 'too-large' });
+  });
+
+  it('rejects more than 20,000 aggregate (non-leaf) elements with too-large', () => {
+    const tokens: OfxToken[] = [];
+    for (let i = 0; i < 20_001; i += 1) {
+      tokens.push({ t: 'open', name: 'X' }, { t: 'close', name: 'X' });
     }
     expect(buildOfxTree(tokens)).toEqual({ ok: false, error: 'too-large' });
   });
@@ -189,7 +197,7 @@ describe('findAll / child / childText', () => {
 });
 
 describe('serialisation equivalence (SGML unclosed/closed, XML, single-line, CRLF, random whitespace)', () => {
-  const leaves: ReadonlyArray<[string, string]> = [
+  const leaves: readonly [string, string][] = [
     ['TRNTYPE', 'DEBIT'],
     ['DTPOSTED', '20260912'],
     ['TRNAMT', '-12.50'],

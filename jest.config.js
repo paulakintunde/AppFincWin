@@ -15,9 +15,12 @@ process.env.EXPO_PUBLIC_USE_RN_FETCH = '1';
 
 // D-21: engine/ branch-coverage thresholds are per-directory, but jest errors if a
 // threshold path matches no files. Only add a threshold for a folder once it has real
-// source, so the 100% folders (money/decide/payoff/split, and Phase 2's
-// recurring/csv/categorize/undo/activity) can arrive in later phases without anyone
-// needing to remember to edit this config.
+// source, so the 100% folders (money/decide/payoff/split, Phase 2's
+// recurring/csv/categorize/undo/activity, and the statement-import extension
+// folders ofx/statement/transfer/accounts) can arrive in later phases without
+// anyone needing to remember to edit this config. The import extension folders
+// are 100% too: a wrong sign, balance or transfer pair moves real money the
+// wrong way.
 const isSource = (f) => /\.(ts|tsx)$/.test(f) && !/\.test\.tsx?$/.test(f) && !/\.d\.ts$/.test(f);
 function hasSource(dir) {
   if (!fs.existsSync(dir)) return false;
@@ -33,7 +36,7 @@ const REST = { branches: 95, functions: 95, lines: 95, statements: 95 };
 
 const coverageThreshold = {};
 if (hasSource('src/engine')) coverageThreshold['./src/engine/'] = REST; // D-21: 95% on the rest of engine/
-for (const f of ['money', 'decide', 'payoff', 'split', 'recurring', 'csv', 'categorize', 'undo', 'activity']) {
+for (const f of ['money', 'decide', 'payoff', 'split', 'recurring', 'csv', 'categorize', 'undo', 'activity', 'ofx', 'statement', 'transfer', 'accounts']) {
   // D-21: 100% folders
   if (hasSource(`src/engine/${f}`)) coverageThreshold[`./src/engine/${f}/`] = FULL;
 }
