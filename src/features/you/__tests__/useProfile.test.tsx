@@ -5,6 +5,8 @@
 import type { ReactNode } from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { queryKeys } from '@/data/keys';
+import { wipeDeviceData } from '@/services/storage/wipe';
 import { useProfile } from '../useProfile';
 
 // useProfile reads the shared profile row from the TanStack Query cache, so every render
@@ -56,7 +58,9 @@ const PROFILE_ROW = {
   analytics_consent_at: null,
 };
 
-beforeEach(() => {
+beforeEach(async () => {
+  // Sign-out's wipe clears the module-level once-per-user theme guard (WR-03).
+  await wipeDeviceData();
   jest.clearAllMocks();
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   mockUser = { id: '11111111-1111-4111-8111-111111111111' };
@@ -144,6 +148,40 @@ describe('useProfile', () => {
     });
 
     expect(result.current.b.profile?.accent).toBe('rust');
+  });
+
+  it('a stale persisted row never applies its theme; the fresh fetch does (WR-03)', async () => {
+    let release: () => void = () => undefined;
+    mockSingle.mockReturnValue(
+      new Promise((resolve) => {
+        release = () => resolve({ data: { ...PROFILE_ROW, accent: 'navy', font_pairing: 'modern' }, error: null });
+      })
+    );
+    // As restored from the persisted cache: written in an earlier app session.
+    client.setQueryData(queryKeys.profile(PROFILE_ROW.id), PROFILE_ROW, { updatedAt: 1 });
+
+    const { result } = await renderHook(() => useProfile(), { wrapper });
+    expect(result.current.profile?.accent).toBe('green');
+    expect(mockApplyRemote).not.toHaveBeenCalled();
+
+    await act(async () => {
+      release();
+    });
+    await waitFor(() => expect(mockApplyRemote).toHaveBeenCalledWith('navy', 'modern'));
+    expect(mockApplyRemote).toHaveBeenCalledTimes(1);
+  });
+
+  it('the sign-out wipe re-arms the theme guard for the same user signing back in (WR-03)', async () => {
+    const first = await renderHook(() => useProfile(), { wrapper });
+    await waitFor(() => expect(mockApplyRemote).toHaveBeenCalledTimes(1));
+    // The (app) group unmounts on sign-out without ever rendering a signed-out caller.
+    await first.unmount();
+
+    await wipeDeviceData();
+    client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+    await renderHook(() => useProfile(), { wrapper });
+
+    await waitFor(() => expect(mockApplyRemote).toHaveBeenCalledTimes(2));
   });
 
   it('a failed fetch settles loading to false with no profile', async () => {
