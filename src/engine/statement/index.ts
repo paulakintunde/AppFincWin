@@ -9,3 +9,4 @@ export * from './decodeText';
 export * from './sniffFormat';
 export * from './convert';
 export * from './reconcile';
+export * from './profile';
