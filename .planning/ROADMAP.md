@@ -194,11 +194,11 @@ Plans:
 - [x] 02-38-PLAN.md — Schema: deferred transfer pair trigger, import_profiles table (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 02-03-PLAN.md — Engine: CSV column detection (balance/direction/limit) and sign-free StatementDraft mapping (W3)
-- [ ] 02-09-PLAN.md — Schema: undo_log, apply_patches (transfer/limit keys), undo/rollback RPCs, tombstone purge, read RPCs (W3)
-- [ ] 02-12-PLAN.md — DB layer: categories and recurring-series RPC wrappers (W3)
-- [ ] 02-34-PLAN.md — Engine: OFX dates, amounts and statement extraction + synthetic fixtures (W3)
-- [ ] 02-36-PLAN.md — Engine: format-profile inference anchored on account kind, flip (W3)
+- [x] 02-03-PLAN.md — Engine: CSV column detection (balance/direction/limit) and sign-free StatementDraft mapping (W3)
+- [x] 02-09-PLAN.md — Schema: undo_log, apply_patches (transfer/limit keys), undo/rollback RPCs, tombstone purge, read RPCs (W3)
+- [x] 02-12-PLAN.md — DB layer: categories and recurring-series RPC wrappers (W3)
+- [x] 02-34-PLAN.md — Engine: OFX dates, amounts and statement extraction + synthetic fixtures (W3)
+- [x] 02-36-PLAN.md — Engine: format-profile inference anchored on account kind, flip (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 02-04-PLAN.md — Engine: category guessing, occurrence-count duplicates (FITID, ±2-day cross-format), pending-bill match, recurring suggestions (W4)
@@ -255,7 +255,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 14/40 plans executed
+**Plans:** 19/40 plans executed
 
 Plans:
 
