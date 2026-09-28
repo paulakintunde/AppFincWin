@@ -7,12 +7,19 @@
 // to the original two (see registerCustomCurrencyMutations/registerMoneyPrefsMutations below).
 import type { QueryClient } from '@tanstack/react-query';
 import { registerAccountMutations } from './accounts';
+import { registerUndoCaptureMutations } from './undoCapture';
 import { registerTransactionMutations } from './transactions';
+import { registerImportFinalizeMutations } from './importFinalize';
 import { registerCustomCurrencyMutations } from './customCurrencies';
 import { registerMoneyPrefsMutations } from './moneyPrefs';
 
 export function registerMutationDefaults(qc: QueryClient): void {
+  // 02-15: undo capture must be registered before the transaction/import mutations that
+  // call recordUndoStepSafely's queued fallback, so a paused-mutation replay restored from
+  // disk always has a registered mutationFn to resume with (Pitfall 3, RESEARCH.md).
+  registerUndoCaptureMutations(qc);
   registerTransactionMutations(qc);
+  registerImportFinalizeMutations(qc);
   registerAccountMutations(qc);
   registerCustomCurrencyMutations(qc);
   registerMoneyPrefsMutations(qc);
