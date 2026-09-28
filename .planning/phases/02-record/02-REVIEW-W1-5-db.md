@@ -32,7 +32,31 @@ findings:
   info: 7
   total: 18
 status: issues_found
+fix_status: paused_not_started
 ---
+
+## Fix status (gsd-code-fixer, 2026-09-28)
+
+The fix run was paused by the user before any finding was started. No migration, test or `src/db` file has been changed. Every finding is still open.
+
+| ID | Status |
+|----|--------|
+| D-CR-01 | not started |
+| D-CR-02 | not started |
+| D-WR-01 | not started |
+| D-WR-02 | not started |
+| D-WR-03 | not started |
+| D-WR-04 | not started |
+| D-WR-05 | not started |
+| D-WR-06 | not started |
+| D-WR-07 | not started |
+| D-WR-08 | not started |
+| D-WR-09 | not started |
+| D-IN-01..D-IN-07 | not started |
+
+Notes for resuming:
+- None of the 8 Phase 2 migrations has been pushed, so fixes go in place.
+- WR-07's cited lines (282-287) do not match `20260926000200_transactions_record_fields.sql`, which has 133 lines. The `transactions_active` grant block is near the end of that file (section 6).
 
 # Phase 02 (Record) Waves 1-5, Area B: DB schema, RPCs and typed db layer
 
