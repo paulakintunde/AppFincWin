@@ -181,6 +181,57 @@ describe('detectRecurring', () => {
     expect(result.map((r) => r.name)).toEqual(['B SUB', 'A SUB', 'Z SUB']);
   });
 
+  it('does not treat two same-day rows in a group as periodic (0-day gap fits no window)', () => {
+    const rows = [
+      row({ id: 'a', name: 'SAME DAY', localDate: '2026-01-01' }),
+      row({ id: 'b', name: 'SAME DAY', localDate: '2026-01-01' }),
+    ];
+    expect(detectRecurring(rows)).toEqual([]);
+  });
+
+  it('breaks a tie in suggestion ordering by name when rowIds.length and name both match', () => {
+    const rows = [
+      row({ id: 'g1', name: 'DUP SUB', currency: 'GBP', localDate: '2026-05-03' }),
+      row({ id: 'g2', name: 'DUP SUB', currency: 'GBP', localDate: '2026-06-03' }),
+      row({ id: 'g3', name: 'DUP SUB', currency: 'GBP', localDate: '2026-07-03' }),
+      row({ id: 'u1', name: 'DUP SUB', currency: 'USD', localDate: '2026-05-03' }),
+      row({ id: 'u2', name: 'DUP SUB', currency: 'USD', localDate: '2026-06-03' }),
+      row({ id: 'u3', name: 'DUP SUB', currency: 'USD', localDate: '2026-07-03' }),
+    ];
+    const result = detectRecurring(rows);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.name).toBe('DUP SUB');
+    expect(result[1]!.name).toBe('DUP SUB');
+  });
+
+  it('sorts two same-length suggestions alphabetically when the earlier-named group is seen second', () => {
+    const rows = [
+      // 'Z GROUP' rows appear first in the input, so its group is inserted first...
+      row({ id: 'z1', name: 'Z GROUP', localDate: '2026-05-03' }),
+      row({ id: 'z2', name: 'Z GROUP', localDate: '2026-06-03' }),
+      row({ id: 'z3', name: 'Z GROUP', localDate: '2026-07-03' }),
+      // ...but 'A GROUP' must still sort first alphabetically once both are length 3.
+      row({ id: 'a1', name: 'A GROUP', localDate: '2026-05-03' }),
+      row({ id: 'a2', name: 'A GROUP', localDate: '2026-06-03' }),
+      row({ id: 'a3', name: 'A GROUP', localDate: '2026-07-03' }),
+    ];
+    const result = detectRecurring(rows);
+    expect(result.map((r) => r.name)).toEqual(['A GROUP', 'Z GROUP']);
+  });
+
+  it('sorts rows by date before computing gaps, even when given out of order', () => {
+    const rows = [
+      row({ id: 'd', localDate: '2026-08-04' }),
+      row({ id: 'a', localDate: '2026-05-03' }),
+      row({ id: 'c', localDate: '2026-07-03' }),
+      row({ id: 'b', localDate: '2026-06-03' }),
+    ];
+    const result = detectRecurring(rows);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.rowIds).toEqual(['a', 'b', 'c', 'd']);
+    expect(result[0]!.anchorDate).toBe('2026-08-04');
+  });
+
   it('exposes the tolerance, window and min-rows constants', () => {
     expect(AMOUNT_TOLERANCE).toBe(0.1);
     expect(INTERVAL_WINDOWS.weekly).toEqual([6, 8]);
