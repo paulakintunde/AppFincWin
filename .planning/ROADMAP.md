@@ -201,8 +201,8 @@ Plans:
 - [x] 02-36-PLAN.md — Engine: format-profile inference anchored on account kind, flip (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 02-04-PLAN.md — Engine: category guessing, occurrence-count duplicates (FITID, ±2-day cross-format), pending-bill match, recurring suggestions (W4)
-- [ ] 02-13-PLAN.md — DB layer: apply_patches, undo log, balances/months/member reads, import profiles (W4)
+- [x] 02-04-PLAN.md — Engine: category guessing, occurrence-count duplicates (FITID, ±2-day cross-format), pending-bill match, recurring suggestions (W4)
+- [x] 02-13-PLAN.md — DB layer: apply_patches, undo log, balances/months/member reads, import profiles (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 02-14-PLAN.md — Read hooks: month view (transfer-aware), months, search, balances with standing, categories, history (W5)
@@ -255,7 +255,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 19/40 plans executed
+**Plans:** 21/40 plans executed
 
 Plans:
 
