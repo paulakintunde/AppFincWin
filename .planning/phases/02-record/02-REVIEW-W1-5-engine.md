@@ -4,6 +4,7 @@ scope: "Waves 1-5, Area A: pure financial engine (src/engine)"
 reviewed: 2026-09-28T00:00:00Z
 depth: deep
 status: issues_found
+fix_status: paused
 files_reviewed: 40
 files_reviewed_list:
   - src/engine/accounts/index.ts
@@ -74,6 +75,15 @@ The problems are in the maths and heuristics. They are not in the plumbing.
 Each of these was confirmed by running the engine code against a scratch Jest probe outside the repo. No source file was modified.
 
 Three tests pass while pinning incorrect behaviour: `inferFormat.test.ts:74`, `reconcile.test.ts:176` and `schedule.test.ts` ("never touches", about line 197). The recurring property test never starts its window after the anchor, so it cannot catch CR-01.
+
+## Fix Status (paused 2026-09-28 at the user's request)
+
+| ID | Status |
+|----|--------|
+| E-CR-01 | in progress. Failing regression tests are in WIP commit cc157b4 (not yet run). The one-line fix in `schedule.ts` (`startN = floor(monthsBetween / MONTHS_PER_OCCURRENCE[freq]) - 1`, floored at 0) has not been applied. Mirror note: the plpgsql `materialise_series()` scans from n = 0 and has no `startN` jump, so it does not have this bug. The shared fixture covers only `occurrence_date` and the horizon, so it needs no new cases for this finding. |
+| E-CR-02, E-CR-03, E-CR-04 | not started |
+| E-WR-01 … E-WR-12 | not started |
+| IN-01 … IN-12 | not started (fix only if trivial) |
 
 ## Critical Issues
 
