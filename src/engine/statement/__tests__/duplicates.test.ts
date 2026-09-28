@@ -224,6 +224,16 @@ describe('findDuplicates', () => {
     expect(matches.get(0)).toEqual({ kind: 'existing', id: 'e-exact', by: 'match' });
   });
 
+  it('prefers the exact-date match even when the window candidate is listed first', () => {
+    const candidates = [candidate({ index: 0, localDate: '2026-09-01' })];
+    const existing = [
+      existingRow({ id: 'e-window', localDate: '2026-09-02', importFormat: 'csv' }),
+      existingRow({ id: 'e-exact', localDate: '2026-09-01', importFormat: 'csv' }),
+    ];
+    const { matches } = findDuplicates(candidates, existing, { sourceFormat: 'ofx' });
+    expect(matches.get(0)).toEqual({ kind: 'existing', id: 'e-exact', by: 'match' });
+  });
+
   it('picks the smaller day gap among two cross-format window candidates', () => {
     const candidates = [candidate({ index: 0, localDate: '2026-09-03' })];
     const existing = [
@@ -234,9 +244,26 @@ describe('findDuplicates', () => {
     expect(matches.get(0)).toEqual({ kind: 'existing', id: 'e-near', by: 'cross-format-window' });
   });
 
-  it('breaks a full tie by the smaller existing id', () => {
+  it('prefers the higher name similarity when two existing rows both match on date and amount', () => {
+    const candidates = [candidate({ index: 0, name: 'AAA BBB CCC DDD' })];
+    const existing = [
+      existingRow({ id: 'e-low', name: 'AAA BBB CCC EEE' }), // Jaccard 3/5 = 0.6, at the threshold
+      existingRow({ id: 'e-high', name: 'AAA BBB CCC DDD' }), // exact containment match, similarity 1
+    ];
+    const { matches } = findDuplicates(candidates, existing, { sourceFormat: 'csv' });
+    expect(matches.get(0)).toEqual({ kind: 'existing', id: 'e-high', by: 'match' });
+  });
+
+  it('breaks a full tie by the smaller existing id, listed second', () => {
     const candidates = [candidate({ index: 0 })];
     const existing = [existingRow({ id: 'e2' }), existingRow({ id: 'e1' })];
+    const { matches } = findDuplicates(candidates, existing, { sourceFormat: 'csv' });
+    expect(matches.get(0)).toEqual({ kind: 'existing', id: 'e1', by: 'match' });
+  });
+
+  it('breaks a full tie by the smaller existing id, listed first', () => {
+    const candidates = [candidate({ index: 0 })];
+    const existing = [existingRow({ id: 'e1' }), existingRow({ id: 'e2' })];
     const { matches } = findDuplicates(candidates, existing, { sourceFormat: 'csv' });
     expect(matches.get(0)).toEqual({ kind: 'existing', id: 'e1', by: 'match' });
   });
