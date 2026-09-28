@@ -7,14 +7,31 @@
 // RESEARCH.md) -- registerTransactionMutations must run once, at module scope, before
 // PersistQueryClientProvider restores (wired in src/data/QueryProvider.tsx, this plan's
 // Task 3).
+//
+// Record (Phase 2, plan 02-15): every add/edit/delete/mark-paid/skip captures its own undo
+// step at the moment the forward write succeeds (D-23, D-29) via recordUndoStepSafely --
+// never a second write pipeline (RESEARCH.md Anti-pattern 1). Import chunks (D-17) go
+// through this same queue too; the import's own undo step is recorded by
+// importFinalize.ts's finalize write, not here.
 import * as Crypto from 'expo-crypto';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { localDateIn, monthOf } from '@/engine/time';
 import type { MinorUnits } from '@/engine/money';
+import { markPaidDate } from '@/engine/activity';
+import { buildStep, inverseOfInserts, inverseOfPatches, type PatchValue } from '@/engine/undo';
 import { VersionConflictError } from '@/db/errors';
-import { insertTransaction, requestRateResolution, updateTransaction } from '@/db/transactions';
-import type { CustomCurrencyRow, DbClient, FxLatestRow, NewTransaction, TransactionPatch, TransactionRow } from '@/db/rows';
+import { insertTransaction, insertTransactionsBatch, requestRateResolution, updateTransaction, IMPORT_CHUNK_MAX } from '@/db/transactions';
+import type {
+  CustomCurrencyRow,
+  DbClient,
+  FxLatestRow,
+  NewTransaction,
+  PaymentType,
+  TransactionPatch,
+  TransactionRow,
+  TransactionStatus,
+} from '@/db/rows';
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
@@ -31,10 +48,12 @@ import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { editStamp, provisionalStamp } from './provisional';
+import { newStepId, recordUndoStepSafely, type UndoCapture } from './undoCapture';
 
 export interface AddTransactionVars {
   row: NewTransaction;
   optimistic: { homeCurrency: string; createdBy: string; month: string };
+  undo?: UndoCapture;
 }
 
 export interface EditTransactionVars {
@@ -49,6 +68,8 @@ export interface EditTransactionVars {
    * optional so existing callers still type-check.
    */
   homeCurrency?: string;
+  /** REC-11: captured by useEditTransaction's wrapper (the hook computes `before` itself). */
+  undo?: UndoCapture & { before: Readonly<Record<string, PatchValue>> };
 }
 
 type TransactionList = WithPending<TransactionRow>[];
@@ -99,6 +120,10 @@ function targetMonth(vars: EditTransactionVars): string {
  * it is already there) and removes it from every other month in `fromMonths`. An edit that
  * moves a transaction's date across a month boundary would otherwise leave it in the old
  * month's list and missing from the new one, so both months' totals are wrong.
+ *
+ * D-30: when the row is now soft-deleted, it leaves every cached month at once (its own
+ * month included) instead of being upserted anywhere -- a deleted row must never reappear
+ * in a month list just because it was just patched.
  */
 function placeRowInMonth(
   qc: QueryClient,
@@ -107,6 +132,15 @@ function placeRowInMonth(
   fromMonths: readonly string[]
 ): void {
   const month = monthOf(row.local_date);
+  const everyMonth = new Set([...fromMonths, month]);
+
+  if (row.deleted_at !== null) {
+    for (const m of everyMonth) {
+      patchMonthCacheIfLoaded(qc, householdId, m, (rows) => rows.filter((r) => r.id !== row.id));
+    }
+    return;
+  }
+
   for (const from of new Set(fromMonths)) {
     if (from !== month) patchMonthCacheIfLoaded(qc, householdId, from, (rows) => rows.filter((r) => r.id !== row.id));
   }
@@ -114,7 +148,12 @@ function placeRowInMonth(
 }
 
 /** After a write comes back rate_pending, calls resolve-rate and writes the restamped row in. */
-async function followUpIfRatePending(qc: QueryClient, householdId: string, month: string, row: TransactionRow): Promise<void> {
+async function followUpIfRatePending(
+  qc: QueryClient,
+  householdId: string,
+  month: string,
+  row: Pick<TransactionRow, 'id' | 'rate_pending'>
+): Promise<void> {
   if (!row.rate_pending) return;
   // RD-05: resolve-rate's own per-user throttle already answered 429 recently -- skip this
   // call entirely rather than adding to the pile; the row stays rate_pending and a later
@@ -131,9 +170,83 @@ async function followUpIfRatePending(qc: QueryClient, householdId: string, month
   }
 }
 
+export interface ImportChunkVars {
+  householdId: string;
+  batchId: string;
+  rows: NewTransaction[];
+  optimistic: { homeCurrency: string; createdBy: string };
+}
+
+type ImportChunkResult = Pick<TransactionRow, 'id' | 'local_date' | 'version' | 'rate_pending'>[];
+
+/**
+ * D-52's "never splitting the two legs of a new transfer across chunks": rows sharing a
+ * `transfer_id` are grouped into one unit that is never split across a chunk boundary, so a
+ * chunk stays at or under `max` except when a single linked group itself would not fit
+ * (never happens in practice -- a transfer is always exactly two legs). Order is otherwise
+ * preserved.
+ *
+ * Deviation (Rule 3 - blocking): the plan places this function in importFinalize.ts (Task
+ * 3), with useImportChunks (this file, Task 2) importing it from there. That is a genuine
+ * import cycle (importFinalize.ts's useImportCommit also imports useImportChunks from this
+ * file) which `npm run depcruise`'s `no-circular` rule rejects unconditionally. Defining it
+ * here instead -- the one file that actually needs it at the value level -- and having
+ * importFinalize.ts re-export it keeps both modules' documented public shape intact with a
+ * one-directional dependency (importFinalize.ts -> transactions.ts, never the reverse).
+ */
+export function chunkKeepingPairs(rows: readonly NewTransaction[], max: number): NewTransaction[][] {
+  if (max <= 0) throw new RangeError(`chunkKeepingPairs: max must be positive, got ${max}`);
+
+  const units: NewTransaction[][] = [];
+  const byTransferId = new Map<string, NewTransaction[]>();
+  for (const row of rows) {
+    if (row.transfer_id) {
+      const group = byTransferId.get(row.transfer_id);
+      if (group) {
+        group.push(row);
+        continue; // already placed at its transfer_id's first-occurrence unit
+      }
+      const created: NewTransaction[] = [row];
+      byTransferId.set(row.transfer_id, created);
+      units.push(created);
+    } else {
+      units.push([row]);
+    }
+  }
+
+  const chunks: NewTransaction[][] = [];
+  let current: NewTransaction[] = [];
+  for (const unit of units) {
+    if (unit.length > max) {
+      throw new RangeError(`chunkKeepingPairs: a linked group of ${unit.length} rows exceeds max (${max})`);
+    }
+    if (current.length > 0 && current.length + unit.length > max) {
+      chunks.push(current);
+      current = [];
+    }
+    current.push(...unit);
+  }
+  if (current.length > 0) chunks.push(current);
+  return chunks;
+}
+
 export function registerTransactionMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.addTransaction, {
-    mutationFn: (vars: AddTransactionVars) => guardSession(vars, async () => insertTransaction(await writeClient(), vars.row)),
+    mutationFn: (vars: AddTransactionVars) =>
+      guardSession(vars, async () => {
+        const client = await writeClient();
+        const row = await insertTransaction(client, vars.row);
+        if (vars.undo) {
+          const step = buildStep(
+            vars.undo.stepId,
+            vars.undo.labelKey,
+            vars.undo.labelParams,
+            inverseOfInserts('transactions', [{ id: row.id, version: row.version }])
+          );
+          await recordUndoStepSafely(qc, client, step, vars.undo.ownerId);
+        }
+        return row;
+      }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
@@ -237,6 +350,15 @@ export function registerTransactionMutations(qc: QueryClient): void {
           acceptIfAlreadyApplied<TransactionRow>(err, vars.patch)
         );
         recordWrittenVersion('transactions', vars.id, [vars.expectedVersion, expected], row.version);
+        if (vars.undo) {
+          const step = buildStep(
+            vars.undo.stepId,
+            vars.undo.labelKey,
+            vars.undo.labelParams,
+            inverseOfPatches('transactions', [{ id: row.id, before: vars.undo.before, versionAfter: row.version }])
+          );
+          await recordUndoStepSafely(qc, client, step, vars.undo.ownerId);
+        }
         return row;
       }),
     scope: WRITE_SCOPE,
@@ -303,6 +425,113 @@ export function registerTransactionMutations(qc: QueryClient): void {
       }
     },
   });
+
+  qc.setMutationDefaults(mutationKeys.importChunk, {
+    mutationFn: (vars: ImportChunkVars) => guardSession(vars, async () => insertTransactionsBatch(await writeClient(), vars.rows)),
+    scope: WRITE_SCOPE,
+    retry: shouldRetryWrite,
+    retryDelay: writeRetryDelay,
+    onMutate: async (vars: ImportChunkVars) => {
+      markSession(vars); // WR-A09
+      const rates = qc.getQueryData<FxLatestRow[]>(queryKeys.fxLatest()) ?? [];
+      const customs = qc.getQueryData<CustomCurrencyRow[]>(queryKeys.customCurrencies(vars.optimistic.createdBy)) ?? [];
+      const now = new Date().toISOString();
+
+      // D-17: prepended into month caches that are already loaded only -- never fabricates a
+      // month that was not loaded (same rule as patchMonthCacheIfLoaded's single-row callers).
+      const byMonth = new Map<string, WithPending<TransactionRow>[]>();
+      for (const tx of vars.rows) {
+        const stamp = provisionalStamp(
+          { amount: tx.original_amount, currency: tx.original_currency, homeCurrency: vars.optimistic.homeCurrency, localDate: tx.local_date },
+          rates,
+          customs
+        );
+        const optimisticRow: WithPending<TransactionRow> = {
+          id: tx.id,
+          household_id: vars.householdId,
+          account_id: tx.account_id,
+          created_by: vars.optimistic.createdBy,
+          original_amount: tx.original_amount,
+          original_currency: tx.original_currency,
+          home_currency: vars.optimistic.homeCurrency,
+          home_amount: stamp.home_amount,
+          rate: stamp.rate,
+          orig_per_eur: stamp.orig_per_eur,
+          home_per_eur: stamp.home_per_eur,
+          orig_custom_unit_value: null,
+          orig_custom_ref_per_eur: null,
+          home_custom_unit_value: null,
+          home_custom_ref_per_eur: null,
+          rate_date: stamp.rate_date,
+          rate_source: stamp.rate_source,
+          rate_pending: stamp.rate_pending,
+          local_date: tx.local_date,
+          time_zone: tx.time_zone,
+          note: tx.note,
+          name: tx.name ?? null,
+          category_id: tx.category_id ?? null,
+          payment_type: tx.payment_type ?? null,
+          status: tx.status ?? 'paid', // D-15: imported rows are paid
+          deleted_at: null,
+          import_batch_id: tx.import_batch_id ?? vars.batchId,
+          recurring_series_id: null,
+          occurrence_date: null,
+          updated_by: null,
+          raw_amount: tx.raw_amount ?? null,
+          raw_balance: tx.raw_balance ?? null,
+          external_id: tx.external_id ?? null,
+          import_format: tx.import_format ?? null,
+          transfer_id: tx.transfer_id ?? null,
+          version: 1,
+          created_at: now,
+          updated_at: now,
+          pending: true,
+        };
+        const month = monthOf(tx.local_date);
+        const list = byMonth.get(month);
+        if (list) list.push(optimisticRow);
+        else byMonth.set(month, [optimisticRow]);
+      }
+      for (const [month, rows] of byMonth) {
+        patchMonthCacheIfLoaded(qc, vars.householdId, month, (existing) => [...rows, ...existing]);
+      }
+    },
+    onSuccess: async (rows: ImportChunkResult, vars: ImportChunkVars) => {
+      await qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
+
+      // D-19/D-45: one resolve-rate call per distinct (original_currency, local_date) among
+      // the rows that came back rate_pending, capped at 20 per chunk -- never awaited (WR-A15).
+      const currencyById = new Map(vars.rows.map((r) => [r.id, r.original_currency] as const));
+      const seen = new Set<string>();
+      let resolved = 0;
+      for (const row of rows) {
+        if (!row.rate_pending || resolved >= 20) continue;
+        const currency = currencyById.get(row.id);
+        if (!currency) continue;
+        const dedupeKey = `${currency}:${row.local_date}`;
+        if (seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
+        resolved += 1;
+        void followUpIfRatePending(qc, vars.householdId, monthOf(row.local_date), row);
+      }
+    },
+    onError: async (err: unknown, vars: ImportChunkVars) => {
+      const cls = classifySettledWriteError(err);
+      if (cls !== 'rejected' && cls !== 'not-found') return;
+      const ids = new Set(vars.rows.map((r) => r.id));
+      const months = new Set(vars.rows.map((r) => monthOf(r.local_date)));
+      for (const month of months) {
+        patchMonthCacheIfLoaded(qc, vars.householdId, month, (existing) => existing.filter((r) => !ids.has(r.id)));
+      }
+      await recordFailedWrite({
+        entity: 'transactions',
+        entityId: `import:${vars.batchId}`,
+        kind: cls,
+        code: settledWriteErrorCode(err),
+        attempted: { import_batch_id: vars.batchId, rows: vars.rows.length },
+      });
+    },
+  });
 }
 
 export interface AddTransactionInput {
@@ -315,6 +544,11 @@ export interface AddTransactionInput {
   note?: string | null;
   localDate?: string;
   timeZone?: string;
+  name?: string | null;
+  categoryId?: string | null;
+  paymentType?: PaymentType | null;
+  status?: TransactionStatus;
+  undo?: Omit<UndoCapture, 'ownerId'>;
 }
 
 export function useAddTransaction(): { add(input: AddTransactionInput): string } {
@@ -339,23 +573,163 @@ export function useAddTransaction(): { add(input: AddTransactionInput): string }
         local_date: localDate,
         time_zone: timeZone,
         note: input.note ?? null,
+        name: input.name,
+        category_id: input.categoryId,
+        payment_type: input.paymentType,
+        status: input.status,
       };
 
-      mutation.mutate({ row, optimistic: { homeCurrency: input.homeCurrency, createdBy: input.userId, month } });
+      mutation.mutate({
+        row,
+        optimistic: { homeCurrency: input.homeCurrency, createdBy: input.userId, month },
+        undo: input.undo ? { ...input.undo, ownerId: input.userId } : undefined,
+      });
       return id;
     },
   };
 }
 
-export function useEditTransaction(): { edit(vars: EditTransactionVars): void } {
+export function useEditTransaction(): {
+  edit(vars: EditTransactionVars, undo?: UndoCapture): void;
+} {
   const mutation = useMutation<TransactionRow, unknown, EditTransactionVars>({
     mutationKey: mutationKeys.editTransaction,
     scope: WRITE_SCOPE,
   });
+  const qc = useQueryClient();
 
   return {
-    edit(vars: EditTransactionVars): void {
-      mutation.mutate(vars);
+    edit(vars: EditTransactionVars, undo?: UndoCapture): void {
+      if (!undo) {
+        mutation.mutate(vars);
+        return;
+      }
+
+      // REC-11: `before` is captured from the cache at the moment of the action, for exactly
+      // the keys this edit patches -- never reconstructed later (RESEARCH.md Anti-pattern 2).
+      const current = qc
+        .getQueryData<TransactionList>(queryKeys.transactionsMonth(vars.householdId, vars.month))
+        ?.find((r) => r.id === vars.id);
+      if (!current) {
+        // Nothing cached to capture a before-state from: send the edit without an undo step
+        // rather than guess -- matches the plan's "attaches vars.undo only when the row was
+        // found".
+        mutation.mutate(vars);
+        return;
+      }
+
+      const before: Record<string, PatchValue> = {};
+      for (const key of Object.keys(vars.patch)) {
+        const value = (current as unknown as Record<string, PatchValue | undefined>)[key];
+        before[key] = value ?? null;
+      }
+      mutation.mutate({ ...vars, undo: { ...undo, before } });
+    },
+  };
+}
+
+type UndoableRow = Pick<TransactionRow, 'id' | 'household_id' | 'local_date' | 'version' | 'name'>;
+
+function nameParams(row: UndoableRow): { name?: string } {
+  return row.name ? { name: row.name } : {};
+}
+
+export function useDeleteTransaction(): { remove(row: UndoableRow, ownerId: string): string } {
+  const { edit } = useEditTransaction();
+  return {
+    remove(row: UndoableRow, ownerId: string): string {
+      const stepId = newStepId();
+      edit(
+        {
+          id: row.id,
+          householdId: row.household_id,
+          month: monthOf(row.local_date),
+          expectedVersion: row.version,
+          patch: { deleted_at: new Date().toISOString() },
+        },
+        { stepId, ownerId, labelKey: 'deleted', labelParams: nameParams(row) }
+      );
+      return stepId;
+    },
+  };
+}
+
+export function useMarkPaid(): {
+  markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: number; localDate?: string }): string;
+} {
+  const { edit } = useEditTransaction();
+  return {
+    markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: number; localDate?: string }): string {
+      const stepId = newStepId();
+      const localDate = adjust?.localDate ?? markPaidDate(today, row.local_date);
+      const patch: TransactionPatch = { status: 'paid', local_date: localDate };
+      if (adjust?.amount !== undefined) patch.original_amount = adjust.amount;
+      edit(
+        {
+          id: row.id,
+          householdId: row.household_id,
+          month: monthOf(row.local_date),
+          expectedVersion: row.version,
+          patch,
+        },
+        { stepId, ownerId, labelKey: 'markedPaid', labelParams: nameParams(row) }
+      );
+      return stepId;
+    },
+  };
+}
+
+export function useSkipOccurrence(): { skip(row: UndoableRow, ownerId: string): string } {
+  const { edit } = useEditTransaction();
+  return {
+    skip(row: UndoableRow, ownerId: string): string {
+      const stepId = newStepId();
+      edit(
+        {
+          id: row.id,
+          householdId: row.household_id,
+          month: monthOf(row.local_date),
+          expectedVersion: row.version,
+          patch: { status: 'skipped' },
+        },
+        { stepId, ownerId, labelKey: 'skipped', labelParams: nameParams(row) }
+      );
+      return stepId;
+    },
+  };
+}
+
+export interface ImportChunksInput {
+  householdId: string;
+  batchId: string;
+  rows: NewTransaction[];
+  homeCurrency: string;
+  userId: string;
+}
+
+/**
+ * D-17: splits `input.rows` into <= IMPORT_CHUNK_MAX chunks (never splitting a transfer
+ * pair, D-52) and enqueues one importChunk mutation per chunk, in order. Records no undo
+ * step itself -- importFinalize.ts's useImportCommit enqueues the finalize write (which
+ * carries the import's single undo step) after every chunk.
+ */
+export function useImportChunks(): { enqueue(input: ImportChunksInput): void } {
+  const mutation = useMutation<ImportChunkResult, unknown, ImportChunkVars>({
+    mutationKey: mutationKeys.importChunk,
+    scope: WRITE_SCOPE,
+  });
+
+  return {
+    enqueue(input: ImportChunksInput): void {
+      const chunks = chunkKeepingPairs(input.rows, IMPORT_CHUNK_MAX);
+      for (const rows of chunks) {
+        mutation.mutate({
+          householdId: input.householdId,
+          batchId: input.batchId,
+          rows,
+          optimistic: { homeCurrency: input.homeCurrency, createdBy: input.userId },
+        });
+      }
     },
   };
 }

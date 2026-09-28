@@ -12,14 +12,22 @@ globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto)
 import React from 'react';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
-import type { AccountRow, DbClient, TransactionRow } from '@/db/rows';
+import type { AccountRow, DbClient, NewTransaction, TransactionRow } from '@/db/rows';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { mutationKeys, queryKeys } from '@/data/keys';
 import { MAX_SERVER_ERROR_RETRIES } from '@/data/sync/writeErrors';
 import { clearVersionChains } from '@/data/sync/versionChain';
 import { noteResolveRateThrottled, resetResolveRateBackoffForTests } from '@/data/sync/resolveRateBackoff';
 import { registerMutationDefaults } from '../index';
-import { useAddTransaction, useEditTransaction, type AddTransactionVars } from '../transactions';
+import {
+  useAddTransaction,
+  useDeleteTransaction,
+  useEditTransaction,
+  useImportChunks,
+  useMarkPaid,
+  useSkipOccurrence,
+  type AddTransactionVars,
+} from '../transactions';
 import { useAddAccount, useEditAccount } from '../accounts';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
@@ -625,6 +633,330 @@ describe('useEditTransaction', () => {
     const rows = qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'));
     expect(rows?.[0]?.note).toBe('someone else edited this');
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.transactionsRoot('h1') });
+  });
+
+  it('REC-11: an add with undo records one inverse-of-insert step after the insert succeeds', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: serverTransaction({ version: 1 }), error: null, status: 201 }); // insert
+    fake.respondWith({ data: null, error: null, status: 201 }); // undo_log insert
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+      undo: { stepId: 'step-1', labelKey: 'added', labelParams: {} },
+    });
+
+    await waitFor(() => {
+      const undoInsert = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
+      expect(undoInsert).toBeDefined();
+    });
+
+    const undoInsert = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
+    const payload = undoInsert?.args[0] as { id: string; label_key: string; ops: unknown[] };
+    expect(payload.id).toBe('step-1');
+    expect(payload.label_key).toBe('added');
+    expect(payload.ops).toEqual([{ entity: 'transactions', id: 'uuid-0', expectedVersion: 1, patch: { deleted_at: '$now' } }]);
+  });
+
+  it('REC-11: an edit with undo captures before from the cached row for exactly the patched keys', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    const original = serverTransaction({ id: 'tx-1', note: 'old note', version: 1 });
+    fake.respondWith({ data: [serverTransaction({ id: 'tx-1', note: 'new note', version: 2 })], error: null, status: 200 }); // update
+    fake.respondWith({ data: null, error: null, status: 201 }); // undo_log insert
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [original]);
+    const { result } = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.edit(
+      { id: 'tx-1', householdId: 'h1', month: '2026-09', expectedVersion: 1, patch: { note: 'new note' } },
+      { stepId: 'step-2', ownerId: 'user-1', labelKey: 'edited', labelParams: {} }
+    );
+
+    await waitFor(() => {
+      const undoInsert = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
+      expect(undoInsert).toBeDefined();
+    });
+
+    const undoInsert = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
+    const payload = undoInsert?.args[0] as { ops: unknown[] };
+    expect(payload.ops).toEqual([{ entity: 'transactions', id: 'tx-1', expectedVersion: 2, patch: { note: 'old note' } }]);
+  });
+
+  it('an edit with undo but no cached row sends the edit without attaching an undo step', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: [serverTransaction({ id: 'tx-1', note: 'new note', version: 2 })], error: null, status: 200 }); // update only
+
+    const qc = newClient();
+    // No cached row for tx-1 in this month.
+    const { result } = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.edit(
+      { id: 'tx-1', householdId: 'h1', month: '2026-09', expectedVersion: 1, patch: { note: 'new note' } },
+      { stepId: 'step-3', ownerId: 'user-1', labelKey: 'edited', labelParams: {} }
+    );
+
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'update')).toBe(true));
+    expect(fake.calls.some((c) => c.table === 'undo_log')).toBe(false);
+  });
+});
+
+describe('useDeleteTransaction / useMarkPaid / useSkipOccurrence', () => {
+  it('remove soft-deletes optimistically, sends {deleted_at: iso}, and records an undo step with patch {deleted_at: null}', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    const row = serverTransaction({ id: 'tx-1', name: 'Groceries', version: 1 });
+    fake.respondWith({
+      data: [serverTransaction({ id: 'tx-1', name: 'Groceries', deleted_at: '2026-09-24T00:00:00.000Z', version: 2 })],
+      error: null,
+      status: 200,
+    });
+    fake.respondWith({ data: null, error: null, status: 201 }); // undo_log insert
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [row]);
+    const { result } = await renderHook(() => useDeleteTransaction(), { wrapper: wrapper(qc) });
+
+    const stepId = result.current.remove(
+      { id: 'tx-1', household_id: 'h1', local_date: '2026-09-24', version: 1, name: 'Groceries' },
+      'user-1'
+    );
+    expect(typeof stepId).toBe('string');
+
+    await waitFor(() => {
+      const rows = qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+      expect(rows ?? []).toHaveLength(0); // D-30: a deleted row leaves every cached month at once
+    });
+
+    const updateCall = fake.calls.find((c) => c.method === 'update');
+    expect(updateCall?.args[0]).toMatchObject({ deleted_at: expect.any(String) });
+
+    await waitFor(() => {
+      const undoInsert = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
+      expect(undoInsert).toBeDefined();
+    });
+    const undoInsert = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
+    const payload = undoInsert?.args[0] as { label_key: string; ops: unknown[] };
+    expect(payload.label_key).toBe('deleted');
+    expect(payload.ops).toEqual([{ entity: 'transactions', id: 'tx-1', expectedVersion: 2, patch: { deleted_at: null } }]);
+  });
+
+  it('D-30: a VersionConflictError on delete puts the server row back (existing onError path)', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    const serverRow = serverTransaction({ id: 'tx-1', note: 'still here' });
+    fake.respondWith({ data: [], error: null, status: 200 });
+    fake.respondWith({ data: serverRow, error: null, status: 200 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [serverTransaction({ id: 'tx-1' })]);
+    const { result } = await renderHook(() => useDeleteTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.remove({ id: 'tx-1', household_id: 'h1', local_date: '2026-09-24', version: 1, name: null }, 'user-1');
+
+    await waitFor(() => {
+      const rows = qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+      expect(rows?.[0]?.note).toBe('still here');
+    });
+  });
+
+  it('markPaid patches status/local_date via markPaidDate (the earlier of today/due date)', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    const row = serverTransaction({ id: 'tx-1', status: 'pending', local_date: '2026-09-20', version: 1 });
+    fake.respondWith({
+      data: [serverTransaction({ id: 'tx-1', status: 'paid', local_date: '2026-09-20', version: 2 })],
+      error: null,
+      status: 200,
+    });
+    fake.respondWith({ data: null, error: null, status: 201 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [row]);
+    const { result } = await renderHook(() => useMarkPaid(), { wrapper: wrapper(qc) });
+
+    result.current.markPaid({ id: 'tx-1', household_id: 'h1', local_date: '2026-09-20', version: 1, name: null }, 'user-1', '2026-09-24');
+
+    await waitFor(() => {
+      const updateCall = fake.calls.find((c) => c.method === 'update');
+      expect(updateCall?.args[0]).toEqual({ status: 'paid', local_date: '2026-09-20' });
+    });
+  });
+
+  it('markPaid with adjust overrides the amount and local date', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    const row = serverTransaction({ id: 'tx-1', status: 'pending', local_date: '2026-09-20', version: 1 });
+    fake.respondWith({
+      data: [serverTransaction({ id: 'tx-1', status: 'paid', local_date: '2026-09-25', original_amount: 1000, version: 2 })],
+      error: null,
+      status: 200,
+    });
+    fake.respondWith({ data: null, error: null, status: 201 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [row]);
+    const { result } = await renderHook(() => useMarkPaid(), { wrapper: wrapper(qc) });
+
+    result.current.markPaid(
+      { id: 'tx-1', household_id: 'h1', local_date: '2026-09-20', version: 1, name: null },
+      'user-1',
+      '2026-09-24',
+      { amount: 1000, localDate: '2026-09-25' }
+    );
+
+    await waitFor(() => {
+      const updateCall = fake.calls.find((c) => c.method === 'update');
+      expect(updateCall?.args[0]).toEqual({ status: 'paid', local_date: '2026-09-25', original_amount: 1000 });
+    });
+  });
+
+  it('skip patches status: skipped', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    const row = serverTransaction({ id: 'tx-1', status: 'pending', version: 1 });
+    fake.respondWith({ data: [serverTransaction({ id: 'tx-1', status: 'skipped', version: 2 })], error: null, status: 200 });
+    fake.respondWith({ data: null, error: null, status: 201 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [row]);
+    const { result } = await renderHook(() => useSkipOccurrence(), { wrapper: wrapper(qc) });
+
+    result.current.skip({ id: 'tx-1', household_id: 'h1', local_date: '2026-09-24', version: 1, name: null }, 'user-1');
+
+    await waitFor(() => {
+      const updateCall = fake.calls.find((c) => c.method === 'update');
+      expect(updateCall?.args[0]).toEqual({ status: 'skipped' });
+    });
+  });
+});
+
+describe('useImportChunks / importChunk', () => {
+  const importRow = (overrides: Partial<NewTransaction> = {}): NewTransaction => ({
+    id: 'imp-1',
+    household_id: 'h1',
+    account_id: 'acc1',
+    original_amount: -500,
+    original_currency: 'USD',
+    local_date: '2026-09-24',
+    time_zone: 'UTC',
+    note: null,
+    status: 'paid',
+    import_batch_id: 'batch-1',
+    ...overrides,
+  });
+
+  it('inserts optimistic rows only into month caches already loaded, and invalidates transactionsRoot on success', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({
+      data: [
+        { id: 'imp-1', local_date: '2026-09-24', version: 1, rate_pending: false },
+        { id: 'imp-2', local_date: '2026-09-25', version: 1, rate_pending: false },
+      ],
+      error: null,
+      status: 201,
+    });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []); // already loaded
+    const invalidateSpy = jest.spyOn(qc, 'invalidateQueries');
+    const { result } = await renderHook(() => useImportChunks(), { wrapper: wrapper(qc) });
+
+    result.current.enqueue({
+      householdId: 'h1',
+      batchId: 'batch-1',
+      rows: [importRow({ id: 'imp-1' }), importRow({ id: 'imp-2', local_date: '2026-09-25' })],
+      homeCurrency: 'USD',
+      userId: 'user-1',
+    });
+
+    await waitFor(() => {
+      const rows = qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+      expect(rows).toHaveLength(2);
+    });
+    await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.transactionsRoot('h1') }));
+
+    // A month never loaded is never fabricated as a one-row list.
+    expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-10'))).toBeUndefined();
+  });
+
+  it('calls resolve-rate once per distinct (currency, date) among rate_pending rows, deduplicated', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({
+      data: [
+        { id: 'imp-1', local_date: '2026-09-24', version: 1, rate_pending: true },
+        { id: 'imp-2', local_date: '2026-09-24', version: 1, rate_pending: true }, // same currency+date -> deduped
+      ],
+      error: null,
+      status: 201,
+    });
+    fake.respondWith({ data: { row: serverTransaction({ id: 'imp-1', rate_pending: false }) }, error: null, status: 200 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []);
+    const { result } = await renderHook(() => useImportChunks(), { wrapper: wrapper(qc) });
+
+    result.current.enqueue({
+      householdId: 'h1',
+      batchId: 'batch-1',
+      rows: [
+        importRow({ id: 'imp-1', original_currency: 'JPY' }),
+        importRow({ id: 'imp-2', original_currency: 'JPY' }),
+      ],
+      homeCurrency: 'USD',
+      userId: 'user-1',
+    });
+
+    await waitFor(() => expect(fake.calls.filter((c) => c.method === 'functions.invoke')).toHaveLength(1));
+  });
+
+  it('a rejected chunk removes its optimistic rows and records one failed write with ids and counts only', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'check violation', code: '23514' }, status: 400 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []);
+    const { result } = await renderHook(() => useImportChunks(), { wrapper: wrapper(qc) });
+
+    result.current.enqueue({
+      householdId: 'h1',
+      batchId: 'batch-1',
+      rows: [importRow({ id: 'imp-1' })],
+      homeCurrency: 'USD',
+      userId: 'user-1',
+    });
+
+    await waitFor(() => {
+      const rows = qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'));
+      expect(rows ?? []).toHaveLength(0);
+    });
+
+    await waitFor(() =>
+      expect(recordFailedWrite).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entity: 'transactions',
+          entityId: 'import:batch-1',
+          kind: 'rejected',
+          code: '23514',
+          attempted: { import_batch_id: 'batch-1', rows: 1 },
+        })
+      )
+    );
   });
 });
 
