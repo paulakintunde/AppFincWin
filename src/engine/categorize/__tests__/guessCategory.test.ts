@@ -130,6 +130,15 @@ describe('guessCategory', () => {
     expect(result).toEqual({ categoryId: 'cat-dining', source: 'keyword' });
   });
 
+  it('prefers a whole-word match even when it is declared before the substring-only rule', () => {
+    const rules: readonly KeywordRule[] = [
+      { keyword: 'coffee', category: 'Dining' },
+      { keyword: 'card', category: 'Debt' },
+    ];
+    const result = guessCategory({ name: 'Cardiff coffee', amount: -800 }, makeCtx({ keywordRules: rules }));
+    expect(result).toEqual({ categoryId: 'cat-dining', source: 'keyword' });
+  });
+
   it('prefers the longer keyword when both candidates are whole-word matches', () => {
     const result = guessCategory({ name: 'loan saving', amount: -1000 }, makeCtx());
     expect(result).toEqual({ categoryId: 'cat-savings', source: 'keyword' });
