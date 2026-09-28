@@ -5,10 +5,9 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
-import type { DbClient } from '@/db/rows';
-import type { AccountRow, CategoryRow, FxLatestRow, RecurringSeriesRow, TransactionRow } from '@/db/rows';
-import { convertMinor, EUR_PER_EUR, parseRate } from '@/engine/money';
-import { isOverdue, monthTotals, monthsForSwitcher } from '@/engine/activity';
+import type { AccountRow, CategoryRow, DbClient, FxLatestRow, RecurringSeriesRow, TransactionRow } from '@/db/rows';
+import { convertMinor, EUR_PER_EUR, minorUnits, parseRate } from '@/engine/money';
+import { monthTotals, monthsForSwitcher } from '@/engine/activity';
 import { supabase } from '@/services/supabase';
 import type { FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { i18n } from '@/i18n';
@@ -207,7 +206,7 @@ describe('homeAmountFor', () => {
     const row = txRow({ home_currency: 'USD', original_amount: -1000, original_currency: 'USD', orig_per_eur: '1.1' });
     const rates = [fxRow({ quote: 'GBP', rate: '0.85' })];
 
-    const expected = convertMinor(-1000, parseRate('1.1'), 2, parseRate('0.85'), 2);
+    const expected = convertMinor(minorUnits(-1000), parseRate('1.1'), 2, parseRate('0.85'), 2);
     expect(homeAmountFor(row, 'GBP', rates)).toBe(expected);
   });
 
@@ -234,7 +233,7 @@ describe('projectionHomeAmount', () => {
 
   it('converts through EUR_PER_EUR when the projection currency is EUR', () => {
     const rates = [fxRow({ quote: 'GBP', rate: '0.85' })];
-    const expected = convertMinor(500, EUR_PER_EUR, 2, parseRate('0.85'), 2);
+    const expected = convertMinor(minorUnits(500), EUR_PER_EUR, 2, parseRate('0.85'), 2);
     expect(projectionHomeAmount(500, 'EUR', 'GBP', rates)).toBe(expected);
   });
 

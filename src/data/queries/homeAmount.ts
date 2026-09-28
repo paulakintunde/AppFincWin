@@ -5,7 +5,7 @@
 // (Phase 1 D-05: "cross-converted through the stored base"). Any missing rate or unusable
 // exponent counts as unconverted (null) rather than a guessed figure. Every rate is parsed
 // with engine/money's own BigInt parser, never a float-producing conversion.
-import { EUR_PER_EUR, convertMinor, parseRate, resolveExponent, type ScaledRate } from '@/engine/money';
+import { EUR_PER_EUR, convertMinor, minorUnits, parseRate, resolveExponent, type ScaledRate } from '@/engine/money';
 import type { FxLatestRow, TransactionRow } from '@/db/rows';
 
 /** `code`'s latest units-per-EUR rate from the cached FX table, or null when none is cached. */
@@ -41,7 +41,7 @@ export function homeAmountFor(
   try {
     const origExponent = resolveExponent(row.original_currency);
     const homeExponent = resolveExponent(homeCurrency);
-    return convertMinor(row.original_amount, origPerEur, origExponent, homePerEur, homeExponent);
+    return convertMinor(minorUnits(row.original_amount), origPerEur, origExponent, homePerEur, homeExponent);
   } catch {
     return null;
   }
@@ -63,7 +63,7 @@ export function projectionHomeAmount(
   try {
     const fromExponent = resolveExponent(currency);
     const toExponent = resolveExponent(homeCurrency);
-    return convertMinor(amount, fromPerEur, fromExponent, toPerEur, toExponent);
+    return convertMinor(minorUnits(amount), fromPerEur, fromExponent, toPerEur, toExponent);
   } catch {
     return null;
   }

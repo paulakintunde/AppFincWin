@@ -5,8 +5,9 @@
 // still-loading identity for a genuine signed-out or no-household state.
 import { useHouseholdId } from '@/data/queries/household';
 import { useMoneyPrefs } from '@/data/queries/moneyPrefs';
-import { getDeviceTimeZone, localDateIn } from '@/engine/time';
+import { localDateIn } from '@/engine/time';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 
 export interface RecordContext {
   ready: boolean;
