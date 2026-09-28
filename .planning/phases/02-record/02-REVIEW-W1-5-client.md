@@ -59,6 +59,25 @@ status: issues_found
 **Files Reviewed:** 38
 **Status:** issues_found
 
+## Fix status (paused 2026-09-28)
+
+The user paused the fix pass before any finding was started. No source files have changed. Every finding is still open.
+
+| ID | Status |
+|----|--------|
+| C-CR-01 | not started |
+| C-CR-02 | not started |
+| C-WR-01 | not started |
+| C-WR-02 | not started |
+| C-WR-03 | not started |
+| C-WR-04 | not started |
+| C-WR-05 | not started |
+| C-WR-06 | not started |
+| C-WR-07 | not started |
+| C-WR-08 | not started |
+| C-WR-09 | not started |
+| C-IN-01..06 | not started |
+
 ## Summary
 
 The core write-queue plumbing is sound. Every Phase 2 mutation that is actually used (`addTransaction`, `editTransaction`, `importChunk`, `importFinalize`, `recordUndoStep`, accounts) is registered through `setMutationDefaults` at module scope before the persister restores, and they all share `WRITE_SCOPE`. No registered key is a prefix of another. Chunk inserts are idempotent (`upsert ... ignoreDuplicates`). The undo step is recorded inside the forward `mutationFn` after the server write succeeds, and a duplicate step id resolves as success, so a replay does not record the step twice. Money in this layer stays in integer minor units, with BigInt for the pending sums. Analytics events carry only banded or enum values, so no PII leaks through them. I found no "advice", "recommendation" or "you should" copy.
