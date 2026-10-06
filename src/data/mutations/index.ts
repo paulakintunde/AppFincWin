@@ -12,6 +12,8 @@ import { registerTransactionMutations } from './transactions';
 import { registerImportFinalizeMutations } from './importFinalize';
 import { registerCustomCurrencyMutations } from './customCurrencies';
 import { registerMoneyPrefsMutations } from './moneyPrefs';
+import { registerPatchMutations } from './patches';
+import { registerUndoMutations } from './undo';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -23,4 +25,8 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerAccountMutations(qc);
   registerCustomCurrencyMutations(qc);
   registerMoneyPrefsMutations(qc);
+  // 02-16: bulk actions and undo/rollback. The remaining unregistered keys (categories,
+  // recurring series, transfers, saveImportProfile) land with their own plans.
+  registerPatchMutations(qc);
+  registerUndoMutations(qc);
 }
