@@ -751,6 +751,87 @@ describe('useEditTransaction', () => {
   });
 });
 
+// C-WR-04: balances, the month switcher and search all read transactions but are not month
+// caches, so patching month caches alone left them stale until the app was backgrounded.
+describe('C-WR-04: transaction writes refresh the derived reads', () => {
+  const derivedKeys = [
+    { queryKey: queryKeys.accountBalances('h1') },
+    { queryKey: queryKeys.transactionMonths('h1') },
+    { queryKey: queryKeys.transactionsSearchRoot('h1') },
+  ];
+
+  it('an add invalidates balances, the month list and search on success', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []);
+    const invalidateSpy = jest.spyOn(qc, 'invalidateQueries');
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 90000 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => {
+      for (const key of derivedKeys) expect(invalidateSpy).toHaveBeenCalledWith(key);
+    });
+  });
+
+  it('an edit (here a delete) invalidates them on success, and a search hit is refreshed', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({
+      data: [serverTransaction({ id: 'tx-1', deleted_at: '2026-09-24T00:00:00.000Z', version: 2 })],
+      error: null,
+      status: 200,
+    });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [serverTransaction({ id: 'tx-1' })]);
+    qc.setQueryData(queryKeys.transactionsSearch('h1', 'rent'), [serverTransaction({ id: 'tx-1' })]);
+    const { result } = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.edit({ id: 'tx-1', householdId: 'h1', month: '2026-09', expectedVersion: 1, patch: { deleted_at: '2026-09-24T00:00:00.000Z' } });
+
+    await waitFor(() => expect(qc.getQueryState(queryKeys.transactionsSearch('h1', 'rent'))?.isInvalidated).toBe(true));
+    expect(qc.getQueryState(queryKeys.transactionsMonth('h1', '2026-09'))?.isInvalidated).toBe(false); // patched, not refetched
+  });
+
+  it('a rejected add that rolls back also invalidates them', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'check violation', code: '23514' }, status: 400 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []);
+    const invalidateSpy = jest.spyOn(qc, 'invalidateQueries');
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(1));
+    for (const key of derivedKeys) expect(invalidateSpy).toHaveBeenCalledWith(key);
+  });
+});
+
 describe('useDeleteTransaction / useMarkPaid / useSkipOccurrence', () => {
   it('remove soft-deletes optimistically, sends {deleted_at: iso}, and records an undo step with patch {deleted_at: null}', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;

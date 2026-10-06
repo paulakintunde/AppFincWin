@@ -19,6 +19,8 @@ export const queryKeys = {
   recurringSeries: (householdId: string) => ['recurring-series', householdId] as const,
   undoLog: (userId: string) => ['undo-log', userId] as const,
   transactionsSearch: (householdId: string, term: string) => ['transactions', householdId, 'search', term] as const,
+  // C-WR-04: every search term at once, for invalidation after a write.
+  transactionsSearchRoot: (householdId: string) => ['transactions', householdId, 'search'] as const,
   // Both nested under transactionsRoot's ['transactions', householdId] prefix so any
   // transaction invalidation refreshes them too.
   transactionMonths: (householdId: string) => ['transactions', householdId, 'months'] as const,

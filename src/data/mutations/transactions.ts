@@ -110,6 +110,19 @@ function patchMonthCacheIfLoaded(
   patchMonthCache(qc, householdId, month, updater);
 }
 
+/**
+ * C-WR-04: the reads derived from transactions that are not month caches -- account
+ * balances and standing (REC-08/REC-17), the month switcher, and search results -- go stale
+ * on every transaction write, and focusManager only refetches on app foreground, not on a tab
+ * change. Not awaited: query-core holds WRITE_SCOPE while onSuccess/onError are awaited
+ * (WR-A15), and these refetches must never delay the next queued write.
+ */
+function invalidateDerivedReads(qc: QueryClient, householdId: string): void {
+  void qc.invalidateQueries({ queryKey: queryKeys.accountBalances(householdId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.transactionMonths(householdId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.transactionsSearchRoot(householdId) });
+}
+
 /** The month an edit leaves the row in: the patched local_date's month, else the original. */
 function targetMonth(vars: EditTransactionVars): string {
   return vars.patch.local_date !== undefined ? monthOf(vars.patch.local_date) : vars.month;
@@ -331,6 +344,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
         // WR-A04: upsert, not replace -- a refetch may have dropped the optimistic row.
         patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) => upsertRow(rows, row, 'start'));
       }
+      invalidateDerivedReads(qc, vars.row.household_id); // C-WR-04
       // WR-A15: not awaited. query-core awaits onSuccess before releasing WRITE_SCOPE, so an
       // awaited Edge Function call would hold every later queued write behind it.
       void followUpIfRatePending(qc, vars.row.household_id, vars.optimistic.month, row);
@@ -341,6 +355,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
       patchMonthCacheIfLoaded(qc, vars.row.household_id, vars.optimistic.month, (rows) =>
         rows.filter((r) => r.id !== vars.row.id)
       );
+      invalidateDerivedReads(qc, vars.row.household_id); // C-WR-04: the rollback moves them too
       await recordFailedWrite({
         entity: 'transactions',
         entityId: vars.row.id,
@@ -400,6 +415,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
     onSuccess: async (row: TransactionRow, vars: EditTransactionVars) => {
       const toMonth = targetMonth(vars);
       placeRowInMonth(qc, vars.householdId, row, [vars.month, toMonth]);
+      invalidateDerivedReads(qc, vars.householdId); // C-WR-04
       if (toMonth !== vars.month || monthOf(row.local_date) !== toMonth) {
         // WR-A05: the row changed months; refetch both so their totals come from the server.
         await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) });
@@ -423,6 +439,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
         return;
       }
       if (cls === 'rejected' || cls === 'not-found') {
+        invalidateDerivedReads(qc, vars.householdId); // C-WR-04: the optimistic patch moved them
         await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) });
         if (targetMonth(vars) !== vars.month) {
           await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, targetMonth(vars)) });
