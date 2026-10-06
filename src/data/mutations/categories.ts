@@ -217,11 +217,11 @@ export function registerCategoryMutations(qc: QueryClient): void {
         // D-WR-03: the undo step travels with the call so a replay is recognised as applied.
         const applied = await applyPatches(client, forward, buildStep(vars.stepId, 'categoryMerged', { name: vars.targetName }, inverse));
 
-        const bases = new Map(
-          [...rows.map((r) => ['transactions', r.id, r.version] as const), ['categories', vars.source.id, vars.source.version] as const].map(
-            ([entity, id, version], k) => [`${entity}\u0000${id}`, [version, items[k]!.expectedVersion]] as const
-          )
-        );
+        const bases = new Map<string, number[]>();
+        items.forEach((item, k) => {
+          const original = k < rows.length ? rows[k]!.version : vars.source.version;
+          bases.set(`${item.entity}\u0000${item.id}`, [original, item.expectedVersion]);
+        });
         for (const row of applied) {
           recordWrittenVersion(row.entity as WriteEntity, row.id, bases.get(`${row.entity}\u0000${row.id}`) ?? [], row.version);
         }

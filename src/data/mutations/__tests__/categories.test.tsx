@@ -116,14 +116,14 @@ describe('useEditCategory / useArchiveCategory', () => {
   it('rename + recolour patches with a version check and the step restores the previous values', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
-    fake.respondWith(ok([cat('c1', { name: 'Fun', color_key: 'red', version: 2 })]));
+    fake.respondWith(ok([cat('c1', { name: 'Fun', color_key: 'rust', version: 2 })]));
     const qc = newClient();
     const { result } = await renderHook(() => useEditCategory(), { wrapper: wrapper(qc) });
 
-    result.current.edit(cat('c1', { name: 'Hobbies', color_key: 'green' }), { name: 'Fun', colorKey: 'red' });
+    result.current.edit(cat('c1', { name: 'Hobbies', color_key: 'green' }), { name: 'Fun', colorKey: 'rust' });
     await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
 
-    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ name: 'Fun', color_key: 'red' });
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ name: 'Fun', color_key: 'rust' });
     expect(fake.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toContainEqual(['version', 1]);
     expect(lastStep()).toMatchObject({
       labelKey: 'categoryEdited',
