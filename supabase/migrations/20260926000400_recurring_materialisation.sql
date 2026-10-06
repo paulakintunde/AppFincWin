@@ -41,6 +41,7 @@ declare
   v_floor date;
   v_date date;
   v_id uuid;
+  v_added boolean := false;
   n integer := 0;
 begin
   select * into s from public.recurring_series
@@ -76,6 +77,7 @@ begin
       returning id into v_id;
 
       if v_id is not null then
+        v_added := true;
         return next v_id;
       end if;
     end if;
@@ -83,9 +85,15 @@ begin
     n := n + 1;
   end loop;
 
-  if v_through > coalesce(s.materialised_through, '-infinity'::date) then
+  -- D-CR-01: generation moves whenever this run adds rows, so a stored undo
+  -- step for a template edit/end can tell that the occurrence set it was
+  -- built against has grown since (apply_undo_step refuses it, D-26).
+  if v_through > coalesce(s.materialised_through, '-infinity'::date) or v_added then
     perform set_config('fincwin.system_restamp', 'on', true);
-    update public.recurring_series set materialised_through = v_through where id = s.id;
+    update public.recurring_series
+       set materialised_through = greatest(v_through, coalesce(materialised_through, v_through)),
+           generation = generation + case when v_added then 1 else 0 end
+     where id = s.id;
     perform set_config('fincwin.system_restamp', '', true);
   end if;
 

@@ -38,6 +38,7 @@ create table public.recurring_series (
   end_date date,
   occurrence_count integer check (occurrence_count is null or occurrence_count between 1 and 1000),
   materialised_through date,                                           -- the materialiser's high-water mark; never rewinds except via edit-from
+  generation integer not null default 0,                               -- D-CR-01: bumped (without a version bump) each time the materialiser adds rows
   deleted_at timestamptz,
   version integer not null default 1,
   created_at timestamptz not null default now(),
