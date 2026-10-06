@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(17);
+select extensions.plan(20);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -177,6 +177,31 @@ select extensions.is(
   '11111111-1111-1111-1111-111111111111'::uuid,
   'renaming an account stamps accounts.updated_by'
 );
+-- 14. D-WR-07: transactions_active is a read path only. Supabase's default
+-- privileges hand every new relation insert/update/delete for
+-- authenticated; none of that may survive on the view, so the write
+-- surface never depends on the view keeping security_invoker.
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select extensions.throws_ok(
+  $$update public.transactions_active set note = 'via view' where id = 'b1111111-1111-1111-1111-111111111111'$$,
+  '42501', null,
+  'authenticated cannot update through transactions_active'
+);
+select extensions.throws_ok(
+  $$delete from public.transactions_active where id = 'b1111111-1111-1111-1111-111111111111'$$,
+  '42501', null,
+  'authenticated cannot delete through transactions_active'
+);
+reset role;
+select extensions.is(
+  (select array_agg(privilege_type::text order by privilege_type)
+     from information_schema.role_table_grants
+    where table_schema = 'public' and table_name = 'transactions_active' and grantee = 'authenticated'),
+  array['SELECT'],
+  'authenticated holds only SELECT on transactions_active'
+);
+
 reset role;
 
 select * from extensions.finish();
