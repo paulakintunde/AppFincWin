@@ -157,6 +157,38 @@ function tryRemembered(
 
 const STRUCTURAL_LABELS = ['debit-credit-columns', 'direction-column', 'dr-cr-markers'] as const;
 
+/**
+ * Review E-CR-03: a structural label (DR/CR markers, a direction column,
+ * debit/credit columns) only says that *some* rows state their direction.
+ * Rows that do are converted by their marker whatever the profile says; the
+ * rest still go through positiveMeans, so the label alone must not pick it.
+ *  - every non-zero row carries dr or cr: positiveMeans never applies, so
+ *    money-in is returned as the canonical choice;
+ *  - only cr appears and the unmarked rows are bare numbers: bare means the
+ *    opposite of cr (a UK card CSV marking only payments 'CR'), money-spent;
+ *  - only dr appears and the unmarked rows are bare: money-in;
+ *  - anything else (both markers alongside unmarked rows, or unmarked rows
+ *    with their own sign) is not decided here and falls through.
+ */
+function decideFromStructural(draft: StatementDraft): 'money-in' | 'money-spent' | null {
+  let dr = 0;
+  let cr = 0;
+  let bare = 0;
+  let signed = 0;
+  for (const row of draft.rows) {
+    if (row.magnitude === null || row.magnitude === 0) continue;
+    if (row.marker === 'dr') dr += 1;
+    else if (row.marker === 'cr') cr += 1;
+    else if (row.marker === 'none' || row.marker === 'plus') bare += 1;
+    else signed += 1;
+  }
+  if (bare === 0 && signed === 0) return 'money-in';
+  if (signed > 0) return null;
+  if (dr === 0 && cr > 0) return 'money-spent';
+  if (cr === 0 && dr > 0) return 'money-in';
+  return null;
+}
+
 function decideFromRowSign(
   draft: StatementDraft,
   accountFamily: AccountFamily
@@ -256,7 +288,10 @@ export function inferProfile(
 
   const structural = STRUCTURAL_LABELS.find((code) => draft.labels.includes(code));
   if (structural !== undefined) {
-    return decideByLabel(moneyIn, structural);
+    const structuralDecision = decideFromStructural(draft);
+    if (structuralDecision !== null) {
+      return decideByLabel(structuralDecision === 'money-in' ? moneyIn : moneySpent, structural);
+    }
   }
 
   const rowSignDecision = decideFromRowSign(draft, accountFamily);

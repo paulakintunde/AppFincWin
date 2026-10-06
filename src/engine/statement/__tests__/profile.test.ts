@@ -1,5 +1,6 @@
 import fc from 'fast-check';
 import { minorUnits } from '../../money';
+import { convertDraft } from '../convert';
 import { balanceMeansFor, candidateProfiles, flipProfile, inferProfile, PAYMENT_LIKE_CARD, INCOME_LIKE_DEPOSIT } from '../profile';
 import type { AccountKind, DraftRow, FormatProfile, ProfileResult, StatementDraft } from '../types';
 import { arbLedger, renderDraft } from './fixtures/ledgers';
@@ -161,6 +162,79 @@ describe('inferProfile: labels decide outright (debit/credit columns)', () => {
     const { profile, evidence } = asDecided(result);
     expect(profile.decidedBy).toBe('labels');
     expect(evidence).toEqual(expect.arrayContaining(['debit-credit-columns', 'account-kind']));
+  });
+});
+
+describe('inferProfile: partial DR/CR or direction evidence (review E-CR-03)', () => {
+  it('a card CSV marking only payments CR reads the unmarked purchases as money spent', () => {
+    const draft = makeDraft({
+      labels: ['dr-cr-markers'],
+      rows: [
+        makeRow(0, { magnitude: minorUnits(4500), marker: 'none' }),
+        makeRow(1, { magnitude: minorUnits(2000), marker: 'none' }),
+        makeRow(2, { magnitude: minorUnits(10000), marker: 'cr' }),
+      ],
+    });
+    const { profile, evidence } = asDecided(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(profile.positiveMeans).toBe('money-spent');
+    expect(evidence).toEqual(expect.arrayContaining(['account-kind', 'dr-cr-markers']));
+    expect(convertDraft(draft, profile, { limit: null }).rows.map((r) => r.amount)).toEqual([-4500, -2000, 10000]);
+  });
+
+  it('a file marking only debits DR reads the unmarked rows as money in', () => {
+    const draft = makeDraft({
+      labels: ['dr-cr-markers'],
+      rows: [makeRow(0, { magnitude: minorUnits(4500), marker: 'dr' }), makeRow(1, { magnitude: minorUnits(9000), marker: 'plus' })],
+    });
+    const { profile } = asDecided(inferProfile(draft, { kind: 'checking', limit: null }, null));
+    expect(profile.positiveMeans).toBe('money-in');
+    expect(convertDraft(draft, profile, { limit: null }).rows.map((r) => r.amount)).toEqual([-4500, 9000]);
+  });
+
+  it('a direction column whose unrecognised rows are bare, beside CR-only rows, reads them as money spent', () => {
+    const draft = makeDraft({
+      labels: ['direction-column'],
+      rows: [makeRow(0, { magnitude: minorUnits(4500), marker: 'none' }), makeRow(1, { magnitude: minorUnits(9000), marker: 'cr' })],
+    });
+    const { profile } = asDecided(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(profile.positiveMeans).toBe('money-spent');
+  });
+
+  it('zero-magnitude and unreadable rows are ignored when weighing the markers', () => {
+    const draft = makeDraft({
+      labels: ['dr-cr-markers'],
+      rows: [
+        makeRow(0, { magnitude: minorUnits(4500), marker: 'dr' }),
+        makeRow(1, { magnitude: minorUnits(0), marker: 'none' }),
+        makeRow(2, { magnitude: null, marker: 'none' }),
+      ],
+    });
+    const { profile, evidence } = asDecided(inferProfile(draft, { kind: 'checking', limit: null }, null));
+    expect(profile.positiveMeans).toBe('money-in');
+    expect(evidence).toContain('dr-cr-markers');
+  });
+
+  it('both markers beside unmarked rows is not decided by the label', () => {
+    const draft = makeDraft({
+      labels: ['dr-cr-markers'],
+      rows: [
+        makeRow(0, { magnitude: minorUnits(4500), marker: 'dr' }),
+        makeRow(1, { magnitude: minorUnits(9000), marker: 'cr' }),
+        makeRow(2, { magnitude: minorUnits(1000), marker: 'none' }),
+      ],
+    });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, null);
+    expect(result.kind).toBe('ambiguous');
+    expect(result.evidence).not.toContain('dr-cr-markers');
+  });
+
+  it('unmarked rows carrying their own sign are not decided by the label', () => {
+    const draft = makeDraft({
+      labels: ['dr-cr-markers'],
+      rows: [makeRow(0, { magnitude: minorUnits(4500), marker: 'minus' }), makeRow(1, { magnitude: minorUnits(9000), marker: 'cr' })],
+    });
+    const result = inferProfile(draft, { kind: 'credit', limit: null }, null);
+    expect(result.kind).toBe('ambiguous');
   });
 });
 
