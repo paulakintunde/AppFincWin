@@ -327,6 +327,20 @@ begin
     raise exception 'edit_recurring_series_from: p_patch must be a non-empty object' using errcode = '22023';
   end if;
 
+  -- D-WR-09: a null effective date is invalid (it used to bump the version
+  -- and regenerate nothing); one far in the past is rejected, because the
+  -- rewind would re-materialise every occurrence the user deleted since
+  -- (tombstones fall outside the occurrence unique index); and one before
+  -- the anchor is clamped to it, so a re-anchor never starts the series
+  -- earlier than it began.
+  if p_effective_from is null then
+    raise exception 'edit_recurring_series_from: p_effective_from is required' using errcode = '22023';
+  end if;
+  if p_effective_from < (date_trunc('month', (now() at time zone s.time_zone)::date) - interval '12 months')::date then
+    raise exception 'edit_recurring_series_from: p_effective_from % is too far in the past', p_effective_from using errcode = '22023';
+  end if;
+  p_effective_from := greatest(p_effective_from, s.anchor_date);
+
   for v_key in select jsonb_object_keys(p_patch) loop
     if not (v_key = any (v_allowed)) then
       raise exception 'unknown recurring_series patch key %', v_key using errcode = '22023';
@@ -446,6 +460,11 @@ begin
         'record_name', s.name, 'builtin_key', null, 'reason', 'changed'
       )
     );
+  end if;
+  -- D-WR-09: a null end date used to pass the check below (NULL < x is
+  -- NULL) and silently turn "End series" into "remove the end date".
+  if p_end_date is null then
+    raise exception 'end_recurring_series: p_end_date is required' using errcode = '22023';
   end if;
   if p_end_date < s.anchor_date then
     raise exception 'end_date % is before anchor_date %', p_end_date, s.anchor_date using errcode = '22023';

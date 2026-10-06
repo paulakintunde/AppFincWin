@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(33);
+select extensions.plan(38);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -418,6 +418,53 @@ select extensions.is(
   '12'::jsonb,
   'the change set''s before carries the old occurrence_count, so undo restores it'
 );
+-- ---------------------------------------------------------------------
+-- 16. D-WR-09: a null end date / effective date is invalid, never a silent
+-- "remove the end date" or a no-op that still bumps the version; an
+-- effective date far in the past is rejected; one before the anchor is
+-- clamped to the anchor.
+-- ---------------------------------------------------------------------
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+
+select public.create_recurring_series(jsonb_build_object(
+  'id', 'cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+  'household_id', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+  'account_id', 'a1111111-1111-1111-1111-111111111111',
+  'name', 'Dates', 'amount', -100, 'currency', 'USD', 'freq', 'monthly',
+  'anchor_date', date_trunc('month', current_date)::date, 'time_zone', 'UTC'
+));
+
+select extensions.throws_ok(
+  $$select public.end_recurring_series('cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 1, null)$$,
+  '22023', null,
+  'end_recurring_series with a null end date is rejected'
+);
+select extensions.throws_ok(
+  $$select public.edit_recurring_series_from('cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 1, '{"amount": -200}'::jsonb, null)$$,
+  '22023', null,
+  'edit_recurring_series_from with a null effective date is rejected'
+);
+select extensions.throws_ok(
+  $$select public.edit_recurring_series_from('cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 1, '{"amount": -200}'::jsonb, (current_date - interval '3 years')::date)$$,
+  '22023', null,
+  'an effective date years in the past is rejected (it would resurrect every deleted occurrence since)'
+);
+select extensions.is(
+  (public.edit_recurring_series_from(
+    'cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 1, '{"freq": "weekly"}'::jsonb,
+    (date_trunc('month', current_date) - interval '5 days')::date
+  ) ->> 'status'),
+  'applied',
+  'an effective date shortly before the anchor still applies'
+);
+select extensions.is(
+  (select anchor_date from public.recurring_series where id = 'cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
+  date_trunc('month', current_date)::date,
+  'it is clamped to the anchor: a re-anchor never moves the series earlier than it began'
+);
+reset role;
+
 reset role;
 
 select * from extensions.finish();
