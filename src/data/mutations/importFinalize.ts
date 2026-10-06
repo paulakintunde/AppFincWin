@@ -22,7 +22,7 @@ import type { FormatProfile } from '@/engine/statement';
 import { applyPatches, BAD_RESPONSE, type AppliedRow } from '@/db/patches';
 import { DbError, VersionConflictError } from '@/db/errors';
 import { IMPORT_CHUNK_MAX, insertTransactionsBatch } from '@/db/transactions';
-import { insertUndoStep } from '@/db/undoLog';
+import { fetchUndoLog, insertUndoStep } from '@/db/undoLog';
 import { saveImportProfile } from '@/db/importProfiles';
 import type { DbClient, NewTransaction } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
@@ -184,6 +184,19 @@ function isPermanentRefusal(err: unknown): boolean {
   return !(err instanceof DbError && err.code === BAD_RESPONSE);
 }
 
+/**
+ * C-WR-02: apply_patches records the import's undo step in the same transaction as its
+ * patches, so finding the step already in the log proves an earlier attempt of this finalize
+ * committed -- its response was lost to a timeout or an app kill, and the retry conflicts only
+ * because it still sends the versions from before. The client-side check reads the owner's
+ * newest steps (fetchUndoLog's 12); a db helper that looks the id up directly would be exact
+ * (follow-up for src/db, recorded in the review).
+ */
+async function stepAlreadyRecorded(client: DbClient, vars: ImportFinalizeVars): Promise<boolean> {
+  const steps = await fetchUndoLog(client, vars.ownerId);
+  return steps.some((step) => step.id === vars.stepId);
+}
+
 interface Keep {
   link(l: ImportLink): boolean;
   markPaid(m: ImportMarkPaid): boolean;
@@ -210,6 +223,7 @@ async function runFinalize(client: DbClient, vars: ImportFinalizeVars): Promise<
   let limit = vars.limit;
   const fallback: NewTransaction[] = [];
   let dropped: FinalizeDropped | null = null;
+  let replayChecked = false;
 
   const setAside = (kind: FinalizeDropped['kind'], code: string, keep: Keep, id: string | null): boolean => {
     const keptLinks = links.filter((l) => keep.link(l));
@@ -274,6 +288,10 @@ async function runFinalize(client: DbClient, vars: ImportFinalizeVars): Promise<
       return { applied, dropped };
     } catch (err) {
       if (err instanceof VersionConflictError) {
+        if (!replayChecked) {
+          replayChecked = true;
+          if (await stepAlreadyRecorded(client, vars)) return { applied: [], dropped: null }; // C-WR-02
+        }
         const conflict = err.serverRow as Partial<UndoConflict> | null;
         const id = typeof conflict?.id === 'string' ? conflict.id : null;
         const hit = (entity: string, candidate: string): boolean =>

@@ -322,6 +322,7 @@ describe('useImportCommit', () => {
       error: null,
       status: 200,
     });
+    fake.respondWith({ data: [], error: null, status: 200 }); // C-WR-02: step not already recorded
     fake.respondWith({ data: null, error: null, status: 201 }); // insertUndoStep: nothing left to patch
 
     const qc = newClient();
@@ -352,6 +353,43 @@ describe('useImportCommit', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.transactionsRoot('h1') });
   });
 
+  // C-WR-02: the first attempt committed and its response was lost (timeout, app killed). The
+  // retry still sends the old versions, so it conflicts; the step being recorded already
+  // proves it landed, so it settles as success -- never a failed import that succeeded.
+  it('C-WR-02: a retried finalize whose first attempt already committed settles as success', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({
+      data: {
+        status: 'conflict',
+        conflict: { entity: 'transactions', id: 'n2', updated_by: null, record_name: null, builtin_key: null, reason: 'changed' },
+      },
+      error: null,
+      status: 200,
+    });
+    fake.respondWith({
+      data: [{ id: 'step-1', owner_id: 'user-1', label_key: 'imported', label_params: { n: 2 }, status: 'available', refusal: null, created_at: '2026-09-28T10:00:00+00:00', resolved_at: null }],
+      error: null,
+      status: 200,
+    });
+
+    const qc = newClient();
+    const invalidateSpy = jest.spyOn(qc, 'invalidateQueries');
+    const { result } = await renderHook(() => useImportCommit(), { wrapper: wrapper(qc) });
+
+    result.current.commit(
+      baseInput({
+        transferCategoryId: 'transfer-cat',
+        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T' }],
+      })
+    );
+
+    await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.undoLog('user-1') }));
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+    expect(fake.calls.filter((c) => c.method === 'rpc')).toHaveLength(1); // nothing resent
+    expect(fake.calls.some((c) => c.table === 'undo_log' && c.method === 'insert')).toBe(false);
+  });
+
   it('C-CR-01: a conflict on a mark-paid bill records its statement line as an ordinary row, in the undo step', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
@@ -363,6 +401,7 @@ describe('useImportCommit', () => {
       error: null,
       status: 200,
     });
+    fake.respondWith({ data: [], error: null, status: 200 }); // C-WR-02: step not already recorded
     fake.respondWith({ data: [{ id: 'line-p1', local_date: '2026-09-04', version: 1, rate_pending: false }], error: null, status: 201 }); // fallback line
     fake.respondWith({ data: { status: 'applied', rows: [{ entity: 'accounts', id: 'a1', version: 4 }] }, error: null, status: 200 });
 
@@ -424,6 +463,7 @@ describe('useImportCommit', () => {
       error: null,
       status: 200,
     });
+    fake.respondWith({ data: [], error: null, status: 200 }); // C-WR-02: step not already recorded
     fake.respondWith({ data: { status: 'applied', rows: [{ entity: 'transactions', id: 'p1', version: 3 }] }, error: null, status: 200 });
 
     const qc = newClient();
