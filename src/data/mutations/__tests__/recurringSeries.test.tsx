@@ -175,8 +175,14 @@ describe('useCreateSeries', () => {
 
     const stepId = result.current.create({ series: newSeries, anchorTransactionId: 't1', linkTransactionIds: ['t2'], ownerId: 'u1' });
 
-    const cached = qc.getQueryData<RecurringSeriesRow[]>(queryKeys.recurringSeries('h1'))!;
-    expect(cached[0]).toMatchObject({ id: 's1', version: 1, materialised_through: null, pending: true });
+    await waitFor(() =>
+      expect(qc.getQueryData<RecurringSeriesRow[]>(queryKeys.recurringSeries('h1'))?.[0]).toMatchObject({
+        id: 's1',
+        version: 1,
+        materialised_through: null,
+        pending: true,
+      })
+    );
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.transactionsRoot('h1') }));
 
     const [call] = rpcCalls(fake);

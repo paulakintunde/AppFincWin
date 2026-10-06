@@ -15,6 +15,7 @@ import { registerMoneyPrefsMutations } from './moneyPrefs';
 import { registerPatchMutations } from './patches';
 import { registerUndoMutations } from './undo';
 import { registerCategoryMutations } from './categories';
+import { registerSeriesMutations } from './recurringSeries';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -32,4 +33,6 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerUndoMutations(qc);
   // 02-17: category add/edit/archive/merge.
   registerCategoryMutations(qc);
+  // 02-18: recurring series create / edit-from / end.
+  registerSeriesMutations(qc);
 }
