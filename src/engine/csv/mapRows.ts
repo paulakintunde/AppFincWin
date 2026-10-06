@@ -37,8 +37,12 @@ export const MAX_NAME_LENGTH = 200; // = MAX_DESCRIPTION, mirrors the DB check a
 // Kept in sync with detectColumns.ts's private direction-value word set,
 // which uses the same table to decide whether an otherwise header-matched
 // 'Type'/'Direction' column is accepted as a direction role at all.
+// 'payment' is in neither table (review E-WR-09): on a card export it is a
+// payment *to* the card (money in), on a current account it is money out.
+// A 'Payment' row takes the plain reading and the format profile decides.
+// detectColumns still counts it as a direction-column word.
 export const DIRECTION_OUT = ['debit', 'dr', 'sale', 'purchase', 'withdrawal', 'payment out', 'out'] as const;
-export const DIRECTION_IN = ['credit', 'cr', 'payment', 'return', 'refund', 'deposit', 'in'] as const;
+export const DIRECTION_IN = ['credit', 'cr', 'return', 'refund', 'deposit', 'in'] as const;
 
 export interface CsvDraftOptions {
   mapping: ColumnMapping;

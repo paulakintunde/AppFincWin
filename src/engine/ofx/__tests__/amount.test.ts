@@ -72,6 +72,21 @@ describe('parseOfxAmount', () => {
     expect(result).toEqual({ ok: true, magnitude: 1200, marker: 'minus' });
   });
 
+  it("refuses a lone ',' followed by exactly three digits as ambiguous, never 1.00 for '-1,000' (review E-WR-03)", () => {
+    expect(parseOfxAmount('-1,000', 2)).toEqual({ ok: false, error: 'ambiguous-separator' });
+    expect(parseOfxAmount('-1,250', 2)).toEqual({ ok: false, error: 'ambiguous-separator' });
+    expect(parseOfxAmount('999,000', 0)).toEqual({ ok: false, error: 'ambiguous-separator' });
+  });
+
+  it("still reads a ',' decimal with three digits when the currency has three decimals, or a longer integer part", () => {
+    expect(parseOfxAmount('-1,250', 3)).toEqual({ ok: true, magnitude: 1250, marker: 'minus' });
+    expect(parseOfxAmount('1250,500', 2)).toEqual({ ok: true, magnitude: 125050, marker: 'none' });
+  });
+
+  it("a '.' mark (the OFX spec's) followed by three zeros at exponent 0 is refused, never read as 1", () => {
+    expect(parseOfxAmount('1.000', 0)).toEqual({ ok: false, error: 'too-many-decimals' });
+  });
+
   it('reads a padded four-decimal amount against a 2-exponent currency', () => {
     const result = parseOfxAmount('45.0000', 2);
     expect(result).toEqual({ ok: true, magnitude: 4500, marker: 'none' });
@@ -94,6 +109,13 @@ describe('parseOfxAmount', () => {
             const raw = a < 0 ? `-${body}` : body;
 
             const result = parseOfxAmount(raw, exponent);
+            // A lone ',' with exactly three digits after it and a 1-3 digit
+            // integer part reads equally as a thousands group, so it is
+            // refused unless the currency itself has three decimals (E-WR-03).
+            if (mark === ',' && exponent !== 3 && fraction.length === 3 && whole.length <= 3) {
+              expect(result).toEqual({ ok: false, error: 'ambiguous-separator' });
+              return;
+            }
             expect(result.ok).toBe(true);
             if (result.ok) {
               expect(result.magnitude).toBe(magnitude);

@@ -158,8 +158,11 @@ describe('transferEditPatches', () => {
       in: { ...before.in, localDate: '2026-09-06' },
     });
     expect(transferEditPatches(before, after)).toEqual({
-      out: { local_date: '2026-09-06' },
-      in: { local_date: '2026-09-06' },
+      ok: true,
+      patches: {
+        out: { local_date: '2026-09-06' },
+        in: { local_date: '2026-09-06' },
+      },
     });
   });
 
@@ -170,8 +173,11 @@ describe('transferEditPatches', () => {
       in: { ...before.in, amount: 6000 },
     });
     expect(transferEditPatches(before, after)).toEqual({
-      out: { original_amount: -6000 },
-      in: { original_amount: 6000 },
+      ok: true,
+      patches: {
+        out: { original_amount: -6000 },
+        in: { original_amount: 6000 },
+      },
     });
   });
 
@@ -185,8 +191,11 @@ describe('transferEditPatches', () => {
       in: { ...before.in, amount: 6000 },
     });
     expect(transferEditPatches(before, after)).toEqual({
-      out: {},
-      in: { original_amount: 6000 },
+      ok: true,
+      patches: {
+        out: {},
+        in: { original_amount: 6000 },
+      },
     });
   });
 
@@ -197,14 +206,38 @@ describe('transferEditPatches', () => {
       in: { ...before.in, accountId: 'a3', currency: 'USD' },
     });
     expect(transferEditPatches(before, after)).toEqual({
-      out: {},
-      in: { account_id: 'a3', original_currency: 'USD' },
+      ok: true,
+      patches: {
+        out: {},
+        in: { account_id: 'a3', original_currency: 'USD' },
+      },
     });
   });
 
   it('nothing changed -> empty patches', () => {
     const before = state();
     const after = state();
-    expect(transferEditPatches(before, after)).toEqual({ out: {}, in: {} });
+    expect(transferEditPatches(before, after)).toEqual({ ok: true, patches: { out: {}, in: {} } });
+  });
+
+  describe('rejects an after state that breaks the pair (review E-WR-11)', () => {
+    it.each<[string, Partial<TransferPairState>, string]>([
+      ['a positive out-leg', { out: { accountId: 'a1', currency: 'GBP', amount: 5000, localDate: '2026-09-05' } }, 'non-positive'],
+      ['a negative in-leg', { in: { accountId: 'a2', currency: 'GBP', amount: -5000, localDate: '2026-09-05' } }, 'non-positive'],
+      ['a zero leg', { in: { accountId: 'a2', currency: 'GBP', amount: 0, localDate: '2026-09-05' } }, 'non-positive'],
+      ['both legs on one account', { in: { accountId: 'a1', currency: 'GBP', amount: 5000, localDate: '2026-09-05' } }, 'same-account'],
+      ['unequal same-currency amounts', { in: { accountId: 'a2', currency: 'GBP', amount: 6000, localDate: '2026-09-05' } }, 'same-currency-mismatch'],
+      ['legs on different dates', { in: { accountId: 'a2', currency: 'GBP', amount: 5000, localDate: '2026-09-06' } }, 'date-mismatch'],
+      [
+        'an invalid date',
+        {
+          out: { accountId: 'a1', currency: 'GBP', amount: -5000, localDate: '2026-02-30' },
+          in: { accountId: 'a2', currency: 'GBP', amount: 5000, localDate: '2026-02-30' },
+        },
+        'bad-date',
+      ],
+    ])('%s', (_label, overrides, error) => {
+      expect(transferEditPatches(state(), state(overrides))).toEqual({ ok: false, error });
+    });
   });
 });

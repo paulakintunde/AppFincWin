@@ -1,5 +1,9 @@
 import fc from 'fast-check';
+import * as fs from 'fs';
+import * as path from 'path';
+import { parseOfx } from '../../ofx';
 import { minorUnits } from '../../money';
+import { convertDraft } from '../convert';
 import { balanceMeansFor, candidateProfiles, flipProfile, inferProfile, PAYMENT_LIKE_CARD, INCOME_LIKE_DEPOSIT } from '../profile';
 import type { AccountKind, DraftRow, FormatProfile, ProfileResult, StatementDraft } from '../types';
 import { arbLedger, renderDraft } from './fixtures/ledgers';
@@ -161,6 +165,79 @@ describe('inferProfile: labels decide outright (debit/credit columns)', () => {
     const { profile, evidence } = asDecided(result);
     expect(profile.decidedBy).toBe('labels');
     expect(evidence).toEqual(expect.arrayContaining(['debit-credit-columns', 'account-kind']));
+  });
+});
+
+describe('inferProfile: partial DR/CR or direction evidence (review E-CR-03)', () => {
+  it('a card CSV marking only payments CR reads the unmarked purchases as money spent', () => {
+    const draft = makeDraft({
+      labels: ['dr-cr-markers'],
+      rows: [
+        makeRow(0, { magnitude: minorUnits(4500), marker: 'none' }),
+        makeRow(1, { magnitude: minorUnits(2000), marker: 'none' }),
+        makeRow(2, { magnitude: minorUnits(10000), marker: 'cr' }),
+      ],
+    });
+    const { profile, evidence } = asDecided(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(profile.positiveMeans).toBe('money-spent');
+    expect(evidence).toEqual(expect.arrayContaining(['account-kind', 'dr-cr-markers']));
+    expect(convertDraft(draft, profile, { limit: null }).rows.map((r) => r.amount)).toEqual([-4500, -2000, 10000]);
+  });
+
+  it('a file marking only debits DR reads the unmarked rows as money in', () => {
+    const draft = makeDraft({
+      labels: ['dr-cr-markers'],
+      rows: [makeRow(0, { magnitude: minorUnits(4500), marker: 'dr' }), makeRow(1, { magnitude: minorUnits(9000), marker: 'plus' })],
+    });
+    const { profile } = asDecided(inferProfile(draft, { kind: 'checking', limit: null }, null));
+    expect(profile.positiveMeans).toBe('money-in');
+    expect(convertDraft(draft, profile, { limit: null }).rows.map((r) => r.amount)).toEqual([-4500, 9000]);
+  });
+
+  it('a direction column whose unrecognised rows are bare, beside CR-only rows, reads them as money spent', () => {
+    const draft = makeDraft({
+      labels: ['direction-column'],
+      rows: [makeRow(0, { magnitude: minorUnits(4500), marker: 'none' }), makeRow(1, { magnitude: minorUnits(9000), marker: 'cr' })],
+    });
+    const { profile } = asDecided(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(profile.positiveMeans).toBe('money-spent');
+  });
+
+  it('zero-magnitude and unreadable rows are ignored when weighing the markers', () => {
+    const draft = makeDraft({
+      labels: ['dr-cr-markers'],
+      rows: [
+        makeRow(0, { magnitude: minorUnits(4500), marker: 'dr' }),
+        makeRow(1, { magnitude: minorUnits(0), marker: 'none' }),
+        makeRow(2, { magnitude: null, marker: 'none' }),
+      ],
+    });
+    const { profile, evidence } = asDecided(inferProfile(draft, { kind: 'checking', limit: null }, null));
+    expect(profile.positiveMeans).toBe('money-in');
+    expect(evidence).toContain('dr-cr-markers');
+  });
+
+  it('both markers beside unmarked rows is not decided by the label', () => {
+    const draft = makeDraft({
+      labels: ['dr-cr-markers'],
+      rows: [
+        makeRow(0, { magnitude: minorUnits(4500), marker: 'dr' }),
+        makeRow(1, { magnitude: minorUnits(9000), marker: 'cr' }),
+        makeRow(2, { magnitude: minorUnits(1000), marker: 'none' }),
+      ],
+    });
+    const result = inferProfile(draft, { kind: 'checking', limit: null }, null);
+    expect(result.kind).toBe('ambiguous');
+    expect(result.evidence).not.toContain('dr-cr-markers');
+  });
+
+  it('unmarked rows carrying their own sign are not decided by the label', () => {
+    const draft = makeDraft({
+      labels: ['dr-cr-markers'],
+      rows: [makeRow(0, { magnitude: minorUnits(4500), marker: 'minus' }), makeRow(1, { magnitude: minorUnits(9000), marker: 'cr' })],
+    });
+    const result = inferProfile(draft, { kind: 'credit', limit: null }, null);
+    expect(result.kind).toBe('ambiguous');
   });
 });
 
@@ -454,7 +531,7 @@ describe('property: every returned candidate has balanceMeans consistent with th
 });
 
 describe('inferProfile: ambiguity table (RESEARCH.md §A2) -- available-credit balance, no limit stated', () => {
-  it('converted amounts are still correct via availableDelta; statedLimit stays null', () => {
+  it('decided by reconciling the signed available figures; statedLimit stays null', () => {
     const draft = makeDraft({
       balanceLabel: 'available',
       rows: [
@@ -639,6 +716,75 @@ describe('inferProfile: income-row-sign on a deposit account', () => {
     expect(evidence).toContain('income-row-sign');
     expect(profile.positiveMeans).toBe('money-in');
   });
+
+  it('the majority of matching rows decides, not the first (review E-WR-08)', () => {
+    const draft = makeDraft({
+      rows: [
+        makeRow(0, { description: 'SALARY - NANNY', magnitude: minorUnits(50000), marker: 'minus' }),
+        makeRow(1, { description: 'SALARY', magnitude: minorUnits(200000), marker: 'none' }),
+        makeRow(2, { description: 'INTEREST PAID', magnitude: minorUnits(150), marker: 'none' }),
+      ],
+    });
+    const { profile, evidence } = asDecided(inferProfile(draft, { kind: 'checking', limit: null }, null));
+    expect(evidence).toContain('income-row-sign');
+    expect(profile.positiveMeans).toBe('money-in');
+  });
+
+  it('an even split of matching rows decides nothing', () => {
+    const draft = makeDraft({
+      rows: [
+        makeRow(0, { description: 'SALARY - NANNY', magnitude: minorUnits(50000), marker: 'minus' }),
+        makeRow(1, { description: 'SALARY', magnitude: minorUnits(200000), marker: 'none' }),
+      ],
+    });
+    expect(inferProfile(draft, { kind: 'checking', limit: null }, null).kind).toBe('ambiguous');
+  });
+
+  it('a running-balance check that verifies only the other reading overrides the description (review E-WR-08)', () => {
+    // True ledger, raw sign = stored sign (money-in): 1000.00 -> 500.00 -> 480.00.
+    // The only income-like row is an outgoing 'OVERDRAFT INTEREST PAID'.
+    const draft = makeDraft({
+      statedOpening: { magnitude: minorUnits(100000), marker: 'none', asOf: null, raw: '1000.00' },
+      rows: [
+        makeRow(0, {
+          description: 'OVERDRAFT INTEREST PAID',
+          magnitude: minorUnits(50000),
+          marker: 'minus',
+          balanceMagnitude: minorUnits(50000),
+          balanceMarker: 'none',
+        }),
+        makeRow(1, {
+          description: 'TESCO',
+          magnitude: minorUnits(2000),
+          marker: 'minus',
+          balanceMagnitude: minorUnits(48000),
+          balanceMarker: 'none',
+        }),
+      ],
+    });
+    const { profile, evidence } = asDecided(inferProfile(draft, { kind: 'checking', limit: null }, null));
+    expect(profile.positiveMeans).toBe('money-in');
+    expect(profile.decidedBy).toBe('reconciliation');
+    expect(evidence).toEqual(['account-kind', 'running-balance']);
+  });
+
+  it('a running-balance check agreeing with the description keeps the label decision', () => {
+    const draft = makeDraft({
+      statedOpening: { magnitude: minorUnits(100000), marker: 'none', asOf: null, raw: '1000.00' },
+      rows: [
+        makeRow(0, {
+          description: 'SALARY',
+          magnitude: minorUnits(50000),
+          marker: 'none',
+          balanceMagnitude: minorUnits(150000),
+          balanceMarker: 'none',
+        }),
+      ],
+    });
+    const { profile, evidence } = asDecided(inferProfile(draft, { kind: 'checking', limit: null }, null));
+    expect(profile.decidedBy).toBe('labels');
+    expect(evidence).toEqual(['account-kind', 'income-row-sign', 'running-balance']);
+  });
 });
 
 describe('inferProfile: a CSV limit-label column value is copied verbatim, never re-derived', () => {
@@ -666,15 +812,99 @@ describe('inferProfile: OFX card limit derivation edge cases', () => {
     expect(profile.statedLimit).toBe(0);
   });
 
-  it('a negative computed figure is never offered as a limit', () => {
+  it('a negative computed figure is never offered as a limit; with no reading giving a limit, the user is asked (review E-CR-04)', () => {
     const draft = makeDraft({
       source: 'ofx',
       statedClosing: { magnitude: minorUnits(25000), marker: 'none', asOf: null, raw: '250.00' },
       available: { magnitude: minorUnits(40000), marker: 'minus', asOf: null, raw: '-400.00' },
       rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
     });
-    const result = inferProfile(draft, { kind: 'credit', limit: null }, null);
-    const { profile } = asDecided(result);
-    expect(profile.statedLimit).toBeNull();
+    const { candidates } = asAmbiguous(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(candidates.map((c) => c.balanceMeans)).toEqual(['owed', 'held']);
+    for (const c of candidates) {
+      expect(c.statedLimit).toBeNull();
+      expect(c.positiveMeans).toBe('money-spent');
+    }
+  });
+});
+
+describe('inferProfile: OFX card balance orientation decided by LEDGERBAL + AVAILBAL (review E-CR-04, D-53 amended)', () => {
+  const EXPONENTS: Readonly<Record<string, number>> = { GBP: 2 };
+  function ofxFixtureDraft(name: string): StatementDraft {
+    const text = fs.readFileSync(path.join(__dirname, '..', '..', 'ofx', '__tests__', 'fixtures', name), 'utf8');
+    const result = parseOfx(text, { exponentFor: (code) => EXPONENTS[code] ?? null });
+    if (!result.ok) throw new Error('fixture failed to parse');
+    return result.drafts[0] as StatementDraft;
+  }
+
+  it('card-over-limit.ofx (holder view, LEDGERBAL -1250, AVAILBAL -250) reads as owing 1,250 against a 1,000 limit', () => {
+    const draft = ofxFixtureDraft('card-over-limit.ofx');
+    const { profile } = asDecided(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(profile.balanceMeans).toBe('held');
+    expect(profile.statedLimit).toBe(100000);
+    const converted = convertDraft(draft, profile, { limit: profile.statedLimit });
+    expect(converted.closing).toBe(-125000);
+    expect(converted.rows.map((r) => r.amount)).toEqual([-130000, 5000]);
+  });
+
+  it('issuer view (LEDGERBAL +1250, AVAILBAL -250) keeps the owed reading', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(125000), marker: 'none', asOf: null, raw: '1250.00' },
+      available: { magnitude: minorUnits(25000), marker: 'minus', asOf: null, raw: '-250.00' },
+      rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
+    });
+    const { profile } = asDecided(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(profile.balanceMeans).toBe('owed');
+    expect(convertDraft(draft, profile, { limit: null }).closing).toBe(-125000);
+  });
+
+  it('both readings giving a valid limit is ambiguous, with every s/k candidate when s is undecided', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(20000), marker: 'none', asOf: null, raw: '200.00' },
+      available: { magnitude: minorUnits(80000), marker: 'none', asOf: null, raw: '800.00' },
+      rows: [makeRow(0, { description: 'SHOP', magnitude: minorUnits(1000), marker: 'none' })],
+    });
+    const { candidates, evidence } = asAmbiguous(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(evidence).toEqual(['account-kind']);
+    expect(candidates).toHaveLength(4);
+    expect(candidates.map((c) => [c.balanceMeans, c.statedLimit])).toEqual([
+      ['owed', 100000],
+      ['owed', 100000],
+      ['held', 60000],
+      ['held', 60000],
+    ]);
+  });
+
+  it('a zero LEDGERBAL reads the same either way and stays owed', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(0), marker: 'none', asOf: null, raw: '0.00' },
+      available: { magnitude: minorUnits(50000), marker: 'none', asOf: null, raw: '500.00' },
+      rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
+    });
+    const { profile } = asDecided(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(profile.balanceMeans).toBe('owed');
+    expect(profile.statedLimit).toBe(50000);
+  });
+
+  it('an OFX card with LEDGERBAL but no AVAILBAL keeps the D-53 owed default', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(125000), marker: 'minus', asOf: null, raw: '-1250.00' },
+      rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
+    });
+    expect(balanceMeansFor('credit', draft)).toBe('owed');
+  });
+
+  it('a CSV card is never re-oriented by these figures', () => {
+    const draft = makeDraft({
+      source: 'csv',
+      statedClosing: { magnitude: minorUnits(125000), marker: 'minus', asOf: null, raw: '-1250.00' },
+      available: { magnitude: minorUnits(25000), marker: 'minus', asOf: null, raw: '-250.00' },
+      rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
+    });
+    expect(balanceMeansFor('credit', draft)).toBe('owed');
   });
 });

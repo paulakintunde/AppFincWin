@@ -34,6 +34,14 @@ export function parseOfxAmount(raw: string, exponent: number): NotatedAmountResu
   // sends, so two or more is refused rather than guessed at.
   if (decimalMarkCount > 1) return { ok: false, error: 'invalid' };
 
+  // A lone ',' (not the spec's mark) with exactly three digits after it and a
+  // 1-3 digit integer part reads equally as a thousands group: '-1,000' is
+  // £1,000 as often as £1.00. Refuse rather than guess, unless the currency
+  // itself has three decimals (review E-WR-03).
+  if (decimalChar === ',' && exponent !== 3 && /^[+-]?\d{1,3},\d{3}$/.test(trimmed)) {
+    return { ok: false, error: 'ambiguous-separator' };
+  }
+
   const decimal = decimalChar ?? '.';
   const group = decimal === '.' ? ',' : '.';
   const notation: NumberNotation = { decimal, group, grouping: 'western' };

@@ -292,6 +292,10 @@ export function matchTransfers(input: {
         importIndex: bestImport,
         options: [top.existingId, second.existingId].sort(),
       });
+      // Both offered legs are reserved: a later import must never be paired
+      // with, or offered, a leg the user may pick here (review E-WR-06).
+      assignedExisting.add(top.existingId);
+      assignedExisting.add(second.existingId);
     } else {
       resolved.set(bestImport, { kind: 'pair', importIndex: bestImport, existingId: top.existingId, score: top.score });
       assignedExisting.add(top.existingId);

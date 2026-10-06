@@ -76,8 +76,10 @@ function splitDateParts(raw: string): string[] | null {
   let s = raw.trim();
   if (s === '') return null;
 
-  const tIdx = s.indexOf('T');
-  if (tIdx > 0) s = s.slice(0, tIdx);
+  // An ISO time part starts at a 'T' with a digit on both sides. A bare
+  // indexOf('T') would also cut 'OCT', 'SEPT' or 'AUGUST' (review E-WR-01).
+  const isoTime = s.match(/^(.*\d)T\d/);
+  if (isoTime) s = isoTime[1] as string;
 
   const spaceTime = s.match(/^(.*)\s+\d{1,2}:\d{2}/);
   if (spaceTime) s = spaceTime[1] as string;
@@ -106,6 +108,7 @@ function assembleFromParts(
   const roles = FORMAT_ROLES[format];
   const monthNameIdx = parts.findIndex((p) => monthNumberFor(p) !== undefined);
   const values: Partial<Record<DateRole, number>> = {};
+  let yearDigits = 0;
 
   if (monthNameIdx !== -1) {
     values.month = monthNumberFor(parts[monthNameIdx] as string) as number;
@@ -119,19 +122,25 @@ function assembleFromParts(
       const value = parts[idx] as string;
       if (!isAllDigits(value)) return null;
       values[role] = digitsToInt(value);
+      if (role === 'year') yearDigits = value.length;
     }
   } else {
     for (let i = 0; i < 3; i += 1) {
       const value = parts[i] as string;
       if (!isAllDigits(value)) return null;
       values[roles[i] as DateRole] = digitsToInt(value);
+      if (roles[i] === 'year') yearDigits = value.length;
     }
   }
 
+  // Review E-CR-02: a year is 4 digits, or 2 digits in the trailing position
+  // only (dd/mm/yy, mm/dd/yy). A leading 2-digit "year" would let every
+  // dd/mm/yy sample in 2026-2031 also parse as yy/mm/dd, so YMD demands 4.
+  if (yearDigits !== 4 && (format === 'YMD' || yearDigits !== 2)) return null;
   let year = values.year as number;
   const month = values.month as number;
   const day = values.day as number;
-  if (year < 100) year += 2000;
+  if (yearDigits === 2) year += 2000;
   if (year < 1900 || year > 2100) return null;
 
   return { year, month, day };
@@ -159,8 +168,13 @@ export function inferDateFormat(samples: readonly string[]): DateFormatGuess {
 
   if (candidates.length === 0) return { kind: 'none' };
   if (candidates.length === 1) return { kind: 'certain', format: candidates[0] as DateFormat };
-  if (candidates.includes('YMD')) return { kind: 'certain', format: 'YMD' };
-  return { kind: 'ambiguous', candidates: ['DMY', 'MDY'] };
+  // Readings that land on the same date for every sample (a spelled-out month
+  // makes DMY and MDY identical) are not a real choice: nothing to ask.
+  const allAgree = nonEmpty.every((s) => new Set(candidates.map((f) => parseCsvDate(s, f))).size === 1);
+  if (allAgree) return { kind: 'certain', format: candidates[0] as DateFormat };
+  // More than one reading fits every sample: the user is asked (D-11). YMD
+  // is never preferred by tie-break (review E-CR-02).
+  return { kind: 'ambiguous', candidates };
 }
 
 // ---- shared sample cleaning (decimal-mark and notation inference) --------

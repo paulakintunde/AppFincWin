@@ -259,6 +259,8 @@ function resolveMarker(markers: AmountMarker[]): { ok: true; marker: AmountMarke
  * touches the LAST occurrence of `decimalChar`, and only when it is followed
  * by digits only -- anything else is left for `parseAmount` to judge.
  */
+const MAX_ZERO_PADDING = 2;
+
 function stripExcessZeros(
   rest: string,
   decimalChar: string,
@@ -273,6 +275,11 @@ function stripExcessZeros(
   }
   if (fraction.length <= exponent) return { ok: true, value: rest };
   const excess = fraction.slice(exponent);
+  // Padding is at most two extra places (OFX pads 2 dp to 4). Three or more
+  // trailing zeros past the exponent look like a misread thousands group
+  // ('1.000' at exponent 0), so they are refused, never divided away
+  // (review E-WR-03).
+  if (excess.length > MAX_ZERO_PADDING) return { ok: false };
   for (const ch of excess) {
     if (ch !== '0') return { ok: false };
   }

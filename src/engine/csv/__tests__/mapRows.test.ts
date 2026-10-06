@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { csvToDraft, layoutSignatureOf, MAX_NAME_LENGTH, type CsvDraftOptions } from '../mapRows';
+import { csvToDraft, DIRECTION_IN, DIRECTION_OUT, layoutSignatureOf, MAX_NAME_LENGTH, type CsvDraftOptions } from '../mapRows';
 import type { ColumnMapping } from '../detectColumns';
 import type { NumberNotation } from '../../money';
 import * as csvBarrel from '../index';
@@ -272,6 +272,15 @@ describe('csvToDraft: direction column', () => {
   it('reads Refund as cr via the direction word table', () => {
     const draft = csvToDraft(header, [['2026-09-01', 'Shop', '10.00', 'Refund']], opts);
     expect(draft.rows[0]).toMatchObject({ marker: 'cr', trnType: 'CREDIT' });
+  });
+
+  it("reads 'Payment' as neutral: the plain reading, decided later by the profile (review E-WR-09)", () => {
+    // 'Payment' is money in on a card export and money out on a current
+    // account, so the direction table never forces it either way.
+    const draft = csvToDraft(header, [['2026-09-01', 'Rent', '850.00', 'Payment']], opts);
+    expect(draft.rows[0]).toMatchObject({ magnitude: 85000, marker: 'none', trnType: null });
+    expect(DIRECTION_IN as readonly string[]).not.toContain('payment');
+    expect(DIRECTION_OUT as readonly string[]).not.toContain('payment');
   });
 
   it('flags a contradicting signed amount as conflicting-markers', () => {

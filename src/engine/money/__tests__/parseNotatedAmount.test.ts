@@ -149,6 +149,12 @@ describe('parseNotatedAmount: excess decimals and exponent boundaries', () => {
   it('rejects a non-zero excess decimal as too-many-decimals, never rounding', () => {
     expect(parseNotatedAmount('12.501', WEST, 2)).toEqual({ ok: false, error: 'too-many-decimals' });
   });
+
+  it('never strips three or more zero excess digits: "1.000" at exponent 0 is not 1 (review E-WR-03)', () => {
+    expect(parseNotatedAmount('1.000', WEST, 0)).toEqual({ ok: false, error: 'too-many-decimals' });
+    expect(parseNotatedAmount('12.00000', WEST, 2)).toEqual({ ok: false, error: 'too-many-decimals' });
+    expect(parseNotatedAmount('12.5000', WEST, 2)).toEqual({ ok: true, magnitude: 1250, marker: 'none' });
+  });
 });
 
 describe('parseNotatedAmount: rejections', () => {

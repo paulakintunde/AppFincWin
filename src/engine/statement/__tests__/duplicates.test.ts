@@ -1,6 +1,7 @@
 import fc from 'fast-check';
 import {
   CROSS_FORMAT_WINDOW_DAYS,
+  FITID_WINDOW_DAYS,
   NAME_SIMILARITY_THRESHOLD,
   findDuplicates,
   fitidReliable,
@@ -156,6 +157,26 @@ describe('findDuplicates', () => {
     const { matches, fitidDisabled } = findDuplicates(candidates, existing, { sourceFormat: 'csv' });
     expect(fitidDisabled).toBe(false);
     expect(matches.get(0)).toEqual({ kind: 'existing', id: 'e1', by: 'fitid' });
+  });
+
+  it('a FITID reused a month later on the same amount is not a duplicate (review E-WR-05)', () => {
+    const candidates = [candidate({ index: 0, externalId: '3', amount: -999, localDate: '2026-09-05', name: 'NETFLIX' })];
+    const existing = [existingRow({ id: 'e1', externalId: '3', amount: -999, localDate: '2026-08-05', name: 'NETFLIX' })];
+    const { matches } = findDuplicates(candidates, existing, { sourceFormat: 'ofx' });
+    expect(matches.has(0)).toBe(false);
+  });
+
+  it('a FITID match holds up to FITID_WINDOW_DAYS apart and not one day more (review E-WR-05)', () => {
+    const at = (localDate: string) =>
+      findDuplicates(
+        [candidate({ index: 0, externalId: 'F7', localDate, name: 'X' })],
+        [existingRow({ id: 'e1', externalId: 'F7', localDate: '2026-09-01', name: 'Y', importFormat: 'ofx' })],
+        { sourceFormat: 'ofx' }
+      ).matches.get(0);
+    expect(FITID_WINDOW_DAYS).toBe(7);
+    expect(at('2026-09-08')).toEqual({ kind: 'existing', id: 'e1', by: 'fitid' });
+    expect(at('2026-09-09')).toBeUndefined();
+    expect(at('2026-08-25')).toEqual({ kind: 'existing', id: 'e1', by: 'fitid' });
   });
 
   it('does not use FITID when the amount differs, and falls through with no match', () => {

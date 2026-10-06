@@ -134,9 +134,17 @@ export function occurrencesBetween(
   const results: { n: number; date: string }[] = [];
   if (toInclusive < fromInclusive) return results;
 
+  // startN is an occurrence index, never a month count: occurrence n of a
+  // month-based series lands in month anchor + n * MONTHS_PER_OCCURRENCE, so
+  // the month gap is divided by the step before use. One step back is a safe
+  // lower bound (the clamped day can only move a date earlier in its month);
+  // dates before fromInclusive are filtered in the loop.
   const startN = isDayBasedFreq(schedule.freq)
     ? Math.max(0, Math.floor(daysBetween(schedule.anchorDate, fromInclusive) / STEP_DAYS[schedule.freq]))
-    : Math.max(0, monthsBetween(schedule.anchorDate, fromInclusive) - 1);
+    : Math.max(
+        0,
+        Math.floor(monthsBetween(schedule.anchorDate, fromInclusive) / MONTHS_PER_OCCURRENCE[schedule.freq]) - 1
+      );
 
   const maxN = schedule.occurrenceCount ?? Infinity;
 

@@ -26,7 +26,11 @@ export interface ConvertedRow {
   description: string;
   amount: MinorUnits | null; // stored sign rule (D-44)
   balance: MinorUnits | null; // stored rule: held positive, owed negative; null when unknown
-  availableDelta: MinorUnits | null; // available-credit files without a limit: held-view delta to the previous row
+  // Available-credit files without a known limit: the row's balance up to
+  // that unknown constant (stored balance = availableSigned - limit). Only
+  // differences between rows are meaningful, so reconciliation can use it
+  // as a running balance; it is never a balance to store (review E-WR-07).
+  availableSigned: MinorUnits | null;
   rawAmount: string | null;
   rawBalance: string | null;
   currency: string;
@@ -86,21 +90,14 @@ function heldSignedValue(magnitude: MinorUnits | null, marker: AmountMarker): Mi
   return minorUnits(noNegativeZero(markerSign(marker) * magnitude));
 }
 
-function convertRow(
-  row: DraftRow,
-  profile: FormatProfile,
-  limit: MinorUnits | null,
-  prevRow: DraftRow | undefined
-): ConvertedRow {
+function convertRow(row: DraftRow, profile: FormatProfile, limit: MinorUnits | null): ConvertedRow {
   const amount = row.magnitude === null ? null : convertAmount(row.magnitude, row.marker, profile);
 
   let balance: MinorUnits | null = null;
-  let availableDelta: MinorUnits | null = null;
+  let availableSigned: MinorUnits | null = null;
 
   if (profile.balanceMeans === 'available' && limit === null) {
-    const curHeld = heldSignedValue(row.balanceMagnitude, row.balanceMarker);
-    const prevHeld = prevRow ? heldSignedValue(prevRow.balanceMagnitude, prevRow.balanceMarker) : null;
-    availableDelta = curHeld !== null && prevHeld !== null ? minorUnits(noNegativeZero(curHeld - prevHeld)) : null;
+    availableSigned = heldSignedValue(row.balanceMagnitude, row.balanceMarker);
   } else if (row.balanceMagnitude !== null) {
     balance = convertBalance({ magnitude: row.balanceMagnitude, marker: row.balanceMarker }, profile, limit);
   }
@@ -111,7 +108,7 @@ function convertRow(
     description: row.description,
     amount,
     balance,
-    availableDelta,
+    availableSigned,
     rawAmount: row.rawAmount,
     rawBalance: row.rawBalance,
     currency: row.currency,
@@ -126,7 +123,7 @@ export function convertDraft(
   profile: FormatProfile,
   opts: { limit: MinorUnits | null }
 ): ConvertedStatement {
-  const rows = draft.rows.map((row, i) => convertRow(row, profile, opts.limit, draft.rows[i - 1]));
+  const rows = draft.rows.map((row) => convertRow(row, profile, opts.limit));
 
   const opening =
     draft.statedOpening === null

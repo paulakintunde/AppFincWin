@@ -5,7 +5,7 @@
  * built equal and opposite; cross-currency legs carry the two amounts the
  * user or the statements give, never one derived from the other. Editing a
  * pair patches only the keys that actually changed, on whichever leg they
- * belong to.
+ * belong to, once the edited pair has been checked against the same rules.
  */
 import { isValidLocalDate } from '../time/localDate';
 import { minorUnits, type MinorUnits } from '../money/types';
@@ -98,9 +98,29 @@ function legPatch(
   return patch;
 }
 
-export function transferEditPatches(before: TransferPairState, after: TransferPairState): TransferEditPatches {
+export type TransferEditError = BuildTransferError | 'date-mismatch';
+
+export type TransferEditResult = { ok: true; patches: TransferEditPatches } | { ok: false; error: TransferEditError };
+
+/**
+ * The per-leg patches for an edit, after checking the edited pair keeps every
+ * invariant `buildTransferLegs` enforces (review E-WR-11): out negative and in
+ * positive, two distinct accounts, equal magnitudes in one currency, and one
+ * shared valid date (D-51: editing the date edits both legs).
+ */
+export function transferEditPatches(before: TransferPairState, after: TransferPairState): TransferEditResult {
+  if (after.out.accountId === after.in.accountId) return { ok: false, error: 'same-account' };
+  if (after.out.localDate !== after.in.localDate) return { ok: false, error: 'date-mismatch' };
+  if (!isValidLocalDate(after.out.localDate)) return { ok: false, error: 'bad-date' };
+  if (after.out.amount >= 0 || after.in.amount <= 0) return { ok: false, error: 'non-positive' };
+  if (after.out.currency === after.in.currency && -after.out.amount !== after.in.amount) {
+    return { ok: false, error: 'same-currency-mismatch' };
+  }
   return {
-    out: legPatch(before.out, after.out),
-    in: legPatch(before.in, after.in),
+    ok: true,
+    patches: {
+      out: legPatch(before.out, after.out),
+      in: legPatch(before.in, after.in),
+    },
   };
 }

@@ -158,6 +158,20 @@ describe('occurrencesBetween', () => {
     expect(() => occurrencesBetween(monthlySchedule, '2026-01-01', '2026-02-30')).toThrow(RangeError);
   });
 
+  it('returns every yearly occurrence in a window that starts after the anchor (review E-CR-01)', () => {
+    const yearly: RecurringSchedule = {
+      anchorDate: '2025-03-10',
+      freq: 'yearly',
+      endDate: null,
+      occurrenceCount: null,
+    };
+    expect(occurrencesBetween(yearly, '2025-06-01', '2028-12-31')).toEqual([
+      { n: 1, date: '2026-03-10' },
+      { n: 2, date: '2027-03-10' },
+      { n: 3, date: '2028-03-10' },
+    ]);
+  });
+
   it('skips dates before fromInclusive without iterating from the anchor', () => {
     const results = occurrencesBetween(monthlySchedule, '2030-01-01', '2030-03-01');
     expect(results.map((r) => r.date)).toEqual(['2030-01-01', '2030-02-01', '2030-03-01']);
@@ -196,13 +210,38 @@ describe('projectOccurrences', () => {
   });
 
   it('returns an empty array for a month the schedule never touches', () => {
-    const weekly: RecurringSchedule = {
+    const yearly: RecurringSchedule = {
       anchorDate: '2026-01-01',
       freq: 'yearly',
       endDate: null,
       occurrenceCount: null,
     };
-    expect(projectOccurrences(weekly, '2026-06', null)).toEqual([]);
+    expect(projectOccurrences(yearly, '2026-06', null)).toEqual([]);
+    // The same schedule does land in the following January -- so the empty
+    // result above is because June is untouched, not because the scan
+    // started too far in the future (review E-CR-01).
+    expect(projectOccurrences(yearly, '2027-01', null)).toEqual(['2027-01-01']);
+  });
+
+  it('finds a quarterly occurrence in a month well after the anchor (review E-CR-01)', () => {
+    const quarterly: RecurringSchedule = {
+      anchorDate: '2026-01-15',
+      freq: 'quarterly',
+      endDate: null,
+      occurrenceCount: null,
+    };
+    expect(projectOccurrences(quarterly, '2026-07', null)).toEqual(['2026-07-15']);
+    expect(projectOccurrences(quarterly, '2026-08', null)).toEqual([]);
+  });
+
+  it('finds a yearly occurrence in the anniversary month (review E-CR-01)', () => {
+    const yearly: RecurringSchedule = {
+      anchorDate: '2025-03-10',
+      freq: 'yearly',
+      endDate: null,
+      occurrenceCount: null,
+    };
+    expect(projectOccurrences(yearly, '2026-03', null)).toEqual(['2026-03-10']);
   });
 
   it('throws RangeError for an unparseable month', () => {
@@ -270,6 +309,39 @@ describe('properties', () => {
               expect(entry.date > results[i - 1]!.date).toBe(true);
             }
           }
+        }
+      )
+    );
+  });
+
+  it('property: occurrencesBetween with any window matches a brute-force scan from n = 0 (review E-CR-01)', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 2020, max: 2030 }),
+        fc.integer({ min: 1, max: 12 }),
+        fc.integer({ min: 1, max: 31 }),
+        fc.constantFrom<RecurringFreq>('weekly', 'fortnightly', 'monthly', 'quarterly', 'yearly'),
+        // `from` is drawn independently of the anchor, before or after it.
+        fc.integer({ min: 2018, max: 2034 }),
+        fc.integer({ min: 1, max: 12 }),
+        fc.integer({ min: 1, max: 28 }),
+        fc.integer({ min: 0, max: 800 }),
+        (year, month, rawDay, freq, fromYear, fromMonth, fromDay, spanDays) => {
+          const day = Math.min(rawDay, daysInMonth(year, month));
+          const pad = (v: number) => String(v).padStart(2, '0');
+          const anchor = `${year}-${pad(month)}-${pad(day)}`;
+          const from = `${fromYear}-${pad(fromMonth)}-${pad(fromDay)}`;
+          const toDt = new Date(Date.UTC(fromYear, fromMonth - 1, fromDay + spanDays));
+          const to = `${toDt.getUTCFullYear()}-${pad(toDt.getUTCMonth() + 1)}-${pad(toDt.getUTCDate())}`;
+          const schedule: RecurringSchedule = { anchorDate: anchor, freq, endDate: null, occurrenceCount: null };
+
+          const expected: { n: number; date: string }[] = [];
+          for (let n = 0; ; n += 1) {
+            const date = occurrenceDate(anchor, freq, n);
+            if (date > to) break;
+            if (date >= from) expected.push({ n, date });
+          }
+          expect(occurrencesBetween(schedule, from, to)).toEqual(expected);
         }
       )
     );

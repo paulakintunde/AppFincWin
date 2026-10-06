@@ -31,6 +31,14 @@ export type DuplicateMatch = { kind: 'existing'; id: string; by: 'fitid' | 'matc
 
 export const NAME_SIMILARITY_THRESHOLD = 0.6;
 export const CROSS_FORMAT_WINDOW_DAYS = 2;
+/**
+ * A FITID match must also sit within this many days of the stored row
+ * (review E-WR-05): some issuers restart FITIDs each statement, so a
+ * same-amount monthly bill would otherwise reuse last month's id and be
+ * unticked as a duplicate. Wide enough for a posting-date shift, well short
+ * of a monthly cycle.
+ */
+export const FITID_WINDOW_DAYS = 7;
 
 /**
  * Jaccard similarity over normalised whitespace tokens, with a containment
@@ -139,7 +147,11 @@ export function findDuplicates(
     for (const c of eligible) {
       if (c.externalId === null) continue;
       const found = existing.find(
-        (e) => !usedExisting.has(e.id) && e.externalId === c.externalId && e.amount === c.amount
+        (e) =>
+          !usedExisting.has(e.id) &&
+          e.externalId === c.externalId &&
+          e.amount === c.amount &&
+          Math.abs(daysBetween(e.localDate, c.localDate as string)) <= FITID_WINDOW_DAYS
       );
       if (found !== undefined) {
         matches.set(c.index, { kind: 'existing', id: found.id, by: 'fitid' });

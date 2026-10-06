@@ -168,6 +168,67 @@ describe('detectColumns', () => {
   });
 });
 
+describe('detectColumns: scored header matching (review E-WR-02)', () => {
+  it("never maps amount to 'Value Date': a date phrase excludes the generic 'value' match", () => {
+    const { mapping } = detectColumns(['Booking Date', 'Value Date', 'Details', 'Amount'], [
+      ['2026-09-01', '2026-09-02', 'Tesco', '-12.50'],
+    ]);
+    expect(mapping.date).toBe(0);
+    expect(mapping.amount).toBe(3);
+    expect(mapping.description).toBe(2);
+  });
+
+  it("maps a Lloyds layout's description to 'Transaction Description', not 'Transaction Type'", () => {
+    const header = [
+      'Transaction Date', 'Transaction Type', 'Sort Code', 'Account Number', 'Transaction Description',
+      'Debit Amount', 'Credit Amount', 'Balance',
+    ];
+    const { mapping, confidence } = detectColumns(header, [
+      ['01/09/2026', 'DEB', "'30-00-00", '12345678', 'TESCO STORES 1234', '12.50', '', '987.65'],
+      ['02/09/2026', 'DD', "'30-00-00", '12345678', 'COUNCIL TAX', '120.00', '', '867.65'],
+    ]);
+    expect(mapping.date).toBe(0);
+    expect(mapping.direction).toBeNull();
+    expect(mapping.description).toBe(4);
+    expect(mapping.debit).toBe(5);
+    expect(mapping.credit).toBe(6);
+    expect(mapping.balance).toBe(7);
+    expect(confidence).toBe('high');
+  });
+
+  it("an exact 'Description' header beats an earlier generic 'Account Name' or 'Reference'", () => {
+    const { mapping } = detectColumns(['Date', 'Account Name', 'Reference', 'Description', 'Amount'], [
+      ['2026-09-01', 'Main', 'REF1', 'Tesco', '-12.50'],
+    ]);
+    expect(mapping.description).toBe(3);
+  });
+
+  it('matches a multi-word keyword inside a longer header, ahead of a single generic word', () => {
+    const { mapping, confidence } = detectColumns(['Date', 'Description', 'Cash Out', 'Paid out (GBP)', 'Paid in (GBP)'], [
+      ['2026-09-01', 'Tesco', '1.00', '12.50', ''],
+    ]);
+    expect(mapping.debit).toBe(3);
+    expect(mapping.credit).toBe(4);
+    expect(confidence).toBe('high');
+  });
+
+  it('content-checks a header-matched date column', () => {
+    const { mapping } = detectColumns(['Date', 'Details', 'Amount', 'When'], [['not a date', 'Tesco', '-12.50', '2026-09-01']]);
+    expect(mapping.date).toBe(3);
+  });
+
+  it('content-checks a header-matched amount column', () => {
+    const { mapping } = detectColumns(['Date', 'Details', 'Amount', 'Sum'], [['2026-09-01', 'Tesco', 'n/a', '-12.50']]);
+    expect(mapping.amount).toBe(3);
+  });
+
+  it('reports low confidence when a key role matched only a generic single word', () => {
+    const { mapping, confidence } = detectColumns(['Date', 'Description', 'Net Value'], [['2026-09-01', 'Tesco', '-12.50']]);
+    expect(mapping.amount).toBe(2);
+    expect(confidence).toBe('low');
+  });
+});
+
 describe('balanceLabelOf', () => {
   it.each<[string, 'held' | 'owed' | 'available' | null]>([
     ['Available credit', 'available'],

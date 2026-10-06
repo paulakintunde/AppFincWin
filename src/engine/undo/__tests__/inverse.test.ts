@@ -125,6 +125,22 @@ describe('planBulkPatch', () => {
     expect(() => planBulkPatch(items)).toThrow(RangeError);
   });
 
+  it('throws RangeError when one (entity, id) appears twice (review E-WR-10)', () => {
+    const items: BulkPatchItem[] = [
+      { entity: 'transactions', id: 'a', expectedVersion: 2, before: { status: 'pending' }, patch: { status: 'paid' } },
+      { entity: 'transactions', id: 'a', expectedVersion: 2, before: { note: null }, patch: { note: 'x' } },
+    ];
+    expect(() => planBulkPatch(items)).toThrow(RangeError);
+  });
+
+  it('allows the same id under two different entities', () => {
+    const items: BulkPatchItem[] = [
+      { entity: 'transactions', id: 'a', expectedVersion: 2, before: { status: 'pending' }, patch: { status: 'paid' } },
+      { entity: 'accounts', id: 'a', expectedVersion: 2, before: { name: 'X' }, patch: { name: 'Y' } },
+    ];
+    expect(planBulkPatch(items).inverse).toHaveLength(2);
+  });
+
   it('property: inverse expectedVersion is forward + 1, with patch keys matching the forward op', () => {
     const keyArb = fc.constantFrom('status', 'note', 'category_id');
     const valueArb: fc.Arbitrary<PatchValue> = fc.oneof(fc.string(), fc.integer(), fc.boolean(), fc.constant(null));
@@ -141,11 +157,13 @@ describe('planBulkPatch', () => {
       });
 
     fc.assert(
-      fc.property(fc.array(itemArb, { minLength: 1, maxLength: 5 }), (items) => {
+      fc.property(fc.uniqueArray(itemArb, { minLength: 1, maxLength: 5, selector: (item) => item.id }), (items) => {
         const { forward, inverse } = planBulkPatch(items);
         items.forEach((item, i) => {
-          expect(inverse[i]!.expectedVersion).toBe(item.expectedVersion + 1);
-          expect(Object.keys(inverse[i]!.patch).sort()).toEqual(Object.keys(forward[i]!.patch).sort());
+          const inv = inverse[i]!;
+          expect(inv.id).toBe(item.id);
+          expect(inv.expectedVersion).toBe(item.expectedVersion + 1);
+          expect(Object.keys(inv.patch).sort()).toEqual(Object.keys(forward[i]!.patch).sort());
           expect(forward[i]!.expectedVersion).toBe(item.expectedVersion);
         });
       })

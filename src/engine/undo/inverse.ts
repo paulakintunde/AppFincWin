@@ -96,14 +96,24 @@ export interface BulkPatchItem {
 /**
  * Builds a bulk edit's forward ops and its inverse ops together (bulk edit -> bulk edit
  * back), so a bulk action and its undo step are always derived from the same snapshot
- * and can be sent atomically.
+ * and can be sent atomically. Each (entity, id) may appear once: a second patch on the
+ * same row would expect a stale version and its inverse would restore an intermediate
+ * state, so it is refused -- merge the patches first (review E-WR-10). With every row
+ * distinct the inverse ops are independent of one another, so their order (kept parallel
+ * to `forward`) cannot change the restored state.
  */
 export function planBulkPatch(items: readonly BulkPatchItem[]): { forward: PatchOp[]; inverse: PatchOp[] } {
   const forward: PatchOp[] = [];
   const inverse: PatchOp[] = [];
+  const seen = new Set<string>();
 
   for (const item of items) {
     assertValidVersion(item.expectedVersion, 'planBulkPatch');
+    const key = `${item.entity}\u0000${item.id}`;
+    if (seen.has(key)) {
+      throw new RangeError(`planBulkPatch: ${item.entity} row appears more than once`);
+    }
+    seen.add(key);
     const patchKeys = Object.keys(item.patch);
     if (patchKeys.length === 0) {
       throw new RangeError('planBulkPatch: patch must not be empty');

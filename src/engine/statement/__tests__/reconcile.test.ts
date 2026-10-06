@@ -1,5 +1,8 @@
 import fc from 'fast-check';
+import { minorUnits } from '../../money';
+import { convertDraft } from '../convert';
 import { reconcile, type ReconcileRow } from '../reconcile';
+import type { DraftRow, FormatProfile, StatementDraft } from '../types';
 
 interface LedgerOpts {
   opening: number;
@@ -172,23 +175,104 @@ describe('reconcile: a row with a null amount breaks its link', () => {
   });
 });
 
-describe('reconcile: available-credit rows (no limit) reconcile via availableDelta', () => {
-  it('a consistent held-view delta chain verifies from its second link onward', () => {
-    // heldView (arbitrarily seeded): row0 unknown, row1 = 10, row2 = 30, row3 = 55.
-    // delta[i] = heldView[i] - heldView[i-1], which a consistent ledger requires to
-    // equal amt[i]. Row0 has no delta (nothing precedes it) and row1 -- the first
-    // anchor found -- has nothing before it either (no stated.opening exists in this
-    // held-view scale), so neither can ever be verified; row1's own amount is
-    // therefore irrelevant to the check. Rows 2 and 3 chain off row1's anchor value.
-    const rows: ReconcileRow[] = [
-      { amount: 1, balance: null, localDate: '2026-02-01', availableDelta: null },
-      { amount: 999, balance: null, localDate: '2026-02-02', availableDelta: 10 },
-      { amount: 20, balance: null, localDate: '2026-02-03', availableDelta: 20 },
-      { amount: 25, balance: null, localDate: '2026-02-04', availableDelta: 25 },
-    ];
-    const result = reconcile(rows, { opening: null, closing: null });
+describe('reconcile: available-credit rows (no limit) reconcile on the signed available figure (review E-WR-07)', () => {
+  // Signed available 1000 -> 1010 -> 1030 -> 1055 (limit unknown, a constant
+  // offset): each row's amount is the change from the row before.
+  const fileOrder: ReconcileRow[] = [
+    { amount: 1, balance: 1000, localDate: '2026-02-01' },
+    { amount: 10, balance: 1010, localDate: '2026-02-02' },
+    { amount: 20, balance: 1030, localDate: '2026-02-03' },
+    { amount: 25, balance: 1055, localDate: '2026-02-04' },
+  ];
+
+  it('every link verifies from row 1 on, exactly like a held running balance', () => {
+    const result = reconcile(fileOrder, { opening: null, closing: null });
+    expect(result.rows).toEqual(['no-balance', 'verified', 'verified', 'verified']);
+    expect(result.verifiedLinks).toBe(3);
+  });
+
+  it('the same file newest-first verifies in reversed orientation', () => {
+    const result = reconcile([...fileOrder].reverse(), { opening: null, closing: null });
+    expect(result.orientation).toBe('reversed');
+    expect(result.verifiedLinks).toBe(3);
+    expect(result.failedLinks).toBe(0);
+  });
+
+  it('end to end: an available-credit card CSV with no limit verifies through convertDraft', () => {
+    const profile: FormatProfile = {
+      version: 1, source: 'csv', accountFamily: 'card', positiveMeans: 'money-in', balanceMeans: 'available',
+      statedLimit: null, decidedBy: 'user',
+    };
+    const row = (index: number, amount: number, available: number): DraftRow => ({
+      index, localDate: `2026-02-0${3 - index}`, description: 'X', magnitude: minorUnits(Math.abs(amount)),
+      marker: amount < 0 ? 'minus' : 'none', rawAmount: null, balanceMagnitude: minorUnits(available), balanceMarker: 'none',
+      rawBalance: null, currency: 'GBP', externalId: null, trnType: null, issues: [],
+    });
+    // newest-first: purchases reduce available credit, a payment restores it
+    const draft: StatementDraft = {
+      source: 'csv', layoutSignature: 'x', accountHint: null, currency: 'GBP',
+      rows: [row(0, 5000, 9000), row(1, -2000, 4000), row(2, -1000, 6000)],
+      statedOpening: null, statedClosing: null, available: null, statedLimit: null, balanceLabel: 'available',
+      labels: [], periodStart: null, periodEnd: null, warnings: [],
+    };
+    const converted = convertDraft(draft, profile, { limit: null });
+    const result = reconcile(
+      converted.rows.map((r) => ({ amount: r.amount, balance: r.availableSigned, localDate: r.localDate })),
+      { opening: null, closing: null }
+    );
+    expect(result.orientation).toBe('reversed');
+    expect(result.verifiedLinks).toBe(2);
+    expect(result.failedLinks).toBe(0);
+  });
+});
+
+describe('reconcile: a stated closing is checked even when rows carry running balances (review E-WR-12)', () => {
+  const rows: ReconcileRow[] = [
+    { amount: -100, balance: 900, localDate: '2026-03-01' },
+    { amount: -50, balance: 850, localDate: '2026-03-02' },
+  ];
+
+  it('a closing equal to the last running balance adds one verified link', () => {
+    const result = reconcile(rows, { opening: 1000, closing: 850 });
+    expect(result.file).toBe('all-verified');
+    expect(result.verifiedLinks).toBe(3);
+    expect(result.failedLinks).toBe(0);
+  });
+
+  it('a closing that disagrees with the last running balance fails the file', () => {
+    const result = reconcile(rows, { opening: 1000, closing: 700 });
     expect(result.file).toBe('partial');
-    expect(result.rows).toEqual(['no-balance', 'no-balance', 'verified', 'verified']);
+    expect(result.rows).toEqual(['verified', 'cannot-verify']);
+    expect(result.failedLinks).toBe(1);
+  });
+
+  it('rows after the last running balance are verified against the closing', () => {
+    const trailing: ReconcileRow[] = [...rows, { amount: -25, balance: null, localDate: '2026-03-03' }];
+    const result = reconcile(trailing, { opening: 1000, closing: 825 });
+    expect(result.file).toBe('all-verified');
+    expect(result.rows).toEqual(['verified', 'verified', 'verified']);
+  });
+
+  it('truncated rows after the last running balance fail against the closing', () => {
+    const trailing: ReconcileRow[] = [...rows, { amount: -25, balance: null, localDate: '2026-03-03' }];
+    const result = reconcile(trailing, { opening: 1000, closing: 600 });
+    expect(result.file).toBe('partial');
+    expect(result.rows).toEqual(['verified', 'verified', 'cannot-verify']);
+  });
+
+  it('an unreadable trailing amount can never verify the closing', () => {
+    const trailing: ReconcileRow[] = [...rows, { amount: null, balance: null, localDate: '2026-03-03' }];
+    const result = reconcile(trailing, { opening: 1000, closing: 850 });
+    expect(result.rows[2]).toBe('cannot-verify');
+  });
+
+  it('newest-first: the closing is checked at the chronologically last row', () => {
+    const newestFirst: ReconcileRow[] = [
+      { amount: -50, balance: 850, localDate: '2026-03-02' },
+      { amount: -100, balance: 900, localDate: '2026-03-01' },
+    ];
+    expect(reconcile(newestFirst, { opening: 1000, closing: 850 }).file).toBe('all-verified');
+    expect(reconcile(newestFirst, { opening: 1000, closing: 900 }).file).toBe('partial');
   });
 });
 
@@ -238,8 +322,8 @@ describe('no-leak', () => {
   it('never throws for any content, and results carry only indexes and codes', () => {
     const rows: ReconcileRow[] = [
       { amount: null, balance: null, localDate: null },
-      { amount: 10, balance: 5, localDate: '2026-01-01', availableDelta: null },
-      { amount: -3, balance: null, localDate: null, availableDelta: 7 },
+      { amount: 10, balance: 5, localDate: '2026-01-01' },
+      { amount: -3, balance: null, localDate: null },
     ];
     expect(() => reconcile(rows, { opening: null, closing: null })).not.toThrow();
     const result = reconcile(rows, { opening: null, closing: null });
