@@ -902,6 +902,66 @@ describe('useDeleteTransaction / useMarkPaid / useSkipOccurrence', () => {
     }
   });
 
+  // C-WR-05: a delete from cross-month search (its month not loaded) used to send no undo
+  // step yet still return a stepId, so the toast offered an Undo that could only fail. A
+  // delete's inverse needs no cache at all.
+  it('C-WR-05: remove of a row whose month is not cached still records its undo step', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({
+      data: [serverTransaction({ id: 'tx-1', local_date: '2026-04-01', deleted_at: '2026-09-24T00:00:00.000Z', version: 4 })],
+      error: null,
+      status: 200,
+    });
+    fake.respondWith({ data: null, error: null, status: 201 }); // undo_log insert
+
+    const qc = newClient(); // April was never loaded: the row came from a search hit
+    const { result } = await renderHook(() => useDeleteTransaction(), { wrapper: wrapper(qc) });
+
+    const stepId = result.current.remove({ id: 'tx-1', household_id: 'h1', local_date: '2026-04-01', version: 3, name: 'Rent' }, 'user-1');
+    expect(stepId).toEqual(expect.any(String));
+
+    await waitFor(() => expect(fake.calls.some((c) => c.table === 'undo_log' && c.method === 'insert')).toBe(true));
+    const undoInsert = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
+    const payload = undoInsert?.args[0] as { id: string; ops: unknown[] };
+    expect(payload.id).toBe(stepId);
+    expect(payload.ops).toEqual([{ entity: 'transactions', id: 'tx-1', expectedVersion: 4, patch: { deleted_at: null } }]);
+  });
+
+  it('C-WR-05: skip uses the row it was given when the month is not cached', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: [serverTransaction({ id: 'tx-1', status: 'skipped', version: 2 })], error: null, status: 200 });
+    fake.respondWith({ data: null, error: null, status: 201 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useSkipOccurrence(), { wrapper: wrapper(qc) });
+
+    const stepId = result.current.skip(
+      { id: 'tx-1', household_id: 'h1', local_date: '2026-09-24', version: 1, name: null, status: 'pending' },
+      'user-1'
+    );
+    expect(stepId).toEqual(expect.any(String));
+    await waitFor(() => expect(fake.calls.some((c) => c.table === 'undo_log' && c.method === 'insert')).toBe(true));
+    const payload = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert')?.args[0] as { ops: unknown[] };
+    expect(payload.ops).toEqual([{ entity: 'transactions', id: 'tx-1', expectedVersion: 2, patch: { status: 'pending' } }]);
+  });
+
+  it('C-WR-05: returns null (no Undo to offer) when no before-state is known for every patched key', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: [serverTransaction({ id: 'tx-1', status: 'paid', version: 2 })], error: null, status: 200 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useMarkPaid(), { wrapper: wrapper(qc) });
+
+    // No cached month, and the row carries no status: the inverse cannot be built honestly.
+    const stepId = result.current.markPaid({ id: 'tx-1', household_id: 'h1', local_date: '2026-09-20', version: 1, name: null }, 'user-1', '2026-09-24');
+    expect(stepId).toBeNull();
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'update')).toBe(true));
+    expect(fake.calls.some((c) => c.table === 'undo_log')).toBe(false);
+  });
+
   it('D-30: a VersionConflictError on delete puts the server row back (existing onError path)', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;

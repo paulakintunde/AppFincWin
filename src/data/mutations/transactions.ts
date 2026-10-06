@@ -618,8 +618,16 @@ export function useAddTransaction(): { add(input: AddTransactionInput): string }
   };
 }
 
+/**
+ * C-WR-05: an undo capture may carry the caller's own before-state, used only when the row is
+ * not in the cached month (a search hit, or a row whose month was never loaded). The cached
+ * row, when present, always wins: it is the freshest copy this device has.
+ */
+export type EditUndoCapture = UndoCapture & { before?: Readonly<Record<string, PatchValue>> };
+
 export function useEditTransaction(): {
-  edit(vars: EditTransactionVars, undo?: UndoCapture): void;
+  /** Returns whether an undo step will be recorded for this edit (false when sent without one). */
+  edit(vars: EditTransactionVars, undo?: EditUndoCapture): boolean;
 } {
   const mutation = useMutation<TransactionRow, unknown, EditTransactionVars>({
     mutationKey: mutationKeys.editTransaction,
@@ -628,47 +636,66 @@ export function useEditTransaction(): {
   const qc = useQueryClient();
 
   return {
-    edit(vars: EditTransactionVars, undo?: UndoCapture): void {
+    edit(vars: EditTransactionVars, undo?: EditUndoCapture): boolean {
       if (!undo) {
         mutation.mutate(vars);
-        return;
+        return false;
       }
 
-      // REC-11: `before` is captured from the cache at the moment of the action, for exactly
-      // the keys this edit patches -- never reconstructed later (RESEARCH.md Anti-pattern 2).
+      // REC-11: `before` is captured at the moment of the action, for exactly the keys this
+      // edit patches -- never reconstructed later (RESEARCH.md Anti-pattern 2).
       const current = qc
         .getQueryData<TransactionList>(queryKeys.transactionsMonth(vars.householdId, vars.month))
-        ?.find((r) => r.id === vars.id);
-      if (!current) {
-        // Nothing cached to capture a before-state from: send the edit without an undo step
-        // rather than guess -- matches the plan's "attaches vars.undo only when the row was
-        // found".
+        ?.find((r) => r.id === vars.id) as unknown as Record<string, PatchValue | undefined> | undefined;
+      const source = current ?? undo.before;
+      const keys = Object.keys(vars.patch);
+      const complete = current !== undefined || (source !== undefined && keys.every((key) => source[key] !== undefined));
+      if (!source || !complete) {
+        // Nothing honest to capture a before-state from: send the edit without an undo step
+        // rather than guess, and tell the caller so it never offers an Undo that cannot work.
         mutation.mutate(vars);
-        return;
+        return false;
       }
 
       const before: Record<string, PatchValue> = {};
-      for (const key of Object.keys(vars.patch)) {
-        const value = (current as unknown as Record<string, PatchValue | undefined>)[key];
-        before[key] = value ?? null;
-      }
-      mutation.mutate({ ...vars, undo: { ...undo, before } });
+      for (const key of keys) before[key] = source[key] ?? null;
+      const { stepId, ownerId, labelKey, labelParams } = undo;
+      mutation.mutate({ ...vars, undo: { stepId, ownerId, labelKey, labelParams, before } });
+      return true;
     },
   };
 }
 
-type UndoableRow = Pick<TransactionRow, 'id' | 'household_id' | 'local_date' | 'version' | 'name'>;
+/**
+ * The row an undoable action is taken on. `status` and `original_amount` are optional so a
+ * caller holding only a search hit can still act; they let the hook build the inverse when
+ * the row's month is not cached (C-WR-05).
+ */
+type UndoableRow = Pick<TransactionRow, 'id' | 'household_id' | 'local_date' | 'version' | 'name'> &
+  Partial<Pick<TransactionRow, 'status' | 'original_amount'>>;
 
 function nameParams(row: UndoableRow): { name?: string } {
   return row.name ? { name: row.name } : {};
 }
 
-export function useDeleteTransaction(): { remove(row: UndoableRow, ownerId: string): string } {
+/** The before-state the row itself carries, for exactly the keys it has. */
+function knownBefore(row: UndoableRow): Record<string, PatchValue> {
+  const before: Record<string, PatchValue> = { local_date: row.local_date };
+  if (row.status !== undefined) before.status = row.status;
+  if (row.original_amount !== undefined) before.original_amount = row.original_amount;
+  return before;
+}
+
+/**
+ * Each of these returns the undo step id the toast's Undo replays, or null when no step
+ * will be recorded (C-WR-05) -- the host must not offer Undo for a null.
+ */
+export function useDeleteTransaction(): { remove(row: UndoableRow, ownerId: string): string | null } {
   const { edit } = useEditTransaction();
   return {
-    remove(row: UndoableRow, ownerId: string): string {
+    remove(row: UndoableRow, ownerId: string): string | null {
       const stepId = newStepId();
-      edit(
+      const recorded = edit(
         {
           id: row.id,
           householdId: row.household_id,
@@ -676,24 +703,25 @@ export function useDeleteTransaction(): { remove(row: UndoableRow, ownerId: stri
           expectedVersion: row.version,
           patch: { deleted_at: new Date().toISOString() },
         },
-        { stepId, ownerId, labelKey: 'deleted', labelParams: nameParams(row) }
+        // A soft-delete's inverse is always known: the row was not deleted.
+        { stepId, ownerId, labelKey: 'deleted', labelParams: nameParams(row), before: { deleted_at: null } }
       );
-      return stepId;
+      return recorded ? stepId : null;
     },
   };
 }
 
 export function useMarkPaid(): {
-  markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: number; localDate?: string }): string;
+  markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: number; localDate?: string }): string | null;
 } {
   const { edit } = useEditTransaction();
   return {
-    markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: number; localDate?: string }): string {
+    markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: number; localDate?: string }): string | null {
       const stepId = newStepId();
       const localDate = adjust?.localDate ?? markPaidDate(today, row.local_date);
       const patch: TransactionPatch = { status: 'paid', local_date: localDate };
       if (adjust?.amount !== undefined) patch.original_amount = adjust.amount;
-      edit(
+      const recorded = edit(
         {
           id: row.id,
           householdId: row.household_id,
@@ -701,19 +729,19 @@ export function useMarkPaid(): {
           expectedVersion: row.version,
           patch,
         },
-        { stepId, ownerId, labelKey: 'markedPaid', labelParams: nameParams(row) }
+        { stepId, ownerId, labelKey: 'markedPaid', labelParams: nameParams(row), before: knownBefore(row) }
       );
-      return stepId;
+      return recorded ? stepId : null;
     },
   };
 }
 
-export function useSkipOccurrence(): { skip(row: UndoableRow, ownerId: string): string } {
+export function useSkipOccurrence(): { skip(row: UndoableRow, ownerId: string): string | null } {
   const { edit } = useEditTransaction();
   return {
-    skip(row: UndoableRow, ownerId: string): string {
+    skip(row: UndoableRow, ownerId: string): string | null {
       const stepId = newStepId();
-      edit(
+      const recorded = edit(
         {
           id: row.id,
           householdId: row.household_id,
@@ -721,9 +749,9 @@ export function useSkipOccurrence(): { skip(row: UndoableRow, ownerId: string): 
           expectedVersion: row.version,
           patch: { status: 'skipped' },
         },
-        { stepId, ownerId, labelKey: 'skipped', labelParams: nameParams(row) }
+        { stepId, ownerId, labelKey: 'skipped', labelParams: nameParams(row), before: knownBefore(row) }
       );
-      return stepId;
+      return recorded ? stepId : null;
     },
   };
 }
