@@ -170,7 +170,33 @@ describe('useImportCommit', () => {
     expect(() =>
       result.current.commit(
         baseInput({
-          links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T' }],
+          links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T', storedTransferId: null }],
+        })
+      )
+    ).toThrow(TypeError);
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  // E-WR-06: one stored leg must never end up in two transfers. A leg that already carries a
+  // transfer_id, or a leg named by two links, is refused before anything is enqueued.
+  it('E-WR-06: refuses to link a stored leg that is already in a transfer, or one leg twice', async () => {
+    const enqueue = jest.fn();
+    (transactionsModule.useImportChunks as jest.Mock).mockReturnValue({ enqueue });
+    const qc = newClient();
+    const { result } = await renderHook(() => useImportCommit(), { wrapper: wrapper(qc) });
+    const link = { importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T' };
+
+    expect(() =>
+      result.current.commit(baseInput({ transferCategoryId: 'transfer-cat', links: [{ ...link, storedTransferId: 'T-existing' }] }))
+    ).toThrow(TypeError);
+    expect(() =>
+      result.current.commit(
+        baseInput({
+          transferCategoryId: 'transfer-cat',
+          links: [
+            { ...link, storedTransferId: null },
+            { ...link, importedId: 'n3', transferId: 'T2', storedTransferId: null },
+          ],
         })
       )
     ).toThrow(TypeError);
@@ -223,7 +249,7 @@ describe('useImportCommit', () => {
     result.current.commit(
       baseInput({
         transferCategoryId: 'transfer-cat',
-        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: 'c-old', transferId: 'T' }],
+        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: 'c-old', transferId: 'T', storedTransferId: null }],
         markPaid: [
           {
             pendingId: 'p1',
@@ -332,7 +358,7 @@ describe('useImportCommit', () => {
     result.current.commit(
       baseInput({
         transferCategoryId: 'transfer-cat',
-        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T' }],
+        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T', storedTransferId: null }],
       })
     );
 
@@ -380,7 +406,7 @@ describe('useImportCommit', () => {
     result.current.commit(
       baseInput({
         transferCategoryId: 'transfer-cat',
-        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T' }],
+        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T', storedTransferId: null }],
       })
     );
 
@@ -472,7 +498,7 @@ describe('useImportCommit', () => {
     result.current.commit(
       baseInput({
         transferCategoryId: 'transfer-cat',
-        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T' }],
+        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T', storedTransferId: null }],
         markPaid: [
           {
             pendingId: 'p1',
@@ -543,7 +569,7 @@ describe('useImportCommit', () => {
     result.current.commit(
       baseInput({
         transferCategoryId: 'transfer-cat',
-        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T' }],
+        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T', storedTransferId: null }],
       })
     );
 

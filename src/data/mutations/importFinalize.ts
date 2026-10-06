@@ -52,6 +52,11 @@ export interface ImportLink {
   storedVersion: number;
   storedCategoryId: string | null;
   transferId: string;
+  /**
+   * E-WR-06: the stored leg's own transfer_id as of the preview. A leg already in a transfer
+   * is never linked again -- one stored leg must never end up in two transfers.
+   */
+  storedTransferId: string | null;
 }
 
 export interface ImportMarkPaid {
@@ -399,6 +404,18 @@ export function useImportCommit(): { commit(input: ImportCommitInput): void } {
     commit(input: ImportCommitInput): void {
       if (input.finalize.links.length > 0 && !input.finalize.transferCategoryId) {
         throw new TypeError('useImportCommit: transferCategoryId is required when links are present');
+      }
+      // E-WR-06: refused before anything is enqueued. The link op's version check only catches
+      // a leg that changed after the preview, not one that was already linked at preview time.
+      const linkedLegs = new Set<string>();
+      for (const link of input.finalize.links) {
+        if (link.storedTransferId !== null) {
+          throw new TypeError(`useImportCommit: stored leg ${link.storedId} is already in a transfer`);
+        }
+        for (const leg of [link.storedId, link.importedId]) {
+          if (linkedLegs.has(leg)) throw new TypeError(`useImportCommit: leg ${leg} is named by two links`);
+          linkedLegs.add(leg);
+        }
       }
 
       // C-WR-09: every row this commit inserts belongs to this batch (REC-14 provenance,
