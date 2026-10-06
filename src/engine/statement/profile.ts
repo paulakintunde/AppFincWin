@@ -229,14 +229,20 @@ function decideFromRowSign(
   const patterns: readonly string[] | null =
     accountFamily === 'card' ? PAYMENT_LIKE_CARD : accountFamily === 'deposit' ? INCOME_LIKE_DEPOSIT : null;
   if (patterns === null) return null;
+  // Review E-WR-08: the majority of matching rows decides, never the first
+  // one -- an outgoing 'SALARY - NANNY' or 'OVERDRAFT INTEREST PAID' must not
+  // set the sign for the whole file. An even split decides nothing.
+  let positive = 0;
+  let negative = 0;
   for (const row of draft.rows) {
     if (row.magnitude === null || row.magnitude === 0) continue;
     const upper = row.description.toUpperCase();
-    if (patterns.some((p) => upper.includes(p))) {
-      return { s: markerSign(row.marker), evidence: accountFamily === 'card' ? 'payment-row-sign' : 'income-row-sign' };
-    }
+    if (!patterns.some((p) => upper.includes(p))) continue;
+    if (markerSign(row.marker) === 1) positive += 1;
+    else negative += 1;
   }
-  return null;
+  if (positive === negative) return null;
+  return { s: positive > negative ? 1 : -1, evidence: accountFamily === 'card' ? 'payment-row-sign' : 'income-row-sign' };
 }
 
 function decideFromTrntype(draft: StatementDraft): { s: 1 | -1 } | null {
@@ -255,6 +261,19 @@ function decideFromTrntype(draft: StatementDraft): { s: 1 | -1 } | null {
   if (agreeUnderMoneyIn * 2 > total) return { s: 1 };
   if (agreeUnderMoneyIn * 2 < total) return { s: -1 };
   return null;
+}
+
+/** The candidate that alone reconciles every row, when exactly one does. */
+function strictReconciliationWinner(
+  draft: StatementDraft,
+  limit: MinorUnits | null,
+  candidates: readonly [FormatProfile, FormatProfile]
+): FormatProfile | null {
+  const [moneyIn, moneySpent] = candidates;
+  const aAll = reconcileVerifiedLinks(draft, moneyIn, limit).file === 'all-verified';
+  const bAll = reconcileVerifiedLinks(draft, moneySpent, limit).file === 'all-verified';
+  if (aAll === bAll) return null;
+  return aAll ? moneyIn : moneySpent;
 }
 
 function decideByReconciliation(
@@ -347,14 +366,26 @@ function inferWithBalanceMeans(
     }
   }
 
+  // Description and TRNTYPE evidence is a heuristic: when the file's own
+  // running balances reconcile only under the other reading, the balances
+  // win (review E-WR-08).
+  function decideByHeuristic(chosen: FormatProfile, evidenceCode: ProfileEvidence): ProfileResult {
+    const strict = hasBalances ? strictReconciliationWinner(draft, target.limit, [moneyIn, moneySpent]) : null;
+    if (strict !== null && strict.positiveMeans !== chosen.positiveMeans) {
+      const profile: FormatProfile = { ...strict, statedLimit: deriveStatedLimit(draft, strict), decidedBy: 'reconciliation' };
+      return { kind: 'decided', profile, evidence: ['account-kind', 'running-balance'] };
+    }
+    return decideByLabel(chosen, evidenceCode);
+  }
+
   const rowSignDecision = decideFromRowSign(draft, accountFamily);
   if (rowSignDecision !== null) {
-    return decideByLabel(rowSignDecision.s === 1 ? moneyIn : moneySpent, rowSignDecision.evidence);
+    return decideByHeuristic(rowSignDecision.s === 1 ? moneyIn : moneySpent, rowSignDecision.evidence);
   }
 
   const trntypeDecision = decideFromTrntype(draft);
   if (trntypeDecision !== null) {
-    return decideByLabel(trntypeDecision.s === 1 ? moneyIn : moneySpent, 'trntype-agrees');
+    return decideByHeuristic(trntypeDecision.s === 1 ? moneyIn : moneySpent, 'trntype-agrees');
   }
 
   if (hasBalances) {

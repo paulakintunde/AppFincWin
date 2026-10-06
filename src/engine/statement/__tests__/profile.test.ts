@@ -716,6 +716,75 @@ describe('inferProfile: income-row-sign on a deposit account', () => {
     expect(evidence).toContain('income-row-sign');
     expect(profile.positiveMeans).toBe('money-in');
   });
+
+  it('the majority of matching rows decides, not the first (review E-WR-08)', () => {
+    const draft = makeDraft({
+      rows: [
+        makeRow(0, { description: 'SALARY - NANNY', magnitude: minorUnits(50000), marker: 'minus' }),
+        makeRow(1, { description: 'SALARY', magnitude: minorUnits(200000), marker: 'none' }),
+        makeRow(2, { description: 'INTEREST PAID', magnitude: minorUnits(150), marker: 'none' }),
+      ],
+    });
+    const { profile, evidence } = asDecided(inferProfile(draft, { kind: 'checking', limit: null }, null));
+    expect(evidence).toContain('income-row-sign');
+    expect(profile.positiveMeans).toBe('money-in');
+  });
+
+  it('an even split of matching rows decides nothing', () => {
+    const draft = makeDraft({
+      rows: [
+        makeRow(0, { description: 'SALARY - NANNY', magnitude: minorUnits(50000), marker: 'minus' }),
+        makeRow(1, { description: 'SALARY', magnitude: minorUnits(200000), marker: 'none' }),
+      ],
+    });
+    expect(inferProfile(draft, { kind: 'checking', limit: null }, null).kind).toBe('ambiguous');
+  });
+
+  it('a running-balance check that verifies only the other reading overrides the description (review E-WR-08)', () => {
+    // True ledger, raw sign = stored sign (money-in): 1000.00 -> 500.00 -> 480.00.
+    // The only income-like row is an outgoing 'OVERDRAFT INTEREST PAID'.
+    const draft = makeDraft({
+      statedOpening: { magnitude: minorUnits(100000), marker: 'none', asOf: null, raw: '1000.00' },
+      rows: [
+        makeRow(0, {
+          description: 'OVERDRAFT INTEREST PAID',
+          magnitude: minorUnits(50000),
+          marker: 'minus',
+          balanceMagnitude: minorUnits(50000),
+          balanceMarker: 'none',
+        }),
+        makeRow(1, {
+          description: 'TESCO',
+          magnitude: minorUnits(2000),
+          marker: 'minus',
+          balanceMagnitude: minorUnits(48000),
+          balanceMarker: 'none',
+        }),
+      ],
+    });
+    const { profile, evidence } = asDecided(inferProfile(draft, { kind: 'checking', limit: null }, null));
+    expect(profile.positiveMeans).toBe('money-in');
+    expect(profile.decidedBy).toBe('reconciliation');
+    expect(evidence).toEqual(['account-kind', 'running-balance']);
+  });
+
+  it('a running-balance check agreeing with the description keeps the label decision', () => {
+    const draft = makeDraft({
+      statedOpening: { magnitude: minorUnits(100000), marker: 'none', asOf: null, raw: '1000.00' },
+      rows: [
+        makeRow(0, {
+          description: 'SALARY',
+          magnitude: minorUnits(50000),
+          marker: 'none',
+          balanceMagnitude: minorUnits(150000),
+          balanceMarker: 'none',
+        }),
+      ],
+    });
+    const { profile, evidence } = asDecided(inferProfile(draft, { kind: 'checking', limit: null }, null));
+    expect(profile.decidedBy).toBe('labels');
+    expect(evidence).toEqual(['account-kind', 'income-row-sign', 'running-balance']);
+  });
 });
 
 describe('inferProfile: a CSV limit-label column value is copied verbatim, never re-derived', () => {
