@@ -297,6 +297,9 @@ declare
   v_soft_deleted jsonb := '[]'::jsonb;
   v_inserted jsonb := '[]'::jsonb;
   v_new_version integer;
+  v_new_anchor date;
+  v_count integer;
+  v_used integer := 0;
 begin
   select * into s from public.recurring_series where id = p_series_id and deleted_at is null for update;
   if not found then
@@ -338,6 +341,32 @@ begin
     v_before := v_before || jsonb_build_object('anchor_date', to_jsonb(s.anchor_date));
   end if;
 
+  -- D-WR-05: occurrence_count counts n = 0..count-1 from anchor_date, so
+  -- moving the anchor (a freq change re-anchors at p_effective_from, or an
+  -- explicit anchor_date) must carry over only what the old schedule had
+  -- not yet used -- otherwise the count restarts and a 12-instalment loan
+  -- grows extra instalments. An explicit occurrence_count in the patch wins.
+  v_new_anchor := case
+    when p_patch ? 'anchor_date' then (p_patch ->> 'anchor_date')::date
+    when p_patch ? 'freq' then p_effective_from
+    else s.anchor_date
+  end;
+  v_count := case when p_patch ? 'occurrence_count'
+                  then nullif(p_patch ->> 'occurrence_count', '')::integer
+                  else s.occurrence_count end;
+  if v_new_anchor is distinct from s.anchor_date and s.occurrence_count is not null
+     and not (p_patch ? 'occurrence_count') then
+    while v_used < s.occurrence_count
+      and public.recurring_occurrence_date(s.anchor_date, s.freq, v_used) < v_new_anchor loop
+      v_used := v_used + 1;
+    end loop;
+    if v_used >= s.occurrence_count then
+      raise exception 'series % has no occurrences left after %', s.id, v_new_anchor using errcode = '22023';
+    end if;
+    v_count := s.occurrence_count - v_used;
+    v_before := v_before || jsonb_build_object('occurrence_count', to_jsonb(s.occurrence_count));
+  end if;
+
   update public.recurring_series set
     name = case when p_patch ? 'name' then (p_patch ->> 'name') else name end,
     amount = case when p_patch ? 'amount' then (p_patch ->> 'amount')::bigint else amount end,
@@ -346,13 +375,9 @@ begin
     category_id = case when p_patch ? 'category_id' then nullif(p_patch ->> 'category_id', '')::uuid else category_id end,
     payment_type = case when p_patch ? 'payment_type' then nullif(p_patch ->> 'payment_type', '') else payment_type end,
     freq = case when p_patch ? 'freq' then (p_patch ->> 'freq') else freq end,
-    anchor_date = case
-      when p_patch ? 'anchor_date' then (p_patch ->> 'anchor_date')::date
-      when p_patch ? 'freq' then p_effective_from
-      else anchor_date
-    end,
+    anchor_date = v_new_anchor,
     end_date = case when p_patch ? 'end_date' then nullif(p_patch ->> 'end_date', '')::date else end_date end,
-    occurrence_count = case when p_patch ? 'occurrence_count' then nullif(p_patch ->> 'occurrence_count', '')::integer else occurrence_count end,
+    occurrence_count = v_count,
     materialised_through = least(coalesce(materialised_through, p_effective_from - 1), p_effective_from - 1)
   where id = p_series_id
   returning version into v_new_version;

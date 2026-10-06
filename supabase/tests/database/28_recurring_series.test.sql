@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(31);
+select extensions.plan(33);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -384,6 +384,41 @@ select extensions.is(
   2,
   'a series with no author materialises, attributed to the household owner'
 );
+
+-- ---------------------------------------------------------------------
+-- 15. D-WR-05: moving the anchor (a freq change, or an explicit
+-- anchor_date) carries over only the occurrences the old schedule had not
+-- yet reached, instead of restarting occurrence_count from zero.
+-- A 12-instalment monthly series that started 6 months ago has used 7
+-- instalments (n = 0..6, this month included) before next month.
+-- ---------------------------------------------------------------------
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+
+select public.create_recurring_series(jsonb_build_object(
+  'id', 'caaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  'household_id', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+  'account_id', 'a1111111-1111-1111-1111-111111111111',
+  'name', 'Loan', 'amount', -25000, 'currency', 'USD', 'freq', 'monthly',
+  'anchor_date', (date_trunc('month', current_date) - interval '6 months')::date, 'time_zone', 'UTC',
+  'occurrence_count', 12
+));
+create temp table wr05 as select public.edit_recurring_series_from(
+  'caaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 1, '{"freq": "fortnightly"}'::jsonb,
+  (date_trunc('month', current_date) + interval '1 month')::date
+) as r;
+
+select extensions.is(
+  (select occurrence_count from public.recurring_series where id = 'caaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  5,
+  'a freq change carries over the 5 remaining instalments, not a fresh 12'
+);
+select extensions.is(
+  (select r -> 'series' -> 'before' -> 'occurrence_count' from wr05),
+  '12'::jsonb,
+  'the change set''s before carries the old occurrence_count, so undo restores it'
+);
+reset role;
 
 select * from extensions.finish();
 rollback;
