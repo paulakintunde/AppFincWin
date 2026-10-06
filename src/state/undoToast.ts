@@ -26,6 +26,17 @@ export interface ToastState {
 export const TOAST_MS_ORDINARY = 3200; // D-31 (prototype say())
 export const TOAST_MS_DESTRUCTIVE = 6000; // D-31 deletes, bulk deletes, imports
 
+/**
+ * D-31 / C-CR-02: how long the host keeps a toast up before auto-dismissing it. `null` means
+ * never auto-dismiss: with a screen reader running the user dismisses it themselves (the
+ * History screen stays the fallback either way). A refusal carries a longer sentence ("Sam
+ * edited Groceries after this...") so it gets the longer timing too.
+ */
+export function toastDurationMs(kind: ToastKind, screenReaderEnabled: boolean): number | null {
+  if (screenReaderEnabled) return null;
+  return kind === 'destructive' || kind === 'refusal' ? TOAST_MS_DESTRUCTIVE : TOAST_MS_ORDINARY;
+}
+
 let toast: ToastState | null = null;
 let nextId = 1;
 const listeners = new Set<() => void>();

@@ -2,11 +2,18 @@
  * UI-SPEC Design System: the presentational Undo toast (D-31) -- ink background, surface
  * text, radii.pill container, an optional action (e.g. "Undo") and a dismiss control.
  * T-02-19-02: shows only the user's own payee/category name back to themselves; no logging.
- * Purely presentational -- auto-dismiss timing (3.2s ordinary / ~6s destructive, D-31) is
- * the caller's concern, not this component's.
+ * Purely presentational -- auto-dismiss timing (3.2s ordinary / ~6s destructive, none while a
+ * screen reader runs: D-31, `toastDurationMs` in src/state/undoToast.ts) is the caller's
+ * concern, not this component's.
+ *
+ * C-CR-02: the container is deliberately NOT `accessible`. On iOS an accessible view becomes
+ * a single accessibility element and hides its descendants, so VoiceOver could never reach
+ * Undo or Dismiss -- the only undo affordance for deletes and imports. Only the message text
+ * is the alert; the controls stay separately focusable. `accessibilityLiveRegion` is
+ * Android-only, so iOS gets an explicit announcement on mount / message change instead.
  */
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { AccessibilityInfo, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
@@ -24,14 +31,15 @@ export function ToastView({ message, actionLabel, onAction, onDismiss, dismissLa
   const messageStyle = { ...textRole(pairing, 'body'), color: colors.surface };
   const actionStyle = { ...textRole(pairing, 'label'), color: colors.surface };
 
+  useEffect(() => {
+    if (Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(message);
+  }, [message]);
+
   return (
-    <View
-      accessible
-      accessibilityRole="alert"
-      accessibilityLiveRegion="polite"
-      style={[styles.container, { backgroundColor: colors.ink, borderRadius: radii.pill }]}
-    >
-      <Text style={[styles.message, messageStyle]}>{message}</Text>
+    <View style={[styles.container, { backgroundColor: colors.ink, borderRadius: radii.pill }]}>
+      <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.message, messageStyle]}>
+        {message}
+      </Text>
       {actionLabel && onAction ? (
         <Pressable
           accessibilityRole="button"

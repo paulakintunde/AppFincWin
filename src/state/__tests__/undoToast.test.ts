@@ -1,6 +1,15 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { wipeDeviceData } from '@/services/storage/wipe';
-import { showToast, dismissToast, getToast, useToast, resetToastForTests, TOAST_MS_DESTRUCTIVE, TOAST_MS_ORDINARY } from '../undoToast';
+import {
+  showToast,
+  dismissToast,
+  getToast,
+  useToast,
+  resetToastForTests,
+  toastDurationMs,
+  TOAST_MS_DESTRUCTIVE,
+  TOAST_MS_ORDINARY,
+} from '../undoToast';
 
 describe('undoToast', () => {
   afterEach(() => {
@@ -10,6 +19,17 @@ describe('undoToast', () => {
   it('exposes the D-31 timing constants', () => {
     expect(TOAST_MS_ORDINARY).toBe(3200);
     expect(TOAST_MS_DESTRUCTIVE).toBe(6000);
+  });
+
+  // C-CR-02 / D-31: with a screen reader running there is no auto-dismiss.
+  it('toastDurationMs gives the D-31 timings, and no auto-dismiss under a screen reader', () => {
+    expect(toastDurationMs('ordinary', false)).toBe(TOAST_MS_ORDINARY);
+    expect(toastDurationMs('info', false)).toBe(TOAST_MS_ORDINARY);
+    expect(toastDurationMs('destructive', false)).toBe(TOAST_MS_DESTRUCTIVE);
+    expect(toastDurationMs('refusal', false)).toBe(TOAST_MS_DESTRUCTIVE);
+    for (const kind of ['ordinary', 'destructive', 'refusal', 'info'] as const) {
+      expect(toastDurationMs(kind, true)).toBeNull();
+    }
   });
 
   it('showToast replaces any current toast with a new id', () => {
