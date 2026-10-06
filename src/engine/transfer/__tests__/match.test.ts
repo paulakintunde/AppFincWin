@@ -178,6 +178,25 @@ describe('matchTransfers', () => {
     expect(result).toEqual([{ kind: 'pair', importIndex: 0, existingId: 'e1', score: expect.any(Number) }]);
   });
 
+  it('between equally scored cross-currency candidates, the smaller converted difference wins', () => {
+    const result = matchTransfers({
+      imported: [
+        imported({ index: 0, accountId: 'eur-acc', localDate: '2026-09-05', amount: 11500, currency: 'EUR', name: 'X' }),
+      ],
+      existing: [
+        // 9900 GBP -> 11583 EUR (diff 83); 9830 GBP -> 11501 EUR (diff 1). The id order alone would pick a-far.
+        existing({ id: 'a-far', accountId: 'current', localDate: '2026-09-05', amount: -9900, currency: 'GBP' }),
+        existing({ id: 'b-near', accountId: 'savings', localDate: '2026-09-05', amount: -9830, currency: 'GBP' }),
+      ],
+      accounts: ACCOUNTS,
+      perEur: new Map<string, ScaledRate>([
+        ['GBP', parseRate('1')],
+        ['EUR', parseRate('1.17')],
+      ]),
+    });
+    expect(result).toEqual([{ kind: 'pair', importIndex: 0, existingId: 'b-near', score: expect.any(Number) }]);
+  });
+
   it('does not pair a cross-currency leg beyond the 5% tolerance', () => {
     const result = matchTransfers({
       imported: [
