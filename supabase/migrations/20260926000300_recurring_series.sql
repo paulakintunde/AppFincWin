@@ -68,13 +68,22 @@ security definer
 set search_path = ''
 as $$
 begin
-  if not public.is_known_currency(new.currency, coalesce(new.created_by, (select auth.uid()))) then
+  -- D-WR-08 (and D-WR-01): on UPDATE, only re-validate what actually
+  -- changed. Re-checking an untouched currency/time zone/category on every
+  -- update made unrelated writes fail -- the materialiser's bookkeeping
+  -- update after a tzdata upgrade drops a zone, or the ON DELETE SET NULL of
+  -- created_by during account deletion (the category's owner is the user
+  -- being deleted, so the ownership check can no longer pass).
+  if (tg_op = 'INSERT' or new.currency is distinct from old.currency)
+     and not public.is_known_currency(new.currency, coalesce(new.created_by, (select auth.uid()))) then
     raise exception 'unknown currency %', new.currency using errcode = '23514';
   end if;
-  if not exists (select 1 from pg_catalog.pg_timezone_names z where z.name = new.time_zone) then
+  if (tg_op = 'INSERT' or new.time_zone is distinct from old.time_zone)
+     and not exists (select 1 from pg_catalog.pg_timezone_names z where z.name = new.time_zone) then
     raise exception 'unknown time zone %', new.time_zone using errcode = '23514';
   end if;
-  if new.category_id is not null and not exists (
+  if (tg_op = 'INSERT' or new.category_id is distinct from old.category_id)
+     and new.category_id is not null and not exists (
     select 1 from public.categories c
     where c.id = new.category_id
       and (c.owner_id = (select auth.uid()) or c.owner_id = new.created_by)
@@ -83,7 +92,11 @@ begin
   end if;
   if tg_op = 'UPDATE' then
     new.household_id := old.household_id;
-    new.created_by := old.created_by;
+    -- D-WR-08: pinned against any change except being cleared, which only
+    -- the ON DELETE SET NULL action from auth.users does (no client can
+    -- write this table at all); reverting that would fail the FK and abort
+    -- the departing member's account deletion.
+    new.created_by := case when new.created_by is null then null else old.created_by end;
   end if;
   return new;
 end;
