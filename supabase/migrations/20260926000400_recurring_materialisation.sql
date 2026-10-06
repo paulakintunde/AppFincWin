@@ -22,6 +22,14 @@
 -- it never bumps the series' version and never blocks a user's undo -- only
 -- a genuine template edit (edit_recurring_series_from/end_recurring_series)
 -- does that.
+--
+-- D-WR-04: each of the three series RPCs takes an optional p_undo_step
+-- ({id, label_key, label_params}) and, when given, records the inverse of
+-- its own change set in undo_log in the same transaction
+-- (public.record_series_undo_step, defined with undo_log in
+-- 20260926000500_undo_log.sql and resolved at call time), so "one action is
+-- one step" (D-24) holds even if the app dies between the write and a
+-- separate insertUndoStep call.
 
 -- 1. materialise_series(): generate every not-yet-materialised occurrence of
 -- one series through the horizon (or its end date, if sooner), skipping
@@ -152,7 +160,8 @@ $$;
 create or replace function public.create_recurring_series(
   p_series jsonb,
   p_anchor_transaction_id uuid default null,
-  p_link_transaction_ids uuid[] default '{}'
+  p_link_transaction_ids uuid[] default '{}',
+  p_undo_step jsonb default null
 )
 returns jsonb
 language plpgsql
@@ -249,13 +258,13 @@ begin
   select coalesce(jsonb_agg(jsonb_build_object('id', id, 'version', 1)), '[]'::jsonb) into v_inserted
     from public.materialise_series(v_series_id) as id;
 
-  return jsonb_build_object(
+  return public.record_series_undo_step(p_undo_step, jsonb_build_object(
     'status', 'applied',
     'series', jsonb_build_object('id', v_series_id, 'version', 1, 'before', null),
     'inserted', v_inserted,
     'soft_deleted', '[]'::jsonb,
     'linked', v_linked
-  );
+  ));
 end;
 $$;
 
@@ -271,7 +280,8 @@ create or replace function public.edit_recurring_series_from(
   p_series_id uuid,
   p_expected_version integer,
   p_patch jsonb,
-  p_effective_from date
+  p_effective_from date,
+  p_undo_step jsonb default null
 )
 returns jsonb
 language plpgsql
@@ -303,6 +313,10 @@ begin
         'record_name', s.name, 'builtin_key', null, 'reason', 'changed'
       )
     );
+  end if;
+
+  if jsonb_typeof(p_patch) is distinct from 'object' or p_patch = '{}'::jsonb then
+    raise exception 'edit_recurring_series_from: p_patch must be a non-empty object' using errcode = '22023';
   end if;
 
   for v_key in select jsonb_object_keys(p_patch) loop
@@ -354,13 +368,13 @@ begin
   select coalesce(jsonb_agg(jsonb_build_object('id', id, 'version', 1)), '[]'::jsonb) into v_inserted
     from public.materialise_series(p_series_id) as id;
 
-  return jsonb_build_object(
+  return public.record_series_undo_step(p_undo_step, jsonb_build_object(
     'status', 'applied',
     'series', jsonb_build_object('id', p_series_id, 'version', v_new_version, 'before', v_before),
     'inserted', v_inserted,
     'soft_deleted', v_soft_deleted,
     'linked', '[]'::jsonb
-  );
+  ));
 end;
 $$;
 
@@ -369,7 +383,8 @@ $$;
 create or replace function public.end_recurring_series(
   p_series_id uuid,
   p_expected_version integer,
-  p_end_date date
+  p_end_date date,
+  p_undo_step jsonb default null
 )
 returns jsonb
 language plpgsql
@@ -420,13 +435,13 @@ begin
     into v_soft_deleted
     from to_delete;
 
-  return jsonb_build_object(
+  return public.record_series_undo_step(p_undo_step, jsonb_build_object(
     'status', 'applied',
     'series', jsonb_build_object('id', p_series_id, 'version', v_new_version, 'before', v_before),
     'inserted', '[]'::jsonb,
     'soft_deleted', v_soft_deleted,
     'linked', '[]'::jsonb
-  );
+  ));
 end;
 $$;
 
@@ -439,14 +454,14 @@ grant execute on function public.materialise_series(uuid, date) to service_role;
 revoke execute on function public.materialise_recurring() from public, anon, authenticated;
 grant execute on function public.materialise_recurring() to service_role;
 
-revoke execute on function public.create_recurring_series(jsonb, uuid, uuid[]) from public, anon;
-grant execute on function public.create_recurring_series(jsonb, uuid, uuid[]) to authenticated;
+revoke execute on function public.create_recurring_series(jsonb, uuid, uuid[], jsonb) from public, anon;
+grant execute on function public.create_recurring_series(jsonb, uuid, uuid[], jsonb) to authenticated;
 
-revoke execute on function public.edit_recurring_series_from(uuid, integer, jsonb, date) from public, anon;
-grant execute on function public.edit_recurring_series_from(uuid, integer, jsonb, date) to authenticated;
+revoke execute on function public.edit_recurring_series_from(uuid, integer, jsonb, date, jsonb) from public, anon;
+grant execute on function public.edit_recurring_series_from(uuid, integer, jsonb, date, jsonb) to authenticated;
 
-revoke execute on function public.end_recurring_series(uuid, integer, date) from public, anon;
-grant execute on function public.end_recurring_series(uuid, integer, date) to authenticated;
+revoke execute on function public.end_recurring_series(uuid, integer, date, jsonb) from public, anon;
+grant execute on function public.end_recurring_series(uuid, integer, date, jsonb) to authenticated;
 
 -- 7. Daily materialisation schedule: 00:20 UTC, well clear of the FX jobs
 -- (16:00/17:00 UTC), pure SQL with no HTTP call and no Vault secret needed.

@@ -295,3 +295,52 @@ describe('endRecurringSeries', () => {
     await expect(endRecurringSeries(client, 'series-1', 1, '2026-09-30')).rejects.toBeInstanceOf(DbError);
   });
 });
+
+// D-WR-04: the series RPCs record their own undo step in the same transaction as the write.
+describe('server-recorded undo step (D-WR-04)', () => {
+  const UNDO = { id: 'step-9', labelKey: 'seriesEdited', labelParams: { name: 'Rent' } } as const;
+
+  it('createRecurringSeries sends p_undo_step and surfaces the recorded step id', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { ...APPLIED_RESPONSE, undo_step_id: 'step-9' }, error: null, status: 200 });
+
+    const result = await createRecurringSeries(client, NEW_SERIES, undefined, { ...UNDO, labelKey: 'seriesCreated' });
+
+    expect(result.status).toBe('applied');
+    expect(result.status === 'applied' ? result.undoStepId : null).toBe('step-9');
+    const rpcCall = client.calls.find((c) => c.method === 'rpc');
+    expect(rpcCall?.args[1]).toEqual({
+      p_series: NEW_SERIES,
+      p_anchor_transaction_id: null,
+      p_link_transaction_ids: [],
+      p_undo_step: { id: 'step-9', label_key: 'seriesCreated', label_params: { name: 'Rent' } },
+    });
+  });
+
+  it('editRecurringSeriesFrom sends p_undo_step', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { ...APPLIED_RESPONSE, undo_step_id: 'step-9' }, error: null, status: 200 });
+
+    await editRecurringSeriesFrom(client, 'series-1', 1, { amount: -100000 }, '2026-10-01', UNDO);
+
+    const rpcCall = client.calls.find((c) => c.method === 'rpc');
+    expect(rpcCall?.args[1]).toMatchObject({ p_undo_step: { id: 'step-9', label_key: 'seriesEdited', label_params: { name: 'Rent' } } });
+  });
+
+  it('endRecurringSeries sends p_undo_step', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { ...APPLIED_RESPONSE, undo_step_id: 'step-9' }, error: null, status: 200 });
+
+    await endRecurringSeries(client, 'series-1', 1, '2026-09-30', { ...UNDO, labelKey: 'seriesEnded' });
+
+    const rpcCall = client.calls.find((c) => c.method === 'rpc');
+    expect(rpcCall?.args[1]).toMatchObject({ p_undo_step: { id: 'step-9', label_key: 'seriesEnded' } });
+  });
+
+  it('rejects a malformed undo_step_id in the response', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { ...APPLIED_RESPONSE, undo_step_id: 42 }, error: null, status: 200 });
+
+    await expect(endRecurringSeries(client, 'series-1', 1, '2026-09-30', UNDO)).rejects.toBeInstanceOf(DbError);
+  });
+});

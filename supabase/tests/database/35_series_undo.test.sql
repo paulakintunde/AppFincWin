@@ -19,7 +19,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(17);
+select extensions.plan(24);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -248,6 +248,73 @@ select extensions.lives_ok(
   'no broken pair is left queued for commit'
 );
 set constraints public.transfer_pair_check deferred;
+
+-- ---------------------------------------------------------------------
+-- 7. D-WR-04: each series RPC records its own undo step in the same
+-- transaction as the write (D-24), built server-side from the change set
+-- exactly as engine/undo's inverseOfSeriesChange orders it.
+-- ---------------------------------------------------------------------
+create temp table r8 as select public.create_recurring_series(
+  jsonb_build_object(
+    'id', 'c8000000-0000-0000-0000-000000000008',
+    'household_id', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+    'account_id', 'a1111111-1111-1111-1111-111111111111',
+    'name', 'Water', 'amount', -2500, 'currency', 'USD', 'freq', 'monthly',
+    'anchor_date', date_trunc('month', current_date)::date, 'time_zone', 'UTC'
+  ),
+  null, '{}'::uuid[],
+  '{"id":"e8000000-0000-0000-0000-000000000008","label_key":"seriesCreated","label_params":{"name":"Water"}}'::jsonb
+) as r;
+
+select extensions.is((select r ->> 'undo_step_id' from r8), 'e8000000-0000-0000-0000-000000000008', 'create reports the undo step it recorded');
+select extensions.is(
+  (select jsonb_array_length(ops) from public.undo_log where id = 'e8000000-0000-0000-0000-000000000008'),
+  3,
+  'the stored step soft-deletes both inserted rows, then the series'
+);
+select extensions.is(
+  (select ops -> 2 from public.undo_log where id = 'e8000000-0000-0000-0000-000000000008'),
+  '{"entity":"recurring_series","id":"c8000000-0000-0000-0000-000000000008","expectedVersion":1,"patch":{"deleted_at":"$now"}}'::jsonb,
+  'the series op goes last and deletes the series'
+);
+select extensions.is(
+  (public.apply_undo_step('e8000000-0000-0000-0000-000000000008') ->> 'status'),
+  'undone',
+  'the server-recorded create step undoes'
+);
+select extensions.is(
+  (select count(*)::int from public.transactions where recurring_series_id = 'c8000000-0000-0000-0000-000000000008' and deleted_at is null),
+  0,
+  'no live occurrence survives the undo'
+);
+
+select public.create_recurring_series(jsonb_build_object(
+  'id', 'c9000000-0000-0000-0000-000000000009',
+  'household_id', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+  'account_id', 'a1111111-1111-1111-1111-111111111111',
+  'name', 'Broadband', 'amount', -4000, 'currency', 'USD', 'freq', 'monthly',
+  'anchor_date', date_trunc('month', current_date)::date, 'time_zone', 'UTC'
+));
+select public.edit_recurring_series_from(
+  'c9000000-0000-0000-0000-000000000009'::uuid, 1, '{"amount": -4200}'::jsonb,
+  (date_trunc('month', current_date) + interval '1 month')::date,
+  '{"id":"e9000000-0000-0000-0000-000000000009","label_key":"seriesEdited","label_params":{}}'::jsonb
+);
+select extensions.is(
+  (select ops -> (jsonb_array_length(ops) - 1) -> 'patch' from public.undo_log where id = 'e9000000-0000-0000-0000-000000000009'),
+  '{"amount":-4000}'::jsonb,
+  'the edit step restores the template last'
+);
+select public.end_recurring_series(
+  'c9000000-0000-0000-0000-000000000009'::uuid, 2,
+  (date_trunc('month', current_date) + interval '1 month' - interval '1 day')::date,
+  '{"id":"ea000000-0000-0000-0000-00000000000a","label_key":"seriesEnded","label_params":{}}'::jsonb
+);
+select extensions.is(
+  (select count(*)::int from public.undo_log where id = 'ea000000-0000-0000-0000-00000000000a'),
+  1,
+  'the end RPC records its undo step too'
+);
 
 reset role;
 

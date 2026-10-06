@@ -495,6 +495,78 @@ begin
 end;
 $$;
 
+-- 5c. D-WR-04: the series RPCs' undo step, built and stored server-side in
+-- the same transaction as the series write. series_change_inverse is the
+-- SQL mirror of src/engine/undo/inverse.ts's inverseOfSeriesChange, and its
+-- op order is the same load-bearing order (T-02-05-02): inserted rows are
+-- soft-deleted first, then soft-deleted rows restored, then linked rows
+-- unlinked, and the series template patch (or the series' own delete, for
+-- a create) goes last.
+create or replace function public.series_change_inverse(p_change jsonb)
+returns jsonb
+language sql
+immutable
+set search_path = ''
+as $$
+  select
+    coalesce((select jsonb_agg(jsonb_build_object(
+                'entity', 'transactions', 'id', e.value ->> 'id', 'expectedVersion', (e.value ->> 'version')::integer,
+                'patch', jsonb_build_object('deleted_at', '$now')) order by e.ordinality)
+                from jsonb_array_elements(p_change -> 'inserted') with ordinality e), '[]'::jsonb)
+    || coalesce((select jsonb_agg(jsonb_build_object(
+                'entity', 'transactions', 'id', e.value ->> 'id', 'expectedVersion', (e.value ->> 'version')::integer,
+                'patch', jsonb_build_object('deleted_at', null)) order by e.ordinality)
+                from jsonb_array_elements(p_change -> 'soft_deleted') with ordinality e), '[]'::jsonb)
+    || coalesce((select jsonb_agg(jsonb_build_object(
+                'entity', 'transactions', 'id', e.value ->> 'id', 'expectedVersion', (e.value ->> 'version')::integer,
+                'patch', jsonb_build_object('recurring_series_id', null, 'occurrence_date', null)) order by e.ordinality)
+                from jsonb_array_elements(p_change -> 'linked') with ordinality e), '[]'::jsonb)
+    || jsonb_build_array(jsonb_build_object(
+         'entity', 'recurring_series', 'id', p_change -> 'series' ->> 'id',
+         'expectedVersion', (p_change -> 'series' ->> 'version')::integer,
+         'patch', case when jsonb_typeof(p_change -> 'series' -> 'before') is distinct from 'object'
+                       then jsonb_build_object('deleted_at', '$now')
+                       else p_change -> 'series' -> 'before' end));
+$$;
+
+-- Records the step (when the caller asked for one) and returns the applied
+-- envelope with undo_step_id added. With p_undo_step null this is a no-op,
+-- so a caller that still records its own step keeps working.
+create or replace function public.record_series_undo_step(p_undo_step jsonb, p_change jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_step_id uuid;
+begin
+  if p_undo_step is null then
+    return p_change;
+  end if;
+  if jsonb_typeof(p_undo_step) <> 'object' then
+    raise exception 'p_undo_step must be an object' using errcode = '22023';
+  end if;
+  begin
+    v_step_id := (p_undo_step ->> 'id')::uuid;
+  exception when others then
+    raise exception 'p_undo_step.id must be a uuid' using errcode = '22023';
+  end;
+  if v_step_id is null then
+    raise exception 'p_undo_step.id must be a uuid' using errcode = '22023';
+  end if;
+
+  insert into public.undo_log (id, owner_id, label_key, label_params, ops)
+  values (
+    v_step_id, (select auth.uid()), p_undo_step ->> 'label_key',
+    coalesce(p_undo_step -> 'label_params', '{}'::jsonb),
+    public.series_change_inverse(p_change)
+  );
+
+  return p_change || jsonb_build_object('undo_step_id', v_step_id);
+end;
+$$;
+
 -- 6. apply_undo_step: replay one stored step's ops through apply_patches.
 create or replace function public.apply_undo_step(p_step_id uuid)
 returns jsonb
@@ -634,6 +706,8 @@ revoke execute on function public.apply_patches(jsonb, jsonb) from public, anon;
 grant execute on function public.apply_patches(jsonb, jsonb) to authenticated;
 
 revoke execute on function public.undo_replay(public.undo_log) from public, anon, authenticated;
+revoke execute on function public.series_change_inverse(jsonb) from public, anon, authenticated;
+revoke execute on function public.record_series_undo_step(jsonb, jsonb) from public, anon, authenticated;
 
 revoke execute on function public.apply_undo_step(uuid) from public, anon;
 grant execute on function public.apply_undo_step(uuid) to authenticated;

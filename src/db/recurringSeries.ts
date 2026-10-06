@@ -9,7 +9,7 @@
 // same typed errors (VersionConflictError, NotFoundError) a table write throws -- so the
 // mutation layer (plan 02-18) never has to know it is talking to an RPC instead of a table.
 
-import type { PatchValue, SeriesChangeSet } from '@/engine/undo';
+import type { PatchValue, SeriesChangeSet, UndoLabelKey, UndoLabelParams } from '@/engine/undo';
 import type { RecurringFreq } from '@/engine/recurring';
 import { NotFoundError, VersionConflictError, DbError, toDbError } from './errors';
 import {
@@ -53,7 +53,21 @@ export const RECURRING_SERIES_PATCH_KEYS = [
 
 export type RecurringSeriesPatch = Partial<Pick<RecurringSeriesRow, (typeof RECURRING_SERIES_PATCH_KEYS)[number]>>;
 
-export type SeriesWriteResult = { status: 'applied'; changeSet: SeriesChangeSet } | { status: 'already-applied' };
+/**
+ * D-WR-04: the label for the undo step a series RPC records server-side, in the same
+ * transaction as the write (D-24). The server builds the step's ops from its own change
+ * set (the SQL mirror of `inverseOfSeriesChange`), so a caller that passes this must NOT
+ * also call `insertUndoStep` for the same action.
+ */
+export interface SeriesUndoLabel {
+  id: string;
+  labelKey: UndoLabelKey;
+  labelParams: UndoLabelParams;
+}
+
+export type SeriesWriteResult =
+  | { status: 'applied'; changeSet: SeriesChangeSet; undoStepId?: string }
+  | { status: 'already-applied' };
 
 /** A series RPC returned a status this module does not recognise, or a shape it cannot validate (T-02-12-01). */
 export const BAD_RESPONSE = 'bad-response';
@@ -138,8 +152,13 @@ function interpretSeriesResponse(entityId: string, data: unknown): SeriesWriteRe
   const status = isRecord(data) ? data.status : undefined;
 
   switch (status) {
-    case 'applied':
-      return { status: 'applied', changeSet: parseSeriesChangeSet(data) };
+    case 'applied': {
+      const changeSet = parseSeriesChangeSet(data);
+      const undoStepId = isRecord(data) ? data.undo_step_id : undefined;
+      if (undoStepId === undefined || undoStepId === null) return { status: 'applied', changeSet };
+      if (typeof undoStepId !== 'string' || undoStepId.length === 0) throw badResponse('malformed undo_step_id');
+      return { status: 'applied', changeSet, undoStepId };
+    }
     case 'already-applied':
       return { status: 'already-applied' };
     case 'not-found':
@@ -163,15 +182,22 @@ export async function fetchRecurringSeries(client: DbClient, householdId: string
   return (data as RecurringSeriesRow[] | null) ?? [];
 }
 
+/** `p_undo_step` is only sent when the caller asks the server to record the step (D-WR-04). */
+function undoStepParam(undo: SeriesUndoLabel | undefined): { p_undo_step?: { id: string; label_key: string; label_params: UndoLabelParams } } {
+  return undo ? { p_undo_step: { id: undo.id, label_key: undo.labelKey, label_params: undo.labelParams } } : {};
+}
+
 export async function createRecurringSeries(
   client: DbClient,
   series: NewRecurringSeries,
-  link?: { anchorTransactionId?: string | null; linkTransactionIds?: readonly string[] }
+  link?: { anchorTransactionId?: string | null; linkTransactionIds?: readonly string[] },
+  undo?: SeriesUndoLabel
 ): Promise<SeriesWriteResult> {
   const { data, error, status } = await client.rpc('create_recurring_series', {
     p_series: series,
     p_anchor_transaction_id: link?.anchorTransactionId ?? null,
     p_link_transaction_ids: link?.linkTransactionIds ?? [],
+    ...undoStepParam(undo),
   });
 
   if (error) throw toDbError(error, status);
@@ -183,7 +209,8 @@ export async function editRecurringSeriesFrom(
   id: string,
   expectedVersion: number,
   patch: RecurringSeriesPatch,
-  effectiveFrom: string
+  effectiveFrom: string,
+  undo?: SeriesUndoLabel
 ): Promise<SeriesWriteResult> {
   assertAllowedKeys(patch, RECURRING_SERIES_PATCH_KEYS, 'editRecurringSeriesFrom');
 
@@ -192,6 +219,7 @@ export async function editRecurringSeriesFrom(
     p_expected_version: expectedVersion,
     p_patch: patch,
     p_effective_from: effectiveFrom,
+    ...undoStepParam(undo),
   });
 
   if (error) throw toDbError(error, status);
@@ -202,12 +230,14 @@ export async function endRecurringSeries(
   client: DbClient,
   id: string,
   expectedVersion: number,
-  endDate: string
+  endDate: string,
+  undo?: SeriesUndoLabel
 ): Promise<SeriesWriteResult> {
   const { data, error, status } = await client.rpc('end_recurring_series', {
     p_series_id: id,
     p_expected_version: expectedVersion,
     p_end_date: endDate,
+    ...undoStepParam(undo),
   });
 
   if (error) throw toDbError(error, status);
