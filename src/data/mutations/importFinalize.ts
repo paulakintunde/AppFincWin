@@ -222,11 +222,15 @@ export function useImportCommit(): { commit(input: ImportCommitInput): void } {
         throw new TypeError('useImportCommit: transferCategoryId is required when links are present');
       }
 
-      const insertedIds = input.rows.map((r) => r.id);
+      // C-WR-09: every row this commit inserts belongs to this batch (REC-14 provenance,
+      // dedupe by batch, History). Stamped here so it never depends on the caller setting the
+      // optional field -- otherwise the optimistic row showed the batch and the saved one lost it.
+      const rows = input.rows.map((r) => ({ ...r, import_batch_id: input.batchId }));
+      const insertedIds = rows.map((r) => r.id);
       enqueue({
         householdId: input.householdId,
         batchId: input.batchId,
-        rows: input.rows,
+        rows,
         homeCurrency: input.homeCurrency,
         userId: input.userId,
       });

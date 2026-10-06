@@ -143,6 +143,24 @@ describe('useImportCommit', () => {
     expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
   });
 
+  // C-WR-09: batch provenance (REC-14) must not depend on the UI remembering to set it.
+  it('stamps the batch id onto every row it enqueues, whatever the caller sent', async () => {
+    const enqueue = jest.fn();
+    (transactionsModule.useImportChunks as jest.Mock).mockReturnValue({ enqueue });
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: null, status: 201 }); // insertUndoStep
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useImportCommit(), { wrapper: wrapper(qc) });
+
+    result.current.commit(baseInput({}, [newTx('n2', { import_batch_id: undefined }), newTx('n3', { import_batch_id: 'stale' })]));
+
+    const sent = (enqueue.mock.calls[0]?.[0] as { rows: NewTransaction[] }).rows;
+    expect(sent.map((r) => r.import_batch_id)).toEqual(['batch-1', 'batch-1']);
+    await waitFor(() => expect(fake.calls.some((c) => c.table === 'undo_log' && c.method === 'insert')).toBe(true));
+  });
+
   it('throws before mutate (and before enqueuing) when links are present but transferCategoryId is missing', async () => {
     const enqueue = jest.fn();
     (transactionsModule.useImportChunks as jest.Mock).mockReturnValue({ enqueue });
