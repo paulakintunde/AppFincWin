@@ -531,7 +531,7 @@ describe('property: every returned candidate has balanceMeans consistent with th
 });
 
 describe('inferProfile: ambiguity table (RESEARCH.md §A2) -- available-credit balance, no limit stated', () => {
-  it('converted amounts are still correct via availableDelta; statedLimit stays null', () => {
+  it('decided by reconciling the signed available figures; statedLimit stays null', () => {
     const draft = makeDraft({
       balanceLabel: 'available',
       rows: [

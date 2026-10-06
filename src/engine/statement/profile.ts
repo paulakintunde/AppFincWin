@@ -153,9 +153,11 @@ function reconcileVerifiedLinks(
   const converted = convertDraft(draft, profile, { limit });
   const rows: ReconcileRow[] = converted.rows.map((r) => ({
     amount: r.amount,
-    balance: r.balance,
+    // An available-credit file with no known limit reconciles on its signed
+    // available figures: the unknown limit is a constant offset that cancels
+    // in every difference (review E-WR-07).
+    balance: r.balance ?? r.availableSigned,
     localDate: r.localDate,
-    availableDelta: r.availableDelta,
   }));
   const result = reconcile(rows, { opening: converted.opening, closing: converted.closing });
   return { verifiedLinks: result.verifiedLinks, file: result.file };

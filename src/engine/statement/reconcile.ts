@@ -1,9 +1,10 @@
 /**
  * D-46: running-balance reconciliation. Checks a converted statement's rows
  * against whatever balance evidence the file provides -- a running balance
- * printed on some or all rows, a stated opening/closing pair, or (for
- * available-credit files without a known limit) a per-row held-view delta
- * -- and reports what verifies, what can't be checked, and what genuinely
+ * printed on some or all rows (for an available-credit file without a
+ * known limit, the signed available figure, whose unknown limit offset
+ * cancels in every difference), or a stated opening/closing pair -- and
+ * reports what verifies, what can't be checked, and what genuinely
  * doesn't add up. An overdrawn or over-limit reading is an ordinary state
  * (D-49): nothing here inspects the sign of a balance or an amount to
  * decide anything, only whether two figures the file itself supplies agree.
@@ -24,7 +25,6 @@ export interface ReconcileRow {
   amount: number | null;
   balance: number | null;
   localDate: string | null;
-  availableDelta?: number | null;
 }
 
 export interface ReconcileResult {
@@ -44,37 +44,6 @@ interface OrientationResult {
   rowStatus: RowCheck[];
   verifiedLinks: number;
   failedLinks: number;
-}
-
-/**
- * Builds a per-row "effective balance" for this orientation's row order: a
- * real `balance` value where the row carries one, otherwise a held-view
- * value rebuilt by accumulating `availableDelta` (an available-credit file
- * without a known limit never carries an absolute balance, only a
- * difference to the row immediately before it). Reconciliation only ever
- * compares differences between two such points, so the arbitrary starting
- * value a fresh delta run is seeded with never affects a result -- only an
- * unbroken run of deltas can bridge two positions.
- */
-function effectiveBalances(rows: readonly ReconcileRow[]): (number | null)[] {
-  const result: (number | null)[] = new Array(rows.length).fill(null);
-  let cumulative: number | null = null;
-  for (let i = 0; i < rows.length; i += 1) {
-    const row = rows[i] as ReconcileRow;
-    if (row.balance !== null) {
-      result[i] = row.balance;
-      cumulative = row.balance;
-      continue;
-    }
-    const delta = row.availableDelta;
-    if (delta === undefined || delta === null) {
-      cumulative = null;
-      continue;
-    }
-    cumulative = (cumulative ?? 0) + delta;
-    result[i] = cumulative;
-  }
-  return result;
 }
 
 function segmentSumBigInt(rows: readonly ReconcileRow[], fromExclusive: number, toInclusive: number): bigint | null {
@@ -197,8 +166,8 @@ export function reconcile(rows: readonly ReconcileRow[], stated: StatedEnds): Re
 
   const reversedRows = [...rows].reverse();
 
-  const forwardBalances = effectiveBalances(rows);
-  const reversedBalances = effectiveBalances(reversedRows);
+  const forwardBalances = rows.map((r) => r.balance);
+  const reversedBalances = reversedRows.map((r) => r.balance);
 
   const forward = runOrientation(rows, forwardBalances, stated);
   const reversed = runOrientation(reversedRows, reversedBalances, stated);

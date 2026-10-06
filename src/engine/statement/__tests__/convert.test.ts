@@ -253,75 +253,57 @@ describe('convertDraft: statedOpening/statedClosing/available conversion', () =>
 });
 
 describe('convertDraft: available-credit balance with a known limit produces a per-row balance, not a delta', () => {
-  it('available (25000, none), limit 100000 -> row.balance -75000, availableDelta null', () => {
+  it('available (25000, none), limit 100000 -> row.balance -75000, availableSigned null', () => {
     const profile = makeProfile({ balanceMeans: 'available', accountFamily: 'card', positiveMeans: 'money-spent' });
     const draft = makeDraft({
       rows: [makeRow(0, { balanceMagnitude: minorUnits(25000), balanceMarker: 'none' })],
     });
     const result = convertDraft(draft, profile, { limit: minorUnits(100000) });
     expect(result.rows[0]?.balance).toBe(-75000);
-    expect(result.rows[0]?.availableDelta).toBeNull();
+    expect(result.rows[0]?.availableSigned).toBeNull();
   });
 });
 
-describe('convertDraft: available-credit balance with no limit keeps a per-row availableDelta', () => {
+describe('convertDraft: available-credit balance with no limit keeps the signed available figure (review E-WR-07)', () => {
   const profile = makeProfile({ balanceMeans: 'available', accountFamily: 'card', positiveMeans: 'money-spent' });
 
-  it('first row: availableDelta is null, balance is null', () => {
-    const draft = makeDraft({
-      rows: [makeRow(0, { balanceMagnitude: minorUnits(25000), balanceMarker: 'none' })],
-    });
-    const result = convertDraft(draft, profile, { limit: null });
-    expect(result.rows[0]?.balance).toBeNull();
-    expect(result.rows[0]?.availableDelta).toBeNull();
-  });
-
-  it('second row: availableDelta is the held-view difference to the previous row', () => {
+  it('every row with a figure carries it signed, row 0 included; balance stays null', () => {
     const draft = makeDraft({
       rows: [
         makeRow(0, { balanceMagnitude: minorUnits(25000), balanceMarker: 'none' }),
-        makeRow(1, { balanceMagnitude: minorUnits(20000), balanceMarker: 'none' }),
+        makeRow(1, { balanceMagnitude: minorUnits(20000), balanceMarker: 'minus' }),
       ],
     });
     const result = convertDraft(draft, profile, { limit: null });
-    // held view: +25000, then +20000 -> delta = 20000 - 25000 = -5000
-    expect(result.rows[1]?.availableDelta).toBe(-5000);
-    expect(result.rows[1]?.balance).toBeNull();
+    expect(result.rows.map((r) => r.availableSigned)).toEqual([25000, -20000]);
+    expect(result.rows.map((r) => r.balance)).toEqual([null, null]);
   });
 
-  it('a gap (null balance) breaks the delta for the row right after it', () => {
-    const draft = makeDraft({
-      rows: [
-        makeRow(0, { balanceMagnitude: minorUnits(25000), balanceMarker: 'none' }),
-        makeRow(1, { balanceMagnitude: null, balanceMarker: 'none' }),
-        makeRow(2, { balanceMagnitude: minorUnits(20000), balanceMarker: 'none' }),
-      ],
-    });
-    const result = convertDraft(draft, profile, { limit: null });
-    expect(result.rows[1]?.availableDelta).toBeNull();
-    expect(result.rows[2]?.availableDelta).toBeNull(); // previous row (index 1) has no balance
+  it('a row with no figure carries null', () => {
+    const draft = makeDraft({ rows: [makeRow(0, { balanceMagnitude: null, balanceMarker: 'none' })] });
+    expect(convertDraft(draft, profile, { limit: null }).rows[0]?.availableSigned).toBeNull();
   });
 });
 
 describe('convertDraft: held/owed rows carry a converted per-row balance when present', () => {
-  it('a held row with a balance gets balance converted, availableDelta null', () => {
+  it('a held row with a balance gets balance converted, availableSigned null', () => {
     const profile = makeProfile({ balanceMeans: 'held' });
     const draft = makeDraft({
       rows: [makeRow(0, { balanceMagnitude: minorUnits(500), balanceMarker: 'minus' })],
     });
     const result = convertDraft(draft, profile, { limit: null });
     expect(result.rows[0]?.balance).toBe(-500);
-    expect(result.rows[0]?.availableDelta).toBeNull();
+    expect(result.rows[0]?.availableSigned).toBeNull();
   });
 
-  it('a row with no balance at all keeps balance and availableDelta both null', () => {
+  it('a row with no balance at all keeps balance and availableSigned both null', () => {
     const profile = makeProfile({ balanceMeans: 'held' });
     const draft = makeDraft({
       rows: [makeRow(0, { balanceMagnitude: null })],
     });
     const result = convertDraft(draft, profile, { limit: null });
     expect(result.rows[0]?.balance).toBeNull();
-    expect(result.rows[0]?.availableDelta).toBeNull();
+    expect(result.rows[0]?.availableSigned).toBeNull();
   });
 });
 
@@ -389,7 +371,7 @@ describe('property: round-trip through render -> convert for a decided held/owed
   });
 });
 
-describe('property: available-credit files without a limit -- consecutive differences equal held-view differences', () => {
+describe('property: available-credit files without a limit carry the signed available figure (E-WR-07)', () => {
   it('holds for any sequence of present/absent balance readings', () => {
     fc.assert(
       fc.property(
@@ -420,11 +402,8 @@ describe('property: available-credit files without a limit -- consecutive differ
 
           converted.rows.forEach((row, i) => {
             expect(row.balance).toBeNull();
-            const prev = i > 0 ? heldView[i - 1] : null;
-            const cur = heldView[i];
-            const expected =
-              cur === null || cur === undefined || prev === null || prev === undefined ? null : cur - prev;
-            expect(row.availableDelta).toBe(expected);
+            const expected = heldView[i] ?? null;
+            expect(row.availableSigned).toBe(expected === 0 ? 0 : expected); // never -0
           });
         }
       )
