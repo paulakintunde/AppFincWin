@@ -230,6 +230,7 @@ describe('useImportCommit', () => {
             expectedVersion: 2,
             before: { status: 'pending', local_date: '2026-09-03', original_amount: -1099 },
             patch: { status: 'paid', local_date: '2026-09-04', original_amount: -1150 },
+            line: newTx('line-p1', { local_date: '2026-09-04', original_amount: -1150 }),
           },
         ],
         limit: { accountId: 'a1', expectedVersion: 3, before: { credit_limit: null }, patch: { credit_limit: 100000 } },
@@ -307,7 +308,10 @@ describe('useImportCommit', () => {
     expect(recordFailedWrite).not.toHaveBeenCalled();
   });
 
-  it('a version conflict (a stored leg or pending bill changed since preview) records one failed write with ids and counts only', async () => {
+  // C-CR-01: a conflict no longer fails the whole finalize. The conflicting suggestion is set
+  // aside, the rest is sent again, the import's undo step is always recorded, and what was set
+  // aside is reported with ids and counts only (T-02-15-07).
+  it('a version conflict on a stored leg sets that link aside, still records the undo step, and reports ids and counts only', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
     fake.respondWith({
@@ -318,6 +322,7 @@ describe('useImportCommit', () => {
       error: null,
       status: 200,
     });
+    fake.respondWith({ data: null, error: null, status: 201 }); // insertUndoStep: nothing left to patch
 
     const qc = newClient();
     const invalidateSpy = jest.spyOn(qc, 'invalidateQueries');
@@ -336,15 +341,161 @@ describe('useImportCommit', () => {
       entityId: 'import:batch-1',
       kind: 'conflict',
       code: 'version-conflict',
-      attempted: { import_batch_id: 'batch-1', stage: 'finalize', links: 1, markPaid: 0 },
+      attempted: { import_batch_id: 'batch-1', stage: 'finalize', links: 1, markPaid: 0, limit: 0, recordedAsLines: 0, ids: ['s1'] },
     });
+    // The undo step still covers both inserted rows, n2 back at version 1 (never linked).
+    const undoInsert = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
+    expect((undoInsert?.args[0] as { ops: unknown[] }).ops).toEqual([
+      { entity: 'transactions', id: 'n2', expectedVersion: 1, patch: { deleted_at: '$now' } },
+      { entity: 'transactions', id: 'n3', expectedVersion: 1, patch: { deleted_at: '$now' } },
+    ]);
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.transactionsRoot('h1') });
   });
 
-  it('a 23514 (pair trigger) rejection is recorded the same way, with the code from the underlying error', async () => {
+  it('C-CR-01: a conflict on a mark-paid bill records its statement line as an ordinary row, in the undo step', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({
+      data: {
+        status: 'conflict',
+        conflict: { entity: 'transactions', id: 'p1', updated_by: 'Sam', record_name: 'Netflix', builtin_key: null, reason: 'changed' },
+      },
+      error: null,
+      status: 200,
+    });
+    fake.respondWith({ data: [{ id: 'line-p1', local_date: '2026-09-04', version: 1, rate_pending: false }], error: null, status: 201 }); // fallback line
+    fake.respondWith({ data: { status: 'applied', rows: [{ entity: 'accounts', id: 'a1', version: 4 }] }, error: null, status: 200 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useImportCommit(), { wrapper: wrapper(qc) });
+
+    result.current.commit(
+      baseInput({
+        markPaid: [
+          {
+            pendingId: 'p1',
+            expectedVersion: 2,
+            before: { status: 'pending', local_date: '2026-09-03', original_amount: -1099 },
+            patch: { status: 'paid', local_date: '2026-09-04', original_amount: -1150 },
+            line: newTx('line-p1', { local_date: '2026-09-04', original_amount: -1150 }),
+          },
+        ],
+        limit: { accountId: 'a1', expectedVersion: 3, before: { credit_limit: null }, patch: { credit_limit: 100000 } },
+      })
+    );
+
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(1));
+
+    // The line was inserted as an ordinary row, with the batch's provenance.
+    const upsert = fake.calls.find((c) => c.table === 'transactions' && c.method === 'upsert');
+    expect((upsert?.args[0] as { id: string; import_batch_id: string }[]).map((r) => [r.id, r.import_batch_id])).toEqual([
+      ['line-p1', 'batch-1'],
+    ]);
+
+    // The second apply_patches carries only the limit, and the undo step covers the line.
+    const rpcs = fake.calls.filter((c) => c.method === 'rpc');
+    expect(rpcs).toHaveLength(2);
+    const [, args] = rpcs[1]?.args as [string, { p_ops: { id: string }[]; p_undo_step: { label_params: { n: number }; ops: unknown[] } }];
+    expect(args.p_ops.map((o) => o.id)).toEqual(['a1']);
+    expect(args.p_undo_step.label_params).toEqual({ n: 3 });
+    expect(args.p_undo_step.ops).toEqual([
+      { entity: 'transactions', id: 'n2', expectedVersion: 1, patch: { deleted_at: '$now' } },
+      { entity: 'transactions', id: 'n3', expectedVersion: 1, patch: { deleted_at: '$now' } },
+      { entity: 'transactions', id: 'line-p1', expectedVersion: 1, patch: { deleted_at: '$now' } },
+      { entity: 'accounts', id: 'a1', expectedVersion: 4, patch: { credit_limit: null } },
+    ]);
+
+    expect(recordFailedWrite).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'conflict',
+        attempted: { import_batch_id: 'batch-1', stage: 'finalize', links: 0, markPaid: 1, limit: 0, recordedAsLines: 1, ids: ['p1'] },
+      })
+    );
+  });
+
+  it('C-CR-01: a link to a row whose chunk was rejected (not-found) is set aside; the mark-paid still applies', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({
+      data: {
+        status: 'conflict',
+        conflict: { entity: 'transactions', id: 'n2', updated_by: null, record_name: null, builtin_key: null, reason: 'not-found' },
+      },
+      error: null,
+      status: 200,
+    });
+    fake.respondWith({ data: { status: 'applied', rows: [{ entity: 'transactions', id: 'p1', version: 3 }] }, error: null, status: 200 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useImportCommit(), { wrapper: wrapper(qc) });
+
+    result.current.commit(
+      baseInput({
+        transferCategoryId: 'transfer-cat',
+        links: [{ importedId: 'n2', importedCategoryId: null, storedId: 's1', storedVersion: 4, storedCategoryId: null, transferId: 'T' }],
+        markPaid: [
+          {
+            pendingId: 'p1',
+            expectedVersion: 2,
+            before: { status: 'pending', local_date: '2026-09-03', original_amount: -1099 },
+            patch: { status: 'paid', local_date: '2026-09-04', original_amount: -1150 },
+            line: newTx('line-p1'),
+          },
+        ],
+      })
+    );
+
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(1));
+    const rpcs = fake.calls.filter((c) => c.method === 'rpc');
+    expect(rpcs).toHaveLength(2);
+    const [, args] = rpcs[1]?.args as [string, { p_ops: { id: string }[] }];
+    expect(args.p_ops.map((o) => o.id)).toEqual(['p1']); // the bill is still marked paid
+    expect(fake.calls.some((c) => c.method === 'upsert')).toBe(false); // so its line is not inserted
+    expect(recordFailedWrite).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attempted: { import_batch_id: 'batch-1', stage: 'finalize', links: 1, markPaid: 0, limit: 0, recordedAsLines: 0, ids: ['n2'] },
+      })
+    );
+  });
+
+  it('C-CR-01: when the finalize cannot run at all, its mark-paid lines are kept in the failed write, not lost', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: 'not an envelope', error: null, status: 200 }); // unreadable: may have committed
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useImportCommit(), { wrapper: wrapper(qc) });
+
+    const line = newTx('line-p1', { local_date: '2026-09-04', original_amount: -1150 });
+    result.current.commit(
+      baseInput({
+        markPaid: [
+          {
+            pendingId: 'p1',
+            expectedVersion: 2,
+            before: { status: 'pending', local_date: '2026-09-03', original_amount: -1099 },
+            patch: { status: 'paid', local_date: '2026-09-04', original_amount: -1150 },
+            line,
+          },
+        ],
+      })
+    );
+
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(1));
+    expect(fake.calls.some((c) => c.method === 'upsert')).toBe(false); // never degraded on an unreadable answer
+    expect(recordFailedWrite).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'rejected',
+        attempted: expect.objectContaining({ stage: 'finalize', markPaid: 1, unrecordedLines: [line] }),
+      })
+    );
+  });
+
+  it('a 23514 (pair trigger) rejection sets every suggestion aside and is recorded with the code from the underlying error', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
     fake.respondWith({ data: null, error: { message: 'pair trigger violation', code: '23514' }, status: 400 });
+    fake.respondWith({ data: null, error: null, status: 201 }); // insertUndoStep
 
     const qc = newClient();
     const { result } = await renderHook(() => useImportCommit(), { wrapper: wrapper(qc) });
@@ -362,7 +513,9 @@ describe('useImportCommit', () => {
       entityId: 'import:batch-1',
       kind: 'rejected',
       code: '23514',
-      attempted: { import_batch_id: 'batch-1', stage: 'finalize', links: 1, markPaid: 0 },
+      attempted: { import_batch_id: 'batch-1', stage: 'finalize', links: 1, markPaid: 0, limit: 0, recordedAsLines: 0, ids: [] },
     });
+    // C-CR-01: the import's undo step is still recorded for the rows that landed.
+    expect(fake.calls.some((c) => c.table === 'undo_log' && c.method === 'insert')).toBe(true);
   });
 });
