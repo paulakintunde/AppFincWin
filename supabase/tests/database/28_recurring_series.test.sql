@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(28);
+select extensions.plan(42);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -341,6 +341,165 @@ select extensions.is(
   1,
   'recurring-materialise-daily cron job is scheduled'
 );
+
+-- ---------------------------------------------------------------------
+-- 14. D-WR-01: one failing series never aborts the daily run for everyone
+-- else, and a series whose author has gone (created_by null) still
+-- materialises, attributed to the household owner.
+-- ---------------------------------------------------------------------
+insert into public.recurring_series (id, household_id, created_by, account_id, name, amount, currency, freq, anchor_date, time_zone)
+values
+  ('c7777777-7777-7777-7777-777777777777', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'Healthy', -100, 'USD', 'monthly',
+   date_trunc('month', current_date)::date, 'UTC'),
+  ('c8888888-8888-8888-8888-888888888888', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   null, 'a1111111-1111-1111-1111-111111111111', 'Orphaned author', -200, 'EUR', 'monthly',
+   date_trunc('month', current_date)::date, 'UTC'),
+  ('c9999999-9999-9999-9999-999999999999', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'Poisoned', -300, 'USD', 'monthly',
+   date_trunc('month', current_date)::date, 'UTC');
+
+-- Poison one series with a time zone no row can ever be written with
+-- (bypassing the guard the way a tzdata upgrade dropping a zone would).
+set local session_replication_role = replica;
+update public.recurring_series set time_zone = 'Mars/Olympus_Mons' where id = 'c9999999-9999-9999-9999-999999999999';
+set local session_replication_role = origin;
+
+set local role service_role;
+select extensions.lives_ok(
+  $$select public.materialise_recurring()$$,
+  'materialise_recurring survives one failing series'
+);
+reset role;
+
+select extensions.is(
+  (select count(*) from public.transactions where recurring_series_id = 'c7777777-7777-7777-7777-777777777777')::int,
+  2,
+  'the healthy series still materialised in the same run'
+);
+select extensions.is(
+  (select count(*) from public.transactions
+    where recurring_series_id = 'c8888888-8888-8888-8888-888888888888'
+      and created_by = '11111111-1111-1111-1111-111111111111')::int,
+  2,
+  'a series with no author materialises, attributed to the household owner'
+);
+
+-- ---------------------------------------------------------------------
+-- 15. D-WR-05: moving the anchor (a freq change, or an explicit
+-- anchor_date) carries over only the occurrences the old schedule had not
+-- yet reached, instead of restarting occurrence_count from zero.
+-- A 12-instalment monthly series that started 6 months ago has used 7
+-- instalments (n = 0..6, this month included) before next month.
+-- ---------------------------------------------------------------------
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+
+select public.create_recurring_series(jsonb_build_object(
+  'id', 'caaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  'household_id', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+  'account_id', 'a1111111-1111-1111-1111-111111111111',
+  'name', 'Loan', 'amount', -25000, 'currency', 'USD', 'freq', 'monthly',
+  'anchor_date', (date_trunc('month', current_date) - interval '6 months')::date, 'time_zone', 'UTC',
+  'occurrence_count', 12
+));
+create temp table wr05 as select public.edit_recurring_series_from(
+  'caaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 1, '{"freq": "fortnightly"}'::jsonb,
+  (date_trunc('month', current_date) + interval '1 month')::date
+) as r;
+
+select extensions.is(
+  (select occurrence_count from public.recurring_series where id = 'caaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  5,
+  'a freq change carries over the 5 remaining instalments, not a fresh 12'
+);
+select extensions.is(
+  (select r -> 'series' -> 'before' -> 'occurrence_count' from wr05),
+  '12'::jsonb,
+  'the change set''s before carries the old occurrence_count, so undo restores it'
+);
+-- ---------------------------------------------------------------------
+-- 16. D-WR-09: a null end date / effective date is invalid, never a silent
+-- "remove the end date" or a no-op that still bumps the version; an
+-- effective date far in the past is rejected; one before the anchor is
+-- clamped to the anchor.
+-- ---------------------------------------------------------------------
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+
+select public.create_recurring_series(jsonb_build_object(
+  'id', 'cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+  'household_id', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+  'account_id', 'a1111111-1111-1111-1111-111111111111',
+  'name', 'Dates', 'amount', -100, 'currency', 'USD', 'freq', 'monthly',
+  'anchor_date', date_trunc('month', current_date)::date, 'time_zone', 'UTC'
+));
+
+select extensions.throws_ok(
+  $$select public.end_recurring_series('cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 1, null)$$,
+  '22023', null,
+  'end_recurring_series with a null end date is rejected'
+);
+select extensions.throws_ok(
+  $$select public.edit_recurring_series_from('cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 1, '{"amount": -200}'::jsonb, null)$$,
+  '22023', null,
+  'edit_recurring_series_from with a null effective date is rejected'
+);
+select extensions.throws_ok(
+  $$select public.edit_recurring_series_from('cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 1, '{"amount": -200}'::jsonb, (current_date - interval '3 years')::date)$$,
+  '22023', null,
+  'an effective date years in the past is rejected (it would resurrect every deleted occurrence since)'
+);
+select extensions.is(
+  (public.edit_recurring_series_from(
+    'cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 1, '{"freq": "weekly"}'::jsonb,
+    (date_trunc('month', current_date) - interval '5 days')::date
+  ) ->> 'status'),
+  'applied',
+  'an effective date shortly before the anchor still applies'
+);
+select extensions.is(
+  (select anchor_date from public.recurring_series where id = 'cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
+  date_trunc('month', current_date)::date,
+  'it is clamped to the anchor: a re-anchor never moves the series earlier than it began'
+);
+reset role;
+
+-- ---------------------------------------------------------------------
+-- 17. D-IN-04: the two pure schedule functions are not executable by anon
+-- (consistent with every other function in this wave).
+-- ---------------------------------------------------------------------
+select extensions.ok(
+  not has_function_privilege('anon', 'public.recurring_occurrence_date(date, text, integer)', 'execute'),
+  'anon cannot execute recurring_occurrence_date'
+);
+select extensions.ok(
+  not has_function_privilege('anon', 'public.recurring_horizon(date)', 'execute'),
+  'anon cannot execute recurring_horizon'
+);
+
+-- ---------------------------------------------------------------------
+-- 18. D-IN-06: anchors are range-checked, and a long-running series is
+-- materialised from near its high-water mark rather than from n = 0, so the
+-- 5000-step guard never silently stops it.
+-- ---------------------------------------------------------------------
+select extensions.throws_ok(
+  $$insert into public.recurring_series (id, household_id, created_by, account_id, name, amount, currency, freq, anchor_date, time_zone)
+    values (gen_random_uuid(), (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+            '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'Ancient', -1, 'USD', 'weekly', '1800-01-01', 'UTC')$$,
+  '23514', null,
+  'an anchor before 1900 is rejected'
+);
+insert into public.recurring_series (id, household_id, created_by, account_id, name, amount, currency, freq, anchor_date, time_zone, materialised_through)
+values ('cddddddd-dddd-dddd-dddd-dddddddddddd', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+        '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'Century-old weekly', -1, 'USD', 'weekly',
+        '1920-01-06', 'UTC', (date_trunc('month', current_date) - interval '1 day')::date);
+select extensions.ok(
+  (select count(*) from public.materialise_series('cddddddd-dddd-dddd-dddd-dddddddddddd'::uuid)) >= 8,
+  'a weekly series anchored about a century ago still materialises this month and next'
+);
+
+reset role;
 
 select * from extensions.finish();
 rollback;

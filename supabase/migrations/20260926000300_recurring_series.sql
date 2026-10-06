@@ -38,11 +38,13 @@ create table public.recurring_series (
   end_date date,
   occurrence_count integer check (occurrence_count is null or occurrence_count between 1 and 1000),
   materialised_through date,                                           -- the materialiser's high-water mark; never rewinds except via edit-from
+  generation integer not null default 0,                               -- D-CR-01: bumped (without a version bump) each time the materialiser adds rows
   deleted_at timestamptz,
   version integer not null default 1,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint recurring_series_end_after_anchor check (end_date is null or end_date >= anchor_date),
+  constraint recurring_series_anchor_range check (anchor_date >= date '1900-01-01'),  -- D-IN-06
   constraint recurring_series_account_same_household foreign key (account_id, household_id)
     references public.accounts (id, household_id) on delete restrict
 );
@@ -67,13 +69,22 @@ security definer
 set search_path = ''
 as $$
 begin
-  if not public.is_known_currency(new.currency, coalesce(new.created_by, (select auth.uid()))) then
+  -- D-WR-08 (and D-WR-01): on UPDATE, only re-validate what actually
+  -- changed. Re-checking an untouched currency/time zone/category on every
+  -- update made unrelated writes fail -- the materialiser's bookkeeping
+  -- update after a tzdata upgrade drops a zone, or the ON DELETE SET NULL of
+  -- created_by during account deletion (the category's owner is the user
+  -- being deleted, so the ownership check can no longer pass).
+  if (tg_op = 'INSERT' or new.currency is distinct from old.currency)
+     and not public.is_known_currency(new.currency, coalesce(new.created_by, (select auth.uid()))) then
     raise exception 'unknown currency %', new.currency using errcode = '23514';
   end if;
-  if not exists (select 1 from pg_catalog.pg_timezone_names z where z.name = new.time_zone) then
+  if (tg_op = 'INSERT' or new.time_zone is distinct from old.time_zone)
+     and not exists (select 1 from pg_catalog.pg_timezone_names z where z.name = new.time_zone) then
     raise exception 'unknown time zone %', new.time_zone using errcode = '23514';
   end if;
-  if new.category_id is not null and not exists (
+  if (tg_op = 'INSERT' or new.category_id is distinct from old.category_id)
+     and new.category_id is not null and not exists (
     select 1 from public.categories c
     where c.id = new.category_id
       and (c.owner_id = (select auth.uid()) or c.owner_id = new.created_by)
@@ -82,7 +93,11 @@ begin
   end if;
   if tg_op = 'UPDATE' then
     new.household_id := old.household_id;
-    new.created_by := old.created_by;
+    -- D-WR-08: pinned against any change except being cleared, which only
+    -- the ON DELETE SET NULL action from auth.users does (no client can
+    -- write this table at all); reverting that would fail the FK and abort
+    -- the departing member's account deletion.
+    new.created_by := case when new.created_by is null then null else old.created_by end;
   end if;
   return new;
 end;
@@ -164,7 +179,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.recurring_occurrence_date(date, text, integer) from public;
+revoke execute on function public.recurring_occurrence_date(date, text, integer) from public, anon; -- D-IN-04
 grant execute on function public.recurring_occurrence_date(date, text, integer) to authenticated, service_role;
 
 -- The last day of the month after `p_today`'s month (D-03): the current and
@@ -180,5 +195,5 @@ as $$
   select (date_trunc('month', p_today) + interval '2 months' - interval '1 day')::date;
 $$;
 
-revoke execute on function public.recurring_horizon(date) from public;
+revoke execute on function public.recurring_horizon(date) from public, anon; -- D-IN-04
 grant execute on function public.recurring_horizon(date) to authenticated, service_role;

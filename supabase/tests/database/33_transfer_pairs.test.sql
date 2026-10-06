@@ -15,7 +15,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(16);
+select extensions.plan(18);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -194,6 +194,37 @@ select extensions.has_trigger(
   'public', 'transactions', 'transfer_pair_check',
   'transfer_pair_check trigger exists on public.transactions'
 );
+
+-- 11. D-IN-01: the pair rule counts legs in the row's own household only.
+-- Another household planting two valid legs with a known transfer_id
+-- while A's pair is soft-deleted must not make A's restore fail.
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, transfer_id) values
+  ('c0000011-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'aaaaaaa1-1111-1111-1111-111111111111', -100, 'GBP', '2026-09-22', 'UTC', 'd0000009-0000-0000-0000-000000000009'),
+  ('c0000012-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'aaaaaaa2-1111-1111-1111-111111111111', 116, 'EUR', '2026-09-22', 'UTC', 'd0000009-0000-0000-0000-000000000009');
+update public.transactions set deleted_at = now() where transfer_id = 'd0000009-0000-0000-0000-000000000009';
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
+insert into public.accounts (id, household_id, name, kind, currency, opening_balance) values
+  ('bbbbbbb2-2222-2222-2222-222222222222', (select id from hh where owner_id = '22222222-2222-2222-2222-222222222222'), 'B two', 'checking', 'GBP', 0);
+select extensions.lives_ok(
+  $$insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, transfer_id) values
+      ('c0000021-2222-2222-2222-222222222222', (select id from hh where owner_id = '22222222-2222-2222-2222-222222222222'), 'bbbbbbb1-2222-2222-2222-222222222222', -1, 'GBP', '2026-09-22', 'UTC', 'd0000009-0000-0000-0000-000000000009'),
+      ('c0000022-2222-2222-2222-222222222222', (select id from hh where owner_id = '22222222-2222-2222-2222-222222222222'), 'bbbbbbb2-2222-2222-2222-222222222222', 1, 'GBP', '2026-09-22', 'UTC', 'd0000009-0000-0000-0000-000000000009')$$,
+  'B can form its own valid pair (the id is just a client uuid)'
+);
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select extensions.lives_ok(
+  $$update public.transactions set deleted_at = null where transfer_id = 'd0000009-0000-0000-0000-000000000009'$$,
+  'A restoring its own pair is unaffected by legs in another household sharing the id'
+);
+reset role;
 
 select * from extensions.finish();
 rollback;

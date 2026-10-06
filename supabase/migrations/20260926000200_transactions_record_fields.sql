@@ -116,6 +116,13 @@ create view public.transactions_active
   select * from public.transactions where deleted_at is null;
 
 revoke all on public.transactions_active from anon, public;
+-- D-WR-07: Supabase's default privileges grant authenticated every table
+-- privilege on a new relation, views included, and this view is
+-- auto-updatable. Revoke them, so the write surface never depends on the
+-- view keeping security_invoker (a later `create or replace view` without
+-- it would otherwise write as the view owner, past the column grants and
+-- RLS). Writes go to public.transactions, never through the view.
+revoke all on public.transactions_active from authenticated;
 grant select on public.transactions_active to authenticated;
 
 -- 7. Additive column grants. recurring_series_id, occurrence_date and

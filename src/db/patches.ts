@@ -6,6 +6,7 @@
 //
 // Response contract (plan 02-09 <interfaces>):
 //   applied  -> {"status":"applied","rows":[{"entity","id","version"}]}
+//   already-applied -> same shape as applied (D-WR-03: a replay keyed on the undo step id)
 //   conflict -> {"status":"conflict","conflict":{"entity","id","updated_by","record_name","builtin_key","reason"}}
 // A conflict is surfaced as the same `VersionConflictError` Phase 1 already uses (D-26), with
 // the parsed `UndoConflict` (camelCase) as its `serverRow` -- callers narrow on
@@ -57,8 +58,18 @@ function badResponse(context: string): DbError {
   return new DbError(`apply_patches response: ${context}`, BAD_RESPONSE, null);
 }
 
-/** Serialises a `PatchOp[]` into exactly the JSON shape `apply_patches` (plan 02-09) expects. */
+/**
+ * Serialises a `PatchOp[]` into exactly the JSON shape `apply_patches` (plan 02-09) expects.
+ * D-CR-02: throws `RangeError` for any op whose `expectedVersion` is not a positive integer,
+ * so a version-less op is refused here rather than sent as an unchecked write.
+ */
 export function serialiseOps(ops: readonly PatchOp[]): SerialisedOp[] {
+  for (const op of ops) {
+    const version: unknown = op.expectedVersion;
+    if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) {
+      throw new RangeError(`serialiseOps: op on ${String(op.entity)} ${String(op.id)} has no valid expectedVersion`);
+    }
+  }
   return ops.map((op) => ({
     entity: op.entity,
     id: op.id,
@@ -118,6 +129,9 @@ export async function applyPatches(
   if (!isRecord(data)) throw badResponse('not an object');
 
   switch (data.status) {
+    // D-WR-03: the server recognised this as a replay of an action that already landed
+    // (same undo step id) and reports each row's current version instead of a conflict.
+    case 'already-applied':
     case 'applied': {
       const rows = data.rows;
       if (!Array.isArray(rows) || !rows.every(isAppliedRow)) throw badResponse('malformed rows');

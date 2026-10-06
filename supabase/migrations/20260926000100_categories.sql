@@ -24,7 +24,25 @@ returns trigger
 language plpgsql
 set search_path = ''
 as $$
+declare
+  v_old jsonb;
+  v_new jsonb;
 begin
+  -- D-WR-08: an ON DELETE SET NULL action from auth.users (a member or
+  -- owner deleting their account) clears created_by or updated_by. That is
+  -- not a user edit: re-stamping it would write the departing user's own id
+  -- back into updated_by (auth.uid() is still them during in-app deletion),
+  -- which then fails the very FK being cleared and aborts the deletion. No
+  -- client or RPC can null either column (neither is in any update grant or
+  -- the apply_patches allowlist), so this shape only ever comes from the FK
+  -- action. created_by is read through jsonb because categories has none.
+  v_old := to_jsonb(old);
+  v_new := to_jsonb(new);
+  if (v_old ->> 'created_by' is not null and v_new ->> 'created_by' is null)
+     or (v_old ->> 'updated_by' is not null and v_new ->> 'updated_by' is null) then
+    return new;
+  end if;
+
   if coalesce(current_setting('fincwin.system_restamp', true), '') = 'on' then
     new.updated_by := old.updated_by;
   else

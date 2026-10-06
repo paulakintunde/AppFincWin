@@ -28,6 +28,26 @@ describe('serialiseOps', () => {
     const [serialised] = serialiseOps(OPS);
     expect(serialised?.patch).not.toBe(OPS[0]?.patch);
   });
+
+  // D-CR-02: an op without a usable version must never reach the server, where it would
+  // otherwise be rejected (or, before the server fix, applied unconditionally).
+  it.each([
+    ['undefined', undefined],
+    ['null', null],
+    ['zero', 0],
+    ['negative', -1],
+    ['fractional', 1.5],
+    ['NaN', Number.NaN],
+    ['a string', '2'],
+  ])('refuses to serialise an op whose expectedVersion is %s', (_label, version) => {
+    const bad = { entity: 'transactions', id: 't1', expectedVersion: version, patch: { note: null } } as unknown as PatchOp;
+    expect(() => serialiseOps([bad])).toThrow(RangeError);
+  });
+
+  it('refuses to serialise a step carrying a version-less op', () => {
+    const bad = { entity: 'transactions', id: 't1', patch: { note: null } } as unknown as PatchOp;
+    expect(() => serialiseStep({ ...STEP, ops: [bad] })).toThrow(RangeError);
+  });
 });
 
 describe('serialiseStep', () => {
@@ -114,6 +134,25 @@ describe('applyPatches', () => {
 
     const rpcCall = client.calls.find((c) => c.method === 'rpc');
     expect(rpcCall?.args).toEqual(['apply_patches', { p_ops: serialiseOps(OPS), p_undo_step: serialiseStep(STEP) }]);
+  });
+
+  // D-WR-03: a replay of an action whose first response was lost (same step id).
+  it('already-applied: returns the rows (current versions) instead of throwing a conflict', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({
+      data: { status: 'already-applied', rows: [{ entity: 'transactions', id: 't1', version: 4 }] },
+      error: null,
+      status: 200,
+    });
+
+    await expect(applyPatches(client, OPS, STEP)).resolves.toEqual([{ entity: 'transactions', id: 't1', version: 4 }]);
+  });
+
+  it('already-applied: a malformed rows array is a BAD_RESPONSE DbError', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { status: 'already-applied', rows: 'nope' }, error: null, status: 200 });
+
+    await expect(applyPatches(client, OPS, STEP)).rejects.toMatchObject({ code: BAD_RESPONSE });
   });
 
   it('applied: returns the rows array as-is', async () => {

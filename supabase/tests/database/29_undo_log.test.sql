@@ -19,7 +19,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(64);
+select extensions.plan(72);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -130,6 +130,48 @@ select extensions.throws_ok(
   $$select public.apply_patches('[{"entity":"transactions","id":"c0000000-0000-0000-0000-000000000005","expectedVersion":1,"patch":{"recurring_series_id":"33333333-3333-3333-3333-333333333333"}}]'::jsonb)$$,
   '22023', null,
   'recurring_series_id must be null; a real uuid throws 22023'
+);
+
+-- D-CR-02: a missing or null expectedVersion is an invalid op, never an
+-- unconditional write -- both in apply_patches and in a stored step.
+select extensions.throws_ok(
+  $$select public.apply_patches('[{"entity":"transactions","id":"c0000000-0000-0000-0000-000000000005","patch":{"note":"no version"}}]'::jsonb)$$,
+  '22023', null,
+  'an op with no expectedVersion key throws 22023 (fails closed)'
+);
+select extensions.throws_ok(
+  $$select public.apply_patches('[{"entity":"transactions","id":"c0000000-0000-0000-0000-000000000005","expectedVersion":null,"patch":{"note":"null version"}}]'::jsonb)$$,
+  '22023', null,
+  'an op with a null expectedVersion throws 22023 (fails closed)'
+);
+select extensions.throws_ok(
+  $$insert into public.undo_log (id, label_key, label_params, ops) values (
+      gen_random_uuid(), 'edited', '{}'::jsonb,
+      '[{"entity":"transactions","id":"c0000000-0000-0000-0000-000000000005","patch":{"note":null}}]'::jsonb)$$,
+  '22023', null,
+  'a stored undo step whose op has no expectedVersion is rejected at insert time'
+);
+select extensions.throws_ok(
+  $$insert into public.undo_log (id, label_key, label_params, ops) values (
+      gen_random_uuid(), 'edited', '{}'::jsonb,
+      '[{"entity":"profiles","id":"c0000000-0000-0000-0000-000000000005","expectedVersion":1,"patch":{"note":null}}]'::jsonb)$$,
+  '22023', null,
+  'a stored undo step naming an unknown entity is rejected at insert time'
+);
+select extensions.is(
+  (select note from public.transactions where id = 'c0000000-0000-0000-0000-000000000005'),
+  null,
+  'the version-less ops never wrote anything'
+);
+
+-- D-IN-02: a stored step has a size cap, not just an element-count cap.
+select extensions.throws_ok(
+  $$insert into public.undo_log (id, label_key, label_params, ops) values (
+      gen_random_uuid(), 'edited', '{}'::jsonb,
+      jsonb_build_array(jsonb_build_object('entity', 'transactions', 'id', 'c0000000-0000-0000-0000-000000000005',
+        'expectedVersion', 1, 'patch', jsonb_build_object('note', repeat('x', 2200000)))))$$,
+  '23514', null,
+  'a stored undo step larger than 2 MB is rejected'
 );
 
 -- ---------------------------------------------------------------------
@@ -312,7 +354,18 @@ select extensions.throws_ok(
 reset role;
 insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, deleted_at) values
   ('90000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a0000000-0000-0000-0000-000000000001', -10, 'USD', '2026-09-01', 'America/Vancouver', now() - interval '2 days'),
-  ('90000000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a0000000-0000-0000-0000-000000000001', -20, 'USD', '2026-09-01', 'America/Vancouver', now() - interval '2 days');
+  ('90000000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a0000000-0000-0000-0000-000000000001', -20, 'USD', '2026-09-01', 'America/Vancouver', now() - interval '2 days'),
+  ('90000000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a0000000-0000-0000-0000-000000000001', -30, 'USD', '2026-09-01', 'America/Vancouver', now() - interval '2 days'),
+  ('90000000-0000-0000-0000-000000000004', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a0000000-0000-0000-0000-000000000001', -40, 'USD', '2026-09-01', 'America/Vancouver', now() - interval '2 days');
+
+-- D-IN-03: an outsider (C, in no household with A) names A's tombstone in
+-- their own step; that must not keep it from being purged.
+insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
+values ('33333333-3333-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c@test.local', '{}', now(), now());
+insert into public.undo_log (id, owner_id, label_key, label_params, ops) values (
+  '90000000-0000-0000-0000-000000000007', '33333333-3333-3333-3333-333333333333', 'deleted', '{}'::jsonb,
+  '[{"entity":"transactions","id":"90000000-0000-0000-0000-000000000004","expectedVersion":1,"patch":{"deleted_at":null}}]'::jsonb
+);
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
@@ -320,7 +373,14 @@ insert into public.undo_log (id, label_key, label_params, ops) values (
   '90000000-0000-0000-0000-000000000009', 'deleted', '{}'::jsonb,
   '[{"entity":"transactions","id":"90000000-0000-0000-0000-000000000002","expectedVersion":1,"patch":{"deleted_at":null}}]'::jsonb
 );
+-- D-WR-06: a step that can never be applied again (refused) pins nothing.
+insert into public.undo_log (id, label_key, label_params, ops) values (
+  '90000000-0000-0000-0000-000000000008', 'deleted', '{}'::jsonb,
+  '[{"entity":"transactions","id":"90000000-0000-0000-0000-000000000003","expectedVersion":1,"patch":{"deleted_at":null}}]'::jsonb
+);
 reset role;
+update public.undo_log set status = 'refused', refusal = '{"forced":"test-fixture"}'::jsonb, resolved_at = now()
+ where id = '90000000-0000-0000-0000-000000000008';
 
 set local role service_role;
 select extensions.lives_ok($$select public.purge_record_tombstones()$$, 'service_role can call purge_record_tombstones');
@@ -328,6 +388,8 @@ reset role;
 
 select extensions.is((select count(*)::int from public.transactions where id = '90000000-0000-0000-0000-000000000001'), 0, 'an unreferenced tombstone aged 2 days is hard-deleted');
 select extensions.is((select count(*)::int from public.transactions where id = '90000000-0000-0000-0000-000000000002'), 1, 'a tombstone referenced by an available step is kept');
+select extensions.is((select count(*)::int from public.transactions where id = '90000000-0000-0000-0000-000000000003'), 0, 'a tombstone referenced only by a refused step is purged (D-WR-06)');
+select extensions.is((select count(*)::int from public.transactions where id = '90000000-0000-0000-0000-000000000004'), 0, 'a step owned by someone outside the household pins nothing (D-IN-03)');
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
