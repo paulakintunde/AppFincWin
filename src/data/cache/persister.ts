@@ -17,6 +17,12 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // D-15: bump this whenever any cached row shape changes. persistQueryClient compares this
 // against the buster stored alongside the persisted blob and discards on mismatch, so an
 // app upgrade never hydrates the client with a shape it no longer expects.
+//
+// C-WR-07: a mismatch discards the cached *queries* only. The queued offline writes in the same
+// blob are carried across (carryQueuedWrites below) -- they are user-authored changes that must
+// survive an upgrade (SYN-02), including an EAS Update OTA. The constraint that buys this:
+// a registered mutation's variables shape must stay readable by the next build's mutationFn
+// (add fields as optional; never rename or remove one a queued write may still carry).
 // Phase 2 added transaction fields (including import provenance and transfer links) and new
 // query shapes -- bumped 1 -> 2 (D-15 buster).
 export const CACHE_SCHEMA_VERSION = '2';
@@ -69,17 +75,43 @@ export function deserializeWithFetchTimes(raw: string): PersistedClient {
   return parsed;
 }
 
+/**
+ * C-WR-07: persistQueryClientRestore removes the whole persisted client when its buster does
+ * not match (or it is older than maxAge) -- and the dehydrated write queue lives in that same
+ * client. A blob that still holds queued writes is therefore rewritten to the current buster
+ * and a fresh timestamp with its queries dropped (their shape may be stale) and its mutations
+ * kept, so the restore hydrates the queue and resumeRestoredMutations replays it. A blob with
+ * no queued writes, or a current one, is returned unchanged.
+ */
+export function carryQueuedWrites(
+  client: PersistedClient | undefined,
+  buster: string,
+  maxAge: number,
+  now: number = Date.now()
+): PersistedClient | undefined {
+  if (!client) return client;
+  const mutations = client.clientState?.mutations ?? [];
+  const current = client.buster === buster && now - client.timestamp <= maxAge;
+  if (current || mutations.length === 0) return client;
+  return { timestamp: now, buster, clientState: { queries: [], mutations } };
+}
+
 export function createEncryptedPersister(storage: LargeSecureStore = new LargeSecureStore()): Persister {
   // storage is typed as LargeSecureStore above only to give callers autocomplete/defaulting;
   // createAsyncStoragePersister's storage param wants the AsyncStorage-shaped
   // getItem/setItem/removeItem interface, which LargeSecureStore already implements.
-  return createAsyncStoragePersister({
+  const base = createAsyncStoragePersister({
     storage,
     key: QUERY_CACHE_KEY,
     throttleTime: 1000,
     serialize: serializeWithFetchTimes,
     deserialize: deserializeWithFetchTimes,
   });
+  return {
+    persistClient: base.persistClient,
+    removeClient: base.removeClient,
+    restoreClient: async () => carryQueuedWrites(await base.restoreClient(), CACHE_SCHEMA_VERSION, CACHE_MAX_AGE_MS),
+  };
 }
 
 export const persister = createEncryptedPersister();
