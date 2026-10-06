@@ -13,6 +13,7 @@ import React from 'react';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { AccountRow, DbClient, NewTransaction, TransactionRow } from '@/db/rows';
+import type { MinorUnits } from '@/engine/money';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { mutationKeys, queryKeys } from '@/data/keys';
 import { MAX_SERVER_ERROR_RETRIES } from '@/data/sync/writeErrors';
@@ -1023,8 +1024,14 @@ describe('useDeleteTransaction / useMarkPaid / useSkipOccurrence', () => {
       { id: 'tx-1', household_id: 'h1', local_date: '2026-09-20', version: 1, name: null },
       'user-1',
       '2026-09-24',
-      { amount: 1000, localDate: '2026-09-25' }
+      { amount: 1000 as MinorUnits, localDate: '2026-09-25' }
     );
+
+    // C-IN-04: the money brand is enforced at the boundary -- a bare number (a major-unit or
+    // fractional value would reach the bigint column and be rejected) does not type-check.
+    // @ts-expect-error adjust.amount is MinorUnits, not number
+    const unbranded: Parameters<typeof result.current.markPaid>[3] = { amount: 10.5 };
+    expect(unbranded).toBeDefined();
 
     await waitFor(() => {
       const updateCall = fake.calls.find((c) => c.method === 'update');

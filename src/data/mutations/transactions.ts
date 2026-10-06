@@ -712,11 +712,11 @@ export function useDeleteTransaction(): { remove(row: UndoableRow, ownerId: stri
 }
 
 export function useMarkPaid(): {
-  markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: number; localDate?: string }): string | null;
+  markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: MinorUnits; localDate?: string }): string | null;
 } {
   const { edit } = useEditTransaction();
   return {
-    markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: number; localDate?: string }): string | null {
+    markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: MinorUnits; localDate?: string }): string | null {
       const stepId = newStepId();
       const localDate = adjust?.localDate ?? markPaidDate(today, row.local_date);
       const patch: TransactionPatch = { status: 'paid', local_date: localDate };
