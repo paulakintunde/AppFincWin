@@ -44,6 +44,7 @@ export const mutationKeys = {
   // Phase 2 (Record)
   addCategory: ['categories', 'add'] as const,
   editCategory: ['categories', 'edit'] as const,
+  mergeCategory: ['categories', 'merge'] as const,
   bulkPatch: ['patches', 'apply'] as const,
   createSeries: ['recurring-series', 'create'] as const,
   editSeriesFrom: ['recurring-series', 'edit-from'] as const,
