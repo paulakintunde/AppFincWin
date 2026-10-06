@@ -30,7 +30,8 @@ create table public.undo_log (
   owner_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   label_key text not null check (label_key ~ '^[a-zA-Z]{1,40}$'),
   label_params jsonb not null default '{}'::jsonb check (jsonb_typeof(label_params) = 'object' and pg_column_size(label_params) <= 2048),
-  ops jsonb not null check (jsonb_typeof(ops) = 'array' and jsonb_array_length(ops) between 1 and 6000),
+  ops jsonb not null check (jsonb_typeof(ops) = 'array' and jsonb_array_length(ops) between 1 and 6000
+                            and octet_length(ops::text) <= 2097152),  -- D-IN-02: 2 MB per step, alongside the count cap
   touched_ids uuid[] not null default '{}',
   series_generations jsonb not null default '{}'::jsonb,           -- D-CR-01: server-derived {series id: generation} at insert time
   status text not null default 'available' check (status in ('available', 'undone', 'refused')),

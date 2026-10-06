@@ -19,7 +19,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(70);
+select extensions.plan(71);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -162,6 +162,16 @@ select extensions.is(
   (select note from public.transactions where id = 'c0000000-0000-0000-0000-000000000005'),
   null,
   'the version-less ops never wrote anything'
+);
+
+-- D-IN-02: a stored step has a size cap, not just an element-count cap.
+select extensions.throws_ok(
+  $$insert into public.undo_log (id, label_key, label_params, ops) values (
+      gen_random_uuid(), 'edited', '{}'::jsonb,
+      jsonb_build_array(jsonb_build_object('entity', 'transactions', 'id', 'c0000000-0000-0000-0000-000000000005',
+        'expectedVersion', 1, 'patch', jsonb_build_object('note', repeat('x', 2200000)))))$$,
+  '23514', null,
+  'a stored undo step larger than 2 MB is rejected'
 );
 
 -- ---------------------------------------------------------------------
