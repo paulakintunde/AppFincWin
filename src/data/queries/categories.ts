@@ -6,6 +6,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchCategories } from '@/db/categories';
+import { MERGE_LIMIT, fetchActiveIdsByCategory } from '@/db/transactions';
 import type { CategoryRow } from '@/db/rows';
 import { BUILTIN_CATEGORY_KEYS, type BuiltinCategoryKey } from '@/engine/categorize';
 import { supabase } from '@/services/supabase';
@@ -66,4 +67,19 @@ export function useCategoryLookup(userId?: string): CategoryLookup {
 
     return { all, active, byId, builtinIds, transferCategoryId: transferRow?.id ?? null, loading: query.isLoading };
   }, [all, query.isLoading]);
+}
+
+/**
+ * D-36: how many active transactions use a category, read before the user chooses merge or
+ * archive. The server read is capped at MERGE_LIMIT + 1 rows, so a count above MERGE_LIMIT is
+ * reported as MERGE_LIMIT with `capped` set (shown as "6000+").
+ */
+export function useCategoryUsage(householdId: string | null, categoryId: string | null, enabled: boolean) {
+  const query = useQuery({
+    queryKey: ['categories', 'usage', householdId, categoryId] as const,
+    queryFn: async () => (await fetchActiveIdsByCategory(supabase, householdId as string, categoryId as string)).length,
+    enabled: enabled && Boolean(householdId) && Boolean(categoryId),
+  });
+  const total = query.data ?? 0;
+  return { count: Math.min(total, MERGE_LIMIT), capped: total > MERGE_LIMIT, isLoading: query.isLoading };
 }
