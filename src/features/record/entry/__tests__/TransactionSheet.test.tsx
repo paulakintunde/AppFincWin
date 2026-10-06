@@ -210,3 +210,135 @@ describe('TransactionSheet: new and edit', () => {
     expect((mockAdd.mock.calls[0] as unknown[])[0]).toMatchObject({ categoryId: 'c1' });
   });
 });
+
+function leg(over: Partial<TransactionRow>): TransactionRow {
+  return row({ name: null, category_id: 'tc', payment_type: null, transfer_id: 'tr1', ...over });
+}
+const outLeg = () => leg({ id: 'o1', account_id: 'a1', original_amount: -1000 });
+const inLeg = () => leg({ id: 'i1', account_id: 'a2', original_amount: 1000 });
+
+describe('TransactionSheet: transfers', () => {
+  it('swaps the fields when Transfer is chosen', async () => {
+    const { getByText, queryByText, queryByLabelText, getByLabelText } = await open({ kind: 'new', direction: 'out' });
+    await fireEvent.press(getByText('Transfer'));
+    expect(getByText('New transfer')).toBeTruthy();
+    expect(getByText('Add transfer')).toBeTruthy();
+    expect(getByLabelText('From account')).toBeTruthy();
+    expect(getByLabelText('To account')).toBeTruthy();
+    expect(queryByLabelText('Category')).toBeNull();
+    expect(queryByLabelText('Account')).toBeNull();
+    expect(queryByText('Paid')).toBeNull();
+    expect(queryByLabelText('Payment type')).toBeNull();
+    expect(getByText(/Transfers move money between your own accounts/)).toBeTruthy();
+  });
+
+  it('shows the amount figure with the arrow in the inkDim colour', async () => {
+    const { getByText, getByLabelText } = await open({ kind: 'new', direction: 'out' });
+    await fireEvent.press(getByText('Transfer'));
+    await fireEvent.changeText(getByLabelText('Amount'), '10');
+    const figure = getByText(/^↔ /);
+    const style = ([] as Record<string, unknown>[]).concat(figure.props.style as never);
+    expect(style.some((s) => s && s.color === '#5C5A50')).toBe(true);
+  });
+
+  it('records a same-currency transfer, toasts and tracks it', async () => {
+    const { getByText, getByLabelText, onClose } = await open({ kind: 'new', direction: 'out' });
+    await fireEvent.press(getByText('Transfer'));
+    await fireEvent.press(getByLabelText('To account'));
+    await fireEvent.press(getByLabelText('Savings'));
+    await fireEvent.changeText(getByLabelText('Amount'), '10');
+    await fireEvent.press(getByText('Add transfer'));
+
+    expect(mockAddTransfer).toHaveBeenCalledTimes(1);
+    expect((mockAddTransfer.mock.calls[0] as unknown[])[0]).toMatchObject({
+      householdId: 'h1',
+      ownerId: 'u1',
+      from: { id: 'a1', currency: 'GBP' },
+      to: { id: 'a2', currency: 'GBP' },
+      amountOut: 1000,
+      amountIn: 1000,
+      transferCategoryId: 'tc',
+      toName: 'Savings',
+    });
+    expect(getToast()).toMatchObject({
+      kind: 'ordinary',
+      stepId: 'tr-step',
+      text: { key: 'undo.label.transferAdded', params: { name: 'Savings' } },
+    });
+    expect(mockTrack).toHaveBeenCalledWith('transaction_added', { kind: 'transfer', recurring: false });
+    expect(mockAdd).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('blocks a transfer with no destination account', async () => {
+    const { getByText, getByLabelText } = await open({ kind: 'new', direction: 'out' });
+    await fireEvent.press(getByText('Transfer'));
+    await fireEvent.changeText(getByLabelText('Amount'), '10');
+    await fireEvent.press(getByText('Add transfer'));
+    expect(mockAddTransfer).not.toHaveBeenCalled();
+    expect(getByText('Pick an account.')).toBeTruthy();
+  });
+
+  it('asks for both amounts across currencies and never derives one', async () => {
+    const { getByText, getByLabelText } = await open({ kind: 'new', direction: 'out' });
+    await fireEvent.press(getByText('Transfer'));
+    await fireEvent.press(getByLabelText('To account'));
+    await fireEvent.press(getByLabelText('Euro pot'));
+    await fireEvent.changeText(getByLabelText('Amount sent'), '10');
+    await fireEvent.changeText(getByLabelText('Amount received'), '11.5');
+    expect(getByText(/from Current and .* to Euro pot — each in its own currency\./)).toBeTruthy();
+    await fireEvent.press(getByText('Add transfer'));
+    expect((mockAddTransfer.mock.calls[0] as unknown[])[0]).toMatchObject({
+      amountOut: 1000,
+      amountIn: 1150,
+      to: { id: 'a3', currency: 'EUR' },
+    });
+  });
+
+  it('edits both legs from either leg', async () => {
+    mockLegs = [outLeg(), inLeg()];
+    const { getByText, getByLabelText, onClose } = await open({ kind: 'edit', row: inLeg() });
+    expect(getByText('Editing a transfer updates both sides.')).toBeTruthy();
+    expect(getByText('Save changes')).toBeTruthy();
+    await fireEvent.changeText(getByLabelText('Amount'), '12');
+    await fireEvent.press(getByText('Save changes'));
+    expect(mockEditTransfer).toHaveBeenCalledTimes(1);
+    const [legs, after, ctx] = mockEditTransfer.mock.calls[0] as unknown as [
+      { out: { id: string }; in: { id: string } },
+      { out: { amount: number }; in: { amount: number } },
+      Record<string, unknown>,
+    ];
+    expect(legs.out.id).toBe('o1');
+    expect(legs.in.id).toBe('i1');
+    expect(after.out.amount).toBe(-1200);
+    expect(after.in.amount).toBe(1200);
+    expect(ctx).toMatchObject({ ownerId: 'u1', labelName: 'Savings' });
+    expect(getToast()?.text?.key).toBe('undo.label.transferEdited');
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('closes without a toast when a transfer edit changes nothing', async () => {
+    mockLegs = [outLeg(), inLeg()];
+    mockEditTransfer.mockReturnValueOnce(null);
+    const { getByText, onClose } = await open({ kind: 'edit', row: outLeg() });
+    await fireEvent.press(getByText('Save changes'));
+    expect(getToast()).toBeNull();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('confirms a delete naming both accounts, then removes the pair', async () => {
+    mockLegs = [outLeg(), inLeg()];
+    const { getByText, getAllByText } = await open({ kind: 'edit', row: outLeg() });
+    await fireEvent.press(getByText('Delete'));
+    expect(getByText('Delete this transfer? Both linked entries — Current and Savings — will be removed.')).toBeTruthy();
+    const deletes = getAllByText('Delete');
+    await fireEvent.press(deletes[deletes.length - 1]!);
+    expect(mockRemoveTransfer).toHaveBeenCalledTimes(1);
+    expect(mockRemove).not.toHaveBeenCalled();
+    expect(getToast()).toMatchObject({
+      kind: 'destructive',
+      stepId: 'trd-step',
+      text: { key: 'undo.label.transferDeleted', params: { name: 'Savings' } },
+    });
+  });
+});
