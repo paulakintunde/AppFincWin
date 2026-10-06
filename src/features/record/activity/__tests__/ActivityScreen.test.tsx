@@ -70,7 +70,7 @@ jest.mock('@/data/queries/categories', () => ({
     return {
       all: [groceries, transfer],
       active: [groceries],
-      byId: new Map([['c1', groceries], ['tc', transfer]]),
+      byId: new Map<string, unknown>([['c1', groceries], ['tc', transfer]]),
       transferCategoryId: 'tc',
       loading: false,
     };
