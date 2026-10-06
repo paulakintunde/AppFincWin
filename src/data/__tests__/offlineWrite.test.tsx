@@ -129,6 +129,7 @@ describe('offline write queue (SYN-02)', () => {
     onlineManager.setOnline(false);
 
     const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []); // the month on screen (C-WR-03)
     const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
 
     result.current.add({
@@ -315,6 +316,7 @@ describe('offline write queue (SYN-02)', () => {
     fake.respondWith({ data: serverTransaction({ id: 'uuid-0' }), error: null, status: 201 });
 
     const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []); // the month on screen (C-WR-03)
     const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
     result.current.add({
       householdId: 'h1',
@@ -326,7 +328,7 @@ describe('offline write queue (SYN-02)', () => {
       localDate: '2026-09-24',
       timeZone: 'UTC',
     });
-    await waitFor(() => expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-09'))).toBeDefined());
+    await waitFor(() => expect(qc.getQueryData<unknown[]>(queryKeys.transactionsMonth('h1', '2026-09'))).toHaveLength(1));
 
     // Sign-out wipe, exactly as src/data/queryClient.ts's handler does it.
     bumpSessionEpoch();
@@ -346,6 +348,7 @@ describe('offline write queue (SYN-02)', () => {
     fake.sessionGate = new Promise<void>(() => undefined); // the first attempt never finishes
 
     const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []); // the month on screen (C-WR-03)
     const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
     const id = result.current.add({
       householdId: 'h1',

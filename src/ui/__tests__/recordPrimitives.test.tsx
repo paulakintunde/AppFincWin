@@ -217,12 +217,39 @@ describe('ToastView', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
-  it('carries accessibilityRole alert and accessibilityLiveRegion polite', async () => {
-    const { getByRole } = await renderWithTheme(
-      <ToastView message="Imported 4 lines" onDismiss={jest.fn()} dismissLabel="Dismiss" />
+  // C-CR-02: an `accessible` container collapses its children into one iOS accessibility
+  // element, so VoiceOver could never reach Undo or Dismiss. Only the message text is the
+  // alert; the two controls stay separately focusable.
+  it('makes only the message the alert, never the container holding the controls', async () => {
+    const { getByRole, getByLabelText } = await renderWithTheme(
+      <ToastView message="Imported 4 lines" actionLabel="Undo" onAction={jest.fn()} onDismiss={jest.fn()} dismissLabel="Dismiss" />
     );
     const alert = getByRole('alert');
     expect(alert.props.accessibilityLiveRegion).toBe('polite');
+    expect(alert.props.children).toBe('Imported 4 lines');
+
+    // No ancestor of either control may be an accessible element (that would hide them on iOS).
+    for (const label of ['Undo', 'Dismiss']) {
+      let node = getByLabelText(label).parent;
+      while (node) {
+        expect(node.props.accessible).not.toBe(true);
+        node = node.parent;
+      }
+    }
+  });
+
+  it('announces the message on iOS, where the live region has no effect', async () => {
+    const { Platform, AccessibilityInfo } = jest.requireActual<typeof import('react-native')>('react-native');
+    const original = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { configurable: true, get: () => 'ios' });
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
+    try {
+      await renderWithTheme(<ToastView message="Deleted · Rent" onDismiss={jest.fn()} dismissLabel="Dismiss" />);
+      expect(announce).toHaveBeenCalledWith('Deleted · Rent');
+    } finally {
+      announce.mockRestore();
+      Object.defineProperty(Platform, 'OS', { configurable: true, get: () => original });
+    }
   });
 
   it('renders no action control when actionLabel/onAction are omitted', async () => {
@@ -255,6 +282,21 @@ describe('Row', () => {
     const { getByRole } = await renderWithTheme(<Row label="Groceries" onPress={onPress} />);
     fireEvent.press(getByRole('button'));
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  // C-WR-08: the pressable's own label overrides its child text, so the current selection
+  // (the row's value) must be exposed as the accessibility value or VoiceOver never reads it.
+  it('exposes its value to screen readers when pressable', async () => {
+    const first = await renderWithTheme(<Row label="Category" value="Groceries" onPress={jest.fn()} />);
+    expect(first.getByRole('button').props.accessibilityLabel).toBe('Category');
+    expect(first.getByRole('button').props.accessibilityValue).toMatchObject({ text: 'Groceries' });
+  });
+
+  it('keeps announcing the value when a custom accessibilityLabel is passed', async () => {
+    const second = await renderWithTheme(
+      <Row label="Category" value="Rent" accessibilityLabel="Choose category" onPress={jest.fn()} />
+    );
+    expect(second.getByRole('button').props.accessibilityValue).toMatchObject({ text: 'Rent' });
   });
 
   it('is at least 44px tall', async () => {
@@ -347,6 +389,16 @@ describe('CategoryGlyph', () => {
     // row's own semantic label) -- include hidden elements to still assert its styling.
     const style = flatStyle(getByText('G', { includeHiddenElements: true }).props);
     expect(style.some((s) => s.color === categorySwatch.teal.color)).toBe(true);
+  });
+
+  // C-IN-05: importantForAccessibility is Android-only; iOS needs accessibilityElementsHidden,
+  // or VoiceOver reads the letter ("G") inside a non-pressable container.
+  it('is hidden from VoiceOver on iOS as well as from Android accessibility', async () => {
+    const { getByText } = await renderWithTheme(<CategoryGlyph colorKey="teal" letter="G" />);
+    let tile = getByText('G', { includeHiddenElements: true }).parent;
+    while (tile && tile.props.importantForAccessibility === undefined) tile = tile.parent;
+    expect(tile?.props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(tile?.props.accessibilityElementsHidden).toBe(true);
   });
 });
 

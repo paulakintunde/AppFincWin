@@ -49,7 +49,8 @@ findings:
   warning: 9
   info: 6
   total: 17
-status: issues_found
+status: fixed_with_followups
+fixed_at: 2026-10-06
 ---
 
 # Phase 2: Code Review Report (waves 1-5, area C: client)
@@ -57,7 +58,67 @@ status: issues_found
 **Reviewed:** 2026-09-28
 **Depth:** deep (call chains traced into `src/db/*`, `src/engine/undo`, `apply_patches` / `account_balances` SQL, TanStack Query v5 semantics, i18next 26 behaviour)
 **Files Reviewed:** 38
-**Status:** issues_found
+**Status:** fixed_with_followups (see Fix status)
+
+## Fix status
+
+Fix pass completed 2026-10-06 on `phase2/record` (base f8d20d5). Each finding has one commit, with its test written first and confirmed failing on the old code.
+
+| ID | Status | Commit |
+|----|--------|--------|
+| C-CR-01 | fixed | 6175746 |
+| C-CR-02 | fixed | c4f9a96 |
+| C-WR-01 | fixed | 33a19e4 |
+| C-WR-02 | fixed (client-side check; exact lookup is a follow-up) | c9637f8 |
+| C-WR-03 | fixed | 273b680 |
+| C-WR-04 | fixed | e4918fe |
+| C-WR-05 | fixed | 9a84cdd |
+| C-WR-06 | fixed | 610506d |
+| C-WR-07 | fixed | 32894c9 |
+| C-WR-08 | fixed | ad32c86 |
+| C-WR-09 | fixed | e0eb161 |
+| E-WR-06 (handed over by the engine fixer) | fixed | cecedcd |
+| C-IN-01 | fixed | 985b20e |
+| C-IN-02 | skipped: the cap belongs in the import preview UI, which a later wave builds (see follow-ups) | none |
+| C-IN-03 | skipped: cosmetic flicker only, and the chunk's success invalidation already corrects it | none |
+| C-IN-04 | fixed | 41ccbaf |
+| C-IN-05 | partly fixed: CategoryGlyph is now hidden on iOS. The Sheet label and the AmountDisplay `inkDim` tone are left for their UI waves | 7edadfa |
+| C-IN-06 | partly addressed: tests now cover a restart replay (WR-01), a link to a row from a failed chunk (CR-01) and adds into unloaded months (WR-03). The unregistered keys get registered when their waves land | none |
+
+### How C-CR-01 was resolved (and why)
+
+The finalize now degrades instead of being all-or-nothing (`runFinalize` in `importFinalize.ts`):
+
+- **On a `VersionConflictError`:** only the suggestion the conflict names is set aside, and the rest is resent. `apply_patches` is atomic, so a refused attempt changed nothing and resending is safe. Each pass sets aside at least one suggestion, so the loop always ends.
+- **On a permanent refusal:** for example the 23514 pair trigger. Every suggestion is set aside. The exception is a response the client could not parse: that attempt may have committed, so the finalize never degrades on it.
+- **A set-aside transfer link:** both rows already exist as ordinary rows, and only the link is not made. A link to a row whose chunk was rejected or parked conflicts with reason `not-found` and is set aside the same way. This is why the chunk failure does not short-circuit the finalize. Short-circuiting would also have dropped the mark-paid matches and the undo step. The chunk's own failed write already names the missing rows.
+- **A set-aside mark-paid:** the statement line is inserted as an ordinary paid row (`ImportMarkPaid.line`, idempotent batch upsert) and joins the import's undo step. D-55 does not insert a matched line while the pending row is marked paid. That rule is unchanged. A matched line is now inserted only when the mark-paid cannot be applied, so it is never lost silently.
+- **The import's single undo step is always recorded** (REC-13). It covers whatever landed.
+- **Reporting what was set aside (D-19):** one failed-write entry with ids and counts only (`links`, `markPaid`, `limit`, `recordedAsLines`, `ids`), which follows the existing failedWrites pattern and T-02-15-07.
+- **If the finalize cannot run at all:** this means server errors past the retry budget, or an unreadable response. The `onError` record then keeps the mark-paid lines as `unrecordedLines`, so they can be re-entered. This is a deliberate, narrow exception to T-02-15-07's counts-only rule. Those lines exist nowhere else. The failed-writes store is encrypted at rest (T-01-09-01), and the failure reporter never sees `attempted`.
+
+### Choices on the other findings
+
+- **C-WR-01:** a patched value written as an ISO date-time with an explicit offset is now compared by instant, so `...120Z` matches `...12+00:00`. Bare dates and all other values are still compared by strict equality.
+- **C-WR-02:** on the first conflict, the finalize checks whether its step id is already in the owner's undo log. `apply_patches` writes the step in the same transaction as the patches, so a match proves the first attempt committed, and the retry settles as success. The check reads `fetchUndoLog`, which returns the newest 12 steps, because `src/db` is owned by another agent. See the follow-ups.
+- **C-WR-06:** the label key set belongs to the engine (`UNDO_LABEL_KEYS`) and is already stored in `undo_log`, so the fix sits at the i18n layer. A new `undo.labelUnnamed.*` copy set and a new `undoLabelText()` helper pick the nameless variant at render time. The helper also maps the engine's `n` onto i18next's `count`.
+- **C-WR-07:** proportionate, since nothing is installed yet. When a buster changes, or a blob passes `maxAge`, the encrypted persister's `restoreClient` keeps the queued mutations and drops the queries. The constraint this depends on is documented next to `CACHE_SCHEMA_VERSION`: a queued mutation's variables must stay readable by the next build.
+- **C-WR-05:** a delete's inverse is always `{deleted_at: null}`. Mark-paid and skip use the status, date and amount the row carries. When no honest before-state exists for every patched key, the hooks return `null` instead of a stepId.
+- **C-CR-02:** only the message text is the alert, and iOS gets `announceForAccessibility`. A new `toastDurationMs(kind, screenReaderEnabled)` returns `null` (no auto-dismiss) while a screen reader runs, per D-31.
+
+### Follow-ups for other areas
+
+- **src/db:** add an exact `undoStepExists(client, id)` lookup. C-WR-02 can then stop relying on the step being among the owner's newest 12. Also check whether the transfer pair trigger refuses a leg that already has a `transfer_id`. E-WR-06 is only enforced client-side in `useImportCommit`.
+- **supabase/:** optionally, `apply_patches` could return `applied` when `p_undo_step.id` already exists for `auth.uid()`. That would be the server-side form of the C-WR-02 check.
+- **The toast host (plan 02-28) and the History screen:** must
+  - use `toastDurationMs` with `AccessibilityInfo.isScreenReaderEnabled`
+  - render labels through `undoLabelText`
+  - not offer Undo when a hook returns a `null` stepId.
+- **Import preview UI:** must
+  - supply `ImportMarkPaid.line` and `ImportLink.storedTransferId`
+  - cap the accepted suggestions so a finalize stays under the 6000-op step limit (C-IN-02). An oversized step now fails before it is sent, and its mark-paid lines are kept in the failed write.
+- **A mark-paid line inserted as a fallback:** gets no immediate resolve-rate follow-up. A `rate_pending` fallback line waits for the next write's follow-up or the daily restamp.
+- **Not yet built:** when `undoStep` is registered, add a test for the case where a queued undo-record lands after an undo-apply (C-IN-06's uncertain item).
 
 ## Summary
 

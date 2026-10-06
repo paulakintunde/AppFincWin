@@ -120,6 +120,34 @@ describe('encrypted query cache persister', () => {
     expect(fresh.getQueryData(TX_KEY)).toBeUndefined();
   });
 
+  // C-WR-07: persistQueryClientRestore discards the whole blob on a buster mismatch, which
+  // also held the dehydrated offline write queue -- an upgrade would silently lose unsynced
+  // writes. Queries are discarded (their shape may have changed); queued writes are kept.
+  it('C-WR-07: a buster change drops the cached queries but keeps the queued writes', async () => {
+    const client = new QueryClient();
+    client.setQueryData(TX_KEY, TX_DATA);
+    const queued = client.getMutationCache().build(client, {
+      mutationKey: ['transactions', 'add'],
+      mutationFn: () => new Promise<never>(() => undefined), // never lands: still pending at save
+    });
+    void queued.execute({ row: { id: 'queued-1' } });
+    await saveWith(client, `older-than-${CACHE_SCHEMA_VERSION}`);
+
+    const fresh = new QueryClient();
+    await persistQueryClientRestore({
+      queryClient: fresh,
+      persister: createEncryptedPersister(),
+      maxAge: CACHE_MAX_AGE_MS,
+      buster: CACHE_SCHEMA_VERSION,
+    });
+
+    expect(fresh.getQueryData(TX_KEY)).toBeUndefined();
+    const restored = fresh.getMutationCache().getAll();
+    expect(restored).toHaveLength(1);
+    expect(restored[0]?.options.mutationKey).toEqual(['transactions', 'add']);
+    expect(restored[0]?.state).toMatchObject({ status: 'pending', variables: { row: { id: 'queued-1' } } });
+  });
+
   it('does not persist a query whose data has not refreshed successfully in 30 days (D-15)', async () => {
     const client = new QueryClient();
     const staleKey = ['accounts', 'h1'];

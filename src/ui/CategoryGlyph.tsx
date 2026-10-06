@@ -25,7 +25,8 @@ export function CategoryGlyph({ colorKey, letter }: CategoryGlyphProps) {
   return (
     <View
       accessible={false}
-      importantForAccessibility="no-hide-descendants"
+      importantForAccessibility="no-hide-descendants" // Android
+      accessibilityElementsHidden // iOS (C-IN-05)
       style={[styles.tile, { backgroundColor: swatch.tint, borderRadius: radii.glyphTile }]}
     >
       <Text style={{ ...textRole(pairing, 'label'), color: swatch.color }}>{letter}</Text>

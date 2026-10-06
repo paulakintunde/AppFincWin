@@ -110,6 +110,19 @@ function patchMonthCacheIfLoaded(
   patchMonthCache(qc, householdId, month, updater);
 }
 
+/**
+ * C-WR-04: the reads derived from transactions that are not month caches -- account
+ * balances and standing (REC-08/REC-17), the month switcher, and search results -- go stale
+ * on every transaction write, and focusManager only refetches on app foreground, not on a tab
+ * change. Not awaited: query-core holds WRITE_SCOPE while onSuccess/onError are awaited
+ * (WR-A15), and these refetches must never delay the next queued write.
+ */
+function invalidateDerivedReads(qc: QueryClient, householdId: string): void {
+  void qc.invalidateQueries({ queryKey: queryKeys.accountBalances(householdId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.transactionMonths(householdId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.transactionsSearchRoot(householdId) });
+}
+
 /** The month an edit leaves the row in: the patched local_date's month, else the original. */
 function targetMonth(vars: EditTransactionVars): string {
   return vars.patch.local_date !== undefined ? monthOf(vars.patch.local_date) : vars.month;
@@ -163,7 +176,10 @@ async function followUpIfRatePending(
   try {
     const resolved = await requestRateResolution(lazySupabaseClient(), row.id);
     if (resolved) {
-      patchMonthCache(qc, householdId, month, (rows) => rows.map((r) => (r.id === resolved.id ? resolved : r)));
+      // C-WR-03: only a month already loaded. This runs after the caller's invalidation, so a
+      // fabricated `[]` for a month never opened would not be refetched -- it would show as an
+      // empty month (status success) and be persisted.
+      patchMonthCacheIfLoaded(qc, householdId, month, (rows) => rows.map((r) => (r.id === resolved.id ? resolved : r)));
     }
   } catch {
     // Network/function failure: the row stays rate_pending; fx-monitor reports stuck rows.
@@ -253,6 +269,9 @@ export function registerTransactionMutations(qc: QueryClient): void {
     onMutate: async (vars: AddTransactionVars) => {
       markSession(vars); // WR-A09
       const monthKey = queryKeys.transactionsMonth(vars.row.household_id, vars.optimistic.month);
+      // C-WR-03: a month that was never loaded is not fabricated as a one-row list (it would
+      // pass for the whole month and show wrong totals). onSuccess invalidates it instead.
+      if (qc.getQueryData(monthKey) === undefined) return;
       await qc.cancelQueries({ queryKey: monthKey });
 
       const rates = qc.getQueryData<FxLatestRow[]>(queryKeys.fxLatest()) ?? [];
@@ -314,11 +333,18 @@ export function registerTransactionMutations(qc: QueryClient): void {
         updated_at: now,
         pending: true,
       };
-      patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) => [optimisticRow, ...rows]);
+      patchMonthCacheIfLoaded(qc, vars.row.household_id, vars.optimistic.month, (rows) => [optimisticRow, ...rows]);
     },
     onSuccess: (row: TransactionRow, vars: AddTransactionVars) => {
-      // WR-A04: upsert, not replace -- a refetch may have dropped the optimistic row.
-      patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) => upsertRow(rows, row, 'start'));
+      const monthKey = queryKeys.transactionsMonth(vars.row.household_id, vars.optimistic.month);
+      if (qc.getQueryData(monthKey) === undefined) {
+        // C-WR-03: not loaded -- mark it stale rather than create it (not awaited, WR-A15).
+        void qc.invalidateQueries({ queryKey: monthKey });
+      } else {
+        // WR-A04: upsert, not replace -- a refetch may have dropped the optimistic row.
+        patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) => upsertRow(rows, row, 'start'));
+      }
+      invalidateDerivedReads(qc, vars.row.household_id); // C-WR-04
       // WR-A15: not awaited. query-core awaits onSuccess before releasing WRITE_SCOPE, so an
       // awaited Edge Function call would hold every later queued write behind it.
       void followUpIfRatePending(qc, vars.row.household_id, vars.optimistic.month, row);
@@ -326,9 +352,10 @@ export function registerTransactionMutations(qc: QueryClient): void {
     onError: async (err: unknown, vars: AddTransactionVars) => {
       const cls = classifySettledWriteError(err);
       if (cls !== 'rejected' && cls !== 'not-found') return; // an insert never conflicts; a duplicate-id insert already resolved to success in db/
-      patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) =>
+      patchMonthCacheIfLoaded(qc, vars.row.household_id, vars.optimistic.month, (rows) =>
         rows.filter((r) => r.id !== vars.row.id)
       );
+      invalidateDerivedReads(qc, vars.row.household_id); // C-WR-04: the rollback moves them too
       await recordFailedWrite({
         entity: 'transactions',
         entityId: vars.row.id,
@@ -388,6 +415,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
     onSuccess: async (row: TransactionRow, vars: EditTransactionVars) => {
       const toMonth = targetMonth(vars);
       placeRowInMonth(qc, vars.householdId, row, [vars.month, toMonth]);
+      invalidateDerivedReads(qc, vars.householdId); // C-WR-04
       if (toMonth !== vars.month || monthOf(row.local_date) !== toMonth) {
         // WR-A05: the row changed months; refetch both so their totals come from the server.
         await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) });
@@ -411,6 +439,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
         return;
       }
       if (cls === 'rejected' || cls === 'not-found') {
+        invalidateDerivedReads(qc, vars.householdId); // C-WR-04: the optimistic patch moved them
         await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) });
         if (targetMonth(vars) !== vars.month) {
           await qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, targetMonth(vars)) });
@@ -589,8 +618,16 @@ export function useAddTransaction(): { add(input: AddTransactionInput): string }
   };
 }
 
+/**
+ * C-WR-05: an undo capture may carry the caller's own before-state, used only when the row is
+ * not in the cached month (a search hit, or a row whose month was never loaded). The cached
+ * row, when present, always wins: it is the freshest copy this device has.
+ */
+export type EditUndoCapture = UndoCapture & { before?: Readonly<Record<string, PatchValue>> };
+
 export function useEditTransaction(): {
-  edit(vars: EditTransactionVars, undo?: UndoCapture): void;
+  /** Returns whether an undo step will be recorded for this edit (false when sent without one). */
+  edit(vars: EditTransactionVars, undo?: EditUndoCapture): boolean;
 } {
   const mutation = useMutation<TransactionRow, unknown, EditTransactionVars>({
     mutationKey: mutationKeys.editTransaction,
@@ -599,47 +636,66 @@ export function useEditTransaction(): {
   const qc = useQueryClient();
 
   return {
-    edit(vars: EditTransactionVars, undo?: UndoCapture): void {
+    edit(vars: EditTransactionVars, undo?: EditUndoCapture): boolean {
       if (!undo) {
         mutation.mutate(vars);
-        return;
+        return false;
       }
 
-      // REC-11: `before` is captured from the cache at the moment of the action, for exactly
-      // the keys this edit patches -- never reconstructed later (RESEARCH.md Anti-pattern 2).
+      // REC-11: `before` is captured at the moment of the action, for exactly the keys this
+      // edit patches -- never reconstructed later (RESEARCH.md Anti-pattern 2).
       const current = qc
         .getQueryData<TransactionList>(queryKeys.transactionsMonth(vars.householdId, vars.month))
-        ?.find((r) => r.id === vars.id);
-      if (!current) {
-        // Nothing cached to capture a before-state from: send the edit without an undo step
-        // rather than guess -- matches the plan's "attaches vars.undo only when the row was
-        // found".
+        ?.find((r) => r.id === vars.id) as unknown as Record<string, PatchValue | undefined> | undefined;
+      const source = current ?? undo.before;
+      const keys = Object.keys(vars.patch);
+      const complete = current !== undefined || (source !== undefined && keys.every((key) => source[key] !== undefined));
+      if (!source || !complete) {
+        // Nothing honest to capture a before-state from: send the edit without an undo step
+        // rather than guess, and tell the caller so it never offers an Undo that cannot work.
         mutation.mutate(vars);
-        return;
+        return false;
       }
 
       const before: Record<string, PatchValue> = {};
-      for (const key of Object.keys(vars.patch)) {
-        const value = (current as unknown as Record<string, PatchValue | undefined>)[key];
-        before[key] = value ?? null;
-      }
-      mutation.mutate({ ...vars, undo: { ...undo, before } });
+      for (const key of keys) before[key] = source[key] ?? null;
+      const { stepId, ownerId, labelKey, labelParams } = undo;
+      mutation.mutate({ ...vars, undo: { stepId, ownerId, labelKey, labelParams, before } });
+      return true;
     },
   };
 }
 
-type UndoableRow = Pick<TransactionRow, 'id' | 'household_id' | 'local_date' | 'version' | 'name'>;
+/**
+ * The row an undoable action is taken on. `status` and `original_amount` are optional so a
+ * caller holding only a search hit can still act; they let the hook build the inverse when
+ * the row's month is not cached (C-WR-05).
+ */
+type UndoableRow = Pick<TransactionRow, 'id' | 'household_id' | 'local_date' | 'version' | 'name'> &
+  Partial<Pick<TransactionRow, 'status' | 'original_amount'>>;
 
 function nameParams(row: UndoableRow): { name?: string } {
   return row.name ? { name: row.name } : {};
 }
 
-export function useDeleteTransaction(): { remove(row: UndoableRow, ownerId: string): string } {
+/** The before-state the row itself carries, for exactly the keys it has. */
+function knownBefore(row: UndoableRow): Record<string, PatchValue> {
+  const before: Record<string, PatchValue> = { local_date: row.local_date };
+  if (row.status !== undefined) before.status = row.status;
+  if (row.original_amount !== undefined) before.original_amount = row.original_amount;
+  return before;
+}
+
+/**
+ * Each of these returns the undo step id the toast's Undo replays, or null when no step
+ * will be recorded (C-WR-05) -- the host must not offer Undo for a null.
+ */
+export function useDeleteTransaction(): { remove(row: UndoableRow, ownerId: string): string | null } {
   const { edit } = useEditTransaction();
   return {
-    remove(row: UndoableRow, ownerId: string): string {
+    remove(row: UndoableRow, ownerId: string): string | null {
       const stepId = newStepId();
-      edit(
+      const recorded = edit(
         {
           id: row.id,
           householdId: row.household_id,
@@ -647,24 +703,25 @@ export function useDeleteTransaction(): { remove(row: UndoableRow, ownerId: stri
           expectedVersion: row.version,
           patch: { deleted_at: new Date().toISOString() },
         },
-        { stepId, ownerId, labelKey: 'deleted', labelParams: nameParams(row) }
+        // A soft-delete's inverse is always known: the row was not deleted.
+        { stepId, ownerId, labelKey: 'deleted', labelParams: nameParams(row), before: { deleted_at: null } }
       );
-      return stepId;
+      return recorded ? stepId : null;
     },
   };
 }
 
 export function useMarkPaid(): {
-  markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: number; localDate?: string }): string;
+  markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: MinorUnits; localDate?: string }): string | null;
 } {
   const { edit } = useEditTransaction();
   return {
-    markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: number; localDate?: string }): string {
+    markPaid(row: UndoableRow, ownerId: string, today: string, adjust?: { amount?: MinorUnits; localDate?: string }): string | null {
       const stepId = newStepId();
       const localDate = adjust?.localDate ?? markPaidDate(today, row.local_date);
       const patch: TransactionPatch = { status: 'paid', local_date: localDate };
       if (adjust?.amount !== undefined) patch.original_amount = adjust.amount;
-      edit(
+      const recorded = edit(
         {
           id: row.id,
           householdId: row.household_id,
@@ -672,19 +729,19 @@ export function useMarkPaid(): {
           expectedVersion: row.version,
           patch,
         },
-        { stepId, ownerId, labelKey: 'markedPaid', labelParams: nameParams(row) }
+        { stepId, ownerId, labelKey: 'markedPaid', labelParams: nameParams(row), before: knownBefore(row) }
       );
-      return stepId;
+      return recorded ? stepId : null;
     },
   };
 }
 
-export function useSkipOccurrence(): { skip(row: UndoableRow, ownerId: string): string } {
+export function useSkipOccurrence(): { skip(row: UndoableRow, ownerId: string): string | null } {
   const { edit } = useEditTransaction();
   return {
-    skip(row: UndoableRow, ownerId: string): string {
+    skip(row: UndoableRow, ownerId: string): string | null {
       const stepId = newStepId();
-      edit(
+      const recorded = edit(
         {
           id: row.id,
           householdId: row.household_id,
@@ -692,9 +749,9 @@ export function useSkipOccurrence(): { skip(row: UndoableRow, ownerId: string): 
           expectedVersion: row.version,
           patch: { status: 'skipped' },
         },
-        { stepId, ownerId, labelKey: 'skipped', labelParams: nameParams(row) }
+        { stepId, ownerId, labelKey: 'skipped', labelParams: nameParams(row), before: knownBefore(row) }
       );
-      return stepId;
+      return recorded ? stepId : null;
     },
   };
 }
