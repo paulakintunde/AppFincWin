@@ -390,6 +390,16 @@ describe('CategoryGlyph', () => {
     const style = flatStyle(getByText('G', { includeHiddenElements: true }).props);
     expect(style.some((s) => s.color === categorySwatch.teal.color)).toBe(true);
   });
+
+  // C-IN-05: importantForAccessibility is Android-only; iOS needs accessibilityElementsHidden,
+  // or VoiceOver reads the letter ("G") inside a non-pressable container.
+  it('is hidden from VoiceOver on iOS as well as from Android accessibility', async () => {
+    const { getByText } = await renderWithTheme(<CategoryGlyph colorKey="teal" letter="G" />);
+    let tile = getByText('G', { includeHiddenElements: true }).parent;
+    while (tile && tile.props.importantForAccessibility === undefined) tile = tile.parent;
+    expect(tile?.props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(tile?.props.accessibilityElementsHidden).toBe(true);
+  });
 });
 
 describe('AmountDisplay', () => {
