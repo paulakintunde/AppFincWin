@@ -27,6 +27,23 @@ describe('acceptIfAlreadyApplied (WR-A13)', () => {
     expect(() => acceptIfAlreadyApplied(err, { note: 'mine' })).toThrow(err);
   });
 
+  // C-WR-01: the client sends `toISOString()` ("...123Z"); PostgREST serialises timestamptz
+  // as "...123+00:00" and trims trailing fractional zeros. Same instant, so already applied.
+  it('treats two spellings of the same timestamp instant as equal', () => {
+    const deleted = { id: 'x', deleted_at: '2026-09-28T10:00:00.12+00:00', version: 2 };
+    expect(
+      acceptIfAlreadyApplied(new VersionConflictError('transactions', 'x', deleted), { deleted_at: '2026-09-28T10:00:00.120Z' })
+    ).toBe(deleted);
+  });
+
+  it('still rethrows when the server timestamp is a different instant, or the value is not a timestamp', () => {
+    const deleted = { id: 'x', deleted_at: '2026-09-28T10:00:01+00:00', local_date: '2026-09-28', version: 2 };
+    const err = new VersionConflictError('transactions', 'x', deleted);
+    expect(() => acceptIfAlreadyApplied(err, { deleted_at: '2026-09-28T10:00:00.000Z' })).toThrow(err);
+    // A plain date is compared as a string, never widened to an instant.
+    expect(() => acceptIfAlreadyApplied(err, { local_date: '2026-09-28T00:00:00Z' })).toThrow(err);
+  });
+
   it('rethrows an empty patch, a missing server row, or any other error', () => {
     expect(() => acceptIfAlreadyApplied(new VersionConflictError('transactions', 'x', server), {})).toThrow(
       VersionConflictError

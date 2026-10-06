@@ -753,6 +753,36 @@ describe('useDeleteTransaction / useMarkPaid / useSkipOccurrence', () => {
     expect(payload.ops).toEqual([{ entity: 'transactions', id: 'tx-1', expectedVersion: 2, patch: { deleted_at: null } }]);
   });
 
+  it('C-WR-01: a delete replayed after it already landed (server spells deleted_at as +00:00) settles as success with its undo step', async () => {
+    jest.useFakeTimers({
+      now: new Date('2026-09-28T10:00:00.120Z'),
+      doNotFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask'],
+    });
+    try {
+      const fake = createFakeSupabase() as FakeSupabase & DbClient;
+      mockActiveClient = fake;
+      const landed = serverTransaction({ id: 'tx-1', name: 'Rent', deleted_at: '2026-09-28T10:00:00.12+00:00', version: 2 });
+      fake.respondWith({ data: [], error: null, status: 200 }); // zero rows: version 1 no longer matches
+      fake.respondWith({ data: landed, error: null, status: 200 }); // fetchTransaction: the delete already landed
+      fake.respondWith({ data: null, error: null, status: 201 }); // undo_log insert
+
+      const qc = newClient();
+      qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [serverTransaction({ id: 'tx-1', name: 'Rent' })]);
+      const { result } = await renderHook(() => useDeleteTransaction(), { wrapper: wrapper(qc) });
+
+      result.current.remove({ id: 'tx-1', household_id: 'h1', local_date: '2026-09-24', version: 1, name: 'Rent' }, 'user-1');
+
+      await waitFor(() => expect(fake.calls.some((c) => c.table === 'undo_log' && c.method === 'insert')).toBe(true));
+      const undoInsert = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
+      expect((undoInsert?.args[0] as { ops: unknown[] }).ops).toEqual([
+        { entity: 'transactions', id: 'tx-1', expectedVersion: 2, patch: { deleted_at: null } },
+      ]);
+      expect(recordFailedWrite).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('D-30: a VersionConflictError on delete puts the server row back (existing onError path)', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
