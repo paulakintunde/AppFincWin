@@ -748,6 +748,9 @@ begin
        and not exists (
          select 1 from public.undo_log u
           where u.status = 'available' and u.touched_ids @> array[t.id]
+            -- D-IN-03: only a step by a member of the row's household pins it
+            -- (ops are client-authored, so a step can name any uuid).
+            and u.owner_id in (select hm.user_id from public.household_members hm where hm.household_id = t.household_id)
        )
     returning 1
   )
@@ -760,6 +763,7 @@ begin
        and not exists (
          select 1 from public.undo_log u
           where u.status = 'available' and u.touched_ids @> array[s.id]
+            and u.owner_id in (select hm.user_id from public.household_members hm where hm.household_id = s.household_id)
        )
        and not exists (select 1 from public.transactions t where t.recurring_series_id = s.id)
     returning 1
