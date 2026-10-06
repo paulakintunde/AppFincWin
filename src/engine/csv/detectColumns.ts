@@ -71,7 +71,9 @@ const SNIFF_EXPONENT = 2; // structural check only -- no magnitude is kept from 
 
 // Kept in sync with mapRows.ts's own DIRECTION_OUT/DIRECTION_IN (Task 2):
 // a direction column's values must mostly be drawn from this table before
-// the column is accepted as a direction role at all.
+// the column is accepted as a direction role at all. 'payment' is here
+// although mapRows treats it as neutral (review E-WR-09): it still marks a
+// Type column as a direction column.
 const DIRECTION_VALUE_WORDS = new Set([
   'debit', 'dr', 'sale', 'purchase', 'withdrawal', 'payment out', 'out',
   'credit', 'cr', 'payment', 'return', 'refund', 'deposit', 'in',
