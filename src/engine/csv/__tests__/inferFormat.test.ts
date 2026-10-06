@@ -57,6 +57,17 @@ describe('parseCsvDate', () => {
     expect(parseCsvDate('13/09/2101', 'DMY')).toBeNull();
   });
 
+  it('rejects a YMD reading whose leading year is not 4 digits (review E-CR-02)', () => {
+    expect(parseCsvDate('25/03/26', 'YMD')).toBeNull();
+    expect(parseCsvDate('26-Mar-05', 'YMD')).toBeNull();
+    expect(parseCsvDate('25/03/26', 'DMY')).toBe('2026-03-25');
+  });
+
+  it('accepts only a 2- or 4-digit year in DMY/MDY (review E-CR-02)', () => {
+    expect(parseCsvDate('25/03/6', 'DMY')).toBeNull();
+    expect(parseCsvDate('25/03/026', 'DMY')).toBeNull();
+  });
+
   it('drops a space-separated time part', () => {
     expect(parseCsvDate('13/09/2026 10:22', 'DMY')).toBe('2026-09-13');
   });
@@ -71,10 +82,15 @@ describe('inferDateFormat', () => {
     expect(inferDateFormat(['13/09/2026', '01/09/2026'])).toEqual({ kind: 'certain', format: 'DMY' });
   });
 
-  it('prefers YMD even when a DMY reading of the same 2-digit-year sample also parses', () => {
-    // '13/09/26': YMD reads year=2013 (valid); DMY reads day=13,year=2026 (also valid);
-    // MDY reads month=13 (invalid). Two candidates remain and YMD wins the tie-break.
-    expect(inferDateFormat(['13/09/26'])).toEqual({ kind: 'certain', format: 'YMD' });
+  it('reads a dd/mm/yy sample as DMY, never as a 2-digit-year YMD (review E-CR-02)', () => {
+    // '13/09/26': a YMD reading would need a 4-digit leading year, so only DMY
+    // survives (MDY reads month=13, invalid).
+    expect(inferDateFormat(['13/09/26'])).toEqual({ kind: 'certain', format: 'DMY' });
+    expect(inferDateFormat(['25/03/26', '14/04/26', '01/05/26'])).toEqual({ kind: 'certain', format: 'DMY' });
+  });
+
+  it('is ambiguous DMY/MDY for dd/mm/yy samples with no day above 12 (review E-CR-02)', () => {
+    expect(inferDateFormat(['01/02/26', '03/04/26'])).toEqual({ kind: 'ambiguous', candidates: ['DMY', 'MDY'] });
   });
 
   it('is certain MDY when a "day" position exceeds 12 under DMY reading', () => {
