@@ -41,7 +41,7 @@ export interface ColumnMapping {
 export type MappingError = 'no-date' | 'no-description' | 'no-amount' | 'amount-and-debit-credit' | 'duplicate-column';
 
 export const HEADER_KEYWORDS: Readonly<Record<ColumnRole, readonly string[]>> = {
-  date: ['date', 'transaction date', 'posted', 'posting date', 'value date', 'booking date', 'datum', 'fecha', 'data', 'buchungstag'],
+  date: ['date', 'transaction date', 'posted', 'posting date', 'booking date', 'value date', 'datum', 'fecha', 'data', 'buchungstag'],
   description: [
     'description', 'details', 'payee', 'merchant', 'narrative', 'memo', 'name', 'reference', 'transaction',
     'omschrijving', 'beschreibung', 'concepto', 'libelle', 'verwendungszweck',
@@ -115,14 +115,43 @@ function containsPhrase(headerWords: readonly string[], phraseWords: readonly st
   return false;
 }
 
-function headerMatchesRole(header: string, role: ColumnRole): boolean {
+// Keywords that are common words inside unrelated headers ('Value Date',
+// 'Transaction Type', 'Account Name'). A match on one of these alone, inside a
+// longer header, is weak evidence (review E-WR-02).
+const GENERIC_KEYWORDS = new Set(['value', 'transaction', 'name', 'reference', 'type', 'data', 'posted', 'in', 'out']);
+
+interface HeaderMatch {
+  score: 0 | 1 | 2 | 3; // 3 exact header, 2 multi-word phrase, 1 single word inside a longer header
+  rank: number; // index of the matching keyword in its role's list: earlier keywords are more specific
+  generic: boolean; // a score-1 match on a generic word
+}
+
+const NO_MATCH: HeaderMatch = { score: 0, rank: Number.MAX_SAFE_INTEGER, generic: false };
+
+function headerMatch(header: string, role: ColumnRole): HeaderMatch {
   const normalised = normaliseHeader(header);
   const headerWords = wordsOf(normalised);
-  for (const keyword of HEADER_KEYWORDS[role]) {
-    if (normalised === keyword) return true;
-    if (containsPhrase(headerWords, wordsOf(keyword))) return true;
-  }
-  return false;
+  let best = NO_MATCH;
+  HEADER_KEYWORDS[role].forEach((keyword, rank) => {
+    const keywordWords = wordsOf(keyword);
+    let score: HeaderMatch['score'] = 0;
+    if (normalised === keyword) score = 3;
+    else if (containsPhrase(headerWords, keywordWords)) score = keywordWords.length > 1 ? 2 : 1;
+    if (score > best.score) best = { score, rank, generic: score === 1 && GENERIC_KEYWORDS.has(keyword) };
+  });
+  return best;
+}
+
+/**
+ * A single-word match never stands when the same header carries an exact or
+ * multi-word match for another role: 'Value Date' is a date, not an amount;
+ * 'Transaction Type' is a type, not a description (review E-WR-02).
+ */
+function effectiveMatch(header: string, role: ColumnRole): HeaderMatch {
+  const match = headerMatch(header, role);
+  if (match.score !== 1) return match;
+  const otherIsSpecific = ROLE_ORDER.some((other) => other !== role && headerMatch(header, other).score >= 2);
+  return otherIsSpecific ? NO_MATCH : match;
 }
 
 function nonEmptyValues(sample: readonly (readonly string[])[], col: number): string[] {
@@ -145,20 +174,53 @@ function columnPassesDirectionContent(sample: readonly (readonly string[])[], co
   return matches / values.length >= 0.8;
 }
 
+function isDateCell(v: string): boolean {
+  return DATE_FORMATS.some((format) => parseCsvDate(v, format) !== null);
+}
+
+function isAmountCell(v: string): boolean {
+  return (
+    parseNotatedAmount(v, notationFor('.'), SNIFF_EXPONENT).ok || parseNotatedAmount(v, notationFor(','), SNIFF_EXPONENT).ok
+  );
+}
+
+/** At least 80% of the column's non-empty sample cells pass; an all-blank sample cannot contradict a header. */
+function columnContentPasses(sample: readonly (readonly string[])[], col: number, test: (v: string) => boolean): boolean {
+  const values = nonEmptyValues(sample, col);
+  if (values.length === 0) return true;
+  return values.filter(test).length / values.length >= 0.8;
+}
+
+function headerContentPasses(role: ColumnRole, sample: readonly (readonly string[])[], col: number): boolean {
+  if (role === 'direction') return columnPassesDirectionContent(sample, col);
+  if (role === 'date') return columnContentPasses(sample, col, isDateCell);
+  if (role === 'amount' || role === 'debit' || role === 'credit') return columnContentPasses(sample, col, isAmountCell);
+  return true;
+}
+
+/**
+ * The unused column whose header matches the role most specifically (the
+ * first wins a tie), content-checked -- never simply the first column that
+ * shares a word with a keyword (review E-WR-02).
+ */
 function resolveRoleFromHeader(
   role: ColumnRole,
   header: readonly string[],
   sample: readonly (readonly string[])[],
   used: ReadonlySet<number>
-): number | null {
+): { idx: number; weak: boolean } | null {
+  let best: { idx: number; match: HeaderMatch } | null = null;
   for (let i = 0; i < header.length; i += 1) {
     if (used.has(i)) continue;
-    const cell = header[i];
-    if (cell === undefined || !headerMatchesRole(cell, role)) continue;
-    if (role === 'direction' && !columnPassesDirectionContent(sample, i)) continue;
-    return i;
+    const match = effectiveMatch(header[i] as string, role);
+    if (match.score === 0) continue;
+    if (best !== null && !(match.score > best.match.score || (match.score === best.match.score && match.rank < best.match.rank))) {
+      continue;
+    }
+    if (!headerContentPasses(role, sample, i)) continue;
+    best = { idx: i, match };
   }
-  return null;
+  return best === null ? null : { idx: best.idx, weak: best.match.generic };
 }
 
 function sniffDateColumn(
@@ -168,10 +230,8 @@ function sniffDateColumn(
 ): number | null {
   for (let i = 0; i < header.length; i += 1) {
     if (used.has(i)) continue;
-    const values = nonEmptyValues(sample, i);
-    if (values.length === 0) continue;
-    const passing = values.filter((v) => DATE_FORMATS.some((format) => parseCsvDate(v, format) !== null)).length;
-    if (passing / values.length >= 0.8) return i;
+    if (nonEmptyValues(sample, i).length === 0) continue;
+    if (columnContentPasses(sample, i, isDateCell)) return i;
   }
   return null;
 }
@@ -181,16 +241,10 @@ function sniffAmountColumn(
   sample: readonly (readonly string[])[],
   used: ReadonlySet<number>
 ): number | null {
-  const dotNotation = notationFor('.');
-  const commaNotation = notationFor(',');
   for (let i = 0; i < header.length; i += 1) {
     if (used.has(i)) continue;
-    const values = nonEmptyValues(sample, i);
-    if (values.length === 0) continue;
-    const dotPasses = values.filter((v) => parseNotatedAmount(v, dotNotation, SNIFF_EXPONENT).ok).length;
-    const commaPasses = values.filter((v) => parseNotatedAmount(v, commaNotation, SNIFF_EXPONENT).ok).length;
-    const passing = Math.max(dotPasses, commaPasses);
-    if (passing / values.length >= 0.8) return i;
+    if (nonEmptyValues(sample, i).length === 0) continue;
+    if (columnContentPasses(sample, i, isAmountCell)) return i;
   }
   return null;
 }
@@ -232,14 +286,16 @@ export function detectColumns(
   };
   const used = new Set<number>();
   const viaHeader = new Set<ColumnRole>();
+  const weak = new Set<ColumnRole>();
 
   for (const role of ROLE_ORDER) {
     if (role === 'amount' && mapping.debit !== null && mapping.credit !== null) continue;
-    const idx = resolveRoleFromHeader(role, header, sample, used);
-    if (idx !== null) {
-      mapping[role] = idx;
-      used.add(idx);
+    const found = resolveRoleFromHeader(role, header, sample, used);
+    if (found !== null) {
+      mapping[role] = found.idx;
+      used.add(found.idx);
       viaHeader.add(role);
+      if (found.weak) weak.add(role);
     }
   }
 
@@ -266,8 +322,11 @@ export function detectColumns(
   }
 
   const amountConfident = viaHeader.has('amount') || (viaHeader.has('debit') && viaHeader.has('credit'));
+  // A key role found only through a generic word inside a longer header is
+  // not confident enough to skip the user's check (review E-WR-02).
+  const anyWeak = (['date', 'description', 'amount', 'debit', 'credit'] as const).some((r) => weak.has(r));
   const confidence: 'high' | 'low' =
-    viaHeader.has('date') && viaHeader.has('description') && amountConfident ? 'high' : 'low';
+    viaHeader.has('date') && viaHeader.has('description') && amountConfident && !anyWeak ? 'high' : 'low';
 
   return { mapping, confidence };
 }
