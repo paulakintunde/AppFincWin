@@ -1,7 +1,7 @@
 // SYN-02/MON-08: the same paused-mutation shape as transactions.ts but with no FX --
 // accounts never carry a rate.
 import * as Crypto from 'expo-crypto';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { VersionConflictError } from '@/db/errors';
 import { insertAccount, updateAccount } from '@/db/accounts';
@@ -19,9 +19,18 @@ import { writeClient } from './writeClient';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
+import { buildStep, inverseOfInserts, inverseOfPatches, type PatchValue } from '@/engine/undo';
+import { recordUndoStepSafely } from './undoCapture';
+
+/** REC-11: the caller-minted step id and owner; the label is fixed by the action. */
+export interface AccountUndo {
+  stepId: string;
+  ownerId: string;
+}
 
 export interface AddAccountVars {
   row: NewAccount;
+  undo?: AccountUndo;
 }
 
 export interface EditAccountVars {
@@ -29,6 +38,8 @@ export interface EditAccountVars {
   householdId: string;
   expectedVersion: number;
   patch: AccountPatch;
+  /** Set by useEditAccount's wrapper, which captures `before` itself. */
+  undo?: AccountUndo & { name: string; before: Readonly<Record<string, PatchValue>> };
 }
 
 type AccountList = WithPending<AccountRow>[];
@@ -45,7 +56,21 @@ function patchAccountsCache(
 
 export function registerAccountMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.addAccount, {
-    mutationFn: (vars: AddAccountVars) => guardSession(vars, async () => insertAccount(await writeClient(), vars.row)),
+    mutationFn: (vars: AddAccountVars) =>
+      guardSession(vars, async () => {
+        const client = await writeClient();
+        const row = await insertAccount(client, vars.row);
+        if (vars.undo) {
+          const step = buildStep(
+            vars.undo.stepId,
+            'accountAdded',
+            { name: row.name },
+            inverseOfInserts('accounts', [{ id: row.id, version: row.version }])
+          );
+          await recordUndoStepSafely(qc, client, step, vars.undo.ownerId);
+        }
+        return row;
+      }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
@@ -103,6 +128,15 @@ export function registerAccountMutations(qc: QueryClient): void {
           acceptIfAlreadyApplied<AccountRow>(err, vars.patch)
         );
         recordWrittenVersion('accounts', vars.id, [vars.expectedVersion, expected], row.version);
+        if (vars.undo) {
+          const step = buildStep(
+            vars.undo.stepId,
+            'accountEdited',
+            { name: vars.undo.name },
+            inverseOfPatches('accounts', [{ id: row.id, before: vars.undo.before, versionAfter: row.version }])
+          );
+          await recordUndoStepSafely(qc, client, step, vars.undo.ownerId);
+        }
         return row;
       }),
     scope: WRITE_SCOPE,
@@ -147,30 +181,62 @@ export function registerAccountMutations(qc: QueryClient): void {
   });
 }
 
-export function useAddAccount(): { add(input: Omit<NewAccount, 'id'>): string } {
+/** D-48: a limit is null (none) or a non-negative safe integer in minor units; the DB check is the backstop. */
+function assertLimit(label: string, value: number | null | undefined): void {
+  if (value === undefined || value === null) return;
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new RangeError(`${label} must be null or a non-negative safe integer, got ${value}`);
+  }
+}
+
+export function useAddAccount(): { add(input: Omit<NewAccount, 'id'>, undo?: AccountUndo): string } {
   const mutation = useMutation<AccountRow, unknown, AddAccountVars>({
     mutationKey: mutationKeys.addAccount,
     scope: WRITE_SCOPE,
   });
 
   return {
-    add(input: Omit<NewAccount, 'id'>): string {
+    add(input: Omit<NewAccount, 'id'>, undo?: AccountUndo): string {
+      assertLimit('overdraft_limit', input.overdraft_limit);
+      assertLimit('credit_limit', input.credit_limit);
       const id = Crypto.randomUUID();
-      mutation.mutate({ row: { id, ...input } });
+      mutation.mutate({ row: { id, ...input }, ...(undo ? { undo } : {}) });
       return id;
     },
   };
 }
 
-export function useEditAccount(): { edit(vars: EditAccountVars): void } {
+export function useEditAccount(): {
+  /** Returns whether an undo step will be recorded (false when none was asked for, or the account is not cached). */
+  edit(vars: EditAccountVars, undo?: AccountUndo): boolean;
+} {
   const mutation = useMutation<AccountRow, unknown, EditAccountVars>({
     mutationKey: mutationKeys.editAccount,
     scope: WRITE_SCOPE,
   });
+  const qc = useQueryClient();
 
   return {
-    edit(vars: EditAccountVars): void {
-      mutation.mutate(vars);
+    edit(vars: EditAccountVars, undo?: AccountUndo): boolean {
+      assertLimit('overdraft_limit', vars.patch.overdraft_limit);
+      assertLimit('credit_limit', vars.patch.credit_limit);
+      if (!undo) {
+        mutation.mutate(vars);
+        return false;
+      }
+      // REC-11: before-state is read now, for exactly the keys this edit patches.
+      const current = qc.getQueryData<AccountList>(queryKeys.accounts(vars.householdId))?.find((r) => r.id === vars.id);
+      if (!current) {
+        // Nothing honest to capture a before-state from: send without a step rather than guess.
+        mutation.mutate(vars);
+        return false;
+      }
+      const source = current as unknown as Record<string, PatchValue | undefined>;
+      const before: Record<string, PatchValue> = {};
+      for (const key of Object.keys(vars.patch)) before[key] = source[key] ?? null;
+      mutation.mutate({ ...vars, undo: { ...undo, name: vars.patch.name ?? current.name, before } });
+      return true;
     },
   };
 }
+
