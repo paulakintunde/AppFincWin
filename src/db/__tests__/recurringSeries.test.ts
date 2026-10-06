@@ -227,7 +227,26 @@ describe('editRecurringSeriesFrom', () => {
     expect(err).toBeInstanceOf(VersionConflictError);
     expect((err as VersionConflictError).entity).toBe('recurring_series');
     expect((err as VersionConflictError).id).toBe('series-1');
-    expect((err as VersionConflictError).serverRow).toEqual(conflict);
+    // D-IN-05: the conflict payload is validated and mapped exactly as applyPatches does.
+    expect((err as VersionConflictError).serverRow).toEqual({
+      entity: 'recurring_series',
+      id: 'series-1',
+      updatedBy: 'u2',
+      recordName: 'Rent',
+      builtinKey: null,
+      reason: 'changed',
+    });
+  });
+
+  it("'conflict' with a malformed conflict payload is a BAD_RESPONSE DbError (D-IN-05)", async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { status: 'conflict', conflict: { entity: 'recurring_series', id: 7 } }, error: null, status: 200 });
+
+    const err = await editRecurringSeriesFrom(client, 'series-1', 1, { amount: -100000 }, '2026-10-01').catch((e) => e);
+
+    expect(err).toBeInstanceOf(DbError);
+    expect(err).not.toBeInstanceOf(VersionConflictError);
+    expect((err as DbError).code).toBe(BAD_RESPONSE);
   });
 
   it("'not-found' throws NotFoundError", async () => {

@@ -12,6 +12,7 @@
 import type { PatchValue, SeriesChangeSet, UndoLabelKey, UndoLabelParams } from '@/engine/undo';
 import type { RecurringFreq } from '@/engine/recurring';
 import { NotFoundError, VersionConflictError, DbError, toDbError } from './errors';
+import { parseConflict } from './patches';
 import {
   assertAllowedKeys,
   RECURRING_SERIES_COLUMNS,
@@ -164,7 +165,9 @@ function interpretSeriesResponse(entityId: string, data: unknown): SeriesWriteRe
     case 'not-found':
       throw new NotFoundError(ENTITY, entityId);
     case 'conflict':
-      throw new VersionConflictError('recurring_series', entityId, isRecord(data) ? data.conflict : undefined);
+      // D-IN-05: validated and mapped exactly as applyPatches does, so callers narrowing on
+      // `serverRow` for the refusal copy always get an `UndoConflict`.
+      throw new VersionConflictError('recurring_series', entityId, parseConflict(isRecord(data) ? data.conflict : undefined));
     default:
       throw badResponse(`unrecognised status ${JSON.stringify(status)}`);
   }
