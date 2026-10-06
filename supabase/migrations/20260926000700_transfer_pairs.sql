@@ -40,12 +40,15 @@ begin
            count(*) filter (where t.original_amount > 0), count(*) filter (where t.original_amount < 0)
       into v_count, v_accounts, v_households, v_pos, v_neg
       from public.transactions t
-     where t.transfer_id = v_id and t.deleted_at is null;
+     where t.transfer_id = v_id and t.deleted_at is null
+       and t.household_id = new.household_id;  -- D-IN-01: household_id never changes on update (accounts are household-bound)
 
     if v_count = 0 then
       continue;
     end if;
 
+    -- A leg that reaches into another household is still rejected: each
+    -- household's group then holds a lone leg, which fails v_count <> 2.
     if v_count <> 2 or v_accounts <> 2 or v_households <> 1 or v_pos <> 1 or v_neg <> 1 then
       raise exception 'transfer pair is incomplete or invalid' using errcode = '23514';
     end if;
