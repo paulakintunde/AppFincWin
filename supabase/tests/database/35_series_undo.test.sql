@@ -12,12 +12,14 @@
 --     rows from the edited template (they cannot be rebuilt from a fixed op
 --     list), and the template is left as it is;
 --   * undo of a template edit with no intervening materialisation still
---     undoes normally.
+--     undoes normally;
+--   * D-WR-02: a replay that hits an integrity error (the occurrence unique
+--     index, a lone transfer leg) is refused instead of thrown.
 
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(12);
+select extensions.plan(17);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -177,6 +179,75 @@ select extensions.is(
   (-3000)::bigint,
   'the template is back to its pre-edit amount'
 );
+
+-- ---------------------------------------------------------------------
+-- 5. D-WR-02: an undo step that hits an integrity error is refused, not
+-- thrown -- otherwise it throws on every tap forever and wedges history.
+-- The user deletes next month's pending occurrence (step S1 restores it),
+-- then edits "this and future" from this month: the rewind re-materialises
+-- a NEW row on the deleted occurrence's date. Restoring the old row now
+-- collides with transactions_series_occurrence_uidx (23505).
+-- ---------------------------------------------------------------------
+select public.create_recurring_series(jsonb_build_object(
+  'id', 'c6000000-0000-0000-0000-000000000006',
+  'household_id', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+  'account_id', 'a1111111-1111-1111-1111-111111111111',
+  'name', 'Insurance', 'amount', -4000, 'currency', 'USD', 'freq', 'monthly',
+  'anchor_date', date_trunc('month', current_date)::date, 'time_zone', 'UTC'
+));
+create temp table o2 as
+  select id from public.transactions
+   where recurring_series_id = 'c6000000-0000-0000-0000-000000000006'
+     and occurrence_date = (date_trunc('month', current_date) + interval '1 month')::date;
+select public.apply_patches(
+  jsonb_build_array(jsonb_build_object('entity', 'transactions', 'id', (select id from o2), 'expectedVersion', 1, 'patch', '{"deleted_at":"$now"}'::jsonb)),
+  jsonb_build_object('id', 'e6000000-0000-0000-0000-000000000006', 'label_key', 'deleted', 'label_params', '{}'::jsonb,
+    'ops', jsonb_build_array(jsonb_build_object('entity', 'transactions', 'id', (select id from o2), 'expectedVersion', 2, 'patch', '{"deleted_at":null}'::jsonb)))
+);
+select public.edit_recurring_series_from(
+  'c6000000-0000-0000-0000-000000000006'::uuid, 1, '{"amount": -4500}'::jsonb, date_trunc('month', current_date)::date
+);
+
+select extensions.lives_ok(
+  $$select public.apply_undo_step('e6000000-0000-0000-0000-000000000006')$$,
+  'an undo step that would violate the occurrence unique index does not throw'
+);
+select extensions.is(
+  (select status from public.undo_log where id = 'e6000000-0000-0000-0000-000000000006'),
+  'refused',
+  'the step is marked refused (greyed in History, D-28) rather than left available'
+);
+select extensions.is(
+  (public.apply_undo_step('e6000000-0000-0000-0000-000000000006') ->> 'status'),
+  'refused',
+  'a second tap returns refused, not an error'
+);
+
+-- ---------------------------------------------------------------------
+-- 6. D-WR-02: the deferred transfer-pair check is forced inside the replay,
+-- so a step that would leave a lone leg is refused instead of failing at
+-- commit, where nothing could catch it.
+-- ---------------------------------------------------------------------
+insert into public.accounts (id, household_id, name, kind, currency, opening_balance)
+values ('a2222222-2222-2222-2222-222222222222', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Savings', 'checking', 'USD', 0);
+insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, transfer_id, name) values
+  ('17000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -800, 'USD', current_date, 'UTC', 'd7000000-0000-0000-0000-000000000007', 'Out'),
+  ('17000000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a2222222-2222-2222-2222-222222222222', 800, 'USD', current_date, 'UTC', 'd7000000-0000-0000-0000-000000000007', 'In');
+-- A (hand-built) step that would restore only one leg of the pair.
+select public.apply_patches(
+  '[{"entity":"transactions","id":"17000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"deleted_at":"$now"}},
+    {"entity":"transactions","id":"17000000-0000-0000-0000-000000000002","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb,
+  '{"id":"e7000000-0000-0000-0000-000000000007","label_key":"transferDeleted","label_params":{},
+    "ops":[{"entity":"transactions","id":"17000000-0000-0000-0000-000000000001","expectedVersion":2,"patch":{"deleted_at":null}}]}'::jsonb
+);
+
+create temp table u7 as select public.apply_undo_step('e7000000-0000-0000-0000-000000000007') as r;
+select extensions.is((select r ->> 'status' from u7), 'refused', 'a replay that would leave a lone transfer leg is refused');
+select extensions.lives_ok(
+  $$set constraints public.transfer_pair_check immediate$$,
+  'no broken pair is left queued for commit'
+);
+set constraints public.transfer_pair_check deferred;
 
 reset role;
 

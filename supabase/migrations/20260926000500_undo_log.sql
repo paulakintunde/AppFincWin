@@ -460,12 +460,36 @@ begin
     end if;
   end loop;
 
-  v_result := public.apply_patches(p_step.ops);
+  -- D-WR-02: the replay runs in a subtransaction. A step whose ops are
+  -- individually version-valid can still be impossible to apply -- a
+  -- restored occurrence colliding with a re-materialised one (23505), a
+  -- check or deferred transfer-pair violation (23514), a moved account
+  -- (23503), a caller who has since left the household (42501), or an op a
+  -- newer server no longer accepts (22023). Any of those is a refusal (D-26,
+  -- D-28), not an error: otherwise the step stays 'available', throws on
+  -- every tap, and blocks every rollback beneath it. The deferred
+  -- transfer-pair check is forced here so its failure is catchable too,
+  -- instead of surfacing at commit where nothing can turn it into a refusal.
+  begin
+    v_result := public.apply_patches(p_step.ops);
 
-  if v_result ->> 'status' = 'applied' and cardinality(v_cleanup) > 0 then
-    update public.transactions set deleted_at = now()
-     where id = any (v_cleanup) and deleted_at is null;
-  end if;
+    if v_result ->> 'status' = 'applied' and cardinality(v_cleanup) > 0 then
+      update public.transactions set deleted_at = now()
+       where id = any (v_cleanup) and deleted_at is null;
+    end if;
+
+    set constraints public.transfer_pair_check immediate;
+    set constraints public.transfer_pair_check deferred;
+  exception
+    when integrity_constraint_violation or insufficient_privilege or invalid_parameter_value then
+      v_result := jsonb_build_object(
+        'status', 'conflict',
+        'conflict', jsonb_build_object(
+          'entity', p_step.ops -> 0 ->> 'entity', 'id', p_step.ops -> 0 ->> 'id', 'updated_by', null,
+          'record_name', null, 'builtin_key', null, 'reason', 'changed'
+        )
+      );
+  end;
 
   return v_result;
 end;
