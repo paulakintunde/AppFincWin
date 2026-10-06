@@ -92,7 +92,11 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
       note: out.note ?? '',
       toAccountId: inn.account_id,
       toCurrency: inn.original_currency,
-      amountInText: magnitudeText(inn.original_amount, inn.original_currency, ctx),
+      // Same currency: both legs are one amount, so there is no second field to prefill.
+      amountInText:
+        inn.original_currency === out.original_currency
+          ? ''
+          : magnitudeText(inn.original_amount, inn.original_currency, ctx),
     };
   }
   const localDate = mode.localDate ?? ctx.today;
@@ -137,11 +141,16 @@ export function withStatus(state: FormState, status: FormState['status']): FormS
 
 /** Picking an account moves the currency with it (the Currency row can still override it). */
 export function withAccount(state: FormState, account: { id: string; currency: string }): FormState {
-  return { ...state, accountId: account.id, currency: account.currency };
+  return dropStaleAmountIn({ ...state, accountId: account.id, currency: account.currency });
 }
 
 export function withToAccount(state: FormState, account: { id: string; currency: string }): FormState {
-  return { ...state, toAccountId: account.id, toCurrency: account.currency };
+  return dropStaleAmountIn({ ...state, toAccountId: account.id, toCurrency: account.currency });
+}
+
+/** The received-amount field only exists across currencies; a same-currency pair never keeps a stale value. */
+function dropStaleAmountIn(state: FormState): FormState {
+  return state.toCurrency === null || state.toCurrency === state.currency ? { ...state, amountInText: '' } : state;
 }
 
 const ZERO: AmountFailure = { ok: false, error: 'invalid', maxDecimals: 0 };
