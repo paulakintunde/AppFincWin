@@ -203,6 +203,21 @@ describe('useImportCommit', () => {
     expect(enqueue).not.toHaveBeenCalled();
   });
 
+  // C-IN-01: every line was de-duplicated away. Building an undo step with no ops threw, and
+  // the RangeError was recorded as a spurious failed import.
+  it('C-IN-01: a commit with nothing to insert, link, mark paid or set queues nothing at all', async () => {
+    const enqueue = jest.fn();
+    (transactionsModule.useImportChunks as jest.Mock).mockReturnValue({ enqueue });
+    const qc = newClient();
+    const { result } = await renderHook(() => useImportCommit(), { wrapper: wrapper(qc) });
+
+    result.current.commit(baseInput({}, []));
+
+    expect(enqueue).not.toHaveBeenCalled();
+    expect(qc.getMutationCache().getAll()).toHaveLength(0);
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+  });
+
   it('with no links, mark-paid or limit, sends no apply_patches and inserts the undo step directly with every inserted id at version 1', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;

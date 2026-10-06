@@ -418,6 +418,11 @@ export function useImportCommit(): { commit(input: ImportCommitInput): void } {
         }
       }
 
+      // C-IN-01: every line was de-duplicated away and nothing was accepted -- there is no
+      // write and no undo step to record (an empty step would only fail as a spurious import).
+      const { links, markPaid, limit } = input.finalize;
+      if (input.rows.length === 0 && links.length === 0 && markPaid.length === 0 && limit === null) return;
+
       // C-WR-09: every row this commit inserts belongs to this batch (REC-14 provenance,
       // dedupe by batch, History). Stamped here so it never depends on the caller setting the
       // optional field -- otherwise the optimistic row showed the batch and the saved one lost it.
