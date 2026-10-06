@@ -469,6 +469,7 @@ const en = {
       '{{name}} is used by {{count}} transactions. Merge them into another category, or archive {{name}} and keep its history.',
     removeCancel: 'Cancel',
     removeMerge: 'Merge',
+    mergeTooLarge: 'Too many transactions to merge at once. Archiving keeps their history.',
     removeArchive: 'Archive',
     mergePick: 'Merge {{name}} into',
     swatch: {
