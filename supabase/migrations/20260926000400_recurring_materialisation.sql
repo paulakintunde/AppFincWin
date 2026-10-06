@@ -41,6 +41,7 @@ declare
   v_floor date;
   v_date date;
   v_id uuid;
+  v_author uuid;
   v_added boolean := false;
   n integer := 0;
 begin
@@ -57,6 +58,10 @@ begin
     v_through := s.end_date;
   end if;
   v_floor := greatest(coalesce(s.materialised_through + 1, s.anchor_date), s.anchor_date);
+  -- D-WR-01: a series outlives a non-owner author (created_by is ON DELETE
+  -- SET NULL), but stamp_fx_rate needs an author profile, so fall back to
+  -- the household owner rather than fail every day from then on.
+  v_author := coalesce(s.created_by, (select h.owner_id from public.households h where h.id = s.household_id));
 
   loop
     exit when s.occurrence_count is not null and n >= s.occurrence_count;
@@ -69,7 +74,7 @@ begin
         id, household_id, account_id, created_by, original_amount, original_currency,
         local_date, time_zone, name, category_id, payment_type, status, recurring_series_id, occurrence_date
       ) values (
-        gen_random_uuid(), s.household_id, s.account_id, s.created_by, s.amount, s.currency,
+        gen_random_uuid(), s.household_id, s.account_id, v_author, s.amount, s.currency,
         v_date, s.time_zone, s.name, s.category_id, s.payment_type, 'pending', s.id, v_date
       )
       on conflict (recurring_series_id, occurrence_date) where recurring_series_id is not null and deleted_at is null
@@ -120,7 +125,16 @@ begin
      where deleted_at is null
        and (end_date is null or end_date >= current_date - 1)
   loop
-    total := total + (select count(*) from public.materialise_series(s.id));
+    -- D-WR-01: each series in its own subtransaction, so one series that
+    -- raises (a dropped time zone, a guard, a missing author profile) is
+    -- logged and skipped instead of rolling back the whole run for every
+    -- household -- and failing again every day after. Its row lock is
+    -- released with the subtransaction.
+    begin
+      total := total + (select count(*) from public.materialise_series(s.id));
+    exception when others then
+      raise warning 'materialise_series % failed: % (%)', s.id, sqlerrm, sqlstate;
+    end;
   end loop;
   return total;
 end;

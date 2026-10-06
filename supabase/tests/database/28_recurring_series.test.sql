@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(28);
+select extensions.plan(31);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -340,6 +340,49 @@ select extensions.is(
   (select count(*) from cron.job where jobname = 'recurring-materialise-daily')::int,
   1,
   'recurring-materialise-daily cron job is scheduled'
+);
+
+-- ---------------------------------------------------------------------
+-- 14. D-WR-01: one failing series never aborts the daily run for everyone
+-- else, and a series whose author has gone (created_by null) still
+-- materialises, attributed to the household owner.
+-- ---------------------------------------------------------------------
+insert into public.recurring_series (id, household_id, created_by, account_id, name, amount, currency, freq, anchor_date, time_zone)
+values
+  ('c7777777-7777-7777-7777-777777777777', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'Healthy', -100, 'USD', 'monthly',
+   date_trunc('month', current_date)::date, 'UTC'),
+  ('c8888888-8888-8888-8888-888888888888', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   null, 'a1111111-1111-1111-1111-111111111111', 'Orphaned author', -200, 'EUR', 'monthly',
+   date_trunc('month', current_date)::date, 'UTC'),
+  ('c9999999-9999-9999-9999-999999999999', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'Poisoned', -300, 'USD', 'monthly',
+   date_trunc('month', current_date)::date, 'UTC');
+
+-- Poison one series with a time zone no row can ever be written with
+-- (bypassing the guard the way a tzdata upgrade dropping a zone would).
+set local session_replication_role = replica;
+update public.recurring_series set time_zone = 'Mars/Olympus_Mons' where id = 'c9999999-9999-9999-9999-999999999999';
+set local session_replication_role = origin;
+
+set local role service_role;
+select extensions.lives_ok(
+  $$select public.materialise_recurring()$$,
+  'materialise_recurring survives one failing series'
+);
+reset role;
+
+select extensions.is(
+  (select count(*) from public.transactions where recurring_series_id = 'c7777777-7777-7777-7777-777777777777')::int,
+  2,
+  'the healthy series still materialised in the same run'
+);
+select extensions.is(
+  (select count(*) from public.transactions
+    where recurring_series_id = 'c8888888-8888-8888-8888-888888888888'
+      and created_by = '11111111-1111-1111-1111-111111111111')::int,
+  2,
+  'a series with no author materialises, attributed to the household owner'
 );
 
 select * from extensions.finish();
