@@ -722,7 +722,10 @@ end;
 $$;
 
 -- 8. purge_record_tombstones: hard-delete a soft-deleted row once no
--- available/refused undo step still references it (D-30). Recurring series
+-- available undo step still references it (D-30). D-WR-06: a refused step
+-- can never be applied again (apply_undo_step returns its refusal straight
+-- away), so it pins nothing -- it stays visible in History (D-28) without
+-- keeping "deleted" data on the server indefinitely. Recurring series
 -- tombstones are purged the same way, and only once no transaction (live
 -- or itself a tombstone) still points at them -- the FK from transactions
 -- to recurring_series is ON DELETE RESTRICT (02-08), so this is not just a
@@ -743,7 +746,7 @@ begin
        and t.deleted_at < now() - p_older_than
        and not exists (
          select 1 from public.undo_log u
-          where u.status in ('available', 'refused') and u.touched_ids @> array[t.id]
+          where u.status = 'available' and u.touched_ids @> array[t.id]
        )
     returning 1
   )
@@ -755,7 +758,7 @@ begin
        and s.deleted_at < now() - p_older_than
        and not exists (
          select 1 from public.undo_log u
-          where u.status in ('available', 'refused') and u.touched_ids @> array[s.id]
+          where u.status = 'available' and u.touched_ids @> array[s.id]
        )
        and not exists (select 1 from public.transactions t where t.recurring_series_id = s.id)
     returning 1
