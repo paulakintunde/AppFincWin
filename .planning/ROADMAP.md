@@ -209,8 +209,8 @@ Plans:
 - [x] 02-15-PLAN.md — Mutations: transaction fields, soft delete, mark paid, skip, import chunks + finalize (links, mark-paid, limit, post-link undo step), toast store (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 02-16-PLAN.md — Mutations: bulk delete (transfer partners)/mark paid/unpaid, undo and rollback (W6)
-- [ ] 02-40-PLAN.md — Mutations: transfer create/edit/delete as one pair and one undo step (W6)
+- [x] 02-16-PLAN.md — Mutations: bulk delete (transfer partners)/mark paid/unpaid, undo and rollback (W6)
+- [x] 02-40-PLAN.md — Mutations: transfer create/edit/delete as one pair and one undo step (W6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 - [ ] 02-17-PLAN.md — Mutations: categories (add/edit/archive/merge), account undo capture with limits (W7)
@@ -255,7 +255,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 23/40 plans executed
+**Plans:** 25/40 plans executed
 
 Plans:
 
