@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(38);
+select extensions.plan(40);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -464,6 +464,19 @@ select extensions.is(
   'it is clamped to the anchor: a re-anchor never moves the series earlier than it began'
 );
 reset role;
+
+-- ---------------------------------------------------------------------
+-- 17. D-IN-04: the two pure schedule functions are not executable by anon
+-- (consistent with every other function in this wave).
+-- ---------------------------------------------------------------------
+select extensions.ok(
+  not has_function_privilege('anon', 'public.recurring_occurrence_date(date, text, integer)', 'execute'),
+  'anon cannot execute recurring_occurrence_date'
+);
+select extensions.ok(
+  not has_function_privilege('anon', 'public.recurring_horizon(date)', 'execute'),
+  'anon cannot execute recurring_horizon'
+);
 
 reset role;
 

@@ -178,7 +178,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.recurring_occurrence_date(date, text, integer) from public;
+revoke execute on function public.recurring_occurrence_date(date, text, integer) from public, anon; -- D-IN-04
 grant execute on function public.recurring_occurrence_date(date, text, integer) to authenticated, service_role;
 
 -- The last day of the month after `p_today`'s month (D-03): the current and
@@ -194,5 +194,5 @@ as $$
   select (date_trunc('month', p_today) + interval '2 months' - interval '1 day')::date;
 $$;
 
-revoke execute on function public.recurring_horizon(date) from public;
+revoke execute on function public.recurring_horizon(date) from public, anon; -- D-IN-04
 grant execute on function public.recurring_horizon(date) to authenticated, service_role;
