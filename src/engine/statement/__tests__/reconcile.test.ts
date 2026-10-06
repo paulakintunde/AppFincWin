@@ -226,6 +226,56 @@ describe('reconcile: available-credit rows (no limit) reconcile on the signed av
   });
 });
 
+describe('reconcile: a stated closing is checked even when rows carry running balances (review E-WR-12)', () => {
+  const rows: ReconcileRow[] = [
+    { amount: -100, balance: 900, localDate: '2026-03-01' },
+    { amount: -50, balance: 850, localDate: '2026-03-02' },
+  ];
+
+  it('a closing equal to the last running balance adds one verified link', () => {
+    const result = reconcile(rows, { opening: 1000, closing: 850 });
+    expect(result.file).toBe('all-verified');
+    expect(result.verifiedLinks).toBe(3);
+    expect(result.failedLinks).toBe(0);
+  });
+
+  it('a closing that disagrees with the last running balance fails the file', () => {
+    const result = reconcile(rows, { opening: 1000, closing: 700 });
+    expect(result.file).toBe('partial');
+    expect(result.rows).toEqual(['verified', 'cannot-verify']);
+    expect(result.failedLinks).toBe(1);
+  });
+
+  it('rows after the last running balance are verified against the closing', () => {
+    const trailing: ReconcileRow[] = [...rows, { amount: -25, balance: null, localDate: '2026-03-03' }];
+    const result = reconcile(trailing, { opening: 1000, closing: 825 });
+    expect(result.file).toBe('all-verified');
+    expect(result.rows).toEqual(['verified', 'verified', 'verified']);
+  });
+
+  it('truncated rows after the last running balance fail against the closing', () => {
+    const trailing: ReconcileRow[] = [...rows, { amount: -25, balance: null, localDate: '2026-03-03' }];
+    const result = reconcile(trailing, { opening: 1000, closing: 600 });
+    expect(result.file).toBe('partial');
+    expect(result.rows).toEqual(['verified', 'verified', 'cannot-verify']);
+  });
+
+  it('an unreadable trailing amount can never verify the closing', () => {
+    const trailing: ReconcileRow[] = [...rows, { amount: null, balance: null, localDate: '2026-03-03' }];
+    const result = reconcile(trailing, { opening: 1000, closing: 850 });
+    expect(result.rows[2]).toBe('cannot-verify');
+  });
+
+  it('newest-first: the closing is checked at the chronologically last row', () => {
+    const newestFirst: ReconcileRow[] = [
+      { amount: -50, balance: 850, localDate: '2026-03-02' },
+      { amount: -100, balance: 900, localDate: '2026-03-01' },
+    ];
+    expect(reconcile(newestFirst, { opening: 1000, closing: 850 }).file).toBe('all-verified');
+    expect(reconcile(newestFirst, { opening: 1000, closing: 900 }).file).toBe('partial');
+  });
+});
+
 describe('reconcile: negative balances are never flagged', () => {
   it('property: an opening crossing zero in either direction still verifies with no flag', () => {
     fc.assert(

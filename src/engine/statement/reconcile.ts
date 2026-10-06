@@ -212,6 +212,23 @@ export function reconcile(rows: readonly ReconcileRow[], stated: StatedEnds): Re
       failedLinks = 0;
     }
   } else {
+    if (stated.closing !== null) {
+      // Review E-WR-12: the stated closing is one more link, from the last
+      // anchor (in reading order) to the end of the file -- so a summary
+      // line that disagrees with the last running balance, or rows lost
+      // after it, can never report 'all-verified'.
+      let lastPos = n - 1;
+      while (chosenBalances[lastPos] === null) lastPos -= 1;
+      const sum = segmentSumBigInt(chosenRows, lastPos, n - 1);
+      const ok = sum !== null && sum === BigInt(stated.closing) - BigInt(chosenBalances[lastPos] as number);
+      if (ok) {
+        for (let k = lastPos + 1; k < n; k += 1) rowStatus[k] = 'verified';
+        verifiedLinks += 1;
+      } else {
+        for (let k = lastPos === n - 1 ? lastPos : lastPos + 1; k < n; k += 1) rowStatus[k] = 'cannot-verify';
+        failedLinks += 1;
+      }
+    }
     const allGood = finalRowStatus.every((s) => s === 'verified' || s === 'verified-as-group');
     file = allGood ? 'all-verified' : 'partial';
   }
