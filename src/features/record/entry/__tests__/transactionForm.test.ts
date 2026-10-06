@@ -217,9 +217,9 @@ describe('transfer helpers', () => {
   });
 
   it('builds the signed after-state', () => {
-    expect(toTransferAfter(base(), 1000, 1100)).toEqual({
+    expect(toTransferAfter({ ...base(), toCurrency: 'EUR' }, 1000, 1100)).toEqual({
       out: { accountId: 'a1', currency: 'GBP', amount: -1000, localDate: '2026-09-25' },
-      in: { accountId: 'a2', currency: 'GBP', amount: 1100, localDate: '2026-09-25' },
+      in: { accountId: 'a2', currency: 'EUR', amount: 1100, localDate: '2026-09-25' },
     });
   });
 });
