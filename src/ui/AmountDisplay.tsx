@@ -11,12 +11,13 @@ import { fontSize } from '@/theme/typography';
 
 export interface AmountDisplayProps {
   text: string;
-  tone?: 'default' | 'danger';
+  /** 'dim' (inkDim) is the transfer figure: money moving, not earned or spent (D-50). */
+  tone?: 'default' | 'danger' | 'dim';
 }
 
 export function AmountDisplay({ text, tone = 'default' }: AmountDisplayProps) {
   const { colors, fonts } = useTheme();
-  const color = tone === 'danger' ? colors.danger : colors.ink;
+  const color = tone === 'danger' ? colors.danger : tone === 'dim' ? colors.inkDim : colors.ink;
 
   return (
     <Text

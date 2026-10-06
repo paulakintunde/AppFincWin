@@ -98,7 +98,7 @@ function row(over: Partial<TransactionRow> = {}): TransactionRow {
 }
 
 async function open(mode: React.ComponentProps<typeof TransactionSheet>['mode'], onClose = jest.fn()) {
-  const utils = render(
+  const utils = await render(
     <ThemeProvider>
       <TransactionSheet visible mode={mode} onClose={onClose} />
     </ThemeProvider>
@@ -113,15 +113,21 @@ beforeEach(() => {
 });
 
 describe('TransactionSheet: new and edit', () => {
-  it('names the title and the primary action for expense and income', async () => {
+  // One render per test: a second render in the same test leaks an act() scope into the next
+  // test in this project's Jest environment (see recordPrimitives.test.tsx).
+  it('names the title and the primary action for an expense', async () => {
     const out = await open({ kind: 'new', direction: 'out' });
     expect(out.getByText('New expense')).toBeTruthy();
     expect(out.getByText('Save expense')).toBeTruthy();
-    out.unmount();
+  });
+
+  it('names the title and the primary action for income', async () => {
     const inc = await open({ kind: 'new', direction: 'in' });
     expect(inc.getByText('New income')).toBeTruthy();
     expect(inc.getByText('Save income')).toBeTruthy();
-    inc.unmount();
+  });
+
+  it('names the title and the primary action for an edit', async () => {
     const edit = await open({ kind: 'edit', row: row() });
     expect(edit.getByText('Edit transaction')).toBeTruthy();
     expect(edit.getByText('Save changes')).toBeTruthy();
@@ -134,9 +140,9 @@ describe('TransactionSheet: new and edit', () => {
 
   it('saves a valid new expense with a negative amount, an undo step, a toast and analytics', async () => {
     const { getByLabelText, getByText, onClose } = await open({ kind: 'new', direction: 'out' });
-    fireEvent.changeText(getByLabelText('Amount'), '4.20');
-    fireEvent.changeText(getByLabelText('What is it for?'), 'Tea');
-    fireEvent.press(getByText('Save expense'));
+    await fireEvent.changeText(getByLabelText('Amount'), '4.20');
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Tea');
+    await fireEvent.press(getByText('Save expense'));
 
     expect(mockAdd).toHaveBeenCalledTimes(1);
     const input = (mockAdd.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
@@ -159,7 +165,7 @@ describe('TransactionSheet: new and edit', () => {
 
   it('shows inline errors and does not add when the form is invalid', async () => {
     const { getByText, onClose } = await open({ kind: 'new', direction: 'out' });
-    fireEvent.press(getByText('Save expense'));
+    await fireEvent.press(getByText('Save expense'));
     expect(mockAdd).not.toHaveBeenCalled();
     expect(getByText('Give it a name.')).toBeTruthy();
     expect(onClose).not.toHaveBeenCalled();
@@ -167,8 +173,8 @@ describe('TransactionSheet: new and edit', () => {
 
   it('sends only the changed field on edit', async () => {
     const { getByLabelText, getByText } = await open({ kind: 'edit', row: row() });
-    fireEvent.changeText(getByLabelText('What is it for?'), 'Latte');
-    fireEvent.press(getByText('Save changes'));
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Latte');
+    await fireEvent.press(getByText('Save changes'));
     expect(mockEdit).toHaveBeenCalledTimes(1);
     const [vars, undo] = mockEdit.mock.calls[0] as unknown as [Record<string, unknown>, Record<string, unknown>];
     expect(vars).toMatchObject({ id: 't1', householdId: 'h1', expectedVersion: 3, patch: { name: 'Latte' } });
@@ -178,30 +184,29 @@ describe('TransactionSheet: new and edit', () => {
 
   it('closes without a write when nothing changed', async () => {
     const { getByText, onClose } = await open({ kind: 'edit', row: row() });
-    fireEvent.press(getByText('Save changes'));
+    await fireEvent.press(getByText('Save changes'));
     expect(mockEdit).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });
 
   it('confirms before deleting, then shows the destructive toast', async () => {
-    const { getByText } = await open({ kind: 'edit', row: row() });
-    fireEvent.press(getByText('Delete'));
+    const { getByText, getAllByText } = await open({ kind: 'edit', row: row() });
+    await fireEvent.press(getByText('Delete'));
     expect(getByText('Delete this transaction?')).toBeTruthy();
     expect(mockRemove).not.toHaveBeenCalled();
-    const buttons = getByText('Delete this transaction?');
-    expect(buttons).toBeTruthy();
-    fireEvent.press(getByText('Delete', { exact: true, includeHiddenElements: true }));
+    const deletes = getAllByText('Delete');
+    await fireEvent.press(deletes[deletes.length - 1]!);
     await waitFor(() => expect(mockRemove).toHaveBeenCalled());
     expect(getToast()).toMatchObject({ kind: 'destructive', stepId: 'del-step' });
   });
 
   it('picks a category from the picker', async () => {
     const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out' });
-    fireEvent.press(getByLabelText('Category'));
-    fireEvent.press(getByText('Groceries'));
-    fireEvent.changeText(getByLabelText('Amount'), '9');
-    fireEvent.changeText(getByLabelText('What is it for?'), 'Shop');
-    fireEvent.press(getByText('Save expense'));
+    await fireEvent.press(getByLabelText('Category'));
+    await fireEvent.press(getByText('Groceries'));
+    await fireEvent.changeText(getByLabelText('Amount'), '9');
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Shop');
+    await fireEvent.press(getByText('Save expense'));
     expect((mockAdd.mock.calls[0] as unknown[])[0]).toMatchObject({ categoryId: 'c1' });
   });
 });

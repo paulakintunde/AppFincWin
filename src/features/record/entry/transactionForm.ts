@@ -38,6 +38,8 @@ export interface FormContext {
   today: string;
   defaultAccount: { id: string; currency: string } | null;
   exponentFor: (code: string) => number;
+  /** The currency of any account by id, so a preselected account brings its own currency. */
+  accountCurrency?: (accountId: string) => string | undefined;
 }
 
 type AmountFailure = Extract<ParseAmountResult, { ok: false }>;
@@ -95,7 +97,8 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
   }
   const localDate = mode.localDate ?? ctx.today;
   const accountId = mode.accountId ?? ctx.defaultAccount?.id ?? null;
-  const currency = mode.accountId && mode.accountId !== ctx.defaultAccount?.id ? '' : (ctx.defaultAccount?.currency ?? '');
+  const currency =
+    (accountId !== null ? ctx.accountCurrency?.(accountId) : undefined) ?? ctx.defaultAccount?.currency ?? '';
   return {
     direction: mode.direction,
     amountText: '',
