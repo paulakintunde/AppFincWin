@@ -3,8 +3,9 @@ phase: 02-record
 scope: "Waves 1-5, Area A: pure financial engine (src/engine)"
 reviewed: 2026-09-28T00:00:00Z
 depth: deep
-status: issues_found
-fix_status: paused
+status: fixed
+fix_status: critical_and_warnings_fixed
+fixed_at: 2026-10-06
 files_reviewed: 40
 files_reviewed_list:
   - src/engine/accounts/index.ts
@@ -76,14 +77,29 @@ Each of these was confirmed by running the engine code against a scratch Jest pr
 
 Three tests pass while pinning incorrect behaviour: `inferFormat.test.ts:74`, `reconcile.test.ts:176` and `schedule.test.ts` ("never touches", about line 197). The recurring property test never starts its window after the anchor, so it cannot catch CR-01.
 
-## Fix Status (paused 2026-09-28 at the user's request)
+## Fix Status (2026-10-06)
 
-| ID | Status |
-|----|--------|
-| E-CR-01 | in progress. Failing regression tests are in WIP commit cc157b4 (not yet run). The one-line fix in `schedule.ts` (`startN = floor(monthsBetween / MONTHS_PER_OCCURRENCE[freq]) - 1`, floored at 0) has not been applied. Mirror note: the plpgsql `materialise_series()` scans from n = 0 and has no `startN` jump, so it does not have this bug. The shared fixture covers only `occurrence_date` and the horizon, so it needs no new cases for this finding. |
-| E-CR-02, E-CR-03, E-CR-04 | not started |
-| E-WR-01 … E-WR-12 | not started |
-| IN-01 … IN-12 | not started (fix only if trivial) |
+Every Critical and Warning finding is fixed, each in its own commit, test first (several existing tests that pinned the wrong behaviour were corrected in the same commit). The Info items are left as they are: none is both trivial and clearly correct without a design call.
+
+| ID | Status | Notes |
+|----|--------|-------|
+| E-CR-01 | fixed 21cffeb (tests cc157b4) | `startN` divides the month gap by `MONTHS_PER_OCCURRENCE`. Adds a brute-force property with an independently drawn window. **Mirror:** the plpgsql `materialise_series()` loops from n = 0 with no start-index jump, so it does not have this bug. The shared fixture covers only `occurrence_date` and the horizon, so it needs no new cases and the generated pgTAP file is unchanged. |
+| E-CR-02 | fixed 61e02b5 | YMD needs a 4-digit leading year. A year is only ever 2 or 4 digits. A tie between readings is `ambiguous`, never resolved to YMD. Corrects `inferFormat.test.ts:74`. |
+| E-CR-03 | fixed 7dc1ca7 | A structural label decides only when every non-zero row is marked. CR-only with bare rows gives money-spent, DR-only gives money-in, and any other mix falls through. This also covers unrecognised direction values. |
+| E-CR-04 | fixed f25a3df | For an OFX card with both LEDGERBAL and AVAILBAL, both orientations are tried: issuer gives `owed`, holder gives `held`. A non-negative limit picks the orientation; neither or both makes the profile ambiguous, with every candidate offered. The D-53 amendment is recorded in 02-CONTEXT.md. CSV files, and OFX files without both figures, keep the D-53 default. |
+| E-WR-01 | fixed f8b6ff3 | Cuts only at a `T` between digits. A spelled-out month made DMY and MDY identical readings, so identical readings now count as `certain`. |
+| E-WR-02 | fixed dae4073 | Header matches are scored: exact header, then a phrase, then a single word, with the keyword rank breaking ties. A single word is ignored when the header carries a specific phrase for another role. Header-matched date and amount columns are content-checked. A generic single-word match gives `low` confidence. `booking date` is now ranked ahead of `value date`. |
+| E-WR-03 | fixed 96e8dc7 | Zero padding is capped at 2 extra places, so `1.000` at exponent 0 is refused. OFX refuses a lone `,` followed by exactly 3 digits with a 1-3 digit integer part as `ambiguous-separator`, unless the exponent is 3. The `.` (spec) mark is exempt, so 3-decimal padding with `.` still reads. |
+| E-WR-04 | fixed ff06562 | Deviation: instead of a closed set of aggregates, the fix uses a closed set of OFX **leaf** names. An empty known leaf is dropped together with its close tag. Unknown names keep the aggregate reading, so vendor aggregates and the existing generic-name tree tests are unaffected. |
+| E-WR-05 | fixed d5a7a1b | A FITID match must also fall within `FITID_WINDOW_DAYS` (7). |
+| E-WR-06 | fixed 6215dc9 | A `choose` reserves both offered legs. The property now asserts that no stored id appears in two suggestions. The commit-path guard against a leg that already has a `transfer_id` belongs in src/data and is left to that owner. |
+| E-WR-07 | fixed 19e4010 | The delta machinery is removed. `ConvertedRow.availableSigned` carries the signed available figure, and profile reconciliation uses it as the running balance, with the unknown limit cancelling as an offset. `reconcile.test.ts:176` is corrected. |
+| E-WR-08 | fixed 5645558 | The majority of matching rows decides, and an even split decides nothing. For row-sign and TRNTYPE evidence, a reconciliation that verifies only the other candidate wins. |
+| E-WR-09 | fixed b89700e | `payment` is removed from `DIRECTION_IN` and is now neutral, so the profile decides. detectColumns still counts it as a direction-column word. |
+| E-WR-10 | fixed ec0c351 | A duplicate `(entity, id)` throws `RangeError`. Partial deviation: the inverse is **not** reversed. With every row distinct the ops are independent, so order cannot change the restored state, and reversing it would break `src/data` importFinalize's pinned op order, which this agent does not own. |
+| E-WR-11 | fixed 9bc7147 | `transferEditPatches` now returns `{ok, patches}` or `{ok:false, error}`. It enforces sign, distinct accounts, same-currency equality, a valid date, and one shared date (`date-mismatch`). There are no callers outside engine/ yet. |
+| E-WR-12 | fixed ef48b65 | The stated closing is one more link from the last anchor, in reading order, to the end of the file. On a mismatch the trailing rows, or the last anchored row, become cannot-verify and the file is `partial`. |
+| IN-01 … IN-12 | not fixed | Info. Each needs a design decision or a cross-module change, for example IN-09's shared `AccountKind` or IN-01's re-parse on currency. Left for triage. |
 
 ## Critical Issues
 
