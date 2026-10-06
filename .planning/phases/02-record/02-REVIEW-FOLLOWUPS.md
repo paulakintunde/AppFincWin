@@ -43,4 +43,5 @@ The three review files (`02-REVIEW-W1-5-{engine,db,client}.md`) give the per-fin
 | 16 | Confirm the transfer-pair trigger refuses a leg that already has a `transfer_id`; E-WR-06 is enforced client-side only. | follow-up in `20260926000700_transfer_pairs.sql` |
 | 17 | Decide whether soft-deleted rows get a hard retention limit (D-WR-06 removed the indefinite pin from refused steps but added no time cap). | Compliance phase |
 | 18 | Check where `pg_trgm` is installed before `db push`. | 02-31 preflight |
+| 18a | Plan 02-20 added the native module `@react-native-community/datetimepicker` 9.1.0. Build a new development build (EAS) before the 02-31 device check, or the date picker will not open. | 02-31 device check |
 | 19 | 12 engine info items (IN-01..IN-12) are unfixed; each needs a design call. See the engine review file. | backlog |
