@@ -19,7 +19,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(64);
+select extensions.plan(69);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -130,6 +130,38 @@ select extensions.throws_ok(
   $$select public.apply_patches('[{"entity":"transactions","id":"c0000000-0000-0000-0000-000000000005","expectedVersion":1,"patch":{"recurring_series_id":"33333333-3333-3333-3333-333333333333"}}]'::jsonb)$$,
   '22023', null,
   'recurring_series_id must be null; a real uuid throws 22023'
+);
+
+-- D-CR-02: a missing or null expectedVersion is an invalid op, never an
+-- unconditional write -- both in apply_patches and in a stored step.
+select extensions.throws_ok(
+  $$select public.apply_patches('[{"entity":"transactions","id":"c0000000-0000-0000-0000-000000000005","patch":{"note":"no version"}}]'::jsonb)$$,
+  '22023', null,
+  'an op with no expectedVersion key throws 22023 (fails closed)'
+);
+select extensions.throws_ok(
+  $$select public.apply_patches('[{"entity":"transactions","id":"c0000000-0000-0000-0000-000000000005","expectedVersion":null,"patch":{"note":"null version"}}]'::jsonb)$$,
+  '22023', null,
+  'an op with a null expectedVersion throws 22023 (fails closed)'
+);
+select extensions.throws_ok(
+  $$insert into public.undo_log (id, label_key, label_params, ops) values (
+      gen_random_uuid(), 'edited', '{}'::jsonb,
+      '[{"entity":"transactions","id":"c0000000-0000-0000-0000-000000000005","patch":{"note":null}}]'::jsonb)$$,
+  '22023', null,
+  'a stored undo step whose op has no expectedVersion is rejected at insert time'
+);
+select extensions.throws_ok(
+  $$insert into public.undo_log (id, label_key, label_params, ops) values (
+      gen_random_uuid(), 'edited', '{}'::jsonb,
+      '[{"entity":"profiles","id":"c0000000-0000-0000-0000-000000000005","expectedVersion":1,"patch":{"note":null}}]'::jsonb)$$,
+  '22023', null,
+  'a stored undo step naming an unknown entity is rejected at insert time'
+);
+select extensions.is(
+  (select note from public.transactions where id = 'c0000000-0000-0000-0000-000000000005'),
+  null,
+  'the version-less ops never wrote anything'
 );
 
 -- ---------------------------------------------------------------------

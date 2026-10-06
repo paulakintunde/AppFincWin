@@ -49,8 +49,27 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  e jsonb;
 begin
-  new.touched_ids := array(select distinct (e ->> 'id')::uuid from jsonb_array_elements(new.ops) e);
+  -- D-CR-02: a step is validated when it is written, not when it is
+  -- replayed -- every op must be an object carrying an allowlisted entity,
+  -- a uuid id, a positive integer expectedVersion and a non-empty patch
+  -- object. apply_patches re-checks all of this (and the column allowlist)
+  -- at replay time; this just stops a malformed step ever being stored.
+  for e in select value from jsonb_array_elements(new.ops) loop
+    if jsonb_typeof(e) is distinct from 'object'
+       or coalesce(e ->> 'entity', '') not in ('transactions', 'categories', 'recurring_series', 'accounts')
+       or coalesce(e ->> 'id', '') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+       or jsonb_typeof(e -> 'expectedVersion') is distinct from 'number'
+       or coalesce(e ->> 'expectedVersion', '') !~ '^[1-9][0-9]{0,8}$'
+       or jsonb_typeof(e -> 'patch') is distinct from 'object'
+       or e -> 'patch' = '{}'::jsonb then
+      raise exception 'undo_log: malformed op in step %', new.id using errcode = '22023';
+    end if;
+  end loop;
+
+  new.touched_ids := array(select distinct (e2 ->> 'id')::uuid from jsonb_array_elements(new.ops) e2);
   return new;
 end;
 $$;
@@ -182,13 +201,14 @@ begin
       raise exception 'apply_patches: op % has an invalid id', v_idx using errcode = '22023';
     end;
 
-    if v_op ->> 'expectedVersion' !~ '^[0-9]+$' then
+    -- D-CR-02: fail closed. A missing key or a JSON null yields SQL NULL from
+    -- ->>, and `NULL !~ ...` is NULL (not true), so the coalesce is what
+    -- turns "no version" into an invalid op instead of an unconditional write.
+    if jsonb_typeof(v_op -> 'expectedVersion') is distinct from 'number'
+       or coalesce(v_op ->> 'expectedVersion', '') !~ '^[1-9][0-9]{0,8}$' then
       raise exception 'apply_patches: op % has an invalid expectedVersion', v_idx using errcode = '22023';
     end if;
     v_expected_version := (v_op ->> 'expectedVersion')::integer;
-    if v_expected_version < 1 then
-      raise exception 'apply_patches: op % expectedVersion must be >= 1', v_idx using errcode = '22023';
-    end if;
 
     v_patch := v_op -> 'patch';
     if jsonb_typeof(v_patch) <> 'object' or (select count(*) from jsonb_object_keys(v_patch)) = 0 then

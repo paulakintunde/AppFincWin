@@ -28,6 +28,26 @@ describe('serialiseOps', () => {
     const [serialised] = serialiseOps(OPS);
     expect(serialised?.patch).not.toBe(OPS[0]?.patch);
   });
+
+  // D-CR-02: an op without a usable version must never reach the server, where it would
+  // otherwise be rejected (or, before the server fix, applied unconditionally).
+  it.each([
+    ['undefined', undefined],
+    ['null', null],
+    ['zero', 0],
+    ['negative', -1],
+    ['fractional', 1.5],
+    ['NaN', Number.NaN],
+    ['a string', '2'],
+  ])('refuses to serialise an op whose expectedVersion is %s', (_label, version) => {
+    const bad = { entity: 'transactions', id: 't1', expectedVersion: version, patch: { note: null } } as unknown as PatchOp;
+    expect(() => serialiseOps([bad])).toThrow(RangeError);
+  });
+
+  it('refuses to serialise a step carrying a version-less op', () => {
+    const bad = { entity: 'transactions', id: 't1', patch: { note: null } } as unknown as PatchOp;
+    expect(() => serialiseStep({ ...STEP, ops: [bad] })).toThrow(RangeError);
+  });
 });
 
 describe('serialiseStep', () => {

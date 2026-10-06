@@ -57,8 +57,18 @@ function badResponse(context: string): DbError {
   return new DbError(`apply_patches response: ${context}`, BAD_RESPONSE, null);
 }
 
-/** Serialises a `PatchOp[]` into exactly the JSON shape `apply_patches` (plan 02-09) expects. */
+/**
+ * Serialises a `PatchOp[]` into exactly the JSON shape `apply_patches` (plan 02-09) expects.
+ * D-CR-02: throws `RangeError` for any op whose `expectedVersion` is not a positive integer,
+ * so a version-less op is refused here rather than sent as an unchecked write.
+ */
 export function serialiseOps(ops: readonly PatchOp[]): SerialisedOp[] {
+  for (const op of ops) {
+    const version: unknown = op.expectedVersion;
+    if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) {
+      throw new RangeError(`serialiseOps: op on ${String(op.entity)} ${String(op.id)} has no valid expectedVersion`);
+    }
+  }
   return ops.map((op) => ({
     entity: op.entity,
     id: op.id,
