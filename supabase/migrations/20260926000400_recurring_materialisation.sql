@@ -51,7 +51,10 @@ declare
   v_id uuid;
   v_author uuid;
   v_added boolean := false;
+  v_tripped boolean := false;
+  v_months integer;
   n integer := 0;
+  n_start integer := 0;
 begin
   select * into s from public.recurring_series
    where id = p_series_id and deleted_at is null
@@ -71,9 +74,29 @@ begin
   -- the household owner rather than fail every day from then on.
   v_author := coalesce(s.created_by, (select h.owner_id from public.households h where h.id = s.household_id));
 
+  -- D-IN-06: start one step below the first n that can reach v_floor
+  -- (occurrence dates never decrease in n, and every n below this one is
+  -- dated before v_floor) instead of at n = 0, so the 5000-step guard bounds
+  -- the work done per run rather than the series' whole lifetime. n stays
+  -- absolute, so occurrence_count is still counted from the anchor.
+  v_months := ((extract(year from v_floor) - extract(year from s.anchor_date)) * 12
+               + (extract(month from v_floor) - extract(month from s.anchor_date)))::integer;
+  n_start := greatest(0, case s.freq
+    when 'weekly' then (v_floor - s.anchor_date) / 7
+    when 'fortnightly' then (v_floor - s.anchor_date) / 14
+    when 'monthly' then v_months
+    when 'quarterly' then v_months / 3
+    when 'yearly' then v_months / 12
+    else 0
+  end - 1);
+  n := n_start;
+
   loop
     exit when s.occurrence_count is not null and n >= s.occurrence_count;
-    exit when n > 5000; -- hard guard (T-02-08-05): no series ever loops unbounded
+    if n - n_start > 5000 then -- hard guard (T-02-08-05): no series ever loops unbounded
+      v_tripped := true;
+      exit;
+    end if;
     v_date := public.recurring_occurrence_date(s.anchor_date, s.freq, n);
     exit when v_date > v_through;
 
@@ -101,6 +124,13 @@ begin
   -- D-CR-01: generation moves whenever this run adds rows, so a stored undo
   -- step for a template edit/end can tell that the occurrence set it was
   -- built against has grown since (apply_undo_step refuses it, D-26).
+  -- D-IN-06: if the guard tripped, the high-water mark only moves as far as
+  -- the last date actually generated, never silently past skipped dates.
+  if v_tripped then
+    raise warning 'materialise_series %: step guard tripped before %', s.id, v_through;
+    v_through := least(v_through, v_date);
+  end if;
+
   if v_through > coalesce(s.materialised_through, '-infinity'::date) or v_added then
     perform set_config('fincwin.system_restamp', 'on', true);
     update public.recurring_series

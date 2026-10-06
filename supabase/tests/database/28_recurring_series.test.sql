@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(40);
+select extensions.plan(42);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -476,6 +476,27 @@ select extensions.ok(
 select extensions.ok(
   not has_function_privilege('anon', 'public.recurring_horizon(date)', 'execute'),
   'anon cannot execute recurring_horizon'
+);
+
+-- ---------------------------------------------------------------------
+-- 18. D-IN-06: anchors are range-checked, and a long-running series is
+-- materialised from near its high-water mark rather than from n = 0, so the
+-- 5000-step guard never silently stops it.
+-- ---------------------------------------------------------------------
+select extensions.throws_ok(
+  $$insert into public.recurring_series (id, household_id, created_by, account_id, name, amount, currency, freq, anchor_date, time_zone)
+    values (gen_random_uuid(), (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+            '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'Ancient', -1, 'USD', 'weekly', '1800-01-01', 'UTC')$$,
+  '23514', null,
+  'an anchor before 1900 is rejected'
+);
+insert into public.recurring_series (id, household_id, created_by, account_id, name, amount, currency, freq, anchor_date, time_zone, materialised_through)
+values ('cddddddd-dddd-dddd-dddd-dddddddddddd', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+        '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'Century-old weekly', -1, 'USD', 'weekly',
+        '1920-01-06', 'UTC', (date_trunc('month', current_date) - interval '1 day')::date);
+select extensions.ok(
+  (select count(*) from public.materialise_series('cddddddd-dddd-dddd-dddd-dddddddddddd'::uuid)) >= 8,
+  'a weekly series anchored about a century ago still materialises this month and next'
 );
 
 reset role;

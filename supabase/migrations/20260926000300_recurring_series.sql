@@ -44,6 +44,7 @@ create table public.recurring_series (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint recurring_series_end_after_anchor check (end_date is null or end_date >= anchor_date),
+  constraint recurring_series_anchor_range check (anchor_date >= date '1900-01-01'),  -- D-IN-06
   constraint recurring_series_account_same_household foreign key (account_id, household_id)
     references public.accounts (id, household_id) on delete restrict
 );
