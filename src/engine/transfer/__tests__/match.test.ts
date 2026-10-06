@@ -270,6 +270,22 @@ describe('matchTransfers', () => {
     expect(result).toEqual([{ kind: 'choose', importIndex: 0, options: ['exist-a', 'exist-b'] }]);
   });
 
+  it('reserves the legs a choose offers, so no stored leg is offered to two imports (review E-WR-06)', () => {
+    const result = matchTransfers({
+      imported: [
+        imported({ index: 0, accountId: 'current', localDate: '2026-09-05', amount: -10000, name: 'Foo' }),
+        imported({ index: 1, accountId: 'current', localDate: '2026-09-05', amount: -10000, name: 'Foo' }),
+      ],
+      existing: [
+        existing({ id: 'e1', accountId: 'visa', localDate: '2026-09-05', amount: 10000 }),
+        existing({ id: 'e2', accountId: 'visa', localDate: '2026-09-05', amount: 10000 }),
+      ],
+      accounts: ACCOUNTS,
+      perEur: new Map<string, ScaledRate>([['GBP', parseRate('1')]]),
+    });
+    expect(result).toEqual([{ kind: 'choose', importIndex: 0, options: ['e1', 'e2'] }]);
+  });
+
   it('offers an unmatched payment-like row as an orphan transfer', () => {
     const result = matchTransfers({
       imported: [imported({ index: 0, accountId: 'visa', name: 'TRANSFER TO SAVINGS' })],
@@ -492,6 +508,16 @@ describe('matchTransfers: permutation-invariance property', () => {
 
           expect(usedExistingIds.has(p.existingId)).toBe(false);
           usedExistingIds.add(p.existingId);
+        }
+
+        // Review E-WR-06: a leg offered in a choose is reserved too -- no
+        // stored id appears in more than one suggestion of any kind.
+        for (const r of result) {
+          if (r.kind !== 'choose') continue;
+          for (const id of r.options) {
+            expect(usedExistingIds.has(id)).toBe(false);
+            usedExistingIds.add(id);
+          }
         }
       })
     );
