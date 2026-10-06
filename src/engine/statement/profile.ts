@@ -40,21 +40,60 @@ function hasAnyBalance(draft: StatementDraft): boolean {
   return draft.rows.some((r) => r.balanceMagnitude !== null) || draft.statedOpening !== null || draft.statedClosing !== null;
 }
 
+function signedStated(b: { magnitude: MinorUnits; marker: Parameters<typeof markerSign>[0] }): number {
+  return markerSign(b.marker) * b.magnitude;
+}
+
+/**
+ * An OFX card limit implied by LEDGERBAL and AVAILBAL under one balance
+ * reading: owed + available = limit. 'owed' is the issuer view (a positive
+ * LEDGERBAL is the amount owed); 'held' is the account-holder view (a
+ * negative LEDGERBAL is the amount owed). Null when either figure is
+ * missing or the implied limit is negative.
+ */
+function ofxCardLimitUnder(draft: StatementDraft, reading: 'owed' | 'held'): MinorUnits | null {
+  if (draft.statedClosing === null || draft.available === null) return null;
+  const ledgerSigned = signedStated(draft.statedClosing);
+  const owed = reading === 'owed' ? ledgerSigned : -ledgerSigned;
+  const limit = normalizeZero(owed + signedStated(draft.available));
+  return limit >= 0 ? minorUnits(limit) : null;
+}
+
+/**
+ * D-53 amended 2026-09-28 (review E-CR-04): OFX card issuers report the owed
+ * LEDGERBAL with either sign, so for an OFX card file carrying both
+ * LEDGERBAL and AVAILBAL the orientation is read from the figures: the
+ * reading that implies a non-negative limit wins. Neither or both is
+ * 'ambiguous' and the user confirms (D-42). Without both figures, and for
+ * every non-OFX file, D-53's 'owed' default stands.
+ */
+function ofxCardReading(draft: StatementDraft): 'owed' | 'held' | 'ambiguous' {
+  if (draft.source !== 'ofx' || draft.statedClosing === null || draft.available === null) return 'owed';
+  if (draft.statedClosing.magnitude === 0) return 'owed'; // both readings are the same figure
+  const issuer = ofxCardLimitUnder(draft, 'owed') !== null;
+  const holder = ofxCardLimitUnder(draft, 'held') !== null;
+  if (issuer !== holder) return issuer ? 'owed' : 'held';
+  return 'ambiguous';
+}
+
 /** Step 1 of the resolution order: the target kind fixes the balance family. */
 export function balanceMeansFor(kind: AccountKind, draft: StatementDraft): FormatProfile['balanceMeans'] {
   if (!hasAnyBalance(draft)) return 'none';
   if (kind === 'credit') {
     if (draft.balanceLabel === 'available' || draft.labels.includes('available-balance-label')) return 'available';
-    return 'owed';
+    return ofxCardReading(draft) === 'held' ? 'held' : 'owed';
   }
   if (kind === 'loan') return 'owed';
   return 'held';
 }
 
 /** Same balanceMeans/accountFamily, s = money-in then money-spent (statedLimit filled in later). */
-export function candidateProfiles(draft: StatementDraft, kind: AccountKind): [FormatProfile, FormatProfile] {
+export function candidateProfiles(
+  draft: StatementDraft,
+  kind: AccountKind,
+  balanceMeans: FormatProfile['balanceMeans'] = balanceMeansFor(kind, draft)
+): [FormatProfile, FormatProfile] {
   const accountFamily = accountFamilyOf(kind);
-  const balanceMeans = balanceMeansFor(kind, draft);
   const base = {
     version: 1 as const,
     source: draft.source,
@@ -83,18 +122,6 @@ function normalizeZero(n: number): number {
   return n === 0 ? 0 : n;
 }
 
-// Called only when balanceMeans is fixed to 'owed' (deriveStatedLimit's gate), where the
-// stored-owed formula is `-(sign*magnitude)` (convert.ts's convertBalance) -- so the owed
-// magnitude itself is exactly `sign*magnitude`, computed directly rather than through
-// convertBalance (whose 'available'/'none' branches can never apply here).
-function deriveOfxCardLimit(draft: StatementDraft): MinorUnits | null {
-  if (draft.statedClosing === null || draft.available === null) return null;
-  const owedMagnitude = markerSign(draft.statedClosing.marker) * draft.statedClosing.magnitude;
-  const availableSigned = markerSign(draft.available.marker) * draft.available.magnitude;
-  const limit = normalizeZero(owedMagnitude + availableSigned);
-  return limit >= 0 ? minorUnits(limit) : null;
-}
-
 // Called only when balanceMeans is fixed to 'held', where the stored-held formula is
 // `sign*magnitude` directly -- computed the same way, for the same reason.
 function deriveBankOverdraftLimit(draft: StatementDraft): MinorUnits | null {
@@ -109,8 +136,12 @@ function deriveBankOverdraftLimit(draft: StatementDraft): MinorUnits | null {
 /** statedLimit never depends on which s candidate is chosen -- only on balanceMeans. */
 function deriveStatedLimit(draft: StatementDraft, profile: FormatProfile): MinorUnits | null {
   if (draft.statedLimit !== null) return draft.statedLimit;
-  if (profile.balanceMeans === 'owed') return deriveOfxCardLimit(draft);
-  if (profile.balanceMeans === 'held') return deriveBankOverdraftLimit(draft);
+  if (profile.balanceMeans === 'owed') return ofxCardLimitUnder(draft, 'owed');
+  if (profile.balanceMeans === 'held') {
+    // A card read in the account-holder view (review E-CR-04): owed = -LEDGERBAL.
+    if (profile.accountFamily === 'card') return ofxCardLimitUnder(draft, 'held');
+    return deriveBankOverdraftLimit(draft);
+  }
   return null;
 }
 
@@ -272,8 +303,28 @@ export function inferProfile(
   const rememberedResult = tryRemembered(draft, accountFamily, target.limit, remembered);
   if (rememberedResult !== null) return rememberedResult;
 
+  const balanceMeans = balanceMeansFor(target.kind, draft);
+  if (balanceMeans === 'owed' && target.kind === 'credit' && ofxCardReading(draft) === 'ambiguous') {
+    // The balance orientation itself is undecided (review E-CR-04): offer
+    // every reading under both orientations, never a decided one.
+    const candidates = (['owed', 'held'] as const).flatMap((bm) => {
+      const r = inferWithBalanceMeans(draft, target, accountFamily, bm);
+      const ps = r.kind === 'decided' ? [r.profile] : r.candidates;
+      return ps.map((p): FormatProfile => ({ ...p, decidedBy: 'user' }));
+    });
+    return { kind: 'ambiguous', candidates, evidence: ['account-kind'] };
+  }
+  return inferWithBalanceMeans(draft, target, accountFamily, balanceMeans);
+}
+
+function inferWithBalanceMeans(
+  draft: StatementDraft,
+  target: { kind: AccountKind; limit: MinorUnits | null },
+  accountFamily: AccountFamily,
+  balanceMeans: FormatProfile['balanceMeans']
+): ProfileResult {
   const hasBalances = hasAnyBalance(draft);
-  const candidates = candidateProfiles(draft, target.kind);
+  const candidates = candidateProfiles(draft, target.kind, balanceMeans);
   const [moneyIn, moneySpent] = candidates;
 
   function decideByLabel(chosen: FormatProfile, evidenceCode: ProfileEvidence): ProfileResult {

@@ -1,4 +1,7 @@
 import fc from 'fast-check';
+import * as fs from 'fs';
+import * as path from 'path';
+import { parseOfx } from '../../ofx';
 import { minorUnits } from '../../money';
 import { convertDraft } from '../convert';
 import { balanceMeansFor, candidateProfiles, flipProfile, inferProfile, PAYMENT_LIKE_CARD, INCOME_LIKE_DEPOSIT } from '../profile';
@@ -740,15 +743,99 @@ describe('inferProfile: OFX card limit derivation edge cases', () => {
     expect(profile.statedLimit).toBe(0);
   });
 
-  it('a negative computed figure is never offered as a limit', () => {
+  it('a negative computed figure is never offered as a limit; with no reading giving a limit, the user is asked (review E-CR-04)', () => {
     const draft = makeDraft({
       source: 'ofx',
       statedClosing: { magnitude: minorUnits(25000), marker: 'none', asOf: null, raw: '250.00' },
       available: { magnitude: minorUnits(40000), marker: 'minus', asOf: null, raw: '-400.00' },
       rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
     });
-    const result = inferProfile(draft, { kind: 'credit', limit: null }, null);
-    const { profile } = asDecided(result);
-    expect(profile.statedLimit).toBeNull();
+    const { candidates } = asAmbiguous(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(candidates.map((c) => c.balanceMeans)).toEqual(['owed', 'held']);
+    for (const c of candidates) {
+      expect(c.statedLimit).toBeNull();
+      expect(c.positiveMeans).toBe('money-spent');
+    }
+  });
+});
+
+describe('inferProfile: OFX card balance orientation decided by LEDGERBAL + AVAILBAL (review E-CR-04, D-53 amended)', () => {
+  const EXPONENTS: Readonly<Record<string, number>> = { GBP: 2 };
+  function ofxFixtureDraft(name: string): StatementDraft {
+    const text = fs.readFileSync(path.join(__dirname, '..', '..', 'ofx', '__tests__', 'fixtures', name), 'utf8');
+    const result = parseOfx(text, { exponentFor: (code) => EXPONENTS[code] ?? null });
+    if (!result.ok) throw new Error('fixture failed to parse');
+    return result.drafts[0] as StatementDraft;
+  }
+
+  it('card-over-limit.ofx (holder view, LEDGERBAL -1250, AVAILBAL -250) reads as owing 1,250 against a 1,000 limit', () => {
+    const draft = ofxFixtureDraft('card-over-limit.ofx');
+    const { profile } = asDecided(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(profile.balanceMeans).toBe('held');
+    expect(profile.statedLimit).toBe(100000);
+    const converted = convertDraft(draft, profile, { limit: profile.statedLimit });
+    expect(converted.closing).toBe(-125000);
+    expect(converted.rows.map((r) => r.amount)).toEqual([-130000, 5000]);
+  });
+
+  it('issuer view (LEDGERBAL +1250, AVAILBAL -250) keeps the owed reading', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(125000), marker: 'none', asOf: null, raw: '1250.00' },
+      available: { magnitude: minorUnits(25000), marker: 'minus', asOf: null, raw: '-250.00' },
+      rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
+    });
+    const { profile } = asDecided(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(profile.balanceMeans).toBe('owed');
+    expect(convertDraft(draft, profile, { limit: null }).closing).toBe(-125000);
+  });
+
+  it('both readings giving a valid limit is ambiguous, with every s/k candidate when s is undecided', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(20000), marker: 'none', asOf: null, raw: '200.00' },
+      available: { magnitude: minorUnits(80000), marker: 'none', asOf: null, raw: '800.00' },
+      rows: [makeRow(0, { description: 'SHOP', magnitude: minorUnits(1000), marker: 'none' })],
+    });
+    const { candidates, evidence } = asAmbiguous(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(evidence).toEqual(['account-kind']);
+    expect(candidates).toHaveLength(4);
+    expect(candidates.map((c) => [c.balanceMeans, c.statedLimit])).toEqual([
+      ['owed', 100000],
+      ['owed', 100000],
+      ['held', 60000],
+      ['held', 60000],
+    ]);
+  });
+
+  it('a zero LEDGERBAL reads the same either way and stays owed', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(0), marker: 'none', asOf: null, raw: '0.00' },
+      available: { magnitude: minorUnits(50000), marker: 'none', asOf: null, raw: '500.00' },
+      rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
+    });
+    const { profile } = asDecided(inferProfile(draft, { kind: 'credit', limit: null }, null));
+    expect(profile.balanceMeans).toBe('owed');
+    expect(profile.statedLimit).toBe(50000);
+  });
+
+  it('an OFX card with LEDGERBAL but no AVAILBAL keeps the D-53 owed default', () => {
+    const draft = makeDraft({
+      source: 'ofx',
+      statedClosing: { magnitude: minorUnits(125000), marker: 'minus', asOf: null, raw: '-1250.00' },
+      rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
+    });
+    expect(balanceMeansFor('credit', draft)).toBe('owed');
+  });
+
+  it('a CSV card is never re-oriented by these figures', () => {
+    const draft = makeDraft({
+      source: 'csv',
+      statedClosing: { magnitude: minorUnits(125000), marker: 'minus', asOf: null, raw: '-1250.00' },
+      available: { magnitude: minorUnits(25000), marker: 'minus', asOf: null, raw: '-250.00' },
+      rows: [makeRow(0, { description: 'PAYMENT - THANK YOU', magnitude: minorUnits(1000), marker: 'minus' })],
+    });
+    expect(balanceMeansFor('credit', draft)).toBe('owed');
   });
 });
