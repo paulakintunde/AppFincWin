@@ -284,6 +284,21 @@ describe('Row', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
+  // C-WR-08: the pressable's own label overrides its child text, so the current selection
+  // (the row's value) must be exposed as the accessibility value or VoiceOver never reads it.
+  it('exposes its value to screen readers when pressable', async () => {
+    const first = await renderWithTheme(<Row label="Category" value="Groceries" onPress={jest.fn()} />);
+    expect(first.getByRole('button').props.accessibilityLabel).toBe('Category');
+    expect(first.getByRole('button').props.accessibilityValue).toMatchObject({ text: 'Groceries' });
+  });
+
+  it('keeps announcing the value when a custom accessibilityLabel is passed', async () => {
+    const second = await renderWithTheme(
+      <Row label="Category" value="Rent" accessibilityLabel="Choose category" onPress={jest.fn()} />
+    );
+    expect(second.getByRole('button').props.accessibilityValue).toMatchObject({ text: 'Rent' });
+  });
+
   it('is at least 44px tall', async () => {
     const { getByTestId } = await renderWithTheme(<Row label="Groceries" />);
     const style = flatStyle(getByTestId('row-root').props);

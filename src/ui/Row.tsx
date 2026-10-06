@@ -45,6 +45,9 @@ export function Row({ label, value, leading, chevron = false, dense = false, onP
         testID="row-root"
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel ?? label}
+        // C-WR-08: the label above overrides the child text, so the current selection would
+        // otherwise never be announced ("Category, button"). Expose it as the value instead.
+        accessibilityValue={value ? { text: value } : undefined}
         onPress={onPress}
         style={styles.minHeight}
       >
