@@ -305,6 +305,11 @@ begin
   if s.household_id not in (select public.user_household_ids()) then
     raise exception 'not a member of household %', s.household_id using errcode = '42501';
   end if;
+  -- D-WR-03: a replay of this same action (its undo step already exists)
+  -- is already-applied, not a conflict with its own first attempt.
+  if public.undo_step_replayed(p_undo_step) then
+    return jsonb_build_object('status', 'already-applied', 'series_id', s.id, 'undo_step_id', p_undo_step ->> 'id');
+  end if;
   if s.version <> p_expected_version then
     return jsonb_build_object(
       'status', 'conflict',
@@ -403,6 +408,10 @@ begin
   end if;
   if s.household_id not in (select public.user_household_ids()) then
     raise exception 'not a member of household %', s.household_id using errcode = '42501';
+  end if;
+  -- D-WR-03: replay of this same action -> already-applied.
+  if public.undo_step_replayed(p_undo_step) then
+    return jsonb_build_object('status', 'already-applied', 'series_id', s.id, 'undo_step_id', p_undo_step ->> 'id');
   end if;
   if s.version <> p_expected_version then
     return jsonb_build_object(

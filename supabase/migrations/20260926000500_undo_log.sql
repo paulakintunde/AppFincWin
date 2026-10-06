@@ -152,6 +152,46 @@ revoke insert, update, delete, truncate on public.undo_log from authenticated;
 grant select on public.undo_log to authenticated;
 grant insert (id, label_key, label_params, ops) on public.undo_log to authenticated;
 
+-- 4b. D-WR-03: replay detection. The client generates an action's undo
+-- step id at the moment of the action, so a step id that is already in
+-- undo_log means this exact action already landed and its response was
+-- lost; the paused-mutation queue is replaying it. Returns true for the
+-- caller's own step, false when the id is unused, and raises 42501 when the
+-- id belongs to someone else (never a silent no-op).
+create or replace function public.undo_step_replayed(p_undo_step jsonb)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_step_id uuid;
+  v_owner uuid;
+begin
+  if p_undo_step is null or jsonb_typeof(p_undo_step) <> 'object' then
+    return false;
+  end if;
+  begin
+    v_step_id := (p_undo_step ->> 'id')::uuid;
+  exception when others then
+    raise exception 'p_undo_step.id must be a uuid' using errcode = '22023';
+  end;
+  if v_step_id is null then
+    return false;
+  end if;
+
+  select u.owner_id into v_owner from public.undo_log u where u.id = v_step_id;
+  if not found then
+    return false;
+  end if;
+  if v_owner is distinct from (select auth.uid()) then
+    raise exception 'undo step % belongs to another user', v_step_id using errcode = '42501';
+  end if;
+  return true;
+end;
+$$;
+
 -- 5. apply_patches: the one generic, atomic, version-checked patch
 -- primitive. p_ops is a JSON array of
 -- `{entity, id, expectedVersion, patch}` (interfaces block, plan 02-05).
@@ -194,6 +234,35 @@ begin
   n := jsonb_array_length(p_ops);
   if n < 1 or n > 6000 then
     raise exception 'apply_patches: p_ops must contain between 1 and 6000 operations' using errcode = '22023';
+  end if;
+
+  -- D-WR-03: a replay of an action that already landed (same client step
+  -- id) is reported as already-applied with each row's current version,
+  -- instead of conflicting with the versions its own first attempt left
+  -- behind. Rows are only reported for allowlisted entities in the
+  -- caller's scope.
+  if public.undo_step_replayed(p_undo_step) then
+    for v_idx in 0 .. n - 1 loop
+      v_op := p_ops -> v_idx;
+      v_entity := v_op ->> 'entity';
+      continue when jsonb_typeof(v_op) <> 'object'
+        or v_entity is null or v_entity not in ('transactions', 'categories', 'recurring_series', 'accounts');
+      begin
+        v_id := (v_op ->> 'id')::uuid;
+      exception when others then
+        continue;
+      end;
+      execute format('select to_jsonb(t) from public.%I t where t.id = $1', v_entity) using v_id into v_row_json;
+      continue when v_row_json is null;
+      if v_entity = 'categories' then
+        continue when (v_row_json ->> 'owner_id')::uuid is distinct from (select auth.uid());
+      else
+        continue when not ((v_row_json ->> 'household_id')::uuid in (select public.user_household_ids()));
+      end if;
+      v_rows := v_rows || jsonb_build_array(jsonb_build_object(
+        'entity', v_entity, 'id', v_id, 'version', (v_row_json ->> 'version')::integer));
+    end loop;
+    return jsonb_build_object('status', 'already-applied', 'rows', v_rows);
   end if;
 
   -- Phase A: validate shape, lock and check every row, no writes yet.
@@ -372,9 +441,10 @@ begin
       raise exception 'apply_patches: p_undo_step.ops must be an array' using errcode = '22023';
     end if;
 
+    -- No `on conflict do nothing`: a replay never reaches here (D-WR-03
+    -- short-circuits it above), so a duplicate id is a real error.
     insert into public.undo_log (id, owner_id, label_key, label_params, ops)
-    values (v_step_id, (select auth.uid()), v_label_key, v_label_params, v_step_ops)
-    on conflict (id) do nothing;
+    values (v_step_id, (select auth.uid()), v_label_key, v_label_params, v_step_ops);
   end if;
 
   return jsonb_build_object('status', 'applied', 'rows', v_rows);
@@ -706,6 +776,7 @@ revoke execute on function public.apply_patches(jsonb, jsonb) from public, anon;
 grant execute on function public.apply_patches(jsonb, jsonb) to authenticated;
 
 revoke execute on function public.undo_replay(public.undo_log) from public, anon, authenticated;
+revoke execute on function public.undo_step_replayed(jsonb) from public, anon, authenticated;
 revoke execute on function public.series_change_inverse(jsonb) from public, anon, authenticated;
 revoke execute on function public.record_series_undo_step(jsonb, jsonb) from public, anon, authenticated;
 

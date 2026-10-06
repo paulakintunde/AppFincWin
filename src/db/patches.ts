@@ -6,6 +6,7 @@
 //
 // Response contract (plan 02-09 <interfaces>):
 //   applied  -> {"status":"applied","rows":[{"entity","id","version"}]}
+//   already-applied -> same shape as applied (D-WR-03: a replay keyed on the undo step id)
 //   conflict -> {"status":"conflict","conflict":{"entity","id","updated_by","record_name","builtin_key","reason"}}
 // A conflict is surfaced as the same `VersionConflictError` Phase 1 already uses (D-26), with
 // the parsed `UndoConflict` (camelCase) as its `serverRow` -- callers narrow on
@@ -128,6 +129,9 @@ export async function applyPatches(
   if (!isRecord(data)) throw badResponse('not an object');
 
   switch (data.status) {
+    // D-WR-03: the server recognised this as a replay of an action that already landed
+    // (same undo step id) and reports each row's current version instead of a conflict.
+    case 'already-applied':
     case 'applied': {
       const rows = data.rows;
       if (!Array.isArray(rows) || !rows.every(isAppliedRow)) throw badResponse('malformed rows');

@@ -136,6 +136,25 @@ describe('applyPatches', () => {
     expect(rpcCall?.args).toEqual(['apply_patches', { p_ops: serialiseOps(OPS), p_undo_step: serialiseStep(STEP) }]);
   });
 
+  // D-WR-03: a replay of an action whose first response was lost (same step id).
+  it('already-applied: returns the rows (current versions) instead of throwing a conflict', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({
+      data: { status: 'already-applied', rows: [{ entity: 'transactions', id: 't1', version: 4 }] },
+      error: null,
+      status: 200,
+    });
+
+    await expect(applyPatches(client, OPS, STEP)).resolves.toEqual([{ entity: 'transactions', id: 't1', version: 4 }]);
+  });
+
+  it('already-applied: a malformed rows array is a BAD_RESPONSE DbError', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { status: 'already-applied', rows: 'nope' }, error: null, status: 200 });
+
+    await expect(applyPatches(client, OPS, STEP)).rejects.toMatchObject({ code: BAD_RESPONSE });
+  });
+
   it('applied: returns the rows array as-is', async () => {
     const client = createFakeSupabase();
     const rows = [

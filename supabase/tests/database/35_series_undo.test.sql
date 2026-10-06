@@ -19,7 +19,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(24);
+select extensions.plan(29);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -314,6 +314,69 @@ select extensions.is(
   (select count(*)::int from public.undo_log where id = 'ea000000-0000-0000-0000-00000000000a'),
   1,
   'the end RPC records its undo step too'
+);
+
+-- ---------------------------------------------------------------------
+-- 8. D-WR-03: a replay of a write whose response was lost (the paused
+-- mutation queue retrying the same action) reports already-applied, keyed
+-- on the client-generated undo step id, instead of a version conflict
+-- against its own first attempt.
+-- ---------------------------------------------------------------------
+insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, name) values
+  ('18000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -100, 'USD', current_date, 'UTC', 'Replay me');
+
+select public.apply_patches(
+  '[{"entity":"transactions","id":"18000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb,
+  '{"id":"eb000000-0000-0000-0000-00000000000b","label_key":"deleted","label_params":{},
+    "ops":[{"entity":"transactions","id":"18000000-0000-0000-0000-000000000001","expectedVersion":2,"patch":{"deleted_at":null}}]}'::jsonb
+);
+create temp table r9 as select public.apply_patches(
+  '[{"entity":"transactions","id":"18000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb,
+  '{"id":"eb000000-0000-0000-0000-00000000000b","label_key":"deleted","label_params":{},
+    "ops":[{"entity":"transactions","id":"18000000-0000-0000-0000-000000000001","expectedVersion":2,"patch":{"deleted_at":null}}]}'::jsonb
+) as r;
+select extensions.is((select r ->> 'status' from r9), 'already-applied', 'apply_patches replayed with the same step id is already-applied, not a conflict');
+select extensions.is((select (r -> 'rows' -> 0 ->> 'version')::int from r9), 2, 'the replay reports the row''s current version');
+select extensions.is(
+  (select version from public.transactions where id = '18000000-0000-0000-0000-000000000001')::int,
+  2,
+  'the replay wrote nothing'
+);
+
+select public.create_recurring_series(jsonb_build_object(
+  'id', 'cc000000-0000-0000-0000-00000000000c',
+  'household_id', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+  'account_id', 'a1111111-1111-1111-1111-111111111111',
+  'name', 'Council tax', 'amount', -15000, 'currency', 'USD', 'freq', 'monthly',
+  'anchor_date', date_trunc('month', current_date)::date, 'time_zone', 'UTC'
+));
+select public.edit_recurring_series_from(
+  'cc000000-0000-0000-0000-00000000000c'::uuid, 1, '{"amount": -16000}'::jsonb,
+  (date_trunc('month', current_date) + interval '1 month')::date,
+  '{"id":"ec000000-0000-0000-0000-00000000000c","label_key":"seriesEdited","label_params":{}}'::jsonb
+);
+select extensions.is(
+  (public.edit_recurring_series_from(
+    'cc000000-0000-0000-0000-00000000000c'::uuid, 1, '{"amount": -16000}'::jsonb,
+    (date_trunc('month', current_date) + interval '1 month')::date,
+    '{"id":"ec000000-0000-0000-0000-00000000000c","label_key":"seriesEdited","label_params":{}}'::jsonb
+  ) ->> 'status'),
+  'already-applied',
+  'edit_recurring_series_from replayed with the same step id is already-applied'
+);
+select public.end_recurring_series(
+  'cc000000-0000-0000-0000-00000000000c'::uuid, 2,
+  (date_trunc('month', current_date) + interval '1 month' - interval '1 day')::date,
+  '{"id":"ed000000-0000-0000-0000-00000000000d","label_key":"seriesEnded","label_params":{}}'::jsonb
+);
+select extensions.is(
+  (public.end_recurring_series(
+    'cc000000-0000-0000-0000-00000000000c'::uuid, 2,
+    (date_trunc('month', current_date) + interval '1 month' - interval '1 day')::date,
+    '{"id":"ed000000-0000-0000-0000-00000000000d","label_key":"seriesEnded","label_params":{}}'::jsonb
+  ) ->> 'status'),
+  'already-applied',
+  'end_recurring_series replayed with the same step id is already-applied'
 );
 
 reset role;
