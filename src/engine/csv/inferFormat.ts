@@ -76,8 +76,10 @@ function splitDateParts(raw: string): string[] | null {
   let s = raw.trim();
   if (s === '') return null;
 
-  const tIdx = s.indexOf('T');
-  if (tIdx > 0) s = s.slice(0, tIdx);
+  // An ISO time part starts at a 'T' with a digit on both sides. A bare
+  // indexOf('T') would also cut 'OCT', 'SEPT' or 'AUGUST' (review E-WR-01).
+  const isoTime = s.match(/^(.*\d)T\d/);
+  if (isoTime) s = isoTime[1] as string;
 
   const spaceTime = s.match(/^(.*)\s+\d{1,2}:\d{2}/);
   if (spaceTime) s = spaceTime[1] as string;
@@ -166,6 +168,10 @@ export function inferDateFormat(samples: readonly string[]): DateFormatGuess {
 
   if (candidates.length === 0) return { kind: 'none' };
   if (candidates.length === 1) return { kind: 'certain', format: candidates[0] as DateFormat };
+  // Readings that land on the same date for every sample (a spelled-out month
+  // makes DMY and MDY identical) are not a real choice: nothing to ask.
+  const allAgree = nonEmpty.every((s) => new Set(candidates.map((f) => parseCsvDate(s, f))).size === 1);
+  if (allAgree) return { kind: 'certain', format: candidates[0] as DateFormat };
   // More than one reading fits every sample: the user is asked (D-11). YMD
   // is never preferred by tie-break (review E-CR-02).
   return { kind: 'ambiguous', candidates };

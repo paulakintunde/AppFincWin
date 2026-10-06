@@ -30,6 +30,17 @@ describe('parseCsvDate', () => {
     expect(parseCsvDate('13-Sep-2026', 'DMY')).toBe('2026-09-13');
   });
 
+  it('reads upper-case month names containing a T (review E-WR-01)', () => {
+    expect(parseCsvDate('01-OCT-2026', 'DMY')).toBe('2026-10-01');
+    expect(parseCsvDate('15-SEPT-2026', 'DMY')).toBe('2026-09-15');
+    expect(parseCsvDate('03 AUGUST 2026', 'DMY')).toBe('2026-08-03');
+    expect(inferDateFormat(['01-OCT-2026', '15-SEP-2026'])).toEqual({ kind: 'certain', format: 'DMY' });
+  });
+
+  it('still drops a T-separated time part only between digits (review E-WR-01)', () => {
+    expect(parseCsvDate('13/09/2026T10:22', 'DMY')).toBe('2026-09-13');
+  });
+
   it('reads a full English month name', () => {
     expect(parseCsvDate('13-September-2026', 'DMY')).toBe('2026-09-13');
   });
