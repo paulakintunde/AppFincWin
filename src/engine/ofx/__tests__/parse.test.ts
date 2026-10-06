@@ -335,6 +335,25 @@ describe('parseOfx: description assembly', () => {
   });
 });
 
+describe('parseOfx: empty SGML leaves (review E-WR-04)', () => {
+  it('an empty DTUSER or NAME never hides the TRNAMT, FITID or MEMO that follow it', () => {
+    const result = parseOfx(
+      wrapBankStatement({
+        stmttrn: '<STMTTRN>\n<TRNTYPE>DEBIT\n<DTPOSTED>20260905\n<DTUSER>\n<TRNAMT>-45.00\n<NAME>\n<FITID>F-9\n<MEMO>CARD 1234 TESCO\n</STMTTRN>',
+      }),
+      opts
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const row = result.drafts[0]!.rows[0]!;
+    expect(row.magnitude).toBe(4500);
+    expect(row.marker).toBe('minus');
+    expect(row.externalId).toBe('F-9');
+    expect(row.description).toBe('CARD 1234 TESCO');
+    expect(row.issues).toEqual([]);
+  });
+});
+
 describe('parseOfx: row issues', () => {
   it('a malformed DTPOSTED gets localDate null and the bad-date issue', () => {
     const text = wrapBankStatement({

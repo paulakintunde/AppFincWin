@@ -27,6 +27,21 @@ export type BuildOfxTreeResult =
 
 const ROOT_NAME = '#root';
 
+/** Elements the OFX 1.x/2.x specs define as leaves (data elements), never aggregates. */
+const OFX_LEAF_NAMES: ReadonlySet<string> = new Set([
+  // signon / status
+  'CODE', 'SEVERITY', 'MESSAGE', 'DTSERVER', 'LANGUAGE', 'DTPROFUP', 'DTACCTUP', 'ORG', 'FID', 'SESSCOOKIE',
+  'USERKEY', 'TSKEYEXPIRE', 'TRNUID', 'CLTCOOKIE', 'INTU.BID', 'INTU.USERID',
+  // statement and account
+  'CURDEF', 'BANKID', 'BRANCHID', 'ACCTID', 'ACCTTYPE', 'ACCTKEY', 'DTSTART', 'DTEND', 'BALAMT', 'DTASOF',
+  'MKTGINFO', 'BALTYPE', 'DESC', 'VALUE',
+  // transaction
+  'TRNTYPE', 'DTPOSTED', 'DTUSER', 'DTAVAIL', 'TRNAMT', 'FITID', 'CORRECTFITID', 'CORRECTACTION', 'SRVRTID',
+  'CHECKNUM', 'REFNUM', 'SIC', 'PAYEEID', 'NAME', 'EXTDNAME', 'MEMO', 'INV401KSOURCE', 'CURRATE', 'CURSYM',
+  // payee address
+  'ADDR1', 'ADDR2', 'ADDR3', 'CITY', 'STATE', 'POSTALCODE', 'COUNTRY', 'PHONE',
+]);
+
 /**
  * Builds an `OfxNode` tree from a token stream (RESEARCH §A1 step 3, budget
  * step 4). `tokens` is normally `tokenizeOfx(...).tokens`, but this function
@@ -97,6 +112,17 @@ export function buildOfxTree(tokens: readonly OfxToken[]): BuildOfxTreeResult {
 
     elementCount += 1;
     if (elementCount > OFX_LIMITS.maxElements) return { ok: false, error: 'too-large' };
+
+    // An OFX 1.x SGML leaf may be sent empty ('<DTUSER>' then a newline and
+    // the next tag). A known leaf name is never an aggregate, so it is dropped
+    // (with its close tag, if any) instead of adopting every later sibling as
+    // a child and hiding TRNAMT, FITID or NAME (review E-WR-04). Unknown
+    // names keep the aggregate reading, so vendor aggregates still nest.
+    if (OFX_LEAF_NAMES.has(tok.name)) {
+      i += 1;
+      if (next !== undefined && next.t === 'close' && next.name === tok.name) i += 1;
+      continue;
+    }
 
     const aggregate: OfxNode = { name: tok.name, value: null, children: [] };
     parent.children.push(aggregate);

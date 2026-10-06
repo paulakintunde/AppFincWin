@@ -159,6 +159,41 @@ describe('buildOfxTree: stray/text edge cases', () => {
   });
 });
 
+describe('buildOfxTree: empty SGML leaves (review E-WR-04)', () => {
+  it('an empty known leaf never swallows its following siblings', () => {
+    const result = build('<STMTTRN>\n<DTUSER>\n<TRNAMT>-45.00\n<NAME>\n<FITID>9\n</STMTTRN>');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toEqual([]);
+    expect(result.root.children).toEqual([
+      {
+        name: 'STMTTRN',
+        value: null,
+        children: [
+          { name: 'TRNAMT', value: '-45.00', children: [] },
+          { name: 'FITID', value: '9', children: [] },
+        ],
+      },
+    ]);
+  });
+
+  it('an XML-style empty known leaf (<MEMO></MEMO>) is dropped with its close tag', () => {
+    const result = build('<STMTTRN><MEMO></MEMO><FITID>9</FITID></STMTTRN>');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toEqual([]);
+    expect(result.root.children).toEqual([
+      { name: 'STMTTRN', value: null, children: [{ name: 'FITID', value: '9', children: [] }] },
+    ]);
+  });
+
+  it('an empty known leaf still counts against the element budget', () => {
+    const tokens: OfxToken[] = [];
+    for (let i = 0; i < 20_001; i += 1) tokens.push({ t: 'open', name: 'MEMO' });
+    expect(buildOfxTree(tokens)).toEqual({ ok: false, error: 'too-large' });
+  });
+});
+
 describe('findAll / child / childText', () => {
   const tree = build('<BANKTRANLIST><STMTTRN><FITID>1</STMTTRN><STMTTRN><FITID>2</STMTTRN></BANKTRANLIST>');
 
