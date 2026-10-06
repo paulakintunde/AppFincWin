@@ -31,38 +31,60 @@ findings:
   warning: 9
   info: 7
   total: 18
-status: issues_found
-fix_status: paused_not_started
+status: fixed
+fix_status: all_in_scope_fixed
+fixed_at: 2026-10-06
+fixed: 17
+not_applicable: 1
 ---
 
-## Fix status (gsd-code-fixer, 2026-09-28)
+## Fix status (gsd-code-fixer, 2026-10-06)
 
-The fix run was paused by the user before any finding was started. No migration, test or `src/db` file has been changed. Every finding is still open.
+Every Critical and Warning finding is fixed, and so are six of the seven Info items. The seventh (D-IN-07) is notes only. Each fix has a pgTAP test, and each test was run against the pre-fix code and seen to fail before the fix was applied, with one exception: D-CR-02, whose fix landed before its first run (see its row). The eight unpushed Phase 2 migrations were edited in place, so no corrective migration was added. Everything was run on the local stack only (`supabase db reset --local && supabase test db`); nothing touched a remote project.
 
-| ID | Status |
-|----|--------|
-| D-CR-01 | not started |
-| D-CR-02 | not started |
-| D-WR-01 | not started |
-| D-WR-02 | not started |
-| D-WR-03 | not started |
-| D-WR-04 | not started |
-| D-WR-05 | not started |
-| D-WR-06 | not started |
-| D-WR-07 | not started |
-| D-WR-08 | not started |
-| D-WR-09 | not started |
-| D-IN-01..D-IN-07 | not started |
+| ID | Status | Commit | What changed |
+|----|--------|--------|--------------|
+| D-CR-01 | fixed | `2f42784` | See "D-CR-01 approach" below. New `recurring_series.generation` (bumped by the materialiser without a version bump); `undo_log.series_generations` captured server-side at insert; new `undo_replay()` shared by `apply_undo_step`/`rollback_undo_to`. Test: `35_series_undo.test.sql` sections 1-4. |
+| D-CR-02 | fixed | `f23c59b` | `apply_patches` requires a JSON-number `expectedVersion` matching `^[1-9][0-9]{0,8}$` (a missing key or null raises 22023). `undo_log_fill` validates every stored op's shape at insert (22023). `serialiseOps` throws `RangeError` for a version-less op. Tests: `29` (4 cases), `patches.test.ts`. The fix was applied before its first run, so this test was not seen to fail against the pre-fix code. |
+| D-WR-01 | fixed | `92fb86e` | Each series in `materialise_recurring` runs in its own subtransaction (`raise warning` on failure). A null `created_by` falls back to the household owner as author. Test: `28` section 14 (a poisoned series and an orphaned-author series). |
+| D-WR-02 | fixed | `a079f9e` | The replay in `undo_replay` runs in a subtransaction and forces `transfer_pair_check` immediate (then deferred again). Integrity errors (class 23), 42501 and 22023 become a refusal (reason `changed`, naming the step's first op) instead of an exception. Test: `35` section 5 (the 23505 scenario from the review) and section 6 (a lone transfer leg). |
+| D-WR-03 | fixed | `4c72b83` | New `undo_step_replayed(p_undo_step)`: if the client's step id already exists for the caller, `apply_patches` returns `already-applied` with each row's current version, and `edit_recurring_series_from`/`end_recurring_series` return `already-applied`. A step id owned by someone else raises 42501. The undo-step insert no longer uses `on conflict do nothing`. `applyPatches` maps `already-applied` like `applied`. Test: `35` section 8, `patches.test.ts`. |
+| D-WR-04 | fixed | `930ab68` | The three series RPCs take `p_undo_step jsonb default null` (`{id,label_key,label_params}`). The server builds the inverse with `series_change_inverse()` (the SQL mirror of `inverseOfSeriesChange`, same op order) and inserts it in the same transaction (`record_series_undo_step`), returning `undo_step_id`. The db wrappers take an optional `SeriesUndoLabel` and only send `p_undo_step` when given. Test: `35` section 7, `recurringSeries.test.ts`. **src/data follow-up below.** |
+| D-WR-05 | fixed | `5e3bbc2` | When the anchor moves (a `freq` change or an explicit `anchor_date`) and `occurrence_count` is set but not patched, the count becomes `old - occurrences dated before the new anchor`. If nothing is left, the edit raises 22023. The old count goes into `before`, so undo restores it. Test: `28` section 15. |
+| D-WR-06 | fixed | `d76682a` | `purge_record_tombstones` pins only on `status = 'available'`. Test: `29` section 13. The suggested 90-day hard ceiling was **not** added: it is a retention-policy decision (D-25 says "no time limit") for the Compliance phase and the privacy policy. |
+| D-WR-07 | fixed | `288873a` | `revoke all on public.transactions_active from authenticated`, then grant select. Test: `26` section 14 (update through the view, and the grant list is exactly SELECT). |
+| D-WR-08 | fixed | `97c6de7` | **The new test reproduced a real failure.** Deleting a user with Phase 2 data failed: (1) `set_updated_by` re-stamped the departing user's id during the ON DELETE SET NULL action, which violated `*_updated_by_fkey`; (2) `guard_recurring_series` re-validated an unchanged category owned by the user being deleted (23514), and reverted a cleared `created_by` (FK violation). Now `set_updated_by` leaves the FK action alone, the guard only re-validates columns that changed on UPDATE, and `created_by` may be cleared. The RESTRICT diamond itself is fine. Test: new `36_account_deletion.test.sql` (member deletion, then owner deletion, with every Phase 2 table populated, and zero rows left). |
+| D-WR-09 | fixed | `0487d16` | A null `p_end_date` or `p_effective_from` raises 22023. `p_effective_from` earlier than the start of the current month minus 12 months raises 22023, and an earlier date is clamped up to `anchor_date`. Test: `28` section 16. |
+| D-IN-01 | fixed | `842274a` | `check_transfer_pair` counts legs in `new.household_id` only. A leg in another household is still rejected, because each household's group then holds a lone leg. Test: `33` section 11. |
+| D-IN-02 | fixed | `c4fdd16` | `undo_log.ops` check adds `octet_length(ops::text) <= 2097152` (2 MB). Test: `29`. |
+| D-IN-03 | fixed | `96564a2` | The purge only honours steps whose owner is a member of the row's household. Test: `29` section 13 (an outsider's step). |
+| D-IN-04 | fixed | `2ba1111` | `recurring_occurrence_date`/`recurring_horizon` are revoked from `public, anon`. Test: `28` section 17. |
+| D-IN-05 | fixed | `251d290` | The series RPC `conflict` goes through `parseConflict`, so `serverRow` is an `UndoConflict`. Test: `recurringSeries.test.ts`. |
+| D-IN-06 | fixed | `180d8b6` | New check `recurring_series_anchor_range` (`anchor_date >= 1900-01-01`). `materialise_series` starts at a computed `n_start`, and the 5000-step guard is relative to it. If the guard trips, `materialised_through` only advances to the last processed date (with `raise warning`). Test: `28` section 18. |
+| D-IN-07 | not applicable (notes) | - | Ordering, locking and backfill are notes with nothing to change. The pg_trgm-in-another-schema check belongs in the push preflight script (out of this task's scope), so it is left for the Phase 2 push task (02-31). |
 
-Notes for resuming:
-- None of the 8 Phase 2 migrations has been pushed, so fixes go in place.
-- WR-07's cited lines (282-287) do not match `20260926000200_transactions_record_fields.sql`, which has 133 lines. The `transactions_active` grant block is near the end of that file (section 6).
+### D-CR-01 approach (how series undo now treats system-added rows)
+
+A stored series step is a fixed op list, but the daily materialiser keeps adding occurrences after it. The choice follows D-24 (system actions never enter the stack) and D-26 (refuse rather than clobber, including after a "system job"):
+
+- **Undo of a series create.** Every live occurrence of the series that the step does not reference must have been added by the materialiser, because any user change to the series bumps its version, which `apply_patches` already refuses. If all of those rows are still untouched system rows (pending, version 1), they are soft-deleted together with the series, so the undo still works after a month boundary and nothing is left attached to a deleted series. If a user has acted on one of them (paid, skipped or edited it), the step is **refused**, naming that transaction.
+- **Undo of a template edit or end.** If the materialiser has added rows since the step (the series `generation` moved), those rows were built from the template the undo would revert, and a fixed op list cannot rebuild them. The step is **refused**, naming the series with `updated_by = null` (the system), which is exactly D-26's "or a system job" case. Before the next materialisation, the undo works as before.
+- **Not chosen:** re-running the regeneration inside an `undo_recurring_series_edit` RPC. It could resurrect occurrences the user deleted (tombstones sit outside the unique index), and it makes undo produce new rows. Refusing is the conservative, declared behaviour.
+- **Known limit:** an edit or end of a series stops being undoable after the next month boundary on which the materialiser adds rows. The History copy for a series refusal with a null `updated_by` should say the app itself has since scheduled newer occurrences.
+
+### Follow-ups for the orchestrator (outside src/db)
+
+1. **src/data, series mutations (plan 02-18):** pass a `SeriesUndoLabel` (`{id, labelKey, labelParams}`) to `createRecurringSeries`, `editRecurringSeriesFrom` and `endRecurringSeries`, and do **not** call `insertUndoStep` or `inverseOfSeriesChange` for those actions. The server now records the step atomically (D-WR-04). Keep the same step id across paused-mutation replays, because it is the replay key (D-WR-03).
+2. **src/data, every `applyPatches` caller:** a replay is only recognised when the call carries its undo step (the step id is the key). Any forward write sent without a step will still self-conflict on replay.
+3. **src/ui History copy:** a refusal with `entity = 'recurring_series'` and `updated_by = null` means the system added occurrences since (D-CR-01). A refusal produced by D-WR-02 has `updated_by = null`/`record_name = null` and names the step's first op.
+4. **Compliance phase:** decide whether to add a hard retention ceiling for tombstones (D-WR-06), and whether to document it in the privacy policy.
+5. **02-31 push preflight:** check that `pg_trgm` is either absent or installed in `extensions` before `db push` (D-IN-07).
 
 # Phase 02 (Record) Waves 1-5, Area B: DB schema, RPCs and typed db layer
 
 **Reviewed:** 2026-09-28
 **Depth:** deep (security focus)
-**Status:** issues_found
+**Status:** issues_found (all fixed 2026-10-06; see Fix status above)
 
 ## Summary
 
