@@ -5,6 +5,7 @@ import type { CategoryRow } from '@/db/rows';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { CategorySheet } from '../CategorySheet';
 import { RemoveCategoryPrompt } from '../RemoveCategoryPrompt';
+import { CategoriesScreen } from '../CategoriesScreen';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -50,7 +51,7 @@ jest.mock('@/data/mutations/categories', () => ({
   useMergeCategory: () => ({ merge: mockMerge }),
 }));
 jest.mock('@/data/queries/categories', () => ({
-  useCategoryLookup: () => ({ all: mockAll, active: mockAll, byId: new Map(), loading: false }),
+  useCategoryLookup: () => ({ all: [...mockAll, ...mockSystemAndArchived], active: mockAll, byId: new Map(), loading: false }),
   useCategoryUsage: () => mockUsage,
 }));
 jest.mock('@/features/record/useRecordContext', () => ({
@@ -210,5 +211,47 @@ describe('RemoveCategoryPrompt', () => {
     );
     expect(u.getByLabelText('Merge').props.accessibilityState.disabled).toBe(true);
     expect(u.getByLabelText('Archive').props.accessibilityState.disabled).toBe(false);
+  });
+});
+
+const mockSystemAndArchived = [
+  cat({ id: 's1', name: null, builtin_key: 'Transfer', is_system: true, color_key: 'slate' }),
+  cat({ id: 's2', name: null, builtin_key: 'Settlement', is_system: true, color_key: 'slate' }),
+  cat({ id: 'x1', name: 'Old hobby', archived_at: '2026-09-10T00:00:00Z' }),
+];
+
+describe('CategoriesScreen', () => {
+  it('lists active, system and archived categories; tapping edits and Restore undoes the archive', async () => {
+    const u = await render(
+      <ThemeProvider>
+        <CategoriesScreen />
+      </ThemeProvider>
+    );
+    expect(u.getByText('Groceries')).toBeTruthy();
+    expect(u.getByText('Dining')).toBeTruthy();
+    expect(u.getByText('Transfer')).toBeTruthy();
+    expect(u.getByText('Settlement')).toBeTruthy();
+    expect(u.getByText('Used by transfers and settlements. It can’t be changed.')).toBeTruthy();
+    expect(u.getByText('Archived')).toBeTruthy();
+    expect(u.getByText('Old hobby')).toBeTruthy();
+    // System rows have no edit action (not pressable).
+    expect(u.queryByLabelText('Transfer')).toBeNull();
+
+    await fireEvent.press(u.getByText('Restore'));
+    expect(mockRestore).toHaveBeenCalledWith(mockSystemAndArchived[2]);
+    expect(getToast()?.stepId).toBe('restore-step');
+
+    await fireEvent.press(u.getByText('Fuel'));
+    expect(u.getByText('Edit category')).toBeTruthy();
+  });
+
+  it('opens the new-category sheet from Add category', async () => {
+    const u = await render(
+      <ThemeProvider>
+        <CategoriesScreen />
+      </ThemeProvider>
+    );
+    await fireEvent.press(u.getByText('Add category'));
+    expect(u.getByText('New category')).toBeTruthy();
   });
 });
