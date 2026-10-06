@@ -163,7 +163,10 @@ async function followUpIfRatePending(
   try {
     const resolved = await requestRateResolution(lazySupabaseClient(), row.id);
     if (resolved) {
-      patchMonthCache(qc, householdId, month, (rows) => rows.map((r) => (r.id === resolved.id ? resolved : r)));
+      // C-WR-03: only a month already loaded. This runs after the caller's invalidation, so a
+      // fabricated `[]` for a month never opened would not be refetched -- it would show as an
+      // empty month (status success) and be persisted.
+      patchMonthCacheIfLoaded(qc, householdId, month, (rows) => rows.map((r) => (r.id === resolved.id ? resolved : r)));
     }
   } catch {
     // Network/function failure: the row stays rate_pending; fx-monitor reports stuck rows.
@@ -253,6 +256,9 @@ export function registerTransactionMutations(qc: QueryClient): void {
     onMutate: async (vars: AddTransactionVars) => {
       markSession(vars); // WR-A09
       const monthKey = queryKeys.transactionsMonth(vars.row.household_id, vars.optimistic.month);
+      // C-WR-03: a month that was never loaded is not fabricated as a one-row list (it would
+      // pass for the whole month and show wrong totals). onSuccess invalidates it instead.
+      if (qc.getQueryData(monthKey) === undefined) return;
       await qc.cancelQueries({ queryKey: monthKey });
 
       const rates = qc.getQueryData<FxLatestRow[]>(queryKeys.fxLatest()) ?? [];
@@ -314,11 +320,17 @@ export function registerTransactionMutations(qc: QueryClient): void {
         updated_at: now,
         pending: true,
       };
-      patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) => [optimisticRow, ...rows]);
+      patchMonthCacheIfLoaded(qc, vars.row.household_id, vars.optimistic.month, (rows) => [optimisticRow, ...rows]);
     },
     onSuccess: (row: TransactionRow, vars: AddTransactionVars) => {
-      // WR-A04: upsert, not replace -- a refetch may have dropped the optimistic row.
-      patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) => upsertRow(rows, row, 'start'));
+      const monthKey = queryKeys.transactionsMonth(vars.row.household_id, vars.optimistic.month);
+      if (qc.getQueryData(monthKey) === undefined) {
+        // C-WR-03: not loaded -- mark it stale rather than create it (not awaited, WR-A15).
+        void qc.invalidateQueries({ queryKey: monthKey });
+      } else {
+        // WR-A04: upsert, not replace -- a refetch may have dropped the optimistic row.
+        patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) => upsertRow(rows, row, 'start'));
+      }
       // WR-A15: not awaited. query-core awaits onSuccess before releasing WRITE_SCOPE, so an
       // awaited Edge Function call would hold every later queued write behind it.
       void followUpIfRatePending(qc, vars.row.household_id, vars.optimistic.month, row);
@@ -326,7 +338,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
     onError: async (err: unknown, vars: AddTransactionVars) => {
       const cls = classifySettledWriteError(err);
       if (cls !== 'rejected' && cls !== 'not-found') return; // an insert never conflicts; a duplicate-id insert already resolved to success in db/
-      patchMonthCache(qc, vars.row.household_id, vars.optimistic.month, (rows) =>
+      patchMonthCacheIfLoaded(qc, vars.row.household_id, vars.optimistic.month, (rows) =>
         rows.filter((r) => r.id !== vars.row.id)
       );
       await recordFailedWrite({

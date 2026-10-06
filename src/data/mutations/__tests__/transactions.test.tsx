@@ -127,6 +127,7 @@ describe('useAddTransaction', () => {
     fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
 
     const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []); // the month on screen (C-WR-03)
     const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
 
     let id = '';
@@ -211,6 +212,7 @@ describe('useAddTransaction', () => {
 
     const qc = newClient();
     qc.setQueryData(queryKeys.fxLatest(), [USD_RATE, JPY_RATE]);
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []); // the month on screen (C-WR-03)
     const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
 
     result.current.add({
@@ -252,6 +254,7 @@ describe('useAddTransaction', () => {
 
     const qc = newClient();
     qc.setQueryData(queryKeys.fxLatest(), [USD_RATE, JPY_RATE]);
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []); // the month on screen (C-WR-03)
     const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
 
     result.current.add({
@@ -271,6 +274,37 @@ describe('useAddTransaction', () => {
     });
 
     expect(fake.calls.filter((c) => c.method === 'functions.invoke')).toHaveLength(0);
+  });
+
+  // C-WR-03: a one-row list for a month that was never loaded would pass for the whole month
+  // (status success, fresh dataUpdatedAt) and show wrong totals, offline indefinitely.
+  it('C-WR-03: a backdated add into a month never loaded does not fabricate that month, and invalidates it instead', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    const pendingRow = serverTransaction({ local_date: '2026-03-14', original_currency: 'JPY', rate_pending: true });
+    fake.respondWith({ data: pendingRow, error: null, status: 201 });
+    fake.respondWith({ data: { row: { ...pendingRow, rate_pending: false } }, error: null, status: 200 }); // resolve-rate
+
+    const qc = newClient();
+    const invalidateSpy = jest.spyOn(qc, 'invalidateQueries');
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'JPY',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-03-14',
+      timeZone: 'UTC',
+    });
+
+    await waitFor(() => expect(fake.calls.filter((c) => c.method === 'functions.invoke')).toHaveLength(1));
+    await waitFor(() =>
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.transactionsMonth('h1', '2026-03') })
+    );
+    expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-03'))).toBeUndefined();
   });
 
   it('add rejected with a permanent DbError removes the optimistic row and records a failed write', async () => {
@@ -311,6 +345,7 @@ describe('useAddTransaction', () => {
     fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
 
     const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []); // the month on screen (C-WR-03)
     const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
 
     result.current.add({
@@ -352,6 +387,7 @@ describe('useAddTransaction', () => {
     fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
 
     const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []); // the month on screen (C-WR-03)
     const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
 
     result.current.add({
@@ -383,6 +419,7 @@ describe('useAddTransaction', () => {
     fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
 
     const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []); // the month on screen (C-WR-03)
     const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
 
     result.current.add({
@@ -472,6 +509,7 @@ describe('useAddTransaction', () => {
     fake.respondWith({ data: serverTransaction(), error: null, status: 200 });
 
     const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []); // the month on screen (C-WR-03)
     const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
 
     result.current.add({
@@ -952,6 +990,33 @@ describe('useImportChunks / importChunk', () => {
     });
 
     await waitFor(() => expect(fake.calls.filter((c) => c.method === 'functions.invoke')).toHaveLength(1));
+  });
+
+  it('C-WR-03: the resolve-rate follow-up never writes an empty list into a month that was not loaded', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: [{ id: 'imp-1', local_date: '2026-07-10', version: 1, rate_pending: true }], error: null, status: 201 });
+    fake.respondWith({
+      data: { row: serverTransaction({ id: 'imp-1', local_date: '2026-07-10', rate_pending: false }) },
+      error: null,
+      status: 200,
+    });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useImportChunks(), { wrapper: wrapper(qc) });
+
+    result.current.enqueue({
+      householdId: 'h1',
+      batchId: 'batch-1',
+      rows: [importRow({ id: 'imp-1', local_date: '2026-07-10', original_currency: 'JPY' })],
+      homeCurrency: 'USD',
+      userId: 'user-1',
+    });
+
+    await waitFor(() => expect(fake.calls.filter((c) => c.method === 'functions.invoke')).toHaveLength(1));
+    // Let the follow-up's cache write (if any) land.
+    await new Promise((r) => setTimeout(r, 0));
+    expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-07'))).toBeUndefined();
   });
 
   it('a rejected chunk removes its optimistic rows and records one failed write with ids and counts only', async () => {
