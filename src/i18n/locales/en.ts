@@ -696,6 +696,8 @@ const en = {
       memberUnknown: 'Someone in your household edited {{record}} after this, so it can’t be undone.',
       self: '{{record}} was changed on another device after this, so it can’t be undone.',
       system: '{{record}} was changed elsewhere after this, so it can’t be undone.',
+      // D-CR-01: the daily job has since scheduled newer occurrences from the edited template.
+      seriesScheduled: 'Newer occurrences of {{record}} have been scheduled since, so this can’t be undone.',
       record: {
         transactions: 'this line',
         categories: 'this category',
