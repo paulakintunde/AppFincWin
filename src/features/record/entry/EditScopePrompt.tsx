@@ -22,6 +22,7 @@ export function EditScopePrompt({ visible, onThisOne, onThisAndFuture, onCancel,
   const t = useT();
   const { colors, pairing } = useTheme();
   const heading = { ...textRole(pairing, 'sheetTitle'), color: colors.ink };
+  const note = { ...textRole(pairing, 'label'), color: colors.inkMuted };
 
   return (
     <Sheet visible={visible} onDismiss={onCancel} accessibilityLabel={t('record.recurring.scopeHeading')}>
@@ -32,8 +33,10 @@ export function EditScopePrompt({ visible, onThisOne, onThisAndFuture, onCancel,
           label={t('record.recurring.scopeThisAndFuture')}
           variant="primary"
           disabled={futureDisabled}
+          accessibilityHint={futureDisabled ? t('record.recurring.futureUnavailable') : undefined}
           onPress={onThisAndFuture}
         />
+        {futureDisabled ? <Text style={note}>{t('record.recurring.futureUnavailable')}</Text> : null}
         <Pill label={t('record.sheet.cancel')} variant="secondary" onPress={onCancel} />
       </View>
     </Sheet>

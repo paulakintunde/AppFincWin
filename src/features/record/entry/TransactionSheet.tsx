@@ -420,6 +420,8 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           accountB: nameOf(state.toAccountId),
         })
       : null;
+  // S-WR-10: a new transfer needs the transfer category; the disabled Save says why.
+  const transferSaveBlocked = isNew && isTransfer && categories.transferCategoryId === null;
   const deleteBody = pair
     ? t('record.sheet.transferDeleteConfirm', { from: nameOf(pair.out.account_id), to: nameOf(pair.in.account_id) })
     : t('record.sheet.confirmDelete');
@@ -569,7 +571,14 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           <RateAttribution rateDate={editRow.rate_date} rateSource={editRow.rate_source} ratePending={editRow.rate_pending} />
         ) : null}
 
-        <Pill label={saveText} variant="primary" disabled={isNew && isTransfer && categories.transferCategoryId === null} onPress={save} />
+        {transferSaveBlocked ? <Text style={noteStyle}>{t('record.sheet.transferCategoryLoading')}</Text> : null}
+        <Pill
+          label={saveText}
+          variant="primary"
+          disabled={transferSaveBlocked}
+          accessibilityHint={transferSaveBlocked ? t('record.sheet.transferCategoryLoading') : undefined}
+          onPress={save}
+        />
         {editRow || pair ? <Pill label={t('record.sheet.delete')} variant="danger" onPress={() => setConfirmDelete(true)} /> : null}
       </SheetScroll>
 

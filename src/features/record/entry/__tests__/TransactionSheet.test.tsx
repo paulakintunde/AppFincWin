@@ -21,6 +21,7 @@ const mockRemoveTransfer = jest.fn(() => 'trd-step');
 const mockTrack = jest.fn();
 let mockLegs: TransactionRow[] = [];
 let mockRegion = 'GB';
+let mockTransferCat: string | null = 'tc';
 
 jest.mock('@/data/mutations/transactions', () => ({
   useAddTransaction: () => ({ add: mockAdd }),
@@ -57,7 +58,7 @@ jest.mock('@/data/queries/categories', () => ({
   useCategoryLookup: () => ({
     active: [{ id: 'c1', builtin_key: null, name: 'Groceries', color_key: 'teal', is_system: false, archived_at: null }],
     byId: new Map(),
-    transferCategoryId: 'tc',
+    transferCategoryId: mockTransferCat,
   }),
 }));
 jest.mock('@/data/queries/currencyOptions', () => ({
@@ -122,6 +123,7 @@ beforeEach(() => {
   resetToastForTests();
   mockLegs = [];
   mockRegion = 'GB';
+  mockTransferCat = 'tc';
 });
 
 describe('TransactionSheet: new and edit', () => {
@@ -329,6 +331,17 @@ describe('TransactionSheet: transfers', () => {
     await fireEvent.press(getByText('Add transfer'));
     expect(mockAddTransfer).toHaveBeenCalledTimes(1);
     expect((mockAddTransfer.mock.calls[0] as unknown[])[0]).toMatchObject({ from: { id: 'a1', currency: 'GBP' }, to: { currency: 'GBP' } });
+  });
+
+  it('S-WR-10: a new transfer says why Save is unavailable while the transfer category loads', async () => {
+    mockTransferCat = null;
+    const { getByText, getByRole } = await open({ kind: 'new', direction: 'out' });
+    await fireEvent.press(getByText('Transfer'));
+    const reason = 'Transfers can be added once your categories have loaded.';
+    expect(getByText(reason)).toBeTruthy();
+    const save = getByRole('button', { name: 'Add transfer' });
+    expect(save).toBeDisabled();
+    expect(save.props.accessibilityHint).toBe(reason);
   });
 
   it('edits both legs from either leg', async () => {

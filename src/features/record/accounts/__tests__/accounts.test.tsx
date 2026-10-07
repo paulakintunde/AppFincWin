@@ -24,6 +24,7 @@ const mockTrack = jest.fn();
 let mockAccounts: AccountRow[] = [];
 let mockRegion = 'GB';
 let mockHome = 'GBP';
+let mockReady = true;
 let mockBalances = new Map<string, AccountBalanceView>();
 
 jest.mock('@/data/mutations/accounts', () => ({
@@ -67,7 +68,7 @@ jest.mock('@/data/queries/currencyOptions', () => ({
 }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({
-    ready: true,
+    ready: mockReady,
     userId: 'u1',
     householdId: 'h1',
     homeCurrency: mockHome,
@@ -118,6 +119,7 @@ beforeEach(() => {
   mockBalances = new Map();
   mockRegion = 'GB';
   mockHome = 'GBP';
+  mockReady = true;
 });
 
 describe('AccountSheet new', () => {
@@ -416,5 +418,17 @@ describe('AccountSheet: new-account currency follows a late home-currency defaul
     await fireEvent.press(u.getByText('Save account'));
     const [input] = mockAdd.mock.calls[0] as unknown as [Record<string, unknown>];
     expect(input.currency).toBe('EUR');
+  });
+});
+
+describe('AccountSheet: a disabled Save gives its reason (S-WR-10)', () => {
+  it('says why while the record context is still loading', async () => {
+    mockReady = false;
+    const u = await wrap(<AccountSheet visible mode={{ kind: 'new', context: 'later' }} onClose={jest.fn()} />);
+    const reason = 'Your account details are still loading, so this can’t be saved yet.';
+    expect(u.getByText(reason)).toBeTruthy();
+    const save = u.getByRole('button', { name: 'Save account' });
+    expect(save).toBeDisabled();
+    expect(save.props.accessibilityHint).toBe(reason);
   });
 });

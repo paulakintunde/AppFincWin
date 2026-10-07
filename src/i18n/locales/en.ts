@@ -242,6 +242,7 @@ const en = {
       transferCrossCurrency:
         'Recorded as {{amountA}} from {{accountA}} and {{amountB}} to {{accountB}} — each in its own currency.',
       transferEditBoth: 'Editing a transfer updates both sides.',
+      transferCategoryLoading: 'Transfers can be added once your categories have loaded.',
       transferNeedsBothSides: 'Both sides of this transfer are needed to change it. They haven’t loaded yet.',
       transferDeleteConfirm:
         'Delete this transfer? Both linked entries — {{from}} and {{to}} — will be removed.',
@@ -293,6 +294,7 @@ const en = {
       scopeHeading: 'Edit this one, or this and future?',
       scopeThisOne: 'This one',
       scopeThisAndFuture: 'This and future',
+      futureUnavailable: 'The series hasn’t loaded yet, so only this one can change.',
       skip: 'Skip this one',
       end: 'End this series',
       endConfirm: 'Ends {{name}}. Paid history stays; nothing pending after {{date}} is created.',
@@ -399,6 +401,7 @@ const en = {
       kind: 'Type',
       currency: 'Currency',
       currencyFixed: 'The currency is set when the account is made.',
+      notReady: 'Your account details are still loading, so this can’t be saved yet.',
       openingBalance: 'Opening balance',
       amountOwed: 'Amount owed',
       save: 'Save account',

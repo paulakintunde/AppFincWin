@@ -253,11 +253,13 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
           </>
         ) : null}
 
+        {canSubmit ? null : <Text style={helpStyle}>{t('accounts.sheet.notReady')}</Text>}
         <Pill
           label={t(account ? 'accounts.sheet.saveChanges' : 'accounts.sheet.save')}
           variant="primary"
           onPress={save}
           disabled={!canSubmit}
+          accessibilityHint={canSubmit ? undefined : t('accounts.sheet.notReady')}
         />
         {account ? (
           <Pill

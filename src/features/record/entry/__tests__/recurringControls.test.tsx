@@ -387,6 +387,19 @@ describe('RepeatsField and EditScopePrompt on their own', () => {
     expect(onChange).toHaveBeenCalledWith({ freq: 'quarterly', end: { kind: 'never' } });
   });
 
+  it('S-WR-10: says why This and future is unavailable while the series loads', async () => {
+    const { getByText, getByRole } = await render(
+      <ThemeProvider>
+        <EditScopePrompt visible futureDisabled onThisOne={jest.fn()} onThisAndFuture={jest.fn()} onCancel={jest.fn()} />
+      </ThemeProvider>
+    );
+    const reason = 'The series hasn’t loaded yet, so only this one can change.';
+    expect(getByText(reason)).toBeTruthy();
+    const future = getByRole('button', { name: 'This and future' });
+    expect(future).toBeDisabled();
+    expect(future.props.accessibilityHint).toBe(reason);
+  });
+
   it('routes the three prompt choices', async () => {
     const calls: string[] = [];
     const { getByText } = await render(
