@@ -481,6 +481,8 @@ const en = {
     removeCancel: 'Cancel',
     removeMerge: 'Merge',
     mergeTooLarge: 'Too many transactions to merge at once. Archiving keeps their history.',
+    removeUsageUnknown: 'Can’t tell yet how many transactions use {{name}}. Archiving keeps their history.',
+    removeUsageRetry: 'Try again',
     removeArchive: 'Archive',
     mergePick: 'Merge {{name}} into',
     swatch: {

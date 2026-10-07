@@ -19,7 +19,7 @@ const mockEdit = jest.fn(() => 'edit-step');
 const mockArchive = jest.fn(() => 'archive-step');
 const mockRestore = jest.fn(() => 'restore-step');
 const mockMerge = jest.fn(() => 'merge-step');
-let mockUsage = { count: 0, capped: false, isLoading: false };
+let mockUsage: Record<string, unknown> = { count: 0, capped: false, isLoading: false };
 
 function cat(over: Partial<CategoryRow> = {}): CategoryRow {
   return {
@@ -200,6 +200,41 @@ describe('RemoveCategoryPrompt', () => {
     expect(mockArchive).not.toHaveBeenCalled();
     expect(u.getByLabelText('Merge').props.accessibilityState.disabled).toBe(true);
     expect(u.getByLabelText('Archive').props.accessibilityState.disabled).toBe(true);
+  });
+
+  it.each([
+    ['errored', { count: 0, capped: false, isLoading: false, isError: true }],
+    ['paused offline (not loading, not succeeded)', { count: 0, capped: false, isLoading: false, isError: false, isSuccess: false }],
+    ['with no count', { count: undefined, capped: false, isLoading: false }],
+    ['with a null count', { count: null, capped: false, isLoading: false, isSuccess: false }],
+  ])('S-WR-07: never auto-archives while the usage count is unknown (%s)', async (_label, usage) => {
+    const refetch = jest.fn();
+    mockUsage = { ...usage, refetch };
+    const onDone = jest.fn();
+    const u = await render(
+      <ThemeProvider>
+        <RemoveCategoryPrompt visible category={mockAll[0] as CategoryRow} onDone={onDone} onCancel={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(mockArchive).not.toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
+    expect(u.getByText('Can’t tell yet how many transactions use Groceries. Archiving keeps their history.')).toBeTruthy();
+    expect(u.getByLabelText('Merge').props.accessibilityState.disabled).toBe(true);
+    // Archive stays an explicit choice; Try again re-reads the count.
+    expect(u.getByLabelText('Archive').props.accessibilityState.disabled).toBe(false);
+    await fireEvent.press(u.getByText('Try again'));
+    expect(refetch).toHaveBeenCalled();
+  });
+
+  it('S-WR-07: auto-archives once the count is known to be zero', async () => {
+    mockUsage = { count: 0, capped: false, isLoading: false, isError: false, isSuccess: true };
+    const onDone = jest.fn();
+    await render(
+      <ThemeProvider>
+        <RemoveCategoryPrompt visible category={mockAll[0] as CategoryRow} onDone={onDone} onCancel={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(mockArchive).toHaveBeenCalledTimes(1);
   });
 
   it('disables Merge when the count is capped (the merge would be refused) but still allows Archive', async () => {
