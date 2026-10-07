@@ -41,6 +41,12 @@ jest.mock('@/features/record/history/UndoToastHost', () => {
   const { View } = require('react-native');
   return { UndoToastHost: () => R.createElement(View, { testID: 'undo-toast-host' }) };
 });
+jest.mock('@/features/record/useRecordContext', () => ({
+  useRecordContext: () => ({ ready: true, householdId: 'h1' }),
+}));
+jest.mock('@/data/queries/accounts', () => ({
+  useAccounts: () => ({ data: [{ archived_at: null }], isLoading: false, isError: false }),
+}));
 jest.mock('@/features/consent/useConsent', () => ({
   useConsent: () => ({ loading: false, needsPrompt: false }),
 }));
