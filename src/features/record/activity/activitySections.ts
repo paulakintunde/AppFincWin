@@ -56,3 +56,8 @@ export function buildActivityItems(rows: readonly ActivityRowView[], projections
 export function getActivityItemType(item: ActivityItem): 'header' | 'row' | 'projection' {
   return item.type;
 }
+
+/** A search result list: one flat newest-first list with no section headers. */
+export function buildFlatItems(rows: readonly ActivityRowView[]): ActivityItem[] {
+  return [...rows].sort(compareNewestFirst).map((row): ActivityItem => ({ type: 'row', key: row.id, row }));
+}

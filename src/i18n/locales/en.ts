@@ -326,6 +326,7 @@ const en = {
     noMatchBody: 'Try a different search, or set the filter back to All.',
     searchMonth: 'Search {{month}}',
     searchAll: 'Search every month',
+    searchClear: 'Clear search',
     searchScopeMonth: 'This month',
     searchScopeAll: 'Every month',
     select: 'Select',
@@ -359,6 +360,8 @@ const en = {
       next: 'Next month',
     },
     filter: {
+      title: 'Filter',
+      rangeInvalid: 'At least cannot be more than At most.',
       all: 'All',
       category: 'Category',
       account: 'Account',

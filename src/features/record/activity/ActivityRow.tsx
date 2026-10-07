@@ -23,8 +23,10 @@ export interface ActivityRowProps {
   accountName: (id: string) => string;
   formatter: MoneyFormatter;
   homeCurrency: string;
-  /** 02-23 turns selection on; until then rows are never selectable. */
+  /** Select mode: the row shows a checkbox and a press toggles selection instead of opening. */
   selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (row: ActivityRowView) => void;
   onPress: (row: ActivityRowView) => void;
   onMarkPaid: (row: ActivityRowView) => void;
 }
@@ -43,7 +45,18 @@ function Tag({ label }: { label: string }) {
   );
 }
 
-export function ActivityRow({ row, categories, accountName, formatter, homeCurrency, onPress, onMarkPaid }: ActivityRowProps) {
+export function ActivityRow({
+  row,
+  categories,
+  accountName,
+  formatter,
+  homeCurrency,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
+  onPress,
+  onMarkPaid,
+}: ActivityRowProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const isTransfer = row.transfer_id !== null;
@@ -76,17 +89,28 @@ export function ActivityRow({ row, categories, accountName, formatter, homeCurre
   const homeText = showHome ? formatter.formatMoney(money(row.amountHome as number, homeCurrency)) : null;
   const amountColor = isTransfer ? colors.inkDim : colors.ink;
 
-  const canMarkPaid = row.status === 'pending' && !isTransfer;
+  const canMarkPaid = row.status === 'pending' && !isTransfer && !selectable;
 
   return (
     <View style={styles.wrap}>
       <Pressable
         testID={`activity-row-${row.id}`}
-        accessibilityRole="button"
-        accessibilityLabel={`${name}, ${amountText}`}
-        onPress={() => onPress(row)}
+        accessibilityRole={selectable ? 'checkbox' : 'button'}
+        accessibilityLabel={selectable ? t('a11y.selectRow', { name }) : `${name}, ${amountText}`}
+        accessibilityState={selectable ? { checked: selected } : undefined}
+        onPress={() => (selectable ? onToggleSelect?.(row) : onPress(row))}
         style={styles.main}
       >
+        {selectable ? (
+          <View
+            style={[
+              styles.checkbox,
+              { borderColor: selected ? colors.accent : colors.inkFaint, backgroundColor: selected ? colors.accent : 'transparent' },
+            ]}
+          >
+            {selected ? <View style={[styles.checkDot, { backgroundColor: colors.surface }]} /> : null}
+          </View>
+        ) : null}
         <CategoryGlyph colorKey={swatchKey} letter={letter} />
         <View style={styles.text}>
           <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
@@ -181,6 +205,19 @@ const styles = StyleSheet.create({
   },
   amounts: {
     alignItems: 'flex-end',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: radii.pill,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radii.pill,
   },
   tags: {
     flexDirection: 'row',
