@@ -427,3 +427,189 @@ describe('ImportScreen: mapping', () => {
     expect(mockState.cancel).toHaveBeenCalledTimes(1);
   });
 });
+
+// ---------------------------------------------------------------------------------------
+// Review
+// ---------------------------------------------------------------------------------------
+
+function previewRow(index: number, over: Record<string, unknown> = {}, converted: Record<string, unknown> = {}) {
+  return {
+    index,
+    converted: {
+      index,
+      localDate: '2026-03-01',
+      description: `LINE ${index}`,
+      amount: -350,
+      balance: null,
+      availableSigned: null,
+      rawAmount: '3.50',
+      rawBalance: null,
+      currency: 'GBP',
+      externalId: null,
+      trnType: null,
+      issues: [],
+      ...converted,
+    },
+    check: 'verified',
+    duplicate: null,
+    categoryId: null,
+    categorySource: 'none',
+    included: true,
+    locked: false,
+    transfer: null,
+    payMatch: null,
+    ...over,
+  };
+}
+
+function reviewState(rows: ReturnType<typeof previewRow>[], over: Record<string, unknown> = {}, file = 'all-verified') {
+  return makeState({
+    stage: 'review',
+    accountId: 'a1',
+    profile: profile({ accountFamily: 'deposit', balanceMeans: 'held' }),
+    preview: { rows, reconcile: { file, rows: rows.map((r) => r.check), orientation: 'as-is', verifiedLinks: 0, failedLinks: 0 }, fitidDisabled: false, limitOffer: null },
+    reconcile: { file },
+    counts: { total: rows.length, included: rows.filter((r) => r.included).length, duplicates: 0, blocked: 0, cannotVerify: 0 },
+    rowState: jest.fn((i: number) => {
+      const r = rows.find((x) => x.index === i);
+      return { included: r?.included ?? false, categoryId: r?.categoryId ?? null, locked: r?.locked ?? false };
+    }),
+    ...over,
+  });
+}
+
+describe('ImportScreen: review', () => {
+  it.each([
+    ['all-verified', ['Balances check out.'], []],
+    ['partial', ['Some rows can’t be checked against the balance', 'Review them before importing. The rest reconciled.'], []],
+    [
+      'ends-only-mismatch',
+      ['The opening and closing balances don’t add up', 'The rows between them can’t be checked one by one. Review them before importing.'],
+      ['The rest reconciled.'],
+    ],
+    ['none-in-file', ['Couldn’t check this file against a balance.'], []],
+  ])('reconciliation %s reads as a plain sentence', async (file, shown, hidden) => {
+    mockState = reviewState([previewRow(0)], {}, file);
+    await renderScreen();
+    for (const s of shown) expect(screen.getByText(s)).toBeTruthy();
+    for (const s of hidden) expect(screen.queryByText(s)).toBeNull();
+  });
+
+  it('ends-only mismatch never says the rest reconciled', async () => {
+    mockState = reviewState([previewRow(0)], {}, 'ends-only-mismatch');
+    await renderScreen();
+    expect(screen.queryByText(/The rest reconciled/)).toBeNull();
+  });
+
+  it('shows the heading with the line count and a row per line', async () => {
+    mockState = reviewState([previewRow(0), previewRow(1)]);
+    await renderScreen();
+    expect(screen.getByText('Review 2 lines')).toBeTruthy();
+    expect(screen.getByText('LINE 0')).toBeTruthy();
+    expect(screen.getByText('LINE 1')).toBeTruthy();
+    expect(screen.getAllByText('-£3.50')).toHaveLength(2);
+  });
+
+  it('a cannot-verify row carries the Can’t verify tag and stays tickable', async () => {
+    mockState = reviewState([previewRow(0, { check: 'cannot-verify' }), previewRow(1)], {}, 'partial');
+    await renderScreen();
+    expect(screen.getAllByText('Can’t verify')).toHaveLength(1);
+    expect(screen.getByLabelText('Can’t verify against the balance')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'Select LINE 0' }));
+    expect(mockState.toggleRow).toHaveBeenCalledWith(0);
+  });
+
+  it('a row with a negative running balance gets no tag and no warning', async () => {
+    mockState = reviewState([previewRow(0, { check: 'verified' }, { balance: -5000 })]);
+    await renderScreen();
+    expect(screen.queryByText('Can’t verify')).toBeNull();
+    expect(screen.queryByText('Possible duplicate')).toBeNull();
+  });
+
+  it('a possible duplicate is tagged and shown unticked; a locked row cannot be toggled', async () => {
+    mockState = reviewState([previewRow(0, { duplicate: { kind: 'fitid' }, included: false }), previewRow(1, { locked: true, included: false })]);
+    await renderScreen();
+    expect(screen.getAllByText('Possible duplicate')).toHaveLength(1);
+    expect(screen.getByRole('checkbox', { name: 'Select LINE 0' })).toHaveProp('accessibilityState', { checked: false, disabled: false });
+    expect(screen.getByRole('checkbox', { name: 'Select LINE 1' })).toBeDisabled();
+  });
+
+  it('shows each row issue', async () => {
+    mockState = reviewState([previewRow(0, {}, { issues: ['conflicting-markers', 'bad-balance'] })]);
+    await renderScreen();
+    expect(screen.getByText('Amount shows two different signs')).toBeTruthy();
+    expect(screen.getByText('Balance not recognised')).toBeTruthy();
+  });
+
+  it('the category chip opens the picker and sets the row category', async () => {
+    mockState = reviewState([previewRow(0)]);
+    await renderScreen();
+    await fireEvent.press(screen.getByLabelText('Category for LINE 0'));
+    await fireEvent.press(screen.getByLabelText('Groceries'));
+    expect(mockState.setRowCategory).toHaveBeenCalledWith(0, 'c1');
+  });
+
+  it('notes that rates for older foreign-currency lines are still being fetched', async () => {
+    mockState = reviewState([previewRow(0, {}, { currency: 'EUR', localDate: '2026-03-01' })]);
+    await renderScreen();
+    expect(screen.getByText('Rates for older dates are still being fetched.')).toBeTruthy();
+  });
+
+  it('shows no rates note for home-currency lines', async () => {
+    mockState = reviewState([previewRow(0)]);
+    await renderScreen();
+    expect(screen.queryByText('Rates for older dates are still being fetched.')).toBeNull();
+  });
+
+  it('offers the statement limit with Add limit and Skip', async () => {
+    mockState = reviewState([previewRow(0)], { limitOffer: { field: 'overdraft_limit', amount: 100000 } });
+    await renderScreen();
+    expect(screen.getByText('This statement shows a £1,000.00 limit. Add it to Current?')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Add limit' }));
+    expect(mockState.acceptLimit).toHaveBeenCalledWith(true);
+    await fireEvent.press(screen.getByRole('button', { name: 'Skip' }));
+    expect(mockState.acceptLimit).toHaveBeenCalledWith(false);
+  });
+
+  it('shows no limit card when none is offered', async () => {
+    mockState = reviewState([previewRow(0)]);
+    await renderScreen();
+    expect(screen.queryByRole('button', { name: 'Add limit' })).toBeNull();
+  });
+
+  it('commits from review when no matches remain, with the ticked count', async () => {
+    mockState = reviewState([previewRow(0), previewRow(1), previewRow(2, { included: false })]);
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Import 2 transactions' }));
+    expect(mockState.commit).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows Continue instead when matches remain', async () => {
+    mockState = reviewState([previewRow(0)], { transferRows: [{ index: 0, suggestion: { kind: 'orphan' }, answer: null }] });
+    await renderScreen();
+    expect(screen.queryByRole('button', { name: /Import/ })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
+    expect(mockState.continue).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the primary action at zero ticked lines', async () => {
+    mockState = reviewState([previewRow(0, { included: false })]);
+    await renderScreen();
+    expect(screen.getByRole('button', { name: 'Import 0 transactions' })).toBeDisabled();
+  });
+
+  it('while the preview is still being read there is nothing to commit', async () => {
+    mockState = makeState({ stage: 'review', accountId: 'a1', preview: null });
+    await renderScreen();
+    expect(screen.queryByRole('button', { name: /Import/ })).toBeNull();
+  });
+
+  it('Back and Cancel are wired', async () => {
+    mockState = reviewState([previewRow(0)]);
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(mockState.back).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockState.cancel).toHaveBeenCalledTimes(1);
+  });
+});
