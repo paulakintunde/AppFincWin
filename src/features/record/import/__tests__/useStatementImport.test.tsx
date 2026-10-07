@@ -1,7 +1,6 @@
 // 02-39: the statement import state machine. The pure pipeline (02-26) and the engine run for
 // real; the picker, the database reads, the mutation hooks, analytics and the toast are mocked.
 // D-39: nothing in these tests (or the hook) puts statement content in an analytics property.
-/* eslint-disable import/first, @typescript-eslint/no-require-imports */
 import fs from 'fs';
 import path from 'path';
 import React from 'react';
@@ -9,11 +8,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { AccountRow } from '@/db/rows';
 import { useStatementImport } from '../useStatementImport';
-/* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 const mockTrack = jest.fn();
 const mockCommit = jest.fn();
-const mockCreateSeries = jest.fn(() => 'series-step');
+const mockCreateSeries = jest.fn((..._args: unknown[]) => 'series-step');
 const mockShowToast = jest.fn();
 let mockUuid = 0;
 
@@ -60,7 +58,12 @@ const { pickStatementBytes } = require('@/services/files/pickStatement') as { pi
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { fetchImportProfile } = require('@/db/importProfiles') as { fetchImportProfile: jest.Mock };
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const dbTx = require('@/db/transactions') as Record<string, jest.Mock>;
+const dbTx = require('@/db/transactions') as {
+  fetchTransactionsInRange: jest.Mock;
+  fetchTransferCandidates: jest.Mock;
+  fetchHasRowsBefore: jest.Mock;
+  fetchCategorisedNames: jest.Mock;
+};
 
 function account(over: Partial<AccountRow>): AccountRow {
   return {
@@ -138,7 +141,7 @@ beforeEach(() => {
 describe('useStatementImport: pick, statement choice, format and mapping', () => {
   it('start() fires import_started and a cancelled pick returns to idle', async () => {
     pickStatementBytes.mockResolvedValueOnce({ kind: 'canceled' });
-    const { result } = setup({ entry: 'you' });
+    const { result } = await setup({ entry: 'you' });
     await act(async () => {
       result.current.start();
     });
@@ -148,7 +151,7 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
 
   it('a rejected pick moves to rejected and fires import_file_rejected with the reason only', async () => {
     pickStatementBytes.mockResolvedValueOnce({ kind: 'rejected', reason: 'too_big' });
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
@@ -159,7 +162,7 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
 
   it('a file the pipeline cannot read is rejected with its typed reason', async () => {
     pickOk(csv('hello'), 'other');
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
@@ -170,7 +173,7 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
 
   it('an OFX file with two statements waits on choose-statement, then continues', async () => {
     pickOk(fixture('multi-statement.ofx'), 'ofx');
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
@@ -186,7 +189,7 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
 
   it('a decided CSV reading shows the format step with one example row, then goes to mapping', async () => {
     pickOk(csv(CSV_DECIDED));
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
@@ -194,7 +197,7 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
     expect(result.current.profile?.decidedBy).toBe('labels');
     expect(result.current.rememberedNote).toBe(false);
     expect(result.current.exampleRow?.amount).toBe(-350);
-    act(() => {
+    await act(async () => {
       result.current.confirmFormat();
     });
     expect(mockTrack).toHaveBeenCalledWith('import_format_confirmed', { format: 'csv', decided_by: 'labels', flipped: false });
@@ -204,7 +207,7 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
 
   it('flip() replaces the profile and re-derives the example row; the event says flipped', async () => {
     pickOk(csv(CSV_AMBIGUOUS));
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
@@ -212,22 +215,22 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
     expect(result.current.stage).toBe('format');
     expect(result.current.profile).toBeNull();
     expect(result.current.candidates.length).toBeGreaterThanOrEqual(2);
-    act(() => {
+    await act(async () => {
       result.current.confirmFormat();
     });
     expect(result.current.stage).toBe('format');
     expect(trackedNames()).not.toContain('import_format_confirmed');
 
-    act(() => {
+    await act(async () => {
       result.current.chooseCandidate(0);
     });
     const before = result.current.exampleRow?.amount;
     expect(result.current.profile).not.toBeNull();
-    act(() => {
+    await act(async () => {
       result.current.flip();
     });
     expect(result.current.exampleRow?.amount).toBe(-(before as number));
-    act(() => {
+    await act(async () => {
       result.current.confirmFormat();
     });
     expect(mockTrack).toHaveBeenCalledWith('import_format_confirmed', { format: 'csv', decided_by: 'user', flipped: true });
@@ -239,7 +242,7 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
     fetchImportProfile.mockResolvedValueOnce({
       profile: { version: 1, source: 'csv', accountFamily: 'deposit', positiveMeans: 'money-in', balanceMeans: 'none', statedLimit: null, decidedBy: 'user' },
     });
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
@@ -252,7 +255,7 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
   it('a failing remembered-profile read never blocks the import', async () => {
     pickOk(csv(CSV_DECIDED));
     fetchImportProfile.mockRejectedValueOnce(new Error('offline'));
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
@@ -262,11 +265,11 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
 
   it('mapping errors recompute, an ambiguous date order must be asked, and continue fires the event', async () => {
     pickOk(csv(CSV_DATE_AMBIGUOUS));
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
-    act(() => {
+    await act(async () => {
       result.current.confirmFormat();
     });
     expect(result.current.stage).toBe('mapping');
@@ -281,16 +284,16 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
     expect(trackedNames()).not.toContain('import_mapping_confirmed');
 
     const detected = result.current.mapping;
-    act(() => {
+    await act(async () => {
       result.current.setMapping({ ...(detected as NonNullable<typeof detected>), date: null });
     });
     expect(result.current.mappingErrors).toContain('no-date');
-    act(() => {
+    await act(async () => {
       result.current.setMapping(detected as NonNullable<typeof detected>);
     });
     expect(result.current.mappingErrors).toEqual([]);
 
-    act(() => {
+    await act(async () => {
       result.current.setDateFormat('MDY');
     });
     expect(result.current.dateNeedsChoice).toBe(false);
@@ -303,7 +306,7 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
 
   it('an OFX file skips mapping and goes straight to review', async () => {
     pickOk(fixture('bank-sgml.ofx'), 'ofx');
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
@@ -317,7 +320,7 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
 
   it('changing the account re-runs the reading for the new account kind', async () => {
     pickOk(csv(CSV_DECIDED));
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
@@ -332,7 +335,7 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
 
   it('with no account the import waits for one, then reads', async () => {
     pickOk(csv(CSV_DECIDED));
-    const { result } = setup({ accountId: null });
+    const { result } = await setup({ accountId: null });
     await act(async () => {
       result.current.start();
     });
@@ -346,11 +349,11 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
 
   it('cancel() fires import_abandoned with the stage and returns to idle', async () => {
     pickOk(csv(CSV_DECIDED));
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
-    act(() => {
+    await act(async () => {
       result.current.cancel();
     });
     expect(mockTrack).toHaveBeenCalledWith('import_abandoned', { stage: 'format' });
@@ -360,11 +363,11 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
 
   it('never puts statement content in an analytics property', async () => {
     pickOk(csv(CSV_DECIDED));
-    const { result } = setup();
+    const { result } = await setup();
     await act(async () => {
       result.current.start();
     });
-    act(() => {
+    await act(async () => {
       result.current.confirmFormat();
     });
     const serialised = JSON.stringify(mockTrack.mock.calls);
