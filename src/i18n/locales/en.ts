@@ -738,6 +738,8 @@ const en = {
   setup: {
     accountHeading: 'Your first account',
     accountBody: 'Add the account you use most. More can be added later.',
+    addAccount: 'Add an account',
+    toYou: 'Sign out or delete your account',
   },
   a11y: {
     close: 'Close',
