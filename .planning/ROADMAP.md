@@ -241,7 +241,7 @@ Plans:
 - [x] 02-30-PLAN.md — Onboarding first account + Bring your history (statement), You entry points, Activity landing (W13)
 
 **Wave 14** *(blocked on Wave 13 completion)*
-- [ ] 02-31-PLAN.md — Production rollout: schema push [BLOCKING], live checks, device walkthrough incl. OFX, standing and transfers (W14; needs 01-16)
+- [x] 02-31-PLAN.md — Production rollout: schema push [BLOCKING], live checks, device walkthrough incl. OFX, standing and transfers (W14; needs 01-16)
 **UI hint**: yes
 
 ### Phase 02.1: PDF statement import (INSERTED)
@@ -255,7 +255,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 39/40 plans executed
+**Plans:** 40/40 plans complete
 
 Plans:
 
