@@ -11,31 +11,58 @@
 // user chooses; a remembered reading that still reconciles skips the format step.
 // D-17 / D-29: every database read has a fallback, so a preview never waits on the network.
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { validateMapping, notationFor, type ColumnMapping, type DateFormat, type MappingError } from '@/engine/csv';
-import { minorUnits, resolveExponent, type NumberNotation } from '@/engine/money';
+import { buildLearnedMap } from '@/engine/categorize';
+import { minorUnits, parseAmount, resolveExponent, type NumberNotation, type ScaledRate } from '@/engine/money';
+import { detectRecurring, type PendingOccurrence, type RecurringSuggestion } from '@/engine/recurring';
 import {
   convertDraft,
   flipProfile,
   type ConvertedRow,
+  type ExistingRow,
   type FormatProfile,
   type StatementDraft,
 } from '@/engine/statement';
+import type { ExistingLeg, TransferAccount } from '@/engine/transfer';
 import { fetchImportProfile } from '@/db/importProfiles';
-import type { AccountRow } from '@/db/rows';
+import type { AccountRow, TransactionRow } from '@/db/rows';
+import {
+  fetchCategorisedNames,
+  fetchHasRowsBefore,
+  fetchTransactionsInRange,
+  fetchTransferCandidates,
+} from '@/db/transactions';
+import { queryKeys } from '@/data/keys';
 import { useAccounts } from '@/data/queries/accounts';
+import { useAccountBalances } from '@/data/queries/activity';
+import { useCategoryLookup } from '@/data/queries/categories';
+import { useFxLatest } from '@/data/queries/fxLatest';
+import { latestPerEur } from '@/data/queries/homeAmount';
+import { useImportCommit } from '@/data/mutations/importFinalize';
+import { useCreateSeries } from '@/data/mutations/recurringSeries';
+import { newStepId } from '@/data/mutations/undoCapture';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { pickStatementBytes } from '@/services/files/pickStatement';
 import { getAnalytics, type EventName, type EventProps } from '@/services/analytics';
 import { useDeviceLocale } from '@/services/locale/deviceLocale';
 import { supabase } from '@/services/supabase';
+import { showToast } from '@/state/undoToast';
 import {
+  buildPreview,
   prepareImport,
   resolveCsvDraft,
   resolveProfile,
+  sizeBand,
   statementOptions,
+  suggestionToSeries,
+  toImportCommit,
+  type ExistingInfo,
   type ImportFormat,
   type PreparedImport,
+  type Preview,
   type PreviewAccount,
+  type PreviewRow,
   type RejectReason,
 } from './importPipeline';
 
@@ -76,7 +103,23 @@ interface Machine {
   notation: NumberNotation | null;
   notationChosen: boolean;
   notationEdited: boolean;
+  // review and matches: every default is "not accepted" (D-48, D-52, D-55)
+  preview: Preview | null;
+  existingById: ReadonlyMap<string, ExistingInfo>;
+  included: ReadonlyMap<number, boolean>;
+  categories: ReadonlyMap<number, string | null>;
+  links: ReadonlyMap<number, string>;
+  orphans: ReadonlyMap<number, { accountId: string; counterAmount: number | null }>;
+  orphanDrafts: ReadonlyMap<number, { accountId: string; text: string }>;
+  transferAnswers: ReadonlyMap<number, 'linked' | 'orphan' | 'dismissed'>;
+  payAnswers: ReadonlyMap<number, 'accepted' | 'dismissed'>;
+  limitAccepted: boolean;
+  // after commit
+  suggestions: RecurringSuggestion[];
+  committedRows: { id: string; localDate: string; categoryId: string | null }[];
 }
+
+const NONE = new Map<never, never>();
 
 function initialMachine(accountId: string | null): Machine {
   return {
@@ -99,7 +142,52 @@ function initialMachine(accountId: string | null): Machine {
     notation: null,
     notationChosen: false,
     notationEdited: false,
+    preview: null,
+    existingById: NONE,
+    included: NONE,
+    categories: NONE,
+    links: NONE,
+    orphans: NONE,
+    orphanDrafts: NONE,
+    transferAnswers: NONE,
+    payAnswers: NONE,
+    limitAccepted: false,
+    suggestions: [],
+    committedRows: [],
   };
+}
+
+function addDays(localDate: string, days: number): string {
+  const [y, mo, d] = localDate.split('-').map(Number) as [number, number, number];
+  return new Date(Date.UTC(y, mo - 1, d + days)).toISOString().slice(0, 10);
+}
+
+const RECONCILIATION = {
+  'all-verified': 'all_verified',
+  partial: 'partial',
+  'none-in-file': 'none_in_file',
+  'ends-only-mismatch': 'ends_only_mismatch',
+} as const;
+
+function isTransactionRow(v: unknown): v is TransactionRow {
+  if (typeof v !== 'object' || v === null) return false;
+  const r = v as Record<string, unknown>;
+  return typeof r.id === 'string' && typeof r.account_id === 'string' && typeof r.local_date === 'string' && typeof r.original_amount === 'number';
+}
+
+/** D-17 / D-29: the cached month rows for the account, when a live read fails. */
+function cachedRows(rows: readonly unknown[][]): TransactionRow[] {
+  return rows.flat().filter(isTransactionRow);
+}
+
+type Read<T> = { ok: true; value: T } | { ok: false };
+
+async function attempt<T>(read: () => Promise<T>): Promise<Read<T>> {
+  try {
+    return { ok: true, value: await read() };
+  } catch {
+    return { ok: false };
+  }
 }
 
 /** Unknown currency code -> null (the pipeline then refuses rather than guessing a scale). */
@@ -126,6 +214,13 @@ function rolesKeyOf(m: ColumnMapping): string {
   return JSON.stringify([m.amount, m.debit, m.credit, m.balance, m.direction, m.limit]);
 }
 
+/** The household's accounts as the transfer matcher sees them. */
+function transferAccounts(accounts: readonly AccountRow[]): TransferAccount[] {
+  return accounts
+    .filter((a) => a.archived_at === null)
+    .map((a) => ({ id: a.id, name: a.name, kind: a.kind, currency: a.currency, exponent: exponentFor(a.currency) ?? 2 }));
+}
+
 function previewAccountOf(a: AccountRow): PreviewAccount {
   return {
     id: a.id,
@@ -147,8 +242,16 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const device = useDeviceLocale(ctx.region);
   const accounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
 
+  const qc = useQueryClient();
+  const lookup = useCategoryLookup(ctx.userId ?? undefined);
+  const fx = useFxLatest();
+  const { balances } = useAccountBalances(ctx.householdId, accounts);
+  const importCommit = useImportCommit();
+  const createSeries = useCreateSeries();
+
   const [m, setM] = useState<Machine>(() => initialMachine(initialAccountId));
   const run = useRef(0); // bumped on every restart or cancel, so a late read is dropped
+  const committing = useRef(false);
 
   const region = useMemo(
     () => ({ decimal: (device.separators?.decimal === ',' ? ',' : '.') as '.' | ',', dayFirst: isDayFirst(device.locale) }),
@@ -192,12 +295,149 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     [ctx.userId]
   );
 
-  // Review (Task 2 fills this in).
+  /**
+   * Enters review: reads what the preview needs (D-17), every read with a fallback so the
+   * import never waits on the network (D-29), then builds the preview. Existing rows are
+   * supplied for every stored row that can be offered (pair and choose options, pending
+   * rows), with their transfer_id, so a finalize never meets an unknown stored row (02-26).
+   */
   const goReview = useCallback(
-    (_draft: StatementDraft, _profile: FormatProfile, _accountId: string, _format: ImportFormat) => {
-      patch({ stage: 'review' });
+    (draft: StatementDraft, profile: FormatProfile, accountId: string, format: ImportFormat): void => {
+      const account = accountById(accountId);
+      const householdId = ctx.householdId;
+      const userId = ctx.userId;
+      if (account === null || householdId === null || userId === null) return;
+      const token = ++run.current;
+      setM((prev) => ({
+        ...prev,
+        stage: 'review',
+        preview: null,
+        existingById: NONE,
+        included: NONE,
+        categories: NONE,
+        links: NONE,
+        orphans: NONE,
+        orphanDrafts: NONE,
+        transferAnswers: NONE,
+        payAnswers: NONE,
+        limitAccepted: false,
+      }));
+
+      void (async () => {
+        const dates = draft.rows.flatMap((r) => (r.localDate === null ? [] : [r.localDate])).sort();
+        const first = dates[0] ?? ctx.today;
+        const last = dates[dates.length - 1] ?? ctx.today;
+        const range = { from: addDays(first, -2), toInclusive: addDays(last, 2) };
+
+        const [rangeRead, candidateRead, namesRead] = await Promise.all([
+          attempt(() => fetchTransactionsInRange(supabase, householdId, { ...range, accountId })),
+          attempt(() =>
+            fetchTransferCandidates(supabase, householdId, {
+              excludeAccountId: accountId,
+              from: addDays(first, -3),
+              toInclusive: addDays(last, 3),
+            })
+          ),
+          attempt(() => fetchCategorisedNames(supabase, householdId, userId)),
+        ]);
+
+        // A failed read falls back to the cached month rows for this account, or to none.
+        const stored: TransactionRow[] = rangeRead.ok
+          ? rangeRead.value
+          : cachedRows(qc.getQueriesData<unknown[]>({ queryKey: queryKeys.transactionsRoot(householdId) }).map(([, data]) => (Array.isArray(data) ? data : []))).filter(
+              (r) => r.account_id === accountId && r.local_date >= range.from && r.local_date <= range.toInclusive
+            );
+        const candidates = candidateRead.ok ? candidateRead.value : [];
+        const names = namesRead.ok ? namesRead.value : [];
+
+        // OFX carries no opening balance: a stored balance stands in only when the account has
+        // rows before the file and none inside it (D-46).
+        let storedOpeningForFile: number | null = null;
+        if (format !== 'csv' && draft.periodStart !== null) {
+          const periodStart = draft.periodStart;
+          const periodEnd = draft.periodEnd ?? last;
+          const before = await attempt(() => fetchHasRowsBefore(supabase, householdId, accountId, periodStart));
+          const anyInside = stored.some((r) => r.local_date >= periodStart && r.local_date <= periodEnd);
+          if (before.ok && before.value && !anyInside) storedOpeningForFile = balances.get(accountId)?.balance ?? null;
+        }
+        if (token !== run.current) return;
+
+        const pendingRows = stored.filter((r) => r.status === 'pending');
+        const settled = stored.filter((r) => r.status !== 'pending');
+        const existing: ExistingRow[] = settled.map((r) => ({
+          id: r.id,
+          localDate: r.local_date,
+          amount: r.original_amount,
+          name: r.name,
+          externalId: r.external_id,
+          importFormat: r.import_format,
+        }));
+        const pending: PendingOccurrence[] = pendingRows.map((r) => ({
+          id: r.id,
+          version: r.version,
+          localDate: r.local_date,
+          amount: r.original_amount,
+          name: r.name,
+          accountId: r.account_id,
+        }));
+        const transferCandidates: ExistingLeg[] = candidates.map((c) => ({
+          id: c.id,
+          accountId: c.account_id,
+          localDate: c.local_date,
+          amount: c.original_amount,
+          currency: c.original_currency,
+          name: c.name,
+          paymentType: c.payment_type,
+          transferId: c.transfer_id,
+        }));
+
+        const existingById = new Map<string, ExistingInfo>();
+        for (const r of stored) {
+          existingById.set(r.id, {
+            version: r.version,
+            category_id: r.category_id,
+            local_date: r.local_date,
+            original_amount: r.original_amount,
+            status: r.status,
+            transfer_id: r.transfer_id,
+          });
+        }
+        for (const c of candidates) {
+          existingById.set(c.id, {
+            version: c.version,
+            category_id: c.category_id,
+            local_date: c.local_date,
+            original_amount: c.original_amount,
+            status: 'paid',
+            transfer_id: c.transfer_id,
+          });
+        }
+
+        const perEur = new Map<string, ScaledRate>();
+        const rates = fx.data ?? [];
+        for (const code of new Set([...accounts.map((a) => a.currency), ...draft.rows.map((r) => r.currency)])) {
+          const rate = latestPerEur(rates, code);
+          if (rate !== null) perEur.set(code, rate);
+        }
+
+        const preview = buildPreview({
+          draft,
+          profile,
+          format,
+          account: previewAccountOf(account),
+          accounts: transferAccounts(accounts),
+          existing,
+          pending,
+          transferCandidates,
+          perEur,
+          learned: buildLearnedMap(names.map((n) => ({ name: n.name, categoryId: n.category_id, updatedAt: n.updated_at }))),
+          builtinIds: lookup.builtinIds,
+          storedOpeningForFile,
+        });
+        patch({ preview, existingById });
+      })();
     },
-    [patch]
+    [accountById, accounts, balances, ctx.householdId, ctx.today, ctx.userId, fx.data, lookup.builtinIds, patch, qc]
   );
 
   /**
@@ -243,6 +483,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
 
   const start = useCallback((): void => {
     const token = ++run.current;
+    committing.current = false;
     track('import_started', { entry });
     setM(() => ({ ...initialMachine(m.accountId), stage: 'reading' }));
     void (async () => {
@@ -411,10 +652,310 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     patch({ draft, profile: result.profile, candidates: [], rememberedNote: result.profile.decidedBy === 'remembered', flipped: false, rolesKey, stage: 'format' });
   }, [accountById, dateNeedsChoice, draftFor, goReview, m, mappingErrors.length, notationNeedsChoice, patch, rememberedFor]);
 
+  // --- review ---------------------------------------------------------------------------
+
+  const isIncluded = useCallback(
+    (row: PreviewRow): boolean => (row.locked ? false : (m.included.get(row.index) ?? row.included)),
+    [m.included]
+  );
+
+  const counts = useMemo(() => {
+    const rows = m.preview?.rows ?? [];
+    return {
+      total: rows.length,
+      included: rows.filter(isIncluded).length,
+      duplicates: rows.filter((r) => r.duplicate !== null).length,
+      blocked: rows.filter((r) => r.locked).length,
+      cannotVerify: rows.filter((r) => r.check === 'cannot-verify').length,
+    };
+  }, [isIncluded, m.preview]);
+
+  const rowState = useCallback(
+    (index: number): { included: boolean; categoryId: string | null; locked: boolean } => {
+      const row = m.preview?.rows.find((r) => r.index === index);
+      if (row === undefined) return { included: false, categoryId: null, locked: false };
+      return {
+        included: isIncluded(row),
+        categoryId: m.categories.has(index) ? (m.categories.get(index) ?? null) : row.categoryId,
+        locked: row.locked,
+      };
+    },
+    [isIncluded, m.categories, m.preview]
+  );
+
+  const toggleRow = useCallback(
+    (index: number): void => {
+      const row = m.preview?.rows.find((r) => r.index === index);
+      if (row === undefined || row.locked) return;
+      setM((prev) => ({ ...prev, included: new Map(prev.included).set(index, !isIncluded(row)) }));
+    },
+    [isIncluded, m.preview]
+  );
+
+  const setRowCategory = useCallback((index: number, categoryId: string | null): void => {
+    setM((prev) => ({ ...prev, categories: new Map(prev.categories).set(index, categoryId) }));
+  }, []);
+
+  const selectAllClean = useCallback((): void => {
+    const next = new Map<number, boolean>();
+    for (const row of m.preview?.rows ?? []) next.set(row.index, !row.locked && row.duplicate === null);
+    setM((prev) => ({ ...prev, included: next }));
+  }, [m.preview]);
+
+  const acceptLimit = useCallback((accepted: boolean): void => patch({ limitAccepted: accepted }), [patch]);
+
+  // --- matches: each suggestion is applied only when the user accepts it ----------------
+
+  const transferRows = useMemo(() => {
+    const own = accountById(m.accountId);
+    return (m.preview?.rows ?? []).flatMap((row) => {
+      if (row.transfer === null || !isIncluded(row)) return [];
+      const draft = m.orphanDrafts.get(row.index);
+      const other = draft === undefined ? null : accountById(draft.accountId);
+      return [
+        {
+          index: row.index,
+          suggestion: row.transfer,
+          answer: m.transferAnswers.get(row.index) ?? null,
+          linkedId: m.links.get(row.index) ?? null,
+          orphanAccountId: draft?.accountId ?? null,
+          needsCounterAmount: other !== null && own !== null && other.currency !== row.converted.currency && !m.orphans.has(row.index),
+        },
+      ];
+    });
+  }, [accountById, isIncluded, m.accountId, m.links, m.orphanDrafts, m.orphans, m.preview, m.transferAnswers]);
+
+  const payMatchRows = useMemo(
+    () =>
+      (m.preview?.rows ?? []).flatMap((row) =>
+        row.payMatch === null || !isIncluded(row)
+          ? []
+          : [{ index: row.index, pendingId: row.payMatch.pendingId, answer: m.payAnswers.get(row.index) ?? null }]
+      ),
+    [isIncluded, m.payAnswers, m.preview]
+  );
+
+  const rowAt = useCallback((index: number): PreviewRow | undefined => m.preview?.rows.find((r) => r.index === index), [m.preview]);
+
+  const linkTransfer = useCallback(
+    (index: number, existingId: string): void => {
+      const t = rowAt(index)?.transfer;
+      if (t === undefined || t === null) return;
+      const offered = t.kind === 'pair' ? t.existingId === existingId : t.kind === 'choose' ? t.options.includes(existingId) : false;
+      const info = m.existingById.get(existingId);
+      if (!offered || info === undefined || info.transfer_id !== null) return;
+      for (const [other, id] of m.links) if (id === existingId && other !== index) return; // one stored leg, one link (E-WR-06)
+      track('transfer_suggestion_answered', { accepted: true, kind: 'pair' });
+      setM((prev) => ({
+        ...prev,
+        links: new Map(prev.links).set(index, existingId),
+        transferAnswers: new Map(prev.transferAnswers).set(index, 'linked'),
+      }));
+    },
+    [m.existingById, m.links, rowAt]
+  );
+
+  const dismissTransfer = useCallback(
+    (index: number): void => {
+      const t = rowAt(index)?.transfer;
+      if (t === undefined || t === null || t.kind === 'orphan') return;
+      track('transfer_suggestion_answered', { accepted: false, kind: 'pair' });
+      setM((prev) => {
+        const links = new Map(prev.links);
+        links.delete(index);
+        return { ...prev, links, transferAnswers: new Map(prev.transferAnswers).set(index, 'dismissed') };
+      });
+    },
+    [rowAt]
+  );
+
+  const setOrphanAccount = useCallback(
+    (index: number, otherAccountId: string, counterAmountText?: string): void => {
+      const row = rowAt(index);
+      const own = accountById(m.accountId);
+      const other = accountById(otherAccountId);
+      if (row === undefined || row.transfer?.kind !== 'orphan' || own === null || other === null) return;
+      if (other.id === own.id || other.archived_at !== null) return;
+
+      let counterAmount: number | null = null;
+      let accepted = true;
+      if (other.currency !== row.converted.currency) {
+        // Cross-currency: the user's own figure, parsed strictly, never one derived from a rate (D-50).
+        accepted = false;
+        if (counterAmountText !== undefined && counterAmountText.trim() !== '') {
+          const parsed = parseAmount(counterAmountText, {
+            locale: device.locale,
+            exponent: exponentFor(other.currency) ?? 2,
+            separators: device.separators,
+          });
+          if (parsed.ok && parsed.value !== 0) {
+            counterAmount = Math.abs(parsed.value);
+            accepted = true;
+          }
+        }
+      }
+      const wasAccepted = m.orphans.has(index);
+      if (accepted && !wasAccepted) track('transfer_suggestion_answered', { accepted: true, kind: 'orphan' });
+      setM((prev) => {
+        const orphans = new Map(prev.orphans);
+        const answers = new Map(prev.transferAnswers);
+        if (accepted) {
+          orphans.set(index, { accountId: other.id, counterAmount });
+          answers.set(index, 'orphan');
+        } else {
+          orphans.delete(index);
+          if (answers.get(index) === 'orphan') answers.delete(index);
+        }
+        return {
+          ...prev,
+          orphans,
+          transferAnswers: answers,
+          orphanDrafts: new Map(prev.orphanDrafts).set(index, { accountId: other.id, text: counterAmountText ?? '' }),
+        };
+      });
+    },
+    [accountById, device.locale, device.separators, m.accountId, m.orphans, rowAt]
+  );
+
+  const dismissOrphan = useCallback(
+    (index: number): void => {
+      if (rowAt(index)?.transfer?.kind !== 'orphan') return;
+      track('transfer_suggestion_answered', { accepted: false, kind: 'orphan' });
+      setM((prev) => {
+        const orphans = new Map(prev.orphans);
+        orphans.delete(index);
+        return { ...prev, orphans, transferAnswers: new Map(prev.transferAnswers).set(index, 'dismissed') };
+      });
+    },
+    [rowAt]
+  );
+
+  const answerPayMatch = useCallback(
+    (index: number, accepted: boolean): void => {
+      const pm = rowAt(index)?.payMatch;
+      if (pm === undefined || pm === null) return;
+      if (accepted && m.existingById.get(pm.pendingId)?.status !== 'pending') return;
+      track('pay_match_answered', { accepted });
+      setM((prev) => ({ ...prev, payAnswers: new Map(prev.payAnswers).set(index, accepted ? 'accepted' : 'dismissed') }));
+    },
+    [m.existingById, rowAt]
+  );
+  const acceptPayMatch = useCallback((index: number): void => answerPayMatch(index, true), [answerPayMatch]);
+  const dismissPayMatch = useCallback((index: number): void => answerPayMatch(index, false), [answerPayMatch]);
+
+  // --- commit ---------------------------------------------------------------------------
+
+  const commit = useCallback((): void => {
+    const { preview, profile, draft } = m;
+    const account = accountById(m.accountId);
+    const householdId = ctx.householdId;
+    const userId = ctx.userId;
+    // T-02-39-01: nothing is written under a reading the user has not selected (D-42).
+    if ((m.stage !== 'review' && m.stage !== 'matches') || committing.current) return;
+    if (preview === null || profile === null || draft === null || account === null || householdId === null || userId === null) return;
+
+    const included = new Set(preview.rows.filter(isIncluded).map((r) => r.index));
+    const payMatches = new Set([...m.payAnswers].flatMap(([i, a]) => (a === 'accepted' ? [i] : [])));
+    const batchId = newStepId();
+    const stepId = newStepId();
+    const built = toImportCommit(
+      preview,
+      { included, categories: m.categories, links: m.links, orphans: m.orphans, payMatches, acceptLimit: m.limitAccepted },
+      {
+        householdId,
+        accountId: account.id,
+        timeZone: ctx.timeZone,
+        transferCategoryId: lookup.transferCategoryId,
+        accounts: transferAccounts(accounts),
+        existingById: m.existingById,
+        accountVersion: account.version,
+        // A reading the user confirmed or flipped is remembered for this layout (D-42).
+        remember: profile.decidedBy === 'remembered' ? null : { signature: draft.layoutSignature, id: newStepId() },
+      },
+      batchId,
+      newStepId
+    );
+    // Nothing included and nothing marked paid: there is nothing to write.
+    if (built.rows.length === 0 && built.finalize.markPaid.length === 0) return;
+
+    // Held until the next start or cancel, so a double tap can never write the batch twice.
+    committing.current = true;
+    try {
+      importCommit.commit({
+        householdId,
+        userId,
+        homeCurrency: ctx.homeCurrency,
+        batchId,
+        stepId,
+        rows: built.rows,
+        finalize: built.finalize,
+      });
+    } catch (err) {
+      committing.current = false;
+      throw err;
+    }
+
+    const count = built.rows.length + built.finalize.markPaid.length;
+    showToast({ kind: 'destructive', text: { key: 'undo.label.imported', params: { count, n: count } }, stepId });
+    track('import_committed', {
+      entry,
+      size: sizeBand(count),
+      format: preview.format,
+      reconciliation: RECONCILIATION[preview.reconcile.file],
+    });
+
+    // D-21 / D-56: recurring suggestions come from the committed ordinary rows only; a linked
+    // or counter transfer leg and a row that marked a bill paid are never fed to detection.
+    const linkedImported = new Set(built.finalize.links.map((l) => l.importedId));
+    const ordinary = built.rows.filter((r) => !r.transfer_id && !linkedImported.has(r.id) && r.name !== null && r.name !== undefined);
+    const suggestions = detectRecurring(
+      ordinary.map((r) => ({
+        id: r.id,
+        name: r.name as string,
+        amount: r.original_amount,
+        currency: r.original_currency,
+        localDate: r.local_date,
+        isTransfer: false,
+      }))
+    );
+    patch({
+      stage: 'done',
+      suggestions,
+      committedRows: ordinary.map((r) => ({ id: r.id, localDate: r.local_date, categoryId: r.category_id ?? null })),
+    });
+  }, [accountById, accounts, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, importCommit, isIncluded, lookup.transferCategoryId, m, patch]);
+
+  const acceptSuggestion = useCallback(
+    (key: string): void => {
+      const s = m.suggestions.find((x) => x.key === key);
+      if (s === undefined || m.accountId === null || ctx.householdId === null || ctx.userId === null) return;
+      const spec = suggestionToSeries(s, m.committedRows, { householdId: ctx.householdId, accountId: m.accountId, timeZone: ctx.timeZone }, newStepId());
+      createSeries.create({
+        series: spec.series,
+        anchorTransactionId: spec.anchorTransactionId,
+        linkTransactionIds: spec.linkTransactionIds,
+        anchorIsNew: false,
+        ownerId: ctx.userId,
+      });
+      track('recurring_suggestion_answered', { accepted: true });
+      setM((prev) => ({ ...prev, suggestions: prev.suggestions.filter((x) => x.key !== key) }));
+    },
+    [createSeries, ctx.householdId, ctx.timeZone, ctx.userId, m.accountId, m.committedRows, m.suggestions]
+  );
+
+  const dismissSuggestion = useCallback((key: string): void => {
+    track('recurring_suggestion_answered', { accepted: false });
+    setM((prev) => ({ ...prev, suggestions: prev.suggestions.filter((x) => x.key !== key) }));
+  }, []);
+
   const continueStage = useCallback((): Promise<void> | void => {
     if (m.stage === 'mapping') return continueFromMapping();
+    if (m.stage === 'review') {
+      if (transferRows.length > 0 || payMatchRows.length > 0) patch({ stage: 'matches' });
+      else commit();
+    } else if (m.stage === 'matches') commit();
     return undefined;
-  }, [continueFromMapping, m.stage]);
+  }, [commit, continueFromMapping, m.stage, patch, payMatchRows.length, transferRows.length]);
 
   const back = useCallback((): void => {
     if (m.stage === 'mapping') patch({ stage: 'format' });
@@ -431,6 +972,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           : null;
     if (m.stage === 'committing') return;
     run.current += 1;
+    committing.current = false;
     if (at !== null) track('import_abandoned', { stage: at });
     setM(initialMachine(m.accountId));
   }, [m.accountId, m.stage]);
@@ -484,5 +1026,30 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     cancel,
     continue: continueStage,
     back,
+    // review
+    preview: m.preview,
+    reconcile: m.preview?.reconcile ?? null,
+    counts,
+    rowState,
+    toggleRow,
+    setRowCategory,
+    selectAllClean,
+    limitOffer: m.preview?.limitOffer ?? null,
+    limitAccepted: m.limitAccepted,
+    acceptLimit,
+    // matches
+    transferRows,
+    payMatchRows,
+    linkTransfer,
+    dismissTransfer,
+    setOrphanAccount,
+    dismissOrphan,
+    acceptPayMatch,
+    dismissPayMatch,
+    // commit and what follows
+    commit,
+    suggestions: m.suggestions,
+    acceptSuggestion,
+    dismissSuggestion,
   };
 }
