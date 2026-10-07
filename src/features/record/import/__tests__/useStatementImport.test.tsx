@@ -374,3 +374,430 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
     expect(serialised).not.toMatch(/COFFEE|PAYSLIP|3\.50|1000/);
   });
 });
+
+// ---------------------------------------------------------------------------------------
+// Task 2: review, matches, commit and recurring suggestions
+// ---------------------------------------------------------------------------------------
+
+async function reachReview(bytes: Uint8Array, extension: 'csv' | 'ofx' | 'qfx', opts: { accountId?: string } = {}) {
+  pickOk(bytes, extension);
+  const hook = await setup({ accountId: opts.accountId ?? 'acc-1' });
+  await act(async () => {
+    hook.result.current.start();
+  });
+  await act(async () => {
+    hook.result.current.confirmFormat();
+  });
+  if (extension === 'csv') {
+    await act(async () => {
+      await hook.result.current.continue();
+    });
+  }
+  await waitFor(() => expect(hook.result.current.preview).not.toBeNull());
+  return hook;
+}
+
+const stored = (over: Record<string, unknown>) => ({
+  id: 'stored-1',
+  household_id: 'hh-1',
+  account_id: 'acc-1',
+  original_amount: -100,
+  original_currency: 'GBP',
+  local_date: '2026-09-01',
+  name: 'SOMETHING ELSE',
+  category_id: null,
+  payment_type: null,
+  status: 'paid',
+  transfer_id: null,
+  external_id: null,
+  import_format: null,
+  version: 2,
+  ...over,
+});
+
+const candidateLeg = (over: Record<string, unknown>) => ({
+  id: 'leg-1',
+  account_id: 'acc-2',
+  local_date: '2026-09-08',
+  original_amount: 30000,
+  original_currency: 'GBP',
+  name: 'RENT PAYMENT',
+  payment_type: null,
+  transfer_id: null,
+  category_id: null,
+  version: 4,
+  ...over,
+});
+
+function rowIndex(result: { current: { preview: { rows: { index: number; converted: { description: string } }[] } | null } }, description: string): number {
+  const row = result.current.preview!.rows.find((r) => r.converted.description === description);
+  return row!.index;
+}
+
+describe('useStatementImport: review', () => {
+  it('reads existing rows, candidates and learned names over the file range and builds the preview', async () => {
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(dbTx.fetchTransactionsInRange).toHaveBeenCalledWith(expect.anything(), 'hh-1', {
+      from: '2026-08-30',
+      toInclusive: '2026-09-12',
+      accountId: 'acc-1',
+    });
+    expect(dbTx.fetchTransferCandidates).toHaveBeenCalledWith(expect.anything(), 'hh-1', {
+      excludeAccountId: 'acc-1',
+      from: '2026-08-29',
+      toInclusive: '2026-09-13',
+    });
+    expect(dbTx.fetchCategorisedNames).toHaveBeenCalledWith(expect.anything(), 'hh-1', 'user-1');
+    // an OFX file also looks for rows before the period (the reconciliation anchor)
+    expect(dbTx.fetchHasRowsBefore).toHaveBeenCalledWith(expect.anything(), 'hh-1', 'acc-1', '2026-09-01');
+    expect(result.current.counts).toEqual(expect.objectContaining({ total: 5, blocked: 1, duplicates: 0 }));
+    expect(result.current.reconcile).not.toBeNull();
+  });
+
+  it('does not look for earlier rows for a CSV file', async () => {
+    await reachReview(csv(CSV_DECIDED), 'csv');
+    expect(dbTx.fetchHasRowsBefore).not.toHaveBeenCalled();
+  });
+
+  it('every read failing falls back and the preview is still built', async () => {
+    dbTx.fetchTransactionsInRange.mockRejectedValue(new Error('offline'));
+    dbTx.fetchTransferCandidates.mockRejectedValue(new Error('offline'));
+    dbTx.fetchHasRowsBefore.mockRejectedValue(new Error('offline'));
+    dbTx.fetchCategorisedNames.mockRejectedValue(new Error('offline'));
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.stage).toBe('review');
+    expect(result.current.preview?.rows).toHaveLength(5);
+  });
+
+  it('a stored FITID match is a duplicate and excluded by default; rows can be toggled, categorised and bulk-included', async () => {
+    dbTx.fetchTransactionsInRange.mockResolvedValue([
+      stored({ id: 'dup-1', original_amount: -4500, name: 'TESCO STORES', external_id: 'SYN0001', import_format: 'ofx' }),
+    ]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.counts).toEqual({ total: 5, included: 3, duplicates: 1, blocked: 1, cannotVerify: expect.any(Number) });
+
+    const rows = result.current.preview!.rows;
+    const dup = rows.find((r) => r.duplicate !== null)!;
+    const locked = rows.find((r) => r.locked)!;
+    const plain = rows.find((r) => !r.locked && r.duplicate === null)!;
+
+    await act(async () => {
+      result.current.toggleRow(locked.index);
+    });
+    expect(result.current.counts.included).toBe(3); // locked rows cannot be switched on
+    await act(async () => {
+      result.current.toggleRow(plain.index);
+    });
+    expect(result.current.counts.included).toBe(2);
+    await act(async () => {
+      result.current.setRowCategory(plain.index, 'cat-x');
+    });
+    expect(result.current.rowState(plain.index).categoryId).toBe('cat-x');
+    await act(async () => {
+      result.current.selectAllClean();
+    });
+    expect(result.current.rowState(dup.index).included).toBe(false);
+    expect(result.current.counts.included).toBe(3);
+  });
+
+  it('a card statement offering a limit lets acceptLimit toggle it', async () => {
+    const { result } = await reachReview(fixture('card-over-limit.ofx'), 'ofx', { accountId: 'acc-card' });
+    expect(result.current.limitOffer).not.toBeNull();
+    expect(result.current.limitAccepted).toBe(false);
+    await act(async () => {
+      result.current.acceptLimit(true);
+    });
+    expect(result.current.limitAccepted).toBe(true);
+  });
+});
+
+describe('useStatementImport: matches', () => {
+  it('goes straight to commit when nothing is suggested', async () => {
+    const { result } = await reachReview(csv(CSV_DECIDED), 'csv');
+    expect(result.current.transferRows).toHaveLength(0);
+    expect(result.current.payMatchRows).toHaveLength(0);
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(mockCommit).toHaveBeenCalledTimes(1);
+    expect(result.current.stage).toBe('done');
+  });
+
+  it('a transfer pair is only linked when accepted; the default is a plain import', async () => {
+    dbTx.fetchTransferCandidates.mockResolvedValue([candidateLeg({})]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.transferRows).toHaveLength(1);
+    const rent = rowIndex(result, 'RENT PAYMENT');
+    expect(result.current.transferRows[0]).toEqual(expect.objectContaining({ index: rent, answer: null }));
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(result.current.stage).toBe('matches');
+
+    // nothing accepted -> nothing linked
+    await act(async () => {
+      result.current.dismissTransfer(rent);
+    });
+    expect(mockTrack).toHaveBeenCalledWith('transfer_suggestion_answered', { accepted: false, kind: 'pair' });
+    await act(async () => {
+      result.current.commit();
+    });
+    const input = mockCommit.mock.calls[0]![0];
+    expect(input.finalize.links).toEqual([]);
+    expect(input.rows.some((r: { name: string }) => r.name === 'RENT PAYMENT')).toBe(true);
+  });
+
+  it('accepting a pair links the imported row to the stored leg with its transfer id', async () => {
+    dbTx.fetchTransferCandidates.mockResolvedValue([candidateLeg({})]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const rent = rowIndex(result, 'RENT PAYMENT');
+    await act(async () => {
+      result.current.continue();
+    });
+    await act(async () => {
+      result.current.linkTransfer(rent, 'not-offered');
+    });
+    expect(result.current.transferRows[0]!.answer).toBeNull(); // an id the row never offered is ignored
+    await act(async () => {
+      result.current.linkTransfer(rent, 'leg-1');
+    });
+    expect(mockTrack).toHaveBeenCalledWith('transfer_suggestion_answered', { accepted: true, kind: 'pair' });
+    await act(async () => {
+      result.current.commit();
+    });
+    const { finalize } = mockCommit.mock.calls[0]![0];
+    expect(finalize.links).toHaveLength(1);
+    expect(finalize.links[0]).toEqual(expect.objectContaining({ storedId: 'leg-1', storedVersion: 4, storedTransferId: null }));
+    expect(finalize.transferCategoryId).toBe('cat-transfer');
+  });
+
+  it('an orphan transfer needs an account, and a cross-currency one a counter amount the strict parser accepts', async () => {
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const rent = rowIndex(result, 'RENT PAYMENT');
+    expect(result.current.transferRows[0]!.suggestion.kind).toBe('orphan');
+    await act(async () => {
+      result.current.continue();
+    });
+
+    await act(async () => {
+      result.current.setOrphanAccount(rent, 'acc-eur');
+    });
+    expect(result.current.transferRows[0]!.answer).toBeNull();
+    expect(result.current.transferRows[0]!.needsCounterAmount).toBe(true);
+    await act(async () => {
+      result.current.setOrphanAccount(rent, 'acc-eur', 'abc');
+    });
+    expect(result.current.transferRows[0]!.answer).toBeNull();
+    expect(mockTrack).not.toHaveBeenCalledWith('transfer_suggestion_answered', expect.objectContaining({ kind: 'orphan' }));
+    await act(async () => {
+      result.current.setOrphanAccount(rent, 'acc-eur', '350.00');
+    });
+    expect(result.current.transferRows[0]!.answer).toBe('orphan');
+    expect(mockTrack).toHaveBeenCalledWith('transfer_suggestion_answered', { accepted: true, kind: 'orphan' });
+
+    await act(async () => {
+      result.current.commit();
+    });
+    const { rows } = mockCommit.mock.calls[0]![0];
+    const counter = rows.find((r: { account_id: string }) => r.account_id === 'acc-eur');
+    expect(counter.original_amount).toBe(35000);
+    expect(counter.transfer_id).toBeTruthy();
+  });
+
+  it('dismissing an orphan keeps the row as an ordinary import', async () => {
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const rent = rowIndex(result, 'RENT PAYMENT');
+    await act(async () => {
+      result.current.continue();
+    });
+    await act(async () => {
+      result.current.dismissOrphan(rent);
+    });
+    expect(mockTrack).toHaveBeenCalledWith('transfer_suggestion_answered', { accepted: false, kind: 'orphan' });
+    await act(async () => {
+      result.current.commit();
+    });
+    const { rows } = mockCommit.mock.calls[0]![0];
+    expect(rows.filter((r: { transfer_id?: string }) => r.transfer_id).length).toBe(0);
+  });
+
+  it('a pay-match appears only in markPaid when accepted, and is an ordinary row when dismissed', async () => {
+    dbTx.fetchTransactionsInRange.mockResolvedValue([
+      stored({ id: 'pend-1', status: 'pending', original_amount: -1250, name: 'COSTA COFFEE', local_date: '2026-09-03', version: 6 }),
+    ]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.payMatchRows).toHaveLength(1);
+    const costa = rowIndex(result, 'COSTA COFFEE');
+    expect(result.current.payMatchRows[0]).toEqual(expect.objectContaining({ index: costa, pendingId: 'pend-1', answer: null }));
+    await act(async () => {
+      result.current.continue();
+    });
+    await act(async () => {
+      result.current.acceptPayMatch(costa);
+    });
+    expect(mockTrack).toHaveBeenCalledWith('pay_match_answered', { accepted: true });
+    await act(async () => {
+      result.current.commit();
+    });
+    const { rows, finalize } = mockCommit.mock.calls[0]![0];
+    expect(finalize.markPaid).toHaveLength(1);
+    expect(finalize.markPaid[0]).toEqual(expect.objectContaining({ pendingId: 'pend-1', expectedVersion: 6 }));
+    expect(finalize.markPaid[0].line.name).toBe('COSTA COFFEE');
+    expect(rows.some((r: { name: string }) => r.name === 'COSTA COFFEE')).toBe(false);
+  });
+
+  it('a dismissed pay-match is tracked and the line is inserted normally', async () => {
+    dbTx.fetchTransactionsInRange.mockResolvedValue([
+      stored({ id: 'pend-1', status: 'pending', original_amount: -1250, name: 'COSTA COFFEE', local_date: '2026-09-03' }),
+    ]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const costa = rowIndex(result, 'COSTA COFFEE');
+    await act(async () => {
+      result.current.continue();
+    });
+    await act(async () => {
+      result.current.dismissPayMatch(costa);
+    });
+    expect(mockTrack).toHaveBeenCalledWith('pay_match_answered', { accepted: false });
+    await act(async () => {
+      result.current.commit();
+    });
+    const { rows, finalize } = mockCommit.mock.calls[0]![0];
+    expect(finalize.markPaid).toEqual([]);
+    expect(rows.some((r: { name: string }) => r.name === 'COSTA COFFEE')).toBe(true);
+  });
+});
+
+describe('useStatementImport: commit and recurring suggestions', () => {
+  it('commits one batch: input, destructive toast, funnel event, then done', async () => {
+    const { result } = await reachReview(csv(CSV_DECIDED), 'csv');
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit).toHaveBeenCalledTimes(1);
+    const input = mockCommit.mock.calls[0]![0];
+    expect(input).toEqual(
+      expect.objectContaining({ householdId: 'hh-1', userId: 'user-1', homeCurrency: 'GBP', batchId: expect.any(String), stepId: expect.any(String) })
+    );
+    expect(input.rows).toHaveLength(3);
+    // the confirmed reading is remembered for this layout (D-42)
+    expect(input.finalize.profile).toEqual(expect.objectContaining({ accountId: 'acc-1', signature: expect.any(String), id: expect.any(String) }));
+    expect(mockShowToast).toHaveBeenCalledWith({
+      kind: 'destructive',
+      text: { key: 'undo.label.imported', params: { count: 3, n: 3 } },
+      stepId: input.stepId,
+    });
+    expect(mockTrack).toHaveBeenCalledWith('import_committed', {
+      entry: 'account',
+      size: '1-50',
+      format: 'csv',
+      reconciliation: expect.stringMatching(/^(all_verified|partial|none_in_file|ends_only_mismatch)$/),
+    });
+    expect(result.current.stage).toBe('done');
+    const serialised = JSON.stringify(mockTrack.mock.calls) + JSON.stringify(mockShowToast.mock.calls);
+    expect(serialised).not.toMatch(/COFFEE|PAYSLIP/);
+  });
+
+  it('a remembered reading is not saved again', async () => {
+    fetchImportProfile.mockResolvedValue({
+      profile: { version: 1, source: 'csv', accountFamily: 'deposit', positiveMeans: 'money-in', balanceMeans: 'none', statedLimit: null, decidedBy: 'user' },
+    });
+    pickOk(csv(CSV_DECIDED));
+    const { result } = await setup();
+    await act(async () => {
+      result.current.start();
+    });
+    await act(async () => {
+      await result.current.continue();
+    });
+    await waitFor(() => expect(result.current.preview).not.toBeNull());
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit.mock.calls[0]![0].finalize.profile).toBeNull();
+  });
+
+  it('commit with nothing included is a no-op', async () => {
+    const { result } = await reachReview(csv(CSV_DECIDED), 'csv');
+    for (const r of result.current.preview!.rows) {
+      await act(async () => {
+        result.current.toggleRow(r.index);
+      });
+    }
+    expect(result.current.counts.included).toBe(0);
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit).not.toHaveBeenCalled();
+    expect(trackedNames()).not.toContain('import_committed');
+  });
+
+  it('cannot commit without a selected reading (an ambiguous one)', async () => {
+    pickOk(csv(CSV_AMBIGUOUS));
+    const { result } = await setup();
+    await act(async () => {
+      result.current.start();
+    });
+    expect(result.current.profile).toBeNull();
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit).not.toHaveBeenCalled();
+  });
+
+  it('suggests recurring series from the committed non-transfer rows and creates one on accept', async () => {
+    const monthly = ['Date,Description,Debit,Credit', '2026-01-05,GYM,30.00,', '2026-02-05,GYM,30.00,', '2026-03-05,GYM,30.00,', '2026-04-05,GYM,30.00,'].join('\n');
+    const { result } = await reachReview(csv(monthly), 'csv');
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(result.current.stage).toBe('done');
+    expect(result.current.suggestions).toHaveLength(1);
+    const key = result.current.suggestions[0]!.key;
+    await act(async () => {
+      result.current.acceptSuggestion(key);
+    });
+    expect(mockCreateSeries).toHaveBeenCalledWith(
+      expect.objectContaining({ anchorIsNew: false, ownerId: 'user-1', anchorTransactionId: expect.any(String), linkTransactionIds: expect.any(Array) })
+    );
+    expect(mockTrack).toHaveBeenCalledWith('recurring_suggestion_answered', { accepted: true });
+    expect(result.current.suggestions).toHaveLength(0);
+  });
+
+  it('dismissing a suggestion is tracked and creates nothing', async () => {
+    const monthly = ['Date,Description,Debit,Credit', '2026-01-05,GYM,30.00,', '2026-02-05,GYM,30.00,', '2026-03-05,GYM,30.00,', '2026-04-05,GYM,30.00,'].join('\n');
+    const { result } = await reachReview(csv(monthly), 'csv');
+    await act(async () => {
+      result.current.commit();
+    });
+    await act(async () => {
+      result.current.dismissSuggestion(result.current.suggestions[0]!.key);
+    });
+    expect(mockTrack).toHaveBeenCalledWith('recurring_suggestion_answered', { accepted: false });
+    expect(mockCreateSeries).not.toHaveBeenCalled();
+  });
+
+  it('never feeds a linked or counter transfer leg to recurring detection (D-56)', async () => {
+    const rentCsv = [
+      'Date,Description,Debit,Credit',
+      '2026-01-08,TRANSFER TO SAVINGS,300.00,',
+      '2026-02-08,TRANSFER TO SAVINGS,300.00,',
+      '2026-03-08,TRANSFER TO SAVINGS,300.00,',
+      '2026-04-08,TRANSFER TO SAVINGS,300.00,',
+    ].join('\n');
+    const { result } = await reachReview(csv(rentCsv), 'csv');
+    expect(result.current.transferRows.length).toBeGreaterThan(0);
+    await act(async () => {
+      result.current.continue();
+    });
+    for (const t of result.current.transferRows) {
+      await act(async () => {
+        result.current.setOrphanAccount(t.index, 'acc-2');
+      });
+    }
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(result.current.suggestions).toHaveLength(0);
+  });
+});
