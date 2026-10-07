@@ -160,6 +160,13 @@ export interface DeleteTransferVars {
   labelName: string;
   /** The leg the user acted on: its version is the conflict check; the partner is fetched at flush. */
   leg: { id: string; version: number; month: string };
+  /**
+   * W6-13 IN-03: the partner leg as the user saw it, when the caller has it. Its version is then
+   * checked too (D-26: an edit to the partner made after the user looked refuses the delete).
+   * Absent (one leg in hand, or a write queued before this field existed): the partner's current
+   * version at flush is accepted -- the user asked to delete the pair.
+   */
+  partner?: { id: string; version: number };
 }
 
 const LEG_KEYS = ['local_date', 'account_id', 'original_currency', 'original_amount'] as const;
@@ -272,7 +279,8 @@ function registerDeleteTransfer(qc: QueryClient): void {
           throw new VersionConflictError('transactions', vars.leg.id, null);
         }
         const items = pair.map((row) => {
-          const base = row.id === vars.leg.id ? vars.leg.version : row.version;
+          const base =
+            row.id === vars.leg.id ? vars.leg.version : row.id === vars.partner?.id ? vars.partner.version : row.version;
           return {
             id: row.id,
             base,
@@ -520,8 +528,11 @@ export function useEditTransfer(): {
 }
 
 export function useDeleteTransfer(): {
-  /** Returns the undo step id. Either leg may be passed; the partner is fetched when the write flushes. */
-  remove(leg: TransferLegRow, ctx: TransferEditContext): string;
+  /**
+   * Returns the undo step id. Either leg may be passed; the partner is fetched when the write
+   * flushes. Pass `partner` when the other leg is in hand too, so its observed version is checked.
+   */
+  remove(leg: TransferLegRow, ctx: TransferEditContext, partner?: TransferLegRow): string;
 } {
   const mutation = useMutation<AppliedRow[], unknown, DeleteTransferVars>({
     mutationKey: mutationKeys.deleteTransfer,
@@ -529,8 +540,11 @@ export function useDeleteTransfer(): {
   });
 
   return {
-    remove(leg, ctx): string {
+    remove(leg, ctx, partner): string {
       if (!leg.transfer_id) throw new TypeError('useDeleteTransfer: the row is not a transfer leg');
+      if (partner && (partner.transfer_id !== leg.transfer_id || partner.id === leg.id)) {
+        throw new TypeError('useDeleteTransfer: the two legs are not one linked transfer');
+      }
       const stepId = newStepId();
       mutation.mutate({
         householdId: leg.household_id,
@@ -539,6 +553,7 @@ export function useDeleteTransfer(): {
         transferId: leg.transfer_id,
         labelName: ctx.labelName,
         leg: { id: leg.id, version: leg.version, month: monthOf(leg.local_date) },
+        ...(partner ? { partner: { id: partner.id, version: partner.version } } : {}),
       });
       return stepId;
     },

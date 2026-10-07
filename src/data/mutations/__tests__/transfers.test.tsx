@@ -552,6 +552,24 @@ describe('useDeleteTransfer', () => {
     expect(recordFailedWrite).not.toHaveBeenCalled();
   });
 
+  it('IN-03: when the caller has both legs, the partner is checked at the version the user saw', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    // The partner was edited elsewhere (now version 6) after the user looked at it (version 4).
+    fake.respondWith({ data: [fullRow({ id: 'o1', version: 2 }), fullRow({ id: 'i1', account_id: 'a2', original_amount: 5000, version: 6 })], error: null, status: 200 });
+    fake.respondWith(applied([{ id: 'o1', version: 3 }, { id: 'i1', version: 7 }]));
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useDeleteTransfer(), { wrapper: wrapper(qc) });
+    result.current.remove(outLeg(), { ownerId: 'user-1', labelName: 'x' }, inLeg());
+
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    expect(rpcArgs(fake).p_ops.map((o) => [o.id, o.expectedVersion])).toEqual([
+      ['o1', 2],
+      ['i1', 4],
+    ]);
+  });
+
   it('a version conflict from apply_patches records one conflict failed write', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
