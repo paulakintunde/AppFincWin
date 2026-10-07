@@ -221,6 +221,21 @@ describe('ActivityScreen', () => {
     expect(screen.getByLabelText('Mark paid')).toBeTruthy();
   });
 
+  it('S-WR-14: the row label carries its tags and the home figure, not just name and amount', async () => {
+    mockRows = [
+      row({ id: 'o1', name: 'Rent', status: 'pending', local_date: '2026-09-01', overdue: true }),
+      row({ id: 'e1', name: 'Hotel', original_amount: -10000, original_currency: 'EUR', amountHome: -8500, pending: true } as never),
+    ];
+    const screen = await renderScreen();
+    const rent = screen.getByTestId('activity-row-o1').props.accessibilityLabel as string;
+    expect(rent).toMatch(/^Rent, /);
+    expect(rent).toContain('Overdue');
+    const hotel = screen.getByTestId('activity-row-e1').props.accessibilityLabel as string;
+    expect(hotel).toContain('£85.00');
+    expect(hotel).toContain('€100.00');
+    expect(hotel).toContain('queued');
+  });
+
   it('renders a projection muted, tagged Expected, and not tappable', async () => {
     mockProjections = [
       { key: 's1:2026-09-30', seriesId: 's1', date: '2026-09-30', name: 'Netflix', amount: -999, currency: 'GBP', categoryId: null, accountId: 'a1', amountHome: -999 },

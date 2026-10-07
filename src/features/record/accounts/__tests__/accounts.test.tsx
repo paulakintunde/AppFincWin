@@ -323,6 +323,15 @@ describe('AccountsScreen and AccountDetailScreen', () => {
     expect(onOpen).toHaveBeenCalledWith('acc2');
   });
 
+  it('S-WR-14: an account card is announced with its balance and standing, not the name alone', async () => {
+    mockAccounts = [account()];
+    mockBalances = new Map([['acc1', view({ balance: -2500, standing: { kind: 'overdrawn-no-limit', overdrawnBy: 2500 } as never })]]);
+    const { getByLabelText } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
+    const card = getByLabelText(/^Current, /);
+    expect(card.props.accessibilityLabel).toContain('−£25.00');
+    expect(card.props.accessibilityLabel).toContain('Overdrawn by £25.00. No overdraft set.');
+  });
+
   it('shows the empty state', async () => {
     const { getByText } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
     expect(getByText('No accounts yet.')).toBeTruthy();

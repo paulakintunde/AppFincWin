@@ -91,12 +91,21 @@ export function ActivityRow({
 
   const canMarkPaid = row.status === 'pending' && !isTransfer && !selectable;
 
+  // S-WR-14: an accessibility label replaces the children, so it carries everything the row
+  // shows that matters: name, amount, the home figure and the queued / overdue / due tags.
+  const tagTexts = [
+    row.pending ? t('sync.pendingRow') : null,
+    row.overdue ? t('record.recurring.overdue') : null,
+    row.status === 'pending' && !row.overdue ? t('record.recurring.dueOn', { date: formatter.formatDate(row.local_date, 'short') }) : null,
+  ];
+  const spoken = [name, amountText, homeText, ...tagTexts].filter((p): p is string => p !== null && p !== '').join(', ');
+
   return (
     <View style={styles.wrap}>
       <Pressable
         testID={`activity-row-${row.id}`}
         accessibilityRole={selectable ? 'checkbox' : 'button'}
-        accessibilityLabel={selectable ? t('a11y.selectRow', { name }) : `${name}, ${amountText}`}
+        accessibilityLabel={selectable ? t('a11y.selectRow', { name }) : spoken}
         accessibilityState={selectable ? { checked: selected } : undefined}
         onPress={() => (selectable ? onToggleSelect?.(row) : onPress(row))}
         style={styles.main}
