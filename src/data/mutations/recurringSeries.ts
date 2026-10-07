@@ -96,6 +96,8 @@ export interface CreateSeriesVars {
   series: NewRecurringSeries;
   anchorTransactionId: string | null;
   linkTransactionIds: string[];
+  /** The anchor row was created in the same user action: its undo also removes it. */
+  anchorIsNew?: boolean;
   ownerId: string;
   undo: SeriesUndoLabel;
 }
@@ -175,7 +177,11 @@ export function registerSeriesMutations(qc: QueryClient): void {
         return createRecurringSeries(
           client,
           vars.series,
-          { anchorTransactionId: vars.anchorTransactionId, linkTransactionIds: vars.linkTransactionIds },
+          {
+            anchorTransactionId: vars.anchorTransactionId,
+            linkTransactionIds: vars.linkTransactionIds,
+            anchorIsNew: vars.anchorIsNew,
+          },
           vars.undo
         );
       }),
@@ -271,6 +277,8 @@ export function useCreateSeries(): {
     series: NewRecurringSeries;
     anchorTransactionId?: string | null;
     linkTransactionIds?: string[];
+    /** Pass true when the anchor entry was created in this same action (Repeats on a new entry). */
+    anchorIsNew?: boolean;
     ownerId: string;
   }): string;
 } {
@@ -286,6 +294,7 @@ export function useCreateSeries(): {
         series: input.series,
         anchorTransactionId: input.anchorTransactionId ?? null,
         linkTransactionIds: input.linkTransactionIds ?? [],
+        anchorIsNew: input.anchorIsNew ?? false,
         ownerId: input.ownerId,
         undo: { id: stepId, labelKey: 'seriesCreated', labelParams: { name: input.series.name } },
       });

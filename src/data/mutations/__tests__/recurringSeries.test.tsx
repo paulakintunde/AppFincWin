@@ -197,6 +197,36 @@ describe('useCreateSeries', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.recurringSeries('h1') });
   });
 
+  it('forwards anchorIsNew as p_anchor_is_new and keeps the minted step id', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(applied(1));
+    const qc = newClient();
+    const { result } = await renderHook(() => useCreateSeries(), { wrapper: wrapper(qc) });
+
+    const stepId = result.current.create({ series: newSeries, anchorTransactionId: 't1', anchorIsNew: true, ownerId: 'u1' });
+    await waitFor(() => expect(rpcCalls(fake)).toHaveLength(1));
+
+    expect(rpcCalls(fake)[0]!.args).toMatchObject({
+      p_anchor_transaction_id: 't1',
+      p_anchor_is_new: true,
+      p_undo_step: { id: stepId, label_key: 'seriesCreated' },
+    });
+  });
+
+  it('does not send p_anchor_is_new when anchorIsNew is not given', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(applied(1));
+    const qc = newClient();
+    const { result } = await renderHook(() => useCreateSeries(), { wrapper: wrapper(qc) });
+
+    result.current.create({ series: newSeries, anchorTransactionId: 't1', ownerId: 'u1' });
+    await waitFor(() => expect(rpcCalls(fake)).toHaveLength(1));
+
+    expect(rpcCalls(fake)[0]!.args).not.toHaveProperty('p_anchor_is_new');
+  });
+
   it('defaults the link arguments to null and an empty list', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
