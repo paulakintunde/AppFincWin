@@ -22,3 +22,4 @@ export type {
   ValidateCustomCurrencyResult,
   ValidatedCustomCurrency,
 } from './customCurrency';
+export { currencyForRegion } from './regionCurrency';

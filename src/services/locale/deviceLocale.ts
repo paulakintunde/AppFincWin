@@ -115,6 +115,18 @@ export function getDeviceSeparators(regionOverride?: string | null): LocaleSepar
   return resolveLocale(getLocales()[0], deviceTimeZone(), regionOverride).separators;
 }
 
+/**
+ * 02-31: the region RD-02's precedence resolves to (override > device region > time zone
+ * tiebreak), or undefined when none does. Used to pick a starting home currency; never IP.
+ */
+export function getDeviceRegion(regionOverride?: string | null): string | undefined {
+  return resolveRegion({
+    override: regionOverride,
+    deviceRegion: getLocales()[0]?.regionCode,
+    timeZone: deviceTimeZone(),
+  });
+}
+
 export function getDeviceTimeZone(): string {
   return deviceTimeZone() ?? FALLBACK_TIME_ZONE;
 }
