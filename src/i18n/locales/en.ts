@@ -283,6 +283,9 @@ const en = {
       endAfterCount: 'After a number of times',
       endCount_one: 'After {{count}} time',
       endCount_other: 'After {{count}} times',
+      countField: 'Number of times',
+      endCountInvalid: 'Use a whole number from 1 to 1000.',
+      done: 'Done',
     },
     recurring: {
       scopeHeading: 'Edit this one, or this and future?',

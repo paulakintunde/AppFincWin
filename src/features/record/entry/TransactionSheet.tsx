@@ -2,18 +2,27 @@
 // component. Every write goes through the queued mutation hooks and records its own undo
 // step, then shows the Undo toast tied to that step (D-31). Form rules live in
 // transactionForm.ts (pure). Copy is declarative, never advice.
+import * as Crypto from 'expo-crypto';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { currencyExponent, money } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import type { MinorUnits } from '@/engine/money';
-import type { PaymentType, TransactionRow } from '@/db/rows';
+import type { PaymentType, TransactionPatch, TransactionRow } from '@/db/rows';
 import { PAYMENT_TYPES } from '@/db/rows';
 import { useAccounts } from '@/data/queries/accounts';
 import { useTransferLegs } from '@/data/queries/activity';
+import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 import { useAddTransaction, useDeleteTransaction, useEditTransaction } from '@/data/mutations/transactions';
+import {
+  seriesInputFromRow,
+  seriesPatchFromOccurrenceEdit,
+  useCreateSeries,
+  useEditSeriesFrom,
+  type ScheduleInput,
+} from '@/data/mutations/recurringSeries';
 import { useAddTransfer, useDeleteTransfer, useEditTransfer, type TransferLegRow } from '@/data/mutations/transfers';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -40,6 +49,10 @@ import { AccountPicker } from './pickers/AccountPicker';
 import { CategoryPicker } from './pickers/CategoryPicker';
 import { DateField } from './pickers/DateField';
 import { OptionPicker } from './pickers/OptionPicker';
+import { EditScopePrompt } from './EditScopePrompt';
+import { OccurrenceActions } from './OccurrenceActions';
+import { RepeatsField } from './RepeatsField';
+import { needsScopePrompt, nonTemplatePatch, repeatsToSchedule, type RepeatsValue } from './recurringForm';
 import {
   initialFormState,
   toAddInput,
@@ -113,6 +126,9 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const { add: addTransfer } = useAddTransfer();
   const { edit: editTransfer } = useEditTransfer();
   const { remove: removeTransfer } = useDeleteTransfer();
+  const { create: createSeries } = useCreateSeries();
+  const { editFrom } = useEditSeriesFrom();
+  const seriesList = useRecurringSeries(rc.householdId ?? undefined).data;
 
   const activeAccounts = useMemo(() => accounts.filter((a) => a.archived_at === null), [accounts]);
   const exponentFor = (code: string): number => options.find((o) => o.code === code)?.exponent ?? currencyExponent(code);
@@ -127,10 +143,14 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const [picker, setPicker] = useState<PickerKey>(null);
   const [submitted, setSubmitted] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [repeats, setRepeats] = useState<RepeatsValue>({ freq: 'never' });
+  const [scopePatch, setScopePatch] = useState<TransactionPatch | null>(null);
 
   const editRow: TransactionRow | null = mode.kind === 'edit' ? mode.row : null;
   const pair = mode.kind === 'edit-transfer' ? mode : null;
   const isNew = mode.kind === 'new';
+  const series = editRow?.recurring_series_id ? seriesList?.find((x) => x.id === editRow.recurring_series_id) : undefined;
+  const repeatsInvalid = submitted && repeatsToSchedule(repeats) === 'invalid';
   const isTransfer = state.direction === 'transfer';
   const parse = (text: string, currency: string) => parser.parse(text, currency, exponentFor(currency));
   const nameOf = (id: string | null): string => accounts.find((a) => a.id === id)?.name ?? '';
@@ -216,39 +236,126 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     if (validateForm(state, parse).length > 0) return;
     const amountMinor = (parse(state.amountText, state.currency) as { value: MinorUnits }).value;
     const name = state.name.trim();
+    // Repeats is only offered on rows that are not already in a series.
+    const schedule = editRow?.recurring_series_id ? null : repeatsToSchedule(repeats);
+    if (schedule === 'invalid') return;
 
     if (editRow) {
       const patch = toPatch(editRow, state, amountMinor);
-      const keys = Object.keys(patch) as (keyof typeof patch)[];
-      if (keys.length === 0) {
-        onClose();
+      // D-06/D-07: a template change on an occurrence asks which occurrences it applies to.
+      if (needsScopePrompt(editRow, patch)) {
+        setScopePatch(patch);
         return;
       }
-      const before: Record<string, string | number | null> = {};
-      for (const key of keys) before[key] = (editRow as unknown as Record<string, string | number | null>)[key] ?? null;
-      const stepId = newStepId();
-      const recorded = edit(
-        { id: editRow.id, householdId: editRow.household_id, month: monthOf(editRow.local_date), expectedVersion: editRow.version, patch },
-        { stepId, ownerId: rc.userId, labelKey: 'edited', labelParams: { name }, before }
-      );
-      showToast({ kind: 'ordinary', text: undoLabelText('edited', { name }), stepId: recorded ? stepId : null });
+      commitEdit(editRow, patch, name, schedule);
+      return;
+    }
+
+    const input = toAddInput(state, amountMinor, {
+      householdId: rc.householdId,
+      userId: rc.userId,
+      homeCurrency: rc.homeCurrency,
+      timeZone: rc.timeZone,
+    });
+    if (schedule) {
+      // One Undo removes the entry and its series together (D-24 amendment): the entry is
+      // added without its own step and the series step carries it (anchorIsNew).
+      const newId = add(input);
+      const seriesStep = createSeries({
+        series: seriesInputFromRow(
+          {
+            household_id: input.householdId,
+            account_id: input.accountId,
+            original_amount: input.amount,
+            original_currency: input.currency,
+            category_id: input.categoryId ?? null,
+            payment_type: input.paymentType ?? null,
+            time_zone: rc.timeZone,
+            local_date: state.localDate,
+            name,
+          },
+          schedule,
+          Crypto.randomUUID()
+        ),
+        anchorTransactionId: newId,
+        anchorIsNew: true,
+        ownerId: rc.userId,
+      });
+      showToast({ kind: 'ordinary', text: undoLabelText('seriesCreated', { name }), stepId: seriesStep });
+      trackAdded({ kind: state.direction === 'in' ? 'income' : 'expense', recurring: true });
       onClose();
       return;
     }
 
     const stepId = newStepId();
-    add({
-      ...toAddInput(state, amountMinor, {
-        householdId: rc.householdId,
-        userId: rc.userId,
-        homeCurrency: rc.homeCurrency,
-        timeZone: rc.timeZone,
-      }),
-      undo: { stepId, labelKey: 'added', labelParams: { name } },
-    });
+    add({ ...input, undo: { stepId, labelKey: 'added', labelParams: { name } } });
     showToast({ kind: 'ordinary', text: undoLabelText('added', { name }), stepId });
     trackAdded({ kind: state.direction === 'in' ? 'income' : 'expense', recurring: false });
     onClose();
+  };
+
+  /** Sends the edit of this one row; returns the step id when an Undo step will be recorded. */
+  const sendRowEdit = (row: TransactionRow, patch: TransactionPatch, name: string): string | null => {
+    const keys = Object.keys(patch) as (keyof TransactionPatch)[];
+    if (keys.length === 0) return null;
+    const before: Record<string, string | number | null> = {};
+    for (const key of keys) before[key] = (row as unknown as Record<string, string | number | null>)[key] ?? null;
+    const stepId = newStepId();
+    const recorded = edit(
+      { id: row.id, householdId: row.household_id, month: monthOf(row.local_date), expectedVersion: row.version, patch },
+      { stepId, ownerId: rc.userId as string, labelKey: 'edited', labelParams: { name }, before }
+    );
+    return recorded ? stepId : null;
+  };
+
+  const commitEdit = (row: TransactionRow, patch: TransactionPatch, name: string, schedule: ScheduleInput | null) => {
+    if (!rc.userId) return;
+    if (Object.keys(patch).length === 0 && !schedule) {
+      onClose();
+      return;
+    }
+    const editStep = sendRowEdit(row, patch, name);
+    if (schedule) {
+      // D-09: an existing entry becomes the first occurrence and survives an Undo (anchorIsNew false).
+      const seriesStep = createSeries({
+        series: seriesInputFromRow({ ...row, ...patch, name: patch.name ?? row.name } as TransactionRow, schedule, Crypto.randomUUID()),
+        anchorTransactionId: row.id,
+        anchorIsNew: false,
+        ownerId: rc.userId,
+      });
+      showToast({ kind: 'ordinary', text: undoLabelText('seriesCreated', { name }), stepId: seriesStep });
+    } else {
+      showToast({ kind: 'ordinary', text: undoLabelText('edited', { name }), stepId: editStep });
+    }
+    onClose();
+  };
+
+  const applyThisAndFuture = () => {
+    const patch = scopePatch;
+    setScopePatch(null);
+    if (!patch || !editRow || !series || !rc.userId) return;
+    // Note and status stay on this one row; the template fields go to the series (D-07).
+    const rest = nonTemplatePatch(patch);
+    if (Object.keys(rest).length > 0) sendRowEdit(editRow, rest, patch.name ?? series.name);
+    const seriesName = patch.name ?? series.name;
+    const stepId = editFrom({
+      id: series.id,
+      householdId: editRow.household_id,
+      expectedVersion: series.version,
+      patch: seriesPatchFromOccurrenceEdit(patch),
+      effectiveFrom: editRow.occurrence_date ?? editRow.local_date,
+      ownerId: rc.userId,
+      name: seriesName,
+    });
+    showToast({ kind: 'ordinary', text: undoLabelText('seriesEdited', { name: seriesName }), stepId });
+    onClose();
+  };
+
+  const applyThisOne = () => {
+    const patch = scopePatch;
+    setScopePatch(null);
+    if (!patch || !editRow) return;
+    commitEdit(editRow, patch, state.name.trim(), null);
   };
 
   const doDelete = () => {
@@ -405,7 +512,18 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
               />
             </View>
 
-            {/* 02-21: recurring controls mount here */}
+            {editRow ? (
+              <OccurrenceActions
+                row={editRow}
+                series={series}
+                onAdjust={() => setState((s) => withStatus(s, 'paid'))}
+                onDone={onClose}
+              />
+            ) : null}
+            {editRow?.recurring_series_id ? null : (
+              <RepeatsField value={repeats} onChange={setRepeats} formatDate={(d) => formatter.formatDate(d)} today={rc.today} />
+            )}
+            {repeatsInvalid ? <Text style={errorStyle}>{t('record.repeats.endCountInvalid')}</Text> : null}
           </>
         )}
 
@@ -482,6 +600,13 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           setPicker(null);
         }}
         onClose={() => setPicker(null)}
+      />
+      <EditScopePrompt
+        visible={scopePatch !== null}
+        onThisOne={applyThisOne}
+        onThisAndFuture={applyThisAndFuture}
+        onCancel={() => setScopePatch(null)}
+        futureDisabled={series === undefined}
       />
       <ConfirmSheet
         visible={confirmDelete}

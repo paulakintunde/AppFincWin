@@ -161,7 +161,7 @@ describe('Repeats on a new entry', () => {
     await fireEvent.press(getByLabelText('Repeats'));
     await fireEvent.press(getByText('Every week'));
     await fireEvent.press(getByText('After a number of times'));
-    await fireEvent.changeText(getByLabelText('After a number of times'), '12');
+    await fireEvent.changeText(getByLabelText('Number of times'), '12');
     await fireEvent.press(getByText('Done'));
     await fireEvent.press(getByText('Save expense'));
     expect((mockCreate.mock.calls[0] as unknown[])[0]).toMatchObject({
@@ -176,7 +176,7 @@ describe('Repeats on a new entry', () => {
     await fireEvent.press(getByLabelText('Repeats'));
     await fireEvent.press(getByText('Every week'));
     await fireEvent.press(getByText('After a number of times'));
-    await fireEvent.changeText(getByLabelText('After a number of times'), '5000');
+    await fireEvent.changeText(getByLabelText('Number of times'), '5000');
     await fireEvent.press(getByText('Done'));
     await fireEvent.press(getByText('Save expense'));
     expect(mockAdd).not.toHaveBeenCalled();

@@ -48,7 +48,17 @@ export function templateFieldsChanged(patch: TransactionPatch): boolean {
  * adjusted values) is never a template edit.
  */
 export function needsScopePrompt(row: Pick<TransactionRow, 'recurring_series_id' | 'status'>, patch: TransactionPatch): boolean {
-  if (row.recurring_series_id === null) return false;
+  if (!row.recurring_series_id) return false;
   if (row.status === 'pending' && patch.status === 'paid') return false;
   return templateFieldsChanged(patch);
+}
+
+/** The keys of a patch that stay on the one row when a series is edited "this and future" (note, status). */
+export function nonTemplatePatch(patch: TransactionPatch): TransactionPatch {
+  const out: Record<string, unknown> = {};
+  const template = TEMPLATE_FIELDS as readonly string[];
+  for (const [key, value] of Object.entries(patch)) {
+    if (!template.includes(key)) out[key] = value;
+  }
+  return out as TransactionPatch;
 }

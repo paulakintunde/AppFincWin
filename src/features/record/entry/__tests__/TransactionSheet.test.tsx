@@ -25,6 +25,8 @@ jest.mock('@/data/mutations/transactions', () => ({
   useAddTransaction: () => ({ add: mockAdd }),
   useEditTransaction: () => ({ edit: mockEdit }),
   useDeleteTransaction: () => ({ remove: mockRemove }),
+  useMarkPaid: () => ({ markPaid: jest.fn(() => 'paid-step') }),
+  useSkipOccurrence: () => ({ skip: jest.fn(() => 'skip-step') }),
 }));
 jest.mock('@/data/mutations/transfers', () => ({
   useAddTransfer: () => ({ add: mockAddTransfer }),
@@ -32,6 +34,14 @@ jest.mock('@/data/mutations/transfers', () => ({
   useDeleteTransfer: () => ({ remove: mockRemoveTransfer }),
 }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => 'step-1' }));
+jest.mock('@/data/mutations/recurringSeries', () => ({
+  ...jest.requireActual('@/data/mutations/recurringSeries'),
+  useCreateSeries: () => ({ create: jest.fn(() => 'series-step') }),
+  useEditSeriesFrom: () => ({ editFrom: jest.fn(() => 'sedit-step') }),
+  useEndSeries: () => ({ end: jest.fn(() => 'send-step') }),
+}));
+jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [] }) }));
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'series-1' }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: mockTrack }) }));
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({

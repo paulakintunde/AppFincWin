@@ -1,4 +1,4 @@
-import { needsScopePrompt, repeatsToSchedule, templateFieldsChanged } from '../recurringForm';
+import { needsScopePrompt, nonTemplatePatch, repeatsToSchedule, templateFieldsChanged } from '../recurringForm';
 
 describe('repeatsToSchedule', () => {
   it('maps never to null', () => {
@@ -83,5 +83,11 @@ describe('needsScopePrompt', () => {
 
   it('never asks for a row outside a series', () => {
     expect(needsScopePrompt({ recurring_series_id: null, status: 'paid' }, { original_amount: -500 })).toBe(false);
+  });
+});
+
+describe('nonTemplatePatch', () => {
+  it('keeps only the note and status keys', () => {
+    expect(nonTemplatePatch({ original_amount: -5, note: 'x', status: 'paid', name: 'Rent' })).toEqual({ note: 'x', status: 'paid' });
   });
 });
