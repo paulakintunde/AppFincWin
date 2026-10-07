@@ -613,3 +613,215 @@ describe('ImportScreen: review', () => {
     expect(mockState.cancel).toHaveBeenCalledTimes(1);
   });
 });
+
+// ---------------------------------------------------------------------------------------
+// Matches and suggestions
+// ---------------------------------------------------------------------------------------
+
+function pairRow(index: number, existingId: string, amount = -30000) {
+  return previewRow(index, { transfer: { kind: 'pair', existingId } }, { description: `PAYMENT ${index}`, amount });
+}
+
+function tRow(index: number, suggestion: unknown, over: Record<string, unknown> = {}) {
+  return { index, suggestion, answer: null, linkedId: null, orphanAccountId: null, needsCounterAmount: false, ...over };
+}
+
+function matchesState(rows: ReturnType<typeof previewRow>[], over: Record<string, unknown> = {}) {
+  return makeState({
+    stage: 'matches',
+    accountId: 'a1',
+    preview: { rows, reconcile: { file: 'none-in-file', rows: [], orientation: 'as-is', verifiedLinks: 0, failedLinks: 0 }, fitidDisabled: false, limitOffer: null },
+    counts: { total: rows.length, included: rows.length, duplicates: 0, blocked: 0, cannotVerify: 0 },
+    storedLegs: new Map([
+      ['leg-1', { accountId: 'a2', name: 'Savings in' }],
+      ['leg-2', { accountId: 'a2', name: 'Savings in' }],
+      ['leg-3', { accountId: 'a1', name: 'Current in' }],
+      ['pend-1', { accountId: 'a1', name: 'Coffee subscription' }],
+    ]),
+    ...over,
+  });
+}
+
+describe('ImportScreen: matches', () => {
+  it('names both accounts in a transfer suggestion, in money-out to money-in order', async () => {
+    mockState = matchesState([pairRow(0, 'leg-1')], { transferRows: [tRow(0, { kind: 'pair', existingId: 'leg-1' })] });
+    await renderScreen();
+    expect(screen.getByText('Before importing')).toBeTruthy();
+    expect(screen.getByText('Looks like a payment from Current to Savings. Link as a transfer?')).toBeTruthy();
+    expect(screen.getByLabelText('Suggested transfer: Current to Savings. Link as a transfer?')).toBeTruthy();
+  });
+
+  it('a money-in line reads from the other account to this one', async () => {
+    mockState = matchesState([pairRow(0, 'leg-1', 30000)], { transferRows: [tRow(0, { kind: 'pair', existingId: 'leg-1' })] });
+    await renderScreen();
+    expect(screen.getByText('Looks like a payment from Savings to Current. Link as a transfer?')).toBeTruthy();
+  });
+
+  it('Link as transfer and Not a transfer call the hook', async () => {
+    mockState = matchesState([pairRow(0, 'leg-1')], { transferRows: [tRow(0, { kind: 'pair', existingId: 'leg-1' })] });
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Link as transfer' }));
+    expect(mockState.linkTransfer).toHaveBeenCalledWith(0, 'leg-1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Not a transfer' }));
+    expect(mockState.dismissTransfer).toHaveBeenCalledWith(0);
+  });
+
+  it('a choose row renders one pair card per option, and linking one leaves only that card', async () => {
+    const choose = { kind: 'choose', options: ['leg-1', 'leg-2'] };
+    mockState = matchesState([pairRow(0, 'leg-1')], { transferRows: [tRow(0, choose)] });
+    await renderScreen();
+    expect(screen.getAllByText('Looks like a payment from Current to Savings. Link as a transfer?')).toHaveLength(2);
+    await fireEvent.press(screen.getAllByRole('button', { name: 'Link as transfer' })[1]!);
+    expect(mockState.linkTransfer).toHaveBeenCalledWith(0, 'leg-2');
+  });
+
+  it('once an option is linked the other options are no longer offered', async () => {
+    const choose = { kind: 'choose', options: ['leg-1', 'leg-2'] };
+    mockState = matchesState([pairRow(0, 'leg-1')], { transferRows: [tRow(0, choose, { answer: 'linked', linkedId: 'leg-2' })] });
+    await renderScreen();
+    expect(screen.getAllByText('Looks like a payment from Current to Savings. Link as a transfer?')).toHaveLength(1);
+  });
+
+  it('an orphan asks for the other account, and picking one calls setOrphanAccount', async () => {
+    mockState = matchesState([previewRow(0, { transfer: { kind: 'orphan' } })], { transferRows: [tRow(0, { kind: 'orphan' })] });
+    await renderScreen();
+    expect(screen.getByText('Looks like a transfer, but we can’t tell where it went. Pick the other account.')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Pick the other account for this transfer'));
+    expect(screen.queryByLabelText('Current')).toBeNull(); // the target account is excluded
+    await fireEvent.press(screen.getByLabelText('Savings'));
+    expect(mockState.setOrphanAccount).toHaveBeenCalledWith(0, 'a2');
+    await fireEvent.press(screen.getByRole('button', { name: 'Not a transfer' }));
+    expect(mockState.dismissOrphan).toHaveBeenCalledWith(0);
+  });
+
+  it('a cross-currency orphan asks for the amount received in the other account', async () => {
+    mockState = matchesState([previewRow(0, { transfer: { kind: 'orphan' } })], {
+      transferRows: [tRow(0, { kind: 'orphan' }, { orphanAccountId: 'a2', needsCounterAmount: true })],
+    });
+    await renderScreen();
+    const field = screen.getByLabelText('Amount received in Savings');
+    await fireEvent.changeText(field, '12.50');
+    expect(mockState.setOrphanAccount).toHaveBeenCalledWith(0, 'a2', '12.50');
+  });
+
+  it('a same-currency orphan shows no amount field', async () => {
+    mockState = matchesState([previewRow(0, { transfer: { kind: 'orphan' } })], {
+      transferRows: [tRow(0, { kind: 'orphan' }, { orphanAccountId: 'a2', needsCounterAmount: false })],
+    });
+    await renderScreen();
+    expect(screen.queryByLabelText('Amount received in Savings')).toBeNull();
+  });
+
+  it('a pay-match names the pending bill and offers Mark paid and Keep both', async () => {
+    mockState = matchesState([previewRow(0, { payMatch: { pendingId: 'pend-1' } })], {
+      payMatchRows: [{ index: 0, pendingId: 'pend-1', answer: null }],
+    });
+    await renderScreen();
+    expect(screen.getByText('Looks like this pays the pending Coffee subscription bill. Mark it paid?')).toBeTruthy();
+    expect(screen.getByLabelText('Suggested match: this line pays the pending Coffee subscription bill. Mark it paid?')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Mark paid' }));
+    expect(mockState.acceptPayMatch).toHaveBeenCalledWith(0);
+    await fireEvent.press(screen.getByRole('button', { name: 'Keep both' }));
+    expect(mockState.dismissPayMatch).toHaveBeenCalledWith(0);
+  });
+
+  it('the commit button carries the included count and calls commit', async () => {
+    mockState = matchesState([previewRow(0), previewRow(1), previewRow(2)], { transferRows: [tRow(0, { kind: 'orphan' })] });
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Import 3 transactions' }));
+    expect(mockState.commit).toHaveBeenCalledTimes(1);
+  });
+
+  it('Back and Cancel are wired', async () => {
+    mockState = matchesState([pairRow(0, 'leg-1')], { transferRows: [tRow(0, { kind: 'pair', existingId: 'leg-1' })] });
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(mockState.back).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockState.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  describe('suggestion cap (review item 12)', () => {
+    const capState = (over: Record<string, unknown> = {}) =>
+      matchesState([pairRow(0, 'leg-1'), pairRow(1, 'leg-2'), previewRow(2, { transfer: { kind: 'orphan' }, payMatch: { pendingId: 'pend-1' } })], {
+        counts: { total: 3, included: 5998, duplicates: 0, blocked: 0, cannotVerify: 0 },
+        transferRows: [
+          tRow(0, { kind: 'pair', existingId: 'leg-1' }, { answer: 'linked', linkedId: 'leg-1' }),
+          tRow(1, { kind: 'pair', existingId: 'leg-2' }),
+          tRow(2, { kind: 'orphan' }),
+        ],
+        payMatchRows: [{ index: 2, pendingId: 'pend-1', answer: null }],
+        ...over,
+      });
+
+    it('disables further acceptances once the cap is reached and says why', async () => {
+      mockState = capState();
+      await renderScreen();
+      expect(screen.getByText('One import can apply up to 1 suggestion. The rest are kept as separate lines.')).toBeTruthy();
+      const links = screen.getAllByRole('button', { name: 'Link as transfer' });
+      expect(links[0]).toBeDisabled(); // already linked: nothing more to do
+      expect(links[1]).toBeDisabled(); // would be the second accepted suggestion
+      expect(screen.getByRole('button', { name: 'Mark paid' })).toBeDisabled();
+      expect(screen.getByLabelText('Pick the other account for this transfer')).toBeDisabled();
+    });
+
+    it('still lets a suggestion be declined at the cap', async () => {
+      mockState = capState();
+      await renderScreen();
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Not a transfer' })[0]!);
+      expect(mockState.dismissTransfer).toHaveBeenCalledWith(0);
+      await fireEvent.press(screen.getByRole('button', { name: 'Keep both' }));
+      expect(mockState.dismissPayMatch).toHaveBeenCalledWith(0);
+    });
+
+    it('says nothing and disables nothing while under the cap', async () => {
+      mockState = capState({ counts: { total: 3, included: 100, duplicates: 0, blocked: 0, cannotVerify: 0 } });
+      await renderScreen();
+      expect(screen.queryByText(/One import can apply up to/)).toBeNull();
+      expect(screen.getAllByRole('button', { name: 'Link as transfer' })[1]).not.toBeDisabled();
+    });
+  });
+});
+
+describe('ImportScreen: done', () => {
+  const suggestion = { key: 'k1', name: 'Netflix', amount: -999, currency: 'GBP', freq: 'monthly', anchorDate: '2026-03-01', rowIds: ['r1', 'r2', 'r3'] };
+
+  it('shows Import finished and a recurring suggestion per detected series', async () => {
+    mockState = makeState({ stage: 'done', accountId: 'a1', suggestions: [suggestion] });
+    await renderScreen();
+    expect(screen.getByText('Import finished')).toBeTruthy();
+    expect(screen.getByText('Looks like Netflix, £9.99 monthly. Make it recurring?')).toBeTruthy();
+  });
+
+  it('Make recurring and Not now call the hook with the suggestion key', async () => {
+    mockState = makeState({ stage: 'done', accountId: 'a1', suggestions: [suggestion] });
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Make recurring' }));
+    expect(mockState.acceptSuggestion).toHaveBeenCalledWith('k1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Not now' }));
+    expect(mockState.dismissSuggestion).toHaveBeenCalledWith('k1');
+  });
+
+  it('Done leaves the screen', async () => {
+    const onDone = jest.fn();
+    mockState = makeState({ stage: 'done', accountId: 'a1', suggestions: [] });
+    await renderScreen(onDone);
+    expect(screen.queryByRole('button', { name: 'Make recurring' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('never offers an Undo of its own (the import toast owns it, and only with a real step id)', async () => {
+    mockState = makeState({ stage: 'done', accountId: 'a1', suggestions: [suggestion] });
+    await renderScreen();
+    expect(screen.queryByText('Undo')).toBeNull();
+  });
+});
+
+describe('ImportScreen: committing', () => {
+  it('shows Importing… while the write is handed off', async () => {
+    mockState = makeState({ stage: 'committing', accountId: 'a1' });
+    await renderScreen();
+    expect(screen.getByText('Importing…')).toBeTruthy();
+  });
+});
