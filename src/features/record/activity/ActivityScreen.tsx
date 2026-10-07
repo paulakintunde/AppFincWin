@@ -271,7 +271,10 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
           getItemType={getActivityItemType}
           renderItem={renderItem}
           ListEmptyComponent={
-            searching || filtering ? (
+            flat && search.isLoading ? (
+              // S-IN-04: an in-flight server search is not an empty result.
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('activity.searching')}</Text>
+            ) : searching || filtering ? (
               <EmptyState heading={t('activity.noMatchHeading')} body={t('activity.noMatchBody')} />
             ) : (
               <EmptyState
@@ -293,7 +296,12 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
       ) : null}
       <ConfirmSheet
         visible={confirmOpen}
-        body={t('activity.bulkDeleteConfirm', { count: selectedRows.length })}
+        body={
+          // S-IN-05: a selected transfer leg takes its partner with it (expandTransferIds).
+          selectedRows.some((r) => r.transfer_id !== null)
+            ? `${t('activity.bulkDeleteConfirm', { count: selectedRows.length })} ${t('activity.bulkDeleteTransfers')}`
+            : t('activity.bulkDeleteConfirm', { count: selectedRows.length })
+        }
         cancelLabel={t('activity.bulkDeleteCancel')}
         confirmLabel={t('activity.bulkDeleteProceed')}
         destructive

@@ -27,6 +27,7 @@ export function CategoryPicker({ visible, categories, selectedId, onSelect, onCl
           label={t('record.sheet.uncategorised')}
           dense
           value={selectedId === null ? '✓' : undefined}
+          selected={selectedId === null}
           onPress={() => onSelect(null)}
         />
         {categories.map((category) => {
@@ -38,6 +39,7 @@ export function CategoryPicker({ visible, categories, selectedId, onSelect, onCl
               dense
               leading={<CategoryGlyph colorKey={category.color_key} letter={name.charAt(0).toUpperCase()} />}
               value={category.id === selectedId ? '✓' : undefined}
+              selected={category.id === selectedId}
               accessibilityLabel={name}
               onPress={() => onSelect(category.id)}
             />

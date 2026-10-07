@@ -30,6 +30,7 @@ export function AccountPicker({ visible, title, accounts, selectedId, excludeId,
             label={account.name}
             dense
             value={account.id === selectedId ? `${account.currency} ✓` : account.currency}
+            selected={account.id === selectedId}
             accessibilityLabel={account.name}
             onPress={() => onSelect({ id: account.id, currency: account.currency, name: account.name })}
           />

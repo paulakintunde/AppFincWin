@@ -465,3 +465,11 @@ describe('AccountSheet: changing the type keeps what the balance means (S-WR-12)
     expect(vars.patch).toEqual({ kind: 'checking', credit_limit: null });
   });
 });
+
+describe('AccountDetailScreen for an account that is not there (S-IN-10)', () => {
+  it('says so instead of rendering a blank screen', async () => {
+    mockAccounts = [account()];
+    const u = await wrap(<AccountDetailScreen accountId="gone" onImport={jest.fn()} />);
+    expect(u.getByText('This account can’t be shown.')).toBeTruthy();
+  });
+});

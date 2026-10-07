@@ -206,7 +206,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   };
   const outFigure = showMoney(state.amountText, state.currency);
   const inFigure = showMoney(state.amountInText, state.toCurrency ?? state.currency);
-  const figureText = outFigure ?? (state.amountText === '' ? (showMoney('0', state.currency || 'GBP') ?? '') : state.amountText);
+  const figureText = outFigure ?? (state.amountText === '' ? (showMoney('0', state.currency || rc.homeCurrency) ?? '') : state.amountText);
 
   const amountsFor = (): { out: number; inn: number } => {
     const out = (parse(state.amountText, state.currency) as { value: MinorUnits }).value;

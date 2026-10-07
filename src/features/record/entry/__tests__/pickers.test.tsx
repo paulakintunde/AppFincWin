@@ -9,6 +9,7 @@ import { MonthSwitcher } from '@/features/record/activity/MonthSwitcher';
 import { OptionPicker } from '../pickers/OptionPicker';
 import { CategoryPicker } from '../pickers/CategoryPicker';
 import { AccountPicker } from '../pickers/AccountPicker';
+import { EditScopePrompt } from '../EditScopePrompt';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -71,5 +72,24 @@ describe('long pickers scroll under a fixed header (S-CR-05)', () => {
     expect(within(body).queryByLabelText('Cancel')).toBeNull();
     await fireEvent.press(getByLabelText('Cancel'));
     expect(queryByTestId('sheet-scroll')).toBeNull();
+  });
+
+  it('S-IN-09: the current choice is a selected state, not only a check mark', async () => {
+    const options = [
+      { value: 'GBP', label: 'GBP · Pound' },
+      { value: 'EUR', label: 'EUR · Euro' },
+    ];
+    const { getByRole } = await wrap(
+      <OptionPicker visible title="Currency" options={options} selected="EUR" onSelect={jest.fn()} onClose={jest.fn()} />
+    );
+    expect(getByRole('button', { name: 'EUR · Euro' }).props.accessibilityState).toMatchObject({ selected: true });
+    expect(getByRole('button', { name: 'GBP · Pound' }).props.accessibilityState).toMatchObject({ selected: false });
+  });
+
+  it('S-IN-09: the scope question is a header', async () => {
+    const { getByRole } = await wrap(
+      <EditScopePrompt visible onThisOne={jest.fn()} onThisAndFuture={jest.fn()} onCancel={jest.fn()} />
+    );
+    expect(getByRole('header', { name: 'Edit this one, or this and future?' })).toBeTruthy();
   });
 });

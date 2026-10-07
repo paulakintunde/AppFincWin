@@ -28,6 +28,7 @@ export function OptionPicker<T extends string>({ visible, title, options, select
             dense
             chevron={false}
             value={option.value === selected ? '✓' : undefined}
+            selected={option.value === selected}
             accessibilityLabel={option.label}
             onPress={() => onSelect(option.value)}
           />

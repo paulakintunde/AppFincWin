@@ -27,7 +27,9 @@ export function EditScopePrompt({ visible, onThisOne, onThisAndFuture, onCancel,
   return (
     <Sheet visible={visible} onDismiss={onCancel} accessibilityLabel={t('record.recurring.scopeHeading')}>
       <View style={styles.column}>
-        <Text style={heading}>{t('record.recurring.scopeHeading')}</Text>
+        <Text accessibilityRole="header" style={heading}>
+          {t('record.recurring.scopeHeading')}
+        </Text>
         <Pill label={t('record.recurring.scopeThisOne')} variant="secondary" onPress={onThisOne} />
         <Pill
           label={t('record.recurring.scopeThisAndFuture')}

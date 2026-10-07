@@ -22,6 +22,8 @@ const mockTrack = jest.fn();
 let mockLegs: TransactionRow[] = [];
 let mockRegion = 'GB';
 let mockTransferCat: string | null = 'tc';
+let mockNoAccounts = false;
+let mockHome = 'GBP';
 
 jest.mock('@/data/mutations/transactions', () => ({
   useAddTransaction: () => ({ add: mockAdd }),
@@ -47,11 +49,13 @@ jest.mock('expo-crypto', () => ({ randomUUID: () => 'series-1' }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: mockTrack }) }));
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({
-    data: [
-      { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null },
-      { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null },
-      { id: 'a3', name: 'Euro pot', currency: 'EUR', archived_at: null },
-    ],
+    data: mockNoAccounts
+      ? []
+      : [
+          { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null },
+          { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null },
+          { id: 'a3', name: 'Euro pot', currency: 'EUR', archived_at: null },
+        ],
   }),
 }));
 jest.mock('@/data/queries/categories', () => ({
@@ -78,7 +82,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
     ready: true,
     userId: 'u1',
     householdId: 'h1',
-    homeCurrency: 'GBP',
+    homeCurrency: mockHome,
     showCents: true,
     region: mockRegion,
     timeZone: 'Europe/London',
@@ -124,6 +128,8 @@ beforeEach(() => {
   mockLegs = [];
   mockRegion = 'GB';
   mockTransferCat = 'tc';
+  mockNoAccounts = false;
+  mockHome = 'GBP';
 });
 
 describe('TransactionSheet: new and edit', () => {
@@ -389,6 +395,16 @@ describe('TransactionSheet: transfers', () => {
       stepId: 'trd-step',
       text: { key: 'undo.label.transferDeleted', params: { name: 'Savings' } },
     });
+  });
+});
+
+describe('TransactionSheet: empty figure (S-IN-01)', () => {
+  it('shows the empty figure in the home currency when no account is chosen yet', async () => {
+    mockNoAccounts = true;
+    mockHome = 'USD';
+    const { getByText, queryByText } = await open({ kind: 'new', direction: 'out' });
+    expect(queryByText('£0.00')).toBeNull();
+    expect(getByText(/\$0\.00/)).toBeTruthy();
   });
 });
 
