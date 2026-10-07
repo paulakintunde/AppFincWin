@@ -191,7 +191,8 @@ create or replace function public.create_recurring_series(
   p_series jsonb,
   p_anchor_transaction_id uuid default null,
   p_link_transaction_ids uuid[] default '{}',
-  p_undo_step jsonb default null
+  p_undo_step jsonb default null,
+  p_anchor_is_new boolean default false
 )
 returns jsonb
 language plpgsql
@@ -201,6 +202,7 @@ as $$
 declare
   v_household_id uuid := (p_series ->> 'household_id')::uuid;
   v_series_id uuid := (p_series ->> 'id')::uuid;
+  v_anchor_created jsonb := null;
   v_existing public.recurring_series%rowtype;
   v_anchor_date date := nullif(p_series ->> 'anchor_date', '')::date;
   v_anchor_txn public.transactions%rowtype;
@@ -220,6 +222,13 @@ begin
       raise exception 'series % belongs to a different household', v_series_id using errcode = '42501';
     end if;
     return jsonb_build_object('status', 'already-applied', 'series_id', v_series_id);
+  end if;
+
+  -- 2026-10-06 user decision: p_anchor_is_new says the anchor row was created
+  -- in this same user action, so its undo also removes the anchor. It is only
+  -- meaningful with an anchor; a flag with nothing to apply to is malformed.
+  if coalesce(p_anchor_is_new, false) and p_anchor_transaction_id is null then
+    raise exception 'p_anchor_is_new requires p_anchor_transaction_id' using errcode = '22023';
   end if;
 
   if p_anchor_transaction_id is not null then
@@ -288,13 +297,22 @@ begin
   select coalesce(jsonb_agg(jsonb_build_object('id', id, 'version', 1)), '[]'::jsonb) into v_inserted
     from public.materialise_series(v_series_id) as id;
 
+  -- The anchor's version is read after the link above, so the undo op's
+  -- expectedVersion is the row as this action left it: any later edit makes
+  -- the undo refuse (D-26) rather than silently deleting the user's change.
+  if coalesce(p_anchor_is_new, false) then
+    select jsonb_build_object('id', t.id, 'version', t.version) into v_anchor_created
+      from public.transactions t where t.id = p_anchor_transaction_id;
+  end if;
+
   return public.record_series_undo_step(p_undo_step, jsonb_build_object(
     'status', 'applied',
     'series', jsonb_build_object('id', v_series_id, 'version', 1, 'before', null),
     'inserted', v_inserted,
     'soft_deleted', '[]'::jsonb,
     'linked', v_linked
-  ));
+  ) || case when v_anchor_created is null then '{}'::jsonb
+            else jsonb_build_object('anchor_created', v_anchor_created) end);
 end;
 $$;
 
@@ -537,8 +555,8 @@ grant execute on function public.materialise_series(uuid, date) to service_role;
 revoke execute on function public.materialise_recurring() from public, anon, authenticated;
 grant execute on function public.materialise_recurring() to service_role;
 
-revoke execute on function public.create_recurring_series(jsonb, uuid, uuid[], jsonb) from public, anon;
-grant execute on function public.create_recurring_series(jsonb, uuid, uuid[], jsonb) to authenticated;
+revoke execute on function public.create_recurring_series(jsonb, uuid, uuid[], jsonb, boolean) from public, anon;
+grant execute on function public.create_recurring_series(jsonb, uuid, uuid[], jsonb, boolean) to authenticated;
 
 revoke execute on function public.edit_recurring_series_from(uuid, integer, jsonb, date, jsonb) from public, anon;
 grant execute on function public.edit_recurring_series_from(uuid, integer, jsonb, date, jsonb) to authenticated;

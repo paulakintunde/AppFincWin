@@ -175,6 +175,31 @@ describe('createRecurringSeries', () => {
     });
   });
 
+  it('passes p_anchor_is_new: true only when the anchor was created in the same action', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: APPLIED_RESPONSE, error: null, status: 200 });
+
+    await createRecurringSeries(client, NEW_SERIES, { anchorTransactionId: 'tx-1', anchorIsNew: true });
+
+    const rpcCall = client.calls.find((c) => c.method === 'rpc');
+    expect(rpcCall?.args[1]).toEqual({
+      p_series: NEW_SERIES,
+      p_anchor_transaction_id: 'tx-1',
+      p_link_transaction_ids: [],
+      p_anchor_is_new: true,
+    });
+  });
+
+  it('omits p_anchor_is_new when the flag is false or absent (server default is false)', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: APPLIED_RESPONSE, error: null, status: 200 });
+
+    await createRecurringSeries(client, NEW_SERIES, { anchorTransactionId: 'tx-1', anchorIsNew: false });
+
+    const rpcCall = client.calls.find((c) => c.method === 'rpc');
+    expect(rpcCall?.args[1]).not.toHaveProperty('p_anchor_is_new');
+  });
+
   it('an RPC error object is thrown as a DbError', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: null, error: { message: 'boom', code: 'XX000' }, status: 500 });

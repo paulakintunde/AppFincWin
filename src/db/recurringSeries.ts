@@ -193,13 +193,23 @@ function undoStepParam(undo: SeriesUndoLabel | undefined): { p_undo_step?: { id:
 export async function createRecurringSeries(
   client: DbClient,
   series: NewRecurringSeries,
-  link?: { anchorTransactionId?: string | null; linkTransactionIds?: readonly string[] },
+  link?: {
+    anchorTransactionId?: string | null;
+    linkTransactionIds?: readonly string[];
+    /**
+     * The anchor transaction was created in this same user action, so the recorded undo step
+     * also soft-deletes it (one undo removes the new entry and its series). Only sent when
+     * true; the server default is false and leaves the anchor alone.
+     */
+    anchorIsNew?: boolean;
+  },
   undo?: SeriesUndoLabel
 ): Promise<SeriesWriteResult> {
   const { data, error, status } = await client.rpc('create_recurring_series', {
     p_series: series,
     p_anchor_transaction_id: link?.anchorTransactionId ?? null,
     p_link_transaction_ids: link?.linkTransactionIds ?? [],
+    ...(link?.anchorIsNew === true ? { p_anchor_is_new: true } : {}),
     ...undoStepParam(undo),
   });
 

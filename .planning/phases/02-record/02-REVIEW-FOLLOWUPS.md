@@ -45,3 +45,4 @@ The three review files (`02-REVIEW-W1-5-{engine,db,client}.md`) give the per-fin
 | 18 | Check where `pg_trgm` is installed before `db push`. | 02-31 preflight |
 | 18a | Plan 02-20 added the native module `@react-native-community/datetimepicker` 9.1.0. Build a new development build (EAS) before the 02-31 device check, or the date picker will not open. | 02-31 device check |
 | 19 | 12 engine info items (IN-01..IN-12) are unfixed; each needs a design call. See the engine review file. | backlog |
+| 20 | Plan 02-21: when Repeats is switched on for a **brand-new** entry, call `useCreateSeries().create({ ..., anchorTransactionId, anchorIsNew: true })` so one undo removes the entry and its series (user decision 2026-10-06, see D-24 amendment). Leave `anchorIsNew` off when an existing entry is made to repeat. | 02-21 |
