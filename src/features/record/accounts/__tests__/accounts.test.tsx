@@ -22,6 +22,7 @@ const mockAdd = jest.fn((..._args: unknown[]) => 'new-acc');
 const mockEdit = jest.fn((..._args: unknown[]) => true);
 const mockTrack = jest.fn();
 let mockAccounts: AccountRow[] = [];
+let mockRegion = 'GB';
 let mockBalances = new Map<string, AccountBalanceView>();
 
 jest.mock('@/data/mutations/accounts', () => ({
@@ -70,7 +71,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
     householdId: 'h1',
     homeCurrency: 'GBP',
     showCents: true,
-    region: 'GB',
+    region: mockRegion,
     timeZone: 'Europe/London',
     today: '2026-10-06',
   }),
@@ -114,6 +115,7 @@ beforeEach(() => {
   resetToastForTests();
   mockAccounts = [];
   mockBalances = new Map();
+  mockRegion = 'GB';
 });
 
 describe('AccountSheet new', () => {
@@ -340,5 +342,32 @@ describe('AccountsScreen and AccountDetailScreen', () => {
     expect(onImport).toHaveBeenCalledWith('acc1');
     await fireEvent.press(getByText('Edit account'));
     expect(getByText('Save changes')).toBeTruthy();
+  });
+});
+
+describe('AccountSheet: opening balance prefill in the region notation (S-CR-01)', () => {
+  it('de-DE, KWD (3 decimals): renaming leaves the opening balance unchanged', async () => {
+    mockRegion = 'DE';
+    const acc = account({ currency: 'KWD', opening_balance: 500000 });
+    const { getByLabelText, getByText } = await wrap(<AccountSheet visible mode={{ kind: 'edit', account: acc }} onClose={jest.fn()} />);
+    expect(getByLabelText('Opening balance').props.value).toBe('500,000');
+    await fireEvent.changeText(getByLabelText('Name'), 'Dinar');
+    await fireEvent.press(getByText('Save changes'));
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    const [vars] = mockEdit.mock.calls[0] as unknown as [{ patch: Record<string, unknown> }];
+    expect(vars.patch).toEqual({ name: 'Dinar' });
+  });
+
+  it('de-DE, EUR: a rename of an account with cents saves, with no separator error', async () => {
+    mockRegion = 'DE';
+    const acc = account({ currency: 'EUR', opening_balance: 123456, overdraft_limit: 50000 });
+    const { getByLabelText, getByText, queryByText } = await wrap(<AccountSheet visible mode={{ kind: 'edit', account: acc }} onClose={jest.fn()} />);
+    expect(getByLabelText('Opening balance').props.value).toBe('1234,56');
+    expect(getByLabelText('Overdraft limit').props.value).toBe('500,00');
+    await fireEvent.changeText(getByLabelText('Name'), 'Giro');
+    await fireEvent.press(getByText('Save changes'));
+    expect(queryByText(/match how amounts are written/)).toBeNull();
+    const [vars] = mockEdit.mock.calls[0] as unknown as [{ patch: Record<string, unknown> }];
+    expect(vars.patch).toEqual({ name: 'Giro' });
   });
 });

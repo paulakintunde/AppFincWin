@@ -1,4 +1,4 @@
-import { parseAmount, resolveExponent, type ParseAmountResult } from '@/engine/money';
+import { minorUnits, parseAmount, resolveExponent, toDecimalString, type ParseAmountResult } from '@/engine/money';
 import type { TransactionRow } from '@/db/rows';
 import {
   initialFormState,
@@ -18,7 +18,7 @@ import {
 const ctx: FormContext = {
   today: '2026-09-25',
   defaultAccount: { id: 'a1', currency: 'GBP' },
-  exponentFor: (code) => resolveExponent(code),
+  amountInputText: (minor, code) => toDecimalString(minorUnits(minor), resolveExponent(code)),
 };
 
 const parse = (text: string, currency: string): ParseAmountResult =>

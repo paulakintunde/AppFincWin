@@ -4,7 +4,6 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { AccountRow, CategoryRow } from '@/db/rows';
-import { resolveExponent } from '@/engine/money';
 import { EMPTY_FILTER, type ActivityFilter } from '@/engine/activity/filters';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
@@ -36,11 +35,6 @@ function toggled<T>(list: readonly T[] | null, item: T): readonly T[] | null {
   return next.length === 0 ? null : next;
 }
 
-function formatMinor(minor: number | null, exponent: number): string {
-  if (minor === null) return '';
-  return exponent === 0 ? String(minor) : (minor / 10 ** exponent).toFixed(exponent);
-}
-
 export function FilterSheet(props: FilterSheetProps) {
   if (!props.visible) return null;
   return <FilterBody {...props} />;
@@ -51,10 +45,10 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
   const { colors, pairing } = useTheme();
   const parser = useAmountParser(region ?? null);
   const [draft, setDraft] = useState<ActivityFilter>(value);
-  // Prefill from the applied range using the same exponent the parser will use.
-  const exponent = resolveExponent(homeCurrency);
-  const [minText, setMinText] = useState(() => formatMinor(value.amountMin, exponent));
-  const [maxText, setMaxText] = useState(() => formatMinor(value.amountMax, exponent));
+  // S-CR-01: prefill from the applied range in the region's own notation, through the same
+  // parser that reads it back (string maths, never a float), so it always round-trips.
+  const [minText, setMinText] = useState(() => (value.amountMin === null ? '' : parser.toInputText(value.amountMin, homeCurrency)));
+  const [maxText, setMaxText] = useState(() => (value.amountMax === null ? '' : parser.toInputText(value.amountMax, homeCurrency)));
   const [error, setError] = useState<string | null>(null);
 
   const labelStyle = { ...textRole(pairing, 'label'), color: colors.inkMuted };

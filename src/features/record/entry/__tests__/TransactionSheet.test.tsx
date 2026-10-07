@@ -20,6 +20,7 @@ const mockEditTransfer = jest.fn((): string | null => 'tre-step');
 const mockRemoveTransfer = jest.fn(() => 'trd-step');
 const mockTrack = jest.fn();
 let mockLegs: TransactionRow[] = [];
+let mockRegion = 'GB';
 
 jest.mock('@/data/mutations/transactions', () => ({
   useAddTransaction: () => ({ add: mockAdd }),
@@ -78,7 +79,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
     householdId: 'h1',
     homeCurrency: 'GBP',
     showCents: true,
-    region: 'GB',
+    region: mockRegion,
     timeZone: 'Europe/London',
     today: '2026-09-25',
   }),
@@ -120,6 +121,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   resetToastForTests();
   mockLegs = [];
+  mockRegion = 'GB';
 });
 
 describe('TransactionSheet: new and edit', () => {
@@ -350,5 +352,37 @@ describe('TransactionSheet: transfers', () => {
       stepId: 'trd-step',
       text: { key: 'undo.label.transferDeleted', params: { name: 'Savings' } },
     });
+  });
+});
+
+describe('TransactionSheet: amount prefill in the region notation (S-CR-01)', () => {
+  it('de-DE: prefills "12,50" and a note-only edit saves just the note', async () => {
+    mockRegion = 'DE';
+    const { getByLabelText, getByText, queryByText } = await open({
+      kind: 'edit',
+      row: row({ original_amount: -1250, original_currency: 'EUR', home_currency: 'EUR', account_id: 'a3' }),
+    });
+    expect(getByLabelText('Amount').props.value).toBe('12,50');
+    await fireEvent.changeText(getByLabelText('Note'), 'split with Sam');
+    await fireEvent.press(getByText('Save changes'));
+    expect(queryByText(/match how amounts are written/)).toBeNull();
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    const [vars] = mockEdit.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(vars).toMatchObject({ patch: { note: 'split with Sam' } });
+    expect(Object.keys(vars.patch as object)).toEqual(['note']);
+  });
+
+  it('de-DE, KWD (3 decimals): prefills "1,500" and a note-only edit leaves the amount alone', async () => {
+    mockRegion = 'DE';
+    const { getByLabelText, getByText } = await open({
+      kind: 'edit',
+      row: row({ original_amount: -1500, original_currency: 'KWD', home_currency: 'GBP' }),
+    });
+    expect(getByLabelText('Amount').props.value).toBe('1,500');
+    await fireEvent.changeText(getByLabelText('Note'), 'dinar');
+    await fireEvent.press(getByText('Save changes'));
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    const [vars] = mockEdit.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(Object.keys(vars.patch as object)).toEqual(['note']);
   });
 });

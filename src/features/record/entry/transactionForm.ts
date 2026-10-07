@@ -2,7 +2,7 @@
 // D-56). No React, no I/O: defaults, validation and the patch diff are tested without a
 // renderer. Amounts only ever cross this file as integer minor units; the typed text is
 // parsed by the Phase 1 strict parser the caller passes in (never Number()/parseFloat).
-import { toDecimalString, type MinorUnits, type ParseAmountResult } from '@/engine/money';
+import type { MinorUnits, ParseAmountResult } from '@/engine/money';
 import { defaultStatusFor } from '@/engine/activity';
 import type { TransferPairState } from '@/engine/transfer';
 import { PAYMENT_TYPES, type PaymentType, type TransactionPatch, type TransactionRow } from '@/db/rows';
@@ -37,7 +37,12 @@ export interface FormState {
 export interface FormContext {
   today: string;
   defaultAccount: { id: string; currency: string } | null;
-  exponentFor: (code: string) => number;
+  /**
+   * S-CR-01: the unsigned magnitude of a stored amount as field text, in the resolved
+   * region's own decimal mark and the currency's own exponent (useAmountParser's
+   * toInputText), so an untouched prefill always re-parses to the same minor units.
+   */
+  amountInputText: (minor: number, currency: string) => string;
   /** The currency of any account by id, so a preselected account brings its own currency. */
   accountCurrency?: (accountId: string) => string | undefined;
 }
@@ -54,7 +59,7 @@ export type TransferFormError =
 type Parse = (text: string, currency: string) => ParseAmountResult;
 
 const magnitudeText = (amount: number, currency: string, ctx: FormContext): string =>
-  toDecimalString(Math.abs(amount) as MinorUnits, ctx.exponentFor(currency));
+  ctx.amountInputText(Math.abs(amount), currency);
 
 export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
   if (mode.kind === 'edit') {

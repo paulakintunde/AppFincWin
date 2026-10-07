@@ -4,7 +4,7 @@
 // edit with undo. Copy is declarative, never advice.
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { currencyExponent, toDecimalString, type MinorUnits } from '@/engine/money';
+import { currencyExponent } from '@/engine/money';
 import type { AccountPatch, AccountRow } from '@/db/rows';
 import { useAddAccount, useEditAccount } from '@/data/mutations/accounts';
 import { newStepId } from '@/data/mutations/undoCapture';
@@ -74,7 +74,7 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
 
   const exponentFor = (code: string): number => options.find((o) => o.code === code)?.exponent ?? currencyExponent(code);
   const magnitude = (minor: number, code: string): string =>
-    minor === 0 ? '' : toDecimalString(Math.abs(minor) as MinorUnits, exponentFor(code));
+    minor === 0 ? '' : parser.toInputText(minor, code, exponentFor(code));
 
   const [name, setName] = useState(account?.name ?? '');
   const [kind, setKind] = useState<AccountKind>(account?.kind ?? 'checking');
