@@ -801,3 +801,46 @@ describe('useStatementImport: commit and recurring suggestions', () => {
     expect(result.current.suggestions).toHaveLength(0);
   });
 });
+
+// 02-27: what the screens need that the machine kept to itself -- the CSV header row (so the
+// mapping step can name a column) and the figures the format sentence quotes.
+describe('useStatementImport: screen read-outs (02-27)', () => {
+  it('exposes the CSV header row for the mapping step, and none before a file is read', async () => {
+    pickOk(csv(CSV_DECIDED));
+    const { result } = await setup();
+    expect(result.current.headers).toEqual([]);
+    await act(async () => {
+      result.current.start();
+    });
+    expect(result.current.headers).toEqual(['Date', 'Description', 'Debit', 'Credit']);
+  });
+
+  it('exposes the stated closing balance and limit the format sentence quotes (D-42)', async () => {
+    pickOk(fixture('card-over-limit.ofx'), 'ofx');
+    const { result } = await setup({ accountId: 'acc-card' });
+    expect(result.current.formatFigures).toBeNull();
+    await act(async () => {
+      result.current.start();
+    });
+    expect(result.current.stage).toBe('format');
+    const figures = result.current.formatFigures;
+    expect(figures).not.toBeNull();
+    expect(figures?.closing).not.toBeNull();
+    expect(figures?.currency).toBe('GBP');
+    expect(typeof figures?.overLimit).toBe('boolean');
+  });
+
+  it('names the account a transfer pair points at, so the suggestion can say both accounts (D-52)', async () => {
+    dbTx.fetchTransferCandidates.mockResolvedValue([candidateLeg({})]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.storedLegs.get('leg-1')).toEqual({ accountId: 'acc-2', name: 'RENT PAYMENT' });
+  });
+
+  it('names the pending bill a pay-match points at (D-55)', async () => {
+    dbTx.fetchTransactionsInRange.mockResolvedValue([
+      stored({ id: 'pend-1', status: 'pending', original_amount: -1250, name: 'Coffee subscription', local_date: '2026-09-03', version: 6 }),
+    ]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.storedLegs.get('pend-1')).toEqual({ accountId: 'acc-1', name: 'Coffee subscription' });
+  });
+});
