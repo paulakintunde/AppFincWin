@@ -11,6 +11,7 @@ export * from './rates';
 export * from './currencyExponents';
 export * from './arithmetic';
 export * from './parseAmount';
+export * from './parseNotatedAmount';
 export * from './formatAmount';
 export * from './formatDate';
 export { validateCustomCurrency } from './customCurrency';

@@ -12,9 +12,16 @@ import {
   assertAllowedKeys,
   type DbClient,
   type NewTransaction,
+  type PaymentType,
   type TransactionPatch,
   type TransactionRow,
 } from './rows';
+
+// D-30: every client read path uses the soft-delete-filtering view, never the raw table --
+// a tombstoned row must never appear in a month, a search or a count. fetchTransaction is the
+// one deliberate exception: a conflict lookup (insert-duplicate, update-version-mismatch) must
+// still see a row that was soft-deleted since the caller last read it.
+export const ACTIVE_VIEW = 'transactions_active';
 
 // Mirrors supabase/migrations/20260924000400_transactions.sql's insert/update grants
 // exactly. Every FX stamp column (rate, rate_date, rate_source, home_amount,
@@ -34,8 +41,23 @@ export const TRANSACTION_INSERT_KEYS = [
   'local_date',
   'time_zone',
   'note',
+  'name',
+  'category_id',
+  'payment_type',
+  'status',
+  'import_batch_id',
+  'raw_amount',
+  'raw_balance',
+  'external_id',
+  'import_format',
+  'transfer_id',
 ] as const satisfies readonly (keyof NewTransaction)[];
 
+// D-45: raw_amount/raw_balance/external_id/import_format are insert-only provenance and are
+// deliberately absent here -- assertAllowedKeys catches a provenance edit before the server
+// does. transfer_id IS patchable (editing/deleting a transfer touches both legs, D-50/D-51).
+// recurring_series_id/occurrence_date/updated_by are server-only and never appear in either
+// write-key list -- they are select-only columns in TRANSACTION_COLUMNS below.
 export const TRANSACTION_PATCH_KEYS = [
   'account_id',
   'original_amount',
@@ -43,13 +65,19 @@ export const TRANSACTION_PATCH_KEYS = [
   'local_date',
   'time_zone',
   'note',
+  'name',
+  'category_id',
+  'payment_type',
+  'status',
+  'deleted_at',
+  'transfer_id',
 ] as const satisfies readonly (keyof TransactionPatch)[];
 
 // Casting rate/orig_per_eur/home_per_eur/the four custom-leg stamp columns to text keeps
 // them out of JS float arithmetic on the way in from Postgres's `numeric` type (MON-01) --
 // callers parse the string themselves via engine/money, never `parseFloat`.
 export const TRANSACTION_COLUMNS =
-  'id, household_id, account_id, created_by, original_amount, original_currency, home_currency, home_amount, rate:rate::text, orig_per_eur:orig_per_eur::text, home_per_eur:home_per_eur::text, orig_custom_unit_value:orig_custom_unit_value::text, orig_custom_ref_per_eur:orig_custom_ref_per_eur::text, home_custom_unit_value:home_custom_unit_value::text, home_custom_ref_per_eur:home_custom_ref_per_eur::text, rate_date, rate_source, rate_pending, local_date, time_zone, note, version, created_at, updated_at';
+  'id, household_id, account_id, created_by, original_amount, original_currency, home_currency, home_amount, rate:rate::text, orig_per_eur:orig_per_eur::text, home_per_eur:home_per_eur::text, orig_custom_unit_value:orig_custom_unit_value::text, orig_custom_ref_per_eur:orig_custom_ref_per_eur::text, home_custom_unit_value:home_custom_unit_value::text, home_custom_ref_per_eur:home_custom_ref_per_eur::text, rate_date, rate_source, rate_pending, local_date, time_zone, note, name, category_id, payment_type, status, deleted_at, import_batch_id, recurring_series_id, occurrence_date, updated_by, raw_amount, raw_balance, external_id, import_format, transfer_id, version, created_at, updated_at';
 
 const ENTITY = 'transactions' as const;
 
@@ -77,33 +105,28 @@ export const MONTH_PAGE_SIZE = 1000;
 /** WR-A12: a month read returned fewer rows than the server said exist. */
 export const TRUNCATED_READ = 'read-truncated';
 
-export async function fetchTransactionsForMonth(
-  client: DbClient,
-  householdId: string,
-  month: string
-): Promise<TransactionRow[]> {
-  const { start, endExclusive } = monthRange(month);
+interface PageResponse<T> {
+  data: T[] | null;
+  error: { message: string; code?: string | null } | null;
+  status: number;
+  count?: number | null;
+}
 
-  // WR-A12: an unpaged read is silently capped at PostgREST's max_rows, which would
-  // truncate every total derived from the month (and Decide's inputs) with no error. Pages
-  // are requested until the exact count from the first page is reached; `id` is the final
-  // sort key so the page boundaries are stable when local_date and created_at tie.
-  const rows: TransactionRow[] = [];
+/**
+ * WR-A12's paging loop, generalised so every unbounded read (month, date range, ...) shares
+ * it: an unpaged read is silently capped at PostgREST's max_rows, which would truncate any
+ * total derived from it with no error. `build` is called with the current page offset and
+ * whether this is the first page (which must ask for an exact count); pages are requested
+ * until the exact row count reported with the first page has been read.
+ */
+async function fetchAllPages<T>(build: (from: number, withCount: boolean) => PromiseLike<PageResponse<T>>): Promise<T[]> {
+  const rows: T[] = [];
   let total: number | null = null;
   for (let from = 0; ; from += MONTH_PAGE_SIZE) {
-    const { data, error, status, count } = await client
-      .from('transactions')
-      .select(TRANSACTION_COLUMNS, from === 0 ? { count: 'exact' } : undefined)
-      .eq('household_id', householdId)
-      .gte('local_date', start)
-      .lt('local_date', endExclusive)
-      .order('local_date', { ascending: false })
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: true })
-      .range(from, from + MONTH_PAGE_SIZE - 1);
+    const { data, error, status, count } = await build(from, from === 0);
 
     if (error) throw toDbError(error, status);
-    const page = (data as TransactionRow[] | null) ?? [];
+    const page = data ?? [];
     if (from === 0) total = count ?? null;
     rows.push(...page);
 
@@ -113,15 +136,43 @@ export async function fetchTransactionsForMonth(
 
   if (total !== null && rows.length < total) {
     // Rows were removed between pages (or the server capped a page below our page size and
-    // then returned nothing). Fail the read rather than serve a short month as complete.
-    throw new DbError(`month read incomplete: ${rows.length} of ${total} rows`, TRUNCATED_READ, null);
+    // then returned nothing). Fail the read rather than serve a short read as complete.
+    throw new DbError(`read incomplete: ${rows.length} of ${total} rows`, TRUNCATED_READ, null);
   }
   return rows;
 }
 
+export async function fetchTransactionsForMonth(
+  client: DbClient,
+  householdId: string,
+  month: string
+): Promise<TransactionRow[]> {
+  const { start, endExclusive } = monthRange(month);
+
+  // D-30: reads the soft-delete-filtering view, not the raw table -- a tombstoned row must
+  // never appear in a month total. `id` is the final sort key so page boundaries are stable
+  // when local_date and created_at tie.
+  return fetchAllPages<TransactionRow>((from, withCount) =>
+    client
+      .from(ACTIVE_VIEW)
+      .select(TRANSACTION_COLUMNS, withCount ? { count: 'exact' } : undefined)
+      .eq('household_id', householdId)
+      .gte('local_date', start)
+      .lt('local_date', endExclusive)
+      .order('local_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, from + MONTH_PAGE_SIZE - 1)
+  );
+}
+
 export async function insertTransaction(client: DbClient, tx: NewTransaction): Promise<TransactionRow> {
   const row: Record<string, unknown> = {};
-  for (const key of TRANSACTION_INSERT_KEYS) row[key] = tx[key];
+  // Record (Phase 2): most new NewTransaction fields are optional -- skip undefined so an old
+  // caller never sends e.g. status: undefined for a column the server defaults itself.
+  for (const key of TRANSACTION_INSERT_KEYS) {
+    if (tx[key] !== undefined) row[key] = tx[key];
+  }
 
   const { data, error, status } = await client.from('transactions').insert(row).select(TRANSACTION_COLUMNS).single();
 
@@ -167,6 +218,221 @@ export async function updateTransaction(
   const serverRow = await fetchTransaction(client, id);
   if (serverRow) throw new VersionConflictError(ENTITY, id, serverRow);
   throw new NotFoundError(ENTITY, id);
+}
+
+/** ACT-03 default cap on a cross-month name search. */
+export const SEARCH_LIMIT = 200;
+
+/** Backslash-escapes LIKE/ILIKE metacharacters (\\, %, _) so a search term is never read as a wildcard (T-02-11-03). */
+export function escapeLikeTerm(term: string): string {
+  return term.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
+/** ACT-03: searches names across every month, newest first. The term is passed as a PostgREST parameter, never concatenated into SQL. */
+export async function fetchTransactionsSearch(
+  client: DbClient,
+  householdId: string,
+  term: string,
+  limit = SEARCH_LIMIT
+): Promise<TransactionRow[]> {
+  const trimmed = term.trim();
+  if (trimmed.length === 0) throw new RangeError('fetchTransactionsSearch: term must not be empty');
+
+  const { data, error, status } = await client
+    .from(ACTIVE_VIEW)
+    .select(TRANSACTION_COLUMNS)
+    .eq('household_id', householdId)
+    .ilike('name', `%${escapeLikeTerm(trimmed)}%`)
+    .order('local_date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: true })
+    .limit(limit);
+
+  if (error) throw toDbError(error, status);
+  return (data as TransactionRow[] | null) ?? [];
+}
+
+/**
+ * Reads a date range on the household (optionally narrowed to one account), oldest first --
+ * the shape the import pipeline needs for duplicate detection (with external_id/import_format)
+ * and pending-bill matching (D-55).
+ */
+export async function fetchTransactionsInRange(
+  client: DbClient,
+  householdId: string,
+  range: { from: string; toInclusive: string; accountId?: string }
+): Promise<TransactionRow[]> {
+  return fetchAllPages<TransactionRow>((from, withCount) => {
+    const base = client
+      .from(ACTIVE_VIEW)
+      .select(TRANSACTION_COLUMNS, withCount ? { count: 'exact' } : undefined)
+      .eq('household_id', householdId)
+      .gte('local_date', range.from)
+      .lte('local_date', range.toInclusive);
+    const scoped = range.accountId ? base.eq('account_id', range.accountId) : base;
+    return scoped
+      .order('local_date', { ascending: true })
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, from + MONTH_PAGE_SIZE - 1);
+  });
+}
+
+/** D-52: a candidate leg for import's transfer detection -- always unlinked (transfer_id null). */
+export interface TransferCandidateRow {
+  id: string;
+  account_id: string;
+  local_date: string;
+  original_amount: number;
+  original_currency: string;
+  name: string | null;
+  payment_type: PaymentType | null;
+  transfer_id: null;
+  category_id: string | null;
+  version: number;
+}
+
+const TRANSFER_CANDIDATE_COLUMNS =
+  'id, account_id, local_date, original_amount, original_currency, name, payment_type, transfer_id, category_id, version';
+
+/** D-52: unlinked rows on the user's OTHER accounts in a date window -- import's transfer-candidate search. */
+export async function fetchTransferCandidates(
+  client: DbClient,
+  householdId: string,
+  q: { excludeAccountId: string; from: string; toInclusive: string }
+): Promise<TransferCandidateRow[]> {
+  return fetchAllPages<TransferCandidateRow>((from, withCount) =>
+    client
+      .from(ACTIVE_VIEW)
+      .select(TRANSFER_CANDIDATE_COLUMNS, withCount ? { count: 'exact' } : undefined)
+      .eq('household_id', householdId)
+      .is('transfer_id', null)
+      .neq('account_id', q.excludeAccountId)
+      .gte('local_date', q.from)
+      .lte('local_date', q.toInclusive)
+      .order('local_date', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, from + MONTH_PAGE_SIZE - 1)
+  );
+}
+
+/** RESEARCH §A1 option a: whether the target account has any active row before `beforeDate` -- an OFX reconciliation anchor. */
+export async function fetchHasRowsBefore(
+  client: DbClient,
+  householdId: string,
+  accountId: string,
+  beforeDate: string
+): Promise<boolean> {
+  const { data, error, status } = await client
+    .from(ACTIVE_VIEW)
+    .select('id')
+    .eq('household_id', householdId)
+    .eq('account_id', accountId)
+    .lt('local_date', beforeDate)
+    .limit(1);
+
+  if (error) throw toDbError(error, status);
+  return ((data as { id: string }[] | null) ?? []).length > 0;
+}
+
+/** T-02-11-06: denial-of-service guard on fetchTransferLegs. */
+export const TRANSFER_LEGS_MAX = 200;
+
+/** D-50/D-51: both legs of one or more transfers, for edit/delete-both. */
+export async function fetchTransferLegs(
+  client: DbClient,
+  householdId: string,
+  transferIds: readonly string[]
+): Promise<TransactionRow[]> {
+  if (transferIds.length === 0) return [];
+  if (transferIds.length > TRANSFER_LEGS_MAX) {
+    throw new RangeError(`fetchTransferLegs: ${transferIds.length} ids exceeds TRANSFER_LEGS_MAX (${TRANSFER_LEGS_MAX})`);
+  }
+
+  const { data, error, status } = await client
+    .from(ACTIVE_VIEW)
+    .select(TRANSACTION_COLUMNS)
+    .eq('household_id', householdId)
+    .in('transfer_id', transferIds);
+
+  if (error) throw toDbError(error, status);
+  return (data as TransactionRow[] | null) ?? [];
+}
+
+/** D-14: descriptions the user has categorised before, for import's category-guess learning. */
+export async function fetchCategorisedNames(
+  client: DbClient,
+  householdId: string,
+  userId: string,
+  limit = 5000
+): Promise<{ name: string; category_id: string; updated_at: string }[]> {
+  const { data, error, status } = await client
+    .from(ACTIVE_VIEW)
+    .select('name, category_id, updated_at')
+    .eq('household_id', householdId)
+    .eq('created_by', userId)
+    .not('category_id', 'is', null)
+    .not('name', 'is', null)
+    .order('updated_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw toDbError(error, status);
+  return (data as { name: string; category_id: string; updated_at: string }[] | null) ?? [];
+}
+
+/** D-36: denial-of-service guard on a category merge -- callers detect overflow via length > MERGE_LIMIT. */
+export const MERGE_LIMIT = 6000;
+
+/** D-36: every active row's id/version/local_date in one category, for a category merge. */
+export async function fetchActiveIdsByCategory(
+  client: DbClient,
+  householdId: string,
+  categoryId: string
+): Promise<{ id: string; version: number; local_date: string }[]> {
+  const { data, error, status } = await client
+    .from(ACTIVE_VIEW)
+    .select('id, version, local_date')
+    .eq('household_id', householdId)
+    .eq('category_id', categoryId)
+    .limit(MERGE_LIMIT + 1);
+
+  if (error) throw toDbError(error, status);
+  return (data as { id: string; version: number; local_date: string }[] | null) ?? [];
+}
+
+/** T-02-11-04: denial-of-service guard on one import chunk. */
+export const IMPORT_CHUNK_MAX = 500;
+
+/**
+ * D-17/MON-08: inserts an import chunk in one request. `ON CONFLICT DO NOTHING` (via
+ * `ignoreDuplicates`) needs only the insert grant, so a replayed chunk (the paused-mutation
+ * queue retrying after a flaky first attempt that actually landed) returns only the rows that
+ * were genuinely new.
+ */
+export async function insertTransactionsBatch(
+  client: DbClient,
+  rows: readonly NewTransaction[]
+): Promise<Pick<TransactionRow, 'id' | 'local_date' | 'version' | 'rate_pending'>[]> {
+  if (rows.length === 0 || rows.length > IMPORT_CHUNK_MAX) {
+    throw new RangeError(`insertTransactionsBatch: ${rows.length} rows is outside the allowed range (1..${IMPORT_CHUNK_MAX})`);
+  }
+
+  const payloads = rows.map((tx) => {
+    assertAllowedKeys(tx as unknown as Record<string, unknown>, TRANSACTION_INSERT_KEYS, 'insertTransactionsBatch');
+    const row: Record<string, unknown> = {};
+    for (const key of TRANSACTION_INSERT_KEYS) {
+      if (tx[key] !== undefined) row[key] = tx[key];
+    }
+    return row;
+  });
+
+  const { data, error, status } = await client
+    .from('transactions')
+    .upsert(payloads, { onConflict: 'id', ignoreDuplicates: true })
+    .select('id, local_date, version, rate_pending');
+
+  if (error) throw toDbError(error, status);
+  return (data as Pick<TransactionRow, 'id' | 'local_date' | 'version' | 'rate_pending'>[] | null) ?? [];
 }
 
 /**

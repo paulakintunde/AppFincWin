@@ -5,6 +5,8 @@ export const radii = {
   card: 26,
   pill: 999,
   glyphTile: 11,
+  /** Prototype `border-radius:28px 28px 0 0`, 25 sheets, UI-SPEC. */
+  sheetTop: 28,
 } as const;
 
 /**
@@ -23,6 +25,8 @@ export const space = {
   gapMd: 12,
   pillPadV: 15,
   touchMin: 44,
+  /** Entry-sheet field rows (dense variant). */
+  rowPadDense: 13,
 } as const;
 
 export interface ScreenInsets {

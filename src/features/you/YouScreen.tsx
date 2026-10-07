@@ -4,6 +4,7 @@
 // sign-out row. The destructive colour stays reserved for the confirm-dialog copy only — the
 // row label itself is plain ink (00-UI-SPEC.md Color).
 import { useCallback } from 'react';
+import { router, type Href } from 'expo-router';
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -21,6 +22,19 @@ import { FontPairingSwitcher } from './components/FontPairingSwitcher';
 import { AnalyticsToggle } from './components/AnalyticsToggle';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { DevSyncProbe } from './components/DevSyncProbe';
+
+// 02-30: Record entry points (D-32, D-39). The import row opens the statement import with the
+// 'you' entry. Hrefs are cast once because generated route types may lag the route files.
+const MONEY_ROWS: readonly {
+  label: 'you.record.activity' | 'you.record.accounts' | 'you.record.categories' | 'you.record.importCsv' | 'you.record.history';
+  href: Href;
+}[] = [
+  { label: 'you.record.activity', href: '/activity' as Href },
+  { label: 'you.record.accounts', href: '/accounts' as Href },
+  { label: 'you.record.categories', href: '/categories' as Href },
+  { label: 'you.record.importCsv', href: { pathname: '/import', params: { entry: 'you' } } as Href },
+  { label: 'you.record.history', href: '/history' as Href },
+];
 
 export function YouScreen() {
   const t = useT();
@@ -67,6 +81,14 @@ export function YouScreen() {
           ) : null}
         </View>
       </View>
+
+      <SettingsGroup title={t('you.record.section')}>
+        {MONEY_ROWS.map((row) => (
+          <Pressable key={row.label} accessibilityRole="button" onPress={() => router.push(row.href)}>
+            <Text style={[styles.rowLabel, { fontFamily: fonts.body[500], color: colors.ink }]}>{t(row.label)}</Text>
+          </Pressable>
+        ))}
+      </SettingsGroup>
 
       <SettingsGroup title={t('you.section.appearance')}>
         <View>

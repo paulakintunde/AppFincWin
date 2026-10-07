@@ -13,9 +13,11 @@ export const fontSize = {
   healthScore: 32,
   netWorth: 42,
   display: 34,
+  /** Entry-sheet amount figure — a display-figure exception alongside netWorth/healthScore. */
+  amountDisplay: 44,
 } as const;
 
-export type TextRole = 'display' | 'heading' | 'body' | 'label';
+export type TextRole = 'display' | 'heading' | 'body' | 'label' | 'sheetTitle';
 
 export interface ResolvedTextStyle {
   fontFamily: string;
@@ -28,8 +30,9 @@ export interface ResolvedTextStyle {
  * Resolves a semantic text role to concrete RN text style values for the active font
  * pairing. Roles per 00-UI-SPEC.md Typography: display 34 / lh 1.0 / display face;
  * heading 26 / weight 700 / lh 1.16 / letter-spacing -0.01em; body 15 / weight 500 /
- * lh 1.5; label 13 / weight 600 / lh 1.4. Em letter-spacing is converted to points as
- * `size * em`.
+ * lh 1.5; label 13 / weight 600 / lh 1.4; sheetTitle 16 / weight 600 / lh 1.2 /
+ * letter-spacing -0.01em (02-UI-SPEC.md Typography, "Sheet title"). Em letter-spacing is
+ * converted to points as `size * em`.
  */
 export function textRole(pairing: FontPairingKey, role: TextRole): ResolvedTextStyle {
   const p = FONT_PAIRINGS[pairing];
@@ -61,6 +64,13 @@ export function textRole(pairing: FontPairingKey, role: TextRole): ResolvedTextS
         fontSize: fontSize.label,
         lineHeight: fontSize.label * 1.4,
         letterSpacing: 0,
+      };
+    case 'sheetTitle':
+      return {
+        fontFamily: p.body[600],
+        fontSize: fontSize.sheetTitle,
+        lineHeight: fontSize.sheetTitle * 1.2,
+        letterSpacing: fontSize.sheetTitle * -0.01,
       };
   }
 }

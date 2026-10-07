@@ -9,9 +9,11 @@
     "@expo-google-fonts/manrope": "^0.4.2",
     "@expo-google-fonts/space-grotesk": "^0.4.1",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/datetimepicker": "9.1.0",
     "@react-native-community/netinfo": "12.0.1",
     "@react-native-google-signin/google-signin": "16.1.5",
     "@sentry/react-native": "~7.11.0",
+    "@shopify/flash-list": "2.0.2",
     "@supabase/supabase-js": "2.117.0",
     "@tanstack/query-async-storage-persister": "^5.103.2",
     "@tanstack/react-query": "^5.103.2",
@@ -25,6 +27,7 @@
     "expo-crypto": "~57.0.3",
     "expo-dev-client": "~57.0.19",
     "expo-device": "~57.0.2",
+    "expo-document-picker": "~57.0.3",
     "expo-file-system": "~57.0.7",
     "expo-font": "~57.0.4",
     "expo-linking": "~57.0.10",
@@ -88,7 +91,8 @@
     "supabase:db:push": "node scripts/supabase-preflight.mjs && supabase db push",
     "lint:migrations": "node scripts/check-migration-compat.mjs",
     "verify:migrations": "node scripts/verify-migration-gate.mjs",
-    "check:money-mirror": "node scripts/gen-money-mirror-test.mjs --check"
+    "check:money-mirror": "node scripts/gen-money-mirror-test.mjs --check",
+    "check:recurring-mirror": "node scripts/gen-recurring-mirror-test.mjs --check"
   },
   "private": true
 }

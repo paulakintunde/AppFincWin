@@ -1,0 +1,404 @@
+/**
+ * D-41 as amended by D-53: builds a format profile before any conversion.
+ * The target account's kind fixes what the balance column means (`k`,
+ * `balanceMeans`); with `k` fixed, label evidence and then running-balance
+ * reconciliation settle the sign convention (`s`, `positiveMeans`) on their
+ * own (RESEARCH.md §A2). The mirror reading (flipping both `s` and `k`
+ * together) is never offered -- only `k` fixed by the account, `s` decided
+ * -- because a running-balance check alone cannot separate the two
+ * (RESEARCH.md §A2's key finding). When neither labels nor numbers decide,
+ * the result is `ambiguous` with both candidate readings, and the pipeline
+ * blocks commit until the user chooses (D-42).
+ */
+import { markerSign, minorUnits, type MinorUnits } from '../money';
+import { convertDraft } from './convert';
+import { reconcile, type FileCheck, type ReconcileRow } from './reconcile';
+import {
+  accountFamilyOf,
+  type AccountFamily,
+  type AccountKind,
+  type FormatProfile,
+  type ProfileEvidence,
+  type ProfileResult,
+  type StatementDraft,
+} from './types';
+
+/** Card descriptions that are money in, whatever the raw sign says (RESEARCH.md §A2). */
+export const PAYMENT_LIKE_CARD = [
+  'PAYMENT - THANK YOU',
+  'PAYMENT – THANK YOU',
+  'PAYMENT THANK YOU',
+  'PAYMENT RECEIVED',
+  'DIRECT DEBIT PAYMENT',
+  'THANK YOU FOR YOUR PAYMENT',
+] as const;
+
+/** Deposit-account descriptions that are money in, whatever the raw sign says. */
+export const INCOME_LIKE_DEPOSIT = ['SALARY', 'PAYROLL', 'INTEREST PAID', 'WAGES'] as const;
+
+function hasAnyBalance(draft: StatementDraft): boolean {
+  return draft.rows.some((r) => r.balanceMagnitude !== null) || draft.statedOpening !== null || draft.statedClosing !== null;
+}
+
+function signedStated(b: { magnitude: MinorUnits; marker: Parameters<typeof markerSign>[0] }): number {
+  return markerSign(b.marker) * b.magnitude;
+}
+
+/**
+ * An OFX card limit implied by LEDGERBAL and AVAILBAL under one balance
+ * reading: owed + available = limit. 'owed' is the issuer view (a positive
+ * LEDGERBAL is the amount owed); 'held' is the account-holder view (a
+ * negative LEDGERBAL is the amount owed). Null when either figure is
+ * missing or the implied limit is negative.
+ */
+function ofxCardLimitUnder(draft: StatementDraft, reading: 'owed' | 'held'): MinorUnits | null {
+  if (draft.statedClosing === null || draft.available === null) return null;
+  const ledgerSigned = signedStated(draft.statedClosing);
+  const owed = reading === 'owed' ? ledgerSigned : -ledgerSigned;
+  const limit = normalizeZero(owed + signedStated(draft.available));
+  return limit >= 0 ? minorUnits(limit) : null;
+}
+
+/**
+ * D-53 amended 2026-09-28 (review E-CR-04): OFX card issuers report the owed
+ * LEDGERBAL with either sign, so for an OFX card file carrying both
+ * LEDGERBAL and AVAILBAL the orientation is read from the figures: the
+ * reading that implies a non-negative limit wins. Neither or both is
+ * 'ambiguous' and the user confirms (D-42). Without both figures, and for
+ * every non-OFX file, D-53's 'owed' default stands.
+ */
+function ofxCardReading(draft: StatementDraft): 'owed' | 'held' | 'ambiguous' {
+  if (draft.source !== 'ofx' || draft.statedClosing === null || draft.available === null) return 'owed';
+  if (draft.statedClosing.magnitude === 0) return 'owed'; // both readings are the same figure
+  const issuer = ofxCardLimitUnder(draft, 'owed') !== null;
+  const holder = ofxCardLimitUnder(draft, 'held') !== null;
+  if (issuer !== holder) return issuer ? 'owed' : 'held';
+  return 'ambiguous';
+}
+
+/** Step 1 of the resolution order: the target kind fixes the balance family. */
+export function balanceMeansFor(kind: AccountKind, draft: StatementDraft): FormatProfile['balanceMeans'] {
+  if (!hasAnyBalance(draft)) return 'none';
+  if (kind === 'credit') {
+    if (draft.balanceLabel === 'available' || draft.labels.includes('available-balance-label')) return 'available';
+    return ofxCardReading(draft) === 'held' ? 'held' : 'owed';
+  }
+  if (kind === 'loan') return 'owed';
+  return 'held';
+}
+
+/** Same balanceMeans/accountFamily, s = money-in then money-spent (statedLimit filled in later). */
+export function candidateProfiles(
+  draft: StatementDraft,
+  kind: AccountKind,
+  balanceMeans: FormatProfile['balanceMeans'] = balanceMeansFor(kind, draft)
+): [FormatProfile, FormatProfile] {
+  const accountFamily = accountFamilyOf(kind);
+  const base = {
+    version: 1 as const,
+    source: draft.source,
+    accountFamily,
+    balanceMeans,
+    statedLimit: null,
+    decidedBy: 'user' as const,
+  };
+  const moneyIn: FormatProfile = { ...base, positiveMeans: 'money-in' };
+  const moneySpent: FormatProfile = { ...base, positiveMeans: 'money-spent' };
+  return [moneyIn, moneySpent];
+}
+
+export function flipProfile(p: FormatProfile): FormatProfile {
+  return {
+    ...p,
+    positiveMeans: p.positiveMeans === 'money-in' ? 'money-spent' : 'money-in',
+    decidedBy: 'user',
+  };
+}
+
+// A limit computed from stated statement figures could legitimately land on
+// exactly 0 via a subtraction that produces IEEE-754 -0; normalise before
+// handing it to minorUnits() (mirrors convert.ts's noNegativeZero).
+function normalizeZero(n: number): number {
+  return n === 0 ? 0 : n;
+}
+
+// Called only when balanceMeans is fixed to 'held', where the stored-held formula is
+// `sign*magnitude` directly -- computed the same way, for the same reason.
+function deriveBankOverdraftLimit(draft: StatementDraft): MinorUnits | null {
+  if (draft.statedClosing === null || draft.available === null) return null;
+  const ledgerSigned = markerSign(draft.statedClosing.marker) * draft.statedClosing.magnitude;
+  const availableSigned = markerSign(draft.available.marker) * draft.available.magnitude;
+  const diff = normalizeZero(availableSigned - ledgerSigned);
+  if (diff <= 0 || diff % 10_000 !== 0) return null;
+  return minorUnits(diff);
+}
+
+/** statedLimit never depends on which s candidate is chosen -- only on balanceMeans. */
+function deriveStatedLimit(draft: StatementDraft, profile: FormatProfile): MinorUnits | null {
+  if (draft.statedLimit !== null) return draft.statedLimit;
+  if (profile.balanceMeans === 'owed') return ofxCardLimitUnder(draft, 'owed');
+  if (profile.balanceMeans === 'held') {
+    // A card read in the account-holder view (review E-CR-04): owed = -LEDGERBAL.
+    if (profile.accountFamily === 'card') return ofxCardLimitUnder(draft, 'held');
+    return deriveBankOverdraftLimit(draft);
+  }
+  return null;
+}
+
+function reconcileVerifiedLinks(
+  draft: StatementDraft,
+  profile: FormatProfile,
+  limit: MinorUnits | null
+): { verifiedLinks: number; file: FileCheck } {
+  const converted = convertDraft(draft, profile, { limit });
+  const rows: ReconcileRow[] = converted.rows.map((r) => ({
+    amount: r.amount,
+    // An available-credit file with no known limit reconciles on its signed
+    // available figures: the unknown limit is a constant offset that cancels
+    // in every difference (review E-WR-07).
+    balance: r.balance ?? r.availableSigned,
+    localDate: r.localDate,
+  }));
+  const result = reconcile(rows, { opening: converted.opening, closing: converted.closing });
+  return { verifiedLinks: result.verifiedLinks, file: result.file };
+}
+
+function tryRemembered(
+  draft: StatementDraft,
+  accountFamily: AccountFamily,
+  limit: MinorUnits | null,
+  remembered: FormatProfile | null
+): ProfileResult | null {
+  if (remembered === null) return null;
+  if (remembered.source !== draft.source) return null;
+  if (remembered.accountFamily !== accountFamily) return null;
+
+  if (!hasAnyBalance(draft)) {
+    const profile: FormatProfile = { ...remembered, statedLimit: deriveStatedLimit(draft, remembered), decidedBy: 'remembered' };
+    return { kind: 'decided', profile, evidence: ['remembered'] };
+  }
+
+  const own = reconcileVerifiedLinks(draft, remembered, limit);
+  const flipped = flipProfile(remembered);
+  const flippedResult = reconcileVerifiedLinks(draft, flipped, limit);
+  if (own.verifiedLinks >= flippedResult.verifiedLinks) {
+    const profile: FormatProfile = { ...remembered, statedLimit: deriveStatedLimit(draft, remembered), decidedBy: 'remembered' };
+    return { kind: 'decided', profile, evidence: ['remembered', 'running-balance'] };
+  }
+  return null; // never silently reapplied -- falls through to normal inference
+}
+
+const STRUCTURAL_LABELS = ['debit-credit-columns', 'direction-column', 'dr-cr-markers'] as const;
+
+/**
+ * Review E-CR-03: a structural label (DR/CR markers, a direction column,
+ * debit/credit columns) only says that *some* rows state their direction.
+ * Rows that do are converted by their marker whatever the profile says; the
+ * rest still go through positiveMeans, so the label alone must not pick it.
+ *  - every non-zero row carries dr or cr: positiveMeans never applies, so
+ *    money-in is returned as the canonical choice;
+ *  - only cr appears and the unmarked rows are bare numbers: bare means the
+ *    opposite of cr (a UK card CSV marking only payments 'CR'), money-spent;
+ *  - only dr appears and the unmarked rows are bare: money-in;
+ *  - anything else (both markers alongside unmarked rows, or unmarked rows
+ *    with their own sign) is not decided here and falls through.
+ */
+function decideFromStructural(draft: StatementDraft): 'money-in' | 'money-spent' | null {
+  let dr = 0;
+  let cr = 0;
+  let bare = 0;
+  let signed = 0;
+  for (const row of draft.rows) {
+    if (row.magnitude === null || row.magnitude === 0) continue;
+    if (row.marker === 'dr') dr += 1;
+    else if (row.marker === 'cr') cr += 1;
+    else if (row.marker === 'none' || row.marker === 'plus') bare += 1;
+    else signed += 1;
+  }
+  if (bare === 0 && signed === 0) return 'money-in';
+  if (signed > 0) return null;
+  if (dr === 0 && cr > 0) return 'money-spent';
+  if (cr === 0 && dr > 0) return 'money-in';
+  return null;
+}
+
+function decideFromRowSign(
+  draft: StatementDraft,
+  accountFamily: AccountFamily
+): { s: 1 | -1; evidence: ProfileEvidence } | null {
+  const patterns: readonly string[] | null =
+    accountFamily === 'card' ? PAYMENT_LIKE_CARD : accountFamily === 'deposit' ? INCOME_LIKE_DEPOSIT : null;
+  if (patterns === null) return null;
+  // Review E-WR-08: the majority of matching rows decides, never the first
+  // one -- an outgoing 'SALARY - NANNY' or 'OVERDRAFT INTEREST PAID' must not
+  // set the sign for the whole file. An even split decides nothing.
+  let positive = 0;
+  let negative = 0;
+  for (const row of draft.rows) {
+    if (row.magnitude === null || row.magnitude === 0) continue;
+    const upper = row.description.toUpperCase();
+    if (!patterns.some((p) => upper.includes(p))) continue;
+    if (markerSign(row.marker) === 1) positive += 1;
+    else negative += 1;
+  }
+  if (positive === negative) return null;
+  return { s: positive > negative ? 1 : -1, evidence: accountFamily === 'card' ? 'payment-row-sign' : 'income-row-sign' };
+}
+
+function decideFromTrntype(draft: StatementDraft): { s: 1 | -1 } | null {
+  let agreeUnderMoneyIn = 0;
+  let total = 0;
+  for (const row of draft.rows) {
+    if (row.trnType === null || row.magnitude === null || row.magnitude === 0) continue;
+    const t = row.trnType.toUpperCase();
+    if (t !== 'CREDIT' && t !== 'DEBIT') continue;
+    total += 1;
+    const storedSignUnderMoneyIn = markerSign(row.marker); // s = +1: stored sign equals raw sign
+    const expectPositive = t === 'CREDIT';
+    if ((storedSignUnderMoneyIn > 0) === expectPositive) agreeUnderMoneyIn += 1;
+  }
+  if (total === 0) return null;
+  if (agreeUnderMoneyIn * 2 > total) return { s: 1 };
+  if (agreeUnderMoneyIn * 2 < total) return { s: -1 };
+  return null;
+}
+
+/** The candidate that alone reconciles every row, when exactly one does. */
+function strictReconciliationWinner(
+  draft: StatementDraft,
+  limit: MinorUnits | null,
+  candidates: readonly [FormatProfile, FormatProfile]
+): FormatProfile | null {
+  const [moneyIn, moneySpent] = candidates;
+  const aAll = reconcileVerifiedLinks(draft, moneyIn, limit).file === 'all-verified';
+  const bAll = reconcileVerifiedLinks(draft, moneySpent, limit).file === 'all-verified';
+  if (aAll === bAll) return null;
+  return aAll ? moneyIn : moneySpent;
+}
+
+function decideByReconciliation(
+  draft: StatementDraft,
+  limit: MinorUnits | null,
+  candidates: readonly [FormatProfile, FormatProfile]
+): { profile: FormatProfile; evidence: ProfileEvidence[] } | null {
+  const [moneyIn, moneySpent] = candidates;
+  const a = reconcileVerifiedLinks(draft, moneyIn, limit);
+  const b = reconcileVerifiedLinks(draft, moneySpent, limit);
+  const aAll = a.file === 'all-verified';
+  const bAll = b.file === 'all-verified';
+  if (aAll !== bAll) {
+    const winner = aAll ? moneyIn : moneySpent;
+    return { profile: { ...winner, decidedBy: 'reconciliation' }, evidence: ['account-kind', 'running-balance'] };
+  }
+  if (a.verifiedLinks !== b.verifiedLinks) {
+    const winner = a.verifiedLinks > b.verifiedLinks ? moneyIn : moneySpent;
+    return { profile: { ...winner, decidedBy: 'reconciliation' }, evidence: ['account-kind', 'running-balance'] };
+  }
+  return null;
+}
+
+/** Weak prior (step 4): majority raw sign, ordering only, never deciding. */
+function orderByPrior(
+  draft: StatementDraft,
+  candidates: readonly [FormatProfile, FormatProfile]
+): [FormatProfile, FormatProfile] {
+  const [moneyIn, moneySpent] = candidates;
+  let posCount = 0;
+  let negCount = 0;
+  for (const row of draft.rows) {
+    if (row.magnitude === null || row.magnitude === 0) continue;
+    if (markerSign(row.marker) === 1) posCount += 1;
+    else negCount += 1;
+  }
+  if (negCount > posCount) return [moneyIn, moneySpent];
+  return [moneySpent, moneyIn];
+}
+
+export function inferProfile(
+  draft: StatementDraft,
+  target: { kind: AccountKind; limit: MinorUnits | null },
+  remembered: FormatProfile | null
+): ProfileResult {
+  const accountFamily = accountFamilyOf(target.kind);
+
+  const rememberedResult = tryRemembered(draft, accountFamily, target.limit, remembered);
+  if (rememberedResult !== null) return rememberedResult;
+
+  const balanceMeans = balanceMeansFor(target.kind, draft);
+  if (balanceMeans === 'owed' && target.kind === 'credit' && ofxCardReading(draft) === 'ambiguous') {
+    // The balance orientation itself is undecided (review E-CR-04): offer
+    // every reading under both orientations, never a decided one.
+    const candidates = (['owed', 'held'] as const).flatMap((bm) => {
+      const r = inferWithBalanceMeans(draft, target, accountFamily, bm);
+      const ps = r.kind === 'decided' ? [r.profile] : r.candidates;
+      return ps.map((p): FormatProfile => ({ ...p, decidedBy: 'user' }));
+    });
+    return { kind: 'ambiguous', candidates, evidence: ['account-kind'] };
+  }
+  return inferWithBalanceMeans(draft, target, accountFamily, balanceMeans);
+}
+
+function inferWithBalanceMeans(
+  draft: StatementDraft,
+  target: { kind: AccountKind; limit: MinorUnits | null },
+  accountFamily: AccountFamily,
+  balanceMeans: FormatProfile['balanceMeans']
+): ProfileResult {
+  const hasBalances = hasAnyBalance(draft);
+  const candidates = candidateProfiles(draft, target.kind, balanceMeans);
+  const [moneyIn, moneySpent] = candidates;
+
+  function decideByLabel(chosen: FormatProfile, evidenceCode: ProfileEvidence): ProfileResult {
+    const profile: FormatProfile = { ...chosen, statedLimit: deriveStatedLimit(draft, chosen), decidedBy: 'labels' };
+    const evidence: ProfileEvidence[] = ['account-kind', evidenceCode];
+    if (hasBalances) {
+      const r = reconcileVerifiedLinks(draft, profile, target.limit);
+      if (r.verifiedLinks > 0 || r.file === 'all-verified') evidence.push('running-balance');
+    }
+    return { kind: 'decided', profile, evidence };
+  }
+
+  const structural = STRUCTURAL_LABELS.find((code) => draft.labels.includes(code));
+  if (structural !== undefined) {
+    const structuralDecision = decideFromStructural(draft);
+    if (structuralDecision !== null) {
+      return decideByLabel(structuralDecision === 'money-in' ? moneyIn : moneySpent, structural);
+    }
+  }
+
+  // Description and TRNTYPE evidence is a heuristic: when the file's own
+  // running balances reconcile only under the other reading, the balances
+  // win (review E-WR-08).
+  function decideByHeuristic(chosen: FormatProfile, evidenceCode: ProfileEvidence): ProfileResult {
+    const strict = hasBalances ? strictReconciliationWinner(draft, target.limit, [moneyIn, moneySpent]) : null;
+    if (strict !== null && strict.positiveMeans !== chosen.positiveMeans) {
+      const profile: FormatProfile = { ...strict, statedLimit: deriveStatedLimit(draft, strict), decidedBy: 'reconciliation' };
+      return { kind: 'decided', profile, evidence: ['account-kind', 'running-balance'] };
+    }
+    return decideByLabel(chosen, evidenceCode);
+  }
+
+  const rowSignDecision = decideFromRowSign(draft, accountFamily);
+  if (rowSignDecision !== null) {
+    return decideByHeuristic(rowSignDecision.s === 1 ? moneyIn : moneySpent, rowSignDecision.evidence);
+  }
+
+  const trntypeDecision = decideFromTrntype(draft);
+  if (trntypeDecision !== null) {
+    return decideByHeuristic(trntypeDecision.s === 1 ? moneyIn : moneySpent, 'trntype-agrees');
+  }
+
+  if (hasBalances) {
+    const decision = decideByReconciliation(draft, target.limit, [moneyIn, moneySpent]);
+    if (decision !== null) {
+      const profile: FormatProfile = { ...decision.profile, statedLimit: deriveStatedLimit(draft, decision.profile) };
+      return { kind: 'decided', profile, evidence: decision.evidence };
+    }
+  }
+
+  const [first, second] = orderByPrior(draft, [moneyIn, moneySpent]);
+  const statedLimit = deriveStatedLimit(draft, first);
+  const finalFirst: FormatProfile = { ...first, statedLimit, decidedBy: 'user' };
+  const finalSecond: FormatProfile = { ...second, statedLimit, decidedBy: 'user' };
+  return { kind: 'ambiguous', candidates: [finalFirst, finalSecond], evidence: ['account-kind'] };
+}

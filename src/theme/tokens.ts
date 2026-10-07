@@ -80,6 +80,19 @@ export const categoryTint = {
 
 export type CategoryKey = keyof typeof categoryColor;
 
+/** D-35: the 7 distinct prototype swatch pairs, keyed by the colour key stored on
+ * categories.color_key. Built only from existing values. */
+export const categorySwatch = {
+  green: { color: categoryColor.Housing, tint: categoryTint.Housing },
+  slate: { color: categoryColor.Utilities, tint: categoryTint.Utilities },
+  teal: { color: categoryColor.Groceries, tint: categoryTint.Groceries },
+  blue: { color: categoryColor.Insurance, tint: categoryTint.Insurance },
+  plum: { color: categoryColor.Subscriptions, tint: categoryTint.Subscriptions },
+  rust: { color: categoryColor.Debt, tint: categoryTint.Debt },
+  ochre: { color: categoryColor.Business, tint: categoryTint.Business },
+} as const;
+export type CategorySwatchKey = keyof typeof categorySwatch;
+
 /** Component.HHCOL, FincWin United.dc.html line 3216. */
 export const memberColors = ['#1B4D3E', '#B4472A', '#3E5C6B', '#7E6020', '#6E4A63', '#2F6E68'] as const;
 

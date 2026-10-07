@@ -11,9 +11,27 @@ export function acceptIfAlreadyApplied<T>(err: unknown, patch: Record<string, un
   if (err instanceof VersionConflictError && err.serverRow !== null && typeof err.serverRow === 'object') {
     const server = err.serverRow as Record<string, unknown>;
     const keys = Object.keys(patch);
-    if (keys.length > 0 && keys.every((k) => server[k] === patch[k])) return err.serverRow as T;
+    if (keys.length > 0 && keys.every((k) => sameValue(server[k], patch[k]))) return err.serverRow as T;
   }
   throw err;
+}
+
+// An ISO 8601 date-time carrying an explicit offset (Z or +hh:mm): what the client sends from
+// `toISOString()` and what PostgREST returns for a timestamptz. A bare date never matches.
+const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+
+/**
+ * C-WR-01: patched timestamps are compared by instant, not spelling. The client sends
+ * "2026-09-28T10:00:00.120Z"; PostgREST returns the same instant as
+ * "2026-09-28T10:00:00.12+00:00". Strict string equality misread a replayed soft-delete that
+ * had already landed as a "changed elsewhere" conflict (and lost its undo step).
+ */
+function sameValue(server: unknown, sent: unknown): boolean {
+  if (server === sent) return true;
+  if (typeof server !== 'string' || typeof sent !== 'string') return false;
+  if (!ISO_INSTANT.test(server) || !ISO_INSTANT.test(sent)) return false;
+  const a = Date.parse(server);
+  return !Number.isNaN(a) && a === Date.parse(sent);
 }
 
 /**
