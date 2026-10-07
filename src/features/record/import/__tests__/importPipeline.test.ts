@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import fc from 'fast-check';
+import { assert as fcAssert, boolean as fcBoolean, constantFrom as fcConstantFrom, property as fcProperty } from 'fast-check';
 import type { BuiltinCategoryKey } from '@/engine/categorize';
 import { minorUnits } from '@/engine/money';
 import type { PendingOccurrence, RecurringSuggestion } from '@/engine/recurring';
@@ -497,13 +497,13 @@ describe('buildPreview: conversion and reconciliation', () => {
   });
 
   it('property: converted amounts equal the ledger amounts under the decided profile, in any convention', () => {
-    fc.assert(
-      fc.property(
+    fcAssert(
+      fcProperty(
         arbLedger(),
-        fc.constantFrom<1 | -1>(1, -1),
-        fc.boolean(),
-        fc.constantFrom<'asc' | 'desc'>('asc', 'desc'),
-        fc.boolean(),
+        fcConstantFrom<1 | -1>(1, -1),
+        fcBoolean(),
+        fcConstantFrom<'asc' | 'desc'>('asc', 'desc'),
+        fcBoolean(),
         (ledger, s, card, orientation, withBalances) => {
           const balanceMeans = card ? 'owed' : 'held';
           const draft = renderDraft(ledger, {
