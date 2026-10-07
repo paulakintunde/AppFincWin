@@ -384,7 +384,9 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     setConfirmDelete(false);
     if (pair) {
       const labelName = nameOf(pair.in.account_id);
-      const stepId = removeTransfer(pair.out as TransferLegRow, { ownerId: rc.userId, labelName });
+      // I-04 (data IN-03): both legs are in hand, so pass the partner and its observed version
+      // is checked too -- a concurrent edit to the other side is refused, not deleted silently.
+      const stepId = removeTransfer(pair.out as TransferLegRow, { ownerId: rc.userId, labelName }, pair.in as TransferLegRow);
       showToast({ kind: 'destructive', text: undoLabelText('transferDeleted', { name: labelName }), stepId });
       onClose();
       return;

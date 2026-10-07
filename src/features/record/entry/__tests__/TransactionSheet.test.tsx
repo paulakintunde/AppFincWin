@@ -406,6 +406,10 @@ describe('TransactionSheet: transfers', () => {
     const deletes = getAllByText('Delete');
     await fireEvent.press(deletes[deletes.length - 1]!);
     expect(mockRemoveTransfer).toHaveBeenCalledTimes(1);
+    // I-04 (data IN-03): both legs are in hand, so the partner goes too and its observed version is checked.
+    const [leg, , partner] = mockRemoveTransfer.mock.calls[0] as unknown as [{ id: string }, unknown, { id: string } | undefined];
+    expect(leg.id).toBe('o1');
+    expect(partner?.id).toBe('i1');
     expect(mockRemove).not.toHaveBeenCalled();
     expect(getToast()).toMatchObject({
       kind: 'destructive',
