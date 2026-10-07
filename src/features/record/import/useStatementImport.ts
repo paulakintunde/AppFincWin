@@ -726,9 +726,13 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     };
   }, [isIncluded, m.preview]);
 
+  // S-WR-13: one keyed lookup per preview, so per-row reads (every render of a 5,000-line
+  // review) are O(1) rather than a scan of every row.
+  const rowsByIndex = useMemo(() => new Map((m.preview?.rows ?? []).map((r) => [r.index, r] as const)), [m.preview]);
+
   const rowState = useCallback(
     (index: number): { included: boolean; categoryId: string | null; locked: boolean } => {
-      const row = m.preview?.rows.find((r) => r.index === index);
+      const row = rowsByIndex.get(index);
       if (row === undefined) return { included: false, categoryId: null, locked: false };
       return {
         included: isIncluded(row),
@@ -736,16 +740,16 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         locked: row.locked,
       };
     },
-    [isIncluded, m.categories, m.preview]
+    [isIncluded, m.categories, rowsByIndex]
   );
 
   const toggleRow = useCallback(
     (index: number): void => {
-      const row = m.preview?.rows.find((r) => r.index === index);
+      const row = rowsByIndex.get(index);
       if (row === undefined || row.locked) return;
       setM((prev) => ({ ...prev, included: new Map(prev.included).set(index, !isIncluded(row)) }));
     },
-    [isIncluded, m.preview]
+    [isIncluded, rowsByIndex]
   );
 
   const setRowCategory = useCallback((index: number, categoryId: string | null): void => {
@@ -800,7 +804,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   // S-WR-04: a link or counter leg needs the transfer category; without it nothing is offered.
   const transfersUnavailable = lookup.transferCategoryId === null;
 
-  const rowAt = useCallback((index: number): PreviewRow | undefined => m.preview?.rows.find((r) => r.index === index), [m.preview]);
+  const rowAt = useCallback((index: number): PreviewRow | undefined => rowsByIndex.get(index), [rowsByIndex]);
 
   const linkTransfer = useCallback(
     (index: number, existingId: string): void => {

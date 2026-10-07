@@ -557,6 +557,17 @@ describe('useStatementImport: review', () => {
     expect(input.storedOpeningForFile).toBeNull();
   });
 
+  it('S-WR-13: per-row lookups are keyed, not a scan of every preview row', async () => {
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const rows = result.current.preview!.rows;
+    const find = jest.spyOn(rows, 'find');
+    for (const r of rows) result.current.rowState(r.index);
+    await act(async () => {
+      result.current.toggleRow(rows[0]!.index);
+    });
+    expect(find).not.toHaveBeenCalled();
+  });
+
   it('does not look for earlier rows for a CSV file', async () => {
     await reachReview(csv(CSV_DECIDED), 'csv');
     expect(dbTx.fetchHasRowsBefore).not.toHaveBeenCalled();

@@ -6,7 +6,7 @@
 // Review item 12: accepted suggestions are capped so one finalize and its undo step stay under
 // the 6000-op limit. At the cap the accept actions are disabled and the copy says why;
 // declining is always possible.
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useAccounts } from '@/data/queries/accounts';
 import { AccountPicker } from '@/features/record/entry/pickers/AccountPicker';
@@ -35,7 +35,9 @@ export function MatchesStep({ state }: { state: ImportState }) {
 
   const accountName = (id: string | null): string => (id === null ? '' : (accounts.find((a) => a.id === id)?.name ?? ''));
   const own = accountName(state.accountId);
-  const rowAt = (index: number): PreviewRow | undefined => state.preview?.rows.find((r) => r.index === index);
+  // S-WR-13: keyed once per preview rather than scanned per suggestion card.
+  const byIndex = useMemo(() => new Map((state.preview?.rows ?? []).map((r) => [r.index, r] as const)), [state.preview]);
+  const rowAt = (index: number): PreviewRow | undefined => byIndex.get(index);
 
   const included = state.counts.included;
   const accepted = acceptedSuggestionCount(state.transferRows, state.payMatchRows);
