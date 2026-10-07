@@ -9,8 +9,12 @@ let mockParams: Record<string, string | undefined> = {};
 
 jest.mock('expo-router', () => {
   const R = require('react');
-  const Stack = ({ children }: { children?: React.ReactNode }) => R.createElement(R.Fragment, null, children);
-  Stack.Screen = () => null;
+  function Stack({ children }: { children?: React.ReactNode }) {
+    return R.createElement(R.Fragment, null, children);
+  }
+  Stack.Screen = function StackScreen() {
+    return null;
+  };
   return {
     router: { push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
     useLocalSearchParams: () => mockParams,
@@ -52,40 +56,40 @@ beforeEach(() => {
 });
 
 describe('import route', () => {
-  it.each(['onboarding', 'you', 'account'])('passes the %s entry through', (entry) => {
+  it.each(['onboarding', 'you', 'account'])('passes the %s entry through', async (entry) => {
     mockParams = { entry, accountId: 'acc-1' };
-    render(<ImportRoute />);
+    await render(<ImportRoute />);
     expect(mockImportScreen).toHaveBeenCalledWith(expect.objectContaining({ entry, accountId: 'acc-1' }));
   });
 
-  it('maps an unknown or missing entry to you, and a missing accountId to null', () => {
+  it('maps an unknown or missing entry to you, and a missing accountId to null', async () => {
     mockParams = { entry: 'evil' };
-    render(<ImportRoute />);
+    await render(<ImportRoute />);
     expect(mockImportScreen).toHaveBeenCalledWith(expect.objectContaining({ entry: 'you', accountId: null }));
     mockParams = {};
-    render(<ImportRoute />);
+    await render(<ImportRoute />);
     expect(mockImportScreen).toHaveBeenLastCalledWith(expect.objectContaining({ entry: 'you' }));
   });
 
-  it('returns to Activity when done', () => {
-    render(<ImportRoute />);
+  it('returns to Activity when done', async () => {
+    await render(<ImportRoute />);
     (mockImportScreen.mock.calls[0]![0] as { onDone: () => void }).onDone();
     expect(mockReplace).toHaveBeenCalledWith('/activity');
   });
 });
 
 describe('record routes', () => {
-  it('account detail reads the id and opens import with the account entry', () => {
+  it('account detail reads the id and opens import with the account entry', async () => {
     mockParams = { id: 'acc-9' };
-    render(<AccountDetailRoute />);
+    await render(<AccountDetailRoute />);
     const props = mockAccountDetail.mock.calls[0]![0] as { accountId: string; onImport: (id: string) => void };
     expect(props.accountId).toBe('acc-9');
     props.onImport('acc-9');
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/import', params: { entry: 'account', accountId: 'acc-9' } });
   });
 
-  it('activity navigates to accounts, history and you', () => {
-    render(<ActivityRoute />);
+  it('activity navigates to accounts, history and you', async () => {
+    await render(<ActivityRoute />);
     const p = mockActivity.mock.calls[0]![0] as Record<string, () => void>;
     p.onOpenAccounts!();
     p.onOpenHistory!();
@@ -95,8 +99,8 @@ describe('record routes', () => {
 });
 
 describe('signed-in layout', () => {
-  it('mounts exactly one UndoToastHost', () => {
-    const { getAllByTestId } = render(<AppLayout />);
+  it('mounts exactly one UndoToastHost', async () => {
+    const { getAllByTestId } = await render(<AppLayout />);
     expect(getAllByTestId('undo-toast-host')).toHaveLength(1);
   });
 });

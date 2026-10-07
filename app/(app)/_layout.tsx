@@ -2,7 +2,9 @@
 // hasn't answered it yet (skipped if already there, to avoid a redirect loop), otherwise
 // renders the You screen (and later screens, as they're added in Phase 1+).
 import { Redirect, Stack, usePathname } from 'expo-router';
+import { View } from 'react-native';
 import { useConsent } from '@/features/consent/useConsent';
+import { UndoToastHost } from '@/features/record/history/UndoToastHost';
 import { Screen } from '@/ui/Screen';
 
 export default function AppLayout() {
@@ -20,10 +22,21 @@ export default function AppLayout() {
     return <Redirect href="/consent" />;
   }
 
+  // The undo toast host is mounted once here so every undoable change anywhere in the
+  // signed-in app shows its toast (D-31). It lives beside the Stack, not inside a screen.
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="you" />
-      <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
-    </Stack>
+    <View style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="activity" />
+        <Stack.Screen name="accounts/index" />
+        <Stack.Screen name="accounts/[id]" />
+        <Stack.Screen name="categories" />
+        <Stack.Screen name="history" />
+        <Stack.Screen name="import" />
+        <Stack.Screen name="you" />
+        <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
+      </Stack>
+      <UndoToastHost />
+    </View>
   );
 }
