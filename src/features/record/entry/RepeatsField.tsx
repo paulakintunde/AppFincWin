@@ -12,20 +12,21 @@ import { Row } from '@/ui/Row';
 import { Sheet } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { DateField } from './pickers/DateField';
-import { MAX_OCCURRENCE_COUNT, type RepeatsEnd, type RepeatsValue } from './recurringForm';
+import { defaultEndDate, MAX_OCCURRENCE_COUNT, type RepeatsEnd, type RepeatsValue } from './recurringForm';
 
 export interface RepeatsFieldProps {
   value: RepeatsValue;
   onChange: (value: RepeatsValue) => void;
   /** Formats a 'YYYY-MM-DD' date for display. */
   formatDate: (localDate: string) => string;
-  /** The default end date when "On a date" is chosen. */
   today: string;
+  /** S-CR-03: the entry's own date (the series anchor). "On a date" defaults to and may not precede it. */
+  entryDate: string;
 }
 
 const DIGITS = /^\d+$/;
 
-export function RepeatsField({ value, onChange, formatDate, today }: RepeatsFieldProps) {
+export function RepeatsField({ value, onChange, formatDate, today, entryDate }: RepeatsFieldProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const [open, setOpen] = useState(false);
@@ -88,7 +89,7 @@ export function RepeatsField({ value, onChange, formatDate, today }: RepeatsFiel
               label={t('record.repeats.endOnDate')}
               dense
               value={mark(endKind === 'date')}
-              onPress={() => setEnd({ kind: 'date', date: value.end.kind === 'date' ? value.end.date : today })}
+              onPress={() => setEnd({ kind: 'date', date: value.end.kind === 'date' ? value.end.date : defaultEndDate(today, entryDate) })}
             />
             {value.end.kind === 'date' ? (
               <DateField
@@ -96,6 +97,7 @@ export function RepeatsField({ value, onChange, formatDate, today }: RepeatsFiel
                 value={value.end.date}
                 display={formatDate(value.end.date)}
                 onChange={(date) => setEnd({ kind: 'date', date })}
+                minDate={entryDate}
               />
             ) : null}
             <Row

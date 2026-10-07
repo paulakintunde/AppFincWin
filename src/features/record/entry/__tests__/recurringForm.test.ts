@@ -1,12 +1,12 @@
-import { needsScopePrompt, nonTemplatePatch, repeatsToSchedule, templateFieldsChanged, thisAndFuturePlan } from '../recurringForm';
+import { needsScopePrompt, nonTemplatePatch, repeatsToSchedule, templateFieldsChanged, thisAndFuturePlan, repeatsProblem } from '../recurringForm';
 
 describe('repeatsToSchedule', () => {
   it('maps never to null', () => {
-    expect(repeatsToSchedule({ freq: 'never' })).toBeNull();
+    expect(repeatsToSchedule({ freq: 'never' }, '2026-01-01')).toBeNull();
   });
 
   it('maps an open-ended repeat', () => {
-    expect(repeatsToSchedule({ freq: 'monthly', end: { kind: 'never' } })).toEqual({
+    expect(repeatsToSchedule({ freq: 'monthly', end: { kind: 'never' } }, '2026-01-01')).toEqual({
       freq: 'monthly',
       endDate: null,
       occurrenceCount: null,
@@ -14,7 +14,7 @@ describe('repeatsToSchedule', () => {
   });
 
   it('maps an end date', () => {
-    expect(repeatsToSchedule({ freq: 'weekly', end: { kind: 'date', date: '2027-01-31' } })).toEqual({
+    expect(repeatsToSchedule({ freq: 'weekly', end: { kind: 'date', date: '2027-01-31' } }, '2026-01-01')).toEqual({
       freq: 'weekly',
       endDate: '2027-01-31',
       occurrenceCount: null,
@@ -22,7 +22,7 @@ describe('repeatsToSchedule', () => {
   });
 
   it('maps an occurrence count', () => {
-    expect(repeatsToSchedule({ freq: 'yearly', end: { kind: 'count', count: 12 } })).toEqual({
+    expect(repeatsToSchedule({ freq: 'yearly', end: { kind: 'count', count: 12 } }, '2026-01-01')).toEqual({
       freq: 'yearly',
       endDate: null,
       occurrenceCount: 12,
@@ -30,16 +30,16 @@ describe('repeatsToSchedule', () => {
   });
 
   it('accepts the count bounds 1 and 1000', () => {
-    expect(repeatsToSchedule({ freq: 'monthly', end: { kind: 'count', count: 1 } })).not.toBe('invalid');
-    expect(repeatsToSchedule({ freq: 'monthly', end: { kind: 'count', count: 1000 } })).not.toBe('invalid');
+    expect(repeatsToSchedule({ freq: 'monthly', end: { kind: 'count', count: 1 } }, '2026-01-01')).not.toBe('invalid');
+    expect(repeatsToSchedule({ freq: 'monthly', end: { kind: 'count', count: 1000 } }, '2026-01-01')).not.toBe('invalid');
   });
 
   it.each([0, -1, 1001, 2.5, Number.NaN])('rejects the count %p', (count) => {
-    expect(repeatsToSchedule({ freq: 'monthly', end: { kind: 'count', count } })).toBe('invalid');
+    expect(repeatsToSchedule({ freq: 'monthly', end: { kind: 'count', count } }, '2026-01-01')).toBe('invalid');
   });
 
   it('rejects an end date that is not a calendar date', () => {
-    expect(repeatsToSchedule({ freq: 'monthly', end: { kind: 'date', date: '' } })).toBe('invalid');
+    expect(repeatsToSchedule({ freq: 'monthly', end: { kind: 'date', date: '' } }, '2026-01-01')).toBe('invalid');
   });
 });
 
@@ -89,6 +89,22 @@ describe('needsScopePrompt', () => {
 describe('nonTemplatePatch', () => {
   it('keeps only the note and status keys', () => {
     expect(nonTemplatePatch({ original_amount: -5, note: 'x', status: 'paid', name: 'Rent' })).toEqual({ note: 'x', status: 'paid' });
+  });
+});
+
+describe('repeatsToSchedule against the anchor date (S-CR-03)', () => {
+  const v = (date: string) => ({ freq: 'monthly' as const, end: { kind: 'date' as const, date } });
+  it('refuses an end date before the entry date', () => {
+    expect(repeatsToSchedule(v('2026-10-07'), '2026-10-20')).toBe('invalid');
+    expect(repeatsProblem(v('2026-10-07'), '2026-10-20')).toBe('endBeforeStart');
+  });
+  it('accepts an end date on or after the entry date', () => {
+    expect(repeatsToSchedule(v('2026-10-20'), '2026-10-20')).toMatchObject({ endDate: '2026-10-20' });
+    expect(repeatsProblem(v('2026-11-20'), '2026-10-20')).toBeNull();
+  });
+  it('names a bad count separately', () => {
+    expect(repeatsProblem({ freq: 'weekly', end: { kind: 'count', count: 0 } }, '2026-10-20')).toBe('endCountInvalid');
+    expect(repeatsProblem({ freq: 'never' }, '2026-10-20')).toBeNull();
   });
 });
 

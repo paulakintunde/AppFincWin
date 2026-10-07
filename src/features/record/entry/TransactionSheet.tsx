@@ -52,7 +52,7 @@ import { OptionPicker } from './pickers/OptionPicker';
 import { EditScopePrompt } from './EditScopePrompt';
 import { OccurrenceActions } from './OccurrenceActions';
 import { RepeatsField } from './RepeatsField';
-import { needsScopePrompt, repeatsToSchedule, thisAndFuturePlan, type RepeatsValue } from './recurringForm';
+import { needsScopePrompt, repeatsProblem, repeatsToSchedule, thisAndFuturePlan, type RepeatsValue } from './recurringForm';
 import {
   initialFormState,
   toAddInput,
@@ -150,7 +150,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const pair = mode.kind === 'edit-transfer' ? mode : null;
   const isNew = mode.kind === 'new';
   const series = editRow?.recurring_series_id ? seriesList?.find((x) => x.id === editRow.recurring_series_id) : undefined;
-  const repeatsInvalid = submitted && repeatsToSchedule(repeats) === 'invalid';
+  const repeatsError = submitted ? repeatsProblem(repeats, state.localDate) : null;
   const isTransfer = state.direction === 'transfer';
   const parse = (text: string, currency: string) => parser.parse(text, currency, exponentFor(currency));
   const nameOf = (id: string | null): string => accounts.find((a) => a.id === id)?.name ?? '';
@@ -237,7 +237,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     const amountMinor = (parse(state.amountText, state.currency) as { value: MinorUnits }).value;
     const name = state.name.trim();
     // Repeats is only offered on rows that are not already in a series.
-    const schedule = editRow?.recurring_series_id ? null : repeatsToSchedule(repeats);
+    const schedule = editRow?.recurring_series_id ? null : repeatsToSchedule(repeats, state.localDate);
     if (schedule === 'invalid') return;
 
     if (editRow) {
@@ -523,9 +523,15 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
               />
             ) : null}
             {editRow?.recurring_series_id ? null : (
-              <RepeatsField value={repeats} onChange={setRepeats} formatDate={(d) => formatter.formatDate(d)} today={rc.today} />
+              <RepeatsField
+                value={repeats}
+                onChange={setRepeats}
+                formatDate={(d) => formatter.formatDate(d)}
+                today={rc.today}
+                entryDate={state.localDate}
+              />
             )}
-            {repeatsInvalid ? <Text style={errorStyle}>{t('record.repeats.endCountInvalid')}</Text> : null}
+            {repeatsError ? <Text style={errorStyle}>{t(`record.repeats.${repeatsError}`)}</Text> : null}
           </>
         )}
 

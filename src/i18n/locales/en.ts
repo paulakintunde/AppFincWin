@@ -285,6 +285,7 @@ const en = {
       endCount_other: 'After {{count}} times',
       countField: 'Number of times',
       endCountInvalid: 'Use a whole number from 1 to 1000.',
+      endBeforeStart: 'The end date is before this entry’s date.',
       done: 'Done',
     },
     recurring: {

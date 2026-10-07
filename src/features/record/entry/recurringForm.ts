@@ -23,19 +23,48 @@ export const MAX_OCCURRENCE_COUNT = 1000;
 
 const DATE_SHAPE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** `null` when it does not repeat; 'invalid' when the end value cannot be stored. */
-export function repeatsToSchedule(v: RepeatsValue): ScheduleInput | null | 'invalid' {
+export type RepeatsProblem = 'endBeforeStart' | 'endCountInvalid';
+
+/**
+ * Why a Repeats choice cannot be stored, or null when it can. S-CR-03: recurring_series has
+ * `check (end_date >= anchor_date)`, and the anchor is the entry's own date, so an end date
+ * before it is refused here instead of being sent and rejected by the server.
+ */
+export function repeatsProblem(v: RepeatsValue, anchorDate: string): RepeatsProblem | null {
   if (v.freq === 'never') return null;
+  switch (v.end.kind) {
+    case 'never':
+      return null;
+    case 'date':
+      if (!DATE_SHAPE.test(v.end.date)) return 'endBeforeStart';
+      return v.end.date < anchorDate ? 'endBeforeStart' : null;
+    case 'count':
+      return Number.isInteger(v.end.count) && v.end.count >= 1 && v.end.count <= MAX_OCCURRENCE_COUNT
+        ? null
+        : 'endCountInvalid';
+  }
+}
+
+/**
+ * `null` when it does not repeat; 'invalid' when the end value cannot be stored.
+ * @param anchorDate the entry's own date (the series anchor).
+ */
+export function repeatsToSchedule(v: RepeatsValue, anchorDate: string): ScheduleInput | null | 'invalid' {
+  if (v.freq === 'never') return null;
+  if (repeatsProblem(v, anchorDate) !== null) return 'invalid';
   switch (v.end.kind) {
     case 'never':
       return { freq: v.freq, endDate: null, occurrenceCount: null };
     case 'date':
-      return DATE_SHAPE.test(v.end.date) ? { freq: v.freq, endDate: v.end.date, occurrenceCount: null } : 'invalid';
+      return { freq: v.freq, endDate: v.end.date, occurrenceCount: null };
     case 'count':
-      return Number.isInteger(v.end.count) && v.end.count >= 1 && v.end.count <= MAX_OCCURRENCE_COUNT
-        ? { freq: v.freq, endDate: null, occurrenceCount: v.end.count }
-        : 'invalid';
+      return { freq: v.freq, endDate: null, occurrenceCount: v.end.count };
   }
+}
+
+/** S-CR-03: the default "On a date" end -- never earlier than the entry's own date. */
+export function defaultEndDate(today: string, entryDate: string): string {
+  return entryDate > today ? entryDate : today;
 }
 
 export function templateFieldsChanged(patch: TransactionPatch): boolean {

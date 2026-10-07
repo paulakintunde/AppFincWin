@@ -184,6 +184,40 @@ describe('Repeats on a new entry', () => {
   });
 });
 
+describe('Repeats "On a date" against the entry date (S-CR-03)', () => {
+  it('defaults the end to a future entry date, so the series is stored', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out', localDate: '2026-10-20' });
+    await fireEvent.changeText(getByLabelText('Amount'), '500');
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Rent');
+    await fireEvent.press(getByLabelText('Repeats'));
+    await fireEvent.press(getByText('Every month'));
+    await fireEvent.press(getByText('On a date'));
+    await fireEvent.press(getByText('Done'));
+    await fireEvent.press(getByText('Save expense'));
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect((mockCreate.mock.calls[0] as unknown[])[0]).toMatchObject({
+      series: { anchor_date: '2026-10-20', end_date: '2026-10-20' },
+    });
+  });
+
+  it('refuses an end date before the entry date: no write, no Undo, a reason shown', async () => {
+    const { getByLabelText, getByText, getAllByText, getByTestId } = await open({ kind: 'new', direction: 'out', localDate: '2026-10-20' });
+    await fireEvent.changeText(getByLabelText('Amount'), '500');
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Rent');
+    await fireEvent.press(getByLabelText('Repeats'));
+    await fireEvent.press(getByText('Every month'));
+    await fireEvent.press(getByText('On a date'));
+    await fireEvent.press(getAllByText('Ends')[0]!);
+    await fireEvent(getByTestId('date-picker'), 'onChange', { nativeEvent: { timestamp: new Date(2026, 9, 1, 12).getTime() } });
+    await fireEvent.press(getByText('Done'));
+    await fireEvent.press(getByText('Save expense'));
+    expect(mockAdd).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(getToast()).toBeNull();
+    expect(getByText('The end date is before this entry’s date.')).toBeTruthy();
+  });
+});
+
 describe('Repeats on an existing one-off entry (D-09)', () => {
   it('makes it the first occurrence without a new entry and without anchorIsNew', async () => {
     const { getByLabelText, getByText } = await open({ kind: 'edit', row: row() });
@@ -345,7 +379,7 @@ describe('RepeatsField and EditScopePrompt on their own', () => {
     const onChange = jest.fn();
     const { getByLabelText, getByText } = await render(
       <ThemeProvider>
-        <RepeatsField value={{ freq: 'never' }} onChange={onChange} formatDate={(d) => d} today="2026-09-25" />
+        <RepeatsField value={{ freq: 'never' }} onChange={onChange} formatDate={(d) => d} today="2026-09-25" entryDate="2026-09-25" />
       </ThemeProvider>
     );
     await fireEvent.press(getByLabelText('Repeats'));
