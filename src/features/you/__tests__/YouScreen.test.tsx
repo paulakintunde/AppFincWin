@@ -61,6 +61,11 @@ jest.mock('@/features/consent/useConsent', () => ({
   }),
 }));
 
+const mockRouterPush = jest.fn();
+jest.mock('expo-router', () => ({
+  router: { push: (...a: unknown[]) => mockRouterPush(...a) },
+}));
+
 const mockCheckConnection = jest.fn();
 jest.mock('@/services/supabase', () => ({
   checkConnection: (...args: unknown[]) => mockCheckConnection(...args),
@@ -283,6 +288,29 @@ describe('YouScreen sync status', () => {
   it("shows 'offline · 3 changes queued' in the Connection section", async () => {
     const { getByText } = await renderScreen();
     expect(getByText('offline · 3 changes queued')).toBeTruthy();
+  });
+});
+
+// 02-30: the Money section links to every Record screen.
+describe('YouScreen Money section', () => {
+  it('lists the five Record entry points and navigates to each', async () => {
+    const { getByText, queryByText } = await renderScreen();
+    expect(getByText('Money')).toBeTruthy();
+    expect(getByText('Import statement')).toBeTruthy();
+    expect(queryByText('Import CSV')).toBeNull();
+
+    fireEvent.press(getByText('Activity'));
+    fireEvent.press(getByText('Accounts'));
+    fireEvent.press(getByText('Categories'));
+    fireEvent.press(getByText('Import statement'));
+    fireEvent.press(getByText('History'));
+    expect(mockRouterPush.mock.calls.map((c) => c[0])).toEqual([
+      '/activity',
+      '/accounts',
+      '/categories',
+      { pathname: '/import', params: { entry: 'you' } },
+      '/history',
+    ]);
   });
 });
 
