@@ -584,6 +584,15 @@ as $$
                 'entity', 'transactions', 'id', e.value ->> 'id', 'expectedVersion', (e.value ->> 'version')::integer,
                 'patch', jsonb_build_object('deleted_at', '$now')) order by e.ordinality)
                 from jsonb_array_elements(p_change -> 'inserted') with ordinality e), '[]'::jsonb)
+    -- 2026-10-06: an anchor created in the same action is removed with its
+    -- series (same expectedVersion rules as every other op). It is also in
+    -- 'linked', so it is excluded from the unlink ops below: one op per row.
+    || case when jsonb_typeof(p_change -> 'anchor_created') = 'object'
+            then jsonb_build_array(jsonb_build_object(
+                   'entity', 'transactions', 'id', p_change -> 'anchor_created' ->> 'id',
+                   'expectedVersion', (p_change -> 'anchor_created' ->> 'version')::integer,
+                   'patch', jsonb_build_object('deleted_at', '$now')))
+            else '[]'::jsonb end
     || coalesce((select jsonb_agg(jsonb_build_object(
                 'entity', 'transactions', 'id', e.value ->> 'id', 'expectedVersion', (e.value ->> 'version')::integer,
                 'patch', jsonb_build_object('deleted_at', null)) order by e.ordinality)
@@ -591,7 +600,8 @@ as $$
     || coalesce((select jsonb_agg(jsonb_build_object(
                 'entity', 'transactions', 'id', e.value ->> 'id', 'expectedVersion', (e.value ->> 'version')::integer,
                 'patch', jsonb_build_object('recurring_series_id', null, 'occurrence_date', null)) order by e.ordinality)
-                from jsonb_array_elements(p_change -> 'linked') with ordinality e), '[]'::jsonb)
+                from jsonb_array_elements(p_change -> 'linked') with ordinality e
+               where e.value ->> 'id' is distinct from p_change -> 'anchor_created' ->> 'id'), '[]'::jsonb)
     || jsonb_build_array(jsonb_build_object(
          'entity', 'recurring_series', 'id', p_change -> 'series' ->> 'id',
          'expectedVersion', (p_change -> 'series' ->> 'version')::integer,

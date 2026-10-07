@@ -22,6 +22,9 @@ insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, c
 values
   ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a@test.local', '{"full_name":"Alice Test"}', now(), now());
 
+insert into public.fx_rates (base, quote, rate, rate_date, source) values
+  ('EUR', 'USD', 1.1483, '2026-09-21', 'frankfurter-v2');
+
 create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
