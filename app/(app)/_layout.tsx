@@ -33,6 +33,8 @@ export default function AppLayout() {
         <Stack.Screen name="categories" />
         <Stack.Screen name="history" />
         <Stack.Screen name="import" />
+        <Stack.Screen name="setup/account" />
+        <Stack.Screen name="setup/history" />
         <Stack.Screen name="you" />
         <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
       </Stack>
