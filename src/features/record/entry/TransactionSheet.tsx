@@ -52,7 +52,7 @@ import { OptionPicker } from './pickers/OptionPicker';
 import { EditScopePrompt } from './EditScopePrompt';
 import { OccurrenceActions } from './OccurrenceActions';
 import { RepeatsField } from './RepeatsField';
-import { needsScopePrompt, nonTemplatePatch, repeatsToSchedule, type RepeatsValue } from './recurringForm';
+import { needsScopePrompt, repeatsToSchedule, thisAndFuturePlan, type RepeatsValue } from './recurringForm';
 import {
   initialFormState,
   toAddInput,
@@ -334,16 +334,18 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     const patch = scopePatch;
     setScopePatch(null);
     if (!patch || !editRow || !series || !rc.userId) return;
-    // Note and status stay on this one row; the template fields go to the series (D-07).
-    const rest = nonTemplatePatch(patch);
-    if (Object.keys(rest).length > 0) sendRowEdit(editRow, rest, patch.name ?? series.name);
+    // S-CR-02 (D-07): the opened row always ends up with the user's whole edit -- either the
+    // series RPC rewrites it (pending, template-only) or it is patched directly and the
+    // series change starts after it (see thisAndFuturePlan).
+    const plan = thisAndFuturePlan(editRow, patch);
     const seriesName = patch.name ?? series.name;
+    if (plan.rowPatch) sendRowEdit(editRow, plan.rowPatch, seriesName);
     const stepId = editFrom({
       id: series.id,
       householdId: editRow.household_id,
       expectedVersion: series.version,
       patch: seriesPatchFromOccurrenceEdit(patch),
-      effectiveFrom: editRow.occurrence_date ?? editRow.local_date,
+      effectiveFrom: plan.effectiveFrom,
       ownerId: rc.userId,
       name: seriesName,
     });

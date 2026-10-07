@@ -237,6 +237,33 @@ describe('scope prompt', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it('S-CR-02: a paid occurrence keeps the figure the user typed, and the series changes from the next day', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'edit', row: occurrence({ status: 'paid' }) });
+    await fireEvent.changeText(getByLabelText('Amount'), '20');
+    await fireEvent.press(getByText('Save changes'));
+    await fireEvent.press(getByText('This and future'));
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    expect((mockEdit.mock.calls[0] as unknown[])[0]).toMatchObject({ id: 't1', patch: { original_amount: -2000 } });
+    expect(mockEditFrom).toHaveBeenCalledTimes(1);
+    expect((mockEditFrom.mock.calls[0] as unknown[])[0]).toMatchObject({ effectiveFrom: '2026-09-21', patch: { amount: -2000 } });
+    expect(getToast()).toMatchObject({ stepId: 'sedit-step' });
+  });
+
+  it('S-CR-02: a pending occurrence with a new note keeps the note and the new amount on that row', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'edit', row: occurrence() });
+    await fireEvent.changeText(getByLabelText('Amount'), '20');
+    await fireEvent.changeText(getByLabelText('Note'), 'landlord rise');
+    await fireEvent.press(getByText('Save changes'));
+    await fireEvent.press(getByText('This and future'));
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    expect((mockEdit.mock.calls[0] as unknown[])[0]).toMatchObject({
+      id: 't1',
+      patch: { original_amount: -2000, note: 'landlord rise' },
+    });
+    // The series rewrite starts after this row, so the RPC cannot soft-delete it (and the note).
+    expect((mockEditFrom.mock.calls[0] as unknown[])[0]).toMatchObject({ effectiveFrom: '2026-09-21', patch: { amount: -2000 } });
+  });
+
   it('does not ask for a note-only edit', async () => {
     const { getByLabelText, getByText, queryByText } = await open({ kind: 'edit', row: occurrence() });
     await fireEvent.changeText(getByLabelText('Note'), 'hello');

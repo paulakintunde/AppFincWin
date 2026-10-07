@@ -1,4 +1,4 @@
-import { needsScopePrompt, nonTemplatePatch, repeatsToSchedule, templateFieldsChanged } from '../recurringForm';
+import { needsScopePrompt, nonTemplatePatch, repeatsToSchedule, templateFieldsChanged, thisAndFuturePlan } from '../recurringForm';
 
 describe('repeatsToSchedule', () => {
   it('maps never to null', () => {
@@ -89,5 +89,36 @@ describe('needsScopePrompt', () => {
 describe('nonTemplatePatch', () => {
   it('keeps only the note and status keys', () => {
     expect(nonTemplatePatch({ original_amount: -5, note: 'x', status: 'paid', name: 'Rent' })).toEqual({ note: 'x', status: 'paid' });
+  });
+});
+
+describe('thisAndFuturePlan (S-CR-02)', () => {
+  const occ = { status: 'pending' as const, occurrence_date: '2026-09-20', local_date: '2026-09-20' };
+
+  it('a pending, template-only edit lets the series rewrite the row: one step', () => {
+    expect(thisAndFuturePlan(occ, { original_amount: -2000 })).toEqual({ rowPatch: null, effectiveFrom: '2026-09-20' });
+  });
+
+  it('a pending edit with a note patches the row in full and starts the series the next day', () => {
+    expect(thisAndFuturePlan(occ, { original_amount: -2000, note: 'x' })).toEqual({
+      rowPatch: { original_amount: -2000, note: 'x' },
+      effectiveFrom: '2026-09-21',
+    });
+  });
+
+  it.each(['paid', 'skipped'] as const)('a %s occurrence is patched in full; the series starts the next day', (status) => {
+    expect(thisAndFuturePlan({ ...occ, status }, { original_amount: -2000 })).toEqual({
+      rowPatch: { original_amount: -2000 },
+      effectiveFrom: '2026-09-21',
+    });
+  });
+
+  it('a moved date starts the series after the later of the two dates, across a month end', () => {
+    expect(thisAndFuturePlan({ ...occ, status: 'paid' }, { local_date: '2026-09-30' }).effectiveFrom).toBe('2026-10-01');
+    expect(thisAndFuturePlan({ ...occ, status: 'paid' }, { local_date: '2026-09-10' }).effectiveFrom).toBe('2026-09-21');
+  });
+
+  it('falls back to the local date when the row has no occurrence date', () => {
+    expect(thisAndFuturePlan({ status: 'paid', occurrence_date: null, local_date: '2026-12-31' }, { name: 'x' }).effectiveFrom).toBe('2027-01-01');
   });
 });

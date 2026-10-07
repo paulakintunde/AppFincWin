@@ -62,3 +62,40 @@ export function nonTemplatePatch(patch: TransactionPatch): TransactionPatch {
   }
   return out as TransactionPatch;
 }
+
+/** The calendar day after a YYYY-MM-DD local date (pure calendar arithmetic, no time zone). */
+export function dayAfter(localDate: string): string {
+  const [y, m, d] = localDate.split('-').map((part) => Number.parseInt(part, 10)) as [number, number, number];
+  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+}
+
+export interface ThisAndFuturePlan {
+  /** The whole edit applied to the opened row itself, or null when the series RPC rewrites it. */
+  rowPatch: TransactionPatch | null;
+  /** The date the series template edit takes effect from. */
+  effectiveFrom: string;
+}
+
+/**
+ * S-CR-02 / D-07: how "This and future" reaches the occurrence the user opened.
+ * edit_recurring_series_from only rewrites *pending* rows on or after the effective date,
+ * by soft-deleting them and materialising fresh ones from the new template.
+ *  - A pending row with a template-only change: let the RPC rewrite it, from its own
+ *    occurrence date. One user action stays one undo step (D-24).
+ *  - A paid or skipped row (the RPC never touches it), or a pending row carrying a note or
+ *    status change (the RPC would drop it with the soft-deleted row): the whole edit goes to
+ *    the row itself, and the series edit starts the day after this occurrence -- after the
+ *    later of its scheduled and its new date -- so the RPC can neither soft-delete the row
+ *    nor materialise a duplicate of it.
+ */
+export function thisAndFuturePlan(
+  row: Pick<TransactionRow, 'status' | 'occurrence_date' | 'local_date'>,
+  patch: TransactionPatch
+): ThisAndFuturePlan {
+  const scheduled = row.occurrence_date ?? row.local_date;
+  const keepsOwnFields = Object.keys(nonTemplatePatch(patch)).length > 0;
+  if (row.status === 'pending' && !keepsOwnFields) return { rowPatch: null, effectiveFrom: scheduled };
+  const moved = patch.local_date ?? row.local_date;
+  const last = moved > scheduled ? moved : scheduled;
+  return { rowPatch: patch, effectiveFrom: dayAfter(last) };
+}
