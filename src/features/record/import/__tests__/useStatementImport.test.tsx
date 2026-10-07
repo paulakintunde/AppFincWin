@@ -9,6 +9,7 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { AccountRow } from '@/db/rows';
 import { useStatementImport } from '../useStatementImport';
 import * as suggestionCap from '../suggestionCap';
+import * as pipeline from '../importPipeline';
 
 const mockTrack = jest.fn();
 const mockCommit = jest.fn();
@@ -535,6 +536,25 @@ describe('useStatementImport: review', () => {
     expect(dbTx.fetchHasRowsBefore).toHaveBeenCalledWith(expect.anything(), 'hh-1', 'acc-1', '2026-09-01');
     expect(result.current.counts).toEqual(expect.objectContaining({ total: 5, blocked: 1, duplicates: 0 }));
     expect(result.current.reconcile).not.toBeNull();
+  });
+
+  it('S-WR-05: the stored balance stands in for the OFX opening only when nothing is dated after the file', async () => {
+    dbTx.fetchHasRowsBefore.mockResolvedValue(true);
+    const spy = jest.spyOn(pipeline, 'buildPreview');
+    await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const input = spy.mock.calls.at(-1)![0] as { storedOpeningForFile: number | null };
+    expect(input.storedOpeningForFile).toBe(5000);
+  });
+
+  it('S-WR-05: rows dated after the file mean the current balance is not the opening', async () => {
+    dbTx.fetchHasRowsBefore.mockResolvedValue(true);
+    dbTx.fetchTransactionsInRange.mockImplementation(async (_c: unknown, _h: unknown, range: { toInclusive: string }) =>
+      range.toInclusive === '9999-12-31' ? [stored({ id: 'later', local_date: '2026-10-01' })] : []
+    );
+    const spy = jest.spyOn(pipeline, 'buildPreview');
+    await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const input = spy.mock.calls.at(-1)![0] as { storedOpeningForFile: number | null };
+    expect(input.storedOpeningForFile).toBeNull();
   });
 
   it('does not look for earlier rows for a CSV file', async () => {

@@ -128,6 +128,9 @@ interface Machine {
 
 const NONE = new Map<never, never>();
 
+/** The open end of a "dated after" range read (S-WR-05). */
+const LAST_LOCAL_DATE = '9999-12-31';
+
 /**
  * Why a commit wrote nothing (S-WR-03, S-WR-04): more accepted suggestions than one import can
  * hold; transfers asked for while the transfer category is unknown; or the write was refused
@@ -373,14 +376,21 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         const names = namesRead.ok ? namesRead.value : [];
 
         // OFX carries no opening balance: a stored balance stands in only when the account has
-        // rows before the file and none inside it (D-46).
+        // rows before the file and none inside it (D-46). S-WR-05: that balance is the balance
+        // *now*, so it equals the balance at the file's start only when nothing is dated after
+        // the file either; a failed or non-empty read of the later rows drops the fallback.
         let storedOpeningForFile: number | null = null;
         if (format !== 'csv' && draft.periodStart !== null) {
           const periodStart = draft.periodStart;
           const periodEnd = draft.periodEnd ?? last;
           const before = await attempt(() => fetchHasRowsBefore(supabase, householdId, accountId, periodStart));
           const anyInside = stored.some((r) => r.local_date >= periodStart && r.local_date <= periodEnd);
-          if (before.ok && before.value && !anyInside) storedOpeningForFile = balances.get(accountId)?.balance ?? null;
+          if (before.ok && before.value && !anyInside) {
+            const after = await attempt(() =>
+              fetchTransactionsInRange(supabase, householdId, { from: addDays(periodEnd, 1), toInclusive: LAST_LOCAL_DATE, accountId })
+            );
+            if (after.ok && after.value.length === 0) storedOpeningForFile = balances.get(accountId)?.balance ?? null;
+          }
         }
         if (token !== run.current) return;
 
