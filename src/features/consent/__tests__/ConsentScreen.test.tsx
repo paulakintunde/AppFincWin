@@ -1,7 +1,7 @@
 // D-17: proves the heading/body/never-sent list render from the i18n catalogue, that the two
 // choice buttons are the same size (equal weight, no dark pattern), that Share usage calls
 // grant() exactly once and Not now calls decline() exactly once, that either choice then
-// navigates to /you, and that there is no third close/skip control.
+// navigates to the signed-in landing (/activity), and that there is no third close/skip control.
 import { StyleSheet } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -86,7 +86,7 @@ describe('ConsentScreen', () => {
     }
   });
 
-  it('calls grant() once when Share usage is pressed, then navigates to /you', async () => {
+  it('calls grant() once when Share usage is pressed, then navigates to the signed-in landing (/activity)', async () => {
     const { getByTestId, getByText } = await renderScreen();
 
     await act(async () => {
@@ -95,10 +95,10 @@ describe('ConsentScreen', () => {
 
     expect(mockGrant).toHaveBeenCalledTimes(1);
     expect(mockDecline).not.toHaveBeenCalled();
-    await waitFor(() => expect(getByText('/you')).toBeTruthy());
+    await waitFor(() => expect(getByText('/activity')).toBeTruthy());
   });
 
-  it('calls decline() once when Not now is pressed, then navigates to /you', async () => {
+  it('calls decline() once when Not now is pressed, then navigates to the signed-in landing (/activity)', async () => {
     const { getByTestId, getByText } = await renderScreen();
 
     await act(async () => {
@@ -107,7 +107,7 @@ describe('ConsentScreen', () => {
 
     expect(mockDecline).toHaveBeenCalledTimes(1);
     expect(mockGrant).not.toHaveBeenCalled();
-    await waitFor(() => expect(getByText('/you')).toBeTruthy());
+    await waitFor(() => expect(getByText('/activity')).toBeTruthy());
   });
 
   it('stays on the prompt (no redirect) when the answer fails to save', async () => {
@@ -136,7 +136,7 @@ describe('ConsentScreen', () => {
       fireEvent.press(getByTestId('consent-decline'));
     });
     expect(queryByTestId('consent-save-failed')).toBeNull();
-    await waitFor(() => expect(getByText('/you')).toBeTruthy());
+    await waitFor(() => expect(getByText('/activity')).toBeTruthy());
   });
 
   it('never leaves both choices disabled when grant() throws (WR-02)', async () => {

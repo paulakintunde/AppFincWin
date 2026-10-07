@@ -499,6 +499,7 @@ const en = {
     pick: 'Choose a statement file',
     pickHelper: 'CSV, OFX or QFX — up to 5,000 rows (about 2MB).',
     pickAccount: 'Which account is this file from?',
+    pickAccountFirst: 'Choose or add an account first.',
     newAccount: 'Add an account',
     pickStatement: 'This file holds more than one account. Which one is this import for?',
     statementKind: {

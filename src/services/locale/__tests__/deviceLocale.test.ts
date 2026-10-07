@@ -1,6 +1,6 @@
 import { getCalendars, getLocales, useCalendars, useLocales } from 'expo-localization';
 import { renderHook } from '@testing-library/react-native';
-import { getDeviceLocale, getDeviceSeparators, getDeviceTimeZone, useDeviceLocale } from '../deviceLocale';
+import { getDeviceLocale, getDeviceRegion, getDeviceSeparators, getDeviceTimeZone, useDeviceLocale } from '../deviceLocale';
 
 jest.mock('expo-localization', () => ({
   getLocales: jest.fn(),
@@ -175,5 +175,30 @@ describe('useDeviceLocale', () => {
     const { result } = await renderHook(() => useDeviceLocale());
 
     expect(result.current).toEqual({ locale: 'en-US', timeZone: 'UTC' });
+  });
+});
+
+describe('getDeviceRegion (02-31): override > device region > time zone, never IP', () => {
+  it('returns the device region when no override is given', () => {
+    mockGetLocales.mockReturnValue([{ languageTag: 'en-CA', languageCode: 'en', regionCode: 'CA' }]);
+    mockGetCalendars.mockReturnValue([{ timeZone: 'America/Vancouver' }]);
+    expect(getDeviceRegion()).toBe('CA');
+  });
+
+  it('an explicit override wins over the device region', () => {
+    mockGetLocales.mockReturnValue([{ languageTag: 'en-CA', languageCode: 'en', regionCode: 'CA' }]);
+    expect(getDeviceRegion('gb')).toBe('GB');
+  });
+
+  it('falls back to the time zone country when the device reports no region', () => {
+    mockGetLocales.mockReturnValue([{ languageTag: 'en', languageCode: 'en', regionCode: null }]);
+    mockGetCalendars.mockReturnValue([{ timeZone: 'America/Vancouver' }]);
+    expect(getDeviceRegion()).toBe('CA');
+  });
+
+  it('is undefined when nothing resolves', () => {
+    mockGetLocales.mockReturnValue([]);
+    mockGetCalendars.mockReturnValue([{ timeZone: 'Etc/GMT' }]);
+    expect(getDeviceRegion()).toBeUndefined();
   });
 });

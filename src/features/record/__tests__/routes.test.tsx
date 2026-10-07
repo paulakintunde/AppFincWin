@@ -41,6 +41,7 @@ jest.mock('@/features/record/history/UndoToastHost', () => {
   const { View } = require('react-native');
   return { UndoToastHost: () => R.createElement(View, { testID: 'undo-toast-host' }) };
 });
+jest.mock('@/features/record/useDeviceHomeCurrencyDefault', () => ({ DeviceHomeCurrencyDefault: () => null }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ ready: true, householdId: 'h1' }),
 }));
