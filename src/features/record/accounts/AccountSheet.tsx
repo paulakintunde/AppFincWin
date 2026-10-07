@@ -78,7 +78,10 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
 
   const [name, setName] = useState(account?.name ?? '');
   const [kind, setKind] = useState<AccountKind>(account?.kind ?? 'checking');
-  const [currency, setCurrency] = useState(account?.currency ?? rc.homeCurrency);
+  // S-WR-09: until the user picks one, a new account's currency follows the home currency, which
+  // the device default can set a moment after the onboarding sheet has mounted.
+  const [pickedCurrency, setCurrency] = useState<string | null>(account?.currency ?? null);
+  const currency = pickedCurrency ?? rc.homeCurrency;
   const [openingText, setOpeningText] = useState(account ? magnitude(account.opening_balance, account.currency) : '');
   const [signChoice, setSignChoice] = useState<SignChoice>(() => {
     if (!account) return 'default';

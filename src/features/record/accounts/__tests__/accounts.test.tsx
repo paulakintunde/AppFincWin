@@ -23,6 +23,7 @@ const mockEdit = jest.fn((..._args: unknown[]) => true);
 const mockTrack = jest.fn();
 let mockAccounts: AccountRow[] = [];
 let mockRegion = 'GB';
+let mockHome = 'GBP';
 let mockBalances = new Map<string, AccountBalanceView>();
 
 jest.mock('@/data/mutations/accounts', () => ({
@@ -69,7 +70,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
     ready: true,
     userId: 'u1',
     householdId: 'h1',
-    homeCurrency: 'GBP',
+    homeCurrency: mockHome,
     showCents: true,
     region: mockRegion,
     timeZone: 'Europe/London',
@@ -116,6 +117,7 @@ beforeEach(() => {
   mockAccounts = [];
   mockBalances = new Map();
   mockRegion = 'GB';
+  mockHome = 'GBP';
 });
 
 describe('AccountSheet new', () => {
@@ -369,5 +371,50 @@ describe('AccountSheet: opening balance prefill in the region notation (S-CR-01)
     expect(queryByText(/match how amounts are written/)).toBeNull();
     const [vars] = mockEdit.mock.calls[0] as unknown as [{ patch: Record<string, unknown> }];
     expect(vars.patch).toEqual({ name: 'Giro' });
+  });
+});
+
+describe('AccountSheet: new-account currency follows a late home-currency default (S-WR-09)', () => {
+  it('moves with the home currency until the user picks one', async () => {
+    mockHome = 'USD';
+    const ui = (
+      <ThemeProvider>
+        <AccountSheet visible mode={{ kind: 'new', context: 'onboarding' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    const u = await render(ui);
+    expect(u.getByLabelText('Currency').props.accessibilityValue).toMatchObject({ text: 'USD' });
+    mockHome = 'GBP';
+    await u.rerender(
+      <ThemeProvider>
+        <AccountSheet visible mode={{ kind: 'new', context: 'onboarding' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(u.getByLabelText('Currency').props.accessibilityValue).toMatchObject({ text: 'GBP' });
+    await fireEvent.changeText(u.getByLabelText('Name'), 'Main');
+    await fireEvent.press(u.getByText('Save account'));
+    const [input] = mockAdd.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(input.currency).toBe('GBP');
+  });
+
+  it('keeps a currency the user picked when the home currency changes later', async () => {
+    mockHome = 'GBP';
+    const u = await render(
+      <ThemeProvider>
+        <AccountSheet visible mode={{ kind: 'new', context: 'onboarding' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    await fireEvent.press(u.getByLabelText('Currency'));
+    await fireEvent.press(u.getByText('EUR · Euro'));
+    mockHome = 'USD';
+    await u.rerender(
+      <ThemeProvider>
+        <AccountSheet visible mode={{ kind: 'new', context: 'onboarding' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    await fireEvent.changeText(u.getByLabelText('Name'), 'Euro');
+    await fireEvent.press(u.getByText('Save account'));
+    const [input] = mockAdd.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(input.currency).toBe('EUR');
   });
 });
