@@ -197,6 +197,21 @@ describe('ImportScreen: pick', () => {
     expect(mockState.setAccount).toHaveBeenCalledWith('a2');
   });
 
+  it('explains why the file button is disabled while no account is chosen (finding 3)', async () => {
+    await renderScreen();
+    expect(screen.getByText('Choose or add an account first.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Choose a statement file' }).props.accessibilityHint).toBe(
+      'Choose or add an account first.'
+    );
+  });
+
+  it('drops the reason and the hint once an account is chosen', async () => {
+    mockState = makeState({ accountId: 'a1' });
+    await renderScreen();
+    expect(screen.queryByText('Choose or add an account first.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Choose a statement file' }).props.accessibilityHint).toBeUndefined();
+  });
+
   it('with an account chosen the file button starts the import', async () => {
     mockState = makeState({ accountId: 'a1' });
     await renderScreen();
