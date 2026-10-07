@@ -223,10 +223,10 @@ Plans:
 - [x] 02-25-PLAN.md — Categories: manage, swatches, merge-or-archive (W8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 02-21-PLAN.md — Entry sheet recurring controls: Repeats, this one/this and future, skip, end (W9)
-- [ ] 02-23-PLAN.md — Activity: search across months, filters (incl. Transfers), bulk select (W9)
-- [ ] 02-24-PLAN.md — Accounts: list, detail, create/edit sheet with limits and sign control, balances and standing (W9)
-- [ ] 02-26-PLAN.md — Statement import pipeline: CSV/OFX/QFX byte read, one D-40 pipeline, preview, commit input (W9)
+- [x] 02-21-PLAN.md — Entry sheet recurring controls: Repeats, this one/this and future, skip, end (W9)
+- [x] 02-23-PLAN.md — Activity: search across months, filters (incl. Transfers), bulk select (W9)
+- [x] 02-24-PLAN.md — Accounts: list, detail, create/edit sheet with limits and sign control, balances and standing (W9)
+- [x] 02-26-PLAN.md — Statement import pipeline: CSV/OFX/QFX byte read, one D-40 pipeline, preview, commit input (W9)
 
 **Wave 10** *(blocked on Wave 9 completion)*
 - [ ] 02-39-PLAN.md — Statement import state machine: format confirmation, mapping, review, matches, commit, funnel (W10)
@@ -255,7 +255,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 31/40 plans executed
+**Plans:** 35/40 plans executed
 
 Plans:
 
