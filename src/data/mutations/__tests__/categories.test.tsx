@@ -424,13 +424,24 @@ describe('useCategoryUsage', () => {
     onlineManager.setOnline(false);
     try {
       const qc = newClient();
-      qc.setQueryData(['categories', 'usage', 'h1', 'c1'], 0);
+      qc.setQueryData(queryKeys.categoryUsage('h1', 'c1'), 0);
       const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
       await waitFor(() => expect(result.current.isUnavailable).toBe(true));
       expect(result.current.isKnown).toBe(false);
     } finally {
       onlineManager.setOnline(true);
     }
+  });
+
+  it('IN-01: the usage key sits under the transactions root, so any transaction write invalidates it', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(ok([]));
+    const qc = newClient();
+    await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
+    await waitFor(() => expect(qc.getQueryData(queryKeys.categoryUsage('h1', 'c1'))).toBe(0));
+    await qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot('h1'), refetchType: 'none' });
+    expect(qc.getQueryState(queryKeys.categoryUsage('h1', 'c1'))?.isInvalidated).toBe(true);
   });
 
   it('does not query while disabled', async () => {

@@ -104,7 +104,7 @@ export interface CategoryUsage {
 export function useCategoryUsage(householdId: string | null, categoryId: string | null, enabled: boolean): CategoryUsage {
   const on = enabled && Boolean(householdId) && Boolean(categoryId);
   const query = useQuery({
-    queryKey: ['categories', 'usage', householdId, categoryId] as const,
+    queryKey: queryKeys.categoryUsage(householdId ?? '', categoryId ?? ''),
     queryFn: async () => (await fetchActiveIdsByCategory(supabase, householdId as string, categoryId as string)).length,
     enabled: on,
   });
