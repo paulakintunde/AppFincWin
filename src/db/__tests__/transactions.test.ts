@@ -17,6 +17,7 @@ import {
   escapeLikeTerm,
   fetchActiveIdsByCategory,
   fetchCategorisedNames,
+  fetchHasRowsAfter,
   fetchHasRowsBefore,
   fetchTransaction,
   fetchTransactionVersions,
@@ -558,6 +559,30 @@ describe('fetchTransferCandidates', () => {
     expect(client.calls.find((c) => c.method === 'select')?.args[0]).toBe(
       'id, account_id, local_date, original_amount, original_currency, name, payment_type, transfer_id, category_id, version'
     );
+  });
+});
+
+describe('fetchHasRowsAfter', () => {
+  it('asks ACTIVE_VIEW for one row of the account dated strictly after the date', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [{ id: 't1' }], error: null, status: 200 });
+
+    await expect(fetchHasRowsAfter(client, 'h1', 'a1', '2026-09-30')).resolves.toBe(true);
+    expect(client.calls.every((c) => c.table === ACTIVE_VIEW)).toBe(true);
+    expect(client.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toEqual([
+      ['household_id', 'h1'],
+      ['account_id', 'a1'],
+    ]);
+    expect(client.calls.find((c) => c.method === 'gt')?.args).toEqual(['local_date', '2026-09-30']);
+    expect(client.calls.find((c) => c.method === 'limit')?.args).toEqual([1]);
+  });
+
+  it('is false for no rows and throws a server error as a DbError', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: null, status: 200 });
+    await expect(fetchHasRowsAfter(client, 'h1', 'a1', '2026-09-30')).resolves.toBe(false);
+    client.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+    await expect(fetchHasRowsAfter(client, 'h1', 'a1', '2026-09-30')).rejects.toBeInstanceOf(DbError);
   });
 });
 

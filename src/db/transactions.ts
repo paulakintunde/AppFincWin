@@ -335,6 +335,29 @@ export async function fetchHasRowsBefore(
   return ((data as { id: string }[] | null) ?? []).length > 0;
 }
 
+/**
+ * Screens review W6-13 WR-05 follow-up: whether the account has any active row dated strictly
+ * after `afterDate` -- one limit-1 read, so an import can tell whether "today's balance" still
+ * describes the end of a statement period without paging the whole range.
+ */
+export async function fetchHasRowsAfter(
+  client: DbClient,
+  householdId: string,
+  accountId: string,
+  afterDate: string
+): Promise<boolean> {
+  const { data, error, status } = await client
+    .from(ACTIVE_VIEW)
+    .select('id')
+    .eq('household_id', householdId)
+    .eq('account_id', accountId)
+    .gt('local_date', afterDate)
+    .limit(1);
+
+  if (error) throw toDbError(error, status);
+  return ((data as { id: string }[] | null) ?? []).length > 0;
+}
+
 /** T-02-11-06: denial-of-service guard on fetchTransferLegs. */
 export const TRANSFER_LEGS_MAX = 200;
 
