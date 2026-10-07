@@ -219,11 +219,45 @@ describe('RemoveCategoryPrompt', () => {
     expect(mockArchive).not.toHaveBeenCalled();
     expect(onDone).not.toHaveBeenCalled();
     expect(u.getByText('Can’t tell yet how many transactions use Groceries. Archiving keeps their history.')).toBeTruthy();
-    expect(u.getByLabelText('Merge').props.accessibilityState.disabled).toBe(true);
+    expect(u.getByLabelText('Merge').props.accessibilityState.disabled).toBe(false);
     // Archive stays an explicit choice; Try again re-reads the count.
     expect(u.getByLabelText('Archive').props.accessibilityState.disabled).toBe(false);
     await fireEvent.press(u.getByText('Try again'));
     expect(refetch).toHaveBeenCalled();
+  });
+
+  it.each([
+    ['unavailable (failed or offline read)', { count: 0, capped: false, isLoading: false, isKnown: false, isUnavailable: true }],
+    ['not yet known (a persisted 0 from an earlier mount)', { count: 0, capped: false, isLoading: false, isKnown: false, isUnavailable: false }],
+  ])('I-01: gates on the useCategoryUsage contract -- %s never auto-archives', async (_label, usage) => {
+    const refetch = jest.fn();
+    mockUsage = { ...usage, refetch };
+    const onDone = jest.fn();
+    const u = await render(
+      <ThemeProvider>
+        <RemoveCategoryPrompt visible category={mockAll[0] as CategoryRow} onDone={onDone} onCancel={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(mockArchive).not.toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
+    expect(u.getByText('Can’t tell yet how many transactions use Groceries. Archiving keeps their history.')).toBeTruthy();
+    expect(u.getByLabelText('Merge').props.accessibilityState.disabled).toBe(false);
+    expect(u.getByLabelText('Archive').props.accessibilityState.disabled).toBe(false);
+    await fireEvent.press(u.getByText('Try again'));
+    expect(refetch).toHaveBeenCalled();
+    // Merge is a real choice here: it opens the target picker (the write re-reads the rows itself).
+    await fireEvent.press(u.getByText('Merge'));
+    expect(u.getByText('Merge Groceries into')).toBeTruthy();
+  });
+
+  it('I-01: auto-archives only when isKnown && count === 0 && !capped', async () => {
+    mockUsage = { count: 0, capped: false, isLoading: false, isKnown: true, isUnavailable: false };
+    await render(
+      <ThemeProvider>
+        <RemoveCategoryPrompt visible category={mockAll[0] as CategoryRow} onDone={jest.fn()} onCancel={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(mockArchive).toHaveBeenCalledTimes(1);
   });
 
   it('S-WR-07: auto-archives once the count is known to be zero', async () => {

@@ -5,7 +5,7 @@ globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto)
 
 import React from 'react';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { CategoryRow, DbClient } from '@/db/rows';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { queryKeys } from '@/data/keys';
@@ -401,6 +401,22 @@ describe('useCategoryUsage', () => {
     const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
     await waitFor(() => expect(result.current.isUnavailable).toBe(true));
     expect(result.current).toMatchObject({ isKnown: false, isLoading: false, known: false, isSuccess: false, isError: true, status: 'unavailable' });
+  });
+
+  it('I-01: refetch re-reads an unavailable count so the prompt can offer Try again', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+    const qc = newClient();
+    const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
+    await waitFor(() => expect(result.current.isUnavailable).toBe(true));
+    expect(typeof result.current.refetch).toBe('function');
+    fake.respondWith(ok([{ id: 'a', version: 1, local_date: '2026-09-01' }]));
+    await act(async () => {
+      await result.current.refetch();
+    });
+    await waitFor(() => expect(result.current.isKnown).toBe(true));
+    expect(result.current.count).toBe(1);
   });
 
   it('WR-06: an offline (paused) read is unknown and unavailable, never a settled 0', async () => {
