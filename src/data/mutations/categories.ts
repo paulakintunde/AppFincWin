@@ -24,7 +24,7 @@ import {
 import { DbError, VersionConflictError, type WriteEntity } from '@/db/errors';
 import { insertCategory, updateCategory } from '@/db/categories';
 import { applyPatches } from '@/db/patches';
-import { MERGE_LIMIT, fetchActiveIdsByCategory } from '@/db/transactions';
+import { MERGE_ROWS_MAX, fetchActiveIdsByCategory } from '@/db/transactions';
 import type { CategoryPatch, CategoryRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
@@ -195,7 +195,8 @@ export function registerCategoryMutations(qc: QueryClient): void {
         const client = await writeClient();
         // D-36: ids are read at flush time, so rows added while this sat in the queue move too.
         const rows = await fetchActiveIdsByCategory(client, vars.householdId, vars.source.id);
-        if (rows.length > MERGE_LIMIT) throw new DbError('merge too large', 'merge-too-large', null);
+        // WR-03: the moves plus the archive op must fit one apply_patches call (MERGE_LIMIT ops).
+        if (rows.length > MERGE_ROWS_MAX) throw new DbError('merge too large', 'merge-too-large', null);
 
         const items = [
           ...rows.map((r) => ({

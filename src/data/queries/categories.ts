@@ -6,7 +6,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchCategories } from '@/db/categories';
-import { MERGE_LIMIT, fetchActiveIdsByCategory } from '@/db/transactions';
+import { MERGE_LIMIT, MERGE_ROWS_MAX, fetchActiveIdsByCategory } from '@/db/transactions';
 import type { CategoryRow } from '@/db/rows';
 import { BUILTIN_CATEGORY_KEYS, type BuiltinCategoryKey } from '@/engine/categorize';
 import { supabase } from '@/services/supabase';
@@ -71,8 +71,9 @@ export function useCategoryLookup(userId?: string): CategoryLookup {
 
 /**
  * D-36: how many active transactions use a category, read before the user chooses merge or
- * archive. The server read is capped at MERGE_LIMIT + 1 rows, so a count above MERGE_LIMIT is
- * reported as MERGE_LIMIT with `capped` set (shown as "6000+").
+ * archive. The server read is capped at MERGE_LIMIT + 1 rows; a count above MERGE_LIMIT is
+ * reported as MERGE_LIMIT, and `capped` is set once the rows cannot be merged in one step
+ * (more than MERGE_ROWS_MAX, W6-13 WR-03).
  */
 export function useCategoryUsage(householdId: string | null, categoryId: string | null, enabled: boolean) {
   const query = useQuery({
@@ -81,5 +82,6 @@ export function useCategoryUsage(householdId: string | null, categoryId: string 
     enabled: enabled && Boolean(householdId) && Boolean(categoryId),
   });
   const total = query.data ?? 0;
-  return { count: Math.min(total, MERGE_LIMIT), capped: total > MERGE_LIMIT, isLoading: query.isLoading };
+  // WR-03: capped means "too many to merge in one step" (rows + the archive op > MERGE_LIMIT).
+  return { count: Math.min(total, MERGE_LIMIT), capped: total > MERGE_ROWS_MAX, isLoading: query.isLoading };
 }

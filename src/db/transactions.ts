@@ -407,6 +407,13 @@ export async function fetchCategorisedNames(
 /** D-36: denial-of-service guard on a category merge -- callers detect overflow via length > MERGE_LIMIT. */
 export const MERGE_LIMIT = 6000;
 
+/**
+ * Review W6-13 WR-03: the most transaction rows one merge can move. MERGE_LIMIT is the op cap of
+ * one apply_patches call (and of buildStep), and a merge always adds one op to archive the source
+ * category, so at most MERGE_LIMIT - 1 rows fit. Use this for "can this be merged" checks.
+ */
+export const MERGE_ROWS_MAX = MERGE_LIMIT - 1;
+
 /** D-36: every active row's id/version/local_date in one category, for a category merge. */
 export async function fetchActiveIdsByCategory(
   client: DbClient,

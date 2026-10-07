@@ -256,6 +256,21 @@ describe('useMergeCategory', () => {
     expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
   });
 
+  it('WR-03: refuses exactly 6000 rows too (6000 moves + the archive op would be 6001 ops)', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(ok(Array.from({ length: 6000 }, (_, i) => ({ id: `t${i}`, version: 1, local_date: '2026-09-01' }))));
+    const qc = newClient();
+    const { result } = await renderHook(() => useMergeCategory(), { wrapper: wrapper(qc) });
+
+    result.current.merge(vars);
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(1));
+    expect(recordFailedWrite).toHaveBeenCalledWith(
+      expect.objectContaining({ entity: 'categories', entityId: 'src', kind: 'rejected', code: 'merge-too-large' })
+    );
+    expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
+  });
+
   it('refuses whole on a conflict with a refusal toast and a conflict failed write', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
@@ -298,6 +313,16 @@ describe('useCategoryUsage', () => {
     const second = await renderHook(() => useCategoryUsage('h1', 'c2', true), { wrapper: wrapper(qc) });
     await waitFor(() => expect(second.result.current.capped).toBe(true));
     expect(second.result.current.count).toBe(6000);
+  });
+
+  it('WR-03: reports exactly 6000 rows as capped (too many to merge in one step)', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(ok(Array.from({ length: 6000 }, (_, i) => ({ id: `t${i}`, version: 1, local_date: '2026-09-01' }))));
+    const qc = newClient();
+    const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
+    await waitFor(() => expect(result.current.count).toBe(6000));
+    expect(result.current.capped).toBe(true);
   });
 
   it('does not query while disabled', async () => {
