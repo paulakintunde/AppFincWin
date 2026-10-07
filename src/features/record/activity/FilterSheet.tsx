@@ -64,7 +64,20 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
     { backgroundColor: colors.fill1, color: colors.ink, borderRadius: radii.card / 2 },
   ];
 
-  const parseField = (text: string): { ok: true; value: number | null } | { ok: false; message: string } => {
+  const directionLabel = (dir: ActivityFilter['direction']): string => {
+    switch (dir) {
+      case 'all':
+        return t('activity.filter.all');
+      case 'out':
+        return t('activity.filter.out');
+      case 'in':
+        return t('activity.filter.in');
+      case 'transfers':
+        return t('activity.filter.transfers');
+    }
+  };
+
+  const parseField =(text: string): { ok: true; value: number | null } | { ok: false; message: string } => {
     if (text.trim() === '') return { ok: true, value: null };
     const result = parser.parse(text, homeCurrency);
     if (!result.ok) return { ok: false, message: parser.errorMessage(result) };
@@ -125,7 +138,7 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
           {DIRECTIONS.map((dir) => (
             <Chip
               key={dir}
-              label={t(`activity.filter.${dir}`)}
+              label={directionLabel(dir)}
               selected={draft.direction === dir}
               onPress={() => setDraft((d) => ({ ...d, direction: dir }))}
             />

@@ -28,9 +28,11 @@ export function SearchBar({ term, scope, monthLabel, onTermChange, onScopeChange
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep the field in step when the screen changes the term (for example a reset).
-  useEffect(() => {
+  const [prevTerm, setPrevTerm] = useState(term);
+  if (prevTerm !== term) {
+    setPrevTerm(term);
     setText(term);
-  }, [term]);
+  }
 
   useEffect(
     () => () => {

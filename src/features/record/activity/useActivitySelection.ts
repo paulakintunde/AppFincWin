@@ -1,7 +1,7 @@
 // Selection state for Activity's bulk mode (ACT-05). Selection applies to whatever list is on
 // screen (a month or a search result); ids that leave the visible list are dropped so a bulk
 // action can never touch a row the user can no longer see.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 export interface ActivitySelection {
   active: boolean;
@@ -21,18 +21,15 @@ export function useActivitySelection(visibleIds: readonly string[]): ActivitySel
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set());
 
   const visibleKey = visibleIds.join('\u0000');
-  useEffect(() => {
+  // Adjust state during render (React's documented pattern) when the visible list changes.
+  const [prevVisibleKey, setPrevVisibleKey] = useState(visibleKey);
+  if (prevVisibleKey !== visibleKey) {
+    setPrevVisibleKey(visibleKey);
     const visible = new Set(visibleKey === '' ? [] : visibleKey.split('\u0000'));
-    setSelectedIds((prev) => {
-      let changed = false;
-      const next = new Set<string>();
-      for (const id of prev) {
-        if (visible.has(id)) next.add(id);
-        else changed = true;
-      }
-      return changed ? next : prev;
-    });
-  }, [visibleKey]);
+    const next = new Set<string>();
+    for (const id of selectedIds) if (visible.has(id)) next.add(id);
+    if (next.size !== selectedIds.size) setSelectedIds(next);
+  }
 
   const enter = useCallback(() => setActive(true), []);
   const clear = useCallback(() => setSelectedIds(new Set()), []);
