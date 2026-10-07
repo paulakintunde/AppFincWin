@@ -106,10 +106,12 @@ function PickStep({ state, entry }: { state: ImportState; entry: ImportEntry }) 
         <Row label={t('importCsv.newAccount')} chevron onPress={() => setSheetOpen(true)} />
       </View>
       <T tone="inkMuted">{t('importCsv.pickHelper')}</T>
+      {state.accountId === null ? <T tone="inkMuted">{t('importCsv.pickAccountFirst')}</T> : null}
       <Actions>
         <Pill
           label={t('importCsv.pick')}
           variant="secondary"
+          accessibilityHint={state.accountId === null ? t('importCsv.pickAccountFirst') : undefined}
           disabled={state.accountId === null || state.stage === 'reading'}
           onPress={state.start}
         />

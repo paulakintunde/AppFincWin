@@ -4,6 +4,7 @@
 import { Redirect, Stack, usePathname } from 'expo-router';
 import { View } from 'react-native';
 import { useConsent } from '@/features/consent/useConsent';
+import { DeviceHomeCurrencyDefault } from '@/features/record/useDeviceHomeCurrencyDefault';
 import { UndoToastHost } from '@/features/record/history/UndoToastHost';
 import { Screen } from '@/ui/Screen';
 
@@ -39,6 +40,7 @@ export default function AppLayout() {
         <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
       </Stack>
       <UndoToastHost />
+      <DeviceHomeCurrencyDefault />
     </View>
   );
 }

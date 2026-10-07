@@ -20,9 +20,10 @@ export interface PillProps {
   disabled?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
-export function Pill({ label, variant, selected = false, disabled = false, onPress, accessibilityLabel }: PillProps) {
+export function Pill({ label, variant, selected = false, disabled = false, onPress, accessibilityLabel, accessibilityHint }: PillProps) {
   const { colors, pairing } = useTheme();
 
   const backgroundColor =
@@ -34,6 +35,7 @@ export function Pill({ label, variant, selected = false, disabled = false, onPre
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled, selected }}
       disabled={disabled}
       onPress={onPress}
