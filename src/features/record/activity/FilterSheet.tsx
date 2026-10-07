@@ -2,7 +2,7 @@
 // a home-currency amount range. Amounts go through the strict amount parser (never a float
 // conversion); an invalid figure shows the parser's own message and is not applied.
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import type { AccountRow, CategoryRow } from '@/db/rows';
 import { EMPTY_FILTER, type ActivityFilter } from '@/engine/activity/filters';
 import { categoryName } from '@/features/record/categoryName';
@@ -12,7 +12,7 @@ import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
-import { Sheet } from '@/ui/Sheet';
+import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useAmountParser } from '@/ui/money/useAmountParser';
 
@@ -99,7 +99,7 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={t('activity.filter.title')}>
       <SheetHeader title={t('activity.filter.title')} cancelLabel={t('a11y.close')} onCancel={onClose} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.body}>
+      <SheetScroll contentContainerStyle={styles.body}>
         <Text style={labelStyle}>{t('activity.filter.category')}</Text>
         <View style={styles.chips}>
           {categories.map((c) => (
@@ -168,7 +168,7 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
           <Pill label={t('activity.filter.clear')} variant="secondary" onPress={clear} />
           <Pill label={t('activity.filter.apply')} variant="primary" onPress={apply} />
         </View>
-      </ScrollView>
+      </SheetScroll>
     </Sheet>
   );
 }

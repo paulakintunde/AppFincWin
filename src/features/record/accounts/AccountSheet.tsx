@@ -3,7 +3,7 @@
 // never has to accept a minus sign. Limits are optional and per kind. Archive / Restore is an
 // edit with undo. Copy is declarative, never advice.
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { currencyExponent } from '@/engine/money';
 import type { AccountPatch, AccountRow } from '@/db/rows';
 import { useAddAccount, useEditAccount } from '@/data/mutations/accounts';
@@ -21,7 +21,7 @@ import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
-import { Sheet } from '@/ui/Sheet';
+import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useAmountParser, type AmountParseFailure } from '@/ui/money/useAmountParser';
 
@@ -193,7 +193,7 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={title}>
       <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.column}>
+      <SheetScroll contentContainerStyle={styles.column}>
         <Text style={labelStyle}>{t('accounts.sheet.name')}</Text>
         <TextInput
           accessibilityLabel={t('accounts.sheet.name')}
@@ -263,7 +263,7 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
             onPress={toggleArchive}
           />
         ) : null}
-      </ScrollView>
+      </SheetScroll>
       <OptionPicker<AccountKind>
         visible={picker === 'kind'}
         title={t('accounts.sheet.kind')}

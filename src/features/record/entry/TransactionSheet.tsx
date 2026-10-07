@@ -4,7 +4,7 @@
 // transactionForm.ts (pure). Copy is declarative, never advice.
 import * as Crypto from 'expo-crypto';
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { currencyExponent, money } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import type { MinorUnits } from '@/engine/money';
@@ -41,7 +41,7 @@ import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Pill } from '@/ui/Pill';
 import { RateAttribution } from '@/ui/RateAttribution';
 import { Row } from '@/ui/Row';
-import { Sheet } from '@/ui/Sheet';
+import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useAmountParser, type AmountParseFailure } from '@/ui/money/useAmountParser';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -407,7 +407,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={titleText}>
       <SheetHeader title={titleText} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.column}>
+      <SheetScroll contentContainerStyle={styles.column}>
         {isNew ? (
           <View style={styles.chips}>
             {(['out', 'in', 'transfer'] as Direction[]).map((d) => (
@@ -551,7 +551,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
 
         <Pill label={saveText} variant="primary" disabled={isNew && isTransfer && categories.transferCategoryId === null} onPress={save} />
         {editRow || pair ? <Pill label={t('record.sheet.delete')} variant="danger" onPress={() => setConfirmDelete(true)} /> : null}
-      </ScrollView>
+      </SheetScroll>
 
       <CategoryPicker
         visible={picker === 'category'}

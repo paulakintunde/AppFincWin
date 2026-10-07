@@ -4,7 +4,7 @@
 // (more than the 6000-row merge limit, which the write would refuse anyway); Archive stays
 // available because it keeps every transaction on the category.
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { CategoryRow } from '@/db/rows';
 import { useArchiveCategory, useMergeCategory } from '@/data/mutations/categories';
 import { useCategoryLookup, useCategoryUsage } from '@/data/queries/categories';
@@ -19,7 +19,7 @@ import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
-import { Sheet } from '@/ui/Sheet';
+import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 
 export interface RemoveCategoryPromptProps {
@@ -85,7 +85,7 @@ function PromptBody({ category, onDone, onCancel }: Omit<RemoveCategoryPromptPro
           cancelLabel={t('categories.removeCancel')}
           onCancel={() => setPicking(false)}
         />
-        <ScrollView>
+        <SheetScroll>
           {targets.map((target) => (
             <Row
               key={target.id}
@@ -94,7 +94,7 @@ function PromptBody({ category, onDone, onCancel }: Omit<RemoveCategoryPromptPro
               onPress={() => doMerge(target)}
             />
           ))}
-        </ScrollView>
+        </SheetScroll>
       </Sheet>
     );
   }
