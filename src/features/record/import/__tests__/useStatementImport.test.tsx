@@ -304,6 +304,85 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
     expect(result.current.stage).toBe('review');
   });
 
+  it('S-CR-06: remapping Date to an ambiguous column asks for the order again; it is never inherited', async () => {
+    // Column 0 has a day above 12 (certainly day-first); column 1 reads either way.
+    pickOk(csv(['Date,Value Date,Description,Debit,Credit', '25/03/2026,03/04/2026,COFFEE,3.50,', '26/03/2026,05/06/2026,PAYSLIP,,1000.00'].join('\n')));
+    const { result } = await setup();
+    await act(async () => {
+      result.current.start();
+    });
+    await act(async () => {
+      result.current.confirmFormat();
+    });
+    expect(result.current.stage).toBe('mapping');
+    const detected = result.current.mapping as NonNullable<typeof result.current.mapping>;
+    expect(detected.date).toBe(0);
+    expect(result.current.dateNeedsChoice).toBe(false);
+
+    await act(async () => {
+      result.current.setMapping({ ...detected, date: 1 });
+    });
+    expect(result.current.dateAmbiguous).toBe(true);
+    expect(result.current.dateNeedsChoice).toBe(true);
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(result.current.stage).toBe('mapping');
+
+    // Back to the certain column: no question, and its own order applies.
+    await act(async () => {
+      result.current.setMapping(detected);
+    });
+    expect(result.current.dateNeedsChoice).toBe(false);
+    expect(result.current.dateFormat).toBe('DMY');
+  });
+
+  it('S-CR-06: a date order chosen for one column is asked again after a remap', async () => {
+    pickOk(csv(['Date,Value Date,Description,Debit,Credit', '03/04/2026,07/08/2026,COFFEE,3.50,', '05/06/2026,09/10/2026,PAYSLIP,,1000.00'].join('\n')));
+    const { result } = await setup();
+    await act(async () => {
+      result.current.start();
+    });
+    await act(async () => {
+      result.current.confirmFormat();
+    });
+    await act(async () => {
+      result.current.setDateFormat('MDY');
+    });
+    expect(result.current.dateNeedsChoice).toBe(false);
+    const detected = result.current.mapping as NonNullable<typeof result.current.mapping>;
+    await act(async () => {
+      result.current.setMapping({ ...detected, date: detected.date === 0 ? 1 : 0 });
+    });
+    expect(result.current.dateNeedsChoice).toBe(true);
+  });
+
+  it('S-CR-06: remapping an amount column to one with an ambiguous decimal mark asks for the mark', async () => {
+    // Debit/Credit settle the mark ('.'); Out/In read either way (1.234 is 1234 or 1.234).
+    pickOk(
+      csv(['Date,Description,Debit,Credit,Out,In', '2026-03-01,COFFEE,3.50,,1.234,', '2026-03-02,PAYSLIP,,1000.00,,2.345'].join('\n'))
+    );
+    const { result } = await setup();
+    await act(async () => {
+      result.current.start();
+    });
+    await act(async () => {
+      result.current.confirmFormat();
+    });
+    expect(result.current.stage).toBe('mapping');
+    expect(result.current.notationNeedsChoice).toBe(false);
+    const detected = result.current.mapping as NonNullable<typeof result.current.mapping>;
+    await act(async () => {
+      result.current.setMapping({ ...detected, debit: 4, credit: 5 });
+    });
+    expect(result.current.notationAmbiguous).toBe(true);
+    expect(result.current.notationNeedsChoice).toBe(true);
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(result.current.stage).toBe('mapping');
+  });
+
   it('an OFX file skips mapping and goes straight to review', async () => {
     pickOk(fixture('bank-sgml.ofx'), 'ofx');
     const { result } = await setup();

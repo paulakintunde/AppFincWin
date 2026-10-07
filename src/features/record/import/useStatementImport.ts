@@ -50,6 +50,7 @@ import { supabase } from '@/services/supabase';
 import { showToast } from '@/state/undoToast';
 import {
   buildPreview,
+  inferCsvReading,
   prepareImport,
   resolveCsvDraft,
   resolveProfile,
@@ -57,6 +58,7 @@ import {
   statementOptions,
   suggestionToSeries,
   toImportCommit,
+  type CsvReading,
   type ExistingInfo,
   type ImportFormat,
   type PreparedImport,
@@ -97,6 +99,8 @@ interface Machine {
   rolesKey: string | null;
   mapping: ColumnMapping | null;
   mappingEdited: boolean;
+  /** S-CR-06: the date order and decimal mark the file shows under the *current* mapping. */
+  reading: CsvReading | null;
   dateFormat: DateFormat | null;
   dateChosen: boolean;
   dateEdited: boolean;
@@ -123,6 +127,9 @@ interface Machine {
 
 const NONE = new Map<never, never>();
 
+/** The mapping roles whose cells decide the decimal mark (S-CR-06). */
+const AMOUNT_ROLES = ['amount', 'debit', 'credit', 'balance', 'limit'] as const;
+
 function initialMachine(accountId: string | null): Machine {
   return {
     stage: 'idle',
@@ -138,6 +145,7 @@ function initialMachine(accountId: string | null): Machine {
     rolesKey: null,
     mapping: null,
     mappingEdited: false,
+    reading: null,
     dateFormat: null,
     dateChosen: false,
     dateEdited: false,
@@ -520,6 +528,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       const next: Machine = { ...initialMachine(m.accountId), prepared: p };
       if (p.format === 'csv') {
         next.mapping = p.csv.detected;
+        next.reading = p.csv;
         next.dateFormat = p.csv.dateFormat;
         next.notation = p.csv.notation;
       } else if (p.statements.length > 1) {
@@ -581,8 +590,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   // --- mapping (CSV only) ---------------------------------------------------------------
 
   const mappingErrors: MappingError[] = useMemo(() => (m.mapping === null ? [] : validateMapping(m.mapping)), [m.mapping]);
-  const dateAmbiguous = m.prepared !== null && m.prepared.format === 'csv' ? m.prepared.csv.dateAmbiguous : false;
-  const notationAmbiguous = m.prepared !== null && m.prepared.format === 'csv' ? m.prepared.csv.notationAmbiguous : false;
+  const dateAmbiguous = m.reading?.dateAmbiguous ?? false;
+  const notationAmbiguous = m.reading?.notationAmbiguous ?? false;
   const dateNeedsChoice = dateAmbiguous && !m.dateChosen;
   const notationNeedsChoice = notationAmbiguous && !m.notationChosen;
 
@@ -601,15 +610,35 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     (mapping: ColumnMapping): void => {
       if (m.stage !== 'mapping' || m.prepared === null || m.prepared.format !== 'csv') return;
       const edited = JSON.stringify(mapping) !== JSON.stringify(m.prepared.csv.detected);
-      setM(redraft({ ...m, mapping, mappingEdited: edited }));
+      const next: Machine = { ...m, mapping, mappingEdited: edited };
+      // S-CR-06 (E-CR-02): a remapped date or amount column is read again on its own, and any
+      // earlier answer about the old column is dropped, so no order or mark is inherited.
+      const before = m.mapping;
+      const dateMoved = before === null || before.date !== mapping.date;
+      const amountsMoved = before === null || AMOUNT_ROLES.some((role) => before[role] !== mapping[role]);
+      if (dateMoved || amountsMoved) {
+        const reading = inferCsvReading(m.prepared.csv.dataRows, mapping, region);
+        const prior = m.reading ?? reading;
+        next.reading = {
+          ...(dateMoved
+            ? { dateGuess: reading.dateGuess, dateFormat: reading.dateFormat, dateAmbiguous: reading.dateAmbiguous }
+            : { dateGuess: prior.dateGuess, dateFormat: prior.dateFormat, dateAmbiguous: prior.dateAmbiguous }),
+          ...(amountsMoved
+            ? { notationGuess: reading.notationGuess, notation: reading.notation, notationAmbiguous: reading.notationAmbiguous }
+            : { notationGuess: prior.notationGuess, notation: prior.notation, notationAmbiguous: prior.notationAmbiguous }),
+        };
+        if (dateMoved) Object.assign(next, { dateFormat: reading.dateFormat, dateChosen: false, dateEdited: false });
+        if (amountsMoved) Object.assign(next, { notation: reading.notation, notationChosen: false, notationEdited: false });
+      }
+      setM(redraft(next));
     },
-    [m, redraft]
+    [m, redraft, region]
   );
 
   const setDateFormat = useCallback(
     (f: DateFormat): void => {
       if (m.stage !== 'mapping' || m.prepared === null || m.prepared.format !== 'csv') return;
-      const edited = f !== m.prepared.csv.dateFormat;
+      const edited = f !== (m.reading ?? m.prepared.csv).dateFormat;
       setM(redraft({ ...m, dateFormat: f, dateChosen: true, dateEdited: edited }));
     },
     [m, redraft]
@@ -618,7 +647,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const setDecimalMark = useCallback(
     (mark: '.' | ','): void => {
       if (m.stage !== 'mapping' || m.prepared === null || m.prepared.format !== 'csv') return;
-      const edited = mark !== m.prepared.csv.notation.decimal;
+      const edited = mark !== (m.reading ?? m.prepared.csv).notation.decimal;
       setM(redraft({ ...m, notation: notationFor(mark), notationChosen: true, notationEdited: edited }));
     },
     [m, redraft]
