@@ -22,6 +22,9 @@ const mockAdd = jest.fn((..._args: unknown[]) => 'new-acc');
 const mockEdit = jest.fn((..._args: unknown[]) => true);
 const mockTrack = jest.fn();
 let mockAccounts: AccountRow[] = [];
+let mockRegion = 'GB';
+let mockHome = 'GBP';
+let mockReady = true;
 let mockBalances = new Map<string, AccountBalanceView>();
 
 jest.mock('@/data/mutations/accounts', () => ({
@@ -65,12 +68,12 @@ jest.mock('@/data/queries/currencyOptions', () => ({
 }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({
-    ready: true,
+    ready: mockReady,
     userId: 'u1',
     householdId: 'h1',
-    homeCurrency: 'GBP',
+    homeCurrency: mockHome,
     showCents: true,
-    region: 'GB',
+    region: mockRegion,
     timeZone: 'Europe/London',
     today: '2026-10-06',
   }),
@@ -114,6 +117,9 @@ beforeEach(() => {
   resetToastForTests();
   mockAccounts = [];
   mockBalances = new Map();
+  mockRegion = 'GB';
+  mockHome = 'GBP';
+  mockReady = true;
 });
 
 describe('AccountSheet new', () => {
@@ -317,6 +323,15 @@ describe('AccountsScreen and AccountDetailScreen', () => {
     expect(onOpen).toHaveBeenCalledWith('acc2');
   });
 
+  it('S-WR-14: an account card is announced with its balance and standing, not the name alone', async () => {
+    mockAccounts = [account()];
+    mockBalances = new Map([['acc1', view({ balance: -2500, standing: { kind: 'overdrawn-no-limit', overdrawnBy: 2500 } as never })]]);
+    const { getByLabelText } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
+    const card = getByLabelText(/^Current, /);
+    expect(card.props.accessibilityLabel).toContain('−£25.00');
+    expect(card.props.accessibilityLabel).toContain('Overdrawn by £25.00. No overdraft set.');
+  });
+
   it('shows the empty state', async () => {
     const { getByText } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
     expect(getByText('No accounts yet.')).toBeTruthy();
@@ -340,5 +355,121 @@ describe('AccountsScreen and AccountDetailScreen', () => {
     expect(onImport).toHaveBeenCalledWith('acc1');
     await fireEvent.press(getByText('Edit account'));
     expect(getByText('Save changes')).toBeTruthy();
+  });
+});
+
+describe('AccountSheet: opening balance prefill in the region notation (S-CR-01)', () => {
+  it('de-DE, KWD (3 decimals): renaming leaves the opening balance unchanged', async () => {
+    mockRegion = 'DE';
+    const acc = account({ currency: 'KWD', opening_balance: 500000 });
+    const { getByLabelText, getByText } = await wrap(<AccountSheet visible mode={{ kind: 'edit', account: acc }} onClose={jest.fn()} />);
+    expect(getByLabelText('Opening balance').props.value).toBe('500,000');
+    await fireEvent.changeText(getByLabelText('Name'), 'Dinar');
+    await fireEvent.press(getByText('Save changes'));
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    const [vars] = mockEdit.mock.calls[0] as unknown as [{ patch: Record<string, unknown> }];
+    expect(vars.patch).toEqual({ name: 'Dinar' });
+  });
+
+  it('de-DE, EUR: a rename of an account with cents saves, with no separator error', async () => {
+    mockRegion = 'DE';
+    const acc = account({ currency: 'EUR', opening_balance: 123456, overdraft_limit: 50000 });
+    const { getByLabelText, getByText, queryByText } = await wrap(<AccountSheet visible mode={{ kind: 'edit', account: acc }} onClose={jest.fn()} />);
+    expect(getByLabelText('Opening balance').props.value).toBe('1234,56');
+    expect(getByLabelText('Overdraft limit').props.value).toBe('500,00');
+    await fireEvent.changeText(getByLabelText('Name'), 'Giro');
+    await fireEvent.press(getByText('Save changes'));
+    expect(queryByText(/match how amounts are written/)).toBeNull();
+    const [vars] = mockEdit.mock.calls[0] as unknown as [{ patch: Record<string, unknown> }];
+    expect(vars.patch).toEqual({ name: 'Giro' });
+  });
+});
+
+describe('AccountSheet: new-account currency follows a late home-currency default (S-WR-09)', () => {
+  it('moves with the home currency until the user picks one', async () => {
+    mockHome = 'USD';
+    const ui = (
+      <ThemeProvider>
+        <AccountSheet visible mode={{ kind: 'new', context: 'onboarding' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    const u = await render(ui);
+    expect(u.getByLabelText('Currency').props.accessibilityValue).toMatchObject({ text: 'USD' });
+    mockHome = 'GBP';
+    await u.rerender(
+      <ThemeProvider>
+        <AccountSheet visible mode={{ kind: 'new', context: 'onboarding' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(u.getByLabelText('Currency').props.accessibilityValue).toMatchObject({ text: 'GBP' });
+    await fireEvent.changeText(u.getByLabelText('Name'), 'Main');
+    await fireEvent.press(u.getByText('Save account'));
+    const [input] = mockAdd.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(input.currency).toBe('GBP');
+  });
+
+  it('keeps a currency the user picked when the home currency changes later', async () => {
+    mockHome = 'GBP';
+    const u = await render(
+      <ThemeProvider>
+        <AccountSheet visible mode={{ kind: 'new', context: 'onboarding' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    await fireEvent.press(u.getByLabelText('Currency'));
+    await fireEvent.press(u.getByText('EUR · Euro'));
+    mockHome = 'USD';
+    await u.rerender(
+      <ThemeProvider>
+        <AccountSheet visible mode={{ kind: 'new', context: 'onboarding' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    await fireEvent.changeText(u.getByLabelText('Name'), 'Euro');
+    await fireEvent.press(u.getByText('Save account'));
+    const [input] = mockAdd.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(input.currency).toBe('EUR');
+  });
+});
+
+describe('AccountSheet: a disabled Save gives its reason (S-WR-10)', () => {
+  it('says why while the record context is still loading', async () => {
+    mockReady = false;
+    const u = await wrap(<AccountSheet visible mode={{ kind: 'new', context: 'later' }} onClose={jest.fn()} />);
+    const reason = 'Your account details are still loading, so this can’t be saved yet.';
+    expect(u.getByText(reason)).toBeTruthy();
+    const save = u.getByRole('button', { name: 'Save account' });
+    expect(save).toBeDisabled();
+    expect(save.props.accessibilityHint).toBe(reason);
+  });
+});
+
+describe('AccountSheet: changing the type keeps what the balance means (S-WR-12)', () => {
+  it('an overdrawn current account changed to Savings stays overdrawn', async () => {
+    const acc = account({ kind: 'checking', opening_balance: -20000 });
+    const u = await wrap(<AccountSheet visible mode={{ kind: 'edit', account: acc }} onClose={jest.fn()} />);
+    await fireEvent.press(u.getByLabelText('Type'));
+    await fireEvent.press(u.getByText('Savings'));
+    await fireEvent.press(u.getByText('Save changes'));
+    const [vars] = mockEdit.mock.calls[0] as unknown as [{ patch: Record<string, unknown> }];
+    expect(vars.patch).toEqual({ kind: 'savings' });
+  });
+
+  it('a credit card changed to a current account drops the credit limit instead of re-using it', async () => {
+    const acc = account({ kind: 'credit', opening_balance: -10000, credit_limit: 50000 });
+    const u = await wrap(<AccountSheet visible mode={{ kind: 'edit', account: acc }} onClose={jest.fn()} />);
+    expect(u.getByLabelText('Credit limit').props.value).toBe('500.00');
+    await fireEvent.press(u.getByLabelText('Type'));
+    await fireEvent.press(u.getByText('Current account'));
+    expect(u.getByLabelText('Overdraft limit').props.value).toBe('');
+    await fireEvent.press(u.getByText('Save changes'));
+    const [vars] = mockEdit.mock.calls[0] as unknown as [{ patch: Record<string, unknown> }];
+    expect(vars.patch).toEqual({ kind: 'checking', credit_limit: null });
+  });
+});
+
+describe('AccountDetailScreen for an account that is not there (S-IN-10)', () => {
+  it('says so instead of rendering a blank screen', async () => {
+    mockAccounts = [account()];
+    const u = await wrap(<AccountDetailScreen accountId="gone" onImport={jest.fn()} />);
+    expect(u.getByText('This account can’t be shown.')).toBeTruthy();
   });
 });

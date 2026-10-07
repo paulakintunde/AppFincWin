@@ -172,6 +172,26 @@ describe('FilterSheet', () => {
     expect(onApply).not.toHaveBeenCalled();
   });
 
+  it('S-CR-01: de-DE, KWD: reapplying a stored range round-trips through the region notation', async () => {
+    const onApply = jest.fn();
+    const screen = await wrap(
+      <FilterSheet
+        visible
+        value={{ ...EMPTY_FILTER, amountMin: 1500, amountMax: 250000 }}
+        homeCurrency="KWD"
+        region="DE"
+        categories={categories}
+        accounts={accounts}
+        onApply={onApply}
+        onClose={jest.fn()}
+      />
+    );
+    expect(screen.getByLabelText('At least').props.value).toBe('1,500');
+    expect(screen.getByLabelText('At most').props.value).toBe('250,000');
+    await fireEvent.press(screen.getByText('Show results'));
+    expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ amountMin: 1500, amountMax: 250000 }));
+  });
+
   it('Clear filters resets to the empty filter', async () => {
     const { screen, onApply } = await renderFilter({ ...EMPTY_FILTER, direction: 'in', amountMin: 500 });
     await fireEvent.press(screen.getByText('Clear filters'));

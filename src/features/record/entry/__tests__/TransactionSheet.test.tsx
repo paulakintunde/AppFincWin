@@ -20,6 +20,10 @@ const mockEditTransfer = jest.fn((): string | null => 'tre-step');
 const mockRemoveTransfer = jest.fn(() => 'trd-step');
 const mockTrack = jest.fn();
 let mockLegs: TransactionRow[] = [];
+let mockRegion = 'GB';
+let mockTransferCat: string | null = 'tc';
+let mockNoAccounts = false;
+let mockHome = 'GBP';
 
 jest.mock('@/data/mutations/transactions', () => ({
   useAddTransaction: () => ({ add: mockAdd }),
@@ -45,18 +49,20 @@ jest.mock('expo-crypto', () => ({ randomUUID: () => 'series-1' }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: mockTrack }) }));
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({
-    data: [
-      { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null },
-      { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null },
-      { id: 'a3', name: 'Euro pot', currency: 'EUR', archived_at: null },
-    ],
+    data: mockNoAccounts
+      ? []
+      : [
+          { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null },
+          { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null },
+          { id: 'a3', name: 'Euro pot', currency: 'EUR', archived_at: null },
+        ],
   }),
 }));
 jest.mock('@/data/queries/categories', () => ({
   useCategoryLookup: () => ({
     active: [{ id: 'c1', builtin_key: null, name: 'Groceries', color_key: 'teal', is_system: false, archived_at: null }],
     byId: new Map(),
-    transferCategoryId: 'tc',
+    transferCategoryId: mockTransferCat,
   }),
 }));
 jest.mock('@/data/queries/currencyOptions', () => ({
@@ -76,9 +82,9 @@ jest.mock('@/features/record/useRecordContext', () => ({
     ready: true,
     userId: 'u1',
     householdId: 'h1',
-    homeCurrency: 'GBP',
+    homeCurrency: mockHome,
     showCents: true,
-    region: 'GB',
+    region: mockRegion,
     timeZone: 'Europe/London',
     today: '2026-09-25',
   }),
@@ -120,6 +126,10 @@ beforeEach(() => {
   jest.clearAllMocks();
   resetToastForTests();
   mockLegs = [];
+  mockRegion = 'GB';
+  mockTransferCat = 'tc';
+  mockNoAccounts = false;
+  mockHome = 'GBP';
 });
 
 describe('TransactionSheet: new and edit', () => {
@@ -305,6 +315,41 @@ describe('TransactionSheet: transfers', () => {
     });
   });
 
+  it('S-WR-01: a leg whose partner has not loaded opens read-only, never as a one-leg edit', async () => {
+    mockLegs = [inLeg()];
+    const { getByText, queryByText, queryByLabelText } = await open({ kind: 'edit', row: inLeg() });
+    expect(getByText('Both sides of this transfer are needed to change it. They haven’t loaded yet.')).toBeTruthy();
+    expect(queryByLabelText('Amount')).toBeNull();
+    expect(queryByText('Save changes')).toBeNull();
+    expect(queryByText('Delete')).toBeNull();
+  });
+
+  it('S-WR-06: a currency picked for an expense does not carry into a transfer from a GBP account', async () => {
+    const { getByText, getByLabelText, queryByLabelText } = await open({ kind: 'new', direction: 'out' });
+    await fireEvent.press(getByLabelText('Currency'));
+    await fireEvent.press(getByText('EUR · Euro'));
+    await fireEvent.press(getByText('Transfer'));
+    await fireEvent.press(getByLabelText('To account'));
+    await fireEvent.press(getByLabelText('Savings'));
+    // Current (GBP) to Savings (GBP): same currency, so no second amount is asked for.
+    expect(queryByLabelText('Amount received')).toBeNull();
+    await fireEvent.changeText(getByLabelText('Amount'), '10');
+    await fireEvent.press(getByText('Add transfer'));
+    expect(mockAddTransfer).toHaveBeenCalledTimes(1);
+    expect((mockAddTransfer.mock.calls[0] as unknown[])[0]).toMatchObject({ from: { id: 'a1', currency: 'GBP' }, to: { currency: 'GBP' } });
+  });
+
+  it('S-WR-10: a new transfer says why Save is unavailable while the transfer category loads', async () => {
+    mockTransferCat = null;
+    const { getByText, getByRole } = await open({ kind: 'new', direction: 'out' });
+    await fireEvent.press(getByText('Transfer'));
+    const reason = 'Transfers can be added once your categories have loaded.';
+    expect(getByText(reason)).toBeTruthy();
+    const save = getByRole('button', { name: 'Add transfer' });
+    expect(save).toBeDisabled();
+    expect(save.props.accessibilityHint).toBe(reason);
+  });
+
   it('edits both legs from either leg', async () => {
     mockLegs = [outLeg(), inLeg()];
     const { getByText, getByLabelText, onClose } = await open({ kind: 'edit', row: inLeg() });
@@ -350,5 +395,47 @@ describe('TransactionSheet: transfers', () => {
       stepId: 'trd-step',
       text: { key: 'undo.label.transferDeleted', params: { name: 'Savings' } },
     });
+  });
+});
+
+describe('TransactionSheet: empty figure (S-IN-01)', () => {
+  it('shows the empty figure in the home currency when no account is chosen yet', async () => {
+    mockNoAccounts = true;
+    mockHome = 'USD';
+    const { getByText, queryByText } = await open({ kind: 'new', direction: 'out' });
+    expect(queryByText('£0.00')).toBeNull();
+    expect(getByText(/\$0\.00/)).toBeTruthy();
+  });
+});
+
+describe('TransactionSheet: amount prefill in the region notation (S-CR-01)', () => {
+  it('de-DE: prefills "12,50" and a note-only edit saves just the note', async () => {
+    mockRegion = 'DE';
+    const { getByLabelText, getByText, queryByText } = await open({
+      kind: 'edit',
+      row: row({ original_amount: -1250, original_currency: 'EUR', home_currency: 'EUR', account_id: 'a3' }),
+    });
+    expect(getByLabelText('Amount').props.value).toBe('12,50');
+    await fireEvent.changeText(getByLabelText('Note'), 'split with Sam');
+    await fireEvent.press(getByText('Save changes'));
+    expect(queryByText(/match how amounts are written/)).toBeNull();
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    const [vars] = mockEdit.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(vars).toMatchObject({ patch: { note: 'split with Sam' } });
+    expect(Object.keys(vars.patch as object)).toEqual(['note']);
+  });
+
+  it('de-DE, KWD (3 decimals): prefills "1,500" and a note-only edit leaves the amount alone', async () => {
+    mockRegion = 'DE';
+    const { getByLabelText, getByText } = await open({
+      kind: 'edit',
+      row: row({ original_amount: -1500, original_currency: 'KWD', home_currency: 'GBP' }),
+    });
+    expect(getByLabelText('Amount').props.value).toBe('1,500');
+    await fireEvent.changeText(getByLabelText('Note'), 'dinar');
+    await fireEvent.press(getByText('Save changes'));
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    const [vars] = mockEdit.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(Object.keys(vars.patch as object)).toEqual(['note']);
   });
 });

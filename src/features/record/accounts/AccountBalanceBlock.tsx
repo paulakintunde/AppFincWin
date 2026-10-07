@@ -28,6 +28,24 @@ export interface AccountBalanceBlockProps {
   compact?: boolean;
 }
 
+/**
+ * S-WR-14: the balance and standing as one spoken phrase ("−£25.00, Overdrawn by £25.00..."),
+ * so a list card's accessibility label carries what the block shows. Null without a balance.
+ */
+export function useBalanceSummary(account: AccountRow, balance: AccountBalanceView | undefined): string | null {
+  const t = useT();
+  const rc = useRecordContext();
+  const formatter = useMoneyFormatter(rc.showCents);
+  const { options } = useCurrencyOptions(rc.userId ?? undefined);
+  if (!balance) return null;
+  const exponent = options.find((o) => o.code === account.currency)?.exponent ?? currencyExponent(account.currency);
+  const fmt = (minor: number) => formatter.formatMoney(money(minor, account.currency), { exponent });
+  if (balance.overflow || balance.balance === null) return t('accounts.balanceNow');
+  const line = standingText(balance.standing, fmt);
+  const sentence = line ? (t as unknown as (k: string, o: Record<string, string>) => string)(line.key, line.params) : null;
+  return [fmt(balance.balance), sentence].filter((p): p is string => p !== null).join(', ');
+}
+
 export function AccountBalanceBlock({ account, balance, homeCurrency, compact = false }: AccountBalanceBlockProps) {
   const t = useT();
   const { colors, pairing } = useTheme();

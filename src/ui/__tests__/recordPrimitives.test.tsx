@@ -5,12 +5,12 @@
  * Row/Pill/Chip/SwatchDot/CategoryGlyph/AmountDisplay (Task 2).
  */
 import React from 'react';
-import { Text } from 'react-native';
-import { fireEvent, render } from '@testing-library/react-native';
+import { Dimensions, Text } from 'react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { categorySwatch } from '@/theme/tokens';
-import { Sheet } from '../Sheet';
+import { Sheet, SheetScroll } from '../Sheet';
 import { SheetHeader } from '../SheetHeader';
 import { ConfirmSheet } from '../ConfirmSheet';
 import { ToastView } from '../ToastView';
@@ -93,6 +93,37 @@ describe('Sheet', () => {
     const style = flatStyle(getByTestId('sheet-container').props);
     expect(style.some((s) => s.borderTopLeftRadius === 28)).toBe(true);
     expect(style.some((s) => s.borderTopRightRadius === 28)).toBe(true);
+  });
+});
+
+describe('Sheet with content taller than the screen (S-CR-05)', () => {
+  it('caps the container below the top inset, and lets it shrink', async () => {
+    const { getByTestId } = await renderWithTheme(
+      <Sheet visible onDismiss={jest.fn()}>
+        <Text>{'Content'}</Text>
+      </Sheet>
+    );
+    const style = Object.assign({}, ...flatStyle(getByTestId('sheet-container').props));
+    expect(style.maxHeight).toBe(Dimensions.get('window').height - 47 - 18);
+    expect(style.flexShrink).toBe(1);
+  });
+
+  it('SheetScroll is a shrinkable scroll body, so a header above it stays on screen', async () => {
+    const { getByTestId, getByText } = await renderWithTheme(
+      <Sheet visible onDismiss={jest.fn()}>
+        <SheetHeader title="Currency" cancelLabel="Cancel" onCancel={jest.fn()} />
+        <SheetScroll>
+          {Array.from({ length: 170 }, (_, i) => (
+            <Text key={i}>{`Row ${i}`}</Text>
+          ))}
+        </SheetScroll>
+      </Sheet>
+    );
+    const scroll = getByTestId('sheet-scroll');
+    expect(Object.assign({}, ...flatStyle(scroll.props)).flexShrink).toBe(1);
+    expect(within(scroll).getByText('Row 169')).toBeTruthy();
+    expect(within(scroll).queryByText('Cancel')).toBeNull();
+    expect(getByText('Cancel')).toBeTruthy();
   });
 });
 

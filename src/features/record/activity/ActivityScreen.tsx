@@ -51,6 +51,15 @@ export interface ActivityScreenProps {
   initialMonth?: string;
 }
 
+type BulkHint = 'selectFirst' | 'nothingToMarkPaid' | 'nothingToMarkUnpaid' | 'tooMany';
+
+const BULK_HINT_KEYS = {
+  selectFirst: 'activity.selectFirst',
+  nothingToMarkPaid: 'activity.bulkNothingToMarkPaid',
+  nothingToMarkUnpaid: 'activity.bulkNothingToMarkUnpaid',
+  tooMany: 'activity.bulkTooMany',
+} as const satisfies Record<BulkHint, string>;
+
 export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initialMonth }: ActivityScreenProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -74,7 +83,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
   const [filter, setFilter] = useState<ActivityFilter>(EMPTY_FILTER);
   const [filterOpen, setFilterOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [hint, setHint] = useState(false);
+  // S-WR-02: why the last bulk action did nothing, shown whatever the selected count.
+  const [hint, setHint] = useState<BulkHint | null>(null);
 
   const accountName = useCallback(
     (id: string): string => (accountsData ?? []).find((a) => a.id === id)?.name ?? '',
@@ -117,14 +127,14 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
 
   const onToggleSelect = useCallback(
     (row: ActivityRowView) => {
-      setHint(false);
+      setHint(null);
       selection.toggle(row.id);
     },
     [selection]
   );
 
   const onBulkDelete = () => {
-    if (selectedRows.length === 0) return setHint(true);
+    if (selectedRows.length === 0) return setHint('selectFirst');
     setConfirmOpen(true);
   };
 
@@ -136,25 +146,33 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
       // Selected legs carry transfer_id, so the hook adds each transfer's partner leg (D-51).
       const stepId: string | null = bulkRemove(selectedRows, bulkCtx);
       // Review item 7: a null step id means there is no honest before-state, so no Undo.
+      setHint(null);
       showToast({ kind: 'destructive', text: undoLabelText('deletedMany', { n }), stepId });
       selection.exit();
-    } catch {
-      // A selection beyond the bulk limit is refused before anything is sent.
-      setHint(true);
+    } catch (error) {
+      // A selection beyond the bulk limit is refused (RangeError) before anything is sent.
+      if (!(error instanceof RangeError)) throw error;
+      setHint('tooMany');
     }
   };
 
   const onBulkMarkPaid = () => {
+    if (selectedRows.length === 0) return setHint('selectFirst');
     const targets = selectedRows.filter((r) => r.status === 'pending' && r.transfer_id === null);
-    if (bulkCtx === null || targets.length === 0) return setHint(true);
+    if (bulkCtx === null) return undefined;
+    if (targets.length === 0) return setHint('nothingToMarkPaid');
+    setHint(null);
     const stepId: string | null = bulkMarkPaid(targets, bulkCtx, rc.today);
     showToast({ kind: 'ordinary', text: undoLabelText('markedPaidMany', { n: targets.length }), stepId });
     selection.clear();
   };
 
   const onBulkMarkUnpaid = () => {
+    if (selectedRows.length === 0) return setHint('selectFirst');
     const targets = selectedRows.filter((r) => r.status === 'paid' && r.transfer_id === null);
-    if (bulkCtx === null || targets.length === 0) return setHint(true);
+    if (bulkCtx === null) return undefined;
+    if (targets.length === 0) return setHint('nothingToMarkUnpaid');
+    setHint(null);
     const stepId: string | null = bulkMarkUnpaid(targets, bulkCtx);
     showToast({ kind: 'ordinary', text: undoLabelText('markedUnpaidMany', { n: targets.length }), stepId });
     selection.clear();
@@ -240,7 +258,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
           label={selection.active ? t('activity.done') : t('activity.select')}
           variant="secondary"
           onPress={() => {
-            setHint(false);
+            setHint(null);
             if (selection.active) selection.exit();
             else selection.enter();
           }}
@@ -253,7 +271,10 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
           getItemType={getActivityItemType}
           renderItem={renderItem}
           ListEmptyComponent={
-            searching || filtering ? (
+            flat && search.isLoading ? (
+              // S-IN-04: an in-flight server search is not an empty result.
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('activity.searching')}</Text>
+            ) : searching || filtering ? (
               <EmptyState heading={t('activity.noMatchHeading')} body={t('activity.noMatchBody')} />
             ) : (
               <EmptyState
@@ -267,7 +288,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
       {selection.active ? (
         <BulkBar
           count={selection.count}
-          hint={hint && selection.count === 0 ? t('activity.selectFirst') : null}
+          hint={hint === null ? null : t(BULK_HINT_KEYS[hint])}
           onMarkPaid={onBulkMarkPaid}
           onMarkUnpaid={onBulkMarkUnpaid}
           onDelete={onBulkDelete}
@@ -275,7 +296,12 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
       ) : null}
       <ConfirmSheet
         visible={confirmOpen}
-        body={t('activity.bulkDeleteConfirm', { count: selectedRows.length })}
+        body={
+          // S-IN-05: a selected transfer leg takes its partner with it (expandTransferIds).
+          selectedRows.some((r) => r.transfer_id !== null)
+            ? `${t('activity.bulkDeleteConfirm', { count: selectedRows.length })} ${t('activity.bulkDeleteTransfers')}`
+            : t('activity.bulkDeleteConfirm', { count: selectedRows.length })
+        }
         cancelLabel={t('activity.bulkDeleteCancel')}
         confirmLabel={t('activity.bulkDeleteProceed')}
         destructive

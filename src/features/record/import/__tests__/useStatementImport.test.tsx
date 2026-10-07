@@ -8,11 +8,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { AccountRow } from '@/db/rows';
 import { useStatementImport } from '../useStatementImport';
+import * as suggestionCap from '../suggestionCap';
+import * as pipeline from '../importPipeline';
 
 const mockTrack = jest.fn();
 const mockCommit = jest.fn();
 const mockCreateSeries = jest.fn((..._args: unknown[]) => 'series-step');
 const mockShowToast = jest.fn();
+let mockTransferCategoryId: string | null = 'cat-transfer';
 let mockUuid = 0;
 
 jest.mock('@/services/files/pickStatement', () => ({ pickStatementBytes: jest.fn() }));
@@ -46,7 +49,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
 }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
 jest.mock('@/data/queries/categories', () => ({
-  useCategoryLookup: () => ({ builtinIds: new Map(), transferCategoryId: 'cat-transfer', loading: false }),
+  useCategoryLookup: () => ({ builtinIds: new Map(), transferCategoryId: mockTransferCategoryId, loading: false }),
 }));
 jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
 jest.mock('@/data/queries/activity', () => ({
@@ -130,6 +133,8 @@ function trackedNames(): string[] {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.restoreAllMocks();
+  mockTransferCategoryId = 'cat-transfer';
   mockUuid = 0;
   fetchImportProfile.mockResolvedValue(null);
   dbTx.fetchTransactionsInRange.mockResolvedValue([]);
@@ -304,6 +309,85 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
     expect(result.current.stage).toBe('review');
   });
 
+  it('S-CR-06: remapping Date to an ambiguous column asks for the order again; it is never inherited', async () => {
+    // Column 0 has a day above 12 (certainly day-first); column 1 reads either way.
+    pickOk(csv(['Date,Value Date,Description,Debit,Credit', '25/03/2026,03/04/2026,COFFEE,3.50,', '26/03/2026,05/06/2026,PAYSLIP,,1000.00'].join('\n')));
+    const { result } = await setup();
+    await act(async () => {
+      result.current.start();
+    });
+    await act(async () => {
+      result.current.confirmFormat();
+    });
+    expect(result.current.stage).toBe('mapping');
+    const detected = result.current.mapping as NonNullable<typeof result.current.mapping>;
+    expect(detected.date).toBe(0);
+    expect(result.current.dateNeedsChoice).toBe(false);
+
+    await act(async () => {
+      result.current.setMapping({ ...detected, date: 1 });
+    });
+    expect(result.current.dateAmbiguous).toBe(true);
+    expect(result.current.dateNeedsChoice).toBe(true);
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(result.current.stage).toBe('mapping');
+
+    // Back to the certain column: no question, and its own order applies.
+    await act(async () => {
+      result.current.setMapping(detected);
+    });
+    expect(result.current.dateNeedsChoice).toBe(false);
+    expect(result.current.dateFormat).toBe('DMY');
+  });
+
+  it('S-CR-06: a date order chosen for one column is asked again after a remap', async () => {
+    pickOk(csv(['Date,Value Date,Description,Debit,Credit', '03/04/2026,07/08/2026,COFFEE,3.50,', '05/06/2026,09/10/2026,PAYSLIP,,1000.00'].join('\n')));
+    const { result } = await setup();
+    await act(async () => {
+      result.current.start();
+    });
+    await act(async () => {
+      result.current.confirmFormat();
+    });
+    await act(async () => {
+      result.current.setDateFormat('MDY');
+    });
+    expect(result.current.dateNeedsChoice).toBe(false);
+    const detected = result.current.mapping as NonNullable<typeof result.current.mapping>;
+    await act(async () => {
+      result.current.setMapping({ ...detected, date: detected.date === 0 ? 1 : 0 });
+    });
+    expect(result.current.dateNeedsChoice).toBe(true);
+  });
+
+  it('S-CR-06: remapping an amount column to one with an ambiguous decimal mark asks for the mark', async () => {
+    // Debit/Credit settle the mark ('.'); Out/In read either way (1.234 is 1234 or 1.234).
+    pickOk(
+      csv(['Date,Description,Debit,Credit,Out,In', '2026-03-01,COFFEE,3.50,,1.234,', '2026-03-02,PAYSLIP,,1000.00,,2.345'].join('\n'))
+    );
+    const { result } = await setup();
+    await act(async () => {
+      result.current.start();
+    });
+    await act(async () => {
+      result.current.confirmFormat();
+    });
+    expect(result.current.stage).toBe('mapping');
+    expect(result.current.notationNeedsChoice).toBe(false);
+    const detected = result.current.mapping as NonNullable<typeof result.current.mapping>;
+    await act(async () => {
+      result.current.setMapping({ ...detected, debit: 4, credit: 5 });
+    });
+    expect(result.current.notationAmbiguous).toBe(true);
+    expect(result.current.notationNeedsChoice).toBe(true);
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(result.current.stage).toBe('mapping');
+  });
+
   it('an OFX file skips mapping and goes straight to review', async () => {
     pickOk(fixture('bank-sgml.ofx'), 'ofx');
     const { result } = await setup();
@@ -454,6 +538,36 @@ describe('useStatementImport: review', () => {
     expect(result.current.reconcile).not.toBeNull();
   });
 
+  it('S-WR-05: the stored balance stands in for the OFX opening only when nothing is dated after the file', async () => {
+    dbTx.fetchHasRowsBefore.mockResolvedValue(true);
+    const spy = jest.spyOn(pipeline, 'buildPreview');
+    await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const input = spy.mock.calls.at(-1)![0] as { storedOpeningForFile: number | null };
+    expect(input.storedOpeningForFile).toBe(5000);
+  });
+
+  it('S-WR-05: rows dated after the file mean the current balance is not the opening', async () => {
+    dbTx.fetchHasRowsBefore.mockResolvedValue(true);
+    dbTx.fetchTransactionsInRange.mockImplementation(async (_c: unknown, _h: unknown, range: { toInclusive: string }) =>
+      range.toInclusive === '9999-12-31' ? [stored({ id: 'later', local_date: '2026-10-01' })] : []
+    );
+    const spy = jest.spyOn(pipeline, 'buildPreview');
+    await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const input = spy.mock.calls.at(-1)![0] as { storedOpeningForFile: number | null };
+    expect(input.storedOpeningForFile).toBeNull();
+  });
+
+  it('S-WR-13: per-row lookups are keyed, not a scan of every preview row', async () => {
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const rows = result.current.preview!.rows;
+    const find = jest.spyOn(rows, 'find');
+    for (const r of rows) result.current.rowState(r.index);
+    await act(async () => {
+      result.current.toggleRow(rows[0]!.index);
+    });
+    expect(find).not.toHaveBeenCalled();
+  });
+
   it('does not look for earlier rows for a CSV file', async () => {
     await reachReview(csv(CSV_DECIDED), 'csv');
     expect(dbTx.fetchHasRowsBefore).not.toHaveBeenCalled();
@@ -602,6 +716,78 @@ describe('useStatementImport: matches', () => {
     const counter = rows.find((r: { account_id: string }) => r.account_id === 'acc-eur');
     expect(counter.original_amount).toBe(35000);
     expect(counter.transfer_id).toBeTruthy();
+  });
+
+  it('S-WR-03: an accept beyond the cap is refused by the hook, not only the buttons', async () => {
+    dbTx.fetchTransferCandidates.mockResolvedValue([candidateLeg({})]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const rent = rowIndex(result, 'RENT PAYMENT');
+    jest.spyOn(suggestionCap, 'maxAcceptedSuggestions').mockReturnValue(0);
+    await act(async () => {
+      result.current.continue();
+    });
+    await act(async () => {
+      result.current.linkTransfer(rent, 'leg-1');
+    });
+    expect(result.current.transferRows[0]!.answer).toBeNull();
+  });
+
+  it('S-WR-03: commit re-checks the cap and writes nothing when it has gone stale', async () => {
+    dbTx.fetchTransferCandidates.mockResolvedValue([candidateLeg({})]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const rent = rowIndex(result, 'RENT PAYMENT');
+    await act(async () => {
+      result.current.continue();
+    });
+    await act(async () => {
+      result.current.linkTransfer(rent, 'leg-1');
+    });
+    expect(result.current.transferRows[0]!.answer).toBe('linked');
+    // More lines were included since: the cap is now below what was accepted.
+    jest.spyOn(suggestionCap, 'maxAcceptedSuggestions').mockReturnValue(0);
+    await act(async () => {
+      result.current.back();
+    });
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit).not.toHaveBeenCalled();
+    expect(result.current.overSuggestionCap).toBe(true);
+    expect(result.current.stage).toBe('matches');
+  });
+
+  it('S-WR-04: with no transfer category a link is refused and commit never throws', async () => {
+    mockTransferCategoryId = null;
+    dbTx.fetchTransferCandidates.mockResolvedValue([candidateLeg({})]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const rent = rowIndex(result, 'RENT PAYMENT');
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(result.current.transfersUnavailable).toBe(true);
+    await act(async () => {
+      result.current.linkTransfer(rent, 'leg-1');
+    });
+    expect(result.current.transferRows[0]!.answer).toBeNull();
+  });
+
+  it('S-WR-04: a commit that throws moves to a recoverable state instead of crashing', async () => {
+    mockCommit.mockImplementationOnce(() => {
+      throw new TypeError('useImportCommit: transferCategoryId is required when links are present');
+    });
+    const { result } = await reachReview(csv(CSV_DECIDED), 'csv');
+    await act(async () => {
+      expect(() => result.current.commit()).not.toThrow();
+    });
+    expect(result.current.commitProblem).toBe('failed');
+    expect(result.current.stage).toBe('review');
+    expect(mockShowToast).not.toHaveBeenCalled();
+    // The guard is released, so the user can try again.
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit).toHaveBeenCalledTimes(2);
+    expect(result.current.commitProblem).toBeNull();
   });
 
   it('dismissing an orphan keeps the row as an ordinary import', async () => {

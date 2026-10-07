@@ -3,8 +3,8 @@
 // never has to accept a minus sign. Limits are optional and per kind. Archive / Restore is an
 // edit with undo. Copy is declarative, never advice.
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { currencyExponent, toDecimalString, type MinorUnits } from '@/engine/money';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { currencyExponent } from '@/engine/money';
 import type { AccountPatch, AccountRow } from '@/db/rows';
 import { useAddAccount, useEditAccount } from '@/data/mutations/accounts';
 import { newStepId } from '@/data/mutations/undoCapture';
@@ -21,7 +21,7 @@ import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
-import { Sheet } from '@/ui/Sheet';
+import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useAmountParser, type AmountParseFailure } from '@/ui/money/useAmountParser';
 
@@ -49,6 +49,12 @@ function isNegative(kind: AccountKind, choice: SignChoice): boolean {
   return choice === 'other';
 }
 
+/** S-WR-12: the sign control choice under `kind` that keeps the balance owed (or in credit). */
+function choiceFor(kind: AccountKind, negative: boolean): SignChoice {
+  if (kind === 'credit') return negative ? 'default' : 'other';
+  return negative ? 'other' : 'default';
+}
+
 function limitKind(kind: AccountKind): 'overdraft' | 'credit' | null {
   if (kind === 'checking' || kind === 'savings') return 'overdraft';
   if (kind === 'credit') return 'credit';
@@ -74,11 +80,14 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
 
   const exponentFor = (code: string): number => options.find((o) => o.code === code)?.exponent ?? currencyExponent(code);
   const magnitude = (minor: number, code: string): string =>
-    minor === 0 ? '' : toDecimalString(Math.abs(minor) as MinorUnits, exponentFor(code));
+    minor === 0 ? '' : parser.toInputText(minor, code, exponentFor(code));
 
   const [name, setName] = useState(account?.name ?? '');
   const [kind, setKind] = useState<AccountKind>(account?.kind ?? 'checking');
-  const [currency, setCurrency] = useState(account?.currency ?? rc.homeCurrency);
+  // S-WR-09: until the user picks one, a new account's currency follows the home currency, which
+  // the device default can set a moment after the onboarding sheet has mounted.
+  const [pickedCurrency, setCurrency] = useState<string | null>(account?.currency ?? null);
+  const currency = pickedCurrency ?? rc.homeCurrency;
   const [openingText, setOpeningText] = useState(account ? magnitude(account.opening_balance, account.currency) : '');
   const [signChoice, setSignChoice] = useState<SignChoice>(() => {
     if (!account) return 'default';
@@ -147,6 +156,9 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
     if (signedOpening !== account.opening_balance) patch.opening_balance = signedOpening;
     if (limits === 'overdraft' && limitMinor !== account.overdraft_limit) patch.overdraft_limit = limitMinor;
     if (limits === 'credit' && limitMinor !== account.credit_limit) patch.credit_limit = limitMinor;
+    // S-WR-12: a limit the new kind no longer has is cleared, not left behind on the row.
+    if (limits !== 'overdraft' && account.overdraft_limit !== null) patch.overdraft_limit = null;
+    if (limits !== 'credit' && account.credit_limit !== null) patch.credit_limit = null;
     if (Object.keys(patch).length > 0) {
       sendEdit(account, patch, ownerId);
     }
@@ -193,7 +205,7 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={title}>
       <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.column}>
+      <SheetScroll contentContainerStyle={styles.column}>
         <Text style={labelStyle}>{t('accounts.sheet.name')}</Text>
         <TextInput
           accessibilityLabel={t('accounts.sheet.name')}
@@ -250,11 +262,13 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
           </>
         ) : null}
 
+        {canSubmit ? null : <Text style={helpStyle}>{t('accounts.sheet.notReady')}</Text>}
         <Pill
           label={t(account ? 'accounts.sheet.saveChanges' : 'accounts.sheet.save')}
           variant="primary"
           onPress={save}
           disabled={!canSubmit}
+          accessibilityHint={canSubmit ? undefined : t('accounts.sheet.notReady')}
         />
         {account ? (
           <Pill
@@ -263,15 +277,19 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
             onPress={toggleArchive}
           />
         ) : null}
-      </ScrollView>
+      </SheetScroll>
       <OptionPicker<AccountKind>
         visible={picker === 'kind'}
         title={t('accounts.sheet.kind')}
         options={KINDS.map((k) => ({ value: k, label: kindLabel(k) }))}
         selected={kind}
         onSelect={(k) => {
+          // S-WR-12: on an existing account keep what its balance means (owed stays owed); a new
+          // one takes the new kind's default (a card defaults to owing). Never carry a limit
+          // typed for one kind of limit into the other.
+          setSignChoice(account ? choiceFor(k, isNegative(kind, signChoice)) : 'default');
+          if (limitKind(k) !== limitKind(kind)) setLimitText('');
           setKind(k);
-          setSignChoice('default');
           setPicker(null);
         }}
         onClose={() => setPicker(null)}

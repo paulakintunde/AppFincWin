@@ -316,6 +316,16 @@ describe('YouScreen Money section', () => {
   });
 });
 
+describe('YouScreen Money rows are full-size touch targets (S-WR-14)', () => {
+  it('each row is at least 44pt tall', async () => {
+    const { getByRole } = await renderScreen();
+    for (const name of ['Activity', 'Accounts', 'Categories', 'Import statement', 'History']) {
+      const style = Object.assign({}, ...[].concat(getByRole('button', { name }).props.style ?? []));
+      expect(style.minHeight).toBe(44);
+    }
+  });
+});
+
 describe('YouScreen credits', () => {
   it('renders the open.er-api credit line and opens its URL when pressed', async () => {
     const openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);

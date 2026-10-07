@@ -15,6 +15,8 @@ export interface DateFieldProps {
   value: string;
   display: string;
   onChange: (localDate: string) => void;
+  /** 'YYYY-MM-DD': the earliest day the picker offers (S-CR-03). */
+  minDate?: string;
 }
 
 const pad = (n: number): string => String(n).padStart(2, '0');
@@ -28,7 +30,7 @@ function fromLocalDateString(value: string): Date {
   return new Date(y, m - 1, d, 12, 0, 0);
 }
 
-export function DateField({ label, value, display, onChange }: DateFieldProps) {
+export function DateField({ label, value, display, onChange, minDate }: DateFieldProps) {
   const t = useT();
   const [open, setOpen] = useState(false);
 
@@ -38,7 +40,14 @@ export function DateField({ label, value, display, onChange }: DateFieldProps) {
   };
 
   const picker = open ? (
-    <DateTimePicker testID="date-picker" value={fromLocalDateString(value)} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'default'} onChange={handle} />
+    <DateTimePicker
+      testID="date-picker"
+      value={fromLocalDateString(value)}
+      mode="date"
+      display={Platform.OS === 'ios' ? 'inline' : 'default'}
+      minimumDate={minDate ? fromLocalDateString(minDate) : undefined}
+      onChange={handle}
+    />
   ) : null;
 
   return (
