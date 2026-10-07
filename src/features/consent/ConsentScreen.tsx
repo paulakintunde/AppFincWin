@@ -4,6 +4,7 @@
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
+import { APP_HOME_HREF } from '@/features/auth/appHome';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space, radii } from '@/theme/layout';
@@ -40,7 +41,7 @@ export function ConsentScreen() {
   const handleDecline = useCallback(() => choose(decline), [choose, decline]);
 
   if (status === 'done') {
-    return <Redirect href="/you" />;
+    return <Redirect href={APP_HOME_HREF} />;
   }
 
   return (
