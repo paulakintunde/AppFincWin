@@ -25,6 +25,7 @@ jest.mock('@/db/transactions', () => ({
   fetchTransactionsInRange: jest.fn(),
   fetchTransferCandidates: jest.fn(),
   fetchHasRowsBefore: jest.fn(),
+  fetchHasRowsAfter: jest.fn(),
   fetchCategorisedNames: jest.fn(),
 }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...args: unknown[]) => mockTrack(...args) }) }));
@@ -65,6 +66,7 @@ const dbTx = require('@/db/transactions') as {
   fetchTransactionsInRange: jest.Mock;
   fetchTransferCandidates: jest.Mock;
   fetchHasRowsBefore: jest.Mock;
+  fetchHasRowsAfter: jest.Mock;
   fetchCategorisedNames: jest.Mock;
 };
 
@@ -140,6 +142,7 @@ beforeEach(() => {
   dbTx.fetchTransactionsInRange.mockResolvedValue([]);
   dbTx.fetchTransferCandidates.mockResolvedValue([]);
   dbTx.fetchHasRowsBefore.mockResolvedValue(false);
+  dbTx.fetchHasRowsAfter.mockResolvedValue(false);
   dbTx.fetchCategorisedNames.mockResolvedValue([]);
 });
 
@@ -546,11 +549,26 @@ describe('useStatementImport: review', () => {
     expect(input.storedOpeningForFile).toBe(5000);
   });
 
+  it('I-02: asks whether any row is dated after the file with one limit-1 read, not a paged range read', async () => {
+    dbTx.fetchHasRowsBefore.mockResolvedValue(true);
+    await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(dbTx.fetchHasRowsAfter).toHaveBeenCalledWith(expect.anything(), 'hh-1', 'acc-1', '2026-09-12');
+    // the only range read is the file range itself
+    expect(dbTx.fetchTransactionsInRange).toHaveBeenCalledTimes(1);
+  });
+
   it('S-WR-05: rows dated after the file mean the current balance is not the opening', async () => {
     dbTx.fetchHasRowsBefore.mockResolvedValue(true);
-    dbTx.fetchTransactionsInRange.mockImplementation(async (_c: unknown, _h: unknown, range: { toInclusive: string }) =>
-      range.toInclusive === '9999-12-31' ? [stored({ id: 'later', local_date: '2026-10-01' })] : []
-    );
+    dbTx.fetchHasRowsAfter.mockResolvedValue(true);
+    const spy = jest.spyOn(pipeline, 'buildPreview');
+    await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const input = spy.mock.calls.at(-1)![0] as { storedOpeningForFile: number | null };
+    expect(input.storedOpeningForFile).toBeNull();
+  });
+
+  it('I-02: a failed after-read drops the fallback rather than assume nothing is later', async () => {
+    dbTx.fetchHasRowsBefore.mockResolvedValue(true);
+    dbTx.fetchHasRowsAfter.mockRejectedValue(new Error('offline'));
     const spy = jest.spyOn(pipeline, 'buildPreview');
     await reachReview(fixture('bank-sgml.ofx'), 'ofx');
     const input = spy.mock.calls.at(-1)![0] as { storedOpeningForFile: number | null };
