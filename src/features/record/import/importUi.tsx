@@ -43,15 +43,17 @@ export function T({
   tone = 'ink',
   children,
   numberOfLines,
+  accessibilityLabel,
 }: {
   role?: TextRole;
   tone?: Tone;
   children: ReactNode;
   numberOfLines?: number;
+  accessibilityLabel?: string;
 }) {
   const { colors, pairing } = useTheme();
   return (
-    <Text numberOfLines={numberOfLines} style={{ ...textRole(pairing, role), color: colors[tone] }}>
+    <Text numberOfLines={numberOfLines} accessibilityLabel={accessibilityLabel} style={{ ...textRole(pairing, role), color: colors[tone] }}>
       {children}
     </Text>
   );

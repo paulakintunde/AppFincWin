@@ -16,7 +16,9 @@ import { Screen } from '@/ui/Screen';
 import { space } from '@/theme/layout';
 import { FormatStep } from './FormatStep';
 import { MappingStep } from './MappingStep';
+import { MatchesStep } from './MatchesStep';
 import { ReviewStep } from './ReviewStep';
+import { SuggestionsStep } from './SuggestionsStep';
 import { Actions, Heading, T } from './importUi';
 import { useStatementImport, type ImportEntry } from './useStatementImport';
 import type { RejectReason } from './importPipeline';
@@ -54,7 +56,8 @@ export function ImportScreen({ entry, accountId = null, onDone }: ImportScreenPr
   );
 }
 
-function StageView({ state, entry }: { state: ImportState; entry: ImportEntry; onDone: () => void }) {
+function StageView({ state, entry, onDone }: { state: ImportState; entry: ImportEntry; onDone: () => void }) {
+  const t = useT();
   switch (state.stage) {
     case 'idle':
     case 'reading':
@@ -69,6 +72,12 @@ function StageView({ state, entry }: { state: ImportState; entry: ImportEntry; o
       return <MappingStep state={state} />;
     case 'review':
       return <ReviewStep state={state} />;
+    case 'matches':
+      return <MatchesStep state={state} />;
+    case 'committing':
+      return <T tone="inkMuted">{t('importCsv.committing')}</T>;
+    case 'done':
+      return <SuggestionsStep state={state} onDone={onDone} />;
     default:
       return null;
   }

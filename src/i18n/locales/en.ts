@@ -584,7 +584,8 @@ const en = {
       a11y: 'Suggested match: this line pays the pending {{name}} bill. Mark it paid?',
     },
     matchesHeading: 'Before importing',
-    suggestionCap: 'One import can apply up to {{max}} suggestions. The rest are kept as separate lines.',
+    suggestionCap_one: 'One import can apply up to {{count}} suggestion. The rest are kept as separate lines.',
+    suggestionCap_other: 'One import can apply up to {{count}} suggestions. The rest are kept as separate lines.',
     dateFormat: 'Reading dates as {{format}}',
     dateFormatAmbiguous: 'These dates could be day-first or month-first. Pick one.',
     formats: {

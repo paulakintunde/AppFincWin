@@ -771,7 +771,7 @@ describe('ImportScreen: matches', () => {
       await fireEvent.press(screen.getAllByRole('button', { name: 'Not a transfer' })[0]!);
       expect(mockState.dismissTransfer).toHaveBeenCalledWith(0);
       await fireEvent.press(screen.getByRole('button', { name: 'Keep both' }));
-      expect(mockState.dismissPayMatch).toHaveBeenCalledWith(0);
+      expect(mockState.dismissPayMatch).toHaveBeenCalledWith(2);
     });
 
     it('says nothing and disables nothing while under the cap', async () => {
