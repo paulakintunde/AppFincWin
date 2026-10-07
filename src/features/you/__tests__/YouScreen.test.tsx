@@ -299,11 +299,13 @@ describe('YouScreen Money section', () => {
     expect(getByText('Import statement')).toBeTruthy();
     expect(queryByText('Import CSV')).toBeNull();
 
-    fireEvent.press(getByText('Activity'));
-    fireEvent.press(getByText('Accounts'));
-    fireEvent.press(getByText('Categories'));
-    fireEvent.press(getByText('Import statement'));
-    fireEvent.press(getByText('History'));
+    await act(async () => {
+      fireEvent.press(getByText('Activity'));
+      fireEvent.press(getByText('Accounts'));
+      fireEvent.press(getByText('Categories'));
+      fireEvent.press(getByText('Import statement'));
+      fireEvent.press(getByText('History'));
+    });
     expect(mockRouterPush.mock.calls.map((c) => c[0])).toEqual([
       '/activity',
       '/accounts',
