@@ -49,6 +49,12 @@ function isNegative(kind: AccountKind, choice: SignChoice): boolean {
   return choice === 'other';
 }
 
+/** S-WR-12: the sign control choice under `kind` that keeps the balance owed (or in credit). */
+function choiceFor(kind: AccountKind, negative: boolean): SignChoice {
+  if (kind === 'credit') return negative ? 'default' : 'other';
+  return negative ? 'other' : 'default';
+}
+
 function limitKind(kind: AccountKind): 'overdraft' | 'credit' | null {
   if (kind === 'checking' || kind === 'savings') return 'overdraft';
   if (kind === 'credit') return 'credit';
@@ -150,6 +156,9 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
     if (signedOpening !== account.opening_balance) patch.opening_balance = signedOpening;
     if (limits === 'overdraft' && limitMinor !== account.overdraft_limit) patch.overdraft_limit = limitMinor;
     if (limits === 'credit' && limitMinor !== account.credit_limit) patch.credit_limit = limitMinor;
+    // S-WR-12: a limit the new kind no longer has is cleared, not left behind on the row.
+    if (limits !== 'overdraft' && account.overdraft_limit !== null) patch.overdraft_limit = null;
+    if (limits !== 'credit' && account.credit_limit !== null) patch.credit_limit = null;
     if (Object.keys(patch).length > 0) {
       sendEdit(account, patch, ownerId);
     }
@@ -275,8 +284,12 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
         options={KINDS.map((k) => ({ value: k, label: kindLabel(k) }))}
         selected={kind}
         onSelect={(k) => {
+          // S-WR-12: on an existing account keep what its balance means (owed stays owed); a new
+          // one takes the new kind's default (a card defaults to owing). Never carry a limit
+          // typed for one kind of limit into the other.
+          setSignChoice(account ? choiceFor(k, isNegative(kind, signChoice)) : 'default');
+          if (limitKind(k) !== limitKind(kind)) setLimitText('');
           setKind(k);
-          setSignChoice('default');
           setPicker(null);
         }}
         onClose={() => setPicker(null)}

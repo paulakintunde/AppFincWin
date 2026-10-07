@@ -432,3 +432,27 @@ describe('AccountSheet: a disabled Save gives its reason (S-WR-10)', () => {
     expect(save.props.accessibilityHint).toBe(reason);
   });
 });
+
+describe('AccountSheet: changing the type keeps what the balance means (S-WR-12)', () => {
+  it('an overdrawn current account changed to Savings stays overdrawn', async () => {
+    const acc = account({ kind: 'checking', opening_balance: -20000 });
+    const u = await wrap(<AccountSheet visible mode={{ kind: 'edit', account: acc }} onClose={jest.fn()} />);
+    await fireEvent.press(u.getByLabelText('Type'));
+    await fireEvent.press(u.getByText('Savings'));
+    await fireEvent.press(u.getByText('Save changes'));
+    const [vars] = mockEdit.mock.calls[0] as unknown as [{ patch: Record<string, unknown> }];
+    expect(vars.patch).toEqual({ kind: 'savings' });
+  });
+
+  it('a credit card changed to a current account drops the credit limit instead of re-using it', async () => {
+    const acc = account({ kind: 'credit', opening_balance: -10000, credit_limit: 50000 });
+    const u = await wrap(<AccountSheet visible mode={{ kind: 'edit', account: acc }} onClose={jest.fn()} />);
+    expect(u.getByLabelText('Credit limit').props.value).toBe('500.00');
+    await fireEvent.press(u.getByLabelText('Type'));
+    await fireEvent.press(u.getByText('Current account'));
+    expect(u.getByLabelText('Overdraft limit').props.value).toBe('');
+    await fireEvent.press(u.getByText('Save changes'));
+    const [vars] = mockEdit.mock.calls[0] as unknown as [{ patch: Record<string, unknown> }];
+    expect(vars.patch).toEqual({ kind: 'checking', credit_limit: null });
+  });
+});
