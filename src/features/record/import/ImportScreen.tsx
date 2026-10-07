@@ -16,6 +16,7 @@ import { Screen } from '@/ui/Screen';
 import { space } from '@/theme/layout';
 import { FormatStep } from './FormatStep';
 import { MappingStep } from './MappingStep';
+import { ReviewStep } from './ReviewStep';
 import { Actions, Heading, T } from './importUi';
 import { useStatementImport, type ImportEntry } from './useStatementImport';
 import type { RejectReason } from './importPipeline';
@@ -42,8 +43,8 @@ export function ImportScreen({ entry, accountId = null, onDone }: ImportScreenPr
   const t = useT();
 
   return (
-    <Screen scroll>
-      <View style={{ paddingBottom: space.groupGap }}>
+    <Screen scroll={state.stage !== 'review'}>
+      <View style={state.stage === 'review' ? { flex: 1 } : { paddingBottom: space.groupGap }}>
         {state.rememberedNote && (state.stage === 'mapping' || state.stage === 'review') ? (
           <T tone="inkMuted">{t('importCsv.format.remembered')}</T>
         ) : null}
@@ -66,6 +67,8 @@ function StageView({ state, entry }: { state: ImportState; entry: ImportEntry; o
       return <FormatStep state={state} />;
     case 'mapping':
       return <MappingStep state={state} />;
+    case 'review':
+      return <ReviewStep state={state} />;
     default:
       return null;
   }

@@ -507,7 +507,7 @@ describe('ImportScreen: review', () => {
     expect(screen.getByText('Review 2 lines')).toBeTruthy();
     expect(screen.getByText('LINE 0')).toBeTruthy();
     expect(screen.getByText('LINE 1')).toBeTruthy();
-    expect(screen.getAllByText('-£3.50')).toHaveLength(2);
+    expect(screen.getAllByText('−£3.50')).toHaveLength(2);
   });
 
   it('a cannot-verify row carries the Can’t verify tag and stays tickable', async () => {

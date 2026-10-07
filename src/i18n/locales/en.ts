@@ -609,6 +609,7 @@ const en = {
     reviewHeading_one: 'Review {{count}} line',
     reviewHeading_other: 'Review {{count}} lines',
     duplicate: 'Possible duplicate',
+    categoryA11y: 'Category for {{name}}',
     issue: {
       badDate: 'Date not recognised',
       badAmount: 'Amount not recognised',
