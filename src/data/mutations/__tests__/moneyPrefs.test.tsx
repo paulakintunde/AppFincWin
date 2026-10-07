@@ -14,7 +14,7 @@ import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupaba
 import { queryKeys } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { registerMutationDefaults } from '../index';
-import { useUpdateMoneyPrefs } from '../moneyPrefs';
+import { useSetHomeCurrencyIfDefault, useUpdateMoneyPrefs } from '../moneyPrefs';
 import { useAddCustomCurrency, useEditCustomCurrency } from '../customCurrencies';
 import { DEFAULT_MONEY_PREFS, useMoneyPrefs } from '@/data/queries/moneyPrefs';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
@@ -112,6 +112,74 @@ describe('useMoneyPrefs', () => {
     const { result } = await renderHook(() => useMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
 
     await waitFor(() => expect(result.current.prefs.home_currency).toBe('JPY'));
+  });
+});
+
+describe('useMoneyPrefs read state (W6-13 WR-07)', () => {
+  it('a failed read is isError with the placeholder prefs, never isSuccess', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = await renderHook(() => useMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current).toMatchObject({ prefs: DEFAULT_MONEY_PREFS, loading: false, isSuccess: false });
+  });
+
+  it('a real read is isSuccess and fetched after mount', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: prefsRow({ home_currency: 'EUR' }), error: null, status: 200 });
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = await renderHook(() => useMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current).toMatchObject({ isError: false, isFetchedAfterMount: true });
+  });
+});
+
+describe('useSetHomeCurrencyIfDefault (W6-13 WR-07)', () => {
+  it('sends one update conditional on home_currency = USD and caches the returned row', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: prefsRow({ home_currency: 'CAD' }), error: null, status: 200 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useSetHomeCurrencyIfDefault('user-1'), { wrapper: wrapper(qc) });
+
+    await expect(result.current('CAD')).resolves.toBe(true);
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ home_currency: 'CAD' });
+    expect(fake.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toEqual([
+      ['id', 'user-1'],
+      ['home_currency', 'USD'],
+    ]);
+    expect(qc.getQueryData<MoneyPrefsRow>(queryKeys.moneyPrefs('user-1'))?.home_currency).toBe('CAD');
+  });
+
+  it('resolves false and changes nothing locally when the currency was already changed', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: null, status: 200 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.moneyPrefs('user-1'), prefsRow({ home_currency: 'EUR' }));
+    const { result } = await renderHook(() => useSetHomeCurrencyIfDefault('user-1'), { wrapper: wrapper(qc) });
+
+    await expect(result.current('CAD')).resolves.toBe(false);
+    expect(qc.getQueryData<MoneyPrefsRow>(queryKeys.moneyPrefs('user-1'))?.home_currency).toBe('EUR');
+  });
+
+  it('throws on a server error so the caller can retry later', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useSetHomeCurrencyIfDefault('user-1'), { wrapper: wrapper(qc) });
+    await expect(result.current('CAD')).rejects.toBeTruthy();
   });
 });
 

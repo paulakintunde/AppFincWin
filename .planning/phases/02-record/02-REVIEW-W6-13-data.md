@@ -32,6 +32,12 @@ findings:
   info: 4
   total: 12
 status: issues_found
+fix_status: partial
+fixed_at: 2026-10-07
+fixed: 11
+skipped: 1
+requires_production_push:
+  - supabase/migrations/20261007000100_series_anchor_is_new_verified.sql
 ---
 
 # Phase 2: Code Review Report, waves 6-13 data layer (Area A)
@@ -64,6 +70,9 @@ None of these rises to BLOCKER. None corrupts money values. All of them are reco
 
 ### WR-01: Transfer add replay loses the undo step permanently
 
+**Status:** fixed `bba66f8`. A replay that gets no rows re-reads both legs (new `fetchTransactionVersions`, raw table) and records the step when both are live at version 1. Test 277 now expects the step.
+
+
 **File:** `src/data/mutations/transfers.ts:321-337`
 
 **Issue:** The undo step is recorded in a separate call, only after `insertTransactionsBatch` returns. On a replay, `ignoreDuplicates` returns `[]`, and the code skips recording on the assumption that "the original attempt's own step stands". But the original step was never written when the first attempt's response was lost, because recording happens after the response.
@@ -87,6 +96,9 @@ Change test 277 to expect the step to be recorded.
 
 ### WR-02: Transfer delete replay reports a false "changed elsewhere" conflict
 
+**Status:** fixed `4dcb71a`. When the pair is not two live rows, the mutation first checks the step by exact id (new `undoStepExists`, follow-up #15). It succeeds when the step exists and still refuses otherwise.
+
+
 **File:** `src/data/mutations/transfers.ts:261-267`
 
 **Issue:** `fetchTransferLegs` reads `transactions_active`, which excludes deleted rows (`src/db/transactions.ts:352-356`). If the delete landed and its response was lost, the replay finds 0 live legs and throws `VersionConflictError` before `applyPatches` is called. The server's D-WR-03 replay key (the step id) is therefore never consulted.
@@ -104,6 +116,9 @@ The undo step was recorded and still works, so the History and failed-writes vie
 
 ### WR-03: Category merge of exactly 6000 rows always fails (off-by-one)
 
+**Status:** fixed `6b2f326`. New `MERGE_ROWS_MAX = MERGE_LIMIT - 1` bounds the merge guard and `useCategoryUsage().capped`.
+
+
 **Files:** `src/data/mutations/categories.ts:197-218`, `src/db/transactions.ts:384`, `src/data/queries/categories.ts:83-84`
 
 **Issue:** The guard is `rows.length > MERGE_LIMIT` (6000), but the op list is `rows` plus 1 category op. With 6000 rows that is 6001 ops:
@@ -120,6 +135,9 @@ The undo step was recorded and still works, so the History and failed-writes vie
 
 ### WR-04: Bulk delete checks the 6000 limit before partner-leg expansion
 
+**Status:** fixed `62d1791`. `apply()` counts each transfer id to expand as one more op. The mutationFn re-checks after expansion and throws `DbError(..., 'bulk-too-large')`.
+
+
 **File:** `src/data/mutations/patches.ts:184, 255-258`
 
 **Issue:** `apply()` checks `items.length > BULK_MAX` on the selection. `partnerDeleteItems` then adds up to one more op per unpaired transfer leg at flush time. Nothing re-checks the size, so `buildStep` throws a `RangeError` (rejected, code `''`) once the total passes 6000.
@@ -130,6 +148,9 @@ The undo step was recorded and still works, so the History and failed-writes vie
 
 ### WR-05: Category merge leaves recurring series templates on the archived source
 
+**Status:** fixed `0780758` (client only, through the existing apply_patches path). The merge reads live series filed under the source (new `fetchSeriesIdsByCategory`) at flush and moves them in the same call and undo step. They count toward the op cap. pgTAP 38 checks the server side. Note: under D-CR-01, undoing such a merge is refused once the materialiser has generated rows from a moved template.
+
+
 **File:** `src/data/mutations/categories.ts:200-215`
 
 **Issue:** The merge moves only active `transactions` rows. `recurring_series.category_id` is never patched. `materialise_series` copies `s.category_id` into each new occurrence (`20260926000400_recurring_materialisation.sql:104-110`).
@@ -139,6 +160,9 @@ The undo step was recorded and still works, so the History and failed-writes vie
 **Fix:** In the mutationFn, also fetch the live `recurring_series` rows in the household where `category_id = source`. Add ops `{entity:'recurring_series', id, expectedVersion: version, before:{category_id: source}, patch:{category_id: target}}` to the same atomic `apply_patches` call; `category_id` is already in the allowlist. Count these ops against the 6000 limit (WR-03).
 
 ### WR-06: Offline or failed usage read auto-archives an in-use category without offering merge
+
+**Status:** fixed `29faa18`, hook only. The screens fixer owns `RemoveCategoryPrompt`. See "useCategoryUsage contract" below.
+
 
 **Files:** `src/data/queries/categories.ts:83-84`; consumer `src/features/record/categories/RemoveCategoryPrompt.tsx:48-63`
 
@@ -156,6 +180,9 @@ In both cases the hook returns `{count: 0, capped: false, isLoading: false}`, an
 - Optionally nest the key under `queryKeys.categories(ownerId)` or the transactions root so merges and imports invalidate it (see IN-01).
 
 ### WR-07: Home-currency default can overwrite a real choice when the profile read fails, and the write is unconditional
+
+**Status:** fixed `fe16954`. This also closes screens-review WR-08, which is the same bug. `useMoneyPrefs` now exposes `isSuccess`, `isError` and `isFetchedAfterMount`. The hook decides only from successful prefs and accounts reads made in this mount. The write is now conditional: `useSetHomeCurrencyIfDefault` sends `update ... where home_currency = 'USD'` through `setHomeCurrencyIfStill`. A failed write leaves the flag unset.
+
 
 **Files:** `src/features/record/useDeviceHomeCurrencyDefault.tsx:36, 43-65`; `src/data/queries/moneyPrefs.ts:27`
 
@@ -179,6 +206,9 @@ The test file mocks `useMoneyPrefs` as `{prefs, loading}` and has no prefs-error
 - Add a test for the prefs-error case.
 
 ### WR-08: `create_recurring_series` trusts `p_anchor_is_new` and records `anchor_created` even when the anchor was not linked
+
+**Status:** fixed `3249993`. Adds the new forward migration `20261007000100_series_anchor_is_new_verified.sql`, **which REQUIRES A PRODUCTION PUSH**. With the flag set, the anchor must be at version 1 and `created_by = auth.uid()`; otherwise the call fails with 22023 and nothing is written. `anchor_created` is set only when the anchor is in `v_linked`. pgTAP 38 has 14 tests: they fail on the production schema and pass with the migration. A second-member `created_by` case is not covered, because pgTAP has no multi-member household fixture here.
+
 
 **File:** `supabase/migrations/20260926000400_recurring_materialisation.sql:263-284, 303-306` (inverse in `20260926000500_undo_log.sql:587-604`)
 
@@ -207,11 +237,17 @@ Note on the version check: `TransactionSheet` only queues `add` immediately befo
 
 ### IN-01: `useCategoryUsage` key sits outside every invalidated prefix
 
+**Status:** fixed `764a6b2` (`queryKeys.categoryUsage` = `['transactions', householdId, 'category-usage', categoryId]`).
+
+
 **File:** `src/data/queries/categories.ts:79`
 
 The key `['categories','usage',householdId,categoryId]` is not under `queryKeys.categories(ownerId)` (`['categories', ownerId]`) or the transactions root, so merges, imports, bulk deletes and undo never invalidate it. A remount refetches it (staleTime 0), but a persisted copy can be shown stale first. Move the key into `queryKeys` under `transactionsRoot(householdId)`, for example `['transactions', householdId, 'category-usage', categoryId]`.
 
 ### IN-02: Region map leaves several euro users on USD
+
+**Status:** fixed `4b6c821`. Added ME, XK, AD, MC, SM and VA as EUR, LI as CHF and RU as RUB. The caller still drops any currency the app does not offer. BA (BAM) was not added.
+
 
 **File:** `src/engine/money/regionCurrency.ts:88-100`
 
@@ -219,15 +255,53 @@ The 21 EU eurozone members are correct as of 2026, including BG and HR. Non-EU s
 
 ### IN-03: Transfer delete accepts the partner's current version, so a concurrent partner edit is deleted silently
 
+**Status:** fixed `7cdbd27`. `useDeleteTransfer().remove(leg, ctx, partner?)` takes an optional partner. When it is passed, the partner's observed version is checked. Without it, behaviour is unchanged. Screens can pass the partner wherever both legs are in hand.
+
+
 **File:** `src/data/mutations/transfers.ts:268-275`
 
 Only the leg in hand carries the user's observed version. The partner's `expectedVersion` is whatever is live at flush, so an edit to the partner by another member or device after the user looked is deleted without a D-26-style refusal. This is defensible because the user asked to delete the pair, but it differs from `useEditTransfer`, which checks both legs' observed versions. If this is intended, document it. Otherwise pass both legs' versions when the UI has both.
 
 ### IN-04 (outside listed scope, uncertain): Import pay-match patches `original_amount` without comparing currency
 
+**Status:** skipped (confirmed, outside the data fixer's ownership). `PendingOccurrence` (`src/engine/recurring/payMatch.ts`) has no currency, `matchPendingPayments` never compares one, and `importPipeline.ts` passes no currency into the match. So a mapped-currency line can pay-match a pending occurrence in a different currency. The fix belongs to the engine/import owners: add `currency` to `PendingOccurrence` and `PayMatchRow`, skip a candidate on mismatch (keeping 100% coverage in engine/recurring), and pass the currencies from `importPipeline.ts` and the pending-row source.
+
+
 **File:** `src/features/record/import/importPipeline.ts:496-506`
 
 `markPaid.patch` sets `original_amount: c.amount` on the pending row but never `original_currency`, and `ExistingInfo` has no currency to compare against. If a mapped currency column (D-12) gives a line in a currency other than the pending occurrence's, the occurrence would be marked paid with a foreign-currency minor-unit amount under its own currency. Whether `matchPendingPayments`' candidate set already filters by currency was not verified. Add `original_currency` to `ExistingInfo` and refuse the pay-match (fall back to an ordinary insert) on a mismatch.
+
+## Fix pass (2026-10-07)
+
+### useCategoryUsage contract (for the screens fixer, WR-06)
+
+`useCategoryUsage(householdId, categoryId, enabled): CategoryUsage` (`src/data/queries/categories.ts`):
+
+| Field | Meaning |
+|---|---|
+| `count: number` | Active rows, capped at MERGE_LIMIT. **It is 0 whenever `!isKnown`, so never act on it then.** The type is unchanged. |
+| `capped: boolean` | More rows than one merge can move (`> MERGE_ROWS_MAX` = 5999). Only meaningful when `isKnown`. |
+| `isKnown` / `known` / `isSuccess` | True only after a successful read in **this mount**. A count cached from an earlier mount is not known until it is re-read. |
+| `isUnavailable` | The read failed, or it is paused offline. The count is unknown. |
+| `isError` | The failed-read half of `isUnavailable`. |
+| `status` | One of `success`, `unavailable`, `pending`, `disabled`. |
+| `isLoading` | Enabled and still waiting, meaning neither known nor unavailable. |
+
+Rules for the screen:
+- Auto-archive only when `isKnown && count === 0 && !capped`.
+- When `isUnavailable`, offer the merge-or-archive choice, optionally with an "unavailable offline" note.
+- When the read is offline or has failed, `isSuccess === false` and `status !== 'success'`, so the prompt's existing unknown checks trip.
+
+### Other contract changes for screens
+- `useMoneyPrefs` returns `{ prefs, loading, isSuccess, isError, isFetchedAfterMount }`. Anything that decides from `prefs`, rather than just rendering it, must check `isSuccess`.
+- `useSetHomeCurrencyIfDefault(userId)` returns `(target) => Promise<boolean>`. It is a conditional, unqueued write.
+- `useDeleteTransfer().remove(leg, ctx, partner?)`: pass `partner` when both legs are in hand (IN-03).
+- `useTransferLegs` and `useTransactionsSearch` now also return `isPending`, `fetchStatus`, `isError` and `isSuccess`, so a screen can tell an offline read from a real not-found.
+- New `fetchHasRowsAfter(client, householdId, accountId, afterDate)` in `src/db/transactions.ts`: a limit-1 read for an active row dated strictly after a date. Screens WR-05 can switch the import flow's paged range read to it.
+- New `MERGE_ROWS_MAX` and `queryKeys.categoryUsage`.
+
+### Production push
+`supabase/migrations/20261007000100_series_anchor_is_new_verified.sql` must be pushed (`npm run supabase:db:push`, after the preflight). Until it is pushed, production keeps the old trusting behaviour. No client change depends on it, so the client can ship first.
 
 ## Checked and clean
 

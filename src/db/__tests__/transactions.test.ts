@@ -17,8 +17,10 @@ import {
   escapeLikeTerm,
   fetchActiveIdsByCategory,
   fetchCategorisedNames,
+  fetchHasRowsAfter,
   fetchHasRowsBefore,
   fetchTransaction,
+  fetchTransactionVersions,
   fetchTransactionsForMonth,
   fetchTransactionsSearch,
   fetchTransferCandidates,
@@ -560,6 +562,30 @@ describe('fetchTransferCandidates', () => {
   });
 });
 
+describe('fetchHasRowsAfter', () => {
+  it('asks ACTIVE_VIEW for one row of the account dated strictly after the date', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [{ id: 't1' }], error: null, status: 200 });
+
+    await expect(fetchHasRowsAfter(client, 'h1', 'a1', '2026-09-30')).resolves.toBe(true);
+    expect(client.calls.every((c) => c.table === ACTIVE_VIEW)).toBe(true);
+    expect(client.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toEqual([
+      ['household_id', 'h1'],
+      ['account_id', 'a1'],
+    ]);
+    expect(client.calls.find((c) => c.method === 'gt')?.args).toEqual(['local_date', '2026-09-30']);
+    expect(client.calls.find((c) => c.method === 'limit')?.args).toEqual([1]);
+  });
+
+  it('is false for no rows and throws a server error as a DbError', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: null, status: 200 });
+    await expect(fetchHasRowsAfter(client, 'h1', 'a1', '2026-09-30')).resolves.toBe(false);
+    client.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+    await expect(fetchHasRowsAfter(client, 'h1', 'a1', '2026-09-30')).rejects.toBeInstanceOf(DbError);
+  });
+});
+
 describe('fetchHasRowsBefore', () => {
   it("selects 'id' from ACTIVE_VIEW, eq household_id, eq account_id, lt local_date, limit 1", async () => {
     const client = createFakeSupabase();
@@ -608,6 +634,32 @@ describe('fetchTransferLegs', () => {
     const ids = Array.from({ length: TRANSFER_LEGS_MAX + 1 }, (_, i) => `tr-${i}`);
     await expect(fetchTransferLegs(client, 'h1', ids)).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(0);
+  });
+});
+
+describe('fetchTransactionVersions (W6-13 WR-01)', () => {
+  it("reads the raw table (deleted rows included) with eq household_id and in('id', ids)", async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [{ id: 't1', local_date: '2026-09-24', version: 1, rate_pending: false, deleted_at: null }], error: null, status: 200 });
+
+    await expect(fetchTransactionVersions(client, 'h1', ['t1', 't2'])).resolves.toHaveLength(1);
+    expect(client.calls.every((c) => c.table === 'transactions')).toBe(true);
+    expect(client.calls.find((c) => c.method === 'eq')?.args).toEqual(['household_id', 'h1']);
+    expect(client.calls.find((c) => c.method === 'in')?.args).toEqual(['id', ['t1', 't2']]);
+  });
+
+  it('returns [] without a call for no ids, and refuses more than TRANSFER_LEGS_MAX', async () => {
+    const client = createFakeSupabase();
+    await expect(fetchTransactionVersions(client, 'h1', [])).resolves.toEqual([]);
+    const ids = Array.from({ length: TRANSFER_LEGS_MAX + 1 }, (_, i) => `t-${i}`);
+    await expect(fetchTransactionVersions(client, 'h1', ids)).rejects.toBeInstanceOf(RangeError);
+    expect(client.calls).toHaveLength(0);
+  });
+
+  it('throws the server error as a DbError', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+    await expect(fetchTransactionVersions(client, 'h1', ['t1'])).rejects.toBeInstanceOf(DbError);
   });
 });
 

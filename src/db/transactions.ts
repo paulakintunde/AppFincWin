@@ -335,6 +335,29 @@ export async function fetchHasRowsBefore(
   return ((data as { id: string }[] | null) ?? []).length > 0;
 }
 
+/**
+ * Screens review W6-13 WR-05 follow-up: whether the account has any active row dated strictly
+ * after `afterDate` -- one limit-1 read, so an import can tell whether "today's balance" still
+ * describes the end of a statement period without paging the whole range.
+ */
+export async function fetchHasRowsAfter(
+  client: DbClient,
+  householdId: string,
+  accountId: string,
+  afterDate: string
+): Promise<boolean> {
+  const { data, error, status } = await client
+    .from(ACTIVE_VIEW)
+    .select('id')
+    .eq('household_id', householdId)
+    .eq('account_id', accountId)
+    .gt('local_date', afterDate)
+    .limit(1);
+
+  if (error) throw toDbError(error, status);
+  return ((data as { id: string }[] | null) ?? []).length > 0;
+}
+
 /** T-02-11-06: denial-of-service guard on fetchTransferLegs. */
 export const TRANSFER_LEGS_MAX = 200;
 
@@ -357,6 +380,30 @@ export async function fetchTransferLegs(
 
   if (error) throw toDbError(error, status);
   return (data as TransactionRow[] | null) ?? [];
+}
+
+/**
+ * Review W6-13 WR-01: the current id/version/deleted_at of specific rows, read from the RAW table
+ * (not the soft-delete view) so a replay can tell "landed and untouched" (version 1, live) from
+ * "landed and changed since". Used only for small, known id sets (a transfer's two legs).
+ */
+export async function fetchTransactionVersions(
+  client: DbClient,
+  householdId: string,
+  ids: readonly string[]
+): Promise<Pick<TransactionRow, 'id' | 'local_date' | 'version' | 'rate_pending' | 'deleted_at'>[]> {
+  if (ids.length === 0) return [];
+  if (ids.length > TRANSFER_LEGS_MAX) {
+    throw new RangeError(`fetchTransactionVersions: ${ids.length} ids exceeds ${TRANSFER_LEGS_MAX}`);
+  }
+  const { data, error, status } = await client
+    .from('transactions')
+    .select('id, local_date, version, rate_pending, deleted_at')
+    .eq('household_id', householdId)
+    .in('id', ids);
+
+  if (error) throw toDbError(error, status);
+  return (data as Pick<TransactionRow, 'id' | 'local_date' | 'version' | 'rate_pending' | 'deleted_at'>[] | null) ?? [];
 }
 
 /** D-14: descriptions the user has categorised before, for import's category-guess learning. */
@@ -382,6 +429,13 @@ export async function fetchCategorisedNames(
 
 /** D-36: denial-of-service guard on a category merge -- callers detect overflow via length > MERGE_LIMIT. */
 export const MERGE_LIMIT = 6000;
+
+/**
+ * Review W6-13 WR-03: the most transaction rows one merge can move. MERGE_LIMIT is the op cap of
+ * one apply_patches call (and of buildStep), and a merge always adds one op to archive the source
+ * category, so at most MERGE_LIMIT - 1 rows fit. Use this for "can this be merged" checks.
+ */
+export const MERGE_ROWS_MAX = MERGE_LIMIT - 1;
 
 /** D-36: every active row's id/version/local_date in one category, for a category merge. */
 export async function fetchActiveIdsByCategory(

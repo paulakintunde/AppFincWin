@@ -29,6 +29,9 @@ export const queryKeys = {
   // transferIds: sorted ids joined with ',' -- also nested under transactionsRoot.
   transferLegs: (householdId: string, transferIds: string) =>
     ['transactions', householdId, 'transfer-legs', transferIds] as const,
+  // W6-13 IN-01: under transactionsRoot so merges, imports, bulk deletes and undo invalidate it.
+  categoryUsage: (householdId: string, categoryId: string) =>
+    ['transactions', householdId, 'category-usage', categoryId] as const,
   importProfile: (userId: string, accountId: string, signature: string) =>
     ['import-profiles', userId, accountId, signature] as const,
 };

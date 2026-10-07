@@ -2,9 +2,10 @@
 // currency, Show cents, lead figure). Same shape as transactions.ts/accounts.ts, but writes
 // are not version-conditional -- preferences are a user's own settings row, not a shared
 // record D-18 governs (see src/db/profile.ts's header comment).
-import { useMutation } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
-import { updateMoneyPrefs, type MoneyPrefsPatch } from '@/db/profile';
+import { setHomeCurrencyIfStill, updateMoneyPrefs, type MoneyPrefsPatch } from '@/db/profile';
 import type { MoneyPrefsRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import {
@@ -17,6 +18,9 @@ import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { DEFAULT_MONEY_PREFS } from '@/data/queries/moneyPrefs';
+
+/** The server-side default new profiles are created with (20260924000200_money_prefs.sql). */
+export const SERVER_DEFAULT_CURRENCY = 'USD';
 
 export interface UpdateMoneyPrefsVars {
   userId: string;
@@ -97,4 +101,26 @@ export function useUpdateMoneyPrefs(userId: string): {
       mutation.mutate({ userId, patch: { region } });
     },
   };
+}
+
+/**
+ * W6-13 WR-07: the device-region default for a fresh profile. Unlike setHomeCurrency (an
+ * unconditional, queued patch) this is one direct conditional write: it applies only while the
+ * profile still holds SERVER_DEFAULT_CURRENCY, so a real choice -- including one made on another
+ * device after this device read the prefs -- is never overwritten. Resolves true when it applied,
+ * false when the currency had already been changed; throws (nothing written) when offline or on a
+ * server error, so the caller can try again later. Not queued on purpose: a default that lands
+ * long after sign-in could race a choice the user has made since.
+ */
+export function useSetHomeCurrencyIfDefault(userId: string): (target: string) => Promise<boolean> {
+  const qc = useQueryClient();
+  return useCallback(
+    async (target: string): Promise<boolean> => {
+      const row = await setHomeCurrencyIfStill(await writeClient(), userId, target, SERVER_DEFAULT_CURRENCY);
+      if (row) qc.setQueryData(queryKeys.moneyPrefs(userId), row);
+      else await qc.invalidateQueries({ queryKey: queryKeys.moneyPrefs(userId) });
+      return row !== null;
+    },
+    [qc, userId]
+  );
 }
