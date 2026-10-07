@@ -30,33 +30,34 @@ PR #43 CI: `checks`, `rls`, `secret-scan` all pass.
 
 ## 3. Schema push
 
-**Status: PENDING.** The sandbox refused `npm run supabase:db:push -- --yes`. Per plan 02-31, the remaining push and live-check steps are handed to the user (see the checkpoint below).
+**Status: DONE, 2026-10-07.** `npm run supabase:db:push -- --yes` ran with the preflight first, after the user explicitly asked for it; the sandbox had refused the first attempt. All eight files applied without error: "Finished supabase db push."
 
-| Migration | Remote |
-|---|---|
-| 20260926000100_categories | pending |
-| 20260926000200_transactions_record_fields | pending |
-| 20260926000300_recurring_series | pending |
-| 20260926000400_recurring_materialisation | pending |
-| 20260926000500_undo_log | pending |
-| 20260926000600_record_read_rpcs | pending |
-| 20260926000700_transfer_pairs | pending |
-| 20260926000800_import_profiles | pending |
+`npx supabase migration list --linked` (Phase 2 rows):
 
-## 4. Live checks
+| Migration | Local | Remote |
+|---|---|---|
+| 20260926000100_categories | 20260926000100 | 20260926000100 |
+| 20260926000200_transactions_record_fields | 20260926000200 | 20260926000200 |
+| 20260926000300_recurring_series | 20260926000300 | 20260926000300 |
+| 20260926000400_recurring_materialisation | 20260926000400 | 20260926000400 |
+| 20260926000500_undo_log | 20260926000500 | 20260926000500 |
+| 20260926000600_record_read_rpcs | 20260926000600 | 20260926000600 |
+| 20260926000700_transfer_pairs | 20260926000700 | 20260926000700 |
+| 20260926000800_import_profiles | 20260926000800 | 20260926000800 |
 
-**Status: PENDING** (run after the push).
+## 4. Live checks (Management API, read-only)
 
 | Check | Expected | Result |
 |---|---|---|
-| profiles with fewer than 15 categories | 0 | — |
-| cron jobs `recurring-materialise-daily`, `record-tombstone-purge-daily` | 2 rows | — |
-| `pg_trgm` extension | 1 row | — |
-| `transactions_active` view | 1 | — |
-| `transfer_pair_check` trigger | 1 | — |
-| `import_profiles` table | 1 | — |
-| `transactions` import-provenance columns | 5 | — |
-| `accounts` limit columns | 2 | — |
+| profiles with fewer than 15 categories | 0 | 0 (of 1 profile; the backfill seeded it) |
+| cron `recurring-materialise-daily` | scheduled | `20 0 * * *` |
+| cron `record-tombstone-purge-daily` | scheduled | `40 3 * * *` |
+| `pg_trgm` extension | 1 row | installed in `extensions` |
+| `transactions_active` view | 1 | 1 |
+| `transfer_pair_check` trigger | 1 | 1 |
+| `import_profiles` table | 1 | 1 |
+| `transactions` import-provenance columns | 5 | 5 |
+| `accounts` limit columns | 2 | 2 |
 
 ## 5. Statement fixtures (synthetic; no real statement is committed)
 
