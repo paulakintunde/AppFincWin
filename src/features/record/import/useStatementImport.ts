@@ -406,6 +406,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           version: r.version,
           localDate: r.local_date,
           amount: r.original_amount,
+          currency: r.original_currency,
           name: r.name,
           accountId: r.account_id,
         }));

@@ -374,7 +374,7 @@ export function buildPreview(input: PreviewInput): Preview {
 
   const payMatches = new Map(
     matchPendingPayments(
-      usable.map((u) => ({ index: u.row.index, localDate: u.localDate, amount: u.amount, name: u.row.description })),
+      usable.map((u) => ({ index: u.row.index, localDate: u.localDate, amount: u.amount, currency: u.row.currency, name: u.row.description })),
       input.pending,
       { excludeIndexes: new Set(duplicates.keys()) }
     ).map((m) => [m.index, m.pendingId] as const)
