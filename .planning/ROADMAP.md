@@ -218,9 +218,9 @@ Plans:
 - [x] 02-28-PLAN.md — Undo toast host and History screen (W7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 02-18-PLAN.md — Mutations: recurring series create/edit-from/end (W8)
-- [ ] 02-22-PLAN.md — Activity: month list, switcher, totals, projections, mark paid, transfer legs (W8)
-- [ ] 02-25-PLAN.md — Categories: manage, swatches, merge-or-archive (W8)
+- [x] 02-18-PLAN.md — Mutations: recurring series create/edit-from/end (W8)
+- [x] 02-22-PLAN.md — Activity: month list, switcher, totals, projections, mark paid, transfer legs (W8)
+- [x] 02-25-PLAN.md — Categories: manage, swatches, merge-or-archive (W8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 02-21-PLAN.md — Entry sheet recurring controls: Repeats, this one/this and future, skip, end (W9)
@@ -255,7 +255,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 28/40 plans executed
+**Plans:** 31/40 plans executed
 
 Plans:
 
