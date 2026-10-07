@@ -229,7 +229,7 @@ Plans:
 - [x] 02-26-PLAN.md — Statement import pipeline: CSV/OFX/QFX byte read, one D-40 pipeline, preview, commit input (W9)
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 02-39-PLAN.md — Statement import state machine: format confirmation, mapping, review, matches, commit, funnel (W10)
+- [x] 02-39-PLAN.md — Statement import state machine: format confirmation, mapping, review, matches, commit, funnel (W10)
 
 **Wave 11** *(blocked on Wave 10 completion)*
 - [ ] 02-27-PLAN.md — Statement import screens: account/file, format step, mapping, review with reconciliation, matches, suggestions (W11)
@@ -255,7 +255,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 35/40 plans executed
+**Plans:** 36/40 plans executed
 
 Plans:
 
