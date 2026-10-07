@@ -274,16 +274,54 @@ describe('useAddTransfer', () => {
     expect(rows[1]).toMatchObject({ original_currency: 'EUR', original_amount: 5800 });
   });
 
-  it('records no undo step (and does not throw) when a replayed insert returns no rows', async () => {
+  it('WR-01: a replayed insert that returns no rows re-reads both legs and records the step the lost first attempt never wrote', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
     fake.respondWith({ data: [], error: null, status: 201 }); // ignoreDuplicates: both rows already exist
+    fake.respondWith({
+      data: [
+        { id: 'uuid-1', local_date: '2026-09-24', version: 1, rate_pending: false, deleted_at: null },
+        { id: 'uuid-2', local_date: '2026-09-24', version: 1, rate_pending: false, deleted_at: null },
+      ],
+      error: null,
+      status: 200,
+    });
+    fake.respondWith({ data: null, error: null, status: 201 }); // undo_log insert
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddTransfer(), { wrapper: wrapper(qc) });
+    const out = result.current.add(addInput);
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'));
+    const reread = fake.calls.filter((c) => c.table === 'transactions' && c.method === 'in');
+    expect(reread.at(-1)?.args).toEqual(['id', ['uuid-1', 'uuid-2']]);
+    const step = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert')?.args[0] as {
+      id: string;
+      label_key: string;
+      ops: { id: string; expectedVersion: number }[];
+    };
+    expect(step.id).toBe(out.stepId);
+    expect(step.label_key).toBe('transferAdded');
+    expect(step.ops.map((o) => [o.id, o.expectedVersion])).toEqual([['uuid-1', 1], ['uuid-2', 1]]);
+  });
+
+  it('WR-01: records no step on a replay when either leg has changed since (no honest inverse)', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: [], error: null, status: 201 });
+    fake.respondWith({
+      data: [
+        { id: 'uuid-1', local_date: '2026-09-24', version: 2, rate_pending: false, deleted_at: null },
+        { id: 'uuid-2', local_date: '2026-09-24', version: 1, rate_pending: false, deleted_at: null },
+      ],
+      error: null,
+      status: 200,
+    });
 
     const qc = newClient();
     const { result } = await renderHook(() => useAddTransfer(), { wrapper: wrapper(qc) });
     result.current.add(addInput);
 
-    await waitFor(() => expect(fake.calls.some((c) => c.method === 'upsert')).toBe(true));
     await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'));
     expect(fake.calls.some((c) => c.table === 'undo_log')).toBe(false);
   });

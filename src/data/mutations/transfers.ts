@@ -14,7 +14,7 @@ import { buildTransferLegs, transferEditPatches, type TransferPairState } from '
 import { buildStep, inverseOfInserts, NOW_SENTINEL, planBulkPatch, type PatchValue, type UndoConflict } from '@/engine/undo';
 import { VersionConflictError } from '@/db/errors';
 import { applyPatches, type AppliedRow } from '@/db/patches';
-import { fetchTransferLegs, insertTransactionsBatch } from '@/db/transactions';
+import { fetchTransactionVersions, fetchTransferLegs, insertTransactionsBatch } from '@/db/transactions';
 import type { CustomCurrencyRow, FxLatestRow, NewTransaction, TransactionRow } from '@/db/rows';
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
@@ -321,10 +321,21 @@ export function registerTransferMutations(qc: QueryClient): void {
     mutationFn: (vars: AddTransferVars) =>
       guardSession(vars, async () => {
         const client = await writeClient();
-        const rows = await insertTransactionsBatch(client, vars.rows);
-        // A replay of an insert that already landed returns no rows (ignoreDuplicates): there
-        // is no honest version to build the inverse from, so none is recorded -- the original
-        // attempt's own step stands.
+        let rows: InsertedLeg[] = await insertTransactionsBatch(client, vars.rows);
+        // Review W6-13 WR-01: a replay of an insert that already landed returns no rows
+        // (ignoreDuplicates). The step is recorded only AFTER the insert returns, so when the
+        // first attempt's response was lost its step was never written either. Re-read both
+        // legs: if both are still live at version 1 (untouched since this action), the inverse
+        // is honest and the step is recorded now; insertUndoStep treats a duplicate step id
+        // (the first attempt did record it) as success. A changed leg gets no step.
+        if (rows.length !== vars.rows.length) {
+          const ids = vars.rows.map((r) => r.id);
+          const current = await fetchTransactionVersions(client, vars.householdId, ids);
+          const legs = ids.map((id) => current.find((r) => r.id === id));
+          if (legs.every((l) => l !== undefined && l.version === 1 && l.deleted_at === null)) {
+            rows = legs.map((l) => ({ id: l!.id, local_date: l!.local_date, version: l!.version, rate_pending: l!.rate_pending }));
+          }
+        }
         if (rows.length === vars.rows.length) {
           const step = buildStep(
             vars.stepId,

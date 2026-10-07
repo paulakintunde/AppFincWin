@@ -359,6 +359,30 @@ export async function fetchTransferLegs(
   return (data as TransactionRow[] | null) ?? [];
 }
 
+/**
+ * Review W6-13 WR-01: the current id/version/deleted_at of specific rows, read from the RAW table
+ * (not the soft-delete view) so a replay can tell "landed and untouched" (version 1, live) from
+ * "landed and changed since". Used only for small, known id sets (a transfer's two legs).
+ */
+export async function fetchTransactionVersions(
+  client: DbClient,
+  householdId: string,
+  ids: readonly string[]
+): Promise<Pick<TransactionRow, 'id' | 'local_date' | 'version' | 'rate_pending' | 'deleted_at'>[]> {
+  if (ids.length === 0) return [];
+  if (ids.length > TRANSFER_LEGS_MAX) {
+    throw new RangeError(`fetchTransactionVersions: ${ids.length} ids exceeds ${TRANSFER_LEGS_MAX}`);
+  }
+  const { data, error, status } = await client
+    .from('transactions')
+    .select('id, local_date, version, rate_pending, deleted_at')
+    .eq('household_id', householdId)
+    .in('id', ids);
+
+  if (error) throw toDbError(error, status);
+  return (data as Pick<TransactionRow, 'id' | 'local_date' | 'version' | 'rate_pending' | 'deleted_at'>[] | null) ?? [];
+}
+
 /** D-14: descriptions the user has categorised before, for import's category-guess learning. */
 export async function fetchCategorisedNames(
   client: DbClient,
