@@ -307,6 +307,15 @@ describe('TransactionSheet: transfers', () => {
     });
   });
 
+  it('S-WR-01: a leg whose partner has not loaded opens read-only, never as a one-leg edit', async () => {
+    mockLegs = [inLeg()];
+    const { getByText, queryByText, queryByLabelText } = await open({ kind: 'edit', row: inLeg() });
+    expect(getByText('Both sides of this transfer are needed to change it. They haven’t loaded yet.')).toBeTruthy();
+    expect(queryByLabelText('Amount')).toBeNull();
+    expect(queryByText('Save changes')).toBeNull();
+    expect(queryByText('Delete')).toBeNull();
+  });
+
   it('edits both legs from either leg', async () => {
     mockLegs = [outLeg(), inLeg()];
     const { getByText, getByLabelText, onClose } = await open({ kind: 'edit', row: inLeg() });

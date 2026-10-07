@@ -104,10 +104,30 @@ export function TransactionSheet({ visible, mode, onClose }: TransactionSheetPro
     }
     const out = legs.find((l) => l.transfer_id === transferId && l.original_amount < 0);
     const inn = legs.find((l) => l.transfer_id === transferId && l.original_amount > 0);
-    if (out && inn) resolved = { kind: 'edit-transfer', out, in: inn };
+    if (!out || !inn) {
+      // S-WR-01: the partner leg did not load (offline, an error, or a pair the server has not
+      // received yet). Editing or deleting one leg alone would break the pair, so the sheet
+      // stays read-only until both sides are here.
+      return (
+        <Sheet visible onDismiss={onClose} accessibilityLabel={t('record.sheet.titleEdit')}>
+          <SheetHeader title={t('record.sheet.titleEdit')} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
+          <TransferUnavailable text={t('record.sheet.transferNeedsBothSides')} />
+        </Sheet>
+      );
+    }
+    resolved = { kind: 'edit-transfer', out, in: inn };
   }
 
   return <SheetBody key={resolved.kind} mode={resolved} onClose={onClose} />;
+}
+
+function TransferUnavailable({ text }: { text: string }) {
+  const { colors, pairing } = useTheme();
+  return (
+    <Text accessibilityRole="text" style={[textRole(pairing, 'body'), { color: colors.inkMuted }]}>
+      {text}
+    </Text>
+  );
 }
 
 function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) {

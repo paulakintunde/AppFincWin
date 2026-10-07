@@ -242,6 +242,7 @@ const en = {
       transferCrossCurrency:
         'Recorded as {{amountA}} from {{accountA}} and {{amountB}} to {{accountB}} — each in its own currency.',
       transferEditBoth: 'Editing a transfer updates both sides.',
+      transferNeedsBothSides: 'Both sides of this transfer are needed to change it. They haven’t loaded yet.',
       transferDeleteConfirm:
         'Delete this transfer? Both linked entries — {{from}} and {{to}} — will be removed.',
       transferSameAccount: 'Pick two different accounts.',
