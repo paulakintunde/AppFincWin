@@ -4,7 +4,7 @@
 globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto);
 
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { CategoryRow, DbClient } from '@/db/rows';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
@@ -379,6 +379,58 @@ describe('useCategoryUsage', () => {
     const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
     await waitFor(() => expect(result.current.count).toBe(6000));
     expect(result.current.capped).toBe(true);
+  });
+
+  it('WR-06: a successful read in this mount is the only known count', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(ok([]));
+    const qc = newClient();
+    const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
+    expect(result.current.isKnown).toBe(false);
+    expect(result.current.isLoading).toBe(true);
+    await waitFor(() => expect(result.current.isKnown).toBe(true));
+    expect(result.current).toMatchObject({ count: 0, capped: false, isLoading: false, isUnavailable: false, known: true, isSuccess: true, status: 'success' });
+  });
+
+  it('WR-06: a failed read is unknown and unavailable, never a settled 0', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+    const qc = newClient();
+    const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
+    await waitFor(() => expect(result.current.isUnavailable).toBe(true));
+    expect(result.current).toMatchObject({ isKnown: false, isLoading: false, known: false, isSuccess: false, isError: true, status: 'unavailable' });
+  });
+
+  it('WR-06: an offline (paused) read is unknown and unavailable, never a settled 0', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+    try {
+      const qc = newClient();
+      const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
+      await waitFor(() => expect(result.current.isUnavailable).toBe(true));
+      expect(result.current).toMatchObject({ isKnown: false, isLoading: false, known: false, isSuccess: false, status: 'unavailable' });
+      expect(fake.calls).toHaveLength(0);
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+
+  it('WR-06: a cached count from before this mount is not "known" until it is re-read', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+    try {
+      const qc = newClient();
+      qc.setQueryData(['categories', 'usage', 'h1', 'c1'], 0);
+      const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
+      await waitFor(() => expect(result.current.isUnavailable).toBe(true));
+      expect(result.current.isKnown).toBe(false);
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 
   it('does not query while disabled', async () => {

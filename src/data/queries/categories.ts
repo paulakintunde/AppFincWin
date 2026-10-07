@@ -69,19 +69,57 @@ export function useCategoryLookup(userId?: string): CategoryLookup {
   }, [all, query.isLoading]);
 }
 
+/** W6-13 WR-06: what useCategoryUsage reports. See the contract on the hook. */
+export interface CategoryUsage {
+  /** Active rows using the category, capped at MERGE_LIMIT. 0 whenever !isKnown -- never act on it then. */
+  count: number;
+  /** More rows than one merge can move (> MERGE_ROWS_MAX). Only meaningful when isKnown. */
+  capped: boolean;
+  /** True only after a successful read in THIS mount. The only state in which count may be trusted. */
+  isKnown: boolean;
+  /** The read failed, or is paused offline: the count is unknown (not 0). */
+  isUnavailable: boolean;
+  /** Enabled and still waiting for the first answer of this mount (neither known nor unavailable). */
+  isLoading: boolean;
+  /** Aliases of isKnown for callers that test TanStack-style flags: false/non-success means unknown. */
+  known: boolean;
+  isSuccess: boolean;
+  /** The failed-read half of isUnavailable. */
+  isError: boolean;
+  status: 'success' | 'unavailable' | 'pending' | 'disabled';
+}
+
 /**
  * D-36: how many active transactions use a category, read before the user chooses merge or
  * archive. The server read is capped at MERGE_LIMIT + 1 rows; a count above MERGE_LIMIT is
  * reported as MERGE_LIMIT, and `capped` is set once the rows cannot be merged in one step
  * (more than MERGE_ROWS_MAX, W6-13 WR-03).
+ *
+ * W6-13 WR-06 contract: an unknown count is never a 0. Treat a category as unused (and archive it
+ * without asking) ONLY when `isKnown && count === 0 && !capped`. When `isUnavailable` (a failed
+ * or offline read) the caller must offer the merge-or-archive choice, not decide for the user. A
+ * count cached from an earlier mount is not "known" until it has been re-read in this one, so a
+ * persisted 0 can never auto-archive a category that has gained rows since.
  */
-export function useCategoryUsage(householdId: string | null, categoryId: string | null, enabled: boolean) {
+export function useCategoryUsage(householdId: string | null, categoryId: string | null, enabled: boolean): CategoryUsage {
+  const on = enabled && Boolean(householdId) && Boolean(categoryId);
   const query = useQuery({
     queryKey: ['categories', 'usage', householdId, categoryId] as const,
     queryFn: async () => (await fetchActiveIdsByCategory(supabase, householdId as string, categoryId as string)).length,
-    enabled: enabled && Boolean(householdId) && Boolean(categoryId),
+    enabled: on,
   });
-  const total = query.data ?? 0;
-  // WR-03: capped means "too many to merge in one step" (rows + the archive op > MERGE_LIMIT).
-  return { count: Math.min(total, MERGE_LIMIT), capped: total > MERGE_ROWS_MAX, isLoading: query.isLoading };
+  const isKnown = on && query.isSuccess && query.isFetchedAfterMount && query.fetchStatus !== 'paused';
+  const isUnavailable = on && !isKnown && (query.isError || query.fetchStatus === 'paused');
+  const total = isKnown ? query.data : 0;
+  return {
+    count: Math.min(total, MERGE_LIMIT),
+    capped: isKnown && total > MERGE_ROWS_MAX,
+    isKnown,
+    isUnavailable,
+    isLoading: on && !isKnown && !isUnavailable,
+    known: isKnown,
+    isSuccess: isKnown,
+    isError: on && query.isError,
+    status: !on ? 'disabled' : isKnown ? 'success' : isUnavailable ? 'unavailable' : 'pending',
+  };
 }
