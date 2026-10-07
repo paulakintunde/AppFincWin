@@ -391,6 +391,39 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(getToast()?.stepId).toBe('bu-step');
   });
 
+  it('S-WR-02: Mark paid on only paid rows says so, and sends nothing', async () => {
+    mockRows = [row({ id: 'g', name: 'Coffee' })];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByLabelText('Select Coffee'));
+    await fireEvent.press(screen.getByLabelText('Mark paid'));
+    expect(mockBulkPaid).not.toHaveBeenCalled();
+    expect(screen.getByText('None of the selected lines are still to come.')).toBeTruthy();
+  });
+
+  it('S-WR-02: Mark unpaid on only pending rows says so, and sends nothing', async () => {
+    mockRows = [row({ id: 'p', name: 'Phone', status: 'pending', local_date: '2026-09-28' })];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByLabelText('Select Phone'));
+    await fireEvent.press(screen.getByLabelText('Mark unpaid'));
+    expect(mockBulkUnpaid).not.toHaveBeenCalled();
+    expect(screen.getByText('None of the selected lines are paid.')).toBeTruthy();
+  });
+
+  it('S-WR-02: a bulk delete refused for its size says so', async () => {
+    mockRemove.mockImplementationOnce(() => {
+      throw new RangeError('bulk patch: 6001 rows exceeds 6000');
+    });
+    mockRows = [row({ id: 'a', name: 'Coffee' })];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByLabelText('Select Coffee'));
+    await fireEvent.press(screen.getByLabelText('Delete'));
+    await fireEvent.press(screen.getAllByText('Delete').at(-1)!);
+    expect(screen.getByText('That’s more lines than one change can hold. Select fewer.')).toBeTruthy();
+  });
+
   it('does not offer Undo when a bulk hook returns no step id', async () => {
     mockRemove.mockReturnValueOnce(null as unknown as string);
     mockRows = [row({ id: 'a', name: 'Coffee' })];
