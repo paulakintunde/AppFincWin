@@ -70,7 +70,9 @@ describe('encrypted query cache persister', () => {
     expect(raw).not.toBeNull();
     expect(raw).toMatch(/^[0-9a-f]{32}:[0-9a-f]+$/i);
     expect(raw).not.toContain('Groceries');
-    expect(raw).not.toContain('1234');
+    // Not '1234': the ciphertext is hex, so a bare digit run can appear in it by chance.
+    // A JSON key can't, and the hex-only regex above already rules out plaintext numbers.
+    expect(raw).not.toContain('original_amount');
     expect(raw).not.toContain('t1');
   });
 
