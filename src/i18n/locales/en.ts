@@ -548,6 +548,8 @@ const en = {
         'We can’t tell how this file reads its amounts. Choose how it should be read before importing.',
       candidateIn: 'Positive amounts are money in',
       candidateOut: 'Positive amounts are money out',
+      candidateBalanceOwed: 'The balance is what you owe',
+      candidateBalanceHeld: 'The balance is what the account holds',
       remembered: 'Read the same way as your last statement from this account.',
       confirm: 'Use this reading',
     },
@@ -582,6 +584,7 @@ const en = {
       a11y: 'Suggested match: this line pays the pending {{name}} bill. Mark it paid?',
     },
     matchesHeading: 'Before importing',
+    suggestionCap: 'One import can apply up to {{max}} suggestions. The rest are kept as separate lines.',
     dateFormat: 'Reading dates as {{format}}',
     dateFormatAmbiguous: 'These dates could be day-first or month-first. Pick one.',
     formats: {
@@ -590,6 +593,7 @@ const en = {
       MDY: 'MM/DD/YYYY',
     },
     decimalMark: 'Decimal mark',
+    decimalMarkAmbiguous: 'These amounts could use a point or a comma as the decimal mark. Pick one.',
     decimalPoint: 'Point (1,234.56)',
     decimalComma: 'Comma (1.234,56)',
     mappingError: {

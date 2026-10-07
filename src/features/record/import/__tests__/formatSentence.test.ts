@@ -17,7 +17,7 @@ function profile(over: Partial<FormatProfile>): FormatProfile {
   } as FormatProfile;
 }
 
-const t = (key: string, params?: Record<string, string>) => i18n.t(key, params) as string;
+const t = (key: string, params?: Record<string, string>) => String(i18n.t(key as never, params as never));
 const none = { closing: null, limit: null, overLimit: false };
 
 describe('formatSentenceKeys', () => {

@@ -991,6 +991,30 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     return converted.rows[0] ?? null;
   }, [accountById, m.accountId, m.draft, m.profile]);
 
+  /**
+   * What the format sentence quotes (D-42): the file's stated closing balance under the
+   * current reading (owed negative, held positive), the limit it is read against, and whether
+   * the amount owed is over that limit. Null until a reading is selected.
+   */
+  const formatFigures = useMemo(() => {
+    if (m.draft === null || m.profile === null) return null;
+    const account = accountById(m.accountId);
+    if (account === null) return null;
+    const own = m.profile.accountFamily === 'card' ? account.credit_limit : account.overdraft_limit;
+    const limit = m.profile.accountFamily === 'card' ? (own ?? m.profile.statedLimit) : own;
+    const converted = convertDraft({ ...m.draft, rows: [] }, m.profile, { limit: limit === null ? null : minorUnits(limit) });
+    const closing: number | null = converted.closing;
+    return {
+      closing,
+      limit: limit as number | null,
+      overLimit: limit !== null && closing !== null && closing < 0 && -closing > limit,
+      currency: m.draft.currency ?? account.currency,
+    };
+  }, [accountById, m.accountId, m.draft, m.profile]);
+
+  /** The CSV header row, so the mapping step can name each column (empty for OFX). */
+  const headers: string[] = m.prepared !== null && m.prepared.format === 'csv' ? m.prepared.csv.header : [];
+
   const statementChoices = useMemo(
     () => (m.prepared !== null && m.prepared.format !== 'csv' ? statementOptions(m.prepared.statements) : []),
     [m.prepared]
@@ -1008,6 +1032,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     candidates: m.candidates,
     rememberedNote: m.rememberedNote,
     exampleRow,
+    formatFigures,
+    headers,
     flip,
     chooseCandidate,
     confirmFormat,

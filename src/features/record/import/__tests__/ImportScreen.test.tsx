@@ -175,8 +175,8 @@ beforeEach(() => {
 });
 
 describe('ImportScreen: pick', () => {
-  it('shows the privacy line, the file helper and only the non-archived accounts', () => {
-    renderScreen();
+  it('shows the privacy line, the file helper and only the non-archived accounts', async () => {
+    await renderScreen();
     expect(screen.getByText('This file is read on your device and never uploaded.')).toBeTruthy();
     expect(screen.getByText('CSV, OFX or QFX — up to 5,000 rows (about 2MB).')).toBeTruthy();
     expect(screen.getByText('Which account is this file from?')).toBeTruthy();
@@ -185,48 +185,48 @@ describe('ImportScreen: pick', () => {
     expect(screen.queryByText('Old card')).toBeNull();
   });
 
-  it('passes the entry and account to the hook', () => {
-    renderScreen();
+  it('passes the entry and account to the hook', async () => {
+    await renderScreen();
     expect(mockUseStatementImport).toHaveBeenCalledWith({ entry: 'you', accountId: null });
   });
 
-  it('the file button is disabled until an account is chosen', () => {
-    renderScreen();
+  it('the file button is disabled until an account is chosen', async () => {
+    await renderScreen();
     expect(screen.getByRole('button', { name: 'Choose a statement file' })).toBeDisabled();
-    fireEvent.press(screen.getByText('Savings'));
+    await fireEvent.press(screen.getByText('Savings'));
     expect(mockState.setAccount).toHaveBeenCalledWith('a2');
   });
 
-  it('with an account chosen the file button starts the import', () => {
+  it('with an account chosen the file button starts the import', async () => {
     mockState = makeState({ accountId: 'a1' });
-    renderScreen();
-    fireEvent.press(screen.getByRole('button', { name: 'Choose a statement file' }));
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Choose a statement file' }));
     expect(mockState.start).toHaveBeenCalledTimes(1);
   });
 
-  it('Add an account opens the account sheet and selects the saved account', () => {
-    renderScreen();
-    fireEvent.press(screen.getByRole('button', { name: 'Add an account' }));
+  it('Add an account opens the account sheet and selects the saved account', async () => {
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Add an account' }));
     expect(screen.getByText('account-sheet:later')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('account-sheet-stub'));
+    await fireEvent.press(screen.getByTestId('account-sheet-stub'));
     expect(mockState.setAccount).toHaveBeenCalledWith('new-account');
   });
 
-  it('opens the account sheet in onboarding context when the entry is onboarding', () => {
-    render(
+  it('opens the account sheet in onboarding context when the entry is onboarding', async () => {
+    await render(
       <ThemeProvider>
         <ImportScreen entry="onboarding" accountId={null} onDone={jest.fn()} />
       </ThemeProvider>
     );
-    fireEvent.press(screen.getByRole('button', { name: 'Add an account' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Add an account' }));
     expect(screen.getByText('account-sheet:onboarding')).toBeTruthy();
   });
 });
 
 describe('ImportScreen: rejected and statement choice', () => {
-  it('too many rows shows the split-the-file message', () => {
+  it('too many rows shows the split-the-file message', async () => {
     mockState = makeState({ stage: 'rejected', rejectReason: 'too_many_rows' });
-    renderScreen();
+    await renderScreen();
     expect(screen.getByText('This file has more than 5,000 rows. Split it into smaller files and import them one at a time.')).toBeTruthy();
   });
 
@@ -236,15 +236,15 @@ describe('ImportScreen: rejected and statement choice', () => {
     ['too_big', 'This file is too large to read.'],
     ['unsupported_format', 'This file isn’t a CSV, OFX or QFX statement.'],
     ['unsupported_statement', 'This file holds an investment or loan statement, which can’t be imported yet.'],
-  ])('%s shows its copy, and Back returns to the start', (reason, copy) => {
+  ])('%s shows its copy, and Back returns to the start', async (reason, copy) => {
     mockState = makeState({ stage: 'rejected', rejectReason: reason });
-    renderScreen();
+    await renderScreen();
     expect(screen.getByText(copy)).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     expect(mockState.cancel).toHaveBeenCalledTimes(1);
   });
 
-  it('a multi-account file lists one row per statement and chooses on tap', () => {
+  it('a multi-account file lists one row per statement and chooses on tap', async () => {
     mockState = makeState({
       stage: 'choose-statement',
       statementChoices: [
@@ -252,11 +252,11 @@ describe('ImportScreen: rejected and statement choice', () => {
         { index: 1, kind: 'bank', currency: 'EUR', count: 1 },
       ],
     });
-    renderScreen();
+    await renderScreen();
     expect(screen.getByText('This file holds more than one account. Which one is this import for?')).toBeTruthy();
     expect(screen.getByText('Credit card in GBP · 12 lines')).toBeTruthy();
     expect(screen.getByText('Bank account in EUR · 1 line')).toBeTruthy();
-    fireEvent.press(screen.getByText('Bank account in EUR · 1 line'));
+    await fireEvent.press(screen.getByText('Bank account in EUR · 1 line'));
     expect(mockState.chooseStatement).toHaveBeenCalledWith(1);
   });
 });
@@ -277,7 +277,7 @@ describe('ImportScreen: format', () => {
     issues: [],
   };
 
-  it('states the reading in words with the example row, flip and confirm', () => {
+  it('states the reading in words with the example row, flip and confirm', async () => {
     mockState = makeState({
       stage: 'format',
       accountId: 'a1',
@@ -285,7 +285,7 @@ describe('ImportScreen: format', () => {
       exampleRow: example,
       formatFigures: { closing: -125000, limit: 100000, overLimit: true, currency: 'GBP' },
     });
-    renderScreen();
+    await renderScreen();
     expect(screen.getByText('Check how we read this')).toBeTruthy();
     expect(
       screen.getByText(
@@ -294,19 +294,19 @@ describe('ImportScreen: format', () => {
     ).toBeTruthy();
     expect(screen.getByText('Example row')).toBeTruthy();
     expect(screen.getByText('COFFEE SHOP')).toBeTruthy();
-    fireEvent.press(screen.getByText('Doesn’t look right? Flip the reading'));
+    await fireEvent.press(screen.getByText('Doesn’t look right? Flip the reading'));
     expect(mockState.flip).toHaveBeenCalledTimes(1);
-    fireEvent.press(screen.getByRole('button', { name: 'Use this reading' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Use this reading' }));
     expect(mockState.confirmFormat).toHaveBeenCalledTimes(1);
   });
 
-  it('the flip control names the new meaning for a screen reader', () => {
+  it('the flip control names the new meaning for a screen reader', async () => {
     mockState = makeState({ stage: 'format', accountId: 'a1', profile: profile({ positiveMeans: 'money-in' }), exampleRow: example });
-    renderScreen();
+    await renderScreen();
     expect(screen.getByLabelText('Flip the reading — read positive amounts as money out instead')).toBeTruthy();
   });
 
-  it('an ambiguous file shows the candidate readings, preselects none and blocks confirm (E-CR-04)', () => {
+  it('an ambiguous file shows the candidate readings, preselects none and blocks confirm (E-CR-04)', async () => {
     mockState = makeState({
       stage: 'format',
       accountId: 'a1',
@@ -316,16 +316,16 @@ describe('ImportScreen: format', () => {
         profile({ positiveMeans: 'money-in', balanceMeans: 'owed' }),
       ],
     });
-    renderScreen();
+    await renderScreen();
     expect(screen.getByText('We can’t tell how this file reads its amounts. Choose how it should be read before importing.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Use this reading' })).toBeDisabled();
     expect(screen.queryByText('✓')).toBeNull();
     expect(screen.queryByText('Doesn’t look right? Flip the reading')).toBeNull();
-    fireEvent.press(screen.getByLabelText(/Positive amounts are money out/));
+    await fireEvent.press(screen.getByLabelText(/Positive amounts are money out/));
     expect(mockState.chooseCandidate).toHaveBeenCalledWith(0);
   });
 
-  it('once a candidate is chosen it is marked and confirm is enabled', () => {
+  it('once a candidate is chosen it is marked and confirm is enabled', async () => {
     const chosen = profile({ positiveMeans: 'money-in', balanceMeans: 'owed', decidedBy: 'user' });
     mockState = makeState({
       stage: 'format',
@@ -333,15 +333,15 @@ describe('ImportScreen: format', () => {
       profile: chosen,
       candidates: [profile({ positiveMeans: 'money-spent' }), profile({ positiveMeans: 'money-in' })],
     });
-    renderScreen();
+    await renderScreen();
     expect(screen.getByRole('button', { name: 'Use this reading' })).not.toBeDisabled();
     expect(screen.getAllByText('✓')).toHaveLength(1);
   });
 
-  it('Cancel calls cancel()', () => {
+  it('Cancel calls cancel()', async () => {
     mockState = makeState({ stage: 'format', accountId: 'a1', profile: profile(), exampleRow: example });
-    renderScreen();
-    fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
     expect(mockState.cancel).toHaveBeenCalledTimes(1);
   });
 });
@@ -359,9 +359,9 @@ describe('ImportScreen: mapping', () => {
     decimalMark: '.',
   };
 
-  it('shows one row per role with the chosen header or Not used', () => {
+  it('shows one row per role with the chosen header or Not used', async () => {
     mockState = makeState(base);
-    renderScreen();
+    await renderScreen();
     expect(screen.getByText('Check the columns')).toBeTruthy();
     for (const role of ['Date', 'Description', 'Amount', 'Money out', 'Money in', 'Money in or out', 'Balance', 'Currency', 'Limit']) {
       expect(screen.getByText(role)).toBeTruthy();
@@ -370,60 +370,60 @@ describe('ImportScreen: mapping', () => {
     expect(screen.getAllByText('Not used').length).toBeGreaterThanOrEqual(5);
   });
 
-  it('picking a header for a role sets the mapping; picking Not used clears it', () => {
+  it('picking a header for a role sets the mapping; picking Not used clears it', async () => {
     mockState = makeState(base);
-    renderScreen();
-    fireEvent.press(screen.getByText('Amount'));
-    fireEvent.press(screen.getByLabelText('Memo'));
+    await renderScreen();
+    await fireEvent.press(screen.getByText('Amount'));
+    await fireEvent.press(screen.getByLabelText('Memo'));
     expect(mockState.setMapping).toHaveBeenCalledWith({ ...mapping, amount: 1 });
   });
 
-  it('lists mapping errors and disables Continue while any exist', () => {
+  it('lists mapping errors and disables Continue while any exist', async () => {
     mockState = makeState({ ...base, mappingErrors: ['no-date', 'duplicate-column'] });
-    renderScreen();
+    await renderScreen();
     expect(screen.getByText('Pick the date column.')).toBeTruthy();
     expect(screen.getByText('Each column can only be used once.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
   });
 
-  it('Continue calls continue() when the mapping is valid', () => {
+  it('Continue calls continue() when the mapping is valid', async () => {
     mockState = makeState(base);
-    renderScreen();
-    fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
     expect(mockState.continue).toHaveBeenCalledTimes(1);
   });
 
-  it('an ambiguous date order is asked explicitly, preselects neither, and blocks Continue (E-CR-02)', () => {
+  it('an ambiguous date order is asked explicitly, preselects neither, and blocks Continue (E-CR-02)', async () => {
     mockState = makeState({ ...base, dateAmbiguous: true, dateNeedsChoice: true });
-    renderScreen();
+    await renderScreen();
     expect(screen.getByText('These dates could be day-first or month-first. Pick one.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
-    fireEvent.press(screen.getByText('MM/DD/YYYY'));
+    await fireEvent.press(screen.getByText('MM/DD/YYYY'));
     expect(mockState.setDateFormat).toHaveBeenCalledWith('MDY');
-    fireEvent.press(screen.getByText('DD/MM/YYYY'));
+    await fireEvent.press(screen.getByText('DD/MM/YYYY'));
     expect(mockState.setDateFormat).toHaveBeenCalledWith('DMY');
   });
 
-  it('an ambiguous decimal mark is asked explicitly and blocks Continue (E-CR-02)', () => {
+  it('an ambiguous decimal mark is asked explicitly and blocks Continue (E-CR-02)', async () => {
     mockState = makeState({ ...base, decimalMark: ',', notationAmbiguous: true, notationNeedsChoice: true });
-    renderScreen();
+    await renderScreen();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
-    fireEvent.press(screen.getByText('Point (1,234.56)'));
+    await fireEvent.press(screen.getByText('Point (1,234.56)'));
     expect(mockState.setDecimalMark).toHaveBeenCalledWith('.');
   });
 
-  it('shows the remembered-reading note when the format step was skipped', () => {
+  it('shows the remembered-reading note when the format step was skipped', async () => {
     mockState = makeState({ ...base, rememberedNote: true });
-    renderScreen();
+    await renderScreen();
     expect(screen.getByText('Read the same way as your last statement from this account.')).toBeTruthy();
   });
 
-  it('Back and Cancel are wired', () => {
+  it('Back and Cancel are wired', async () => {
     mockState = makeState(base);
-    renderScreen();
-    fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     expect(mockState.back).toHaveBeenCalledTimes(1);
-    fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
     expect(mockState.cancel).toHaveBeenCalledTimes(1);
   });
 });
