@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { getToast, resetToastForTests } from '@/state/undoToast';
@@ -40,6 +40,16 @@ let mockRows: ActivityRowView[] = [];
 let mockProjections: ProjectionView[] = [];
 let mockMonths: string[] = ['2026-10', '2026-09', '2026-08'];
 const mockSheetProps = jest.fn();
+let mockSearchRows: ActivityRowView[] = [];
+const mockRemove = jest.fn((): string => 'del-step');
+const mockBulkPaid = jest.fn((): string => 'bp-step');
+const mockBulkUnpaid = jest.fn((): string => 'bu-step');
+
+jest.mock('@/data/mutations/patches', () => ({
+  useBulkDelete: () => ({ remove: mockRemove }),
+  useBulkMarkPaid: () => ({ markPaid: mockBulkPaid }),
+  useBulkMarkUnpaid: () => ({ markUnpaid: mockBulkUnpaid }),
+}));
 
 jest.mock('@/data/mutations/transactions', () => ({
   useMarkPaid: () => ({ markPaid: mockMarkPaid }),
@@ -54,6 +64,12 @@ jest.mock('@/data/queries/activity', () => ({
     refetch: jest.fn(),
   }),
   useTransactionMonths: () => ({ months: mockMonths, isLoading: false }),
+  SEARCH_MIN_CHARS: 2,
+  useTransactionsSearch: (_h: string | null, term: string) => ({
+    rows: mockSearchRows,
+    isLoading: false,
+    enabled: term.trim().length >= 2,
+  }),
 }));
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({
@@ -136,6 +152,7 @@ beforeEach(() => {
   mockRows = [];
   mockProjections = [];
   mockMonths = ['2026-10', '2026-09', '2026-08'];
+  mockSearchRows = [];
 });
 
 describe('ActivityScreen', () => {
@@ -246,5 +263,142 @@ describe('ActivityScreen', () => {
     expect(onOpenAccounts).toHaveBeenCalled();
     expect(onOpenHistory).toHaveBeenCalled();
     expect(onOpenYou).toHaveBeenCalled();
+  });
+});
+
+describe('ActivityScreen search, filters and bulk select', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  type Screen = Awaited<ReturnType<typeof renderScreen>>;
+  const type = async (screen: Screen, placeholder: string, text: string) => {
+    await fireEvent.changeText(screen.getByPlaceholderText(placeholder), text);
+    await act(async () => {
+      jest.advanceTimersByTime(250);
+    });
+  };
+  const enterSelect = async (screen: Screen) => {
+    await fireEvent.press(screen.getByText('Select'));
+  };
+
+  it('searches the current month by name', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' }), row({ id: 'b', name: 'Rent' })];
+    const screen = await renderScreen();
+    await type(screen, 'Search September 2026', 'cof');
+    expect(screen.getByText('Coffee')).toBeTruthy();
+    expect(screen.queryByText('Rent')).toBeNull();
+  });
+
+  it('searches every month through the server rows as one flat list', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' })];
+    mockSearchRows = [
+      row({ id: 's1', name: 'Coffee beans', local_date: '2026-03-02' }),
+      row({ id: 's2', name: 'Coffee shop', local_date: '2026-07-02' }),
+    ];
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByText('Every month'));
+    await type(screen, 'Search every month', 'coffee');
+    expect(screen.getByText('Coffee beans')).toBeTruthy();
+    expect(screen.getByText('Coffee shop')).toBeTruthy();
+    expect(screen.queryByText('Paid')).toBeNull();
+  });
+
+  it('shows Nothing matches when a search finds nothing', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' })];
+    const screen = await renderScreen();
+    await type(screen, 'Search September 2026', 'zzz');
+    expect(screen.getByText('Nothing matches.')).toBeTruthy();
+  });
+
+  it('filters by direction, then clears back to everything', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' }), row({ id: 'b', name: 'Salary', original_amount: 200000, amountHome: 200000 })];
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByLabelText('Filter'));
+    await fireEvent.press(screen.getByText('Money in'));
+    await fireEvent.press(screen.getByText('Show results'));
+    expect(screen.queryByText('Coffee')).toBeNull();
+    expect(screen.getByText('Salary')).toBeTruthy();
+    expect(screen.getByLabelText('Filter').props.accessibilityState.selected).toBe(true);
+    await fireEvent.press(screen.getByLabelText('Filter'));
+    await fireEvent.press(screen.getByText('Clear filters'));
+    expect(screen.getByText('Coffee')).toBeTruthy();
+  });
+
+  it('selects rows with checkbox semantics and never lets a projection be selected', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' })];
+    mockProjections = [
+      { key: 's1:2026-09-30', seriesId: 's1', date: '2026-09-30', name: 'Netflix', amount: -999, currency: 'GBP', categoryId: null, accountId: 'a1', amountHome: -999 },
+    ];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    const box = screen.getByLabelText('Select Coffee');
+    expect(box.props.accessibilityRole).toBe('checkbox');
+    await fireEvent.press(box);
+    expect(screen.getByText('1 selected')).toBeTruthy();
+    expect(screen.queryByLabelText('Select Netflix')).toBeNull();
+    await fireEvent.press(screen.getByText('Done'));
+    expect(screen.queryByTestId('bulk-bar')).toBeNull();
+  });
+
+  it('asks to select first when an action is used with nothing selected', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' })];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByLabelText('Delete'));
+    expect(screen.getByText('Select some rows first.')).toBeTruthy();
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
+  it('bulk delete confirms with the count, passes transfer legs, and shows one undoable destructive toast', async () => {
+    mockRows = [
+      row({ id: 'a', name: 'Coffee' }),
+      row({ id: 'tl', name: null, transfer_id: 't1', original_amount: -5000, counterpartAccountId: 'a2', category_id: 'tc' }),
+      row({ id: 'z', name: 'Rent' }),
+    ];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByLabelText('Select Coffee'));
+    await fireEvent.press(screen.getByLabelText('Select Transfer to Savings'));
+    await fireEvent.press(screen.getByLabelText('Delete'));
+    expect(screen.getByText('Delete 2 transactions?')).toBeTruthy();
+    expect(mockRemove).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getAllByText('Delete').at(-1)!);
+    expect(mockRemove).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ id: 'a' }), expect.objectContaining({ id: 'tl', transfer_id: 't1' })]),
+      { householdId: 'h1', ownerId: 'u1' }
+    );
+    const toast = getToast();
+    expect(toast?.kind).toBe('destructive');
+    expect(toast?.stepId).toBe('del-step');
+    expect(screen.queryByTestId('bulk-bar')).toBeNull();
+  });
+
+  it('bulk Mark paid and Mark unpaid act on the selection with ordinary toasts', async () => {
+    mockRows = [
+      row({ id: 'p', name: 'Phone', status: 'pending', local_date: '2026-09-28' }),
+      row({ id: 'g', name: 'Coffee' }),
+    ];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByLabelText('Select Phone'));
+    await fireEvent.press(screen.getByLabelText('Mark paid'));
+    expect(mockBulkPaid).toHaveBeenCalledWith([expect.objectContaining({ id: 'p' })], { householdId: 'h1', ownerId: 'u1' }, '2026-09-25');
+    expect(getToast()?.kind).toBe('ordinary');
+    expect(getToast()?.stepId).toBe('bp-step');
+    await fireEvent.press(screen.getByLabelText('Select Coffee'));
+    await fireEvent.press(screen.getByLabelText('Mark unpaid'));
+    expect(mockBulkUnpaid).toHaveBeenCalled();
+    expect(getToast()?.stepId).toBe('bu-step');
+  });
+
+  it('does not offer Undo when a bulk hook returns no step id', async () => {
+    mockRemove.mockReturnValueOnce(null as unknown as string);
+    mockRows = [row({ id: 'a', name: 'Coffee' })];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByLabelText('Select Coffee'));
+    await fireEvent.press(screen.getByLabelText('Delete'));
+    await fireEvent.press(screen.getAllByText('Delete').at(-1)!);
+    expect(getToast()?.stepId ?? null).toBeNull();
   });
 });
