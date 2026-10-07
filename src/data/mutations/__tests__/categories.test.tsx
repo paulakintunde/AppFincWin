@@ -386,9 +386,18 @@ describe('useCategoryUsage', () => {
     mockActiveClient = fake;
     fake.respondWith(ok([]));
     const qc = newClient();
-    const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
-    expect(result.current.isKnown).toBe(false);
-    expect(result.current.isLoading).toBe(true);
+    // Record the first render: it always happens before the fetch settles. Reading result.current after
+    // `await renderHook` raced the fake response and was flaky.
+    const renders: { isKnown: boolean; isLoading: boolean }[] = [];
+    const { result } = await renderHook(
+      () => {
+        const r = useCategoryUsage('h1', 'c1', true);
+        renders.push({ isKnown: r.isKnown, isLoading: r.isLoading });
+        return r;
+      },
+      { wrapper: wrapper(qc) },
+    );
+    expect(renders[0]).toEqual({ isKnown: false, isLoading: true });
     await waitFor(() => expect(result.current.isKnown).toBe(true));
     expect(result.current).toMatchObject({ count: 0, capped: false, isLoading: false, isUnavailable: false, known: true, isSuccess: true, status: 'success' });
   });
