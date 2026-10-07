@@ -592,6 +592,10 @@ const en = {
     matchesHeading: 'Before importing',
     suggestionCap_one: 'One import can apply up to {{count}} suggestion. The rest are kept as separate lines.',
     suggestionCap_other: 'One import can apply up to {{count}} suggestions. The rest are kept as separate lines.',
+    suggestionCapOver_one: 'More suggestions are accepted than one import can apply (up to {{count}}). Decline some to import.',
+    suggestionCapOver_other: 'More suggestions are accepted than one import can apply (up to {{count}}). Decline some to import.',
+    transfersUnavailable: 'Transfers can be linked once your categories have loaded.',
+    commitFailed: 'This import couldn’t start, so nothing was written. Your choices are kept.',
     dateFormat: 'Reading dates as {{format}}',
     dateFormatAmbiguous: 'These dates could be day-first or month-first. Pick one.',
     formats: {

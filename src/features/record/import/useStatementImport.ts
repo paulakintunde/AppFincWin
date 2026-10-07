@@ -48,6 +48,7 @@ import { getAnalytics, type EventName, type EventProps } from '@/services/analyt
 import { useDeviceLocale } from '@/services/locale/deviceLocale';
 import { supabase } from '@/services/supabase';
 import { showToast } from '@/state/undoToast';
+import { acceptedSuggestionCount, maxAcceptedSuggestions } from './suggestionCap';
 import {
   buildPreview,
   inferCsvReading,
@@ -126,6 +127,13 @@ interface Machine {
 }
 
 const NONE = new Map<never, never>();
+
+/**
+ * Why a commit wrote nothing (S-WR-03, S-WR-04): more accepted suggestions than one import can
+ * hold; transfers asked for while the transfer category is unknown; or the write was refused
+ * before anything was queued. Each leaves the user's choices in place to adjust and retry.
+ */
+export type CommitProblem = 'suggestionCap' | 'transfersUnavailable' | 'failed';
 
 /** The mapping roles whose cells decide the decimal mark (S-CR-06). */
 const AMOUNT_ROLES = ['amount', 'debit', 'credit', 'balance', 'limit'] as const;
@@ -261,6 +269,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const createSeries = useCreateSeries();
 
   const [m, setM] = useState<Machine>(() => initialMachine(initialAccountId));
+  /** S-WR-03/S-WR-04: why the last commit wrote nothing; cleared by the next attempt. */
+  const [commitProblem, setCommitProblem] = useState<CommitProblem | null>(null);
   const run = useRef(0); // bumped on every restart or cancel, so a late read is dropped
   const committing = useRef(false);
 
@@ -771,6 +781,15 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     [isIncluded, m.payAnswers, m.preview]
   );
 
+  // S-WR-03: the cap is enforced here, not only by the buttons, and re-checked at commit, since
+  // going Back to Review and including more lines lowers it after suggestions were accepted.
+  const acceptedSuggestions = acceptedSuggestionCount(transferRows, payMatchRows);
+  const suggestionCap = maxAcceptedSuggestions(counts.included);
+  const roomForSuggestion = acceptedSuggestions < suggestionCap;
+  const overSuggestionCap = acceptedSuggestions > suggestionCap;
+  // S-WR-04: a link or counter leg needs the transfer category; without it nothing is offered.
+  const transfersUnavailable = lookup.transferCategoryId === null;
+
   const rowAt = useCallback((index: number): PreviewRow | undefined => m.preview?.rows.find((r) => r.index === index), [m.preview]);
 
   const linkTransfer = useCallback(
@@ -781,6 +800,9 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       const info = m.existingById.get(existingId);
       if (!offered || info === undefined || info.transfer_id !== null) return;
       for (const [other, id] of m.links) if (id === existingId && other !== index) return; // one stored leg, one link (E-WR-06)
+      if (transfersUnavailable) return;
+      const answered = m.transferAnswers.get(index);
+      if (answered !== 'linked' && answered !== 'orphan' && !roomForSuggestion) return;
       track('transfer_suggestion_answered', { accepted: true, kind: 'pair' });
       setM((prev) => ({
         ...prev,
@@ -788,7 +810,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         transferAnswers: new Map(prev.transferAnswers).set(index, 'linked'),
       }));
     },
-    [m.existingById, m.links, rowAt]
+    [m.existingById, m.links, m.transferAnswers, roomForSuggestion, rowAt, transfersUnavailable]
   );
 
   const dismissTransfer = useCallback(
@@ -812,6 +834,9 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       const other = accountById(otherAccountId);
       if (row === undefined || row.transfer?.kind !== 'orphan' || own === null || other === null) return;
       if (other.id === own.id || other.archived_at !== null) return;
+      if (transfersUnavailable) return;
+      const answered = m.transferAnswers.get(index);
+      if (answered !== 'linked' && answered !== 'orphan' && !roomForSuggestion) return;
 
       let counterAmount: number | null = null;
       let accepted = true;
@@ -850,7 +875,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         };
       });
     },
-    [accountById, device.locale, device.separators, m.accountId, m.orphans, rowAt]
+    [accountById, device.locale, device.separators, m.accountId, m.orphans, m.transferAnswers, roomForSuggestion, rowAt, transfersUnavailable]
   );
 
   const dismissOrphan = useCallback(
@@ -871,10 +896,11 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       const pm = rowAt(index)?.payMatch;
       if (pm === undefined || pm === null) return;
       if (accepted && m.existingById.get(pm.pendingId)?.status !== 'pending') return;
+      if (accepted && m.payAnswers.get(index) !== 'accepted' && !roomForSuggestion) return;
       track('pay_match_answered', { accepted });
       setM((prev) => ({ ...prev, payAnswers: new Map(prev.payAnswers).set(index, accepted ? 'accepted' : 'dismissed') }));
     },
-    [m.existingById, rowAt]
+    [m.existingById, m.payAnswers, roomForSuggestion, rowAt]
   );
   const acceptPayMatch = useCallback((index: number): void => answerPayMatch(index, true), [answerPayMatch]);
   const dismissPayMatch = useCallback((index: number): void => answerPayMatch(index, false), [answerPayMatch]);
@@ -889,6 +915,17 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     // T-02-39-01: nothing is written under a reading the user has not selected (D-42).
     if ((m.stage !== 'review' && m.stage !== 'matches') || committing.current) return;
     if (preview === null || profile === null || draft === null || account === null || householdId === null || userId === null) return;
+    if (overSuggestionCap) {
+      // S-WR-03: never sent -- the finalize and its undo step would exceed MAX_UNDO_OPS.
+      setCommitProblem('suggestionCap');
+      if (m.stage === 'review') patch({ stage: 'matches' });
+      return;
+    }
+    if (transfersUnavailable && (m.links.size > 0 || m.orphans.size > 0)) {
+      setCommitProblem('transfersUnavailable');
+      if (m.stage === 'review') patch({ stage: 'matches' });
+      return;
+    }
 
     const included = new Set(preview.rows.filter(isIncluded).map((r) => r.index));
     const payMatches = new Set([...m.payAnswers].flatMap(([i, a]) => (a === 'accepted' ? [i] : [])));
@@ -926,10 +963,15 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         rows: built.rows,
         finalize: built.finalize,
       });
-    } catch (err) {
+    } catch {
+      // S-WR-04: refused before anything was queued (the hook validates synchronously). An
+      // exception thrown from an onPress would crash the app and lose the import; instead the
+      // user's choices stay and they can adjust and try again.
       committing.current = false;
-      throw err;
+      setCommitProblem('failed');
+      return;
     }
+    setCommitProblem(null);
 
     const count = built.rows.length + built.finalize.markPaid.length;
     showToast({ kind: 'destructive', text: { key: 'undo.label.imported', params: { count, n: count } }, stepId });
@@ -959,7 +1001,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       suggestions,
       committedRows: ordinary.map((r) => ({ id: r.id, localDate: r.local_date, categoryId: r.category_id ?? null })),
     });
-  }, [accountById, accounts, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, importCommit, isIncluded, lookup.transferCategoryId, m, patch]);
+  }, [accountById, accounts, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, transfersUnavailable]);
 
   const acceptSuggestion = useCallback(
     (key: string): void => {
@@ -1109,8 +1151,12 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     dismissOrphan,
     acceptPayMatch,
     dismissPayMatch,
+    overSuggestionCap,
+    suggestionCap,
+    transfersUnavailable,
     // commit and what follows
     commit,
+    commitProblem,
     suggestions: m.suggestions,
     acceptSuggestion,
     dismissSuggestion,

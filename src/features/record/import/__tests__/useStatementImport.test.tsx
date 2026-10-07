@@ -8,11 +8,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { AccountRow } from '@/db/rows';
 import { useStatementImport } from '../useStatementImport';
+import * as suggestionCap from '../suggestionCap';
 
 const mockTrack = jest.fn();
 const mockCommit = jest.fn();
 const mockCreateSeries = jest.fn((..._args: unknown[]) => 'series-step');
 const mockShowToast = jest.fn();
+let mockTransferCategoryId: string | null = 'cat-transfer';
 let mockUuid = 0;
 
 jest.mock('@/services/files/pickStatement', () => ({ pickStatementBytes: jest.fn() }));
@@ -46,7 +48,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
 }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
 jest.mock('@/data/queries/categories', () => ({
-  useCategoryLookup: () => ({ builtinIds: new Map(), transferCategoryId: 'cat-transfer', loading: false }),
+  useCategoryLookup: () => ({ builtinIds: new Map(), transferCategoryId: mockTransferCategoryId, loading: false }),
 }));
 jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
 jest.mock('@/data/queries/activity', () => ({
@@ -130,6 +132,8 @@ function trackedNames(): string[] {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.restoreAllMocks();
+  mockTransferCategoryId = 'cat-transfer';
   mockUuid = 0;
   fetchImportProfile.mockResolvedValue(null);
   dbTx.fetchTransactionsInRange.mockResolvedValue([]);
@@ -681,6 +685,78 @@ describe('useStatementImport: matches', () => {
     const counter = rows.find((r: { account_id: string }) => r.account_id === 'acc-eur');
     expect(counter.original_amount).toBe(35000);
     expect(counter.transfer_id).toBeTruthy();
+  });
+
+  it('S-WR-03: an accept beyond the cap is refused by the hook, not only the buttons', async () => {
+    dbTx.fetchTransferCandidates.mockResolvedValue([candidateLeg({})]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const rent = rowIndex(result, 'RENT PAYMENT');
+    jest.spyOn(suggestionCap, 'maxAcceptedSuggestions').mockReturnValue(0);
+    await act(async () => {
+      result.current.continue();
+    });
+    await act(async () => {
+      result.current.linkTransfer(rent, 'leg-1');
+    });
+    expect(result.current.transferRows[0]!.answer).toBeNull();
+  });
+
+  it('S-WR-03: commit re-checks the cap and writes nothing when it has gone stale', async () => {
+    dbTx.fetchTransferCandidates.mockResolvedValue([candidateLeg({})]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const rent = rowIndex(result, 'RENT PAYMENT');
+    await act(async () => {
+      result.current.continue();
+    });
+    await act(async () => {
+      result.current.linkTransfer(rent, 'leg-1');
+    });
+    expect(result.current.transferRows[0]!.answer).toBe('linked');
+    // More lines were included since: the cap is now below what was accepted.
+    jest.spyOn(suggestionCap, 'maxAcceptedSuggestions').mockReturnValue(0);
+    await act(async () => {
+      result.current.back();
+    });
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit).not.toHaveBeenCalled();
+    expect(result.current.overSuggestionCap).toBe(true);
+    expect(result.current.stage).toBe('matches');
+  });
+
+  it('S-WR-04: with no transfer category a link is refused and commit never throws', async () => {
+    mockTransferCategoryId = null;
+    dbTx.fetchTransferCandidates.mockResolvedValue([candidateLeg({})]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const rent = rowIndex(result, 'RENT PAYMENT');
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(result.current.transfersUnavailable).toBe(true);
+    await act(async () => {
+      result.current.linkTransfer(rent, 'leg-1');
+    });
+    expect(result.current.transferRows[0]!.answer).toBeNull();
+  });
+
+  it('S-WR-04: a commit that throws moves to a recoverable state instead of crashing', async () => {
+    mockCommit.mockImplementationOnce(() => {
+      throw new TypeError('useImportCommit: transferCategoryId is required when links are present');
+    });
+    const { result } = await reachReview(csv(CSV_DECIDED), 'csv');
+    await act(async () => {
+      expect(() => result.current.commit()).not.toThrow();
+    });
+    expect(result.current.commitProblem).toBe('failed');
+    expect(result.current.stage).toBe('review');
+    expect(mockShowToast).not.toHaveBeenCalled();
+    // The guard is released, so the user can try again.
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit).toHaveBeenCalledTimes(2);
+    expect(result.current.commitProblem).toBeNull();
   });
 
   it('dismissing an orphan keeps the row as an ordinary import', async () => {
