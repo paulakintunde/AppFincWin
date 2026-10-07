@@ -232,7 +232,7 @@ Plans:
 - [x] 02-39-PLAN.md — Statement import state machine: format confirmation, mapping, review, matches, commit, funnel (W10)
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 02-27-PLAN.md — Statement import screens: account/file, format step, mapping, review with reconciliation, matches, suggestions (W11)
+- [x] 02-27-PLAN.md — Statement import screens: account/file, format step, mapping, review with reconciliation, matches, suggestions (W11)
 
 **Wave 12** *(blocked on Wave 11 completion)*
 - [ ] 02-29-PLAN.md — Routes for Record screens + app-wide Undo toast host (W12; needs Phase 0 00-17/00-18 and 01-15)
@@ -255,7 +255,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 36/40 plans executed
+**Plans:** 37/40 plans executed
 
 Plans:
 
