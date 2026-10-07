@@ -125,6 +125,14 @@ describe('withDirection', () => {
     );
     expect(s).toMatchObject({ direction: 'transfer', status: 'paid', categoryId: null, paymentType: null });
   });
+
+  it('S-WR-06: to transfer drops a hidden currency override; the from-leg uses its account currency', () => {
+    const currencyOf = (id: string) => ({ a1: 'GBP', a3: 'EUR' })[id];
+    const s = withDirection({ ...newOut(), currency: 'EUR', toAccountId: 'a2', toCurrency: 'GBP', amountInText: '9' }, 'transfer', currencyOf);
+    expect(s.currency).toBe('GBP');
+    // GBP to GBP is one amount: no stale received-amount figure is kept.
+    expect(s.amountInText).toBe('');
+  });
 });
 
 describe('validateForm', () => {

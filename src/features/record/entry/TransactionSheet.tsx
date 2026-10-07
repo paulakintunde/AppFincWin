@@ -441,7 +441,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                       : 'record.sheet.directionTransfer'
                 )}
                 selected={state.direction === d}
-                onPress={() => setState((s) => withDirection(s, d))}
+                onPress={() => setState((s) => withDirection(s, d, formCtx.accountCurrency))}
               />
             ))}
           </View>

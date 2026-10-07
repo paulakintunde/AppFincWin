@@ -131,9 +131,19 @@ export function withDate(state: FormState, localDate: string, today: string): Fo
   return { ...state, localDate, status: defaultStatusFor(localDate, today) };
 }
 
-export function withDirection(state: FormState, direction: Direction): FormState {
+/**
+ * @param accountCurrency S-WR-06: the currency of an account by id. A transfer's Currency row
+ * is hidden and its from-leg is in the from-account's own currency, so any override picked for
+ * an expense or income is dropped on the way to Transfer.
+ */
+export function withDirection(
+  state: FormState,
+  direction: Direction,
+  accountCurrency?: (accountId: string) => string | undefined
+): FormState {
   if (direction === 'transfer') {
-    return { ...state, direction, status: 'paid', categoryId: null, paymentType: null };
+    const currency = (state.accountId !== null ? accountCurrency?.(state.accountId) : undefined) ?? state.currency;
+    return dropStaleAmountIn({ ...state, direction, status: 'paid', categoryId: null, paymentType: null, currency });
   }
   const allowed = PAYMENT_TYPES[direction] as readonly PaymentType[];
   const paymentType = state.paymentType !== null && allowed.includes(state.paymentType) ? state.paymentType : null;

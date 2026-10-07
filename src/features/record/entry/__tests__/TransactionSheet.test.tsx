@@ -316,6 +316,21 @@ describe('TransactionSheet: transfers', () => {
     expect(queryByText('Delete')).toBeNull();
   });
 
+  it('S-WR-06: a currency picked for an expense does not carry into a transfer from a GBP account', async () => {
+    const { getByText, getByLabelText, queryByLabelText } = await open({ kind: 'new', direction: 'out' });
+    await fireEvent.press(getByLabelText('Currency'));
+    await fireEvent.press(getByText('EUR · Euro'));
+    await fireEvent.press(getByText('Transfer'));
+    await fireEvent.press(getByLabelText('To account'));
+    await fireEvent.press(getByLabelText('Savings'));
+    // Current (GBP) to Savings (GBP): same currency, so no second amount is asked for.
+    expect(queryByLabelText('Amount received')).toBeNull();
+    await fireEvent.changeText(getByLabelText('Amount'), '10');
+    await fireEvent.press(getByText('Add transfer'));
+    expect(mockAddTransfer).toHaveBeenCalledTimes(1);
+    expect((mockAddTransfer.mock.calls[0] as unknown[])[0]).toMatchObject({ from: { id: 'a1', currency: 'GBP' }, to: { currency: 'GBP' } });
+  });
+
   it('edits both legs from either leg', async () => {
     mockLegs = [outLeg(), inLeg()];
     const { getByText, getByLabelText, onClose } = await open({ kind: 'edit', row: inLeg() });
