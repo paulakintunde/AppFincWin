@@ -14,86 +14,86 @@ jest.mock('react-native-safe-area-context', () => ({
 jest.setTimeout(30000);
 
 describe('useActivitySelection', () => {
-  it('toggles, counts and clears', () => {
-    const { result } = renderHook(() => useActivitySelection(['a', 'b', 'c']));
+  it('toggles, counts and clears', async () => {
+    const { result } = await renderHook(() => useActivitySelection(['a', 'b', 'c']));
     expect(result.current.active).toBe(false);
-    act(() => result.current.enter());
-    act(() => result.current.toggle('a'));
-    act(() => result.current.toggle('b'));
+    await act(() => result.current.enter());
+    await act(() => result.current.toggle('a'));
+    await act(() => result.current.toggle('b'));
     expect(result.current.count).toBe(2);
     expect(result.current.isSelected('a')).toBe(true);
-    act(() => result.current.toggle('a'));
+    await act(() => result.current.toggle('a'));
     expect(result.current.isSelected('a')).toBe(false);
-    act(() => result.current.clear());
+    await act(() => result.current.clear());
     expect(result.current.count).toBe(0);
   });
 
-  it('selectAll selects every given id; exit clears and deactivates', () => {
-    const { result } = renderHook(() => useActivitySelection(['a', 'b']));
-    act(() => result.current.enter());
-    act(() => result.current.selectAll(['a', 'b']));
+  it('selectAll selects every given id; exit clears and deactivates', async () => {
+    const { result } = await renderHook(() => useActivitySelection(['a', 'b']));
+    await act(() => result.current.enter());
+    await act(() => result.current.selectAll(['a', 'b']));
     expect(result.current.count).toBe(2);
-    act(() => result.current.exit());
+    await act(() => result.current.exit());
     expect(result.current.active).toBe(false);
     expect(result.current.count).toBe(0);
   });
 
-  it('drops selected ids that are no longer in the visible list', () => {
-    const { result, rerender } = renderHook(({ ids }: { ids: string[] }) => useActivitySelection(ids), {
+  it('drops selected ids that are no longer in the visible list', async () => {
+    const { result, rerender } = await renderHook(({ ids }: { ids: string[] }) => useActivitySelection(ids), {
       initialProps: { ids: ['a', 'b', 'c'] },
     });
-    act(() => result.current.enter());
-    act(() => result.current.selectAll(['a', 'b', 'c']));
-    rerender({ ids: ['a', 'c'] });
+    await act(() => result.current.enter());
+    await act(() => result.current.selectAll(['a', 'b', 'c']));
+    await rerender({ ids: ['a', 'c'] });
     expect(result.current.count).toBe(2);
     expect(result.current.isSelected('b')).toBe(false);
   });
 });
 
-function wrap(ui: React.ReactElement) {
-  return render(<ThemeProvider>{ui}</ThemeProvider>);
+async function wrap(ui: React.ReactElement) {
+  return await render(<ThemeProvider>{ui}</ThemeProvider>);
 }
 
 describe('SearchBar', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  it('shows scope-specific placeholders and switches scope', () => {
+  it('shows scope-specific placeholders and switches scope', async () => {
     const onScope = jest.fn();
-    const screen = wrap(
+    const screen = await wrap(
       <SearchBar term="" scope="month" monthLabel="September 2026" onTermChange={jest.fn()} onScopeChange={onScope} />
     );
     expect(screen.getByPlaceholderText('Search September 2026')).toBeTruthy();
-    fireEvent.press(screen.getByText('Every month'));
+    await fireEvent.press(screen.getByText('Every month'));
     expect(onScope).toHaveBeenCalledWith('all');
   });
 
-  it('uses the every-month placeholder in all scope', () => {
-    const screen = wrap(
+  it('uses the every-month placeholder in all scope', async () => {
+    const screen = await wrap(
       <SearchBar term="" scope="all" monthLabel="September 2026" onTermChange={jest.fn()} onScopeChange={jest.fn()} />
     );
     expect(screen.getByPlaceholderText('Search every month')).toBeTruthy();
   });
 
-  it('debounces typing by 250 ms', () => {
+  it('debounces typing by 250 ms', async () => {
     const onTerm = jest.fn();
-    const screen = wrap(
+    const screen = await wrap(
       <SearchBar term="" scope="month" monthLabel="September 2026" onTermChange={onTerm} onScopeChange={jest.fn()} />
     );
-    fireEvent.changeText(screen.getByPlaceholderText('Search September 2026'), 'cof');
+    await fireEvent.changeText(screen.getByPlaceholderText('Search September 2026'), 'cof');
     expect(onTerm).not.toHaveBeenCalled();
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(250);
     });
     expect(onTerm).toHaveBeenCalledWith('cof');
   });
 
-  it('clears the term at once with a labelled button', () => {
+  it('clears the term at once with a labelled button', async () => {
     const onTerm = jest.fn();
-    const screen = wrap(
+    const screen = await wrap(
       <SearchBar term="cof" scope="month" monthLabel="September 2026" onTermChange={onTerm} onScopeChange={jest.fn()} />
     );
-    fireEvent.press(screen.getByLabelText('Clear search'));
+    await fireEvent.press(screen.getByLabelText('Clear search'));
     expect(onTerm).toHaveBeenCalledWith('');
   });
 });
@@ -107,10 +107,10 @@ const accounts = [
   { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null },
 ] as never;
 
-function renderFilter(value: ActivityFilter = EMPTY_FILTER) {
+async function renderFilter(value: ActivityFilter = EMPTY_FILTER) {
   const onApply = jest.fn();
   const onClose = jest.fn();
-  const screen = wrap(
+  const screen = await wrap(
     <FilterSheet
       visible
       value={value}
@@ -125,13 +125,13 @@ function renderFilter(value: ActivityFilter = EMPTY_FILTER) {
 }
 
 describe('FilterSheet', () => {
-  it('applies category, account and direction picks', () => {
-    const { screen, onApply } = renderFilter();
-    fireEvent.press(screen.getByText('Groceries'));
-    fireEvent.press(screen.getByText('Uncategorised'));
-    fireEvent.press(screen.getByText('Savings'));
-    fireEvent.press(screen.getByText('Money out'));
-    fireEvent.press(screen.getByText('Show results'));
+  it('applies category, account and direction picks', async () => {
+    const { screen, onApply } = await renderFilter();
+    await fireEvent.press(screen.getByText('Groceries'));
+    await fireEvent.press(screen.getByText('Uncategorised'));
+    await fireEvent.press(screen.getByText('Savings'));
+    await fireEvent.press(screen.getByText('Money out'));
+    await fireEvent.press(screen.getByText('Show results'));
     expect(onApply).toHaveBeenCalledWith({
       categoryIds: ['c1', null],
       accountIds: ['a2'],
@@ -141,40 +141,40 @@ describe('FilterSheet', () => {
     });
   });
 
-  it('offers Transfers as a direction', () => {
-    const { screen, onApply } = renderFilter();
-    fireEvent.press(screen.getByText('Transfers'));
-    fireEvent.press(screen.getByText('Show results'));
+  it('offers Transfers as a direction', async () => {
+    const { screen, onApply } = await renderFilter();
+    await fireEvent.press(screen.getByText('Transfers'));
+    await fireEvent.press(screen.getByText('Show results'));
     expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ direction: 'transfers' }));
   });
 
-  it('parses amounts with the strict parser into home minor units', () => {
-    const { screen, onApply } = renderFilter();
-    fireEvent.changeText(screen.getByLabelText('At least'), '12.50');
-    fireEvent.changeText(screen.getByLabelText('At most'), '100');
-    fireEvent.press(screen.getByText('Show results'));
+  it('parses amounts with the strict parser into home minor units', async () => {
+    const { screen, onApply } = await renderFilter();
+    await fireEvent.changeText(screen.getByLabelText('At least'), '12.50');
+    await fireEvent.changeText(screen.getByLabelText('At most'), '100');
+    await fireEvent.press(screen.getByText('Show results'));
     expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ amountMin: 1250, amountMax: 10000 }));
   });
 
-  it('shows the parser message for invalid input and does not apply', () => {
-    const { screen, onApply } = renderFilter();
-    fireEvent.changeText(screen.getByLabelText('At least'), 'abc');
-    fireEvent.press(screen.getByText('Show results'));
+  it('shows the parser message for invalid input and does not apply', async () => {
+    const { screen, onApply } = await renderFilter();
+    await fireEvent.changeText(screen.getByLabelText('At least'), 'abc');
+    await fireEvent.press(screen.getByText('Show results'));
     expect(onApply).not.toHaveBeenCalled();
     expect(screen.getByRole('alert')).toBeTruthy();
   });
 
-  it('refuses a minimum above the maximum', () => {
-    const { screen, onApply } = renderFilter();
-    fireEvent.changeText(screen.getByLabelText('At least'), '50');
-    fireEvent.changeText(screen.getByLabelText('At most'), '10');
-    fireEvent.press(screen.getByText('Show results'));
+  it('refuses a minimum above the maximum', async () => {
+    const { screen, onApply } = await renderFilter();
+    await fireEvent.changeText(screen.getByLabelText('At least'), '50');
+    await fireEvent.changeText(screen.getByLabelText('At most'), '10');
+    await fireEvent.press(screen.getByText('Show results'));
     expect(onApply).not.toHaveBeenCalled();
   });
 
-  it('Clear filters resets to the empty filter', () => {
-    const { screen, onApply } = renderFilter({ ...EMPTY_FILTER, direction: 'in', amountMin: 500 });
-    fireEvent.press(screen.getByText('Clear filters'));
+  it('Clear filters resets to the empty filter', async () => {
+    const { screen, onApply } = await renderFilter({ ...EMPTY_FILTER, direction: 'in', amountMin: 500 });
+    await fireEvent.press(screen.getByText('Clear filters'));
     expect(onApply).toHaveBeenCalledWith(EMPTY_FILTER);
   });
 });
