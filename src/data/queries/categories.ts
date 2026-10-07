@@ -87,6 +87,8 @@ export interface CategoryUsage {
   /** The failed-read half of isUnavailable. */
   isError: boolean;
   status: 'success' | 'unavailable' | 'pending' | 'disabled';
+  /** Re-reads the count: the remove prompt's Try again when the count is unavailable. */
+  refetch: () => Promise<unknown>;
 }
 
 /**
@@ -121,5 +123,6 @@ export function useCategoryUsage(householdId: string | null, categoryId: string 
     isSuccess: isKnown,
     isError: on && query.isError,
     status: !on ? 'disabled' : isKnown ? 'success' : isUnavailable ? 'unavailable' : 'pending',
+    refetch: query.refetch,
   };
 }

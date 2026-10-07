@@ -42,6 +42,8 @@ let mockMonths: string[] = ['2026-10', '2026-09', '2026-08'];
 const mockSheetProps = jest.fn();
 let mockSearchRows: ActivityRowView[] = [];
 let mockSearchLoading = false;
+let mockSearchPaused = false;
+let mockSearchError = false;
 const mockRemove = jest.fn((): string => 'del-step');
 const mockBulkPaid = jest.fn((): string => 'bp-step');
 const mockBulkUnpaid = jest.fn((): string => 'bu-step');
@@ -66,11 +68,19 @@ jest.mock('@/data/queries/activity', () => ({
   }),
   useTransactionMonths: () => ({ months: mockMonths, isLoading: false }),
   SEARCH_MIN_CHARS: 2,
-  useTransactionsSearch: (_h: string | null, term: string) => ({
-    rows: mockSearchRows,
-    isLoading: mockSearchLoading,
-    enabled: term.trim().length >= 2,
-  }),
+  useTransactionsSearch: (_h: string | null, term: string) => {
+    const enabled = term.trim().length >= 2;
+    const pending = enabled && (mockSearchLoading || mockSearchPaused) && !mockSearchError;
+    return {
+      rows: mockSearchRows,
+      isLoading: enabled && mockSearchLoading,
+      enabled,
+      isPending: pending,
+      fetchStatus: pending ? (mockSearchPaused ? 'paused' : 'fetching') : 'idle',
+      isError: enabled && mockSearchError,
+      isSuccess: enabled && !pending && !mockSearchError,
+    };
+  },
 }));
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({
@@ -155,6 +165,8 @@ beforeEach(() => {
   mockMonths = ['2026-10', '2026-09', '2026-08'];
   mockSearchRows = [];
   mockSearchLoading = false;
+  mockSearchPaused = false;
+  mockSearchError = false;
 });
 
 describe('ActivityScreen', () => {
@@ -327,6 +339,32 @@ describe('ActivityScreen search, filters and bulk select', () => {
     await type(screen, 'Search every month', 'coffee');
     expect(screen.queryByText('Nothing matches.')).toBeNull();
     expect(screen.getByText('Searching every month…')).toBeTruthy();
+  });
+
+  it('I-03: an every-month search paused offline says so, not Nothing matches', async () => {
+    mockSearchPaused = true;
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByText('Every month'));
+    await type(screen, 'Search every month', 'coffee');
+    expect(screen.queryByText('Nothing matches.')).toBeNull();
+    expect(screen.queryByText('Searching every month…')).toBeNull();
+    expect(screen.getByText('Every-month search needs a connection. It runs once you’re back online.')).toBeTruthy();
+  });
+
+  it('I-03: an every-month search that failed says so, not Nothing matches', async () => {
+    mockSearchError = true;
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByText('Every month'));
+    await type(screen, 'Search every month', 'coffee');
+    expect(screen.queryByText('Nothing matches.')).toBeNull();
+    expect(screen.getByText('Every-month search couldn’t finish.')).toBeTruthy();
+  });
+
+  it('I-03: an every-month search that succeeded with no rows says Nothing matches', async () => {
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByText('Every month'));
+    await type(screen, 'Search every month', 'coffee');
+    expect(screen.getByText('Nothing matches.')).toBeTruthy();
   });
 
   it('S-IN-05: deleting a selected transfer leg says both sides go', async () => {

@@ -271,9 +271,16 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
           getItemType={getActivityItemType}
           renderItem={renderItem}
           ListEmptyComponent={
-            flat && search.isLoading ? (
-              // S-IN-04: an in-flight server search is not an empty result.
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('activity.searching')}</Text>
+            flat && !search.isSuccess ? (
+              // S-IN-04 / I-03: only a server search that succeeded can say "Nothing matches.";
+              // one in flight, paused offline or failed says which.
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+                {search.isPending && search.fetchStatus === 'paused'
+                  ? t('activity.searchOffline')
+                  : search.isError
+                    ? t('activity.searchFailed')
+                    : t('activity.searching')}
+              </Text>
             ) : searching || filtering ? (
               <EmptyState heading={t('activity.noMatchHeading')} body={t('activity.noMatchBody')} />
             ) : (

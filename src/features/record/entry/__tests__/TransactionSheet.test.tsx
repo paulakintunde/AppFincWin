@@ -20,6 +20,7 @@ const mockEditTransfer = jest.fn((): string | null => 'tre-step');
 const mockRemoveTransfer = jest.fn(() => 'trd-step');
 const mockTrack = jest.fn();
 let mockLegs: TransactionRow[] = [];
+let mockLegsRead: Record<string, unknown> = { isPending: false, fetchStatus: 'idle', isError: false, isSuccess: true };
 let mockRegion = 'GB';
 let mockTransferCat: string | null = 'tc';
 let mockNoAccounts = false;
@@ -75,7 +76,7 @@ jest.mock('@/data/queries/currencyOptions', () => ({
   }),
 }));
 jest.mock('@/data/queries/activity', () => ({
-  useTransferLegs: () => ({ legs: mockLegs, isLoading: false }),
+  useTransferLegs: () => ({ legs: mockLegs, isLoading: false, ...mockLegsRead }),
 }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({
@@ -126,6 +127,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   resetToastForTests();
   mockLegs = [];
+  mockLegsRead = { isPending: false, fetchStatus: 'idle', isError: false, isSuccess: true };
   mockRegion = 'GB';
   mockTransferCat = 'tc';
   mockNoAccounts = false;
@@ -315,10 +317,25 @@ describe('TransactionSheet: transfers', () => {
     });
   });
 
-  it('S-WR-01: a leg whose partner has not loaded opens read-only, never as a one-leg edit', async () => {
+  it('S-WR-01: a leg whose partner is not on the server opens read-only, never as a one-leg edit', async () => {
     mockLegs = [inLeg()];
     const { getByText, queryByText, queryByLabelText } = await open({ kind: 'edit', row: inLeg() });
-    expect(getByText('Both sides of this transfer are needed to change it. They haven’t loaded yet.')).toBeTruthy();
+    expect(getByText('Both sides of this transfer are needed to change it. The other side isn’t on the server yet.')).toBeTruthy();
+    expect(queryByLabelText('Amount')).toBeNull();
+    expect(queryByText('Save changes')).toBeNull();
+    expect(queryByText('Delete')).toBeNull();
+  });
+
+  it.each([
+    ['offline (paused)', { isPending: true, fetchStatus: 'paused', isError: false, isSuccess: false }, 'Both sides of this transfer are needed to change it. You’re offline, so the other side can’t load yet.'],
+    ['still loading', { isPending: true, fetchStatus: 'fetching', isError: false, isSuccess: false }, 'Loading both sides of this transfer…'],
+    ['a failed read', { isPending: false, fetchStatus: 'idle', isError: true, isSuccess: false }, 'Both sides of this transfer are needed to change it. The other side couldn’t be loaded.'],
+  ])('I-03: a partner that is %s is shown as such, not as missing', async (_label, read, text) => {
+    mockLegs = [];
+    mockLegsRead = read;
+    const { getByText, queryByText, queryByLabelText } = await open({ kind: 'edit', row: inLeg() });
+    expect(getByText(text)).toBeTruthy();
+    expect(queryByText('Both sides of this transfer are needed to change it. The other side isn’t on the server yet.')).toBeNull();
     expect(queryByLabelText('Amount')).toBeNull();
     expect(queryByText('Save changes')).toBeNull();
     expect(queryByText('Delete')).toBeNull();
@@ -389,6 +406,10 @@ describe('TransactionSheet: transfers', () => {
     const deletes = getAllByText('Delete');
     await fireEvent.press(deletes[deletes.length - 1]!);
     expect(mockRemoveTransfer).toHaveBeenCalledTimes(1);
+    // I-04 (data IN-03): both legs are in hand, so the partner goes too and its observed version is checked.
+    const [leg, , partner] = mockRemoveTransfer.mock.calls[0] as unknown as [{ id: string }, unknown, { id: string } | undefined];
+    expect(leg.id).toBe('o1');
+    expect(partner?.id).toBe('i1');
     expect(mockRemove).not.toHaveBeenCalled();
     expect(getToast()).toMatchObject({
       kind: 'destructive',

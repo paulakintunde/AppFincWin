@@ -303,6 +303,21 @@ Rules for the screen:
 ### Production push
 `supabase/migrations/20261007000100_series_anchor_is_new_verified.sql` must be pushed (`npm run supabase:db:push`, after the preflight). Until it is pushed, production keeps the old trusting behaviour. No client change depends on it, so the client can ship first.
 
+## Integration pass (2026-10-07)
+
+This pass ran after both fix branches were merged (base `0d1a990`). The screens now use the new data contracts, and IN-04 is closed. Each item was test-first: the new test failed on the old code, then the fix landed in its own commit. There are no server changes and no migrations.
+
+| Item | Status | Commit | What changed |
+|---|---|---|---|
+| I-01 RemoveCategoryPrompt on the `useCategoryUsage` contract (WR-06, screens WR-07) | fixed | `ed2f682` | The prompt auto-archives only when `isKnown && count === 0 && !capped`. When the count is `isUnavailable` or not known, it shows "Can't tell yet" with Merge and Archive both available, plus Try again. `useCategoryUsage` now returns `refetch` to support Try again. Merge is safe without a count because the merge write re-reads the rows and refuses more than one step can move. The existing alias checks stay. The call site no longer casts, so the hook's type is checked against the prompt's view. |
+| I-02 Import OFX opening fallback (screens WR-05) | fixed | `0f5e4b2` | `useStatementImport` calls `fetchHasRowsAfter(…, periodEnd)` instead of the paged read up to `9999-12-31`. A failed read still drops the fallback. It calls the db function directly, the same way it calls `fetchHasRowsBefore`. |
+| I-03 Offline vs not-found (screens WR-01, IN-04) | fixed | `2ad048a` | When the partner leg is missing, the transfer sheet now says why: loading, offline (`isPending` with a paused fetch), a failed read, or a successful read without the partner ("isn't on the server yet"). It stays read-only in every case. Every-month search shows "Nothing matches." only after a successful read. Otherwise it shows a searching, offline or "couldn't finish" line. |
+| I-04 Transfer delete passes the partner (IN-03) | fixed | `60cc55f` | `TransactionSheet` calls `removeTransfer(pair.out, ctx, pair.in)`. It is the only `useDeleteTransfer` caller. |
+| I-05 `useMoneyPrefs` consumers that decide (WR-07) | fixed | `24518ef` | `useRecordContext.ready` now requires `isSuccess`. It gates a new account's default currency (`AccountSheet.canSubmit`) and the Activity loading state. The dev sync probe, which writes `prefs.home_currency`, also requires `isSuccess`. `useDeviceHomeCurrencyDefault` already checked it. The other consumers only display the prefs. |
+| I-06 Import pay-match currency (IN-04) | fixed | `94d7905` | `PendingOccurrence` and `PayMatchRow` now have `currency`. `matchPendingPayments` skips any candidate whose currency differs. `importPipeline` passes the line's currency and `useStatementImport` passes the pending row's `original_currency`. `engine/recurring` stays at 100% and stays pure. |
+
+Verification: `npm run typecheck` is clean, `npm run depcruise` finds no violations, and `npx eslint` on the changed files shows 0 errors. `npx jest --ci --coverage src/engine` passed 1270 tests, with every FULL engine folder at 100%. `npx jest --ci src/features src/data src/db` passed 1133 tests in 67 suites.
+
 ## Checked and clean
 
 - `undo.ts`: refusal is an outcome, not a throw. Failed-write records hold only ids. Undo and rollback share `WRITE_SCOPE`.

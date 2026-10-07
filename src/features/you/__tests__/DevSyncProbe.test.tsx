@@ -14,10 +14,14 @@ jest.mock('@/data/queries/household', () => ({
   useHouseholdId: () => ({ data: 'household-1' }),
 }));
 
+let mockPrefsSuccess = true;
 jest.mock('@/data/queries/moneyPrefs', () => ({
   useMoneyPrefs: () => ({
     prefs: { home_currency: 'USD', show_cents: false, lead_figure: 'home', region: null },
     loading: false,
+    isSuccess: mockPrefsSuccess,
+    isError: !mockPrefsSuccess,
+    isFetchedAfterMount: mockPrefsSuccess,
   }),
 }));
 
@@ -48,9 +52,18 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockAddAccount.mockReturnValue('new-account-id');
   mockAccountsData = [];
+  mockPrefsSuccess = true;
 });
 
 describe('DevSyncProbe', () => {
+  it('I-05: writes nothing while the prefs are only the placeholder (a failed or offline read)', async () => {
+    mockPrefsSuccess = false;
+    const { getByText } = await renderProbe();
+    fireEvent.press(getByText('Queue a test entry (dev)'));
+    expect(mockAddAccount).not.toHaveBeenCalled();
+    expect(mockAddTransaction).not.toHaveBeenCalled();
+  });
+
   it('renders the dev-only label', async () => {
     const { getByText } = await renderProbe();
     expect(getByText('Queue a test entry (dev)')).toBeTruthy();

@@ -1,8 +1,9 @@
 // D-36: removing a category is never a delete. An unused category archives straight away;
 // one in use says how many transactions use it and offers Merge into another category or
-// Archive, both undoable. Merge is disabled while the count is loading and when it is capped
-// (more than the 6000-row merge limit, which the write would refuse anyway); Archive stays
-// available because it keeps every transaction on the category.
+// Archive, both undoable. When the count cannot be read (offline, an error) the same two choices
+// are offered under a "can't tell yet" note, with Try again. Merge is disabled while the count is
+// loading and when it is known to be capped (more than the 6000-row merge limit, which the write
+// would refuse anyway); Archive stays available because it keeps every transaction on the category.
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { CategoryRow } from '@/db/rows';
@@ -23,15 +24,18 @@ import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 
 /**
- * S-WR-07: what this prompt reads from useCategoryUsage. Written defensively so it holds both
- * for the hook as it stands (count / capped / isLoading only) and for the data-layer change
- * that exposes an explicit unknown state (data WR-06): any of isError, isSuccess === false,
- * status other than 'success', known === false, or a missing / null count means "can't tell".
- * Re-check against the final hook once both fixes are merged.
+ * S-WR-07 / integration I-01: what this prompt reads from useCategoryUsage's CategoryUsage
+ * contract (data W6-13 WR-06). The count is trusted only when `isKnown`; `isUnavailable` (a
+ * failed or offline read) and every other not-known state mean "can't tell". The TanStack-style
+ * aliases (isError, isSuccess === false, a non-success status, known === false) and a missing or
+ * null count are still read as unknown, as a second line of defence. CategoryUsage must stay
+ * assignable to this view; the call site checks that without a cast.
  */
 interface UsageView {
   count?: number | null;
   capped?: boolean;
+  isKnown?: boolean;
+  isUnavailable?: boolean;
   isLoading?: boolean;
   isError?: boolean;
   isSuccess?: boolean;
@@ -43,8 +47,10 @@ interface UsageView {
 type UsageState = { kind: 'loading' } | { kind: 'unknown' } | { kind: 'known'; count: number; capped: boolean };
 
 export function readUsage(usage: UsageView): UsageState {
+  if (usage.isUnavailable === true) return { kind: 'unknown' };
   if (usage.isLoading === true) return { kind: 'loading' };
   const unknown =
+    usage.isKnown === false ||
     usage.isError === true ||
     usage.isSuccess === false ||
     (usage.status !== undefined && usage.status !== 'success') ||
@@ -72,7 +78,7 @@ function PromptBody({ category, onDone, onCancel }: Omit<RemoveCategoryPromptPro
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const lookup = useCategoryLookup(rc.userId ?? undefined);
-  const usageView = useCategoryUsage(rc.householdId, category.id, true) as UsageView;
+  const usageView: UsageView = useCategoryUsage(rc.householdId, category.id, true);
   const usage = readUsage(usageView);
   const { archive } = useArchiveCategory();
   const { merge } = useMergeCategory();
@@ -80,8 +86,10 @@ function PromptBody({ category, onDone, onCancel }: Omit<RemoveCategoryPromptPro
   const autoArchived = useRef(false);
 
   const name = categoryName(category, t);
-  // Only a count known to be zero archives straight away; an unknown one (offline, an error,
-  // no household yet) never does -- the in-use prompt is shown with Merge disabled instead.
+  // Only isKnown && count === 0 && !capped archives straight away. An unknown count (offline, an
+  // error, no household yet, a 0 cached from an earlier mount) never does: the "can't tell yet"
+  // prompt offers Merge or Archive as the user's choice, plus Try again. Merge is safe without a
+  // count because the merge write re-reads the rows and refuses more than one step can move.
   const settledUnused = usage.kind === 'known' && usage.count === 0 && !usage.capped;
 
   const doArchive = () => {
@@ -148,7 +156,7 @@ function PromptBody({ category, onDone, onCancel }: Omit<RemoveCategoryPromptPro
           <Pill
             label={t('categories.removeMerge')}
             variant="secondary"
-            disabled={usage.kind !== 'known' || capped}
+            disabled={loading || capped}
             onPress={() => setPicking(true)}
           />
           <Pill label={t('categories.removeArchive')} variant="danger" disabled={loading} onPress={doArchive} />

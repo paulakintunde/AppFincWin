@@ -88,30 +88,29 @@ export function TransactionSheet({ visible, mode, onClose }: TransactionSheetPro
   const t = useT();
   const rc = useRecordContext();
   const transferId = mode.kind === 'edit' ? mode.row.transfer_id : null;
-  const { legs, isLoading } = useTransferLegs(rc.householdId, transferId ? [transferId] : []);
+  const legsRead = useTransferLegs(rc.householdId, transferId ? [transferId] : []);
+  const { legs } = legsRead;
 
   if (!visible) return null;
 
   // D-51: opening either leg of a transfer edits the pair, so wait for both legs.
   let resolved: EntryMode = mode;
   if (transferId) {
-    if (isLoading) {
-      return (
-        <Sheet visible onDismiss={onClose} accessibilityLabel={t('record.sheet.titleEdit')}>
-          <SheetHeader title={t('record.sheet.titleEdit')} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
-        </Sheet>
-      );
-    }
     const out = legs.find((l) => l.transfer_id === transferId && l.original_amount < 0);
     const inn = legs.find((l) => l.transfer_id === transferId && l.original_amount > 0);
     if (!out || !inn) {
-      // S-WR-01: the partner leg did not load (offline, an error, or a pair the server has not
-      // received yet). Editing or deleting one leg alone would break the pair, so the sheet
-      // stays read-only until both sides are here.
+      // S-WR-01: without both legs the sheet stays read-only; editing or deleting one leg alone
+      // would break the pair. I-03: say why -- still loading, offline, a failed read, or a read
+      // that succeeded without the partner (a pair the server has not received yet).
+      let text: string = t('record.sheet.transferNeedsBothSides');
+      if (legsRead.isPending && legsRead.fetchStatus === 'paused') text = t('record.sheet.transferLegsOffline');
+      else if (legsRead.isPending) text = t('record.sheet.transferLegsLoading');
+      else if (legsRead.isError) text = t('record.sheet.transferLegsFailed');
+      else if (legsRead.isSuccess) text = t('record.sheet.transferPartnerMissing');
       return (
         <Sheet visible onDismiss={onClose} accessibilityLabel={t('record.sheet.titleEdit')}>
           <SheetHeader title={t('record.sheet.titleEdit')} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
-          <TransferUnavailable text={t('record.sheet.transferNeedsBothSides')} />
+          <TransferUnavailable text={text} />
         </Sheet>
       );
     }
@@ -385,7 +384,9 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     setConfirmDelete(false);
     if (pair) {
       const labelName = nameOf(pair.in.account_id);
-      const stepId = removeTransfer(pair.out as TransferLegRow, { ownerId: rc.userId, labelName });
+      // I-04 (data IN-03): both legs are in hand, so pass the partner and its observed version
+      // is checked too -- a concurrent edit to the other side is refused, not deleted silently.
+      const stepId = removeTransfer(pair.out as TransferLegRow, { ownerId: rc.userId, labelName }, pair.in as TransferLegRow);
       showToast({ kind: 'destructive', text: undoLabelText('transferDeleted', { name: labelName }), stepId });
       onClose();
       return;

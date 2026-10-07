@@ -29,6 +29,7 @@ import { fetchImportProfile } from '@/db/importProfiles';
 import type { AccountRow, TransactionRow } from '@/db/rows';
 import {
   fetchCategorisedNames,
+  fetchHasRowsAfter,
   fetchHasRowsBefore,
   fetchTransactionsInRange,
   fetchTransferCandidates,
@@ -127,9 +128,6 @@ interface Machine {
 }
 
 const NONE = new Map<never, never>();
-
-/** The open end of a "dated after" range read (S-WR-05). */
-const LAST_LOCAL_DATE = '9999-12-31';
 
 /**
  * Why a commit wrote nothing (S-WR-03, S-WR-04): more accepted suggestions than one import can
@@ -386,10 +384,9 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           const before = await attempt(() => fetchHasRowsBefore(supabase, householdId, accountId, periodStart));
           const anyInside = stored.some((r) => r.local_date >= periodStart && r.local_date <= periodEnd);
           if (before.ok && before.value && !anyInside) {
-            const after = await attempt(() =>
-              fetchTransactionsInRange(supabase, householdId, { from: addDays(periodEnd, 1), toInclusive: LAST_LOCAL_DATE, accountId })
-            );
-            if (after.ok && after.value.length === 0) storedOpeningForFile = balances.get(accountId)?.balance ?? null;
+            // I-02: one limit-1 read for any active row dated strictly after the period.
+            const after = await attempt(() => fetchHasRowsAfter(supabase, householdId, accountId, periodEnd));
+            if (after.ok && !after.value) storedOpeningForFile = balances.get(accountId)?.balance ?? null;
           }
         }
         if (token !== run.current) return;
@@ -409,6 +406,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           version: r.version,
           localDate: r.local_date,
           amount: r.original_amount,
+          currency: r.original_currency,
           name: r.name,
           accountId: r.account_id,
         }));
