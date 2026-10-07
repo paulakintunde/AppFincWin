@@ -522,6 +522,7 @@ describe('useDeleteTransfer', () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
     fake.respondWith({ data: [fullRow({ id: 'o1', version: 2 })], error: null, status: 200 });
+    fake.respondWith({ data: null, error: null, status: 200 }); // WR-02: this delete's step was never recorded
 
     const qc = newClient();
     const { result } = await renderHook(() => useDeleteTransfer(), { wrapper: wrapper(qc) });
@@ -532,6 +533,23 @@ describe('useDeleteTransfer', () => {
       expect.objectContaining({ entityId: 'transfer:T1', kind: 'conflict', attempted: { transfer_id: 'T1', action: 'delete' } })
     );
     expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
+  });
+
+  it('WR-02: a replay whose first attempt landed (no live legs, step recorded) succeeds without a false conflict', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: [], error: null, status: 200 }); // both legs already soft-deleted
+    fake.respondWith({ data: { id: 'uuid-0' }, error: null, status: 200 }); // the step exists
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useDeleteTransfer(), { wrapper: wrapper(qc) });
+    const stepId = result.current.remove(outLeg(), { ownerId: 'user-1', labelName: 'x' });
+
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'));
+    const lookup = fake.calls.filter((c) => c.table === 'undo_log');
+    expect(lookup.find((c) => c.method === 'eq')?.args).toEqual(['id', stepId]);
+    expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
+    expect(recordFailedWrite).not.toHaveBeenCalled();
   });
 
   it('a version conflict from apply_patches records one conflict failed write', async () => {

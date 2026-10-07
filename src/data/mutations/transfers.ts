@@ -14,6 +14,7 @@ import { buildTransferLegs, transferEditPatches, type TransferPairState } from '
 import { buildStep, inverseOfInserts, NOW_SENTINEL, planBulkPatch, type PatchValue, type UndoConflict } from '@/engine/undo';
 import { VersionConflictError } from '@/db/errors';
 import { applyPatches, type AppliedRow } from '@/db/patches';
+import { undoStepExists } from '@/db/undoLog';
 import { fetchTransactionVersions, fetchTransferLegs, insertTransactionsBatch } from '@/db/transactions';
 import type { CustomCurrencyRow, FxLatestRow, NewTransaction, TransactionRow } from '@/db/rows';
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
@@ -261,8 +262,13 @@ function registerDeleteTransfer(qc: QueryClient): void {
         const fetched = await fetchTransferLegs(client, vars.householdId, [vars.transferId]);
         const pair = fetched.filter((r) => r.transfer_id === vars.transferId);
         // A pair that is not exactly two live rows (the other leg already deleted, or this one)
-        // changed elsewhere: refuse rather than half-delete.
+        // changed elsewhere: refuse rather than half-delete -- unless this is a replay of this
+        // same delete whose first attempt landed and lost its response (review W6-13 WR-02).
+        // apply_patches writes the step in the same transaction as the deletes, so the step id
+        // existing proves the delete already applied; the server's own replay key is never
+        // reached here because there are no live legs left to send.
         if (pair.length !== 2 || !pair.some((r) => r.id === vars.leg.id)) {
+          if (await undoStepExists(client, vars.stepId)) return [];
           throw new VersionConflictError('transactions', vars.leg.id, null);
         }
         const items = pair.map((row) => {
