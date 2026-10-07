@@ -3,7 +3,7 @@
 // helpers -- same harness as queries.test.tsx: '@/services/supabase' is mocked to a
 // FakeSupabase instance so no hook here ever touches the real client.
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { AccountRow, CategoryRow, DbClient, FxLatestRow, RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import { convertMinor, EUR_PER_EUR, minorUnits, parseRate } from '@/engine/money';
@@ -23,6 +23,7 @@ import {
   useMonthView,
   useTransactionMonths,
   useTransactionsSearch,
+  useTransferLegs,
 } from '../activity';
 
 jest.mock('@/services/supabase', () => {
@@ -485,6 +486,42 @@ describe('useTransactionsSearch', () => {
     expect(result.current.enabled).toBe(true);
     expect(fakeClient.calls.find((c) => c.method === 'ilike')?.args).toEqual(['name', '%gro%']);
     expect(result.current.rows).toHaveLength(1);
+  });
+});
+
+describe('read state for offline vs not-found (W6-13 screens WR-01 / IN-04)', () => {
+  afterEach(() => onlineManager.setOnline(true));
+
+  it('useTransactionsSearch: offline is pending and paused, never a settled empty result', async () => {
+    onlineManager.setOnline(false);
+    const { result } = await renderHook(() => useTransactionsSearch('h1', 'groceries', 'USD', '2026-09-25'), {
+      wrapper: wrapper(newClient()),
+    });
+    await waitFor(() => expect(result.current.fetchStatus).toBe('paused'));
+    expect(result.current).toMatchObject({ isPending: true, isSuccess: false, isError: false, rows: [] });
+  });
+
+  it('useTransactionsSearch: a successful empty read is isSuccess', async () => {
+    fakeClient.respondWith({ data: [], error: null, status: 200 }); // fxLatest
+    fakeClient.respondWith({ data: [], error: null, status: 200 }); // search
+    const { result } = await renderHook(() => useTransactionsSearch('h1', 'groceries', 'USD', '2026-09-25'), {
+      wrapper: wrapper(newClient()),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current).toMatchObject({ isPending: false, fetchStatus: 'idle', rows: [] });
+  });
+
+  it('useTransferLegs: offline is pending and paused; a failed read is isError', async () => {
+    onlineManager.setOnline(false);
+    const offline = await renderHook(() => useTransferLegs('h1', ['T1']), { wrapper: wrapper(newClient()) });
+    await waitFor(() => expect(offline.result.current.fetchStatus).toBe('paused'));
+    expect(offline.result.current).toMatchObject({ isPending: true, isSuccess: false, legs: [] });
+
+    onlineManager.setOnline(true);
+    fakeClient.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+    const failed = await renderHook(() => useTransferLegs('h1', ['T2']), { wrapper: wrapper(newClient()) });
+    await waitFor(() => expect(failed.result.current.isError).toBe(true));
+    expect(failed.result.current.isSuccess).toBe(false);
   });
 });
 
