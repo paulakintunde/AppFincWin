@@ -19,6 +19,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
+import { EmptyState } from '@/ui/EmptyState';
 import { Screen } from '@/ui/Screen';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { AccountBalanceBlock } from './AccountBalanceBlock';
@@ -63,7 +64,16 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
     [markPaid, rc.userId, rc.today]
   );
 
-  if (!account) return <Screen>{null}</Screen>;
+  // S-IN-10: while the list loads, nothing; once it has loaded without this id, say so.
+  if (!account) {
+    return (
+      <Screen>
+        {accountsData === undefined ? null : (
+          <EmptyState heading={t('accounts.notFoundHeading')} body={t('accounts.notFoundBody')} />
+        )}
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -76,7 +86,7 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
           <Pill label={t('accounts.importCsv')} variant="secondary" onPress={() => onImport(account.id)} />
           <Pill label={t('accounts.sheet.titleEdit')} variant="secondary" onPress={() => setEditing(true)} />
         </View>
-        {lines.map((row) => (
+        {lines.map((row, i) => (
           <ActivityRow
             key={row.id}
             row={row}
@@ -86,6 +96,7 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
             homeCurrency={rc.homeCurrency}
             onPress={(r) => setSheetMode({ kind: 'edit', row: r })}
             onMarkPaid={onMarkPaid}
+            cardPosition={lines.length === 1 ? 'only' : i === 0 ? 'first' : i === lines.length - 1 ? 'last' : 'middle'}
           />
         ))}
       </ScrollView>

@@ -201,6 +201,7 @@ describe('filters', () => {
       name: null,
       note: null,
       transfer_id: null,
+      status: 'paid',
       ...overrides,
     };
   }
@@ -250,7 +251,21 @@ describe('filters', () => {
       expect(filterRows(rows, { ...EMPTY_FILTER, amountMin: null, amountMax: 60 })).toEqual([rows[1]]);
     });
 
+    it('unpaidOnly keeps only pending rows and composes with the other filters', () => {
+      const mixed: FilterRow[] = [
+        row({ account_id: 'a', original_amount: -500, status: 'pending' }),
+        row({ account_id: 'a', original_amount: -700, status: 'paid' }),
+        row({ account_id: 'b', original_amount: -900, status: 'pending' }),
+        row({ account_id: 'a', original_amount: 400, status: 'pending' }),
+        row({ account_id: 'a', original_amount: -300, status: 'skipped' }),
+      ];
+      expect(filterRows(mixed, { ...EMPTY_FILTER, unpaidOnly: true })).toEqual([mixed[0], mixed[2], mixed[3]]);
+      expect(filterRows(mixed, { ...EMPTY_FILTER, unpaidOnly: true, accountIds: ['a'], direction: 'out' })).toEqual([mixed[0]]);
+      expect(filterRows(mixed, { ...EMPTY_FILTER, unpaidOnly: false })).toEqual(mixed);
+    });
+
     const filterRowArb = fc.record({
+      status: fc.constantFrom('pending', 'paid', 'skipped'),
       category_id: fc.option(fc.string(), { nil: null }),
       account_id: fc.string({ minLength: 1 }),
       original_amount: fc.integer({ min: -1_000_000, max: 1_000_000 }),
@@ -288,6 +303,10 @@ describe('filters', () => {
 
     it('is true when amountMin is set', () => {
       expect(isFilterActive({ ...EMPTY_FILTER, amountMin: 100 })).toBe(true);
+    });
+
+    it('is true when unpaidOnly is set', () => {
+      expect(isFilterActive({ ...EMPTY_FILTER, unpaidOnly: true })).toBe(true);
     });
 
     it('is true when amountMax is set', () => {

@@ -1,8 +1,9 @@
 // An account's balance block (D-10, D-49): 'Balance now' in the account's own currency with
 // the minus sign always visible, the standing sentence beneath it, other-currency subtotals,
 // the still-to-come figure and, for a foreign account, an approximate home figure with the
-// rate's date. A negative balance is a state, not an error: plain ink unless the engine could
-// not describe its standing at all.
+// rate's date. The figure uses the latest stored rate only and never fetches (02-DECISION-fx-on-demand.md
+// item 5); with no stored rate for the pair it reads "Waiting for a rate", never a guess. A negative balance figure is danger (2026-10-07 amendment); its standing sentence
+// stays the D-49 copy in warn1 / muted.
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { AccountRow } from '@/db/rows';
@@ -26,6 +27,24 @@ export interface AccountBalanceBlockProps {
   homeCurrency: string;
   /** Lists show the figure compact; the detail screen shows the full block. */
   compact?: boolean;
+}
+
+/**
+ * S-WR-14: the balance and standing as one spoken phrase ("−£25.00, Overdrawn by £25.00..."),
+ * so a list card's accessibility label carries what the block shows. Null without a balance.
+ */
+export function useBalanceSummary(account: AccountRow, balance: AccountBalanceView | undefined): string | null {
+  const t = useT();
+  const rc = useRecordContext();
+  const formatter = useMoneyFormatter(rc.showCents);
+  const { options } = useCurrencyOptions(rc.userId ?? undefined);
+  if (!balance) return null;
+  const exponent = options.find((o) => o.code === account.currency)?.exponent ?? currencyExponent(account.currency);
+  const fmt = (minor: number) => formatter.formatMoney(money(minor, account.currency), { exponent });
+  if (balance.overflow || balance.balance === null) return t('accounts.balanceNow');
+  const line = standingText(balance.standing, fmt);
+  const sentence = line ? (t as unknown as (k: string, o: Record<string, string>) => string)(line.key, line.params) : null;
+  return [fmt(balance.balance), sentence].filter((p): p is string => p !== null).join(', ');
 }
 
 export function AccountBalanceBlock({ account, balance, homeCurrency, compact = false }: AccountBalanceBlockProps) {
@@ -52,8 +71,9 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
 
   const overflow = balance.overflow || balance.balance === null;
   const negative = balance.balance !== null && balance.balance < 0;
-  // D-49: danger only when a negative balance has no understood standing.
-  const balanceColor = negative && balance.standing === null ? colors.danger : colors.ink;
+  // 2026-10-07 amendment (supersedes the D-49 colour narrowing for the figure only): a negative
+  // balance is danger. The standing sentence below keeps its D-49 words and its warn1 / muted colour.
+  const balanceColor = negative ? colors.danger : colors.ink;
   const metaStyle = { ...textRole(pairing, 'label'), color: colors.inkMuted };
 
   const foreign = account.currency !== homeCurrency;
@@ -70,6 +90,8 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
       rateSource = fx?.source ?? null;
     }
   }
+
+  const waiting = foreign && !overflow && balance.balance !== null && homeFigure === null;
 
   return (
     <View style={styles.block}>
@@ -94,6 +116,8 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
           <Text style={metaStyle}>{t('accounts.inHome', { amount: homeFigure })}</Text>
           <RateAttribution rateDate={rateDate} rateSource={rateSource} ratePending={false} />
         </>
+      ) : waiting ? (
+        <Text style={metaStyle}>{t('accounts.inHomeWaiting')}</Text>
       ) : null}
       {compact
         ? null
@@ -103,7 +127,11 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
             </Text>
           ))}
       {!compact && balance.pendingSum !== null && balance.pendingSum !== 0 ? (
-        <Text style={metaStyle}>{t('accounts.stillToCome', { amount: fmt(balance.pendingSum) })}</Text>
+        <Text
+          style={{ ...textRole(pairing, 'label'), color: balance.pendingSum > 0 ? colors.accent : colors.danger }}
+        >
+          {t('accounts.stillToCome', { amount: fmt(balance.pendingSum) })}
+        </Text>
       ) : null}
     </View>
   );

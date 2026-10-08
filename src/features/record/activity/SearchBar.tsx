@@ -61,7 +61,7 @@ export function SearchBar({ term, scope, monthLabel, onTermChange, onScopeChange
         <TextInput
           accessibilityLabel={placeholder}
           placeholder={placeholder}
-          placeholderTextColor={colors.inkFaint}
+          placeholderTextColor={colors.inkMuted}
           value={text}
           onChangeText={onChange}
           autoCorrect={false}

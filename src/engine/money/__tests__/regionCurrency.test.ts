@@ -21,6 +21,21 @@ describe('currencyForRegion (02-31: home currency from the device region)', () =
     expect(currencyForRegion(region)).toBe(currency);
   });
 
+  // W6-13 IN-02: non-EU euro users, Liechtenstein (Swiss franc) and Russia.
+  it.each([
+    ['ME', 'EUR'],
+    ['XK', 'EUR'],
+    ['AD', 'EUR'],
+    ['MC', 'EUR'],
+    ['SM', 'EUR'],
+    ['VA', 'EUR'],
+    ['LI', 'CHF'],
+    ['RU', 'RUB'],
+  ])('IN-02: %s -> %s', (region, currency) => {
+    expect(currencyForRegion(region)).toBe(currency);
+    expect(Number.isInteger(currencyExponent(currency))).toBe(true);
+  });
+
   it('is case-insensitive and trims', () => {
     expect(currencyForRegion(' ca ')).toBe('CAD');
   });

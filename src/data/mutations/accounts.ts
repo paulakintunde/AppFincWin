@@ -21,6 +21,7 @@ import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { buildStep, inverseOfInserts, inverseOfPatches, type PatchValue } from '@/engine/undo';
 import { recordUndoStepSafely } from './undoCapture';
+import { runAccountRateCheck } from './accountRateChecks';
 
 /** REC-11: the caller-minted step id and owner; the label is fixed by the action. */
 export interface AccountUndo {
@@ -28,9 +29,17 @@ export interface AccountUndo {
   ownerId: string;
 }
 
+/** 02-DECISION-fx-on-demand.md item 3b: set for a foreign-currency account; carried in the persisted vars. */
+export interface AccountRateCheckRequest {
+  homeCurrency: string;
+  openingDate: string;
+  userId: string;
+}
+
 export interface AddAccountVars {
   row: NewAccount;
   undo?: AccountUndo;
+  rateCheck?: AccountRateCheckRequest;
 }
 
 export interface EditAccountVars {
@@ -102,6 +111,8 @@ export function registerAccountMutations(qc: QueryClient): void {
     onSuccess: (row: AccountRow, vars: AddAccountVars) => {
       // WR-A04: upsert, not replace -- a refetch may have dropped the optimistic row.
       patchAccountsCache(qc, vars.row.household_id, (rows) => upsertRow(rows, row, 'end'));
+      // Item 3b: the insert succeeded (online, or after an offline flush); ask for the opening date's rate.
+      if (vars.rateCheck) void runAccountRateCheck(qc, { ...vars.rateCheck, accountId: row.id, currency: row.currency });
     },
     onError: async (err: unknown, vars: AddAccountVars) => {
       const cls = classifySettledWriteError(err);
@@ -189,18 +200,21 @@ function assertLimit(label: string, value: number | null | undefined): void {
   }
 }
 
-export function useAddAccount(): { add(input: Omit<NewAccount, 'id'>, undo?: AccountUndo): string } {
+export function useAddAccount(): {
+  add(input: Omit<NewAccount, 'id'>, undo?: AccountUndo, rateCheck?: AccountRateCheckRequest): string;
+} {
   const mutation = useMutation<AccountRow, unknown, AddAccountVars>({
     mutationKey: mutationKeys.addAccount,
     scope: WRITE_SCOPE,
   });
 
   return {
-    add(input: Omit<NewAccount, 'id'>, undo?: AccountUndo): string {
+    add(input: Omit<NewAccount, 'id'>, undo?: AccountUndo, rateCheck?: AccountRateCheckRequest): string {
       assertLimit('overdraft_limit', input.overdraft_limit);
       assertLimit('credit_limit', input.credit_limit);
       const id = Crypto.randomUUID();
-      mutation.mutate({ row: { id, ...input }, ...(undo ? { undo } : {}) });
+      const foreign = rateCheck !== undefined && input.currency !== rateCheck.homeCurrency;
+      mutation.mutate({ row: { id, ...input }, ...(undo ? { undo } : {}), ...(foreign ? { rateCheck } : {}) });
       return id;
     },
   };

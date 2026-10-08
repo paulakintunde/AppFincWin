@@ -1,7 +1,7 @@
 import type { PatchOp, UndoStepDraft } from '@/engine/undo';
 import { DbError } from '../errors';
 import { UNDO_LOG_COLUMNS, type UndoLogRow } from '../rows';
-import { BAD_RESPONSE, applyUndoStep, fetchUndoLog, insertUndoStep, rollbackUndoTo } from '../undoLog';
+import { BAD_RESPONSE, applyUndoStep, fetchUndoLog, insertUndoStep, rollbackUndoTo, undoStepExists } from '../undoLog';
 import { createFakeSupabase } from './fakeSupabase';
 
 const OPS: PatchOp[] = [{ entity: 'transactions', id: 't1', expectedVersion: 3, patch: { deleted_at: null } }];
@@ -219,5 +219,27 @@ describe('rollbackUndoTo', () => {
     client.respondWith({ data: { status: 'sideways' }, error: null, status: 200 });
 
     await expect(rollbackUndoTo(client, 'step-3')).rejects.toMatchObject({ code: BAD_RESPONSE });
+  });
+});
+
+describe('undoStepExists (follow-up #15, W6-13 WR-02)', () => {
+  it('looks the step up by exact id', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { id: 'step-1' }, error: null, status: 200 });
+    await expect(undoStepExists(client, 'step-1')).resolves.toBe(true);
+    expect(client.calls.every((c) => c.table === 'undo_log')).toBe(true);
+    expect(client.calls.find((c) => c.method === 'eq')?.args).toEqual(['id', 'step-1']);
+  });
+
+  it('is false when no row comes back', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: null, status: 200 });
+    await expect(undoStepExists(client, 'step-1')).resolves.toBe(false);
+  });
+
+  it('throws a server error rather than guessing', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+    await expect(undoStepExists(client, 'step-1')).rejects.toBeInstanceOf(DbError);
   });
 });

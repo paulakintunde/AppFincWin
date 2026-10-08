@@ -184,6 +184,40 @@ describe('Repeats on a new entry', () => {
   });
 });
 
+describe('Repeats "On a date" against the entry date (S-CR-03)', () => {
+  it('defaults the end to a future entry date, so the series is stored', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out', localDate: '2026-10-20' });
+    await fireEvent.changeText(getByLabelText('Amount'), '500');
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Rent');
+    await fireEvent.press(getByLabelText('Repeats'));
+    await fireEvent.press(getByText('Every month'));
+    await fireEvent.press(getByText('On a date'));
+    await fireEvent.press(getByText('Done'));
+    await fireEvent.press(getByText('Save expense'));
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect((mockCreate.mock.calls[0] as unknown[])[0]).toMatchObject({
+      series: { anchor_date: '2026-10-20', end_date: '2026-10-20' },
+    });
+  });
+
+  it('refuses an end date before the entry date: no write, no Undo, a reason shown', async () => {
+    const { getByLabelText, getByText, getAllByText, getByTestId } = await open({ kind: 'new', direction: 'out', localDate: '2026-10-20' });
+    await fireEvent.changeText(getByLabelText('Amount'), '500');
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Rent');
+    await fireEvent.press(getByLabelText('Repeats'));
+    await fireEvent.press(getByText('Every month'));
+    await fireEvent.press(getByText('On a date'));
+    await fireEvent.press(getAllByText('Ends')[0]!);
+    await fireEvent(getByTestId('date-picker'), 'onChange', { nativeEvent: { timestamp: new Date(2026, 9, 1, 12).getTime() } });
+    await fireEvent.press(getByText('Done'));
+    await fireEvent.press(getByText('Save expense'));
+    expect(mockAdd).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(getToast()).toBeNull();
+    expect(getByText('The end date is before this entry’s date.')).toBeTruthy();
+  });
+});
+
 describe('Repeats on an existing one-off entry (D-09)', () => {
   it('makes it the first occurrence without a new entry and without anchorIsNew', async () => {
     const { getByLabelText, getByText } = await open({ kind: 'edit', row: row() });
@@ -235,6 +269,33 @@ describe('scope prompt', () => {
     expect(mockEdit).not.toHaveBeenCalled();
     expect(getToast()).toMatchObject({ stepId: 'sedit-step', text: { key: 'undo.label.seriesEdited' } });
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('S-CR-02: a paid occurrence keeps the figure the user typed, and the series changes from the next day', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'edit', row: occurrence({ status: 'paid' }) });
+    await fireEvent.changeText(getByLabelText('Amount'), '20');
+    await fireEvent.press(getByText('Save changes'));
+    await fireEvent.press(getByText('This and future'));
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    expect((mockEdit.mock.calls[0] as unknown[])[0]).toMatchObject({ id: 't1', patch: { original_amount: -2000 } });
+    expect(mockEditFrom).toHaveBeenCalledTimes(1);
+    expect((mockEditFrom.mock.calls[0] as unknown[])[0]).toMatchObject({ effectiveFrom: '2026-09-21', patch: { amount: -2000 } });
+    expect(getToast()).toMatchObject({ stepId: 'sedit-step' });
+  });
+
+  it('S-CR-02: a pending occurrence with a new note keeps the note and the new amount on that row', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'edit', row: occurrence() });
+    await fireEvent.changeText(getByLabelText('Amount'), '20');
+    await fireEvent.changeText(getByLabelText('Note'), 'landlord rise');
+    await fireEvent.press(getByText('Save changes'));
+    await fireEvent.press(getByText('This and future'));
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    expect((mockEdit.mock.calls[0] as unknown[])[0]).toMatchObject({
+      id: 't1',
+      patch: { original_amount: -2000, note: 'landlord rise' },
+    });
+    // The series rewrite starts after this row, so the RPC cannot soft-delete it (and the note).
+    expect((mockEditFrom.mock.calls[0] as unknown[])[0]).toMatchObject({ effectiveFrom: '2026-09-21', patch: { amount: -2000 } });
   });
 
   it('does not ask for a note-only edit', async () => {
@@ -318,12 +379,25 @@ describe('RepeatsField and EditScopePrompt on their own', () => {
     const onChange = jest.fn();
     const { getByLabelText, getByText } = await render(
       <ThemeProvider>
-        <RepeatsField value={{ freq: 'never' }} onChange={onChange} formatDate={(d) => d} today="2026-09-25" />
+        <RepeatsField value={{ freq: 'never' }} onChange={onChange} formatDate={(d) => d} today="2026-09-25" entryDate="2026-09-25" />
       </ThemeProvider>
     );
     await fireEvent.press(getByLabelText('Repeats'));
     await fireEvent.press(getByText('Every quarter'));
     expect(onChange).toHaveBeenCalledWith({ freq: 'quarterly', end: { kind: 'never' } });
+  });
+
+  it('S-WR-10: says why This and future is unavailable while the series loads', async () => {
+    const { getByText, getByRole } = await render(
+      <ThemeProvider>
+        <EditScopePrompt visible futureDisabled onThisOne={jest.fn()} onThisAndFuture={jest.fn()} onCancel={jest.fn()} />
+      </ThemeProvider>
+    );
+    const reason = 'The series hasn’t loaded yet, so only this one can change.';
+    expect(getByText(reason)).toBeTruthy();
+    const future = getByRole('button', { name: 'This and future' });
+    expect(future).toBeDisabled();
+    expect(future.props.accessibilityHint).toBe(reason);
   });
 
   it('routes the three prompt choices', async () => {

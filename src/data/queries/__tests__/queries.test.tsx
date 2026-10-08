@@ -8,8 +8,8 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import type { DbClient } from '@/db/rows';
 import { supabase } from '@/services/supabase';
 import type { FakeSupabase } from '@/db/__tests__/fakeSupabase';
+import { queryKeys } from '../../keys';
 import { useAccounts } from '../accounts';
-import { useCurrencies } from '../currencies';
 import { useFxLatest } from '../fxLatest';
 import { useHouseholdId } from '../household';
 import { useTransactionsForMonth } from '../transactions';
@@ -90,16 +90,18 @@ describe('useTransactionsForMonth', () => {
   });
 });
 
-describe('useCurrencies', () => {
-  it('fetches active currencies (end_date is null), ordered by code', async () => {
-    const currencies = [{ code: 'USD', iso_numeric: '840', name: 'US Dollar', symbol: '$', start_date: null, end_date: null }];
-    fakeClient.respondWith({ data: currencies, error: null, status: 200 });
+describe('empty reference data is never treated as fresh', () => {
+  // A device that cached [] (e.g. while currencies.end_date was wrongly set on every
+  // row) must refetch on its next mount instead of serving [] for staleTime.
+  it('useFxLatest refetches a cached empty list on mount', async () => {
+    const fresh = [{ quote: 'CAD', rate: '1.35', rate_date: '2026-09-20', source: 'frankfurter-v2' }];
+    fakeClient.respondWith({ data: fresh, error: null, status: 200 });
+    const client = newClient();
+    client.setQueryData(queryKeys.fxLatest(), []);
 
-    const { result } = await renderHook(() => useCurrencies(), { wrapper: wrapper(newClient()) });
+    const { result } = await renderHook(() => useFxLatest(), { wrapper: wrapper(client) });
 
-    await waitFor(() => expect(result.current.data).toEqual(currencies));
-    expect(fakeClient.calls.find((c) => c.method === 'is')?.args).toEqual(['end_date', null]);
-    expect(fakeClient.calls.find((c) => c.method === 'order')?.args).toEqual(['code', { ascending: true }]);
+    await waitFor(() => expect(result.current.data).toEqual(fresh));
   });
 });
 

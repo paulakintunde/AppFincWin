@@ -14,17 +14,24 @@ import { space, useScreenInsets } from '@/theme/layout';
 import { ToastView } from '@/ui/ToastView';
 import { conflictText, stepLabel } from './undoCopy';
 
-const LABEL_PREFIX = 'undo.label.';
+// S-CR-04: undoLabelText emits `undo.labelUnnamed.<key>` for a step with no name (a Phase 1
+// row, an import, an unresolved transfer account). Both shapes carry the same engine label key.
+const LABEL_PREFIXES = ['undo.label.', 'undo.labelUnnamed.'] as const;
+
+function labelPrefixOf(key: string): string | undefined {
+  return LABEL_PREFIXES.find((p) => key.startsWith(p));
+}
 
 function asNumber(v: unknown): number | undefined {
   return typeof v === 'number' ? v : undefined;
 }
 
-/** Derives the engine label key and params from a toast's `undo.label.<key>` text. */
+/** Derives the engine label key and params from a toast's `undo.label[Unnamed].<key>` text. */
 function undoableLabel(toast: ToastState): { labelKey: UndoLabelKey; labelParams: UndoLabelParams } | null {
   const key = toast.text?.key;
-  if (!key || !key.startsWith(LABEL_PREFIX)) return null;
-  const labelKey = key.slice(LABEL_PREFIX.length);
+  const prefix = key ? labelPrefixOf(key) : undefined;
+  if (!key || prefix === undefined) return null;
+  const labelKey = key.slice(prefix.length);
   if (!(UNDO_LABEL_KEYS as readonly string[]).includes(labelKey)) return null;
   const params = toast.text?.params ?? {};
   const n = asNumber(params.n) ?? asNumber(params.count);
@@ -82,7 +89,7 @@ export function UndoToastHost() {
         ...(typeof params.name === 'string' ? { name: params.name } : {}),
       };
       parts.push(l(key, { label: stepLabel(t, String(params.labelKey), labelParams) }));
-    } else if (key.startsWith(LABEL_PREFIX)) {
+    } else if (labelPrefixOf(key) !== undefined) {
       const label = undoableLabel(toast);
       parts.push(label ? stepLabel(t, label.labelKey, label.labelParams) : l(key, params));
     } else {

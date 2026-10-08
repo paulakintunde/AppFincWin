@@ -70,6 +70,20 @@ describe('useAmountParser', () => {
     expect(result.current.parse('12,50', 'EUR')).toEqual({ ok: true, value: 1250 });
   });
 
+  it.each([
+    ['DE', 'EUR', 123456, '1234,56'],
+    ['DE', 'KWD', 500000, '500,000'],
+    ['FR', 'EUR', -1250, '12,50'],
+    ['FR', 'KWD', 5, '0,005'],
+    ['US', 'USD', 123456, '1234.56'],
+    ['JP', 'JPY', 1200, '1200'],
+  ])('S-CR-01: %s %s toInputText(%d) is %s and parses back to the magnitude', async (region, code, minor, text) => {
+    mockDevice(enUS);
+    const { result } = await renderHook(() => useAmountParser(region));
+    expect(result.current.toInputText(minor, code)).toBe(text);
+    expect(result.current.parse(text, code)).toEqual({ ok: true, value: Math.abs(minor) });
+  });
+
   it('an unambiguous grouped amount still parses under the same region', async () => {
     mockDevice(enUS);
     const { result } = await renderHook(() => useAmountParser());
