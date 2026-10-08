@@ -17,8 +17,8 @@
 // against the nearest stored prior may enter the served fx_rates. A row that
 // fails plausibility goes to fx_rate_holds (with a 'held' alert), exactly as
 // an fx-sync hold would -- never to fx_rates.
-import { FRANKFURTER_V2_RATES_URL, parseFrankfurterRates, type FxRow } from '../fx-sync/parse.ts';
-import { classifyRates, type Classification, type StoredRate } from '../fx-sync/plausibility.ts';
+import { FRANKFURTER_V2_RATES_URL, parseFrankfurterRates, type FxRow } from '../_shared/fx/parse.ts';
+import { classifyRates, type Classification, type StoredRate } from '../_shared/fx/plausibility.ts';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

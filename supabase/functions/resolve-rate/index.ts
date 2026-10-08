@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 import { resolveRate, type ResolveDeps } from './resolve.ts';
-import type { FxRow } from '../fx-sync/parse.ts';
+import type { FxRow } from '../_shared/fx/parse.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });

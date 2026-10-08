@@ -1,4 +1,4 @@
-// Plausibility check for fx-sync ingest (MON-11, D-11, D-12). Zero imports
+// Plausibility check shared by Edge Functions (resolve-rate) (MON-11, D-11, D-12). Zero imports
 // (besides the type-only FxRow import, erased at compile time) so this
 // loads identically under Deno and Jest, like parse.ts.
 //

@@ -1,5 +1,5 @@
 import { resolveRate, type ResolveDeps, type PendingTransaction } from './resolve';
-import { FRANKFURTER_V2_RATES_URL, type FxRow } from '../fx-sync/parse';
+import { FRANKFURTER_V2_RATES_URL, type FxRow } from '../_shared/fx/parse';
 
 const VALID_ID = '11111111-1111-1111-1111-111111111111';
 

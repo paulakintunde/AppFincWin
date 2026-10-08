@@ -13,7 +13,7 @@
  *   Claude-drafted in the prototype's voice (D-20) and awaits user review before being
  *   treated as final, except money.rate.attribution and credits.exchangeRateApi, which are
  *   third-party-mandated text (D-13) and must not be paraphrased. Both read the single
- *   constant in ../mandatedCopy.ts, cross-checked against fx-sync's copy by a test.
+ *   constant in ../mandatedCopy.ts, cross-checked against the server copy in _shared/fx/openErApi.ts by a test.
  * - dev.syncProbe.label is a development-build-only row (01-15); it never ships visible in a
  *   release build, but still lives in the typed catalogue like every other string.
  * - money.fxNote.converted/kept, money.homeCurrency.title/note, money.customCurrency.title,

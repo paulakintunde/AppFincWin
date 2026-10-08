@@ -1,5 +1,5 @@
 // Pure Frankfurter v2 response validator/mapper. Zero imports so this file
-// loads identically under Deno (the fx-sync Edge Function) and Jest
+// loads identically under Deno (shared by Edge Functions, resolve-rate) and Jest
 // (parse.test.ts) with no runtime-specific glue.
 //
 // Pinned to /v2 deliberately -- v1 only covers ~30 ECB currencies (PROJECT.md).
