@@ -14,7 +14,7 @@ const OPEN_ER_FIXTURE = {
   rates: { EUR: 1, USD: 1.11 },
 };
 const CURRENCIES_FIXTURE = [
-  { iso_code: 'USD', iso_numeric: '840', name: 'United States Dollar', symbol: '$', start_date: '1792-01-01', end_date: '2026-09-24' },
+  { iso_code: 'USD', iso_numeric: '840', name: 'United States Dollar', symbol: '$', start_date: '1792-01-01', end_date: new Date().toISOString().slice(0, 10) },
 ];
 
 interface FakeDb extends FxSyncDb {
@@ -239,7 +239,7 @@ describe('runFxSync', () => {
     await runFxSync({ fetchJson, db });
 
     expect(db.calls.upsertCurrencies).toEqual([
-      [{ code: 'USD', isoNumeric: '840', name: 'United States Dollar', symbol: '$', startDate: '1792-01-01', endDate: '2026-09-24' }],
+      [{ code: 'USD', isoNumeric: '840', name: 'United States Dollar', symbol: '$', startDate: '1792-01-01', endDate: null }],
     ]);
   });
 

@@ -194,7 +194,10 @@ async function ingest(
   // Currency metadata (D-08): a failure here never fails the rate sync.
   let currencies = 0;
   try {
-    const meta = parseFrankfurterCurrencies(await fetchJson(FRANKFURTER_V2_CURRENCIES_URL));
+    const meta = parseFrankfurterCurrencies(
+      await fetchJson(FRANKFURTER_V2_CURRENCIES_URL),
+      new Date().toISOString().slice(0, 10)
+    );
     const codes = meta.map((m) => m.code);
 
     // RD-07: a code this sync has never seen before, seeded into the shadow
