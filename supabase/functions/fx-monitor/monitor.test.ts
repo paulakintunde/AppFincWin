@@ -44,6 +44,15 @@ describe('findStale', () => {
     expect(result).toEqual([]);
   });
 
+  it('checks an active currency (null end_date, no override) against the global default', () => {
+    const result = findStale(
+      [{ quote: 'USD', rate_date: '2026-09-20' }],
+      [{ code: 'USD', end_date: null, staleness_limit_days: null }],
+      TODAY
+    );
+    expect(result).toEqual([{ quote: 'USD', rateDate: '2026-09-20', ageDays: 9, limitDays: 4 }]);
+  });
+
   it('uses the global default when the quote has no currencies row at all', () => {
     const result = findStale([{ quote: 'ZZZ', rate_date: '2026-09-20' }], [], TODAY);
     expect(result).toEqual([{ quote: 'ZZZ', rateDate: '2026-09-20', ageDays: 9, limitDays: 4 }]);
