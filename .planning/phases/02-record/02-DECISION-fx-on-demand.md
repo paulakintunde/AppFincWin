@@ -34,6 +34,7 @@ The user chose the cheapest model with the fewest moving parts. The goals, all c
 - The fx-sync parser fix from the same day becomes moot once the daily job is removed.
 - The client change that never treats an empty cached list as fresh stays.
 - Removing the cron and `fx-monitor` is a production change and needs the user's approval at deploy time.
+- `fx_pending_rows_count()` and `fx_restamp_pending()` are revoked from all roles and marked DEPRECATED rather than dropped, because the migration linter forbids `drop function` without a `min_supported_version` raise. Drop them at the next floor raise (02-REVIEW-FOLLOWUPS item 22).
 - **Open for planning:**
   - whether any existing code reads `currencies` or `fx_latest_rates` for something other than the picker (exponent lookups, the Decide engine, money mirror tests);
   - how the cross rate via the EUR base works when neither currency is EUR;
