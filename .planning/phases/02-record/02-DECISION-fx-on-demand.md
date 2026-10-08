@@ -20,7 +20,8 @@ The user chose the cheapest model with the fewest moving parts. The goals, all c
 3. **Fetch only when a different currency is involved.** A rate is fetched, then stored, only when a currency other than the home currency enters the data:
    - saving a foreign-currency line uses the line's own date;
    - creating a foreign-currency account uses its opening date;
-   - a statement import makes one fetch per distinct foreign date.
+   - a statement import makes one fetch per distinct foreign date;
+   - changing the home currency fetches today's rate for the new home currency against every other currency the household already uses (accounts, lines, recurring series), through the same fetch path, so totals convert immediately; offline, it is retried like a pending line. *(Added 2026-10-07 by the user while reviewing the gap-closure plans; built in plan 02-49.)*
    A user who only ever uses their home currency never causes a fetch.
 4. **Shared rates.** One stored rate per currency per date, readable by every user. A rate is fetched once, ever. Rates are public data, so sharing reveals nothing about users.
 5. **Balances use the latest stored rate.** Account balances, net worth and Decide convert with the most recent stored rate for the pair and never fetch on their own.

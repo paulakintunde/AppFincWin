@@ -33,7 +33,7 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [x] **ENV-05**: EAS project is initialised with development, preview and production build profiles
 - [x] **ENV-06**: Google OAuth client IDs exist for iOS, Android and Web, and Google Sign-In completes end to end
 - [ ] **ENV-07**: Sign in with Apple is configured with its Service ID and key, and completes end to end — *deferrable, blocked on ENV-10*
-- [x] **ENV-08**: Frankfurter rate-refresh Edge Function is deployed and populating the `fx_rates` table on schedule
+- [x] **ENV-08**: The on-demand FX fetch path (the `resolve-rate` Edge Function, Frankfurter v2 with the open.er-api fallback) is deployed, populates the shared `fx_rates` table when a rate is needed, and is monitored on failure; there is no schedule *(amended 2026-10-07, was: "deployed and populating the `fx_rates` table on schedule"; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
 - [x] **ENV-09**: A dependency status register is maintained listing every external service as provisioned, pending or deferred, with its blocker and the phase it must land by
 - [ ] **ENV-10**: Apple Developer Program membership is active **as an organisation, under the company** (Guideline 5.1.1(ix)) — *external clock: D-U-N-S then enrolment; gates ENV-07, iOS device builds, TestFlight and submission*
 - [ ] **ENV-11**: Google Play Console organisation account is active under the company and an app entry exists — *deferrable to Phase 11; uses the same D-U-N-S number as ENV-10*
@@ -83,12 +83,12 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **MON-03**: Splitting an amount across members always produces shares that sum exactly to the original, using largest-remainder rounding
 - [x] **MON-04**: User can set a home currency from the supported list or add a custom currency
 - [x] **MON-05**: A transaction in a non-home currency records the FX rate applied at the time it was written
-- [x] **MON-06**: FX rates refresh daily from Frankfurter v2 into the project's own store, and the app reads only that store
+- [x] **MON-06**: FX rates are fetched on demand, per date, only when a currency other than the home currency is involved (a foreign line, a foreign account, an import, a home-currency change); each rate is stored once in the project's own shared store and reused by every user, and the app reads only that store *(amended 2026-10-07, was: "FX rates refresh daily from Frankfurter v2 into the project's own store, and the app reads only that store"; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
 - [x] **MON-07**: A rate's own publication date is visible wherever a converted figure is shown, rather than implied to be current
 - [x] **MON-08**: Every record carries a client-generated UUID primary key assigned before the write leaves the device
 - [x] **MON-09**: Every mutable record carries an integer version that increments server-side on write
-- [x] **MON-10**: An alert fires when any currency's latest stored rate is older than its staleness limit
-- [x] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it
+- [x] **MON-10**: An alert fires when an on-demand rate fetch fails or a fetched rate is held *(amended 2026-10-07, was: "An alert fires when any currency's latest stored rate is older than its staleness limit"; staleness limits are retired; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
+- [x] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it *(adapted 2026-10-07: with on-demand fetching the move is measured against a stored rate at most 7 days older, and an unconfirmed hold is auto-accepted after 2 days by the fetch path rather than a cron; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
 - [x] **MON-12**: When Frankfurter cannot be reached, rates refresh from open.er-api instead, and its required attribution is shown in the app
 - [x] **MON-13**: Each currency's decimal places come from ISO 4217 — 0 for JPY, KRW and VND, 3 for KWD, BHD and OMR — and a custom currency declares its own
 - [x] **MON-14**: A transaction stores its local calendar date and time zone, so its month and any recurring schedule never shift across time zones or clock changes
