@@ -1,12 +1,12 @@
-// D-08: the currency picker's data source is every currency fx-sync stores (~171, plus EUR
-// itself) with no curated shortlist, plus the user's own custom currencies. buildCurrencyOptions
-// is the pure merge step (unit-testable without a QueryClient); useCurrencyOptions is the hook
-// Record's picker (Phase 2) will call.
-import { currencyExponent } from '@/engine/money';
-import type { CurrencyRow, CustomCurrencyRow, FxLatestRow } from '@/db/rows';
-import { useCurrencies } from './currencies';
+// D-08 as amended by 02-DECISION-fx-on-demand.md: the currency picker's ISO data source is the
+// list built into the app (engine/money ISO_CURRENCIES), plus the user's own custom currencies.
+// It has no dependency on any rate, on the server `currencies` table or on the network, so it
+// works with empty tables and on first launch offline. buildCurrencyOptions is the pure merge
+// step (unit-testable without a QueryClient); useCurrencyOptions is the hook Record's picker calls.
+import { ISO_CURRENCIES } from '@/engine/money';
+import type { IsoCurrency } from '@/engine/money';
+import type { CustomCurrencyRow } from '@/db/rows';
 import { useCustomCurrencies } from './customCurrencies';
-import { useFxLatest } from './fxLatest';
 
 export interface CurrencyOption {
   code: string;
@@ -18,47 +18,24 @@ export interface CurrencyOption {
 }
 
 /**
- * Merges the ISO currency set with the user's custom currencies into one sorted picker list
- * (D-08). An ISO currency with no `fx_latest` quote is excluded (there is no rate to convert
- * with) -- except EUR, which fx-sync never carries as a quote of itself (fx_rates is
- * EUR-based) but must always be offered. A custom code that happens to collide with an ISO
- * code never appears twice -- the ISO entry wins (the guard trigger in
- * 20260924000100_custom_currencies.sql already prevents a user from creating one, so this is
- * belt-and-braces, not the primary defence).
+ * Merges the built-in ISO list with the user's custom currencies into one sorted picker list.
+ * ISO options always carry `rateDate: null` (the picker depends on no rate); custom options
+ * carry their `as_of`. A custom code that happens to collide with an ISO code never appears
+ * twice -- the ISO entry wins (the guard trigger in 20260924000100_custom_currencies.sql already
+ * prevents a user from creating one, so this is belt-and-braces, not the primary defence).
  */
 export function buildCurrencyOptions(
-  currencies: readonly CurrencyRow[],
-  latest: readonly FxLatestRow[],
+  iso: readonly IsoCurrency[],
   customs: readonly CustomCurrencyRow[]
 ): CurrencyOption[] {
-  const latestByCode = new Map(latest.map((rate) => [rate.quote, rate]));
-
-  const isoOptions: CurrencyOption[] = [];
-  for (const currency of currencies) {
-    if (currency.code === 'EUR') {
-      isoOptions.push({
-        code: 'EUR',
-        name: currency.name,
-        symbol: currency.symbol,
-        exponent: currencyExponent('EUR'),
-        kind: 'iso',
-        rateDate: null,
-      });
-      continue;
-    }
-
-    const rate = latestByCode.get(currency.code);
-    if (!rate) continue; // no fx_latest rate -- nothing to convert with, so not offered
-
-    isoOptions.push({
-      code: currency.code,
-      name: currency.name,
-      symbol: currency.symbol,
-      exponent: currencyExponent(currency.code),
-      kind: 'iso',
-      rateDate: rate.rate_date,
-    });
-  }
+  const isoOptions: CurrencyOption[] = iso.map((currency) => ({
+    code: currency.code,
+    name: currency.name,
+    symbol: currency.symbol,
+    exponent: currency.exponent,
+    kind: 'iso' as const,
+    rateDate: null,
+  }));
 
   const isoCodes = new Set(isoOptions.map((option) => option.code));
   const customOptions: CurrencyOption[] = customs
@@ -76,12 +53,10 @@ export function buildCurrencyOptions(
 }
 
 export function useCurrencyOptions(userId?: string): { options: CurrencyOption[]; loading: boolean } {
-  const currencies = useCurrencies();
-  const fxLatest = useFxLatest();
   const customCurrencies = useCustomCurrencies(userId);
 
-  const loading = currencies.isLoading || fxLatest.isLoading || (Boolean(userId) && customCurrencies.isLoading);
-  const options = buildCurrencyOptions(currencies.data ?? [], fxLatest.data ?? [], customCurrencies.data ?? []);
+  const loading = Boolean(userId) && customCurrencies.isLoading;
+  const options = buildCurrencyOptions(ISO_CURRENCIES, customCurrencies.data ?? []);
 
   return { options, loading };
 }

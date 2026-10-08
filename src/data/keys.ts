@@ -7,7 +7,6 @@ export const queryKeys = {
   accounts: (householdId: string) => ['accounts', householdId] as const,
   transactionsRoot: (householdId: string) => ['transactions', householdId] as const,
   transactionsMonth: (householdId: string, month: string) => ['transactions', householdId, month] as const,
-  currencies: () => ['currencies'] as const,
   customCurrencies: (userId: string) => ['custom-currencies', userId] as const,
   fxLatest: () => ['fx-latest'] as const,
   moneyPrefs: (userId: string) => ['money-prefs', userId] as const,
