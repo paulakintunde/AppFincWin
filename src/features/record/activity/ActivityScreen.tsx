@@ -254,6 +254,12 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
       />
       <View style={styles.header}>
         <Chip label={t('activity.filter.title')} selected={filtering} onPress={() => setFilterOpen(true)} />
+        {selection.active ? (
+          <View style={styles.links}>
+            <Pill label={t('activity.selectAll')} variant="secondary" onPress={() => { setHint(null); selection.selectAll(itemRows.map((r) => r.id)); }} />
+            <Pill label={t('activity.selectNone')} variant="secondary" onPress={() => { setHint(null); selection.clear(); }} />
+          </View>
+        ) : null}
         <Pill
           label={selection.active ? t('activity.done') : t('activity.select')}
           variant="secondary"
