@@ -174,7 +174,7 @@ Plans:
   5. A user can undo any of their last 12 changes from the toast or the history screen as a compensating write, and is refused with an explanation when another household member has since changed the same record.
   6. An account can be overdrawn, beyond its overdraft, or over its card limit, and the app shows that standing plainly rather than treating it as an error; card statements that show purchases as positive or balances as available credit import with the correct signs.
   7. A user can record a transfer between their own accounts, import suggests matching pairs such as a card payment, and transfers never count as income or spending.
-**Plans**: 40 plans in 14 waves (31 original plans revised in place for the 2026-09-25 import extension, plus 02-32…02-40)
+**Plans**: 50 plans in 14 waves plus 4 gap-closure waves (31 original plans revised in place for the 2026-09-25 import extension, plus 02-32…02-40; gap closure 02-41…02-50 for on-demand FX, 2026-10-07)
 Plans:
 **Wave 1**
 - [x] 02-01-PLAN.md — Engine: recurring schedule maths + shared TS/SQL fixture (W1)
@@ -243,6 +243,18 @@ Plans:
 
 **Wave 14** *(blocked on Wave 13 completion)*
 - [x] 02-31-PLAN.md — Production rollout: schema push [BLOCKING], live checks, device walkthrough incl. OFX, standing and transfers (W14; needs 01-16)
+
+**Gap closure: on-demand FX, built-in currency list, no daily sync** *(2026-10-07, `02-DECISION-fx-on-demand.md`; GW = gap-closure wave)*
+- [ ] 02-41-PLAN.md — Schema: fx_rate_lookups coverage, 6h negative cache, coverage-based per_eur_rate, is_iso_currency without a stored rate (GW1)
+- [ ] 02-43-PLAN.md — Edge Functions: shared _shared/fx library, delete fx-sync and fx-monitor (GW1)
+- [ ] 02-45-PLAN.md — Engine + picker: built-in ISO currency list, currencies-table query removed (GW1)
+- [ ] 02-46-PLAN.md — Client: fxResolve door, per-date import and series follow-ups, fxLatest refresh (GW1)
+- [ ] 02-42-PLAN.md — Schema: retire fx-sync/fx-monitor crons and monitor-only functions (GW2)
+- [ ] 02-44-PLAN.md — resolve-rate: on-demand fetch path, fallback, MON-11 hold with second-source witness, failure-only alerts (GW2)
+- [ ] 02-47-PLAN.md — Client: foreign-account opening-date fetch, budgeted pending sweep (GW2)
+- [ ] 02-48-PLAN.md — Client: "Waiting for a rate" display, read paths can never fetch (GW2)
+- [ ] 02-49-PLAN.md — Client: home-currency change fetches today's rates for every currency in use (GW3)
+- [ ] 02-50-PLAN.md — Production rollout [BLOCKING, approval], device check, then cleanup (GW4)
 **UI hint**: yes
 
 ### Phase 02.1: PDF statement import (INSERTED)
