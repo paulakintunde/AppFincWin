@@ -419,6 +419,7 @@ const en = {
     otherCurrency: 'Also {{amount}} in {{code}}',
     stillToCome: '{{amount}} still to come',
     inHome: '≈ {{amount}}',
+    inHomeWaiting: 'Waiting for a rate',
     importCsv: 'Import statement',
     archived: 'Archived',
     sheet: {
