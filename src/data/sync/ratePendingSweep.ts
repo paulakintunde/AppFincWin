@@ -13,6 +13,7 @@
 import { focusManager, onlineManager, type QueryClient } from '@tanstack/react-query';
 import { fetchRatePendingRows } from '@/db/fxResolve';
 import { retryAccountRateChecks } from '@/data/mutations/accountRateChecks';
+import { retryOutstandingHomeRateCheck } from '@/data/mutations/homeCurrencyRates';
 import { followUpPendingByDate, lazySupabaseClient } from '@/data/mutations/transactionCache';
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { localDateIn } from '@/engine/time';
@@ -61,6 +62,11 @@ export async function runRatePendingSweep(qc: QueryClient, now: number = Date.no
     lastRunAt = now;
 
     const budget = createSweepBudget(SWEEP_MAX_CALLS);
+    try {
+      await retryOutstandingHomeRateCheck(qc, userId, budget);
+    } catch {
+      // never stops the rest of the run; the stored check is retried next time
+    }
     await retryAccountRateChecks(qc, userId, budget);
     if (budget.remaining <= 0) return;
 

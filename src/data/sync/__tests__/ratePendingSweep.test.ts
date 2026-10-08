@@ -39,6 +39,10 @@ const mockFollowUp = jest.fn(
 jest.mock('@/db/fxResolve', () => ({
   fetchRatePendingRows: (c: unknown, o: unknown) => mockFetchRows(c, o),
 }));
+const mockHomeRetry = jest.fn(async (_qc: unknown, _uid: string, _budget: SweepBudget) => undefined);
+jest.mock('@/data/mutations/homeCurrencyRates', () => ({
+  retryOutstandingHomeRateCheck: (q: unknown, u: string, b: SweepBudget) => mockHomeRetry(q, u, b),
+}));
 jest.mock('@/data/mutations/accountRateChecks', () => ({
   retryAccountRateChecks: (q: unknown, u: string, b: SweepBudget) => mockRetryChecks(q, u, b),
 }));
@@ -194,5 +198,54 @@ describe('startRatePendingSweep', () => {
     expect(mockFetchRows).not.toHaveBeenCalled();
     stop();
     jest.restoreAllMocks();
+  });
+});
+
+describe('02-49 home-currency check in the sweep', () => {
+  const thirtyDates = () => Array.from({ length: 30 }, (_, i) => row(dayN(i + 1)));
+
+  it('runs first, before account checks, with the shared budget and the session user', async () => {
+    const order: string[] = [];
+    let homeBudget: SweepBudget | undefined;
+    let accountBudget: SweepBudget | undefined;
+    mockHomeRetry.mockImplementationOnce(async (_q, _u, b) => {
+      order.push('home');
+      homeBudget = b;
+    });
+    mockRetryChecks.mockImplementationOnce(async (_q, _u, b) => {
+      order.push('account');
+      accountBudget = b;
+    });
+    await runRatePendingSweep(qc, NOW);
+    expect(mockHomeRetry).toHaveBeenCalledWith(qc, 'u1', expect.anything());
+    expect(order).toEqual(['home', 'account']);
+    expect(homeBudget).toBe(accountBudget);
+  });
+
+  it('a home check needing 3 chunks leaves 7 calls for the rest; total never exceeds the cap', async () => {
+    mockRows = thirtyDates();
+    mockHomeRetry.mockImplementationOnce(async (_q, _u, b) => {
+      for (let i = 0; i < 3; i++) if (b.take()) mockCalls.push(['home']);
+    });
+    await runRatePendingSweep(qc, NOW);
+    expect(mockFollowUp).toHaveBeenCalledWith(qc, expect.any(Array), { maxCalls: 7 });
+    expect(mockCalls).toHaveLength(SWEEP_MAX_CALLS);
+  });
+
+  it('a failing home check never stops the rest of the run', async () => {
+    mockRows = [row(dayN(1))];
+    mockHomeRetry.mockRejectedValueOnce(new Error('boom'));
+    await runRatePendingSweep(qc, NOW);
+    expect(mockRetryChecks).toHaveBeenCalled();
+    expect(mockFollowUp).toHaveBeenCalled();
+  });
+
+  it('signed out or throttled -> the home check is not run', async () => {
+    mockSession = null;
+    await runRatePendingSweep(qc, NOW);
+    noteResolveRateThrottled(NOW);
+    mockSession = { user: { id: 'u1' } };
+    await runRatePendingSweep(qc, NOW);
+    expect(mockHomeRetry).not.toHaveBeenCalled();
   });
 });
