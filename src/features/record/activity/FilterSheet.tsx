@@ -151,7 +151,7 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
           <TextInput
             accessibilityLabel={t('activity.filter.min')}
             placeholder={t('activity.filter.min')}
-            placeholderTextColor={colors.inkFaint}
+            placeholderTextColor={colors.inkMuted}
             keyboardType="decimal-pad"
             value={minText}
             onChangeText={setMinText}
@@ -160,7 +160,7 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
           <TextInput
             accessibilityLabel={t('activity.filter.max')}
             placeholder={t('activity.filter.max')}
-            placeholderTextColor={colors.inkFaint}
+            placeholderTextColor={colors.inkMuted}
             keyboardType="decimal-pad"
             value={maxText}
             onChangeText={setMaxText}
