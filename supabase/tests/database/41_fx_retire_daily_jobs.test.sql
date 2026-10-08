@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(24);
+select extensions.plan(30);
 
 select extensions.is(
   (select count(*) from cron.job where jobname in ('fx-sync-daily', 'fx-monitor-daily'))::int, 0,
@@ -18,8 +18,14 @@ select extensions.is(
   'no cron command references fx_sync_* or fx_monitor_* vault secrets'
 );
 
-select extensions.hasnt_function('public', 'fx_pending_rows_count', array['interval'], 'fx_pending_rows_count is dropped');
-select extensions.hasnt_function('public', 'fx_restamp_pending', array['integer'], 'fx_restamp_pending is dropped');
+select extensions.ok(not has_function_privilege('anon', 'public.fx_pending_rows_count(interval)', 'execute'), 'anon cannot execute fx_pending_rows_count');
+select extensions.ok(not has_function_privilege('authenticated', 'public.fx_pending_rows_count(interval)', 'execute'), 'authenticated cannot execute fx_pending_rows_count');
+select extensions.ok(not has_function_privilege('service_role', 'public.fx_pending_rows_count(interval)', 'execute'), 'service_role cannot execute fx_pending_rows_count');
+select extensions.ok(obj_description('public.fx_pending_rows_count(interval)'::regprocedure, 'pg_proc') like 'DEPRECATED 2026-10-08%', 'fx_pending_rows_count carries the deprecation comment');
+select extensions.ok(not has_function_privilege('anon', 'public.fx_restamp_pending(integer)', 'execute'), 'anon cannot execute fx_restamp_pending');
+select extensions.ok(not has_function_privilege('authenticated', 'public.fx_restamp_pending(integer)', 'execute'), 'authenticated cannot execute fx_restamp_pending');
+select extensions.ok(not has_function_privilege('service_role', 'public.fx_restamp_pending(integer)', 'execute'), 'service_role cannot execute fx_restamp_pending');
+select extensions.ok(obj_description('public.fx_restamp_pending(integer)'::regprocedure, 'pg_proc') like 'DEPRECATED 2026-10-08%', 'fx_restamp_pending carries the deprecation comment');
 
 select extensions.has_function('public', 'fx_auto_accept_holds', array['interval'], 'fx_auto_accept_holds is kept');
 select extensions.has_function('public', 'fx_drop_hold', array['bigint'], 'fx_drop_hold is kept');
