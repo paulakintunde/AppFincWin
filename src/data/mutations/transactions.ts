@@ -49,6 +49,7 @@ import { editStamp, provisionalStamp } from './provisional';
 import { newStepId, recordUndoStepSafely, type UndoCapture } from './undoCapture';
 import {
   followUpIfRatePending,
+  followUpPendingByDate,
   invalidateDerivedReads,
   patchMonthCache,
   patchMonthCacheIfLoaded,
@@ -430,21 +431,12 @@ export function registerTransactionMutations(qc: QueryClient): void {
     onSuccess: async (rows: ImportChunkResult, vars: ImportChunkVars) => {
       await qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
 
-      // D-19/D-45: one resolve-rate call per distinct (original_currency, local_date) among
-      // the rows that came back rate_pending, capped at 20 per chunk -- never awaited (WR-A15).
-      const currencyById = new Map(vars.rows.map((r) => [r.id, r.original_currency] as const));
-      const seen = new Set<string>();
-      let resolved = 0;
-      for (const row of rows) {
-        if (!row.rate_pending || resolved >= 20) continue;
-        const currency = currencyById.get(row.id);
-        if (!currency) continue;
-        const dedupeKey = `${currency}:${row.local_date}`;
-        if (seen.has(dedupeKey)) continue;
-        seen.add(dedupeKey);
-        resolved += 1;
-        void followUpIfRatePending(qc, vars.householdId, monthOf(row.local_date), row);
-      }
+      // 02-DECISION-fx-on-demand item 3c: one resolve-rate call per distinct local_date among the
+      // rows that came back rate_pending (<= 50 ids per call, <= 20 calls) -- never awaited (WR-A15).
+      void followUpPendingByDate(
+        qc,
+        rows.map((r) => ({ ...r, household_id: vars.householdId }))
+      );
     },
     onError: async (err: unknown, vars: ImportChunkVars) => {
       const cls = classifySettledWriteError(err);

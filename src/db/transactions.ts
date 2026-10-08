@@ -4,9 +4,7 @@
 // imports the real Supabase client (src/services/supabase), so its tests never trigger
 // that module's eager getEnv() call and can run against a fake client instead.
 
-import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
 import { monthRange } from '@/engine/time';
-import { noteResolveRateThrottled } from '@/data/sync/resolveRateBackoff';
 import { DbError, NotFoundError, VersionConflictError, toDbError } from './errors';
 import {
   assertAllowedKeys,
@@ -487,39 +485,4 @@ export async function insertTransactionsBatch(
 
   if (error) throw toDbError(error, status);
   return (data as Pick<TransactionRow, 'id' | 'local_date' | 'version' | 'rate_pending'>[] | null) ?? [];
-}
-
-/**
- * D-17: calls the resolve-rate Edge Function so a `rate_pending` row (no history existed
- * yet for its currency/date) gets backfilled and re-stamped. A network-layer failure
- * (`FunctionsFetchError`) is transient and rethrown so the caller's retry policy handles
- * it; any HTTP-layer failure the function itself returned is swallowed to `null` -- the
- * row stays `rate_pending` and a later call (or the background restamp path) can retry.
- */
-/**
- * WR-A15: upper bound on one resolve-rate call. The call is best-effort (a row that stays
- * rate_pending is picked up later), so a slow upstream backfill must never hang a caller.
- */
-export const RATE_RESOLUTION_TIMEOUT_MS = 15_000;
-
-export async function requestRateResolution(client: DbClient, transactionId: string): Promise<TransactionRow | null> {
-  const { data, error } = await client.functions.invoke('resolve-rate', {
-    body: { transactionId },
-    timeout: RATE_RESOLUTION_TIMEOUT_MS,
-  });
-
-  if (error) {
-    if (error instanceof FunctionsFetchError) throw error;
-    // RD-05: a 429 from resolve-rate's own per-user throttle is never a permanent failure
-    // (the row simply stays rate_pending -- same as any other HTTP-layer error here), but
-    // the client notes it so a burst of other pending writes does not keep calling an
-    // endpoint that has already asked it to slow down (see resolveRateBackoff.ts).
-    if (error instanceof FunctionsHttpError && (error.context as { status?: number } | undefined)?.status === 429) {
-      noteResolveRateThrottled();
-    }
-    return null;
-  }
-
-  const row = (data as { row?: TransactionRow } | null)?.row;
-  return row ?? null;
 }
