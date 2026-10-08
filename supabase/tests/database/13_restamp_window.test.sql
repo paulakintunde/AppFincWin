@@ -9,6 +9,9 @@
 --     an earlier row beyond 7 days;
 --   * a row dated more than a day ahead of the server date stays pending;
 --   * local_date must fall between 1900-01-01 and a year ahead;
+--   * NOTE: the 7-day exact window is superseded by migration
+--     20261007000400 (exact needs own-date rates or a recorded lookup; see
+--     40_fx_on_demand_stamping). The relax path asserted below is unchanged.
 --   * fx_restamp_pending() (fx-monitor, daily) re-stamps due pending rows
 --     under the normal window, so a future-dated row resolves once its day
 --     arrives.
@@ -28,6 +31,13 @@ insert into public.fx_rates (base, quote, rate, rate_date, source) values
   ('EUR', 'JPY', 120, '2019-01-10', 'frankfurter-v2'),
   ('EUR', 'USD', 1.15, current_date, 'frankfurter-v2'),
   ('EUR', 'JPY', 170, current_date, 'frankfurter-v2');
+
+-- 20261007000400 (window semantics): the tomorrow-dated row (case 3) is exact
+-- only because a fresh lookup says today's rate is the publication for
+-- tomorrow's date; the old 7-day exact window is superseded.
+insert into public.fx_rate_lookups (quote, requested_date, rate_date, source, fetched_at) values
+  ('JPY', current_date + 1, current_date, 'frankfurter-v2', now()),
+  ('USD', current_date + 1, current_date, 'frankfurter-v2', now());
 
 create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
@@ -146,6 +156,11 @@ reset role;
 insert into public.fx_rates (base, quote, rate, rate_date, source) values
   ('EUR', 'USD', 1.2, '2021-05-31', 'frankfurter-v2'),
   ('EUR', 'JPY', 130, '2021-05-31', 'frankfurter-v2');
+-- 20261007000400 (restamp_pending block seed): final lookups say 05-31 is
+-- the publication for 2021-06-01 (plan 02-42 removes this block).
+insert into public.fx_rate_lookups (quote, requested_date, rate_date, source, fetched_at) values
+  ('USD', '2021-06-01', '2021-05-31', 'frankfurter-v2', timestamptz '2021-06-05 00:00+00'),
+  ('JPY', '2021-06-01', '2021-05-31', 'frankfurter-v2', timestamptz '2021-06-05 00:00+00');
 
 set local role service_role;
 select extensions.ok(
