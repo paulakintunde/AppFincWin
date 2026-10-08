@@ -385,7 +385,7 @@ Plans:
 ### Phase 6: Grow
 **Goal**: A user can track savings goals, investments and debt payoff against their real numbers.
 **Depends on**: Phase 3 (Shell provides the navigation these screens live in)
-**Requirements**: GRW-01, GRW-02, GRW-03, GRW-04, GRW-05, GRW-06, GRW-07, GRW-08, GRW-09, GRW-10
+**Requirements**: GRW-01, GRW-02, GRW-03, GRW-04, GRW-05, GRW-06, GRW-07, GRW-08, GRW-09, GRW-10, GRW-11
 **Success Criteria** (what must be TRUE):
   1. A user can create a savings goal with a target amount or leave it open-ended, flag exactly one goal as their emergency fund, and set an automatic contribution to any goal.
   2. A user can record investment holdings across the supported account types, with cost-basis lots — buys, sells, dividends, fees — against each holding.

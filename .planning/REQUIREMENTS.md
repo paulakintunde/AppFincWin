@@ -194,6 +194,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **GRW-08**: User can compare avalanche and snowball payoff strategies with an optional extra payment
 - [ ] **GRW-09**: User can see a projected payoff date and total interest for their chosen strategy
 - [ ] **GRW-10**: User records a holding's market value by hand, and its as-of date is shown wherever that value appears
+- [ ] **GRW-11**: User can record an interest rate (APY) on savings and investment accounts, alongside GRW-07's rate (APR) and minimum payment for credit cards and loans. Added 2026-10-07 from the Phase 2 device walkthrough; user decision: deferred to Phase 6.
 
 ### Insights
 
@@ -486,6 +487,7 @@ Populated during roadmap creation.
 | GRW-08 | Phase 6 - Grow | Pending |
 | GRW-09 | Phase 6 - Grow | Pending |
 | GRW-10 | Phase 6 - Grow | Pending |
+| GRW-11 | Phase 6 - Grow | Pending |
 | INS-01 | Phase 7 - Insights | Pending |
 | INS-02 | Phase 7 - Insights | Pending |
 | INS-03 | Phase 7 - Insights | Pending |

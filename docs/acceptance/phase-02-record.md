@@ -74,7 +74,7 @@ PR #43 CI: `checks`, `rls`, `secret-scan` all pass.
 |---|---|
 | 1 Sign-in, first account, bring your history | Pass after fixes. The first run landed on You instead of Activity, the home currency stayed USD on an en-CA device, and the import file button was disabled with no reason. All three are fixed in `02-31-WALKTHROUGH-FIXES.md`. |
 | 2 CSV import, column check, date format | Pass |
-| 3 Review: duplicate, category guesses, import toast | Pass |
+| 3 Review: category guesses, import toast; duplicates per D-47 | Pass. Under D-47 the two identical Coffee House rows on 12/07 are both imported and neither is flagged; the plan's original 'one Possible duplicate' wording predates D-47. Re-importing the same file flags every line, which the user confirmed on device on 2026-10-07. |
 | 4 Netflix recurring suggestion, pending line | Pass |
 | 5 Add and undo a line | Pass |
 | 6 Mark paid, "This and future", skip, end series | Pass |
