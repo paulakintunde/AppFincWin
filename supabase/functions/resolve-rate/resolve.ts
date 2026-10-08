@@ -30,9 +30,21 @@
 // on-demand feed there is no daily series, so "no prior within a week"
 // accepts (MON-11 says day-on-day; WR-B04's any-age comparison assumed a
 // daily feed).
+//
+// MON-11 hold confirmation (user decision 2026-10-07): open holds are passed
+// to classifyRates, so a later reading within 3% confirms an older hold. When
+// the primary Frankfurter value is held and the date is within
+// WITNESS_WINDOW_DAYS of today(UTC) (open.er-api is latest-only), open.er-api
+// latest is fetched once as a witness and confirms the exact hold this call
+// created (WR-B03, confirmWithWitness). Unconfirmed holds auto-accept after
+// 2 days: fx_auto_accept_holds() runs lazily, once per request that is about
+// to fetch (there is no cron). A held value counts as a failed fetch for
+// back-off (reason 'held') and alerts via its own 'held' alert; the lookup
+// naming it makes the date covered the moment it is accepted.
 import { FRANKFURTER_V2_RATES_URL, parseFrankfurterRates, type FxRow } from '../_shared/fx/parse.ts';
 import { OPEN_ER_API_URL, parseOpenErApiRates } from '../_shared/fx/openErApi.ts';
 import { classifyRates, type Classification, type OpenHold, type StoredRate } from '../_shared/fx/plausibility.ts';
+import { confirmWithWitness } from '../_shared/fx/witness.ts';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -264,10 +276,36 @@ async function quarantineAndStore(
       })
     )
   ).flat();
-  const classified = classifyRates(candidates, history, [], source);
+  // Open and dropped holds go in as openHolds: a reading from another source
+  // (or a later date) within CONFIRM_TOLERANCE confirms an older open hold,
+  // and a dropped / already-held (quote, date, source) is skipped (CR-B02).
+  const holds = await deps.openHolds(needed);
+  const classified = classifyRates(candidates, history, holds, source);
 
   if (classified.accept.length > 0) {
     await deps.upsertRates(classified.accept, source);
+  }
+
+  const relax = new Set(classified.accept.map((r) => r.quote));
+  // At most one lookup per (quote, requested date): the table's key.
+  const lookups = new Map<string, LookupRow>();
+  for (const r of classified.accept) lookups.set(r.quote, { quote: r.quote, requestedDate: date, rateDate: r.date, source });
+
+  if (classified.confirm.length > 0) {
+    // Group by each confirmation's own (held) source -- a single reading can
+    // confirm holds originally written under different sources.
+    const bySource = new Map<string, FxRow[]>();
+    for (const c of classified.confirm) bySource.set(c.source, [...(bySource.get(c.source) ?? []), c.row]);
+    for (const [confirmSource, confirmRows] of bySource) {
+      await deps.upsertRates(confirmRows, confirmSource as FxSource);
+    }
+    await deps.confirmHolds(classified.confirm.map((c) => c.holdId));
+    for (const c of classified.confirm) {
+      relax.add(c.row.quote);
+      if (!lookups.has(c.row.quote)) {
+        lookups.set(c.row.quote, { quote: c.row.quote, requestedDate: date, rateDate: c.row.date, source: c.source as FxSource });
+      }
+    }
   }
   if (classified.hold.length > 0) {
     await deps.upsertHolds(classified.hold);
@@ -287,16 +325,48 @@ async function quarantineAndStore(
     );
   }
 
-  const lookups: LookupRow[] = [
-    ...classified.accept.map((r) => ({ quote: r.quote, requestedDate: date, rateDate: r.date, source })),
-    // A held value becomes coverage the moment it is accepted.
-    ...classified.hold.map((h) => ({ quote: h.quote, requestedDate: date, rateDate: h.date, source: h.source as FxSource })),
-  ];
-  if (lookups.length > 0) await deps.upsertLookups(lookups);
+  // A held value becomes coverage the moment it is accepted (confirmed, or
+  // auto-accepted after 2 days, which refreshes this lookup's fetched_at).
+  for (const h of classified.hold) {
+    if (!lookups.has(h.quote)) {
+      lookups.set(h.quote, { quote: h.quote, requestedDate: date, rateDate: h.date, source: h.source as FxSource });
+    }
+  }
+  if (lookups.size > 0) await deps.upsertLookups([...lookups.values()]);
 
-  result.relax = [...new Set(classified.accept.map((r) => r.quote))].sort();
-  result.held = [...new Set(classified.hold.map((h) => h.quote))].sort();
-  if (result.relax.length > 0) await deps.clearFailures(date, result.relax);
+  // Second-source witness: only when the primary source was Frankfurter,
+  // this call created holds, and the date is recent enough for open.er-api's
+  // latest-only feed to speak for it. Its reading is only a witness; the HELD
+  // Frankfurter value is what enters fx_rates (D-12). A failure to fetch or
+  // read never fails the call -- the hold simply stays open (auto-accept
+  // after 2 days is the fallback).
+  let stillHeld = [...new Set(classified.hold.map((h) => h.quote))].sort();
+  if (source === 'frankfurter-v2' && classified.hold.length > 0 && date >= addDays(deps.today(), -WITNESS_WINDOW_DAYS)) {
+    let witnessed: { rowsBySource: Map<string, FxRow[]>; holdIds: number[] } | null = null;
+    try {
+      const witnessRows = parseOpenErApiRates(await deps.fetchJson(`${OPEN_ER_API_URL}/EUR`));
+      const fresh = (await deps.openHolds(stillHeld)).filter((h) => (h.status ?? 'held') === 'held');
+      witnessed = confirmWithWitness(classified.hold, fresh, witnessRows);
+    } catch {
+      witnessed = null;
+    }
+    if (witnessed !== null && witnessed.holdIds.length > 0) {
+      const confirmedQuotes: string[] = [];
+      for (const [heldSource, rows] of witnessed.rowsBySource) {
+        await deps.upsertRates(rows, heldSource as FxSource);
+        for (const r of rows) confirmedQuotes.push(r.quote);
+      }
+      await deps.confirmHolds(witnessed.holdIds);
+      for (const q of confirmedQuotes) relax.add(q);
+      stillHeld = stillHeld.filter((q) => !confirmedQuotes.includes(q));
+      await deps.clearFailures(date, confirmedQuotes.sort());
+    }
+  }
+
+  result.relax = [...relax].sort();
+  result.held = stillHeld;
+  const acceptedOnly = [...new Set(classified.accept.map((r) => r.quote))].sort();
+  if (acceptedOnly.length > 0) await deps.clearFailures(date, acceptedOnly);
   return result;
 }
 

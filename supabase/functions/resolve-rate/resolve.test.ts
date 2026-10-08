@@ -695,3 +695,121 @@ describe('02-44 fallback, coverage and failures', () => {
     expect(deps.notify).toHaveBeenCalledTimes(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// 02-44 Task 2: MON-11 second-source confirmation.
+// ---------------------------------------------------------------------------
+describe('02-44 MON-11 holds: open holds and the second-source witness', () => {
+  const gbp = (overrides: Partial<PendingTransaction> = {}) =>
+    pendingRow({ original_currency: 'GBP', home_currency: 'EUR', ...overrides });
+
+  it('an open hold from another source is confirmed by a within-3% reading (classifyRates confirm path)', async () => {
+    const hold = { id: 9, quote: 'GBP', heldRate: '1.30', heldDate: '2020-01-14', source: 'open-er-api', status: 'held' as const };
+    const deps = makeDeps({
+      readPending: jest.fn(async () => gbp()),
+      fetchJson: jest.fn(async () => frank('2020-01-15', { GBP: 1.305 })),
+      openHolds: jest.fn(async () => [hold]),
+    });
+    await resolveRate(deps, { transactionId: VALID_ID });
+    expect(deps.upsertRates).toHaveBeenCalledWith([{ base: 'EUR', quote: 'GBP', rate: '1.30', date: '2020-01-14' }], 'open-er-api');
+    expect(deps.confirmHolds).toHaveBeenCalledWith([9]);
+    expect(deps.upsertRates).toHaveBeenCalledWith([{ base: 'EUR', quote: 'GBP', rate: '1.305', date: '2020-01-15' }], 'frankfurter-v2');
+    expect(deps.restamp).toHaveBeenCalledWith(VALID_ID, ['GBP']);
+    // exactly one lookup per (quote, requested date): the accepted row's
+    expect(deps.upsertLookups).toHaveBeenCalledWith([
+      { quote: 'GBP', requestedDate: '2020-01-15', rateDate: '2020-01-15', source: 'frankfurter-v2' },
+    ]);
+  });
+
+  it('a dropped hold on (quote, date, source) is skipped: no store, no new hold, no held alert (CR-B02)', async () => {
+    const dropped = { id: 5, quote: 'GBP', heldRate: '1.30', heldDate: '2020-01-15', source: 'frankfurter-v2', status: 'dropped' as const };
+    const deps = makeDeps({
+      readPending: jest.fn(async () => gbp()),
+      fetchJson: jest.fn(async () => frank('2020-01-15', { GBP: 1.3 })),
+      openHolds: jest.fn(async () => [dropped]),
+    });
+    await resolveRate(deps, { transactionId: VALID_ID });
+    expect(deps.upsertRates).not.toHaveBeenCalled();
+    expect(deps.upsertHolds).not.toHaveBeenCalled();
+    expect(deps.confirmHolds).not.toHaveBeenCalled();
+    expect(deps.insertAlerts).not.toHaveBeenCalledWith([expect.objectContaining({ kind: 'held' })]);
+    expect(deps.recordFailures).toHaveBeenCalledWith('2020-01-15', ['GBP'], 'no-usable-rate');
+  });
+
+  describe('witness (open.er-api latest) for a Frankfurter value this call held', () => {
+    const TODAY = '2026-10-07';
+    const prior = [{ quote: 'GBP', rate: '0.86', date: '2026-09-30' }];
+    const freshHold = { id: 11, quote: 'GBP', heldRate: '1.3', heldDate: TODAY, source: 'frankfurter-v2', status: 'held' as const };
+
+    const setup = (opts: { witnessGbp?: number; date?: string; witnessThrows?: boolean; frankfurterThrows?: boolean }) => {
+      const date = opts.date ?? TODAY;
+      const fetchJson = jest.fn(async (url: string) => {
+        if (url.startsWith(FRANKFURTER_V2_RATES_URL)) {
+          if (opts.frankfurterThrows) throw new Error('down');
+          return frank(date, { GBP: 1.3 });
+        }
+        if (opts.witnessThrows) throw new Error('witness down');
+        return openEr('Wed, 07 Oct 2026 00:02:31 +0000', { GBP: opts.witnessGbp ?? 1.31 });
+      });
+      let reads = 0;
+      const openHolds = jest.fn(async () => (reads++ === 0 ? [] : [freshHold]));
+      const deps = makeDeps({
+        readPending: jest.fn(async () => gbp({ local_date: date })),
+        fetchJson,
+        storedRatesAround: jest.fn(async () => prior),
+        openHolds,
+      });
+      return { deps, fetchJson };
+    };
+
+    it('within 3% -> hold confirmed, held value stored under its own source, lookup recorded, quote relaxed, no held failure', async () => {
+      const { deps } = setup({});
+      await resolveRate(deps, { transactionId: VALID_ID });
+      expect(deps.confirmHolds).toHaveBeenCalledWith([11]);
+      expect(deps.upsertRates).toHaveBeenCalledWith([{ base: 'EUR', quote: 'GBP', rate: '1.3', date: TODAY }], 'frankfurter-v2');
+      expect(deps.upsertLookups).toHaveBeenCalledWith([
+        { quote: 'GBP', requestedDate: TODAY, rateDate: TODAY, source: 'frankfurter-v2' },
+      ]);
+      expect(deps.restamp).toHaveBeenCalledWith(VALID_ID, ['GBP']);
+      expect(deps.recordFailures).not.toHaveBeenCalled();
+      expect(deps.clearFailures).toHaveBeenCalledWith(TODAY, ['GBP']);
+      expect(deps.insertAlerts).toHaveBeenCalledWith([expect.objectContaining({ kind: 'held', quote: 'GBP' })]);
+      expect(deps.insertAlerts).toHaveBeenCalledTimes(1);
+    });
+
+    it('beyond 3% -> hold stays, held failure recorded, held value lookup recorded, operator notified', async () => {
+      const { deps } = setup({ witnessGbp: 1.45 });
+      await resolveRate(deps, { transactionId: VALID_ID });
+      expect(deps.confirmHolds).not.toHaveBeenCalled();
+      expect(deps.upsertRates).not.toHaveBeenCalled();
+      expect(deps.recordFailures).toHaveBeenCalledWith(TODAY, ['GBP'], 'held');
+      expect(deps.upsertLookups).toHaveBeenCalledWith([
+        { quote: 'GBP', requestedDate: TODAY, rateDate: TODAY, source: 'frankfurter-v2' },
+      ]);
+      expect(deps.notify).toHaveBeenCalledTimes(1);
+    });
+
+    it('requested date 5 days old -> no witness fetch', async () => {
+      const { deps, fetchJson } = setup({ date: '2026-10-02' });
+      await resolveRate(deps, { transactionId: VALID_ID });
+      expect(fetchJson).toHaveBeenCalledTimes(1);
+      expect(deps.recordFailures).toHaveBeenCalledWith('2026-10-02', ['GBP'], 'held');
+    });
+
+    it('primary source open.er-api -> no witness fetch', async () => {
+      const { deps, fetchJson } = setup({ frankfurterThrows: true, witnessGbp: 1.3 });
+      await resolveRate(deps, { transactionId: VALID_ID });
+      expect(fetchJson.mock.calls.filter(([u]) => String(u).includes('open.er-api'))).toHaveLength(1);
+      expect(deps.confirmHolds).not.toHaveBeenCalled();
+      expect(deps.recordFailures).toHaveBeenCalledWith(TODAY, ['GBP'], 'held');
+    });
+
+    it('witness fetch throws -> treated as not confirmed; the call still succeeds', async () => {
+      const { deps } = setup({ witnessThrows: true });
+      const result = await resolveRate(deps, { transactionId: VALID_ID });
+      expect(result.status).toBe(200);
+      expect(deps.confirmHolds).not.toHaveBeenCalled();
+      expect(deps.recordFailures).toHaveBeenCalledWith(TODAY, ['GBP'], 'held');
+    });
+  });
+});
