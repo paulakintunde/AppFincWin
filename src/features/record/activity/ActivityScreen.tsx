@@ -36,7 +36,7 @@ import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { ActivityRow, ProjectionRow } from './ActivityRow';
-import { buildActivityItems, buildFlatItems, getActivityItemType, type ActivityItem } from './activitySections';
+import { buildActivityItems, buildFlatItems, cardPositions, getActivityItemType, type ActivityItem } from './activitySections';
 import { BulkBar } from './BulkBar';
 import { FilterSheet } from './FilterSheet';
 import { formatMonthLabel, MonthSwitcher } from './MonthSwitcher';
@@ -110,6 +110,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         : buildActivityItems(narrowed, searching || filtering ? [] : view.projections),
     [flat, narrowed, searching, filtering, view.projections]
   );
+  const positions = useMemo(() => cardPositions(items), [items]);
   const itemRows = useMemo(() => items.flatMap((i) => (i.type === 'row' ? [i.row] : [])), [items]);
   const selection = useActivitySelection(useMemo(() => itemRows.map((r) => r.id), [itemRows]));
   const selectedRows = useMemo(() => itemRows.filter((r) => selection.isSelected(r.id)), [itemRows, selection]);
@@ -185,7 +186,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
     setSheetMode({ kind: 'new', direction });
   };
 
-  const renderItem = ({ item }: { item: ActivityItem }) => {
+  const renderItem = ({ item, index }: { item: ActivityItem; index: number }) => {
+    const cardPosition = positions[index] ?? 'only';
     if (item.type === 'header') {
       return (
         <Text style={[styles.sectionHeader, { ...textRole(pairing, 'label'), color: colors.inkMuted }]}>
@@ -201,6 +203,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
           accountName={accountName}
           formatter={formatter}
           homeCurrency={rc.homeCurrency}
+          cardPosition={cardPosition}
         />
       );
     }
@@ -216,6 +219,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         onToggleSelect={onToggleSelect}
         onPress={onPressRow}
         onMarkPaid={onMarkPaid}
+        cardPosition={cardPosition}
       />
     );
   };

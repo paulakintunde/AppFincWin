@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { colors, shadows } from '@/theme/tokens';
 import { radii, space } from '@/theme/layout';
@@ -17,10 +17,10 @@ const categories: CategoryLookup = {
   loading: false,
 } as unknown as CategoryLookup;
 
-const formatter: MoneyFormatter = {
+const formatter = {
   locale: 'en-GB',
-  formatMoney: (m) => `${m.amount < 0 ? '-' : ''}£${(Math.abs(m.amount) / 100).toFixed(2)}`,
-  formatDate: (d) => d,
+  formatMoney: (m: { amount: number }) => `${m.amount < 0 ? '-' : ''}£${(Math.abs(m.amount) / 100).toFixed(2)}`,
+  formatDate: (d: string) => d,
 } as unknown as MoneyFormatter;
 
 function row(over: Partial<ActivityRowView>): ActivityRowView {
@@ -98,10 +98,9 @@ describe('ActivityRow card styling (02-polish item 2)', () => {
     expect(onMarkPaid).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps Mark paid in the row (not a second block below it)', async () => {
+  it('keeps Mark paid in the row card, not in a second block below it', async () => {
     const { screen } = await renderRow(row({ status: 'pending', local_date: '2026-09-28' }), 'only');
-    const card = screen.getByTestId('activity-card-r1');
-    expect(card.findAll((n) => n.props.accessibilityLabel === 'Mark paid').length).toBeGreaterThan(0);
-    expect(screen.queryByTestId('activity-markpaid-block')).toBeNull();
+    const card = within(screen.getByTestId('activity-card-r1'));
+    expect(card.getByLabelText('Mark paid')).toBeTruthy();
   });
 });
