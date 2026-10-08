@@ -185,6 +185,31 @@ export async function fetchRecurringSeries(client: DbClient, householdId: string
   return (data as RecurringSeriesRow[] | null) ?? [];
 }
 
+/** W6-13 WR-05: denial-of-service guard on fetchSeriesIdsByCategory (one merge's op cap). */
+export const SERIES_BY_CATEGORY_MAX = 6000;
+
+/**
+ * D-36 / W6-13 WR-05: every live series template filed under one category, so a category merge
+ * can move the templates with the rows (materialise_series copies the template's category into
+ * each new occurrence, so a template left on the archived source keeps filing bills there).
+ */
+export async function fetchSeriesIdsByCategory(
+  client: DbClient,
+  householdId: string,
+  categoryId: string
+): Promise<{ id: string; version: number }[]> {
+  const { data, error, status } = await client
+    .from('recurring_series')
+    .select('id, version')
+    .eq('household_id', householdId)
+    .eq('category_id', categoryId)
+    .is('deleted_at', null)
+    .limit(SERIES_BY_CATEGORY_MAX + 1);
+
+  if (error) throw toDbError(error, status);
+  return (data as { id: string; version: number }[] | null) ?? [];
+}
+
 /** `p_undo_step` is only sent when the caller asks the server to record the step (D-WR-04). */
 function undoStepParam(undo: SeriesUndoLabel | undefined): { p_undo_step?: { id: string; label_key: string; label_params: UndoLabelParams } } {
   return undo ? { p_undo_step: { id: undo.id, label_key: undo.labelKey, label_params: undo.labelParams } } : {};

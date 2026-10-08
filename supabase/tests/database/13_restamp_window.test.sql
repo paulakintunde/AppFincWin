@@ -9,14 +9,16 @@
 --     an earlier row beyond 7 days;
 --   * a row dated more than a day ahead of the server date stays pending;
 --   * local_date must fall between 1900-01-01 and a year ahead;
---   * fx_restamp_pending() (fx-monitor, daily) re-stamps due pending rows
---     under the normal window, so a future-dated row resolves once its day
---     arrives.
+--   * NOTE: the 7-day exact window is superseded by migration
+--     20261007000400 (exact needs own-date rates or a recorded lookup; see
+--     40_fx_on_demand_stamping). The relax path asserted below is unchanged.
+--   * fx_restamp_pending() (fx-monitor, daily) was retired by migration
+--     20261007000300; the client pending-rate sweep now resolves due rows.
 
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(14);
+select extensions.plan(10);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a@test.local', '{}', now(), now());
@@ -28,6 +30,13 @@ insert into public.fx_rates (base, quote, rate, rate_date, source) values
   ('EUR', 'JPY', 120, '2019-01-10', 'frankfurter-v2'),
   ('EUR', 'USD', 1.15, current_date, 'frankfurter-v2'),
   ('EUR', 'JPY', 170, current_date, 'frankfurter-v2');
+
+-- 20261007000400 (window semantics): the tomorrow-dated row (case 3) is exact
+-- only because a fresh lookup says today's rate is the publication for
+-- tomorrow's date; the old 7-day exact window is superseded.
+insert into public.fx_rate_lookups (quote, requested_date, rate_date, source, fetched_at) values
+  ('JPY', current_date + 1, current_date, 'frankfurter-v2', now()),
+  ('USD', current_date + 1, current_date, 'frankfurter-v2', now());
 
 create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
@@ -127,41 +136,6 @@ select extensions.is(
   (select rate_pending from public.transactions where id = 'b2111111-1111-1111-1111-111111111111'),
   true,
   'a future-dated row stays pending after a relaxed restamp'
-);
-
--- 9. fx_restamp_pending() re-stamps due pending rows under the normal
--- window, is service_role-only, and never bumps version.
-set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
-insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone)
-values ('b6111111-1111-1111-1111-111111111111', (select id from hh), 'a1111111-1111-1111-1111-111111111111', 1000, 'JPY', '2021-06-01', 'UTC');
-select extensions.throws_ok(
-  $$select public.fx_restamp_pending()$$,
-  '42501', null,
-  'fx_restamp_pending is not executable by authenticated'
-);
-reset role;
-
--- fx-sync later stores the rates for that week.
-insert into public.fx_rates (base, quote, rate, rate_date, source) values
-  ('EUR', 'USD', 1.2, '2021-05-31', 'frankfurter-v2'),
-  ('EUR', 'JPY', 130, '2021-05-31', 'frankfurter-v2');
-
-set local role service_role;
-select extensions.ok(
-  (select public.fx_restamp_pending()) >= 1,
-  'fx_restamp_pending re-stamps the due pending rows'
-);
-reset role;
-select extensions.is(
-  (select rate_pending from public.transactions where id = 'b6111111-1111-1111-1111-111111111111'),
-  false,
-  'a due pending row is resolved once its week''s rates exist'
-);
-select extensions.is(
-  (select version from public.transactions where id = 'b6111111-1111-1111-1111-111111111111')::int,
-  1,
-  'fx_restamp_pending does not bump version'
 );
 
 select * from extensions.finish();

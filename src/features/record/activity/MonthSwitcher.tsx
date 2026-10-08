@@ -8,7 +8,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Row } from '@/ui/Row';
-import { Sheet } from '@/ui/Sheet';
+import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { SheetHeader } from '@/ui/SheetHeader';
 
 export function formatMonthLabel(month: string, locale: string): string {
   const [yearStr, monthStr] = month.split('-') as [string, string];
@@ -67,7 +68,9 @@ export function MonthSwitcher({ month, months, locale, onChange }: MonthSwitcher
         onPress={() => setListOpen(true)}
         style={styles.label}
       >
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{formatMonthLabel(month, locale)}</Text>
+        <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+          {formatMonthLabel(month, locale)}
+        </Text>
       </Pressable>
       <Pressable
         accessibilityRole="button"
@@ -80,17 +83,24 @@ export function MonthSwitcher({ month, months, locale, onChange }: MonthSwitcher
         <Chevron direction="right" color={colors.ink} />
       </Pressable>
       <Sheet visible={listOpen} onDismiss={() => setListOpen(false)} accessibilityLabel={t('activity.monthSwitcher.label')}>
-        {months.map((m) => (
-          <Row
-            key={m}
-            label={formatMonthLabel(m, locale)}
-            value={m === month ? '✓' : undefined}
-            onPress={() => {
-              setListOpen(false);
-              onChange(m);
-            }}
-          />
-        ))}
+        <SheetHeader
+          title={t('activity.monthSwitcher.label')}
+          cancelLabel={t('record.sheet.cancel')}
+          onCancel={() => setListOpen(false)}
+        />
+        <SheetScroll>
+          {months.map((m) => (
+            <Row
+              key={m}
+              label={formatMonthLabel(m, locale)}
+              value={m === month ? '✓' : undefined}
+              onPress={() => {
+                setListOpen(false);
+                onChange(m);
+              }}
+            />
+          ))}
+        </SheetScroll>
       </Sheet>
     </View>
   );
@@ -109,6 +119,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
+    flexShrink: 1,
     minHeight: space.touchMin,
     justifyContent: 'center',
   },

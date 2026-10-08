@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchFxLatest } from '@/db/fxRates';
 import { supabase } from '@/services/supabase';
 import { queryKeys } from '../keys';
+import { staleUnlessEmpty } from './staleness';
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -10,6 +11,6 @@ export function useFxLatest() {
   return useQuery({
     queryKey: queryKeys.fxLatest(),
     queryFn: () => fetchFxLatest(supabase),
-    staleTime: ONE_HOUR_MS,
+    staleTime: staleUnlessEmpty(ONE_HOUR_MS),
   });
 }

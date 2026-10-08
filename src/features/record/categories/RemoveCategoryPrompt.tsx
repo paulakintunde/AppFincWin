@@ -1,10 +1,11 @@
 // D-36: removing a category is never a delete. An unused category archives straight away;
 // one in use says how many transactions use it and offers Merge into another category or
-// Archive, both undoable. Merge is disabled while the count is loading and when it is capped
-// (more than the 6000-row merge limit, which the write would refuse anyway); Archive stays
-// available because it keeps every transaction on the category.
+// Archive, both undoable. When the count cannot be read (offline, an error) the same two choices
+// are offered under a "can't tell yet" note, with Try again. Merge is disabled while the count is
+// loading and when it is known to be capped (more than the 6000-row merge limit, which the write
+// would refuse anyway); Archive stays available because it keeps every transaction on the category.
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { CategoryRow } from '@/db/rows';
 import { useArchiveCategory, useMergeCategory } from '@/data/mutations/categories';
 import { useCategoryLookup, useCategoryUsage } from '@/data/queries/categories';
@@ -19,8 +20,46 @@ import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
-import { Sheet } from '@/ui/Sheet';
+import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
+
+/**
+ * S-WR-07 / integration I-01: what this prompt reads from useCategoryUsage's CategoryUsage
+ * contract (data W6-13 WR-06). The count is trusted only when `isKnown`; `isUnavailable` (a
+ * failed or offline read) and every other not-known state mean "can't tell". The TanStack-style
+ * aliases (isError, isSuccess === false, a non-success status, known === false) and a missing or
+ * null count are still read as unknown, as a second line of defence. CategoryUsage must stay
+ * assignable to this view; the call site checks that without a cast.
+ */
+interface UsageView {
+  count?: number | null;
+  capped?: boolean;
+  isKnown?: boolean;
+  isUnavailable?: boolean;
+  isLoading?: boolean;
+  isError?: boolean;
+  isSuccess?: boolean;
+  status?: string;
+  known?: boolean;
+  refetch?: () => unknown;
+}
+
+type UsageState = { kind: 'loading' } | { kind: 'unknown' } | { kind: 'known'; count: number; capped: boolean };
+
+export function readUsage(usage: UsageView): UsageState {
+  if (usage.isUnavailable === true) return { kind: 'unknown' };
+  if (usage.isLoading === true) return { kind: 'loading' };
+  const unknown =
+    usage.isKnown === false ||
+    usage.isError === true ||
+    usage.isSuccess === false ||
+    (usage.status !== undefined && usage.status !== 'success') ||
+    usage.known === false ||
+    usage.count === undefined ||
+    usage.count === null;
+  if (unknown) return { kind: 'unknown' };
+  return { kind: 'known', count: usage.count as number, capped: usage.capped === true };
+}
 
 export interface RemoveCategoryPromptProps {
   visible: boolean;
@@ -39,14 +78,19 @@ function PromptBody({ category, onDone, onCancel }: Omit<RemoveCategoryPromptPro
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const lookup = useCategoryLookup(rc.userId ?? undefined);
-  const usage = useCategoryUsage(rc.householdId, category.id, true);
+  const usageView: UsageView = useCategoryUsage(rc.householdId, category.id, true);
+  const usage = readUsage(usageView);
   const { archive } = useArchiveCategory();
   const { merge } = useMergeCategory();
   const [picking, setPicking] = useState(false);
   const autoArchived = useRef(false);
 
   const name = categoryName(category, t);
-  const settledUnused = !usage.isLoading && usage.count === 0 && !usage.capped;
+  // Only isKnown && count === 0 && !capped archives straight away. An unknown count (offline, an
+  // error, no household yet, a 0 cached from an earlier mount) never does: the "can't tell yet"
+  // prompt offers Merge or Archive as the user's choice, plus Try again. Merge is safe without a
+  // count because the merge write re-reads the rows and refuses more than one step can move.
+  const settledUnused = usage.kind === 'known' && usage.count === 0 && !usage.capped;
 
   const doArchive = () => {
     const stepId = archive(category);
@@ -85,7 +129,7 @@ function PromptBody({ category, onDone, onCancel }: Omit<RemoveCategoryPromptPro
           cancelLabel={t('categories.removeCancel')}
           onCancel={() => setPicking(false)}
         />
-        <ScrollView>
+        <SheetScroll>
           {targets.map((target) => (
             <Row
               key={target.id}
@@ -94,27 +138,32 @@ function PromptBody({ category, onDone, onCancel }: Omit<RemoveCategoryPromptPro
               onPress={() => doMerge(target)}
             />
           ))}
-        </ScrollView>
+        </SheetScroll>
       </Sheet>
     );
   }
 
-  const loading = usage.isLoading;
+  const loading = usage.kind === 'loading';
+  const capped = usage.kind === 'known' && usage.capped;
   return (
     <Sheet visible onDismiss={onCancel}>
       <View style={styles.column}>
-        {loading ? null : <Text style={bodyStyle}>{t('categories.removeInUse', { name, count: usage.count })}</Text>}
-        {usage.capped ? <Text style={noteStyle}>{t('categories.mergeTooLarge')}</Text> : null}
+        {usage.kind === 'known' ? <Text style={bodyStyle}>{t('categories.removeInUse', { name, count: usage.count })}</Text> : null}
+        {usage.kind === 'unknown' ? <Text style={bodyStyle}>{t('categories.removeUsageUnknown', { name })}</Text> : null}
+        {capped ? <Text style={noteStyle}>{t('categories.mergeTooLarge')}</Text> : null}
         <View style={styles.actions}>
           <Pill label={t('categories.removeCancel')} variant="secondary" onPress={onCancel} />
           <Pill
             label={t('categories.removeMerge')}
             variant="secondary"
-            disabled={loading || usage.capped}
+            disabled={loading || capped}
             onPress={() => setPicking(true)}
           />
           <Pill label={t('categories.removeArchive')} variant="danger" disabled={loading} onPress={doArchive} />
         </View>
+        {usage.kind === 'unknown' && usageView.refetch ? (
+          <Pill label={t('categories.removeUsageRetry')} variant="secondary" onPress={() => void usageView.refetch?.()} />
+        ) : null}
       </View>
     </Sheet>
   );

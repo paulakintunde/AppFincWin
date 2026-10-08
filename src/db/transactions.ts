@@ -4,9 +4,7 @@
 // imports the real Supabase client (src/services/supabase), so its tests never trigger
 // that module's eager getEnv() call and can run against a fake client instead.
 
-import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
 import { monthRange } from '@/engine/time';
-import { noteResolveRateThrottled } from '@/data/sync/resolveRateBackoff';
 import { DbError, NotFoundError, VersionConflictError, toDbError } from './errors';
 import {
   assertAllowedKeys,
@@ -335,6 +333,29 @@ export async function fetchHasRowsBefore(
   return ((data as { id: string }[] | null) ?? []).length > 0;
 }
 
+/**
+ * Screens review W6-13 WR-05 follow-up: whether the account has any active row dated strictly
+ * after `afterDate` -- one limit-1 read, so an import can tell whether "today's balance" still
+ * describes the end of a statement period without paging the whole range.
+ */
+export async function fetchHasRowsAfter(
+  client: DbClient,
+  householdId: string,
+  accountId: string,
+  afterDate: string
+): Promise<boolean> {
+  const { data, error, status } = await client
+    .from(ACTIVE_VIEW)
+    .select('id')
+    .eq('household_id', householdId)
+    .eq('account_id', accountId)
+    .gt('local_date', afterDate)
+    .limit(1);
+
+  if (error) throw toDbError(error, status);
+  return ((data as { id: string }[] | null) ?? []).length > 0;
+}
+
 /** T-02-11-06: denial-of-service guard on fetchTransferLegs. */
 export const TRANSFER_LEGS_MAX = 200;
 
@@ -357,6 +378,30 @@ export async function fetchTransferLegs(
 
   if (error) throw toDbError(error, status);
   return (data as TransactionRow[] | null) ?? [];
+}
+
+/**
+ * Review W6-13 WR-01: the current id/version/deleted_at of specific rows, read from the RAW table
+ * (not the soft-delete view) so a replay can tell "landed and untouched" (version 1, live) from
+ * "landed and changed since". Used only for small, known id sets (a transfer's two legs).
+ */
+export async function fetchTransactionVersions(
+  client: DbClient,
+  householdId: string,
+  ids: readonly string[]
+): Promise<Pick<TransactionRow, 'id' | 'local_date' | 'version' | 'rate_pending' | 'deleted_at'>[]> {
+  if (ids.length === 0) return [];
+  if (ids.length > TRANSFER_LEGS_MAX) {
+    throw new RangeError(`fetchTransactionVersions: ${ids.length} ids exceeds ${TRANSFER_LEGS_MAX}`);
+  }
+  const { data, error, status } = await client
+    .from('transactions')
+    .select('id, local_date, version, rate_pending, deleted_at')
+    .eq('household_id', householdId)
+    .in('id', ids);
+
+  if (error) throw toDbError(error, status);
+  return (data as Pick<TransactionRow, 'id' | 'local_date' | 'version' | 'rate_pending' | 'deleted_at'>[] | null) ?? [];
 }
 
 /** D-14: descriptions the user has categorised before, for import's category-guess learning. */
@@ -382,6 +427,13 @@ export async function fetchCategorisedNames(
 
 /** D-36: denial-of-service guard on a category merge -- callers detect overflow via length > MERGE_LIMIT. */
 export const MERGE_LIMIT = 6000;
+
+/**
+ * Review W6-13 WR-03: the most transaction rows one merge can move. MERGE_LIMIT is the op cap of
+ * one apply_patches call (and of buildStep), and a merge always adds one op to archive the source
+ * category, so at most MERGE_LIMIT - 1 rows fit. Use this for "can this be merged" checks.
+ */
+export const MERGE_ROWS_MAX = MERGE_LIMIT - 1;
 
 /** D-36: every active row's id/version/local_date in one category, for a category merge. */
 export async function fetchActiveIdsByCategory(
@@ -433,39 +485,4 @@ export async function insertTransactionsBatch(
 
   if (error) throw toDbError(error, status);
   return (data as Pick<TransactionRow, 'id' | 'local_date' | 'version' | 'rate_pending'>[] | null) ?? [];
-}
-
-/**
- * D-17: calls the resolve-rate Edge Function so a `rate_pending` row (no history existed
- * yet for its currency/date) gets backfilled and re-stamped. A network-layer failure
- * (`FunctionsFetchError`) is transient and rethrown so the caller's retry policy handles
- * it; any HTTP-layer failure the function itself returned is swallowed to `null` -- the
- * row stays `rate_pending` and a later call (or the background restamp path) can retry.
- */
-/**
- * WR-A15: upper bound on one resolve-rate call. The call is best-effort (a row that stays
- * rate_pending is picked up later), so a slow upstream backfill must never hang a caller.
- */
-export const RATE_RESOLUTION_TIMEOUT_MS = 15_000;
-
-export async function requestRateResolution(client: DbClient, transactionId: string): Promise<TransactionRow | null> {
-  const { data, error } = await client.functions.invoke('resolve-rate', {
-    body: { transactionId },
-    timeout: RATE_RESOLUTION_TIMEOUT_MS,
-  });
-
-  if (error) {
-    if (error instanceof FunctionsFetchError) throw error;
-    // RD-05: a 429 from resolve-rate's own per-user throttle is never a permanent failure
-    // (the row simply stays rate_pending -- same as any other HTTP-layer error here), but
-    // the client notes it so a burst of other pending writes does not keep calling an
-    // endpoint that has already asked it to slow down (see resolveRateBackoff.ts).
-    if (error instanceof FunctionsHttpError && (error.context as { status?: number } | undefined)?.status === 429) {
-      noteResolveRateThrottled();
-    }
-    return null;
-  }
-
-  const row = (data as { row?: TransactionRow } | null)?.row;
-  return row ?? null;
 }

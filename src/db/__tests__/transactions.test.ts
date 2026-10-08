@@ -1,5 +1,3 @@
-import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
-import { isResolveRateThrottled, resetResolveRateBackoffForTests } from '@/data/sync/resolveRateBackoff';
 import { DbError, NotFoundError, VersionConflictError } from '../errors';
 import type { NewTransaction, TransactionPatch, TransactionRow } from '../rows';
 import {
@@ -7,7 +5,6 @@ import {
   IMPORT_CHUNK_MAX,
   MERGE_LIMIT,
   MONTH_PAGE_SIZE,
-  RATE_RESOLUTION_TIMEOUT_MS,
   SEARCH_LIMIT,
   TRANSACTION_COLUMNS,
   TRANSACTION_INSERT_KEYS,
@@ -17,15 +14,16 @@ import {
   escapeLikeTerm,
   fetchActiveIdsByCategory,
   fetchCategorisedNames,
+  fetchHasRowsAfter,
   fetchHasRowsBefore,
   fetchTransaction,
+  fetchTransactionVersions,
   fetchTransactionsForMonth,
   fetchTransactionsSearch,
   fetchTransferCandidates,
   fetchTransferLegs,
   insertTransaction,
   insertTransactionsBatch,
-  requestRateResolution,
   updateTransaction,
 } from '../transactions';
 import { createFakeSupabase } from './fakeSupabase';
@@ -428,76 +426,6 @@ describe('updateTransaction', () => {
   });
 });
 
-describe('requestRateResolution', () => {
-  it("invokes functions 'resolve-rate' with body { transactionId } and returns data.row", async () => {
-    const client = createFakeSupabase();
-    const resolved = row({ rate_pending: false });
-    client.respondWith({ data: { row: resolved }, error: null, status: 200 });
-
-    const result = await requestRateResolution(client, 't1');
-
-    expect(result).toEqual(resolved);
-    expect(client.calls.find((c) => c.method === 'functions.invoke')?.args).toEqual([
-      'resolve-rate',
-      { body: { transactionId: 't1' }, timeout: RATE_RESOLUTION_TIMEOUT_MS },
-    ]);
-  });
-
-  it('returns null when the response carries no row', async () => {
-    const client = createFakeSupabase();
-    client.respondWith({ data: {}, error: null, status: 200 });
-    await expect(requestRateResolution(client, 't1')).resolves.toBeNull();
-  });
-
-  it('rethrows a FunctionsFetchError since a network failure is transient', async () => {
-    const client = createFakeSupabase();
-    const fetchError = new FunctionsFetchError({ requestId: 'r1' });
-    client.respondWith({ data: null, error: fetchError, status: 0 });
-
-    await expect(requestRateResolution(client, 't1')).rejects.toBe(fetchError);
-  });
-
-  it('returns null on an HTTP-layer error from the function', async () => {
-    const client = createFakeSupabase();
-    const httpError = new FunctionsHttpError({ status: 500 });
-    client.respondWith({ data: null, error: httpError, status: 500 });
-
-    await expect(requestRateResolution(client, 't1')).resolves.toBeNull();
-  });
-
-  describe('RD-05: rate-limited (429) response', () => {
-    beforeEach(() => resetResolveRateBackoffForTests());
-    afterEach(() => resetResolveRateBackoffForTests());
-
-    it('returns null (never throws) on a 429 from resolve-rate\'s own throttle', async () => {
-      const client = createFakeSupabase();
-      const httpError = new FunctionsHttpError({ status: 429 });
-      client.respondWith({ data: null, error: httpError, status: 429 });
-
-      await expect(requestRateResolution(client, 't1')).resolves.toBeNull();
-    });
-
-    it('notes the client-side backoff so a later caller can skip the follow-up entirely', async () => {
-      const client = createFakeSupabase();
-      const httpError = new FunctionsHttpError({ status: 429 });
-      client.respondWith({ data: null, error: httpError, status: 429 });
-
-      expect(isResolveRateThrottled()).toBe(false);
-      await requestRateResolution(client, 't1');
-      expect(isResolveRateThrottled()).toBe(true);
-    });
-
-    it('a plain 500 (not rate-limited) never triggers the backoff', async () => {
-      const client = createFakeSupabase();
-      const httpError = new FunctionsHttpError({ status: 500 });
-      client.respondWith({ data: null, error: httpError, status: 500 });
-
-      await requestRateResolution(client, 't1');
-      expect(isResolveRateThrottled()).toBe(false);
-    });
-  });
-});
-
 describe('escapeLikeTerm', () => {
   it('backslash-escapes backslash, percent and underscore', () => {
     expect(escapeLikeTerm('50%_off')).toBe('50\\%\\_off');
@@ -560,6 +488,30 @@ describe('fetchTransferCandidates', () => {
   });
 });
 
+describe('fetchHasRowsAfter', () => {
+  it('asks ACTIVE_VIEW for one row of the account dated strictly after the date', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [{ id: 't1' }], error: null, status: 200 });
+
+    await expect(fetchHasRowsAfter(client, 'h1', 'a1', '2026-09-30')).resolves.toBe(true);
+    expect(client.calls.every((c) => c.table === ACTIVE_VIEW)).toBe(true);
+    expect(client.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toEqual([
+      ['household_id', 'h1'],
+      ['account_id', 'a1'],
+    ]);
+    expect(client.calls.find((c) => c.method === 'gt')?.args).toEqual(['local_date', '2026-09-30']);
+    expect(client.calls.find((c) => c.method === 'limit')?.args).toEqual([1]);
+  });
+
+  it('is false for no rows and throws a server error as a DbError', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: null, status: 200 });
+    await expect(fetchHasRowsAfter(client, 'h1', 'a1', '2026-09-30')).resolves.toBe(false);
+    client.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+    await expect(fetchHasRowsAfter(client, 'h1', 'a1', '2026-09-30')).rejects.toBeInstanceOf(DbError);
+  });
+});
+
 describe('fetchHasRowsBefore', () => {
   it("selects 'id' from ACTIVE_VIEW, eq household_id, eq account_id, lt local_date, limit 1", async () => {
     const client = createFakeSupabase();
@@ -608,6 +560,32 @@ describe('fetchTransferLegs', () => {
     const ids = Array.from({ length: TRANSFER_LEGS_MAX + 1 }, (_, i) => `tr-${i}`);
     await expect(fetchTransferLegs(client, 'h1', ids)).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(0);
+  });
+});
+
+describe('fetchTransactionVersions (W6-13 WR-01)', () => {
+  it("reads the raw table (deleted rows included) with eq household_id and in('id', ids)", async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [{ id: 't1', local_date: '2026-09-24', version: 1, rate_pending: false, deleted_at: null }], error: null, status: 200 });
+
+    await expect(fetchTransactionVersions(client, 'h1', ['t1', 't2'])).resolves.toHaveLength(1);
+    expect(client.calls.every((c) => c.table === 'transactions')).toBe(true);
+    expect(client.calls.find((c) => c.method === 'eq')?.args).toEqual(['household_id', 'h1']);
+    expect(client.calls.find((c) => c.method === 'in')?.args).toEqual(['id', ['t1', 't2']]);
+  });
+
+  it('returns [] without a call for no ids, and refuses more than TRANSFER_LEGS_MAX', async () => {
+    const client = createFakeSupabase();
+    await expect(fetchTransactionVersions(client, 'h1', [])).resolves.toEqual([]);
+    const ids = Array.from({ length: TRANSFER_LEGS_MAX + 1 }, (_, i) => `t-${i}`);
+    await expect(fetchTransactionVersions(client, 'h1', ids)).rejects.toBeInstanceOf(RangeError);
+    expect(client.calls).toHaveLength(0);
+  });
+
+  it('throws the server error as a DbError', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+    await expect(fetchTransactionVersions(client, 'h1', ['t1'])).rejects.toBeInstanceOf(DbError);
   });
 });
 

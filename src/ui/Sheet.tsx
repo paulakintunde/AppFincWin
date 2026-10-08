@@ -4,7 +4,18 @@
  * @gorhom/bottom-sheet with drag-to-dismiss; props stay the same.
  */
 import React, { type ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space, useScreenInsets } from '@/theme/layout';
@@ -20,6 +31,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel }: Shee
   const t = useT();
   const { colors } = useTheme();
   const insets = useScreenInsets();
+  const { height } = useWindowDimensions();
 
   if (!visible) {
     return null;
@@ -40,6 +52,9 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel }: Shee
           style={[
             styles.container,
             {
+              // S-CR-05: never taller than the screen below the status bar, so the header
+              // (title and Cancel) is always reachable; the body scrolls in a SheetScroll.
+              maxHeight: height - insets.top - space.groupGap,
               backgroundColor: colors.surface,
               borderTopLeftRadius: radii.sheetTop,
               borderTopRightRadius: radii.sheetTop,
@@ -56,7 +71,32 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel }: Shee
   );
 }
 
+export interface SheetScrollProps {
+  children: ReactNode;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+}
+
+/**
+ * S-CR-05: the scrollable body of a sheet. Placed after the SheetHeader, it shrinks to the
+ * space the capped container leaves, so a long list scrolls while the header stays put.
+ */
+export function SheetScroll({ children, contentContainerStyle }: SheetScrollProps) {
+  return (
+    <ScrollView
+      testID="sheet-scroll"
+      style={styles.scroll}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={contentContainerStyle}
+    >
+      {children}
+    </ScrollView>
+  );
+}
+
 const styles = StyleSheet.create({
+  scroll: {
+    flexShrink: 1,
+  },
   flex: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -66,5 +106,6 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '100%',
+    flexShrink: 1,
   },
 });

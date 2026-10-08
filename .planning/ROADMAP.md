@@ -16,6 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Money Core** - Integer-money engine, client UUID keys, FX rate storage, TanStack Query data layer with the offline write queue (completed 2026-09-26)
 - [ ] **Phase 2: Record** - Transactions, recurring entries, transfers, statement import (CSV, OFX/QFX), account limits and standing, Activity list, compensating-write undo
 - [ ] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy
+- [ ] **Phase 2.2: Record polish** (INSERTED) - Activity views and subtotals, sort, recurring-from-history, clone, detail sheet and swipe, entry-sheet extras, paste import, sample data
 - [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB
 - [ ] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
@@ -173,7 +174,7 @@ Plans:
   5. A user can undo any of their last 12 changes from the toast or the history screen as a compensating write, and is refused with an explanation when another household member has since changed the same record.
   6. An account can be overdrawn, beyond its overdraft, or over its card limit, and the app shows that standing plainly rather than treating it as an error; card statements that show purchases as positive or balances as available credit import with the correct signs.
   7. A user can record a transfer between their own accounts, import suggests matching pairs such as a card payment, and transfers never count as income or spending.
-**Plans**: 40 plans in 14 waves (31 original plans revised in place for the 2026-09-25 import extension, plus 02-32…02-40)
+**Plans**: 50 plans in 14 waves plus 4 gap-closure waves (31 original plans revised in place for the 2026-09-25 import extension, plus 02-32…02-40; gap closure 02-41…02-50 for on-demand FX, 2026-10-07)
 Plans:
 **Wave 1**
 - [x] 02-01-PLAN.md — Engine: recurring schedule maths + shared TS/SQL fixture (W1)
@@ -241,13 +242,26 @@ Plans:
 - [x] 02-30-PLAN.md — Onboarding first account + Bring your history (statement), You entry points, Activity landing (W13)
 
 **Wave 14** *(blocked on Wave 13 completion)*
-- [ ] 02-31-PLAN.md — Production rollout: schema push [BLOCKING], live checks, device walkthrough incl. OFX, standing and transfers (W14; needs 01-16)
+- [x] 02-31-PLAN.md — Production rollout: schema push [BLOCKING], live checks, device walkthrough incl. OFX, standing and transfers (W14; needs 01-16)
+
+**Gap closure: on-demand FX, built-in currency list, no daily sync** *(2026-10-07, `02-DECISION-fx-on-demand.md`; GW = gap-closure wave)*
+- [ ] 02-41-PLAN.md — Schema: fx_rate_lookups coverage, 6h negative cache, coverage-based per_eur_rate, is_iso_currency without a stored rate (GW1)
+- [ ] 02-43-PLAN.md — Edge Functions: shared _shared/fx library, delete fx-sync and fx-monitor (GW1)
+- [ ] 02-45-PLAN.md — Engine + picker: built-in ISO currency list, currencies-table query removed (GW1)
+- [ ] 02-46-PLAN.md — Client: fxResolve door, per-date import and series follow-ups, fxLatest refresh (GW1)
+- [ ] 02-42-PLAN.md — Schema: retire fx-sync/fx-monitor crons and monitor-only functions (GW2)
+- [ ] 02-44-PLAN.md — resolve-rate: on-demand fetch path, fallback, MON-11 hold with second-source witness, failure-only alerts (GW2)
+- [ ] 02-47-PLAN.md — Client: foreign-account opening-date fetch, budgeted pending sweep (GW2)
+- [ ] 02-48-PLAN.md — Client: "Waiting for a rate" display, read paths can never fetch (GW2)
+- [ ] 02-49-PLAN.md — Client: home-currency change fetches today's rates for every currency in use (GW3)
+- [ ] 02-50-PLAN.md — Production rollout [BLOCKING, approval], device check, then cleanup (GW4)
 **UI hint**: yes
 
 ### Phase 02.1: PDF statement import (INSERTED)
 
 **Goal:** A user can import a text-based PDF bank or card statement through the same import pipeline as CSV and OFX, with figures that are only committed once they reconcile or the user has reviewed them.
-**Requirements**: IMP-01, IMP-02, IMP-03, IMP-04
+**Requirements**: IMP-01, IMP-02, IMP-03, IMP-04, IMP-05
+**Note (2026-10-08):** IMP-05 (statement-provided conversions, show both figures) was added after this phase was planned; re-plan 2.1 to cover it before executing.
 **Depends on:** Phase 2 (the D-40 import pipeline, format profile, reconciliation, transfers)
 **Success Criteria** (what must be TRUE):
   1. A text-based PDF statement from a supported layout imports with the same format read-back, preview, duplicate check and transfer suggestions as a CSV or OFX file.
@@ -255,7 +269,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 39/40 plans executed
+**Plans:** 12 plans
 
 Plans:
 
@@ -284,6 +298,24 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion; after Phase 2's 02-31 push)*
 - [ ] 02.1-12-PLAN.md — Production rollout: schema push [BLOCKING], deploy both functions, live checks, worst-case timing, device walkthrough (W7)
+
+### Phase 02.2: Record polish (INSERTED)
+
+**Goal:** Activity and the Record screens reach the prototype's depth (`FincWin United.dc.html`). Views have subtotals, with sort and counts; recurring lines are spotted from logged history; and entry, import and month tools are richer. The Phase 2 filter system stays.
+**Requirements**: ACT-06, ACT-07, ACT-08, ACT-09, ACT-10, ACT-11, ACT-12, ACT-13, ACT-14, ACT-15, ACT-16, ACT-17, ACT-18, REC-19, REC-20, REC-21, REC-22, REC-23, REC-24
+**Depends on:** Phase 2 (Record), Phase 3 (Shell) for the dropdown and FAB chrome where it applies
+**Inserted:** 2026-10-07, from the Phase 2 device walkthrough and a prototype gap audit (user decisions)
+**Success Criteria** (what must be TRUE):
+  1. Activity offers a view dropdown: By day, By week, In / out, Running balance, Calendar. Every group shows its net subtotal, including Week 1 to Week 5 and each day. The existing filters keep working in every view.
+  2. A user can sort Activity (Newest, Oldest, Biggest, Smallest, A–Z) and sees the transaction count next to the total.
+  3. Lines that recur in logged history are offered as a series ("N lines also ran in Aug at about the same amount…"), with Review each, Mark all monthly and Not now.
+  4. A user can clone transactions, open a read-only detail sheet with Mark as paid, Edit and Delete, and swipe a row to pay or delete. Future-dated lines show as Scheduled.
+  5. The entry sheet has the keypad, Automatic payment and Refund, the "Marking this paid moves…" and FX "Saves as…" notes, and Received/Expected for income. A list can be pasted to import it.
+  6. The month list shows entry counts and "Add next month". The week start is a setting. Categories show usage and an optional monthly cap.
+  7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
+  8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
+**Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
+**Plans:** TBD
 
 ### Phase 3: Shell
 **Goal**: The app's navigation chrome matches the design system exactly.
@@ -385,7 +417,7 @@ Plans:
 ### Phase 6: Grow
 **Goal**: A user can track savings goals, investments and debt payoff against their real numbers.
 **Depends on**: Phase 3 (Shell provides the navigation these screens live in)
-**Requirements**: GRW-01, GRW-02, GRW-03, GRW-04, GRW-05, GRW-06, GRW-07, GRW-08, GRW-09, GRW-10
+**Requirements**: GRW-01, GRW-02, GRW-03, GRW-04, GRW-05, GRW-06, GRW-07, GRW-08, GRW-09, GRW-10, GRW-11
 **Success Criteria** (what must be TRUE):
   1. A user can create a savings goal with a target amount or leave it open-ended, flag exactly one goal as their emergency fund, and set an automatic contribution to any goal.
   2. A user can record investment holdings across the supported account types, with cost-basis lots — buys, sells, dividends, fees — against each holding.
@@ -399,7 +431,7 @@ Plans:
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
 **Depends on**: Phase 6
-**Requirements**: INS-01, INS-02, INS-03, INS-04, INS-05, INS-06, ACT-06
+**Requirements**: INS-01, INS-02, INS-03, INS-04, INS-05, INS-06
 **Success Criteria** (what must be TRUE):
   1. A user can see net worth over time with a selectable range.
   2. A user can see money in and out per month as bars, switch to a comparison mode, and compare a month against the previous one.
@@ -441,7 +473,7 @@ Plans:
 ### Phase 10: System
 **Goal**: The app is secure, resilient offline, and lets a user manage their own data completely.
 **Depends on**: Phase 0 (auth), Phase 1 (write queue mechanism), Phases 2-9 (features being hardened, alerted on, imported and exported)
-**Requirements**: ACC-06, ACC-07, ACC-08, ACC-09, ACC-10, SYN-03, SYN-04, SYN-05, ALR-01, ALR-02, ALR-03, ALR-04, ALR-05, DAT-01, DAT-02, DAT-03, DAT-04, ENV-19, ACC-11, ACC-13, DAT-05, DAT-06, ALR-06, DSG-08, ENV-16
+**Requirements**: ACC-06, ACC-07, ACC-08, ACC-09, ACC-10, SYN-03, SYN-04, SYN-05, ALR-01, ALR-02, ALR-03, ALR-04, ALR-05, DAT-01, DAT-02, DAT-03, DAT-04, ENV-19, ACC-11, ACC-13, DAT-05, DAT-06, ALR-06, DSG-08, ENV-16, IMP-06
 **Success Criteria** (what must be TRUE):
   1. A user can see every device where their account is signed in with the current device marked, and sign out of one device or all devices at once.
   2. A user can unlock the app with Face ID, Touch ID or Android biometrics, or a PIN.

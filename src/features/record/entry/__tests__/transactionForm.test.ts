@@ -1,4 +1,4 @@
-import { parseAmount, resolveExponent, type ParseAmountResult } from '@/engine/money';
+import { minorUnits, parseAmount, resolveExponent, toDecimalString, type ParseAmountResult } from '@/engine/money';
 import type { TransactionRow } from '@/db/rows';
 import {
   initialFormState,
@@ -18,7 +18,7 @@ import {
 const ctx: FormContext = {
   today: '2026-09-25',
   defaultAccount: { id: 'a1', currency: 'GBP' },
-  exponentFor: (code) => resolveExponent(code),
+  amountInputText: (minor, code) => toDecimalString(minorUnits(minor), resolveExponent(code)),
 };
 
 const parse = (text: string, currency: string): ParseAmountResult =>
@@ -124,6 +124,14 @@ describe('withDirection', () => {
       'transfer'
     );
     expect(s).toMatchObject({ direction: 'transfer', status: 'paid', categoryId: null, paymentType: null });
+  });
+
+  it('S-WR-06: to transfer drops a hidden currency override; the from-leg uses its account currency', () => {
+    const currencyOf = (id: string) => ({ a1: 'GBP', a3: 'EUR' })[id];
+    const s = withDirection({ ...newOut(), currency: 'EUR', toAccountId: 'a2', toCurrency: 'GBP', amountInText: '9' }, 'transfer', currencyOf);
+    expect(s.currency).toBe('GBP');
+    // GBP to GBP is one amount: no stale received-amount figure is kept.
+    expect(s.amountInText).toBe('');
   });
 });
 
