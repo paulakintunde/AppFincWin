@@ -289,7 +289,7 @@ Plans:
 ### Phase 02.2: Record polish (INSERTED)
 
 **Goal:** Activity and the Record screens reach the prototype's depth (`FincWin United.dc.html`). Views have subtotals, with sort and counts; recurring lines are spotted from logged history; and entry, import and month tools are richer. The Phase 2 filter system stays.
-**Requirements**: ACT-06, ACT-07, ACT-08, ACT-09, ACT-10, ACT-11, ACT-12, ACT-13, ACT-14, ACT-15, ACT-16, REC-19, REC-20, REC-21, REC-22, REC-23, REC-24
+**Requirements**: ACT-06, ACT-07, ACT-08, ACT-09, ACT-10, ACT-11, ACT-12, ACT-13, ACT-14, ACT-15, ACT-16, ACT-17, ACT-18, REC-19, REC-20, REC-21, REC-22, REC-23, REC-24
 **Depends on:** Phase 2 (Record), Phase 3 (Shell) for the dropdown and FAB chrome where it applies
 **Inserted:** 2026-10-07, from the Phase 2 device walkthrough and a prototype gap audit (user decisions)
 **Success Criteria** (what must be TRUE):
@@ -300,6 +300,7 @@ Plans:
   5. The entry sheet has the keypad, Automatic payment and Refund, the "Marking this paid moves…" and FX "Saves as…" notes, and Received/Expected for income. A list can be pasted to import it.
   6. The month list shows entry counts and "Add next month". The week start is a setting. Categories show usage and an optional monthly cap.
   7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
+  8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
 **Plans:** TBD
 

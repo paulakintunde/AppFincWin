@@ -148,6 +148,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **ACT-14**: User can swipe a line to mark it paid or unpaid, or to delete it
 - [ ] **ACT-15**: The month list shows each month's entry count and offers "Add next month"
 - [ ] **ACT-16**: User can set the first day of the week used by the week and calendar views
+- [ ] **ACT-17**: An account's detail shows Coming in and Going out separately (green and red), plus the balance after everything pending; the in/out split of pending lines is computed from existing data
+- [ ] **ACT-18**: Activity rows show a Paid tag (Received for income) in green, alongside the Pending, Due and Overdue tags in red
 
 ### Statement Import (PDF)
 
@@ -466,6 +468,8 @@ Populated during roadmap creation.
 | ACT-14 | Phase 2.2 - Record polish | Pending |
 | ACT-15 | Phase 2.2 - Record polish | Pending |
 | ACT-16 | Phase 2.2 - Record polish | Pending |
+| ACT-17 | Phase 2.2 - Record polish | Pending |
+| ACT-18 | Phase 2.2 - Record polish | Pending |
 | REC-19 | Phase 2.2 - Record polish | Pending |
 | REC-20 | Phase 2.2 - Record polish | Pending |
 | REC-21 | Phase 2.2 - Record polish | Pending |
