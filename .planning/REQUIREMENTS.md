@@ -157,6 +157,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **IMP-02**: A PDF import is committed only after its balances reconcile or the user has reviewed every row that could not be verified
 - [ ] **IMP-03**: An uploaded statement file is deleted after a successful import unless the user chooses to keep it, a kept file is removed on account deletion, and statement content never appears in logs or error reports
 - [ ] **IMP-04**: Privacy copy states plainly where a PDF statement is processed and how long the file is kept
+- [ ] **IMP-05**: When a statement already gives a foreign line's converted amount, the account-currency figure is stored as the truth and never recomputed with a market rate. The original amount and the bank's implied rate (and any FX fee) are kept and shown together (e.g. "US$10.00 · charged C$13.92 at 1.392"), with an optional factual comparison to the market rate. Each line records whether its conversion came from the statement or an on-demand market rate. *(Added 2026-10-08, user decision.)*
+- [ ] **IMP-06**: Wallet and payment-app statements (PayPal, Wise, Revolut and similar) import with gross, fee and net per line. Each currency balance is its own account, and a currency conversion's paired lines are linked as a transfer, with the fee as a separate expense. *(Added 2026-10-08, user decision.)*
 
 ### Shell & Navigation
 
@@ -480,6 +482,8 @@ Populated during roadmap creation.
 | IMP-02 | Phase 2.1 - PDF statement import | Pending |
 | IMP-03 | Phase 2.1 - PDF statement import | Pending |
 | IMP-04 | Phase 2.1 - PDF statement import | Pending |
+| IMP-05 | Phase 2.1 - PDF statement import | Pending |
+| IMP-06 | Phase 10 - System | Pending |
 | NAV-01 | Phase 3 - Shell | Pending |
 | NAV-02 | Phase 3 - Shell | Pending |
 | NAV-03 | Phase 3 - Shell | Pending |

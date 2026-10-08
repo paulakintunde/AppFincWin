@@ -260,7 +260,8 @@ Plans:
 ### Phase 02.1: PDF statement import (INSERTED)
 
 **Goal:** A user can import a text-based PDF bank or card statement through the same import pipeline as CSV and OFX, with figures that are only committed once they reconcile or the user has reviewed them.
-**Requirements**: IMP-01, IMP-02, IMP-03, IMP-04
+**Requirements**: IMP-01, IMP-02, IMP-03, IMP-04, IMP-05
+**Note (2026-10-08):** IMP-05 (statement-provided conversions, show both figures) was added after this phase was planned; re-plan 2.1 to cover it before executing.
 **Depends on:** Phase 2 (the D-40 import pipeline, format profile, reconciliation, transfers)
 **Success Criteria** (what must be TRUE):
   1. A text-based PDF statement from a supported layout imports with the same format read-back, preview, duplicate check and transfer suggestions as a CSV or OFX file.
@@ -472,7 +473,7 @@ Plans:
 ### Phase 10: System
 **Goal**: The app is secure, resilient offline, and lets a user manage their own data completely.
 **Depends on**: Phase 0 (auth), Phase 1 (write queue mechanism), Phases 2-9 (features being hardened, alerted on, imported and exported)
-**Requirements**: ACC-06, ACC-07, ACC-08, ACC-09, ACC-10, SYN-03, SYN-04, SYN-05, ALR-01, ALR-02, ALR-03, ALR-04, ALR-05, DAT-01, DAT-02, DAT-03, DAT-04, ENV-19, ACC-11, ACC-13, DAT-05, DAT-06, ALR-06, DSG-08, ENV-16
+**Requirements**: ACC-06, ACC-07, ACC-08, ACC-09, ACC-10, SYN-03, SYN-04, SYN-05, ALR-01, ALR-02, ALR-03, ALR-04, ALR-05, DAT-01, DAT-02, DAT-03, DAT-04, ENV-19, ACC-11, ACC-13, DAT-05, DAT-06, ALR-06, DSG-08, ENV-16, IMP-06
 **Success Criteria** (what must be TRUE):
   1. A user can see every device where their account is signed in with the current device marked, and sign out of one device or all devices at once.
   2. A user can unlock the app with Face ID, Touch ID or Android biometrics, or a PIN.

@@ -39,3 +39,4 @@ The user chose the cheapest model with the fewest moving parts. The goals, all c
   - whether any existing code reads `currencies` or `fx_latest_rates` for something other than the picker (exponent lookups, the Decide engine, money mirror tests);
   - how the cross rate via the EUR base works when neither currency is EUR;
   - what a balance shows when no stored rate exists yet for a pair.
+- **Rate source (2026-10-08, user):** every stored conversion should record where it came from: `statement` (the bank's own figure, see IMP-05, Phase 2.1) or `market` (an on-demand fetch). A statement-provided figure is the truth and never triggers a fetch. The on-demand path built here must leave room for this source; no code is needed until IMP-05.
