@@ -23,3 +23,4 @@ export type {
   ValidatedCustomCurrency,
 } from './customCurrency';
 export { currencyForRegion } from './regionCurrency';
+export * from './isoCurrencies';

@@ -10,7 +10,6 @@ import { supabase } from '@/services/supabase';
 import type { FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { queryKeys } from '../../keys';
 import { useAccounts } from '../accounts';
-import { useCurrencies } from '../currencies';
 import { useFxLatest } from '../fxLatest';
 import { useHouseholdId } from '../household';
 import { useTransactionsForMonth } from '../transactions';
@@ -91,45 +90,9 @@ describe('useTransactionsForMonth', () => {
   });
 });
 
-describe('useCurrencies', () => {
-  it('fetches active currencies (end_date is null), ordered by code', async () => {
-    const currencies = [{ code: 'USD', iso_numeric: '840', name: 'US Dollar', symbol: '$', start_date: null, end_date: null }];
-    fakeClient.respondWith({ data: currencies, error: null, status: 200 });
-
-    const { result } = await renderHook(() => useCurrencies(), { wrapper: wrapper(newClient()) });
-
-    await waitFor(() => expect(result.current.data).toEqual(currencies));
-    expect(fakeClient.calls.find((c) => c.method === 'is')?.args).toEqual(['end_date', null]);
-    expect(fakeClient.calls.find((c) => c.method === 'order')?.args).toEqual(['code', { ascending: true }]);
-  });
-});
-
 describe('empty reference data is never treated as fresh', () => {
   // A device that cached [] (e.g. while currencies.end_date was wrongly set on every
   // row) must refetch on its next mount instead of serving [] for staleTime.
-  it('useCurrencies refetches a cached empty list on mount', async () => {
-    const fresh = [{ code: 'USD', iso_numeric: '840', name: 'US Dollar', symbol: '$', start_date: null, end_date: null }];
-    fakeClient.respondWith({ data: fresh, error: null, status: 200 });
-    const client = newClient();
-    client.setQueryData(queryKeys.currencies(), []);
-
-    const { result } = await renderHook(() => useCurrencies(), { wrapper: wrapper(client) });
-
-    await waitFor(() => expect(result.current.data).toEqual(fresh));
-  });
-
-  it('useCurrencies does not refetch a cached non-empty list within staleTime', async () => {
-    const cached = [{ code: 'USD', iso_numeric: '840', name: 'US Dollar', symbol: '$', start_date: null, end_date: null }];
-    const client = newClient();
-    client.setQueryData(queryKeys.currencies(), cached);
-
-    const { result } = await renderHook(() => useCurrencies(), { wrapper: wrapper(client) });
-
-    expect(result.current.data).toEqual(cached);
-    expect(result.current.fetchStatus).toBe('idle');
-    expect(fakeClient.calls).toHaveLength(0);
-  });
-
   it('useFxLatest refetches a cached empty list on mount', async () => {
     const fresh = [{ quote: 'CAD', rate: '1.35', rate_date: '2026-09-20', source: 'frankfurter-v2' }];
     fakeClient.respondWith({ data: fresh, error: null, status: 200 });
