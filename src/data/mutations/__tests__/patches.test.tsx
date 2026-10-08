@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { DbClient, TransactionRow } from '@/db/rows';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
-import { mutationKeys, queryKeys } from '@/data/keys';
+import { queryKeys } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { clearVersionChains, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { getToast, resetToastForTests } from '@/state/undoToast';
@@ -173,49 +173,6 @@ describe('useBulkDelete', () => {
     const many = Array.from({ length: 6001 }, (_, i) => row(`r${i}`));
     expect(() => result.current.remove(many, ctx)).toThrow(RangeError);
     expect(qc.getMutationCache().getAll()).toHaveLength(0);
-  });
-
-  it('WR-04: counts unpaired transfer legs (partners fetched at flush) toward the 6000 limit up front', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    const qc = newClient();
-    const { result } = await renderHook(() => useBulkDelete(), { wrapper: wrapper(qc) });
-
-    const plain = Array.from({ length: 5999 }, (_, i) => row(`r${i}`));
-    const legs = [row('leg-1', { transfer_id: 'T1' }), row('leg-2', { transfer_id: 'T2' })];
-    // 6000 selected + 2 partners pulled in at flush = 6002 ops: refused before anything is queued.
-    expect(() => result.current.remove([...plain.slice(1), ...legs], ctx)).toThrow(RangeError);
-    expect(qc.getMutationCache().getAll()).toHaveLength(0);
-  });
-
-  it('WR-04: a batch that crosses 6000 ops after partner expansion fails with a bulk-too-large code, sending nothing', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith({ data: [fullRow(row('leg-a', { transfer_id: 'T1' })), fullRow(row('leg-b', { version: 3, transfer_id: 'T1' }))], error: null, status: 200 });
-    const qc = newClient();
-    // A batch persisted before the up-front check existed: 6000 rows, one with an unselected partner.
-    const items = Array.from({ length: 5999 }, (_, i) => ({
-      entity: 'transactions' as const,
-      id: `r${i}`,
-      expectedVersion: 1,
-      before: { deleted_at: null },
-      patch: { deleted_at: '$now' },
-    }));
-    items.push({ entity: 'transactions', id: 'leg-a', expectedVersion: 1, before: { deleted_at: null }, patch: { deleted_at: '$now' } });
-    const mutation = qc.getMutationCache().build(qc, { mutationKey: mutationKeys.bulkPatch });
-    await mutation
-      .execute({
-        ...ctx,
-        items,
-        months: ['2026-09'],
-        expandTransferIds: ['T1'],
-        undo: { stepId: 'step-x', labelKey: 'deletedMany', labelParams: { n: 6000 } },
-      })
-      .catch(() => undefined);
-
-    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(1));
-    expect(recordFailedWrite).toHaveBeenCalledWith(expect.objectContaining({ kind: 'rejected', code: 'bulk-too-large' }));
-    expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
   });
 
   it('deduplicates repeated rows so planBulkPatch never sees a duplicate', async () => {

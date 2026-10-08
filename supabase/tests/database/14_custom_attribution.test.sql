@@ -18,11 +18,6 @@ insert into public.fx_rates (base, quote, rate, rate_date, source) values
   ('EUR', 'USD', 1.1483, '2026-09-21', 'frankfurter-v2'),
   ('EUR', 'CHF', 0.93, '2026-09-21', 'open-er-api');   -- only the fallback carries CHF
 
--- 20261007000400: exact now needs the line's own date or a recorded lookup; these FINAL lookups stand in for the on-demand fetch (incidental seed).
-insert into public.fx_rate_lookups (quote, requested_date, rate_date, source, fetched_at) values
-  ('CHF', '2026-09-22', '2026-09-21', 'open-er-api', timestamptz '2026-09-25 00:00+00'),
-  ('USD', '2026-09-22', '2026-09-21', 'frankfurter-v2', timestamptz '2026-09-25 00:00+00');
-
 create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 

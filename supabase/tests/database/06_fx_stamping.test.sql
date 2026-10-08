@@ -29,18 +29,6 @@ insert into public.fx_rates (base, quote, rate, rate_date, source) values
   ('EUR', 'CHF', 0.93, '2026-09-21', 'open-er-api'),
   ('EUR', 'USD', 1.20, '2026-09-21', 'open-er-api');
 
--- 20261007000400: an earlier-dated rate is exact only when a recorded
--- on-demand lookup says it is that date's publication. These FINAL lookups
--- (fetched 3 days after the requested date) stand in for the fetches that
--- resolve-rate would have recorded for the 09-22 and 09-19 lines
--- (incidental seed; the 7-day window itself is covered in
--- 40_fx_on_demand_stamping).
-insert into public.fx_rate_lookups (quote, requested_date, rate_date, source, fetched_at) values
-  ('JPY', '2026-09-22', '2026-09-21', 'frankfurter-v2', timestamptz '2026-09-25 00:00+00'),
-  ('USD', '2026-09-22', '2026-09-21', 'frankfurter-v2', timestamptz '2026-09-25 00:00+00'),
-  ('JPY', '2026-09-19', '2026-09-18', 'frankfurter-v2', timestamptz '2026-09-22 00:00+00'),
-  ('USD', '2026-09-19', '2026-09-18', 'frankfurter-v2', timestamptz '2026-09-22 00:00+00');
-
 -- A's home currency is USD (set as postgres; also the column default).
 update public.profiles set home_currency = 'USD' where id = '11111111-1111-1111-1111-111111111111';
 

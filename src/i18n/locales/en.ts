@@ -13,7 +13,7 @@
  *   Claude-drafted in the prototype's voice (D-20) and awaits user review before being
  *   treated as final, except money.rate.attribution and credits.exchangeRateApi, which are
  *   third-party-mandated text (D-13) and must not be paraphrased. Both read the single
- *   constant in ../mandatedCopy.ts, cross-checked against the server copy in _shared/fx/openErApi.ts by a test.
+ *   constant in ../mandatedCopy.ts, cross-checked against fx-sync's copy by a test.
  * - dev.syncProbe.label is a development-build-only row (01-15); it never ships visible in a
  *   release build, but still lives in the typed catalogue like every other string.
  * - money.fxNote.converted/kept, money.homeCurrency.title/note, money.customCurrency.title,
@@ -206,19 +206,6 @@ const en = {
       label: 'Queue a test entry (dev)',
     },
   },
-  currencyPicker: {
-    yourCurrency: 'Your currency',
-    popular: 'Popular',
-    allCurrencies: 'All currencies',
-    continent: {
-      northAmerica: 'North America',
-      southAmerica: 'South America',
-      europe: 'Europe',
-      asia: 'Asia',
-      africa: 'Africa',
-      oceania: 'Oceania',
-    },
-  },
   record: {
     sheet: {
       titleNewExpense: 'New expense',
@@ -255,12 +242,6 @@ const en = {
       transferCrossCurrency:
         'Recorded as {{amountA}} from {{accountA}} and {{amountB}} to {{accountB}} — each in its own currency.',
       transferEditBoth: 'Editing a transfer updates both sides.',
-      transferCategoryLoading: 'Transfers can be added once your categories have loaded.',
-      transferNeedsBothSides: 'Both sides of this transfer are needed to change it. They haven’t loaded yet.',
-      transferLegsLoading: 'Loading both sides of this transfer…',
-      transferLegsOffline: 'Both sides of this transfer are needed to change it. You’re offline, so the other side can’t load yet.',
-      transferLegsFailed: 'Both sides of this transfer are needed to change it. The other side couldn’t be loaded.',
-      transferPartnerMissing: 'Both sides of this transfer are needed to change it. The other side isn’t on the server yet.',
       transferDeleteConfirm:
         'Delete this transfer? Both linked entries — {{from}} and {{to}} — will be removed.',
       transferSameAccount: 'Pick two different accounts.',
@@ -304,14 +285,12 @@ const en = {
       endCount_other: 'After {{count}} times',
       countField: 'Number of times',
       endCountInvalid: 'Use a whole number from 1 to 1000.',
-      endBeforeStart: 'The end date is before this entry’s date.',
       done: 'Done',
     },
     recurring: {
       scopeHeading: 'Edit this one, or this and future?',
       scopeThisOne: 'This one',
       scopeThisAndFuture: 'This and future',
-      futureUnavailable: 'The series hasn’t loaded yet, so only this one can change.',
       skip: 'Skip this one',
       end: 'End this series',
       endConfirm: 'Ends {{name}}. Paid history stays; nothing pending after {{date}} is created.',
@@ -344,9 +323,6 @@ const en = {
     transferFrom: 'Transfer from {{account}}',
     transferOther: 'Transfer',
     noMatchHeading: 'Nothing matches.',
-    searching: 'Searching every month…',
-    searchOffline: 'Every-month search needs a connection. It runs once you’re back online.',
-    searchFailed: 'Every-month search couldn’t finish.',
     noMatchBody: 'Try a different search, or set the filter back to All.',
     searchMonth: 'Search {{month}}',
     searchAll: 'Search every month',
@@ -354,13 +330,8 @@ const en = {
     searchScopeMonth: 'This month',
     searchScopeAll: 'Every month',
     select: 'Select',
-    selectAll: 'Select all',
-    selectNone: 'None',
     done: 'Done',
     selectFirst: 'Select some rows first.',
-    bulkNothingToMarkPaid: 'None of the selected lines are still to come.',
-    bulkNothingToMarkUnpaid: 'None of the selected lines are paid.',
-    bulkTooMany: 'That’s more lines than one change can hold. Select fewer.',
     selected_one: '{{count}} selected',
     selected_other: '{{count}} selected',
     bulkDelete: 'Delete',
@@ -368,7 +339,6 @@ const en = {
     bulkMarkUnpaid: 'Mark unpaid',
     bulkDeleteConfirm_one: 'Delete {{count}} transaction?',
     bulkDeleteConfirm_other: 'Delete {{count}} transactions?',
-    bulkDeleteTransfers: 'Transfers are deleted with both sides.',
     bulkDeleteCancel: 'Cancel',
     bulkDeleteProceed: 'Delete',
     totals: {
@@ -400,8 +370,6 @@ const en = {
       in: 'Money in',
       out: 'Money out',
       transfers: 'Transfers',
-      status: 'Status',
-      unpaidOnly: 'Unpaid only',
       min: 'At least',
       max: 'At most',
       clear: 'Clear filters',
@@ -412,14 +380,11 @@ const en = {
     title: 'Accounts',
     add: 'Add account',
     emptyHeading: 'No accounts yet.',
-    notFoundHeading: 'This account can’t be shown.',
-    notFoundBody: 'It may not have loaded yet, or it may have been removed on another device.',
     emptyBody: 'Add one to start logging money in and out.',
     balanceNow: 'Balance now',
     otherCurrency: 'Also {{amount}} in {{code}}',
     stillToCome: '{{amount}} still to come',
     inHome: '≈ {{amount}}',
-    inHomeWaiting: 'Waiting for a rate',
     importCsv: 'Import statement',
     archived: 'Archived',
     sheet: {
@@ -429,7 +394,6 @@ const en = {
       kind: 'Type',
       currency: 'Currency',
       currencyFixed: 'The currency is set when the account is made.',
-      notReady: 'Your account details are still loading, so this can’t be saved yet.',
       openingBalance: 'Opening balance',
       amountOwed: 'Amount owed',
       save: 'Save account',
@@ -512,8 +476,6 @@ const en = {
     removeCancel: 'Cancel',
     removeMerge: 'Merge',
     mergeTooLarge: 'Too many transactions to merge at once. Archiving keeps their history.',
-    removeUsageUnknown: 'Can’t tell yet how many transactions use {{name}}. Archiving keeps their history.',
-    removeUsageRetry: 'Try again',
     removeArchive: 'Archive',
     mergePick: 'Merge {{name}} into',
     swatch: {
@@ -625,10 +587,6 @@ const en = {
     matchesHeading: 'Before importing',
     suggestionCap_one: 'One import can apply up to {{count}} suggestion. The rest are kept as separate lines.',
     suggestionCap_other: 'One import can apply up to {{count}} suggestions. The rest are kept as separate lines.',
-    suggestionCapOver_one: 'More suggestions are accepted than one import can apply (up to {{count}}). Decline some to import.',
-    suggestionCapOver_other: 'More suggestions are accepted than one import can apply (up to {{count}}). Decline some to import.',
-    transfersUnavailable: 'Transfers can be linked once your categories have loaded.',
-    commitFailed: 'This import couldn’t start, so nothing was written. Your choices are kept.',
     dateFormat: 'Reading dates as {{format}}',
     dateFormatAmbiguous: 'These dates could be day-first or month-first. Pick one.',
     formats: {
@@ -766,8 +724,6 @@ const en = {
   setup: {
     accountHeading: 'Your first account',
     accountBody: 'Add the account you use most. More can be added later.',
-    addAccount: 'Add an account',
-    toYou: 'Sign out or delete your account',
   },
   a11y: {
     close: 'Close',

@@ -24,23 +24,17 @@ export function useRecordContext(): RecordContext {
   const { status, user } = useAuth();
   const userId = user?.id ?? null;
   const householdQuery = useHouseholdId(userId ?? undefined);
-  const prefsQuery = useMoneyPrefs(userId ?? undefined);
-  const { prefs } = prefsQuery;
+  const { prefs, loading: prefsLoading } = useMoneyPrefs(userId ?? undefined);
   const timeZone = getDeviceTimeZone();
   const today = localDateIn(new Date(), timeZone);
 
-  // I-05 (W6-13 WR-07): `ready` is a decision input (a new account's default currency, the
-  // Activity screen), so it waits for a successful prefs read. A failed or offline-paused read
-  // leaves `prefs` as the USD placeholder, which is not the user's home currency. A copy restored
-  // from the persisted cache counts as a success.
   const ready =
     status !== 'loading' &&
     userId !== null &&
     !householdQuery.isLoading &&
     householdQuery.data !== undefined &&
     householdQuery.data !== null &&
-    !prefsQuery.loading &&
-    prefsQuery.isSuccess;
+    !prefsLoading;
 
   return {
     ready,

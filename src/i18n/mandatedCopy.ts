@@ -4,8 +4,8 @@
  * translate. The client's single source of truth: en.ts (money.rate.attribution and
  * credits.exchangeRateApi) and RateAttribution read these constants.
  *
- * The Deno Edge Function bundle (resolve-rate) cannot share a module with the React Native
- * bundle, so it keeps its own copy in supabase/functions/_shared/fx/openErApi.ts. src/i18n/__tests__/
+ * The Deno fx-sync bundle cannot share a module with the React Native bundle, so it keeps
+ * its own copy in supabase/functions/fx-sync/openErApi.ts. src/i18n/__tests__/
  * mandatedCopy.test.ts asserts the two stay identical.
  */
 export const EXCHANGE_RATE_API_ATTRIBUTION = 'Rates By Exchange Rate API';

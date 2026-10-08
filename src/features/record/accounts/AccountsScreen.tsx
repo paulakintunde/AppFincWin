@@ -2,9 +2,8 @@
 // an Archived section beneath, and Add account. Tapping an account opens its detail.
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import type { AccountRow } from '@/db/rows';
 import { useAccounts } from '@/data/queries/accounts';
-import { useAccountBalances, type AccountBalanceView } from '@/data/queries/activity';
+import { useAccountBalances } from '@/data/queries/activity';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -13,45 +12,11 @@ import { textRole } from '@/theme/typography';
 import { EmptyState } from '@/ui/EmptyState';
 import { Pill } from '@/ui/Pill';
 import { Screen } from '@/ui/Screen';
-import { AccountBalanceBlock, useBalanceSummary } from './AccountBalanceBlock';
+import { AccountBalanceBlock } from './AccountBalanceBlock';
 import { AccountSheet } from './AccountSheet';
 
 export interface AccountsScreenProps {
   onOpenAccount: (id: string) => void;
-}
-
-/**
- * S-WR-14: one account card. Its accessibility label is built from what it shows -- name, kind
- * and currency, balance and standing -- since a label replaces the children for a screen reader.
- */
-function AccountCard({
-  account,
-  balance,
-  homeCurrency,
-  onPress,
-}: {
-  account: AccountRow;
-  balance: AccountBalanceView | undefined;
-  homeCurrency: string;
-  onPress: () => void;
-}) {
-  const t = useT();
-  const { colors, pairing } = useTheme();
-  const kindLine = `${t(`accounts.kind.${account.kind}`)} · ${account.currency}`;
-  const summary = useBalanceSummary(account, balance);
-  const label = [account.name, kindLine, summary].filter((p): p is string => p !== null && p !== '').join(', ');
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={balance ? label : account.name}
-      onPress={onPress}
-      style={[styles.card, { backgroundColor: colors.surface }]}
-    >
-      <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{account.name}</Text>
-      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{kindLine}</Text>
-      {balance ? <AccountBalanceBlock account={account} balance={balance} homeCurrency={homeCurrency} compact /> : null}
-    </Pressable>
-  );
 }
 
 export function AccountsScreen({ onOpenAccount }: AccountsScreenProps) {
@@ -67,13 +32,19 @@ export function AccountsScreen({ onOpenAccount }: AccountsScreenProps) {
   const archived = accounts.filter((a) => a.archived_at !== null);
 
   const renderAccount = (a: (typeof accounts)[number], showBalance: boolean) => (
-    <AccountCard
+    <Pressable
       key={a.id}
-      account={a}
-      balance={showBalance ? balances.get(a.id) : undefined}
-      homeCurrency={rc.homeCurrency}
+      accessibilityRole="button"
+      accessibilityLabel={a.name}
       onPress={() => onOpenAccount(a.id)}
-    />
+      style={[styles.card, { backgroundColor: colors.surface }]}
+    >
+      <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{a.name}</Text>
+      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+        {`${t(`accounts.kind.${a.kind}`)} · ${a.currency}`}
+      </Text>
+      {showBalance ? <AccountBalanceBlock account={a} balance={balances.get(a.id)} homeCurrency={rc.homeCurrency} compact /> : null}
+    </Pressable>
   );
 
   return (

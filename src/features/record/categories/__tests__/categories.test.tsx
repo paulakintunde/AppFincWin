@@ -19,7 +19,7 @@ const mockEdit = jest.fn(() => 'edit-step');
 const mockArchive = jest.fn(() => 'archive-step');
 const mockRestore = jest.fn(() => 'restore-step');
 const mockMerge = jest.fn(() => 'merge-step');
-let mockUsage: Record<string, unknown> = { count: 0, capped: false, isLoading: false };
+let mockUsage = { count: 0, capped: false, isLoading: false };
 
 function cat(over: Partial<CategoryRow> = {}): CategoryRow {
   return {
@@ -200,75 +200,6 @@ describe('RemoveCategoryPrompt', () => {
     expect(mockArchive).not.toHaveBeenCalled();
     expect(u.getByLabelText('Merge').props.accessibilityState.disabled).toBe(true);
     expect(u.getByLabelText('Archive').props.accessibilityState.disabled).toBe(true);
-  });
-
-  it.each([
-    ['errored', { count: 0, capped: false, isLoading: false, isError: true }],
-    ['paused offline (not loading, not succeeded)', { count: 0, capped: false, isLoading: false, isError: false, isSuccess: false }],
-    ['with no count', { count: undefined, capped: false, isLoading: false }],
-    ['with a null count', { count: null, capped: false, isLoading: false, isSuccess: false }],
-  ])('S-WR-07: never auto-archives while the usage count is unknown (%s)', async (_label, usage) => {
-    const refetch = jest.fn();
-    mockUsage = { ...usage, refetch };
-    const onDone = jest.fn();
-    const u = await render(
-      <ThemeProvider>
-        <RemoveCategoryPrompt visible category={mockAll[0] as CategoryRow} onDone={onDone} onCancel={jest.fn()} />
-      </ThemeProvider>
-    );
-    expect(mockArchive).not.toHaveBeenCalled();
-    expect(onDone).not.toHaveBeenCalled();
-    expect(u.getByText('Can’t tell yet how many transactions use Groceries. Archiving keeps their history.')).toBeTruthy();
-    expect(u.getByLabelText('Merge').props.accessibilityState.disabled).toBe(false);
-    // Archive stays an explicit choice; Try again re-reads the count.
-    expect(u.getByLabelText('Archive').props.accessibilityState.disabled).toBe(false);
-    await fireEvent.press(u.getByText('Try again'));
-    expect(refetch).toHaveBeenCalled();
-  });
-
-  it.each([
-    ['unavailable (failed or offline read)', { count: 0, capped: false, isLoading: false, isKnown: false, isUnavailable: true }],
-    ['not yet known (a persisted 0 from an earlier mount)', { count: 0, capped: false, isLoading: false, isKnown: false, isUnavailable: false }],
-  ])('I-01: gates on the useCategoryUsage contract -- %s never auto-archives', async (_label, usage) => {
-    const refetch = jest.fn();
-    mockUsage = { ...usage, refetch };
-    const onDone = jest.fn();
-    const u = await render(
-      <ThemeProvider>
-        <RemoveCategoryPrompt visible category={mockAll[0] as CategoryRow} onDone={onDone} onCancel={jest.fn()} />
-      </ThemeProvider>
-    );
-    expect(mockArchive).not.toHaveBeenCalled();
-    expect(onDone).not.toHaveBeenCalled();
-    expect(u.getByText('Can’t tell yet how many transactions use Groceries. Archiving keeps their history.')).toBeTruthy();
-    expect(u.getByLabelText('Merge').props.accessibilityState.disabled).toBe(false);
-    expect(u.getByLabelText('Archive').props.accessibilityState.disabled).toBe(false);
-    await fireEvent.press(u.getByText('Try again'));
-    expect(refetch).toHaveBeenCalled();
-    // Merge is a real choice here: it opens the target picker (the write re-reads the rows itself).
-    await fireEvent.press(u.getByText('Merge'));
-    expect(u.getByText('Merge Groceries into')).toBeTruthy();
-  });
-
-  it('I-01: auto-archives only when isKnown && count === 0 && !capped', async () => {
-    mockUsage = { count: 0, capped: false, isLoading: false, isKnown: true, isUnavailable: false };
-    await render(
-      <ThemeProvider>
-        <RemoveCategoryPrompt visible category={mockAll[0] as CategoryRow} onDone={jest.fn()} onCancel={jest.fn()} />
-      </ThemeProvider>
-    );
-    expect(mockArchive).toHaveBeenCalledTimes(1);
-  });
-
-  it('S-WR-07: auto-archives once the count is known to be zero', async () => {
-    mockUsage = { count: 0, capped: false, isLoading: false, isError: false, isSuccess: true };
-    const onDone = jest.fn();
-    await render(
-      <ThemeProvider>
-        <RemoveCategoryPrompt visible category={mockAll[0] as CategoryRow} onDone={onDone} onCancel={jest.fn()} />
-      </ThemeProvider>
-    );
-    expect(mockArchive).toHaveBeenCalledTimes(1);
   });
 
   it('disables Merge when the count is capped (the merge would be refused) but still allows Archive', async () => {

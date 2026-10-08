@@ -274,54 +274,16 @@ describe('useAddTransfer', () => {
     expect(rows[1]).toMatchObject({ original_currency: 'EUR', original_amount: 5800 });
   });
 
-  it('WR-01: a replayed insert that returns no rows re-reads both legs and records the step the lost first attempt never wrote', async () => {
+  it('records no undo step (and does not throw) when a replayed insert returns no rows', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
     fake.respondWith({ data: [], error: null, status: 201 }); // ignoreDuplicates: both rows already exist
-    fake.respondWith({
-      data: [
-        { id: 'uuid-1', local_date: '2026-09-24', version: 1, rate_pending: false, deleted_at: null },
-        { id: 'uuid-2', local_date: '2026-09-24', version: 1, rate_pending: false, deleted_at: null },
-      ],
-      error: null,
-      status: 200,
-    });
-    fake.respondWith({ data: null, error: null, status: 201 }); // undo_log insert
-
-    const qc = newClient();
-    const { result } = await renderHook(() => useAddTransfer(), { wrapper: wrapper(qc) });
-    const out = result.current.add(addInput);
-
-    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'));
-    const reread = fake.calls.filter((c) => c.table === 'transactions' && c.method === 'in');
-    expect(reread.at(-1)?.args).toEqual(['id', ['uuid-1', 'uuid-2']]);
-    const step = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert')?.args[0] as {
-      id: string;
-      label_key: string;
-      ops: { id: string; expectedVersion: number }[];
-    };
-    expect(step.id).toBe(out.stepId);
-    expect(step.label_key).toBe('transferAdded');
-    expect(step.ops.map((o) => [o.id, o.expectedVersion])).toEqual([['uuid-1', 1], ['uuid-2', 1]]);
-  });
-
-  it('WR-01: records no step on a replay when either leg has changed since (no honest inverse)', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith({ data: [], error: null, status: 201 });
-    fake.respondWith({
-      data: [
-        { id: 'uuid-1', local_date: '2026-09-24', version: 2, rate_pending: false, deleted_at: null },
-        { id: 'uuid-2', local_date: '2026-09-24', version: 1, rate_pending: false, deleted_at: null },
-      ],
-      error: null,
-      status: 200,
-    });
 
     const qc = newClient();
     const { result } = await renderHook(() => useAddTransfer(), { wrapper: wrapper(qc) });
     result.current.add(addInput);
 
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'upsert')).toBe(true));
     await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'));
     expect(fake.calls.some((c) => c.table === 'undo_log')).toBe(false);
   });
@@ -522,7 +484,6 @@ describe('useDeleteTransfer', () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
     fake.respondWith({ data: [fullRow({ id: 'o1', version: 2 })], error: null, status: 200 });
-    fake.respondWith({ data: null, error: null, status: 200 }); // WR-02: this delete's step was never recorded
 
     const qc = newClient();
     const { result } = await renderHook(() => useDeleteTransfer(), { wrapper: wrapper(qc) });
@@ -533,41 +494,6 @@ describe('useDeleteTransfer', () => {
       expect.objectContaining({ entityId: 'transfer:T1', kind: 'conflict', attempted: { transfer_id: 'T1', action: 'delete' } })
     );
     expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
-  });
-
-  it('WR-02: a replay whose first attempt landed (no live legs, step recorded) succeeds without a false conflict', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith({ data: [], error: null, status: 200 }); // both legs already soft-deleted
-    fake.respondWith({ data: { id: 'uuid-0' }, error: null, status: 200 }); // the step exists
-
-    const qc = newClient();
-    const { result } = await renderHook(() => useDeleteTransfer(), { wrapper: wrapper(qc) });
-    const stepId = result.current.remove(outLeg(), { ownerId: 'user-1', labelName: 'x' });
-
-    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('success'));
-    const lookup = fake.calls.filter((c) => c.table === 'undo_log');
-    expect(lookup.find((c) => c.method === 'eq')?.args).toEqual(['id', stepId]);
-    expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
-    expect(recordFailedWrite).not.toHaveBeenCalled();
-  });
-
-  it('IN-03: when the caller has both legs, the partner is checked at the version the user saw', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    // The partner was edited elsewhere (now version 6) after the user looked at it (version 4).
-    fake.respondWith({ data: [fullRow({ id: 'o1', version: 2 }), fullRow({ id: 'i1', account_id: 'a2', original_amount: 5000, version: 6 })], error: null, status: 200 });
-    fake.respondWith(applied([{ id: 'o1', version: 3 }, { id: 'i1', version: 7 }]));
-
-    const qc = newClient();
-    const { result } = await renderHook(() => useDeleteTransfer(), { wrapper: wrapper(qc) });
-    result.current.remove(outLeg(), { ownerId: 'user-1', labelName: 'x' }, inLeg());
-
-    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
-    expect(rpcArgs(fake).p_ops.map((o) => [o.id, o.expectedVersion])).toEqual([
-      ['o1', 2],
-      ['i1', 4],
-    ]);
   });
 
   it('a version conflict from apply_patches records one conflict failed write', async () => {

@@ -84,7 +84,7 @@ export function YouScreen() {
 
       <SettingsGroup title={t('you.record.section')}>
         {MONEY_ROWS.map((row) => (
-          <Pressable key={row.label} accessibilityRole="button" onPress={() => router.push(row.href)} style={styles.moneyRow}>
+          <Pressable key={row.label} accessibilityRole="button" onPress={() => router.push(row.href)}>
             <Text style={[styles.rowLabel, { fontFamily: fonts.body[500], color: colors.ink }]}>{t(row.label)}</Text>
           </Pressable>
         ))}
@@ -197,11 +197,6 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     fontSize: fontSize.body,
-  },
-  // S-WR-14: a full-size touch target for each Money row.
-  moneyRow: {
-    minHeight: space.touchMin,
-    justifyContent: 'center',
   },
   rowContent: {
     marginTop: space.gapSm,

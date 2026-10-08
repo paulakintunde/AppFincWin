@@ -16,7 +16,6 @@ import {
   inverseOfInserts,
   inverseOfPatches,
   planBulkPatch,
-  type BulkPatchItem,
   type PatchValue,
   type UndoConflict,
   type UndoLabelKey,
@@ -25,8 +24,7 @@ import {
 import { DbError, VersionConflictError, type WriteEntity } from '@/db/errors';
 import { insertCategory, updateCategory } from '@/db/categories';
 import { applyPatches } from '@/db/patches';
-import { fetchSeriesIdsByCategory } from '@/db/recurringSeries';
-import { MERGE_LIMIT, MERGE_ROWS_MAX, fetchActiveIdsByCategory } from '@/db/transactions';
+import { MERGE_LIMIT, fetchActiveIdsByCategory } from '@/db/transactions';
 import type { CategoryPatch, CategoryRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
@@ -197,27 +195,13 @@ export function registerCategoryMutations(qc: QueryClient): void {
         const client = await writeClient();
         // D-36: ids are read at flush time, so rows added while this sat in the queue move too.
         const rows = await fetchActiveIdsByCategory(client, vars.householdId, vars.source.id);
-        // WR-03: the moves plus the archive op must fit one apply_patches call (MERGE_LIMIT ops).
-        if (rows.length > MERGE_ROWS_MAX) throw new DbError('merge too large', 'merge-too-large', null);
-        // W6-13 WR-05: recurring templates filed under the source move too, in the same atomic
-        // call and undo step -- otherwise every future occurrence is generated under the archived
-        // (hidden) category. Read at flush, like the rows.
-        const series = await fetchSeriesIdsByCategory(client, vars.householdId, vars.source.id);
-        if (rows.length + series.length + 1 > MERGE_LIMIT) throw new DbError('merge too large', 'merge-too-large', null);
+        if (rows.length > MERGE_LIMIT) throw new DbError('merge too large', 'merge-too-large', null);
 
-        const originals = [...rows.map((r) => r.version), ...series.map((s) => s.version), vars.source.version];
-        const items: BulkPatchItem[] = [
+        const items = [
           ...rows.map((r) => ({
             entity: 'transactions' as const,
             id: r.id,
             expectedVersion: resolveExpectedVersion('transactions', r.id, r.version),
-            before: { category_id: vars.source.id },
-            patch: { category_id: vars.target.id },
-          })),
-          ...series.map((s) => ({
-            entity: 'recurring_series' as const,
-            id: s.id,
-            expectedVersion: resolveExpectedVersion('recurring_series', s.id, s.version),
             before: { category_id: vars.source.id },
             patch: { category_id: vars.target.id },
           })),
@@ -235,7 +219,8 @@ export function registerCategoryMutations(qc: QueryClient): void {
 
         const bases = new Map<string, number[]>();
         items.forEach((item, k) => {
-          bases.set(`${item.entity}\u0000${item.id}`, [originals[k]!, item.expectedVersion]);
+          const original = k < rows.length ? rows[k]!.version : vars.source.version;
+          bases.set(`${item.entity}\u0000${item.id}`, [original, item.expectedVersion]);
         });
         for (const row of applied) {
           recordWrittenVersion(row.entity as WriteEntity, row.id, bases.get(`${row.entity}\u0000${row.id}`) ?? [], row.version);
@@ -258,14 +243,12 @@ export function registerCategoryMutations(qc: QueryClient): void {
       void qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
       void qc.invalidateQueries({ queryKey: queryKeys.categories(vars.ownerId) });
       void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.recurringSeries(vars.householdId) }); // WR-05
     },
     onError: async (err: unknown, vars: MergeCategoryVars) => {
       const cls = classifySettledWriteError(err);
       if (cls !== 'conflict' && cls !== 'rejected' && cls !== 'not-found') return;
       void qc.invalidateQueries({ queryKey: queryKeys.categories(vars.ownerId) });
       void qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.recurringSeries(vars.householdId) });
 
       if (err instanceof VersionConflictError) {
         const conflict = err.serverRow as UndoConflict;

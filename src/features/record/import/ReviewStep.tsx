@@ -118,7 +118,6 @@ export function ReviewStep({ state }: { state: ImportState }) {
 
   const footer = (
     <View>
-      {state.commitProblem === 'failed' ? <T tone="inkMuted">{t('importCsv.commitFailed')}</T> : null}
       <Actions>
         {hasMatches ? (
           <Pill label={t('importCsv.continue')} variant="secondary" disabled={included === 0} onPress={() => void state.continue()} />

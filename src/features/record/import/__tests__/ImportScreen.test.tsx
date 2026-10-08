@@ -141,10 +141,6 @@ function makeState(over: Partial<Record<keyof ImportState, unknown>> = {}): Impo
     acceptPayMatch: fn(),
     dismissPayMatch: fn(),
     commit: fn(),
-    commitProblem: null,
-    overSuggestionCap: false,
-    suggestionCap: 2999,
-    transfersUnavailable: false,
     suggestions: [],
     acceptSuggestion: fn(),
     dismissSuggestion: fn(),
@@ -793,41 +789,12 @@ describe('ImportScreen: matches', () => {
       expect(mockState.dismissPayMatch).toHaveBeenCalledWith(2);
     });
 
-    it('S-WR-03: over a cap that went stale, says so and blocks the import until some are declined', async () => {
-      mockState = capState({ counts: { total: 3, included: 5999, duplicates: 0, blocked: 0, cannotVerify: 0 } });
-      await renderScreen();
-      expect(screen.getByText('More suggestions are accepted than one import can apply (up to 0). Decline some to import.')).toBeTruthy();
-      const importButton = screen.getByRole('button', { name: 'Import 5999 transactions' });
-      expect(importButton).toBeDisabled();
-      expect(importButton.props.accessibilityHint).toBe('More suggestions are accepted than one import can apply (up to 0). Decline some to import.');
-    });
-
     it('says nothing and disables nothing while under the cap', async () => {
       mockState = capState({ counts: { total: 3, included: 100, duplicates: 0, blocked: 0, cannotVerify: 0 } });
       await renderScreen();
       expect(screen.queryByText(/One import can apply up to/)).toBeNull();
       expect(screen.getAllByRole('button', { name: 'Link as transfer' })[1]).not.toBeDisabled();
     });
-  });
-});
-
-describe('ImportScreen: commit problems (S-WR-04)', () => {
-  it('without the transfer category, linking is disabled and the reason is shown', async () => {
-    mockState = matchesState([pairRow(0, 'leg-1'), previewRow(1, { transfer: { kind: 'orphan' } })], {
-      transferRows: [tRow(0, { kind: 'pair', existingId: 'leg-1' }), tRow(1, { kind: 'orphan' })],
-      transfersUnavailable: true,
-    });
-    await renderScreen();
-    expect(screen.getByText('Transfers can be linked once your categories have loaded.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Link as transfer' })).toBeDisabled();
-    expect(screen.getByLabelText('Pick the other account for this transfer')).toBeDisabled();
-    expect(screen.getAllByRole('button', { name: 'Not a transfer' })[0]).not.toBeDisabled();
-  });
-
-  it('a refused commit says nothing was written, on the matches step', async () => {
-    mockState = matchesState([pairRow(0, 'leg-1')], { transferRows: [tRow(0, { kind: 'pair', existingId: 'leg-1' })], commitProblem: 'failed' });
-    await renderScreen();
-    expect(screen.getByText('This import couldn’t start, so nothing was written. Your choices are kept.')).toBeTruthy();
   });
 });
 

@@ -3,7 +3,7 @@
 // undo step and shows the Undo toast (REC-11). Removal goes through RemoveCategoryPrompt
 // (merge or archive, never delete, D-36).
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { CATEGORY_COLOR_KEYS, type CategoryColorKey } from '@/engine/categorize';
 import type { CategoryRow } from '@/db/rows';
 import { useAddCategory, useEditCategory } from '@/data/mutations/categories';
@@ -17,7 +17,7 @@ import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
 import { Pill } from '@/ui/Pill';
-import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { Sheet } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { SwatchDot } from '@/ui/SwatchDot';
 import { RemoveCategoryPrompt } from './RemoveCategoryPrompt';
@@ -86,7 +86,7 @@ function SheetBody({ mode, onClose }: { mode: CategorySheetMode; onClose: () => 
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={title}>
       <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
-      <SheetScroll contentContainerStyle={styles.column}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.column}>
         <View style={styles.previewRow}>
           <CategoryGlyph colorKey={colorKey} letter={(trimmed.charAt(0) || '?').toUpperCase()} />
         </View>
@@ -110,7 +110,7 @@ function SheetBody({ mode, onClose }: { mode: CategorySheetMode; onClose: () => 
         {editing ? (
           <Pill label={t('categories.sheet.archive')} variant="danger" onPress={() => setRemoving(true)} />
         ) : null}
-      </SheetScroll>
+      </ScrollView>
       {editing ? (
         <RemoveCategoryPrompt
           visible={removing}

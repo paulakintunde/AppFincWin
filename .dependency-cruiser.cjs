@@ -20,22 +20,6 @@ module.exports = {
       },
     },
     {
-      name: 'fx-fetch-only-from-writes',
-      severity: 'error',
-      comment:
-        '02-DECISION-fx-on-demand.md item 5: only write paths may ask the server to fetch FX rates; balances, totals and Decide read stored rates only.',
-      from: { pathNot: '^src/(db|data/mutations|data/sync)/' },
-      to: { path: '^src/db/fxResolve' },
-    },
-    {
-      name: 'fx-fetch-never-from-reads',
-      severity: 'error',
-      comment:
-        '02-DECISION-fx-on-demand.md item 5: read hooks and the engine (incl. Phase 4 Decide) must not reach the fetch door, even through another module.',
-      from: { path: '^src/(data/queries|engine)/' },
-      to: { path: '^src/db/fxResolve', reachable: true },
-    },
-    {
       name: 'no-circular',
       severity: 'error',
       from: {},

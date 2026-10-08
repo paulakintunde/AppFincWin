@@ -11,8 +11,6 @@ export interface ActivityFilter {
   direction: 'all' | 'in' | 'out' | 'transfers';
   amountMin: number | null; // home-currency minor units, compared on magnitude
   amountMax: number | null;
-  /** Keep only rows still to be paid (status 'pending'): the prototype's "Unpaid only". */
-  unpaidOnly: boolean;
 }
 
 export const EMPTY_FILTER: ActivityFilter = {
@@ -21,7 +19,6 @@ export const EMPTY_FILTER: ActivityFilter = {
   direction: 'all',
   amountMin: null,
   amountMax: null,
-  unpaidOnly: false,
 };
 
 export interface FilterRow {
@@ -32,7 +29,6 @@ export interface FilterRow {
   name: string | null;
   note: string | null;
   transfer_id: string | null;
-  status: 'pending' | 'paid' | 'skipped';
 }
 
 export function isFilterActive(f: ActivityFilter): boolean {
@@ -41,8 +37,7 @@ export function isFilterActive(f: ActivityFilter): boolean {
     f.accountIds !== null ||
     f.direction !== 'all' ||
     f.amountMin !== null ||
-    f.amountMax !== null ||
-    f.unpaidOnly
+    f.amountMax !== null
   );
 }
 
@@ -92,7 +87,6 @@ export function filterRows<T extends FilterRow>(rows: readonly T[], f: ActivityF
   return rows.filter((row) => {
     if (f.categoryIds !== null && !f.categoryIds.includes(row.category_id)) return false;
     if (f.accountIds !== null && !f.accountIds.includes(row.account_id)) return false;
-    if (f.unpaidOnly && row.status !== 'pending') return false;
     if (!matchesDirection(row, f.direction)) return false;
     if (!matchesAmountRange(row, f.amountMin, f.amountMax)) return false;
     return true;

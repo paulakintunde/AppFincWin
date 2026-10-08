@@ -14,8 +14,6 @@ export interface PendingOccurrence {
   version: number;
   localDate: string;
   amount: number;
-  /** The occurrence's original currency: `amount` is in its minor units. */
-  currency: string;
   name: string | null;
   accountId: string;
 }
@@ -24,8 +22,6 @@ export interface PayMatchRow {
   index: number;
   localDate: string;
   amount: number;
-  /** The statement line's currency (a mapped currency column can differ from the account's). */
-  currency: string;
   name: string;
 }
 
@@ -59,7 +55,7 @@ interface Candidate {
 }
 
 /**
- * Same currency; same sign; amount within 10% of the planned figure (integer maths:
+ * Same sign; amount within 10% of the planned figure (integer maths:
  * `|imported - planned| * 10 <= |planned|`); imported dated from
  * `due - PAY_MATCH_BEFORE_DAYS` to `due + PAY_MATCH_AFTER_DAYS`; a
  * similar name (a null pending name never matches). Candidates are
@@ -78,9 +74,6 @@ export function matchPendingPayments(
     if (excluded.has(row.index)) continue;
     for (const p of pending) {
       if (p.name === null) continue;
-      // IN-04: amounts in different currencies are not comparable minor units, and marking the
-      // occurrence paid would record a foreign amount under its own currency.
-      if (row.currency !== p.currency) continue;
       if (Math.sign(row.amount) !== Math.sign(p.amount)) continue;
 
       const dayGap = daysBetween(p.localDate, row.localDate); // positive: imported after due

@@ -107,36 +107,6 @@ function resolveDateFormat(guess: DateFormatGuess, region: PrepareRegion): { for
   return { format: fallback, ambiguous: true };
 }
 
-/** What the file itself says about the date order and decimal mark under one column mapping. */
-export interface CsvReading {
-  dateGuess: DateFormatGuess;
-  dateFormat: DateFormat;
-  dateAmbiguous: boolean;
-  notationGuess: NotationGuess;
-  notation: NumberNotation;
-  notationAmbiguous: boolean;
-}
-
-/**
- * S-CR-06 / E-CR-02: infers the date order from the mapped date column and the decimal mark
- * from the mapped amount columns. Run again whenever the user remaps one of them, so an order
- * or mark is never carried over from a column nobody chose.
- */
-export function inferCsvReading(
-  dataRows: readonly (readonly string[])[],
-  mapping: ColumnMapping,
-  region: PrepareRegion
-): CsvReading {
-  const dateGuess = inferDateFormat(columnCells(dataRows, [mapping.date]));
-  const date = resolveDateFormat(dateGuess, region);
-  const notationGuess = inferNumberNotation(
-    columnCells(dataRows, [mapping.amount, mapping.debit, mapping.credit, mapping.balance, mapping.limit])
-  );
-  const notationAmbiguous = notationGuess.kind === 'ambiguous';
-  const notation = notationGuess.kind === 'ambiguous' ? notationFor(region.decimal) : notationGuess.notation;
-  return { dateGuess, dateFormat: date.format, dateAmbiguous: date.ambiguous, notationGuess, notation, notationAmbiguous };
-}
-
 function prepareCsv(text: string, region: PrepareRegion): PrepareResult {
   const tokens = tokenize(text);
   if (!tokens.ok) return { ok: false, reason: tokens.error === 'too-many-rows' ? 'too_many_rows' : 'unreadable' };
@@ -147,7 +117,14 @@ function prepareCsv(text: string, region: PrepareRegion): PrepareResult {
 
   const { mapping, confidence } = detectColumns(header, dataRows.slice(0, COLUMN_SAMPLE_ROWS));
 
-  const reading = inferCsvReading(dataRows, mapping, region);
+  const dateGuess = inferDateFormat(columnCells(dataRows, [mapping.date]));
+  const date = resolveDateFormat(dateGuess, region);
+
+  const notationGuess = inferNumberNotation(
+    columnCells(dataRows, [mapping.amount, mapping.debit, mapping.credit, mapping.balance, mapping.limit])
+  );
+  const notationAmbiguous = notationGuess.kind === 'ambiguous';
+  const notation = notationGuess.kind === 'ambiguous' ? notationFor(region.decimal) : notationGuess.notation;
 
   return {
     ok: true,
@@ -159,7 +136,12 @@ function prepareCsv(text: string, region: PrepareRegion): PrepareResult {
         delimiter: tokens.delimiter,
         detected: mapping,
         confidence,
-        ...reading,
+        dateGuess,
+        dateFormat: date.format,
+        dateAmbiguous: date.ambiguous,
+        notationGuess,
+        notation,
+        notationAmbiguous,
       },
     },
   };
@@ -374,7 +356,7 @@ export function buildPreview(input: PreviewInput): Preview {
 
   const payMatches = new Map(
     matchPendingPayments(
-      usable.map((u) => ({ index: u.row.index, localDate: u.localDate, amount: u.amount, currency: u.row.currency, name: u.row.description })),
+      usable.map((u) => ({ index: u.row.index, localDate: u.localDate, amount: u.amount, name: u.row.description })),
       input.pending,
       { excludeIndexes: new Set(duplicates.keys()) }
     ).map((m) => [m.index, m.pendingId] as const)

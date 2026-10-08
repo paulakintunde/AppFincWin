@@ -1,5 +1,5 @@
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
-import { buildActivityItems, cardPositions, getActivityItemType } from '../activitySections';
+import { buildActivityItems, getActivityItemType } from '../activitySections';
 
 function row(over: Partial<ActivityRowView>): ActivityRowView {
   return {
@@ -68,19 +68,5 @@ describe('buildActivityItems', () => {
   it('reports item types for the list recycler', () => {
     const items = buildActivityItems([row({ id: 'p1', status: 'pending' })], [proj('k', '2026-09-30')]);
     expect(items.map(getActivityItemType)).toEqual(['header', 'row', 'projection']);
-  });
-});
-
-describe('cardPositions', () => {
-  it('marks each row as first, middle, last or only within its section; headers get null', () => {
-    const items = buildActivityItems(
-      [row({ id: 'a', status: 'pending' }), row({ id: 'b' }), row({ id: 'c' }), row({ id: 'd' })],
-      []
-    );
-    expect(cardPositions(items)).toEqual([null, 'only', null, 'first', 'middle', 'last']);
-  });
-
-  it('returns an empty list for no items', () => {
-    expect(cardPositions([])).toEqual([]);
   });
 });

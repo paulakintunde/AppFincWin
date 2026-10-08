@@ -23,14 +23,13 @@ export function DevSyncProbe() {
   const { colors, fonts } = useTheme();
   const { user } = useAuth();
   const { data: householdId } = useHouseholdId(user?.id);
-  // I-05: the probe writes prefs.home_currency, so it waits for a successful prefs read.
-  const { prefs, isSuccess: prefsKnown } = useMoneyPrefs(user?.id);
+  const { prefs } = useMoneyPrefs(user?.id);
   const { data: accounts } = useAccounts(householdId ?? undefined);
   const { add: addAccount } = useAddAccount();
   const { add: addTransaction } = useAddTransaction();
 
   const handlePress = useCallback(() => {
-    if (!user || !householdId || !prefsKnown) return;
+    if (!user || !householdId) return;
 
     const existing = accounts?.find((account) => account.name === PROBE_ACCOUNT_NAME);
     const accountId =
@@ -56,7 +55,7 @@ export function DevSyncProbe() {
       userId: user.id,
       note: 'sync probe',
     });
-  }, [user, householdId, prefsKnown, accounts, prefs, addAccount, addTransaction]);
+  }, [user, householdId, accounts, prefs, addAccount, addTransaction]);
 
   return (
     <Pressable accessibilityRole="button" onPress={handlePress}>

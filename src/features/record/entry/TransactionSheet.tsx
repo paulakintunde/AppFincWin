@@ -4,7 +4,7 @@
 // transactionForm.ts (pure). Copy is declarative, never advice.
 import * as Crypto from 'expo-crypto';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { currencyExponent, money } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import type { MinorUnits } from '@/engine/money';
@@ -41,7 +41,7 @@ import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Pill } from '@/ui/Pill';
 import { RateAttribution } from '@/ui/RateAttribution';
 import { Row } from '@/ui/Row';
-import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { Sheet } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useAmountParser, type AmountParseFailure } from '@/ui/money/useAmountParser';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -49,11 +49,10 @@ import { AccountPicker } from './pickers/AccountPicker';
 import { CategoryPicker } from './pickers/CategoryPicker';
 import { DateField } from './pickers/DateField';
 import { OptionPicker } from './pickers/OptionPicker';
-import { CurrencyPicker } from './pickers/CurrencyPicker';
 import { EditScopePrompt } from './EditScopePrompt';
 import { OccurrenceActions } from './OccurrenceActions';
 import { RepeatsField } from './RepeatsField';
-import { needsScopePrompt, repeatsProblem, repeatsToSchedule, thisAndFuturePlan, type RepeatsValue } from './recurringForm';
+import { needsScopePrompt, nonTemplatePatch, repeatsToSchedule, type RepeatsValue } from './recurringForm';
 import {
   initialFormState,
   toAddInput,
@@ -89,45 +88,26 @@ export function TransactionSheet({ visible, mode, onClose }: TransactionSheetPro
   const t = useT();
   const rc = useRecordContext();
   const transferId = mode.kind === 'edit' ? mode.row.transfer_id : null;
-  const legsRead = useTransferLegs(rc.householdId, transferId ? [transferId] : []);
-  const { legs } = legsRead;
+  const { legs, isLoading } = useTransferLegs(rc.householdId, transferId ? [transferId] : []);
 
   if (!visible) return null;
 
   // D-51: opening either leg of a transfer edits the pair, so wait for both legs.
   let resolved: EntryMode = mode;
   if (transferId) {
-    const out = legs.find((l) => l.transfer_id === transferId && l.original_amount < 0);
-    const inn = legs.find((l) => l.transfer_id === transferId && l.original_amount > 0);
-    if (!out || !inn) {
-      // S-WR-01: without both legs the sheet stays read-only; editing or deleting one leg alone
-      // would break the pair. I-03: say why -- still loading, offline, a failed read, or a read
-      // that succeeded without the partner (a pair the server has not received yet).
-      let text: string = t('record.sheet.transferNeedsBothSides');
-      if (legsRead.isPending && legsRead.fetchStatus === 'paused') text = t('record.sheet.transferLegsOffline');
-      else if (legsRead.isPending) text = t('record.sheet.transferLegsLoading');
-      else if (legsRead.isError) text = t('record.sheet.transferLegsFailed');
-      else if (legsRead.isSuccess) text = t('record.sheet.transferPartnerMissing');
+    if (isLoading) {
       return (
         <Sheet visible onDismiss={onClose} accessibilityLabel={t('record.sheet.titleEdit')}>
           <SheetHeader title={t('record.sheet.titleEdit')} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
-          <TransferUnavailable text={text} />
         </Sheet>
       );
     }
-    resolved = { kind: 'edit-transfer', out, in: inn };
+    const out = legs.find((l) => l.transfer_id === transferId && l.original_amount < 0);
+    const inn = legs.find((l) => l.transfer_id === transferId && l.original_amount > 0);
+    if (out && inn) resolved = { kind: 'edit-transfer', out, in: inn };
   }
 
   return <SheetBody key={resolved.kind} mode={resolved} onClose={onClose} />;
-}
-
-function TransferUnavailable({ text }: { text: string }) {
-  const { colors, pairing } = useTheme();
-  return (
-    <Text accessibilityRole="text" style={[textRole(pairing, 'body'), { color: colors.inkMuted }]}>
-      {text}
-    </Text>
-  );
 }
 
 function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) {
@@ -155,7 +135,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const formCtx: FormContext = {
     today: rc.today,
     defaultAccount: activeAccounts[0] ? { id: activeAccounts[0].id, currency: activeAccounts[0].currency } : null,
-    amountInputText: (minor, code) => parser.toInputText(minor, code, exponentFor(code)),
+    exponentFor,
     accountCurrency: (id) => accounts.find((a) => a.id === id)?.currency,
   };
 
@@ -170,7 +150,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const pair = mode.kind === 'edit-transfer' ? mode : null;
   const isNew = mode.kind === 'new';
   const series = editRow?.recurring_series_id ? seriesList?.find((x) => x.id === editRow.recurring_series_id) : undefined;
-  const repeatsError = submitted ? repeatsProblem(repeats, state.localDate) : null;
+  const repeatsInvalid = submitted && repeatsToSchedule(repeats) === 'invalid';
   const isTransfer = state.direction === 'transfer';
   const parse = (text: string, currency: string) => parser.parse(text, currency, exponentFor(currency));
   const nameOf = (id: string | null): string => accounts.find((a) => a.id === id)?.name ?? '';
@@ -206,7 +186,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   };
   const outFigure = showMoney(state.amountText, state.currency);
   const inFigure = showMoney(state.amountInText, state.toCurrency ?? state.currency);
-  const figureText = outFigure ?? (state.amountText === '' ? (showMoney('0', state.currency || rc.homeCurrency) ?? '') : state.amountText);
+  const figureText = outFigure ?? (state.amountText === '' ? (showMoney('0', state.currency || 'GBP') ?? '') : state.amountText);
 
   const amountsFor = (): { out: number; inn: number } => {
     const out = (parse(state.amountText, state.currency) as { value: MinorUnits }).value;
@@ -257,7 +237,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     const amountMinor = (parse(state.amountText, state.currency) as { value: MinorUnits }).value;
     const name = state.name.trim();
     // Repeats is only offered on rows that are not already in a series.
-    const schedule = editRow?.recurring_series_id ? null : repeatsToSchedule(repeats, state.localDate);
+    const schedule = editRow?.recurring_series_id ? null : repeatsToSchedule(repeats);
     if (schedule === 'invalid') return;
 
     if (editRow) {
@@ -354,18 +334,16 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     const patch = scopePatch;
     setScopePatch(null);
     if (!patch || !editRow || !series || !rc.userId) return;
-    // S-CR-02 (D-07): the opened row always ends up with the user's whole edit -- either the
-    // series RPC rewrites it (pending, template-only) or it is patched directly and the
-    // series change starts after it (see thisAndFuturePlan).
-    const plan = thisAndFuturePlan(editRow, patch);
+    // Note and status stay on this one row; the template fields go to the series (D-07).
+    const rest = nonTemplatePatch(patch);
+    if (Object.keys(rest).length > 0) sendRowEdit(editRow, rest, patch.name ?? series.name);
     const seriesName = patch.name ?? series.name;
-    if (plan.rowPatch) sendRowEdit(editRow, plan.rowPatch, seriesName);
     const stepId = editFrom({
       id: series.id,
       householdId: editRow.household_id,
       expectedVersion: series.version,
       patch: seriesPatchFromOccurrenceEdit(patch),
-      effectiveFrom: plan.effectiveFrom,
+      effectiveFrom: editRow.occurrence_date ?? editRow.local_date,
       ownerId: rc.userId,
       name: seriesName,
     });
@@ -385,9 +363,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     setConfirmDelete(false);
     if (pair) {
       const labelName = nameOf(pair.in.account_id);
-      // I-04 (data IN-03): both legs are in hand, so pass the partner and its observed version
-      // is checked too -- a concurrent edit to the other side is refused, not deleted silently.
-      const stepId = removeTransfer(pair.out as TransferLegRow, { ownerId: rc.userId, labelName }, pair.in as TransferLegRow);
+      const stepId = removeTransfer(pair.out as TransferLegRow, { ownerId: rc.userId, labelName });
       showToast({ kind: 'destructive', text: undoLabelText('transferDeleted', { name: labelName }), stepId });
       onClose();
       return;
@@ -422,8 +398,6 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           accountB: nameOf(state.toAccountId),
         })
       : null;
-  // S-WR-10: a new transfer needs the transfer category; the disabled Save says why.
-  const transferSaveBlocked = isNew && isTransfer && categories.transferCategoryId === null;
   const deleteBody = pair
     ? t('record.sheet.transferDeleteConfirm', { from: nameOf(pair.out.account_id), to: nameOf(pair.in.account_id) })
     : t('record.sheet.confirmDelete');
@@ -431,7 +405,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={titleText}>
       <SheetHeader title={titleText} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
-      <SheetScroll contentContainerStyle={styles.column}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.column}>
         {isNew ? (
           <View style={styles.chips}>
             {(['out', 'in', 'transfer'] as Direction[]).map((d) => (
@@ -445,7 +419,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                       : 'record.sheet.directionTransfer'
                 )}
                 selected={state.direction === d}
-                onPress={() => setState((s) => withDirection(s, d, formCtx.accountCurrency))}
+                onPress={() => setState((s) => withDirection(s, d))}
               />
             ))}
           </View>
@@ -547,15 +521,9 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
               />
             ) : null}
             {editRow?.recurring_series_id ? null : (
-              <RepeatsField
-                value={repeats}
-                onChange={setRepeats}
-                formatDate={(d) => formatter.formatDate(d)}
-                today={rc.today}
-                entryDate={state.localDate}
-              />
+              <RepeatsField value={repeats} onChange={setRepeats} formatDate={(d) => formatter.formatDate(d)} today={rc.today} />
             )}
-            {repeatsError ? <Text style={errorStyle}>{t(`record.repeats.${repeatsError}`)}</Text> : null}
+            {repeatsInvalid ? <Text style={errorStyle}>{t('record.repeats.endCountInvalid')}</Text> : null}
           </>
         )}
 
@@ -573,16 +541,9 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           <RateAttribution rateDate={editRow.rate_date} rateSource={editRow.rate_source} ratePending={editRow.rate_pending} />
         ) : null}
 
-        {transferSaveBlocked ? <Text style={noteStyle}>{t('record.sheet.transferCategoryLoading')}</Text> : null}
-        <Pill
-          label={saveText}
-          variant="primary"
-          disabled={transferSaveBlocked}
-          accessibilityHint={transferSaveBlocked ? t('record.sheet.transferCategoryLoading') : undefined}
-          onPress={save}
-        />
+        <Pill label={saveText} variant="primary" disabled={isNew && isTransfer && categories.transferCategoryId === null} onPress={save} />
         {editRow || pair ? <Pill label={t('record.sheet.delete')} variant="danger" onPress={() => setConfirmDelete(true)} /> : null}
-      </SheetScroll>
+      </ScrollView>
 
       <CategoryPicker
         visible={picker === 'category'}
@@ -629,11 +590,10 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         }}
         onClose={() => setPicker(null)}
       />
-      <CurrencyPicker
+      <OptionPicker<string>
         visible={picker === 'currency'}
         title={t('record.sheet.field.currency')}
-        options={options}
-        homeCurrency={rc.homeCurrency}
+        options={options.map((o) => ({ value: o.code, label: `${o.code} · ${o.name}` }))}
         selected={state.currency}
         onSelect={(code) => {
           set({ currency: code });

@@ -85,10 +85,6 @@ export class FakeSupabase {
         record('not', [column, operator, value]);
         return builder;
       },
-      gt: (column: string, value: unknown) => {
-        record('gt', [column, value]);
-        return builder;
-      },
       gte: (column: string, value: unknown) => {
         record('gte', [column, value]);
         return builder;

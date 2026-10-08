@@ -33,7 +33,7 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [x] **ENV-05**: EAS project is initialised with development, preview and production build profiles
 - [x] **ENV-06**: Google OAuth client IDs exist for iOS, Android and Web, and Google Sign-In completes end to end
 - [ ] **ENV-07**: Sign in with Apple is configured with its Service ID and key, and completes end to end — *deferrable, blocked on ENV-10*
-- [ ] **ENV-08**: The on-demand FX fetch path (the `resolve-rate` Edge Function, Frankfurter v2 with the open.er-api fallback) is deployed, populates the shared `fx_rates` table when a rate is needed, and is monitored on failure; there is no schedule *(amended 2026-10-07, was: "deployed and populating the `fx_rates` table on schedule"; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
+- [x] **ENV-08**: Frankfurter rate-refresh Edge Function is deployed and populating the `fx_rates` table on schedule
 - [x] **ENV-09**: A dependency status register is maintained listing every external service as provisioned, pending or deferred, with its blocker and the phase it must land by
 - [ ] **ENV-10**: Apple Developer Program membership is active **as an organisation, under the company** (Guideline 5.1.1(ix)) — *external clock: D-U-N-S then enrolment; gates ENV-07, iOS device builds, TestFlight and submission*
 - [ ] **ENV-11**: Google Play Console organisation account is active under the company and an app entry exists — *deferrable to Phase 11; uses the same D-U-N-S number as ENV-10*
@@ -83,12 +83,12 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **MON-03**: Splitting an amount across members always produces shares that sum exactly to the original, using largest-remainder rounding
 - [x] **MON-04**: User can set a home currency from the supported list or add a custom currency
 - [x] **MON-05**: A transaction in a non-home currency records the FX rate applied at the time it was written
-- [ ] **MON-06**: FX rates are fetched on demand, per date, only when a currency other than the home currency is involved (a foreign line, a foreign account, an import, a home-currency change); each rate is stored once in the project's own shared store and reused by every user, and the app reads only that store *(amended 2026-10-07, was: "FX rates refresh daily from Frankfurter v2 into the project's own store, and the app reads only that store"; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
+- [x] **MON-06**: FX rates refresh daily from Frankfurter v2 into the project's own store, and the app reads only that store
 - [x] **MON-07**: A rate's own publication date is visible wherever a converted figure is shown, rather than implied to be current
 - [x] **MON-08**: Every record carries a client-generated UUID primary key assigned before the write leaves the device
 - [x] **MON-09**: Every mutable record carries an integer version that increments server-side on write
-- [ ] **MON-10**: An alert fires when an on-demand rate fetch fails or a fetched rate is held *(amended 2026-10-07, was: "An alert fires when any currency's latest stored rate is older than its staleness limit"; staleness limits are retired; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
-- [ ] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it *(adapted 2026-10-07: with on-demand fetching the move is measured against a stored rate at most 7 days older, and an unconfirmed hold is auto-accepted after 2 days by the fetch path rather than a cron; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
+- [x] **MON-10**: An alert fires when any currency's latest stored rate is older than its staleness limit
+- [x] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it
 - [x] **MON-12**: When Frankfurter cannot be reached, rates refresh from open.er-api instead, and its required attribution is shown in the app
 - [x] **MON-13**: Each currency's decimal places come from ISO 4217 — 0 for JPY, KRW and VND, 3 for KWD, BHD and OMR — and a custom currency declares its own
 - [x] **MON-14**: A transaction stores its local calendar date and time zone, so its month and any recurring schedule never shift across time zones or clock changes
@@ -123,12 +123,6 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **REC-16**: Re-importing the same or an overlapping statement does not create duplicates, while identical genuine transactions within one file are all kept
 - [ ] **REC-17**: User can set an overdraft limit on a current or savings account and a credit limit on a card, and each account shows its standing — in credit, overdrawn within or beyond its overdraft, owing within or over its card limit — without treating overdrawn or over-limit as an error
 - [ ] **REC-18**: User can record a transfer between their own accounts as one linked pair, import suggests matching transfer pairs such as card payments, and transfers are excluded from income and spending totals
-- [ ] **REC-19**: User can clone transactions (a line, or last month's recurring lines) as well as using recurring series
-- [ ] **REC-20**: The entry sheet offers a money keypad, Automatic payment and Refund toggles, a "Marking this paid moves X by Y" note, an FX "Saves as … at rate" note, and Received/Expected wording for income
-- [ ] **REC-21**: User can paste a list of lines to import them
-- [ ] **REC-22**: Categories show their usage and an optional monthly cap
-- [ ] **REC-23**: A new user can explore on sample figures, and a "Start fresh" banner clears them
-- [ ] **REC-24**: User can delete a money account that has no lines; an account with lines can only be archived
 
 ### Activity
 
@@ -137,19 +131,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **ACT-03**: User can search transactions across all months
 - [ ] **ACT-04**: User can filter the list by category, account and amount
 - [ ] **ACT-05**: User can select multiple transactions and delete them in one action
-- [ ] **ACT-06**: User can view the month as a week breakdown, a split view, a balance view and a calendar *(moved from Phase 7 to Phase 2.2 on 2026-10-07)*
-- [ ] **ACT-07**: User can view Activity by day, with each day's net subtotal
-- [ ] **ACT-08**: Every Activity grouping shows a net subtotal, including Week 1 to Week 5 in the week view and each group in In / out and Running balance
-- [ ] **ACT-09**: User can sort Activity by Newest, Oldest, Biggest, Smallest or A–Z
-- [ ] **ACT-10**: Activity shows the number of transactions next to the total
-- [ ] **ACT-11**: Lines that recur in logged history (not only imports) are offered as a series, with Review each, Mark all monthly and Not now
-- [ ] **ACT-12**: Future-dated lines and transfers show as Scheduled, distinct from Pending
-- [ ] **ACT-13**: Tapping a line opens a read-only detail sheet with Mark as paid, Edit and Delete
-- [ ] **ACT-14**: User can swipe a line to mark it paid or unpaid, or to delete it
-- [ ] **ACT-15**: The month list shows each month's entry count and offers "Add next month"
-- [ ] **ACT-16**: User can set the first day of the week used by the week and calendar views
-- [ ] **ACT-17**: An account's detail shows Coming in and Going out separately (green and red), plus the balance after everything pending; the in/out split of pending lines is computed from existing data
-- [ ] **ACT-18**: Activity rows show a Paid tag (Received for income) in green, alongside the Pending, Due and Overdue tags in red
+- [ ] **ACT-06**: User can view the month as a week breakdown, a split view, a balance view and a calendar
 
 ### Statement Import (PDF)
 
@@ -157,8 +139,6 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **IMP-02**: A PDF import is committed only after its balances reconcile or the user has reviewed every row that could not be verified
 - [ ] **IMP-03**: An uploaded statement file is deleted after a successful import unless the user chooses to keep it, a kept file is removed on account deletion, and statement content never appears in logs or error reports
 - [ ] **IMP-04**: Privacy copy states plainly where a PDF statement is processed and how long the file is kept
-- [ ] **IMP-05**: When a statement already gives a foreign line's converted amount, the account-currency figure is stored as the truth and never recomputed with a market rate. The original amount and the bank's implied rate (and any FX fee) are kept and shown together (e.g. "US$10.00 · charged C$13.92 at 1.392"), with an optional factual comparison to the market rate. Each line records whether its conversion came from the statement or an on-demand market rate. *(Added 2026-10-08, user decision.)*
-- [ ] **IMP-06**: Wallet and payment-app statements (PayPal, Wise, Revolut and similar) import with gross, fee and net per line. Each currency balance is its own account, and a currency conversion's paired lines are linked as a transfer, with the fee as a separate expense. *(Added 2026-10-08, user decision.)*
 
 ### Shell & Navigation
 
@@ -214,7 +194,6 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **GRW-08**: User can compare avalanche and snowball payoff strategies with an optional extra payment
 - [ ] **GRW-09**: User can see a projected payoff date and total interest for their chosen strategy
 - [ ] **GRW-10**: User records a holding's market value by hand, and its as-of date is shown wherever that value appears
-- [ ] **GRW-11**: User can record an interest rate (APY) on savings and investment accounts, alongside GRW-07's rate (APR) and minimum payment for credit cards and loans. Added 2026-10-07 from the Phase 2 device walkthrough; user decision: deferred to Phase 6.
 
 ### Insights
 
@@ -381,7 +360,7 @@ Populated during roadmap creation.
 | ENV-05 | Phase 0 - Foundation | Complete |
 | ENV-06 | Phase 0 - Foundation | Complete |
 | ENV-07 | Phase 0 - Foundation | Pending |
-| ENV-08 | Phase 0 - Foundation | Pending (amended 2026-10-07; re-verified by 02-50) |
+| ENV-08 | Phase 0 - Foundation | Complete |
 | ENV-09 | Phase 0 - Foundation | Complete |
 | ENV-10 | Phase 0 - Foundation | Pending |
 | ENV-11 | Phase 11 - Compliance & Release | Pending |
@@ -420,12 +399,12 @@ Populated during roadmap creation.
 | MON-03 | Phase 1 - Money Core | Complete |
 | MON-04 | Phase 1 - Money Core | Complete |
 | MON-05 | Phase 1 - Money Core | Complete |
-| MON-06 | Phase 1 - Money Core | Pending (amended 2026-10-07; re-verified by 02-50) |
+| MON-06 | Phase 1 - Money Core | Complete |
 | MON-07 | Phase 1 - Money Core | Complete |
 | MON-08 | Phase 1 - Money Core | Complete |
 | MON-09 | Phase 1 - Money Core | Complete |
-| MON-10 | Phase 1 - Money Core | Pending (amended 2026-10-07; re-verified by 02-50) |
-| MON-11 | Phase 1 - Money Core | Pending (amended 2026-10-07; re-verified by 02-50) |
+| MON-10 | Phase 1 - Money Core | Complete |
+| MON-11 | Phase 1 - Money Core | Complete |
 | MON-12 | Phase 1 - Money Core | Complete |
 | MON-13 | Phase 1 - Money Core | Complete |
 | MON-14 | Phase 1 - Money Core | Complete |
@@ -459,31 +438,11 @@ Populated during roadmap creation.
 | ACT-03 | Phase 2 - Record | Pending |
 | ACT-04 | Phase 2 - Record | Pending |
 | ACT-05 | Phase 2 - Record | Pending |
-| ACT-06 | Phase 2.2 - Record polish | Pending |
-| ACT-07 | Phase 2.2 - Record polish | Pending |
-| ACT-08 | Phase 2.2 - Record polish | Pending |
-| ACT-09 | Phase 2.2 - Record polish | Pending |
-| ACT-10 | Phase 2.2 - Record polish | Pending |
-| ACT-11 | Phase 2.2 - Record polish | Pending |
-| ACT-12 | Phase 2.2 - Record polish | Pending |
-| ACT-13 | Phase 2.2 - Record polish | Pending |
-| ACT-14 | Phase 2.2 - Record polish | Pending |
-| ACT-15 | Phase 2.2 - Record polish | Pending |
-| ACT-16 | Phase 2.2 - Record polish | Pending |
-| ACT-17 | Phase 2.2 - Record polish | Pending |
-| ACT-18 | Phase 2.2 - Record polish | Pending |
-| REC-19 | Phase 2.2 - Record polish | Pending |
-| REC-20 | Phase 2.2 - Record polish | Pending |
-| REC-21 | Phase 2.2 - Record polish | Pending |
-| REC-22 | Phase 2.2 - Record polish | Pending |
-| REC-23 | Phase 2.2 - Record polish | Pending |
-| REC-24 | Phase 2.2 - Record polish | Pending |
+| ACT-06 | Phase 7 - Insights | Pending |
 | IMP-01 | Phase 2.1 - PDF statement import | Pending |
 | IMP-02 | Phase 2.1 - PDF statement import | Pending |
 | IMP-03 | Phase 2.1 - PDF statement import | Pending |
 | IMP-04 | Phase 2.1 - PDF statement import | Pending |
-| IMP-05 | Phase 2.1 - PDF statement import | Pending |
-| IMP-06 | Phase 10 - System | Pending |
 | NAV-01 | Phase 3 - Shell | Pending |
 | NAV-02 | Phase 3 - Shell | Pending |
 | NAV-03 | Phase 3 - Shell | Pending |
@@ -527,7 +486,6 @@ Populated during roadmap creation.
 | GRW-08 | Phase 6 - Grow | Pending |
 | GRW-09 | Phase 6 - Grow | Pending |
 | GRW-10 | Phase 6 - Grow | Pending |
-| GRW-11 | Phase 6 - Grow | Pending |
 | INS-01 | Phase 7 - Insights | Pending |
 | INS-02 | Phase 7 - Insights | Pending |
 | INS-03 | Phase 7 - Insights | Pending |

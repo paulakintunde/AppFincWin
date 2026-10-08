@@ -2,7 +2,7 @@
 // D-56). No React, no I/O: defaults, validation and the patch diff are tested without a
 // renderer. Amounts only ever cross this file as integer minor units; the typed text is
 // parsed by the Phase 1 strict parser the caller passes in (never Number()/parseFloat).
-import type { MinorUnits, ParseAmountResult } from '@/engine/money';
+import { toDecimalString, type MinorUnits, type ParseAmountResult } from '@/engine/money';
 import { defaultStatusFor } from '@/engine/activity';
 import type { TransferPairState } from '@/engine/transfer';
 import { PAYMENT_TYPES, type PaymentType, type TransactionPatch, type TransactionRow } from '@/db/rows';
@@ -37,12 +37,7 @@ export interface FormState {
 export interface FormContext {
   today: string;
   defaultAccount: { id: string; currency: string } | null;
-  /**
-   * S-CR-01: the unsigned magnitude of a stored amount as field text, in the resolved
-   * region's own decimal mark and the currency's own exponent (useAmountParser's
-   * toInputText), so an untouched prefill always re-parses to the same minor units.
-   */
-  amountInputText: (minor: number, currency: string) => string;
+  exponentFor: (code: string) => number;
   /** The currency of any account by id, so a preselected account brings its own currency. */
   accountCurrency?: (accountId: string) => string | undefined;
 }
@@ -59,7 +54,7 @@ export type TransferFormError =
 type Parse = (text: string, currency: string) => ParseAmountResult;
 
 const magnitudeText = (amount: number, currency: string, ctx: FormContext): string =>
-  ctx.amountInputText(Math.abs(amount), currency);
+  toDecimalString(Math.abs(amount) as MinorUnits, ctx.exponentFor(currency));
 
 export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
   if (mode.kind === 'edit') {
@@ -131,19 +126,9 @@ export function withDate(state: FormState, localDate: string, today: string): Fo
   return { ...state, localDate, status: defaultStatusFor(localDate, today) };
 }
 
-/**
- * @param accountCurrency S-WR-06: the currency of an account by id. A transfer's Currency row
- * is hidden and its from-leg is in the from-account's own currency, so any override picked for
- * an expense or income is dropped on the way to Transfer.
- */
-export function withDirection(
-  state: FormState,
-  direction: Direction,
-  accountCurrency?: (accountId: string) => string | undefined
-): FormState {
+export function withDirection(state: FormState, direction: Direction): FormState {
   if (direction === 'transfer') {
-    const currency = (state.accountId !== null ? accountCurrency?.(state.accountId) : undefined) ?? state.currency;
-    return dropStaleAmountIn({ ...state, direction, status: 'paid', categoryId: null, paymentType: null, currency });
+    return { ...state, direction, status: 'paid', categoryId: null, paymentType: null };
   }
   const allowed = PAYMENT_TYPES[direction] as readonly PaymentType[];
   const paymentType = state.paymentType !== null && allowed.includes(state.paymentType) ? state.paymentType : null;
