@@ -143,7 +143,10 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
           ...(limits === 'overdraft' ? { overdraft_limit: limitMinor } : {}),
           ...(limits === 'credit' ? { credit_limit: limitMinor } : {}),
         },
-        { stepId, ownerId }
+        { stepId, ownerId },
+        currency !== rc.homeCurrency
+          ? { homeCurrency: rc.homeCurrency, openingDate: rc.today, userId: ownerId }
+          : undefined
       );
       showToast({ kind: 'ordinary', text: undoLabelText('accountAdded', { name: nameTrimmed }), stepId });
       getAnalytics().track('account_created', { context: mode.kind === 'new' ? mode.context : 'later' });
