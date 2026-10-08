@@ -71,13 +71,13 @@ insert into public.fx_rate_lookups (quote, requested_date, rate_date, source, fe
   ('USD', '2024-06-10', '2024-06-07', 'frankfurter-v2', timestamptz '2024-06-13 00:00+00');
 -- 7. Fresh / stale non-final lookups around today.
 insert into public.fx_rates (base, quote, rate, rate_date, source) values
-  ('EUR', 'GBP', 0.85, current_date - 1, 'frankfurter-v2'),
-  ('EUR', 'USD', 1.10, current_date - 1, 'frankfurter-v2');
+  ('EUR', 'GBP', 0.85, current_date - 2, 'frankfurter-v2'),
+  ('EUR', 'USD', 1.10, current_date - 2, 'frankfurter-v2');
 insert into public.fx_rate_lookups (quote, requested_date, rate_date, source, fetched_at) values
-  ('GBP', current_date, current_date - 1, 'frankfurter-v2', now()),
-  ('USD', current_date, current_date - 1, 'frankfurter-v2', now()),
-  ('GBP', current_date - 1, current_date - 1, 'frankfurter-v2', now() - interval '2 hours'),
-  ('USD', current_date - 1, current_date - 1, 'frankfurter-v2', now() - interval '2 hours');
+  ('GBP', current_date, current_date - 2, 'frankfurter-v2', now()),
+  ('USD', current_date, current_date - 2, 'frankfurter-v2', now()),
+  ('GBP', current_date - 1, current_date - 2, 'frankfurter-v2', now() - interval '2 hours'),
+  ('USD', current_date - 1, current_date - 2, 'frankfurter-v2', now() - interval '2 hours');
 -- 8. Coverage older than 7 days is exact when a final lookup says so.
 insert into public.fx_rates (base, quote, rate, rate_date, source) values
   ('EUR', 'GBP', 0.85, '2024-07-21', 'frankfurter-v2'),
