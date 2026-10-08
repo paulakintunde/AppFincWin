@@ -22,7 +22,7 @@ import {
   type UndoLabelKey,
   type UndoLabelParams,
 } from '@/engine/undo';
-import { VersionConflictError, type WriteEntity } from '@/db/errors';
+import { DbError, VersionConflictError, type WriteEntity } from '@/db/errors';
 import { applyPatches } from '@/db/patches';
 import { TRANSFER_LEGS_MAX, fetchTransferLegs } from '@/db/transactions';
 import type { TransactionRow } from '@/db/rows';
@@ -43,6 +43,9 @@ import { newStepId } from './undoCapture';
 
 /** The server's cap on ops in one apply_patches call (matches buildStep's own cap). */
 const BULK_MAX = 6000;
+
+/** W6-13 WR-04: the failed-write code for a batch that grew past BULK_MAX at flush time. */
+export const BULK_TOO_LARGE = 'bulk-too-large';
 
 export interface BulkPatchVars {
   householdId: string;
@@ -182,6 +185,9 @@ export function registerPatchMutations(qc: QueryClient): void {
         // D-50: partner legs are read at flush time, so a transfer's other leg is whatever it
         // is now (it may have been edited or deleted while this sat in the queue).
         const items = [...requested, ...(await partnerDeleteItems(vars, requested, client))];
+        // W6-13 WR-04: partner expansion can push a batch past the op cap after apply() checked
+        // it; refuse with a meaningful code instead of letting buildStep throw a bare RangeError.
+        if (items.length > BULK_MAX) throw new DbError(`bulk patch: ${items.length} ops exceeds ${BULK_MAX}`, BULK_TOO_LARGE, null);
         const resolved = items.map((i) => ({
           ...i,
           expectedVersion: resolveExpectedVersion(i.entity as WriteEntity, i.id, i.expectedVersion),
@@ -255,7 +261,10 @@ export function useBulkPatch(): { apply(vars: ApplyInput): string } {
     apply(vars: ApplyInput): string {
       const items = dedupeItems(vars.items);
       if (items.length === 0) throw new RangeError('bulk patch: nothing selected');
-      if (items.length > BULK_MAX) throw new RangeError(`bulk patch: ${items.length} rows exceeds ${BULK_MAX}`);
+      // W6-13 WR-04: each transfer id to expand can add one partner leg at flush, so it counts
+      // toward the cap here too (worst case: none of those partners is already selected).
+      const worstCase = items.length + (vars.expandTransferIds?.length ?? 0);
+      if (worstCase > BULK_MAX) throw new RangeError(`bulk patch: ${worstCase} rows exceeds ${BULK_MAX}`);
       const stepId = newStepId();
       mutation.mutate({ ...vars, items, undo: { ...vars.undo, stepId } });
       return stepId;

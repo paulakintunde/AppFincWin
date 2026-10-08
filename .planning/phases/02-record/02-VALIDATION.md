@@ -50,6 +50,15 @@ Filled in by the planner and executor as tasks are created. Baseline mapping fro
 | REC-11/12 | unit + pgTAP (RLS) | `npm test -- src/engine/undo` / `supabase test db` | ❌ W0 | ⬜ pending |
 | ACT-01..05 | unit + pgTAP | `npm test -- src/data/queries/__tests__/activitySearch.test.ts` | ❌ W0 | ⬜ pending |
 | ANL-05 | unit (typed catalogue) | `npm test -- src/services/analytics` | ✅ | ⬜ pending |
+| MON-05/06/13 (on-demand stamping, 02-41) | pgTAP | `supabase test db` (40_fx_on_demand_stamping) | ❌ GW1 | ⬜ pending |
+| MON-06/10/ENV-08 (retire daily jobs, 02-42) | pgTAP | `supabase test db` (41_fx_retire_daily_jobs; 10/13/20 trimmed) | ❌ GW2 | ⬜ pending |
+| MON-11/12 (shared FX library, 02-43) | unit | `npm test -- supabase/functions/_shared src/i18n` | ❌ GW1 (moved) | ⬜ pending |
+| MON-05/06/10/11/12, ENV-08 (resolve-rate, 02-44) | unit | `npm test -- supabase/functions/resolve-rate supabase/functions/_shared/fx/witness.test.ts` | ❌ GW2 | ⬜ pending |
+| MON-13, REC-01/02 (built-in currency list, 02-45) | unit | `npm test -- src/engine/money src/data/queries/__tests__/isoCurrencyServerParity.test.ts src/data/queries/__tests__/currencyOptions.test.ts` | ❌ GW1 | ⬜ pending |
+| MON-05/06, REC-05/09 (fxResolve + follow-ups, 02-46) | unit | `npm test -- src/db/__tests__/fxResolve.test.ts src/data/mutations/__tests__/transactions.test.tsx src/data/mutations/__tests__/recurringSeries.test.tsx` | ❌ GW1 | ⬜ pending |
+| REC-08, SYN-01 (account check + sweep, 02-47) | unit | `npm test -- src/data/mutations/__tests__/accountsRate.test.tsx src/data/sync/__tests__/ratePendingSweep.test.ts` | ❌ GW2 | ⬜ pending |
+| MON-07, REC-08 (waiting for a rate, never fetch, 02-48) | unit + depcruise | `npm test -- src/features/record/accounts/__tests__/AccountBalanceBlock.test.tsx src/data/queries/__tests__/homeAmount.test.ts` / `npm run depcruise` | ❌ GW2 | ⬜ pending |
+| MON-06 (home-currency change trigger, 02-49) | unit | `npm test -- src/data/mutations/__tests__/homeCurrencyRates.test.ts src/db/__tests__/householdCurrencies.test.ts` | ❌ GW3 | ⬜ pending |
 
 ### Import extension (2026-09-25) — Validation Architecture (extension)
 
@@ -115,6 +124,7 @@ From 02-RESEARCH.md "Validation Architecture (extension)". Framework unchanged (
 | Household conflict refusal on undo | REC-12 | Needs two signed-in household members | Member A edits, member B edits the same row, member A undoes; confirm the refusal copy |
 | Statement import on a device: OFX pick, format step, overdrawn and over-limit standing, transfer link, one-step undo | REC-09, REC-13, REC-15, REC-17, REC-18 | Native picker, real rendering and the full queue need a device | 02-31 Task 2 steps 15-19 with the synthetic fixtures |
 | `.ofx`/`.qfx` selectable in the iOS file picker | REC-09 | iOS may grey out files without a registered UTType (RESEARCH assumption E4); the '*/*' fallback needs a real iPhone | 02-31 Task 2 step 20 on the iPhone XR, or recorded pending until Apple enrolment clears |
+| On-demand FX in production: picker from the built-in list, one shared fetch per date, home switch converts at once, offline line filled after reconnect | MON-05, MON-06, MON-07, REC-01, REC-08 | Needs the production project, a device and airplane mode | 02-50 Task 4 steps 1-7 |
 
 ---
 
@@ -127,4 +137,4 @@ From 02-RESEARCH.md "Validation Architecture (extension)". Framework unchanged (
 - [x] Feedback latency < 120s
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** approved 2026-09-25 (plan checker: 0 blockers; TDD plans write their failing tests first, so Wave 0 test files land during execution). Extended the same day for the import extension (REC-13…REC-18, widened REC-09/ANL-05): every new requirement has an automated command above; the two device-only behaviours are in Manual-Only Verifications and 02-31. Re-check by the plan checker pending.
+**Approval:** approved 2026-09-25 (plan checker: 0 blockers; TDD plans write their failing tests first, so Wave 0 test files land during execution). Extended the same day for the import extension (REC-13…REC-18, widened REC-09/ANL-05): every new requirement has an automated command above; the two device-only behaviours are in Manual-Only Verifications and 02-31. Re-check by the plan checker pending. Extended 2026-10-07 for the on-demand FX gap closure (02-41…02-50): every plan task has an `<automated>` verify; new rows above; the production/device behaviour is in Manual-Only Verifications and 02-50.

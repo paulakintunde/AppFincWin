@@ -642,6 +642,7 @@ describe('buildPreview: transfers, mark-paid and categories', () => {
       version: 3,
       localDate: '2026-09-02',
       amount: -10000,
+      currency: 'GBP',
       name: 'TRANSFER TO SAVINGS',
       accountId: 'acc-1',
     };
@@ -651,7 +652,7 @@ describe('buildPreview: transfers, mark-paid and categories', () => {
   });
 
   it('does not offer a pay-match for a duplicate-flagged row', () => {
-    const pending: PendingOccurrence = { id: 'p1', version: 1, localDate: '2026-09-01', amount: -1000, name: 'ROW 0', accountId: 'acc-1' };
+    const pending: PendingOccurrence = { id: 'p1', version: 1, localDate: '2026-09-01', amount: -1000, currency: 'GBP', name: 'ROW 0', accountId: 'acc-1' };
     const p = buildPreview(
       previewInput(draftOf([draftRow(0)]), {
         pending: [pending],
@@ -659,6 +660,14 @@ describe('buildPreview: transfers, mark-paid and categories', () => {
       })
     );
     expect(p.rows[0]?.payMatch).toBeNull();
+  });
+
+  it('IN-04: a line in a mapped currency other than the pending occurrence’s is not offered as its payment', () => {
+    const pending: PendingOccurrence = { id: 'p1', version: 1, localDate: '2026-09-01', amount: -1000, currency: 'GBP', name: 'ROW 0', accountId: 'acc-1' };
+    const p = buildPreview(previewInput(draftOf([draftRow(0, { currency: 'EUR' })]), { pending: [pending] }));
+    expect(p.rows[0]?.payMatch).toBeNull();
+    const same = buildPreview(previewInput(draftOf([draftRow(0)]), { pending: [pending] }));
+    expect(same.rows[0]?.payMatch).toEqual({ pendingId: 'p1' });
   });
 
   it('guesses categories: learned, keyword, income, none', () => {
@@ -964,6 +973,7 @@ describe('toImportCommit', () => {
       version: 3,
       localDate: '2026-09-02',
       amount: -1000,
+      currency: 'GBP',
       name: 'ROW 0',
       accountId: 'acc-1',
     };

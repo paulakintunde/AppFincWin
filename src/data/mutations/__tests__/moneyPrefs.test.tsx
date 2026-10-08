@@ -14,7 +14,7 @@ import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupaba
 import { queryKeys } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { registerMutationDefaults } from '../index';
-import { useUpdateMoneyPrefs } from '../moneyPrefs';
+import { useSetHomeCurrencyIfDefault, useUpdateMoneyPrefs } from '../moneyPrefs';
 import { useAddCustomCurrency, useEditCustomCurrency } from '../customCurrencies';
 import { DEFAULT_MONEY_PREFS, useMoneyPrefs } from '@/data/queries/moneyPrefs';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
@@ -40,6 +40,11 @@ jest.mock('@/data/sync/failedWrites', () => ({
 
 jest.mock('@/services/locale/deviceLocale', () => ({
   getDeviceTimeZone: jest.fn(() => 'UTC'),
+}));
+
+const mockEnsureRates = jest.fn(async (..._a: unknown[]) => 'done');
+jest.mock('../homeCurrencyRates', () => ({
+  ensureRatesForHomeChange: (...a: unknown[]) => mockEnsureRates(...a),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -112,6 +117,74 @@ describe('useMoneyPrefs', () => {
     const { result } = await renderHook(() => useMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
 
     await waitFor(() => expect(result.current.prefs.home_currency).toBe('JPY'));
+  });
+});
+
+describe('useMoneyPrefs read state (W6-13 WR-07)', () => {
+  it('a failed read is isError with the placeholder prefs, never isSuccess', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = await renderHook(() => useMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current).toMatchObject({ prefs: DEFAULT_MONEY_PREFS, loading: false, isSuccess: false });
+  });
+
+  it('a real read is isSuccess and fetched after mount', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: prefsRow({ home_currency: 'EUR' }), error: null, status: 200 });
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = await renderHook(() => useMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current).toMatchObject({ isError: false, isFetchedAfterMount: true });
+  });
+});
+
+describe('useSetHomeCurrencyIfDefault (W6-13 WR-07)', () => {
+  it('sends one update conditional on home_currency = USD and caches the returned row', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: prefsRow({ home_currency: 'CAD' }), error: null, status: 200 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useSetHomeCurrencyIfDefault('user-1'), { wrapper: wrapper(qc) });
+
+    await expect(result.current('CAD')).resolves.toBe(true);
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ home_currency: 'CAD' });
+    expect(fake.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toEqual([
+      ['id', 'user-1'],
+      ['home_currency', 'USD'],
+    ]);
+    expect(qc.getQueryData<MoneyPrefsRow>(queryKeys.moneyPrefs('user-1'))?.home_currency).toBe('CAD');
+  });
+
+  it('resolves false and changes nothing locally when the currency was already changed', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: null, status: 200 });
+
+    const qc = newClient();
+    qc.setQueryData(queryKeys.moneyPrefs('user-1'), prefsRow({ home_currency: 'EUR' }));
+    const { result } = await renderHook(() => useSetHomeCurrencyIfDefault('user-1'), { wrapper: wrapper(qc) });
+
+    await expect(result.current('CAD')).resolves.toBe(false);
+    expect(qc.getQueryData<MoneyPrefsRow>(queryKeys.moneyPrefs('user-1'))?.home_currency).toBe('EUR');
+  });
+
+  it('throws on a server error so the caller can retry later', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useSetHomeCurrencyIfDefault('user-1'), { wrapper: wrapper(qc) });
+    await expect(result.current('CAD')).rejects.toBeTruthy();
   });
 });
 
@@ -399,5 +472,116 @@ describe('useEditCustomCurrency', () => {
 
     const rows = qc.getQueryData<WithPending<CustomCurrencyRow>[]>(queryKeys.customCurrencies('user-1'));
     expect(rows?.[0]).toMatchObject({ version: 5, unit_value: '9.0000000000' });
+  });
+});
+
+describe('02-49 home-currency rate check trigger', () => {
+  const today = () => new Date().toISOString().slice(0, 10); // device time zone is mocked to UTC
+
+  beforeEach(() => {
+    mockEnsureRates.mockClear();
+    onlineManager.setOnline(true);
+    // An earlier test in this file pins another zone; this block's dates are UTC days.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    (require('@/services/locale/deviceLocale') as { getDeviceTimeZone: jest.Mock }).getDeviceTimeZone.mockReturnValue('UTC');
+  });
+
+  it('setHomeCurrency calls the helper once on success with the date it was made, not awaited', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: prefsRow({ home_currency: 'THB' }), error: null, status: 200 });
+    const qc = newClient();
+    qc.setQueryData(queryKeys.moneyPrefs('user-1'), prefsRow());
+    const { result } = await renderHook(() => useUpdateMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
+
+    result.current.setHomeCurrency('THB');
+
+    await waitFor(() => expect(mockEnsureRates).toHaveBeenCalledTimes(1));
+    expect(mockEnsureRates).toHaveBeenCalledWith(qc, {
+      userId: 'user-1',
+      homeCurrency: 'THB',
+      date: today(),
+      householdId: null,
+    });
+  });
+
+  it('other prefs make no call', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: prefsRow({ show_cents: true }), error: null, status: 200 });
+    fake.respondWith({ data: prefsRow({ lead_figure: 'original' }), error: null, status: 200 });
+    fake.respondWith({ data: prefsRow({ region: 'GB' }), error: null, status: 200 });
+    const qc = newClient();
+    qc.setQueryData(queryKeys.moneyPrefs('user-1'), prefsRow());
+    const { result } = await renderHook(() => useUpdateMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
+    result.current.setShowCents(true);
+    result.current.setLeadFigure('original');
+    result.current.setRegion('GB');
+    await waitFor(() => expect(fake.calls.filter((c) => c.method === 'update')).toHaveLength(3));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(mockEnsureRates).not.toHaveBeenCalled();
+  });
+
+  it('a rejected prefs write makes no call', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'unknown home currency XYZ', code: '23514' }, status: 400 });
+    const qc = newClient();
+    qc.setQueryData(queryKeys.moneyPrefs('user-1'), prefsRow());
+    const { result } = await renderHook(() => useUpdateMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
+    result.current.setHomeCurrency('XYZ');
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
+    expect(mockEnsureRates).not.toHaveBeenCalled();
+  });
+
+  it('an offline change flushes later with the ORIGINAL date', async () => {
+    jest.useFakeTimers({
+      now: new Date('2026-10-08T10:00:00Z'),
+      doNotFake: [
+        'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate',
+        'nextTick', 'queueMicrotask', 'performance', 'requestAnimationFrame', 'cancelAnimationFrame',
+        'requestIdleCallback', 'cancelIdleCallback',
+      ],
+    });
+    try {
+      const fake = createFakeSupabase() as FakeSupabase & DbClient;
+      mockActiveClient = fake;
+      onlineManager.setOnline(false);
+      const qc = newClient();
+      qc.setQueryData(queryKeys.moneyPrefs('user-1'), prefsRow());
+      const { result } = await renderHook(() => useUpdateMoneyPrefs('user-1'), { wrapper: wrapper(qc) });
+      result.current.setHomeCurrency('THB');
+      await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.isPaused).toBe(true));
+      jest.setSystemTime(new Date('2026-10-09T10:00:00Z'));
+      fake.respondWith({ data: prefsRow({ home_currency: 'THB' }), error: null, status: 200 });
+      onlineManager.setOnline(true);
+      await qc.resumePausedMutations();
+      await waitFor(() => expect(mockEnsureRates).toHaveBeenCalledTimes(1));
+      expect(mockEnsureRates).toHaveBeenCalledWith(qc, expect.objectContaining({ date: '2026-10-08' }));
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('useSetHomeCurrencyIfDefault: applied -> helper called with today; not applied -> no call', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: prefsRow({ home_currency: 'CAD' }), error: null, status: 200 });
+    fake.respondWith({ data: null, error: null, status: 200 });
+    const qc = newClient();
+    const { result } = await renderHook(() => useSetHomeCurrencyIfDefault('user-1'), { wrapper: wrapper(qc) });
+
+    await expect(result.current('CAD')).resolves.toBe(true);
+    expect(mockEnsureRates).toHaveBeenCalledTimes(1);
+    expect(mockEnsureRates).toHaveBeenCalledWith(qc, {
+      userId: 'user-1',
+      homeCurrency: 'CAD',
+      date: today(),
+      householdId: null,
+    });
+
+    mockEnsureRates.mockClear();
+    await expect(result.current('GBP')).resolves.toBe(false);
+    expect(mockEnsureRates).not.toHaveBeenCalled();
   });
 });

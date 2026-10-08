@@ -61,3 +61,21 @@ export function getActivityItemType(item: ActivityItem): 'header' | 'row' | 'pro
 export function buildFlatItems(rows: readonly ActivityRowView[]): ActivityItem[] {
   return [...rows].sort(compareNewestFirst).map((row): ActivityItem => ({ type: 'row', key: row.id, row }));
 }
+
+export type CardPositionOf = 'only' | 'first' | 'middle' | 'last';
+
+/**
+ * For each item, where it sits in its run of non-header items (a section is one grouped card);
+ * null for a header. Pure, so the list's card edges are tested without rendering.
+ */
+export function cardPositions(items: readonly ActivityItem[]): (CardPositionOf | null)[] {
+  return items.map((item, i) => {
+    if (item.type === 'header') return null;
+    const prevIsRow = i > 0 && items[i - 1]!.type !== 'header';
+    const nextIsRow = i < items.length - 1 && items[i + 1]!.type !== 'header';
+    if (prevIsRow && nextIsRow) return 'middle';
+    if (prevIsRow) return 'last';
+    if (nextIsRow) return 'first';
+    return 'only';
+  });
+}

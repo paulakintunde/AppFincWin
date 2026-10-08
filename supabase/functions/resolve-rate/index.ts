@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 import { resolveRate, type ResolveDeps } from './resolve.ts';
-import type { FxRow } from '../fx-sync/parse.ts';
+import { notifyOperator, type NotifyDeps } from './notify.ts';
+import type { FxRow } from '../_shared/fx/parse.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -42,18 +43,173 @@ Deno.serve(async (req) => {
     return res.json();
   };
 
+  // The caller's id comes from their own JWT (already verified by the
+  // platform gateway), never from client-supplied input. Memoised per request.
+  let callerPromise: Promise<string | null> | null = null;
+  const callerId = () => {
+    callerPromise ??= userClient.auth.getUser().then(({ data, error }) => (error || !data?.user ? null : data.user.id));
+    return callerPromise;
+  };
+
+  // Operator email (02-44): Resend secrets are project-wide function secrets.
+  // Never logged; the body carries codes, dates and reasons only (T-01-11-04).
+  const resendApiKey = Deno.env.get('RESEND_API_KEY');
+  const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL');
+  const alertToEmail = Deno.env.get('FX_ALERT_TO_EMAIL');
+  const notifyDeps: NotifyDeps = {
+    now: () => new Date(),
+    configured: () => Boolean(resendApiKey && resendFromEmail && alertToEmail),
+    async lastEmailedAt() {
+      const { data, error } = await admin
+        .from('fx_alerts')
+        .select('emailed_at')
+        .not('emailed_at', 'is', null)
+        .order('emailed_at', { ascending: false })
+        .limit(1);
+      if (error) throw new Error(error.message);
+      return data?.[0]?.emailed_at ?? null;
+    },
+    async unsentAlerts() {
+      const { data, error } = await admin
+        .from('fx_alerts')
+        .select('id, kind, quote, detail, created_at')
+        .is('emailed_at', null)
+        .order('created_at', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+    async markEmailed(ids) {
+      if (ids.length === 0) return;
+      const { error } = await admin.from('fx_alerts').update({ emailed_at: new Date().toISOString() }).in('id', ids);
+      if (error) throw new Error(error.message);
+    },
+    async sendEmail(subject, text) {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: resendFromEmail, to: [alertToEmail], subject, text }),
+      });
+      if (!res.ok) throw new Error(`resend ${res.status}`);
+    },
+  };
+
   const deps: ResolveDeps = {
     // RD-05: per-user throttle (~60/hour), enforced by the fx_resolve_calls-backed SQL
-    // function (service-role, atomic increment). The caller's id comes from their own JWT
-    // (already verified by the platform gateway), never from client-supplied input.
+    // function (service-role, atomic increment); one count per call, whatever the shape.
     async checkRateLimit() {
-      const { data: userData, error: userError } = await userClient.auth.getUser();
-      if (userError || !userData?.user) return false;
-      const { data, error } = await admin.rpc('fx_resolve_rate_check_limit', {
-        p_user_id: userData.user.id,
-      });
+      const id = await callerId();
+      if (!id) return false;
+      const { data, error } = await admin.rpc('fx_resolve_rate_check_limit', { p_user_id: id });
       if (error) throw new Error(error.message);
       return Boolean(data);
+    },
+    today: () => new Date().toISOString().slice(0, 10),
+    callerId,
+    async readPendingMany(ids) {
+      const { data, error } = await userClient
+        .from('transactions')
+        .select('id, original_currency, home_currency, local_date, rate_pending, created_by')
+        .in('id', ids);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+    async quotesNeedingFetch(quotes, date) {
+      const { data, error } = await admin.rpc('fx_quotes_needing_fetch', { p_quotes: quotes, p_on: date });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as string[];
+    },
+    async openHolds(quotes) {
+      if (quotes.length === 0) return [];
+      const { data, error } = await admin
+        .from('fx_rate_holds')
+        .select('id, quote, held_rate, held_rate_date, source, status')
+        .in('quote', quotes)
+        .in('status', ['held', 'dropped']);
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((h) => ({
+        id: h.id,
+        quote: h.quote,
+        heldRate: String(h.held_rate),
+        heldDate: h.held_rate_date,
+        source: h.source,
+        status: h.status as 'held' | 'dropped',
+      }));
+    },
+    async confirmHolds(ids) {
+      if (ids.length === 0) return;
+      const { error } = await admin
+        .from('fx_rate_holds')
+        .update({ status: 'confirmed', resolved_at: new Date().toISOString() })
+        .in('id', ids);
+      if (error) throw new Error(error.message);
+    },
+    async upsertLookups(rows) {
+      if (rows.length === 0) return;
+      // Not ignoreDuplicates: refreshing fetched_at keeps the 1-hour freshness rule honest.
+      const { error } = await admin.from('fx_rate_lookups').upsert(
+        rows.map((r) => ({
+          base: 'EUR',
+          quote: r.quote,
+          requested_date: r.requestedDate,
+          rate_date: r.rateDate,
+          source: r.source,
+          fetched_at: new Date().toISOString(),
+        })),
+        { onConflict: 'base,quote,requested_date' }
+      );
+      if (error) throw new Error(error.message);
+    },
+    async recordFailures(date, quotes, reason) {
+      if (quotes.length === 0) return;
+      const { error } = await admin.from('fx_rate_fetch_failures').upsert(
+        quotes.map((q) => ({ base: 'EUR', quote: q, requested_date: date, reason, failed_at: new Date().toISOString() })),
+        { onConflict: 'base,quote,requested_date' }
+      );
+      if (error) throw new Error(error.message);
+    },
+    async clearFailures(date, quotes) {
+      if (quotes.length === 0) return;
+      const { error } = await admin
+        .from('fx_rate_fetch_failures')
+        .delete()
+        .eq('base', 'EUR')
+        .eq('requested_date', date)
+        .in('quote', quotes);
+      if (error) throw new Error(error.message);
+    },
+    async autoAcceptHolds() {
+      const { data, error } = await admin.rpc('fx_auto_accept_holds');
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as Array<{ quote: string; held_rate_date: string }>).map((h) => ({
+        quote: h.quote,
+        heldDate: h.held_rate_date,
+      }));
+    },
+    async refreshLookupsFor(accepted) {
+      for (const a of accepted) {
+        const { error } = await admin
+          .from('fx_rate_lookups')
+          .update({ fetched_at: new Date().toISOString() })
+          .eq('base', 'EUR')
+          .eq('quote', a.quote)
+          .eq('rate_date', a.heldDate);
+        if (error) throw new Error(error.message);
+      }
+    },
+    async recentFailureAlert(date, quotes) {
+      const since = new Date(Date.now() - 24 * 3_600_000).toISOString();
+      const { data, error } = await admin.from('fx_alerts').select('detail').eq('kind', 'sync-failed').gte('created_at', since);
+      if (error) throw new Error(error.message);
+      const want = [...quotes].sort().join(',');
+      return ((data ?? []) as Array<{ detail: { date?: unknown; quotes?: unknown } | null }>).some(
+        (a) =>
+          a.detail?.date === date &&
+          Array.isArray(a.detail.quotes) &&
+          [...(a.detail.quotes as string[])].sort().join(',') === want
+      );
+    },
+    async notify() {
+      await notifyOperator(notifyDeps);
     },
     async readPending(id) {
       const { data, error } = await userClient
@@ -139,12 +295,12 @@ Deno.serve(async (req) => {
         .insert(alerts.map((a) => ({ kind: a.kind, quote: a.quote ?? null, detail: a.detail ?? {} })));
       if (error) throw new Error(error.message);
     },
-    async upsertRates(rows: FxRow[]) {
+    async upsertRates(rows: FxRow[], source) {
       if (rows.length === 0) return;
       const { error } = await admin
         .from('fx_rates')
         .upsert(
-          rows.map((r) => ({ base: r.base, quote: r.quote, rate: r.rate, rate_date: r.date, source: 'frankfurter-v2' })),
+          rows.map((r) => ({ base: r.base, quote: r.quote, rate: r.rate, rate_date: r.date, source })),
           { onConflict: 'base,quote,rate_date,source', ignoreDuplicates: true }
         );
       if (error) throw new Error(error.message);

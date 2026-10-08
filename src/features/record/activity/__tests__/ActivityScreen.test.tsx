@@ -1,5 +1,6 @@
 import React from 'react';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { Dimensions, StyleSheet } from 'react-native';
+import { act, fireEvent, render, within } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { getToast, resetToastForTests } from '@/state/undoToast';
@@ -41,6 +42,9 @@ let mockProjections: ProjectionView[] = [];
 let mockMonths: string[] = ['2026-10', '2026-09', '2026-08'];
 const mockSheetProps = jest.fn();
 let mockSearchRows: ActivityRowView[] = [];
+let mockSearchLoading = false;
+let mockSearchPaused = false;
+let mockSearchError = false;
 const mockRemove = jest.fn((): string => 'del-step');
 const mockBulkPaid = jest.fn((): string => 'bp-step');
 const mockBulkUnpaid = jest.fn((): string => 'bu-step');
@@ -65,11 +69,19 @@ jest.mock('@/data/queries/activity', () => ({
   }),
   useTransactionMonths: () => ({ months: mockMonths, isLoading: false }),
   SEARCH_MIN_CHARS: 2,
-  useTransactionsSearch: (_h: string | null, term: string) => ({
-    rows: mockSearchRows,
-    isLoading: false,
-    enabled: term.trim().length >= 2,
-  }),
+  useTransactionsSearch: (_h: string | null, term: string) => {
+    const enabled = term.trim().length >= 2;
+    const pending = enabled && (mockSearchLoading || mockSearchPaused) && !mockSearchError;
+    return {
+      rows: mockSearchRows,
+      isLoading: enabled && mockSearchLoading,
+      enabled,
+      isPending: pending,
+      fetchStatus: pending ? (mockSearchPaused ? 'paused' : 'fetching') : 'idle',
+      isError: enabled && mockSearchError,
+      isSuccess: enabled && !pending && !mockSearchError,
+    };
+  },
 }));
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({
@@ -153,6 +165,9 @@ beforeEach(() => {
   mockProjections = [];
   mockMonths = ['2026-10', '2026-09', '2026-08'];
   mockSearchRows = [];
+  mockSearchLoading = false;
+  mockSearchPaused = false;
+  mockSearchError = false;
 });
 
 describe('ActivityScreen', () => {
@@ -219,6 +234,21 @@ describe('ActivityScreen', () => {
     const screen = await renderScreen();
     expect(screen.getByText('Overdue')).toBeTruthy();
     expect(screen.getByLabelText('Mark paid')).toBeTruthy();
+  });
+
+  it('S-WR-14: the row label carries its tags and the home figure, not just name and amount', async () => {
+    mockRows = [
+      row({ id: 'o1', name: 'Rent', status: 'pending', local_date: '2026-09-01', overdue: true }),
+      row({ id: 'e1', name: 'Hotel', original_amount: -10000, original_currency: 'EUR', amountHome: -8500, pending: true } as never),
+    ];
+    const screen = await renderScreen();
+    const rent = screen.getByTestId('activity-row-o1').props.accessibilityLabel as string;
+    expect(rent).toMatch(/^Rent, /);
+    expect(rent).toContain('Overdue');
+    const hotel = screen.getByTestId('activity-row-e1').props.accessibilityLabel as string;
+    expect(hotel).toContain('£85.00');
+    expect(hotel).toContain('€100.00');
+    expect(hotel).toContain('queued');
   });
 
   it('renders a projection muted, tagged Expected, and not tappable', async () => {
@@ -303,6 +333,50 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(screen.queryByText('Paid')).toBeNull();
   });
 
+  it('S-IN-04: an every-month search still in flight says so, not Nothing matches', async () => {
+    mockSearchLoading = true;
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByText('Every month'));
+    await type(screen, 'Search every month', 'coffee');
+    expect(screen.queryByText('Nothing matches.')).toBeNull();
+    expect(screen.getByText('Searching every month…')).toBeTruthy();
+  });
+
+  it('I-03: an every-month search paused offline says so, not Nothing matches', async () => {
+    mockSearchPaused = true;
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByText('Every month'));
+    await type(screen, 'Search every month', 'coffee');
+    expect(screen.queryByText('Nothing matches.')).toBeNull();
+    expect(screen.queryByText('Searching every month…')).toBeNull();
+    expect(screen.getByText('Every-month search needs a connection. It runs once you’re back online.')).toBeTruthy();
+  });
+
+  it('I-03: an every-month search that failed says so, not Nothing matches', async () => {
+    mockSearchError = true;
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByText('Every month'));
+    await type(screen, 'Search every month', 'coffee');
+    expect(screen.queryByText('Nothing matches.')).toBeNull();
+    expect(screen.getByText('Every-month search couldn’t finish.')).toBeTruthy();
+  });
+
+  it('I-03: an every-month search that succeeded with no rows says Nothing matches', async () => {
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByText('Every month'));
+    await type(screen, 'Search every month', 'coffee');
+    expect(screen.getByText('Nothing matches.')).toBeTruthy();
+  });
+
+  it('S-IN-05: deleting a selected transfer leg says both sides go', async () => {
+    mockRows = [row({ id: 'tl', name: null, transfer_id: 't1', original_amount: -5000, counterpartAccountId: 'a2', category_id: 'tc' })];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByLabelText('Select Transfer to Savings'));
+    await fireEvent.press(screen.getByLabelText('Delete'));
+    expect(screen.getByText('Delete 1 transaction? Transfers are deleted with both sides.')).toBeTruthy();
+  });
+
   it('shows Nothing matches when a search finds nothing', async () => {
     mockRows = [row({ id: 'a', name: 'Coffee' })];
     const screen = await renderScreen();
@@ -340,6 +414,33 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(screen.queryByTestId('bulk-bar')).toBeNull();
   });
 
+  it('Unpaid only filter hides paid rows and keeps pending ones', async () => {
+    mockRows = [
+      row({ id: 'a', name: 'Coffee' }),
+      row({ id: 'p', name: 'Phone bill', status: 'pending', local_date: '2026-09-28' }),
+    ];
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByText('Filter'));
+    await fireEvent.press(screen.getByText('Unpaid only'));
+    await fireEvent.press(screen.getByText('Show results'));
+    expect(screen.getByText('Phone bill')).toBeTruthy();
+    expect(screen.queryByText('Coffee')).toBeNull();
+  });
+
+  it('Select all and None drive the selection and never select a projection', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' }), row({ id: 'b', name: 'Rent' })];
+    mockProjections = [
+      { key: 's1:2026-09-30', seriesId: 's1', date: '2026-09-30', name: 'Netflix', amount: -999, currency: 'GBP', categoryId: null, accountId: 'a1', amountHome: -999 },
+    ];
+    const screen = await renderScreen();
+    expect(screen.queryByText('Select all')).toBeNull();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByText('Select all'));
+    expect(screen.getByText('2 selected')).toBeTruthy();
+    await fireEvent.press(screen.getByText('None'));
+    expect(screen.getByText('0 selected')).toBeTruthy();
+  });
+
   it('asks to select first when an action is used with nothing selected', async () => {
     mockRows = [row({ id: 'a', name: 'Coffee' })];
     const screen = await renderScreen();
@@ -360,7 +461,7 @@ describe('ActivityScreen search, filters and bulk select', () => {
     await fireEvent.press(screen.getByLabelText('Select Coffee'));
     await fireEvent.press(screen.getByLabelText('Select Transfer to Savings'));
     await fireEvent.press(screen.getByLabelText('Delete'));
-    expect(screen.getByText('Delete 2 transactions?')).toBeTruthy();
+    expect(screen.getByText('Delete 2 transactions? Transfers are deleted with both sides.')).toBeTruthy();
     expect(mockRemove).not.toHaveBeenCalled();
     await fireEvent.press(screen.getAllByText('Delete').at(-1)!);
     expect(mockRemove).toHaveBeenCalledWith(
@@ -391,6 +492,39 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(getToast()?.stepId).toBe('bu-step');
   });
 
+  it('S-WR-02: Mark paid on only paid rows says so, and sends nothing', async () => {
+    mockRows = [row({ id: 'g', name: 'Coffee' })];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByLabelText('Select Coffee'));
+    await fireEvent.press(screen.getByLabelText('Mark paid'));
+    expect(mockBulkPaid).not.toHaveBeenCalled();
+    expect(screen.getByText('None of the selected lines are still to come.')).toBeTruthy();
+  });
+
+  it('S-WR-02: Mark unpaid on only pending rows says so, and sends nothing', async () => {
+    mockRows = [row({ id: 'p', name: 'Phone', status: 'pending', local_date: '2026-09-28' })];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByLabelText('Select Phone'));
+    await fireEvent.press(screen.getByLabelText('Mark unpaid'));
+    expect(mockBulkUnpaid).not.toHaveBeenCalled();
+    expect(screen.getByText('None of the selected lines are paid.')).toBeTruthy();
+  });
+
+  it('S-WR-02: a bulk delete refused for its size says so', async () => {
+    mockRemove.mockImplementationOnce(() => {
+      throw new RangeError('bulk patch: 6001 rows exceeds 6000');
+    });
+    mockRows = [row({ id: 'a', name: 'Coffee' })];
+    const screen = await renderScreen();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByLabelText('Select Coffee'));
+    await fireEvent.press(screen.getByLabelText('Delete'));
+    await fireEvent.press(screen.getAllByText('Delete').at(-1)!);
+    expect(screen.getByText('That’s more lines than one change can hold. Select fewer.')).toBeTruthy();
+  });
+
   it('does not offer Undo when a bulk hook returns no step id', async () => {
     mockRemove.mockReturnValueOnce(null as unknown as string);
     mockRows = [row({ id: 'a', name: 'Coffee' })];
@@ -400,5 +534,52 @@ describe('ActivityScreen search, filters and bulk select', () => {
     await fireEvent.press(screen.getByLabelText('Delete'));
     await fireEvent.press(screen.getAllByText('Delete').at(-1)!);
     expect(getToast()?.stepId ?? null).toBeNull();
+  });
+});
+
+describe('ActivityScreen small-screen header (02-polish item 3)', () => {
+  const flat = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
+  const original = Dimensions.get('window');
+
+  afterEach(() => {
+    Dimensions.set({ window: original });
+  });
+
+  it.each([320, 360])('at %ipt the month switcher and the nav links sit in separate rows and the links shrink to fit', async (width) => {
+    Dimensions.set({ window: { ...original, width } });
+    const screen = await renderScreen();
+    const monthRow = screen.getByTestId('activity-month-row');
+    const links = screen.getByTestId('activity-nav-links');
+    // The switcher and the links never share one non-wrapping row.
+    expect(links.parent).not.toBe(monthRow);
+    expect(within(monthRow).getByLabelText('Choose month')).toBeTruthy();
+    expect(within(links).queryByLabelText('Choose month')).toBeNull();
+    expect(flat(links).flexDirection).toBe('row');
+    for (const label of ['Accounts', 'History', 'You']) {
+      const link = screen.getByLabelText(label);
+      const style = flat(link);
+      // Equal-width pills that can shrink below their content, label ellipsised.
+      expect(style.flex).toBe(1);
+      expect(style.minWidth).toBe(0);
+      expect(screen.getByText(label).props.numberOfLines).toBe(1);
+    }
+  });
+
+  it('lets the select-mode toolbar wrap instead of overflowing', async () => {
+    const screen = await renderScreen();
+    expect(flat(screen.getByTestId('activity-tools-row')).flexWrap).toBe('wrap');
+  });
+});
+
+describe('ActivityScreen section colours (02-polish item 5)', () => {
+  it('shows the Paid section header in the accent colour and Still to come in muted ink', async () => {
+    mockRows = [
+      row({ id: 'p', name: 'Phone bill', status: 'pending', local_date: '2026-09-28' }),
+      row({ id: 'g', name: 'Coffee' }),
+    ];
+    const screen = await renderScreen();
+    const style = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
+    expect(style(screen.getByText('Paid')).color).toBe('#1B4D3E');
+    expect(style(screen.getAllByText('Still to come')[1]!).color).toBe('#6E6A5E');
   });
 });

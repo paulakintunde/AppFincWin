@@ -6,6 +6,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { dismissToast, getToast, resetToastForTests, showToast } from '@/state/undoToast';
 import type { UndoLogRow } from '@/db/rows';
+import { undoLabelText } from '@/i18n/undoLabel';
 import { HistoryScreen } from '../HistoryScreen';
 import { UndoToastHost } from '../UndoToastHost';
 
@@ -92,11 +93,25 @@ describe('UndoToastHost', () => {
     expect(screen.queryByLabelText('Undo')).toBeNull();
   });
 
-  it('renders a nameless label without a raw placeholder (item 10)', async () => {
+  it('renders a nameless label without a raw placeholder, and still offers Undo (item 10, S-CR-04)', async () => {
     await renderThemed(<UndoToastHost />);
-    await show({ kind: 'ordinary', text: { key: 'undo.label.deleted', params: {} }, stepId: 's3' });
+    const text = undoLabelText('deleted', {});
+    expect(text.key).toBe('undo.labelUnnamed.deleted');
+    await show({ kind: 'destructive', text, stepId: 's3' });
     expect(screen.getByText('Deleted')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Undo'));
+    expect(mockUndo).toHaveBeenCalledWith(expect.objectContaining({ stepId: 's3', labelKey: 'deleted', labelParams: {} }));
   });
+
+  it.each(['markedPaid', 'skipped', 'transferAdded', 'transferEdited', 'transferDeleted', 'edited'])(
+    'offers Undo for a nameless %s step (S-CR-04)',
+    async (labelKey) => {
+      await renderThemed(<UndoToastHost />);
+      await show({ kind: 'ordinary', text: undoLabelText(labelKey, {}), stepId: 's4' });
+      await fireEvent.press(screen.getByLabelText('Undo'));
+      expect(mockUndo).toHaveBeenCalledWith(expect.objectContaining({ stepId: 's4', labelKey }));
+    }
+  );
 
   it('auto-dismisses ordinary at 3200 ms and destructive at 6000 ms', async () => {
     jest.useFakeTimers();

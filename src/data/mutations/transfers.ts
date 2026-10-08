@@ -14,7 +14,8 @@ import { buildTransferLegs, transferEditPatches, type TransferPairState } from '
 import { buildStep, inverseOfInserts, NOW_SENTINEL, planBulkPatch, type PatchValue, type UndoConflict } from '@/engine/undo';
 import { VersionConflictError } from '@/db/errors';
 import { applyPatches, type AppliedRow } from '@/db/patches';
-import { fetchTransferLegs, insertTransactionsBatch } from '@/db/transactions';
+import { undoStepExists } from '@/db/undoLog';
+import { fetchTransactionVersions, fetchTransferLegs, insertTransactionsBatch } from '@/db/transactions';
 import type { CustomCurrencyRow, FxLatestRow, NewTransaction, TransactionRow } from '@/db/rows';
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
@@ -159,6 +160,13 @@ export interface DeleteTransferVars {
   labelName: string;
   /** The leg the user acted on: its version is the conflict check; the partner is fetched at flush. */
   leg: { id: string; version: number; month: string };
+  /**
+   * W6-13 IN-03: the partner leg as the user saw it, when the caller has it. Its version is then
+   * checked too (D-26: an edit to the partner made after the user looked refuses the delete).
+   * Absent (one leg in hand, or a write queued before this field existed): the partner's current
+   * version at flush is accepted -- the user asked to delete the pair.
+   */
+  partner?: { id: string; version: number };
 }
 
 const LEG_KEYS = ['local_date', 'account_id', 'original_currency', 'original_amount'] as const;
@@ -261,12 +269,18 @@ function registerDeleteTransfer(qc: QueryClient): void {
         const fetched = await fetchTransferLegs(client, vars.householdId, [vars.transferId]);
         const pair = fetched.filter((r) => r.transfer_id === vars.transferId);
         // A pair that is not exactly two live rows (the other leg already deleted, or this one)
-        // changed elsewhere: refuse rather than half-delete.
+        // changed elsewhere: refuse rather than half-delete -- unless this is a replay of this
+        // same delete whose first attempt landed and lost its response (review W6-13 WR-02).
+        // apply_patches writes the step in the same transaction as the deletes, so the step id
+        // existing proves the delete already applied; the server's own replay key is never
+        // reached here because there are no live legs left to send.
         if (pair.length !== 2 || !pair.some((r) => r.id === vars.leg.id)) {
+          if (await undoStepExists(client, vars.stepId)) return [];
           throw new VersionConflictError('transactions', vars.leg.id, null);
         }
         const items = pair.map((row) => {
-          const base = row.id === vars.leg.id ? vars.leg.version : row.version;
+          const base =
+            row.id === vars.leg.id ? vars.leg.version : row.id === vars.partner?.id ? vars.partner.version : row.version;
           return {
             id: row.id,
             base,
@@ -321,10 +335,21 @@ export function registerTransferMutations(qc: QueryClient): void {
     mutationFn: (vars: AddTransferVars) =>
       guardSession(vars, async () => {
         const client = await writeClient();
-        const rows = await insertTransactionsBatch(client, vars.rows);
-        // A replay of an insert that already landed returns no rows (ignoreDuplicates): there
-        // is no honest version to build the inverse from, so none is recorded -- the original
-        // attempt's own step stands.
+        let rows: InsertedLeg[] = await insertTransactionsBatch(client, vars.rows);
+        // Review W6-13 WR-01: a replay of an insert that already landed returns no rows
+        // (ignoreDuplicates). The step is recorded only AFTER the insert returns, so when the
+        // first attempt's response was lost its step was never written either. Re-read both
+        // legs: if both are still live at version 1 (untouched since this action), the inverse
+        // is honest and the step is recorded now; insertUndoStep treats a duplicate step id
+        // (the first attempt did record it) as success. A changed leg gets no step.
+        if (rows.length !== vars.rows.length) {
+          const ids = vars.rows.map((r) => r.id);
+          const current = await fetchTransactionVersions(client, vars.householdId, ids);
+          const legs = ids.map((id) => current.find((r) => r.id === id));
+          if (legs.every((l) => l !== undefined && l.version === 1 && l.deleted_at === null)) {
+            rows = legs.map((l) => ({ id: l!.id, local_date: l!.local_date, version: l!.version, rate_pending: l!.rate_pending }));
+          }
+        }
         if (rows.length === vars.rows.length) {
           const step = buildStep(
             vars.stepId,
@@ -503,8 +528,11 @@ export function useEditTransfer(): {
 }
 
 export function useDeleteTransfer(): {
-  /** Returns the undo step id. Either leg may be passed; the partner is fetched when the write flushes. */
-  remove(leg: TransferLegRow, ctx: TransferEditContext): string;
+  /**
+   * Returns the undo step id. Either leg may be passed; the partner is fetched when the write
+   * flushes. Pass `partner` when the other leg is in hand too, so its observed version is checked.
+   */
+  remove(leg: TransferLegRow, ctx: TransferEditContext, partner?: TransferLegRow): string;
 } {
   const mutation = useMutation<AppliedRow[], unknown, DeleteTransferVars>({
     mutationKey: mutationKeys.deleteTransfer,
@@ -512,8 +540,11 @@ export function useDeleteTransfer(): {
   });
 
   return {
-    remove(leg, ctx): string {
+    remove(leg, ctx, partner): string {
       if (!leg.transfer_id) throw new TypeError('useDeleteTransfer: the row is not a transfer leg');
+      if (partner && (partner.transfer_id !== leg.transfer_id || partner.id === leg.id)) {
+        throw new TypeError('useDeleteTransfer: the two legs are not one linked transfer');
+      }
       const stepId = newStepId();
       mutation.mutate({
         householdId: leg.household_id,
@@ -522,6 +553,7 @@ export function useDeleteTransfer(): {
         transferId: leg.transfer_id,
         labelName: ctx.labelName,
         leg: { id: leg.id, version: leg.version, month: monthOf(leg.local_date) },
+        ...(partner ? { partner: { id: partner.id, version: partner.version } } : {}),
       });
       return stepId;
     },

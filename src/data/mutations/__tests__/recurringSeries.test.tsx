@@ -35,6 +35,10 @@ jest.mock('expo-crypto', () => ({
   randomUUID: jest.fn(() => `id-${++mockUuid}`),
 }));
 
+jest.mock('@/services/locale/deviceLocale', () => ({
+  getDeviceTimeZone: jest.fn(() => 'UTC'),
+}));
+
 jest.mock('@/data/sync/failedWrites', () => ({
   recordFailedWrite: jest.fn(async () => undefined),
 }));
@@ -360,5 +364,132 @@ describe('useEndSeries', () => {
       p_undo_step: { id: stepId, label_key: 'seriesEnded', label_params: { name: 'Rent' } },
     });
     expect(insertUndoStep).not.toHaveBeenCalled();
+  });
+});
+
+describe('FX follow-up for server-materialised foreign lines (02-46)', () => {
+  const pendingRows = [
+    { id: 'l1', household_id: 'h1', local_date: '2026-10-03', rate_pending: true },
+    { id: 'l2', household_id: 'h1', local_date: '2026-11-03', rate_pending: true },
+  ];
+  const calls = (fake: FakeSupabase, method: string) => fake.calls.filter((c) => c.method === method);
+  const settle = () => new Promise((r) => setTimeout(r, 20));
+
+  it('createSeries in a foreign currency reads back the series pending rows then resolves one call per date', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(applied(1));
+    fake.respondWith(ok(pendingRows));
+    fake.respondWith(ok({ ok: true, rows: [] }));
+    fake.respondWith(ok({ ok: true, rows: [] }));
+    const qc = newClient();
+    qc.setQueryData(queryKeys.moneyPrefs('u1'), { home_currency: 'USD' });
+    const { result } = await renderHook(() => useCreateSeries(), { wrapper: wrapper(qc) });
+
+    result.current.create({ series: newSeries, anchorTransactionId: null, linkTransactionIds: [], ownerId: 'u1' });
+
+    await waitFor(() => expect(calls(fake, 'functions.invoke')).toHaveLength(2));
+    const eqs = fake.calls.filter((c) => c.method === 'eq').map((c) => c.args);
+    expect(eqs).toContainEqual(['recurring_series_id', 's1']);
+    expect(fake.calls.find((c) => c.method === 'limit')?.args).toEqual([100]);
+    expect(fake.calls.find((c) => c.method === 'order')?.args).toEqual(['local_date', { ascending: true }]);
+    const bodies = calls(fake, 'functions.invoke').map((c) => (c.args[1] as { body: unknown }).body);
+    expect(bodies).toEqual([{ transactionIds: ['l2'] }, { transactionIds: ['l1'] }]);
+  });
+
+  it('createSeries in the home currency does no read and no invoke', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(applied(1));
+    const qc = newClient();
+    qc.setQueryData(queryKeys.moneyPrefs('u1'), { home_currency: 'GBP' });
+    const { result } = await renderHook(() => useCreateSeries(), { wrapper: wrapper(qc) });
+    const invalidate = jest.spyOn(qc, 'invalidateQueries');
+
+    result.current.create({ series: newSeries, anchorTransactionId: null, linkTransactionIds: [], ownerId: 'u1' });
+
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.transactionsRoot('h1') }));
+    await settle();
+    expect(calls(fake, 'from')).toHaveLength(0);
+    expect(fake.calls.some((c) => c.table === 'transactions')).toBe(false);
+    expect(calls(fake, 'functions.invoke')).toHaveLength(0);
+  });
+
+  it('editSeriesFrom always reads back; with no pending rows there is no invoke', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(applied(4));
+    fake.respondWith(ok([]));
+    const qc = newClient();
+    const { result } = await renderHook(() => useEditSeriesFrom(), { wrapper: wrapper(qc) });
+
+    result.current.editFrom({
+      id: 's1',
+      householdId: 'h1',
+      expectedVersion: 3,
+      patch: { amount: -130000 },
+      effectiveFrom: '2026-11-01',
+      ownerId: 'u1',
+      name: 'Rent',
+    });
+
+    await waitFor(() => expect(fake.calls.some((c) => c.table === 'transactions' && c.method === 'select')).toBe(true));
+    await settle();
+    expect(fake.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toContainEqual(['recurring_series_id', 's1']);
+    expect(calls(fake, 'functions.invoke')).toHaveLength(0);
+  });
+
+  it('editSeriesFrom resolves pending rows it finds', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(applied(4));
+    fake.respondWith(ok([pendingRows[0]]));
+    fake.respondWith(ok({ ok: true, rows: [] }));
+    const qc = newClient();
+    const { result } = await renderHook(() => useEditSeriesFrom(), { wrapper: wrapper(qc) });
+
+    result.current.editFrom({
+      id: 's1',
+      householdId: 'h1',
+      expectedVersion: 3,
+      patch: { currency: 'EUR' },
+      effectiveFrom: '2026-11-01',
+      ownerId: 'u1',
+      name: 'Rent',
+    });
+
+    await waitFor(() => expect(calls(fake, 'functions.invoke')).toHaveLength(1));
+  });
+
+  it('endSeries does no follow-up', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(applied(4));
+    const qc = newClient();
+    const { result } = await renderHook(() => useEndSeries(), { wrapper: wrapper(qc) });
+    const invalidate = jest.spyOn(qc, 'invalidateQueries');
+
+    result.current.end({ id: 's1', householdId: 'h1', expectedVersion: 3, endDate: '2026-12-31', ownerId: 'u1', name: 'Rent' });
+
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.transactionsRoot('h1') }));
+    await settle();
+    expect(fake.calls.some((c) => c.table === 'transactions')).toBe(false);
+    expect(calls(fake, 'functions.invoke')).toHaveLength(0);
+  });
+
+  it('a failing read is swallowed and the series write still succeeds', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(applied(1));
+    fake.respondWith({ data: null, error: { message: 'boom', code: 'XX000' }, status: 500 });
+    const qc = newClient();
+    const { result } = await renderHook(() => useCreateSeries(), { wrapper: wrapper(qc) });
+
+    result.current.create({ series: newSeries, anchorTransactionId: null, linkTransactionIds: [], ownerId: 'u1' });
+
+    await waitFor(() => expect(fake.calls.some((c) => c.table === 'transactions' && c.method === 'limit')).toBe(true));
+    await settle();
+    expect(calls(fake, 'functions.invoke')).toHaveLength(0);
+    expect(recordFailedWrite).not.toHaveBeenCalled();
   });
 });

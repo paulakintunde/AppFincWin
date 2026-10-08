@@ -22,18 +22,23 @@ export function EditScopePrompt({ visible, onThisOne, onThisAndFuture, onCancel,
   const t = useT();
   const { colors, pairing } = useTheme();
   const heading = { ...textRole(pairing, 'sheetTitle'), color: colors.ink };
+  const note = { ...textRole(pairing, 'label'), color: colors.inkMuted };
 
   return (
     <Sheet visible={visible} onDismiss={onCancel} accessibilityLabel={t('record.recurring.scopeHeading')}>
       <View style={styles.column}>
-        <Text style={heading}>{t('record.recurring.scopeHeading')}</Text>
+        <Text accessibilityRole="header" style={heading}>
+          {t('record.recurring.scopeHeading')}
+        </Text>
         <Pill label={t('record.recurring.scopeThisOne')} variant="secondary" onPress={onThisOne} />
         <Pill
           label={t('record.recurring.scopeThisAndFuture')}
           variant="primary"
           disabled={futureDisabled}
+          accessibilityHint={futureDisabled ? t('record.recurring.futureUnavailable') : undefined}
           onPress={onThisAndFuture}
         />
+        {futureDisabled ? <Text style={note}>{t('record.recurring.futureUnavailable')}</Text> : null}
         <Pill label={t('record.sheet.cancel')} variant="secondary" onPress={onCancel} />
       </View>
     </Sheet>

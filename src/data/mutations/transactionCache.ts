@@ -4,7 +4,7 @@
 // without a transactions <-> transfers import cycle.
 import type { QueryClient } from '@tanstack/react-query';
 import { monthOf } from '@/engine/time';
-import { requestRateResolution } from '@/db/transactions';
+import { requestRateResolution, requestRateResolutionBatch, MAX_IDS_PER_CALL } from '@/db/fxResolve';
 import type { DbClient, TransactionRow } from '@/db/rows';
 import { queryKeys } from '@/data/keys';
 import type { WithPending } from '@/data/types';
@@ -105,11 +105,13 @@ export async function followUpIfRatePending(
   if (!row.rate_pending) return;
   // RD-05: resolve-rate's own per-user throttle already answered 429 recently -- skip this
   // call entirely rather than adding to the pile; the row stays rate_pending and a later
-  // write's follow-up (once the cooldown passes), or the daily background restamp, resolves
+  // write's follow-up (once the cooldown passes) or the pending sweep (02-47) resolves
   // it instead.
   if (isResolveRateThrottled()) return;
   try {
     const resolved = await requestRateResolution(lazySupabaseClient(), row.id);
+    // A returned call may have stored a new rate: refresh cached latest rates so balances use it.
+    void qc.invalidateQueries({ queryKey: queryKeys.fxLatest() });
     if (resolved) {
       // C-WR-03: only a month already loaded. This runs after the caller's invalidation, so a
       // fabricated `[]` for a month never opened would not be refetched -- it would show as an
@@ -117,6 +119,61 @@ export async function followUpIfRatePending(
       patchMonthCacheIfLoaded(qc, householdId, month, (rows) => rows.map((r) => (r.id === resolved.id ? resolved : r)));
     }
   } catch {
-    // Network/function failure: the row stays rate_pending; fx-monitor reports stuck rows.
+    // Network/function failure: the row stays rate_pending; the pending sweep (02-47) retries it.
   }
+}
+
+export const MAX_RESOLVE_CALLS_PER_BATCH = 20;
+
+/**
+ * Follows up many rate_pending rows with one resolve-rate call per distinct local_date
+ * (chunked to MAX_IDS_PER_CALL ids), most recent dates first, at most `maxCalls` calls. Never
+ * throws; callers do not await it (WR-A15). `stillPendingDates` lists dates whose returned rows
+ * are all still rate_pending or whose call returned nothing, so the sweep can back off on them.
+ */
+export async function followUpPendingByDate(
+  qc: QueryClient,
+  rows: readonly Pick<TransactionRow, 'id' | 'household_id' | 'local_date' | 'rate_pending'>[],
+  opts?: { maxCalls?: number }
+): Promise<{ calls: number; stillPendingDates: string[] }> {
+  const maxCalls = opts?.maxCalls ?? MAX_RESOLVE_CALLS_PER_BATCH;
+  const result = { calls: 0, stillPendingDates: [] as string[] };
+  if (isResolveRateThrottled()) return result;
+
+  const byDate = new Map<string, string[]>();
+  for (const r of rows) {
+    if (!r.rate_pending) continue;
+    const ids = byDate.get(r.local_date);
+    if (ids) ids.push(r.id);
+    else byDate.set(r.local_date, [r.id]);
+  }
+  const dates = [...byDate.keys()].sort().reverse();
+
+  const pendingByDate = new Map<string, boolean>();
+  try {
+    outer: for (const date of dates) {
+      const ids = byDate.get(date) ?? [];
+      for (let i = 0; i < ids.length; i += MAX_IDS_PER_CALL) {
+        if (result.calls >= maxCalls || isResolveRateThrottled()) break outer;
+        result.calls += 1;
+        let returned: TransactionRow[] | null = null;
+        try {
+          returned = await requestRateResolutionBatch(lazySupabaseClient(), ids.slice(i, i + MAX_IDS_PER_CALL));
+        } catch {
+          // Network/function failure: rows stay rate_pending; the pending sweep retries them.
+        }
+        const stillPending = returned === null || returned.some((r) => r.rate_pending);
+        pendingByDate.set(date, (pendingByDate.get(date) ?? false) || stillPending);
+        for (const resolved of returned ?? []) {
+          patchMonthCacheIfLoaded(qc, resolved.household_id, monthOf(resolved.local_date), (list) =>
+            list.map((r) => (r.id === resolved.id ? resolved : r))
+          );
+        }
+      }
+    }
+  } finally {
+    if (result.calls > 0) void qc.invalidateQueries({ queryKey: queryKeys.fxLatest() });
+  }
+  result.stillPendingDates = dates.filter((d) => pendingByDate.get(d) === true);
+  return result;
 }

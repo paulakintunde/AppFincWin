@@ -15,9 +15,11 @@ import { startOnlineManager } from './onlineManager';
 import { registerMutationDefaults } from './mutations';
 import { hydrateFailedWrites } from './sync/failedWrites';
 import { hydrateLastSynced, trackSyncActivity } from './sync/lastSynced';
+import { startRatePendingSweep } from './sync/ratePendingSweep';
 
 registerMutationDefaults(queryClient);
 startOnlineManager();
+startRatePendingSweep(queryClient); // 02-47: retries rate_pending lines and failed account rate checks
 trackSyncActivity(queryClient);
 trackServerFetches(queryClient); // IN-A05
 void hydrateFailedWrites();

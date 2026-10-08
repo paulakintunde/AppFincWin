@@ -124,6 +124,14 @@ Reuse `src/theme/tokens.ts` and `src/theme/accents.ts` exactly — no new hex va
 
 Accent reserved for: entry-sheet primary CTA ("Save expense" / "Save income" / "Save changes" / "Add transfer"), statement-import commit button, "Mark paid" primary bulk action, focus ring, FX/connection accent indicators already established. Never for category glyphs (those keep their own mapped colour), never for the Delete/destructive path, never as a decorative fill, and **never for account standing** — standing uses plain text or, for the one exceeded tier, `warn1`, so that a user's choice of accent colour (which is themeable) never accidentally reads as a financial-health signal.
 
+**Amendment 2026-10-07 (user decision): status and money-direction colours follow the prototype.** The Accent and Destructive "reserved only for" lists above are widened for Activity and account detail, and only there:
+
+- Money in: an income line's amount is `accent` with a leading "+". Paid/Received status text is `accent` (the Activity "Paid" section header); refunds follow the same rule wherever a refund line exists (none is modelled yet).
+- Not yet paid: Pending / Due / Expected / Overdue status tags are `danger`.
+- Account detail: money still coming in is `accent`, money still going out is `danger`, and a negative balance figure is `danger` (this supersedes the earlier narrowing of negative balances to "not a declared, understood standing", for the figure only).
+- Unchanged: an account's standing sentence keeps its D-49 copy and `warn1` for beyond-overdraft / over-limit (approved on device); transfers stay `inkDim`; the queued sync tag stays `inkMuted`.
+- Never colour alone: every status keeps its words and every accessibility label is as before. Contrast (WCAG AA, 4.5:1): `danger` is 5.42 on `surface`, 5.19 on `canvas`, 4.71 on `fill1`; all four accents are 6.8 or higher on all three, so `accent` text needs no darker substitute. A user's accent choice now also tints these amounts and headers; they always carry a "+" or words, so the colour is reinforcement only.
+
 **Reconciliation result colour (new this revision):** none. "Balances check out.", "Some rows can't be checked against the balance." and "Couldn't check this file against a balance." all render as plain `ink`/`inkMuted` Body text with no icon and no accent/warn/danger colour-coding — the declarative sentence itself carries the meaning, and a cheerful green tick on a balance check would read as more reassurance than the copy voice allows (CLAUDE.md's declarative-not-prescriptive rule). A per-row "Can't verify" tag (for rows that fail the check) reuses the exact visual treatment already specified for the "Possible duplicate" tag in the original spec below — same `fill1` chip, same `inkMuted` Label text, distinguished only by its own words, not a different colour, which also satisfies "must not be conveyed by colour alone."
 
 ---

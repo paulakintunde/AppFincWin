@@ -6,7 +6,7 @@
 // Review item 12: accepted suggestions are capped so one finalize and its undo step stay under
 // the 6000-op limit. At the cap the accept actions are disabled and the copy says why;
 // declining is always possible.
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useAccounts } from '@/data/queries/accounts';
 import { AccountPicker } from '@/features/record/entry/pickers/AccountPicker';
@@ -35,12 +35,19 @@ export function MatchesStep({ state }: { state: ImportState }) {
 
   const accountName = (id: string | null): string => (id === null ? '' : (accounts.find((a) => a.id === id)?.name ?? ''));
   const own = accountName(state.accountId);
-  const rowAt = (index: number): PreviewRow | undefined => state.preview?.rows.find((r) => r.index === index);
+  // S-WR-13: keyed once per preview rather than scanned per suggestion card.
+  const byIndex = useMemo(() => new Map((state.preview?.rows ?? []).map((r) => [r.index, r] as const)), [state.preview]);
+  const rowAt = (index: number): PreviewRow | undefined => byIndex.get(index);
 
   const included = state.counts.included;
   const accepted = acceptedSuggestionCount(state.transferRows, state.payMatchRows);
   const roomForMore = canAcceptSuggestion(included, accepted);
   const atCap = !roomForMore;
+  // S-WR-03: going Back and including more lines lowers the cap below what was accepted.
+  const overCap = accepted > maxAcceptedSuggestions(included);
+  const overCapText = t('importCsv.suggestionCapOver', { count: maxAcceptedSuggestions(included) });
+  // S-WR-04: links need the transfer category, which may not have loaded.
+  const noTransfers = state.transfersUnavailable;
 
   const lineText = (row: PreviewRow | undefined): string | null => {
     if (row === undefined) return null;
@@ -69,7 +76,7 @@ export function MatchesStep({ state }: { state: ImportState }) {
           <Pill
             label={t('importCsv.transfer.link')}
             variant="secondary"
-            disabled={linked || atCap}
+            disabled={linked || atCap || noTransfers}
             onPress={() => state.linkTransfer(ts.index, existingId)}
           />
           <Pill
@@ -90,7 +97,7 @@ export function MatchesStep({ state }: { state: ImportState }) {
     const crossCurrency = other !== null && row !== undefined && other.currency !== row.converted.currency;
     const askAmount = other !== null && (ts.needsCounterAmount || crossCurrency);
     const isAccepted = ts.answer === 'orphan';
-    const locked = !isAccepted && atCap;
+    const locked = !isAccepted && (atCap || noTransfers);
     const pickLabel = t('importCsv.transfer.pickOther');
     return (
       <SuggestionCard key={ts.index}>
@@ -170,7 +177,10 @@ export function MatchesStep({ state }: { state: ImportState }) {
   return (
     <View>
       <Heading>{t('importCsv.matchesHeading')}</Heading>
-      {atCap ? <T tone="inkMuted">{t('importCsv.suggestionCap', { count: maxAcceptedSuggestions(included) })}</T> : null}
+      {overCap ? <T tone="inkMuted">{overCapText}</T> : null}
+      {atCap && !overCap ? <T tone="inkMuted">{t('importCsv.suggestionCap', { count: maxAcceptedSuggestions(included) })}</T> : null}
+      {noTransfers && state.transferRows.length > 0 ? <T tone="inkMuted">{t('importCsv.transfersUnavailable')}</T> : null}
+      {state.commitProblem === 'failed' ? <T tone="inkMuted">{t('importCsv.commitFailed')}</T> : null}
 
       {state.transferRows.map((ts) => {
         if (ts.suggestion.kind === 'pair') return pairCard(ts, ts.suggestion.existingId);
@@ -183,7 +193,13 @@ export function MatchesStep({ state }: { state: ImportState }) {
       {state.payMatchRows.map(payCard)}
 
       <Actions>
-        <Pill label={t('importCsv.commit', { count: included })} variant="primary" disabled={included === 0} onPress={state.commit} />
+        <Pill
+          label={t('importCsv.commit', { count: included })}
+          variant="primary"
+          disabled={included === 0 || overCap}
+          accessibilityHint={overCap ? overCapText : undefined}
+          onPress={state.commit}
+        />
         <Pill label={t('importCsv.back')} variant="secondary" onPress={state.back} />
         <Pill label={t('importCsv.cancel')} variant="secondary" onPress={state.cancel} />
       </Actions>
