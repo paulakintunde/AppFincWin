@@ -68,7 +68,9 @@ export function MonthSwitcher({ month, months, locale, onChange }: MonthSwitcher
         onPress={() => setListOpen(true)}
         style={styles.label}
       >
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{formatMonthLabel(month, locale)}</Text>
+        <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+          {formatMonthLabel(month, locale)}
+        </Text>
       </Pressable>
       <Pressable
         accessibilityRole="button"
@@ -117,6 +119,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
+    flexShrink: 1,
     minHeight: space.touchMin,
     justifyContent: 'center',
   },

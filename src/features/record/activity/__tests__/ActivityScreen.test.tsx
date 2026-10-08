@@ -1,6 +1,6 @@
 import React from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, within } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { getToast, resetToastForTests } from '@/state/undoToast';
@@ -552,8 +552,8 @@ describe('ActivityScreen small-screen header (02-polish item 3)', () => {
     const links = screen.getByTestId('activity-nav-links');
     // The switcher and the links never share one non-wrapping row.
     expect(links.parent).not.toBe(monthRow);
-    expect(monthRow.findByProps({ accessibilityLabel: 'Choose month' })).toBeTruthy();
-    expect(() => links.findByProps({ accessibilityLabel: 'Choose month' })).toThrow();
+    expect(within(monthRow).getByLabelText('Choose month')).toBeTruthy();
+    expect(within(links).queryByLabelText('Choose month')).toBeNull();
     expect(flat(links).flexDirection).toBe('row');
     for (const label of ['Accounts', 'History', 'You']) {
       const link = screen.getByLabelText(label);

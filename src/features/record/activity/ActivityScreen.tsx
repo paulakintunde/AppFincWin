@@ -238,15 +238,18 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         </Text>
         <Pill label={t('activity.add')} variant="primary" onPress={() => setAddOpen(true)} />
       </View>
-      <View style={styles.header}>
+      <View testID="activity-month-row" style={styles.header}>
         <MonthSwitcher month={month} months={months} locale={formatter.locale} onChange={setMonth} />
-        <View style={styles.links}>
-          {links.map((l) => (
-            <Pressable key={l.label} accessibilityRole="link" accessibilityLabel={l.label} onPress={l.onPress} style={styles.link}>
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{l.label}</Text>
-            </Pressable>
-          ))}
-        </View>
+      </View>
+      {/* Equal-width links on their own row: they shrink and ellipsise rather than overflow at 320pt. */}
+      <View testID="activity-nav-links" style={styles.links}>
+        {links.map((l) => (
+          <Pressable key={l.label} accessibilityRole="link" accessibilityLabel={l.label} onPress={l.onPress} style={styles.link}>
+            <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+              {l.label}
+            </Text>
+          </Pressable>
+        ))}
       </View>
       {flat ? null : <MonthTotalsBar totals={view.totals} homeCurrency={rc.homeCurrency} formatter={formatter} />}
       <SearchBar
@@ -256,7 +259,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         onTermChange={setTerm}
         onScopeChange={setScope}
       />
-      <View style={styles.header}>
+      <View testID="activity-tools-row" style={[styles.header, styles.wrapRow]}>
         <Chip label={t('activity.filter.title')} selected={filtering} onPress={() => setFilterOpen(true)} />
         {selection.active ? (
           <View style={styles.links}>
@@ -359,13 +362,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: space.gapMd,
   },
+  wrapRow: {
+    flexWrap: 'wrap',
+  },
   links: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: space.gapSm,
   },
   link: {
+    flex: 1,
+    minWidth: 0,
     minHeight: space.touchMin,
     paddingHorizontal: space.gapSm,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   list: {
