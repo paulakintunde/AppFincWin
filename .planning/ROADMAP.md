@@ -16,6 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Money Core** - Integer-money engine, client UUID keys, FX rate storage, TanStack Query data layer with the offline write queue (completed 2026-09-26)
 - [ ] **Phase 2: Record** - Transactions, recurring entries, transfers, statement import (CSV, OFX/QFX), account limits and standing, Activity list, compensating-write undo
 - [ ] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy
+- [ ] **Phase 2.2: Record polish** (INSERTED) - Activity views and subtotals, sort, recurring-from-history, clone, detail sheet and swipe, entry-sheet extras, paste import, sample data
 - [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB
 - [ ] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
@@ -255,7 +256,7 @@ Plans:
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 40/40 plans complete
+**Plans:** 12 plans
 
 Plans:
 
@@ -284,6 +285,23 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion; after Phase 2's 02-31 push)*
 - [ ] 02.1-12-PLAN.md — Production rollout: schema push [BLOCKING], deploy both functions, live checks, worst-case timing, device walkthrough (W7)
+
+### Phase 02.2: Record polish (INSERTED)
+
+**Goal:** Activity and the Record screens reach the prototype's depth (`FincWin United.dc.html`). Views have subtotals, with sort and counts; recurring lines are spotted from logged history; and entry, import and month tools are richer. The Phase 2 filter system stays.
+**Requirements**: ACT-06, ACT-07, ACT-08, ACT-09, ACT-10, ACT-11, ACT-12, ACT-13, ACT-14, ACT-15, ACT-16, REC-19, REC-20, REC-21, REC-22, REC-23, REC-24
+**Depends on:** Phase 2 (Record), Phase 3 (Shell) for the dropdown and FAB chrome where it applies
+**Inserted:** 2026-10-07, from the Phase 2 device walkthrough and a prototype gap audit (user decisions)
+**Success Criteria** (what must be TRUE):
+  1. Activity offers a view dropdown: By day, By week, In / out, Running balance, Calendar. Every group shows its net subtotal, including Week 1 to Week 5 and each day. The existing filters keep working in every view.
+  2. A user can sort Activity (Newest, Oldest, Biggest, Smallest, A–Z) and sees the transaction count next to the total.
+  3. Lines that recur in logged history are offered as a series ("N lines also ran in Aug at about the same amount…"), with Review each, Mark all monthly and Not now.
+  4. A user can clone transactions, open a read-only detail sheet with Mark as paid, Edit and Delete, and swipe a row to pay or delete. Future-dated lines show as Scheduled.
+  5. The entry sheet has the keypad, Automatic payment and Refund, the "Marking this paid moves…" and FX "Saves as…" notes, and Received/Expected for income. A list can be pasted to import it.
+  6. The month list shows entry counts and "Add next month". The week start is a setting. Categories show usage and an optional monthly cap.
+  7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
+**Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
+**Plans:** TBD
 
 ### Phase 3: Shell
 **Goal**: The app's navigation chrome matches the design system exactly.
@@ -399,7 +417,7 @@ Plans:
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
 **Depends on**: Phase 6
-**Requirements**: INS-01, INS-02, INS-03, INS-04, INS-05, INS-06, ACT-06
+**Requirements**: INS-01, INS-02, INS-03, INS-04, INS-05, INS-06
 **Success Criteria** (what must be TRUE):
   1. A user can see net worth over time with a selectable range.
   2. A user can see money in and out per month as bars, switch to a comparison mode, and compare a month against the previous one.

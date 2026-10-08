@@ -123,6 +123,12 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **REC-16**: Re-importing the same or an overlapping statement does not create duplicates, while identical genuine transactions within one file are all kept
 - [ ] **REC-17**: User can set an overdraft limit on a current or savings account and a credit limit on a card, and each account shows its standing — in credit, overdrawn within or beyond its overdraft, owing within or over its card limit — without treating overdrawn or over-limit as an error
 - [ ] **REC-18**: User can record a transfer between their own accounts as one linked pair, import suggests matching transfer pairs such as card payments, and transfers are excluded from income and spending totals
+- [ ] **REC-19**: User can clone transactions (a line, or last month's recurring lines) as well as using recurring series
+- [ ] **REC-20**: The entry sheet offers a money keypad, Automatic payment and Refund toggles, a "Marking this paid moves X by Y" note, an FX "Saves as … at rate" note, and Received/Expected wording for income
+- [ ] **REC-21**: User can paste a list of lines to import them
+- [ ] **REC-22**: Categories show their usage and an optional monthly cap
+- [ ] **REC-23**: A new user can explore on sample figures, and a "Start fresh" banner clears them
+- [ ] **REC-24**: User can delete a money account that has no lines; an account with lines can only be archived
 
 ### Activity
 
@@ -131,7 +137,17 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **ACT-03**: User can search transactions across all months
 - [ ] **ACT-04**: User can filter the list by category, account and amount
 - [ ] **ACT-05**: User can select multiple transactions and delete them in one action
-- [ ] **ACT-06**: User can view the month as a week breakdown, a split view, a balance view and a calendar
+- [ ] **ACT-06**: User can view the month as a week breakdown, a split view, a balance view and a calendar *(moved from Phase 7 to Phase 2.2 on 2026-10-07)*
+- [ ] **ACT-07**: User can view Activity by day, with each day's net subtotal
+- [ ] **ACT-08**: Every Activity grouping shows a net subtotal, including Week 1 to Week 5 in the week view and each group in In / out and Running balance
+- [ ] **ACT-09**: User can sort Activity by Newest, Oldest, Biggest, Smallest or A–Z
+- [ ] **ACT-10**: Activity shows the number of transactions next to the total
+- [ ] **ACT-11**: Lines that recur in logged history (not only imports) are offered as a series, with Review each, Mark all monthly and Not now
+- [ ] **ACT-12**: Future-dated lines and transfers show as Scheduled, distinct from Pending
+- [ ] **ACT-13**: Tapping a line opens a read-only detail sheet with Mark as paid, Edit and Delete
+- [ ] **ACT-14**: User can swipe a line to mark it paid or unpaid, or to delete it
+- [ ] **ACT-15**: The month list shows each month's entry count and offers "Add next month"
+- [ ] **ACT-16**: User can set the first day of the week used by the week and calendar views
 
 ### Statement Import (PDF)
 
@@ -439,7 +455,23 @@ Populated during roadmap creation.
 | ACT-03 | Phase 2 - Record | Pending |
 | ACT-04 | Phase 2 - Record | Pending |
 | ACT-05 | Phase 2 - Record | Pending |
-| ACT-06 | Phase 7 - Insights | Pending |
+| ACT-06 | Phase 2.2 - Record polish | Pending |
+| ACT-07 | Phase 2.2 - Record polish | Pending |
+| ACT-08 | Phase 2.2 - Record polish | Pending |
+| ACT-09 | Phase 2.2 - Record polish | Pending |
+| ACT-10 | Phase 2.2 - Record polish | Pending |
+| ACT-11 | Phase 2.2 - Record polish | Pending |
+| ACT-12 | Phase 2.2 - Record polish | Pending |
+| ACT-13 | Phase 2.2 - Record polish | Pending |
+| ACT-14 | Phase 2.2 - Record polish | Pending |
+| ACT-15 | Phase 2.2 - Record polish | Pending |
+| ACT-16 | Phase 2.2 - Record polish | Pending |
+| REC-19 | Phase 2.2 - Record polish | Pending |
+| REC-20 | Phase 2.2 - Record polish | Pending |
+| REC-21 | Phase 2.2 - Record polish | Pending |
+| REC-22 | Phase 2.2 - Record polish | Pending |
+| REC-23 | Phase 2.2 - Record polish | Pending |
+| REC-24 | Phase 2.2 - Record polish | Pending |
 | IMP-01 | Phase 2.1 - PDF statement import | Pending |
 | IMP-02 | Phase 2.1 - PDF statement import | Pending |
 | IMP-03 | Phase 2.1 - PDF statement import | Pending |
