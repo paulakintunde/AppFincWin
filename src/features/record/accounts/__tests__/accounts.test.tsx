@@ -442,6 +442,33 @@ describe('AccountSheet: new-account currency follows a late home-currency defaul
   });
 });
 
+describe('AccountSheet: opening-date rate check (02-47)', () => {
+  it('a foreign-currency account passes the check request as the third argument', async () => {
+    mockHome = 'USD';
+    const u = await render(
+      <ThemeProvider>
+        <AccountSheet visible mode={{ kind: 'new', context: 'later' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    await fireEvent.press(u.getByLabelText('Currency'));
+    await fireEvent.press(within(u.getByTestId('currency-section-popular')).getByText('EUR · Euro'));
+    await fireEvent.changeText(u.getByLabelText('Name'), 'Euro');
+    await fireEvent.press(u.getByText('Save account'));
+    expect(mockAdd.mock.calls[0]?.[2]).toEqual({ homeCurrency: 'USD', openingDate: '2026-10-06', userId: 'u1' });
+  });
+
+  it('a home-currency account passes nothing', async () => {
+    const u = await render(
+      <ThemeProvider>
+        <AccountSheet visible mode={{ kind: 'new', context: 'later' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    await fireEvent.changeText(u.getByLabelText('Name'), 'Main');
+    await fireEvent.press(u.getByText('Save account'));
+    expect(mockAdd.mock.calls[0]?.[2]).toBeUndefined();
+  });
+});
+
 describe('AccountSheet: a disabled Save gives its reason (S-WR-10)', () => {
   it('says why while the record context is still loading', async () => {
     mockReady = false;
