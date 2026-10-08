@@ -10,6 +10,7 @@ import { useAddAccount, useEditAccount } from '@/data/mutations/accounts';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 import { OptionPicker } from '@/features/record/entry/pickers/OptionPicker';
+import { CurrencyPicker } from '@/features/record/entry/pickers/CurrencyPicker';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
@@ -294,10 +295,11 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
         }}
         onClose={() => setPicker(null)}
       />
-      <OptionPicker<string>
+      <CurrencyPicker
         visible={picker === 'currency'}
         title={t('accounts.sheet.currency')}
-        options={options.map((o) => ({ value: o.code, label: `${o.code} · ${o.name}` }))}
+        options={options}
+        homeCurrency={rc.homeCurrency}
         selected={currency}
         onSelect={(code) => {
           setCurrency(code);

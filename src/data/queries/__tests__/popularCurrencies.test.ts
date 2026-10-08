@@ -1,4 +1,5 @@
-import { POPULAR_CURRENCY_GROUPS, currencyPickerSections, type CurrencyOption } from '../currencyOptions';
+import type { CurrencyOption } from '../currencyOptions';
+import { POPULAR_CURRENCY_GROUPS, currencyPickerSections } from '../popularCurrencies';
 
 function opt(code: string, kind: 'iso' | 'custom' = 'iso'): CurrencyOption {
   return { code, name: `${code} name`, symbol: null, exponent: 2, kind, rateDate: null };

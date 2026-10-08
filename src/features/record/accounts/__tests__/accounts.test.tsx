@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { colors } from '@/theme/tokens';
 import type { AccountRow } from '@/db/rows';
@@ -416,7 +416,7 @@ describe('AccountSheet: new-account currency follows a late home-currency defaul
       </ThemeProvider>
     );
     await fireEvent.press(u.getByLabelText('Currency'));
-    await fireEvent.press(u.getByText('EUR · Euro'));
+    await fireEvent.press(within(u.getByTestId('currency-section-popular')).getByText('EUR · Euro'));
     mockHome = 'USD';
     await u.rerender(
       <ThemeProvider>

@@ -206,6 +206,19 @@ const en = {
       label: 'Queue a test entry (dev)',
     },
   },
+  currencyPicker: {
+    yourCurrency: 'Your currency',
+    popular: 'Popular',
+    allCurrencies: 'All currencies',
+    continent: {
+      northAmerica: 'North America',
+      southAmerica: 'South America',
+      europe: 'Europe',
+      asia: 'Asia',
+      africa: 'Africa',
+      oceania: 'Oceania',
+    },
+  },
   record: {
     sheet: {
       titleNewExpense: 'New expense',
