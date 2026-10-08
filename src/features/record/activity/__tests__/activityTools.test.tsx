@@ -138,7 +138,24 @@ describe('FilterSheet', () => {
       direction: 'out',
       amountMin: null,
       amountMax: null,
+      unpaidOnly: false,
     });
+  });
+
+  it('offers Unpaid only as a toggle that combines with the other filters', async () => {
+    const { screen, onApply } = await renderFilter();
+    await fireEvent.press(screen.getByText('Unpaid only'));
+    await fireEvent.press(screen.getByText('Money out'));
+    await fireEvent.press(screen.getByText('Show results'));
+    expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ unpaidOnly: true, direction: 'out' }));
+  });
+
+  it('Unpaid only reflects the applied value and can be switched back off', async () => {
+    const { screen, onApply } = await renderFilter({ ...EMPTY_FILTER, unpaidOnly: true });
+    expect(screen.getByText('Unpaid only')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Unpaid only'));
+    await fireEvent.press(screen.getByText('Show results'));
+    expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ unpaidOnly: false }));
   });
 
   it('offers Transfers as a direction', async () => {

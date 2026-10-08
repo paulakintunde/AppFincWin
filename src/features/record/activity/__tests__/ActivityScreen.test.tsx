@@ -413,6 +413,33 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(screen.queryByTestId('bulk-bar')).toBeNull();
   });
 
+  it('Unpaid only filter hides paid rows and keeps pending ones', async () => {
+    mockRows = [
+      row({ id: 'a', name: 'Coffee' }),
+      row({ id: 'p', name: 'Phone bill', status: 'pending', local_date: '2026-09-28' }),
+    ];
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByText('Filter'));
+    await fireEvent.press(screen.getByText('Unpaid only'));
+    await fireEvent.press(screen.getByText('Show results'));
+    expect(screen.getByText('Phone bill')).toBeTruthy();
+    expect(screen.queryByText('Coffee')).toBeNull();
+  });
+
+  it('Select all and None drive the selection and never select a projection', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' }), row({ id: 'b', name: 'Rent' })];
+    mockProjections = [
+      { key: 's1:2026-09-30', seriesId: 's1', date: '2026-09-30', name: 'Netflix', amount: -999, currency: 'GBP', categoryId: null, accountId: 'a1', amountHome: -999 },
+    ];
+    const screen = await renderScreen();
+    expect(screen.queryByText('Select all')).toBeNull();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByText('Select all'));
+    expect(screen.getByText('2 selected')).toBeTruthy();
+    await fireEvent.press(screen.getByText('None'));
+    expect(screen.getByText('0 selected')).toBeTruthy();
+  });
+
   it('asks to select first when an action is used with nothing selected', async () => {
     mockRows = [row({ id: 'a', name: 'Coffee' })];
     const screen = await renderScreen();
