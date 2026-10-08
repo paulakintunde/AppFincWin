@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchCurrencies } from '@/db/currencies';
 import { supabase } from '@/services/supabase';
 import { queryKeys } from '../keys';
+import { staleUnlessEmpty } from './staleness';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -10,6 +11,6 @@ export function useCurrencies() {
   return useQuery({
     queryKey: queryKeys.currencies(),
     queryFn: () => fetchCurrencies(supabase),
-    staleTime: ONE_DAY_MS,
+    staleTime: staleUnlessEmpty(ONE_DAY_MS),
   });
 }
