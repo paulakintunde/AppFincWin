@@ -1,29 +1,74 @@
 # FX operations
 
-The operator runbook for the FX pipeline: `fx-sync` (daily ingest, plan
-01-08), `fx-monitor` (daily digest, plan 01-11) and `resolve-rate`
-(client-invoked backfill, plan 01-11). Nothing here is user-facing — every
-alert in this document goes to the operator inbox (`FX_ALERT_TO_EMAIL`) by
-email through Resend, never to app users (D-09). The rate's visible
-publication date (MON-07) is the user's own honest signal.
+The operator runbook for the FX pipeline. Since the on-demand model (plans
+02-41 to 02-50, decision `02-DECISION-fx-on-demand.md`, rolled out
+2026-10-08) there is **one** function, `resolve-rate`, and **no daily job**.
+Rates are fetched only when a foreign currency is actually used. `fx-sync`
+(daily ingest, plan 01-08) and `fx-monitor` (daily digest, plan 01-11) and
+their cron jobs `fx-sync-daily` / `fx-monitor-daily` are retired. Nothing
+here is user-facing: every alert goes to the operator inbox
+(`FX_ALERT_TO_EMAIL`) by email through Resend, never to app users (D-09).
+The rate's visible publication date (MON-07) is the user's own honest signal.
+
+## How rates get fetched
+
+`resolve-rate` (JWT-gated, `verify_jwt = true`) is the only door, and the
+client reaches it only through `src/db/fxResolve.ts`. It fetches what is
+neither already covered nor backing off, with one Frankfurter request per
+distinct date and open.er-api as the fallback. Triggers:
+
+- a foreign-currency line (its date);
+- a foreign-currency account (its opening date);
+- an import (one call per distinct date);
+- a recurring series create or edit (its materialised lines);
+- a home-currency change (today's rate for the new home against every other
+  currency in use, 50 codes per call);
+- the client pending sweep, which retries outstanding lines and checks.
+
+The sweep also covers foreign lines that the server's
+`recurring-materialise-daily` job creates. That job runs no FX fetch of its
+own, so **its foreign lines get their rate only when a client sweep next
+runs**. If nobody opens the app, those lines stay `rate_pending` (shown
+provisional with the nearest earlier rate) until someone does.
+
+### Bounds
+
+| Mechanism | Rule |
+|---|---|
+| Coverage, `fx_rate_lookups` | One row per (quote, requested date) naming the stored rate that is that date's publication. FINAL when the requested date is at least 2 UTC days before the fetch; otherwise it counts as covered for 1 hour. |
+| Negative cache, `fx_rate_fetch_failures` | After both providers failed: 30 minutes. After no usable rate, or a held value: 6 hours. |
+| Client sweep budget | At most once per 15 minutes and at most 10 `resolve-rate` calls per run, shared by the home-currency retry, account checks and pending lines. |
+| Per-user rate limit (RD-05) | About 60 calls/hour, see below. |
+
+### Plausibility, hold, witness (MON-11)
+
+A fetched rate that moves more than about 10% against a prior stored rate no
+more than 7 days older is quarantined in `fx_rate_holds` instead of
+`fx_rates`. A second source (open.er-api, only for dates within 2 days of
+today, since it is latest-only) can confirm it. Otherwise later readings are
+classified by `classifyRates` and a consistent reading confirms the hold.
+An unconfirmed hold is accepted lazily after 2 days, on the next
+`resolve-rate` call that fetches (`fx_auto_accept_holds()`); that also
+refreshes `fetched_at` on the matching lookups so the date counts as
+covered. The last confirmed rate keeps serving until then.
 
 ## Alert kinds
 
-Every row in `fx_alerts` has a `kind`. `fx-monitor`'s daily digest groups
-unsent rows by kind with a count in the subject (for example `FincWin FX: 2
-stale, 1 held, 1 auto-accepted`) and lists each alert's currency and detail
-in the body.
+Every row in `fx_alerts` has a `kind`. Written now:
 
 | Kind | Raised by | Meaning |
 |---|---|---|
-| `stale` | fx-monitor | A currency's latest stored rate is older than its staleness limit — the per-currency override (`currencies.staleness_limit_days`) if set, else the global default of about 4 calendar days (D-10). Check whether `fx-sync-daily` actually ran; Frankfurter/ECB publish nothing on weekends, so isolated staleness on a Monday for every currency is expected, but one currency stale on its own usually means that currency stopped publishing or the sync silently regressed for it. A currency is reported once per stale episode (its latest `rateDate`), not every day it stays stale; it alerts again only after a newer rate arrives and that one goes stale too. |
-| `held` | fx-sync | A day-on-day move over ~10% was quarantined into `fx_rate_holds` instead of being written to `fx_rates` (D-11, MON-11). The last confirmed rate keeps serving conversions until this is confirmed or auto-accepted. |
-| `auto-accepted` | fx-monitor | A held rate sat unconfirmed for more than 2 days and was accepted into `fx_rates` on the operator's behalf (D-12). This is the alert that most warrants a manual look — see "Dropping a bad rate" below. |
-| `pending-rows` | fx-monitor | How many transactions have sat `rate_pending = true` for more than a day (Pitfall 2 — a stuck backfill must never be silent). Before counting, fx-monitor runs `fx_restamp_pending()`, which re-stamps every pending row whose date has arrived under the normal 7-day window. So a planned, future-dated row (kept pending until its own day) resolves on its own once fx-sync stores that day's rate, and only genuinely stuck rows are counted. A non-zero count that persists across several days' digests means `resolve-rate` isn't being called for those rows, is failing, or is finding its backfilled rate held; check Edge Function logs for `resolve-rate` and `fx_rate_holds`. |
-| `fallback-used` | fx-sync | Frankfurter v2 was unreachable or returned something unparsable for that day's sync, and open.er-api served the rates instead (MON-12). Check `docs/dependency-register.md`'s Frankfurter row and Frankfurter's own status if this repeats. |
-| `hold-dropped` | `fx_drop_hold()` | The operator dropped a hold. `detail` records the hold's previous status, whether a served `fx_rates` row was removed (`rateRemoved`), and how many transactions were re-stamped (`restamped`). |
-| `sync-failed` | fx-sync | Both Frankfurter and the open.er-api fallback failed in the same run, so nothing was written. Or, with `"stage": "ingest"` in `detail`, the fetch worked but a later step failed (reading history or holds, writing rates, holds or alerts); some writes from that run may have landed. Either way rates stay at their last known values (still individually dated and visible per MON-07). Investigate immediately, since two consecutive failed days approach the staleness limit. |
-| `custom-shadowed` | fx-sync | RD-07: the daily currency-metadata sync (`currencies` table) saw a code for the first time, and it matches a code some user already registered as a custom currency before that code was ever synced. No action required — the custom currency keeps resolving exactly as before (the shadow check only blocks a *new* registration of that code); this is purely informational. |
+| `sync-failed` | resolve-rate | `detail.via` is `resolve-rate`. `detail.reason` is `both-sources-failed` (Frankfurter and open.er-api both failed) or `no-usable-rate` (they answered but nothing usable). Nothing was written for those quotes; the line stays provisional and is retried after the back-off. Check Frankfurter's status and `docs/dependency-register.md` if it repeats. |
+| `held` | resolve-rate | A move over about 10% was quarantined into `fx_rate_holds`. `detail.via` is `resolve-rate`. The last confirmed rate keeps serving. |
+| `auto-accepted` | resolve-rate | A hold sat unconfirmed for more than 2 days and was accepted into `fx_rates` (D-12). The alert most worth a manual look; see "Dropping a bad rate". |
+| `hold-dropped` | `fx_drop_hold()` | The operator dropped a hold. `detail` records the hold's previous status, whether a served `fx_rates` row was removed (`rateRemoved`) and how many transactions were re-stamped (`restamped`). |
+
+Retired on 2026-10-07 (old rows may still exist, nothing writes them now):
+`stale`, `pending-rows`, `fallback-used`, `custom-shadowed`.
+
+Email: at most one per hour, for failure, hold and auto-accept only. There is
+**no daily digest and no "all clear" heartbeat**, so silence now means
+nothing is wrong; it can no longer be read as "the monitor died".
 
 ## Inspecting holds
 
@@ -31,21 +76,16 @@ in the body.
 select * from public.fx_rate_holds where status = 'held';
 ```
 
-Add `order by held_at` to see the oldest first — those are closest to
-auto-accepting. `status` moves `held` → `confirmed` (a second source or a
-later refresh landed near it) or `held` → `auto-accepted` (2 days elapsed
-unconfirmed) → optionally `dropped` (see below).
+Add `order by held_at` to see the oldest first; those are closest to
+auto-accepting. `status` moves `held` to `confirmed` (a second source or a
+later reading landed near it) or `held` to `auto-accepted` (2 days elapsed
+unconfirmed), and optionally to `dropped` (see below).
 
 A resolved hold is terminal. `dropped` never changes again, and
 `confirmed`/`auto-accepted` can only move to `dropped`. A guard trigger on
-`fx_rate_holds` discards any other update, and `fx-sync` skips an incoming
-rate whose `(quote, date, source)` is already held or dropped. So a
-Frankfurter feed that keeps re-reporting a value you dropped never revives
-it, and `fx_auto_accept_holds()` only ever accepts rows that were never
-resolved. `resolve-rate` backfills go through the same quarantine: a
-backfilled rate for a held or dropped `(quote, date)` is discarded, and an
-implausible one becomes a new hold whose `held` alert carries
-`"via": "resolve-rate"`.
+`fx_rate_holds` discards any other update, and `resolve-rate` skips an
+incoming rate whose `(quote, date, source)` is already held or dropped. So a
+provider that keeps re-reporting a value you dropped never revives it.
 
 ## Dropping a bad held, confirmed or auto-accepted rate
 
@@ -57,22 +97,17 @@ dropped `(quote, date, source)` is never re-evaluated. Later publications on
 other dates are checked normally.
 
 When a served rate was removed, `fx_drop_hold` also calls
-`fx_restamp_by_rate(<quote>, <date>)`. That re-stamps every transaction that
-could have been stamped from the rate, including rows that are no longer
-`rate_pending`: rows with that quote on either leg (directly, or as the
-reference of the author's custom currency) that are pending, carry that
-`rate_date`, or are dated within the 7 days the rate served. Re-stamped rows
-take the best remaining rate under the normal 7-day window. If none exists,
-they go back to `rate_pending` for `resolve-rate` or the daily
-`fx_restamp_pending()` to resolve. `version` is not bumped. The function
-returns the re-stamped count, which the `hold-dropped` alert also records.
-`fx_restamp_by_rate` can be run on its own for a rate removed some other way.
+`fx_restamp_by_rate(<quote>, <date>)`, which re-stamps every transaction
+that could have been stamped from the rate. Re-stamped rows take the best
+remaining rate; if none is covered they go back to `rate_pending`. After a
+drop, the `fx_rate_lookups` row naming the deleted rate is inert (coverage
+needs the referenced `fx_rates` row), so lines on that date stay provisional
+until the date is refetched after the 6-hour `held` back-off and the provider
+publishes a sane value. `version` is not bumped. The function returns the
+re-stamped count, which the `hold-dropped` alert also records.
 
-`select public.restamp_transaction('<transaction-id>');` still re-stamps a
-single row, but only if it is still `rate_pending`. Called without a second
-argument, it re-stamps under the normal 7-day window. `resolve-rate` passes the quotes its backfill stored as
-`p_relax_quotes`, and only those legs may use an older rate. A row dated more
-than a day ahead of the server date always stays pending.
+`select public.restamp_transaction('<transaction-id>');` re-stamps a single
+row, but only if it is still `rate_pending`.
 
 Run it against the linked (production) project with the Supabase CLI, not
 the dashboard SQL editor, so the action is logged the same way every other
@@ -84,52 +119,48 @@ npx supabase db query --linked "select public.fx_drop_hold(<hold-id>);"
 
 Acting fast still matters. The repair re-stamps stored rows, but any figure
 a user already saw or acted on while the bad rate was served cannot be
-recalled. The 2-day auto-accept window (D-12) is the actual time budget to
-act in.
+recalled. The 2-day auto-accept window (D-12) is the time budget to act in.
 
-## Setting a per-currency staleness override
+## Currency metadata
 
-`currencies.staleness_limit_days` (D-10) tightens the global ~4-day default
-for a specific currency — a candidate for a volatile currency (ARS, NGN,
-TRY) that genuinely needs catching sooner. Always via a migration, never the
-dashboard, per `CLAUDE.md`'s "no dashboard SQL edits to schema, ever":
+`currencies` is now a frozen snapshot. The daily metadata sync is gone, so
+nothing writes `currencies.end_date` again (migration 20261007000200 cleared
+the false end dates that the old sync had written from Frankfurter's
+"latest date with data"). Which codes are accepted is decided by
+`is_iso_currency()`, which accepts the active ISO 4217 set without needing a
+stored rate. The per-currency staleness override
+(`currencies.staleness_limit_days`) is retired along with the stale check; the
+column remains, carrying a retirement comment in migration 20261007000300.
 
-```sql
--- supabase/migrations/<timestamp>_ars_staleness_override.sql
-update public.currencies set staleness_limit_days = 2 where code = 'ARS';
-```
+## Secrets each function needs
 
-`staleness_limit_days` is checked `between 1 and 30`; `null` (the default)
-falls back to the global default inside `fx-monitor`'s `findStale()`.
-
-## Secrets and Vault rows each function needs
-
-| Function | Auth | Env vars | Vault rows (production, created at deploy time — plan 01-16, never in git) |
+| Function | Auth | Env vars | Vault rows |
 |---|---|---|---|
-| `fx-sync` | shared secret (`x-fx-sync-secret`) | `FX_SYNC_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | `fx_sync_url`, `fx_sync_secret` |
-| `fx-monitor` | its own shared secret (`x-fx-monitor-secret`), never fx-sync's | `FX_MONITOR_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `FX_ALERT_TO_EMAIL` | `fx_monitor_url`, `fx_monitor_secret` |
-| `resolve-rate` | caller's JWT (`verify_jwt = true`) | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | none (not pg_cron-invoked) |
+| `resolve-rate` | caller's JWT (`verify_jwt = true`) | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `FX_ALERT_TO_EMAIL` | none (not pg_cron-invoked) |
 
-`FX_MONITOR_SECRET` and the `fx_monitor_secret` Vault row must hold the same
-value, and it must differ from `FX_SYNC_SECRET`. fx-monitor can auto-accept
-holds and re-stamp transactions, so one leaked secret must not authorise
-both functions.
+`FX_SYNC_SECRET`, `FX_MONITOR_SECRET` and the vault rows `fx_sync_url`,
+`fx_sync_secret`, `fx_monitor_url`, `fx_monitor_secret` are removed by the
+rollout (Task 5 of plan 02-50). `RESEND_*` and `FX_ALERT_TO_EMAIL` stay as
+Edge Function secrets only.
+
+The two monitor-only SQL functions `fx_pending_rows_count()` and
+`fx_restamp_pending()` are REVOKED from every role and marked DEPRECATED, not
+dropped (user decision 2026-10-08; `lint:migrations` rejects `drop function`
+without a `min_supported_version` raise). They are dropped at the next
+`min_supported_version` raise (follow-up 22).
 
 ## resolve-rate's per-user rate limit (RD-05)
 
-`resolve-rate` throttles each caller to ~60 calls/hour, tracked in
+`resolve-rate` throttles each caller to about 60 calls/hour, tracked in
 `fx_resolve_calls` (one row per `(user_id, current UTC hour)`, incremented
 atomically by the service-role-only `fx_resolve_rate_check_limit()`). A
 caller over the limit gets `HTTP 429 {"ok":false,"error":"rate-limited"}`
-before any read, fetch or write happens — the row simply stays
-`rate_pending` until a later call (or the next day's `fx_restamp_pending()`
-sweep) resolves it. This is not a failure to page on: it means one user's
-device is calling `resolve-rate` unusually often (a burst of offline writes
-flushing at once is the normal case, not abuse). Only investigate if
-`pending-rows` (above) stays non-zero for the *same* household across
-several digests, which would suggest the client-side backoff
-(`src/data/sync/resolveRateBackoff.ts`) or the 60/hour limit itself needs
-tuning.
+before any read, fetch or write happens; the row stays `rate_pending` until
+a later call resolves it. This is not a failure to page on: a burst of
+offline writes flushing at once is the normal case. Only investigate if the
+same household stays rate-pending across days, which would suggest the
+client-side backoff (`src/data/sync/resolveRateBackoff.ts`), the sweep
+budget or the 60/hour limit needs tuning.
 
 ```sql
 -- Calls in the current hour, by user, closest to the limit first.
@@ -137,18 +168,6 @@ select user_id, count from public.fx_resolve_calls
  where window_start = date_trunc('hour', now())
  order by count desc;
 ```
-
-fx-monitor emails every day. With alerts pending, it sends the digest; with
-none, it sends a one-line `FincWin FX: all clear` heartbeat with the day's
-auto-accepted, re-stamped and pending counts. A day with **no** email means
-fx-monitor itself failed (missing config, Resend rejecting the key, or the
-cron job not firing). Check the `fx-monitor` Edge Function logs and
-`cron.job_run_details`.
-
-`fx-monitor`'s cron job (`fx-monitor-daily`, 17:00 UTC — 30 minutes after
-`fx-sync-daily`) runs locally too and fails harmlessly, since
-`vault.decrypted_secrets` has no rows in local development. This is expected
-and not a bug to chase.
 
 ## open.er-api attribution
 
@@ -159,10 +178,92 @@ date, verbatim:
 
 > Rates By Exchange Rate API
 
-linking to `https://www.exchangerate-api.com`. Phase 1 ships the reusable
-component and its i18n key (`supabase/functions/fx-sync/openErApi.ts`
-exports `OPEN_ER_API_ATTRIBUTION`/`OPEN_ER_API_ATTRIBUTION_URL` as the
-canonical strings); Record's screens are what actually render it. A
-permanent line is also required in the app's About/credits screen,
-independent of whether any currently-displayed figure used the fallback
-that day.
+linking to `https://www.exchangerate-api.com`.
+`supabase/functions/_shared/fx/openErApi.ts` exports
+`OPEN_ER_API_ATTRIBUTION`/`OPEN_ER_API_ATTRIBUTION_URL` as the canonical
+strings. open.er-api is latest-only (no historical mode), which is why it is
+the fallback for today-ish dates and the second-source witness only within 2
+days of today. A permanent line is also required in the app's About/credits
+screen, independent of whether any displayed figure used the fallback.
+
+## min_supported_version
+
+No `min_supported_version` raise was needed for this rollout and none is
+made. No table or column was dropped or renamed, and every old-client read
+path keeps its shape: `currencies` stays (frozen, end dates cleared),
+`fx_latest_rates` is unchanged, and `resolve-rate` still accepts the old
+`{transactionId}` request (shape A) and resolves those rows. The two
+monitor-only functions were revoked rather than dropped for the same reason.
+
+## Rollback
+
+Cheap and secret-free until Task 5 of plan 02-50 (the cleanup) has run.
+After Task 5, step (c) also needs the secrets and vault rows re-created. The
+new tables (`fx_rate_lookups`, `fx_rate_fetch_failures`) can stay in every
+case; nothing old reads them.
+
+**(a) Client.** Supersede the bad update on the same channel and
+environment (`docs/ops/ota-policy.md`):
+
+```bash
+npx eas update:list --branch <channel> --json --non-interactive   # find the last good group
+npx eas update:republish --group <last-good-group-id> --message "rollback: on-demand FX"
+# or fall back to the embedded bundle of the installed binary:
+npx eas update:roll-back-to-embedded --branch <channel> --runtime-version <fingerprint>
+```
+
+Use the channel (`development` / `preview` / `production`) and its
+identically named EAS environment that the rollout published to.
+
+**(b) resolve-rate.** Redeploy the pre-rollout version from the main commit
+recorded in `docs/acceptance/phase-02-fx-on-demand.md` (field "Pre-rollout
+main hash"):
+
+```bash
+git switch -c rollback/resolve-rate <pre-rollout-main-hash>
+npx supabase functions deploy resolve-rate
+```
+
+(or `git show <hash>:supabase/functions/resolve-rate/<file>` per file into a
+branch). Old clients that send `{transactionId}` keep working either way.
+
+**(c) Daily jobs.** Write a NEW forward migration
+`supabase/migrations/<ts>_fx_restore_daily_jobs.sql` (never edit or delete an
+applied one). It must:
+
+1. re-create `fx_pending_rows_count()` and `fx_restamp_pending()` verbatim
+   from `20260924000700_fx_monitor_jobs.sql` and re-grant their execute
+   rights as that file did (migration 20261007000300 revoked them);
+2. re-create the ISO branch of `per_eur_rate()` verbatim from
+   `20260924000500` (the old 7-day exact window);
+3. re-run both `cron.schedule(...)` calls verbatim: `fx-sync-daily`
+   (`30 16 * * *`) from `20260922000400_fx_sync_schedule.sql` and
+   `fx-monitor-daily` (`0 17 * * *`) from `20260924000700_fx_monitor_jobs.sql`.
+
+Then redeploy the two functions from the last commit that had them, which is
+`29c9755` (the parent of 957d263; it already carries the `end_date` parser
+fix, so the old `currencies.end_date` corruption cannot recur):
+
+```bash
+git switch -c rollback/fx-daily 29c9755
+npx supabase functions deploy fx-sync --no-verify-jwt
+npx supabase functions deploy fx-monitor --no-verify-jwt
+npm run supabase:db:push     # applies the restore migration, preflight-chained
+```
+
+Before Task 5 the secrets and vault rows still exist and nothing more is
+needed. After Task 5 they must be re-created as in plans 00-09 / 01-16: new
+random `FX_SYNC_SECRET` and `FX_MONITOR_SECRET` values (different from each
+other) via `npx supabase secrets set`, and the four vault rows via
+`vault.create_secret` (`fx_sync_url`, `fx_sync_secret`, `fx_monitor_url`,
+`fx_monitor_secret`, each secret pair holding the same value as the function
+secret). Never print or commit the values.
+
+If a push stops part-way, after migration 20261007000200 but before
+20261007000300, unschedule both crons at once so the old deployed fx-sync
+cannot re-write `currencies.end_date`:
+
+```sql
+select cron.unschedule(jobname) from cron.job
+ where jobname in ('fx-sync-daily','fx-monitor-daily') returning jobname;
+```
