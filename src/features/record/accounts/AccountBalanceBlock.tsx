@@ -1,8 +1,8 @@
 // An account's balance block (D-10, D-49): 'Balance now' in the account's own currency with
 // the minus sign always visible, the standing sentence beneath it, other-currency subtotals,
 // the still-to-come figure and, for a foreign account, an approximate home figure with the
-// rate's date. A negative balance is a state, not an error: plain ink unless the engine could
-// not describe its standing at all.
+// rate's date. A negative balance figure is danger (2026-10-07 amendment); its standing sentence
+// stays the D-49 copy in warn1 / muted.
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { AccountRow } from '@/db/rows';
@@ -70,8 +70,9 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
 
   const overflow = balance.overflow || balance.balance === null;
   const negative = balance.balance !== null && balance.balance < 0;
-  // D-49: danger only when a negative balance has no understood standing.
-  const balanceColor = negative && balance.standing === null ? colors.danger : colors.ink;
+  // 2026-10-07 amendment (supersedes the D-49 colour narrowing for the figure only): a negative
+  // balance is danger. The standing sentence below keeps its D-49 words and its warn1 / muted colour.
+  const balanceColor = negative ? colors.danger : colors.ink;
   const metaStyle = { ...textRole(pairing, 'label'), color: colors.inkMuted };
 
   const foreign = account.currency !== homeCurrency;
@@ -121,7 +122,11 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
             </Text>
           ))}
       {!compact && balance.pendingSum !== null && balance.pendingSum !== 0 ? (
-        <Text style={metaStyle}>{t('accounts.stillToCome', { amount: fmt(balance.pendingSum) })}</Text>
+        <Text
+          style={{ ...textRole(pairing, 'label'), color: balance.pendingSum > 0 ? colors.accent : colors.danger }}
+        >
+          {t('accounts.stillToCome', { amount: fmt(balance.pendingSum) })}
+        </Text>
       ) : null}
     </View>
   );

@@ -67,11 +67,16 @@ function letterOf(name: string): string {
   return first === '' ? '?' : first.toUpperCase();
 }
 
-function Tag({ label }: { label: string }) {
+/**
+ * Status tag. 'unpaid' (Due / Overdue / Expected) is danger, as in the prototype (UI-SPEC
+ * colour amendment, 2026-10-07); danger on fill1 is 4.71:1. The word always carries the
+ * meaning, never the colour alone.
+ */
+function Tag({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'unpaid' }) {
   const { colors, pairing } = useTheme();
   return (
     <View style={[styles.tag, { backgroundColor: colors.fill1 }]}>
-      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{label}</Text>
+      <Text style={{ ...textRole(pairing, 'label'), color: tone === 'unpaid' ? colors.danger : colors.inkMuted }}>{label}</Text>
     </View>
   );
 }
@@ -119,7 +124,10 @@ export function ActivityRow({
   const amountText = formatter.formatMoney(money(row.original_amount, row.original_currency));
   const showHome = !isTransfer && row.original_currency !== homeCurrency && row.amountHome !== null;
   const homeText = showHome ? formatter.formatMoney(money(row.amountHome as number, homeCurrency)) : null;
-  const amountColor = isTransfer ? colors.inkDim : colors.ink;
+  // 2026-10-07 colour amendment: money in is accent with a leading +; transfers stay inkDim.
+  const isIncome = !isTransfer && row.original_amount > 0;
+  const amountColor = isTransfer ? colors.inkDim : isIncome ? colors.accent : colors.ink;
+  const amountShown = isIncome ? `+${amountText}` : amountText;
 
   const canMarkPaid = row.status === 'pending' && !isTransfer && !selectable;
 
@@ -164,9 +172,9 @@ export function ActivityRow({
           </Text>
           <View style={styles.tags}>
             {row.pending ? <Tag label={t('sync.pendingRow')} /> : null}
-            {row.overdue ? <Tag label={t('record.recurring.overdue')} /> : null}
+            {row.overdue ? <Tag tone="unpaid" label={t('record.recurring.overdue')} /> : null}
             {row.status === 'pending' && !row.overdue ? (
-              <Tag label={t('record.recurring.dueOn', { date: formatter.formatDate(row.local_date, 'short') })} />
+              <Tag tone="unpaid" label={t('record.recurring.dueOn', { date: formatter.formatDate(row.local_date, 'short') })} />
             ) : null}
           </View>
         </View>
@@ -182,7 +190,7 @@ export function ActivityRow({
           onPress={onRowPress}
           style={styles.amountPress}
         >
-          <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: amountColor }}>{amountText}</Text>
+          <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: amountColor }}>{amountShown}</Text>
           {homeText !== null ? (
             <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{homeText}</Text>
           ) : null}
@@ -240,7 +248,7 @@ export function ProjectionRow({ projection, categories, accountName, formatter, 
           {meta}
         </Text>
         <View style={styles.tags}>
-          <Tag label={t('record.recurring.projected')} />
+          <Tag tone="unpaid" label={t('record.recurring.projected')} />
         </View>
       </View>
       <View style={styles.amounts}>

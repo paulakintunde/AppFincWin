@@ -190,7 +190,13 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
     const cardPosition = positions[index] ?? 'only';
     if (item.type === 'header') {
       return (
-        <Text style={[styles.sectionHeader, { ...textRole(pairing, 'label'), color: colors.inkMuted }]}>
+        <Text
+          style={[
+            styles.sectionHeader,
+            // 2026-10-07 colour amendment: Paid reads green; the header's words carry the meaning.
+            { ...textRole(pairing, 'label'), color: item.section === 'paid' ? colors.accent : colors.inkMuted },
+          ]}
+        >
           {t(`activity.section.${item.section}`)}
         </Text>
       );
