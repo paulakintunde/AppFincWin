@@ -104,3 +104,21 @@ describe('ActivityRow card styling (02-polish item 2)', () => {
     expect(card.getByLabelText('Mark paid')).toBeTruthy();
   });
 });
+
+describe('ActivityRow large-text layout (02-polish item 3)', () => {
+  it('truncates the name to one line and never lets the amount column shrink', async () => {
+    const { screen } = await renderRow(row({ name: 'A very long merchant name that would squeeze the amount at large text sizes' }), 'only');
+    const name = screen.getByText(/A very long merchant name/);
+    expect(name.props.numberOfLines).toBe(1);
+    const card = screen.getByTestId('activity-card-r1');
+    const amount = screen.getByText('-£12.50', { includeHiddenElements: true });
+    expect(amount.props.numberOfLines).toBe(1);
+    // Text column: flex 1 + minWidth 0 so it gives way; amount column: flexShrink 0.
+    const textCol = name.parent as { props: { style?: unknown } };
+    expect(flat(textCol).flex).toBe(1);
+    expect(flat(textCol).minWidth).toBe(0);
+    const amountsCol = amount.parent?.parent as { props: { style?: unknown } };
+    expect(flat(amountsCol).flexShrink).toBe(0);
+    expect(card).toBeTruthy();
+  });
+});

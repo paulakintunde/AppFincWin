@@ -1,4 +1,5 @@
 import React from 'react';
+import { Dimensions, StyleSheet } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
@@ -533,5 +534,39 @@ describe('ActivityScreen search, filters and bulk select', () => {
     await fireEvent.press(screen.getByLabelText('Delete'));
     await fireEvent.press(screen.getAllByText('Delete').at(-1)!);
     expect(getToast()?.stepId ?? null).toBeNull();
+  });
+});
+
+describe('ActivityScreen small-screen header (02-polish item 3)', () => {
+  const flat = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
+  const original = Dimensions.get('window');
+
+  afterEach(() => {
+    Dimensions.set({ window: original });
+  });
+
+  it.each([320, 360])('at %ipt the month switcher and the nav links sit in separate rows and the links shrink to fit', async (width) => {
+    Dimensions.set({ window: { ...original, width } });
+    const screen = await renderScreen();
+    const monthRow = screen.getByTestId('activity-month-row');
+    const links = screen.getByTestId('activity-nav-links');
+    // The switcher and the links never share one non-wrapping row.
+    expect(links.parent).not.toBe(monthRow);
+    expect(monthRow.findByProps({ accessibilityLabel: 'Choose month' })).toBeTruthy();
+    expect(() => links.findByProps({ accessibilityLabel: 'Choose month' })).toThrow();
+    expect(flat(links).flexDirection).toBe('row');
+    for (const label of ['Accounts', 'History', 'You']) {
+      const link = screen.getByLabelText(label);
+      const style = flat(link);
+      // Equal-width pills that can shrink below their content, label ellipsised.
+      expect(style.flex).toBe(1);
+      expect(style.minWidth).toBe(0);
+      expect(screen.getByText(label).props.numberOfLines).toBe(1);
+    }
+  });
+
+  it('lets the select-mode toolbar wrap instead of overflowing', async () => {
+    const screen = await renderScreen();
+    expect(flat(screen.getByTestId('activity-tools-row')).flexWrap).toBe('wrap');
   });
 });
