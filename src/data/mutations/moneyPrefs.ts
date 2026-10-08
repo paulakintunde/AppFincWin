@@ -18,6 +18,9 @@ import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { writeClient } from './writeClient';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { DEFAULT_MONEY_PREFS } from '@/data/queries/moneyPrefs';
+import { localDateIn } from '@/engine/time';
+import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
+import { ensureRatesForHomeChange } from './homeCurrencyRates';
 
 /** The server-side default new profiles are created with (20260924000200_money_prefs.sql). */
 export const SERVER_DEFAULT_CURRENCY = 'USD';
@@ -25,7 +28,11 @@ export const SERVER_DEFAULT_CURRENCY = 'USD';
 export interface UpdateMoneyPrefsVars {
   userId: string;
   patch: MoneyPrefsPatch;
+  /** Device-local day a home-currency change was made (02-49); carried so an offline-queued change still asks for that day. */
+  homeRateDate?: string;
 }
+
+const todayLocal = (): string => localDateIn(new Date(), getDeviceTimeZone());
 
 interface MutationContext {
   previous: MoneyPrefsRow | undefined;
@@ -50,8 +57,18 @@ export function registerMoneyPrefsMutations(qc: QueryClient): void {
     },
     onSuccess: (row: MoneyPrefsRow, vars: UpdateMoneyPrefsVars) => {
       // D-05: changing home currency never rewrites transaction history -- only this cache
-      // entry is ever touched, nothing else is invalidated.
+      // entry is ever touched here. 02-49 adds one thing: today's rates for the new home currency
+      // are fetched into the shared rate store (fire-and-forget, never throws); no transaction
+      // row is touched, only rates are added.
       qc.setQueryData(queryKeys.moneyPrefs(vars.userId), row);
+      if (vars.patch.home_currency && vars.homeRateDate) {
+        void ensureRatesForHomeChange(qc, {
+          userId: vars.userId,
+          homeCurrency: vars.patch.home_currency,
+          date: vars.homeRateDate,
+          householdId: null,
+        });
+      }
     },
     onError: async (err: unknown, vars: UpdateMoneyPrefsVars, context: unknown) => {
       const cls = classifySettledWriteError(err);
@@ -89,7 +106,7 @@ export function useUpdateMoneyPrefs(userId: string): {
 
   return {
     setHomeCurrency(code: string): void {
-      mutation.mutate({ userId, patch: { home_currency: code } });
+      mutation.mutate({ userId, patch: { home_currency: code }, homeRateDate: todayLocal() });
     },
     setShowCents(on: boolean): void {
       mutation.mutate({ userId, patch: { show_cents: on } });
@@ -117,8 +134,11 @@ export function useSetHomeCurrencyIfDefault(userId: string): (target: string) =>
   return useCallback(
     async (target: string): Promise<boolean> => {
       const row = await setHomeCurrencyIfStill(await writeClient(), userId, target, SERVER_DEFAULT_CURRENCY);
-      if (row) qc.setQueryData(queryKeys.moneyPrefs(userId), row);
-      else await qc.invalidateQueries({ queryKey: queryKeys.moneyPrefs(userId) });
+      if (row) {
+        qc.setQueryData(queryKeys.moneyPrefs(userId), row);
+        // 02-49: the device-region default is a home-currency change too; rates only, no history rewrite.
+        void ensureRatesForHomeChange(qc, { userId, homeCurrency: target, date: todayLocal(), householdId: null });
+      } else await qc.invalidateQueries({ queryKey: queryKeys.moneyPrefs(userId) });
       return row !== null;
     },
     [qc, userId]

@@ -481,6 +481,9 @@ describe('02-49 home-currency rate check trigger', () => {
   beforeEach(() => {
     mockEnsureRates.mockClear();
     onlineManager.setOnline(true);
+    // An earlier test in this file pins another zone; this block's dates are UTC days.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    (require('@/services/locale/deviceLocale') as { getDeviceTimeZone: jest.Mock }).getDeviceTimeZone.mockReturnValue('UTC');
   });
 
   it('setHomeCurrency calls the helper once on success with the date it was made, not awaited', async () => {
