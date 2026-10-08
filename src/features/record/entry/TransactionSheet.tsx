@@ -49,6 +49,7 @@ import { AccountPicker } from './pickers/AccountPicker';
 import { CategoryPicker } from './pickers/CategoryPicker';
 import { DateField } from './pickers/DateField';
 import { OptionPicker } from './pickers/OptionPicker';
+import { CurrencyPicker } from './pickers/CurrencyPicker';
 import { EditScopePrompt } from './EditScopePrompt';
 import { OccurrenceActions } from './OccurrenceActions';
 import { RepeatsField } from './RepeatsField';
@@ -628,10 +629,11 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         }}
         onClose={() => setPicker(null)}
       />
-      <OptionPicker<string>
+      <CurrencyPicker
         visible={picker === 'currency'}
         title={t('record.sheet.field.currency')}
-        options={options.map((o) => ({ value: o.code, label: `${o.code} · ${o.name}` }))}
+        options={options}
+        homeCurrency={rc.homeCurrency}
         selected={state.currency}
         onSelect={(code) => {
           set({ currency: code });

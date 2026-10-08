@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { TransactionRow } from '@/db/rows';
 import { getToast, resetToastForTests } from '@/state/undoToast';
@@ -342,9 +342,9 @@ describe('TransactionSheet: transfers', () => {
   });
 
   it('S-WR-06: a currency picked for an expense does not carry into a transfer from a GBP account', async () => {
-    const { getByText, getByLabelText, queryByLabelText } = await open({ kind: 'new', direction: 'out' });
+    const { getByText, getByTestId, getByLabelText, queryByLabelText } = await open({ kind: 'new', direction: 'out' });
     await fireEvent.press(getByLabelText('Currency'));
-    await fireEvent.press(getByText('EUR · Euro'));
+    await fireEvent.press(within(getByTestId('currency-section-popular')).getByText('EUR · Euro'));
     await fireEvent.press(getByText('Transfer'));
     await fireEvent.press(getByLabelText('To account'));
     await fireEvent.press(getByLabelText('Savings'));
