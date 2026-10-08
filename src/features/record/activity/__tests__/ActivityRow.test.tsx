@@ -7,7 +7,8 @@ import { radii, space } from '@/theme/layout';
 import type { ActivityRowView } from '@/data/queries/activity';
 import type { CategoryLookup } from '@/data/queries/categories';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
-import { ActivityRow, type CardPosition } from '../ActivityRow';
+import { ACCENTS } from '@/theme/accents';
+import { ActivityRow, ProjectionRow, type CardPosition } from '../ActivityRow';
 
 const categories: CategoryLookup = {
   all: [],
@@ -120,5 +121,54 @@ describe('ActivityRow large-text layout (02-polish item 3)', () => {
     const amountsCol = amount.parent?.parent as { props: { style?: unknown } };
     expect(flat(amountsCol).flexShrink).toBe(0);
     expect(card).toBeTruthy();
+  });
+});
+
+describe('ActivityRow colours (02-polish item 5, UI-SPEC amendment 2026-10-07)', () => {
+  const colourOf = (el: { props: { style?: unknown } }) => flat(el).color;
+
+  it('shows income in the accent colour with a leading +, while the spoken label is unchanged', async () => {
+    const { screen } = await renderRow(row({ original_amount: 5000, amountHome: 5000, name: 'Salary' }), 'only');
+    const amount = screen.getByText('+£50.00', { includeHiddenElements: true });
+    expect(colourOf(amount)).toBe(ACCENTS.green);
+    expect(screen.getByTestId('activity-row-r1').props.accessibilityLabel).toBe('Salary, £50.00');
+  });
+
+  it('keeps an expense in ink with no sign added', async () => {
+    const { screen } = await renderRow(row({}), 'only');
+    expect(colourOf(screen.getByText('-£12.50', { includeHiddenElements: true }))).toBe(colors.ink);
+  });
+
+  it('keeps a transfer leg in inkDim, even when it is the incoming leg', async () => {
+    const { screen } = await renderRow(row({ original_amount: 5000, transfer_id: 't1', counterpartAccountId: 'a2' }), 'only');
+    const amount = screen.getByText('£50.00', { includeHiddenElements: true });
+    expect(colourOf(amount)).toBe(colors.inkDim);
+  });
+
+  it('colours Due and Overdue tags in danger, with their words intact', async () => {
+    const due = await renderRow(row({ status: 'pending', local_date: '2026-09-28' }), 'only');
+    expect(colourOf(due.screen.getByText('Due 2026-09-28'))).toBe(colors.danger);
+    const overdue = await renderRow(row({ id: 'r2', status: 'pending', overdue: true }), 'only');
+    expect(colourOf(overdue.screen.getByText('Overdue'))).toBe(colors.danger);
+  });
+
+  it('keeps the queued sync tag neutral', async () => {
+    const { screen } = await renderRow(row({ pending: true } as Partial<ActivityRowView>), 'only');
+    expect(colourOf(screen.getByText('queued'))).toBe(colors.inkMuted);
+  });
+
+  it('colours the Expected tag of a projection in danger', async () => {
+    const screen = await render(
+      <ThemeProvider>
+        <ProjectionRow
+          projection={{ key: 's1:2026-09-30', seriesId: 's1', date: '2026-09-30', name: 'Netflix', amount: -999, currency: 'GBP', categoryId: null, accountId: 'a1', amountHome: -999 }}
+          categories={categories}
+          accountName={() => 'Current'}
+          formatter={formatter}
+          homeCurrency="GBP"
+        />
+      </ThemeProvider>
+    );
+    expect(flat(screen.getByText('Expected')).color).toBe(colors.danger);
   });
 });

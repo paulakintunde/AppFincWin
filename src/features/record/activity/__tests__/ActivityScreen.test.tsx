@@ -570,3 +570,16 @@ describe('ActivityScreen small-screen header (02-polish item 3)', () => {
     expect(flat(screen.getByTestId('activity-tools-row')).flexWrap).toBe('wrap');
   });
 });
+
+describe('ActivityScreen section colours (02-polish item 5)', () => {
+  it('shows the Paid section header in the accent colour and Still to come in muted ink', async () => {
+    mockRows = [
+      row({ id: 'p', name: 'Phone bill', status: 'pending', local_date: '2026-09-28' }),
+      row({ id: 'g', name: 'Coffee' }),
+    ];
+    const screen = await renderScreen();
+    const style = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
+    expect(style(screen.getByText('Paid')).color).toBe('#1B4D3E');
+    expect(style(screen.getAllByText('Still to come')[1]!).color).toBe('#6E6A5E');
+  });
+});

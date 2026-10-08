@@ -276,7 +276,7 @@ describe('AccountBalanceBlock', () => {
     expect(getByText('Nothing owing.')).toBeTruthy();
   });
 
-  it('shows a visible minus, never parentheses, and no danger colour when standing is understood', async () => {
+  it('shows a visible minus, never parentheses, and a negative balance in danger even when standing is understood (2026-10-07 amendment)', async () => {
     const { getByText } = await wrap(
       <AccountBalanceBlock
         account={account()}
@@ -286,7 +286,19 @@ describe('AccountBalanceBlock', () => {
     );
     const figure = getByText(/^[−-]£240\.00$/);
     expect(figure.props.children).not.toMatch(/\(/);
-    expect(JSON.stringify(figure.props.style)).not.toContain(colors.danger);
+    expect(JSON.stringify(figure.props.style)).toContain(colors.danger);
+  });
+
+  it('keeps a positive balance in plain ink', async () => {
+    const { getByText } = await wrap(<AccountBalanceBlock account={account()} balance={view({ balance: 24000 })} homeCurrency="GBP" />);
+    expect(JSON.stringify(getByText('£240.00').props.style)).not.toContain(colors.danger);
+  });
+
+  it('colours money still coming in green and still going out red', async () => {
+    const inbound = await wrap(<AccountBalanceBlock account={account()} balance={view({ pendingSum: 1500 })} homeCurrency="GBP" />);
+    expect(JSON.stringify(inbound.getByText('£15.00 still to come').props.style)).toContain('#1B4D3E');
+    const outbound = await wrap(<AccountBalanceBlock account={account()} balance={view({ pendingSum: -1500 })} homeCurrency="GBP" />);
+    expect(JSON.stringify(outbound.getByText(/still to come/).props.style)).toContain(colors.danger);
   });
 
   it('shows other-currency subtotals, still to come, and an approximate home figure with the rate date', async () => {
