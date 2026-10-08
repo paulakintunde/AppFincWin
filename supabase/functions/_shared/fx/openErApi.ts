@@ -1,11 +1,12 @@
-// open.er-api fallback (MON-12) -- used only when Frankfurter is
-// unreachable, errors, or returns an unparsable body. Zero imports (besides
+// open.er-api fallback (MON-12) -- shared by Edge Functions (resolve-rate).
+// It is resolve-rate's on-demand fallback, used only when Frankfurter is
+// unreachable, errors, or returns an unparsable body, and also the
+// second-source witness for recent holds. Zero imports (besides
 // the type-only FxRow import, erased at compile time) so this file loads
 // identically under Deno and Jest, exactly like parse.ts.
 //
 // There is no historical endpoint on the free tier (verified live
-// 2026-09-24) -- this is a latest-only fallback for the daily sync, never a
-// backfill source. The date stamped on every row comes from the provider's
+// 2026-09-24) -- this is latest-only, never a backfill source. The date stamped on every row comes from the provider's
 // own publication time (time_last_update_utc), not "today" -- MON-07
 // surfaces this as the rate's publication date.
 import type { FxRow } from './parse.ts';
