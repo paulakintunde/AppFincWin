@@ -10,16 +10,13 @@
 //     happens once, right after sign-in/consent, before the user can reach the You screen.
 // Limitation: a user who explicitly picks USD and still has no account on a second device would
 // be re-evaluated there; and the flag is per device. See 02-31-WALKTHROUGH-FIXES.md.
-// W6-13 WR-07: the decision needs a successful prefs read made in this mount (a failed read shows
-// the USD placeholder), and the write itself is conditional on the server still holding USD, so a
-// real choice -- even one made on another device a moment earlier -- is never overwritten.
 import { useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAccounts } from '@/data/queries/accounts';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 import { useHouseholdId } from '@/data/queries/household';
 import { useMoneyPrefs } from '@/data/queries/moneyPrefs';
-import { useSetHomeCurrencyIfDefault } from '@/data/mutations/moneyPrefs';
+import { useUpdateMoneyPrefs } from '@/data/mutations/moneyPrefs';
 import { currencyForRegion } from '@/engine/money';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { getDeviceRegion } from '@/services/locale/deviceLocale';
@@ -36,25 +33,19 @@ export function useDeviceHomeCurrencyDefault(): void {
   const userId = user?.id ?? null;
   const household = useHouseholdId(userId ?? undefined);
   const householdId = household.data ?? undefined;
-  const prefsQuery = useMoneyPrefs(userId ?? undefined);
-  const { prefs } = prefsQuery;
+  const { prefs, loading: prefsLoading } = useMoneyPrefs(userId ?? undefined);
   const accounts = useAccounts(householdId);
   const { options, loading: optionsLoading } = useCurrencyOptions(userId ?? undefined);
-  const setHomeCurrencyIfDefault = useSetHomeCurrencyIfDefault(userId ?? '');
+  const { setHomeCurrency } = useUpdateMoneyPrefs(userId ?? '');
   const ran = useRef<string | null>(null);
 
   const accountsData = accounts.data;
   const ready =
     userId !== null &&
     householdId !== undefined &&
-    // W6-13 WR-07: decide only from a real, fresh read. A failed read returns the USD placeholder
-    // and a persisted copy may predate a choice made on another device; both look like the default.
-    prefsQuery.isSuccess &&
-    !prefsQuery.isError &&
-    prefsQuery.isFetchedAfterMount &&
+    !prefsLoading &&
     accountsData !== undefined &&
     !accounts.isError &&
-    accounts.isFetchedAfterMount &&
     !optionsLoading &&
     options.length > 0;
 
@@ -70,10 +61,7 @@ export function useDeviceHomeCurrencyDefault(): void {
         const target = currencyForRegion(getDeviceRegion(prefs.region));
         const untouched = prefs.home_currency === SERVER_DEFAULT_CURRENCY && accountsData.length === 0;
         if (untouched && target && target !== prefs.home_currency && options.some((o) => o.code === target)) {
-          // WR-07: conditional on the server still holding USD, so a concurrent explicit choice
-          // wins; false (it changed meanwhile) is still a completed check. A throw (offline,
-          // server error) skips the flag below so the check runs again next launch.
-          await setHomeCurrencyIfDefault(target);
+          setHomeCurrency(target);
         }
         await AsyncStorage.setItem(key, '1');
       } catch {
@@ -82,7 +70,7 @@ export function useDeviceHomeCurrencyDefault(): void {
         ran.current = null;
       }
     })();
-  }, [ready, userId, accountsData, prefs.home_currency, prefs.region, options, setHomeCurrencyIfDefault]);
+  }, [ready, userId, accountsData, prefs.home_currency, prefs.region, options, setHomeCurrency]);
 }
 
 /** Mounted once in the signed-in layout, beside the undo toast host. */

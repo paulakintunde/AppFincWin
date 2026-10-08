@@ -79,18 +79,6 @@ export async function insertUndoStep(client: DbClient, step: UndoStepDraft): Pro
   throw toDbError(error, status);
 }
 
-/**
- * Follow-up #15 / review W6-13 WR-02: whether one specific step id is recorded, by exact id (not
- * via the 12-deep list). A queued write whose server-side effect cannot be re-validated (its rows
- * are already gone) uses this to tell "my first attempt landed" from "changed elsewhere": the
- * step is written in the same transaction as the forward write, so it exists only if that landed.
- */
-export async function undoStepExists(client: DbClient, stepId: string): Promise<boolean> {
-  const { data, error, status } = await client.from('undo_log').select('id').eq('id', stepId).maybeSingle();
-  if (error) throw toDbError(error, status);
-  return data !== null && data !== undefined;
-}
-
 /** D-26/D-28: replays one step's ops through `apply_patches` server-side and marks it undone/refused. */
 export async function applyUndoStep(client: DbClient, stepId: string): Promise<UndoOutcome> {
   const { data, error, status } = await client.rpc('apply_undo_step', { p_step_id: stepId });

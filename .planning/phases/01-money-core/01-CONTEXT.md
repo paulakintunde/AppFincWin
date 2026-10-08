@@ -31,7 +31,6 @@ No product screens ship. The only visible surface is the sync status line added 
 - **D-06:** **Home currency lives on the user's profile** and drives personal totals. The `households` row gets its own **reporting currency** (defaulting to the owner's home currency) for shared totals and Phase 8 settlements. In a household of one the two are equal.
 - **D-07:** **Custom currencies** (MON-04): the user declares a code, a symbol, decimal places (MON-13), and what one unit is worth in a **currency the user picks** (not hard-pinned to USD as in the prototype). They are stored per user with their own as-of date, shown the way MON-07 shows publication dates, and updated by hand. They are **exempt from staleness alerts and plausibility holds**, since there is no feed to check them against.
 - **D-08:** The currency picker's data source is **every currency fx-sync stores from Frankfurter v2 (~171) plus the user's custom currencies**. There is no curated shortlist at the data layer; Record may add search or ordering in its UI.
-  - **Amended 2026-10-07:** the picker now leads with a curated Popular section (by continent) after Your currency; the complete A-Z list is unchanged, so every currency stays available. See `02-record/02-DECISION-popular-currencies.md`.
 
 ### FX monitoring and holds
 - **D-09:** **Staleness alerts (MON-10) go to the operator by email via Resend** (already provisioned for outbound mail), from a scheduled server-side check (pg_cron). Users are not alerted. The rate's visible publication date (MON-07) is their honest signal.

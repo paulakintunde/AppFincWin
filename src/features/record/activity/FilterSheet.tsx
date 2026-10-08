@@ -1,9 +1,10 @@
 // Activity filters (ACT-04, D-50): category (including Uncategorised), account, direction and
-// a home-currency amount range, plus Unpaid only (pending lines). Amounts go through the strict amount parser (never a float
+// a home-currency amount range. Amounts go through the strict amount parser (never a float
 // conversion); an invalid figure shows the parser's own message and is not applied.
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { AccountRow, CategoryRow } from '@/db/rows';
+import { resolveExponent } from '@/engine/money';
 import { EMPTY_FILTER, type ActivityFilter } from '@/engine/activity/filters';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
@@ -12,7 +13,7 @@ import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
-import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { Sheet } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useAmountParser } from '@/ui/money/useAmountParser';
 
@@ -35,6 +36,11 @@ function toggled<T>(list: readonly T[] | null, item: T): readonly T[] | null {
   return next.length === 0 ? null : next;
 }
 
+function formatMinor(minor: number | null, exponent: number): string {
+  if (minor === null) return '';
+  return exponent === 0 ? String(minor) : (minor / 10 ** exponent).toFixed(exponent);
+}
+
 export function FilterSheet(props: FilterSheetProps) {
   if (!props.visible) return null;
   return <FilterBody {...props} />;
@@ -45,10 +51,10 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
   const { colors, pairing } = useTheme();
   const parser = useAmountParser(region ?? null);
   const [draft, setDraft] = useState<ActivityFilter>(value);
-  // S-CR-01: prefill from the applied range in the region's own notation, through the same
-  // parser that reads it back (string maths, never a float), so it always round-trips.
-  const [minText, setMinText] = useState(() => (value.amountMin === null ? '' : parser.toInputText(value.amountMin, homeCurrency)));
-  const [maxText, setMaxText] = useState(() => (value.amountMax === null ? '' : parser.toInputText(value.amountMax, homeCurrency)));
+  // Prefill from the applied range using the same exponent the parser will use.
+  const exponent = resolveExponent(homeCurrency);
+  const [minText, setMinText] = useState(() => formatMinor(value.amountMin, exponent));
+  const [maxText, setMaxText] = useState(() => formatMinor(value.amountMax, exponent));
   const [error, setError] = useState<string | null>(null);
 
   const labelStyle = { ...textRole(pairing, 'label'), color: colors.inkMuted };
@@ -99,7 +105,7 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={t('activity.filter.title')}>
       <SheetHeader title={t('activity.filter.title')} cancelLabel={t('a11y.close')} onCancel={onClose} />
-      <SheetScroll contentContainerStyle={styles.body}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.body}>
         <Text style={labelStyle}>{t('activity.filter.category')}</Text>
         <View style={styles.chips}>
           {categories.map((c) => (
@@ -138,20 +144,12 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
             />
           ))}
         </View>
-        <Text style={labelStyle}>{t('activity.filter.status')}</Text>
-        <View style={styles.chips}>
-          <Chip
-            label={t('activity.filter.unpaidOnly')}
-            selected={draft.unpaidOnly}
-            onPress={() => setDraft((d) => ({ ...d, unpaidOnly: !d.unpaidOnly }))}
-          />
-        </View>
         <Text style={labelStyle}>{`${t('activity.filter.amount')} (${homeCurrency})`}</Text>
         <View style={styles.chips}>
           <TextInput
             accessibilityLabel={t('activity.filter.min')}
             placeholder={t('activity.filter.min')}
-            placeholderTextColor={colors.inkMuted}
+            placeholderTextColor={colors.inkFaint}
             keyboardType="decimal-pad"
             value={minText}
             onChangeText={setMinText}
@@ -160,7 +158,7 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
           <TextInput
             accessibilityLabel={t('activity.filter.max')}
             placeholder={t('activity.filter.max')}
-            placeholderTextColor={colors.inkMuted}
+            placeholderTextColor={colors.inkFaint}
             keyboardType="decimal-pad"
             value={maxText}
             onChangeText={setMaxText}
@@ -176,7 +174,7 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
           <Pill label={t('activity.filter.clear')} variant="secondary" onPress={clear} />
           <Pill label={t('activity.filter.apply')} variant="primary" onPress={apply} />
         </View>
-      </SheetScroll>
+      </ScrollView>
     </Sheet>
   );
 }

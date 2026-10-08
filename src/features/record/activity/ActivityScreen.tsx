@@ -36,7 +36,7 @@ import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { ActivityRow, ProjectionRow } from './ActivityRow';
-import { buildActivityItems, buildFlatItems, cardPositions, getActivityItemType, type ActivityItem } from './activitySections';
+import { buildActivityItems, buildFlatItems, getActivityItemType, type ActivityItem } from './activitySections';
 import { BulkBar } from './BulkBar';
 import { FilterSheet } from './FilterSheet';
 import { formatMonthLabel, MonthSwitcher } from './MonthSwitcher';
@@ -50,15 +50,6 @@ export interface ActivityScreenProps {
   onOpenYou: () => void;
   initialMonth?: string;
 }
-
-type BulkHint = 'selectFirst' | 'nothingToMarkPaid' | 'nothingToMarkUnpaid' | 'tooMany';
-
-const BULK_HINT_KEYS = {
-  selectFirst: 'activity.selectFirst',
-  nothingToMarkPaid: 'activity.bulkNothingToMarkPaid',
-  nothingToMarkUnpaid: 'activity.bulkNothingToMarkUnpaid',
-  tooMany: 'activity.bulkTooMany',
-} as const satisfies Record<BulkHint, string>;
 
 export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initialMonth }: ActivityScreenProps) {
   const t = useT();
@@ -83,8 +74,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
   const [filter, setFilter] = useState<ActivityFilter>(EMPTY_FILTER);
   const [filterOpen, setFilterOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  // S-WR-02: why the last bulk action did nothing, shown whatever the selected count.
-  const [hint, setHint] = useState<BulkHint | null>(null);
+  const [hint, setHint] = useState(false);
 
   const accountName = useCallback(
     (id: string): string => (accountsData ?? []).find((a) => a.id === id)?.name ?? '',
@@ -110,7 +100,6 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         : buildActivityItems(narrowed, searching || filtering ? [] : view.projections),
     [flat, narrowed, searching, filtering, view.projections]
   );
-  const positions = useMemo(() => cardPositions(items), [items]);
   const itemRows = useMemo(() => items.flatMap((i) => (i.type === 'row' ? [i.row] : [])), [items]);
   const selection = useActivitySelection(useMemo(() => itemRows.map((r) => r.id), [itemRows]));
   const selectedRows = useMemo(() => itemRows.filter((r) => selection.isSelected(r.id)), [itemRows, selection]);
@@ -128,14 +117,14 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
 
   const onToggleSelect = useCallback(
     (row: ActivityRowView) => {
-      setHint(null);
+      setHint(false);
       selection.toggle(row.id);
     },
     [selection]
   );
 
   const onBulkDelete = () => {
-    if (selectedRows.length === 0) return setHint('selectFirst');
+    if (selectedRows.length === 0) return setHint(true);
     setConfirmOpen(true);
   };
 
@@ -147,33 +136,25 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
       // Selected legs carry transfer_id, so the hook adds each transfer's partner leg (D-51).
       const stepId: string | null = bulkRemove(selectedRows, bulkCtx);
       // Review item 7: a null step id means there is no honest before-state, so no Undo.
-      setHint(null);
       showToast({ kind: 'destructive', text: undoLabelText('deletedMany', { n }), stepId });
       selection.exit();
-    } catch (error) {
-      // A selection beyond the bulk limit is refused (RangeError) before anything is sent.
-      if (!(error instanceof RangeError)) throw error;
-      setHint('tooMany');
+    } catch {
+      // A selection beyond the bulk limit is refused before anything is sent.
+      setHint(true);
     }
   };
 
   const onBulkMarkPaid = () => {
-    if (selectedRows.length === 0) return setHint('selectFirst');
     const targets = selectedRows.filter((r) => r.status === 'pending' && r.transfer_id === null);
-    if (bulkCtx === null) return undefined;
-    if (targets.length === 0) return setHint('nothingToMarkPaid');
-    setHint(null);
+    if (bulkCtx === null || targets.length === 0) return setHint(true);
     const stepId: string | null = bulkMarkPaid(targets, bulkCtx, rc.today);
     showToast({ kind: 'ordinary', text: undoLabelText('markedPaidMany', { n: targets.length }), stepId });
     selection.clear();
   };
 
   const onBulkMarkUnpaid = () => {
-    if (selectedRows.length === 0) return setHint('selectFirst');
     const targets = selectedRows.filter((r) => r.status === 'paid' && r.transfer_id === null);
-    if (bulkCtx === null) return undefined;
-    if (targets.length === 0) return setHint('nothingToMarkUnpaid');
-    setHint(null);
+    if (bulkCtx === null || targets.length === 0) return setHint(true);
     const stepId: string | null = bulkMarkUnpaid(targets, bulkCtx);
     showToast({ kind: 'ordinary', text: undoLabelText('markedUnpaidMany', { n: targets.length }), stepId });
     selection.clear();
@@ -186,17 +167,10 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
     setSheetMode({ kind: 'new', direction });
   };
 
-  const renderItem = ({ item, index }: { item: ActivityItem; index: number }) => {
-    const cardPosition = positions[index] ?? 'only';
+  const renderItem = ({ item }: { item: ActivityItem }) => {
     if (item.type === 'header') {
       return (
-        <Text
-          style={[
-            styles.sectionHeader,
-            // 2026-10-07 colour amendment: Paid reads green; the header's words carry the meaning.
-            { ...textRole(pairing, 'label'), color: item.section === 'paid' ? colors.accent : colors.inkMuted },
-          ]}
-        >
+        <Text style={[styles.sectionHeader, { ...textRole(pairing, 'label'), color: colors.inkMuted }]}>
           {t(`activity.section.${item.section}`)}
         </Text>
       );
@@ -209,7 +183,6 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
           accountName={accountName}
           formatter={formatter}
           homeCurrency={rc.homeCurrency}
-          cardPosition={cardPosition}
         />
       );
     }
@@ -225,7 +198,6 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         onToggleSelect={onToggleSelect}
         onPress={onPressRow}
         onMarkPaid={onMarkPaid}
-        cardPosition={cardPosition}
       />
     );
   };
@@ -244,18 +216,15 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         </Text>
         <Pill label={t('activity.add')} variant="primary" onPress={() => setAddOpen(true)} />
       </View>
-      <View testID="activity-month-row" style={styles.header}>
+      <View style={styles.header}>
         <MonthSwitcher month={month} months={months} locale={formatter.locale} onChange={setMonth} />
-      </View>
-      {/* Equal-width links on their own row: they shrink and ellipsise rather than overflow at 320pt. */}
-      <View testID="activity-nav-links" style={styles.links}>
-        {links.map((l) => (
-          <Pressable key={l.label} accessibilityRole="link" accessibilityLabel={l.label} onPress={l.onPress} style={styles.link}>
-            <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
-              {l.label}
-            </Text>
-          </Pressable>
-        ))}
+        <View style={styles.links}>
+          {links.map((l) => (
+            <Pressable key={l.label} accessibilityRole="link" accessibilityLabel={l.label} onPress={l.onPress} style={styles.link}>
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{l.label}</Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
       {flat ? null : <MonthTotalsBar totals={view.totals} homeCurrency={rc.homeCurrency} formatter={formatter} />}
       <SearchBar
@@ -265,19 +234,13 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         onTermChange={setTerm}
         onScopeChange={setScope}
       />
-      <View testID="activity-tools-row" style={[styles.header, styles.wrapRow]}>
+      <View style={styles.header}>
         <Chip label={t('activity.filter.title')} selected={filtering} onPress={() => setFilterOpen(true)} />
-        {selection.active ? (
-          <View style={styles.links}>
-            <Pill label={t('activity.selectAll')} variant="secondary" onPress={() => { setHint(null); selection.selectAll(itemRows.map((r) => r.id)); }} />
-            <Pill label={t('activity.selectNone')} variant="secondary" onPress={() => { setHint(null); selection.clear(); }} />
-          </View>
-        ) : null}
         <Pill
           label={selection.active ? t('activity.done') : t('activity.select')}
           variant="secondary"
           onPress={() => {
-            setHint(null);
+            setHint(false);
             if (selection.active) selection.exit();
             else selection.enter();
           }}
@@ -290,17 +253,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
           getItemType={getActivityItemType}
           renderItem={renderItem}
           ListEmptyComponent={
-            flat && !search.isSuccess ? (
-              // S-IN-04 / I-03: only a server search that succeeded can say "Nothing matches.";
-              // one in flight, paused offline or failed says which.
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
-                {search.isPending && search.fetchStatus === 'paused'
-                  ? t('activity.searchOffline')
-                  : search.isError
-                    ? t('activity.searchFailed')
-                    : t('activity.searching')}
-              </Text>
-            ) : searching || filtering ? (
+            searching || filtering ? (
               <EmptyState heading={t('activity.noMatchHeading')} body={t('activity.noMatchBody')} />
             ) : (
               <EmptyState
@@ -314,7 +267,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
       {selection.active ? (
         <BulkBar
           count={selection.count}
-          hint={hint === null ? null : t(BULK_HINT_KEYS[hint])}
+          hint={hint && selection.count === 0 ? t('activity.selectFirst') : null}
           onMarkPaid={onBulkMarkPaid}
           onMarkUnpaid={onBulkMarkUnpaid}
           onDelete={onBulkDelete}
@@ -322,12 +275,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
       ) : null}
       <ConfirmSheet
         visible={confirmOpen}
-        body={
-          // S-IN-05: a selected transfer leg takes its partner with it (expandTransferIds).
-          selectedRows.some((r) => r.transfer_id !== null)
-            ? `${t('activity.bulkDeleteConfirm', { count: selectedRows.length })} ${t('activity.bulkDeleteTransfers')}`
-            : t('activity.bulkDeleteConfirm', { count: selectedRows.length })
-        }
+        body={t('activity.bulkDeleteConfirm', { count: selectedRows.length })}
         cancelLabel={t('activity.bulkDeleteCancel')}
         confirmLabel={t('activity.bulkDeleteProceed')}
         destructive
@@ -368,20 +316,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: space.gapMd,
   },
-  wrapRow: {
-    flexWrap: 'wrap',
-  },
   links: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.gapSm,
   },
   link: {
-    flex: 1,
-    minWidth: 0,
     minHeight: space.touchMin,
     paddingHorizontal: space.gapSm,
-    alignItems: 'center',
     justifyContent: 'center',
   },
   list: {

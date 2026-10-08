@@ -7,18 +7,10 @@
 // or inverseOfSeriesChange: the caller mints one step id up front (kept across paused-mutation
 // replays -- it is the server's replay key) and the label rides on the RPC. A replayed call
 // comes back 'already-applied' and records nothing twice (D-29).
-//
-// FX (02-46): the create/edit RPCs return only a change set, not the foreign lines the server
-// materialised, so a foreign series follows up its rate_pending rows by reading them back
-// (followUpSeriesRates). Lines the daily recurring-materialise job creates later are covered by
-// the pending sweep (02-47); 02-50 records that dependency in docs/ops/fx-operations.md.
 import * as Crypto from 'expo-crypto';
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import type { RecurringFreq } from '@/engine/recurring';
-import { localDateIn } from '@/engine/time';
-import { fetchRatePendingRows } from '@/db/fxResolve';
-import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { VersionConflictError } from '@/db/errors';
 import {
   createRecurringSeries,
@@ -29,7 +21,7 @@ import {
   type SeriesUndoLabel,
   type SeriesWriteResult,
 } from '@/db/recurringSeries';
-import type { MoneyPrefsRow, RecurringSeriesRow, TransactionPatch, TransactionRow } from '@/db/rows';
+import type { RecurringSeriesRow, TransactionPatch, TransactionRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import {
@@ -43,7 +35,6 @@ import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { writeClient } from './writeClient';
 import { upsertRow } from './cacheRows';
-import { followUpPendingByDate, lazySupabaseClient } from './transactionCache';
 
 export interface ScheduleInput {
   freq: RecurringFreq;
@@ -174,28 +165,6 @@ async function handleSeriesWriteError(
   }
 }
 
-const SERIES_FOLLOW_UP_LIMIT = 100;
-
-/**
- * Reads back the series' rate_pending lines (up to device-local tomorrow, oldest first) and
- * resolves them one call per date. Never throws and is never awaited by onSuccess: the series
- * write has already succeeded, and a failure leaves the rows to the pending sweep (02-47).
- */
-async function followUpSeriesRates(qc: QueryClient, seriesId: string): Promise<void> {
-  try {
-    const tomorrow = localDateIn(new Date(Date.now() + 24 * 60 * 60 * 1000), getDeviceTimeZone());
-    const rows = await fetchRatePendingRows(lazySupabaseClient(), {
-      onOrBefore: tomorrow,
-      limit: SERIES_FOLLOW_UP_LIMIT,
-      order: 'asc',
-      recurringSeriesId: seriesId,
-    });
-    if (rows.length > 0) await followUpPendingByDate(qc, rows);
-  } catch {
-    // Best-effort: the rows stay rate_pending and the pending sweep retries them.
-  }
-}
-
 function recordVersion(id: string, bases: readonly number[], result: SeriesWriteResult): void {
   if (result.status === 'applied') recordWrittenVersion('recurring_series', id, bases, result.changeSet.series.versionAfter);
 }
@@ -240,10 +209,6 @@ export function registerSeriesMutations(qc: QueryClient): void {
     },
     onSuccess: async (_result: SeriesWriteResult, vars: CreateSeriesVars) => {
       await invalidateSeriesAndTransactions(qc, vars.series.household_id, vars.ownerId);
-      // A series in the home currency never has rate_pending lines, so skip the read. Unknown
-      // prefs (not cached) fall through to the read, which returns [] for a home-only series.
-      const home = qc.getQueryData<MoneyPrefsRow>(queryKeys.moneyPrefs(vars.ownerId))?.home_currency;
-      if (home === undefined || home !== vars.series.currency) void followUpSeriesRates(qc, vars.series.id);
     },
     onError: async (err: unknown, vars: CreateSeriesVars) => {
       const cls = classifySettledWriteError(err);
@@ -278,8 +243,6 @@ export function registerSeriesMutations(qc: QueryClient): void {
     },
     onSuccess: async (_result: SeriesWriteResult, vars: EditSeriesFromVars) => {
       await invalidateSeriesAndTransactions(qc, vars.householdId, vars.ownerId);
-      // An edit may re-materialise future lines (the patch need not carry a currency): always read back.
-      void followUpSeriesRates(qc, vars.id);
     },
     onError: (err: unknown, vars: EditSeriesFromVars) => handleSeriesWriteError(qc, err, vars, { ...vars.patch }),
   });

@@ -10,7 +10,6 @@ function pending(over: Partial<PendingOccurrence> & { id: string; localDate: str
   return {
     version: 1,
     amount: -1099,
-    currency: 'GBP',
     name: 'Netflix',
     accountId: 'acc-1',
     ...over,
@@ -20,7 +19,6 @@ function pending(over: Partial<PendingOccurrence> & { id: string; localDate: str
 function importedRow(over: Partial<PayMatchRow> & { index: number; localDate: string }): PayMatchRow {
   return {
     amount: -1099,
-    currency: 'GBP',
     name: 'NETFLIX.COM',
     ...over,
   };
@@ -147,21 +145,6 @@ describe('matchPendingPayments', () => {
       pending({ id: 'pA', localDate: '2026-09-03' }),
     ];
     expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'pA' }]);
-  });
-
-  it('IN-04: never matches a line in a different currency from the pending occurrence', () => {
-    const rows = [importedRow({ index: 0, localDate: '2026-09-04', currency: 'EUR' })];
-    const pendingRows = [pending({ id: 'p1', localDate: '2026-09-03', currency: 'GBP' })];
-    expect(matchPendingPayments(rows, pendingRows)).toEqual([]);
-  });
-
-  it('IN-04: a currency mismatch skips only that candidate, so a same-currency one still matches', () => {
-    const rows = [importedRow({ index: 0, localDate: '2026-09-04', currency: 'EUR' })];
-    const pendingRows = [
-      pending({ id: 'pA', localDate: '2026-09-04', currency: 'GBP' }),
-      pending({ id: 'pB', localDate: '2026-09-03', currency: 'EUR' }),
-    ];
-    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'pB' }]);
   });
 
   it('exposes the before/after window constants', () => {

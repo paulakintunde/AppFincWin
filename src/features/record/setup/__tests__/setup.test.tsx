@@ -27,20 +27,14 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 47, bottom: 12, left: 0, right: 0 }),
 }));
 
-let mockSheetProps: { mode: unknown; visible: boolean; onClose: () => void; onSaved?: (id: string) => void } | null = null;
+let mockSheetProps: { mode: unknown; onSaved?: (id: string) => void } | null = null;
 jest.mock('@/features/record/accounts/AccountSheet', () => {
   const R = require('react');
-  const { Pressable, Text, View } = require('react-native');
+  const { Pressable, Text } = require('react-native');
   return {
-    AccountSheet: (props: { mode: unknown; visible: boolean; onClose: () => void; onSaved?: (id: string) => void }) => {
+    AccountSheet: (props: { mode: unknown; onSaved?: (id: string) => void }) => {
       mockSheetProps = props;
-      if (!props.visible) return null;
-      return R.createElement(
-        View,
-        null,
-        R.createElement(Pressable, { onPress: () => props.onSaved?.('acc-new') }, R.createElement(Text, null, 'sheet')),
-        R.createElement(Pressable, { onPress: () => props.onClose() }, R.createElement(Text, null, 'sheet-cancel'))
-      );
+      return R.createElement(Pressable, { onPress: () => props.onSaved?.('acc-new') }, R.createElement(Text, null, 'sheet'));
     },
   };
 });
@@ -101,22 +95,6 @@ describe('SetupAccountScreen', () => {
     expect(mockSheetProps!.mode).toEqual({ kind: 'new', context: 'onboarding' });
     fireEvent.press(getByText('sheet'));
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/setup/history', params: { accountId: 'acc-new' } });
-  });
-
-  it('S-WR-11: Cancel closes the sheet and offers a way to You (sign out or delete) and back to the sheet', async () => {
-    const { getByText, queryByText, getByRole } = await render(wrap(<SetupAccountScreen />));
-    await fireEvent.press(getByText('sheet-cancel'));
-    expect(queryByText('sheet')).toBeNull();
-    await fireEvent.press(getByRole('button', { name: 'Sign out or delete your account' }));
-    expect(mockPush).toHaveBeenCalledWith('/you');
-    await fireEvent.press(getByRole('button', { name: 'Add an account' }));
-    expect(getByText('sheet')).toBeTruthy();
-  });
-
-  it('S-WR-11: You stays reachable for an account-less user (the gate is only on Activity)', async () => {
-    mockAccounts = { data: [], isLoading: false, isError: false };
-    await render(wrap(<ActivityRoute />));
-    expect(mockRedirectHref).toBe('/setup/account');
   });
 });
 

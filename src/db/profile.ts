@@ -32,30 +32,6 @@ export async function fetchMoneyPrefs(client: DbClient, userId: string): Promise
   return (data as MoneyPrefsRow | null) ?? null;
 }
 
-/**
- * W6-13 WR-07: sets home_currency only while the row still holds `expected` (the server default),
- * as one conditional UPDATE -- so an explicit choice made on another device, even between the
- * caller's read and this write, always wins. Returns the updated row, or null when nothing
- * matched (the currency had already been changed).
- */
-export async function setHomeCurrencyIfStill(
-  client: DbClient,
-  userId: string,
-  target: string,
-  expected: string
-): Promise<MoneyPrefsRow | null> {
-  const { data, error, status } = await client
-    .from('profiles')
-    .update({ home_currency: target })
-    .eq('id', userId)
-    .eq('home_currency', expected)
-    .select(MONEY_PREFS_COLUMNS)
-    .maybeSingle();
-
-  if (error) throw toDbError(error, status);
-  return (data as MoneyPrefsRow | null) ?? null;
-}
-
 export async function updateMoneyPrefs(
   client: DbClient,
   userId: string,

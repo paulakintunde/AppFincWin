@@ -1,6 +1,6 @@
 // Active categories with glyph tiles, plus an 'Uncategorised' choice (null).
 import React from 'react';
-import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { Sheet } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Row } from '@/ui/Row';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
@@ -22,30 +22,26 @@ export function CategoryPicker({ visible, categories, selectedId, onSelect, onCl
   return (
     <Sheet visible={visible} onDismiss={onClose} accessibilityLabel={title}>
       <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
-      <SheetScroll>
-        <Row
-          label={t('record.sheet.uncategorised')}
-          dense
-          value={selectedId === null ? '✓' : undefined}
-          selected={selectedId === null}
-          onPress={() => onSelect(null)}
-        />
-        {categories.map((category) => {
-          const name = categoryName(category, t);
-          return (
-            <Row
-              key={category.id}
-              label={name}
-              dense
-              leading={<CategoryGlyph colorKey={category.color_key} letter={name.charAt(0).toUpperCase()} />}
-              value={category.id === selectedId ? '✓' : undefined}
-              selected={category.id === selectedId}
-              accessibilityLabel={name}
-              onPress={() => onSelect(category.id)}
-            />
-          );
-        })}
-      </SheetScroll>
+      <Row
+        label={t('record.sheet.uncategorised')}
+        dense
+        value={selectedId === null ? '✓' : undefined}
+        onPress={() => onSelect(null)}
+      />
+      {categories.map((category) => {
+        const name = categoryName(category, t);
+        return (
+          <Row
+            key={category.id}
+            label={name}
+            dense
+            leading={<CategoryGlyph colorKey={category.color_key} letter={name.charAt(0).toUpperCase()} />}
+            value={category.id === selectedId ? '✓' : undefined}
+            accessibilityLabel={name}
+            onPress={() => onSelect(category.id)}
+          />
+        );
+      })}
     </Sheet>
   );
 }

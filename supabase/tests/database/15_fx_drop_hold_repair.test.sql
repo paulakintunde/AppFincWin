@@ -23,11 +23,6 @@ insert into public.fx_rates (base, quote, rate, rate_date, source) values
   ('EUR', 'JPY', 170, '2026-09-18', 'frankfurter-v2'),
   ('EUR', 'JPY', 170, '2026-09-21', 'frankfurter-v2'),
   ('EUR', 'GBP', 0.95, '2026-09-21', 'frankfurter-v2');
-
--- 20261007000400: exact now needs the line's own date or a recorded lookup; these FINAL lookups stand in for the on-demand fetch (incidental seed).
-insert into public.fx_rate_lookups (quote, requested_date, rate_date, source, fetched_at) values
-  ('JPY', '2026-09-22', '2026-09-21', 'frankfurter-v2', timestamptz '2026-09-25 00:00+00'),
-  ('USD', '2026-09-22', '2026-09-21', 'frankfurter-v2', timestamptz '2026-09-25 00:00+00');
 insert into public.fx_rate_holds (base, quote, held_rate, held_rate_date, source, prior_rate, prior_rate_date, change_ratio, status, resolved_at)
 values ('EUR', 'USD', 1.50, '2026-09-21', 'frankfurter-v2', 1.15, '2026-09-18', 0.3043, 'confirmed', now());
 -- A still-held GBP value that nonetheless sits in fx_rates.
@@ -71,8 +66,8 @@ select extensions.is(
 );
 select extensions.is(
   (select rate_pending from public.transactions where id = 'b1111111-1111-1111-1111-111111111111'),
-  true,
-  're-stamped row is provisional: the dropped value''s lookup is inert and 09-18 is not recorded as 09-22''s publication, so the next on-demand fetch refreshes it (20261007000400)'
+  false,
+  're-stamped row is exact again (09-18 is within 7 days)'
 );
 select extensions.is(
   (select version from public.transactions where id = 'b1111111-1111-1111-1111-111111111111')::int,

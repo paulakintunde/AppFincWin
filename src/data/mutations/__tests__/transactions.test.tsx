@@ -1109,74 +1109,35 @@ describe('useImportChunks / importChunk', () => {
     expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-10'))).toBeUndefined();
   });
 
-  it('calls resolve-rate once per distinct local_date among rate_pending rows (ids batched per date)', async () => {
+  it('calls resolve-rate once per distinct (currency, date) among rate_pending rows, deduplicated', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
     fake.respondWith({
       data: [
         { id: 'imp-1', local_date: '2026-09-24', version: 1, rate_pending: true },
-        { id: 'imp-2', local_date: '2026-09-24', version: 1, rate_pending: true },
-        { id: 'imp-3', local_date: '2026-09-24', version: 1, rate_pending: true },
-        { id: 'imp-4', local_date: '2026-09-20', version: 1, rate_pending: true },
-        { id: 'imp-5', local_date: '2026-09-20', version: 1, rate_pending: true },
-        { id: 'imp-6', local_date: '2026-09-20', version: 1, rate_pending: false },
+        { id: 'imp-2', local_date: '2026-09-24', version: 1, rate_pending: true }, // same currency+date -> deduped
       ],
       error: null,
       status: 201,
     });
-    fake.respondWith({ data: { ok: true, rows: [] }, error: null, status: 200 });
-    fake.respondWith({ data: { ok: true, rows: [] }, error: null, status: 200 });
+    fake.respondWith({ data: { row: serverTransaction({ id: 'imp-1', rate_pending: false }) }, error: null, status: 200 });
 
     const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []);
     const { result } = await renderHook(() => useImportChunks(), { wrapper: wrapper(qc) });
 
     result.current.enqueue({
       householdId: 'h1',
       batchId: 'batch-1',
       rows: [
-        importRow({ id: 'imp-1', original_currency: 'JPY', local_date: '2026-09-24' }),
-        importRow({ id: 'imp-2', original_currency: 'GBP', local_date: '2026-09-24' }),
-        importRow({ id: 'imp-3', original_currency: 'GBP', local_date: '2026-09-24' }),
-        importRow({ id: 'imp-4', original_currency: 'JPY', local_date: '2026-09-20' }),
-        importRow({ id: 'imp-5', original_currency: 'JPY', local_date: '2026-09-20' }),
-        importRow({ id: 'imp-6', original_currency: 'USD', local_date: '2026-09-20' }),
+        importRow({ id: 'imp-1', original_currency: 'JPY' }),
+        importRow({ id: 'imp-2', original_currency: 'JPY' }),
       ],
       homeCurrency: 'USD',
       userId: 'user-1',
     });
 
-    await waitFor(() => expect(fake.calls.filter((c) => c.method === 'functions.invoke')).toHaveLength(2));
-    const bodies = fake.calls
-      .filter((c) => c.method === 'functions.invoke')
-      .map((c) => (c.args[1] as { body: unknown }).body);
-    expect(bodies).toEqual([
-      { transactionIds: ['imp-1', 'imp-2', 'imp-3'] },
-      { transactionIds: ['imp-4', 'imp-5'] },
-    ]);
-  });
-
-  it('a home-currency-only import (nothing rate_pending) never calls resolve-rate', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith({
-      data: [{ id: 'imp-1', local_date: '2026-09-24', version: 1, rate_pending: false }],
-      error: null,
-      status: 201,
-    });
-
-    const qc = newClient();
-    const { result } = await renderHook(() => useImportChunks(), { wrapper: wrapper(qc) });
-    result.current.enqueue({
-      householdId: 'h1',
-      batchId: 'batch-1',
-      rows: [importRow({ id: 'imp-1', original_currency: 'USD' })],
-      homeCurrency: 'USD',
-      userId: 'user-1',
-    });
-
-    await waitFor(() => expect(fake.calls.some((c) => c.method === 'upsert')).toBe(true));
-    await new Promise((r) => setTimeout(r, 0));
-    expect(fake.calls.filter((c) => c.method === 'functions.invoke')).toHaveLength(0);
+    await waitFor(() => expect(fake.calls.filter((c) => c.method === 'functions.invoke')).toHaveLength(1));
   });
 
   it('C-WR-03: the resolve-rate follow-up never writes an empty list into a month that was not loaded', async () => {
@@ -1184,7 +1145,7 @@ describe('useImportChunks / importChunk', () => {
     mockActiveClient = fake;
     fake.respondWith({ data: [{ id: 'imp-1', local_date: '2026-07-10', version: 1, rate_pending: true }], error: null, status: 201 });
     fake.respondWith({
-      data: { ok: true, rows: [serverTransaction({ id: 'imp-1', local_date: '2026-07-10', rate_pending: false })] },
+      data: { row: serverTransaction({ id: 'imp-1', local_date: '2026-07-10', rate_pending: false }) },
       error: null,
       status: 200,
     });

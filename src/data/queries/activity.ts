@@ -58,16 +58,7 @@ export function useTransferLegs(householdId: string | null, transferIds: readonl
     queryFn: () => fetchTransferLegs(supabase, householdId as string, transferIds),
     enabled,
   });
-  // W6-13 (screens WR-01): isPending/fetchStatus/isError/isSuccess let a screen tell "offline or
-  // failed, partner unknown" from "read succeeded and the partner is really not there".
-  return {
-    legs: query.data ?? [],
-    isLoading: enabled ? query.isLoading : false,
-    isPending: enabled && query.isPending,
-    fetchStatus: query.fetchStatus,
-    isError: enabled && query.isError,
-    isSuccess: enabled && query.isSuccess,
-  };
+  return { legs: query.data ?? [], isLoading: enabled ? query.isLoading : false };
 }
 
 /** transfer_id -> the month's own rows sharing it (1 when the partner sits in another month, 2 when both legs are in this month). */
@@ -214,16 +205,7 @@ export function useTransactionsSearch(
   term: string,
   homeCurrency: string,
   today: string
-): {
-  rows: ActivityRowView[];
-  isLoading: boolean;
-  enabled: boolean;
-  /** W6-13 (screens IN-04): no answer yet (including paused offline) -- "no results" is not known. */
-  isPending: boolean;
-  fetchStatus: 'fetching' | 'paused' | 'idle';
-  isError: boolean;
-  isSuccess: boolean;
-} {
+): { rows: ActivityRowView[]; isLoading: boolean; enabled: boolean } {
   const trimmed = term.trim();
   const enabled = Boolean(householdId) && trimmed.length >= SEARCH_MIN_CHARS;
   const fxQuery = useFxLatest();
@@ -246,15 +228,7 @@ export function useTransactionsSearch(
     [query.data, homeCurrency, rates, today]
   );
 
-  return {
-    rows,
-    isLoading: query.isLoading,
-    enabled,
-    isPending: enabled && query.isPending,
-    fetchStatus: query.fetchStatus,
-    isError: enabled && query.isError,
-    isSuccess: enabled && query.isSuccess,
-  };
+  return { rows, isLoading: query.isLoading, enabled };
 }
 
 export interface AccountBalanceView extends AccountBalance {

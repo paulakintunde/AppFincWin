@@ -4,8 +4,8 @@
 globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto);
 
 import React from 'react';
-import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
-import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react-native';
 import type { CategoryRow, DbClient } from '@/db/rows';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { queryKeys } from '@/data/keys';
@@ -196,7 +196,6 @@ describe('useMergeCategory', () => {
       { id: 't1', version: 2, local_date: '2026-09-01' },
       { id: 't2', version: 5, local_date: '2026-08-01' },
     ]));
-    fake.respondWith(ok([])); // no recurring series on the source
     fake.respondWith(
       ok({
         status: 'applied',
@@ -228,63 +227,9 @@ describe('useMergeCategory', () => {
     expect(qc.getQueryData<CategoryRow[]>(queryKeys.categories('user-1'))?.find((c) => c.id === 'src')?.archived_at).not.toBeNull();
   });
 
-  it('WR-05: moves the source category recurring series templates in the same call and undo step', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith(ok([{ id: 't1', version: 2, local_date: '2026-09-01' }]));
-    fake.respondWith(ok([{ id: 's1', version: 3 }]));
-    fake.respondWith(
-      ok({
-        status: 'applied',
-        rows: [
-          { entity: 'transactions', id: 't1', version: 3 },
-          { entity: 'recurring_series', id: 's1', version: 4 },
-          { entity: 'categories', id: 'src', version: 5 },
-        ],
-      })
-    );
-    const qc = newClient();
-    const { result } = await renderHook(() => useMergeCategory(), { wrapper: wrapper(qc) });
-
-    result.current.merge(vars);
-    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
-
-    const seriesRead = fake.calls.filter((c) => c.table === 'recurring_series');
-    expect(seriesRead.filter((c) => c.method === 'eq').map((c) => c.args)).toEqual([
-      ['household_id', 'h1'],
-      ['category_id', 'src'],
-    ]);
-    expect(seriesRead.find((c) => c.method === 'is')?.args).toEqual(['deleted_at', null]);
-    const args = fake.calls.find((c) => c.method === 'rpc')!.args[1] as {
-      p_ops: unknown[];
-      p_undo_step: { ops: { entity: string; id: string; expectedVersion: number; patch: unknown }[] };
-    };
-    expect(args.p_ops).toEqual([
-      { entity: 'transactions', id: 't1', expectedVersion: 2, patch: { category_id: 'dst' } },
-      { entity: 'recurring_series', id: 's1', expectedVersion: 3, patch: { category_id: 'dst' } },
-      { entity: 'categories', id: 'src', expectedVersion: 4, patch: { archived_at: '$now' } },
-    ]);
-    expect(args.p_undo_step.ops[1]).toEqual({ entity: 'recurring_series', id: 's1', expectedVersion: 4, patch: { category_id: 'src' } });
-  });
-
-  it('WR-05: counts series templates toward the op cap', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith(ok(Array.from({ length: 5999 }, (_, i) => ({ id: `t${i}`, version: 1, local_date: '2026-09-01' }))));
-    fake.respondWith(ok([{ id: 's1', version: 1 }]));
-    const qc = newClient();
-    const { result } = await renderHook(() => useMergeCategory(), { wrapper: wrapper(qc) });
-
-    result.current.merge(vars);
-    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(1));
-    expect(recordFailedWrite).toHaveBeenCalledWith(expect.objectContaining({ kind: 'rejected', code: 'merge-too-large' }));
-    expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
-  });
-
   it('merges an unused category by archiving it alone', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
-    fake.respondWith(ok([]));
     fake.respondWith(ok([]));
     fake.respondWith(ok({ status: 'applied', rows: [{ entity: 'categories', id: 'src', version: 5 }] }));
     const qc = newClient();
@@ -311,26 +256,10 @@ describe('useMergeCategory', () => {
     expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
   });
 
-  it('WR-03: refuses exactly 6000 rows too (6000 moves + the archive op would be 6001 ops)', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith(ok(Array.from({ length: 6000 }, (_, i) => ({ id: `t${i}`, version: 1, local_date: '2026-09-01' }))));
-    const qc = newClient();
-    const { result } = await renderHook(() => useMergeCategory(), { wrapper: wrapper(qc) });
-
-    result.current.merge(vars);
-    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(1));
-    expect(recordFailedWrite).toHaveBeenCalledWith(
-      expect.objectContaining({ entity: 'categories', entityId: 'src', kind: 'rejected', code: 'merge-too-large' })
-    );
-    expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
-  });
-
   it('refuses whole on a conflict with a refusal toast and a conflict failed write', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
     fake.respondWith(ok([{ id: 't1', version: 2, local_date: '2026-09-01' }]));
-    fake.respondWith(ok([]));
     const conflict = { entity: 'transactions', id: 't1', updated_by: 'sam', record_name: 'Lunch', builtin_key: null, reason: 'changed' };
     fake.respondWith(ok({ status: 'conflict', conflict }));
     const qc = newClient();
@@ -369,104 +298,6 @@ describe('useCategoryUsage', () => {
     const second = await renderHook(() => useCategoryUsage('h1', 'c2', true), { wrapper: wrapper(qc) });
     await waitFor(() => expect(second.result.current.capped).toBe(true));
     expect(second.result.current.count).toBe(6000);
-  });
-
-  it('WR-03: reports exactly 6000 rows as capped (too many to merge in one step)', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith(ok(Array.from({ length: 6000 }, (_, i) => ({ id: `t${i}`, version: 1, local_date: '2026-09-01' }))));
-    const qc = newClient();
-    const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
-    await waitFor(() => expect(result.current.count).toBe(6000));
-    expect(result.current.capped).toBe(true);
-  });
-
-  it('WR-06: a successful read in this mount is the only known count', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith(ok([]));
-    const qc = newClient();
-    // Record the first render: it always happens before the fetch settles. Reading result.current after
-    // `await renderHook` raced the fake response and was flaky.
-    const renders: { isKnown: boolean; isLoading: boolean }[] = [];
-    const { result } = await renderHook(
-      () => {
-        const r = useCategoryUsage('h1', 'c1', true);
-        renders.push({ isKnown: r.isKnown, isLoading: r.isLoading });
-        return r;
-      },
-      { wrapper: wrapper(qc) },
-    );
-    expect(renders[0]).toEqual({ isKnown: false, isLoading: true });
-    await waitFor(() => expect(result.current.isKnown).toBe(true));
-    expect(result.current).toMatchObject({ count: 0, capped: false, isLoading: false, isUnavailable: false, known: true, isSuccess: true, status: 'success' });
-  });
-
-  it('WR-06: a failed read is unknown and unavailable, never a settled 0', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
-    const qc = newClient();
-    const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
-    await waitFor(() => expect(result.current.isUnavailable).toBe(true));
-    expect(result.current).toMatchObject({ isKnown: false, isLoading: false, known: false, isSuccess: false, isError: true, status: 'unavailable' });
-  });
-
-  it('I-01: refetch re-reads an unavailable count so the prompt can offer Try again', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
-    const qc = newClient();
-    const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
-    await waitFor(() => expect(result.current.isUnavailable).toBe(true));
-    expect(typeof result.current.refetch).toBe('function');
-    fake.respondWith(ok([{ id: 'a', version: 1, local_date: '2026-09-01' }]));
-    await act(async () => {
-      await result.current.refetch();
-    });
-    await waitFor(() => expect(result.current.isKnown).toBe(true));
-    expect(result.current.count).toBe(1);
-  });
-
-  it('WR-06: an offline (paused) read is unknown and unavailable, never a settled 0', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    onlineManager.setOnline(false);
-    try {
-      const qc = newClient();
-      const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
-      await waitFor(() => expect(result.current.isUnavailable).toBe(true));
-      expect(result.current).toMatchObject({ isKnown: false, isLoading: false, known: false, isSuccess: false, status: 'unavailable' });
-      expect(fake.calls).toHaveLength(0);
-    } finally {
-      onlineManager.setOnline(true);
-    }
-  });
-
-  it('WR-06: a cached count from before this mount is not "known" until it is re-read', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    onlineManager.setOnline(false);
-    try {
-      const qc = newClient();
-      qc.setQueryData(queryKeys.categoryUsage('h1', 'c1'), 0);
-      const { result } = await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
-      await waitFor(() => expect(result.current.isUnavailable).toBe(true));
-      expect(result.current.isKnown).toBe(false);
-    } finally {
-      onlineManager.setOnline(true);
-    }
-  });
-
-  it('IN-01: the usage key sits under the transactions root, so any transaction write invalidates it', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith(ok([]));
-    const qc = newClient();
-    await renderHook(() => useCategoryUsage('h1', 'c1', true), { wrapper: wrapper(qc) });
-    await waitFor(() => expect(qc.getQueryData(queryKeys.categoryUsage('h1', 'c1'))).toBe(0));
-    await qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot('h1'), refetchType: 'none' });
-    expect(qc.getQueryState(queryKeys.categoryUsage('h1', 'c1'))?.isInvalidated).toBe(true);
   });
 
   it('does not query while disabled', async () => {

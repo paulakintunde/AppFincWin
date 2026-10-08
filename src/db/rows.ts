@@ -99,6 +99,15 @@ export interface AccountRow {
   updated_at: string;
 }
 
+export interface CurrencyRow {
+  code: string;
+  iso_numeric: string | null;
+  name: string;
+  symbol: string | null;
+  start_date: string | null;
+  end_date: string | null;
+}
+
 export interface FxLatestRow {
   quote: string;
   rate: string;

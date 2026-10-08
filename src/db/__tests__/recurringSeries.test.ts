@@ -8,8 +8,6 @@ import {
   editRecurringSeriesFrom,
   endRecurringSeries,
   fetchRecurringSeries,
-  fetchSeriesIdsByCategory,
-  SERIES_BY_CATEGORY_MAX,
   parseSeriesChangeSet,
   type NewRecurringSeries,
 } from '../recurringSeries';
@@ -388,28 +386,5 @@ describe('server-recorded undo step (D-WR-04)', () => {
     client.respondWith({ data: { ...APPLIED_RESPONSE, undo_step_id: 42 }, error: null, status: 200 });
 
     await expect(endRecurringSeries(client, 'series-1', 1, '2026-09-30', UNDO)).rejects.toBeInstanceOf(DbError);
-  });
-});
-
-describe('fetchSeriesIdsByCategory (W6-13 WR-05)', () => {
-  it('reads live series in the household filed under the category, bounded', async () => {
-    const client = createFakeSupabase();
-    client.respondWith({ data: [{ id: 's1', version: 2 }], error: null, status: 200 });
-    await expect(fetchSeriesIdsByCategory(client, 'hh-1', 'cat-1')).resolves.toEqual([{ id: 's1', version: 2 }]);
-    expect(client.calls.every((c) => c.table === 'recurring_series')).toBe(true);
-    expect(client.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toEqual([
-      ['household_id', 'hh-1'],
-      ['category_id', 'cat-1'],
-    ]);
-    expect(client.calls.find((c) => c.method === 'is')?.args).toEqual(['deleted_at', null]);
-    expect(client.calls.find((c) => c.method === 'limit')?.args).toEqual([SERIES_BY_CATEGORY_MAX + 1]);
-  });
-
-  it('returns [] for null data and throws a server error as a DbError', async () => {
-    const client = createFakeSupabase();
-    client.respondWith({ data: null, error: null, status: 200 });
-    await expect(fetchSeriesIdsByCategory(client, 'hh-1', 'cat-1')).resolves.toEqual([]);
-    client.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
-    await expect(fetchSeriesIdsByCategory(client, 'hh-1', 'cat-1')).rejects.toBeInstanceOf(DbError);
   });
 });

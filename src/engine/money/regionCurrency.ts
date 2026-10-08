@@ -8,8 +8,6 @@
 const EUR_REGIONS = [
   'AT', 'BE', 'BG', 'CY', 'DE', 'EE', 'ES', 'FI', 'FR', 'GR', 'HR', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT',
   'NL', 'PT', 'SI', 'SK',
-  // W6-13 IN-02: outside the EU, but the euro is their currency (by agreement or unilaterally).
-  'AD', 'MC', 'SM', 'VA', 'ME', 'XK',
 ] as const;
 
 const OTHER_REGION_CURRENCY: Readonly<Record<string, string>> = {
@@ -19,8 +17,6 @@ const OTHER_REGION_CURRENCY: Readonly<Record<string, string>> = {
   TR: 'TRY', EG: 'EGP', NG: 'NGN', KE: 'KES', GH: 'GHS', ZA: 'ZAR', MA: 'MAD', CH: 'CHF', NO: 'NOK',
   SE: 'SEK', DK: 'DKK', IS: 'ISK', PL: 'PLN', CZ: 'CZK', HU: 'HUF', RO: 'RON', UA: 'UAH',
   MX: 'MXN', BR: 'BRL', AR: 'ARS', CL: 'CLP', CO: 'COP', PE: 'PEN', JM: 'JMD', TT: 'TTD',
-  // W6-13 IN-02. RUB is applied only when the app offers it (the caller's options check).
-  LI: 'CHF', RU: 'RUB',
 };
 
 const REGION_CURRENCY: ReadonlyMap<string, string> = new Map<string, string>([

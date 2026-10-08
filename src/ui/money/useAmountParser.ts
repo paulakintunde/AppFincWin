@@ -12,14 +12,7 @@
  * `locale`/`separators` output.
  */
 import { useCallback, useMemo } from 'react';
-import {
-  localeSeparators,
-  minorUnits,
-  parseAmount,
-  resolveExponent,
-  toDecimalString,
-  type ParseAmountResult,
-} from '@/engine/money';
+import { parseAmount, resolveExponent, type ParseAmountResult } from '@/engine/money';
 import { assertNever } from '@/engine/guards/assertNever';
 import { useDeviceLocale } from '@/services/locale/deviceLocale';
 import { useT } from '@/i18n';
@@ -35,13 +28,6 @@ export interface AmountParser {
   parse(input: string, currencyCode: string, customDecimals?: number): ParseAmountResult;
   /** Catalogue copy for a failed parse, covering every `ParseError` code (WR-A10/WR-A11). */
   errorMessage(result: AmountParseFailure): string;
-  /**
-   * S-CR-01: the unsigned magnitude of `minor` as editable field text, written with the
-   * resolved region's own decimal mark and the currency's own exponent, with no grouping --
-   * so `parse(toInputText(m, c), c)` round-trips to `|m|` by construction in every region
-   * (de-DE '12,50', KWD '500,000'). String maths only (toDecimalString), never a float.
-   */
-  toInputText(minor: number, currencyCode: string, customDecimals?: number): string;
 }
 
 /**
@@ -87,15 +73,5 @@ export function useAmountParser(regionOverride?: string | null): AmountParser {
     [t, locale]
   );
 
-  const toInputText = useCallback(
-    (minor: number, currencyCode: string, customDecimals?: number): string => {
-      // The same separator choice parseAmount makes: the region's own pair, else the tag's.
-      const { decimal } = separators ?? localeSeparators(locale);
-      const plain = toDecimalString(minorUnits(Math.abs(minor)), resolveExponent(currencyCode, customDecimals));
-      return decimal === '.' ? plain : plain.replace('.', decimal);
-    },
-    [locale, separators]
-  );
-
-  return useMemo(() => ({ parse, errorMessage, toInputText }), [parse, errorMessage, toInputText]);
+  return useMemo(() => ({ parse, errorMessage }), [parse, errorMessage]);
 }

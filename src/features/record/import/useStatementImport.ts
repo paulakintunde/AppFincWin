@@ -29,7 +29,6 @@ import { fetchImportProfile } from '@/db/importProfiles';
 import type { AccountRow, TransactionRow } from '@/db/rows';
 import {
   fetchCategorisedNames,
-  fetchHasRowsAfter,
   fetchHasRowsBefore,
   fetchTransactionsInRange,
   fetchTransferCandidates,
@@ -49,10 +48,8 @@ import { getAnalytics, type EventName, type EventProps } from '@/services/analyt
 import { useDeviceLocale } from '@/services/locale/deviceLocale';
 import { supabase } from '@/services/supabase';
 import { showToast } from '@/state/undoToast';
-import { acceptedSuggestionCount, maxAcceptedSuggestions } from './suggestionCap';
 import {
   buildPreview,
-  inferCsvReading,
   prepareImport,
   resolveCsvDraft,
   resolveProfile,
@@ -60,7 +57,6 @@ import {
   statementOptions,
   suggestionToSeries,
   toImportCommit,
-  type CsvReading,
   type ExistingInfo,
   type ImportFormat,
   type PreparedImport,
@@ -101,8 +97,6 @@ interface Machine {
   rolesKey: string | null;
   mapping: ColumnMapping | null;
   mappingEdited: boolean;
-  /** S-CR-06: the date order and decimal mark the file shows under the *current* mapping. */
-  reading: CsvReading | null;
   dateFormat: DateFormat | null;
   dateChosen: boolean;
   dateEdited: boolean;
@@ -129,16 +123,6 @@ interface Machine {
 
 const NONE = new Map<never, never>();
 
-/**
- * Why a commit wrote nothing (S-WR-03, S-WR-04): more accepted suggestions than one import can
- * hold; transfers asked for while the transfer category is unknown; or the write was refused
- * before anything was queued. Each leaves the user's choices in place to adjust and retry.
- */
-export type CommitProblem = 'suggestionCap' | 'transfersUnavailable' | 'failed';
-
-/** The mapping roles whose cells decide the decimal mark (S-CR-06). */
-const AMOUNT_ROLES = ['amount', 'debit', 'credit', 'balance', 'limit'] as const;
-
 function initialMachine(accountId: string | null): Machine {
   return {
     stage: 'idle',
@@ -154,7 +138,6 @@ function initialMachine(accountId: string | null): Machine {
     rolesKey: null,
     mapping: null,
     mappingEdited: false,
-    reading: null,
     dateFormat: null,
     dateChosen: false,
     dateEdited: false,
@@ -270,8 +253,6 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const createSeries = useCreateSeries();
 
   const [m, setM] = useState<Machine>(() => initialMachine(initialAccountId));
-  /** S-WR-03/S-WR-04: why the last commit wrote nothing; cleared by the next attempt. */
-  const [commitProblem, setCommitProblem] = useState<CommitProblem | null>(null);
   const run = useRef(0); // bumped on every restart or cancel, so a late read is dropped
   const committing = useRef(false);
 
@@ -374,20 +355,14 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         const names = namesRead.ok ? namesRead.value : [];
 
         // OFX carries no opening balance: a stored balance stands in only when the account has
-        // rows before the file and none inside it (D-46). S-WR-05: that balance is the balance
-        // *now*, so it equals the balance at the file's start only when nothing is dated after
-        // the file either; a failed or non-empty read of the later rows drops the fallback.
+        // rows before the file and none inside it (D-46).
         let storedOpeningForFile: number | null = null;
         if (format !== 'csv' && draft.periodStart !== null) {
           const periodStart = draft.periodStart;
           const periodEnd = draft.periodEnd ?? last;
           const before = await attempt(() => fetchHasRowsBefore(supabase, householdId, accountId, periodStart));
           const anyInside = stored.some((r) => r.local_date >= periodStart && r.local_date <= periodEnd);
-          if (before.ok && before.value && !anyInside) {
-            // I-02: one limit-1 read for any active row dated strictly after the period.
-            const after = await attempt(() => fetchHasRowsAfter(supabase, householdId, accountId, periodEnd));
-            if (after.ok && !after.value) storedOpeningForFile = balances.get(accountId)?.balance ?? null;
-          }
+          if (before.ok && before.value && !anyInside) storedOpeningForFile = balances.get(accountId)?.balance ?? null;
         }
         if (token !== run.current) return;
 
@@ -406,7 +381,6 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           version: r.version,
           localDate: r.local_date,
           amount: r.original_amount,
-          currency: r.original_currency,
           name: r.name,
           accountId: r.account_id,
         }));
@@ -546,7 +520,6 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       const next: Machine = { ...initialMachine(m.accountId), prepared: p };
       if (p.format === 'csv') {
         next.mapping = p.csv.detected;
-        next.reading = p.csv;
         next.dateFormat = p.csv.dateFormat;
         next.notation = p.csv.notation;
       } else if (p.statements.length > 1) {
@@ -608,8 +581,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   // --- mapping (CSV only) ---------------------------------------------------------------
 
   const mappingErrors: MappingError[] = useMemo(() => (m.mapping === null ? [] : validateMapping(m.mapping)), [m.mapping]);
-  const dateAmbiguous = m.reading?.dateAmbiguous ?? false;
-  const notationAmbiguous = m.reading?.notationAmbiguous ?? false;
+  const dateAmbiguous = m.prepared !== null && m.prepared.format === 'csv' ? m.prepared.csv.dateAmbiguous : false;
+  const notationAmbiguous = m.prepared !== null && m.prepared.format === 'csv' ? m.prepared.csv.notationAmbiguous : false;
   const dateNeedsChoice = dateAmbiguous && !m.dateChosen;
   const notationNeedsChoice = notationAmbiguous && !m.notationChosen;
 
@@ -628,35 +601,15 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     (mapping: ColumnMapping): void => {
       if (m.stage !== 'mapping' || m.prepared === null || m.prepared.format !== 'csv') return;
       const edited = JSON.stringify(mapping) !== JSON.stringify(m.prepared.csv.detected);
-      const next: Machine = { ...m, mapping, mappingEdited: edited };
-      // S-CR-06 (E-CR-02): a remapped date or amount column is read again on its own, and any
-      // earlier answer about the old column is dropped, so no order or mark is inherited.
-      const before = m.mapping;
-      const dateMoved = before === null || before.date !== mapping.date;
-      const amountsMoved = before === null || AMOUNT_ROLES.some((role) => before[role] !== mapping[role]);
-      if (dateMoved || amountsMoved) {
-        const reading = inferCsvReading(m.prepared.csv.dataRows, mapping, region);
-        const prior = m.reading ?? reading;
-        next.reading = {
-          ...(dateMoved
-            ? { dateGuess: reading.dateGuess, dateFormat: reading.dateFormat, dateAmbiguous: reading.dateAmbiguous }
-            : { dateGuess: prior.dateGuess, dateFormat: prior.dateFormat, dateAmbiguous: prior.dateAmbiguous }),
-          ...(amountsMoved
-            ? { notationGuess: reading.notationGuess, notation: reading.notation, notationAmbiguous: reading.notationAmbiguous }
-            : { notationGuess: prior.notationGuess, notation: prior.notation, notationAmbiguous: prior.notationAmbiguous }),
-        };
-        if (dateMoved) Object.assign(next, { dateFormat: reading.dateFormat, dateChosen: false, dateEdited: false });
-        if (amountsMoved) Object.assign(next, { notation: reading.notation, notationChosen: false, notationEdited: false });
-      }
-      setM(redraft(next));
+      setM(redraft({ ...m, mapping, mappingEdited: edited }));
     },
-    [m, redraft, region]
+    [m, redraft]
   );
 
   const setDateFormat = useCallback(
     (f: DateFormat): void => {
       if (m.stage !== 'mapping' || m.prepared === null || m.prepared.format !== 'csv') return;
-      const edited = f !== (m.reading ?? m.prepared.csv).dateFormat;
+      const edited = f !== m.prepared.csv.dateFormat;
       setM(redraft({ ...m, dateFormat: f, dateChosen: true, dateEdited: edited }));
     },
     [m, redraft]
@@ -665,7 +618,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const setDecimalMark = useCallback(
     (mark: '.' | ','): void => {
       if (m.stage !== 'mapping' || m.prepared === null || m.prepared.format !== 'csv') return;
-      const edited = mark !== (m.reading ?? m.prepared.csv).notation.decimal;
+      const edited = mark !== m.prepared.csv.notation.decimal;
       setM(redraft({ ...m, notation: notationFor(mark), notationChosen: true, notationEdited: edited }));
     },
     [m, redraft]
@@ -724,13 +677,9 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     };
   }, [isIncluded, m.preview]);
 
-  // S-WR-13: one keyed lookup per preview, so per-row reads (every render of a 5,000-line
-  // review) are O(1) rather than a scan of every row.
-  const rowsByIndex = useMemo(() => new Map((m.preview?.rows ?? []).map((r) => [r.index, r] as const)), [m.preview]);
-
   const rowState = useCallback(
     (index: number): { included: boolean; categoryId: string | null; locked: boolean } => {
-      const row = rowsByIndex.get(index);
+      const row = m.preview?.rows.find((r) => r.index === index);
       if (row === undefined) return { included: false, categoryId: null, locked: false };
       return {
         included: isIncluded(row),
@@ -738,16 +687,16 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         locked: row.locked,
       };
     },
-    [isIncluded, m.categories, rowsByIndex]
+    [isIncluded, m.categories, m.preview]
   );
 
   const toggleRow = useCallback(
     (index: number): void => {
-      const row = rowsByIndex.get(index);
+      const row = m.preview?.rows.find((r) => r.index === index);
       if (row === undefined || row.locked) return;
       setM((prev) => ({ ...prev, included: new Map(prev.included).set(index, !isIncluded(row)) }));
     },
-    [isIncluded, rowsByIndex]
+    [isIncluded, m.preview]
   );
 
   const setRowCategory = useCallback((index: number, categoryId: string | null): void => {
@@ -793,16 +742,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     [isIncluded, m.payAnswers, m.preview]
   );
 
-  // S-WR-03: the cap is enforced here, not only by the buttons, and re-checked at commit, since
-  // going Back to Review and including more lines lowers it after suggestions were accepted.
-  const acceptedSuggestions = acceptedSuggestionCount(transferRows, payMatchRows);
-  const suggestionCap = maxAcceptedSuggestions(counts.included);
-  const roomForSuggestion = acceptedSuggestions < suggestionCap;
-  const overSuggestionCap = acceptedSuggestions > suggestionCap;
-  // S-WR-04: a link or counter leg needs the transfer category; without it nothing is offered.
-  const transfersUnavailable = lookup.transferCategoryId === null;
-
-  const rowAt = useCallback((index: number): PreviewRow | undefined => rowsByIndex.get(index), [rowsByIndex]);
+  const rowAt = useCallback((index: number): PreviewRow | undefined => m.preview?.rows.find((r) => r.index === index), [m.preview]);
 
   const linkTransfer = useCallback(
     (index: number, existingId: string): void => {
@@ -812,9 +752,6 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       const info = m.existingById.get(existingId);
       if (!offered || info === undefined || info.transfer_id !== null) return;
       for (const [other, id] of m.links) if (id === existingId && other !== index) return; // one stored leg, one link (E-WR-06)
-      if (transfersUnavailable) return;
-      const answered = m.transferAnswers.get(index);
-      if (answered !== 'linked' && answered !== 'orphan' && !roomForSuggestion) return;
       track('transfer_suggestion_answered', { accepted: true, kind: 'pair' });
       setM((prev) => ({
         ...prev,
@@ -822,7 +759,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         transferAnswers: new Map(prev.transferAnswers).set(index, 'linked'),
       }));
     },
-    [m.existingById, m.links, m.transferAnswers, roomForSuggestion, rowAt, transfersUnavailable]
+    [m.existingById, m.links, rowAt]
   );
 
   const dismissTransfer = useCallback(
@@ -846,9 +783,6 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       const other = accountById(otherAccountId);
       if (row === undefined || row.transfer?.kind !== 'orphan' || own === null || other === null) return;
       if (other.id === own.id || other.archived_at !== null) return;
-      if (transfersUnavailable) return;
-      const answered = m.transferAnswers.get(index);
-      if (answered !== 'linked' && answered !== 'orphan' && !roomForSuggestion) return;
 
       let counterAmount: number | null = null;
       let accepted = true;
@@ -887,7 +821,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         };
       });
     },
-    [accountById, device.locale, device.separators, m.accountId, m.orphans, m.transferAnswers, roomForSuggestion, rowAt, transfersUnavailable]
+    [accountById, device.locale, device.separators, m.accountId, m.orphans, rowAt]
   );
 
   const dismissOrphan = useCallback(
@@ -908,11 +842,10 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       const pm = rowAt(index)?.payMatch;
       if (pm === undefined || pm === null) return;
       if (accepted && m.existingById.get(pm.pendingId)?.status !== 'pending') return;
-      if (accepted && m.payAnswers.get(index) !== 'accepted' && !roomForSuggestion) return;
       track('pay_match_answered', { accepted });
       setM((prev) => ({ ...prev, payAnswers: new Map(prev.payAnswers).set(index, accepted ? 'accepted' : 'dismissed') }));
     },
-    [m.existingById, m.payAnswers, roomForSuggestion, rowAt]
+    [m.existingById, rowAt]
   );
   const acceptPayMatch = useCallback((index: number): void => answerPayMatch(index, true), [answerPayMatch]);
   const dismissPayMatch = useCallback((index: number): void => answerPayMatch(index, false), [answerPayMatch]);
@@ -927,17 +860,6 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     // T-02-39-01: nothing is written under a reading the user has not selected (D-42).
     if ((m.stage !== 'review' && m.stage !== 'matches') || committing.current) return;
     if (preview === null || profile === null || draft === null || account === null || householdId === null || userId === null) return;
-    if (overSuggestionCap) {
-      // S-WR-03: never sent -- the finalize and its undo step would exceed MAX_UNDO_OPS.
-      setCommitProblem('suggestionCap');
-      if (m.stage === 'review') patch({ stage: 'matches' });
-      return;
-    }
-    if (transfersUnavailable && (m.links.size > 0 || m.orphans.size > 0)) {
-      setCommitProblem('transfersUnavailable');
-      if (m.stage === 'review') patch({ stage: 'matches' });
-      return;
-    }
 
     const included = new Set(preview.rows.filter(isIncluded).map((r) => r.index));
     const payMatches = new Set([...m.payAnswers].flatMap(([i, a]) => (a === 'accepted' ? [i] : [])));
@@ -975,15 +897,10 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         rows: built.rows,
         finalize: built.finalize,
       });
-    } catch {
-      // S-WR-04: refused before anything was queued (the hook validates synchronously). An
-      // exception thrown from an onPress would crash the app and lose the import; instead the
-      // user's choices stay and they can adjust and try again.
+    } catch (err) {
       committing.current = false;
-      setCommitProblem('failed');
-      return;
+      throw err;
     }
-    setCommitProblem(null);
 
     const count = built.rows.length + built.finalize.markPaid.length;
     showToast({ kind: 'destructive', text: { key: 'undo.label.imported', params: { count, n: count } }, stepId });
@@ -1013,7 +930,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       suggestions,
       committedRows: ordinary.map((r) => ({ id: r.id, localDate: r.local_date, categoryId: r.category_id ?? null })),
     });
-  }, [accountById, accounts, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, transfersUnavailable]);
+  }, [accountById, accounts, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, importCommit, isIncluded, lookup.transferCategoryId, m, patch]);
 
   const acceptSuggestion = useCallback(
     (key: string): void => {
@@ -1163,12 +1080,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     dismissOrphan,
     acceptPayMatch,
     dismissPayMatch,
-    overSuggestionCap,
-    suggestionCap,
-    transfersUnavailable,
     // commit and what follows
     commit,
-    commitProblem,
     suggestions: m.suggestions,
     acceptSuggestion,
     dismissSuggestion,

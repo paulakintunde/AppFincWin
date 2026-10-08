@@ -67,32 +67,4 @@ PR #43 CI: `checks`, `rls`, `secret-scan` all pass.
 
 ## 6. Device walkthrough
 
-**Device:** Pixel 9 (Android, physical), development build from `main` at 59ac179 plus the walkthrough fixes (`npx expo` dev client and Metro over USB). Backend: production.
-**Status: approved by the user, 2026-10-07.**
-
-| Step | Result |
-|---|---|
-| 1 Sign-in, first account, bring your history | Pass after fixes. The first run landed on You instead of Activity, the home currency stayed USD on an en-CA device, and the import file button was disabled with no reason. All three are fixed in `02-31-WALKTHROUGH-FIXES.md`. |
-| 2 CSV import, column check, date format | Pass |
-| 3 Review: category guesses, import toast; duplicates per D-47 | Pass. Under D-47 the two identical Coffee House rows on 12/07 are both imported and neither is flagged; the plan's original 'one Possible duplicate' wording predates D-47. Re-importing the same file flags every line, which the user confirmed on device on 2026-10-07. |
-| 4 Netflix recurring suggestion, pending line | Pass |
-| 5 Add and undo a line | Pass |
-| 6 Mark paid, "This and future", skip, end series | Pass |
-| 7 Months, search every month, filters | Pass |
-| 8 Bulk delete and undo | Pass |
-| 9 Categories: rename, recolour, add, merge, undo | Pass |
-| 10 Account balance, still to come | Pass |
-| 11 History, "Undo to here" | Pass |
-| 12 Refusal after a server-side change | Pass. Coffee House `57f3bc86…`, version 4 to 5, then undo refused as "changed elsewhere". |
-| 13 Offline queue and replay in order | Pass |
-| 14 TalkBack: toast stays until dismissed | Pass |
-| 15 Overdrawn current account, reconciliation, standing | Pass |
-| 16 Card over limit (OFX): format flip, limit offer | Pass |
-| 17 Transfer link from import, totals exclude, over-limit warning | Pass |
-| 18 Undo the OFX import | Pass |
-| 19 Re-import duplicates; manual transfer delete and undo | Pass |
-| 20 iPhone XR file picker | Pending, Apple enrolment |
-
-**New finding, out of scope for Phase 2:** money accounts can only be archived, not deleted. The user decided on 2026-10-07 to allow deleting an account only while it has no lines. This is tracked as a follow-up; it needs a migration.
-
-approved
+**Status: PENDING.** This needs a new EAS development build first. Plans 02-20 and 02-26 added the native modules `@react-native-community/datetimepicker` and `expo-document-picker`.
