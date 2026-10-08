@@ -36,7 +36,7 @@ import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { ActivityRow, ProjectionRow } from './ActivityRow';
-import { buildActivityItems, buildFlatItems, getActivityItemType, type ActivityItem } from './activitySections';
+import { buildActivityItems, buildFlatItems, cardPositions, getActivityItemType, type ActivityItem } from './activitySections';
 import { BulkBar } from './BulkBar';
 import { FilterSheet } from './FilterSheet';
 import { formatMonthLabel, MonthSwitcher } from './MonthSwitcher';
@@ -110,6 +110,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         : buildActivityItems(narrowed, searching || filtering ? [] : view.projections),
     [flat, narrowed, searching, filtering, view.projections]
   );
+  const positions = useMemo(() => cardPositions(items), [items]);
   const itemRows = useMemo(() => items.flatMap((i) => (i.type === 'row' ? [i.row] : [])), [items]);
   const selection = useActivitySelection(useMemo(() => itemRows.map((r) => r.id), [itemRows]));
   const selectedRows = useMemo(() => itemRows.filter((r) => selection.isSelected(r.id)), [itemRows, selection]);
@@ -185,10 +186,17 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
     setSheetMode({ kind: 'new', direction });
   };
 
-  const renderItem = ({ item }: { item: ActivityItem }) => {
+  const renderItem = ({ item, index }: { item: ActivityItem; index: number }) => {
+    const cardPosition = positions[index] ?? 'only';
     if (item.type === 'header') {
       return (
-        <Text style={[styles.sectionHeader, { ...textRole(pairing, 'label'), color: colors.inkMuted }]}>
+        <Text
+          style={[
+            styles.sectionHeader,
+            // 2026-10-07 colour amendment: Paid reads green; the header's words carry the meaning.
+            { ...textRole(pairing, 'label'), color: item.section === 'paid' ? colors.accent : colors.inkMuted },
+          ]}
+        >
           {t(`activity.section.${item.section}`)}
         </Text>
       );
@@ -201,6 +209,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
           accountName={accountName}
           formatter={formatter}
           homeCurrency={rc.homeCurrency}
+          cardPosition={cardPosition}
         />
       );
     }
@@ -216,6 +225,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         onToggleSelect={onToggleSelect}
         onPress={onPressRow}
         onMarkPaid={onMarkPaid}
+        cardPosition={cardPosition}
       />
     );
   };
@@ -234,15 +244,18 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         </Text>
         <Pill label={t('activity.add')} variant="primary" onPress={() => setAddOpen(true)} />
       </View>
-      <View style={styles.header}>
+      <View testID="activity-month-row" style={styles.header}>
         <MonthSwitcher month={month} months={months} locale={formatter.locale} onChange={setMonth} />
-        <View style={styles.links}>
-          {links.map((l) => (
-            <Pressable key={l.label} accessibilityRole="link" accessibilityLabel={l.label} onPress={l.onPress} style={styles.link}>
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{l.label}</Text>
-            </Pressable>
-          ))}
-        </View>
+      </View>
+      {/* Equal-width links on their own row: they shrink and ellipsise rather than overflow at 320pt. */}
+      <View testID="activity-nav-links" style={styles.links}>
+        {links.map((l) => (
+          <Pressable key={l.label} accessibilityRole="link" accessibilityLabel={l.label} onPress={l.onPress} style={styles.link}>
+            <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+              {l.label}
+            </Text>
+          </Pressable>
+        ))}
       </View>
       {flat ? null : <MonthTotalsBar totals={view.totals} homeCurrency={rc.homeCurrency} formatter={formatter} />}
       <SearchBar
@@ -252,8 +265,14 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         onTermChange={setTerm}
         onScopeChange={setScope}
       />
-      <View style={styles.header}>
+      <View testID="activity-tools-row" style={[styles.header, styles.wrapRow]}>
         <Chip label={t('activity.filter.title')} selected={filtering} onPress={() => setFilterOpen(true)} />
+        {selection.active ? (
+          <View style={styles.links}>
+            <Pill label={t('activity.selectAll')} variant="secondary" onPress={() => { setHint(null); selection.selectAll(itemRows.map((r) => r.id)); }} />
+            <Pill label={t('activity.selectNone')} variant="secondary" onPress={() => { setHint(null); selection.clear(); }} />
+          </View>
+        ) : null}
         <Pill
           label={selection.active ? t('activity.done') : t('activity.select')}
           variant="secondary"
@@ -349,13 +368,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: space.gapMd,
   },
+  wrapRow: {
+    flexWrap: 'wrap',
+  },
   links: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: space.gapSm,
   },
   link: {
+    flex: 1,
+    minWidth: 0,
     minHeight: space.touchMin,
     paddingHorizontal: space.gapSm,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   list: {

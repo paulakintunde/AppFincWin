@@ -1,5 +1,6 @@
 import React from 'react';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { Dimensions, StyleSheet } from 'react-native';
+import { act, fireEvent, render, within } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { getToast, resetToastForTests } from '@/state/undoToast';
@@ -413,6 +414,33 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(screen.queryByTestId('bulk-bar')).toBeNull();
   });
 
+  it('Unpaid only filter hides paid rows and keeps pending ones', async () => {
+    mockRows = [
+      row({ id: 'a', name: 'Coffee' }),
+      row({ id: 'p', name: 'Phone bill', status: 'pending', local_date: '2026-09-28' }),
+    ];
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByText('Filter'));
+    await fireEvent.press(screen.getByText('Unpaid only'));
+    await fireEvent.press(screen.getByText('Show results'));
+    expect(screen.getByText('Phone bill')).toBeTruthy();
+    expect(screen.queryByText('Coffee')).toBeNull();
+  });
+
+  it('Select all and None drive the selection and never select a projection', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' }), row({ id: 'b', name: 'Rent' })];
+    mockProjections = [
+      { key: 's1:2026-09-30', seriesId: 's1', date: '2026-09-30', name: 'Netflix', amount: -999, currency: 'GBP', categoryId: null, accountId: 'a1', amountHome: -999 },
+    ];
+    const screen = await renderScreen();
+    expect(screen.queryByText('Select all')).toBeNull();
+    await enterSelect(screen);
+    await fireEvent.press(screen.getByText('Select all'));
+    expect(screen.getByText('2 selected')).toBeTruthy();
+    await fireEvent.press(screen.getByText('None'));
+    expect(screen.getByText('0 selected')).toBeTruthy();
+  });
+
   it('asks to select first when an action is used with nothing selected', async () => {
     mockRows = [row({ id: 'a', name: 'Coffee' })];
     const screen = await renderScreen();
@@ -506,5 +534,52 @@ describe('ActivityScreen search, filters and bulk select', () => {
     await fireEvent.press(screen.getByLabelText('Delete'));
     await fireEvent.press(screen.getAllByText('Delete').at(-1)!);
     expect(getToast()?.stepId ?? null).toBeNull();
+  });
+});
+
+describe('ActivityScreen small-screen header (02-polish item 3)', () => {
+  const flat = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
+  const original = Dimensions.get('window');
+
+  afterEach(() => {
+    Dimensions.set({ window: original });
+  });
+
+  it.each([320, 360])('at %ipt the month switcher and the nav links sit in separate rows and the links shrink to fit', async (width) => {
+    Dimensions.set({ window: { ...original, width } });
+    const screen = await renderScreen();
+    const monthRow = screen.getByTestId('activity-month-row');
+    const links = screen.getByTestId('activity-nav-links');
+    // The switcher and the links never share one non-wrapping row.
+    expect(links.parent).not.toBe(monthRow);
+    expect(within(monthRow).getByLabelText('Choose month')).toBeTruthy();
+    expect(within(links).queryByLabelText('Choose month')).toBeNull();
+    expect(flat(links).flexDirection).toBe('row');
+    for (const label of ['Accounts', 'History', 'You']) {
+      const link = screen.getByLabelText(label);
+      const style = flat(link);
+      // Equal-width pills that can shrink below their content, label ellipsised.
+      expect(style.flex).toBe(1);
+      expect(style.minWidth).toBe(0);
+      expect(screen.getByText(label).props.numberOfLines).toBe(1);
+    }
+  });
+
+  it('lets the select-mode toolbar wrap instead of overflowing', async () => {
+    const screen = await renderScreen();
+    expect(flat(screen.getByTestId('activity-tools-row')).flexWrap).toBe('wrap');
+  });
+});
+
+describe('ActivityScreen section colours (02-polish item 5)', () => {
+  it('shows the Paid section header in the accent colour and Still to come in muted ink', async () => {
+    mockRows = [
+      row({ id: 'p', name: 'Phone bill', status: 'pending', local_date: '2026-09-28' }),
+      row({ id: 'g', name: 'Coffee' }),
+    ];
+    const screen = await renderScreen();
+    const style = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
+    expect(style(screen.getByText('Paid')).color).toBe('#1B4D3E');
+    expect(style(screen.getAllByText('Still to come')[1]!).color).toBe('#6E6A5E');
   });
 });

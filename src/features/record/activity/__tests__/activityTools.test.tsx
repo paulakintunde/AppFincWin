@@ -2,6 +2,8 @@ import React from 'react';
 import { act, fireEvent, render, renderHook } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { EMPTY_FILTER, type ActivityFilter } from '@/engine/activity/filters';
+import { contrastRatio } from '@/theme/contrast';
+import { colors } from '@/theme/tokens';
 import { useActivitySelection } from '../useActivitySelection';
 import { FilterSheet } from '../FilterSheet';
 import { SearchBar } from '../SearchBar';
@@ -138,7 +140,24 @@ describe('FilterSheet', () => {
       direction: 'out',
       amountMin: null,
       amountMax: null,
+      unpaidOnly: false,
     });
+  });
+
+  it('offers Unpaid only as a toggle that combines with the other filters', async () => {
+    const { screen, onApply } = await renderFilter();
+    await fireEvent.press(screen.getByText('Unpaid only'));
+    await fireEvent.press(screen.getByText('Money out'));
+    await fireEvent.press(screen.getByText('Show results'));
+    expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ unpaidOnly: true, direction: 'out' }));
+  });
+
+  it('Unpaid only reflects the applied value and can be switched back off', async () => {
+    const { screen, onApply } = await renderFilter({ ...EMPTY_FILTER, unpaidOnly: true });
+    expect(screen.getByText('Unpaid only')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Unpaid only'));
+    await fireEvent.press(screen.getByText('Show results'));
+    expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ unpaidOnly: false }));
   });
 
   it('offers Transfers as a direction', async () => {
@@ -196,5 +215,23 @@ describe('FilterSheet', () => {
     const { screen, onApply } = await renderFilter({ ...EMPTY_FILTER, direction: 'in', amountMin: 500 });
     await fireEvent.press(screen.getByText('Clear filters'));
     expect(onApply).toHaveBeenCalledWith(EMPTY_FILTER);
+  });
+});
+
+describe('placeholder contrast (02-polish item 4)', () => {
+  it('SearchBar placeholder meets WCAG AA (4.5:1) on its fill1 field', async () => {
+    const screen = await wrap(
+      <SearchBar term="" scope="month" monthLabel="September 2026" onTermChange={jest.fn()} onScopeChange={jest.fn()} />
+    );
+    const colour = screen.getByPlaceholderText('Search September 2026').props.placeholderTextColor as string;
+    expect(contrastRatio(colour, colors.fill1)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('FilterSheet amount placeholders meet WCAG AA (4.5:1) on fill1', async () => {
+    const { screen } = await renderFilter();
+    for (const label of ['At least', 'At most']) {
+      const colour = screen.getByPlaceholderText(label).props.placeholderTextColor as string;
+      expect(contrastRatio(colour, colors.fill1)).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });

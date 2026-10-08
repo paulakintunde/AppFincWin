@@ -86,7 +86,7 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
           <Pill label={t('accounts.importCsv')} variant="secondary" onPress={() => onImport(account.id)} />
           <Pill label={t('accounts.sheet.titleEdit')} variant="secondary" onPress={() => setEditing(true)} />
         </View>
-        {lines.map((row) => (
+        {lines.map((row, i) => (
           <ActivityRow
             key={row.id}
             row={row}
@@ -96,6 +96,7 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
             homeCurrency={rc.homeCurrency}
             onPress={(r) => setSheetMode({ kind: 'edit', row: r })}
             onMarkPaid={onMarkPaid}
+            cardPosition={lines.length === 1 ? 'only' : i === 0 ? 'first' : i === lines.length - 1 ? 'last' : 'middle'}
           />
         ))}
       </ScrollView>

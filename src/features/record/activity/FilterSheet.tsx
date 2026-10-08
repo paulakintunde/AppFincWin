@@ -1,5 +1,5 @@
 // Activity filters (ACT-04, D-50): category (including Uncategorised), account, direction and
-// a home-currency amount range. Amounts go through the strict amount parser (never a float
+// a home-currency amount range, plus Unpaid only (pending lines). Amounts go through the strict amount parser (never a float
 // conversion); an invalid figure shows the parser's own message and is not applied.
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
@@ -138,12 +138,20 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
             />
           ))}
         </View>
+        <Text style={labelStyle}>{t('activity.filter.status')}</Text>
+        <View style={styles.chips}>
+          <Chip
+            label={t('activity.filter.unpaidOnly')}
+            selected={draft.unpaidOnly}
+            onPress={() => setDraft((d) => ({ ...d, unpaidOnly: !d.unpaidOnly }))}
+          />
+        </View>
         <Text style={labelStyle}>{`${t('activity.filter.amount')} (${homeCurrency})`}</Text>
         <View style={styles.chips}>
           <TextInput
             accessibilityLabel={t('activity.filter.min')}
             placeholder={t('activity.filter.min')}
-            placeholderTextColor={colors.inkFaint}
+            placeholderTextColor={colors.inkMuted}
             keyboardType="decimal-pad"
             value={minText}
             onChangeText={setMinText}
@@ -152,7 +160,7 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
           <TextInput
             accessibilityLabel={t('activity.filter.max')}
             placeholder={t('activity.filter.max')}
-            placeholderTextColor={colors.inkFaint}
+            placeholderTextColor={colors.inkMuted}
             keyboardType="decimal-pad"
             value={maxText}
             onChangeText={setMaxText}
