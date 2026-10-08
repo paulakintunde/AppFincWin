@@ -1,7 +1,8 @@
 // An account's balance block (D-10, D-49): 'Balance now' in the account's own currency with
 // the minus sign always visible, the standing sentence beneath it, other-currency subtotals,
 // the still-to-come figure and, for a foreign account, an approximate home figure with the
-// rate's date. A negative balance figure is danger (2026-10-07 amendment); its standing sentence
+// rate's date. The figure uses the latest stored rate only and never fetches (02-DECISION-fx-on-demand.md
+// item 5); with no stored rate for the pair it reads "Waiting for a rate", never a guess. A negative balance figure is danger (2026-10-07 amendment); its standing sentence
 // stays the D-49 copy in warn1 / muted.
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -90,6 +91,8 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
     }
   }
 
+  const waiting = foreign && !overflow && balance.balance !== null && homeFigure === null;
+
   return (
     <View style={styles.block}>
       {compact ? null : <Text style={metaStyle}>{t('accounts.balanceNow')}</Text>}
@@ -113,6 +116,8 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
           <Text style={metaStyle}>{t('accounts.inHome', { amount: homeFigure })}</Text>
           <RateAttribution rateDate={rateDate} rateSource={rateSource} ratePending={false} />
         </>
+      ) : waiting ? (
+        <Text style={metaStyle}>{t('accounts.inHomeWaiting')}</Text>
       ) : null}
       {compact
         ? null
