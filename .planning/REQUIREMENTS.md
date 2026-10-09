@@ -129,6 +129,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **REC-22**: Categories show their usage and an optional monthly cap
 - [ ] **REC-23**: A new user can explore on sample figures, and a "Start fresh" banner clears them
 - [ ] **REC-24**: User can delete a money account that has no lines; an account with lines can only be archived
+- [ ] **REC-25**: User can change their home currency under You → Money; the change asks for today's rates for the new home currency against every currency in use (on-demand FX), and totals re-convert
 
 ### Activity
 
@@ -478,6 +479,7 @@ Populated during roadmap creation.
 | REC-22 | Phase 2.2 - Record polish | Pending |
 | REC-23 | Phase 2.2 - Record polish | Pending |
 | REC-24 | Phase 2.2 - Record polish | Pending |
+| REC-25 | Phase 2.2 - Record polish | Pending |
 | IMP-01 | Phase 2.1 - PDF statement import | Pending |
 | IMP-02 | Phase 2.1 - PDF statement import | Pending |
 | IMP-03 | Phase 2.1 - PDF statement import | Pending |
@@ -594,8 +596,8 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 209 total
-- Mapped to phases: 209
+- v1 requirements: 210 total
+- Mapped to phases: 210
 - Unmapped: 0 ✓
 
 ---
