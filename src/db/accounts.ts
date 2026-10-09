@@ -108,3 +108,41 @@ export async function updateAccount(
   if (serverRow) throw new VersionConflictError(ENTITY, id, serverRow);
   throw new NotFoundError(ENTITY, id);
 }
+
+export interface AccountUsageCounts {
+  liveLineCount: number;
+  activeSeriesCount: number;
+}
+
+/**
+ * REC-24, CONTEXT D-24: how many live lines and active repeating lines use an account.
+ * Head counts only (no row data); RLS scopes them to the caller's household.
+ */
+export async function fetchAccountUsageCounts(
+  client: DbClient,
+  householdId: string,
+  accountId: string,
+  today: string
+): Promise<AccountUsageCounts> {
+  const lines = await client
+    .from('transactions_active')
+    .select('id', { count: 'exact', head: true })
+    .eq('household_id', householdId)
+    .eq('account_id', accountId);
+  if (lines.error) throw toDbError(lines.error, lines.status);
+
+  const seriesBase = () =>
+    client
+      .from('recurring_series')
+      .select('id', { count: 'exact', head: true })
+      .eq('household_id', householdId)
+      .eq('account_id', accountId)
+      .is('deleted_at', null);
+  // Active = no end date, or an end date that has not passed.
+  const open = await seriesBase().is('end_date', null);
+  if (open.error) throw toDbError(open.error, open.status);
+  const future = await seriesBase().gte('end_date', today);
+  if (future.error) throw toDbError(future.error, future.status);
+
+  return { liveLineCount: lines.count ?? 0, activeSeriesCount: (open.count ?? 0) + (future.count ?? 0) };
+}
