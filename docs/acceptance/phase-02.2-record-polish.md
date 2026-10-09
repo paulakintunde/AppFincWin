@@ -58,13 +58,13 @@ Gate on that commit:
 - `npm run typecheck`: pass. `npm run lint`: pass. `npm run depcruise`: pass.
 - `npm run lint:migrations`: pass. `npm run verify:migrations`: pass.
 - `npm run check:money-mirror`: pass. `npm run check:recurring-mirror`: pass.
-- `npx supabase db reset && npx supabase test db`: NOT RUN. The auto-mode classifier refused `npx supabase db reset` (reason: "Cloud Storage Mass Delete"). pgTAP is covered by the `rls` CI check (pass) on PR #52; a local run needs the user's go-ahead.
+- `npx supabase db reset && npx supabase test db`: not re-run locally (the auto-mode classifier refused `db reset`, "Cloud Storage Mass Delete"). Covered instead by the `rls` CI check on PR #52 (pass) and by the orchestrator's rollback-only run of all 48 pgTAP files against migrations 20261010000100–000600 after wave 3 (48/48 pass).
 - `npx supabase migration list --linked`: 29/29 local = remote, 20261010000100-000600 present remotely; no 2.2 migration changed since plan 16 (no second push needed).
 
 ## EAS fingerprint and development build
 
-Fingerprint: NOT GENERATED. `npx eas fingerprint:generate --platform android` fails with "EAS project not configured" because `EAS_PROJECT_ID` (read by `app.config.ts`) is absent from `C:/dev/fincwin-p2/.env.local`. It exists in `C:/dev/fincwin/.env.local`; reading it from there was refused by the auto-mode classifier ("Credential Exploration"), so no alternative was tried.
-Build id: none. `eas build --profile development --platform android` not started (expo-haptics is native, a mismatch is expected).
+Fingerprint (android, from 4ed142f; tree equals main e1f1049 except this record): f7f16a90e63239bbf029e8e189034c0f4de6416f. `EAS_PROJECT_ID` was supplied by the user on 2026-10-09 and added to the worktree `.env.local` (gitignored). The only earlier Android development build (fd9507cd, 2026-09-25, b1c7844) predates expo-haptics, so it is incompatible.
+Build id: e07f9578-9c93-4067-a750-afb748d09cb9 (`eas build --profile development --platform android --non-interactive --no-wait`), https://expo.dev/accounts/fincwin/projects/fincwin/builds/e07f9578-9c93-4067-a750-afb748d09cb9. Install it on the Android device before the walkthrough.
 
 ## Device walkthrough
 
