@@ -13,6 +13,7 @@ import { Pill } from './Pill';
 
 export interface ConfirmSheetProps {
   visible: boolean;
+  title?: string;
   body: string;
   cancelLabel: string;
   confirmLabel: string;
@@ -23,6 +24,7 @@ export interface ConfirmSheetProps {
 
 export function ConfirmSheet({
   visible,
+  title,
   body,
   cancelLabel,
   confirmLabel,
@@ -36,6 +38,7 @@ export function ConfirmSheet({
   return (
     <Sheet visible={visible} onDismiss={onCancel}>
       <View style={styles.column}>
+        {title ? <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{title}</Text> : null}
         <Text style={bodyStyle}>{body}</Text>
         <View style={styles.actions}>
           <Pill label={cancelLabel} variant="secondary" onPress={onCancel} />
