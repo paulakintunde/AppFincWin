@@ -2,6 +2,7 @@ import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { wipeDeviceData } from '@/services/storage/wipe';
 import {
   showToast,
+  queueToast,
   dismissToast,
   getToast,
   useToast,
@@ -94,5 +95,26 @@ describe('undoToast', () => {
     await wipeDeviceData();
 
     expect(getToast()).toBeNull();
+  });
+
+  describe('queueToast', () => {
+    it('shows immediately when no toast is up', () => {
+      queueToast({ kind: 'ordinary', text: { key: 'a' } });
+      expect(getToast()?.text?.key).toBe('a');
+    });
+
+    it('waits behind the current toast and shows after it is dismissed, never stacking', () => {
+      showToast({ kind: 'ordinary', text: { key: 'first' } });
+      queueToast({ kind: 'ordinary', text: { key: 'second' } });
+      queueToast({ kind: 'ordinary', text: { key: 'third' } });
+      expect(getToast()?.text?.key).toBe('first');
+
+      dismissToast();
+      expect(getToast()?.text?.key).toBe('second');
+      dismissToast();
+      expect(getToast()?.text?.key).toBe('third');
+      dismissToast();
+      expect(getToast()).toBeNull();
+    });
   });
 });
