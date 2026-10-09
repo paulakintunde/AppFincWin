@@ -1,6 +1,7 @@
 import React from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
 import { act, fireEvent, render, within } from '@testing-library/react-native';
+import { mockScreen } from './activityScreenMocks';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { getToast, resetToastForTests } from '@/state/undoToast';
@@ -46,6 +47,7 @@ let mockSearchLoading = false;
 let mockSearchPaused = false;
 let mockSearchError = false;
 const mockRemove = jest.fn((): string => 'del-step');
+const mockSingleRemove = jest.fn((): string | null => 'single-del-step');
 const mockBulkPaid = jest.fn((): string => 'bp-step');
 const mockBulkUnpaid = jest.fn((): string => 'bu-step');
 
@@ -53,10 +55,12 @@ jest.mock('@/data/mutations/patches', () => ({
   useBulkDelete: () => ({ remove: mockRemove }),
   useBulkMarkPaid: () => ({ markPaid: mockBulkPaid }),
   useBulkMarkUnpaid: () => ({ markUnpaid: mockBulkUnpaid }),
+  useBulkPatch: () => ({ apply: mockScreen.apply }),
 }));
 
 jest.mock('@/data/mutations/transactions', () => ({
   useMarkPaid: () => ({ markPaid: mockMarkPaid }),
+  useDeleteTransaction: () => ({ remove: mockSingleRemove }),
 }));
 jest.mock('@/data/queries/activity', () => ({
   useMonthView: () => ({
@@ -67,7 +71,7 @@ jest.mock('@/data/queries/activity', () => ({
     isError: false,
     refetch: jest.fn(),
   }),
-  useTransactionMonths: () => ({ months: mockMonths, isLoading: false }),
+  useTransactionMonths: () => ({ months: mockMonths, counts: new Map(mockMonths.map((m) => [m, 1])), isLoading: false }),
   SEARCH_MIN_CHARS: 2,
   useTransactionsSearch: (_h: string | null, term: string) => {
     const enabled = term.trim().length >= 2;
@@ -177,7 +181,7 @@ describe('ActivityScreen', () => {
   it('shows the empty state for a month with nothing in it', async () => {
     const screen = await renderScreen();
     expect(screen.getByText('Nothing in September 2026 yet.')).toBeTruthy();
-    expect(screen.getByText('Add the first one with the Add button.')).toBeTruthy();
+    expect(screen.getByText('Add the first one with the Add button, clone August’s lines that aren’t already repeating, or paste a list.')).toBeTruthy();
   });
 
   it('groups still-to-come, paid and skipped rows under section headers', async () => {
@@ -209,10 +213,11 @@ describe('ActivityScreen', () => {
     expect(screen.getByLabelText('Next month').props.accessibilityState.disabled).toBe(false);
   });
 
-  it('opens a row in the transaction sheet in edit mode', async () => {
+  it('opens a row in the detail sheet, then Edit opens the transaction sheet in edit mode', async () => {
     mockRows = [row({ id: 'g1', name: 'Coffee' })];
     const screen = await renderScreen();
     await fireEvent.press(screen.getByTestId('activity-row-g1'));
+    await fireEvent.press(screen.getByText('Edit transaction'));
     expect(screen.getByTestId('sheet-stub').props.children).toBe('edit:g1');
   });
 

@@ -4,6 +4,8 @@
 // Read paths never fetch exchange rates (02-48 rule): a missing rate shows as 'Waiting for a rate'.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAccounts } from '@/data/queries/accounts';
+import { useAddMonth } from '@/data/mutations/addMonth';
+import { useSeriesOffers } from '@/data/queries/offers';
 import {
   useMonthView,
   useTransactionMonths,
@@ -23,10 +25,12 @@ import {
   type ActivityFilter,
   type MonthTotals,
   type RunningRow,
+  addableMonth,
   type SortKey,
 } from '@/engine/activity';
 import { money } from '@/engine/money';
 import { monthOf } from '@/engine/time';
+import type { EntryMode } from '@/features/record/entry/transactionForm';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -46,7 +50,10 @@ import {
   type ActivityView,
 } from './activityViewPrefs';
 import type { SearchScope } from './SearchBar';
+import { previousMonth } from './CloneMonthSheet';
 import { useActivitySelection } from './useActivitySelection';
+import type { DeletePrompt, RowActions } from './useRowActions';
+import { showToast } from '@/state/undoToast';
 
 export type { ActivityView } from './activityViewPrefs';
 
@@ -55,6 +62,63 @@ export type BalanceNote = { kind: 'after'; text: string } | { kind: 'notCounted'
 export interface ActivityViewModelInput {
   initialMonth?: string;
   supportedViews: readonly ActivityView[];
+}
+
+/**
+ * ACT-13/ACT-14: the detail sheet, the entry sheet target and the pending delete prompt for the
+ * Activity rows. `rowActions` (useRowActions) does the writes; this holds the sheet state.
+ */
+export function useRowFlow(rowActions: RowActions, month: string) {
+  const [entryMode, setEntryMode] = useState<EntryMode | null>(null);
+  const [detailRow, setDetailRow] = useState<ActivityRowView | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{ row: ActivityRowView; prompt: DeletePrompt } | null>(null);
+
+  const openDetail = useCallback((row: ActivityRowView) => {
+    setDetailRow(row);
+    setDetailOpen(true);
+  }, []);
+  const closeDetail = useCallback(() => setDetailOpen(false), []);
+  const detail = {
+    row: detailRow,
+    visible: detailOpen,
+    onDismiss: closeDetail,
+    onStatus: (next: 'paid' | 'pending') => {
+      if (detailRow !== null) (next === 'paid' ? rowActions.pay : rowActions.unpay)(detailRow);
+      setDetailOpen(false);
+    },
+    onEdit: () => {
+      if (detailRow !== null) setEntryMode({ kind: 'edit', row: detailRow });
+      setDetailOpen(false);
+    },
+    onClone: () => {
+      if (detailRow !== null) setEntryMode(rowActions.cloneMode(detailRow, month));
+      setDetailOpen(false);
+    },
+    onDelete: () => {
+      setDetailOpen(false);
+      if (detailRow === null) return;
+      const prompt = rowActions.remove(detailRow);
+      if (prompt !== null) setPendingDelete({ row: detailRow, prompt: prompt.prompt });
+    },
+  };
+  const requestDelete = useCallback(
+    (row: ActivityRowView) => {
+      const prompt = rowActions.remove(row);
+      if (prompt !== null) setPendingDelete({ row, prompt: prompt.prompt });
+    },
+    [rowActions]
+  );
+  const answerDelete = (answer: 'one' | 'future' | 'transfer' | 'cancel') => {
+    const target = pendingDelete;
+    setPendingDelete(null);
+    if (target === null || answer === 'cancel') return;
+    if (answer === 'one') rowActions.deleteThisOne(target.row);
+    else if (answer === 'future') rowActions.deleteThisAndFuture(target.row);
+    else rowActions.deleteTransfer(target.row);
+  };
+
+  return { entryMode, setEntryMode, openDetail, detail, requestDelete, pendingDelete, answerDelete };
 }
 
 export function useActivityViewModel({ initialMonth, supportedViews }: ActivityViewModelInput) {
@@ -97,7 +161,7 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
   }, []);
 
   const monthView = useMonthView({ householdId: rc.householdId, homeCurrency: rc.homeCurrency, today: rc.today }, month);
-  const { months } = useTransactionMonths(rc.householdId, rc.today);
+  const { months, counts } = useTransactionMonths(rc.householdId, rc.today, rc.horizonMonth ?? null);
   const accounts = useAccounts(rc.householdId ?? undefined).data;
 
   // ACT-03: a 2+ character term in Every month scope is a server search; shorter terms leave
@@ -225,6 +289,57 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
     return notes;
   }, [balance, items, t, formatter]);
 
+  // ---- Row actions, detail sheet, offers and month tools (plan 34) ---------------------------
+  // D-17: the offer sits above the first group in the list views, not in Calendar or search.
+  const seriesOffers = useSeriesOffers({ householdId: rc.householdId, userId: rc.userId }, month);
+  const offers = view === 'calendar' || searching || flat ? [] : seriesOffers.offers;
+
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [cloneOpen, setCloneOpen] = useState(false);
+  const [pasteOpen, setPasteOpen] = useState(false);
+
+  const prevMonth = previousMonth(month);
+  const monthNameOf = useCallback(
+    (m: string) =>
+      new Intl.DateTimeFormat(formatter.locale, { month: 'long', timeZone: 'UTC' }).format(
+        Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1)
+      ),
+    [formatter.locale]
+  );
+  // REC-19: "earliest" means no earlier month holds a line to clone from.
+  const hasEarlier = useMemo(() => [...counts].some(([m, n]) => m < month && n > 0), [counts, month]);
+  const addMonth = addableMonth(rc.today, rc.horizonMonth ?? null);
+  const { add: addMonthMutation } = useAddMonth();
+  const onAddMonth = () => {
+    if (addMonth === null || rc.householdId === null || rc.userId === null) return;
+    addMonthMutation({
+      householdId: rc.householdId,
+      ownerId: rc.userId,
+      today: rc.today,
+      horizonMonth: rc.horizonMonth ?? null,
+      monthLabel: monthNameOf(addMonth),
+    });
+    setMonth(addMonth);
+  };
+  const openClone = () => {
+    if (hasEarlier) setCloneOpen(true);
+    else showToast({ kind: 'info', text: { key: 'activity.clone.earliest', params: { month: monthNameOf(month) } } });
+  };
+  const openPaste = () => setPasteOpen(true);
+  const monthTools = {
+    counts,
+    addMonth,
+    onAddMonth,
+    prevMonthName: monthNameOf(prevMonth),
+    hasEarlier,
+    cloneOpen,
+    pasteOpen,
+    openClone,
+    openPaste,
+    closeClone: () => setCloneOpen(false),
+    closePaste: () => setPasteOpen(false),
+  };
+
   return {
     month,
     setMonth,
@@ -254,5 +369,10 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
     accounts,
     formatter,
     rc,
+    offers,
+    rowsById: seriesOffers.rowsById,
+    reviewOpen,
+    setReviewOpen,
+    monthTools,
   };
 }
