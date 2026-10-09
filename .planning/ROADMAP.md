@@ -315,7 +315,7 @@ Plans:
   7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
   8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
-**Plans:** 16/35 plans executed
+**Plans:** 18/35 plans executed
 
 Plans:
 
@@ -344,8 +344,8 @@ Plans:
 - [x] 02.2-16-PLAN.md — Schema PR merged to main, then production schema push [BLOCKING, approval] and live checks (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 02.2-17-PLAN.md — DB layer: new columns in row types/key lists, soft-deleted accounts filtered, batch series wrapper (W5)
-- [ ] 02.2-18-PLAN.md — DB layer: record prefs, horizon, dismissed offers, samples, pending split, paid-before, add month, keys (W5)
+- [x] 02.2-17-PLAN.md — DB layer: new columns in row types/key lists, soft-deleted accounts filtered, batch series wrapper (W5)
+- [x] 02.2-18-PLAN.md — DB layer: record prefs, horizon, dismissed offers, samples, pending split, paid-before, add month, keys (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 02.2-19-PLAN.md — Queries: record context (week start, horizon, samples), month counts, refund-aware totals, on-device series offers (W6)
