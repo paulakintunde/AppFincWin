@@ -21,18 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 02 — record
+**Current focus:** Phase 02 complete; next Phase 02.2 (record polish), 02.1 (needs re-plan for IMP-05), then 03
 
 ## Current Position
 
-Phase: 02 (record) — EXECUTING
-Plan: 2 of 40
+Phase: 02 (record) — COMPLETE
+Plan: 50 of 50
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
-Phase 02 (record): planned (40 plans, 14 waves, checker passed); not started.
+Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
 Phase 02.1 (PDF statement import): planned (12 plans, 7 waves, checker passed); not started. Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
-Status: Ready to execute
-Last activity: 2026-09-27
+Status: Phase 02 complete
+Last activity: 2026-10-09
 
 ## Performance Metrics
 
@@ -127,6 +127,7 @@ Recent decisions affecting current work:
 - **Phase 0 code review fixes** — `00-REVIEW.md`: 2 critical (CR-01 a malformed `min_supported_version` blanks the app for every user; CR-02 the device is only wiped on the sign-out button, not when a session ends another way) and 20 warnings. Run `/gsd-code-review-fix 0`.
 - **Phase 0 security** — `00-SECURITY.md`: 2 open, neither high (T-00-01-03 no DMARC on fincwin.com; T-00-03-04 DB password shorter than declared). Add the DMARC record and rotate or accept, then re-run `/gsd-secure-phase 0`. Also: remove leftover `POSTHOG_CLI_*` vars from the EAS preview env and revoke that key; disable the unused Supabase email provider and fix `site_url` (still localhost); purge production test accounts before launch (AR-11 drift).
 - **Public repo privacy** — a personal test Gmail address is committed in `docs/acceptance/phase-00-android.md` and `docs/acceptance/phase-01-money-core.md`; the repo is public.
+- **Phase 2 human UAT** — 2 items in `02-HUMAN-UAT.md` (iOS statement file picker, pending Apple enrolment; home-currency switch FX fetch, pending a settings screen). Also needed: a new EAS preview build, because the Phase 2 native modules changed the fingerprint.
 - **Phase 1 human UAT** — 3 items in `01-HUMAN-UAT.md` (region separators on device, RateAttribution mounted by Phase 2, FX hold/ISO list product review).
 
 ### Blockers/Concerns
