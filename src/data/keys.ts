@@ -33,6 +33,16 @@ export const queryKeys = {
     ['transactions', householdId, 'category-usage', categoryId] as const,
   importProfile: (userId: string, accountId: string, signature: string) =>
     ['import-profiles', userId, accountId, signature] as const,
+  // Phase 02.2 (Record polish)
+  recordPrefs: (userId: string) => ['record-prefs', userId] as const,
+  householdHorizon: (householdId: string) => ['household-horizon', householdId] as const,
+  dismissedOffers: (userId: string) => ['dismissed-offers', userId] as const,
+  // The next four sit under transactionsRoot so transaction writes invalidate them.
+  sampleExists: (householdId: string) => ['transactions', householdId, 'sample-exists'] as const,
+  pendingSplit: (householdId: string) => ['transactions', householdId, 'pending-split'] as const,
+  paidBefore: (householdId: string, before: string) => ['transactions', householdId, 'paid-before', before] as const,
+  offerHistory: (householdId: string, from: string, to: string) =>
+    ['transactions', householdId, 'offer-history', from, to] as const,
 };
 
 export const mutationKeys = {
@@ -60,6 +70,16 @@ export const mutationKeys = {
   editTransfer: ['transfers', 'edit'] as const,
   deleteTransfer: ['transfers', 'delete'] as const,
   saveImportProfile: ['import-profiles', 'save'] as const,
+  // Phase 02.2 (Record polish)
+  cloneMonth: ['transactions', 'clone-month'] as const,
+  pasteLines: ['transactions', 'paste-lines'] as const,
+  markMonthly: ['recurring-series', 'mark-monthly'] as const,
+  addMonth: ['household', 'add-month'] as const,
+  deleteAccount: ['accounts', 'delete'] as const,
+  dismissOffers: ['dismissed-offers', 'add'] as const,
+  updateRecordPrefs: ['record-prefs', 'update'] as const,
+  seedSamples: ['samples', 'seed'] as const,
+  clearSamples: ['samples', 'clear'] as const,
 };
 
 // D-20: one scope means every paused write replays serially in the order it was queued --

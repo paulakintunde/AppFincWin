@@ -20,7 +20,7 @@ export type EventCatalogue = {
   // statement import (import_committed, any format); no amounts, payees, bank names, file
   // names or free text.
   account_created: { context: 'onboarding' | 'later' };
-  onboarding_history_choice: { choice: 'import' | 'fresh' };
+  onboarding_history_choice: { choice: 'import' | 'fresh' | 'sample' };
   transaction_added: { kind: 'expense' | 'income' | 'transfer'; recurring: boolean };
   import_started: { entry: 'onboarding' | 'you' | 'account' };
   import_file_rejected: {
@@ -42,6 +42,7 @@ export type EventCatalogue = {
   recurring_suggestion_answered: { accepted: boolean };
   transfer_suggestion_answered: { accepted: boolean; kind: 'pair' | 'orphan' };
   pay_match_answered: { accepted: boolean };
+  refund_suggestion_answered: { accepted: boolean };
 };
 
 export type EventName = keyof EventCatalogue;

@@ -12,6 +12,7 @@
 // D-17 / D-29: every database read has a fallback, so a preview never waits on the network.
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { maybeRequestSampleClearPrompt } from '@/data/mutations/samplePromptTrigger';
 import { validateMapping, notationFor, type ColumnMapping, type DateFormat, type MappingError } from '@/engine/csv';
 import { buildLearnedMap } from '@/engine/categorize';
 import { minorUnits, parseAmount, resolveExponent, type NumberNotation, type ScaledRate } from '@/engine/money';
@@ -22,6 +23,8 @@ import {
   type ConvertedRow,
   type ExistingRow,
   type FormatProfile,
+  REFUND_LOOKBACK_DAYS,
+  type RefundPurchase,
   type StatementDraft,
 } from '@/engine/statement';
 import type { ExistingLeg, TransferAccount } from '@/engine/transfer';
@@ -41,7 +44,7 @@ import { useCategoryLookup } from '@/data/queries/categories';
 import { useFxLatest } from '@/data/queries/fxLatest';
 import { latestPerEur } from '@/data/queries/homeAmount';
 import { useImportCommit } from '@/data/mutations/importFinalize';
-import { useCreateSeries } from '@/data/mutations/recurringSeries';
+import { suggestionToSeries, useCreateSeries } from '@/data/mutations/recurringSeries';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { pickStatementBytes } from '@/services/files/pickStatement';
@@ -58,7 +61,6 @@ import {
   resolveProfile,
   sizeBand,
   statementOptions,
-  suggestionToSeries,
   toImportCommit,
   type CsvReading,
   type ExistingInfo,
@@ -121,6 +123,8 @@ interface Machine {
   orphanDrafts: ReadonlyMap<number, { accountId: string; text: string }>;
   transferAnswers: ReadonlyMap<number, 'linked' | 'orphan' | 'dismissed'>;
   payAnswers: ReadonlyMap<number, 'accepted' | 'dismissed'>;
+  /** D-07: refund suggestions are unticked until the user accepts. */
+  refundAnswers: ReadonlyMap<number, 'accepted' | 'dismissed'>;
   limitAccepted: boolean;
   // after commit
   suggestions: RecurringSuggestion[];
@@ -171,6 +175,7 @@ function initialMachine(accountId: string | null): Machine {
     orphanDrafts: NONE,
     transferAnswers: NONE,
     payAnswers: NONE,
+    refundAnswers: NONE,
     limitAccepted: false,
     suggestions: [],
     committedRows: [],
@@ -343,6 +348,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         orphanDrafts: NONE,
         transferAnswers: NONE,
         payAnswers: NONE,
+        refundAnswers: NONE,
         limitAccepted: false,
       }));
 
@@ -352,7 +358,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         const last = dates[dates.length - 1] ?? ctx.today;
         const range = { from: addDays(first, -2), toInclusive: addDays(last, 2) };
 
-        const [rangeRead, candidateRead, namesRead] = await Promise.all([
+        const [rangeRead, candidateRead, namesRead, purchaseRead] = await Promise.all([
           attempt(() => fetchTransactionsInRange(supabase, householdId, { ...range, accountId })),
           attempt(() =>
             fetchTransferCandidates(supabase, householdId, {
@@ -362,6 +368,10 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
             })
           ),
           attempt(() => fetchCategorisedNames(supabase, householdId, userId)),
+          // D-07: earlier purchases on this account for the refund matcher, read once.
+          attempt(() =>
+            fetchTransactionsInRange(supabase, householdId, { from: addDays(first, -REFUND_LOOKBACK_DAYS), toInclusive: last, accountId })
+          ),
         ]);
 
         // A failed read falls back to the cached month rows for this account, or to none.
@@ -372,6 +382,17 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
             );
         const candidates = candidateRead.ok ? candidateRead.value : [];
         const names = namesRead.ok ? namesRead.value : [];
+        const purchases: RefundPurchase[] = (purchaseRead.ok ? purchaseRead.value : [])
+          .filter((r) => r.original_amount < 0 && !r.is_refund && r.transfer_id === null)
+          .map((r) => ({
+            id: r.id,
+            amount: r.original_amount,
+            currency: r.original_currency,
+            name: r.name,
+            localDate: r.local_date,
+            categoryId: r.category_id,
+            isRefund: r.is_refund,
+          }));
 
         // OFX carries no opening balance: a stored balance stands in only when the account has
         // rows before the file and none inside it (D-46). S-WR-05: that balance is the balance
@@ -409,6 +430,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           currency: r.original_currency,
           name: r.name,
           accountId: r.account_id,
+          automatic: r.is_automatic,
         }));
         const transferCandidates: ExistingLeg[] = candidates.map((c) => ({
           id: c.id,
@@ -458,6 +480,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           accounts: transferAccounts(accounts),
           existing,
           pending,
+          purchases,
           transferCandidates,
           perEur,
           learned: buildLearnedMap(names.map((n) => ({ name: n.name, categoryId: n.category_id, updatedAt: n.updated_at }))),
@@ -783,20 +806,40 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     });
   }, [accountById, isIncluded, m.accountId, m.links, m.orphanDrafts, m.orphans, m.preview, m.transferAnswers]);
 
-  const payMatchRows = useMemo(
-    () =>
-      (m.preview?.rows ?? []).flatMap((row) =>
-        row.payMatch === null || !isIncluded(row)
-          ? []
-          : [{ index: row.index, pendingId: row.payMatch.pendingId, answer: m.payAnswers.get(row.index) ?? null }]
-      ),
-    [isIncluded, m.payAnswers, m.preview]
-  );
-
   // S-WR-03: the cap is enforced here, not only by the buttons, and re-checked at commit, since
   // going Back to Review and including more lines lowers it after suggestions were accepted.
-  const acceptedSuggestions = acceptedSuggestionCount(transferRows, payMatchRows);
   const suggestionCap = maxAcceptedSuggestions(counts.included);
+
+  // D-08: a pay match on an Automatic line is pre-ticked (still a suggestion the user can untick);
+  // a Manual one stays unticked. Pre-ticks are counted against the cap, so they only apply while
+  // there is room after the transfers and explicit answers already accepted.
+  const payMatchRows = useMemo(() => {
+    const rows = (m.preview?.rows ?? []).flatMap((row) =>
+      row.payMatch === null || !isIncluded(row)
+        ? []
+        : [{ index: row.index, pendingId: row.payMatch.pendingId, automatic: row.payMatch.automatic, answer: m.payAnswers.get(row.index) ?? null }]
+    );
+    const out: ((typeof rows)[number] | { index: number; pendingId: string; automatic: boolean; answer: 'accepted' })[] = [];
+    let accepted = acceptedSuggestionCount(transferRows, rows);
+    for (const r of rows) {
+      const preTick = r.answer === null && r.automatic && m.existingById.get(r.pendingId)?.status === 'pending' && accepted < suggestionCap;
+      if (preTick) accepted += 1;
+      out.push(preTick ? { ...r, answer: 'accepted' } : r);
+    }
+    return out;
+  }, [isIncluded, m.existingById, m.payAnswers, m.preview, suggestionCap, transferRows]);
+
+  const refundRows = useMemo(
+    () =>
+      (m.preview?.rows ?? []).flatMap((row) =>
+        row.refund === null || !isIncluded(row)
+          ? []
+          : [{ index: row.index, merchant: row.refund.merchant, answer: m.refundAnswers.get(row.index) ?? null }]
+      ),
+    [isIncluded, m.preview, m.refundAnswers]
+  );
+
+  const acceptedSuggestions = acceptedSuggestionCount(transferRows, payMatchRows);
   const roomForSuggestion = acceptedSuggestions < suggestionCap;
   const overSuggestionCap = acceptedSuggestions > suggestionCap;
   // S-WR-04: a link or counter leg needs the transfer category; without it nothing is offered.
@@ -914,6 +957,17 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     },
     [m.existingById, m.payAnswers, roomForSuggestion, rowAt]
   );
+  // D-07: refunds are set on the inserted row, so they add no undo ops and need no cap check.
+  const answerRefund = useCallback(
+    (index: number, accepted: boolean): void => {
+      if (rowAt(index)?.refund == null) return;
+      track('refund_suggestion_answered', { accepted });
+      setM((prev) => ({ ...prev, refundAnswers: new Map(prev.refundAnswers).set(index, accepted ? 'accepted' : 'dismissed') }));
+    },
+    [rowAt]
+  );
+  const acceptRefund = useCallback((index: number): void => answerRefund(index, true), [answerRefund]);
+  const dismissRefund = useCallback((index: number): void => answerRefund(index, false), [answerRefund]);
   const acceptPayMatch = useCallback((index: number): void => answerPayMatch(index, true), [answerPayMatch]);
   const dismissPayMatch = useCallback((index: number): void => answerPayMatch(index, false), [answerPayMatch]);
 
@@ -940,12 +994,13 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     }
 
     const included = new Set(preview.rows.filter(isIncluded).map((r) => r.index));
-    const payMatches = new Set([...m.payAnswers].flatMap(([i, a]) => (a === 'accepted' ? [i] : [])));
+    const payMatches = new Set(payMatchRows.flatMap((r) => (r.answer === 'accepted' ? [r.index] : [])));
+    const refunds = new Set([...m.refundAnswers].flatMap(([i, a]) => (a === 'accepted' ? [i] : [])));
     const batchId = newStepId();
     const stepId = newStepId();
     const built = toImportCommit(
       preview,
-      { included, categories: m.categories, links: m.links, orphans: m.orphans, payMatches, acceptLimit: m.limitAccepted },
+      { included, categories: m.categories, links: m.links, orphans: m.orphans, payMatches, refunds, acceptLimit: m.limitAccepted },
       {
         householdId,
         accountId: account.id,
@@ -984,6 +1039,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       return;
     }
     setCommitProblem(null);
+    // D-11: imported rows are real lines (the client has no is_sample grant).
+    if (built.rows.length > 0) maybeRequestSampleClearPrompt(qc, { householdId, userId });
 
     const count = built.rows.length + built.finalize.markPaid.length;
     showToast({ kind: 'destructive', text: { key: 'undo.label.imported', params: { count, n: count } }, stepId });
@@ -1013,7 +1070,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       suggestions,
       committedRows: ordinary.map((r) => ({ id: r.id, localDate: r.local_date, categoryId: r.category_id ?? null })),
     });
-  }, [accountById, accounts, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, transfersUnavailable]);
+  }, [accountById, accounts, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, transfersUnavailable]);
 
   const acceptSuggestion = useCallback(
     (key: string): void => {
@@ -1041,11 +1098,11 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const continueStage = useCallback((): Promise<void> | void => {
     if (m.stage === 'mapping') return continueFromMapping();
     if (m.stage === 'review') {
-      if (transferRows.length > 0 || payMatchRows.length > 0) patch({ stage: 'matches' });
+      if (transferRows.length > 0 || payMatchRows.length > 0 || refundRows.length > 0) patch({ stage: 'matches' });
       else commit();
     } else if (m.stage === 'matches') commit();
     return undefined;
-  }, [commit, continueFromMapping, m.stage, patch, payMatchRows.length, transferRows.length]);
+  }, [commit, continueFromMapping, m.stage, patch, payMatchRows.length, refundRows.length, transferRows.length]);
 
   const back = useCallback((): void => {
     if (m.stage === 'mapping') patch({ stage: 'format' });
@@ -1157,6 +1214,9 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     // matches
     transferRows,
     payMatchRows,
+    refundRows,
+    acceptRefund,
+    dismissRefund,
     linkTransfer,
     dismissTransfer,
     setOrphanAccount,

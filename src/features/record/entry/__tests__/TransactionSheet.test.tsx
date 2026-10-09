@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
+import { fireEvent, render, waitFor, within, type RenderResult } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { TransactionRow } from '@/db/rows';
 import { getToast, resetToastForTests } from '@/state/undoToast';
@@ -13,6 +13,9 @@ jest.mock('react-native-safe-area-context', () => ({
 jest.setTimeout(30000);
 
 const mockAdd = jest.fn(() => 'new-id');
+const mockCheckCap = jest.fn((..._a: unknown[]) => false);
+const mockPush = jest.fn();
+let mockRates: { quote: string; rate: string; rate_date: string; source: string }[] = [];
 const mockEdit = jest.fn(() => true);
 const mockRemove = jest.fn((): string | null => 'del-step');
 const mockAddTransfer = jest.fn(() => ({ transferId: 'tr1', stepId: 'tr-step' }));
@@ -33,6 +36,11 @@ jest.mock('@/data/mutations/transactions', () => ({
   useMarkPaid: () => ({ markPaid: jest.fn(() => 'paid-step') }),
   useSkipOccurrence: () => ({ skip: jest.fn(() => 'skip-step') }),
 }));
+jest.mock('expo-router', () => ({ router: { push: (...a: unknown[]) => mockPush(...a) } }));
+jest.mock('../useCapCrossing', () => ({ useCapCrossing: () => ({ check: (...a: unknown[]) => mockCheckCap(...a) }) }));
+jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: mockRates }) }));
+jest.mock('@/data/queries/moneyPrefs', () => ({ useMoneyPrefs: () => ({ prefs: { lead_figure: 'home' } }) }));
+jest.mock('@/features/record/categories/useCategoryMonthUsage', () => ({ useCategoryMonthUsage: () => ({ usage: new Map(), isLoading: false }) }));
 jest.mock('@/data/mutations/transfers', () => ({
   useAddTransfer: () => ({ add: mockAddTransfer }),
   useEditTransfer: () => ({ edit: mockEditTransfer }),
@@ -114,6 +122,14 @@ function row(over: Partial<TransactionRow> = {}): TransactionRow {
   } as TransactionRow;
 }
 
+async function typeAmount(getByLabelText: RenderResult['getByLabelText'], text: string) {
+  // Long-press backspace clears, so an edit that opens with a prefilled amount types from empty.
+  await fireEvent(getByLabelText('Delete last digit'), 'longPress');
+  for (const ch of text) {
+    await fireEvent.press(getByLabelText(ch === '.' || ch === ',' ? 'Decimal point' : ch));
+  }
+}
+
 async function open(mode: React.ComponentProps<typeof TransactionSheet>['mode'], onClose = jest.fn()) {
   const utils = await render(
     <ThemeProvider>
@@ -127,6 +143,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   resetToastForTests();
   mockLegs = [];
+  mockRates = [];
   mockLegsRead = { isPending: false, fetchStatus: 'idle', isError: false, isSuccess: true };
   mockRegion = 'GB';
   mockTransferCat = 'tc';
@@ -162,7 +179,7 @@ describe('TransactionSheet: new and edit', () => {
 
   it('saves a valid new expense with a negative amount, an undo step, a toast and analytics', async () => {
     const { getByLabelText, getByText, onClose } = await open({ kind: 'new', direction: 'out' });
-    await fireEvent.changeText(getByLabelText('Amount'), '4.20');
+    await typeAmount(getByLabelText, '4.20');
     await fireEvent.changeText(getByLabelText('What is it for?'), 'Tea');
     await fireEvent.press(getByText('Save expense'));
 
@@ -226,7 +243,7 @@ describe('TransactionSheet: new and edit', () => {
     const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out' });
     await fireEvent.press(getByLabelText('Category'));
     await fireEvent.press(getByText('Groceries'));
-    await fireEvent.changeText(getByLabelText('Amount'), '9');
+    await typeAmount(getByLabelText, '9');
     await fireEvent.changeText(getByLabelText('What is it for?'), 'Shop');
     await fireEvent.press(getByText('Save expense'));
     expect((mockAdd.mock.calls[0] as unknown[])[0]).toMatchObject({ categoryId: 'c1' });
@@ -257,7 +274,7 @@ describe('TransactionSheet: transfers', () => {
   it('shows the amount figure with the arrow in the inkDim colour', async () => {
     const { getByText, getByLabelText } = await open({ kind: 'new', direction: 'out' });
     await fireEvent.press(getByText('Transfer'));
-    await fireEvent.changeText(getByLabelText('Amount'), '10');
+    await typeAmount(getByLabelText, '10');
     const figure = getByText(/^↔ /);
     const style = ([] as Record<string, unknown>[]).concat(figure.props.style as never);
     expect(style.some((s) => s && s.color === '#5C5A50')).toBe(true);
@@ -268,7 +285,7 @@ describe('TransactionSheet: transfers', () => {
     await fireEvent.press(getByText('Transfer'));
     await fireEvent.press(getByLabelText('To account'));
     await fireEvent.press(getByLabelText('Savings'));
-    await fireEvent.changeText(getByLabelText('Amount'), '10');
+    await typeAmount(getByLabelText, '10');
     await fireEvent.press(getByText('Add transfer'));
 
     expect(mockAddTransfer).toHaveBeenCalledTimes(1);
@@ -295,19 +312,20 @@ describe('TransactionSheet: transfers', () => {
   it('blocks a transfer with no destination account', async () => {
     const { getByText, getByLabelText } = await open({ kind: 'new', direction: 'out' });
     await fireEvent.press(getByText('Transfer'));
-    await fireEvent.changeText(getByLabelText('Amount'), '10');
+    await typeAmount(getByLabelText, '10');
     await fireEvent.press(getByText('Add transfer'));
     expect(mockAddTransfer).not.toHaveBeenCalled();
     expect(getByText('Pick an account.')).toBeTruthy();
   });
 
   it('asks for both amounts across currencies and never derives one', async () => {
-    const { getByText, getByLabelText } = await open({ kind: 'new', direction: 'out' });
+    const { getByText, getByLabelText, getByHintText } = await open({ kind: 'new', direction: 'out' });
     await fireEvent.press(getByText('Transfer'));
     await fireEvent.press(getByLabelText('To account'));
     await fireEvent.press(getByLabelText('Euro pot'));
-    await fireEvent.changeText(getByLabelText('Amount sent'), '10');
-    await fireEvent.changeText(getByLabelText('Amount received'), '11.5');
+    await typeAmount(getByLabelText, '10');
+    await fireEvent.press(getByHintText('Amount received'));
+    await typeAmount(getByLabelText, '11.5');
     expect(getByText(/from Current and .* to Euro pot — each in its own currency\./)).toBeTruthy();
     await fireEvent.press(getByText('Add transfer'));
     expect((mockAddTransfer.mock.calls[0] as unknown[])[0]).toMatchObject({
@@ -350,7 +368,7 @@ describe('TransactionSheet: transfers', () => {
     await fireEvent.press(getByLabelText('Savings'));
     // Current (GBP) to Savings (GBP): same currency, so no second amount is asked for.
     expect(queryByLabelText('Amount received')).toBeNull();
-    await fireEvent.changeText(getByLabelText('Amount'), '10');
+    await typeAmount(getByLabelText, '10');
     await fireEvent.press(getByText('Add transfer'));
     expect(mockAddTransfer).toHaveBeenCalledTimes(1);
     expect((mockAddTransfer.mock.calls[0] as unknown[])[0]).toMatchObject({ from: { id: 'a1', currency: 'GBP' }, to: { currency: 'GBP' } });
@@ -372,7 +390,7 @@ describe('TransactionSheet: transfers', () => {
     const { getByText, getByLabelText, onClose } = await open({ kind: 'edit', row: inLeg() });
     expect(getByText('Editing a transfer updates both sides.')).toBeTruthy();
     expect(getByText('Save changes')).toBeTruthy();
-    await fireEvent.changeText(getByLabelText('Amount'), '12');
+    await typeAmount(getByLabelText, '12');
     await fireEvent.press(getByText('Save changes'));
     expect(mockEditTransfer).toHaveBeenCalledTimes(1);
     const [legs, after, ctx] = mockEditTransfer.mock.calls[0] as unknown as [
@@ -436,7 +454,7 @@ describe('TransactionSheet: amount prefill in the region notation (S-CR-01)', ()
       kind: 'edit',
       row: row({ original_amount: -1250, original_currency: 'EUR', home_currency: 'EUR', account_id: 'a3' }),
     });
-    expect(getByLabelText('Amount').props.value).toBe('12,50');
+    expect(getByLabelText(/^Amount .*12[.,]50/)).toBeTruthy();
     await fireEvent.changeText(getByLabelText('Note'), 'split with Sam');
     await fireEvent.press(getByText('Save changes'));
     expect(queryByText(/match how amounts are written/)).toBeNull();
@@ -452,11 +470,136 @@ describe('TransactionSheet: amount prefill in the region notation (S-CR-01)', ()
       kind: 'edit',
       row: row({ original_amount: -1500, original_currency: 'KWD', home_currency: 'GBP' }),
     });
-    expect(getByLabelText('Amount').props.value).toBe('1,500');
+    expect(getByLabelText(/^Amount .*1.500|^Amount .*1,500/)).toBeTruthy();
     await fireEvent.changeText(getByLabelText('Note'), 'dinar');
     await fireEvent.press(getByText('Save changes'));
     expect(mockEdit).toHaveBeenCalledTimes(1);
     const [vars] = mockEdit.mock.calls[0] as unknown as [Record<string, unknown>];
     expect(Object.keys(vars.patch as object)).toEqual(['note']);
+  });
+});
+
+describe('TransactionSheet: keypad, toggles, notes and wording (REC-20)', () => {
+  it('types the amount on the keypad and hides it while a text field is focused', async () => {
+    const { getByLabelText, queryByLabelText } = await open({ kind: 'new', direction: 'out' });
+    await typeAmount(getByLabelText, '4.20');
+    expect(getByLabelText('Amount £4.20')).toBeTruthy();
+    expect(getByLabelText('Amount £4.20').props.accessibilityLiveRegion).toBe('polite');
+    await fireEvent(getByLabelText('What is it for?'), 'focus');
+    expect(queryByLabelText('Decimal point')).toBeNull();
+    await fireEvent(getByLabelText('What is it for?'), 'blur');
+    expect(getByLabelText('Decimal point')).toBeTruthy();
+  });
+
+  it('offers Automatic for expense and income, Refund for expense only, neither on a transfer', async () => {
+    const { getByText, queryByText } = await open({ kind: 'new', direction: 'out' });
+    expect(getByText('Automatic payment')).toBeTruthy();
+    expect(getByText('This is a refund')).toBeTruthy();
+    await fireEvent.press(getByText('Money in'));
+    expect(getByText('Automatic payment')).toBeTruthy();
+    expect(queryByText('This is a refund')).toBeNull();
+    await fireEvent.press(getByText('Transfer'));
+    expect(queryByText('Automatic payment')).toBeNull();
+    expect(queryByText('This is a refund')).toBeNull();
+  });
+
+  it('saves a refund as a positive amount with the flag and shows the refund note', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out' });
+    await typeAmount(getByLabelText, '29.99');
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Return');
+    await fireEvent.press(getByText('This is a refund'));
+    expect(getByText(/A refund gives the money back to Uncategorised/)).toBeTruthy();
+    await fireEvent.press(getByText('Save expense'));
+    expect((mockAdd.mock.calls[0] as unknown[])[0]).toMatchObject({ amount: 2999, isRefund: true, isAutomatic: false });
+  });
+
+  it('keeps Automatic a label: it does not change the status', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out' });
+    await typeAmount(getByLabelText, '5');
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Gym');
+    await fireEvent.press(getByText('Automatic payment'));
+    await fireEvent.press(getByText('Save expense'));
+    expect((mockAdd.mock.calls[0] as unknown[])[0]).toMatchObject({ isAutomatic: true, status: 'paid' });
+  });
+
+  it('says what marking a pending line paid does', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out' });
+    await typeAmount(getByLabelText, '12');
+    await fireEvent.press(getByText('Pending'));
+    expect(getByText('Marking this paid moves Current by £12.00.')).toBeTruthy();
+  });
+
+  it('words income status as Received and Expected, with their hints', async () => {
+    const { getByText, queryByText, getByHintText } = await open({ kind: 'new', direction: 'in' });
+    expect(getByText('Received')).toBeTruthy();
+    expect(getByText('Expected')).toBeTruthy();
+    expect(getByHintText('Money is in the account')).toBeTruthy();
+    expect(getByHintText('Invoiced or scheduled')).toBeTruthy();
+    expect(queryByText('Paid')).toBeNull();
+  });
+
+  it('shows the FX note with the stored rate for a foreign line', async () => {
+    mockRates = [{ quote: 'GBP', rate: '0.86', rate_date: '2026-09-24', source: 'frankfurter-v2' }];
+    const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out', accountId: 'a3' });
+    await typeAmount(getByLabelText, '10');
+    expect(getByText(/Saves as £8\.60 in GBP at 1 EUR = .* GBP\. The original €10\.00 stays on the record\./)).toBeTruthy();
+  });
+
+  it('omits the FX note when no rate is stored', async () => {
+    const { getByLabelText, queryByText } = await open({ kind: 'new', direction: 'out', accountId: 'a3' });
+    await typeAmount(getByLabelText, '10');
+    expect(queryByText(/Saves as/)).toBeNull();
+  });
+
+  it('opens a clone as a pending new line and writes nothing until Save', async () => {
+    const { getByText, getByLabelText } = await open({
+      kind: 'new',
+      direction: 'out',
+      localDate: '2026-10-09',
+      prefill: {
+        amountMinor: 1450,
+        currency: 'GBP',
+        name: 'Rent',
+        categoryId: 'c1',
+        accountId: 'a1',
+        paymentType: 'bank_transfer',
+        isRefund: false,
+        isAutomatic: true,
+      },
+    });
+    expect(mockAdd).not.toHaveBeenCalled();
+    expect(getByLabelText('Amount £14.50')).toBeTruthy();
+    await fireEvent.press(getByText('Save expense'));
+    expect((mockAdd.mock.calls[0] as unknown[])[0]).toMatchObject({
+      amount: -1450,
+      name: 'Rent',
+      categoryId: 'c1',
+      paymentType: 'bank_transfer',
+      status: 'pending',
+      localDate: '2026-10-09',
+      isAutomatic: true,
+    });
+  });
+
+  it('runs the cap check after a save, carrying the undo step so Undo stays on the toast', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out' });
+    await fireEvent.press(getByLabelText('Category'));
+    await fireEvent.press(getByText('Groceries'));
+    await typeAmount(getByLabelText, '30');
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Shop');
+    await fireEvent.press(getByText('Save expense'));
+    expect(mockCheckCap).toHaveBeenCalledWith(
+      expect.objectContaining({ categoryId: 'c1', amountMinor: -3000, currency: 'GBP', stepId: 'step-1' })
+    );
+  });
+
+  it('reopens a refund as an expense with the toggle on', async () => {
+    const { getByText, getByLabelText } = await open({
+      kind: 'edit',
+      row: row({ original_amount: 2999, is_refund: true } as Partial<TransactionRow>),
+    });
+    expect(getByLabelText('Amount £29.99')).toBeTruthy();
+    expect(getByText('This is a refund')).toBeTruthy();
+    expect(getByText('Paid')).toBeTruthy();
   });
 });

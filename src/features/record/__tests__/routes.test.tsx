@@ -42,6 +42,8 @@ jest.mock('@/features/record/history/UndoToastHost', () => {
   return { UndoToastHost: () => R.createElement(View, { testID: 'undo-toast-host' }) };
 });
 jest.mock('@/features/record/useDeviceHomeCurrencyDefault', () => ({ DeviceHomeCurrencyDefault: () => null }));
+jest.mock('@/features/record/samples/SampleBanner', () => ({ SampleBanner: () => null }));
+jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPrompts: () => null }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ ready: true, householdId: 'h1' }),
 }));

@@ -7,6 +7,7 @@ import { noteResolveRateThrottled, resetResolveRateBackoffForTests } from '@/dat
 import { wipeDeviceData } from '@/services/storage/wipe';
 import {
   ensureRatesForHomeChange,
+  fetchRatesForHomeChange,
   HOME_RATE_CHECK_KEY,
   retryOutstandingHomeRateCheck,
   type HomeRateCheck,
@@ -174,4 +175,48 @@ it('wipeDeviceData removes the key', async () => {
   await AsyncStorage.setItem(HOME_RATE_CHECK_KEY, JSON.stringify(check()));
   await wipeDeviceData();
   expect(await AsyncStorage.getItem(HOME_RATE_CHECK_KEY)).toBeNull();
+});
+
+describe('fetchRatesForHomeChange', () => {
+  const input = { next: 'USD', previous: 'GBP', date: '2026-10-08', householdId: 'h1' };
+
+  it('requests next first, then previous and the other household currencies, and resolves done', async () => {
+    mockCurrencies.mockResolvedValue(['EUR', 'GBP']);
+    mockRequest.mockResolvedValue(['USD', 'GBP', 'EUR']);
+    const spy = jest.spyOn(qc, 'invalidateQueries');
+    expect(await fetchRatesForHomeChange(qc, input)).toBe('done');
+    expect(mockRequest).toHaveBeenCalledWith({ fake: true }, '2026-10-08', ['USD', 'GBP', 'EUR']);
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.fxLatest() });
+  });
+
+  it('includes the previous home even when no line uses it', async () => {
+    mockCurrencies.mockResolvedValue([]);
+    mockRequest.mockResolvedValue(['USD', 'GBP']);
+    expect(await fetchRatesForHomeChange(qc, input)).toBe('done');
+    expect(mockRequest).toHaveBeenCalledWith({ fake: true }, '2026-10-08', ['USD', 'GBP']);
+  });
+
+  it('fails when a chunk returns null, throws, is throttled, or omits next/previous', async () => {
+    mockCurrencies.mockResolvedValue(['EUR']);
+    mockRequest.mockResolvedValue(null);
+    expect(await fetchRatesForHomeChange(qc, input)).toBe('failed');
+    mockRequest.mockReset();
+    mockRequest.mockRejectedValue(new Error('offline'));
+    expect(await fetchRatesForHomeChange(qc, input)).toBe('failed');
+    mockRequest.mockReset();
+    mockRequest.mockResolvedValue(['USD', 'EUR']); // previous missing
+    expect(await fetchRatesForHomeChange(qc, input)).toBe('failed');
+    mockRequest.mockReset();
+    noteResolveRateThrottled();
+    expect(await fetchRatesForHomeChange(qc, input)).toBe('failed');
+    expect(mockRequest).not.toHaveBeenCalled();
+  });
+
+  it('requires every chunk and never persists a check', async () => {
+    mockCurrencies.mockResolvedValue(many(60));
+    mockRequest.mockResolvedValueOnce(['USD', 'GBP']).mockResolvedValueOnce(null);
+    expect(await fetchRatesForHomeChange(qc, input)).toBe('failed');
+    expect(mockRequest).toHaveBeenCalledTimes(2);
+    expect(await stored()).toBeNull();
+  });
 });

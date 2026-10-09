@@ -45,6 +45,13 @@ describe('matchRefunds', () => {
     expect(matchRefunds([row()], amt, 'credit')[0]?.purchaseId).toBe('b');
     expect(matchRefunds(rows, [purchase()], 'credit').map((m) => m.index)).toEqual([0]);
   });
+  it('breaks full ties by purchase id in either input order, then by row index', () => {
+    const ids = ['b', 'a', 'c'].map((id) => purchase({ id }));
+    expect(matchRefunds([row()], ids, 'credit')[0]?.purchaseId).toBe('a');
+    expect(matchRefunds([row()], [...ids].reverse(), 'credit')[0]?.purchaseId).toBe('a');
+    const rows = [row({ index: 1 }), row({ index: 0 })];
+    expect(matchRefunds(rows, [purchase()], 'credit').map((m) => m.index)).toEqual([0]);
+  });
   it('property: one-to-one and only positive rows', () => {
     fc.assert(
       fc.property(

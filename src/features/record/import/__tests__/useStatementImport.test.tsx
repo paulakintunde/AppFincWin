@@ -8,6 +8,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { AccountRow } from '@/db/rows';
 import { useStatementImport } from '../useStatementImport';
+import { getSampleClearPromptRequestForTests, resetSamplePromptForTests } from '@/state/samplePrompt';
+import { queryKeys } from '@/data/keys';
 import * as suggestionCap from '../suggestionCap';
 import * as pipeline from '../importPipeline';
 
@@ -32,7 +34,11 @@ jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...arg
 jest.mock('@/state/undoToast', () => ({ showToast: (...args: unknown[]) => mockShowToast(...args) }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => `id-${++mockUuid}` }));
 jest.mock('@/data/mutations/importFinalize', () => ({ useImportCommit: () => ({ commit: (...args: unknown[]) => mockCommit(...args) }) }));
-jest.mock('@/data/mutations/recurringSeries', () => ({ useCreateSeries: () => ({ create: (...args: unknown[]) => mockCreateSeries(...args) }) }));
+// 02.2-20: suggestionToSeries moved here from the pipeline; keep the real one, mock only the hook.
+jest.mock('@/data/mutations/recurringSeries', () => ({
+  ...jest.requireActual('@/data/mutations/recurringSeries'),
+  useCreateSeries: () => ({ create: (...args: unknown[]) => mockCreateSeries(...args) }),
+}));
 jest.mock('@/services/locale/deviceLocale', () => ({
   useDeviceLocale: () => ({ locale: 'en-GB', timeZone: 'UTC', separators: { decimal: '.', group: ',' } }),
 }));
@@ -73,6 +79,8 @@ const dbTx = require('@/db/transactions') as {
 function account(over: Partial<AccountRow>): AccountRow {
   return {
     id: 'acc-1',
+    deleted_at: null,
+    is_sample: false,
     household_id: 'hh-1',
     created_by: 'user-1',
     name: 'Current',
@@ -116,8 +124,10 @@ function pickOk(bytes: Uint8Array, extension: 'csv' | 'ofx' | 'qfx' | 'other' = 
   pickStatementBytes.mockResolvedValueOnce({ kind: 'ok', bytes, mimeType: null, extension });
 }
 
+let testClient: QueryClient;
 function wrapper() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  testClient = client;
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
   };
@@ -134,6 +144,7 @@ function trackedNames(): string[] {
 }
 
 beforeEach(() => {
+  resetSamplePromptForTests();
   jest.clearAllMocks();
   jest.restoreAllMocks();
   mockTransferCategoryId = 'cat-transfer';
@@ -553,8 +564,8 @@ describe('useStatementImport: review', () => {
     dbTx.fetchHasRowsBefore.mockResolvedValue(true);
     await reachReview(fixture('bank-sgml.ofx'), 'ofx');
     expect(dbTx.fetchHasRowsAfter).toHaveBeenCalledWith(expect.anything(), 'hh-1', 'acc-1', '2026-09-12');
-    // the only range read is the file range itself
-    expect(dbTx.fetchTransactionsInRange).toHaveBeenCalledTimes(1);
+    // two range reads: the file range itself and the one refund-purchases read (D-07)
+    expect(dbTx.fetchTransactionsInRange).toHaveBeenCalledTimes(2);
   });
 
   it('S-WR-05: rows dated after the file mean the current balance is not the opening', async () => {
@@ -872,6 +883,87 @@ describe('useStatementImport: matches', () => {
   });
 });
 
+describe('useStatementImport: refunds and automatic pay matches (D-07, D-08)', () => {
+  const pending = (over: Record<string, unknown>) =>
+    stored({ id: 'pend-1', status: 'pending', original_amount: -1250, name: 'COSTA COFFEE', local_date: '2026-09-03', version: 6, ...over });
+
+  it('D-08: an Automatic pending line is pre-ticked and commits as mark-paid without an answer', async () => {
+    dbTx.fetchTransactionsInRange.mockResolvedValue([pending({ is_automatic: true })]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.payMatchRows[0]).toEqual(expect.objectContaining({ pendingId: 'pend-1', automatic: true, answer: 'accepted' }));
+    await act(async () => {
+      result.current.commit();
+    });
+    const { finalize } = mockCommit.mock.calls[0]![0];
+    expect(finalize.markPaid).toHaveLength(1);
+  });
+
+  it('D-08: a pre-tick can be unticked, and a Manual line stays unticked', async () => {
+    dbTx.fetchTransactionsInRange.mockResolvedValue([pending({ is_automatic: true })]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const costa = rowIndex(result, 'COSTA COFFEE');
+    await act(async () => {
+      result.current.dismissPayMatch(costa);
+    });
+    expect(result.current.payMatchRows[0]?.answer).toBe('dismissed');
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit.mock.calls[0]![0].finalize.markPaid).toEqual([]);
+  });
+
+  it('D-08: a Manual line is not pre-ticked', async () => {
+    dbTx.fetchTransactionsInRange.mockResolvedValue([pending({ is_automatic: false })]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.payMatchRows[0]).toEqual(expect.objectContaining({ automatic: false, answer: null }));
+  });
+
+  const purchase = stored({ id: 'pur-1', original_amount: -150000, name: 'ACME LTD', local_date: '2026-08-20', category_id: 'cat-shop' });
+  const withPurchase = (): void => {
+    // the purchases read starts REFUND_LOOKBACK_DAYS before the file; the file-range read does not
+    dbTx.fetchTransactionsInRange.mockImplementation(async (_c: unknown, _h: unknown, range: { from: string }) =>
+      range.from === '2026-05-04' ? [purchase] : []
+    );
+  };
+
+  it('D-07: a refund is unticked by default and inserts as is_refund only when accepted', async () => {
+    withPurchase();
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.refundRows).toHaveLength(1);
+    const acme = result.current.refundRows[0]!.index;
+    expect(result.current.refundRows[0]).toEqual({ index: acme, merchant: 'ACME LTD', answer: null });
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(result.current.stage).toBe('matches');
+    await act(async () => {
+      result.current.acceptRefund(acme);
+    });
+    expect(mockTrack).toHaveBeenCalledWith('refund_suggestion_answered', { accepted: true });
+    await act(async () => {
+      result.current.commit();
+    });
+    const { rows } = mockCommit.mock.calls[0]![0];
+    const line = rows.find((r: { original_amount: number }) => r.original_amount === 150000);
+    expect(line).toEqual(expect.objectContaining({ is_refund: true, category_id: 'cat-shop' }));
+  });
+
+  it('D-07: declining a refund inserts the line unchanged', async () => {
+    withPurchase();
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const acme = result.current.refundRows[0]!.index;
+    await act(async () => {
+      result.current.dismissRefund(acme);
+    });
+    expect(mockTrack).toHaveBeenCalledWith('refund_suggestion_answered', { accepted: false });
+    await act(async () => {
+      result.current.commit();
+    });
+    const line = mockCommit.mock.calls[0]![0].rows.find((r: { original_amount: number }) => r.original_amount === 150000);
+    expect(line.is_refund).toBeUndefined();
+  });
+});
+
 describe('useStatementImport: commit and recurring suggestions', () => {
   it('commits one batch: input, destructive toast, funnel event, then done', async () => {
     const { result } = await reachReview(csv(CSV_DECIDED), 'csv');
@@ -1046,5 +1138,34 @@ describe('useStatementImport: screen read-outs (02-27)', () => {
     ]);
     const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
     expect(result.current.storedLegs.get('pend-1')).toEqual({ accountId: 'acc-1', name: 'Coffee subscription' });
+  });
+});
+
+describe('useStatementImport: first real save prompt (D-11)', () => {
+  const seedSamples = () => {
+    testClient.setQueryData(queryKeys.sampleExists('hh-1'), true);
+    testClient.setQueryData(queryKeys.recordPrefs('user-1'), { week_start: null, sample_prompt_answered_at: null });
+  };
+
+  it('a commit with rows asks to clear the samples', async () => {
+    const { result } = await reachReview(csv(CSV_DECIDED), 'csv');
+    seedSamples();
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(mockCommit).toHaveBeenCalledTimes(1);
+    expect(getSampleClearPromptRequestForTests()).toBe(true);
+  });
+
+  it('a commit that throws does not ask', async () => {
+    mockCommit.mockImplementationOnce(() => {
+      throw new TypeError('refused');
+    });
+    const { result } = await reachReview(csv(CSV_DECIDED), 'csv');
+    seedSamples();
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(getSampleClearPromptRequestForTests()).toBe(false);
   });
 });

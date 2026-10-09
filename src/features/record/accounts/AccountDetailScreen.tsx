@@ -1,10 +1,12 @@
 // One account (REC-08, D-22, D-39): balance block with standing line, Import statement for this
 // account, Edit account, and this month's lines for the account.
 import React, { useCallback, useMemo, useState } from 'react';
+import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAccounts } from '@/data/queries/accounts';
 import { useAccountBalances, useMonthView, type ActivityRowView } from '@/data/queries/activity';
 import { useCategoryLookup } from '@/data/queries/categories';
+import { usePendingSplit } from '@/data/queries/pendingSplit';
 import { useMarkPaid } from '@/data/mutations/transactions';
 import { EMPTY_FILTER, filterRows } from '@/engine/activity';
 import { monthOf } from '@/engine/time';
@@ -23,7 +25,10 @@ import { EmptyState } from '@/ui/EmptyState';
 import { Screen } from '@/ui/Screen';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { AccountBalanceBlock } from './AccountBalanceBlock';
+import { AccountDetailRows } from './AccountDetailRows';
+import { AccountRemoveRow } from './AccountRemoveRow';
 import { AccountSheet } from './AccountSheet';
+import { useAccountUsage } from './useAccountUsage';
 
 export interface AccountDetailScreenProps {
   accountId: string;
@@ -44,6 +49,8 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
     { householdId: rc.householdId, homeCurrency: rc.homeCurrency, today: rc.today },
     monthOf(rc.today)
   );
+  const { split } = usePendingSplit(rc.householdId);
+  const { usage } = useAccountUsage(accountId);
   const { markPaid } = useMarkPaid();
   const [editing, setEditing] = useState(false);
   const [sheetMode, setSheetMode] = useState<EntryMode | null>(null);
@@ -82,6 +89,12 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
           {account.name}
         </Text>
         <AccountBalanceBlock account={account} balance={balances.get(account.id)} homeCurrency={rc.homeCurrency} />
+        <AccountDetailRows
+          account={account}
+          balance={balances.get(account.id)}
+          split={split.get(`${account.id}:${account.currency}`)}
+          horizonMonth={rc.horizonMonth}
+        />
         <View style={styles.actions}>
           <Pill label={t('accounts.importCsv')} variant="secondary" onPress={() => onImport(account.id)} />
           <Pill label={t('accounts.sheet.titleEdit')} variant="secondary" onPress={() => setEditing(true)} />
@@ -94,11 +107,13 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
             accountName={accountName}
             formatter={formatter}
             homeCurrency={rc.homeCurrency}
+            today={rc.today}
             onPress={(r) => setSheetMode({ kind: 'edit', row: r })}
             onMarkPaid={onMarkPaid}
             cardPosition={lines.length === 1 ? 'only' : i === 0 ? 'first' : i === lines.length - 1 ? 'last' : 'middle'}
           />
         ))}
+        <AccountRemoveRow account={account} usage={usage} onDeleted={() => router.back()} />
       </ScrollView>
       <AccountSheet visible={editing} mode={{ kind: 'edit', account }} onClose={() => setEditing(false)} />
       <TransactionSheet

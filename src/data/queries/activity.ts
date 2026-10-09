@@ -175,7 +175,7 @@ export function useMonthView(
   const totals = useMemo(
     () =>
       monthTotals(
-        mappedRows.map((r) => ({ amountHome: r.amountHome, status: r.status, isTransfer: r.transfer_id !== null })),
+        mappedRows.map((r) => ({ amountHome: r.amountHome, status: r.status, isTransfer: r.transfer_id !== null, isRefund: r.is_refund })),
         projections
       ),
     [mappedRows, projections]
@@ -194,16 +194,29 @@ export function useMonthView(
   };
 }
 
-/** ACT-02: every month with data, plus the current and next month, newest first. */
-export function useTransactionMonths(householdId: string | null, today: string): { months: string[]; isLoading: boolean } {
+/**
+ * ACT-02, ACT-15: every month with data, plus the current month through the household horizon
+ * (D-16), newest first, with the entry count per month (0 for months without rows).
+ */
+export function useTransactionMonths(
+  householdId: string | null,
+  today: string,
+  horizonMonth: string | null = null
+): { months: string[]; counts: ReadonlyMap<string, number>; isLoading: boolean } {
   const query = useQuery({
     queryKey: queryKeys.transactionMonths(householdId ?? ''),
     queryFn: () => fetchTransactionMonths(supabase, householdId as string),
     enabled: Boolean(householdId),
   });
   const dataMonths = useMemo(() => (query.data ?? []).map((m) => m.month), [query.data]);
-  const months = useMemo(() => monthsForSwitcher(dataMonths, today), [dataMonths, today]);
-  return { months, isLoading: query.isLoading };
+  const months = useMemo(() => monthsForSwitcher(dataMonths, today, horizonMonth), [dataMonths, today, horizonMonth]);
+  const counts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const m of months) map.set(m, 0);
+    for (const m of query.data ?? []) map.set(m.month, m.row_count);
+    return map;
+  }, [months, query.data]);
+  return { months, counts, isLoading: query.isLoading };
 }
 
 /** ACT-03: a 2+ character term searches every month on the server. */

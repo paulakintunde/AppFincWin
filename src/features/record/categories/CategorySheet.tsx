@@ -10,6 +10,7 @@ import { useAddCategory, useEditCategory } from '@/data/mutations/categories';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
+import { useAmountParser } from '@/ui/money/useAmountParser';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -31,6 +32,7 @@ export interface CategorySheetProps {
 }
 
 const NAME_MAX = 60;
+const CAP_MAX = 10_000_000_000_000;
 
 export function CategorySheet({ visible, mode, onClose }: CategorySheetProps) {
   if (!visible) return null;
@@ -47,6 +49,19 @@ function SheetBody({ mode, onClose }: { mode: CategorySheetMode; onClose: () => 
   const initialName = editing ? categoryName(editing, t) : '';
   const [name, setName] = useState(initialName);
   const [colorKey, setColorKey] = useState<CategoryColorKey>(editing?.color_key ?? CATEGORY_COLOR_KEYS[0]);
+  const parser = useAmountParser(rc.region);
+  const [capText, setCapText] = useState(
+    editing && editing.monthly_cap !== null ? parser.toInputText(editing.monthly_cap, rc.homeCurrency) : ''
+  );
+  const showCap = !editing?.is_system;
+  const capRaw = capText.trim() === '' ? null : parser.parse(capText, rc.homeCurrency);
+  // The DB check is 1..10^13 minor units, so a zero or out-of-range cap is refused here too.
+  const capParsed =
+    capRaw && capRaw.ok && (capRaw.value < 1 || capRaw.value > CAP_MAX)
+      ? ({ ok: false, error: capRaw.value < 1 ? 'invalid' : 'too-large', maxDecimals: 2 } as const)
+      : capRaw;
+  const capFailure = capParsed && !capParsed.ok ? capParsed : null;
+  const capMinor = capParsed && capParsed.ok ? capParsed.value : null;
   const [submitted, setSubmitted] = useState(false);
   const [removing, setRemoving] = useState(false);
 
@@ -57,15 +72,17 @@ function SheetBody({ mode, onClose }: { mode: CategorySheetMode; onClose: () => 
   const save = () => {
     setSubmitted(true);
     if (nameMissing || !rc.userId) return;
+    if (showCap && capFailure) return;
     if (!editing) {
-      const { stepId } = add({ ownerId: rc.userId, name: trimmed, colorKey });
+      const { stepId } = add({ ownerId: rc.userId, name: trimmed, colorKey, ...(showCap && capMinor !== null ? { monthlyCap: capMinor } : {}) });
       showToast({ kind: 'ordinary', text: undoLabelText('categoryAdded', { name: trimmed }), stepId });
       onClose();
       return;
     }
-    const patch: { name?: string; colorKey?: CategoryColorKey } = {};
+    const patch: { name?: string; colorKey?: CategoryColorKey; monthlyCap?: number | null } = {};
     if (trimmed !== initialName) patch.name = trimmed;
     if (colorKey !== editing.color_key) patch.colorKey = colorKey;
+    if (showCap && capMinor !== editing.monthly_cap) patch.monthlyCap = capMinor;
     if (Object.keys(patch).length === 0) {
       onClose();
       return;
@@ -106,6 +123,24 @@ function SheetBody({ mode, onClose }: { mode: CategorySheetMode; onClose: () => 
             <SwatchDot key={key} colorKey={key} selected={key === colorKey} onPress={() => setColorKey(key)} />
           ))}
         </View>
+        {showCap ? (
+          <>
+            <Text style={labelStyle}>{t('categories.cap.label')}</Text>
+            <TextInput
+              accessibilityLabel={t('categories.cap.label')}
+              value={capText}
+              onChangeText={setCapText}
+              keyboardType="decimal-pad"
+              style={inputStyle}
+              placeholderTextColor={colors.inkFaint}
+            />
+            {capFailure ? (
+              <Text style={errorStyle}>{parser.errorMessage(capFailure)}</Text>
+            ) : (
+              <Text style={labelStyle}>{t('categories.cap.helper')}</Text>
+            )}
+          </>
+        ) : null}
         <Pill label={editing ? t('categories.sheet.saveChanges') : t('categories.sheet.save')} variant="primary" onPress={save} />
         {editing ? (
           <Pill label={t('categories.sheet.archive')} variant="danger" onPress={() => setRemoving(true)} />

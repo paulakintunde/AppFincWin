@@ -51,6 +51,8 @@ function newClient(): QueryClient {
 
 const acct = (overrides: Partial<AccountRow> = {}): AccountRow => ({
   id: 'a1',
+  deleted_at: null,
+  is_sample: false,
   household_id: 'h1',
   created_by: null,
   name: 'Current',

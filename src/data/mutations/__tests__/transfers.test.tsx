@@ -53,6 +53,9 @@ function newClient(): QueryClient {
 
 const fullRow = (overrides: Partial<TransactionRow> = {}): TransactionRow => ({
   id: 'x',
+  is_refund: false,
+  is_automatic: false,
+  is_sample: false,
   household_id: 'h1',
   account_id: 'a1',
   created_by: 'user-1',

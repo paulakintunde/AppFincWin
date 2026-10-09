@@ -1,6 +1,6 @@
 import { DbError, NotFoundError, VersionConflictError } from '../errors';
 import type { AccountPatch, AccountRow, NewAccount } from '../rows';
-import { ACCOUNT_COLUMNS, fetchAccounts, insertAccount, updateAccount } from '../accounts';
+import { ACCOUNT_COLUMNS, ACCOUNT_PATCH_KEYS, fetchAccountUsageCounts, fetchAccount, fetchAccounts, insertAccount, updateAccount } from '../accounts';
 import { createFakeSupabase } from './fakeSupabase';
 
 function row(overrides: Partial<AccountRow> = {}): AccountRow {
@@ -16,6 +16,8 @@ function row(overrides: Partial<AccountRow> = {}): AccountRow {
     updated_by: null,
     overdraft_limit: null,
     credit_limit: null,
+    deleted_at: null,
+    is_sample: false,
     version: 1,
     created_at: '2026-09-01T00:00:00Z',
     updated_at: '2026-09-01T00:00:00Z',
@@ -42,6 +44,32 @@ describe('fetchAccounts', () => {
     expect(result).toEqual([row()]);
     expect(client.calls.find((c) => c.method === 'eq')?.args).toEqual(['household_id', 'h1']);
     expect(client.calls.find((c) => c.method === 'order')?.args).toEqual(['name', { ascending: true }]);
+  });
+});
+
+describe('soft-deleted accounts (D-24)', () => {
+  it('fetchAccounts filters out soft-deleted rows', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [row()], error: null, status: 200 });
+    await fetchAccounts(client, 'h1');
+    expect(client.calls.find((c) => c.method === 'is')?.args).toEqual(['deleted_at', null]);
+  });
+
+  it('fetchAccount filters out soft-deleted rows', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: null, status: 200 });
+    await expect(fetchAccount(client, 'a1')).resolves.toBeNull();
+    expect(client.calls.find((c) => c.method === 'is')?.args).toEqual(['deleted_at', null]);
+  });
+
+  it('deleted_at is patchable, is_sample is read-only', async () => {
+    expect(ACCOUNT_PATCH_KEYS).toContain('deleted_at');
+    expect(ACCOUNT_PATCH_KEYS).not.toContain('is_sample');
+    expect(ACCOUNT_COLUMNS).toContain('is_sample');
+    const client = createFakeSupabase();
+    // @ts-expect-error -- deliberately passing a disallowed key to prove the guard
+    await expect(updateAccount(client, 'a1', 1, { is_sample: true })).rejects.toThrow(TypeError);
+    expect(client.calls).toHaveLength(0);
   });
 });
 
@@ -133,5 +161,26 @@ describe('updateAccount', () => {
 
     await expect(updateAccount(client, 'a1', 1, patch)).rejects.toThrow(TypeError);
     expect(client.calls).toHaveLength(0);
+  });
+});
+
+describe('fetchAccountUsageCounts (REC-24)', () => {
+  it('head-counts live lines and active series, scoped to the account', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: null, status: 200, count: 3 });
+    client.respondWith({ data: null, error: null, status: 200, count: 1 });
+    client.respondWith({ data: null, error: null, status: 200, count: 2 });
+    const out = await fetchAccountUsageCounts(client, 'h1', 'a1', '2026-10-09');
+    expect(out).toEqual({ liveLineCount: 3, activeSeriesCount: 3 });
+    const tables = client.calls.filter((c) => c.method === 'select').map((c) => c.table);
+    expect(tables).toEqual(['transactions_active', 'recurring_series', 'recurring_series']);
+    expect(client.calls).toContainEqual({ table: 'transactions_active', method: 'eq', args: ['account_id', 'a1'] });
+    expect(client.calls).toContainEqual({ table: 'recurring_series', method: 'gte', args: ['end_date', '2026-10-09'] });
+  });
+
+  it('throws on a failed count', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'boom' }, status: 500 });
+    await expect(fetchAccountUsageCounts(client, 'h1', 'a1', '2026-10-09')).rejects.toBeInstanceOf(DbError);
   });
 });

@@ -1,5 +1,13 @@
 import { DbError } from '../errors';
-import { fetchAccountBalances, fetchHouseholdMemberNames, fetchTransactionMonths } from '../recordReads';
+import {
+  MonthNotAddableError,
+  addActivityMonth,
+  fetchAccountBalances,
+  fetchAccountPaidBefore,
+  fetchAccountPendingSplit,
+  fetchHouseholdMemberNames,
+  fetchTransactionMonths,
+} from '../recordReads';
 import { createFakeSupabase } from './fakeSupabase';
 
 describe('fetchAccountBalances', () => {
@@ -86,5 +94,79 @@ describe('fetchHouseholdMemberNames', () => {
     const client = createFakeSupabase();
     client.respondWith({ data: null, error: { message: 'boom', code: 'XX000' }, status: 500 });
     await expect(fetchHouseholdMemberNames(client, 'hh-1')).rejects.toBeInstanceOf(DbError);
+  });
+});
+
+describe('Phase 02.2 reads', () => {
+  const undo = { id: 'u1', labelKey: 'monthAdded' as const, labelParams: { name: 'Oct' } };
+
+  it('fetchAccountPendingSplit maps rows and keeps sums as strings', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({
+      data: [{ account_id: 'a1', currency: 'GBP', pending_in: '100', pending_out: '-250', pending_count: 3 }],
+      error: null,
+      status: 200,
+    });
+    await expect(fetchAccountPendingSplit(client, 'hh')).resolves.toEqual([
+      { accountId: 'a1', currency: 'GBP', pendingIn: '100', pendingOut: '-250', pendingCount: 3 },
+    ]);
+    expect(client.calls.find((c) => c.method === 'rpc')?.args).toEqual(['account_pending_split', { p_household_id: 'hh' }]);
+  });
+
+  it('fetchAccountPaidBefore maps rows', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({
+      data: [{ account_id: 'a1', currency: 'USD', paid_sum: '5', paid_home_sum: '4', unconverted: 1 }],
+      error: null,
+      status: 200,
+    });
+    await expect(fetchAccountPaidBefore(client, 'hh', '2026-10-01')).resolves.toEqual([
+      { accountId: 'a1', currency: 'USD', paidSum: '5', paidHomeSum: '4', unconverted: 1 },
+    ]);
+    expect(client.calls.find((c) => c.method === 'rpc')?.args).toEqual([
+      'account_paid_before',
+      { p_household_id: 'hh', p_before: '2026-10-01' },
+    ]);
+  });
+
+  it('rejects a malformed split row', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [{ account_id: 'a1' }], error: null, status: 200 });
+    await expect(fetchAccountPendingSplit(client, 'hh')).rejects.toMatchObject({ code: 'bad-response' });
+  });
+
+  it('addActivityMonth sends the undo step and maps applied, already-applied and 22023', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({
+      data: { status: 'applied', month: '2026-11', inserted: ['t1'], undo_step_id: 'u1' },
+      error: null,
+      status: 200,
+    });
+    client.respondWith({ data: { status: 'already-applied' }, error: null, status: 200 });
+    client.respondWith({ data: null, error: { message: 'bad', code: '22023' }, status: 400 });
+    const args = { householdId: 'hh', month: '2026-11', today: '2026-10-09', undo };
+    await expect(addActivityMonth(client, args)).resolves.toEqual({
+      status: 'applied',
+      month: '2026-11',
+      insertedIds: ['t1'],
+      undoStepId: 'u1',
+    });
+    expect(client.calls.find((c) => c.method === 'rpc')?.args).toEqual([
+      'add_activity_month',
+      {
+        p_household_id: 'hh',
+        p_month: '2026-11',
+        p_today: '2026-10-09',
+        p_undo_step: { id: 'u1', label_key: 'monthAdded', label_params: { name: 'Oct' } },
+      },
+    ]);
+    await expect(addActivityMonth(client, args)).resolves.toEqual({ status: 'already-applied' });
+    await expect(addActivityMonth(client, args)).rejects.toBeInstanceOf(MonthNotAddableError);
+  });
+
+  it('fetchTransactionMonths returns row counts (ACT-15)', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [{ month: '2026-10', row_count: 7 }], error: null, status: 200 });
+    await expect(fetchTransactionMonths(client, 'hh')).resolves.toEqual([{ month: '2026-10', row_count: 7 }]);
   });
 });

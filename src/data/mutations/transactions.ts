@@ -41,6 +41,7 @@ import {
   writeRetryDelay,
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { maybeRequestSampleClearPrompt } from './samplePromptTrigger';
 import { writeClient } from './writeClient';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
@@ -231,6 +232,9 @@ export function registerTransactionMutations(qc: QueryClient): void {
         external_id: vars.row.external_id ?? null,
         import_format: vars.row.import_format ?? null,
         transfer_id: vars.row.transfer_id ?? null,
+        is_refund: vars.row.is_refund ?? false,
+        is_automatic: vars.row.is_automatic ?? false,
+        is_sample: false,
         version: 1,
         created_at: now,
         updated_at: now,
@@ -414,6 +418,9 @@ export function registerTransactionMutations(qc: QueryClient): void {
           external_id: tx.external_id ?? null,
           import_format: tx.import_format ?? null,
           transfer_id: tx.transfer_id ?? null,
+          is_refund: tx.is_refund ?? false,
+          is_automatic: tx.is_automatic ?? false,
+          is_sample: false,
           version: 1,
           created_at: now,
           updated_at: now,
@@ -471,6 +478,9 @@ export interface AddTransactionInput {
   categoryId?: string | null;
   paymentType?: PaymentType | null;
   status?: TransactionStatus;
+  /** CONTEXT D-01/D-03: a refund is stored positive with is_refund; Automatic is a label only. */
+  isRefund?: boolean;
+  isAutomatic?: boolean;
   undo?: Omit<UndoCapture, 'ownerId'>;
 }
 
@@ -479,6 +489,7 @@ export function useAddTransaction(): { add(input: AddTransactionInput): string }
     mutationKey: mutationKeys.addTransaction,
     scope: WRITE_SCOPE,
   });
+  const qc = useQueryClient();
 
   return {
     add(input: AddTransactionInput): string {
@@ -500,6 +511,8 @@ export function useAddTransaction(): { add(input: AddTransactionInput): string }
         category_id: input.categoryId,
         payment_type: input.paymentType,
         status: input.status,
+        ...(input.isRefund === undefined ? {} : { is_refund: input.isRefund }),
+        ...(input.isAutomatic === undefined ? {} : { is_automatic: input.isAutomatic }),
       };
 
       mutation.mutate({
@@ -507,6 +520,8 @@ export function useAddTransaction(): { add(input: AddTransactionInput): string }
         optimistic: { homeCurrency: input.homeCurrency, createdBy: input.userId, month },
         undo: input.undo ? { ...input.undo, ownerId: input.userId } : undefined,
       });
+      // D-11: a real line while samples exist asks once to clear them.
+      maybeRequestSampleClearPrompt(qc, { householdId: input.householdId, userId: input.userId });
       return id;
     },
   };
@@ -531,8 +546,17 @@ export function useEditTransaction(): {
 
   return {
     edit(vars: EditTransactionVars, undo?: EditUndoCapture): boolean {
+      // D-10/D-11: editing a sample line makes it real, which is a first real save.
+      const cachedRow = qc
+        .getQueryData<TransactionList>(queryKeys.transactionsMonth(vars.householdId, vars.month))
+        ?.find((r) => r.id === vars.id);
+      const madeReal = cachedRow?.is_sample === true && undo !== undefined;
+      const ask = (): void => {
+        if (madeReal && undo) maybeRequestSampleClearPrompt(qc, { householdId: vars.householdId, userId: undo.ownerId });
+      };
       if (!undo) {
         mutation.mutate(vars);
+        ask();
         return false;
       }
 
@@ -548,6 +572,7 @@ export function useEditTransaction(): {
         // Nothing honest to capture a before-state from: send the edit without an undo step
         // rather than guess, and tell the caller so it never offers an Undo that cannot work.
         mutation.mutate(vars);
+        ask();
         return false;
       }
 
@@ -555,6 +580,7 @@ export function useEditTransaction(): {
       for (const key of keys) before[key] = source[key] ?? null;
       const { stepId, ownerId, labelKey, labelParams } = undo;
       mutation.mutate({ ...vars, undo: { stepId, ownerId, labelKey, labelParams, before } });
+      ask();
       return true;
     },
   };

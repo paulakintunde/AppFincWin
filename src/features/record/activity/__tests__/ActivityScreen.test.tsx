@@ -1,6 +1,7 @@
 import React from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
 import { act, fireEvent, render, within } from '@testing-library/react-native';
+import { mockScreen } from './activityScreenMocks';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { getToast, resetToastForTests } from '@/state/undoToast';
@@ -46,6 +47,7 @@ let mockSearchLoading = false;
 let mockSearchPaused = false;
 let mockSearchError = false;
 const mockRemove = jest.fn((): string => 'del-step');
+const mockSingleRemove = jest.fn((): string | null => 'single-del-step');
 const mockBulkPaid = jest.fn((): string => 'bp-step');
 const mockBulkUnpaid = jest.fn((): string => 'bu-step');
 
@@ -53,21 +55,23 @@ jest.mock('@/data/mutations/patches', () => ({
   useBulkDelete: () => ({ remove: mockRemove }),
   useBulkMarkPaid: () => ({ markPaid: mockBulkPaid }),
   useBulkMarkUnpaid: () => ({ markUnpaid: mockBulkUnpaid }),
+  useBulkPatch: () => ({ apply: mockScreen.apply }),
 }));
 
 jest.mock('@/data/mutations/transactions', () => ({
   useMarkPaid: () => ({ markPaid: mockMarkPaid }),
+  useDeleteTransaction: () => ({ remove: mockSingleRemove }),
 }));
 jest.mock('@/data/queries/activity', () => ({
   useMonthView: () => ({
     rows: mockRows,
     projections: mockProjections,
-    totals: { paidIn: 0, paidOut: -1250, net: -1250, stillToCome: -500, pendingCount: 1, projectedCount: 1, unconvertedCount: 2, transferCount: 0 },
+    totals: { paidIn: 0, paidOut: -1250, net: -1250, stillToCome: -500, pendingCount: 1, projectedCount: 1, unconvertedCount: 2, transferCount: 0, count: 2 },
     isLoading: false,
     isError: false,
     refetch: jest.fn(),
   }),
-  useTransactionMonths: () => ({ months: mockMonths, isLoading: false }),
+  useTransactionMonths: () => ({ months: mockMonths, counts: new Map(mockMonths.map((m) => [m, 1])), isLoading: false }),
   SEARCH_MIN_CHARS: 2,
   useTransactionsSearch: (_h: string | null, term: string) => {
     const enabled = term.trim().length >= 2;
@@ -83,11 +87,13 @@ jest.mock('@/data/queries/activity', () => ({
     };
   },
 }));
+jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
+jest.mock('@/data/queries/pendingSplit', () => ({ usePaidBefore: () => ({ legs: [], isLoading: false }) }));
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({
     data: [
-      { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null },
-      { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null },
+      { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null, deleted_at: null, opening_balance: 0 },
+      { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null, deleted_at: null, opening_balance: 0 },
     ],
   }),
 }));
@@ -114,6 +120,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
     region: 'GB',
     timeZone: 'Europe/London',
     today: '2026-09-25',
+    weekStart: 1,
   }),
 }));
 jest.mock('@/features/record/entry/TransactionSheet', () => {
@@ -174,7 +181,7 @@ describe('ActivityScreen', () => {
   it('shows the empty state for a month with nothing in it', async () => {
     const screen = await renderScreen();
     expect(screen.getByText('Nothing in September 2026 yet.')).toBeTruthy();
-    expect(screen.getByText('Add the first one with the Add button.')).toBeTruthy();
+    expect(screen.getByText('Add the first one with the Add button, clone August’s lines that aren’t already repeating, or paste a list.')).toBeTruthy();
   });
 
   it('groups still-to-come, paid and skipped rows under section headers', async () => {
@@ -186,8 +193,8 @@ describe('ActivityScreen', () => {
     const screen = await renderScreen();
     // One in the totals bar, one as the section header.
     expect(screen.getAllByText('Still to come')).toHaveLength(2);
-    expect(screen.getByText('Paid')).toBeTruthy();
-    expect(screen.getByText('Skipped')).toBeTruthy();
+    expect(screen.getAllByText('Paid')[0]).toBeTruthy();
+    expect(screen.getAllByText('Skipped')[0]).toBeTruthy();
     expect(screen.getByText('Phone bill')).toBeTruthy();
   });
 
@@ -206,10 +213,11 @@ describe('ActivityScreen', () => {
     expect(screen.getByLabelText('Next month').props.accessibilityState.disabled).toBe(false);
   });
 
-  it('opens a row in the transaction sheet in edit mode', async () => {
+  it('opens a row in the detail sheet, then Edit opens the transaction sheet in edit mode', async () => {
     mockRows = [row({ id: 'g1', name: 'Coffee' })];
     const screen = await renderScreen();
     await fireEvent.press(screen.getByTestId('activity-row-g1'));
+    await fireEvent.press(screen.getByText('Edit transaction'));
     expect(screen.getByTestId('sheet-stub').props.children).toBe('edit:g1');
   });
 
@@ -330,7 +338,8 @@ describe('ActivityScreen search, filters and bulk select', () => {
     await type(screen, 'Search every month', 'coffee');
     expect(screen.getByText('Coffee beans')).toBeTruthy();
     expect(screen.getByText('Coffee shop')).toBeTruthy();
-    expect(screen.queryByText('Paid')).toBeNull();
+    // Two row tags, no section header (02.2-21 row tags).
+    expect(screen.getAllByText('Paid')).toHaveLength(2);
   });
 
   it('S-IN-04: an every-month search still in flight says so, not Nothing matches', async () => {
@@ -579,7 +588,7 @@ describe('ActivityScreen section colours (02-polish item 5)', () => {
     ];
     const screen = await renderScreen();
     const style = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
-    expect(style(screen.getByText('Paid')).color).toBe('#1B4D3E');
+    expect(style(screen.getAllByText('Paid')[0]!).color).toBe('#1B4D3E');
     expect(style(screen.getAllByText('Still to come')[1]!).color).toBe('#6E6A5E');
   });
 });

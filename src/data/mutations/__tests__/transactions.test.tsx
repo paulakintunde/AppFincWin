@@ -20,6 +20,7 @@ import { MAX_SERVER_ERROR_RETRIES } from '@/data/sync/writeErrors';
 import { clearVersionChains } from '@/data/sync/versionChain';
 import { noteResolveRateThrottled, resetResolveRateBackoffForTests } from '@/data/sync/resolveRateBackoff';
 import { registerMutationDefaults } from '../index';
+import { getSampleClearPromptRequestForTests, resetSamplePromptForTests } from '@/state/samplePrompt';
 import {
   useAddTransaction,
   useDeleteTransaction,
@@ -73,6 +74,9 @@ const JPY_RATE = { quote: 'JPY', rate: '180.7000000000', rate_date: '2026-09-21'
 
 const serverTransaction = (overrides: Partial<TransactionRow> = {}): TransactionRow => ({
   id: 'uuid-0',
+  is_refund: false,
+  is_automatic: false,
+  is_sample: false,
   household_id: 'h1',
   account_id: 'acc1',
   created_by: 'user-1',
@@ -114,6 +118,7 @@ const serverTransaction = (overrides: Partial<TransactionRow> = {}): Transaction
 });
 
 beforeEach(() => {
+  resetSamplePromptForTests();
   mockUuidCounter = 0;
   recordFailedWrite.mockClear();
   onlineManager.setOnline(true);
@@ -1245,6 +1250,8 @@ describe('useImportChunks / importChunk', () => {
 describe('useAddAccount / useEditAccount', () => {
   const serverAccount = (overrides: Partial<AccountRow> = {}): AccountRow => ({
     id: 'uuid-0',
+    deleted_at: null,
+    is_sample: false,
     household_id: 'h1',
     created_by: 'user-1',
     name: 'Everyday chequing',
@@ -1302,5 +1309,87 @@ describe('useAddAccount / useEditAccount', () => {
 
     const rows = qc.getQueryData<AccountRow[]>(queryKeys.accounts('h1'));
     expect(rows?.[0]?.name).toBe('Renamed elsewhere');
+  });
+});
+
+describe('useAddTransaction refund and automatic flags (REC-20)', () => {
+  it('writes is_refund and is_automatic on the inserted row', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []);
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+      isRefund: true,
+      isAutomatic: true,
+    });
+
+    await waitFor(() => expect(fake.calls.find((c) => c.method === 'insert')).toBeDefined());
+    expect(fake.calls.find((c) => c.method === 'insert')?.args[0]).toMatchObject({
+      is_refund: true,
+      is_automatic: true,
+    });
+  });
+});
+
+describe('first real save asks to clear the samples (D-10, D-11)', () => {
+  const seed = (qc: QueryClient) => {
+    qc.setQueryData(queryKeys.sampleExists('h1'), true);
+    qc.setQueryData(queryKeys.recordPrefs('user-1'), { week_start: null, sample_prompt_answered_at: null });
+  };
+  const edit = {
+    householdId: 'h1',
+    month: '2026-09',
+    expectedVersion: 1,
+    patch: { note: 'x' },
+    homeCurrency: 'USD',
+  };
+  const undo = { stepId: 's1', ownerId: 'user-1', labelKey: 'edited' as never, labelParams: {} };
+
+  it('add asks', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
+    const qc = newClient();
+    seed(qc);
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+    });
+    expect(getSampleClearPromptRequestForTests()).toBe(true);
+  });
+
+  it('editing a sample line asks; editing a real line does not', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+    const qc = newClient();
+    seed(qc);
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), [
+      serverTransaction({ id: 'real' }),
+      serverTransaction({ id: 'sample', is_sample: true } as never),
+    ]);
+    const { result } = await renderHook(() => useEditTransaction(), { wrapper: wrapper(qc) });
+    result.current.edit({ ...edit, id: 'real' }, undo);
+    expect(getSampleClearPromptRequestForTests()).toBe(false);
+    result.current.edit({ ...edit, id: 'sample' }, undo);
+    expect(getSampleClearPromptRequestForTests()).toBe(true);
   });
 });

@@ -75,6 +75,10 @@ jest.mock('@/data/queries/categories', () => ({
     return { all: [groceries], active: [groceries], byId: new Map([['c1', groceries]]), transferCategoryId: 'tc', loading: false };
   },
 }));
+jest.mock('../PasteSheet', () => {
+  const { View } = jest.requireActual('react-native');
+  return { PasteSheet: (props: { visible: boolean }) => (props.visible ? <View accessibilityLabel="paste-sheet-open" /> : null) };
+});
 jest.mock('@/features/record/accounts/AccountSheet', () => {
   const { Pressable, Text } = jest.requireActual('react-native');
   return {
@@ -134,6 +138,9 @@ function makeState(over: Partial<Record<keyof ImportState, unknown>> = {}): Impo
     acceptLimit: fn(),
     transferRows: [],
     payMatchRows: [],
+    refundRows: [],
+    acceptRefund: fn(),
+    dismissRefund: fn(),
     linkTransfer: fn(),
     dismissTransfer: fn(),
     setOrphanAccount: fn(),
@@ -187,6 +194,14 @@ describe('ImportScreen: pick', () => {
     expect(screen.getByText('Current')).toBeTruthy();
     expect(screen.getByText('Savings')).toBeTruthy();
     expect(screen.queryByText('Old card')).toBeNull();
+  });
+
+  it('lists Paste a list first and opens the paste sheet', async () => {
+    await renderScreen();
+    expect(screen.getByText('One line per item, typed or copied from a sheet')).toBeTruthy();
+    expect(screen.queryByLabelText('paste-sheet-open')).toBeNull();
+    await fireEvent.press(screen.getByText('Paste a list'));
+    expect(screen.getByLabelText('paste-sheet-open')).toBeTruthy();
   });
 
   it('passes the entry and account to the hook', async () => {
@@ -733,7 +748,7 @@ describe('ImportScreen: matches', () => {
 
   it('a pay-match names the pending bill and offers Mark paid and Keep both', async () => {
     mockState = matchesState([previewRow(0, { payMatch: { pendingId: 'pend-1' } })], {
-      payMatchRows: [{ index: 0, pendingId: 'pend-1', answer: null }],
+      payMatchRows: [{ index: 0, pendingId: 'pend-1', automatic: false, answer: null }],
     });
     await renderScreen();
     expect(screen.getByText('Looks like this pays the pending Coffee subscription bill. Mark it paid?')).toBeTruthy();
@@ -769,7 +784,7 @@ describe('ImportScreen: matches', () => {
           tRow(1, { kind: 'pair', existingId: 'leg-2' }),
           tRow(2, { kind: 'orphan' }),
         ],
-        payMatchRows: [{ index: 2, pendingId: 'pend-1', answer: null }],
+        payMatchRows: [{ index: 2, pendingId: 'pend-1', automatic: false, answer: null }],
         ...over,
       });
 

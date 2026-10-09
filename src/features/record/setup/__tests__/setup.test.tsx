@@ -1,7 +1,7 @@
 // 02-30: the first-account gate, the two onboarding setup screens (D-22) and the routing that
 // makes Activity the signed-in landing. Hooks, router and analytics are mocked; this checks wiring.
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { needsFirstAccount } from '../firstAccountGate';
 
@@ -45,7 +45,14 @@ jest.mock('@/features/record/accounts/AccountSheet', () => {
   };
 });
 
-let mockCtx = { ready: true, householdId: 'h1' as string | null };
+let mockCtx = { ready: true, householdId: 'h1' as string | null, userId: 'u1' as string | null, today: '2026-10-09' };
+const mockSeed = jest.fn();
+let mockSeedPending = false;
+jest.mock('@/data/mutations/sampleData', () => ({
+  useSampleData: () => ({ seed: mockSeed, clear: jest.fn(), declinePrompt: jest.fn(), pending: mockSeedPending }),
+}));
+const mockShowToast = jest.fn();
+jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockShowToast(...a) }));
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => mockCtx }));
 let mockAccounts: { data?: { archived_at: string | null }[]; isLoading: boolean; isError: boolean } = {
   data: [],
@@ -72,7 +79,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockRedirectHref = null;
   mockSheetProps = null;
-  mockCtx = { ready: true, householdId: 'h1' };
+  mockCtx = { ready: true, householdId: 'h1', userId: 'u1', today: '2026-10-09' };
+  mockSeedPending = false;
+  mockSeed.mockResolvedValue(true);
   mockAccounts = { data: [], isLoading: false, isError: false };
 });
 
@@ -143,6 +152,28 @@ describe('SetupHistoryScreen', () => {
     expect(mockReplace).toHaveBeenCalledWith('/activity');
   });
 
+  it('Explore with sample figures tracks the choice, seeds and opens Activity', async () => {
+    const { getByText } = await render(wrap(<SetupHistoryScreen accountId="acc-1" />));
+    await fireEvent.press(getByText('Explore with sample figures'));
+    expect(mockTrack).toHaveBeenCalledWith('onboarding_history_choice', { choice: 'sample' });
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/activity'));
+    expect(mockSeed).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed seed shows the message and stays on the screen', async () => {
+    mockSeed.mockResolvedValue(false);
+    const { getByText } = await render(wrap(<SetupHistoryScreen accountId="acc-1" />));
+    await fireEvent.press(getByText('Explore with sample figures'));
+    await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith({ kind: 'info', text: { key: 'samples.seedFailed' } }));
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('the Explore button is disabled while seeding', async () => {
+    mockSeedPending = true;
+    const { getByLabelText } = await render(wrap(<SetupHistoryScreen accountId="acc-1" />));
+    expect(getByLabelText('Explore with sample figures').props.accessibilityState.disabled).toBe(true);
+  });
+
   it('sends no amounts or names in the event', async () => {
     const { getByText } = await render(wrap(<SetupHistoryScreen accountId="acc-1" />));
     fireEvent.press(getByText('Start fresh'));
@@ -165,7 +196,7 @@ describe('Activity route first-account gate', () => {
     await render(wrap(<ActivityRoute />));
     mockAccounts = { data: undefined, isLoading: false, isError: true };
     await render(wrap(<ActivityRoute />));
-    mockCtx = { ready: false, householdId: null };
+    mockCtx = { ready: false, householdId: null, userId: null, today: '2026-10-09' };
     mockAccounts = { data: [], isLoading: false, isError: false };
     await render(wrap(<ActivityRoute />));
     expect(mockRedirectHref).toBeNull();

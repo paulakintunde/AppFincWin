@@ -6,6 +6,8 @@ import { View } from 'react-native';
 import { useConsent } from '@/features/consent/useConsent';
 import { DeviceHomeCurrencyDefault } from '@/features/record/useDeviceHomeCurrencyDefault';
 import { UndoToastHost } from '@/features/record/history/UndoToastHost';
+import { SampleBanner } from '@/features/record/samples/SampleBanner';
+import { SampleClearPrompts } from '@/features/record/samples/SampleClearPrompts';
 import { Screen } from '@/ui/Screen';
 
 export default function AppLayout() {
@@ -39,7 +41,9 @@ export default function AppLayout() {
         <Stack.Screen name="you" />
         <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
       </Stack>
+      <SampleBanner />
       <UndoToastHost />
+      <SampleClearPrompts />
       <DeviceHomeCurrencyDefault />
     </View>
   );

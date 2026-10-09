@@ -15,7 +15,7 @@
 import * as Crypto from 'expo-crypto';
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
-import type { RecurringFreq } from '@/engine/recurring';
+import type { RecurringFreq, RecurringSuggestion } from '@/engine/recurring';
 import { localDateIn } from '@/engine/time';
 import { fetchRatePendingRows } from '@/db/fxResolve';
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
@@ -65,7 +65,10 @@ type SeriesSourceRow = Pick<
   | 'time_zone'
   | 'local_date'
   | 'name'
->;
+> & {
+  /** Optional so callers that do not model Automatic yet still compile; absent means false. */
+  is_automatic?: boolean;
+};
 
 export function seriesInputFromRow(row: SeriesSourceRow, schedule: ScheduleInput, id: string): NewRecurringSeries {
   if (row.name === null || row.name.length === 0) {
@@ -85,6 +88,7 @@ export function seriesInputFromRow(row: SeriesSourceRow, schedule: ScheduleInput
     time_zone: row.time_zone,
     end_date: schedule.endDate,
     occurrence_count: schedule.occurrenceCount,
+    is_automatic: row.is_automatic ?? false,
   };
 }
 
@@ -98,7 +102,49 @@ export function seriesPatchFromOccurrenceEdit(patch: TransactionPatch): Recurrin
   if (patch.payment_type !== undefined) out.payment_type = patch.payment_type;
   if (patch.name !== undefined && patch.name !== null) out.name = patch.name;
   if (patch.local_date !== undefined) out.anchor_date = patch.local_date;
+  if (patch.is_automatic !== undefined) out.is_automatic = patch.is_automatic;
   return out;
+}
+
+/**
+ * A recurring suggestion turned into a series anchored on the latest logged row (relocated
+ * from the import pipeline so Activity can reuse it, 02.2-20). The account comes from the
+ * anchor row when the rows carry one (Activity), else ctx.accountId (import). Callers must
+ * not pass transfer legs to detectRecurring (D-56); the suggestion's row ids are the only rows
+ * this reads.
+ */
+export function suggestionToSeries(
+  s: RecurringSuggestion,
+  rows: readonly { id: string; localDate: string; categoryId: string | null; accountId?: string; isAutomatic?: boolean }[],
+  ctx: { householdId: string; accountId: string; timeZone: string },
+  id: string
+): { series: NewRecurringSeries; anchorTransactionId: string; linkTransactionIds: string[] } {
+  const wanted = new Set(s.rowIds);
+  let latest: (typeof rows)[number] | null = null;
+  for (const row of rows) {
+    if (wanted.has(row.id) && (latest === null || row.localDate >= latest.localDate)) latest = row;
+  }
+  const anchorTransactionId = latest?.id ?? (s.rowIds[s.rowIds.length - 1] as string);
+  return {
+    series: {
+      id,
+      household_id: ctx.householdId,
+      account_id: latest?.accountId ?? ctx.accountId,
+      name: s.name,
+      amount: s.amount,
+      currency: s.currency,
+      category_id: latest?.categoryId ?? null,
+      payment_type: null,
+      freq: s.freq,
+      anchor_date: s.anchorDate,
+      time_zone: ctx.timeZone,
+      end_date: null,
+      occurrence_count: null,
+      is_automatic: latest?.isAutomatic ?? false,
+    },
+    anchorTransactionId,
+    linkTransactionIds: s.rowIds.filter((rowId) => rowId !== anchorTransactionId),
+  };
 }
 
 export interface CreateSeriesVars {
@@ -227,6 +273,8 @@ export function registerSeriesMutations(qc: QueryClient): void {
       // D-02/D-03: the optimistic row is what projects 'Expected' lines until the server materialises real ones.
       const optimistic: WithPending<RecurringSeriesRow> = {
         ...vars.series,
+        is_automatic: vars.series.is_automatic ?? false,
+        is_sample: false,
         created_by: null,
         updated_by: null,
         materialised_through: null,

@@ -4,7 +4,8 @@
 // transactionForm.ts (pure). Copy is declarative, never advice.
 import * as Crypto from 'expo-crypto';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { currencyExponent, money } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import type { MinorUnits } from '@/engine/money';
@@ -14,6 +15,9 @@ import { useAccounts } from '@/data/queries/accounts';
 import { useTransferLegs } from '@/data/queries/activity';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useCategoryLookup } from '@/data/queries/categories';
+import { useMoneyPrefs } from '@/data/queries/moneyPrefs';
+import { useCategoryMonthUsage } from '@/features/record/categories/useCategoryMonthUsage';
+import { useDeviceLocale } from '@/services/locale/deviceLocale';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 import { useAddTransaction, useDeleteTransaction, useEditTransaction } from '@/data/mutations/transactions';
 import {
@@ -38,6 +42,8 @@ import { textRole } from '@/theme/typography';
 import { AmountDisplay } from '@/ui/AmountDisplay';
 import { Chip } from '@/ui/Chip';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
+import { Keypad } from '@/ui/Keypad';
+import { ToggleRow } from '@/ui/ToggleRow';
 import { Pill } from '@/ui/Pill';
 import { RateAttribution } from '@/ui/RateAttribution';
 import { Row } from '@/ui/Row';
@@ -48,6 +54,8 @@ import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { AccountPicker } from './pickers/AccountPicker';
 import { CategoryPicker } from './pickers/CategoryPicker';
 import { DateField } from './pickers/DateField';
+import { EntryNotes } from './EntryNotes';
+import { useCapCrossing } from './useCapCrossing';
 import { OptionPicker } from './pickers/OptionPicker';
 import { CurrencyPicker } from './pickers/CurrencyPicker';
 import { EditScopePrompt } from './EditScopePrompt';
@@ -63,8 +71,10 @@ import {
   validateForm,
   validateTransfer,
   withAccount,
+  withAutomatic,
   withDate,
   withDirection,
+  withRefund,
   withStatus,
   withToAccount,
   type Direction,
@@ -140,6 +150,10 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const { options } = useCurrencyOptions(rc.userId ?? undefined);
   const parser = useAmountParser(rc.region);
   const formatter = useMoneyFormatter(rc.showCents);
+  const { separators } = useDeviceLocale(rc.region);
+  const autoConvert = useMoneyPrefs(rc.userId ?? undefined).prefs.lead_figure === 'home';
+  const { usage } = useCategoryMonthUsage();
+  const { check: checkCap } = useCapCrossing();
   const { add } = useAddTransaction();
   const { edit } = useEditTransaction();
   const { remove } = useDeleteTransaction();
@@ -165,6 +179,9 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [repeats, setRepeats] = useState<RepeatsValue>({ freq: 'never' });
   const [scopePatch, setScopePatch] = useState<TransactionPatch | null>(null);
+  // UI-SPEC 8: the keypad types into whichever amount is active; a text field hides it.
+  const [activeAmount, setActiveAmount] = useState<'out' | 'in'>('out');
+  const [textFocused, setTextFocused] = useState(false);
 
   const editRow: TransactionRow | null = mode.kind === 'edit' ? mode.row : null;
   const pair = mode.kind === 'edit-transfer' ? mode : null;
@@ -245,6 +262,30 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     onClose();
   };
 
+  /** UI-SPEC 10: warn once when this save takes a category from under its cap to at or over it. */
+  const runCapCheck = (stepId: string | null, previous?: TransactionRow) => {
+    if (isTransfer) return;
+    const parsed = parse(state.amountText, state.currency);
+    if (!parsed.ok) return;
+    const positive = state.direction === 'in' || state.refund;
+    checkCap({
+      categoryId: state.categoryId,
+      localDate: state.localDate,
+      amountMinor: positive ? parsed.value : -parsed.value,
+      currency: state.currency,
+      previous:
+        previous && previous.status !== 'skipped'
+          ? {
+              categoryId: previous.category_id,
+              localDate: previous.local_date,
+              amountMinor: previous.original_amount,
+              currency: previous.original_currency,
+            }
+          : undefined,
+      stepId,
+    });
+  };
+
   const save = () => {
     setSubmitted(true);
     if (!rc.householdId || !rc.userId) return;
@@ -263,7 +304,8 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     if (editRow) {
       const patch = toPatch(editRow, state, amountMinor);
       // D-06/D-07: a template change on an occurrence asks which occurrences it applies to.
-      if (needsScopePrompt(editRow, patch)) {
+      // Automatic is a template flag too (D-02): changing it on an occurrence asks the same question.
+      if (needsScopePrompt(editRow, patch) || (editRow.recurring_series_id && patch.is_automatic !== undefined)) {
         setScopePatch(patch);
         return;
       }
@@ -302,6 +344,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         ownerId: rc.userId,
       });
       showToast({ kind: 'ordinary', text: undoLabelText('seriesCreated', { name }), stepId: seriesStep });
+      runCapCheck(seriesStep);
       trackAdded({ kind: state.direction === 'in' ? 'income' : 'expense', recurring: true });
       onClose();
       return;
@@ -310,6 +353,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     const stepId = newStepId();
     add({ ...input, undo: { stepId, labelKey: 'added', labelParams: { name } } });
     showToast({ kind: 'ordinary', text: undoLabelText('added', { name }), stepId });
+    runCapCheck(stepId);
     trackAdded({ kind: state.direction === 'in' ? 'income' : 'expense', recurring: false });
     onClose();
   };
@@ -344,8 +388,10 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         ownerId: rc.userId,
       });
       showToast({ kind: 'ordinary', text: undoLabelText('seriesCreated', { name }), stepId: seriesStep });
+      runCapCheck(seriesStep, row);
     } else {
       showToast({ kind: 'ordinary', text: undoLabelText('edited', { name }), stepId: editStep });
+      runCapCheck(editStep, row);
     }
     onClose();
   };
@@ -411,6 +457,23 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   ];
   const errorStyle = [textRole(pairing, 'label'), { color: colors.danger }];
   const noteStyle = [textRole(pairing, 'label'), { color: colors.inkMuted }];
+  const formatHome = (minor: number): string => formatter.formatMoney(money(minor, rc.homeCurrency));
+  const formatIn = (minor: number, code: string): string => {
+    const option = options.find((o) => o.code === code);
+    return formatter.formatMoney(money(minor, code), {
+      exponent: exponentFor(code),
+      customSymbol: option?.kind === 'custom' ? (option.symbol ?? undefined) : undefined,
+    });
+  };
+  const typedAmount = parse(state.amountText, state.currency);
+  const income = state.direction === 'in';
+  const inActive = crossCurrency && activeAmount === 'in';
+  const activeCurrency = inActive ? (state.toCurrency as string) : state.currency;
+  const keypadVisible = !textFocused;
+  const inFigureText = !crossCurrency
+    ? ''
+    : (inFigure ?? (state.amountInText === '' ? (showMoney('0', state.toCurrency ?? state.currency) ?? '') : state.amountInText));
+  const textFocusProps = { onFocus: () => setTextFocused(true), onBlur: () => setTextFocused(false) };
   const amountFailure = failureOf('amount');
   const amountInFailure = failureOf('amountIn');
   const crossNote =
@@ -451,31 +514,40 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           </View>
         ) : null}
 
-        <AmountDisplay text={isTransfer ? `↔ ${figureText}` : figureText} tone={isTransfer ? 'dim' : 'default'} />
-        <TextInput
-          accessibilityLabel={t(crossCurrency ? 'record.sheet.field.amountOut' : 'record.sheet.field.amount')}
-          keyboardType="decimal-pad"
-          value={state.amountText}
-          onChangeText={(text) => set({ amountText: text })}
-          style={inputStyle}
-          placeholderTextColor={colors.inkFaint}
-        />
+        <Pressable
+          accessibilityRole={crossCurrency ? 'button' : 'text'}
+          accessibilityLabel={t('record.sheet.keypad.amountA11y', { amount: figureText })}
+          accessibilityHint={t(crossCurrency ? 'record.sheet.field.amountOut' : 'record.sheet.field.amount')}
+          accessibilityLiveRegion="polite"
+          onPress={() => setActiveAmount('out')}
+        >
+          <AmountDisplay text={isTransfer ? `↔ ${figureText}` : figureText} tone={isTransfer ? 'dim' : 'default'} />
+        </Pressable>
         {amountFailure ? <Text style={errorStyle}>{parser.errorMessage(amountFailure)}</Text> : null}
         {crossCurrency ? (
           <>
-            <TextInput
-              accessibilityLabel={t('record.sheet.field.amountIn')}
-              keyboardType="decimal-pad"
-              value={state.amountInText}
-              onChangeText={(text) => set({ amountInText: text })}
-              style={inputStyle}
-              placeholderTextColor={colors.inkFaint}
-            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('record.sheet.keypad.amountA11y', { amount: inFigureText })}
+              accessibilityHint={t('record.sheet.field.amountIn')}
+              accessibilityLiveRegion="polite"
+              onPress={() => setActiveAmount('in')}
+            >
+              <AmountDisplay text={inFigureText} tone="dim" />
+            </Pressable>
             {amountInFailure ? <Text style={errorStyle}>{parser.errorMessage(amountInFailure)}</Text> : null}
             {crossNote ? <Text style={noteStyle}>{crossNote}</Text> : null}
           </>
         ) : null}
         {hasError('transferAmountsMatch') ? <Text style={errorStyle}>{t('record.sheet.transferAmountsMatch')}</Text> : null}
+        {keypadVisible ? (
+          <Keypad
+            value={inActive ? state.amountInText : state.amountText}
+            onChange={(next) => set(inActive ? { amountInText: next } : { amountText: next })}
+            exponent={exponentFor(activeCurrency)}
+            decimalSeparator={separators?.decimal ?? '.'}
+          />
+        ) : null}
 
         {isTransfer ? null : (
           <>
@@ -486,6 +558,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
               value={state.name}
               onChangeText={(text) => set({ name: text })}
               style={inputStyle}
+              {...textFocusProps}
             />
             {hasError('nameRequired') ? <Text style={errorStyle}>{t('record.sheet.nameRequired')}</Text> : null}
             <Row label={t('record.sheet.field.category')} value={categoryLabel} dense chevron onPress={() => setPicker('category')} />
@@ -511,7 +584,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         />
 
         {isTransfer ? (
-          <Text style={noteStyle}>{t(pair ? 'record.sheet.transferEditBoth' : 'record.sheet.transferNote')}</Text>
+          pair ? <Text style={noteStyle}>{t('record.sheet.transferEditBoth')}</Text> : null
         ) : (
           <>
             <Row
@@ -525,13 +598,15 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
 
             <View style={styles.chips}>
               <Pill
-                label={t('record.sheet.status.paid')}
+                label={t(income ? 'record.sheet.status.received' : 'record.sheet.status.paid')}
+                accessibilityHint={t(income ? 'record.sheet.status.receivedSub' : 'record.sheet.status.paidSub')}
                 variant={state.status === 'paid' ? 'primary' : 'secondary'}
                 selected={state.status === 'paid'}
                 onPress={() => setState((s) => withStatus(s, 'paid'))}
               />
               <Pill
-                label={t('record.sheet.status.pending')}
+                label={t(income ? 'record.sheet.status.expected' : 'record.sheet.status.pending')}
+                accessibilityHint={t(income ? 'record.sheet.status.expectedSub' : 'record.sheet.status.pendingSub')}
                 variant={state.status === 'pending' ? 'primary' : 'secondary'}
                 selected={state.status === 'pending'}
                 onPress={() => setState((s) => withStatus(s, 'pending'))}
@@ -556,6 +631,18 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
               />
             )}
             {repeatsError ? <Text style={errorStyle}>{t(`record.repeats.${repeatsError}`)}</Text> : null}
+            <ToggleRow
+              label={t('record.sheet.toggle.automatic')}
+              value={state.automatic}
+              onChange={(on) => setState((s) => withAutomatic(s, on))}
+            />
+            {state.direction === 'out' ? (
+              <ToggleRow
+                label={t('record.sheet.toggle.refund')}
+                value={state.refund}
+                onChange={(on) => setState((s) => withRefund(s, on))}
+              />
+            ) : null}
           </>
         )}
 
@@ -567,6 +654,23 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           onChangeText={(text) => set({ note: text })}
           style={inputStyle}
           multiline
+          {...textFocusProps}
+        />
+
+        <EntryNotes
+          direction={state.direction}
+          refund={state.refund}
+          status={state.status}
+          hasAccount={state.accountId !== null}
+          categoryLabel={categoryLabel}
+          accountName={nameOf(state.accountId)}
+          amountMinor={typedAmount.ok ? typedAmount.value : null}
+          currency={state.currency}
+          homeCurrency={rc.homeCurrency}
+          autoConvert={autoConvert}
+          formatMinor={formatIn}
+          exponentFor={exponentFor}
+          showAttribution={!editRow}
         />
 
         {editRow && editRow.original_currency !== editRow.home_currency ? (
@@ -593,6 +697,13 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           setPicker(null);
         }}
         onClose={() => setPicker(null)}
+        usage={usage}
+        formatMinor={formatHome}
+        onManage={() => {
+          setPicker(null);
+          onClose();
+          router.push('/categories');
+        }}
       />
       <AccountPicker
         visible={picker === 'account'}

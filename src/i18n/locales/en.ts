@@ -1031,6 +1031,7 @@ const en = {
       accountDeleted: 'Account deleted',
     },
     reverted: 'Undone · {{label}}',
+    batchRefused: 'That batch couldn’t be saved. Nothing was changed.',
     rolledBack_one: 'Undid {{count}} change',
     rolledBack_other: 'Undid {{count}} changes',
     refusal: {

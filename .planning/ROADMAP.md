@@ -315,7 +315,7 @@ Plans:
   7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
   8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
-**Plans:** 15/35 plans executed
+**Plans:** 34/35 plans executed
 
 Plans:
 
@@ -341,35 +341,35 @@ Plans:
 - [x] 02.2-15-PLAN.md — Schema: seed/clear sample data RPCs + pgTAP 48 (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 02.2-16-PLAN.md — Schema PR merged to main, then production schema push [BLOCKING, approval] and live checks (W4)
+- [x] 02.2-16-PLAN.md — Schema PR merged to main, then production schema push [BLOCKING, approval] and live checks (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 02.2-17-PLAN.md — DB layer: new columns in row types/key lists, soft-deleted accounts filtered, batch series wrapper (W5)
-- [ ] 02.2-18-PLAN.md — DB layer: record prefs, horizon, dismissed offers, samples, pending split, paid-before, add month, keys (W5)
+- [x] 02.2-17-PLAN.md — DB layer: new columns in row types/key lists, soft-deleted accounts filtered, batch series wrapper (W5)
+- [x] 02.2-18-PLAN.md — DB layer: record prefs, horizon, dismissed offers, samples, pending split, paid-before, add month, keys (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 02.2-19-PLAN.md — Queries: record context (week start, horizon, samples), month counts, refund-aware totals, on-device series offers (W6)
-- [ ] 02.2-20-PLAN.md — Mutations: clone month, paste lines, mark all monthly (one step each), suggestionToSeries relocation (W6)
-- [ ] 02.2-21-PLAN.md — Activity row tags, swipe, balance note; read-only detail sheet (W6)
-- [ ] 02.2-22-PLAN.md — Categories: usage sub-labels, monthly cap field, usage-sorted picker (W6)
+- [x] 02.2-19-PLAN.md — Queries: record context (week start, horizon, samples), month counts, refund-aware totals, on-device series offers (W6)
+- [x] 02.2-20-PLAN.md — Mutations: clone month, paste lines, mark all monthly (one step each), suggestionToSeries relocation (W6)
+- [x] 02.2-21-PLAN.md — Activity row tags, swipe, balance note; read-only detail sheet (W6)
+- [x] 02.2-22-PLAN.md — Categories: usage sub-labels, monthly cap field, usage-sorted picker (W6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 02.2-23-PLAN.md — Mutations: add month, delete account, dismiss offers, record prefs (W7)
-- [ ] 02.2-24-PLAN.md — Activity list views: view/sort dropdowns, group subtotals, running balance, count, view model (W7)
-- [ ] 02.2-25-PLAN.md — Entry sheet: keypad, Automatic/Refund toggles, notes, Received/Expected, clone prefill, cap warning (W7)
-- [ ] 02.2-26-PLAN.md — Paste to add sheet and Import entry (W7)
-- [ ] 02.2-27-PLAN.md — Import: refund suggestions and Automatic pre-tick (W7)
+- [x] 02.2-23-PLAN.md — Mutations: add month, delete account, dismiss offers, record prefs (W7)
+- [x] 02.2-24-PLAN.md — Activity list views: view/sort dropdowns, group subtotals, running balance, count, view model (W7)
+- [x] 02.2-25-PLAN.md — Entry sheet: keypad, Automatic/Refund toggles, notes, Received/Expected, clone prefill, cap warning (W7)
+- [x] 02.2-26-PLAN.md — Paste to add sheet and Import entry (W7)
+- [x] 02.2-27-PLAN.md — Import: refund suggestions and Automatic pre-tick (W7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 02.2-28-PLAN.md — Actions: sample seed/clear/decline, all-or-nothing home-currency change (W8)
-- [ ] 02.2-29-PLAN.md — Calendar view, series offer card, recurring review sheet (W8)
-- [ ] 02.2-30-PLAN.md — Month switcher counts + Add month, clone-month sheet (W8)
-- [ ] 02.2-31-PLAN.md — Account detail: Coming in / Going out / after pending, delete empty or archive (W8)
+- [x] 02.2-28-PLAN.md — Actions: sample seed/clear/decline, all-or-nothing home-currency change (W8)
+- [x] 02.2-29-PLAN.md — Calendar view, series offer card, recurring review sheet (W8)
+- [x] 02.2-30-PLAN.md — Month switcher counts + Add month, clone-month sheet (W8)
+- [x] 02.2-31-PLAN.md — Account detail: Coming in / Going out / after pending, delete empty or archive (W8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 02.2-32-PLAN.md — You -> Money: week start, home-currency change sheet, toast queue (W9)
-- [ ] 02.2-33-PLAN.md — Sample figures: onboarding option, Start fresh banner, first-save prompt on every real save path (W9)
-- [ ] 02.2-34-PLAN.md — Activity integration: calendar, offer, detail sheet, swipe, More menu, months, empty state (W9)
+- [x] 02.2-32-PLAN.md — You -> Money: week start, home-currency change sheet, toast queue (W9)
+- [x] 02.2-33-PLAN.md — Sample figures: onboarding option, Start fresh banner, first-save prompt on every real save path (W9)
+- [x] 02.2-34-PLAN.md — Activity integration: calendar, offer, detail sheet, swipe, More menu, months, empty state (W9)
 
 **Wave 10** *(blocked on Wave 9 completion)*
 - [ ] 02.2-35-PLAN.md — New dev build, device walkthrough of all eight criteria, validation sign-off (W10)

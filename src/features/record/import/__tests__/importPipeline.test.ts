@@ -3,7 +3,7 @@ import path from 'path';
 import { assert as fcAssert, boolean as fcBoolean, constantFrom as fcConstantFrom, property as fcProperty } from 'fast-check';
 import type { BuiltinCategoryKey } from '@/engine/categorize';
 import { minorUnits } from '@/engine/money';
-import type { PendingOccurrence, RecurringSuggestion } from '@/engine/recurring';
+import type { PendingOccurrence } from '@/engine/recurring';
 import {
   inferProfile,
   type DraftRow,
@@ -21,7 +21,6 @@ import {
   resolveProfile,
   sizeBand,
   statementOptions,
-  suggestionToSeries,
   toImportCommit,
   type CommitDecisions,
   type ExistingInfo,
@@ -647,7 +646,7 @@ describe('buildPreview: transfers, mark-paid and categories', () => {
       accountId: 'acc-1',
     };
     const p = buildPreview(previewInput(draftOf([out(0)]), { pending: [pending], transferCandidates: [leg('L1')] }));
-    expect(p.rows[0]?.payMatch).toEqual({ pendingId: 'p1' });
+    expect(p.rows[0]?.payMatch).toEqual({ pendingId: 'p1', automatic: false });
     expect(p.rows[0]?.transfer).toBeNull();
   });
 
@@ -667,7 +666,7 @@ describe('buildPreview: transfers, mark-paid and categories', () => {
     const p = buildPreview(previewInput(draftOf([draftRow(0, { currency: 'EUR' })]), { pending: [pending] }));
     expect(p.rows[0]?.payMatch).toBeNull();
     const same = buildPreview(previewInput(draftOf([draftRow(0)]), { pending: [pending] }));
-    expect(same.rows[0]?.payMatch).toEqual({ pendingId: 'p1' });
+    expect(same.rows[0]?.payMatch).toEqual({ pendingId: 'p1', automatic: false });
   });
 
   it('guesses categories: learned, keyword, income, none', () => {
@@ -989,7 +988,7 @@ describe('toImportCommit', () => {
 
     it('replaces the inserted row with an in-place patch of the pending row and keeps the line for fallback', () => {
       const p = preview();
-      expect(p.rows[0]?.payMatch).toEqual({ pendingId: 'p1' });
+      expect(p.rows[0]?.payMatch).toEqual({ pendingId: 'p1', automatic: false });
       const ctx = { ...CTX, existingById: new Map([['p1', info]]) };
       const { rows, finalize } = toImportCommit(p, decisions({ included: all(p), payMatches: new Set([0]) }), ctx, 'b', NEW_IDS());
       expect(rows).toEqual([]);
@@ -1067,57 +1066,92 @@ describe('sizeBand', () => {
   });
 });
 
-describe('suggestionToSeries', () => {
-  const suggestion: RecurringSuggestion = {
-    key: 'netflix|GBP|-',
-    name: 'NETFLIX',
-    amount: -999,
+describe('refund suggestions and automatic pay matches (plan 02.2-27)', () => {
+  const purchase = {
+    id: 'pur-1',
+    amount: -2999,
     currency: 'GBP',
-    freq: 'monthly',
-    anchorDate: '2026-11-03',
-    rowIds: ['r1', 'r2', 'r3'],
+    name: 'Amazon',
+    localDate: '2026-08-20',
+    categoryId: 'cat-shop',
+    isRefund: false,
   };
-  const rows = [
-    { id: 'r1', localDate: '2026-07-03', categoryId: 'cat-a' },
-    { id: 'r3', localDate: '2026-09-03', categoryId: 'cat-latest' },
-    { id: 'r2', localDate: '2026-08-03', categoryId: 'cat-b' },
-    { id: 'other', localDate: '2026-09-04', categoryId: 'cat-z' },
-  ];
+  const refundRow = (index = 0, over: Partial<DraftRow> = {}) =>
+    draftRow(index, { description: 'AMAZON REFUND', marker: 'none', magnitude: minorUnits(2999), rawAmount: '29.99', ...over });
+  const NEW_IDS = () => {
+    let n = 0;
+    return () => `id-${++n}`;
+  };
+  const CTX = {
+    householdId: 'hh-1',
+    accountId: 'acc-1',
+    timeZone: 'Europe/London',
+    transferCategoryId: 'cat-transfer',
+    accounts: TRANSFER_ACCOUNTS,
+    existingById: new Map<string, ExistingInfo>(),
+    accountVersion: 4,
+    remember: null as { signature: string; id: string } | null,
+  };
+  const decide = (over: Partial<CommitDecisions> = {}): CommitDecisions => ({
+    included: new Set([0]),
+    categories: new Map(),
+    links: new Map(),
+    orphans: new Map(),
+    payMatches: new Set(),
+    acceptLimit: false,
+    ...over,
+  });
 
-  it('anchors on the latest row, links the others and takes that row category', () => {
-    const r = suggestionToSeries(suggestion, rows, { householdId: 'hh', accountId: 'acc-1', timeZone: 'Europe/London' }, 'series-1');
-    expect(r.anchorTransactionId).toBe('r3');
-    expect(r.linkTransactionIds.sort()).toEqual(['r1', 'r2']);
-    expect(r.series).toEqual({
-      id: 'series-1',
-      household_id: 'hh',
-      account_id: 'acc-1',
-      name: 'NETFLIX',
-      amount: -999,
+  it('offers a refund on a current account and a card, not on a savings account', () => {
+    const draft = draftOf([refundRow()]);
+    const onCurrent = buildPreview(previewInput(draft, { purchases: [purchase] }));
+    expect(onCurrent.rows[0]?.refund).toEqual({ purchaseId: 'pur-1', merchant: 'Amazon', categoryId: 'cat-shop' });
+    const onCard = buildPreview(previewInput(draft, { purchases: [purchase], account: CARD_ACCOUNT }));
+    expect(onCard.rows[0]?.refund?.purchaseId).toBe('pur-1');
+    const onSavings = buildPreview(previewInput(draft, { purchases: [purchase], account: { ...ACCOUNT, kind: 'savings' } }));
+    expect(onSavings.rows[0]?.refund).toBeNull();
+  });
+
+  it('offers nothing without a matching earlier purchase', () => {
+    expect(buildPreview(previewInput(draftOf([refundRow()]))).rows[0]?.refund).toBeNull();
+    expect(buildPreview(previewInput(draftOf([refundRow()]), { purchases: [{ ...purchase, name: 'Tesco' }] })).rows[0]?.refund).toBeNull();
+  });
+
+  it('gives a duplicate row no refund suggestion', () => {
+    const p = buildPreview(
+      previewInput(draftOf([refundRow()]), {
+        purchases: [purchase],
+        existing: [{ id: 'e1', localDate: '2026-09-01', amount: 2999, name: 'AMAZON REFUND', externalId: null, importFormat: null }],
+      })
+    );
+    expect(p.rows[0]?.duplicate).not.toBeNull();
+    expect(p.rows[0]?.refund).toBeNull();
+  });
+
+  it('inserts an accepted refund with is_refund in the purchase category; unaccepted rows are unchanged', () => {
+    const p = buildPreview(previewInput(draftOf([refundRow()]), { purchases: [purchase] }));
+    const accepted = toImportCommit(p, decide({ refunds: new Set([0]) }), CTX, 'b', NEW_IDS());
+    expect(accepted.rows).toHaveLength(1);
+    expect(accepted.rows[0]).toMatchObject({ is_refund: true, category_id: 'cat-shop', original_amount: 2999 });
+    const declined = toImportCommit(p, decide(), CTX, 'b', NEW_IDS());
+    expect(declined.rows[0]?.is_refund).toBeUndefined();
+  });
+
+  it('carries the automatic flag of the matched pending line', () => {
+    const pending = (automatic: boolean): PendingOccurrence => ({
+      id: 'p1',
+      version: 1,
+      localDate: '2026-09-01',
+      amount: -1000,
       currency: 'GBP',
-      category_id: 'cat-latest',
-      payment_type: null,
-      freq: 'monthly',
-      anchor_date: '2026-11-03',
-      time_zone: 'Europe/London',
-      end_date: null,
-      occurrence_count: null,
+      name: 'ROW 0',
+      accountId: 'acc-1',
+      automatic,
     });
-  });
-
-  it('copes with rows that do not include a suggested id', () => {
-    const r = suggestionToSeries(suggestion, [], { householdId: 'hh', accountId: 'a', timeZone: 'UTC' }, 's');
-    expect(r.anchorTransactionId).toBe('r3');
-    expect(r.linkTransactionIds).toEqual(['r1', 'r2']);
-    expect(r.series.category_id).toBeNull();
-  });
-
-  it('breaks a same-day tie towards the later row in the list', () => {
-    const tie = [
-      { id: 'r1', localDate: '2026-09-03', categoryId: null },
-      { id: 'r2', localDate: '2026-09-03', categoryId: null },
-    ];
-    const r = suggestionToSeries({ ...suggestion, rowIds: ['r1', 'r2'] }, tie, { householdId: 'h', accountId: 'a', timeZone: 'UTC' }, 's');
-    expect(r.anchorTransactionId).toBe('r2');
+    expect(buildPreview(previewInput(draftOf([draftRow(0)]), { pending: [pending(true)] })).rows[0]?.payMatch).toEqual({
+      pendingId: 'p1',
+      automatic: true,
+    });
+    expect(buildPreview(previewInput(draftOf([draftRow(0)]), { pending: [pending(false)] })).rows[0]?.payMatch?.automatic).toBe(false);
   });
 });
