@@ -6,7 +6,10 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import type { CategoryLookup } from '@/data/queries/categories';
+import { flowOf, rowTag, type RowTagTone } from '@/engine/activity';
 import { money } from '@/engine/money';
+import { localDateIn } from '@/engine/time';
+import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import type { CardPositionOf } from './activitySections';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
@@ -15,6 +18,7 @@ import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { shadows, type CategorySwatchKey, type colors as ThemeColours } from '@/theme/tokens';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
+import { SwipeRow, type SwipeAction } from '@/ui/SwipeRow';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 
 /** Where a row sits in its run of rows: a section is one grouped card (UI-SPEC list-row cards). */
@@ -60,6 +64,16 @@ export interface ActivityRowProps {
   onPress: (row: ActivityRowView) => void;
   onMarkPaid: (row: ActivityRowView) => void;
   cardPosition?: CardPosition;
+  /** Local date used for the Due / Overdue / Scheduled tags; defaults to today on this device. */
+  today?: string;
+  /** Swipe right: mark paid / received (pending line) or moved (pending transfer). */
+  onSwipePay?: () => void;
+  /** Swipe right on a paid line: back to unpaid (a paid transfer goes back to scheduled). */
+  onSwipeUnpay?: () => void;
+  /** Swipe left: delete. */
+  onSwipeDelete?: () => void;
+  /** Running-balance note (D-25): replaces the sub-label. */
+  balanceNote?: { kind: 'after'; text: string } | { kind: 'notCounted' };
 }
 
 function letterOf(name: string): string {
@@ -67,16 +81,16 @@ function letterOf(name: string): string {
   return first === '' ? '?' : first.toUpperCase();
 }
 
-/**
- * Status tag. 'unpaid' (Due / Overdue / Expected) is danger, as in the prototype (UI-SPEC
- * colour amendment, 2026-10-07); danger on fill1 is 4.71:1. The word always carries the
- * meaning, never the colour alone.
- */
-function Tag({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'unpaid' }) {
+/** A tag word. The word carries the meaning; colour never does alone (UI-SPEC Accessibility). */
+function Tag({ label, tone = 'neutral', faint = false }: { label: string; tone?: RowTagTone; faint?: boolean }) {
   const { colors, pairing } = useTheme();
+  // Moved is inkFaint, so it sits on no fill (inkFaint on fill1 fails contrast); every other
+  // tone is on fill1.
+  const color =
+    tone === 'paid' ? colors.accent : tone === 'unpaid' ? colors.danger : faint ? colors.inkFaint : colors.inkMuted;
   return (
-    <View style={[styles.tag, { backgroundColor: colors.fill1 }]}>
-      <Text style={{ ...textRole(pairing, 'label'), color: tone === 'unpaid' ? colors.danger : colors.inkMuted }}>{label}</Text>
+    <View style={[styles.tag, { backgroundColor: faint ? 'transparent' : colors.fill1 }]}>
+      <Text style={{ ...textRole(pairing, 'label'), color }}>{label}</Text>
     </View>
   );
 }
@@ -93,6 +107,11 @@ export function ActivityRow({
   onPress,
   onMarkPaid,
   cardPosition = 'only',
+  today,
+  onSwipePay,
+  onSwipeUnpay,
+  onSwipeDelete,
+  balanceNote,
 }: ActivityRowProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -124,25 +143,57 @@ export function ActivityRow({
   const amountText = formatter.formatMoney(money(row.original_amount, row.original_currency));
   const showHome = !isTransfer && row.original_currency !== homeCurrency && row.amountHome !== null;
   const homeText = showHome ? formatter.formatMoney(money(row.amountHome as number, homeCurrency)) : null;
-  // 2026-10-07 colour amendment: money in is accent with a leading +; transfers stay inkDim.
-  const isIncome = !isTransfer && row.original_amount > 0;
-  const amountColor = isTransfer ? colors.inkDim : isIncome ? colors.accent : colors.ink;
-  const amountShown = isIncome ? `+${amountText}` : amountText;
+  // Refunds never count as income (D-03): flowOf says 'out'. They still show a leading '+' in
+  // accent (UI-SPEC accent item 3), but neither styling nor announcement calls them income.
+  const flow = flowOf(row);
+  const tag = rowTag(row, today ?? localDateIn(new Date(), getDeviceTimeZone()));
+  const isRefund = tag.refund && !isTransfer;
+  const isIncome = flow === 'in';
+  const amountColor = isTransfer ? colors.inkDim : isIncome || isRefund ? colors.accent : colors.ink;
+  const amountShown = !isTransfer && row.original_amount > 0 ? `+${amountText}` : amountText;
+  const notCounted = balanceNote?.kind === 'notCounted';
+  const nameColor = notCounted ? colors.inkMuted : colors.ink;
+  const figureColor = notCounted ? colors.inkMuted : amountColor;
 
   const canMarkPaid = row.status === 'pending' && !isTransfer && !selectable;
 
   // S-WR-14: an accessibility label replaces the children, so it carries everything the row
-  // shows that matters: name, amount, the home figure and the queued / overdue / due tags.
+  // shows that matters: name, amount, the home figure, the tag word and the refund / balance notes.
+  const tagWord = t(`activity.tag.${tag.kind}`);
   const tagTexts = [
     row.pending ? t('sync.pendingRow') : null,
-    row.overdue ? t('record.recurring.overdue') : null,
-    row.status === 'pending' && !row.overdue ? t('record.recurring.dueOn', { date: formatter.formatDate(row.local_date, 'short') }) : null,
+    tagWord,
+    isRefund ? t('activity.tag.refund') : null,
+    notCounted ? t('activity.balance.notCountedA11y') : null,
   ];
   const spoken = [name, amountText, homeText, ...tagTexts].filter((p): p is string => p !== null && p !== '').join(', ');
 
   const onRowPress = () => (selectable ? onToggleSelect?.(row) : onPress(row));
 
-  return (
+  const pending = row.status === 'pending';
+  const swipeable = onSwipePay !== undefined || onSwipeUnpay !== undefined || onSwipeDelete !== undefined;
+  let leftAction: SwipeAction | undefined;
+  if (row.status !== 'skipped') {
+    if (pending && onSwipePay) {
+      leftAction = isTransfer
+        ? { word: t('activity.swipe.moved'), a11yLabel: t('activity.detail.markMoved'), tone: 'positive', onCommit: onSwipePay }
+        : {
+            word: t(isIncome ? 'activity.swipe.received' : 'activity.swipe.paid'),
+            a11yLabel: t(isIncome ? 'activity.swipe.a11yMarkReceived' : 'activity.swipe.a11yMarkPaid'),
+            tone: 'positive',
+            onCommit: onSwipePay,
+          };
+    } else if (!pending && onSwipeUnpay) {
+      leftAction = isTransfer
+        ? { word: t('activity.swipe.scheduled'), a11yLabel: t('activity.detail.markScheduled'), tone: 'danger', onCommit: onSwipeUnpay }
+        : { word: t('activity.swipe.unpay'), a11yLabel: t('activity.swipe.a11yMarkUnpaid'), tone: 'danger', onCommit: onSwipeUnpay };
+    }
+  }
+  const rightAction: SwipeAction | undefined = onSwipeDelete
+    ? { word: t('activity.swipe.delete'), a11yLabel: t('activity.swipe.a11yDelete'), tone: 'danger', onCommit: onSwipeDelete }
+    : undefined;
+
+  const card = (
     <View testID={`activity-card-${row.id}`} style={[styles.card, cardStyle(cardPosition, colors)]}>
       <Pressable
         testID={`activity-row-${row.id}`}
@@ -164,18 +215,18 @@ export function ActivityRow({
         ) : null}
         <CategoryGlyph colorKey={swatchKey} letter={letter} />
         <View style={styles.text}>
-          <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+          <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: nameColor }}>
             {name}
           </Text>
           <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
-            {meta}
+            {balanceNote?.kind === 'after' ? balanceNote.text : notCounted ? t('activity.balance.notCounted') : meta}
+            {isRefund ? (
+              <Text style={{ color: colors.accent }}>{` · ${t('activity.tag.refund')}`}</Text>
+            ) : null}
           </Text>
           <View style={styles.tags}>
             {row.pending ? <Tag label={t('sync.pendingRow')} /> : null}
-            {row.overdue ? <Tag tone="unpaid" label={t('record.recurring.overdue')} /> : null}
-            {row.status === 'pending' && !row.overdue ? (
-              <Tag tone="unpaid" label={t('record.recurring.dueOn', { date: formatter.formatDate(row.local_date, 'short') })} />
-            ) : null}
+            <Tag tone={tag.tone} faint={tag.kind === 'moved'} label={tagWord} />
           </View>
         </View>
       </Pressable>
@@ -190,7 +241,7 @@ export function ActivityRow({
           onPress={onRowPress}
           style={styles.amountPress}
         >
-          <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: amountColor }}>{amountShown}</Text>
+          <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: figureColor }}>{amountShown}</Text>
           {homeText !== null ? (
             <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{homeText}</Text>
           ) : null}
@@ -208,6 +259,12 @@ export function ActivityRow({
         ) : null}
       </View>
     </View>
+  );
+  if (!swipeable) return card;
+  return (
+    <SwipeRow left={leftAction} right={rightAction} disabled={selectable} onPress={onRowPress} accessibilityLabel={selectable ? undefined : spoken}>
+      {card}
+    </SwipeRow>
   );
 }
 

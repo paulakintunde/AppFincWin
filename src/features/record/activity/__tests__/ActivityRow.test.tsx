@@ -10,6 +10,21 @@ import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { ACCENTS } from '@/theme/accents';
 import { ActivityRow, ProjectionRow, type CardPosition } from '../ActivityRow';
 
+jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+const mockSwipe: { props: Record<string, any> } = { props: {} };
+jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
+  const R = require('react');
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: R.forwardRef((props: any, ref: any) => {
+      mockSwipe.props = props;
+      R.useImperativeHandle(ref, () => ({ close: jest.fn() }));
+      return <View>{props.children}</View>;
+    }),
+  };
+});
+
 const categories: CategoryLookup = {
   all: [],
   active: [],
@@ -43,7 +58,12 @@ function row(over: Partial<ActivityRowView>): ActivityRowView {
   } as unknown as ActivityRowView;
 }
 
-async function renderRow(r: ActivityRowView, cardPosition?: CardPosition, onMarkPaid = jest.fn()) {
+async function renderRow(
+  r: ActivityRowView,
+  cardPosition?: CardPosition,
+  onMarkPaid = jest.fn(),
+  extra: Partial<React.ComponentProps<typeof ActivityRow>> = {}
+) {
   const screen = await render(
     <ThemeProvider>
       <ActivityRow
@@ -55,6 +75,8 @@ async function renderRow(r: ActivityRowView, cardPosition?: CardPosition, onMark
         cardPosition={cardPosition}
         onPress={jest.fn()}
         onMarkPaid={onMarkPaid}
+        today="2026-09-30"
+        {...extra}
       />
     </ThemeProvider>
   );
@@ -131,7 +153,7 @@ describe('ActivityRow colours (02-polish item 5, UI-SPEC amendment 2026-10-07)',
     const { screen } = await renderRow(row({ original_amount: 5000, amountHome: 5000, name: 'Salary' }), 'only');
     const amount = screen.getByText('+£50.00', { includeHiddenElements: true });
     expect(colourOf(amount)).toBe(ACCENTS.green);
-    expect(screen.getByTestId('activity-row-r1').props.accessibilityLabel).toBe('Salary, £50.00');
+    expect(screen.getByTestId('activity-row-r1').props.accessibilityLabel).toBe('Salary, £50.00, Received');
   });
 
   it('keeps an expense in ink with no sign added', async () => {
@@ -146,9 +168,9 @@ describe('ActivityRow colours (02-polish item 5, UI-SPEC amendment 2026-10-07)',
   });
 
   it('colours Due and Overdue tags in danger, with their words intact', async () => {
-    const due = await renderRow(row({ status: 'pending', local_date: '2026-09-28' }), 'only');
-    expect(colourOf(due.screen.getByText('Due 2026-09-28'))).toBe(colors.danger);
-    const overdue = await renderRow(row({ id: 'r2', status: 'pending', overdue: true }), 'only');
+    const due = await renderRow(row({ status: 'pending', local_date: '2026-09-30' }), 'only');
+    expect(colourOf(due.screen.getByText('Due'))).toBe(colors.danger);
+    const overdue = await renderRow(row({ id: 'r2', status: 'pending', overdue: true, local_date: '2026-09-29' }), 'only');
     expect(colourOf(overdue.screen.getByText('Overdue'))).toBe(colors.danger);
   });
 
@@ -170,5 +192,84 @@ describe('ActivityRow colours (02-polish item 5, UI-SPEC amendment 2026-10-07)',
       </ThemeProvider>
     );
     expect(flat(screen.getByText('Expected')).color).toBe(colors.danger);
+  });
+});
+
+describe('ActivityRow tags, refunds, swipe and balance note (02.2-21)', () => {
+  const colourOf = (el: { props: { style?: unknown } }) => flat(el).color;
+
+  it('tags paid expense Paid and paid income Received in accent', async () => {
+    const a = await renderRow(row({}), 'only');
+    expect(colourOf(a.screen.getByText('Paid'))).toBe(ACCENTS.green);
+    const b = await renderRow(row({ id: 'r2', original_amount: 5000, amountHome: 5000 }), 'only');
+    expect(colourOf(b.screen.getByText('Received'))).toBe(ACCENTS.green);
+  });
+
+  it('tags a pending expense dated yesterday Overdue, and pending income today Expected, in danger', async () => {
+    const a = await renderRow(row({ status: 'pending', local_date: '2026-09-29' }), 'only');
+    expect(colourOf(a.screen.getByText('Overdue'))).toBe(colors.danger);
+    const b = await renderRow(row({ id: 'r2', status: 'pending', original_amount: 5000, local_date: '2026-09-30' }), 'only');
+    expect(colourOf(b.screen.getByText('Expected'))).toBe(colors.danger);
+  });
+
+  it('tags a future line Scheduled in inkMuted on fill1', async () => {
+    const { screen } = await renderRow(row({ status: 'pending', local_date: '2026-10-05' }), 'only');
+    const word = screen.getByText('Scheduled');
+    expect(colourOf(word)).toBe(colors.inkMuted);
+    expect(flat(word.parent as never).backgroundColor).toBe(colors.fill1);
+  });
+
+  it('shows a paid refund with + in accent, Paid, a Refund sub-label and no income wording', async () => {
+    const { screen } = await renderRow(row({ original_amount: 2999, amountHome: 2999, is_refund: true, name: 'Return' } as Partial<ActivityRowView>), 'only');
+    expect(colourOf(screen.getByText('+£29.99', { includeHiddenElements: true }))).toBe(ACCENTS.green);
+    expect(screen.getByText('Paid')).toBeTruthy();
+    expect(colourOf(screen.getByText(/· Refund/))).toBe(ACCENTS.green);
+    const label = screen.getByTestId('activity-row-r1').props.accessibilityLabel as string;
+    expect(label).toBe('Return, £29.99, Paid, Refund');
+    expect(label).not.toMatch(/Received|income/);
+  });
+
+  async function actionWords() {
+    const left = mockSwipe.props.renderLeftActions?.();
+    const right = mockSwipe.props.renderRightActions?.();
+    const view = await render(<ThemeProvider>{left}{right}</ThemeProvider>);
+    return view;
+  }
+
+  it('exposes PAID / RECEIVED / UNPAY / DELETE swipe actions and disables them when selectable', async () => {
+    const handlers = { onSwipePay: jest.fn(), onSwipeUnpay: jest.fn(), onSwipeDelete: jest.fn() };
+    const hidden = { includeHiddenElements: true };
+    await renderRow(row({ status: 'pending', local_date: '2026-09-30' }), 'only', jest.fn(), handlers);
+    expect(mockSwipe.props.enabled).toBe(true);
+    let words = await actionWords();
+    expect(words.getByText('PAID', hidden)).toBeTruthy();
+    expect(words.getByText('DELETE', hidden)).toBeTruthy();
+    await renderRow(row({ id: 'r2', status: 'pending', original_amount: 900, local_date: '2026-09-30' }), 'only', jest.fn(), handlers);
+    words = await actionWords();
+    expect(words.getByText('RECEIVED', hidden)).toBeTruthy();
+    await renderRow(row({ id: 'r3' }), 'only', jest.fn(), handlers);
+    words = await actionWords();
+    expect(words.getByText('UNPAY', hidden)).toBeTruthy();
+    await renderRow(row({ id: 'r4' }), 'only', jest.fn(), { ...handlers, selectable: true });
+    expect(mockSwipe.props.enabled).toBe(false);
+  });
+
+  it('renders the balance note in place of the sub-label', async () => {
+    const { screen } = await renderRow(row({}), 'only', jest.fn(), { balanceNote: { kind: 'after', text: 'Oct 3 · balance £75.00 after' } });
+    expect(screen.getByText('Oct 3 · balance £75.00 after')).toBeTruthy();
+  });
+
+  it('shows not yet counted with name and amount in inkMuted and speaks it', async () => {
+    const { screen } = await renderRow(row({ status: 'pending', local_date: '2026-09-30' }), 'only', jest.fn(), { balanceNote: { kind: 'notCounted' } });
+    expect(screen.getByText('not yet counted')).toBeTruthy();
+    expect(colourOf(screen.getByText('Coffee'))).toBe(colors.inkMuted);
+    expect(colourOf(screen.getByText('-£12.50', { includeHiddenElements: true }))).toBe(colors.inkMuted);
+    expect((screen.getByTestId('activity-row-r1').props.accessibilityLabel as string).endsWith('not yet counted in the balance')).toBe(true);
+  });
+
+  it('keeps the queued tag alongside the status tag', async () => {
+    const { screen } = await renderRow(row({ pending: true } as Partial<ActivityRowView>), 'only');
+    expect(screen.getByText('queued')).toBeTruthy();
+    expect(screen.getByText('Paid')).toBeTruthy();
   });
 });
