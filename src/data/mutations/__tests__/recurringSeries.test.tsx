@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { DbClient, RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import type { NewRecurringSeries } from '@/db/recurringSeries';
+import type { RecurringSuggestion } from '@/engine/recurring';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { queryKeys } from '@/data/keys';
 import { clearVersionChains, resolveExpectedVersion } from '@/data/sync/versionChain';
@@ -16,6 +17,7 @@ import {
   registerSeriesMutations,
   seriesInputFromRow,
   seriesPatchFromOccurrenceEdit,
+  suggestionToSeries,
   useCreateSeries,
   useEditSeriesFrom,
   useEndSeries,
@@ -130,13 +132,18 @@ describe('helpers', () => {
     time_zone: 'Europe/London',
     local_date: '2026-10-03',
     name: 'Rent',
+    is_automatic: false,
   } satisfies Pick<
     TransactionRow,
-    'household_id' | 'account_id' | 'original_amount' | 'original_currency' | 'category_id' | 'payment_type' | 'time_zone' | 'local_date' | 'name'
+    'household_id' | 'account_id' | 'original_amount' | 'original_currency' | 'category_id' | 'payment_type' | 'time_zone' | 'local_date' | 'name' | 'is_automatic'
   >;
 
   it('seriesInputFromRow maps the row and schedule onto a NewRecurringSeries', () => {
-    expect(seriesInputFromRow(row, { freq: 'monthly', endDate: null, occurrenceCount: null }, 's1')).toEqual(newSeries);
+    expect(seriesInputFromRow(row, { freq: 'monthly', endDate: null, occurrenceCount: null }, 's1')).toEqual({ ...newSeries, is_automatic: false });
+  });
+
+  it('seriesInputFromRow carries is_automatic from an Automatic line (D-02)', () => {
+    expect(seriesInputFromRow({ ...row, is_automatic: true }, { freq: 'monthly', endDate: null, occurrenceCount: null }, 's1').is_automatic).toBe(true);
   });
 
   it('seriesInputFromRow carries the schedule end date and count', () => {
@@ -166,6 +173,10 @@ describe('helpers', () => {
       seriesPatchFromOccurrenceEdit({ original_currency: 'EUR', account_id: 'a2', category_id: null, payment_type: 'card' })
     ).toEqual({ currency: 'EUR', account_id: 'a2', category_id: null, payment_type: 'card' });
     expect(seriesPatchFromOccurrenceEdit({ note: 'only a note' })).toEqual({});
+  });
+
+  it('seriesPatchFromOccurrenceEdit carries is_automatic so This and future keeps the flag (D-02)', () => {
+    expect(seriesPatchFromOccurrenceEdit({ is_automatic: true })).toEqual({ is_automatic: true });
   });
 });
 
@@ -493,5 +504,71 @@ describe('FX follow-up for server-materialised foreign lines (02-46)', () => {
     await settle();
     expect(calls(fake, 'functions.invoke')).toHaveLength(0);
     expect(recordFailedWrite).not.toHaveBeenCalled();
+  });
+});
+
+describe('suggestionToSeries', () => {
+  const suggestion: RecurringSuggestion = {
+    key: 'netflix|GBP|-',
+    name: 'NETFLIX',
+    amount: -999,
+    currency: 'GBP',
+    freq: 'monthly',
+    anchorDate: '2026-11-03',
+    rowIds: ['r1', 'r2', 'r3'],
+  };
+  const rows = [
+    { id: 'r1', localDate: '2026-07-03', categoryId: 'cat-a' },
+    { id: 'r3', localDate: '2026-09-03', categoryId: 'cat-latest' },
+    { id: 'r2', localDate: '2026-08-03', categoryId: 'cat-b' },
+    { id: 'other', localDate: '2026-09-04', categoryId: 'cat-z' },
+  ];
+
+  it('anchors on the latest row, links the others and takes that row category', () => {
+    const r = suggestionToSeries(suggestion, rows, { householdId: 'hh', accountId: 'acc-1', timeZone: 'Europe/London' }, 'series-1');
+    expect(r.anchorTransactionId).toBe('r3');
+    expect(r.linkTransactionIds.sort()).toEqual(['r1', 'r2']);
+    expect(r.series).toEqual({
+      id: 'series-1',
+      household_id: 'hh',
+      account_id: 'acc-1',
+      name: 'NETFLIX',
+      amount: -999,
+      currency: 'GBP',
+      category_id: 'cat-latest',
+      payment_type: null,
+      freq: 'monthly',
+      anchor_date: '2026-11-03',
+      time_zone: 'Europe/London',
+      end_date: null,
+      occurrence_count: null,
+      is_automatic: false,
+    });
+  });
+
+  it('copes with rows that do not include a suggested id', () => {
+    const r = suggestionToSeries(suggestion, [], { householdId: 'hh', accountId: 'a', timeZone: 'UTC' }, 's');
+    expect(r.anchorTransactionId).toBe('r3');
+    expect(r.linkTransactionIds).toEqual(['r1', 'r2']);
+    expect(r.series.category_id).toBeNull();
+  });
+
+  it('breaks a same-day tie towards the later row in the list', () => {
+    const tie = [
+      { id: 'r1', localDate: '2026-09-03', categoryId: null },
+      { id: 'r2', localDate: '2026-09-03', categoryId: null },
+    ];
+    const r = suggestionToSeries({ ...suggestion, rowIds: ['r1', 'r2'] }, tie, { householdId: 'h', accountId: 'a', timeZone: 'UTC' }, 's');
+    expect(r.anchorTransactionId).toBe('r2');
+  });
+
+  it('takes the account and Automatic flag from the anchor row when the rows carry them (Activity)', () => {
+    const withAcc = [
+      { id: 'r1', localDate: '2026-07-03', categoryId: null, accountId: 'acc-old', isAutomatic: false },
+      { id: 'r3', localDate: '2026-09-03', categoryId: null, accountId: 'acc-latest', isAutomatic: true },
+    ];
+    const r = suggestionToSeries(suggestion, withAcc, { householdId: 'hh', accountId: 'fallback', timeZone: 'UTC' }, 's');
+    expect(r.series.account_id).toBe('acc-latest');
+    expect(r.series.is_automatic).toBe(true);
   });
 });

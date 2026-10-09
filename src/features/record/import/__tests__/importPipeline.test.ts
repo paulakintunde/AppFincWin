@@ -3,7 +3,7 @@ import path from 'path';
 import { assert as fcAssert, boolean as fcBoolean, constantFrom as fcConstantFrom, property as fcProperty } from 'fast-check';
 import type { BuiltinCategoryKey } from '@/engine/categorize';
 import { minorUnits } from '@/engine/money';
-import type { PendingOccurrence, RecurringSuggestion } from '@/engine/recurring';
+import type { PendingOccurrence } from '@/engine/recurring';
 import {
   inferProfile,
   type DraftRow,
@@ -21,7 +21,6 @@ import {
   resolveProfile,
   sizeBand,
   statementOptions,
-  suggestionToSeries,
   toImportCommit,
   type CommitDecisions,
   type ExistingInfo,
@@ -1064,60 +1063,5 @@ describe('toImportCommit', () => {
 describe('sizeBand', () => {
   it('bands a row count', () => {
     expect([1, 50, 51, 500, 501, 5000].map(sizeBand)).toEqual(['1-50', '1-50', '51-500', '51-500', '501-5000', '501-5000']);
-  });
-});
-
-describe('suggestionToSeries', () => {
-  const suggestion: RecurringSuggestion = {
-    key: 'netflix|GBP|-',
-    name: 'NETFLIX',
-    amount: -999,
-    currency: 'GBP',
-    freq: 'monthly',
-    anchorDate: '2026-11-03',
-    rowIds: ['r1', 'r2', 'r3'],
-  };
-  const rows = [
-    { id: 'r1', localDate: '2026-07-03', categoryId: 'cat-a' },
-    { id: 'r3', localDate: '2026-09-03', categoryId: 'cat-latest' },
-    { id: 'r2', localDate: '2026-08-03', categoryId: 'cat-b' },
-    { id: 'other', localDate: '2026-09-04', categoryId: 'cat-z' },
-  ];
-
-  it('anchors on the latest row, links the others and takes that row category', () => {
-    const r = suggestionToSeries(suggestion, rows, { householdId: 'hh', accountId: 'acc-1', timeZone: 'Europe/London' }, 'series-1');
-    expect(r.anchorTransactionId).toBe('r3');
-    expect(r.linkTransactionIds.sort()).toEqual(['r1', 'r2']);
-    expect(r.series).toEqual({
-      id: 'series-1',
-      household_id: 'hh',
-      account_id: 'acc-1',
-      name: 'NETFLIX',
-      amount: -999,
-      currency: 'GBP',
-      category_id: 'cat-latest',
-      payment_type: null,
-      freq: 'monthly',
-      anchor_date: '2026-11-03',
-      time_zone: 'Europe/London',
-      end_date: null,
-      occurrence_count: null,
-    });
-  });
-
-  it('copes with rows that do not include a suggested id', () => {
-    const r = suggestionToSeries(suggestion, [], { householdId: 'hh', accountId: 'a', timeZone: 'UTC' }, 's');
-    expect(r.anchorTransactionId).toBe('r3');
-    expect(r.linkTransactionIds).toEqual(['r1', 'r2']);
-    expect(r.series.category_id).toBeNull();
-  });
-
-  it('breaks a same-day tie towards the later row in the list', () => {
-    const tie = [
-      { id: 'r1', localDate: '2026-09-03', categoryId: null },
-      { id: 'r2', localDate: '2026-09-03', categoryId: null },
-    ];
-    const r = suggestionToSeries({ ...suggestion, rowIds: ['r1', 'r2'] }, tie, { householdId: 'h', accountId: 'a', timeZone: 'UTC' }, 's');
-    expect(r.anchorTransactionId).toBe('r2');
   });
 });

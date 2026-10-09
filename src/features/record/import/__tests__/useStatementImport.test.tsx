@@ -32,7 +32,11 @@ jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...arg
 jest.mock('@/state/undoToast', () => ({ showToast: (...args: unknown[]) => mockShowToast(...args) }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => `id-${++mockUuid}` }));
 jest.mock('@/data/mutations/importFinalize', () => ({ useImportCommit: () => ({ commit: (...args: unknown[]) => mockCommit(...args) }) }));
-jest.mock('@/data/mutations/recurringSeries', () => ({ useCreateSeries: () => ({ create: (...args: unknown[]) => mockCreateSeries(...args) }) }));
+// 02.2-20: suggestionToSeries moved here from the pipeline; keep the real one, mock only the hook.
+jest.mock('@/data/mutations/recurringSeries', () => ({
+  ...jest.requireActual('@/data/mutations/recurringSeries'),
+  useCreateSeries: () => ({ create: (...args: unknown[]) => mockCreateSeries(...args) }),
+}));
 jest.mock('@/services/locale/deviceLocale', () => ({
   useDeviceLocale: () => ({ locale: 'en-GB', timeZone: 'UTC', separators: { decimal: '.', group: ',' } }),
 }));
