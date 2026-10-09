@@ -20,6 +20,8 @@ import { SettingsGroup } from './components/SettingsGroup';
 import { AccentSwitcher } from './components/AccentSwitcher';
 import { FontPairingSwitcher } from './components/FontPairingSwitcher';
 import { AnalyticsToggle } from './components/AnalyticsToggle';
+import { WeekStartRow } from './components/WeekStartRow';
+import { HomeCurrencyRow } from './components/HomeCurrencyRow';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { DevSyncProbe } from './components/DevSyncProbe';
 
@@ -88,6 +90,8 @@ export function YouScreen() {
             <Text style={[styles.rowLabel, { fontFamily: fonts.body[500], color: colors.ink }]}>{t(row.label)}</Text>
           </Pressable>
         ))}
+        <WeekStartRow />
+        <HomeCurrencyRow />
       </SettingsGroup>
 
       <SettingsGroup title={t('you.section.appearance')}>

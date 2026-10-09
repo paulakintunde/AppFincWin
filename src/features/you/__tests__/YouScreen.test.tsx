@@ -99,6 +99,29 @@ jest.mock('../components/DevSyncProbe', () => ({
   DevSyncProbe: () => null,
 }));
 
+// 02.2-32: the Money group's week-start and home-currency rows have their own data hooks;
+// stubbed here so this screen-level test needs no providers.
+const mockSetWeekStart = jest.fn();
+let mockWeekStart: 0 | 1 = 1;
+jest.mock('@/features/record/useRecordContext', () => ({
+  useRecordContext: () => ({
+    userId: 'u1',
+    householdId: 'h1',
+    homeCurrency: 'GBP',
+    weekStart: mockWeekStart,
+    region: 'GB',
+  }),
+}));
+jest.mock('@/data/mutations/recordPrefs', () => ({
+  useUpdateRecordPrefs: () => ({ setWeekStart: (...a: unknown[]) => mockSetWeekStart(...a) }),
+}));
+jest.mock('@/data/queries/currencyOptions', () => ({
+  useCurrencyOptions: () => ({ options: [{ code: 'GBP', name: 'Pound', exponent: 2 }] }),
+}));
+jest.mock('@/data/mutations/homeCurrency', () => ({
+  useChangeHomeCurrency: () => ({ change: jest.fn(), pending: false }),
+}));
+
 async function renderScreen() {
   return render(
     <ThemeProvider>
@@ -338,5 +361,27 @@ describe('YouScreen credits', () => {
     });
 
     expect(openURLSpy).toHaveBeenCalledWith('https://www.exchangerate-api.com');
+  });
+});
+
+describe('YouScreen Money settings (02.2-32)', () => {
+  it('shows week start (Monday) with its sub-label, and picking Sunday calls setWeekStart(0)', async () => {
+    mockWeekStart = 1;
+    const { getByText, getByLabelText } = await renderScreen();
+    expect(getByText('Monday')).toBeTruthy();
+    expect(getByText('Used by the calendar and week view')).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(getByLabelText('Week starts on'));
+    });
+    await act(async () => {
+      fireEvent.press(getByLabelText('Sunday'));
+    });
+    expect(mockSetWeekStart).toHaveBeenCalledWith(0);
+  });
+
+  it('shows the Home currency row with the current code', async () => {
+    const { getByText } = await renderScreen();
+    expect(getByText('Home currency')).toBeTruthy();
+    expect(getByText('GBP')).toBeTruthy();
   });
 });
