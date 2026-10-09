@@ -174,6 +174,35 @@ export function MatchesStep({ state }: { state: ImportState }) {
     );
   };
 
+  const refundCard = (rf: ImportState['refundRows'][number]) => {
+    const merchant = rf.merchant;
+    const line = lineText(rowAt(rf.index));
+    return (
+      <SuggestionCard key={`refund-${rf.index}`}>
+        <T accessibilityLabel={t('importCsv.refund.a11y', { merchant })}>{t('importCsv.refund.suggestion', { merchant })}</T>
+        {line === null ? null : (
+          <T role="label" tone="inkMuted" numberOfLines={1}>
+            {line}
+          </T>
+        )}
+        <Actions>
+          <Pill
+            label={t('importCsv.refund.accept')}
+            variant="secondary"
+            disabled={rf.answer === 'accepted'}
+            onPress={() => state.acceptRefund(rf.index)}
+          />
+          <Pill
+            label={t('importCsv.refund.dismiss')}
+            variant="secondary"
+            disabled={rf.answer === 'dismissed'}
+            onPress={() => state.dismissRefund(rf.index)}
+          />
+        </Actions>
+      </SuggestionCard>
+    );
+  };
+
   return (
     <View>
       <Heading>{t('importCsv.matchesHeading')}</Heading>
@@ -191,6 +220,7 @@ export function MatchesStep({ state }: { state: ImportState }) {
         return orphanCard(ts);
       })}
       {state.payMatchRows.map(payCard)}
+      {state.refundRows.map(refundCard)}
 
       <Actions>
         <Pill

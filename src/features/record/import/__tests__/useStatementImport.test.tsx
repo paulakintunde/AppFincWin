@@ -559,8 +559,8 @@ describe('useStatementImport: review', () => {
     dbTx.fetchHasRowsBefore.mockResolvedValue(true);
     await reachReview(fixture('bank-sgml.ofx'), 'ofx');
     expect(dbTx.fetchHasRowsAfter).toHaveBeenCalledWith(expect.anything(), 'hh-1', 'acc-1', '2026-09-12');
-    // the only range read is the file range itself
-    expect(dbTx.fetchTransactionsInRange).toHaveBeenCalledTimes(1);
+    // two range reads: the file range itself and the one refund-purchases read (D-07)
+    expect(dbTx.fetchTransactionsInRange).toHaveBeenCalledTimes(2);
   });
 
   it('S-WR-05: rows dated after the file mean the current balance is not the opening', async () => {
@@ -875,6 +875,87 @@ describe('useStatementImport: matches', () => {
     const { rows, finalize } = mockCommit.mock.calls[0]![0];
     expect(finalize.markPaid).toEqual([]);
     expect(rows.some((r: { name: string }) => r.name === 'COSTA COFFEE')).toBe(true);
+  });
+});
+
+describe('useStatementImport: refunds and automatic pay matches (D-07, D-08)', () => {
+  const pending = (over: Record<string, unknown>) =>
+    stored({ id: 'pend-1', status: 'pending', original_amount: -1250, name: 'COSTA COFFEE', local_date: '2026-09-03', version: 6, ...over });
+
+  it('D-08: an Automatic pending line is pre-ticked and commits as mark-paid without an answer', async () => {
+    dbTx.fetchTransactionsInRange.mockResolvedValue([pending({ is_automatic: true })]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.payMatchRows[0]).toEqual(expect.objectContaining({ pendingId: 'pend-1', automatic: true, answer: 'accepted' }));
+    await act(async () => {
+      result.current.commit();
+    });
+    const { finalize } = mockCommit.mock.calls[0]![0];
+    expect(finalize.markPaid).toHaveLength(1);
+  });
+
+  it('D-08: a pre-tick can be unticked, and a Manual line stays unticked', async () => {
+    dbTx.fetchTransactionsInRange.mockResolvedValue([pending({ is_automatic: true })]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const costa = rowIndex(result, 'COSTA COFFEE');
+    await act(async () => {
+      result.current.dismissPayMatch(costa);
+    });
+    expect(result.current.payMatchRows[0]?.answer).toBe('dismissed');
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit.mock.calls[0]![0].finalize.markPaid).toEqual([]);
+  });
+
+  it('D-08: a Manual line is not pre-ticked', async () => {
+    dbTx.fetchTransactionsInRange.mockResolvedValue([pending({ is_automatic: false })]);
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.payMatchRows[0]).toEqual(expect.objectContaining({ automatic: false, answer: null }));
+  });
+
+  const purchase = stored({ id: 'pur-1', original_amount: -150000, name: 'ACME LTD', local_date: '2026-08-20', category_id: 'cat-shop' });
+  const withPurchase = (): void => {
+    // the purchases read starts REFUND_LOOKBACK_DAYS before the file; the file-range read does not
+    dbTx.fetchTransactionsInRange.mockImplementation(async (_c: unknown, _h: unknown, range: { from: string }) =>
+      range.from === '2026-05-04' ? [purchase] : []
+    );
+  };
+
+  it('D-07: a refund is unticked by default and inserts as is_refund only when accepted', async () => {
+    withPurchase();
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(result.current.refundRows).toHaveLength(1);
+    const acme = result.current.refundRows[0]!.index;
+    expect(result.current.refundRows[0]).toEqual({ index: acme, merchant: 'ACME LTD', answer: null });
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(result.current.stage).toBe('matches');
+    await act(async () => {
+      result.current.acceptRefund(acme);
+    });
+    expect(mockTrack).toHaveBeenCalledWith('refund_suggestion_answered', { accepted: true });
+    await act(async () => {
+      result.current.commit();
+    });
+    const { rows } = mockCommit.mock.calls[0]![0];
+    const line = rows.find((r: { original_amount: number }) => r.original_amount === 150000);
+    expect(line).toEqual(expect.objectContaining({ is_refund: true, category_id: 'cat-shop' }));
+  });
+
+  it('D-07: declining a refund inserts the line unchanged', async () => {
+    withPurchase();
+    const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    const acme = result.current.refundRows[0]!.index;
+    await act(async () => {
+      result.current.dismissRefund(acme);
+    });
+    expect(mockTrack).toHaveBeenCalledWith('refund_suggestion_answered', { accepted: false });
+    await act(async () => {
+      result.current.commit();
+    });
+    const line = mockCommit.mock.calls[0]![0].rows.find((r: { original_amount: number }) => r.original_amount === 150000);
+    expect(line.is_refund).toBeUndefined();
   });
 });
 

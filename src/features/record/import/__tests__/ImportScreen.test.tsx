@@ -134,6 +134,9 @@ function makeState(over: Partial<Record<keyof ImportState, unknown>> = {}): Impo
     acceptLimit: fn(),
     transferRows: [],
     payMatchRows: [],
+    refundRows: [],
+    acceptRefund: fn(),
+    dismissRefund: fn(),
     linkTransfer: fn(),
     dismissTransfer: fn(),
     setOrphanAccount: fn(),
@@ -733,7 +736,7 @@ describe('ImportScreen: matches', () => {
 
   it('a pay-match names the pending bill and offers Mark paid and Keep both', async () => {
     mockState = matchesState([previewRow(0, { payMatch: { pendingId: 'pend-1' } })], {
-      payMatchRows: [{ index: 0, pendingId: 'pend-1', answer: null }],
+      payMatchRows: [{ index: 0, pendingId: 'pend-1', automatic: false, answer: null }],
     });
     await renderScreen();
     expect(screen.getByText('Looks like this pays the pending Coffee subscription bill. Mark it paid?')).toBeTruthy();
@@ -769,7 +772,7 @@ describe('ImportScreen: matches', () => {
           tRow(1, { kind: 'pair', existingId: 'leg-2' }),
           tRow(2, { kind: 'orphan' }),
         ],
-        payMatchRows: [{ index: 2, pendingId: 'pend-1', answer: null }],
+        payMatchRows: [{ index: 2, pendingId: 'pend-1', automatic: false, answer: null }],
         ...over,
       });
 

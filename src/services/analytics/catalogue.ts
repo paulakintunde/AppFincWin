@@ -42,6 +42,7 @@ export type EventCatalogue = {
   recurring_suggestion_answered: { accepted: boolean };
   transfer_suggestion_answered: { accepted: boolean; kind: 'pair' | 'orphan' };
   pay_match_answered: { accepted: boolean };
+  refund_suggestion_answered: { accepted: boolean };
 };
 
 export type EventName = keyof EventCatalogue;
