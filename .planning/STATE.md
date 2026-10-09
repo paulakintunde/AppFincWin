@@ -132,6 +132,8 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
+- [Phase 02.1] **Execution order: 02.2 → revise 02.1 → execute 02.1.** 02.1's plans (committed 2026-09-27) are stale and must be revised after 02.2 executes, before 02.1 runs: (1) migrations `20260927000100_statement_uploads_bucket.sql` / `…000200_statement_uploads_purge.sql` predate production's latest (`20261007000400`), so `supabase db push` refuses them without `--include-all`; re-date them after 02.2's `20261010…` range. (2) pgTAP `35_statement_uploads.test.sql` collides with existing `35_series_undo.test.sql`; renumber after 02.2's 42–48. (3) Plans 02.1-09..11 edit `useStatementImport.ts`, `importPipeline.ts`, `ImportScreen.tsx`, which 02.2 plans 20/26/27/33 change (suggestionToSeries move, refund/Automatic, paste entry, sample-clear prompt); rebase them on the post-02.2 code. Route: `/gsd-plan-phase 02.1` → "Replan" or targeted revision
+
 - [Phase 10] ENV-16 moved from Phase 2 on 2026-09-25: production has **no backups** until then (method TBD, likely AWS, e.g. a daily dump to S3). Supabase Pro is no longer assumed, so a Free-plan production project also **pauses after a week with no activity**, taking the live app offline. That needs its own answer (upgrade, keep-alive, or accept) before real users arrive
 - [Phase 0] EAS provisioning and credentials from Windows are unproven for this project — trigger the first iOS EAS Build on day one so provisioning surprises surface in week one, not week ten
 - [Phase 8] The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe — needs a dedicated two-client offline-mid-edit spike before it is trusted

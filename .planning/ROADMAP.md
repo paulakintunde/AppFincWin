@@ -262,7 +262,7 @@ Plans:
 **Goal:** A user can import a text-based PDF bank or card statement through the same import pipeline as CSV and OFX, with figures that are only committed once they reconcile or the user has reviewed them.
 **Requirements**: IMP-01, IMP-02, IMP-03, IMP-04, IMP-05
 **Note (2026-10-08):** IMP-05 (statement-provided conversions, show both figures) was added after this phase was planned; re-plan 2.1 to cover it before executing.
-**Depends on:** Phase 2 (the D-40 import pipeline, format profile, reconciliation, transfers)
+**Depends on:** Phase 2 (the D-40 import pipeline, format profile, reconciliation, transfers), Phase 02.2 (executes first; it changes the import commit path 02.1-09..11 build on). Plans need revision before execution: see STATE.md Blockers
 **Success Criteria** (what must be TRUE):
   1. A text-based PDF statement from a supported layout imports with the same format read-back, preview, duplicate check and transfer suggestions as a CSV or OFX file.
   2. Nothing from a PDF is committed unless its balances reconcile or the user has reviewed each row that could not be verified.
