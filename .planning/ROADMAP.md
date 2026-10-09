@@ -315,7 +315,7 @@ Plans:
   7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
   8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
-**Plans:** 27/35 plans executed
+**Plans:** 31/35 plans executed
 
 Plans:
 
@@ -361,10 +361,10 @@ Plans:
 - [x] 02.2-27-PLAN.md — Import: refund suggestions and Automatic pre-tick (W7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 02.2-28-PLAN.md — Actions: sample seed/clear/decline, all-or-nothing home-currency change (W8)
-- [ ] 02.2-29-PLAN.md — Calendar view, series offer card, recurring review sheet (W8)
-- [ ] 02.2-30-PLAN.md — Month switcher counts + Add month, clone-month sheet (W8)
-- [ ] 02.2-31-PLAN.md — Account detail: Coming in / Going out / after pending, delete empty or archive (W8)
+- [x] 02.2-28-PLAN.md — Actions: sample seed/clear/decline, all-or-nothing home-currency change (W8)
+- [x] 02.2-29-PLAN.md — Calendar view, series offer card, recurring review sheet (W8)
+- [x] 02.2-30-PLAN.md — Month switcher counts + Add month, clone-month sheet (W8)
+- [x] 02.2-31-PLAN.md — Account detail: Coming in / Going out / after pending, delete empty or archive (W8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 02.2-32-PLAN.md — You -> Money: week start, home-currency change sheet, toast queue (W9)
