@@ -20,9 +20,12 @@ export interface RowProps {
   accessibilityLabel?: string;
   /** S-IN-09: a choice row's selected state, announced as such rather than only as a check mark. */
   selected?: boolean;
+  /** REC-22: an optional second line under the label (meta size), e.g. a category's usage. */
+  sublabel?: string;
+  sublabelTone?: 'inkMuted' | 'warn1';
 }
 
-export function Row({ label, value, leading, chevron = false, dense = false, onPress, accessibilityLabel, selected }: RowProps) {
+export function Row({ label, value, leading, chevron = false, dense = false, onPress, accessibilityLabel, selected, sublabel, sublabelTone = 'inkMuted' }: RowProps) {
   const { colors, pairing } = useTheme();
   const labelStyle = { ...textRole(pairing, 'body'), color: colors.ink };
   const valueStyle = { ...textRole(pairing, 'body'), color: colors.inkMuted };
@@ -35,7 +38,14 @@ export function Row({ label, value, leading, chevron = false, dense = false, onP
       ]}
     >
       {leading ? <View style={styles.leading}>{leading}</View> : null}
-      <Text style={[styles.label, labelStyle]}>{label}</Text>
+      {sublabel ? (
+        <View style={styles.label}>
+          <Text style={labelStyle}>{label}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), color: colors[sublabelTone] }}>{sublabel}</Text>
+        </View>
+      ) : (
+        <Text style={[styles.label, labelStyle]}>{label}</Text>
+      )}
       {value ? <Text style={valueStyle}>{value}</Text> : null}
       {chevron ? <ChevronGlyph color={colors.inkFaint} /> : null}
     </View>
@@ -46,7 +56,7 @@ export function Row({ label, value, leading, chevron = false, dense = false, onP
       <Pressable
         testID="row-root"
         accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityLabel={accessibilityLabel ?? (sublabel ? `${label}, ${sublabel}` : label)}
         // C-WR-08: the label above overrides the child text, so the current selection would
         // otherwise never be announced ("Category, button"). Expose it as the value instead.
         accessibilityValue={value ? { text: value } : undefined}

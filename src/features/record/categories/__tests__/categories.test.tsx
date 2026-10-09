@@ -57,13 +57,26 @@ jest.mock('@/data/queries/categories', () => ({
   useCategoryUsage: () => mockUsage,
 }));
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ ready: true, userId: 'u1', householdId: 'h1' }),
+  useRecordContext: () => ({
+    ready: true,
+    userId: 'u1',
+    householdId: 'h1',
+    homeCurrency: 'GBP',
+    showCents: true,
+    region: 'GB',
+    today: '2026-10-09',
+  }),
+}));
+let mockMonthRows: Record<string, unknown>[] = [];
+jest.mock('@/data/queries/activity', () => ({
+  useMonthView: () => ({ rows: mockMonthRows, isLoading: false }),
 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
   resetToastForTests();
   mockUsage = { count: 0, capped: false, isLoading: false };
+  mockMonthRows = [];
 });
 
 // One render per test: a second render leaks an act() scope in this project's Jest setup.
@@ -324,5 +337,38 @@ describe('CategoriesScreen', () => {
     );
     await fireEvent.press(u.getByText('Add category'));
     expect(u.getByText('New category')).toBeTruthy();
+  });
+});
+
+describe('CategoriesScreen usage sub-labels', () => {
+  const line = (category_id: string, amountHome: number) => ({
+    category_id,
+    amountHome,
+    status: 'paid',
+    transfer_id: null,
+    is_refund: false,
+  });
+
+  it('shows used and unused counts', async () => {
+    mockMonthRows = [line('c1', -1000), line('c1', -500)];
+    const u = await render(
+      <ThemeProvider>
+        <CategoriesScreen />
+      </ThemeProvider>
+    );
+    expect(u.getByText('Used 2 times this month')).toBeTruthy();
+    expect(u.getAllByText('Not used yet').length).toBeGreaterThan(0);
+  });
+
+  it('shows spend against a cap, and the over-cap wording', async () => {
+    mockAll[0] = cat({ monthly_cap: 30000 });
+    mockMonthRows = [line('c1', -31000)];
+    const u = await render(
+      <ThemeProvider>
+        <CategoriesScreen />
+      </ThemeProvider>
+    );
+    expect(u.getByText(/£310\.00 of £300\.00 this month, over by £10\.00/)).toBeTruthy();
+    mockAll[0] = cat();
   });
 });
