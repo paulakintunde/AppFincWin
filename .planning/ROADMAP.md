@@ -315,7 +315,7 @@ Plans:
   7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
   8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
-**Plans:** 22/35 plans executed
+**Plans:** 27/35 plans executed
 
 Plans:
 
@@ -354,11 +354,11 @@ Plans:
 - [x] 02.2-22-PLAN.md — Categories: usage sub-labels, monthly cap field, usage-sorted picker (W6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 02.2-23-PLAN.md — Mutations: add month, delete account, dismiss offers, record prefs (W7)
-- [ ] 02.2-24-PLAN.md — Activity list views: view/sort dropdowns, group subtotals, running balance, count, view model (W7)
-- [ ] 02.2-25-PLAN.md — Entry sheet: keypad, Automatic/Refund toggles, notes, Received/Expected, clone prefill, cap warning (W7)
-- [ ] 02.2-26-PLAN.md — Paste to add sheet and Import entry (W7)
-- [ ] 02.2-27-PLAN.md — Import: refund suggestions and Automatic pre-tick (W7)
+- [x] 02.2-23-PLAN.md — Mutations: add month, delete account, dismiss offers, record prefs (W7)
+- [x] 02.2-24-PLAN.md — Activity list views: view/sort dropdowns, group subtotals, running balance, count, view model (W7)
+- [x] 02.2-25-PLAN.md — Entry sheet: keypad, Automatic/Refund toggles, notes, Received/Expected, clone prefill, cap warning (W7)
+- [x] 02.2-26-PLAN.md — Paste to add sheet and Import entry (W7)
+- [x] 02.2-27-PLAN.md — Import: refund suggestions and Automatic pre-tick (W7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
 - [ ] 02.2-28-PLAN.md — Actions: sample seed/clear/decline, all-or-nothing home-currency change (W8)
