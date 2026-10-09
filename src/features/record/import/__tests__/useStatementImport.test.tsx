@@ -8,6 +8,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { AccountRow } from '@/db/rows';
 import { useStatementImport } from '../useStatementImport';
+import { getSampleClearPromptRequestForTests, resetSamplePromptForTests } from '@/state/samplePrompt';
+import { queryKeys } from '@/data/keys';
 import * as suggestionCap from '../suggestionCap';
 import * as pipeline from '../importPipeline';
 
@@ -122,8 +124,10 @@ function pickOk(bytes: Uint8Array, extension: 'csv' | 'ofx' | 'qfx' | 'other' = 
   pickStatementBytes.mockResolvedValueOnce({ kind: 'ok', bytes, mimeType: null, extension });
 }
 
+let testClient: QueryClient;
 function wrapper() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  testClient = client;
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
   };
@@ -140,6 +144,7 @@ function trackedNames(): string[] {
 }
 
 beforeEach(() => {
+  resetSamplePromptForTests();
   jest.clearAllMocks();
   jest.restoreAllMocks();
   mockTransferCategoryId = 'cat-transfer';
@@ -1133,5 +1138,34 @@ describe('useStatementImport: screen read-outs (02-27)', () => {
     ]);
     const { result } = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
     expect(result.current.storedLegs.get('pend-1')).toEqual({ accountId: 'acc-1', name: 'Coffee subscription' });
+  });
+});
+
+describe('useStatementImport: first real save prompt (D-11)', () => {
+  const seedSamples = () => {
+    testClient.setQueryData(queryKeys.sampleExists('hh-1'), true);
+    testClient.setQueryData(queryKeys.recordPrefs('user-1'), { week_start: null, sample_prompt_answered_at: null });
+  };
+
+  it('a commit with rows asks to clear the samples', async () => {
+    const { result } = await reachReview(csv(CSV_DECIDED), 'csv');
+    seedSamples();
+    await act(async () => {
+      result.current.continue();
+    });
+    expect(mockCommit).toHaveBeenCalledTimes(1);
+    expect(getSampleClearPromptRequestForTests()).toBe(true);
+  });
+
+  it('a commit that throws does not ask', async () => {
+    mockCommit.mockImplementationOnce(() => {
+      throw new TypeError('refused');
+    });
+    const { result } = await reachReview(csv(CSV_DECIDED), 'csv');
+    seedSamples();
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(getSampleClearPromptRequestForTests()).toBe(false);
   });
 });

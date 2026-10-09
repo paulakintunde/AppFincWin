@@ -22,6 +22,7 @@ import {
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { showToast } from '@/state/undoToast';
+import { maybeRequestSampleClearPrompt } from './samplePromptTrigger';
 import { writeClient } from './writeClient';
 import { provisionalStamp } from './provisional';
 import { recordUndoStepSafely } from './undoCapture';
@@ -72,6 +73,8 @@ export async function insertRowsAsOneStep(
       )
     );
     await recordUndoStepSafely(qc, client, step, input.ownerId);
+    // D-11: clone month and paste share this path.
+    maybeRequestSampleClearPrompt(qc, { householdId: input.rows[0]!.household_id, userId: input.ownerId });
   }
   return { inserted: collected.length, rateRows: collected };
 }

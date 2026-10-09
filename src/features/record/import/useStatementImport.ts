@@ -12,6 +12,7 @@
 // D-17 / D-29: every database read has a fallback, so a preview never waits on the network.
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { maybeRequestSampleClearPrompt } from '@/data/mutations/samplePromptTrigger';
 import { validateMapping, notationFor, type ColumnMapping, type DateFormat, type MappingError } from '@/engine/csv';
 import { buildLearnedMap } from '@/engine/categorize';
 import { minorUnits, parseAmount, resolveExponent, type NumberNotation, type ScaledRate } from '@/engine/money';
@@ -1038,6 +1039,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       return;
     }
     setCommitProblem(null);
+    // D-11: imported rows are real lines (the client has no is_sample grant).
+    if (built.rows.length > 0) maybeRequestSampleClearPrompt(qc, { householdId, userId });
 
     const count = built.rows.length + built.finalize.markPaid.length;
     showToast({ kind: 'destructive', text: { key: 'undo.label.imported', params: { count, n: count } }, stepId });
