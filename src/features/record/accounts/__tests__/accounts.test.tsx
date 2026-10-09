@@ -31,6 +31,10 @@ jest.mock('@/data/mutations/accounts', () => ({
   useAddAccount: () => ({ add: mockAdd }),
   useEditAccount: () => ({ edit: mockEdit }),
 }));
+jest.mock('@/data/mutations/accountDelete', () => ({ useDeleteAccount: () => ({ remove: jest.fn() }) }));
+jest.mock('@/data/queries/pendingSplit', () => ({ usePendingSplit: () => ({ split: new Map(), isLoading: false }) }));
+jest.mock('../useAccountUsage', () => ({ useAccountUsage: () => ({ usage: null }) }));
+jest.mock('expo-router', () => ({ router: { back: jest.fn() } }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => 'step-1' }));
 jest.mock('@/data/mutations/transactions', () => ({ useMarkPaid: () => ({ markPaid: jest.fn(() => null) }) }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: mockTrack }) }));
@@ -76,6 +80,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
     region: mockRegion,
     timeZone: 'Europe/London',
     today: '2026-10-06',
+    horizonMonth: null,
   }),
 }));
 jest.mock('@/features/record/entry/TransactionSheet', () => ({ TransactionSheet: () => null }));
@@ -296,14 +301,12 @@ describe('AccountBalanceBlock', () => {
     expect(JSON.stringify(getByText('£240.00').props.style)).not.toContain(colors.danger);
   });
 
-  it('colours money still coming in green and still going out red', async () => {
-    const inbound = await wrap(<AccountBalanceBlock account={account()} balance={view({ pendingSum: 1500 })} homeCurrency="GBP" />);
-    expect(JSON.stringify(inbound.getByText('£15.00 still to come').props.style)).toContain('#1B4D3E');
-    const outbound = await wrap(<AccountBalanceBlock account={account()} balance={view({ pendingSum: -1500 })} homeCurrency="GBP" />);
-    expect(JSON.stringify(outbound.getByText(/still to come/).props.style)).toContain(colors.danger);
+  it('no longer shows the single still-to-come line (the detail rows carry the split, ACT-17)', async () => {
+    const u = await wrap(<AccountBalanceBlock account={account()} balance={view({ pendingSum: 1500 })} homeCurrency="GBP" />);
+    expect(u.queryByText(/still to come/)).toBeNull();
   });
 
-  it('shows other-currency subtotals, still to come, and an approximate home figure with the rate date', async () => {
+  it('shows other-currency subtotals and an approximate home figure with the rate date', async () => {
     const { getByText } = await wrap(
       <AccountBalanceBlock
         account={account({ currency: 'EUR' })}
@@ -312,7 +315,6 @@ describe('AccountBalanceBlock', () => {
       />
     );
     expect(getByText('Also £5.00 in GBP')).toBeTruthy();
-    expect(getByText(/still to come/)).toBeTruthy();
     expect(getByText(/^≈ /)).toBeTruthy();
     expect(getByText(/1 Oct 2026|2026/)).toBeTruthy();
   });
@@ -369,6 +371,16 @@ describe('AccountsScreen and AccountDetailScreen', () => {
     expect(onImport).toHaveBeenCalledWith('acc1');
     await fireEvent.press(getByText('Edit account'));
     expect(getByText('Save changes')).toBeTruthy();
+  });
+
+  it('detail shows the pending rows and the archive footer while usage is unknown', async () => {
+    mockAccounts = [account()];
+    mockBalances = new Map([['acc1', view()]]);
+    const { getByText, queryByText } = await wrap(<AccountDetailScreen accountId="acc1" onImport={jest.fn()} />);
+    expect(getByText('Coming in')).toBeTruthy();
+    expect(getByText('After pending through November')).toBeTruthy();
+    expect(getByText('Archive account')).toBeTruthy();
+    expect(queryByText('Delete account')).toBeNull();
   });
 });
 
