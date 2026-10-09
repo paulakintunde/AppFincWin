@@ -33,7 +33,7 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [x] **ENV-05**: EAS project is initialised with development, preview and production build profiles
 - [x] **ENV-06**: Google OAuth client IDs exist for iOS, Android and Web, and Google Sign-In completes end to end
 - [ ] **ENV-07**: Sign in with Apple is configured with its Service ID and key, and completes end to end — *deferrable, blocked on ENV-10*
-- [ ] **ENV-08**: The on-demand FX fetch path (the `resolve-rate` Edge Function, Frankfurter v2 with the open.er-api fallback) is deployed, populates the shared `fx_rates` table when a rate is needed, and is monitored on failure; there is no schedule *(amended 2026-10-07, was: "deployed and populating the `fx_rates` table on schedule"; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
+- [x] **ENV-08**: The on-demand FX fetch path (the `resolve-rate` Edge Function, Frankfurter v2 with the open.er-api fallback) is deployed, populates the shared `fx_rates` table when a rate is needed, and is monitored on failure; there is no schedule *(amended 2026-10-07, was: "deployed and populating the `fx_rates` table on schedule"; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
 - [x] **ENV-09**: A dependency status register is maintained listing every external service as provisioned, pending or deferred, with its blocker and the phase it must land by
 - [ ] **ENV-10**: Apple Developer Program membership is active **as an organisation, under the company** (Guideline 5.1.1(ix)) — *external clock: D-U-N-S then enrolment; gates ENV-07, iOS device builds, TestFlight and submission*
 - [ ] **ENV-11**: Google Play Console organisation account is active under the company and an app entry exists — *deferrable to Phase 11; uses the same D-U-N-S number as ENV-10*
@@ -55,7 +55,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **ANL-02**: No analytics event leaves the device until the user has opted in, and the user can change that choice in settings at any time
 - [x] **ANL-03**: Every event is drawn from a typed catalogue whose properties cannot carry amounts, payee names, account names or free text
 - [x] **ANL-04**: Session replay is excluded from production builds
-- [ ] **ANL-05**: Drop-off from signup through first entry and first statement import is measurable
+- [x] **ANL-05**: Drop-off from signup through first entry and first statement import is measurable
 - [ ] **ANL-06**: Checks started, completed, their verdict state and decisions recorded are measurable, with no amounts attached
 - [ ] **ANL-07**: Onboarding asks for analytics consent once, in plain language
 - [ ] **ANL-08**: The level onboarding assigns, and any later change the user makes to it, is measurable
@@ -83,12 +83,12 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **MON-03**: Splitting an amount across members always produces shares that sum exactly to the original, using largest-remainder rounding
 - [x] **MON-04**: User can set a home currency from the supported list or add a custom currency
 - [x] **MON-05**: A transaction in a non-home currency records the FX rate applied at the time it was written
-- [ ] **MON-06**: FX rates are fetched on demand, per date, only when a currency other than the home currency is involved (a foreign line, a foreign account, an import, a home-currency change); each rate is stored once in the project's own shared store and reused by every user, and the app reads only that store *(amended 2026-10-07, was: "FX rates refresh daily from Frankfurter v2 into the project's own store, and the app reads only that store"; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
+- [x] **MON-06**: FX rates are fetched on demand, per date, only when a currency other than the home currency is involved (a foreign line, a foreign account, an import, a home-currency change); each rate is stored once in the project's own shared store and reused by every user, and the app reads only that store *(amended 2026-10-07, was: "FX rates refresh daily from Frankfurter v2 into the project's own store, and the app reads only that store"; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
 - [x] **MON-07**: A rate's own publication date is visible wherever a converted figure is shown, rather than implied to be current
 - [x] **MON-08**: Every record carries a client-generated UUID primary key assigned before the write leaves the device
 - [x] **MON-09**: Every mutable record carries an integer version that increments server-side on write
-- [ ] **MON-10**: An alert fires when an on-demand rate fetch fails or a fetched rate is held *(amended 2026-10-07, was: "An alert fires when any currency's latest stored rate is older than its staleness limit"; staleness limits are retired; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
-- [ ] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it *(adapted 2026-10-07: with on-demand fetching the move is measured against a stored rate at most 7 days older, and an unconfirmed hold is auto-accepted after 2 days by the fetch path rather than a cron; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
+- [x] **MON-10**: An alert fires when an on-demand rate fetch fails or a fetched rate is held *(amended 2026-10-07, was: "An alert fires when any currency's latest stored rate is older than its staleness limit"; staleness limits are retired; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
+- [x] **MON-11**: A day-on-day rate move beyond the plausibility threshold (about 10%) is held back until a second source confirms it *(adapted 2026-10-07: with on-demand fetching the move is measured against a stored rate at most 7 days older, and an unconfirmed hold is auto-accepted after 2 days by the fetch path rather than a cron; see `.planning/phases/02-record/02-DECISION-fx-on-demand.md`)*
 - [x] **MON-12**: When Frankfurter cannot be reached, rates refresh from open.er-api instead, and its required attribution is shown in the app
 - [x] **MON-13**: Each currency's decimal places come from ISO 4217 — 0 for JPY, KRW and VND, 3 for KWD, BHD and OMR — and a custom currency declares its own
 - [x] **MON-14**: A transaction stores its local calendar date and time zone, so its month and any recurring schedule never shift across time zones or clock changes
@@ -105,24 +105,24 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 ### Recording
 
-- [ ] **REC-01**: User can log an expense with amount, category, account and date
-- [ ] **REC-02**: User can log income with amount, category, account and date
-- [ ] **REC-03**: User can edit any transaction they created
-- [ ] **REC-04**: User can delete a transaction
-- [ ] **REC-05**: User can mark a transaction as recurring on a schedule, and it generates entries without re-typing
-- [ ] **REC-06**: User can skip or end a single occurrence of a recurring transaction without deleting the series
-- [ ] **REC-07**: User can create, rename and colour their own categories beyond the built-in set
-- [ ] **REC-08**: User can create accounts and see a balance per account
-- [ ] **REC-09**: User can import transactions from a statement file (CSV or OFX/QFX; PDF in Phase 2.1) during onboarding or later
-- [ ] **REC-10**: Import shows what will be created and lets the user correct column mapping before committing
-- [ ] **REC-11**: User can undo any of their last 12 changes from the toast or the history screen
-- [ ] **REC-12**: Undo is refused with an explanation when another household member has since changed the same record
-- [ ] **REC-13**: Before converting a statement, import works out its format (what a positive amount means, what the balance column shows — money held, amount owed or available credit — and any stated limit), shows that reading in plain words for the user to confirm or flip, asks when the file is ambiguous, and remembers a confirmed reading for the same file layout
-- [ ] **REC-14**: Import reads every common amount notation (leading or trailing minus, parentheses, DR/CR, OD, separate debit and credit columns) and stores every row under one sign rule, keeping the bank's original values alongside
-- [ ] **REC-15**: When a statement carries balances, import checks that the opening balance plus the rows equals the closing balance and highlights rows it cannot verify before committing; a negative balance is never treated as an error
-- [ ] **REC-16**: Re-importing the same or an overlapping statement does not create duplicates, while identical genuine transactions within one file are all kept
-- [ ] **REC-17**: User can set an overdraft limit on a current or savings account and a credit limit on a card, and each account shows its standing — in credit, overdrawn within or beyond its overdraft, owing within or over its card limit — without treating overdrawn or over-limit as an error
-- [ ] **REC-18**: User can record a transfer between their own accounts as one linked pair, import suggests matching transfer pairs such as card payments, and transfers are excluded from income and spending totals
+- [x] **REC-01**: User can log an expense with amount, category, account and date
+- [x] **REC-02**: User can log income with amount, category, account and date
+- [x] **REC-03**: User can edit any transaction they created
+- [x] **REC-04**: User can delete a transaction
+- [x] **REC-05**: User can mark a transaction as recurring on a schedule, and it generates entries without re-typing
+- [x] **REC-06**: User can skip or end a single occurrence of a recurring transaction without deleting the series
+- [x] **REC-07**: User can create, rename and colour their own categories beyond the built-in set
+- [x] **REC-08**: User can create accounts and see a balance per account
+- [x] **REC-09**: User can import transactions from a statement file (CSV or OFX/QFX; PDF in Phase 2.1) during onboarding or later
+- [x] **REC-10**: Import shows what will be created and lets the user correct column mapping before committing
+- [x] **REC-11**: User can undo any of their last 12 changes from the toast or the history screen
+- [x] **REC-12**: Undo is refused with an explanation when another household member has since changed the same record
+- [x] **REC-13**: Before converting a statement, import works out its format (what a positive amount means, what the balance column shows — money held, amount owed or available credit — and any stated limit), shows that reading in plain words for the user to confirm or flip, asks when the file is ambiguous, and remembers a confirmed reading for the same file layout
+- [x] **REC-14**: Import reads every common amount notation (leading or trailing minus, parentheses, DR/CR, OD, separate debit and credit columns) and stores every row under one sign rule, keeping the bank's original values alongside
+- [x] **REC-15**: When a statement carries balances, import checks that the opening balance plus the rows equals the closing balance and highlights rows it cannot verify before committing; a negative balance is never treated as an error
+- [x] **REC-16**: Re-importing the same or an overlapping statement does not create duplicates, while identical genuine transactions within one file are all kept
+- [x] **REC-17**: User can set an overdraft limit on a current or savings account and a credit limit on a card, and each account shows its standing — in credit, overdrawn within or beyond its overdraft, owing within or over its card limit — without treating overdrawn or over-limit as an error
+- [x] **REC-18**: User can record a transfer between their own accounts as one linked pair, import suggests matching transfer pairs such as card payments, and transfers are excluded from income and spending totals
 - [ ] **REC-19**: User can clone transactions (a line, or last month's recurring lines) as well as using recurring series
 - [ ] **REC-20**: The entry sheet offers a money keypad, Automatic payment and Refund toggles, a "Marking this paid moves X by Y" note, an FX "Saves as … at rate" note, and Received/Expected wording for income
 - [ ] **REC-21**: User can paste a list of lines to import them
@@ -132,11 +132,11 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 ### Activity
 
-- [ ] **ACT-01**: User can see all transactions for a month in a list
-- [ ] **ACT-02**: User can switch months, including into archived months
-- [ ] **ACT-03**: User can search transactions across all months
-- [ ] **ACT-04**: User can filter the list by category, account and amount
-- [ ] **ACT-05**: User can select multiple transactions and delete them in one action
+- [x] **ACT-01**: User can see all transactions for a month in a list
+- [x] **ACT-02**: User can switch months, including into archived months
+- [x] **ACT-03**: User can search transactions across all months
+- [x] **ACT-04**: User can filter the list by category, account and amount
+- [x] **ACT-05**: User can select multiple transactions and delete them in one action
 - [ ] **ACT-06**: User can view the month as a week breakdown, a split view, a balance view and a calendar *(moved from Phase 7 to Phase 2.2 on 2026-10-07)*
 - [ ] **ACT-07**: User can view Activity by day, with each day's net subtotal
 - [ ] **ACT-08**: Every Activity grouping shows a net subtotal, including Week 1 to Week 5 in the week view and each group in In / out and Running balance
@@ -381,7 +381,7 @@ Populated during roadmap creation.
 | ENV-05 | Phase 0 - Foundation | Complete |
 | ENV-06 | Phase 0 - Foundation | Complete |
 | ENV-07 | Phase 0 - Foundation | Pending |
-| ENV-08 | Phase 0 - Foundation | Pending (amended 2026-10-07; re-verified by 02-50) |
+| ENV-08 | Phase 0 - Foundation | Complete (on-demand FX rollout 2026-10-08, docs/acceptance/phase-02-fx-on-demand.md) |
 | ENV-09 | Phase 0 - Foundation | Complete |
 | ENV-10 | Phase 0 - Foundation | Pending |
 | ENV-11 | Phase 11 - Compliance & Release | Pending |
@@ -398,7 +398,7 @@ Populated during roadmap creation.
 | ANL-02 | Phase 0 - Foundation | Complete |
 | ANL-03 | Phase 0 - Foundation | Complete |
 | ANL-04 | Phase 0 - Foundation | Complete |
-| ANL-05 | Phase 2 - Record | Pending |
+| ANL-05 | Phase 2 - Record | Complete |
 | ANL-06 | Phase 5 - Decide UI | Pending |
 | ANL-07 | Phase 9 - Tiers & Onboarding | Pending |
 | ANL-08 | Phase 9 - Tiers & Onboarding | Pending |
@@ -420,12 +420,12 @@ Populated during roadmap creation.
 | MON-03 | Phase 1 - Money Core | Complete |
 | MON-04 | Phase 1 - Money Core | Complete |
 | MON-05 | Phase 1 - Money Core | Complete |
-| MON-06 | Phase 1 - Money Core | Pending (amended 2026-10-07; re-verified by 02-50) |
+| MON-06 | Phase 1 - Money Core | Complete (on-demand FX rollout 2026-10-08, docs/acceptance/phase-02-fx-on-demand.md) |
 | MON-07 | Phase 1 - Money Core | Complete |
 | MON-08 | Phase 1 - Money Core | Complete |
 | MON-09 | Phase 1 - Money Core | Complete |
-| MON-10 | Phase 1 - Money Core | Pending (amended 2026-10-07; re-verified by 02-50) |
-| MON-11 | Phase 1 - Money Core | Pending (amended 2026-10-07; re-verified by 02-50) |
+| MON-10 | Phase 1 - Money Core | Complete (on-demand FX rollout 2026-10-08, docs/acceptance/phase-02-fx-on-demand.md) |
+| MON-11 | Phase 1 - Money Core | Complete (on-demand FX rollout 2026-10-08, docs/acceptance/phase-02-fx-on-demand.md) |
 | MON-12 | Phase 1 - Money Core | Complete |
 | MON-13 | Phase 1 - Money Core | Complete |
 | MON-14 | Phase 1 - Money Core | Complete |
@@ -436,29 +436,29 @@ Populated during roadmap creation.
 | SYN-05 | Phase 10 - System | Pending |
 | SYN-06 | Phase 1 - Money Core | Complete |
 | SYN-07 | Phase 1 - Money Core | Complete |
-| REC-01 | Phase 2 - Record | Pending |
-| REC-02 | Phase 2 - Record | Pending |
-| REC-03 | Phase 2 - Record | Pending |
-| REC-04 | Phase 2 - Record | Pending |
-| REC-05 | Phase 2 - Record | Pending |
-| REC-06 | Phase 2 - Record | Pending |
-| REC-07 | Phase 2 - Record | Pending |
-| REC-08 | Phase 2 - Record | Pending |
-| REC-09 | Phase 2 - Record | Pending |
-| REC-10 | Phase 2 - Record | Pending |
-| REC-11 | Phase 2 - Record | Pending |
-| REC-12 | Phase 2 - Record | Pending |
-| REC-13 | Phase 2 - Record | Pending |
-| REC-14 | Phase 2 - Record | Pending |
-| REC-15 | Phase 2 - Record | Pending |
-| REC-16 | Phase 2 - Record | Pending |
-| REC-17 | Phase 2 - Record | Pending |
-| REC-18 | Phase 2 - Record | Pending |
-| ACT-01 | Phase 2 - Record | Pending |
-| ACT-02 | Phase 2 - Record | Pending |
-| ACT-03 | Phase 2 - Record | Pending |
-| ACT-04 | Phase 2 - Record | Pending |
-| ACT-05 | Phase 2 - Record | Pending |
+| REC-01 | Phase 2 - Record | Complete |
+| REC-02 | Phase 2 - Record | Complete |
+| REC-03 | Phase 2 - Record | Complete |
+| REC-04 | Phase 2 - Record | Complete |
+| REC-05 | Phase 2 - Record | Complete |
+| REC-06 | Phase 2 - Record | Complete |
+| REC-07 | Phase 2 - Record | Complete |
+| REC-08 | Phase 2 - Record | Complete |
+| REC-09 | Phase 2 - Record | Complete (Android verified; iOS picker in 02-HUMAN-UAT.md) |
+| REC-10 | Phase 2 - Record | Complete |
+| REC-11 | Phase 2 - Record | Complete |
+| REC-12 | Phase 2 - Record | Complete |
+| REC-13 | Phase 2 - Record | Complete |
+| REC-14 | Phase 2 - Record | Complete |
+| REC-15 | Phase 2 - Record | Complete |
+| REC-16 | Phase 2 - Record | Complete |
+| REC-17 | Phase 2 - Record | Complete |
+| REC-18 | Phase 2 - Record | Complete |
+| ACT-01 | Phase 2 - Record | Complete |
+| ACT-02 | Phase 2 - Record | Complete |
+| ACT-03 | Phase 2 - Record | Complete |
+| ACT-04 | Phase 2 - Record | Complete |
+| ACT-05 | Phase 2 - Record | Complete |
 | ACT-06 | Phase 2.2 - Record polish | Pending |
 | ACT-07 | Phase 2.2 - Record polish | Pending |
 | ACT-08 | Phase 2.2 - Record polish | Pending |

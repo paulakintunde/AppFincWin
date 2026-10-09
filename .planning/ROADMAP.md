@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 0: Foundation** - Expo project, engine purity CI gates, Apple/Google auth, household-of-one schema and RLS, design tokens
 - [x] **Phase 1: Money Core** - Integer-money engine, client UUID keys, FX rate storage, TanStack Query data layer with the offline write queue (completed 2026-09-26)
-- [ ] **Phase 2: Record** - Transactions, recurring entries, transfers, statement import (CSV, OFX/QFX), account limits and standing, Activity list, compensating-write undo
+- [x] **Phase 2: Record** - Transactions, recurring entries, transfers, statement import (CSV, OFX/QFX), account limits and standing, Activity list, compensating-write undo (completed 2026-10-09)
 - [ ] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy
 - [ ] **Phase 2.2: Record polish** (INSERTED) - Activity views and subtotals, sort, recurring-from-history, clone, detail sheet and swipe, entry-sheet extras, paste import, sample data
 - [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB
@@ -245,16 +245,16 @@ Plans:
 - [x] 02-31-PLAN.md — Production rollout: schema push [BLOCKING], live checks, device walkthrough incl. OFX, standing and transfers (W14; needs 01-16)
 
 **Gap closure: on-demand FX, built-in currency list, no daily sync** *(2026-10-07, `02-DECISION-fx-on-demand.md`; GW = gap-closure wave)*
-- [ ] 02-41-PLAN.md — Schema: fx_rate_lookups coverage, 6h negative cache, coverage-based per_eur_rate, is_iso_currency without a stored rate (GW1)
-- [ ] 02-43-PLAN.md — Edge Functions: shared _shared/fx library, delete fx-sync and fx-monitor (GW1)
-- [ ] 02-45-PLAN.md — Engine + picker: built-in ISO currency list, currencies-table query removed (GW1)
-- [ ] 02-46-PLAN.md — Client: fxResolve door, per-date import and series follow-ups, fxLatest refresh (GW1)
-- [ ] 02-42-PLAN.md — Schema: retire fx-sync/fx-monitor crons and monitor-only functions (GW2)
-- [ ] 02-44-PLAN.md — resolve-rate: on-demand fetch path, fallback, MON-11 hold with second-source witness, failure-only alerts (GW2)
-- [ ] 02-47-PLAN.md — Client: foreign-account opening-date fetch, budgeted pending sweep (GW2)
-- [ ] 02-48-PLAN.md — Client: "Waiting for a rate" display, read paths can never fetch (GW2)
-- [ ] 02-49-PLAN.md — Client: home-currency change fetches today's rates for every currency in use (GW3)
-- [ ] 02-50-PLAN.md — Production rollout [BLOCKING, approval], device check, then cleanup (GW4)
+- [x] 02-41-PLAN.md — Schema: fx_rate_lookups coverage, 6h negative cache, coverage-based per_eur_rate, is_iso_currency without a stored rate (GW1)
+- [x] 02-43-PLAN.md — Edge Functions: shared _shared/fx library, delete fx-sync and fx-monitor (GW1)
+- [x] 02-45-PLAN.md — Engine + picker: built-in ISO currency list, currencies-table query removed (GW1)
+- [x] 02-46-PLAN.md — Client: fxResolve door, per-date import and series follow-ups, fxLatest refresh (GW1)
+- [x] 02-42-PLAN.md — Schema: retire fx-sync/fx-monitor crons and monitor-only functions (GW2)
+- [x] 02-44-PLAN.md — resolve-rate: on-demand fetch path, fallback, MON-11 hold with second-source witness, failure-only alerts (GW2)
+- [x] 02-47-PLAN.md — Client: foreign-account opening-date fetch, budgeted pending sweep (GW2)
+- [x] 02-48-PLAN.md — Client: "Waiting for a rate" display, read paths can never fetch (GW2)
+- [x] 02-49-PLAN.md — Client: home-currency change fetches today's rates for every currency in use (GW3)
+- [x] 02-50-PLAN.md — Production rollout [BLOCKING, approval], device check, then cleanup (GW4)
 **UI hint**: yes
 
 ### Phase 02.1: PDF statement import (INSERTED)
@@ -510,7 +510,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4* → 5 → 6 → 7 �
 |-------|----------------|--------|-----------|
 | 0. Foundation | 18/20 | In Progress | - |
 | 1. Money Core | 16/16 | Complete | 2026-09-26 |
-| 2. Record | 0/TBD | Not started | - |
+| 2. Record | 50/50 | Complete | 2026-10-09 |
 | 3. Shell | 0/16 | Planned | - |
 | 4. Decide Engine | 0/TBD | Not started | - |
 | 5. Decide UI | 0/TBD | Not started | - |
