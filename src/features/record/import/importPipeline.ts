@@ -26,6 +26,7 @@ import {
   decodeText,
   findDuplicates,
   inferProfile,
+  matchRefunds,
   reconcile,
   sniffFormat,
   type AccountKind,
@@ -36,6 +37,7 @@ import {
   type FormatProfile,
   type ProfileResult,
   type ReconcileResult,
+  type RefundPurchase,
   type RowCheck,
   type StatementDraft,
 } from '@/engine/statement';
@@ -266,7 +268,9 @@ export interface PreviewRow {
   included: boolean;
   locked: boolean;
   transfer: RowTransfer | null;
-  payMatch: { pendingId: string } | null;
+  payMatch: { pendingId: string; automatic: boolean } | null;
+  /** D-07: a suggestion only, applied on insert when accepted; never changes anything unasked. */
+  refund: { purchaseId: string; merchant: string; categoryId: string | null } | null;
 }
 
 export interface Preview {
@@ -289,6 +293,8 @@ export interface PreviewInput {
   existing: readonly ExistingRow[];
   /** Target account pending rows in range. */
   pending: readonly PendingOccurrence[];
+  /** Earlier expense rows on the target account (refund matching, D-07). Omitted means none. */
+  purchases?: readonly RefundPurchase[];
   /** Other accounts' unlinked rows, range plus or minus 3 days. */
   transferCandidates: readonly ExistingLeg[];
   perEur: ReadonlyMap<string, ScaledRate>;
@@ -376,11 +382,14 @@ export function buildPreview(input: PreviewInput): Preview {
       usable.map((u) => ({ index: u.row.index, localDate: u.localDate, amount: u.amount, currency: u.row.currency, name: u.row.description })),
       input.pending,
       { excludeIndexes: new Set(duplicates.keys()) }
-    ).map((m) => [m.index, m.pendingId] as const)
+    ).map((m) => [m.index, { pendingId: m.pendingId, automatic: m.automatic }] as const)
   );
 
-  const imported: ImportedLeg[] = usable
-    .filter((u) => !duplicates.has(u.row.index) && !payMatches.has(u.row.index))
+  // D-07: refund suggestions run over rows that are not duplicates or pay-matched, and drop
+  // any row later paired as a transfer (a transfer is never a refund).
+  const refundCandidates = usable.filter((u) => !duplicates.has(u.row.index) && !payMatches.has(u.row.index));
+
+  const imported: ImportedLeg[] = refundCandidates
     .map((u) => ({
       index: u.row.index,
       accountId: account.id,
@@ -397,13 +406,31 @@ export function buildPreview(input: PreviewInput): Preview {
     else transfers.set(s.importIndex, { kind: 'orphan' });
   }
 
+  const refunds = new Map(
+    matchRefunds(
+      refundCandidates
+        .filter((u) => !transfers.has(u.row.index))
+        .map((u) => ({
+          index: u.row.index,
+          amount: u.amount,
+          currency: u.row.currency,
+          name: u.row.description,
+          localDate: u.localDate,
+          isTransfer: false,
+        })),
+      input.purchases ?? [],
+      account.kind
+    ).map((m) => [m.index, m] as const)
+  );
+
   const guessContext = { keywordRules: DEFAULT_KEYWORD_RULES, learned: input.learned, builtinIds: input.builtinIds };
 
   const rows: PreviewRow[] = converted.rows.map((r, position) => {
     const locked = blocked.get(r.index) === true;
     const duplicate = duplicates.get(r.index) ?? null;
     const guess = guessCategory({ name: r.description, amount: r.amount ?? 0 }, guessContext);
-    const pendingId = payMatches.get(r.index);
+    const pay = payMatches.get(r.index);
+    const refund = refunds.get(r.index);
     return {
       index: r.index,
       converted: r,
@@ -414,7 +441,8 @@ export function buildPreview(input: PreviewInput): Preview {
       included: !locked && duplicate === null,
       locked,
       transfer: transfers.get(r.index) ?? null,
-      payMatch: pendingId === undefined ? null : { pendingId },
+      payMatch: pay === undefined ? null : { pendingId: pay.pendingId, automatic: pay.automatic },
+      refund: refund === undefined ? null : { purchaseId: refund.purchaseId, merchant: refund.merchant, categoryId: refund.categoryId },
     };
   });
 
@@ -448,6 +476,8 @@ export interface CommitDecisions {
   orphans: ReadonlyMap<number, { accountId: string; counterAmount: number | null }>;
   /** Row indexes whose pay-match the user accepted. */
   payMatches: ReadonlySet<number>;
+  /** Row indexes whose refund suggestion the user accepted (D-07). None when omitted. */
+  refunds?: ReadonlySet<number>;
   acceptLimit: boolean;
 }
 
@@ -508,6 +538,13 @@ export function toImportCommit(
       external_id: c.externalId,
       import_format: importFormat,
     };
+
+    // D-07: an accepted refund is set on the inserted row itself (so it adds no undo ops) and
+    // takes the purchase's category; it is never income (D-03).
+    if (decisions.refunds?.has(pr.index) === true && pr.refund !== null && c.amount > 0 && pr.transfer === null) {
+      row.is_refund = true;
+      row.category_id = pr.refund.categoryId ?? categoryId;
+    }
 
     // Mark paid replaces the insert (D-55); the line rides along for the fallback.
     if (decisions.payMatches.has(pr.index) && pr.payMatch !== null) {
