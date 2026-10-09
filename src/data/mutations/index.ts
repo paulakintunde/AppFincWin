@@ -19,6 +19,10 @@ import { registerSeriesMutations } from './recurringSeries';
 import { registerCloneMonthMutations } from './cloneMonth';
 import { registerPasteLinesMutations } from './pasteLines';
 import { registerMarkMonthlyMutations } from './markMonthly';
+import { registerAddMonthMutations } from './addMonth';
+import { registerAccountDeleteMutations } from './accountDelete';
+import { registerDismissOffersMutations } from './dismissedOffers';
+import { registerRecordPrefsMutations } from './recordPrefs';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -42,4 +46,9 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerCloneMonthMutations(qc);
   registerPasteLinesMutations(qc);
   registerMarkMonthlyMutations(qc);
+  // 02.2-23: add month, delete account, dismiss offers, record prefs.
+  registerAddMonthMutations(qc);
+  registerAccountDeleteMutations(qc);
+  registerDismissOffersMutations(qc);
+  registerRecordPrefsMutations(qc);
 }
