@@ -1,6 +1,4 @@
-import React from 'react';
-import { Text } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { renderHook } from '@testing-library/react-native';
 import type { CategoryRow } from '@/db/rows';
 import { useCategoryMonthUsage, usageSubLabel } from '../useCategoryMonthUsage';
 
@@ -24,12 +22,6 @@ function line(categoryId: string | null, amountHome: number | null, over: Record
   return { category_id: categoryId, amountHome, status: 'paid', transfer_id: null, is_refund: false, ...over };
 }
 
-let captured: ReadonlyMap<string, ReturnType<typeof useCategoryMonthUsage>['usage'] extends ReadonlyMap<string, infer V> ? V : never>;
-function Probe() {
-  captured = useCategoryMonthUsage().usage;
-  return <Text>x</Text>;
-}
-
 describe('useCategoryMonthUsage', () => {
   it('groups the month by category, counts paid and pending, nets refunds, skips transfers and skipped', async () => {
     mockCats = [cat('a', 30000), cat('b', null), cat('c', null)];
@@ -42,7 +34,8 @@ describe('useCategoryMonthUsage', () => {
       line('b', -100),
       line(null, -500),
     ];
-    await render(<Probe />);
+    const { result } = await renderHook(() => useCategoryMonthUsage());
+    const captured = result.current.usage;
     expect(captured.get('a')).toMatchObject({ count: 3, spent: 24000, cap: 30000, state: 'capped' });
     expect(captured.get('b')).toMatchObject({ count: 1, state: 'used' });
     expect(captured.get('c')).toMatchObject({ count: 0, state: 'unused' });

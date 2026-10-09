@@ -372,3 +372,52 @@ describe('CategoriesScreen usage sub-labels', () => {
     mockAll[0] = cat();
   });
 });
+
+describe('CategorySheet: monthly cap', () => {
+  it('saves a typed cap in minor units on a new category', async () => {
+    const u = await render(
+      <ThemeProvider>
+        <CategorySheet visible mode={{ kind: 'new' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(u.getByText('Optional. Leave blank for no cap.')).toBeTruthy();
+    await fireEvent.changeText(u.getByLabelText('Name'), 'Pets');
+    await fireEvent.changeText(u.getByLabelText('Monthly cap'), '300');
+    await fireEvent.press(u.getByText('Save category'));
+    expect(mockAdd).toHaveBeenCalledWith({ ownerId: 'u1', name: 'Pets', colorKey: expect.any(String), monthlyCap: 30000 });
+  });
+
+  it('clearing an existing cap saves null', async () => {
+    const row = cat({ monthly_cap: 30000 });
+    const u = await render(
+      <ThemeProvider>
+        <CategorySheet visible mode={{ kind: 'edit', category: row }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(u.getByLabelText('Monthly cap').props.value).toBe('300.00');
+    await fireEvent.changeText(u.getByLabelText('Monthly cap'), '');
+    await fireEvent.press(u.getByText('Save changes'));
+    expect(mockEdit).toHaveBeenCalledWith(row, { monthlyCap: null });
+  });
+
+  it('blocks save on an invalid amount and shows the parser error', async () => {
+    const u = await render(
+      <ThemeProvider>
+        <CategorySheet visible mode={{ kind: 'edit', category: cat() }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    await fireEvent.changeText(u.getByLabelText('Monthly cap'), 'abc');
+    await fireEvent.press(u.getByText('Save changes'));
+    expect(mockEdit).not.toHaveBeenCalled();
+    expect(u.queryByText('Optional. Leave blank for no cap.')).toBeNull();
+  });
+
+  it('shows no cap field for a system category', async () => {
+    const u = await render(
+      <ThemeProvider>
+        <CategorySheet visible mode={{ kind: 'edit', category: cat({ is_system: true }) }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(u.queryByLabelText('Monthly cap')).toBeNull();
+  });
+});

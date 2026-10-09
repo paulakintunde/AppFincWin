@@ -22,6 +22,42 @@ async function wrap(ui: React.ReactElement) {
   return render(<ThemeProvider>{ui}</ThemeProvider>);
 }
 
+describe('CategoryPicker usage (REC-22)', () => {
+  const mk = (id: string, name: string) =>
+    ({ id, builtin_key: null, name, color_key: 'teal', is_system: false, archived_at: null }) as unknown as CategoryRow;
+  const base = { count: 0, spent: 0, cap: null, over: 0, unconvertedCount: 0 };
+  const fmt = (m: number) => `£${(m / 100).toFixed(2)}`;
+
+  it('sorts by use then name, shows sub-labels and a Manage row', async () => {
+    const usage = new Map([
+      ['a', { ...base, state: 'unused' as const }],
+      ['b', { ...base, state: 'used' as const, count: 3 }],
+      ['c', { ...base, state: 'capped' as const, cap: 30000 }],
+    ]);
+    const onManage = jest.fn();
+    const { getAllByTestId, getByText, getByLabelText } = await wrap(
+      <CategoryPicker
+        visible
+        categories={[mk('a', 'Alpha'), mk('b', 'Beta'), mk('c', 'Charlie')]}
+        selectedId={null}
+        onSelect={jest.fn()}
+        onClose={jest.fn()}
+        usage={usage}
+        formatMinor={fmt}
+        onManage={onManage}
+      />
+    );
+    expect(getByText('Used 3 times this month')).toBeTruthy();
+    expect(getByText('Cap £300.00 a month')).toBeTruthy();
+    expect(getByText('Not used yet')).toBeTruthy();
+    const labels = getAllByTestId('row-root').map((r) => r.props.accessibilityLabel as string);
+    const order = ['Beta', 'Alpha', 'Charlie'].map((n) => labels.findIndex((l) => l?.startsWith(n)));
+    expect(order).toEqual([...order].sort((x, y) => x - y));
+    await fireEvent.press(getByLabelText(/Manage categories/));
+    expect(onManage).toHaveBeenCalled();
+  });
+});
+
 describe('long pickers scroll under a fixed header (S-CR-05)', () => {
   it('OptionPicker: 170 currencies sit in the scroll body; Cancel stays outside it', async () => {
     const options = Array.from({ length: 170 }, (_, i) => ({ value: `C${i}`, label: `Currency ${i}` }));

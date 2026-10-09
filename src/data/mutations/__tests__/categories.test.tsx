@@ -114,6 +114,24 @@ describe('useAddCategory', () => {
   });
 });
 
+describe('useAddCategory monthly cap', () => {
+  it('REC-22: sends monthly_cap when provided', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(ok(cat('id-1', { name: 'Pets', color_key: 'blue', monthly_cap: 5000 })));
+    const qc = newClient();
+    const { result } = await renderHook(() => useAddCategory(), { wrapper: wrapper(qc) });
+    result.current.add({ ownerId: 'user-1', name: 'Pets', colorKey: 'blue', monthlyCap: 5000 });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(fake.calls.find((c) => c.method === 'insert')?.args[0]).toEqual({
+      id: 'id-1',
+      name: 'Pets',
+      color_key: 'blue',
+      monthly_cap: 5000,
+    });
+  });
+});
+
 describe('useEditCategory / useArchiveCategory', () => {
   it('rename + recolour patches with a version check and the step restores the previous values', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
@@ -131,6 +149,32 @@ describe('useEditCategory / useArchiveCategory', () => {
       labelKey: 'categoryEdited',
       ops: [{ expectedVersion: 2, patch: { name: 'Hobbies', color_key: 'green' } }],
     });
+  });
+
+  it('REC-22: a cap edit patches monthly_cap and the undo step restores the previous cap', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(ok([cat('c1', { monthly_cap: 30000, version: 2 })]));
+    const qc = newClient();
+    const { result } = await renderHook(() => useEditCategory(), { wrapper: wrapper(qc) });
+
+    result.current.edit(cat('c1', { monthly_cap: null }), { monthlyCap: 30000 });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ monthly_cap: 30000 });
+    expect(lastStep().ops[0]).toMatchObject({ patch: { monthly_cap: null } });
+  });
+
+  it('REC-22: clearing a cap patches null and the step restores the old amount', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(ok([cat('c1', { monthly_cap: null, version: 2 })]));
+    const qc = newClient();
+    const { result } = await renderHook(() => useEditCategory(), { wrapper: wrapper(qc) });
+
+    result.current.edit(cat('c1', { monthly_cap: 30000 }), { monthlyCap: null });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ monthly_cap: null });
+    expect(lastStep().ops[0]).toMatchObject({ patch: { monthly_cap: 30000 } });
   });
 
   it('allows a built-in (not system) category to be renamed; its null name is restored as null', async () => {
