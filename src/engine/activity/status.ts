@@ -61,16 +61,49 @@ export function nextMonth(month: string): string {
   return `${String(nextYear).padStart(4, '0')}-${String(nextMonthNum).padStart(2, '0')}`;
 }
 
+export const ADD_MONTH_LIMIT = 12;
+
+/** Whole months from `from` to `to` (negative if `to` is earlier). */
+export function monthsAhead(from: string, to: string): number {
+  for (const m of [from, to]) {
+    if (!MONTH_PATTERN.test(m)) {
+      throw new RangeError(`monthsAhead: "${m}" is not a valid 'YYYY-MM' month`);
+    }
+  }
+  const idx = (m: string): number => Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7));
+  return idx(to) - idx(from);
+}
+
 /**
  * ACT-02: every month that has data, plus the current and next month, newest
- * first. Deduplicated. Stays compatible with a later `archive_months` concept
- * because it only ever needs the caller's own list of months with data.
+ * first, plus every month through the household horizon (CONTEXT D-16) so an
+ * added empty month persists. Deduplicated.
  */
-export function monthsForSwitcher(dataMonths: readonly string[], today: string): string[] {
+export function monthsForSwitcher(
+  dataMonths: readonly string[],
+  today: string,
+  horizonMonth: string | null = null
+): string[] {
   const current = monthOf(today);
   const next = nextMonth(current);
   // A Set already guarantees every entry is distinct, so a two-way comparator
   // (never an a === b tie) is sufficient here.
   const months = new Set<string>([...dataMonths, current, next]);
+  if (horizonMonth !== null) {
+    monthsAhead(current, horizonMonth); // validates the format (RangeError)
+    let m = next;
+    for (let i = 0; i <= ADD_MONTH_LIMIT && m < horizonMonth; i++) {
+      m = nextMonth(m);
+      months.add(m);
+    }
+  }
   return [...months].sort((a, b) => (a < b ? 1 : -1));
+}
+
+/** The month the "add a month" row would create, or null beyond 12 months ahead. */
+export function addableMonth(today: string, horizonMonth: string | null): string | null {
+  const next = nextMonth(monthOf(today));
+  const base = horizonMonth !== null && horizonMonth > next ? horizonMonth : next;
+  const candidate = nextMonth(base);
+  return monthsAhead(monthOf(today), candidate) > ADD_MONTH_LIMIT ? null : candidate;
 }
