@@ -315,7 +315,7 @@ Plans:
   7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
   8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
-**Plans:** 13/35 plans executed
+**Plans:** 15/35 plans executed
 
 Plans:
 
@@ -337,8 +337,8 @@ Plans:
 - [x] 02.2-13-PLAN.md — UI primitives: SwipeRow, Keypad (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 02.2-14-PLAN.md — Schema: add_activity_month with one undoable step + pgTAP 47 (W3)
-- [ ] 02.2-15-PLAN.md — Schema: seed/clear sample data RPCs + pgTAP 48 (W3)
+- [x] 02.2-14-PLAN.md — Schema: add_activity_month with one undoable step + pgTAP 47 (W3)
+- [x] 02.2-15-PLAN.md — Schema: seed/clear sample data RPCs + pgTAP 48 (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 02.2-16-PLAN.md — Schema PR merged to main, then production schema push [BLOCKING, approval] and live checks (W4)
