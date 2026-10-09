@@ -1,3 +1,5 @@
+// Soft-deleted accounts (D-24, RESEARCH Open Question 6) read as not found: fetchAccounts and
+// fetchAccount filter deleted_at, so every consumer drops them.
 // Typed account reads and version-conditional writes (MON-08, MON-09, D-18). Same shape as
 // transactions.ts: every function takes `client: DbClient` first, no real-client import.
 
@@ -30,17 +32,18 @@ export const ACCOUNT_PATCH_KEYS = [
   'archived_at',
   'overdraft_limit',
   'credit_limit',
+  'deleted_at',
 ] as const satisfies readonly (keyof AccountPatch)[];
 
 export const ACCOUNT_COLUMNS =
-  'id, household_id, created_by, name, kind, currency, opening_balance, archived_at, updated_by, overdraft_limit, credit_limit, version, created_at, updated_at';
+  'id, household_id, created_by, name, kind, currency, opening_balance, archived_at, updated_by, overdraft_limit, credit_limit, deleted_at, is_sample, version, created_at, updated_at';
 
 const ENTITY = 'accounts' as const;
 
 const UNIQUE_VIOLATION = '23505';
 
 export async function fetchAccount(client: DbClient, id: string): Promise<AccountRow | null> {
-  const { data, error, status } = await client.from('accounts').select(ACCOUNT_COLUMNS).eq('id', id).maybeSingle();
+  const { data, error, status } = await client.from('accounts').select(ACCOUNT_COLUMNS).eq('id', id).is('deleted_at', null).maybeSingle();
 
   if (error) throw toDbError(error, status);
   return (data as AccountRow | null) ?? null;
@@ -51,6 +54,7 @@ export async function fetchAccounts(client: DbClient, householdId: string): Prom
     .from('accounts')
     .select(ACCOUNT_COLUMNS)
     .eq('household_id', householdId)
+    .is('deleted_at', null)
     .order('name', { ascending: true });
 
   if (error) throw toDbError(error, status);

@@ -287,6 +287,9 @@ describe('editStamp (WR-A06)', () => {
   const GBP_RATE: FxLatestRow = { quote: 'GBP', rate: '0.8500000000', rate_date: '2026-09-21', source: 'frankfurter-v2' };
   const stampedJpyRow: TransactionRow = {
     id: 'tx-1',
+    is_refund: false,
+    is_automatic: false,
+    is_sample: false,
     household_id: 'h1',
     account_id: 'acc1',
     created_by: 'user-1',
@@ -413,6 +416,9 @@ describe('editStamp (WR-A06)', () => {
     // home_amount is computed from once the raw stamp is present.
     const GOLD_ROW: TransactionRow = {
       id: 'tx-gold',
+      is_refund: false,
+      is_automatic: false,
+      is_sample: false,
       household_id: 'h1',
       account_id: 'acc1',
       created_by: 'user-1',

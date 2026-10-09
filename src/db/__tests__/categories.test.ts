@@ -21,6 +21,8 @@ function categoryRow(overrides: Partial<CategoryRow> = {}): CategoryRow {
     color_key: 'green',
     is_system: false,
     archived_at: null,
+    monthly_cap: null,
+    is_sample: false,
     version: 1,
     updated_by: null,
     created_at: '2026-09-24T00:00:00Z',
@@ -72,7 +74,7 @@ describe('insertCategory', () => {
 
     await insertCategory(client, NEW_CATEGORY);
 
-    expect(CATEGORY_INSERT_KEYS).toEqual(['id', 'name', 'color_key']);
+    expect(CATEGORY_INSERT_KEYS).toEqual(['id', 'name', 'color_key', 'monthly_cap']);
     expect(client.calls.find((c) => c.method === 'insert')?.args[0]).toEqual({
       id: 'cat-1',
       name: 'Groceries',
@@ -102,6 +104,23 @@ describe('insertCategory', () => {
   });
 });
 
+describe('monthly_cap', () => {
+  it('insertCategory sends monthly_cap when given', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: categoryRow({ monthly_cap: 5000 }), error: null, status: 201 });
+    await insertCategory(client, { ...NEW_CATEGORY, monthly_cap: 5000 });
+    expect(client.calls.find((c) => c.method === 'insert')?.args[0]).toMatchObject({ monthly_cap: 5000 });
+  });
+
+  it('updateCategory accepts monthly_cap and rejects is_sample', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [categoryRow({ version: 2, monthly_cap: 100 })], error: null, status: 200 });
+    await expect(updateCategory(client, 'cat-1', 1, { monthly_cap: 100 })).resolves.toMatchObject({ monthly_cap: 100 });
+    // @ts-expect-error -- deliberately passing a disallowed key to prove the guard
+    await expect(updateCategory(client, 'cat-1', 1, { is_sample: true })).rejects.toThrow(TypeError);
+  });
+});
+
 describe('updateCategory', () => {
   it('rejects a patch naming is_system with a TypeError before any network call', async () => {
     const client = createFakeSupabase();
@@ -125,7 +144,7 @@ describe('updateCategory', () => {
 
     expect(result.version).toBe(2);
     expect(client.calls.find((c) => c.method === 'eq' && c.args[0] === 'version')?.args).toEqual(['version', 1]);
-    expect(CATEGORY_PATCH_KEYS).toEqual(['name', 'color_key', 'archived_at']);
+    expect(CATEGORY_PATCH_KEYS).toEqual(['name', 'color_key', 'archived_at', 'monthly_cap']);
   });
 
   it('zero rows back with the row still present throws VersionConflictError carrying the server row', async () => {

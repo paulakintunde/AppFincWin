@@ -31,6 +31,9 @@ import { createFakeSupabase } from './fakeSupabase';
 function row(overrides: Partial<TransactionRow> = {}): TransactionRow {
   return {
     id: 't1',
+    is_refund: false,
+    is_automatic: false,
+    is_sample: false,
     household_id: 'h1',
     account_id: 'a1',
     created_by: 'u1',
@@ -123,6 +126,16 @@ describe('TRANSACTION_COLUMNS', () => {
     ]) {
       expect(TRANSACTION_COLUMNS).toContain(col);
     }
+  });
+
+  it('record polish: is_refund/is_automatic are writable, is_sample is read-only', () => {
+    for (const col of ['is_refund', 'is_automatic', 'is_sample']) expect(TRANSACTION_COLUMNS).toContain(col);
+    for (const col of ['is_refund', 'is_automatic']) {
+      expect(TRANSACTION_INSERT_KEYS).toContain(col);
+      expect(TRANSACTION_PATCH_KEYS).toContain(col);
+    }
+    expect(TRANSACTION_INSERT_KEYS).not.toContain('is_sample');
+    expect(TRANSACTION_PATCH_KEYS).not.toContain('is_sample');
   });
 
   it('D-45: includes the statement-import provenance columns', () => {
@@ -264,6 +277,22 @@ describe('insertTransaction', () => {
       note: 'coffee',
     });
     expect(client.calls.find((c) => c.method === 'select')?.args[0]).toBe(TRANSACTION_COLUMNS);
+  });
+
+  it('accepts is_refund and never writes is_sample', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: row(), error: null, status: 201 });
+    await insertTransaction(client, { ...NEW_TX, is_refund: true });
+    const sent = client.calls.find((c) => c.method === 'insert')?.args[0] as Record<string, unknown>;
+    expect(sent).toMatchObject({ is_refund: true });
+    expect(sent).not.toHaveProperty('is_sample');
+  });
+
+  it('updateTransaction throws on is_sample before any network call', async () => {
+    const bad = createFakeSupabase();
+    // @ts-expect-error -- deliberately passing a disallowed key to prove the guard
+    await expect(updateTransaction(bad, 't1', 1, { is_sample: true })).rejects.toThrow(TypeError);
+    expect(bad.calls).toHaveLength(0);
   });
 
   it('on a 23505 duplicate-id error, fetches by id and returns the existing row instead of failing', async () => {

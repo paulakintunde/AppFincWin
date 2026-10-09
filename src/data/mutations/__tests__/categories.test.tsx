@@ -61,6 +61,8 @@ function newClient(): QueryClient {
 
 const cat = (id: string, overrides: Partial<CategoryRow> = {}): CategoryRow => ({
   id,
+  monthly_cap: null,
+  is_sample: false,
   owner_id: 'user-1',
   builtin_key: null,
   name: id,

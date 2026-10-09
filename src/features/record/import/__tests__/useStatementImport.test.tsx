@@ -73,6 +73,8 @@ const dbTx = require('@/db/transactions') as {
 function account(over: Partial<AccountRow>): AccountRow {
   return {
     id: 'acc-1',
+    deleted_at: null,
+    is_sample: false,
     household_id: 'hh-1',
     created_by: 'user-1',
     name: 'Current',

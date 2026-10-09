@@ -227,6 +227,8 @@ export function registerSeriesMutations(qc: QueryClient): void {
       // D-02/D-03: the optimistic row is what projects 'Expected' lines until the server materialises real ones.
       const optimistic: WithPending<RecurringSeriesRow> = {
         ...vars.series,
+        is_automatic: vars.series.is_automatic ?? false,
+        is_sample: false,
         created_by: null,
         updated_by: null,
         materialised_through: null,

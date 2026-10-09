@@ -24,6 +24,8 @@ let mockUsage: Record<string, unknown> = { count: 0, capped: false, isLoading: f
 function cat(over: Partial<CategoryRow> = {}): CategoryRow {
   return {
     id: 'c1',
+    monthly_cap: null,
+    is_sample: false,
     owner_id: 'u1',
     builtin_key: null,
     name: 'Groceries',
