@@ -7,6 +7,9 @@ import type { CategoryRow } from '@/db/rows';
 import { useArchiveCategory } from '@/data/mutations/categories';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { useCategoryMonthUsage, usageSubLabel } from './useCategoryMonthUsage';
+import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import { money } from '@/engine/money';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
@@ -25,6 +28,9 @@ export function CategoriesScreen() {
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const lookup = useCategoryLookup(rc.userId ?? undefined);
+  const { usage } = useCategoryMonthUsage();
+  const formatter = useMoneyFormatter(rc.showCents);
+  const fmt = (minor: number) => formatter.formatMoney(money(minor, rc.homeCurrency));
   const { restore } = useArchiveCategory();
   const [sheet, setSheet] = useState<CategorySheetMode | null>(null);
 
@@ -50,9 +56,21 @@ export function CategoriesScreen() {
         <Text accessibilityRole="header" style={titleStyle}>
           {t('categories.title')}
         </Text>
-        {lookup.active.map((c) => (
-          <Row key={c.id} label={categoryName(c, t)} leading={glyph(c)} chevron onPress={() => setSheet({ kind: 'edit', category: c })} />
-        ))}
+        {lookup.active.map((c) => {
+          const u = usage.get(c.id);
+          const sub = u ? usageSubLabel(u, fmt, t) : null;
+          return (
+            <Row
+              key={c.id}
+              label={categoryName(c, t)}
+              sublabel={sub?.text}
+              sublabelTone={sub?.tone}
+              leading={glyph(c)}
+              chevron
+              onPress={() => setSheet({ kind: 'edit', category: c })}
+            />
+          );
+        })}
         <Pill label={t('categories.add')} variant="primary" onPress={() => setSheet({ kind: 'new' })} />
 
         {system.length > 0 ? (

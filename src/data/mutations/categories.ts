@@ -299,7 +299,12 @@ function assertEditable(row: CategoryRow): void {
 }
 
 export function useAddCategory(): {
-  add(input: { ownerId: string; name: string; colorKey: CategoryColorKey }): { id: string; stepId: string };
+  add(input: {
+    ownerId: string;
+    name: string;
+    colorKey: CategoryColorKey;
+    monthlyCap?: number | null;
+  }): { id: string; stepId: string };
 } {
   const mutation = useMutation<CategoryRow, unknown, AddCategoryVars>({
     mutationKey: mutationKeys.addCategory,
@@ -311,7 +316,12 @@ export function useAddCategory(): {
       const stepId = newStepId();
       mutation.mutate({
         ownerId: input.ownerId,
-        row: { id, name: input.name, color_key: input.colorKey },
+        row: {
+          id,
+          name: input.name,
+          color_key: input.colorKey,
+          ...(input.monthlyCap != null ? { monthly_cap: input.monthlyCap } : {}),
+        },
         stepId,
       });
       return { id, stepId };
@@ -327,7 +337,7 @@ function useEditMutation() {
 }
 
 export function useEditCategory(): {
-  edit(row: CategoryRow, patch: { name?: string; colorKey?: CategoryColorKey }): string;
+  edit(row: CategoryRow, patch: { name?: string; colorKey?: CategoryColorKey; monthlyCap?: number | null }): string;
 } {
   const mutation = useEditMutation();
   return {
@@ -342,6 +352,10 @@ export function useEditCategory(): {
       if (patch.colorKey !== undefined) {
         dbPatch.color_key = patch.colorKey;
         before.color_key = row.color_key;
+      }
+      if (patch.monthlyCap !== undefined) {
+        dbPatch.monthly_cap = patch.monthlyCap;
+        before.monthly_cap = row.monthly_cap;
       }
       if (Object.keys(dbPatch).length === 0) throw new RangeError('edit category: nothing to change');
       const stepId = newStepId();

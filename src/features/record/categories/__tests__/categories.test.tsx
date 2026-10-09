@@ -57,13 +57,26 @@ jest.mock('@/data/queries/categories', () => ({
   useCategoryUsage: () => mockUsage,
 }));
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ ready: true, userId: 'u1', householdId: 'h1' }),
+  useRecordContext: () => ({
+    ready: true,
+    userId: 'u1',
+    householdId: 'h1',
+    homeCurrency: 'GBP',
+    showCents: true,
+    region: 'GB',
+    today: '2026-10-09',
+  }),
+}));
+let mockMonthRows: Record<string, unknown>[] = [];
+jest.mock('@/data/queries/activity', () => ({
+  useMonthView: () => ({ rows: mockMonthRows, isLoading: false }),
 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
   resetToastForTests();
   mockUsage = { count: 0, capped: false, isLoading: false };
+  mockMonthRows = [];
 });
 
 // One render per test: a second render leaks an act() scope in this project's Jest setup.
@@ -324,5 +337,87 @@ describe('CategoriesScreen', () => {
     );
     await fireEvent.press(u.getByText('Add category'));
     expect(u.getByText('New category')).toBeTruthy();
+  });
+});
+
+describe('CategoriesScreen usage sub-labels', () => {
+  const line = (category_id: string, amountHome: number) => ({
+    category_id,
+    amountHome,
+    status: 'paid',
+    transfer_id: null,
+    is_refund: false,
+  });
+
+  it('shows used and unused counts', async () => {
+    mockMonthRows = [line('c1', -1000), line('c1', -500)];
+    const u = await render(
+      <ThemeProvider>
+        <CategoriesScreen />
+      </ThemeProvider>
+    );
+    expect(u.getByText('Used 2 times this month')).toBeTruthy();
+    expect(u.getAllByText('Not used yet').length).toBeGreaterThan(0);
+  });
+
+  it('shows spend against a cap, and the over-cap wording', async () => {
+    mockAll[0] = cat({ monthly_cap: 30000 });
+    mockMonthRows = [line('c1', -31000)];
+    const u = await render(
+      <ThemeProvider>
+        <CategoriesScreen />
+      </ThemeProvider>
+    );
+    expect(u.getByText(/£310\.00 of £300\.00 this month, over by £10\.00/)).toBeTruthy();
+    mockAll[0] = cat();
+  });
+});
+
+describe('CategorySheet: monthly cap', () => {
+  it('saves a typed cap in minor units on a new category', async () => {
+    const u = await render(
+      <ThemeProvider>
+        <CategorySheet visible mode={{ kind: 'new' }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(u.getByText('Optional. Leave blank for no cap.')).toBeTruthy();
+    await fireEvent.changeText(u.getByLabelText('Name'), 'Pets');
+    await fireEvent.changeText(u.getByLabelText('Monthly cap'), '300');
+    await fireEvent.press(u.getByText('Save category'));
+    expect(mockAdd).toHaveBeenCalledWith({ ownerId: 'u1', name: 'Pets', colorKey: expect.any(String), monthlyCap: 30000 });
+  });
+
+  it('clearing an existing cap saves null', async () => {
+    const row = cat({ monthly_cap: 30000 });
+    const u = await render(
+      <ThemeProvider>
+        <CategorySheet visible mode={{ kind: 'edit', category: row }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(u.getByLabelText('Monthly cap').props.value).toBe('300.00');
+    await fireEvent.changeText(u.getByLabelText('Monthly cap'), '');
+    await fireEvent.press(u.getByText('Save changes'));
+    expect(mockEdit).toHaveBeenCalledWith(row, { monthlyCap: null });
+  });
+
+  it('blocks save on an invalid amount and shows the parser error', async () => {
+    const u = await render(
+      <ThemeProvider>
+        <CategorySheet visible mode={{ kind: 'edit', category: cat() }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    await fireEvent.changeText(u.getByLabelText('Monthly cap'), 'abc');
+    await fireEvent.press(u.getByText('Save changes'));
+    expect(mockEdit).not.toHaveBeenCalled();
+    expect(u.queryByText('Optional. Leave blank for no cap.')).toBeNull();
+  });
+
+  it('shows no cap field for a system category', async () => {
+    const u = await render(
+      <ThemeProvider>
+        <CategorySheet visible mode={{ kind: 'edit', category: cat({ is_system: true }) }} onClose={jest.fn()} />
+      </ThemeProvider>
+    );
+    expect(u.queryByLabelText('Monthly cap')).toBeNull();
   });
 });
