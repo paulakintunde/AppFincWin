@@ -37,8 +37,12 @@ export function toastDurationMs(kind: ToastKind, screenReaderEnabled: boolean): 
   return kind === 'destructive' || kind === 'refusal' ? TOAST_MS_DESTRUCTIVE : TOAST_MS_ORDINARY;
 }
 
+type ToastInput = Parameters<typeof showToast>[0];
+
 let toast: ToastState | null = null;
 let nextId = 1;
+// UI-SPEC 15: a toast that must follow another is "queued behind the first (never stacked)".
+let pending: ToastInput[] = [];
 const listeners = new Set<() => void>();
 
 function notify(): void {
@@ -69,11 +73,28 @@ export function showToast(t: {
   notify();
 }
 
-/** Clears the current toast. A stale `id` (no longer the current toast) is a no-op. */
+/**
+ * Shows `t` now when no toast is up; otherwise holds it (FIFO) and shows it once the current
+ * toast is dismissed, by timeout or by the user. Never replaces a toast on screen.
+ */
+export function queueToast(t: ToastInput): void {
+  if (toast === null) {
+    showToast(t);
+    return;
+  }
+  pending.push(t);
+}
+
+/** Clears the current toast, then shows the next queued one. A stale `id` is a no-op. */
 export function dismissToast(id?: number): void {
   if (toast === null) return;
   if (id !== undefined && id !== toast.id) return;
   toast = null;
+  const next = pending.shift();
+  if (next !== undefined) {
+    showToast(next);
+    return;
+  }
   notify();
 }
 
@@ -88,6 +109,7 @@ export function useToast(): ToastState | null {
 /** Test helper: resets in-memory toast state between tests. */
 export function resetToastForTests(): void {
   toast = null;
+  pending = [];
   nextId = 1;
   notify();
 }
@@ -97,6 +119,7 @@ registerWipeHandler({
   id: 'undo-toast',
   wipe: async () => {
     toast = null;
+    pending = [];
     notify();
   },
 });
