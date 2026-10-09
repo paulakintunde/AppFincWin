@@ -315,18 +315,18 @@ Plans:
   7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
   8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
-**Plans:** 35 plans in 10 waves
+**Plans:** 7/35 plans executed
 
 Plans:
 
 **Wave 1**
-- [ ] 02.2-01-PLAN.md — Foundations: expo-haptics + haptics wrapper, full phase copy catalogue, undo label keys, UI-SPEC offer wording, cross-phase is_sample/is_refund rule (W1)
-- [ ] 02.2-02-PLAN.md — Schema: additive columns (refund, automatic, sample, cap, week start, horizon, account soft delete), view re-create, grants, sample trigger, delete guard, dismissed offers + pgTAP 42/43 (W1)
-- [ ] 02.2-03-PLAN.md — Engine: refund-aware totals/filters, count, horizon month list, row tags, sort, entry notes (W1)
-- [ ] 02.2-04-PLAN.md — Engine: series offers over detect.ts (unchanged), clone candidates, pay-match automatic flag (W1)
-- [ ] 02.2-05-PLAN.md — Engine (TDD): paste line parser, 100% coverage folder (W1)
-- [ ] 02.2-06-PLAN.md — Engine: category usage/cap, account pending split, delete-or-archive rule (W1)
-- [ ] 02.2-07-PLAN.md — Engine: keypad reducer, region week start, refund matcher (W1)
+- [x] 02.2-01-PLAN.md — Foundations: expo-haptics + haptics wrapper, full phase copy catalogue, undo label keys, UI-SPEC offer wording, cross-phase is_sample/is_refund rule (W1)
+- [x] 02.2-02-PLAN.md — Schema: additive columns (refund, automatic, sample, cap, week start, horizon, account soft delete), view re-create, grants, sample trigger, delete guard, dismissed offers + pgTAP 42/43 (W1)
+- [x] 02.2-03-PLAN.md — Engine: refund-aware totals/filters, count, horizon month list, row tags, sort, entry notes (W1)
+- [x] 02.2-04-PLAN.md — Engine: series offers over detect.ts (unchanged), clone candidates, pay-match automatic flag (W1)
+- [x] 02.2-05-PLAN.md — Engine (TDD): paste line parser, 100% coverage folder (W1)
+- [x] 02.2-06-PLAN.md — Engine: category usage/cap, account pending split, delete-or-archive rule (W1)
+- [x] 02.2-07-PLAN.md — Engine: keypad reducer, region week start, refund matcher (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 02.2-08-PLAN.md — Engine: day/week/in-out groups with one net, week buckets, calendar cells, running balance (W2)
