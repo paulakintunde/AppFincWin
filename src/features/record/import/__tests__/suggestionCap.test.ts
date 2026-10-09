@@ -49,3 +49,17 @@ describe('canAcceptSuggestion', () => {
     expect(canAcceptSuggestion(5000, 999)).toBe(false);
   });
 });
+
+describe('refunds and pre-ticked pay matches (D-07, D-08)', () => {
+  it('counts a pre-ticked pay match when the caller passes it as accepted', () => {
+    expect(acceptedSuggestionCount([], [{ answer: 'accepted' }, { answer: 'accepted' }])).toBe(2);
+  });
+
+  it('refunds add no ops: they are set on the inserted row, so a 5000-row import of refunds stays in the cap', () => {
+    // acceptedSuggestionCount has no refund input at all; an all-refund import accepts zero suggestions.
+    const accepted = acceptedSuggestionCount([], []);
+    expect(accepted).toBe(0);
+    expect(5000 + accepted + 1).toBeLessThanOrEqual(MAX_UNDO_OPS);
+    expect(canAcceptSuggestion(5000, accepted)).toBe(true);
+  });
+});

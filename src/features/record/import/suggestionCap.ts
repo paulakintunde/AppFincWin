@@ -7,7 +7,9 @@
 //   min(2999, MAX_UNDO_OPS - includedLines - 1)
 // because the finalize then holds at most 2 * 2999 + 1 ops, and the undo step at most
 // includedLines + accepted + 1 (an orphan's counter-leg is one more inserted row; a link or
-// mark-paid is one more reversal). The screen disables further acceptances at the cap and
+// mark-paid is one more reversal). Refunds (D-07) add no ops: they are set on the inserted row,
+// so they are not counted. Pre-ticked Automatic pay matches (D-08) are counted when the caller
+// passes them as accepted. The screen disables further acceptances at the cap and
 // says so; declining is always allowed.
 import { MAX_UNDO_OPS } from '@/engine/undo/types';
 
