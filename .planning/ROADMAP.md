@@ -315,7 +315,7 @@ Plans:
   7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
   8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
-**Plans:** 7/35 plans executed
+**Plans:** 13/35 plans executed
 
 Plans:
 
@@ -329,12 +329,12 @@ Plans:
 - [x] 02.2-07-PLAN.md — Engine: keypad reducer, region week start, refund matcher (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 02.2-08-PLAN.md — Engine: day/week/in-out groups with one net, week buckets, calendar cells, running balance (W2)
-- [ ] 02.2-09-PLAN.md — Schema: apply_patches new keys + server-only undo gate (allow_system_keys) + pgTAP 44 (W2)
-- [ ] 02.2-10-PLAN.md — Schema: series Automatic/sample flags, household-horizon materialiser, batch series RPC + pgTAP 45 (W2)
-- [ ] 02.2-11-PLAN.md — Schema: pending split, paid-before, atomic change_home_currency with cap conversion + pgTAP 46 (W2)
-- [ ] 02.2-12-PLAN.md — UI primitives: Dropdown, ToggleRow, DetailSheet, ConfirmSheet title (W2)
-- [ ] 02.2-13-PLAN.md — UI primitives: SwipeRow, Keypad (W2)
+- [x] 02.2-08-PLAN.md — Engine: day/week/in-out groups with one net, week buckets, calendar cells, running balance (W2)
+- [x] 02.2-09-PLAN.md — Schema: apply_patches new keys + server-only undo gate (allow_system_keys) + pgTAP 44 (W2)
+- [x] 02.2-10-PLAN.md — Schema: series Automatic/sample flags, household-horizon materialiser, batch series RPC + pgTAP 45 (W2)
+- [x] 02.2-11-PLAN.md — Schema: pending split, paid-before, atomic change_home_currency with cap conversion + pgTAP 46 (W2)
+- [x] 02.2-12-PLAN.md — UI primitives: Dropdown, ToggleRow, DetailSheet, ConfirmSheet title (W2)
+- [x] 02.2-13-PLAN.md — UI primitives: SwipeRow, Keypad (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 02.2-14-PLAN.md — Schema: add_activity_month with one undoable step + pgTAP 47 (W3)
