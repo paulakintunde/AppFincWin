@@ -9,9 +9,10 @@ import { FlashList } from '@shopify/flash-list';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useBulkDelete, useBulkMarkPaid, useBulkMarkUnpaid } from '@/data/mutations/patches';
-import { useMarkPaid } from '@/data/mutations/transactions';
+import { EditScopePrompt } from '@/features/record/entry/EditScopePrompt';
+import { PasteSheet } from '@/features/record/import/PasteSheet';
 import { TransactionSheet } from '@/features/record/entry/TransactionSheet';
-import type { Direction, EntryMode } from '@/features/record/entry/transactionForm';
+import type { Direction } from '@/features/record/entry/transactionForm';
 import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
@@ -25,18 +26,23 @@ import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
-import { ActivityRow, ProjectionRow } from './ActivityRow';
+import { ActivityRow, ProjectionRow, type CardPosition } from './ActivityRow';
 import { ActivityHeader } from './ActivityHeader';
 import { getActivityItemType, type ActivityItem } from './activitySections';
 import { BulkBar } from './BulkBar';
+import { CloneMonthSheet } from './CloneMonthSheet';
 import { FilterSheet } from './FilterSheet';
 import { GroupHeader } from './GroupHeader';
 import { formatMonthLabel } from './MonthSwitcher';
+import { RecurringReviewSheet } from './RecurringReviewSheet';
+import { SeriesOfferCard } from './SeriesOfferCard';
+import { TransactionDetailSheet } from './TransactionDetailSheet';
+import { CalendarView } from './views/CalendarView';
 import { SearchBar } from './SearchBar';
-import { useActivityViewModel, type ActivityView } from './useActivityViewModel';
+import { useActivityViewModel, useRowFlow, type ActivityView } from './useActivityViewModel';
+import { useRowActions } from './useRowActions';
 
-// Calendar is added to this list by plan 34.
-const SUPPORTED_VIEWS: readonly ActivityView[] = ['list', 'week', 'split', 'balance'];
+const SUPPORTED_VIEWS: readonly ActivityView[] = ['list', 'week', 'split', 'balance', 'calendar'];
 
 export interface ActivityScreenProps {
   onOpenAccounts: () => void;
@@ -60,11 +66,22 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
   const vm = useActivityViewModel({ initialMonth, supportedViews: SUPPORTED_VIEWS });
   const { rc, formatter, month, items, positions, itemRows, selection, filter, filtering, searching, flat, search } = vm;
   const accountsData = vm.accounts;
-  const [sheetMode, setSheetMode] = useState<EntryMode | null>(null);
+  const accountName = useCallback(
+    (id: string): string => (accountsData ?? []).find((a) => a.id === id)?.name ?? '',
+    [accountsData]
+  );
+  const rowActions = useRowActions({
+    householdId: rc.householdId,
+    ownerId: rc.userId,
+    today: rc.today,
+    selectionActive: selection.active,
+    rows: itemRows,
+    accountName,
+  });
+  const flow = useRowFlow(rowActions, month);
   const [addOpen, setAddOpen] = useState(false);
 
   const categories = useCategoryLookup(rc.userId ?? undefined);
-  const { markPaid } = useMarkPaid();
   const { remove: bulkRemove } = useBulkDelete();
   const { markPaid: bulkMarkPaid } = useBulkMarkPaid();
   const { markUnpaid: bulkMarkUnpaid } = useBulkMarkUnpaid();
@@ -74,23 +91,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
   // S-WR-02: why the last bulk action did nothing, shown whatever the selected count.
   const [hint, setHint] = useState<BulkHint | null>(null);
 
-  const accountName = useCallback(
-    (id: string): string => (accountsData ?? []).find((a) => a.id === id)?.name ?? '',
-    [accountsData]
-  );
-
   const selectedRows = itemRows.filter((r) => selection.isSelected(r.id));
   const bulkCtx = rc.householdId !== null && rc.userId !== null ? { householdId: rc.householdId, ownerId: rc.userId } : null;
-
-  const onMarkPaid = useCallback(
-    (row: ActivityRowView) => {
-      if (rc.userId === null) return;
-      const stepId = markPaid(row, rc.userId, rc.today);
-      // Item 7: a null step means there was no honest before-state, so no Undo is offered.
-      showToast({ kind: 'ordinary', text: undoLabelText('markedPaid', { name: row.name ?? undefined }), stepId });
-    },
-    [markPaid, rc.userId, rc.today]
-  );
 
   const onToggleSelect = useCallback(
     (row: ActivityRowView) => {
@@ -145,12 +147,32 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
     selection.clear();
   };
 
-  const onPressRow = useCallback((row: ActivityRowView) => setSheetMode({ kind: 'edit', row }), []);
 
   const openNew = (direction: Direction) => {
     setAddOpen(false);
-    setSheetMode({ kind: 'new', direction });
+    flow.setEntryMode({ kind: 'new', direction });
   };
+
+  const renderActivityRow = (row: ActivityRowView, cardPosition: CardPosition) => (
+    <ActivityRow
+      row={row}
+      categories={categories}
+      accountName={accountName}
+      formatter={formatter}
+      homeCurrency={rc.homeCurrency}
+      today={rc.today}
+      selectable={selection.active}
+      selected={selection.isSelected(row.id)}
+      onToggleSelect={onToggleSelect}
+      onPress={flow.openDetail}
+      onMarkPaid={rowActions.pay}
+      onSwipePay={() => rowActions.pay(row)}
+      onSwipeUnpay={() => rowActions.unpay(row)}
+      onSwipeDelete={() => flow.requestDelete(row)}
+      cardPosition={cardPosition}
+      balanceNote={vm.balanceNotes.get(row.id)}
+    />
+  );
 
   const renderItem = ({ item, index }: { item: ActivityItem; index: number }) => {
     const cardPosition = positions[index] ?? 'only';
@@ -182,23 +204,10 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         />
       );
     }
-    return (
-      <ActivityRow
-        row={item.row}
-        categories={categories}
-        accountName={accountName}
-        formatter={formatter}
-        homeCurrency={rc.homeCurrency}
-        selectable={selection.active}
-        selected={selection.isSelected(item.row.id)}
-        onToggleSelect={onToggleSelect}
-        onPress={onPressRow}
-        onMarkPaid={onMarkPaid}
-        cardPosition={cardPosition}
-        balanceNote={vm.balanceNotes.get(item.row.id)}
-      />
-    );
+    return renderActivityRow(item.row, cardPosition);
   };
+
+  const calendar = vm.view === 'calendar';
 
   const links: { label: string; onPress: () => void }[] = [
     { label: t('activity.accounts'), onPress: onOpenAccounts },
@@ -227,6 +236,11 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         onViewChange={vm.setView}
         sort={vm.sort}
         onSortChange={vm.setSort}
+        counts={vm.monthTools.counts}
+        addMonth={vm.monthTools.addMonth}
+        onAddMonth={vm.monthTools.onAddMonth}
+        prevMonthName={vm.monthTools.prevMonthName}
+        onMore={(key) => (key === 'clone' ? vm.monthTools.openClone() : vm.monthTools.openPaste())}
       />
       {vm.balanceHeader === undefined ? null : (
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
@@ -262,22 +276,39 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
             <Pill label={t('activity.selectNone')} variant="secondary" onPress={() => { setHint(null); selection.clear(); }} />
           </View>
         ) : null}
-        <Pill
-          label={selection.active ? t('activity.done') : t('activity.select')}
-          variant="secondary"
-          onPress={() => {
-            setHint(null);
-            if (selection.active) selection.exit();
-            else selection.enter();
-          }}
-        />
+        {calendar ? null : (
+          <Pill
+            label={selection.active ? t('activity.done') : t('activity.select')}
+            variant="secondary"
+            onPress={() => {
+              setHint(null);
+              if (selection.active) selection.exit();
+              else selection.enter();
+            }}
+          />
+        )}
       </View>
       <View style={styles.list}>
+        {calendar ? (
+          <CalendarView
+            month={month}
+            weekStart={rc.weekStart ?? 1}
+            rows={vm.itemRows}
+            today={rc.today}
+            onRowPress={flow.openDetail}
+            renderRow={(row) => renderActivityRow(row, 'only')}
+          />
+        ) : (
         <FlashList
           data={items}
           keyExtractor={(item) => item.key}
           getItemType={getActivityItemType}
           renderItem={renderItem}
+          ListHeaderComponent={
+            vm.offers.length > 0 ? (
+              <SeriesOfferCard offers={vm.offers} rowsById={vm.rowsById} onReview={() => vm.setReviewOpen(true)} />
+            ) : null
+          }
           ListEmptyComponent={
             flat && !search.isSuccess ? (
               // S-IN-04 / I-03: only a server search that succeeded can say "Nothing matches.";
@@ -292,13 +323,30 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
             ) : searching || filtering ? (
               <EmptyState heading={t('activity.noMatchHeading')} body={t('activity.noMatchBody')} />
             ) : (
-              <EmptyState
-                heading={t('activity.emptyHeading', { month: formatMonthLabel(month, formatter.locale) })}
-                body={t('activity.emptyBody')}
-              />
+              <View style={styles.emptyBlock}>
+                <EmptyState
+                  heading={t('activity.emptyHeading', { month: formatMonthLabel(month, formatter.locale) })}
+                  body={
+                    vm.monthTools.hasEarlier
+                      ? t('activity.empty.withClone', { month: vm.monthTools.prevMonthName })
+                      : t('activity.empty.noClone')
+                  }
+                />
+                <View style={styles.links}>
+                  {vm.monthTools.hasEarlier ? (
+                    <Pill
+                      label={t('activity.empty.cloneAction', { month: vm.monthTools.prevMonthName })}
+                      variant="secondary"
+                      onPress={vm.monthTools.openClone}
+                    />
+                  ) : null}
+                  <Pill label={t('activity.empty.pasteAction')} variant="secondary" onPress={vm.monthTools.openPaste} />
+                </View>
+              </View>
             )
           }
         />
+        )}
       </View>
       {selection.active ? (
         <BulkBar
@@ -341,10 +389,37 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
         <Row label={t('record.sheet.directionIn')} onPress={() => openNew('in')} />
         <Row label={t('record.sheet.directionTransfer')} onPress={() => openNew('transfer')} />
       </Sheet>
+      <TransactionDetailSheet {...flow.detail} today={rc.today} />
+      <RecurringReviewSheet
+        visible={vm.reviewOpen}
+        offers={vm.offers}
+        rowsById={vm.rowsById}
+        onClose={() => vm.setReviewOpen(false)}
+      />
+      <EditScopePrompt
+        visible={flow.pendingDelete?.prompt === 'scope'}
+        onThisOne={() => flow.answerDelete('one')}
+        onThisAndFuture={() => flow.answerDelete('future')}
+        onCancel={() => flow.answerDelete('cancel')}
+      />
+      <ConfirmSheet
+        visible={flow.pendingDelete?.prompt === 'transferDelete'}
+        body={t('record.sheet.transferDeleteConfirm', {
+          from: accountName(flow.pendingDelete?.row.account_id ?? ''),
+          to: accountName(flow.pendingDelete?.row.counterpartAccountId ?? ''),
+        })}
+        cancelLabel={t('activity.bulkDeleteCancel')}
+        confirmLabel={t('activity.bulkDeleteProceed')}
+        destructive
+        onConfirm={() => flow.answerDelete('transfer')}
+        onCancel={() => flow.answerDelete('cancel')}
+      />
+      <CloneMonthSheet visible={vm.monthTools.cloneOpen} targetMonth={month} onClose={vm.monthTools.closeClone} />
+      <PasteSheet visible={vm.monthTools.pasteOpen} month={month} onClose={vm.monthTools.closePaste} />
       <TransactionSheet
-        visible={sheetMode !== null}
-        mode={sheetMode ?? { kind: 'new', direction: 'out' }}
-        onClose={() => setSheetMode(null)}
+        visible={flow.entryMode !== null}
+        mode={flow.entryMode ?? { kind: 'new', direction: 'out' }}
+        onClose={() => flow.setEntryMode(null)}
       />
     </Screen>
   );
@@ -375,6 +450,10 @@ const styles = StyleSheet.create({
   },
   list: {
     flex: 1,
+  },
+  emptyBlock: {
+    alignItems: 'center',
+    gap: space.groupGap,
   },
   sectionHeader: {
     paddingTop: space.groupGap,

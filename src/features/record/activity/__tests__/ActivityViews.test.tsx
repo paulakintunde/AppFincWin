@@ -1,6 +1,7 @@
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import './activityScreenMocks';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { ACTIVITY_VIEW_KEY, DEFAULT_VIEW_PREFS, loadViewPrefs } from '../activityViewPrefs';
@@ -40,8 +41,9 @@ jest.mock('@/data/mutations/patches', () => ({
   useBulkDelete: () => ({ remove: jest.fn() }),
   useBulkMarkPaid: () => ({ markPaid: jest.fn() }),
   useBulkMarkUnpaid: () => ({ markUnpaid: jest.fn() }),
+  useBulkPatch: () => ({ apply: jest.fn() }),
 }));
-jest.mock('@/data/mutations/transactions', () => ({ useMarkPaid: () => ({ markPaid: jest.fn() }) }));
+jest.mock('@/data/mutations/transactions', () => ({ useMarkPaid: () => ({ markPaid: jest.fn() }), useDeleteTransaction: () => ({ remove: jest.fn() }) }));
 jest.mock('@/data/queries/activity', () => ({
   useMonthView: () => ({
     rows: mockRows,
