@@ -1,6 +1,6 @@
 /**
  * The only haptics entry point for Phase 2.2 features (swipe commit, keypad, cap warning,
- * bulk commits). Expo SDK 57 dropped the deprecated `impact()/notification()/selection()`
+ * bulk commits). Expo SDK 57 dropped the deprecated non-async haptic methods
  * methods (CLAUDE.md), so only the *Async surface is used here. Feature haptics map to
  * UI-SPEC sections 4 (swipe), 8 (keypad / dropdown) and 10 (cap crossed).
  *
