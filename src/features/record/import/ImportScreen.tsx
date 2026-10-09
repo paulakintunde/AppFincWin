@@ -9,12 +9,14 @@ import { View } from 'react-native';
 import { useAccounts } from '@/data/queries/accounts';
 import { AccountSheet } from '@/features/record/accounts/AccountSheet';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { monthOf } from '@/engine/time';
 import { useT } from '@/i18n';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { Screen } from '@/ui/Screen';
 import { space } from '@/theme/layout';
 import { FormatStep } from './FormatStep';
+import { PasteSheet } from './PasteSheet';
 import { MappingStep } from './MappingStep';
 import { MatchesStep } from './MatchesStep';
 import { ReviewStep } from './ReviewStep';
@@ -88,9 +90,11 @@ function PickStep({ state, entry }: { state: ImportState; entry: ImportEntry }) 
   const rc = useRecordContext();
   const accounts = (useAccounts(rc.householdId ?? undefined).data ?? []).filter((a) => a.archived_at === null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [pasteOpen, setPasteOpen] = useState(false);
 
   return (
     <View>
+      <Row label={t('importCsv.paste.entry')} sublabel={t('importCsv.paste.entrySub')} chevron onPress={() => setPasteOpen(true)} />
       <T tone="inkMuted">{t('importCsv.privacy')}</T>
       <View style={{ paddingTop: space.gapMd }}>
         <Heading>{t('importCsv.pickAccount')}</Heading>
@@ -116,6 +120,7 @@ function PickStep({ state, entry }: { state: ImportState; entry: ImportEntry }) 
           onPress={state.start}
         />
       </Actions>
+      <PasteSheet visible={pasteOpen} month={monthOf(rc.today)} onClose={() => setPasteOpen(false)} onCsv={() => setPasteOpen(false)} />
       <AccountSheet
         visible={sheetOpen}
         mode={{ kind: 'new', context: entry === 'onboarding' ? 'onboarding' : 'later' }}

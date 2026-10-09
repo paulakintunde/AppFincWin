@@ -75,6 +75,10 @@ jest.mock('@/data/queries/categories', () => ({
     return { all: [groceries], active: [groceries], byId: new Map([['c1', groceries]]), transferCategoryId: 'tc', loading: false };
   },
 }));
+jest.mock('../PasteSheet', () => {
+  const { View } = jest.requireActual('react-native');
+  return { PasteSheet: (props: { visible: boolean }) => (props.visible ? <View accessibilityLabel="paste-sheet-open" /> : null) };
+});
 jest.mock('@/features/record/accounts/AccountSheet', () => {
   const { Pressable, Text } = jest.requireActual('react-native');
   return {
@@ -187,6 +191,14 @@ describe('ImportScreen: pick', () => {
     expect(screen.getByText('Current')).toBeTruthy();
     expect(screen.getByText('Savings')).toBeTruthy();
     expect(screen.queryByText('Old card')).toBeNull();
+  });
+
+  it('lists Paste a list first and opens the paste sheet', async () => {
+    await renderScreen();
+    expect(screen.getByText('One line per item, typed or copied from a sheet')).toBeTruthy();
+    expect(screen.queryByLabelText('paste-sheet-open')).toBeNull();
+    await fireEvent.press(screen.getByText('Paste a list'));
+    expect(screen.getByLabelText('paste-sheet-open')).toBeTruthy();
   });
 
   it('passes the entry and account to the hook', async () => {
