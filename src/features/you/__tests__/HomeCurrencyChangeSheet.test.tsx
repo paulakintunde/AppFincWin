@@ -73,22 +73,24 @@ describe('HomeCurrencyChangeSheet', () => {
 
   it('rates failure keeps the sheet open with the unchanged line', async () => {
     mockChange = jest.fn().mockResolvedValue({ ok: false, reason: 'rates' });
-    const { getByText } = await renderSheet();
+    const { getByText, queryByText } = await renderSheet();
     await act(async () => {
       fireEvent.press(getByText('Change to USD'));
     });
     expect(getByText('Couldn’t get today’s rates. Home currency is unchanged. Try again.')).toBeTruthy();
+    expect(queryByText('Your settings changed elsewhere. Home currency is unchanged.')).toBeNull();
     expect(onClose).not.toHaveBeenCalled();
     expect(getToast()).toBeNull();
   });
 
-  it('changed elsewhere closes the sheet without a success toast', async () => {
+  it('changed elsewhere keeps the sheet open with the unchanged line', async () => {
     mockChange = jest.fn().mockResolvedValue({ ok: false, reason: 'changed' });
     const { getByText } = await renderSheet();
     await act(async () => {
       fireEvent.press(getByText('Change to USD'));
     });
-    expect(onClose).toHaveBeenCalled();
+    expect(getByText('Your settings changed elsewhere. Home currency is unchanged.')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
     expect(getToast()).toBeNull();
   });
 });
