@@ -30,13 +30,13 @@ describe('matchPendingPayments', () => {
   it('matches an imported row to a pending occurrence with the same amount, dated just after the due date', () => {
     const rows = [importedRow({ index: 0, localDate: '2026-09-04' })];
     const pendingRows = [pending({ id: 'p1', localDate: '2026-09-03' })];
-    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p1' }]);
+    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p1', automatic: false }]);
   });
 
   it('matches within 10% of the planned amount', () => {
     const rows = [importedRow({ index: 0, localDate: '2026-09-04', amount: -1150 })];
     const pendingRows = [pending({ id: 'p1', localDate: '2026-09-03' })];
-    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p1' }]);
+    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p1', automatic: false }]);
   });
 
   it('does not match beyond 10% of the planned amount', () => {
@@ -60,7 +60,7 @@ describe('matchPendingPayments', () => {
   it('matches a row dated exactly PAY_MATCH_BEFORE_DAYS before the due date', () => {
     const rows = [importedRow({ index: 0, localDate: '2026-08-31' })]; // 3 days before 09-03
     const pendingRows = [pending({ id: 'p1', localDate: '2026-09-03' })];
-    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p1' }]);
+    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p1', automatic: false }]);
   });
 
   it('does not match a row dated more than PAY_MATCH_AFTER_DAYS after the due date', () => {
@@ -72,7 +72,7 @@ describe('matchPendingPayments', () => {
   it('matches a row dated exactly PAY_MATCH_AFTER_DAYS after the due date', () => {
     const rows = [importedRow({ index: 0, localDate: '2026-09-10' })]; // 7 days after 09-03
     const pendingRows = [pending({ id: 'p1', localDate: '2026-09-03' })];
-    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p1' }]);
+    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p1', automatic: false }]);
   });
 
   it('matches the closest due date only, one-to-one, among two pending occurrences', () => {
@@ -81,7 +81,7 @@ describe('matchPendingPayments', () => {
       pending({ id: 'p-aug', localDate: '2026-08-03' }),
       pending({ id: 'p-sep', localDate: '2026-09-03' }),
     ];
-    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p-sep' }]);
+    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p-sep', automatic: false }]);
   });
 
   it('excludes rows already flagged as duplicates', () => {
@@ -128,7 +128,7 @@ describe('matchPendingPayments', () => {
     const pendingRows = [pending({ id: 'p1', localDate: '2026-09-03' })];
     // Both rows tie on dayGap, amountDiff and pendingId, so the smaller row index wins
     // the single pending occurrence, one-to-one.
-    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p1' }]);
+    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'p1', automatic: false }]);
   });
 
   it('prefers the pending occurrence with the smaller amount difference when day gaps tie', () => {
@@ -137,7 +137,7 @@ describe('matchPendingPayments', () => {
       pending({ id: 'pHigh', localDate: '2026-09-03', amount: -1050 }), // amountDiff 49
       pending({ id: 'pExact', localDate: '2026-09-03', amount: -1099 }), // amountDiff 0
     ];
-    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'pExact' }]);
+    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'pExact', automatic: false }]);
   });
 
   it('breaks a tie between two equally-good pending occurrences by the smaller pending id', () => {
@@ -146,7 +146,7 @@ describe('matchPendingPayments', () => {
       pending({ id: 'pB', localDate: '2026-09-03' }),
       pending({ id: 'pA', localDate: '2026-09-03' }),
     ];
-    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'pA' }]);
+    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'pA', automatic: false }]);
   });
 
   it('IN-04: never matches a line in a different currency from the pending occurrence', () => {
@@ -161,11 +161,28 @@ describe('matchPendingPayments', () => {
       pending({ id: 'pA', localDate: '2026-09-04', currency: 'GBP' }),
       pending({ id: 'pB', localDate: '2026-09-03', currency: 'EUR' }),
     ];
-    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'pB' }]);
+    expect(matchPendingPayments(rows, pendingRows)).toEqual([{ index: 0, pendingId: 'pB', automatic: false }]);
   });
 
   it('exposes the before/after window constants', () => {
     expect(PAY_MATCH_BEFORE_DAYS).toBe(3);
     expect(PAY_MATCH_AFTER_DAYS).toBe(7);
+  });
+});
+
+describe('matchPendingPayments automatic flag', () => {
+  it('carries automatic true from the matched occurrence, false when absent', () => {
+    const rows = [
+      importedRow({ index: 0, localDate: '2026-09-04' }),
+      importedRow({ index: 1, localDate: '2026-10-04', name: 'SPOTIFY', amount: -999 }),
+    ];
+    const pendingRows = [
+      pending({ id: 'p1', localDate: '2026-09-03', automatic: true }),
+      pending({ id: 'p2', localDate: '2026-10-03', name: 'Spotify', amount: -999 }),
+    ];
+    expect(matchPendingPayments(rows, pendingRows)).toEqual([
+      { index: 0, pendingId: 'p1', automatic: true },
+      { index: 1, pendingId: 'p2', automatic: false },
+    ]);
   });
 });
