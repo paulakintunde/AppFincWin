@@ -15,11 +15,11 @@ export type { NewCategory, CategoryPatch } from './rows';
 
 // Mirrors the migration's insert grant: id, name, color_key -- is_system and builtin_key are
 // server-only (seeded at provisioning, D-34) and deliberately excluded.
-export const CATEGORY_INSERT_KEYS = ['id', 'name', 'color_key'] as const satisfies readonly (keyof NewCategory)[];
+export const CATEGORY_INSERT_KEYS = ['id', 'name', 'color_key', 'monthly_cap'] as const satisfies readonly (keyof NewCategory)[];
 
 // Mirrors the migration's update grant: name, color_key, archived_at -- is_system and
 // builtin_key are excluded, so a patch naming either throws before any network call.
-export const CATEGORY_PATCH_KEYS = ['name', 'color_key', 'archived_at'] as const satisfies readonly (keyof CategoryPatch)[];
+export const CATEGORY_PATCH_KEYS = ['name', 'color_key', 'archived_at', 'monthly_cap'] as const satisfies readonly (keyof CategoryPatch)[];
 
 const ENTITY = 'categories' as const;
 
@@ -46,7 +46,9 @@ export async function fetchCategories(client: DbClient, ownerId: string): Promis
 
 export async function insertCategory(client: DbClient, category: NewCategory): Promise<CategoryRow> {
   const row: Record<string, unknown> = {};
-  for (const key of CATEGORY_INSERT_KEYS) row[key] = category[key];
+  for (const key of CATEGORY_INSERT_KEYS) {
+    if (category[key] !== undefined) row[key] = category[key];
+  }
 
   const { data, error, status } = await client.from('categories').insert(row).select(CATEGORY_COLUMNS).single();
 

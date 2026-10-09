@@ -71,6 +71,9 @@ function memoryStorage(backing: Map<string, string> = new Map()) {
 
 const serverTransaction = (overrides: Partial<TransactionRow> = {}): TransactionRow => ({
   id: 'uuid-0',
+  is_refund: false,
+  is_automatic: false,
+  is_sample: false,
   household_id: 'h1',
   account_id: 'acc1',
   created_by: 'user-1',

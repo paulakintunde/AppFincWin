@@ -48,6 +48,8 @@ jest.mock('@supabase/supabase-js', () => ({
 function account(over: Partial<AccountRow> = {}): AccountRow {
   return {
     id: 'acc1',
+    deleted_at: null,
+    is_sample: false,
     household_id: 'h1',
     created_by: null,
     name: 'Current',

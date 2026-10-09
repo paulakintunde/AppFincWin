@@ -94,6 +94,8 @@ const newSeries: NewRecurringSeries = {
 
 const seriesRow = (overrides: Partial<RecurringSeriesRow> = {}): RecurringSeriesRow => ({
   ...newSeries,
+  is_automatic: false,
+  is_sample: false,
   created_by: null,
   updated_by: null,
   materialised_through: null,

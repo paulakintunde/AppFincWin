@@ -101,6 +101,8 @@ export function registerAccountMutations(qc: QueryClient): void {
         updated_by: null,
         overdraft_limit: vars.row.overdraft_limit ?? null,
         credit_limit: vars.row.credit_limit ?? null,
+        deleted_at: null,
+        is_sample: false,
         version: 1,
         created_at: now,
         updated_at: now,

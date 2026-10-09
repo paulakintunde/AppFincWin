@@ -52,6 +52,8 @@ afterEach(() => {
 function categoryRow(overrides: Partial<CategoryRow> = {}): CategoryRow {
   return {
     id: 'c1',
+    monthly_cap: null,
+    is_sample: false,
     owner_id: 'u1',
     builtin_key: null,
     name: 'Custom',
@@ -73,6 +75,9 @@ function fxRow(overrides: Partial<FxLatestRow> = {}): FxLatestRow {
 export function txRow(overrides: Partial<TransactionRow> = {}): TransactionRow {
   return {
     id: 't1',
+    is_refund: false,
+    is_automatic: false,
+    is_sample: false,
     household_id: 'h1',
     account_id: 'a1',
     created_by: 'u1',
@@ -266,6 +271,8 @@ describe('categoryName', () => {
 function accountRow(overrides: Partial<AccountRow> = {}): AccountRow {
   return {
     id: 'acc1',
+    deleted_at: null,
+    is_sample: false,
     household_id: 'h1',
     created_by: 'u1',
     name: 'Everyday chequing',
@@ -286,6 +293,8 @@ function accountRow(overrides: Partial<AccountRow> = {}): AccountRow {
 function seriesRow(overrides: Partial<RecurringSeriesRow> = {}): RecurringSeriesRow {
   return {
     id: 's1',
+    is_automatic: false,
+    is_sample: false,
     household_id: 'h1',
     created_by: 'u1',
     updated_by: null,

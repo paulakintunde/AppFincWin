@@ -76,6 +76,11 @@ export interface TransactionRow {
   external_id: string | null;
   import_format: string | null;
   transfer_id: string | null;
+  // Record polish (plan 02 grants): is_refund/is_automatic are client-writable; is_sample is
+  // server-written and client-read-only (never in a write-key list).
+  is_refund: boolean;
+  is_automatic: boolean;
+  is_sample: boolean;
   version: number;
   created_at: string;
   updated_at: string;
@@ -94,6 +99,9 @@ export interface AccountRow {
   // D-48: optional non-negative limits, in the account's own currency's minor units.
   overdraft_limit: number | null;
   credit_limit: number | null;
+  // Record polish: soft delete (D-24, client-patchable) and server-written is_sample (read-only).
+  deleted_at: string | null;
+  is_sample: boolean;
   version: number;
   created_at: string;
   updated_at: string;
@@ -149,6 +157,8 @@ export interface NewTransaction {
   external_id?: string | null;
   import_format?: 'csv' | 'ofx' | null;
   transfer_id?: string | null;
+  is_refund?: boolean;
+  is_automatic?: boolean;
 }
 
 // D-45: raw_amount/raw_balance/external_id/import_format are insert-only provenance and are
@@ -163,6 +173,8 @@ export type TransactionPatch = Partial<
     status: TransactionStatus;
     deleted_at: string | null;
     transfer_id: string | null;
+    is_refund: boolean;
+    is_automatic: boolean;
   }>;
 
 export interface NewAccount {
@@ -177,7 +189,7 @@ export interface NewAccount {
 }
 
 export type AccountPatch = Partial<
-  Pick<AccountRow, 'name' | 'kind' | 'opening_balance' | 'archived_at' | 'overdraft_limit' | 'credit_limit'>
+  Pick<AccountRow, 'name' | 'kind' | 'opening_balance' | 'archived_at' | 'overdraft_limit' | 'credit_limit' | 'deleted_at'>
 >;
 
 export interface ImportProfileRow {
@@ -199,6 +211,9 @@ export interface CategoryRow {
   color_key: CategoryColorKey;
   is_system: boolean;
   archived_at: string | null;
+  // Record polish: optional monthly cap (client-writable); is_sample is server-written, read-only.
+  monthly_cap: number | null;
+  is_sample: boolean;
   version: number;
   updated_by: string | null;
   created_at: string;
@@ -208,10 +223,16 @@ export interface NewCategory {
   id: string;
   name: string;
   color_key: CategoryColorKey;
+  monthly_cap?: number | null;
 }
-export type CategoryPatch = Partial<{ name: string; color_key: CategoryColorKey; archived_at: string | null }>;
+export type CategoryPatch = Partial<{
+  name: string;
+  color_key: CategoryColorKey;
+  archived_at: string | null;
+  monthly_cap: number | null;
+}>;
 export const CATEGORY_COLUMNS =
-  'id, owner_id, builtin_key, name, color_key, is_system, archived_at, version, updated_by, created_at, updated_at';
+  'id, owner_id, builtin_key, name, color_key, is_system, archived_at, monthly_cap, is_sample, version, updated_by, created_at, updated_at';
 
 export interface RecurringSeriesRow {
   id: string;
@@ -231,12 +252,14 @@ export interface RecurringSeriesRow {
   occurrence_count: number | null;
   materialised_through: string | null;
   deleted_at: string | null;
+  is_automatic: boolean;
+  is_sample: boolean;
   version: number;
   created_at: string;
   updated_at: string;
 }
 export const RECURRING_SERIES_COLUMNS =
-  'id, household_id, created_by, updated_by, account_id, name, amount, currency, category_id, payment_type, freq, anchor_date, time_zone, end_date, occurrence_count, materialised_through, deleted_at, version, created_at, updated_at';
+  'id, household_id, created_by, updated_by, account_id, name, amount, currency, category_id, payment_type, freq, anchor_date, time_zone, end_date, occurrence_count, materialised_through, deleted_at, is_automatic, is_sample, version, created_at, updated_at';
 
 export interface UndoLogRow {
   id: string;

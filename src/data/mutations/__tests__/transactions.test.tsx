@@ -73,6 +73,9 @@ const JPY_RATE = { quote: 'JPY', rate: '180.7000000000', rate_date: '2026-09-21'
 
 const serverTransaction = (overrides: Partial<TransactionRow> = {}): TransactionRow => ({
   id: 'uuid-0',
+  is_refund: false,
+  is_automatic: false,
+  is_sample: false,
   household_id: 'h1',
   account_id: 'acc1',
   created_by: 'user-1',
@@ -1245,6 +1248,8 @@ describe('useImportChunks / importChunk', () => {
 describe('useAddAccount / useEditAccount', () => {
   const serverAccount = (overrides: Partial<AccountRow> = {}): AccountRow => ({
     id: 'uuid-0',
+    deleted_at: null,
+    is_sample: false,
     household_id: 'h1',
     created_by: 'user-1',
     name: 'Everyday chequing',
