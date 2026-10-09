@@ -3,7 +3,7 @@
 Plan 02.2-16. Records every production command and what it printed. No secret
 values are ever written here (names only).
 
-PR: PENDING
+PR: https://github.com/paulakintunde/AppFincWin/pull/51 (OPEN; checks: checks pass 2m27s, rls pass 1m55s, secret-scan pass 16s; mergeStateStatus CLEAN)
 Approval: pending
 Deployed commit: pending
 
