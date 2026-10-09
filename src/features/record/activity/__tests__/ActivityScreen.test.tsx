@@ -186,8 +186,8 @@ describe('ActivityScreen', () => {
     const screen = await renderScreen();
     // One in the totals bar, one as the section header.
     expect(screen.getAllByText('Still to come')).toHaveLength(2);
-    expect(screen.getByText('Paid')).toBeTruthy();
-    expect(screen.getByText('Skipped')).toBeTruthy();
+    expect(screen.getAllByText('Paid')[0]).toBeTruthy();
+    expect(screen.getAllByText('Skipped')[0]).toBeTruthy();
     expect(screen.getByText('Phone bill')).toBeTruthy();
   });
 
@@ -330,7 +330,8 @@ describe('ActivityScreen search, filters and bulk select', () => {
     await type(screen, 'Search every month', 'coffee');
     expect(screen.getByText('Coffee beans')).toBeTruthy();
     expect(screen.getByText('Coffee shop')).toBeTruthy();
-    expect(screen.queryByText('Paid')).toBeNull();
+    // Two row tags, no section header (02.2-21 row tags).
+    expect(screen.getAllByText('Paid')).toHaveLength(2);
   });
 
   it('S-IN-04: an every-month search still in flight says so, not Nothing matches', async () => {
@@ -579,7 +580,7 @@ describe('ActivityScreen section colours (02-polish item 5)', () => {
     ];
     const screen = await renderScreen();
     const style = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
-    expect(style(screen.getByText('Paid')).color).toBe('#1B4D3E');
+    expect(style(screen.getAllByText('Paid')[0]!).color).toBe('#1B4D3E');
     expect(style(screen.getAllByText('Still to come')[1]!).color).toBe('#6E6A5E');
   });
 });
