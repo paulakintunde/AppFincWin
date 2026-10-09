@@ -1309,3 +1309,33 @@ describe('useAddAccount / useEditAccount', () => {
     expect(rows?.[0]?.name).toBe('Renamed elsewhere');
   });
 });
+
+describe('useAddTransaction refund and automatic flags (REC-20)', () => {
+  it('writes is_refund and is_automatic on the inserted row', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: serverTransaction(), error: null, status: 201 });
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []);
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+
+    result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+      isRefund: true,
+      isAutomatic: true,
+    });
+
+    await waitFor(() => expect(fake.calls.find((c) => c.method === 'insert')).toBeDefined());
+    expect(fake.calls.find((c) => c.method === 'insert')?.args[0]).toMatchObject({
+      is_refund: true,
+      is_automatic: true,
+    });
+  });
+});
