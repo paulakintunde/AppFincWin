@@ -1070,7 +1070,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       suggestions,
       committedRows: ordinary.map((r) => ({ id: r.id, localDate: r.local_date, categoryId: r.category_id ?? null })),
     });
-  }, [accountById, accounts, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, transfersUnavailable]);
+  }, [accountById, accounts, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, transfersUnavailable]);
 
   const acceptSuggestion = useCallback(
     (key: string): void => {
