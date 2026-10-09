@@ -126,13 +126,6 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
               {t('accounts.otherCurrency', { amount: fmtIn(o.currency)(o.paidSum), code: o.currency })}
             </Text>
           ))}
-      {!compact && balance.pendingSum !== null && balance.pendingSum !== 0 ? (
-        <Text
-          style={{ ...textRole(pairing, 'label'), color: balance.pendingSum > 0 ? colors.accent : colors.danger }}
-        >
-          {t('accounts.stillToCome', { amount: fmt(balance.pendingSum) })}
-        </Text>
-      ) : null}
     </View>
   );
 }
