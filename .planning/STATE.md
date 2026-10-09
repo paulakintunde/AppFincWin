@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 UI-SPEC approved
-last_updated: "2026-09-27T19:19:03.012Z"
-last_activity: 2026-09-27
+stopped_at: Phase 02.2 UI-SPEC aligned with CONTEXT, approved
+last_updated: "2026-10-09T09:03:47.336Z"
+last_activity: 2026-10-09 -- Phase 02.2 execution started
 progress:
-  total_phases: 13
-  completed_phases: 1
-  total_plans: 116
-  completed_plans: 41
-  percent: 35
+  total_phases: 14
+  completed_phases: 2
+  total_plans: 161
+  completed_plans: 84
+  percent: 52
 ---
 
 # Project State
@@ -21,18 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 02 complete; next Phase 02.2 (record polish), 02.1 (needs re-plan for IMP-05), then 03
+**Current focus:** Phase 02.2 — record-polish
 
 ## Current Position
 
-Phase: 02 (record) — COMPLETE
-Plan: 50 of 50
+Phase: 02.2 (record-polish) — EXECUTING
+Plan: 1 of 35
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
-Phase 02.1 (PDF statement import): planned (12 plans, 7 waves, checker passed); not started. Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
-Status: Phase 02 complete
-Last activity: 2026-10-09
+Phase 02.1 (PDF statement import): planned (12 plans, 7 waves, checker passed); not started. Phase 02.2 (record-polish): planned (35 plans, 10 waves, checker passed); not started — plan 16 is a production schema push checkpoint. Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
+Status: Executing Phase 02.2
+Last activity: 2026-10-09 -- Phase 02.2 execution started
 
 ## Performance Metrics
 
@@ -132,6 +132,8 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
+- [Phase 02.1] **Execution order: 02.2 → revise 02.1 → execute 02.1.** 02.1's plans (committed 2026-09-27) are stale and must be revised after 02.2 executes, before 02.1 runs: (1) migrations `20260927000100_statement_uploads_bucket.sql` / `…000200_statement_uploads_purge.sql` predate production's latest (`20261007000400`), so `supabase db push` refuses them without `--include-all`; re-date them after 02.2's `20261010…` range. (2) pgTAP `35_statement_uploads.test.sql` collides with existing `35_series_undo.test.sql`; renumber after 02.2's 42–48. (3) Plans 02.1-09..11 edit `useStatementImport.ts`, `importPipeline.ts`, `ImportScreen.tsx`, which 02.2 plans 20/26/27/33 change (suggestionToSeries move, refund/Automatic, paste entry, sample-clear prompt); rebase them on the post-02.2 code. Route: `/gsd-plan-phase 02.1` → "Replan" or targeted revision
+
 - [Phase 10] ENV-16 moved from Phase 2 on 2026-09-25: production has **no backups** until then (method TBD, likely AWS, e.g. a daily dump to S3). Supabase Pro is no longer assumed, so a Free-plan production project also **pauses after a week with no activity**, taking the live app offline. That needs its own answer (upgrade, keep-alive, or accept) before real users arrive
 - [Phase 0] EAS provisioning and credentials from Windows are unproven for this project — trigger the first iOS EAS Build on day one so provisioning surprises surface in week one, not week ten
 - [Phase 8] The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe — needs a dedicated two-client offline-mid-edit spike before it is trusted
@@ -164,6 +166,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-27T01:15:40.542Z
-Stopped at: Phase 3 UI-SPEC approved
-Resume file: .planning/phases/03-shell/03-UI-SPEC.md
+Last session: 2026-10-09T07:16:09.788Z
+Stopped at: Phase 02.2 UI-SPEC aligned with CONTEXT, approved
+Resume file: .planning/phases/02.2-record-polish/02.2-CONTEXT.md

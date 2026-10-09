@@ -11,3 +11,4 @@ export * from './convert';
 export * from './reconcile';
 export * from './profile';
 export * from './duplicates';
+export * from './refundMatch';

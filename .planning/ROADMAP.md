@@ -262,7 +262,7 @@ Plans:
 **Goal:** A user can import a text-based PDF bank or card statement through the same import pipeline as CSV and OFX, with figures that are only committed once they reconcile or the user has reviewed them.
 **Requirements**: IMP-01, IMP-02, IMP-03, IMP-04, IMP-05
 **Note (2026-10-08):** IMP-05 (statement-provided conversions, show both figures) was added after this phase was planned; re-plan 2.1 to cover it before executing.
-**Depends on:** Phase 2 (the D-40 import pipeline, format profile, reconciliation, transfers)
+**Depends on:** Phase 2 (the D-40 import pipeline, format profile, reconciliation, transfers), Phase 02.2 (executes first; it changes the import commit path 02.1-09..11 build on). Plans need revision before execution: see STATE.md Blockers
 **Success Criteria** (what must be TRUE):
   1. A text-based PDF statement from a supported layout imports with the same format read-back, preview, duplicate check and transfer suggestions as a CSV or OFX file.
   2. Nothing from a PDF is committed unless its balances reconcile or the user has reviewed each row that could not be verified.
@@ -302,7 +302,7 @@ Plans:
 ### Phase 02.2: Record polish (INSERTED)
 
 **Goal:** Activity and the Record screens reach the prototype's depth (`FincWin United.dc.html`). Views have subtotals, with sort and counts; recurring lines are spotted from logged history; and entry, import and month tools are richer. The Phase 2 filter system stays.
-**Requirements**: ACT-06, ACT-07, ACT-08, ACT-09, ACT-10, ACT-11, ACT-12, ACT-13, ACT-14, ACT-15, ACT-16, ACT-17, ACT-18, REC-19, REC-20, REC-21, REC-22, REC-23, REC-24
+**Requirements**: ACT-06, ACT-07, ACT-08, ACT-09, ACT-10, ACT-11, ACT-12, ACT-13, ACT-14, ACT-15, ACT-16, ACT-17, ACT-18, REC-19, REC-20, REC-21, REC-22, REC-23, REC-24, REC-25
 **Depends on:** Phase 2 (Record), Phase 3 (Shell) for the dropdown and FAB chrome where it applies
 **Inserted:** 2026-10-07, from the Phase 2 device walkthrough and a prototype gap audit (user decisions)
 **Success Criteria** (what must be TRUE):
@@ -315,7 +315,64 @@ Plans:
   7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
   8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
-**Plans:** TBD
+**Plans:** 15/35 plans executed
+
+Plans:
+
+**Wave 1**
+- [x] 02.2-01-PLAN.md — Foundations: expo-haptics + haptics wrapper, full phase copy catalogue, undo label keys, UI-SPEC offer wording, cross-phase is_sample/is_refund rule (W1)
+- [x] 02.2-02-PLAN.md — Schema: additive columns (refund, automatic, sample, cap, week start, horizon, account soft delete), view re-create, grants, sample trigger, delete guard, dismissed offers + pgTAP 42/43 (W1)
+- [x] 02.2-03-PLAN.md — Engine: refund-aware totals/filters, count, horizon month list, row tags, sort, entry notes (W1)
+- [x] 02.2-04-PLAN.md — Engine: series offers over detect.ts (unchanged), clone candidates, pay-match automatic flag (W1)
+- [x] 02.2-05-PLAN.md — Engine (TDD): paste line parser, 100% coverage folder (W1)
+- [x] 02.2-06-PLAN.md — Engine: category usage/cap, account pending split, delete-or-archive rule (W1)
+- [x] 02.2-07-PLAN.md — Engine: keypad reducer, region week start, refund matcher (W1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 02.2-08-PLAN.md — Engine: day/week/in-out groups with one net, week buckets, calendar cells, running balance (W2)
+- [x] 02.2-09-PLAN.md — Schema: apply_patches new keys + server-only undo gate (allow_system_keys) + pgTAP 44 (W2)
+- [x] 02.2-10-PLAN.md — Schema: series Automatic/sample flags, household-horizon materialiser, batch series RPC + pgTAP 45 (W2)
+- [x] 02.2-11-PLAN.md — Schema: pending split, paid-before, atomic change_home_currency with cap conversion + pgTAP 46 (W2)
+- [x] 02.2-12-PLAN.md — UI primitives: Dropdown, ToggleRow, DetailSheet, ConfirmSheet title (W2)
+- [x] 02.2-13-PLAN.md — UI primitives: SwipeRow, Keypad (W2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 02.2-14-PLAN.md — Schema: add_activity_month with one undoable step + pgTAP 47 (W3)
+- [x] 02.2-15-PLAN.md — Schema: seed/clear sample data RPCs + pgTAP 48 (W3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 02.2-16-PLAN.md — Schema PR merged to main, then production schema push [BLOCKING, approval] and live checks (W4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 02.2-17-PLAN.md — DB layer: new columns in row types/key lists, soft-deleted accounts filtered, batch series wrapper (W5)
+- [ ] 02.2-18-PLAN.md — DB layer: record prefs, horizon, dismissed offers, samples, pending split, paid-before, add month, keys (W5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 02.2-19-PLAN.md — Queries: record context (week start, horizon, samples), month counts, refund-aware totals, on-device series offers (W6)
+- [ ] 02.2-20-PLAN.md — Mutations: clone month, paste lines, mark all monthly (one step each), suggestionToSeries relocation (W6)
+- [ ] 02.2-21-PLAN.md — Activity row tags, swipe, balance note; read-only detail sheet (W6)
+- [ ] 02.2-22-PLAN.md — Categories: usage sub-labels, monthly cap field, usage-sorted picker (W6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 02.2-23-PLAN.md — Mutations: add month, delete account, dismiss offers, record prefs (W7)
+- [ ] 02.2-24-PLAN.md — Activity list views: view/sort dropdowns, group subtotals, running balance, count, view model (W7)
+- [ ] 02.2-25-PLAN.md — Entry sheet: keypad, Automatic/Refund toggles, notes, Received/Expected, clone prefill, cap warning (W7)
+- [ ] 02.2-26-PLAN.md — Paste to add sheet and Import entry (W7)
+- [ ] 02.2-27-PLAN.md — Import: refund suggestions and Automatic pre-tick (W7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 02.2-28-PLAN.md — Actions: sample seed/clear/decline, all-or-nothing home-currency change (W8)
+- [ ] 02.2-29-PLAN.md — Calendar view, series offer card, recurring review sheet (W8)
+- [ ] 02.2-30-PLAN.md — Month switcher counts + Add month, clone-month sheet (W8)
+- [ ] 02.2-31-PLAN.md — Account detail: Coming in / Going out / after pending, delete empty or archive (W8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 02.2-32-PLAN.md — You -> Money: week start, home-currency change sheet, toast queue (W9)
+- [ ] 02.2-33-PLAN.md — Sample figures: onboarding option, Start fresh banner, first-save prompt on every real save path (W9)
+- [ ] 02.2-34-PLAN.md — Activity integration: calendar, offer, detail sheet, swipe, More menu, months, empty state (W9)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 02.2-35-PLAN.md — New dev build, device walkthrough of all eight criteria, validation sign-off (W10)
 
 ### Phase 3: Shell
 **Goal**: The app's navigation chrome matches the design system exactly.

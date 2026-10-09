@@ -33,6 +33,17 @@ export interface FilterRow {
   note: string | null;
   transfer_id: string | null;
   status: 'pending' | 'paid' | 'skipped';
+  is_refund?: boolean;
+}
+
+/** Flow of a row: refunds are 'out' (CONTEXT D-03), never classified by sign alone. */
+export function flowOf(
+  row: Pick<FilterRow, 'original_amount' | 'transfer_id' | 'is_refund'>
+): 'in' | 'out' | 'transfer' {
+  if (row.transfer_id !== null) return 'transfer';
+  if (row.is_refund === true) return 'out';
+  if (row.original_amount < 0) return 'out';
+  return 'in';
 }
 
 export function isFilterActive(f: ActivityFilter): boolean {
@@ -67,17 +78,9 @@ export function matchesSearch(row: Pick<FilterRow, 'name' | 'note'>, term: strin
 }
 
 function matchesDirection(row: FilterRow, direction: ActivityFilter['direction']): boolean {
-  const isTransfer = row.transfer_id !== null;
-  switch (direction) {
-    case 'all':
-      return true;
-    case 'transfers':
-      return isTransfer;
-    case 'in':
-      return !isTransfer && row.original_amount > 0;
-    case 'out':
-      return !isTransfer && row.original_amount < 0;
-  }
+  if (direction === 'all') return true;
+  const flow = flowOf(row);
+  return direction === 'transfers' ? flow === 'transfer' : flow === direction;
 }
 
 function matchesAmountRange(row: FilterRow, min: number | null, max: number | null): boolean {

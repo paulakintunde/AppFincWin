@@ -18,6 +18,8 @@ export interface PendingOccurrence {
   currency: string;
   name: string | null;
   accountId: string;
+  /** The series is flagged Automatic: a match is pre-ticked in the import step (D-08). */
+  automatic?: boolean;
 }
 
 export interface PayMatchRow {
@@ -32,6 +34,8 @@ export interface PayMatchRow {
 export interface PayMatch {
   index: number;
   pendingId: string;
+  /** True when the matched occurrence is flagged Automatic (D-08). */
+  automatic: boolean;
 }
 
 export const PAY_MATCH_BEFORE_DAYS = 3;
@@ -56,6 +60,7 @@ interface Candidate {
   pendingId: string;
   dayGap: number;
   amountDiff: number;
+  automatic: boolean;
 }
 
 /**
@@ -91,7 +96,13 @@ export function matchPendingPayments(
 
       if (nameSimilarity(row.name, p.name) < NAME_SIMILARITY_MIN) continue;
 
-      candidates.push({ rowIndex: row.index, pendingId: p.id, dayGap: Math.abs(dayGap), amountDiff });
+      candidates.push({
+        rowIndex: row.index,
+        pendingId: p.id,
+        dayGap: Math.abs(dayGap),
+        amountDiff,
+        automatic: p.automatic === true,
+      });
     }
   }
 
@@ -107,7 +118,7 @@ export function matchPendingPayments(
   const result: PayMatch[] = [];
   for (const c of candidates) {
     if (usedRows.has(c.rowIndex) || usedPending.has(c.pendingId)) continue;
-    result.push({ index: c.rowIndex, pendingId: c.pendingId });
+    result.push({ index: c.rowIndex, pendingId: c.pendingId, automatic: c.automatic });
     usedRows.add(c.rowIndex);
     usedPending.add(c.pendingId);
   }
