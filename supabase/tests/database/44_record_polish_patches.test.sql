@@ -25,9 +25,9 @@ insert into public.accounts (id, household_id, name, kind, currency, opening_bal
   ('a1111111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Wallet', 'cash', 'USD', 0),
   ('a2222222-2222-2222-2222-222222222222', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Spare', 'cash', 'USD', 0);
 insert into public.categories (id, owner_id, name, color_key)
-values ('ca000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Groceries2', 'sage');
-insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, name) values
-  ('d1000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', 500, 'USD', '2026-10-02', 'UTC', 'Money back');
+values ('ca000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Groceries2', 'green');
+insert into public.transactions (id, created_by, household_id, account_id, original_amount, original_currency, local_date, time_zone, name) values
+  ('d1000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', 500, 'USD', '2026-10-02', 'UTC', 'Money back');
 insert into public.recurring_series (id, household_id, account_id, name, amount, currency, freq, anchor_date, time_zone, materialised_through)
 values ('c1000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
   'a1111111-1111-1111-1111-111111111111', 'Rent', -1000, 'USD', 'monthly', '2026-10-01', 'UTC', '2026-12-31');
