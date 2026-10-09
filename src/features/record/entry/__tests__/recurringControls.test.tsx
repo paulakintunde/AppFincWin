@@ -36,6 +36,11 @@ jest.mock('@/data/mutations/transfers', () => ({
   useEditTransfer: () => ({ edit: jest.fn() }),
   useDeleteTransfer: () => ({ remove: jest.fn() }),
 }));
+jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
+jest.mock('@/data/queries/moneyPrefs', () => ({ useMoneyPrefs: () => ({ prefs: { lead_figure: 'home' } }) }));
+jest.mock('@/features/record/categories/useCategoryMonthUsage', () => ({ useCategoryMonthUsage: () => ({ usage: new Map(), isLoading: false }) }));
+jest.mock('../useCapCrossing', () => ({ useCapCrossing: () => ({ check: () => false }) }));
+jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => 'step-1' }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'series-1' }));
 jest.mock('@/data/mutations/recurringSeries', () => ({
@@ -133,7 +138,8 @@ beforeEach(() => {
 describe('Repeats on a new entry', () => {
   it('adds without its own undo, creates the series anchored on the new entry, one undo for both', async () => {
     const { getByLabelText, getByText, onClose } = await open({ kind: 'new', direction: 'out' });
-    await fireEvent.changeText(getByLabelText('Amount'), '500');
+    await fireEvent(getByLabelText('Delete last digit'), 'longPress');
+    for (const ch of '500') await fireEvent.press(getByLabelText(ch));
     await fireEvent.changeText(getByLabelText('What is it for?'), 'Rent');
     await fireEvent.press(getByLabelText('Repeats'));
     await fireEvent.press(getByText('Every month'));
@@ -156,7 +162,8 @@ describe('Repeats on a new entry', () => {
 
   it('passes an occurrence count end', async () => {
     const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out' });
-    await fireEvent.changeText(getByLabelText('Amount'), '5');
+    await fireEvent(getByLabelText('Delete last digit'), 'longPress');
+    for (const ch of '5') await fireEvent.press(getByLabelText(ch));
     await fireEvent.changeText(getByLabelText('What is it for?'), 'Gym');
     await fireEvent.press(getByLabelText('Repeats'));
     await fireEvent.press(getByText('Every week'));
@@ -171,7 +178,8 @@ describe('Repeats on a new entry', () => {
 
   it('does not save while the count is out of range', async () => {
     const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out' });
-    await fireEvent.changeText(getByLabelText('Amount'), '5');
+    await fireEvent(getByLabelText('Delete last digit'), 'longPress');
+    for (const ch of '5') await fireEvent.press(getByLabelText(ch));
     await fireEvent.changeText(getByLabelText('What is it for?'), 'Gym');
     await fireEvent.press(getByLabelText('Repeats'));
     await fireEvent.press(getByText('Every week'));
@@ -187,7 +195,8 @@ describe('Repeats on a new entry', () => {
 describe('Repeats "On a date" against the entry date (S-CR-03)', () => {
   it('defaults the end to a future entry date, so the series is stored', async () => {
     const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out', localDate: '2026-10-20' });
-    await fireEvent.changeText(getByLabelText('Amount'), '500');
+    await fireEvent(getByLabelText('Delete last digit'), 'longPress');
+    for (const ch of '500') await fireEvent.press(getByLabelText(ch));
     await fireEvent.changeText(getByLabelText('What is it for?'), 'Rent');
     await fireEvent.press(getByLabelText('Repeats'));
     await fireEvent.press(getByText('Every month'));
@@ -202,7 +211,8 @@ describe('Repeats "On a date" against the entry date (S-CR-03)', () => {
 
   it('refuses an end date before the entry date: no write, no Undo, a reason shown', async () => {
     const { getByLabelText, getByText, getAllByText, getByTestId } = await open({ kind: 'new', direction: 'out', localDate: '2026-10-20' });
-    await fireEvent.changeText(getByLabelText('Amount'), '500');
+    await fireEvent(getByLabelText('Delete last digit'), 'longPress');
+    for (const ch of '500') await fireEvent.press(getByLabelText(ch));
     await fireEvent.changeText(getByLabelText('What is it for?'), 'Rent');
     await fireEvent.press(getByLabelText('Repeats'));
     await fireEvent.press(getByText('Every month'));
@@ -241,7 +251,8 @@ describe('Repeats on an existing one-off entry (D-09)', () => {
 describe('scope prompt', () => {
   it('asks when the amount of an occurrence changes, and This one edits only the row', async () => {
     const { getByLabelText, getByText } = await open({ kind: 'edit', row: occurrence() });
-    await fireEvent.changeText(getByLabelText('Amount'), '20');
+    await fireEvent(getByLabelText('Delete last digit'), 'longPress');
+    for (const ch of '20') await fireEvent.press(getByLabelText(ch));
     await fireEvent.press(getByText('Save changes'));
     expect(mockEdit).not.toHaveBeenCalled();
     expect(getByText('Edit this one, or this and future?')).toBeTruthy();
@@ -253,7 +264,8 @@ describe('scope prompt', () => {
 
   it('This and future edits the series from the occurrence date', async () => {
     const { getByLabelText, getByText, onClose } = await open({ kind: 'edit', row: occurrence() });
-    await fireEvent.changeText(getByLabelText('Amount'), '20');
+    await fireEvent(getByLabelText('Delete last digit'), 'longPress');
+    for (const ch of '20') await fireEvent.press(getByLabelText(ch));
     await fireEvent.press(getByText('Save changes'));
     await fireEvent.press(getByText('This and future'));
     expect(mockEditFrom).toHaveBeenCalledTimes(1);
@@ -273,7 +285,8 @@ describe('scope prompt', () => {
 
   it('S-CR-02: a paid occurrence keeps the figure the user typed, and the series changes from the next day', async () => {
     const { getByLabelText, getByText } = await open({ kind: 'edit', row: occurrence({ status: 'paid' }) });
-    await fireEvent.changeText(getByLabelText('Amount'), '20');
+    await fireEvent(getByLabelText('Delete last digit'), 'longPress');
+    for (const ch of '20') await fireEvent.press(getByLabelText(ch));
     await fireEvent.press(getByText('Save changes'));
     await fireEvent.press(getByText('This and future'));
     expect(mockEdit).toHaveBeenCalledTimes(1);
@@ -285,7 +298,8 @@ describe('scope prompt', () => {
 
   it('S-CR-02: a pending occurrence with a new note keeps the note and the new amount on that row', async () => {
     const { getByLabelText, getByText } = await open({ kind: 'edit', row: occurrence() });
-    await fireEvent.changeText(getByLabelText('Amount'), '20');
+    await fireEvent(getByLabelText('Delete last digit'), 'longPress');
+    for (const ch of '20') await fireEvent.press(getByLabelText(ch));
     await fireEvent.changeText(getByLabelText('Note'), 'landlord rise');
     await fireEvent.press(getByText('Save changes'));
     await fireEvent.press(getByText('This and future'));
@@ -329,7 +343,8 @@ describe('occurrence actions', () => {
     await fireEvent.press(getByText('Adjust, then mark paid'));
     expect(mockMarkPaid).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
-    await fireEvent.changeText(getByLabelText('Amount'), '20');
+    await fireEvent(getByLabelText('Delete last digit'), 'longPress');
+    for (const ch of '20') await fireEvent.press(getByLabelText(ch));
     await fireEvent.press(getByText('Save changes'));
     expect(mockEdit).toHaveBeenCalledTimes(1);
     expect((mockEdit.mock.calls[0] as unknown[])[0]).toMatchObject({ patch: { status: 'paid', original_amount: -2000 } });
