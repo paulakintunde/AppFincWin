@@ -64,7 +64,10 @@ export function detailRowsFor(input: DetailRowsInput): DetailRowSpec[] {
   rows.push({
     key: 'method',
     labelKey: 'activity.detail.method',
-    value: row.is_automatic === true ? t('activity.detail.methodAutomatic') : t('activity.detail.methodManual'),
+    value:
+      row.is_automatic === true
+        ? t('activity.detail.methodAutomatic')
+        : t('activity.detail.methodManual'),
   });
   rows.push({ key: 'note', labelKey: 'activity.detail.note', value: row.note });
   return rows;
