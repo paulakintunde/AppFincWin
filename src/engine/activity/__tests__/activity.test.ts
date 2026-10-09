@@ -1,7 +1,7 @@
 import fc from 'fast-check';
-import { directionOf, isOverdue, markPaidDate, defaultStatusFor, monthsForSwitcher, nextMonth } from '../status';
+import { directionOf, isOverdue, markPaidDate, defaultStatusFor, monthsForSwitcher, nextMonth, addableMonth, monthsAhead, ADD_MONTH_LIMIT } from '../status';
 import { monthTotals, type TotalsInput } from '../totals';
-import { filterRows, matchesSearch, normaliseForSearch, isFilterActive, EMPTY_FILTER, type ActivityFilter, type FilterRow } from '../filters';
+import { flowOf, filterRows, matchesSearch, normaliseForSearch, isFilterActive, EMPTY_FILTER, type ActivityFilter, type FilterRow } from '../filters';
 import { accountBalance } from '../balance';
 
 describe('directionOf', () => {
@@ -120,6 +120,7 @@ describe('monthTotals', () => {
       projectedCount: 1,
       unconvertedCount: 1,
       transferCount: 2,
+      count: 4,
     });
   });
 
@@ -133,6 +134,7 @@ describe('monthTotals', () => {
       projectedCount: 0,
       unconvertedCount: 1,
       transferCount: 0,
+      count: 0,
     });
   });
 
@@ -146,6 +148,7 @@ describe('monthTotals', () => {
       projectedCount: 0,
       unconvertedCount: 0,
       transferCount: 0,
+      count: 0,
     });
   });
 
@@ -383,5 +386,81 @@ describe('accountBalance', () => {
     expect(
       accountBalance({ openingBalance: 0, currency: 'GBP', legs: [{ currency: 'GBP', paidSum: '-5000' }] })
     ).toEqual({ balance: -5000, otherCurrencies: [], overflow: false });
+  });
+});
+
+describe('refund-aware totals (D-03)', () => {
+  it('files a paid refund under Money out as a reduction', () => {
+    const t = monthTotals([{ amountHome: 500, status: 'paid', isTransfer: false, isRefund: true }], []);
+    expect(t.paidIn).toBe(0);
+    expect(t.paidOut).toBe(500);
+    expect(t.net).toBe(500);
+  });
+
+  it('never routes a refund into paidIn and keeps paidIn + paidOut === net', () => {
+    const row = fc.record({
+      amountHome: fc.option(fc.integer({ min: -100000, max: 100000 }), { nil: null }),
+      status: fc.constantFrom('pending', 'paid', 'skipped'),
+      isTransfer: fc.boolean(),
+      isRefund: fc.boolean(),
+    });
+    fc.assert(
+      fc.property(fc.array(row), (rows) => {
+        const t = monthTotals(rows, []);
+        const refundsOnly = monthTotals(rows.map((r) => ({ ...r, isRefund: true })), []);
+        expect(t.paidIn + t.paidOut).toBe(t.net);
+        expect(refundsOnly.paidIn).toBe(0);
+        expect(t.count).toBe(rows.filter((r) => !r.isTransfer && r.status !== 'skipped').length);
+      })
+    );
+  });
+});
+
+describe('flowOf', () => {
+  it('classifies by transfer link, refund flag, then sign', () => {
+    expect(flowOf({ original_amount: 500, transfer_id: null, is_refund: true })).toBe('out');
+    expect(flowOf({ original_amount: 500, transfer_id: 't', is_refund: true })).toBe('transfer');
+    expect(flowOf({ original_amount: -300, transfer_id: null })).toBe('out');
+    expect(flowOf({ original_amount: 300, transfer_id: null })).toBe('in');
+  });
+
+  it('filterRows direction in never returns a refund; out returns refunds', () => {
+    const rows = [
+      { category_id: null, account_id: 'a', original_amount: 500, amountHome: 500, name: null, note: null, transfer_id: null, status: 'paid' as const, is_refund: true },
+      { category_id: null, account_id: 'a', original_amount: 300, amountHome: 300, name: null, note: null, transfer_id: null, status: 'paid' as const },
+    ];
+    expect(filterRows(rows, { ...EMPTY_FILTER, direction: 'in' })).toEqual([rows[1]]);
+    expect(filterRows(rows, { ...EMPTY_FILTER, direction: 'out' })).toEqual([rows[0]]);
+  });
+});
+
+describe('horizon-aware months', () => {
+  it('includes every month through the horizon, newest first', () => {
+    expect(monthsForSwitcher(['2026-09'], '2026-10-09', '2027-01')).toEqual([
+      '2027-01', '2026-12', '2026-11', '2026-10', '2026-09',
+    ]);
+  });
+
+  it('ignores a horizon earlier than next month and bounds a far horizon', () => {
+    expect(monthsForSwitcher([], '2026-10-09', '2026-10')).toEqual(['2026-11', '2026-10']);
+    expect(monthsForSwitcher([], '2026-10-09', '2099-01').length).toBeLessThanOrEqual(ADD_MONTH_LIMIT + 3);
+  });
+
+  it('throws RangeError on a malformed horizon', () => {
+    expect(() => monthsForSwitcher([], '2026-10-09', 'nope')).toThrow(RangeError);
+  });
+
+  it('addableMonth stops at 12 months ahead', () => {
+    expect(addableMonth('2026-10-09', null)).toBe('2026-12');
+    expect(addableMonth('2026-10-09', '2027-09')).toBe('2027-10');
+    expect(addableMonth('2026-10-09', '2027-10')).toBeNull();
+    expect(addableMonth('2026-10-09', '2026-10')).toBe('2026-12');
+  });
+
+  it('monthsAhead counts months and rejects bad input', () => {
+    expect(monthsAhead('2026-10', '2027-01')).toBe(3);
+    expect(monthsAhead('2026-10', '2026-08')).toBe(-2);
+    expect(() => monthsAhead('x', '2026-08')).toThrow(RangeError);
+    expect(() => monthsAhead('2026-08', 'x')).toThrow(RangeError);
   });
 });
