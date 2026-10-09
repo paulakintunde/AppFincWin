@@ -42,15 +42,15 @@ function MoreMenu({ prevMonthName, onMore }: { prevMonthName: string; onMore: (k
   const t = useT();
   const label = t('activity.more.label');
   const options: DropdownOption<MoreKey>[] = [
-    { key: 'clone', label: t('activity.more.clone', { month: prevMonthName }), subLabel: t('activity.more.cloneSub'), triggerLabel: label },
-    { key: 'paste', label: t('activity.more.paste'), subLabel: t('activity.more.pasteSub'), triggerLabel: label },
+    { key: 'clone', label: t('activity.more.clone', { month: prevMonthName }), subLabel: t('activity.more.cloneSub') },
+    { key: 'paste', label: t('activity.more.paste'), subLabel: t('activity.more.pasteSub') },
   ];
-  // The trigger always reads "More" (each option's triggerLabel); the Dropdown needs a value, so Clone stands in.
+  // Action menu: no value, so no row reads as selected; the trigger always reads "More".
   return (
     <Dropdown
       title={label}
       options={options}
-      value="clone"
+      triggerLabel={label}
       onSelect={onMore}
       triggerA11yLabel={t('activity.more.triggerA11y')}
     />
