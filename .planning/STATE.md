@@ -32,7 +32,7 @@ Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 2
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
 Phase 02.1 (PDF statement import): planned (12 plans, 7 waves, checker passed); not started. Phase 02.2 (record-polish): planned (35 plans, 10 waves, checker passed); not started — plan 16 is a production schema push checkpoint. Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
 Status: Executing Phase 02.2
-Last activity: 2026-10-09 -- Phase 02.2 execution started
+Last activity: 2026-10-09 - Completed quick task 261009-mvn: Phase 02.2 follow-ups
 
 ## Performance Metrics
 
@@ -155,6 +155,7 @@ Recent decisions affecting current work:
 | 260922-us3 | Align all docs to single prod Supabase project | 2026-09-22 | 07ef5f6 | [260922-us3-align-all-docs-to-single-prod-supabase-p](./quick/260922-us3-align-all-docs-to-single-prod-supabase-p/) |
 | 260925-8bi | Replace placeholder app icons with FincWin F logo | 2026-09-25 | 3020470 | [260925-8bi-replace-placeholder-app-icons-with-fincw](./quick/260925-8bi-replace-placeholder-app-icons-with-fincw/) |
 | 260926-0mn | Launch positioning into Phase 5, "A · Refine" navy icon, pricing advisory | 2026-09-26 | 414920d | [260926-0mn-launch-positioning-phase5-pricing-adviso](./quick/260926-0mn-launch-positioning-phase5-pricing-adviso/) |
+| 261009-mvn | Phase 02.2 follow-ups: home-currency conflict message, More menu action mode, real failed-write entities, leftover worktree folders removed | 2026-10-09 | decaafd | [261009-mvn-phase-02-2-follow-ups-home-currency-conf](./quick/261009-mvn-phase-02-2-follow-ups-home-currency-conf/) |
 
 ## Deferred Items
 
