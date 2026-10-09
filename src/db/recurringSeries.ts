@@ -35,6 +35,8 @@ export interface NewRecurringSeries {
   time_zone: string;
   end_date: string | null;
   occurrence_count: number | null;
+  /** Record polish D-02: the template flag; materialised occurrences inherit it. */
+  is_automatic?: boolean;
 }
 
 // Mirrors edit_recurring_series_from's allowed patch keys (plan 02-08): any other key
@@ -50,6 +52,7 @@ export const RECURRING_SERIES_PATCH_KEYS = [
   'anchor_date',
   'end_date',
   'occurrence_count',
+  'is_automatic',
 ] as const satisfies readonly (keyof RecurringSeriesRow)[];
 
 export type RecurringSeriesPatch = Partial<Pick<RecurringSeriesRow, (typeof RECURRING_SERIES_PATCH_KEYS)[number]>>;
@@ -280,4 +283,50 @@ export async function endRecurringSeries(
 
   if (error) throw toDbError(error, status);
   return interpretSeriesResponse(id, data);
+}
+
+/** D-19 / T-02.2-17-03: one batch call carries 1..50 series (the SQL enforces the same cap). */
+export const SERIES_BATCH_MAX = 50;
+
+export interface SeriesBatchItem {
+  series: NewRecurringSeries;
+  anchorTransactionId: string;
+  linkTransactionIds: readonly string[];
+}
+
+export type SeriesBatchResult =
+  | { status: 'applied'; undoStepId: string; changeSets: SeriesChangeSet[] }
+  | { status: 'already-applied'; undoStepId: string };
+
+/** Creates several series in one transaction and one undo step (D-19). */
+export async function createRecurringSeriesBatch(
+  client: DbClient,
+  items: readonly SeriesBatchItem[],
+  undo: SeriesUndoLabel
+): Promise<SeriesBatchResult> {
+  if (items.length < 1 || items.length > SERIES_BATCH_MAX) {
+    throw new RangeError(`createRecurringSeriesBatch: expected 1 to ${SERIES_BATCH_MAX} items, got ${items.length}`);
+  }
+
+  const { data, error, status } = await client.rpc('create_recurring_series_batch', {
+    p_items: items.map((item) => ({
+      series: item.series,
+      anchor_transaction_id: item.anchorTransactionId,
+      link_transaction_ids: item.linkTransactionIds,
+    })),
+    p_undo_step: { id: undo.id, label_key: undo.labelKey, label_params: undo.labelParams },
+  });
+
+  if (error) throw toDbError(error, status);
+
+  const state = isRecord(data) ? data.status : undefined;
+  const undoStepId = isRecord(data) ? data.undo_step_id : undefined;
+  if ((state !== 'applied' && state !== 'already-applied') || typeof undoStepId !== 'string' || undoStepId.length === 0) {
+    throw badResponse(`unrecognised batch response ${JSON.stringify(state)}`);
+  }
+  if (state === 'already-applied') return { status: 'already-applied', undoStepId };
+
+  const changes = (data as Record<string, unknown>).changes;
+  if (!Array.isArray(changes)) throw badResponse('malformed changes');
+  return { status: 'applied', undoStepId, changeSets: changes.map((change) => parseSeriesChangeSet(change)) };
 }

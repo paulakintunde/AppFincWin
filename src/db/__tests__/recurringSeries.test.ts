@@ -5,6 +5,8 @@ import {
   BAD_RESPONSE,
   RECURRING_SERIES_PATCH_KEYS,
   createRecurringSeries,
+  createRecurringSeriesBatch,
+  SERIES_BATCH_MAX,
   editRecurringSeriesFrom,
   endRecurringSeries,
   fetchRecurringSeries,
@@ -34,6 +36,8 @@ function seriesRow(overrides: Partial<RecurringSeriesRow> = {}): RecurringSeries
     occurrence_count: null,
     materialised_through: '2026-10-31',
     deleted_at: null,
+    is_automatic: false,
+    is_sample: false,
     version: 1,
     created_at: '2026-09-24T00:00:00Z',
     updated_at: '2026-09-24T00:00:00Z',
@@ -241,6 +245,7 @@ describe('editRecurringSeriesFrom', () => {
       'anchor_date',
       'end_date',
       'occurrence_count',
+      'is_automatic',
     ]);
   });
 
@@ -411,5 +416,51 @@ describe('fetchSeriesIdsByCategory (W6-13 WR-05)', () => {
     await expect(fetchSeriesIdsByCategory(client, 'hh-1', 'cat-1')).resolves.toEqual([]);
     client.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
     await expect(fetchSeriesIdsByCategory(client, 'hh-1', 'cat-1')).rejects.toBeInstanceOf(DbError);
+  });
+});
+
+describe('is_automatic and createRecurringSeriesBatch (D-02, D-19)', () => {
+  const UNDO = { id: 'step-1', labelKey: 'seriesCreated' as never, labelParams: {} as never };
+  const item = { series: NEW_SERIES, anchorTransactionId: 'tx-1', linkTransactionIds: ['tx-2'] };
+
+  it('is_automatic is a patch key', () => {
+    expect(RECURRING_SERIES_PATCH_KEYS).toContain('is_automatic');
+  });
+
+  it('sends p_items and p_undo_step and parses an applied response', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { status: 'applied', undo_step_id: 'step-1', changes: [APPLIED_RESPONSE] }, error: null, status: 200 });
+    const result = await createRecurringSeriesBatch(client, [item], UNDO);
+    expect(result).toMatchObject({ status: 'applied', undoStepId: 'step-1' });
+    expect(result.status === 'applied' && result.changeSets).toHaveLength(1);
+    expect(client.calls.find((c) => c.method === 'rpc')?.args).toEqual([
+      'create_recurring_series_batch',
+      {
+        p_items: [{ series: NEW_SERIES, anchor_transaction_id: 'tx-1', link_transaction_ids: ['tx-2'] }],
+        p_undo_step: { id: 'step-1', label_key: 'seriesCreated', label_params: {} },
+      },
+    ]);
+  });
+
+  it('returns already-applied with the step id', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { status: 'already-applied', undo_step_id: 'step-1' }, error: null, status: 200 });
+    await expect(createRecurringSeriesBatch(client, [item], UNDO)).resolves.toEqual({ status: 'already-applied', undoStepId: 'step-1' });
+  });
+
+  it('rejects 0 and 51 items before any call', async () => {
+    const client = createFakeSupabase();
+    await expect(createRecurringSeriesBatch(client, [], UNDO)).rejects.toThrow(RangeError);
+    await expect(createRecurringSeriesBatch(client, Array(SERIES_BATCH_MAX + 1).fill(item), UNDO)).rejects.toThrow(RangeError);
+    expect(client.calls).toHaveLength(0);
+  });
+
+  it('throws BAD_RESPONSE on an unrecognised response and maps a 42501 error', async () => {
+    const bad = createFakeSupabase();
+    bad.respondWith({ data: { status: 'weird' }, error: null, status: 200 });
+    await expect(createRecurringSeriesBatch(bad, [item], UNDO)).rejects.toMatchObject({ code: BAD_RESPONSE });
+    const denied = createFakeSupabase();
+    denied.respondWith({ data: null, error: { message: 'denied', code: '42501' }, status: 403 });
+    await expect(createRecurringSeriesBatch(denied, [item], UNDO)).rejects.toBeInstanceOf(DbError);
   });
 });
