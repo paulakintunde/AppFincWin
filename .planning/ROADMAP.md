@@ -315,7 +315,7 @@ Plans:
   7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
   8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
-**Plans:** 31/35 plans executed
+**Plans:** 34/35 plans executed
 
 Plans:
 
@@ -367,9 +367,9 @@ Plans:
 - [x] 02.2-31-PLAN.md — Account detail: Coming in / Going out / after pending, delete empty or archive (W8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 02.2-32-PLAN.md — You -> Money: week start, home-currency change sheet, toast queue (W9)
-- [ ] 02.2-33-PLAN.md — Sample figures: onboarding option, Start fresh banner, first-save prompt on every real save path (W9)
-- [ ] 02.2-34-PLAN.md — Activity integration: calendar, offer, detail sheet, swipe, More menu, months, empty state (W9)
+- [x] 02.2-32-PLAN.md — You -> Money: week start, home-currency change sheet, toast queue (W9)
+- [x] 02.2-33-PLAN.md — Sample figures: onboarding option, Start fresh banner, first-save prompt on every real save path (W9)
+- [x] 02.2-34-PLAN.md — Activity integration: calendar, offer, detail sheet, swipe, More menu, months, empty state (W9)
 
 **Wave 10** *(blocked on Wave 9 completion)*
 - [ ] 02.2-35-PLAN.md — New dev build, device walkthrough of all eight criteria, validation sign-off (W10)
