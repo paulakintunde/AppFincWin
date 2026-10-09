@@ -105,6 +105,7 @@ describe('parseLines examples', () => {
 
   it('does not treat a lone month word as a date', () => {
     expect(rows('May Day 5').rows[0]).toMatchObject({ name: 'May Day', amount: -500 });
+    expect(rows('Tea 2 abcd-ef-gh').rows[0]).toMatchObject({ name: 'Tea abcd-ef-gh', amount: -200 });
     expect(rows('Tea 5 6 7').rows[0]).toMatchObject({ name: 'Tea 5 6', amount: -700 });
   });
 
@@ -133,10 +134,9 @@ function nonBlank(text: string): number {
 
 describe('parseLines properties', () => {
   const check = (text: string) => {
-    let r: PasteResult = { ok: false, error: 'too-many-lines', limit: 0 };
-    expect(() => {
-      r = parseLines(text, GBP);
-    }).not.toThrow();
+    const run = (): PasteResult => parseLines(text, GBP);
+    expect(run).not.toThrow();
+    const r = run();
     if (r.ok) {
       expect(r.rows.length + r.skipped.length).toBe(nonBlank(text));
       const rowNos = new Set(r.rows.map((x) => x.lineNo));
