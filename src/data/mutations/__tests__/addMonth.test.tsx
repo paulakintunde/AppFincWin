@@ -98,6 +98,8 @@ describe('useAddMonth', () => {
     await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
     expect(qc.getQueryData(queryKeys.householdHorizon('h1'))).toBe('2026-11');
     expect(getToast()?.kind).toBe('refusal');
-    expect((recordFailedWrite.mock.calls[0]?.[0] as { attempted: unknown }).attempted).toEqual({ month: '2026-12' });
+    expect(recordFailedWrite).toHaveBeenCalledWith(
+      expect.objectContaining({ entity: 'households', entityId: 'h1', attempted: { month: '2026-12' } }),
+    );
   });
 });

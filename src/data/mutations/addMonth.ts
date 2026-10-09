@@ -76,8 +76,8 @@ export function registerAddMonthMutations(qc: QueryClient): void {
       void qc.invalidateQueries({ queryKey: queryKeys.transactionMonths(vars.householdId) });
       // Ids and the month only (T-02.2-23-03).
       await recordFailedWrite({
-        entity: 'transactions',
-        entityId: vars.undo.id,
+        entity: 'households',
+        entityId: vars.householdId,
         kind: cls,
         code: err instanceof MonthNotAddableError ? err.code : settledWriteErrorCode(err),
         attempted: { month: vars.month },
