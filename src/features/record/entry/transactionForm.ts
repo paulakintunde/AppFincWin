@@ -12,9 +12,27 @@ import type { AddTransferInput } from '@/data/mutations/transfers';
 export type Direction = 'out' | 'in' | 'transfer';
 
 export type EntryMode =
-  | { kind: 'new'; direction: Direction; accountId?: string | null; localDate?: string | null }
+  | {
+      kind: 'new';
+      direction: Direction;
+      accountId?: string | null;
+      localDate?: string | null;
+      /** CONTEXT D-15: a clone of an existing line, opened as a new pending line; nothing is written until Save. */
+      prefill?: EntryPrefill;
+    }
   | { kind: 'edit'; row: TransactionRow }
   | { kind: 'edit-transfer'; out: TransactionRow; in: TransactionRow };
+
+export interface EntryPrefill {
+  amountMinor: number;
+  currency: string;
+  name: string | null;
+  categoryId: string | null;
+  accountId: string;
+  paymentType: PaymentType | null;
+  isRefund: boolean;
+  isAutomatic: boolean;
+}
 
 export interface FormState {
   direction: Direction;
@@ -32,6 +50,10 @@ export interface FormState {
   toAccountId: string | null;
   toCurrency: string | null;
   amountInText: string;
+  /** CONTEXT D-03: a label only; it never changes status. */
+  automatic: boolean;
+  /** CONTEXT D-01: expense only; saves a positive amount with is_refund. */
+  refund: boolean;
 }
 
 export interface FormContext {
@@ -65,7 +87,8 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
   if (mode.kind === 'edit') {
     const r = mode.row;
     return {
-      direction: r.original_amount < 0 ? 'out' : 'in',
+      // The refund trap: a refund is stored positive but is an expense, so key on the flag.
+      direction: r.is_refund ? 'out' : r.original_amount < 0 ? 'out' : 'in',
       amountText: magnitudeText(r.original_amount, r.original_currency, ctx),
       name: r.name ?? '',
       categoryId: r.category_id,
@@ -79,6 +102,8 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
       toAccountId: null,
       toCurrency: null,
       amountInText: '',
+      automatic: r.is_automatic ?? false,
+      refund: r.is_refund ?? false,
     };
   }
   if (mode.kind === 'edit-transfer') {
@@ -102,12 +127,35 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
         inn.original_currency === out.original_currency
           ? ''
           : magnitudeText(inn.original_amount, inn.original_currency, ctx),
+      automatic: false,
+      refund: false,
     };
   }
   const localDate = mode.localDate ?? ctx.today;
   const accountId = mode.accountId ?? ctx.defaultAccount?.id ?? null;
   const currency =
     (accountId !== null ? ctx.accountCurrency?.(accountId) : undefined) ?? ctx.defaultAccount?.currency ?? '';
+  const pf = mode.prefill;
+  if (pf) {
+    return {
+      direction: mode.direction,
+      amountText: ctx.amountInputText(Math.abs(pf.amountMinor), pf.currency),
+      name: pf.name ?? '',
+      categoryId: pf.categoryId,
+      accountId: pf.accountId,
+      currency: pf.currency,
+      localDate,
+      status: 'pending',
+      statusTouched: true,
+      paymentType: pf.paymentType,
+      note: '',
+      toAccountId: null,
+      toCurrency: null,
+      amountInText: '',
+      automatic: pf.isAutomatic,
+      refund: pf.isRefund && mode.direction === 'out',
+    };
+  }
   return {
     direction: mode.direction,
     amountText: '',
@@ -123,6 +171,8 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
     toAccountId: null,
     toCurrency: null,
     amountInText: '',
+    automatic: false,
+    refund: false,
   };
 }
 
@@ -143,12 +193,32 @@ export function withDirection(
 ): FormState {
   if (direction === 'transfer') {
     const currency = (state.accountId !== null ? accountCurrency?.(state.accountId) : undefined) ?? state.currency;
-    return dropStaleAmountIn({ ...state, direction, status: 'paid', categoryId: null, paymentType: null, currency });
+    return dropStaleAmountIn({
+      ...state,
+      direction,
+      status: 'paid',
+      categoryId: null,
+      paymentType: null,
+      currency,
+      automatic: false,
+      refund: false,
+    });
   }
   const allowed = PAYMENT_TYPES[direction] as readonly PaymentType[];
   const paymentType = state.paymentType !== null && allowed.includes(state.paymentType) ? state.paymentType : null;
-  return { ...state, direction, paymentType };
+  return { ...state, direction, paymentType, refund: direction === 'out' ? state.refund : false };
 }
+
+export function withRefund(state: FormState, on: boolean): FormState {
+  return { ...state, refund: state.direction === 'out' ? on : false };
+}
+
+export function withAutomatic(state: FormState, on: boolean): FormState {
+  return { ...state, automatic: state.direction === 'transfer' ? false : on };
+}
+
+/** A refund is stored positive (the database check refuses anything else) but is never income. */
+const isPositive = (state: FormState): boolean => state.direction === 'in' || state.refund;
 
 export function withStatus(state: FormState, status: FormState['status']): FormState {
   return { ...state, status, statusTouched: true };
@@ -195,7 +265,7 @@ export function toAddInput(
   return {
     householdId: ctx.householdId,
     accountId: state.accountId as string,
-    amount: (state.direction === 'out' ? -amountMinor : amountMinor) as MinorUnits,
+    amount: (isPositive(state) ? amountMinor : -amountMinor) as MinorUnits,
     currency: state.currency,
     homeCurrency: ctx.homeCurrency,
     userId: ctx.userId,
@@ -206,13 +276,15 @@ export function toAddInput(
     categoryId: state.categoryId,
     paymentType: state.paymentType,
     status: state.status,
+    isRefund: state.refund,
+    isAutomatic: state.automatic,
   };
 }
 
 /** Only the keys that differ from the row (REC-03). `{}` means nothing changed. */
 export function toPatch(row: TransactionRow, state: FormState, amountMinor: number): TransactionPatch {
   const patch: TransactionPatch = {};
-  const signed = state.direction === 'out' ? -amountMinor : amountMinor;
+  const signed = isPositive(state) ? amountMinor : -amountMinor;
   if (signed !== row.original_amount) patch.original_amount = signed;
   if (state.currency !== row.original_currency) patch.original_currency = state.currency;
   if (state.accountId !== null && state.accountId !== row.account_id) patch.account_id = state.accountId;
@@ -224,6 +296,8 @@ export function toPatch(row: TransactionRow, state: FormState, amountMinor: numb
   if (state.status !== row.status) patch.status = state.status;
   const note = state.note.trim() === '' ? null : state.note.trim();
   if (note !== row.note) patch.note = note;
+  if (state.refund !== (row.is_refund ?? false)) patch.is_refund = state.refund;
+  if (state.automatic !== (row.is_automatic ?? false)) patch.is_automatic = state.automatic;
   return patch;
 }
 

@@ -477,6 +477,9 @@ export interface AddTransactionInput {
   categoryId?: string | null;
   paymentType?: PaymentType | null;
   status?: TransactionStatus;
+  /** CONTEXT D-01/D-03: a refund is stored positive with is_refund; Automatic is a label only. */
+  isRefund?: boolean;
+  isAutomatic?: boolean;
   undo?: Omit<UndoCapture, 'ownerId'>;
 }
 
@@ -506,6 +509,8 @@ export function useAddTransaction(): { add(input: AddTransactionInput): string }
         category_id: input.categoryId,
         payment_type: input.paymentType,
         status: input.status,
+        ...(input.isRefund === undefined ? {} : { is_refund: input.isRefund }),
+        ...(input.isAutomatic === undefined ? {} : { is_automatic: input.isAutomatic }),
       };
 
       mutation.mutate({

@@ -9,7 +9,9 @@ import {
   validateForm,
   validateTransfer,
   withDate,
+  withAutomatic,
   withDirection,
+  withRefund,
   withStatus,
   type FormContext,
   type FormState,
@@ -245,6 +247,76 @@ describe('edit-transfer state', () => {
       toCurrency: 'EUR',
       amountText: '10.00',
       amountInText: '12.00',
+    });
+  });
+});
+
+describe('refund, automatic and clone prefill (REC-20)', () => {
+  it('reopens a refund as an expense with the toggle on, never as income', () => {
+    const state = initialFormState({ kind: 'edit', row: row({ original_amount: 2999, is_refund: true }) }, ctx);
+    expect(state).toMatchObject({ direction: 'out', refund: true, amountText: '29.99' });
+  });
+
+  it('carries the automatic flag on edit', () => {
+    expect(initialFormState({ kind: 'edit', row: row({ is_automatic: true }) }, ctx).automatic).toBe(true);
+    expect(initialFormState({ kind: 'edit', row: row() }, ctx).automatic).toBe(false);
+  });
+
+  it('saves a refund as a positive amount with the flag, and a plain expense negative', () => {
+    const base = { ...newOut(), amountText: '29.99', name: 'Return', accountId: 'a1' };
+    const c = { householdId: 'h1', userId: 'u1', homeCurrency: 'GBP', timeZone: 'UTC' };
+    const refund = toAddInput({ ...base, refund: true }, 2999, c);
+    expect(refund).toMatchObject({ amount: 2999, isRefund: true });
+    const plain = toAddInput(base, 2999, c);
+    expect(plain).toMatchObject({ amount: -2999, isRefund: false });
+  });
+
+  it('patches the sign and flag when a refund is toggled off, and the automatic flag', () => {
+    const r = row({ original_amount: 2999, is_refund: true, is_automatic: false });
+    const state = initialFormState({ kind: 'edit', row: r }, ctx);
+    expect(toPatch(r, withRefund(state, false), 2999)).toEqual({ original_amount: -2999, is_refund: false });
+    expect(toPatch(r, withAutomatic(state, true), 2999)).toEqual({ is_automatic: true });
+    expect(toPatch(r, state, 2999)).toEqual({});
+  });
+
+  it('clears refund when leaving expense and automatic when entering transfer', () => {
+    const s = withAutomatic(withRefund(newOut(), true), true);
+    expect(withDirection(s, 'in')).toMatchObject({ refund: false, automatic: true });
+    expect(withDirection(s, 'transfer')).toMatchObject({ refund: false, automatic: false });
+    expect(withRefund({ ...newOut(), direction: 'in' }, true).refund).toBe(false);
+  });
+
+  it('opens a clone as a pending new line with the source fields', () => {
+    const state = initialFormState(
+      {
+        kind: 'new',
+        direction: 'out',
+        localDate: '2026-10-09',
+        prefill: {
+          amountMinor: 1450,
+          currency: 'GBP',
+          name: 'Rent',
+          categoryId: 'c1',
+          accountId: 'a1',
+          paymentType: 'bank_transfer',
+          isRefund: false,
+          isAutomatic: true,
+        },
+      },
+      ctx
+    );
+    expect(state).toMatchObject({
+      amountText: '14.50',
+      name: 'Rent',
+      categoryId: 'c1',
+      accountId: 'a1',
+      currency: 'GBP',
+      localDate: '2026-10-09',
+      paymentType: 'bank_transfer',
+      status: 'pending',
+      statusTouched: true,
+      automatic: true,
+      refund: false,
     });
   });
 });
