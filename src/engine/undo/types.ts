@@ -29,7 +29,7 @@ export interface PatchOp {
 
 // transfer* added for D-50: creating, editing or deleting a transfer is one undo step
 // covering both legs.
-export const UNDO_LABEL_KEYS = ['added','edited','deleted','deletedMany','markedPaid','markedPaidMany','markedUnpaidMany','skipped','imported','seriesCreated','seriesEdited','seriesEnded','categoryAdded','categoryEdited','categoryArchived','categoryMerged','accountAdded','accountEdited','transferAdded','transferEdited','transferDeleted'] as const;
+export const UNDO_LABEL_KEYS = ['added','edited','deleted','deletedMany','markedPaid','markedPaidMany','markedUnpaidMany','skipped','imported','seriesCreated','seriesEdited','seriesEnded','categoryAdded','categoryEdited','categoryArchived','categoryMerged','accountAdded','accountEdited','transferAdded','transferEdited','transferDeleted','cloned','pasted','markedMonthly','monthAdded','accountDeleted'] as const;
 
 export type UndoLabelKey = (typeof UNDO_LABEL_KEYS)[number];
 
