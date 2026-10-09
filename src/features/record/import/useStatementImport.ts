@@ -41,7 +41,7 @@ import { useCategoryLookup } from '@/data/queries/categories';
 import { useFxLatest } from '@/data/queries/fxLatest';
 import { latestPerEur } from '@/data/queries/homeAmount';
 import { useImportCommit } from '@/data/mutations/importFinalize';
-import { useCreateSeries } from '@/data/mutations/recurringSeries';
+import { suggestionToSeries, useCreateSeries } from '@/data/mutations/recurringSeries';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { pickStatementBytes } from '@/services/files/pickStatement';
@@ -58,7 +58,6 @@ import {
   resolveProfile,
   sizeBand,
   statementOptions,
-  suggestionToSeries,
   toImportCommit,
   type CsvReading,
   type ExistingInfo,

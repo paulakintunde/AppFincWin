@@ -20,7 +20,7 @@ import {
 import { DEFAULT_KEYWORD_RULES, guessCategory, type BuiltinCategoryKey, type GuessSource } from '@/engine/categorize';
 import { minorUnits, type MinorUnits, type NumberNotation, type ScaledRate } from '@/engine/money';
 import { parseOfx } from '@/engine/ofx';
-import { matchPendingPayments, type PendingOccurrence, type RecurringSuggestion } from '@/engine/recurring';
+import { matchPendingPayments, type PendingOccurrence } from '@/engine/recurring';
 import {
   convertDraft,
   decodeText,
@@ -41,7 +41,6 @@ import {
 } from '@/engine/statement';
 import { buildTransferLegs, matchTransfers, type ExistingLeg, type ImportedLeg, type TransferAccount } from '@/engine/transfer';
 import type { ImportCommitInput, ImportLink, ImportLimit, ImportMarkPaid } from '@/data/mutations/importFinalize';
-import type { NewRecurringSeries } from '@/db/recurringSeries';
 import type { NewTransaction } from '@/db/rows';
 
 export type RejectReason =
@@ -655,42 +654,4 @@ export function sizeBand(n: number): '1-50' | '51-500' | '501-5000' {
   if (n <= 50) return '1-50';
   if (n <= 500) return '51-500';
   return '501-5000';
-}
-
-/**
- * A recurring suggestion turned into a series anchored on the latest imported row. Callers
- * must not pass transfer legs to detectRecurring (D-56); the suggestion's row ids are the only
- * rows this reads.
- */
-export function suggestionToSeries(
-  s: RecurringSuggestion,
-  rows: readonly { id: string; localDate: string; categoryId: string | null }[],
-  ctx: { householdId: string; accountId: string; timeZone: string },
-  id: string
-): { series: NewRecurringSeries; anchorTransactionId: string; linkTransactionIds: string[] } {
-  const wanted = new Set(s.rowIds);
-  let latest: { id: string; localDate: string; categoryId: string | null } | null = null;
-  for (const row of rows) {
-    if (wanted.has(row.id) && (latest === null || row.localDate >= latest.localDate)) latest = row;
-  }
-  const anchorTransactionId = latest?.id ?? (s.rowIds[s.rowIds.length - 1] as string);
-  return {
-    series: {
-      id,
-      household_id: ctx.householdId,
-      account_id: ctx.accountId,
-      name: s.name,
-      amount: s.amount,
-      currency: s.currency,
-      category_id: latest?.categoryId ?? null,
-      payment_type: null,
-      freq: s.freq,
-      anchor_date: s.anchorDate,
-      time_zone: ctx.timeZone,
-      end_date: null,
-      occurrence_count: null,
-    },
-    anchorTransactionId,
-    linkTransactionIds: s.rowIds.filter((rowId) => rowId !== anchorTransactionId),
-  };
 }
