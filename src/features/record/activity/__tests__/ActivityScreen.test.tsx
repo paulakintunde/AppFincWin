@@ -62,7 +62,7 @@ jest.mock('@/data/queries/activity', () => ({
   useMonthView: () => ({
     rows: mockRows,
     projections: mockProjections,
-    totals: { paidIn: 0, paidOut: -1250, net: -1250, stillToCome: -500, pendingCount: 1, projectedCount: 1, unconvertedCount: 2, transferCount: 0 },
+    totals: { paidIn: 0, paidOut: -1250, net: -1250, stillToCome: -500, pendingCount: 1, projectedCount: 1, unconvertedCount: 2, transferCount: 0, count: 2 },
     isLoading: false,
     isError: false,
     refetch: jest.fn(),
@@ -83,11 +83,13 @@ jest.mock('@/data/queries/activity', () => ({
     };
   },
 }));
+jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
+jest.mock('@/data/queries/pendingSplit', () => ({ usePaidBefore: () => ({ legs: [], isLoading: false }) }));
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({
     data: [
-      { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null },
-      { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null },
+      { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null, deleted_at: null, opening_balance: 0 },
+      { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null, deleted_at: null, opening_balance: 0 },
     ],
   }),
 }));
@@ -114,6 +116,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
     region: 'GB',
     timeZone: 'Europe/London',
     today: '2026-09-25',
+    weekStart: 1,
   }),
 }));
 jest.mock('@/features/record/entry/TransactionSheet', () => {

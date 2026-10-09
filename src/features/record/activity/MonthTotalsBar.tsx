@@ -30,6 +30,9 @@ export function MonthTotalsBar({ totals, homeCurrency, formatter }: MonthTotalsB
 
   return (
     <View style={styles.wrap}>
+      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+        {t('activity.count', { count: totals.count })}
+      </Text>
       <View style={styles.row}>
         {cells.map((c) => (
           <View key={c.key} style={styles.cell} accessible accessibilityLabel={`${c.label}, ${c.value}`}>
