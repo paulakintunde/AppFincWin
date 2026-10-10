@@ -303,7 +303,7 @@ Plans:
 
 **Goal:** Activity and the Record screens reach the prototype's depth (`FincWin United.dc.html`). Views have subtotals, with sort and counts; recurring lines are spotted from logged history; and entry, import and month tools are richer. The Phase 2 filter system stays.
 **Requirements**: ACT-06, ACT-07, ACT-08, ACT-09, ACT-10, ACT-11, ACT-12, ACT-13, ACT-14, ACT-15, ACT-16, ACT-17, ACT-18, REC-19, REC-20, REC-21, REC-22, REC-23, REC-24, REC-25
-**Depends on:** Phase 2 (Record), Phase 3 (Shell) for the dropdown and FAB chrome where it applies
+**Depends on:** Phase 2 (Record). Phase 3 (Shell) was not executed first: 2.2 built its own primitives in `src/ui` (Dropdown, ToggleRow, DetailSheet, SwipeRow, Keypad) on the existing `Sheet`, and installed `expo-haptics` (D-27). Phase 3 adopts them.
 **Inserted:** 2026-10-07, from the Phase 2 device walkthrough and a prototype gap audit (user decisions)
 **Success Criteria** (what must be TRUE):
   1. Activity offers a view dropdown: By day, By week, In / out, Running balance, Calendar. Every group shows its net subtotal, including Week 1 to Week 5 and each day. The existing filters keep working in every view.
@@ -316,6 +316,7 @@ Plans:
   8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
 **Plans:** 34/35 plans executed
+**Status (2026-10-09):** Plans 01–34 executed and on main (PR #51 schema and engine, PR #52 app). Production schema at 20261010000600. Plan 35 waits on the Android device walkthrough (development build e07f9578); iOS waits on Apple enrolment. Follow-ups found in execution are fixed in quick task 261009-mvn.
 
 Plans:
 
@@ -385,6 +386,7 @@ Plans:
   4. The FAB's action changes to match the current tab, and it hides during sheets, bulk select, onboarding and step flows.
   5. A user can navigate and read every screen with a screen reader on both platforms.
 **Plans**: 16 plans in 7 waves
+**Check before executing (2026-10-09):** these plans predate Phase 2.2. `expo-haptics` is already installed with a feature wrapper at `src/ui/haptics.ts` (03-01 must not reinstall it), and `src/ui` now has Dropdown, ToggleRow, DetailSheet, SwipeRow and Keypad on the existing `Sheet`, which the bottom-sheet migration must carry over. See STATE.md Blockers.
 Plans:
 **Wave 1**
 - [ ] 03-01-PLAN.md — Foundations: bottom-sheet/haptics/blur deps, predictive back off, haptics wrapper, shell tokens, lint boundary, Reanimated/worklets doc fix
@@ -560,16 +562,19 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 0 → 1 → 2 → 3 → 4* → 5 → 6 → 7 → 8 → 9 → 10 → 11
+Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 5 → 6 → 7 → 8 → 9 → 10 → 11
 *Phase 4 has no data-layer dependency and may run concurrently with Phases 1-3 if parallel workstreams are available.
+2.2 runs before 2.1 because it changes the import commit path that 2.1's plans build on; 2.1 is replanned after 2.2 (STATE.md Blockers).
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 0. Foundation | 18/20 | In Progress | - |
 | 1. Money Core | 16/16 | Complete | 2026-09-26 |
 | 2. Record | 50/50 | Complete | 2026-10-09 |
-| 3. Shell | 0/16 | Planned | - |
-| 4. Decide Engine | 0/TBD | Not started | - |
+| 2.1 PDF statement import | 0/12 | Planned; replan before executing | - |
+| 2.2 Record polish | 34/35 | In Progress (device walkthrough) | - |
+| 3. Shell | 0/16 | Planned; check against 2.2 before executing | - |
+| 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |

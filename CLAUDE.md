@@ -200,6 +200,8 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 
 **Use the Supabase CLI / Management API instead**, authenticated with `SUPABASE_ACCESS_TOKEN` from `.env.local`. That path is verified working against this project.
 
+- The token (and `SUPABASE_DB_PASSWORD`) lives in the main checkout's `C:\dev\fincwin\.env.local`. Worktree `.env.local` files do not carry it, and the shell may already export another account's `SUPABASE_ACCESS_TOKEN` (CLI answers 403 "missing database_write"). Export the FincWin values per command; never print them. EAS commands from a worktree also need `EAS_PROJECT_ID`.
+
 - There is one Supabase project, `Fincwin United`, ref `cohmcbdfgqmiwykztrdg`, and it is production. The repo pins it in `supabase/config.toml`.
 - Its ref lives in `SUPABASE_PROD_PROJECT_REF` in `.env.local`, which is gitignored and never committed. There is no dev ref.
 - `supabase db push` targets production. Run `npm run supabase:preflight` first, or use `npm run supabase:db:push`, which chains the check. The preflight asserts that `config.toml`'s `project_id` matches `SUPABASE_PROD_PROJECT_REF`.
