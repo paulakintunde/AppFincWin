@@ -46,6 +46,35 @@ Steps (Task 3, after approval):
 
 Deviation (credentials): the plan-16 executor was refused by the Claude Code auto-mode classifier ("Production Deploy") after the merge; the orchestrator then ran steps 3–6 at the user's explicit request. `C:/dev/fincwin-p2/.env.local` holds only SUPABASE_PROD_PROJECT_REF and the public keys, and the shell carried a different account's SUPABASE_ACCESS_TOKEN (first `migration list` returned 403 missing database_write). SUPABASE_ACCESS_TOKEN and SUPABASE_DB_PASSWORD were read from `C:/dev/fincwin/.env.local` for each command, never printed. Step 6 ran through the Management API SQL endpoint with `read_only: true`.
 
+## App PR and gate (plan 35, Task 1)
+
+App PR: https://github.com/paulakintunde/AppFincWin/pull/52
+Main commit: e1f1049579d7d13fd7cd5e61e594ad4a82db15cf
+
+CI on PR #52: checks pass (3m17s), rls pass, secret-scan pass. Merged with `gh pr merge 52 --merge`. `git diff --quiet origin/main` in the phase worktree exited 0 (tree identical to main).
+
+Gate on that commit:
+- `npx jest --coverage --ci --no-watchman --forceExit`: 215 suites, 5814 tests passed, no threshold failure.
+- `npm run typecheck`: pass. `npm run lint`: pass. `npm run depcruise`: pass.
+- `npm run lint:migrations`: pass. `npm run verify:migrations`: pass.
+- `npm run check:money-mirror`: pass. `npm run check:recurring-mirror`: pass.
+- `npx supabase db reset && npx supabase test db`: not re-run locally (the auto-mode classifier refused `db reset`, "Cloud Storage Mass Delete"). Covered instead by the `rls` CI check on PR #52 (pass) and by the orchestrator's rollback-only run of all 48 pgTAP files against migrations 20261010000100–000600 after wave 3 (48/48 pass).
+- `npx supabase migration list --linked`: 29/29 local = remote, 20261010000100-000600 present remotely; no 2.2 migration changed since plan 16 (no second push needed).
+
+## EAS fingerprint and development build
+
+Fingerprint (android, from 4ed142f; tree equals main e1f1049 except this record): f7f16a90e63239bbf029e8e189034c0f4de6416f. `EAS_PROJECT_ID` was supplied by the user on 2026-10-09 and added to the worktree `.env.local` (gitignored). The only earlier Android development build (fd9507cd, 2026-09-25, b1c7844) predates expo-haptics, so it is incompatible.
+Build id: e07f9578-9c93-4067-a750-afb748d09cb9 (`eas build --profile development --platform android --non-interactive --no-wait`), https://expo.dev/accounts/fincwin/projects/fincwin/builds/e07f9578-9c93-4067-a750-afb748d09cb9. Install it on the Android device before the walkthrough.
+
 ## Device walkthrough
 
-(filled by plan 35)
+Criterion 1: Observed:
+Criterion 2: Observed:
+Criterion 3: Observed:
+Criterion 4: Observed:
+Criterion 5: Observed:
+Criterion 6: Observed:
+Criterion 7: Observed:
+Criterion 8: Observed:
+Haptics:
+iOS: pending (Apple enrolment, D-U-N-S pending; no iOS build)
