@@ -17,6 +17,7 @@ import { useConsent } from '@/features/consent/useConsent';
 import { requestSignOut, performSignOut } from '@/features/auth/signOut';
 import { useProfile } from './useProfile';
 import { SettingsGroup } from './components/SettingsGroup';
+import { APP_HOME_HREF } from '@/features/auth/appHome';
 import { AccentSwitcher } from './components/AccentSwitcher';
 import { FontPairingSwitcher } from './components/FontPairingSwitcher';
 import { AnalyticsToggle } from './components/AnalyticsToggle';
@@ -31,7 +32,7 @@ const MONEY_ROWS: readonly {
   label: 'you.record.activity' | 'you.record.accounts' | 'you.record.categories' | 'you.record.importCsv' | 'you.record.history';
   href: Href;
 }[] = [
-  { label: 'you.record.activity', href: '/activity' as Href },
+  { label: 'you.record.activity', href: APP_HOME_HREF },
   { label: 'you.record.accounts', href: '/accounts' as Href },
   { label: 'you.record.categories', href: '/categories' as Href },
   { label: 'you.record.importCsv', href: { pathname: '/import', params: { entry: 'you' } } as Href },
@@ -86,7 +87,7 @@ export function YouScreen() {
 
       <SettingsGroup title={t('you.record.section')}>
         {MONEY_ROWS.map((row) => (
-          <Pressable key={row.label} accessibilityRole="button" onPress={() => router.push(row.href)} style={styles.moneyRow}>
+          <Pressable key={row.label} accessibilityRole="button" onPress={() => (row.href === APP_HOME_HREF ? router.dismissTo(APP_HOME_HREF) : router.push(row.href))} style={styles.moneyRow}>
             <Text style={[styles.rowLabel, { fontFamily: fonts.body[500], color: colors.ink }]}>{t(row.label)}</Text>
           </Pressable>
         ))}

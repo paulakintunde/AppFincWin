@@ -2,7 +2,10 @@
 // hasn't answered it yet (skipped if already there, to avoid a redirect loop), otherwise
 // renders the You screen (and later screens, as they're added in Phase 1+).
 import { Redirect, Stack, usePathname } from 'expo-router';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { SwipeBack } from '@/features/navigation/SwipeBack';
+import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
+import { useReduceMotion } from '@/theme/motion';
 import { useConsent } from '@/features/consent/useConsent';
 import { DeviceHomeCurrencyDefault } from '@/features/record/useDeviceHomeCurrencyDefault';
 import { UndoToastHost } from '@/features/record/history/UndoToastHost';
@@ -17,6 +20,8 @@ export { RouteErrorBoundary as ErrorBoundary };
 export default function AppLayout() {
   const { loading, needsPrompt } = useConsent();
   const pathname = usePathname();
+  const reduceMotion = useReduceMotion();
+  const animation = Platform.OS === 'android' ? (reduceMotion ? 'none' : 'slide_from_right') : 'default';
 
   if (loading) {
     // The root layout's splash has already hidden by the time this group renders (app/
@@ -33,7 +38,10 @@ export default function AppLayout() {
   // signed-in app shows its toast (D-31). It lives beside the Stack, not inside a screen.
   return (
     <View style={{ flex: 1 }}>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack
+        screenOptions={{ headerShown: false, animation }}
+        screenLayout={({ children, route }) => <SwipeBack enabled={isSwipeBackRoute(route.name)}>{children}</SwipeBack>}
+      >
         <Stack.Screen name="activity" />
         <Stack.Screen name="accounts/index" />
         <Stack.Screen name="accounts/[id]" />
