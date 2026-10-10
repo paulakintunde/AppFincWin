@@ -36,7 +36,7 @@ describe('SwipeBack', () => {
   it('goes back on a qualifying edge swipe', async () => {
     await render(
       <SwipeBack enabled>
-        <Text>x</Text>
+        <Text>{'x'}</Text>
       </SwipeBack>
     );
     swipe(120);
@@ -46,7 +46,7 @@ describe('SwipeBack', () => {
     mockCanGoBack = false;
     await render(
       <SwipeBack enabled>
-        <Text>x</Text>
+        <Text>{'x'}</Text>
       </SwipeBack>
     );
     swipe(120);
@@ -55,7 +55,7 @@ describe('SwipeBack', () => {
   it('ignores a short slow swipe', async () => {
     await render(
       <SwipeBack enabled>
-        <Text>x</Text>
+        <Text>{'x'}</Text>
       </SwipeBack>
     );
     swipe(15, 0, 100);
@@ -64,7 +64,7 @@ describe('SwipeBack', () => {
   it('ignores a vertical swipe', async () => {
     await render(
       <SwipeBack enabled>
-        <Text>x</Text>
+        <Text>{'x'}</Text>
       </SwipeBack>
     );
     swipe(60, 200);
@@ -73,7 +73,7 @@ describe('SwipeBack', () => {
   it('renders children only when disabled', async () => {
     const u = await render(
       <SwipeBack enabled={false}>
-        <Text>x</Text>
+        <Text>{'x'}</Text>
       </SwipeBack>
     );
     expect(u.getByText('x')).toBeTruthy();
@@ -83,7 +83,7 @@ describe('SwipeBack', () => {
     setOS('ios');
     const u = await render(
       <SwipeBack enabled>
-        <Text>x</Text>
+        <Text>{'x'}</Text>
       </SwipeBack>
     );
     expect(u.getByText('x')).toBeTruthy();
