@@ -164,7 +164,7 @@ Recent decisions affecting current work:
 | 260925-8bi | Replace placeholder app icons with FincWin F logo | 2026-09-25 | 3020470 | [260925-8bi-replace-placeholder-app-icons-with-fincw](./quick/260925-8bi-replace-placeholder-app-icons-with-fincw/) |
 | 260926-0mn | Launch positioning into Phase 5, "A · Refine" navy icon, pricing advisory | 2026-09-26 | 414920d | [260926-0mn-launch-positioning-phase5-pricing-adviso](./quick/260926-0mn-launch-positioning-phase5-pricing-adviso/) |
 | 261009-mvn | Phase 02.2 follow-ups: home-currency conflict message, More menu action mode, real failed-write entities, leftover worktree folders removed | 2026-10-09 | decaafd | [261009-mvn-phase-02-2-follow-ups-home-currency-conf](./quick/261009-mvn-phase-02-2-follow-ups-home-currency-conf/) |
-| 261010-i7u | Phase 02.2 walkthrough fixes: 7-column calendar with activity tile and scroll, one-line swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check; Phase 02.3 requirements recorded | 2026-10-10 | - | [261010-i7u-02-2-walkthrough-fixes-calendar-swipe-la](./quick/261010-i7u-02-2-walkthrough-fixes-calendar-swipe-la/) |
+| 261010-i7u | Phase 02.2 walkthrough fixes: 7-column calendar with activity tile and scroll, one-line swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check; Phase 02.3 requirements recorded | 2026-10-10 | fd8e9cf | [261010-i7u-02-2-walkthrough-fixes-calendar-swipe-la](./quick/261010-i7u-02-2-walkthrough-fixes-calendar-swipe-la/) |
 
 ## Deferred Items
 
