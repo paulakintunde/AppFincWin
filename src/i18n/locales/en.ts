@@ -131,6 +131,7 @@ const en = {
       confirm: 'Change to {{code}}',
       fetching: 'Getting rates…',
       failed: 'Couldn’t get today’s rates. Home currency is unchanged. Try again.',
+      changedElsewhere: 'Your settings changed elsewhere. Home currency is unchanged.',
       done: 'Home currency is now {{code}}',
       capsConverted: 'Category caps converted to {{code}}',
     },

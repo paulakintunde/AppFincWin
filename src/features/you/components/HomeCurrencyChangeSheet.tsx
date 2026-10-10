@@ -1,6 +1,7 @@
 // REC-25, CONTEXT D-22, Confirmed Decision 11: the all-or-nothing home-currency confirm. The
 // sheet only reports the server's atomic result; on failure it says nothing changed. It never
 // claims stored amounts change (each line keeps the amount and currency it was entered in).
+// A version conflict ('changed') keeps the sheet open with an inline line, like a rates failure.
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useChangeHomeCurrency } from '@/data/mutations/homeCurrency';
@@ -28,16 +29,16 @@ export function HomeCurrencyChangeSheet({ visible, next, onClose }: HomeCurrency
     householdId: rc.householdId ?? '',
     currentHome: rc.homeCurrency,
   });
-  const [failed, setFailed] = useState(false);
+  const [failure, setFailure] = useState<'rates' | 'changed' | null>(null);
 
   const close = () => {
-    setFailed(false);
+    setFailure(null);
     onClose();
   };
 
   const onConfirm = async () => {
     if (pending) return;
-    setFailed(false);
+    setFailure(null);
     const result = await change(next);
     if (result.ok) {
       showToast({ kind: 'ordinary', text: { key: 'you.homeCurrency.done', params: { code: next } } });
@@ -47,11 +48,7 @@ export function HomeCurrencyChangeSheet({ visible, next, onClose }: HomeCurrency
       close();
       return;
     }
-    if (result.reason === 'changed') {
-      close();
-      return;
-    }
-    setFailed(true);
+    setFailure(result.reason);
   };
 
   const title = t('you.homeCurrency.confirmTitle', { code: next });
@@ -63,9 +60,9 @@ export function HomeCurrencyChangeSheet({ visible, next, onClose }: HomeCurrency
         <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{title}</Text>
         <Text style={body}>{t('you.homeCurrency.confirmBody', { code: next })}</Text>
         <Text style={body}>{t('you.homeCurrency.keepsAmounts')}</Text>
-        {failed ? (
+        {failure !== null ? (
           <Text accessibilityRole="alert" style={{ ...textRole(pairing, 'label'), color: colors.danger }}>
-            {t('you.homeCurrency.failed')}
+            {t(failure === 'changed' ? 'you.homeCurrency.changedElsewhere' : 'you.homeCurrency.failed')}
           </Text>
         ) : null}
         <View style={styles.actions}>

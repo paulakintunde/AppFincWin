@@ -315,6 +315,8 @@ describe('month tools', () => {
     const screen = await renderScreen({ initialMonth: '2026-09' });
     await fireEvent.press(screen.getByLabelText('More actions. Opens a menu.'));
     expect(screen.getAllByLabelText(/^Clone August/).length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('dropdown-dot-clone')).toBeNull();
+    expect(screen.queryByTestId('dropdown-dot-paste')).toBeNull();
     await fireEvent.press(screen.getAllByLabelText(/^Paste a list/).at(-1)!);
     expect(screen.getByText('paste:2026-09')).toBeTruthy();
   });

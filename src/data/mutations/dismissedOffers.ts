@@ -48,7 +48,7 @@ export function registerDismissOffersMutations(qc: QueryClient): void {
       else void qc.invalidateQueries({ queryKey: key });
       // Counts only (T-02.2-23-03): offer keys embed merchant names.
       await recordFailedWrite({
-        entity: 'profiles',
+        entity: 'dismissed_series_offers',
         entityId: vars.userId,
         kind: cls,
         code: settledWriteErrorCode(err),

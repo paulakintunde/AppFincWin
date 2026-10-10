@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 02.2 UI-SPEC aligned with CONTEXT, approved
-last_updated: "2026-10-09T09:03:47.336Z"
-last_activity: 2026-10-09 -- Phase 02.2 execution started
+stopped_at: Phase 02.2 plan 35 Task 2 — Android device walkthrough (development build e07f9578)
+last_updated: "2026-10-09T23:59:00.000Z"
+last_activity: 2026-10-09 -- Phase 02.2 plans 01-34 on main; quick task 261009-mvn; planning docs refreshed
 progress:
   total_phases: 14
   completed_phases: 2
   total_plans: 161
-  completed_plans: 84
-  percent: 52
+  completed_plans: 118
+  percent: 73
 ---
 
 # Project State
@@ -26,13 +26,13 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 ## Current Position
 
 Phase: 02.2 (record-polish) — EXECUTING
-Plan: 1 of 35
+Plan: 35 of 35 (Task 2, device walkthrough). Plans 01-34 done and on main: PR #51 (schema, engine, primitives; production schema pushed to 20261010000600 from main 2157641) and PR #52 (app, main e1f1049). Development build e07f9578 (Android, fingerprint f7f16a90) replaces the 2026-09-25 build because expo-haptics is native. Walkthrough checklist and record: docs/acceptance/phase-02.2-record-polish.md. iOS pending Apple enrolment.
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
-Phase 02.1 (PDF statement import): planned (12 plans, 7 waves, checker passed); not started. Phase 02.2 (record-polish): planned (35 plans, 10 waves, checker passed); not started — plan 16 is a production schema push checkpoint. Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
-Status: Executing Phase 02.2
-Last activity: 2026-10-09 -- Phase 02.2 execution started
+Phase 02.1 (PDF statement import): planned (12 plans, 7 waves); not started — replan after 02.2 (see Blockers). Phase 02.2 (record-polish): 34/35 plans executed, see above. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
+Status: Executing Phase 02.2 — waiting on the device walkthrough, then plan 35 Task 3 (validation sign-off) and phase verification
+Last activity: 2026-10-09 - Completed quick task 261009-mvn: Phase 02.2 follow-ups
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Last activity: 2026-10-09 -- Phase 02.2 execution started
 ### Roadmap Evolution
 
 - Phase 2.1 inserted after Phase 2: PDF statement import: text PDFs, generic parser with balance reconciliation, server worker and privacy decision (split from Record's import extension, 2026-09-25)
+- Phase 2.2 inserted 2026-10-07: Record polish (prototype depth for Activity and Record, ACT-06..18, REC-19..25). Runs before 2.1 because it changes the import commit path (decided 2026-10-09).
 
 ### Decisions
 
@@ -119,6 +120,9 @@ Recent decisions affecting current work:
 - [Phase 00]: 00-19: Android acceptance ran on a physical Pixel 9 instead of the planned Pixel_8_API_36 emulator, which segfaulted twice on boot (GPU and swiftshader paths) on this machine's Intel Iris Xe graphics
 - [Phase 00]: 00-19: the dependency register's 'Supabase dev project' row is marked deferred rather than deleted -- it was collapsed into the single production project by quick task 260922-tsn on 2026-09-22, and the register should record that history
 - [Phase 00]: 00-19: website-audit.md verdict moves from REMEDIATE (9 items) to READY pending two items (D-U-N-S name match, an explicit 'registered in Canada' line) after live curl re-verification of both domains, not from the user's remediation report alone
+- [Phase 02.2]: user decisions at plan time (2026-10-09): the recurring detector `detect.ts` is reused unchanged and the offer copy was reworded to match it; the add-month horizon is per household (`households.horizon_month`); refunds count under Money out as a reduction, never as income; category cap usage counts paid and pending lines; the home-currency change is one atomic `change_home_currency` RPC that also converts caps
+- [Phase 02.2]: undoing "Add month" rewinds the horizon and `materialised_through` through a server-only path (`undo_log.allow_system_keys`, no client grant); sample data is seeded and cleared by server RPCs so no client can set `is_sample`; a server trigger refuses to soft-delete an account that still has lines or an active series
+- [Phase 02.2]: execution ran in manually created per-plan git worktrees, because Claude Code's own worktree isolation refused the c:/C: drive-letter casing; production pushes and EAS builds ran in the main session (the auto-mode classifier blocks them for subagents). The FincWin SUPABASE_ACCESS_TOKEN lives only in C:/dev/fincwin/.env.local (the shell exports another account's token)
 - [Phase 01]: 01-16: Task 3's device check ran on the same Pixel 9 session as 00-19 Task 2 (combined for one fresh dev-client rebuild); DSG-06 (locale formatting) is accepted on the existing Hermes unit-test suite rather than a visual check, since no shipped screen renders a formatted amount before Phase 2 (Record)
 
 ### Pending Todos
@@ -127,12 +131,15 @@ Recent decisions affecting current work:
 - **Phase 0 code review fixes** — `00-REVIEW.md`: 2 critical (CR-01 a malformed `min_supported_version` blanks the app for every user; CR-02 the device is only wiped on the sign-out button, not when a session ends another way) and 20 warnings. Run `/gsd-code-review-fix 0`.
 - **Phase 0 security** — `00-SECURITY.md`: 2 open, neither high (T-00-01-03 no DMARC on fincwin.com; T-00-03-04 DB password shorter than declared). Add the DMARC record and rotate or accept, then re-run `/gsd-secure-phase 0`. Also: remove leftover `POSTHOG_CLI_*` vars from the EAS preview env and revoke that key; disable the unused Supabase email provider and fix `site_url` (still localhost); purge production test accounts before launch (AR-11 drift).
 - **Public repo privacy** — a personal test Gmail address is committed in `docs/acceptance/phase-00-android.md` and `docs/acceptance/phase-01-money-core.md`; the repo is public.
-- **Phase 2 human UAT** — 2 items in `02-HUMAN-UAT.md` (iOS statement file picker, pending Apple enrolment; home-currency switch FX fetch, pending a settings screen). Also needed: a new EAS preview build, because the Phase 2 native modules changed the fingerprint.
+- **Phase 2 human UAT** — 2 items in `02-HUMAN-UAT.md` (iOS statement file picker, pending Apple enrolment; home-currency switch FX fetch). The settings screen now exists (02.2-32, You → Money), so the home-currency item can be checked during the 02.2 walkthrough (criterion 8). A preview build would also need rebuilding (native fingerprint changed again with expo-haptics); the 02.2 walkthrough uses development build e07f9578.
+- **Phase 2.2 close-out** — after the walkthrough: plan 35 Task 3 (VALIDATION sign-off, `nyquist_compliant: true`), then `/gsd-verify-work 02.2` or the phase verifier, `/gsd-secure-phase 02.2` (security enforcement is on and there is no 02.2-SECURITY.md yet), and tick ACT-06..18 / REC-19..25 in REQUIREMENTS.md on verification evidence.
 - **Phase 1 human UAT** — 3 items in `01-HUMAN-UAT.md` (region separators on device, RateAttribution mounted by Phase 2, FX hold/ISO list product review).
 
 ### Blockers/Concerns
 
 - [Phase 02.1] **Execution order: 02.2 → revise 02.1 → execute 02.1.** 02.1's plans (committed 2026-09-27) are stale and must be revised after 02.2 executes, before 02.1 runs: (1) migrations `20260927000100_statement_uploads_bucket.sql` / `…000200_statement_uploads_purge.sql` predate production's latest (`20261007000400`), so `supabase db push` refuses them without `--include-all`; re-date them after 02.2's `20261010…` range. (2) pgTAP `35_statement_uploads.test.sql` collides with existing `35_series_undo.test.sql`; renumber after 02.2's 42–48. (3) Plans 02.1-09..11 edit `useStatementImport.ts`, `importPipeline.ts`, `ImportScreen.tsx`, which 02.2 plans 20/26/27/33 change (suggestionToSeries move, refund/Automatic, paste entry, sample-clear prompt); rebase them on the post-02.2 code. Route: `/gsd-plan-phase 02.1` → "Replan" or targeted revision
+
+- [Phase 03] **Shell plans predate 02.2 — check before executing.** 03-01 installs `expo-haptics` and builds a haptics wrapper: the package is already installed (02.2-01) with a feature wrapper at `src/ui/haptics.ts`, so 03-01 must not reinstall it and should decide whether its shell wrapper extends or sits beside it. 02.2 also added `src/ui` Dropdown, ToggleRow, DetailSheet, SwipeRow and Keypad on the existing RN-Modal `Sheet` (D-27: Phase 3 adopts them); the `@gorhom/bottom-sheet` migration must carry DetailSheet, the paste, clone-month, review and confirm sheets with it, and 03-UI-SPEC has no Dropdown contract (the 02.2 UI-SPEC section 1 is the source). Route: `/gsd-plan-phase 3` targeted revision.
 
 - [Phase 10] ENV-16 moved from Phase 2 on 2026-09-25: production has **no backups** until then (method TBD, likely AWS, e.g. a daily dump to S3). Supabase Pro is no longer assumed, so a Free-plan production project also **pauses after a week with no activity**, taking the live app offline. That needs its own answer (upgrade, keep-alive, or accept) before real users arrive
 - [Phase 0] EAS provisioning and credentials from Windows are unproven for this project — trigger the first iOS EAS Build on day one so provisioning surprises surface in week one, not week ten
@@ -155,6 +162,7 @@ Recent decisions affecting current work:
 | 260922-us3 | Align all docs to single prod Supabase project | 2026-09-22 | 07ef5f6 | [260922-us3-align-all-docs-to-single-prod-supabase-p](./quick/260922-us3-align-all-docs-to-single-prod-supabase-p/) |
 | 260925-8bi | Replace placeholder app icons with FincWin F logo | 2026-09-25 | 3020470 | [260925-8bi-replace-placeholder-app-icons-with-fincw](./quick/260925-8bi-replace-placeholder-app-icons-with-fincw/) |
 | 260926-0mn | Launch positioning into Phase 5, "A · Refine" navy icon, pricing advisory | 2026-09-26 | 414920d | [260926-0mn-launch-positioning-phase5-pricing-adviso](./quick/260926-0mn-launch-positioning-phase5-pricing-adviso/) |
+| 261009-mvn | Phase 02.2 follow-ups: home-currency conflict message, More menu action mode, real failed-write entities, leftover worktree folders removed | 2026-10-09 | decaafd | [261009-mvn-phase-02-2-follow-ups-home-currency-conf](./quick/261009-mvn-phase-02-2-follow-ups-home-currency-conf/) |
 
 ## Deferred Items
 
@@ -166,6 +174,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-09T07:16:09.788Z
-Stopped at: Phase 02.2 UI-SPEC aligned with CONTEXT, approved
-Resume file: .planning/phases/02.2-record-polish/02.2-CONTEXT.md
+Last session: 2026-10-09T23:59:00.000Z
+Stopped at: Phase 02.2 plan 35 Task 2 — waiting on the Android device walkthrough (install development build e07f9578, run `npx expo start --dev-client` from a checkout with EAS_PROJECT_ID set)
+Resume file: docs/acceptance/phase-02.2-record-polish.md

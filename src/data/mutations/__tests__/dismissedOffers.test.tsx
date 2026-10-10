@@ -78,6 +78,8 @@ describe('useDismissOffers', () => {
 
     await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
     expect([...(qc.getQueryData(queryKeys.dismissedOffers('u1')) as Set<string>)]).toEqual(['old']);
-    expect((recordFailedWrite.mock.calls[0]?.[0] as { attempted: unknown }).attempted).toEqual({ count: 1 });
+    expect(recordFailedWrite).toHaveBeenCalledWith(
+      expect.objectContaining({ entity: 'dismissed_series_offers', entityId: 'u1', attempted: { count: 1 } }),
+    );
   });
 });

@@ -59,3 +59,32 @@ describe('Dropdown', () => {
     expect(queryByText('Pick')).toBeNull();
   });
 });
+
+describe('Dropdown action menu (no value)', () => {
+  async function setupAction() {
+    const onSelect = jest.fn();
+    const utils = await render(
+      <ThemeProvider>
+        <Dropdown title="Pick" options={options} triggerLabel="More" onSelect={onSelect} triggerA11yLabel="More actions" />
+      </ThemeProvider>,
+    );
+    return { ...utils, onSelect };
+  }
+
+  it('shows the trigger label and no selected dots', async () => {
+    const { getByLabelText, getByText, queryByTestId } = await setupAction();
+    expect(getByText('More')).toBeTruthy();
+    await fireEvent.press(getByLabelText('More actions'));
+    for (const k of ['a', 'b']) expect(queryByTestId(`dropdown-dot-${k}`)).toBeNull();
+    expect(getByLabelText('Beta').props.accessibilityState?.selected).toBeFalsy();
+  });
+
+  it('selecting calls onSelect once and closes', async () => {
+    const { getByLabelText, queryByText, onSelect } = await setupAction();
+    await fireEvent.press(getByLabelText('More actions'));
+    await fireEvent.press(getByLabelText('Beta'));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledWith('b');
+    expect(queryByText('Pick')).toBeNull();
+  });
+});

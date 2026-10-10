@@ -460,26 +460,26 @@ Populated during roadmap creation.
 | ACT-03 | Phase 2 - Record | Complete |
 | ACT-04 | Phase 2 - Record | Complete |
 | ACT-05 | Phase 2 - Record | Complete |
-| ACT-06 | Phase 2.2 - Record polish | Pending |
-| ACT-07 | Phase 2.2 - Record polish | Pending |
-| ACT-08 | Phase 2.2 - Record polish | Pending |
-| ACT-09 | Phase 2.2 - Record polish | Pending |
-| ACT-10 | Phase 2.2 - Record polish | Pending |
-| ACT-11 | Phase 2.2 - Record polish | Pending |
-| ACT-12 | Phase 2.2 - Record polish | Pending |
-| ACT-13 | Phase 2.2 - Record polish | Pending |
-| ACT-14 | Phase 2.2 - Record polish | Pending |
-| ACT-15 | Phase 2.2 - Record polish | Pending |
-| ACT-16 | Phase 2.2 - Record polish | Pending |
-| ACT-17 | Phase 2.2 - Record polish | Pending |
-| ACT-18 | Phase 2.2 - Record polish | Pending |
-| REC-19 | Phase 2.2 - Record polish | Pending |
-| REC-20 | Phase 2.2 - Record polish | Pending |
-| REC-21 | Phase 2.2 - Record polish | Pending |
-| REC-22 | Phase 2.2 - Record polish | Pending |
-| REC-23 | Phase 2.2 - Record polish | Pending |
-| REC-24 | Phase 2.2 - Record polish | Pending |
-| REC-25 | Phase 2.2 - Record polish | Pending |
+| ACT-06 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-07 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-08 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-09 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-10 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-11 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-12 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-13 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-14 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-15 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-16 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-17 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-18 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| REC-19 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| REC-20 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| REC-21 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| REC-22 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| REC-23 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| REC-24 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| REC-25 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
 | IMP-01 | Phase 2.1 - PDF statement import | Pending |
 | IMP-02 | Phase 2.1 - PDF statement import | Pending |
 | IMP-03 | Phase 2.1 - PDF statement import | Pending |
@@ -596,10 +596,11 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 210 total
-- Mapped to phases: 210
+- v1 requirements: 231 total (75 ticked)
+- Mapped to phases: 231
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-09-26 — Phase 1 closed: FND-10, MON-01, MON-02, MON-03, MON-07, MON-08, MON-14 ticked on 01-VERIFICATION.md evidence; FND-04/FND-05 ticked (enforce_admins on). 203/203 v1 requirements mapped*
+*Last updated: 2026-10-09 — Phase 2.2 implemented: ACT-06..ACT-18 and REC-19..REC-25 marked "Implemented, awaiting device walkthrough and verification" (ticked only after 02.2-VERIFICATION.md, as for Phase 1); coverage recounted to 231/231 v1 requirements mapped.*
+*Previously: 2026-09-26 — Phase 1 closed: FND-10, MON-01, MON-02, MON-03, MON-07, MON-08, MON-14 ticked on 01-VERIFICATION.md evidence; FND-04/FND-05 ticked (enforce_admins on). 203/203 v1 requirements mapped*

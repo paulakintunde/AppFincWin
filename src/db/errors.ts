@@ -2,7 +2,7 @@
 // underneath both src/data/sync/writeErrors.ts and any future db/ query builder without
 // creating a cycle.
 
-/** The write-carrying tables the app currently mutates through db/data. */
+/** The tables the app mutates through db/data (failed-write and version-chain keys). */
 export type WriteEntity =
   | 'transactions'
   | 'accounts'
@@ -11,7 +11,9 @@ export type WriteEntity =
   | 'categories'
   | 'recurring_series'
   | 'undo_log'
-  | 'import_profiles';
+  | 'import_profiles'
+  | 'households'
+  | 'dismissed_series_offers';
 
 /**
  * A PostgREST/Postgres error normalized into a typed shape. `code` is the Postgres or

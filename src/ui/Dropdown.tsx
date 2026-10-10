@@ -1,7 +1,8 @@
 /**
  * CONTEXT D-27: reusable anchored menu (title, radio-dot rows, optional sub-labels, pill or
  * settings-row trigger). Built to 02.2-UI-SPEC sections 1-2 because 03-UI-SPEC has no
- * dropdown contract; Phase 3 adopts this component unchanged.
+ * dropdown contract; Phase 3 adopts this component unchanged. Action-menu mode: omit `value`
+ * and no row is selected and no radio dots render.
  */
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -22,7 +23,12 @@ export interface DropdownOption<K extends string> {
 export interface DropdownProps<K extends string> {
   title: string;
   options: readonly DropdownOption<K>[];
-  value: K;
+  /**
+   * Omit `value` for an action menu: no row is selected and no radio dots render; the
+   * trigger shows `triggerLabel`.
+   */
+  value?: K;
+  triggerLabel?: string;
   onSelect: (key: K) => void;
   triggerA11yLabel: string;
   disabled?: boolean;
@@ -39,6 +45,7 @@ export function Dropdown<K extends string>({
   title,
   options,
   value,
+  triggerLabel,
   onSelect,
   triggerA11yLabel,
   disabled = false,
@@ -49,8 +56,9 @@ export function Dropdown<K extends string>({
   const { colors, pairing } = useTheme();
   const reduced = useReduceMotion();
   const [open, setOpen] = useState(false);
+  const actionMenu = value === undefined;
   const current = options.find((o) => o.key === value);
-  const currentLabel = current?.triggerLabel ?? current?.label ?? '';
+  const currentLabel = triggerLabel ?? current?.triggerLabel ?? current?.label ?? '';
   const label = textRole(pairing, 'label');
   const body = textRole(pairing, 'body');
 
@@ -96,7 +104,7 @@ export function Dropdown<K extends string>({
                   key={o.key}
                   accessibilityRole="button"
                   accessibilityLabel={o.subLabel ? `${o.label}, ${o.subLabel}` : o.label}
-                  accessibilityState={{ selected }}
+                  accessibilityState={actionMenu ? undefined : { selected }}
                   onPress={() => {
                     hapticSelection();
                     setOpen(false);
@@ -104,12 +112,14 @@ export function Dropdown<K extends string>({
                   }}
                   style={styles.option}
                 >
-                  <View
-                    testID={`dropdown-dot-${o.key}`}
-                    style={[styles.dot, { borderColor: selected ? colors.accent : colors.fill1 }]}
-                  >
-                    {selected ? <View style={[styles.dotInner, { backgroundColor: colors.accent }]} /> : null}
-                  </View>
+                  {actionMenu ? null : (
+                    <View
+                      testID={`dropdown-dot-${o.key}`}
+                      style={[styles.dot, { borderColor: selected ? colors.accent : colors.fill1 }]}
+                    >
+                      {selected ? <View style={[styles.dotInner, { backgroundColor: colors.accent }]} /> : null}
+                    </View>
+                  )}
                   <View style={styles.optionText}>
                     <Text style={{ ...body, color: colors.ink }}>{o.label}</Text>
                     {o.subLabel ? <Text style={{ ...label, color: colors.inkMuted }}>{o.subLabel}</Text> : null}
