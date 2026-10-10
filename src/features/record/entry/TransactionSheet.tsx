@@ -3,9 +3,9 @@
 // step, then shows the Undo toast tied to that step (D-31). Form rules live in
 // transactionForm.ts (pure). Copy is declarative, never advice.
 import * as Crypto from 'expo-crypto';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { currencyExponent, money } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import type { MinorUnits } from '@/engine/money';
@@ -181,7 +181,22 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const [scopePatch, setScopePatch] = useState<TransactionPatch | null>(null);
   // UI-SPEC 8: the keypad types into whichever amount is active; a text field hides it.
   const [activeAmount, setActiveAmount] = useState<'out' | 'in'>('out');
-  const [textFocused, setTextFocused] = useState(false);
+  // Keypad vs keyboard is driven by an explicit active field (261010-kpe): blur is unreliable on Android with keyboardShouldPersistTaps='handled'.
+  const [activeField, setActiveField] = useState<'amount' | 'text'>('amount');
+  const nameRef = useRef<TextInput>(null);
+  const noteRef = useRef<TextInput>(null);
+  useEffect(() => {
+    const hide = Keyboard.addListener('keyboardDidHide', () => {
+      nameRef.current?.blur();
+      noteRef.current?.blur();
+      setActiveField('amount');
+    });
+    const show = Keyboard.addListener('keyboardDidShow', () => setActiveField('text'));
+    return () => {
+      hide.remove();
+      show.remove();
+    };
+  }, []);
 
   const editRow: TransactionRow | null = mode.kind === 'edit' ? mode.row : null;
   const pair = mode.kind === 'edit-transfer' ? mode : null;
@@ -469,11 +484,22 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const income = state.direction === 'in';
   const inActive = crossCurrency && activeAmount === 'in';
   const activeCurrency = inActive ? (state.toCurrency as string) : state.currency;
-  const keypadVisible = !textFocused;
+  const keypadVisible = activeField === 'amount';
   const inFigureText = !crossCurrency
     ? ''
     : (inFigure ?? (state.amountInText === '' ? (showMoney('0', state.toCurrency ?? state.currency) ?? '') : state.amountInText));
-  const textFocusProps = { onFocus: () => setTextFocused(true), onBlur: () => setTextFocused(false) };
+  const textFocusProps = { onFocus: () => setActiveField('text'), onBlur: () => setActiveField('amount') };
+  const focusAmount = (which: 'out' | 'in'): void => {
+    Keyboard.dismiss();
+    nameRef.current?.blur();
+    noteRef.current?.blur();
+    setActiveAmount(which);
+    setActiveField('amount');
+  };
+  const openPicker = (key: Exclude<PickerKey, null>): void => {
+    Keyboard.dismiss();
+    setPicker(key);
+  };
   const amountFailure = failureOf('amount');
   const amountInFailure = failureOf('amountIn');
   const crossNote =
@@ -519,7 +545,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           accessibilityLabel={t('record.sheet.keypad.amountA11y', { amount: figureText })}
           accessibilityHint={t(crossCurrency ? 'record.sheet.field.amountOut' : 'record.sheet.field.amount')}
           accessibilityLiveRegion="polite"
-          onPress={() => setActiveAmount('out')}
+          onPress={() => focusAmount('out')}
         >
           <AmountDisplay text={isTransfer ? `↔ ${figureText}` : figureText} tone={isTransfer ? 'dim' : 'default'} />
         </Pressable>
@@ -531,7 +557,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
               accessibilityLabel={t('record.sheet.keypad.amountA11y', { amount: inFigureText })}
               accessibilityHint={t('record.sheet.field.amountIn')}
               accessibilityLiveRegion="polite"
-              onPress={() => setActiveAmount('in')}
+              onPress={() => focusAmount('in')}
             >
               <AmountDisplay text={inFigureText} tone="dim" />
             </Pressable>
@@ -557,22 +583,23 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
               placeholderTextColor={colors.inkFaint}
               value={state.name}
               onChangeText={(text) => set({ name: text })}
+              ref={nameRef}
               style={inputStyle}
               {...textFocusProps}
             />
             {hasError('nameRequired') ? <Text style={errorStyle}>{t('record.sheet.nameRequired')}</Text> : null}
-            <Row label={t('record.sheet.field.category')} value={categoryLabel} dense chevron onPress={() => setPicker('category')} />
+            <Row label={t('record.sheet.field.category')} value={categoryLabel} dense chevron onPress={() => openPicker('category')} />
           </>
         )}
 
         {isTransfer ? (
           <>
-            <Row label={t('record.sheet.field.fromAccount')} value={nameOf(state.accountId)} dense chevron onPress={() => setPicker('account')} />
-            <Row label={t('record.sheet.field.toAccount')} value={nameOf(state.toAccountId)} dense chevron onPress={() => setPicker('toAccount')} />
+            <Row label={t('record.sheet.field.fromAccount')} value={nameOf(state.accountId)} dense chevron onPress={() => openPicker('account')} />
+            <Row label={t('record.sheet.field.toAccount')} value={nameOf(state.toAccountId)} dense chevron onPress={() => openPicker('toAccount')} />
             {hasError('transferSameAccount') ? <Text style={errorStyle}>{t('record.sheet.transferSameAccount')}</Text> : null}
           </>
         ) : (
-          <Row label={t('record.sheet.field.account')} value={nameOf(state.accountId)} dense chevron onPress={() => setPicker('account')} />
+          <Row label={t('record.sheet.field.account')} value={nameOf(state.accountId)} dense chevron onPress={() => openPicker('account')} />
         )}
         {hasError('accountRequired') ? <Text style={errorStyle}>{t('record.sheet.accountRequired')}</Text> : null}
 
@@ -592,9 +619,9 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
               value={state.paymentType ? t(`record.paymentType.${state.paymentType}`) : t('record.sheet.none')}
               dense
               chevron
-              onPress={() => setPicker('payment')}
+              onPress={() => openPicker('payment')}
             />
-            <Row label={t('record.sheet.field.currency')} value={state.currency} dense chevron onPress={() => setPicker('currency')} />
+            <Row label={t('record.sheet.field.currency')} value={state.currency} dense chevron onPress={() => openPicker('currency')} />
 
             <View style={styles.chips}>
               <Pill
@@ -653,6 +680,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           value={state.note}
           onChangeText={(text) => set({ note: text })}
           style={inputStyle}
+          ref={noteRef}
           multiline
           {...textFocusProps}
         />
