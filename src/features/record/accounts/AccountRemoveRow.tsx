@@ -14,7 +14,7 @@ import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space } from '@/theme/layout';
+import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 
@@ -32,6 +32,7 @@ export function AccountRemoveRow({ account, usage, onDeleted }: AccountRemoveRow
   const { remove } = useDeleteAccount();
   const { edit } = useEditAccount();
   const [confirming, setConfirming] = useState(false);
+  const [confirmingArchive, setConfirmingArchive] = useState(false);
 
   const state = usage ? accountDeleteState(usage) : null;
 
@@ -43,6 +44,7 @@ export function AccountRemoveRow({ account, usage, onDeleted }: AccountRemoveRow
   };
 
   const doArchive = () => {
+    setConfirmingArchive(false);
     const vars = {
       id: account.id,
       householdId: account.household_id,
@@ -57,7 +59,7 @@ export function AccountRemoveRow({ account, usage, onDeleted }: AccountRemoveRow
     const recorded = edit(vars, { stepId, ownerId: rc.userId });
     showToast({
       kind: 'ordinary',
-      text: undoLabelText('accountEdited', { name: account.name }),
+      text: undoLabelText('accountArchived', { name: account.name }),
       stepId: recorded ? stepId : null,
     });
   };
@@ -93,15 +95,37 @@ export function AccountRemoveRow({ account, usage, onDeleted }: AccountRemoveRow
 
   return (
     <View style={styles.block}>
-      <Pressable accessibilityRole="button" onPress={doArchive} style={styles.press}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => setConfirmingArchive(true)}
+        style={[styles.button, { borderColor: colors.line4 }]}
+      >
         <Text style={{ ...labelStyle, color: colors.ink }}>{t('accounts.remove.archive')}</Text>
-        {reason !== null ? <Text style={metaStyle}>{reason}</Text> : null}
       </Pressable>
+      {reason !== null ? <Text style={metaStyle}>{reason}</Text> : null}
+      <ConfirmSheet
+        visible={confirmingArchive}
+        title={t('accounts.remove.archiveConfirmTitle', { name: account.name })}
+        body={t('accounts.remove.archiveConfirmBody')}
+        cancelLabel={t('accounts.remove.cancel')}
+        confirmLabel={t('accounts.remove.archiveConfirmAction')}
+        onConfirm={doArchive}
+        onCancel={() => setConfirmingArchive(false)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   block: { gap: space.gapSm / 2 },
+  button: {
+    minHeight: space.touchMin,
+    borderWidth: 1,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: space.cardPad,
+    marginTop: space.gapSm,
+  },
   press: { paddingVertical: space.rowPad, gap: space.gapSm / 2 },
 });

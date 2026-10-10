@@ -127,6 +127,7 @@ export function UndoToastHost() {
         onAction={canUndo ? onUndo : undefined}
         onDismiss={() => dismissToast(toast.id)}
         dismissLabel={t('a11y.dismiss')}
+        tone={toast.tone}
       />
     </View>
   );

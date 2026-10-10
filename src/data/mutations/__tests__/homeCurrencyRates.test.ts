@@ -15,6 +15,8 @@ import {
 
 const mockRequest = jest.fn();
 const mockCurrencies = jest.fn();
+const mockLatest = jest.fn();
+jest.mock('@/db/fxRates', () => ({ fetchFxLatest: (...a: unknown[]) => mockLatest(...a) }));
 jest.mock('@/db/fxResolve', () => ({
   ...jest.requireActual('@/db/fxResolve'),
   requestRatesForDate: (...a: unknown[]) => mockRequest(...a),
@@ -39,6 +41,8 @@ let qc: QueryClient;
 beforeEach(async () => {
   mockRequest.mockReset();
   mockCurrencies.mockReset();
+  mockLatest.mockReset();
+  mockLatest.mockResolvedValue([]);
   resetResolveRateBackoffForTests();
   await AsyncStorage.clear();
   qc = new QueryClient();
@@ -218,5 +222,40 @@ describe('fetchRatesForHomeChange', () => {
     expect(await fetchRatesForHomeChange(qc, input)).toBe('failed');
     expect(mockRequest).toHaveBeenCalledTimes(2);
     expect(await stored()).toBeNull();
+  });
+
+  const row = (quote: string, rate_date: string) => ({ quote, rate: '1.1', rate_date, source: 'frankfurter-v2' });
+
+  it('treats EUR as covered on either side without a store lookup', async () => {
+    mockCurrencies.mockResolvedValue([]);
+    mockRequest.mockResolvedValue(['GBP']);
+    expect(await fetchRatesForHomeChange(qc, { ...input, next: 'EUR' })).toBe('done');
+    mockRequest.mockResolvedValue(['USD']);
+    expect(await fetchRatesForHomeChange(qc, { ...input, previous: 'EUR' })).toBe('done');
+    expect(mockLatest).not.toHaveBeenCalled();
+  });
+
+  it('accepts codes already stored within 7 days when this call stored none of them', async () => {
+    mockCurrencies.mockResolvedValue([]);
+    mockRequest.mockResolvedValue([]);
+    mockLatest.mockResolvedValue([row('USD', '2026-10-08'), row('GBP', '2026-10-01')]);
+    expect(await fetchRatesForHomeChange(qc, input)).toBe('done');
+    expect(mockLatest).toHaveBeenCalledWith({ fake: true }, '2026-10-08');
+  });
+
+  it('fails when a code is absent from the store or its row is older than 7 days', async () => {
+    mockCurrencies.mockResolvedValue([]);
+    mockRequest.mockResolvedValue([]);
+    mockLatest.mockResolvedValue([row('USD', '2026-10-08')]);
+    expect(await fetchRatesForHomeChange(qc, input)).toBe('failed');
+    mockLatest.mockResolvedValue([row('USD', '2026-10-08'), row('GBP', '2026-09-30')]);
+    expect(await fetchRatesForHomeChange(qc, input)).toBe('failed');
+  });
+
+  it('still fails when any chunk is null even if the store holds the rates', async () => {
+    mockCurrencies.mockResolvedValue([]);
+    mockRequest.mockResolvedValue(null);
+    mockLatest.mockResolvedValue([row('USD', '2026-10-08'), row('GBP', '2026-10-08')]);
+    expect(await fetchRatesForHomeChange(qc, input)).toBe('failed');
   });
 });

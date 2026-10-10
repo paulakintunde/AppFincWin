@@ -74,6 +74,7 @@ export function useCapCrossing(): { check(input: CapCheckInput): boolean } {
     hapticWarning();
     showToast({
       kind: input.stepId ? 'ordinary' : 'info',
+      tone: 'warning',
       stepId: input.stepId ?? null,
       text: {
         key: 'categories.cap.overToast',

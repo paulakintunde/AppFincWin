@@ -1,7 +1,9 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { colors } from '@/theme/tokens';
+import { getToast, resetToastForTests } from '@/state/undoToast';
 import type { AccountRow } from '@/db/rows';
 import { AccountRemoveRow } from '../AccountRemoveRow';
 
@@ -36,7 +38,10 @@ function wrap(usage: { liveLineCount: number; activeSeriesCount: number } | null
   );
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  resetToastForTests();
+});
 
 describe('AccountRemoveRow (REC-24)', () => {
   it('deletes an empty account after the confirm, then leaves the screen', async () => {
@@ -61,7 +66,15 @@ describe('AccountRemoveRow (REC-24)', () => {
     expect(queryByText('Delete account')).toBeNull();
     expect(getByText(reason)).toBeTruthy();
     await fireEvent.press(getByText('Archive account'));
+    expect(mockEdit).not.toHaveBeenCalled(); // asks first
+    expect(getByText('Archive Everyday?')).toBeTruthy();
+    await fireEvent.press(getByText('Archive'));
     expect(mockEdit).toHaveBeenCalledTimes(1);
+    expect(getToast()).toMatchObject({
+      kind: 'ordinary',
+      stepId: 'step-1',
+      text: { key: 'undo.label.accountArchived', params: { name: 'Everyday' } },
+    });
     const [vars] = mockEdit.mock.calls[0] as unknown as [{ patch: Record<string, unknown> }];
     expect(vars.patch).toEqual({ archived_at: '$now' });
     expect(mockRemove).not.toHaveBeenCalled();
@@ -72,5 +85,20 @@ describe('AccountRemoveRow (REC-24)', () => {
     expect(getByText('Archive account')).toBeTruthy();
     expect(queryByText('Delete account')).toBeNull();
     expect(queryByText(/stay in your history|repeating line/)).toBeNull();
+  });
+
+  it('cancelling the archive confirm does nothing', async () => {
+    const { getByText } = await wrap({ liveLineCount: 3, activeSeriesCount: 0 });
+    await fireEvent.press(getByText('Archive account'));
+    await fireEvent.press(getByText('Cancel'));
+    expect(mockEdit).not.toHaveBeenCalled();
+    expect(getToast()).toBeNull();
+  });
+
+  it('draws the archive control as a bounded, outlined button', async () => {
+    const { getByRole } = await wrap({ liveLineCount: 3, activeSeriesCount: 0 });
+    const style = StyleSheet.flatten(getByRole('button').props.style);
+    expect(style.borderWidth).toBe(1);
+    expect(style.borderColor).toBe(colors.line4);
   });
 });

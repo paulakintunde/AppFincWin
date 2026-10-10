@@ -10,6 +10,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { QueryClient } from '@tanstack/react-query';
 import { fetchHouseholdCurrencies } from '@/db/householdCurrencies';
+import { fetchFxLatest } from '@/db/fxRates';
 import { MAX_CODES_PER_ENSURE, requestRatesForDate } from '@/db/fxResolve';
 import { queryKeys } from '@/data/keys';
 import { isResolveRateThrottled } from '@/data/sync/resolveRateBackoff';
@@ -119,6 +120,34 @@ export async function retryOutstandingHomeRateCheck(qc: QueryClient, sessionUser
   await ensureRatesForHomeChange(qc, check, budget);
 }
 
+/** change_home_currency accepts a stored rate no older than this many days before the rate date. */
+const RATE_WINDOW_DAYS = 7;
+
+/** YYYY-MM-DD minus whole days, in UTC, so a device zone never shifts the date. */
+function minusDays(date: string, days: number): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number];
+  return new Date(Date.UTC(y, m - 1, d - days)).toISOString().slice(0, 10);
+}
+
+/**
+ * EUR is the base of every stored rate, so it is always covered. Another code counts as covered
+ * when the ensure call stored it, or when the shared store already holds a row for it inside
+ * change_home_currency's own window (ensure only reports codes it wrote this call, so a rate
+ * stored earlier today would otherwise read as missing). The RPC stays the authority.
+ */
+async function coversCodes(
+  client: ReturnType<typeof lazySupabaseClient>,
+  date: string,
+  storedCodes: ReadonlySet<string>,
+  codes: readonly string[]
+): Promise<boolean> {
+  const missing = codes.filter((c) => c !== 'EUR' && !storedCodes.has(c));
+  if (missing.length === 0) return true;
+  const earliest = minusDays(date, RATE_WINDOW_DAYS);
+  const rows = await fetchFxLatest(client, date);
+  return missing.every((code) => rows.some((r) => r.quote === code && r.rate_date >= earliest && r.rate_date <= date));
+}
+
 /**
  * D-22 / Confirmed Decision 11: the awaited rate fetch that must complete BEFORE change_home_currency
  * is called. Requests the new home currency and the old one against every currency the household
@@ -139,7 +168,7 @@ export async function fetchRatesForHomeChange(
     const chunks = await requestHomeChunks(client, input.date, input.next, others);
     if (chunks === null || chunks === 'budget') return 'failed';
     const covered = new Set(chunks.flat());
-    if (!covered.has(input.next) || !covered.has(input.previous)) return 'failed';
+    if (!(await coversCodes(client, input.date, covered, [input.next, input.previous]))) return 'failed';
     void qc.invalidateQueries({ queryKey: queryKeys.fxLatest() });
     return 'done';
   } catch {

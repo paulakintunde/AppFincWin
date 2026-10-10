@@ -24,10 +24,14 @@ export interface ToastViewProps {
   onAction?: () => void;
   onDismiss: () => void;
   dismissLabel: string;
+  /** 'warning' is the amber cap-crossing toast; everything else keeps the ink toast. */
+  tone?: 'default' | 'warning';
 }
 
-export function ToastView({ message, actionLabel, onAction, onDismiss, dismissLabel }: ToastViewProps) {
+export function ToastView({ message, actionLabel, onAction, onDismiss, dismissLabel, tone = 'default' }: ToastViewProps) {
   const { colors, pairing } = useTheme();
+  // Warning: surface text on warn1 is about 5.9:1 (>= 4.5:1), so the amber toast stays readable.
+  const background = tone === 'warning' ? colors.warn1 : colors.ink;
   const messageStyle = { ...textRole(pairing, 'body'), color: colors.surface };
   const actionStyle = { ...textRole(pairing, 'label'), color: colors.surface };
 
@@ -36,7 +40,7 @@ export function ToastView({ message, actionLabel, onAction, onDismiss, dismissLa
   }, [message]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.ink, borderRadius: radii.pill }]}>
+    <View style={[styles.container, { backgroundColor: background, borderRadius: radii.pill }]}>
       <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.message, messageStyle]}>
         {message}
       </Text>
