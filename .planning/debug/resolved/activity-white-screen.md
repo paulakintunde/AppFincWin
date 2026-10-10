@@ -1,5 +1,5 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "White screen after login on any account with no recurring-series offers (all new users)."
 created: 2026-10-10
 updated: 2026-10-10
@@ -48,5 +48,5 @@ workspace: C:/dev/fincwin-d1 (branch fix/activity-white-screen, from origin/main
 
 - root_cause: shortMonthName('') (from commonPreviousMonth([]) with zero offers) built Date.UTC(NaN) and Intl format threw RangeError on every RecurringReviewSheet render; no error boundary, so release builds went white. Confirmed by a regression test that fails with RangeError before the fix (3/3 red) and passes after.
 - fix: (1) shortMonthName returns '' for non-finite dates; (2) RecurringReviewSheet returns null with zero offers (after hooks); (3) ActivityNoOffers.test.tsx renders real ActivityScreen/sheet/card with zero offers; (4) RouteErrorBoundary (src/ui) exported as ErrorBoundary from app/(app)/_layout.tsx, reports via captureError area 'ui', copy errorBoundary.* in en.ts; (5) startup warning is third-party: expo-router@57.0.22 build/fork/useLinking.native.js getInitialState, getInitialURL().then(...) calls onUnhandledLinking which sets state before the container mounts. Dev-only (React DEV warning), no our-code frame in the stack; no workaround applied.
-- verification: typecheck clean, lint 0 errors (369 pre-existing warnings), depcruise clean, jest --coverage --ci 217 suites / 5828 tests pass.
+- verification: typecheck clean, lint 0 errors (369 pre-existing warnings), depcruise clean, jest --coverage --ci 217 suites / 5828 tests pass. Device: Pixel 9 development build e07f9578 against Metro on 8076 from this branch, same account that went white on main: Activity renders (October 2026, 3 transactions); logcat for the run (PID 18317) has no RangeError, only the Reanimated reduced-motion notice.
 - files_changed: [src/features/record/activity/SeriesOfferCard.tsx, src/features/record/activity/RecurringReviewSheet.tsx, src/features/record/activity/__tests__/ActivityNoOffers.test.tsx, src/ui/RouteErrorBoundary.tsx, src/ui/__tests__/RouteErrorBoundary.test.tsx, app/(app)/_layout.tsx, src/i18n/locales/en.ts, src/services/errors/errorReporter.ts]
