@@ -26,7 +26,7 @@ function captureKeyboard() {
 
 const base = space.sheetPadBottom + 10;
 
-function paddingBottom(screen: ReturnType<typeof render>): number {
+function paddingBottom(screen: Awaited<ReturnType<typeof render>>): number {
   return StyleSheet.flatten(screen.getByTestId('sheet-container').props.style).paddingBottom as number;
 }
 
