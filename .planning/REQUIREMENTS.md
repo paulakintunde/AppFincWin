@@ -124,13 +124,13 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **REC-16**: Re-importing the same or an overlapping statement does not create duplicates, while identical genuine transactions within one file are all kept
 - [x] **REC-17**: User can set an overdraft limit on a current or savings account and a credit limit on a card, and each account shows its standing — in credit, overdrawn within or beyond its overdraft, owing within or over its card limit — without treating overdrawn or over-limit as an error
 - [x] **REC-18**: User can record a transfer between their own accounts as one linked pair, import suggests matching transfer pairs such as card payments, and transfers are excluded from income and spending totals
-- [ ] **REC-19**: User can clone transactions (a line, or last month's recurring lines) as well as using recurring series
-- [ ] **REC-20**: The entry sheet offers a money keypad, Automatic payment and Refund toggles, a "Marking this paid moves X by Y" note, an FX "Saves as … at rate" note, and Received/Expected wording for income
-- [ ] **REC-21**: User can paste a list of lines to import them
-- [ ] **REC-22**: Categories show their usage and an optional monthly cap
-- [ ] **REC-23**: A new user can explore on sample figures, and a "Start fresh" banner clears them
-- [ ] **REC-24**: User can delete a money account that has no lines; an account with lines can only be archived
-- [ ] **REC-25**: User can change their home currency under You → Money; the change asks for today's rates for the new home currency against every currency in use (on-demand FX), and totals re-convert
+- [x] **REC-19**: User can clone transactions (a line, or last month's recurring lines) as well as using recurring series
+- [x] **REC-20**: The entry sheet offers a money keypad, Automatic payment and Refund toggles, a "Marking this paid moves X by Y" note, an FX "Saves as … at rate" note, and Received/Expected wording for income
+- [x] **REC-21**: User can paste a list of lines to import them
+- [x] **REC-22**: Categories show their usage and an optional monthly cap
+- [x] **REC-23**: A new user can explore on sample figures, and a "Start fresh" banner clears them
+- [x] **REC-24**: User can delete a money account that has no lines; an account with lines can only be archived
+- [x] **REC-25**: User can change their home currency under You → Money; the change asks for today's rates for the new home currency against every currency in use (on-demand FX), and totals re-convert
 - [ ] **REC-26**: After a statement is parsed, the user chooses whether it reconciles against entries already made or loads as new entries. Reconcile mode shows only rows missing from existing records, flags them, and adds them on approval (builds on REC-16 duplicate finding); new-entries mode loads every row as today
 - [ ] **REC-27**: Manual entries are auto-categorised from the description using the learned map and default keyword rules (`src/engine/categorize/guessCategory`, `DEFAULT_KEYWORD_RULES`), and the user can add, edit and remove description-to-category rules
 
@@ -141,19 +141,19 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **ACT-03**: User can search transactions across all months
 - [x] **ACT-04**: User can filter the list by category, account and amount
 - [x] **ACT-05**: User can select multiple transactions and delete them in one action
-- [ ] **ACT-06**: User can view the month as a week breakdown, a split view, a balance view and a calendar *(moved from Phase 7 to Phase 2.2 on 2026-10-07)*
-- [ ] **ACT-07**: User can view Activity by day, with each day's net subtotal
-- [ ] **ACT-08**: Every Activity grouping shows a net subtotal, including Week 1 to Week 5 in the week view and each group in In / out and Running balance
-- [ ] **ACT-09**: User can sort Activity by Newest, Oldest, Biggest, Smallest or A–Z
-- [ ] **ACT-10**: Activity shows the number of transactions next to the total
-- [ ] **ACT-11**: Lines that recur in logged history (not only imports) are offered as a series, with Review each, Mark all monthly and Not now
-- [ ] **ACT-12**: Future-dated lines and transfers show as Scheduled, distinct from Pending
-- [ ] **ACT-13**: Tapping a line opens a read-only detail sheet with Mark as paid, Edit and Delete
-- [ ] **ACT-14**: User can swipe a line to mark it paid or unpaid, or to delete it
-- [ ] **ACT-15**: The month list shows each month's entry count and offers "Add next month"
-- [ ] **ACT-16**: User can set the first day of the week used by the week and calendar views
-- [ ] **ACT-17**: An account's detail shows Coming in and Going out separately (green and red), plus the balance after everything pending; the in/out split of pending lines is computed from existing data
-- [ ] **ACT-18**: Activity rows show a Paid tag (Received for income) in green, alongside the Pending, Due and Overdue tags in red
+- [x] **ACT-06**: User can view the month as a week breakdown, a split view, a balance view and a calendar *(moved from Phase 7 to Phase 2.2 on 2026-10-07)*
+- [x] **ACT-07**: User can view Activity by day, with each day's net subtotal
+- [x] **ACT-08**: Every Activity grouping shows a net subtotal, including Week 1 to Week 5 in the week view and each group in In / out and Running balance
+- [x] **ACT-09**: User can sort Activity by Newest, Oldest, Biggest, Smallest or A–Z
+- [x] **ACT-10**: Activity shows the number of transactions next to the total
+- [x] **ACT-11**: Lines that recur in logged history (not only imports) are offered as a series, with Review each, Mark all monthly and Not now
+- [x] **ACT-12**: Future-dated lines and transfers show as Scheduled, distinct from Pending
+- [x] **ACT-13**: Tapping a line opens a read-only detail sheet with Mark as paid, Edit and Delete
+- [x] **ACT-14**: User can swipe a line to mark it paid or unpaid, or to delete it
+- [x] **ACT-15**: The month list shows each month's entry count and offers "Add next month"
+- [x] **ACT-16**: User can set the first day of the week used by the week and calendar views
+- [x] **ACT-17**: An account's detail shows Coming in and Going out separately (green and red), plus the balance after everything pending; the in/out split of pending lines is computed from existing data
+- [x] **ACT-18**: Activity rows show a Paid tag (Received for income) in green, alongside the Pending, Due and Overdue tags in red
 
 ### Statement Import (PDF)
 
@@ -464,26 +464,26 @@ Populated during roadmap creation.
 | ACT-03 | Phase 2 - Record | Complete |
 | ACT-04 | Phase 2 - Record | Complete |
 | ACT-05 | Phase 2 - Record | Complete |
-| ACT-06 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-07 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-08 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-09 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-10 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-11 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-12 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-13 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-14 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-15 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-16 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-17 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| ACT-18 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| REC-19 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| REC-20 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| REC-21 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| REC-22 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| REC-23 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| REC-24 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
-| REC-25 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| ACT-06 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-07 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-08 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-09 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-10 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-11 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-12 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-13 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-14 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-15 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-16 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-17 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| ACT-18 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| REC-19 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| REC-20 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| REC-21 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| REC-22 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| REC-23 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| REC-24 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
+| REC-25 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
 | REC-26 | Phase 2.3 - Record follow-ups | Pending |
 | REC-27 | Phase 2.3 - Record follow-ups | Pending |
 | IMP-01 | Phase 2.1 - PDF statement import | Pending |
@@ -602,12 +602,13 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 234 total (75 ticked)
+- v1 requirements: 234 total (95 ticked)
 - Mapped to phases: 234
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-10-09 — Phase 2.2 implemented: ACT-06..ACT-18 and REC-19..REC-25 marked "Implemented, awaiting device walkthrough and verification" (ticked only after 02.2-VERIFICATION.md, as for Phase 1); coverage recounted to 231/231 v1 requirements mapped.*
+*Last updated: 2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
+*2026-10-09 — Phase 2.2 implemented: ACT-06..ACT-18 and REC-19..REC-25 marked "Implemented, awaiting device walkthrough and verification" (ticked only after 02.2-VERIFICATION.md, as for Phase 1); coverage recounted to 231/231 v1 requirements mapped.*
 *2026-10-10 — Phase 2.2 walkthrough follow-ups: REC-26, REC-27 and ACC-14 added and mapped to the new Phase 2.3; coverage 234/234 (75 ticked).*
 *Previously: 2026-09-26 — Phase 1 closed: FND-10, MON-01, MON-02, MON-03, MON-07, MON-08, MON-14 ticked on 01-VERIFICATION.md evidence; FND-04/FND-05 ticked (enforce_admins on). 203/203 v1 requirements mapped*
