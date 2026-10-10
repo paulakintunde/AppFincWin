@@ -66,6 +66,9 @@ export function RecurringReviewSheet({ visible, offers, rowsById, onClose }: Rec
     close();
   };
 
+  // Nothing to review (every new user): render nothing rather than an empty sheet.
+  if (offers.length === 0) return null;
+
   const month = shortMonthName(commonPreviousMonth(offers), formatter.locale);
   const title = t('activity.review.title');
 

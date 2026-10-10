@@ -8,7 +8,11 @@ import { DeviceHomeCurrencyDefault } from '@/features/record/useDeviceHomeCurren
 import { UndoToastHost } from '@/features/record/history/UndoToastHost';
 import { SampleBanner } from '@/features/record/samples/SampleBanner';
 import { SampleClearPrompts } from '@/features/record/samples/SampleClearPrompts';
+import { RouteErrorBoundary } from '@/ui/RouteErrorBoundary';
 import { Screen } from '@/ui/Screen';
+
+// Expo Router picks this up as the group's error boundary.
+export { RouteErrorBoundary as ErrorBoundary };
 
 export default function AppLayout() {
   const { loading, needsPrompt } = useConsent();

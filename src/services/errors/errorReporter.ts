@@ -11,7 +11,7 @@ import * as Sentry from '@sentry/react-native';
 import { getErrorTrackingEnv, type ErrorTrackingEnv } from '@/config/env';
 import { scrubMessage, scrubStackFrame } from './scrub';
 
-export type ErrorArea = 'auth' | 'theme' | 'sync' | 'boot' | 'unknown';
+export type ErrorArea = 'auth' | 'theme' | 'sync' | 'boot' | 'ui' | 'unknown';
 
 // The subset of the real Sentry module this file depends on, so tests can inject a fake
 // without calling the real SDK's global init.
