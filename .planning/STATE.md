@@ -33,7 +33,7 @@ Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closur
 Phase 02.1 (PDF statement import): planned (12 plans, 7 waves); not started — replan after 02.2 (see Blockers). Phase 02.2 (record-polish): 34/35 plans executed, see above. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
 Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
 Status: Executing Phase 02.2 — waiting on the device walkthrough, then plan 35 Task 3 (validation sign-off) and phase verification
-Last activity: 2026-10-10 - Completed quick task 261010-i7u: Phase 02.2 walkthrough fixes
+Last activity: 2026-10-10 - Completed quick task 261010-kpe: amount keypad and Android swipe-back; 02.2 walkthrough Part E approved
 
 ## Performance Metrics
 
@@ -165,6 +165,7 @@ Recent decisions affecting current work:
 | 260926-0mn | Launch positioning into Phase 5, "A · Refine" navy icon, pricing advisory | 2026-09-26 | 414920d | [260926-0mn-launch-positioning-phase5-pricing-adviso](./quick/260926-0mn-launch-positioning-phase5-pricing-adviso/) |
 | 261009-mvn | Phase 02.2 follow-ups: home-currency conflict message, More menu action mode, real failed-write entities, leftover worktree folders removed | 2026-10-09 | decaafd | [261009-mvn-phase-02-2-follow-ups-home-currency-conf](./quick/261009-mvn-phase-02-2-follow-ups-home-currency-conf/) |
 | 261010-i7u | Phase 02.2 walkthrough fixes: 7-column calendar with activity tile and scroll, one-line swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check; Phase 02.3 requirements recorded | 2026-10-10 | fd8e9cf | [261010-i7u-02-2-walkthrough-fixes-calendar-swipe-la](./quick/261010-i7u-02-2-walkthrough-fixes-calendar-swipe-la/) |
+| 261010-kpe | Amount keypad returns after text fields (explicit active field); Android edge swipe-back on inner screens with slide animation; You → Activity no longer duplicates Activity | 2026-10-10 | 2a77a4d | [261010-kpe-amount-keypad-returns-after-text-fields-](./quick/261010-kpe-amount-keypad-returns-after-text-fields-/) |
 
 ## Deferred Items
 
