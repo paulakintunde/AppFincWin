@@ -3,8 +3,8 @@
 // Mark paid and the entry points into the transaction sheet. The list is the visual anchor;
 // Shell's FAB replaces the Add button in Phase 3. Search (this month or every month),
 // filters and bulk select layer on top (ACT-03, ACT-04, ACT-05); the list keeps visual priority.
-import React, { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { useCategoryLookup } from '@/data/queries/categories';
@@ -80,6 +80,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
   });
   const flow = useRowFlow(rowActions, month);
   const [addOpen, setAddOpen] = useState(false);
+  // Calendar: tapping a day scrolls its detail (below the grid) into view.
+  const calendarScroll = useRef<ScrollView>(null);
 
   const categories = useCategoryLookup(rc.userId ?? undefined);
   const { remove: bulkRemove } = useBulkDelete();
@@ -290,7 +292,9 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
       </View>
       <View style={styles.list}>
         {calendar ? (
+          <ScrollView ref={calendarScroll} testID="calendar-scroll" keyboardShouldPersistTaps="handled">
           <CalendarView
+            onDetailLayout={(y) => calendarScroll.current?.scrollTo({ y, animated: true })}
             month={month}
             weekStart={rc.weekStart ?? 1}
             rows={vm.itemRows}
@@ -298,6 +302,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, onOpenYou, initi
             onRowPress={flow.openDetail}
             renderRow={(row) => renderActivityRow(row, 'only')}
           />
+          </ScrollView>
         ) : (
         <FlashList
           data={items}
