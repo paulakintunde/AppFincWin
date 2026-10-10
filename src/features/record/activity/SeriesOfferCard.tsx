@@ -39,7 +39,11 @@ export function commonPreviousMonth(offers: readonly SeriesOffer[]): string {
 
 export function shortMonthName(month: string, locale: string): string {
   const [y, m] = month.split('-').map(Number) as [number, number];
-  return new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(Date.UTC(y, m - 1, 1));
+  const at = Date.UTC(y, m - 1, 1);
+  // A blank or malformed month (no offers, so no common previous month) has no name; Intl
+  // throws RangeError on an invalid time, which unmounted the whole screen.
+  if (!Number.isFinite(at)) return '';
+  return new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(at);
 }
 
 /** A 44px outlined button in ink (Mark all monthly on the card, Leave them all in the sheet). */

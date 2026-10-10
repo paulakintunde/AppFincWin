@@ -61,6 +61,11 @@ const en = {
       signInFailed: 'Sign-in didn’t go through. Try again.',
     },
   },
+  errorBoundary: {
+    heading: 'Something went wrong',
+    body: 'This screen hit a problem and could not load. Your records are unchanged.',
+    retry: 'Try again',
+  },
   consent: {
     heading: 'Share anonymous usage?',
     body: 'Helps us see where the app is confusing — never your amounts, payees or account names. Change this anytime in settings.',
