@@ -8,7 +8,7 @@ FincWin ships in build order dictated by one architectural fact: local-first was
 
 **Phase Numbering:**
 - Integer phases (0, 1, 2, 3...): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+- Decimal phases (2.1, 2.2, 2.3): Urgent insertions (marked with INSERTED)
 
 Decimal phases appear between their surrounding integers in numeric order.
 
@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Record** - Transactions, recurring entries, transfers, statement import (CSV, OFX/QFX), account limits and standing, Activity list, compensating-write undo (completed 2026-10-09)
 - [ ] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy
 - [ ] **Phase 2.2: Record polish** (INSERTED) - Activity views and subtotals, sort, recurring-from-history, clone, detail sheet and swipe, entry-sheet extras, paste import, sample data
+- [ ] **Phase 2.3: Record follow-ups** (INSERTED) - Import reconcile-or-new choice, description auto-categorise rules, signed-out account chooser
 - [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB
 - [ ] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
@@ -375,6 +376,19 @@ Plans:
 **Wave 10** *(blocked on Wave 9 completion)*
 - [ ] 02.2-35-PLAN.md — New dev build, device walkthrough of all eight criteria, validation sign-off (W10)
 
+### Phase 02.3: Record follow-ups from the 02.2 walkthrough (INSERTED)
+
+**Goal:** Three requests from the Phase 02.2 device walkthrough: choosing how a parsed statement meets existing entries, categorising manual entries from their description, and offering the previous account on the signed-out screen.
+**Requirements**: REC-26, REC-27, ACC-14
+**Depends on:** Phase 02.2
+**Inserted:** 2026-10-10 (device walkthrough, user requests)
+**Success Criteria** (what must be TRUE):
+  1. After a statement is parsed, the user chooses to reconcile against existing entries or to load every row as new. Reconcile shows only the rows missing from existing records, flags them, and adds them on approval.
+  2. A manual entry is categorised from its description using the learned map and the default keyword rules, and the user can add, edit and remove description-to-category rules.
+  3. The signed-out screen offers "Continue as <previous account>" or "Use a different account". Only the last account's display identity and provider are remembered, never tokens, and a different Google account shows the account picker.
+**Plans:** 0 plans
+**Status:** Not started (not planned)
+
 ### Phase 3: Shell
 **Goal**: The app's navigation chrome matches the design system exactly.
 **Depends on**: Phase 2
@@ -573,6 +587,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2. Record | 50/50 | Complete | 2026-10-09 |
 | 2.1 PDF statement import | 0/12 | Planned; replan before executing | - |
 | 2.2 Record polish | 34/35 | In Progress (device walkthrough) | - |
+| 2.3 Record follow-ups | 0/TBD | Not started | - |
 | 3. Shell | 0/16 | Planned; check against 2.2 before executing | - |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |

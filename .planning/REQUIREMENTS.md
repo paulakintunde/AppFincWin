@@ -75,6 +75,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **ACC-11**: A sign-in method restricted to allow-listed store-review accounts exists, so reviewers can enter an app that otherwise offers only Apple and Google
 - [x] **ACC-12**: The auth session is stored encrypted, with its key held in secure storage, working around secure storage's 2048-byte limit
 - [ ] **ACC-13**: Server-side functions enforce per-user rate limits
+- [ ] **ACC-14**: The signed-out screen offers "Continue as <previous account>" or "Use a different account". Only the last account's display identity and provider are remembered, never tokens; choosing a different Google account shows the account picker
 
 ### Money & Data Integrity
 
@@ -130,6 +131,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **REC-23**: A new user can explore on sample figures, and a "Start fresh" banner clears them
 - [ ] **REC-24**: User can delete a money account that has no lines; an account with lines can only be archived
 - [ ] **REC-25**: User can change their home currency under You → Money; the change asks for today's rates for the new home currency against every currency in use (on-demand FX), and totals re-convert
+- [ ] **REC-26**: After a statement is parsed, the user chooses whether it reconciles against entries already made or loads as new entries. Reconcile mode shows only rows missing from existing records, flags them, and adds them on approval (builds on REC-16 duplicate finding); new-entries mode loads every row as today
+- [ ] **REC-27**: Manual entries are auto-categorised from the description using the learned map and default keyword rules (`src/engine/categorize/guessCategory`, `DEFAULT_KEYWORD_RULES`), and the user can add, edit and remove description-to-category rules
 
 ### Activity
 
@@ -416,6 +419,7 @@ Populated during roadmap creation.
 | ACC-11 | Phase 10 - System | Pending |
 | ACC-12 | Phase 0 - Foundation | Complete |
 | ACC-13 | Phase 10 - System | Pending |
+| ACC-14 | Phase 2.3 - Record follow-ups | Pending |
 | MON-01 | Phase 1 - Money Core | Complete |
 | MON-02 | Phase 1 - Money Core | Complete |
 | MON-03 | Phase 1 - Money Core | Complete |
@@ -480,6 +484,8 @@ Populated during roadmap creation.
 | REC-23 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
 | REC-24 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
 | REC-25 | Phase 2.2 - Record polish | Implemented 2026-10-09 (on main via PR #52); awaiting device walkthrough and verification |
+| REC-26 | Phase 2.3 - Record follow-ups | Pending |
+| REC-27 | Phase 2.3 - Record follow-ups | Pending |
 | IMP-01 | Phase 2.1 - PDF statement import | Pending |
 | IMP-02 | Phase 2.1 - PDF statement import | Pending |
 | IMP-03 | Phase 2.1 - PDF statement import | Pending |
@@ -596,11 +602,12 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 231 total (75 ticked)
-- Mapped to phases: 231
+- v1 requirements: 234 total (75 ticked)
+- Mapped to phases: 234
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
 *Last updated: 2026-10-09 — Phase 2.2 implemented: ACT-06..ACT-18 and REC-19..REC-25 marked "Implemented, awaiting device walkthrough and verification" (ticked only after 02.2-VERIFICATION.md, as for Phase 1); coverage recounted to 231/231 v1 requirements mapped.*
+*2026-10-10 — Phase 2.2 walkthrough follow-ups: REC-26, REC-27 and ACC-14 added and mapped to the new Phase 2.3; coverage 234/234 (75 ticked).*
 *Previously: 2026-09-26 — Phase 1 closed: FND-10, MON-01, MON-02, MON-03, MON-07, MON-08, MON-14 ticked on 01-VERIFICATION.md evidence; FND-04/FND-05 ticked (enforce_admins on). 203/203 v1 requirements mapped*
