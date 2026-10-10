@@ -62,8 +62,12 @@ jest.mock('@/features/consent/useConsent', () => ({
 }));
 
 const mockRouterPush = jest.fn();
+const mockRouterDismissTo = jest.fn();
 jest.mock('expo-router', () => ({
-  router: { push: (...a: unknown[]) => mockRouterPush(...a) },
+  router: {
+    push: (...a: unknown[]) => mockRouterPush(...a),
+    dismissTo: (...a: unknown[]) => mockRouterDismissTo(...a),
+  },
 }));
 
 const mockCheckConnection = jest.fn();
@@ -329,8 +333,8 @@ describe('YouScreen Money section', () => {
       fireEvent.press(getByText('Import statement'));
       fireEvent.press(getByText('History'));
     });
+    expect(mockRouterDismissTo).toHaveBeenCalledWith('/activity');
     expect(mockRouterPush.mock.calls.map((c) => c[0])).toEqual([
-      '/activity',
       '/accounts',
       '/categories',
       { pathname: '/import', params: { entry: 'you' } },
