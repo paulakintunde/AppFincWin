@@ -3,8 +3,9 @@
  * (entry, category, account, import) is built on. Phase 3 (NAV-03) swaps internals for
  * @gorhom/bottom-sheet with drag-to-dismiss; props stay the same.
  */
-import React, { type ReactNode } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -27,11 +28,33 @@ export interface SheetProps {
   accessibilityLabel?: string;
 }
 
+/**
+ * Android: a transparent Modal is its own window that adjustResize does not shrink under
+ * SDK 57 edge-to-edge, and KeyboardAvoidingView has no `behavior` there, so the keyboard
+ * would cover the focused input. Track its height and pad the sheet by it; the capped
+ * container then shrinks and the SheetScroll body scrolls the focused field into view.
+ * iOS keeps KeyboardAvoidingView 'padding'.
+ */
+function useAndroidKeyboardHeight(): number {
+  const [kb, setKb] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== 'android') return undefined;
+    const show = Keyboard.addListener('keyboardDidShow', (e) => setKb(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKb(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return kb;
+}
+
 export function Sheet({ visible, onDismiss, children, accessibilityLabel }: SheetProps) {
   const t = useT();
   const { colors } = useTheme();
   const insets = useScreenInsets();
   const { height } = useWindowDimensions();
+  const keyboardHeight = useAndroidKeyboardHeight();
 
   if (!visible) {
     return null;
@@ -60,7 +83,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel }: Shee
               borderTopRightRadius: radii.sheetTop,
               paddingHorizontal: space.sheetCornerPad,
               paddingTop: space.sheetCornerPad,
-              paddingBottom: space.sheetPadBottom + insets.bottom,
+              paddingBottom: space.sheetPadBottom + insets.bottom + keyboardHeight,
             },
           ]}
         >
@@ -86,6 +109,7 @@ export function SheetScroll({ children, contentContainerStyle }: SheetScrollProp
       testID="sheet-scroll"
       style={styles.scroll}
       keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
       contentContainerStyle={contentContainerStyle}
     >
       {children}

@@ -1,6 +1,8 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { colors as tokenColors } from '@/theme/tokens';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { CalendarView } from '../views/CalendarView';
 
@@ -86,11 +88,48 @@ describe('CalendarView', () => {
     expect(sun.getAllByTestId('calendar-blank').length).toBe(4 + 0);
   });
 
-  it('shows category dots and an accessible label per day', async () => {
+  it.each([360, 411.43])('renders 7 cells in the header and in every week at %s wide', async (width) => {
+    const dims = jest.requireActual('react-native').Dimensions;
+    jest.spyOn(dims, 'get').mockReturnValue({ width, height: 800, scale: 2, fontScale: 1 });
     const screen = await renderCal(1);
-    expect(screen.getAllByTestId('calendar-dot').length).toBe(2);
-    const cell = screen.getByLabelText(/^Oct 14, 2 lines, net −£12\.00/);
-    expect(cell.props.accessibilityState.selected).toBe(false);
+    expect(screen.getByTestId('calendar-header').children.length).toBe(7);
+    for (let w = 0; w < 5; w += 1) {
+      expect(screen.getByTestId(`calendar-week-${w}`).children.length).toBe(7);
+    }
+    expect(screen.queryByTestId('calendar-week-5')).toBeNull();
+    jest.restoreAllMocks();
+  });
+
+  it('puts a tile and one net-coloured dot on days with activity only', async () => {
+    const screen = await renderCal(1, [
+      ROWS[0]!,
+      row({ id: 'in', local_date: '2026-10-20', amountHome: 500 }),
+      row({ id: 'z1', local_date: '2026-10-22', amountHome: 100 }),
+      row({ id: 'z2', local_date: '2026-10-22', amountHome: -100 }),
+    ]);
+    const dots = screen.getAllByTestId('calendar-dot');
+    expect(dots.length).toBe(3);
+    const colours = dots.map((d) => StyleSheet.flatten(d.props.style).backgroundColor);
+    expect(colours).toContain(tokenColors.danger);
+    expect(colours).toContain(tokenColors.inkFaint);
+    expect(colours.some((c) => c !== tokenColors.danger && c !== tokenColors.inkFaint)).toBe(true);
+    const active = screen.getByLabelText(/^Oct 14, 1 line/);
+    expect(StyleSheet.flatten(active.props.style).backgroundColor).toBe(tokenColors.fill1);
+    const empty = screen.getByLabelText(/^Oct 15, no lines/);
+    expect(StyleSheet.flatten(empty.props.style).backgroundColor).toBe('transparent');
+  });
+
+  it('reports the detail y when a day is selected', async () => {
+    const onDetailLayout = jest.fn();
+    const screen = await render(
+      <ThemeProvider>
+        <CalendarView month="2026-10" weekStart={1} rows={ROWS} today="2026-10-25" onRowPress={jest.fn()} onDetailLayout={onDetailLayout} />
+      </ThemeProvider>
+    );
+    await fireEvent.press(screen.getByLabelText(/^Oct 14, 2 lines/));
+    const detail = screen.getByText('Oct 14, 2026').parent!.parent!;
+    detail.props.onLayout({ nativeEvent: { layout: { x: 0, y: 240, width: 300, height: 100 } } });
+    expect(onDetailLayout).toHaveBeenCalledWith(240);
   });
 
   it('selects a day, lists its lines, and deselects on a second tap', async () => {

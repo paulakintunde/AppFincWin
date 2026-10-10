@@ -12,7 +12,7 @@
  *
  * Reduced motion: the library's spring is the only motion; no extra animation is added.
  */
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -20,7 +20,14 @@ import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { hapticLight } from '@/ui/haptics';
 
-export const SWIPE_ACTION_WIDTH = 88; // UI-SPEC Confirmed Decision 10
+export const SWIPE_ACTION_WIDTH = 88; // UI-SPEC Confirmed Decision 10; the minimum, a longer label grows its zone
+
+const ZONE_PAD = space.gapSm;
+
+/** Zone width for a measured label: never below the minimum, grows to fit the word plus padding. */
+export function zoneWidthFor(labelWidth: number): number {
+  return Math.max(SWIPE_ACTION_WIDTH, Math.ceil(labelWidth) + 2 * ZONE_PAD);
+}
 
 export interface SwipeAction {
   word: string;
@@ -41,22 +48,43 @@ export interface SwipeRowProps {
   accessibilityLabel?: string;
 }
 
-function ActionZone({ action, align }: { action: SwipeAction; align: 'left' | 'right' }) {
+function ActionZone({
+  action,
+  align,
+  width,
+  onMeasure,
+}: {
+  action: SwipeAction;
+  align: 'left' | 'right';
+  width: number;
+  onMeasure: (labelWidth: number) => void;
+}) {
   const { colors, pairing } = useTheme();
   const backgroundColor = action.tone === 'danger' ? colors.danger : colors.accent;
   return (
     <View
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
-      style={[styles.zone, { backgroundColor, alignItems: align === 'left' ? 'flex-start' : 'flex-end' }]}
+      style={[styles.zone, { width, backgroundColor, alignItems: align === 'left' ? 'flex-start' : 'flex-end' }]}
     >
-      <Text style={{ ...textRole(pairing, 'label'), color: colors.surface }}>{action.word}</Text>
+      <Text
+        numberOfLines={1}
+        onTextLayout={(e) => {
+          const w = e.nativeEvent.lines[0]?.width;
+          if (w !== undefined) onMeasure(w);
+        }}
+        style={{ ...textRole(pairing, 'label'), color: colors.surface }}
+      >
+        {action.word}
+      </Text>
     </View>
   );
 }
 
 export function SwipeRow({ children, left, right, disabled = false, onPress, accessibilityLabel }: SwipeRowProps) {
   const ref = useRef<SwipeableMethods>(null);
+  const [leftZone, setLeftZone] = useState(SWIPE_ACTION_WIDTH);
+  const [rightZone, setRightZone] = useState(SWIPE_ACTION_WIDTH);
 
   const commit = useCallback((action: SwipeAction | undefined) => {
     if (!action) return;
@@ -99,12 +127,16 @@ export function SwipeRow({ children, left, right, disabled = false, onPress, acc
       ref={ref}
       enabled={!disabled}
       friction={2}
-      leftThreshold={SWIPE_ACTION_WIDTH}
-      rightThreshold={SWIPE_ACTION_WIDTH}
+      leftThreshold={leftZone}
+      rightThreshold={rightZone}
       overshootLeft
       overshootRight
-      renderLeftActions={left ? () => <ActionZone action={left} align="left" /> : undefined}
-      renderRightActions={right ? () => <ActionZone action={right} align="right" /> : undefined}
+      renderLeftActions={
+        left ? () => <ActionZone action={left} align="left" width={leftZone} onMeasure={(w) => setLeftZone(zoneWidthFor(w))} /> : undefined
+      }
+      renderRightActions={
+        right ? () => <ActionZone action={right} align="right" width={rightZone} onMeasure={(w) => setRightZone(zoneWidthFor(w))} /> : undefined
+      }
       onSwipeableOpen={onSwipeableOpen}
     >
       {body}
@@ -114,9 +146,8 @@ export function SwipeRow({ children, left, right, disabled = false, onPress, acc
 
 const styles = StyleSheet.create({
   zone: {
-    width: SWIPE_ACTION_WIDTH,
     minHeight: space.touchMin,
     justifyContent: 'center',
-    paddingHorizontal: space.cardPad,
+    paddingHorizontal: ZONE_PAD,
   },
 });

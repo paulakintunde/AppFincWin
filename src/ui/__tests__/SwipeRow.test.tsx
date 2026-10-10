@@ -2,7 +2,8 @@ import React from 'react';
 import { Text } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
-import { SwipeRow } from '../SwipeRow';
+import { StyleSheet } from 'react-native';
+import { SwipeRow, SWIPE_ACTION_WIDTH, zoneWidthFor } from '../SwipeRow';
 import { hapticLight } from '../haptics';
 
 jest.mock('../haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
@@ -88,5 +89,26 @@ describe('SwipeRow', () => {
     await act(async () => mockCaptured.props.onSwipeableOpen('left'));
     expect(right.onCommit).toHaveBeenCalledTimes(1);
     expect(left.onCommit).not.toHaveBeenCalled();
+  });
+
+  it('keeps the action label on one line', async () => {
+    await setup();
+    const r = await render(<ThemeProvider>{mockCaptured.props.renderRightActions()}</ThemeProvider>);
+    expect((await r.findByText('Delete', { includeHiddenElements: true })).props.numberOfLines).toBe(1);
+  });
+
+  it('grows the zone to fit a long label and drives the threshold from it', async () => {
+    expect(zoneWidthFor(10)).toBe(SWIPE_ACTION_WIDTH);
+    expect(zoneWidthFor(100)).toBe(116);
+    await setup({ left: { ...left, word: 'Received' } });
+    expect(mockCaptured.props.leftThreshold).toBe(SWIPE_ACTION_WIDTH);
+    const l = await render(<ThemeProvider>{mockCaptured.props.renderLeftActions()}</ThemeProvider>);
+    const label = await l.findByText('Received', { includeHiddenElements: true });
+    await act(async () => label.props.onTextLayout({ nativeEvent: { lines: [{ width: 100 }] } }));
+    expect(mockCaptured.props.leftThreshold).toBe(116);
+    expect(mockCaptured.props.rightThreshold).toBe(SWIPE_ACTION_WIDTH);
+    const l2 = await render(<ThemeProvider>{mockCaptured.props.renderLeftActions()}</ThemeProvider>);
+    const zone = (await l2.findByText('Received', { includeHiddenElements: true })).parent!;
+    expect(StyleSheet.flatten(zone.props.style).width).toBe(116);
   });
 });

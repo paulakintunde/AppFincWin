@@ -5,7 +5,7 @@ milestone_name: milestone
 status: executing
 stopped_at: Phase 02.2 plan 35 Task 2 — Android device walkthrough (development build e07f9578)
 last_updated: "2026-10-09T23:59:00.000Z"
-last_activity: 2026-10-09 -- Phase 02.2 plans 01-34 on main; quick task 261009-mvn; planning docs refreshed
+last_activity: 2026-10-10 -- Phase 02.2 walkthrough Parts A-D approved; quick task 261010-i7u fixes; Phase 02.3 added
 progress:
   total_phases: 14
   completed_phases: 2
@@ -31,8 +31,9 @@ Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on th
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
 Phase 02.1 (PDF statement import): planned (12 plans, 7 waves); not started — replan after 02.2 (see Blockers). Phase 02.2 (record-polish): 34/35 plans executed, see above. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
+Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
 Status: Executing Phase 02.2 — waiting on the device walkthrough, then plan 35 Task 3 (validation sign-off) and phase verification
-Last activity: 2026-10-09 - Completed quick task 261009-mvn: Phase 02.2 follow-ups
+Last activity: 2026-10-10 - Completed quick task 261010-i7u: Phase 02.2 walkthrough fixes
 
 ## Performance Metrics
 
@@ -163,6 +164,7 @@ Recent decisions affecting current work:
 | 260925-8bi | Replace placeholder app icons with FincWin F logo | 2026-09-25 | 3020470 | [260925-8bi-replace-placeholder-app-icons-with-fincw](./quick/260925-8bi-replace-placeholder-app-icons-with-fincw/) |
 | 260926-0mn | Launch positioning into Phase 5, "A · Refine" navy icon, pricing advisory | 2026-09-26 | 414920d | [260926-0mn-launch-positioning-phase5-pricing-adviso](./quick/260926-0mn-launch-positioning-phase5-pricing-adviso/) |
 | 261009-mvn | Phase 02.2 follow-ups: home-currency conflict message, More menu action mode, real failed-write entities, leftover worktree folders removed | 2026-10-09 | decaafd | [261009-mvn-phase-02-2-follow-ups-home-currency-conf](./quick/261009-mvn-phase-02-2-follow-ups-home-currency-conf/) |
+| 261010-i7u | Phase 02.2 walkthrough fixes: 7-column calendar with activity tile and scroll, one-line swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check; Phase 02.3 requirements recorded | 2026-10-10 | fd8e9cf | [261010-i7u-02-2-walkthrough-fixes-calendar-swipe-la](./quick/261010-i7u-02-2-walkthrough-fixes-calendar-swipe-la/) |
 
 ## Deferred Items
 

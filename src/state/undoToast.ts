@@ -15,9 +15,13 @@ export interface ToastText {
   params?: Record<string, string | number>;
 }
 
+/** Colour treatment only; `kind` alone decides duration and Undo. */
+export type ToastTone = 'default' | 'warning';
+
 export interface ToastState {
   id: number;
   kind: ToastKind;
+  tone: ToastTone;
   text: ToastText | null;
   stepId: string | null;
   refusal: UndoConflict | null;
@@ -59,6 +63,7 @@ function subscribe(listener: () => void): () => void {
 /** Replaces any current toast with a new one (a new id), even mid-display. */
 export function showToast(t: {
   kind: ToastKind;
+  tone?: ToastTone;
   text?: ToastText | null;
   stepId?: string | null;
   refusal?: UndoConflict | null;
@@ -66,6 +71,7 @@ export function showToast(t: {
   toast = {
     id: nextId++,
     kind: t.kind,
+    tone: t.tone ?? 'default',
     text: t.text ?? null,
     stepId: t.stepId ?? null,
     refusal: t.refusal ?? null,

@@ -57,6 +57,7 @@ describe('useCapCrossing', () => {
     expect(mockWarning).toHaveBeenCalledTimes(1);
     expect(getToast()).toMatchObject({
       kind: 'info',
+      tone: 'warning',
       text: { key: 'categories.cap.overToast', params: { category: 'Groceries', amount: '£10.00' } },
     });
   });
