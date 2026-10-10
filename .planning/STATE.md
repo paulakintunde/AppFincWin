@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 02.2 plan 35 Task 2 — Android device walkthrough (development build e07f9578)
+stopped_at: Completed 02.2-35-PLAN.md (walkthrough approved, VALIDATION signed off); next phase verification
 last_updated: "2026-10-09T23:59:00.000Z"
 last_activity: 2026-10-10 -- Phase 02.2 walkthrough Parts A-D approved; quick task 261010-i7u fixes; Phase 02.3 added
 progress:
   total_phases: 14
   completed_phases: 2
   total_plans: 161
-  completed_plans: 118
-  percent: 73
+  completed_plans: 119
+  percent: 74
 ---
 
 # Project State
@@ -25,14 +25,14 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 
 ## Current Position
 
-Phase: 02.2 (record-polish) — EXECUTING
-Plan: 35 of 35 (Task 2, device walkthrough). Plans 01-34 done and on main: PR #51 (schema, engine, primitives; production schema pushed to 20261010000600 from main 2157641) and PR #52 (app, main e1f1049). Development build e07f9578 (Android, fingerprint f7f16a90) replaces the 2026-09-25 build because expo-haptics is native. Walkthrough checklist and record: docs/acceptance/phase-02.2-record-polish.md. iOS pending Apple enrolment.
+Phase: 02.2 (record-polish) — PLANS COMPLETE, verification pending
+Plan: 35 of 35 complete (walkthrough approved 2026-10-10; app PRs #51-#56, main 9cb5c58). Plans 01-34 done and on main: PR #51 (schema, engine, primitives; production schema pushed to 20261010000600 from main 2157641) and PR #52 (app, main e1f1049). Development build e07f9578 (Android, fingerprint f7f16a90) replaces the 2026-09-25 build because expo-haptics is native. Walkthrough checklist and record: docs/acceptance/phase-02.2-record-polish.md. iOS pending Apple enrolment.
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
-Phase 02.1 (PDF statement import): planned (12 plans, 7 waves); not started — replan after 02.2 (see Blockers). Phase 02.2 (record-polish): 34/35 plans executed, see above. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
+Phase 02.1 (PDF statement import): planned (12 plans, 7 waves); not started — replan after 02.2 (see Blockers). Phase 02.2 (record-polish): 35/35 plans executed, awaiting phase verification. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
 Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
-Status: Executing Phase 02.2 — waiting on the device walkthrough, then plan 35 Task 3 (validation sign-off) and phase verification
+Status: Phase 02.2 plans complete (35/35) — device walkthrough approved, VALIDATION signed off; phase verification next
 Last activity: 2026-10-10 - Completed quick task 261010-kpe: amount keypad and Android swipe-back; 02.2 walkthrough Part E approved
 
 ## Performance Metrics
@@ -178,5 +178,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-10-09T23:59:00.000Z
-Stopped at: Phase 02.2 plan 35 Task 2 — waiting on the Android device walkthrough (install development build e07f9578, run `npx expo start --dev-client` from a checkout with EAS_PROJECT_ID set)
+Stopped at: Completed 02.2-35-PLAN.md — run phase verification for 02.2
 Resume file: docs/acceptance/phase-02.2-record-polish.md

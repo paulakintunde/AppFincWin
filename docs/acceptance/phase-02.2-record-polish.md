@@ -66,15 +66,38 @@ Gate on that commit:
 Fingerprint (android, from 4ed142f; tree equals main e1f1049 except this record): f7f16a90e63239bbf029e8e189034c0f4de6416f. `EAS_PROJECT_ID` was supplied by the user on 2026-10-09 and added to the worktree `.env.local` (gitignored). The only earlier Android development build (fd9507cd, 2026-09-25, b1c7844) predates expo-haptics, so it is incompatible.
 Build id: e07f9578-9c93-4067-a750-afb748d09cb9 (`eas build --profile development --platform android --non-interactive --no-wait`), https://expo.dev/accounts/fincwin/projects/fincwin/builds/e07f9578-9c93-4067-a750-afb748d09cb9. Install it on the Android device before the walkthrough.
 
+## Follow-up PRs and final gate (2026-10-10)
+
+App PRs to main for this phase (all merged with `gh pr merge --merge`, no --admin):
+- #51 schema, engine and UI primitives (plans 01-15), main 2157641b6db055a1722c36500a486b6953dd4651
+- #52 app work (plans 16-34), main e1f1049579d7d13fd7cd5e61e594ad4a82db15cf
+- #53 follow-ups and planning docs refresh, fd5a90e0ba4bfaca242aec77222e31a82b81f152
+- #54 white-screen fix on Activity with no series offers, 4a847708072645d78e73af687eea019f5b36e474
+- #55 walkthrough fixes (quick 261010-i7u), a2157f0605bf6ffafa62a5ad9873fad71347d7ed
+- #56 amount keypad and Android swipe-back (quick 261010-kpe), 9cb5c58d337edef51b893ecddc430dd0c229e2a0
+
+Final main commit: 9cb5c58d337edef51b893ecddc430dd0c229e2a0. Development build e07f9578 (Android) was used for the walkthrough; later JS-only fixes reached the device through Metro, no newer EAS build id recorded (not recorded).
+
+Gate on docs/02.2-signoff (= main 9cb5c58 plus docs), 2026-10-10:
+- `npm run typecheck`: pass.
+- `npm run lint`: 0 errors, 373 warnings.
+- `npm run depcruise`: no violations (361 modules, 1953 dependencies).
+- `npm run check:ignores`: OK.
+- `npm run test:coverage -- --forceExit`: 222 suites, 5888 tests passed, no threshold failure.
+- `npm run verify:gates`: GATES OK.
+- `npm run lint:migrations`: MIGRATION COMPAT OK (29 files, floor 0.1.0), two non-fatal DEPRECATED-comment warnings. `npm run verify:migrations`: MIGRATION GATE OK.
+- `npm run check:money-mirror` and `check:recurring-mirror`: up to date.
+- pgTAP (`supabase db reset`/`test db`): not run (needs local Docker and a destructive local reset; covered by the rls CI check on each PR).
+
 ## Device walkthrough
 
-Criterion 1: Observed:
-Criterion 2: Observed:
-Criterion 3: Observed:
-Criterion 4: Observed:
-Criterion 5: Observed:
-Criterion 6: Observed:
-Criterion 7: Observed:
-Criterion 8: Observed:
-Haptics:
+Criterion 1: Observed: Pass on Pixel 9 (2026-10-10) after quick task 261010-i7u (PR #55). First pass: calendar 7th column wrapped (Sat on its own row, stacked weekday initials read as 'M/S'/'S/S'), days with activity were not highlighted, and the day detail could not be scrolled into view. Fixed: 7 columns always fit, activity tile + one net-coloured dot, scroll to the day's detail. Rechecked and approved.
+Criterion 2: Observed: Pass. Sort orders and the 'N transactions' count behaved as described.
+Criterion 3: Observed: Pass. Offer card, Review each, Mark all monthly with Undo, Not now stays hidden after reopening.
+Criterion 4: Observed: Pass after 261010-i7u. Swipe labels Delete/Received wrapped to two lines on the 412dp screen; now one line and sized to the label. Detail sheet, Mark as paid, Clone, swipe pay/unpay/delete with Undo, Scheduled tag all as described.
+Criterion 5: Observed: Pass after 261010-i7u and 261010-kpe (PR #56). The keyboard covered number inputs near the bottom of sheets (fixed: Android keyboard padding in Sheet); in Part E the amount keypad did not return after visiting the description or category (fixed: explicit active field). Paste a list added 2 lines and Undo removed both.
+Criterion 6: Observed: Pass after 261010-i7u. Month counts, Add month with Undo, Clone month, cap set and crossed. The over-cap message was the save toast in the standard ink style; the cap-crossing toast is now amber (warn1). The Categories sub-label already uses warn1, the brightest amber token.
+Criterion 7: Observed: Pass after 261010-i7u. Empty account delete with Undo, Archive with reason on an account with lines. Archive was a bare text row tapped by accident; it is now an outlined button with a confirm sheet and an 'Account archived' toast. Part D sample figures (Explore, Keep for now once, Start fresh keeps edited and real lines) approved.
+Criterion 8: Observed: Pass after 261010-i7u. Account detail Coming in / Going out / After pending / On the statement / Not ticked off and Paid/Received tags as described. Changing home currency to EUR failed online with 'Couldn't get today's rates' (resolve-rate ensure never lists EUR or already-stored codes); fixed client-side and rechecked. Part E (sign out, sign back in) passed; the account chooser request is ACC-14 in Phase 02.3.
+Haptics: Keypad, swipe and cap-warning haptic steps were part of Part C; approved with no haptic difference reported (Pixel 9, Android).
 iOS: pending (Apple enrolment, D-U-N-S pending; no iOS build)

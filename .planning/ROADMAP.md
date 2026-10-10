@@ -316,7 +316,7 @@ Plans:
   7. A new user can look around on sample figures and clear them with "Start fresh". An empty money account can be deleted.
   8. An account's detail shows Coming in and Going out separately, plus the balance after everything pending. Rows carry a green Paid or Received tag.
 **Notes:** ACT-06 moved here from Phase 7 on 2026-10-07 because the user wants the views with subtotals now. Clone was superseded by D-02/D-03 in Phase 2 and the user re-added it alongside recurring series. "Shared lines" stays with Phase 8 (HH-04).
-**Plans:** 34/35 plans executed
+**Plans:** 35/35 plans executed
 **Status (2026-10-09):** Plans 01–34 executed and on main (PR #51 schema and engine, PR #52 app). Production schema at 20261010000600. Plan 35 waits on the Android device walkthrough (development build e07f9578); iOS waits on Apple enrolment. Follow-ups found in execution are fixed in quick task 261009-mvn.
 
 Plans:
@@ -374,7 +374,7 @@ Plans:
 - [x] 02.2-34-PLAN.md — Activity integration: calendar, offer, detail sheet, swipe, More menu, months, empty state (W9)
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 02.2-35-PLAN.md — New dev build, device walkthrough of all eight criteria, validation sign-off (W10)
+- [x] 02.2-35-PLAN.md — New dev build, device walkthrough of all eight criteria, validation sign-off (W10)
 
 ### Phase 02.3: Record follow-ups from the 02.2 walkthrough (INSERTED)
 
@@ -586,7 +586,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 1. Money Core | 16/16 | Complete | 2026-09-26 |
 | 2. Record | 50/50 | Complete | 2026-10-09 |
 | 2.1 PDF statement import | 0/12 | Planned; replan before executing | - |
-| 2.2 Record polish | 34/35 | In Progress (device walkthrough) | - |
+| 2.2 Record polish | 35/35 | Plans complete (verification pending) | - |
 | 2.3 Record follow-ups | 0/TBD | Not started | - |
 | 3. Shell | 0/16 | Planned; check against 2.2 before executing | - |
 | 4. Decide Engine | 0/12 | Planned | - |
