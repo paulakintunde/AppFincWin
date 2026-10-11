@@ -65,7 +65,14 @@ const startsWithPhrase = (text: string, phrases: readonly string[]): boolean => 
   const up = text.toUpperCase();
   return phrases.some((p) => up === p || up.startsWith(`${p} `));
 };
-const lastNumeric = (line: PdfLine): string | null => [...line.cells].reverse().find((c) => looksNumeric(c.text))?.text ?? null;
+// A figure is either its own cell or the tail of a label cell ("Previous balance 820.40", "New balance 1,250.00 CR").
+const TAIL_FIGURE = /\s(\S+(?:\s(?:CR|DR|OD))?)$/i;
+const lastNumeric = (line: PdfLine): string | null => {
+  const cell = [...line.cells].reverse().find((c) => looksNumeric(c.text));
+  if (cell !== undefined) return cell.text;
+  const tail = TAIL_FIGURE.exec(lineText(line))?.[1];
+  return tail !== undefined && looksNumeric(tail) ? tail : null;
+};
 const hasDate = (line: PdfLine): boolean => line.cells.some((c) => looksLikeDate(c.text));
 
 function sectionLabel(line: PdfLine): PdfSectionSpan['label'] | null {
@@ -219,7 +226,7 @@ function headerRows(lines: readonly PdfLine[], headers: readonly HeaderMatch[], 
       return;
     }
     const prev = rows[rows.length - 1] as RawRow | undefined;
-    if (prev === undefined) return;
+    if (prev === undefined || prev.page !== line.page) return; // a page's running header is not a wrapped description
     if (text.length > 0) {
       prev.descriptionParts.push(...text.map((c) => c.text));
       addFlag(prev, 'wrapped');
@@ -248,7 +255,7 @@ function headerlessRows(lines: readonly PdfLine[], summary: TableSummary): RawRo
       return;
     }
     const prev = rows[rows.length - 1] as RawRow | undefined;
-    if (prev !== undefined && !looksLikeDate(firstCell.text) && !cells.some((c) => looksNumeric(c.text))) {
+    if (prev !== undefined && prev.page === line.page && !looksLikeDate(firstCell.text) && !cells.some((c) => looksNumeric(c.text))) {
       prev.descriptionParts.push(...cells.map((c) => c.text));
       addFlag(prev, 'wrapped');
     }

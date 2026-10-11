@@ -33,6 +33,11 @@ describe('groupLines', () => {
     expect(apart[0]!.cells.map((c) => c.text)).toEqual(['ACME', 'GROCERS']);
   });
 
+  it('keeps runs that overlap by more than a rounding error as separate columns', () => {
+    const lines = groupLines([page(1, [item('Transaction date', 50, 700, 67), item('Description', 110, 700, 45)])]);
+    expect(lines[0]!.cells.map((c) => c.text)).toEqual(['Transaction date', 'Description']);
+  });
+
   it('joins touching runs without a space and drops blanks', () => {
     const lines = groupLines([page(1, [item('AC', 100, 700, 10), item('ME', 110, 700, 10), item('  ', 300, 700), item('  ', 100, 650)])]);
     expect(lines).toHaveLength(1);

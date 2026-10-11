@@ -2,7 +2,7 @@
 // Deterministic and string-only: every amount goes through the Phase 2 notation reader, nothing is signed here
 // (the format profile decides that), and anything the reader is not sure of carries a pdf-* issue (D-23).
 // Nothing in this file logs or throws for statement content (D-15).
-import { notationFor, inferNumberNotation } from '../../csv';
+import { notationFor, inferNumberNotation } from '../../csv/inferFormat';
 import { markerSign, parseNotatedAmount } from '../../money';
 import type { AmountMarker, MinorUnits, NumberNotation } from '../../money';
 import { MAX_DESCRIPTION, MAX_LAYOUT_SIGNATURE, MAX_RAW_CELL } from '../types';
