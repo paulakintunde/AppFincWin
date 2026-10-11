@@ -155,7 +155,7 @@ export interface NewTransaction {
   raw_amount?: string | null;
   raw_balance?: string | null;
   external_id?: string | null;
-  import_format?: 'csv' | 'ofx' | null;
+  import_format?: 'csv' | 'ofx' | 'pdf' | null;
   transfer_id?: string | null;
   is_refund?: boolean;
   is_automatic?: boolean;
