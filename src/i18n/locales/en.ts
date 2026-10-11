@@ -827,6 +827,8 @@ const en = {
       currency: 'Currency',
       balance: 'Balance',
       direction: 'Money in or out',
+      foreignAmount: 'Original amount',
+      foreignCurrency: 'Original currency',
       limit: 'Limit',
       ignore: 'Not used',
     },

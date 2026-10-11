@@ -51,6 +51,10 @@ export const TRANSACTION_INSERT_KEYS = [
   'transfer_id',
   'is_refund',
   'is_automatic',
+  // D-34 (IMP-05): statement figures and fee link are insert-only, like D-45's provenance.
+  'stmt_orig_amount',
+  'stmt_orig_currency',
+  'fx_fee_of',
 ] as const satisfies readonly (keyof NewTransaction)[];
 
 // D-45: raw_amount/raw_balance/external_id/import_format are insert-only provenance and are
@@ -79,7 +83,7 @@ export const TRANSACTION_PATCH_KEYS = [
 // them out of JS float arithmetic on the way in from Postgres's `numeric` type (MON-01) --
 // callers parse the string themselves via engine/money, never `parseFloat`.
 export const TRANSACTION_COLUMNS =
-  'id, household_id, account_id, created_by, original_amount, original_currency, home_currency, home_amount, rate:rate::text, orig_per_eur:orig_per_eur::text, home_per_eur:home_per_eur::text, orig_custom_unit_value:orig_custom_unit_value::text, orig_custom_ref_per_eur:orig_custom_ref_per_eur::text, home_custom_unit_value:home_custom_unit_value::text, home_custom_ref_per_eur:home_custom_ref_per_eur::text, rate_date, rate_source, rate_pending, local_date, time_zone, note, name, category_id, payment_type, status, deleted_at, import_batch_id, recurring_series_id, occurrence_date, updated_by, raw_amount, raw_balance, external_id, import_format, transfer_id, is_refund, is_automatic, is_sample, version, created_at, updated_at';
+  'id, household_id, account_id, created_by, original_amount, original_currency, home_currency, home_amount, rate:rate::text, orig_per_eur:orig_per_eur::text, home_per_eur:home_per_eur::text, orig_custom_unit_value:orig_custom_unit_value::text, orig_custom_ref_per_eur:orig_custom_ref_per_eur::text, home_custom_unit_value:home_custom_unit_value::text, home_custom_ref_per_eur:home_custom_ref_per_eur::text, rate_date, rate_source, rate_pending, local_date, time_zone, note, name, category_id, payment_type, status, deleted_at, import_batch_id, recurring_series_id, occurrence_date, updated_by, raw_amount, raw_balance, external_id, import_format, transfer_id, is_refund, is_automatic, stmt_orig_amount, stmt_orig_currency, conversion_source, fx_fee_of, is_sample, version, created_at, updated_at';
 
 const ENTITY = 'transactions' as const;
 

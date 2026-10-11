@@ -1060,6 +1060,139 @@ describe('toImportCommit', () => {
   });
 });
 
+describe('IMP-05: statement conversion and FX fee links (plan 02.1-16)', () => {
+  const NEW_IDS = () => {
+    let n = 0;
+    return () => `id-${++n}`;
+  };
+  const CTX16 = {
+    householdId: 'hh-1',
+    accountId: 'acc-1',
+    timeZone: 'Europe/London',
+    transferCategoryId: 'cat-transfer',
+    accounts: TRANSFER_ACCOUNTS,
+    existingById: new Map<string, ExistingInfo>(),
+    accountVersion: 4,
+    remember: null as { signature: string; id: string } | null,
+  };
+  const dec = (included: number[], over: Partial<CommitDecisions> = {}): CommitDecisions => ({
+    included: new Set(included),
+    categories: new Map(),
+    links: new Map(),
+    orphans: new Map(),
+    payMatches: new Set(),
+    acceptLimit: false,
+    ...over,
+  });
+  const purchase = (over: Partial<DraftRow> = {}) =>
+    draftRow(0, {
+      description: 'SAMPLE STORE NEW YORK',
+      magnitude: minorUnits(3538),
+      rawAmount: '-35.38',
+      foreign: { magnitude: minorUnits(4500), currency: 'USD', raw: '45.00 USD' },
+      ...over,
+    });
+  const fee = (over: Partial<DraftRow> = {}) =>
+    draftRow(1, { description: 'NON-STERLING TRANSACTION FEE', magnitude: minorUnits(97), rawAmount: '-0.97', ...over });
+  const build = (rows: DraftRow[], over: Partial<PreviewInput> = {}) => buildPreview(previewInput(draftOf(rows), over));
+
+  it('exposes the foreign original and links the fee to its purchase', () => {
+    const p = build([purchase(), fee()]);
+    expect(p.rows[0]?.foreign).toEqual({ amount: -4500, currency: 'USD' });
+    expect(p.rows[0]?.feeOf).toBeNull();
+    expect(p.rows[1]?.feeOf).toBe(0);
+    expect(p.rows[1]?.foreign).toBeNull();
+  });
+
+  it('never targets a locked or duplicate purchase with a fee', () => {
+    const locked = build([purchase({ issues: ['bad-date'] }), fee()]);
+    expect(locked.rows[1]?.feeOf).toBeNull();
+    const existing: ExistingRow[] = [
+      { id: 'e1', accountId: 'acc-1', localDate: '2026-09-01', amount: -3538, currency: 'GBP', externalId: null, name: 'SAMPLE STORE NEW YORK' } as unknown as ExistingRow,
+    ];
+    const dup = build([purchase(), fee()], { existing });
+    if (dup.rows[0]?.duplicate !== null) expect(dup.rows[1]?.feeOf).toBeNull();
+  });
+
+  it('commits the statement figures on the purchase and links the fee to it', () => {
+    const p = build([purchase(), fee()]);
+    const { rows } = toImportCommit(p, dec([0, 1]), CTX16, 'b', NEW_IDS());
+    expect(rows[0]).toMatchObject({
+      id: 'id-1',
+      original_amount: -3538,
+      original_currency: 'GBP',
+      stmt_orig_amount: -4500,
+      stmt_orig_currency: 'USD',
+    });
+    expect(rows[1]).toMatchObject({ original_amount: -97, fx_fee_of: 'id-1' });
+    expect(rows[1]?.stmt_orig_amount).toBeUndefined();
+  });
+
+  it('commits the fee unlinked when the purchase is unticked', () => {
+    const p = build([purchase(), fee()]);
+    const { rows } = toImportCommit(p, dec([1]), CTX16, 'b', NEW_IDS());
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.fx_fee_of).toBeUndefined();
+  });
+
+  it('sends no statement figures when the foreign currency equals the row currency', () => {
+    const p = build([purchase({ foreign: { magnitude: minorUnits(4500), currency: 'GBP', raw: '45.00 GBP' } })]);
+    const { rows } = toImportCommit(p, dec([0]), CTX16, 'b', NEW_IDS());
+    expect(rows[0]?.stmt_orig_amount).toBeUndefined();
+    expect(rows[0]?.stmt_orig_currency).toBeUndefined();
+  });
+
+  it('a purchase accepted as mark-paid carries the figures on the fallback line only and holds the fee', () => {
+    const pending: PendingOccurrence = {
+      id: 'p1',
+      version: 3,
+      localDate: '2026-09-02',
+      amount: -3538,
+      currency: 'GBP',
+      name: 'SAMPLE STORE NEW YORK',
+      accountId: 'acc-1',
+    };
+    const info: ExistingInfo = { version: 3, category_id: null, local_date: '2026-09-02', original_amount: -3538, status: 'pending', transfer_id: null };
+    const p = build([purchase(), fee()], { pending: [pending] });
+    expect(p.rows[0]?.payMatch).not.toBeNull();
+    const ctx = { ...CTX16, existingById: new Map([['p1', info]]) };
+    const { rows, finalize } = toImportCommit(p, dec([0, 1], { payMatches: new Set([0]) }), ctx, 'b', NEW_IDS());
+    expect(rows).toEqual([]);
+    const entry = finalize.markPaid[0];
+    expect(entry?.line).toMatchObject({ stmt_orig_amount: -4500, stmt_orig_currency: 'USD' });
+    expect(entry?.patch).not.toHaveProperty('stmt_orig_amount');
+    expect(entry?.feeLines).toHaveLength(1);
+    expect(entry?.feeLines?.[0]).toMatchObject({ original_amount: -97, fx_fee_of: 'p1' });
+  });
+
+  it('CSV card-foreign fixture prepares as csv (column roles are covered by the engine tests)', () => {
+    const csv = fs.readFileSync(
+      path.join(__dirname, '..', '..', '..', '..', 'engine', 'statement', '__tests__', 'fixtures', 'foreign', 'card-foreign.csv')
+    );
+    const prep = expectOk(prepareImport(new Uint8Array(csv), { extension: 'csv' }, REGION, exponentFor));
+    if (prep.format !== 'csv') throw new Error('expected csv');
+    expect(prep.format).toBe('csv');
+  });
+
+  describe.each(['card-origcurrency.ofx', 'card-currency.ofx'])('OFX %s', (file) => {
+    it('commits the same shape: 13.92 CAD charged, USD 10.00 original, fee linked', () => {
+      const prep = expectOk(prepareImport(ofxBytes(`../../../statement/__tests__/fixtures/foreign/${file}`), { extension: 'ofx' }, REGION, (c) => (c === 'CAD' || c === 'USD' ? 2 : null)));
+      if (prep.format === 'csv') throw new Error('expected ofx');
+      const draft = prep.statements[0] as StatementDraft;
+      const account: PreviewAccount = { ...ACCOUNT, currency: 'CAD', kind: 'credit' };
+      const p = buildPreview(previewInput(draft, { format: 'ofx', account }));
+      const idx = p.rows.findIndex((r) => r.foreign !== null);
+      expect(idx).toBeGreaterThanOrEqual(0);
+      const feeRow = p.rows.find((r) => r.feeOf !== null);
+      expect(feeRow?.feeOf).toBe(p.rows[idx]?.index);
+      const { rows } = toImportCommit(p, dec(p.rows.map((r) => r.index)), { ...CTX16, accountId: 'acc-1' }, 'b', NEW_IDS());
+      const buy = rows.find((r) => r.stmt_orig_amount != null);
+      expect(buy).toMatchObject({ original_amount: -1392, original_currency: 'CAD', stmt_orig_amount: -1000, stmt_orig_currency: 'USD' });
+      expect(rows.find((r) => r.fx_fee_of != null)?.fx_fee_of).toBe(buy?.id);
+    });
+  });
+});
+
 describe('sizeBand', () => {
   it('bands a row count', () => {
     expect([1, 50, 51, 500, 501, 5000].map(sizeBand)).toEqual(['1-50', '1-50', '51-500', '51-500', '501-5000', '501-5000']);
