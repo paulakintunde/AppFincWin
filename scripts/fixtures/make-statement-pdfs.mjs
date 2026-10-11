@@ -300,7 +300,7 @@ function buildSavings() {
 }
 
 function buildCreditCard() {
-  // Stored sign: purchase negative, payment positive; owed is negative.
+  // Stored sign: spend negative, payment positive; owed is negative.
   const spec = [
     ['2026-02-05', 'ACME GROCERS', -12430],
     ['2026-02-08', 'FABRIKAM CAFE', -3495],
@@ -524,6 +524,103 @@ const STATEMENTS = [
   buildMultiAccount,
 ];
 
+// ------------------------------------------------------- edge-case fixtures
+
+function buildScanned() {
+  // Shapes only: no text operators at all, like an image-only scan.
+  const page = newPage();
+  page.shapes.push(
+    '0.85 g 50 620 495 150 re f',
+    '0 G 1 w 50 600 m 545 600 l S',
+    '0 G 1 w 50 560 m 545 560 l S',
+    '0 G 1 w 50 520 m 545 520 l S',
+    '0 G 1 w 50 480 m 545 480 l S',
+    '0 G 1 w 110 600 m 110 480 l S',
+    '0 G 1 w 380 600 m 380 480 l S',
+    '0.7 g 50 440 200 20 re f',
+  );
+  return { pages: [page] };
+}
+
+function buildEncrypted() {
+  const spec = [
+    ['2026-03-02', 'ACME GROCERS', -4520],
+    ['2026-03-04', 'CONTOSO PAYROLL', 180000],
+    ['2026-03-09', 'NORTHWIND ENERGY', -8900],
+    ['2026-03-13', 'FABRIKAM CAFE', -1275],
+    ['2026-03-17', 'TAILSPIN TRAVEL', -3600],
+    ['2026-03-20', 'WINGTIP TOYS', -2499],
+    ['2026-03-24', 'LITWARE BOOKS', -1850],
+    ['2026-03-27', 'ACME GROCERS', -5210],
+  ];
+  const opening = 124560;
+  const rows = withBalances(opening, spec.map(([date, description, amount]) => ({ date, description, amount, flags: [], print: {} })));
+  const closing = rows[rows.length - 1].balance;
+  const pages = [newPage()];
+  topBlock(pages[0], [
+    ...IDENT,
+    'Sort code 20-30-40 Account number 40302010',
+    'Statement period 1 March 2026 to 31 March 2026',
+  ]);
+  drawTable(pages, 0, {
+    headerY: FIRST_PAGE_HEADER_Y,
+    headers: BALANCE_HEADERS,
+    lines: bankBalanceLines(opening, rows, closing, fmtShort),
+    linesPerPage: 40,
+  });
+  return { pages };
+}
+
+function buildTooManyPages() {
+  const pages = [];
+  for (let p = 0; p < 26; p++) {
+    const page = newPage();
+    text(page, `Example Bank page ${p + 1} of 26`, 50, 812);
+    const lines = [0, 1, 2].map((i) => ({
+      cells: [
+        { col: 'date', str: `0${i + 1} Mar` },
+        { col: 'description', str: 'ACME GROCERS' },
+        { col: 'out', str: money(1000 + i) },
+        { col: 'balance', str: money(500000 - i) },
+      ],
+    }));
+    drawTable([page], 0, { headerY: FIRST_PAGE_HEADER_Y, headers: BALANCE_HEADERS, lines, linesPerPage: 40 });
+    pages.push(page);
+  }
+  return { pages };
+}
+
+function writeWorstCase(dir) {
+  const rows = [];
+  let bal = 5000000;
+  for (let i = 0; i < 1000; i++) {
+    const amount = i % 7 === 0 ? 25000 : -(1000 + ((i * 37) % 9000));
+    bal += amount;
+    rows.push({ date: `2026-03-${String(1 + (i % 28)).padStart(2, '0')}`, description: 'ACME GROCERS', amount, balance: bal, print: {} });
+  }
+  const pages = [];
+  let rowIdx = 0;
+  for (let p = 0; p < 25; p++) {
+    const page = newPage();
+    pages.push(page);
+    if (p === 0) topBlock(page, [...IDENT, 'Statement period 1 March 2026 to 31 March 2026']);
+    const lines = rows.slice(rowIdx, rowIdx + 40).map((r) => bankBalanceLines(0, [r], r.balance, fmtShort)[1]);
+    rowIdx += 40;
+    const headerY = p === 0 ? FIRST_PAGE_HEADER_Y : CONT_HEADER_Y;
+    const pageList = [page];
+    drawTable(pageList, 0, { headerY, headers: BALANCE_HEADERS, lines, linesPerPage: 40 });
+  }
+  const base = writePdf(pages, { name: 'worst-case' });
+  const target = 10_000_000;
+  const filler = target - base.length - 120;
+  const buf = writePdf(pages, { name: 'worst-case', fillerBytes: filler });
+  if (buf.length < 9_900_000 || buf.length > 10_400_000) throw new Error('worst-case size out of window');
+  fs.mkdirSync(dir, { recursive: true });
+  const out = path.join(dir, 'worst-case-25-pages.pdf');
+  fs.writeFileSync(out, buf);
+  console.log(`${out} ${buf.length}`);
+}
+
 // ---------------------------------------------------------------------- main
 
 function writeJson(file, obj) {
@@ -532,6 +629,11 @@ function writeJson(file, obj) {
 
 function main() {
   const argv = process.argv.slice(2);
+  const wcIdx = argv.indexOf('--worst-case');
+  if (wcIdx >= 0) {
+    writeWorstCase(path.resolve(argv[wcIdx + 1]));
+    return;
+  }
   const outIdx = argv.indexOf('--out');
   const outDir = outIdx >= 0 ? path.resolve(argv[outIdx + 1]) : DEFAULT_PDF_DIR;
   fs.mkdirSync(outDir, { recursive: true });
@@ -542,7 +644,15 @@ function main() {
     fs.writeFileSync(path.join(outDir, `${expected.name}.pdf`), writePdf(pages, { name: expected.name }));
     writeJson(path.join(EXPECTED_DIR, `${expected.name}.expected.json`), expected);
   }
-  console.log(`wrote ${STATEMENTS.length} statements to ${outDir}`);
+  const extras = [
+    ['scanned', buildScanned().pages, {}],
+    ['encrypted', buildEncrypted().pages, { encrypt: { userPassword: 'fincwin-test', ownerPassword: 'fincwin-owner' } }],
+    ['too-many-pages', buildTooManyPages().pages, {}],
+  ];
+  for (const [name, pages, opts] of extras) {
+    fs.writeFileSync(path.join(outDir, `${name}.pdf`), writePdf(pages, { name, ...opts }));
+  }
+  console.log(`wrote ${STATEMENTS.length + extras.length} statements to ${outDir}`);
 }
 
 main();
