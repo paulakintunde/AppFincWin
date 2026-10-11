@@ -397,11 +397,27 @@ describe('ImportScreen: mapping', () => {
     mockState = makeState(base);
     await renderScreen();
     expect(screen.getByText('Check the columns')).toBeTruthy();
-    for (const role of ['Date', 'Description', 'Amount', 'Money out', 'Money in', 'Money in or out', 'Balance', 'Currency', 'Limit']) {
+    for (const role of ['Date', 'Description', 'Amount', 'Money out', 'Money in', 'Money in or out', 'Balance', 'Currency', 'Original amount', 'Original currency', 'Limit']) {
       expect(screen.getByText(role)).toBeTruthy();
     }
     expect(screen.getByText('Posted')).toBeTruthy();
     expect(screen.getAllByText('Not used').length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('IMP-05: picking a header for Original amount sets foreignAmount; Not used clears it', async () => {
+    mockState = makeState(base);
+    await renderScreen();
+    await fireEvent.press(screen.getByText('Original amount'));
+    await fireEvent.press(screen.getByLabelText('Memo'));
+    expect(mockState.setMapping).toHaveBeenCalledWith({ ...mapping, foreignAmount: 1 });
+  });
+
+  it('IMP-05: Not used clears a mapped Original currency', async () => {
+    mockState = makeState({ ...base, mapping: { ...mapping, foreignCurrency: 3 } });
+    await renderScreen();
+    await fireEvent.press(screen.getByText('Original currency'));
+    await fireEvent.press(screen.getAllByLabelText('Not used').at(-1) as never);
+    expect(mockState.setMapping).toHaveBeenCalledWith({ ...mapping, foreignCurrency: null });
   });
 
   it('picking a header for a role sets the mapping; picking Not used clears it', async () => {
