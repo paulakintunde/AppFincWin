@@ -605,21 +605,12 @@ describe('parseOfx: CURRENCY / ORIGCURRENCY (IMP-05)', () => {
   });
 
   it('a missing or zero CURRATE parses exactly as before', () => {
-    for (const rate of ['<CURRATE>0
-', '']) {
-      const xml = wrapBankStatement({
-        stmttrn: `<STMTTRN>
-<TRNTYPE>DEBIT
-<DTPOSTED>20260902
-<TRNAMT>-10.00
-<FITID>Z1
-<NAME>SHOP
-<CURRENCY>
-${rate}<CURSYM>USD
-</CURRENCY>
-</STMTTRN>`,
-      });
-      const result = parseOfx(xml, fxOpts);
+    for (const rate of ['<CURRATE>0', '']) {
+      const stmttrn = [
+        '<STMTTRN>', '<TRNTYPE>DEBIT', '<DTPOSTED>20260902', '<TRNAMT>-10.00', '<FITID>Z1', '<NAME>SHOP',
+        '<CURRENCY>', rate, '<CURSYM>USD', '</CURRENCY>', '</STMTTRN>',
+      ].join(String.fromCharCode(10));
+      const result = parseOfx(wrapBankStatement({ stmttrn }), fxOpts);
       if (!result.ok) throw new Error('expected ok');
       expect(result.drafts[0]!.rows[0]).toMatchObject({ magnitude: 1000, foreign: null });
     }

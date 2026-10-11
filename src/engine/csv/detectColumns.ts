@@ -24,7 +24,9 @@ export type ColumnRole =
   | 'currency'
   | 'balance'
   | 'direction'
-  | 'limit';
+  | 'limit'
+  | 'foreignAmount'
+  | 'foreignCurrency';
 
 export interface ColumnMapping {
   date: number | null;
@@ -36,6 +38,9 @@ export interface ColumnMapping {
   balance: number | null;
   direction: number | null;
   limit: number | null;
+  // IMP-05 / D-30: optional original-amount and original-currency columns.
+  foreignAmount?: number | null;
+  foreignCurrency?: number | null;
 }
 
 export type MappingError = 'no-date' | 'no-description' | 'no-amount' | 'amount-and-debit-credit' | 'duplicate-column';
@@ -56,14 +61,18 @@ export const HEADER_KEYWORDS: Readonly<Record<ColumnRole, readonly string[]>> = 
   ],
   direction: ['type', 'transaction type', 'dr/cr', 'debit/credit', 'direction'],
   limit: ['credit limit', 'overdraft limit', 'limit'],
+  foreignAmount: ['original amount', 'foreign amount', 'amount in original currency', 'orig amount', 'original value'],
+  foreignCurrency: ['original currency', 'foreign currency', 'orig currency', 'original ccy'],
 };
 
 // Resolution order: limit and balance first so 'Credit limit'/'Available
 // credit' are never mistaken for a plain credit column; direction before
 // debit/credit so a 'Debit/Credit' or 'DR/CR' header becomes a direction
 // column rather than (incorrectly) a debit or credit column.
+// The foreign roles come first so 'Original amount' never resolves as the
+// amount and 'Original currency' never as the currency (D-30).
 const ROLE_ORDER: readonly ColumnRole[] = [
-  'limit', 'balance', 'direction', 'date', 'debit', 'credit', 'amount', 'currency', 'description',
+  'foreignAmount', 'foreignCurrency', 'limit', 'balance', 'direction', 'date', 'debit', 'credit', 'amount', 'currency', 'description',
 ];
 
 const DATE_FORMATS: readonly DateFormat[] = ['YMD', 'DMY', 'MDY'];
@@ -196,7 +205,7 @@ function columnContentPasses(sample: readonly (readonly string[])[], col: number
 function headerContentPasses(role: ColumnRole, sample: readonly (readonly string[])[], col: number): boolean {
   if (role === 'direction') return columnPassesDirectionContent(sample, col);
   if (role === 'date') return columnContentPasses(sample, col, isDateCell);
-  if (role === 'amount' || role === 'debit' || role === 'credit') return columnContentPasses(sample, col, isAmountCell);
+  if (role === 'amount' || role === 'debit' || role === 'credit' || role === 'foreignAmount') return columnContentPasses(sample, col, isAmountCell);
   return true;
 }
 
@@ -285,6 +294,8 @@ export function detectColumns(
     balance: null,
     direction: null,
     limit: null,
+    foreignAmount: null,
+    foreignCurrency: null,
   };
   const used = new Set<number>();
   const viaHeader = new Set<ColumnRole>();
@@ -343,7 +354,7 @@ export function validateMapping(m: ColumnMapping): MappingError[] {
   if (!hasAmount && !hasDebitOrCredit) errors.push('no-amount');
   if (hasAmount && hasDebitOrCredit) errors.push('amount-and-debit-credit');
 
-  const indices = [m.date, m.description, m.amount, m.debit, m.credit, m.currency, m.balance, m.direction, m.limit].filter(
+  const indices = [m.date, m.description, m.amount, m.debit, m.credit, m.currency, m.balance, m.direction, m.limit, m.foreignAmount ?? null, m.foreignCurrency ?? null].filter(
     (i): i is number => i !== null
   );
   const seen = new Set<number>();

@@ -11,6 +11,7 @@
 import { balanceLabelOf, normaliseHeader, type ColumnMapping } from './detectColumns';
 import { parseCsvDate, type DateFormat } from './inferFormat';
 import type { Delimiter } from './tokenize';
+import { foreignFromColumns } from '../statement/foreign';
 import {
   markerSign,
   minorUnits,
@@ -24,6 +25,7 @@ import {
 import {
   MAX_RAW_CELL,
   MAX_LAYOUT_SIGNATURE,
+  type ForeignAmount,
   type StatementDraft,
   type DraftRow,
   type DraftRowIssue,
@@ -305,6 +307,14 @@ export function csvToDraft(
     const amountResolved = resolveAmount(dataRow, mapping, notation, currencyResolved.exponent);
     const balanceResolved = resolveBalance(dataRow, mapping, notation, currencyResolved.exponent);
 
+    const foreign: ForeignAmount | null =
+      typeof mapping.foreignAmount === 'number' && typeof mapping.foreignCurrency === 'number'
+        ? foreignFromColumns(cell(dataRow, mapping.foreignAmount), cell(dataRow, mapping.foreignCurrency), currencyResolved.currency, {
+            notation,
+            exponentFor,
+          })
+        : null;
+
     const issues: DraftRowIssue[] = [];
     if (localDate === null) issues.push('bad-date');
     if (description === '') issues.push('empty-description');
@@ -331,6 +341,7 @@ export function csvToDraft(
       externalId: null,
       trnType: amountResolved.trnType,
       issues,
+      foreign,
     });
     noAmountContent.push(rowHasNoAmountContent(dataRow, mapping));
   }

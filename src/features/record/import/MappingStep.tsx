@@ -13,7 +13,8 @@ import { Actions, Heading, T } from './importUi';
 import type { useStatementImport } from './useStatementImport';
 
 type ImportState = ReturnType<typeof useStatementImport>;
-type Role = keyof ColumnMapping;
+// The foreign amount/currency roles (IMP-05) are detected, not user-corrected here.
+type Role = Exclude<keyof ColumnMapping, 'foreignAmount' | 'foreignCurrency'>;
 
 const ROLES: readonly Role[] = ['date', 'description', 'amount', 'debit', 'credit', 'direction', 'balance', 'currency', 'limit'];
 const ALL_FORMATS: readonly DateFormat[] = ['YMD', 'DMY', 'MDY'];
