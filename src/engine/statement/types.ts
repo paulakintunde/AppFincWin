@@ -37,6 +37,13 @@ export type DraftRowIssue =
   | 'pdf-ambiguous-column'
   | 'pdf-ambiguous-date';
 
+/** IMP-05 / D-30: a statement line's original foreign amount (magnitude, never signed). */
+export interface ForeignAmount {
+  magnitude: MinorUnits;
+  currency: string; // upper-case code
+  raw: string; // matched text, <= MAX_RAW_CELL
+}
+
 export interface DraftRow {
   index: number; // 0-based, file order, after summary lines are removed
   localDate: string | null; // 'YYYY-MM-DD'
@@ -51,6 +58,8 @@ export interface DraftRow {
   externalId: string | null; // OFX FITID, <= 255 chars (D-39, D-54)
   trnType: string | null; // OFX TRNTYPE upper-case, or a CSV type-column value mapped to 'DEBIT'/'CREDIT'
   issues: DraftRowIssue[];
+  // IMP-05 / D-30: the statement's original foreign amount; provenance only, never drives FX stamping (D-34)
+  foreign?: ForeignAmount | null;
 }
 
 export interface StatedBalance {
