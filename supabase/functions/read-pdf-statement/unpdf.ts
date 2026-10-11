@@ -3,17 +3,25 @@
 import { getDocumentProxy } from 'npm:unpdf@1.8.1';
 import type { PdfOpenResult, RawTextItem } from './read.ts';
 
+// pdf.js VerbosityLevel.ERRORS. Review LO-01: pdf.js logs through console at its default WARNINGS
+// level, which bypasses the D-15 log allow-list with text derived from the uploaded file.
+export const PDFJS_VERBOSITY_ERRORS = 0;
+
+export function pdfOpenOptions(password: string | null): NonNullable<Parameters<typeof getDocumentProxy>[1]> {
+  // isEvalSupported and verbosity are honoured by pdf.js but missing from unpdf's bundled option types.
+  return {
+    password: password ?? undefined,
+    isEvalSupported: false,
+    disableFontFace: true,
+    useSystemFonts: false,
+    verbosity: PDFJS_VERBOSITY_ERRORS,
+  } as NonNullable<Parameters<typeof getDocumentProxy>[1]>;
+}
+
 export async function openPdf(bytes: Uint8Array, password: string | null): Promise<PdfOpenResult> {
   let pdf: Awaited<ReturnType<typeof getDocumentProxy>>;
   try {
-    // isEvalSupported is honoured by pdf.js but missing from unpdf's bundled option types.
-    const options = {
-      password: password ?? undefined,
-      isEvalSupported: false,
-      disableFontFace: true,
-      useSystemFonts: false,
-    } as NonNullable<Parameters<typeof getDocumentProxy>[1]>;
-    pdf = await getDocumentProxy(bytes, options);
+    pdf = await getDocumentProxy(bytes, pdfOpenOptions(password));
   } catch (err) {
     const e = err as { name?: unknown; code?: unknown } | null;
     const name = e !== null && typeof e === 'object' ? e.name : undefined;

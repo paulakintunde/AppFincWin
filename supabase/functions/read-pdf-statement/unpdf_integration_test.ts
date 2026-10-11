@@ -1,6 +1,6 @@
 // Real-parser proof (Deno). Named _test so Jest's *.test.ts testMatch never picks it up.
 import { readStatement, type ReadDeps } from './read.ts';
-import { openPdf } from './unpdf.ts';
+import { openPdf, pdfOpenOptions, PDFJS_VERBOSITY_ERRORS } from './unpdf.ts';
 
 const UID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const PATH = `${UID}/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.pdf`;
@@ -88,4 +88,26 @@ Deno.test('encrypted.pdf password round trip', async () => {
   if (b.ok || b.error !== 'password-incorrect') throw new Error('expected password-incorrect');
   const c = await run(bytes, 'fincwin-test');
   if (!c.ok || c.pageCount < 1) throw new Error('expected ok with right password');
+});
+
+// Review LO-01: pdf.js runs at errors-only verbosity, and reading the fixtures writes nothing to the
+// console outside the allow-listed log line.
+Deno.test('pdf.js verbosity is errors-only and parsing prints nothing to the console', async () => {
+  assertEq(PDFJS_VERBOSITY_ERRORS, 0, 'VerbosityLevel.ERRORS is 0');
+  assertEq((pdfOpenOptions(null) as Record<string, unknown>).verbosity, 0, 'open options carry verbosity 0');
+  const seen: unknown[] = [];
+  const saved = { log: console.log, warn: console.warn, info: console.info, debug: console.debug };
+  console.log = console.warn = console.info = console.debug = (...a: unknown[]) => {
+    seen.push(a);
+  };
+  try {
+    for (const f of ['current-account.pdf', 'credit-card.pdf']) {
+      const h = harness(await load(f));
+      const r = await readStatement(h.deps, { path: PATH });
+      if (!r.body.ok) throw new Error(`${f} did not read`);
+    }
+  } finally {
+    Object.assign(console, saved);
+  }
+  assertEq(seen.length, 0, 'pdf.js wrote to the console');
 });
