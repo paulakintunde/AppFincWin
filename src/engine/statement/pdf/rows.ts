@@ -69,8 +69,8 @@ const lastNumeric = (line: PdfLine): string | null => [...line.cells].reverse().
 const hasDate = (line: PdfLine): boolean => line.cells.some((c) => looksLikeDate(c.text));
 
 function sectionLabel(line: PdfLine): PdfSectionSpan['label'] | null {
-  const key = line.cells[0].text.replace(/\s+/g, ' ').trim().toUpperCase();
-  return !hasDate(line) && key in SECTION_LABELS ? SECTION_LABELS[key] : null;
+  const key = line.cells[0]!.text.replace(/\s+/g, ' ').trim().toUpperCase();
+  return !hasDate(line) && key in SECTION_LABELS ? SECTION_LABELS[key]! : null;
 }
 
 export function findSections(lines: readonly PdfLine[]): PdfSectionSpan[] {
@@ -83,7 +83,7 @@ export function findSections(lines: readonly PdfLine[]): PdfSectionSpan[] {
   return starts.map((s, i) => ({
     label: s.label,
     fromLine: s.at,
-    toLine: i + 1 < starts.length ? starts[i + 1].at - 1 : lines.length - 1,
+    toLine: i + 1 < starts.length ? starts[i + 1]!.at - 1 : lines.length - 1,
   }));
 }
 
@@ -234,20 +234,21 @@ function headerlessRows(lines: readonly PdfLine[], summary: TableSummary): RawRo
   lines.forEach((line) => {
     if (sectionLabel(line) !== null || classify(line, summary)) return;
     const cells = line.cells;
-    if (cells.length >= 2 && looksLikeDate(cells[0].text) && looksNumeric(cells[cells.length - 1].text)) {
+    const firstCell = cells[0]!;
+    if (cells.length >= 2 && looksLikeDate(firstCell.text) && looksNumeric(cells[cells.length - 1]!.text)) {
       let from = cells.length;
-      while (from > 1 && cells.length - from < 3 && looksNumeric(cells[from - 1].text)) from--;
+      while (from > 1 && cells.length - from < 3 && looksNumeric(cells[from - 1]!.text)) from--;
       const nums = cells.slice(from).map((c) => c.text);
       const row = newRow(line.page);
-      row.dateText = cells[0].text;
+      row.dateText = firstCell.text;
       row.descriptionParts = cells.slice(1, from).map((c) => c.text);
-      row.balanceText = nums.length >= 2 ? nums[nums.length - 1] : null;
+      row.balanceText = nums.length >= 2 ? nums[nums.length - 1]! : null;
       row.candidates = nums.length >= 2 ? nums.slice(0, -1) : nums;
       rows.push(row);
       return;
     }
     const prev = rows[rows.length - 1] as RawRow | undefined;
-    if (prev !== undefined && !looksLikeDate(cells[0].text) && !cells.some((c) => looksNumeric(c.text))) {
+    if (prev !== undefined && !looksLikeDate(firstCell.text) && !cells.some((c) => looksNumeric(c.text))) {
       prev.descriptionParts.push(...cells.map((c) => c.text));
       addFlag(prev, 'wrapped');
     }
@@ -260,7 +261,7 @@ export function assembleTable(lines: readonly PdfLine[]): AssembledTable | null 
   const summary = emptySummary();
   const headers = findHeaders(lines);
   if (headers.length > 0) {
-    const first = headers[0];
+    const first = headers[0]!;
     const rows = headerRows(lines, headers, summary);
     const roles = [...new Set(first.anchors.map((a) => a.role).filter((r) => r !== 'other'))];
     return { mode: 'header', roles, availableLabel: first.availableLabel, rows, summary };

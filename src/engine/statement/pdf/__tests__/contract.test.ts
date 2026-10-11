@@ -1,13 +1,16 @@
 import * as Server from '../../../../../supabase/functions/read-pdf-statement/contract';
 import * as Engine from '../types';
 
+const engine: Record<string, unknown> = { ...Engine };
+const server: Record<string, unknown> = { ...Server };
+
 describe('wire contract parity with the Edge Function', () => {
   it.each(['PDF_MAX_PAGES', 'PDF_MAX_BYTES', 'PDF_MAX_ITEMS', 'PDF_MAX_ITEM_CHARS', 'PDF_PASSWORD_MAX', 'STATEMENT_BUCKET'] as const)('%s is identical', (name) => {
-    expect(Engine[name]).toBe(Server[name]);
+    expect(engine[name]).toBe(server[name]);
   });
 
   it('the engine mirror exposes no constant the server lacks', () => {
-    expect(Object.keys(Engine).every((k) => k in Server)).toBe(true);
+    expect(Object.keys(engine).every((k) => k in server)).toBe(true);
   });
 
   it('STATEMENT_PATH_RE is defined by the server only and has the expected shape', () => {

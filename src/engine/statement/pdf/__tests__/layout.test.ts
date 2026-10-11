@@ -11,7 +11,7 @@ describe('groupLines', () => {
   it('puts baselines within tolerance on one line', () => {
     const lines = groupLines([page(1, [item('A', 50, 700), item('B', 200, 701.5)])]);
     expect(lines).toHaveLength(1);
-    expect(lines[0].cells.map((c) => c.text)).toEqual(['A', 'B']);
+    expect(lines[0]!.cells.map((c) => c.text)).toEqual(['A', 'B']);
   });
 
   it('splits distant baselines, higher first, and keeps page order', () => {
@@ -19,7 +19,7 @@ describe('groupLines', () => {
       page(1, [item('low', 50, 686), item('high', 50, 700)]),
       page(2, [item('p2', 50, 700)]),
     ]);
-    expect(lines.map((l) => [l.page, l.cells[0].text])).toEqual([
+    expect(lines.map((l) => [l.page, l.cells[0]!.text])).toEqual([
       [1, 'high'],
       [1, 'low'],
       [2, 'p2'],
@@ -28,24 +28,24 @@ describe('groupLines', () => {
 
   it('joins close runs into one cell and splits wide gaps', () => {
     const joined = groupLines([page(1, [item('GROCERS', 152, 700), item('ACME', 110, 700)])]);
-    expect(joined[0].cells).toEqual([{ text: 'ACME GROCERS', x0: 110, x1: 192 }]);
+    expect(joined[0]!.cells).toEqual([{ text: 'ACME GROCERS', x0: 110, x1: 192 }]);
     const apart = groupLines([page(1, [item('ACME', 110, 700), item('GROCERS', 170, 700)])]);
-    expect(apart[0].cells.map((c) => c.text)).toEqual(['ACME', 'GROCERS']);
+    expect(apart[0]!.cells.map((c) => c.text)).toEqual(['ACME', 'GROCERS']);
   });
 
   it('joins touching runs without a space and drops blanks', () => {
     const lines = groupLines([page(1, [item('AC', 100, 700, 10), item('ME', 110, 700, 10), item('  ', 300, 700), item('  ', 100, 650)])]);
     expect(lines).toHaveLength(1);
-    expect(lines[0].cells).toEqual([{ text: 'ACME', x0: 100, x1: 120 }]);
+    expect(lines[0]!.cells).toEqual([{ text: 'ACME', x0: 100, x1: 120 }]);
   });
 
   it('collapses internal whitespace and handles an empty page', () => {
-    expect(groupLines([page(1, [item('A   B', 10, 10)]), page(2, [])])[0].cells[0].text).toBe('A B');
+    expect(groupLines([page(1, [item('A   B', 10, 10)]), page(2, [])])[0]!.cells[0]!.text).toBe('A B');
   });
 
   it('keeps the widest right edge when runs overlap', () => {
     const lines = groupLines([page(1, [item('LONG', 100, 700, 100), item('IN', 110, 700, 10)])]);
-    expect(lines[0].cells[0].x1).toBe(200);
+    expect(lines[0]!.cells[0]!.x1).toBe(200);
   });
 });
 
@@ -85,7 +85,7 @@ const headerLine = (y = 700, p = 1): PdfLine =>
 
 describe('findHeaders', () => {
   it('anchors roles in order with x positions', () => {
-    const [h] = findHeaders([headerLine()]);
+    const h = findHeaders([headerLine()])[0]!;
     expect(h.line).toBe(0);
     expect(h.span).toBe(1);
     expect(h.anchors.map((a) => a.role)).toEqual(['date', 'description', 'debit', 'credit', 'balance']);
@@ -95,9 +95,9 @@ describe('findHeaders', () => {
 
   it('turns an unrecognised cell into an other anchor', () => {
     const l = line([cell('Date', 40, 70), cell('Description', 94, 160), cell('Foreign amount', 250, 320), cell('Amount', 340, 380), cell('Balance', 510, 545)]);
-    const [h] = findHeaders([l]);
+    const h = findHeaders([l])[0]!;
     expect(h.anchors.map((a) => a.role)).toEqual(['date', 'description', 'other', 'amount', 'balance']);
-    expect(Object.keys(h.anchors[2]).sort()).toEqual(['role', 'x0', 'x1']);
+    expect(Object.keys(h.anchors[2]!).sort()).toEqual(['role', 'x0', 'x1']);
   });
 
   it('merges a header split over two lines', () => {
@@ -106,23 +106,23 @@ describe('findHeaders', () => {
     const lines = [top, bottom, line([cell('02 Mar', 40, 70)], 676)];
     const hs = findHeaders(lines);
     expect(hs).toHaveLength(1);
-    expect(hs[0].span).toBe(2);
-    expect(hs[0].anchors.map((a) => a.role)).toEqual(['date', 'description', 'debit', 'credit', 'balance']);
+    expect(hs[0]!.span).toBe(2);
+    expect(hs[0]!.anchors.map((a) => a.role)).toEqual(['date', 'description', 'debit', 'credit', 'balance']);
   });
 
   it('merges when the top line alone is not a header and keeps leftover bottom cells', () => {
     const top = line([cell('Date', 40, 70), cell('Paid', 340, 380), cell('Balance', 510, 545)], 700);
     const bottom = line([cell('out', 350, 370), cell('note', 200, 230)], 688);
     const hs = findHeaders([top, bottom]);
-    expect(hs[0].span).toBe(2);
-    expect(hs[0].anchors.map((a) => a.role)).toEqual(['date', 'other', 'debit', 'balance']);
+    expect(hs[0]!.span).toBe(2);
+    expect(hs[0]!.anchors.map((a) => a.role)).toEqual(['date', 'other', 'debit', 'balance']);
   });
 
   it('does not merge a header with the data line below it', () => {
     const data = line([cell('02 Mar', 40, 70), cell('ACME', 94, 130), cell('45.23', 340, 380), cell('1,200.37', 500, 545)], 688);
     const hs = findHeaders([headerLine(), data]);
     expect(hs).toHaveLength(1);
-    expect(hs[0].span).toBe(1);
+    expect(hs[0]!.span).toBe(1);
   });
 
   it('does not merge across pages or distant lines', () => {
@@ -144,7 +144,7 @@ describe('findHeaders', () => {
 
   it('flags an available balance header', () => {
     const l = line([cell('Date', 40, 70), cell('Description', 94, 160), cell('Amount', 340, 380), cell('Available balance', 480, 545)]);
-    expect(findHeaders([l])[0].availableLabel).toBe(true);
+    expect(findHeaders([l])[0]!.availableLabel).toBe(true);
   });
 });
 

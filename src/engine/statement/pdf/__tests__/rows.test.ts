@@ -36,15 +36,15 @@ describe('assembleTable (header mode)', () => {
   it('a wrapped description joins its row and is flagged, never emitted as its own row', () => {
     const t = assembleTable([header(), ln([date(), desc('ACME'), out('45.23'), bal('1,200.37')]), ln([desc('NBR 131')]), ln([desc('MORE')])]);
     expect(t?.rows).toHaveLength(1);
-    expect(t?.rows[0].descriptionParts).toEqual(['ACME', 'NBR 131', 'MORE']);
-    expect(t?.rows[0].flags).toEqual(['wrapped']);
-    expect(t?.rows[0].amountColumn).toBe('debit');
+    expect(t?.rows[0]!.descriptionParts).toEqual(['ACME', 'NBR 131', 'MORE']);
+    expect(t?.rows[0]!.flags).toEqual(['wrapped']);
+    expect(t?.rows[0]!.amountColumn).toBe('debit');
   });
 
   it('ignores a text line before any row exists', () => {
     const t = assembleTable([header(), ln([desc('NOTE')]), ln([date(), desc(), out('1.00')])]);
     expect(t?.rows).toHaveLength(1);
-    expect(t?.rows[0].flags).toEqual([]);
+    expect(t?.rows[0]!.flags).toEqual([]);
   });
 
   it('flags a line with an amount but no date', () => {
@@ -61,8 +61,8 @@ describe('assembleTable (header mode)', () => {
 
   it('flags values in both money columns', () => {
     const t = assembleTable([header(), ln([date(), desc(), out('5.00'), cred('6.00')])]);
-    expect(t?.rows[0].flags).toEqual(['both-columns']);
-    expect(t?.rows[0].amountColumn).toBe('debit');
+    expect(t?.rows[0]!.flags).toEqual(['both-columns']);
+    expect(t?.rows[0]!.amountColumn).toBe('debit');
   });
 
   it('keeps the first value when a column holds two', () => {
@@ -79,7 +79,7 @@ describe('assembleTable (header mode)', () => {
 
   it('puts a numeric-looking cell that is not near the date column in the numbers, not the date', () => {
     const t = assembleTable([header(), ln([desc('X'), c('03/04', 300, 330), cred('1.00')])]);
-    expect(t?.rows[0].dateText).toBeNull();
+    expect(t?.rows[0]!.dateText).toBeNull();
   });
 
   it('attaches a balance-only line to a row without a balance, otherwise ignores it', () => {
@@ -90,8 +90,8 @@ describe('assembleTable (header mode)', () => {
       ln([bal('88.00')]),
     ]);
     expect(t?.rows).toHaveLength(1);
-    expect(t?.rows[0].balanceText).toBe('99.00');
-    expect(t?.rows[0].flags).toEqual([]);
+    expect(t?.rows[0]!.balanceText).toBe('99.00');
+    expect(t?.rows[0]!.flags).toEqual([]);
   });
 
   it('ignores lines before the first header but still reads figures from them', () => {
@@ -170,7 +170,7 @@ describe('assembleTable (header mode)', () => {
       ln([date(), desc(), out('1.00')]),
     ]);
     expect(t?.summary.periodLine).toBe('PERIOD 1 Mar to 31 Mar 2026');
-    expect(t?.rows[0].descriptionParts).toEqual(['ACME GROCERS']);
+    expect(t?.rows[0]!.descriptionParts).toEqual(['ACME GROCERS']);
   });
 
   it('reads a period line from two dates without the word period', () => {
@@ -268,7 +268,7 @@ describe('findSections', () => {
   });
   it.each([['CHECKING ACCOUNT', 'checking'], ['Checking', 'checking'], ['SAVINGS', 'savings']] as const)('labels %s as %s', (name, label) => {
     const spans = findSections([ln([c(name, 40, 100)]), dated(), ln([c('Credit Card', 40, 100)])]);
-    expect(spans[0].label).toBe(label);
+    expect(spans[0]!.label).toBe(label);
   });
   it('needs at least two section lines and ignores dated lines', () => {
     expect(findSections([ln([c('CURRENT ACCOUNT', 40, 100)]), dated()])).toEqual([]);

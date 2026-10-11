@@ -29,9 +29,10 @@ interface Run {
 function toCells(runs: readonly Run[]): PdfCell[] {
   const sorted = [...runs].sort((a, b) => a.x - b.x);
   const cells: PdfCell[] = [];
-  let text = sorted[0].str;
-  let x0 = sorted[0].x;
-  let x1 = sorted[0].x + sorted[0].w;
+  const head = sorted[0]!;
+  let text = head.str;
+  let x0 = head.x;
+  let x1 = head.x + head.w;
   for (const r of sorted.slice(1)) {
     if (r.x - x1 <= CELL_JOIN_GAP) {
       text += (r.x - x1 < 0.5 ? '' : ' ') + r.str;
@@ -53,11 +54,11 @@ export function groupLines(pages: readonly PdfPageText[]): PdfLine[] {
     const items = page.items.filter((i) => i.str.trim() !== '').sort((a, b) => b.y - a.y);
     let bucket: Run[] = [];
     const flush = (): void => {
-      if (bucket.length > 0) lines.push({ page: page.n, y: bucket[0].y, cells: toCells(bucket) });
+      if (bucket.length > 0) lines.push({ page: page.n, y: bucket[0]!.y, cells: toCells(bucket) });
       bucket = [];
     };
     for (const item of items) {
-      if (bucket.length > 0 && Math.abs(item.y - bucket[0].y) > LINE_TOLERANCE) flush();
+      if (bucket.length > 0 && Math.abs(item.y - bucket[0]!.y) > LINE_TOLERANCE) flush();
       bucket.push(item);
     }
     flush();
@@ -70,7 +71,7 @@ const NUMERIC_SHAPE = /^[-+(]?[£$€]?[-+]?(\d[\d,.   ']*)\)?(?: ?(?:OD|CR|D
 export function looksNumeric(text: string): boolean {
   const m = NUMERIC_SHAPE.exec(text.trim());
   if (m === null) return false;
-  const body = m[1].replace(/[\s  ']+$/, '');
+  const body = m[1]!.replace(/[\s  ']+$/, '');
   return /^\d{1,12}$/.test(body) || /[.,]\d{2}$/.test(body);
 }
 
@@ -141,7 +142,7 @@ function mergeCells(top: readonly PdfCell[], bottom: readonly PdfCell[]): PdfCel
     const j = bottom.findIndex((b, k) => !used.has(k) && overlapsEnough(t, b));
     if (j === -1) return t;
     used.add(j);
-    const b = bottom[j];
+    const b = bottom[j]!;
     return { text: `${t.text} ${b.text}`, x0: Math.min(t.x0, b.x0), x1: Math.max(t.x1, b.x1) };
   });
   bottom.forEach((b, k) => {
@@ -164,11 +165,12 @@ function toMatch(index: number, span: 1 | 2, cand: Candidate): HeaderMatch {
 export function findHeaders(lines: readonly PdfLine[]): HeaderMatch[] {
   const found: HeaderMatch[] = [];
   for (let i = 0; i < lines.length; i++) {
-    const plain = evaluate(lines[i].cells);
+    const cur = lines[i]!;
+    const plain = evaluate(cur.cells);
     if (plain.matched < 2) continue;
     const next = lines[i + 1] as PdfLine | undefined;
-    if (next !== undefined && next.page === lines[i].page && Math.abs(lines[i].y - next.y) <= HEADER_LINE_GAP) {
-      const merged = evaluate(mergeCells(lines[i].cells, next.cells));
+    if (next !== undefined && next.page === cur.page && Math.abs(cur.y - next.y) <= HEADER_LINE_GAP) {
+      const merged = evaluate(mergeCells(cur.cells, next.cells));
       if (merged.isHeader && (!plain.isHeader || merged.matched > plain.matched)) {
         found.push(toMatch(i, 2, merged));
         i++;
@@ -198,12 +200,13 @@ export function placeCell(cell: PdfCell, anchors: readonly ColumnAnchor[]): Plac
     .sort((p, q) => p.d - q.d);
   if (ranked.length === 0) return { kind: 'column', role: 'other' };
   if (ranked.length >= 2) {
-    const [first, second] = ranked;
+    const first = ranked[0]!;
+    const second = ranked[1]!;
     const pair = [first.a.role, second.a.role];
     if (pair.includes('debit') && pair.includes('credit')) {
       const gap = Math.abs(mid(first.a) - mid(second.a));
       if (second.d - first.d < 0.25 * gap) return { kind: 'between', roles: ['debit', 'credit'] };
     }
   }
-  return { kind: 'column', role: ranked[0].a.role };
+  return { kind: 'column', role: ranked[0]!.a.role };
 }

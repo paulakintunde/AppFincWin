@@ -4,3 +4,5 @@ export * from './balanceDelta';
 export * from './dates';
 export * from './layout';
 export * from './rows';
+export * from './validate';
+export * from './layoutFingerprint';
