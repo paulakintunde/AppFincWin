@@ -1,4 +1,4 @@
-import { sniffFormat } from '../sniffFormat';
+import { sniffFormat, sniffPdfBytes } from '../sniffFormat';
 
 describe('sniffFormat: OFX detection', () => {
   it('recognises an OFX 1.x SGML header', () => {
@@ -29,8 +29,9 @@ describe('sniffFormat: CSV detection', () => {
 });
 
 describe('sniffFormat: unknown', () => {
-  it('reports unknown for a PDF header', () => {
-    expect(sniffFormat('%PDF-1.7\n%âãÏÓ')).toBe('unknown');
+  it('reports pdf for a PDF header, with or without a BOM', () => {
+    expect(sniffFormat('%PDF-1.7\n%âãÏÓ')).toBe('pdf');
+    expect(sniffFormat('﻿  %PDF-1.4')).toBe('pdf');
   });
 
   it('reports unknown for prose with no delimiter', () => {
@@ -68,5 +69,22 @@ describe('sniffFormat: no-leak (never throws for sensitive statement text)', () 
 
   it.each(sensitiveInputs)('never throws sniffing %p', (text) => {
     expect(() => sniffFormat(text)).not.toThrow();
+  });
+});
+
+describe('sniffPdfBytes', () => {
+  const enc = (t: string) => new TextEncoder().encode(t);
+  it('is true for a leading header', () => {
+    expect(sniffPdfBytes(enc('%PDF-1.7\n'))).toBe(true);
+  });
+  it('is true for the header after junk within 1 KB', () => {
+    expect(sniffPdfBytes(enc(`${'x'.repeat(600)}%PDF-1.4`))).toBe(true);
+  });
+  it('is false for the header beyond 1 KB', () => {
+    expect(sniffPdfBytes(enc(`${'x'.repeat(2000)}%PDF-1.4`))).toBe(false);
+  });
+  it('is false for CSV and empty bytes', () => {
+    expect(sniffPdfBytes(enc('Date,Amount'))).toBe(false);
+    expect(sniffPdfBytes(new Uint8Array(0))).toBe(false);
   });
 });

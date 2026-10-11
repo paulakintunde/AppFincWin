@@ -8,8 +8,9 @@
 // engine (decodeText).
 import { getDocumentAsync } from 'expo-document-picker';
 import { File } from 'expo-file-system';
+import { MAX_PDF_BYTES } from '@/engine/statement/limits';
 
-export const MAX_STATEMENT_BYTES = 5 * 1024 * 1024;
+export { MAX_STATEMENT_BYTES, MAX_PDF_BYTES } from '@/engine/statement/limits';
 
 // The match-everything entry stays last so iOS never greys out an .ofx or .qfx file that has no registered type (E4).
 export const STATEMENT_MIME_TYPES: readonly string[] = [
@@ -22,19 +23,20 @@ export const STATEMENT_MIME_TYPES: readonly string[] = [
   'application/ofx',
   'application/vnd.intu.qfx',
   'application/x-qfx',
+  'application/pdf',
   '*/*',
 ];
 
 export type PickStatementResult =
-  | { kind: 'ok'; bytes: Uint8Array; mimeType: string | null; extension: 'csv' | 'ofx' | 'qfx' | 'other' }
+  | { kind: 'ok'; bytes: Uint8Array; mimeType: string | null; extension: 'csv' | 'ofx' | 'qfx' | 'pdf' | 'other' }
   | { kind: 'canceled' }
   | { kind: 'rejected'; reason: 'too_big' | 'unreadable' };
 
-function extensionOf(label: string): 'csv' | 'ofx' | 'qfx' | 'other' {
+function extensionOf(label: string): 'csv' | 'ofx' | 'qfx' | 'pdf' | 'other' {
   const dot = label.lastIndexOf('.');
   if (dot === -1) return 'other';
   const suffix = label.slice(dot + 1).toLowerCase();
-  if (suffix === 'csv' || suffix === 'ofx' || suffix === 'qfx') return suffix;
+  if (suffix === 'csv' || suffix === 'ofx' || suffix === 'qfx' || suffix === 'pdf') return suffix;
   return 'other';
 }
 
@@ -60,10 +62,10 @@ export async function pickStatementBytes(): Promise<PickStatementResult> {
   try {
     file = new File(asset.uri);
     const size = asset.size ?? file.size;
-    if (size > MAX_STATEMENT_BYTES) return { kind: 'rejected', reason: 'too_big' };
+    if (size > MAX_PDF_BYTES) return { kind: 'rejected', reason: 'too_big' };
     const bytes = await file.bytes();
-    // The picker size can be absent or stale; the real length decides.
-    if (bytes.length > MAX_STATEMENT_BYTES) return { kind: 'rejected', reason: 'too_big' };
+    // The picker size can be absent or stale; the real length decides. The CSV/OFX 5 MB cap is applied in prepareImport after sniffing.
+    if (bytes.length > MAX_PDF_BYTES) return { kind: 'rejected', reason: 'too_big' };
     return { kind: 'ok', bytes, mimeType: asset.mimeType ?? null, extension: extensionOf(asset.name) };
   } catch {
     return { kind: 'rejected', reason: 'unreadable' };
