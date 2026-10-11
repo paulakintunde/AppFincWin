@@ -18,12 +18,18 @@ import { Pill } from '@/ui/Pill';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { Actions, Heading, SuggestionCard, T, Tag, useDynamicT, useFormatAmount } from './importUi';
+import type { DraftRowIssue } from '@/engine/statement';
 import type { PreviewRow } from './importPipeline';
 import type { useStatementImport } from './useStatementImport';
 
 type ImportState = ReturnType<typeof useStatementImport>;
 
-const ISSUE_KEY = {
+const ISSUE_KEY: Partial<
+  Record<
+    DraftRowIssue,
+    'badDate' | 'badAmount' | 'zeroAmount' | 'emptyDescription' | 'unknownCurrency' | 'amountTooLarge' | 'conflictingMarkers' | 'badBalance'
+  >
+> = {
   'bad-date': 'badDate',
   'bad-amount': 'badAmount',
   'zero-amount': 'zeroAmount',
@@ -32,7 +38,7 @@ const ISSUE_KEY = {
   'amount-too-large': 'amountTooLarge',
   'conflicting-markers': 'conflictingMarkers',
   'bad-balance': 'badBalance',
-} as const;
+};
 
 function Reconciliation({ file }: { file: string | null }) {
   const t = useT();
@@ -179,11 +185,13 @@ export function ReviewStep({ state }: { state: ImportState }) {
           {item.check === 'cannot-verify' ? (
             <Tag label={t('importCsv.reconcile.rowTag')} accessibilityLabel={t('importCsv.reconcile.rowTagA11y')} />
           ) : null}
-          {c.issues.map((issue) => (
-            <T key={issue} role="label" tone="inkMuted">
-              {issue === 'unknown-currency' ? t('importCsv.issue.unknownCurrency', { code: c.currency }) : tx(`importCsv.issue.${ISSUE_KEY[issue]}`)}
-            </T>
-          ))}
+          {c.issues.map((issue) =>
+            issue === 'unknown-currency' || ISSUE_KEY[issue] !== undefined ? (
+              <T key={issue} role="label" tone="inkMuted">
+                {issue === 'unknown-currency' ? t('importCsv.issue.unknownCurrency', { code: c.currency }) : tx(`importCsv.issue.${ISSUE_KEY[issue]}`)}
+              </T>
+            ) : null
+          )}
         </View>
       </View>
     );
