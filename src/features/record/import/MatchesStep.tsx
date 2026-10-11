@@ -226,7 +226,7 @@ export function MatchesStep({ state }: { state: ImportState }) {
         <Pill
           label={t('importCsv.commit', { count: included })}
           variant="primary"
-          disabled={included === 0 || overCap}
+          disabled={included === 0 || overCap || (state.reviewGate.required && !state.rowsChecked)}
           accessibilityHint={overCap ? overCapText : undefined}
           onPress={state.commit}
         />

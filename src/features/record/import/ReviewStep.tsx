@@ -89,6 +89,8 @@ export function ReviewStep({ state }: { state: ImportState }) {
 
   const rows = preview.rows;
   const included = state.counts.included;
+  const checkedLabel = t('importCsv.pdf.checkedRows', { count: state.reviewGate.count });
+  const gated = state.reviewGate.required && !state.rowsChecked;
   const hasMatches = state.transferRows.length > 0 || state.payMatchRows.length > 0;
   const ratesPending = rows.some((r) => {
     const s = state.rowState(r.index);
@@ -125,11 +127,34 @@ export function ReviewStep({ state }: { state: ImportState }) {
   const footer = (
     <View>
       {state.commitProblem === 'failed' ? <T tone="inkMuted">{t('importCsv.commitFailed')}</T> : null}
+      {state.reviewGate.required ? (
+        <Pressable
+          accessibilityRole="checkbox"
+          accessibilityLabel={checkedLabel}
+          accessibilityState={{ checked: state.rowsChecked }}
+          onPress={() => state.setRowsChecked(!state.rowsChecked)}
+          style={styles.gateRow}
+        >
+          <View style={styles.tickHit}>
+            <View
+              style={[
+                styles.tick,
+                { borderColor: state.rowsChecked ? colors.ink : colors.inkFaint, backgroundColor: state.rowsChecked ? colors.ink : 'transparent' },
+              ]}
+            >
+              {state.rowsChecked ? <View style={[styles.tickDot, { backgroundColor: colors.surface }]} /> : null}
+            </View>
+          </View>
+          <View style={styles.text}>
+            <T>{checkedLabel}</T>
+          </View>
+        </Pressable>
+      ) : null}
       <Actions>
         {hasMatches ? (
-          <Pill label={t('importCsv.continue')} variant="secondary" disabled={included === 0} onPress={() => void state.continue()} />
+          <Pill label={t('importCsv.continue')} variant="secondary" disabled={included === 0 || gated} onPress={() => void state.continue()} />
         ) : (
-          <Pill label={t('importCsv.commit', { count: included })} variant="primary" disabled={included === 0} onPress={state.commit} />
+          <Pill label={t('importCsv.commit', { count: included })} variant="primary" disabled={included === 0 || gated} onPress={state.commit} />
         )}
         <Pill label={t('importCsv.back')} variant="secondary" onPress={state.back} />
         <Pill label={t('importCsv.cancel')} variant="secondary" onPress={state.cancel} />
@@ -227,6 +252,7 @@ const styles = StyleSheet.create({
   row: { paddingVertical: space.gapSm, borderBottomWidth: StyleSheet.hairlineWidth },
   top: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
   text: { flex: 1 },
+  gateRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: space.touchMin },
   tickHit: { minWidth: space.touchMin, minHeight: space.touchMin, alignItems: 'center', justifyContent: 'center' },
   tick: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   tickDot: { width: 8, height: 8, borderRadius: 4 },
