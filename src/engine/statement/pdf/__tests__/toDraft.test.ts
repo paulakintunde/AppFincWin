@@ -195,6 +195,35 @@ describe('both columns and headerless rows', () => {
   });
 });
 
+describe('foreign amounts on continuation lines (IMP-05)', () => {
+  it('carries a recognised note as structured data and keeps the raw text and the wrapped flag', () => {
+    const d = draftOf([
+      PERIOD,
+      HEAD,
+      [D('02 Mar'), DESC('SAMPLE STORE'), OUT('35.38')],
+      [DESC('USD 45.00 @ 1.2718')],
+      [D('03 Mar'), DESC('PLAIN'), OUT('2.00')],
+    ]).draft;
+    expect(d.rows[0]).toMatchObject({ description: 'SAMPLE STORE USD 45.00 @ 1.2718', issues: ['pdf-wrapped-description'] });
+    expect(d.rows[0]!.foreign).toMatchObject({ magnitude: 4500, currency: 'USD' });
+    expect(d.rows[1]!.foreign).toBeNull();
+  });
+
+  it('takes the first hit among later parts and ignores the first part and a same-currency note', () => {
+    const d = draftOf([
+      PERIOD,
+      HEAD,
+      [D('02 Mar'), DESC('USD 9.00 SHOP'), OUT('1.00')],
+      [DESC('REF 123')],
+      [DESC('EUR 10.00')],
+      [D('03 Mar'), DESC('SAME'), OUT('2.00')],
+      [DESC('GBP 2.00')],
+    ], { exponentFor: (code) => (['GBP', 'USD', 'EUR'].includes(code) ? 2 : null) }).draft;
+    expect(d.rows[0]!.foreign).toMatchObject({ magnitude: 1000, currency: 'EUR' });
+    expect(d.rows[1]!.foreign).toBeNull();
+  });
+});
+
 describe('descriptions and dates', () => {
   it('joins wrapped parts, and carries the previous date for a line without one', () => {
     const d = draftOf([

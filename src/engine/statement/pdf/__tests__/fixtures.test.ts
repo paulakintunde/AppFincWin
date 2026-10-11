@@ -1,6 +1,6 @@
 // Real extraction snapshots (plan 02.1-06) read by the real reader and run through Phase 2's unchanged
 // profile, conversion and reconciliation (D-19, IMP-01, IMP-02). No PDF-specific substitute for any stage.
-import { applyUncertainRows, convertDraft, inferProfile, isUncertainIssue, reconcile } from '../..';
+import { applyUncertainRows, convertDraft, inferProfile, isUncertainIssue, linkFxFees, reconcile } from '../..';
 import type { AccountKind, StatementDraft } from '../..';
 import { pdfToDrafts } from '../toDraft';
 import type { PdfExtraction } from '../types';
@@ -10,6 +10,8 @@ interface ExpectedRow {
   description: string;
   amount: number;
   balance: number | null;
+  foreign?: { amount: number; currency: string } | null;
+  feeOf?: number | null;
 }
 interface Expected {
   accountKind: AccountKind;
@@ -28,7 +30,7 @@ const load = (name: string): { extraction: PdfExtraction; expected: Expected } =
 
 const options = {
   accountCurrency: 'GBP',
-  exponentFor: () => 2,
+  exponentFor: (code: string) => (['GBP', 'USD', 'EUR'].includes(code) ? 2 : null),
   dayFirst: true,
   decimalMark: '.' as const,
   today: '2026-09-26',
@@ -81,6 +83,20 @@ describe.each(NAMES)('fixture %s', (name) => {
           if (draft.rows[k]!.issues.includes('pdf-ambiguous-column')) return;
           expect(row.amount).toBe(rows[k]!.amount);
         });
+        // IMP-05: foreign figures and fee links come out of the same conversion (D-30, D-32)
+        converted.rows.forEach((row, k) => {
+          expect(row.foreign ?? null).toEqual(rows[k]!.foreign ?? null);
+        });
+        const links = linkFxFees(
+          converted.rows.map((r, k) => ({
+            index: k,
+            localDate: r.localDate,
+            description: r.description,
+            amount: r.amount,
+            hasForeign: (r.foreign ?? null) !== null,
+          })),
+        );
+        rows.forEach((row, k) => expect(links.get(k) ?? null).toBe(row.feeOf ?? null));
         if (opening !== null) expect(converted.opening).toBe(opening);
         if (closing !== null) expect(converted.closing).toBe(closing);
 

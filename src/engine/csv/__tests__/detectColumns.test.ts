@@ -31,6 +31,8 @@ describe('detectColumns', () => {
       balance: null,
       direction: null,
       limit: null,
+      foreignAmount: null,
+      foreignCurrency: null,
     });
     expect(confidence).toBe('high');
   });
@@ -291,6 +293,38 @@ describe('validateMapping', () => {
       limit: null,
     };
     expect(validateMapping(mapping)).toEqual(['no-date', 'no-description', 'no-amount']);
+  });
+});
+
+describe('foreign amount and currency roles (IMP-05)', () => {
+  const sample = [['01/02/2026', 'SAMPLE STORE', '-35.38', '45.00', 'USD', '805.37']];
+
+  it('maps Original amount / Original currency ahead of amount and currency', () => {
+    const { mapping } = detectColumns(
+      ['Date', 'Description', 'Amount', 'Original amount', 'Original currency', 'Balance'],
+      sample
+    );
+    expect(mapping).toMatchObject({ amount: 2, foreignAmount: 3, foreignCurrency: 4, currency: null, balance: 5 });
+  });
+
+  it('maps Foreign amount / Foreign currency and keeps a plain Currency header as currency', () => {
+    const { mapping } = detectColumns(
+      ['Date', 'Description', 'Foreign amount', 'Foreign currency', 'Amount', 'Currency'],
+      [['01/02/2026', 'SAMPLE STORE', '45.00', 'USD', '-35.38', 'GBP']]
+    );
+    expect(mapping).toMatchObject({ foreignAmount: 2, foreignCurrency: 3, amount: 4, currency: 5 });
+  });
+
+  it('leaves both roles null when no original columns exist', () => {
+    const { mapping } = detectColumns(['Date', 'Description', 'Amount'], [['2026-09-01', 'Tesco', '-12.50']]);
+    expect(mapping.foreignAmount).toBeNull();
+    expect(mapping.foreignCurrency).toBeNull();
+  });
+
+  it('reports duplicate-column when a foreign role reuses another role column', () => {
+    expect(validateMapping(baseMapping({ foreignAmount: 2 }))).toEqual(['duplicate-column']);
+    expect(validateMapping(baseMapping({ foreignCurrency: 0 }))).toEqual(['duplicate-column']);
+    expect(validateMapping(baseMapping({ foreignAmount: 3, foreignCurrency: 4 }))).toEqual([]);
   });
 });
 

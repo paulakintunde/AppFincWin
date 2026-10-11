@@ -14,6 +14,7 @@ import { parseOfxAmount } from './amount';
 import { ofxLocalDate } from './date';
 import { buildOfxTree, child, childText, findAll, type OfxNode } from './tree';
 import { splitOfxHeader, tokenizeOfx } from './tokenize';
+import { foreignFromOfx } from '../statement/foreign';
 import {
   MAX_DESCRIPTION,
   MAX_EXTERNAL_ID,
@@ -116,7 +117,14 @@ function layoutSignatureFor(statementNode: OfxNode, kind: 'bank' | 'card'): stri
   return acctType !== null ? `ofx|bank|${acctType}` : 'ofx|bank';
 }
 
-function extractRow(stmttrn: OfxNode, index: number, currency: string, exponent: number, unknownCurrency: boolean): DraftRow {
+function extractRow(
+  stmttrn: OfxNode,
+  index: number,
+  currency: string,
+  exponent: number,
+  unknownCurrency: boolean,
+  exponentFor: (code: string) => number | null
+): DraftRow {
   const issues: DraftRow['issues'] = [];
 
   const dtPostedText = childText(stmttrn, 'DTPOSTED');
@@ -128,6 +136,7 @@ function extractRow(stmttrn: OfxNode, index: number, currency: string, exponent:
 
   let magnitude: DraftRow['magnitude'] = null;
   let marker: DraftRow['marker'] = 'none';
+  let foreign: DraftRow['foreign'] = null;
   if (trnAmtText === null) {
     issues.push('bad-amount');
   } else {
@@ -138,6 +147,28 @@ function extractRow(stmttrn: OfxNode, index: number, currency: string, exponent:
       magnitude = amountResult.magnitude;
       marker = amountResult.marker;
       if (magnitude === 0) issues.push('zero-amount');
+
+      // IMP-05 / D-30: ORIGCURRENCY keeps TRNAMT as the charged amount;
+      // CURRENCY states TRNAMT in the foreign currency, so the charged amount
+      // is TRNAMT x the statement's own CURRATE (D-34).
+      const orig = child(stmttrn, 'ORIGCURRENCY');
+      const cur = orig ?? child(stmttrn, 'CURRENCY');
+      if (cur !== null) {
+        const found = foreignFromOfx(
+          {
+            kind: orig !== null ? 'origcurrency' : 'currency',
+            trnAmtMagnitude: magnitude,
+            accountExponent: exponent,
+            curRate: childText(cur, 'CURRATE'),
+            curSym: childText(cur, 'CURSYM'),
+          },
+          exponentFor
+        );
+        if (found !== null) {
+          foreign = found.foreign;
+          if (orig === null) magnitude = found.chargedMagnitude;
+        }
+      }
     }
   }
 
@@ -167,6 +198,7 @@ function extractRow(stmttrn: OfxNode, index: number, currency: string, exponent:
     externalId: fitidText !== null ? fitidText.slice(0, MAX_EXTERNAL_ID) : null,
     trnType: trnTypeText !== null ? trnTypeText.toUpperCase() : null,
     issues,
+    foreign,
   };
 }
 
@@ -188,7 +220,7 @@ function extractDraft(
   const dtEndText = bankTranList !== null ? childText(bankTranList, 'DTEND') : null;
 
   const stmttrns = findAll(statementNode, 'STMTTRN');
-  const rows = stmttrns.map((stmttrn, index) => extractRow(stmttrn, index, rowCurrency, exponent, unknownCurrency));
+  const rows = stmttrns.map((stmttrn, index) => extractRow(stmttrn, index, rowCurrency, exponent, unknownCurrency, opts.exponentFor));
 
   return {
     source: 'ofx',
