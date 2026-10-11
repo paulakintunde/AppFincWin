@@ -76,6 +76,12 @@ export interface TransactionRow {
   external_id: string | null;
   import_format: string | null;
   transfer_id: string | null;
+  // IMP-05 (02.1-13). Always present on server reads; optional only so optimistic rows and existing
+  // fixtures keep compiling; readers treat undefined as null.
+  stmt_orig_amount?: number | null;
+  stmt_orig_currency?: string | null;
+  conversion_source?: 'statement' | 'market' | null;
+  fx_fee_of?: string | null;
   // Record polish (plan 02 grants): is_refund/is_automatic are client-writable; is_sample is
   // server-written and client-read-only (never in a write-key list).
   is_refund: boolean;
@@ -157,6 +163,10 @@ export interface NewTransaction {
   external_id?: string | null;
   import_format?: 'csv' | 'ofx' | 'pdf' | null;
   transfer_id?: string | null;
+  // IMP-05 (D-34) -- insert-only statement figures and fee link.
+  stmt_orig_amount?: number | null;
+  stmt_orig_currency?: string | null;
+  fx_fee_of?: string | null;
   is_refund?: boolean;
   is_automatic?: boolean;
 }

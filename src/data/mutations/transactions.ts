@@ -418,6 +418,10 @@ export function registerTransactionMutations(qc: QueryClient): void {
           external_id: tx.external_id ?? null,
           import_format: tx.import_format ?? null,
           transfer_id: tx.transfer_id ?? null,
+          stmt_orig_amount: tx.stmt_orig_amount ?? null,
+          stmt_orig_currency: tx.stmt_orig_currency ?? null,
+          conversion_source: tx.stmt_orig_amount != null ? 'statement' : null, // server recomputes
+          fx_fee_of: tx.fx_fee_of ?? null,
           is_refund: tx.is_refund ?? false,
           is_automatic: tx.is_automatic ?? false,
           is_sample: false,

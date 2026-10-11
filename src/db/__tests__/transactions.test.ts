@@ -153,6 +153,17 @@ describe('TRANSACTION_COLUMNS', () => {
     expect(TRANSACTION_PATCH_KEYS).toContain('transfer_id');
   });
 
+  it('IMP-05: statement figures and fee link are selected and insert-only', () => {
+    for (const col of ['stmt_orig_amount', 'stmt_orig_currency', 'conversion_source', 'fx_fee_of']) {
+      expect(TRANSACTION_COLUMNS).toContain(col);
+      expect(TRANSACTION_PATCH_KEYS).not.toContain(col);
+    }
+    for (const col of ['stmt_orig_amount', 'stmt_orig_currency', 'fx_fee_of']) {
+      expect(TRANSACTION_INSERT_KEYS).toContain(col);
+    }
+    expect(TRANSACTION_INSERT_KEYS).not.toContain('conversion_source');
+  });
+
   it("Record fields recurring_series_id/occurrence_date/updated_by are server-only (read-only, never in a write-key list)", () => {
     for (const col of ['recurring_series_id', 'occurrence_date', 'updated_by']) {
       expect(TRANSACTION_INSERT_KEYS).not.toContain(col);
