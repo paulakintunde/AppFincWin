@@ -213,7 +213,7 @@ export interface FeeLinkRow {
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const DAY_MS = 86_400_000;
 
-function dayNumber(localDate: string | null): number | null {
+function dayIndex(localDate: string | null): number | null {
   if (localDate === null) return null;
   const m = DATE_RE.exec(localDate);
   if (!m) return null;
@@ -233,7 +233,7 @@ export function linkFxFees(rows: readonly FeeLinkRow[]): Map<number, number> {
 
   rows.forEach((fee, pos) => {
     if (!isFxFeeDescription(fee.description)) return;
-    const feeDay = dayNumber(fee.localDate);
+    const feeDay = dayIndex(fee.localDate);
     if (feeDay === null || fee.amount === null || fee.amount === 0) return;
     const feeNeg = fee.amount < 0;
 
@@ -242,7 +242,7 @@ export function linkFxFees(rows: readonly FeeLinkRow[]): Map<number, number> {
       if (p === pos || !r.hasForeign || isFxFeeDescription(r.description)) return;
       if (taken.has(r.index) || r.amount === null || r.amount === 0) return;
       if (r.amount < 0 !== feeNeg) return;
-      const day = dayNumber(r.localDate);
+      const day = dayIndex(r.localDate);
       if (day === null || Math.abs(day - feeDay) > 1) return;
       candidates.push(p);
     });
