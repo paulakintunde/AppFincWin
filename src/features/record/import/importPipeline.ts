@@ -32,6 +32,7 @@ import {
   pdfToDrafts,
   reconcile,
   sniffFormat,
+  signToTurn,
   sniffPdfBytes,
   type AccountKind,
   type ConvertedRow,
@@ -344,8 +345,13 @@ export interface PreviewAccount {
   creditLimit: number | null;
 }
 
+/** A limit of null or 0 or less is "no limit set" (D-49, see engine/accounts/standing.ts). */
+export function setLimit(n: number | null): number | null {
+  return n !== null && n > 0 ? n : null;
+}
+
 function limitOf(account: PreviewAccount): MinorUnits | null {
-  const n = account.kind === 'credit' ? account.creditLimit : account.overdraftLimit;
+  const n = setLimit(account.kind === 'credit' ? account.creditLimit : account.overdraftLimit);
   return n === null ? null : minorUnits(n);
 }
 
@@ -437,9 +443,18 @@ const BLOCKING_ISSUES: ReadonlySet<DraftRowIssue> = new Set<DraftRowIssue>([
 function offerLimit(profile: FormatProfile, account: PreviewAccount): Preview['limitOffer'] {
   const stated = profile.statedLimit;
   if (stated === null || stated <= 0) return null;
-  if (profile.accountFamily === 'card' && account.creditLimit === null) return { field: 'credit_limit', amount: stated };
-  if (profile.accountFamily === 'deposit' && account.overdraftLimit === null) return { field: 'overdraft_limit', amount: stated };
+  if (profile.accountFamily === 'card' && setLimit(account.creditLimit) === null) return { field: 'credit_limit', amount: stated };
+  if (profile.accountFamily === 'deposit' && setLimit(account.overdraftLimit) === null) return { field: 'overdraft_limit', amount: stated };
   return null;
+}
+
+/** The same line the other way round: the amount and its foreign original are signed alike. */
+function turnSign(r: ConvertedRow): ConvertedRow {
+  return {
+    ...r,
+    amount: r.amount === null ? null : minorUnits(-r.amount),
+    foreign: r.foreign === undefined || r.foreign === null ? r.foreign : { ...r.foreign, amount: minorUnits(-r.foreign.amount) },
+  };
 }
 
 /**
@@ -451,9 +466,24 @@ export function buildPreview(input: PreviewInput): Preview {
   const { draft, profile, account } = input;
 
   const accountLimit = limitOf(account);
-  const converted = convertDraft(draft, profile, {
+  const read = convertDraft(draft, profile, {
     limit: profile.accountFamily === 'card' ? (accountLimit ?? profile.statedLimit) : accountLimit,
   });
+  const opening =
+    read.opening ??
+    ((draft.source === 'ofx' || draft.source === 'pdf') && input.storedOpeningForFile !== null ? input.storedOpeningForFile : null);
+
+  // D-24: with no running balance anywhere, the ends decide a PDF line's open sign (debug
+  // pdf-closing-balance-unverified); otherwise one guessed sign fails every line in the file.
+  const turn =
+    draft.source === 'pdf' && read.rows.every((r) => r.balance === null && r.availableSigned === null)
+      ? signToTurn(
+          read.rows.map((r) => r.amount),
+          draft.rows.map((r) => r.marker === 'none' && r.issues.includes('pdf-ambiguous-column')),
+          { opening, closing: read.closing }
+        )
+      : null;
+  const converted = turn === null ? read : { ...read, rows: read.rows.map((r, i) => (i === turn ? turnSign(r) : r)) };
 
   const reconciled = reconcile(
     converted.rows.map((r) => ({
@@ -463,14 +493,7 @@ export function buildPreview(input: PreviewInput): Preview {
       balance: r.balance ?? r.availableSigned,
       localDate: r.localDate,
     })),
-    {
-      opening:
-        converted.opening ??
-        ((draft.source === 'ofx' || draft.source === 'pdf') && input.storedOpeningForFile !== null
-          ? input.storedOpeningForFile
-          : null),
-      closing: converted.closing,
-    }
+    { opening, closing: converted.closing }
   );
 
   // D-23: rows the PDF reader was unsure of read 'cannot-verify' even when their balance link holds.
@@ -624,6 +647,8 @@ export interface CommitContext {
   accounts: readonly TransferAccount[];
   existingById: ReadonlyMap<string, ExistingInfo>;
   accountVersion: number;
+  /** The account's stored limits, so an accepted offer undoes to the real prior value (a 0 is stored, not null). */
+  priorLimits?: { creditLimit: number | null; overdraftLimit: number | null };
   remember: { signature: string; id: string } | null;
 }
 
@@ -850,11 +875,11 @@ function counterLeg(
 function acceptedLimit(preview: Preview, decisions: CommitDecisions, ctx: CommitContext): ImportLimit | null {
   const offer = preview.limitOffer;
   if (!decisions.acceptLimit || offer === null) return null;
-  // The offer only exists while the account has no limit of that kind, so the prior value is null.
+  // The offer only exists while the account has no usable limit of that kind: null, or a stored 0 (D-49).
   if (offer.field === 'credit_limit') {
-    return { accountId: ctx.accountId, expectedVersion: ctx.accountVersion, before: { credit_limit: null }, patch: { credit_limit: offer.amount } };
+    return { accountId: ctx.accountId, expectedVersion: ctx.accountVersion, before: { credit_limit: ctx.priorLimits?.creditLimit ?? null }, patch: { credit_limit: offer.amount } };
   }
-  return { accountId: ctx.accountId, expectedVersion: ctx.accountVersion, before: { overdraft_limit: null }, patch: { overdraft_limit: offer.amount } };
+  return { accountId: ctx.accountId, expectedVersion: ctx.accountVersion, before: { overdraft_limit: ctx.priorLimits?.overdraftLimit ?? null }, patch: { overdraft_limit: offer.amount } };
 }
 
 /** Analytics size band for an import (counts only, never content). */

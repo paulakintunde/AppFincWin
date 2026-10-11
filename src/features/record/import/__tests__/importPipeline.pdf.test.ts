@@ -203,6 +203,36 @@ describe('PDF: buildPreview, reviewGate and commit', () => {
     expect(p.rows[0]?.transfer).not.toBeNull();
   });
 
+  it('offers the stated limit into a credit account whose limit is 0 (D-49)', () => {
+    const draft = pdfDraft('credit-card');
+    const account: PreviewAccount = { ...ACCOUNT, id: 'acc-card', name: 'Visa', kind: 'credit', creditLimit: 0 };
+    const r = resolveProfile(draft, account, null);
+    if (r.kind !== 'decided') throw new Error('ambiguous');
+    const p = buildPreview(previewInput(draft, { profile: r.profile, format: 'pdf', account }));
+    expect(p.limitOffer).toEqual({ field: 'credit_limit', amount: 100000 });
+  });
+
+  it('pairs a card payment with the matching outgoing leg on another account', () => {
+    const draft = pdfDraft('credit-card');
+    const account: PreviewAccount = { ...ACCOUNT, id: 'acc-card', name: 'Example Card', kind: 'credit' };
+    const r = resolveProfile(draft, account, null);
+    if (r.kind !== 'decided') throw new Error('ambiguous');
+    const leg: ExistingLeg = {
+      id: 'L9',
+      accountId: 'acc-1',
+      localDate: '2026-03-01',
+      amount: -50000,
+      currency: 'GBP',
+      name: 'CARD PAYMENT EXAMPLE CARD',
+      paymentType: null,
+      transferId: null,
+    };
+    const accounts: TransferAccount[] = [...TRANSFER_ACCOUNTS, { id: 'acc-card', name: 'Example Card', kind: 'credit', currency: 'GBP', exponent: 2 }];
+    const p = buildPreview(previewInput(draft, { profile: r.profile, format: 'pdf', account, accounts, transferCandidates: [leg] }));
+    const idx = p.rows.findIndex((row) => row.converted.amount === 50000);
+    expect(p.rows[idx]?.transfer).toEqual({ kind: 'pair', existingId: 'L9' });
+  });
+
   it('does not flag a row one day off an earlier PDF import: same-format matching is exact-date', () => {
     const p = pdfPreview(pdfDraft(), { existing: [existingRow({ importFormat: 'pdf' })] });
     expect(p.rows[1]?.duplicate).toBeNull();

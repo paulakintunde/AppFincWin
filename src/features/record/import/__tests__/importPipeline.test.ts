@@ -407,6 +407,20 @@ describe('buildPreview: conversion and reconciliation', () => {
     expect(buildPreview(previewInput(draft, { profile, account: { ...ACCOUNT, overdraftLimit: 50000 } })).limitOffer).toBeNull();
   });
 
+  it('treats a limit of 0 as no limit set (D-49): the stated limit is still offered', () => {
+    const draft = draftOf([draftRow(0)]);
+    const card: FormatProfile = { ...CARD_PROFILE, statedLimit: minorUnits(100000) };
+    expect(buildPreview(previewInput(draft, { profile: card, account: { ...CARD_ACCOUNT, creditLimit: 0 } })).limitOffer).toEqual({
+      field: 'credit_limit',
+      amount: 100000,
+    });
+    const deposit: FormatProfile = { ...DEPOSIT_PROFILE, statedLimit: minorUnits(50000) };
+    expect(buildPreview(previewInput(draft, { profile: deposit, account: { ...ACCOUNT, overdraftLimit: 0 } })).limitOffer).toEqual({
+      field: 'overdraft_limit',
+      amount: 50000,
+    });
+  });
+
   it('marks a row whose running-balance link fails as cannot-verify but still committable', () => {
     const draft = draftOf(
       [

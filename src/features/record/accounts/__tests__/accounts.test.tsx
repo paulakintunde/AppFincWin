@@ -209,6 +209,19 @@ describe('AccountSheet kinds', () => {
     expect(input).not.toHaveProperty('overdraft_limit');
   });
 
+  it('a credit limit typed as 0 saves as null: zero means no limit (D-49)', async () => {
+    const { getByLabelText, getByText } = await wrap(
+      <AccountSheet visible mode={{ kind: 'new', context: 'later' }} onClose={jest.fn()} />
+    );
+    await fireEvent.press(getByLabelText('Type'));
+    await fireEvent.press(getByText('Credit card'));
+    await fireEvent.changeText(getByLabelText('Name'), 'Visa');
+    await fireEvent.changeText(getByLabelText('Credit limit'), '0');
+    await fireEvent.press(getByText('Save account'));
+    const [input] = mockAdd.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(input).toMatchObject({ kind: 'credit', credit_limit: null });
+  });
+
   it('a loan reads Amount owed, has no sign control or limit, and is stored negative', async () => {
     const { getByLabelText, getByText, queryByText, queryByLabelText } = await wrap(
       <AccountSheet visible mode={{ kind: 'new', context: 'later' }} onClose={jest.fn()} />

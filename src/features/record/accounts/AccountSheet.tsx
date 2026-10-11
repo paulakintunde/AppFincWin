@@ -121,7 +121,8 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
   const negative = isNegative(kind, signChoice);
   const openingMinor = openingParsed && openingParsed.ok ? openingParsed.value : 0;
   const signedOpening = negative ? -openingMinor : openingMinor;
-  const limitMinor = limitParsed && limitParsed.ok ? limitParsed.value : null;
+  // A limit of 0 is stored as null: zero means no limit (D-49).
+  const limitMinor = limitParsed && limitParsed.ok && limitParsed.value > 0 ? limitParsed.value : null;
 
   const canSubmit = rc.ready && rc.householdId !== null;
 
