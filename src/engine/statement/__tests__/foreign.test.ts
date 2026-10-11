@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { MAX_ABS_AMOUNT_MINOR, minorUnits, type NumberNotation } from '../../money';
+import { MAX_ABS_AMOUNT_MINOR, knownCurrencyExponent, minorUnits, type NumberNotation } from '../../money';
 import {
   foreignFromColumns,
   foreignFromOfx,
@@ -15,6 +15,26 @@ const exponentFor = (c: string): number | null => (c in EXP ? (EXP[c] as number)
 const dot: NumberNotation = { decimal: '.', group: ',', grouping: 'western' };
 const comma: NumberNotation = { decimal: ',', group: '.', grouping: 'western' };
 const opts = { notation: dot, exponentFor };
+
+// Review HI-01: with the real known-currency lookup, a three-letter word next to a number is text.
+describe('parseForeignNote with the real currency lookup', () => {
+  const real = { notation: dot, exponentFor: (c: string) => knownCurrencyExponent(c) };
+  it.each(['REF 123456', 'TEL 0800123', 'ATM 0042', '12 PCS', 'NBR 131', 'ref 88213'])('%s is not a foreign amount', (text) => {
+    expect(parseForeignNote(text, real)).toBeNull();
+  });
+  it('still reads a real code', () => {
+    expect(parseForeignNote('USD 45.00', real)).toEqual({ magnitude: 4500, currency: 'USD', raw: 'USD 45.00' });
+    expect(parseForeignNote('JPY 500', real)).toEqual({ magnitude: 500, currency: 'JPY', raw: 'JPY 500' });
+  });
+  it('OFX CURSYM and a CSV original-currency cell need a known code too', () => {
+    const lookup = (c: string) => knownCurrencyExponent(c);
+    expect(
+      foreignFromOfx({ kind: 'origcurrency', trnAmtMagnitude: minorUnits(3538), accountExponent: 2, curRate: '0.7862', curSym: 'REF' }, lookup)
+    ).toBeNull();
+    expect(foreignFromColumns('45.00', 'REF', 'GBP', real)).toBeNull();
+    expect(foreignFromColumns('45.00', 'USD', 'GBP', real)).toEqual({ magnitude: 4500, currency: 'USD', raw: '45.00 USD' });
+  });
+});
 
 describe('parseForeignNote', () => {
   it.each([

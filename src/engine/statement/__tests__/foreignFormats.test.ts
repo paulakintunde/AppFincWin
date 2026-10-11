@@ -6,13 +6,13 @@ import * as path from 'path';
 import { csvToDraft, detectColumns, inferDateFormat, inferNumberNotation, notationFor, tokenize } from '../../csv';
 import { parseOfx } from '../../ofx';
 import { pdfToDrafts } from '../pdf/toDraft';
-import { minorUnits, type MinorUnits } from '../../money';
+import { knownCurrencyExponent, minorUnits, type MinorUnits } from '../../money';
 import type { PdfExtraction } from '../pdf/types';
 import { applyUncertainRows, convertDraft, impliedRate, inferProfile, linkFxFees, reconcile } from '..';
 import type { AccountKind, StatementDraft } from '..';
 
-const EXPONENTS: Readonly<Record<string, number>> = { GBP: 2, CAD: 2, USD: 2, EUR: 2 };
-const exponentFor = (code: string): number | null => EXPONENTS[code] ?? null;
+// Review HI-01: the real known-currency lookup, not an allow-list.
+const exponentFor = (code: string): number | null => knownCurrencyExponent(code);
 const foreignText = (name: string): string => fs.readFileSync(path.join(__dirname, 'fixtures', 'foreign', name), 'utf8');
 
 function ofxDraft(name: string): StatementDraft {

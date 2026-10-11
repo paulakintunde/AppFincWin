@@ -59,6 +59,8 @@ jest.mock('@/data/queries/categories', () => ({
   useCategoryLookup: () => ({ builtinIds: new Map(), transferCategoryId: mockTransferCategoryId, loading: false }),
 }));
 jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
+// Review HI-01: the user's own custom currencies feed the hook's real currency lookup.
+jest.mock('@/data/queries/customCurrencies', () => ({ useCustomCurrencies: () => ({ data: [], isLoading: false }) }));
 jest.mock('@/data/queries/activity', () => ({
   useAccountBalances: () => ({ balances: new Map([['acc-1', { balance: 5000 }]]), isLoading: false }),
 }));
@@ -1646,5 +1648,51 @@ describe('useStatementImport: PDF review gate (IMP-02)', () => {
     expect(csvHook.result.current.reviewGate).toEqual({ required: false, count: 0 });
     const ofxHook = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
     expect(ofxHook.result.current.reviewGate).toEqual({ required: false, count: 0 });
+  });
+});
+
+// Review HI-01: the hook's own currency lookup (not a test stub) decides what counts as a currency.
+describe('useStatementImport: currency recognition (review HI-01)', () => {
+  it('a wrapped "REF 88213" line on a PDF is description text, never a foreign amount', async () => {
+    const { result } = await readToReview('current-account');
+    const rows = result.current.preview!.rows;
+    const wrapped = rows.find((r) => r.converted.description.includes('REF 88213'));
+    expect(wrapped).toBeDefined();
+    expect(rows.every((r) => r.foreign === null)).toBe(true);
+  });
+
+  it('a real foreign note on a PDF is still read', async () => {
+    mockReadPdf.mockResolvedValueOnce(okRead('credit-card'));
+    const { result } = await startPdf({ accountId: 'acc-card' });
+    await act(async () => {
+      await result.current.sendPdf();
+    });
+    await act(async () => {
+      result.current.confirmFormat();
+    });
+    await waitFor(() => expect(result.current.preview).not.toBeNull());
+    const foreign = result.current.preview!.rows.map((r) => r.foreign).filter((f) => f !== null);
+    expect(foreign.map((f) => f!.currency)).toContain('USD');
+  });
+
+  it('an unknown code in a CSV currency column is flagged unknown-currency (Phase 2 behaviour)', async () => {
+    const text = ['Date,Description,Debit,Credit,Currency', '2026-03-01,COFFEE,3.50,,REF', '2026-03-02,PAYSLIP,,1000.00,GBP'].join('\n');
+    const { result } = await reachReview(csv(text), 'csv');
+    const issues = result.current.preview!.rows.map((r) => r.converted.issues);
+    expect(issues[0]).toContain('unknown-currency');
+    expect(issues[1]).not.toContain('unknown-currency');
+  });
+
+  it('an unknown code in a CSV original-currency column is not stored as a foreign amount', async () => {
+    const text = [
+      'Date,Description,Amount,Original amount,Original currency,Balance',
+      '2026-03-01,COFFEE,-3.50,123456,REF,996.50',
+      '2026-03-02,LUNCH,-9.00,11.00,USD,987.50',
+      '2026-03-03,PAYSLIP,100.00,,,1087.50',
+    ].join('\n');
+    const { result } = await reachReview(csv(text), 'csv');
+    const rows = result.current.preview!.rows;
+    expect(rows[0]!.foreign).toBeNull();
+    expect(rows[1]!.foreign).toEqual({ amount: -1100, currency: 'USD' });
   });
 });

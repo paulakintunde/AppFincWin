@@ -14,7 +14,7 @@
 -- EXCLUSIVE lock. That is acceptable at the current table size.
 alter table public.transactions
   add column stmt_orig_amount bigint check (stmt_orig_amount is null or (stmt_orig_amount <> 0 and abs(stmt_orig_amount) <= 10000000000000)),
-  add column stmt_orig_currency text check (stmt_orig_currency is null or stmt_orig_currency ~ '^[A-Z0-9]{2,4}$'),
+  add column stmt_orig_currency text check (stmt_orig_currency is null or stmt_orig_currency ~ '^[A-Z]{3}$'),
   add column fx_fee_of uuid,
   add column conversion_source text generated always as (
     case

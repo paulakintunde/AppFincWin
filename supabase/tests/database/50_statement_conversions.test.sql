@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(37);
+select extensions.plan(40);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -76,6 +76,26 @@ select extensions.throws_ok(
     values ('b4111111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
       'a1111111-1111-1111-1111-111111111111', -100, 'GBP', '2026-09-21', 'Europe/London', -120, 'GBP')$$,
   '23514', null, 'a statement currency equal to the line currency violates the shape check'
+);
+
+-- 11a-11c. Review HI-01/ME-01: stmt_orig_currency is exactly three upper-case letters.
+select extensions.throws_ok(
+  $$insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, stmt_orig_amount, stmt_orig_currency)
+    values ('b4211111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+      'a1111111-1111-1111-1111-111111111111', -100, 'GBP', '2026-09-21', 'Europe/London', -120, 'AB')$$,
+  '23514', null, 'a two-letter statement currency violates the ^[A-Z]{3}$ check (review HI-01/ME-01)'
+);
+select extensions.throws_ok(
+  $$insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, stmt_orig_amount, stmt_orig_currency)
+    values ('b4311111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+      'a1111111-1111-1111-1111-111111111111', -100, 'GBP', '2026-09-21', 'Europe/London', -120, 'XY12')$$,
+  '23514', null, 'a four-character statement currency violates the ^[A-Z]{3}$ check (review HI-01/ME-01)'
+);
+select extensions.throws_ok(
+  $$insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, stmt_orig_amount, stmt_orig_currency)
+    values ('b4411111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+      'a1111111-1111-1111-1111-111111111111', -100, 'GBP', '2026-09-21', 'Europe/London', -120, 'usd')$$,
+  '23514', null, 'a lower-case statement currency violates the ^[A-Z]{3}$ check (review HI-01/ME-01)'
 );
 
 -- 12-14. Tamper rules.

@@ -15,7 +15,7 @@ import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { maybeRequestSampleClearPrompt } from '@/data/mutations/samplePromptTrigger';
 import { validateMapping, notationFor, type ColumnMapping, type DateFormat, type MappingError } from '@/engine/csv';
 import { buildLearnedMap } from '@/engine/categorize';
-import { minorUnits, parseAmount, resolveExponent, type MinorUnits, type NumberNotation, type ScaledRate } from '@/engine/money';
+import { minorUnits, parseAmount, type MinorUnits, type NumberNotation, type ScaledRate } from '@/engine/money';
 import { detectRecurring, type PendingOccurrence, type RecurringSuggestion } from '@/engine/recurring';
 import {
   convertDraft,
@@ -43,6 +43,7 @@ import { queryKeys } from '@/data/keys';
 import { useAccounts } from '@/data/queries/accounts';
 import { useAccountBalances } from '@/data/queries/activity';
 import { useCategoryLookup } from '@/data/queries/categories';
+import { useCustomCurrencies } from '@/data/queries/customCurrencies';
 import { useFxLatest } from '@/data/queries/fxLatest';
 import { latestPerEur } from '@/data/queries/homeAmount';
 import { useImportCommit } from '@/data/mutations/importFinalize';
@@ -56,6 +57,7 @@ import { getAnalytics, type EventName, type EventProps } from '@/services/analyt
 import { useDeviceLocale } from '@/services/locale/deviceLocale';
 import { supabase } from '@/services/supabase';
 import { showToast } from '@/state/undoToast';
+import { importExponentLookup, type ExponentLookup } from './currencyLookup';
 import { acceptedSuggestionCount, maxAcceptedSuggestions } from './suggestionCap';
 import {
   buildPreview,
@@ -250,15 +252,6 @@ async function attempt<T>(read: () => Promise<T>): Promise<Read<T>> {
   }
 }
 
-/** Unknown currency code -> null (the pipeline then refuses rather than guessing a scale). */
-function exponentFor(code: string): number | null {
-  try {
-    return resolveExponent(code);
-  } catch {
-    return null;
-  }
-}
-
 function isDayFirst(locale: string): boolean {
   try {
     const parts = new Intl.DateTimeFormat(locale, { timeZone: 'UTC' }).formatToParts(new Date(Date.UTC(2026, 11, 31)));
@@ -275,7 +268,7 @@ function rolesKeyOf(m: ColumnMapping): string {
 }
 
 /** The household's accounts as the transfer matcher sees them. */
-function transferAccounts(accounts: readonly AccountRow[]): TransferAccount[] {
+function transferAccounts(accounts: readonly AccountRow[], exponentFor: ExponentLookup): TransferAccount[] {
   return accounts
     .filter((a) => a.archived_at === null)
     .map((a) => ({ id: a.id, name: a.name, kind: a.kind, currency: a.currency, exponent: exponentFor(a.currency) ?? 2 }));
@@ -301,6 +294,12 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const accountsQuery = useAccounts(ctx.householdId ?? undefined);
   const device = useDeviceLocale(ctx.region);
   const accounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
+  const customCurrencies = useCustomCurrencies(ctx.userId ?? undefined);
+  /** Review HI-01: only a currency the app explicitly knows is read as one; anything else is null. */
+  const exponentFor = useMemo(
+    () => importExponentLookup(customCurrencies.data ?? [], accounts.map((a) => a.currency)),
+    [customCurrencies.data, accounts]
+  );
 
   const qc = useQueryClient();
   const lookup = useCategoryLookup(ctx.userId ?? undefined);
@@ -350,7 +349,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         return null; // an account currency with no known scale
       }
     },
-    []
+    [exponentFor]
   );
 
   /** The remembered reading for this layout, or null when absent or unreadable (D-17, D-42). */
@@ -524,7 +523,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           profile,
           format,
           account: previewAccountOf(account),
-          accounts: transferAccounts(accounts),
+          accounts: transferAccounts(accounts, exponentFor),
           existing,
           pending,
           purchases,
@@ -540,7 +539,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         patch({ preview, existingById, storedLegs });
       })();
     },
-    [accountById, accounts, balances, ctx.householdId, ctx.today, ctx.userId, fx.data, lookup.builtinIds, patch, qc]
+    [accountById, accounts, balances, exponentFor, ctx.householdId, ctx.today, ctx.userId, fx.data, lookup.builtinIds, patch, qc]
   );
 
   /**
@@ -645,7 +644,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       setM({ ...next, stage: 'format' });
       if (next.accountId !== null) await derive(next, next.accountId);
     })();
-  }, [clearPdf, derive, entry, m.accountId, patch, region]);
+  }, [clearPdf, derive, entry, exponentFor, m.accountId, patch, region]);
 
   // --- PDF (02.1-10): the same machine, plus notice, reading, password, year and balance -----
 
@@ -731,7 +730,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       setM(ready);
       void pdfNext(ready, accountId);
     },
-    [accountById, ctx.today, pdfNext, region, rejectPdf]
+    [accountById, ctx.today, exponentFor, pdfNext, region, rejectPdf]
   );
 
   /** The password is a parameter of this call only: never state, a ref, an event or an error (D-21). */
@@ -1214,7 +1213,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         };
       });
     },
-    [accountById, device.locale, device.separators, m.accountId, m.orphans, m.transferAnswers, roomForSuggestion, rowAt, transfersUnavailable]
+    [accountById, device.locale, device.separators, exponentFor, m.accountId, m.orphans, m.transferAnswers, roomForSuggestion, rowAt, transfersUnavailable]
   );
 
   const dismissOrphan = useCallback(
@@ -1291,7 +1290,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         accountId: account.id,
         timeZone: ctx.timeZone,
         transferCategoryId: lookup.transferCategoryId,
-        accounts: transferAccounts(accounts),
+        accounts: transferAccounts(accounts, exponentFor),
         existingById: m.existingById,
         accountVersion: account.version,
         // A reading the user confirmed or flipped is remembered for this layout (D-42).
@@ -1356,7 +1355,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       suggestions,
       committedRows: ordinary.map((r) => ({ id: r.id, localDate: r.local_date, categoryId: r.category_id ?? null })),
     });
-  }, [accountById, accounts, clearPdf, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, gate.required, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, rowsChecked, transfersUnavailable]);
+  }, [accountById, accounts, clearPdf, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, exponentFor, gate.required, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, rowsChecked, transfersUnavailable]);
 
   const acceptSuggestion = useCallback(
     (key: string): void => {

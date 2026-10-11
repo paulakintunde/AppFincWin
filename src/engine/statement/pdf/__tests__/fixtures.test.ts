@@ -2,6 +2,7 @@
 // profile, conversion and reconciliation (D-19, IMP-01, IMP-02). No PDF-specific substitute for any stage.
 import { applyUncertainRows, convertDraft, inferProfile, isUncertainIssue, linkFxFees, reconcile } from '../..';
 import type { AccountKind, StatementDraft } from '../..';
+import { knownCurrencyExponent } from '../../../money';
 import { pdfToDrafts } from '../toDraft';
 import type { PdfExtraction } from '../types';
 
@@ -30,7 +31,8 @@ const load = (name: string): { extraction: PdfExtraction; expected: Expected } =
 
 const options = {
   accountCurrency: 'GBP',
-  exponentFor: (code: string) => (['GBP', 'USD', 'EUR'].includes(code) ? 2 : null),
+  // Review HI-01: the real lookup, not an allow-list, so a 'REF 88213' wrap is proven to be text.
+  exponentFor: (code: string) => knownCurrencyExponent(code),
   dayFirst: true,
   decimalMark: '.' as const,
   today: '2026-09-26',
