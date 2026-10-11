@@ -160,11 +160,11 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 ### Statement Import (PDF)
 
-- [ ] **IMP-01**: User can import a text-based PDF statement, with the same format reading, preview, duplicate check and transfer suggestions as other statement files
-- [ ] **IMP-02**: A PDF import is committed only after its balances reconcile or the user has reviewed every row that could not be verified
-- [ ] **IMP-03**: An uploaded statement file is deleted after a successful import unless the user chooses to keep it, a kept file is removed on account deletion, and statement content never appears in logs or error reports
-- [ ] **IMP-04**: Privacy copy states plainly where a PDF statement is processed and how long the file is kept
-- [ ] **IMP-05**: When a statement already gives a foreign line's converted amount, the account-currency figure is stored as the truth and never recomputed with a market rate. The original amount and the bank's implied rate (and any FX fee) are kept and shown together (e.g. "US$10.00 · charged C$13.92 at 1.392"), with an optional factual comparison to the market rate. Each line records whether its conversion came from the statement or an on-demand market rate. *(Added 2026-10-08, user decision. 2026-10-10: the market comparison is resolved as not built, and fees and display are fixed in Phase 2.1 CONTEXT D-30 to D-35; planned in 02.1-13 to 02.1-17.)*
+- [x] **IMP-01**: User can import a text-based PDF statement, with the same format reading, preview, duplicate check and transfer suggestions as other statement files
+- [x] **IMP-02**: A PDF import is committed only after its balances reconcile or the user has reviewed every row that could not be verified
+- [x] **IMP-03**: An uploaded statement file is deleted after a successful import unless the user chooses to keep it, a kept file is removed on account deletion, and statement content never appears in logs or error reports
+- [x] **IMP-04**: Privacy copy states plainly where a PDF statement is processed and how long the file is kept
+- [x] **IMP-05**: When a statement already gives a foreign line's converted amount, the account-currency figure is stored as the truth and never recomputed with a market rate. The original amount and the bank's implied rate (and any FX fee) are kept and shown together (e.g. "US$10.00 · charged C$13.92 at 1.392"), with an optional factual comparison to the market rate. Each line records whether its conversion came from the statement or an on-demand market rate. *(Added 2026-10-08, user decision. 2026-10-10: the market comparison is resolved as not built, and fees and display are fixed in Phase 2.1 CONTEXT D-30 to D-35; planned in 02.1-13 to 02.1-17.)*
 - [ ] **IMP-06**: Wallet and payment-app statements (PayPal, Wise, Revolut and similar) import with gross, fee and net per line. Each currency balance is its own account, and a currency conversion's paired lines are linked as a transfer, with the fee as a separate expense. *(Added 2026-10-08, user decision.)*
 
 ### Shell & Navigation
@@ -492,11 +492,11 @@ Populated during roadmap creation.
 | REC-28 | Phase 2.3 - Record follow-ups | Pending |
 | REC-29 | Phase 2.3 - Record follow-ups | Pending |
 | REC-30 | Phase 2.3 - Record follow-ups | Pending |
-| IMP-01 | Phase 2.1 - PDF statement import | Pending |
-| IMP-02 | Phase 2.1 - PDF statement import | Pending |
-| IMP-03 | Phase 2.1 - PDF statement import | Pending |
-| IMP-04 | Phase 2.1 - PDF statement import | Pending |
-| IMP-05 | Phase 2.1 - PDF statement import | Pending |
+| IMP-01 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
+| IMP-02 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
+| IMP-03 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
+| IMP-04 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
+| IMP-05 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
 | IMP-06 | Phase 10 - System | Pending |
 | NAV-01 | Phase 3 - Shell | Pending |
 | NAV-02 | Phase 3 - Shell | Pending |
@@ -608,13 +608,15 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 237 total (95 ticked)
-- Mapped to phases: 234
+- v1 requirements: 237 total (100 ticked)
+- Mapped to phases: 237
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
+*Last updated: 2026-10-11 — Phase 2.1 closed: IMP-01..IMP-05 ticked on 02.1-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough and privacy-policy publication pending, 02.1-HUMAN-UAT.md); coverage 237/237 (100 ticked).*
+
+*2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 
 *2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
 *2026-10-09 — Phase 2.2 implemented: ACT-06..ACT-18 and REC-19..REC-25 marked "Implemented, awaiting device walkthrough and verification" (ticked only after 02.2-VERIFICATION.md, as for Phase 1); coverage recounted to 231/231 v1 requirements mapped.*
