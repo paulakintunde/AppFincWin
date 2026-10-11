@@ -218,6 +218,68 @@ describe('assembleTable (header mode)', () => {
   });
 });
 
+describe('assembleTable: summary phrases inside dated rows (review HI-02)', () => {
+  it('a dated purchase at NEW BALANCE stays a row and never becomes the closing figure', () => {
+    const t = assembleTable([
+      ln([desc('Closing balance'), bal('1,000.00')]),
+      header(),
+      ln([date('14 Sep'), desc('NEW BALANCE LONDON'), out('89.99'), bal('1,203.11')]),
+    ]);
+    expect(t?.rows).toHaveLength(1);
+    expect(t?.rows[0]).toMatchObject({ descriptionParts: ['NEW BALANCE LONDON'], debitText: '89.99', balanceText: '1,203.11' });
+    expect(t?.summary.closingText).toBe('1,000.00');
+  });
+
+  it('a dated merchant containing an opening, limit or available phrase stays a row', () => {
+    const t = assembleTable([
+      header(),
+      ln([date('01 Sep'), desc('BROUGHT FORWARD LTD'), out('5.00')]),
+      ln([date('02 Sep'), desc('ACME CREDIT LIMITED'), out('6.00')]),
+      ln([date('03 Sep'), desc('AVAILABLE CREDIT UNION'), cred('7.00')]),
+    ]);
+    expect(t?.rows.map((r) => r.descriptionParts[0])).toEqual(['BROUGHT FORWARD LTD', 'ACME CREDIT LIMITED', 'AVAILABLE CREDIT UNION']);
+    expect(t?.summary).toMatchObject({ openingText: null, limitText: null, availableText: null });
+  });
+
+  it('a dotted-date "TOTAL GAS & POWER" row is a transaction, not a removed total', () => {
+    const t = assembleTable([header(), ln([c('12.09.26', 40, 80), desc('TOTAL GAS & POWER'), out('54.00')])]);
+    expect(t?.rows).toHaveLength(1);
+    expect(t?.rows[0]).toMatchObject({ dateText: '12.09.26', debitText: '54.00' });
+    expect(t?.summary.summaryLinesRemoved).toBe(false);
+  });
+
+  it('a dated line whose whole label is a summary phrase is still a statement figure', () => {
+    const t = assembleTable([
+      header(),
+      ln([date('01 Sep'), desc('Balance brought forward'), bal('1,000.00')]),
+      ln([date('02 Sep'), desc(), out('1.00'), bal('999.00')]),
+      ln([date('30 Sep'), desc('Balance carried forward'), bal('999.00')]),
+      ln([date('30 Sep'), desc('Total'), out('1.00')]),
+    ]);
+    expect(t?.rows).toHaveLength(1);
+    expect(t?.summary).toMatchObject({ openingText: '1,000.00', closingText: '999.00', summaryLinesRemoved: true });
+  });
+
+  it('a dated summary label with its figure written in the label cell is still a figure', () => {
+    const t = assembleTable([header(), ln([date('30 Sep'), c('New balance 1,250.00 CR', 94, 200)]), ln([date(), desc(), out('1.00')])]);
+    expect(t?.summary.closingText).toBe('1,250.00 CR');
+    expect(t?.rows).toHaveLength(1);
+  });
+
+  it('headerless: a dated NEW BALANCE purchase stays a row', () => {
+    const r = (d: string, name: string, ...nums: string[]): PdfLine =>
+      ln([c(d, 40, 70), c(name, 94, 94 + name.length * 5), ...nums.map((n, i) => c(n, 300 + i * 60, 340 + i * 60))]);
+    const t = assembleTable([
+      r('02 Mar', 'ACME', '1.00', '99.00'),
+      r('03 Mar', 'NEW BALANCE LONDON', '9.00', '90.00'),
+      r('04 Mar', 'COFFEE', '3.00', '87.00'),
+      r('05 Mar', 'SHOP', '2.00', '85.00'),
+    ]);
+    expect(t?.rows).toHaveLength(4);
+    expect(t?.summary.closingText).toBeNull();
+  });
+});
+
 describe('assembleTable (headerless mode)', () => {
   const row = (d: string, name: string, ...nums: string[]): PdfLine =>
     ln([c(d, 40, 70), c(name, 94, 94 + name.length * 5), ...nums.map((n, i) => c(n, 300 + i * 60, 340 + i * 60))]);

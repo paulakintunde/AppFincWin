@@ -23,7 +23,8 @@ interface Expected {
   expect: { reconcile: string; uncertainRows: number[] };
 }
 
-const NAMES = ['current-account', 'savings', 'credit-card', 'year-end', 'no-balances', 'multi-account'] as const;
+// merchant-phrases: review HI-02, dated rows whose merchant text contains a summary phrase.
+const NAMES = ['current-account', 'savings', 'credit-card', 'year-end', 'no-balances', 'multi-account', 'merchant-phrases'] as const;
 const load = (name: string): { extraction: PdfExtraction; expected: Expected } => ({
   extraction: require(`./fixtures/${name}.extract.json`) as PdfExtraction,
   expected: require(`./fixtures/${name}.expected.json`) as Expected,

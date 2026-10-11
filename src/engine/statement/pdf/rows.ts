@@ -107,7 +107,27 @@ function emptySummary(): TableSummary {
   };
 }
 
-/** Captures statement figures, the period and hints; true when the line must not become a row. */
+// The line's label: its text cells with any date cell and any figure removed, and a figure written at
+// the end of the label cell ("Previous balance 820.40") trimmed off.
+function labelOf(line: PdfLine): string {
+  const text = line.cells
+    .filter((c) => !looksLikeDate(c.text) && !looksNumeric(c.text))
+    .map((c) => c.text)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const tail = TAIL_FIGURE.exec(text);
+  return (tail !== null && looksNumeric(tail[1]!) ? text.slice(0, tail.index) : text).trim().toUpperCase();
+}
+
+/**
+ * Captures statement figures, the period and hints; true when the line must not become a row.
+ *
+ * Review HI-02: an undated line is a summary line when it mentions a summary phrase anywhere. A dated
+ * line is a transaction unless its whole label is the phrase ("01 Sep  Balance brought forward"), so a
+ * purchase at NEW BALANCE, ACME CREDIT LIMITED or "12.09.26 TOTAL GAS & POWER" is never dropped and
+ * never overwrites a stated figure.
+ */
 function classify(line: PdfLine, s: TableSummary): boolean {
   const text = lineText(line);
   const up = text.toUpperCase();
@@ -117,25 +137,28 @@ function classify(line: PdfLine, s: TableSummary): boolean {
   const cardLine = undated && hasAny(up, CARD_PHRASES);
   if (bankLine) s.bankHint = true;
   if (cardLine) s.cardHint = true;
+  const label = undated ? '' : labelOf(line);
+  const is = (phrases: readonly string[]): boolean => (undated ? hasAny(up, phrases) : phrases.includes(label));
   const last = lastNumeric(line);
-  if (hasAny(up, OPENING_PHRASES)) {
+  if (is(OPENING_PHRASES)) {
     s.openingText = s.openingText ?? last;
     return true;
   }
-  if (hasAny(up, CLOSING_PHRASES)) {
+  if (is(CLOSING_PHRASES)) {
     s.closingText = last ?? s.closingText;
     return true;
   }
-  if (up.includes('CREDIT LIMIT')) {
+  if (is(['CREDIT LIMIT'])) {
     s.limitText = last;
     return true;
   }
-  if (up.includes('AVAILABLE CREDIT')) {
+  if (is(['AVAILABLE CREDIT'])) {
     s.availableText = last;
     return true;
   }
   const first = line.cells.find((c) => !looksNumeric(c.text));
-  if (first !== undefined && startsWithPhrase(first.text, REMOVED_PHRASES)) {
+  const removed = undated ? first !== undefined && startsWithPhrase(first.text, REMOVED_PHRASES) : REMOVED_PHRASES.some((p) => p === label);
+  if (removed) {
     s.summaryLinesRemoved = true;
     return true;
   }
