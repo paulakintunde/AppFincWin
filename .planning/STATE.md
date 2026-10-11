@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 02.2 complete — next: /gsd-secure-phase 02.2, then revise Phase 02.1 plans, then plan Phase 02.3
+**Current focus:** Phase 02.1 plans revised (17 plans, 7 waves, checker passed 2026-10-10) — next: /gsd-execute-phase 02.1, then preview APK for the second phone, then /gsd-plan-phase 02.3
 
 ## Current Position
 
@@ -30,9 +30,9 @@ Plan: 35 of 35 complete (walkthrough approved 2026-10-10; app PRs #51-#56, main 
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
-Phase 02.1 (PDF statement import): planned (12 plans, 7 waves); not started — replan after 02.2 (see Blockers). Phase 02.2 (record-polish): COMPLETE 2026-10-10 — 35/35 plans, 02.2-VERIFICATION.md 8/8 criteria and 20/20 requirements (ACT-06..ACT-18, REC-19..REC-25), status human_needed (1 item in 02.2-HUMAN-UAT.md: iOS walkthrough, blocked on Apple enrolment). Phase 02.3 (record follow-ups): not planned. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
+Phase 02.1 (PDF statement import): revised 2026-10-10 against post-02.2 main — 17 plans, 7 waves (IMP-05 added as plans 13–17, decisions D-30..D-36), plan checker passed (round 3); not started. Phase 02.2 (record-polish): COMPLETE 2026-10-10 — 35/35 plans, 02.2-VERIFICATION.md 8/8 criteria and 20/20 requirements (ACT-06..ACT-18, REC-19..REC-25), status human_needed (1 item in 02.2-HUMAN-UAT.md: iOS walkthrough, blocked on Apple enrolment). Phase 02.3 (record follow-ups): not planned. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
 Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
-Status: Phase 02.2 complete — next: /gsd-secure-phase 02.2, then revise the Phase 02.1 plans (see Blockers), then /gsd-plan-phase 02.3
+Status: Phase 02.1 ready to execute — next: /gsd-execute-phase 02.1, then the preview APK build, then /gsd-plan-phase 02.3
 Last activity: 2026-10-10 - Phase 02.2 verified (02.2-VERIFICATION.md) and marked complete; requirements ticked (95 of 234)
 
 ## Performance Metrics
@@ -138,9 +138,9 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-- [Phase 02.1] **Execution order: 02.2 → revise 02.1 → execute 02.1.** 02.1's plans (committed 2026-09-27) are stale and must be revised after 02.2 executes, before 02.1 runs: (1) migrations `20260927000100_statement_uploads_bucket.sql` / `…000200_statement_uploads_purge.sql` predate production's latest (`20261007000400`), so `supabase db push` refuses them without `--include-all`; re-date them after 02.2's `20261010…` range. (2) pgTAP `35_statement_uploads.test.sql` collides with existing `35_series_undo.test.sql`; renumber after 02.2's 42–48. (3) Plans 02.1-09..11 edit `useStatementImport.ts`, `importPipeline.ts`, `ImportScreen.tsx`, which 02.2 plans 20/26/27/33 change (suggestionToSeries move, refund/Automatic, paste entry, sample-clear prompt); rebase them on the post-02.2 code. Route: `/gsd-plan-phase 02.1` → "Replan" or targeted revision
+- [Phase 02.1] **Plans revised 2026-10-10 (resolved the post-02.2 staleness).** Migrations re-dated to 20261011000100/200/300, pgTAP 49/50, plans 04/05/09–12 rebased on post-02.2 code, fx-monitor references removed, IMP-05 planned (13–17; conversion_source is a stored generated column, no backfill; D-36 user-accepted limitation for kept mark-paid lines). Rollout plan 12 pushes from merged main with a before/after checksum and ends with the second-phone preview APK.
 
-- [Phase 03] **Shell plans predate 02.2 — check before executing.** 03-01 installs `expo-haptics` and builds a haptics wrapper: the package is already installed (02.2-01) with a feature wrapper at `src/ui/haptics.ts`, so 03-01 must not reinstall it and should decide whether its shell wrapper extends or sits beside it. 02.2 also added `src/ui` Dropdown, ToggleRow, DetailSheet, SwipeRow and Keypad on the existing RN-Modal `Sheet` (D-27: Phase 3 adopts them); the `@gorhom/bottom-sheet` migration must carry DetailSheet, the paste, clone-month, review and confirm sheets with it, and 03-UI-SPEC has no Dropdown contract (the 02.2 UI-SPEC section 1 is the source). Route: `/gsd-plan-phase 3` targeted revision.
+- [Phase 03] **Shell plans predate 02.2 — check before executing.** 03-01 installs `expo-haptics` and builds a haptics wrapper: the package is already installed (02.2-01) with a feature wrapper at `src/ui/haptics.ts`, so 03-01 must not reinstall it and should decide whether its shell wrapper extends or sits beside it. 02.2 also added `src/ui` Dropdown, ToggleRow, DetailSheet, SwipeRow and Keypad on the existing RN-Modal `Sheet` (D-27: Phase 3 adopts them); the `@gorhom/bottom-sheet` migration must carry DetailSheet, the paste, clone-month, review and confirm sheets with it, and 03-UI-SPEC has no Dropdown contract (the 02.2 UI-SPEC section 1 is the source). Route: `/gsd-plan-phase 3` targeted revision. Phase 02.1 also adds `PasswordPromptSheet` (plan 11) and a detail-sheet statement-conversion note block (plan 17) on the current `Sheet`/`DetailSheet`; Phase 02.3 changes the entry sheet and Keypad (REC-28..30) — the bottom-sheet migration must carry these.
 
 - [Phase 10] ENV-16 moved from Phase 2 on 2026-09-25: production has **no backups** until then (method TBD, likely AWS, e.g. a daily dump to S3). Supabase Pro is no longer assumed, so a Free-plan production project also **pauses after a week with no activity**, taking the live app offline. That needs its own answer (upgrade, keep-alive, or accept) before real users arrive
 - [Phase 0] EAS provisioning and credentials from Windows are unproven for this project — trigger the first iOS EAS Build on day one so provisioning surprises surface in week one, not week ten
@@ -178,5 +178,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-10-10T23:00:00.000Z
-Stopped at: Phase 02.2 complete — next /gsd-secure-phase 02.2, then revise 02.1 plans, then plan 02.3
+Stopped at: Phase 02.1 plans revised and checked — next /gsd-execute-phase 02.1
 Resume file: .planning/phases/02.2-record-polish/02.2-VERIFICATION.md
