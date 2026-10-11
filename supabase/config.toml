@@ -9,3 +9,8 @@ project_id = "cohmcbdfgqmiwykztrdg"
 # gateway and again via a user-scoped read under RLS, T-01-11-01).
 [functions.resolve-rate]
 verify_jwt = true
+
+# purge-statement-uploads (D-12): invoked hourly by pg_cron via net.http_post with its own
+# shared secret (x-statement-purge-secret), not a user JWT.
+[functions.purge-statement-uploads]
+verify_jwt = false
