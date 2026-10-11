@@ -1,6 +1,6 @@
 import { getDocumentAsync } from 'expo-document-picker';
 import { File } from 'expo-file-system';
-import { MAX_STATEMENT_BYTES, STATEMENT_MIME_TYPES, pickStatementBytes } from '../pickStatement';
+import { MAX_PDF_BYTES, STATEMENT_MIME_TYPES, pickStatementBytes } from '../pickStatement';
 
 jest.mock('expo-document-picker', () => ({ getDocumentAsync: jest.fn() }));
 
@@ -56,6 +56,7 @@ describe('pickStatementBytes', () => {
   it.each([
     ['a.OFX', 'ofx'],
     ['a.qfx', 'qfx'],
+    ['a.pdf', 'pdf'],
     ['a.txt', 'other'],
     ['noextension', 'other'],
   ])('maps %s to extension %s', async (name, extension) => {
@@ -65,22 +66,30 @@ describe('pickStatementBytes', () => {
   });
 
   it('rejects too_big on the picker size, without reading, and still deletes the copy', async () => {
-    pick.mockResolvedValue({ canceled: false, assets: [asset({ size: MAX_STATEMENT_BYTES + 1 })] });
+    pick.mockResolvedValue({ canceled: false, assets: [asset({ size: MAX_PDF_BYTES + 1 })] });
     await expect(pickStatementBytes()).resolves.toEqual({ kind: 'rejected', reason: 'too_big' });
     expect(mockBytes).not.toHaveBeenCalled();
     expect(mockDelete).toHaveBeenCalledTimes(1);
   });
 
   it('falls back to the file size when the picker gives none, and rejects too_big', async () => {
-    mockFileSize = MAX_STATEMENT_BYTES + 5;
+    mockFileSize = MAX_PDF_BYTES + 5;
     pick.mockResolvedValue({ canceled: false, assets: [asset({ size: undefined })] });
     await expect(pickStatementBytes()).resolves.toEqual({ kind: 'rejected', reason: 'too_big' });
     expect(mockBytes).not.toHaveBeenCalled();
     expect(mockDelete).toHaveBeenCalledTimes(1);
   });
 
+  it('accepts a 7 MB PDF and rejects an 11 MB one, deleting the copy both times', async () => {
+    pick.mockResolvedValue({ canceled: false, assets: [asset({ name: 's.pdf', size: 7 * 1024 * 1024 })] });
+    await expect(pickStatementBytes()).resolves.toMatchObject({ kind: 'ok', extension: 'pdf' });
+    pick.mockResolvedValue({ canceled: false, assets: [asset({ name: 's.pdf', size: 11 * 1024 * 1024 })] });
+    await expect(pickStatementBytes()).resolves.toEqual({ kind: 'rejected', reason: 'too_big' });
+    expect(mockDelete).toHaveBeenCalledTimes(2);
+  });
+
   it('accepts a file of exactly the cap', async () => {
-    pick.mockResolvedValue({ canceled: false, assets: [asset({ size: MAX_STATEMENT_BYTES })] });
+    pick.mockResolvedValue({ canceled: false, assets: [asset({ size: MAX_PDF_BYTES })] });
     await expect(pickStatementBytes()).resolves.toMatchObject({ kind: 'ok' });
   });
 
@@ -110,6 +119,7 @@ describe('pickStatementBytes', () => {
     expect(pick).toHaveBeenCalledWith({ type: [...STATEMENT_MIME_TYPES], copyToCacheDirectory: true, multiple: false });
     expect(STATEMENT_MIME_TYPES[STATEMENT_MIME_TYPES.length - 1]).toBe('*/*');
     expect(STATEMENT_MIME_TYPES).toContain('application/x-ofx');
-    expect(STATEMENT_MIME_TYPES).toHaveLength(10);
+    expect(STATEMENT_MIME_TYPES).toHaveLength(11);
+    expect(STATEMENT_MIME_TYPES).toContain('application/pdf');
   });
 });

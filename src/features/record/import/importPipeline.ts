@@ -27,14 +27,20 @@ import {
   findDuplicates,
   inferProfile,
   matchRefunds,
+  applyUncertainRows,
+  pdfToDrafts,
   reconcile,
   sniffFormat,
+  sniffPdfBytes,
   type AccountKind,
   type ConvertedRow,
   type DraftRowIssue,
   type DuplicateMatch,
   type ExistingRow,
   type FormatProfile,
+  type PdfDraft,
+  type PdfDraftResult,
+  type PdfExtraction,
   type ProfileResult,
   type ReconcileResult,
   type RefundPurchase,
@@ -42,6 +48,7 @@ import {
   type StatementDraft,
 } from '@/engine/statement';
 import { buildTransferLegs, matchTransfers, type ExistingLeg, type ImportedLeg, type TransferAccount } from '@/engine/transfer';
+import { MAX_STATEMENT_BYTES } from '@/engine/statement/limits';
 import type { ImportCommitInput, ImportLink, ImportLimit, ImportMarkPaid } from '@/data/mutations/importFinalize';
 import type { NewTransaction } from '@/db/rows';
 
@@ -53,7 +60,7 @@ export type RejectReason =
   | 'unsupported_format'
   | 'unsupported_statement';
 
-export type ImportFormat = 'csv' | 'ofx' | 'qfx';
+export type ImportFormat = 'csv' | 'ofx' | 'qfx' | 'pdf';
 
 export interface PreparedCsv {
   header: string[];
@@ -71,7 +78,10 @@ export interface PreparedCsv {
 
 export type PreparedImport =
   | { format: 'csv'; csv: PreparedCsv }
-  | { format: 'ofx' | 'qfx'; statements: StatementDraft[] };
+  | { format: 'ofx' | 'qfx'; statements: StatementDraft[] }
+  // Empty until the hook has read the file on the server and run preparePdfDrafts; it then
+  // replaces `statements`, so the hook's existing non-CSV branches carry PDF unchanged.
+  | { format: 'pdf'; statements: StatementDraft[] };
 
 export type PrepareResult = { ok: true; prepared: PreparedImport } | { ok: false; reason: RejectReason };
 
@@ -183,12 +193,17 @@ function prepareOfx(text: string, hints: { extension: string }, exponentFor: (co
  */
 export function prepareImport(
   bytes: Uint8Array,
-  hints: { extension: 'csv' | 'ofx' | 'qfx' | 'other' },
+  hints: { extension: 'csv' | 'ofx' | 'qfx' | 'pdf' | 'other' },
   region: PrepareRegion,
   exponentFor: (code: string) => number | null
 ): PrepareResult {
+  // A PDF is recognised from its bytes and read on the server (D-07, D-08); it is not decoded here.
+  if (sniffPdfBytes(bytes)) return { ok: true, prepared: { format: 'pdf', statements: [] } };
+  // CSV and OFX keep their own, smaller cap (Phase 2 D-18); the picker admits up to the PDF cap.
+  if (bytes.length > MAX_STATEMENT_BYTES) return { ok: false, reason: 'too_big' };
   const { text } = decodeText(bytes);
   const sniffed = sniffFormat(text);
+  if (sniffed === 'pdf') return { ok: true, prepared: { format: 'pdf', statements: [] } };
   if (sniffed === 'unknown') return { ok: false, reason: 'unsupported_format' };
   if (sniffed === 'ofx') return prepareOfx(text, hints, exponentFor);
   return prepareCsv(text, region);
@@ -204,6 +219,99 @@ export function statementOptions(
     currency: s.currency,
     count: s.rows.length,
   }));
+}
+
+export interface PdfPrepareContext {
+  accountCurrency: string;
+  region: PrepareRegion;
+  today: string;
+  yearOverride: { section: number; year: number } | null;
+}
+
+/**
+ * Turns the server's positioned text into drafts (one per account section). A missing period
+ * is filled from the first and last row dates so the stored-opening check (which the hook
+ * only runs when periodStart is set) works for statements without a period line (D-24).
+ */
+export function preparePdfDrafts(
+  extraction: PdfExtraction,
+  ctx: PdfPrepareContext,
+  exponentFor: (code: string) => number | null
+): PdfDraftResult {
+  const result = pdfToDrafts(extraction, {
+    accountCurrency: ctx.accountCurrency,
+    exponentFor,
+    dayFirst: ctx.region.dayFirst,
+    decimalMark: ctx.region.decimal,
+    today: ctx.today,
+    yearOverride: ctx.yearOverride,
+  });
+  if (result.kind !== 'drafts') return result;
+  return {
+    kind: 'drafts',
+    drafts: result.drafts.map((d) => {
+      const dates = d.draft.rows.flatMap((r) => (r.localDate === null ? [] : [r.localDate])).sort();
+      const first = dates[0];
+      const last = dates[dates.length - 1];
+      if (first === undefined || last === undefined) return d;
+      return {
+        ...d,
+        draft: {
+          ...d.draft,
+          periodStart: d.draft.periodStart ?? first,
+          periodEnd: d.draft.periodEnd ?? last,
+        },
+      };
+    }),
+  };
+}
+
+/** The multi-account picker's rows for a PDF (D-12): section label, kind, currency and line count. */
+export function pdfStatementOptions(drafts: readonly PdfDraft[]): {
+  index: number;
+  label: 'checking' | 'savings' | 'card' | null;
+  kind: 'bank' | 'card';
+  currency: string | null;
+  count: number;
+}[] {
+  return drafts.map((d, index) => ({
+    index,
+    label: d.sectionLabel,
+    kind: d.draft.accountHint === 'card' ? 'card' : 'bank',
+    currency: d.draft.currency,
+    count: d.draft.rows.length,
+  }));
+}
+
+/** D-24: a PDF with no balance figure anywhere can take a closing balance the user types in. */
+export function needsClosingBalance(draft: StatementDraft): boolean {
+  return (
+    draft.source === 'pdf' &&
+    draft.statedOpening === null &&
+    draft.statedClosing === null &&
+    draft.rows.every((r) => r.balanceMagnitude === null)
+  );
+}
+
+/** A copy of the draft carrying the user's closing balance, dated at the period end. */
+export function withClosingBalance(
+  draft: StatementDraft,
+  input: { magnitude: MinorUnits; marker: 'none' | 'minus'; raw: string }
+): StatementDraft {
+  return {
+    ...draft,
+    statedClosing: { magnitude: input.magnitude, marker: input.marker, asOf: draft.periodEnd, raw: input.raw },
+  };
+}
+
+/**
+ * IMP-02: a PDF preview cannot be committed until the user has confirmed every included row
+ * that could not be verified. CSV and OFX keep Phase 2's behaviour (no gate).
+ */
+export function reviewGate(preview: Preview): { required: boolean; count: number } {
+  if (preview.format !== 'pdf') return { required: false, count: 0 };
+  const count = preview.rows.filter((r) => r.included && (r.check === 'cannot-verify' || r.check === 'no-balance')).length;
+  return { required: true, count };
 }
 
 /** The CSV draft once the user has confirmed the mapping, date order and number notation. */
@@ -351,10 +459,17 @@ export function buildPreview(input: PreviewInput): Preview {
       localDate: r.localDate,
     })),
     {
-      opening: converted.opening ?? (draft.source === 'ofx' && input.storedOpeningForFile !== null ? input.storedOpeningForFile : null),
+      opening:
+        converted.opening ??
+        ((draft.source === 'ofx' || draft.source === 'pdf') && input.storedOpeningForFile !== null
+          ? input.storedOpeningForFile
+          : null),
       closing: converted.closing,
     }
   );
+
+  // D-23: rows the PDF reader was unsure of read 'cannot-verify' even when their balance link holds.
+  const checked = draft.source === 'pdf' ? applyUncertainRows(reconciled, draft.rows) : reconciled;
 
   const { matches: duplicates, fitidDisabled } = findDuplicates(
     converted.rows.map((r) => ({
@@ -434,7 +549,7 @@ export function buildPreview(input: PreviewInput): Preview {
     return {
       index: r.index,
       converted: r,
-      check: reconciled.rows[position] ?? 'no-balance',
+      check: checked.rows[position] ?? 'no-balance',
       duplicate,
       categoryId: guess.categoryId,
       categorySource: guess.source,
@@ -448,7 +563,7 @@ export function buildPreview(input: PreviewInput): Preview {
 
   return {
     rows,
-    reconcile: reconciled,
+    reconcile: checked,
     fitidDisabled,
     limitOffer: offerLimit(profile, account),
     profile,
@@ -512,7 +627,7 @@ export function toImportCommit(
   const markPaid: ImportMarkPaid[] = [];
   const linkedStored = new Set<string>();
   const usedPending = new Set<string>();
-  const importFormat = preview.format === 'csv' ? 'csv' : 'ofx'; // QFX is OFX (D-39)
+  const importFormat = preview.format === 'pdf' ? 'pdf' : preview.format === 'csv' ? 'csv' : 'ofx'; // QFX is OFX (D-39)
   const canTransfer = ctx.transferCategoryId !== null;
 
   for (const pr of preview.rows) {
