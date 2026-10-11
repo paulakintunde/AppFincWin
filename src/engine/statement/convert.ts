@@ -37,6 +37,8 @@ export interface ConvertedRow {
   externalId: string | null;
   trnType: string | null;
   issues: DraftRowIssue[];
+  // IMP-05: the original foreign amount, signed like `amount` (provenance only, D-34)
+  foreign?: { amount: MinorUnits; currency: string } | null;
 }
 
 export interface ConvertedStatement {
@@ -102,6 +104,14 @@ function convertRow(row: DraftRow, profile: FormatProfile, limit: MinorUnits | n
     balance = convertBalance({ magnitude: row.balanceMagnitude, marker: row.balanceMarker }, profile, limit);
   }
 
+  const foreign =
+    row.foreign && amount !== null
+      ? {
+          amount: minorUnits(noNegativeZero(amount < 0 ? -row.foreign.magnitude : row.foreign.magnitude)),
+          currency: row.foreign.currency,
+        }
+      : null;
+
   return {
     index: row.index,
     localDate: row.localDate,
@@ -115,6 +125,7 @@ function convertRow(row: DraftRow, profile: FormatProfile, limit: MinorUnits | n
     externalId: row.externalId,
     trnType: row.trnType,
     issues: row.issues,
+    foreign,
   };
 }
 
