@@ -379,14 +379,18 @@ Plans:
 
 ### Phase 02.3: Record follow-ups from the 02.2 walkthrough (INSERTED)
 
-**Goal:** Three requests from the Phase 02.2 device walkthrough: choosing how a parsed statement meets existing entries, categorising manual entries from their description, and offering the previous account on the signed-out screen.
-**Requirements**: REC-26, REC-27, ACC-14
+**Goal:** Requests from the Phase 02.2 device walkthrough: choosing how a parsed statement meets existing entries, categorising manual entries from their description, offering the previous account on the signed-out screen, and a faster entry sheet (compact amount, Add account from the picker, bulk Add to list).
+**Requirements**: REC-26, REC-27, ACC-14, REC-28, REC-29, REC-30
 **Depends on:** Phase 02.2
 **Inserted:** 2026-10-10 (device walkthrough, user requests)
 **Success Criteria** (what must be TRUE):
   1. After a statement is parsed, the user chooses to reconcile against existing entries or to load every row as new. Reconcile shows only the rows missing from existing records, flags them, and adds them on approval.
   2. A manual entry is categorised from its description using the learned map and the default keyword rules, and the user can add, edit and remove description-to-category rules.
   3. The signed-out screen offers "Continue as <previous account>" or "Use a different account". Only the last account's display identity and provider are remembered, never tokens, and a different Google account shows the account picker.
+  4. The entry sheet for money out, money in and transfer shows the amount as a compact field with an "Amount" placeholder; the number keypad opens only when it is tapped.
+  5. The account picker in the entry sheet ends with "Add account"; creating an account there returns to the entry with the new account selected.
+  6. "Add to list" keeps a valid entry in a list at the bottom of the sheet and clears the form, up to 30 per money out, money in or transfer list; listed entries can be edited or removed, survive an accidental swipe or close, and Save writes the current entry plus the list in one step with one Undo.
+**Note:** criteria 4–6 change the entry sheet and Keypad that Phase 3's bottom-sheet migration carries over; plan 02.3 before re-checking the Phase 3 plans.
 **Plans:** 0 plans
 **Status:** Not started (not planned)
 

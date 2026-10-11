@@ -133,6 +133,9 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **REC-25**: User can change their home currency under You → Money; the change asks for today's rates for the new home currency against every currency in use (on-demand FX), and totals re-convert
 - [ ] **REC-26**: After a statement is parsed, the user chooses whether it reconciles against entries already made or loads as new entries. Reconcile mode shows only rows missing from existing records, flags them, and adds them on approval (builds on REC-16 duplicate finding); new-entries mode loads every row as today
 - [ ] **REC-27**: Manual entries are auto-categorised from the description using the learned map and default keyword rules (`src/engine/categorize/guessCategory`, `DEFAULT_KEYWORD_RULES`), and the user can add, edit and remove description-to-category rules
+- [ ] **REC-28**: In the entry sheet for money out, money in and transfer, the amount is a compact field with an "Amount" placeholder near the top; the number keypad opens only when the amount is tapped, so "What is it for" and the other fields are visible without scrolling
+- [ ] **REC-29**: The account picker in the entry sheet ends with "Add account", which opens account creation and returns to the entry with the new account selected
+- [ ] **REC-30**: The entry sheet offers "Add to list" beside Save: it validates the entry, keeps it in a list at the bottom of the sheet and clears the form for the next one, up to 30 entries per money out, money in or transfer list. Listed entries can be edited or removed before saving, the list survives an accidental swipe or close as a local draft, and Save writes the current entry plus the whole list in one step with one Undo
 
 ### Activity
 
@@ -486,6 +489,9 @@ Populated during roadmap creation.
 | REC-25 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
 | REC-26 | Phase 2.3 - Record follow-ups | Pending |
 | REC-27 | Phase 2.3 - Record follow-ups | Pending |
+| REC-28 | Phase 2.3 - Record follow-ups | Pending |
+| REC-29 | Phase 2.3 - Record follow-ups | Pending |
+| REC-30 | Phase 2.3 - Record follow-ups | Pending |
 | IMP-01 | Phase 2.1 - PDF statement import | Pending |
 | IMP-02 | Phase 2.1 - PDF statement import | Pending |
 | IMP-03 | Phase 2.1 - PDF statement import | Pending |
@@ -602,13 +608,15 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 234 total (95 ticked)
+- v1 requirements: 237 total (95 ticked)
 - Mapped to phases: 234
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
+*Last updated: 2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
+
+*2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
 *2026-10-09 — Phase 2.2 implemented: ACT-06..ACT-18 and REC-19..REC-25 marked "Implemented, awaiting device walkthrough and verification" (ticked only after 02.2-VERIFICATION.md, as for Phase 1); coverage recounted to 231/231 v1 requirements mapped.*
 *2026-10-10 — Phase 2.2 walkthrough follow-ups: REC-26, REC-27 and ACC-14 added and mapped to the new Phase 2.3; coverage 234/234 (75 ticked).*
 *Previously: 2026-09-26 — Phase 1 closed: FND-10, MON-01, MON-02, MON-03, MON-07, MON-08, MON-14 ticked on 01-VERIFICATION.md evidence; FND-04/FND-05 ticked (enforce_admins on). 203/203 v1 requirements mapped*
