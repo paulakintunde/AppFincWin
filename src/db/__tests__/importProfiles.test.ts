@@ -34,7 +34,7 @@ describe('isFormatProfile', () => {
   });
 
   it('accepts every enumerated source/accountFamily/positiveMeans/balanceMeans/decidedBy value', () => {
-    for (const source of ['csv', 'ofx'] as const) {
+    for (const source of ['csv', 'ofx', 'pdf'] as const) {
       expect(isFormatProfile({ ...VALID_PROFILE, source })).toBe(true);
     }
     for (const accountFamily of ['deposit', 'card', 'loan'] as const) {
@@ -66,7 +66,7 @@ describe('isFormatProfile', () => {
   });
 
   it('rejects an unrecognised enum value for each field', () => {
-    expect(isFormatProfile({ ...VALID_PROFILE, source: 'pdf' })).toBe(false);
+    expect(isFormatProfile({ ...VALID_PROFILE, source: 'xls' })).toBe(false);
     expect(isFormatProfile({ ...VALID_PROFILE, accountFamily: 'investment' })).toBe(false);
     expect(isFormatProfile({ ...VALID_PROFILE, positiveMeans: 'unsure' })).toBe(false);
     expect(isFormatProfile({ ...VALID_PROFILE, balanceMeans: 'unsure' })).toBe(false);
