@@ -15,6 +15,7 @@ export interface PdfLine {
 
 export const LINE_TOLERANCE = 2; // pt: baselines this close share a line
 export const CELL_JOIN_GAP = 4; // pt: runs this close on a line join into one cell
+export const CELL_OVERLAP = 1; // pt: runs overlapping by more than this are different columns, not one split run
 export const HEADER_LINE_GAP = 14; // pt: max distance between the two lines of a split header
 
 const collapse = (s: string): string => s.replace(/\s+/g, ' ').trim();
@@ -34,7 +35,7 @@ function toCells(runs: readonly Run[]): PdfCell[] {
   let x0 = head.x;
   let x1 = head.x + head.w;
   for (const r of sorted.slice(1)) {
-    if (r.x - x1 <= CELL_JOIN_GAP) {
+    if (r.x - x1 >= -CELL_OVERLAP && r.x - x1 <= CELL_JOIN_GAP) {
       text += (r.x - x1 < 0.5 ? '' : ' ') + r.str;
       x1 = Math.max(x1, r.x + r.w);
     } else {

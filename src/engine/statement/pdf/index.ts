@@ -6,3 +6,4 @@ export * from './layout';
 export * from './rows';
 export * from './validate';
 export * from './layoutFingerprint';
+export * from './toDraft';

@@ -155,6 +155,23 @@ describe('assembleTable (header mode)', () => {
     expect(t?.rows).toHaveLength(0);
   });
 
+  it('reads a figure written at the end of a label cell', () => {
+    const t = assembleTable([
+      header(),
+      ln([c('Previous balance 820.40', 40, 200)]),
+      ln([c('New balance 1,250.00 CR', 40, 200)]),
+      ln([c('Credit limit 1,000.00', 40, 200)]),
+      ln([c('Available credit offline', 40, 200)]),
+    ]);
+    expect(t?.summary).toMatchObject({ openingText: '820.40', closingText: '1,250.00 CR', limitText: '1,000.00', availableText: null });
+  });
+
+  it('does not let a page running header become a wrapped description', () => {
+    const t = assembleTable([header(), ln([date(), desc('ACME'), out('1.00')]), ln([desc('Example Bank')], 2)]);
+    expect(t?.rows[0]!.descriptionParts).toEqual(['ACME']);
+    expect(t?.rows[0]!.flags).toEqual([]);
+  });
+
   it('does not treat a merchant that merely starts with a removed word as a total', () => {
     const t = assembleTable([header(), ln([date(), desc('TOTALLY WINE'), out('9.00')])]);
     expect(t?.rows).toHaveLength(1);
@@ -230,6 +247,11 @@ describe('assembleTable (headerless mode)', () => {
     expect(t?.rows[1]).toMatchObject({ candidates: ['4.00'], balanceText: null });
     expect(t?.rows[3]).toMatchObject({ candidates: ['2', '3'], balanceText: '4', descriptionParts: ['D', '1'] });
     expect(t?.roles).toContain('balance');
+  });
+
+  it('does not join a text line from the next page', () => {
+    const t = assembleTable([row('02 Mar', 'A', '1.00'), row('03 Mar', 'B', '2.00'), row('04 Mar', 'C', '3.00'), ln([c('Example Bank', 94, 150)], 2)]);
+    expect(t?.rows[2]).toMatchObject({ descriptionParts: ['C'], flags: [] });
   });
 
   it('has no balance role when no balances are seen, joins wrapped text, and ignores strays', () => {
