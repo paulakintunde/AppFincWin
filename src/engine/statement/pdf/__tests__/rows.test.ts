@@ -82,7 +82,8 @@ describe('assembleTable (header mode)', () => {
     expect(t?.rows[0]!.dateText).toBeNull();
   });
 
-  it('attaches a balance-only line to a row without a balance, otherwise ignores it', () => {
+  // Review ME-02: a continuation line never fills the previous row's amount or balance slots.
+  it('a figure on a continuation line is not taken as the balance; the row is flagged instead', () => {
     const t = assembleTable([
       header(),
       ln([date(), desc(), out('1.00')]),
@@ -90,8 +91,31 @@ describe('assembleTable (header mode)', () => {
       ln([bal('88.00')]),
     ]);
     expect(t?.rows).toHaveLength(1);
-    expect(t?.rows[0]!.balanceText).toBe('99.00');
-    expect(t?.rows[0]!.flags).toEqual([]);
+    expect(t?.rows[0]!.balanceText).toBeNull();
+    expect(t?.rows[0]!.flags).toEqual(['stray-figure']);
+  });
+
+  it('a foreign note split into "USD" and "45.00" runs in the description column is one wrapped part, not a row', () => {
+    const t = assembleTable([
+      header(),
+      ln([date(), desc('SAMPLE STORE'), cred('35.38'), bal('100.00')]),
+      ln([c('USD', 94, 112), c('45.00', 116, 140)]),
+    ]);
+    expect(t?.rows).toHaveLength(1);
+    expect(t?.rows[0]).toMatchObject({
+      descriptionParts: ['SAMPLE STORE', 'USD 45.00'],
+      creditText: '35.38',
+      debitText: null,
+      balanceText: '100.00',
+      flags: ['wrapped'],
+    });
+  });
+
+  it('a figure on a wrapped line under the balance column never fills the balance', () => {
+    const t = assembleTable([header(), ln([date(), desc(), out('5.00')]), ln([desc('Rate'), bal('45.00')])]);
+    expect(t?.rows).toHaveLength(1);
+    expect(t?.rows[0]).toMatchObject({ balanceText: null, descriptionParts: ['ACME GROCERS', 'Rate'] });
+    expect(t?.rows[0]!.flags).toEqual(['wrapped', 'stray-figure']);
   });
 
   it('ignores lines before the first header but still reads figures from them', () => {

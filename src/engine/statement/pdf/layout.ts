@@ -185,7 +185,7 @@ export function findHeaders(lines: readonly PdfLine[]): HeaderMatch[] {
 
 export type Placement = { kind: 'column'; role: ColumnRole } | { kind: 'between'; roles: ['debit', 'credit'] };
 
-const NUMERIC_ROLES: readonly ColumnRole[] = ['amount', 'debit', 'credit', 'balance'];
+export const NUMERIC_ROLES: readonly ColumnRole[] = ['amount', 'debit', 'credit', 'balance'];
 const TEXT_ROLES: readonly ColumnRole[] = ['date', 'description', 'other'];
 const mid = (a: { x0: number; x1: number }): number => (a.x0 + a.x1) / 2;
 

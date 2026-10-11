@@ -2,10 +2,11 @@
 // Uncertainty is raised as flags for the draft stage; nothing here guesses. Bank and card hints are
 // booleans only: no digits from identity lines are kept anywhere (D-14).
 import { looksLikeDate, parsePeriod } from './dates';
-import { findHeaders, looksNumeric, placeCell } from './layout';
+import { findHeaders, looksNumeric, NUMERIC_ROLES, placeCell } from './layout';
 import type { ColumnAnchor, ColumnRole, HeaderMatch, PdfCell, PdfLine } from './layout';
 
-export type RowFlag = 'wrapped' | 'no-date' | 'between' | 'both-columns';
+// 'stray-figure': a continuation line carried a figure that was not used (review ME-02).
+export type RowFlag = 'wrapped' | 'no-date' | 'between' | 'both-columns' | 'stray-figure';
 
 export interface RawRow {
   page: number;
@@ -236,8 +237,12 @@ function headerRows(lines: readonly PdfLine[], headers: readonly HeaderMatch[], 
     if (seconds.has(i) || sectionLabel(line) !== null || classify(line, summary) || anchors === null) return;
     const active: readonly ColumnAnchor[] = anchors;
     const dateCell = line.cells.find((c) => isDateCell(c, active));
-    const numeric = line.cells.filter((c) => c !== dateCell && looksNumeric(c.text));
-    const text = line.cells.filter((c) => c !== dateCell && !looksNumeric(c.text));
+    // Review ME-02: on an undated line, a figure that ends left of every numeric column sits in the
+    // description ("USD" "45.00" split into two runs), so it is text, never an amount.
+    const moneyLeft = Math.min(...active.filter((a) => NUMERIC_ROLES.includes(a.role)).map((a) => a.x0));
+    const inText = (c: PdfCell): boolean => dateCell === undefined && c.x1 < moneyLeft;
+    const numeric = line.cells.filter((c) => c !== dateCell && looksNumeric(c.text) && !inText(c));
+    const text = line.cells.filter((c) => c !== dateCell && (!looksNumeric(c.text) || inText(c)));
     if (dateCell !== undefined || numeric.some((c) => isMoneyPlacement(c, active))) {
       const row = newRow(line.page);
       row.dateText = dateCell?.text ?? null;
@@ -250,11 +255,14 @@ function headerRows(lines: readonly PdfLine[], headers: readonly HeaderMatch[], 
     }
     const prev = rows[rows.length - 1] as RawRow | undefined;
     if (prev === undefined || prev.page !== line.page) return; // a page's running header is not a wrapped description
+    // One part per continuation line, so a foreign note split into runs still reads as one note.
     if (text.length > 0) {
-      prev.descriptionParts.push(...text.map((c) => c.text));
+      prev.descriptionParts.push(text.map((c) => c.text).join(' '));
       addFlag(prev, 'wrapped');
     }
-    numeric.forEach((c) => applyNumeric(prev, c, active));
+    // Review ME-02: a continuation line never fills the row's amount or balance; its figure is
+    // left unused and the row is flagged so it is reviewed rather than silently re-reconciled.
+    if (numeric.length > 0) addFlag(prev, 'stray-figure');
   });
   return rows;
 }

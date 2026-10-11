@@ -1,3 +1,4 @@
+import { knownCurrencyExponent } from '../../../money';
 import { pdfToDrafts } from '../toDraft';
 import type { PdfDraftOptions } from '../toDraft';
 import type { PdfExtraction } from '../types';
@@ -221,6 +222,26 @@ describe('foreign amounts on continuation lines (IMP-05)', () => {
     ], { exponentFor: (code) => (['GBP', 'USD', 'EUR'].includes(code) ? 2 : null) }).draft;
     expect(d.rows[0]!.foreign).toMatchObject({ magnitude: 1000, currency: 'EUR' });
     expect(d.rows[1]!.foreign).toBeNull();
+  });
+});
+
+describe('figures on continuation lines (review ME-02)', () => {
+  it('a split "USD" / "45.00" note is read as the foreign amount and never nets into the charged amount', () => {
+    const d = draftOf([
+      PERIOD,
+      HEAD,
+      [D('02 Mar'), DESC('SAMPLE REFUND'), IN('35.38'), BAL('135.38')],
+      [['USD', 94, 112], ['45.00', 116, 140]],
+      [D('03 Mar'), DESC('PLAIN'), OUT('2.00'), BAL('133.38')],
+    ], { exponentFor: (code) => knownCurrencyExponent(code) }).draft;
+    expect(d.rows).toHaveLength(2);
+    expect(d.rows[0]).toMatchObject({ magnitude: 3538, marker: 'cr', issues: ['pdf-wrapped-description'] });
+    expect(d.rows[0]!.foreign).toMatchObject({ magnitude: 4500, currency: 'USD' });
+  });
+
+  it('a stray figure on a continuation line leaves the balance unset and flags the row', () => {
+    const d = draftOf([PERIOD, HEAD, [D('02 Mar'), DESC('SHOP'), OUT('5.00')], [BAL('95.00')]]).draft;
+    expect(d.rows[0]).toMatchObject({ magnitude: 500, balanceMagnitude: null, issues: ['pdf-ambiguous-column'] });
   });
 });
 

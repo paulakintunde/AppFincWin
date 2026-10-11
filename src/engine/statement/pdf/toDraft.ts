@@ -258,6 +258,7 @@ function readSegment(table: AssembledTable, index: number, label: PdfDraft['sect
     const description = collapse(r.descriptionParts.join(' ')).slice(0, MAX_DESCRIPTION);
     if (description === '') add(own, 'empty-description');
     if (r.flags.includes('wrapped')) add(own, 'pdf-wrapped-description');
+    if (r.flags.includes('stray-figure')) add(own, 'pdf-ambiguous-column');
     const date = years.dates[i] as string | null;
     if (date === null) add(own, 'bad-date');
     if (years.outOfPeriod[i]) add(own, 'pdf-ambiguous-date');
