@@ -276,32 +276,32 @@ Plans:
 Plans:
 
 **Wave 1** *(Phase-2-independent server work and fixtures run first; engine/copy plans precondition-check Phase 2)*
-- [ ] 02.1-01-PLAN.md — Synthetic PDF statement fixtures, generator, expected ledgers, unpdf smoke (W1)
-- [ ] 02.1-02-PLAN.md — Private statement-uploads bucket + owner-folder RLS, hourly purge via Storage API, pgTAP 49 (W1)
-- [ ] 02.1-03-PLAN.md — read-pdf-statement pure core: wire contract, caps, delete-after-read, metadata-only logs (W1)
-- [ ] 02.1-04-PLAN.md — Engine foundation: 'pdf' source + uncertain-row codes, applyUncertainRows, balance delta, dates/years (W1)
-- [ ] 02.1-05-PLAN.md — PDF copy (server variant) + privacy line, analytics fingerprint event, decision record, privacy-policy draft (W1)
-- [ ] 02.1-13-PLAN.md — IMP-05 schema: insert-only statement figures + fee link, server-written conversion_source, pgTAP 50 (W1)
+- [x] 02.1-01-PLAN.md — Synthetic PDF statement fixtures, generator, expected ledgers, unpdf smoke (W1)
+- [x] 02.1-02-PLAN.md — Private statement-uploads bucket + owner-folder RLS, hourly purge via Storage API, pgTAP 49 (W1)
+- [x] 02.1-03-PLAN.md — read-pdf-statement pure core: wire contract, caps, delete-after-read, metadata-only logs (W1)
+- [x] 02.1-04-PLAN.md — Engine foundation: 'pdf' source + uncertain-row codes, applyUncertainRows, balance delta, dates/years (W1)
+- [x] 02.1-05-PLAN.md — PDF copy (server variant) + privacy line, analytics fingerprint event, decision record, privacy-policy draft (W1)
+- [x] 02.1-13-PLAN.md — IMP-05 schema: insert-only statement figures + fee link, server-written conversion_source, pgTAP 50 (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 02.1-06-PLAN.md — unpdf binding + Deno glue, real-parser Deno test (passwords, deletion), extraction snapshots, CI job (W2)
-- [ ] 02.1-07-PLAN.md — Generic layout reader: lines/columns, rows/figures/sections, response validation, fingerprint, contract guard (W2)
-- [ ] 02.1-14-PLAN.md — IMP-05 shared extractor: foreign amounts, OFX statement rate, implied rate, fee linking (W2)
+- [x] 02.1-06-PLAN.md — unpdf binding + Deno glue, real-parser Deno test (passwords, deletion), extraction snapshots, CI job (W2)
+- [x] 02.1-07-PLAN.md — Generic layout reader: lines/columns, rows/figures/sections, response validation, fingerprint, contract guard (W2)
+- [x] 02.1-14-PLAN.md — IMP-05 shared extractor: foreign amounts, OFX statement rate, implied rate, fee linking (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 02.1-08-PLAN.md — pdfToDrafts adapter + real-fixture flow through Phase 2's engine + no-leak test (W3)
+- [x] 02.1-08-PLAN.md — pdfToDrafts adapter + real-fixture flow through Phase 2's engine + no-leak test (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 02.1-09-PLAN.md — PDF sniff + picker, statementPdf read service (offline refusal), pipeline PDF branches + review gate (W4)
-- [ ] 02.1-15-PLAN.md — IMP-05 adapters: OFX CURRENCY/ORIGCURRENCY, CSV original-amount roles, PDF continuation lines, cross-format fixtures (W4)
+- [x] 02.1-09-PLAN.md — PDF sniff + picker, statementPdf read service (offline refusal), pipeline PDF branches + review gate (W4)
+- [x] 02.1-15-PLAN.md — IMP-05 adapters: OFX CURRENCY/ORIGCURRENCY, CSV original-amount roles, PDF continuation lines, cross-format fixtures (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 02.1-10-PLAN.md — useStatementImport PDF branch: notice, password, sections, year, closing balance, checked-rows gate (W5)
-- [ ] 02.1-16-PLAN.md — IMP-05 commit path: preview foreign/fee links, insert-only statement figures, CSV mapping roles (W5)
+- [x] 02.1-10-PLAN.md — useStatementImport PDF branch: notice, password, sections, year, closing balance, checked-rows gate (W5)
+- [x] 02.1-16-PLAN.md — IMP-05 commit path: preview foreign/fee links, insert-only statement figures, CSV mapping roles (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 02.1-11-PLAN.md — Screens: reading progress, password sheet, closing-balance prompt, notice, section/year, checked-rows gate (W6)
-- [ ] 02.1-17-PLAN.md — IMP-05 display: Activity foreign line, detail statement conversion + bank fee + provenance note (W6)
+- [x] 02.1-11-PLAN.md — Screens: reading progress, password sheet, closing-balance prompt, notice, section/year, checked-rows gate (W6)
+- [x] 02.1-17-PLAN.md — IMP-05 display: Activity foreign line, detail statement conversion + bank fee + provenance note (W6)
 
 **Wave 7** *(blocked on Wave 6 completion; production is at 20261010000600 from Phase 02.2)*
 - [ ] 02.1-12-PLAN.md — Production rollout: PR to main, schema push (3 migrations) [BLOCKING], deploy both functions, live checks, worst-case timing, device walkthrough incl. IMP-05, preview APK (W7)
