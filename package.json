@@ -77,6 +77,8 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "test:deno": "deno test --allow-read --node-modules-dir=none supabase/functions/read-pdf-statement/unpdf_integration_test.ts",
+    "fixtures:pdf:snapshot": "deno run --allow-read --allow-write --node-modules-dir=none supabase/functions/_fixtures/tools/snapshot-pdf-extractions.ts",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
