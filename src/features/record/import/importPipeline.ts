@@ -32,6 +32,7 @@ import {
   pdfToDrafts,
   reconcile,
   sniffFormat,
+  signToTurn,
   sniffPdfBytes,
   type AccountKind,
   type ConvertedRow,
@@ -447,6 +448,15 @@ function offerLimit(profile: FormatProfile, account: PreviewAccount): Preview['l
   return null;
 }
 
+/** The same line the other way round: the amount and its foreign original are signed alike. */
+function turnSign(r: ConvertedRow): ConvertedRow {
+  return {
+    ...r,
+    amount: r.amount === null ? null : minorUnits(-r.amount),
+    foreign: r.foreign === undefined || r.foreign === null ? r.foreign : { ...r.foreign, amount: minorUnits(-r.foreign.amount) },
+  };
+}
+
 /**
  * convert -> reconcile -> duplicates -> pay-match -> transfers -> categories, in D-40 order.
  * Never throws for content. Nothing is linked, marked paid or applied here: every suggestion is
@@ -456,9 +466,24 @@ export function buildPreview(input: PreviewInput): Preview {
   const { draft, profile, account } = input;
 
   const accountLimit = limitOf(account);
-  const converted = convertDraft(draft, profile, {
+  const read = convertDraft(draft, profile, {
     limit: profile.accountFamily === 'card' ? (accountLimit ?? profile.statedLimit) : accountLimit,
   });
+  const opening =
+    read.opening ??
+    ((draft.source === 'ofx' || draft.source === 'pdf') && input.storedOpeningForFile !== null ? input.storedOpeningForFile : null);
+
+  // D-24: with no running balance anywhere, the ends decide a PDF line's open sign (debug
+  // pdf-closing-balance-unverified); otherwise one guessed sign fails every line in the file.
+  const turn =
+    draft.source === 'pdf' && read.rows.every((r) => r.balance === null && r.availableSigned === null)
+      ? signToTurn(
+          read.rows.map((r) => r.amount),
+          draft.rows.map((r) => r.marker === 'none' && r.issues.includes('pdf-ambiguous-column')),
+          { opening, closing: read.closing }
+        )
+      : null;
+  const converted = turn === null ? read : { ...read, rows: read.rows.map((r, i) => (i === turn ? turnSign(r) : r)) };
 
   const reconciled = reconcile(
     converted.rows.map((r) => ({
@@ -468,14 +493,7 @@ export function buildPreview(input: PreviewInput): Preview {
       balance: r.balance ?? r.availableSigned,
       localDate: r.localDate,
     })),
-    {
-      opening:
-        converted.opening ??
-        ((draft.source === 'ofx' || draft.source === 'pdf') && input.storedOpeningForFile !== null
-          ? input.storedOpeningForFile
-          : null),
-      closing: converted.closing,
-    }
+    { opening, closing: converted.closing }
   );
 
   // D-23: rows the PDF reader was unsure of read 'cannot-verify' even when their balance link holds.
