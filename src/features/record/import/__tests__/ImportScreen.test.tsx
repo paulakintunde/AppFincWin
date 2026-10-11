@@ -188,8 +188,8 @@ beforeEach(() => {
 describe('ImportScreen: pick', () => {
   it('shows the privacy line, the file helper and only the non-archived accounts', async () => {
     await renderScreen();
-    expect(screen.getByText('This file is read on your device and never uploaded.')).toBeTruthy();
-    expect(screen.getByText('CSV, OFX or QFX — up to 5,000 rows (about 2MB).')).toBeTruthy();
+    expect(screen.getByText('PDF statements are read on our server in the United States and deleted straight after. CSV and OFX files never leave your phone.')).toBeTruthy();
+    expect(screen.getByText('CSV, OFX, QFX or PDF.')).toBeTruthy();
     expect(screen.getByText('Which account is this file from?')).toBeTruthy();
     expect(screen.getByText('Current')).toBeTruthy();
     expect(screen.getByText('Savings')).toBeTruthy();
@@ -268,7 +268,7 @@ describe('ImportScreen: rejected and statement choice', () => {
     ['unreadable', 'This file couldn’t be read as a statement.'],
     ['no_rows', 'This file has no transactions in it.'],
     ['too_big', 'This file is too large to read.'],
-    ['unsupported_format', 'This file isn’t a CSV, OFX or QFX statement.'],
+    ['unsupported_format', 'This file isn’t a CSV, OFX, QFX or PDF statement.'],
     ['unsupported_statement', 'This file holds an investment or loan statement, which can’t be imported yet.'],
   ])('%s shows its copy, and Back returns to the start', async (reason, copy) => {
     mockState = makeState({ stage: 'rejected', rejectReason: reason });

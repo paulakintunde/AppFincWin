@@ -29,6 +29,25 @@ track('not_an_event', {});
 // @ts-expect-error
 track('import_committed', { entry: 'you', size: 42, format: 'ofx', reconciliation: 'partial' });
 
-// Invalid: format outside the finite Phase 2 literal union.
+// Invalid: format outside the finite literal union.
 // @ts-expect-error
-track('import_committed', { entry: 'you', size: '51-500', format: 'pdf', reconciliation: 'partial' });
+track('import_committed', { entry: 'you', size: '51-500', format: 'xls', reconciliation: 'partial' });
+
+track('import_committed', { entry: 'you', size: '1-50', format: 'pdf', reconciliation: 'partial' });
+track('import_pdf_unread', {
+  failed_step: 'no_table',
+  pages: '2-5',
+  has_date: true,
+  has_description: true,
+  has_amount: false,
+  has_debit_credit: false,
+  has_balance: false,
+});
+
+// Invalid: pages must be a banded literal, not a number.
+// @ts-expect-error
+track('import_pdf_unread', { failed_step: 'no_rows', pages: 3, has_date: true, has_description: true, has_amount: true, has_debit_credit: false, has_balance: false });
+
+// Invalid: no extra free-form properties.
+// @ts-expect-error
+track('import_pdf_unread', { failed_step: 'no_rows', pages: '1', has_date: true, has_description: true, has_amount: true, has_debit_credit: false, has_balance: false, header: 'Date' });
