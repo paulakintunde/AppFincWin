@@ -10,12 +10,12 @@
 // D-42: an ambiguous reading has no selected profile, so nothing can be committed until the
 // user chooses; a remembered reading that still reconciles skips the format step.
 // D-17 / D-29: every database read has a fallback, so a preview never waits on the network.
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { maybeRequestSampleClearPrompt } from '@/data/mutations/samplePromptTrigger';
 import { validateMapping, notationFor, type ColumnMapping, type DateFormat, type MappingError } from '@/engine/csv';
 import { buildLearnedMap } from '@/engine/categorize';
-import { minorUnits, parseAmount, resolveExponent, type NumberNotation, type ScaledRate } from '@/engine/money';
+import { minorUnits, parseAmount, resolveExponent, type MinorUnits, type NumberNotation, type ScaledRate } from '@/engine/money';
 import { detectRecurring, type PendingOccurrence, type RecurringSuggestion } from '@/engine/recurring';
 import {
   convertDraft,
@@ -23,6 +23,8 @@ import {
   type ConvertedRow,
   type ExistingRow,
   type FormatProfile,
+  type PdfExtraction,
+  pageBand,
   REFUND_LOOKBACK_DAYS,
   type RefundPurchase,
   type StatementDraft,
@@ -48,6 +50,8 @@ import { suggestionToSeries, useCreateSeries } from '@/data/mutations/recurringS
 import { newStepId } from '@/data/mutations/undoCapture';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { pickStatementBytes } from '@/services/files/pickStatement';
+import { readPdfStatement } from '@/services/statementPdf';
+import { useAmountParser, type AmountParseFailure } from '@/ui/money/useAmountParser';
 import { getAnalytics, type EventName, type EventProps } from '@/services/analytics';
 import { useDeviceLocale } from '@/services/locale/deviceLocale';
 import { supabase } from '@/services/supabase';
@@ -56,12 +60,17 @@ import { acceptedSuggestionCount, maxAcceptedSuggestions } from './suggestionCap
 import {
   buildPreview,
   inferCsvReading,
+  needsClosingBalance,
+  pdfStatementOptions,
   prepareImport,
+  preparePdfDrafts,
+  reviewGate,
   resolveCsvDraft,
   resolveProfile,
   sizeBand,
   statementOptions,
   toImportCommit,
+  withClosingBalance,
   type CsvReading,
   type ExistingInfo,
   type ImportFormat,
@@ -75,6 +84,9 @@ import {
 export type ImportStage =
   | 'idle'
   | 'reading'
+  | 'pdf-consent'
+  | 'pdf-password'
+  | 'pdf-balance'
   | 'rejected'
   | 'choose-statement'
   | 'format'
@@ -86,11 +98,13 @@ export type ImportStage =
 
 export type ImportEntry = 'onboarding' | 'you' | 'account';
 
-type AbandonStage = 'pick' | 'format' | 'mapping' | 'review' | 'matches';
+type AbandonStage = 'pick' | 'format' | 'mapping' | 'review' | 'matches' | 'consent' | 'password' | 'balance';
+
+type MachineRejectReason = RejectReason | 'pdf_offline' | 'pdf_too_large' | 'pdf_scanned' | 'pdf_unreadable';
 
 interface Machine {
   stage: ImportStage;
-  rejectReason: RejectReason | null;
+  rejectReason: MachineRejectReason | null;
   prepared: PreparedImport | null;
   statementIndex: number | null;
   accountId: string | null;
@@ -126,6 +140,18 @@ interface Machine {
   /** D-07: refund suggestions are unticked until the user accepts. */
   refundAnswers: ReadonlyMap<number, 'accepted' | 'dismissed'>;
   limitAccepted: boolean;
+  // PDF only (02.1-10). The password is never a field here (D-21).
+  /** Mirrors "the picked PDF's bytes are still in memory" so it re-renders (D-10, D-16). */
+  bytesHeld: boolean;
+  pdfSections: ReturnType<typeof pdfStatementOptions>;
+  yearQuestions: ([number, number] | null)[];
+  chosenYear: number | null;
+  passwordWrong: boolean;
+  closingAnswered: boolean;
+  closingEntered: { magnitude: MinorUnits; marker: 'none' | 'minus'; raw: string } | null;
+  /** IMP-02: the user's tick, valid only for the flagged-row set it was given for. */
+  rowsChecked: boolean;
+  rowsCheckedKey: string | null;
   // after commit
   suggestions: RecurringSuggestion[];
   committedRows: { id: string; localDate: string; categoryId: string | null }[];
@@ -177,6 +203,15 @@ function initialMachine(accountId: string | null): Machine {
     payAnswers: NONE,
     refundAnswers: NONE,
     limitAccepted: false,
+    bytesHeld: false,
+    pdfSections: [],
+    yearQuestions: [],
+    chosenYear: null,
+    passwordWrong: false,
+    closingAnswered: false,
+    closingEntered: null,
+    rowsChecked: false,
+    rowsCheckedKey: null,
     suggestions: [],
     committedRows: [],
   };
@@ -279,6 +314,16 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const [commitProblem, setCommitProblem] = useState<CommitProblem | null>(null);
   const run = useRef(0); // bumped on every restart or cancel, so a late read is dropped
   const committing = useRef(false);
+  // D-10 / D-16: the picked PDF's bytes and the server's text live only here, never in state, and
+  // are dropped as soon as they are read, on any rejection, cancel, commit or unmount.
+  const pdfBytes = useRef<Uint8Array | null>(null);
+  const pdfExtraction = useRef<PdfExtraction | null>(null);
+  const amountParser = useAmountParser();
+  const clearPdf = useCallback((): void => {
+    pdfBytes.current = null;
+    pdfExtraction.current = null;
+  }, []);
+  useEffect(() => clearPdf, [clearPdf]);
 
   const region = useMemo(
     () => ({ decimal: (device.separators?.decimal === ',' ? ',' : '.') as '.' | ',', dayFirst: isDayFirst(device.locale) }),
@@ -350,6 +395,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         payAnswers: NONE,
         refundAnswers: NONE,
         limitAccepted: false,
+        rowsChecked: false,
+        rowsCheckedKey: null,
       }));
 
       void (async () => {
@@ -521,13 +568,16 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         patch({ draft, accountId, profile: null, candidates: result.candidates, rememberedNote: false, flipped: false, rolesKey, stage: 'format' });
         return;
       }
-      const skip = result.profile.decidedBy === 'remembered';
+      // D-27 / D-23: a remembered reading never skips an open year question; a guessed year is
+      // never committed silently.
+      const yearOpen = format === 'pdf' && (s.yearQuestions[s.statementIndex ?? 0] ?? null) !== null && s.chosenYear === null;
+      const skip = result.profile.decidedBy === 'remembered' && !yearOpen;
       patch({
         draft,
         accountId,
         profile: result.profile,
         candidates: [],
-        rememberedNote: skip,
+        rememberedNote: result.profile.decidedBy === 'remembered',
         flipped: false,
         rolesKey,
         stage: skip ? (format === 'csv' ? 'mapping' : 'review') : 'format',
@@ -540,6 +590,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const start = useCallback((): void => {
     const token = ++run.current;
     committing.current = false;
+    clearPdf();
     track('import_started', { entry });
     setM(() => ({ ...initialMachine(m.accountId), stage: 'reading' }));
     void (async () => {
@@ -566,6 +617,18 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         return;
       }
       const p = prepared.prepared;
+      if (p.format === 'pdf') {
+        // D-06: offline stops here, before the notice; nothing is uploaded or queued.
+        if (!onlineManager.isOnline()) {
+          track('import_file_rejected', { reason: 'pdf_offline' });
+          patch({ stage: 'rejected', rejectReason: 'pdf_offline' });
+          return;
+        }
+        // D-05: the notice is shown on every PDF import; only sendPdf reads the bytes out.
+        pdfBytes.current = picked.bytes;
+        setM({ ...initialMachine(m.accountId), prepared: p, bytesHeld: true, stage: 'pdf-consent' });
+        return;
+      }
       const next: Machine = { ...initialMachine(m.accountId), prepared: p };
       if (p.format === 'csv') {
         next.mapping = p.csv.detected;
@@ -582,17 +645,212 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       setM({ ...next, stage: 'format' });
       if (next.accountId !== null) await derive(next, next.accountId);
     })();
-  }, [derive, entry, m.accountId, patch, region]);
+  }, [clearPdf, derive, entry, m.accountId, patch, region]);
+
+  // --- PDF (02.1-10): the same machine, plus notice, reading, password, year and balance -----
+
+  /** Moves a PDF on to the closing-balance question when it needs one, else to the reading (D-24). */
+  const pdfNext = useCallback(
+    async (s: Machine, accountId: string): Promise<void> => {
+      if (s.prepared?.format === 'pdf') {
+        const draft = s.prepared.statements[s.statementIndex ?? 0];
+        if (draft !== undefined && needsClosingBalance(draft) && !s.closingAnswered) {
+          patch({ stage: 'pdf-balance' });
+          return;
+        }
+      }
+      await derive(s, accountId);
+    },
+    [derive, patch]
+  );
+
+  const rejectPdf = useCallback(
+    (reason: 'pdf_offline' | 'pdf_too_large' | 'pdf_scanned' | 'pdf_unreadable'): void => {
+      clearPdf();
+      track('import_file_rejected', { reason });
+      patch({ stage: 'rejected', rejectReason: reason, bytesHeld: false });
+    },
+    [clearPdf, patch]
+  );
+
+  /** Turns the held extraction into drafts for the account; a chosen year is applied to its section (D-27). */
+  const applyPdfDrafts = useCallback(
+    (s: Machine, accountId: string): void => {
+      const account = accountById(accountId);
+      const extraction = pdfExtraction.current;
+      if (account === null || extraction === null) return;
+      const section = s.statementIndex ?? 0;
+      let result: ReturnType<typeof preparePdfDrafts> | null;
+      try {
+        result = preparePdfDrafts(
+          extraction,
+          {
+            accountCurrency: account.currency,
+            region,
+            today: ctx.today,
+            yearOverride: s.chosenYear === null ? null : { section, year: s.chosenYear },
+          },
+          exponentFor
+        );
+      } catch {
+        result = null;
+      }
+      if (result === null) {
+        rejectPdf('pdf_unreadable');
+        return;
+      }
+      if (result.kind === 'unreadable') {
+        const f = result.fingerprint;
+        // D-14: the anonymous layout shape only, built from the fingerprint's literal fields.
+        track('import_pdf_unread', {
+          failed_step: f.failedStep,
+          pages: f.pages,
+          has_date: f.hasDate,
+          has_description: f.hasDescription,
+          has_amount: f.hasAmount,
+          has_debit_credit: f.hasDebitCredit,
+          has_balance: f.hasBalance,
+        });
+        rejectPdf('pdf_unreadable');
+        return;
+      }
+      const drafts = result.drafts;
+      const entered = s.closingEntered;
+      const statements = drafts.map((d, i) => (entered !== null && i === section ? withClosingBalance(d.draft, entered) : d.draft));
+      const next: Machine = {
+        ...s,
+        prepared: { format: 'pdf', statements },
+        pdfSections: pdfStatementOptions(drafts),
+        yearQuestions: drafts.map((d) => d.yearQuestion),
+      };
+      if (drafts.length > 1 && s.statementIndex === null) {
+        setM({ ...next, stage: 'choose-statement' });
+        return;
+      }
+      const ready: Machine = { ...next, statementIndex: section, stage: 'format' };
+      setM(ready);
+      void pdfNext(ready, accountId);
+    },
+    [accountById, ctx.today, pdfNext, region, rejectPdf]
+  );
+
+  /** The password is a parameter of this call only: never state, a ref, an event or an error (D-21). */
+  const readPdf = useCallback(
+    async (password: null | string): Promise<void> => {
+      const bytes = pdfBytes.current;
+      const accountId = m.accountId;
+      if ((m.stage !== 'pdf-consent' && m.stage !== 'pdf-password') || bytes === null || accountId === null) return;
+      const token = ++run.current;
+      patch({ stage: 'reading' });
+      const outcome = await readPdfStatement(bytes, { password });
+      if (token !== run.current) return;
+      if (outcome.kind === 'ok') {
+        // D-10: the file is gone from memory the moment it has been read.
+        pdfBytes.current = null;
+        pdfExtraction.current = outcome.extraction;
+        const next: Machine = { ...m, stage: 'reading', bytesHeld: false, passwordWrong: false };
+        applyPdfDrafts(next, accountId);
+        return;
+      }
+      switch (outcome.reason) {
+        case 'password-required':
+          patch({ stage: 'pdf-password', passwordWrong: false });
+          return;
+        case 'password-incorrect':
+          patch({ stage: 'pdf-password', passwordWrong: true });
+          return;
+        case 'offline':
+        case 'network':
+          rejectPdf('pdf_offline');
+          return;
+        case 'too-large':
+          rejectPdf('pdf_too_large');
+          return;
+        case 'no-text-layer':
+          track('import_pdf_unread', {
+            failed_step: 'no_text_layer',
+            pages: pageBand(outcome.pageCount ?? 1),
+            has_date: false,
+            has_description: false,
+            has_amount: false,
+            has_debit_credit: false,
+            has_balance: false,
+          });
+          rejectPdf('pdf_scanned');
+          return;
+        default:
+          rejectPdf('pdf_unreadable');
+      }
+    },
+    [applyPdfDrafts, m, patch, rejectPdf]
+  );
+
+  const sendPdf = useCallback((): Promise<void> => readPdf(null), [readPdf]);
+  const submitPassword = useCallback((password: string): Promise<void> => readPdf(password), [readPdf]);
+
+  const yearQuestion: [number, number] | null = m.prepared?.format === 'pdf' ? (m.yearQuestions[m.statementIndex ?? 0] ?? null) : null;
+
+  const chooseYear = useCallback(
+    (year: number): void => {
+      if (m.stage !== 'format' || m.prepared?.format !== 'pdf' || yearQuestion === null || m.accountId === null) return;
+      if (!yearQuestion.includes(year)) return;
+      applyPdfDrafts({ ...m, chosenYear: year }, m.accountId);
+    },
+    [applyPdfDrafts, m, yearQuestion]
+  );
+
+  /** D-24: the user's closing balance, parsed strictly; a leading minus marks an overdrawn figure. */
+  const submitClosingBalance = useCallback(
+    (text: string): { ok: true } | AmountParseFailure => {
+      const account = accountById(m.accountId);
+      if (m.stage !== 'pdf-balance' || m.prepared?.format !== 'pdf' || account === null || m.accountId === null) {
+        return { ok: false, error: 'invalid', maxDecimals: 2 };
+      }
+      const trimmed = text.trim();
+      const minus = trimmed.startsWith('-') || trimmed.startsWith('−');
+      const rest = (minus ? trimmed.slice(1) : trimmed).trim();
+      let parsed: ReturnType<typeof amountParser.parse>;
+      try {
+        parsed = amountParser.parse(rest, account.currency);
+      } catch {
+        return { ok: false, error: 'invalid', maxDecimals: 2 };
+      }
+      if (!parsed.ok) return parsed;
+      const entered = { magnitude: parsed.value, marker: minus ? ('minus' as const) : ('none' as const), raw: trimmed };
+      const index = m.statementIndex ?? 0;
+      const next: Machine = {
+        ...m,
+        closingEntered: entered,
+        closingAnswered: true,
+        prepared: { format: 'pdf', statements: m.prepared.statements.map((d, i) => (i === index ? withClosingBalance(d, entered) : d)) },
+      };
+      setM(next);
+      void derive(next, m.accountId);
+      return { ok: true };
+    },
+    [accountById, amountParser, derive, m]
+  );
+
+  const skipClosingBalance = useCallback((): void => {
+    if (m.stage !== 'pdf-balance' || m.accountId === null) return;
+    const next: Machine = { ...m, closingAnswered: true };
+    setM(next);
+    void derive(next, m.accountId);
+  }, [derive, m]);
 
   const chooseStatement = useCallback(
     (index: number): void => {
       if (m.stage !== 'choose-statement' || m.prepared === null || m.prepared.format === 'csv') return;
       if (m.prepared.statements[index] === undefined) return;
-      const next: Machine = { ...m, statementIndex: index, stage: 'format' };
+      const isPdf = m.prepared.format === 'pdf';
+      // Each PDF section asks its own year and closing balance.
+      const next: Machine = isPdf
+        ? { ...m, statementIndex: index, stage: 'format', chosenYear: null, closingAnswered: false, closingEntered: null }
+        : { ...m, statementIndex: index, stage: 'format' };
       setM(next);
-      if (next.accountId !== null) void derive(next, next.accountId);
+      if (next.accountId !== null) void (isPdf ? pdfNext(next, next.accountId) : derive(next, next.accountId));
     },
-    [derive, m]
+    [derive, m, pdfNext]
   );
 
   const setAccount = useCallback(
@@ -600,10 +858,15 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       if (m.stage === 'review' || m.stage === 'matches' || m.stage === 'committing' || m.stage === 'done') return;
       const next: Machine = { ...m, accountId: id };
       setM(next);
+      // A PDF's drafts take the account's currency, so they are built again for the new account.
+      if (m.prepared?.format === 'pdf' && m.stage === 'format' && pdfExtraction.current !== null) {
+        applyPdfDrafts(next, id);
+        return;
+      }
       // The account kind fixes what the balance means, so the reading is worked out again (D-53).
       if (next.prepared !== null && (next.stage === 'format' || next.stage === 'mapping')) void derive(next, id);
     },
-    [derive, m]
+    [applyPdfDrafts, derive, m]
   );
 
   const flip = useCallback((): void => {
@@ -622,11 +885,13 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
 
   const confirmFormat = useCallback((): void => {
     if (m.stage !== 'format' || m.profile === null || m.prepared === null || m.draft === null || m.accountId === null) return;
+    // D-27: the reading cannot be confirmed while the year is still a question.
+    if (m.prepared.format === 'pdf' && yearQuestion !== null && m.chosenYear === null) return;
     const format: ImportFormat = m.prepared.format;
     track('import_format_confirmed', { format, decided_by: m.profile.decidedBy, flipped: m.flipped });
     if (format === 'csv') patch({ stage: 'mapping' });
     else goReview(m.draft, m.profile, m.accountId, format);
-  }, [goReview, m, patch]);
+  }, [goReview, m, patch, yearQuestion]);
 
   // --- mapping (CSV only) ---------------------------------------------------------------
 
@@ -746,6 +1011,25 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       cannotVerify: rows.filter((r) => r.check === 'cannot-verify').length,
     };
   }, [isIncluded, m.preview]);
+
+  // IMP-02: a PDF cannot move on or commit while an included row is unverified, until the user
+  // ticks that they checked them. The tick belongs to the flagged set it was given for, so any
+  // change to that set (a row toggled, a new preview) drops it.
+  const gate = useMemo(() => {
+    if (m.preview === null) return { required: false, count: 0 };
+    const base = reviewGate({ ...m.preview, rows: m.preview.rows.map((r) => ({ ...r, included: isIncluded(r) })) });
+    return { required: base.required && base.count > 0, count: base.count };
+  }, [isIncluded, m.preview]);
+  const flaggedKey = useMemo(
+    () =>
+      (m.preview?.rows ?? [])
+        .filter((r) => isIncluded(r) && (r.check === 'cannot-verify' || r.check === 'no-balance'))
+        .map((r) => r.index)
+        .join(','),
+    [isIncluded, m.preview]
+  );
+  const rowsChecked = m.rowsChecked && m.rowsCheckedKey === flaggedKey;
+  const setRowsChecked = useCallback((v: boolean): void => patch({ rowsChecked: v, rowsCheckedKey: v ? flaggedKey : null }), [flaggedKey, patch]);
 
   // S-WR-13: one keyed lookup per preview, so per-row reads (every render of a 5,000-line
   // review) are O(1) rather than a scan of every row.
@@ -980,6 +1264,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     const userId = ctx.userId;
     // T-02-39-01: nothing is written under a reading the user has not selected (D-42).
     if ((m.stage !== 'review' && m.stage !== 'matches') || committing.current) return;
+    if (gate.required && !rowsChecked) return;
     if (preview === null || profile === null || draft === null || account === null || householdId === null || userId === null) return;
     if (overSuggestionCap) {
       // S-WR-03: never sent -- the finalize and its undo step would exceed MAX_UNDO_OPS.
@@ -1065,12 +1350,13 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         isTransfer: false,
       }))
     );
+    clearPdf();
     patch({
       stage: 'done',
       suggestions,
       committedRows: ordinary.map((r) => ({ id: r.id, localDate: r.local_date, categoryId: r.category_id ?? null })),
     });
-  }, [accountById, accounts, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, transfersUnavailable]);
+  }, [accountById, accounts, clearPdf, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, gate.required, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, rowsChecked, transfersUnavailable]);
 
   const acceptSuggestion = useCallback(
     (key: string): void => {
@@ -1098,11 +1384,12 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const continueStage = useCallback((): Promise<void> | void => {
     if (m.stage === 'mapping') return continueFromMapping();
     if (m.stage === 'review') {
+      if (gate.required && !rowsChecked) return undefined;
       if (transferRows.length > 0 || payMatchRows.length > 0 || refundRows.length > 0) patch({ stage: 'matches' });
       else commit();
     } else if (m.stage === 'matches') commit();
     return undefined;
-  }, [commit, continueFromMapping, m.stage, patch, payMatchRows.length, refundRows.length, transferRows.length]);
+  }, [commit, continueFromMapping, gate.required, m.stage, patch, payMatchRows.length, refundRows.length, rowsChecked, transferRows.length]);
 
   const back = useCallback((): void => {
     if (m.stage === 'mapping') patch({ stage: 'format' });
@@ -1114,15 +1401,22 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     const at: AbandonStage | null =
       m.stage === 'reading' || m.stage === 'choose-statement'
         ? 'pick'
-        : m.stage === 'format' || m.stage === 'mapping' || m.stage === 'review' || m.stage === 'matches'
+        : m.stage === 'pdf-consent'
+          ? 'consent'
+          : m.stage === 'pdf-password'
+            ? 'password'
+            : m.stage === 'pdf-balance'
+              ? 'balance'
+              : m.stage === 'format' || m.stage === 'mapping' || m.stage === 'review' || m.stage === 'matches'
           ? m.stage
           : null;
     if (m.stage === 'committing') return;
     run.current += 1;
     committing.current = false;
+    clearPdf();
     if (at !== null) track('import_abandoned', { stage: at });
     setM(initialMachine(m.accountId));
-  }, [m.accountId, m.stage]);
+  }, [clearPdf, m.accountId, m.stage]);
 
   const exampleRow: ConvertedRow | null = useMemo(() => {
     if (m.draft === null || m.profile === null) return null;
@@ -1173,6 +1467,20 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     format: (m.prepared?.format ?? null) as ImportFormat | null,
     statementChoices,
     chooseStatement,
+    // PDF
+    pdfBytesHeld: m.bytesHeld,
+    sendPdf,
+    passwordWrong: m.passwordWrong,
+    submitPassword,
+    pdfSections: m.pdfSections,
+    yearQuestion,
+    chosenYear: m.chosenYear,
+    chooseYear,
+    submitClosingBalance,
+    skipClosingBalance,
+    reviewGate: gate,
+    rowsChecked,
+    setRowsChecked,
     accountId: m.accountId,
     setAccount,
     profile: m.profile,

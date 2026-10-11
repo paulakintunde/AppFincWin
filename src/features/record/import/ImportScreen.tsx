@@ -140,7 +140,7 @@ function RejectedStep({ state }: { state: ImportState }) {
   if (reason === null) return null;
   return (
     <View>
-      <T tone={reason === 'too_many_rows' ? 'danger' : 'ink'}>{t(`importCsv.${REJECT_KEY[reason]}`)}</T>
+      <T tone={reason === 'too_many_rows' ? 'danger' : 'ink'}>{t(`importCsv.${REJECT_KEY[reason in REJECT_KEY ? (reason as RejectReason) : 'unreadable']}`)}</T>
       <Actions>
         <Pill label={t('importCsv.back')} variant="secondary" onPress={state.cancel} />
       </Actions>
