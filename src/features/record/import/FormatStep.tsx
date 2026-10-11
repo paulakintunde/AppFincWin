@@ -99,8 +99,28 @@ export function FormatStep({ state }: { state: ImportState }) {
         </View>
       ) : null}
 
+      {state.yearQuestion !== null ? (
+        <View>
+          <Heading>{t('importCsv.pdf.yearHeading')}</Heading>
+          {state.yearQuestion.map((y) => (
+            <Row
+              key={y}
+              label={String(y)}
+              value={state.chosenYear === y ? '✓' : undefined}
+              accessibilityLabel={t('importCsv.pdf.yearA11y', { year: String(y) })}
+              onPress={() => state.chooseYear(y)}
+            />
+          ))}
+        </View>
+      ) : null}
+
       <Actions>
-        <Pill label={t('importCsv.format.confirm')} variant="secondary" disabled={profile === null} onPress={state.confirmFormat} />
+        <Pill
+          label={t('importCsv.format.confirm')}
+          variant="secondary"
+          disabled={profile === null || (state.yearQuestion !== null && state.chosenYear === null)}
+          onPress={state.confirmFormat}
+        />
         <Pill label={t('importCsv.cancel')} variant="secondary" onPress={state.cancel} />
       </Actions>
     </View>

@@ -27,11 +27,11 @@ describe('ReadingProgress', () => {
     expect(screen.getByText('Reading your statement…')).toBeTruthy();
     expect(screen.getByLabelText('Reading statement')).toBeTruthy();
     expect(screen.getByText('This can take up to 10 seconds.')).toBeTruthy();
-    let node: { props: Record<string, unknown>; parent: unknown } | null = screen.getByText('Reading your statement…') as never;
+    let node = screen.getByText('Reading your statement…') as unknown as { props: Record<string, unknown>; parent: unknown } | null;
     let live: unknown;
     while (node && live === undefined) {
       live = node.props.accessibilityLiveRegion;
-      node = node.parent as never;
+      node = node.parent as typeof node;
     }
     expect(live).toBe('polite');
   });
@@ -78,7 +78,7 @@ describe('ClosingBalancePrompt', () => {
     expect(onSkip).toHaveBeenCalled();
   });
   it('shows the parser error text when the check fails', async () => {
-    const onCheck = jest.fn(() => ({ ok: false as const, error: { ok: false as const, error: 'empty' as const, maxDecimals: 2 } }));
+    const onCheck = jest.fn(() => ({ ok: false as const, error: 'empty' as const, maxDecimals: 2 }));
     await wrap(<ClosingBalancePrompt currency="GBP" onCheck={onCheck} onSkip={jest.fn()} />);
     await fireEvent.changeText(screen.getByLabelText('Closing balance'), 'abc');
     await fireEvent.press(screen.getByRole('button', { name: 'Check balance' }));

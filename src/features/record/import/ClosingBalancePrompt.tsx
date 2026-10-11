@@ -12,7 +12,7 @@ import { Actions, Heading, T } from './importUi';
 
 export interface ClosingBalancePromptProps {
   currency: string;
-  onCheck: (text: string) => { ok: true } | { ok: false; error: AmountParseFailure };
+  onCheck: (text: string) => { ok: true } | AmountParseFailure;
   onSkip: () => void;
 }
 
@@ -25,7 +25,7 @@ export function ClosingBalancePrompt({ currency, onCheck, onSkip }: ClosingBalan
 
   const check = () => {
     const result = onCheck(text);
-    setError(result.ok ? null : result.error);
+    setError(result.ok ? null : result);
   };
 
   return (
