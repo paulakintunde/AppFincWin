@@ -1,0 +1,295 @@
+{
+  "name": "current-account",
+  "accountKind": "checking",
+  "currency": "GBP",
+  "period": {
+    "start": "2026-03-01",
+    "end": "2026-03-31"
+  },
+  "opening": 124560,
+  "closing": 78378,
+  "rows": [
+    {
+      "date": "2026-03-01",
+      "description": "CARD PAYMENT EXAMPLE CARD",
+      "amount": -50000,
+      "balance": 74560,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-02",
+      "description": "ACME GROCERS",
+      "amount": -4520,
+      "balance": 70040,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-03",
+      "description": "NORTHWIND ENERGY",
+      "amount": -8900,
+      "balance": 61140,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-04",
+      "description": "FABRIKAM CAFE",
+      "amount": -1275,
+      "balance": 59865,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-05",
+      "description": "TAILSPIN TRAVEL",
+      "amount": -3600,
+      "balance": 56265,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-06",
+      "description": "WINGTIP TOYS REF 88213",
+      "amount": -2499,
+      "balance": 53766,
+      "flags": [
+        "pdf-wrapped-description"
+      ],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-07",
+      "description": "LITWARE BOOKS",
+      "amount": -1850,
+      "balance": 51916,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-08",
+      "description": "ACME GROCERS",
+      "amount": -5210,
+      "balance": 46706,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-09",
+      "description": "ADVENTURE WORKS",
+      "amount": -60000,
+      "balance": -13294,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-10",
+      "description": "FABRIKAM CAFE",
+      "amount": -3345,
+      "balance": -16639,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-11",
+      "description": "TAILSPIN TRAVEL",
+      "amount": -7200,
+      "balance": -23839,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-12",
+      "description": "WINGTIP TOYS",
+      "amount": -1999,
+      "balance": -25838,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-13",
+      "description": "ACME GROCERS",
+      "amount": -4310,
+      "balance": -30148,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-14",
+      "description": "NORTHWIND ENERGY",
+      "amount": -14000,
+      "balance": -44148,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-15",
+      "description": "LITWARE BOOKS",
+      "amount": -2250,
+      "balance": -46398,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-16",
+      "description": "ADVENTURE WORKS",
+      "amount": -6780,
+      "balance": -53178,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-17",
+      "description": "FABRIKAM CAFE",
+      "amount": -3120,
+      "balance": -56298,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-18",
+      "description": "ACME GROCERS",
+      "amount": -9900,
+      "balance": -66198,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-18",
+      "description": "WINGTIP TOYS",
+      "amount": -1500,
+      "balance": -67698,
+      "flags": [
+        "pdf-no-date"
+      ],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-19",
+      "description": "CONTOSO PAYROLL",
+      "amount": 185000,
+      "balance": 117302,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-20",
+      "description": "ACME GROCERS",
+      "amount": -3875,
+      "balance": 113427,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-21",
+      "description": "FABRIKAM CAFE",
+      "amount": -2100,
+      "balance": 111327,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-22",
+      "description": "LITWARE BOOKS",
+      "amount": -5400,
+      "balance": 105927,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-23",
+      "description": "WINGTIP TOYS",
+      "amount": -1299,
+      "balance": 104628,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-24",
+      "description": "NORTHWIND ENERGY",
+      "amount": -8800,
+      "balance": 95828,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-25",
+      "description": "TAILSPIN TRAVEL",
+      "amount": -4150,
+      "balance": 91678,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-26",
+      "description": "ACME GROCERS",
+      "amount": -2760,
+      "balance": 88918,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-27",
+      "description": "FABRIKAM CAFE",
+      "amount": -1190,
+      "balance": 87728,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-28",
+      "description": "ADVENTURE WORKS",
+      "amount": -6300,
+      "balance": 81428,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-29",
+      "description": "ACME GROCERS",
+      "amount": -3050,
+      "balance": 78378,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    }
+  ],
+  "sections": null,
+  "expect": {
+    "reconcile": "partial",
+    "uncertainRows": [
+      5,
+      18
+    ]
+  }
+}

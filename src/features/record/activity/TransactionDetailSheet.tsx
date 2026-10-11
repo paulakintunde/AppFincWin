@@ -7,8 +7,10 @@ import { useAccounts } from '@/data/queries/accounts';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
+import { useLinkedFees } from '@/data/queries/transactions';
 import { flowOf, rowTag } from '@/engine/activity';
-import { money } from '@/engine/money';
+import { currencyExponent, knownCurrencyExponent, money } from '@/engine/money';
+import { impliedRate } from '@/engine/statement';
 import { categoryName } from '@/features/record/categoryName';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
@@ -22,6 +24,7 @@ import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Pill } from '@/ui/Pill';
 import { RateAttribution } from '@/ui/RateAttribution';
 import { detailRowsFor, statusActionFor } from './detailRows';
+import { formatStatementMoney } from './statementMoney';
 
 export interface TransactionDetailSheetProps {
   row: ActivityRowView | null;
@@ -42,6 +45,7 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
   const accounts = useAccounts(ctx.householdId ?? undefined);
   const categories = useCategoryLookup(ctx.userId ?? undefined);
   const series = useRecurringSeries(ctx.householdId ?? undefined);
+  const linkedFees = useLinkedFees(ctx.householdId, row);
 
   if (row === null) return null;
 
@@ -86,6 +90,35 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
         })
       : null;
 
+  // D-33 / D-32: the bank's own conversion, from stored figures only. No market rate is read or
+  // compared here (D-31).
+  const hasStatement = !isTransfer && row.stmt_orig_amount != null && row.stmt_orig_currency != null;
+  let statementLine: string | null = null;
+  if (hasStatement) {
+    const origMag = Math.abs(row.stmt_orig_amount as number);
+    const original = formatStatementMoney(formatter, origMag, row.stmt_orig_currency as string);
+    const chargedMag = Math.abs(row.original_amount);
+    const charged = formatter.formatMoney(money(chargedMag, row.original_currency));
+    // Review IN-01: the account currency is always one the app holds; the statement's code gets an
+    // implied rate only when it is a currency the app knows, never a guessed scale.
+    const chargedExp = knownCurrencyExponent(row.original_currency) ?? currencyExponent(row.original_currency);
+    const foreignExp = knownCurrencyExponent(row.stmt_orig_currency as string);
+    statementLine =
+      chargedExp === null || foreignExp === null
+        ? t('activity.detail.statementConversionNoRate', { original, charged })
+        : t('activity.detail.statementConversion', {
+            original,
+            charged,
+            rate: impliedRate({ magnitude: chargedMag, exponent: chargedExp }, { magnitude: origMag, exponent: foreignExp }),
+          });
+  }
+  const feeLines = hasStatement
+    ? (linkedFees.data ?? []).map((fee) => ({
+        id: fee.id,
+        text: t('activity.detail.statementFee', { fee: formatter.formatMoney(money(Math.abs(fee.original_amount), fee.original_currency)) }),
+      }))
+    : [];
+
   const action = statusActionFor(row);
 
   return (
@@ -98,10 +131,23 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
       subtitle={[categoryLabel, formatter.formatDate(row.local_date, 'short')].filter((p) => p !== null && p !== '').join(' · ')}
       trailing={<Text style={{ ...textRole(pairing, 'body'), color: amountColor }}>{amountShown}</Text>}
       note={
-        fxNote !== null ? (
-          <View style={styles.fx}>
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{fxNote}</Text>
-            <RateAttribution rateDate={row.rate_date} rateSource={row.rate_source} ratePending={row.rate_pending} />
+        statementLine !== null || fxNote !== null ? (
+          <View>
+            {statementLine !== null ? (
+              <View style={styles.fx}>
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{statementLine}</Text>
+                {feeLines.map((fee) => (
+                  <Text key={fee.id} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{fee.text}</Text>
+                ))}
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('activity.detail.statementConversionNote')}</Text>
+              </View>
+            ) : null}
+            {fxNote !== null ? (
+              <View style={styles.fx}>
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{fxNote}</Text>
+                <RateAttribution rateDate={row.rate_date} rateSource={row.rate_source} ratePending={row.rate_pending} />
+              </View>
+            ) : null}
           </View>
         ) : undefined
       }

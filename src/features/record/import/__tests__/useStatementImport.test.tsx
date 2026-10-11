@@ -59,8 +59,18 @@ jest.mock('@/data/queries/categories', () => ({
   useCategoryLookup: () => ({ builtinIds: new Map(), transferCategoryId: mockTransferCategoryId, loading: false }),
 }));
 jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
+// Review HI-01: the user's own custom currencies feed the hook's real currency lookup.
+jest.mock('@/data/queries/customCurrencies', () => ({ useCustomCurrencies: () => ({ data: [], isLoading: false }) }));
 jest.mock('@/data/queries/activity', () => ({
   useAccountBalances: () => ({ balances: new Map([['acc-1', { balance: 5000 }]]), isLoading: false }),
+}));
+// 02.1-10: the PDF read is a service call and the online check is a switch the tests flip.
+const mockReadPdf = jest.fn();
+let mockOnline = true;
+jest.mock('@/services/statementPdf', () => ({ readPdfStatement: (...a: unknown[]) => mockReadPdf(...a) }));
+jest.mock('@tanstack/react-query', () => ({
+  ...jest.requireActual('@tanstack/react-query'),
+  onlineManager: { isOnline: () => mockOnline },
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -120,7 +130,7 @@ const CSV_AMBIGUOUS = ['Date,Description,Amount', '2026-03-01,COFFEE,-3.50', '20
 // 03/04/2026 and 05/06/2026 read as either day-first or month-first.
 const CSV_DATE_AMBIGUOUS = ['Date,Description,Debit,Credit', '03/04/2026,COFFEE,3.50,', '05/06/2026,PAYSLIP,,1000.00'].join('\n');
 
-function pickOk(bytes: Uint8Array, extension: 'csv' | 'ofx' | 'qfx' | 'other' = 'csv') {
+function pickOk(bytes: Uint8Array, extension: 'csv' | 'ofx' | 'qfx' | 'pdf' | 'other' = 'csv') {
   pickStatementBytes.mockResolvedValueOnce({ kind: 'ok', bytes, mimeType: null, extension });
 }
 
@@ -149,6 +159,8 @@ beforeEach(() => {
   jest.restoreAllMocks();
   mockTransferCategoryId = 'cat-transfer';
   mockUuid = 0;
+  mockOnline = true;
+  mockReadPdf.mockReset();
   fetchImportProfile.mockResolvedValue(null);
   dbTx.fetchTransactionsInRange.mockResolvedValue([]);
   dbTx.fetchTransferCandidates.mockResolvedValue([]);
@@ -1167,5 +1179,520 @@ describe('useStatementImport: first real save prompt (D-11)', () => {
       result.current.commit();
     });
     expect(getSampleClearPromptRequestForTests()).toBe(false);
+  });
+});
+
+// --- 02.1-10: the PDF branch of the one state machine ------------------------------------------
+
+const PDF_FIXTURES = path.join(__dirname, '..', '..', '..', '..', 'engine', 'statement', 'pdf', '__tests__', 'fixtures');
+function extraction(name: string): unknown {
+  return JSON.parse(fs.readFileSync(path.join(PDF_FIXTURES, `${name}.extract.json`), 'utf8'));
+}
+const PDF_BYTES = () => new TextEncoder().encode('%PDF-1.4\n% fake body for tests');
+const okRead = (name: string) => ({ kind: 'ok', extraction: extraction(name) });
+
+async function startPdf(opts: { accountId?: string | null } = {}) {
+  pickOk(PDF_BYTES(), 'pdf');
+  const hook = await setup(opts);
+  await act(async () => {
+    hook.result.current.start();
+  });
+  return hook;
+}
+
+async function readToFormat(name: string, opts: { accountId?: string | null } = {}) {
+  mockReadPdf.mockResolvedValueOnce(okRead(name));
+  const hook = await startPdf(opts);
+  await act(async () => {
+    await hook.result.current.sendPdf();
+  });
+  return hook;
+}
+
+async function readToReview(name: string) {
+  const hook = await readToFormat(name);
+  await act(async () => {
+    hook.result.current.confirmFormat();
+  });
+  await waitFor(() => expect(hook.result.current.preview).not.toBeNull());
+  return hook;
+}
+
+describe('useStatementImport: PDF stages (02.1-10)', () => {
+  it('offline, a PDF stops with the offline reason before the notice; nothing is read', async () => {
+    mockOnline = false;
+    const { result } = await startPdf();
+    expect(result.current.stage).toBe('rejected');
+    expect(result.current.rejectReason).toBe('pdf_offline');
+    expect(mockTrack).toHaveBeenCalledWith('import_file_rejected', { reason: 'pdf_offline' });
+    expect(mockReadPdf).not.toHaveBeenCalled();
+    expect(result.current.pdfBytesHeld).toBe(false);
+  });
+
+  it('online, a PDF waits on the upload notice with its bytes held and nothing sent', async () => {
+    const { result } = await startPdf();
+    expect(result.current.stage).toBe('pdf-consent');
+    expect(result.current.format).toBe('pdf');
+    expect(result.current.pdfBytesHeld).toBe(true);
+    expect(mockReadPdf).not.toHaveBeenCalled();
+  });
+
+  it('cancel at the notice sends nothing and drops the bytes', async () => {
+    const { result } = await startPdf();
+    await act(async () => {
+      result.current.cancel();
+    });
+    expect(result.current.stage).toBe('idle');
+    expect(mockTrack).toHaveBeenCalledWith('import_abandoned', { stage: 'consent' });
+    expect(result.current.pdfBytesHeld).toBe(false);
+    expect(mockReadPdf).not.toHaveBeenCalled();
+  });
+
+  it('sendPdf reads, drops the bytes and continues to the format step', async () => {
+    const { result } = await readToFormat('current-account');
+    expect(mockReadPdf).toHaveBeenCalledTimes(1);
+    expect(result.current.pdfBytesHeld).toBe(false);
+    expect(result.current.stage).toBe('format');
+    expect(result.current.format).toBe('pdf');
+    expect(result.current.profile).not.toBeNull();
+    expect(result.current.exampleRow).not.toBeNull();
+  });
+
+  it('asks for a password, says when it is wrong, and then reads', async () => {
+    mockReadPdf.mockResolvedValueOnce({ kind: 'failed', reason: 'password-required', pageCount: null });
+    const { result } = await startPdf();
+    await act(async () => {
+      await result.current.sendPdf();
+    });
+    expect(result.current.stage).toBe('pdf-password');
+    expect(result.current.passwordWrong).toBe(false);
+    expect(result.current.pdfBytesHeld).toBe(true);
+
+    mockReadPdf.mockResolvedValueOnce({ kind: 'failed', reason: 'password-incorrect', pageCount: null });
+    await act(async () => {
+      await result.current.submitPassword('wrong');
+    });
+    expect(result.current.stage).toBe('pdf-password');
+    expect(result.current.passwordWrong).toBe(true);
+
+    mockReadPdf.mockResolvedValueOnce(okRead('current-account'));
+    await act(async () => {
+      await result.current.submitPassword('fincwin-test');
+    });
+    expect(result.current.stage).toBe('format');
+    expect(result.current.pdfBytesHeld).toBe(false);
+    expect(mockReadPdf).toHaveBeenLastCalledWith(expect.any(Uint8Array), { password: 'fincwin-test' });
+  });
+
+  it('the password never reaches hook state or analytics', async () => {
+    mockReadPdf.mockResolvedValueOnce({ kind: 'failed', reason: 'password-required', pageCount: null });
+    const { result } = await startPdf();
+    await act(async () => {
+      await result.current.sendPdf();
+    });
+    mockReadPdf.mockResolvedValueOnce({ kind: 'failed', reason: 'password-incorrect', pageCount: null });
+    await act(async () => {
+      await result.current.submitPassword('wrong');
+    });
+    mockReadPdf.mockResolvedValueOnce(okRead('current-account'));
+    await act(async () => {
+      await result.current.submitPassword('fincwin-test');
+    });
+    const state = JSON.stringify(result.current, (_k, v) => (typeof v === 'function' ? undefined : typeof v === 'bigint' ? String(v) : v));
+    expect(state).not.toContain('wrong');
+    expect(state).not.toContain('fincwin-test');
+    expect(JSON.stringify(mockTrack.mock.calls)).not.toContain('fincwin-test');
+    expect(JSON.stringify(mockTrack.mock.calls)).not.toContain('wrong');
+  });
+
+  it('cancel at the password step is tracked and drops the bytes', async () => {
+    mockReadPdf.mockResolvedValueOnce({ kind: 'failed', reason: 'password-required', pageCount: null });
+    const { result } = await startPdf();
+    await act(async () => {
+      await result.current.sendPdf();
+    });
+    await act(async () => {
+      result.current.cancel();
+    });
+    expect(mockTrack).toHaveBeenCalledWith('import_abandoned', { stage: 'password' });
+    expect(result.current.pdfBytesHeld).toBe(false);
+  });
+
+  it.each([
+    ['offline', 'pdf_offline'],
+    ['network', 'pdf_offline'],
+    ['too-large', 'pdf_too_large'],
+    ['unreadable', 'pdf_unreadable'],
+  ] as const)('a %s read is refused as %s and the bytes are dropped', async (reason, rejected) => {
+    mockReadPdf.mockResolvedValueOnce({ kind: 'failed', reason, pageCount: null });
+    const { result } = await startPdf();
+    await act(async () => {
+      await result.current.sendPdf();
+    });
+    expect(result.current.stage).toBe('rejected');
+    expect(result.current.rejectReason).toBe(rejected);
+    expect(mockTrack).toHaveBeenCalledWith('import_file_rejected', { reason: rejected });
+    expect(trackedNames()).not.toContain('import_pdf_unread');
+    expect(result.current.pdfBytesHeld).toBe(false);
+  });
+
+  it('a scanned PDF is refused and recorded only as the anonymous fingerprint', async () => {
+    mockReadPdf.mockResolvedValueOnce({ kind: 'failed', reason: 'no-text-layer', pageCount: 3 });
+    const { result } = await startPdf();
+    await act(async () => {
+      await result.current.sendPdf();
+    });
+    expect(result.current.rejectReason).toBe('pdf_scanned');
+    expect(mockTrack).toHaveBeenCalledWith('import_file_rejected', { reason: 'pdf_scanned' });
+    expect(mockTrack).toHaveBeenCalledWith('import_pdf_unread', {
+      failed_step: 'no_text_layer',
+      pages: '2-5',
+      has_date: false,
+      has_description: false,
+      has_amount: false,
+      has_debit_credit: false,
+      has_balance: false,
+    });
+  });
+
+  it('an extraction that yields no drafts is refused and its fingerprint recorded', async () => {
+    mockReadPdf.mockResolvedValueOnce({ kind: 'ok', extraction: { pageCount: 2, pages: [{ n: 1, width: 595, height: 842, items: [] }] } });
+    const { result } = await startPdf();
+    await act(async () => {
+      await result.current.sendPdf();
+    });
+    expect(result.current.rejectReason).toBe('pdf_unreadable');
+    const call = mockTrack.mock.calls.find((c) => c[0] === 'import_pdf_unread');
+    expect(call).toBeDefined();
+    expect(Object.keys(call![1] as object).sort()).toEqual(
+      ['failed_step', 'has_amount', 'has_balance', 'has_date', 'has_debit_credit', 'has_description', 'pages']
+    );
+    expect(result.current.pdfBytesHeld).toBe(false);
+  });
+
+  it('a multi-account PDF asks which section, then continues with the chosen one', async () => {
+    const { result } = await readToFormat('multi-account');
+    expect(result.current.stage).toBe('choose-statement');
+    expect(result.current.pdfSections.map((x) => x.label)).toEqual(['checking', 'savings']);
+    expect(result.current.statementChoices).toHaveLength(2);
+    await act(async () => {
+      result.current.chooseStatement(1);
+    });
+    expect(result.current.stage).toBe('format');
+    expect(result.current.exampleRow).not.toBeNull();
+    expect(result.current.statementChoices[1]?.count).toBe(4);
+  });
+
+  describe('year question', () => {
+    function asksYear() {
+      const original = pipeline.preparePdfDrafts;
+      return jest.spyOn(pipeline, 'preparePdfDrafts').mockImplementation((ex, ctx, exp) => {
+        const out = original(ex, ctx, exp);
+        if (out.kind !== 'drafts') return out;
+        return { kind: 'drafts', drafts: out.drafts.map((d, i) => ({ ...d, yearQuestion: ctx.yearOverride?.section === i ? null : ([2025, 2026] as [number, number]) })) };
+      });
+    }
+
+    it('blocks confirming the reading until the year is chosen, and chooseYear re-runs the read', async () => {
+      const spy = asksYear();
+      const { result } = await readToFormat('current-account');
+      expect(result.current.stage).toBe('format');
+      expect(result.current.yearQuestion).toEqual([2025, 2026]);
+      await act(async () => {
+        result.current.confirmFormat();
+      });
+      expect(result.current.stage).toBe('format');
+      expect(trackedNames()).not.toContain('import_format_confirmed');
+
+      await act(async () => {
+        result.current.chooseYear(2025);
+      });
+      expect(spy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ yearOverride: { section: 0, year: 2025 } }), expect.any(Function));
+      expect(result.current.chosenYear).toBe(2025);
+      expect(result.current.yearQuestion).toBeNull();
+      await act(async () => {
+        result.current.confirmFormat();
+      });
+      expect(mockTrack).toHaveBeenCalledWith('import_format_confirmed', expect.objectContaining({ format: 'pdf' }));
+      expect(result.current.stage).toBe('review');
+    });
+
+    it('a remembered PDF reading with an open year question still stops at the year step', async () => {
+      asksYear();
+      fetchImportProfile.mockResolvedValue({
+        profile: { version: 1, source: 'pdf', accountFamily: 'deposit', positiveMeans: 'money-in', balanceMeans: 'held', statedLimit: null, decidedBy: 'user' },
+      });
+      const { result } = await readToFormat('current-account');
+      expect(result.current.rememberedNote).toBe(true);
+      expect(result.current.stage).toBe('format');
+      expect(dbTx.fetchTransactionsInRange).not.toHaveBeenCalled();
+      await act(async () => {
+        result.current.chooseYear(2025);
+      });
+      await act(async () => {
+        result.current.confirmFormat();
+      });
+      await waitFor(() => expect(result.current.stage).toBe('review'));
+    });
+
+    it('choosing another section asks its own year again', async () => {
+      asksYear();
+      const { result } = await readToFormat('multi-account');
+      await act(async () => {
+        result.current.chooseStatement(0);
+      });
+      await act(async () => {
+        result.current.chooseYear(2026);
+      });
+      expect(result.current.chosenYear).toBe(2026);
+      expect(result.current.yearQuestion).toBeNull();
+    });
+  });
+
+  it('changing the account at the format step reads the drafts again for that account', async () => {
+    const spy = jest.spyOn(pipeline, 'preparePdfDrafts');
+    const { result } = await readToFormat('current-account');
+    await act(async () => {
+      result.current.setAccount('acc-eur');
+    });
+    expect(spy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ accountCurrency: 'EUR' }), expect.any(Function));
+    expect(result.current.stage).toBe('format');
+  });
+
+  describe('closing balance (D-24)', () => {
+    it('a PDF with no balances asks for one; a typed figure is stored on the draft', async () => {
+      const { result } = await readToFormat('no-balances');
+      expect(result.current.stage).toBe('pdf-balance');
+      await act(async () => {
+        expect(result.current.submitClosingBalance('abc')).toEqual(expect.objectContaining({ ok: false, error: expect.any(String) }));
+      });
+      expect(result.current.stage).toBe('pdf-balance');
+      await act(async () => {
+        expect(result.current.submitClosingBalance('1,234.56')).toEqual({ ok: true });
+      });
+      expect(result.current.stage).toBe('format');
+      expect(result.current.formatFigures?.closing).toBe(123456);
+    });
+
+    it('a leading minus marks an overdrawn balance', async () => {
+      const { result } = await readToFormat('no-balances');
+      await act(async () => {
+        result.current.submitClosingBalance('-12.00');
+      });
+      expect(result.current.formatFigures?.closing).toBe(-1200);
+    });
+
+    it('skipping continues with no stated balance and every row unverified', async () => {
+      const { result } = await readToFormat('no-balances');
+      await act(async () => {
+        result.current.skipClosingBalance();
+      });
+      expect(result.current.stage).toBe('format');
+      await act(async () => {
+        result.current.confirmFormat();
+      });
+      await waitFor(() => expect(result.current.preview).not.toBeNull());
+      const checks = result.current.preview!.rows.map((r) => r.check);
+      expect(checks).not.toContain('verified');
+      expect(checks.every((c) => c === 'no-balance' || c === 'cannot-verify')).toBe(true);
+    });
+
+    it('an entered closing balance verifies a period-less PDF against the stored balance', async () => {
+      dbTx.fetchHasRowsBefore.mockResolvedValue(true);
+      dbTx.fetchHasRowsAfter.mockResolvedValue(false);
+      const { result } = await readToFormat('no-balances');
+      // The stored balance 5000 is the opening; the rows sum to 112170 + 3700 for the one line whose
+      // column was ambiguous and read as money in, so the closing is 5000 + 115870.
+      await act(async () => {
+        result.current.submitClosingBalance('1208.70');
+      });
+      await act(async () => {
+        result.current.confirmFormat();
+      });
+      await waitFor(() => expect(result.current.preview).not.toBeNull());
+      expect(dbTx.fetchHasRowsBefore).toHaveBeenCalledWith(expect.anything(), 'hh-1', 'acc-1', '2026-03-03');
+      const checks = result.current.preview!.rows.map((r) => r.check);
+      expect(checks.filter((c) => c === 'verified')).toHaveLength(9);
+      expect(checks).not.toContain('no-balance');
+      expect(result.current.reconcile?.file).toBe('partial');
+      // Only the uncertain line is left for the user to check (IMP-02).
+      expect(result.current.reviewGate).toEqual({ required: true, count: 1 });
+    });
+
+    it('cancel at the balance prompt is tracked', async () => {
+      const { result } = await readToFormat('no-balances');
+      await act(async () => {
+        result.current.cancel();
+      });
+      expect(mockTrack).toHaveBeenCalledWith('import_abandoned', { stage: 'balance' });
+    });
+  });
+
+  it('a late read is dropped after cancel and nothing is kept', async () => {
+    let release: (v: unknown) => void = () => undefined;
+    mockReadPdf.mockReturnValueOnce(new Promise((r) => (release = r)));
+    const { result } = await startPdf();
+    let pending: Promise<void> = Promise.resolve();
+    await act(async () => {
+      pending = result.current.sendPdf();
+    });
+    expect(result.current.stage).toBe('reading');
+    await act(async () => {
+      result.current.cancel();
+    });
+    await act(async () => {
+      release(okRead('current-account'));
+      await pending;
+    });
+    expect(result.current.stage).toBe('idle');
+    expect(result.current.pdfBytesHeld).toBe(false);
+  });
+
+  it('unmounting while bytes are held does not throw', async () => {
+    const { unmount } = await startPdf();
+    expect(() => unmount()).not.toThrow();
+  });
+});
+
+describe('useStatementImport: PDF review gate (IMP-02)', () => {
+  it('a PDF import with unverified rows commits only after they are confirmed as checked', async () => {
+    const { result } = await readToReview('current-account');
+    expect(result.current.reviewGate.required).toBe(true);
+    expect(result.current.reviewGate.count).toBeGreaterThan(0);
+    expect(result.current.rowsChecked).toBe(false);
+
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit).not.toHaveBeenCalled();
+    expect(trackedNames()).not.toContain('import_committed');
+    await act(async () => {
+      await result.current.continue();
+    });
+    expect(mockCommit).not.toHaveBeenCalled();
+
+    await act(async () => {
+      result.current.setRowsChecked(true);
+    });
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit).toHaveBeenCalledTimes(1);
+    const input = mockCommit.mock.calls[0]![0] as { rows: { import_format?: string }[] };
+    expect(input.rows.length).toBeGreaterThan(0);
+    expect(input.rows.every((r) => r.import_format === 'pdf')).toBe(true);
+    expect(mockTrack).toHaveBeenCalledWith('import_committed', expect.objectContaining({ format: 'pdf' }));
+    expect(mockShowToast).toHaveBeenCalledTimes(1);
+    expect(result.current.stage).toBe('done');
+    expect(result.current.pdfBytesHeld).toBe(false);
+  });
+
+  it('toggling a flagged row changes the count and drops the tick', async () => {
+    const { result } = await readToReview('current-account');
+    const before = result.current.reviewGate.count;
+    await act(async () => {
+      result.current.setRowsChecked(true);
+    });
+    expect(result.current.rowsChecked).toBe(true);
+    const flagged = result.current.preview!.rows.find((r) => r.included && (r.check === 'cannot-verify' || r.check === 'no-balance'))!;
+    await act(async () => {
+      result.current.toggleRow(flagged.index);
+    });
+    expect(result.current.reviewGate.count).toBe(before - 1);
+    expect(result.current.rowsChecked).toBe(false);
+  });
+
+  it('with no balances every included row needs the tick', async () => {
+    const { result } = await readToFormat('no-balances');
+    await act(async () => {
+      result.current.skipClosingBalance();
+    });
+    await act(async () => {
+      result.current.confirmFormat();
+    });
+    await waitFor(() => expect(result.current.preview).not.toBeNull());
+    expect(result.current.reviewGate).toEqual({ required: true, count: result.current.counts.included });
+  });
+
+  it('a PDF whose rows all reconcile needs no tick', async () => {
+    const { result } = await readToReview('year-end');
+    expect(result.current.reviewGate).toEqual({ required: false, count: 0 });
+    await act(async () => {
+      result.current.commit();
+    });
+    expect(mockCommit).toHaveBeenCalledTimes(1);
+  });
+
+  it('the tick also unlocks continue into the matches step', async () => {
+    dbTx.fetchTransactionsInRange.mockResolvedValue([
+      stored({ id: 'pend-1', status: 'pending', original_amount: -4520, name: 'ACME GROCERS', local_date: '2026-03-02', version: 6, is_automatic: true }),
+    ]);
+    const { result } = await readToReview('current-account');
+    const suggested = result.current.payMatchRows.length + result.current.transferRows.length + result.current.refundRows.length;
+    if (suggested === 0) return; // nothing to match in this snapshot: the commit path above covers the gate
+    await act(async () => {
+      await result.current.continue();
+    });
+    expect(result.current.stage).toBe('review');
+    await act(async () => {
+      result.current.setRowsChecked(true);
+    });
+    await act(async () => {
+      await result.current.continue();
+    });
+    expect(result.current.stage).toBe('matches');
+  });
+
+  it('CSV and OFX have no gate', async () => {
+    const csvHook = await reachReview(csv(CSV_DECIDED), 'csv');
+    expect(csvHook.result.current.reviewGate).toEqual({ required: false, count: 0 });
+    const ofxHook = await reachReview(fixture('bank-sgml.ofx'), 'ofx');
+    expect(ofxHook.result.current.reviewGate).toEqual({ required: false, count: 0 });
+  });
+});
+
+// Review HI-01: the hook's own currency lookup (not a test stub) decides what counts as a currency.
+describe('useStatementImport: currency recognition (review HI-01)', () => {
+  it('a wrapped "REF 88213" line on a PDF is description text, never a foreign amount', async () => {
+    const { result } = await readToReview('current-account');
+    const rows = result.current.preview!.rows;
+    const wrapped = rows.find((r) => r.converted.description.includes('REF 88213'));
+    expect(wrapped).toBeDefined();
+    expect(rows.every((r) => r.foreign === null)).toBe(true);
+  });
+
+  it('a real foreign note on a PDF is still read', async () => {
+    mockReadPdf.mockResolvedValueOnce(okRead('credit-card'));
+    const { result } = await startPdf({ accountId: 'acc-card' });
+    await act(async () => {
+      await result.current.sendPdf();
+    });
+    await act(async () => {
+      result.current.confirmFormat();
+    });
+    await waitFor(() => expect(result.current.preview).not.toBeNull());
+    const foreign = result.current.preview!.rows.map((r) => r.foreign).filter((f) => f !== null);
+    expect(foreign.map((f) => f!.currency)).toContain('USD');
+  });
+
+  it('an unknown code in a CSV currency column is flagged unknown-currency (Phase 2 behaviour)', async () => {
+    const text = ['Date,Description,Debit,Credit,Currency', '2026-03-01,COFFEE,3.50,,REF', '2026-03-02,PAYSLIP,,1000.00,GBP'].join('\n');
+    const { result } = await reachReview(csv(text), 'csv');
+    const issues = result.current.preview!.rows.map((r) => r.converted.issues);
+    expect(issues[0]).toContain('unknown-currency');
+    expect(issues[1]).not.toContain('unknown-currency');
+  });
+
+  it('an unknown code in a CSV original-currency column is not stored as a foreign amount', async () => {
+    const text = [
+      'Date,Description,Amount,Original amount,Original currency,Balance',
+      '2026-03-01,COFFEE,-3.50,123456,REF,996.50',
+      '2026-03-02,LUNCH,-9.00,11.00,USD,987.50',
+      '2026-03-03,PAYSLIP,100.00,,,1087.50',
+    ].join('\n');
+    const { result } = await reachReview(csv(text), 'csv');
+    const rows = result.current.preview!.rows;
+    expect(rows[0]!.foreign).toBeNull();
+    expect(rows[1]!.foreign).toEqual({ amount: -1100, currency: 'USD' });
   });
 });

@@ -579,6 +579,68 @@ describe('parseOfx: no-leak', () => {
   });
 });
 
+describe('parseOfx: CURRENCY / ORIGCURRENCY (IMP-05)', () => {
+  const FX_EXPONENTS: Readonly<Record<string, number>> = { CAD: 2, USD: 2, JPY: 0 };
+  const fxOpts: ParseOfxOptions = { exponentFor: (code) => FX_EXPONENTS[code] ?? null };
+  const foreignFixture = (name: string): string =>
+    fs.readFileSync(path.join(__dirname, '..', '..', 'statement', '__tests__', 'fixtures', 'foreign', name), 'utf8');
+
+  it('card-origcurrency.ofx: TRNAMT stays the charged amount and the foreign amount is derived', () => {
+    const result = parseOfx(foreignFixture('card-origcurrency.ofx'), fxOpts);
+    if (!result.ok) throw new Error('expected ok');
+    const rows = result.drafts[0]!.rows;
+    expect(rows).toHaveLength(5);
+    expect(rows[1]).toMatchObject({ magnitude: 1392, marker: 'minus', rawAmount: '-13.92' });
+    expect(rows[1]!.foreign).toMatchObject({ magnitude: 1000, currency: 'USD' });
+    expect(rows[2]!.description).toBe('FOREIGN TRANSACTION FEE');
+    expect(rows.filter((_, i) => i !== 1).every((r) => r.foreign === null)).toBe(true);
+  });
+
+  it('card-currency.ofx: TRNAMT is foreign, the charged amount uses the statement CURRATE', () => {
+    const result = parseOfx(foreignFixture('card-currency.ofx'), fxOpts);
+    if (!result.ok) throw new Error('expected ok');
+    const row = result.drafts[0]!.rows[1]!;
+    expect(row).toMatchObject({ magnitude: 1392, marker: 'minus', rawAmount: '-10.00' });
+    expect(row.foreign).toMatchObject({ magnitude: 1000, currency: 'USD' });
+  });
+
+  // Review ME-03: under CURRENCY, TRNAMT is in CURSYM. Without a usable CURRATE there is no
+  // account-currency amount, so the row is blocked rather than imported at the foreign figure.
+  it.each(['<CURRATE>0', '', '<CURRATE>N/A', '<CURRATE>-1.2'])('CURRENCY with an unusable CURRATE %p blocks the row', (rate) => {
+    const stmttrn = [
+      '<STMTTRN>', '<TRNTYPE>DEBIT', '<DTPOSTED>20260902', '<TRNAMT>-10.00', '<FITID>Z1', '<NAME>SHOP',
+      '<CURRENCY>', rate, '<CURSYM>USD', '</CURRENCY>', '</STMTTRN>',
+    ].join(String.fromCharCode(10));
+    const result = parseOfx(wrapBankStatement({ stmttrn }), fxOpts);
+    if (!result.ok) throw new Error('expected ok');
+    const row = result.drafts[0]!.rows[0]!;
+    expect(row).toMatchObject({ magnitude: 1000, rawAmount: '-10.00', foreign: null });
+    expect(row.issues).toContain('bad-amount');
+  });
+
+  it('CURRENCY with an unknown CURSYM blocks the row too', () => {
+    const stmttrn = [
+      '<STMTTRN>', '<TRNTYPE>DEBIT', '<DTPOSTED>20260902', '<TRNAMT>-10.00', '<FITID>Z2', '<NAME>SHOP',
+      '<CURRENCY>', '<CURRATE>1.2', '<CURSYM>REF', '</CURRENCY>', '</STMTTRN>',
+    ].join(String.fromCharCode(10));
+    const result = parseOfx(wrapBankStatement({ stmttrn }), fxOpts);
+    if (!result.ok) throw new Error('expected ok');
+    expect(result.drafts[0]!.rows[0]!.issues).toContain('bad-amount');
+  });
+
+  it('ORIGCURRENCY with an unusable CURRATE keeps TRNAMT, drops the provenance and is not blocked', () => {
+    const stmttrn = [
+      '<STMTTRN>', '<TRNTYPE>DEBIT', '<DTPOSTED>20260902', '<TRNAMT>-10.00', '<FITID>Z3', '<NAME>SHOP',
+      '<ORIGCURRENCY>', '<CURRATE>N/A', '<CURSYM>USD', '</ORIGCURRENCY>', '</STMTTRN>',
+    ].join(String.fromCharCode(10));
+    const result = parseOfx(wrapBankStatement({ stmttrn }), fxOpts);
+    if (!result.ok) throw new Error('expected ok');
+    const row = result.drafts[0]!.rows[0]!;
+    expect(row).toMatchObject({ magnitude: 1000, foreign: null });
+    expect(row.issues).not.toContain('bad-amount');
+  });
+});
+
 describe('barrel', () => {
   it('re-exports ofxLocalDate, parseOfxAmount and parseOfx alongside the 02-33 tokenizer/tree exports', () => {
     expect(ofxBarrel.ofxLocalDate).toBe(ofxLocalDate);

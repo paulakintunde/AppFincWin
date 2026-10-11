@@ -21,6 +21,7 @@ import {
   fetchTransactionsForMonth,
   fetchTransactionsSearch,
   fetchTransferCandidates,
+  fetchLinkedFees,
   fetchTransferLegs,
   insertTransaction,
   insertTransactionsBatch,
@@ -151,6 +152,17 @@ describe('TRANSACTION_COLUMNS', () => {
     }
     // transfer_id IS patchable (editing/deleting a transfer, D-50/D-51).
     expect(TRANSACTION_PATCH_KEYS).toContain('transfer_id');
+  });
+
+  it('IMP-05: statement figures and fee link are selected and insert-only', () => {
+    for (const col of ['stmt_orig_amount', 'stmt_orig_currency', 'conversion_source', 'fx_fee_of']) {
+      expect(TRANSACTION_COLUMNS).toContain(col);
+      expect(TRANSACTION_PATCH_KEYS).not.toContain(col);
+    }
+    for (const col of ['stmt_orig_amount', 'stmt_orig_currency', 'fx_fee_of']) {
+      expect(TRANSACTION_INSERT_KEYS).toContain(col);
+    }
+    expect(TRANSACTION_INSERT_KEYS).not.toContain('conversion_source');
   });
 
   it("Record fields recurring_series_id/occurrence_date/updated_by are server-only (read-only, never in a write-key list)", () => {
@@ -589,6 +601,30 @@ describe('fetchTransferLegs', () => {
     const ids = Array.from({ length: TRANSFER_LEGS_MAX + 1 }, (_, i) => `tr-${i}`);
     await expect(fetchTransferLegs(client, 'h1', ids)).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(0);
+  });
+});
+
+describe('fetchLinkedFees', () => {
+  it('queries ACTIVE_VIEW with eq household_id and eq fx_fee_of, ordered by local_date', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [row({ id: 'f1' })], error: null, status: 200 });
+    await expect(fetchLinkedFees(client, 'h1', 'p1')).resolves.toHaveLength(1);
+    expect(client.calls.every((c) => c.table === ACTIVE_VIEW)).toBe(true);
+    const eqs = client.calls.filter((c) => c.method === 'eq').map((c) => c.args);
+    expect(eqs).toEqual([['household_id', 'h1'], ['fx_fee_of', 'p1']]);
+    expect(client.calls.find((c) => c.method === 'order')?.args[0]).toBe('local_date');
+  });
+
+  it('returns [] when the purchase has no fee lines (or does not exist)', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: null, status: 200 });
+    await expect(fetchLinkedFees(client, 'h1', 'gone')).resolves.toEqual([]);
+  });
+
+  it('maps an error through toDbError', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
+    await expect(fetchLinkedFees(client, 'h1', 'p1')).rejects.toBeDefined();
   });
 });
 

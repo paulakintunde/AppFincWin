@@ -12,6 +12,10 @@ jest.setTimeout(20000);
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({ data: [{ id: 'a1', name: 'Everyday' }, { id: 'a2', name: 'Savings' }] }),
 }));
+let mockFees: { id: string; original_amount: number; original_currency: string }[] = [];
+jest.mock('@/data/queries/transactions', () => ({
+  useLinkedFees: () => ({ data: mockFees }),
+}));
 jest.mock('@/data/queries/recurringSeries', () => ({
   useRecurringSeries: () => ({ data: [{ id: 's1', freq: 'monthly' }] }),
 }));
@@ -127,5 +131,49 @@ describe('TransactionDetailSheet', () => {
   it('shows the FX note for a foreign line with a stored rate', async () => {
     const { screen } = await renderSheet(tx({ original_currency: 'EUR', rate: '0.8600', rate_pending: true }));
     expect(screen.getByText(/at 1 EUR = 0\.8600 GBP/)).toBeTruthy();
+  });
+
+  describe('statement conversion (D-31..D-33)', () => {
+    const stmt = (over: Partial<ActivityRowView> = {}) =>
+      tx({
+        original_amount: -1392,
+        original_currency: 'CAD',
+        home_currency: 'CAD',
+        stmt_orig_amount: -1000,
+        stmt_orig_currency: 'USD',
+        conversion_source: 'statement',
+        ...over,
+      });
+
+    beforeEach(() => {
+      mockFees = [];
+    });
+    it('shows the foreign amount, charged amount, implied rate and provenance note, with no market note', async () => {
+      const { screen } = await renderSheet(stmt());
+      expect(screen.getByText(/\$10\.00 · charged CA\$13\.92 at 1\.392/)).toBeTruthy();
+      expect(screen.getByText('Converted by your bank, as shown on the statement.')).toBeTruthy();
+      expect(screen.queryByText(/ = /)).toBeNull();
+      expect(screen.queryByText(/^Bank fee/)).toBeNull();
+    });
+    it('also shows the home-currency note below when the account currency differs from home', async () => {
+      const { screen } = await renderSheet(stmt({ home_currency: 'EUR', rate: '0.6800' }));
+      expect(screen.getByText(/\$10\.00 · charged CA\$13\.92 at 1\.392/)).toBeTruthy();
+      expect(screen.getByText(/at 1 CAD = 0\.6800 EUR/)).toBeTruthy();
+    });
+    // Review ME-01 / IN-01: an unexpected stored code never crashes the sheet, and an unknown code
+    // has no implied rate rather than a guessed scale.
+    it.each(['AB', 'XY12'])('a stored statement currency %p shows code and number with no rate', async (code) => {
+      const { screen } = await renderSheet(stmt({ stmt_orig_currency: code }));
+      expect(screen.getByText(`${code} 10.00 · charged CA$13.92`)).toBeTruthy();
+    });
+    it('a well-formed but unknown code has no implied rate', async () => {
+      const { screen } = await renderSheet(stmt({ stmt_orig_currency: 'REF' }));
+      expect(screen.queryByText(/ at /)).toBeNull();
+    });
+    it('shows a linked bank fee', async () => {
+      mockFees = [{ id: 'f1', original_amount: -42, original_currency: 'CAD' }];
+      const { screen } = await renderSheet(stmt());
+      expect(screen.getByText('Bank fee CA$0.42')).toBeTruthy();
+    });
   });
 });

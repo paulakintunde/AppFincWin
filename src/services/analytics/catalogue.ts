@@ -24,10 +24,11 @@ export type EventCatalogue = {
   transaction_added: { kind: 'expense' | 'income' | 'transfer'; recurring: boolean };
   import_started: { entry: 'onboarding' | 'you' | 'account' };
   import_file_rejected: {
-    reason: 'too_many_rows' | 'unreadable' | 'no_rows' | 'too_big' | 'unsupported_format' | 'unsupported_statement';
+    reason: 'too_many_rows' | 'unreadable' | 'no_rows' | 'too_big' | 'unsupported_format' | 'unsupported_statement'
+      | 'pdf_offline' | 'pdf_too_large' | 'pdf_scanned' | 'pdf_unreadable';
   };
   import_format_confirmed: {
-    format: 'csv' | 'ofx' | 'qfx';
+    format: 'csv' | 'ofx' | 'qfx' | 'pdf';
     decided_by: 'labels' | 'reconciliation' | 'remembered' | 'user';
     flipped: boolean;
   };
@@ -35,10 +36,23 @@ export type EventCatalogue = {
   import_committed: {
     entry: 'onboarding' | 'you' | 'account';
     size: '1-50' | '51-500' | '501-5000';
-    format: 'csv' | 'ofx' | 'qfx';
+    format: 'csv' | 'ofx' | 'qfx' | 'pdf';
     reconciliation: 'all_verified' | 'partial' | 'none_in_file' | 'ends_only_mismatch';
   };
-  import_abandoned: { stage: 'pick' | 'format' | 'mapping' | 'review' | 'matches' };
+  import_abandoned: {
+    stage: 'pick' | 'format' | 'mapping' | 'review' | 'matches' | 'consent' | 'password' | 'balance';
+  };
+  // D-14: the only record kept of a statement that couldn't be read — anonymous layout shape,
+  // no text, headers, bank names, amounts or file names; consent-gated like every event.
+  import_pdf_unread: {
+    failed_step: 'no_text_layer' | 'no_table' | 'no_rows';
+    pages: '1' | '2-5' | '6-10' | '11-25';
+    has_date: boolean;
+    has_description: boolean;
+    has_amount: boolean;
+    has_debit_credit: boolean;
+    has_balance: boolean;
+  };
   recurring_suggestion_answered: { accepted: boolean };
   transfer_suggestion_answered: { accepted: boolean; kind: 'pair' | 'orphan' };
   pay_match_answered: { accepted: boolean };

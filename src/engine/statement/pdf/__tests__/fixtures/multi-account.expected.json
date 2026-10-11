@@ -1,0 +1,125 @@
+{
+  "name": "multi-account",
+  "accountKind": "checking",
+  "currency": "GBP",
+  "period": {
+    "start": "2026-03-01",
+    "end": "2026-03-31"
+  },
+  "opening": 75000,
+  "closing": 234206,
+  "rows": [
+    {
+      "date": "2026-03-02",
+      "description": "ACME GROCERS",
+      "amount": -4520,
+      "balance": 70480,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-04",
+      "description": "CONTOSO PAYROLL",
+      "amount": 180000,
+      "balance": 250480,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-09",
+      "description": "NORTHWIND ENERGY",
+      "amount": -8900,
+      "balance": 241580,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-13",
+      "description": "FABRIKAM CAFE",
+      "amount": -1275,
+      "balance": 240305,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-20",
+      "description": "TAILSPIN TRAVEL",
+      "amount": -3600,
+      "balance": 236705,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-27",
+      "description": "WINGTIP TOYS",
+      "amount": -2499,
+      "balance": 234206,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    }
+  ],
+  "sections": [
+    {
+      "kind": "bank",
+      "label": "checking",
+      "rowCount": 6,
+      "opening": 75000,
+      "closing": 234206
+    },
+    {
+      "kind": "bank",
+      "label": "savings",
+      "rowCount": 4,
+      "opening": 250000,
+      "closing": 275812,
+      "rows": [
+        {
+          "date": "2026-03-05",
+          "description": "TRANSFER IN",
+          "amount": 20000,
+          "balance": 270000,
+          "flags": [],
+          "foreign": null,
+          "feeOf": null
+        },
+        {
+          "date": "2026-03-12",
+          "description": "WITHDRAWAL",
+          "amount": -5000,
+          "balance": 265000,
+          "flags": [],
+          "foreign": null,
+          "feeOf": null
+        },
+        {
+          "date": "2026-03-19",
+          "description": "TRANSFER IN",
+          "amount": 10000,
+          "balance": 275000,
+          "flags": [],
+          "foreign": null,
+          "feeOf": null
+        },
+        {
+          "date": "2026-03-31",
+          "description": "INTEREST PAID",
+          "amount": 812,
+          "balance": 275812,
+          "flags": [],
+          "foreign": null,
+          "feeOf": null
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "reconcile": "all-verified",
+    "uncertainRows": []
+  }
+}

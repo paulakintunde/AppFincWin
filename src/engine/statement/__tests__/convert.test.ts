@@ -423,3 +423,29 @@ describe('no-leak', () => {
     expect(() => convertDraft(draft, profile, { limit: null })).not.toThrow();
   });
 });
+
+describe('convertDraft: IMP-05 foreign amount', () => {
+  const profile = makeProfile({ accountFamily: 'card', positiveMeans: 'money-spent' });
+  const foreign = { magnitude: minorUnits(4500), currency: 'USD', raw: 'USD 45.00' };
+
+  it('signs the foreign amount like the converted amount', () => {
+    const draft = makeDraft({
+      rows: [
+        makeRow(0, { magnitude: minorUnits(3538), foreign }),
+        makeRow(1, { magnitude: minorUnits(3538), marker: 'cr', foreign }),
+      ],
+    });
+    const rows = convertDraft(draft, profile, { limit: null }).rows;
+    expect(rows[0]?.amount).toBe(-3538);
+    expect(rows[0]?.foreign).toEqual({ amount: -4500, currency: 'USD' });
+    expect(rows[1]?.foreign).toEqual({ amount: 4500, currency: 'USD' });
+  });
+
+  it('is null when the amount is unreadable or there is no foreign data', () => {
+    const draft = makeDraft({
+      rows: [makeRow(0, { magnitude: null, foreign }), makeRow(1), makeRow(2, { foreign: null })],
+    });
+    const rows = convertDraft(draft, profile, { limit: null }).rows;
+    expect(rows.map((r) => r.foreign)).toEqual([null, null, null]);
+  });
+});

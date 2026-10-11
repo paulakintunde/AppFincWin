@@ -134,8 +134,9 @@ describe('SetupHistoryScreen', () => {
     const { getByText, toJSON } = await render(wrap(<SetupHistoryScreen accountId="acc-1" />));
     expect(getByText('Bring your history?')).toBeTruthy();
     expect(getByText('Import a statement from your bank, or start with an empty month.')).toBeTruthy();
-    expect(getByText('This file is read on your device and never uploaded.')).toBeTruthy();
-    expect(JSON.stringify(toJSON())).not.toMatch(/CSV/);
+    expect(getByText('PDF statements are read on our server in the United States and deleted straight after. CSV and OFX files never leave your phone.')).toBeTruthy();
+    // The privacy line names CSV/OFX deliberately (it must be true wherever a statement can be picked); the rest must not.
+    expect(JSON.stringify(toJSON()).replace(/CSV and OFX files never leave your phone./, '')).not.toMatch(/CSV/);
   });
 
   it('Bring your history tracks the choice and opens the onboarding import for the account', async () => {

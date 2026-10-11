@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 02.1 plans revised (17 plans, 7 waves, checker passed 2026-10-10) — next: /gsd-execute-phase 02.1, then preview APK for the second phone, then /gsd-plan-phase 02.3
+**Current focus:** Phase 02.1 executing — 16/17 plans built on feat/02.1-pdf-import (code review fixed); next: plan 12 rollout (PR, prod push, functions, walkthrough, preview APK)
 
 ## Current Position
 
@@ -32,7 +32,7 @@ Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 2
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
 Phase 02.1 (PDF statement import): revised 2026-10-10 against post-02.2 main — 17 plans, 7 waves (IMP-05 added as plans 13–17, decisions D-30..D-36), plan checker passed (round 3); not started. Phase 02.2 (record-polish): COMPLETE 2026-10-10 — 35/35 plans, 02.2-VERIFICATION.md 8/8 criteria and 20/20 requirements (ACT-06..ACT-18, REC-19..REC-25), status human_needed (1 item in 02.2-HUMAN-UAT.md: iOS walkthrough, blocked on Apple enrolment). Phase 02.3 (record follow-ups): not planned. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): planned (12 plans, 6 waves, checker passed); not started.
 Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
-Status: Phase 02.1 ready to execute — next: /gsd-execute-phase 02.1, then the preview APK build, then /gsd-plan-phase 02.3
+Status: Phase 02.1 — 16/17 plans complete; plan 12 (rollout) in progress
 Last activity: 2026-10-10 - Phase 02.2 verified (02.2-VERIFICATION.md) and marked complete; requirements ticked (95 of 234)
 
 ## Performance Metrics
@@ -178,5 +178,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-10-10T23:00:00.000Z
-Stopped at: Phase 02.1 plans revised and checked — next /gsd-execute-phase 02.1
+Stopped at: Phase 02.1 plan 12 Task 1 (PR to main, then production schema push)
 Resume file: .planning/phases/02.2-record-polish/02.2-VERIFICATION.md

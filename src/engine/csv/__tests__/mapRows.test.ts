@@ -83,6 +83,7 @@ describe('csvToDraft: single signed-amount column', () => {
         externalId: null,
         trnType: null,
         issues: [],
+        foreign: null,
       },
     ]);
     expect(draft.source).toBe('csv');
@@ -617,6 +618,37 @@ describe('csvToDraft: summary lines', () => {
     // (the first row) nor follows every transaction (the third row), so it is
     // left in place rather than guessed as opening or closing.
     expect(draft.rows).toHaveLength(3);
+  });
+});
+
+describe('csvToDraft: foreign amount columns (IMP-05)', () => {
+  const header = ['Date', 'Description', 'Amount', 'Original amount', 'Original currency'];
+  const fm = (overrides: Partial<ColumnMapping> = {}): ColumnMapping =>
+    mapping({ foreignAmount: 3, foreignCurrency: 4, ...overrides });
+  const data = [
+    ['2026-09-01', 'SAMPLE STORE NEW YORK', '-35.38', '45.00', 'USD'],
+    ['2026-09-02', 'ACME GROCERS', '-12.00', '', ''],
+    ['2026-09-03', 'SAME CURRENCY', '-5.00', '5.00', 'GBP'],
+  ];
+
+  it('carries the foreign amount when both roles are mapped and readable', () => {
+    const draft = csvToDraft(header, data, baseOpts({ mapping: fm() }));
+    expect(draft.rows[0]).toMatchObject({ magnitude: 3538, marker: 'minus' });
+    expect(draft.rows[0]!.foreign).toEqual({ magnitude: 4500, currency: 'USD', raw: '45.00 USD' });
+    expect(draft.rows[1]!.foreign).toBeNull();
+    expect(draft.rows[2]!.foreign).toBeNull();
+  });
+
+  it('gives no foreign data when only one role is mapped', () => {
+    for (const m of [fm({ foreignCurrency: null }), fm({ foreignAmount: null })]) {
+      const draft = csvToDraft(header, data, baseOpts({ mapping: m }));
+      expect(draft.rows.map((r) => r.foreign)).toEqual([null, null, null]);
+    }
+  });
+
+  it('imports exactly as before when neither role is present on the mapping', () => {
+    const draft = csvToDraft(header, data, baseOpts({ mapping: mapping() }));
+    expect(draft.rows.map((r) => r.foreign)).toEqual([null, null, null]);
   });
 });
 

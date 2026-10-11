@@ -1114,6 +1114,40 @@ describe('useImportChunks / importChunk', () => {
     expect(qc.getQueryData(queryKeys.transactionsMonth('h1', '2026-10'))).toBeUndefined();
   });
 
+  it('IMP-05: the optimistic import row carries statement figures and conversion_source; plain rows carry nulls', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({
+      data: [
+        { id: 'imp-1', local_date: '2026-09-24', version: 1, rate_pending: false },
+        { id: 'imp-2', local_date: '2026-09-24', version: 1, rate_pending: false },
+      ],
+      error: null,
+      status: 201,
+    });
+    const qc = newClient();
+    qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-09'), []);
+    const { result } = await renderHook(() => useImportChunks(), { wrapper: wrapper(qc) });
+    result.current.enqueue({
+      householdId: 'h1',
+      batchId: 'batch-1',
+      rows: [
+        importRow({ id: 'imp-1', original_amount: -3538, original_currency: 'GBP', stmt_orig_amount: -4500, stmt_orig_currency: 'USD' }),
+        importRow({ id: 'imp-2', fx_fee_of: 'imp-1' }),
+      ],
+      homeCurrency: 'GBP',
+      userId: 'user-1',
+    });
+    await waitFor(() => {
+      expect(qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09'))).toHaveLength(2);
+    });
+    const rows = qc.getQueryData<TransactionRow[]>(queryKeys.transactionsMonth('h1', '2026-09')) ?? [];
+    const a = rows.find((r) => r.id === 'imp-1');
+    const b = rows.find((r) => r.id === 'imp-2');
+    expect(a).toMatchObject({ stmt_orig_amount: -4500, stmt_orig_currency: 'USD', conversion_source: 'statement' });
+    expect(b).toMatchObject({ stmt_orig_amount: null, conversion_source: null, fx_fee_of: 'imp-1' });
+  });
+
   it('calls resolve-rate once per distinct local_date among rate_pending rows (ids batched per date)', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;

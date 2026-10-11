@@ -2,6 +2,7 @@
 // rendered directly; the machine itself is covered by its own tests. D-39: the screens render
 // the file's text as plain Text only.
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { FormatProfile } from '@/engine/statement';
@@ -148,6 +149,19 @@ function makeState(over: Partial<Record<keyof ImportState, unknown>> = {}): Impo
     acceptPayMatch: fn(),
     dismissPayMatch: fn(),
     commit: fn(),
+    reviewGate: { required: false, count: 0 },
+    rowsChecked: false,
+    setRowsChecked: fn(),
+    pdfSections: [],
+    yearQuestion: null,
+    chosenYear: null,
+    chooseYear: fn(),
+    passwordWrong: false,
+    pdfBytesHeld: false,
+    sendPdf: fn(),
+    submitPassword: fn(),
+    submitClosingBalance: jest.fn(() => ({ ok: true })),
+    skipClosingBalance: fn(),
     commitProblem: null,
     overSuggestionCap: false,
     suggestionCap: 2999,
@@ -188,8 +202,8 @@ beforeEach(() => {
 describe('ImportScreen: pick', () => {
   it('shows the privacy line, the file helper and only the non-archived accounts', async () => {
     await renderScreen();
-    expect(screen.getByText('This file is read on your device and never uploaded.')).toBeTruthy();
-    expect(screen.getByText('CSV, OFX or QFX — up to 5,000 rows (about 2MB).')).toBeTruthy();
+    expect(screen.getByText('PDF statements are read on our server in the United States and deleted straight after. CSV and OFX files never leave your phone.')).toBeTruthy();
+    expect(screen.getByText('CSV, OFX, QFX or PDF.')).toBeTruthy();
     expect(screen.getByText('Which account is this file from?')).toBeTruthy();
     expect(screen.getByText('Current')).toBeTruthy();
     expect(screen.getByText('Savings')).toBeTruthy();
@@ -268,7 +282,7 @@ describe('ImportScreen: rejected and statement choice', () => {
     ['unreadable', 'This file couldn’t be read as a statement.'],
     ['no_rows', 'This file has no transactions in it.'],
     ['too_big', 'This file is too large to read.'],
-    ['unsupported_format', 'This file isn’t a CSV, OFX or QFX statement.'],
+    ['unsupported_format', 'This file isn’t a CSV, OFX, QFX or PDF statement.'],
     ['unsupported_statement', 'This file holds an investment or loan statement, which can’t be imported yet.'],
   ])('%s shows its copy, and Back returns to the start', async (reason, copy) => {
     mockState = makeState({ stage: 'rejected', rejectReason: reason });
@@ -397,11 +411,27 @@ describe('ImportScreen: mapping', () => {
     mockState = makeState(base);
     await renderScreen();
     expect(screen.getByText('Check the columns')).toBeTruthy();
-    for (const role of ['Date', 'Description', 'Amount', 'Money out', 'Money in', 'Money in or out', 'Balance', 'Currency', 'Limit']) {
+    for (const role of ['Date', 'Description', 'Amount', 'Money out', 'Money in', 'Money in or out', 'Balance', 'Currency', 'Original amount', 'Original currency', 'Limit']) {
       expect(screen.getByText(role)).toBeTruthy();
     }
     expect(screen.getByText('Posted')).toBeTruthy();
     expect(screen.getAllByText('Not used').length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('IMP-05: picking a header for Original amount sets foreignAmount; Not used clears it', async () => {
+    mockState = makeState(base);
+    await renderScreen();
+    await fireEvent.press(screen.getByText('Original amount'));
+    await fireEvent.press(screen.getByLabelText('Memo'));
+    expect(mockState.setMapping).toHaveBeenCalledWith({ ...mapping, foreignAmount: 1 });
+  });
+
+  it('IMP-05: Not used clears a mapped Original currency', async () => {
+    mockState = makeState({ ...base, mapping: { ...mapping, foreignCurrency: 3 } });
+    await renderScreen();
+    await fireEvent.press(screen.getByText('Original currency'));
+    await fireEvent.press(screen.getAllByLabelText('Not used').at(-1) as never);
+    expect(mockState.setMapping).toHaveBeenCalledWith({ ...mapping, foreignCurrency: null });
   });
 
   it('picking a header for a role sets the mapping; picking Not used clears it', async () => {
@@ -878,6 +908,194 @@ describe('ImportScreen: done', () => {
     mockState = makeState({ stage: 'done', accountId: 'a1', suggestions: [suggestion] });
     await renderScreen();
     expect(screen.queryByText('Undo')).toBeNull();
+  });
+});
+
+describe('ImportScreen: PDF', () => {
+  it('shows the server-variant privacy line verbatim', async () => {
+    await renderScreen();
+    expect(
+      screen.getByText('PDF statements are read on our server in the United States and deleted straight after. CSV and OFX files never leave your phone.')
+    ).toBeTruthy();
+    expect(screen.getByText('CSV, OFX, QFX or PDF.')).toBeTruthy();
+    expect(screen.getByText('Paste a list')).toBeTruthy();
+  });
+
+  it('asks before sending: consent sentence, Send and read, Cancel', async () => {
+    mockState = makeState({ stage: 'pdf-consent', accountId: 'a1', format: 'pdf' });
+    await renderScreen();
+    expect(screen.getByText('To read a PDF we send it to our server in the United States. It’s deleted straight after.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Send this PDF to our server to read it' }));
+    expect(mockState.sendPdf).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockState.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the reading progress while the server reads a PDF', async () => {
+    mockState = makeState({ stage: 'reading', accountId: 'a1', format: 'pdf' });
+    await renderScreen();
+    expect(screen.getByText('Reading your statement…')).toBeTruthy();
+    expect(screen.getByText('This can take up to 10 seconds.')).toBeTruthy();
+    expect(screen.queryByText('Paste a list')).toBeNull();
+  });
+
+  it('a CSV in the reading stage still shows the pick step', async () => {
+    mockState = makeState({ stage: 'reading', accountId: 'a1', format: null });
+    await renderScreen();
+    expect(screen.getByText('Paste a list')).toBeTruthy();
+    expect(screen.queryByText('Reading your statement…')).toBeNull();
+  });
+
+  it('asks for the password and passes it to submitPassword', async () => {
+    mockState = makeState({ stage: 'pdf-password', accountId: 'a1', format: 'pdf', passwordWrong: true });
+    await renderScreen();
+    expect(screen.getByText('That password didn’t open the file. Try again.')).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'pw');
+    await fireEvent.press(screen.getByRole('button', { name: 'Unlock' }));
+    expect(mockState.submitPassword).toHaveBeenCalledWith('pw');
+  });
+
+  it('asks for the closing balance, wired to the hook', async () => {
+    mockState = makeState({ stage: 'pdf-balance', accountId: 'a1', format: 'pdf' });
+    await renderScreen();
+    await fireEvent.changeText(screen.getByLabelText('Closing balance'), '10.00');
+    await fireEvent.press(screen.getByRole('button', { name: 'Check balance' }));
+    expect(mockState.submitClosingBalance).toHaveBeenCalledWith('10.00');
+    await fireEvent.press(screen.getByRole('button', { name: 'Skip' }));
+    expect(mockState.skipClosingBalance).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['pdf_offline', 'PDF statements need a connection to read. Try again when you’re online.'],
+    ['pdf_unreadable', 'We couldn’t read this statement’s layout. Most banks also let you download CSV or OFX from online banking, and those import reliably.'],
+    ['pdf_scanned', 'This looks like a scanned statement. Download it from online banking as a PDF, CSV or OFX file instead.'],
+    ['pdf_too_large', 'This statement has more than 25 pages, or is larger than 10 MB. Split it into smaller files and import them one at a time.'],
+  ])('%s shows its message and Back cancels', async (reason, copy) => {
+    mockState = makeState({ stage: 'rejected', rejectReason: reason });
+    await renderScreen();
+    expect(screen.getByText(copy)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(mockState.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('a too-large PDF takes the danger colour of the too-many-rows message; the other PDF messages stay ink', async () => {
+    const ui = () => (
+      <ThemeProvider>
+        <ImportScreen entry="you" accountId={null} onDone={jest.fn()} />
+      </ThemeProvider>
+    );
+    const colorOf = (re: RegExp) => StyleSheet.flatten(screen.getByText(re).props.style).color;
+    mockState = makeState({ stage: 'rejected', rejectReason: 'too_many_rows' });
+    const view = await render(ui());
+    const danger = colorOf(/more than 5,000 rows/);
+    mockState = makeState({ stage: 'rejected', rejectReason: 'pdf_too_large' });
+    await view.rerender(ui());
+    expect(colorOf(/more than 25 pages/)).toBe(danger);
+    mockState = makeState({ stage: 'rejected', rejectReason: 'pdf_scanned' });
+    await view.rerender(ui());
+    expect(colorOf(/scanned statement/)).not.toBe(danger);
+  });
+
+  it('a multi-account PDF asks which account and chooses by index', async () => {
+    mockState = makeState({
+      stage: 'choose-statement',
+      format: 'pdf',
+      pdfSections: [
+        { index: 0, label: 'checking', kind: 'bank', currency: 'GBP', count: 6 },
+        { index: 1, label: 'card', kind: 'card', currency: 'GBP', count: 1 },
+      ],
+    });
+    await renderScreen();
+    expect(screen.getByText('Which account is this?')).toBeTruthy();
+    expect(screen.getByText(/This file covers more than one account/)).toBeTruthy();
+    expect(screen.getByLabelText('Current account, 6 lines')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Current account in GBP · 6 lines'));
+    expect(mockState.chooseStatement).toHaveBeenCalledWith(0);
+  });
+
+  describe('year question', () => {
+    const base = { stage: 'format', accountId: 'a1', profile: profile(), format: 'pdf', yearQuestion: [2025, 2026] };
+    it('asks the year and keeps Use this reading disabled until one is chosen', async () => {
+      mockState = makeState(base);
+      await renderScreen();
+      expect(screen.getByText('Which year does this line belong to?')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Use this reading' })).toBeDisabled();
+      await fireEvent.press(screen.getByLabelText('Year 2026'));
+      expect(mockState.chooseYear).toHaveBeenCalledWith(2026);
+    });
+    it('marks the chosen year and enables Use this reading', async () => {
+      mockState = makeState({ ...base, chosenYear: 2025 });
+      await renderScreen();
+      expect(screen.getAllByText('✓')).toHaveLength(1);
+      expect(screen.getByRole('button', { name: 'Use this reading' })).not.toBeDisabled();
+    });
+    it('shows nothing extra without a year question', async () => {
+      mockState = makeState({ ...base, yearQuestion: null });
+      await renderScreen();
+      expect(screen.queryByText('Which year does this line belong to?')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Use this reading' })).not.toBeDisabled();
+    });
+  });
+
+  describe('checked-rows gate', () => {
+    const rows = () => [previewRow(0, { check: 'cannot-verify' }), previewRow(1, { check: 'cannot-verify' })];
+    const gate = { required: true, count: 2 };
+
+    it('disables commit until the checkbox is ticked and the row toggles it', async () => {
+      mockState = reviewState(rows(), { reviewGate: gate, rowsChecked: false });
+      await renderScreen();
+      const box = screen.getByRole('checkbox', { name: 'I’ve checked these 2 rows' });
+      expect(box.props.accessibilityState.checked).toBe(false);
+      expect(screen.getByRole('button', { name: 'Import 2 transactions' })).toBeDisabled();
+      await fireEvent.press(box);
+      expect(mockState.setRowsChecked).toHaveBeenCalledWith(true);
+    });
+
+    it('enables commit once ticked', async () => {
+      mockState = reviewState(rows(), { reviewGate: gate, rowsChecked: true });
+      await renderScreen();
+      expect(screen.getByRole('checkbox', { name: 'I’ve checked these 2 rows' }).props.accessibilityState.checked).toBe(true);
+      expect(screen.getByRole('button', { name: 'Import 2 transactions' })).not.toBeDisabled();
+    });
+
+    it('disables Continue the same way when matches remain', async () => {
+      mockState = reviewState(rows(), {
+        reviewGate: gate,
+        rowsChecked: false,
+        transferRows: [{ index: 0, suggestion: { kind: 'orphan' }, answer: null }],
+      });
+      await renderScreen();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    });
+
+    it('uncertain rows carry the Can’t verify tag and no issue text', async () => {
+      mockState = reviewState([previewRow(0, { check: 'cannot-verify' }, { issues: ['pdf-no-date'] })], {
+        reviewGate: { required: true, count: 1 },
+        rowsChecked: false,
+      });
+      await renderScreen();
+      expect(screen.getAllByText('Can’t verify').length).toBeGreaterThan(0);
+      expect(screen.queryByText(/pdf-no-date/)).toBeNull();
+    });
+
+    it('shows no checkbox row when not required', async () => {
+      mockState = reviewState(rows());
+      await renderScreen();
+      expect(screen.queryByRole('checkbox', { name: /checked these/ })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Import 2 transactions' })).not.toBeDisabled();
+    });
+
+    it('the matches commit is disabled while the gate is unticked', async () => {
+      mockState = makeState({
+        stage: 'matches',
+        accountId: 'a1',
+        counts: { total: 2, included: 2, duplicates: 0, blocked: 0, cannotVerify: 2 },
+        reviewGate: gate,
+        rowsChecked: false,
+      });
+      await renderScreen();
+      expect(screen.getByRole('button', { name: 'Import 2 transactions' })).toBeDisabled();
+    });
   });
 });
 

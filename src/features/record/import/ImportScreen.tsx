@@ -17,11 +17,14 @@ import { Screen } from '@/ui/Screen';
 import { space } from '@/theme/layout';
 import { FormatStep } from './FormatStep';
 import { PasteSheet } from './PasteSheet';
+import { ClosingBalancePrompt } from './ClosingBalancePrompt';
+import { PasswordPromptSheet } from './PasswordPromptSheet';
+import { ReadingProgress } from './ReadingProgress';
 import { MappingStep } from './MappingStep';
 import { MatchesStep } from './MatchesStep';
 import { ReviewStep } from './ReviewStep';
 import { SuggestionsStep } from './SuggestionsStep';
-import { Actions, Heading, T } from './importUi';
+import { Actions, Heading, T, useDynamicT } from './importUi';
 import { useStatementImport, type ImportEntry } from './useStatementImport';
 import type { RejectReason } from './importPipeline';
 
@@ -33,13 +36,31 @@ export interface ImportScreenProps {
   onDone: () => void;
 }
 
-const REJECT_KEY: Record<RejectReason, 'tooManyRows' | 'unreadable' | 'noRows' | 'tooBig' | 'unsupportedFormat' | 'unsupportedStatement'> = {
+type PdfRejectReason = 'pdf_offline' | 'pdf_too_large' | 'pdf_scanned' | 'pdf_unreadable';
+
+const REJECT_KEY: Record<
+  RejectReason | PdfRejectReason,
+  | 'tooManyRows'
+  | 'unreadable'
+  | 'noRows'
+  | 'tooBig'
+  | 'unsupportedFormat'
+  | 'unsupportedStatement'
+  | 'pdf.offline'
+  | 'pdf.tooLarge'
+  | 'pdf.unreadable'
+  | 'pdf.scanned'
+> = {
   too_many_rows: 'tooManyRows',
   unreadable: 'unreadable',
   no_rows: 'noRows',
   too_big: 'tooBig',
   unsupported_format: 'unsupportedFormat',
   unsupported_statement: 'unsupportedStatement',
+  pdf_offline: 'pdf.offline',
+  pdf_too_large: 'pdf.tooLarge',
+  pdf_unreadable: 'pdf.unreadable',
+  pdf_scanned: 'pdf.scanned',
 };
 
 export function ImportScreen({ entry, accountId = null, onDone }: ImportScreenProps) {
@@ -62,8 +83,15 @@ function StageView({ state, entry, onDone }: { state: ImportState; entry: Import
   const t = useT();
   switch (state.stage) {
     case 'idle':
-    case 'reading':
       return <PickStep state={state} entry={entry} />;
+    case 'reading':
+      return state.format === 'pdf' ? <ReadingProgress format="pdf" /> : <PickStep state={state} entry={entry} />;
+    case 'pdf-consent':
+      return <ConsentStep state={state} />;
+    case 'pdf-password':
+      return <PasswordPromptSheet visible wrong={state.passwordWrong} onUnlock={state.submitPassword} onCancel={state.cancel} />;
+    case 'pdf-balance':
+      return <BalanceStep state={state} />;
     case 'rejected':
       return <RejectedStep state={state} />;
     case 'choose-statement':
@@ -140,7 +168,7 @@ function RejectedStep({ state }: { state: ImportState }) {
   if (reason === null) return null;
   return (
     <View>
-      <T tone={reason === 'too_many_rows' ? 'danger' : 'ink'}>{t(`importCsv.${REJECT_KEY[reason]}`)}</T>
+      <T tone={reason === 'too_many_rows' || reason === 'pdf_too_large' ? 'danger' : 'ink'}>{t(`importCsv.${REJECT_KEY[reason]}`)}</T>
       <Actions>
         <Pill label={t('importCsv.back')} variant="secondary" onPress={state.cancel} />
       </Actions>
@@ -148,8 +176,54 @@ function RejectedStep({ state }: { state: ImportState }) {
   );
 }
 
+function ConsentStep({ state }: { state: ImportState }) {
+  const t = useT();
+  return (
+    <View>
+      <T>{t('importCsv.pdf.consent')}</T>
+      <Actions>
+        <Pill label={t('importCsv.pdf.send')} accessibilityLabel={t('importCsv.pdf.sendA11y')} variant="primary" onPress={state.sendPdf} />
+        <Pill label={t('importCsv.cancel')} variant="secondary" onPress={state.cancel} />
+      </Actions>
+    </View>
+  );
+}
+
+function BalanceStep({ state }: { state: ImportState }) {
+  const rc = useRecordContext();
+  const accounts = useAccounts(rc.householdId ?? undefined).data ?? [];
+  const currency = accounts.find((a) => a.id === state.accountId)?.currency ?? rc.homeCurrency;
+  return <ClosingBalancePrompt currency={currency} onCheck={state.submitClosingBalance} onSkip={state.skipClosingBalance} />;
+}
+
+function PdfSectionsStep({ state }: { state: ImportState }) {
+  const t = useT();
+  const tx = useDynamicT();
+  return (
+    <View>
+      <Heading>{t('importCsv.pdf.sectionHeading')}</Heading>
+      <T>{t('importCsv.pdf.sectionBody')}</T>
+      {state.pdfSections.map((s) => {
+        const kind = tx(`accounts.kind.${s.label === 'card' ? 'credit' : (s.label ?? 'other')}`);
+        return (
+          <Row
+            key={s.index}
+            label={t('importCsv.statementOption', { kind, currency: s.currency ?? '', count: s.count })}
+            accessibilityLabel={t('importCsv.pdf.sectionA11y', { kind, count: s.count })}
+            onPress={() => state.chooseStatement(s.index)}
+          />
+        );
+      })}
+      <Actions>
+        <Pill label={t('importCsv.cancel')} variant="secondary" onPress={state.cancel} />
+      </Actions>
+    </View>
+  );
+}
+
 function ChooseStatementStep({ state }: { state: ImportState }) {
   const t = useT();
+  if (state.format === 'pdf') return <PdfSectionsStep state={state} />;
   return (
     <View>
       <Heading>{t('importCsv.pickStatement')}</Heading>

@@ -11,7 +11,7 @@
  */
 import type { AmountMarker, MinorUnits } from '../money';
 
-export type ImportSource = 'csv' | 'ofx'; // QFX is 'ofx' (D-39); the 'qfx' literal exists only in analytics
+export type ImportSource = 'csv' | 'ofx' | 'pdf'; // QFX is 'ofx' (D-39); the 'qfx' literal exists only in analytics
 
 export type AccountKind = 'cash' | 'checking' | 'savings' | 'credit' | 'investment' | 'loan' | 'other';
 export type AccountFamily = 'deposit' | 'card' | 'loan';
@@ -30,7 +30,19 @@ export type DraftRowIssue =
   | 'unknown-currency'
   | 'amount-too-large'
   | 'conflicting-markers'
-  | 'bad-balance';
+  | 'bad-balance'
+  // D-23: rows the PDF reader isn't sure of; never blocking, always reviewed
+  | 'pdf-wrapped-description'
+  | 'pdf-no-date'
+  | 'pdf-ambiguous-column'
+  | 'pdf-ambiguous-date';
+
+/** IMP-05 / D-30: a statement line's original foreign amount (magnitude, never signed). */
+export interface ForeignAmount {
+  magnitude: MinorUnits;
+  currency: string; // upper-case code
+  raw: string; // matched text, <= MAX_RAW_CELL
+}
 
 export interface DraftRow {
   index: number; // 0-based, file order, after summary lines are removed
@@ -46,6 +58,8 @@ export interface DraftRow {
   externalId: string | null; // OFX FITID, <= 255 chars (D-39, D-54)
   trnType: string | null; // OFX TRNTYPE upper-case, or a CSV type-column value mapped to 'DEBIT'/'CREDIT'
   issues: DraftRowIssue[];
+  // IMP-05 / D-30: the statement's original foreign amount; provenance only, never drives FX stamping (D-34)
+  foreign?: ForeignAmount | null;
 }
 
 export interface StatedBalance {

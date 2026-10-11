@@ -18,12 +18,29 @@ import { Pill } from '@/ui/Pill';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { Actions, Heading, SuggestionCard, T, Tag, useDynamicT, useFormatAmount } from './importUi';
+import type { DraftRowIssue } from '@/engine/statement';
 import type { PreviewRow } from './importPipeline';
 import type { useStatementImport } from './useStatementImport';
 
 type ImportState = ReturnType<typeof useStatementImport>;
 
-const ISSUE_KEY = {
+const ISSUE_KEY: Partial<
+  Record<
+    DraftRowIssue,
+    | 'badDate'
+    | 'badAmount'
+    | 'zeroAmount'
+    | 'emptyDescription'
+    | 'unknownCurrency'
+    | 'amountTooLarge'
+    | 'conflictingMarkers'
+    | 'badBalance'
+    | 'pdfWrappedDescription'
+    | 'pdfNoDate'
+    | 'pdfAmbiguousColumn'
+    | 'pdfAmbiguousDate'
+  >
+> = {
   'bad-date': 'badDate',
   'bad-amount': 'badAmount',
   'zero-amount': 'zeroAmount',
@@ -32,7 +49,12 @@ const ISSUE_KEY = {
   'amount-too-large': 'amountTooLarge',
   'conflicting-markers': 'conflictingMarkers',
   'bad-balance': 'badBalance',
-} as const;
+  // Review LO-06: the PDF uncertainty codes (D-23) say what the reader was unsure of.
+  'pdf-wrapped-description': 'pdfWrappedDescription',
+  'pdf-no-date': 'pdfNoDate',
+  'pdf-ambiguous-column': 'pdfAmbiguousColumn',
+  'pdf-ambiguous-date': 'pdfAmbiguousDate',
+};
 
 function Reconciliation({ file }: { file: string | null }) {
   const t = useT();
@@ -83,6 +105,8 @@ export function ReviewStep({ state }: { state: ImportState }) {
 
   const rows = preview.rows;
   const included = state.counts.included;
+  const checkedLabel = t('importCsv.pdf.checkedRows', { count: state.reviewGate.count });
+  const gated = state.reviewGate.required && !state.rowsChecked;
   const hasMatches = state.transferRows.length > 0 || state.payMatchRows.length > 0;
   const ratesPending = rows.some((r) => {
     const s = state.rowState(r.index);
@@ -119,11 +143,34 @@ export function ReviewStep({ state }: { state: ImportState }) {
   const footer = (
     <View>
       {state.commitProblem === 'failed' ? <T tone="inkMuted">{t('importCsv.commitFailed')}</T> : null}
+      {state.reviewGate.required ? (
+        <Pressable
+          accessibilityRole="checkbox"
+          accessibilityLabel={checkedLabel}
+          accessibilityState={{ checked: state.rowsChecked }}
+          onPress={() => state.setRowsChecked(!state.rowsChecked)}
+          style={styles.gateRow}
+        >
+          <View style={styles.tickHit}>
+            <View
+              style={[
+                styles.tick,
+                { borderColor: state.rowsChecked ? colors.ink : colors.inkFaint, backgroundColor: state.rowsChecked ? colors.ink : 'transparent' },
+              ]}
+            >
+              {state.rowsChecked ? <View style={[styles.tickDot, { backgroundColor: colors.surface }]} /> : null}
+            </View>
+          </View>
+          <View style={styles.text}>
+            <T>{checkedLabel}</T>
+          </View>
+        </Pressable>
+      ) : null}
       <Actions>
         {hasMatches ? (
-          <Pill label={t('importCsv.continue')} variant="secondary" disabled={included === 0} onPress={() => void state.continue()} />
+          <Pill label={t('importCsv.continue')} variant="secondary" disabled={included === 0 || gated} onPress={() => void state.continue()} />
         ) : (
-          <Pill label={t('importCsv.commit', { count: included })} variant="primary" disabled={included === 0} onPress={state.commit} />
+          <Pill label={t('importCsv.commit', { count: included })} variant="primary" disabled={included === 0 || gated} onPress={state.commit} />
         )}
         <Pill label={t('importCsv.back')} variant="secondary" onPress={state.back} />
         <Pill label={t('importCsv.cancel')} variant="secondary" onPress={state.cancel} />
@@ -179,11 +226,13 @@ export function ReviewStep({ state }: { state: ImportState }) {
           {item.check === 'cannot-verify' ? (
             <Tag label={t('importCsv.reconcile.rowTag')} accessibilityLabel={t('importCsv.reconcile.rowTagA11y')} />
           ) : null}
-          {c.issues.map((issue) => (
-            <T key={issue} role="label" tone="inkMuted">
-              {issue === 'unknown-currency' ? t('importCsv.issue.unknownCurrency', { code: c.currency }) : tx(`importCsv.issue.${ISSUE_KEY[issue]}`)}
-            </T>
-          ))}
+          {c.issues.map((issue) =>
+            issue === 'unknown-currency' || ISSUE_KEY[issue] !== undefined ? (
+              <T key={issue} role="label" tone="inkMuted">
+                {issue === 'unknown-currency' ? t('importCsv.issue.unknownCurrency', { code: c.currency }) : tx(`importCsv.issue.${ISSUE_KEY[issue]}`)}
+              </T>
+            ) : null
+          )}
         </View>
       </View>
     );
@@ -219,6 +268,7 @@ const styles = StyleSheet.create({
   row: { paddingVertical: space.gapSm, borderBottomWidth: StyleSheet.hairlineWidth },
   top: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
   text: { flex: 1 },
+  gateRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: space.touchMin },
   tickHit: { minWidth: space.touchMin, minHeight: space.touchMin, alignItems: 'center', justifyContent: 'center' },
   tick: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   tickDot: { width: 8, height: 8, borderRadius: 4 },

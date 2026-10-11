@@ -1,0 +1,90 @@
+{
+  "name": "savings",
+  "accountKind": "savings",
+  "currency": "GBP",
+  "period": {
+    "start": "2026-03-01",
+    "end": "2026-03-31"
+  },
+  "opening": 500000,
+  "closing": 546245,
+  "rows": [
+    {
+      "date": "2026-03-03",
+      "description": "TRANSFER IN",
+      "amount": 30000,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-07",
+      "description": "WITHDRAWAL",
+      "amount": -25000,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-14",
+      "description": "TRANSFER IN",
+      "amount": 15000,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-15",
+      "description": "WITHDRAWAL",
+      "amount": -8000,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-21",
+      "description": "TRANSFER IN",
+      "amount": 40000,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-25",
+      "description": "WITHDRAWAL",
+      "amount": -12000,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-28",
+      "description": "TRANSFER IN",
+      "amount": 5000,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-31",
+      "description": "INTEREST PAID",
+      "amount": 1245,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    }
+  ],
+  "sections": null,
+  "expect": {
+    "reconcile": "all-verified",
+    "uncertainRows": []
+  }
+}

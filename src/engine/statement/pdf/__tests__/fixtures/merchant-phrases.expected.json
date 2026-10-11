@@ -1,0 +1,63 @@
+{
+  "name": "merchant-phrases",
+  "accountKind": "checking",
+  "currency": "GBP",
+  "period": {
+    "start": "2026-09-01",
+    "end": "2026-09-30"
+  },
+  "opening": 100000,
+  "closing": 92690,
+  "rows": [
+    {
+      "date": "2026-09-03",
+      "description": "NEW BALANCE LONDON",
+      "amount": -8999,
+      "balance": 91001,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-09-07",
+      "description": "TOTAL GAS & POWER",
+      "amount": -5400,
+      "balance": 85601,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-09-10",
+      "description": "ACME CREDIT LIMITED",
+      "amount": -2000,
+      "balance": 83601,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-09-12",
+      "description": "PAYSLIP",
+      "amount": 10000,
+      "balance": 93601,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-09-15",
+      "description": "FABRIKAM CAFE",
+      "amount": -911,
+      "balance": 92690,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    }
+  ],
+  "sections": null,
+  "expect": {
+    "reconcile": "all-verified",
+    "uncertainRows": []
+  }
+}

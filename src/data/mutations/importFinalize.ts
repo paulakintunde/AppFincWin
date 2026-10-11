@@ -71,6 +71,12 @@ export interface ImportMarkPaid {
    * refused the batch), the line is inserted as an ordinary row so it is never lost.
    */
   line: NewTransaction;
+  /**
+   * D-32 / IMP-05: separate FX fee lines of this purchase, held back from the chunk inserts.
+   * Finalize inserts them once it knows whether the pending line (fx_fee_of = pendingId) or the
+   * fallback line (re-pointed to line.id) is the purchase they belong to.
+   */
+  feeLines?: NewTransaction[];
 }
 
 export interface ImportLimit {
@@ -250,7 +256,8 @@ async function runFinalize(client: DbClient, vars: ImportFinalizeVars): Promise<
       recordedAsLines: (prior?.recordedAsLines ?? 0) + removedMarkPaid.length,
       ids: id ? [...(prior?.ids ?? []), id] : (prior?.ids ?? []),
     };
-    fallback.push(...removedMarkPaid.map((m) => m.line));
+    // D-32: a set-aside mark-paid's fee lines follow its fallback line.
+    fallback.push(...removedMarkPaid.flatMap((m) => [m.line, ...(m.feeLines ?? []).map((f) => ({ ...f, fx_fee_of: m.line.id }))]));
     links = keptLinks;
     markPaid = keptMarkPaid;
     limit = keptLimit;
@@ -267,15 +274,19 @@ async function runFinalize(client: DbClient, vars: ImportFinalizeVars): Promise<
     // above. A linked imported row is at version 2 by the time this runs (its own insert at
     // 1, then the link patch); every other inserted row stays at 1.
     const linkedImported = new Set(links.map((l) => l.importedId));
-    const inserted = [...vars.insertedIds, ...fallback.map((l) => l.id)].map((id) => ({
+    // D-32: fee lines of kept mark-paids are inserted after the patches but share this undo step.
+    const heldFees = markPaid.flatMap((m) => m.feeLines ?? []);
+    const inserted = [...vars.insertedIds, ...fallback.map((l) => l.id), ...heldFees.map((l) => l.id)].map((id) => ({
       id,
       version: linkedImported.has(id) ? 2 : 1,
     }));
     // n counts every statement line the import accounted for, however it landed.
-    const n = vars.insertedIds.length + vars.markPaid.length;
+    // Every held fee counts once: a kept one is a held fee, a set-aside one is in the fallback.
+    const n = vars.insertedIds.length + vars.markPaid.length + vars.markPaid.reduce((a, m) => a + (m.feeLines?.length ?? 0), 0);
 
     if (items.length === 0) {
       await insertUndoStep(client, buildStep(vars.stepId, 'imported', { n }, inverseOfInserts('transactions', inserted)));
+      if (heldFees.length > 0) await insertFallbackLines(client, heldFees);
       return { applied: [], dropped };
     }
 
@@ -290,12 +301,21 @@ async function runFinalize(client: DbClient, vars: ImportFinalizeVars): Promise<
         const item = items.find((i) => i.entity === row.entity && i.id === row.id);
         if (item) recordWrittenVersion(row.entity, row.id, [item.expectedVersion], row.version);
       }
+      // The step is recorded, so Undo already covers these ids. An inverse-of-insert op is a
+      // soft-delete patch and apply_patches skips a row that does not exist ("already gone is
+      // satisfied"), so if this insert fails Undo still succeeds; the retry/replay inserts them
+      // (the batch upsert ignores duplicate ids).
+      if (heldFees.length > 0) await insertFallbackLines(client, heldFees);
       return { applied, dropped };
     } catch (err) {
       if (err instanceof VersionConflictError) {
         if (!replayChecked) {
           replayChecked = true;
-          if (await stepAlreadyRecorded(client, vars)) return { applied: [], dropped: null }; // C-WR-02
+          if (await stepAlreadyRecorded(client, vars)) {
+            // C-WR-02: the earlier attempt may have died before its fee lines landed.
+            if (heldFees.length > 0) await insertFallbackLines(client, heldFees);
+            return { applied: [], dropped: null };
+          }
         }
         const conflict = err.serverRow as Partial<UndoConflict> | null;
         const id = typeof conflict?.id === 'string' ? conflict.id : null;
@@ -386,7 +406,7 @@ export function registerImportFinalizeMutations(qc: QueryClient): void {
           // A deliberate exception to T-02-15-07's counts-only rule for this one case: the
           // store is encrypted at rest (T-01-09-01) and the failure reporter never sees
           // `attempted`.
-          ...(vars.markPaid.length > 0 ? { unrecordedLines: vars.markPaid.map((m) => ({ ...m.line })) } : {}),
+          ...(vars.markPaid.length > 0 ? { unrecordedLines: vars.markPaid.flatMap((m) => [{ ...m.line }, ...(m.feeLines ?? []).map((f) => ({ ...f, fx_fee_of: m.line.id }))]) } : {}),
         },
       });
     },

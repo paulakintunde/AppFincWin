@@ -13,9 +13,22 @@ import { Actions, Heading, T } from './importUi';
 import type { useStatementImport } from './useStatementImport';
 
 type ImportState = ReturnType<typeof useStatementImport>;
+// IMP-05: the original amount/currency roles are optional and correctable like the rest.
 type Role = keyof ColumnMapping;
 
-const ROLES: readonly Role[] = ['date', 'description', 'amount', 'debit', 'credit', 'direction', 'balance', 'currency', 'limit'];
+const ROLES: readonly Role[] = [
+  'date',
+  'description',
+  'amount',
+  'debit',
+  'credit',
+  'direction',
+  'balance',
+  'currency',
+  'foreignAmount',
+  'foreignCurrency',
+  'limit',
+];
 const ALL_FORMATS: readonly DateFormat[] = ['YMD', 'DMY', 'MDY'];
 const AMBIGUOUS_FORMATS: readonly DateFormat[] = ['DMY', 'MDY'];
 const NONE = 'none';
@@ -60,7 +73,7 @@ export function MappingStep({ state }: { state: ImportState }) {
       <Heading>{t('importCsv.mappingHeading')}</Heading>
 
       {ROLES.map((r) => (
-        <Row key={r} label={t(`importCsv.column.${r}`)} value={headerName(mapping[r])} chevron onPress={() => setRole(r)} />
+        <Row key={r} label={t(`importCsv.column.${r}`)} value={headerName(mapping[r] ?? null)} chevron onPress={() => setRole(r)} />
       ))}
 
       {state.dateAmbiguous ? (
@@ -110,7 +123,7 @@ export function MappingStep({ state }: { state: ImportState }) {
         visible={role !== null}
         title={role === null ? '' : t(`importCsv.column.${role}`)}
         options={roleOptions}
-        selected={role === null ? null : mapping[role] === null ? NONE : String(mapping[role])}
+        selected={role === null ? null : (mapping[role] ?? null) === null ? NONE : String(mapping[role])}
         onSelect={(value) => {
           if (role !== null) state.setMapping({ ...mapping, [role]: value === NONE ? null : Number(value) });
           setRole(null);
