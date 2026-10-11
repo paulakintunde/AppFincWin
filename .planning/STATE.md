@@ -166,6 +166,7 @@ Recent decisions affecting current work:
 | 261009-mvn | Phase 02.2 follow-ups: home-currency conflict message, More menu action mode, real failed-write entities, leftover worktree folders removed | 2026-10-09 | decaafd | [261009-mvn-phase-02-2-follow-ups-home-currency-conf](./quick/261009-mvn-phase-02-2-follow-ups-home-currency-conf/) |
 | 261010-i7u | Phase 02.2 walkthrough fixes: 7-column calendar with activity tile and scroll, one-line swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check; Phase 02.3 requirements recorded | 2026-10-10 | fd8e9cf | [261010-i7u-02-2-walkthrough-fixes-calendar-swipe-la](./quick/261010-i7u-02-2-walkthrough-fixes-calendar-swipe-la/) |
 | 261010-kpe | Amount keypad returns after text fields (explicit active field); Android edge swipe-back on inner screens with slide animation; You → Activity no longer duplicates Activity | 2026-10-10 | 2a77a4d | [261010-kpe-amount-keypad-returns-after-text-fields-](./quick/261010-kpe-amount-keypad-returns-after-text-fields-/) |
+| 261011-eio | Import treats a credit/overdraft limit of 0 as no limit (D-49): statement limit offer, profile/convert fallback, prior-limit undo; account sheet saves 0 as no limit | 2026-10-11 | 984300d | [261011-eio-credit-or-overdraft-limit-of-0-counts-as](./quick/261011-eio-credit-or-overdraft-limit-of-0-counts-as/) |
 
 ## Deferred Items
 
