@@ -262,43 +262,49 @@ Plans:
 
 **Goal:** A user can import a text-based PDF bank or card statement through the same import pipeline as CSV and OFX, with figures that are only committed once they reconcile or the user has reviewed them.
 **Requirements**: IMP-01, IMP-02, IMP-03, IMP-04, IMP-05
-**Note (2026-10-08):** IMP-05 (statement-provided conversions, show both figures) was added after this phase was planned; re-plan 2.1 to cover it before executing.
-**Depends on:** Phase 2 (the D-40 import pipeline, format profile, reconciliation, transfers), Phase 02.2 (executes first; it changes the import commit path 02.1-09..11 build on). Plans need revision before execution: see STATE.md Blockers
+**Note (2026-10-08, resolved 2026-10-10):** IMP-05 (statement-provided conversions, show both figures) was added after this phase was planned. Its decisions are locked as CONTEXT D-30 to D-35 and it is covered by plans 02.1-13 to 02.1-17.
+**Depends on:** Phase 2 (the D-40 import pipeline, format profile, reconciliation, transfers), Phase 02.2 (complete; it changed the import commit path 02.1-09..11 build on). Plans revised 2026-10-10 against post-02.2 main (migrations re-dated to 20261011000100/200, pgTAP 49, fx-monitor references removed, 09-12 rebased); IMP-05 added as plans 13-17 the same day
 **Success Criteria** (what must be TRUE):
   1. A text-based PDF statement from a supported layout imports with the same format read-back, preview, duplicate check and transfer suggestions as a CSV or OFX file.
   2. Nothing from a PDF is committed unless its balances reconcile or the user has reviewed each row that could not be verified.
   3. The uploaded file is deleted after a successful import unless the user chose to keep it, a kept file is removed on account deletion, and no statement content appears in logs or Sentry.
   4. The privacy copy says where the PDF is processed and how long it is kept.
+  5. A foreign line whose statement gives the converted amount stores the account-currency figure as the truth, records that its conversion came from the statement, and shows the original amount, charged amount, the bank's implied rate and any linked fee, with no market comparison (IMP-05).
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 12 plans
+**Plans:** 17 plans
 
 Plans:
 
 **Wave 1** *(Phase-2-independent server work and fixtures run first; engine/copy plans precondition-check Phase 2)*
 - [ ] 02.1-01-PLAN.md — Synthetic PDF statement fixtures, generator, expected ledgers, unpdf smoke (W1)
-- [ ] 02.1-02-PLAN.md — Private statement-uploads bucket + owner-folder RLS, hourly purge via Storage API, pgTAP 35 (W1)
+- [ ] 02.1-02-PLAN.md — Private statement-uploads bucket + owner-folder RLS, hourly purge via Storage API, pgTAP 49 (W1)
 - [ ] 02.1-03-PLAN.md — read-pdf-statement pure core: wire contract, caps, delete-after-read, metadata-only logs (W1)
 - [ ] 02.1-04-PLAN.md — Engine foundation: 'pdf' source + uncertain-row codes, applyUncertainRows, balance delta, dates/years (W1)
 - [ ] 02.1-05-PLAN.md — PDF copy (server variant) + privacy line, analytics fingerprint event, decision record, privacy-policy draft (W1)
+- [ ] 02.1-13-PLAN.md — IMP-05 schema: insert-only statement figures + fee link, server-written conversion_source, pgTAP 50 (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 02.1-06-PLAN.md — unpdf binding + Deno glue, real-parser Deno test (passwords, deletion), extraction snapshots, CI job (W2)
 - [ ] 02.1-07-PLAN.md — Generic layout reader: lines/columns, rows/figures/sections, response validation, fingerprint, contract guard (W2)
+- [ ] 02.1-14-PLAN.md — IMP-05 shared extractor: foreign amounts, OFX statement rate, implied rate, fee linking (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 02.1-08-PLAN.md — pdfToDrafts adapter + real-fixture flow through Phase 2's engine + no-leak test (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 02.1-09-PLAN.md — PDF sniff + picker, statementPdf read service (offline refusal), pipeline PDF branches + review gate (W4)
+- [ ] 02.1-15-PLAN.md — IMP-05 adapters: OFX CURRENCY/ORIGCURRENCY, CSV original-amount roles, PDF continuation lines, cross-format fixtures (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 02.1-10-PLAN.md — useStatementImport PDF branch: notice, password, sections, year, closing balance, checked-rows gate (W5)
+- [ ] 02.1-16-PLAN.md — IMP-05 commit path: preview foreign/fee links, insert-only statement figures, CSV mapping roles (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 02.1-11-PLAN.md — Screens: reading progress, password sheet, closing-balance prompt, notice, section/year, checked-rows gate (W6)
+- [ ] 02.1-17-PLAN.md — IMP-05 display: Activity foreign line, detail statement conversion + bank fee + provenance note (W6)
 
-**Wave 7** *(blocked on Wave 6 completion; after Phase 2's 02-31 push)*
-- [ ] 02.1-12-PLAN.md — Production rollout: schema push [BLOCKING], deploy both functions, live checks, worst-case timing, device walkthrough (W7)
+**Wave 7** *(blocked on Wave 6 completion; production is at 20261010000600 from Phase 02.2)*
+- [ ] 02.1-12-PLAN.md — Production rollout: PR to main, schema push (3 migrations) [BLOCKING], deploy both functions, live checks, worst-case timing, device walkthrough incl. IMP-05, preview APK (W7)
 
 ### Phase 02.2: Record polish (INSERTED)
 
