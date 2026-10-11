@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 0: Foundation** - Expo project, engine purity CI gates, Apple/Google auth, household-of-one schema and RLS, design tokens
 - [x] **Phase 1: Money Core** - Integer-money engine, client UUID keys, FX rate storage, TanStack Query data layer with the offline write queue (completed 2026-09-26)
 - [x] **Phase 2: Record** - Transactions, recurring entries, transfers, statement import (CSV, OFX/QFX), account limits and standing, Activity list, compensating-write undo (completed 2026-10-09)
-- [ ] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy
+- [x] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy (completed 2026-10-11; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 2.2: Record polish** (INSERTED) - Activity views and subtotals, sort, recurring-from-history, clone, detail sheet and swipe, entry-sheet extras, paste import, sample data (completed 2026-10-10; Android verified, iOS pending Apple enrolment)
 - [ ] **Phase 2.3: Record follow-ups** (INSERTED) - Import reconcile-or-new choice, description auto-categorise rules, signed-out account chooser
 - [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB
@@ -271,7 +271,8 @@ Plans:
   4. The privacy copy says where the PDF is processed and how long it is kept.
   5. A foreign line whose statement gives the converted amount stores the account-currency figure as the truth, records that its conversion came from the statement, and shows the original amount, charged amount, the bank's implied rate and any linked fee, with no market comparison (IMP-05).
 **Research flag**: PDF parsing needs a server-side worker, which breaks Phase 2 D-17 ("file never uploaded"). Decide the worker host, the retention default, and whether OCR or an opt-in LLM fallback is in scope, during discuss-phase. Collect real redacted statements first.
-**Plans:** 17 plans
+**Plans:** 17/17 plans executed
+**Status (2026-10-11):** Complete. PR #60 (plans 01-11, 13-17 and review fixes, main 22f8f57) and PR #62 (walkthrough fixes: quick 261011-eio and signFromEnds, main ef8bbfa). Production at 20261011000300; read-pdf-statement and purge-statement-uploads deployed. Android device walkthrough approved on Pixel 9; preview APK d7f35c19. 02.1-VERIFICATION.md: 5/5 criteria, IMP-01..IMP-05 satisfied, no code gaps. The iOS walkthrough is pending Apple enrolment and the privacy-policy publication is unconfirmed (02.1-HUMAN-UAT.md).
 
 Plans:
 
@@ -304,7 +305,7 @@ Plans:
 - [x] 02.1-17-PLAN.md — IMP-05 display: Activity foreign line, detail statement conversion + bank fee + provenance note (W6)
 
 **Wave 7** *(blocked on Wave 6 completion; production is at 20261010000600 from Phase 02.2)*
-- [ ] 02.1-12-PLAN.md — Production rollout: PR to main, schema push (3 migrations) [BLOCKING], deploy both functions, live checks, worst-case timing, device walkthrough incl. IMP-05, preview APK (W7)
+- [x] 02.1-12-PLAN.md — Production rollout: PR to main, schema push (3 migrations) [BLOCKING], deploy both functions, live checks, worst-case timing, device walkthrough incl. IMP-05, preview APK (W7)
 
 ### Phase 02.2: Record polish (INSERTED)
 
@@ -596,7 +597,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 0. Foundation | 18/20 | In Progress | - |
 | 1. Money Core | 16/16 | Complete | 2026-09-26 |
 | 2. Record | 50/50 | Complete | 2026-10-09 |
-| 2.1 PDF statement import | 0/12 | Planned; replan before executing | - |
+| 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 0/TBD | Not started | - |
 | 3. Shell | 0/16 | Planned; check against 2.2 before executing | - |
