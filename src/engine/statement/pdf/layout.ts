@@ -77,7 +77,7 @@ export function looksNumeric(text: string): boolean {
 export type ColumnRole = 'date' | 'description' | 'amount' | 'debit' | 'credit' | 'balance' | 'other';
 type NamedRole = Exclude<ColumnRole, 'other'>;
 
-// 'PAYMENTS' and 'CHARGES' are deliberately absent: their direction differs between bank and card statements.
+// Payments and charges are deliberately absent: their direction differs between bank and card statements.
 export const HEADER_VOCABULARY: Readonly<Record<NamedRole, readonly string[]>> = {
   date: ['DATE', 'TRANSACTION DATE', 'TRANS DATE', 'POSTING DATE', 'POST DATE', 'POSTED', 'VALUE DATE'],
   description: ['DESCRIPTION', 'DETAILS', 'TRANSACTION DETAILS', 'TRANSACTION', 'PARTICULARS', 'NARRATIVE', 'MERCHANT', 'PAYEE'],
