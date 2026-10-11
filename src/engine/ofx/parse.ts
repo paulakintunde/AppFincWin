@@ -167,6 +167,11 @@ function extractRow(
         if (found !== null) {
           foreign = found.foreign;
           if (orig === null) magnitude = found.chargedMagnitude;
+        } else if (orig === null) {
+          // Review ME-03: under CURRENCY, TRNAMT is in CURSYM. With no usable CURRATE or CURSYM
+          // there is no account-currency amount, so the row is blocked rather than imported at
+          // the foreign figure. TRNAMT stays as read and no foreign provenance is kept.
+          issues.push('bad-amount');
         }
       }
     }

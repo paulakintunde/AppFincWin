@@ -604,16 +604,40 @@ describe('parseOfx: CURRENCY / ORIGCURRENCY (IMP-05)', () => {
     expect(row.foreign).toMatchObject({ magnitude: 1000, currency: 'USD' });
   });
 
-  it('a missing or zero CURRATE parses exactly as before', () => {
-    for (const rate of ['<CURRATE>0', '']) {
-      const stmttrn = [
-        '<STMTTRN>', '<TRNTYPE>DEBIT', '<DTPOSTED>20260902', '<TRNAMT>-10.00', '<FITID>Z1', '<NAME>SHOP',
-        '<CURRENCY>', rate, '<CURSYM>USD', '</CURRENCY>', '</STMTTRN>',
-      ].join(String.fromCharCode(10));
-      const result = parseOfx(wrapBankStatement({ stmttrn }), fxOpts);
-      if (!result.ok) throw new Error('expected ok');
-      expect(result.drafts[0]!.rows[0]).toMatchObject({ magnitude: 1000, foreign: null });
-    }
+  // Review ME-03: under CURRENCY, TRNAMT is in CURSYM. Without a usable CURRATE there is no
+  // account-currency amount, so the row is blocked rather than imported at the foreign figure.
+  it.each(['<CURRATE>0', '', '<CURRATE>N/A', '<CURRATE>-1.2'])('CURRENCY with an unusable CURRATE %p blocks the row', (rate) => {
+    const stmttrn = [
+      '<STMTTRN>', '<TRNTYPE>DEBIT', '<DTPOSTED>20260902', '<TRNAMT>-10.00', '<FITID>Z1', '<NAME>SHOP',
+      '<CURRENCY>', rate, '<CURSYM>USD', '</CURRENCY>', '</STMTTRN>',
+    ].join(String.fromCharCode(10));
+    const result = parseOfx(wrapBankStatement({ stmttrn }), fxOpts);
+    if (!result.ok) throw new Error('expected ok');
+    const row = result.drafts[0]!.rows[0]!;
+    expect(row).toMatchObject({ magnitude: 1000, rawAmount: '-10.00', foreign: null });
+    expect(row.issues).toContain('bad-amount');
+  });
+
+  it('CURRENCY with an unknown CURSYM blocks the row too', () => {
+    const stmttrn = [
+      '<STMTTRN>', '<TRNTYPE>DEBIT', '<DTPOSTED>20260902', '<TRNAMT>-10.00', '<FITID>Z2', '<NAME>SHOP',
+      '<CURRENCY>', '<CURRATE>1.2', '<CURSYM>REF', '</CURRENCY>', '</STMTTRN>',
+    ].join(String.fromCharCode(10));
+    const result = parseOfx(wrapBankStatement({ stmttrn }), fxOpts);
+    if (!result.ok) throw new Error('expected ok');
+    expect(result.drafts[0]!.rows[0]!.issues).toContain('bad-amount');
+  });
+
+  it('ORIGCURRENCY with an unusable CURRATE keeps TRNAMT, drops the provenance and is not blocked', () => {
+    const stmttrn = [
+      '<STMTTRN>', '<TRNTYPE>DEBIT', '<DTPOSTED>20260902', '<TRNAMT>-10.00', '<FITID>Z3', '<NAME>SHOP',
+      '<ORIGCURRENCY>', '<CURRATE>N/A', '<CURSYM>USD', '</ORIGCURRENCY>', '</STMTTRN>',
+    ].join(String.fromCharCode(10));
+    const result = parseOfx(wrapBankStatement({ stmttrn }), fxOpts);
+    if (!result.ok) throw new Error('expected ok');
+    const row = result.drafts[0]!.rows[0]!;
+    expect(row).toMatchObject({ magnitude: 1000, foreign: null });
+    expect(row.issues).not.toContain('bad-amount');
   });
 });
 
