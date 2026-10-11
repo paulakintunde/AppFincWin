@@ -27,7 +27,18 @@ type ImportState = ReturnType<typeof useStatementImport>;
 const ISSUE_KEY: Partial<
   Record<
     DraftRowIssue,
-    'badDate' | 'badAmount' | 'zeroAmount' | 'emptyDescription' | 'unknownCurrency' | 'amountTooLarge' | 'conflictingMarkers' | 'badBalance'
+    | 'badDate'
+    | 'badAmount'
+    | 'zeroAmount'
+    | 'emptyDescription'
+    | 'unknownCurrency'
+    | 'amountTooLarge'
+    | 'conflictingMarkers'
+    | 'badBalance'
+    | 'pdfWrappedDescription'
+    | 'pdfNoDate'
+    | 'pdfAmbiguousColumn'
+    | 'pdfAmbiguousDate'
   >
 > = {
   'bad-date': 'badDate',
@@ -38,6 +49,11 @@ const ISSUE_KEY: Partial<
   'amount-too-large': 'amountTooLarge',
   'conflicting-markers': 'conflictingMarkers',
   'bad-balance': 'badBalance',
+  // Review LO-06: the PDF uncertainty codes (D-23) say what the reader was unsure of.
+  'pdf-wrapped-description': 'pdfWrappedDescription',
+  'pdf-no-date': 'pdfNoDate',
+  'pdf-ambiguous-column': 'pdfAmbiguousColumn',
+  'pdf-ambiguous-date': 'pdfAmbiguousDate',
 };
 
 function Reconciliation({ file }: { file: string | null }) {

@@ -943,6 +943,11 @@ const en = {
       amountTooLarge: 'Amount too large',
       conflictingMarkers: 'Amount shows two different signs',
       badBalance: 'Balance not recognised',
+      // Review LO-06: why a PDF row reads Can’t verify (declarative, D-23).
+      pdfWrappedDescription: 'Description runs over more than one line on the statement',
+      pdfNoDate: 'No date printed on this line; the date above it is used',
+      pdfAmbiguousColumn: 'A figure on this line sits outside a clear column',
+      pdfAmbiguousDate: 'Date reads more than one way, or falls outside the statement period',
     },
     ratesPending: 'Rates for older dates are still being fetched.',
     commit_one: 'Import {{count}} transaction',

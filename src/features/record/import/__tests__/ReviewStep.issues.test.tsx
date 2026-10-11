@@ -1,5 +1,6 @@
-// 02.1-04: PDF issue codes show no issue text; the "Can’t verify" tag carries them.
+// 02.1-04: PDF issue codes carry the "Can’t verify" tag; review LO-06 adds a line saying why.
 import React from 'react';
+import en from '@/i18n/locales/en';
 import { render, screen } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { ReviewStep } from '../ReviewStep';
@@ -138,7 +139,7 @@ function state(issues: string[]): ImportState {
 }
 
 describe('ReviewStep issue lines', () => {
-  it('a pdf code shows the Can’t verify tag and no issue text; a csv code still shows its text', async () => {
+  it('a pdf code shows the Can’t verify tag and its explanation; a csv code still shows its text', async () => {
     await render(
       <ThemeProvider>
         <ReviewStep state={state(['bad-balance', 'pdf-no-date'])} />
@@ -146,6 +147,36 @@ describe('ReviewStep issue lines', () => {
     );
     expect(screen.getByText('Can’t verify')).toBeTruthy();
     expect(screen.getByText('Balance not recognised')).toBeTruthy();
+    expect(screen.getByText(en.importCsv.issue.pdfNoDate)).toBeTruthy();
     expect(screen.queryByText(/pdf-no-date/)).toBeNull();
+  });
+
+  // Review LO-06: every PDF uncertainty code says what the reader was unsure of.
+  it.each([
+    ['pdf-wrapped-description', en.importCsv.issue.pdfWrappedDescription],
+    ['pdf-no-date', en.importCsv.issue.pdfNoDate],
+    ['pdf-ambiguous-column', en.importCsv.issue.pdfAmbiguousColumn],
+    ['pdf-ambiguous-date', en.importCsv.issue.pdfAmbiguousDate],
+  ])('%s is explained on the row', async (code, text) => {
+    await render(
+      <ThemeProvider>
+        <ReviewStep state={state([code])} />
+      </ThemeProvider>
+    );
+    expect(screen.getByText(text)).toBeTruthy();
+  });
+
+  it('the PDF explanations are declarative: no instruction, advice or "you should"', () => {
+    const texts = [
+      en.importCsv.issue.pdfWrappedDescription,
+      en.importCsv.issue.pdfNoDate,
+      en.importCsv.issue.pdfAmbiguousColumn,
+      en.importCsv.issue.pdfAmbiguousDate,
+    ];
+    for (const text of texts) {
+      expect(text).not.toMatch(/you|should|advice|recommend|please|check|make sure/i);
+      expect(text).not.toContain("'");
+      expect(text.trim().length).toBeGreaterThan(0);
+    }
   });
 });
