@@ -579,6 +579,53 @@ describe('parseOfx: no-leak', () => {
   });
 });
 
+describe('parseOfx: CURRENCY / ORIGCURRENCY (IMP-05)', () => {
+  const FX_EXPONENTS: Readonly<Record<string, number>> = { CAD: 2, USD: 2, JPY: 0 };
+  const fxOpts: ParseOfxOptions = { exponentFor: (code) => FX_EXPONENTS[code] ?? null };
+  const foreignFixture = (name: string): string =>
+    fs.readFileSync(path.join(__dirname, '..', '..', 'statement', '__tests__', 'fixtures', 'foreign', name), 'utf8');
+
+  it('card-origcurrency.ofx: TRNAMT stays the charged amount and the foreign amount is derived', () => {
+    const result = parseOfx(foreignFixture('card-origcurrency.ofx'), fxOpts);
+    if (!result.ok) throw new Error('expected ok');
+    const rows = result.drafts[0]!.rows;
+    expect(rows).toHaveLength(5);
+    expect(rows[1]).toMatchObject({ magnitude: 1392, marker: 'minus', rawAmount: '-13.92' });
+    expect(rows[1]!.foreign).toMatchObject({ magnitude: 1000, currency: 'USD' });
+    expect(rows[2]!.description).toBe('FOREIGN TRANSACTION FEE');
+    expect(rows.filter((_, i) => i !== 1).every((r) => r.foreign === null)).toBe(true);
+  });
+
+  it('card-currency.ofx: TRNAMT is foreign, the charged amount uses the statement CURRATE', () => {
+    const result = parseOfx(foreignFixture('card-currency.ofx'), fxOpts);
+    if (!result.ok) throw new Error('expected ok');
+    const row = result.drafts[0]!.rows[1]!;
+    expect(row).toMatchObject({ magnitude: 1392, marker: 'minus', rawAmount: '-10.00' });
+    expect(row.foreign).toMatchObject({ magnitude: 1000, currency: 'USD' });
+  });
+
+  it('a missing or zero CURRATE parses exactly as before', () => {
+    for (const rate of ['<CURRATE>0
+', '']) {
+      const xml = wrapBankStatement({
+        stmttrn: `<STMTTRN>
+<TRNTYPE>DEBIT
+<DTPOSTED>20260902
+<TRNAMT>-10.00
+<FITID>Z1
+<NAME>SHOP
+<CURRENCY>
+${rate}<CURSYM>USD
+</CURRENCY>
+</STMTTRN>`,
+      });
+      const result = parseOfx(xml, fxOpts);
+      if (!result.ok) throw new Error('expected ok');
+      expect(result.drafts[0]!.rows[0]).toMatchObject({ magnitude: 1000, foreign: null });
+    }
+  });
+});
+
 describe('barrel', () => {
   it('re-exports ofxLocalDate, parseOfxAmount and parseOfx alongside the 02-33 tokenizer/tree exports', () => {
     expect(ofxBarrel.ofxLocalDate).toBe(ofxLocalDate);
