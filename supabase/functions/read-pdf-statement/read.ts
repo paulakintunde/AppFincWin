@@ -62,11 +62,22 @@ export function normalizePage(
   return { n, width: round1(raw.width), height: round1(raw.height), items };
 }
 
+/**
+ * Review LO-02: the parse (open + every page) must finish inside this budget, well under the Edge
+ * runtime's limits, so a hostile or very complex file ends as 'unreadable' through the normal path
+ * and its upload is still removed in finally, rather than the isolate being killed first.
+ */
+export const PARSE_BUDGET_MS = 20_000;
+
+class ParseTimeout extends Error {
+  override name = 'ParseTimeout';
+}
+
 function fail(error: PdfReadError, pageCount?: number): PdfReadResponse {
   return pageCount === undefined ? { ok: false, error } : { ok: false, error, pageCount };
 }
 
-export async function readStatement(deps: ReadDeps, body: unknown): Promise<ReadResult> {
+export async function readStatement(deps: ReadDeps, body: unknown, budgetMs: number = PARSE_BUDGET_MS): Promise<ReadResult> {
   const started = deps.now();
   const rec = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : null;
   const path = rec !== null && typeof rec.path === 'string' ? rec.path : '';
@@ -95,7 +106,7 @@ export async function readStatement(deps: ReadDeps, body: unknown): Promise<Read
   let byteSize: number | null = null;
   let errorClass: ErrorClass | null = null;
   let removed = false;
-  let doc: PdfDoc | null = null;
+  let doc = null as PdfDoc | null; // assigned inside the budgeted parse closure, so not narrowed to null
   let stage: 'storage' | 'parse' = 'storage';
   try {
     const bytes = await deps.download(path);
@@ -107,32 +118,45 @@ export async function readStatement(deps: ReadDeps, body: unknown): Promise<Read
         response = fail('too-large');
       } else {
         stage = 'parse';
-        const opened = await deps.openPdf(bytes, password);
-        if (opened.kind === 'password-required') response = fail('password-required');
-        else if (opened.kind === 'password-incorrect') response = fail('password-incorrect');
-        else if (opened.kind === 'invalid') response = fail('unreadable');
-        else {
+        let timedOut = false;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const parse = async (): Promise<PdfReadResponse> => {
+          const opened = await deps.openPdf(bytes, password);
+          if (opened.kind === 'password-required') return fail('password-required');
+          if (opened.kind === 'password-incorrect') return fail('password-incorrect');
+          if (opened.kind === 'invalid') return fail('unreadable');
+          if (timedOut) {
+            // The budget already ran out and finally has run: release the late document here.
+            await opened.doc.destroy().catch(() => undefined);
+            throw new ParseTimeout();
+          }
           doc = opened.doc;
           pageCount = doc.numPages;
-          if (doc.numPages > PDF_MAX_PAGES) {
-            response = fail('too-many-pages', doc.numPages);
-          } else {
-            const pages: PdfPageText[] = [];
-            let total = 0;
-            let overflow = false;
-            for (let n = 1; n <= doc.numPages; n++) {
-              const page = normalizePage(n, await doc.page(n));
-              total += page.items.length;
-              if (total > PDF_MAX_ITEMS) {
-                overflow = true;
-                break;
-              }
-              pages.push(page);
-            }
-            if (overflow) response = fail('unreadable', doc.numPages);
-            else if (total === 0) response = fail('no-text-layer', doc.numPages);
-            else response = { ok: true, pageCount: doc.numPages, pages };
+          if (doc.numPages > PDF_MAX_PAGES) return fail('too-many-pages', doc.numPages);
+          const pages: PdfPageText[] = [];
+          let total = 0;
+          for (let n = 1; n <= doc.numPages; n++) {
+            if (timedOut) throw new ParseTimeout();
+            const page = normalizePage(n, await doc.page(n));
+            total += page.items.length;
+            if (total > PDF_MAX_ITEMS) return fail('unreadable', doc.numPages);
+            pages.push(page);
           }
+          if (total === 0) return fail('no-text-layer', doc.numPages);
+          return { ok: true, pageCount: doc.numPages, pages };
+        };
+        const budget = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            timedOut = true;
+            reject(new ParseTimeout());
+          }, budgetMs);
+        });
+        const parsing = parse();
+        parsing.catch(() => undefined); // a late failure after the budget has nowhere to go
+        try {
+          response = await Promise.race([parsing, budget]);
+        } finally {
+          clearTimeout(timer);
         }
       }
     }

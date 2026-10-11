@@ -1,4 +1,4 @@
-import { readStatement, normalizePage, type PdfDoc, type PdfOpenResult, type ReadDeps } from './read';
+import { readStatement, normalizePage, PARSE_BUDGET_MS, type PdfDoc, type PdfOpenResult, type ReadDeps } from './read';
 import { PDF_MAX_BYTES, PDF_MAX_ITEMS } from './contract';
 
 const UID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -231,6 +231,58 @@ describe('readStatement outcomes', () => {
     const p = JSON.parse(logs[0]);
     expect(Object.keys(p)).toEqual(['fn', 'outcome', 'durationMs', 'pageCount', 'byteSize', 'removed', 'errorClass']);
     expect(p).toMatchObject({ outcome: 'ok', pageCount: 1, byteSize: 10, removed: true, errorClass: null });
+  });
+});
+
+// Review LO-02: a parse that runs past the budget ends as 'unreadable' and the upload is still removed.
+describe('readStatement parse budget', () => {
+  it('uses a 20 s default budget', () => {
+    expect(PARSE_BUDGET_MS).toBe(20_000);
+  });
+
+  it('an open that never finishes is unreadable within the budget, and the file is removed', async () => {
+    const { deps, logs } = mkDeps();
+    deps.openPdf.mockImplementation(() => new Promise<PdfOpenResult>(() => undefined));
+    const r = await readStatement(deps, { path: PATH }, 10);
+    expect(r).toEqual({ status: 200, body: { ok: false, error: 'unreadable' } });
+    expect(deps.remove).toHaveBeenCalledWith(PATH);
+    const line = JSON.parse(logs[0]!) as Record<string, unknown>;
+    expect(line).toMatchObject({ outcome: 'unreadable', removed: true, errorClass: 'ParseTimeout' });
+  });
+
+  it('a page read that stalls is unreadable, the document is destroyed and the file removed', async () => {
+    const doc = mkDoc(2, () => new Promise<Page>(() => undefined));
+    const { deps, logs } = mkDeps({ open: { kind: 'ok', doc } });
+    const r = await readStatement(deps, { path: PATH }, 10);
+    expect(r.body).toEqual({ ok: false, error: 'unreadable', pageCount: 2 });
+    expect(doc.destroy).toHaveBeenCalled();
+    expect(deps.remove).toHaveBeenCalledWith(PATH);
+    expect(JSON.parse(logs[0]!)).toMatchObject({ errorClass: 'ParseTimeout', removed: true });
+  });
+
+  it('a document that opens after the budget is released and never read', async () => {
+    let finishOpen: (v: PdfOpenResult) => void = () => undefined;
+    const doc = mkDoc([textPage]);
+    const { deps } = mkDeps();
+    deps.openPdf.mockImplementation(() => new Promise<PdfOpenResult>((res) => (finishOpen = res)));
+    const r = await readStatement(deps, { path: PATH }, 10);
+    expect(r.body).toEqual({ ok: false, error: 'unreadable' });
+    finishOpen({ kind: 'ok', doc });
+    await new Promise((res) => setTimeout(res, 0));
+    expect(doc.destroy).toHaveBeenCalled();
+    expect(doc.page).not.toHaveBeenCalled();
+  });
+
+  it('a page loop that sees the budget gone stops before the next page', async () => {
+    let release: () => void = () => undefined;
+    const pages = [textPage, textPage];
+    const doc = mkDoc(2, (n) => (n === 1 ? new Promise<Page>((res) => (release = () => res(pages[0]!))) : Promise.resolve(pages[1]!)));
+    const { deps } = mkDeps({ open: { kind: 'ok', doc } });
+    const r = await readStatement(deps, { path: PATH }, 10);
+    expect(r.body).toEqual({ ok: false, error: 'unreadable', pageCount: 2 });
+    release();
+    await new Promise((res) => setTimeout(res, 0));
+    expect(doc.page).toHaveBeenCalledTimes(1);
   });
 });
 

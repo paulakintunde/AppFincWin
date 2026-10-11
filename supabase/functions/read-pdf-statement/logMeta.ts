@@ -14,6 +14,7 @@ export const ERROR_CLASSES = [
   'UnknownErrorException',
   'AbortException',
   'StorageError',
+  'ParseTimeout',
   'Other',
 ] as const;
 export type ErrorClass = (typeof ERROR_CLASSES)[number];
