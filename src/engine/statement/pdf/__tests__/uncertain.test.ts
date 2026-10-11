@@ -1,6 +1,7 @@
 import fc from 'fast-check';
 import type { DraftRowIssue } from '../../types';
 import type { ReconcileResult, RowCheck } from '../../reconcile';
+import * as pdf from '..';
 import { PDF_UNCERTAIN_ISSUES, applyUncertainRows, isUncertainIssue } from '../uncertain';
 
 const rowsOf = (...issues: DraftRowIssue[][]) => issues.map((i) => ({ issues: i }));
@@ -10,6 +11,18 @@ const result = (rows: RowCheck[], file: ReconcileResult['file']): ReconcileResul
   file,
   verifiedLinks: 3,
   failedLinks: 1,
+});
+
+describe('pdf barrel', () => {
+  it('exposes the mirrored contract limits', () => {
+    expect(pdf.PDF_MAX_PAGES).toBe(25);
+    expect(pdf.PDF_MAX_BYTES).toBe(10485760);
+    expect(pdf.PDF_MAX_ITEMS).toBe(60000);
+    expect(pdf.PDF_MAX_ITEM_CHARS).toBe(200);
+    expect(pdf.PDF_PASSWORD_MAX).toBe(256);
+    expect(pdf.STATEMENT_BUCKET).toBe('statement-uploads');
+    expect(pdf.applyUncertainRows).toBe(applyUncertainRows);
+  });
 });
 
 describe('isUncertainIssue', () => {
@@ -48,6 +61,11 @@ describe('applyUncertainRows', () => {
     const out = applyUncertainRows(input, rowsOf(['bad-balance'], []));
     expect(out).toEqual(input);
     expect(out.file).toBe('all-verified');
+  });
+
+  it('treats rows missing from the issue list as clean', () => {
+    const input = result(['verified', 'verified'], 'all-verified');
+    expect(applyUncertainRows(input, rowsOf([]))).toEqual(input);
   });
 
   it('property: uncertain rows are always cannot-verify and verified never grows', () => {

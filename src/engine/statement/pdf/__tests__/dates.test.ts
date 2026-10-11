@@ -11,7 +11,7 @@ describe('parsePdfDate', () => {
     ['Mar 4, 2026', named(2026, 3, 4)],
     ['04-Mar-2026', named(2026, 3, 4)],
     ['Sept 30', named(null, 9, 30)],
-    ['  4.  Mar  ', named(null, 3, 4)],
+    ['  4  Mar.  ', named(null, 3, 4)],
     ['29 Feb', named(null, 2, 29)],
     ['2026-03-14', { kind: 'iso', parts: { y: 2026, m: 3, d: 14 } }],
     ['2026/3/4', { kind: 'iso', parts: { y: 2026, m: 3, d: 4 } }],
@@ -195,6 +195,7 @@ describe('assignYears without a period', () => {
     const out = assignYears(
       [
         { y: 2025, m: 11, d: 30 },
+        null,
         { y: null, m: 12, d: 15 },
         { y: null, m: 1, d: 2 },
         { y: 2027, m: 2, d: 2 },
@@ -203,7 +204,7 @@ describe('assignYears without a period', () => {
       noPeriod,
       opts
     );
-    expect(out.dates).toEqual(['2025-11-30', '2025-12-15', '2026-01-02', '2027-02-02', '2027-02-05']);
+    expect(out.dates).toEqual(['2025-11-30', null, '2025-12-15', '2026-01-02', '2027-02-02', '2027-02-05']);
   });
 
   it('walks forward newest-first (month rises by six or more)', () => {
