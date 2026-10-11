@@ -493,6 +493,98 @@ describe('useImportCommit', () => {
     );
   });
 
+  const feeMarkPaid = () => [
+    {
+      pendingId: 'p1',
+      expectedVersion: 2,
+      before: { status: 'pending' as const, local_date: '2026-09-03', original_amount: -3538 },
+      patch: { status: 'paid' as const, local_date: '2026-09-04', original_amount: -3538 },
+      line: newTx('line-p1', { local_date: '2026-09-04', original_amount: -3538, original_currency: 'GBP', stmt_orig_amount: -4500, stmt_orig_currency: 'USD' }),
+      feeLines: [newTx('fee-1', { local_date: '2026-09-04', original_amount: -97, original_currency: 'GBP', fx_fee_of: 'p1' })],
+    },
+  ];
+  const upsertIds = (fake: FakeSupabase) =>
+    fake.calls
+      .filter((c) => c.table === 'transactions' && c.method === 'upsert')
+      .flatMap((c) => (c.args[0] as { id: string }[]).map((r) => r.id));
+
+  it('undo of an import with a kept mark-paid also removes its fee line', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: { status: 'applied', rows: [{ entity: 'transactions', id: 'p1', version: 3 }] }, error: null, status: 200 });
+    fake.respondWith({ data: [{ id: 'fee-1', local_date: '2026-09-04', version: 1, rate_pending: false }], error: null, status: 201 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useImportCommit(), { wrapper: wrapper(qc) });
+    result.current.commit(baseInput({ markPaid: feeMarkPaid() }));
+
+    await waitFor(() => expect(upsertIds(fake)).toEqual(['fee-1']));
+    const rpc = fake.calls.find((c) => c.method === 'rpc');
+    const [, args] = rpc?.args as [string, { p_undo_step: { label_params: { n: number }; ops: { id: string; patch: unknown }[] } }];
+    expect(args.p_undo_step.label_params).toEqual({ n: 4 }); // 2 inserted + 1 mark-paid + 1 fee
+    expect(args.p_undo_step.ops).toContainEqual({ entity: 'transactions', id: 'fee-1', expectedVersion: 1, patch: { deleted_at: '$now' } });
+    expect(args.p_undo_step.ops).toContainEqual(expect.objectContaining({ id: 'p1', patch: { status: 'pending', local_date: '2026-09-03', original_amount: -3538 } }));
+    // The fee is inserted pointing at the pending line, which keeps no statement figures (D-36).
+    const upsert = fake.calls.find((c) => c.table === 'transactions' && c.method === 'upsert');
+    expect((upsert?.args[0] as { fx_fee_of: string }[])[0]?.fx_fee_of).toBe('p1');
+  });
+
+  it('a set-aside mark-paid keeps its statement figures and its fee re-points to the fallback line', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({
+      data: {
+        status: 'conflict',
+        conflict: { entity: 'transactions', id: 'p1', updated_by: 'Sam', record_name: 'Shop', builtin_key: null, reason: 'changed' },
+      },
+      error: null,
+      status: 200,
+    });
+    fake.respondWith({ data: [], error: null, status: 200 }); // step not already recorded
+    fake.respondWith({ data: [{ id: 'line-p1', local_date: '2026-09-04', version: 1, rate_pending: false }, { id: 'fee-1', local_date: '2026-09-04', version: 1, rate_pending: false }], error: null, status: 201 });
+
+    const qc = newClient();
+    const { result } = await renderHook(() => useImportCommit(), { wrapper: wrapper(qc) });
+    result.current.commit(baseInput({ markPaid: feeMarkPaid() }));
+
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(1));
+    const upserts = fake.calls.filter((c) => c.table === 'transactions' && c.method === 'upsert').flatMap((c) => c.args[0] as Record<string, unknown>[]);
+    expect(upserts.find((r) => r.id === 'line-p1')).toMatchObject({ stmt_orig_amount: -4500, stmt_orig_currency: 'USD' });
+    expect(upserts.find((r) => r.id === 'fee-1')).toMatchObject({ fx_fee_of: 'line-p1' });
+    expect(upserts.filter((r) => r.id === 'fee-1')).toHaveLength(1);
+    // The undo step (items.length === 0 path) covers both lines; n counts the fee once.
+    const stepInsert = fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
+    const step = stepInsert?.args[0] as { label_params: { n: number }; ops: { id: string }[] };
+    expect(step.label_params).toEqual({ n: 4 });
+    expect(step.ops.map((o) => o.id)).toEqual(expect.arrayContaining(['line-p1', 'fee-1']));
+  });
+
+  it('a retried finalize after a recorded step still inserts the held fee line once', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({
+      data: { status: 'conflict', conflict: { entity: 'transactions', id: 'p1', updated_by: null, record_name: null, builtin_key: null, reason: 'changed' } },
+      error: null,
+      status: 200,
+    });
+    fake.respondWith({
+      data: [{ id: 'step-1', owner_id: 'user-1', label_key: 'imported', label_params: { n: 4 }, status: 'available', refusal: null, created_at: '2026-09-28T10:00:00+00:00', resolved_at: null }],
+      error: null,
+      status: 200,
+    });
+    fake.respondWith({ data: [{ id: 'fee-1', local_date: '2026-09-04', version: 1, rate_pending: false }], error: null, status: 201 });
+
+    const qc = newClient();
+    const invalidateSpy = jest.spyOn(qc, 'invalidateQueries');
+    const { result } = await renderHook(() => useImportCommit(), { wrapper: wrapper(qc) });
+    result.current.commit(baseInput({ markPaid: feeMarkPaid() }));
+
+    await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.undoLog('user-1') }));
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+    expect(upsertIds(fake)).toEqual(['fee-1']);
+    expect(fake.calls.some((c) => c.table === 'undo_log' && c.method === 'insert')).toBe(false);
+  });
+
   it('C-CR-01: a link to a row whose chunk was rejected (not-found) is set aside; the mark-paid still applies', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;

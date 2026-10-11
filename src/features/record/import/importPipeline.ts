@@ -26,6 +26,7 @@ import {
   decodeText,
   findDuplicates,
   inferProfile,
+  linkFxFees,
   matchRefunds,
   applyUncertainRows,
   pdfToDrafts,
@@ -379,6 +380,10 @@ export interface PreviewRow {
   payMatch: { pendingId: string; automatic: boolean } | null;
   /** D-07: a suggestion only, applied on insert when accepted; never changes anything unasked. */
   refund: { purchaseId: string; merchant: string; categoryId: string | null } | null;
+  /** IMP-05 / D-30: the statement's own foreign original, signed like the amount (provenance only). */
+  foreign: { amount: MinorUnits; currency: string } | null;
+  /** D-32: index of the purchase this separate FX fee line belongs to, when unambiguous. */
+  feeOf: number | null;
 }
 
 export interface Preview {
@@ -540,6 +545,19 @@ export function buildPreview(input: PreviewInput): Preview {
 
   const guessContext = { keywordRules: DEFAULT_KEYWORD_RULES, learned: input.learned, builtinIds: input.builtinIds };
 
+  // D-32: link separate FX fee lines to their purchase; locked and duplicate rows are never targets.
+  const feeLinks = linkFxFees(
+    converted.rows
+      .filter((r) => blocked.get(r.index) !== true && !duplicates.has(r.index))
+      .map((r) => ({
+        index: r.index,
+        localDate: r.localDate,
+        description: r.description,
+        amount: r.amount,
+        hasForeign: (r.foreign ?? null) !== null,
+      }))
+  );
+
   const rows: PreviewRow[] = converted.rows.map((r, position) => {
     const locked = blocked.get(r.index) === true;
     const duplicate = duplicates.get(r.index) ?? null;
@@ -558,6 +576,8 @@ export function buildPreview(input: PreviewInput): Preview {
       transfer: transfers.get(r.index) ?? null,
       payMatch: pay === undefined ? null : { pendingId: pay.pendingId, automatic: pay.automatic },
       refund: refund === undefined ? null : { purchaseId: refund.purchaseId, merchant: refund.merchant, categoryId: refund.categoryId },
+      foreign: r.foreign ?? null,
+      feeOf: feeLinks.get(r.index) ?? null,
     };
   });
 
@@ -629,6 +649,8 @@ export function toImportCommit(
   const usedPending = new Set<string>();
   const importFormat = preview.format === 'pdf' ? 'pdf' : preview.format === 'csv' ? 'csv' : 'ofx'; // QFX is OFX (D-39)
   const canTransfer = ctx.transferCategoryId !== null;
+  const committedByIndex = new Map<number, NewTransaction>();
+  const markPaidByIndex = new Map<number, ImportMarkPaid>();
 
   for (const pr of preview.rows) {
     const c = pr.converted;
@@ -654,6 +676,14 @@ export function toImportCommit(
       import_format: importFormat,
     };
 
+    // D-34 (IMP-05): the statement's own conversion, sent only when it satisfies the DB shape
+    // check (currency differs, same sign). It is set before any branch so a mark-paid fallback
+    // line carries it too; the mark-paid PATCH never does (apply_patches refuses these columns).
+    if (pr.foreign !== null && pr.foreign.currency !== c.currency && Math.sign(pr.foreign.amount) === Math.sign(c.amount)) {
+      row.stmt_orig_amount = pr.foreign.amount;
+      row.stmt_orig_currency = pr.foreign.currency;
+    }
+
     // D-07: an accepted refund is set on the inserted row itself (so it adds no undo ops) and
     // takes the purchase's category; it is never income (D-03).
     if (decisions.refunds?.has(pr.index) === true && pr.refund !== null && c.amount > 0 && pr.transfer === null) {
@@ -673,6 +703,7 @@ export function toImportCommit(
           patch: { status: 'paid', local_date: c.localDate, original_amount: c.amount },
           line: row,
         });
+        markPaidByIndex.set(pr.index, markPaid[markPaid.length - 1] as ImportMarkPaid);
         continue;
       }
     }
@@ -681,7 +712,9 @@ export function toImportCommit(
     if (orphan !== undefined && pr.transfer?.kind === 'orphan' && ctx.transferCategoryId !== null) {
       const counter = counterLeg(row, c.currency, orphan, ctx, newId, batchId);
       if (counter !== null) {
-        rows.push({ ...row, category_id: ctx.transferCategoryId, transfer_id: counter.transferId }, counter.row);
+        const leg = { ...row, category_id: ctx.transferCategoryId, transfer_id: counter.transferId };
+        rows.push(leg, counter.row);
+        committedByIndex.set(pr.index, leg);
         continue;
       }
     }
@@ -705,10 +738,33 @@ export function toImportCommit(
     }
 
     rows.push(row);
+    committedByIndex.set(pr.index, row);
   }
 
+  // D-32: a fee commits linked to its purchase only when the preview linked them. A purchase
+  // that marked a pending bill paid gets the fee held back (feeLines) so finalize points it at
+  // the pending line, or at the fallback line if that mark-paid is set aside.
+  const heldFees = new Set<NewTransaction>();
+  for (const pr of preview.rows) {
+    if (pr.feeOf === null) continue;
+    const fee = committedByIndex.get(pr.index);
+    if (fee === undefined) continue; // not committed, or itself a mark-paid: stays unlinked
+    const purchase = committedByIndex.get(pr.feeOf);
+    if (purchase !== undefined) {
+      fee.fx_fee_of = purchase.id;
+      continue;
+    }
+    const entry = markPaidByIndex.get(pr.feeOf);
+    if (entry !== undefined) {
+      fee.fx_fee_of = entry.pendingId;
+      (entry.feeLines ??= []).push(fee);
+      heldFees.add(fee);
+    }
+  }
+  const committedRows = heldFees.size === 0 ? rows : rows.filter((r) => !heldFees.has(r));
+
   return {
-    rows,
+    rows: committedRows,
     finalize: {
       transferCategoryId: ctx.transferCategoryId,
       links,
