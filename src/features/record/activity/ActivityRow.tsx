@@ -141,6 +141,11 @@ export function ActivityRow({
   const meta = metaParts.filter((p) => p !== '').join(' · ');
 
   const amountText = formatter.formatMoney(money(row.original_amount, row.original_currency));
+  // D-33: what the statement showed in the foreign currency, unsigned; stored figures only (D-31).
+  const stmtText =
+    !isTransfer && row.stmt_orig_amount != null && row.stmt_orig_currency != null
+      ? formatter.formatMoney(money(Math.abs(row.stmt_orig_amount), row.stmt_orig_currency))
+      : null;
   const showHome = !isTransfer && row.original_currency !== homeCurrency && row.amountHome !== null;
   const homeText = showHome ? formatter.formatMoney(money(row.amountHome as number, homeCurrency)) : null;
   // Refunds never count as income (D-03): flowOf says 'out'. They still show a leading '+' in
@@ -166,7 +171,8 @@ export function ActivityRow({
     isRefund ? t('activity.tag.refund') : null,
     notCounted ? t('activity.balance.notCountedA11y') : null,
   ];
-  const spoken = [name, amountText, homeText, ...tagTexts].filter((p): p is string => p !== null && p !== '').join(', ');
+  const stmtSpoken = stmtText === null ? null : t('activity.row.foreignA11y', { amount: stmtText });
+  const spoken = [name, amountText, stmtSpoken, homeText, ...tagTexts].filter((p): p is string => p !== null && p !== '').join(', ');
 
   const onRowPress = () => (selectable ? onToggleSelect?.(row) : onPress(row));
 
@@ -242,6 +248,9 @@ export function ActivityRow({
           style={styles.amountPress}
         >
           <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: figureColor }}>{amountShown}</Text>
+          {stmtText !== null ? (
+            <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{stmtText}</Text>
+          ) : null}
           {homeText !== null ? (
             <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{homeText}</Text>
           ) : null}

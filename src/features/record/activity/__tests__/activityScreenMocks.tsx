@@ -17,6 +17,7 @@ jest.mock('@/data/mutations/cloneMonth', () => ({ useCloneMonth: () => ({ clone:
 jest.mock('@/data/mutations/transfers', () => ({ useDeleteTransfer: () => ({ remove: (...a: unknown[]) => (mockScreen.removeTransfer as (...x: unknown[]) => string)(...a) }) }));
 jest.mock('@/data/mutations/recurringSeries', () => ({ useEndSeries: () => ({ end: (...a: unknown[]) => (mockScreen.end as (...x: unknown[]) => string)(...a) }) }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [] }) }));
+jest.mock('@/data/queries/transactions', () => ({ useLinkedFees: () => ({ data: [] }) }));
 jest.mock('@/data/queries/offers', () => ({
   useSeriesOffers: () => ({ offers: mockScreen.offers, rowsById: new Map(), isLoading: false }),
 }));
