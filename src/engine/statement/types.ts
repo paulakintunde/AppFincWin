@@ -11,7 +11,7 @@
  */
 import type { AmountMarker, MinorUnits } from '../money';
 
-export type ImportSource = 'csv' | 'ofx'; // QFX is 'ofx' (D-39); the 'qfx' literal exists only in analytics
+export type ImportSource = 'csv' | 'ofx' | 'pdf'; // QFX is 'ofx' (D-39); the 'qfx' literal exists only in analytics
 
 export type AccountKind = 'cash' | 'checking' | 'savings' | 'credit' | 'investment' | 'loan' | 'other';
 export type AccountFamily = 'deposit' | 'card' | 'loan';
@@ -30,7 +30,12 @@ export type DraftRowIssue =
   | 'unknown-currency'
   | 'amount-too-large'
   | 'conflicting-markers'
-  | 'bad-balance';
+  | 'bad-balance'
+  // D-23: rows the PDF reader isn't sure of; never blocking, always reviewed
+  | 'pdf-wrapped-description'
+  | 'pdf-no-date'
+  | 'pdf-ambiguous-column'
+  | 'pdf-ambiguous-date';
 
 export interface DraftRow {
   index: number; // 0-based, file order, after summary lines are removed

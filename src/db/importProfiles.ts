@@ -22,7 +22,7 @@ const UNIQUE_VIOLATION = '23505';
 
 const ENTITY = 'import_profiles' as const;
 
-const SOURCES: readonly ImportSource[] = ['csv', 'ofx'];
+const SOURCES: readonly ImportSource[] = ['csv', 'ofx', 'pdf'];
 const ACCOUNT_FAMILIES: readonly AccountFamily[] = ['deposit', 'card', 'loan'];
 const POSITIVE_MEANS: readonly FormatProfile['positiveMeans'][] = ['money-in', 'money-spent'];
 const BALANCE_MEANS: readonly FormatProfile['balanceMeans'][] = ['held', 'owed', 'available', 'none'];
