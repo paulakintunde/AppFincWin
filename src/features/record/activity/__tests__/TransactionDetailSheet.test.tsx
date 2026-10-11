@@ -160,6 +160,16 @@ describe('TransactionDetailSheet', () => {
       expect(screen.getByText(/\$10\.00 · charged CA\$13\.92 at 1\.392/)).toBeTruthy();
       expect(screen.getByText(/at 1 CAD = 0\.6800 EUR/)).toBeTruthy();
     });
+    // Review ME-01 / IN-01: an unexpected stored code never crashes the sheet, and an unknown code
+    // has no implied rate rather than a guessed scale.
+    it.each(['AB', 'XY12'])('a stored statement currency %p shows code and number with no rate', async (code) => {
+      const { screen } = await renderSheet(stmt({ stmt_orig_currency: code }));
+      expect(screen.getByText(`${code} 10.00 · charged CA$13.92`)).toBeTruthy();
+    });
+    it('a well-formed but unknown code has no implied rate', async () => {
+      const { screen } = await renderSheet(stmt({ stmt_orig_currency: 'REF' }));
+      expect(screen.queryByText(/ at /)).toBeNull();
+    });
     it('shows a linked bank fee', async () => {
       mockFees = [{ id: 'f1', original_amount: -42, original_currency: 'CAD' }];
       const { screen } = await renderSheet(stmt());

@@ -11,6 +11,7 @@ import { money } from '@/engine/money';
 import { localDateIn } from '@/engine/time';
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import type { CardPositionOf } from './activitySections';
+import { formatStatementMoney } from './statementMoney';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -144,7 +145,7 @@ export function ActivityRow({
   // D-33: what the statement showed in the foreign currency, unsigned; stored figures only (D-31).
   const stmtText =
     !isTransfer && row.stmt_orig_amount != null && row.stmt_orig_currency != null
-      ? formatter.formatMoney(money(Math.abs(row.stmt_orig_amount), row.stmt_orig_currency))
+      ? formatStatementMoney(formatter, Math.abs(row.stmt_orig_amount), row.stmt_orig_currency)
       : null;
   const showHome = !isTransfer && row.original_currency !== homeCurrency && row.amountHome !== null;
   const homeText = showHome ? formatter.formatMoney(money(row.amountHome as number, homeCurrency)) : null;

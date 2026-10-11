@@ -97,6 +97,14 @@ describe('ActivityRow statement foreign line (D-33)', () => {
     const { screen } = await renderRow(row({}));
     expect(screen.queryByLabelText(/originally/)).toBeNull();
   });
+
+  // Review ME-01: a code Intl cannot format never crashes the list; it reads as code + plain number.
+  it.each(['AB', 'XY12', 'usd'])('a stored statement currency %p renders as code and number, without throwing', async (code) => {
+    const { screen } = await renderRow(
+      row({ original_amount: -3538, stmt_orig_amount: -4500, stmt_orig_currency: code, conversion_source: 'statement' } as Partial<ActivityRowView>)
+    );
+    expect(screen.getByText(`${code} 45.00`, { includeHiddenElements: true })).toBeTruthy();
+  });
 });
 
 const flat = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;

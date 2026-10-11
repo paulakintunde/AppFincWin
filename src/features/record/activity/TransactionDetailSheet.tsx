@@ -9,7 +9,7 @@ import { useCategoryLookup } from '@/data/queries/categories';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useLinkedFees } from '@/data/queries/transactions';
 import { flowOf, rowTag } from '@/engine/activity';
-import { money, resolveExponent } from '@/engine/money';
+import { currencyExponent, knownCurrencyExponent, money } from '@/engine/money';
 import { impliedRate } from '@/engine/statement';
 import { categoryName } from '@/features/record/categoryName';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -24,6 +24,7 @@ import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Pill } from '@/ui/Pill';
 import { RateAttribution } from '@/ui/RateAttribution';
 import { detailRowsFor, statusActionFor } from './detailRows';
+import { formatStatementMoney } from './statementMoney';
 
 export interface TransactionDetailSheetProps {
   row: ActivityRowView | null;
@@ -34,15 +35,6 @@ export interface TransactionDetailSheetProps {
   onEdit: () => void;
   onClone: () => void;
   onDelete: () => void;
-}
-
-/** The currency's minor-unit exponent, or null for a code the engine does not know (never guessed). */
-function exponentOf(code: string): number | null {
-  try {
-    return resolveExponent(code);
-  } catch {
-    return null;
-  }
 }
 
 export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatus, onEdit, onClone, onDelete }: TransactionDetailSheetProps) {
@@ -104,11 +96,13 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
   let statementLine: string | null = null;
   if (hasStatement) {
     const origMag = Math.abs(row.stmt_orig_amount as number);
-    const original = formatter.formatMoney(money(origMag, row.stmt_orig_currency as string));
+    const original = formatStatementMoney(formatter, origMag, row.stmt_orig_currency as string);
     const chargedMag = Math.abs(row.original_amount);
     const charged = formatter.formatMoney(money(chargedMag, row.original_currency));
-    const chargedExp = exponentOf(row.original_currency);
-    const foreignExp = exponentOf(row.stmt_orig_currency as string);
+    // Review IN-01: the account currency is always one the app holds; the statement's code gets an
+    // implied rate only when it is a currency the app knows, never a guessed scale.
+    const chargedExp = knownCurrencyExponent(row.original_currency) ?? currencyExponent(row.original_currency);
+    const foreignExp = knownCurrencyExponent(row.stmt_orig_currency as string);
     statementLine =
       chargedExp === null || foreignExp === null
         ? t('activity.detail.statementConversionNoRate', { original, charged })
