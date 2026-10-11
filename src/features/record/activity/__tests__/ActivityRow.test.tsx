@@ -83,6 +83,22 @@ async function renderRow(
   return { screen, onMarkPaid };
 }
 
+describe('ActivityRow statement foreign line (D-33)', () => {
+  const stmtRow = () =>
+    row({ original_amount: -3538, stmt_orig_amount: -4500, stmt_orig_currency: 'USD', conversion_source: 'statement' } as Partial<ActivityRowView>);
+
+  it('shows the unsigned foreign amount and speaks it', async () => {
+    const { screen } = await renderRow(stmtRow());
+    expect(screen.getByText('£45.00', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByLabelText(/originally £45\.00/)).toBeTruthy();
+  });
+
+  it('shows nothing extra for a line without statement figures', async () => {
+    const { screen } = await renderRow(row({}));
+    expect(screen.queryByLabelText(/originally/)).toBeNull();
+  });
+});
+
 const flat = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
 
 describe('ActivityRow card styling (02-polish item 2)', () => {

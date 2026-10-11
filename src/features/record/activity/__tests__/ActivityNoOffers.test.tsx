@@ -31,6 +31,7 @@ jest.mock('@/data/mutations/recurringSeries', () => ({ useEndSeries: () => ({ en
 jest.mock('@/data/mutations/markMonthly', () => ({ useMarkMonthly: () => ({ markAll: jest.fn(), markOne: jest.fn() }) }));
 jest.mock('@/data/mutations/dismissedOffers', () => ({ useDismissOffers: () => ({ dismiss: jest.fn() }) }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [] }) }));
+jest.mock('@/data/queries/transactions', () => ({ useLinkedFees: () => ({ data: [] }) }));
 jest.mock('@/data/queries/offers', () => ({
   useSeriesOffers: () => ({ offers: [], rowsById: new Map(), isLoading: false }),
 }));
