@@ -513,6 +513,9 @@ const en = {
       a11yDelete: 'Delete',
       a11yOpen: 'Open details',
     },
+    row: {
+      foreignA11y: 'originally {{amount}}',
+    },
     detail: {
       status: 'Status',
       paidFrom: 'Paid from',
@@ -529,6 +532,10 @@ const en = {
       note: 'Note',
       empty: '—',
       fxNote: '{{native}} at {{unit}} = {{rate}}',
+      statementConversion: '{{original}} · charged {{charged}} at {{rate}}',
+      statementConversionNoRate: '{{original}} · charged {{charged}}',
+      statementConversionNote: 'Converted by your bank, as shown on the statement.',
+      statementFee: 'Bank fee {{fee}}',
       markPaid: 'Mark as paid',
       markReceived: 'Mark as received',
       markPending: 'Mark as pending',

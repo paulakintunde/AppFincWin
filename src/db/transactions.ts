@@ -389,6 +389,23 @@ export async function fetchTransferLegs(
 }
 
 /**
+ * D-32: the fee lines linked to one purchase (fx_fee_of = id), for the detail sheet. fx_fee_of
+ * has no FK, so a missing purchase simply yields no rows. Read through the RLS-scoped active view
+ * with a household filter.
+ */
+export async function fetchLinkedFees(client: DbClient, householdId: string, transactionId: string): Promise<TransactionRow[]> {
+  const { data, error, status } = await client
+    .from(ACTIVE_VIEW)
+    .select(TRANSACTION_COLUMNS)
+    .eq('household_id', householdId)
+    .eq('fx_fee_of', transactionId)
+    .order('local_date', { ascending: true });
+
+  if (error) throw toDbError(error, status);
+  return (data as TransactionRow[] | null) ?? [];
+}
+
+/**
  * Review W6-13 WR-01: the current id/version/deleted_at of specific rows, read from the RAW table
  * (not the soft-delete view) so a replay can tell "landed and untouched" (version 1, live) from
  * "landed and changed since". Used only for small, known id sets (a transfer's two legs).
