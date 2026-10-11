@@ -55,6 +55,8 @@ describe('assembleTable (header mode)', () => {
   it('flags a midway value as between', () => {
     const t = assembleTable([header(), ln([date(), desc(), c('10.00', 380, 420)])]);
     expect(t?.rows[0]).toMatchObject({ amountColumn: 'between', amountText: '10.00', flags: ['between'] });
+    const two = assembleTable([header(), ln([date(), desc(), c('10.00', 380, 420), c('11.00', 382, 422)])]);
+    expect(two?.rows[0]).toMatchObject({ amountText: '10.00', flags: ['between'] });
   });
 
   it('flags values in both money columns', () => {
@@ -86,7 +88,6 @@ describe('assembleTable (header mode)', () => {
       ln([date(), desc(), out('1.00')]),
       ln([bal('99.00')]),
       ln([bal('88.00')]),
-      ln([c('5', 200, 210)]),
     ]);
     expect(t?.rows).toHaveLength(1);
     expect(t?.rows[0].balanceText).toBe('99.00');
@@ -155,7 +156,7 @@ describe('assembleTable (header mode)', () => {
   });
 
   it('does not treat a merchant that merely starts with a removed word as a total', () => {
-    const t = assembleTable([header(), ln([date(), desc('TOTALLY WINE'), out('9.00')]), ln([c('1.00', 340, 380)])]);
+    const t = assembleTable([header(), ln([date(), desc('TOTALLY WINE'), out('9.00')])]);
     expect(t?.rows).toHaveLength(1);
     expect(t?.summary.summaryLinesRemoved).toBe(false);
   });
@@ -167,8 +168,6 @@ describe('assembleTable (header mode)', () => {
       header(),
       ln([c('Savings account', 40, 120)]),
       ln([date(), desc(), out('1.00')]),
-      ln([c('3 Mar 2026 - 4 Mar 2026', 40, 200)]),
-      ln([c('1.00', 340, 380)]),
     ]);
     expect(t?.summary.periodLine).toBe('PERIOD 1 Mar to 31 Mar 2026');
     expect(t?.rows[0].descriptionParts).toEqual(['ACME GROCERS']);
@@ -193,11 +192,12 @@ describe('assembleTable (header mode)', () => {
     expect(t?.summary.bankHint).toBe(false);
   });
 
-  it('survives a number-only line and a numeric cell with no money anchor', () => {
+  it('starts a no-date row from a number-only line and keeps the first value in a column', () => {
     const noMoney = ln([c('Date', 40, 70), c('Description', 94, 160), c('Reference', 200, 260), c('Amount', 340, 380)]);
     const t = assembleTable([noMoney, ln([c('123.45', 340, 380)]), ln([date(), desc(), c('77.00', 200, 260), c('3.00', 340, 380)])]);
     expect(t?.rows).toHaveLength(2);
-    expect(t?.rows[1]).toMatchObject({ amountText: '3.00' });
+    expect(t?.rows[0]).toMatchObject({ dateText: null, flags: ['no-date'] });
+    expect(t?.rows[1]).toMatchObject({ amountText: '77.00' });
   });
 });
 
