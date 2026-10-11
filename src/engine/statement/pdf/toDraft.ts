@@ -5,8 +5,9 @@
 import { notationFor, inferNumberNotation } from '../../csv/inferFormat';
 import { markerSign, parseNotatedAmount } from '../../money';
 import type { AmountMarker, MinorUnits, NumberNotation } from '../../money';
+import { parseForeignNote } from '../foreign';
 import { MAX_DESCRIPTION, MAX_LAYOUT_SIGNATURE, MAX_RAW_CELL } from '../types';
-import type { DraftRow, DraftRowIssue, DraftWarning, LabelEvidence, StatedBalance, StatementDraft } from '../types';
+import type { DraftRow, DraftRowIssue, ForeignAmount, DraftWarning, LabelEvidence, StatedBalance, StatementDraft } from '../types';
 import { balanceStep, learnDebitDirection, pickByDelta } from './balanceDelta';
 import { assignYears, numericOrder, parsePdfDate, parsePeriod, resolveNumeric } from './dates';
 import type { PdfDateParts } from './dates';
@@ -153,6 +154,16 @@ function columnAmount(r: RawRow, ctx: Ctx): RowAmount {
   return fromCell(c, raw, () => (column === 'debit' ? 'dr' : 'cr'));
 }
 
+// IMP-05 / D-30, D-35: the first recognised foreign note on a continuation line. The description and the
+// wrapped-description flag are untouched, so the row still needs review (D-23).
+function foreignOf(parts: readonly string[], currency: string, ctx: Ctx, opts: PdfDraftOptions): ForeignAmount | null {
+  for (const part of parts.slice(1)) {
+    const hit = parseForeignNote(part, { notation: ctx.notation, exponentFor: opts.exponentFor });
+    if (hit !== null && hit.currency !== currency) return hit;
+  }
+  return null;
+}
+
 function readSegment(table: AssembledTable, index: number, label: PdfDraft['sectionLabel'], opts: PdfDraftOptions): PdfDraft {
   const texts = allNumericTexts(table);
   const guess = inferNumberNotation(texts);
@@ -265,6 +276,7 @@ function readSegment(table: AssembledTable, index: number, label: PdfDraft['sect
       externalId: null,
       trnType: null,
       issues: [...new Set(own)],
+      foreign: foreignOf(r.descriptionParts, currency, ctx, opts),
     };
   });
 
