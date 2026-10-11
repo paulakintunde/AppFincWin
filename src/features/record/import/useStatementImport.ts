@@ -81,6 +81,7 @@ import {
   type PreviewAccount,
   type PreviewRow,
   type RejectReason,
+  setLimit,
 } from './importPipeline';
 
 export type ImportStage =
@@ -1293,6 +1294,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         accounts: transferAccounts(accounts, exponentFor),
         existingById: m.existingById,
         accountVersion: account.version,
+        priorLimits: { creditLimit: account.credit_limit, overdraftLimit: account.overdraft_limit },
         // A reading the user confirmed or flipped is remembered for this layout (D-42).
         remember: profile.decidedBy === 'remembered' ? null : { signature: draft.layoutSignature, id: newStepId() },
       },
@@ -1423,7 +1425,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     if (account === null) return null;
     const row = m.draft.rows.find((r) => r.magnitude !== null);
     if (row === undefined) return null;
-    const own = m.profile.accountFamily === 'card' ? account.credit_limit : account.overdraft_limit;
+    const own = setLimit(m.profile.accountFamily === 'card' ? account.credit_limit : account.overdraft_limit);
     const limit = m.profile.accountFamily === 'card' ? (own ?? m.profile.statedLimit) : own;
     const converted = convertDraft({ ...m.draft, rows: [row], statedOpening: null, statedClosing: null, available: null }, m.profile, {
       limit: limit === null ? null : minorUnits(limit),
@@ -1440,7 +1442,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     if (m.draft === null || m.profile === null) return null;
     const account = accountById(m.accountId);
     if (account === null) return null;
-    const own = m.profile.accountFamily === 'card' ? account.credit_limit : account.overdraft_limit;
+    const own = setLimit(m.profile.accountFamily === 'card' ? account.credit_limit : account.overdraft_limit);
     const limit = m.profile.accountFamily === 'card' ? (own ?? m.profile.statedLimit) : own;
     const converted = convertDraft({ ...m.draft, rows: [] }, m.profile, { limit: limit === null ? null : minorUnits(limit) });
     const closing: number | null = converted.closing;

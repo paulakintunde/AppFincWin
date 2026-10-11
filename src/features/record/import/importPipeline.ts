@@ -344,8 +344,13 @@ export interface PreviewAccount {
   creditLimit: number | null;
 }
 
+/** A limit of null or 0 or less is "no limit set" (D-49, see engine/accounts/standing.ts). */
+export function setLimit(n: number | null): number | null {
+  return n !== null && n > 0 ? n : null;
+}
+
 function limitOf(account: PreviewAccount): MinorUnits | null {
-  const n = account.kind === 'credit' ? account.creditLimit : account.overdraftLimit;
+  const n = setLimit(account.kind === 'credit' ? account.creditLimit : account.overdraftLimit);
   return n === null ? null : minorUnits(n);
 }
 
@@ -437,8 +442,8 @@ const BLOCKING_ISSUES: ReadonlySet<DraftRowIssue> = new Set<DraftRowIssue>([
 function offerLimit(profile: FormatProfile, account: PreviewAccount): Preview['limitOffer'] {
   const stated = profile.statedLimit;
   if (stated === null || stated <= 0) return null;
-  if (profile.accountFamily === 'card' && account.creditLimit === null) return { field: 'credit_limit', amount: stated };
-  if (profile.accountFamily === 'deposit' && account.overdraftLimit === null) return { field: 'overdraft_limit', amount: stated };
+  if (profile.accountFamily === 'card' && setLimit(account.creditLimit) === null) return { field: 'credit_limit', amount: stated };
+  if (profile.accountFamily === 'deposit' && setLimit(account.overdraftLimit) === null) return { field: 'overdraft_limit', amount: stated };
   return null;
 }
 
@@ -624,6 +629,8 @@ export interface CommitContext {
   accounts: readonly TransferAccount[];
   existingById: ReadonlyMap<string, ExistingInfo>;
   accountVersion: number;
+  /** The account's stored limits, so an accepted offer undoes to the real prior value (a 0 is stored, not null). */
+  priorLimits?: { creditLimit: number | null; overdraftLimit: number | null };
   remember: { signature: string; id: string } | null;
 }
 
@@ -850,11 +857,11 @@ function counterLeg(
 function acceptedLimit(preview: Preview, decisions: CommitDecisions, ctx: CommitContext): ImportLimit | null {
   const offer = preview.limitOffer;
   if (!decisions.acceptLimit || offer === null) return null;
-  // The offer only exists while the account has no limit of that kind, so the prior value is null.
+  // The offer only exists while the account has no usable limit of that kind: null, or a stored 0 (D-49).
   if (offer.field === 'credit_limit') {
-    return { accountId: ctx.accountId, expectedVersion: ctx.accountVersion, before: { credit_limit: null }, patch: { credit_limit: offer.amount } };
+    return { accountId: ctx.accountId, expectedVersion: ctx.accountVersion, before: { credit_limit: ctx.priorLimits?.creditLimit ?? null }, patch: { credit_limit: offer.amount } };
   }
-  return { accountId: ctx.accountId, expectedVersion: ctx.accountVersion, before: { overdraft_limit: null }, patch: { overdraft_limit: offer.amount } };
+  return { accountId: ctx.accountId, expectedVersion: ctx.accountVersion, before: { overdraft_limit: ctx.priorLimits?.overdraftLimit ?? null }, patch: { overdraft_limit: offer.amount } };
 }
 
 /** Analytics size band for an import (counts only, never content). */
