@@ -121,6 +121,18 @@ function labelOf(line: PdfLine): string {
   return (tail !== null && looksNumeric(tail[1]!) ? text.slice(0, tail.index) : text).trim().toUpperCase();
 }
 
+// A date written across one to three words ("12/09", "1 Sep", "1 Sep 2026").
+function hasDateIn(text: string): boolean {
+  const words = text.split(/\s+/);
+  return words.some((_, i) => [1, 2, 3].some((n) => i + n <= words.length && looksLikeDate(words.slice(i, i + n).join(' '))));
+}
+
+// Review LO-03: a period line must carry dates; a bare "Statement period" heading never latches.
+function isPeriodLine(text: string, up: string): boolean {
+  if (parsePeriod(text, true) !== null || parsePeriod(text, false) !== null) return true;
+  return up.includes('PERIOD') && hasDateIn(text);
+}
+
 /**
  * Captures statement figures, the period and hints; true when the line must not become a row.
  *
@@ -132,7 +144,7 @@ function labelOf(line: PdfLine): string {
 function classify(line: PdfLine, s: TableSummary): boolean {
   const text = lineText(line);
   const up = text.toUpperCase();
-  if (s.periodLine === null && (up.includes('PERIOD') || parsePeriod(text, true) !== null)) s.periodLine = text;
+  if (s.periodLine === null && isPeriodLine(text, up)) s.periodLine = text;
   const undated = !hasDate(line);
   const bankLine = undated && hasAny(up, BANK_PHRASES);
   const cardLine = undated && hasAny(up, CARD_PHRASES);

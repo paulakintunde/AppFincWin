@@ -214,6 +214,22 @@ describe('assembleTable (header mode)', () => {
     expect(t?.rows[0]!.descriptionParts).toEqual(['ACME GROCERS']);
   });
 
+  // Review LO-03: a heading that only names the period never latches; the dated line after it does.
+  it('skips a "Statement period" heading without dates and takes the dated line after it', () => {
+    const t = assembleTable([ln([c('Statement period', 40, 120)]), ln([c('1 Sep 2026 to 30 Sep 2026', 40, 300)]), header()]);
+    expect(t?.summary.periodLine).toBe('1 Sep 2026 to 30 Sep 2026');
+  });
+
+  it('keeps a period line whose dates have no year, for the date order', () => {
+    const t = assembleTable([ln([c('Period 01/09 - 30/09', 40, 200)]), header()]);
+    expect(t?.summary.periodLine).toBe('Period 01/09 - 30/09');
+  });
+
+  it('latches a month-first period that only reads month-first', () => {
+    const t = assembleTable([ln([c('01/02/2026 to 02/01/2026', 40, 200)]), header()]);
+    expect(t?.summary.periodLine).toBe('01/02/2026 to 02/01/2026');
+  });
+
   it('reads a period line from two dates without the word period', () => {
     const t = assembleTable([ln([c('1 March 2026 to 31 March 2026', 40, 300)]), header()]);
     expect(t?.summary.periodLine).toBe('1 March 2026 to 31 March 2026');
