@@ -1690,7 +1690,13 @@ describe('useStatementImport: currency recognition (review HI-01)', () => {
       '2026-03-02,LUNCH,-9.00,11.00,USD,987.50',
       '2026-03-03,PAYSLIP,100.00,,,1087.50',
     ].join('\n');
-    const { result } = await reachReview(csv(text), 'csv');
+    pickOk(csv(text));
+    const { result } = await setup();
+    await act(async () => {
+      result.current.start();
+    });
+    // eslint-disable-next-line no-console
+    console.log('DBG', result.current.stage, JSON.stringify(result.current.mapping), result.current.mappingErrors);
     const rows = result.current.preview!.rows;
     expect(rows[0]!.foreign).toBeNull();
     expect(rows[1]!.foreign).toEqual({ amount: -1100, currency: 'USD' });
