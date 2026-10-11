@@ -86,6 +86,7 @@
     "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "test": "jest",
     "test:coverage": "jest --coverage --ci",
+    "fixtures:pdf": "node scripts/fixtures/make-statement-pdfs.mjs",
     "verify:gates": "node scripts/verify-gates.mjs",
     "check:ignores": "node scripts/check-coverage-ignores.mjs",
     "supabase:preflight": "node scripts/supabase-preflight.mjs",

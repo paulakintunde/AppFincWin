@@ -1,0 +1,109 @@
+{
+  "name": "no-balances",
+  "accountKind": "checking",
+  "currency": "GBP",
+  "period": null,
+  "opening": null,
+  "closing": null,
+  "rows": [
+    {
+      "date": "2026-03-03",
+      "description": "ACME GROCERS",
+      "amount": -4520,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-05",
+      "description": "FABRIKAM CAFE",
+      "amount": -1275,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-08",
+      "description": "NORTHWIND ENERGY",
+      "amount": -8900,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-10",
+      "description": "CONTOSO PAYROLL",
+      "amount": 150000,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-12",
+      "description": "TAILSPIN TRAVEL",
+      "amount": -3600,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-15",
+      "description": "WINGTIP TOYS",
+      "amount": -2350,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-18",
+      "description": "LITWARE BOOKS",
+      "amount": -1850,
+      "balance": null,
+      "flags": [
+        "pdf-ambiguous-column"
+      ],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-21",
+      "description": "ACME GROCERS",
+      "amount": -5210,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-26",
+      "description": "ADVENTURE WORKS",
+      "amount": -6780,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    },
+    {
+      "date": "2026-03-29",
+      "description": "FABRIKAM CAFE",
+      "amount": -3345,
+      "balance": null,
+      "flags": [],
+      "foreign": null,
+      "feeOf": null
+    }
+  ],
+  "sections": null,
+  "expect": {
+    "reconcile": "none-in-file",
+    "uncertainRows": [
+      6
+    ]
+  }
+}
