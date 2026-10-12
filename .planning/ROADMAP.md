@@ -398,18 +398,18 @@ Plans:
   5. The account picker in the entry sheet ends with "Add account"; creating an account there returns to the entry with the new account selected.
   6. "Add to list" keeps a valid entry in a list at the bottom of the sheet and clears the form, up to 30 per money out, money in or transfer list; listed entries can be edited or removed, survive an accidental swipe or close, and Save writes the current entry plus the list in one step with one Undo.
 **Note:** criteria 4–6 change the entry sheet and Keypad that Phase 3's bottom-sheet migration carries over; plan 02.3 before re-checking the Phase 3 plans.
-**Plans:** 20 plans in 5 waves
+**Plans:** 6/20 plans executed
 **Status:** Planned 2026-10-12 (not started). Three additive migrations (20261012000100 category_rules, 20261012000200 category_rules_patches, 20261012000300 entry_list) and pgTAP 51-53; the production push in 02.3-20 needs the user's go.
 
 Plans:
 
 **Wave 1**
-- [ ] 02.3-01-PLAN.md — Foundations: full phase copy, undo vocabulary (category_rules, addedMany, rule labels), write entity, keys (W1)
-- [ ] 02.3-02-PLAN.md — Schema: category_rules table, personal/shared RLS, guards, soft delete + pgTAP 51, 36 extended (W1)
-- [ ] 02.3-03-PLAN.md — Schema: record_entry_list RPC (list save with series as one undo step) + pgTAP 53 (W1)
-- [ ] 02.3-04-PLAN.md — Engine (TDD): rule tiers, D-25 precedence, shared-rule resolution, whole-word fix (W1)
-- [ ] 02.3-05-PLAN.md — Engine (TDD): reconcile extras and near-match hint (W1)
-- [ ] 02.3-06-PLAN.md — Engine (TDD): entry list model, caps, summary, draft format; entryList 100% folder (W1)
+- [x] 02.3-01-PLAN.md — Foundations: full phase copy, undo vocabulary (category_rules, addedMany, rule labels), write entity, keys (W1)
+- [x] 02.3-02-PLAN.md — Schema: category_rules table, personal/shared RLS, guards, soft delete + pgTAP 51, 36 extended (W1)
+- [x] 02.3-03-PLAN.md — Schema: record_entry_list RPC (list save with series as one undo step) + pgTAP 53 (W1)
+- [x] 02.3-04-PLAN.md — Engine (TDD): rule tiers, D-25 precedence, shared-rule resolution, whole-word fix (W1)
+- [x] 02.3-05-PLAN.md — Engine (TDD): reconcile extras and near-match hint (W1)
+- [x] 02.3-06-PLAN.md — Engine (TDD): entry list model, caps, summary, draft format; entryList 100% folder (W1)
 - [ ] 02.3-07-PLAN.md — Remembered accounts store, Google continue/different/forget flows, AuthProvider, docs (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
