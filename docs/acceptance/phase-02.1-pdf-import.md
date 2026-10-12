@@ -74,3 +74,7 @@ Follow-up PR: #62 (merged, main ef8bbfa4f0a0aade5703e905f19b69a82e7fb0da).
 - Build: d7f35c19-5456-4261-8eaf-a348987665d8 (profile preview, Android), from main ef8bbfa
 - Install URL: https://expo.dev/artifacts/eas/b4fKCse8fg4DphILzO8PosxFdreKPgRwrmahUNdMexk.apk
 - Earlier attempt c7c72336 failed at CONFIGURE_EXPO_UPDATES (runtime fingerprint mismatch) because it was started from a worktree whose node_modules was a junction; rebuilt from a checkout with its own node_modules.
+
+## Privacy policy
+
+The PDF statements paragraph (docs/compliance/privacy-policy-pdf-statements.md) was published on fincwin.com/privacy, confirmed by the user on 2026-10-11. Region checked against the live project: us-west-2.
