@@ -71,7 +71,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **ACC-07**: User can sign out of one listed device, or all devices at once
 - [ ] **ACC-08**: User can unlock the app with Face ID, Touch ID or Android biometrics
 - [ ] **ACC-09**: User can set and use a PIN as an alternative to biometrics
-- [ ] **ACC-10**: User can delete their account in-app, and doing so purges their data from Supabase
+- [ ] **ACC-10**: User can delete their account in-app, and doing so purges their data from Supabase *(Note, 02.3 D-20: the deletion flow must also call `forgetGoogleOnAccountDeletion(email)` — clears the remembered-account tile and runs GoogleSignin signOut/revokeAccess.)*
 - [ ] **ACC-11**: A sign-in method restricted to allow-listed store-review accounts exists, so reviewers can enter an app that otherwise offers only Apple and Google
 - [x] **ACC-12**: The auth session is stored encrypted, with its key held in secure storage, working around secure storage's 2048-byte limit
 - [ ] **ACC-13**: Server-side functions enforce per-user rate limits
