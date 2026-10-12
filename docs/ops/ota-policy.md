@@ -70,7 +70,7 @@ eas update:roll-back-to-embedded --branch production --runtime-version <fingerpr
 
 ### How clients pick up a rollback
 
-`app.config.ts` sets `checkAutomatically: 'ON_LOAD'` and `fallbackToCacheTimeout: 0`, so every cold launch checks the channel for a newer update before rendering and applies it before the next launch if found. There is no manual "check for updates" step for the user — the rollback reaches every device on its next app open.
+`app.config.ts` sets `checkAutomatically: 'ON_LOAD'` and `fallbackToCacheTimeout: 0` for `preview` and `production` EAS builds, so every cold launch on those profiles checks the channel for a newer update before rendering and applies it before the next launch if found — there is no manual "check for updates" step for the user, and the rollback reaches every device on its next app open. The `development` profile and local (`expo run:android` / prebuild) builds use `checkAutomatically: 'ON_ERROR_RECOVERY'` instead, so a dev-client never blocks on an unpublished or unreachable update channel (quick 261009-uuw).
 
 ## Compatibility rule
 

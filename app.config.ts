@@ -15,7 +15,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: './assets/icon.png',
   runtimeVersion: { policy: 'fingerprint' }, // FND-11, see docs/ops/ota-policy.md (00-14)
   updates: process.env.EAS_PROJECT_ID
-    ? { url: `https://u.expo.dev/${process.env.EAS_PROJECT_ID}`, checkAutomatically: 'ON_LOAD', fallbackToCacheTimeout: 0 }
+    ? {
+        url: `https://u.expo.dev/${process.env.EAS_PROJECT_ID}`,
+        // dev/local: ON_ERROR_RECOVERY so an unpublished channel can't block Metro (quick 261009-uuw)
+        checkAutomatically:
+          process.env.EAS_BUILD_PROFILE === 'production' || process.env.EAS_BUILD_PROFILE === 'preview'
+            ? 'ON_LOAD'
+            : 'ON_ERROR_RECOVERY',
+        fallbackToCacheTimeout: 0,
+      }
     : undefined,
   ios: { bundleIdentifier: APP_ID, supportsTablet: false, usesAppleSignIn: true },
   android: {
