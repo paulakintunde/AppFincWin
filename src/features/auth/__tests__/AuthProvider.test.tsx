@@ -14,6 +14,9 @@ const mockConfigureGoogle = jest.fn();
 const mockRetryPendingFirstAuthProfile = jest.fn(async (..._args: unknown[]) => undefined);
 const mockSignInWithApple = jest.fn();
 const mockSignInWithGoogle = jest.fn();
+const mockContinueWithGoogle = jest.fn();
+const mockSignInWithDifferentGoogleAccount = jest.fn();
+const mockRemember = jest.fn();
 
 let mockAuthStateCallback: ((event: string, session: unknown) => void) | undefined;
 
@@ -34,6 +37,13 @@ jest.mock('@/services/auth', () => ({
   retryPendingFirstAuthProfile: (...args: unknown[]) => mockRetryPendingFirstAuthProfile(...args),
   signInWithApple: (...args: unknown[]) => mockSignInWithApple(...args),
   signInWithGoogle: (...args: unknown[]) => mockSignInWithGoogle(...args),
+  continueWithGoogle: (...args: unknown[]) => mockContinueWithGoogle(...args),
+  signInWithDifferentGoogleAccount: (...args: unknown[]) => mockSignInWithDifferentGoogleAccount(...args),
+}));
+
+jest.mock('../rememberedAccounts', () => ({
+  ...jest.requireActual('../rememberedAccounts'),
+  rememberAccount: (...args: unknown[]) => mockRemember(...args),
 }));
 
 function wrapper({ children }: { children: React.ReactNode }) {
@@ -114,6 +124,43 @@ describe('AuthProvider', () => {
     });
     await waitFor(() => expect(result.current.status).toBe('signedOut'));
     expect(result.current.user).toBeNull();
+  });
+
+  it('records the identity on SIGNED_IN but not SIGNED_OUT', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('signedOut'));
+
+    await act(async () => {
+      mockAuthStateCallback?.('SIGNED_OUT', null);
+    });
+    expect(mockRemember).not.toHaveBeenCalled();
+
+    const session = {
+      user: {
+        id: 'u',
+        email: 'a@x.com',
+        user_metadata: { full_name: 'Ann' },
+        app_metadata: { provider: 'google' },
+      },
+    };
+    await act(async () => {
+      mockAuthStateCallback?.('SIGNED_IN', session);
+    });
+    expect(mockRemember).toHaveBeenCalledWith({ provider: 'google', email: 'a@x.com', name: 'Ann' });
+  });
+
+  it('continueAs routes by provider and signInWithDifferentAccount is exposed', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('signedOut'));
+
+    await result.current.continueAs({ provider: 'google', email: 'a@x.com' });
+    expect(mockContinueWithGoogle).toHaveBeenCalledWith('a@x.com');
+    await result.current.continueAs({ provider: 'apple', email: 'a@x.com' });
+    expect(mockSignInWithApple).toHaveBeenCalledTimes(1);
+    await result.current.signInWithDifferentAccount();
+    expect(mockSignInWithDifferentGoogleAccount).toHaveBeenCalledTimes(1);
   });
 
   it('calls configureGoogle once on mount', async () => {
