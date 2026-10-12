@@ -36,6 +36,12 @@ describe('inverseOfInserts', () => {
     ]);
   });
 
+  it('soft-deletes an inserted category rule (D-24)', () => {
+    expect(inverseOfInserts('category_rules', [{ id: 'r1', version: 1 }])).toEqual([
+      { entity: 'category_rules', id: 'r1', expectedVersion: 1, patch: { deleted_at: NOW_SENTINEL } },
+    ]);
+  });
+
   it('covers both legs of a transfer create in one op list (D-50)', () => {
     expect(
       inverseOfInserts('transactions', [
@@ -85,6 +91,12 @@ describe('inverseOfPatches', () => {
         patch: { status: 'pending', local_date: '2026-09-01' },
       },
     ]);
+  });
+
+  it('reverses a category rule patch at the post-write version', () => {
+    expect(
+      inverseOfPatches('category_rules', [{ id: 'r1', before: { keyword: 'Tesco' }, versionAfter: 2 }])
+    ).toEqual([{ entity: 'category_rules', id: 'r1', expectedVersion: 2, patch: { keyword: 'Tesco' } }]);
   });
 
   it('throws RangeError when before is empty', () => {

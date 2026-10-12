@@ -17,7 +17,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(14);
+select extensions.plan(17);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -97,6 +97,15 @@ select public.create_recurring_series(jsonb_build_object(
 ));
 reset role;
 
+-- B also owns a custom category with a personal rule, and authors a shared rule in A's household.
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
+insert into public.categories (id, name, color_key) values ('c0000000-0000-0000-0000-0000000000c2', 'B stuff', 'plum');
+insert into public.category_rules (id, scope, household_id, keyword, keyword_norm, category_id, target_builtin_key, target_name) values
+  ('ab000000-0000-0000-0000-000000000001', 'personal', null, 'Gym', 'gym', 'c0000000-0000-0000-0000-0000000000c2', null, null),
+  ('ab000000-0000-0000-0000-000000000002', 'shared', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Tesco', 'tesco', null, 'Groceries', null);
+reset role;
+
 -- Sanity: the fixture really has data in every table.
 select extensions.ok(
   (select count(*) from public.transactions where household_id = (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')) > 5
@@ -117,6 +126,15 @@ select extensions.is(
   (select created_by from public.recurring_series where id = 'c6000000-0000-0000-0000-000000000006'),
   null,
   'the departed member''s series stays, with created_by cleared'
+);
+select extensions.is(
+  (select count(*)::int from public.category_rules where id = 'ab000000-0000-0000-0000-000000000001'),
+  0,
+  'the departed member''s personal rule is purged'
+);
+select extensions.ok(
+  (select created_by is null and updated_by is null from public.category_rules where id = 'ab000000-0000-0000-0000-000000000002'),
+  'the departed member''s shared rule stays, with created_by and updated_by cleared'
 );
 select extensions.lives_ok(
   $$set constraints all immediate$$,
@@ -140,6 +158,7 @@ select extensions.is((select count(*)::int from public.recurring_series), 0, 'no
 select extensions.is((select count(*)::int from public.categories), 0, 'no category remains');
 select extensions.is((select count(*)::int from public.undo_log), 0, 'no undo step remains');
 select extensions.is((select count(*)::int from public.import_profiles), 0, 'no import profile remains');
+select extensions.is((select count(*)::int from public.category_rules), 0, 'no category rule remains');
 select extensions.is((select count(*)::int from public.profiles), 0, 'no profile remains');
 
 select * from extensions.finish();
