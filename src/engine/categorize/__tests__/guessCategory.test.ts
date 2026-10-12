@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import {
   DEFAULT_KEYWORD_RULES,
   buildLearnedMap,
@@ -192,5 +193,70 @@ describe('DEFAULT_KEYWORD_RULES', () => {
     for (const [keyword, category] of Object.entries(prototypePairs)) {
       expect(DEFAULT_KEYWORD_RULES).toContainEqual({ keyword, category });
     }
+  });
+});
+
+describe('guessCategory rule tiers (D-25)', () => {
+  const p = (keywordNorm: string, categoryId: string) => ({ keywordNorm, categoryId });
+
+  it('personal beats shared, learned and built-in', () => {
+    const ctx = makeCtx({
+      personalRules: [p('tesco', 'c1')],
+      sharedRules: [p('tesco', 'c2')],
+      learned: new Map([['tesco express', 'c3']]),
+    });
+    expect(guessCategory({ name: 'Tesco Express', amount: -5 }, ctx)).toEqual({
+      categoryId: 'c1',
+      source: 'rule-personal',
+    });
+  });
+
+  it('shared beats learned', () => {
+    const ctx = makeCtx({ sharedRules: [p('tesco', 'c2')], learned: new Map([['tesco express', 'c3']]) });
+    expect(guessCategory({ name: 'Tesco Express', amount: -5 }, ctx)).toEqual({
+      categoryId: 'c2',
+      source: 'rule-shared',
+    });
+  });
+
+  it('learned still beats built-in keywords', () => {
+    const ctx = makeCtx({ learned: new Map([['tesco express', 'c3']]) });
+    expect(guessCategory({ name: 'Tesco Express', amount: -5 }, ctx).source).toBe('learned');
+  });
+
+  it('longer keyword beats shorter; equal length first in order', () => {
+    const ctx = makeCtx({ personalRules: [p('tesco', 'c1'), p('tesco express', 'c2')] });
+    expect(guessCategory({ name: 'Tesco Express', amount: -5 }, ctx).categoryId).toBe('c2');
+    const tie = makeCtx({ personalRules: [p('aaa', 'c1'), p('bbb', 'c2')] });
+    expect(guessCategory({ name: 'aaa bbb', amount: -5 }, tie).categoryId).toBe('c1');
+  });
+
+  it('whole word beats longer part-word, including a later occurrence (Pitfall 1)', () => {
+    const ctx = makeCtx({ personalRules: [p('busin', 'c-part'), p('bus', 'c-whole')] });
+    expect(guessCategory({ name: 'business bus stop', amount: -5 }, ctx).categoryId).toBe('c-whole');
+    expect(guessCategory({ name: 'business', amount: -5 }, ctx).categoryId).toBe('c-part');
+  });
+
+  it('skips empty keywords', () => {
+    const ctx = makeCtx({ personalRules: [p('', 'c1')] });
+    expect(guessCategory({ name: 'zzz', amount: -5 }, ctx)).toEqual({ categoryId: null, source: 'none' });
+  });
+
+  it('property: a substring personal rule always yields rule-personal', () => {
+    fc.assert(
+      fc.property(
+        fc.string({ minLength: 1, maxLength: 20 }),
+        fc.string({ maxLength: 10 }),
+        fc.string({ maxLength: 10 }),
+        (mid, pre, post) => {
+          const kw = normaliseDescription(mid);
+          fc.pre(kw !== '');
+          const name = pre + mid + post;
+          fc.pre(normaliseDescription(name).includes(kw));
+          const r = guessCategory({ name, amount: -1 }, makeCtx({ personalRules: [p(kw, 'c1')] }));
+          return r.source === 'rule-personal';
+        }
+      )
+    );
   });
 });

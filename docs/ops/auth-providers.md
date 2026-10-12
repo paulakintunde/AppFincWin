@@ -96,3 +96,28 @@ Live as of this record:
   ID-token flows this app actually uses, this URI is never hit by the client at
   all — it exists because Google's Cloud Console requires a Web client to
   declare at least one authorized redirect URI).
+
+## Remembered accounts on the signed-out screen (ACC-14)
+
+- **What is stored**: per account, only provider, email, display name and last-used time.
+  At most 3, most recent first, deduplicated by provider + email (case-insensitive).
+  No token and no financial data. Never sent to analytics or error reports.
+- **Where**: AsyncStorage key `fincwin-identity:recent-accounts:v1`
+  (`src/features/auth/rememberedAccounts.ts`), deliberately outside the `fincwin:`
+  wipe prefix so `wipeDeviceData()` on sign-out keeps it. Not SecureStore/Keychain,
+  so uninstalling the app removes it.
+- **How "Continue as" works**: Supabase's local sign-out leaves the Google SDK's
+  session cached. `continueWithGoogle(email)` calls `signInSilently()` and uses the
+  result only when the returned Google email equals the tile's email; otherwise it
+  calls `GoogleSignin.signOut()` and opens the chooser with `loginHint` (iOS) and
+  `accountName` (Android), then restores the plain configuration in a `finally`.
+  "Use a different account" always calls `signOut()` first so the account list shows.
+- **Nonce**: T-00-15-02 (no nonce on Google sign-in) is unchanged; a silent sign-in
+  returns an ID token of the same kind, audience-bound and verified by GoTrue.
+- **[ASSUMED] native behaviour to confirm on device** (RESEARCH A1, A2): that
+  `signInSilently()` succeeds after a Supabase local sign-out, and that `loginHint`
+  (iPhone XR) and `accountName` (Android) preselect the hinted account. Confirm in the
+  walkthrough; adjust only `src/services/auth/google.ts`.
+- **ACC-10 (Phase 10) must call `forgetGoogleOnAccountDeletion(email)` after the server
+  purge (D-20)**: it clears the remembered entry and runs `revokeAccess` + `signOut`.
+  In-app deletion does not exist yet, so this is a dependency on that later phase.

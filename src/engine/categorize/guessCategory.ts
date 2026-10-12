@@ -1,5 +1,7 @@
 /**
- * Category guessing for statement import (D-14, REC-10). Combines the
+ * Category guessing (D-14, REC-10, REC-27). Precedence (D-25): personal
+ * rule > shared household rule > learned > built-in keywords > Income
+ * default > none. Combines the
  * user's own past categorisation (learned) with a fixed keyword list (the
  * prototype's guessCat, FincWin United.dc.html line 3228, ported verbatim
  * plus additions), then an Income default for a positive amount, then
@@ -95,13 +97,27 @@ export const DEFAULT_KEYWORD_RULES: readonly KeywordRule[] = [
   { keyword: 'wages', category: 'Income' },
 ];
 
+/** A rule already resolved to one member's category id (see rules.ts resolveRules). */
+export interface ResolvedRule {
+  keywordNorm: string;
+  categoryId: string;
+}
+
 export interface GuessContext {
   keywordRules: readonly KeywordRule[];
   learned: ReadonlyMap<string, string>; // normalised name -> category id
   builtinIds: ReadonlyMap<BuiltinCategoryKey, string>; // active (non-archived) builtin -> id
+  personalRules?: readonly ResolvedRule[];
+  sharedRules?: readonly ResolvedRule[];
 }
 
-export type GuessSource = 'learned' | 'keyword' | 'income-default' | 'none';
+export type GuessSource =
+  | 'rule-personal'
+  | 'rule-shared'
+  | 'learned'
+  | 'keyword'
+  | 'income-default'
+  | 'none';
 
 /**
  * NFD-normalises, strips combining marks (diacritics), lowercases, collapses
@@ -144,34 +160,56 @@ function isWordChar(ch: string | undefined): boolean {
   return ch !== undefined && /[a-z0-9]/.test(ch);
 }
 
-interface KeywordMatch {
-  category: BuiltinCategoryKey;
-  wholeWord: boolean;
-  length: number;
+interface Candidate<T> {
+  keyword: string;
+  target: T;
 }
 
-/** Every rule whose keyword occurs in `normalised`, ranked whole-word first then longest. */
-function matchKeywords(normalised: string, rules: readonly KeywordRule[]): KeywordMatch[] {
-  const matches: KeywordMatch[] = [];
-  for (const rule of rules) {
-    const idx = normalised.indexOf(rule.keyword);
-    if (idx === -1) continue;
+/** True when any occurrence of `keyword` in `normalised` has non-word characters on both sides. */
+function hasWholeWordOccurrence(normalised: string, keyword: string): boolean {
+  let from = 0;
+  for (;;) {
+    const idx = normalised.indexOf(keyword, from);
+    if (idx === -1) return false;
     const before = idx > 0 ? normalised[idx - 1] : undefined;
-    const afterIdx = idx + rule.keyword.length;
+    const afterIdx = idx + keyword.length;
     const after = afterIdx < normalised.length ? normalised[afterIdx] : undefined;
-    const wholeWord = !isWordChar(before) && !isWordChar(after);
-    matches.push({ category: rule.category, wholeWord, length: rule.keyword.length });
+    if (!isWordChar(before) && !isWordChar(after)) return true;
+    from = idx + 1;
   }
-  matches.sort((a, b) => {
-    if (a.wholeWord !== b.wholeWord) return a.wholeWord ? -1 : 1;
-    return b.length - a.length;
-  });
-  return matches;
 }
 
 /**
- * learned exact match first; then keyword rules (whole-word, then longest,
- * skipping any candidate whose category has no active builtin id); then
+ * Every candidate whose keyword occurs in `normalised`, ranked whole-word
+ * first, then longest keyword, then input order. Empty keywords are skipped.
+ */
+function rankMatches<T>(normalised: string, candidates: readonly Candidate<T>[]): T[] {
+  const matches: { target: T; wholeWord: boolean; length: number; order: number }[] = [];
+  candidates.forEach((c, order) => {
+    if (c.keyword === '' || !normalised.includes(c.keyword)) return;
+    matches.push({
+      target: c.target,
+      wholeWord: hasWholeWordOccurrence(normalised, c.keyword),
+      length: c.keyword.length,
+      order,
+    });
+  });
+  matches.sort((a, b) => {
+    if (a.wholeWord !== b.wholeWord) return a.wholeWord ? -1 : 1;
+    if (a.length !== b.length) return b.length - a.length;
+    return a.order - b.order;
+  });
+  return matches.map((m) => m.target);
+}
+
+function fromResolved(rules: readonly ResolvedRule[]): Candidate<string>[] {
+  return rules.map((r) => ({ keyword: r.keywordNorm, target: r.categoryId }));
+}
+
+/**
+ * D-25 precedence: the user's own rule, then a shared household rule, then
+ * the learned map, then built-in keyword rules (whole-word, then longest,
+ * skipping any candidate whose category has no active builtin id), then
  * Income for a positive amount when Income has an id; else uncategorised.
  */
 export function guessCategory(
@@ -180,13 +218,24 @@ export function guessCategory(
 ): { categoryId: string | null; source: GuessSource } {
   const normalised = normaliseDescription(input.name);
 
+  const [personalId] = rankMatches(normalised, fromResolved(ctx.personalRules ?? []));
+  if (personalId !== undefined) {
+    return { categoryId: personalId, source: 'rule-personal' };
+  }
+
+  const [sharedId] = rankMatches(normalised, fromResolved(ctx.sharedRules ?? []));
+  if (sharedId !== undefined) {
+    return { categoryId: sharedId, source: 'rule-shared' };
+  }
+
   const learnedId = ctx.learned.get(normalised);
   if (learnedId !== undefined) {
     return { categoryId: learnedId, source: 'learned' };
   }
 
-  for (const match of matchKeywords(normalised, ctx.keywordRules)) {
-    const id = ctx.builtinIds.get(match.category);
+  const keywordCandidates = ctx.keywordRules.map((r) => ({ keyword: r.keyword, target: r.category }));
+  for (const category of rankMatches(normalised, keywordCandidates)) {
+    const id = ctx.builtinIds.get(category);
     if (id !== undefined) {
       return { categoryId: id, source: 'keyword' };
     }

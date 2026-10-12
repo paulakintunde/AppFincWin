@@ -46,6 +46,11 @@ export const queryKeys = {
   paidBefore: (householdId: string, before: string) => ['transactions', householdId, 'paid-before', before] as const,
   offerHistory: (householdId: string, from: string, to: string) =>
     ['transactions', householdId, 'offer-history', from, to] as const,
+  // Phase 02.3 (Record follow-ups)
+  categoryRules: (userId: string, householdId: string) => ['category-rules', userId, householdId] as const,
+  // Under transactionsRoot so any transaction write refreshes the learned map (D-07).
+  categorisedNames: (householdId: string, userId: string) =>
+    ['transactions', householdId, 'categorised-names', userId] as const,
 };
 
 export const mutationKeys = {
@@ -83,6 +88,9 @@ export const mutationKeys = {
   updateRecordPrefs: ['record-prefs', 'update'] as const,
   seedSamples: ['samples', 'seed'] as const,
   clearSamples: ['samples', 'clear'] as const,
+  addRule: ['category-rules', 'add'] as const,
+  editRule: ['category-rules', 'edit'] as const,
+  bulkAdd: ['transactions', 'bulk-add'] as const,
 };
 
 // D-20: one scope means every paused write replays serially in the order it was queued --

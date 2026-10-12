@@ -6,11 +6,14 @@ import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase';
 import {
   configureGoogle,
+  continueWithGoogle,
+  signInWithDifferentGoogleAccount,
   retryPendingFirstAuthProfile,
   signInWithApple,
   signInWithGoogle,
   type SignInResult,
 } from '@/services/auth';
+import { identityFromUser, rememberAccount, type RememberedAccount } from './rememberedAccounts';
 
 export type AuthStatus = 'loading' | 'signedOut' | 'signedIn';
 
@@ -20,6 +23,8 @@ export interface AuthContextValue {
   user: User | null;
   signInWithApple(): Promise<SignInResult>;
   signInWithGoogle(): Promise<SignInResult>;
+  continueAs(account: Pick<RememberedAccount, 'provider' | 'email'>): Promise<SignInResult>;
+  signInWithDifferentAccount(): Promise<SignInResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -51,7 +56,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
-      if (event === 'SIGNED_IN') setStatus('signedIn');
+      if (event === 'SIGNED_IN') {
+        setStatus('signedIn');
+        // ACC-14: remember the identity (name/email/provider only) for the Welcome tiles.
+        if (newSession?.user) void rememberAccount(identityFromUser(newSession.user));
+      }
       else if (event === 'SIGNED_OUT') setStatus('signedOut');
     });
 
@@ -67,6 +76,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     user: session?.user ?? null,
     signInWithApple,
     signInWithGoogle,
+    continueAs: (account) =>
+      account.provider === 'google' ? continueWithGoogle(account.email) : signInWithApple(),
+    signInWithDifferentAccount: signInWithDifferentGoogleAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
