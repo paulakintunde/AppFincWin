@@ -398,8 +398,40 @@ Plans:
   5. The account picker in the entry sheet ends with "Add account"; creating an account there returns to the entry with the new account selected.
   6. "Add to list" keeps a valid entry in a list at the bottom of the sheet and clears the form, up to 30 per money out, money in or transfer list; listed entries can be edited or removed, survive an accidental swipe or close, and Save writes the current entry plus the list in one step with one Undo.
 **Note:** criteria 4–6 change the entry sheet and Keypad that Phase 3's bottom-sheet migration carries over; plan 02.3 before re-checking the Phase 3 plans.
-**Plans:** 0 plans
-**Status:** Not started (not planned)
+**Plans:** 20 plans in 5 waves
+**Status:** Planned 2026-10-12 (not started). Three additive migrations (20261012000100 category_rules, 20261012000200 category_rules_patches, 20261012000300 entry_list) and pgTAP 51-53; the production push in 02.3-20 needs the user's go.
+
+Plans:
+
+**Wave 1**
+- [ ] 02.3-01-PLAN.md — Foundations: full phase copy, undo vocabulary (category_rules, addedMany, rule labels), write entity, keys (W1)
+- [ ] 02.3-02-PLAN.md — Schema: category_rules table, personal/shared RLS, guards, soft delete + pgTAP 51, 36 extended (W1)
+- [ ] 02.3-03-PLAN.md — Schema: record_entry_list RPC (list save with series as one undo step) + pgTAP 53 (W1)
+- [ ] 02.3-04-PLAN.md — Engine (TDD): rule tiers, D-25 precedence, shared-rule resolution, whole-word fix (W1)
+- [ ] 02.3-05-PLAN.md — Engine (TDD): reconcile extras and near-match hint (W1)
+- [ ] 02.3-06-PLAN.md — Engine (TDD): entry list model, caps, summary, draft format; entryList 100% folder (W1)
+- [ ] 02.3-07-PLAN.md — Remembered accounts store, Google continue/different/forget flows, AuthProvider, docs (W1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 02.3-08-PLAN.md — Schema: apply_patches + undo_log_fill re-created with category_rules + pgTAP 52; 35/37/44/45 regression (W2)
+- [ ] 02.3-09-PLAN.md — Rules data layer: db, query, mutations with undo, useGuessContext (W2)
+- [ ] 02.3-10-PLAN.md — Import machine: choose-mode stage, mode, overlap, extras (W2)
+- [ ] 02.3-11-PLAN.md — Entry sheet: compact amount field, pad on tap; Add account from the picker (W2)
+- [ ] 02.3-12-PLAN.md — Welcome: Continue as tiles, Use a different account, Not you? Remove (W2)
+- [ ] 02.3-18-PLAN.md — Entry list parts: form/item conversion, device draft, useEntryList, EntryList, ConfirmSheet onDismiss (W2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 02.3-13-PLAN.md — Bulk save path: buildEntryListWrite, useBulkAdd (one step, one Undo), optimistic transfer fix (W3)
+- [ ] 02.3-14-PLAN.md — Categories -> Rules screen and RuleSheet (W3)
+- [ ] 02.3-15-PLAN.md — Import UI: choice step, reconcile review, extras detail (W3)
+- [ ] 02.3-16-PLAN.md — Rules feed statement import and paste-a-list (W3)
+- [ ] 02.3-17-PLAN.md — Entry sheet: suggested category and the one-tap rule offer (W3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 02.3-19-PLAN.md — Entry sheet: Add to list, list section, drafts and prompts, one-step Save (W4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 02.3-20-PLAN.md — Rollout: PR, full gate, production schema push [BLOCKING, user go], live checks, device walkthrough, preview APK (W5)
 
 ### Phase 3: Shell
 **Goal**: The app's navigation chrome matches the design system exactly.
@@ -559,6 +591,7 @@ Plans:
 **Goal**: The app is secure, resilient offline, and lets a user manage their own data completely.
 **Depends on**: Phase 0 (auth), Phase 1 (write queue mechanism), Phases 2-9 (features being hardened, alerted on, imported and exported)
 **Requirements**: ACC-06, ACC-07, ACC-08, ACC-09, ACC-10, SYN-03, SYN-04, SYN-05, ALR-01, ALR-02, ALR-03, ALR-04, ALR-05, DAT-01, DAT-02, DAT-03, DAT-04, ENV-19, ACC-11, ACC-13, DAT-05, DAT-06, ALR-06, DSG-08, ENV-16, IMP-06
+**Note (02.3 D-20):** ACC-10's in-app account deletion must call `forgetGoogleOnAccountDeletion(email)` (src/services/auth/google.ts) to clear the remembered-account tile and sign out of / revoke Google.
 **Success Criteria** (what must be TRUE):
   1. A user can see every device where their account is signed in with the current device marked, and sign out of one device or all devices at once.
   2. A user can unlock the app with Face ID, Touch ID or Android biometrics, or a PIN.
