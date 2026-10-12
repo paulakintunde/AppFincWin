@@ -74,6 +74,7 @@ describe('resolveRules', () => {
     const cats = [
       cat({ id: 'b', displayName: 'cafe' }),
       cat({ id: 'a', displayName: 'Café' }),
+      cat({ id: 'c', displayName: 'CAFÉ' }),
       cat({ id: 'x', displayName: 'cafe', active: false }),
       cat({ id: 'y', displayName: 'Gym', system: true }),
     ];
