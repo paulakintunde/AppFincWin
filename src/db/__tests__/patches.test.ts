@@ -191,6 +191,23 @@ describe('applyPatches', () => {
     });
   });
 
+  it('conflict: accepts category_rules as an entity', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({
+      data: {
+        status: 'conflict',
+        conflict: { entity: 'category_rules', id: 'r1', updated_by: null, record_name: 'Tesco', builtin_key: null, reason: 'changed' },
+      },
+      error: null,
+      status: 200,
+    });
+
+    const err = await applyPatches(client, OPS).catch((e) => e);
+    expect(err).toBeInstanceOf(VersionConflictError);
+    expect((err as VersionConflictError).entity).toBe('category_rules');
+    expect((err as VersionConflictError).serverRow).toMatchObject({ entity: 'category_rules', recordName: 'Tesco' });
+  });
+
   it('an rpc error with code 22023 (malformed op) throws a DbError carrying that code', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: null, error: { message: 'invalid patch column', code: '22023' }, status: 400 });

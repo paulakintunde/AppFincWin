@@ -10,6 +10,7 @@ export type WriteEntity =
   | 'profiles'
   | 'categories'
   | 'recurring_series'
+  | 'category_rules'
   | 'undo_log'
   | 'import_profiles'
   | 'households'

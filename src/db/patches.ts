@@ -40,7 +40,7 @@ export interface SerialisedStep {
 /** `apply_patches`/`apply_undo_step`/`rollback_undo_to` returned a shape this module cannot validate (T-02-13-01). */
 export const BAD_RESPONSE = 'bad-response';
 
-const UNDO_ENTITIES: readonly UndoEntity[] = ['transactions', 'categories', 'recurring_series', 'accounts'];
+const UNDO_ENTITIES: readonly UndoEntity[] = ['transactions', 'categories', 'recurring_series', 'accounts', 'category_rules'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
