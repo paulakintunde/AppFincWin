@@ -49,6 +49,7 @@ jest.mock('@/data/mutations/transfers', () => ({
   useDeleteTransfer: () => ({ remove: mockRemoveTransfer }),
 }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => 'step-1' }));
+jest.mock('@/data/mutations/bulkAdd', () => ({ useBulkAdd: () => ({ save: jest.fn(() => 'bulk-step') }) }));
 jest.mock('@/data/mutations/recurringSeries', () => ({
   ...jest.requireActual('@/data/mutations/recurringSeries'),
   useCreateSeries: () => ({ create: jest.fn(() => 'series-step') }),

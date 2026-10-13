@@ -5,7 +5,7 @@
 import * as Crypto from 'expo-crypto';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AccessibilityInfo, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { currencyExponent, money } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import type { MinorUnits } from '@/engine/money';
@@ -62,7 +62,13 @@ import { RuleOfferCard } from './RuleOfferCard';
 import { guessCategory } from '@/engine/categorize';
 import { useGuessContext } from '@/features/record/useGuessContext';
 import { useAddRule } from '@/data/mutations/categoryRules';
-import { hapticLight } from '@/ui/haptics';
+import { hapticLight, hapticSuccess } from '@/ui/haptics';
+import { useBulkAdd } from '@/data/mutations/bulkAdd';
+import { saveCount, summarise, type ListItem } from '@/engine/entryList';
+import { EntryList } from './EntryList';
+import { EntryListFooter, listSummaryText } from './EntryListFooter';
+import { clearedAfterAdd, formFromItem, formHasContent, itemFromForm } from './listForm';
+import { useEntryList } from './useEntryList';
 import { OptionPicker } from './pickers/OptionPicker';
 import { CurrencyPicker } from './pickers/CurrencyPicker';
 import { EditScopePrompt } from './EditScopePrompt';
@@ -170,6 +176,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const { create: createSeries } = useCreateSeries();
   const { editFrom } = useEditSeriesFrom();
   const seriesList = useRecurringSeries(rc.householdId ?? undefined).data;
+  const { save: saveList } = useBulkAdd();
 
   const activeAccounts = useMemo(() => accounts.filter((a) => a.archived_at === null), [accounts]);
   const exponentFor = (code: string): number => options.find((o) => o.code === code)?.exponent ?? currencyExponent(code);
@@ -243,6 +250,13 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const editRow: TransactionRow | null = mode.kind === 'edit' ? mode.row : null;
   const pair = mode.kind === 'edit-transfer' ? mode : null;
   const isNew = mode.kind === 'new';
+  // 02.3 REC-30: the entry list (new entries only). finishFor holds the form state the
+  // finish-current error was raised for, so any later edit to the form clears it.
+  const activeAccountIds = useMemo(() => new Set(activeAccounts.map((a) => a.id)), [activeAccounts]);
+  const list = useEntryList({ userId: rc.userId, householdId: rc.householdId, enabled: isNew, activeAccountIds });
+  const [finishFor, setFinishFor] = useState<FormState | null>(null);
+  const [replaceTarget, setReplaceTarget] = useState<string | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const series = editRow?.recurring_series_id ? seriesList?.find((x) => x.id === editRow.recurring_series_id) : undefined;
   const repeatsError = submitted ? repeatsProblem(repeats, state.localDate) : null;
   const isTransfer = state.direction === 'transfer';
@@ -342,7 +356,97 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     });
   };
 
+  /** The checks save() runs, shared with Add to list; sets `submitted` so errors show. */
+  const validateCurrent = (): boolean => {
+    setSubmitted(true);
+    if (isTransfer) return validateTransfer(state, parse).length === 0 && !transferSaveBlocked;
+    return validateForm(state, parse).length === 0 && repeatsProblem(repeats, state.localDate) === null;
+  };
+
+  const addCurrentToList = (): ListItem | null => {
+    if (!validateCurrent()) return null;
+    const item = itemFromForm(state, isTransfer ? { freq: 'never' } : repeats, parse, Crypto.randomUUID());
+    if (!item || !list.add(item)) return null;
+    setState(clearedAfterAdd);
+    setRepeats({ freq: 'never' });
+    setOrigin('empty');
+    setOffer(null);
+    setSubmitted(false);
+    setFinishFor(null);
+    setActiveField('none');
+    return item;
+  };
+
+  const addToList = () => {
+    const item = addCurrentToList();
+    if (!item) return;
+    hapticLight();
+    const name =
+      item.type === 'transfer'
+        ? t('record.sheet.list.transferName', { from: nameOf(item.accountId), to: nameOf(item.toAccountId ?? '') })
+        : item.name;
+    const summary = listSummaryText(t, summarise([item, ...list.items]), formatIn);
+    void AccessibilityInfo.announceForAccessibility(t('record.sheet.list.addedA11y', { name, summary }));
+  };
+
+  /** One-step save of the listed entries plus the form entry when it has content (D-14, D-28). */
+  const saveWithList = () => {
+    setOffer(null);
+    if (!rc.householdId || !rc.userId) return;
+    let current: ListItem | null = null;
+    if (formHasContent(state)) {
+      if (validateCurrent()) current = itemFromForm(state, isTransfer ? { freq: 'never' } : repeats, parse, Crypto.randomUUID());
+      if (!current) {
+        setFinishFor(state);
+        return;
+      }
+    }
+    const items = [...list.items].reverse();
+    if (current) items.push(current);
+    const stepId = saveList(items, {
+      householdId: rc.householdId,
+      ownerId: rc.userId,
+      homeCurrency: rc.homeCurrency,
+      timeZone: rc.timeZone,
+      transferCategoryId: categories.transferCategoryId,
+    });
+    showToast({ kind: 'ordinary', text: undoLabelText('addedMany', { n: items.length }), stepId });
+    hapticSuccess();
+    list.clearAll();
+    onClose();
+  };
+
+  const loadItem = (id: string) => {
+    const taken = list.take(id);
+    if (!taken) return;
+    const loaded = formFromItem(taken, { amountInputText: formCtx.amountInputText });
+    setState(loaded.state);
+    setRepeats(loaded.repeats);
+    setOrigin(loaded.state.categoryId ? 'picked' : 'empty');
+    setOffer(null);
+    setSubmitted(false);
+    setFinishFor(null);
+    setActiveField('none');
+  };
+
+  const editItem = (id: string) => {
+    if (formHasContent(state)) {
+      if (!validateCurrent()) {
+        setReplaceTarget(id);
+        return;
+      }
+      if (!addCurrentToList()) return;
+    }
+    loadItem(id);
+  };
+
+  const requestCancel = () => (isNew && list.items.length > 0 ? setConfirmCancel(true) : onClose());
+
   const save = () => {
+    if (isNew && list.items.length > 0) {
+      saveWithList();
+      return;
+    }
     setOffer(null);
     setSubmitted(true);
     if (!rc.householdId || !rc.userId) return;
@@ -504,7 +608,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const category = state.categoryId ? categories.active.find((c) => c.id === state.categoryId) : undefined;
   const categoryLabel = category ? categoryName(category, t) : t('record.sheet.uncategorised');
   const categoryNameOf = (id: string): string => {
-    const c = categories.byId.get(id);
+    const c = categories.byId.get(id) ?? categories.active.find((x) => x.id === id);
     return c ? categoryName(c, t) : '';
   };
   const acceptOffer = () => {
@@ -581,13 +685,24 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
       : null;
   // S-WR-10: a new transfer needs the transfer category; the disabled Save says why.
   const transferSaveBlocked = isNew && isTransfer && categories.transferCategoryId === null;
+  const listHasTransfer = list.items.some((i) => i.type === 'transfer');
+  let capNote: string | null = null;
+  if (!list.canAdd(state.direction)) {
+    capNote = t(
+      state.direction === 'out'
+        ? 'record.sheet.list.capOut'
+        : state.direction === 'in'
+          ? 'record.sheet.list.capIn'
+          : 'record.sheet.list.capTransfer'
+    );
+  }
   const deleteBody = pair
     ? t('record.sheet.transferDeleteConfirm', { from: nameOf(pair.out.account_id), to: nameOf(pair.in.account_id) })
     : t('record.sheet.confirmDelete');
 
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={titleText}>
-      <SheetHeader title={titleText} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
+      <SheetHeader title={titleText} cancelLabel={t('record.sheet.cancel')} onCancel={requestCancel} />
       <SheetScroll contentContainerStyle={styles.column}>
         {isNew ? (
           <View style={styles.chips}>
@@ -821,14 +936,44 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         ) : null}
 
         {transferSaveBlocked ? <Text style={noteStyle}>{t('record.sheet.transferCategoryLoading')}</Text> : null}
-        <Pill
-          label={saveText}
-          variant="primary"
-          disabled={transferSaveBlocked}
-          accessibilityHint={transferSaveBlocked ? t('record.sheet.transferCategoryLoading') : undefined}
-          onPress={save}
-        />
+        {isNew ? (
+          <EntryListFooter
+            saveLabel={
+              list.items.length > 0
+                ? t('record.sheet.list.save', { count: saveCount(list.items, state.amountText.trim() !== '') })
+                : saveText
+            }
+            onSave={save}
+            saveDisabled={transferSaveBlocked || (list.items.length > 0 && listHasTransfer && categories.transferCategoryId === null)}
+            saveHint={transferSaveBlocked ? t('record.sheet.transferCategoryLoading') : undefined}
+            onAddToList={addToList}
+            addDisabled={!list.canAdd(state.direction)}
+            capNote={capNote}
+            finishError={finishFor === state}
+          />
+        ) : (
+          <Pill
+            label={saveText}
+            variant="primary"
+            disabled={transferSaveBlocked}
+            accessibilityHint={transferSaveBlocked ? t('record.sheet.transferCategoryLoading') : undefined}
+            onPress={save}
+          />
+        )}
         {editRow || pair ? <Pill label={t('record.sheet.delete')} variant="danger" onPress={() => setConfirmDelete(true)} /> : null}
+        {isNew ? (
+          <EntryList
+            items={list.items}
+            summary={list.summary}
+            dropped={list.dropped}
+            formatAmount={formatIn}
+            formatDate={(d) => formatter.formatDate(d)}
+            accountName={nameOf}
+            categoryLabel={(id) => (id === null ? '' : categoryNameOf(id))}
+            onEdit={editItem}
+            onRemove={list.remove}
+          />
+        ) : null}
         </View>
       </SheetScroll>
 
@@ -933,6 +1078,46 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         destructive
         onConfirm={doDelete}
         onCancel={() => setConfirmDelete(false)}
+      />
+      <ConfirmSheet
+        visible={replaceTarget !== null}
+        body={t('record.sheet.list.replaceBody')}
+        cancelLabel={t('record.sheet.list.replaceKeep')}
+        confirmLabel={t('record.sheet.list.replaceProceed')}
+        onCancel={() => setReplaceTarget(null)}
+        onConfirm={() => {
+          const id = replaceTarget;
+          setReplaceTarget(null);
+          if (id !== null) loadItem(id);
+        }}
+      />
+      <ConfirmSheet
+        visible={isNew && list.resumeCount > 0}
+        title={t('record.sheet.draft.title', { count: list.resumeCount })}
+        body={t('record.sheet.draft.body')}
+        cancelLabel={t('record.sheet.draft.discard')}
+        confirmLabel={t('record.sheet.draft.continue')}
+        onConfirm={list.continueDraft}
+        onCancel={list.discardDraft}
+        onDismiss={list.continueDraft}
+      />
+      <ConfirmSheet
+        visible={confirmCancel}
+        title={t('record.sheet.draft.cancelTitle', { count: list.items.length })}
+        body={t('record.sheet.draft.cancelBody')}
+        cancelLabel={t('record.sheet.draft.keep')}
+        confirmLabel={t('record.sheet.draft.discardList')}
+        destructive
+        onCancel={() => {
+          setConfirmCancel(false);
+          onClose();
+        }}
+        onConfirm={() => {
+          list.clearAll();
+          setConfirmCancel(false);
+          onClose();
+        }}
+        onDismiss={() => setConfirmCancel(false)}
       />
     </Sheet>
   );

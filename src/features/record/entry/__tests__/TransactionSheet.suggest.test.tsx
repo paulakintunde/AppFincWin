@@ -58,6 +58,7 @@ jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) 
 jest.mock('@/data/queries/moneyPrefs', () => ({ useMoneyPrefs: () => ({ prefs: { lead_figure: 'home' } }) }));
 jest.mock('@/features/record/categories/useCategoryMonthUsage', () => ({ useCategoryMonthUsage: () => ({ usage: new Map(), isLoading: false }) }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => 'step-1' }));
+jest.mock('@/data/mutations/bulkAdd', () => ({ useBulkAdd: () => ({ save: jest.fn(() => 'bulk-step') }) }));
 jest.mock('@/data/mutations/recurringSeries', () => ({
   ...jest.requireActual('@/data/mutations/recurringSeries'),
   useCreateSeries: () => ({ create: jest.fn(() => 'series-step') }),

@@ -43,6 +43,7 @@ jest.mock('@/features/record/categories/useCategoryMonthUsage', () => ({ useCate
 jest.mock('../useCapCrossing', () => ({ useCapCrossing: () => ({ check: () => false }) }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => 'step-1' }));
+jest.mock('@/data/mutations/bulkAdd', () => ({ useBulkAdd: () => ({ save: jest.fn(() => 'bulk-step') }) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'series-1' }));
 jest.mock('@/data/mutations/recurringSeries', () => ({
   ...jest.requireActual('@/data/mutations/recurringSeries'),
