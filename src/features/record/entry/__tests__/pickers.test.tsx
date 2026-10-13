@@ -97,22 +97,25 @@ describe('long pickers scroll under a fixed header (S-CR-05)', () => {
     expect(within(body).queryByLabelText('Cancel')).toBeNull();
   });
 
-  it('AccountPicker: ends with Add account only when onAddAccount is given, even with an excluded account', async () => {
-    const accounts = [
-      { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null },
-      { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null },
-    ];
+  const twoAccounts = [
+    { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null },
+    { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null },
+  ];
+
+  it('AccountPicker: ends with Add account when onAddAccount is given, even with an excluded account', async () => {
     const onAdd = jest.fn();
-    const first = await wrap(
-      <AccountPicker visible title="Account" accounts={accounts} excludeId="a2" selectedId={null} onSelect={jest.fn()} onClose={jest.fn()} onAddAccount={onAdd} />
+    const { getByLabelText } = await wrap(
+      <AccountPicker visible title="Account" accounts={twoAccounts} excludeId="a2" selectedId={null} onSelect={jest.fn()} onClose={jest.fn()} onAddAccount={onAdd} />
     );
-    await fireEvent.press(first.getByLabelText('Add account'));
+    await fireEvent.press(getByLabelText('Add account'));
     expect(onAdd).toHaveBeenCalledTimes(1);
-    first.unmount();
-    const second = await wrap(
-      <AccountPicker visible title="Account" accounts={accounts} selectedId={null} onSelect={jest.fn()} onClose={jest.fn()} />
+  });
+
+  it('AccountPicker: has no Add account row without onAddAccount', async () => {
+    const { queryByLabelText } = await wrap(
+      <AccountPicker visible title="Account" accounts={twoAccounts} selectedId={null} onSelect={jest.fn()} onClose={jest.fn()} />
     );
-    expect(second.queryByLabelText('Add account')).toBeNull();
+    expect(queryByLabelText('Add account')).toBeNull();
   });
 
   it('MonthSwitcher: the month list scrolls and has a header that closes it', async () => {
