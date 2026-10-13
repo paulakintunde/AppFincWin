@@ -64,6 +64,24 @@ jest.mock('@/data/queries/accounts', () => ({
     ],
   }),
 }));
+const mockAddRule = jest.fn((..._a: unknown[]) => ({ id: 'rule-1', stepId: 'rule-step' }));
+jest.mock('@/data/mutations/categoryRules', () => ({ useAddRule: () => ({ add: mockAddRule }) }));
+jest.mock('@/features/record/useGuessContext', () => {
+  const value = {
+    guess: {
+      keywordRules: jest.requireActual('@/engine/categorize').DEFAULT_KEYWORD_RULES,
+      learned: new Map(),
+      builtinIds: new Map(),
+      personalRules: [],
+      sharedRules: [],
+    },
+    rules: [],
+    resolved: { personal: [], shared: [], byRuleId: new Map(), unresolvedIds: new Set() },
+    memberCategories: [],
+    rulesStatus: 'ready',
+  };
+  return { useGuessContext: () => value };
+});
 jest.mock('@/data/queries/categories', () => ({
   useCategoryLookup: () => ({
     active: [{ id: 'c1', builtin_key: null, name: 'Groceries', color_key: 'teal', is_system: false, archived_at: null }],

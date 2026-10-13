@@ -57,6 +57,12 @@ import { CategoryPicker } from './pickers/CategoryPicker';
 import { DateField } from './pickers/DateField';
 import { EntryNotes } from './EntryNotes';
 import { useCapCrossing } from './useCapCrossing';
+import { applyGuess, initialOrigin, ruleOfferFor, type CategoryOrigin, type RuleOffer } from './categorySuggest';
+import { RuleOfferCard } from './RuleOfferCard';
+import { guessCategory } from '@/engine/categorize';
+import { useGuessContext } from '@/features/record/useGuessContext';
+import { useAddRule } from '@/data/mutations/categoryRules';
+import { hapticLight } from '@/ui/haptics';
 import { OptionPicker } from './pickers/OptionPicker';
 import { CurrencyPicker } from './pickers/CurrencyPicker';
 import { EditScopePrompt } from './EditScopePrompt';
@@ -190,6 +196,27 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const [awaitingAccount, setAwaitingAccount] = useState<{ id: string; side: 'from' | 'to' } | null>(null);
   const nameRef = useRef<TextInput>(null);
   const noteRef = useRef<TextInput>(null);
+  // 02.3 REC-27 (D-06..D-08): guess the category from the description; a hand pick or a stored
+  // category is never overwritten; correcting a suggestion offers a Just me rule.
+  const guessCtx = useGuessContext();
+  const { add: addRule } = useAddRule();
+  const [origin, setOrigin] = useState<CategoryOrigin>(() => initialOrigin(mode));
+  const [offer, setOffer] = useState<RuleOffer | null>(null);
+  const offered = useRef(new Set<string>());
+  const isTransferNow = state.direction === 'transfer';
+  useEffect(() => {
+    if (isTransferNow || (origin !== 'empty' && origin !== 'suggested')) return;
+    const handle = setTimeout(() => {
+      const g =
+        state.name.trim() === ''
+          ? { categoryId: null }
+          : guessCategory({ name: state.name, amount: state.direction === 'in' ? 1 : -1 }, guessCtx.guess);
+      const next = applyGuess(state.categoryId, origin, g.categoryId);
+      if (next.categoryId !== state.categoryId) setState((s) => ({ ...s, categoryId: next.categoryId }));
+      if (next.origin !== origin) setOrigin(next.origin);
+    }, 250);
+    return () => clearTimeout(handle);
+  }, [state.name, state.direction, state.categoryId, isTransferNow, origin, guessCtx.guess]);
   useEffect(() => {
     const hide = Keyboard.addListener('keyboardDidHide', () => {
       nameRef.current?.blur();
@@ -316,6 +343,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   };
 
   const save = () => {
+    setOffer(null);
     setSubmitted(true);
     if (!rc.householdId || !rc.userId) return;
     if (isTransfer) {
@@ -475,6 +503,25 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
 
   const category = state.categoryId ? categories.active.find((c) => c.id === state.categoryId) : undefined;
   const categoryLabel = category ? categoryName(category, t) : t('record.sheet.uncategorised');
+  const categoryNameOf = (id: string): string => {
+    const c = categories.byId.get(id);
+    return c ? categoryName(c, t) : '';
+  };
+  const acceptOffer = () => {
+    if (!offer || !rc.userId || !rc.householdId) return;
+    const target = categories.byId.get(offer.categoryId);
+    if (!target) return;
+    const { stepId } = addRule({
+      ownerId: rc.userId,
+      householdId: rc.householdId,
+      scope: 'personal',
+      keyword: offer.keyword,
+      category: target,
+    });
+    showToast({ kind: 'ordinary', text: undoLabelText('ruleAdded', { name: offer.keyword }), stepId });
+    hapticLight();
+    setOffer(null);
+  };
   const paymentOptions = (PAYMENT_TYPES[state.direction === 'in' ? 'in' : 'out'] as readonly PaymentType[]).map((value) => ({
     value,
     label: t(`record.paymentType.${value}`),
@@ -625,7 +672,23 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
               {...textFocusProps}
             />
             {hasError('nameRequired') ? <Text style={errorStyle}>{t('record.sheet.nameRequired')}</Text> : null}
-            <Row label={t('record.sheet.field.category')} value={categoryLabel} dense chevron onPress={() => openPicker('category')} />
+            <Row
+              label={t('record.sheet.field.category')}
+              value={categoryLabel}
+              sublabel={origin === 'suggested' ? t('record.sheet.suggested') : undefined}
+              accessibilityLabel={origin === 'suggested' ? t('record.sheet.suggestedA11y', { category: categoryLabel }) : undefined}
+              dense
+              chevron
+              onPress={() => openPicker('category')}
+            />
+            {offer ? (
+              <RuleOfferCard
+                categoryName={categoryNameOf(offer.categoryId)}
+                keyword={offer.keyword}
+                onAccept={acceptOffer}
+                onDismiss={() => setOffer(null)}
+              />
+            ) : null}
           </>
         )}
 
@@ -774,7 +837,19 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         categories={categories.active}
         selectedId={state.categoryId}
         onSelect={(id) => {
+          const o = ruleOfferFor({
+            previousOrigin: origin,
+            previousCategoryId: state.categoryId,
+            pickedCategoryId: id,
+            description: state.name,
+            direction: state.direction,
+            personalRules: guessCtx.resolved.personal,
+            offered: offered.current,
+          });
           set({ categoryId: id });
+          setOrigin('picked');
+          setOffer(o);
+          if (o) offered.current.add(o.keywordNorm);
           setPicker(null);
         }}
         onClose={() => setPicker(null)}
