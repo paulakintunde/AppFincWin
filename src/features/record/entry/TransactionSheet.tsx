@@ -16,6 +16,7 @@ import { useTransferLegs } from '@/data/queries/activity';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useMoneyPrefs } from '@/data/queries/moneyPrefs';
+import { useFxLatest } from '@/data/queries/fxLatest';
 import { useCategoryMonthUsage } from '@/features/record/categories/useCategoryMonthUsage';
 import { useDeviceLocale } from '@/services/locale/deviceLocale';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
@@ -56,6 +57,7 @@ import { AmountField } from './AmountField';
 import { CategoryPicker } from './pickers/CategoryPicker';
 import { DateField } from './pickers/DateField';
 import { EntryNotes } from './EntryNotes';
+import { prefillAmountInText } from './receivedPrefill';
 import { useCapCrossing } from './useCapCrossing';
 import { applyGuess, initialOrigin, ruleOfferFor, type CategoryOrigin, type RuleOffer } from './categorySuggest';
 import { RuleOfferCard } from './RuleOfferCard';
@@ -188,6 +190,10 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   };
 
   const [state, setState] = useState<FormState>(() => initialFormState(mode, formCtx));
+  // The received amount follows the sent amount at the stored rate until the user keys into it;
+  // a saved or restored value counts as already keyed in, so it is never recomputed.
+  const [amountInManual, setAmountInManual] = useState(() => state.amountInText !== '');
+  const rates = useFxLatest().data ?? [];
   const [picker, setPicker] = useState<PickerKey>(null);
   const [submitted, setSubmitted] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -263,6 +269,22 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const parse = (text: string, currency: string) => parser.parse(text, currency, exponentFor(currency));
   const nameOf = (id: string | null): string => accounts.find((a) => a.id === id)?.name ?? '';
   const crossCurrency = isTransfer && state.toCurrency !== null && state.toCurrency !== state.currency;
+
+  useEffect(() => {
+    if (!crossCurrency || amountInManual) return;
+    const next = prefillAmountInText({
+      amountText: state.amountText,
+      currency: state.currency,
+      toCurrency: state.toCurrency,
+      rates,
+      parse,
+      exponentFor,
+      toInputText: formCtx.amountInputText,
+    });
+    setState((s) => (s.amountInText === next ? s : { ...s, amountInText: next }));
+    // parse, exponentFor and formCtx are re-created each render; the fields they read are in the deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crossCurrency, amountInManual, state.amountText, state.currency, state.toCurrency, rates]);
 
   const errorList = submitted ? (isTransfer ? validateTransfer(state, parse) : validateForm(state, parse)) : [];
   const hasError = (code: string): boolean => (errorList as readonly unknown[]).includes(code);
@@ -368,6 +390,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     const item = itemFromForm(state, isTransfer ? { freq: 'never' } : repeats, parse, Crypto.randomUUID());
     if (!item || !list.add(item)) return null;
     setState(clearedAfterAdd);
+    setAmountInManual(false);
     setRepeats({ freq: 'never' });
     setOrigin('empty');
     setOffer(null);
@@ -421,6 +444,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     if (!taken) return;
     const loaded = formFromItem(taken, { amountInputText: formCtx.amountInputText });
     setState(loaded.state);
+    setAmountInManual(loaded.state.amountInText !== '');
     setRepeats(loaded.repeats);
     setOrigin(loaded.state.categoryId ? 'picked' : 'empty');
     setOffer(null);
@@ -752,7 +776,13 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         {hasError('transferAmountsMatch') ? <Text style={errorStyle}>{t('record.sheet.transferAmountsMatch')}</Text> : null}
         {keypadVisible ? (
           <Keypad
-            value={inActive ? state.amountInText : state.amountText}
+            value={inActive ? (amountInManual ? state.amountInText : '') : state.amountText}
+            onKeyPress={(key) => {
+              if (!inActive || amountInManual) return;
+              // First key on a prefilled figure replaces it; backspace or clear empties it.
+              setAmountInManual(true);
+              if (key === 'backspace' || key === 'clear') set({ amountInText: '' });
+            }}
             onChange={(next) => set(inActive ? { amountInText: next } : { amountText: next })}
             exponent={exponentFor(activeCurrency)}
             decimalSeparator={separators?.decimal ?? '.'}

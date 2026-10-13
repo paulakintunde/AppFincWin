@@ -344,7 +344,7 @@ describe('TransactionSheet: transfers', () => {
     expect(getByText('Pick an account.')).toBeTruthy();
   });
 
-  it('asks for both amounts across currencies and never derives one', async () => {
+  it('keeps a typed received amount across currencies', async () => {
     const { getByText, getByLabelText, getByHintText } = await open({ kind: 'new', direction: 'out' });
     await fireEvent.press(getByText('Transfer'));
     await fireEvent.press(getByLabelText('To account'));
@@ -358,6 +358,73 @@ describe('TransactionSheet: transfers', () => {
       amountOut: 1000,
       amountIn: 1150,
       to: { id: 'a3', currency: 'EUR' },
+    });
+  });
+
+  describe('received amount prefill', () => {
+    const rateGbp = { quote: 'GBP', rate: '0.86', rate_date: '2026-09-24', source: 'frankfurter-v2' };
+    const toEuro = async () => {
+      mockRates = [rateGbp];
+      const utils = await open({ kind: 'new', direction: 'out' });
+      await fireEvent.press(utils.getByText('Transfer'));
+      await fireEvent.press(utils.getByLabelText('To account'));
+      await fireEvent.press(utils.getByLabelText('Euro pot'));
+      return utils;
+    };
+
+    it('prefills from the stored rate', async () => {
+      const { getByText, getByLabelText } = await toEuro();
+      await typeAmount(getByLabelText, '10');
+      expect(screen.getAllByText(/11.63/).length).toBeGreaterThan(0);
+      await fireEvent.press(getByText('Add transfer'));
+      expect((mockAddTransfer.mock.calls[0] as unknown[])[0]).toMatchObject({ amountOut: 1000, amountIn: 1163 });
+    });
+
+    it('follows the sent amount while untouched', async () => {
+      const { getByText, getByLabelText } = await toEuro();
+      await typeAmount(getByLabelText, '10');
+      await typeAmount(getByLabelText, '20');
+      expect(screen.getAllByText(/23.26/).length).toBeGreaterThan(0);
+    });
+
+    it('stops after a manual edit', async () => {
+      const { getByText, getByLabelText, getByHintText } = await toEuro();
+      await typeAmount(getByLabelText, '10');
+      await fireEvent.press(getByHintText('Amount received'));
+      await typeAmount(getByLabelText, '11.5');
+      await fireEvent.press(screen.getAllByLabelText(/^Amount/)[0]!);
+      await typeAmount(getByLabelText, '30');
+      await fireEvent.press(getByText('Add transfer'));
+      expect((mockAddTransfer.mock.calls[0] as unknown[])[0]).toMatchObject({ amountOut: 3000, amountIn: 1150 });
+    });
+
+    it('replaces the prefilled figure on the first digit', async () => {
+      const { getByText, getByLabelText, getByHintText } = await toEuro();
+      await typeAmount(getByLabelText, '10');
+      await fireEvent.press(getByHintText('Amount received'));
+      await fireEvent.press(getByLabelText('5'));
+      await fireEvent.press(getByText('Add transfer'));
+      expect((mockAddTransfer.mock.calls[0] as unknown[])[0]).toMatchObject({ amountIn: 500 });
+    });
+
+    it('clears the prefilled figure on backspace and does not refill', async () => {
+      const { getByText, getByLabelText, getByHintText } = await toEuro();
+      await typeAmount(getByLabelText, '10');
+      await fireEvent.press(getByHintText('Amount received'));
+      await fireEvent.press(getByLabelText('Delete last digit'));
+      await fireEvent.press(screen.getAllByLabelText(/^Amount/)[0]!);
+      await typeAmount(getByLabelText, '30');
+      await fireEvent.press(getByText('Add transfer'));
+      expect(mockAddTransfer).not.toHaveBeenCalled();
+    });
+
+    it('stays empty with no stored rate', async () => {
+      const { getByText, getByLabelText, queryByText } = await toEuro();
+      mockRates = [];
+      await typeAmount(getByLabelText, '10');
+      expect(queryByText(/11\.63/)).toBeNull();
+      await fireEvent.press(getByText('Add transfer'));
+      expect(mockAddTransfer).not.toHaveBeenCalled();
     });
   });
 

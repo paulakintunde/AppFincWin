@@ -21,6 +21,8 @@ export interface KeypadProps {
   decimalSeparator: string;
   maxMinor?: number;
   disabled?: boolean;
+  /** Called on every press, before the text is reduced (even when the text would not change). */
+  onKeyPress?: (key: KeypadKey) => void;
 }
 
 const LAYOUT: KeypadKey[][] = [
@@ -30,11 +32,12 @@ const LAYOUT: KeypadKey[][] = [
   ['decimal', '0', 'backspace'],
 ];
 
-export function Keypad({ value, onChange, exponent, decimalSeparator, maxMinor, disabled = false }: KeypadProps) {
+export function Keypad({ value, onChange, exponent, decimalSeparator, maxMinor, disabled = false, onKeyPress }: KeypadProps) {
   const { colors, pairing } = useTheme();
   const t = useT();
 
   const press = (key: KeypadKey) => {
+    onKeyPress?.(key);
     const next = applyKey(value, key, { exponent, decimalSeparator, maxMinor });
     if (next !== value) {
       hapticSelection();
