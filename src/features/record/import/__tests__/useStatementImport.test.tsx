@@ -332,6 +332,11 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
       result.current.continue();
     });
     expect(mockTrack).toHaveBeenCalledWith('import_mapping_confirmed', { corrected: expect.any(Boolean) });
+    expect(result.current.stage).toBe('choose-mode');
+    await waitFor(() => expect(result.current.preview).not.toBeNull());
+    await act(async () => {
+      result.current.chooseMode('new');
+    });
     expect(result.current.stage).toBe('review');
   });
 
@@ -424,6 +429,11 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
     await act(async () => {
       result.current.confirmFormat();
     });
+    expect(result.current.stage).toBe('choose-mode');
+    await waitFor(() => expect(result.current.preview).not.toBeNull());
+    await act(async () => {
+      result.current.chooseMode('new');
+    });
     expect(result.current.stage).toBe('review');
     expect(mockTrack).toHaveBeenCalledWith('import_format_confirmed', expect.objectContaining({ format: 'ofx' }));
   });
@@ -504,6 +514,10 @@ async function reachReview(bytes: Uint8Array, extension: 'csv' | 'ofx' | 'qfx', 
     });
   }
   await waitFor(() => expect(hook.result.current.preview).not.toBeNull());
+  expect(hook.result.current.stage).toBe('choose-mode');
+  await act(async () => {
+    hook.result.current.chooseMode('new');
+  });
   return hook;
 }
 
@@ -1020,6 +1034,9 @@ describe('useStatementImport: commit and recurring suggestions', () => {
     });
     await waitFor(() => expect(result.current.preview).not.toBeNull());
     await act(async () => {
+      result.current.chooseMode('new');
+    });
+    await act(async () => {
       result.current.commit();
     });
     expect(mockCommit.mock.calls[0]![0].finalize.profile).toBeNull();
@@ -1215,6 +1232,10 @@ async function readToReview(name: string) {
     hook.result.current.confirmFormat();
   });
   await waitFor(() => expect(hook.result.current.preview).not.toBeNull());
+  expect(hook.result.current.stage).toBe('choose-mode');
+  await act(async () => {
+    hook.result.current.chooseMode('new');
+  });
   return hook;
 }
 
@@ -1414,6 +1435,11 @@ describe('useStatementImport: PDF stages (02.1-10)', () => {
         result.current.confirmFormat();
       });
       expect(mockTrack).toHaveBeenCalledWith('import_format_confirmed', expect.objectContaining({ format: 'pdf' }));
+      expect(result.current.stage).toBe('choose-mode');
+      await waitFor(() => expect(result.current.preview).not.toBeNull());
+      await act(async () => {
+        result.current.chooseMode('new');
+      });
       expect(result.current.stage).toBe('review');
     });
 
@@ -1432,7 +1458,11 @@ describe('useStatementImport: PDF stages (02.1-10)', () => {
       await act(async () => {
         result.current.confirmFormat();
       });
-      await waitFor(() => expect(result.current.stage).toBe('review'));
+      await waitFor(() => expect(result.current.stage).toBe('choose-mode'));
+      await act(async () => {
+        result.current.chooseMode('new');
+      });
+      expect(result.current.stage).toBe('review');
     });
 
     it('choosing another section asks its own year again', async () => {
@@ -1611,6 +1641,11 @@ describe('useStatementImport: PDF review gate (IMP-02)', () => {
       result.current.confirmFormat();
     });
     await waitFor(() => expect(result.current.preview).not.toBeNull());
+    expect(result.current.stage).toBe('choose-mode');
+    await waitFor(() => expect(result.current.preview).not.toBeNull());
+    await act(async () => {
+      result.current.chooseMode('new');
+    });
     expect(result.current.reviewGate).toEqual({ required: true, count: result.current.counts.included });
   });
 
@@ -1671,6 +1706,11 @@ describe('useStatementImport: currency recognition (review HI-01)', () => {
       result.current.confirmFormat();
     });
     await waitFor(() => expect(result.current.preview).not.toBeNull());
+    expect(result.current.stage).toBe('choose-mode');
+    await waitFor(() => expect(result.current.preview).not.toBeNull());
+    await act(async () => {
+      result.current.chooseMode('new');
+    });
     const foreign = result.current.preview!.rows.map((r) => r.foreign).filter((f) => f !== null);
     expect(foreign.map((f) => f!.currency)).toContain('USD');
   });
