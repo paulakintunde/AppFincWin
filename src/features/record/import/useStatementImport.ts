@@ -28,6 +28,9 @@ import {
   REFUND_LOOKBACK_DAYS,
   type RefundPurchase,
   type StatementDraft,
+  type ExtraLine,
+  findExtras,
+  statementPeriod,
 } from '@/engine/statement';
 import type { ExistingLeg, TransferAccount } from '@/engine/transfer';
 import { fetchImportProfile } from '@/db/importProfiles';
@@ -94,10 +97,14 @@ export type ImportStage =
   | 'choose-statement'
   | 'format'
   | 'mapping'
+  | 'choose-mode'
   | 'review'
   | 'matches'
   | 'committing'
   | 'done';
+
+/** REC-26: reconcile against the app's own lines, or add every statement line (D-01). */
+export type ImportMode = 'reconcile' | 'new';
 
 export type ImportEntry = 'onboarding' | 'you' | 'account';
 
@@ -131,6 +138,12 @@ interface Machine {
   // review and matches: every default is "not accepted" (D-48, D-52, D-55)
   preview: Preview | null;
   existingById: ReadonlyMap<string, ExistingInfo>;
+  mode: ImportMode | null;
+  /** False when the existing entries could not be read at all (reconcile is then refused). */
+  existingChecked: boolean;
+  extras: ExtraLine[];
+  extraRows: ReadonlyMap<string, TransactionRow>;
+  nearByIndex: ReadonlyMap<number, string>;
   /** Which account and name each offered stored row has, so a suggestion can name them (D-52, D-55). */
   storedLegs: ReadonlyMap<string, { accountId: string; name: string | null }>;
   included: ReadonlyMap<number, boolean>;
@@ -196,6 +209,11 @@ function initialMachine(accountId: string | null): Machine {
     notationEdited: false,
     preview: null,
     existingById: NONE,
+    mode: null,
+    existingChecked: false,
+    extras: [],
+    extraRows: NONE,
+    nearByIndex: NONE,
     storedLegs: NONE,
     included: NONE,
     categories: NONE,
@@ -382,9 +400,14 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       const token = ++run.current;
       setM((prev) => ({
         ...prev,
-        stage: 'review',
+        stage: 'choose-mode',
         preview: null,
         existingById: NONE,
+        mode: null,
+        existingChecked: false,
+        extras: [],
+        extraRows: NONE,
+        nearByIndex: NONE,
         storedLegs: NONE,
         included: NONE,
         categories: NONE,
@@ -422,11 +445,15 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         ]);
 
         // A failed read falls back to the cached month rows for this account, or to none.
+        const cachedArrays = rangeRead.ok
+          ? []
+          : qc.getQueriesData<unknown[]>({ queryKey: queryKeys.transactionsRoot(householdId) }).flatMap(([, data]) => (Array.isArray(data) ? [data] : []));
         const stored: TransactionRow[] = rangeRead.ok
           ? rangeRead.value
-          : cachedRows(qc.getQueriesData<unknown[]>({ queryKey: queryKeys.transactionsRoot(householdId) }).map(([, data]) => (Array.isArray(data) ? data : []))).filter(
+          : cachedRows(cachedArrays).filter(
               (r) => r.account_id === accountId && r.local_date >= range.from && r.local_date <= range.toInclusive
             );
+        const existingChecked = rangeRead.ok || cachedArrays.length > 0;
         const candidates = candidateRead.ok ? candidateRead.value : [];
         const names = namesRead.ok ? namesRead.value : [];
         const purchases: RefundPurchase[] = (purchaseRead.ok ? purchaseRead.value : [])
@@ -537,7 +564,28 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         const storedLegs = new Map<string, { accountId: string; name: string | null }>();
         for (const r of stored) storedLegs.set(r.id, { accountId: r.account_id, name: r.name });
         for (const c of candidates) storedLegs.set(c.id, { accountId: c.account_id, name: c.name });
-        patch({ preview, existingById, storedLegs });
+        // D-23: extras = what findDuplicates did not consume (02.3-05)
+        const matchedIds = new Set(preview.rows.flatMap((r) => (r.duplicate === null ? [] : [r.duplicate.id])));
+        const period = statementPeriod(
+          { start: draft.periodStart, end: draft.periodEnd },
+          draft.rows.map((r) => r.localDate)
+        );
+        const missing = preview.rows
+          .filter((r) => r.duplicate === null && !r.locked)
+          .map((r) => ({ index: r.index, localDate: r.converted.localDate, amount: r.converted.amount }));
+        const pool = settled.map((r) => ({
+          id: r.id,
+          localDate: r.local_date,
+          amount: r.original_amount,
+          name: r.name,
+          status: r.status,
+        }));
+        const found = existingChecked
+          ? findExtras(pool, matchedIds, period, missing)
+          : { extras: [] as ExtraLine[], nearByIndex: new Map<number, string>() };
+        const extraIds = new Set(found.extras.map((e) => e.id));
+        const extraRows = new Map(settled.filter((r) => extraIds.has(r.id)).map((r) => [r.id, r] as const));
+        patch({ preview, existingById, storedLegs, existingChecked, extras: found.extras, extraRows, nearByIndex: found.nearByIndex });
       })();
     },
     [accountById, accounts, balances, exponentFor, ctx.householdId, ctx.today, ctx.userId, fx.data, lookup.builtinIds, patch, qc]
@@ -580,7 +628,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         rememberedNote: result.profile.decidedBy === 'remembered',
         flipped: false,
         rolesKey,
-        stage: skip ? (format === 'csv' ? 'mapping' : 'review') : 'format',
+        stage: skip ? (format === 'csv' ? 'mapping' : 'choose-mode') : 'format',
       });
       if (skip && format !== 'csv') goReview(draft, result.profile, accountId, format);
     },
@@ -855,7 +903,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
 
   const setAccount = useCallback(
     (id: string): void => {
-      if (m.stage === 'review' || m.stage === 'matches' || m.stage === 'committing' || m.stage === 'done') return;
+      if (m.stage === 'choose-mode' || m.stage === 'review' || m.stage === 'matches' || m.stage === 'committing' || m.stage === 'done') return;
       const next: Machine = { ...m, accountId: id };
       setM(next);
       // A PDF's drafts take the account's currency, so they are built again for the new account.
@@ -1392,9 +1440,22 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     return undefined;
   }, [commit, continueFromMapping, gate.required, m.stage, patch, payMatchRows.length, refundRows.length, rowsChecked, transferRows.length]);
 
+  const chooseMode = useCallback(
+    (mode: ImportMode): void => {
+      if (m.stage !== 'choose-mode' || m.preview === null) return;
+      if (mode === 'reconcile' && !m.existingChecked) return;
+      // D-03 / D-04: buildPreview's defaults already are the reconcile default; 'new' keeps them too.
+      patch({ stage: 'review', mode });
+    },
+    [m.existingChecked, m.preview, m.stage, patch]
+  );
+
+  const overlapCount = useMemo(() => (m.preview?.rows ?? []).filter((r) => r.duplicate !== null).length, [m.preview]);
+
   const back = useCallback((): void => {
     if (m.stage === 'mapping') patch({ stage: 'format' });
-    else if (m.stage === 'review') patch({ stage: m.prepared?.format === 'csv' ? 'mapping' : 'format' });
+    else if (m.stage === 'choose-mode') patch({ stage: m.prepared?.format === 'csv' ? 'mapping' : 'format' });
+    else if (m.stage === 'review') patch({ stage: 'choose-mode' });
     else if (m.stage === 'matches') patch({ stage: 'review' });
   }, [m.prepared, m.stage, patch]);
 
@@ -1408,9 +1469,11 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
             ? 'password'
             : m.stage === 'pdf-balance'
               ? 'balance'
-              : m.stage === 'format' || m.stage === 'mapping' || m.stage === 'review' || m.stage === 'matches'
-          ? m.stage
-          : null;
+              : m.stage === 'choose-mode'
+                ? 'format'
+                : m.stage === 'format' || m.stage === 'mapping' || m.stage === 'review' || m.stage === 'matches'
+                  ? m.stage
+                  : null;
     if (m.stage === 'committing') return;
     run.current += 1;
     committing.current = false;
@@ -1464,6 +1527,13 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
 
   return {
     stage: m.stage,
+    mode: m.mode,
+    existingChecked: m.existingChecked,
+    overlapCount,
+    chooseMode,
+    extras: m.extras,
+    extraRows: m.extraRows,
+    nearByIndex: m.nearByIndex,
     rejectReason: m.rejectReason,
     format: (m.prepared?.format ?? null) as ImportFormat | null,
     statementChoices,
