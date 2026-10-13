@@ -17,6 +17,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space, useScreenInsets } from '@/theme/layout';
@@ -62,6 +63,9 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel }: Shee
 
   return (
     <Modal transparent visible={visible} animationType="slide" onRequestClose={onDismiss}>
+      {/* A Modal is its own native window on Android, outside the root GestureHandlerRootView in
+          app/_layout.tsx, so RNGH gestures (SwipeRow) need a root of their own in here. */}
+      <GestureHandlerRootView testID="sheet-gesture-root" style={styles.flex}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable
           style={styles.backdrop}
@@ -90,6 +94,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel }: Shee
           {children}
         </View>
       </KeyboardAvoidingView>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
