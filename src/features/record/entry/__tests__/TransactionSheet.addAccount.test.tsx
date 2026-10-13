@@ -59,6 +59,24 @@ jest.mock('@/data/mutations/recurringSeries', () => ({
 }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [] }) }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: jest.fn() }) }));
+const mockAddRule = jest.fn((..._a: unknown[]) => ({ id: 'rule-1', stepId: 'rule-step' }));
+jest.mock('@/data/mutations/categoryRules', () => ({ useAddRule: () => ({ add: mockAddRule }) }));
+jest.mock('@/features/record/useGuessContext', () => {
+  const value = {
+    guess: {
+      keywordRules: jest.requireActual('@/engine/categorize').DEFAULT_KEYWORD_RULES,
+      learned: new Map(),
+      builtinIds: new Map(),
+      personalRules: [],
+      sharedRules: [],
+    },
+    rules: [],
+    resolved: { personal: [], shared: [], byRuleId: new Map(), unresolvedIds: new Set() },
+    memberCategories: [],
+    rulesStatus: 'ready',
+  };
+  return { useGuessContext: () => value };
+});
 jest.mock('@/data/queries/categories', () => ({
   useCategoryLookup: () => ({ active: [], byId: new Map(), transferCategoryId: 'tc' }),
 }));
