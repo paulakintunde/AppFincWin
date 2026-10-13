@@ -398,7 +398,7 @@ Plans:
   5. The account picker in the entry sheet ends with "Add account"; creating an account there returns to the entry with the new account selected.
   6. "Add to list" keeps a valid entry in a list at the bottom of the sheet and clears the form, up to 30 per money out, money in or transfer list; listed entries can be edited or removed, survive an accidental swipe or close, and Save writes the current entry plus the list in one step with one Undo.
 **Note:** criteria 4–6 change the entry sheet and Keypad that Phase 3's bottom-sheet migration carries over; plan 02.3 before re-checking the Phase 3 plans.
-**Plans:** 7/20 plans executed
+**Plans:** 19/20 plans executed
 **Status:** Planned 2026-10-12 (not started). Three additive migrations (20261012000100 category_rules, 20261012000200 category_rules_patches, 20261012000300 entry_list) and pgTAP 51-53; the production push in 02.3-20 needs the user's go.
 
 Plans:
@@ -413,22 +413,22 @@ Plans:
 - [x] 02.3-07-PLAN.md — Remembered accounts store, Google continue/different/forget flows, AuthProvider, docs (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 02.3-08-PLAN.md — Schema: apply_patches + undo_log_fill re-created with category_rules + pgTAP 52; 35/37/44/45 regression (W2)
-- [ ] 02.3-09-PLAN.md — Rules data layer: db, query, mutations with undo, useGuessContext (W2)
-- [ ] 02.3-10-PLAN.md — Import machine: choose-mode stage, mode, overlap, extras (W2)
-- [ ] 02.3-11-PLAN.md — Entry sheet: compact amount field, pad on tap; Add account from the picker (W2)
-- [ ] 02.3-12-PLAN.md — Welcome: Continue as tiles, Use a different account, Not you? Remove (W2)
-- [ ] 02.3-18-PLAN.md — Entry list parts: form/item conversion, device draft, useEntryList, EntryList, ConfirmSheet onDismiss (W2)
+- [x] 02.3-08-PLAN.md — Schema: apply_patches + undo_log_fill re-created with category_rules + pgTAP 52; 35/37/44/45 regression (W2)
+- [x] 02.3-09-PLAN.md — Rules data layer: db, query, mutations with undo, useGuessContext (W2)
+- [x] 02.3-10-PLAN.md — Import machine: choose-mode stage, mode, overlap, extras (W2)
+- [x] 02.3-11-PLAN.md — Entry sheet: compact amount field, pad on tap; Add account from the picker (W2)
+- [x] 02.3-12-PLAN.md — Welcome: Continue as tiles, Use a different account, Not you? Remove (W2)
+- [x] 02.3-18-PLAN.md — Entry list parts: form/item conversion, device draft, useEntryList, EntryList, ConfirmSheet onDismiss (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 02.3-13-PLAN.md — Bulk save path: buildEntryListWrite, useBulkAdd (one step, one Undo), optimistic transfer fix (W3)
-- [ ] 02.3-14-PLAN.md — Categories -> Rules screen and RuleSheet (W3)
-- [ ] 02.3-15-PLAN.md — Import UI: choice step, reconcile review, extras detail (W3)
-- [ ] 02.3-16-PLAN.md — Rules feed statement import and paste-a-list (W3)
-- [ ] 02.3-17-PLAN.md — Entry sheet: suggested category and the one-tap rule offer (W3)
+- [x] 02.3-13-PLAN.md — Bulk save path: buildEntryListWrite, useBulkAdd (one step, one Undo), optimistic transfer fix (W3)
+- [x] 02.3-14-PLAN.md — Categories -> Rules screen and RuleSheet (W3)
+- [x] 02.3-15-PLAN.md — Import UI: choice step, reconcile review, extras detail (W3)
+- [x] 02.3-16-PLAN.md — Rules feed statement import and paste-a-list (W3)
+- [x] 02.3-17-PLAN.md — Entry sheet: suggested category and the one-tap rule offer (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 02.3-19-PLAN.md — Entry sheet: Add to list, list section, drafts and prompts, one-step Save (W4)
+- [x] 02.3-19-PLAN.md — Entry sheet: Add to list, list section, drafts and prompts, one-step Save (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 02.3-20-PLAN.md — Rollout: PR, full gate, production schema push [BLOCKING, user go], live checks, device walkthrough, preview APK (W5)

@@ -46,6 +46,8 @@ export interface SwipeRowProps {
   disabled?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
+  /** Label of the screen-reader "activate" action; defaults to accessibilityLabel. */
+  activateLabel?: string;
 }
 
 function ActionZone({
@@ -81,7 +83,7 @@ function ActionZone({
   );
 }
 
-export function SwipeRow({ children, left, right, disabled = false, onPress, accessibilityLabel }: SwipeRowProps) {
+export function SwipeRow({ children, left, right, disabled = false, onPress, accessibilityLabel, activateLabel }: SwipeRowProps) {
   const ref = useRef<SwipeableMethods>(null);
   const [leftZone, setLeftZone] = useState(SWIPE_ACTION_WIDTH);
   const [rightZone, setRightZone] = useState(SWIPE_ACTION_WIDTH);
@@ -104,7 +106,7 @@ export function SwipeRow({ children, left, right, disabled = false, onPress, acc
   const actions: { name: string; label: string }[] = [];
   if (!disabled && left) actions.push({ name: 'left', label: left.a11yLabel });
   if (!disabled && right) actions.push({ name: 'right', label: right.a11yLabel });
-  if (onPress) actions.push({ name: 'activate', label: accessibilityLabel ?? 'Open' });
+  if (onPress) actions.push({ name: 'activate', label: activateLabel ?? accessibilityLabel ?? 'Open' });
 
   const body = (
     <View

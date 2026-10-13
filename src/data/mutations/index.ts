@@ -23,6 +23,8 @@ import { registerAddMonthMutations } from './addMonth';
 import { registerAccountDeleteMutations } from './accountDelete';
 import { registerDismissOffersMutations } from './dismissedOffers';
 import { registerRecordPrefsMutations } from './recordPrefs';
+import { registerCategoryRuleMutations } from './categoryRules';
+import { registerBulkAddMutations } from './bulkAdd';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -51,4 +53,8 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerAccountDeleteMutations(qc);
   registerDismissOffersMutations(qc);
   registerRecordPrefsMutations(qc);
+  // 02.3-09: description-to-category rules.
+  registerCategoryRuleMutations(qc);
+  // 02.3-13: entry-sheet list (one step, one Undo).
+  registerBulkAddMutations(qc);
 }

@@ -110,7 +110,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
 }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
 jest.mock('@/data/queries/categories', () => ({
-  useCategoryLookup: () => ({ builtinIds: new Map(), transferCategoryId: 'cat-transfer', loading: false }),
+  useCategoryLookup: () => ({ all: [], builtinIds: new Map(), transferCategoryId: 'cat-transfer', loading: false }),
 }));
 jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
 jest.mock('@/data/queries/customCurrencies', () => ({ useCustomCurrencies: () => ({ data: [], isLoading: false }) }));

@@ -698,6 +698,28 @@ describe('buildPreview: transfers, mark-paid and categories', () => {
       ['cat-gym', 'learned'],
     ]);
   });
+
+  it('rules outrank learned and keyword guesses; personal beats shared (02.3 D-11, D-25)', () => {
+    const draft = draftOf([draftRow(0, { description: 'TESCO STORES 3021' })]);
+    const learned = new Map([['tesco stores 3021', 'c-learned']]);
+    const personal = buildPreview(
+      previewInput(draft, {
+        learned,
+        personalRules: [{ keywordNorm: 'tesco', categoryId: 'c-rule' }],
+        sharedRules: [{ keywordNorm: 'tesco', categoryId: 'c-shared' }],
+      })
+    );
+    expect([personal.rows[0]?.categoryId, personal.rows[0]?.categorySource]).toEqual(['c-rule', 'rule-personal']);
+    const shared = buildPreview(previewInput(draft, { learned, sharedRules: [{ keywordNorm: 'tesco', categoryId: 'c-shared' }] }));
+    expect([shared.rows[0]?.categoryId, shared.rows[0]?.categorySource]).toEqual(['c-shared', 'rule-shared']);
+  });
+
+  it('rules do not change duplicates or inclusion', () => {
+    const draft = draftOf([draftRow(0, { description: 'TESCO STORES' }), draftRow(1, { description: 'OTHER' })]);
+    const a = buildPreview(previewInput(draft));
+    const b = buildPreview(previewInput(draft, { personalRules: [{ keywordNorm: 'tesco', categoryId: 'c-rule' }] }));
+    expect(b.rows.map((r) => [r.duplicate, r.included])).toEqual(a.rows.map((r) => [r.duplicate, r.included]));
+  });
 });
 
 describe('toImportCommit', () => {

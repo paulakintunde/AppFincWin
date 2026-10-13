@@ -67,6 +67,8 @@ jest.mock('@/features/record/useRecordContext', () => ({
     today: '2026-10-09',
   }),
 }));
+jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn() } }));
+jest.mock('@/features/record/useGuessContext', () => ({ useGuessContext: () => ({ rules: [] }) }));
 let mockMonthRows: Record<string, unknown>[] = [];
 jest.mock('@/data/queries/activity', () => ({
   useMonthView: () => ({ rows: mockMonthRows, isLoading: false }),

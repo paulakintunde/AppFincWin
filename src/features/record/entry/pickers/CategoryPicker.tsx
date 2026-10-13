@@ -22,9 +22,11 @@ export interface CategoryPickerProps {
   formatMinor?: (minor: number) => string;
   /** Opens category management; the 'Manage categories…' row shows when given. */
   onManage?: () => void;
+  /** REC-27: hides the 'Uncategorised' row (a rule must name a real category). */
+  hideUncategorised?: boolean;
 }
 
-export function CategoryPicker({ visible, categories, selectedId, onSelect, onClose, usage, formatMinor, onManage }: CategoryPickerProps) {
+export function CategoryPicker({ visible, categories, selectedId, onSelect, onClose, usage, formatMinor, onManage, hideUncategorised = false }: CategoryPickerProps) {
   const t = useT();
   const fmt = formatMinor ?? String;
   const ordered = usage
@@ -47,13 +49,15 @@ export function CategoryPicker({ visible, categories, selectedId, onSelect, onCl
     <Sheet visible={visible} onDismiss={onClose} accessibilityLabel={title}>
       <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
       <SheetScroll>
-        <Row
-          label={t('record.sheet.uncategorised')}
-          dense
-          value={selectedId === null ? '✓' : undefined}
-          selected={selectedId === null}
-          onPress={() => onSelect(null)}
-        />
+        {hideUncategorised ? null : (
+          <Row
+            label={t('record.sheet.uncategorised')}
+            dense
+            value={selectedId === null ? '✓' : undefined}
+            selected={selectedId === null}
+            onPress={() => onSelect(null)}
+          />
+        )}
         {ordered.map((category) => {
           const name = categoryName(category, t);
           const sub = subFor(category);
