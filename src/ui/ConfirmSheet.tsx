@@ -20,6 +20,8 @@ export interface ConfirmSheetProps {
   destructive?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  /** Swipe-down or back dismissal; defaults to onCancel so a prompt can treat dismissal differently from Cancel. */
+  onDismiss?: () => void;
 }
 
 export function ConfirmSheet({
@@ -31,12 +33,13 @@ export function ConfirmSheet({
   destructive = false,
   onConfirm,
   onCancel,
+  onDismiss,
 }: ConfirmSheetProps) {
   const { colors, pairing } = useTheme();
   const bodyStyle = { ...textRole(pairing, 'body'), color: colors.ink };
 
   return (
-    <Sheet visible={visible} onDismiss={onCancel}>
+    <Sheet visible={visible} onDismiss={onDismiss ?? onCancel}>
       <View style={styles.column}>
         {title ? <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{title}</Text> : null}
         <Text style={bodyStyle}>{body}</Text>

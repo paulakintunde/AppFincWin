@@ -1,0 +1,166 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
+import type { ListItem } from '@/engine/entryList';
+import { entryDraftKey, saveEntryDraft } from '../useEntryDraft';
+import { useEntryList } from '../useEntryList';
+
+jest.setTimeout(30000);
+
+const item = (id: string, over: Partial<ListItem> = {}): ListItem => ({
+  id,
+  type: 'out',
+  amountMinor: 1250,
+  currency: 'GBP',
+  accountId: 'a1',
+  localDate: '2026-09-20',
+  name: 'Tesco',
+  categoryId: null,
+  paymentType: null,
+  status: 'paid',
+  statusTouched: false,
+  note: '',
+  automatic: false,
+  refund: false,
+  repeat: { freq: 'never' },
+  toAccountId: null,
+  toCurrency: null,
+  amountInMinor: null,
+  ...over,
+});
+
+const KEY = entryDraftKey('u1', 'h1');
+const ids = new Set(['a1', 'a2']);
+const mount = async (over: Partial<Parameters<typeof useEntryList>[0]> = {}) =>
+  await renderHook(() =>
+    useEntryList({ userId: 'u1', householdId: 'h1', enabled: true, activeAccountIds: ids, ...over }),
+  );
+
+beforeEach(async () => {
+  await AsyncStorage.clear();
+});
+
+afterEach(async () => {
+  // let an unmount flush from the test that just ended land, and drop any spies
+  await new Promise((r) => setTimeout(r, 50));
+});
+
+describe('useEntryList', () => {
+  it('starts empty with no stored draft', async () => {
+    const { result } = await mount();
+    await act(async () => {});
+    expect(result.current.resumeCount).toBe(0);
+    expect(result.current.items).toEqual([]);
+  });
+
+  it('offers a stored draft and loads it only on continue', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1'), item('i2')]);
+    const { result } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(2));
+    expect(result.current.items).toEqual([]);
+    await act(() => result.current.continueDraft());
+    expect(result.current.items).toHaveLength(2);
+    expect(result.current.resumeCount).toBe(0);
+  });
+
+  it('discard empties the list and removes the key', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1')]);
+    const { result } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(1));
+    await act(() => result.current.discardDraft());
+    expect(result.current.items).toEqual([]);
+    await waitFor(async () => expect(await AsyncStorage.getItem(KEY)).toBeNull());
+  });
+
+  it('drops and counts items whose account is gone', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1'), item('i2', { accountId: 'gone' })]);
+    const { result } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(2));
+    await act(() => result.current.continueDraft());
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.dropped).toBe(1);
+  });
+
+  it('persists adds after the debounce and enforces the per-type cap', async () => {
+    const { result } = await mount();
+    await act(async () => {});
+    let ok = false;
+    await act(() => {
+      ok = result.current.add(item('n0'));
+    });
+    expect(ok).toBe(true);
+    await waitFor(async () => expect(await AsyncStorage.getItem(KEY)).not.toBeNull());
+    for (let n = 1; n < 30; n += 1) {
+      await act(() => {
+        result.current.add(item(`n${n}`));
+      });
+    }
+    expect(result.current.items).toHaveLength(30);
+    await act(() => {
+      ok = result.current.add(item('over'));
+    });
+    expect(ok).toBe(false);
+    expect(result.current.items).toHaveLength(30);
+    expect(result.current.canAdd('out')).toBe(false);
+    expect(result.current.canAdd('in')).toBe(true);
+  });
+
+  it('remove, take and clearAll update the list and storage', async () => {
+    const { result } = await mount();
+    await act(async () => {});
+    await act(() => {
+      result.current.add(item('i1'));
+      result.current.add(item('i2'));
+      result.current.add(item('i3'));
+    });
+    await act(() => result.current.remove('i1'));
+    expect(result.current.items.map((i) => i.id)).toEqual(['i3', 'i2']);
+    let taken: ListItem | null = null;
+    await act(() => {
+      taken = result.current.take('i2');
+    });
+    expect(taken).toMatchObject({ id: 'i2' });
+    expect(result.current.items.map((i) => i.id)).toEqual(['i3']);
+    await waitFor(async () => expect(await AsyncStorage.getItem(KEY)).toContain('i3'));
+    await act(() => result.current.clearAll());
+    expect(result.current.items).toEqual([]);
+    await waitFor(async () => expect(await AsyncStorage.getItem(KEY)).toBeNull());
+  });
+
+  it('writes nothing while a resume answer is pending', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1')]);
+    const { result } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(1));
+    const spy = jest.spyOn(AsyncStorage, 'setItem');
+    spy.mockClear();
+    await act(() => {
+      result.current.add(item('new'));
+    });
+    await new Promise((r) => setTimeout(r, 400));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('flushes a pending save on unmount', async () => {
+    const { result, unmount } = await mount();
+    await act(async () => {});
+    await act(() => {
+      result.current.add(item('i1'));
+    });
+    await unmount();
+    await waitFor(async () => expect(await AsyncStorage.getItem(KEY)).toContain('i1'));
+  });
+
+  it('never reads or writes storage when disabled', async () => {
+    const get = jest.spyOn(AsyncStorage, 'getItem');
+    const set = jest.spyOn(AsyncStorage, 'setItem');
+    get.mockClear();
+    set.mockClear();
+    const { result, unmount } = await mount({ enabled: false });
+    await act(() => {
+      result.current.add(item('i1'));
+    });
+    await new Promise((r) => setTimeout(r, 400));
+    await unmount();
+    expect(get).not.toHaveBeenCalled();
+    expect(set).not.toHaveBeenCalled();
+  });
+});
