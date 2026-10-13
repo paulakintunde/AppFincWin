@@ -82,7 +82,7 @@ function Reconciliation({ file }: { file: string | null }) {
   }
 }
 
-export function ReviewStep({ state }: { state: ImportState }) {
+export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: () => void }) {
   const t = useT();
   const tx = useDynamicT();
   const fmt = useFormatAmount();

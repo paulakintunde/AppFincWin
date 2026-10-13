@@ -169,6 +169,13 @@ function makeState(over: Partial<Record<keyof ImportState, unknown>> = {}): Impo
     suggestions: [],
     acceptSuggestion: fn(),
     dismissSuggestion: fn(),
+    mode: null,
+    existingChecked: true,
+    overlapCount: 0,
+    chooseMode: fn(),
+    extras: [],
+    extraRows: new Map(),
+    nearByIndex: new Map(),
   };
   return { ...base, ...over } as unknown as ImportState;
 }
@@ -1104,5 +1111,57 @@ describe('ImportScreen: committing', () => {
     mockState = makeState({ stage: 'committing', accountId: 'a1' });
     await renderScreen();
     expect(screen.getByText('Importing…')).toBeTruthy();
+  });
+});
+
+describe('ImportScreen: choose mode', () => {
+  it('shows the checking state with Cancel only while the preview is not ready', async () => {
+    mockState = makeState({ stage: 'choose-mode', preview: null });
+    await renderScreen();
+    expect(screen.getByText('Checking against your entries…')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockState.cancel).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+  });
+
+  it.each([
+    [24, 'This statement overlaps 24 lines you already have.'],
+    [1, 'This statement overlaps 1 line you already have.'],
+    [0, '0 lines overlap with entries you already have.'],
+  ])('states the overlap (%s)', async (overlapCount, sentence) => {
+    mockState = reviewState([previewRow(0)], { stage: 'choose-mode', overlapCount });
+    await renderScreen();
+    expect(screen.getByText('Choose how to add this statement')).toBeTruthy();
+    expect(screen.getByText(sentence)).toBeTruthy();
+  });
+
+  it('each choice proceeds in one tap', async () => {
+    mockState = reviewState([previewRow(0)], { stage: 'choose-mode' });
+    await renderScreen();
+    await fireEvent.press(screen.getByText('Find what’s missing'));
+    expect(mockState.chooseMode).toHaveBeenCalledWith('reconcile');
+    await fireEvent.press(screen.getByText('Add every line'));
+    expect(mockState.chooseMode).toHaveBeenCalledWith('new');
+  });
+
+  it('disables Find what’s missing with its reason when existing entries could not be read', async () => {
+    mockState = reviewState([previewRow(0)], { stage: 'choose-mode', existingChecked: false });
+    await renderScreen();
+    expect(screen.getByText('Your existing entries couldn’t be checked, so nothing can be matched yet.')).toBeTruthy();
+    const reconcile = screen.getByRole('button', { name: 'Find what’s missing' });
+    expect(reconcile.props.accessibilityState).toEqual({ disabled: true });
+    await fireEvent.press(screen.getByText('Find what’s missing'));
+    expect(mockState.chooseMode).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByText('Add every line'));
+    expect(mockState.chooseMode).toHaveBeenCalledWith('new');
+  });
+
+  it('Back and Cancel call the hook', async () => {
+    mockState = reviewState([previewRow(0)], { stage: 'choose-mode' });
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(mockState.back).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockState.cancel).toHaveBeenCalledTimes(1);
   });
 });
