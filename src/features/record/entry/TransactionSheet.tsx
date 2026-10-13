@@ -281,6 +281,8 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
       exponentFor,
       toInputText: formCtx.amountInputText,
     });
+    // The no-op guard below stops a loop; the figure must live in form state because Save reads it.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState((s) => (s.amountInText === next ? s : { ...s, amountInText: next }));
     // parse, exponentFor and formCtx are re-created each render; the fields they read are in the deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
