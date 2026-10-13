@@ -46,6 +46,7 @@ export default function AppLayout() {
         <Stack.Screen name="accounts/index" />
         <Stack.Screen name="accounts/[id]" />
         <Stack.Screen name="categories" />
+        <Stack.Screen name="category-rules" />
         <Stack.Screen name="history" />
         <Stack.Screen name="import" />
         <Stack.Screen name="setup/account" />

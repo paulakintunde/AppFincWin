@@ -2,11 +2,13 @@
 // open the edit sheet; Transfer and Settlement are listed as system categories with no edit
 // action; archived categories can be restored (a single undoable step).
 import React, { useState } from 'react';
+import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import type { CategoryRow } from '@/db/rows';
 import { useArchiveCategory } from '@/data/mutations/categories';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { useGuessContext } from '@/features/record/useGuessContext';
 import { useCategoryMonthUsage, usageSubLabel } from './useCategoryMonthUsage';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { money } from '@/engine/money';
@@ -32,6 +34,7 @@ export function CategoriesScreen() {
   const formatter = useMoneyFormatter(rc.showCents);
   const fmt = (minor: number) => formatter.formatMoney(money(minor, rc.homeCurrency));
   const { restore } = useArchiveCategory();
+  const ruleCount = useGuessContext().rules.length;
   const [sheet, setSheet] = useState<CategorySheetMode | null>(null);
 
   const system = lookup.all.filter((c) => c.is_system);
@@ -56,6 +59,12 @@ export function CategoriesScreen() {
         <Text accessibilityRole="header" style={titleStyle}>
           {t('categories.title')}
         </Text>
+        <Row
+          label={t('categories.rules.title')}
+          sublabel={ruleCount > 0 ? t('categories.rules.count', { count: ruleCount }) : t('categories.rules.entrySub')}
+          chevron
+          onPress={() => router.push('/category-rules')}
+        />
         {lookup.active.map((c) => {
           const u = usage.get(c.id);
           const sub = u ? usageSubLabel(u, fmt, t) : null;
