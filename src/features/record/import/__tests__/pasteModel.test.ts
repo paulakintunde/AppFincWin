@@ -21,6 +21,21 @@ const ctx = (over: Partial<PastePreviewContext> = {}): PastePreviewContext => ({
 });
 
 describe("buildPastePreview", () => {
+  it("categorises by a personal rule, and a user override still wins (02.3 D-11)", () => {
+    const rule = {
+      learned: new Map<string, string>(),
+      builtinIds: new Map(),
+      personalRules: [{ keywordNorm: "gym", categoryId: "c-gym" }],
+    };
+    const p = buildPastePreview("Gym 25.00", ctx({ guess: rule }));
+    expect(p.ok).toBe(true);
+    if (!p.ok) return;
+    expect(p.lines[0].categoryId).toBe("c-gym");
+    const o = buildPastePreview("Gym 25.00", ctx({ guess: rule, overrides: new Map([[1, "c-other"]]) }));
+    if (!o.ok) throw new Error("not ok");
+    expect(o.lines[0].categoryId).toBe("c-other");
+  });
+
   it("parses ready lines, guesses categories and lists skipped lines", () => {
     const p = buildPastePreview(
       "Studio rent 1450\n+ Freelance 600\nbad line",
