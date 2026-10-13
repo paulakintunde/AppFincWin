@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { maybeRequestSampleClearPrompt } from '@/data/mutations/samplePromptTrigger';
 import { validateMapping, notationFor, type ColumnMapping, type DateFormat, type MappingError } from '@/engine/csv';
-import { buildLearnedMap } from '@/engine/categorize';
+import { buildLearnedMap, resolveRules, type ResolvedRule } from '@/engine/categorize';
 import { minorUnits, parseAmount, type MinorUnits, type NumberNotation, type ScaledRate } from '@/engine/money';
 import { detectRecurring, type PendingOccurrence, type RecurringSuggestion } from '@/engine/recurring';
 import {
@@ -33,6 +33,7 @@ import {
   statementPeriod,
 } from '@/engine/statement';
 import type { ExistingLeg, TransferAccount } from '@/engine/transfer';
+import { fetchCategoryRules } from '@/db/categoryRules';
 import { fetchImportProfile } from '@/db/importProfiles';
 import type { AccountRow, TransactionRow } from '@/db/rows';
 import {
@@ -52,7 +53,9 @@ import { latestPerEur } from '@/data/queries/homeAmount';
 import { useImportCommit } from '@/data/mutations/importFinalize';
 import { suggestionToSeries, useCreateSeries } from '@/data/mutations/recurringSeries';
 import { newStepId } from '@/data/mutations/undoCapture';
+import { memberCategoriesOf, toStoredRule } from '@/features/record/useGuessContext';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { useT } from '@/i18n';
 import { pickStatementBytes } from '@/services/files/pickStatement';
 import { readPdfStatement } from '@/services/statementPdf';
 import { useAmountParser, type AmountParseFailure } from '@/ui/money/useAmountParser';
@@ -322,6 +325,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
 
   const qc = useQueryClient();
   const lookup = useCategoryLookup(ctx.userId ?? undefined);
+  const t = useT();
   const fx = useFxLatest();
   const { balances } = useAccountBalances(ctx.householdId, accounts);
   const importCommit = useImportCommit();
@@ -428,7 +432,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         const last = dates[dates.length - 1] ?? ctx.today;
         const range = { from: addDays(first, -2), toInclusive: addDays(last, 2) };
 
-        const [rangeRead, candidateRead, namesRead, purchaseRead] = await Promise.all([
+        const [rangeRead, candidateRead, namesRead, purchaseRead, rulesRead] = await Promise.all([
           attempt(() => fetchTransactionsInRange(supabase, householdId, { ...range, accountId })),
           attempt(() =>
             fetchTransferCandidates(supabase, householdId, {
@@ -442,6 +446,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           attempt(() =>
             fetchTransactionsInRange(supabase, householdId, { from: addDays(first, -REFUND_LOOKBACK_DAYS), toInclusive: last, accountId })
           ),
+          // D-11, D-29: the category rules; a failed or offline read means no rules, never a stuck import.
+          attempt(() => fetchCategoryRules(supabase)),
         ]);
 
         // A failed read falls back to the cached month rows for this account, or to none.
@@ -456,6 +462,13 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         const existingChecked = rangeRead.ok || cachedArrays.length > 0;
         const candidates = candidateRead.ok ? candidateRead.value : [];
         const names = namesRead.ok ? namesRead.value : [];
+        // Rules never block an import: any failure in resolving them degrades to no rules.
+        let resolvedRules: { personal: ResolvedRule[]; shared: ResolvedRule[] } = { personal: [], shared: [] };
+        try {
+          resolvedRules = resolveRules((rulesRead.ok ? rulesRead.value : []).map(toStoredRule), memberCategoriesOf(lookup.all, t));
+        } catch {
+          /* no rules */
+        }
         const purchases: RefundPurchase[] = (purchaseRead.ok ? purchaseRead.value : [])
           .filter((r) => r.original_amount < 0 && !r.is_refund && r.transfer_id === null)
           .map((r) => ({
@@ -559,6 +572,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           perEur,
           learned: buildLearnedMap(names.map((n) => ({ name: n.name, categoryId: n.category_id, updatedAt: n.updated_at }))),
           builtinIds: lookup.builtinIds,
+          personalRules: resolvedRules.personal,
+          sharedRules: resolvedRules.shared,
           storedOpeningForFile,
         });
         const storedLegs = new Map<string, { accountId: string; name: string | null }>();
@@ -588,7 +603,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         patch({ preview, existingById, storedLegs, existingChecked, extras: found.extras, extraRows, nearByIndex: found.nearByIndex });
       })();
     },
-    [accountById, accounts, balances, exponentFor, ctx.householdId, ctx.today, ctx.userId, fx.data, lookup.builtinIds, patch, qc]
+    [accountById, accounts, balances, exponentFor, ctx.householdId, ctx.today, ctx.userId, fx.data, lookup.all, lookup.builtinIds, patch, qc, t]
   );
 
   /**
