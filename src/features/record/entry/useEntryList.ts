@@ -26,10 +26,19 @@ export interface EntryListState {
   continueDraft(): void;
   discardDraft(): void;
   add(item: ListItem): boolean;
-  remove(id: string): void;
+  /** Takes the item off the list; the result lets `restore` put it back at the same index. */
+  remove(id: string): RemovedItem | null;
+  /** False (and does nothing) when the list was cleared or the sheet closed since, or the cap would break. */
+  restore(removed: RemovedItem): boolean;
   take(id: string): ListItem | null;
   clearAll(): void;
   canAdd(type: ListItemType): boolean;
+}
+
+export interface RemovedItem {
+  item: ListItem;
+  index: number;
+  epoch: number;
 }
 
 export interface UseEntryListOptions {
@@ -51,6 +60,15 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
 
   const itemsRef = useRef<ListItem[]>([]);
   const dirtyRef = useRef(false);
+  // Bumped when the list is cleared (saved or discarded) so an older Undo cannot restore into it.
+  const epochRef = useRef(0);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
   const idsRef = useRef(activeAccountIds);
   const targetRef = useRef({ active, userId, householdId, resolved });
   // Keep the latest values readable from callbacks and the unmount flush.
@@ -120,7 +138,29 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
     [setItems],
   );
 
-  const remove = useCallback((id: string) => setItems(removeItem(itemsRef.current, id)), [setItems]);
+  const remove = useCallback(
+    (id: string): RemovedItem | null => {
+      const index = itemsRef.current.findIndex((i) => i.id === id);
+      if (index < 0) return null;
+      const item = itemsRef.current[index]!;
+      setItems(removeItem(itemsRef.current, id));
+      return { item, index, epoch: epochRef.current };
+    },
+    [setItems],
+  );
+
+  const restore = useCallback(
+    (removed: RemovedItem): boolean => {
+      if (!mountedRef.current || removed.epoch !== epochRef.current) return false;
+      const current = itemsRef.current;
+      if (current.some((i) => i.id === removed.item.id)) return false;
+      if (!engineCanAdd(current, removed.item.type)) return false;
+      const at = Math.min(removed.index, current.length);
+      setItems([...current.slice(0, at), removed.item, ...current.slice(at)]);
+      return true;
+    },
+    [setItems],
+  );
 
   const take = useCallback(
     (id: string): ListItem | null => {
@@ -133,6 +173,7 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
   );
 
   const clearAll = useCallback(() => {
+    epochRef.current += 1;
     setPending([]);
     setDropped(0);
     setResolved(true);
@@ -152,6 +193,7 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
     discardDraft,
     add,
     remove,
+    restore,
     take,
     clearAll,
     canAdd,

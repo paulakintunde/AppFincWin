@@ -44,6 +44,80 @@ afterEach(async () => {
   await new Promise((r) => setTimeout(r, 50));
 });
 
+describe('useEntryList remove and restore', () => {
+  const three = async () => {
+    const m = await mount();
+    await act(async () => {});
+    await act(async () => {
+      m.result.current.add(item('c'));
+      m.result.current.add(item('b'));
+      m.result.current.add(item('a'));
+    });
+    return m;
+  };
+
+  it('restores a removed item at its original index and keeps the draft in step', async () => {
+    const { result } = await three();
+    expect(result.current.items.map((i) => i.id)).toEqual(['a', 'b', 'c']);
+    let gone: ReturnType<typeof result.current.remove> = null;
+    await act(async () => {
+      gone = result.current.remove('b');
+    });
+    expect(result.current.items.map((i) => i.id)).toEqual(['a', 'c']);
+    await waitFor(async () => expect(JSON.parse((await AsyncStorage.getItem(KEY)) ?? '{}')).toBeTruthy());
+    await act(async () => {
+      expect(result.current.restore(gone!)).toBe(true);
+    });
+    expect(result.current.items.map((i) => i.id)).toEqual(['a', 'b', 'c']);
+    await waitFor(async () => expect(((await AsyncStorage.getItem(KEY)) ?? '').match(/"id":"[abc]"/g)).toHaveLength(3));
+  });
+
+  it('does nothing once the list has been cleared', async () => {
+    const { result } = await three();
+    let gone: ReturnType<typeof result.current.remove> = null;
+    await act(async () => {
+      gone = result.current.remove('b');
+    });
+    await act(async () => {
+      result.current.clearAll();
+    });
+    await act(async () => {
+      expect(result.current.restore(gone!)).toBe(false);
+    });
+    expect(result.current.items).toEqual([]);
+  });
+
+  it('refuses a restore that would break the 30-per-type cap', async () => {
+    const { result } = await mount();
+    await act(async () => {});
+    await act(async () => {
+      result.current.add(item('x'));
+    });
+    let gone: ReturnType<typeof result.current.remove> = null;
+    await act(async () => {
+      gone = result.current.remove('x');
+    });
+    await act(async () => {
+      for (let n = 0; n < 30; n += 1) result.current.add(item(`f${n}`));
+    });
+    await act(async () => {
+      expect(result.current.restore(gone!)).toBe(false);
+    });
+    expect(result.current.items).toHaveLength(30);
+  });
+
+  it('does nothing after the sheet unmounts', async () => {
+    const { result, unmount } = await three();
+    let gone: ReturnType<typeof result.current.remove> = null;
+    await act(async () => {
+      gone = result.current.remove('b');
+    });
+    const restore = result.current.restore;
+    await unmount();
+    expect(restore(gone!)).toBe(false);
+  });
+});
+
 describe('useEntryList', () => {
   it('starts empty with no stored draft', async () => {
     const { result } = await mount();

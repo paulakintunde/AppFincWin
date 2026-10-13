@@ -402,6 +402,24 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     return item;
   };
 
+  // Changed 2026-10-13: a removed list item can be put back from an Undo toast (local only).
+  const removeFromList = (id: string) => {
+    const gone = list.remove(id);
+    if (gone === null) return;
+    const name =
+      gone.item.type === 'transfer'
+        ? t('record.sheet.list.transferName', { from: nameOf(gone.item.accountId), to: nameOf(gone.item.toAccountId ?? '') })
+        : gone.item.name;
+    showToast({
+      kind: 'destructive',
+      text: { key: 'record.sheet.list.removed', params: { name } },
+      onUndo: () => {
+        // restore() refuses once the sheet has closed or the list was saved or cleared
+        list.restore(gone);
+      },
+    });
+  };
+
   const addToList = () => {
     const item = addCurrentToList();
     if (!item) return;
@@ -1003,7 +1021,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
             accountName={nameOf}
             categoryLabel={(id) => (id === null ? '' : categoryNameOf(id))}
             onEdit={editItem}
-            onRemove={list.remove}
+            onRemove={removeFromList}
           />
         ) : null}
         </View>
