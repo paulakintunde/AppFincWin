@@ -39,7 +39,6 @@ import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
-import { AmountDisplay } from '@/ui/AmountDisplay';
 import { Chip } from '@/ui/Chip';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Keypad } from '@/ui/Keypad';
@@ -51,7 +50,9 @@ import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useAmountParser, type AmountParseFailure } from '@/ui/money/useAmountParser';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import { AccountSheet } from '@/features/record/accounts/AccountSheet';
 import { AccountPicker } from './pickers/AccountPicker';
+import { AmountField } from './AmountField';
 import { CategoryPicker } from './pickers/CategoryPicker';
 import { DateField } from './pickers/DateField';
 import { EntryNotes } from './EntryNotes';
@@ -182,14 +183,19 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   // UI-SPEC 8: the keypad types into whichever amount is active; a text field hides it.
   const [activeAmount, setActiveAmount] = useState<'out' | 'in'>('out');
   // Keypad vs keyboard is driven by an explicit active field (261010-kpe): blur is unreliable on Android with keyboardShouldPersistTaps='handled'.
-  const [activeField, setActiveField] = useState<'amount' | 'text'>('amount');
+  // 02.3 D-12: it starts 'none' -- the pad opens only when an amount field is tapped.
+  const [activeField, setActiveField] = useState<'amount' | 'text' | 'none'>('none');
+  // 02.3 D-13: create an account without leaving the entry (ImportScreen precedent).
+  const [accountSheetFor, setAccountSheetFor] = useState<'from' | 'to' | null>(null);
+  const [awaitingAccount, setAwaitingAccount] = useState<{ id: string; side: 'from' | 'to' } | null>(null);
   const nameRef = useRef<TextInput>(null);
   const noteRef = useRef<TextInput>(null);
   useEffect(() => {
     const hide = Keyboard.addListener('keyboardDidHide', () => {
       nameRef.current?.blur();
       noteRef.current?.blur();
-      setActiveField('amount');
+      // 02.3 D-12 / RESEARCH Pitfall 3: the pad opens only on tap, never on keyboard hide.
+      setActiveField((f) => (f === 'text' ? 'none' : f));
     });
     const show = Keyboard.addListener('keyboardDidShow', () => setActiveField('text'));
     return () => {
@@ -197,6 +203,15 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
       show.remove();
     };
   }, []);
+
+  useEffect(() => {
+    if (awaitingAccount === null) return;
+    const acc = accounts.find((a) => a.id === awaitingAccount.id);
+    if (!acc) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- applies the new account once its row reaches the cache (D-13)
+    setState((s) => (awaitingAccount.side === 'to' ? withToAccount(s, acc) : withAccount(s, acc)));
+    setAwaitingAccount(null);
+  }, [accounts, awaitingAccount]);
 
   const editRow: TransactionRow | null = mode.kind === 'edit' ? mode.row : null;
   const pair = mode.kind === 'edit-transfer' ? mode : null;
@@ -238,7 +253,6 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   };
   const outFigure = showMoney(state.amountText, state.currency);
   const inFigure = showMoney(state.amountInText, state.toCurrency ?? state.currency);
-  const figureText = outFigure ?? (state.amountText === '' ? (showMoney('0', state.currency || rc.homeCurrency) ?? '') : state.amountText);
 
   const amountsFor = (): { out: number; inn: number } => {
     const out = (parse(state.amountText, state.currency) as { value: MinorUnits }).value;
@@ -485,10 +499,11 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const inActive = crossCurrency && activeAmount === 'in';
   const activeCurrency = inActive ? (state.toCurrency as string) : state.currency;
   const keypadVisible = activeField === 'amount';
-  const inFigureText = !crossCurrency
-    ? ''
-    : (inFigure ?? (state.amountInText === '' ? (showMoney('0', state.toCurrency ?? state.currency) ?? '') : state.amountInText));
-  const textFocusProps = { onFocus: () => setActiveField('text'), onBlur: () => setActiveField('amount') };
+  const textFocusProps = {
+    onFocus: () => setActiveField('text'),
+    onBlur: () => setActiveField((f) => (f === 'text' ? 'none' : f)),
+  };
+  const closePad = (): void => setActiveField((f) => (f === 'amount' ? 'none' : f));
   const focusAmount = (which: 'out' | 'in'): void => {
     Keyboard.dismiss();
     nameRef.current?.blur();
@@ -498,7 +513,13 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   };
   const openPicker = (key: Exclude<PickerKey, null>): void => {
     Keyboard.dismiss();
+    closePad();
     setPicker(key);
+  };
+  // Sibling-modal rule: close the picker first, present the AccountSheet on the next frame.
+  const requestAddAccount = (side: 'from' | 'to'): void => {
+    setPicker(null);
+    requestAnimationFrame(() => setAccountSheetFor(side));
   };
   const amountFailure = failureOf('amount');
   const amountInFailure = failureOf('amountIn');
@@ -534,33 +555,34 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                       : 'record.sheet.directionTransfer'
                 )}
                 selected={state.direction === d}
-                onPress={() => setState((s) => withDirection(s, d, formCtx.accountCurrency))}
+                onPress={() => {
+                  closePad();
+                  setState((s) => withDirection(s, d, formCtx.accountCurrency));
+                }}
               />
             ))}
           </View>
         ) : null}
 
-        <Pressable
-          accessibilityRole={crossCurrency ? 'button' : 'text'}
-          accessibilityLabel={t('record.sheet.keypad.amountA11y', { amount: figureText })}
-          accessibilityHint={t(crossCurrency ? 'record.sheet.field.amountOut' : 'record.sheet.field.amount')}
-          accessibilityLiveRegion="polite"
+        <AmountField
+          text={outFigure ?? (state.amountText === '' ? null : state.amountText)}
+          currency={state.currency}
+          open={activeField === 'amount' && !inActive}
+          transfer={isTransfer}
+          hint={t(crossCurrency ? 'record.sheet.field.amountOut' : 'record.sheet.field.amount')}
           onPress={() => focusAmount('out')}
-        >
-          <AmountDisplay text={isTransfer ? `↔ ${figureText}` : figureText} tone={isTransfer ? 'dim' : 'default'} />
-        </Pressable>
+        />
         {amountFailure ? <Text style={errorStyle}>{parser.errorMessage(amountFailure)}</Text> : null}
         {crossCurrency ? (
           <>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('record.sheet.keypad.amountA11y', { amount: inFigureText })}
-              accessibilityHint={t('record.sheet.field.amountIn')}
-              accessibilityLiveRegion="polite"
+            <AmountField
+              text={inFigure ?? (state.amountInText === '' ? null : state.amountInText)}
+              currency={state.toCurrency as string}
+              open={activeField === 'amount' && inActive}
+              transfer
+              hint={t('record.sheet.field.amountIn')}
               onPress={() => focusAmount('in')}
-            >
-              <AmountDisplay text={inFigureText} tone="dim" />
-            </Pressable>
+            />
             {amountInFailure ? <Text style={errorStyle}>{parser.errorMessage(amountInFailure)}</Text> : null}
             {crossNote ? <Text style={noteStyle}>{crossNote}</Text> : null}
           </>
@@ -574,6 +596,21 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
             decimalSeparator={separators?.decimal ?? '.'}
           />
         ) : null}
+        {keypadVisible ? (
+          <View style={styles.doneRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('record.sheet.keypad.done')}
+              hitSlop={space.gapSm}
+              onPress={() => setActiveField('none')}
+              style={styles.done}
+            >
+              <Text style={[textRole(pairing, 'label'), { color: colors.ink }]}>{t('record.sheet.keypad.done')}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        <View onTouchStart={closePad} style={styles.column}>
 
         {isTransfer ? null : (
           <>
@@ -629,14 +666,20 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                 accessibilityHint={t(income ? 'record.sheet.status.receivedSub' : 'record.sheet.status.paidSub')}
                 variant={state.status === 'paid' ? 'primary' : 'secondary'}
                 selected={state.status === 'paid'}
-                onPress={() => setState((s) => withStatus(s, 'paid'))}
+                onPress={() => {
+                  closePad();
+                  setState((s) => withStatus(s, 'paid'));
+                }}
               />
               <Pill
                 label={t(income ? 'record.sheet.status.expected' : 'record.sheet.status.pending')}
                 accessibilityHint={t(income ? 'record.sheet.status.expectedSub' : 'record.sheet.status.pendingSub')}
                 variant={state.status === 'pending' ? 'primary' : 'secondary'}
                 selected={state.status === 'pending'}
-                onPress={() => setState((s) => withStatus(s, 'pending'))}
+                onPress={() => {
+                  closePad();
+                  setState((s) => withStatus(s, 'pending'));
+                }}
               />
             </View>
 
@@ -651,7 +694,10 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
             {editRow?.recurring_series_id ? null : (
               <RepeatsField
                 value={repeats}
-                onChange={setRepeats}
+                onChange={(v) => {
+                  closePad();
+                  setRepeats(v);
+                }}
                 formatDate={(d) => formatter.formatDate(d)}
                 today={rc.today}
                 entryDate={state.localDate}
@@ -661,13 +707,19 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
             <ToggleRow
               label={t('record.sheet.toggle.automatic')}
               value={state.automatic}
-              onChange={(on) => setState((s) => withAutomatic(s, on))}
+              onChange={(on) => {
+                closePad();
+                setState((s) => withAutomatic(s, on));
+              }}
             />
             {state.direction === 'out' ? (
               <ToggleRow
                 label={t('record.sheet.toggle.refund')}
                 value={state.refund}
-                onChange={(on) => setState((s) => withRefund(s, on))}
+                onChange={(on) => {
+                  closePad();
+                  setState((s) => withRefund(s, on));
+                }}
               />
             ) : null}
           </>
@@ -714,6 +766,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           onPress={save}
         />
         {editRow || pair ? <Pill label={t('record.sheet.delete')} variant="danger" onPress={() => setConfirmDelete(true)} /> : null}
+        </View>
       </SheetScroll>
 
       <CategoryPicker
@@ -744,6 +797,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           setPicker(null);
         }}
         onClose={() => setPicker(null)}
+        onAddAccount={() => requestAddAccount('from')}
       />
       <AccountPicker
         visible={picker === 'toAccount'}
@@ -756,6 +810,15 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           setPicker(null);
         }}
         onClose={() => setPicker(null)}
+        onAddAccount={() => requestAddAccount('to')}
+      />
+      <AccountSheet
+        visible={accountSheetFor !== null}
+        mode={{ kind: 'new', context: 'later' }}
+        onClose={() => setAccountSheetFor(null)}
+        onSaved={(id) => {
+          if (accountSheetFor) setAwaitingAccount({ id, side: accountSheetFor });
+        }}
       />
       <OptionPicker<PaymentType | 'none'>
         visible={picker === 'payment'}
@@ -808,6 +871,15 @@ const styles = StyleSheet.create({
   chips: {
     flexDirection: 'row',
     gap: space.gapSm,
+  },
+  doneRow: {
+    alignItems: 'flex-end',
+  },
+  done: {
+    minWidth: space.touchMin,
+    minHeight: space.touchMin,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     minHeight: space.touchMin,
