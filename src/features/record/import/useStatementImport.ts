@@ -264,6 +264,24 @@ function cachedRows(rows: readonly unknown[][]): TransactionRow[] {
   return rows.flat().filter(isTransactionRow);
 }
 
+/** The YYYY-MM of every month touched by an inclusive YYYY-MM-DD range. */
+function monthsOf(range: { from: string; toInclusive: string }): string[] {
+  const out: string[] = [];
+  let y = Number(range.from.slice(0, 4));
+  let m = Number(range.from.slice(5, 7));
+  const endKey = range.toInclusive.slice(0, 7);
+  for (;;) {
+    const key = `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}`;
+    out.push(key);
+    if (key >= endKey) return out;
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+}
+
 type Read<T> = { ok: true; value: T } | { ok: false };
 
 async function attempt<T>(read: () => Promise<T>): Promise<Read<T>> {
@@ -469,7 +487,9 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           : cachedRows(cachedArrays).filter(
               (r) => r.account_id === accountId && r.local_date >= range.from && r.local_date <= range.toInclusive
             );
-        const existingChecked = rangeRead.ok || cachedArrays.length > 0;
+        // Checked only by a successful range read, or by cached month queries that cover every month of
+        // the range (a month query holds the whole household). Unrelated cached arrays prove nothing.
+        const existingChecked = rangeRead.ok || monthsOf(range).every((m) => Array.isArray(qc.getQueryData(queryKeys.transactionsMonth(householdId, m))));
         const candidates = candidateRead.ok ? candidateRead.value : [];
         const names = namesRead.ok ? namesRead.value : [];
         // Rules never block an import: a failed rules read degrades to no rules.
