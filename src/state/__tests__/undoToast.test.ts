@@ -44,6 +44,17 @@ describe('undoToast', () => {
     expect(second?.id).not.toBe(first?.id);
   });
 
+  it('keeps a local onUndo on the toast, defaults it to null and drops it on dismiss', () => {
+    showToast({ kind: 'ordinary', stepId: 'step-1' });
+    expect(getToast()?.onUndo).toBeNull();
+    const cb = jest.fn();
+    showToast({ kind: 'destructive', text: { key: 'x' }, onUndo: cb });
+    expect(getToast()).toMatchObject({ kind: 'destructive', stepId: null, onUndo: cb });
+    expect(cb).not.toHaveBeenCalled();
+    dismissToast();
+    expect(getToast()).toBeNull();
+  });
+
   it('dismissToast clears the current toast', () => {
     showToast({ kind: 'ordinary', stepId: 'step-1' });
     expect(getToast()).not.toBeNull();

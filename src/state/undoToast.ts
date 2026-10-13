@@ -24,6 +24,11 @@ export interface ToastState {
   tone: ToastTone;
   text: ToastText | null;
   stepId: string | null;
+  /**
+   * A local Undo (nothing on the server), e.g. putting a removed entry-list item back. In memory
+   * only: never persisted or serialised, and dropped with the toast on dismiss.
+   */
+  onUndo: (() => void) | null;
   refusal: UndoConflict | null;
 }
 
@@ -66,6 +71,7 @@ export function showToast(t: {
   tone?: ToastTone;
   text?: ToastText | null;
   stepId?: string | null;
+  onUndo?: (() => void) | null;
   refusal?: UndoConflict | null;
 }): void {
   toast = {
@@ -74,6 +80,7 @@ export function showToast(t: {
     tone: t.tone ?? 'default',
     text: t.text ?? null,
     stepId: t.stepId ?? null,
+    onUndo: t.onUndo ?? null,
     refusal: t.refusal ?? null,
   };
   notify();

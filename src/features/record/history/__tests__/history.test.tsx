@@ -78,6 +78,17 @@ describe('UndoToastHost', () => {
     expect(getToast()).toBeNull();
   });
 
+  it('a local onUndo toast shows Undo, calls the callback and never replays a step', async () => {
+    const onUndo = jest.fn();
+    await renderThemed(<UndoToastHost />);
+    await show({ kind: 'destructive', text: { key: 'record.sheet.list.removed', params: { name: 'Bus' } }, onUndo });
+    expect(screen.getByText('Removed · Bus')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Undo'));
+    expect(onUndo).toHaveBeenCalledTimes(1);
+    expect(mockUndo).not.toHaveBeenCalled();
+    expect(getToast()).toBeNull();
+  });
+
   it('maps a { count }-only toast onto labelParams.n', async () => {
     await renderThemed(<UndoToastHost />);
     await show({ kind: 'destructive', text: { key: 'undo.label.deletedMany', params: { count: 30 } }, stepId: 's2' });
