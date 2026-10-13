@@ -53,10 +53,13 @@ describe('ruleOfferFor', () => {
     expect(ruleOfferFor({ ...base, direction: 'transfer' })).toBeNull();
     expect(ruleOfferFor({ ...base, description: '   ' })).toBeNull();
     expect(ruleOfferFor({ ...base, offered: new Set(['tesco express']) })).toBeNull();
-    expect(ruleOfferFor({ ...base, personalRules: [{ keywordNorm: 'tesco express', categoryId: 'c2' }] })).toBeNull();
+    expect(ruleOfferFor({ ...base, personalRules: [{ keywordNorm: 'tesco express' }] })).toBeNull();
   });
-  it('still offers when the rule exists for a different category', () => {
-    expect(ruleOfferFor({ ...base, personalRules: [{ keywordNorm: 'tesco express', categoryId: 'c9' }] })).not.toBeNull();
+  it('declines when a personal rule has the keyword, whatever its category', () => {
+    expect(ruleOfferFor({ ...base, personalRules: [{ keywordNorm: 'tesco express' }] })).toBeNull();
+  });
+  it('still offers when only other keywords have rules', () => {
+    expect(ruleOfferFor({ ...base, personalRules: [{ keywordNorm: 'asda' }] })).not.toBeNull();
   });
   it('cuts the keyword to 60 characters', () => {
     const r = ruleOfferFor({ ...base, description: 'x'.repeat(80) });

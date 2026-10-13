@@ -1038,7 +1038,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
             pickedCategoryId: id,
             description: state.name,
             direction: state.direction,
-            personalRules: guessCtx.resolved.personal,
+            personalRules: guessCtx.rules.filter((r) => r.scope === 'personal' && r.deleted_at === null).map((r) => ({ keywordNorm: r.keyword_norm })),
             offered: offered.current,
           });
           set({ categoryId: id });
