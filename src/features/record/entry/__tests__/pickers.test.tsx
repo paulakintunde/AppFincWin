@@ -97,6 +97,24 @@ describe('long pickers scroll under a fixed header (S-CR-05)', () => {
     expect(within(body).queryByLabelText('Cancel')).toBeNull();
   });
 
+  it('AccountPicker: ends with Add account only when onAddAccount is given, even with an excluded account', async () => {
+    const accounts = [
+      { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null },
+      { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null },
+    ];
+    const onAdd = jest.fn();
+    const first = await wrap(
+      <AccountPicker visible title="Account" accounts={accounts} excludeId="a2" selectedId={null} onSelect={jest.fn()} onClose={jest.fn()} onAddAccount={onAdd} />
+    );
+    await fireEvent.press(first.getByLabelText('Add account'));
+    expect(onAdd).toHaveBeenCalledTimes(1);
+    first.unmount();
+    const second = await wrap(
+      <AccountPicker visible title="Account" accounts={accounts} selectedId={null} onSelect={jest.fn()} onClose={jest.fn()} />
+    );
+    expect(second.queryByLabelText('Add account')).toBeNull();
+  });
+
   it('MonthSwitcher: the month list scrolls and has a header that closes it', async () => {
     const months = Array.from({ length: 36 }, (_, i) => `${2026 - Math.floor(i / 12)}-${String(12 - (i % 12)).padStart(2, '0')}`);
     const { getByLabelText, getByTestId, queryByTestId } = await wrap(

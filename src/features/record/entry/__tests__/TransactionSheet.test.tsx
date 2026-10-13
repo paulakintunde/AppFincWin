@@ -1,10 +1,11 @@
 import React from 'react';
-import { fireEvent, render, waitFor, within, type RenderResult } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within, type RenderResult } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { TransactionRow } from '@/db/rows';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { TransactionSheet } from '../TransactionSheet';
 
+jest.mock('@/features/record/accounts/AccountSheet', () => ({ AccountSheet: () => null }));
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
@@ -123,7 +124,13 @@ function row(over: Partial<TransactionRow> = {}): TransactionRow {
 }
 
 async function typeAmount(getByLabelText: RenderResult['getByLabelText'], text: string) {
-  // Long-press backspace clears, so an edit that opens with a prefilled amount types from empty.
+  const { getAllByLabelText } = screen;
+  // 02.3 D-12: the pad opens on tap. Long-press backspace clears, so an edit that opens with a prefilled amount types from empty.
+  try {
+    getByLabelText('Delete last digit');
+  } catch {
+    await fireEvent.press(getAllByLabelText(/^Amount/)[0]!);
+  }
   await fireEvent(getByLabelText('Delete last digit'), 'longPress');
   for (const ch of text) {
     await fireEvent.press(getByLabelText(ch === '.' || ch === ',' ? 'Decimal point' : ch));
@@ -441,9 +448,11 @@ describe('TransactionSheet: empty figure (S-IN-01)', () => {
   it('shows the empty figure in the home currency when no account is chosen yet', async () => {
     mockNoAccounts = true;
     mockHome = 'USD';
-    const { getByText, queryByText } = await open({ kind: 'new', direction: 'out' });
+    const { getByText, getByLabelText, queryByText } = await open({ kind: 'new', direction: 'out' });
+    // 02.3 D-12: the compact field shows the 'Amount' placeholder, never a typed-looking figure.
     expect(queryByText('£0.00')).toBeNull();
-    expect(getByText(/\$0\.00/)).toBeTruthy();
+    expect(getByLabelText('Amount')).toBeTruthy();
+    expect(getByText('Amount')).toBeTruthy();
   });
 });
 
@@ -488,6 +497,9 @@ describe('TransactionSheet: keypad, toggles, notes and wording (REC-20)', () => 
     await fireEvent(getByLabelText('What is it for?'), 'focus');
     expect(queryByLabelText('Decimal point')).toBeNull();
     await fireEvent(getByLabelText('What is it for?'), 'blur');
+    // 02.3 D-12: blur does not bring the pad back; only tapping the amount does.
+    expect(queryByLabelText('Decimal point')).toBeNull();
+    await fireEvent.press(getByLabelText(/^Amount/));
     expect(getByLabelText('Decimal point')).toBeTruthy();
   });
 

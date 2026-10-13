@@ -15,9 +15,11 @@ export interface AccountPickerProps {
   excludeId?: string | null;
   onSelect: (account: { id: string; currency: string; name: string }) => void;
   onClose: () => void;
+  /** 02.3 D-13: when given, the list ends with an 'Add account' row. */
+  onAddAccount?: () => void;
 }
 
-export function AccountPicker({ visible, title, accounts, selectedId, excludeId, onSelect, onClose }: AccountPickerProps) {
+export function AccountPicker({ visible, title, accounts, selectedId, excludeId, onSelect, onClose, onAddAccount }: AccountPickerProps) {
   const t = useT();
   const shown = accounts.filter((a) => a.archived_at === null && a.id !== excludeId);
   return (
@@ -35,6 +37,9 @@ export function AccountPicker({ visible, title, accounts, selectedId, excludeId,
             onPress={() => onSelect({ id: account.id, currency: account.currency, name: account.name })}
           />
         ))}
+        {onAddAccount ? (
+          <Row label={t('accounts.add')} dense chevron accessibilityLabel={t('accounts.add')} onPress={onAddAccount} />
+        ) : null}
       </SheetScroll>
     </Sheet>
   );
