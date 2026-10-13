@@ -17,7 +17,7 @@ import {
   type Delimiter,
   type NotationGuess,
 } from '@/engine/csv';
-import { DEFAULT_KEYWORD_RULES, guessCategory, type BuiltinCategoryKey, type GuessSource } from '@/engine/categorize';
+import { DEFAULT_KEYWORD_RULES, guessCategory, type BuiltinCategoryKey, type GuessContext, type GuessSource, type ResolvedRule } from '@/engine/categorize';
 import { minorUnits, type MinorUnits, type NumberNotation, type ScaledRate } from '@/engine/money';
 import { parseOfx } from '@/engine/ofx';
 import { matchPendingPayments, type PendingOccurrence } from '@/engine/recurring';
@@ -419,6 +419,10 @@ export interface PreviewInput {
   perEur: ReadonlyMap<string, ScaledRate>;
   learned: ReadonlyMap<string, string>;
   builtinIds: ReadonlyMap<BuiltinCategoryKey, string>;
+  /** 02.3 D-11: the member's resolved personal rules; omitted means none. */
+  personalRules?: readonly ResolvedRule[];
+  /** 02.3 D-11: the member's resolved shared rules; omitted means none. */
+  sharedRules?: readonly ResolvedRule[];
   /**
    * OFX only: the account's stored balance just before the file, supplied only when the
    * account has rows before the file and none inside its date range; else null. OFX carries
@@ -566,7 +570,13 @@ export function buildPreview(input: PreviewInput): Preview {
     ).map((m) => [m.index, m] as const)
   );
 
-  const guessContext = { keywordRules: DEFAULT_KEYWORD_RULES, learned: input.learned, builtinIds: input.builtinIds };
+  const guessContext: GuessContext = {
+    keywordRules: DEFAULT_KEYWORD_RULES,
+    learned: input.learned,
+    builtinIds: input.builtinIds,
+    personalRules: input.personalRules ?? [],
+    sharedRules: input.sharedRules ?? [],
+  };
 
   // D-32: link separate FX fee lines to their purchase; locked and duplicate rows are never targets.
   const feeLinks = linkFxFees(

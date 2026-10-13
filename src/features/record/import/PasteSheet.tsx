@@ -4,21 +4,18 @@
 // Skipped lines are listed after the commit. No device-only privacy claim here (UI-SPEC 9).
 import React, { useMemo, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import { fetchCategorisedNames } from "@/db/transactions";
 import { useAccounts } from "@/data/queries/accounts";
 import { useMonthView } from "@/data/queries/activity";
 import { useCategoryLookup } from "@/data/queries/categories";
 import { usePasteLines } from "@/data/mutations/pasteLines";
-import { buildLearnedMap } from "@/engine/categorize";
 import { currencyExponent, money } from "@/engine/money";
 import type { ExistingRow } from "@/engine/statement";
+import { useGuessContext } from "@/features/record/useGuessContext";
 import { useRecordContext } from "@/features/record/useRecordContext";
 import { categoryName } from "@/features/record/categoryName";
 import { AccountPicker } from "@/features/record/entry/pickers/AccountPicker";
 import { CategoryPicker } from "@/features/record/entry/pickers/CategoryPicker";
 import { useT } from "@/i18n";
-import { supabase } from "@/services/supabase";
 import { useDeviceLocale } from "@/services/locale/deviceLocale";
 import { showToast, TOAST_MS_ORDINARY } from "@/state/undoToast";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -91,27 +88,8 @@ export function PasteSheet({
     accounts.find((a) => a.id === (accountId ?? defaultAccountId)) ?? null;
   const currency = account?.currency ?? rc.homeCurrency;
 
-  const names = useQuery({
-    queryKey: ["pasteGuessNames", rc.householdId, rc.userId],
-    queryFn: () =>
-      fetchCategorisedNames(
-        supabase,
-        rc.householdId as string,
-        rc.userId as string,
-      ),
-    enabled: visible && Boolean(rc.householdId) && Boolean(rc.userId),
-  });
-  const learned = useMemo(
-    () =>
-      buildLearnedMap(
-        (names.data ?? []).map((n) => ({
-          name: n.name,
-          categoryId: n.category_id,
-          updatedAt: n.updated_at,
-        })),
-      ),
-    [names.data],
-  );
+  // REC-27: the same GuessContext (rules, learned, keywords) as manual entry.
+  const guessCtx = useGuessContext();
 
   const existing = useMemo<ExistingRow[]>(
     () =>
@@ -137,7 +115,7 @@ export function PasteSheet({
           today: rc.today,
           month,
         },
-        guess: { learned, builtinIds: lookup.builtinIds },
+        guess: guessCtx.guess,
         existing,
         overrides,
       }),
@@ -148,8 +126,7 @@ export function PasteSheet({
       currency,
       rc.today,
       month,
-      learned,
-      lookup.builtinIds,
+      guessCtx.guess,
       existing,
       overrides,
     ],

@@ -22,8 +22,21 @@ jest.mock("@/state/undoToast", () => ({
   showToast: (...a: unknown[]) => mockShowToast(...a),
 }));
 jest.mock("@/services/supabase", () => ({ supabase: {} }));
-jest.mock("@/db/transactions", () => ({
-  fetchCategorisedNames: jest.fn(async () => []),
+let mockPersonalRules: { keywordNorm: string; categoryId: string }[] = [];
+jest.mock("@/features/record/useGuessContext", () => ({
+  useGuessContext: () => ({
+    guess: {
+      keywordRules: jest.requireActual("@/engine/categorize").DEFAULT_KEYWORD_RULES,
+      learned: new Map(),
+      builtinIds: new Map([["Housing", "c1"]]),
+      personalRules: mockPersonalRules,
+      sharedRules: [],
+    },
+    rules: [],
+    resolved: { personal: mockPersonalRules, shared: [] },
+    memberCategories: [],
+    rulesStatus: "ready",
+  }),
 }));
 jest.mock("@/services/locale/deviceLocale", () => ({
   useDeviceLocale: () => ({
@@ -118,6 +131,7 @@ async function renderSheet(
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockPersonalRules = [];
 });
 
 afterEach(() => {
@@ -144,6 +158,13 @@ describe("PasteSheet", () => {
     expect(screen.getByText("Add 2 lines")).toBeTruthy();
     expect(screen.getByLabelText("Studio rent: Housing")).toBeTruthy();
     expect(screen.getByText(/Possible duplicate/)).toBeTruthy();
+  });
+
+  it("categorises a pasted line by the member's personal rule (02.3 D-11)", async () => {
+    mockPersonalRules = [{ keywordNorm: "gym", categoryId: "c1" }];
+    await renderSheet();
+    await fireEvent.changeText(screen.getByLabelText("Lines to add"), "Gym 25");
+    expect(screen.getByLabelText("Gym: Housing")).toBeTruthy();
   });
 
   it("CSV file… calls onCsv", async () => {
