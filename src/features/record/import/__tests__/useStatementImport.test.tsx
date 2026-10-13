@@ -56,7 +56,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
 }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
 jest.mock('@/data/queries/categories', () => ({
-  useCategoryLookup: () => ({ builtinIds: new Map(), transferCategoryId: mockTransferCategoryId, loading: false }),
+  useCategoryLookup: () => ({ all: [], builtinIds: new Map(), transferCategoryId: mockTransferCategoryId, loading: false }),
 }));
 jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
 // Review HI-01: the user's own custom currencies feed the hook's real currency lookup.

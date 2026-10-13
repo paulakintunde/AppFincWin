@@ -709,9 +709,9 @@ describe('buildPreview: transfers, mark-paid and categories', () => {
         sharedRules: [{ keywordNorm: 'tesco', categoryId: 'c-shared' }],
       })
     );
-    expect([personal.rows[0].categoryId, personal.rows[0].categorySource]).toEqual(['c-rule', 'rule-personal']);
+    expect([personal.rows[0]?.categoryId, personal.rows[0]?.categorySource]).toEqual(['c-rule', 'rule-personal']);
     const shared = buildPreview(previewInput(draft, { learned, sharedRules: [{ keywordNorm: 'tesco', categoryId: 'c-shared' }] }));
-    expect([shared.rows[0].categoryId, shared.rows[0].categorySource]).toEqual(['c-shared', 'rule-shared']);
+    expect([shared.rows[0]?.categoryId, shared.rows[0]?.categorySource]).toEqual(['c-shared', 'rule-shared']);
   });
 
   it('rules do not change duplicates or inclusion', () => {

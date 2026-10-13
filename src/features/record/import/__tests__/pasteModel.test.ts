@@ -30,10 +30,10 @@ describe("buildPastePreview", () => {
     const p = buildPastePreview("Gym 25.00", ctx({ guess: rule }));
     expect(p.ok).toBe(true);
     if (!p.ok) return;
-    expect(p.lines[0].categoryId).toBe("c-gym");
+    expect(p.lines[0]?.categoryId).toBe("c-gym");
     const o = buildPastePreview("Gym 25.00", ctx({ guess: rule, overrides: new Map([[1, "c-other"]]) }));
     if (!o.ok) throw new Error("not ok");
-    expect(o.lines[0].categoryId).toBe("c-other");
+    expect(o.lines[0]?.categoryId).toBe("c-other");
   });
 
   it("parses ready lines, guesses categories and lists skipped lines", () => {

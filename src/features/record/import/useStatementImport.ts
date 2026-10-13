@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { maybeRequestSampleClearPrompt } from '@/data/mutations/samplePromptTrigger';
 import { validateMapping, notationFor, type ColumnMapping, type DateFormat, type MappingError } from '@/engine/csv';
-import { buildLearnedMap, resolveRules, type ResolvedRule } from '@/engine/categorize';
+import { buildLearnedMap, resolveRules } from '@/engine/categorize';
 import { minorUnits, parseAmount, type MinorUnits, type NumberNotation, type ScaledRate } from '@/engine/money';
 import { detectRecurring, type PendingOccurrence, type RecurringSuggestion } from '@/engine/recurring';
 import {
@@ -462,13 +462,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         const existingChecked = rangeRead.ok || cachedArrays.length > 0;
         const candidates = candidateRead.ok ? candidateRead.value : [];
         const names = namesRead.ok ? namesRead.value : [];
-        // Rules never block an import: any failure in resolving them degrades to no rules.
-        let resolvedRules: { personal: ResolvedRule[]; shared: ResolvedRule[] } = { personal: [], shared: [] };
-        try {
-          resolvedRules = resolveRules((rulesRead.ok ? rulesRead.value : []).map(toStoredRule), memberCategoriesOf(lookup.all, t));
-        } catch {
-          /* no rules */
-        }
+        // Rules never block an import: a failed rules read degrades to no rules.
+        const resolvedRules = resolveRules((rulesRead.ok ? rulesRead.value : []).map(toStoredRule), memberCategoriesOf(lookup.all, t));
         const purchases: RefundPurchase[] = (purchaseRead.ok ? purchaseRead.value : [])
           .filter((r) => r.original_amount < 0 && !r.is_refund && r.transfer_id === null)
           .map((r) => ({
