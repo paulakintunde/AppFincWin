@@ -5,7 +5,7 @@ describe('dismissed offers', () => {
   it('fetches keys as a set', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [{ offer_key: 'a' }, { offer_key: 'b' }], error: null, status: 200 });
-    await expect(fetchDismissedOfferKeys(client)).resolves.toEqual(new Set(['a', 'b']));
+    await expect(fetchDismissedOfferKeys(client)).resolves.toEqual(['a', 'b']);
   });
 
   it('upserts with ignoreDuplicates', async () => {

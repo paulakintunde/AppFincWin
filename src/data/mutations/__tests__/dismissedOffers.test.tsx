@@ -42,19 +42,32 @@ describe('useDismissOffers', () => {
     mockActiveClient = fake;
     fake.respondWith({ data: null, error: null, status: 201 });
     const qc = newClient();
-    qc.setQueryData(queryKeys.dismissedOffers('u1'), new Set(['old']));
+    qc.setQueryData(queryKeys.dismissedOffers('u1'), ['old']);
     const { result } = await renderHook(() => useDismissOffers('u1'), { wrapper: wrapper(qc) });
 
     result.current.dismiss(['k1', 'k2']);
 
     await waitFor(() =>
-      expect([...(qc.getQueryData(queryKeys.dismissedOffers('u1')) as Set<string>)].sort()).toEqual(['k1', 'k2', 'old'])
+      expect((qc.getQueryData(queryKeys.dismissedOffers('u1')) as string[]).sort()).toEqual(['k1', 'k2', 'old'])
     );
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'upsert')).toBe(true));
     const upsert = fake.calls.find((c) => c.method === 'upsert');
     expect(upsert?.table).toBe('dismissed_series_offers');
     expect(upsert?.args[0]).toEqual([{ offer_key: 'k1' }, { offer_key: 'k2' }]);
     expect(upsert?.args[1]).toMatchObject({ ignoreDuplicates: true });
+  });
+
+  it('treats a cache restored as {} (a Set persisted before the array shape) as empty', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: null, status: 201 });
+    const qc = newClient();
+    qc.setQueryData(queryKeys.dismissedOffers('u1'), JSON.parse(JSON.stringify(new Set(['old']))));
+    const { result } = await renderHook(() => useDismissOffers('u1'), { wrapper: wrapper(qc) });
+
+    result.current.dismiss(['k1']);
+
+    await waitFor(() => expect(qc.getQueryData(queryKeys.dismissedOffers('u1'))).toEqual(['k1']));
   });
 
   it('refuses an empty or oversized batch before any write', async () => {
@@ -71,13 +84,13 @@ describe('useDismissOffers', () => {
     mockActiveClient = fake;
     fake.respondWith({ data: null, error: { message: 'denied', code: '42501' }, status: 403 });
     const qc = newClient();
-    qc.setQueryData(queryKeys.dismissedOffers('u1'), new Set(['old']));
+    qc.setQueryData(queryKeys.dismissedOffers('u1'), ['old']);
     const { result } = await renderHook(() => useDismissOffers('u1'), { wrapper: wrapper(qc) });
 
     result.current.dismiss(['secret-merchant|GBP|-']);
 
     await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
-    expect([...(qc.getQueryData(queryKeys.dismissedOffers('u1')) as Set<string>)]).toEqual(['old']);
+    expect((qc.getQueryData(queryKeys.dismissedOffers('u1')) as string[])).toEqual(['old']);
     expect(recordFailedWrite).toHaveBeenCalledWith(
       expect.objectContaining({ entity: 'dismissed_series_offers', entityId: 'u1', attempted: { count: 1 } }),
     );

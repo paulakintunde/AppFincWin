@@ -8,11 +8,13 @@ export const DISMISS_BATCH_MAX = 50;
 export const DISMISS_KEY_MAX_LENGTH = 300;
 const FETCH_LIMIT = 5000;
 
-export async function fetchDismissedOfferKeys(client: DbClient): Promise<Set<string>> {
+// Returns a plain array, not a Set: the result is stored in the persisted query cache, which
+// round-trips through JSON, and a Set comes back from a cold start as {}.
+export async function fetchDismissedOfferKeys(client: DbClient): Promise<string[]> {
   const { data, error, status } = await client.from('dismissed_series_offers').select('offer_key').limit(FETCH_LIMIT);
 
   if (error) throw toDbError(error, status);
-  return new Set(((data as { offer_key: string }[] | null) ?? []).map((row) => row.offer_key));
+  return [...new Set(((data as { offer_key: string }[] | null) ?? []).map((row) => row.offer_key))];
 }
 
 export async function insertDismissedOffers(client: DbClient, keys: readonly string[]): Promise<void> {
