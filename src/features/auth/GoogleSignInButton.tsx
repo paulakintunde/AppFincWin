@@ -12,9 +12,11 @@ export interface GoogleSignInButtonProps {
   /** True while any sign-in is in flight (T-00-17-04) -- disables both buttons, not just this one. */
   disabled?: boolean;
   onPress: () => void;
+  /** Overrides the default 'Continue with Google' label. */
+  label?: string;
 }
 
-export function GoogleSignInButton({ disabled = false, onPress }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({ disabled = false, onPress, label }: GoogleSignInButtonProps) {
   const t = useT();
   const { colors, fonts } = useTheme();
 
@@ -32,7 +34,7 @@ export function GoogleSignInButton({ disabled = false, onPress }: GoogleSignInBu
     >
       <GoogleMark size={18} />
       <Text style={[styles.label, { fontFamily: fonts.body[600], color: colors.ink }]}>
-        {t('auth.google.cta')}
+        {label ?? t('auth.google.cta')}
       </Text>
     </Pressable>
   );
