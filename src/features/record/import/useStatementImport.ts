@@ -430,7 +430,17 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         const dates = draft.rows.flatMap((r) => (r.localDate === null ? [] : [r.localDate])).sort();
         const first = dates[0] ?? ctx.today;
         const last = dates[dates.length - 1] ?? ctx.today;
-        const range = { from: addDays(first, -2), toInclusive: addDays(last, 2) };
+        // D-23: the stated period decides which app lines can be "extras", so the read must cover it
+        // as well as the rows' own dates (02.3 review MD-03).
+        const period = statementPeriod(
+          { start: draft.periodStart, end: draft.periodEnd },
+          draft.rows.map((r) => r.localDate)
+        );
+        const rowRange = { from: addDays(first, -2), toInclusive: addDays(last, 2) };
+        const range = {
+          from: period !== null && period.from < rowRange.from ? period.from : rowRange.from,
+          toInclusive: period !== null && period.toInclusive > rowRange.toInclusive ? period.toInclusive : rowRange.toInclusive,
+        };
 
         const [rangeRead, candidateRead, namesRead, purchaseRead, rulesRead] = await Promise.all([
           attempt(() => fetchTransactionsInRange(supabase, householdId, { ...range, accountId })),
@@ -576,10 +586,6 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         for (const c of candidates) storedLegs.set(c.id, { accountId: c.account_id, name: c.name });
         // D-23: extras = what findDuplicates did not consume (02.3-05)
         const matchedIds = new Set(preview.rows.flatMap((r) => (r.duplicate === null ? [] : [r.duplicate.id])));
-        const period = statementPeriod(
-          { start: draft.periodStart, end: draft.periodEnd },
-          draft.rows.map((r) => r.localDate)
-        );
         const missing = preview.rows
           .filter((r) => r.duplicate === null && !r.locked)
           .map((r) => ({ index: r.index, localDate: r.converted.localDate, amount: r.converted.amount }));
