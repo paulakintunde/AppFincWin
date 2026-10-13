@@ -17,11 +17,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   updates: process.env.EAS_PROJECT_ID
     ? {
         url: `https://u.expo.dev/${process.env.EAS_PROJECT_ID}`,
-        // dev/local: ON_ERROR_RECOVERY so an unpublished channel can't block Metro (quick 261009-uuw)
-        checkAutomatically:
-          process.env.EAS_BUILD_PROFILE === 'production' || process.env.EAS_BUILD_PROFILE === 'preview'
-            ? 'ON_LOAD'
-            : 'ON_ERROR_RECOVERY',
+        // dev/local: ON_ERROR_RECOVERY so an unpublished channel can't block Metro (quick 261009-uuw).
+        // Set per build profile in eas.json `env` (quick 261013-l8i), not from EAS_BUILD_PROFILE:
+        // eas build applies profile env both when it computes the runtime version locally and on
+        // EAS, while EAS_BUILD_PROFILE exists only on EAS, so the two fingerprints never matched.
+        checkAutomatically: process.env.APP_UPDATES_CHECK === 'ON_LOAD' ? 'ON_LOAD' : 'ON_ERROR_RECOVERY',
         fallbackToCacheTimeout: 0,
       }
     : undefined,

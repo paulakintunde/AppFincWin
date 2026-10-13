@@ -170,6 +170,7 @@ Recent decisions affecting current work:
 | 261011-eio | Import treats a credit/overdraft limit of 0 as no limit (D-49): statement limit offer, profile/convert fallback, prior-limit undo; account sheet saves 0 as no limit | 2026-10-11 | 984300d | [261011-eio-credit-or-overdraft-limit-of-0-counts-as](./quick/261011-eio-credit-or-overdraft-limit-of-0-counts-as/) |
 | 261013-izi | Phase 02.3 walkthrough: cross-currency transfer prefills Amount received from stored rates while untouched; dim scrim token behind every sheet, fixed while the sheet slides | 2026-10-13 | 9bf7b56 | [261013-izi-transfer-received-amount-prefill-and-she](./quick/261013-izi-transfer-received-amount-prefill-and-she/) |
 | 261013-kf4 | Phase 02.3 walkthrough: Undo toast ("Removed · {name}") when removing an entry-list item; optional local onUndo on the undo toast | 2026-10-13 | 6918c34 | [261013-kf4-local-undo-toast-for-removing-an-entry-l](./quick/261013-kf4-local-undo-toast-for-removing-an-entry-l/) |
+| 261013-l8i | EAS build profiles set the expo-updates check through eas.json env (APP_UPDATES_CHECK), not EAS_BUILD_PROFILE, so local and EAS fingerprints match; unblocks preview and production builds broken since 261009-uuw | 2026-10-13 | pending | [261013-l8i-eas-build-profiles-set-the-updates-check](./quick/261013-l8i-eas-build-profiles-set-the-updates-check/) |
 
 ## Deferred Items
 
