@@ -43,6 +43,47 @@ Run from a release checkout detached at the main commit (`git diff --quiet origi
 
 Result: production carries the 02.3 schema, verified read-only, with no existing row touched.
 
-## Device walkthrough (Task 3)
+## Device walkthrough (Task 3), 2026-10-13
 
-Pending: the user's walkthrough of the six success criteria (steps 1–8 in plan 02.3-20).
+Device: Pixel 9 (Android). Development build: the Oct 10 dev client already installed on the phone (no rebuild). It loaded JS from Metro:
+- first merged main ede43d5 from C:/dev/fincwin-w1 on port 8072;
+- then branch fix/02.3-walkthrough from C:/dev/fincwin-fix on port 8073, to verify the walkthrough fixes before merging.
+
+02.3 adds no native module. The merged-main fingerprint is 6088ff5a301c613ffa8dd5854f0d448c16fd574c. The latest EAS development build, e07f9578, has 1b0223ca14e7a85881da87770a9a5e7e0dcedfdc, because PR #66 changed expo-updates settings. The installed dev client still ran the JS. The dev client was opened with `exp+fincwin://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A<port>` after `adb reverse`. Opening it with `localhost` failed a DNS lookup on this phone and bounced to DevLauncherErrorActivity.
+
+Fixtures pushed to /sdcard/Download: current-account.pdf (02.1 fixture) and docs/acceptance/fixtures/sample-bank-export.csv.
+
+User approval: "all approved", 2026-10-13, after the fixes below were checked on the device.
+
+| Step | Criterion | Result |
+|------|-----------|--------|
+| 1 | Import: reconcile or add every line (REC-26) | pass |
+| 2 | Rules, personal and shared, across entry, paste and import (REC-27) | pass |
+| 3 | Continue as / Use a different account / Not you? Remove (ACC-14) | pass |
+| 4 | Compact amount, pad on tap (REC-28) | pass, after fix 2 below |
+| 5 | Add account from the picker (REC-29) | pass, after fix 3 below |
+| 6 | Bulk list with a repeating item, app close and one Undo (REC-30) | pass, after fixes 1, 4 and 5 below |
+| 7 | iPhone XR | pending: Apple enrolment (no iOS development build exists) |
+| 8 | Remembered-accounts privacy paragraph on fincwin.com/privacy | pending: website (text ready in docs/compliance/privacy-policy-remembered-accounts.md) |
+
+Gate on fix/02.3-walkthrough before its PR: lint (0 errors), typecheck, depcruise, check:ignores, test:coverage (278 suites, 7354 tests, no threshold failure), verify:gates, lint:migrations, verify:migrations, money and recurring mirrors. All pass. The fixes add no migration.
+
+### Fixes made during the walkthrough (branch fix/02.3-walkthrough)
+
+1. **Swipe inside sheets did nothing on Android** (step 6), commit 4d77161. Sheets render in an RN Modal, a separate native window on Android, and the only GestureHandlerRootView was outside it. Each sheet now has its own root. Debug record: .planning/debug/resolved/sheet-swipe-android.md.
+2. **Amount received is prefilled across currencies** (step 4, user request), commits 70eb6b2 and e5d17a3, quick task 261013-izi.
+   - It fills from the stored latest rates while untouched, and never fetches.
+   - The first key on a prefilled figure replaces it.
+   - It stops recalculating after a manual edit.
+   - It stays empty with no rate.
+3. **Dim scrim behind every sheet**, including a sheet opened over another (step 5, user request), commit 9bf7b56, quick task 261013-izi.
+   - It adds one token, `colors.scrim` = rgba(0,0,0,.4), the only colour beyond §2, as the user approved.
+   - The scrim stays fixed while the sheet slides in.
+   - Side effect: closing a sheet no longer animates.
+4. **Activity crashed on the first launch after a restart**, commit e95893d. Found after rebooting the Pixel 9; a Phase 02.2 bug.
+   - The dismissed-offer keys were cached as a Set, and the persisted JSON cache restored it as {}, so `dismissedKeys.has is not a function` was thrown.
+   - Now cached as string[], and a restored {} reads as no keys.
+5. **Undo after removing an entry-list item** (step 6, user request), commits c678528 and 6918c34, quick task 261013-kf4.
+   - "Removed · {name}" with a local Undo (6 s) that restores the item at its index.
+   - It needed a new optional `onUndo` on the undo toast.
+   - UI-SPEC lines 203 and 353 were updated; they previously said no toast.
