@@ -71,6 +71,9 @@ export function buildEntryListWrite(items: readonly ListItem[], ctx: BulkAddCont
       if (item.toAccountId === null || item.toCurrency === null) {
         throw new TypeError('buildEntryListWrite: a transfer needs a destination account');
       }
+      if (item.toCurrency !== item.currency && item.amountInMinor === null) {
+        throw new TypeError('buildEntryListWrite: a cross-currency transfer needs a received amount');
+      }
       const transferId = mint();
       const built = buildTransferLegs({
         transferId,

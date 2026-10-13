@@ -67,6 +67,12 @@ describe('parseDraft', () => {
     expect(parseDraft(raw([mkTransfer({ toAccountId: null })]))).toEqual([]);
     expect(parseDraft(raw([mkTransfer({ repeat: { freq: 'monthly', end: { kind: 'never' } } })]))).toEqual([]);
   });
+  it('rejects a transfer with no destination currency or a missing/stray received amount', () => {
+    expect(parseDraft(raw([mkTransfer({ toCurrency: null })]))).toEqual([]);
+    expect(parseDraft(raw([mkTransfer({ toCurrency: 'EUR', amountInMinor: null })]))).toEqual([]);
+    expect(parseDraft(raw([mkTransfer({ toCurrency: 'GBP', amountInMinor: 500 })]))).toEqual([]);
+    expect(parseDraft(raw([mkTransfer({ toCurrency: 'EUR', amountInMinor: 1150 })]))).toHaveLength(1);
+  });
   it('rejects 31 of one type, accepts 30 of each', () => {
     expect(parseDraft(raw(Array.from({ length: 31 }, () => mk())))).toEqual([]);
     const ok = [

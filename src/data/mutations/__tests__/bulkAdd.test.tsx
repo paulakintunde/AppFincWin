@@ -122,6 +122,13 @@ describe('buildEntryListWrite', () => {
     expect(rows[1]).toMatchObject({ original_amount: 1150, original_currency: 'EUR' });
   });
 
+  it('throws for a cross-currency transfer without a received amount instead of reusing the sent one', () => {
+    const t = item({ type: 'transfer', amountMinor: 10000, toAccountId: 'a2', toCurrency: 'JPY', amountInMinor: null });
+    expect(() => buildEntryListWrite([t], ctx, counter())).toThrow(TypeError);
+    const nul = item({ type: 'transfer', toAccountId: 'a2', toCurrency: null });
+    expect(() => buildEntryListWrite([nul], ctx, counter())).toThrow(TypeError);
+  });
+
   it('throws for a transfer without a Transfer category or with the same account', () => {
     const t = item({ type: 'transfer', toAccountId: 'a2', toCurrency: 'GBP' });
     expect(() => buildEntryListWrite([t], { ...ctx, transferCategoryId: null }, counter())).toThrow(TypeError);
