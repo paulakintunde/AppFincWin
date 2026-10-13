@@ -79,11 +79,17 @@ export async function insertRowsAsOneStep(
   return { inserted: collected.length, rateRows: collected };
 }
 
-function optimisticRow(qc: QueryClient, vars: BatchInsertVars, row: NewTransaction, now: string): WithPending<TransactionRow> {
+/** The optimistic cache row for one new transaction (shared by batch insert and the entry-sheet list). */
+export function optimisticTransactionRow(
+  qc: QueryClient,
+  ctx: { ownerId: string; homeCurrency: string },
+  row: NewTransaction,
+  now: string
+): WithPending<TransactionRow> {
   const rates = qc.getQueryData<FxLatestRow[]>(queryKeys.fxLatest()) ?? [];
-  const customs = qc.getQueryData<CustomCurrencyRow[]>(queryKeys.customCurrencies(vars.ownerId)) ?? [];
+  const customs = qc.getQueryData<CustomCurrencyRow[]>(queryKeys.customCurrencies(ctx.ownerId)) ?? [];
   const stamp = provisionalStamp(
-    { amount: row.original_amount, currency: row.original_currency, homeCurrency: vars.homeCurrency, localDate: row.local_date },
+    { amount: row.original_amount, currency: row.original_currency, homeCurrency: ctx.homeCurrency, localDate: row.local_date },
     rates,
     customs
   );
@@ -91,10 +97,10 @@ function optimisticRow(qc: QueryClient, vars: BatchInsertVars, row: NewTransacti
     id: row.id,
     household_id: row.household_id,
     account_id: row.account_id,
-    created_by: vars.ownerId,
+    created_by: ctx.ownerId,
     original_amount: row.original_amount,
     original_currency: row.original_currency,
-    home_currency: vars.homeCurrency,
+    home_currency: ctx.homeCurrency,
     home_amount: stamp.home_amount,
     rate: stamp.rate,
     orig_per_eur: stamp.orig_per_eur,
@@ -122,7 +128,8 @@ function optimisticRow(qc: QueryClient, vars: BatchInsertVars, row: NewTransacti
     raw_balance: null,
     external_id: null,
     import_format: null,
-    transfer_id: null,
+    // 02.3 RESEARCH Pitfall 4: a listed transfer keeps its pair id so the legs never show as unrelated lines.
+    transfer_id: row.transfer_id ?? null,
     is_refund: row.is_refund ?? false,
     is_automatic: row.is_automatic ?? false,
     is_sample: false,
@@ -156,7 +163,12 @@ export function registerBatchInsert(
       markSession(vars);
       const now = new Date().toISOString();
       for (const row of vars.rows) {
-        placeRowInMonth(qc, vars.householdId, optimisticRow(qc, vars, row, now), []);
+        placeRowInMonth(
+          qc,
+          vars.householdId,
+          optimisticTransactionRow(qc, { ownerId: vars.ownerId, homeCurrency: vars.homeCurrency }, row, now),
+          []
+        );
       }
     },
     onSuccess: (result: Awaited<ReturnType<typeof insertRowsAsOneStep>>, vars: BatchInsertVars) => {
