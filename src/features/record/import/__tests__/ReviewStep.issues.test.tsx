@@ -13,6 +13,8 @@ jest.mock('react-native-safe-area-context', () => ({
 
 jest.setTimeout(30000);
 
+jest.mock('../ExtrasDetail', () => ({ useExtrasDetail: () => ({ open: jest.fn(), element: null }) }));
+
 jest.mock('@shopify/flash-list', () => {
   const { View } = jest.requireActual('react-native');
   return {
@@ -133,6 +135,10 @@ function state(issues: string[]): ImportState {
     suggestions: [],
     acceptSuggestion: fn(),
     dismissSuggestion: fn(),
+    mode: null,
+    extras: [],
+    extraRows: new Map(),
+    nearByIndex: new Map(),
     back: fn(),
     continue: fn(),
   } as unknown as ImportState;

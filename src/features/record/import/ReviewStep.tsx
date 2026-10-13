@@ -18,8 +18,10 @@ import { Pill } from '@/ui/Pill';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { Actions, Heading, SuggestionCard, T, Tag, useDynamicT, useFormatAmount } from './importUi';
+import { DisclosureRow } from './ReconcileChoice';
+import { useExtrasDetail } from './ExtrasDetail';
+import { buildReviewItems, EXTRAS_PAGE, type ReviewItem } from './reconcileView';
 import type { DraftRowIssue } from '@/engine/statement';
-import type { PreviewRow } from './importPipeline';
 import type { useStatementImport } from './useStatementImport';
 
 type ImportState = ReturnType<typeof useStatementImport>;
@@ -91,6 +93,11 @@ export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: (
   const categories = useCategoryLookup(rc.userId ?? undefined);
   const accounts = useAccounts(rc.householdId ?? undefined).data ?? [];
   const [pickerFor, setPickerFor] = useState<number | null>(null);
+  const [recordedOpen, setRecordedOpen] = useState(false);
+  const [extrasOpen, setExtrasOpen] = useState(false);
+  const [extrasShown, setExtrasShown] = useState(EXTRAS_PAGE);
+  const accountName = (id: string): string => accounts.find((a) => a.id === id)?.name ?? '';
+  const extrasDetail = useExtrasDetail(state.extraRows, accountName);
 
   const preview = state.preview;
   const account = accounts.find((a) => a.id === state.accountId) ?? null;
@@ -104,6 +111,12 @@ export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: (
   if (preview === null) return <View>{back}</View>;
 
   const rows = preview.rows;
+  const mode = state.mode ?? 'new';
+  const reconcile = mode === 'reconcile';
+  const missingCount = rows.filter((r) => r.duplicate === null).length;
+  const items = buildReviewItems({ rows, mode, recordedOpen, extrasOpen, extrasShown, extras: state.extras });
+  const extrasCurrency = account?.currency ?? rc.homeCurrency;
+  const nothingToAdd = reconcile && missingCount === 0;
   const included = state.counts.included;
   const checkedLabel = t('importCsv.pdf.checkedRows', { count: state.reviewGate.count });
   const gated = state.reviewGate.required && !state.rowsChecked;
@@ -120,7 +133,7 @@ export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: (
 
   const header = (
     <View style={styles.header}>
-      <Heading>{t('importCsv.reviewHeading', { count: rows.length })}</Heading>
+      <Heading>{reconcile ? (missingCount === 0 ? t('importCsv.missing.none') : t('importCsv.missing.heading', { count: missingCount })) : t('importCsv.reviewHeading', { count: rows.length })}</Heading>
       <Reconciliation file={state.reconcile?.file ?? null} />
       {ratesPending ? <T tone="inkMuted">{t('importCsv.ratesPending')}</T> : null}
       {state.limitOffer !== null && account !== null ? (
@@ -169,8 +182,15 @@ export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: (
       <Actions>
         {hasMatches ? (
           <Pill label={t('importCsv.continue')} variant="secondary" disabled={included === 0 || gated} onPress={() => void state.continue()} />
+        ) : nothingToAdd && included === 0 ? (
+          <Pill label={t('importCsv.missing.close')} variant="secondary" onPress={() => (onClose ?? state.cancel)()} />
         ) : (
-          <Pill label={t('importCsv.commit', { count: included })} variant="primary" disabled={included === 0 || gated} onPress={state.commit} />
+          <Pill
+            label={reconcile ? t('importCsv.missing.commit', { count: included }) : t('importCsv.commit', { count: included })}
+            variant="primary"
+            disabled={included === 0 || gated}
+            onPress={state.commit}
+          />
         )}
         <Pill label={t('importCsv.back')} variant="secondary" onPress={state.back} />
         <Pill label={t('importCsv.cancel')} variant="secondary" onPress={state.cancel} />
@@ -178,8 +198,11 @@ export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: (
     </View>
   );
 
-  const renderRow = ({ item }: { item: PreviewRow }) => {
+  const renderRow = ({ item: entry }: { item: Extract<ReviewItem, { kind: 'row' }> }) => {
+    const item = entry.row;
     const s = state.rowState(item.index);
+    const nearId = state.nearByIndex.get(item.index);
+    const near = nearId === undefined ? undefined : state.extras.find((e) => e.id === nearId);
     const c = item.converted;
     const name = c.description;
     const amountText = c.amount === null ? '' : fmt.amount(c.amount, c.currency);
@@ -222,7 +245,9 @@ export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: (
           >
             <T role="label">{label}</T>
           </Pressable>
-          {item.duplicate !== null ? <Tag label={t('importCsv.duplicate')} /> : null}
+          {entry.tag === 'duplicate' ? <Tag label={t('importCsv.duplicate')} /> : null}
+          {entry.tag === 'missing' ? <Tag label={t('importCsv.missing.tag')} /> : null}
+          {entry.tag === 'recorded' ? <Tag label={t('importCsv.missing.recordedTag')} /> : null}
           {item.check === 'cannot-verify' ? (
             <Tag label={t('importCsv.reconcile.rowTag')} accessibilityLabel={t('importCsv.reconcile.rowTagA11y')} />
           ) : null}
@@ -233,21 +258,84 @@ export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: (
               </T>
             ) : null
           )}
+          {near !== undefined ? (
+            <T role="label" tone="inkMuted">
+              {t('importCsv.missing.nearMatch', { name: near.name ?? fmt.amount(near.amount, extrasCurrency), date: fmt.date(near.localDate) })}
+            </T>
+          ) : null}
         </View>
       </View>
     );
   };
 
+  const renderExtra = (extra: Extract<ReviewItem, { kind: 'extra' }>['extra']) => {
+    const name = extra.name ?? fmt.amount(extra.amount, extrasCurrency);
+    const date = fmt.date(extra.localDate);
+    const amountText = fmt.amount(extra.amount, extrasCurrency);
+    const nearRow = extra.nearIndex === null ? undefined : rows.find((r) => r.index === extra.nearIndex);
+    const nearDate = nearRow?.converted.localDate ?? null;
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${name}, ${date}, ${amountText}`}
+        onPress={() => extrasDetail.open(extra.id)}
+        style={[styles.row, { borderBottomColor: colors.line1 }]}
+      >
+        <View style={styles.top}>
+          <View style={styles.text}>
+            <T numberOfLines={1}>{name}</T>
+            <T role="label" tone="inkMuted" numberOfLines={1}>
+              {date}
+            </T>
+            {nearDate !== null ? (
+              <T role="label" tone="inkMuted">
+                {t('importCsv.missing.nearMatchExtra', { date: fmt.date(nearDate) })}
+              </T>
+            ) : null}
+          </View>
+          <T>{amountText}</T>
+        </View>
+      </Pressable>
+    );
+  };
+
+  const renderItem = ({ item }: { item: ReviewItem }) => {
+    switch (item.kind) {
+      case 'row':
+        return renderRow({ item });
+      case 'recordedSummary':
+        return (
+          <View style={styles.disclosure}>
+            <DisclosureRow label={t('importCsv.missing.recorded', { count: item.count })} expanded={item.open} onPress={() => setRecordedOpen(!recordedOpen)} />
+          </View>
+        );
+      case 'extrasHeader':
+        return (
+          <View style={styles.disclosure}>
+            <DisclosureRow label={t('importCsv.missing.extras', { count: item.count })} expanded={item.open} onPress={() => setExtrasOpen(!extrasOpen)} />
+          </View>
+        );
+      case 'extrasNote':
+        return <T tone="inkMuted">{t('importCsv.missing.extrasNote')}</T>;
+      case 'extra':
+        return renderExtra(item.extra);
+      case 'showMore':
+        return <Pill label={t('importCsv.missing.showMore', { count: item.count })} variant="secondary" onPress={() => setExtrasShown(extrasShown + EXTRAS_PAGE)} />;
+    }
+  };
+
   return (
     <View style={styles.flex}>
       <FlashList
-        data={rows}
-        keyExtractor={(r) => String(r.index)}
+        data={items}
+        keyExtractor={(i) => i.key}
+        getItemType={(i) => i.kind}
         extraData={state.rowState}
-        renderItem={renderRow}
+        renderItem={renderItem}
         ListHeaderComponent={header}
         ListFooterComponent={footer}
       />
+      {extrasDetail.element}
       <CategoryPicker
         visible={pickerFor !== null}
         categories={categories.active}
@@ -265,6 +353,7 @@ export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: (
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { gap: space.gapSm, paddingBottom: space.gapMd },
+  disclosure: { paddingTop: space.groupGap },
   row: { paddingVertical: space.gapSm, borderBottomWidth: StyleSheet.hairlineWidth },
   top: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
   text: { flex: 1 },
