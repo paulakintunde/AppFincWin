@@ -100,14 +100,21 @@ export function UndoToastHost() {
   if (message === '') return null;
 
   const label = undoableLabel(toast);
+  const localUndo = toast.onUndo;
   const canUndo =
-    (toast.kind === 'ordinary' || toast.kind === 'destructive') &&
+    localUndo !== null ||
+    ((toast.kind === 'ordinary' || toast.kind === 'destructive') &&
     toast.stepId !== null &&
     label !== null &&
     ctx.userId !== null &&
-    ctx.householdId !== null;
+    ctx.householdId !== null);
 
   const onUndo = () => {
+    if (localUndo !== null) {
+      dismissToast(toast.id);
+      localUndo();
+      return;
+    }
     if (!label || toast.stepId === null || ctx.userId === null || ctx.householdId === null) return;
     undo({
       stepId: toast.stepId,

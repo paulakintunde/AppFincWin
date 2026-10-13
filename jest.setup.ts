@@ -14,6 +14,10 @@ jest.mock('@react-native-community/netinfo', () =>
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require('react-native-reanimated').setUpTests();
 
+// Sheet wraps its Modal in a GestureHandlerRootView; stub the native module for every suite.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require('react-native-gesture-handler/jestSetup');
+
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(() => Promise.resolve()),
   selectionAsync: jest.fn(() => Promise.resolve()),

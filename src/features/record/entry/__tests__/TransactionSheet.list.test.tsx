@@ -1,7 +1,7 @@
 import React from 'react';
 import { AccessibilityInfo } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { serialiseDraft, type ListItem } from '@/engine/entryList';
 import { getToast, resetToastForTests } from '@/state/undoToast';
@@ -366,6 +366,40 @@ describe('editing and removing listed items', () => {
     const { getByLabelText, queryByText } = await open();
     await addEntry('3', 'Bus');
     await fireEvent(getByLabelText(/^Money out, Bus/), 'accessibilityAction', { nativeEvent: { actionName: 'right' } });
+    expect(queryByText(/in list/)).toBeNull();
+  });
+});
+
+describe('Undo after removing a listed item', () => {
+  it('shows a Removed toast and Undo puts the item back at the same index', async () => {
+    const { getByLabelText, getByText } = await open();
+    await addEntry('3', 'Bus');
+    await addEntry('4', 'Tea');
+    await fireEvent(getByLabelText(/^Money out, Tea/), 'accessibilityAction', { nativeEvent: { actionName: 'right' } });
+    const toast = getToast();
+    expect(toast).toMatchObject({ kind: 'destructive', text: { key: 'record.sheet.list.removed', params: { name: 'Tea' } } });
+    expect(toast?.onUndo).toEqual(expect.any(Function));
+    expect(getByText('1 in list · £3.00')).toBeTruthy();
+    await act(async () => {
+      toast?.onUndo?.();
+    });
+    expect(getByText('2 in list · £7.00')).toBeTruthy();
+    const labels = screen.getAllByLabelText(/^Money out, /).map((n) => n.props.accessibilityLabel as string);
+    expect(labels[0]).toMatch(/Tea/);
+    expect(labels[1]).toMatch(/Bus/);
+  });
+
+  it('does nothing when Undo is pressed after the list was saved', async () => {
+    const { getByLabelText, getByText, queryByText } = await open();
+    await addEntry('3', 'Bus');
+    await addEntry('4', 'Tea');
+    await fireEvent(getByLabelText(/^Money out, Tea/), 'accessibilityAction', { nativeEvent: { actionName: 'right' } });
+    const undo = getToast()?.onUndo;
+    await fireEvent.press(getByText(/^Save/));
+    await waitFor(() => expect(mockBulkSave).toHaveBeenCalled());
+    await act(async () => {
+      undo?.();
+    });
     expect(queryByText(/in list/)).toBeNull();
   });
 });

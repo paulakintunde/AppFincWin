@@ -46,6 +46,11 @@ export function useDismissedOffers(userId?: string): { keys: ReadonlySet<string>
     queryFn: () => fetchDismissedOfferKeys(supabase),
     enabled: Boolean(userId),
   });
-  const keys = useMemo<ReadonlySet<string>>(() => query.data ?? NO_KEYS, [query.data]);
+  // The cache holds a string[] (JSON-safe). A blob persisted before that change restores as {},
+  // so anything but an array reads as no keys until the next fetch replaces it.
+  const keys = useMemo<ReadonlySet<string>>(
+    () => (Array.isArray(query.data) ? new Set(query.data) : NO_KEYS),
+    [query.data]
+  );
   return { keys, isSuccess: query.isSuccess };
 }

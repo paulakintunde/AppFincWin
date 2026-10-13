@@ -5,6 +5,8 @@
  */
 import React, { useEffect, useState, type ReactNode } from 'react';
 import {
+  Animated,
+  Easing,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -12,11 +14,11 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  View,
   useWindowDimensions,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space, useScreenInsets } from '@/theme/layout';
@@ -55,26 +57,41 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel }: Shee
   const insets = useScreenInsets();
   const { height } = useWindowDimensions();
   const keyboardHeight = useAndroidKeyboardHeight();
+  // The Modal does not animate (animationType none) so the scrim stays put and appears with it;
+  // only the sheet container slides up from below.
+  const [slide] = useState(() => new Animated.Value(height));
+  useEffect(() => {
+    if (!visible) return;
+    slide.setValue(height);
+    Animated.timing(slide, { toValue: 0, duration: 250, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    // Re-run on open only; a rotation while open should not replay the slide.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   if (!visible) {
     return null;
   }
 
   return (
-    <Modal transparent visible={visible} animationType="slide" onRequestClose={onDismiss}>
+    <Modal transparent visible={visible} animationType="none" onRequestClose={onDismiss}>
+      {/* A Modal is its own native window on Android, outside the root GestureHandlerRootView in
+          app/_layout.tsx, so RNGH gestures (SwipeRow) need a root of their own in here. */}
+      <GestureHandlerRootView testID="sheet-gesture-root" style={styles.flex}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable
-          style={styles.backdrop}
+          testID="sheet-backdrop"
+          style={[styles.backdrop, { backgroundColor: colors.scrim }]}
           accessibilityRole="button"
           accessibilityLabel={t('a11y.close')}
           onPress={onDismiss}
         />
-        <View
+        <Animated.View
           testID="sheet-container"
           accessibilityLabel={accessibilityLabel}
           style={[
             styles.container,
             {
+              transform: [{ translateY: slide }],
               // S-CR-05: never taller than the screen below the status bar, so the header
               // (title and Cancel) is always reachable; the body scrolls in a SheetScroll.
               maxHeight: height - insets.top - space.groupGap,
@@ -88,8 +105,9 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel }: Shee
           ]}
         >
           {children}
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

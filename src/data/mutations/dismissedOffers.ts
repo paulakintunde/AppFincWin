@@ -21,7 +21,7 @@ export interface DismissOffersVars {
 }
 
 interface DismissContext {
-  previous: ReadonlySet<string> | undefined;
+  previous: string[] | undefined;
 }
 
 export function registerDismissOffersMutations(qc: QueryClient): void {
@@ -35,8 +35,10 @@ export function registerDismissOffersMutations(qc: QueryClient): void {
       markSession(vars);
       const key = queryKeys.dismissedOffers(vars.userId);
       await qc.cancelQueries({ queryKey: key });
-      const previous = qc.getQueryData<ReadonlySet<string>>(key);
-      qc.setQueryData<ReadonlySet<string>>(key, new Set([...(previous ?? []), ...vars.keys]));
+      // Cached as a string[] (JSON-safe for the persisted cache); a restored {} counts as empty.
+      const cached = qc.getQueryData<unknown>(key);
+      const previous = Array.isArray(cached) ? (cached as string[]) : undefined;
+      qc.setQueryData<string[]>(key, [...new Set([...(previous ?? []), ...vars.keys])]);
       return { previous };
     },
     onError: async (err: unknown, vars: DismissOffersVars, context: unknown) => {
@@ -44,7 +46,7 @@ export function registerDismissOffersMutations(qc: QueryClient): void {
       if (cls !== 'rejected' && cls !== 'not-found') return;
       const key = queryKeys.dismissedOffers(vars.userId);
       const previous = (context as DismissContext | undefined)?.previous;
-      if (previous) qc.setQueryData<ReadonlySet<string>>(key, previous);
+      if (previous) qc.setQueryData<string[]>(key, previous);
       else void qc.invalidateQueries({ queryKey: key });
       // Counts only (T-02.2-23-03): offer keys embed merchant names.
       await recordFailedWrite({

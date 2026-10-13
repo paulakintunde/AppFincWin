@@ -342,6 +342,7 @@ const en = {
         itemA11yRepeat: '{{type}}, {{name}}, {{amount}}, {{date}}, {{repeat}}',
         editAction: 'Edit',
         removeAction: 'Remove from list',
+        removed: 'Removed · {{name}}',
         addedA11y: '{{name}} added to the list. {{summary}}',
         dropped_one: '{{count}} entry was left out because its account is no longer available.',
         dropped_other: '{{count}} entries were left out because their account is no longer available.',
