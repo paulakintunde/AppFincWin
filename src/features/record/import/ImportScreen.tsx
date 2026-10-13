@@ -22,6 +22,7 @@ import { PasswordPromptSheet } from './PasswordPromptSheet';
 import { ReadingProgress } from './ReadingProgress';
 import { MappingStep } from './MappingStep';
 import { MatchesStep } from './MatchesStep';
+import { ReconcileChoice } from './ReconcileChoice';
 import { ReviewStep } from './ReviewStep';
 import { SuggestionsStep } from './SuggestionsStep';
 import { Actions, Heading, T, useDynamicT } from './importUi';
@@ -100,8 +101,18 @@ function StageView({ state, entry, onDone }: { state: ImportState; entry: Import
       return <FormatStep state={state} />;
     case 'mapping':
       return <MappingStep state={state} />;
+    case 'choose-mode':
+      return <ReconcileChoice state={state} />;
     case 'review':
-      return <ReviewStep state={state} />;
+      return (
+        <ReviewStep
+          state={state}
+          onClose={() => {
+            state.cancel();
+            onDone();
+          }}
+        />
+      );
     case 'matches':
       return <MatchesStep state={state} />;
     case 'committing':

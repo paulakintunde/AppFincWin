@@ -76,6 +76,8 @@ jest.mock('@/data/queries/categories', () => ({
     return { all: [groceries], active: [groceries], byId: new Map([['c1', groceries]]), transferCategoryId: 'tc', loading: false };
   },
 }));
+const mockExtrasOpen = jest.fn();
+jest.mock('../ExtrasDetail', () => ({ useExtrasDetail: () => ({ open: mockExtrasOpen, element: null }) }));
 jest.mock('../PasteSheet', () => {
   const { View } = jest.requireActual('react-native');
   return { PasteSheet: (props: { visible: boolean }) => (props.visible ? <View accessibilityLabel="paste-sheet-open" /> : null) };
@@ -169,6 +171,13 @@ function makeState(over: Partial<Record<keyof ImportState, unknown>> = {}): Impo
     suggestions: [],
     acceptSuggestion: fn(),
     dismissSuggestion: fn(),
+    mode: null,
+    existingChecked: true,
+    overlapCount: 0,
+    chooseMode: fn(),
+    extras: [],
+    extraRows: new Map(),
+    nearByIndex: new Map(),
   };
   return { ...base, ...over } as unknown as ImportState;
 }
@@ -1104,5 +1113,143 @@ describe('ImportScreen: committing', () => {
     mockState = makeState({ stage: 'committing', accountId: 'a1' });
     await renderScreen();
     expect(screen.getByText('Importing…')).toBeTruthy();
+  });
+});
+
+describe('ImportScreen: choose mode', () => {
+  it('shows the checking state with Cancel only while the preview is not ready', async () => {
+    mockState = makeState({ stage: 'choose-mode', preview: null });
+    await renderScreen();
+    expect(screen.getByText('Checking against your entries…')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockState.cancel).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+  });
+
+  it.each([
+    [24, 'This statement overlaps 24 lines you already have.'],
+    [1, 'This statement overlaps 1 line you already have.'],
+    [0, '0 lines overlap with entries you already have.'],
+  ])('states the overlap (%s)', async (overlapCount, sentence) => {
+    mockState = reviewState([previewRow(0)], { stage: 'choose-mode', overlapCount });
+    await renderScreen();
+    expect(screen.getByText('Choose how to add this statement')).toBeTruthy();
+    expect(screen.getByText(sentence)).toBeTruthy();
+  });
+
+  it('each choice proceeds in one tap', async () => {
+    mockState = reviewState([previewRow(0)], { stage: 'choose-mode' });
+    await renderScreen();
+    await fireEvent.press(screen.getByText('Find what’s missing'));
+    expect(mockState.chooseMode).toHaveBeenCalledWith('reconcile');
+    await fireEvent.press(screen.getByText('Add every line'));
+    expect(mockState.chooseMode).toHaveBeenCalledWith('new');
+  });
+
+  it('disables Find what’s missing with its reason when existing entries could not be read', async () => {
+    mockState = reviewState([previewRow(0)], { stage: 'choose-mode', existingChecked: false });
+    await renderScreen();
+    expect(screen.getByText('Your existing entries couldn’t be checked, so nothing can be matched yet.')).toBeTruthy();
+    const reconcile = screen.getByRole('button', { name: 'Find what’s missing' });
+    expect(reconcile.props.accessibilityState).toEqual({ disabled: true });
+    await fireEvent.press(screen.getByText('Find what’s missing'));
+    expect(mockState.chooseMode).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByText('Add every line'));
+    expect(mockState.chooseMode).toHaveBeenCalledWith('new');
+  });
+
+  it('Back and Cancel call the hook', async () => {
+    mockState = reviewState([previewRow(0)], { stage: 'choose-mode' });
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(mockState.back).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockState.cancel).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ImportScreen: reconcile review', () => {
+  const missing = (i: number) => previewRow(i, { included: true });
+  const matched = (i: number) => previewRow(i, { included: false, duplicate: { kind: 'existing', id: 'x' + i } });
+  const extra = (id: string, over: Record<string, unknown> = {}) => ({ id, localDate: '2026-03-03', amount: -450, name: 'Coffee', nearIndex: null, ...over });
+  const reconcileState = (rows: ReturnType<typeof previewRow>[], over: Record<string, unknown> = {}) =>
+    reviewState(rows, { mode: 'reconcile', ...over });
+
+  it('leads with the missing lines, collapses what is recorded and expands it on demand', async () => {
+    mockState = reconcileState([matched(0), missing(1), missing(2), missing(3), matched(4)]);
+    await renderScreen();
+    expect(screen.getByText('3 lines aren’t recorded yet')).toBeTruthy();
+    expect(screen.getAllByText('Missing')).toHaveLength(3);
+    expect(screen.queryByText('LINE 0')).toBeNull();
+    const summary = screen.getByRole('button', { name: '2 already recorded' });
+    expect(summary.props.accessibilityState).toEqual({ expanded: false });
+    await fireEvent.press(summary);
+    expect(screen.getByText('LINE 0')).toBeTruthy();
+    expect(screen.getAllByText('Already recorded')).toHaveLength(2);
+    expect(screen.queryByText('Possible duplicate')).toBeNull();
+    expect(screen.getByRole('button', { name: '2 already recorded' }).props.accessibilityState).toEqual({ expanded: true });
+  });
+
+  it('commits with Add n lines', async () => {
+    mockState = reconcileState([matched(0), missing(1), missing(2), missing(3)]);
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Add 3 lines' }));
+    expect(mockState.commit).toHaveBeenCalledTimes(1);
+  });
+
+  it('says so when nothing is missing and Close import ends the import', async () => {
+    mockState = reconcileState([matched(0), matched(1)]);
+    const onDone = jest.fn();
+    await renderScreen(onDone);
+    expect(screen.getByText('Everything on this statement is already recorded.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Add d+ lines?$/ })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Close import' }));
+    expect(mockState.cancel).toHaveBeenCalled();
+    expect(onDone).toHaveBeenCalled();
+    expect(mockState.commit).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+  });
+
+  it('folds the app-only lines and opens their detail on press', async () => {
+    mockState = reconcileState([missing(0)], { extras: [extra('e1'), extra('e2', { name: 'Tea' })], extraRows: new Map() });
+    await renderScreen();
+    const header = screen.getByRole('button', { name: 'In the app but not on this statement (2)' });
+    expect(screen.queryByText('Coffee')).toBeNull();
+    await fireEvent.press(header);
+    expect(screen.getByText('The import leaves these as they are.')).toBeTruthy();
+    expect(screen.getByText('Tea')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Coffee'));
+    expect(mockExtrasOpen).toHaveBeenCalledWith('e1');
+  });
+
+  it('pages the extras 50 at a time', async () => {
+    const extras = Array.from({ length: 120 }, (_, i) => extra('e' + i, { name: 'Item ' + i }));
+    mockState = reconcileState([missing(0)], { extras });
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'In the app but not on this statement (120)' }));
+    expect(screen.getByText('Item 49')).toBeTruthy();
+    expect(screen.queryByText('Item 50')).toBeNull();
+    await fireEvent.press(screen.getByText('Show 50 more'));
+    expect(screen.getByText('Item 99')).toBeTruthy();
+    expect(screen.getByText('Show 20 more')).toBeTruthy();
+  });
+
+  it('hints at a near match on both lines without changing the tick', async () => {
+    mockState = reconcileState([missing(7)], {
+      extras: [extra('e1', { nearIndex: 7 })],
+      nearByIndex: new Map([[7, 'e1']]),
+    });
+    await renderScreen();
+    expect(screen.getByText(/^Might be the same as Coffee on /)).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: 'Select LINE 7' }).props.accessibilityState).toMatchObject({ checked: true });
+    await fireEvent.press(screen.getByRole('button', { name: 'In the app but not on this statement (1)' }));
+    expect(screen.getByText(/^Might be the same as the statement line on /)).toBeTruthy();
+  });
+
+  it('new-entries mode keeps the possible duplicate tag', async () => {
+    mockState = reviewState([previewRow(0, { duplicate: { kind: 'existing', id: 'x' } })], { mode: 'new' });
+    await renderScreen();
+    expect(screen.getByText('Possible duplicate')).toBeTruthy();
+    expect(screen.queryByText('Missing')).toBeNull();
   });
 });
