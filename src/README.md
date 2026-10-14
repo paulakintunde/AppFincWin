@@ -25,6 +25,7 @@ landing in it.
   (theme selection, session, feature-flag-free UI state).
 - **`src/ui/`** — shared design-system primitives: tokens, themed
   components, icons, layout primitives.
+- **`src/shell/`** — Phase 3 navigation chrome: tab bar, unified back history, FAB, headers, screen scaffolds, refresh. Pure decision modules here (back history, tab availability, slide direction, FAB hide rule) import no React/RN, like `src/features/system/routeDecision.ts`. Sheets stay in `src/ui/Sheet.tsx` (D-12). Never imported by `src/engine/`.
 - **`src/theme/`** — the design token set, the 4 accents and 4 font
   pairings, live-switching theme context.
 - **`src/i18n/`** — typed i18n catalogue and `i18next`/`react-i18next`
