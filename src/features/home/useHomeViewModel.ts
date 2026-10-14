@@ -10,7 +10,8 @@ import {
   useTransactionMonths,
   type AccountBalanceView,
 } from '@/data/queries/activity';
-import { queryKeys } from '@/data/keys';
+import type { MonthDataState } from '@/data/queries/monthDataState';
+import { monthRefreshKeys } from '@/features/record/activity/refreshKeys';
 import type { AccountRow } from '@/db/rows';
 import {
   monthPosition,
@@ -36,6 +37,7 @@ export function useHomeViewModel(): {
   totals: MonthTotals;
   position: MonthPosition;
   loading: boolean;
+  dataState: MonthDataState;
   isError: boolean;
   comingUp: ComingUpItem[];
   comingUpTotal: number;
@@ -104,20 +106,8 @@ export function useHomeViewModel(): {
   const flow = useRowFlow(rowActions, month);
 
   const hh = rc.householdId;
-  const refreshKeys: readonly QueryKey[] = useMemo(
-    () =>
-      hh === null || hh === undefined
-        ? []
-        : [
-            queryKeys.transactionsMonth(hh, month),
-            queryKeys.recurringSeries(hh),
-            queryKeys.fxLatest(),
-            queryKeys.transactionMonths(hh),
-            queryKeys.accounts(hh),
-            queryKeys.accountBalances(hh),
-          ],
-    [hh, month]
-  );
+  const refreshKeys = useMemo(() => monthRefreshKeys(hh, month), [hh, month]);
+  const dataState: MonthDataState = rc.ready ? monthView.dataState : 'loading';
 
   return {
     rc,
@@ -127,7 +117,8 @@ export function useHomeViewModel(): {
     months,
     totals: monthView.totals,
     position,
-    loading: monthView.isLoading || !rc.ready,
+    loading: dataState === 'loading',
+    dataState,
     isError: monthView.isError,
     comingUp: coming.items,
     comingUpTotal: coming.total,
