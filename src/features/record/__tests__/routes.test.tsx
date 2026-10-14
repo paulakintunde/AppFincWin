@@ -16,7 +16,7 @@ jest.mock('expo-router', () => {
     return null;
   };
   return {
-    router: { push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
+    router: { canDismiss: () => false, dismissTo: jest.fn(), push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
     useLocalSearchParams: () => mockParams,
     usePathname: () => '/activity',
     Redirect: () => null,
@@ -103,8 +103,12 @@ describe('record routes', () => {
   it('activity navigates to accounts and history', async () => {
     await render(<ActivityRoute />);
     const p = mockActivity.mock.calls[0]![0] as Record<string, () => void>;
+    const now = jest.spyOn(Date, 'now');
+    now.mockReturnValue(1_000_000);
     p.onOpenAccounts!();
+    now.mockReturnValue(1_000_000 + 1000); // past the pushOnce guard
     p.onOpenHistory!();
+    now.mockRestore();
     expect(p.onOpenYou).toBeUndefined();
     expect(mockPush.mock.calls.map((c) => c[0])).toEqual(['/accounts', '/history']);
   });
