@@ -342,6 +342,34 @@ describe('useEntryList form keeping (D-25)', () => {
     expect(raw.items).toHaveLength(30);
   });
 
+  it('an oversized merge still keeps live items of a type that has room (WR-02)', async () => {
+    const stored = Array.from({ length: 30 }, (_, n) => item(`s${n}`));
+    await saveEntryDraft('u1', 'h1', stored);
+    const { result, unmount } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(30));
+    await act(() => {
+      result.current.add(item('inc', { type: 'in' }));
+      result.current.keepForm(form);
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 400));
+    const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+    expect(raw.items.map((i: ListItem) => i.id)).toContain('inc');
+  });
+
+  it('a discard after keepForm is not resurrected by the late merge write (WR-02)', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1')]);
+    const { result, unmount } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(1));
+    await act(() => {
+      result.current.keepForm(form);
+      result.current.clearAll();
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 400));
+    expect(await AsyncStorage.getItem(KEY)).toBeNull();
+  });
+
   it('the unmount flush after keepForm keeps the saved form', async () => {
     const { result, unmount } = await mount();
     await act(async () => {});

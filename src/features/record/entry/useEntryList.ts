@@ -211,13 +211,20 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
     // L5: the stored draft is still loading or its resume prompt is unanswered: keep it and add what was typed.
     const { userId, householdId } = t;
     const live = itemsRef.current;
-    void loadEntryDraft(userId, householdId).then((stored) => {
-      const merged = [...stored.items, ...live];
-      const fits = (['out', 'in', 'transfer'] as const).every(
-        (k) => merged.filter((i) => i.type === k).length <= LIST_CAP_PER_TYPE,
-      );
-      return saveEntryDraft(userId, householdId, fits ? merged : stored.items, form ?? stored.form);
-    });
+    const epoch = epochRef.current;
+    void loadEntryDraft(userId, householdId)
+      .then((stored) => {
+        // WR-02: a discard since the call must not be resurrected by this late write.
+        if (epoch !== epochRef.current) return undefined;
+        // Stored items first, then each typed item that still fits its type's cap (none dropped
+        // unless its own type is full).
+        const merged = [...stored.items];
+        for (const i of live) {
+          if (merged.filter((m) => m.type === i.type).length < LIST_CAP_PER_TYPE) merged.push(i);
+        }
+        return saveEntryDraft(userId, householdId, merged, form ?? stored.form);
+      })
+      .catch(() => undefined);
   }, []);
 
   const canAdd = useCallback((type: ListItemType) => engineCanAdd(items, type), [items]);
