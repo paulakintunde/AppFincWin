@@ -67,6 +67,13 @@ findings:
   info: 6
   total: 11
 status: issues_found
+fix_status:
+  WR-01: fixed (8b4da80)
+  WR-02: fixed (e30f374)
+  WR-03: fixed (1ce49f1)
+  WR-04: fixed (ddd671f)
+  WR-05: fixed (4c5ccb3)
+  IN-01..IN-06: not in scope
 ---
 
 # Phase 3: Code Review Report (round 3, gap closure 03-25..03-38)
@@ -98,11 +105,15 @@ No blockers. The remaining defects are robustness edges and a few quality items.
 **Issue:** L1 assumes a real tab switch updates `currentRef` within two animation frames (about 33 ms). If the navigator commits later, for example while the destination tab mounts heavy content, `sameLocation(now, before)` is still true. The code then sets `pendingBackRef.current = false` and calls `clearBackStep()` while the switch is still in flight. The arrival is then recorded as a forward navigation, so back history grows instead of popping, and the slide direction is wrong. The test only covers an instant switcher.
 **Fix:** Do not use a frame-count timeout as the signal. Clear the flags when the switcher reports it did nothing, for example if the tab switcher returns a boolean or the target tab equals the current tab. If a timeout is kept, make it generous (about 300 ms) and cancel it on the next location change and on unmount.
 
+**Fix status:** fixed. Replaced the two-frame check with a 300 ms timeout, cancelled on the next location change and on unmount.
+
 ### WR-02: `keepForm` merge silently drops the user's live entries when over the cap, and has no `.catch`
 
 **File:** `src/features/record/entry/useEntryList.ts:213-221`
 **Issue:** In the L5 branch, when `merged` exceeds `LIST_CAP_PER_TYPE` the code saves `stored.items` and discards `live`. The user's just-typed list entries are lost with no signal. `loadEntryDraft(...).then(...)` has no rejection handler, so a storage failure becomes an unhandled promise rejection. It also races with `discardDraft` (`clearEntryDraft`): a late write can resurrect a draft the user discarded.
 **Fix:** Keep the live items on overflow (`fits ? merged : live`, or trim the stored items). Add `.catch(() => undefined)`. Skip the late write if the draft was cleared since, for example by checking an epoch ref.
+
+**Fix status:** fixed. Merge now keeps stored items then every live item whose type still has room; added .catch; late write skipped when an epoch bump (discard) intervened. No user-facing overflow signal added (no toast channel in this hook).
 
 ### WR-03: `pushOnce` guard is global, not per target
 
@@ -110,17 +121,23 @@ No blockers. The remaining defects are robustness edges and a few quality items.
 **Issue:** One timestamp covers every caller. Any two pushes within 600 ms are dropped, even to different routes, such as avatar then Import, or a quick Back then a tap on another card. The tap does nothing and gives no feedback. It is a silent dropped input in an app that treats lost input as a defect.
 **Fix:** Key the guard on the serialised href: `if (href === lastHref && now - lastAt < PUSH_GUARD_MS) return;`.
 
+**Fix status:** fixed. Guard keyed on the href; a different target is never dropped.
+
 ### WR-04: Import return from a stack with screens but no `(tabs)` underneath pushes `(tabs)` instead of replacing
 
 **File:** `src/features/record/import/importReturn.ts:20-24`
 **Issue:** `router.canDismiss()` is true whenever the stack has more than one screen, not only when `(tabs)` is beneath it. Where the stack holds other outer screens and no `(tabs)` (the test mounts `/import` as the sole entry), `dismissTo` falls back to a push. Back from Activity then returns to the import screen or setup screens. The current onboarding path uses `router.replace` in `SetupHistoryScreen`, so this is latent rather than live. The test only covers a single-entry stack.
 **Fix:** Decide from the navigation state whether `(tabs)` is in the stack, not from `canDismiss()`. Add a test with `[setup/account, import]` and no `(tabs)`.
 
+**Fix status:** fixed. finishImport(r, navState) dismisses only when canDismiss() and (tabs) is in the (app) stack (hasTabsInStack); import route passes useRootNavigationState().
+
 ### WR-05: Gesture end ignores cancellation in SwipeBack
 
 **File:** `src/features/navigation/SwipeBack.tsx:55-80`
 **Issue:** `.onEnd((e) => ...)` ignores the `success` argument. A gesture cancelled by the system after activation (an incoming call, or the navigation gesture taking over) is still evaluated by `shouldSwipeBack`, so it can trigger `router.back()`. If `translateX` was left at `width` and the back does not occur, the screen stays blank, because nothing resets it other than the next gesture.
 **Fix:** Take `(e, success)` and treat `!success` as snap-back. Add `.onFinalize` to reset `translateX` to 0 when no navigation is pending.
+
+**Fix status:** fixed. onEnd honours success (cancel = snap back); onFinalize resets translateX unless the completion timer is pending.
 
 ## Info
 
