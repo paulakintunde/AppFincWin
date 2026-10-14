@@ -23,7 +23,7 @@ export const Text = forwardRef<RNText, TextProps>(function Text(
   if (allowFontScaling === false) {
     return (
       <RNText ref={ref} {...rest} allowFontScaling={false} style={style}>
-        <TextNestingContext.Provider value>{children}</TextNestingContext.Provider>
+        {withNesting(children)}
       </RNText>
     );
   }
@@ -34,7 +34,15 @@ export const Text = forwardRef<RNText, TextProps>(function Text(
   const merged = Object.keys(scaled).length > 0 ? [style, scaled] : style;
   return (
     <RNText ref={ref} {...rest} allowFontScaling={false} style={merged}>
-      <TextNestingContext.Provider value>{children}</TextNestingContext.Provider>
+      {withNesting(children)}
     </RNText>
   );
 });
+
+/** Plain strings and numbers cannot contain a nested Text, so they skip the provider (children stay as given). */
+function withNesting(children: React.ReactNode): React.ReactNode {
+  if (children === undefined || children === null || typeof children === "string" || typeof children === "number") {
+    return children;
+  }
+  return <TextNestingContext.Provider value>{children}</TextNestingContext.Provider>;
+}
