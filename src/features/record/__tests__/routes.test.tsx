@@ -56,7 +56,7 @@ jest.mock('@/features/consent/useConsent', () => ({
 
 import ImportRoute from '../../../../app/(app)/import';
 import AccountDetailRoute from '../../../../app/(app)/accounts/[id]';
-import ActivityRoute from '../../../../app/(app)/activity';
+import ActivityRoute from '../../../../app/(app)/(tabs)/activity';
 import AppLayout from '../../../../app/(app)/_layout';
 
 beforeEach(() => {

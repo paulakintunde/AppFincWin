@@ -19,7 +19,7 @@ describe('shouldSwipeBack', () => {
 });
 
 describe('isSwipeBackRoute', () => {
-  it.each(['activity', 'consent', 'setup/account', 'setup/history'])('is off for %s', (r) => expect(isSwipeBackRoute(r)).toBe(false));
+  it.each(['(tabs)', 'consent', 'setup/account', 'setup/history'])('is off for %s', (r) => expect(isSwipeBackRoute(r)).toBe(false));
   it.each(['accounts/index', 'accounts/[id]', 'categories', 'history', 'import', 'you'])('is on for %s', (r) =>
     expect(isSwipeBackRoute(r)).toBe(true)
   );

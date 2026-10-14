@@ -95,7 +95,7 @@ describe('ConsentScreen', () => {
 
     expect(mockGrant).toHaveBeenCalledTimes(1);
     expect(mockDecline).not.toHaveBeenCalled();
-    await waitFor(() => expect(getByText('/activity')).toBeTruthy());
+    await waitFor(() => expect(getByText('/home')).toBeTruthy());
   });
 
   it('calls decline() once when Not now is pressed, then navigates to the signed-in landing (/activity)', async () => {
@@ -107,7 +107,7 @@ describe('ConsentScreen', () => {
 
     expect(mockDecline).toHaveBeenCalledTimes(1);
     expect(mockGrant).not.toHaveBeenCalled();
-    await waitFor(() => expect(getByText('/activity')).toBeTruthy());
+    await waitFor(() => expect(getByText('/home')).toBeTruthy());
   });
 
   it('stays on the prompt (no redirect) when the answer fails to save', async () => {
@@ -136,7 +136,7 @@ describe('ConsentScreen', () => {
       fireEvent.press(getByTestId('consent-decline'));
     });
     expect(queryByTestId('consent-save-failed')).toBeNull();
-    await waitFor(() => expect(getByText('/activity')).toBeTruthy());
+    await waitFor(() => expect(getByText('/home')).toBeTruthy());
   });
 
   it('never leaves both choices disabled when grant() throws (WR-02)', async () => {
