@@ -30,6 +30,14 @@ describe('pushOnce', () => {
     expect(router.push).toHaveBeenCalledTimes(2);
   });
 
+  it('does not drop a quick push to a different href (WR-03)', () => {
+    pushOnce('/you' as never);
+    pushOnce('/import' as never);
+    expect(router.push).toHaveBeenCalledTimes(2);
+    pushOnce('/import' as never);
+    expect(router.push).toHaveBeenCalledTimes(2);
+  });
+
   it('resetPushOnceForTests clears the guard', () => {
     pushOnce('/you' as never);
     resetPushOnceForTests();
