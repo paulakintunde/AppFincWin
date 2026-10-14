@@ -505,8 +505,8 @@ Plans:
 - [x] 03-35-PLAN.md — Import returns to the one (tabs), to Home when started there (G3); push guards (H7) [integration]
 
 **Gap wave 3** *(blocked on gap wave 2)*
-- [ ] 03-31-PLAN.md — Activity: Unpaid banner (G8 / D-41), tappable Expected rows (G9 / D-42), sync line at rest, FAB clearance
-- [ ] 03-37-PLAN.md — Sync line on every pushed screen (G5) [integration]
+- [x] 03-31-PLAN.md — Activity: Unpaid banner (G8 / D-41), tappable Expected rows (G9 / D-42), sync line at rest, FAB clearance
+- [x] 03-37-PLAN.md — Sync line on every pushed screen (G5) [integration]
 
 **Gap wave 4** *(blocked on gap wave 3)*
 - [ ] 03-38-PLAN.md — Pixel 9 re-check: A7, A9, A15, Accounts row, import from Home, H7/H8/M3 quick checks (checkpoint)
@@ -697,7 +697,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 35/38 | In Progress|  |
+| 3. Shell | 37/38 | In Progress|  |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
