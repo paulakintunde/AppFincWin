@@ -204,3 +204,48 @@ The Accounts card row for a USD account "Main" at -740 is too wide and spacious.
 - Accounts row too wide -> D-39
 
 No app code was changed by plan 03-14; these are gap work for a later plan. Still pending: I1-I4 (Apple enrolment). A11 TalkBack passed later on 2026-10-14.
+
+## Gap re-check (03-38)
+
+Plan 03-38. Re-check on the Pixel 9 of the rows that failed or that the audits doubted, after gap plans 03-25..03-37.
+
+- Date: 2026-10-14
+- Device: Pixel 9 (Android, 3-button navigation), same development build as above (no native change since 06ac01d), JS reloaded from Metro
+- Build id: phase/03-shell HEAD 7e52bb2
+- Gate before the session: tsc, eslint, depcruise clean; jest 337 suites / 8128 tests pass with coverage thresholds met
+
+### R1 A7 edge swipe (G7, D-40)
+
+Result: pending
+
+### R2 A9 Unpaid banner (G8, D-41)
+
+Result: pending
+
+### R3 A9 Expected wording and tap (G9, D-42)
+
+Result: pending
+
+### R4 A15 sync line at rest (G5)
+
+Result: pending
+
+### R5 Accounts row (G6, D-39)
+
+Result: pending
+
+### R6 Import from Home returns to Home (G3)
+
+Result: pending
+
+### R7 Double tap (H7)
+
+Result: pending
+
+### R8 FAB clearance (H8)
+
+Result: pending
+
+### R9 Toast and headline (M3, G1)
+
+Result: pending
