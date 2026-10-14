@@ -39,8 +39,11 @@ jest.mock('@/features/record/activity/ActivityScreen', () => ({
 jest.mock('@/features/record/history/UndoToastHost', () => {
   const R = require('react');
   const { View } = require('react-native');
-  return { UndoToastHost: () => R.createElement(View, { testID: 'undo-toast-host' }) };
+  return { UndoToastHost: () => R.createElement(View, { testID: 'undo-toast-host' }), SheetToastOverlay: () => null };
 });
+jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({ BackHistoryProvider: ({ children }: { children: React.ReactNode }) => children }));
+jest.mock('@/shell/backHistory/useAndroidBackHandler', () => ({ AndroidBackHandler: () => null }));
+jest.mock('@/shell/layout/ShellLayoutProvider', () => ({ ShellLayoutProvider: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('@/features/record/useDeviceHomeCurrencyDefault', () => ({ DeviceHomeCurrencyDefault: () => null }));
 jest.mock('@/features/record/samples/SampleBanner', () => ({ SampleBanner: () => null }));
 jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPrompts: () => null }));

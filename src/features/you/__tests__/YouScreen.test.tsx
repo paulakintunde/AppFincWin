@@ -61,6 +61,11 @@ jest.mock('@/features/consent/useConsent', () => ({
   }),
 }));
 
+const mockGoBack = jest.fn();
+jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({
+  useBackHistory: () => ({ goBack: mockGoBack, canGoBack: true }),
+}));
+
 const mockRouterPush = jest.fn();
 const mockRouterDismissTo = jest.fn();
 jest.mock('expo-router', () => ({
@@ -315,6 +320,16 @@ describe('YouScreen sync status', () => {
   it("shows 'offline · 3 changes queued' in the Connection section", async () => {
     const { getByText } = await renderScreen();
     expect(getByText('offline · 3 changes queued')).toBeTruthy();
+  });
+});
+
+describe('YouScreen back button', () => {
+  it('goes back through the shell back history', async () => {
+    const { getByLabelText } = await renderScreen();
+    await act(async () => {
+      fireEvent.press(getByLabelText('Back'));
+    });
+    expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 });
 
