@@ -68,11 +68,12 @@ function leaf(label: string) {
   };
 }
 
+const IMPORT_LABEL = 'import-root';
 function ImportFinishLeaf() {
   const params = useLocalSearchParams<{ from?: string }>();
   return (
     <Pressable accessibilityLabel="finish" onPress={() => finishImport(parseImportReturn(params.from))}>
-      <Text>import-root</Text>
+      <Text>{IMPORT_LABEL}</Text>
     </Pressable>
   );
 }

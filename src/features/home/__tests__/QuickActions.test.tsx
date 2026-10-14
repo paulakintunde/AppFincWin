@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { EMPTY_FILTER } from '@/engine/activity';
+import { resetPushOnceForTests } from '@/shell/navigation/pushOnce';
 import { QuickActions } from '../QuickActions';
 
 jest.setTimeout(30000);
@@ -34,6 +35,7 @@ async function draw() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  resetPushOnceForTests();
 });
 
 describe('QuickActions', () => {
@@ -64,9 +66,16 @@ describe('QuickActions', () => {
     expect(mockFocus.mock.invocationCallOrder[0] ?? 0).toBeLessThan(mockNavigate.mock.invocationCallOrder[0] ?? 0);
   });
 
+  it('a double tap on Import pushes once', async () => {
+    const { getByLabelText } = await draw();
+    await fireEvent.press(getByLabelText('Import a statement'));
+    await fireEvent.press(getByLabelText('Import a statement'));
+    expect(mockPush).toHaveBeenCalledTimes(1);
+  });
+
   it('Import pushes the import route with the literal entry', async () => {
     const { getByLabelText } = await draw();
     await fireEvent.press(getByLabelText('Import a statement'));
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/import', params: { entry: 'you' } });
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/import', params: { entry: 'you', from: 'home' } });
   });
 });

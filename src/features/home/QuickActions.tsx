@@ -4,13 +4,15 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
+import { ACTIVITY_HREF } from '@/features/auth/appHome';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { Text } from '@/ui/Text';
 import { EMPTY_FILTER } from '@/engine/activity';
 import { openEntry } from '@/features/record/entry/entryHost';
 import { useT } from '@/i18n';
 import { requestActivityFocus } from '@/state/activityFocus';
 import { useTheme } from '@/theme/ThemeProvider';
-import { size, space } from '@/theme/layout';
+import { PRESSED_OPACITY, size, space } from '@/theme/layout';
 import { FONT_PAIRINGS } from '@/theme/fonts';
 import { fontSize } from '@/theme/typography';
 
@@ -82,14 +84,14 @@ export function QuickActions({ month }: { month: string }) {
       a11y: t('home.quick.payBillsA11y'),
       onPress: () => {
         requestActivityFocus({ month, filter: { ...EMPTY_FILTER, unpaidOnly: true } });
-        router.navigate('/activity' as Href);
+        router.navigate(ACTIVITY_HREF);
       },
     },
     {
       key: 'import',
       label: t('home.quick.import'),
       a11y: t('home.quick.importA11y'),
-      onPress: () => router.push({ pathname: '/import', params: { entry: 'you' } } as Href),
+      onPress: () => pushOnce({ pathname: '/import', params: { entry: 'you', from: 'home' } } as Href),
     },
   ];
 
@@ -101,7 +103,7 @@ export function QuickActions({ month }: { month: string }) {
           accessibilityRole="button"
           accessibilityLabel={it.a11y}
           onPress={it.onPress}
-          style={({ pressed }) => [styles.column, pressed ? { opacity: 0.72 } : null]}
+          style={({ pressed }) => [styles.column, pressed ? { opacity: PRESSED_OPACITY } : null]}
         >
           <View style={[styles.circle, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
             <Glyph kind={it.key} color={colors.accent} />

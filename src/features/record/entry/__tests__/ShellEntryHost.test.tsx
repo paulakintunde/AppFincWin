@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { renderWithShellProviders, resetShellStores } from '@/shell/__tests__/testUtils';
 import { FabProvider, useFab, type FabContextValue } from '@/shell/fab/FabProvider';
 import { closeEntry, openEntry, resetEntryHostForTests } from '../entryHost';
+import { resetPushOnceForTests } from '@/shell/navigation/pushOnce';
 import { ShellEntryHost } from '../ShellEntryHost';
 
 jest.setTimeout(30000);
@@ -57,6 +58,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   resetShellStores();
   resetEntryHostForTests();
+  resetPushOnceForTests();
   holder.current = null;
 });
 
@@ -87,10 +89,25 @@ describe('ShellEntryHost', () => {
     expect(lastSheet().mode).toEqual({ kind: 'new', direction });
   });
 
-  it('importStatement routes to the import screen from You', async () => {
-    await renderWithShellProviders(<Host mounted />);
+  it('importStatement carries from=activity on Activity and pushes once on a double run', async () => {
+    await renderWithShellProviders(<Host mounted />, {
+      backHistory: { current: { area: 'tab', tab: 'activity', href: '/activity' } },
+    });
+    const run = cur().quickActions.find((a) => a.id === 'importStatement')!.run;
+    await act(async () => {
+      run();
+      run();
+    });
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/import', params: { entry: 'you', from: 'activity' } });
+  });
+
+  it('importStatement carries from=home while on Home', async () => {
+    await renderWithShellProviders(<Host mounted />, {
+      backHistory: { current: { area: 'tab', tab: 'home', href: '/home' } },
+    });
     await act(async () => cur().quickActions.find((a) => a.id === 'importStatement')!.run());
-    expect(router.push).toHaveBeenCalledWith({ pathname: '/import', params: { entry: 'you' } });
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/import', params: { entry: 'you', from: 'home' } });
   });
 
   it('shows the same sheet when another surface (Home) calls openEntry', async () => {
