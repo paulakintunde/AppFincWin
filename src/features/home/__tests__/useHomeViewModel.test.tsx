@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { queryKeys } from '@/data/keys';
 import { resetActivityFocusForTests } from '@/state/activityFocus';
+import { monthRefreshKeys } from '@/features/record/activity/refreshKeys';
 import { useHomeViewModel } from '../useHomeViewModel';
 
 const mock = {
@@ -29,6 +30,7 @@ const mock = {
     },
     isLoading: false,
     isError: false,
+    dataState: 'ready' as string,
     refetch: jest.fn(),
   },
   accounts: [
@@ -64,6 +66,7 @@ beforeEach(() => {
   mock.rc.ready = true;
   mock.rc.householdId = 'hh1';
   mock.monthView.isLoading = false;
+  mock.monthView.dataState = 'ready';
   mock.monthView.rows = [
     {
       status: 'pending',
@@ -81,6 +84,18 @@ beforeEach(() => {
 });
 
 describe('useHomeViewModel', () => {
+  it('dataState is loading until rc is ready, else the month view state', async () => {
+    mock.monthView.dataState = 'error';
+    const { result, rerender } = await renderHook(() => useHomeViewModel());
+    expect(result.current.dataState).toBe('error');
+    expect(result.current.loading).toBe(false);
+    mock.rc.ready = false;
+    await rerender({});
+    expect(result.current.dataState).toBe('loading');
+    expect(result.current.loading).toBe(true);
+    mock.rc.ready = true;
+  });
+
   it('defaults to the current month and exposes months', async () => {
     const { result } = await renderHook(() => useHomeViewModel());
     expect(result.current.month).toBe('2026-10');
@@ -108,6 +123,7 @@ describe('useHomeViewModel', () => {
 
   it('refreshKeys use the same keys as Activity; none without a household', async () => {
     const { result, rerender } = await renderHook(() => useHomeViewModel());
+    expect(result.current.refreshKeys).toEqual(monthRefreshKeys('hh1', '2026-10'));
     expect(result.current.refreshKeys).toEqual([
       queryKeys.transactionsMonth('hh1', '2026-10'),
       queryKeys.recurringSeries('hh1'),

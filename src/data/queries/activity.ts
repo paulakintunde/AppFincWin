@@ -19,6 +19,7 @@ import type { WithPending } from '../types';
 import { useTransactionsForMonth } from './transactions';
 import { useRecurringSeries } from './recurringSeries';
 import { useFxLatest } from './fxLatest';
+import { monthDataState, type MonthDataState } from './monthDataState';
 import { homeAmountFor, projectionHomeAmount } from './homeAmount';
 
 export interface ActivityRowView extends WithPending<TransactionRow> {
@@ -46,6 +47,7 @@ export interface MonthView {
   totals: MonthTotals;
   isLoading: boolean;
   isError: boolean;
+  dataState: MonthDataState;
   refetch: () => void;
 }
 
@@ -187,6 +189,7 @@ export function useMonthView(
     totals,
     isLoading: txQuery.isLoading || seriesQuery.isLoading || fxQuery.isLoading,
     isError: txQuery.isError || seriesQuery.isError,
+    dataState: monthDataState({ tx: txQuery, series: seriesQuery, fx: fxQuery }),
     refetch: () => {
       void txQuery.refetch();
       void seriesQuery.refetch();

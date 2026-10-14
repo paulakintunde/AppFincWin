@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { colors as base } from '@/theme/tokens';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import type { CategoryLookup } from '@/data/queries/categories';
@@ -69,10 +70,11 @@ const handlers = () => ({
   onSeeAll: jest.fn(),
 });
 
-async function draw(over: Partial<React.ComponentProps<typeof ComingUpCard>> = {}) {
+async function draw(over: Partial<React.ComponentProps<typeof ComingUpCard>> = {}, scale = 1) {
   const h = handlers();
   const utils = await render(
     <ThemeProvider>
+      <FontScaleProvider value={scale}>
       <ComingUpCard
         items={items}
         total={items.length}
@@ -80,10 +82,11 @@ async function draw(over: Partial<React.ComponentProps<typeof ComingUpCard>> = {
         formatter={formatter}
         homeCurrency="GBP"
         categories={categories}
-        loading={false}
+        state="ready"
         {...h}
         {...over}
       />
+      </FontScaleProvider>
     </ThemeProvider>
   );
   return { ...utils, h };
@@ -129,11 +132,57 @@ describe('ComingUpCard', () => {
     expect(getByText(/\$15\.00/)).toBeTruthy();
   });
 
-  it('shows the empty line with the 3-letter month and no See all', async () => {
+  it('shows the empty line with the long month and no See all', async () => {
     const { getByText, queryByText } = await draw({ items: [], total: 0 });
     expect(getByText('Coming up')).toBeTruthy();
-    expect(getByText('Nothing outstanding in Sep.')).toBeTruthy();
+    expect(getByText('Nothing outstanding in September.')).toBeTruthy();
     expect(queryByText('See all')).toBeNull();
+  });
+
+  it.each([
+    ['error', 'Bills due couldn’t load.'],
+    ['offline', 'Bills due will show once this month loads.'],
+  ] as const)('G4: %s shows its line, not the empty line', async (state, line) => {
+    const { getByText, queryByText } = await draw({ items: [], total: 0, state });
+    expect(getByText('Coming up')).toBeTruthy();
+    expect(getByText(line)).toBeTruthy();
+    expect(queryByText(/Nothing outstanding/)).toBeNull();
+    expect(queryByText('See all')).toBeNull();
+  });
+
+  it('never cuts the month to three letters and upper-cases by locale', async () => {
+    const fr = { ...formatter, locale: 'fr-FR' } as MoneyFormatter;
+    const { getByText } = await draw({
+      formatter: fr,
+      items: [{ kind: 'row', row: row({ id: 'j', name: 'Loyer' }), date: '2026-07-14' }],
+      total: 1,
+    });
+    const expected = new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' })
+      .format(Date.UTC(2026, 6, 1))
+      .toLocaleUpperCase('fr-FR');
+    expect(expected.length).toBeGreaterThan(3);
+    expect(getByText(expected, { hidden: true })).toBeTruthy();
+  });
+
+  it('a projected row keeps its amount aligned with a spacer where Pay would be', async () => {
+    const { getByTestId } = await draw();
+    expect(StyleSheet.flatten(getByTestId('coming-up-pay-spacer').props.style).width).toBe(48);
+  });
+
+  it('stacks Pay under the text above 1.3x and drops the spacer', async () => {
+    const { getByLabelText, queryByTestId } = await draw({}, 2);
+    expect(queryByTestId('coming-up-pay-spacer')).toBeNull();
+    expect(StyleSheet.flatten(getByLabelText('Pay Rent, mark as paid').props.style).alignSelf).toBe('flex-end');
+    expect(StyleSheet.flatten(getByLabelText(/^Rent,/).props.style).flexBasis).toBe('100%');
+  });
+
+  it('keeps the shadow on an outer view and clips on an inner one', async () => {
+    const { getByText } = await draw({ items: [], total: 0 });
+    const inner = getByText(/Nothing outstanding/).parent as unknown as { props: { style: unknown }; parent: { props: { style: unknown } } };
+    expect((StyleSheet.flatten(inner.props.style as never) as Record<string, unknown>).overflow).toBe('hidden');
+    const outer = StyleSheet.flatten(inner.parent.props.style as never) as Record<string, unknown>;
+    expect(outer.overflow).toBeUndefined();
+    expect(outer.shadowOpacity ?? outer.elevation).toBeDefined();
   });
 
   it('See all calls onSeeAll', async () => {

@@ -1,6 +1,7 @@
 // HOME-02 / D-30 item 2 / D-32 amendment: Home's This month card. Every figure comes from the
 // engine's monthPosition (03-17) and MonthTotals; this component only formats. Lines without a
-// rate are counted and labelled, never estimated (T-03-22-01). Figures cap at 1.3x text size and
+// rate are counted and labelled, never estimated. The card never replaces position.left while
+// anything is due, and read failures are disclosed, never shown as an empty month (T-03-22-01). Figures cap at 1.3x text size and
 // stack to one column above it (D-19).
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -17,6 +18,7 @@ import { DURATION, EASING } from '@/theme/motion';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import type { MonthDataState } from '@/data/queries/monthDataState';
 import { MonthChips } from './MonthChips';
 
 // UI-SPEC Spacing "prototype-literal exceptions (Home)": the 12 / 14 / 16 px gaps between the
@@ -35,7 +37,8 @@ export interface ThisMonthCardProps {
   onMonthChange(month: string): void;
   formatter: MoneyFormatter;
   homeCurrency: string;
-  loading: boolean;
+  currentMonth: string;
+  state: MonthDataState;
 }
 
 function Segment({ pct, color, opacity, testID }: { pct: number; color: string; opacity?: number; testID: string }) {
@@ -60,29 +63,51 @@ export function ThisMonthCard({
   onMonthChange,
   formatter,
   homeCurrency,
-  loading,
+  currentMonth,
+  state,
 }: ThisMonthCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const fontScale = useFontScale();
   const fmt = (amount: number) => formatter.formatMoney(money(amount, homeCurrency));
-  const monthName = new Intl.DateTimeFormat(formatter.locale, { month: 'long', timeZone: 'UTC' }).format(
-    Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1, 1)
-  );
-  const empty = totals.count === 0;
+  const monthDate = Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1, 1);
+  const monthName = new Intl.DateTimeFormat(formatter.locale, { month: 'long', timeZone: 'UTC' }).format(monthDate);
+  const isCurrent = month === currentMonth;
+  const sameYear = month.slice(0, 4) === currentMonth.slice(0, 4);
+  const headingText = isCurrent
+    ? t('home.month.heading')
+    : new Intl.DateTimeFormat(
+        formatter.locale,
+        sameYear ? { month: 'long', timeZone: 'UTC' } : { month: 'long', year: 'numeric', timeZone: 'UTC' }
+      ).format(monthDate);
+  // T-03-22-01: empty only when nothing is recorded AND nothing is expected.
+  const empty = totals.count === 0 && position.unpaidCount === 0 && position.unconvertedUnpaid === 0;
   const stacked = fontScale > FIGURE_STACK_ABOVE;
 
   const header = (
     <View style={styles.header}>
-      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('home.month.heading')}</Text>
+      <Text accessibilityRole="header" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+        {headingText}
+      </Text>
       <MonthChips months={months} selected={month} locale={formatter.locale} onChange={onMonthChange} />
     </View>
   );
 
   const container = [styles.card, { backgroundColor: colors.surface }, shadows.card];
 
-  if (loading) {
-    const block = { backgroundColor: colors.fill1, borderRadius: PLACEHOLDER_RADIUS };
+  if (state === 'error' || state === 'offline') {
+    return (
+      <View style={container}>
+        {header}
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, marginTop: HEADLINE_GAP }}>
+          {t(state === 'error' ? 'home.state.monthError' : 'home.state.monthOffline')}
+        </Text>
+      </View>
+    );
+  }
+
+  if (state === 'loading') {
+    const block = { backgroundColor: colors.line4, borderRadius: PLACEHOLDER_RADIUS };
     return (
       <View
         style={container}
@@ -92,7 +117,7 @@ export function ThisMonthCard({
       >
         {header}
         <View style={[styles.headlinePlaceholder, block]} />
-        <View style={[styles.track, { backgroundColor: colors.fill1, marginTop: BAR_GAP }]} />
+        <View style={[styles.track, { backgroundColor: colors.line4, marginTop: BAR_GAP }]} />
         <View style={[styles.figures, { flexDirection: stacked ? 'column' : 'row' }]}>
           {[0, 1, 2].map((i) => (
             <View key={i} style={[styles.figurePlaceholder, block]} />
@@ -127,7 +152,7 @@ export function ThisMonthCard({
       </View>
       {empty ? (
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, marginTop: space.gapSm }}>
-          {t('home.month.empty', { month: monthName })}
+          {t(month < currentMonth ? 'home.month.emptyPast' : 'home.month.empty', { month: monthName })}
         </Text>
       ) : null}
       <View
