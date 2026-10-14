@@ -490,12 +490,12 @@ Plans:
 **Gap closure (2026-10-14, from 03-FINDINGS.md: G1-G9, H1-H9, M1-M9, L1-L13)**
 
 **Gap wave 1**
-- [ ] 03-25-PLAN.md — Shared contracts: gap copy ("Expected", Unpaid banner, Home states, compact account line), unused keys removed, PRESSED_OPACITY / ACCENT_TINT_OPACITY, FAB_CLEARANCE, monthRefreshKeys, pushOnce, SyncProblemLine inset
-- [ ] 03-26-PLAN.md — Engine (TDD): unconverted amounts excluded from range filters (H9), refund-safe bar share (L6), Repeats in the draft form, toCurrency cap, skipped -> paid
-- [ ] 03-27-PLAN.md — Sheet onDiscard + single-fire drag dismissal + dirty fling asks + prompt reset; Repeats Discard restores (G2, H5, H6, L9) [integration]
-- [ ] 03-33-PLAN.md — State hygiene: tabSlide wipe and stuck back-step flags, shared-month rollover, owner-only FAB cleanup (L1, L4, L8)
-- [ ] 03-34-PLAN.md — Primitives: toast rise-in and geometry (M3), Text without fontSize (M9 confirm-first), MonthChips tabs and labels (L2, L3)
-- [ ] 03-36-PLAN.md — Android edge swipe-back: 40dp, follows the finger, reduced motion (G7 / D-40)
+- [x] 03-25-PLAN.md — Shared contracts: gap copy ("Expected", Unpaid banner, Home states, compact account line), unused keys removed, PRESSED_OPACITY / ACCENT_TINT_OPACITY, FAB_CLEARANCE, monthRefreshKeys, pushOnce, SyncProblemLine inset
+- [x] 03-26-PLAN.md — Engine (TDD): unconverted amounts excluded from range filters (H9), refund-safe bar share (L6), Repeats in the draft form, toCurrency cap, skipped -> paid
+- [x] 03-27-PLAN.md — Sheet onDiscard + single-fire drag dismissal + dirty fling asks + prompt reset; Repeats Discard restores (G2, H5, H6, L9) [integration]
+- [x] 03-33-PLAN.md — State hygiene: tabSlide wipe and stuck back-step flags, shared-month rollover, owner-only FAB cleanup (L1, L4, L8)
+- [x] 03-34-PLAN.md — Primitives: toast rise-in and geometry (M3), Text without fontSize (M9 confirm-first), MonthChips tabs and labels (L2, L3)
+- [x] 03-36-PLAN.md — Android edge swipe-back: 40dp, follows the finger, reduced motion (G7 / D-40)
 
 **Gap wave 2** *(blocked on gap wave 1)*
 - [ ] 03-28-PLAN.md — Entry sheet: lossless draft restore, validated currencies, no guess on an untouched edit, early-dismiss merge (H1, H2, H4, L5)
@@ -697,7 +697,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 24/38 | Gap closure planned (14) |  |
+| 3. Shell | 30/38 | In Progress|  |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
