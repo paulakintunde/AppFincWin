@@ -14,6 +14,8 @@ import { fontSize } from '@/theme/typography';
 const CHIP_GAP = 5;
 const CHIP_PAD_V = 5;
 const CHIP_PAD_H = 11;
+// L2: half the gap, so neighbouring hit areas never overlap.
+const H_SLOP = Math.floor(CHIP_GAP / 2);
 
 export interface MonthChipsProps {
   months: readonly string[];
@@ -47,10 +49,10 @@ export function MonthChips({ months, selected, locale, onChange }: MonthChipsPro
         return (
           <Pressable
             key={m}
-            accessibilityRole="button"
+            accessibilityRole="tab"
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={t('home.month.chipA11y', { month: long.format(monthDate(m)), year: m.slice(0, 4) })}
-            hitSlop={{ top: slop, bottom: slop, left: 4, right: 4 }}
+            hitSlop={{ top: slop, bottom: slop, left: H_SLOP, right: H_SLOP }}
             onPress={() => onChange(m)}
             style={[styles.chip, { backgroundColor: isSelected ? colors.ink : colors.fill1 }]}
           >
@@ -61,7 +63,7 @@ export function MonthChips({ months, selected, locale, onChange }: MonthChipsPro
                 color: isSelected ? colors.surface : colors.inkMuted,
               }}
             >
-              {Array.from(short.format(monthDate(m)).replace(/\.$/, '')).slice(0, 3).join('')}
+              {short.format(monthDate(m))}
             </Text>
           </Pressable>
         );

@@ -47,4 +47,31 @@ describe('ToastView tone', () => {
     expect(StyleSheet.flatten(text.props.style).color).toBe(colors.surface);
     expect(contrast(colors.surface, colors.warn1)).toBeGreaterThanOrEqual(4.5);
   });
+
+  it('rises in inside a toast-rise wrapper with the specced padding and gap', async () => {
+    const screen = await renderToast();
+    expect(screen.getByTestId('toast-rise')).toBeTruthy();
+    const style = StyleSheet.flatten(screen.getByText('Over cap').parent!.props.style);
+    expect(style.paddingVertical).toBe(13);
+    expect(style.paddingHorizontal).toBe(18);
+    expect(style.gap).toBe(14);
+  });
+
+  it('controls reach 44px through hitSlop, not their own box, and stay separate buttons', async () => {
+    const screen = await render(
+      <ThemeProvider>
+        <ToastView message="Gone" actionLabel="Undo" onAction={jest.fn()} onDismiss={jest.fn()} dismissLabel="Dismiss" />
+      </ThemeProvider>
+    );
+    for (const name of ['Undo', 'Dismiss']) {
+      const btn = screen.getByRole('button', { name });
+      const flat = StyleSheet.flatten(btn.props.style) ?? {};
+      expect(flat.minWidth).toBeUndefined();
+      expect(flat.minHeight).toBeUndefined();
+      expect(btn.props.hitSlop).toEqual({ top: 12, bottom: 12, left: 8, right: 8 });
+    }
+    const msg = screen.getByText('Gone');
+    expect(msg.props.accessibilityRole).toBe('alert');
+    expect(msg.props.accessibilityLiveRegion).toBe('polite');
+  });
 });
