@@ -11,6 +11,7 @@ import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Row } from '@/ui/Row';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { useIsDirty } from '@/ui/useIsDirty';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { DateField } from './pickers/DateField';
 import { defaultEndDate, MAX_OCCURRENCE_COUNT, type RepeatsEnd, type RepeatsValue } from './recurringForm';
@@ -32,6 +33,9 @@ export function RepeatsField({ value, onChange, formatDate, today, entryDate }: 
   const { colors, pairing } = useTheme();
   const [open, setOpen] = useState(false);
   const [countText, setCountText] = useState(value.freq !== 'never' && value.end.kind === 'count' ? String(value.end.count) : '');
+  // D-26: the count text as it stood when the sheet opened; frequency and end picks apply to `value` at once.
+  const [openingCount, setOpeningCount] = useState(countText);
+  const dirty = useIsDirty({ countText: openingCount }, { countText });
 
   const summary = (): string => {
     if (value.freq === 'never') return t('record.repeats.never');
@@ -61,8 +65,15 @@ export function RepeatsField({ value, onChange, formatDate, today, entryDate }: 
 
   return (
     <>
-      <Row label={t('record.sheet.field.repeats')} value={summary()} dense chevron onPress={() => setOpen(true)} />
-      <Sheet visible={open} onDismiss={() => setOpen(false)} accessibilityLabel={t('record.sheet.field.repeats')}>
+      <Row label={t('record.sheet.field.repeats')} value={summary()}
+        dense
+        chevron
+        onPress={() => {
+          setOpeningCount(countText);
+          setOpen(true);
+        }}
+      />
+      <Sheet visible={open} onDismiss={() => setOpen(false)} accessibilityLabel={t('record.sheet.field.repeats')} dirty={dirty}>
         <SheetHeader
           title={t('record.sheet.field.repeats')}
           cancelLabel={t('record.repeats.done')}

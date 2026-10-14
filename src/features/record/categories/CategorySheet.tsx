@@ -21,6 +21,7 @@ import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { useIsDirty } from '@/ui/useIsDirty';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { SwatchDot } from '@/ui/SwatchDot';
 import { RemoveCategoryPrompt } from './RemoveCategoryPrompt';
@@ -66,6 +67,9 @@ function SheetBody({ mode, onClose }: { mode: CategorySheetMode; onClose: () => 
   const capMinor = capParsed && capParsed.ok ? capParsed.value : null;
   const [submitted, setSubmitted] = useState(false);
   const [removing, setRemoving] = useState(false);
+  // D-26: unsaved work = any field differs from what the sheet opened with.
+  const [initial] = useState(() => ({ name, colorKey, capText }));
+  const dirty = useIsDirty(initial, { name, colorKey, capText });
 
   const trimmed = name.trim();
   const nameMissing = trimmed.length < 1 || trimmed.length > NAME_MAX;
@@ -103,7 +107,7 @@ function SheetBody({ mode, onClose }: { mode: CategorySheetMode; onClose: () => 
   const errorStyle = { ...textRole(pairing, 'label'), color: colors.danger };
 
   return (
-    <Sheet visible onDismiss={onClose} accessibilityLabel={title}>
+    <Sheet visible onDismiss={onClose} accessibilityLabel={title} dirty={dirty}>
       <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
       <SheetScroll contentContainerStyle={styles.column}>
         <View style={styles.previewRow}>
