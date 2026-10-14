@@ -100,13 +100,13 @@ describe('record routes', () => {
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/import', params: { entry: 'account', accountId: 'acc-9' } });
   });
 
-  it('activity navigates to accounts, history and you', async () => {
+  it('activity navigates to accounts and history', async () => {
     await render(<ActivityRoute />);
     const p = mockActivity.mock.calls[0]![0] as Record<string, () => void>;
     p.onOpenAccounts!();
     p.onOpenHistory!();
-    p.onOpenYou!();
-    expect(mockPush.mock.calls.map((c) => c[0])).toEqual(['/accounts', '/history', '/you']);
+    expect(p.onOpenYou).toBeUndefined();
+    expect(mockPush.mock.calls.map((c) => c[0])).toEqual(['/accounts', '/history']);
   });
 });
 

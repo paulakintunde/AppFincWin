@@ -2,10 +2,10 @@ import React from 'react';
 import { Dimensions, ScrollView, StyleSheet } from 'react-native';
 import { act, fireEvent, render, within } from '@testing-library/react-native';
 import { mockScreen } from './activityScreenMocks';
-import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ActivityShellProviders } from './activityShellHarness';
 import { ActivityScreen } from '../ActivityScreen';
 import { ACTIVITY_VIEW_KEY } from '../activityViewPrefs';
 import { resetActivityFocusForTests } from '@/state/activityFocus';
@@ -17,28 +17,6 @@ jest.mock('react-native-safe-area-context', () => ({
 
 jest.setTimeout(30000);
 
-// A plain map keeps the list deterministic; FlashList's own layout needs a native measure pass.
-jest.mock('@shopify/flash-list', () => {
-  const { View } = jest.requireActual('react-native');
-  return {
-    FlashList: ({
-      data,
-      renderItem,
-      ListEmptyComponent,
-    }: {
-      data: { key: string }[];
-      renderItem: (info: { item: { key: string }; index: number }) => React.ReactElement;
-      ListEmptyComponent?: React.ReactElement;
-    }) => (
-      <View>
-        {data.length === 0 ? ListEmptyComponent : null}
-        {data.map((item, index) => (
-          <View key={item.key}>{renderItem({ item, index })}</View>
-        ))}
-      </View>
-    ),
-  };
-});
 
 const mockMarkPaid = jest.fn((): string | null => 'paid-step');
 let mockRows: ActivityRowView[] = [];
@@ -162,9 +140,9 @@ function row(over: Partial<ActivityRowView>): ActivityRowView {
 
 function renderScreen(props: Partial<React.ComponentProps<typeof ActivityScreen>> = {}) {
   return render(
-    <ThemeProvider>
-      <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} onOpenYou={jest.fn()} initialMonth="2026-09" {...props} />
-    </ThemeProvider>
+    <ActivityShellProviders>
+      <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} initialMonth="2026-09" {...props} />
+    </ActivityShellProviders>
   );
 }
 
@@ -304,24 +282,38 @@ describe('ActivityScreen', () => {
     expect(screen.queryByLabelText('Mark paid')).toBeNull();
   });
 
-  it('Add offers money out, money in and transfer, and opens the sheet in new mode', async () => {
+  it('is a shell tab root: the Activity header, one Profile avatar, no Add pill and no You link', async () => {
     const screen = await renderScreen();
-    await fireEvent.press(screen.getByLabelText('Add'));
-    await fireEvent.press(screen.getByText('Transfer'));
-    expect(screen.getByTestId('sheet-stub').props.children).toBe('new:transfer');
+    expect(screen.getByRole('header', { name: 'Activity' })).toBeTruthy();
+    expect(screen.getAllByLabelText('Profile')).toHaveLength(1);
+    expect(screen.queryByLabelText('Add')).toBeNull();
+    expect(screen.queryByText('You')).toBeNull();
+    expect(screen.queryByText('Money out')).toBeNull();
+  });
+
+  it('hands the shell refresh control and scroll handler to the list', async () => {
+    const screen = await renderScreen();
+    expect(screen.getByTestId('activity-list').props.accessibilityHint).toBe('refresh:true;scroll:true');
+  });
+
+  it('holds the FAB hidden while select mode is on and releases it after', async () => {
+    mockRows = [row({ id: 'g1', name: 'Coffee' })];
+    const screen = await renderScreen();
+    expect(screen.getByTestId('fab-hidden').props.children).toBe('false');
+    await fireEvent.press(screen.getByText('Select'));
+    expect(screen.getByTestId('fab-hidden').props.children).toBe('true');
+    await fireEvent.press(screen.getByText('Done'));
+    expect(screen.getByTestId('fab-hidden').props.children).toBe('false');
   });
 
   it('calls the navigation props from the text links', async () => {
     const onOpenAccounts = jest.fn();
     const onOpenHistory = jest.fn();
-    const onOpenYou = jest.fn();
-    const screen = await renderScreen({ onOpenAccounts, onOpenHistory, onOpenYou });
+    const screen = await renderScreen({ onOpenAccounts, onOpenHistory });
     await fireEvent.press(screen.getByText('Accounts'));
     await fireEvent.press(screen.getByText('History'));
-    await fireEvent.press(screen.getByText('You'));
     expect(onOpenAccounts).toHaveBeenCalled();
     expect(onOpenHistory).toHaveBeenCalled();
-    expect(onOpenYou).toHaveBeenCalled();
   });
 });
 
@@ -585,7 +577,7 @@ describe('ActivityScreen small-screen header (02-polish item 3)', () => {
     expect(within(monthRow).getByLabelText('Choose month')).toBeTruthy();
     expect(within(links).queryByLabelText('Choose month')).toBeNull();
     expect(flat(links).flexDirection).toBe('row');
-    for (const label of ['Accounts', 'History', 'You']) {
+    for (const label of ['Accounts', 'History']) {
       const link = screen.getByLabelText(label);
       const style = flat(link);
       // Equal-width pills that can shrink below their content, label ellipsised.

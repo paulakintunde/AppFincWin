@@ -2,9 +2,9 @@ import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import './activityScreenMocks';
-import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { ACTIVITY_VIEW_KEY, DEFAULT_VIEW_PREFS, loadViewPrefs } from '../activityViewPrefs';
+import { ActivityShellProviders } from './activityShellHarness';
 import { ActivityScreen } from '../ActivityScreen';
 import { resetActivityFocusForTests } from '@/state/activityFocus';
 
@@ -15,24 +15,6 @@ jest.mock('react-native-safe-area-context', () => ({
 
 jest.setTimeout(30000);
 
-jest.mock('@shopify/flash-list', () => {
-  const { View } = jest.requireActual('react-native');
-  return {
-    FlashList: ({
-      data,
-      renderItem,
-    }: {
-      data: { key: string }[];
-      renderItem: (info: { item: { key: string }; index: number }) => React.ReactElement;
-    }) => (
-      <View>
-        {data.map((item, index) => (
-          <View key={item.key}>{renderItem({ item, index })}</View>
-        ))}
-      </View>
-    ),
-  };
-});
 
 let mockRows: ActivityRowView[] = [];
 let mockLegs: { accountId: string; currency: string; paidSum: string; paidHomeSum: string; unconverted: number }[] = [];
@@ -105,9 +87,9 @@ function row(over: Partial<ActivityRowView>): ActivityRowView {
 
 function renderScreen() {
   return render(
-    <ThemeProvider>
-      <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} onOpenYou={jest.fn()} initialMonth="2026-10" />
-    </ThemeProvider>
+    <ActivityShellProviders>
+      <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} initialMonth="2026-10" />
+    </ActivityShellProviders>
   );
 }
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { mockScreen } from './activityScreenMocks';
-import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { resetToastForTests } from '@/state/undoToast';
 import { EMPTY_FILTER } from '@/engine/activity';
@@ -12,6 +11,7 @@ import {
   resetActivityFocusForTests,
   setSelectedMonth,
 } from '@/state/activityFocus';
+import { ActivityShellProviders } from './activityShellHarness';
 import { ActivityScreen } from '../ActivityScreen';
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -21,28 +21,6 @@ jest.mock('react-native-safe-area-context', () => ({
 
 jest.setTimeout(30000);
 
-// A plain map keeps the list deterministic; FlashList's own layout needs a native measure pass.
-jest.mock('@shopify/flash-list', () => {
-  const { View } = jest.requireActual('react-native');
-  return {
-    FlashList: ({
-      data,
-      renderItem,
-      ListEmptyComponent,
-    }: {
-      data: { key: string }[];
-      renderItem: (info: { item: { key: string }; index: number }) => React.ReactElement;
-      ListEmptyComponent?: React.ReactElement;
-    }) => (
-      <View>
-        {data.length === 0 ? ListEmptyComponent : null}
-        {data.map((item, index) => (
-          <View key={item.key}>{renderItem({ item, index })}</View>
-        ))}
-      </View>
-    ),
-  };
-});
 
 const mockMarkPaid = jest.fn((): string | null => 'paid-step');
 let mockRows: ActivityRowView[] = [];
@@ -166,9 +144,9 @@ function row(over: Partial<ActivityRowView>): ActivityRowView {
 
 function renderScreen(props: Partial<React.ComponentProps<typeof ActivityScreen>> = {}) {
   return render(
-    <ThemeProvider>
-      <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} onOpenYou={jest.fn()} initialMonth="2026-09" {...props} />
-    </ThemeProvider>
+    <ActivityShellProviders>
+      <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} initialMonth="2026-09" {...props} />
+    </ActivityShellProviders>
   );
 }
 

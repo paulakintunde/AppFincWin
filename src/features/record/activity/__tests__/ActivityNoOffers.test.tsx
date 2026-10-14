@@ -5,6 +5,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { ActivityShellProviders } from './activityShellHarness';
 import { ActivityScreen } from '../ActivityScreen';
 import { RecurringReviewSheet } from '../RecurringReviewSheet';
 import { shortMonthName } from '../SeriesOfferCard';
@@ -15,14 +16,6 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 jest.setTimeout(30000);
 
-jest.mock('@shopify/flash-list', () => {
-  const { View } = jest.requireActual('react-native');
-  return {
-    FlashList: ({ data, ListEmptyComponent }: { data: unknown[]; ListEmptyComponent?: React.ReactElement }) => (
-      <View>{data.length === 0 ? ListEmptyComponent : null}</View>
-    ),
-  };
-});
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/data/mutations/addMonth', () => ({ useAddMonth: () => ({ add: jest.fn() }) }));
 jest.mock('@/data/mutations/cloneMonth', () => ({ useCloneMonth: () => ({ clone: jest.fn() }) }));
@@ -98,9 +91,9 @@ describe('no series offers (new user)', () => {
 
   it('ActivityScreen mounts with the real offer UI and zero offers without throwing', async () => {
     const screen = await render(
-      <ThemeProvider>
-        <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} onOpenYou={jest.fn()} initialMonth="2026-09" />
-      </ThemeProvider>
+      <ActivityShellProviders>
+        <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} initialMonth="2026-09" />
+      </ActivityShellProviders>
     );
     expect(screen.toJSON()).not.toBeNull();
   });

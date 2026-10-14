@@ -7,7 +7,6 @@ export default function ActivityRoute() {
     <ActivityScreen
       onOpenAccounts={() => router.push('/accounts')}
       onOpenHistory={() => router.push('/history')}
-      onOpenYou={() => router.push('/you')}
     />
   );
 }
