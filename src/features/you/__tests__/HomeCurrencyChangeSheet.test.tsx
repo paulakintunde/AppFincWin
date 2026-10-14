@@ -94,3 +94,18 @@ describe('HomeCurrencyChangeSheet', () => {
     expect(getToast()).toBeNull();
   });
 });
+
+describe('HomeCurrencyChangeSheet dismissal', () => {
+  it('closes from the backdrop when idle', async () => {
+    const { getByLabelText } = await renderSheet();
+    await fireEvent.press(getByLabelText('Close', { hidden: true }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores the backdrop while pending (dismissible=false), without a no-op onDismiss', async () => {
+    mockPending = true;
+    const { getByLabelText } = await renderSheet();
+    await fireEvent.press(getByLabelText('Close', { hidden: true }));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+});

@@ -56,7 +56,7 @@ export function HomeCurrencyChangeSheet({ visible, next, onClose }: HomeCurrency
   const body = { ...textRole(pairing, 'body'), color: colors.ink };
 
   return (
-    <Sheet visible={visible} onDismiss={pending ? () => undefined : close} accessibilityLabel={title}>
+    <Sheet visible={visible} onDismiss={close} dismissible={!pending} accessibilityLabel={title}>
       <View style={styles.column}>
         <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{title}</Text>
         <Text style={body}>{t('you.homeCurrency.confirmBody', { code: next })}</Text>
