@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, render, renderHook } from '@testing-library/react-native';
 import { BackHistoryProvider, useBackHistory } from '../BackHistoryProvider';
+import * as tabSlide from '@/shell/tabBar/tabSlide';
 import { TAB_ORDER } from '@/shell/tabBar/tabs';
 
 type Fixture = { state: unknown; pathname: string };
@@ -112,6 +113,61 @@ describe('BackHistoryProvider', () => {
     expect(switcher).toHaveBeenCalledWith('home');
     await go(tabState('home'));
     expect(result.current.history).toHaveLength(0);
+  });
+
+  describe('L1 no-op back switch', () => {
+    let rafSpy: jest.SpyInstance;
+    let queue: (() => void)[];
+    const flushFrames = async () => {
+      await act(async () => {
+        for (let i = 0; i < 4 && queue.length > 0; i++) {
+          const run = queue.splice(0);
+          run.forEach((cb) => cb());
+        }
+      });
+    };
+    beforeEach(() => {
+      queue = [];
+      rafSpy = jest.spyOn(global, 'requestAnimationFrame').mockImplementation((cb) => {
+        queue.push(() => cb(0));
+        return 0;
+      });
+    });
+    afterEach(() => rafSpy.mockRestore());
+
+    it('clears the pending flags when the switcher did not change the location', async () => {
+      const clear = jest.spyOn(tabSlide, 'clearBackStep');
+      const { result, go } = await setup(tabState('home'));
+      await go(tabState('activity'));
+      await act(() => {
+        result.current.registerTabSwitcher(jest.fn());
+      });
+      await act(async () => {
+        result.current.goBack();
+      });
+      await flushFrames();
+      expect(clear).toHaveBeenCalledTimes(1);
+      await go(tabState('decide'));
+      expect(result.current.history).toHaveLength(2);
+      clear.mockRestore();
+    });
+
+    it('does not clear when the location changed within the two frames', async () => {
+      const clear = jest.spyOn(tabSlide, 'clearBackStep');
+      const { result, go } = await setup(tabState('home'));
+      await go(tabState('activity'));
+      await act(() => {
+        result.current.registerTabSwitcher(jest.fn());
+      });
+      await act(async () => {
+        result.current.goBack();
+      });
+      await go(tabState('home'));
+      await flushFrames();
+      expect(clear).not.toHaveBeenCalled();
+      expect(result.current.history).toHaveLength(0);
+      clear.mockRestore();
+    });
   });
 
   it('goBack on an outer location calls router.back once and the observed pop clears the entry', async () => {
