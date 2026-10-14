@@ -3,7 +3,8 @@
 // row with the Transfer category's tile and a dimmed figure; it never offers Mark paid
 // (D-51, D-56). A projection is muted, tagged Expected and not tappable.
 import React from 'react';
-import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import type { CategoryLookup } from '@/data/queries/categories';
 import { flowOf, rowTag, type RowTagTone } from '@/engine/activity';

@@ -3,7 +3,8 @@
 // Mark all monthly creates the series as one undo step, Not now stores the offer keys on the
 // server so they never return on any device. Declarative question, never advice.
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { TransactionRow } from '@/db/rows';
 import { useDismissOffers } from '@/data/mutations/dismissedOffers';
 import { useMarkMonthly } from '@/data/mutations/markMonthly';

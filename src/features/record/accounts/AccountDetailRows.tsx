@@ -1,7 +1,8 @@
 // ACT-17, CONTEXT D-26, UI-SPEC 14: the account's pending split. Coming in, Going out and the
 // balance after pending, all from the engine's pendingSplit over the server's pending sums.
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { AccountRow } from '@/db/rows';
 import type { AccountBalanceView } from '@/data/queries/activity';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';

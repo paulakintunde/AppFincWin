@@ -112,4 +112,12 @@ module.exports = [
       'i18next/no-literal-string': ['error', { mode: 'jsx-text-only' }],
     },
   },
+  {
+    // DSG-07 / D-19: all text goes through the scaled primitives so the OS text-size caps hold everywhere.
+    files: ['app/**/*.tsx', 'src/**/*.tsx'],
+    ignores: ['src/ui/Text.tsx', 'src/ui/TextInput.tsx', 'src/engine/**', '**/__tests__/**'],
+    rules: {
+      'no-restricted-imports': ['error', { paths: [{ name: 'react-native', importNames: ['Text', 'TextInput'], message: "DSG-07: import { Text } from '@/ui/Text' / { TextInput } from '@/ui/TextInput' so OS text scaling is capped (D-19)." }] }],
+    },
+  },
 ];

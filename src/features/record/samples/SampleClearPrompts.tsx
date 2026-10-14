@@ -2,7 +2,8 @@
 // (no accent, no danger): clearing and keeping are both fine. Keep or dismiss saves the answer on
 // the server so the prompt never returns on any device; the banner stays until cleared.
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useSampleData } from '@/data/mutations/sampleData';
 import { dismissSampleClearPrompt, useSampleClearPromptRequest } from '@/state/samplePrompt';

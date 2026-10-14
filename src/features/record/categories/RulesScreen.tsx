@@ -3,7 +3,8 @@
 // member is shown as 'not in your categories' and is skipped for their guesses. Rule text
 // from other members renders as plain Text only (T-02.3-14-01).
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { CategoryRuleRow } from '@/db/categoryRules';
 import { useCategoryRules } from '@/data/queries/categoryRules';
 import { useCategoryLookup } from '@/data/queries/categories';

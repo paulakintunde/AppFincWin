@@ -7,6 +7,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { ReducedMotionConfig, ReduceMotion } from 'react-native-reanimated';
 import { ThemeProvider, useTheme, useThemeFonts } from '@/theme';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
@@ -90,15 +91,17 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AppStatusBar />
-        <ThemeProvider>
-          <QueryProvider>
-            <AuthProvider>
-              <ReducedMotionConfig mode={ReduceMotion.System} />
-              <Gate />
-            </AuthProvider>
-          </QueryProvider>
-        </ThemeProvider>
+        <FontScaleProvider>
+          <AppStatusBar />
+          <ThemeProvider>
+            <QueryProvider>
+              <AuthProvider>
+                <ReducedMotionConfig mode={ReduceMotion.System} />
+                <Gate />
+              </AuthProvider>
+            </QueryProvider>
+          </ThemeProvider>
+        </FontScaleProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

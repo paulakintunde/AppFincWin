@@ -5,7 +5,8 @@
  * the accessibility tree rather than double-announcing a bare letter.
  */
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii } from '@/theme/layout';
 import { textRole } from '@/theme/typography';

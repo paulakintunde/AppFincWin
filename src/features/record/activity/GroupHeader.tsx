@@ -1,7 +1,8 @@
 // A group header in the Activity list (ACT-06..ACT-08): label left, count, signed net right.
 // The net comes from the engine's netOf via the item; nothing is summed here.
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { money } from '@/engine/money';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';

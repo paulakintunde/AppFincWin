@@ -2,7 +2,8 @@
 // frequency list and the "Ends" options (never, on a date, after a number of times). The
 // value is a plain RepeatsValue; turning it into a schedule is recurringForm.ts's job.
 import React, { useState } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { TextInput } from '@/ui/TextInput';
 import { RECURRING_FREQS, type RecurringFreq } from '@/engine/recurring';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';

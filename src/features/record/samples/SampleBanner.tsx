@@ -2,7 +2,8 @@
 // rows exist and offers Start fresh, which confirms and then clears the unedited samples. Clearing
 // is not undoable (D-09, D-10).
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useSampleData } from '@/data/mutations/sampleData';
 import { showToast } from '@/state/undoToast';

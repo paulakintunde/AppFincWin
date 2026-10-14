@@ -2,7 +2,8 @@
 // computed upstream by the engine (transfers excluded). Lines with no home-currency figure
 // are counted and labelled, never estimated (T-02-22-01).
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { MonthTotals } from '@/engine/activity';
 import { money } from '@/engine/money';
 import { useT } from '@/i18n';

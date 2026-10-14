@@ -1,7 +1,8 @@
 // The account list (REC-08): active accounts with kind, currency, balance and standing line,
 // an Archived section beneath, and Add account. Tapping an account opens its detail.
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { AccountRow } from '@/db/rows';
 import { useAccounts } from '@/data/queries/accounts';
 import { useAccountBalances, type AccountBalanceView } from '@/data/queries/activity';

@@ -1,7 +1,8 @@
 // The currency picker: Your currency, then Popular by continent, then every currency A-Z
 // (D-08 amended 2026-10-07). Sits in the scrollable Sheet body so Cancel stays reachable (CR-05).
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Row } from '@/ui/Row';

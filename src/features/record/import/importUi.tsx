@@ -2,7 +2,8 @@
 // only (DSG-02); text roles from the UI-SPEC typography table. File text is rendered as plain
 // Text, never as a link or markup (T-02-27 trust boundary).
 import React, { type ReactNode } from 'react';
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Text } from '@/ui/Text';
 import { money } from '@/engine/money';
 import { useT } from '@/i18n';
 import { useRecordContext } from '@/features/record/useRecordContext';

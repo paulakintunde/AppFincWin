@@ -2,7 +2,8 @@
 // entryNotes (at most two); this file only words them. The FX note is computed from the stored
 // latest rates and never fetches (T-02.2-25-04); with no rate it is simply omitted.
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { entryNotes } from '@/engine/activity';
 import { convertMinor, crossRate, formatRate, minorUnits, resolveExponent } from '@/engine/money';
 import { useFxLatest } from '@/data/queries/fxLatest';

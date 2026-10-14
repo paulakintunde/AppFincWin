@@ -1,7 +1,8 @@
 // ACC-14 (D-19..D-22, D-29): one remembered-account tile on the signed-out screen. Provider-neutral
 // -- the same component serves Google and Apple. Shows only name and email; never logged.
 import type { Ref } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space, radii } from '@/theme/layout';

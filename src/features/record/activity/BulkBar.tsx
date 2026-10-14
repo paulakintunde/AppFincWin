@@ -2,7 +2,8 @@
 // count and Mark paid / Mark unpaid / Delete. Ink surface with surface text, per the
 // prototype's bulk bar, using Pills for the actions. The screen owns the data hooks.
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';

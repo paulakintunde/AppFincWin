@@ -5,7 +5,7 @@
  * read as a negative/destructive amount.
  */
 import React from 'react';
-import { Text } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize } from '@/theme/typography';
 
@@ -21,6 +21,7 @@ export function AmountDisplay({ text, tone = 'default' }: AmountDisplayProps) {
 
   return (
     <Text
+      scale="capped"
       style={{
         fontFamily: fonts.body[500],
         fontSize: fontSize.amountDisplay,

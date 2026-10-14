@@ -7,7 +7,8 @@
 // the 6000-op limit. At the cap the accept actions are disabled and the copy says why;
 // declining is always possible.
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { TextInput } from '@/ui/TextInput';
 import { useAccounts } from '@/data/queries/accounts';
 import { AccountPicker } from '@/features/record/entry/pickers/AccountPicker';
 import { useRecordContext } from '@/features/record/useRecordContext';

@@ -1,7 +1,8 @@
 // REC-30 (UI-SPEC 5a): the new-entry footer. 'Add to list' (secondary, left) and Save (primary,
 // right) share a row; the cap note and the finish-current error sit beneath it.
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { ListSummary } from '@/engine/entryList';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';

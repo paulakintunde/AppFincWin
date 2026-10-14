@@ -4,7 +4,8 @@
 // device before Record (Phase 2) ships any screen that writes for real. Gated to __DEV__ by
 // the caller (YouScreen) -- release builds never mount this component.
 import { useCallback } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize } from '@/theme/typography';

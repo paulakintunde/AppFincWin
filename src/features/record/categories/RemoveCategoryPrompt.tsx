@@ -5,7 +5,8 @@
 // loading and when it is known to be capped (more than the 6000-row merge limit, which the write
 // would refuse anyway); Archive stays available because it keeps every transaction on the category.
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { CategoryRow } from '@/db/rows';
 import { useArchiveCategory, useMergeCategory } from '@/data/mutations/categories';
 import { useCategoryLookup, useCategoryUsage } from '@/data/queries/categories';

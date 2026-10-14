@@ -8,7 +8,8 @@
 // the platform-specific visual underneath is wrapped with pointerEvents="none" so touches
 // always resolve to this one control, keeping "disabled" and "in flight" behaviour identical
 // regardless of which visual is showing.
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
