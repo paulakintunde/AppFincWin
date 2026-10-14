@@ -456,10 +456,10 @@ Plans:
 - [x] 03-18-PLAN.md — Engine: entry draft v2 with the form snapshot, v1 still parses (TDD, 100%)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 03-05-PLAN.md — DSG-07 text scaling: Text/TextInput primitives, root font-scale provider, 73-file migration + lint rule
-- [ ] 03-06-PLAN.md — Shell state: BackHistoryProvider, sheetStack store, Android back (steps 2-4), layout measurements, focus helper, test harness
-- [ ] 03-20-PLAN.md — Pull-to-refresh hook with the "updated / nothing new" completion toast
-- [ ] 03-21-PLAN.md — Shared selected month, Activity filter intent, entry-host store; Activity Unpaid lists projected bills
+- [x] 03-05-PLAN.md — DSG-07 text scaling: Text/TextInput primitives, root font-scale provider, 73-file migration + lint rule
+- [x] 03-06-PLAN.md — Shell state: BackHistoryProvider, sheetStack store, Android back (steps 2-4), layout measurements, focus helper, test harness
+- [x] 03-20-PLAN.md — Pull-to-refresh hook with the "updated / nothing new" completion toast
+- [x] 03-21-PLAN.md — Shared selected month, Activity filter intent, entry-host store; Activity Unpaid lists projected bills
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 03-07-PLAN.md — Context-aware FAB: registration API, sheet-aware hide rule, quick actions, haptics, rise and lift above toast
@@ -673,7 +673,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 6/24 | In Progress|  |
+| 3. Shell | 10/24 | In Progress|  |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
