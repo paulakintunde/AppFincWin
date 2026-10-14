@@ -42,6 +42,9 @@ export const colors = {
  * Component.COL / Component.TINT, copied verbatim from FincWin United.dc.html lines 3217-3218.
  * 15 categories including Income, Settlement and Transfer.
  */
+/** M4: a tint of whatever accent the user picked is drawn as colors.accent at this opacity over fill1, never a fixed tint of the default green. An opacity, not a colour (DSG-02). */
+export const ACCENT_TINT_OPACITY = 0.12;
+
 export const categoryColor = {
   Housing: '#1B4D3E',
   Utilities: '#5A6472',
