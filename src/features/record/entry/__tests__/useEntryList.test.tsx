@@ -297,16 +297,49 @@ describe('useEntryList form keeping (D-25)', () => {
     });
   });
 
-  it('keepForm does nothing while a resume answer is pending, and unmount does not overwrite it', async () => {
+  it('keepForm merges with the stored draft while the resume answer is pending (L5)', async () => {
     await saveEntryDraft('u1', 'h1', [item('i1')]);
     const { result, unmount } = await mount();
     await waitFor(() => expect(result.current.resumeCount).toBe(1));
     await act(() => {
+      result.current.add(item('i2'));
       result.current.keepForm(form);
     });
     await unmount();
-    await new Promise((r) => setTimeout(r, 50));
-    expect(JSON.parse((await AsyncStorage.getItem(KEY)) as string).form).toBeNull();
+    await new Promise((r) => setTimeout(r, 400));
+    const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+    expect(raw.form.amountText).toBe('7');
+    expect(raw.items.map((i: ListItem) => i.id)).toEqual(['i1', 'i2']);
+  });
+
+  it('keepForm before the stored draft has loaded keeps the stored items and the live ones (L5)', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1')]);
+    const { result, unmount } = await mount();
+    await act(() => {
+      result.current.add(item('i2'));
+      result.current.keepForm(form);
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 400));
+    const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+    expect(raw.form.amountText).toBe('7');
+    expect(raw.items.map((i: ListItem) => i.id)).toEqual(['i1', 'i2']);
+  });
+
+  it('an oversized merge keeps the stored items with the live form (L5)', async () => {
+    const stored = Array.from({ length: 30 }, (_, n) => item(`s${n}`));
+    await saveEntryDraft('u1', 'h1', stored);
+    const { result, unmount } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(30));
+    await act(() => {
+      result.current.add(item('extra'));
+      result.current.keepForm(form);
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 400));
+    const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+    expect(raw.form.amountText).toBe('7');
+    expect(raw.items).toHaveLength(30);
   });
 
   it('the unmount flush after keepForm keeps the saved form', async () => {
