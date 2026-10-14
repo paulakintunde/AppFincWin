@@ -69,6 +69,7 @@ jest.mock('@/features/record/activity/ActivityScreen', () => ({ ActivityScreen: 
 jest.mock('@/shell/tabBar/TabBar', () => ({ TabBar: () => null }));
 jest.mock('@/shell/fab/Fab', () => ({ Fab: () => null }));
 jest.mock('@/shell/fab/FabQuickMenu', () => ({ FabQuickMenu: () => null }));
+jest.mock('@/features/record/entry/ShellEntryHost', () => ({ ShellEntryHost: () => null }));
 jest.mock('@/shell/fab/FabProvider', () => ({ FabProvider: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('expo-router/js-tabs', () => ({ Tabs: Object.assign(() => null, { Screen: () => null }) }));
 
