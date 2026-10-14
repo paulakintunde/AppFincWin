@@ -144,3 +144,7 @@ Core chrome works on Android (A1-A6, A8, A10, A12-A16 PASS). Gaps are: two confi
 
 _Verified: 2026-10-14_
 _Verifier: Claude (gsd-verifier)_
+
+## Round 2 audit (2026-10-14)
+
+A fresh code review, UI audit (16/24) and security audit (59 threats, 56 closed, 3 open) were run after this verification. All findings, deduplicated against the gaps above, are in 03-FINDINGS.md: 9 blockers (G1-G9, covering gaps 1-7 here plus import tabs duplication and the missing sync line), 9 high, 9 medium, 13 low. Gap planning should use 03-FINDINGS.md as the gap list.
