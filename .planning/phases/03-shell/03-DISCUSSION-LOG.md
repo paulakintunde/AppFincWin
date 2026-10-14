@@ -65,3 +65,36 @@
 
 - The app-switcher privacy snapshot (DSG-08), which sits in Phase 10.
 - Feature haptics, which belong to their own phases.
+
+---
+
+# Update session: 2026-10-13
+
+**Why reopened:** Phases 2.2 and 2.3 changed the Sheet, the entry sheet and navigation after these plans were written. A review against main 2956c45 found the sheet migration would undo later decisions. A mockup review found that Home would land empty.
+
+| Area | Options presented | Chosen |
+|------|-------------------|--------|
+| Sheet engine | Our Sheet, library-ready · Ours only · Migrate to @gorhom | **Our Sheet, library-ready.** Drag is added; one shared interface; @gorhom allowed per sheet later. The user asked for a plain-language explanation first. |
+| Drag zone | Handle + header, body at top · Handle and header only · Anywhere | Handle + header, body at top |
+| Heights | Fit content, capped · Snap points | Fit content, capped |
+| Backdrop colour | Mockup ink at 38% · Keep black at 40% | Mockup ink at 38% (black token removed) |
+| Backdrop fade | Fade in 0.18s · No fade | Fade in 0.18s |
+| Close motion | Match the mockup · Always slide down · Always instant | Match the mockup: taps instant, drag slides away |
+| Backdrop strength | One value everywhere · Mockup's three values | One value everywhere |
+| Entry sheet, accidental dismissal | Keep as draft · Ask "Discard changes?" · Discard silently | Keep as draft (form + list) |
+| Other edit sheets | Ask "Discard changes?" · Discard silently | Ask, only when changed |
+| Cancel with input | Discard, ask only for a list · Always ask | Discard; ask only for a list |
+| Toasts while a sheet is open | Above the sheet · Under the sheet | Above the sheet |
+| Sheet over sheet | Stack on top, return on close · Replace, then return | Stack on top, return on close |
+| Back/drag with a stack | Top sheet only · Whole stack | Top sheet only |
+| Home content | Build in Phase 3 · New phase after 3 · Land on Activity | Build in Phase 3 (HOME-01…04) |
+| Shell details from the mockup | Details cover the tab bar · Back slides in reverse · Refresh completion toast · Pay bills shortcut | All four |
+| Unassigned mockup features to the backlog | Split across categories · Receipt photo · Envelope rollover · Coach + custom types | All (999.1–999.5) |
+
+## Deferred (backlog)
+
+- 999.1 Split a transaction across categories
+- 999.2 Receipt photo
+- 999.3 Envelope rollover
+- 999.4 Coach
+- 999.5 Custom payment and account types
