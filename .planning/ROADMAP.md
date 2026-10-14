@@ -479,7 +479,7 @@ Plans:
 - [x] 03-24-PLAN.md — Entry sheet: draft on accidental dismissal, Discard changes? when editing, Cancel unchanged
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 03-13-PLAN.md — Route wiring: (tabs) group with Home landing, details in the outer stack, SwipeBack kept, gate moved up, providers, router tests
+- [x] 03-13-PLAN.md — Route wiring: (tabs) group with Home landing, details in the outer stack, SwipeBack kept, gate moved up, providers, router tests
 
 **Wave 7** *(blocked on Wave 6 completion)*
 - [ ] 03-15-PLAN.md — Record integration: Activity as a tab root, Add pill/sheet and You link removed, ShellEntryHost
@@ -673,7 +673,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 21/24 | In Progress|  |
+| 3. Shell | 22/24 | In Progress|  |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
