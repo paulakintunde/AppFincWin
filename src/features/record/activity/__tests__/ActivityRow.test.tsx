@@ -219,6 +219,36 @@ describe('ActivityRow colours (02-polish item 5, UI-SPEC amendment 2026-10-07)',
   });
 });
 
+describe('ProjectionRow press (D-42)', () => {
+  const projection = { key: 's1:2026-11-01', seriesId: 's1', date: '2026-11-01', name: 'Rent', amount: -90000, currency: 'GBP', categoryId: null, accountId: 'a1', amountHome: -90000 };
+  const mount = (onPress?: jest.Mock) =>
+    render(
+      <ThemeProvider>
+        <ProjectionRow
+          projection={projection}
+          categories={categories}
+          accountName={() => 'Current'}
+          formatter={{ ...formatter, formatDate: (d: string, style?: string) => (style === 'medium' ? '1 Nov 2026' : d) } as unknown as MoneyFormatter}
+          homeCurrency="GBP"
+          onPress={onPress}
+        />
+      </ThemeProvider>
+    );
+
+  it('is a labelled button that passes the projection to onPress', async () => {
+    const onPress = jest.fn();
+    const screen = await mount(onPress);
+    const button = screen.getByRole('button', { name: 'Rent, -£900.00, expected 1 Nov 2026' });
+    await fireEvent.press(button);
+    expect(onPress).toHaveBeenCalledWith(projection);
+  });
+
+  it('has no button role without onPress', async () => {
+    const screen = await mount();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+});
+
 describe('ActivityRow tags, refunds, swipe and balance note (02.2-21)', () => {
   const colourOf = (el: { props: { style?: unknown } }) => flat(el).color;
 
