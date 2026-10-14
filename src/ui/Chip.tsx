@@ -1,13 +1,14 @@
 /**
- * UI-SPEC Design System: the shared filter chip -- fill1 inactive, accentTint1
- * background + accent text when selected. Used by Activity's filter row and any other
+ * UI-SPEC Design System: the shared filter chip -- fill1 inactive; selected is accent at
+ * ACCENT_TINT_OPACITY over fill1 (following the picked accent) with accent text. Used by Activity's filter row and any other
  * multi-choice filter surface in Record.
  */
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
+import { ACCENT_TINT_OPACITY } from '@/theme/tokens';
 import { textRole } from '@/theme/typography';
 
 export interface ChipProps {
@@ -19,8 +20,7 @@ export interface ChipProps {
 
 export function Chip({ label, selected = false, onPress, accessibilityLabel }: ChipProps) {
   const { colors, pairing } = useTheme();
-  const backgroundColor = selected ? colors.accentTint1 : colors.fill1;
-  const textColor = selected ? colors.accent : colors.ink;
+    const textColor = selected ? colors.accent : colors.ink;
 
   return (
     <Pressable
@@ -28,8 +28,18 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel }: C
       accessibilityState={{ selected }}
       accessibilityLabel={accessibilityLabel ?? label}
       onPress={onPress}
-      style={[styles.chip, { backgroundColor }]}
+      style={[styles.chip, { backgroundColor: colors.fill1 }]}
     >
+      {selected ? (
+        <View
+          testID="accent-tint"
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: colors.accent, opacity: ACCENT_TINT_OPACITY, borderRadius: radii.pill },
+          ]}
+        />
+      ) : null}
       <Text style={{ ...textRole(pairing, 'label'), color: textColor }}>{label}</Text>
     </Pressable>
   );
@@ -42,5 +52,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
 });

@@ -26,6 +26,9 @@ let mockRegion = 'GB';
 let mockHome = 'GBP';
 let mockReady = true;
 let mockBalances = new Map<string, AccountBalanceView>();
+let mockSync = { isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null as number | null };
+
+jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => mockSync }));
 
 jest.mock('@/data/mutations/accounts', () => ({
   useAddAccount: () => ({ add: mockAdd }),
@@ -127,6 +130,7 @@ beforeEach(() => {
   mockRegion = 'GB';
   mockHome = 'GBP';
   mockReady = true;
+  mockSync = { isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null };
 });
 
 describe('AccountSheet new', () => {
@@ -358,7 +362,24 @@ describe('AccountsScreen and AccountDetailScreen', () => {
     const { getByLabelText } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
     const card = getByLabelText(/^Current, /);
     expect(card.props.accessibilityLabel).toContain('−£25.00');
-    expect(card.props.accessibilityLabel).toContain('Overdrawn by £25.00. No overdraft set.');
+    expect(card.props.accessibilityLabel).toMatch(/, Overdrawn$/);
+    expect(card.props.accessibilityLabel).not.toContain('No overdraft set');
+  });
+
+  it('D-39: a foreign account card shows the figure plus the home line, in its label too', async () => {
+    mockAccounts = [account({ name: 'Main', currency: 'EUR' })];
+    mockBalances = new Map([['acc1', view({ balance: -74000 })]]);
+    const { getByLabelText, getByText, queryByText } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
+    expect(getByLabelText(/^Main, Current account · EUR, −€740\.00, ≈ −?£/)).toBeTruthy();
+    expect(getByText(/^≈ −?£/)).toBeTruthy();
+    expect(queryByText(/Rate of/)).toBeNull();
+  });
+
+  it('shows the problem-only sync line while offline', async () => {
+    mockSync = { isOnline: false, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null };
+    const { getByText, queryByTestId } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
+    expect(queryByTestId('sync-problem-line')).toBeTruthy();
+    expect(getByText(/offline/i)).toBeTruthy();
   });
 
   it('shows the empty state', async () => {

@@ -3,6 +3,8 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { AccountRow } from '@/db/rows';
 import type { AccountBalanceView } from '@/data/queries/activity';
+import { resetPushOnceForTests } from '@/shell/navigation/pushOnce';
+import { ACCENT_TINT_OPACITY, colors as tokenColors } from '@/theme/tokens';
 import { AccountsCard } from '../AccountsCard';
 
 jest.setTimeout(30000);
@@ -62,8 +64,8 @@ const view = (over: Partial<AccountBalanceView> = {}): AccountBalanceView => ({
   ...over,
 });
 
-async function draw(accounts: AccountRow[], loading = false) {
-  const balances = new Map(accounts.map((a) => [a.id, view()]));
+async function draw(accounts: AccountRow[], loading = false, balanceOver: Partial<AccountBalanceView> = {}) {
+  const balances = new Map(accounts.map((a) => [a.id, view(balanceOver)]));
   return render(
     <ThemeProvider>
       <AccountsCard accounts={accounts} balances={balances} homeCurrency="GBP" loading={loading} />
@@ -73,6 +75,7 @@ async function draw(accounts: AccountRow[], loading = false) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  resetPushOnceForTests();
 });
 
 describe('AccountsCard', () => {
@@ -87,6 +90,48 @@ describe('AccountsCard', () => {
     expect(buttons[0]?.props.accessibilityLabel).toMatch(/^Current, Current account, /);
     await fireEvent.press(buttons[1] as (typeof buttons)[number]);
     expect(mockPush).toHaveBeenCalledWith('/accounts/a2');
+  });
+
+  it('D-39: a foreign row label is name, kind, figure and the short line', async () => {
+    const { getAllByRole } = await draw([account({ id: 'u', name: 'Main', currency: 'USD' })], false, { balance: -74000 });
+    expect(getAllByRole('button')[0]?.props.accessibilityLabel).toBe('Main, Current account, −$740.00, Waiting for a rate');
+  });
+
+  it('H7: two quick presses push once, for a row and for See all', async () => {
+    const many = Array.from({ length: 7 }, (_, i) => account({ id: `a${i}`, name: `Acc ${i}` }));
+    const { getAllByRole, getByText } = await draw(many);
+    const first = getAllByRole('button')[0] as ReturnType<typeof getAllByRole>[number];
+    await fireEvent.press(first);
+    await fireEvent.press(first);
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    resetPushOnceForTests();
+    mockPush.mockClear();
+    await fireEvent.press(getByText('See all accounts'));
+    await fireEvent.press(getByText('See all accounts'));
+    expect(mockPush).toHaveBeenCalledTimes(1);
+  });
+
+  it('M4: the cash tile is fill1 plus an accent overlay, never accentTint1', async () => {
+    const { getByTestId, toJSON } = await draw([account({ id: 'c', name: 'Cash', kind: 'cash' })]);
+    const style = Object.assign({}, ...[getByTestId('accent-tint', { includeHiddenElements: true }).props.style].flat(2));
+    expect(style.opacity).toBe(ACCENT_TINT_OPACITY);
+    expect(style.backgroundColor).toBe('#1B4D3E');
+    expect(JSON.stringify(toJSON())).not.toContain(tokenColors.accentTint1);
+  });
+
+  it('L3: the tile initial keeps an emoji whole and upper-cases for the locale', async () => {
+    const { getByText } = await draw([
+      account({ id: 'e', name: '🏦 Savings' }),
+      account({ id: 'f', name: 'émile' }),
+    ]);
+    expect(getByText('🏦', { includeHiddenElements: true })).toBeTruthy();
+    expect(getByText('É', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('L12 / M2: the heading is a header, and no 28px spacer sits in the card', async () => {
+    const { getByRole, toJSON } = await draw([account()]);
+    expect(getByRole('header')).toBeTruthy();
+    expect(JSON.stringify(toJSON())).not.toContain('"height":28');
   });
 
   it('shows Waiting for a rate for a foreign account without a rate', async () => {
