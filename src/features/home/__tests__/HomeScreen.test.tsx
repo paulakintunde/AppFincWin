@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import { HomeScreen } from '../HomeScreen';
 
 jest.setTimeout(30000);
@@ -14,6 +15,7 @@ const mockVm = {
   totals: {},
   position: {},
   loading: false,
+  dataState: 'ready' as string,
   comingUp: [],
   comingUpTotal: 0,
   accounts: [],
@@ -35,6 +37,7 @@ jest.mock('../useHomeViewModel', () => ({ useHomeViewModel: () => mockVm }));
 jest.mock('@/data/queries/categories', () => ({ useCategoryLookup: () => ({ byId: new Map() }) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
 jest.mock('expo-router', () => ({ router: { navigate: jest.fn() } }));
+jest.mock('@/features/auth/appHome', () => ({ ACTIVITY_HREF: '/activity-href' }));
 jest.mock('@/state/activityFocus', () => ({ requestActivityFocus: jest.fn() }));
 
 jest.mock('@/shell/screen/TabRootScreen', () => {
@@ -53,10 +56,14 @@ jest.mock('@/shell/screen/TabRootScreen', () => {
   };
 });
 
+const mockSeen: Record<string, Record<string, unknown>> = {};
 function mockProbe(name: string) {
   const R = require('react');
   const { Text } = require('react-native');
-  return () => R.createElement(Text, { testID: `probe-${name}` }, name);
+  return (props: Record<string, unknown>) => {
+    mockSeen[name] = props;
+    return R.createElement(Text, { testID: `probe-${name}` }, name);
+  };
 }
 jest.mock('../QuickActions', () => ({ QuickActions: mockProbe('quick') }));
 jest.mock('../ThisMonthCard', () => ({ ThisMonthCard: mockProbe('month') }));
@@ -98,5 +105,20 @@ describe('HomeScreen', () => {
     for (const n of ['detail', 'scope', 'confirm', 'entry', 'projection']) {
       expect(getByTestId(`probe-${n}`)).toBeTruthy();
     }
+  });
+
+  it('passes the data state to both cards and the current month to This month', async () => {
+    mockVm.dataState = 'error';
+    await render(<HomeScreen />);
+    expect(mockSeen.month?.state).toBe('error');
+    expect(mockSeen.coming?.state).toBe('error');
+    expect(mockSeen.month?.currentMonth).toBe('2026-09');
+    mockVm.dataState = 'ready';
+  });
+
+  it('See all links to Activity through ACTIVITY_HREF', async () => {
+    await render(<HomeScreen />);
+    (mockSeen.coming?.onSeeAll as () => void)();
+    expect(router.navigate).toHaveBeenCalledWith('/activity-href');
   });
 });

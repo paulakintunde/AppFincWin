@@ -1,11 +1,13 @@
 // HOME-01..04 / D-30 / D-31: Home's first content. Order per D-30 (differs from the prototype's
 // hero-first order, UI-SPEC deviation 8); no net-worth hero, health card or Coach until their phases.
 import React, { useCallback, useState } from 'react';
-import { router, type Href } from 'expo-router';
+import { router } from 'expo-router';
 import type { ProjectionView } from '@/data/queries/activity';
 import { useAccounts } from '@/data/queries/accounts';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { EMPTY_FILTER } from '@/engine/activity';
+import { monthOf } from '@/engine/time';
+import { ACTIVITY_HREF } from '@/features/auth/appHome';
 import { EditScopePrompt } from '@/features/record/entry/EditScopePrompt';
 import { TransactionSheet } from '@/features/record/entry/TransactionSheet';
 import { TransactionDetailSheet } from '@/features/record/activity/TransactionDetailSheet';
@@ -41,11 +43,11 @@ export function HomeScreen() {
     timeZone: 'UTC',
   })
     .format(Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1, Number(today.slice(8, 10)), 12))
-    .toUpperCase();
+    .toLocaleUpperCase(formatter.locale);
 
   const seeAll = () => {
     requestActivityFocus({ month: vm.month, filter: { ...EMPTY_FILTER, unpaidOnly: true } });
-    router.navigate('/activity' as Href);
+    router.navigate(ACTIVITY_HREF);
   };
 
   return (
@@ -100,7 +102,8 @@ export function HomeScreen() {
         onMonthChange={vm.setMonth}
         formatter={formatter}
         homeCurrency={rc.homeCurrency}
-        loading={vm.loading}
+        currentMonth={monthOf(rc.today)}
+        state={vm.dataState}
       />
       <ComingUpCard
         items={vm.comingUp}
@@ -109,7 +112,7 @@ export function HomeScreen() {
         formatter={formatter}
         homeCurrency={rc.homeCurrency}
         categories={categories}
-        loading={vm.loading}
+        state={vm.dataState}
         onPay={vm.rowActions.pay}
         onOpenRow={flow.openDetail}
         onOpenProjection={setProjection}

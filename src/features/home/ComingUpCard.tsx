@@ -5,14 +5,16 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
+import type { MonthDataState } from '@/data/queries/monthDataState';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import type { CategoryLookup } from '@/data/queries/categories';
 import { money } from '@/engine/money';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useFontScale } from '@/theme/FontScaleProvider';
 import { FONT_PAIRINGS } from '@/theme/fonts';
-import { radii, size, space } from '@/theme/layout';
+import { PRESSED_OPACITY, radii, size, space } from '@/theme/layout';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -27,6 +29,8 @@ const HEADING_PAD_BOTTOM = 10;
 const PAY_PAD_V = 7;
 const PAY_PAD_H = 13;
 const EMPTY_PAD_V = 22;
+const PAY_MIN_WIDTH = 48; // prototype Pay pill: 13 + label + 13 (UI-SPEC literal)
+const STACK_ABOVE = 1.3;
 const HIT_SLOP = (space.touchMin - 28) / 2;
 
 export interface ComingUpCardProps {
@@ -36,7 +40,7 @@ export interface ComingUpCardProps {
   formatter: MoneyFormatter;
   homeCurrency: string;
   categories: CategoryLookup;
-  loading: boolean;
+  state: MonthDataState;
   onPay(row: ActivityRowView): void;
   onOpenRow(row: ActivityRowView): void;
   onOpenProjection(projection: ProjectionView): void;
@@ -44,10 +48,9 @@ export interface ComingUpCardProps {
 }
 
 function monthWord(formatter: MoneyFormatter, date: string): string {
-  const raw = new Intl.DateTimeFormat(formatter.locale, { month: 'short', timeZone: 'UTC' }).format(
+  return new Intl.DateTimeFormat(formatter.locale, { month: 'short', timeZone: 'UTC' }).format(
     Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, 1)
   );
-  return raw.replace(/\.$/, '').slice(0, 3);
 }
 
 export function ComingUpCard({
@@ -57,7 +60,7 @@ export function ComingUpCard({
   formatter,
   homeCurrency,
   categories,
-  loading,
+  state,
   onPay,
   onOpenRow,
   onOpenProjection,
@@ -66,6 +69,7 @@ export function ComingUpCard({
   const t = useT();
   const { colors, pairing } = useTheme();
   const bodyFont = FONT_PAIRINGS[pairing].body;
+  const stacked = useFontScale() > STACK_ABOVE;
 
   const heading = (
     <View style={styles.headingRow}>
@@ -89,42 +93,56 @@ export function ComingUpCard({
     </View>
   );
 
-  const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
+  // M1: the shadow sits on the outer view; the inner view clips the rows to the corners.
+  const wrap = (children: React.ReactNode, a11y?: React.ComponentProps<typeof View>) => (
+    <View style={[styles.cardOuter, { backgroundColor: colors.surface }, shadows.card]} {...a11y}>
+      <View style={styles.cardInner}>{children}</View>
+    </View>
+  );
+  const noteStyle = {
+    fontFamily: bodyFont[500],
+    fontSize: fontSize.s13_5,
+    lineHeight: fontSize.s13_5 * 1.5,
+    color: colors.inkMuted,
+    paddingVertical: EMPTY_PAD_V,
+    paddingHorizontal: space.cardPadLg,
+  };
 
-  if (loading) {
+  if (state === 'error' || state === 'offline') {
+    // No See all while the month has not loaded: there is nothing to open.
     return (
       <View>
         {heading}
-        <View style={card} accessible accessibilityLabel={t('home.loading')} accessibilityState={{ busy: true }}>
-          {[0, 1, 2].map((i) => (
+        {wrap(<Text style={noteStyle}>{t(state === 'error' ? 'home.state.upcomingError' : 'home.state.upcomingOffline')}</Text>)}
+      </View>
+    );
+  }
+
+  if (state === 'loading') {
+    return (
+      <View>
+        {heading}
+        {wrap(
+          [0, 1, 2].map((i) => (
             <View key={i} style={[styles.row, i === 0 ? null : { borderTopWidth: 1, borderTopColor: colors.fill2 }]}>
-              <View style={[styles.dateBlock, { backgroundColor: colors.fill1, height: size.homeDateBlock }]} />
-              <View style={[styles.placeholderLine, { backgroundColor: colors.fill1 }]} />
+              <View style={[styles.dateBlock, { backgroundColor: colors.line4, height: size.homeDateBlock }]} />
+              <View style={[styles.placeholderLine, { backgroundColor: colors.line4 }]} />
             </View>
-          ))}
-        </View>
+          )),
+          { accessible: true, accessibilityLabel: t('home.loading'), accessibilityState: { busy: true } }
+        )}
       </View>
     );
   }
 
   if (items.length === 0) {
+    const monthName = new Intl.DateTimeFormat(formatter.locale, { month: 'long', timeZone: 'UTC' }).format(
+      Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1, 1)
+    );
     return (
       <View>
         {heading}
-        <View style={card}>
-          <Text
-            style={{
-              fontFamily: bodyFont[500],
-              fontSize: fontSize.s13_5,
-              lineHeight: fontSize.s13_5 * 1.5,
-              color: colors.inkMuted,
-              paddingVertical: EMPTY_PAD_V,
-              paddingHorizontal: space.cardPadLg,
-            }}
-          >
-            {t('home.upcoming.empty', { month: monthWord(formatter, `${month}-01`) })}
-          </Text>
-        </View>
+        {wrap(<Text style={noteStyle}>{t('home.upcoming.empty', { month: monthName })}</Text>)}
       </View>
     );
   }
@@ -132,8 +150,8 @@ export function ComingUpCard({
   return (
     <View>
       {heading}
-      <View style={card}>
-        {items.map((item, i) => {
+      {wrap(
+        items.map((item, i) => {
           const isRow = item.kind === 'row';
           const row = item.kind === 'row' ? item.row : null;
           const projection = item.kind === 'projection' ? item.projection : null;
@@ -181,20 +199,20 @@ export function ComingUpCard({
                 accessibilityRole="button"
                 accessibilityLabel={label}
                 onPress={() => (row ? onOpenRow(row) : projection ? onOpenProjection(projection) : undefined)}
-                style={({ pressed }) => [styles.body, pressed ? { opacity: 0.72 } : null]}
+                style={({ pressed }) => [styles.body, pressed ? { opacity: PRESSED_OPACITY } : null, stacked ? { flexBasis: '100%' } : null]}
               >
                 <View style={styles.dateBlock} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
                   <Text
                     scale="capped"
+                    numberOfLines={1}
                     style={{
                       fontFamily: bodyFont[600],
                       fontSize: fontSize.tabLabel,
                       letterSpacing: fontSize.tabLabel * 0.09,
                       color: colors.inkMuted,
-                      textTransform: 'uppercase',
                     }}
                   >
-                    {monthWord(formatter, item.date)}
+                    {monthWord(formatter, item.date).toLocaleUpperCase(formatter.locale)}
                   </Text>
                   <Text scale="capped" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
                     {Number(item.date.slice(8, 10))}
@@ -224,6 +242,7 @@ export function ComingUpCard({
                   hitSlop={HIT_SLOP}
                   style={({ pressed }) => [
                     styles.pay,
+                    stacked ? { alignSelf: 'flex-end' } : null,
                     { backgroundColor: pressed ? colors.accent : colors.fill1 },
                   ]}
                 >
@@ -239,11 +258,13 @@ export function ComingUpCard({
                     </Text>
                   )}
                 </Pressable>
-              ) : null}
+              ) : stacked ? null : (
+                <View testID="coming-up-pay-spacer" style={{ width: PAY_MIN_WIDTH }} />
+              )}
             </View>
           );
-        })}
-      </View>
+        })
+      )}
     </View>
   );
 }
@@ -259,11 +280,8 @@ const styles = StyleSheet.create({
     paddingBottom: HEADING_PAD_BOTTOM,
   },
   seeAll: { minHeight: 28, justifyContent: 'center' },
-  card: {
-    marginHorizontal: space.cardPad,
-    borderRadius: radii.card,
-    overflow: 'hidden',
-  },
+  cardOuter: { marginHorizontal: space.cardPad, borderRadius: radii.card },
+  cardInner: { borderRadius: radii.card, overflow: 'hidden' },
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -287,6 +305,8 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     paddingVertical: PAY_PAD_V,
     paddingHorizontal: PAY_PAD_H,
+    minWidth: PAY_MIN_WIDTH,
+    alignItems: 'center',
   },
   placeholderLine: { flex: 1, height: space.cardPad, borderRadius: radii.glyphTile },
 });
