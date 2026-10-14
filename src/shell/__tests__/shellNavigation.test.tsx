@@ -7,7 +7,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { act, fireEvent } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useRootNavigationState } from 'expo-router';
+import type { NavStateLike } from '@/shell/backHistory/navLocation';
 import { finishImport, parseImportReturn } from '@/features/record/import/importReturn';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
@@ -71,8 +72,9 @@ function leaf(label: string) {
 const IMPORT_LABEL = 'import-root';
 function ImportFinishLeaf() {
   const params = useLocalSearchParams<{ from?: string }>();
+  const navState = useRootNavigationState() as unknown as NavStateLike | undefined;
   return (
-    <Pressable accessibilityLabel="finish" onPress={() => finishImport(parseImportReturn(params.from))}>
+    <Pressable accessibilityLabel="finish" onPress={() => finishImport(parseImportReturn(params.from), navState)}>
       <Text>{IMPORT_LABEL}</Text>
     </Pressable>
   );

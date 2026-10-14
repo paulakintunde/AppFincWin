@@ -18,6 +18,7 @@ jest.mock('expo-router', () => {
   return {
     router: { canDismiss: () => false, dismissTo: jest.fn(), push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
     useLocalSearchParams: () => mockParams,
+    useRootNavigationState: () => undefined,
     usePathname: () => '/activity',
     Redirect: () => null,
     Stack,
