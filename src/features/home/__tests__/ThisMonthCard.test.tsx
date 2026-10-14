@@ -54,7 +54,8 @@ async function draw(over: Partial<React.ComponentProps<typeof ThisMonthCard>> = 
           onMonthChange={jest.fn()}
           formatter={formatter}
           homeCurrency="GBP"
-          loading={false}
+          state="ready"
+          currentMonth="2026-09"
           {...over}
         />
       </FontScaleProvider>
@@ -101,7 +102,7 @@ describe('ThisMonthCard', () => {
   });
 
   it('shows a busy placeholder while loading', async () => {
-    const { getByLabelText, queryByText } = await draw({ loading: true });
+    const { getByLabelText, queryByText } = await draw({ state: 'loading' });
     expect(getByLabelText('Loading overview').props.accessibilityState).toEqual({ busy: true });
     expect(queryByText('left after everything')).toBeNull();
     expect(queryByText('£2,500.00')).toBeNull();
@@ -110,10 +111,57 @@ describe('ThisMonthCard', () => {
   it('reads an empty month', async () => {
     const { getByText, getAllByText } = await draw({
       totals: { ...totals, count: 0, paidIn: 0, paidOut: 0 },
-      position: { ...position, paidIn: 0, paidOut: 0, unpaid: 0, left: 0, paidPct: 0, pendingPct: 0 },
+      position: { ...position, paidIn: 0, paidOut: 0, unpaid: 0, unpaidCount: 0, left: 0, paidPct: 0, pendingPct: 0 },
     });
     expect(getByText('Nothing recorded in September yet.')).toBeTruthy();
     expect(style(getAllByText('£0.00')[0]!).color).toBe(colors.inkMuted);
+  });
+
+  it('G1: no recorded rows but an expected bill shows the real negative figure', async () => {
+    const { getByText, queryByText } = await draw({
+      totals: { ...totals, count: 0, paidIn: 0, paidOut: 0 },
+      position: { ...position, paidIn: 0, paidOut: 0, unpaid: 4500, unpaidCount: 1, left: -4500, paidPct: 0, pendingPct: 100 },
+    });
+    expect(style(getByText('-£45.00')).color).toBe(colors.danger);
+    expect(queryByText(/Nothing recorded/)).toBeNull();
+  });
+
+  it('an unconverted unpaid line is not empty', async () => {
+    const { queryByText } = await draw({
+      totals: { ...totals, count: 0, paidIn: 0, paidOut: 0 },
+      position: { ...position, paidIn: 0, paidOut: 0, unpaid: 0, unpaidCount: 0, unconvertedUnpaid: 1, left: 0 },
+    });
+    expect(queryByText(/Nothing recorded/)).toBeNull();
+  });
+
+  it.each([
+    ['error', 'This month couldn’t load. Pull down to try again.'],
+    ['offline', 'You’re offline, and this month hasn’t loaded on this device yet.'],
+  ] as const)('G4: %s shows the line and no figures', async (state, line) => {
+    const { getByText, queryByText, queryByTestId } = await draw({ state });
+    expect(getByText(line)).toBeTruthy();
+    expect(queryByText('left after everything')).toBeNull();
+    expect(queryByText('£2,500.00')).toBeNull();
+    expect(queryByTestId('home-bar-paid')).toBeNull();
+  });
+
+  it('M6: heading follows the month', async () => {
+    expect((await draw({ month: '2026-10', currentMonth: '2026-10' })).getByText('This month')).toBeTruthy();
+    expect((await draw({ month: '2026-09', currentMonth: '2026-10' })).getByText('September')).toBeTruthy();
+    const d = await draw({ month: '2025-12', currentMonth: '2026-10' });
+    expect(d.getByText('December 2025')).toBeTruthy();
+    expect(d.getByRole('header')).toBeTruthy();
+  });
+
+  it('M6: empty past month drops yet', async () => {
+    const empty = {
+      totals: { ...totals, count: 0, paidIn: 0, paidOut: 0 },
+      position: { ...position, paidIn: 0, paidOut: 0, unpaid: 0, unpaidCount: 0, left: 0, paidPct: 0, pendingPct: 0 },
+    };
+    const past = await draw({ ...empty, month: '2026-09', currentMonth: '2026-10' });
+    expect(past.getByText('Nothing recorded in September.')).toBeTruthy();
+    const cur = await draw({ ...empty, month: '2026-10', currentMonth: '2026-10' });
+    expect(cur.getByText('Nothing recorded in October yet.')).toBeTruthy();
   });
 
   it('lays figures in a row at 1x and a column above 1.3x, capped at 1.3x', async () => {
