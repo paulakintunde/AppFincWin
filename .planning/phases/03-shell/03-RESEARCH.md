@@ -656,19 +656,27 @@ No file uses `Animated.Text`, `maxFontSizeMultiplier` or `allowFontScaling` toda
 | A6 | A Modal's back-press handling under predictive back on Android 13-15 doesn't matter once `predictiveBackGestureEnabled: false` | Pattern 8 | If predictive back stays on, verify `onRequestClose` still fires |
 | A7 | `SheetScroll` is a direct child of the sheet container at every call site (so `onLayout.y` gives `bodyTop`) | Pattern 4, Pitfall 8 | Spot-checked in TransactionSheet, DetailSheet and FilterSheet, not in all 18 files. Grep during planning. |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+All six were answered at planning on 2026-10-13 and recorded in 03-CONTEXT.md as D-33..D-38.
 
 1. **Entry sheet in edit mode: draft or "Discard changes?"**
    - What we know: D-25 says "entry sheet", and the draft model (`ListItem`, resume prompt) is built for new entries. Edit mode edits an existing row with a `version`.
    - What's unclear: whether an accidental swipe on an edit should keep a device draft of the edit or ask.
    - Recommendation: new-entry mode uses the D-25 draft; **edit mode uses D-26** (`dirty` from form versus the loaded row). Confirm with the user.
+   RESOLVED: D-33
 2. **Projections in Coming up and UNPAID**
    - What we know: projections (recurring occurrences not yet materialised) are in Activity's "Still to come" and in `stillToCome`. `useRowActions().pay` accepts only real rows, and `ProjectionRow` has no Pay.
    - Recommendation: include outflow projections in UNPAID and Coming up (so they match Activity's unfiltered list), with **no Pay button** on projection rows (the row body opens nothing, or the series). Alternatively, exclude projections everywhere on Home. Planner or user decision; affects HOME-02 and HOME-03 tests.
+   RESOLVED: D-34
 3. **The Unpaid filter's new meaning** (outflows only, plus projections when it is the only narrowing). It changes Phase 2 Activity behaviour and `engine/activity/filters` tests (100% folder). Recommendation: adopt it. It is required for HOME-01 to land on a list that matches UNPAID.
+   RESOLVED: D-35
 4. **Pending transfers.** They are excluded from totals, so exclude them from UNPAID and Coming up. Recommended.
+   RESOLVED: D-36
 5. **Dropdown backdrop.** The UI-SPEC says ink 0.38, but today it is transparent (see Pattern 5). Confirm whether menus should dim.
+   RESOLVED: D-37
 6. **Where setup lands after first account** (`router.replace('/activity')` today). Home or Activity?
+   RESOLVED: D-38
 
 ## Environment Availability
 
