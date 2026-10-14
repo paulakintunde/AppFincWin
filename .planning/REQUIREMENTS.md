@@ -75,7 +75,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **ACC-11**: A sign-in method restricted to allow-listed store-review accounts exists, so reviewers can enter an app that otherwise offers only Apple and Google
 - [x] **ACC-12**: The auth session is stored encrypted, with its key held in secure storage, working around secure storage's 2048-byte limit
 - [ ] **ACC-13**: Server-side functions enforce per-user rate limits
-- [ ] **ACC-14**: The signed-out screen offers "Continue as <previous account>" or "Use a different account". Only the last account's display identity and provider are remembered, never tokens; choosing a different Google account shows the account picker Up to 3 recent accounts are remembered, each removable *(scope widened 2026-10-12, 02.3 D-21)*.
+- [x] **ACC-14**: The signed-out screen offers "Continue as <previous account>" or "Use a different account". Only the last account's display identity and provider are remembered, never tokens; choosing a different Google account shows the account picker Up to 3 recent accounts are remembered, each removable *(scope widened 2026-10-12, 02.3 D-21)*.
 
 ### Money & Data Integrity
 
@@ -131,11 +131,11 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **REC-23**: A new user can explore on sample figures, and a "Start fresh" banner clears them
 - [x] **REC-24**: User can delete a money account that has no lines; an account with lines can only be archived
 - [x] **REC-25**: User can change their home currency under You → Money; the change asks for today's rates for the new home currency against every currency in use (on-demand FX), and totals re-convert
-- [ ] **REC-26**: After a statement is parsed, the user chooses whether it reconciles against entries already made or loads as new entries. Reconcile mode shows only rows missing from existing records, flags them, and adds them on approval (builds on REC-16 duplicate finding); new-entries mode loads every row as today In reconcile mode, app lines in the statement period that are not on the statement are also shown, read-only, in a collapsed section *(scope widened 2026-10-12, 02.3 D-23)*.
-- [ ] **REC-27**: Manual entries are auto-categorised from the description using the learned map and default keyword rules (`src/engine/categorize/guessCategory`, `DEFAULT_KEYWORD_RULES`), and the user can add, edit and remove description-to-category rules Rules can be personal ("Just me") or shared with the household; any member edits shared rules, personal rules win, and shared rules resolve to each member's category by name *(scope widened 2026-10-12, 02.3 D-24..D-27)*.
-- [ ] **REC-28**: In the entry sheet for money out, money in and transfer, the amount is a compact field with an "Amount" placeholder near the top; the number keypad opens only when the amount is tapped, so "What is it for" and the other fields are visible without scrolling
-- [ ] **REC-29**: The account picker in the entry sheet ends with "Add account", which opens account creation and returns to the entry with the new account selected
-- [ ] **REC-30**: The entry sheet offers "Add to list" beside Save: it validates the entry, keeps it in a list at the bottom of the sheet and clears the form for the next one, up to 30 entries per money out, money in or transfer list. Listed entries can be edited or removed before saving, the list survives an accidental swipe or close as a local draft, and Save writes the current entry plus the whole list in one step with one Undo
+- [x] **REC-26**: After a statement is parsed, the user chooses whether it reconciles against entries already made or loads as new entries. Reconcile mode shows only rows missing from existing records, flags them, and adds them on approval (builds on REC-16 duplicate finding); new-entries mode loads every row as today In reconcile mode, app lines in the statement period that are not on the statement are also shown, read-only, in a collapsed section *(scope widened 2026-10-12, 02.3 D-23)*.
+- [x] **REC-27**: Manual entries are auto-categorised from the description using the learned map and default keyword rules (`src/engine/categorize/guessCategory`, `DEFAULT_KEYWORD_RULES`), and the user can add, edit and remove description-to-category rules Rules can be personal ("Just me") or shared with the household; any member edits shared rules, personal rules win, and shared rules resolve to each member's category by name *(scope widened 2026-10-12, 02.3 D-24..D-27)*.
+- [x] **REC-28**: In the entry sheet for money out, money in and transfer, the amount is a compact field with an "Amount" placeholder near the top; the number keypad opens only when the amount is tapped, so "What is it for" and the other fields are visible without scrolling
+- [x] **REC-29**: The account picker in the entry sheet ends with "Add account", which opens account creation and returns to the entry with the new account selected
+- [x] **REC-30**: The entry sheet offers "Add to list" beside Save: it validates the entry, keeps it in a list at the bottom of the sheet and clears the form for the next one, up to 30 entries per money out, money in or transfer list. Listed entries can be edited or removed before saving, the list survives an accidental swipe or close as a local draft, and Save writes the current entry plus the whole list in one step with one Undo
 
 ### Activity
 
@@ -422,7 +422,7 @@ Populated during roadmap creation.
 | ACC-11 | Phase 10 - System | Pending |
 | ACC-12 | Phase 0 - Foundation | Complete |
 | ACC-13 | Phase 10 - System | Pending |
-| ACC-14 | Phase 2.3 - Record follow-ups | Pending |
+| ACC-14 | Phase 2.3 - Record follow-ups | Complete |
 | MON-01 | Phase 1 - Money Core | Complete |
 | MON-02 | Phase 1 - Money Core | Complete |
 | MON-03 | Phase 1 - Money Core | Complete |
@@ -487,11 +487,11 @@ Populated during roadmap creation.
 | REC-23 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
 | REC-24 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
 | REC-25 | Phase 2.2 - Record polish | Complete (Android verified; iOS pending Apple enrolment) |
-| REC-26 | Phase 2.3 - Record follow-ups | Pending |
-| REC-27 | Phase 2.3 - Record follow-ups | Pending |
-| REC-28 | Phase 2.3 - Record follow-ups | Pending |
-| REC-29 | Phase 2.3 - Record follow-ups | Pending |
-| REC-30 | Phase 2.3 - Record follow-ups | Pending |
+| REC-26 | Phase 2.3 - Record follow-ups | Complete |
+| REC-27 | Phase 2.3 - Record follow-ups | Complete |
+| REC-28 | Phase 2.3 - Record follow-ups | Complete |
+| REC-29 | Phase 2.3 - Record follow-ups | Complete |
+| REC-30 | Phase 2.3 - Record follow-ups | Complete |
 | IMP-01 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
 | IMP-02 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
 | IMP-03 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
