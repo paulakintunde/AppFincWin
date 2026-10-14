@@ -7,11 +7,11 @@ import { MonthChips } from '../MonthChips';
 
 jest.setTimeout(30000);
 
-async function draw(selected = '2026-09') {
+async function draw(selected = '2026-09', locale = 'en-GB', months = ['2026-10', '2026-09', '2026-08']) {
   const onChange = jest.fn();
   const utils = await render(
     <ThemeProvider>
-      <MonthChips months={['2026-10', '2026-09', '2026-08']} selected={selected} locale="en-GB" onChange={onChange} />
+      <MonthChips months={months} selected={selected} locale={locale} onChange={onChange} />
     </ThemeProvider>
   );
   return { ...utils, onChange };
@@ -20,7 +20,7 @@ async function draw(selected = '2026-09') {
 describe('MonthChips', () => {
   it('lists months oldest first with short names', async () => {
     const { getAllByRole } = await draw();
-    const labels = getAllByRole('button').map((b) => b.props.accessibilityLabel);
+    const labels = getAllByRole('tab').map((b) => b.props.accessibilityLabel);
     expect(labels).toEqual(['August, 2026', 'September, 2026', 'October, 2026']);
   });
 
@@ -29,7 +29,7 @@ describe('MonthChips', () => {
     const selected = getByLabelText('September, 2026');
     expect(selected.props.accessibilityState).toEqual({ selected: true });
     expect(StyleSheet.flatten(selected.props.style).backgroundColor).toBe(lightColors.ink);
-    expect(StyleSheet.flatten(getByText('Sep').props.style).color).toBe(lightColors.surface);
+    expect(StyleSheet.flatten(getByText('Sept').props.style).color).toBe(lightColors.surface);
     const other = getByLabelText('October, 2026');
     expect(other.props.accessibilityState).toEqual({ selected: false });
     expect(StyleSheet.flatten(other.props.style).backgroundColor).toBe(lightColors.fill1);
@@ -42,5 +42,24 @@ describe('MonthChips', () => {
     expect(chip.props.hitSlop.top + chip.props.hitSlop.bottom + 26).toBeGreaterThanOrEqual(44);
     await fireEvent.press(chip);
     expect(onChange).toHaveBeenCalledWith('2026-10');
+  });
+
+  it('keeps neighbouring hit areas from overlapping', async () => {
+    const { getByLabelText } = await draw();
+    const { left, right } = getByLabelText('October, 2026').props.hitSlop;
+    expect(left).toBeLessThanOrEqual(2);
+    expect(right).toBeLessThanOrEqual(2);
+  });
+
+  it('shows the locale short month name uncut', async () => {
+    const fr = await draw('2026-07', 'fr-FR', ['2026-07']);
+    const expected = new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' }).format(Date.UTC(2026, 6, 1));
+    expect(expected.length).toBeGreaterThan(3);
+    expect(fr.getByText(expected)).toBeTruthy();
+  });
+
+  it('shows the uncut en-GB short name (Sept) for September', async () => {
+    const { getByText } = await draw('2026-09');
+    expect(getByText('Sept')).toBeTruthy();
   });
 });
