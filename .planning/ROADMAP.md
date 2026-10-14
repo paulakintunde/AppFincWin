@@ -448,12 +448,12 @@ Plans:
 **Updated 2026-10-13 (re-discussed):** 03-CONTEXT.md was reopened after Phases 2.2 and 2.3. The app keeps its own Sheet and adds drag-to-dismiss (no `@gorhom` migration). The backdrop is ink at 38% with a fade. Sheets stack and close top-first, toasts draw above sheets, and Home content (HOME-01…04) is added. Re-planned the same day: 03-01, 03-09, 03-13 and 03-16 rewritten or revised, the others edited, and 03-17…03-24 added (engine month figures and Unpaid filter, entry draft v2, toast layer, refresh toast, shared Home/Activity state, Home cards, entry-sheet draft and edit guard).
 Plans:
 **Wave 1**
-- [ ] 03-01-PLAN.md — Foundations: expo-blur, predictive back off, hapticMedium in the existing wrapper, shell/Home tokens and durations, src/shell lint boundary, Reanimated/worklets doc fix
-- [ ] 03-02-PLAN.md — Pure back-history core under D-22 (8-deep history, transitions, back decision, nav-state -> location) (TDD)
-- [ ] 03-03-PLAN.md — Pure tab order/availability, forward and always-reverse back slide, FAB hide rule, quick-action order (TDD)
-- [ ] 03-04-PLAN.md — Phase 3 copy: shell, sheet discard, refresh toasts, Home
-- [ ] 03-17-PLAN.md — Engine: unpaid outflows, left after everything, bar shares; Unpaid filter = bills out only, projections filter (TDD, 100%)
-- [ ] 03-18-PLAN.md — Engine: entry draft v2 with the form snapshot, v1 still parses (TDD, 100%)
+- [x] 03-01-PLAN.md — Foundations: expo-blur, predictive back off, hapticMedium in the existing wrapper, shell/Home tokens and durations, src/shell lint boundary, Reanimated/worklets doc fix
+- [x] 03-02-PLAN.md — Pure back-history core under D-22 (8-deep history, transitions, back decision, nav-state -> location) (TDD)
+- [x] 03-03-PLAN.md — Pure tab order/availability, forward and always-reverse back slide, FAB hide rule, quick-action order (TDD)
+- [x] 03-04-PLAN.md — Phase 3 copy: shell, sheet discard, refresh toasts, Home
+- [x] 03-17-PLAN.md — Engine: unpaid outflows, left after everything, bar shares; Unpaid filter = bills out only, projections filter (TDD, 100%)
+- [x] 03-18-PLAN.md — Engine: entry draft v2 with the form snapshot, v1 still parses (TDD, 100%)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 03-05-PLAN.md — DSG-07 text scaling: Text/TextInput primitives, root font-scale provider, 73-file migration + lint rule
@@ -673,7 +673,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 0/16 | Re-discussed 2026-10-13; re-plan before executing | - |
+| 3. Shell | 6/24 | In Progress|  |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
