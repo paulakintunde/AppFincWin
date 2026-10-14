@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { ActivityScreen } from '../ActivityScreen';
+import { resetActivityFocusForTests } from '@/state/activityFocus';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -174,6 +175,7 @@ function renderScreen(props: Partial<React.ComponentProps<typeof ActivityScreen>
 
 
 beforeEach(async () => {
+  resetActivityFocusForTests();
   await AsyncStorage.clear();
   jest.clearAllMocks();
   resetToastForTests();
