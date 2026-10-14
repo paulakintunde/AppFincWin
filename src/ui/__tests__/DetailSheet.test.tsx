@@ -50,7 +50,7 @@ describe('DetailSheet', () => {
     const { getAllByRole } = await wrap(
       <DetailSheet visible onDismiss={onDismiss} accessibilityLabel="Details" title="Coffee" />,
     );
-    await fireEvent.press(getAllByRole('button')[0]!);
+    await fireEvent.press(getAllByRole('button', { hidden: true })[0]!);
     expect(onDismiss).toHaveBeenCalled();
   });
 });

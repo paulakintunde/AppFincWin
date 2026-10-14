@@ -1,5 +1,8 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
+import { colors } from '@/theme/tokens';
+import { BACKDROP_OPACITY } from '../sheetDrag';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { Dropdown } from '../Dropdown';
 import { hapticSelection } from '../haptics';
@@ -56,6 +59,20 @@ describe('Dropdown', () => {
   it('disabled does not open', async () => {
     const { getByLabelText, queryByText } = await setup({ disabled: true });
     await fireEvent.press(getByLabelText('Sort: Alpha, opens a menu'));
+    expect(queryByText('Pick')).toBeNull();
+  });
+});
+
+describe('Dropdown backdrop (D-37)', () => {
+  it('renders an ink backdrop at the sheet opacity under the Close pressable, which still closes', async () => {
+    const { getByLabelText, getByTestId, queryByText } = await setup();
+    await fireEvent.press(getByLabelText('Sort: Alpha, opens a menu'));
+    const fill = getByTestId('dropdown-backdrop-fill');
+    const style = StyleSheet.flatten(fill.props.style);
+    expect(style.backgroundColor).toBe(colors.ink);
+    expect(style.opacity).toBe(BACKDROP_OPACITY);
+    expect(fill.props.pointerEvents).toBe('none');
+    await fireEvent.press(getByLabelText('Close'));
     expect(queryByText('Pick')).toBeNull();
   });
 });

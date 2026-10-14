@@ -10,6 +10,7 @@ import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
+import { BACKDROP_OPACITY } from '@/ui/sheetDrag';
 import { useReduceMotion } from '@/theme/motion';
 import { textRole } from '@/theme/typography';
 import { hapticSelection } from '@/ui/haptics';
@@ -89,6 +90,12 @@ export function Dropdown<K extends string>({
         animationType={reduced ? 'none' : 'fade'}
         onRequestClose={() => setOpen(false)}
       >
+        {/* 03 D-37: menus use the sheets' ink-at-38% backdrop; a visible change in the four menus (ActivityHeader, Sort, View, WeekStart). */}
+        <View
+          testID="dropdown-backdrop-fill"
+          pointerEvents="none"
+          style={[styles.scrim, { backgroundColor: colors.ink, opacity: BACKDROP_OPACITY }]}
+        />
         <Pressable
           style={styles.scrim}
           accessibilityRole="button"
