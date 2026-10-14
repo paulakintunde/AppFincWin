@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/refs -- the chrome object carries the animated scroll ref to the list; nothing reads .current during render */
 // The Activity month screen (ACT-01, ACT-02, REC-03, REC-06): a month's transactions grouped
 // as Still to come / Paid / Skipped, a month switcher, a totals line, overdue flags, one-tap
 // Mark paid and the entry points into the transaction sheet. The list is the visual anchor;
@@ -10,13 +9,14 @@ import { Pressable, type ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
 import { FlashList } from '@shopify/flash-list';
-import type { ActivityRowView } from '@/data/queries/activity';
+import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useBulkDelete, useBulkMarkPaid, useBulkMarkUnpaid } from '@/data/mutations/patches';
 import { EditScopePrompt } from '@/features/record/entry/EditScopePrompt';
 import { PasteSheet } from '@/features/record/import/PasteSheet';
 import { TransactionSheet } from '@/features/record/entry/TransactionSheet';
-import { queryKeys } from '@/data/keys';
+import { ProjectionDetailSheet } from '@/features/home/ProjectionDetailSheet';
+import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
 import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
@@ -36,6 +36,8 @@ import { BulkBar } from './BulkBar';
 import { CloneMonthSheet } from './CloneMonthSheet';
 import { FilterSheet } from './FilterSheet';
 import { GroupHeader } from './GroupHeader';
+import { monthRefreshKeys } from './refreshKeys';
+import { UnpaidBanner } from './UnpaidBanner';
 import { formatMonthLabel } from './MonthSwitcher';
 import { RecurringReviewSheet } from './RecurringReviewSheet';
 import { SeriesOfferCard } from './SeriesOfferCard';
@@ -85,15 +87,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
   const flow = useRowFlow(rowActions, month);
   const chrome = useTabRootChrome({
     title: t('shell.title.activity'),
-    refreshKeys: rc.householdId
-      ? [
-          queryKeys.transactionsMonth(rc.householdId, month),
-          queryKeys.recurringSeries(rc.householdId),
-          queryKeys.fxLatest(),
-          queryKeys.transactionMonths(rc.householdId),
-          queryKeys.accounts(rc.householdId),
-        ]
-      : [],
+    refreshKeys: monthRefreshKeys(rc.householdId, month),
   });
   // D-10: the FAB steps aside while rows are being selected.
   useHideFab('bulkSelect', selection.active);
@@ -104,6 +98,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
   const { markUnpaid: bulkMarkUnpaid } = useBulkMarkUnpaid();
 
   const [filterOpen, setFilterOpen] = useState(false);
+  // D-42: the expected row whose read-only detail is open.
+  const [projection, setProjection] = useState<ProjectionView | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   // S-WR-02: why the last bulk action did nothing, shown whatever the selected count.
   const [hint, setHint] = useState<BulkHint | null>(null);
@@ -212,6 +208,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
           formatter={formatter}
           homeCurrency={rc.homeCurrency}
           cardPosition={cardPosition}
+          onPress={setProjection}
         />
       );
     }
@@ -229,6 +226,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
     <>
       {chrome.largeHeader}
       <View style={styles.pad}>
+        {/* D-41: Clear removes only the Unpaid filter; any other filter the user set stays. */}
+        {filter.unpaidOnly ? <UnpaidBanner onClear={() => vm.setFilter({ ...filter, unpaidOnly: false })} /> : null}
         <ActivityHeader
           month={month}
           months={vm.months}
@@ -306,12 +305,17 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
       <View style={styles.list}>
         {calendar ? (
           <Animated.ScrollView
+            // eslint-disable-next-line react-hooks/refs -- the chrome object carries the animated scroll ref to the list; nothing reads .current during render
             ref={chrome.scrollRef}
             testID="calendar-scroll"
             keyboardShouldPersistTaps="handled"
+            // eslint-disable-next-line react-hooks/refs -- the chrome object carries the animated scroll ref to the list; nothing reads .current during render
             onScroll={chrome.onScroll}
+            // eslint-disable-next-line react-hooks/refs -- the chrome object carries the animated scroll ref to the list; nothing reads .current during render
             scrollEventThrottle={chrome.scrollEventThrottle}
+            // eslint-disable-next-line react-hooks/refs -- the chrome object carries the animated scroll ref to the list; nothing reads .current during render
             refreshControl={chrome.refreshControl}
+            contentContainerStyle={{ paddingBottom: FAB_CLEARANCE }}
           >
           {listHeader}
           <View style={styles.pad}>
@@ -330,6 +334,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
           </Animated.ScrollView>
         ) : (
         <AnimatedFlashList
+          // eslint-disable-next-line react-hooks/refs -- the chrome object carries the animated scroll ref to the list; nothing reads .current during render
           ref={chrome.scrollRef as never}
           data={items}
           keyExtractor={(item: ActivityItem) => item.key}
@@ -337,9 +342,13 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
           renderItem={(info: { item: ActivityItem; index: number }) => (
             <View style={styles.pad}>{renderItem(info)}</View>
           )}
+          // eslint-disable-next-line react-hooks/refs -- the chrome object carries the animated scroll ref to the list; nothing reads .current during render
           onScroll={chrome.onScroll}
+          // eslint-disable-next-line react-hooks/refs -- the chrome object carries the animated scroll ref to the list; nothing reads .current during render
           scrollEventThrottle={chrome.scrollEventThrottle}
+          // eslint-disable-next-line react-hooks/refs -- the chrome object carries the animated scroll ref to the list; nothing reads .current during render
           refreshControl={chrome.refreshControl}
+          contentContainerStyle={{ paddingBottom: FAB_CLEARANCE }}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={
             <View style={styles.pad}>{flat && !search.isSuccess ? (
@@ -380,6 +389,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
         />
         )}
       </View>
+      {/* eslint-disable-next-line react-hooks/refs -- the chrome object carries the animated scroll ref to the list; nothing reads .current during render */}
       {chrome.compactHeader}
       {selection.active ? (
         <View style={styles.pad}>
@@ -420,6 +430,15 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
         onClose={() => setFilterOpen(false)}
       />
       <TransactionDetailSheet {...flow.detail} today={rc.today} />
+      <ProjectionDetailSheet
+        projection={projection}
+        visible={projection !== null}
+        onDismiss={() => setProjection(null)}
+        formatter={formatter}
+        homeCurrency={rc.homeCurrency}
+        categories={categories}
+        accountName={accountName}
+      />
       <RecurringReviewSheet
         visible={vm.reviewOpen}
         offers={vm.offers}

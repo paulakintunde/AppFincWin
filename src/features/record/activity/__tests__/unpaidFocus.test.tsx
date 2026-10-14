@@ -239,4 +239,47 @@ describe('Activity shared month and Unpaid focus', () => {
     expect(screen.queryByText('Netflix')).toBeNull();
     jest.useRealTimers();
   });
+
+  it('shows the Unpaid banner under the Unpaid filter, and Clear removes only that filter', async () => {
+    mockRows = [row({ id: 'bill', name: 'Phone bill', status: 'pending', local_date: '2026-09-28' })];
+    const screen = await renderScreen();
+    expect(screen.queryByTestId('unpaid-banner')).toBeNull();
+    await act(async () => {
+      requestActivityFocus({ month: '2026-09', filter: { ...UNPAID, categoryIds: ['c1'] } });
+    });
+    expect(screen.getByTestId('unpaid-banner')).toBeTruthy();
+    expect(screen.getByText(/Showing unpaid bills/)).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Clear the unpaid filter'));
+    expect(screen.queryByTestId('unpaid-banner')).toBeNull();
+    // The category filter the user also set stays on.
+    expect(screen.getByLabelText('Filter').props.accessibilityState.selected).toBe(true);
+  });
+
+  it('Clear leaves the Filter chip unselected when Unpaid was the only filter', async () => {
+    mockRows = [row({ id: 'bill', name: 'Phone bill', status: 'pending', local_date: '2026-09-28' })];
+    const screen = await renderScreen();
+    await act(async () => {
+      requestActivityFocus({ month: '2026-09', filter: UNPAID });
+    });
+    await fireEvent.press(screen.getByLabelText('Clear the unpaid filter'));
+    expect(screen.getByLabelText('Filter').props.accessibilityState.selected).toBeFalsy();
+  });
+
+  it('has no banner under a non-unpaid filter', async () => {
+    const screen = await renderScreen();
+    await act(async () => {
+      requestActivityFocus({ month: '2026-09', filter: { ...EMPTY_FILTER, direction: 'in' } });
+    });
+    expect(screen.queryByTestId('unpaid-banner')).toBeNull();
+  });
+
+  it('opens a read-only Expected detail from a projection row, with no Pay', async () => {
+    mockProjections = [PROJECTION];
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByTestId('projection-s1:2026-09-30'));
+    expect(screen.getByLabelText('Netflix', { hidden: true })).toBeTruthy();
+    expect(screen.getAllByText('Expected').length).toBeGreaterThan(1);
+    expect(screen.queryByText('Pay')).toBeNull();
+    expect(screen.queryByText('Mark as paid')).toBeNull();
+  });
 });

@@ -9,6 +9,7 @@ import { ActivityShellProviders } from './activityShellHarness';
 import { ActivityScreen } from '../ActivityScreen';
 import { ACTIVITY_VIEW_KEY } from '../activityViewPrefs';
 import { resetActivityFocusForTests } from '@/state/activityFocus';
+import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -157,6 +158,42 @@ beforeEach(() => {
   mockSearchLoading = false;
   mockSearchPaused = false;
   mockSearchError = false;
+});
+
+describe('ActivityScreen sync line at rest (G5, D-15)', () => {
+  const sync = jest.requireMock('@/data/sync/useSyncStatus') as { useSyncStatus: unknown };
+  const original = sync.useSyncStatus;
+  afterEach(() => {
+    sync.useSyncStatus = original;
+  });
+  const goOffline = () => {
+    sync.useSyncStatus = () => ({ isOnline: false, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null });
+  };
+
+  it('shows the offline line at scroll 0 in the list view', async () => {
+    goOffline();
+    const screen = await renderScreen();
+    expect(screen.getByTestId('sync-problem-line')).toBeTruthy();
+    expect(screen.getByText('offline')).toBeTruthy();
+  });
+
+  it('shows the offline line at scroll 0 in the calendar view', async () => {
+    goOffline();
+    await AsyncStorage.setItem(ACTIVITY_VIEW_KEY, JSON.stringify({ view: 'calendar', sort: 'newest' }));
+    const screen = await renderScreen();
+    await screen.findByTestId('calendar-scroll');
+    expect(screen.getByTestId('sync-problem-line')).toBeTruthy();
+    expect(screen.getByText('offline')).toBeTruthy();
+    await AsyncStorage.removeItem(ACTIVITY_VIEW_KEY);
+  });
+
+  it('keeps the last calendar row clear of the FAB (list clearance is asserted in source grep; the FlashList mock drops the prop)', async () => {
+    await AsyncStorage.setItem(ACTIVITY_VIEW_KEY, JSON.stringify({ view: 'calendar', sort: 'newest' }));
+    const cal = await renderScreen();
+    const scroll = await cal.findByTestId('calendar-scroll');
+    expect(StyleSheet.flatten(scroll.props.contentContainerStyle)).toEqual({ paddingBottom: FAB_CLEARANCE });
+    await AsyncStorage.removeItem(ACTIVITY_VIEW_KEY);
+  });
 });
 
 describe('ActivityScreen', () => {
