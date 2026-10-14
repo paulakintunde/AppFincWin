@@ -9,7 +9,7 @@ export interface ActivityFilter {
   categoryIds: readonly (string | null)[] | null; // null entry = uncategorised
   accountIds: readonly string[] | null;
   direction: 'all' | 'in' | 'out' | 'transfers';
-  amountMin: number | null; // home-currency minor units, compared on magnitude
+  amountMin: number | null; // home-currency minor units, compared on magnitude; an unconverted amount is excluded while a range is set
   amountMax: number | null;
   /**
    * Keep only bills still to pay: pending, non-transfer, non-refund outflows
@@ -87,9 +87,11 @@ function matchesDirection(row: FilterRow, direction: ActivityFilter['direction']
   return direction === 'transfers' ? flow === 'transfer' : flow === direction;
 }
 
-function matchesAmountRange(row: FilterRow, min: number | null, max: number | null): boolean {
+/** H9: bounds are home-currency minor units; an amount with no home figure (no rate) cannot be compared, so a range excludes it. */
+function inAmountRange(amountHome: number | null, min: number | null, max: number | null): boolean {
   if (min === null && max === null) return true;
-  const magnitude = Math.abs(row.amountHome ?? row.original_amount);
+  if (amountHome === null) return false;
+  const magnitude = Math.abs(amountHome);
   if (min !== null && magnitude < min) return false;
   if (max !== null && magnitude > max) return false;
   return true;
@@ -112,7 +114,7 @@ export function filterRows<T extends FilterRow>(rows: readonly T[], f: ActivityF
     if (f.accountIds !== null && !f.accountIds.includes(row.account_id)) return false;
     if (f.unpaidOnly && !isUnpaidBill(row)) return false;
     if (!matchesDirection(row, f.direction)) return false;
-    if (!matchesAmountRange(row, f.amountMin, f.amountMax)) return false;
+    if (!inAmountRange(row.amountHome, f.amountMin, f.amountMax)) return false;
     return true;
   });
 }
@@ -135,10 +137,7 @@ export function filterProjections<P extends FilterProjection>(
     if (p.amount >= 0) return false;
     if (f.categoryIds !== null && !f.categoryIds.includes(p.categoryId)) return false;
     if (f.accountIds !== null && !f.accountIds.includes(p.accountId)) return false;
-    const magnitude = Math.abs(p.amountHome ?? p.amount);
-    if (f.amountMin !== null && magnitude < f.amountMin) return false;
-    if (f.amountMax !== null && magnitude > f.amountMax) return false;
-    return true;
+    return inAmountRange(p.amountHome, f.amountMin, f.amountMax);
   });
 }
 

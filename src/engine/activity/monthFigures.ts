@@ -91,7 +91,8 @@ export function barShares(
   paidOut: number,
   unpaid: number
 ): { paidPct: number; pendingPct: number } {
-  const paidPct = pct(Math.abs(paidOut), paidIn);
+  // L6: net refunds (paidOut > 0) are not a paid share
+  const paidPct = pct(Math.max(0, -paidOut), paidIn);
   const pendingPct = Math.min(pct(unpaid, paidIn), 100 - paidPct);
   return { paidPct, pendingPct };
 }
