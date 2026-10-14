@@ -33,9 +33,16 @@ export function RepeatsField({ value, onChange, formatDate, today, entryDate }: 
   const { colors, pairing } = useTheme();
   const [open, setOpen] = useState(false);
   const [countText, setCountText] = useState(value.freq !== 'never' && value.end.kind === 'count' ? String(value.end.count) : '');
-  // D-26: the count text as it stood when the sheet opened; frequency and end picks apply to `value` at once.
-  const [openingCount, setOpeningCount] = useState(countText);
-  const dirty = useIsDirty({ countText: openingCount }, { countText });
+  // D-26 / G2: the sheet snapshots { value, countText } on open; Discard restores it. Frequency and end picks apply to `value` at once.
+  const [opening, setOpening] = useState<{ value: RepeatsValue; countText: string } | null>(null);
+  const dirty = useIsDirty({ countText: opening?.countText ?? countText }, { countText });
+  const discard = () => {
+    if (opening !== null) {
+      onChange(opening.value);
+      setCountText(opening.countText);
+    }
+    setOpen(false);
+  };
 
   const summary = (): string => {
     if (value.freq === 'never') return t('record.repeats.never');
@@ -69,11 +76,11 @@ export function RepeatsField({ value, onChange, formatDate, today, entryDate }: 
         dense
         chevron
         onPress={() => {
-          setOpeningCount(countText);
+          setOpening({ value, countText });
           setOpen(true);
         }}
       />
-      <Sheet visible={open} onDismiss={() => setOpen(false)} accessibilityLabel={t('record.sheet.field.repeats')} dirty={dirty}>
+      <Sheet visible={open} onDismiss={() => setOpen(false)} onDiscard={discard} accessibilityLabel={t('record.sheet.field.repeats')} dirty={dirty}>
         <SheetHeader
           title={t('record.sheet.field.repeats')}
           cancelLabel={t('record.repeats.done')}
