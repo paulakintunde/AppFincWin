@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: "Phase 02.1 verified and complete; next /gsd-plan-phase 02.3 (02.1 security verified: 99/99 threats closed)"
-last_updated: "2026-10-13T18:36:30.277Z"
-last_activity: 2026-10-12 -- Phase 02.3 execution started
+status: planning
+stopped_at: Phase 3 context re-gathered (2026-10-13 update)
+last_updated: "2026-10-14T02:13:03.925Z"
+last_activity: 2026-10-13 -- Phase 02.3 complete (20/20; Android verified, iOS and privacy page pending)
 progress:
-  total_phases: 15
+  total_phases: 20
   completed_phases: 5
   total_plans: 186
-  completed_plans: 155
-  percent: 33
+  completed_plans: 156
+  percent: 84
 ---
 
 # Project State
@@ -141,7 +141,15 @@ Recent decisions affecting current work:
 
 - [Phase 02.1] *(Resolved 2026-10-11: phase complete.)* **Plans revised 2026-10-10 (resolved the post-02.2 staleness).** Migrations re-dated to 20261011000100/200/300, pgTAP 49/50, plans 04/05/09–12 rebased on post-02.2 code, fx-monitor references removed, IMP-05 planned (13–17; conversion_source is a stored generated column, no backfill; D-36 user-accepted limitation for kept mark-paid lines). Rollout plan 12 pushes from merged main with a before/after checksum and ends with the second-phone preview APK.
 
-- [Phase 03] **Shell plans predate 02.2 — check before executing.** 03-01 installs `expo-haptics` and builds a haptics wrapper: the package is already installed (02.2-01) with a feature wrapper at `src/ui/haptics.ts`, so 03-01 must not reinstall it and should decide whether its shell wrapper extends or sits beside it. 02.2 also added `src/ui` Dropdown, ToggleRow, DetailSheet, SwipeRow and Keypad on the existing RN-Modal `Sheet` (D-27: Phase 3 adopts them); the `@gorhom/bottom-sheet` migration must carry DetailSheet, the paste, clone-month, review and confirm sheets with it, and 03-UI-SPEC has no Dropdown contract (the 02.2 UI-SPEC section 1 is the source). Route: `/gsd-plan-phase 3` targeted revision. Phase 02.1 also adds `PasswordPromptSheet` (plan 11) and a detail-sheet statement-conversion note block (plan 17) on the current `Sheet`/`DetailSheet`; Phase 02.3 changes the entry sheet and Keypad (REC-28..30) — the bottom-sheet migration must carry these.
+- [Phase 03] **Shell re-discussed 2026-10-13; re-plan before executing.** 03-CONTEXT.md is updated. Plans 03-01…03-16 predate it. Main changes:
+  - **Sheet:** the app keeps its own `Sheet` and adds drag-to-dismiss, with no `@gorhom/bottom-sheet` migration (D-12). It goes through one shared interface, so a single sheet can adopt `@gorhom` later.
+  - **Backdrop:** ink at 38% with a 0.18s fade, replacing the black `colors.scrim` (D-23/24).
+  - **Dismissal:** the entry sheet keeps a draft on accidental dismissal, and other edited sheets ask "Discard changes?" (D-25…27).
+  - **Layering:** sheets stack and close top-first, and toasts draw above sheets (D-16, D-28/29).
+  - **Navigation:** details cover the tab bar, back always slides in reverse, and the Android SwipeBack is kept (D-05, D-07, D-22).
+  - **Additions:** pull-to-refresh gets a completion toast (D-17), and Home content is new (D-30…32, HOME-01…04).
+
+  Route: `/gsd-plan-phase 3` (targeted revision, following the "Plan impact" section in 03-CONTEXT.md). 03-UI-SPEC lines 112 and 222 also need the backdrop and dismissal changes.
 
 - [Phase 10] ENV-16 moved from Phase 2 on 2026-09-25: production has **no backups** until then (method TBD, likely AWS, e.g. a daily dump to S3). Supabase Pro is no longer assumed, so a Free-plan production project also **pauses after a week with no activity**, taking the live app offline. That needs its own answer (upgrade, keep-alive, or accept) before real users arrive
 - [Phase 0] EAS provisioning and credentials from Windows are unproven for this project — trigger the first iOS EAS Build on day one so provisioning surprises surface in week one, not week ten
@@ -182,6 +190,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-11T23:00:00.000Z
-Stopped at: Phase 02.1 verified and complete; next /gsd-plan-phase 02.3 (02.1 security verified: 99/99 threats closed)
-Resume file: .planning/phases/02.1-pdf-statement-import/02.1-VERIFICATION.md
+Last session: 2026-10-14T02:13:03.877Z
+Stopped at: Phase 3 context re-gathered (2026-10-13 update)
+Resume file: .planning/phases/03-shell/03-CONTEXT.md

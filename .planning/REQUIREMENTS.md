@@ -175,6 +175,10 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **NAV-04**: Bottom sheets can be dismissed by dragging them down
 - [ ] **NAV-05**: The FAB changes its action to match the current tab, and hides during sheets, bulk select, onboarding and step flows
 - [ ] **NAV-06**: The app is navigable and readable with a screen reader on both platforms
+- [ ] **HOME-01**: Home shows quick actions (Add, Pay bills, Import); Pay bills opens Activity filtered to unpaid items
+- [ ] **HOME-02**: Home shows a This month card: what is left after everything, money in, money out, unpaid, and a paid-versus-pending bar
+- [ ] **HOME-03**: Home shows what is coming up, with a one-tap Mark paid, and a clear empty state when nothing is outstanding
+- [ ] **HOME-04**: Home shows an Accounts summary with balances, each opening its account
 
 ### Decide — Engine
 
@@ -504,6 +508,10 @@ Populated during roadmap creation.
 | NAV-04 | Phase 3 - Shell | Pending |
 | NAV-05 | Phase 3 - Shell | Pending |
 | NAV-06 | Phase 3 - Shell | Pending |
+| HOME-01 | Phase 3 - Shell | Pending |
+| HOME-02 | Phase 3 - Shell | Pending |
+| HOME-03 | Phase 3 - Shell | Pending |
+| HOME-04 | Phase 3 - Shell | Pending |
 | DEC-01 | Phase 4 - Decide Engine | Pending |
 | DEC-02 | Phase 4 - Decide Engine | Pending |
 | DEC-03 | Phase 4 - Decide Engine | Pending |
@@ -608,8 +616,8 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 237 total (100 ticked)
-- Mapped to phases: 237
+- v1 requirements: 241 total (100 ticked)
+- Mapped to phases: 241
 - Unmapped: 0 ✓
 
 ---

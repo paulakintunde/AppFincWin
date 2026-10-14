@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy (completed 2026-10-11; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 2.2: Record polish** (INSERTED) - Activity views and subtotals, sort, recurring-from-history, clone, detail sheet and swipe, entry-sheet extras, paste import, sample data (completed 2026-10-10; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 2.3: Record follow-ups** (INSERTED) - Import reconcile-or-new choice, description auto-categorise rules, signed-out account chooser, compact amount, Add account from the picker, bulk Add to list (completed 2026-10-13; Android verified, iOS pending Apple enrolment)
-- [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB
+- [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content
 - [ ] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
@@ -434,17 +434,18 @@ Plans:
 - [x] 02.3-20-PLAN.md — Rollout: PR, full gate, production schema push [BLOCKING, user go], live checks, device walkthrough, preview APK (W5)
 
 ### Phase 3: Shell
-**Goal**: The app's navigation chrome matches the design system exactly.
+**Goal**: The app's navigation chrome matches the design system exactly, and Home opens on real content.
 **Depends on**: Phase 2
-**Requirements**: NAV-01, NAV-02, NAV-03, NAV-04, NAV-05, NAV-06, DSG-07
+**Requirements**: NAV-01, NAV-02, NAV-03, NAV-04, NAV-05, NAV-06, DSG-07, HOME-01, HOME-02, HOME-03, HOME-04
 **Success Criteria** (what must be TRUE):
   1. A user can move between five tabs with the bespoke SVG glyphs, and the slide direction matches the direction of travel.
   2. A user can go back through up to 8 previous screens across tabs and detail screens; detail screens push in over the current screen and dismiss back to it.
-  3. A user can drag any of the ~14 bottom sheets down to dismiss it.
+  3. A user can drag any bottom sheet (about 35 call sites) down to dismiss it; an accidental dismissal of the entry sheet keeps a draft, and other edited sheets ask before discarding.
   4. The FAB's action changes to match the current tab, and it hides during sheets, bulk select, onboarding and step flows.
   5. A user can navigate and read every screen with a screen reader on both platforms.
-**Plans**: 16 plans in 7 waves
-**Check before executing (2026-10-09):** these plans predate Phase 2.2. `expo-haptics` is already installed with a feature wrapper at `src/ui/haptics.ts` (03-01 must not reinstall it), and `src/ui` now has Dropdown, ToggleRow, DetailSheet, SwipeRow and Keypad on the existing `Sheet`, which the bottom-sheet migration must carry over. See STATE.md Blockers.
+  6. Home opens with quick actions, a This month card, what is coming up and an Accounts summary, built from the user's recorded data.
+**Plans**: 16 plans in 7 waves (to be revised: see the update note)
+**Updated 2026-10-13 (re-discussed):** 03-CONTEXT.md was reopened after Phases 2.2 and 2.3. The app keeps its own Sheet and adds drag-to-dismiss (no `@gorhom` migration). The backdrop is ink at 38% with a fade. Sheets stack and close top-first, toasts draw above sheets, and Home content (HOME-01…04) is added. Plans 03-01, 03-09, 03-13 and 03-16 need revising, 03-02, 03-05, 03-06, 03-12, 03-14 and 03-15 need lighter edits, and Home needs new plans: see the 03-CONTEXT.md "Plan impact" section. Run `/gsd-plan-phase 3` before executing.
 Plans:
 **Wave 1**
 - [ ] 03-01-PLAN.md — Foundations: bottom-sheet/haptics/blur deps, predictive back off, haptics wrapper, shell tokens, lint boundary, Reanimated/worklets doc fix
@@ -618,6 +619,35 @@ Plans:
 **UI hint**: no (store assets and copy audit; no new app screens)
 **Research flag**: Guideline 3.2.1(viii) must be re-read against live text; its wording changed since the brief was written. Separately, correct the brief's mis-citation — the 36% APR / 60-day loan cap is 3.2.2(ix), not 3.2.1(viii), and does not apply here regardless.
 
+## Backlog
+
+Ideas parked outside the active phases. Promote one with `/gsd-review-backlog`. Captured 2026-10-13 from the prototype review during the Phase 3 re-discussion.
+
+### Phase 999.1: Split a transaction across categories (BACKLOG)
+**Goal:** Divide one transaction between several categories, as in the prototype's split sheet (`FincWin United.dc.html` L2149–2151, L2572, L6514). This is separate from the household split (HH-04).
+**Requirements:** none yet.
+**Plans:** none.
+
+### Phase 999.2: Receipt photo on a transaction (BACKLOG)
+**Goal:** Attach a receipt image to a transaction (prototype receipt sheet L2747). The detail sheet currently omits Receipt (`src/features/record/activity/detailRows.ts` L3).
+**Requirements:** none yet.
+**Plans:** none.
+
+### Phase 999.3: Envelope rollover of unspent caps (BACKLOG)
+**Goal:** Unspent category caps roll into next month (prototype L5359).
+**Requirements:** none yet.
+**Plans:** none.
+
+### Phase 999.4: Coach (BACKLOG)
+**Goal:** The prototype's Coach screen and its Home quick action (L2357, L5321, L4945–4950). It appears only as an open decision in Phase 9's research flag. The Home quick action stays hidden until it exists (03-CONTEXT D-30).
+**Requirements:** none yet.
+**Plans:** none.
+
+### Phase 999.5: Custom payment and account types (BACKLOG)
+**Goal:** User-defined payment types and account types (prototype L2932, L5930). Custom household roles are HH-03.
+**Requirements:** none yet.
+**Plans:** none.
+
 ## Progress
 
 **Execution Order:**
@@ -633,7 +663,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 0/16 | Planned; check against 2.2 before executing | - |
+| 3. Shell | 0/16 | Re-discussed 2026-10-13; re-plan before executing | - |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
