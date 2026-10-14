@@ -22,6 +22,44 @@ export interface StandingLine {
   tone: 'plain' | 'warn';
 }
 
+export type CompactLineKey =
+  | 'accounts.inHome'
+  | 'accounts.inHomeWaiting'
+  | 'accounts.compact.overdrawn'
+  | 'accounts.compact.overLimit';
+
+export interface CompactLine {
+  key: CompactLineKey;
+  params: Record<string, string>;
+  tone: 'plain' | 'warn';
+}
+
+/** D-39: the one short line a list row may show under the balance. */
+export function compactBalanceLine(input: {
+  foreign: boolean;
+  homeFigure: string | null;
+  overflow: boolean;
+  standing: Standing | null;
+}): CompactLine | null {
+  if (input.overflow) return null;
+  if (input.foreign) {
+    return input.homeFigure !== null
+      ? { key: 'accounts.inHome', params: { amount: input.homeFigure }, tone: 'plain' }
+      : { key: 'accounts.inHomeWaiting', params: {}, tone: 'plain' };
+  }
+  switch (input.standing?.kind) {
+    case 'overdrawn-within':
+    case 'overdrawn-no-limit':
+      return { key: 'accounts.compact.overdrawn', params: {}, tone: 'plain' };
+    case 'overdrawn-beyond':
+      return { key: 'accounts.compact.overdrawn', params: {}, tone: 'warn' };
+    case 'over-limit':
+      return { key: 'accounts.compact.overLimit', params: {}, tone: 'warn' };
+    default:
+      return null;
+  }
+}
+
 export function standingText(s: Standing | null, fmt: (minor: number) => string): StandingLine | null {
   if (s === null) return null;
   switch (s.kind) {
