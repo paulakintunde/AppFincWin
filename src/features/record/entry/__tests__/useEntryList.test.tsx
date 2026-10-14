@@ -238,3 +238,88 @@ describe('useEntryList', () => {
     expect(set).not.toHaveBeenCalled();
   });
 });
+
+describe('useEntryList form keeping (D-25)', () => {
+  const form = {
+    direction: 'out' as const,
+    amountText: '7',
+    name: '',
+    categoryId: null,
+    accountId: 'a1',
+    currency: 'GBP',
+    localDate: '2026-09-20',
+    status: 'paid' as const,
+    statusTouched: false,
+    paymentType: null,
+    note: '',
+    toAccountId: null,
+    toCurrency: null,
+    amountInText: '',
+    automatic: false,
+    refund: false,
+  };
+
+  it('counts a stored form as one unsaved entry', async () => {
+    await saveEntryDraft('u1', 'h1', [], form);
+    const { result } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(1));
+  });
+
+  it('counts 2 items + form as 3, and Continue restores the form once', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1'), item('i2')], form);
+    const onRestoreForm = jest.fn();
+    const { result } = await mount({ onRestoreForm });
+    await waitFor(() => expect(result.current.resumeCount).toBe(3));
+    await act(() => {
+      result.current.continueDraft();
+    });
+    expect(onRestoreForm).toHaveBeenCalledTimes(1);
+    expect(onRestoreForm).toHaveBeenCalledWith(form);
+    expect(result.current.items).toHaveLength(2);
+    await waitFor(async () => {
+      const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+      expect(raw.form).toBeNull();
+      expect(raw.items).toHaveLength(2);
+    });
+  });
+
+  it('keepForm writes items and form at once', async () => {
+    const { result } = await mount();
+    await act(async () => {});
+    await act(() => {
+      result.current.add(item('i1'));
+      result.current.keepForm(form);
+    });
+    await waitFor(async () => {
+      const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+      expect(raw.form.amountText).toBe('7');
+      expect(raw.items).toHaveLength(1);
+    });
+  });
+
+  it('keepForm does nothing while a resume answer is pending, and unmount does not overwrite it', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1')]);
+    const { result, unmount } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(1));
+    await act(() => {
+      result.current.keepForm(form);
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 50));
+    expect(JSON.parse((await AsyncStorage.getItem(KEY)) as string).form).toBeNull();
+  });
+
+  it('the unmount flush after keepForm keeps the saved form', async () => {
+    const { result, unmount } = await mount();
+    await act(async () => {});
+    await act(() => {
+      result.current.add(item('i1'));
+    });
+    await act(() => {
+      result.current.keepForm(form);
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 400));
+    expect(JSON.parse((await AsyncStorage.getItem(KEY)) as string).form.amountText).toBe('7');
+  });
+});
