@@ -2,7 +2,8 @@
 // uncontrolled TextInput) until Unlock hands it to the hook; it is then cleared. It is never
 // logged or stored here.
 import React, { useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { TextInput } from '@/ui/TextInput';
 import { useT } from '@/i18n';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';

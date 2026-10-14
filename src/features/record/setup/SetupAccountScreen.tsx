@@ -5,7 +5,8 @@
 // deletion) without first creating a money account. The first-account gate (on Activity) is
 // unchanged: Activity still sends an account-less user back here.
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { router } from 'expo-router';
 import { AccountSheet } from '@/features/record/accounts/AccountSheet';
 import { useT } from '@/i18n';

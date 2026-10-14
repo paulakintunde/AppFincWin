@@ -4,7 +4,8 @@
  * so "minutes ago" advances without the user touching anything.
  */
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';

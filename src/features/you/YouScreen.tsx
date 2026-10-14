@@ -5,7 +5,8 @@
 // row label itself is plain ink (00-UI-SPEC.md Color).
 import { useCallback } from 'react';
 import { router, type Href } from 'expo-router';
-import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Screen } from '@/ui/Screen';

@@ -3,7 +3,9 @@
 // undo step and shows the Undo toast (REC-11). Removal goes through RemoveCategoryPrompt
 // (merge or archive, never delete, D-36).
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
+import { TextInput } from '@/ui/TextInput';
 import { CATEGORY_COLOR_KEYS, type CategoryColorKey } from '@/engine/categorize';
 import type { CategoryRow } from '@/db/rows';
 import { useAddCategory, useEditCategory } from '@/data/mutations/categories';

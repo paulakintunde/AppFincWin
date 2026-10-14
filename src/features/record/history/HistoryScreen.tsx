@@ -2,7 +2,8 @@
 // reverses that step and every newer one; refused steps are greyed with the reason. No level
 // gating yet (D-32: the levels phase adds it).
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useRollbackUndo } from '@/data/mutations/undo';
 import { useHouseholdMemberNames } from '@/data/queries/activity';

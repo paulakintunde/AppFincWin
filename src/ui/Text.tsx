@@ -18,5 +18,7 @@ export const Text = forwardRef<RNText, TextProps>(function Text(
   }
   const flat = (StyleSheet.flatten(style) ?? {}) as TextStyle;
   const scaled = scaleTextStyle(flat, effectiveScale(os, scale));
-  return <RNText ref={ref} {...rest} allowFontScaling={false} style={[style, scaled]} />;
+  // At scale 1 the caller style passes through untouched (same reference).
+  const merged = Object.keys(scaled).length > 0 ? [style, scaled] : style;
+  return <RNText ref={ref} {...rest} allowFontScaling={false} style={merged} />;
 });

@@ -5,7 +5,8 @@
 // item 5); with no stored rate for the pair it reads "Waiting for a rate", never a guess. A negative balance figure is danger (2026-10-07 amendment); its standing sentence
 // stays the D-49 copy in warn1 / muted.
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { AccountRow } from '@/db/rows';
 import type { AccountBalanceView } from '@/data/queries/activity';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';

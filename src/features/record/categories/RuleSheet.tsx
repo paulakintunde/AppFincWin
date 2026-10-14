@@ -3,7 +3,9 @@
 // under the fields after the first Save attempt. Every write records its own undo step and
 // shows the Undo toast; removal is immediate with a destructive toast (no confirm).
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
+import { TextInput } from '@/ui/TextInput';
 import { RULE_KEYWORD_MAX, normaliseRuleKeyword } from '@/engine/categorize';
 import type { CategoryRuleRow, RuleScope } from '@/db/categoryRules';
 import { useAddRule, useEditRule, useRemoveRule } from '@/data/mutations/categoryRules';

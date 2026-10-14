@@ -2,7 +2,8 @@
 // choices are the same size and position, neither is pre-selected, and there is no
 // close/skip control other than the two choices themselves.
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { Redirect } from 'expo-router';
 import { APP_HOME_HREF } from '@/features/auth/appHome';
 import { useT } from '@/i18n';

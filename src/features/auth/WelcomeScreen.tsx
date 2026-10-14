@@ -2,7 +2,8 @@
 // There is no credential entry field of any kind on this screen (D-10) -- Apple and Google
 // are the two launch sign-in methods.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, findNodeHandle, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, findNodeHandle, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';

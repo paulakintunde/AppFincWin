@@ -12,3 +12,6 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextIn
 ) {
   return <RNTextInput ref={ref} maxFontSizeMultiplier={maxFontSizeMultiplier} {...rest} />;
 });
+
+// Instance type, so `useRef<TextInput>(null)` keeps working like the react-native class did.
+export type TextInput = RNTextInput;

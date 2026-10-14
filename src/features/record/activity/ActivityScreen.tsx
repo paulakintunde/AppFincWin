@@ -4,7 +4,8 @@
 // Shell's FAB replaces the Add button in Phase 3. Search (this month or every month),
 // filters and bulk select layer on top (ACT-03, ACT-04, ACT-05); the list keeps visual priority.
 import React, { useCallback, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { FlashList } from '@shopify/flash-list';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { useCategoryLookup } from '@/data/queries/categories';

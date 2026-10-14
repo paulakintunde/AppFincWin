@@ -2,7 +2,8 @@
 // chips that shows the typed figure or the "Amount" placeholder. The in-app pad opens only
 // when it is tapped; the accent border marks the field the pad is typing into.
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';

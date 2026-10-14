@@ -1,6 +1,6 @@
 // DSG-07 / D-19: body text and labels follow the OS setting to 200% (WCAG 1.4.4); large display
 // figures and tab labels cap at about 1.3x. Applied manually from the OS font scale rather than via
-// maxFontSizeMultiplier, which is reported ignored on Fabric (facebook/react-native#47499, #35658;
+// maxFontSizeMultiplier, which is reported ignored on Fabric (facebook/react-native issues 47499 and 35658;
 // 03-RESEARCH Pitfall 2).
 import type { TextStyle } from 'react-native';
 

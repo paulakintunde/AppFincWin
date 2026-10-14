@@ -5,7 +5,9 @@
 import * as Crypto from 'expo-crypto';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { AccessibilityInfo, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AccessibilityInfo, Keyboard, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
+import { TextInput } from '@/ui/TextInput';
 import { currencyExponent, money } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import type { MinorUnits } from '@/engine/money';

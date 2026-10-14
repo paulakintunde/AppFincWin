@@ -2,7 +2,9 @@
 // a home-currency amount range, plus Unpaid only (pending lines). Amounts go through the strict amount parser (never a float
 // conversion); an invalid figure shows the parser's own message and is not applied.
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
+import { TextInput } from '@/ui/TextInput';
 import type { AccountRow, CategoryRow } from '@/db/rows';
 import { EMPTY_FILTER, type ActivityFilter } from '@/engine/activity/filters';
 import { categoryName } from '@/features/record/categoryName';

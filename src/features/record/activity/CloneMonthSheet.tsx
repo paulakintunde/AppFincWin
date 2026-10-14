@@ -2,7 +2,8 @@
 // month as pending lines. Candidates come from the engine; every one starts ticked and the
 // ticked ones are cloned as a single undo step.
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useMonthView } from '@/data/queries/activity';
 import { useCloneMonth } from '@/data/mutations/cloneMonth';
 import { cloneCandidates, type CloneSourceRow } from '@/engine/recurring';

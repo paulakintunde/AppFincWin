@@ -1,7 +1,8 @@
 // ACT-16, CONTEXT D-23: Monday or Sunday, applied at once with no confirm. The value comes
 // from the record context (stored setting, else the device region default, else Monday).
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useUpdateRecordPrefs } from '@/data/mutations/recordPrefs';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
