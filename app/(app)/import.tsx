@@ -1,4 +1,5 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { finishImport, parseImportReturn } from '@/features/record/import/importReturn';
 import { ImportScreen } from '@/features/record/import/ImportScreen';
 import type { ImportEntry } from '@/features/record/import/useStatementImport';
 
@@ -10,12 +11,12 @@ function parseEntry(raw: string | undefined): ImportEntry {
 }
 
 export default function ImportRoute() {
-  const params = useLocalSearchParams<{ entry?: string; accountId?: string }>();
+  const params = useLocalSearchParams<{ entry?: string; accountId?: string; from?: string }>();
   return (
     <ImportScreen
       entry={parseEntry(params.entry)}
       accountId={params.accountId ?? null}
-      onDone={() => router.replace('/activity')}
+      onDone={() => finishImport(parseImportReturn(params.from))}
     />
   );
 }

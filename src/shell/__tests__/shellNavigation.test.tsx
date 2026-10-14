@@ -2,12 +2,13 @@
 // visibility, D-05/D-06 back order, D-22 details covering the tabs, the D-07 SwipeBack exclusion
 // and the D-38 first-account gate. Leaves are stubs; only the shell wiring is under test.
 import React from 'react';
-import { BackHandler, Text } from 'react-native';
+import { BackHandler, Pressable, Text } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { act, fireEvent } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { finishImport, parseImportReturn } from '@/features/record/import/importReturn';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
 import { resetShellStores } from './testUtils';
@@ -67,6 +68,25 @@ function leaf(label: string) {
   };
 }
 
+function ImportFinishLeaf() {
+  const params = useLocalSearchParams<{ from?: string }>();
+  return (
+    <Pressable accessibilityLabel="finish" onPress={() => finishImport(parseImportReturn(params.from))}>
+      <Text>import-root</Text>
+    </Pressable>
+  );
+}
+
+type RouteNode = { name: string; state?: { routes: RouteNode[] } };
+function countRoutes(state: { routes: RouteNode[] } | undefined, name: string): number {
+  let n = 0;
+  for (const r of state?.routes ?? []) {
+    if (r.name === name) n++;
+    n += countRoutes(r.state, name);
+  }
+  return n;
+}
+
 function Wrapper({ children }: { children: React.ReactNode }) {
   const [client] = React.useState(() => new QueryClient());
   return (
@@ -93,7 +113,7 @@ async function mountRouter(initialUrl: string) {
       '(app)/categories': leaf('categories-root'),
       '(app)/category-rules': leaf('category-rules-root'),
       '(app)/history': leaf('history-root'),
-      '(app)/import': leaf('import-root'),
+      '(app)/import': ImportFinishLeaf,
       '(app)/setup/history': leaf('setup-history'),
       '(app)/you': leaf('you-root'),
       '(app)/setup/account': leaf('setup-account'),
@@ -200,5 +220,34 @@ describe('shell navigation on the real layouts', () => {
     const { handle: r } = await mountRouter('/home');
     expect(await screen.findByText('setup-account')).toBeTruthy();
     expect(r.getPathname()).toBe('/setup/account');
+  });
+
+  describe('import return (G3)', () => {
+    const finish = async () => fireEvent.press(await screen.findByLabelText('finish'));
+
+    it('import from Home finishes on Home with one (tabs)', async () => {
+      const { handle: r } = await mountRouter('/home');
+      await screen.findByText('home-root');
+      await act(async () => router.push({ pathname: '/import', params: { entry: 'you', from: 'home' } } as never));
+      await finish();
+      expect(r.getPathname()).toBe('/home');
+      expect(countRoutes(r.getRouterState() as never, '(tabs)')).toBe(1);
+    });
+
+    it('import from Activity finishes on Activity with one (tabs)', async () => {
+      const { handle: r } = await mountRouter('/activity');
+      await screen.findByText('activity-root');
+      await act(async () => router.push({ pathname: '/import', params: { entry: 'you' } } as never));
+      await finish();
+      expect(r.getPathname()).toBe('/activity');
+      expect(countRoutes(r.getRouterState() as never, '(tabs)')).toBe(1);
+    });
+
+    it('import opened without (tabs) underneath replaces to Activity with one (tabs)', async () => {
+      const { handle: r } = await mountRouter('/import');
+      await finish();
+      expect(r.getPathname()).toBe('/activity');
+      expect(countRoutes(r.getRouterState() as never, '(tabs)')).toBe(1);
+    });
   });
 });
