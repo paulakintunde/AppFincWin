@@ -444,7 +444,7 @@ Plans:
   4. The FAB's action changes to match the current tab, and it hides during sheets, bulk select, onboarding and step flows.
   5. A user can navigate and read every screen with a screen reader on both platforms.
   6. Home opens with quick actions, a This month card, what is coming up and an Accounts summary, built from the user's recorded data.
-**Plans**: 24 plans in 8 waves (re-planned 2026-10-13)
+**Plans**: 38 plans: 24 in 8 waves (re-planned 2026-10-13) plus 14 gap-closure plans in 4 waves (2026-10-14)
 **Updated 2026-10-13 (re-discussed):** 03-CONTEXT.md was reopened after Phases 2.2 and 2.3. The app keeps its own Sheet and adds drag-to-dismiss (no `@gorhom` migration). The backdrop is ink at 38% with a fade. Sheets stack and close top-first, toasts draw above sheets, and Home content (HOME-01…04) is added. Re-planned the same day: 03-01, 03-09, 03-13 and 03-16 rewritten or revised, the others edited, and 03-17…03-24 added (engine month figures and Unpaid filter, entry draft v2, toast layer, refresh toast, shared Home/Activity state, Home cards, entry-sheet draft and edit guard).
 Plans:
 **Wave 1**
@@ -486,6 +486,30 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 - [x] 03-14-PLAN.md — Prototype-deviation record (D-01, D-12, D-23) + Android device acceptance A1-A16 (checkpoint)
+
+**Gap closure (2026-10-14, from 03-FINDINGS.md: G1-G9, H1-H9, M1-M9, L1-L13)**
+
+**Gap wave 1**
+- [ ] 03-25-PLAN.md — Shared contracts: gap copy ("Expected", Unpaid banner, Home states, compact account line), unused keys removed, PRESSED_OPACITY / ACCENT_TINT_OPACITY, FAB_CLEARANCE, monthRefreshKeys, pushOnce, SyncProblemLine inset
+- [ ] 03-26-PLAN.md — Engine (TDD): unconverted amounts excluded from range filters (H9), refund-safe bar share (L6), Repeats in the draft form, toCurrency cap, skipped -> paid
+- [ ] 03-27-PLAN.md — Sheet onDiscard + single-fire drag dismissal + dirty fling asks + prompt reset; Repeats Discard restores (G2, H5, H6, L9) [integration]
+- [ ] 03-33-PLAN.md — State hygiene: tabSlide wipe and stuck back-step flags, shared-month rollover, owner-only FAB cleanup (L1, L4, L8)
+- [ ] 03-34-PLAN.md — Primitives: toast rise-in and geometry (M3), Text without fontSize (M9 confirm-first), MonthChips tabs and labels (L2, L3)
+- [ ] 03-36-PLAN.md — Android edge swipe-back: 40dp, follows the finger, reduced motion (G7 / D-40)
+
+**Gap wave 2** *(blocked on gap wave 1)*
+- [ ] 03-28-PLAN.md — Entry sheet: lossless draft restore, validated currencies, no guess on an untouched edit, early-dismiss merge (H1, H2, H4, L5)
+- [ ] 03-29-PLAN.md — Home This month / Coming up: true headline with expected bills (G1), error and offline states (G4), month-aware copy (M6), shared refresh keys (M8)
+- [ ] 03-30-PLAN.md — Account rows short on Home and Accounts list (G6 / D-39), accent-following tints (M4), card polish (M1, M2, M7)
+- [ ] 03-32-PLAN.md — Tab-root chrome: sync line in the large header (G5), offline refresh no toast (H3), FAB clearance (H8), avatar (M5)
+- [ ] 03-35-PLAN.md — Import returns to the one (tabs), to Home when started there (G3); push guards (H7) [integration]
+
+**Gap wave 3** *(blocked on gap wave 2)*
+- [ ] 03-31-PLAN.md — Activity: Unpaid banner (G8 / D-41), tappable Expected rows (G9 / D-42), sync line at rest, FAB clearance
+- [ ] 03-37-PLAN.md — Sync line on every pushed screen (G5) [integration]
+
+**Gap wave 4** *(blocked on gap wave 3)*
+- [ ] 03-38-PLAN.md — Pixel 9 re-check: A7, A9, A15, Accounts row, import from Home, H7/H8/M3 quick checks (checkpoint)
 **UI hint**: yes — heaviest design-fidelity phase in the roadmap: bespoke SVG tab glyphs, sheet infrastructure, seven named animations.
 
 ### Phase 4: Decide Engine
