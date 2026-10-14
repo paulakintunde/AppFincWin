@@ -43,6 +43,8 @@ export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing }: Ta
       <View style={{ flex: 1, minWidth: 0 }}>
         {eyebrow ? (
           <Text
+            importantForAccessibility="no"
+            accessibilityElementsHidden
             style={{
               fontFamily: fonts.body[600],
               fontSize: fontSize.eyebrow,
@@ -56,6 +58,7 @@ export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing }: Ta
         <Text
           ref={titleRef}
           accessibilityRole="header"
+          accessibilityLabel={eyebrow ? `${title}, ${eyebrow}` : undefined}
           style={{
             ...textRole(pairing, 'heading'),
             color: colors.ink,
