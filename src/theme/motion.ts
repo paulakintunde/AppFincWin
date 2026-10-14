@@ -3,13 +3,21 @@ import { AccessibilityInfo } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 
 /** BUILD-PROMPT.md §2 standard easing: `cubic-bezier(.2,.8,.3,1)`. */
-export const EASING = Easing.bezier(0.2, 0.8, 0.3, 1);
+export const EASING_CURVE = [0.2, 0.8, 0.3, 1] as const;
+export const EASING = Easing.bezier(...EASING_CURVE);
 
-/** BUILD-PROMPT.md §2 durations, in ms: `.55s` progress bars, `.22s` entrances. */
+/** BUILD-PROMPT.md §2 durations, in ms: `.55s` progress bars, `.22s` entrances,
+ * `.26s` tab slide (fw-slideL/R) and sheet rise (fw-up), `.24s` detail push (fw-push) and drag
+ * slide-out / snap-back, `.18s` backdrop fade (D-24, 03-UI-SPEC Animations). */
 export const DURATION = {
   entrance: 220,
   progress: 550,
   fade: 200,
+  tabSlide: 260,
+  push: 240,
+  sheetUp: 260,
+  backdrop: 180,
+  sheetDrag: 240,
 } as const;
 
 /**

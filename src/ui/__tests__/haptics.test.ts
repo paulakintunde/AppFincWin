@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 
-import { hapticLight, hapticSelection, hapticSuccess, hapticWarning } from '../haptics';
+import { hapticLight, hapticMedium, hapticSelection, hapticSuccess, hapticWarning } from '../haptics';
 
 const impact = Haptics.impactAsync as jest.Mock;
 const selection = Haptics.selectionAsync as jest.Mock;
@@ -15,6 +15,18 @@ describe('haptics wrapper', () => {
     hapticLight();
     expect(impact).toHaveBeenCalledTimes(1);
     expect(impact).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
+  });
+
+  it('hapticMedium fires a medium impact once', () => {
+    hapticMedium();
+    expect(impact).toHaveBeenCalledTimes(1);
+    expect(impact).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Medium);
+  });
+
+  it('hapticMedium swallows a rejected impact', async () => {
+    impact.mockReturnValueOnce(Promise.reject(new Error('x')));
+    expect(() => hapticMedium()).not.toThrow();
+    await Promise.resolve();
   });
 
   it('hapticSelection fires a selection once', () => {
