@@ -64,6 +64,25 @@ async function swipe(translationX: number, translationY = 0, velocityX = 900) {
 }
 
 describe('SwipeBack', () => {
+  it('does not go back when the system cancels the gesture after activation (WR-05)', async () => {
+    await render(
+      <Wrap enabled>
+        <Text>{'x'}</Text>
+      </Wrap>
+    );
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId('swipe-back'), [
+        { state: State.BEGAN, absoluteX: 5, translationX: 0 },
+        { state: State.ACTIVE, absoluteX: 65, translationX: 60 },
+        { state: State.CANCELLED, absoluteX: 125, translationX: 120, translationY: 0, velocityX: 900 },
+      ]);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(DURATION.push * 2);
+    });
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+
   it('goes back on a qualifying edge swipe', async () => {
     await render(
       <Wrap enabled>

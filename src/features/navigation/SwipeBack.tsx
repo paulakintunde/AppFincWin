@@ -49,9 +49,11 @@ export function SwipeBack({ enabled, children }: SwipeBackProps) {
         })
         // Gesture callbacks run after render; the timer ref is only touched from them and the unmount cleanup.
         // eslint-disable-next-line react-hooks/refs
-        .onEnd((e) => {
+        .onEnd((e, success) => {
           const startX = e.absoluteX - e.translationX;
+          // WR-05: a gesture the system cancelled after activation is a snap-back, never a back.
           const go =
+            success &&
             shouldSwipeBack({
               startX,
               translationX: e.translationX,
@@ -72,6 +74,12 @@ export function SwipeBack({ enabled, children }: SwipeBackProps) {
             timer.current = null;
             router.back();
           }, DURATION.push);
+        })
+        // eslint-disable-next-line react-hooks/refs
+        .onFinalize(() => {
+          // WR-05: whatever ended the gesture, do not leave the layer displaced unless the
+          // completion slide (timer pending) is running.
+          if (!timer.current) translateX.set(0);
         }),
     [translateX, reduced, width]
   );
