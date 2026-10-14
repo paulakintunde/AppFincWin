@@ -30,6 +30,8 @@ export interface ToastState {
    */
   onUndo: (() => void) | null;
   refusal: UndoConflict | null;
+  /** ms epoch when this toast became visible; hosts schedule the REMAINING time so moving between layers never restarts it (03 D-16, research Pitfall 9). */
+  shownAt: number;
 }
 
 export const TOAST_MS_ORDINARY = 3200; // D-31 (prototype say())
@@ -82,6 +84,7 @@ export function showToast(t: {
     stepId: t.stepId ?? null,
     onUndo: t.onUndo ?? null,
     refusal: t.refusal ?? null,
+    shownAt: Date.now(),
   };
   notify();
 }

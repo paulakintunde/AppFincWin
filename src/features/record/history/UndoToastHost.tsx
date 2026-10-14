@@ -1,4 +1,8 @@
-// D-31, REC-11, REC-12: renders the single undo toast. Mounted once in the signed-in layout.
+// D-31, REC-11, REC-12: renders the single undo toast.
+// D-16: it lives in the TOP-most layer. placement 'app' (mounted in the signed-in layout) renders only
+// while no sheet is open; placement 'sheet' (SheetToastOverlay, injected into the top sheet's Modal via
+// SheetOverlayProvider) always renders. Both schedule the REMAINING time from `shownAt`, so moving
+// between layers never restarts the timer (research Pitfall 9).
 // Auto-dismiss timing comes from `toastDurationMs`, which returns null while a screen reader
 // is on (C-CR-02): the toast then stays until the user dismisses it.
 // Item 7 (C-WR-05): Undo is offered only when the toast carries a real step id.
@@ -11,6 +15,8 @@ import { useHouseholdMemberNames } from '@/data/queries/activity';
 import { UNDO_LABEL_KEYS, type UndoLabelKey, type UndoLabelParams } from '@/engine/undo';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { space, useScreenInsets } from '@/theme/layout';
+import { useSheetCount } from '@/state/sheetStack';
+import { useToastSlot } from '@/shell/fab/useShellPositions';
 import { ToastView } from '@/ui/ToastView';
 import { conflictText, stepLabel } from './undoCopy';
 
@@ -42,13 +48,17 @@ function undoableLabel(toast: ToastState): { labelKey: UndoLabelKey; labelParams
   };
 }
 
-export function UndoToastHost() {
+export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'sheet' }) {
   const t = useT();
   const toast = useToast();
   const { undo } = useUndo();
   const ctx = useRecordContext();
   const memberNames = useHouseholdMemberNames(ctx.householdId);
   const insets = useScreenInsets();
+  const sheetCount = useSheetCount();
+  const active = placement === 'sheet' || sheetCount === 0;
+  const slot = useToastSlot();
+  const { reportHeight } = slot;
   const [screenReader, setScreenReader] = useState(false);
 
   useEffect(() => {
@@ -65,15 +75,29 @@ export function UndoToastHost() {
 
   const toastId = toast?.id ?? null;
   const kind = toast?.kind ?? null;
+  const shownAt = toast?.shownAt ?? 0;
   useEffect(() => {
-    if (toastId === null || kind === null) return undefined;
+    if (!active || toastId === null || kind === null) return undefined;
     const ms = toastDurationMs(kind, screenReader);
     if (ms === null) return undefined;
-    const timer = setTimeout(() => dismissToast(toastId), ms);
+    const timer = setTimeout(() => dismissToast(toastId), Math.max(0, ms - (Date.now() - shownAt)));
     return () => clearTimeout(timer);
-  }, [toastId, kind, screenReader]);
+  }, [toastId, kind, screenReader, active, shownAt]);
 
-  if (!toast) return null;
+  // The app-layer toast feeds the FAB lift; clear it when the toast goes or this host stops being the visible one.
+  const reporting = placement === 'app' && active && toastId !== null;
+  useEffect(() => {
+    if (placement !== 'app') return undefined;
+    if (reporting) return undefined;
+    reportHeight(null);
+    return undefined;
+  }, [placement, reporting, reportHeight]);
+  useEffect(() => {
+    if (placement !== 'app') return undefined;
+    return () => reportHeight(null);
+  }, [placement, reportHeight]);
+
+  if (!active || !toast) return null;
 
   const l = t as unknown as (key: string, params?: Record<string, string | number>) => string;
   const parts: string[] = [];
@@ -96,6 +120,7 @@ export function UndoToastHost() {
       parts.push(l(key, params));
     }
   }
+  const bottom = placement === 'sheet' ? insets.bottom + space.sheetPadBottom : slot.bottom;
   const message = parts.join(' ');
   if (message === '') return null;
 
@@ -127,7 +152,11 @@ export function UndoToastHost() {
   };
 
   return (
-    <View pointerEvents="box-none" style={[styles.host, { bottom: insets.bottom + space.gapMd }]}>
+    <View
+      pointerEvents="box-none"
+      style={[styles.host, { bottom }]}
+      onLayout={placement === 'app' ? (e) => reportHeight(e.nativeEvent.layout.height) : undefined}
+    >
       <ToastView
         message={message}
         actionLabel={canUndo ? t('undo.action') : undefined}
@@ -143,7 +172,12 @@ export function UndoToastHost() {
 const styles = StyleSheet.create({
   host: {
     position: 'absolute',
-    left: space.screenH,
-    right: space.screenH,
+    left: space.groupGap,
+    right: space.groupGap,
   },
 });
+
+/** D-16: handed to SheetOverlayProvider so the top sheet's native window hosts the toast. */
+export function SheetToastOverlay() {
+  return <UndoToastHost placement="sheet" />;
+}

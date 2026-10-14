@@ -58,7 +58,8 @@ import { textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { Pill } from './Pill';
 import { DURATION, EASING, useMotion } from '@/theme/motion';
-import { pushSheet, removeSheet } from '@/state/sheetStack';
+import { pushSheet, removeSheet, useIsTopSheet } from '@/state/sheetStack';
+import { SheetOverlaySlot, useSheetOverlay } from './sheetOverlay';
 import { hapticSelection } from './haptics';
 import {
   BACKDROP_OPACITY,
@@ -119,6 +120,8 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   const keyboardHeight = useAndroidKeyboardHeight();
   const motion = useMotion();
   const id = useId();
+  const Overlay = useSheetOverlay();
+  const isTop = useIsTopSheet(id);
 
   const onDismissRef = useRef(onDismiss);
   const dismissibleRef = useRef(dismissible);
@@ -347,6 +350,11 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
           </Animated.View>
         </GestureDetector>
       </KeyboardAvoidingView>
+      {Overlay !== null && isTop ? (
+        <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+          <SheetOverlaySlot />
+        </View>
+      ) : null}
       </GestureHandlerRootView>
     </Modal>
   );

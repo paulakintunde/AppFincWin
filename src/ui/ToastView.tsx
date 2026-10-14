@@ -1,6 +1,6 @@
 /**
  * UI-SPEC Design System: the presentational Undo toast (D-31) -- ink background, surface
- * text, radii.pill container, an optional action (e.g. "Undo") and a dismiss control.
+ * text, radii.toast container, an optional action (e.g. "Undo") and a dismiss control.
  * T-02-19-02: shows only the user's own payee/category name back to themselves; no logging.
  * Purely presentational -- auto-dismiss timing (3.2s ordinary / ~6s destructive, none while a
  * screen reader runs: D-31, `toastDurationMs` in src/state/undoToast.ts) is the caller's
@@ -41,7 +41,7 @@ export function ToastView({ message, actionLabel, onAction, onDismiss, dismissLa
   }, [message]);
 
   return (
-    <View style={[styles.container, { backgroundColor: background, borderRadius: radii.pill }]}>
+    <View style={[styles.container, { backgroundColor: background, borderRadius: radii.toast }]}>
       <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.message, messageStyle]}>
         {message}
       </Text>
