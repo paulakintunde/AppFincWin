@@ -11,7 +11,11 @@ export interface ActivityFilter {
   direction: 'all' | 'in' | 'out' | 'transfers';
   amountMin: number | null; // home-currency minor units, compared on magnitude
   amountMax: number | null;
-  /** Keep only rows still to be paid (status 'pending'): the prototype's "Unpaid only". */
+  /**
+   * Keep only bills still to pay: pending, non-transfer, non-refund outflows
+   * (03-CONTEXT D-35, D-36). Pending income is excluded so Activity's Unpaid
+   * list matches Home's UNPAID figure.
+   */
   unpaidOnly: boolean;
 }
 
@@ -91,13 +95,53 @@ function matchesAmountRange(row: FilterRow, min: number | null, max: number | nu
   return true;
 }
 
+export function isUnpaidBill(
+  row: Pick<FilterRow, 'status' | 'transfer_id' | 'is_refund' | 'original_amount'>
+): boolean {
+  return (
+    row.status === 'pending' &&
+    row.transfer_id === null &&
+    row.is_refund !== true &&
+    row.original_amount < 0
+  );
+}
+
 export function filterRows<T extends FilterRow>(rows: readonly T[], f: ActivityFilter): T[] {
   return rows.filter((row) => {
     if (f.categoryIds !== null && !f.categoryIds.includes(row.category_id)) return false;
     if (f.accountIds !== null && !f.accountIds.includes(row.account_id)) return false;
-    if (f.unpaidOnly && row.status !== 'pending') return false;
+    if (f.unpaidOnly && !isUnpaidBill(row)) return false;
     if (!matchesDirection(row, f.direction)) return false;
     if (!matchesAmountRange(row, f.amountMin, f.amountMax)) return false;
     return true;
   });
+}
+
+export interface FilterProjection {
+  categoryId: string | null;
+  accountId: string;
+  amount: number;
+  amountHome: number | null;
+}
+
+/** D-34/D-35: projected recurring bills join the Unpaid list (they count in Home's UNPAID); other filters keep hiding projections. */
+export function filterProjections<P extends FilterProjection>(
+  projections: readonly P[],
+  f: ActivityFilter
+): P[] {
+  if (!f.unpaidOnly) return [];
+  if (f.direction === 'in' || f.direction === 'transfers') return [];
+  return projections.filter((p) => {
+    if (p.amount >= 0) return false;
+    if (f.categoryIds !== null && !f.categoryIds.includes(p.categoryId)) return false;
+    if (f.accountIds !== null && !f.accountIds.includes(p.accountId)) return false;
+    const magnitude = Math.abs(p.amountHome ?? p.amount);
+    if (f.amountMin !== null && magnitude < f.amountMin) return false;
+    if (f.amountMax !== null && magnitude > f.amountMax) return false;
+    return true;
+  });
+}
+
+export function isOnlyUnpaid(f: ActivityFilter): boolean {
+  return f.unpaidOnly && !isFilterActive({ ...f, unpaidOnly: false });
 }

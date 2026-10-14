@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { directionOf, isOverdue, markPaidDate, defaultStatusFor, monthsForSwitcher, nextMonth, addableMonth, monthsAhead, ADD_MONTH_LIMIT } from '../status';
 import { monthTotals, type TotalsInput } from '../totals';
-import { flowOf, filterRows, matchesSearch, normaliseForSearch, isFilterActive, EMPTY_FILTER, type ActivityFilter, type FilterRow } from '../filters';
+import { flowOf, filterRows, matchesSearch, normaliseForSearch, isFilterActive, isUnpaidBill, filterProjections, isOnlyUnpaid, EMPTY_FILTER, type ActivityFilter, type FilterRow } from '../filters';
 import { accountBalance } from '../balance';
 
 describe('directionOf', () => {
@@ -254,15 +254,17 @@ describe('filters', () => {
       expect(filterRows(rows, { ...EMPTY_FILTER, amountMin: null, amountMax: 60 })).toEqual([rows[1]]);
     });
 
-    it('unpaidOnly keeps only pending rows and composes with the other filters', () => {
+    it('unpaidOnly keeps bills out only and composes with the other filters (D-35, D-36)', () => {
       const mixed: FilterRow[] = [
         row({ account_id: 'a', original_amount: -500, status: 'pending' }),
         row({ account_id: 'a', original_amount: -700, status: 'paid' }),
         row({ account_id: 'b', original_amount: -900, status: 'pending' }),
         row({ account_id: 'a', original_amount: 400, status: 'pending' }),
         row({ account_id: 'a', original_amount: -300, status: 'skipped' }),
+        row({ account_id: 'a', original_amount: -200, status: 'pending', transfer_id: 't1' }),
+        row({ account_id: 'a', original_amount: 100, status: 'pending', is_refund: true }),
       ];
-      expect(filterRows(mixed, { ...EMPTY_FILTER, unpaidOnly: true })).toEqual([mixed[0], mixed[2], mixed[3]]);
+      expect(filterRows(mixed, { ...EMPTY_FILTER, unpaidOnly: true })).toEqual([mixed[0], mixed[2]]);
       expect(filterRows(mixed, { ...EMPTY_FILTER, unpaidOnly: true, accountIds: ['a'], direction: 'out' })).toEqual([mixed[0]]);
       expect(filterRows(mixed, { ...EMPTY_FILTER, unpaidOnly: false })).toEqual(mixed);
     });
@@ -462,5 +464,54 @@ describe('horizon-aware months', () => {
     expect(monthsAhead('2026-10', '2026-08')).toBe(-2);
     expect(() => monthsAhead('x', '2026-08')).toThrow(RangeError);
     expect(() => monthsAhead('2026-08', 'x')).toThrow(RangeError);
+  });
+});
+
+describe('isUnpaidBill', () => {
+  const base = { status: 'pending' as const, transfer_id: null, is_refund: false, original_amount: -100 };
+  it('accepts a pending non-transfer non-refund outflow', () => {
+    expect(isUnpaidBill(base)).toBe(true);
+  });
+  it('rejects paid, transfer, refund and income', () => {
+    expect(isUnpaidBill({ ...base, status: 'paid' })).toBe(false);
+    expect(isUnpaidBill({ ...base, transfer_id: 't' })).toBe(false);
+    expect(isUnpaidBill({ ...base, is_refund: true })).toBe(false);
+    expect(isUnpaidBill({ ...base, original_amount: 100 })).toBe(false);
+  });
+});
+
+describe('filterProjections', () => {
+  const p = (over: Partial<{ categoryId: string | null; accountId: string; amount: number; amountHome: number | null }> = {}) => ({
+    categoryId: 'c1',
+    accountId: 'a',
+    amount: -1000,
+    amountHome: -1000,
+    ...over,
+  });
+  const unpaid = { ...EMPTY_FILTER, unpaidOnly: true };
+  it('returns nothing unless unpaidOnly', () => {
+    expect(filterProjections([p()], EMPTY_FILTER)).toEqual([]);
+  });
+  it('keeps outflow projections and drops income ones', () => {
+    const list = [p(), p({ amount: 500, amountHome: 500 })];
+    expect(filterProjections(list, unpaid)).toEqual([list[0]]);
+  });
+  it('applies category, account and amount range filters', () => {
+    const list = [p(), p({ categoryId: 'c2' }), p({ accountId: 'b' }), p({ amountHome: -50 }), p({ amountHome: null, amount: -9000 })];
+    expect(filterProjections(list, { ...unpaid, categoryIds: ['c1'], accountIds: ['a'], amountMin: 100, amountMax: 2000 })).toEqual([list[0]]);
+    expect(filterProjections(list, { ...unpaid, amountMin: 5000 })).toEqual([list[4]]);
+  });
+  it('returns nothing for direction in or transfers', () => {
+    expect(filterProjections([p()], { ...unpaid, direction: 'in' })).toEqual([]);
+    expect(filterProjections([p()], { ...unpaid, direction: 'transfers' })).toEqual([]);
+    expect(filterProjections([p()], { ...unpaid, direction: 'out' })).toHaveLength(1);
+  });
+});
+
+describe('isOnlyUnpaid', () => {
+  it('is true only for the bare unpaid filter', () => {
+    expect(isOnlyUnpaid({ ...EMPTY_FILTER, unpaidOnly: true })).toBe(true);
+    expect(isOnlyUnpaid(EMPTY_FILTER)).toBe(false);
+    expect(isOnlyUnpaid({ ...EMPTY_FILTER, unpaidOnly: true, direction: 'out' })).toBe(false);
   });
 });
