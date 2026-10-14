@@ -1,10 +1,48 @@
 import { minorUnits } from '@/engine/money';
 import type { Standing } from '@/engine/accounts';
 import { accountStanding } from '@/engine/accounts';
-import { standingText } from '../standingText';
+import { compactBalanceLine, standingText } from '../standingText';
 
 const m = minorUnits;
 const fmt = (minor: number): string => `$${(minor / 100).toFixed(2)}`;
+
+describe('compactBalanceLine (D-39)', () => {
+  const base = { foreign: false, homeFigure: null, overflow: false };
+  it('foreign accounts show the home figure or Waiting for a rate', () => {
+    expect(compactBalanceLine({ ...base, foreign: true, homeFigure: '£585.00', standing: { kind: 'plain' } })).toEqual({
+      key: 'accounts.inHome',
+      params: { amount: '£585.00' },
+      tone: 'plain',
+    });
+    expect(compactBalanceLine({ ...base, foreign: true, standing: null })).toEqual({
+      key: 'accounts.inHomeWaiting',
+      params: {},
+      tone: 'plain',
+    });
+  });
+  it('domestic overdrawn and over-limit map to short words', () => {
+    expect(compactBalanceLine({ ...base, standing: { kind: 'overdrawn-within', overdrawnBy: m(1), limit: m(2) } })?.key).toBe('accounts.compact.overdrawn');
+    expect(compactBalanceLine({ ...base, standing: { kind: 'overdrawn-no-limit', overdrawnBy: m(1) } })?.tone).toBe('plain');
+    expect(compactBalanceLine({ ...base, standing: { kind: 'overdrawn-beyond', overdrawnBy: m(3), limit: m(2), beyondBy: m(1) } })).toEqual({
+      key: 'accounts.compact.overdrawn',
+      params: {},
+      tone: 'warn',
+    });
+    expect(compactBalanceLine({ ...base, standing: { kind: 'over-limit', owed: m(3), limit: m(2), overBy: m(1) } })).toEqual({
+      key: 'accounts.compact.overLimit',
+      params: {},
+      tone: 'warn',
+    });
+  });
+  it('everything else, and overflow, is null', () => {
+    expect(compactBalanceLine({ ...base, standing: { kind: 'in-credit', balance: m(5) } })).toBeNull();
+    expect(compactBalanceLine({ ...base, standing: { kind: 'owing-within', owed: m(5), limit: null } })).toBeNull();
+    expect(compactBalanceLine({ ...base, standing: { kind: 'plain' } })).toBeNull();
+    expect(compactBalanceLine({ ...base, standing: { kind: 'loan-owing', owed: m(5) } })).toBeNull();
+    expect(compactBalanceLine({ ...base, standing: null })).toBeNull();
+    expect(compactBalanceLine({ ...base, foreign: true, homeFigure: '£1', overflow: true, standing: null })).toBeNull();
+  });
+});
 
 describe('standingText', () => {
   it('returns null for null and plain', () => {
