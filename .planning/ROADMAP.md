@@ -469,9 +469,9 @@ Plans:
 - [x] 03-22-PLAN.md — Home view model, Coming-up selection, month chips, This month card
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 03-11-PLAN.md — Screen scaffolds: TabRootScreen / DetailScreen, large-to-compact header, refresh control, title focus
-- [ ] 03-12-PLAN.md — FAB long-press quick menu on the app Sheet (absorbs Activity's Add sheet)
-- [ ] 03-16-PLAN.md — Sheet dirty prop and stacked "Discard changes?"; dirty reports on seven edit sheets
+- [x] 03-11-PLAN.md — Screen scaffolds: TabRootScreen / DetailScreen, large-to-compact header, refresh control, title focus
+- [x] 03-12-PLAN.md — FAB long-press quick menu on the app Sheet (absorbs Activity's Add sheet)
+- [x] 03-16-PLAN.md — Sheet dirty prop and stacked "Discard changes?"; dirty reports on seven edit sheets
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 03-19-PLAN.md — Toasts above sheets: top-sheet overlay, remaining-time timer, UI-SPEC position, FAB lift feed
@@ -673,7 +673,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 15/24 | In Progress|  |
+| 3. Shell | 18/24 | In Progress|  |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
