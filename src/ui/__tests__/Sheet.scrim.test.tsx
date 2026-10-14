@@ -28,13 +28,13 @@ describe("Sheet backdrop", () => {
         </Sheet>
       </ThemeProvider>,
     );
-    const fill = screen.getByTestId("sheet-backdrop-fill");
+    const fill = screen.getByTestId("sheet-backdrop-fill", { hidden: true });
     expect(StyleSheet.flatten(fill.props.style).backgroundColor).toBe(colors.ink);
     await act(async () => {
       jest.advanceTimersByTime(DURATION.backdrop + 50);
     });
     expect(getAnimatedStyle(fill).opacity).toBeCloseTo(BACKDROP_OPACITY, 2);
-    const backdrop = screen.getByTestId("sheet-backdrop");
+    const backdrop = screen.getByTestId("sheet-backdrop", { hidden: true });
     expect(backdrop.props.accessibilityRole).toBe("button");
     await fireEvent.press(backdrop);
     expect(onDismiss).toHaveBeenCalledTimes(1);

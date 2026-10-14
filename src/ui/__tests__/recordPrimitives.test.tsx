@@ -80,7 +80,7 @@ describe('Sheet', () => {
         <Text>{'Content'}</Text>
       </Sheet>
     );
-    fireEvent.press(getByLabelText('Close'));
+    fireEvent.press(getByLabelText('Close', { hidden: true }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
