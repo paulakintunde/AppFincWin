@@ -39,6 +39,8 @@ export interface FabContextValue {
   openQuickMenu(): void;
   closeQuickMenu(): void;
   setScreenFab(config: FabConfig | null): void;
+  /** Clears the screen config only if it is still `config` (L8: never the next screen's). */
+  clearScreenFab(config: FabConfig): void;
   setDefaultAction(fn: (() => void) | null): void;
   setQuickAction(id: QuickActionId, fn: (() => void) | null): void;
   /** Reference-counted; returns a release function. */
@@ -61,6 +63,10 @@ export function FabProvider({ children }: { children: React.ReactNode }): React.
   const [quickMenuOpen, setQuickMenuOpen] = useState(false);
 
   const setScreenFab = useCallback((c: FabConfig | null): void => setScreenConfig(c), []);
+  const clearScreenFab = useCallback(
+    (c: FabConfig): void => setScreenConfig((prev) => (prev === c ? null : prev)),
+    [],
+  );
   const setDefaultAction = useCallback(
     (fn: (() => void) | null): void => setDefaultActionState(fn ? { fn } : null),
     [],
@@ -126,6 +132,7 @@ export function FabProvider({ children }: { children: React.ReactNode }): React.
       openQuickMenu,
       closeQuickMenu,
       setScreenFab,
+      clearScreenFab,
       setDefaultAction,
       setQuickAction,
       holdHide,
@@ -138,6 +145,7 @@ export function FabProvider({ children }: { children: React.ReactNode }): React.
       openQuickMenu,
       closeQuickMenu,
       setScreenFab,
+      clearScreenFab,
       setDefaultAction,
       setQuickAction,
       holdHide,
@@ -153,9 +161,9 @@ export function useFab(): FabContextValue {
   return ctx;
 }
 
-/** A focused screen overrides the default; blur clears it (T-03-07-02). */
+/** A focused screen overrides the default; blur clears only this screen's own config (T-03-07-02). */
 export function useRegisterFab(config: FabConfig | null): void {
-  const { setScreenFab } = useFab();
+  const { setScreenFab, clearScreenFab } = useFab();
   const onPressRef = useRef<(() => void) | null>(config ? config.onPress : null);
   useEffect(() => {
     onPressRef.current = config ? config.onPress : null;
@@ -166,13 +174,14 @@ export function useRegisterFab(config: FabConfig | null): void {
   useFocusEffect(
     useCallback(() => {
       if (!present) return undefined;
-      setScreenFab({
+      const mine: FabConfig = {
         label,
         accessibilityLabel,
         onPress: () => onPressRef.current?.(),
-      });
-      return () => setScreenFab(null);
-    }, [present, label, accessibilityLabel, setScreenFab]),
+      };
+      setScreenFab(mine);
+      return () => clearScreenFab(mine);
+    }, [present, label, accessibilityLabel, setScreenFab, clearScreenFab]),
   );
 }
 

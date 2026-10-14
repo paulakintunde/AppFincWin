@@ -1,4 +1,5 @@
-import { markBackStep, resetTabSlideForTests, takeSlideFor } from '../tabSlide';
+import { wipeDeviceData } from '@/services/storage/wipe';
+import { clearBackStep, markBackStep, resetTabSlideForTests, takeSlideFor } from '../tabSlide';
 
 describe('tabSlide', () => {
   beforeEach(() => resetTabSlideForTests());
@@ -20,5 +21,20 @@ describe('tabSlide', () => {
     takeSlideFor('home');
     markBackStep();
     expect(takeSlideFor('activity')).toBe('fromLeft');
+  });
+
+  it('clearBackStep drops a pending back step so the next slide is forward', () => {
+    takeSlideFor('home');
+    markBackStep();
+    clearBackStep();
+    expect(takeSlideFor('activity')).toBe('fromRight');
+  });
+
+  it('the tab-slide wipe handler resets last and the pending flag', async () => {
+    takeSlideFor('home');
+    markBackStep();
+    await wipeDeviceData();
+    expect(takeSlideFor('activity')).toBe('none');
+    expect(takeSlideFor('home')).toBe('fromLeft');
   });
 });

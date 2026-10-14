@@ -13,6 +13,7 @@ import React, {
   useState,
 } from 'react';
 import { router, usePathname, useRootNavigationState, type Href } from 'expo-router';
+import { clearBackStep } from '@/shell/tabBar/tabSlide';
 import { HOME_TAB, type TabId } from '@/shell/tabBar/tabs';
 import {
   MAX_HISTORY,
@@ -91,8 +92,19 @@ export function BackHistoryProvider({
       }
       if (action.type === 'switchTab') {
         pendingBackRef.current = true;
+        const before = currentRef.current;
         if (switcherRef.current) switcherRef.current(action.tab as TabId);
         else router.navigate(('/' + action.tab) as Href);
+        // L1: a switch that produced no transition must not leave the back-step flags set.
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            const now = currentRef.current;
+            if (pendingBackRef.current && before !== null && now !== null && sameLocation(now, before)) {
+              pendingBackRef.current = false;
+              clearBackStep();
+            }
+          }),
+        );
         return true;
       }
       return false;
