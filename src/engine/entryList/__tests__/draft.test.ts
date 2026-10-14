@@ -181,6 +181,7 @@ describe('draft v2 form snapshot', () => {
     ['non-string amountInText', { amountInText: 4 }],
     ['long amountInText', { amountInText: '1'.repeat(33) }],
     ['long categoryId', { categoryId: 'x'.repeat(65) }],
+    ['13-char toCurrency (L7)', { toCurrency: 'x'.repeat(13) }],
   ];
   it.each(badForm)('drops only the form on %s', (_n, over) => {
     const items = [mk()];
@@ -193,6 +194,40 @@ describe('draft v2 form snapshot', () => {
     const rest: Record<string, unknown> = { ...FORM };
     delete rest.note;
     expect(parseEntryDraft(JSON.stringify({ v: 2, items: [], form: rest }))).toEqual({ items: [], form: null });
+  });
+  it('keeps a 3-letter toCurrency and coerces a skipped status to paid (L7, H4)', () => {
+    expect(parseEntryDraft(serialiseDraft([], AT, { ...FORM, toCurrency: 'USD' })).form?.toCurrency).toBe('USD');
+    expect(parseEntryDraft(serialiseDraft([], AT, { ...FORM, status: 'skipped' })).form).toEqual({ ...FORM, status: 'paid' });
+  });
+  describe('repeats (H1a)', () => {
+    const formWith = (over: Record<string, unknown>) =>
+      parseEntryDraft(JSON.stringify({ v: 2, savedAt: AT, items: [], form: { ...FORM, ...over } })).form;
+    it('round-trips a valid repeat unchanged', () => {
+      const repeats = { freq: 'monthly' as const, end: { kind: 'count' as const, count: 6 } };
+      expect(parseEntryDraft(serialiseDraft([], AT, { ...FORM, repeats }))).toEqual({ items: [], form: { ...FORM, repeats } });
+    });
+    it('an older v2 form with no repeats key parses with repeats undefined', () => {
+      const form = formWith({});
+      expect(form).toEqual(FORM);
+      expect(form?.repeats).toBeUndefined();
+    });
+    it('a bad repeat degrades to never and keeps every other field', () => {
+      expect(formWith({ repeats: { freq: 'monthly', end: { kind: 'count', count: 0 } } })).toEqual({
+        ...FORM, repeats: { freq: 'never' },
+      });
+      expect(formWith({ repeats: 'weekly' })).toEqual({ ...FORM, repeats: { freq: 'never' } });
+    });
+    it('an end date before the entry degrades to never', () => {
+      expect(
+        formWith({ localDate: '2026-02-01', repeats: { freq: 'weekly', end: { kind: 'date', date: '2026-01-01' } } }),
+      ).toEqual({ ...FORM, localDate: '2026-02-01', repeats: { freq: 'never' } });
+    });
+    it('a transfer cannot repeat; a never repeat on a transfer is kept', () => {
+      expect(formWith({ direction: 'transfer', repeats: { freq: 'monthly', end: { kind: 'never' } } })?.repeats).toEqual({
+        freq: 'never',
+      });
+      expect(formWith({ direction: 'transfer', repeats: { freq: 'never' } })?.repeats).toEqual({ freq: 'never' });
+    });
   });
   it('counts a form as one unsaved entry', () => {
     const a = mk();
@@ -214,12 +249,12 @@ describe('draft v2 form snapshot', () => {
       accountId: idStr,
       currency: fc.string({ minLength: 1, maxLength: 12 }),
       localDate: dateArb,
-      status: fc.constantFrom('paid' as const, 'pending' as const, 'skipped' as const),
+      status: fc.constantFrom('paid' as const, 'pending' as const),
       statusTouched: fc.boolean(),
       paymentType: fc.option(fc.string({ maxLength: 32 }), { nil: null }),
       note: fc.string({ maxLength: 500 }),
       toAccountId: idStr,
-      toCurrency: idStr,
+      toCurrency: fc.option(fc.string({ maxLength: 12 }), { nil: null }),
       amountInText: fc.string({ maxLength: 32 }),
       automatic: fc.boolean(),
       refund: fc.boolean(),

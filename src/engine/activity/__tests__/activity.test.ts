@@ -242,16 +242,26 @@ describe('filters', () => {
       expect(filterRows(rows, { ...EMPTY_FILTER, direction: 'transfers' })).toEqual([rows[2], rows[3]]);
     });
 
-    it('amountMin/amountMax compare |amountHome|, falling back to |original_amount| when amountHome is null', () => {
-      expect(filterRows(rows, { ...EMPTY_FILTER, amountMin: 1000, amountMax: 5000 })).toEqual([rows[2], rows[3]]);
+    it('amountMin/amountMax compare |amountHome| and exclude a row with no home amount (H9)', () => {
+      expect(filterRows(rows, { ...EMPTY_FILTER, amountMin: 1000, amountMax: 5000 })).toEqual([rows[3]]);
     });
 
     it('amountMin alone excludes everything below it, with no ceiling', () => {
-      expect(filterRows(rows, { ...EMPTY_FILTER, amountMin: 1000, amountMax: null })).toEqual([rows[2], rows[3], rows[4]]);
+      expect(filterRows(rows, { ...EMPTY_FILTER, amountMin: 1000, amountMax: null })).toEqual([rows[3], rows[4]]);
     });
 
     it('amountMax alone excludes everything above it, with no floor', () => {
       expect(filterRows(rows, { ...EMPTY_FILTER, amountMin: null, amountMax: 60 })).toEqual([rows[1]]);
+    });
+
+    it('a JPY row with no rate is dropped under a range but kept with no range (H9)', () => {
+      const jpy = [
+        row({ original_amount: -1500, amountHome: -1500 }),
+        row({ original_amount: -200000, amountHome: null }),
+      ];
+      expect(filterRows(jpy, { ...EMPTY_FILTER, amountMin: 1000 })).toEqual([jpy[0]]);
+      expect(filterRows(jpy, { ...EMPTY_FILTER, amountMax: 999999 })).toEqual([jpy[0]]);
+      expect(filterRows(jpy, { ...EMPTY_FILTER, amountMin: null, amountMax: null })).toEqual(jpy);
     });
 
     it('unpaidOnly keeps bills out only and composes with the other filters (D-35, D-36)', () => {
@@ -499,7 +509,13 @@ describe('filterProjections', () => {
   it('applies category, account and amount range filters', () => {
     const list = [p(), p({ categoryId: 'c2' }), p({ accountId: 'b' }), p({ amountHome: -50 }), p({ amountHome: null, amount: -9000 })];
     expect(filterProjections(list, { ...unpaid, categoryIds: ['c1'], accountIds: ['a'], amountMin: 100, amountMax: 2000 })).toEqual([list[0]]);
-    expect(filterProjections(list, { ...unpaid, amountMin: 5000 })).toEqual([list[4]]);
+    expect(filterProjections(list, { ...unpaid, amountMin: 5000 })).toEqual([]);
+  });
+  it('drops a projection with no home amount under a range and keeps it otherwise (H9)', () => {
+    const noRate = p({ amount: -900000, amountHome: null });
+    const rated = p({ amount: -900000, amountHome: -4000 });
+    expect(filterProjections([noRate, rated], { ...unpaid, amountMax: 5000 })).toEqual([rated]);
+    expect(filterProjections([noRate, rated], unpaid)).toEqual([noRate, rated]);
   });
   it('returns nothing for direction in or transfers', () => {
     expect(filterProjections([p()], { ...unpaid, direction: 'in' })).toEqual([]);

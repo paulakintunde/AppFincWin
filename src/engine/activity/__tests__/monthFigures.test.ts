@@ -67,6 +67,10 @@ describe('barShares', () => {
   it('computes integer percents of money in', () => {
     expect(barShares(10000, -2500, 3333)).toEqual({ paidPct: 25, pendingPct: 33 });
   });
+  it('shows no paid share when refunds exceed outflows (L6)', () => {
+    expect(barShares(10000, 2000, 0)).toEqual({ paidPct: 0, pendingPct: 0 });
+    expect(barShares(10000, -2500, 1000)).toEqual({ paidPct: 25, pendingPct: 10 });
+  });
   it('is 0 when money in is 0', () => {
     expect(barShares(0, -500, 100)).toEqual({ paidPct: 0, pendingPct: 0 });
   });

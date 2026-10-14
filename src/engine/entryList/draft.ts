@@ -35,6 +35,8 @@ export interface DraftForm {
   amountInText: string;
   automatic: boolean;
   refund: boolean;
+  /** H1: the Repeats choice for a new recurring entry. Optional so v2 drafts written before it still parse. */
+  repeats?: ListRepeat;
 }
 
 export interface EntryDraft {
@@ -153,14 +155,21 @@ function parseForm(x: unknown): DraftForm | null {
     !isBoundedNullable(categoryId, DRAFT_ID_MAX) ||
     !isBoundedNullable(accountId, DRAFT_ID_MAX) ||
     !isBoundedNullable(toAccountId, DRAFT_ID_MAX) ||
-    !isBoundedNullable(toCurrency, DRAFT_ID_MAX) ||
+    !isBoundedNullable(toCurrency, DRAFT_CURRENCY_MAX) ||
     !isBoundedNullable(paymentType, DRAFT_PAYMENT_TYPE_MAX)
   ) {
     return null;
   }
+  let repeats: ListRepeat | undefined;
+  if (x.repeats !== undefined) {
+    const r = parseRepeat(x.repeats, localDate);
+    repeats = r === null || (direction === 'transfer' && r.freq !== 'never') ? { freq: 'never' } : r;
+  }
   return {
-    direction, amountText, name, categoryId, accountId, currency, localDate, status,
+    direction, amountText, name, categoryId, accountId, currency, localDate,
+    status: status === 'skipped' ? 'paid' : status, // H4: a new entry only offers paid or pending
     statusTouched, paymentType, note, toAccountId, toCurrency, amountInText, automatic, refund,
+    ...(repeats === undefined ? {} : { repeats }),
   };
 }
 
