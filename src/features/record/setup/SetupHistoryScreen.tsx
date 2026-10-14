@@ -14,6 +14,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { Screen } from '@/ui/Screen';
 
 export interface SetupHistoryScreenProps {
@@ -49,6 +50,7 @@ export function SetupHistoryScreen({ accountId }: SetupHistoryScreenProps) {
 
   return (
     <Screen>
+      <SyncProblemLine inset={false} />
       <View style={styles.block}>
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
           {t('importCsv.onboardingHeading')}

@@ -23,6 +23,7 @@ import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
 import { EmptyState } from '@/ui/EmptyState';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { Screen } from '@/ui/Screen';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { AccountBalanceBlock } from './AccountBalanceBlock';
@@ -85,6 +86,7 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
 
   return (
     <Screen>
+      <SyncProblemLine inset={false} />
       <ScrollView contentContainerStyle={styles.column}>
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
           {account.name}

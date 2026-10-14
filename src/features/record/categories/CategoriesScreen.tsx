@@ -23,6 +23,7 @@ import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { Screen } from '@/ui/Screen';
 import { CategorySheet, type CategorySheetMode } from './CategorySheet';
 
@@ -56,6 +57,7 @@ export function CategoriesScreen() {
 
   return (
     <Screen scroll>
+      <SyncProblemLine inset={false} />
       <View style={styles.column}>
         <Text accessibilityRole="header" style={titleStyle}>
           {t('categories.title')}

@@ -8,6 +8,9 @@ import { needsFirstAccount } from '../firstAccountGate';
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
 let mockRedirectHref: unknown = null;
+jest.mock('@/data/sync/useSyncStatus', () => ({
+  useSyncStatus: () => ({ isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null }),
+}));
 jest.mock('expo-router', () => {
   const R = require('react');
   return {

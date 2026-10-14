@@ -16,6 +16,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { EmptyState } from '@/ui/EmptyState';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { Screen } from '@/ui/Screen';
 import { conflictText, stepLabel } from './undoCopy';
 
@@ -52,6 +53,7 @@ export function HistoryScreen() {
 
   return (
     <Screen scroll>
+      <SyncProblemLine inset={false} />
       <Text accessibilityRole="header" style={titleStyle}>
         {t('history.title')}
       </Text>

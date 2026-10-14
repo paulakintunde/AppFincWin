@@ -20,6 +20,8 @@ jest.mock('react-native-safe-area-context', () => ({
 const mockUndo = jest.fn();
 const mockRollbackTo = jest.fn();
 let mockLog: UndoLogRow[] = [];
+let mockSync = { isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null as number | null };
+jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => mockSync }));
 const mockCtx = { userId: 'me', householdId: 'h1', timeZone: 'UTC' };
 
 jest.mock('@/data/mutations/undo', () => ({
@@ -36,6 +38,7 @@ beforeEach(() => {
   mockRollbackTo.mockClear();
   screenReader = false;
   mockLog = [];
+  mockSync = { isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null };
   jest.spyOn(AccessibilityInfo, 'isScreenReaderEnabled').mockImplementation(async () => screenReader);
   jest.spyOn(AccessibilityInfo, 'addEventListener').mockImplementation((() => ({ remove: jest.fn() })) as never);
   jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
@@ -182,6 +185,15 @@ function row(id: string, status: 'available' | 'refused', over: Partial<UndoLogR
 }
 
 describe('HistoryScreen', () => {
+  it('shows the sync line while offline and nothing when all is well (G5, D-15)', async () => {
+    await renderThemed(<HistoryScreen />);
+    expect(screen.queryByTestId('sync-problem-line')).toBeNull();
+    mockSync = { ...mockSync, isOnline: false };
+    await renderThemed(<HistoryScreen />);
+    expect(screen.getByTestId('sync-problem-line')).toBeTruthy();
+    expect(screen.getByText(/offline/i)).toBeTruthy();
+  });
+
   it('shows the empty state', async () => {
     await renderThemed(<HistoryScreen />);
     expect(screen.getByText('Nothing yet.')).toBeTruthy();
