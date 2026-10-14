@@ -1,7 +1,7 @@
 // One Activity line (ACT-01, D-05, D-06, D-50): glyph, name, meta, own-currency amount, an
 // optional home figure, status tags and a one-tap Mark paid. A transfer leg is an ordinary
 // row with the Transfer category's tile and a dimmed figure; it never offers Mark paid
-// (D-51, D-56). A projection is muted, tagged Expected and not tappable.
+// (D-51, D-56). A projection is muted, tagged Expected and opens a read-only detail (D-42).
 import React from 'react';
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -16,7 +16,7 @@ import { formatStatementMoney } from './statementMoney';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radii, space } from '@/theme/layout';
+import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { shadows, type CategorySwatchKey, type colors as ThemeColours } from '@/theme/tokens';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
@@ -291,9 +291,11 @@ export interface ProjectionRowProps {
   formatter: MoneyFormatter;
   homeCurrency: string;
   cardPosition?: CardPosition;
+  /** D-42: opens the read-only projection detail; there is no Pay on a projection (D-34). */
+  onPress?: (projection: ProjectionView) => void;
 }
 
-export function ProjectionRow({ projection, categories, accountName, formatter, homeCurrency, cardPosition = 'only' }: ProjectionRowProps) {
+export function ProjectionRow({ projection, categories, accountName, formatter, homeCurrency, cardPosition = 'only', onPress }: ProjectionRowProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const category = projection.categoryId !== null ? categories.byId.get(projection.categoryId) : undefined;
@@ -305,8 +307,8 @@ export function ProjectionRow({ projection, categories, accountName, formatter, 
     .filter((p) => p !== '')
     .join(' · ');
 
-  return (
-    <View testID={`projection-${projection.key}`} style={[styles.card, cardStyle(cardPosition, colors), { opacity: 0.7 }]}>
+  const content = (
+    <>
       <CategoryGlyph colorKey={swatchKey} letter={letterOf(projection.name || categoryLabel)} />
       <View style={styles.text}>
         <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>
@@ -327,7 +329,30 @@ export function ProjectionRow({ projection, categories, accountName, formatter, 
           </Text>
         ) : null}
       </View>
-    </View>
+    </>
+  );
+  const testID = `projection-${projection.key}`;
+  if (onPress === undefined) {
+    return (
+      <View testID={testID} style={[styles.card, cardStyle(cardPosition, colors), { opacity: 0.7 }]}>
+        {content}
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={t('activity.projection.a11y', {
+        name: projection.name,
+        amount: amountText,
+        date: formatter.formatDate(projection.date, 'medium'),
+      })}
+      onPress={() => onPress(projection)}
+      style={({ pressed }) => [styles.card, cardStyle(cardPosition, colors), { opacity: pressed ? 0.7 * PRESSED_OPACITY : 0.7 }]}
+    >
+      {content}
+    </Pressable>
   );
 }
 
