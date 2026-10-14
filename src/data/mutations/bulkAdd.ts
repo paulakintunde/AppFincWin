@@ -71,6 +71,9 @@ export function buildEntryListWrite(items: readonly ListItem[], ctx: BulkAddCont
       if (item.toAccountId === null || item.toCurrency === null) {
         throw new TypeError('buildEntryListWrite: a transfer needs a destination account');
       }
+      if (item.toCurrency !== item.currency && item.amountInMinor === null) {
+        throw new TypeError('buildEntryListWrite: a cross-currency transfer needs a received amount');
+      }
       const transferId = mint();
       const built = buildTransferLegs({
         transferId,
@@ -170,6 +173,14 @@ interface BulkAddResult {
   rateRows: InsertedRow[];
 }
 
+/**
+ * Step ids whose rows are already inserted on the server. The insert and record_entry_list are two
+ * requests, so a permanent refusal of the second leaves committed rows without an undo step; onError
+ * reads this to tell that case from a refused insert (MD-05). In memory only: after a restart the
+ * replay re-runs the idempotent insert and re-adds the id.
+ */
+const rowsLanded = new Set<string>();
+
 export function registerBulkAddMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.bulkAdd, {
     mutationFn: (vars: BulkAddVars) =>
@@ -182,6 +193,7 @@ export function registerBulkAddMutations(qc: QueryClient): void {
         if (collected.length > 0) {
           maybeRequestSampleClearPrompt(qc, { householdId: vars.householdId, userId: vars.ownerId });
         }
+        rowsLanded.add(vars.stepId);
         // Called even when nothing was inserted: a replay answers 'already-applied'.
         await recordEntryList(
           client,
@@ -189,6 +201,7 @@ export function registerBulkAddMutations(qc: QueryClient): void {
           vars.series,
           { id: vars.stepId, labelKey: 'addedMany', labelParams: { n: vars.n } }
         );
+        rowsLanded.delete(vars.stepId);
         return { inserted: collected.length, rateRows: collected };
       }),
     scope: WRITE_SCOPE,
@@ -222,9 +235,12 @@ export function registerBulkAddMutations(qc: QueryClient): void {
     onError: async (err: unknown, vars: BulkAddVars) => {
       const cls = classifySettledWriteError(err);
       if (cls !== 'rejected' && cls !== 'not-found') return;
+      const landed = rowsLanded.delete(vars.stepId);
       const ids = new Set(vars.rows.map((r) => r.id));
-      for (const month of new Set(vars.rows.map((r) => monthOf(r.local_date)))) {
-        patchMonthCacheIfLoaded(qc, vars.householdId, month, (rows) => rows.filter((r) => !ids.has(r.id)));
+      if (!landed) {
+        for (const month of new Set(vars.rows.map((r) => monthOf(r.local_date)))) {
+          patchMonthCacheIfLoaded(qc, vars.householdId, month, (rows) => rows.filter((r) => !ids.has(r.id)));
+        }
       }
       // Rows that landed before a refused RPC reappear from the server rather than vanish.
       void qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
@@ -237,7 +253,8 @@ export function registerBulkAddMutations(qc: QueryClient): void {
         code: settledWriteErrorCode(err),
         attempted: { count: vars.rows.length },
       });
-      showToast({ kind: 'refusal', text: { key: 'undo.batchRefused' } });
+      // The rows are on the server and stay; claiming "Nothing was changed" would be false.
+      showToast({ kind: 'refusal', text: { key: landed ? 'undo.batchSavedNoUndo' : 'undo.batchRefused' } });
     },
   });
 }

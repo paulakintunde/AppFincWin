@@ -1,6 +1,6 @@
 // REC-27, D-06, D-08: when the entry sheet may guess a category from the description, and when a
 // correction becomes an offer of a personal rule. Pure; the sheet owns the state and the timer.
-import { RULE_KEYWORD_MAX, hasRuleFor, normaliseRuleKeyword, type ResolvedRule } from '@/engine/categorize';
+import { RULE_KEYWORD_MAX, normaliseRuleKeyword } from '@/engine/categorize';
 import type { Direction, EntryMode } from './transactionForm';
 
 /** Where the sheet's current category came from. Only 'empty' and 'suggested' may be re-guessed. */
@@ -35,7 +35,8 @@ export function ruleOfferFor(input: {
   pickedCategoryId: string | null;
   description: string;
   direction: Direction;
-  personalRules: readonly ResolvedRule[];
+  /** Every live personal rule, whatever its category: one keyword can have only one personal rule. */
+  personalRules: readonly { keywordNorm: string }[];
   offered: ReadonlySet<string>;
 }): RuleOffer | null {
   if (input.previousOrigin !== 'suggested') return null;
@@ -46,6 +47,6 @@ export function ruleOfferFor(input: {
   const keywordNorm = normaliseRuleKeyword(keyword);
   if (keywordNorm === '') return null;
   if (input.offered.has(keywordNorm)) return null;
-  if (hasRuleFor(input.personalRules, keywordNorm, input.pickedCategoryId)) return null;
+  if (input.personalRules.some((r) => r.keywordNorm === keywordNorm)) return null;
   return { keyword, keywordNorm, categoryId: input.pickedCategoryId };
 }

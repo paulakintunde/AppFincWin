@@ -27,5 +27,5 @@ export function mk(over: Partial<ListItem> = {}): ListItem {
 }
 
 export function mkTransfer(over: Partial<ListItem> = {}): ListItem {
-  return mk({ type: 'transfer', name: '', toAccountId: 'a2', ...over });
+  return mk({ type: 'transfer', name: '', toAccountId: 'a2', toCurrency: 'GBP', ...over });
 }

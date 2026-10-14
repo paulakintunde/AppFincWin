@@ -10,7 +10,7 @@ import type { ListItem } from '@/engine/entryList';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { queryKeys } from '@/data/keys';
 import type { WithPending } from '@/data/types';
-import { resetToastForTests } from '@/state/undoToast';
+import { getToast, resetToastForTests } from '@/state/undoToast';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { registerBulkAddMutations, useBulkAdd, buildEntryListWrite, type BulkAddContext } from '../bulkAdd';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
@@ -120,6 +120,13 @@ describe('buildEntryListWrite', () => {
     );
     expect(rows[0]).toMatchObject({ original_amount: -1000, original_currency: 'GBP' });
     expect(rows[1]).toMatchObject({ original_amount: 1150, original_currency: 'EUR' });
+  });
+
+  it('throws for a cross-currency transfer without a received amount instead of reusing the sent one', () => {
+    const t = item({ type: 'transfer', amountMinor: 10000, toAccountId: 'a2', toCurrency: 'JPY', amountInMinor: null });
+    expect(() => buildEntryListWrite([t], ctx, counter())).toThrow(TypeError);
+    const nul = item({ type: 'transfer', toAccountId: 'a2', toCurrency: null });
+    expect(() => buildEntryListWrite([nul], ctx, counter())).toThrow(TypeError);
   });
 
   it('throws for a transfer without a Transfer category or with the same account', () => {
@@ -240,6 +247,20 @@ describe('useBulkAdd', () => {
       expect.objectContaining({ entity: 'transactions', entityId: stepId, attempted: { count: 2 } })
     );
     expect(qc.getQueryData<unknown[]>(queryKeys.transactionsMonth('h1', '2026-10'))).toEqual([]);
+    expect(getToast()?.text).toEqual({ key: 'undo.batchRefused' });
+  });
+
+  it('when only the undo step is refused keeps the saved rows and does not say nothing changed', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(inserted(2)).respondWith({ data: null, error: { message: 'bad', code: '22023' }, status: 400 });
+    const qc = newClient();
+    qc.setQueryData<WithPending<TransactionRow>[]>(queryKeys.transactionsMonth('h1', '2026-10'), []);
+    const { result } = await renderHook(() => useBulkAdd(), { wrapper: wrapper(qc) });
+    result.current.save([item(), item({ id: 'i2' })], ctx);
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
+    expect(qc.getQueryData<unknown[]>(queryKeys.transactionsMonth('h1', '2026-10'))).toHaveLength(2);
+    expect(getToast()?.text).toEqual({ key: 'undo.batchSavedNoUndo' });
   });
 
   it('refuses an empty list before mutate', async () => {

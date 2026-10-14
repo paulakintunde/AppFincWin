@@ -78,6 +78,26 @@ describe('useGuessContext', () => {
     expect(rulesStatus).toBe('ready');
   });
 
+  it('does not learn archived or system categories', async () => {
+    mockCategories = [
+      cat('c1'),
+      cat('c9', { archived_at: '2026-10-01T00:00:00Z' }),
+      cat('s1', { is_system: true }),
+      cat('g1', { builtin_key: 'Groceries', name: null }),
+    ];
+    mockNames = {
+      data: [
+        { name: 'Costa', category_id: 'c9', updated_at: '2026-10-01T00:00:00Z' },
+        { name: 'Settle up', category_id: 's1', updated_at: '2026-10-01T00:00:00Z' },
+        { name: 'Pret', category_id: 'c1', updated_at: '2026-10-01T00:00:00Z' },
+      ],
+    };
+    const { result } = await renderHook(() => useGuessContext());
+    expect(result.current.guess.learned.has('costa')).toBe(false);
+    expect(result.current.guess.learned.has('settle up')).toBe(false);
+    expect(result.current.guess.learned.get('pret')).toBe('c1');
+  });
+
   it('degrades to no rules when the rules query errors', async () => {
     mockRules = { data: undefined, isError: true, isSuccess: false };
     const { result } = await renderHook(() => useGuessContext());

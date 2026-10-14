@@ -372,3 +372,48 @@ describe('useStatementImport: navigation around choose-mode', () => {
 afterAll(() => {
   void testClient;
 });
+
+describe('useStatementImport: what counts as checked (02.3 review MD-03, MD-04)', () => {
+  it('reads the stated statement period, not only the row dates', async () => {
+    const text = Buffer.from(ofxBytes()).toString('latin1').replace('<DTEND>20260912', '<DTEND>20260930');
+    await toChooseMode(new Uint8Array(Buffer.from(text, 'latin1')), 'ofx');
+    const range = dbTx.fetchTransactionsInRange.mock.calls[0]![2] as { from: string; toInclusive: string };
+    expect(range.toInclusive).toBe('2026-09-30');
+    expect(range.from <= '2026-09-01').toBe(true);
+  });
+
+  it('a failed read with only an unrelated cached month is not checked', async () => {
+    dbTx.fetchTransactionsInRange.mockRejectedValue(new Error('offline'));
+    pickOk(ofxBytes(), 'ofx');
+    const hook = await setup();
+    testClient.setQueryData(['transactions', 'hh-1', '2020-01'], [stored({ local_date: '2020-01-05' })]);
+    testClient.setQueryData(['transactions', 'hh-1', 'categorised-names', 'user-1'], [{ name: 'x' }]);
+    await act(async () => {
+      hook.result.current.start();
+    });
+    await act(async () => {
+      hook.result.current.confirmFormat();
+    });
+    await waitFor(() => expect(hook.result.current.preview).not.toBeNull());
+    expect(hook.result.current.existingChecked).toBe(false);
+    await act(async () => {
+      hook.result.current.chooseMode('reconcile');
+    });
+    expect(hook.result.current.stage).toBe('choose-mode');
+  });
+
+  it('a failed read is checked when cached months cover the whole range', async () => {
+    dbTx.fetchTransactionsInRange.mockRejectedValue(new Error('offline'));
+    pickOk(ofxBytes(), 'ofx');
+    const hook = await setup();
+    for (const m of ['2026-08', '2026-09', '2026-10']) testClient.setQueryData(['transactions', 'hh-1', m], []);
+    await act(async () => {
+      hook.result.current.start();
+    });
+    await act(async () => {
+      hook.result.current.confirmFormat();
+    });
+    await waitFor(() => expect(hook.result.current.preview).not.toBeNull());
+    expect(hook.result.current.existingChecked).toBe(true);
+  });
+});

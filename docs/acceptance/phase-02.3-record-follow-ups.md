@@ -87,3 +87,28 @@ Gate on fix/02.3-walkthrough before its PR: lint (0 errors), typecheck, depcruis
    - "Removed · {name}" with a local Undo (6 s) that restores the item at its index.
    - It needed a new optional `onUndo` on the undo toast.
    - UI-SPEC lines 203 and 353 were updated; they previously said no toast.
+
+PR: https://github.com/paulakintunde/AppFincWin/pull/70. MERGED 2026-10-13 with `gh pr merge --merge`, no `--admin`. Main commit c2dd26c00d664861963ee1cce035ad4b94876605.
+
+## Preview APK
+
+1. **First attempt:** build 24f383ae-7a81-4a84-95bc-8e8b014fe212 from c2dd26c. ERRORED at "Configure expo-updates" with "Runtime version mismatch": the local fingerprint was 4a445c9f…, the EAS one a1a27962….
+   - The cause was a regression from #66. `app.config.ts` derived `updates.checkAutomatically` from `EAS_BUILD_PROFILE`, which is set only on EAS. The local value was ON_ERROR_RECOVERY and the EAS value ON_LOAD.
+   - Fixed by quick 261013-l8i: each build profile now sets `APP_UPDATES_CHECK` in `eas.json` `env`. PR https://github.com/paulakintunde/AppFincWin/pull/71 was merged; main is 67472bd4438614b665044f4d2ba5ccc925ad1d2f.
+2. **Second attempt:** `npx eas build --profile preview --platform android --non-interactive`, run from C:/dev/fincwin-w1 (real node_modules), detached at 67472bd.
+   - Build id: dd80bb8d-b9b4-4f55-8c9d-95a23915ed51. Status: FINISHED.
+   - Fingerprint / runtime version: 5758b0d3627d20e9478cd14638dfcd4f4831e3dd.
+   - Install URL: https://expo.dev/artifacts/eas/xCSumPDvFOFRf5yAthywKhYlHE5PN8eibQk1vsUSw9E.apk
+3. **Install:** `adb install -r` on the second phone, a Pixel 6, on 2026-10-13. Result: Success.
+
+## Code review fixes (after acceptance)
+
+The phase review (02.3-REVIEW.md) found 0 critical, 0 high, 6 medium and 8 low. The user chose to fix all six mediums before closing the phase. The fixes are on branch fix/02.3-review-close, one commit each:
+- MD-01 95d55c6
+- MD-02 b77dadf
+- MD-03 31fddf9
+- MD-04 2ff25fe
+- MD-05 f99385a
+- MD-06 d9da075
+
+The lows are logged as follow-ups.

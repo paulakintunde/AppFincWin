@@ -74,6 +74,11 @@ function parseItem(x: unknown): ListItem | null {
   if (!isNullableStr(toAccountId) || !isNullableStr(toCurrency)) return null;
   if (amountInMinor !== null && !isAmount(amountInMinor)) return null;
   if (type === 'transfer' ? toAccountId === null : toAccountId !== null) return null;
+  if (type === 'transfer') {
+    // A transfer needs a destination currency, and a received amount exactly when it crosses currencies.
+    if (toCurrency === null) return null;
+    if ((toCurrency !== currency) !== (amountInMinor !== null)) return null;
+  }
   const repeat = parseRepeat(x.repeat, localDate);
   if (repeat === null) return null;
   if (type === 'transfer' && repeat.freq !== 'never') return null;

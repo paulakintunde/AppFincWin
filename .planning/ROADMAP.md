@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Record** - Transactions, recurring entries, transfers, statement import (CSV, OFX/QFX), account limits and standing, Activity list, compensating-write undo (completed 2026-10-09)
 - [x] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy (completed 2026-10-11; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 2.2: Record polish** (INSERTED) - Activity views and subtotals, sort, recurring-from-history, clone, detail sheet and swipe, entry-sheet extras, paste import, sample data (completed 2026-10-10; Android verified, iOS pending Apple enrolment)
-- [ ] **Phase 2.3: Record follow-ups** (INSERTED) - Import reconcile-or-new choice, description auto-categorise rules, signed-out account chooser
+- [x] **Phase 2.3: Record follow-ups** (INSERTED) - Import reconcile-or-new choice, description auto-categorise rules, signed-out account chooser, compact amount, Add account from the picker, bulk Add to list (completed 2026-10-13; Android verified, iOS pending Apple enrolment)
 - [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB
 - [ ] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
@@ -398,7 +398,7 @@ Plans:
   5. The account picker in the entry sheet ends with "Add account"; creating an account there returns to the entry with the new account selected.
   6. "Add to list" keeps a valid entry in a list at the bottom of the sheet and clears the form, up to 30 per money out, money in or transfer list; listed entries can be edited or removed, survive an accidental swipe or close, and Save writes the current entry plus the list in one step with one Undo.
 **Note:** criteria 4–6 change the entry sheet and Keypad that Phase 3's bottom-sheet migration carries over; plan 02.3 before re-checking the Phase 3 plans.
-**Plans:** 19/20 plans executed
+**Plans:** 20/20 plans complete
 **Status:** Planned 2026-10-12 (not started). Three additive migrations (20261012000100 category_rules, 20261012000200 category_rules_patches, 20261012000300 entry_list) and pgTAP 51-53; the production push in 02.3-20 needs the user's go.
 
 Plans:
@@ -431,7 +431,7 @@ Plans:
 - [x] 02.3-19-PLAN.md — Entry sheet: Add to list, list section, drafts and prompts, one-step Save (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 02.3-20-PLAN.md — Rollout: PR, full gate, production schema push [BLOCKING, user go], live checks, device walkthrough, preview APK (W5)
+- [x] 02.3-20-PLAN.md — Rollout: PR, full gate, production schema push [BLOCKING, user go], live checks, device walkthrough, preview APK (W5)
 
 ### Phase 3: Shell
 **Goal**: The app's navigation chrome matches the design system exactly.
@@ -632,7 +632,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2. Record | 50/50 | Complete | 2026-10-09 |
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
-| 2.3 Record follow-ups | 0/TBD | Not started | - |
+| 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 0/16 | Planned; check against 2.2 before executing | - |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |

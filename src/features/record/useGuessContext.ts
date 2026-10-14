@@ -59,13 +59,16 @@ export function useGuessContext(): GuessContextState {
   const rules = useMemo<CategoryRuleRow[]>(() => (rulesQuery.isError ? [] : (rulesQuery.data ?? [])), [rulesQuery.data, rulesQuery.isError]);
   const memberCategories = useMemo(() => memberCategoriesOf(lookup.all, t), [lookup.all, t]);
   const resolved = useMemo(() => resolveRules(rules.map(toStoredRule), memberCategories), [rules, memberCategories]);
-  const learned = useMemo(
-    () =>
-      buildLearnedMap(
-        (namesQuery.data ?? []).map((n) => ({ name: n.name, categoryId: n.category_id, updatedAt: n.updated_at }))
-      ),
-    [namesQuery.data]
-  );
+  // Learned names may only suggest a category the member can still pick: rules resolve against
+  // active, non-system categories, and the learned map must follow the same eligibility.
+  const learned = useMemo(() => {
+    const eligible = new Set(memberCategories.filter((c) => c.active && !c.system).map((c) => c.id));
+    return buildLearnedMap(
+      (namesQuery.data ?? [])
+        .filter((n) => eligible.has(n.category_id))
+        .map((n) => ({ name: n.name, categoryId: n.category_id, updatedAt: n.updated_at }))
+    );
+  }, [namesQuery.data, memberCategories]);
   const guess = useMemo<GuessContext>(
     () => ({
       keywordRules: DEFAULT_KEYWORD_RULES,

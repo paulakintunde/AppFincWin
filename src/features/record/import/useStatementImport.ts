@@ -264,6 +264,24 @@ function cachedRows(rows: readonly unknown[][]): TransactionRow[] {
   return rows.flat().filter(isTransactionRow);
 }
 
+/** The YYYY-MM of every month touched by an inclusive YYYY-MM-DD range. */
+function monthsOf(range: { from: string; toInclusive: string }): string[] {
+  const out: string[] = [];
+  let y = Number(range.from.slice(0, 4));
+  let m = Number(range.from.slice(5, 7));
+  const endKey = range.toInclusive.slice(0, 7);
+  for (;;) {
+    const key = `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}`;
+    out.push(key);
+    if (key >= endKey) return out;
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+}
+
 type Read<T> = { ok: true; value: T } | { ok: false };
 
 async function attempt<T>(read: () => Promise<T>): Promise<Read<T>> {
@@ -430,7 +448,17 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         const dates = draft.rows.flatMap((r) => (r.localDate === null ? [] : [r.localDate])).sort();
         const first = dates[0] ?? ctx.today;
         const last = dates[dates.length - 1] ?? ctx.today;
-        const range = { from: addDays(first, -2), toInclusive: addDays(last, 2) };
+        // D-23: the stated period decides which app lines can be "extras", so the read must cover it
+        // as well as the rows' own dates (02.3 review MD-03).
+        const period = statementPeriod(
+          { start: draft.periodStart, end: draft.periodEnd },
+          draft.rows.map((r) => r.localDate)
+        );
+        const rowRange = { from: addDays(first, -2), toInclusive: addDays(last, 2) };
+        const range = {
+          from: period !== null && period.from < rowRange.from ? period.from : rowRange.from,
+          toInclusive: period !== null && period.toInclusive > rowRange.toInclusive ? period.toInclusive : rowRange.toInclusive,
+        };
 
         const [rangeRead, candidateRead, namesRead, purchaseRead, rulesRead] = await Promise.all([
           attempt(() => fetchTransactionsInRange(supabase, householdId, { ...range, accountId })),
@@ -459,7 +487,9 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
           : cachedRows(cachedArrays).filter(
               (r) => r.account_id === accountId && r.local_date >= range.from && r.local_date <= range.toInclusive
             );
-        const existingChecked = rangeRead.ok || cachedArrays.length > 0;
+        // Checked only by a successful range read, or by cached month queries that cover every month of
+        // the range (a month query holds the whole household). Unrelated cached arrays prove nothing.
+        const existingChecked = rangeRead.ok || monthsOf(range).every((m) => Array.isArray(qc.getQueryData(queryKeys.transactionsMonth(householdId, m))));
         const candidates = candidateRead.ok ? candidateRead.value : [];
         const names = namesRead.ok ? namesRead.value : [];
         // Rules never block an import: a failed rules read degrades to no rules.
@@ -576,10 +606,6 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         for (const c of candidates) storedLegs.set(c.id, { accountId: c.account_id, name: c.name });
         // D-23: extras = what findDuplicates did not consume (02.3-05)
         const matchedIds = new Set(preview.rows.flatMap((r) => (r.duplicate === null ? [] : [r.duplicate.id])));
-        const period = statementPeriod(
-          { start: draft.periodStart, end: draft.periodEnd },
-          draft.rows.map((r) => r.localDate)
-        );
         const missing = preview.rows
           .filter((r) => r.duplicate === null && !r.locked)
           .map((r) => ({ index: r.index, localDate: r.converted.localDate, amount: r.converted.amount }));
