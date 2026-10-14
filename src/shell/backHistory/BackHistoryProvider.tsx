@@ -34,6 +34,9 @@ export interface BackHistoryContextValue {
 
 export const BackHistoryContext = createContext<BackHistoryContextValue | null>(null);
 
+/** WR-01: how long a tab switch may take to commit before it is judged a no-op. */
+const NOOP_SWITCH_MS = 300;
+
 export function BackHistoryProvider({
   children,
 }: {
@@ -51,6 +54,7 @@ export function BackHistoryProvider({
   const currentRef = useRef<Location | null>(current);
   const prevRef = useRef<Location | null>(null);
   const pendingBackRef = useRef(false);
+  const noopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const switcherRef = useRef<((tab: TabId) => void) | null>(null);
   // Kept in sync after commit (declared before the observing effect so it runs first).
   useEffect(() => {
@@ -58,8 +62,18 @@ export function BackHistoryProvider({
     currentRef.current = current;
   }, [history, current]);
 
+  const cancelNoopCheck = useCallback((): void => {
+    if (noopTimerRef.current !== null) {
+      clearTimeout(noopTimerRef.current);
+      noopTimerRef.current = null;
+    }
+  }, []);
+  useEffect(() => cancelNoopCheck, [cancelNoopCheck]);
+
   useEffect(() => {
     if (current === null) return;
+    // The switch (or any navigation) landed: the no-op check no longer applies.
+    cancelNoopCheck();
     const prev = prevRef.current;
     if (prev !== null && sameLocation(prev, current)) return;
     const pending = pendingBackRef.current;
@@ -95,23 +109,25 @@ export function BackHistoryProvider({
         const before = currentRef.current;
         if (switcherRef.current) switcherRef.current(action.tab as TabId);
         else router.navigate(('/' + action.tab) as Href);
-        // L1: a switch that produced no transition must not leave the back-step flags set.
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => {
-            const now = currentRef.current;
-            if (pendingBackRef.current && before !== null && now !== null && sameLocation(now, before)) {
-              pendingBackRef.current = false;
-              clearBackStep();
-            }
-          }),
-        );
+        // L1 / WR-01: a switch that produced no transition must not leave the back-step flags set.
+        // A generous timeout, not a frame count: a slow commit must not be mistaken for a no-op.
+        // Cancelled by the next location change and on unmount.
+        cancelNoopCheck();
+        noopTimerRef.current = setTimeout(() => {
+          noopTimerRef.current = null;
+          const now = currentRef.current;
+          if (pendingBackRef.current && before !== null && now !== null && sameLocation(now, before)) {
+            pendingBackRef.current = false;
+            clearBackStep();
+          }
+        }, NOOP_SWITCH_MS);
         return true;
       }
       return false;
     }
     commit(h);
     return false;
-  }, []);
+  }, [cancelNoopCheck]);
 
   const registerTabSwitcher = useCallback((fn: ((tab: TabId) => void) | null): void => {
     switcherRef.current = fn;

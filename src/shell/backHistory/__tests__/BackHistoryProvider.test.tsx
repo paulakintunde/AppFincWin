@@ -116,24 +116,13 @@ describe('BackHistoryProvider', () => {
   });
 
   describe('L1 no-op back switch', () => {
-    let rafSpy: jest.SpyInstance;
-    let queue: (() => void)[];
-    const flushFrames = async () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+    const tick = async (ms: number) => {
       await act(async () => {
-        for (let i = 0; i < 4 && queue.length > 0; i++) {
-          const run = queue.splice(0);
-          run.forEach((cb) => cb());
-        }
+        jest.advanceTimersByTime(ms);
       });
     };
-    beforeEach(() => {
-      queue = [];
-      rafSpy = jest.spyOn(global, 'requestAnimationFrame').mockImplementation((cb) => {
-        queue.push(() => cb(0));
-        return 0;
-      });
-    });
-    afterEach(() => rafSpy.mockRestore());
 
     it('clears the pending flags when the switcher did not change the location', async () => {
       const clear = jest.spyOn(tabSlide, 'clearBackStep');
@@ -145,14 +134,14 @@ describe('BackHistoryProvider', () => {
       await act(async () => {
         result.current.goBack();
       });
-      await flushFrames();
+      await tick(400);
       expect(clear).toHaveBeenCalledTimes(1);
       await go(tabState('decide'));
       expect(result.current.history).toHaveLength(2);
       clear.mockRestore();
     });
 
-    it('does not clear when the location changed within the two frames', async () => {
+    it('does not clear when the location changed before the check', async () => {
       const clear = jest.spyOn(tabSlide, 'clearBackStep');
       const { result, go } = await setup(tabState('home'));
       await go(tabState('activity'));
@@ -163,9 +152,43 @@ describe('BackHistoryProvider', () => {
         result.current.goBack();
       });
       await go(tabState('home'));
-      await flushFrames();
+      await tick(400);
       expect(clear).not.toHaveBeenCalled();
       expect(result.current.history).toHaveLength(0);
+      clear.mockRestore();
+    });
+
+    it('a slow commit (after 100ms) is still treated as a back step (WR-01)', async () => {
+      const clear = jest.spyOn(tabSlide, 'clearBackStep');
+      const { result, go } = await setup(tabState('home'));
+      await go(tabState('activity'));
+      await act(() => {
+        result.current.registerTabSwitcher(jest.fn());
+      });
+      await act(async () => {
+        result.current.goBack();
+      });
+      await tick(100);
+      await go(tabState('home'));
+      await tick(400);
+      expect(clear).not.toHaveBeenCalled();
+      expect(result.current.history).toHaveLength(0);
+      clear.mockRestore();
+    });
+
+    it('cancels the pending check on unmount', async () => {
+      const clear = jest.spyOn(tabSlide, 'clearBackStep');
+      const { result, go, unmount } = await setup(tabState('home'));
+      await go(tabState('activity'));
+      await act(() => {
+        result.current.registerTabSwitcher(jest.fn());
+      });
+      await act(async () => {
+        result.current.goBack();
+      });
+      await unmount();
+      await tick(400);
+      expect(clear).not.toHaveBeenCalled();
       clear.mockRestore();
     });
   });
