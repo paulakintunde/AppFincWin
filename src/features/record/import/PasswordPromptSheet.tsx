@@ -43,7 +43,7 @@ export function PasswordPromptSheet({ visible, wrong, onUnlock, onCancel }: Pass
   };
 
   return (
-    <Sheet visible={visible} onDismiss={cancel} accessibilityLabel={t('importCsv.pdf.passwordHeading')}>
+    <Sheet visible={visible} onDismiss={cancel} accessibilityLabel={t('importCsv.pdf.passwordHeading')} dirty={hasText}>
       <SheetScroll>
         <Heading>{t('importCsv.pdf.passwordHeading')}</Heading>
         <T>{t('importCsv.pdf.passwordBody')}</T>

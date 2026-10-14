@@ -226,7 +226,12 @@ export function PasteSheet({
   const ctaDisabled = hasText && lines.length === 0;
 
   return (
-    <Sheet visible={visible} onDismiss={close} accessibilityLabel={title}>
+    <Sheet
+      visible={visible}
+      onDismiss={close}
+      accessibilityLabel={title}
+      dirty={text.trim() !== ""}
+    >
       <SheetHeader
         title={title}
         cancelLabel={t("record.sheet.cancel")}

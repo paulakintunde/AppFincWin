@@ -15,6 +15,7 @@ import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { useIsDirty } from '@/ui/useIsDirty';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useAmountParser } from '@/ui/money/useAmountParser';
 
@@ -52,6 +53,9 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
   const [minText, setMinText] = useState(() => (value.amountMin === null ? '' : parser.toInputText(value.amountMin, homeCurrency)));
   const [maxText, setMaxText] = useState(() => (value.amountMax === null ? '' : parser.toInputText(value.amountMax, homeCurrency)));
   const [error, setError] = useState<string | null>(null);
+  // D-26: unsaved work = the draft or an amount text differs from what the sheet opened with.
+  const [initial] = useState(() => ({ draft, minText, maxText }));
+  const dirty = useIsDirty(initial, { draft, minText, maxText });
 
   const labelStyle = { ...textRole(pairing, 'label'), color: colors.inkMuted };
   const inputStyle = [
@@ -99,7 +103,7 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
   };
 
   return (
-    <Sheet visible onDismiss={onClose} accessibilityLabel={t('activity.filter.title')}>
+    <Sheet visible onDismiss={onClose} accessibilityLabel={t('activity.filter.title')} dirty={dirty}>
       <SheetHeader title={t('activity.filter.title')} cancelLabel={t('a11y.close')} onCancel={onClose} />
       <SheetScroll contentContainerStyle={styles.body}>
         <Text style={labelStyle}>{t('activity.filter.category')}</Text>

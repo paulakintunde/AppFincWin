@@ -25,6 +25,7 @@ import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { useIsDirty } from '@/ui/useIsDirty';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useAmountParser, type AmountParseFailure } from '@/ui/money/useAmountParser';
 
@@ -108,6 +109,9 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
   const [limitText, setLimitText] = useState(initialLimit !== null ? magnitude(initialLimit, account?.currency ?? '') : '');
   const [picker, setPicker] = useState<PickerKey>(null);
   const [submitted, setSubmitted] = useState(false);
+  // D-26: unsaved work = any field differs from what the sheet opened with.
+  const [initial] = useState(() => ({ name, kind, pickedCurrency, openingText, signChoice, limitText }));
+  const dirty = useIsDirty(initial, { name, kind, pickedCurrency, openingText, signChoice, limitText });
 
   const parse = (text: string) => parser.parse(text, currency, exponentFor(currency));
   const limits = limitKind(kind);
@@ -210,7 +214,7 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
       : (['accounts.sheet.signInCredit', 'accounts.sheet.signOverdrawn'] as const);
 
   return (
-    <Sheet visible onDismiss={onClose} accessibilityLabel={title}>
+    <Sheet visible onDismiss={onClose} accessibilityLabel={title} dirty={dirty}>
       <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
       <SheetScroll contentContainerStyle={styles.column}>
         <Text style={labelStyle}>{t('accounts.sheet.name')}</Text>
