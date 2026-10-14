@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { colors } from '@/theme/tokens';
+import { radii } from '@/theme/layout';
 import { ToastView } from '../ToastView';
 
 jest.setTimeout(20000);
@@ -30,6 +31,13 @@ describe('ToastView tone', () => {
     const screen = await renderToast();
     const bg = StyleSheet.flatten(screen.getByText('Over cap').parent!.props.style).backgroundColor;
     expect(bg).toBe(colors.ink);
+  });
+
+  it('uses the 18px toast radius', async () => {
+    const screen = await renderToast();
+    const style = StyleSheet.flatten(screen.getByText('Over cap').parent!.props.style);
+    expect(style.borderRadius).toBe(radii.toast);
+    expect(radii.toast).toBe(18);
   });
 
   it('warning uses warn1 with surface text at >= 4.5:1', async () => {
