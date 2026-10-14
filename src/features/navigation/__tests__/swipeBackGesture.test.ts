@@ -1,4 +1,4 @@
-import { isSwipeBackRoute, shouldSwipeBack } from '../swipeBackGesture';
+import { SWIPE_BACK_EDGE_WIDTH, dragOffset, isSwipeBackRoute, shouldSwipeBack } from '../swipeBackGesture';
 
 const s = (o: Partial<Parameters<typeof shouldSwipeBack>[0]> = {}) => ({
   startX: 5,
@@ -16,6 +16,19 @@ describe('shouldSwipeBack', () => {
   it('rejects a tiny fast swipe', () => expect(shouldSwipeBack(s({ translationX: 10, velocityX: 2000 }))).toBe(false));
   it('rejects vertical or diagonal motion', () => expect(shouldSwipeBack(s({ translationY: 200 }))).toBe(false));
   it('rejects a leftward swipe', () => expect(shouldSwipeBack(s({ translationX: -120 }))).toBe(false));
+});
+
+describe('D-40 edge zone and drag offset', () => {
+  it('edge width is 40', () => expect(SWIPE_BACK_EDGE_WIDTH).toBe(40));
+  it('accepts a start at 35 and rejects 41', () => {
+    expect(shouldSwipeBack(s({ startX: 35 }))).toBe(true);
+    expect(shouldSwipeBack(s({ startX: 41 }))).toBe(false);
+  });
+  it('follows rightward drags only', () => {
+    expect(dragOffset(60, 5)).toBe(60);
+    expect(dragOffset(-30, 0)).toBe(0);
+    expect(dragOffset(50, 80)).toBe(0);
+  });
 });
 
 describe('isSwipeBackRoute', () => {
