@@ -72,9 +72,6 @@ gaps:
     missing:
       - "Render a could-not-load state in ThisMonthCard and ComingUpCard when vm.isError"
 human_verification:
-  - test: "A11 TalkBack on Android (NAV-06, D-20)"
-    expected: "Tabs read 'Home, tab, 1 of 2' / 'Activity, tab, 2 of 2' with selected state; tab change and push move focus to title; sheet announces title, keeps focus, offers Close; toast over sheet announced without moving focus"
-    why_human: "Not run on 2026-10-14 (deferred by user); screen reader behaviour cannot be verified from code"
   - test: "I1 iPhone XR native edge swipe pops details only (D-07)"
     expected: "Native swipe pops details, does nothing on Home/Activity"
     why_human: "Apple enrolment pending; no iOS build"
@@ -106,7 +103,7 @@ human_verification:
 | 2 | Back through up to 8 screens; details push over and dismiss | PARTIAL | A1 PASS (back chain, 8-deep reducer). A7 FAIL: in-app edge swipe-back not usable on 3-button Android (D-40). Back button/Android back work. |
 | 3 | Drag any sheet to dismiss; entry sheet keeps a draft; edited sheets ask before discarding | PARTIAL | A2, A3, A4 PASS. But Repeats sheet Discard does not discard (CR-02); WR-02/WR-03 (dirty without input, draft restore drops repeats/category/received amount) are warnings against D-25/D-33. |
 | 4 | FAB action matches tab; hides during sheets, bulk select, onboarding, step flows | VERIFIED | A8 PASS; shouldHideFab, FabProvider, FabQuickMenu present and tested. |
-| 5 | Screen reader navigation on both platforms | UNCERTAIN | Accessibility roles/labels/focus helpers exist in code; A11 not run, I2 pending. Human needed. |
+| 5 | Screen reader navigation on both platforms | PARTIAL | Android: A11 TalkBack PASS (2026-10-14). iOS: I2 VoiceOver pending Apple enrolment. |
 | 6 | Home: quick actions, This month, Coming up, Accounts, from recorded data | FAILED | CR-01 wrong headline, D-39 account rows, D-41 and D-42 Activity/Home hand-off and consistency, WR-01 errors ignored. |
 
 **Score:** 3 verified or mostly verified (1, 4 verified; 2 and 3 partial), 4 of 6 criteria have device evidence of working core behaviour; SC2, SC3, SC6 carry gaps, SC5 is unverified. Counting strictly: 2/6 fully verified.
@@ -122,7 +119,7 @@ All 11 IDs appear in plan frontmatter and in REQUIREMENTS.md; no orphans. REQUIR
 | NAV-03 | BLOCKED (partial) | Push and cover work; edge-swipe dismissal fails A7 (D-40) |
 | NAV-04 | PARTIAL | Drag works (A2); CR-02 Discard bug; WR-05 timer |
 | NAV-05 | SATISFIED | A8 |
-| NAV-06 | NEEDS HUMAN | A11, I2 |
+| NAV-06 | SATISFIED (Android); iOS pending | A11 PASS; I2 pending Apple enrolment |
 | DSG-07 | SATISFIED (Android) | A12 PASS; I3 pending; IN-01 latent |
 | HOME-01 | PARTIAL | Pay bills lands on Unpaid but unclear (D-41) |
 | HOME-02 | BLOCKED | CR-01 |
@@ -141,7 +138,7 @@ None. No later phase covers these gaps.
 
 ### Gaps Summary
 
-Core chrome works on Android (A1-A6, A8, A10, A12-A16 PASS). Gaps are: two confirmed review blockers (CR-01 wrong headline figure, CR-02 false Discard), the three decisions added after the device check that are decided but not implemented (D-39, D-40, D-41, D-42), and the Home error-state hole. Human items: A11 TalkBack, I1-I4 on iPhone XR after Apple enrolment.
+Core chrome works on Android (A1-A6, A8, A10, A12-A16 PASS). Gaps are: two confirmed review blockers (CR-01 wrong headline figure, CR-02 false Discard), the three decisions added after the device check that are decided but not implemented (D-39, D-40, D-41, D-42), and the Home error-state hole. A11 TalkBack passed on 2026-10-14. Human items: I1-I4 on iPhone XR after Apple enrolment.
 
 ---
 

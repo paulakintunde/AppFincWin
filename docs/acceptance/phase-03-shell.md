@@ -122,7 +122,7 @@ Result: PASS
 
 Expected: tabs read "Home, tab, 1 of 2" / "Activity, tab, 2 of 2" with selected state; tab change and push move focus to the title; a sheet announces its title, keeps focus, and offers a "Close" action; a toast over a sheet is announced without moving focus.
 
-Result: pending: not run 2026-10-14 (TalkBack deferred by the user)
+Result: PASS (2026-10-14, Pixel 9, TalkBack on: tab semantics, focus moves, sheet Close action and toast announcement as expected)
 
 ## A12 Largest text (DSG-07, D-19)
 
@@ -203,4 +203,4 @@ The Accounts card row for a USD account "Main" at -740 is too wide and spacious.
 - A9 (Unpaid filter not obvious; Home/Activity inconsistent on projected bills) -> D-41 (banner) and D-42 ("Expected" everywhere, tappable in Activity)
 - Accounts row too wide -> D-39
 
-No app code was changed by plan 03-14; these are gap work for a later plan. Still pending: A11 (TalkBack, not run 2026-10-14) and I1-I4 (Apple enrolment).
+No app code was changed by plan 03-14; these are gap work for a later plan. Still pending: I1-I4 (Apple enrolment). A11 TalkBack passed later on 2026-10-14.

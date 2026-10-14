@@ -18,7 +18,7 @@ metrics:
 
 # Phase 3 Plan 14: Device acceptance Summary
 
-The Android device checks for the shell were run on a Pixel 9 and recorded: 13 of 15 run rows pass, A7 (edge swipe-back) and A9 (Home) fail, A11 (TalkBack) was deferred, and the iOS rows wait for Apple enrolment. One extra finding (Accounts row too wide) was logged. Four decisions (D-39..D-42) close the gaps. No app code was changed by this plan.
+The Android device checks for the shell were run on a Pixel 9 and recorded: 14 of 16 rows pass (A11 TalkBack was run later the same day and passed), A7 (edge swipe-back) and A9 (Home) fail, and the iOS rows wait for Apple enrolment. One extra finding (Accounts row too wide) was logged. Four decisions (D-39..D-42) close the gaps. No app code was changed by this plan.
 
 ## What was recorded
 - `docs/acceptance/phase-03-shell.md`: Date (2026-10-14), build id and every `Result:` line, an "Additional finding" section and a "Gaps for closure" list.
@@ -34,7 +34,7 @@ Pixel 9, Android, 3-button navigation (secure navigation_mode 0). Local `npx exp
 | A1-A6, A8, A10, A12-A16 | PASS (A2 fling and handle margins fine, no tuning; A13 haptics respect touch feedback, no D-18 gap) |
 | A7 Details cover tab bar / edge swipe | FAIL |
 | A9 Home | FAIL |
-| A11 TalkBack | pending: not run 2026-10-14 |
+| A11 TalkBack | PASS (run later on 2026-10-14) |
 | I1-I4 (iPhone XR) | pending: Apple enrolment |
 
 ## Gaps for closure
@@ -47,7 +47,7 @@ Pixel 9, Android, 3-button navigation (secure navigation_mode 0). Local `npx exp
 | Accounts row too wide | AccountBalanceBlock `compact` still renders the standing/overdraft sentence, home-currency conversion and RateAttribution with no width cap; also used compact on AccountsScreen. | D-39: balance plus at most one short line; detail only for the rest |
 
 ## Pending
-- A11 TalkBack: not run 2026-10-14, deferred by the user.
+- A11 TalkBack: PASS, run later on 2026-10-14.
 - I1-I4: pending Apple enrolment.
 
 ## Deviations from Plan
