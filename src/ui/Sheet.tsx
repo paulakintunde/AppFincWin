@@ -54,6 +54,9 @@ import {
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, size, space, useScreenInsets } from '@/theme/layout';
+import { textRole } from '@/theme/typography';
+import { Text } from '@/ui/Text';
+import { Pill } from './Pill';
 import { DURATION, EASING, useMotion } from '@/theme/motion';
 import { pushSheet, removeSheet } from '@/state/sheetStack';
 import { hapticSelection } from './haptics';
@@ -72,6 +75,8 @@ export interface SheetProps {
   accessibilityLabel?: string;
   /** false: drag snaps back and back/backdrop are ignored (e.g. a save in flight). Default true. */
   dismissible?: boolean;
+  /** D-26: while true, drag, Android back and backdrop open 'Discard changes?' instead of closing. Cancel never asks (D-27): callers wire Cancel to their own close. */
+  dirty?: boolean;
 }
 
 export type SheetDismissSource = 'backdrop' | 'drag' | 'back';
@@ -106,7 +111,7 @@ function useAndroidKeyboardHeight(): number {
   return kb;
 }
 
-export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismissible = true }: SheetProps) {
+export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismissible = true, dirty = false }: SheetProps) {
   const t = useT();
   const { colors } = useTheme();
   const insets = useScreenInsets();
@@ -117,11 +122,14 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
 
   const onDismissRef = useRef(onDismiss);
   const dismissibleRef = useRef(dismissible);
+  const dirtyRef = useRef(dirty);
+  const [discardOpen, setDiscardOpen] = useState(false);
   const visibleRef = useRef(visible);
   const durationRef = useRef(motion.duration);
   useEffect(() => {
     onDismissRef.current = onDismiss;
     dismissibleRef.current = dismissible;
+    dirtyRef.current = dirty;
     visibleRef.current = visible;
     durationRef.current = motion.duration;
   });
@@ -129,7 +137,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   const translateY = useSharedValue(height);
   const backdrop = useSharedValue(0);
   const sheetHeight = useSharedValue(height);
-  const canDragDismiss = useSharedValue(dismissible);
+  const canDragDismiss = useSharedValue(dismissible && !dirty);
   const scrollY = useSharedValue(0);
   const bodyTop = useSharedValue(Number.POSITIVE_INFINITY); // sheets without a SheetScroll drag everywhere
   const inBody = useSharedValue(false);
@@ -139,8 +147,8 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   const scrollNative = useMemo(() => Gesture.Native(), []);
 
   useEffect(() => {
-    canDragDismiss.value = dismissible;
-  }, [dismissible, canDragDismiss]);
+    canDragDismiss.value = dismissible && !dirty;
+  }, [dismissible, dirty, canDragDismiss]);
 
   useEffect(() => {
     if (!visible) return;
@@ -164,6 +172,10 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
 
   const requestDismiss = useCallback((_source: SheetDismissSource) => {
     if (!dismissibleRef.current) return;
+    if (dirtyRef.current) {
+      setDiscardOpen(true);
+      return;
+    }
     onDismissRef.current();
   }, []);
 
@@ -180,8 +192,10 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
     }, durationRef.current(SHEET_DISMISS_DELAY));
   }, [requestDismiss, translateY, backdrop]);
 
-  // Hook point: 03-16 shows the Discard prompt here when a dirty sheet is dragged past the threshold.
-  const onBlockedDismiss = useCallback(() => undefined, []);
+  // A dirty sheet dragged past the threshold snaps back (canDragDismiss) and asks instead.
+  const onBlockedDismiss = useCallback(() => {
+    if (dirtyRef.current && dismissibleRef.current) setDiscardOpen(true);
+  }, []);
 
   const pan = useMemo(
     () =>
@@ -239,6 +253,9 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
 
   const backdropStyle = useAnimatedStyle(() => ({ opacity: backdrop.value }));
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
+
+  // Drop a stale prompt when the owner closes the sheet (state adjusted during render, not in an effect).
+  if (!visible && discardOpen) setDiscardOpen(false);
 
   if (!visible) {
     return null;
@@ -317,11 +334,45 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
               />
             </View>
             <SheetGestureContext.Provider value={gestureCtx}>{children}</SheetGestureContext.Provider>
+            {dirty ? (
+              <DiscardPrompt
+                visible={discardOpen}
+                onKeep={() => setDiscardOpen(false)}
+                onDiscard={() => {
+                  setDiscardOpen(false);
+                  onDismissRef.current();
+                }}
+              />
+            ) : null}
           </Animated.View>
         </GestureDetector>
       </KeyboardAvoidingView>
       </GestureHandlerRootView>
     </Modal>
+  );
+}
+
+interface DiscardPromptProps {
+  visible: boolean;
+  onKeep: () => void;
+  onDiscard: () => void;
+}
+
+/** D-26/D-28: rendered inside the edit sheet's container so it is a nested Modal over it. Its own dismissal is Keep editing. */
+function DiscardPrompt({ visible, onKeep, onDiscard }: DiscardPromptProps) {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  return (
+    <Sheet visible={visible} onDismiss={onKeep} accessibilityLabel={t('sheet.discard.title')}>
+      <View style={styles.promptColumn}>
+        <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{t('sheet.discard.title')}</Text>
+        <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('sheet.discard.body')}</Text>
+        <View style={styles.promptActions}>
+          <Pill label={t('sheet.discard.keep')} variant="secondary" onPress={onKeep} />
+          <Pill label={t('sheet.discard.confirm')} variant="danger" onPress={onDiscard} />
+        </View>
+      </View>
+    </Sheet>
   );
 }
 
@@ -400,6 +451,13 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
+  },
+  promptColumn: {
+    gap: space.groupGap,
+  },
+  promptActions: {
+    flexDirection: 'row',
+    gap: space.gapMd,
   },
   container: {
     width: '100%',
