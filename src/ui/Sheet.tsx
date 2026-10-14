@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/immutability, react-hooks/refs -- Reanimated shared values are mutated by design (gesture worklets, scroll handler, ref passed to a Gesture); the React-compiler purity rules do not model them. */
 /**
  * UI-SPEC Design System: the shared modal bottom sheet container every Record sheet
  * (entry, category, account, import) is built on.
@@ -64,7 +63,6 @@ import { hapticSelection } from './haptics';
 import {
   BACKDROP_OPACITY,
   SHEET_DISMISS_DELAY,
-  SHEET_DISMISS_DISTANCE,
   clampDrag,
   sheetDragOutcome,
 } from './sheetDrag';
@@ -78,6 +76,8 @@ export interface SheetProps {
   dismissible?: boolean;
   /** D-26: while true, drag, Android back and backdrop open 'Discard changes?' instead of closing. Cancel never asks (D-27): callers wire Cancel to their own close. */
   dirty?: boolean;
+  /** D-26 / G2: called instead of onDismiss when the user picks Discard in "Discard changes?", so an owner can roll its edits back before closing. Defaults to onDismiss. */
+  onDiscard?: () => void;
 }
 
 export type SheetDismissSource = 'backdrop' | 'drag' | 'back';
@@ -112,7 +112,7 @@ function useAndroidKeyboardHeight(): number {
   return kb;
 }
 
-export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismissible = true, dirty = false }: SheetProps) {
+export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismissible = true, dirty = false, onDiscard }: SheetProps) {
   const t = useT();
   const { colors } = useTheme();
   const insets = useScreenInsets();
@@ -124,6 +124,9 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   const isTop = useIsTopSheet(id);
 
   const onDismissRef = useRef(onDismiss);
+  const onDiscardRef = useRef(onDiscard);
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dismissingRef = useRef(false);
   const dismissibleRef = useRef(dismissible);
   const dirtyRef = useRef(dirty);
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -131,6 +134,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   const durationRef = useRef(motion.duration);
   useEffect(() => {
     onDismissRef.current = onDismiss;
+    onDiscardRef.current = onDiscard;
     dismissibleRef.current = dismissible;
     dirtyRef.current = dirty;
     visibleRef.current = visible;
@@ -153,8 +157,26 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
     canDragDismiss.value = dismissible && !dirty;
   }, [dismissible, dirty, canDragDismiss]);
 
+  const clearDismissTimer = useCallback(() => {
+    if (dismissTimerRef.current !== null) {
+      clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+  }, []);
+
+  // H5: the drag-dismiss timer never outlives the sheet; the flag resets on close.
+  useEffect(() => () => clearDismissTimer(), [clearDismissTimer]);
+  useEffect(() => {
+    if (!visible) {
+      clearDismissTimer();
+      dismissingRef.current = false;
+    }
+  }, [visible, clearDismissTimer]);
+
   useEffect(() => {
     if (!visible) return;
+    clearDismissTimer();
+    dismissingRef.current = false;
     // Reset on every open: a drag leaves translateY at 110%.
     translateY.value = height;
     backdrop.value = 0;
@@ -174,6 +196,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   }, [visible, id]);
 
   const requestDismiss = useCallback((_source: SheetDismissSource) => {
+    if (dismissingRef.current) return;
     if (!dismissibleRef.current) return;
     if (dirtyRef.current) {
       setDiscardOpen(true);
@@ -184,7 +207,11 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
 
   const onDragDismiss = useCallback(() => {
     hapticSelection();
-    setTimeout(() => {
+    dismissingRef.current = true;
+    clearDismissTimer();
+    dismissTimerRef.current = setTimeout(() => {
+      dismissTimerRef.current = null;
+      dismissingRef.current = false;
       requestDismiss('drag');
       // Pitfall 5: if the owner kept the sheet open, bring it back instead of leaving an invisible Modal.
       requestAnimationFrame(() => {
@@ -193,7 +220,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
         backdrop.value = withTiming(BACKDROP_OPACITY, { duration: DURATION.backdrop, easing: Easing.ease });
       });
     }, durationRef.current(SHEET_DISMISS_DELAY));
-  }, [requestDismiss, translateY, backdrop]);
+  }, [requestDismiss, clearDismissTimer, translateY, backdrop]);
 
   // A dirty sheet dragged past the threshold snaps back (canDragDismiss) and asks instead.
   const onBlockedDismiss = useCallback(() => {
@@ -208,29 +235,36 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
         .simultaneousWithExternalGesture(scrollNative)
         .withTestId('sheet-drag')
         .onBegin((e) => {
+          // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
           inBody.value = e.y >= bodyTop.value;
+          // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
           startDy.value = 0;
         })
         .onUpdate((e) => {
           if (inBody.value && scrollY.value > 0) {
+            // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
             startDy.value = e.translationY;
             return;
           }
           const dy = clampDrag(e.translationY - startDy.value);
+          // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
           translateY.value = dy;
           if (dy > 0 && inBody.value) scrollTo(scrollRef, 0, 0, false);
         })
+        // eslint-disable-next-line react-hooks/refs -- ref handed to a Gesture/animated ref, not read during render
         .onEnd((e) => {
           // A pan that began in a scrolled body is a scroll, not a dismissal.
           const scrolling = inBody.value && scrollY.value > 0;
           const dy = scrolling ? 0 : clampDrag(e.translationY - startDy.value);
           if (sheetDragOutcome(dy, e.velocityY) === 'dismiss' && canDragDismiss.value) {
+            // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
             translateY.value = withTiming(sheetHeight.value * 1.1, { duration: DURATION.sheetDrag, easing: EASING });
+            // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
             backdrop.value = withTiming(0, { duration: SHEET_DISMISS_DELAY, easing: EASING });
             scheduleOnRN(onDragDismiss);
           } else {
             translateY.value = withTiming(0, { duration: DURATION.sheetDrag, easing: EASING });
-            if (dy > SHEET_DISMISS_DISTANCE) scheduleOnRN(onBlockedDismiss);
+            if (sheetDragOutcome(dy, e.velocityY) === 'dismiss') scheduleOnRN(onBlockedDismiss);
           }
         }),
     [
@@ -257,8 +291,8 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   const backdropStyle = useAnimatedStyle(() => ({ opacity: backdrop.value }));
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
 
-  // Drop a stale prompt when the owner closes the sheet (state adjusted during render, not in an effect).
-  if (!visible && discardOpen) setDiscardOpen(false);
+  // Drop a stale prompt when the owner closes the sheet or it stops being dirty (state adjusted during render, not in an effect).
+  if ((!visible || !dirty) && discardOpen) setDiscardOpen(false);
 
   if (!visible) {
     return null;
@@ -295,6 +329,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
               if (e.nativeEvent.actionName === 'escape') requestDismiss('back');
             }}
             onLayout={(e: LayoutChangeEvent) => {
+              // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
               sheetHeight.value = e.nativeEvent.layout.height;
             }}
             style={[
@@ -343,7 +378,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
                 onKeep={() => setDiscardOpen(false)}
                 onDiscard={() => {
                   setDiscardOpen(false);
-                  onDismissRef.current();
+                  (onDiscardRef.current ?? onDismissRef.current)();
                 }}
               />
             ) : null}
@@ -407,6 +442,7 @@ export function SheetScroll({ children, contentContainerStyle }: SheetScrollProp
   const onLayout = (e: LayoutChangeEvent) => {
     if (!ctx) return;
     // Immediate estimate from the layout (exact when the body is a direct child of the container) ...
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
     ctx.bodyTop.value = e.nativeEvent.layout.y;
     // ... refined by measuring against the container itself (research Pitfall 8).
     const node = ctx.scrollRef.current as unknown as {
