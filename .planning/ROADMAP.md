@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy (completed 2026-10-11; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 2.2: Record polish** (INSERTED) - Activity views and subtotals, sort, recurring-from-history, clone, detail sheet and swipe, entry-sheet extras, paste import, sample data (completed 2026-10-10; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 2.3: Record follow-ups** (INSERTED) - Import reconcile-or-new choice, description auto-categorise rules, signed-out account chooser, compact amount, Add account from the picker, bulk Add to list (completed 2026-10-13; Android verified, iOS pending Apple enrolment)
-- [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content
+- [x] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content (completed 2026-10-14)
 - [ ] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
@@ -509,7 +509,7 @@ Plans:
 - [x] 03-37-PLAN.md — Sync line on every pushed screen (G5) [integration]
 
 **Gap wave 4** *(blocked on gap wave 3)*
-- [ ] 03-38-PLAN.md — Pixel 9 re-check: A7, A9, A15, Accounts row, import from Home, H7/H8/M3 quick checks (checkpoint)
+- [x] 03-38-PLAN.md — Pixel 9 re-check: A7, A9, A15, Accounts row, import from Home, H7/H8/M3 quick checks (checkpoint)
 **UI hint**: yes — heaviest design-fidelity phase in the roadmap: bespoke SVG tab glyphs, sheet infrastructure, seven named animations.
 
 ### Phase 4: Decide Engine
@@ -697,7 +697,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 37/38 | In Progress|  |
+| 3. Shell | 38/38 | Complete   | 2026-10-14 |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
