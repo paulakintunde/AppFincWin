@@ -82,6 +82,8 @@ Expected: detail covers the tab bar and FAB; the swipe pops it; the same swipe o
 
 Result: FAIL. User: "Swipe from the edge on the left does not work as started; not sure if the swipe works on screen." Diagnosis: the phone uses 3-button navigation, so the only edge swipe is the in-app SwipeBack (src/features/navigation/SwipeBack.tsx + swipeBackGesture.ts): 28dp start zone, 80dp distance, fires only on release, no visual follow. Easy to miss and gives no feedback. Closure: D-40.
 
+Re-check 03-38: PASS (see Gap re-check R1).
+
 ## A8 FAB and quick menu (NAV-05, D-09, D-10, D-11, D-18)
 
 1. Look at Home and Activity.
@@ -103,6 +105,8 @@ Result: PASS
 Expected: order is quick actions, This month, Coming up, Accounts; no net worth or health card; IN/OUT match Activity; UNPAID equals Activity's Unpaid list (bills only, projected bills included, no income, no transfers); Pay marks paid with Undo; projected bill has no Pay and opens a read-only detail; Pay bills and See all open Activity on Unpaid with the Filter chip active; month chip change on Home changes Activity's month; account row opens the account.
 
 Result: FAIL. When Activity opens with the Unpaid filter on, nothing makes it obvious, so entries look like they disappeared. The only cue is the highlighted Filter chip. Also, projected bills are labelled "Projected" and tappable (read-only) on Home but "Expected", faded and not tappable in Activity (inconsistent). Tapping a recorded unpaid bill showed Mark as paid and Activity rows swipe to pay/delete, confirmed correct. Closure: D-41 and D-42.
+
+Re-check 03-38: PASS (see Gap re-check R2, R3).
 
 ## A10 Refresh (D-17)
 
@@ -161,6 +165,8 @@ Expected: the large title scrolls away and the compact header fades in on both, 
 
 Result: PASS
 
+Re-check 03-38: PASS at scroll 0 and on pushed screens (see Gap re-check R4).
+
 ## A16 First account lands on Home (D-38)
 
 1. Create a fresh account and finish setup.
@@ -197,6 +203,8 @@ Result: pending: Apple enrolment
 
 The Accounts card row for a USD account "Main" at -740 is too wide and spacious. Cause: AccountBalanceBlock `compact` (src/features/record/accounts/AccountBalanceBlock.tsx) still renders the standing/overdraft sentence, the home-currency conversion and RateAttribution under the figure, with no width cap. The same block is used compact on AccountsScreen. Closure: D-39.
 
+Re-check 03-38: PASS (see Gap re-check R5).
+
 ## Gaps for closure
 
 - A7 (edge swipe-back not discoverable, no feedback) -> D-40
@@ -216,36 +224,38 @@ Plan 03-38. Re-check on the Pixel 9 of the rows that failed or that the audits d
 
 ### R1 A7 edge swipe (G7, D-40)
 
-Result: pending
+Result: PASS (G7, D-40). Screen follows the finger from the 40dp edge zone, completes or snaps back, does nothing on Home/Activity, and pops at release with Remove animations on. The plain background revealed behind the dragged screen was accepted.
 
 ### R2 A9 Unpaid banner (G8, D-41)
 
-Result: pending
+Result: PASS (G8, D-41). Banner shows from Pay bills and See all; Clear removes it and shows the full month.
 
 ### R3 A9 Expected wording and tap (G9, D-42)
 
-Result: pending
+Result: PASS (G9, D-42). Home and Activity both say "Expected"; an Activity expected row opens the read-only detail with no Pay. Checked with the phone date set to 5 December 2026 so December held only expected bills (nothing written while the date was changed), then restored.
 
 ### R4 A15 sync line at rest (G5)
 
-Result: pending
+Result: PASS (G5). Offline line shows at scroll 0 on Activity list and Calendar and on Accounts, account detail, Categories and History; gone when back online.
 
 ### R5 Accounts row (G6, D-39)
 
-Result: pending
+Result: PASS (G6, D-39). Home Accounts card and the Accounts list show the figure plus one short line; the account detail keeps the full block.
 
 ### R6 Import from Home returns to Home (G3)
 
-Result: pending
+Result: PASS (G3). Import from Home returns to Home with one Add pill and one entry sheet; import from Activity returns to Activity.
 
 ### R7 Double tap (H7)
 
-Result: pending
+Result: PASS (H7). Double tap on the avatar and on an Accounts row opens one screen.
 
 ### R8 FAB clearance (H8)
 
-Result: pending
+Result: PASS (H8). Last Activity row sits above the Add pill.
 
 ### R9 Toast and headline (M3, G1)
 
-Result: pending
+Result: PASS (M3, G1). Toast rises in and is slimmer; a month with only expected bills (December, via the phone-date method in R3) shows a negative red headline, not £0.
+
+All nine re-checks passed on 2026-10-14; no gaps remain after 03-38. Still pending: I1-I4 (Apple enrolment).
