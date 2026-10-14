@@ -73,6 +73,9 @@ import { EntryList } from './EntryList';
 import { EntryListFooter, listSummaryText } from './EntryListFooter';
 import { clearedAfterAdd, formFromItem, formHasContent, itemFromForm } from './listForm';
 import { useEntryList } from './useEntryList';
+import { fromDraftForm, toDraftForm } from './draftForm';
+import { isFormDirty } from './formDirty';
+import { isStructurallyEqual } from '@/ui/useIsDirty';
 import { OptionPicker } from './pickers/OptionPicker';
 import { CurrencyPicker } from './pickers/CurrencyPicker';
 import { EditScopePrompt } from './EditScopePrompt';
@@ -261,7 +264,32 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   // 02.3 REC-30: the entry list (new entries only). finishFor holds the form state the
   // finish-current error was raised for, so any later edit to the form clears it.
   const activeAccountIds = useMemo(() => new Set(activeAccounts.map((a) => a.id)), [activeAccounts]);
-  const list = useEntryList({ userId: rc.userId, householdId: rc.householdId, enabled: isNew, activeAccountIds });
+  const list = useEntryList({
+    userId: rc.userId,
+    householdId: rc.householdId,
+    enabled: isNew,
+    activeAccountIds,
+    // D-25 / T-03-24-01: a stored form is untrusted; unknown ids are dropped before they reach the form.
+    onRestoreForm: (form) =>
+      setState((s) => ({
+        ...s,
+        ...fromDraftForm(form, {
+          activeAccountIds,
+          categoryIds: new Set(categories.all.filter((c) => c.archived_at === null).map((c) => c.id)),
+          paymentTypes: new Set<string>([...PAYMENT_TYPES.out, ...PAYMENT_TYPES.in]),
+        }),
+      })),
+  });
+  // D-33: an existing entry asks "Discard changes?" only once something differs from how it opened.
+  const [initial] = useState(() => ({ state, repeats }));
+  const editDirty =
+    !isNew && (isFormDirty(state, initial.state) || !isStructurallyEqual(repeats, initial.repeats));
+  // D-25: swipe-down, Android back and backdrop on a new entry never ask and never lose input;
+  // the list is flushed by useEntryList on unmount, the form is kept here.
+  const onAccidentalDismiss = () => {
+    if (formHasContent(state)) list.keepForm(toDraftForm(state));
+    onClose();
+  };
   const [finishFor, setFinishFor] = useState<FormState | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -747,7 +775,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     : t('record.sheet.confirmDelete');
 
   return (
-    <Sheet visible onDismiss={onClose} accessibilityLabel={titleText}>
+    <Sheet visible onDismiss={isNew ? onAccidentalDismiss : onClose} dirty={editDirty} accessibilityLabel={titleText}>
       <SheetHeader title={titleText} cancelLabel={t('record.sheet.cancel')} onCancel={requestCancel} />
       <SheetScroll contentContainerStyle={styles.column}>
         {isNew ? (
