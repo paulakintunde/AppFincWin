@@ -3,7 +3,7 @@
 import React from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { ThemeProvider } from '@/theme/ThemeProvider';
+import { ShellTestProviders } from '@/shell/__tests__/testUtils';
 import { dismissToast, getToast, resetToastForTests, showToast } from '@/state/undoToast';
 import type { UndoLogRow } from '@/db/rows';
 import { undoLabelText } from '@/i18n/undoLabel';
@@ -47,7 +47,7 @@ afterEach(() => {
 });
 
 async function renderThemed(ui: React.ReactElement) {
-  return render(<ThemeProvider>{ui}</ThemeProvider>);
+  return render(<ShellTestProviders>{ui}</ShellTestProviders>);
 }
 
 async function show(t: Parameters<typeof showToast>[0]) {
