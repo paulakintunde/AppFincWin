@@ -145,6 +145,15 @@ Decision numbers are local to this phase. "Phase 2 D-xx" refers to `.planning/ph
   4. **Accounts** summary card (HOME-04): accounts with balances, tapping through to the account detail (L112–125).
 - **D-31:** **Not on Home in this phase:** the net-worth hero, range chips and sparkline (INS-01, Phase 7) and the health card (INS-06, Phase 7). Those slots are simply absent, not placeholders (the D-02 spirit).
 - **D-32:** **Home figures use the existing Phase 2 queries and engine.** Integer minor units, the existing rounding, home-currency conversion with the "waiting for a rate" handling Activity uses. No new server calls or migrations.
+  - **Amended at planning (2026-10-13):** "no new maths" in D-30 item 2 is relaxed. The existing `stillToCome` is a signed sum that includes pending income, so it can't supply UNPAID. A new pure function in `src/engine/activity` keeps unpaid outflows separate. It is a pure engine addition at 100% coverage, with no server change.
+
+### Planning answers (new 2026-10-13, from the research open questions)
+- **D-33:** **Editing an existing entry: closing with changes asks "Discard changes?"** (D-26). This applies only when something was changed. A new entry keeps the saved-draft behaviour. The entry draft format moves to version 2 with a form snapshot, and version 1 drafts must still parse.
+- **D-34:** **Projected recurring bills count in UNPAID and Coming up, with no Pay button.** They add to UNPAID and appear in Coming up, and tapping one opens its detail. Pay (Mark paid) appears only on recorded rows.
+- **D-35:** **Activity's Unpaid filter becomes "bills out only".** It shows outflows still due plus projected bills, so that "Pay bills" and "See all" match Home's UNPAID figure. Pending income is excluded.
+- **D-36:** **Pending transfers are excluded from UNPAID, Coming up and the Unpaid filter.**
+- **D-37:** **Dropdown menus get the same ink-at-38% backdrop as sheets** (D-23). This is a small visible change in the 4 places that use them.
+- **D-38:** **After the first account is created, setup lands on Home.** The first-account redirect moves up from `app/(app)/activity.tsx` to the shared layout. YouScreen's "Activity" row gets its own Activity link instead of `APP_HOME_HREF`.
 
 ### Accessibility and text scaling
 - **D-19:** **Text scaling (DSG-07):**
