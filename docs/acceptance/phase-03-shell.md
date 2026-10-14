@@ -3,9 +3,9 @@
 Plan 03-14. Manual-only checks from 03-VALIDATION.md, run on the physical Android phone (Pixel 9). iOS rows wait for an iOS development build (Apple enrolment). No account emails or personal identifiers are recorded here.
 
 - Phase: 03-shell
-- Date: (fill in at run)
+- Date: 2026-10-14
 - Device: Pixel 9 (Android), development build with expo-blur and the predictive-back flag
-- Build id: local `npx expo run:android` build from phase/03-shell (HEAD 112cf5d at install)
+- Build id: local `npx expo run:android` build from phase/03-shell (HEAD 06ac01d at install, 2026-10-14, after uninstalling a differently-signed older build; 3-button navigation, secure navigation_mode 0)
 
 ## A1 Back chain and top-only dismissal (NAV-02, D-06, D-29)
 
@@ -15,7 +15,7 @@ Plan 03-14. Manual-only checks from 03-VALIDATION.md, run on the physical Androi
 
 Expected: first back shows "Discard changes?"; back again closes the prompt and keeps the name; back then Discard closes both. You > back returns to Activity; back returns to Home (slides from the left); back exits the app.
 
-Result: pending
+Result: PASS
 
 ## A2 Drag feel (NAV-04, D-12a/b, D-18)
 
@@ -27,7 +27,7 @@ Result: pending
 
 Expected: sheet follows the finger; past ~92px closes with a selection tick, short snaps back; with a scrolled body the drag waits until the list is at the top; fling outcome recorded; REMOVE swipe still works.
 
-Result: pending
+Result: PASS (fling and handle margins felt fine; no tuning requested)
 
 ## A3 Backdrop and motion (D-23, D-24, D-28, D-37)
 
@@ -38,7 +38,7 @@ Result: pending
 
 Expected: backdrop fades in; the confirm darkens a little more; Cancel and Save close instantly; dropdown menus dim the same way.
 
-Result: pending
+Result: PASS
 
 ## A4 Entry draft and edit guard (D-25, D-27, D-33)
 
@@ -50,7 +50,7 @@ Result: pending
 
 Expected: swipe down closes with no prompt; Continue list restores the amount; Cancel asks "Discard list?"; changed existing entry asks "Discard changes?"; untouched existing entry closes at once.
 
-Result: pending
+Result: PASS
 
 ## A5 Toast over sheets (D-16)
 
@@ -60,7 +60,7 @@ Result: pending
 
 Expected: "Removed · {name}" with Undo shows above the sheet and Undo restores it; after save the Undo toast sits just above the tab bar and the FAB rises above it, then settles.
 
-Result: pending
+Result: PASS
 
 ## A6 Tabs and slide (NAV-01, D-01, D-02, D-05, D-08, D-18)
 
@@ -70,7 +70,7 @@ Result: pending
 
 Expected: only Home and Activity show; Home > Activity slides in from the right; back slides in from the left; second tap scrolls to top; no haptic on tab change.
 
-Result: pending
+Result: PASS
 
 ## A7 Details cover the tab bar (NAV-03, D-07, D-22)
 
@@ -80,7 +80,7 @@ Result: pending
 
 Expected: detail covers the tab bar and FAB; the swipe pops it; the same swipe on Home or Activity does nothing.
 
-Result: pending
+Result: FAIL. User: "Swipe from the edge on the left does not work as started; not sure if the swipe works on screen." Diagnosis: the phone uses 3-button navigation, so the only edge swipe is the in-app SwipeBack (src/features/navigation/SwipeBack.tsx + swipeBackGesture.ts): 28dp start zone, 80dp distance, fires only on release, no visual follow. Easy to miss and gives no feedback. Closure: D-40.
 
 ## A8 FAB and quick menu (NAV-05, D-09, D-10, D-11, D-18)
 
@@ -90,7 +90,7 @@ Result: pending
 
 Expected: an "Add" pill above the tab bar on Home and Activity; tap gives a light haptic and the new-transaction sheet; long-press gives a medium haptic and "Quick add" with Add expense, Add income, Transfer, Import statement (no New check); FAB hidden in bulk select, while any sheet is open and on pushed screens; Activity has no Add pill or Add sheet.
 
-Result: pending
+Result: PASS
 
 ## A9 Home (HOME-01..04, D-30..D-36)
 
@@ -102,7 +102,7 @@ Result: pending
 
 Expected: order is quick actions, This month, Coming up, Accounts; no net worth or health card; IN/OUT match Activity; UNPAID equals Activity's Unpaid list (bills only, projected bills included, no income, no transfers); Pay marks paid with Undo; projected bill has no Pay and opens a read-only detail; Pay bills and See all open Activity on Unpaid with the Filter chip active; month chip change on Home changes Activity's month; account row opens the account.
 
-Result: pending
+Result: FAIL. When Activity opens with the Unpaid filter on, nothing makes it obvious, so entries look like they disappeared. The only cue is the highlighted Filter chip. Also, projected bills are labelled "Projected" and tappable (read-only) on Home but "Expected", faded and not tappable in Activity (inconsistent). Tapping a recorded unpaid bill showed Mark as paid and Activity rows swipe to pay/delete, confirmed correct. Closure: D-41 and D-42.
 
 ## A10 Refresh (D-17)
 
@@ -112,7 +112,7 @@ Result: pending
 
 Expected: accent spinner, then "Up to date — nothing new to pull"; after a change elsewhere "Prices and balances up to date"; offline: no toast, the sync line shows.
 
-Result: pending
+Result: PASS
 
 ## A11 TalkBack (NAV-06, D-20)
 
@@ -122,7 +122,7 @@ Result: pending
 
 Expected: tabs read "Home, tab, 1 of 2" / "Activity, tab, 2 of 2" with selected state; tab change and push move focus to the title; a sheet announces its title, keeps focus, and offers a "Close" action; a toast over a sheet is announced without moving focus.
 
-Result: pending
+Result: pending: not run 2026-10-14 (TalkBack deferred by the user)
 
 ## A12 Largest text (DSG-07, D-19)
 
@@ -131,7 +131,7 @@ Result: pending
 
 Expected: body text about 2x and wrapping, no clipping; tab labels and Home's figures about 1.3x; typed text in inputs capped.
 
-Result: pending
+Result: PASS
 
 ## A13 Haptics setting (D-18)
 
@@ -140,7 +140,7 @@ Result: pending
 
 Expected: the FAB and drag-close haptics do not fire. If they still fire, record "D-18 gap: expo-haptics impactAsync/selectionAsync ignore the Android touch-feedback setting" for a decision.
 
-Result: pending
+Result: PASS (haptics respect touch feedback; no D-18 gap)
 
 ## A14 Reduced motion (D-21)
 
@@ -149,7 +149,7 @@ Result: pending
 
 Expected: tab slide, push, sheet rise, backdrop fade, drag slide-out, FAB rise and Home bar are instant; end states identical.
 
-Result: pending
+Result: PASS
 
 ## A15 Header and sync line (D-14, D-15)
 
@@ -159,7 +159,7 @@ Result: pending
 
 Expected: the large title scrolls away and the compact header fades in on both, including the Calendar path; the slim sync line shows on every screen while offline or queued; absent when all well (You keeps "synced x ago").
 
-Result: pending
+Result: PASS
 
 ## A16 First account lands on Home (D-38)
 
@@ -167,7 +167,7 @@ Result: pending
 
 Expected: setup ends on Home, not Activity.
 
-Result: pending
+Result: PASS
 
 ## I1 Native edge swipe (iPhone XR, D-07)
 
@@ -192,3 +192,15 @@ Result: pending: Apple enrolment
 Dragging a sheet whose body is at the top does not rubber-band the content.
 
 Result: pending: Apple enrolment
+
+## Additional finding: Accounts row too wide (found on Home)
+
+The Accounts card row for a USD account "Main" at -740 is too wide and spacious. Cause: AccountBalanceBlock `compact` (src/features/record/accounts/AccountBalanceBlock.tsx) still renders the standing/overdraft sentence, the home-currency conversion and RateAttribution under the figure, with no width cap. The same block is used compact on AccountsScreen. Closure: D-39.
+
+## Gaps for closure
+
+- A7 (edge swipe-back not discoverable, no feedback) -> D-40
+- A9 (Unpaid filter not obvious; Home/Activity inconsistent on projected bills) -> D-41 (banner) and D-42 ("Expected" everywhere, tappable in Activity)
+- Accounts row too wide -> D-39
+
+No app code was changed by plan 03-14; these are gap work for a later plan. Still pending: A11 (TalkBack, not run 2026-10-14) and I1-I4 (Apple enrolment).
