@@ -498,11 +498,11 @@ Plans:
 - [x] 03-36-PLAN.md — Android edge swipe-back: 40dp, follows the finger, reduced motion (G7 / D-40)
 
 **Gap wave 2** *(blocked on gap wave 1)*
-- [ ] 03-28-PLAN.md — Entry sheet: lossless draft restore, validated currencies, no guess on an untouched edit, early-dismiss merge (H1, H2, H4, L5)
-- [ ] 03-29-PLAN.md — Home This month / Coming up: true headline with expected bills (G1), error and offline states (G4), month-aware copy (M6), shared refresh keys (M8)
-- [ ] 03-30-PLAN.md — Account rows short on Home and Accounts list (G6 / D-39), accent-following tints (M4), card polish (M1, M2, M7)
-- [ ] 03-32-PLAN.md — Tab-root chrome: sync line in the large header (G5), offline refresh no toast (H3), FAB clearance (H8), avatar (M5)
-- [ ] 03-35-PLAN.md — Import returns to the one (tabs), to Home when started there (G3); push guards (H7) [integration]
+- [x] 03-28-PLAN.md — Entry sheet: lossless draft restore, validated currencies, no guess on an untouched edit, early-dismiss merge (H1, H2, H4, L5)
+- [x] 03-29-PLAN.md — Home This month / Coming up: true headline with expected bills (G1), error and offline states (G4), month-aware copy (M6), shared refresh keys (M8)
+- [x] 03-30-PLAN.md — Account rows short on Home and Accounts list (G6 / D-39), accent-following tints (M4), card polish (M1, M2, M7)
+- [x] 03-32-PLAN.md — Tab-root chrome: sync line in the large header (G5), offline refresh no toast (H3), FAB clearance (H8), avatar (M5)
+- [x] 03-35-PLAN.md — Import returns to the one (tabs), to Home when started there (G3); push guards (H7) [integration]
 
 **Gap wave 3** *(blocked on gap wave 2)*
 - [ ] 03-31-PLAN.md — Activity: Unpaid banner (G8 / D-41), tappable Expected rows (G9 / D-42), sync line at rest, FAB clearance
@@ -697,7 +697,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 30/38 | In Progress|  |
+| 3. Shell | 35/38 | In Progress|  |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
