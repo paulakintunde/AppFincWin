@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { AccessibilityInfo, ScrollView } from 'react-native';
-import { act } from '@testing-library/react-native';
+import { act, screen } from '@testing-library/react-native';
 import { useScrollToTop } from 'expo-router';
 import { renderWithShellProviders, resetShellStores } from '@/shell/__tests__/testUtils';
 import { focusAccessibility, useScreenTitleFocus } from '@/shell/a11yFocus';
+import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { useShellRefresh } from '@/shell/refresh/useShellRefresh';
 import { useTheme } from '@/theme/ThemeProvider';
 import {
@@ -26,9 +27,7 @@ jest.mock('@/shell/refresh/useShellRefresh', () => ({ useShellRefresh: jest.fn()
 jest.mock('@/features/you/useProfile', () => ({
   useProfile: () => ({ profile: { full_name: 'Paul', email: 'p@x.com' } }),
 }));
-jest.mock('@/data/sync/useSyncStatus', () => ({
-  useSyncStatus: () => ({ isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null }),
-}));
+jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: jest.fn() }));
 
 const refresh = jest.fn();
 const seen: { chrome?: TabRootChrome; colors?: ReturnType<typeof useTheme>['colors'] } = {};
@@ -52,6 +51,7 @@ function Probe(props: TabRootChromeOptions) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (useSyncStatus as jest.Mock).mockReturnValue({ isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null });
   resetShellStores();
   seen.chrome = undefined;
   refresh.mockResolvedValue('updated');
@@ -66,6 +66,15 @@ describe('compactThreshold', () => {
 });
 
 describe('useTabRootChrome', () => {
+  it('large header carries the sync line only when there is a problem', async () => {
+    await renderWithShellProviders(<Probe title="Overview" />);
+    expect(screen.queryByTestId('sync-problem-line')).toBeNull();
+    await screen.unmount();
+    (useSyncStatus as jest.Mock).mockReturnValue({ isOnline: false, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null });
+    await renderWithShellProviders(<Probe title="Overview" />);
+    expect(screen.getByTestId('sync-problem-line')).toBeTruthy();
+  });
+
   it('builds an accent-tinted RefreshControl when refreshKeys are given', async () => {
     await renderWithShellProviders(<Probe title="Overview" refreshKeys={[['k']]} />);
     const props = rcProps();

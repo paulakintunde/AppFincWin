@@ -8,11 +8,15 @@ import { CompactHeader } from '../CompactHeader';
 import { DetailHeader } from '../DetailHeader';
 import { BackButton } from '../BackButton';
 import { AvatarButton } from '../AvatarButton';
+import { resetPushOnceForTests } from '@/shell/navigation/pushOnce';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
-jest.mock('@/features/you/useProfile', () => ({
-  useProfile: () => ({ profile: { full_name: 'Paul', email: 'p@x.com' } }),
-}));
+const mockProfile: { profile: { full_name: string | null; email: string | null } } = {
+  profile: { full_name: 'Paul', email: 'p@x.com' },
+};
+jest.mock('@/features/you/useProfile', () => ({ useProfile: () => mockProfile }));
+const mockLocale = { locale: 'en-GB' };
+jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => mockLocale }));
 jest.mock('@/data/sync/useSyncStatus', () => ({
   useSyncStatus: jest.fn(() => ({ isOnline: false, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null })),
 }));
@@ -24,6 +28,9 @@ function Probe() {
 beforeEach(() => {
   jest.clearAllMocks();
   resetShellStores();
+  resetPushOnceForTests();
+  mockProfile.profile = { full_name: 'Paul', email: 'p@x.com' };
+  mockLocale.locale = 'en-GB';
 });
 
 describe('BackButton', () => {
@@ -37,7 +44,7 @@ describe('BackButton', () => {
     const style = StyleSheet.flatten(btn.props.style);
     expect(style).toMatchObject({ width: dim, height: dim });
     expect(dim + btn.props.hitSlop * 2).toBeGreaterThanOrEqual(44);
-    fireEvent.press(btn);
+    await fireEvent.press(btn);
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 });
@@ -46,12 +53,47 @@ describe('AvatarButton', () => {
   it('shows the initial and pushes /you', async () => {
     await renderWithShellProviders(<AvatarButton />);
     expect(screen.getByText('P')).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'Profile' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Profile' }));
     expect(router.push).toHaveBeenCalledWith('/you');
+  });
+
+  it('has a 44px target and pushes once on a double tap', async () => {
+    await renderWithShellProviders(<AvatarButton />);
+    const btn = screen.getByRole('button', { name: 'Profile' });
+    expect(btn.props.hitSlop).toBe(1);
+    await fireEvent.press(btn);
+    await fireEvent.press(btn);
+    expect(router.push).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws a person glyph when there is no name or email', async () => {
+    mockProfile.profile = { full_name: null, email: null };
+    await renderWithShellProviders(<AvatarButton />);
+    const glyph = screen.getByTestId('avatar-person-glyph', { includeHiddenElements: true });
+    expect(glyph.children.length).toBe(2);
+  });
+
+  it('keeps a whole emoji initial and upper-cases by locale', async () => {
+    mockProfile.profile = { full_name: '🙂 Sam', email: null };
+    const first = await renderWithShellProviders(<AvatarButton />);
+    expect(screen.getByText('🙂')).toBeTruthy();
+    await first.unmount();
+    mockProfile.profile = { full_name: 'ilker', email: null };
+    mockLocale.locale = 'tr-TR';
+    await renderWithShellProviders(<AvatarButton />);
+    expect(screen.getByText('İ')).toBeTruthy();
   });
 });
 
 describe('TabHeader', () => {
+  it('makes eyebrow and title one screen-reader stop', async () => {
+    await renderWithShellProviders(<TabHeader title="Overview" eyebrow="WEDNESDAY, 14 OCT" />);
+    expect(screen.getByRole('header', { name: 'Overview, WEDNESDAY, 14 OCT' })).toBeTruthy();
+    const eyebrow = screen.getByText('WEDNESDAY, 14 OCT', { includeHiddenElements: true });
+    expect(eyebrow.props.importantForAccessibility).toBe('no');
+    expect(eyebrow.props.accessibilityElementsHidden).toBe(true);
+  });
+
   it('renders title, avatar and no back when history is empty', async () => {
     await renderWithShellProviders(<TabHeader title="Overview" />);
     expect(screen.getByRole('header', { name: 'Overview' })).toBeTruthy();
@@ -62,13 +104,13 @@ describe('TabHeader', () => {
   it('shows Back when history exists and goes back once', async () => {
     const goBack = jest.fn(() => true);
     await renderWithShellProviders(<TabHeader title="Overview" />, { backHistory: { canGoBack: true, goBack } });
-    fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     expect(goBack).toHaveBeenCalledTimes(1);
   });
 
   it('renders the eyebrow only when given', async () => {
     await renderWithShellProviders(<TabHeader title="Overview" eyebrow="MONDAY 28 SEPTEMBER" />);
-    expect(screen.getByText('MONDAY 28 SEPTEMBER')).toBeTruthy();
+    expect(screen.getByText('MONDAY 28 SEPTEMBER', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('has no eyebrow text without the prop', async () => {
@@ -125,7 +167,7 @@ describe('DetailHeader', () => {
     await renderWithShellProviders(<DetailHeader title="Barclays" right={<Probe />} />, { backHistory: { goBack } });
     const back = screen.getByRole('button', { name: 'Back' });
     expect(StyleSheet.flatten(back.props.style)).toMatchObject({ width: 38, height: 38 });
-    fireEvent.press(back);
+    await fireEvent.press(back);
     expect(goBack).toHaveBeenCalledTimes(1);
     const title = screen.getByText('Barclays');
     expect(title.props.numberOfLines).toBe(1);

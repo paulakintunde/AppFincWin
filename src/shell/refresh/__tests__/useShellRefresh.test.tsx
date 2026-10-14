@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { onlineManager, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { runShellRefresh, useShellRefresh } from '../useShellRefresh';
 
@@ -32,6 +32,7 @@ async function setup(fetchers: Record<string, Fetcher>, keys: readonly (readonly
 }
 
 beforeEach(() => resetToastForTests());
+afterEach(() => onlineManager.setOnline(true));
 
 describe('runShellRefresh', () => {
   it('resumes paused mutations once, then refetches each active key once', async () => {
@@ -58,6 +59,27 @@ describe('runShellRefresh', () => {
     expect(refetch).toHaveBeenCalledWith({ queryKey: KEY, type: 'active' });
     expect(order[0]).toBe('resume');
     expect(fa).toHaveBeenCalledTimes(1);
+  });
+
+  it('offline -> failed, no refetch, no toast', async () => {
+    const f = jest.fn(async () => ({ n: 1 }));
+    const { qc } = await setup({ 'refresh-test/a': f }, [KEY]);
+    await waitFor(() => expect(qc.getQueryData(KEY)).toBeDefined());
+    const refetch = jest.spyOn(qc, 'refetchQueries');
+    onlineManager.setOnline(false);
+    expect(await runShellRefresh(qc, [KEY])).toBe('failed');
+    expect(refetch).not.toHaveBeenCalled();
+    expect(getToast()).toBeNull();
+  });
+
+  it('paused query after refetch -> failed, no toast', async () => {
+    const f = jest.fn(async () => ({ n: 1 }));
+    const { qc } = await setup({ 'refresh-test/a': f }, [KEY]);
+    await waitFor(() => expect(qc.getQueryData(KEY)).toBeDefined());
+    jest.spyOn(qc, 'refetchQueries').mockResolvedValue(undefined);
+    jest.spyOn(qc, 'getQueryState').mockReturnValue({ fetchStatus: 'paused', status: 'success' } as never);
+    expect(await runShellRefresh(qc, [KEY])).toBe('failed');
+    expect(getToast()).toBeNull();
   });
 
   it('structurally equal payload -> nothingNew toast', async () => {

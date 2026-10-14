@@ -20,7 +20,7 @@ describe('TabHeader font scale (D-19)', () => {
   it('caps the title at 2x and scales the eyebrow with it', async () => {
     await renderAt(3);
     expect(StyleSheet.flatten(screen.getByText('Overview').props.style).fontSize).toBe(52);
-    expect(StyleSheet.flatten(screen.getByText('MONDAY').props.style).fontSize).toBe(23);
+    expect(StyleSheet.flatten(screen.getByText('MONDAY', { includeHiddenElements: true }).props.style).fontSize).toBe(23);
   });
 
   it('scales proportionally below the cap', async () => {

@@ -2,6 +2,7 @@ import React from 'react';
 import { Text as RNText } from 'react-native';
 import { screen } from '@testing-library/react-native';
 import { renderWithShellProviders, resetShellStores } from '@/shell/__tests__/testUtils';
+import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { useShellRefresh } from '@/shell/refresh/useShellRefresh';
 import { TabRootScreen } from '../TabRootScreen';
 
@@ -18,9 +19,7 @@ jest.mock('@/shell/refresh/useShellRefresh', () => ({ useShellRefresh: jest.fn()
 jest.mock('@/features/you/useProfile', () => ({
   useProfile: () => ({ profile: { full_name: 'Paul', email: 'p@x.com' } }),
 }));
-jest.mock('@/data/sync/useSyncStatus', () => ({
-  useSyncStatus: () => ({ isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null }),
-}));
+jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: jest.fn() }));
 
 type Json = { type: string; children?: unknown[] | null } | string | null | unknown[];
 function hasType(node: Json | undefined, type: string): boolean {
@@ -31,6 +30,7 @@ function hasType(node: Json | undefined, type: string): boolean {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (useSyncStatus as jest.Mock).mockReturnValue({ isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null });
   resetShellStores();
   (useShellRefresh as jest.Mock).mockReturnValue({ refreshing: false, refresh: jest.fn() });
 });
@@ -53,6 +53,13 @@ describe('TabRootScreen', () => {
     await first.unmount();
     const second = await renderWithShellProviders(<TabRootScreen title="A" />);
     expect(hasType(second.toJSON(), 'RCTRefreshControl')).toBe(false);
+  });
+
+  it('reserves FAB clearance at the bottom and shows the sync line once when offline', async () => {
+    (useSyncStatus as jest.Mock).mockReturnValue({ isOnline: false, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null });
+    const r = await renderWithShellProviders(<TabRootScreen title="Overview" />);
+    expect(screen.getAllByTestId('sync-problem-line').length).toBe(1);
+    expect(JSON.stringify(r.toJSON())).toContain('"paddingBottom":82');
   });
 
   it('renders the overlay outside the scroll view', async () => {

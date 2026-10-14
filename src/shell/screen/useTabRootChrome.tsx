@@ -2,7 +2,8 @@
 // that scrolls away, the compact header that fades in (200ms) once it has, the accent-tinted
 // pull-to-refresh, scroll-to-top on a tap of the active tab and screen-reader focus on the title.
 // Screens with their own list (Activity's FlashList) take these pieces directly; TabRootScreen
-// wraps them for plain scrolling screens. Refresh logic itself lives in useShellRefresh (03-20).
+// wraps them for plain scrolling screens. The large header carries the problem-only sync line (D-15),
+// so every tab root shows it at rest. Refresh logic itself lives in useShellRefresh (03-20).
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -16,7 +17,6 @@ import {
 } from 'react-native';
 import Animated, {
   type AnimatedRef,
-  runOnJS,
   useAnimatedReaction,
   useAnimatedRef,
   useAnimatedScrollHandler,
@@ -24,6 +24,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useScrollToTop } from 'expo-router';
 import type { QueryKey } from '@tanstack/react-query';
 import { Text } from '@/ui/Text';
@@ -31,6 +32,7 @@ import * as a11yFocus from '@/shell/a11yFocus';
 import { useShellRefresh } from '@/shell/refresh/useShellRefresh';
 import { CompactHeader } from '@/shell/header/CompactHeader';
 import { TabHeader } from '@/shell/header/TabHeader';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space, useScreenInsets } from '@/theme/layout';
 import { DURATION } from '@/theme/motion';
@@ -97,7 +99,7 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
     (now, prev) => {
       if (now !== prev) {
         opacity.value = withTiming(now ? 1 : 0, { duration: DURATION.fade });
-        runOnJS(setCompactVisible)(now);
+        scheduleOnRN(setCompactVisible, now);
       }
     },
   );
@@ -122,6 +124,7 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
   const largeHeader = (
     <View onLayout={onLargeLayout}>
       <TabHeader title={title} eyebrow={eyebrow} trailing={trailing} titleRef={largeTitleRef} />
+      <SyncProblemLine />
     </View>
   );
   const compactHeader = (
