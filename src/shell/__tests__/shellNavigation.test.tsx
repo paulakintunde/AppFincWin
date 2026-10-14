@@ -30,6 +30,8 @@ jest.mock('@/features/record/history/UndoToastHost', () => ({
   UndoToastHost: () => null,
   SheetToastOverlay: () => null,
 }));
+// Leaf stub: the entry host pulls in the whole transaction sheet (and the Supabase client).
+jest.mock('@/features/record/entry/ShellEntryHost', () => ({ ShellEntryHost: () => null }));
 jest.mock('@/features/record/useDeviceHomeCurrencyDefault', () => ({ DeviceHomeCurrencyDefault: () => null }));
 jest.mock('@/features/record/samples/SampleBanner', () => ({ SampleBanner: () => null }));
 jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPrompts: () => null }));
