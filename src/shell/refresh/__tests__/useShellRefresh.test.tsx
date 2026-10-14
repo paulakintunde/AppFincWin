@@ -13,13 +13,13 @@ function makeClient(): QueryClient {
 
 type Fetcher = () => Promise<unknown>;
 
-function setup(fetchers: Record<string, Fetcher>, keys: readonly (readonly string[])[]) {
+async function setup(fetchers: Record<string, Fetcher>, keys: readonly (readonly string[])[]) {
   const qc = makeClient();
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={qc}>{children}</QueryClientProvider>
   );
   // A fixed-length observer hook per key list (the lists are constant within a test).
-  const observer = renderHook(
+  const observer = await renderHook(
     () => {
       for (const k of keys) {
         // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -38,7 +38,7 @@ describe('runShellRefresh', () => {
     const order: string[] = [];
     const fa = jest.fn(async () => ({ n: 1 }));
     const fb = jest.fn(async () => ({ n: 2 }));
-    const { qc } = setup({ 'refresh-test/a': fa, 'refresh-test/b': fb }, [KEY, KEY2]);
+    const { qc } = await setup({ 'refresh-test/a': fa, 'refresh-test/b': fb }, [KEY, KEY2]);
     await waitFor(() => expect(qc.getQueryData(KEY)).toBeDefined());
     await waitFor(() => expect(qc.getQueryData(KEY2)).toBeDefined());
     fa.mockClear();
@@ -62,7 +62,7 @@ describe('runShellRefresh', () => {
 
   it('structurally equal payload -> nothingNew toast', async () => {
     const f = jest.fn(async () => ({ rows: [1, 2, 3] }));
-    const { qc } = setup({ 'refresh-test/a': f }, [KEY]);
+    const { qc } = await setup({ 'refresh-test/a': f }, [KEY]);
     await waitFor(() => expect(qc.getQueryData(KEY)).toBeDefined());
     const outcome = await runShellRefresh(qc, [KEY]);
     expect(outcome).toBe('nothingNew');
@@ -72,7 +72,7 @@ describe('runShellRefresh', () => {
   it('a changed payload -> updated toast of kind info', async () => {
     let v = 1;
     const f = jest.fn(async () => ({ v }));
-    const { qc } = setup({ 'refresh-test/a': f }, [KEY]);
+    const { qc } = await setup({ 'refresh-test/a': f }, [KEY]);
     await waitFor(() => expect(qc.getQueryData(KEY)).toBeDefined());
     v = 2;
     const outcome = await runShellRefresh(qc, [KEY]);
@@ -87,7 +87,7 @@ describe('runShellRefresh', () => {
       if (fail) throw new Error('offline');
       return { v: 1 };
     });
-    const { qc } = setup({ 'refresh-test/a': f }, [KEY]);
+    const { qc } = await setup({ 'refresh-test/a': f }, [KEY]);
     await waitFor(() => expect(qc.getQueryData(KEY)).toBeDefined());
     fail = true;
     await expect(runShellRefresh(qc, [KEY])).resolves.toBe('failed');
@@ -97,7 +97,7 @@ describe('runShellRefresh', () => {
   it('resumePausedMutations rejecting still refetches', async () => {
     let v = 1;
     const f = jest.fn(async () => ({ v }));
-    const { qc } = setup({ 'refresh-test/a': f }, [KEY]);
+    const { qc } = await setup({ 'refresh-test/a': f }, [KEY]);
     await waitFor(() => expect(qc.getQueryData(KEY)).toBeDefined());
     jest.spyOn(qc, 'resumePausedMutations').mockRejectedValue(new Error('boom'));
     v = 2;
@@ -116,13 +116,13 @@ describe('useShellRefresh', () => {
       }
       return { v: 1 };
     });
-    const { qc, wrapper } = setup({ 'refresh-test/a': f }, [KEY]);
+    const { qc, wrapper } = await setup({ 'refresh-test/a': f }, [KEY]);
     await waitFor(() => expect(qc.getQueryData(KEY)).toBeDefined());
-    const { result } = renderHook(() => useShellRefresh([KEY]), { wrapper });
+    const { result } = await renderHook(() => useShellRefresh([KEY]), { wrapper });
     expect(result.current.refreshing).toBe(false);
     fail = true;
     let p: Promise<unknown> = Promise.resolve();
-    act(() => {
+    await act(async () => {
       p = result.current.refresh();
     });
     await waitFor(() => expect(result.current.refreshing).toBe(true));
@@ -141,13 +141,13 @@ describe('useShellRefresh', () => {
       if (gate) await new Promise<void>((r) => (release = r));
       return { v: 1 };
     });
-    const { qc, wrapper } = setup({ 'refresh-test/a': f }, [KEY]);
+    const { qc, wrapper } = await setup({ 'refresh-test/a': f }, [KEY]);
     await waitFor(() => expect(qc.getQueryData(KEY)).toBeDefined());
-    const { result } = renderHook(() => useShellRefresh([KEY]), { wrapper });
+    const { result } = await renderHook(() => useShellRefresh([KEY]), { wrapper });
     gate = true;
     let p1: Promise<unknown> = Promise.resolve();
     let p2: Promise<unknown> = Promise.resolve();
-    act(() => {
+    await act(async () => {
       p1 = result.current.refresh();
       p2 = result.current.refresh();
     });
