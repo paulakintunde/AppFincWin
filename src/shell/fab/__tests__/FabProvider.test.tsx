@@ -133,6 +133,41 @@ describe('FabProvider', () => {
     expect(cur().config?.label).toBe('Add');
   });
 
+  it('a blurring screen clears only its own config, never the next one (L8)', async () => {
+    function Other({ onPress }: { onPress: () => void }): null {
+      useRegisterFab({ label: 'Other', accessibilityLabel: 'Other action', onPress });
+      return null;
+    }
+    const def = jest.fn();
+    const view = await setup(
+      <>
+        <Default fn={def} />
+        <Screen onPress={jest.fn()} />
+      </>,
+    );
+    expect(cur().config?.label).toBe('New check');
+    // B gains focus while A's registration is still mounted; A's cleanup then runs after B's effect.
+    await view.rerender(
+      tree(
+        <>
+          <Default fn={def} />
+          <Screen onPress={jest.fn()} />
+          <Other onPress={jest.fn()} />
+        </>,
+      ),
+    );
+    expect(cur().config?.label).toBe('Other');
+    await view.rerender(
+      tree(
+        <>
+          <Default fn={def} />
+          <Other onPress={jest.fn()} />
+        </>,
+      ),
+    );
+    expect(cur().config?.label).toBe('Other');
+  });
+
   it('is hidden on outer screens', async () => {
     await setup(<Default fn={jest.fn()} />, { backHistory: { current: outer } });
     expect(cur().hidden).toBe(true);

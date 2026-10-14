@@ -58,4 +58,40 @@ describe('activityFocus', () => {
     expect(getSelectedMonth()).toBeNull();
     expect(consumeActivityFilterIntent()).toBeNull();
   });
+
+  it('a pick made in October is dropped once the fallback rolls to November', async () => {
+    const hook = await renderHook(({ fb }: { fb: string }) => useSelectedMonth(fb), { initialProps: { fb: '2026-10' } });
+    await act(async () => hook.result.current[1]('2026-08'));
+    expect(hook.result.current[0]).toBe('2026-08');
+    await hook.rerender({ fb: '2026-11' });
+    expect(hook.result.current[0]).toBe('2026-11');
+    expect(getSelectedMonth()).toBeNull();
+  });
+
+  it('a requested month survives rerenders with an unchanged fallback', async () => {
+    const hook = await renderHook(({ fb }: { fb: string }) => useSelectedMonth(fb), { initialProps: { fb: '2026-10' } });
+    await act(async () => requestActivityFocus({ month: '2026-09', filter: UNPAID }));
+    expect(hook.result.current[0]).toBe('2026-09');
+    await hook.rerender({ fb: '2026-10' });
+    expect(hook.result.current[0]).toBe('2026-09');
+  });
+
+  it('a pick made after the rollover survives rerenders', async () => {
+    const hook = await renderHook(({ fb }: { fb: string }) => useSelectedMonth(fb), { initialProps: { fb: '2026-11' } });
+    await act(async () => hook.result.current[1]('2026-09'));
+    await hook.rerender({ fb: '2026-11' });
+    expect(hook.result.current[0]).toBe('2026-09');
+  });
+
+  it('the wipe handler also resets the anchor so a later pick is not mis-dropped', async () => {
+    const hook = await renderHook(({ fb }: { fb: string }) => useSelectedMonth(fb), { initialProps: { fb: '2026-10' } });
+    await act(async () => hook.result.current[1]('2026-08'));
+    await act(async () => {
+      await wipeDeviceData();
+    });
+    expect(getSelectedMonth()).toBeNull();
+    await act(async () => hook.result.current[1]('2026-07'));
+    await hook.rerender({ fb: '2026-10' });
+    expect(hook.result.current[0]).toBe('2026-07');
+  });
 });
