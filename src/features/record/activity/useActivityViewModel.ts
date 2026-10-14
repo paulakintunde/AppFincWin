@@ -17,6 +17,7 @@ import { projectionHomeAmount } from '@/data/queries/homeAmount';
 import { usePaidBefore } from '@/data/queries/pendingSplit';
 import {
   EMPTY_FILTER,
+  filterProjections,
   filterRows,
   isFilterActive,
   matchesSearch,
@@ -54,6 +55,7 @@ import { previousMonth } from './CloneMonthSheet';
 import { useActivitySelection } from './useActivitySelection';
 import type { DeletePrompt, RowActions } from './useRowActions';
 import { showToast } from '@/state/undoToast';
+import { consumeActivityFilterIntent, useActivityFilterIntent, useSelectedMonth } from '@/state/activityFocus';
 
 export type { ActivityView } from './activityViewPrefs';
 
@@ -127,11 +129,23 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
   const formatter = useMoneyFormatter(rc.showCents);
   const weekStart: 0 | 1 = rc.weekStart ?? 1;
 
-  const [month, setMonth] = useState(() => initialMonth ?? monthOf(rc.today));
+  const [month, setMonth] = useSelectedMonth(initialMonth ?? monthOf(rc.today));
   const [term, setTerm] = useState('');
   const [scope, setScope] = useState<SearchScope>('month');
   const [filter, setFilter] = useState<ActivityFilter>(EMPTY_FILTER);
   const [prefs, setPrefs] = useState(DEFAULT_VIEW_PREFS);
+
+  // HOME-01: Pay bills / See all hand over a one-shot filter (the month is already set by
+  // requestActivityFocus). Activity stays mounted as a tab, so this runs while it is mounted.
+  const intent = useActivityFilterIntent();
+  useEffect(() => {
+    if (intent === null) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- applies a one-shot external intent (module store) once, then consumes it
+    setFilter(intent);
+    setTerm('');
+    setScope('month');
+    consumeActivityFilterIntent();
+  }, [intent]);
 
   useEffect(() => {
     let live = true;
@@ -176,6 +190,13 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
     return filterRows(base, filter);
   }, [flat, search.rows, monthView.rows, scope, term, filter]);
 
+  // 03-CONTEXT D-34/D-35: projected bills join the Unpaid list so it matches Home's UNPAID;
+  // other filters keep hiding projections.
+  const unpaidProjections = useMemo(
+    () => (searching ? [] : filterProjections(monthView.projections, filter)),
+    [searching, monthView.projections, filter]
+  );
+
   // ACT-10: the count (and the figures beside it) follow the filtered set.
   const totals: MonthTotals = useMemo(
     () =>
@@ -187,10 +208,10 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
               isTransfer: r.transfer_id !== null,
               isRefund: r.is_refund,
             })),
-            []
+            unpaidProjections
           )
         : monthView.totals,
-    [searching, filtering, narrowed, monthView.totals]
+    [searching, filtering, narrowed, monthView.totals, unpaidProjections]
   );
 
   // ---- Running balance inputs (D-25) -------------------------------------------------------
@@ -258,13 +279,13 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
     return buildViewItems({
       view: listView,
       rows: narrowed,
-      projections: searching || filtering ? [] : monthView.projections,
+      projections: searching ? [] : filtering ? unpaidProjections : monthView.projections,
       sort,
       month,
       weekStart,
       balanceSteps: balance?.steps,
     });
-  }, [flat, narrowed, view, sort, searching, filtering, monthView.projections, month, weekStart, balance]);
+  }, [flat, narrowed, view, sort, searching, filtering, unpaidProjections, monthView.projections, month, weekStart, balance]);
 
   const positions: (CardPositionOf | null)[] = useMemo(() => cardPositions(items), [items]);
   const itemRows = useMemo(() => items.flatMap((i) => (i.type === 'row' ? [i.row] : [])), [items]);

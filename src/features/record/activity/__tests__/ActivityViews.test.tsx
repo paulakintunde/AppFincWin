@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { ACTIVITY_VIEW_KEY, DEFAULT_VIEW_PREFS, loadViewPrefs } from '../activityViewPrefs';
 import { ActivityScreen } from '../ActivityScreen';
+import { resetActivityFocusForTests } from '@/state/activityFocus';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -116,6 +117,7 @@ async function choose(screen: Awaited<ReturnType<typeof renderScreen>>, trigger:
 }
 
 beforeEach(async () => {
+  resetActivityFocusForTests();
   await AsyncStorage.clear();
   mockRows = [];
   mockLegs = [];

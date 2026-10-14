@@ -8,6 +8,7 @@ import { getToast, resetToastForTests } from '@/state/undoToast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityScreen } from '../ActivityScreen';
 import { ACTIVITY_VIEW_KEY } from '../activityViewPrefs';
+import { resetActivityFocusForTests } from '@/state/activityFocus';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -168,6 +169,7 @@ function renderScreen(props: Partial<React.ComponentProps<typeof ActivityScreen>
 }
 
 beforeEach(() => {
+  resetActivityFocusForTests();
   jest.clearAllMocks();
   resetToastForTests();
   mockRows = [];
