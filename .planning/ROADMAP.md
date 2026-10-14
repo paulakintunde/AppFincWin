@@ -462,11 +462,11 @@ Plans:
 - [x] 03-21-PLAN.md — Shared selected month, Activity filter intent, entry-host store; Activity Unpaid lists projected bills
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 03-07-PLAN.md — Context-aware FAB: registration API, sheet-aware hide rule, quick actions, haptics, rise and lift above toast
-- [ ] 03-08-PLAN.md — Tab bar: bespoke glyphs, availability, accessibility, re-tap, shell-driven directional slide
-- [ ] 03-09-PLAN.md — Own Sheet: drag-to-dismiss, ink-at-38% backdrop and motion, stacking, dismissible, a11y escape, Dropdown backdrop
-- [ ] 03-10-PLAN.md — Header pieces: tab header, compact header, detail header, avatar, back chevron, problem-only sync line
-- [ ] 03-22-PLAN.md — Home view model, Coming-up selection, month chips, This month card
+- [x] 03-07-PLAN.md — Context-aware FAB: registration API, sheet-aware hide rule, quick actions, haptics, rise and lift above toast
+- [x] 03-08-PLAN.md — Tab bar: bespoke glyphs, availability, accessibility, re-tap, shell-driven directional slide
+- [x] 03-09-PLAN.md — Own Sheet: drag-to-dismiss, ink-at-38% backdrop and motion, stacking, dismissible, a11y escape, Dropdown backdrop
+- [x] 03-10-PLAN.md — Header pieces: tab header, compact header, detail header, avatar, back chevron, problem-only sync line
+- [x] 03-22-PLAN.md — Home view model, Coming-up selection, month chips, This month card
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 03-11-PLAN.md — Screen scaffolds: TabRootScreen / DetailScreen, large-to-compact header, refresh control, title focus
@@ -673,7 +673,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 10/24 | In Progress|  |
+| 3. Shell | 15/24 | In Progress|  |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
