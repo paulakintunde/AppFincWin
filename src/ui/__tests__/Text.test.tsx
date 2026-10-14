@@ -53,6 +53,47 @@ describe('Text', () => {
   });
 });
 
+describe('Text without an explicit fontSize (M9)', () => {
+  it('scales a top-level Text from the RN default 14px at OS scale 2', async () => {
+    await render(
+      <FontScaleProvider value={2}>
+        <Text testID="t">{'x'}</Text>
+      </FontScaleProvider>,
+    );
+    expect(flat('t')?.fontSize).toBe(28);
+  });
+  it('caps the capped tier at 1.3 from the default size', async () => {
+    await render(
+      <FontScaleProvider value={2}>
+        <Text testID="t" scale="capped">{'x'}</Text>
+      </FontScaleProvider>,
+    );
+    expect(flat('t')?.fontSize).toBeCloseTo(18.2);
+  });
+  it('leaves explicit sizes on the current path and a nested Text inheriting', async () => {
+    await render(
+      <FontScaleProvider value={2}>
+        <Text testID="outer" style={{ fontSize: 15 }}>
+          {'a'}
+          <Text testID="inner">{'b'}</Text>
+        </Text>
+      </FontScaleProvider>,
+    );
+    expect(flat('outer')?.fontSize).toBe(30);
+    expect(flat('inner')?.fontSize).toBeUndefined();
+  });
+  it('does not touch Text at OS scale 1 or with allowFontScaling false', async () => {
+    await render(
+      <FontScaleProvider value={1}>
+        <Text testID="a">{'x'}</Text>
+        <Text testID="b" allowFontScaling={false}>{'x'}</Text>
+      </FontScaleProvider>,
+    );
+    expect(flat('a')?.fontSize).toBeUndefined();
+    expect(flat('b')?.fontSize).toBeUndefined();
+  });
+});
+
 describe('TextInput', () => {
   it('defaults the cap to 2 and keeps a caller value', async () => {
     await render(
