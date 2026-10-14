@@ -28,8 +28,6 @@ describe('Phase 3 copy contract', () => {
   it('has the FAB and quick-add copy', () => {
     expect(i18n.t('shell.fab.add')).toBe('Add');
     expect(i18n.t('shell.fab.addA11y')).toBe('Add a transaction');
-    expect(i18n.t('shell.fab.newCheck')).toBe('New check');
-    expect(i18n.t('shell.fab.newCheckA11y')).toBe('Start a new affordability check');
     expect(i18n.t('shell.quick.title')).toBe('Quick add');
     expect(i18n.t('shell.quick.addExpense')).toBe('Add expense');
     expect(i18n.t('shell.quick.addIncome')).toBe('Add income');
@@ -60,8 +58,50 @@ describe('Phase 3 copy contract', () => {
     expect(i18n.t('home.accounts.heading')).toBe('Accounts');
   });
 
+  it('has the gap-closure copy', () => {
+    expect(i18n.t('home.upcoming.projected')).toBe('Expected');
+    expect(i18n.t('home.upcoming.projected')).toBe(i18n.t('record.recurring.projected'));
+    expect(i18n.t('home.month.emptyPast', { month: 'September' })).toBe(
+      'Nothing recorded in September.'
+    );
+    expect(i18n.t('home.state.monthError')).toBe('This month couldn’t load. Pull down to try again.');
+    expect(i18n.t('home.state.monthOffline')).toBe(
+      'You’re offline, and this month hasn’t loaded on this device yet.'
+    );
+    expect(i18n.t('home.state.upcomingError')).toBe('Bills due couldn’t load.');
+    expect(i18n.t('home.state.upcomingOffline')).toBe('Bills due will show once this month loads.');
+    expect(i18n.t('accounts.compact.overdrawn')).toBe('Overdrawn');
+    expect(i18n.t('accounts.compact.overLimit')).toBe('Over limit');
+    expect(i18n.t('activity.unpaidBanner.text')).toBe('Showing unpaid bills');
+    expect(i18n.t('activity.unpaidBanner.clear')).toBe('Clear');
+    expect(i18n.t('activity.unpaidBanner.clearA11y')).toBe('Clear the unpaid filter');
+    expect(
+      i18n.t('activity.projection.a11y', { name: 'Rent', amount: '£900.00', date: '1 Nov 2026' })
+    ).toBe('Rent, £900.00, expected 1 Nov 2026');
+  });
+
+  it('drops the unused keys', () => {
+    for (const key of [
+      'shell.fab.newCheck',
+      'shell.fab.newCheckA11y',
+      'shell.title.decide',
+      'shell.title.grow',
+      'shell.title.insights',
+    ]) {
+      expect(i18n.exists(key)).toBe(false);
+    }
+  });
+
   it('never uses advice wording', () => {
-    const all = [en.shell, en.sheet, en.refresh, en.home].flatMap(leaves);
+    const all = [
+      en.shell,
+      en.sheet,
+      en.refresh,
+      en.home,
+      en.activity.unpaidBanner,
+      en.activity.projection,
+      en.accounts.compact,
+    ].flatMap(leaves);
     expect(all.length).toBeGreaterThan(40);
     for (const value of all) {
       expect(value).not.toMatch(/advice|recommend|you should/i);
