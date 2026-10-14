@@ -1,6 +1,7 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
+import { space } from '@/theme/layout';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { hasSyncProblem } from '../syncProblem';
 import { SyncProblemLine } from '../SyncProblemLine';
@@ -40,5 +41,21 @@ describe('SyncProblemLine', () => {
       </ThemeProvider>,
     );
     expect(getByText('offline')).toBeTruthy();
+  });
+  it('drops its horizontal inset when inset is false, and keeps it by default', async () => {
+    mockStatus.mockReturnValue({ ...ok, isOnline: false });
+    await render(
+      <ThemeProvider>
+        <SyncProblemLine inset={false} />
+      </ThemeProvider>,
+    );
+    expect(screen.getByTestId('sync-problem-line').props.style.paddingHorizontal).toBe(0);
+    await screen.unmount();
+    await render(
+      <ThemeProvider>
+        <SyncProblemLine />
+      </ThemeProvider>,
+    );
+    expect(screen.getByTestId('sync-problem-line').props.style.paddingHorizontal).toBe(space.screenH);
   });
 });

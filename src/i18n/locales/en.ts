@@ -448,6 +448,12 @@ const en = {
     },
   },
   activity: {
+    unpaidBanner: {
+      text: 'Showing unpaid bills',
+      clear: 'Clear',
+      clearA11y: 'Clear the unpaid filter',
+    },
+    projection: { a11y: '{{name}}, {{amount}}, expected {{date}}' },
     title: 'Activity',
     add: 'Add',
     you: 'You',
@@ -683,6 +689,7 @@ const en = {
     },
   },
   accounts: {
+    compact: { overdrawn: 'Overdrawn', overLimit: 'Over limit' },
     title: 'Accounts',
     add: 'Add account',
     emptyHeading: 'No accounts yet.',
@@ -1267,13 +1274,11 @@ const en = {
       insights: 'Insights',
       a11y: '{{label}}, tab, {{position}} of {{total}}',
     },
-    title: { activity: 'Activity', decide: 'Decide', grow: 'Grow', insights: 'Insights' },
+    title: { activity: 'Activity' },
     profile: 'Profile',
     fab: {
       add: 'Add',
       addA11y: 'Add a transaction',
-      newCheck: 'New check',
-      newCheckA11y: 'Start a new affordability check',
     },
     quick: {
       title: 'Quick add',
@@ -1312,6 +1317,13 @@ const en = {
       barA11y: '{{paid}} of {{in}} paid, {{pending}} still to come',
       chipA11y: '{{month}}, {{year}}',
       empty: 'Nothing recorded in {{month}} yet.',
+      emptyPast: 'Nothing recorded in {{month}}.',
+    },
+    state: {
+      monthError: 'This month couldn’t load. Pull down to try again.',
+      monthOffline: 'You’re offline, and this month hasn’t loaded on this device yet.',
+      upcomingError: 'Bills due couldn’t load.',
+      upcomingOffline: 'Bills due will show once this month loads.',
     },
     upcoming: {
       heading: 'Coming up',
@@ -1320,7 +1332,7 @@ const en = {
       a11y: '{{name}}, {{amount}}, due {{date}}',
       a11yOverdue: '{{name}}, {{amount}}, overdue, was due {{date}}',
       automatic: 'Automatic',
-      projected: 'Projected',
+      projected: 'Expected',
       pay: 'Pay',
       payA11y: 'Pay {{name}}, mark as paid',
     },

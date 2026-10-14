@@ -6,7 +6,7 @@ import {
   type ShellTestOptions,
 } from '@/shell/__tests__/testUtils';
 import { useShellLayout } from '@/shell/layout/ShellLayoutProvider';
-import { useFabOffsets, useToastSlot } from '../useShellPositions';
+import { FAB_CLEARANCE, useFabOffsets, useToastSlot } from '../useShellPositions';
 
 beforeEach(() => resetShellStores());
 
@@ -15,6 +15,12 @@ function wrapper(options?: ShellTestOptions) {
     return <ShellTestProviders options={options}>{children}</ShellTestProviders>;
   };
 }
+
+describe('FAB_CLEARANCE', () => {
+  it('is the pill height plus twice its inset', () => {
+    expect(FAB_CLEARANCE).toBe(82);
+  });
+});
 
 describe('useFabOffsets', () => {
   it('sits 16 above the tab bar with no lift', async () => {

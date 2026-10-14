@@ -1,0 +1,23 @@
+// H7: a fast double tap on a push target (avatar, Accounts card, Import, Activity links) must not
+// stack two screens. One guard for every tap-driven push: a push within PUSH_GUARD_MS of the last
+// accepted one is dropped. Module state holds only a timestamp (no user data, nothing to wipe).
+import { router, type Href } from 'expo-router';
+
+export const PUSH_GUARD_MS = 600;
+
+let lastAt: number | null = null;
+
+export function acceptPush(last: number | null, now: number): boolean {
+  return last === null || now - last >= PUSH_GUARD_MS;
+}
+
+export function pushOnce(href: Href): void {
+  const now = Date.now();
+  if (!acceptPush(lastAt, now)) return;
+  lastAt = now;
+  router.push(href);
+}
+
+export function resetPushOnceForTests(): void {
+  lastAt = null;
+}

@@ -15,6 +15,9 @@ export const radii = {
  * BUILD-PROMPT.md §2 / 00-UI-SPEC.md Spacing Scale, exact prototype pixel values —
  * not a generic 4-point/8-point scale. Do not round these.
  */
+/** Pressed-state opacity for tappable rows and tiles (prototype :active), one value app-wide (UI review L13). */
+export const PRESSED_OPACITY = 0.72;
+
 export const space = {
   screenH: 22,
   cardPad: 16,
