@@ -58,6 +58,7 @@ jest.mock('@/data/queries/accounts', () => ({
     data: [
       { id: 'a1', name: 'Current', currency: 'GBP', archived_at: null },
       { id: 'a2', name: 'Savings', currency: 'GBP', archived_at: null },
+      { id: 'a3', name: 'Euro pot', currency: 'EUR', archived_at: null },
     ],
   }),
 }));
@@ -91,7 +92,10 @@ jest.mock('@/data/queries/categories', () => {
 });
 jest.mock('@/data/queries/currencyOptions', () => ({
   useCurrencyOptions: () => ({
-    options: [{ code: 'GBP', name: 'Pound', symbol: '£', exponent: 2, kind: 'iso', rateDate: null }],
+    options: [
+      { code: 'GBP', name: 'Pound', symbol: '£', exponent: 2, kind: 'iso', rateDate: null },
+      { code: 'EUR', name: 'Euro', symbol: '€', exponent: 2, kind: 'iso', rateDate: null },
+    ],
     loading: false,
   }),
 }));
@@ -275,6 +279,66 @@ describe('new entry: accidental dismissal keeps a draft (D-25)', () => {
     expect(await screen.findByDisplayValue('Lunch')).toBeTruthy();
     expect(screen.getAllByLabelText(/^Amount/)[0]).toBeTruthy();
     expect(screen.getByText(/8\.40/)).toBeTruthy();
+  });
+
+  it('Continue restores the Repeats choice (H1a)', async () => {
+    await seed([], { ...formDraft, categoryId: null, repeats: { freq: 'monthly', end: { kind: 'count', count: 6 } } });
+    await open();
+    await fireEvent.press(await screen.findByText('Continue list'));
+    expect(await screen.findByText(/After 6 times/)).toBeTruthy();
+  });
+
+  it('a restored hand-picked category is not replaced by the guess (H1b)', async () => {
+    await seed([], { ...formDraft, name: 'Tesco', categoryId: 'c1' });
+    await open();
+    await fireEvent.press(await screen.findByText('Continue list'));
+    expect(await screen.findByDisplayValue('Tesco')).toBeTruthy();
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 400));
+    });
+    expect(screen.getByText('Groceries')).toBeTruthy();
+    expect(screen.queryByText('Suggested')).toBeNull();
+  });
+
+  it('a restored cross-currency transfer keeps the typed received amount (H1c)', async () => {
+    await seed([], {
+      ...formDraft,
+      direction: 'transfer',
+      categoryId: null,
+      toAccountId: 'a3',
+      toCurrency: 'EUR',
+      amountText: '100',
+      amountInText: '123.00',
+    });
+    await open();
+    await fireEvent.press(await screen.findByText('Continue list'));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 400));
+    });
+    expect(screen.getAllByText(/123\.00/).length).toBeGreaterThan(0);
+  });
+
+  it('re-applies direction invariants and maps skipped to paid on restore (H4)', async () => {
+    await seed([], { ...formDraft, direction: 'transfer', categoryId: 'c1', paymentType: 'card', status: 'skipped' as never, toAccountId: 'a2' });
+    await open();
+    await fireEvent.press(await screen.findByText('Continue list'));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 400));
+    });
+    expect((await screen.findAllByText('New transfer')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Groceries')).toBeNull();
+    expect(screen.queryByText('Skipped')).toBeNull();
+    expect(screen.queryByText('Card')).toBeNull();
+  });
+
+  it('Continue does not overwrite a form that already has content (L5)', async () => {
+    await seed([], formDraft);
+    await open();
+    const prompt = await screen.findByText('Continue list');
+    await fireEvent.changeText(screen.getByLabelText('What is it for?'), 'Typed first');
+    await fireEvent.press(prompt);
+    expect(screen.getByDisplayValue('Typed first')).toBeTruthy();
+    expect(screen.queryByDisplayValue('Lunch')).toBeNull();
   });
 
   it('resumes a v1 draft with 2 items', async () => {

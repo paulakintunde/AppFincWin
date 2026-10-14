@@ -8,6 +8,7 @@ import {
   canAdd as engineCanAdd,
   draftEntryCount,
   dropUnavailable,
+  LIST_CAP_PER_TYPE,
   removeItem,
   summarise,
   takeItem,
@@ -35,7 +36,7 @@ export interface EntryListState {
   restore(removed: RemovedItem): boolean;
   take(id: string): ListItem | null;
   clearAll(): void;
-  /** D-25: writes items + form to the device draft now; a no-op while a resume answer is pending. */
+  /** D-25: writes items + form to the device draft now; while a stored draft is unresolved it merges with it (L5). */
   keepForm(form: DraftForm | null): void;
   canAdd(type: ListItemType): boolean;
 }
@@ -201,9 +202,22 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
 
   const keepForm = useCallback((form: DraftForm | null) => {
     const t = targetRef.current;
-    if (!t.active || !t.resolved || t.userId === null || t.householdId === null) return;
+    if (!t.active || t.userId === null || t.householdId === null) return;
     dirtyRef.current = false;
-    void saveEntryDraft(t.userId, t.householdId, itemsRef.current, form);
+    if (t.resolved) {
+      void saveEntryDraft(t.userId, t.householdId, itemsRef.current, form);
+      return;
+    }
+    // L5: the stored draft is still loading or its resume prompt is unanswered: keep it and add what was typed.
+    const { userId, householdId } = t;
+    const live = itemsRef.current;
+    void loadEntryDraft(userId, householdId).then((stored) => {
+      const merged = [...stored.items, ...live];
+      const fits = (['out', 'in', 'transfer'] as const).every(
+        (k) => merged.filter((i) => i.type === k).length <= LIST_CAP_PER_TYPE,
+      );
+      return saveEntryDraft(userId, householdId, fits ? merged : stored.items, form ?? stored.form);
+    });
   }, []);
 
   const canAdd = useCallback((type: ListItemType) => engineCanAdd(items, type), [items]);

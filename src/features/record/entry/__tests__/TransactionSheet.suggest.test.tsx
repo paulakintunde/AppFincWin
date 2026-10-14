@@ -263,6 +263,17 @@ describe('TransactionSheet: category suggestion and rule offer (REC-27)', () => 
     expect(out.getByText('Dining')).toBeTruthy();
   });
 
+  it('an untouched edit with no category never guesses and closes without asking (H2)', async () => {
+    const out = await open({ kind: 'edit', row: row({ category_id: null, name: 'Tesco' }) });
+    await act(async () => {
+      jest.advanceTimersByTime(300);
+    });
+    expect(out.queryByText('Suggested')).toBeNull();
+    expect(out.getByText('Uncategorised')).toBeTruthy();
+    await fireEvent.press(out.getByTestId('sheet-backdrop', { hidden: true }));
+    expect(out.queryByText('Discard changes?')).toBeNull();
+  });
+
   it('guesses for an edited row with no category', async () => {
     const out = await open({ kind: 'edit', row: row({ category_id: null, name: 'Coffee' }) });
     await typeName(out, 'Tesco');
