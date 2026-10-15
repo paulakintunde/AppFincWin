@@ -2,7 +2,7 @@
 // debounced 250 ms before it reaches the screen; clearing is immediate. Chrome stays in
 // fill1 / ink tokens so the list keeps visual priority.
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View, type TextInput as RNTextInput } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { useT } from '@/i18n';
@@ -24,7 +24,7 @@ export interface SearchBarProps {
   /** 03.1 D-59: when set, a Cancel button renders after the field. */
   onCancel?: () => void;
   autoFocus?: boolean;
-  inputRef?: React.Ref<RNTextInput>;
+  inputRef?: React.Ref<TextInput>;
 }
 
 export function SearchBar({
