@@ -519,16 +519,16 @@ Plans:
 **Requirements**: no new IDs; refines the Phase 2 Activity header (ACT-02 month switcher, ACT-03 search) and keeps Phase 3's D-41 Unpaid banner
 **Proposal**: https://claude.ai/artifact/BNKMdaVimhwxtkev8PJ8Yp (approved 2026-10-15)
 **Depends on:** Phase 3
-**Plans:** 15 plans
+**Plans:** 6/15 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 03.1-01-PLAN.md — Copy catalogue for the new header, DURATION.searchFade, shared RadioDot
-- [ ] 03.1-02-PLAN.md — Pure helpers: active filters (count, chips, clear) and month layout / Intl labels (TDD)
-- [ ] 03.1-03-PLAN.md — Hand-drawn Search / Filter / More glyphs and HeaderIconButton with count badge
-- [ ] 03.1-04-PLAN.md — Row long-press and the Select accessibility action (SwipeRow, ActivityRow)
-- [ ] 03.1-05-PLAN.md — Chrome: compact title / role / trailing slot, avatar dropped, scrollToTop
-- [ ] 03.1-06-PLAN.md — Shared month-figure helper (Home parity), VM position / monthEmpty / entryCount / searchOpen
+- [x] 03.1-01-PLAN.md — Copy catalogue for the new header, DURATION.searchFade, shared RadioDot
+- [x] 03.1-02-PLAN.md — Pure helpers: active filters (count, chips, clear) and month layout / Intl labels (TDD)
+- [x] 03.1-03-PLAN.md — Hand-drawn Search / Filter / More glyphs and HeaderIconButton with count badge
+- [x] 03.1-04-PLAN.md — Row long-press and the Select accessibility action (SwipeRow, ActivityRow)
+- [x] 03.1-05-PLAN.md — Chrome: compact title / role / trailing slot, avatar dropped, scrollToTop
+- [x] 03.1-06-PLAN.md — Shared month-figure helper (Home parity), VM position / monthEmpty / entryCount / searchOpen
 
 **Wave 2** *(blocked on wave 1)*
 - [ ] 03.1-07-PLAN.md — ActivitySummaryCard (left after everything, In/Out, still to come, D-70 count)
