@@ -2,7 +2,9 @@
 // a home-currency amount range, plus Unpaid only (pending lines). Amounts go through the strict amount parser (never a float
 // conversion); an invalid figure shows the parser's own message and is not applied.
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
+import { TextInput } from '@/ui/TextInput';
 import type { AccountRow, CategoryRow } from '@/db/rows';
 import { EMPTY_FILTER, type ActivityFilter } from '@/engine/activity/filters';
 import { categoryName } from '@/features/record/categoryName';
@@ -13,6 +15,7 @@ import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { useIsDirty } from '@/ui/useIsDirty';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useAmountParser } from '@/ui/money/useAmountParser';
 
@@ -50,6 +53,9 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
   const [minText, setMinText] = useState(() => (value.amountMin === null ? '' : parser.toInputText(value.amountMin, homeCurrency)));
   const [maxText, setMaxText] = useState(() => (value.amountMax === null ? '' : parser.toInputText(value.amountMax, homeCurrency)));
   const [error, setError] = useState<string | null>(null);
+  // D-26: unsaved work = the draft or an amount text differs from what the sheet opened with.
+  const [initial] = useState(() => ({ draft, minText, maxText }));
+  const dirty = useIsDirty(initial, { draft, minText, maxText });
 
   const labelStyle = { ...textRole(pairing, 'label'), color: colors.inkMuted };
   const inputStyle = [
@@ -97,7 +103,7 @@ function FilterBody({ value, homeCurrency, categories, accounts, region, onApply
   };
 
   return (
-    <Sheet visible onDismiss={onClose} accessibilityLabel={t('activity.filter.title')}>
+    <Sheet visible onDismiss={onClose} accessibilityLabel={t('activity.filter.title')} dirty={dirty}>
       <SheetHeader title={t('activity.filter.title')} cancelLabel={t('a11y.close')} onCancel={onClose} />
       <SheetScroll contentContainerStyle={styles.body}>
         <Text style={labelStyle}>{t('activity.filter.category')}</Text>

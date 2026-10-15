@@ -2,7 +2,8 @@
 // reverses that step and every newer one; refused steps are greyed with the reason. No level
 // gating yet (D-32: the levels phase adds it).
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useRollbackUndo } from '@/data/mutations/undo';
 import { useHouseholdMemberNames } from '@/data/queries/activity';
@@ -15,6 +16,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { EmptyState } from '@/ui/EmptyState';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { Screen } from '@/ui/Screen';
 import { conflictText, stepLabel } from './undoCopy';
 
@@ -51,6 +53,7 @@ export function HistoryScreen() {
 
   return (
     <Screen scroll>
+      <SyncProblemLine inset={false} />
       <Text accessibilityRole="header" style={titleStyle}>
         {t('history.title')}
       </Text>

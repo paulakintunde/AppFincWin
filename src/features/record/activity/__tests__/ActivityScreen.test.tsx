@@ -2,12 +2,14 @@ import React from 'react';
 import { Dimensions, ScrollView, StyleSheet } from 'react-native';
 import { act, fireEvent, render, within } from '@testing-library/react-native';
 import { mockScreen } from './activityScreenMocks';
-import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ActivityShellProviders } from './activityShellHarness';
 import { ActivityScreen } from '../ActivityScreen';
 import { ACTIVITY_VIEW_KEY } from '../activityViewPrefs';
+import { resetActivityFocusForTests } from '@/state/activityFocus';
+import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -16,28 +18,6 @@ jest.mock('react-native-safe-area-context', () => ({
 
 jest.setTimeout(30000);
 
-// A plain map keeps the list deterministic; FlashList's own layout needs a native measure pass.
-jest.mock('@shopify/flash-list', () => {
-  const { View } = jest.requireActual('react-native');
-  return {
-    FlashList: ({
-      data,
-      renderItem,
-      ListEmptyComponent,
-    }: {
-      data: { key: string }[];
-      renderItem: (info: { item: { key: string }; index: number }) => React.ReactElement;
-      ListEmptyComponent?: React.ReactElement;
-    }) => (
-      <View>
-        {data.length === 0 ? ListEmptyComponent : null}
-        {data.map((item, index) => (
-          <View key={item.key}>{renderItem({ item, index })}</View>
-        ))}
-      </View>
-    ),
-  };
-});
 
 const mockMarkPaid = jest.fn((): string | null => 'paid-step');
 let mockRows: ActivityRowView[] = [];
@@ -161,13 +141,14 @@ function row(over: Partial<ActivityRowView>): ActivityRowView {
 
 function renderScreen(props: Partial<React.ComponentProps<typeof ActivityScreen>> = {}) {
   return render(
-    <ThemeProvider>
-      <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} onOpenYou={jest.fn()} initialMonth="2026-09" {...props} />
-    </ThemeProvider>
+    <ActivityShellProviders>
+      <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} initialMonth="2026-09" {...props} />
+    </ActivityShellProviders>
   );
 }
 
 beforeEach(() => {
+  resetActivityFocusForTests();
   jest.clearAllMocks();
   resetToastForTests();
   mockRows = [];
@@ -177,6 +158,42 @@ beforeEach(() => {
   mockSearchLoading = false;
   mockSearchPaused = false;
   mockSearchError = false;
+});
+
+describe('ActivityScreen sync line at rest (G5, D-15)', () => {
+  const sync = jest.requireMock('@/data/sync/useSyncStatus') as { useSyncStatus: unknown };
+  const original = sync.useSyncStatus;
+  afterEach(() => {
+    sync.useSyncStatus = original;
+  });
+  const goOffline = () => {
+    sync.useSyncStatus = () => ({ isOnline: false, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null });
+  };
+
+  it('shows the offline line at scroll 0 in the list view', async () => {
+    goOffline();
+    const screen = await renderScreen();
+    expect(screen.getByTestId('sync-problem-line')).toBeTruthy();
+    expect(screen.getByText('offline')).toBeTruthy();
+  });
+
+  it('shows the offline line at scroll 0 in the calendar view', async () => {
+    goOffline();
+    await AsyncStorage.setItem(ACTIVITY_VIEW_KEY, JSON.stringify({ view: 'calendar', sort: 'newest' }));
+    const screen = await renderScreen();
+    await screen.findByTestId('calendar-scroll');
+    expect(screen.getByTestId('sync-problem-line')).toBeTruthy();
+    expect(screen.getByText('offline')).toBeTruthy();
+    await AsyncStorage.removeItem(ACTIVITY_VIEW_KEY);
+  });
+
+  it('keeps the last calendar row clear of the FAB (list clearance is asserted in source grep; the FlashList mock drops the prop)', async () => {
+    await AsyncStorage.setItem(ACTIVITY_VIEW_KEY, JSON.stringify({ view: 'calendar', sort: 'newest' }));
+    const cal = await renderScreen();
+    const scroll = await cal.findByTestId('calendar-scroll');
+    expect(StyleSheet.flatten(scroll.props.contentContainerStyle)).toEqual({ paddingBottom: FAB_CLEARANCE });
+    await AsyncStorage.removeItem(ACTIVITY_VIEW_KEY);
+  });
 });
 
 describe('ActivityScreen', () => {
@@ -302,24 +319,38 @@ describe('ActivityScreen', () => {
     expect(screen.queryByLabelText('Mark paid')).toBeNull();
   });
 
-  it('Add offers money out, money in and transfer, and opens the sheet in new mode', async () => {
+  it('is a shell tab root: the Activity header, one Profile avatar, no Add pill and no You link', async () => {
     const screen = await renderScreen();
-    await fireEvent.press(screen.getByLabelText('Add'));
-    await fireEvent.press(screen.getByText('Transfer'));
-    expect(screen.getByTestId('sheet-stub').props.children).toBe('new:transfer');
+    expect(screen.getByRole('header', { name: 'Activity' })).toBeTruthy();
+    expect(screen.getAllByLabelText('Profile')).toHaveLength(1);
+    expect(screen.queryByLabelText('Add')).toBeNull();
+    expect(screen.queryByText('You')).toBeNull();
+    expect(screen.queryByText('Money out')).toBeNull();
+  });
+
+  it('hands the shell refresh control and scroll handler to the list', async () => {
+    const screen = await renderScreen();
+    expect(screen.getByTestId('activity-list').props.accessibilityHint).toBe('refresh:true;scroll:true');
+  });
+
+  it('holds the FAB hidden while select mode is on and releases it after', async () => {
+    mockRows = [row({ id: 'g1', name: 'Coffee' })];
+    const screen = await renderScreen();
+    expect(screen.getByTestId('fab-hidden').props.children).toBe('false');
+    await fireEvent.press(screen.getByText('Select'));
+    expect(screen.getByTestId('fab-hidden').props.children).toBe('true');
+    await fireEvent.press(screen.getByText('Done'));
+    expect(screen.getByTestId('fab-hidden').props.children).toBe('false');
   });
 
   it('calls the navigation props from the text links', async () => {
     const onOpenAccounts = jest.fn();
     const onOpenHistory = jest.fn();
-    const onOpenYou = jest.fn();
-    const screen = await renderScreen({ onOpenAccounts, onOpenHistory, onOpenYou });
+    const screen = await renderScreen({ onOpenAccounts, onOpenHistory });
     await fireEvent.press(screen.getByText('Accounts'));
     await fireEvent.press(screen.getByText('History'));
-    await fireEvent.press(screen.getByText('You'));
     expect(onOpenAccounts).toHaveBeenCalled();
     expect(onOpenHistory).toHaveBeenCalled();
-    expect(onOpenYou).toHaveBeenCalled();
   });
 });
 
@@ -583,7 +614,7 @@ describe('ActivityScreen small-screen header (02-polish item 3)', () => {
     expect(within(monthRow).getByLabelText('Choose month')).toBeTruthy();
     expect(within(links).queryByLabelText('Choose month')).toBeNull();
     expect(flat(links).flexDirection).toBe('row');
-    for (const label of ['Accounts', 'History', 'You']) {
+    for (const label of ['Accounts', 'History']) {
       const link = screen.getByLabelText(label);
       const style = flat(link);
       // Equal-width pills that can shrink below their content, label ellipsised.

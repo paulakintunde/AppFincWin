@@ -2,10 +2,11 @@ import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireEvent, render } from '@testing-library/react-native';
 import { mockScreen } from './activityScreenMocks';
-import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { getToast, resetToastForTests } from '@/state/undoToast';
+import { ActivityShellProviders } from './activityShellHarness';
 import { ActivityScreen } from '../ActivityScreen';
+import { resetActivityFocusForTests } from '@/state/activityFocus';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -14,31 +15,6 @@ jest.mock('react-native-safe-area-context', () => ({
 
 jest.setTimeout(30000);
 
-// A plain map keeps the list deterministic; FlashList's own layout needs a native measure pass.
-jest.mock('@shopify/flash-list', () => {
-  const { View } = jest.requireActual('react-native');
-  return {
-    FlashList: ({
-      data,
-      renderItem,
-      ListEmptyComponent,
-      ListHeaderComponent,
-    }: {
-      data: { key: string }[];
-      renderItem: (info: { item: { key: string }; index: number }) => React.ReactElement;
-      ListEmptyComponent?: React.ReactElement;
-      ListHeaderComponent?: React.ReactElement | null;
-    }) => (
-      <View>
-        {ListHeaderComponent}
-        {data.length === 0 ? ListEmptyComponent : null}
-        {data.map((item, index) => (
-          <View key={item.key}>{renderItem({ item, index })}</View>
-        ))}
-      </View>
-    ),
-  };
-});
 
 const mockMarkPaid = jest.fn((): string | null => 'paid-step');
 let mockRows: ActivityRowView[] = [];
@@ -166,14 +142,15 @@ function row(over: Partial<ActivityRowView>): ActivityRowView {
 
 function renderScreen(props: Partial<React.ComponentProps<typeof ActivityScreen>> = {}) {
   return render(
-    <ThemeProvider>
-      <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} onOpenYou={jest.fn()} initialMonth="2026-09" {...props} />
-    </ThemeProvider>
+    <ActivityShellProviders>
+      <ActivityScreen onOpenAccounts={jest.fn()} onOpenHistory={jest.fn()} initialMonth="2026-09" {...props} />
+    </ActivityShellProviders>
   );
 }
 
 
 beforeEach(async () => {
+  resetActivityFocusForTests();
   await AsyncStorage.clear();
   jest.clearAllMocks();
   resetToastForTests();

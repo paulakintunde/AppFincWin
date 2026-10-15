@@ -16,8 +16,9 @@ jest.mock('expo-router', () => {
     return null;
   };
   return {
-    router: { push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
+    router: { canDismiss: () => false, dismissTo: jest.fn(), push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
     useLocalSearchParams: () => mockParams,
+    useRootNavigationState: () => undefined,
     usePathname: () => '/activity',
     Redirect: () => null,
     Stack,
@@ -39,8 +40,11 @@ jest.mock('@/features/record/activity/ActivityScreen', () => ({
 jest.mock('@/features/record/history/UndoToastHost', () => {
   const R = require('react');
   const { View } = require('react-native');
-  return { UndoToastHost: () => R.createElement(View, { testID: 'undo-toast-host' }) };
+  return { UndoToastHost: () => R.createElement(View, { testID: 'undo-toast-host' }), SheetToastOverlay: () => null };
 });
+jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({ BackHistoryProvider: ({ children }: { children: React.ReactNode }) => children }));
+jest.mock('@/shell/backHistory/useAndroidBackHandler', () => ({ AndroidBackHandler: () => null }));
+jest.mock('@/shell/layout/ShellLayoutProvider', () => ({ ShellLayoutProvider: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('@/features/record/useDeviceHomeCurrencyDefault', () => ({ DeviceHomeCurrencyDefault: () => null }));
 jest.mock('@/features/record/samples/SampleBanner', () => ({ SampleBanner: () => null }));
 jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPrompts: () => null }));
@@ -56,7 +60,7 @@ jest.mock('@/features/consent/useConsent', () => ({
 
 import ImportRoute from '../../../../app/(app)/import';
 import AccountDetailRoute from '../../../../app/(app)/accounts/[id]';
-import ActivityRoute from '../../../../app/(app)/activity';
+import ActivityRoute from '../../../../app/(app)/(tabs)/activity';
 import AppLayout from '../../../../app/(app)/_layout';
 
 beforeEach(() => {
@@ -97,13 +101,17 @@ describe('record routes', () => {
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/import', params: { entry: 'account', accountId: 'acc-9' } });
   });
 
-  it('activity navigates to accounts, history and you', async () => {
+  it('activity navigates to accounts and history', async () => {
     await render(<ActivityRoute />);
     const p = mockActivity.mock.calls[0]![0] as Record<string, () => void>;
+    const now = jest.spyOn(Date, 'now');
+    now.mockReturnValue(1_000_000);
     p.onOpenAccounts!();
+    now.mockReturnValue(1_000_000 + 1000); // past the pushOnce guard
     p.onOpenHistory!();
-    p.onOpenYou!();
-    expect(mockPush.mock.calls.map((c) => c[0])).toEqual(['/accounts', '/history', '/you']);
+    now.mockRestore();
+    expect(p.onOpenYou).toBeUndefined();
+    expect(mockPush.mock.calls.map((c) => c[0])).toEqual(['/accounts', '/history']);
   });
 });
 

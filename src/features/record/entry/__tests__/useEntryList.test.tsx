@@ -238,3 +238,149 @@ describe('useEntryList', () => {
     expect(set).not.toHaveBeenCalled();
   });
 });
+
+describe('useEntryList form keeping (D-25)', () => {
+  const form = {
+    direction: 'out' as const,
+    amountText: '7',
+    name: '',
+    categoryId: null,
+    accountId: 'a1',
+    currency: 'GBP',
+    localDate: '2026-09-20',
+    status: 'paid' as const,
+    statusTouched: false,
+    paymentType: null,
+    note: '',
+    toAccountId: null,
+    toCurrency: null,
+    amountInText: '',
+    automatic: false,
+    refund: false,
+  };
+
+  it('counts a stored form as one unsaved entry', async () => {
+    await saveEntryDraft('u1', 'h1', [], form);
+    const { result } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(1));
+  });
+
+  it('counts 2 items + form as 3, and Continue restores the form once', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1'), item('i2')], form);
+    const onRestoreForm = jest.fn();
+    const { result } = await mount({ onRestoreForm });
+    await waitFor(() => expect(result.current.resumeCount).toBe(3));
+    await act(() => {
+      result.current.continueDraft();
+    });
+    expect(onRestoreForm).toHaveBeenCalledTimes(1);
+    expect(onRestoreForm).toHaveBeenCalledWith(form);
+    expect(result.current.items).toHaveLength(2);
+    await waitFor(async () => {
+      const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+      expect(raw.form).toBeNull();
+      expect(raw.items).toHaveLength(2);
+    });
+  });
+
+  it('keepForm writes items and form at once', async () => {
+    const { result } = await mount();
+    await act(async () => {});
+    await act(() => {
+      result.current.add(item('i1'));
+      result.current.keepForm(form);
+    });
+    await waitFor(async () => {
+      const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+      expect(raw.form.amountText).toBe('7');
+      expect(raw.items).toHaveLength(1);
+    });
+  });
+
+  it('keepForm merges with the stored draft while the resume answer is pending (L5)', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1')]);
+    const { result, unmount } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(1));
+    await act(() => {
+      result.current.add(item('i2'));
+      result.current.keepForm(form);
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 400));
+    const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+    expect(raw.form.amountText).toBe('7');
+    expect(raw.items.map((i: ListItem) => i.id)).toEqual(['i1', 'i2']);
+  });
+
+  it('keepForm before the stored draft has loaded keeps the stored items and the live ones (L5)', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1')]);
+    const { result, unmount } = await mount();
+    await act(() => {
+      result.current.add(item('i2'));
+      result.current.keepForm(form);
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 400));
+    const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+    expect(raw.form.amountText).toBe('7');
+    expect(raw.items.map((i: ListItem) => i.id)).toEqual(['i1', 'i2']);
+  });
+
+  it('an oversized merge keeps the stored items with the live form (L5)', async () => {
+    const stored = Array.from({ length: 30 }, (_, n) => item(`s${n}`));
+    await saveEntryDraft('u1', 'h1', stored);
+    const { result, unmount } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(30));
+    await act(() => {
+      result.current.add(item('extra'));
+      result.current.keepForm(form);
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 400));
+    const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+    expect(raw.form.amountText).toBe('7');
+    expect(raw.items).toHaveLength(30);
+  });
+
+  it('an oversized merge still keeps live items of a type that has room (WR-02)', async () => {
+    const stored = Array.from({ length: 30 }, (_, n) => item(`s${n}`));
+    await saveEntryDraft('u1', 'h1', stored);
+    const { result, unmount } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(30));
+    await act(() => {
+      result.current.add(item('inc', { type: 'in' }));
+      result.current.keepForm(form);
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 400));
+    const raw = JSON.parse((await AsyncStorage.getItem(KEY)) as string);
+    expect(raw.items.map((i: ListItem) => i.id)).toContain('inc');
+  });
+
+  it('a discard after keepForm is not resurrected by the late merge write (WR-02)', async () => {
+    await saveEntryDraft('u1', 'h1', [item('i1')]);
+    const { result, unmount } = await mount();
+    await waitFor(() => expect(result.current.resumeCount).toBe(1));
+    await act(() => {
+      result.current.keepForm(form);
+      result.current.clearAll();
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 400));
+    expect(await AsyncStorage.getItem(KEY)).toBeNull();
+  });
+
+  it('the unmount flush after keepForm keeps the saved form', async () => {
+    const { result, unmount } = await mount();
+    await act(async () => {});
+    await act(() => {
+      result.current.add(item('i1'));
+    });
+    await act(() => {
+      result.current.keepForm(form);
+    });
+    await unmount();
+    await new Promise((r) => setTimeout(r, 400));
+    expect(JSON.parse((await AsyncStorage.getItem(KEY)) as string).form.amountText).toBe('7');
+  });
+});

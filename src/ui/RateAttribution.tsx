@@ -5,7 +5,8 @@
  * nothing for a same-currency figure, since there is no rate to attribute.
  */
 import React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { formatLocalDate } from '@/engine/money';
 import type { RateSource } from '@/db/rows';
 import { useT } from '@/i18n';

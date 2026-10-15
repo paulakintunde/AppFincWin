@@ -13,6 +13,7 @@ import { monthOf } from '@/engine/time';
 import { useT } from '@/i18n';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { Screen } from '@/ui/Screen';
 import { space } from '@/theme/layout';
 import { FormatStep } from './FormatStep';
@@ -70,6 +71,7 @@ export function ImportScreen({ entry, accountId = null, onDone }: ImportScreenPr
 
   return (
     <Screen scroll={state.stage !== 'review'}>
+      <SyncProblemLine inset={false} />
       <View style={state.stage === 'review' ? { flex: 1 } : { paddingBottom: space.groupGap }}>
         {state.rememberedNote && (state.stage === 'mapping' || state.stage === 'review') ? (
           <T tone="inkMuted">{t('importCsv.format.remembered')}</T>

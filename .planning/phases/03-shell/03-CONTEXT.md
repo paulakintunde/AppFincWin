@@ -155,6 +155,12 @@ Decision numbers are local to this phase. "Phase 2 D-xx" refers to `.planning/ph
 - **D-37:** **Dropdown menus get the same ink-at-38% backdrop as sheets** (D-23). This is a small visible change in the 4 places that use them.
 - **D-38:** **After the first account is created, setup lands on Home.** The first-account redirect moves up from `app/(app)/activity.tsx` to the shared layout. YouScreen's "Activity" row gets its own Activity link instead of `APP_HOME_HREF`.
 
+### Device-check decisions (new 2026-10-14)
+- **D-39:** **Account rows (Home Accounts card and the Accounts list) show the balance figure (danger colour when negative) plus at most one short line:** the home-currency amount (e.g. "≈ £585") for a foreign account, or the overdrawn state. The overdraft/standing sentence and the rate source/date appear only on the account detail screen.
+- **D-40:** **Android in-app edge swipe-back (3-button navigation):** widen the start zone to about 40dp and make the screen follow the finger, completing or snapping back on release (iOS-style), keeping it clear of SwipeRow and horizontal scrollers. Needs a device re-check.
+- **D-41:** **When Activity shows the Unpaid filter (including arrival from Home's Pay bills / See all), show a slim banner under the header:** "Showing unpaid bills · Clear". Clear removes the filter. New copy goes through the i18n catalogue.
+- **D-42:** **Projected recurring bills use one word everywhere: "Expected"** (the existing Activity copy). Home's Coming up uses "Expected" instead of "Projected", and Activity's expected rows become tappable to the same read-only detail as Home (still no Pay, per D-34).
+
 ### Accessibility and text scaling
 - **D-19:** **Text scaling (DSG-07):**
   - Body text and labels scale up to **200%** of the OS setting (the WCAG 1.4.4 target). Layouts wrap and grow, never clip.

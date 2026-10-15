@@ -3,7 +3,9 @@
 // a duplicate note; Add inserts every ready line as pending, as one undo step (usePasteLines).
 // Skipped lines are listed after the commit. No device-only privacy claim here (UI-SPEC 9).
 import React, { useMemo, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
+import { TextInput } from '@/ui/TextInput';
 import { useAccounts } from "@/data/queries/accounts";
 import { useMonthView } from "@/data/queries/activity";
 import { useCategoryLookup } from "@/data/queries/categories";
@@ -224,7 +226,12 @@ export function PasteSheet({
   const ctaDisabled = hasText && lines.length === 0;
 
   return (
-    <Sheet visible={visible} onDismiss={close} accessibilityLabel={title}>
+    <Sheet
+      visible={visible}
+      onDismiss={close}
+      accessibilityLabel={title}
+      dirty={text.trim() !== ""}
+    >
       <SheetHeader
         title={title}
         cancelLabel={t("record.sheet.cancel")}

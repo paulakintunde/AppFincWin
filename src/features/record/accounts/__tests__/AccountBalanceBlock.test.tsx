@@ -1,11 +1,11 @@
 // 02-48: a foreign account with no stored pair rate reads "Waiting for a rate", never a guessed
 // figure, and rendering the block never reaches the fetch door (02-DECISION-fx-on-demand.md item 5).
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, renderHook } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { AccountRow } from '@/db/rows';
 import type { AccountBalanceView } from '@/data/queries/activity';
-import { AccountBalanceBlock } from '../AccountBalanceBlock';
+import { AccountBalanceBlock, useCompactBalance } from '../AccountBalanceBlock';
 
 let mockRates: Array<{ quote: string; rate: string; rate_date: string; source: string }> = [];
 const mockInvoke = jest.fn();
@@ -120,5 +120,47 @@ describe('AccountBalanceBlock waiting for a rate', () => {
     await wrap(<AccountBalanceBlock account={account()} balance={view()} homeCurrency="USD" />);
     expect(mockFetchDoor).not.toHaveBeenCalled();
     expect(mockInvoke).not.toHaveBeenCalled();
+  });
+});
+
+describe('D-39 compact block', () => {
+  const usd = () => account({ currency: 'USD', name: 'Main' });
+  it('foreign overdrawn: figure plus one home line, no sentence or attribution', async () => {
+    mockRates = [rate('GBP', '0.85000000'), rate('USD', '1.10000000')];
+    const { getByText, queryByText, toJSON } = await wrap(
+      <AccountBalanceBlock account={account({ currency: 'USD' })} balance={view({ balance: -74000 })} homeCurrency="GBP" compact />
+    );
+    expect(getByText('−$740.00')).toBeTruthy();
+    expect(getByText(/^≈ −?£/)).toBeTruthy();
+    expect(queryByText(/Overdrawn by/)).toBeNull();
+    expect(JSON.stringify(toJSON())).not.toMatch(/Frankfurter|Rate from|rate from/i);
+  });
+  it('domestic overdrawn-within: figure plus Overdrawn, no sentence', async () => {
+    const { getByText, queryByText } = await wrap(
+      <AccountBalanceBlock
+        account={account()}
+        balance={view({ balance: -2500, standing: { kind: 'overdrawn-within', overdrawnBy: 2500, limit: 50000 } as never })}
+        homeCurrency="GBP"
+        compact
+      />
+    );
+    expect(getByText('Overdrawn')).toBeTruthy();
+    expect(queryByText(/within a/)).toBeNull();
+  });
+  it('non-compact keeps Balance now and the home line', async () => {
+    mockRates = [rate('GBP', '0.85000000'), rate('USD', '1.10000000')];
+    const { getByText } = await wrap(
+      <AccountBalanceBlock account={account({ currency: 'USD' })} balance={view({ balance: -74000 })} homeCurrency="GBP" />
+    );
+    expect(getByText('Balance now')).toBeTruthy();
+    expect(getByText(/^≈ −?£/)).toBeTruthy();
+  });
+  it('useCompactBalance label', async () => {
+    mockRates = [rate('GBP', '0.85000000'), rate('USD', '1.10000000')];
+    const { result } = await renderHook(() => useCompactBalance(usd(), view({ balance: -74000 }), 'GBP'), {
+      wrapper: ({ children }: { children: React.ReactNode }) => <ThemeProvider>{children}</ThemeProvider>,
+    });
+    expect(result.current.label).toMatch(/^−\$740\.00, ≈ −?£/);
+    expect(result.current.negative).toBe(true);
   });
 });

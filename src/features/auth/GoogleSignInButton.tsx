@@ -2,7 +2,8 @@
 // full button asset) -- border colour, radius and label match the prototype
 // (FincWin United.dc.html line ~3200), with the official multicolour G mark at its brand
 // proportions (see brand/GoogleMark.tsx).
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space, radii } from '@/theme/layout';

@@ -3,7 +3,8 @@
 // without a manual refresh. Latency is measured (checkConnection's ok result) but never
 // shown — only the three-state label and dot matter here.
 import { useEffect, useState } from 'react';
-import { AppState, type AppStateStatus, StyleSheet, Text, View } from 'react-native';
+import { AppState, type AppStateStatus, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { checkConnection, type ConnectionResult } from '@/services/supabase';

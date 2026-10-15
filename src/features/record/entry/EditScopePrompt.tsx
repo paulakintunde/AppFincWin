@@ -1,7 +1,8 @@
 // D-06/D-07: the "This one / This and future" question, asked before a template edit on an
 // occurrence of a recurring series. Nothing is written until one of the two is chosen.
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';

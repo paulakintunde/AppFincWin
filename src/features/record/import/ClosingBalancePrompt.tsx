@@ -1,7 +1,8 @@
 // D-24: the optional closing-balance check for a PDF, an inline step. Check balance hands the
 // typed text to the hook, which parses it with the account's currency; Skip carries on without.
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { TextInput } from '@/ui/TextInput';
 import { useT } from '@/i18n';
 import { Pill } from '@/ui/Pill';
 import { useAmountParser, type AmountParseFailure } from '@/ui/money/useAmountParser';

@@ -1,4 +1,6 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRootNavigationState } from 'expo-router';
+import type { NavStateLike } from '@/shell/backHistory/navLocation';
+import { finishImport, parseImportReturn } from '@/features/record/import/importReturn';
 import { ImportScreen } from '@/features/record/import/ImportScreen';
 import type { ImportEntry } from '@/features/record/import/useStatementImport';
 
@@ -10,12 +12,13 @@ function parseEntry(raw: string | undefined): ImportEntry {
 }
 
 export default function ImportRoute() {
-  const params = useLocalSearchParams<{ entry?: string; accountId?: string }>();
+  const params = useLocalSearchParams<{ entry?: string; accountId?: string; from?: string }>();
+  const navState = useRootNavigationState() as unknown as NavStateLike | undefined;
   return (
     <ImportScreen
       entry={parseEntry(params.entry)}
       accountId={params.accountId ?? null}
-      onDone={() => router.replace('/activity')}
+      onDone={() => finishImport(parseImportReturn(params.from), navState)}
     />
   );
 }

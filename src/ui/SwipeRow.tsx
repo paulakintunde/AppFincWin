@@ -13,7 +13,8 @@
  * Reduced motion: the library's spring is the only motion; no extra animation is added.
  */
 import React, { useCallback, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';

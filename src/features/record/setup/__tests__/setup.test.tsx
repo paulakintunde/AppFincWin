@@ -1,5 +1,5 @@
 // 02-30: the first-account gate, the two onboarding setup screens (D-22) and the routing that
-// makes Activity the signed-in landing. Hooks, router and analytics are mocked; this checks wiring.
+// makes Home the signed-in landing. Hooks, router and analytics are mocked; this checks wiring.
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -8,6 +8,9 @@ import { needsFirstAccount } from '../firstAccountGate';
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
 let mockRedirectHref: unknown = null;
+jest.mock('@/data/sync/useSyncStatus', () => ({
+  useSyncStatus: () => ({ isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null }),
+}));
 jest.mock('expo-router', () => {
   const R = require('react');
   return {
@@ -66,10 +69,16 @@ jest.mock('../../../../../app/_layout', () => {
   return { RouteContext: R.createContext('app') };
 });
 jest.mock('@/features/record/activity/ActivityScreen', () => ({ ActivityScreen: () => null }));
+jest.mock('@/shell/tabBar/TabBar', () => ({ TabBar: () => null }));
+jest.mock('@/shell/fab/Fab', () => ({ Fab: () => null }));
+jest.mock('@/shell/fab/FabQuickMenu', () => ({ FabQuickMenu: () => null }));
+jest.mock('@/features/record/entry/ShellEntryHost', () => ({ ShellEntryHost: () => null }));
+jest.mock('@/shell/fab/FabProvider', () => ({ FabProvider: ({ children }: { children: React.ReactNode }) => children }));
+jest.mock('expo-router/js-tabs', () => ({ Tabs: Object.assign(() => null, { Screen: () => null }) }));
 
 import { SetupAccountScreen } from '../SetupAccountScreen';
 import { SetupHistoryScreen } from '../SetupHistoryScreen';
-import ActivityRoute from '../../../../../app/(app)/activity';
+import ActivityRoute from '../../../../../app/(app)/(tabs)/_layout';
 import IndexRoute from '../../../../../app/index';
 import { RouteContext } from '../../../../../app/_layout';
 
@@ -146,18 +155,18 @@ describe('SetupHistoryScreen', () => {
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/import', params: { entry: 'onboarding', accountId: 'acc-1' } });
   });
 
-  it('Start fresh tracks the choice and replaces to Activity', async () => {
+  it('Start fresh tracks the choice and replaces to Home', async () => {
     const { getByText } = await render(wrap(<SetupHistoryScreen accountId="acc-1" />));
     fireEvent.press(getByText('Start fresh'));
     expect(mockTrack).toHaveBeenCalledWith('onboarding_history_choice', { choice: 'fresh' });
-    expect(mockReplace).toHaveBeenCalledWith('/activity');
+    expect(mockReplace).toHaveBeenCalledWith('/home');
   });
 
-  it('Explore with sample figures tracks the choice, seeds and opens Activity', async () => {
+  it('Explore with sample figures tracks the choice, seeds and opens Home', async () => {
     const { getByText } = await render(wrap(<SetupHistoryScreen accountId="acc-1" />));
     await fireEvent.press(getByText('Explore with sample figures'));
     expect(mockTrack).toHaveBeenCalledWith('onboarding_history_choice', { choice: 'sample' });
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/activity'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/home'));
     expect(mockSeed).toHaveBeenCalledTimes(1);
   });
 
@@ -182,12 +191,12 @@ describe('SetupHistoryScreen', () => {
   });
 });
 
-describe('Activity route first-account gate', () => {
+describe('Tabs layout first-account gate', () => {
   it('redirects to /setup/account when the household has no active account', async () => {
     await render(wrap(<ActivityRoute />));
     expect(mockRedirectHref).toBe('/setup/account');
   });
-  it('renders Activity when an account exists', async () => {
+  it('renders the tabs when an account exists', async () => {
     mockAccounts = { data: [{ archived_at: null }], isLoading: false, isError: false };
     await render(wrap(<ActivityRoute />));
     expect(mockRedirectHref).toBeNull();
@@ -205,12 +214,12 @@ describe('Activity route first-account gate', () => {
 });
 
 describe('signed-in landing', () => {
-  it('sends a signed-in user to /activity', async () => {
+  it('sends a signed-in user to /home', async () => {
     await render(
       <RouteContext.Provider value="app">
         <IndexRoute />
       </RouteContext.Provider>,
     );
-    expect(mockRedirectHref).toBe('/activity');
+    expect(mockRedirectHref).toBe('/home');
   });
 });

@@ -28,6 +28,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: { bundleIdentifier: APP_ID, supportsTablet: false, usesAppleSignIn: true },
   android: {
     package: APP_ID,
+    // D-06 / 03-RESEARCH Pitfall 1: predictive back sends Android 13-15 back presses past BackHandler and Modal onRequestClose; off so the sheet -> history -> Home -> exit order runs.
+    predictiveBackGestureEnabled: false,
     adaptiveIcon: {
       foregroundImage: './assets/android-icon-foreground.png',
       backgroundImage: './assets/android-icon-background.png',

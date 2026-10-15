@@ -1,14 +1,18 @@
-// REC-30: state for the entry sheet's list. Owns the items, the per-type caps, the summary,
+// REC-30 / D-25: state for the entry sheet's list. Owns the items, the per-type caps, the summary,
 // the resume/discard answer for a stored draft (D-17) and the debounced device persistence.
+// keepForm stores the half-typed form with the list when the sheet is dismissed by accident.
 // Nothing here is synced; the draft lives under the fincwin: prefix (see useEntryDraft).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   addItem,
   canAdd as engineCanAdd,
+  draftEntryCount,
   dropUnavailable,
+  LIST_CAP_PER_TYPE,
   removeItem,
   summarise,
   takeItem,
+  type DraftForm,
   type ListItem,
   type ListItemType,
   type ListSummary,
@@ -32,6 +36,8 @@ export interface EntryListState {
   restore(removed: RemovedItem): boolean;
   take(id: string): ListItem | null;
   clearAll(): void;
+  /** D-25: writes items + form to the device draft now; while a stored draft is unresolved it merges with it (L5). */
+  keepForm(form: DraftForm | null): void;
   canAdd(type: ListItemType): boolean;
 }
 
@@ -47,6 +53,8 @@ export interface UseEntryListOptions {
   /** False in edit mode: the hook never touches storage. */
   enabled: boolean;
   activeAccountIds: ReadonlySet<string>;
+  /** Called once on Continue when the stored draft held a form. */
+  onRestoreForm?: (form: DraftForm) => void;
 }
 
 export function useEntryList(opts: UseEntryListOptions): EntryListState {
@@ -55,11 +63,13 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
 
   const [items, setItemsState] = useState<ListItem[]>([]);
   const [pending, setPending] = useState<ListItem[]>([]);
+  const [pendingForm, setPendingForm] = useState<DraftForm | null>(null);
   const [dropped, setDropped] = useState(0);
   const [resolved, setResolved] = useState(false);
 
   const itemsRef = useRef<ListItem[]>([]);
   const dirtyRef = useRef(false);
+  const optsRef = useRef(opts);
   // Bumped when the list is cleared (saved or discarded) so an older Undo cannot restore into it.
   const epochRef = useRef(0);
   const mountedRef = useRef(true);
@@ -73,6 +83,7 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
   const targetRef = useRef({ active, userId, householdId, resolved });
   // Keep the latest values readable from callbacks and the unmount flush.
   useEffect(() => {
+    optsRef.current = opts;
     idsRef.current = activeAccountIds;
     targetRef.current = { active, userId, householdId, resolved };
   });
@@ -89,8 +100,9 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
     let cancelled = false;
     void loadEntryDraft(userId, householdId).then((stored) => {
       if (cancelled) return;
-      setPending(stored);
-      setResolved(stored.length === 0);
+      setPending(stored.items);
+      setPendingForm(stored.form);
+      setResolved(draftEntryCount(stored) === 0);
     });
     return () => {
       cancelled = true;
@@ -101,7 +113,8 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
     const t = targetRef.current;
     if (!dirtyRef.current || !t.active || !t.resolved || t.userId === null || t.householdId === null) return;
     dirtyRef.current = false;
-    void saveEntryDraft(t.userId, t.householdId, itemsRef.current);
+    // a list change means the form is live in the sheet again, so a stale form snapshot is dropped
+    void saveEntryDraft(t.userId, t.householdId, itemsRef.current, null);
   }, []);
 
   // Debounced save on every change, never while a resume answer is pending.
@@ -119,11 +132,16 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
     setDropped(kept.dropped);
     setPending([]);
     setResolved(true);
+    // the stored form snapshot is spent: the next list save writes the list alone
+    const form = pendingForm;
+    setPendingForm(null);
     setItems([...itemsRef.current, ...kept.items]);
-  }, [pending, setItems]);
+    if (form !== null) optsRef.current.onRestoreForm?.(form);
+  }, [pending, pendingForm, setItems]);
 
   const discardDraft = useCallback(() => {
     setPending([]);
+    setPendingForm(null);
     setResolved(true);
     if (userId !== null && householdId !== null) void clearEntryDraft(userId, householdId);
   }, [userId, householdId]);
@@ -175,11 +193,39 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
   const clearAll = useCallback(() => {
     epochRef.current += 1;
     setPending([]);
+    setPendingForm(null);
     setDropped(0);
     setResolved(true);
     setItems([]);
     if (userId !== null && householdId !== null) void clearEntryDraft(userId, householdId);
   }, [setItems, userId, householdId]);
+
+  const keepForm = useCallback((form: DraftForm | null) => {
+    const t = targetRef.current;
+    if (!t.active || t.userId === null || t.householdId === null) return;
+    dirtyRef.current = false;
+    if (t.resolved) {
+      void saveEntryDraft(t.userId, t.householdId, itemsRef.current, form);
+      return;
+    }
+    // L5: the stored draft is still loading or its resume prompt is unanswered: keep it and add what was typed.
+    const { userId, householdId } = t;
+    const live = itemsRef.current;
+    const epoch = epochRef.current;
+    void loadEntryDraft(userId, householdId)
+      .then((stored) => {
+        // WR-02: a discard since the call must not be resurrected by this late write.
+        if (epoch !== epochRef.current) return undefined;
+        // Stored items first, then each typed item that still fits its type's cap (none dropped
+        // unless its own type is full).
+        const merged = [...stored.items];
+        for (const i of live) {
+          if (merged.filter((m) => m.type === i.type).length < LIST_CAP_PER_TYPE) merged.push(i);
+        }
+        return saveEntryDraft(userId, householdId, merged, form ?? stored.form);
+      })
+      .catch(() => undefined);
+  }, []);
 
   const canAdd = useCallback((type: ListItemType) => engineCanAdd(items, type), [items]);
   const summary = useMemo(() => summarise(items), [items]);
@@ -188,7 +234,7 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
     items,
     summary,
     dropped,
-    resumeCount: pending.length,
+    resumeCount: draftEntryCount({ items: pending, form: pendingForm }),
     continueDraft,
     discardDraft,
     add,
@@ -196,6 +242,7 @@ export function useEntryList(opts: UseEntryListOptions): EntryListState {
     restore,
     take,
     clearAll,
+    keepForm,
     canAdd,
   };
 }

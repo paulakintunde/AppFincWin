@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2.1: PDF statement import** (INSERTED) - Text PDF statements through the same import pipeline, reconciliation-gated, with a server worker and retention policy (completed 2026-10-11; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 2.2: Record polish** (INSERTED) - Activity views and subtotals, sort, recurring-from-history, clone, detail sheet and swipe, entry-sheet extras, paste import, sample data (completed 2026-10-10; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 2.3: Record follow-ups** (INSERTED) - Import reconcile-or-new choice, description auto-categorise rules, signed-out account chooser, compact amount, Add account from the picker, bulk Add to list (completed 2026-10-13; Android verified, iOS pending Apple enrolment)
-- [ ] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content
+- [x] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content (completed 2026-10-14)
 - [ ] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
@@ -444,48 +444,72 @@ Plans:
   4. The FAB's action changes to match the current tab, and it hides during sheets, bulk select, onboarding and step flows.
   5. A user can navigate and read every screen with a screen reader on both platforms.
   6. Home opens with quick actions, a This month card, what is coming up and an Accounts summary, built from the user's recorded data.
-**Plans**: 24 plans in 8 waves (re-planned 2026-10-13)
+**Plans**: 38 plans: 24 in 8 waves (re-planned 2026-10-13) plus 14 gap-closure plans in 4 waves (2026-10-14)
 **Updated 2026-10-13 (re-discussed):** 03-CONTEXT.md was reopened after Phases 2.2 and 2.3. The app keeps its own Sheet and adds drag-to-dismiss (no `@gorhom` migration). The backdrop is ink at 38% with a fade. Sheets stack and close top-first, toasts draw above sheets, and Home content (HOME-01…04) is added. Re-planned the same day: 03-01, 03-09, 03-13 and 03-16 rewritten or revised, the others edited, and 03-17…03-24 added (engine month figures and Unpaid filter, entry draft v2, toast layer, refresh toast, shared Home/Activity state, Home cards, entry-sheet draft and edit guard).
 Plans:
 **Wave 1**
-- [ ] 03-01-PLAN.md — Foundations: expo-blur, predictive back off, hapticMedium in the existing wrapper, shell/Home tokens and durations, src/shell lint boundary, Reanimated/worklets doc fix
-- [ ] 03-02-PLAN.md — Pure back-history core under D-22 (8-deep history, transitions, back decision, nav-state -> location) (TDD)
-- [ ] 03-03-PLAN.md — Pure tab order/availability, forward and always-reverse back slide, FAB hide rule, quick-action order (TDD)
-- [ ] 03-04-PLAN.md — Phase 3 copy: shell, sheet discard, refresh toasts, Home
-- [ ] 03-17-PLAN.md — Engine: unpaid outflows, left after everything, bar shares; Unpaid filter = bills out only, projections filter (TDD, 100%)
-- [ ] 03-18-PLAN.md — Engine: entry draft v2 with the form snapshot, v1 still parses (TDD, 100%)
+- [x] 03-01-PLAN.md — Foundations: expo-blur, predictive back off, hapticMedium in the existing wrapper, shell/Home tokens and durations, src/shell lint boundary, Reanimated/worklets doc fix
+- [x] 03-02-PLAN.md — Pure back-history core under D-22 (8-deep history, transitions, back decision, nav-state -> location) (TDD)
+- [x] 03-03-PLAN.md — Pure tab order/availability, forward and always-reverse back slide, FAB hide rule, quick-action order (TDD)
+- [x] 03-04-PLAN.md — Phase 3 copy: shell, sheet discard, refresh toasts, Home
+- [x] 03-17-PLAN.md — Engine: unpaid outflows, left after everything, bar shares; Unpaid filter = bills out only, projections filter (TDD, 100%)
+- [x] 03-18-PLAN.md — Engine: entry draft v2 with the form snapshot, v1 still parses (TDD, 100%)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 03-05-PLAN.md — DSG-07 text scaling: Text/TextInput primitives, root font-scale provider, 73-file migration + lint rule
-- [ ] 03-06-PLAN.md — Shell state: BackHistoryProvider, sheetStack store, Android back (steps 2-4), layout measurements, focus helper, test harness
-- [ ] 03-20-PLAN.md — Pull-to-refresh hook with the "updated / nothing new" completion toast
-- [ ] 03-21-PLAN.md — Shared selected month, Activity filter intent, entry-host store; Activity Unpaid lists projected bills
+- [x] 03-05-PLAN.md — DSG-07 text scaling: Text/TextInput primitives, root font-scale provider, 73-file migration + lint rule
+- [x] 03-06-PLAN.md — Shell state: BackHistoryProvider, sheetStack store, Android back (steps 2-4), layout measurements, focus helper, test harness
+- [x] 03-20-PLAN.md — Pull-to-refresh hook with the "updated / nothing new" completion toast
+- [x] 03-21-PLAN.md — Shared selected month, Activity filter intent, entry-host store; Activity Unpaid lists projected bills
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 03-07-PLAN.md — Context-aware FAB: registration API, sheet-aware hide rule, quick actions, haptics, rise and lift above toast
-- [ ] 03-08-PLAN.md — Tab bar: bespoke glyphs, availability, accessibility, re-tap, shell-driven directional slide
-- [ ] 03-09-PLAN.md — Own Sheet: drag-to-dismiss, ink-at-38% backdrop and motion, stacking, dismissible, a11y escape, Dropdown backdrop
-- [ ] 03-10-PLAN.md — Header pieces: tab header, compact header, detail header, avatar, back chevron, problem-only sync line
-- [ ] 03-22-PLAN.md — Home view model, Coming-up selection, month chips, This month card
+- [x] 03-07-PLAN.md — Context-aware FAB: registration API, sheet-aware hide rule, quick actions, haptics, rise and lift above toast
+- [x] 03-08-PLAN.md — Tab bar: bespoke glyphs, availability, accessibility, re-tap, shell-driven directional slide
+- [x] 03-09-PLAN.md — Own Sheet: drag-to-dismiss, ink-at-38% backdrop and motion, stacking, dismissible, a11y escape, Dropdown backdrop
+- [x] 03-10-PLAN.md — Header pieces: tab header, compact header, detail header, avatar, back chevron, problem-only sync line
+- [x] 03-22-PLAN.md — Home view model, Coming-up selection, month chips, This month card
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 03-11-PLAN.md — Screen scaffolds: TabRootScreen / DetailScreen, large-to-compact header, refresh control, title focus
-- [ ] 03-12-PLAN.md — FAB long-press quick menu on the app Sheet (absorbs Activity's Add sheet)
-- [ ] 03-16-PLAN.md — Sheet dirty prop and stacked "Discard changes?"; dirty reports on seven edit sheets
+- [x] 03-11-PLAN.md — Screen scaffolds: TabRootScreen / DetailScreen, large-to-compact header, refresh control, title focus
+- [x] 03-12-PLAN.md — FAB long-press quick menu on the app Sheet (absorbs Activity's Add sheet)
+- [x] 03-16-PLAN.md — Sheet dirty prop and stacked "Discard changes?"; dirty reports on seven edit sheets
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 03-19-PLAN.md — Toasts above sheets: top-sheet overlay, remaining-time timer, UI-SPEC position, FAB lift feed
-- [ ] 03-23-PLAN.md — Home: quick actions, Coming up with Pay, projection detail, Accounts card, HomeScreen
-- [ ] 03-24-PLAN.md — Entry sheet: draft on accidental dismissal, Discard changes? when editing, Cancel unchanged
+- [x] 03-19-PLAN.md — Toasts above sheets: top-sheet overlay, remaining-time timer, UI-SPEC position, FAB lift feed
+- [x] 03-23-PLAN.md — Home: quick actions, Coming up with Pay, projection detail, Accounts card, HomeScreen
+- [x] 03-24-PLAN.md — Entry sheet: draft on accidental dismissal, Discard changes? when editing, Cancel unchanged
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 03-13-PLAN.md — Route wiring: (tabs) group with Home landing, details in the outer stack, SwipeBack kept, gate moved up, providers, router tests
+- [x] 03-13-PLAN.md — Route wiring: (tabs) group with Home landing, details in the outer stack, SwipeBack kept, gate moved up, providers, router tests
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 03-15-PLAN.md — Record integration: Activity as a tab root, Add pill/sheet and You link removed, ShellEntryHost
+- [x] 03-15-PLAN.md — Record integration: Activity as a tab root, Add pill/sheet and You link removed, ShellEntryHost
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 03-14-PLAN.md — Prototype-deviation record (D-01, D-12, D-23) + Android device acceptance A1-A16 (checkpoint)
+- [x] 03-14-PLAN.md — Prototype-deviation record (D-01, D-12, D-23) + Android device acceptance A1-A16 (checkpoint)
+
+**Gap closure (2026-10-14, from 03-FINDINGS.md: G1-G9, H1-H9, M1-M9, L1-L13)**
+
+**Gap wave 1**
+- [x] 03-25-PLAN.md — Shared contracts: gap copy ("Expected", Unpaid banner, Home states, compact account line), unused keys removed, PRESSED_OPACITY / ACCENT_TINT_OPACITY, FAB_CLEARANCE, monthRefreshKeys, pushOnce, SyncProblemLine inset
+- [x] 03-26-PLAN.md — Engine (TDD): unconverted amounts excluded from range filters (H9), refund-safe bar share (L6), Repeats in the draft form, toCurrency cap, skipped -> paid
+- [x] 03-27-PLAN.md — Sheet onDiscard + single-fire drag dismissal + dirty fling asks + prompt reset; Repeats Discard restores (G2, H5, H6, L9) [integration]
+- [x] 03-33-PLAN.md — State hygiene: tabSlide wipe and stuck back-step flags, shared-month rollover, owner-only FAB cleanup (L1, L4, L8)
+- [x] 03-34-PLAN.md — Primitives: toast rise-in and geometry (M3), Text without fontSize (M9 confirm-first), MonthChips tabs and labels (L2, L3)
+- [x] 03-36-PLAN.md — Android edge swipe-back: 40dp, follows the finger, reduced motion (G7 / D-40)
+
+**Gap wave 2** *(blocked on gap wave 1)*
+- [x] 03-28-PLAN.md — Entry sheet: lossless draft restore, validated currencies, no guess on an untouched edit, early-dismiss merge (H1, H2, H4, L5)
+- [x] 03-29-PLAN.md — Home This month / Coming up: true headline with expected bills (G1), error and offline states (G4), month-aware copy (M6), shared refresh keys (M8)
+- [x] 03-30-PLAN.md — Account rows short on Home and Accounts list (G6 / D-39), accent-following tints (M4), card polish (M1, M2, M7)
+- [x] 03-32-PLAN.md — Tab-root chrome: sync line in the large header (G5), offline refresh no toast (H3), FAB clearance (H8), avatar (M5)
+- [x] 03-35-PLAN.md — Import returns to the one (tabs), to Home when started there (G3); push guards (H7) [integration]
+
+**Gap wave 3** *(blocked on gap wave 2)*
+- [x] 03-31-PLAN.md — Activity: Unpaid banner (G8 / D-41), tappable Expected rows (G9 / D-42), sync line at rest, FAB clearance
+- [x] 03-37-PLAN.md — Sync line on every pushed screen (G5) [integration]
+
+**Gap wave 4** *(blocked on gap wave 3)*
+- [x] 03-38-PLAN.md — Pixel 9 re-check: A7, A9, A15, Accounts row, import from Home, H7/H8/M3 quick checks (checkpoint)
 **UI hint**: yes — heaviest design-fidelity phase in the roadmap: bespoke SVG tab glyphs, sheet infrastructure, seven named animations.
 
 ### Phase 4: Decide Engine
@@ -673,7 +697,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 0/16 | Re-discussed 2026-10-13; re-plan before executing | - |
+| 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 0/12 | Planned | - |
 | 5. Decide UI | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |

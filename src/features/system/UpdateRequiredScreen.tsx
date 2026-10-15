@@ -2,7 +2,8 @@
 // app_config.min_supported_version. No dismiss, no back gesture on Android -- this is the
 // only route the router allows once the gate reports 'blocked' (routeDecision.ts).
 import { useEffect } from 'react';
-import { BackHandler, Linking, Platform, Pressable, StyleSheet, Text } from 'react-native';
+import { BackHandler, Linking, Platform, Pressable, StyleSheet } from 'react-native';
+import { Text } from '@/ui/Text';
 import * as Application from 'expo-application';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';

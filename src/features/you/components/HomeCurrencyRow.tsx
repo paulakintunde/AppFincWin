@@ -1,7 +1,8 @@
 // REC-25: the Home currency row. Tapping opens the currency picker; choosing a different code
 // opens the all-or-nothing confirm sheet.
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 import { CurrencyPicker } from '@/features/record/entry/pickers/CurrencyPicker';
 import { useRecordContext } from '@/features/record/useRecordContext';

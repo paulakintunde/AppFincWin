@@ -40,6 +40,13 @@
  * `importCsv` key namespace keeps its internal name for stability (plans in this phase
  * grep it), but every value now says "statement", not "CSV" — 02-UI-SPEC.md's D-39
  * revision generalised the entry point beyond CSV to OFX/QFX.
+ *
+ * - shell.* / sheet.* / refresh.* / home.* (Phase 3): tab labels, fab.* and Profile are ported
+ *   from the prototype (html 1855-1888, 6858-6867); home.title 'Overview' and
+ *   home.upcoming.empty are the prototype's (html 59, 184); refresh.* is the prototype's toast
+ *   copy (html 6851-6852); shell.tab.a11y and sheet.discard title/actions are the user's
+ *   wording (03-CONTEXT D-20, D-26); shell.quick.*, sheet.discard.body, home.month.empty and
+ *   home.accounts.seeAll are Claude-drafted, awaiting review.
  */
 import { EXCHANGE_RATE_API_ATTRIBUTION } from '../mandatedCopy';
 
@@ -441,6 +448,12 @@ const en = {
     },
   },
   activity: {
+    unpaidBanner: {
+      text: 'Showing unpaid bills',
+      clear: 'Clear',
+      clearA11y: 'Clear the unpaid filter',
+    },
+    projection: { a11y: '{{name}}, {{amount}}, expected {{date}}' },
     title: 'Activity',
     add: 'Add',
     you: 'You',
@@ -676,6 +689,7 @@ const en = {
     },
   },
   accounts: {
+    compact: { overdrawn: 'Overdrawn', overLimit: 'Over limit' },
     title: 'Accounts',
     add: 'Add account',
     emptyHeading: 'No accounts yet.',
@@ -1250,6 +1264,79 @@ const en = {
     accountBody: 'Add the account you use most. More can be added later.',
     addAccount: 'Add an account',
     toYou: 'Sign out or delete your account',
+  },
+  shell: {
+    tab: {
+      home: 'Home',
+      activity: 'Activity',
+      decide: 'Decide',
+      grow: 'Grow',
+      insights: 'Insights',
+      a11y: '{{label}}, tab, {{position}} of {{total}}',
+    },
+    title: { activity: 'Activity' },
+    profile: 'Profile',
+    fab: {
+      add: 'Add',
+      addA11y: 'Add a transaction',
+    },
+    quick: {
+      title: 'Quick add',
+      addExpense: 'Add expense',
+      addIncome: 'Add income',
+      transfer: 'Transfer',
+      newCheck: 'New check',
+      importStatement: 'Import statement',
+    },
+  },
+  sheet: {
+    discard: {
+      title: 'Discard changes?',
+      body: 'Changes on this sheet haven’t been saved.',
+      keep: 'Keep editing',
+      confirm: 'Discard',
+    },
+  },
+  refresh: { updated: 'Prices and balances up to date', nothingNew: 'Up to date — nothing new to pull' },
+  home: {
+    title: 'Overview',
+    loading: 'Loading overview',
+    quick: {
+      add: 'Add',
+      addA11y: 'Add a transaction',
+      payBills: 'Pay bills',
+      payBillsA11y: 'Pay bills, shows unpaid items in Activity',
+      import: 'Import',
+      importA11y: 'Import a statement',
+    },
+    month: {
+      heading: 'This month',
+      caption: 'left after everything',
+      headlineA11y: '{{figure}} left after everything',
+      unpaid: 'Unpaid',
+      barA11y: '{{paid}} of {{in}} paid, {{pending}} still to come',
+      chipA11y: '{{month}}, {{year}}',
+      empty: 'Nothing recorded in {{month}} yet.',
+      emptyPast: 'Nothing recorded in {{month}}.',
+    },
+    state: {
+      monthError: 'This month couldn’t load. Pull down to try again.',
+      monthOffline: 'You’re offline, and this month hasn’t loaded on this device yet.',
+      upcomingError: 'Bills due couldn’t load.',
+      upcomingOffline: 'Bills due will show once this month loads.',
+    },
+    upcoming: {
+      heading: 'Coming up',
+      seeAll: 'See all',
+      empty: 'Nothing outstanding in {{month}}.',
+      a11y: '{{name}}, {{amount}}, due {{date}}',
+      a11yOverdue: '{{name}}, {{amount}}, overdue, was due {{date}}',
+      automatic: 'Automatic',
+      projected: 'Expected',
+      pay: 'Pay',
+      payA11y: 'Pay {{name}}, mark as paid',
+    },
+    accounts: { heading: 'Accounts', seeAll: 'See all accounts' },
   },
   a11y: {
     close: 'Close',

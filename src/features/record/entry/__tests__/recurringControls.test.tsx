@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { fireEvent, render, type RenderResult } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { TransactionRow } from '@/db/rows';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { TransactionSheet } from '../TransactionSheet';
 import { RepeatsField } from '../RepeatsField';
+import type { RepeatsValue } from '../recurringForm';
 import { EditScopePrompt } from '../EditScopePrompt';
 
 jest.mock('@/features/record/accounts/AccountSheet', () => ({ AccountSheet: () => null }));
@@ -426,6 +427,75 @@ describe('occurrence actions', () => {
   it('labels a pending occurrence past its date as overdue', async () => {
     const { getByText } = await open({ kind: 'edit', row: occurrence() });
     expect(getByText('Overdue')).toBeTruthy();
+  });
+});
+
+describe('Repeats sheet discard (G2, D-26, D-27)', () => {
+  async function harness() {
+    const calls: RepeatsValue[] = [];
+    function Harness() {
+      const [value, setValue] = useState<RepeatsValue>({ freq: 'monthly', end: { kind: 'count', count: 3 } });
+      return (
+        <RepeatsField
+          value={value}
+          onChange={(v) => {
+            calls.push(v);
+            setValue(v);
+          }}
+          formatDate={(d) => d}
+          today="2026-09-25"
+          entryDate="2026-09-25"
+        />
+      );
+    }
+    const screen = await render(
+      <ThemeProvider>
+        <Harness />
+      </ThemeProvider>
+    );
+    return { screen, calls };
+  }
+  async function openAndType(screen: RenderResult) {
+    await fireEvent.press(screen.getByLabelText('Repeats'));
+    await fireEvent.changeText(screen.getByLabelText('Number of times'), '5');
+  }
+
+  it('Discard restores the opening value and closes', async () => {
+    const { screen, calls } = await harness();
+    await openAndType(screen);
+    expect(calls.at(-1)).toEqual({ freq: 'monthly', end: { kind: 'count', count: 5 } });
+    await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
+    expect(screen.getByText('Discard changes?', { hidden: true })).toBeTruthy();
+    await fireEvent.press(screen.getByText('Discard', { hidden: true }));
+    expect(calls.at(-1)).toEqual({ freq: 'monthly', end: { kind: 'count', count: 3 } });
+    expect(screen.queryByLabelText('Number of times')).toBeNull();
+    expect(screen.getByText('Every month · After 3 times')).toBeTruthy();
+  });
+
+  it('Keep editing keeps the typed count and the sheet open', async () => {
+    const { screen, calls } = await harness();
+    await openAndType(screen);
+    await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
+    await fireEvent.press(screen.getByText('Keep editing', { hidden: true }));
+    expect(calls.at(-1)).toEqual({ freq: 'monthly', end: { kind: 'count', count: 5 } });
+    expect(screen.getByLabelText('Number of times')).toBeTruthy();
+  });
+
+  it('Done closes without asking and keeps the count', async () => {
+    const { screen, calls } = await harness();
+    await openAndType(screen);
+    await fireEvent.press(screen.getByText('Done'));
+    expect(screen.queryByText('Discard changes?', { hidden: true })).toBeNull();
+    expect(calls.at(-1)).toEqual({ freq: 'monthly', end: { kind: 'count', count: 5 } });
+    expect(screen.getByText('Every month · After 5 times')).toBeTruthy();
+  });
+
+  it('opening and closing without typing never asks', async () => {
+    const { screen, calls } = await harness();
+    await fireEvent.press(screen.getByLabelText('Repeats'));
+    await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
+    expect(screen.queryByText('Discard changes?', { hidden: true })).toBeNull();
+    expect(calls).toHaveLength(0);
   });
 });
 

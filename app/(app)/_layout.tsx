@@ -1,6 +1,8 @@
-// D-17: the signed-in route group. Redirects to the consent prompt first if the user
-// hasn't answered it yet (skipped if already there, to avoid a redirect loop), otherwise
-// renders the You screen (and later screens, as they're added in Phase 1+).
+// D-17 consent gate, then the shell: the (tabs) group (Home, Activity) plus app-wide pushed
+// screens that cover the tab bar (D-22). SwipeBack wraps every outer route (D-07). The app-layer
+// toast renders only when no sheet is open; the top sheet hosts it otherwise via
+// SheetOverlayProvider (D-16). Multi-step flows (Decide check, import, onboarding) are
+// outer-stack screens (D-12).
 import { Redirect, Stack, usePathname } from 'expo-router';
 import { Platform, View } from 'react-native';
 import { SwipeBack } from '@/features/navigation/SwipeBack';
@@ -8,9 +10,13 @@ import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
 import { useReduceMotion } from '@/theme/motion';
 import { useConsent } from '@/features/consent/useConsent';
 import { DeviceHomeCurrencyDefault } from '@/features/record/useDeviceHomeCurrencyDefault';
-import { UndoToastHost } from '@/features/record/history/UndoToastHost';
+import { SheetToastOverlay, UndoToastHost } from '@/features/record/history/UndoToastHost';
 import { SampleBanner } from '@/features/record/samples/SampleBanner';
 import { SampleClearPrompts } from '@/features/record/samples/SampleClearPrompts';
+import { BackHistoryProvider } from '@/shell/backHistory/BackHistoryProvider';
+import { AndroidBackHandler } from '@/shell/backHistory/useAndroidBackHandler';
+import { ShellLayoutProvider } from '@/shell/layout/ShellLayoutProvider';
+import { SheetOverlayProvider } from '@/ui/sheetOverlay';
 import { RouteErrorBoundary } from '@/ui/RouteErrorBoundary';
 import { Screen } from '@/ui/Screen';
 
@@ -37,27 +43,34 @@ export default function AppLayout() {
   // The undo toast host is mounted once here so every undoable change anywhere in the
   // signed-in app shows its toast (D-31). It lives beside the Stack, not inside a screen.
   return (
-    <View style={{ flex: 1 }}>
-      <Stack
-        screenOptions={{ headerShown: false, animation }}
-        screenLayout={({ children, route }) => <SwipeBack enabled={isSwipeBackRoute(route.name)}>{children}</SwipeBack>}
-      >
-        <Stack.Screen name="activity" />
-        <Stack.Screen name="accounts/index" />
-        <Stack.Screen name="accounts/[id]" />
-        <Stack.Screen name="categories" />
-        <Stack.Screen name="category-rules" />
-        <Stack.Screen name="history" />
-        <Stack.Screen name="import" />
-        <Stack.Screen name="setup/account" />
-        <Stack.Screen name="setup/history" />
-        <Stack.Screen name="you" />
-        <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
-      </Stack>
-      <SampleBanner />
-      <UndoToastHost />
-      <SampleClearPrompts />
-      <DeviceHomeCurrencyDefault />
-    </View>
+    <BackHistoryProvider>
+      <ShellLayoutProvider>
+        <SheetOverlayProvider overlay={SheetToastOverlay}>
+          <AndroidBackHandler />
+          <View style={{ flex: 1 }}>
+            <Stack
+              screenOptions={{ headerShown: false, animation }}
+              screenLayout={({ children, route }) => <SwipeBack enabled={isSwipeBackRoute(route.name)}>{children}</SwipeBack>}
+            >
+              <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+              <Stack.Screen name="accounts/index" />
+              <Stack.Screen name="accounts/[id]" />
+              <Stack.Screen name="categories" />
+              <Stack.Screen name="category-rules" />
+              <Stack.Screen name="history" />
+              <Stack.Screen name="import" />
+              <Stack.Screen name="setup/account" />
+              <Stack.Screen name="setup/history" />
+              <Stack.Screen name="you" />
+              <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
+            </Stack>
+            <SampleBanner />
+            <UndoToastHost />
+            <SampleClearPrompts />
+            <DeviceHomeCurrencyDefault />
+          </View>
+        </SheetOverlayProvider>
+      </ShellLayoutProvider>
+    </BackHistoryProvider>
   );
 }

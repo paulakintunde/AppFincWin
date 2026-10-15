@@ -55,6 +55,23 @@ describe('undoToast', () => {
     expect(getToast()).toBeNull();
   });
 
+  it('stamps shownAt when shown; a queued toast gets its own when it appears', () => {
+    jest.useFakeTimers();
+    try {
+      jest.setSystemTime(1000);
+      showToast({ kind: 'ordinary' });
+      expect(getToast()?.shownAt).toBe(1000);
+      jest.setSystemTime(2000);
+      queueToast({ kind: 'ordinary' });
+      expect(getToast()?.shownAt).toBe(1000);
+      jest.setSystemTime(5000);
+      dismissToast();
+      expect(getToast()?.shownAt).toBe(5000);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('dismissToast clears the current toast', () => {
     showToast({ kind: 'ordinary', stepId: 'step-1' });
     expect(getToast()).not.toBeNull();

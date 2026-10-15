@@ -1,3 +1,4 @@
+// D-39: lists show the figure plus one short line; the detail screen shows the full block.
 // An account's balance block (D-10, D-49): 'Balance now' in the account's own currency with
 // the minus sign always visible, the standing sentence beneath it, other-currency subtotals,
 // the still-to-come figure and, for a foreign account, an approximate home figure with the
@@ -5,7 +6,8 @@
 // item 5); with no stored rate for the pair it reads "Waiting for a rate", never a guess. A negative balance figure is danger (2026-10-07 amendment); its standing sentence
 // stays the D-49 copy in warn1 / muted.
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { AccountRow } from '@/db/rows';
 import type { AccountBalanceView } from '@/data/queries/activity';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
@@ -19,7 +21,7 @@ import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { RateAttribution } from '@/ui/RateAttribution';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
-import { standingText, type StandingLine } from './standingText';
+import { compactBalanceLine, standingText, type StandingLine } from './standingText';
 
 export interface AccountBalanceBlockProps {
   account: AccountRow;
@@ -45,6 +47,64 @@ export function useBalanceSummary(account: AccountRow, balance: AccountBalanceVi
   const line = standingText(balance.standing, fmt);
   const sentence = line ? (t as unknown as (k: string, o: Record<string, string>) => string)(line.key, line.params) : null;
   return [fmt(balance.balance), sentence].filter((p): p is string => p !== null).join(', ');
+}
+
+type FxRates = ReturnType<typeof useFxLatest>['data'];
+
+/** The approximate home figure and its rate provenance; latest stored rate only, never a guess. */
+function deriveHome(
+  account: AccountRow,
+  balance: AccountBalanceView,
+  homeCurrency: string,
+  rates: FxRates,
+  fmtHome: (minor: number) => string
+): { homeFigure: string | null; rateDate: string | null; rateSource: 'frankfurter-v2' | 'open-er-api' | null; foreign: boolean; overflow: boolean } {
+  const overflow = balance.overflow || balance.balance === null;
+  const foreign = account.currency !== homeCurrency;
+  let homeFigure: string | null = null;
+  let rateDate: string | null = null;
+  let rateSource: 'frankfurter-v2' | 'open-er-api' | null = null;
+  if (foreign && !overflow && balance.balance !== null) {
+    const home = projectionHomeAmount(balance.balance, account.currency, homeCurrency, rates ?? []);
+    if (home !== null) {
+      homeFigure = fmtHome(home);
+      const quote = account.currency === 'EUR' ? homeCurrency : account.currency;
+      const fx = (rates ?? []).find((r) => r.quote === quote);
+      rateDate = fx?.rate_date ?? null;
+      rateSource = fx?.source ?? null;
+    }
+  }
+  return { homeFigure, rateDate, rateSource, foreign, overflow };
+}
+
+export interface CompactBalance {
+  figure: string | null;
+  negative: boolean;
+  line: { text: string; tone: 'plain' | 'warn' } | null;
+  label: string | null;
+}
+
+/** D-39: what a list row shows (figure + at most one short line) and speaks as its label. */
+export function useCompactBalance(
+  account: AccountRow,
+  balance: AccountBalanceView | undefined,
+  homeCurrency: string
+): CompactBalance {
+  const t = useT();
+  const rc = useRecordContext();
+  const formatter = useMoneyFormatter(rc.showCents);
+  const { options } = useCurrencyOptions(rc.userId ?? undefined);
+  const rates = useFxLatest().data;
+  if (!balance) return { figure: null, negative: false, line: null, label: null };
+  const exponentFor = (code: string): number => options.find((o) => o.code === code)?.exponent ?? currencyExponent(code);
+  const fmtIn = (code: string) => (minor: number) => formatter.formatMoney(money(minor, code), { exponent: exponentFor(code) });
+  const { homeFigure, foreign, overflow } = deriveHome(account, balance, homeCurrency, rates, fmtIn(homeCurrency));
+  const l = compactBalanceLine({ foreign, homeFigure, overflow, standing: balance.standing });
+  const line = l ? { text: (t as unknown as (k: string, o: Record<string, string>) => string)(l.key, l.params), tone: l.tone } : null;
+  const figure = overflow ? null : fmtIn(account.currency)(balance.balance as number);
+  const negative = balance.balance !== null && balance.balance < 0;
+  const label = [figure ?? t('accounts.balanceNow'), line?.text].filter((p): p is string => Boolean(p)).join(', ');
+  return { figure, negative, line, label };
 }
 
 export function AccountBalanceBlock({ account, balance, homeCurrency, compact = false }: AccountBalanceBlockProps) {
@@ -76,22 +136,27 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
   const balanceColor = negative ? colors.danger : colors.ink;
   const metaStyle = { ...textRole(pairing, 'label'), color: colors.inkMuted };
 
-  const foreign = account.currency !== homeCurrency;
-  let homeFigure: string | null = null;
-  let rateDate: string | null = null;
-  let rateSource: 'frankfurter-v2' | 'open-er-api' | null = null;
-  if (foreign && !overflow && balance.balance !== null) {
-    const home = projectionHomeAmount(balance.balance, account.currency, homeCurrency, rates ?? []);
-    if (home !== null) {
-      homeFigure = fmtIn(homeCurrency)(home);
-      const quote = account.currency === 'EUR' ? homeCurrency : account.currency;
-      const fx = (rates ?? []).find((r) => r.quote === quote);
-      rateDate = fx?.rate_date ?? null;
-      rateSource = fx?.source ?? null;
-    }
-  }
+  const { homeFigure, rateDate, rateSource, foreign } = deriveHome(account, balance, homeCurrency, rates, fmtIn(homeCurrency));
 
   const waiting = foreign && !overflow && balance.balance !== null && homeFigure === null;
+
+  if (compact) {
+    const compactLine = compactBalanceLine({ foreign, homeFigure, overflow, standing: balance.standing });
+    return (
+      <View style={styles.block}>
+        {overflow ? (
+          <Text style={metaStyle} accessibilityLabel={t('accounts.balanceNow')}>—</Text>
+        ) : (
+          <Text style={{ ...textRole(pairing, 'body'), color: balanceColor }}>{fmt(balance.balance as number)}</Text>
+        )}
+        {compactLine ? (
+          <Text style={{ ...textRole(pairing, 'label'), color: compactLine.tone === 'warn' ? colors.warn1 : colors.inkMuted }}>
+            {(t as unknown as (k: string, o: Record<string, string>) => string)(compactLine.key, compactLine.params)}
+          </Text>
+        ) : null}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.block}>

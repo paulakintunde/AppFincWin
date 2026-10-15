@@ -3,7 +3,8 @@
 // archived, with the reason in the sub-label. Delete is never shown disabled, and while the usage
 // counts are unknown nothing is guessed: Archive shows with no reason.
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { AccountRow } from '@/db/rows';
 import { useDeleteAccount } from '@/data/mutations/accountDelete';
 import { useEditAccount } from '@/data/mutations/accounts';

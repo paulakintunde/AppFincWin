@@ -14,6 +14,8 @@ jest.mock('react-native-safe-area-context', () => ({
 
 jest.setTimeout(30000);
 
+let mockSync = { isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null as number | null };
+jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => mockSync }));
 const mockAdd = jest.fn(() => ({ id: 'new-cat', stepId: 'add-step' }));
 const mockEdit = jest.fn(() => 'edit-step');
 const mockArchive = jest.fn(() => 'archive-step');
@@ -307,6 +309,29 @@ const mockSystemAndArchived = [
 ];
 
 describe('CategoriesScreen', () => {
+  beforeEach(() => {
+    mockSync = { isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null };
+  });
+
+  it('shows the sync line while writes are queued (G5, D-15)', async () => {
+    mockSync = { ...mockSync, queued: 2 };
+    const u = await render(
+      <ThemeProvider>
+        <CategoriesScreen />
+      </ThemeProvider>
+    );
+    expect(u.getByTestId('sync-problem-line')).toBeTruthy();
+  });
+
+  it('shows no sync line when all is well', async () => {
+    const u = await render(
+      <ThemeProvider>
+        <CategoriesScreen />
+      </ThemeProvider>
+    );
+    expect(u.queryByTestId('sync-problem-line')).toBeNull();
+  });
+
   it('lists active, system and archived categories; tapping edits and Restore undoes the archive', async () => {
     const u = await render(
       <ThemeProvider>

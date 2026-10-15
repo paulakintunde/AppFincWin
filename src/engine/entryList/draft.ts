@@ -1,18 +1,55 @@
 /**
- * Versioned entry-list draft format. Anything that fails strict validation
- * discards the whole draft (D-17): a stored draft is untrusted input.
+ * Versioned entry-list draft format. A stored draft is untrusted input.
+ * v2 (03 D-25/D-33) adds an optional raw form snapshot; v1 drafts still parse.
+ * A bad form is dropped alone, a bad item still drops the draft (D-17).
  */
 import { RECURRING_FREQS } from '../recurring/schedule';
 import { isValidLocalDate } from '../time/localDate';
 import { LIST_CAP_PER_TYPE, type ListItem, type ListRepeat, type ListRepeatEnd } from './model';
 
-export const ENTRY_DRAFT_VERSION = 1;
+export const ENTRY_DRAFT_VERSION = 2;
+export const DRAFT_TEXT_MAX = 500;
+export const DRAFT_AMOUNT_TEXT_MAX = 32;
+const DRAFT_CURRENCY_MAX = 12;
+const DRAFT_ID_MAX = 64;
+const DRAFT_PAYMENT_TYPE_MAX = 32;
 
 const MAX_AMOUNT_MINOR = 10_000_000_000_000;
 const MAX_COUNT = 1000;
 
-export function serialiseDraft(items: readonly ListItem[], savedAt: string): string {
-  return JSON.stringify({ v: ENTRY_DRAFT_VERSION, savedAt, items });
+/** Raw entry-form snapshot: text and opaque ids, resolved by the feature layer before use. */
+export interface DraftForm {
+  direction: 'out' | 'in' | 'transfer';
+  amountText: string;
+  name: string;
+  categoryId: string | null;
+  accountId: string | null;
+  currency: string;
+  localDate: string;
+  status: 'paid' | 'pending' | 'skipped';
+  statusTouched: boolean;
+  paymentType: string | null;
+  note: string;
+  toAccountId: string | null;
+  toCurrency: string | null;
+  amountInText: string;
+  automatic: boolean;
+  refund: boolean;
+  /** H1: the Repeats choice for a new recurring entry. Optional so v2 drafts written before it still parse. */
+  repeats?: ListRepeat;
+}
+
+export interface EntryDraft {
+  items: ListItem[];
+  form: DraftForm | null;
+}
+
+export function serialiseDraft(
+  items: readonly ListItem[],
+  savedAt: string,
+  form: DraftForm | null = null,
+): string {
+  return JSON.stringify({ v: ENTRY_DRAFT_VERSION, savedAt, items, form });
 }
 
 type Rec = Record<string, unknown>;
@@ -89,25 +126,83 @@ function parseItem(x: unknown): ListItem | null {
   };
 }
 
-export function parseDraft(raw: string | null): ListItem[] {
-  if (raw === null) return [];
+function isBoundedStr(x: unknown, max: number): x is string {
+  return typeof x === 'string' && x.length <= max;
+}
+function isBoundedNullable(x: unknown, max: number): x is string | null {
+  return x === null || isBoundedStr(x, max);
+}
+
+/** The raw form snapshot. Untrusted: any bad field drops the whole form (never the items). */
+function parseForm(x: unknown): DraftForm | null {
+  if (!isRec(x)) return null;
+  const {
+    direction, amountText, name, categoryId, accountId, currency, localDate, status,
+    statusTouched, paymentType, note, toAccountId, toCurrency, amountInText, automatic, refund,
+  } = x;
+  if (direction !== 'out' && direction !== 'in' && direction !== 'transfer') return null;
+  if (status !== 'paid' && status !== 'pending' && status !== 'skipped') return null;
+  if (!isBoundedStr(amountText, DRAFT_AMOUNT_TEXT_MAX) || !isBoundedStr(amountInText, DRAFT_AMOUNT_TEXT_MAX)) {
+    return null;
+  }
+  if (!isBoundedStr(name, DRAFT_TEXT_MAX) || !isBoundedStr(note, DRAFT_TEXT_MAX)) return null;
+  if (!isBoundedStr(currency, DRAFT_CURRENCY_MAX) || currency.length === 0) return null;
+  if (!isStr(localDate) || !isValidLocalDate(localDate)) return null;
+  if (typeof statusTouched !== 'boolean' || typeof automatic !== 'boolean' || typeof refund !== 'boolean') {
+    return null;
+  }
+  if (
+    !isBoundedNullable(categoryId, DRAFT_ID_MAX) ||
+    !isBoundedNullable(accountId, DRAFT_ID_MAX) ||
+    !isBoundedNullable(toAccountId, DRAFT_ID_MAX) ||
+    !isBoundedNullable(toCurrency, DRAFT_CURRENCY_MAX) ||
+    !isBoundedNullable(paymentType, DRAFT_PAYMENT_TYPE_MAX)
+  ) {
+    return null;
+  }
+  let repeats: ListRepeat | undefined;
+  if (x.repeats !== undefined) {
+    const r = parseRepeat(x.repeats, localDate);
+    repeats = r === null || (direction === 'transfer' && r.freq !== 'never') ? { freq: 'never' } : r;
+  }
+  return {
+    direction, amountText, name, categoryId, accountId, currency, localDate,
+    status: status === 'skipped' ? 'paid' : status, // H4: a new entry only offers paid or pending
+    statusTouched, paymentType, note, toAccountId, toCurrency, amountInText, automatic, refund,
+    ...(repeats === undefined ? {} : { repeats }),
+  };
+}
+
+const EMPTY_DRAFT = (): EntryDraft => ({ items: [], form: null });
+
+export function parseEntryDraft(raw: string | null): EntryDraft {
+  if (raw === null) return EMPTY_DRAFT();
   let data: unknown;
   try {
     data = JSON.parse(raw);
   } catch {
-    return [];
+    return EMPTY_DRAFT();
   }
-  if (!isRec(data) || data.v !== ENTRY_DRAFT_VERSION || !Array.isArray(data.items)) return [];
+  if (!isRec(data) || (data.v !== 1 && data.v !== 2) || !Array.isArray(data.items)) return EMPTY_DRAFT();
   const items: ListItem[] = [];
   const counts = { out: 0, in: 0, transfer: 0 };
   for (const entry of data.items as unknown[]) {
     const item = parseItem(entry);
-    if (item === null) return [];
+    if (item === null) return EMPTY_DRAFT();
     counts[item.type] += 1;
-    if (counts[item.type] > LIST_CAP_PER_TYPE) return [];
+    if (counts[item.type] > LIST_CAP_PER_TYPE) return EMPTY_DRAFT();
     items.push(item);
   }
-  return items;
+  return { items, form: data.v === 2 ? parseForm(data.form) : null };
+}
+
+export function parseDraft(raw: string | null): ListItem[] {
+  return parseEntryDraft(raw).items;
+}
+
+/** Unsaved entries a resume prompt should count: list items plus the half-typed form (1). */
+export function draftEntryCount(d: EntryDraft): number {
+  return d.items.length + (d.form === null ? 0 : 1);
 }
 
 export function dropUnavailable(

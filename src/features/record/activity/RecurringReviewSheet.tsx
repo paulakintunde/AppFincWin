@@ -2,7 +2,8 @@
 // Monthly creates that series (one undo step); One-off dismisses the offer for good. The footer
 // marks everything left as monthly or leaves them all (dismissing them).
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { TransactionRow } from '@/db/rows';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useDismissOffers } from '@/data/mutations/dismissedOffers';

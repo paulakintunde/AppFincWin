@@ -5,7 +5,8 @@
 // engine calendarCells; the caller passes the already filtered/searched rows, and bulk select
 // is not offered here.
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useAccounts } from '@/data/queries/accounts';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { useCategoryLookup } from '@/data/queries/categories';

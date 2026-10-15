@@ -2,7 +2,8 @@
 // writes: every button hands back to the screen, which owns the mutations and the
 // confirm / scope prompts.
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useAccounts } from '@/data/queries/accounts';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { useCategoryLookup } from '@/data/queries/categories';

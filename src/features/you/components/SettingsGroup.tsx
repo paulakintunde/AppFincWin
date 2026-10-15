@@ -1,7 +1,8 @@
 // D-13: a settings-row group — an all-caps label heading above a surface card whose rows
 // get 15px padding and a 1px line1 separator between them (not above the first row).
 import { Children, type ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space, radii } from '@/theme/layout';
 import { fontSize } from '@/theme/typography';

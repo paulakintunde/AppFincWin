@@ -1,6 +1,6 @@
 /**
  * The complete BUILD-PROMPT.md §2 colour palette, verbatim. This is the whole palette —
- * no colour is added beyond §2 (bar the Sheet scrim) and the prototype's Component.COL / Component.TINT maps
+ * no colour is added beyond §2 and the prototype's Component.COL / Component.TINT maps
  * (FincWin United.dc.html lines 3217-3218). DSG-02 is enforced by
  * src/theme/__tests__/noRawColours.test.ts: any hex/rgb literal outside this file,
  * src/theme/accents.ts or src/features/auth/brand/ fails CI.
@@ -36,14 +36,15 @@ export const colors = {
   fill5: '#FAF8F3',
   fill6: '#F6F4EE',
   tabBar: 'rgba(251,250,247,.94)',
-  // Dim layer behind every Sheet, including one stacked over another (user-approved, the only addition beyond the palette).
-  scrim: 'rgba(0,0,0,.4)',
 } as const;
 
 /**
  * Component.COL / Component.TINT, copied verbatim from FincWin United.dc.html lines 3217-3218.
  * 15 categories including Income, Settlement and Transfer.
  */
+/** M4: a tint of whatever accent the user picked is drawn as colors.accent at this opacity over fill1, never a fixed tint of the default green. An opacity, not a colour (DSG-02). */
+export const ACCENT_TINT_OPACITY = 0.12;
+
 export const categoryColor = {
   Housing: '#1B4D3E',
   Utilities: '#5A6472',

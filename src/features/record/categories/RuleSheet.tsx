@@ -3,7 +3,9 @@
 // under the fields after the first Save attempt. Every write records its own undo step and
 // shows the Undo toast; removal is immediate with a destructive toast (no confirm).
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
+import { TextInput } from '@/ui/TextInput';
 import { RULE_KEYWORD_MAX, normaliseRuleKeyword } from '@/engine/categorize';
 import type { CategoryRuleRow, RuleScope } from '@/db/categoryRules';
 import { useAddRule, useEditRule, useRemoveRule } from '@/data/mutations/categoryRules';
@@ -23,6 +25,7 @@ import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { useIsDirty } from '@/ui/useIsDirty';
 import { SheetHeader } from '@/ui/SheetHeader';
 
 export type RuleSheetMode = { kind: 'new' } | { kind: 'edit'; rule: CategoryRuleRow; categoryId: string | null };
@@ -55,6 +58,9 @@ function SheetBody({ mode, onClose }: { mode: RuleSheetMode; onClose: () => void
   const [categoryId, setCategoryId] = useState<string | null>(initialCategoryId);
   const [picking, setPicking] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  // D-26: unsaved work = any field differs from what the sheet opened with.
+  const [initial] = useState(() => ({ keyword, scope, categoryId }));
+  const dirty = useIsDirty(initial, { keyword, scope, categoryId });
 
   const choices = lookup.active.filter((c) => !c.is_system);
   const chosen = categoryId ? (choices.find((c) => c.id === categoryId) ?? null) : null;
@@ -120,7 +126,7 @@ function SheetBody({ mode, onClose }: { mode: RuleSheetMode; onClose: () => void
   const scopeLabel = scope === 'shared' ? t('categories.rules.sheet.scopeShared') : t('categories.rules.sheet.scopeMine');
 
   return (
-    <Sheet visible onDismiss={onClose} accessibilityLabel={title}>
+    <Sheet visible onDismiss={onClose} accessibilityLabel={title} dirty={dirty}>
       <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
       <SheetScroll contentContainerStyle={styles.column}>
         <Text style={labelStyle}>{t('categories.rules.sheet.keyword')}</Text>

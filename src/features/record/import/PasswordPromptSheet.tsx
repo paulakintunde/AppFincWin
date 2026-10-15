@@ -2,7 +2,8 @@
 // uncontrolled TextInput) until Unlock hands it to the hook; it is then cleared. It is never
 // logged or stored here.
 import React, { useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { TextInput } from '@/ui/TextInput';
 import { useT } from '@/i18n';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
@@ -42,7 +43,7 @@ export function PasswordPromptSheet({ visible, wrong, onUnlock, onCancel }: Pass
   };
 
   return (
-    <Sheet visible={visible} onDismiss={cancel} accessibilityLabel={t('importCsv.pdf.passwordHeading')}>
+    <Sheet visible={visible} onDismiss={cancel} accessibilityLabel={t('importCsv.pdf.passwordHeading')} dirty={hasText}>
       <SheetScroll>
         <Heading>{t('importCsv.pdf.passwordHeading')}</Heading>
         <T>{t('importCsv.pdf.passwordBody')}</T>

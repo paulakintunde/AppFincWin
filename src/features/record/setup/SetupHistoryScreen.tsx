@@ -1,8 +1,10 @@
 // D-22 / D-39: second step of Record onboarding. Offers a statement import or an empty start.
 // The event carries one literal property only (T-02-30-01); no amounts, names or ids.
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { router } from 'expo-router';
+import { APP_HOME_HREF } from '@/features/auth/appHome';
 import { useT } from '@/i18n';
 import { useSampleData } from '@/data/mutations/sampleData';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -12,6 +14,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { Screen } from '@/ui/Screen';
 
 export interface SetupHistoryScreenProps {
@@ -34,19 +37,20 @@ export function SetupHistoryScreen({ accountId }: SetupHistoryScreenProps) {
   };
   const startFresh = () => {
     getAnalytics().track('onboarding_history_choice', { choice: 'fresh' });
-    router.replace('/activity');
+    router.replace(APP_HOME_HREF);
   };
   // D-12: explore on sample figures. Seeding is online and reports its outcome at once.
   const explore = (): void => {
     getAnalytics().track('onboarding_history_choice', { choice: 'sample' });
     void seed().then((ok) => {
-      if (ok) router.replace('/activity');
+      if (ok) router.replace(APP_HOME_HREF);
       else showToast({ kind: 'info', text: { key: 'samples.seedFailed' } });
     });
   };
 
   return (
     <Screen>
+      <SyncProblemLine inset={false} />
       <View style={styles.block}>
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
           {t('importCsv.onboardingHeading')}

@@ -5,11 +5,14 @@
 // row label itself is plain ink (00-UI-SPEC.md Color).
 import { useCallback } from 'react';
 import { router, type Href } from 'expo-router';
-import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Screen } from '@/ui/Screen';
 import { space } from '@/theme/layout';
+import { BackButton } from '@/shell/header/BackButton';
+import { useBackHistory } from '@/shell/backHistory/BackHistoryProvider';
 import { fontSize } from '@/theme/typography';
 import { SyncStatusLine } from '@/ui/SyncStatusLine';
 import { EXCHANGE_RATE_API_URL } from '@/i18n/mandatedCopy';
@@ -17,7 +20,7 @@ import { useConsent } from '@/features/consent/useConsent';
 import { requestSignOut, performSignOut } from '@/features/auth/signOut';
 import { useProfile } from './useProfile';
 import { SettingsGroup } from './components/SettingsGroup';
-import { APP_HOME_HREF } from '@/features/auth/appHome';
+import { ACTIVITY_HREF } from '@/features/auth/appHome';
 import { AccentSwitcher } from './components/AccentSwitcher';
 import { FontPairingSwitcher } from './components/FontPairingSwitcher';
 import { AnalyticsToggle } from './components/AnalyticsToggle';
@@ -32,7 +35,7 @@ const MONEY_ROWS: readonly {
   label: 'you.record.activity' | 'you.record.accounts' | 'you.record.categories' | 'you.record.importCsv' | 'you.record.history';
   href: Href;
 }[] = [
-  { label: 'you.record.activity', href: APP_HOME_HREF },
+  { label: 'you.record.activity', href: ACTIVITY_HREF },
   { label: 'you.record.accounts', href: '/accounts' as Href },
   { label: 'you.record.categories', href: '/categories' as Href },
   { label: 'you.record.importCsv', href: { pathname: '/import', params: { entry: 'you' } } as Href },
@@ -45,6 +48,7 @@ export function YouScreen() {
   const { colors, fonts } = theme;
   const { profile, setAccent, setPairing } = useProfile();
   const { consent, setEnabled } = useConsent();
+  const { goBack } = useBackHistory();
 
   // D-13: full_name, falling back to email when the name hasn't been captured; the email
   // itself is always also shown as the sub-label.
@@ -69,6 +73,9 @@ export function YouScreen() {
 
   return (
     <Screen scroll>
+      <View style={styles.back}>
+        <BackButton variant="compact" onPress={goBack} />
+      </View>
       <Text style={[styles.title, { fontFamily: fonts.body[700], color: colors.ink }]}>{t('you.title')}</Text>
 
       <View style={styles.identity}>
@@ -87,7 +94,7 @@ export function YouScreen() {
 
       <SettingsGroup title={t('you.record.section')}>
         {MONEY_ROWS.map((row) => (
-          <Pressable key={row.label} accessibilityRole="button" onPress={() => (row.href === APP_HOME_HREF ? router.dismissTo(APP_HOME_HREF) : router.push(row.href))} style={styles.moneyRow}>
+          <Pressable key={row.label} accessibilityRole="button" onPress={() => (row.href === ACTIVITY_HREF ? router.dismissTo(ACTIVITY_HREF) : router.push(row.href))} style={styles.moneyRow}>
             <Text style={[styles.rowLabel, { fontFamily: fonts.body[500], color: colors.ink }]}>{t(row.label)}</Text>
           </Pressable>
         ))}
@@ -169,6 +176,7 @@ export function YouScreen() {
 }
 
 const styles = StyleSheet.create({
+  back: { marginBottom: space.gapMd },
   title: {
     fontSize: fontSize.heading,
     lineHeight: fontSize.heading * 1.16,

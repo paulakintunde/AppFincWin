@@ -3,7 +3,8 @@
 // action; archived categories can be restored (a single undoable step).
 import React, { useState } from 'react';
 import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { CategoryRow } from '@/db/rows';
 import { useArchiveCategory } from '@/data/mutations/categories';
 import { useCategoryLookup } from '@/data/queries/categories';
@@ -22,6 +23,7 @@ import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { Screen } from '@/ui/Screen';
 import { CategorySheet, type CategorySheetMode } from './CategorySheet';
 
@@ -55,6 +57,7 @@ export function CategoriesScreen() {
 
   return (
     <Screen scroll>
+      <SyncProblemLine inset={false} />
       <View style={styles.column}>
         <Text accessibilityRole="header" style={titleStyle}>
           {t('categories.title')}

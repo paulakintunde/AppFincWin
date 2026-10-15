@@ -3,7 +3,8 @@
 // without an explicit tap (T-02-21-02); ending asks for a destructive confirmation first
 // (T-02-21-03). Undo is offered only for a step the hook actually recorded.
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import { useEndSeries } from '@/data/mutations/recurringSeries';
 import { useMarkPaid, useSkipOccurrence } from '@/data/mutations/transactions';

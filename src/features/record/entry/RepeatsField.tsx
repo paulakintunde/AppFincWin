@@ -2,7 +2,8 @@
 // frequency list and the "Ends" options (never, on a date, after a number of times). The
 // value is a plain RepeatsValue; turning it into a schedule is recurringForm.ts's job.
 import React, { useState } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { TextInput } from '@/ui/TextInput';
 import { RECURRING_FREQS, type RecurringFreq } from '@/engine/recurring';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -10,6 +11,7 @@ import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Row } from '@/ui/Row';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { useIsDirty } from '@/ui/useIsDirty';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { DateField } from './pickers/DateField';
 import { defaultEndDate, MAX_OCCURRENCE_COUNT, type RepeatsEnd, type RepeatsValue } from './recurringForm';
@@ -31,6 +33,16 @@ export function RepeatsField({ value, onChange, formatDate, today, entryDate }: 
   const { colors, pairing } = useTheme();
   const [open, setOpen] = useState(false);
   const [countText, setCountText] = useState(value.freq !== 'never' && value.end.kind === 'count' ? String(value.end.count) : '');
+  // D-26 / G2: the sheet snapshots { value, countText } on open; Discard restores it. Frequency and end picks apply to `value` at once.
+  const [opening, setOpening] = useState<{ value: RepeatsValue; countText: string } | null>(null);
+  const dirty = useIsDirty({ countText: opening?.countText ?? countText }, { countText });
+  const discard = () => {
+    if (opening !== null) {
+      onChange(opening.value);
+      setCountText(opening.countText);
+    }
+    setOpen(false);
+  };
 
   const summary = (): string => {
     if (value.freq === 'never') return t('record.repeats.never');
@@ -60,8 +72,15 @@ export function RepeatsField({ value, onChange, formatDate, today, entryDate }: 
 
   return (
     <>
-      <Row label={t('record.sheet.field.repeats')} value={summary()} dense chevron onPress={() => setOpen(true)} />
-      <Sheet visible={open} onDismiss={() => setOpen(false)} accessibilityLabel={t('record.sheet.field.repeats')}>
+      <Row label={t('record.sheet.field.repeats')} value={summary()}
+        dense
+        chevron
+        onPress={() => {
+          setOpening({ value, countText });
+          setOpen(true);
+        }}
+      />
+      <Sheet visible={open} onDismiss={() => setOpen(false)} onDiscard={discard} accessibilityLabel={t('record.sheet.field.repeats')} dirty={dirty}>
         <SheetHeader
           title={t('record.sheet.field.repeats')}
           cancelLabel={t('record.repeats.done')}

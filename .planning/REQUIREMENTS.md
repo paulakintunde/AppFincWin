@@ -169,16 +169,16 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 ### Shell & Navigation
 
-- [ ] **NAV-01**: User can move between five tabs, with the direction of the slide matching the direction of travel
-- [ ] **NAV-02**: User can go back through up to 8 previous screens, across tabs and detail screens
-- [ ] **NAV-03**: Detail screens push in over the current screen and dismiss back to it
-- [ ] **NAV-04**: Bottom sheets can be dismissed by dragging them down
-- [ ] **NAV-05**: The FAB changes its action to match the current tab, and hides during sheets, bulk select, onboarding and step flows
-- [ ] **NAV-06**: The app is navigable and readable with a screen reader on both platforms
-- [ ] **HOME-01**: Home shows quick actions (Add, Pay bills, Import); Pay bills opens Activity filtered to unpaid items
-- [ ] **HOME-02**: Home shows a This month card: what is left after everything, money in, money out, unpaid, and a paid-versus-pending bar
-- [ ] **HOME-03**: Home shows what is coming up, with a one-tap Mark paid, and a clear empty state when nothing is outstanding
-- [ ] **HOME-04**: Home shows an Accounts summary with balances, each opening its account
+- [x] **NAV-01**: User can move between five tabs, with the direction of the slide matching the direction of travel
+- [x] **NAV-02**: User can go back through up to 8 previous screens, across tabs and detail screens
+- [x] **NAV-03**: Detail screens push in over the current screen and dismiss back to it
+- [x] **NAV-04**: Bottom sheets can be dismissed by dragging them down
+- [x] **NAV-05**: The FAB changes its action to match the current tab, and hides during sheets, bulk select, onboarding and step flows
+- [x] **NAV-06**: The app is navigable and readable with a screen reader on both platforms
+- [x] **HOME-01**: Home shows quick actions (Add, Pay bills, Import); Pay bills opens Activity filtered to unpaid items
+- [x] **HOME-02**: Home shows a This month card: what is left after everything, money in, money out, unpaid, and a paid-versus-pending bar
+- [x] **HOME-03**: Home shows what is coming up, with a one-tap Mark paid, and a clear empty state when nothing is outstanding
+- [x] **HOME-04**: Home shows an Accounts summary with balances, each opening its account
 
 ### Decide — Engine
 
@@ -293,7 +293,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DSG-04**: All user-facing strings are served from a typed i18n catalogue
 - [ ] **DSG-05**: No user-facing string claims data stays on the device or is not sent anywhere
 - [x] **DSG-06**: Amounts, numbers and dates are formatted for the user's locale
-- [ ] **DSG-07**: Text scales with the OS text-size setting up to a defined maximum without breaking layouts
+- [x] **DSG-07**: Text scales with the OS text-size setting up to a defined maximum without breaking layouts
 - [ ] **DSG-08**: Balances are hidden in the app-switcher snapshot when the app goes to the background
 
 ### Compliance & Release
@@ -502,16 +502,16 @@ Populated during roadmap creation.
 | IMP-04 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
 | IMP-05 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
 | IMP-06 | Phase 10 - System | Pending |
-| NAV-01 | Phase 3 - Shell | Pending |
-| NAV-02 | Phase 3 - Shell | Pending |
-| NAV-03 | Phase 3 - Shell | Pending |
-| NAV-04 | Phase 3 - Shell | Pending |
-| NAV-05 | Phase 3 - Shell | Pending |
-| NAV-06 | Phase 3 - Shell | Pending |
-| HOME-01 | Phase 3 - Shell | Pending |
-| HOME-02 | Phase 3 - Shell | Pending |
-| HOME-03 | Phase 3 - Shell | Pending |
-| HOME-04 | Phase 3 - Shell | Pending |
+| NAV-01 | Phase 3 - Shell | Complete |
+| NAV-02 | Phase 3 - Shell | Complete |
+| NAV-03 | Phase 3 - Shell | Complete |
+| NAV-04 | Phase 3 - Shell | Complete |
+| NAV-05 | Phase 3 - Shell | Complete |
+| NAV-06 | Phase 3 - Shell | Complete |
+| HOME-01 | Phase 3 - Shell | Complete |
+| HOME-02 | Phase 3 - Shell | Complete |
+| HOME-03 | Phase 3 - Shell | Complete |
+| HOME-04 | Phase 3 - Shell | Complete |
 | DEC-01 | Phase 4 - Decide Engine | Pending |
 | DEC-02 | Phase 4 - Decide Engine | Pending |
 | DEC-03 | Phase 4 - Decide Engine | Pending |
@@ -599,7 +599,7 @@ Populated during roadmap creation.
 | DSG-04 | Phase 0 - Foundation | Complete |
 | DSG-05 | Phase 11 - Compliance & Release | Pending |
 | DSG-06 | Phase 1 - Money Core | Complete |
-| DSG-07 | Phase 3 - Shell | Pending |
+| DSG-07 | Phase 3 - Shell | Complete |
 | DSG-08 | Phase 10 - System | Pending |
 | CMP-01 | Phase 11 - Compliance & Release | Pending |
 | CMP-02 | Phase 11 - Compliance & Release | Pending |

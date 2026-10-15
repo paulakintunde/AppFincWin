@@ -8,6 +8,9 @@ import { RuleSheet } from '../RuleSheet';
 import { RulesScreen } from '../RulesScreen';
 import { CategoriesScreen } from '../CategoriesScreen';
 
+jest.mock('@/data/sync/useSyncStatus', () => ({
+  useSyncStatus: () => ({ isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null }),
+}));
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),

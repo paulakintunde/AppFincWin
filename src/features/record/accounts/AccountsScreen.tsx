@@ -1,7 +1,8 @@
 // The account list (REC-08): active accounts with kind, currency, balance and standing line,
 // an Archived section beneath, and Add account. Tapping an account opens its detail.
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import type { AccountRow } from '@/db/rows';
 import { useAccounts } from '@/data/queries/accounts';
 import { useAccountBalances, type AccountBalanceView } from '@/data/queries/activity';
@@ -13,7 +14,8 @@ import { textRole } from '@/theme/typography';
 import { EmptyState } from '@/ui/EmptyState';
 import { Pill } from '@/ui/Pill';
 import { Screen } from '@/ui/Screen';
-import { AccountBalanceBlock, useBalanceSummary } from './AccountBalanceBlock';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
+import { AccountBalanceBlock, useCompactBalance } from './AccountBalanceBlock';
 import { AccountSheet } from './AccountSheet';
 
 export interface AccountsScreenProps {
@@ -38,8 +40,8 @@ function AccountCard({
   const t = useT();
   const { colors, pairing } = useTheme();
   const kindLine = `${t(`accounts.kind.${account.kind}`)} · ${account.currency}`;
-  const summary = useBalanceSummary(account, balance);
-  const label = [account.name, kindLine, summary].filter((p): p is string => p !== null && p !== '').join(', ');
+  const compact = useCompactBalance(account, balance, homeCurrency);
+  const label = [account.name, kindLine, compact.label].filter((p): p is string => p !== null && p !== '').join(', ');
   return (
     <Pressable
       accessibilityRole="button"
@@ -78,6 +80,7 @@ export function AccountsScreen({ onOpenAccount }: AccountsScreenProps) {
 
   return (
     <Screen>
+      <SyncProblemLine inset={false} />
       <View style={styles.header}>
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
           {t('accounts.title')}

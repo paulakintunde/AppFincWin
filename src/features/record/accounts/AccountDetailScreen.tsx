@@ -2,7 +2,8 @@
 // account, Edit account, and this month's lines for the account.
 import React, { useCallback, useMemo, useState } from 'react';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useAccounts } from '@/data/queries/accounts';
 import { useAccountBalances, useMonthView, type ActivityRowView } from '@/data/queries/activity';
 import { useCategoryLookup } from '@/data/queries/categories';
@@ -22,6 +23,7 @@ import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
 import { EmptyState } from '@/ui/EmptyState';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { Screen } from '@/ui/Screen';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { AccountBalanceBlock } from './AccountBalanceBlock';
@@ -84,6 +86,7 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
 
   return (
     <Screen>
+      <SyncProblemLine inset={false} />
       <ScrollView contentContainerStyle={styles.column}>
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
           {account.name}

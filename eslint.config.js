@@ -36,6 +36,7 @@ module.exports = [
         { type: 'state', pattern: 'src/state/**' },
         { type: 'services', pattern: 'src/services/**' },
         { type: 'ui', pattern: 'src/ui/**' },
+        { type: 'shell', pattern: 'src/shell/**' },
         { type: 'features', pattern: 'src/features/**' },
         { type: 'theme', pattern: 'src/theme/**' },
         { type: 'i18n', pattern: 'src/i18n/**' },
@@ -52,7 +53,7 @@ module.exports = [
             {
               from: { element: { type: 'engine' } },
               disallow: [
-                { to: { element: { types: ['data', 'state', 'services', 'ui', 'features'] } } },
+                { to: { element: { types: ['data', 'state', 'services', 'ui', 'shell', 'features'] } } },
               ],
               message: 'engine/ is pure TypeScript: no db/data, state, services, ui or features imports (FND-04).',
             },
@@ -86,12 +87,14 @@ module.exports = [
                 '**/state/**',
                 '**/services/**',
                 '**/ui/**',
+                '**/shell/**',
                 '**/features/**',
                 '@/db/*',
                 '@/data/*',
                 '@/state/*',
                 '@/services/*',
                 '@/ui/*',
+                '@/shell/*',
                 '@/features/*',
               ],
               message: 'engine/ is pure TypeScript: no React, no I/O, no app layers (FND-04).',
@@ -103,10 +106,18 @@ module.exports = [
   },
   {
     // DSG-04: JSX literal text must come from the i18n catalogue.
-    files: ['app/**/*.tsx', 'src/features/**/*.tsx', 'src/ui/**/*.tsx'],
+    files: ['app/**/*.tsx', 'src/features/**/*.tsx', 'src/ui/**/*.tsx', 'src/shell/**/*.tsx'],
     plugins: { i18next },
     rules: {
       'i18next/no-literal-string': ['error', { mode: 'jsx-text-only' }],
+    },
+  },
+  {
+    // DSG-07 / D-19: all text goes through the scaled primitives so the OS text-size caps hold everywhere.
+    files: ['app/**/*.tsx', 'src/**/*.tsx'],
+    ignores: ['src/ui/Text.tsx', 'src/ui/TextInput.tsx', 'src/engine/**', '**/__tests__/**'],
+    rules: {
+      'no-restricted-imports': ['error', { paths: [{ name: 'react-native', importNames: ['Text', 'TextInput'], message: "DSG-07: import { Text } from '@/ui/Text' / { TextInput } from '@/ui/TextInput' so OS text scaling is capped (D-19)." }] }],
     },
   },
 ];

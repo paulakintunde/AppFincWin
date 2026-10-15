@@ -2,10 +2,11 @@
 // plain heading and body; saving moves on to the history choice with the new account id.
 // S-WR-11: Cancel closes the sheet rather than doing nothing. The screen then offers the sheet
 // again and a way to You, so a new user can sign out or delete their account (mandatory in-app
-// deletion) without first creating a money account. The first-account gate (on Activity) is
-// unchanged: Activity still sends an account-less user back here.
+// deletion) without first creating a money account. The first-account gate lives in the tabs layout
+// (app/(app)/(tabs)/_layout.tsx, D-38): Home and Activity send an account-less user back here.
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { router } from 'expo-router';
 import { AccountSheet } from '@/features/record/accounts/AccountSheet';
 import { useT } from '@/i18n';
@@ -13,6 +14,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { Screen } from '@/ui/Screen';
 
 export function SetupAccountScreen() {
@@ -21,6 +23,7 @@ export function SetupAccountScreen() {
   const [sheetOpen, setSheetOpen] = useState(true);
   return (
     <Screen>
+      <SyncProblemLine inset={false} />
       <View style={styles.block}>
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
           {t('setup.accountHeading')}

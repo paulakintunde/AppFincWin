@@ -3,7 +3,8 @@
 // claims stored amounts change (each line keeps the amount and currency it was entered in).
 // A version conflict ('changed') keeps the sheet open with an inline line, like a rates failure.
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
 import { useChangeHomeCurrency } from '@/data/mutations/homeCurrency';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
@@ -55,7 +56,7 @@ export function HomeCurrencyChangeSheet({ visible, next, onClose }: HomeCurrency
   const body = { ...textRole(pairing, 'body'), color: colors.ink };
 
   return (
-    <Sheet visible={visible} onDismiss={pending ? () => undefined : close} accessibilityLabel={title}>
+    <Sheet visible={visible} onDismiss={close} dismissible={!pending} accessibilityLabel={title}>
       <View style={styles.column}>
         <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{title}</Text>
         <Text style={body}>{t('you.homeCurrency.confirmBody', { code: next })}</Text>

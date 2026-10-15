@@ -80,7 +80,7 @@ describe('Sheet', () => {
         <Text>{'Content'}</Text>
       </Sheet>
     );
-    fireEvent.press(getByLabelText('Close'));
+    fireEvent.press(getByLabelText('Close', { hidden: true }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
@@ -387,11 +387,14 @@ describe('Chip', () => {
     expect(style.some((s) => s.backgroundColor === '#F1EFE8')).toBe(true);
   });
 
-  it('renders selected with accentTint1 background, accent text and accessibilityState', async () => {
-    const { getByText, getByRole } = await renderWithTheme(<Chip label="Transfers" selected onPress={jest.fn()} />);
+  it('renders selected as fill1 plus an accent overlay, accent text and accessibilityState', async () => {
+    const { getByText, getByRole, getByTestId } = await renderWithTheme(<Chip label="Transfers" selected onPress={jest.fn()} />);
     expect(getByRole('button').props.accessibilityState.selected).toBe(true);
     const buttonStyle = flatStyle(getByRole('button').props);
-    expect(buttonStyle.some((s) => s.backgroundColor === '#EAF1EC')).toBe(true);
+    expect(buttonStyle.some((s) => s.backgroundColor === '#F1EFE8')).toBe(true);
+    expect(buttonStyle.some((s) => s.backgroundColor === '#EAF1EC')).toBe(false);
+    const overlay = flatStyle(getByTestId('accent-tint').props);
+    expect(overlay.some((s) => s.backgroundColor === '#1B4D3E' && s.opacity === 0.12)).toBe(true);
     const textStyle = flatStyle(getByText('Transfers').props);
     expect(textStyle.some((s) => s.color === '#1B4D3E')).toBe(true);
   });

@@ -5,7 +5,9 @@
 import * as Crypto from 'expo-crypto';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { AccessibilityInfo, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AccessibilityInfo, Keyboard, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/Text';
+import { TextInput } from '@/ui/TextInput';
 import { currencyExponent, money } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import type { MinorUnits } from '@/engine/money';
@@ -71,6 +73,9 @@ import { EntryList } from './EntryList';
 import { EntryListFooter, listSummaryText } from './EntryListFooter';
 import { clearedAfterAdd, formFromItem, formHasContent, itemFromForm } from './listForm';
 import { useEntryList } from './useEntryList';
+import { fromDraftForm, toDraftForm } from './draftForm';
+import { isFormDirty } from './formDirty';
+import { isStructurallyEqual } from '@/ui/useIsDirty';
 import { OptionPicker } from './pickers/OptionPicker';
 import { CurrencyPicker } from './pickers/CurrencyPicker';
 import { EditScopePrompt } from './EditScopePrompt';
@@ -217,8 +222,15 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const [offer, setOffer] = useState<RuleOffer | null>(null);
   const offered = useRef(new Set<string>());
   const isTransferNow = state.direction === 'transfer';
+  const stateRef = useRef(state);
   useEffect(() => {
+    stateRef.current = state;
+  });
+  const openingName = useRef(state.name);
+  useEffect(() => {
+    // H2 / D-33: an untouched edit never guesses, so opening and closing it changes nothing; editing the name lets the guess run.
     if (isTransferNow || (origin !== 'empty' && origin !== 'suggested')) return;
+    if (mode.kind !== 'new' && state.name === openingName.current) return;
     const handle = setTimeout(() => {
       const g =
         state.name.trim() === ''
@@ -229,7 +241,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
       if (next.origin !== origin) setOrigin(next.origin);
     }, 250);
     return () => clearTimeout(handle);
-  }, [state.name, state.direction, state.categoryId, isTransferNow, origin, guessCtx.guess]);
+  }, [state.name, state.direction, state.categoryId, isTransferNow, origin, guessCtx.guess, mode.kind]);
   useEffect(() => {
     const hide = Keyboard.addListener('keyboardDidHide', () => {
       nameRef.current?.blur();
@@ -259,7 +271,40 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   // 02.3 REC-30: the entry list (new entries only). finishFor holds the form state the
   // finish-current error was raised for, so any later edit to the form clears it.
   const activeAccountIds = useMemo(() => new Set(activeAccounts.map((a) => a.id)), [activeAccounts]);
-  const list = useEntryList({ userId: rc.userId, householdId: rc.householdId, enabled: isNew, activeAccountIds });
+  const list = useEntryList({
+    userId: rc.userId,
+    householdId: rc.householdId,
+    enabled: isNew,
+    activeAccountIds,
+    // D-25 / T-03-24-01: a stored form is untrusted; unknown ids are dropped before they reach the form.
+    onRestoreForm: (form) => {
+      if (formHasContent(stateRef.current)) return; // L5: what the user already typed wins
+      const { patch, repeats: restoredRepeats } = fromDraftForm(form, {
+        activeAccountIds,
+        categoryIds: new Set(categories.all.filter((c) => c.archived_at === null).map((c) => c.id)),
+        paymentTypes: new Set<string>([...PAYMENT_TYPES.out, ...PAYMENT_TYPES.in]),
+        currencyCodes: new Set(options.map((o) => o.code)),
+        accountCurrency: (id) => accounts.find((a) => a.id === id)?.currency,
+      });
+      // H4: direction invariants (transfer status/category/payment type, payment type per direction) are re-applied.
+      const next = withDirection({ ...stateRef.current, ...patch }, form.direction, (id) => accounts.find((a) => a.id === id)?.currency);
+      setState(next);
+      // H1b / H1c: a restored category is a hand pick and a restored received amount counts as keyed in.
+      setOrigin(next.categoryId !== null ? 'picked' : 'empty');
+      setAmountInManual(next.amountInText !== '');
+      setRepeats(restoredRepeats);
+    },
+  });
+  // D-33: an existing entry asks "Discard changes?" only once something differs from how it opened.
+  const [initial] = useState(() => ({ state, repeats }));
+  const editDirty =
+    !isNew && (isFormDirty(state, initial.state) || !isStructurallyEqual(repeats, initial.repeats));
+  // D-25: swipe-down, Android back and backdrop on a new entry never ask and never lose input;
+  // the list is flushed by useEntryList on unmount, the form is kept here.
+  const onAccidentalDismiss = () => {
+    if (formHasContent(state)) list.keepForm(toDraftForm(state, repeats));
+    onClose();
+  };
   const [finishFor, setFinishFor] = useState<FormState | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -745,7 +790,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     : t('record.sheet.confirmDelete');
 
   return (
-    <Sheet visible onDismiss={onClose} accessibilityLabel={titleText}>
+    <Sheet visible onDismiss={isNew ? onAccidentalDismiss : onClose} dirty={editDirty} accessibilityLabel={titleText}>
       <SheetHeader title={titleText} cancelLabel={t('record.sheet.cancel')} onCancel={requestCancel} />
       <SheetScroll contentContainerStyle={styles.column}>
         {isNew ? (
