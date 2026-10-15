@@ -86,3 +86,16 @@ Other research facts the plans rely on: `expo-notifications ~57.0.23` is a new d
 | R3-6 | Dependency hygiene | 05-29 depends on 05-46 and 05-52; 05-06 depends on 05-34 and 05-38 (wave 2 unchanged; local structural types kept) | 05-29, 05-06 |
 | A19 | Go-ahead loan after its series ends | The debts row keeps the balance and minimum written on the day; Phase 6 (debts) updates or closes it | 05-20 |
 | A20 | Replaced series restored in the recalculation | Restored only when its end_date equals Go ahead's end date (needBy ?? local decided date); assumes a replaced line was open-ended when picked | 05-52 |
+| A21 | Card payoff over months | Written as Debt-category expense series from the cash account (role 'payment'), not transfers into the card; the card's derived balance does not fall as payments run, and each payment counts once as a bill. Phase 6 (debts) reconciles the card balance or switches to transfers; flagged for the user | 05-20 |
+
+## Revision 4 checker decisions (final, 2026-10-15)
+
+| # | Issue | Decision taken | Plans |
+|---|-------|----------------|-------|
+| R4-W1 | A reopened decision's reminders came back on the next reconcile | Reopening ends the old check's reminders: 05-21's view model leaves out of both reconcile lists any decided check whose id is the `reopened_from` of a live check (named test `reconcile leaves out a reopened decision`); 05-22 still calls cancelCheckReminders on reopen. 05-26 step 9 now fires the Pass reminder (a) before the Go-ahead check (b) starts, so neither depends on a reopen | 05-21, 05-26 |
+| R4-W2 | Assumptions copy promised a card-minimum control that does not exist | No new control (UI-SPEC locked). `asCardMinimumValue` is now "Card payments aren’t counted in the month." (declarative, DCU-09-safe), shown only while a credit account owes a balance at the snapshot date with no stored minimum (meta.cardsWithoutMinimum > 0). This supersedes the R3-3 copy | 05-02, 05-06, 05-15 |
+| R4-W2-gap | Card payments missing from the month when no minimum is stored | **Phase 6 gap, flagged for the user:** derive the card payment from the card's minimum terms without double-counting a pay-in-full card's spending lines | Phase 6 |
+| R4-W3 | Card payoff written as expenses, not transfers | Recorded as assumption A21 | 05-20 |
+| R4-W4 | Step 9(b) could dirty the demo account used for store screenshots | 05-26 step 9(b) runs on a separate fresh USD test account, never the demo account | 05-26 |
+| R4-W5 | VALIDATION missing 05-52 and card-debt rows; 05-41 / 05-15 wording contradicted R3-2 | VALIDATION rows added (withoutCheckWrites.test.ts, useBoughtCheckComputation.test.tsx, buildSnapshot card tests in 05-06 / 05-15 / 05-20); 05-41 Task 2 and 05-15's objective now say Step3Verdict holds no sections, 05-30 composes them, 05-42 only exports DayByDay / ExpectedIncome | 05-15, 05-41, VALIDATION |
+| R4-I1 | Month boundary in step 9 | 05-26 step 9 notes that a clock jump across a month end can legitimately change the recalculated verdict | 05-26 |

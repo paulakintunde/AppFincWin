@@ -2,7 +2,7 @@
 phase: 5
 slug: decide-ui
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-10-15
 ---
@@ -69,6 +69,9 @@ created: 2026-10-15
 | D-48 / investment monthly (05-04, 05-20, 05-06) | every promo payment run is a written payment link and counts once; an investment monthly series counts as investing | pgTAP + unit | `npx supabase test db`; `npx jest src/features/decide/snapshot src/data/mutations/__tests__/decideGoAhead.test.tsx` | ❌ | ⬜ pending |
 | DCU-09 depth (05-31, 05-37) | depth keys pass the banned list incl. invest now / start investing / best rate / you will earn; "forecast" only as "not a forecast"; interpolated output checked | unit | `npx jest src/i18n src/features/decide/copy` | ❌ | ⬜ pending |
 | DCU-11 depth (05-18) | 6 full steady months (Strong basis); sofa standalone fits with combine off; car combined adjust equals standalone; no basis code, edge flag, D-59 fact or worst-month difference | unit (engine-backed) | `npx jest src/features/decide/__tests__/demoScenario.test.ts` | ❌ | ⬜ pending |
+| D-35 bought recalculation (05-52) | a bought check is recalculated with its own written rows, series, occurrences, debt and payment links removed (replaced series restored, paid writes added back to balances); the hook feeds 05-29's read-only step 3 and the cooling-off landing | unit (100%) + RNTL | `npx jest src/features/decide/snapshot/__tests__/withoutCheckWrites.test.ts src/features/decide/check/__tests__/useBoughtCheckComputation.test.tsx` | ❌ | ⬜ pending |
+| Card debt service (05-06, 05-15, 05-20) | a stored card minimum pays the card balance once; a pay-in-full card adds no payment (meta.cardsWithoutMinimum); Assumptions names 'Card payments' only while a card owes a balance with no stored minimum; a card paid over months writes payment series, paid in full writes none | unit + RNTL | `npx jest src/features/decide/snapshot/__tests__/buildSnapshot.test.ts -t "card"`; `npx jest src/features/decide/check/sections/__tests__/tableSections.test.tsx -t "a card with no minimum is named in assumptions"`; `npx jest src/data/mutations/__tests__/decideGoAhead.test.tsx -t "card"` | ❌ | ⬜ pending |
+| D-10 / D-35 reopen (05-21) | reconcile leaves out a decided check reopened by a live check, so its reminders never return | RNTL | `npx jest src/features/decide/home/__tests__/DecideHomeScreen.test.tsx -t "reconcile leaves out a reopened decision"` | ❌ | ⬜ pending |
 
 Per-task IDs are filled from the PLAN files' `<verify>` blocks during execution.
 
@@ -106,11 +109,11 @@ Per-task IDs are filled from the PLAN files' `<verify>` blocks during execution.
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (mapped to plans; not yet executed, so `wave_0_complete: false`)
+- [x] No watch-mode flags
+- [ ] Feedback latency < 60s (the quick run is ~30 s; the full suite is ~180 s and runs per wave, not per task; confirm on execution)
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** planned 2026-10-15 (execution blocked on Phase 4)
