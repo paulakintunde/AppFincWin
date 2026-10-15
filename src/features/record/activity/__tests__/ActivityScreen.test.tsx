@@ -613,6 +613,9 @@ describe('ActivityScreen search, filters and bulk select', () => {
     await fireEvent.press(screen.getByText('Select all'));
     const bar = () => within(screen.getByTestId('activity-select-bar'));
     expect(bar().getByText('2 selected')).toBeTruthy();
+    // The count shows once, in the select bar; the bulk bar carries only its actions.
+    expect(screen.getAllByText('2 selected')).toHaveLength(1);
+    expect(within(screen.getByTestId('bulk-bar')).queryByText(/selected/)).toBeNull();
     await fireEvent.press(screen.getByText('None'));
     expect(bar().getByText('0 selected')).toBeTruthy();
   });

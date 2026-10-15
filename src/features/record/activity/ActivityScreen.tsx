@@ -455,7 +455,6 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
       {selection.active ? (
         <View style={styles.pad}>
           <BulkBar
-            count={selection.count}
             hint={hint === null ? null : t(BULK_HINT_KEYS[hint])}
             onMarkPaid={onBulkMarkPaid}
             onMarkUnpaid={onBulkMarkUnpaid}
