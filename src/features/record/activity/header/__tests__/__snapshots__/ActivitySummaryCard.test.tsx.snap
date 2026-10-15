@@ -1,0 +1,307 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ActivitySummaryCard matches snapshots: default 1`] = `
+<View
+  accessibilityLabel="+£1,234.00 left after everything, 48 entries. In £2,000.00. Out £765.00. £612.00 still to come."
+  accessible={true}
+  style={
+    [
+      {
+        "borderRadius": 26,
+        "padding": 16,
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "elevation": 3,
+        "shadowColor": "#14150F",
+        "shadowOffset": {
+          "height": 6,
+          "width": 0,
+        },
+        "shadowOpacity": 0.12,
+        "shadowRadius": 15,
+      },
+    ]
+  }
+  testID="activity-summary-card"
+>
+  <View
+    style={
+      [
+        {
+          "alignItems": "flex-start",
+          "flexWrap": "wrap",
+          "gap": 8,
+          "justifyContent": "space-between",
+        },
+        {
+          "flexDirection": "row",
+        },
+      ]
+    }
+  >
+    <View>
+      <Text
+        allowFontScaling={false}
+        style={
+          {
+            "color": "#1B4D3E",
+            "fontFamily": "Archivo_700Bold",
+            "fontSize": 26,
+            "letterSpacing": -0.26,
+            "lineHeight": 30.159999999999997,
+          }
+        }
+      >
+        +£1,234.00
+      </Text>
+      <Text
+        allowFontScaling={false}
+        style={
+          {
+            "color": "#6E6A5E",
+            "fontFamily": "Archivo_600SemiBold",
+            "fontSize": 13,
+            "letterSpacing": 0,
+            "lineHeight": 18.2,
+          }
+        }
+      >
+        left after everything · 48 entries
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      style={
+        {
+          "color": "#8A5A1B",
+          "fontFamily": "Archivo_600SemiBold",
+          "fontSize": 12.5,
+          "letterSpacing": 0,
+          "lineHeight": 18.2,
+        }
+      }
+      testID="activity-summary-still"
+    >
+      £612.00 still to come
+    </Text>
+  </View>
+  <Text
+    allowFontScaling={false}
+    style={
+      [
+        {
+          "fontFamily": "Archivo_600SemiBold",
+          "fontSize": 12.5,
+          "letterSpacing": 0,
+          "lineHeight": 18.2,
+        },
+        {
+          "color": "#6E6A5E",
+          "marginTop": 8,
+        },
+      ]
+    }
+    testID="activity-summary-inout"
+  >
+    In
+     
+    <Text
+      allowFontScaling={false}
+      style={
+        {
+          "color": "#14150F",
+        }
+      }
+    >
+      £2,000.00
+    </Text>
+     · 
+    Out
+     
+    <Text
+      allowFontScaling={false}
+      style={
+        {
+          "color": "#14150F",
+        }
+      }
+    >
+      £765.00
+    </Text>
+  </Text>
+</View>
+`;
+
+exports[`ActivitySummaryCard matches snapshots: loading 1`] = `
+<View
+  accessibilityLabel="Loading overview"
+  accessibilityState={
+    {
+      "busy": true,
+    }
+  }
+  accessible={true}
+  style={
+    [
+      {
+        "borderRadius": 26,
+        "padding": 16,
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "elevation": 3,
+        "shadowColor": "#14150F",
+        "shadowOffset": {
+          "height": 6,
+          "width": 0,
+        },
+        "shadowOpacity": 0.12,
+        "shadowRadius": 15,
+      },
+    ]
+  }
+  testID="activity-summary-card"
+>
+  <View
+    style={
+      [
+        {
+          "backgroundColor": "#D9D5C9",
+          "borderRadius": 8,
+        },
+        {
+          "height": 30,
+          "width": 160,
+        },
+      ]
+    }
+  />
+  <View
+    style={
+      [
+        {
+          "backgroundColor": "#D9D5C9",
+          "borderRadius": 8,
+        },
+        {
+          "height": 14,
+          "marginTop": 8,
+          "width": 200,
+        },
+      ]
+    }
+  />
+</View>
+`;
+
+exports[`ActivitySummaryCard matches snapshots: running-balance 1`] = `
+<View
+  accessibilityLabel="+£1,234.00 left after everything, 48 entries. Balance across all accounts. £612.00 still to come."
+  accessible={true}
+  style={
+    [
+      {
+        "borderRadius": 26,
+        "padding": 16,
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "elevation": 3,
+        "shadowColor": "#14150F",
+        "shadowOffset": {
+          "height": 6,
+          "width": 0,
+        },
+        "shadowOpacity": 0.12,
+        "shadowRadius": 15,
+      },
+    ]
+  }
+  testID="activity-summary-card"
+>
+  <View
+    style={
+      [
+        {
+          "alignItems": "flex-start",
+          "flexWrap": "wrap",
+          "gap": 8,
+          "justifyContent": "space-between",
+        },
+        {
+          "flexDirection": "row",
+        },
+      ]
+    }
+  >
+    <View>
+      <Text
+        allowFontScaling={false}
+        style={
+          {
+            "color": "#1B4D3E",
+            "fontFamily": "Archivo_700Bold",
+            "fontSize": 26,
+            "letterSpacing": -0.26,
+            "lineHeight": 30.159999999999997,
+          }
+        }
+      >
+        +£1,234.00
+      </Text>
+      <Text
+        allowFontScaling={false}
+        style={
+          {
+            "color": "#6E6A5E",
+            "fontFamily": "Archivo_600SemiBold",
+            "fontSize": 13,
+            "letterSpacing": 0,
+            "lineHeight": 18.2,
+          }
+        }
+      >
+        left after everything · 48 entries
+      </Text>
+    </View>
+    <Text
+      allowFontScaling={false}
+      style={
+        {
+          "color": "#8A5A1B",
+          "fontFamily": "Archivo_600SemiBold",
+          "fontSize": 12.5,
+          "letterSpacing": 0,
+          "lineHeight": 18.2,
+        }
+      }
+      testID="activity-summary-still"
+    >
+      £612.00 still to come
+    </Text>
+  </View>
+  <Text
+    allowFontScaling={false}
+    style={
+      {
+        "color": "#6E6A5E",
+        "fontFamily": "Archivo_600SemiBold",
+        "fontSize": 13,
+        "letterSpacing": 0,
+        "lineHeight": 18.2,
+        "marginTop": 8,
+      }
+    }
+    testID="activity-summary-note"
+  >
+    Balance across all accounts
+  </Text>
+</View>
+`;
