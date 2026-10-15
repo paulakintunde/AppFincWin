@@ -141,6 +141,8 @@ Phase 02.2 added recurring series (weekly to yearly, `src/engine/recurring/`), r
 
 Phase 5's quick check and steps 2–5 (05-CONTEXT D-05…D-23, 05-UI-SPEC) render figures the engine did not yet return. These four decisions keep every such figure in the engine, as integer minor units and codes (D-20, D-21). See `04-PHASE5-ALIGNMENT.md`.
 
+**Status: proposed by the alignment review and planned in full, pending the user's confirmation before execution.** The open points are D-37's floor at 0, D-38's pre-pause table, D-39's whole-month runway from cash after the purchase, and D-40's wait target; they are listed in `04-PHASE5-ALIGNMENT.md` "Still open". If the user chooses otherwise, only the named deviation tests and the formulas in 04-06 Task 3, 04-07 Task 4 and 04-10 Tasks 2–3 change.
+
 - **D-37 (added 2026-10-15 for Phase 5 alignment):** **The engine resolves a buy check's price inputs.** This ports the prototype's `dprice` and `downNet`, which no plan had ported.
   - Final price = advertised price + every counted adjustment, floored at 0. "Adds to the price" counts as positive and "takes off the price" as negative.
   - `dayFees` = the counted adjustments that add to the price and are paid on the day (the prototype's rule).
@@ -153,7 +155,7 @@ Phase 5's quick check and steps 2–5 (05-CONTEXT D-05…D-23, 05-UI-SPEC) rende
   - The five ledgers (income, expenses, debt, cash, investments) each carry Now, After and a direction code (`better`, `worse` or `same`):
     - Debt is the total balance owed, plus my share of the amount financed.
     - Cash Now is the cash left after bills due within 90 days (D-24), so the change shown is the purchase alone.
-    - Investments After is the monthly investing left after any pause. An invest check adds the contribution.
+    - Investments After on a buy check is the monthly investing left after any pause. On an invest check there is no pause relief (D-33), so it is the current monthly investing plus the contribution.
 - **D-39 (added 2026-10-15 for Phase 5 alignment):** **Runway is a whole number of months: `floor(max(0, cashAfter) / burn)`, or null when `burn` ≤ 0.**
   - `cashAfter` already has the purchase and the D-24 bills taken off. `burn` is the monthly outgoings after the purchase, without saving or investing (D-02).
   - The prototype divided cash *before* the purchase by burn and showed one decimal. The engine uses cash after the purchase, because the setbacks section tests cash "with this purchase already running". It rounds down, so runway is never overstated.

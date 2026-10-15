@@ -122,7 +122,7 @@ Status key:
 
 - **Check inputs (D-37):**
   - `salesTaxAmount(advertised, taxPercent: Percent)`.
-  - `resolvePriceInputs({ currency, advertised, adjustments: PriceAdjustment[] })` → `ResolvedPrice { price, dayFees, adjustmentsNet, countedLines, totalLines }`.
+  - `resolvePriceInputs({ advertised, adjustments: PriceAdjustment[] })` → `ResolvedPrice { price, dayFees, adjustmentsNet, countedLines, totalLines }`.
   - `netRunningCosts(costs: CostLine[], replaced: CostLine[])` → `RunningCosts { gross, replaced, net, … }`.
   - These feed `BuyCheck.price`, `dayFees` and `runningCostsNet`.
   - The quick check maps tax and fees to `PriceAdjustment { effect: 'adds', onDay: true, counted: true }`.
@@ -145,6 +145,8 @@ Status key:
 - **Pre-fill only:** `suggestItemType(name)`, `suggestSecured(name)`. **Builder data:** `MARKET_DEFAULTS`, `minimumTermsFromDefaults`.
 
 ## Still open (for the user or for Phase 5)
+
+Items 1–4 are recorded in 04-CONTEXT as D-37…D-40 with status "proposed, pending the user's confirmation before execution". The plans implement them as written.
 
 1. **D-38: the month table is pre-pause** (rows add up; the pause shows beside the table). The alternative is the prototype's display, which lowers the saving row while showing the pre-pause left. Confirm.
 2. **D-39: runway** counts whole months from cash *after* the purchase. The prototype used cash before it, to one decimal. Confirm, or ask for tenths.
