@@ -19,6 +19,7 @@ import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import type { MonthDataState } from '@/data/queries/monthDataState';
+import { isMonthEmpty } from '@/features/record/activity/monthFigureInputs';
 import { MonthChips } from './MonthChips';
 
 // UI-SPEC Spacing "prototype-literal exceptions (Home)": the 12 / 14 / 16 px gaps between the
@@ -81,7 +82,7 @@ export function ThisMonthCard({
         sameYear ? { month: 'long', timeZone: 'UTC' } : { month: 'long', year: 'numeric', timeZone: 'UTC' }
       ).format(monthDate);
   // T-03-22-01: empty only when nothing is recorded AND nothing is expected.
-  const empty = totals.count === 0 && position.unpaidCount === 0 && position.unconvertedUnpaid === 0;
+  const empty = isMonthEmpty(totals, position);
   const stacked = fontScale > FIGURE_STACK_ABOVE;
 
   const header = (
