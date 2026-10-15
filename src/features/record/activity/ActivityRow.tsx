@@ -64,6 +64,8 @@ export interface ActivityRowProps {
   selected?: boolean;
   onToggleSelect?: (row: ActivityRowView) => void;
   onPress: (row: ActivityRowView) => void;
+  /** D-63 (03.1): long-press starts select mode with this row ticked; ignored while selectable. */
+  onLongPress?: (row: ActivityRowView) => void;
   onMarkPaid: (row: ActivityRowView) => void;
   cardPosition?: CardPosition;
   /** Local date used for the Due / Overdue / Scheduled tags; defaults to today on this device. */
@@ -107,6 +109,7 @@ export function ActivityRow({
   selected = false,
   onToggleSelect,
   onPress,
+  onLongPress,
   onMarkPaid,
   cardPosition = 'only',
   today,
@@ -178,6 +181,8 @@ export function ActivityRow({
 
   const onRowPress = () => (selectable ? onToggleSelect?.(row) : onPress(row));
 
+  const onRowLongPress = onLongPress !== undefined && !selectable ? () => onLongPress(row) : undefined;
+
   const pending = row.status === 'pending';
   const swipeable = onSwipePay !== undefined || onSwipeUnpay !== undefined || onSwipeDelete !== undefined;
   let leftAction: SwipeAction | undefined;
@@ -209,6 +214,7 @@ export function ActivityRow({
         accessibilityLabel={selectable ? t('a11y.selectRow', { name }) : spoken}
         accessibilityState={selectable ? { checked: selected } : undefined}
         onPress={onRowPress}
+        onLongPress={onRowLongPress}
         style={styles.main}
       >
         {selectable ? (
@@ -247,6 +253,7 @@ export function ActivityRow({
           importantForAccessibility="no-hide-descendants"
           accessibilityElementsHidden
           onPress={onRowPress}
+          onLongPress={onRowLongPress}
           style={styles.amountPress}
         >
           <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: figureColor }}>{amountShown}</Text>
@@ -273,7 +280,15 @@ export function ActivityRow({
   );
   if (!swipeable) return card;
   return (
-    <SwipeRow left={leftAction} right={rightAction} disabled={selectable} onPress={onRowPress} accessibilityLabel={selectable ? undefined : spoken}>
+    <SwipeRow
+      left={leftAction}
+      right={rightAction}
+      disabled={selectable}
+      onPress={onRowPress}
+      onLongPress={onRowLongPress}
+      longPressLabel={t('a11y.selectRow', { name })}
+      accessibilityLabel={selectable ? undefined : spoken}
+    >
       {card}
     </SwipeRow>
   );
