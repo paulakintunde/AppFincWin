@@ -44,13 +44,13 @@ created: 2026-10-15
 | DCU-03 | open check recomputes against a changed snapshot; changed marker | unit + RNTL | `npx jest src/features/decide/home` | ❌ W0 | ⬜ pending |
 | DCU-04 | abandon → soft delete + undo step; Undo restores | mutation + pgTAP | `npx jest src/data/mutations/__tests__`; `npx supabase test db` | ❌ W0 | ⬜ pending |
 | DCU-05/06 | four rows; suppressed row shows "—" + reason for every SuppressionCode | RNTL + exhaustive map | `npx jest src/features/decide/check` | ❌ W0 | ⬜ pending |
-| DCU-07 | Go ahead writes rows/series/debt in one undo step; estimate vs actual at 30/90 days | mutation + pgTAP + unit | `npx jest src/data/mutations/__tests__ src/features/decide/journal` | ❌ W0 | ⬜ pending |
+| DCU-07 | Go ahead writes rows/series/debt in one undo step (loan series from `Plan.paymentSteps`; investment lump/transfer/monthly writes); estimate vs actual at 30/90 days | mutation + pgTAP + unit | `npx jest src/data/mutations/__tests__ src/features/decide/journal` | ❌ W0 | ⬜ pending |
 | DCU-08 | past date refused; offsets +7d/+1m/+3m clamp to month end | unit + RNTL | `npx jest src/features/decide/__tests__/offsets.test.ts src/features/record/entry/pickers` | ❌ W0 / extend | ⬜ pending |
 | DCU-09 | no "advice"/"recommend"/"you should" in any `decide.*` key | unit | `npx jest src/i18n` | ❌ W0 / ✅ | ⬜ pending |
 | DCU-10 | setup order account → rough → first check → history; first read labelled; basis switches once a full month exists | RNTL + unit | `npx jest src/features/decide/onboarding src/features/record/setup` | ❌ W0 / extend | ⬜ pending |
 | DCU-11 | demo fixture: sofa fits, car adjust with ≥2 warnings; SQL seed mirrors fixture | unit (engine-backed) + script | `npx jest src/features/decide/__tests__/demoScenario.test.ts` | ❌ W0 | ⬜ pending |
 | ANL-06 | events typed, enums only, fire points | typecheck + unit | `npm run typecheck`; `npx jest src/services/analytics src/features/decide` | ❌ W0 | ⬜ pending |
-| snapshot | full-month rule, paid-only, refunds, transfers excluded, series bills, FX-null exclusion | unit (100% threshold) | `npx jest src/features/decide/snapshot` | ❌ W0 | ⬜ pending |
+| snapshot | full-month rule, paid-only, refunds, transfers excluded, series bills, FX-null exclusion, pending one-offs off cash ("a Go-ahead pending purchase lowers the next check's cash"), current 04-05 fields; computeCheck/computeQuick through `decide()`, `none` status and the cash-only skip path | unit (100% threshold) | `npx jest src/features/decide/snapshot` | ❌ W0 | ⬜ pending |
 | D-10 | schedule/cancel/reconcile/tap routing with uuid validation | unit (mocked expo-notifications) | `npx jest src/features/decide/notifications` | ❌ W0 | ⬜ pending |
 | RLS | new tables isolate users/households; grants; cascade on delete | pgTAP | `npx supabase test db` | ❌ W0 | ⬜ pending |
 
