@@ -508,7 +508,9 @@ Similar tables: `decide_settings` (pk `user_id`, rough_income/rough_spending/rou
 | A9 | Rows with a null home amount are excluded from the snapshot and counted in "Assumptions in play" | Pattern 2 | Under-counted spending for unstamped foreign rows |
 | A10 | Sales tax applies to the price only, rounded half-up, and is paid on day one (not financed) | Code examples | Credit monthly figure differs from user expectation |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> **Resolution (2026-10-15, plan-phase, non-interactive):** each question below was resolved by taking the recommendation, recorded in `05-PLANNING-NOTES.md` § "Research open questions — defaults taken". OQ1 → minimal `debts` table in Phase 5 (05-03). OQ2 → savings/investment-account transfers + Savings-category outflows (05-06). OQ3 → heuristic + persisted `statement_periods` (05-03, 05-06, 05-19). OQ4 → versioned sample seed shared by "Explore with sample figures" and the demo account (05-18). OQ5 → investment checks kept in scope, low priority. These are planning resolutions; the user is asked to confirm OQ1 and OQ3 (Core Value risk) before execution, which is blocked on Phase 4 anyway.
 
 1. **Debt storage before Phase 6.**
    - What we know: the snapshot needs `DebtRecord {balance, minimumPayment, secured, apr}` and `CardRecord {apr, minimumTerms}`; D-09 writes "a debt record"; there is no table; GRW-07/GRW-11 (rate and minimum on accounts) are Phase 6.

@@ -27,7 +27,7 @@ Wherever the plan-phase workflow would have asked the user, the recommended/defa
 - Phase 5 execution is **blocked until Phase 4 (decide-engine) is executed and verified**. Plans consume `src/engine/decide`'s public barrel as specified by 04-12; they do not edit `src/engine/`.
 - No Supabase command is run during planning. Migration tasks in plans are human-gated.
 
-## Research open questions — defaults taken (need user confirmation)
+## Research open questions — defaults taken (resolved for planning; user confirmation requested before execution)
 
 The researcher raised five open questions and logged assumptions A1–A10 (`05-RESEARCH.md` § Assumptions Log). The recommended option was taken for each:
 
