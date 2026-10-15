@@ -52,6 +52,7 @@ import {
 } from './activityViewPrefs';
 import type { SearchScope } from './SearchBar';
 import { previousMonth } from './CloneMonthSheet';
+import { isMonthEmpty, monthPositionOf } from './monthFigureInputs';
 import { useActivitySelection } from './useActivitySelection';
 import type { DeletePrompt, RowActions } from './useRowActions';
 import { showToast } from '@/state/undoToast';
@@ -134,6 +135,8 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
   const [scope, setScope] = useState<SearchScope>('month');
   const [filter, setFilter] = useState<ActivityFilter>(EMPTY_FILTER);
   const [prefs, setPrefs] = useState(DEFAULT_VIEW_PREFS);
+  // 03.1 D-59/D-60: whether the search field is open. Distinct from `searching` (a term is set).
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // HOME-01: Pay bills / See all hand over a one-shot filter (the month is already set by
   // requestActivityFocus). Activity stays mounted as a tab, so this runs while it is mounted.
@@ -144,6 +147,7 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
     setFilter(intent);
     setTerm('');
     setScope('month');
+    setSearchOpen(false);
     consumeActivityFilterIntent();
   }, [intent]);
 
@@ -197,7 +201,21 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
     [searching, monthView.projections, filter]
   );
 
-  // ACT-10: the count (and the figures beside it) follow the filtered set.
+  // 03.1 D-47 / D-70: the card shows the whole month, the same figure as Home, under any filter.
+  const position = useMemo(
+    () =>
+      monthPositionOf({
+        rows: monthView.rows,
+        projections: monthView.projections,
+        totals: monthView.totals,
+      }),
+    [monthView.rows, monthView.projections, monthView.totals]
+  );
+  const monthEmpty = isMonthEmpty(monthView.totals, position);
+  const monthLoading = !rc.ready || monthView.dataState === 'loading';
+
+  // ACT-10 as amended by 03.1 D-70: the narrowed totals feed the entry count and the search
+  // results count only; the card's figures come from `position`.
   const totals: MonthTotals = useMemo(
     () =>
       searching || filtering
@@ -213,6 +231,11 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
         : monthView.totals,
     [searching, filtering, narrowed, monthView.totals, unpaidProjections]
   );
+  const entryCount = {
+    total: monthView.totals.count,
+    shown: totals.count,
+    narrowed: searching || filtering,
+  };
 
   // ---- Running balance inputs (D-25) -------------------------------------------------------
   const wantBalance = view === 'balance' && !flat;
@@ -380,6 +403,12 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
     sort,
     setSort,
     totals,
+    position,
+    monthEmpty,
+    monthLoading,
+    entryCount,
+    searchOpen,
+    setSearchOpen,
     monthView,
     items,
     positions,
