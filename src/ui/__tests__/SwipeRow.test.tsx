@@ -67,6 +67,49 @@ describe('SwipeRow', () => {
     expect(getByLabelText('Rent').props.accessibilityActions).toEqual([{ name: 'activate', label: 'Rent' }]);
   });
 
+  describe('long-press (D-63)', () => {
+    it('offers a named select action after activate', async () => {
+      const { getByLabelText } = await setup({ onLongPress: jest.fn(), longPressLabel: 'Select Rent' });
+      expect(getByLabelText('Rent').props.accessibilityActions).toEqual([
+        { name: 'left', label: 'Mark paid' },
+        { name: 'right', label: 'Delete entry' },
+        { name: 'activate', label: 'Rent' },
+        { name: 'select', label: 'Select Rent' },
+      ]);
+    });
+
+    it('the select accessibility action calls onLongPress once', async () => {
+      const onLongPress = jest.fn();
+      const { getByLabelText } = await setup({ onLongPress, longPressLabel: 'Select Rent' });
+      await fireEvent(getByLabelText('Rent'), 'accessibilityAction', { nativeEvent: { actionName: 'select' } });
+      expect(onLongPress).toHaveBeenCalledTimes(1);
+    });
+
+    it('long-press calls onLongPress and not onPress', async () => {
+      const onLongPress = jest.fn();
+      const onPress = jest.fn();
+      const { getByText } = await setup({ onLongPress, onPress });
+      await fireEvent(getByText('Row body'), 'longPress');
+      expect(onLongPress).toHaveBeenCalledTimes(1);
+      expect(onPress).not.toHaveBeenCalled();
+    });
+
+    it('disabled offers no select action and ignores long-press', async () => {
+      const onLongPress = jest.fn();
+      const { getByLabelText } = await setup({ onLongPress, longPressLabel: 'Select Rent', disabled: true });
+      expect(getByLabelText('Rent').props.accessibilityActions).toEqual([{ name: 'activate', label: 'Rent' }]);
+      // The select action is not offered, so a screen reader cannot trigger it either. (A touch
+      // long-press is not asserted here: fireEvent would also find SwipeRow's own prop.)
+      await fireEvent(getByLabelText('Rent'), 'accessibilityAction', { nativeEvent: { actionName: 'select' } });
+      expect(onLongPress).not.toHaveBeenCalled();
+    });
+
+    it('without onLongPress there is no select action', async () => {
+      const { getByLabelText } = await setup();
+      expect(getByLabelText('Rent').props.accessibilityActions.map((a: { name: string }) => a.name)).not.toContain('select');
+    });
+  });
+
   it('renders the action words in the action zones', async () => {
     await setup();
     const l = await render(<ThemeProvider>{mockCaptured.props.renderLeftActions()}</ThemeProvider>);
