@@ -667,3 +667,23 @@ All figures below are **data to pass into the engine as snapshot/card-record def
 
 **Research date:** 2026-09-26
 **Valid until:** Regulatory/issuer figures (per-market defaults) should be re-verified before this table is relied on for a real launch decision — recommend 90 days for the UK regulatory citation (stable primary source) and 30 days for the issuer-floor and dealer-cap figures (secondary sources, more likely to have drifted or been found wrong on closer inspection). The engineering/architecture findings (integer amortisation, bisection, CV-without-sqrt) are stable indefinitely — they follow from the existing codebase's own already-committed patterns, not from external, time-sensitive sources.
+
+## Addendum (2026-10-15 replan)
+
+Codebase facts the D-23…D-35 replan relies on. Verified by direct Read of the files named; no web research.
+
+**`src/engine/recurring/schedule.ts` (Record, Phase 02.2; at 100% coverage under `recurring/`):**
+- `RECURRING_FREQS = ['weekly', 'fortnightly', 'monthly', 'quarterly', 'yearly'] as const`; `type RecurringFreq`; `isRecurringFreq(s)`.
+- `interface RecurringSchedule { anchorDate: string; freq: RecurringFreq; endDate: string | null /* inclusive */; occurrenceCount: number | null /* n = 0..count-1 */ }`.
+- `occurrenceDate(anchorDate, freq, n)`: occurrence n is computed directly from the anchor (weekly/fortnightly step 7/14 days; monthly/quarterly/yearly step 1/3/12 months with month-end clamping that never drifts). RangeError on an invalid anchor, freq or n.
+- `occurrencesBetween(schedule, fromInclusive, toInclusive): { n, date }[]`: every occurrence in the inclusive window, n ascending, honouring `endDate` and `occurrenceCount`, capped at `MAX_OCCURRENCES_PER_CALL = 1000`. RangeError on invalid window dates; an inverted window returns `[]`. `from` may lie before the anchor.
+- There is no "next occurrence after a date" helper and no add-days helper. `src/engine/time/localDate.ts` exports only `isValidLocalDate`, `monthOf`, `monthRange`, `localDateIn`, `isValidTimeZone`. Decide's `series.ts` therefore adds a private `addDays` (Date.UTC arithmetic on the parsed parts, the same technique `schedule.ts` uses internally) and derives the next due date as the first `occurrencesBetween` result after the last paid date.
+- `schedule.ts` imports only `../time/localDate`. Importing it from `src/engine/decide/` stays inside `engine/` and passes dependency-cruiser. Import `../recurring/schedule` directly, never the `../recurring` barrel: the barrel also exports `detect.ts` (`detectRecurring`, suggestions), which D-25 keeps off the verdict path.
+
+**Record row shape (`src/engine/recurring/cloneMonth.ts` `CloneSourceRow`):** `status: 'pending' | 'paid' | 'skipped'`, `is_refund?: boolean`, `transfer_id: string | null`, `recurring_series_id: string | null`, `category_id: string | null`, `local_date: 'YYYY-MM-DD'`, `original_amount`, `original_currency`. Decide's `RecordLine` mirrors these fields in camelCase; the Phase 5 snapshot builder converts amounts into the check's single currency (D-16 clarified).
+
+**`src/engine/recurring/detect.ts`:** `detectRecurring(rows): RecurringSuggestion[]` returns suggestions (`rowIds`, `freq`, `amount`) that are not series. Rows only carry `recurring_series_id` once a series exists (user-created or accepted), so the snapshot's `RecurringBill.confirmed` flag is the engine-side guard for D-25.
+
+**`src/engine/transfer/`:** `pair.ts` and `match.ts` pair the two legs of a transfer under one `transfer_id`. A line with a non-null `transferId` is a leg and is neither income nor spending.
+
+**Coverage:** `jest.config.js` holds `recurring/` and `decide/` at 100% branches. Test helpers under `__tests__/` without `.test.` are neither run as suites (`testMatch: **/src/**/*.test.ts?(x)`) nor counted for coverage (`!src/**/__tests__/**`).

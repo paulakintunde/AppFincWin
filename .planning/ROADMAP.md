@@ -560,7 +560,7 @@ Plans:
   4. The engine derives income steadiness from the coefficient of variation across logged months (not a user-stated answer), computes a household's cost share under the active split rule, finds the largest affordable price by bisection (handling both "nothing is affordable" and "the full price already fits"), and determines card eligibility as blocked/capped/permitted.
   5. The full engine suite is green at the agreed branch-coverage threshold, runs with no React, no I/O and no database access, and `dsecured` reads a boolean field on the loan record rather than matching its name.
   6. The engine produces the options list, the four-way alternatives (suppressing and labelling rows whose money is not genuinely spare) and setback re-assessments, and returns a cash-level first read from rough figures when no full month exists — all as codes and numbers, with no English strings (04-CONTEXT D-11, D-19, D-21).
-**Plans**: 12 plans in 6 waves
+**Plans**: 13 plans in 6 waves (revised 2026-10-15 against 04-CONTEXT D-23…D-35)
 Plans:
 **Wave 1**
 - [ ] 04-01-PLAN.md — payoff foundation: Percent type, amortise (DEC-01), futureValue (DEC-02)
@@ -569,19 +569,20 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 04-04-PLAN.md — simulateMinimum with explicit never-clears (DEC-03, SC-2), payoff barrel, payoff parity
-- [ ] 04-05-PLAN.md — Decide contracts, behaviour constants, per-market defaults (US/CA/CA-QC/UK), deriveMoney (DEC-07)
+- [ ] 04-05-PLAN.md — Decide contracts (Record lines, recurring bills, one currency per check, two shares), behaviour constants, per-market defaults (US/CA/CA-QC/UK), currency guard, monthly equivalents and bills due in 90 days (DEC-12)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 04-06-PLAN.md — resolvePlan for cash/loan/instalment/card/invest with missing reason codes (DEC-04/05/10)
+- [ ] 04-13-PLAN.md — deriveMoney over Record lines: paid only, refunds netted, series smoothed, household shares, exact CV steadiness (DEC-07/08)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 04-07-PLAN.md — prepareContext + assess: five ledgers, ordered warnings, user-derived limits (DEC-06)
-- [ ] 04-08-PLAN.md — cash-level first read from rough figures (DEC-16)
+- [ ] 04-07-PLAN.md — prepareContext + assess: two shares, bills due in 90 days, pausable saving/investing, invest-check rules, D-31 basis fact, ordered warnings (DEC-06)
+- [ ] 04-08-PLAN.md — cash-level first read from rough figures with a rough cushion (DEC-16)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 04-09-PLAN.md — exact integer bisection and the ordered options list (DEC-09/13)
 - [ ] 04-10-PLAN.md — four-way alternatives with suppression, setbacks (DEC-14/15)
-- [ ] 04-11-PLAN.md — decide golden parity and D-02/D-08/D-12 deviation tests (D-22)
+- [ ] 04-11-PLAN.md — decide golden parity and named deviation tests D-02/D-08/D-12, D-11 amended, D-24, D-33, D-34, D-35 (D-22)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 04-12-PLAN.md — public barrel, codes-only guard, phase gate (DEC-12)
