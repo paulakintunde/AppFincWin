@@ -519,10 +519,35 @@ Plans:
 **Requirements**: no new IDs; refines the Phase 2 Activity header (ACT-02 month switcher, ACT-03 search) and keeps Phase 3's D-41 Unpaid banner
 **Proposal**: https://claude.ai/artifact/BNKMdaVimhwxtkev8PJ8Yp (approved 2026-10-15)
 **Depends on:** Phase 3
-**Plans:** 0 plans
+**Plans:** 15 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 03.1 to break down)
+**Wave 1**
+- [ ] 03.1-01-PLAN.md — Copy catalogue for the new header, DURATION.searchFade, shared RadioDot
+- [ ] 03.1-02-PLAN.md — Pure helpers: active filters (count, chips, clear) and month layout / Intl labels (TDD)
+- [ ] 03.1-03-PLAN.md — Hand-drawn Search / Filter / More glyphs and HeaderIconButton with count badge
+- [ ] 03.1-04-PLAN.md — Row long-press and the Select accessibility action (SwipeRow, ActivityRow)
+- [ ] 03.1-05-PLAN.md — Chrome: compact title / role / trailing slot, avatar dropped, scrollToTop
+- [ ] 03.1-06-PLAN.md — Shared month-figure helper (Home parity), VM position / monthEmpty / entryCount / searchOpen
+
+**Wave 2** *(blocked on wave 1)*
+- [ ] 03.1-07-PLAN.md — ActivitySummaryCard (left after everything, In/Out, still to come, D-70 count)
+- [ ] 03.1-08-PLAN.md — Display chip and two-section Display sheet; Chip focus ref
+- [ ] 03.1-09-PLAN.md — Filter chips with per-chip ×, sideways scroll and Clear all
+- [ ] 03.1-10-PLAN.md — More menu (three groups) and SelectBar
+- [ ] 03.1-11-PLAN.md — Month row with icon cluster and measured long / short / wrap fallback
+
+**Wave 3** *(blocked on wave 2)*
+- [ ] 03.1-12-PLAN.md — ActivityHeaderBands composition and search Cancel / cross-fade
+
+**Wave 4** *(blocked on wave 3)*
+- [ ] 03.1-13-PLAN.md — ActivityScreen wiring, compact header, long-press select; screen tests
+
+**Wave 5** *(blocked on wave 4)*
+- [ ] 03.1-14-PLAN.md — Remaining Activity suites, Home-intent closes search, retired components and keys removed
+
+**Wave 6** *(blocked on wave 5)*
+- [ ] 03.1-15-PLAN.md — Pixel 9 device acceptance record (checkpoint)
 
 ### Phase 4: Decide Engine
 **Goal**: The affordability engine computes correct verdicts in complete isolation, before any UI exists.
