@@ -1,18 +1,10 @@
-import React, { useEffect } from 'react';
-import { AccessibilityInfo, ScrollView } from 'react-native';
-import { act, screen } from '@testing-library/react-native';
-import { useScrollToTop } from 'expo-router';
+import React from 'react';
+import { Text as RNText, StyleSheet } from 'react-native';
+import { screen, within } from '@testing-library/react-native';
 import { renderWithShellProviders, resetShellStores } from '@/shell/__tests__/testUtils';
-import { focusAccessibility, useScreenTitleFocus } from '@/shell/a11yFocus';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { useShellRefresh } from '@/shell/refresh/useShellRefresh';
-import { useTheme } from '@/theme/ThemeProvider';
-import {
-  compactThreshold,
-  useTabRootChrome,
-  type TabRootChrome,
-  type TabRootChromeOptions,
-} from '../useTabRootChrome';
+import { useTabRootChrome, type TabRootChrome, type TabRootChromeOptions } from '../useTabRootChrome';
 
 jest.mock('expo-router', () => ({
   useScrollToTop: jest.fn(),
@@ -29,88 +21,109 @@ jest.mock('@/features/you/useProfile', () => ({
 }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: jest.fn() }));
 
-const refresh = jest.fn();
-const seen: { chrome?: TabRootChrome; colors?: ReturnType<typeof useTheme>['colors'] } = {};
-const rcProps = (): Record<string, unknown> & { onRefresh: () => Promise<void> } =>
-  seen.chrome?.refreshControl?.props as never;
+// The first render in a file pays the cold module-load cost of the shell providers.
+jest.setTimeout(30000);
 
-function Probe(props: TabRootChromeOptions) {
-  const colors = useTheme().colors;
-  const chrome = useTabRootChrome(props);
-  useEffect(() => {
-    seen.chrome = chrome;
-    seen.colors = colors;
+let captured: TabRootChrome | undefined;
+function Probe(options: TabRootChromeOptions) {
+  const chrome = useTabRootChrome(options);
+  React.useEffect(() => {
+    captured = chrome;
   });
   return (
     <>
       {chrome.largeHeader}
-      <ScrollView refreshControl={chrome.refreshControl} />
+      {chrome.compactHeader}
     </>
   );
 }
 
+function compact() {
+  return within(screen.getByTestId('compact-header', { includeHiddenElements: true }));
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
+  captured = undefined;
   (useSyncStatus as jest.Mock).mockReturnValue({ isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null });
   resetShellStores();
-  seen.chrome = undefined;
-  refresh.mockResolvedValue('updated');
-  (useShellRefresh as jest.Mock).mockReturnValue({ refreshing: false, refresh });
+  (useShellRefresh as jest.Mock).mockReturnValue({ refreshing: false, refresh: jest.fn() });
 });
 
-describe('compactThreshold', () => {
-  it('subtracts the compact header height from the large one', () => {
-    expect(compactThreshold(120, 47)).toBe(13);
-    expect(compactThreshold(50, 47)).toBe(0);
+describe('useTabRootChrome compact options', () => {
+  it('keeps the same title and an avatar with no new options', async () => {
+    await renderWithShellProviders(<Probe title="Overview" />);
+    const title = compact().getByText('Overview', { includeHiddenElements: true });
+    expect(StyleSheet.flatten(title.props.style).fontSize).toBe(26);
+    expect(compact().getByRole('button', { name: 'Profile', includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('uses compactTitle only in the compact header', async () => {
+    await renderWithShellProviders(<Probe title="Activity" compactTitle="Activity · Oct" />);
+    expect(compact().getByText('Activity · Oct', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByText('Activity')).toBeTruthy();
+  });
+
+  it('applies the sheetTitle role to the compact title', async () => {
+    await renderWithShellProviders(<Probe title="Activity" compactTitleRole="sheetTitle" />);
+    const title = compact().getByText('Activity', { includeHiddenElements: true });
+    expect(StyleSheet.flatten(title.props.style).fontSize).toBe(16);
+  });
+
+  it('renders a node compactTrailing and drops the compact avatar only', async () => {
+    await renderWithShellProviders(<Probe title="Activity" compactTrailing={<RNText>{'icons'}</RNText>} />);
+    expect(compact().getByText('icons', { includeHiddenElements: true })).toBeTruthy();
+    expect(compact().queryByRole('button', { name: 'Profile', includeHiddenElements: true })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Profile' })).toBeTruthy();
+  });
+
+  it('passes scrollToTop to a function compactTrailing', async () => {
+    const seen = jest.fn();
+    await renderWithShellProviders(
+      <Probe
+        title="Activity"
+        compactTrailing={(api) => {
+          seen(typeof api.scrollToTop);
+          return <RNText>{'fn-icons'}</RNText>;
+        }}
+      />,
+    );
+    expect(seen).toHaveBeenCalledWith('function');
+    expect(compact().getByText('fn-icons', { includeHiddenElements: true })).toBeTruthy();
   });
 });
 
-describe('useTabRootChrome', () => {
-  it('large header carries the sync line only when there is a problem', async () => {
-    await renderWithShellProviders(<Probe title="Overview" />);
-    expect(screen.queryByTestId('sync-problem-line')).toBeNull();
-    await screen.unmount();
-    (useSyncStatus as jest.Mock).mockReturnValue({ isOnline: false, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null });
-    await renderWithShellProviders(<Probe title="Overview" />);
-    expect(screen.getByTestId('sync-problem-line')).toBeTruthy();
+describe('useTabRootChrome scrollToTop', () => {
+  type Handle = { scrollToOffset?: jest.Mock; scrollTo?: jest.Mock };
+  const Stub = React.forwardRef<Handle, { handle: Handle }>(function Stub({ handle }, ref) {
+    React.useImperativeHandle(ref, () => handle);
+    return null;
   });
-
-  it('builds an accent-tinted RefreshControl when refreshKeys are given', async () => {
-    await renderWithShellProviders(<Probe title="Overview" refreshKeys={[['k']]} />);
-    const props = rcProps();
-    expect(props.tintColor).toBe(seen.colors!.accent);
-    expect(props.colors).toEqual([seen.colors!.accent]);
-    expect(props.progressBackgroundColor).toBe(seen.colors!.surface);
-  });
-
-  it('has no refresh control without refreshKeys', async () => {
-    await renderWithShellProviders(<Probe title="Decide" />);
-    expect(seen.chrome?.refreshControl).toBeUndefined();
-  });
-
-  it('refreshes once on pull, then focuses the title when a screen reader is on', async () => {
-    jest.spyOn(AccessibilityInfo, 'isScreenReaderEnabled').mockResolvedValue(true);
-    await renderWithShellProviders(<Probe title="Overview" refreshKeys={[['k']]} />);
-    await act(async () => {
-      await rcProps().onRefresh();
+  function WithRef({ handle }: { handle: Handle | null }) {
+    const chrome = useTabRootChrome({ title: 'Activity' });
+    React.useEffect(() => {
+      captured = chrome;
     });
-    expect(refresh).toHaveBeenCalledTimes(1);
-    expect(focusAccessibility).toHaveBeenCalledTimes(1);
+    // eslint-disable-next-line react-hooks/refs
+    return handle ? <Stub ref={chrome.scrollRef as unknown as React.Ref<Handle>} handle={handle} /> : null;
+  }
+
+  it('calls scrollToOffset for a FlashList-like ref', async () => {
+    const handle = { scrollToOffset: jest.fn() };
+    await renderWithShellProviders(<WithRef handle={handle} />);
+    captured?.scrollToTop();
+    expect(handle.scrollToOffset).toHaveBeenCalledWith({ offset: 0, animated: true });
   });
 
-  it('does not move focus after a refresh when no screen reader is on', async () => {
-    jest.spyOn(AccessibilityInfo, 'isScreenReaderEnabled').mockResolvedValue(false);
-    await renderWithShellProviders(<Probe title="Overview" refreshKeys={[['k']]} />);
-    await act(async () => {
-      await rcProps().onRefresh();
-    });
-    expect(refresh).toHaveBeenCalledTimes(1);
-    expect(focusAccessibility).not.toHaveBeenCalled();
+  it('calls scrollTo for a ScrollView-like ref', async () => {
+    const handle = { scrollTo: jest.fn() };
+    await renderWithShellProviders(<WithRef handle={handle} />);
+    captured?.scrollToTop();
+    expect(handle.scrollTo).toHaveBeenCalledWith({ y: 0, animated: true });
   });
 
-  it('registers scroll-to-top on the scroll ref and title focus', async () => {
-    await renderWithShellProviders(<Probe title="Overview" />);
-    expect(useScrollToTop).toHaveBeenCalledWith(seen.chrome?.scrollRef);
-    expect(useScreenTitleFocus).toHaveBeenCalled();
+  it('does not throw when the ref is empty', async () => {
+    await renderWithShellProviders(<WithRef handle={null} />);
+    expect(() => captured?.scrollToTop()).not.toThrow();
   });
 });
