@@ -167,6 +167,10 @@ Engine decisions are 04 D-41…D-58. These are the Phase 5 UI and data counterpa
 - **D-36: Learning from history.** Once 3 or more decisions have actuals, step 2 shows the estimate gap beside running costs and the payment ("Your running costs have come in about 20% higher than estimated"). The copy is declarative.
 - **D-37: Currency conversion.** The snapshot builder converts every account, line and debt into the check's home currency at the latest stored rate (Phase 1 `engine/money/rates.ts`) before calling the engine. The basis line says "Includes amounts converted from EUR at 1.47 on 14 Oct". If a needed rate is missing, the result is `missing` with a reason, never a guessed rate.
 
+- **D-24 amended (user, 2026-10-15): every open check is judged with all the others** (04 D-41 amended), so the sofa can read "Fits on its own; not with your other 1 open check". The combined toggle is remembered per check. **Demo frame 1** is captured on the sofa check with "With my other open checks" switched off. That is a real user setting, so nothing is staged. Frames 2–3 (car) use the combined position.
+- **Cushion for new users (04 D-42 amended):** under 3 full months the cushion row reads "3 months — your income steadiness isn't known yet", and the confidence chip shows "Rough".
+- **One card per cause (04 D-24/D-44 amended):** with a cash path, bills due soon appear only as the `cash_dip` card, and the cash-cushion card covers the day-one cost alone.
+
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
 - The table layout for checks, decisions and limits, with RLS per household or user, following the existing migration patterns.

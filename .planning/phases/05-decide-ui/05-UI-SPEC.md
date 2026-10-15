@@ -481,7 +481,7 @@ One `meta` line (`inkMuted`, wraps at large text, absent when empty) directly un
 - **Quick-check placement:** the footer row ("Worked out from the figures you entered.") gains the same pill at the right; the row becomes 44px high (+26). Credit tallest state: chip, size label, line and monthly figure still end at or above y = 543, footer row ends at or above y = 594, buttons stay below the fold as before.
 - **Standalone-vs-combined line:** when standalone and combined states differ, verdict body line 1 reads "Fits on its own; not with your other 1 open check" ("... {n} open checks"); the second body line is the normal short sentence. The state chip, title and warnings are for the combined position. When they match, no line shows.
 - When the toggle is off, the verdict is standalone and the body shows only the normal sentence.
-- **Seed constraint:** checks combine in creation order (sofa, then car). The demo seed must give the car check the same state combined as standalone ("Needs adjustment"), and the sofa check ("It fits") nothing before it.
+- **Seed constraint (amended 2026-10-15, 05 D-24 amended):** every open check combines with all the others. Frame 1 is captured on the sofa check with "With my other open checks" switched off (a real, per-check user setting), so it shows "It fits" standalone. Frames 2-3 use the car's combined position, which must stay "Needs adjustment". Cushion copy under 3 full months: "3 months — your income steadiness isn't known yet". With a cash path, bills due soon show only as `cash_dip`; the cushion card covers the day-one cost alone.
 
 ### Cushion months and "on the edge" (D-25)
 
@@ -753,7 +753,7 @@ Each item is a choice I made instead of asking, picking the option most consiste
 15. **Engine code names:** only `card_not_accepted`, `card_apr_missing`, `debt_rate_exceeds_return`, the size codes and warning codes `month`/`cash`/`dsr`/`owe`/`inv` are named in 04-CONTEXT. Other reason and suppression codes are referred to by meaning here; the planner maps them to the final engine barrel names.
 16. **`expo-notifications` is the only added dependency**, and the slider is hand-built.
 17. **One rate list per check** (0% plus up to three user rates) feeds both the investing-instead section and the "Kept" column; the Kept column and the alternatives table use the first rate in the list, or 0% if none.
-18. **Combined-checks pill lives in the flow header (all steps) and the quick-check footer** rather than as its own row, so DCU-11 holds; it is on by default and remembered per check. The demo seed must keep the car check "Needs adjustment" when combined with the sofa.
+18. **Combined-checks pill lives in the flow header (all steps) and the quick-check footer** rather than as its own row, so DCU-11 holds; it is on by default and remembered per check. The demo seed must keep the car check "Needs adjustment" when combined with the sofa; frame 1 (sofa) is captured with the toggle off (05 D-24 amended).
 19. **Verdict body line 1 is the difference line** (combined first, then worst-month); other basis facts (one-offs, conversion, cash path unavailable) share one optional `meta` row under the card, and overflow goes to "Assumptions in play". The demo seed has none of them.
 20. **"On the edge" shows as a tag by the state chip** with the margin text in "Against your lines" and the chip's accessible name, because the chip row cannot hold the margin sentence at 402.
 21. **Confidence chip** sits in verdict row 2 beside the size label; labels are "Strong / Fair / Rough basis".

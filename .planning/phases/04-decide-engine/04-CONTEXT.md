@@ -208,6 +208,11 @@ These decisions widen Phase 4. Where one amends an earlier decision, the later o
 - **D-57: Independent reference tests.** Payment and amortisation tests include published reference tables (a standard bank or textbook amortisation schedule, cited in the test file) independent of the prototype. Where the prototype and the reference disagree, the reference wins and the case becomes a named deviation (D-22).
 - **D-58: Threshold research.** Phase 4 research sources and cites the 36% debt-service line, the 12× unsecured line, the 6%/22% steadiness cut-offs, the 90-day bills window, the D-42 cushion months and the D-43 5% edge. Values stay as decided unless research finds a cited reason to change them; any change goes back to the user. Every constant's citation sits in `constants.ts`.
 
+#### Consistency amendments (user, 2026-10-15, after the plan review)
+- **D-41 amended: every open check sees all the others.** Combined assessment stacks *all other* open checks with the current one, regardless of creation order (order only fixes the arithmetic sequence, which is order-independent for totals). Each open check therefore reports both its standalone and its combined verdict. Bisection and options still run on the combined position.
+- **D-42 amended: under 3 full months, the default reserve is 3 months of costs, not 6.** The D-12 worst-income/highest-spending basis already carries the caution, and the `rough` confidence code (D-46) states the uncertainty. 4.5 and 6 months apply only once steadiness is measured (3 or more full months). This also removes the jump from the first read's 3-month cushion.
+- **D-24/D-44 amended: one card per cause.** When the D-44 cash path is available, the `cash` ledger tests only `cashOnHand − my day-one cost` against the reserve, and dated bills are covered by `cash_dip` alone. When the cash path is unavailable (`cash_path_unavailable`), the D-24 90-day deduction stays in the `cash` ledger as before. D-36's `from_savings` follows the same rule as the `cash` ledger.
+
 ### Claude's Discretion
 - How the snapshot carries series (frequency, latest amount, next due date, which rows each series covers) for D-23 and D-24.
 - The exact name and payload of the D-31 basis code.
