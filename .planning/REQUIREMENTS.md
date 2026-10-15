@@ -187,7 +187,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DEC-03**: Engine simulates minimum payments on a revolving balance and correctly reports when the balance never clears
 - [ ] **DEC-04**: Engine resolves any of four payment methods — paid in full, deposit plus loan, instalment plan, credit card — into a comparable plan
 - [ ] **DEC-05**: Engine flags a plan as incomplete when its terms are not yet specified
-- [ ] **DEC-06**: Engine returns a verdict of fits, adjust, no, or missing, with up to five warnings ordered by shortfall size
+- [ ] **DEC-06**: Engine returns a verdict of fits, adjust, no, or missing, with up to six warnings ordered by shortfall size (the sixth, `cash_dip`, was added 2026-10-15, 04-CONTEXT D-44/D-59)
 - [ ] **DEC-07**: Engine derives income steadiness from the coefficient of variation across logged months, not from a user-stated answer
 - [ ] **DEC-08**: Engine computes a household's share of a cost under the active split rule
 - [ ] **DEC-09**: Engine finds the largest affordable price by bisection, and handles both "nothing is affordable" and "the full price already fits"

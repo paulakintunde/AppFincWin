@@ -213,6 +213,12 @@ These decisions widen Phase 4. Where one amends an earlier decision, the later o
 - **D-42 amended: under 3 full months, the default reserve is 3 months of costs, not 6.** The D-12 worst-income/highest-spending basis already carries the caution, and the `rough` confidence code (D-46) states the uncertainty. 4.5 and 6 months apply only once steadiness is measured (3 or more full months). This also removes the jump from the first read's 3-month cushion.
 - **D-24/D-44 amended: one card per cause.** When the D-44 cash path is available, the `cash` ledger tests only `cashOnHand − my day-one cost` against the reserve, and dated bills are covered by `cash_dip` alone. When the cash path is unavailable (`cash_path_unavailable`), the D-24 90-day deduction stays in the `cash` ledger as before. D-36's `from_savings` follows the same rule as the `cash` ledger.
 
+#### Threshold and cash-path decisions (user, 2026-10-15, after the expansion replan)
+- **D-59: `cash_dip` fires only when the purchase causes or deepens the dip** (refines D-44 and replaces the replan's default 2). The engine compares the lowest point of the 90-day path with the purchase against the lowest point of the same path without it. The warning fires only if the with-purchase low falls below 0 (hard) or the reserve (soft) **and** the purchase made the low lower. Its shortfall is the extra depth the purchase adds. A dip that exists without the purchase is reported as a basis fact (`cash_tight_before_payday`, with date and amount), never as a warning. Undated spending and debt minimums are still spread evenly by day (replan default 1, accepted).
+- **D-60: Confirmed weekly and fortnightly pay series are smoothed** like non-monthly bills (extends D-23 to income). For steadiness (the coefficient of variation) and the income averages, the occurrences of a confirmed pay series in a month are replaced by its monthly equivalent (amount × 52/12 or × 26/12, latest amount, D-26). Real changes in pay amount still show. Unconfirmed or irregular income is not smoothed. (This reverses the replan note that income series are not smoothed.)
+- **D-04 confirmed after research:** the unsecured-debt line stays at 12 × average monthly income. It is editable, and it is cited in `constants.ts` as a FincWin behaviour line, not a published standard. The 20/10 rule was considered and not adopted.
+- **The 36% line confirmed after research:** it applies to logged take-home income, which is stricter than lenders' gross test, and that is deliberate. Phase 5 copy says "of what you take home".
+
 ### Claude's Discretion
 - How the snapshot carries series (frequency, latest amount, next due date, which rows each series covers) for D-23 and D-24.
 - The exact name and payload of the D-31 basis code.
@@ -290,7 +296,7 @@ These decisions widen Phase 4. Where one amends an earlier decision, the later o
 
 - Per-market default values beyond US, CA and UK: add them when the app ships to more markets.
 - Gray areas offered but not discussed: how open checks recompute, and where limits are stored (per user or per check). Both are Phase 5 concerns. Investment-mode checks were settled on 2026-10-15 (D-31…D-33).
-- User-marked "one-off, won't recur" lines excluded from averages (considered for D-29, not chosen). This would need a new row field and Record UI.
+- ~~User-marked "one-off" lines~~ were adopted on 2026-10-15 as D-47. The `one_off` row field and the Record toggle are built in Phase 5 (05 D-29).
 
 </deferred>
 
