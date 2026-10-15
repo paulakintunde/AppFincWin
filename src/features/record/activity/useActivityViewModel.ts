@@ -188,18 +188,22 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
   const search = useTransactionsSearch(rc.householdId, scope === 'all' ? term : '', rc.homeCurrency, rc.today);
   const flat = scope === 'all' && search.enabled;
   const searching = scope === 'month' ? term.trim() !== '' : flat;
-  const filtering = isFilterActive(filter);
+  // 03.1 review WR-01 / D-61: while the search field is open every filter indicator (badge row,
+  // chips, Unpaid banner) is hidden, so search ignores the filters rather than silently applying
+  // them. The filter is kept and applies again on Cancel.
+  const appliedFilter = searchOpen ? EMPTY_FILTER : filter;
+  const filtering = isFilterActive(appliedFilter);
   const narrowed = useMemo(() => {
     let base: ActivityRowView[] = flat ? search.rows : monthView.rows;
     if (scope === 'month' && term.trim() !== '') base = base.filter((r) => matchesSearch(r, term));
-    return filterRows(base, filter);
-  }, [flat, search.rows, monthView.rows, scope, term, filter]);
+    return filterRows(base, appliedFilter);
+  }, [flat, search.rows, monthView.rows, scope, term, appliedFilter]);
 
   // 03-CONTEXT D-34/D-35: projected bills join the Unpaid list so it matches Home's UNPAID;
   // other filters keep hiding projections.
   const unpaidProjections = useMemo(
-    () => (searching ? [] : filterProjections(monthView.projections, filter)),
-    [searching, monthView.projections, filter]
+    () => (searching ? [] : filterProjections(monthView.projections, appliedFilter)),
+    [searching, monthView.projections, appliedFilter]
   );
 
   // 03.1 D-47 / D-70: the card shows the whole month, the same figure as Home, under any filter.
@@ -248,7 +252,8 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
   const wantBalance = view === 'balance' && !flat;
   const paidBefore = usePaidBefore(rc.householdId, wantBalance ? `${month}-01` : null);
   const rates = useFxLatest().data;
-  const singleAccountId = filter.accountIds !== null && filter.accountIds.length === 1 ? filter.accountIds[0]! : null;
+  const singleAccountId =
+    appliedFilter.accountIds !== null && appliedFilter.accountIds.length === 1 ? appliedFilter.accountIds[0]! : null;
 
   const balance = useMemo(() => {
     if (!wantBalance) return null;

@@ -508,6 +508,22 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(screen.queryByLabelText('Filter, 1 active')).toBeNull();
   });
 
+  it('WR-01: search ignores the hidden filters while open, and they apply again on Cancel', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' }), row({ id: 'b', name: 'Salary', original_amount: 200000, amountHome: 200000 })];
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByLabelText('Filter'));
+    await fireEvent.press(screen.getByText('Money in'));
+    await fireEvent.press(screen.getByText('Show results'));
+    expect(screen.queryByText('Coffee')).toBeNull();
+    await type(screen, 'Search September 2026', 'cof');
+    expect(screen.getByText('Coffee')).toBeTruthy();
+    expect(screen.queryByText('Nothing matches.')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Cancel search'));
+    expect(screen.queryByText('Coffee')).toBeNull();
+    expect(screen.getByText('Salary')).toBeTruthy();
+    expect(screen.getByLabelText('Filter, 1 active')).toBeTruthy();
+  });
+
   it('D-70: the card figure is the same with and without a filter; only the caption count narrows', async () => {
     mockRows = [row({ id: 'a', name: 'Coffee' }), row({ id: 'b', name: 'Salary', original_amount: 200000, amountHome: 200000 })];
     const screen = await renderScreen();
