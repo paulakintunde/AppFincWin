@@ -7,7 +7,7 @@ import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radii, space } from '@/theme/layout';
+import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 
@@ -21,9 +21,22 @@ export interface SearchBarProps {
   monthLabel: string;
   onTermChange: (term: string) => void;
   onScopeChange: (scope: SearchScope) => void;
+  /** 03.1 D-59: when set, a Cancel button renders after the field. */
+  onCancel?: () => void;
+  autoFocus?: boolean;
+  inputRef?: React.Ref<TextInput>;
 }
 
-export function SearchBar({ term, scope, monthLabel, onTermChange, onScopeChange }: SearchBarProps) {
+export function SearchBar({
+  term,
+  scope,
+  monthLabel,
+  onTermChange,
+  onScopeChange,
+  onCancel,
+  autoFocus,
+  inputRef,
+}: SearchBarProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const [text, setText] = useState(term);
@@ -59,25 +72,39 @@ export function SearchBar({ term, scope, monthLabel, onTermChange, onScopeChange
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.field, { backgroundColor: colors.fill1 }]}>
-        <TextInput
-          accessibilityLabel={placeholder}
-          placeholder={placeholder}
-          placeholderTextColor={colors.inkMuted}
-          value={text}
-          onChangeText={onChange}
-          autoCorrect={false}
-          returnKeyType="search"
-          style={[textRole(pairing, 'body'), styles.input, { color: colors.ink }]}
-        />
-        {text !== '' ? (
+      <View style={styles.fieldRow}>
+        <View style={[styles.field, { backgroundColor: colors.fill1 }]}>
+          <TextInput
+            ref={inputRef}
+            autoFocus={autoFocus}
+            accessibilityLabel={placeholder}
+            placeholder={placeholder}
+            placeholderTextColor={colors.inkMuted}
+            value={text}
+            onChangeText={onChange}
+            autoCorrect={false}
+            returnKeyType="search"
+            style={[textRole(pairing, 'body'), styles.input, { color: colors.ink }]}
+          />
+          {text !== '' ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('activity.searchClear')}
+              onPress={clearTerm}
+              style={styles.clear}
+            >
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>×</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        {onCancel ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t('activity.searchClear')}
-            onPress={clearTerm}
-            style={styles.clear}
+            accessibilityLabel={t('activity.search.cancelA11y')}
+            onPress={onCancel}
+            style={({ pressed }) => [styles.cancel, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
           >
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>×</Text>
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('activity.search.cancel')}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -93,7 +120,13 @@ const styles = StyleSheet.create({
   wrap: {
     gap: space.gapSm,
   },
+  fieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.gapSm,
+  },
   field: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: radii.card / 2,
@@ -105,6 +138,12 @@ const styles = StyleSheet.create({
     minHeight: space.touchMin,
   },
   clear: {
+    minWidth: space.touchMin,
+    minHeight: space.touchMin,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancel: {
     minWidth: space.touchMin,
     minHeight: space.touchMin,
     alignItems: 'center',
