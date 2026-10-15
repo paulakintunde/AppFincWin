@@ -99,3 +99,10 @@ Other research facts the plans rely on: `expo-notifications ~57.0.23` is a new d
 | R4-W4 | Step 9(b) could dirty the demo account used for store screenshots | 05-26 step 9(b) runs on a separate fresh USD test account, never the demo account | 05-26 |
 | R4-W5 | VALIDATION missing 05-52 and card-debt rows; 05-41 / 05-15 wording contradicted R3-2 | VALIDATION rows added (withoutCheckWrites.test.ts, useBoughtCheckComputation.test.tsx, buildSnapshot card tests in 05-06 / 05-15 / 05-20); 05-41 Task 2 and 05-15's objective now say Step3Verdict holds no sections, 05-30 composes them, 05-42 only exports DayByDay / ExpectedIncome | 05-15, 05-41, VALIDATION |
 | R4-I1 | Month boundary in step 9 | 05-26 step 9 notes that a clock jump across a month end can legitimately change the recalculated verdict | 05-26 |
+
+## Final checker result and orchestrator closing edits
+
+- Post-expansion checker loop: iteration 1 (50 plans) 1 blocker / 4 warnings; iteration 2 (52 plans) 0 blockers / 5 warnings; iteration 3 (final) 0 blockers / 1 warning / 3 info. Max iterations reached with no blockers, so the plans were accepted ("Proceed anyway" default) after two small orchestrator edits:
+  - 05-06: a credit account whose Go-ahead payoff series is in the month is not counted in `meta.cardsWithoutMinimum`, so "Card payments aren't counted in the month." never shows for it (test assertion + grep added).
+  - 05-26 Task 3: every step runs on a fresh USD test account seeded through "Explore with sample figures", never the App Review demo account; sample data is cleared and re-seeded after steps 9(a) and 11.
+- Open info for the user: a pay-in-full card always shows the "Card payments" Assumptions row (true, but frequent) — see R4-W2-gap.

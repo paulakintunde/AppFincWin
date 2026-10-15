@@ -614,7 +614,79 @@ Plans:
   6. A brand-new user reaches a first verdict within their first session, in roughly a minute, without having logged or imported a month, and the verdict says plainly what it rests on and how an import sharpens it.
   7. Store screenshots 1–3 (verdict, what breaks, alternatives) can be captured from the App Review demo account's sample scenario with nothing staged outside the real app.
 **Launch inputs** (from `research/LAUNCH-POSITIONING.md`, 2026-09-26): the store name is *FincWin: Can I Afford It?*, so the quick check is the product's public promise and stays in the free tier (see `research/PRICING.md`). The first-read question is settled (04-CONTEXT D-11: rough figures give a cash-level answer only, via DEC-16). Discuss-phase must still settle the demo-account scenario (sofa $1,800 in a household of two; car $14,500 on a loan). Onboarding order — welcome, consent, one account, rough month, first check, then "Bring your history" — is shared with Phase 2 (02-30) and Phase 9, where the level questions move after the first verdict.
-**Plans**: TBD
+**Plans**: 52 plans in 10 waves (planned 2026-10-15 against 05-CONTEXT D-01..D-37 and the 22-plan Phase 4 `decide()` API; plan checker passed with 0 blockers after the scope expansion; defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate).
+Plans:
+**Wave 1**
+- [ ] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
+- [ ] 05-02-PLAN.md — Decide copy catalogue, DCU-09 guard, undo vocabulary
+- [ ] 05-03-PLAN.md — Decide tables (checks, settings, debts, links, statement periods), RLS, grants, pgTAP
+- [ ] 05-33-PLAN.md — fxConvert read-side module (custom-currency aware) for D-37
+- [ ] 05-34-PLAN.md — Record data layer: one_off and goal_id fields
+- [ ] 05-38-PLAN.md — db modules for decide_changes and savings_goals
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 05-05-PLAN.md — db modules and RPC wrappers for the Decide tables
+- [ ] 05-06-PLAN.md — Pure snapshot builder: full months, pending one-offs, payments counted once, FX, one-offs, changes (100% coverage)
+- [ ] 05-07-PLAN.md — Check inputs, quick-to-full carry, computeQuick/computeCheck/computeChip over decide()
+- [ ] 05-08-PLAN.md — parseQuick, date offsets, estimate-vs-actual, canUse, DateField past-date guard
+- [ ] 05-09-PLAN.md — Exhaustive code-to-copy maps (verdict, warnings, quick line, suppression, options)
+- [ ] 05-10-PLAN.md — Display and choice primitives (StateChip, WarningCard, StepBar, ...)
+- [ ] 05-11-PLAN.md — expo-notifications ~57, Wait and cooling-off reminders, tap observer
+- [ ] 05-28-PLAN.md — Input primitives (StepSlider, RateInput, MoneyInput)
+- [ ] 05-31-PLAN.md — Depth copy catalogue (D-24..D-37) and extended DCU-09 guard
+- [ ] 05-32-PLAN.md — Depth migrations: decide_changes, savings_goals, cooling_off_at, split estimates, link roles, transactions.one_off/goal_id
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 05-04-PLAN.md — apply_patches allow-list, record_decide_go / record_decide_outcome RPCs, pgTAP
+- [ ] 05-12-PLAN.md — Query keys, read hooks, useDecideSnapshot, other open checks
+- [ ] 05-14-PLAN.md — Steps 1 and 2, line editor
+- [ ] 05-15-PLAN.md — Step 3 verdict card, warnings, core sections, Assumptions
+- [ ] 05-17-PLAN.md — Step 4 alternatives, step 5 decision, written lines
+- [ ] 05-18-PLAN.md — Demo fixture (6 steady months) and engine-backed demo-outcome test
+- [ ] 05-35-PLAN.md — Chart geometry, cash-path chart, net-worth chart
+- [ ] 05-36-PLAN.md — ConfidenceChip, EdgeTag, CombineToggle, GoalProgress
+- [ ] 05-37-PLAN.md — Depth copy maps (verdict and input sides)
+- [ ] 05-39-PLAN.md — Journal helpers: past decisions, attach roles, saved so far
+- [ ] 05-50-PLAN.md — Record one-off toggle
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 05-13-PLAN.md — Quick-check form and result (home and first-read variants)
+- [ ] 05-16-PLAN.md — Step 3 setbacks and options, household scope toggle (hidden)
+- [ ] 05-19-PLAN.md — Queued mutations: checks, settings, links, card rate, statement periods
+- [ ] 05-41-PLAN.md — Step 3 verdict depth: combined line, worst month, confidence, edge, D-59 fact, warnings
+- [ ] 05-43-PLAN.md — Step 1 income change; step 2 promo, variable-rate stress, late fee
+- [ ] 05-44-PLAN.md — Step 2 running-cost prompts and estimate-gap notes
+- [ ] 05-45-PLAN.md — Step 4 "If it went into investing instead"
+- [ ] 05-46-PLAN.md — Step 5 cooling-off toggle, Wait goal preview, written lines
+- [ ] 05-51-PLAN.md — Demo seed v2 SQL, pgTAP, samples.ts, mirror check in CI
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 05-20-PLAN.md — Go ahead (one undo step, incl. investment and card payoff), Wait (+goal, reminder), Pass
+- [ ] 05-21-PLAN.md — Decide tab root, FAB, open checks with stacked chips, reminder reconcile
+- [ ] 05-22-PLAN.md — Past decisions and detail sheet (estimate vs actual, attach/unlink)
+- [ ] 05-23-PLAN.md — Onboarding rough figures and first check (cash-only skip path)
+- [ ] 05-42-PLAN.md — Step 3 depth sections: day by day, expected income, cushion and margins, runway
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 05-24-PLAN.md — Check flow layout, swipe interceptor, useCheckDraft
+- [ ] 05-27-PLAN.md — Your month, Lines, limit and rough-figure sheets, home order
+- [ ] 05-40-PLAN.md — Change mutations (add, edit, remove with undo)
+- [ ] 05-47-PLAN.md — Past decisions goal progress; tag and untag transfers to a goal
+- [ ] 05-52-PLAN.md — withoutCheckWrites and useBoughtCheckComputation
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 05-30-PLAN.md — Check flow route, screen, header, action bar, step 3 section order
+- [ ] 05-48-PLAN.md — Changes coming up card and sheet on Decide home
+- [ ] 05-49-PLAN.md — Cushion months on Lines; missing-rate state in Your month
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 05-29-PLAN.md — Commit a decision; decided checks (bought checks recalculated without their own writes)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 05-25-PLAN.md — Full local gate and [BLOCKING] human-gated production push (npm run supabase:db:push)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots at 402x874, 60 s first read, reminders, haptics, back
 **UI hint**: yes — this phase should carry the deepest testing and design-iteration budget in the roadmap; it is the product's actual moat.
 
 ### Phase 6: Grow
