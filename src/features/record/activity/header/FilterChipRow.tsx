@@ -109,7 +109,16 @@ export function FilterChipRow({
           }}
         />
       ))}
-      {scrolls ? <Chip label={t('activity.filter.clearAll')} onPress={onClearAll} /> : null}
+      {scrolls ? (
+        <Chip
+          label={t('activity.filter.clearAll')}
+          onPress={() => {
+            // Review WR-07: Clear all removes every chip, so focus goes to the Display chip.
+            pendingFocus.current = 0;
+            onClearAll();
+          }}
+        />
+      ) : null}
     </>
   );
 

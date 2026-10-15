@@ -112,4 +112,13 @@ describe('FilterChipRow', () => {
     expect(ref.current).not.toBeNull();
     expect(focusAccessibility).toHaveBeenCalledWith(ref.current);
   });
+
+  it('WR-07: Clear all moves focus to the Display chip', async () => {
+    const { getByRole, rebuild, ref } = await setup([cat, dir, acc]);
+    await fireEvent.press(getByRole('button', { name: 'Clear all' }));
+    await rebuild([]);
+    expect(ref.current).not.toBeNull();
+    expect(focusAccessibility).toHaveBeenCalledTimes(1);
+    expect(focusAccessibility).toHaveBeenCalledWith(ref.current);
+  });
 });
