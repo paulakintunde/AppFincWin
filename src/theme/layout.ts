@@ -61,6 +61,7 @@ export const size = {
   tabIcon: 22,
   avatar: 42,
   backCompact: 36,
+  filterBadge: 16, // 03.1 D-57: Filter count badge minimum diameter
   backDetail: 38,
   fab: 50,
   fabIcon: 20,
