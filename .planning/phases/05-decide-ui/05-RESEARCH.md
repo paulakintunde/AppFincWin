@@ -627,3 +627,514 @@ Similar tables: `decide_settings` (pk `user_id`, rough_income/rough_spending/rou
 
 **Research date:** 2026-10-15
 **Valid until:** 2026-11-14 (stable SDK line). Re-check if Phase 4's barrel names change during execution.
+
+
+---
+
+## Addendum: Depth expansion (D-24..D-37)
+
+**Researched:** 2026-10-15 (addendum to the research above; nothing above is rewritten)
+**Scope:** 05-CONTEXT D-24…D-37 (and D-24 amended, the 04 D-42 and D-24/D-44 amendments carried into 05-CONTEXT), 05-UI-SPEC "Depth surfaces" and assumptions 17–27, against `04-PHASE5-ALIGNMENT.md` "Engine depth expansion (D-41..D-58) — public API" and 04-CONTEXT D-41…D-60.
+**Confidence:** HIGH for codebase facts (file:line), HIGH for engine names (quoted from 04-05-PLAN `<interfaces>` and the alignment doc), MEDIUM for the new storage designs (Claude's discretion), LOW only where flagged.
+
+### Addendum summary
+
+The 29 existing Phase 5 plans (05-01…05-29) were written against D-01…D-23 only. `grep one_off|oneOff` across every 05 plan returns nothing, and no plan mentions goals, future changes, cash path, or `decide(`. So the expansion is not covered anywhere yet. It changes the plan set in five places:
+- **Record:** a new `transactions.one_off` column (D-29), and probably a `transactions.goal_id` tag (D-34). Both touch Record's insert/patch key lists, the `transactions_active` view, column grants and the `apply_patches` allow-list.
+- **New tables:** `decide_changes` (D-27) and `savings_goals` (D-34). Phase 6 inherits `savings_goals`.
+- **Snapshot builder (05-06):** it gains `oneOff`, `incomeSeries`, `futureChanges`, `investmentBalance` and per-check `projectionRates`. Under D-37 it must turn "row left out and counted" (A9) into a **`missing` result** whenever a needed rate is absent.
+- **Computation bridge (05-07):** it moves from `assess(snapshot, check)` to `decide(snapshot, check, otherChecks)`, plus `investmentViews`, `incomeAtRisk`, `runningCostPrompts` and `estimateBias`.
+- **Reminder module (05-11):** it becomes two-kind (wait and cooling-off), keyed by `${kind}:${checkId}`.
+
+Nine engine-API gaps or mismatches are listed under "Engine-API gaps vs 04-PHASE5-ALIGNMENT". The most consequential:
+- D-36 needs the estimate split three ways, but 05-03 stores only two estimate columns.
+- `PromoTerms.deferredInterest` is required by the engine, but no UI-SPEC input supplies it.
+- The UI-SPEC's "Loss of value … about {x}" has no amount source.
+- D-59's `cash_tight_before_payday` basis fact has no copy and no API name yet.
+- D-37's "latest stored rate for every line" conflicts with Phase 1's dated-stamp rule that Activity uses.
+
+**Primary recommendation:**
+- Amend the unexecuted plans in place: 05-03 tables, 05-04 allow-list, 05-06 builder, 05-07 bridge, 05-11 reminders, 05-18 seed.
+- Add three new plans: Record one-off toggle; Changes coming up; charts and goal progress.
+- Recompute every depth figure in render from `decide()`, as before. Persist only user inputs: check `inputs` jsonb, the `decide_changes` rows and the goal row.
+
+### Engine entry point Phase 5 must now use
+
+| Need | Call (04-PHASE5-ALIGNMENT) | Where Phase 5 calls it |
+|---|---|---|
+| Combined + standalone verdict, worst month, margins, stress, expected income | `decide(snapshot, check, otherChecks)` → `Decision { verdict, standalone, combinedDiffers, stacked, worstMonth, margins, stress, withExpectedIncome }` | 05-07 `computeCheck` (step 3 and the quick check) |
+| Chip only (home list, open-check rows) | `assess(snapshot, check, otherChecks)` → `Verdict` (= `decide(...).verdict`) | 05-12 / 05-21 open-checks list; cheaper than `decide` |
+| Options / alternatives / setbacks / wait / investment views on the combined position | pass `decision.verdict.context` and `decision.verdict` to `affordablePrice`, `buildOptions`, `buildAlternatives`, `applySetbacks`, `incomeAtRisk`, `buildWaitPlan`, `investmentViews` | 05-07 |
+| Cash path | `verdict.cashPath` (`CashPathReport`), `verdict.cashDip`, warning `cash_dip`, `verdict.basisCodes` | 05-15 / new chart plan |
+| Confidence | `verdict.confidence` (also on a missing Verdict and on `FirstRead`) | 05-15, 05-13 |
+| Running-cost prompts | `runningCostPrompts(itemType)`, `isNonCashCategory(c)`; `RunningCosts.nonCash` | 05-14 |
+| Estimate bias | `estimateBias(decisions: PastDecision[], currency)` | 05-14 (needs data, see D-36) |
+
+[VERIFIED: 04-PHASE5-ALIGNMENT.md L167-232; 04-05-PLAN.md L505-590]
+
+Bigint rule (unchanged, now wider): `Decision`, `CashPathReport`, `InvestmentViews`, `ProjectionRate` and `StressOutcome` all carry `Percent` bigints. They live only in `useMemo` and never in query data, mutation variables or `inputs` (Pattern 2, Pitfall 8 above).
+
+### D-29: one-off lines (Record field)
+
+**Schema facts:**
+- `transactions` boolean flags precedent: `is_refund`, `is_automatic` and `is_sample` were added in `20261010000100_record_polish_columns.sql` L11-14. [VERIFIED]
+- **`transactions_active` is `select *` and froze its column list.** Any new column needs the view re-created and its grants re-issued, exactly as L47-62 of that migration did ("RESEARCH Pitfall 1" comment at L47-49). If this is missed, every month read through the view silently lacks `one_off`. [VERIFIED]
+- Grants pattern: `grant insert (is_refund, is_automatic)` / `grant update (...)` at L64-65. [VERIFIED]
+- `clear_sample_on_edit` (L72-95) clears `is_sample` when any non-bookkeeping column changes. So toggling one-off on a sample line makes it real. That is consistent with D-10 of 02.2, so no change is needed. [VERIFIED]
+
+**Undo/patch path (all four places, same as Pitfall 5):**
+1. `apply_patches` allowed columns for `transactions`: `20261012000200_category_rules_patches.sql` L159-162 (add `'one_off'`).
+2. Type map: L257+ (add `when 'transactions.one_off' then 'boolean'`).
+3. `undo_log_fill` (L11-38) allow-lists **entities only**, not columns, so no change for `one_off`. It does change for the new entities below.
+4. This is a whole-function `create or replace`. **Fold it into 05-04's rewrite** (which already adds `debts` and `decide_checks`) so that there is one rewrite, not two. Ordering: the column migration must precede 05-04's function migration.
+
+**Client key lists** (`src/db/transactions.ts`):
+- `TRANSACTION_INSERT_KEYS` L33-57.
+- `TRANSACTION_PATCH_KEYS` L65-80.
+- `TRANSACTION_COLUMNS` select string L85-86. It must include `one_off`, or the undo capture's before-state (cached row) lacks it, and the edit-undo inverse cannot restore it.
+- `TransactionRow`/`NewTransaction`/`TransactionPatch` in `src/db/rows.ts` (L32+, L87 `is_refund` precedent).
+- Optimistic row builders (`cacheRows.ts`, `transactionCache.ts`, `batchInsert.ts` L133, `transactions.ts` L235/L425) need `one_off: false` defaults. TypeScript forces this once the field is non-optional.
+
+**UI:**
+- `TransactionSheet.tsx` L980-997 is where the `Automatic` and `Refund` `ToggleRow`s live (create and edit mode share it).
+- Add `ToggleRow` "One-off, won't recur" there.
+- Hide it when `state.direction === 'transfer'` (transfer legs are never income or spending).
+- Hide it when the row belongs to a series (`editRow?.recurring_series_id`) or `repeats` is set: a recurring line cannot be a one-off.
+- Form state: `transactionForm.ts`. Add `oneOff` to `FormState` (L54-56 precedent), the from-row mapper (L105-106), the insert builder (L279-280) and the patch diff (L299-300 precedent: `if (state.oneOff !== (row.one_off ?? false)) patch.one_off = state.oneOff`).
+- `one_off` must **not** be added to `TEMPLATE_FIELDS` (`recurringForm.ts` L79-93): it is never a series template field.
+- `TransactionDetailSheet` (173 lines) is read-only. Add a "One-off" row in `detailRows.ts` (refund precedent L54) so the flag is visible.
+- The UI-SPEC's "TransactionDetailSheet edit mode" is in fact `TransactionSheet` in edit mode.
+
+**Snapshot:** `RecordLine.oneOff` (04-05 L141). Add `one_off` to 05-06's `rows` Pick (05-06-PLAN L119) and map it. The engine reports `MoneyBasis.oneOffsExcluded {count, spending, income}` and `basisCodes` `one_offs_excluded` (alignment L205-208).
+
+**Seed:** `sample_data.sql` L121 inserts an explicit column list, so the default `false` applies. **No seed change.** The demo needs no one-offs (UI-SPEC basis row note).
+
+**Other row writers** (import, clone month, entry list, transfers) need no change: the default is false. The one judgement call is `cloneMonth.ts`, which copies a month. **Do not copy `one_off`**, because a cloned line is by definition recurring.
+
+### D-34: minimal savings goal (amends D-10)
+
+**Existing scaffolding: none.** `grep -i goal` over `src/` and `supabase/migrations/` returns no files. Phase 6 (GRW-01…03) is unplanned (ROADMAP "Plans: TBD"). [VERIFIED]
+
+**The prototype's goal shape** (what Phase 6 will expect; `FincWin United.dc.html` L3507-3513 and L3880-3881):
+- `{ id, n, cur, tgt (0 = open-ended), mo, ccy, note, auto, hh, srule, contrib }`.
+- A transaction carries `link: { k: 'goal', id }`, and a paid linked line moves `cur`. [VERIFIED]
+
+**Recommended table** (in 05-03's migration, or a sibling migration ordered after it). Owner-private like `decide_checks` (A4), with `household_id` carried for Phase 8 shared goals (prototype `hh`):
+```sql
+create table public.savings_goals (
+  id uuid primary key,
+  household_id uuid not null references public.households(id) on delete cascade,
+  created_by uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  updated_by uuid references auth.users(id) on delete set null,
+  check_id uuid references public.decide_checks(id) on delete set null,     -- D-34 origin; null for Phase 6 goals
+  name text not null check (char_length(btrim(name)) between 1 and 80),
+  currency text not null check (currency ~ '^[A-Z0-9]{2,4}$'),
+  target bigint check (target is null or target between 1 and 10000000000000),        -- null = open-ended (GRW-01, Phase 6); D-34 always sets it from WaitPlan.target
+  monthly_amount bigint check (monthly_amount is null or monthly_amount between 0 and 10000000000000),
+  ready_by date,                                                              -- WaitPlan.readyBy; null when the engine returns null
+  opening_saved bigint not null default 0 check (opening_saved between 0 and 10000000000000), -- Phase 6 (prototype cur); D-34 writes 0
+  is_sample boolean not null default false,
+  deleted_at timestamptz, version integer not null default 1,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+```
+- Phase 5 grants: `select` only, plus `update (deleted_at)` if the detail sheet can remove a goal on its own. Rows are written by the definer RPC `record_decide_outcome` (05-04) in the **same undo step** as the Wait decision (inverse op: `{deleted_at:'$now'}` on the goal). Phase 6 adds client insert/update grants and the columns it needs (`is_emergency` with a partial unique index, `note`, auto-contribution) additively.
+- **Saved so far is computed, not stored.** It equals `opening_saved` plus the sum of tagged, paid, live lines, converted to the goal currency (`homeAmountFor` when the goal currency is home; otherwise `projectionHomeAmount`; null → shown as "waiting for a rate"). A stored running balance would be a second source of truth that undo could desync.
+
+**Tagging transfers.** Two designs:
+
+| Design | Cost | Phase 6 fit |
+|---|---|---|
+| **A (recommended): `transactions.goal_id uuid null`**, guarded by a trigger requiring the goal to be live in the same household (FK `references savings_goals(id) on delete set null`, plus a household guard like `guard_debt`, 05-03-PLAN L174) | Same migration, view re-create, grants and allow-list edit as `one_off` (type `uuid`); TransactionPatch key; tag/untag = an ordinary `useEditTransaction` patch with undo (UI-SPEC "Transfer untagged" toast) | Matches the prototype `t.link`; GRW-03 auto-contribution can later add `recurring_series.goal_id` and stamp occurrences |
+| B: a `goal_links` table (like `decide_links`) | No Record change; its own RLS, guard and allow-list entity | A second link mechanism Phase 6 must reconcile with series |
+
+- Tag the **inbound leg** (positive amount into the savings or investment account). The transfer-pair trigger (`20260926000700_transfer_pairs.sql` L68) fires only on `transfer_id, deleted_at, account_id, original_amount`, so a `goal_id` patch on one leg does not disturb pairing. [VERIFIED]
+- The UI-SPEC's "Tag a transfer" reuses 05-22's `AttachLineSheet` (last 90 days, own-household rows; 05-22-PLAN L114) with a transfer-legs-in filter. No Activity transfer picker exists today. [VERIFIED: `src/features/record/activity/` listing]
+
+**Interplay with D-10's reminder:**
+- Wait still schedules the ready-by reminder from `ready_by`. The goal row now carries the same date. Keep `decide_checks.ready_by` as the reconcile source (05-11) and copy it to the goal, so there is one reminder per Wait.
+- `readyBy` null → no reminder, goal `ready_by` null (04 D-40 alignment L142).
+- Reopen or remove of a Wait decision → soft-delete the goal in the same undo step, and cancel the reminder.
+- **Do not add the goal's `monthly_amount` to `snapshot.monthlySaving`.** A2 already derives saving from transfers into savings accounts, so tagged transfers would count twice. State this in 05-06.
+
+**Phase 6 must inherit:**
+- the table name and columns;
+- `check_id` provenance;
+- computed saved-so-far (no stored balance);
+- `transactions.goal_id` (design A);
+- Wait decisions as existing goals;
+- the owner-private RLS, to be widened additively for shared goals in Phase 8.
+
+Record this in ROADMAP Phase 6 notes as an input, like D-17's PRICING amendment.
+
+### D-37: currency conversion
+
+**Phase 1 API** (`src/engine/money/rates.ts`, all VERIFIED):
+- `ScaledRate` is a bigint at `RATE_SCALE = 10`, as units per 1 EUR (fx base EUR).
+- `parseRate(s)`.
+- `convertMinor(amount, fromPerEur, fromExp, toPerEur, toExp)`: one half-up rounding; throws past `MAX_SAFE_INTEGER`.
+- `convertMinorExact` with custom legs (RD-03).
+- `crossRate(fromPerEur, toPerEur)` = to/from at 10 dp.
+- `formatRate(r)` gives a 10-dp string.
+- `customPerEur`.
+
+**Where stored rates come from:**
+- RPC `fx_latest_rates(p_on_or_before)` returns `(quote, rate text, rate_date, source)`, one row per quote, frankfurter preferred (`20260924000600_fx_monitoring.sql` L106-117).
+- It is read through `fetchFxLatest` (`src/db/fxRates.ts`) and `useFxLatest()` (`src/data/queries/fxLatest.ts`, key `queryKeys.fxLatest()`, `staleUnlessEmpty(1h)`). [VERIFIED]
+
+**Conversion helpers already used by reads** (`src/data/queries/homeAmount.ts`):
+- `latestPerEur(rates, code)` (L12-21, EUR → 1).
+- `homeAmountFor(row, home, rates)` (L23-48): uses the row's **own stamped** `home_amount` when the stamp's home currency still matches; otherwise it cross-converts via the row's stored `orig_per_eur`.
+- `projectionHomeAmount(amount, cur, home, rates)` (L51-68): the latest rate on both legs.
+- Both return `null` on any missing rate. They never guess.
+
+**The FX depcruise rule:**
+- `fx-fetch-never-from-reads` (`.dependency-cruiser.cjs` L31-36) forbids `src/data/queries` and `src/engine` from reaching `src/db/fxResolve` (the server fetch door), even transitively.
+- The builder (`src/features/decide/snapshot/`) and its hook (`src/data/queries/decide.ts`) must import only `homeAmount.ts` / `@/engine/money`.
+- **Custom currencies:** `latestPerEur` does not resolve them (it only looks up `rates` by quote), so `projectionHomeAmount` returns null for a custom-currency balance. The only custom-aware resolver is the private `resolvePerEur` in `src/data/mutations/provisional.ts` L79-118, which imports no `fxResolve`. Recommend extracting it into a pure read-side module (`src/data/queries/fxConvert.ts`, also usable by Activity) so a custom-currency account does not force every check to `missing`. Run `npm run depcruise` after the move.
+
+**Conversion per snapshot input:**
+
+| Input | Source currency | Convert with | Missing rate → |
+|---|---|---|---|
+| Past lines (`RecordLine`) in the months used | row stamp | `homeAmountFor` (dated stamp, see OQ-A1) | `missing` (D-37), **replacing A9's "exclude and count"** |
+| Account balances (`cashOnHand`, `investmentBalance`) | account currency | `projectionHomeAmount` (latest) | `missing` |
+| Bills, pay series (`latestAmount`) | series currency | `projectionHomeAmount` | `missing` |
+| Debts (`balance`, `minimum_payment`, card `min_floor`) | `debts.currency` | `projectionHomeAmount` | `missing` |
+| Future changes | `decide_changes.currency` | `projectionHomeAmount` | `missing` |
+| Limits typed in another currency (`decide_settings.currency` ≠ home) | settings currency | 05-06 currently treats these as null (defaults); D-37 lists only accounts, lines and debts | keep the 05-06 rule (no conversion; show the default), see OQ-A6 |
+| Other open checks' inputs (`inputs` amounts) | the check's currency at entry | none: a check whose currency ≠ home is left out of `otherChecks` and counted (see D-24) | — |
+
+**"Needed" is scoped:**
+- Only rows inside the lookback window (≤ 12 months before the current month, 05-06) and live accounts, series, debts and changes can force `missing`.
+- A two-year-old unconverted row must not block a verdict.
+- `rate_pending` rows (an offline foreign entry not yet stamped) inside the window also force `missing`. The UI-SPEC copy "Lines in {CUR} are waiting for a rate" covers this, and it clears on its own once the server stamps the row.
+
+**Builder output change** (05-06):
+- Add a fourth result kind: `{ kind: 'unconverted', currencies: string[], rowCount: number }`.
+- For every logged/rough result, also return `conversions: { currency, rate: ScaledRate-as-string, rateDate }[]`.
+- The engine has **no FX missing-reason code** (the alignment's "Not engine work" L236 puts conversion in Phase 5). So the UI renders the UI-SPEC missing-rate verdict ("Missing terms", the title and body, the link to waiting lines) without calling the engine. The quick check shows the same chip and disables "Run the full check" (assumption 27).
+- The rough first read uses the onboarding account's currency (Pattern 5 above). A non-home account balance follows the same rule.
+
+**Basis line "converted from EUR at 1.47 on 14 Oct":**
+- rate = `crossRate(fromPerEur, homePerEur)` (home per 1 unit of the foreign currency), rendered from the 10-dp string by a pure display rounder (string or bigint maths, 2–4 decimals, half-up). Never via `Number()`.
+- date = the **earlier** `rate_date` of the two legs (the provisional.ts `earlierDate` precedent).
+- With several currencies, use the UI-SPEC's multi-currency form. Each currency gets one row in "Assumptions in play" and one reason row in the D-28 sheet.
+
+### D-26: cash path chart
+
+**Existing SVG usage:** glyphs only.
+- `TabGlyphs.tsx`, `HeaderGlyphs.tsx`, `AppleMark.tsx`, `GoogleMark.tsx` (all `Path`, `strokeLinecap`, no charts).
+- `react-native-svg` 15.15.4 is installed.
+- `HeaderGlyphs.test.tsx` proves SVG renders under jest-expo with no mock. [VERIFIED]
+- **No chart component exists to copy.** Build `CashPathChart` and `NetWorthChart` over one shared pure geometry helper.
+
+**Recommended structure:**
+- `src/features/decide/charts/chartGeometry.ts` is PURE and has a 100% threshold.
+- It maps `MinorUnits[]` (91 points, or horizon+1) plus a box to path `d` strings, y ticks (max / 0 / min rounded to whole units **in minor units before** scaling), the marker point and the scrub index from x.
+- Pixel coordinates are floats. That is allowed: they are geometry, never money, and never fed back into any amount.
+- Labels go through `useMoneyFormatter`.
+- `Path` with `strokeDasharray="4 4"` for "Without"; solid for "With this".
+- `Line` for the zero line (`line3`) and the cushion line (`warn1`, dashed).
+- `Circle` markers.
+
+**Tokens (all exist, `src/theme/tokens.ts`):** `ink`, `inkSoft1` (L16), `danger` (L22), `warn1` (L26), `line3` (L30), `inkMuted`, `categoryTint.Business` (L76). `noRawColours.test.ts` must still pass. [VERIFIED]
+
+**Scrub:**
+- `GestureDetector` + `Gesture.Pan().runOnJS(true)`, the precedent being `src/features/navigation/SwipeBack.tsx` L40-41 (the GH 2.x API exposes `runOnJS(boolean)`).
+- This keeps the index state in React with no worklet.
+- Throttle the readout to index changes.
+
+**Accessibility:**
+- Wrap the `Svg` in a `View` with `accessible`, `accessibilityRole="image"` and `accessibilityLabel` equal to the text alternative.
+- Set `importantForAccessibility="no-hide-descendants"` on the inner Svg.
+- The text alternative line is **always rendered** below the chart, so screen-reader and large-text users never need the chart (UI-SPEC D-26).
+- Colour is never the only cue: dash vs solid plus the legend words.
+
+**Reduced motion:**
+- `useMotion()` / `useReduceMotion()` (`src/theme/motion.ts` L31, L60).
+- The chart draws once with no animation in every case; no path-draw animation is specified.
+- The D-34 progress bar animates width with `DURATION.progress` (550 ms), or 0 when reduced. Precedent: `ThisMonthCard.tsx` L227-232 uses `size.homeBarHeight` (`src/theme/layout.ts` L76 = 8).
+
+**Data:**
+- `Assessment.cashPath` is `{status:'available', withoutPurchase[91], withPurchase[91], lowestWith, lowestWithout}` or `{status:'unavailable', code:'cash_path_unavailable'}`.
+- `CashPathPoint.date` is `'YYYY-MM-DD'`; format it with the locale date formatter.
+- The cushion line = `verdict.context.limits.reserve`.
+
+**Snapshot inputs it needs:**
+- `incomeSeries: RecurringIncome[]`: live series with `amount > 0`, `confirmed: true`, `freq` from `recurring_series.freq` (`weekly|fortnightly|monthly|quarterly|yearly`, `20260926000300_recurring_series.sql` L35), `latestAmount` converted, and `lastPaidDate` as for bills.
+- **D-60 also uses `incomeSeries` for steadiness and averages** (weekly and fortnightly pay smoothed). So the builder must pass it whenever pay series exist, not only "for the chart".
+- Debt-payment series stay out of `bills` (04-05 L152; 05-06 already excludes them).
+
+**D-59 (pending in 04 plans):**
+- `cash_dip` fires only when the purchase causes or deepens the dip. A pre-existing dip becomes basis fact `cash_tight_before_payday` with a date and an amount (04-CONTEXT L217).
+- `BasisCode` in 04-05 L474 is still `'cash_path_unavailable' | 'one_offs_excluded'`, so **the name and the carrying field are not in the contract yet** (another agent is editing 04-17/04-05/04-12).
+- Phase 5 needs both copy (basis detail row and the "Day by day" summary) and a field carrying the date and amount.
+- The UI-SPEC `cash_dip` description "Without it, the lowest is {amt} on {date}" is still valid, since both lows are always reported.
+
+### D-27: future changes
+
+**Engine input:** `DecideSnapshot.futureChanges: FutureChange[] { id, kind: 'income'|'spending', monthlyAmount (signed), startMonth 'YYYY-MM', endMonth|null, currency }`. **Output:** `Decision.worstMonth: WorstMonthReport { month, offset 1..12, leftAfter, leftAfterNow, shortfall, differsFromNow }`. The body line shows when `differsFromNow && shortfall > 0`. (04-05 L509-516, alignment L196-199.)
+
+**Storage: a new table, not `decide_settings` jsonb.** The UI-SPEC needs per-row add, edit and remove with an undo toast ("Change removed"). Every existing undo op is per-row with `expectedVersion` (`apply_patches`), and a jsonb array would need whole-array patches and lose per-row conflict detection.
+```sql
+create table public.decide_changes (
+  id uuid primary key,
+  household_id uuid not null references public.households(id) on delete cascade,
+  created_by uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  updated_by uuid references auth.users(id) on delete set null,
+  kind text not null check (kind in ('income', 'spending')),
+  name text check (name is null or char_length(btrim(name)) between 1 and 80),
+  monthly_amount bigint not null check (monthly_amount <> 0 and abs(monthly_amount) <= 10000000000000),  -- sign from "Goes up / Goes down"
+  currency text not null check (currency ~ '^[A-Z0-9]{2,4}$'),
+  start_month text not null check (start_month ~ '^\d{4}-(0[1-9]|1[0-2])$'),
+  end_month text check (end_month is null or end_month ~ '^\d{4}-(0[1-9]|1[0-2])$'),
+  is_sample boolean not null default false,
+  deleted_at timestamptz, version integer not null default 1,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
+  constraint decide_changes_order check (end_month is null or end_month >= start_month)
+);
+```
+- RLS: owner-private (`created_by = auth.uid() and household_id in user_household_ids()`), "stored per user" (D-27).
+- Client insert and update grants on the user columns.
+- Edits and remove go through `apply_patches` as entity `decide_changes`: add it to `undo_log_fill`'s entity list (L27) and the allowed-columns `case`.
+- **Pitfall:** the ownership branch's `else` is "categories: owner_id …" (`20261012000200_category_rules_patches.sql` L221). A new entity that is not named explicitly falls into that branch and is refused (no `owner_id`). Every new entity (`debts`, `decide_checks`, `decide_changes`, `savings_goals`) needs its own `elsif` **before** the `else`.
+
+**Builder rules:**
+- Live rows only, with `end_month is null or end_month >= current month`.
+- Converted to home (D-37).
+- `startMonth`/`endMonth` passed through.
+- The sheet's `DateField` (`minDate` = first of this month) stores `YYYY-MM` from the picked local date (Pitfall 4 above: local-date strings, never `toISOString`).
+- The engine scans months 1..12 after `asOf`'s month. A change starting this month affects offset 1 onward. State that in the empty-state copy only if needed.
+
+**Query key:** `['decide', 'changes', userId, householdId]`. It sits outside `['transactions', hh]`, which is fine because it is not row-derived. Its mutations invalidate it, and every check recomputes in render.
+
+### D-24: combined checks
+
+**How `decide()` takes them:**
+- `otherChecks: readonly StackedCheckInput[] { check: PurchaseCheck; purchaseRule: SplitRule | null }`.
+- Pass **all other open checks** (D-41 amended); toggle off → `[]`.
+- `purchaseRule` is null in personal scope (always, until Phase 8).
+- Output: `standalone` (null when `[]`), `combinedDiffers`, `stacked[] {index, status: 'applied'|'missing', reasons, mineDayOne, mineMonthly}`. [VERIFIED: alignment L175-179]
+
+**Ordering:**
+- Totals are order-independent (D-41 amended), but pass `created_at` ascending, then `id`, so output is deterministic and test fixtures are stable.
+- The "other" set is checks with `status = 'open'` and `deleted_at is null`, the current check excluded.
+- `waiting` (Wait and save) checks are **not** stacked: no money is committed until they become Go ahead. See OQ-A4.
+
+**Building each stacked check:**
+- 05-07's `toEngineCheck(inputs, ctx)` returns `{ ok: false, missing: 'price'|'method' }` for an incomplete draft (05-07-PLAN L77). Such a draft **cannot** be passed at all.
+- Filter those out, plus any check whose currency differs from home (D-37), and count them.
+- UI line in "Assumptions in play": "{n} open check not counted: no price yet". This copy is not in the UI-SPEC; add it to the catalogue.
+- Stacked entries the engine itself reports `missing` (e.g. a loan with no APR) carry `reasons`. Show them in the same row.
+
+**Toggle state storage:**
+- Per check, **inside `decide_checks.inputs`** as `combine: boolean` (absent = true), autosaved with no undo step (A5).
+- **No migration needed.** The `pg_column_size < 32768` and object-type checks still apply.
+- The demo seed's sofa check carries `combine: false` (D-24 amended, frame 1).
+- The quick check is not a stored check, so its toggle is component state, on by default per session.
+
+**Quick check:**
+- Its "other checks" are *all* open checks; it is not one of them itself.
+- The UI-SPEC shows the pill only "with 2 or more open checks". With exactly one open check the quick check would stack it invisibly (toggle hidden, default on). See OQ-A3.
+
+**"Fits on its own; not with your other {n} open check(s)":**
+- n = the count of `stacked` entries with `status === 'applied'`.
+- Show only when `combinedDiffers`. The chip, title and warnings come from `decision.verdict`.
+
+**Changed-since-you-looked (D-15):**
+- `last_seen_state` compares against the state the user sees, which is the combined state when the check's toggle is on. Another check's edit can therefore flip this check's marker.
+- That is the intended D-41 amended behaviour; note it in 05-21's test.
+
+**Performance:**
+- The home list with N open checks makes N `assess` calls, each positioning N−1 others, so N(N−1) plan resolutions.
+- The step 3 screen makes one `decide` call. Inside it are the standalone and combined runs, the 91-day path, 12 future months, up to 2 stress re-runs, and the expected-income re-run.
+- The plan maths is integer loops of at most 600 months; card minimum simulation is bounded by the 50-year cap.
+- At N ≤ 10 this is well under a frame [ASSUMED, not measured: Phase 4 is not executed].
+- Mitigations:
+  - (1) `assess`, not `decide`, for list chips.
+  - (2) `useMemo` keyed on the snapshot object identity plus a stable `JSON.stringify` of the inputs set.
+  - (3) A Jest timing smoke test (10 open checks, home list compute < 100 ms on CI) as an early warning, non-gating.
+  - (4) `canUse('multipleOpenChecks')` (D-16) stays the future Pro gate.
+- `bisection` (`affordablePrice`) runs only for the open check's options section, not for the list.
+
+### D-35: cooling-off reminder (reuse of the D-10 module)
+
+05-11's module today is keyed by check id only:
+- `REMINDER_STORAGE_KEY = 'fincwin:decide-reminders'`;
+- `scheduleWaitReminder(checkId, readyBy, today)`;
+- `cancelWaitReminder(checkId)`;
+- `reconcileWaitReminders(waiting, today)`;
+- `data: { checkId }`.
+
+A Wait (or Pass, or Go ahead) on a `needs_spreading` check with cooling-off on gives **two reminders for one check**. Changes:
+- **Kinds:** `type ReminderKind = 'wait' | 'cooling_off'`. Storage map key `${kind}:${checkId}`. `data: { checkId, kind }`. The observer validates `kind` against the enum, in addition to the UUID regex, before routing. Both kinds route to `/decide/check/[id]?step=3` (05-29 defines how a decided check opens: read-only, recomputed).
+- **Trigger:** `DATE` at `decided_at + 48h`, not `TIME_INTERVAL`, so reconcile can rebuild it from server state. Android stays inexact (no `SCHEDULE_EXACT_ALARM`, research above).
+- **Server source of truth:** a new `decide_checks.cooling_off_at timestamptz` column. It is decision state, so **no client grant**: written by `record_decide_go` / `record_decide_outcome` from a `p_cooling_off boolean` argument. The RPC computes `now() + interval '48 hours'` server-side and refuses it unless the client asserts size `needs_spreading`; the size is not server-verifiable, so it is a UI rule.
+- **Reconcile:** schedule missing reminders for `(waiting and ready_by >= today)` and `(cooling_off_at > now())`. **Cancel scheduled ones whose check no longer qualifies.** That covers undo of a decision: `apply_undo_step` restores the check to open server-side, and the next reconcile, or the undo mutation's `onSuccess`, cancels the reminder. Reconcile is the backstop for second devices and reinstall.
+- **Copy:** fixed. Title "Check ready", body "A check you saved is ready to look at again…", no amount or name (UI-SPEC D-35), and a different string from the Wait reminder. The test asserts both payloads.
+- **Permission:** same flow as Wait. A refusal still saves the decision, with a toast.
+- The wipe handler (`cancelAllScheduledNotificationsAsync`) already covers both kinds.
+
+### D-28, D-25, D-30, D-31, D-32, D-33, D-36: data the UI must supply
+
+| Decision | Engine reads | Already in snapshot/check? | Phase 5 must add |
+|---|---|---|---|
+| D-28 confidence | `fullMonths`, `steadiness`, `firstRead` (inside the engine) | yes | nothing; the reasons sheet also lists builder facts (one-offs, conversions), which are not engine codes |
+| D-25 cushion/edge | `context.limits.reserveHalfMonths` (null when typed), `money.steadiness`, `Decision.margins[].flag` | yes | nothing. Copy: halves → "3 / 4.5 / 6 months"; `insufficient` under 3 full months reads "3 months — your income steadiness isn't known yet" (05-CONTEXT amended), **not** the UI-SPEC's older "(6) because there isn't enough history yet": fix the UI-SPEC D-25 reason list |
+| D-30 promo / variable / late fee | loan/card `promo?: PromoTerms { apr, months, deferredInterest }`, `variable?: boolean`; instalment `lateFee?`, `lateFeeCapTotal?` | no | `inputs` fields: `promo: { aprText, months, deferredInterest }`, `variable`, `lateFee`, `lateFeeCapTotal`. Rates as decimal strings, `percent()` at the boundary. **Gap:** `deferredInterest` (required boolean, needs promo apr 0) and `lateFeeCapTotal` have no UI-SPEC input |
+| D-31 investment views | `snapshot.projectionRates` (≤3), `investmentBalance`; `InvestmentViewsInput.horizonMonths` | no | `inputs.projectionRates: string[]` (≤3, per check, assumption 17), and `inputs.investHorizon: number|null`. The builder output is shared across checks, so 05-07 makes a per-check snapshot `{...base, projectionRates, projectionReturn: first ?? null}` (memoise on base identity plus rates). `investmentBalance` = converted balances of live `investment` accounts (`accounts.kind` enum, `20260924000300_accounts.sql` L17); 05-06 currently computes `cashOnHand` from cash/checking/savings only, so add the investment sum. Buy checks only (`investmentViews(context, check: BuyCheck, …)`) |
+| D-32 income change | `BuyCheck.incomeChange?: { monthlyAmount (signed, ≠0), startDate, likelihood }` | no | `inputs.incomeChange: { direction: 'raises'|'lowers', amount, startDate, likelihood }` → signed in `toEngineCheck`. Output `Decision.withExpectedIncome` (payback), `incomeAtRisk(verdict.context, verdict, setbacks)` → `runwayLost`, per-setback `paymentsMet` / `breaksBecauseOfPurchase` |
+| D-33 running-cost prompts | `runningCostPrompts(itemType)`; `CostLine.category?`; `RunningCosts.nonCash` | partly (itemType) | prompt rows stored as `CostLine`s with `category` and a blank amount (`counted: false` until typed). **Gap:** the UI-SPEC gives Loss of value no amount field yet shows "about {x} over {n} months" "if the engine returns it". `nonCash` is the *counted* loss-of-value **amount the user typed**, so with no field it is always 0 (04 D-07: never invented). Either give Loss of value an optional amount field (non-cash, never in the month) or drop the "about" line |
+| D-36 estimate gap | `estimateBias(decisions: PastDecision[], currency)`, with `PastDecision.estimate { dayOne, monthlyPayment, runningCosts }` and `actual {…|null}` | **no** | see "D-36 data gap" below |
+
+**D-36 data gap.** 05-03 stores `estimate_day_one` and `estimate_monthly` (payment plus running combined, 05-03-PLAN L101-102). 05-08's `compareEstimate` compares only those two (05-08-PLAN L128). `estimateBias` needs three figures and per-figure actuals. Add:
+- `decide_checks.estimate_monthly_payment bigint`, `estimate_running bigint`, written by `record_decide_go` and kept RPC-only like the other estimate columns. Keep `estimate_monthly` = their sum for 05-22's display.
+- `decide_links.role text check (role in ('day_one','payment','running_cost'))`.
+  - The RPC sets it on written links: the cash or card expense row is `day_one`; the series named by `debts.series_id` or the instalment series is `payment`; the running-cost series are `running_cost`.
+  - For attached links, `AttachLineSheet` (05-22) adds a three-chip "Counts as" row. Default it by date: within 7 days of `decided_at` → day one, else running cost. The user can change it. **This is UI not in the UI-SPEC** (flag for the UI-SPEC re-check).
+- A pure `toPastDecisions(decisions, links, linkedLines, today)` beside `compareEstimate`:
+  - A decision "has actuals" once its 90-day checkpoint is reached; the 30-day checkpoint is used if 90 is not yet reached. See OQ-A5.
+  - A figure's actual is null when no linked line has that role.
+  - Monthly actuals are the window sum ÷ whole months elapsed (half-up, `divideHalfUp`).
+- Queries: all bought decisions, their links, and the linked rows by id. Linked rows may fall outside the cached months, so add a `fetchTransactionsByIds` under `['transactions', hh, 'byIds', …]`, keeping it in the transactions prefix so edits invalidate it.
+- Currency: pass the home currency. Decisions whose stored currency differs are excluded by the engine filter [ASSUMED from the signature `estimateBias(decisions, currency)`; confirm at 04-16].
+
+### Engine-API gaps vs 04-PHASE5-ALIGNMENT
+
+| # | Gap | Severity | Resolution |
+|---|---|---|---|
+| G1 | D-59 `cash_tight_before_payday` (date, amount) has no `BasisCode` member or field in 04-05 (L474) yet; the `cash_dip` shortfall meaning changes ("extra depth the purchase adds") | Medium | Re-read 04-05/04-17/04-12 once the parallel edit lands. Phase 5 adds copy for the basis row and the "Day by day" summary. The demo seed must not trigger it |
+| G2 | `PromoTerms.deferredInterest` is required; the UI-SPEC promo row has no input | Medium | Add a `ToggleRow` "Interest is charged back if it isn't cleared" (shown only when the promo rate is 0), default off, never inferred. Or pass `false` and say so in Assumptions. User call (OQ-A2) |
+| G3 | `lateFeeCapTotal?` has no UI | Low | Omit (absent = none). Optional "Fees capped at" field later |
+| G4 | Loss of value has no amount source | Low | See D-33 row; recommend an optional amount field |
+| G5 | `PastDecision` needs a 3-way estimate and per-figure actuals; 05-03/05-08 store 2 | Medium | New columns plus `decide_links.role` (D-36 above) |
+| G6 | No engine code for "rate missing" | None (by design) | Builder `kind: 'unconverted'`; UI-only missing state (D-37) |
+| G7 | `StackedCheckInput.check` must be a complete `PurchaseCheck`; drafts can't be passed | Low | Filter and count in the builder (D-24) |
+| G8 | 04-05 `RoughFigures`/`FirstRead` carry `confidence` but no combined-check input; the first read ignores other open checks | None | Onboarding has no open checks; the quick check before a full month uses `firstRead` with no stacking. Document it |
+| G9 | `estimateBias(decisions, currency)` currency semantics are not stated in the alignment | Low | Confirm at 04-16 execution: filter or require one currency |
+
+### D-37 / D-24 / D-34 / D-27: migration and plan placement
+
+| Change | Plan (amend or new) | Order |
+|---|---|---|
+| `decide_changes`, `savings_goals` tables; `decide_checks.cooling_off_at`, `estimate_monthly_payment`, `estimate_running`; `decide_links.role` | **amend 05-03** (same migration; table count 5 → 7, so update its grep acceptance criteria) | 1 |
+| `transactions.one_off`, `transactions.goal_id` (+ guard trigger), `transactions_active` re-create + grants | **new** migration `…_record_one_off_goal_tag.sql` (in 05-03 or a new Wave-1 plan) | 2 (after `savings_goals`) |
+| `apply_patches` / `undo_log_fill`: `transactions.one_off` (boolean), `transactions.goal_id` (uuid), entities `decide_changes` and `savings_goals` with explicit ownership branches; `record_decide_go`/`record_decide_outcome` gain `p_cooling_off`, the goal insert (wait), split estimates and link roles | **amend 05-04** | 3 |
+| db modules `decideChanges.ts`, `savingsGoals.ts`; `transactions.ts` key lists | amend 05-05; Record keys in the new Record plan | 4 |
+| builder: `oneOff`, `incomeSeries`, `futureChanges`, `investmentBalance`, `unconverted` kind, `conversions`, custom-currency resolver extraction | amend 05-06 | 4 |
+| bridge: `decide(…, otherChecks)`, per-check snapshot, investment views, income at risk, prompts, `toPastDecisions` + `estimateBias` | amend 05-07 (+05-08 for `toPastDecisions`) | 5 |
+| two-kind reminders | amend 05-11 | 2 |
+| Record one-off toggle + detail row | **new** plan (Record files only) | after 4 |
+| `CashPathChart`, `NetWorthChart`, `chartGeometry`, `GoalProgress`, `ConfidenceChip`, `EdgeTag` | **new** primitives plan (beside 05-10) | 2–3 |
+| Changes coming up card + sheet + mutations | **new** plan (after 05-21/05-27) | late |
+| step 1 income change; step 2 promo/variable/late fee/prompts/estimate gap | amend 05-14 | — |
+| step 3 basis row, edge tag, confidence, cash-path section, expected income, runway lost | amend 05-15 / 05-16 | — |
+| step 4 investing section; step 5 cooling-off, goal preview | amend 05-17 | — |
+| Wait → goal; cooling-off arg | amend 05-20 | — |
+| goal progress + tag transfers in Past decisions | amend 05-22 | — |
+| seed: confirmed monthly **pay series** (cash path available, D-60 smoothing), steady income, sofa `inputs.combine = false`; assertions below | amend 05-18 | — |
+| device checks: chart, cooling-off reminder, one-off toggle | amend 05-26 | last |
+
+**Demo seed assertions to add in 05-18:**
+- `decide(snap, sofa, [])` → `fits`, `combinedDiffers` false.
+- `decide(snap, car, [sofa])` → `adjust`, at least 2 warnings, `needs_spreading`.
+- Both have `basisCodes` empty: no `cash_path_unavailable`, no one-offs, no `cash_tight_before_payday`.
+- No `on_edge` on the frame-2 lines that would add a tag in the frame (optional).
+- `worstMonth.differsFromNow` false (no seeded changes).
+- **Confidence:** with "≥4 full months" (05-PLANNING-NOTES OQ4) the chip reads **"Fair basis"** in frames 1–2. "Strong" needs 6 full months and Steady (04 D-46). See OQ-A7.
+
+### Addendum Open Questions (RESOLVED)
+
+> **Resolution (2026-10-15, plan-phase, non-interactive):** resolved for planning per `05-PLANNING-NOTES.md` § "Addendum open questions". The recommendation was taken wherever it needs no change to the locked UI-SPEC; where it would change the UI-SPEC (OQ-A2, OQ-A3, OQ-A9), the UI-SPEC was followed as written and the item is flagged for the user.
+
+1. **OQ-A1. D-37 "latest stored rate" vs Phase 1's dated stamps for past lines.**
+   - What we know: `homeAmountFor` keeps each row's own stamped home amount (Phase 1 D-05: history is cross-converted through the row's stored base, never re-rated). Activity's month totals use it. D-37 says convert "every account, line and debt … at the latest stored rate".
+   - What's unclear: whether past lines should be re-rated at today's rate.
+   - Recommendation: past lines keep their dated stamp, so Decide's averages equal Activity's month totals and nothing shifts with daily rates. Balances, series, debts and changes use the latest rate (that is what the basis line names). Needs user confirmation, since it reads a locked decision narrowly.
+2. **OQ-A2. Deferred interest input (G2).** Recommendation: add the 0%-only toggle, default off.
+3. **OQ-A3. Quick-check combined pill with exactly one open check.** The UI-SPEC shows the pill at ≥2 open checks, but the quick check is not itself an open check. Recommendation: show it at ≥1 open check for the quick check, and keep ≥2 for the check flow. That is a UI-SPEC tweak.
+4. **OQ-A4. Do `waiting` (Wait and save) checks stack?** Recommendation: no. Only `open` checks stack, and goal monthly amounts are not added to `monthlySaving` (A2 transfers already count them once saved).
+5. **OQ-A5. D-36 "decision with actuals".** Recommendation: counts once the 90-day checkpoint is reached, using 30-day figures before that. Attached links carry a role chosen in `AttachLineSheet`.
+6. **OQ-A6. Limits typed in a former home currency.** Recommendation: keep 05-06's rule (treated as defaults, with an Assumptions row) rather than convert. D-37 does not list limits.
+7. **OQ-A7. Demo confidence chip.** Recommendation: seed 6 full months of steady income, so frames read "Strong basis". A "Fair/Rough basis" chip in a store screenshot undercuts the caption.
+8. **OQ-A8. Goal tagging design.** Recommendation: design A (`transactions.goal_id`) over a link table.
+9. **OQ-A9. UI-SPEC fixes found here:**
+   - the D-25 reason list must use the amended "3 months — … isn't known yet" wording;
+   - the "Counts as" row in `AttachLineSheet`;
+   - D-59 copy;
+   - the deferred-interest toggle;
+   - the loss-of-value amount field;
+   - the "open check not counted" Assumptions row.
+
+### Addendum Assumptions Log
+
+| # | Claim | Section | Risk if wrong |
+|---|---|---|---|
+| A11 | Past lines keep dated stamps under D-37 (OQ-A1) | D-37 | Decide averages differ from Activity totals, or move daily |
+| A12 | `savings_goals` owner-private; saved-so-far computed; `transactions.goal_id` tag | D-34 | Phase 6 reshapes (additive) |
+| A13 | Toggle `combine` stored in `inputs` jsonb; quick-check toggle is session state | D-24 | Toggle not remembered across devices for the quick check |
+| A14 | N ≤ 10 open checks recompute within a frame | D-24 | Jank on Decide home; mitigated by `assess` + memo |
+| A15 | Cooling-off scheduled at server `cooling_off_at` (decided_at + 48h) | D-35 | Reminder drift if client-computed |
+| A16 | Incomplete or foreign-currency open checks are left out of stacking and counted | D-24 | The combined verdict ignores a draft the user expects counted |
+| A17 | `decide_links.role` with a date-based default for attached lines | D-36 | Bias figures misattributed |
+| A18 | `cloneMonth` does not copy `one_off` | D-29 | A copied one-off would silently re-enter averages, or vice versa |
+
+### Validation Architecture delta
+
+Additional rows for the test map (framework, commands and sampling are unchanged):
+
+| Req / decision | Behaviour | Type | Command | Exists? |
+|---|---|---|---|---|
+| D-29 | `one_off` insert/patch keys; form diff; toggle hidden for transfer and series rows; undo restores | unit + RNTL + pgTAP | `npx jest src/features/record/entry/__tests__/transactionForm.test.ts src/db/__tests__/transactions.test.ts`; `supabase test db` (view column present, grant, `apply_patches` accepts `one_off`, rejects non-boolean) | ❌ |
+| D-29 | builder maps `one_off` → `RecordLine.oneOff`; basis row shows "{n} one-off left out" | unit | `npx jest src/features/decide/snapshot` | ❌ |
+| D-37 | missing rate in window → `kind 'unconverted'`; out-of-window missing does not block; custom-currency balance converts; basis rate string from bigint (no `Number`) | unit (100% folder) | `npx jest src/features/decide/snapshot` | ❌ |
+| D-37 | depcruise: snapshot and the extracted fx module never reach `fxResolve` | static | `npm run depcruise` | ✅ rule exists |
+| D-24 | stacked set = open, complete, home-currency checks in `created_at` order; toggle off → `[]`; difference line only when `combinedDiffers`; count = applied | unit + RNTL | `npx jest src/features/decide/__tests__/computeCheck.test.ts src/features/decide/check/__tests__/VerdictCard.test.tsx` | ❌ |
+| D-24 | timing smoke: 10 open checks, list compute < 100 ms | unit (non-gating) | `npx jest src/features/decide/__tests__/stackPerf.test.ts` | ❌ |
+| D-26 | `chartGeometry` paths, ticks, marker and scrub index; unavailable state copy; a11y label = text alternative; no animation under reduced motion | unit (100%) + RNTL | `npx jest src/features/decide/charts` | ❌ |
+| D-27 | `decide_changes` RLS/grants/undo; builder filters ended rows and converts; sheet stores `YYYY-MM` from local date | pgTAP + unit + RNTL | `supabase test db`; `npx jest src/features/decide/changes` | ❌ |
+| D-30/31/32/33 | `toEngineCheck` maps promo/variable/lateFee/incomeChange/prompts/rates/horizon; no field ever pre-filled (property: empty inputs → all optional fields absent) | unit + fast-check | `npx jest src/features/decide/__tests__/checkInputs.test.ts` | ❌ |
+| D-34 | Wait RPC inserts goal in the same undo step; undo soft-deletes it; tag/untag via `goal_id` patch; guard refuses a foreign-household goal; saved-so-far sum | pgTAP + unit | `supabase test db`; `npx jest src/features/decide/past` | ❌ |
+| D-35 | two kinds keyed `${kind}:${id}`; reconcile schedules and cancels both; payload has only `{checkId, kind}`; observer rejects an unknown kind | unit (mocked) | `npx jest src/features/decide/notifications` | ❌ |
+| D-36 | `toPastDecisions` per-figure actuals, null when no role; < 3 decisions → no note; copy declarative | unit | `npx jest src/features/decide/journal` | ❌ |
+| DCU-09 | new keys (investing, changes, cooling-off, estimate gap) pass the extended banned list ("you should invest", "recommend") | unit | `npx jest src/i18n/__tests__/decideCopy.test.ts` | ❌ (05-02) |
+| DCU-11 | seed assertions above (standalone sofa fits, combined car adjust, empty `basisCodes`) | unit (engine-backed) | `npx jest src/features/decide/__tests__/demoScenario.test.ts` | ❌ (05-18) |
+
+**Wave 0 additions:**
+- a `./src/features/decide/charts/` 100% threshold beside `snapshot/` in `jest.config.js` (thresholds built at L37-42);
+- pgTAP files for `decide_changes`, `savings_goals`, the transactions `one_off`/`goal_id` columns and the extended `apply_patches`;
+- the notifications mock gains a second scheduled id.
+
+### Security Domain delta
+
+| ASVS | Addition |
+|---|---|
+| V4 Access Control | `decide_changes`, `savings_goals`: owner-private RLS, with cascade from the user and the household. `transactions.goal_id`: guard trigger requires a live goal in the same household. `apply_patches`: an explicit ownership `elsif` per new entity (the `else` branch is categories-only, L221). Goal and cooling-off columns: RPC-only, no client grant |
+| V5 Input Validation | `inputs` validator extended: ≤3 projection rates (decimal-string regex as in `debts.apr`), promo months 1..600, horizon chip enum, `incomeChange` amount ≠ 0 within bounds, `combine` boolean. SQL checks on `decide_changes` (month regex, order, amount bounds); the 32 KB `inputs` cap kept |
+| V8 Data Protection | Cooling-off notification: fixed copy, `data` only `{checkId, kind}`. No new analytics events (D-20's list is exhaustive; the toggles send nothing) |
+
+| Threat | STRIDE | Mitigation |
+|---|---|---|
+| Tag another household's goal onto a line (or a line onto a foreign goal) | Tampering | `goal_id` guard trigger; pgTAP |
+| Forge `cooling_off_at` or a goal target from the client | Tampering | No grants; RPC computes `now() + 48h` and takes the target from the call args, with bounds checked |
+| Undo op smuggling via `decide_changes`/`savings_goals` | Elevation | Allow-listed columns, explicit ownership branches, `MAX_UNDO_OPS` |
+| Unknown `kind` in a notification payload routes somewhere unexpected | Tampering | Enum check plus UUID regex; href built in-app |
+| Invented FX rate in a verdict | Integrity (Core Value) | Stored rates only (depcruise); a missing rate → `unconverted`, never a fallback rate |
+| O(N²) recompute as a self-DoS | Availability | `assess` for lists, memoisation, `canUse` gate; optional cap on open checks in the validator [ASSUMED, not decided] |
+
+### Addendum sources
+
+**Primary (HIGH):** codebase at `C:/dev/fincwin-04ctx`:
+- `src/engine/money/rates.ts`, `src/data/queries/{homeAmount,fxLatest}.ts`, `src/db/fxRates.ts`, `src/data/mutations/provisional.ts` L79-118, `.dependency-cruiser.cjs` L25-36;
+- `src/db/{transactions,rows}.ts`, `src/features/record/entry/{TransactionSheet.tsx,transactionForm.ts,recurringForm.ts}`, `src/features/record/activity/{TransactionDetailSheet.tsx,detailRows.ts}`;
+- `src/theme/{tokens,motion,layout}.ts`, `src/features/home/ThisMonthCard.tsx`, `src/features/navigation/SwipeBack.tsx`, the SVG glyph files, `jest.config.js`;
+- migrations `20260924000300_accounts.sql`, `20260924000600_fx_monitoring.sql`, `20260926000300_recurring_series.sql`, `20260926000700_transfer_pairs.sql`, `20261010000100_record_polish_columns.sql`, `20261010000600_sample_data.sql`, `20261012000200_category_rules_patches.sql`;
+- the prototype `FincWin United.dc.html` L3507-3513 and L3875-3881;
+- `node_modules/react-native-gesture-handler` gesture typings (`runOnJS`), read from the main checkout since the worktree has no `node_modules`.
+
+**Planning:** 05-CONTEXT (D-24…D-37 and the amendments), 05-UI-SPEC "Depth surfaces" and assumptions 17–27, 04-PHASE5-ALIGNMENT (depth API), 04-05-PLAN `<interfaces>`, 04-CONTEXT D-41…D-60, 05-03/05-06/05-07/05-08/05-11/05-22 plans, ROADMAP Phase 6, REQUIREMENTS GRW-01…11.
+
+**No web sources were needed:** every new dependency is already installed, and expo-notifications was verified in the main research.
+
+**Addendum valid until:** the 04 replan for D-59/D-60 lands. Re-check G1 and the `BasisCode` union then.
