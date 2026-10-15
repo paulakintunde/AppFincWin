@@ -124,15 +124,22 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
   });
 
   // D-59..D-61: Search opens on This month; Cancel clears the term and returns focus to the icon.
+  // Review WR-08: only a user Cancel returns focus. The HOME-01 intent also closes search, and
+  // there the tab change owns focus (Phase 3 D-20), so the close it causes must not move it.
+  const focusIconOnClose = useRef(false);
   const openSearch = () => vm.setSearchOpen(true);
   const cancelSearch = () => {
+    focusIconOnClose.current = true;
     vm.setTerm('');
     vm.setScope('month');
     vm.setSearchOpen(false);
   };
   const wasSearchOpen = useRef(vm.searchOpen);
   useEffect(() => {
-    if (wasSearchOpen.current && !vm.searchOpen) focusAccessibility(searchIconRef.current);
+    if (wasSearchOpen.current && !vm.searchOpen && focusIconOnClose.current) {
+      focusAccessibility(searchIconRef.current);
+    }
+    if (!vm.searchOpen) focusIconOnClose.current = false;
     wasSearchOpen.current = vm.searchOpen;
   }, [vm.searchOpen]);
 

@@ -10,7 +10,8 @@ import { monthPositionOf } from '../monthFigureInputs';
 import { focusAccessibility } from '@/shell/a11yFocus';
 import { ActivityScreen } from '../ActivityScreen';
 import { ACTIVITY_VIEW_KEY } from '../activityViewPrefs';
-import { resetActivityFocusForTests } from '@/state/activityFocus';
+import { requestActivityFocus, resetActivityFocusForTests } from '@/state/activityFocus';
+import { EMPTY_FILTER } from '@/engine/activity';
 import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -566,6 +567,19 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(screen.getByTestId('activity-summary-card')).toBeTruthy();
     expect(screen.getByLabelText(/display options$/)).toBeTruthy();
     expect(focusAccessibility).toHaveBeenCalled();
+  });
+
+  it('WR-08: a Home handoff that closes search does not pull focus to the Search icon', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' })];
+    const screen = await renderScreen();
+    await openSearch(screen);
+    (focusAccessibility as jest.Mock).mockClear();
+    await act(async () => {
+      requestActivityFocus({ month: '2026-09', filter: { ...EMPTY_FILTER, unpaidOnly: true } });
+    });
+    expect(screen.queryByLabelText('Cancel search')).toBeNull();
+    expect(screen.getByTestId('activity-month-row')).toBeTruthy();
+    expect(focusAccessibility).not.toHaveBeenCalled();
   });
 
   it('Cancel within 250 ms of typing leaves the term empty', async () => {
