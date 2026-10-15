@@ -219,6 +219,10 @@ These decisions widen Phase 4. Where one amends an earlier decision, the later o
 - **D-04 confirmed after research:** the unsecured-debt line stays at 12 × average monthly income. It is editable, and it is cited in `constants.ts` as a FincWin behaviour line, not a published standard. The 20/10 rule was considered and not adopted.
 - **The 36% line confirmed after research:** it applies to logged take-home income, which is stricter than lenders' gross test, and that is deliberate. Phase 5 copy says "of what you take home".
 
+#### Phase 5 planning gaps (user, 2026-10-15)
+- **D-61: `scheduledOutflows` snapshot input.** Dated pending one-off outflows (e.g. a pending expense written by Go ahead) are placed on their dates in the D-44 cash path rather than taken off cash on day 0. They still reduce `cashOnHand` for the cash ledger only if they're dated on or before `asOf`.
+- **D-62: Contract clarifications.** `estimateBias` takes estimates and actuals in the check's home currency (05 D-37/D-39 convert first). The split-estimate relation `newMonthly = mineMonthly + mineRunning` is stated in the contract. `incomeAtRisk` takes the same `SetbackInput[]` as `applySetbacks`. An `InvestCheck` is a valid `StackedCheckInput.check`. The decide barrel re-exports `CurrencyCode` and `MinorUnits`.
+
 ### Claude's Discretion
 - How the snapshot carries series (frequency, latest amount, next due date, which rows each series covers) for D-23 and D-24.
 - The exact name and payload of the D-31 basis code.

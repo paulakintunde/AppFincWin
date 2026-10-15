@@ -171,6 +171,14 @@ Engine decisions are 04 D-41…D-58. These are the Phase 5 UI and data counterpa
 - **Cushion for new users (04 D-42 amended):** under 3 full months the cushion row reads "3 months — your income steadiness isn't known yet", and the confidence chip shows "Rough".
 - **One card per cause (04 D-24/D-44 amended):** with a cash path, bills due soon appear only as the `cash_dip` card, and the cash-cushion card covers the day-one cost alone.
 
+### Planning-review decisions (user, 2026-10-15, after the 52-plan Phase 5 plan)
+- **D-38: Minimal `debts` table and a `statement_periods` table in Phase 5.** Debts carry balance, APR, `secured`, minimum terms and a "paid in full monthly" flag. Statement periods let imports mark complete months (04 D-13). Phase 6's payoff planner builds on the same debts table.
+- **D-39: Currency stamping** (amends D-37). Past lines (income, spending, refunds) are converted at the rate **stamped on each line when it was recorded**. Current balances and debts use the **latest** stored rate. A missing rate still gives `missing` with a reason.
+- **D-40: Card minimum payments are pre-filled from the per-market table** (04 D-05/D-16; e.g. US 1% + interest, $25 floor) on each card debt. They're shown and editable on the debt, and the month counts that minimum. A card marked "paid in full monthly" adds no minimum. A card with no terms and no market row shows "Minimum payment not set", and the verdict notes that card payments aren't counted until it's set.
+- **D-41: Store screenshots (success criterion 7) come from the sample-seeded account** (the same seed path as "Explore with sample figures") until the App Review sign-in (ACC-11) exists.
+- **D-42: A deferred-interest toggle** on step 2's promotional-rate row. When it's on, the verdict shows the back-interest charged if the balance isn't cleared by the promo end (04 D-48, `deferred_interest_charged`).
+- **D-43: The UI-SPEC touch-ups are applied as the planner resolved them** (05-PLANNING-NOTES OQ-A2/A3/A9 and the 7 recorded conflicts). The combine pill stays hidden with only 1 open check.
+
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
 - The table layout for checks, decisions and limits, with RLS per household or user, following the existing migration patterns.
