@@ -325,6 +325,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
             unconvertedCount: vm.monthView.totals.unconvertedCount,
             entryCount: vm.entryCount,
             balanceNote: vm.balanceHeader,
+            unavailable: vm.monthUnavailable,
             formatter,
             homeCurrency: rc.homeCurrency,
           }}
@@ -422,6 +423,14 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
                     ? t('activity.searchFailed')
                     : t('activity.searching')}
               </Text>
+            ) : vm.monthUnavailable !== null ? (
+              // CR-01 / T-03-22-01: a failed or offline-uncached read is never an empty month. The
+              // card carries Home's copy; while search hides the card, the list says it instead.
+              vm.searchOpen ? (
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+                  {t(vm.monthUnavailable === 'error' ? 'home.state.monthError' : 'home.state.monthOffline')}
+                </Text>
+              ) : null
             ) : searching || filtering ? (
               <EmptyState heading={t('activity.noMatchHeading')} body={t('activity.noMatchBody')} />
             ) : (

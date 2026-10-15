@@ -148,6 +148,18 @@ describe('ActivitySummaryCard', () => {
     expect(queryByText('+£1,234.00')).toBeNull();
   });
 
+  it('CR-01: shows the Home error / offline copy and no figure when the month read is unavailable', async () => {
+    const err = await draw({ unavailable: 'error' });
+    expect(err.getByText('This month couldn’t load. Pull down to try again.')).toBeTruthy();
+    expect(err.queryByText('+£1,234.00')).toBeNull();
+    expect(err.queryByTestId('activity-summary-inout')).toBeNull();
+    expect(err.queryByTestId('activity-summary-still')).toBeNull();
+    await err.unmount();
+    const off = await draw({ unavailable: 'offline' });
+    expect(off.getByText('You’re offline, and this month hasn’t loaded on this device yet.')).toBeTruthy();
+    expect(off.queryByText('+£1,234.00')).toBeNull();
+  });
+
   it('stacks the corner under the caption at large text', async () => {
     const { getByTestId } = await draw({}, 2);
     let node = getByTestId('activity-summary-still').parent;

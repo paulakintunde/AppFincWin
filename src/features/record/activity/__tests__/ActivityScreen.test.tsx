@@ -24,6 +24,7 @@ jest.setTimeout(30000);
 const mockMarkPaid = jest.fn((): string | null => 'paid-step');
 let mockRows: ActivityRowView[] = [];
 let mockProjections: ProjectionView[] = [];
+let mockDataState: 'ready' | 'loading' | 'offline' | 'error' = 'ready';
 let mockMonths: string[] = ['2026-10', '2026-09', '2026-08'];
 const mockSheetProps = jest.fn();
 const mockTotals = { paidIn: 0, paidOut: -1250, net: -1250, stillToCome: -500, pendingCount: 1, projectedCount: 1, unconvertedCount: 2, transferCount: 0, count: 2 };
@@ -53,7 +54,8 @@ jest.mock('@/data/queries/activity', () => ({
     projections: mockProjections,
     totals: mockTotals,
     isLoading: false,
-    isError: false,
+    isError: mockDataState === 'error',
+    dataState: mockDataState,
     refetch: jest.fn(),
   }),
   useTransactionMonths: () => ({ months: mockMonths, counts: new Map(mockMonths.map((m) => [m, 1])), isLoading: false }),
@@ -156,6 +158,7 @@ beforeEach(() => {
   resetToastForTests();
   mockRows = [];
   mockProjections = [];
+  mockDataState = 'ready';
   mockMonths = ['2026-10', '2026-09', '2026-08'];
   mockSearchRows = [];
   mockSearchLoading = false;
@@ -231,6 +234,28 @@ describe('ActivityScreen', () => {
     const screen = await renderScreen();
     expect(screen.getByText('Nothing in September 2026 yet.')).toBeTruthy();
     expect(screen.getByText('Add the first one with the Add button, clone August’s lines that aren’t already repeating, or paste a list.')).toBeTruthy();
+  });
+
+  it('CR-01: a failed series read with rows on screen shows the Home error copy, never a figure', async () => {
+    mockDataState = 'error';
+    mockRows = [row({ id: 'a', name: 'Coffee' })];
+    const screen = await renderScreen();
+    const card = within(screen.getByTestId('activity-summary-card'));
+    expect(card.getByText('This month couldn’t load. Pull down to try again.')).toBeTruthy();
+    expect(card.queryByText(/£/)).toBeNull();
+    expect(card.queryByTestId('activity-summary-inout')).toBeNull();
+    // The rows that did load still list.
+    expect(screen.getByText('Coffee')).toBeTruthy();
+  });
+
+  it('CR-01: an offline month with nothing cached is not shown as an empty month', async () => {
+    mockDataState = 'offline';
+    const screen = await renderScreen();
+    expect(screen.queryByText('Nothing in September 2026 yet.')).toBeNull();
+    expect(screen.queryByText('Paste a list')).toBeNull();
+    const card = within(screen.getByTestId('activity-summary-card'));
+    expect(card.getByText('You’re offline, and this month hasn’t loaded on this device yet.')).toBeTruthy();
+    expect(card.queryByText(/£/)).toBeNull();
   });
 
   it('groups still-to-come, paid and skipped rows under section headers', async () => {

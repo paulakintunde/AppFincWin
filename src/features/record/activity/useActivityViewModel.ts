@@ -13,6 +13,7 @@ import {
   type ActivityRowView,
 } from '@/data/queries/activity';
 import { useFxLatest } from '@/data/queries/fxLatest';
+import type { MonthDataState } from '@/data/queries/monthDataState';
 import { projectionHomeAmount } from '@/data/queries/homeAmount';
 import { usePaidBefore } from '@/data/queries/pendingSplit';
 import {
@@ -211,8 +212,14 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
       }),
     [monthView.rows, monthView.projections, monthView.totals]
   );
-  const monthEmpty = isMonthEmpty(monthView.totals, position);
-  const monthLoading = !rc.ready || monthView.dataState === 'loading';
+  // T-03-22-01 / D-47 (03.1 review CR-01): the same data-state gate as Home. A core read that
+  // failed or is offline with nothing cached shows Home's error / offline copy, never a figure
+  // and never the empty month.
+  const dataState: MonthDataState = rc.ready ? monthView.dataState : 'loading';
+  const monthLoading = dataState === 'loading';
+  const monthUnavailable: 'error' | 'offline' | null =
+    dataState === 'error' || dataState === 'offline' ? dataState : null;
+  const monthEmpty = monthUnavailable === null && isMonthEmpty(monthView.totals, position);
 
   // ACT-10 as amended by 03.1 D-70: the narrowed totals feed the entry count and the search
   // results count only; the card's figures come from `position`.
@@ -406,6 +413,7 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
     position,
     monthEmpty,
     monthLoading,
+    monthUnavailable,
     entryCount,
     searchOpen,
     setSearchOpen,

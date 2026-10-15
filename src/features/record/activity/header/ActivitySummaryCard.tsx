@@ -29,6 +29,8 @@ export interface ActivitySummaryCardProps {
   entryCount: { total: number; shown: number; narrowed: boolean };
   balanceNote?: { allAccounts: boolean; inexact: boolean };
   loading: boolean;
+  /** CR-01 / T-03-22-01: a core read failed or is offline with nothing cached; no figure shows. */
+  unavailable?: 'error' | 'offline' | null;
   formatter: MoneyFormatter;
   homeCurrency: string;
 }
@@ -39,6 +41,7 @@ export function ActivitySummaryCard({
   entryCount,
   balanceNote,
   loading,
+  unavailable = null,
   formatter,
   homeCurrency,
 }: ActivitySummaryCardProps) {
@@ -63,6 +66,17 @@ export function ActivitySummaryCard({
         <View
           style={[block, { height: PLACEHOLDER_LINE_HEIGHT, width: PLACEHOLDER_LINE_WIDTH, marginTop: space.gapSm }]}
         />
+      </View>
+    );
+  }
+
+  // D-47: the same copy and rule as Home's ThisMonthCard, so the two tabs agree on a failed read.
+  if (unavailable !== null) {
+    return (
+      <View testID="activity-summary-card" accessible style={container}>
+        <Text testID="activity-summary-unavailable" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+          {t(unavailable === 'error' ? 'home.state.monthError' : 'home.state.monthOffline')}
+        </Text>
       </View>
     );
   }
