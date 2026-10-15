@@ -155,6 +155,32 @@ describe('CompactHeader', () => {
     expect(screen.getByRole('button', { name: 'Profile' })).toBeTruthy();
   });
 
+  it('defaults to the 26px heading title with an avatar', async () => {
+    await renderWithShellProviders(<CompactHeader title="Overview" visible />);
+    expect(StyleSheet.flatten(screen.getByText('Overview').props.style).fontSize).toBe(26);
+    expect(screen.getByRole('button', { name: 'Profile' })).toBeTruthy();
+  });
+
+  it('uses the 16px sheetTitle role on one line when asked', async () => {
+    await renderWithShellProviders(<CompactHeader title="Activity" visible titleRole="sheetTitle" />);
+    const title = screen.getByText('Activity');
+    expect(StyleSheet.flatten(title.props.style).fontSize).toBe(16);
+    expect(title.props.numberOfLines).toBe(1);
+  });
+
+  it('renders a trailing slot without the avatar when showAvatar is false', async () => {
+    await renderWithShellProviders(<CompactHeader title="Activity" visible trailing={<Probe />} showAvatar={false} />);
+    expect(screen.getByText('probe')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Profile' })).toBeNull();
+  });
+
+  it('renders trailing after the title and before the avatar', async () => {
+    await renderWithShellProviders(<CompactHeader title="Activity" visible trailing={<Probe />} />);
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('Activity')).toBeLessThan(tree.indexOf('probe'));
+    expect(tree.indexOf('probe')).toBeLessThan(tree.indexOf('"Profile"'));
+  });
+
   it('shows the sync problem line under the row', async () => {
     await renderWithShellProviders(<CompactHeader title="Overview" visible />);
     expect(screen.getByText('offline')).toBeTruthy();

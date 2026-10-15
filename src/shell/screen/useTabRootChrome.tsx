@@ -44,15 +44,33 @@ export function compactThreshold(largeHeaderHeight: number, insetsTop: number): 
   return Math.max(0, largeHeaderHeight - (insetsTop + space.touchMin + 2 * space.gapSm));
 }
 
+// Calls a function-form compactTrailing inside its own component so the hook's render never
+// invokes consumer code with a ref-backed callback (react-hooks/refs).
+function TrailingSlot({
+  render,
+  scrollToTop,
+}: {
+  render: (api: { scrollToTop: () => void }) => React.ReactNode;
+  scrollToTop: () => void;
+}): React.JSX.Element {
+  return <>{render({ scrollToTop })}</>;
+}
+
 export interface TabRootChromeOptions {
   title: string;
   eyebrow?: string;
   trailing?: React.ReactNode;
   /** Passing keys makes the screen refreshable (D-17); omit on roots that are not (Decide). */
   refreshKeys?: readonly QueryKey[];
+  /** 03.1 D-58: compact-only title (defaults to title). */
+  compactTitle?: string;
+  compactTitleRole?: 'heading' | 'sheetTitle';
+  /** 03.1 D-58: compact-only trailing controls; when given, the compact header drops the avatar. */
+  compactTrailing?: React.ReactNode | ((api: { scrollToTop: () => void }) => React.ReactNode);
 }
 
 export interface TabRootChrome {
+  scrollToTop: () => void;
   scrollRef: AnimatedRef<Animated.ScrollView>;
   onScroll: ReturnType<typeof useAnimatedScrollHandler>;
   scrollEventThrottle: 16;
@@ -62,7 +80,7 @@ export interface TabRootChrome {
 }
 
 export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
-  const { title, eyebrow, trailing, refreshKeys } = options;
+  const { title, eyebrow, trailing, refreshKeys, compactTitle, compactTitleRole, compactTrailing } = options;
   const { colors } = useTheme();
   const insets = useScreenInsets();
 
@@ -105,6 +123,18 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
   );
   const opacityStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
+  // Works for a ScrollView (scrollTo) and a FlashList (scrollToOffset); reads the ref only on call.
+  const scrollToTop = useCallback(() => {
+    const node = scrollRef.current as unknown as {
+      scrollToOffset?: (o: { offset: number; animated: boolean }) => void;
+      scrollTo?: (o: { y: number; animated: boolean }) => void;
+    } | null;
+    if (node?.scrollToOffset) node.scrollToOffset({ offset: 0, animated: true });
+    else node?.scrollTo?.({ y: 0, animated: true });
+  }, [scrollRef]);
+  const trailingNode =
+    typeof compactTrailing === 'function' ? <TrailingSlot render={compactTrailing} scrollToTop={scrollToTop} /> : compactTrailing;
+
   useScrollToTop(scrollRef as never);
   a11yFocus.useScreenTitleFocus(focusRef);
 
@@ -129,7 +159,10 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
   );
   const compactHeader = (
     <CompactHeader
-      title={title}
+      title={compactTitle ?? title}
+      titleRole={compactTitleRole}
+      trailing={trailingNode}
+      showAvatar={compactTrailing === undefined}
       visible={compactVisible}
       animatedStyle={opacityStyle as unknown as StyleProp<ViewStyle>}
       titleRef={compactTitleRef}
@@ -145,5 +178,5 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
     />
   ) : undefined;
 
-  return { scrollRef, onScroll, scrollEventThrottle: 16, largeHeader, compactHeader, refreshControl };
+  return { scrollRef, onScroll, scrollEventThrottle: 16, largeHeader, compactHeader, refreshControl, scrollToTop };
 }
