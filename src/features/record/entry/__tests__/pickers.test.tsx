@@ -123,7 +123,7 @@ describe('long pickers scroll under a fixed header (S-CR-05)', () => {
     const { getByLabelText, getByTestId, queryByTestId } = await wrap(
       <MonthSwitcher month="2026-12" months={months} locale="en-GB" onChange={jest.fn()} />
     );
-    await fireEvent.press(getByLabelText('Choose month'));
+    await fireEvent.press(getByLabelText('December 2026, choose month'));
     const body = getByTestId('sheet-scroll');
     expect(within(body).getByText('January 2024')).toBeTruthy();
     expect(within(body).queryByLabelText('Cancel')).toBeNull();

@@ -277,14 +277,14 @@ describe('views and offers', () => {
 describe('month tools', () => {
   it('Add {Month} adds the month through the add-month mutation', async () => {
     const screen = await renderScreen({ initialMonth: '2026-10' });
-    await fireEvent.press(screen.getByLabelText('Choose month'));
+    await fireEvent.press(screen.getByLabelText('October 2026, choose month'));
     await fireEvent.press(screen.getByText('Add November'));
     expect(mockScreen.addMonth).toHaveBeenCalledWith(expect.objectContaining({ monthLabel: 'November', today: '2026-09-25' }));
   });
 
   it('shows entry counts in the month list', async () => {
     const screen = await renderScreen();
-    await fireEvent.press(screen.getByLabelText('Choose month'));
+    await fireEvent.press(screen.getByLabelText('September 2026, choose month'));
     expect(screen.getByText('4 entries')).toBeTruthy();
   });
 

@@ -30,6 +30,8 @@ export interface MonthSwitcherProps {
   /** ACT-15: the month the last row would add, or null (no row) at 12 months ahead. */
   addMonth?: string | null;
   onAddMonth?: (month: string) => void;
+  /** 03.1 D-54: visible name; the screen reader always hears the long name. */
+  displayLabel?: string;
 }
 
 function monthName(month: string, locale: string): string {
@@ -50,7 +52,7 @@ function Chevron({ direction, color }: { direction: 'left' | 'right'; color: str
   );
 }
 
-export function MonthSwitcher({ month, months, locale, onChange, counts, addMonth = null, onAddMonth }: MonthSwitcherProps) {
+export function MonthSwitcher({ month, months, locale, onChange, counts, addMonth = null, onAddMonth, displayLabel }: MonthSwitcherProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const [listOpen, setListOpen] = useState(false);
@@ -77,13 +79,12 @@ export function MonthSwitcher({ month, months, locale, onChange, counts, addMont
       </Pressable>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={t('activity.monthSwitcher.label')}
-        accessibilityValue={{ text: formatMonthLabel(month, locale) }}
+        accessibilityLabel={t('activity.monthSwitcher.nameA11y', { month: formatMonthLabel(month, locale) })}
         onPress={() => setListOpen(true)}
         style={styles.label}
       >
-        <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
-          {formatMonthLabel(month, locale)}
+        <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+          {displayLabel ?? formatMonthLabel(month, locale)}
         </Text>
       </Pressable>
       <Pressable

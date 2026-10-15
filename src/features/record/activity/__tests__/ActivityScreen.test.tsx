@@ -611,8 +611,8 @@ describe('ActivityScreen small-screen header (02-polish item 3)', () => {
     const links = screen.getByTestId('activity-nav-links');
     // The switcher and the links never share one non-wrapping row.
     expect(links.parent).not.toBe(monthRow);
-    expect(within(monthRow).getByLabelText('Choose month')).toBeTruthy();
-    expect(within(links).queryByLabelText('Choose month')).toBeNull();
+    expect(within(monthRow).getByLabelText(/choose month$/)).toBeTruthy();
+    expect(within(links).queryByLabelText(/choose month$/)).toBeNull();
     expect(flat(links).flexDirection).toBe('row');
     for (const label of ['Accounts', 'History']) {
       const link = screen.getByLabelText(label);
