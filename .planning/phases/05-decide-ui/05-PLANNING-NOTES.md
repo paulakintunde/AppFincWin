@@ -73,3 +73,16 @@ The coordinator resumed planning after 05-CONTEXT gained D-24..D-37 (plus amende
 - Go ahead on a seeded sample check writes ordinary (non-sample) rows: intended, they are the user's own records.
 
 Other research facts the plans rely on: `expo-notifications ~57.0.23` is a new dependency (needs a new dev build / preview APK; iOS Push capability once Apple enrolment is done); analytics `step` must be a string; `DateField` needs an explicit past-date guard; row-derived query keys nest under `['transactions', householdId]`; the repo pins Jest 29.7.
+
+## Iteration-3 checker decisions (revision 3)
+
+| # | Issue | Decision taken | Plans |
+|---|-------|----------------|-------|
+| R3-1 | D-35 cooling-off says "reopens this check, recalculated" for Go ahead, but bought checks were never recomputed | Option (a): a bought check is recalculated against the snapshot source with its OWN written lines removed (rows, series, their occurrences, the debt via written decide_links and debts.check_id, its payment links; replaced series Go ahead ended are live again; paid writes added back to balances) by the pure `withoutCheckWrites` and the hook `useBoughtCheckComputation` (new plan 05-52); 05-29 shows it beside "Decided {date}" and the stored verdict_at_decision; the cooling-off route (05-11) lands on the same view; 05-26 step 9 tests Go ahead as well as Pass | 05-52 (new), 05-29, 05-12, 05-06, 05-11, 05-46, 05-26 |
+| R3-2 | Step 3 section composition had two owners | 05-42 exports DayByDaySection and ExpectedIncomeSection only; Step3Verdict holds no sections; 05-30 (now after 05-42) places them at positions 3 and 6 and its test asserts the full order | 05-42, 05-30 |
+| R3-3 | Card debt service never counted | Card Go ahead paid over months writes its paymentSteps as payment series (role 'payment', every run a series) from the cash account in Debt, counted once as a bill; a stored card debts row's minimum_payment is the derived card DebtRecord's minimum; otherwise meta.cardsWithoutMinimum and the Assumptions row "Card payments aren’t in the month unless you set a minimum"; pay-in-full user tested for no double count | 05-01, 05-02, 05-06, 05-15, 05-20, 05-46 |
+| R3-4 | cash_path margin 0 on_edge read "holds by $0" | marginText / edgeChipA11y use the cash_tight_before_payday fact wording in that case | 05-37, 05-41, 05-42 |
+| R3-5 | 05-18 too large | Split: 05-18 = fixture + engine-backed demo test; 05-51 = seed SQL, pgTAP, samples.ts, mirror script, npm and CI (depends on 05-04); 05-25 depends on both | 05-18, 05-51 (new), 05-25 |
+| R3-6 | Dependency hygiene | 05-29 depends on 05-46 and 05-52; 05-06 depends on 05-34 and 05-38 (wave 2 unchanged; local structural types kept) | 05-29, 05-06 |
+| A19 | Go-ahead loan after its series ends | The debts row keeps the balance and minimum written on the day; Phase 6 (debts) updates or closes it | 05-20 |
+| A20 | Replaced series restored in the recalculation | Restored only when its end_date equals Go ahead's end date (needBy ?? local decided date); assumes a replaced line was open-ended when picked | 05-52 |
