@@ -519,7 +519,7 @@ Plans:
 **Requirements**: no new IDs; refines the Phase 2 Activity header (ACT-02 month switcher, ACT-03 search) and keeps Phase 3's D-41 Unpaid banner
 **Proposal**: https://claude.ai/artifact/BNKMdaVimhwxtkev8PJ8Yp (approved 2026-10-15)
 **Depends on:** Phase 3
-**Plans:** 6/15 plans executed
+**Plans:** 11/15 plans executed
 
 Plans:
 **Wave 1**
@@ -531,11 +531,11 @@ Plans:
 - [x] 03.1-06-PLAN.md — Shared month-figure helper (Home parity), VM position / monthEmpty / entryCount / searchOpen
 
 **Wave 2** *(blocked on wave 1)*
-- [ ] 03.1-07-PLAN.md — ActivitySummaryCard (left after everything, In/Out, still to come, D-70 count)
-- [ ] 03.1-08-PLAN.md — Display chip and two-section Display sheet; Chip focus ref
-- [ ] 03.1-09-PLAN.md — Filter chips with per-chip ×, sideways scroll and Clear all
-- [ ] 03.1-10-PLAN.md — More menu (three groups) and SelectBar
-- [ ] 03.1-11-PLAN.md — Month row with icon cluster and measured long / short / wrap fallback
+- [x] 03.1-07-PLAN.md — ActivitySummaryCard (left after everything, In/Out, still to come, D-70 count)
+- [x] 03.1-08-PLAN.md — Display chip and two-section Display sheet; Chip focus ref
+- [x] 03.1-09-PLAN.md — Filter chips with per-chip ×, sideways scroll and Clear all
+- [x] 03.1-10-PLAN.md — More menu (three groups) and SelectBar
+- [x] 03.1-11-PLAN.md — Month row with icon cluster and measured long / short / wrap fallback
 
 **Wave 3** *(blocked on wave 2)*
 - [ ] 03.1-12-PLAN.md — ActivityHeaderBands composition and search Cancel / cross-fade
