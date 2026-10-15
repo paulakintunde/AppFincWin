@@ -42,6 +42,30 @@ Decision numbers are local to Phase 5. "04 D-xx" refers to `.planning/phases/04-
 - **D-03:** **Phase 5 builds the onboarding first read, in the LAUNCH-POSITIONING order:** welcome → consent → one account and balance → **rough monthly in and out** (new) → **first check** (new) → "Bring your history" (import / fresh / sample). The two new steps slot into the existing `app/(app)/setup/*` routes after `SetupAccountScreen` and before `SetupHistoryScreen`. Target: a first verdict in about 60 seconds (success criterion 6). The first check uses the engine's `firstRead()` (04 DEC-16, amended 04 D-11: `adjust` when cash would fall below 3 × rough spending).
 - **D-04:** **Real history replaces the rough figures automatically.** As soon as one full month exists (logged or imported), the rough figures stop being used, open checks recompute, and the verdict's basis line changes visibly, e.g. "Now from your logged months". Until then the rough figures are editable. A first-read verdict always says what it rests on, and that an import sharpens it.
 
+- **D-23 (added 2026-10-15, user, supersedes D-21's "only when cash doesn't cover it" and refines D-01/D-02):** **Every quick check has four inputs, plus optional extras:**
+  - **Amount.** The item and price, parsed from "car 14500" as before.
+  - **Cash or Credit.** A two-way toggle. It starts on Cash.
+  - **APR.** Credit only. Starts at 0%, labelled "before any interest" until the user types a rate (04 D-07: never a default rate).
+  - **Duration.** Credit only. Chips for 12, 24, 36, 48 and 60 months; 12 is selected.
+  - **Optional extras.** A collapsed "+ Tax, fees" row. Sales tax is a user-typed % with no default; fees are a user-typed amount. Both add to the day-one price.
+  - Cash runs the paid-in-full plan. Credit runs the engine's loan plan (amortised at the entered APR, no deposit).
+  - Both go through `assess()`, so the result is the full verdict chip plus one line, the D-22 size label, and the monthly amount for Credit.
+  - When Cash doesn't cover the purchase, the result still states the gap and offers a one-tap "Try on credit", which flips the toggle and keeps the amount.
+  - "Run the full check" carries every field into steps 1–2. Credit maps to the loan method, taxes and fees to the step-2 adjustments.
+  - The first read in onboarding uses the same inputs, assessed by `firstRead()`.
+- **D-21 (added 2026-10-15, amends D-02; superseded in part by D-23):** **When cash doesn't cover it, the quick check also shows an editable spread line.** It reads "Spread it: [APR 0%] over [12 / 24 / 36 / 48 / 60 months] → $x a month. The month closes / is $y short."
+  - The APR field starts at 0% and is labelled "before any interest" until the user types a rate. That starting value is user-editable input, not a default rate the engine invents (04 D-07 holds).
+  - The term chips are 12, 24, 36, 48 and 60 months, with 12 selected.
+  - The result is computed by the engine's loan plan (amortised payment at the entered APR, no deposit). It is assessed through `assess()`, so it gets the same month, debt-service and unsecured-debt tests as the full check, and it recomputes on every edit.
+  - At 0% it is an upper bound: if the month doesn't close at 0%, no rate will make it close.
+  - "Run the full check" carries the APR and term into step 2's loan method.
+  - The spread line is not shown when cash covers the purchase.
+- **D-22 (added 2026-10-15):** **Every quick-check and full-check result carries a size label relative to the user's own money**, never a fixed dollar band. The engine returns it as a code (04 D-36):
+  - `from_spare_this_month`: the price is no more than this month's money left over.
+  - `from_savings`: paid from cash, it still stays above the cushion.
+  - `needs_spreading`: cash can't cover it above the cushion.
+  Phase 5 maps the codes to copy, e.g. "Out of this month's spare", "Out of savings", "Needs spreading".
+
 ### Verdict and impact screen
 - **D-05:** **Step 3 puts the answer first.**
   - At the top: the verdict card (chip, basis line, title, body), then up to five warning cards ordered by shortfall. The verdict line must be visible without scrolling at the phone screenshot size (DCU-11).
