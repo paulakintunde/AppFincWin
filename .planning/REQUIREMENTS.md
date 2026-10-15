@@ -198,6 +198,27 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DEC-14**: Engine computes the four-way alternatives (as planned, cheaper, wait and save, skip), each with its outcome, and suppresses and labels any row whose money is not genuinely spare
 - [ ] **DEC-15**: Engine applies the four setbacks (unexpected expense, income drops, job or client loss, invoices pay late) to a plan and re-assesses it
 - [ ] **DEC-16**: With no full month of history, engine returns a cash-level first read from a balance and rough monthly figures (cash covers it, month closes), marked as resting on the user's figures
+- [ ] **DEC-17**: Engine judges each open check together with all other open checks and reports both the combined and the standalone verdict (04 D-41)
+- [ ] **DEC-18**: Engine sizes the default cash cushion by income steadiness: 3 months Steady, 4.5 Variable, 6 Volatile, 3 under three full months; a user-set cushion wins (04 D-42)
+- [ ] **DEC-19**: Engine reports each line's margin and flags any line passed or failed by under 5% as on the edge, without changing the verdict state (04 D-43)
+- [ ] **DEC-20**: Engine projects cash day by day for 90 days from confirmed pay and bill series and dated pending outflows, and raises `cash_dip` only when the purchase causes or deepens the dip (04 D-44, D-59, D-61)
+- [ ] **DEC-21**: Engine applies user-entered dated income and spending changes and judges the month on the worst of the next 12 months (04 D-45)
+- [ ] **DEC-22**: Engine returns a confidence level (strong, fair, rough) with reasons on every verdict (04 D-46)
+- [ ] **DEC-23**: Engine excludes user-marked one-off lines from averages and reports how many were left out (04 D-47)
+- [ ] **DEC-24**: Engine models user-entered promotional rate schedules, including deferred interest, and tests the month on the highest scheduled payment (04 D-48)
+- [ ] **DEC-25**: Engine stress-tests variable-rate plans at the entered rate plus 2 and plus 4 points, beside the verdict (04 D-49)
+- [ ] **DEC-26**: Engine reports the cost of one and two late instalment payments from a user-entered fee (04 D-50)
+- [ ] **DEC-27**: Engine projects the price invested instead, the payments invested instead, investing growth lost to a pause, and a net-worth path, at 0% and up to three user-entered rates, never a supplied rate (04 D-51, D-52)
+- [ ] **DEC-28**: Engine applies a purchase-linked income loss to the verdict, and shows a purchase-linked income gain only in a separate assessment with payback months (04 D-53)
+- [ ] **DEC-29**: Engine re-runs the setbacks with the new plan and reports runway lost and which setbacks the new payments cannot survive (04 D-54)
+- [ ] **DEC-30**: Engine provides running-cost prompt categories by item type with no amounts, and treats user-entered loss of value and holding fees as non-cash figures (04 D-55, D-63)
+- [ ] **DEC-31**: Engine computes the average gap between past estimates and actuals once three decisions have actuals (04 D-56)
+- [ ] **DEC-32**: Engine payment maths pass published reference amortisation tables, and every behaviour threshold carries a citation or is labelled a FincWin line (04 D-57, D-58)
+- [ ] **DEC-33**: Engine builds the month from paid Record lines only, nets refunds, skips transfers, and smooths confirmed non-monthly bills and weekly/fortnightly pay to monthly equivalents (04 D-23, D-25..D-28, D-60)
+- [ ] **DEC-34**: Engine deducts bills due in the next 90 days from cash when no cash path is available, and returns a relative purchase-size code (04 D-24, D-36)
+- [ ] **DEC-35**: Engine resolves the final price from the advertised price, user-entered sales tax and fees, and trade-ins, never below zero (04 D-37)
+- [ ] **DEC-36**: Engine returns the month table, the five ledgers, runway and the wait-and-save plan (04 D-38, D-39, D-40)
+- [ ] **DEC-37**: Engine uses separate shares for existing household spending and the purchase, and treats saving and investing as pausable (a shortfall they cover is adjust, not no) (04 D-34, D-35)
 
 ### Decide — Experience
 
@@ -212,6 +233,19 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-09**: No verdict copy uses "advice", "recommendation" or "you should"
 - [ ] **DCU-10**: A new user gets a first verdict in their first session, before any months are logged. It is labelled as a first read, says what it rests on, and is superseded by imported or logged history. Settled 2026-09-26 (04-CONTEXT D-11): rough figures give a cash-level first read only, computed by DEC-16; the full verdict needs one real full month
 - [ ] **DCU-11**: The verdict card, impact warnings and alternatives table stay legible when captured as phone store screenshots from the App Review demo account's sample scenario, with the verdict line visible without scrolling
+- [ ] **DCU-12**: Quick check takes amount, Cash or Credit, APR from 0% labelled "before any interest", a 12-60 month duration, and optional tax and fees, and shows a relative size label (05 D-21..D-23)
+- [ ] **DCU-13**: User can see each check with and without their other open checks (05 D-24)
+- [ ] **DCU-14**: Verdict shows the cushion months and why, an on-the-edge tag, a confidence chip, and a 90-day day-by-day cash chart (05 D-25, D-26, D-28)
+- [ ] **DCU-15**: User can add, edit and remove dated income and spending changes that the verdict uses (05 D-27)
+- [ ] **DCU-16**: User can mark a Record line as a one-off that won't recur (05 D-29)
+- [ ] **DCU-17**: User can enter promotional rates with deferred interest, a variable-rate flag, and instalment late fees in the full check (05 D-30, D-42)
+- [ ] **DCU-18**: User sees what the price or payments would be worth invested instead, at 0% and up to three rates they enter, labelled as projections (05 D-31)
+- [ ] **DCU-19**: User can record how a purchase changes their income and see payback and runway lost (05 D-32)
+- [ ] **DCU-20**: User is prompted for running costs by item type with blank amounts, and sees their past estimate gap (05 D-33, D-36)
+- [ ] **DCU-21**: Wait and save creates a savings goal with progress (05 D-34)
+- [ ] **DCU-22**: User can set a 48-hour cooling-off reminder on a purchase that needs spreading (05 D-35)
+- [ ] **DCU-23**: Amounts in other currencies are converted at the stamped rate for past lines and the latest rate for balances, and the verdict says so (05 D-37, D-39)
+- [ ] **DCU-24**: User can record debts with minimum terms (pre-filled from the market table for cards) and imports can mark complete statement months (05 D-38, D-40)
 
 ### Grow
 
@@ -528,6 +562,27 @@ Populated during roadmap creation.
 | DEC-14 | Phase 4 - Decide Engine | Pending |
 | DEC-15 | Phase 4 - Decide Engine | Pending |
 | DEC-16 | Phase 4 - Decide Engine | Pending |
+| DEC-17 | Phase 4 - Decide Engine | Pending |
+| DEC-18 | Phase 4 - Decide Engine | Pending |
+| DEC-19 | Phase 4 - Decide Engine | Pending |
+| DEC-20 | Phase 4 - Decide Engine | Pending |
+| DEC-21 | Phase 4 - Decide Engine | Pending |
+| DEC-22 | Phase 4 - Decide Engine | Pending |
+| DEC-23 | Phase 4 - Decide Engine | Pending |
+| DEC-24 | Phase 4 - Decide Engine | Pending |
+| DEC-25 | Phase 4 - Decide Engine | Pending |
+| DEC-26 | Phase 4 - Decide Engine | Pending |
+| DEC-27 | Phase 4 - Decide Engine | Pending |
+| DEC-28 | Phase 4 - Decide Engine | Pending |
+| DEC-29 | Phase 4 - Decide Engine | Pending |
+| DEC-30 | Phase 4 - Decide Engine | Pending |
+| DEC-31 | Phase 4 - Decide Engine | Pending |
+| DEC-32 | Phase 4 - Decide Engine | Pending |
+| DEC-33 | Phase 4 - Decide Engine | Pending |
+| DEC-34 | Phase 4 - Decide Engine | Pending |
+| DEC-35 | Phase 4 - Decide Engine | Pending |
+| DEC-36 | Phase 4 - Decide Engine | Pending |
+| DEC-37 | Phase 4 - Decide Engine | Pending |
 | DCU-01 | Phase 5 - Decide UI | Pending |
 | DCU-02 | Phase 5 - Decide UI | Pending |
 | DCU-03 | Phase 5 - Decide UI | Pending |
@@ -539,6 +594,19 @@ Populated during roadmap creation.
 | DCU-09 | Phase 5 - Decide UI | Pending |
 | DCU-10 | Phase 5 - Decide UI | Pending |
 | DCU-11 | Phase 5 - Decide UI | Pending |
+| DCU-12 | Phase 5 - Decide UI | Pending |
+| DCU-13 | Phase 5 - Decide UI | Pending |
+| DCU-14 | Phase 5 - Decide UI | Pending |
+| DCU-15 | Phase 5 - Decide UI | Pending |
+| DCU-16 | Phase 5 - Decide UI | Pending |
+| DCU-17 | Phase 5 - Decide UI | Pending |
+| DCU-18 | Phase 5 - Decide UI | Pending |
+| DCU-19 | Phase 5 - Decide UI | Pending |
+| DCU-20 | Phase 5 - Decide UI | Pending |
+| DCU-21 | Phase 5 - Decide UI | Pending |
+| DCU-22 | Phase 5 - Decide UI | Pending |
+| DCU-23 | Phase 5 - Decide UI | Pending |
+| DCU-24 | Phase 5 - Decide UI | Pending |
 | GRW-01 | Phase 6 - Grow | Pending |
 | GRW-02 | Phase 6 - Grow | Pending |
 | GRW-03 | Phase 6 - Grow | Pending |
@@ -616,7 +684,7 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 241 total (100 ticked)
+- v1 requirements: 275 total (100 ticked)
 - Mapped to phases: 241
 - Unmapped: 0 ✓
 
@@ -627,6 +695,8 @@ Populated during roadmap creation.
 *2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 
 *2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
+*2026-10-15 — Decide depth expansion: DEC-17..DEC-37 (Phase 4) and DCU-12..DCU-24 (Phase 5) added from 04-CONTEXT D-23..D-63 and 05-CONTEXT D-21..D-43; v1 total now 275.*
+
 *2026-10-09 — Phase 2.2 implemented: ACT-06..ACT-18 and REC-19..REC-25 marked "Implemented, awaiting device walkthrough and verification" (ticked only after 02.2-VERIFICATION.md, as for Phase 1); coverage recounted to 231/231 v1 requirements mapped.*
 *2026-10-10 — Phase 2.2 walkthrough follow-ups: REC-26, REC-27 and ACC-14 added and mapped to the new Phase 2.3; coverage 234/234 (75 ticked).*
 *Previously: 2026-09-26 — Phase 1 closed: FND-10, MON-01, MON-02, MON-03, MON-07, MON-08, MON-14 ticked on 01-VERIFICATION.md evidence; FND-04/FND-05 ticked (enforce_admins on). 203/203 v1 requirements mapped*

@@ -179,6 +179,8 @@ Engine decisions are 04 D-41…D-58. These are the Phase 5 UI and data counterpa
 - **D-42: A deferred-interest toggle** on step 2's promotional-rate row. When it's on, the verdict shows the back-interest charged if the balance isn't cleared by the promo end (04 D-48, `deferred_interest_charged`).
 - **D-43: The UI-SPEC touch-ups are applied as the planner resolved them** (05-PLANNING-NOTES OQ-A2/A3/A9 and the 7 recorded conflicts). The combine pill stays hidden with only 1 open check.
 
+- **D-44 (user, 2026-10-15): the UI takes user-entered loss of value and holding fees** (04 D-63). Step 2's "Loss of value" prompt takes an amount or %/year, shown as "not a monthly cash cost". The investing views take an optional holding fee %/year. The card-costs tile sums the user's card terms. Requirement IDs DCU-12..DCU-24 now trace D-21..D-43.
+
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
 - The table layout for checks, decisions and limits, with RLS per household or user, following the existing migration patterns.

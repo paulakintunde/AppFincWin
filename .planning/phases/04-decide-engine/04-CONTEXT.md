@@ -223,6 +223,8 @@ These decisions widen Phase 4. Where one amends an earlier decision, the later o
 - **D-61: `scheduledOutflows` snapshot input.** Dated pending one-off outflows (e.g. a pending expense written by Go ahead) are placed on their dates in the D-44 cash path rather than taken off cash on day 0. They still reduce `cashOnHand` for the cash ledger only if they're dated on or before `asOf`.
 - **D-62: Contract clarifications.** `estimateBias` takes estimates and actuals in the check's home currency (05 D-37/D-39 convert first). The split-estimate relation `newMonthly = mineMonthly + mineRunning` is stated in the contract. `incomeAtRisk` takes the same `SetbackInput[]` as `applySetbacks`. An `InvestCheck` is a valid `StackedCheckInput.check`. The decide barrel re-exports `CurrencyCode` and `MinorUnits`.
 
+- **D-63 (user, 2026-10-15): loss of value and holding fees are user-entered.** Loss of value is an optional user-typed amount or %/year on a check. It is a non-cash figure and never enters the month test (D-55). Investment holding fees are an optional user-typed %/year that reduces the D-52 projections (net rate = entered rate − fee). The card-costs figure sums the user's own card terms (APR, fees). Nothing is defaulted. Requirement IDs DEC-17..DEC-37 now trace D-23..D-63.
+
 ### Claude's Discretion
 - How the snapshot carries series (frequency, latest amount, next due date, which rows each series covers) for D-23 and D-24.
 - The exact name and payload of the D-31 basis code.

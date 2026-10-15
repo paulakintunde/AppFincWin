@@ -552,7 +552,7 @@ Plans:
 ### Phase 4: Decide Engine
 **Goal**: The affordability engine computes correct verdicts in complete isolation, before any UI exists.
 **Depends on**: Nothing (pure TypeScript, zero data-layer dependency — parallel-eligible with Phases 1-3)
-**Requirements**: DEC-01, DEC-02, DEC-03, DEC-04, DEC-05, DEC-06, DEC-07, DEC-08, DEC-09, DEC-10, DEC-11, DEC-12, DEC-13, DEC-14, DEC-15, DEC-16
+**Requirements**: DEC-01, DEC-02, DEC-03, DEC-04, DEC-05, DEC-06, DEC-07, DEC-08, DEC-09, DEC-10, DEC-11, DEC-12, DEC-13, DEC-14, DEC-15, DEC-16, DEC-17, DEC-18, DEC-19, DEC-20, DEC-21, DEC-22, DEC-23, DEC-24, DEC-25, DEC-26, DEC-27, DEC-28, DEC-29, DEC-30, DEC-31, DEC-32, DEC-33, DEC-34, DEC-35, DEC-36, DEC-37
 **Success Criteria** (what must be TRUE — test-suite observable, no UI in this phase):
   1. The engine computes an amortised monthly payment for any principal/APR/term including the zero-rate case, and future value of a monthly contribution plus a seed including the zero-rate case.
   2. A credit card at 22.9% APR with a 1% minimum payment is correctly reported as never clearing, via an explicit payment-vs-interest check rather than inference from hitting the simulation's month cap.
@@ -604,7 +604,7 @@ Plans:
 ### Phase 5: Decide UI
 **Goal**: A user gets a trustworthy, explained affordability verdict computed from their own logged months.
 **Depends on**: Phase 4 (engine), Phase 1 (data layer to source the snapshot)
-**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09, DCU-10, DCU-11, ANL-06
+**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09, DCU-10, DCU-11, DCU-12, DCU-13, DCU-14, DCU-15, DCU-16, DCU-17, DCU-18, DCU-19, DCU-20, DCU-21, DCU-22, DCU-23, DCU-24, ANL-06
 **Success Criteria** (what must be TRUE):
   1. A user can get a cash answer from just an item and a price without entering the multi-step flow, and can work through the five steps — item, price and payment, impact, alternatives, decision — for the full picture.
   2. A user can leave a check open, return to it later and see its verdict recomputed against current figures, or abandon it.
