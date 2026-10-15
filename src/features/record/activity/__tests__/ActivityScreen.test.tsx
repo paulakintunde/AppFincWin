@@ -485,6 +485,18 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(screen.getByText('Delete 1 transaction? Transfers are deleted with both sides.')).toBeTruthy();
   });
 
+  it('WR-03: the results count counts every row shown, skipped lines included', async () => {
+    mockRows = [
+      row({ id: 'a', name: 'Coffee' }),
+      row({ id: 'b', name: 'Coffee beans', status: 'skipped' }),
+      row({ id: 'c', name: 'Coffee shop', status: 'skipped' }),
+      row({ id: 'd', name: 'Rent' }),
+    ];
+    const screen = await renderScreen();
+    await type(screen, 'Search September 2026', 'cof');
+    expect(screen.getByText('3 transactions')).toBeTruthy();
+  });
+
   it('shows Nothing matches when a search finds nothing', async () => {
     mockRows = [row({ id: 'a', name: 'Coffee' })];
     const screen = await renderScreen();

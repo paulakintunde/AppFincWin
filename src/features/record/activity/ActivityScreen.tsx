@@ -317,7 +317,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
           scope={vm.scope}
           onTermChange={vm.setTerm}
           onScopeChange={vm.setScope}
-          resultsCount={searching ? vm.totals.count : null}
+          // Review WR-03: count the rows the results list shows (transfers and skipped included).
+          resultsCount={searching ? itemRows.length : null}
           monthEmpty={vm.monthEmpty}
           loading={vm.monthLoading}
           card={{
