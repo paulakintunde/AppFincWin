@@ -130,6 +130,11 @@ Phase 02.2 added recurring series (weekly to yearly, `src/engine/recurring/`), r
 - **D-11 amended:** **The first read flags a cash level below the cushion.** The rough cushion is 3 × the rough monthly spending (mirroring D-01). `cashAfter ≥ 0` but below the rough cushion returns `adjust` with a `cash` warning, so the first read agrees with the full verdict once a real month exists. The first read is still cash-level only: no debt lines, steadiness or squeeze. Plan 04-08's "never `adjust`" is superseded.
 - **D-12 amended:** **Short history is cautious on both sides.** Below 3 full months, the income basis is the worst (lowest) month *and* the spending basis is the highest-spending month.
 - **D-16 clarified:** **The engine sees one currency per check.** The snapshot builder (Phase 5) converts card terms (floor), balances and figures into the check's home currency before calling the engine. The engine rejects mixed currencies rather than converting them.
+- **D-36 (added 2026-10-15, from the Phase 5 quick-check discussion):** **The engine returns a purchase size code relative to the user's own money.** There are no dollar thresholds (D-05). The code is computed from the price paid in cash against this context:
+  - `from_spare_this_month`: price ≤ `leftBefore` (this month's money left over, after saving and investing).
+  - `from_savings`: otherwise, if `cashAfter` (with the D-24 deduction) is still ≥ the reserve.
+  - `needs_spreading`: otherwise.
+  It is returned on the verdict for every check, whatever the payment method. A first read computes it from the rough figures. It is a named test (D-22).
 - **D-22 extended:** D-23, D-24, D-27, D-33, D-34, D-35 and the amended D-11/D-12 each get a named deviation test, in addition to the D-22 list.
 
 ### Claude's Discretion
