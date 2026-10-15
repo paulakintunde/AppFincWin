@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2.2: Record polish** (INSERTED) - Activity views and subtotals, sort, recurring-from-history, clone, detail sheet and swipe, entry-sheet extras, paste import, sample data (completed 2026-10-10; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 2.3: Record follow-ups** (INSERTED) - Import reconcile-or-new choice, description auto-categorise rules, signed-out account chooser, compact amount, Add account from the picker, bulk Add to list (completed 2026-10-13; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content (completed 2026-10-14)
-- [ ] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip
+- [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [ ] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
@@ -519,7 +519,7 @@ Plans:
 **Requirements**: no new IDs; refines the Phase 2 Activity header (ACT-02 month switcher, ACT-03 search) and keeps Phase 3's D-41 Unpaid banner
 **Proposal**: https://claude.ai/artifact/BNKMdaVimhwxtkev8PJ8Yp (approved 2026-10-15)
 **Depends on:** Phase 3
-**Plans:** 14/15 plans executed
+**Plans:** 15/15 plans complete
 
 Plans:
 **Wave 1**
@@ -547,7 +547,7 @@ Plans:
 - [x] 03.1-14-PLAN.md — Remaining Activity suites, Home-intent closes search, retired components and keys removed
 
 **Wave 6** *(blocked on wave 5)*
-- [ ] 03.1-15-PLAN.md — Pixel 9 device acceptance record (checkpoint)
+- [x] 03.1-15-PLAN.md — Pixel 9 device acceptance record (checkpoint)
 
 ### Phase 4: Decide Engine
 **Goal**: The affordability engine computes correct verdicts in complete isolation, before any UI exists.
