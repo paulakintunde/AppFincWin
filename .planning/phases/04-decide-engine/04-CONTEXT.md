@@ -1,7 +1,7 @@
 # Phase 4: Decide Engine - Context
 
 **Gathered:** 2026-09-26
-**Updated:** 2026-10-15 (D-23…D-35; amends D-01, D-03, D-05, D-08, D-11, D-12, D-15, D-16, D-22)
+**Updated:** 2026-10-15 (D-23…D-35; amends D-01, D-03, D-05, D-08, D-11, D-12, D-15, D-16, D-22). D-36 and, for Phase 5 alignment, D-37…D-40 were added the same day.
 **Status:** Ready for replanning. The 12 plans dated 2026-09-27 predate the 2026-10-15 update and must be revised before execution.
 
 <domain>
@@ -136,6 +136,36 @@ Phase 02.2 added recurring series (weekly to yearly, `src/engine/recurring/`), r
   - `needs_spreading`: otherwise.
   It is returned on the verdict for every check, whatever the payment method. A first read computes it from the rough figures. It is a named test (D-22).
 - **D-22 extended:** D-23, D-24, D-27, D-33, D-34, D-35 and the amended D-11/D-12 each get a named deviation test, in addition to the D-22 list.
+
+#### Phase 5 alignment (added 2026-10-15 for Phase 5 alignment)
+
+Phase 5's quick check and steps 2–5 (05-CONTEXT D-05…D-23, 05-UI-SPEC) render figures the engine did not yet return. These four decisions keep every such figure in the engine, as integer minor units and codes (D-20, D-21). See `04-PHASE5-ALIGNMENT.md`.
+
+- **D-37 (added 2026-10-15 for Phase 5 alignment):** **The engine resolves a buy check's price inputs.** This ports the prototype's `dprice` and `downNet`, which no plan had ported.
+  - Final price = advertised price + every counted adjustment, floored at 0. "Adds to the price" counts as positive and "takes off the price" as negative.
+  - `dayFees` = the counted adjustments that add to the price and are paid on the day (the prototype's rule).
+  - Sales tax is a percentage the user types (05 D-23). It is applied to the advertised price with one half-up rounding and becomes a counted, on-the-day adjustment. There is no default tax rate (D-05; never invented, as D-07). Quick-check fees are a counted, on-the-day adjustment too.
+  - Running costs net = counted running costs − counted replaced expenses. It may be negative.
+  - The resolved figures feed `BuyCheck.price`, `dayFees` and `runningCostsNet` unchanged. So a Credit quick check (a loan with no deposit) pays tax and fees on day one and finances the advertised price.
+- **D-38 (added 2026-10-15 for Phase 5 alignment):** **Every assessment returns the month line by line (Now/After) and the five ledgers as numbers.**
+  - The month table rows are: money in, living expenses, debt payments, saving and investing, this purchase, and left. "This purchase" is my running costs on a buy check and my contribution on an invest check.
+  - The table is **pre-pause**: in each column the rows sum exactly to that column's left (`leftBefore` and `left`). The pause is reported separately, through the `inv` warning and `investingAtRisk`/`savingAtRisk` (D-35). The prototype lowered the After "saving and investing" row by `investAtRisk` but kept the pre-pause left, so its rows did not add up. This is a named deviation test.
+  - The five ledgers (income, expenses, debt, cash, investments) each carry Now, After and a direction code (`better`, `worse` or `same`):
+    - Debt is the total balance owed, plus my share of the amount financed.
+    - Cash Now is the cash left after bills due within 90 days (D-24), so the change shown is the purchase alone.
+    - Investments After is the monthly investing left after any pause. An invest check adds the contribution.
+- **D-39 (added 2026-10-15 for Phase 5 alignment):** **Runway is a whole number of months: `floor(max(0, cashAfter) / burn)`, or null when `burn` ≤ 0.**
+  - `cashAfter` already has the purchase and the D-24 bills taken off. `burn` is the monthly outgoings after the purchase, without saving or investing (D-02).
+  - The prototype divided cash *before* the purchase by burn and showed one decimal. The engine uses cash after the purchase, because the setbacks section tests cash "with this purchase already running". It rounds down, so runway is never overstated.
+  - This is a named deviation test.
+- **D-40 (added 2026-10-15 for Phase 5 alignment):** **The engine computes the wait-and-save plan** (05 D-10; the prototype's step-5 wait panel).
+  - Waiting means buying outright later. So the target on a buy check = max(0, my part of the price − spare cash), where spare cash = max(0, `cashAvailable` − reserve), as in the alternatives (D-24). With the default amount, the months equal the alternatives' wait-and-save `monthsToBuy`. On an invest check the target is the amount.
+  - The prototype's target was max(`mineCash`, …). For a cash purchase that made the target the whole price, even when cash above the cushion already covered most of it. It also disagreed with its own wait row. This is a named deviation test.
+  - The monthly amount is the user's choice. It defaults to the monthly surplus before the purchase, max(0, `leftBefore`).
+  - Months = max(1, ⌈target ÷ amount⌉), or null when the amount is 0.
+  - Ready-by = `asOf` + that many calendar months, clamped to the month's end by the recurring-schedule rule.
+  - `withinSpare` = amount ≤ max(0, `leftBefore`).
+  - The prototype's 25.00 minimum amount and its rounding are currency constants, so they are removed (D-05). The slider's step and bounds are UI.
 
 ### Claude's Discretion
 - How the snapshot carries series (frequency, latest amount, next due date, which rows each series covers) for D-23 and D-24.
