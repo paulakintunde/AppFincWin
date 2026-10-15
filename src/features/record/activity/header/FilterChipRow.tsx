@@ -109,26 +109,31 @@ export function FilterChipRow({
           }}
         />
       ))}
-      {scrolls ? <Chip label={t('activity.filter.clearAll')} onPress={onClearAll} /> : null}
+      {scrolls ? (
+        <Chip
+          label={t('activity.filter.clearAll')}
+          onPress={() => {
+            // Review WR-07: Clear all removes every chip, so focus goes to the Display chip.
+            pendingFocus.current = 0;
+            onClearAll();
+          }}
+        />
+      ) : null}
     </>
   );
 
-  if (scrolls) {
-    return (
-      <ScrollView
-        testID="filter-chip-scroll"
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {items}
-      </ScrollView>
-    );
-  }
+  // Review WR-06 / UI-SPEC line 309: the row always scrolls sideways (one line, never wraps), so at
+  // 320pt or 2x text a trailing chip and its x stay reachable even below three chips. "Clear all"
+  // still only joins at three or more (D-67).
   return (
-    <View testID="filter-chip-row" style={styles.row}>
+    <ScrollView
+      testID={scrolls ? 'filter-chip-scroll' : 'filter-chip-row'}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContent}
+    >
       {items}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -147,6 +152,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  row: { flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', gap: space.gapSm },
   scrollContent: { gap: space.gapSm, paddingRight: space.screenH, alignItems: 'center' },
 });

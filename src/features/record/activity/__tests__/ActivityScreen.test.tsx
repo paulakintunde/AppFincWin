@@ -10,7 +10,8 @@ import { monthPositionOf } from '../monthFigureInputs';
 import { focusAccessibility } from '@/shell/a11yFocus';
 import { ActivityScreen } from '../ActivityScreen';
 import { ACTIVITY_VIEW_KEY } from '../activityViewPrefs';
-import { resetActivityFocusForTests } from '@/state/activityFocus';
+import { requestActivityFocus, resetActivityFocusForTests } from '@/state/activityFocus';
+import { EMPTY_FILTER } from '@/engine/activity';
 import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -24,6 +25,7 @@ jest.setTimeout(30000);
 const mockMarkPaid = jest.fn((): string | null => 'paid-step');
 let mockRows: ActivityRowView[] = [];
 let mockProjections: ProjectionView[] = [];
+let mockDataState: 'ready' | 'loading' | 'offline' | 'error' = 'ready';
 let mockMonths: string[] = ['2026-10', '2026-09', '2026-08'];
 const mockSheetProps = jest.fn();
 const mockTotals = { paidIn: 0, paidOut: -1250, net: -1250, stillToCome: -500, pendingCount: 1, projectedCount: 1, unconvertedCount: 2, transferCount: 0, count: 2 };
@@ -53,7 +55,8 @@ jest.mock('@/data/queries/activity', () => ({
     projections: mockProjections,
     totals: mockTotals,
     isLoading: false,
-    isError: false,
+    isError: mockDataState === 'error',
+    dataState: mockDataState,
     refetch: jest.fn(),
   }),
   useTransactionMonths: () => ({ months: mockMonths, counts: new Map(mockMonths.map((m) => [m, 1])), isLoading: false }),
@@ -156,6 +159,7 @@ beforeEach(() => {
   resetToastForTests();
   mockRows = [];
   mockProjections = [];
+  mockDataState = 'ready';
   mockMonths = ['2026-10', '2026-09', '2026-08'];
   mockSearchRows = [];
   mockSearchLoading = false;
@@ -231,6 +235,28 @@ describe('ActivityScreen', () => {
     const screen = await renderScreen();
     expect(screen.getByText('Nothing in September 2026 yet.')).toBeTruthy();
     expect(screen.getByText('Add the first one with the Add button, clone August’s lines that aren’t already repeating, or paste a list.')).toBeTruthy();
+  });
+
+  it('CR-01: a failed series read with rows on screen shows the Home error copy, never a figure', async () => {
+    mockDataState = 'error';
+    mockRows = [row({ id: 'a', name: 'Coffee' })];
+    const screen = await renderScreen();
+    const card = within(screen.getByTestId('activity-summary-card'));
+    expect(card.getByText('This month couldn’t load. Pull down to try again.')).toBeTruthy();
+    expect(card.queryByText(/£/)).toBeNull();
+    expect(card.queryByTestId('activity-summary-inout')).toBeNull();
+    // The rows that did load still list.
+    expect(screen.getByText('Coffee')).toBeTruthy();
+  });
+
+  it('CR-01: an offline month with nothing cached is not shown as an empty month', async () => {
+    mockDataState = 'offline';
+    const screen = await renderScreen();
+    expect(screen.queryByText('Nothing in September 2026 yet.')).toBeNull();
+    expect(screen.queryByText('Paste a list')).toBeNull();
+    const card = within(screen.getByTestId('activity-summary-card'));
+    expect(card.getByText('You’re offline, and this month hasn’t loaded on this device yet.')).toBeTruthy();
+    expect(card.queryByText(/£/)).toBeNull();
   });
 
   it('groups still-to-come, paid and skipped rows under section headers', async () => {
@@ -460,6 +486,18 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(screen.getByText('Delete 1 transaction? Transfers are deleted with both sides.')).toBeTruthy();
   });
 
+  it('WR-03: the results count counts every row shown, skipped lines included', async () => {
+    mockRows = [
+      row({ id: 'a', name: 'Coffee' }),
+      row({ id: 'b', name: 'Coffee beans', status: 'skipped' }),
+      row({ id: 'c', name: 'Coffee shop', status: 'skipped' }),
+      row({ id: 'd', name: 'Rent' }),
+    ];
+    const screen = await renderScreen();
+    await type(screen, 'Search September 2026', 'cof');
+    expect(screen.getByText('3 transactions')).toBeTruthy();
+  });
+
   it('shows Nothing matches when a search finds nothing', async () => {
     mockRows = [row({ id: 'a', name: 'Coffee' })];
     const screen = await renderScreen();
@@ -481,6 +519,22 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(screen.getByText('Coffee')).toBeTruthy();
     expect(screen.getByLabelText('Filter')).toBeTruthy();
     expect(screen.queryByLabelText('Filter, 1 active')).toBeNull();
+  });
+
+  it('WR-01: search ignores the hidden filters while open, and they apply again on Cancel', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' }), row({ id: 'b', name: 'Salary', original_amount: 200000, amountHome: 200000 })];
+    const screen = await renderScreen();
+    await fireEvent.press(screen.getByLabelText('Filter'));
+    await fireEvent.press(screen.getByText('Money in'));
+    await fireEvent.press(screen.getByText('Show results'));
+    expect(screen.queryByText('Coffee')).toBeNull();
+    await type(screen, 'Search September 2026', 'cof');
+    expect(screen.getByText('Coffee')).toBeTruthy();
+    expect(screen.queryByText('Nothing matches.')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Cancel search'));
+    expect(screen.queryByText('Coffee')).toBeNull();
+    expect(screen.getByText('Salary')).toBeTruthy();
+    expect(screen.getByLabelText('Filter, 1 active')).toBeTruthy();
   });
 
   it('D-70: the card figure is the same with and without a filter; only the caption count narrows', async () => {
@@ -515,6 +569,19 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(focusAccessibility).toHaveBeenCalled();
   });
 
+  it('WR-08: a Home handoff that closes search does not pull focus to the Search icon', async () => {
+    mockRows = [row({ id: 'a', name: 'Coffee' })];
+    const screen = await renderScreen();
+    await openSearch(screen);
+    (focusAccessibility as jest.Mock).mockClear();
+    await act(async () => {
+      requestActivityFocus({ month: '2026-09', filter: { ...EMPTY_FILTER, unpaidOnly: true } });
+    });
+    expect(screen.queryByLabelText('Cancel search')).toBeNull();
+    expect(screen.getByTestId('activity-month-row')).toBeTruthy();
+    expect(focusAccessibility).not.toHaveBeenCalled();
+  });
+
   it('Cancel within 250 ms of typing leaves the term empty', async () => {
     mockRows = [row({ id: 'a', name: 'Coffee' }), row({ id: 'b', name: 'Rent' })];
     const screen = await renderScreen();
@@ -535,6 +602,18 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(within(screen.getByTestId('activity-select-bar')).getByText('1 selected')).toBeTruthy();
     expect(screen.getByTestId('activity-row-g1').props.accessibilityState.checked).toBe(true);
     expect(screen.queryByLabelText(/display options$/)).toBeNull();
+  });
+
+  it('WR-02: long-pressing a search result shows the SelectBar with its count and Done', async () => {
+    mockRows = [row({ id: 'g1', name: 'Coffee' }), row({ id: 'g2', name: 'Rent' })];
+    const screen = await renderScreen();
+    await type(screen, 'Search September 2026', 'cof');
+    await fireEvent(screen.getByTestId('activity-row-g1'), 'longPress');
+    const bar = within(screen.getByTestId('activity-select-bar'));
+    expect(bar.getByText('1 selected')).toBeTruthy();
+    await fireEvent.press(bar.getByText('Done'));
+    expect(screen.queryByTestId('activity-select-bar')).toBeNull();
+    expect(screen.queryByLabelText('Delete')).toBeNull();
   });
 
   it('D-68: choosing Calendar exits select mode, keeps the header and drops Select from More', async () => {

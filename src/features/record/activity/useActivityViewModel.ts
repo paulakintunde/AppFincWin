@@ -13,6 +13,7 @@ import {
   type ActivityRowView,
 } from '@/data/queries/activity';
 import { useFxLatest } from '@/data/queries/fxLatest';
+import type { MonthDataState } from '@/data/queries/monthDataState';
 import { projectionHomeAmount } from '@/data/queries/homeAmount';
 import { usePaidBefore } from '@/data/queries/pendingSplit';
 import {
@@ -187,18 +188,22 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
   const search = useTransactionsSearch(rc.householdId, scope === 'all' ? term : '', rc.homeCurrency, rc.today);
   const flat = scope === 'all' && search.enabled;
   const searching = scope === 'month' ? term.trim() !== '' : flat;
-  const filtering = isFilterActive(filter);
+  // 03.1 review WR-01 / D-61: while the search field is open every filter indicator (badge row,
+  // chips, Unpaid banner) is hidden, so search ignores the filters rather than silently applying
+  // them. The filter is kept and applies again on Cancel.
+  const appliedFilter = searchOpen ? EMPTY_FILTER : filter;
+  const filtering = isFilterActive(appliedFilter);
   const narrowed = useMemo(() => {
     let base: ActivityRowView[] = flat ? search.rows : monthView.rows;
     if (scope === 'month' && term.trim() !== '') base = base.filter((r) => matchesSearch(r, term));
-    return filterRows(base, filter);
-  }, [flat, search.rows, monthView.rows, scope, term, filter]);
+    return filterRows(base, appliedFilter);
+  }, [flat, search.rows, monthView.rows, scope, term, appliedFilter]);
 
   // 03-CONTEXT D-34/D-35: projected bills join the Unpaid list so it matches Home's UNPAID;
   // other filters keep hiding projections.
   const unpaidProjections = useMemo(
-    () => (searching ? [] : filterProjections(monthView.projections, filter)),
-    [searching, monthView.projections, filter]
+    () => (searching ? [] : filterProjections(monthView.projections, appliedFilter)),
+    [searching, monthView.projections, appliedFilter]
   );
 
   // 03.1 D-47 / D-70: the card shows the whole month, the same figure as Home, under any filter.
@@ -211,8 +216,14 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
       }),
     [monthView.rows, monthView.projections, monthView.totals]
   );
-  const monthEmpty = isMonthEmpty(monthView.totals, position);
-  const monthLoading = !rc.ready || monthView.dataState === 'loading';
+  // T-03-22-01 / D-47 (03.1 review CR-01): the same data-state gate as Home. A core read that
+  // failed or is offline with nothing cached shows Home's error / offline copy, never a figure
+  // and never the empty month.
+  const dataState: MonthDataState = rc.ready ? monthView.dataState : 'loading';
+  const monthLoading = dataState === 'loading';
+  const monthUnavailable: 'error' | 'offline' | null =
+    dataState === 'error' || dataState === 'offline' ? dataState : null;
+  const monthEmpty = monthUnavailable === null && isMonthEmpty(monthView.totals, position);
 
   // ACT-10 as amended by 03.1 D-70: the narrowed totals feed the entry count and the search
   // results count only; the card's figures come from `position`.
@@ -241,7 +252,8 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
   const wantBalance = view === 'balance' && !flat;
   const paidBefore = usePaidBefore(rc.householdId, wantBalance ? `${month}-01` : null);
   const rates = useFxLatest().data;
-  const singleAccountId = filter.accountIds !== null && filter.accountIds.length === 1 ? filter.accountIds[0]! : null;
+  const singleAccountId =
+    appliedFilter.accountIds !== null && appliedFilter.accountIds.length === 1 ? appliedFilter.accountIds[0]! : null;
 
   const balance = useMemo(() => {
     if (!wantBalance) return null;
@@ -406,6 +418,7 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
     position,
     monthEmpty,
     monthLoading,
+    monthUnavailable,
     entryCount,
     searchOpen,
     setSearchOpen,

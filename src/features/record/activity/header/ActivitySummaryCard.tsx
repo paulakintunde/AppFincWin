@@ -1,5 +1,5 @@
 // Band 3 of the Activity header (D-47..D-50, D-70): the read-only summary card. It formats engine
-// output only; no arithmetic beyond Math.abs for display. The figure is position.left, never
+// output only; no arithmetic beyond the Out sign (paidOutText). The figure is position.left, never
 // changed by the entry count or a narrowing filter (D-70). There is no paid-versus-pending bar
 // (D-48), and the card is one screen-reader stop (D-50).
 import React from 'react';
@@ -14,6 +14,7 @@ import { radii, space } from '@/theme/layout';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import { paidOutText } from '../monthFigureInputs';
 
 const FIGURE_STACK_ABOVE = 1.3;
 // final-size placeholder (UI-SPEC Loading)
@@ -29,6 +30,8 @@ export interface ActivitySummaryCardProps {
   entryCount: { total: number; shown: number; narrowed: boolean };
   balanceNote?: { allAccounts: boolean; inexact: boolean };
   loading: boolean;
+  /** CR-01 / T-03-22-01: a core read failed or is offline with nothing cached; no figure shows. */
+  unavailable?: 'error' | 'offline' | null;
   formatter: MoneyFormatter;
   homeCurrency: string;
 }
@@ -39,6 +42,7 @@ export function ActivitySummaryCard({
   entryCount,
   balanceNote,
   loading,
+  unavailable = null,
   formatter,
   homeCurrency,
 }: ActivitySummaryCardProps) {
@@ -67,6 +71,17 @@ export function ActivitySummaryCard({
     );
   }
 
+  // D-47: the same copy and rule as Home's ThisMonthCard, so the two tabs agree on a failed read.
+  if (unavailable !== null) {
+    return (
+      <View testID="activity-summary-card" accessible style={container}>
+        <Text testID="activity-summary-unavailable" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+          {t(unavailable === 'error' ? 'home.state.monthError' : 'home.state.monthOffline')}
+        </Text>
+      </View>
+    );
+  }
+
   const entries =
     entryCount.narrowed && entryCount.shown !== entryCount.total
       ? t('activity.summary.entriesOf', { shown: entryCount.shown, count: entryCount.total })
@@ -74,6 +89,7 @@ export function ActivitySummaryCard({
   const caption = t('activity.summary.caption', { caption: t('home.month.caption'), entries });
   const figure = position.left >= 0 ? `+${fmt(position.left)}` : fmt(position.left);
   const figureColor = position.left >= 0 ? colors.accent : colors.danger;
+  const outText = paidOutText(position.paidOut, fmt);
   const stillText = position.unpaid > 0 ? t('activity.summary.stillToCome', { amount: fmt(position.unpaid) }) : null;
   // undefined = not the balance view (show In/Out); null = balance view with nothing to say.
   const note =
@@ -91,7 +107,7 @@ export function ActivitySummaryCard({
           figure,
           entries,
           in: fmt(position.paidIn),
-          out: fmt(Math.abs(position.paidOut)),
+          out: outText,
         })
       : t('activity.summary.a11yBalance', {
           figure,
@@ -123,7 +139,7 @@ export function ActivitySummaryCard({
         <Text testID="activity-summary-inout" style={[small, { color: colors.inkMuted, marginTop: space.gapSm }]}>
           {t('activity.totals.in')} <Text style={{ color: colors.ink }}>{fmt(position.paidIn)}</Text>
           {' · '}
-          {t('activity.totals.out')} <Text style={{ color: colors.ink }}>{fmt(Math.abs(position.paidOut))}</Text>
+          {t('activity.totals.out')} <Text style={{ color: colors.ink }}>{outText}</Text>
         </Text>
       ) : note !== null ? (
         <Text

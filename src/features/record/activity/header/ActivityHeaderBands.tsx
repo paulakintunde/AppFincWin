@@ -139,25 +139,25 @@ export function ActivityHeaderBands(p: ActivityHeaderBandsProps): React.JSX.Elem
       {/* Band 3 */}
       {!hideBands ? <ActivitySummaryCard {...p.card} loading={p.loading} /> : null}
 
-      {/* Band 4: D-63 the SelectBar replaces the Display row in select mode. */}
-      {!hideBands ? (
-        p.selectionActive ? (
-          <SelectBar
-            count={p.selectionCount}
-            onSelectAll={p.onSelectAll}
-            onSelectNone={p.onSelectNone}
-            onDone={p.onSelectDone}
-          />
-        ) : (
-          <FilterChipRow
-            leading={<DisplayChip view={p.view} sort={p.sort} onPress={p.onOpenDisplay} chipRef={p.displayChipRef} />}
-            leadingFocusRef={p.displayChipRef}
-            chips={p.filterChips}
-            onOpenFilters={p.onOpenFilters}
-            onRemove={p.onRemoveFilter}
-            onClearAll={p.onClearAllFilters}
-          />
-        )
+      {/* Band 4: D-63 the SelectBar replaces the Display row in select mode. Review WR-02: it shows
+          whenever select mode is on, even while searching or in an empty month, so the count and
+          Done are always reachable while the BulkBar is up. */}
+      {p.selectionActive ? (
+        <SelectBar
+          count={p.selectionCount}
+          onSelectAll={p.onSelectAll}
+          onSelectNone={p.onSelectNone}
+          onDone={p.onSelectDone}
+        />
+      ) : !hideBands ? (
+        <FilterChipRow
+          leading={<DisplayChip view={p.view} sort={p.sort} onPress={p.onOpenDisplay} chipRef={p.displayChipRef} />}
+          leadingFocusRef={p.displayChipRef}
+          chips={p.filterChips}
+          onOpenFilters={p.onOpenFilters}
+          onRemove={p.onRemoveFilter}
+          onClearAll={p.onClearAllFilters}
+        />
       ) : null}
 
       {/* D-66: the Unpaid banner stays under band 4 while the Unpaid filter is on. */}

@@ -124,15 +124,22 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
   });
 
   // D-59..D-61: Search opens on This month; Cancel clears the term and returns focus to the icon.
+  // Review WR-08: only a user Cancel returns focus. The HOME-01 intent also closes search, and
+  // there the tab change owns focus (Phase 3 D-20), so the close it causes must not move it.
+  const focusIconOnClose = useRef(false);
   const openSearch = () => vm.setSearchOpen(true);
   const cancelSearch = () => {
+    focusIconOnClose.current = true;
     vm.setTerm('');
     vm.setScope('month');
     vm.setSearchOpen(false);
   };
   const wasSearchOpen = useRef(vm.searchOpen);
   useEffect(() => {
-    if (wasSearchOpen.current && !vm.searchOpen) focusAccessibility(searchIconRef.current);
+    if (wasSearchOpen.current && !vm.searchOpen && focusIconOnClose.current) {
+      focusAccessibility(searchIconRef.current);
+    }
+    if (!vm.searchOpen) focusIconOnClose.current = false;
     wasSearchOpen.current = vm.searchOpen;
   }, [vm.searchOpen]);
 
@@ -317,7 +324,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
           scope={vm.scope}
           onTermChange={vm.setTerm}
           onScopeChange={vm.setScope}
-          resultsCount={searching ? vm.totals.count : null}
+          // Review WR-03: count the rows the results list shows (transfers and skipped included).
+          resultsCount={searching ? itemRows.length : null}
           monthEmpty={vm.monthEmpty}
           loading={vm.monthLoading}
           card={{
@@ -325,6 +333,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
             unconvertedCount: vm.monthView.totals.unconvertedCount,
             entryCount: vm.entryCount,
             balanceNote: vm.balanceHeader,
+            unavailable: vm.monthUnavailable,
             formatter,
             homeCurrency: rc.homeCurrency,
           }}
@@ -422,6 +431,14 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
                     ? t('activity.searchFailed')
                     : t('activity.searching')}
               </Text>
+            ) : vm.monthUnavailable !== null ? (
+              // CR-01 / T-03-22-01: a failed or offline-uncached read is never an empty month. The
+              // card carries Home's copy; while search hides the card, the list says it instead.
+              vm.searchOpen ? (
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+                  {t(vm.monthUnavailable === 'error' ? 'home.state.monthError' : 'home.state.monthOffline')}
+                </Text>
+              ) : null
             ) : searching || filtering ? (
               <EmptyState heading={t('activity.noMatchHeading')} body={t('activity.noMatchBody')} />
             ) : (

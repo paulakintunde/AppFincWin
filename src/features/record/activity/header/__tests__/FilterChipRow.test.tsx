@@ -52,11 +52,12 @@ describe('FilterChipRow', () => {
     expect(queryByTestId('filter-chip-scroll')).toBeNull();
   });
 
-  it('two chips: plain one-line row, no Clear all', async () => {
+  it('two chips: one sideways-scrolling line, no Clear all (WR-06)', async () => {
     const { getByTestId, getByText, queryByText } = await setup([cat, dir]);
-    const style = StyleSheet.flatten(getByTestId('filter-chip-row').props.style);
-    expect(style.flexDirection).toBe('row');
-    expect(style.flexWrap).toBe('nowrap');
+    const row = getByTestId('filter-chip-row');
+    // A horizontal ScrollView never wraps and lets a clipped trailing chip and its x scroll into view.
+    expect(row.props.horizontal).toBe(true);
+    expect(row.props.showsHorizontalScrollIndicator).toBe(false);
     expect(getByText('Groceries')).toBeTruthy();
     expect(getByText('Money out')).toBeTruthy();
     expect(queryByText('Clear all')).toBeNull();
@@ -109,6 +110,15 @@ describe('FilterChipRow', () => {
     await fireEvent.press(getByRole('button', { name: 'Remove filter Groceries' }));
     await rebuild([]);
     expect(ref.current).not.toBeNull();
+    expect(focusAccessibility).toHaveBeenCalledWith(ref.current);
+  });
+
+  it('WR-07: Clear all moves focus to the Display chip', async () => {
+    const { getByRole, rebuild, ref } = await setup([cat, dir, acc]);
+    await fireEvent.press(getByRole('button', { name: 'Clear all' }));
+    await rebuild([]);
+    expect(ref.current).not.toBeNull();
+    expect(focusAccessibility).toHaveBeenCalledTimes(1);
     expect(focusAccessibility).toHaveBeenCalledWith(ref.current);
   });
 });

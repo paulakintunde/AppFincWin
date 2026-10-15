@@ -19,7 +19,7 @@ import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import type { MonthDataState } from '@/data/queries/monthDataState';
-import { isMonthEmpty } from '@/features/record/activity/monthFigureInputs';
+import { isMonthEmpty, paidOutText } from '@/features/record/activity/monthFigureInputs';
 import { MonthChips } from './MonthChips';
 
 // UI-SPEC Spacing "prototype-literal exceptions (Home)": the 12 / 14 / 16 px gaps between the
@@ -134,7 +134,7 @@ export function ThisMonthCard({
 
   const cells: { key: string; label: string; value: string; color: string }[] = [
     { key: 'in', label: t('activity.totals.in'), value: fmt(position.paidIn), color: colors.ink },
-    { key: 'out', label: t('activity.totals.out'), value: fmt(Math.abs(position.paidOut)), color: colors.ink },
+    { key: 'out', label: t('activity.totals.out'), value: paidOutText(position.paidOut, fmt), color: colors.ink },
     { key: 'unpaid', label: t('home.month.unpaid'), value: fmt(position.unpaid), color: colors.danger },
   ];
 
