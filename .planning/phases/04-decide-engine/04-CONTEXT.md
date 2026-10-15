@@ -2,7 +2,7 @@
 
 **Gathered:** 2026-09-26
 **Updated:** 2026-10-15 (D-23…D-35; amends D-01, D-03, D-05, D-08, D-11, D-12, D-15, D-16, D-22). D-36 and, for Phase 5 alignment, D-37…D-40 were added the same day.
-**Status:** Replanned 2026-10-15: 13 plans in 6 waves, aligned with Phase 5. The plan checker passed. D-37…D-40 were confirmed by the user on 2026-10-15. Ready to execute.
+**Status:** Needs replanning for D-41…D-58, added 2026-10-15 (the engine depth expansion the user chose to fold into Phase 4). The 13 plans cover D-01…D-40 only.
 
 <domain>
 ## Phase Boundary
@@ -168,6 +168,45 @@ Phase 5's quick check and steps 2–5 (05-CONTEXT D-05…D-23, 05-UI-SPEC) rende
   - Ready-by = `asOf` + that many calendar months, clamped to the month's end by the recurring-schedule rule.
   - `withinSpare` = amount ≤ max(0, `leftBefore`).
   - The prototype's 25.00 minimum amount and its rounding are currency constants, so they are removed (D-05). The slider's step and bounds are UI.
+
+### Engine depth expansion (added 2026-10-15; user chose to fold everything into Phases 4 and 5)
+
+These decisions widen Phase 4. Where one amends an earlier decision, the later one wins. Every new number is a **behaviour constant or a user input, never a currency amount** (D-05). Every new output is **codes and numbers only** (D-21).
+
+#### Trust and accuracy
+- **D-41: Combined checks.** `assess` accepts other open checks to stack with the current one. Each is resolved to its plan, and their day-one costs, monthly costs, financed amounts and shares are applied cumulatively in creation order before the current check. The verdict, warnings and size are for the combined position. The result also reports the standalone verdict, so the UI can say "fits on its own, not with your other open checks". Bisection and options run against the combined position.
+- **D-42: The cushion grows with unsteady income** (amends D-01). The default reserve is a number of months of costs: 3 for Steady, 4.5 for Variable, 6 for Volatile, and 6 when steadiness is `insufficient` (under 3 full months). The first read uses 3 × rough spending, as before. A reserve the user types still wins. Half-months are computed exactly in integer minor units, rounding half-up.
+- **D-43: An "on the edge" flag.** The verdict state is unchanged. Each of the five lines (and the cash-path minimum, D-44) reports its margin. A line passed or failed by less than 5% of that line's threshold gets the `on_edge` flag, with the margin amount. The 5% is a behaviour constant. Where a threshold is 0 (the month line), the margin is measured against a month's costs.
+- **D-44: Day-by-day 90-day cash path.** Using confirmed series with their dates (pay in, bills out, D-25), plus the purchase's day-one and monthly costs on their dates, the engine projects the cash balance each day from `asOf` for 90 days, with and without the purchase. It reports the lowest day and amount for each path. A new warning, `cash_dip`, fires when the lowest balance with the purchase goes below 0 (hard, so the state is `no`) or below the reserve (soft, so `adjust`), and it joins the ordered warnings. If there are no confirmed income series, the path is skipped with basis code `cash_path_unavailable`, and the verdict says so.
+- **D-45: Known future changes.** The snapshot carries user-entered dated changes: income or spending, a signed monthly amount, a start month and an optional end month. The month test runs for each of the next 12 months with the changes applied, and the month ledger uses the **worst** of those months. The result reports which month that is and its shortfall (e.g. "from June the month is $90 short"). Raises therefore can never rescue a shortfall in an earlier month.
+- **D-46: Confidence code.** Every verdict carries `confidence`: `strong` (6 or more full months and Steady), `fair` (3 or more full months, or Variable), or `rough` (under 3 months, Volatile, or a first read). The reasons are included as codes.
+- **D-47: One-off lines** (amends D-29). Record lines the user marks `one_off` are excluded from the averages and the worst month, and are counted in a basis detail (`one_offs_excluded: n, amount`). Unmarked spikes still stay in.
+
+#### Credit that hurts people
+- **D-48: Promotional rates.** A loan or card plan can carry a rate schedule, e.g. 0% for 12 months, then x%. The schedule is entered by the user and never defaulted (D-07). Amortisation and the minimum simulation follow the schedule. The plan reports the payment after the promo ends, whether the balance clears before it ends, and the interest after it ends. The verdict's month test uses the **highest** monthly payment in the schedule.
+- **D-49: Variable-rate stress.** For plans flagged `variable`, the engine re-runs the plan and the month and debt-service tests at the entered APR plus 2 and plus 4 percentage points (behaviour constants). It reports each stressed payment and state beside the verdict, and the verdict itself stays on the entered rate.
+- **D-50: Buy-now-pay-later fees.** Instalment plans can carry a late fee entered by the user. The engine reports the cost of 1 and of 2 late payments (fee × n) and does not change the verdict.
+
+#### Investment and income impact (user rates only; D-06 kept, amended)
+- **D-51: Up to three projection rates the user enters** (amends D-06). The default is still 0%. Every projection is returned for each user rate, plus 0%, as codes and numbers labelled "projection at the rate you entered". The engine never supplies a non-zero rate.
+- **D-52: Four investment views,** all over a horizon (default: the plan's term, or 60 months for cash purchases; behaviour constant, user-editable):
+  - (a) **Price invested instead:** the future value of my share of the final price as a lump sum.
+  - (b) **Payments invested instead:** the future value of the monthly payments (plus running costs) contributed over the term.
+  - (c) **Impact on current investing:** when D-35 pauses investing, the growth lost on the paused amounts over the horizon (future value of the pause), alongside the amount paused.
+  - (d) **Net-worth path:** monthly series of cash + investments − debt balances, with and without the purchase, at each rate.
+  All use `futureValue`/`amortise` from `engine/payoff`.
+- **D-53: Purchase-linked income change.** A check can carry an expected monthly income change caused by the purchase: positive (a work van, +$400 from a start date, with a `likely`/`uncertain` tag) or negative (a course that means fewer hours).
+  - Negative changes are included in the verdict, applied as D-45 changes.
+  - Positive changes are **never** included in the main verdict. A separate "with expected income" assessment and a payback month count (months until the extra income covers the total cost) are returned beside it.
+- **D-54: Income at risk from the new debt.** The setbacks (D-19, DEC-15) are re-run with the new plan included. The engine reports, for each setback, whether the new payments can still be met, and the number of months of runway lost because of the purchase (runway without the purchase minus runway with it).
+
+#### Running costs, wait, learning
+- **D-55: Running-cost prompts by item type.** The engine exports a table that maps an item type (D-14) to the running-cost categories to prompt for. For example, `vehicle` → insurance, fuel, maintenance, registration and loss of value. The table has categories only and no amounts. Loss of value is reported as a non-cash figure and never enters the month test.
+- **D-56: Estimate bias.** Given past decisions with their estimates and actuals (05 D-12), a pure function returns the average signed gap per figure (day-one, monthly payment, running costs) once there are 3 or more decisions with actuals, as a percentage. Phase 5 shows it beside new estimates ("your running costs have come in about 20% higher").
+
+#### Tests and thresholds
+- **D-57: Independent reference tests.** Payment and amortisation tests include published reference tables (a standard bank or textbook amortisation schedule, cited in the test file) independent of the prototype. Where the prototype and the reference disagree, the reference wins and the case becomes a named deviation (D-22).
+- **D-58: Threshold research.** Phase 4 research sources and cites the 36% debt-service line, the 12× unsecured line, the 6%/22% steadiness cut-offs, the 90-day bills window, the D-42 cushion months and the D-43 5% edge. Values stay as decided unless research finds a cited reason to change them; any change goes back to the user. Every constant's citation sits in `constants.ts`.
 
 ### Claude's Discretion
 - How the snapshot carries series (frequency, latest amount, next due date, which rows each series covers) for D-23 and D-24.

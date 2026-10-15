@@ -1,7 +1,7 @@
 # Phase 5: Decide UI - Context
 
 **Gathered:** 2026-10-15
-**Status:** Ready for UI design contract (`/gsd-ui-phase 5`), then planning
+**Status:** Expanded 2026-10-15 with D-24…D-37. The UI-SPEC needs an update for these before planning completes.
 
 <domain>
 ## Phase Boundary
@@ -124,6 +124,48 @@ Decision numbers are local to Phase 5. "04 D-xx" refers to `.planning/phases/04-
 - All copy lives in `src/i18n/locales/en.ts` and is marked as draft in `copyStatus.ts`. The engine's codes (04 D-21) map to catalogue keys. A test asserts that no Decide key contains "advice", "recommend" or "you should" (DCU-09). The voice is declarative, not prescriptive. Verdict strings are ported from the prototype (HTML 4476–4512) with typographic apostrophes, minus any that imply a rate the user didn't enter.
 - Haptics fire on the verdict reveal and on committing a decision (BUILD-PROMPT §155), using `notificationAsync`/`impactAsync` only.
 - No review prompt after a "You cannot afford this" verdict (LAUNCH §4).
+
+### Engine depth expansion: UI side (added 2026-10-15; user chose to fold everything into Phases 4 and 5)
+
+Engine decisions are 04 D-41…D-58. These are the Phase 5 UI and data counterparts.
+- **D-24: Combined checks.** With 2 or more open checks, the check screen and the quick check show a "With my other open checks" toggle, on by default. The verdict shows the combined position. When the standalone and combined verdicts differ, one line says so: "Fits on its own; not with your other 1 open check".
+- **D-25: Unsteady-income cushion and edge.** The cushion line in "Against your lines" shows how many months it uses and why ("6 months, because your income is volatile"). The "on the edge" flag shows as a small amber tag on the chip with the margin, e.g. "on the edge: the cushion holds by $120".
+- **D-26: Cash path.** Step 3 gets a "Day by day, next 90 days" section: a simple line chart (react-native-svg, §2 tokens only) of the two paths, with the lowest day marked. The `cash_dip` warning card names the date. When there are no confirmed pay series, the section says "Add your pay as a recurring series to see day-by-day cash".
+- **D-27: Future changes.** A "Changes coming up" list on the Decide home screen holds the user's dated changes (income or spending, amount, start, optional end; add, edit, remove). The verdict shows the worst-month line when it differs ("Fits now; from June the month is $90 short"). Changes are stored per user.
+- **D-28: Confidence chip.** Every verdict shows strong / fair / rough beside the basis line, and tapping it shows the reasons.
+- **D-29: One-off lines.** Record's line detail gets a "One-off, won't recur" toggle (a new field on rows). The verdict's basis line shows "1 one-off left out" when any are excluded. This touches Record's row editor, and the field must be included in the snapshot.
+- **D-30: Credit terms in step 2.**
+  - **Loan and card:** an optional "Promotional rate" (rate, months, then the rate after). The engine never pre-fills it.
+  - **Variable rate:** a toggle, with the stress results shown as "At +2 points: $x a month; at +4: $y".
+  - **Instalments:** an optional late fee, with "If 1 payment is late: +$x".
+  - The quick check (D-23) stays simple. It has no promo, variable or fee inputs; those live in the full check.
+- **D-31: Investment views (step 4).** A new "If it went into investing instead" section with the four views:
+  - price invested;
+  - payments invested;
+  - investing growth lost to a pause;
+  - a net-worth path chart, with and without the purchase.
+  - **Rates:** each view is shown at 0% plus up to three rates the user adds ("+ Add a rate", max 3). Every figure carries "A projection at the rate you entered, not a forecast". The app never suggests a rate.
+  - **Copy:** declarative only, never "you should invest".
+  - **Horizon:** a chip row, defaulting to the plan term (or 60 months for cash).
+- **D-32: Income impact.**
+  - Step 1 gets an optional "Does this change your income?" with these fields:
+    - raises or lowers;
+    - amount a month;
+    - start date;
+    - likely or uncertain.
+  - **Lowering:** feeds the verdict.
+  - **Raising:** shows a separate card: "With the expected $400 a month (uncertain): fits, pays for itself in 31 months". The main verdict never changes because of it.
+  - **Setbacks:** step 3's setbacks section shows the runway lost because of the purchase, and which setbacks the new payments can't survive.
+- **D-33: Running-cost prompts.** Step 2's "Costs that follow it" pre-lists the categories for the item type, with blank amounts (e.g. vehicle: insurance, fuel, maintenance, registration, loss of value). Loss of value is shown as "not a monthly cash cost".
+- **D-34: Minimal savings goal** (amends D-10). "Wait and save" creates a goal row with:
+  - the target (04 D-40);
+  - the monthly amount;
+  - the ready-by date;
+  - saved-so-far, from transfers the user tags to the goal.
+  It gets a progress bar in Past decisions and on the check. Phase 6 builds goals on this same table and does not replace it.
+- **D-35: Cooling-off.** For `needs_spreading` purchases (D-22), step 5 offers an optional "Check again in 48 hours" toggle, off by default. When it's on, a local notification reopens the check, recomputed. The reminder text carries no amount or item name.
+- **D-36: Learning from history.** Once 3 or more decisions have actuals, step 2 shows the estimate gap beside running costs and the payment ("Your running costs have come in about 20% higher than estimated"). The copy is declarative.
+- **D-37: Currency conversion.** The snapshot builder converts every account, line and debt into the check's home currency at the latest stored rate (Phase 1 `engine/money/rates.ts`) before calling the engine. The basis line says "Includes amounts converted from EUR at 1.47 on 14 Oct". If a needed rate is missing, the result is `missing` with a reason, never a guessed rate.
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
