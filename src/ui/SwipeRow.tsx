@@ -49,6 +49,10 @@ export interface SwipeRowProps {
   accessibilityLabel?: string;
   /** Label of the screen-reader "activate" action; defaults to accessibilityLabel. */
   activateLabel?: string;
+  /** D-63 (03.1): long-press starts select mode. */
+  onLongPress?: () => void;
+  /** Name of the screen-reader 'select' action; defaults to accessibilityLabel. */
+  longPressLabel?: string;
 }
 
 function ActionZone({
@@ -84,7 +88,7 @@ function ActionZone({
   );
 }
 
-export function SwipeRow({ children, left, right, disabled = false, onPress, accessibilityLabel, activateLabel }: SwipeRowProps) {
+export function SwipeRow({ children, left, right, disabled = false, onPress, accessibilityLabel, activateLabel, onLongPress, longPressLabel }: SwipeRowProps) {
   const ref = useRef<SwipeableMethods>(null);
   const [leftZone, setLeftZone] = useState(SWIPE_ACTION_WIDTH);
   const [rightZone, setRightZone] = useState(SWIPE_ACTION_WIDTH);
@@ -108,6 +112,7 @@ export function SwipeRow({ children, left, right, disabled = false, onPress, acc
   if (!disabled && left) actions.push({ name: 'left', label: left.a11yLabel });
   if (!disabled && right) actions.push({ name: 'right', label: right.a11yLabel });
   if (onPress) actions.push({ name: 'activate', label: activateLabel ?? accessibilityLabel ?? 'Open' });
+  if (!disabled && onLongPress) actions.push({ name: 'select', label: longPressLabel ?? accessibilityLabel ?? 'Select' });
 
   const body = (
     <View
@@ -119,9 +124,16 @@ export function SwipeRow({ children, left, right, disabled = false, onPress, acc
         if (name === 'left') commit(left);
         else if (name === 'right') commit(right);
         else if (name === 'activate') onPress?.();
+        else if (name === 'select' && !disabled) onLongPress?.();
       }}
     >
-      {onPress ? <Pressable onPress={onPress}>{children}</Pressable> : children}
+      {onPress || onLongPress ? (
+        <Pressable onPress={onPress} onLongPress={disabled ? undefined : onLongPress}>
+          {children}
+        </Pressable>
+      ) : (
+        children
+      )}
     </View>
   );
 
