@@ -687,3 +687,275 @@ Codebase facts the D-23…D-35 replan relies on. Verified by direct Read of the 
 **`src/engine/transfer/`:** `pair.ts` and `match.ts` pair the two legs of a transfer under one `transfer_id`. A line with a non-null `transferId` is a leg and is neither income nor spending.
 
 **Coverage:** `jest.config.js` holds `recurring/` and `decide/` at 100% branches. Test helpers under `__tests__/` without `.test.` are neither run as suites (`testMatch: **/src/**/*.test.ts?(x)`) nor counted for coverage (`!src/**/__tests__/**`).
+
+
+## Addendum 2026-10-15: Engine depth expansion (D-41..D-58)
+
+**Researched:** 2026-10-15
+**Scope:** what the planner needs for D-41…D-58 in `04-CONTEXT.md`: threshold citations (D-58), independent amortisation vectors (D-57), promotional and deferred-interest mechanics (D-48), BNPL late-fee shapes (D-50), engine-design notes, and a validation mapping.
+**Confidence:** MEDIUM overall. The regulatory and textbook citations are HIGH. Several D-58 constants have no authoritative source, and that is stated below rather than papered over.
+
+**Requirement IDs:** REQUIREMENTS.md has no IDs beyond DEC-16 (verified by grep). D-41…D-58 currently trace by decision number only. The planner can either keep D-number traceability or propose DEC-17+; adding requirement IDs is the user's call.
+
+### A. D-58 threshold citations
+
+Every value below **stays as decided** (D-58). Where evidence argues for a different value, it is listed under "For the user" (§A.9) and not applied.
+
+The citation-string column is the text to place in `constants.ts`. Keep each one to a single comment line, with the URL on a second line.
+
+| Constant | Value | Verdict | `constants.ts` citation string | URL(s) |
+|---|---|---|---|---|
+| Debt-service line (D-04) | 36% | **SUPPORTED** | `Fannie Mae Selling Guide B3-6-02 (2025-04-02): max total DTI 36% of stable monthly income for manually underwritten loans; CFPB DTI tool: keep all-debt DTI at 36% or less. Lenders use gross income; FincWin uses logged income, so this line is stricter.` | https://selling-guide.fanniemae.com/sel/b3-6-02/debt-income-ratios ; https://files.consumerfinance.gov/f/documents/cfpb_your-money-your-goals_debt_income_calc_tool_2018-11_ADA.pdf |
+| Unsecured-debt line (D-04) | 12 × avg monthly income | **UNSOURCED-BEHAVIOUR-CONSTANT** (the closest published heuristic contradicts it) | `Prototype behaviour constant (dlim). No authoritative stock threshold found. Closest heuristic: the "20/10 rule" (Experian, 2023) puts consumer debt under 20% of annual take-home pay. See 04-RESEARCH §A.2.` | https://www.experian.com/blogs/ask-experian/what-is-the-20-10-rule/ |
+| Steady CV cut-off (D-12) | < 6% | **UNSOURCED-BEHAVIOUR-CONSTANT** | `Prototype behaviour constant (dmoney cv < .06). No published CV cut-off found. JPMorgan Chase Institute (2019) reports a median monthly-income CV of about 0.38 (2013–2018).` | https://www.jpmorganchase.com/institute/all-topics/household-financial-health/report-weathering-volatility-2-a-monthly-stress-test-to-guide-saving |
+| Variable CV cut-off (D-12) | < 22% | **UNSOURCED-BEHAVIOUR-CONSTANT** | same as above, with `cv < .22` | same |
+| Bills window (D-24) | 90 days | **UNSOURCED-BEHAVIOUR-CONSTANT** | `Product behaviour constant: covers one quarterly billing cycle ahead of the check date and matches the D-44 cash path. No regulatory "upcoming bills" window found.` | — |
+| Cushion months (D-42) | 3 / 4.5 / 6 (6 if insufficient) | **PARTIALLY SUPPORTED** | `3–6 months of expenses: FCAC (via Consumer Protection BC, 2025-07-03), MoneyHelper (via NS&I), Vanguard (2025-08-15). Vanguard: variable income needs a higher cash buffer. The 4.5 midpoint and the steadiness mapping are FincWin behaviour constants.` | https://www.consumerprotectionbc.ca/2025/07/9545/ ; https://www.nsandi.com/guide/emergency-fund ; https://investor.vanguard.com/investor-resources-education/article/understanding-income-volatility-and-emergency-saving |
+| Edge margin (D-43) | 5% of threshold | **UNSOURCED-BEHAVIOUR-CONSTANT** | `Product behaviour constant. No published near-threshold tolerance standard found. Precedent only: software budget warnings default to a configurable 5% remaining.` | (precedent, LOW: https://www.supportability.com.au/release/7-9/) |
+| Stress +2pp (D-49) | +2 percentage points | **SUPPORTED (analogue)** | `OSFI B-20 minimum qualifying rate: greater of contract rate + 2% or 5.25% (page modified 2026-01-29). The floor is not adopted: D-07 forbids invented rates.` | https://www.osfi-bsif.gc.ca/en/supervision/financial-institutions/banks/minimum-qualifying-rate-uninsured-mortgages |
+| Stress +4pp (D-49) | +4 percentage points | **UNSOURCED-BEHAVIOUR-CONSTANT** (deliberately above published practice) | `Behaviour constant: a severe case above the Bank of England FPC's former +3pp reversion-rate stress (withdrawn 2022-08-01). FCA MCOB 11.6.18R prescribes no figure.` | https://www.bankofengland.co.uk/paper/2022/an-fpc-response-consultation-on-withdrawal-of-the-affordability-test-recommendation ; https://www.fca.org.uk/firms/interest-rate-stress-test-rule |
+| Cash-purchase horizon (D-52) | 60 months | **UNSOURCED-BEHAVIOUR-CONSTANT** | `Behaviour constant: 5-year projection horizon for cash purchases with no term. User-editable.` | — |
+
+#### A.1 Debt-service line, 36%: SUPPORTED (HIGH for the Fannie Mae text, MEDIUM for the CFPB wording)
+- **Fannie Mae Selling Guide B3-6-02**, section dated 04/02/2025, fetched live. It says: "For manually underwritten loans, Fannie Mae's maximum total DTI ratio is 36% of the borrower's stable monthly income." It adds that "the maximum can be exceeded up to 45%" when credit-score and reserve requirements are met, and that for loans underwritten through DU "the maximum allowable DTI ratio is 50%." [VERIFIED: WebFetch selling-guide.fanniemae.com]
+- **CFPB, "Debt-to-income calculator tool"** (Your Money, Your Goals, 2018-11). The search extraction gives: "Consider maintaining a debt-to-income ratio for all debts of 36 percent or less. Some lenders will go up to 43 percent or higher." The PDF's text streams could not be decoded locally, so this wording is MEDIUM: it was quoted by the search tool, not read directly.
+- **Canada, CMHC:** "CMHC restricts debt service ratios to 39% (GDS) and 44% (TDS)." This comes from a search snippet; the CMHC page returned 403 to WebFetch, so it is LOW-MEDIUM. TDS includes housing costs such as heat and property tax, so it is not like-for-like with FincWin's debt-payments-only line.
+- **UK:** FCA MCOB affordability rules use no fixed DTI ratio. No UK equivalent was found.
+- **Definitional caveat:** Fannie Mae, CFPB and CMHC all measure **gross** income. FincWin's basis income is **logged** money in, which is usually take-home pay. At the same 36%, FincWin's line is therefore stricter than lender practice. This is noted for the user (§A.9) and is not a value change.
+
+#### A.2 Unsecured-debt line, 12× monthly income: UNSOURCED-BEHAVIOUR-CONSTANT, and the evidence leans against it
+- No authoritative source sets a cap on the **stock** of unsecured debt relative to income.
+- **Bank of England working paper (2005)**, "The impact of unsecured debt on financial distress among British households": per the search summary and Oxera's restatement, the unsecured debt-to-income ratio is the main determinant of reported debt problems. No cut-off was confirmed. The PDF could not be read here. LOW-MEDIUM.
+- **UK official over-indebtedness indicator** (former DTI/BERR): spending over 25% of gross monthly income on unsecured **repayments**. This is a payment-flow test, not a stock test. The sources are secondary (TransUnion newsroom, Channel 4) and LOW-MEDIUM.
+- **The "20/10 rule"** (Experian, 2023-05-14, fetched): "keep your debts below 20% of your annual take-home pay and below 10% of your monthly take-home pay." It covers cards, personal loans, BNPL, auto loans and student loans, and excludes mortgages. This is a consumer heuristic, not regulation.
+- **Comparison:** 12 × monthly income equals 100% of annual income, which is **five times looser** than the 20/10 rule's 20%. No source was found that supports a 100%-of-income stock line. Listed for the user in §A.9.
+
+#### A.3 CV cut-offs 6% and 22%: UNSOURCED-BEHAVIOUR-CONSTANT
+- **JPMorgan Chase Institute, "Weathering Volatility 2.0"** (2019-10-23), fetched: "CV measures the dispersion of a family's income in a given month relative to the mean income of the prior twelve-months." The median CV is "around 0.38 between 2013 and 2018", which the Institute equates to "a 36 percent change in income month-to-month." The Institute publishes no Steady/Variable/Volatile cut-offs.
+- **Federal Reserve SHED** (search summary of federalreserve.gov, 2024 report on 2023): 28% of adults said their income varied at least occasionally from month to month. 10% struggled to pay bills because of it. MEDIUM.
+- **Not like-for-like:** JPMCI measures each month against a trailing 12-month mean across all deposits. FincWin measures population CV across at most 6 full months (D-09). Even so, a median JPMCI family would be **Volatile** under the 22% cut-off.
+- **Paycheck-count artefact (computed here, HIGH):** a perfectly steady **fortnightly** salary gives 2 or 3 paydays per calendar month. Over a 6-month window that produces CV 0, 0.172 (one three-payday month) or 0.202 (two). A **weekly** salary gives 4 or 5 paydays, for CV of about 0.109 (two five-payday months in six). D-23 smooths non-monthly **bills** but not **income** (verified: plans 04-05 and 04-13 apply `monthlyEquivalent` only to bills). So a steady fortnightly or weekly earner is classed **Variable**, and that cascades into D-42 (4.5-month cushion), D-46 (`fair`, never `strong`) and the worst-month basis. Listed for the user in §A.9.
+
+#### A.4 90-day bills window (D-24): UNSOURCED-BEHAVIOUR-CONSTANT
+- One search for a regulator-defined "upcoming bills" or quarterly billing window (Ofwat/Ofgem) found no rule. No CFPB, FCA or FCAC practice was found. Treat 90 days as a product constant: it is roughly one quarterly cycle.
+- **Engineering note:** a calendar quarter can be 92 days (1 Jul → 1 Oct). Plan 04-05's window, [first of the check's month, asOf + 90], is never shorter than 91 days. A quarterly bill falling 91–92 days after `asOf` is correctly outside "within 90 days" and is not a bug.
+
+#### A.5 D-42 cushion months 3 / 4.5 / 6: PARTIALLY SUPPORTED
+- **FCAC**, relayed by Consumer Protection BC on 2025-07-03 (fetched): "FCAC recommends trying to reach the goal of 3-6 months of your regular expenses." The canada.ca page itself was not found. MEDIUM.
+- **MoneyHelper**, relayed by NS&I (fetched; NS&I attributes it to "government-backed MoneyHelper.org.uk"): "three to six months of essential outgoings as suggestion for an emergency savings fund." MEDIUM.
+- **Vanguard**, "Understanding income volatility and emergency savings" (2025-08-15, fetched): "The general rule of thumb on the size of an emergency fund is 3–6 months of expenses." Also: "Income variability is one of the most important factors in determining your emergency fund needs", and those with variable income "may need a higher cash buffer than those with a more stable income." Vanguard's factor table maps more income variability to more liquidity needs. HIGH that the direction is supported.
+- **JPMCI (2019):** "Families need roughly six weeks of take-home income in liquid assets" to weather a simultaneous income dip and expense spike. This is a lower bound, consistent with 3 months as the floor.
+- **What is not sourced:** 4.5 for Variable (an interpolation), and 6 for `insufficient` (a product caution choice). Secondary calculators (richify.ai, financewonk.com) suggest 9–12 months for variable or self-employed income. They are LOW, not authoritative, and are listed for information only in §A.9.
+
+#### A.6 D-43 5% edge margin: UNSOURCED-BEHAVIOUR-CONSTANT
+- No published near-threshold tolerance band was found. The only precedent is a software one: SupportAbility's budget warning, which defaults to a configurable 5% remaining. Yodlee's insight APIs use user-configured thresholds. Both are LOW. Label the 5% a behaviour constant.
+
+#### A.7 D-49 stress offsets
+- **+2pp, SUPPORTED as an analogue (HIGH):** OSFI's page, modified 2026-01-29, defines the minimum qualifying rate as "The greater of the mortgage contract rate plus 2% or 5.25%." The 5.25% floor is a rate constant, and D-07 forbids inventing rates, so FincWin adopts only the +2pp buffer.
+- **+4pp, a deliberate severe case:** the Bank of England FPC's affordability test stressed at 3pp above the reversion rate over the first five years. It was withdrawn "with effect from 1 August 2022" (fetched). FCA MCOB 11.6.18R requires lenders to "take into account the impact of likely future interest rate increases on affordability for a minimum of 5 years" and prescribes no figure (fetched). No source uses +4pp.
+
+#### A.8 D-52 60-month horizon: UNSOURCED-BEHAVIOUR-CONSTANT
+- For context only: Experian Q1 2026 reports an average new-vehicle loan term of about 69.5 months. That figure comes from a single secondary write-up (crowdfundinsider) and is LOW. 60 months is a round five-year horizon. Label it a behaviour constant; it is user-editable per D-52.
+
+#### A.9 For the user (evidence only; no values changed)
+1. **The 12× unsecured line is far looser than the only published stock heuristic.** The 20/10 rule (Experian) caps consumer debt at 20% of annual take-home pay. 12× is 100% of annual income. The UK official indicator is payment-based instead (unsecured repayments over 25% of gross monthly income). Options for the user: keep 12× as a prototype constant, or revisit it. **Not changed.**
+2. **The steadiness cut-offs misclassify steady weekly and fortnightly pay.** As computed in §A.3, a constant fortnightly salary scores CV 0.17–0.20 and a weekly one about 0.11, both "Variable". That raises the cushion to 4.5 months (D-42) and blocks `strong` confidence (D-46). The fix is not a threshold change: apply D-23-style smoothing (52/12, 26/12) to **confirmed weekly or fortnightly income series** before averaging and computing CV. That is a new behaviour, so it needs a user decision. Separately, JPMCI's median CV of 0.38 means many real households will be `Volatile` → 6-month cushion → `rough` confidence. Check that this is the intended product experience.
+3. **The 36% line is applied to logged (take-home) income**, while all the sources use gross income, so FincWin is stricter than lender practice at the same number. Information only; it is consistent with the cautious voice.
+4. **Volatile = 6 months sits at the top of the authoritative 3–6 range.** LOW-confidence calculators suggest 9–12 months for variable or self-employed income. Information only.
+5. **D-49 has no rate floor**, unlike OSFI's 5.25%. On a 0%–2% variable product, the +2pp stress stays mild. A floor would be a default rate, which D-07 forbids. Information only.
+6. **Housekeeping:** `04-CONTEXT.md` `<deferred>` still lists "User-marked one-off lines … not chosen", which D-47 now supersedes. Separately, D-47 needs a `one_off` row field that Record does not yet have (verified: `CloneSourceRow` has no such field). The snapshot can carry the flag; who adds the column and the Record UI is a scope question for Phase 5 or Record.
+
+### B. D-57 independent amortisation reference vectors
+
+**Convention used by the engine:** a US-style nominal APR with monthly rate r = APR/1200 (`MONTHLY_RATE_DENOMINATOR = 1200n * PERCENT_SCALE`, plan 04-01). The payment is the closed form rounded half-up to the minor unit. Each month's interest is rounded half-up. The final payment absorbs the residual (D-20).
+
+**Canadian mortgages differ:** Interest Act (R.S.C. 1985, c. I-15) s.6, fetched from laws-lois.justice.gc.ca, requires blended-payment mortgages to state the rate "calculated yearly or half-yearly, not in advance". In practice Canadian fixed mortgages quote semi-annual compounding. The engine's APR/12 convention will not reproduce a Canadian bank's mortgage payment from the quoted rate. This is acceptable because Decide is not a mortgage tool, but test vectors must come from monthly-compounding sources only, and Phase 5 copy should not claim to match a Canadian mortgage statement. [CITED: https://laws-lois.justice.gc.ca/eng/acts/i-15/page-1.html]
+
+All engine outputs below were **computed in this session** with exact rational arithmetic and half-up rounding (a Python `Fraction` script mirroring `divideHalfUp`). Amounts are in minor units.
+
+**Vector R1: OpenStax *Contemporary Mathematics* §6.8, Example 6.79** (Rice University, CC-BY). https://openstax.org/books/contemporary-mathematics/pages/6-8-the-basics-of-loans (worked values taken from search extraction of the OpenStax page and the FSW LibreTexts course; the pages were not WebFetched. MEDIUM-HIGH: all three published checkpoints are reproduced exactly by an independent computation, which is strong corroboration)
+- Inputs: P = 1,000,000 ($10,000.00), APR 4.75%, n = 240, monthly.
+- Published: payment $64.62. Interest in payment 10 is $38.68. Balance after payment 15 is $9,613.83. First-month interest is $39.58 and principal $25.04 (FSW LibreTexts course).
+- Engine: payment **6462** ✓. Row 1 interest **3958**, principal 2504 ✓. Row 10 interest **3868** ✓. Balance after row 15 **961383** ✓. Final payment (row 240) **6538**. Total interest **550956**.
+- **All published checkpoints match exactly.** This is the best exact-match vector.
+
+**Vector R2: OpenStax *Principles of Finance* §8.3, car loan.** https://openstax.org/books/principles-finance/pages/8-3-loan-amortization (fetched; HIGH)
+- Inputs: P = 3,200,000 ($32,000.00), APR 6% (0.5% per month), n = 36, end-of-month payments.
+- Published: payment **$973.50**. Rows 1–3 balances $31,186.50, $30,368.93, $29,547.27, with interest $160.00, $155.93, $151.84. Row 36 is printed with interest $4.84, principal $968.66 and balance 0.00. The text says: "The remaining $3,046.08 is the lender's revenue, the cost of credit."
+- Engine: payment **97350** ✓. Rows 1–3 **3118650 / 3036893 / 2954727** with interest 16000 / 15593 / 15184 ✓. Row 35 balance **96876** against the printed $968.66 (+10). Row 36: interest 484 ✓, **final payment 97360** (+10 absorbed). Total interest **304610** against the printed 3,046.08 (+2).
+- **Named deviation (D-20 against the source's convention):** the printed table carries the **unrounded** payment (973.501998…) internally. 36 × 973.501998 − 32,000 = 3,046.07, which explains the printed $3,046.08. The engine rounds the payment to the cent and lets the final payment absorb the residual. Test: assert payment and rows 1–3 exactly, assert the engine's own invariant (Σ payments = P + Σ interest), and document the final-row difference in the deviation test.
+- The source has a typo: it divides by "32.781" where the annuity factor is 32.871. Do not copy it.
+
+**Vector R3: OpenStax *Principles of Finance* §8.3, 20-year mortgage (Table 8.5).** Same URL (fetched)
+- Inputs: P = 14,000,000 ($140,000.00), APR 3.6% (0.3% per month), n = 240.
+- Published: payment **$819.16**. Rows 1–3 balances $139,600.84, $139,200.48, $138,798.92 (interest $420.00, $418.80, $417.60). Row 239 interest $4.89, balance $815.33. Row 240 interest $2.45, balance **(1.38)**, an overpayment shown on a "(Rounding)" line.
+- Engine: payment **81916** ✓. Rows 1–3 **13960084 / 13920048 / 13879892** ✓. Row 239 interest 489 ✓, balance 81545 (printed 815.33, a 12-unit drift in the printed table). Row 240 interest 245 ✓, **final payment 81790**. Total interest 5659714.
+- **Named deviation:** the source leaves a −$1.38 residual on a "(Rounding)" line. D-20 puts the residual into the final payment instead. Assert the payment and rows 1–3 exactly, and document rows 236–240.
+
+**Vector R4: Sekhon & Bloom, *Applied Finite Mathematics* §6.5, Example 6** (LibreTexts, CC-BY). https://math.libretexts.org/Bookshelves/Applied_Mathematics/Applied_Finite_Mathematics_(Sekhon_and_Bloom)/06:_Mathematics_of_Finance/6.05:_Miscellaneous_Application_Problems (fetched; HIGH)
+- Inputs: P = 50,000 ($500.00), APR 12%, n = 6.
+- Published: payment $86.27. Month 1 interest $5.00, principal $81.27, balance $418.73. Month 6 interest $0.85. The source notes a **leftover 3 cents** attributed to rounding.
+- Engine: payment **8627** ✓. Row 1 **500 / 8127 / 41873** ✓. Row 6 interest 85 ✓, **final payment 8630**, which is exactly the source's 86.27 + 0.03. Total interest 1765.
+- **This vector demonstrates D-20's final-payment rule against a textbook that names the residual.** Use it for the D-57 named test.
+
+**Avoid as a reference:** the Coastline College *Personal Finance* LibreTexts page gives a $20,000 / 6% / 60-month payment of "$385.54". The correct payment is $386.66 (engine 38666; exact 386.656). The source is wrong. Do not use it.
+
+**Zero-rate check (no external source needed):** P = 100,000, r = 0, n = 12. The payment is divideHalfUp(100000, 12) = 8333, and the final payment is 8337 (100000 − 11×8333). Test it as a property, not a reference.
+
+### C. D-48 promotional and deferred-interest mechanics
+
+**US** (HIGH; primary sources fetched)
+- **True 0% intro APR (temporary rate):** Reg Z §1026.55(b)(1) allows an increase "upon the expiration of a specified period of six months or longer". The issuer must disclose "the annual percentage rate, fee, or charge that would apply after expiration of the period". After expiry, the disclosed post-promo rate applies to the remaining balance **going forward**, with no retroactive interest. [CITED: consumerfinance.gov/rules-policy/regulations/1026/55/]
+- **Deferred interest ("no interest if paid in full"):** comment 55(b)(1)-3.i says the temporary-rate exception "also applies to these programs". The CFPB explains that if the balance is not cleared in time, "the interest is calculated based on the balance you owed in each month since you first made the purchase" and you owe "all of the interest back to the original date of the charge". It can also be lost if "you are more than 60 days late in making a minimum payment". [CITED: consumerfinance.gov/ask-cfpb/what-is-a-deferred-interest-promotion-en-40/]
+- **Payment allocation:** §1026.53(a) sends any excess over the minimum "first to the balance with the highest annual percentage rate". §1026.53(b)(1) says that "during the two billing cycles immediately preceding expiration" the excess goes "first to the balance subject to the deferred interest". [CITED: consumerfinance.gov/rules-policy/regulations/1026/53/] **This is a multi-balance rule.** The engine models one balance per plan, so allocation across balances is out of scope. Record that in the docblock.
+- **Minimum payment during a promo:** the card's own formula applies with no interest component, so for most promo balances only the percentage or floor part is paid.
+
+**Canada** (MEDIUM)
+- The FCAC's "Credit agreement for a credit card" information-box example (modified 2025-10-07, fetched) includes "Promotional rate on purchases: 4.99% for your first three monthly statements", "an interest-free grace period of at least 21 days if you pay off your balance in full by the due date", and "Your minimum payment will be the greater of 2% of the outstanding balance owing …". Promotional rates are disclosed as a rate for N statements, then the standard rate. [CITED: canada.ca/en/financial-consumer-agency/services/industry/bulletins/information-box-examples/credit-agreement-credit-card.html]
+- No federal deferred-interest rule was found. One secondary source says Canadian issuers generally do not charge retroactive interest on card promos (LOW). Retailer "don't pay for 12 months" plans exist, but no authoritative Canadian source was fetched for them.
+
+**UK** (HIGH for the rules, MEDIUM for practice at promo end)
+- **Minimum repayment:** CONC 6.7.5R requires at least "the interest, fees and charges … plus 1%" (already in the base research). Persistent debt is defined in CONC 6.7.27R as principal repaid being lower than interest, fees and charges over the "immediately preceding 18-month period". CONC 6.7.33G expects a "reasonable period" for repayment to "usually be between three and four years". CONC 6.7.10R exempts the end of a "promotional rate of interest" from its ban on rate increases for customers in difficulty. CONC 6.7.16A(2) requires a reminder before a conditional "zero-percentage or low interest, introductory or promotional offer" ends. [CITED: handbook.fca.org.uk/handbook/CONC/6/7.html]
+- **At promo end**, the balance reverts to the standard rate going forward. Card-provider and comparison sources agree on this (MEDIUM, secondary).
+- **Retail "buy now pay later" deferred-interest credit:** FCA PS19/17 (press release 2019-06-12, fetched) says "Firms cannot charge backdated interest on amounts of money that have been repaid", effective 12 November 2019. Backdated interest on the **unpaid** amount is still allowed.
+
+**Recommended minimal model** (a recommendation for the planner; no rates are invented, and every rate is user-entered per D-07):
+
+```typescript
+// engine/payoff/types.ts (proposal)
+export interface RateSegment {
+  readonly fromMonth: number;   // 1-based; segments[0].fromMonth === 1; strictly ascending
+  readonly apr: Percent;        // user-entered; 0 allowed
+}
+export interface RateSchedule {
+  readonly segments: readonly RateSegment[];   // length >= 1; a single segment = today's flat-rate plan
+  readonly deferredInterest: boolean;          // user-entered, default false, never inferred
+}
+```
+
+- **Amortising loans:** at the start of each segment, recompute the payment as `amortisedPayment(balanceAtSegmentStart, segment.apr, monthsRemaining)`. For a 0% first segment this is straight-line principal with half-up rounding. Each month's interest is half-up, and the final payment absorbs the residual (D-20). This is the ARM-style "recast at rate change" convention [ASSUMED: standard practice; not verified against a primary source this session]. The user can still enter a fixed lender-quoted payment where a lender does otherwise.
+- **Card minimum simulation:** `simulateMinimumPayments` looks up the segment rate for each month. The D-17 never-clears check still fires per month. At 0%, interest is 0, so any positive payment passes.
+- **Deferred interest: include it (recommended), as a user-entered flag with a reported retro charge.** Justification: this is the most harmful promo shape (CFPB), D-48 sits under "Credit that hurts people", and the model is cheap.
+  - During the promo, accrue `shadow += divideHalfUp(balance_m × postPromoApr, MONTHLY_RATE_DENOMINATOR)` on each month's opening balance.
+  - If the balance is above 0 at promo end, add `shadow` to the balance and report `retroInterest` with a code such as `deferred_interest_charged`.
+  - Charging interest only on each month's outstanding balance matches the CFPB's "balance you owed in each month" and the FCA PS19/17 ban on interest for repaid amounts, so one formula fits the US and UK.
+  - The post-promo payment then re-amortises the enlarged balance. The D-48 "highest monthly payment" month test therefore picks up the retro charge with no special case.
+  - The 60-days-late forfeiture is behaviour-dependent and stays out of scope.
+- **Outputs D-48 requires:** `paymentAfterPromo`, `clearsBeforePromoEnd: boolean`, `interestAfterPromo`, `highestMonthlyPayment` (used by the month test). Also recommended: `paymentToClearInPromo = amortisedPayment(balance, 0, promoMonths)`, which uses D-20's own zero-rate rule rather than a ceiling. It is the figure that tells the user how to avoid a deferred-interest charge.
+
+### D. D-50 BNPL late-fee shapes
+
+| Provider / market | Fee | Escalation | Cap | Source (fetched unless noted) | Confidence |
+|---|---|---|---|---|---|
+| Afterpay US | "capped at $8.00" per late instalment, after it is unpaid "ten (10) days after the due date" | per instalment | total "will not exceed 25% of the order value at the time of purchase"; none for Rhode Island residents | https://www.afterpay.com/en-US/installment-agreement ("Last updated September 2026") | HIGH |
+| Klarna US Pay in 4 | "Late Fee of up to $7" if unpaid 10 days after due | per instalment | "will never exceed 25% of the Total Purchase Amount" | https://cdn.klarna.com/1.0/shared/content/legal/terms/0/en_us/sliceitinx | HIGH |
+| Affirm US | no late fees (investor and marketing pages); Pay in 4 is 0% APR, other plans 0–36% APR | — | — | https://www.affirm.com/how-it-works (APR); "no late fees" from investors.affirm.com via search | MEDIUM |
+| PayPal Pay in 4 US/CA | "always interest-free, with no late fees or sign-up fees" | — | — | https://www.paypal.com/us/digital-wallet/ways-to-pay/buy-now-pay-later (US fetched; CA via search) | HIGH (US) / MEDIUM (CA) |
+| Clearpay UK | "initial £6 late fee"; "A further £6 late fee … if a payment is still unpaid 7 days after the due date" | **two fees per missed instalment** | "capped at £24 or 25% of the order value, whichever is less"; "capped at £6 for orders under £24" | https://www.clearpay.co.uk/en-GB/how-it-works | HIGH |
+| Klarna UK Pay in 3 | "late fee of £5" on orders of £20 or more, if unpaid 14 days after the 2nd or 3rd instalment; 25% of price on smaller orders | "a maximum of one late fee per instalment" | none stated beyond per-instalment | https://cdn.klarna.com/1.0/shared/content/legal/terms/en-GB/paylaterin3 (document states the product is "not regulated by the FCA", which pre-dates July 2026) | MEDIUM (possibly stale) |
+| Afterpay / Klarna Canada | **not verified**: secondary sources conflict ($10–$15, 25% caps) and the official CA agreement URL returned 404 | — | — | — | LOW |
+
+**UK regulatory status (HIGH):** the FCA regulates deferred payment credit, and "BNPL borrowers will benefit from stronger protections from 15 July 2026" (press release 2026-02-11, fetched). The protections are affordability checks, Financial Ombudsman access, support in financial difficulty, and upfront information on missed payments. **No late-fee cap is stated in the press release.** Clearpay's site says it is "Deemed authorised and regulated by the Financial Conduct Authority for the purposes of the Temporary Permission regime". PS26/1 (the policy statement) was found but not read.
+
+**Conclusion on D-50:** `fee × n` is adequate for the n = 1 and n = 2 figures D-50 asks for, provided:
+- (a) the fee the user enters is "per missed instalment". A Clearpay user who expects the 7-day second fee enters £12 or accepts that 1 late payment is understated.
+- (b) n is capped at the number of remaining instalments.
+- (c) the result is capped when the user supplies a cap. **Recommendation (not a decision):** add an optional user-entered `lateFeeCapTotal: MinorUnits | null`, never defaulted, and report `min(fee × n, cap)`. Do not default a 25% cap: it is provider-specific, and a percentage default would be an invented term. Affirm and PayPal users enter fee 0, and the engine reports 0. The verdict is unchanged (D-50).
+
+### E. Engine-design notes for planning (from the codebase and the decisions)
+
+- **APR arithmetic (D-48, D-49):** APRs are `Percent` at RATE_SCALE 10, where 22.9 means 22.9% (plan 04-01). The +2pp and +4pp stresses are therefore `apr + percent('2')` and `apr + percent('4')`, i.e. +20_000_000_000n. **Pitfall:** adding `percent('0.02')` would stress by 0.02pp. Name the constants `STRESS_OFFSETS: readonly Percent[] = [percent('2'), percent('4')]` and give them boundary tests. Open question: stress every segment of a variable plan, or only the post-promo (variable) segments? Recommendation: stress segments after the last 0% or promo segment, because a contractual promo rate is fixed. Confirm at plan-check.
+- **D-42 half-months:** compute `reserve = divideHalfUp(monthsCosts × 9n, 2n)` for 4.5. Never multiply by a 4.5 float or a `Percent`. Represent cushion months as **half-month integers** (6 / 9 / 12 halves) so all three tiers use one code path: `divideHalfUp(costs × halves, 2n)`. Exactness test: an odd `costs` × 9 rounds half-up once.
+- **D-43 edge test without division:** a line is on the edge when `|margin| × 100 < 5 × threshold`, i.e. `20n × |margin| < threshold`, all bigint. "By less than 5%" is strict, so `=` is not on the edge. Write a boundary test at exactly 5%.
+  - If the threshold is 0 (the month line, or a user-entered 0 reserve), use a month's costs as the base.
+  - If a month's costs is also 0, emit no edge flag. That guard needs its own branch for 100% coverage.
+  - For the DSR line, convert the ratio to money first (`threshold = divideHalfUp(income × 36%, …)`), then apply the edge test to money.
+- **D-44 90-day cash path:**
+  - Start from **cashOnHand**, not `cashAfter`. Apply dated flows day by day. Do not also subtract the D-24 lump, which would count it twice.
+  - Generate dates with `occurrencesBetween(schedule, asOf, addDays(asOf, 90))` and reuse plan 04-05's private `addDays` and window helper, so D-24 and D-44 share one definition of "within 90 days".
+  - Treat unpaid occurrences earlier in the check's month (D-24 counts them) as due on day 0.
+  - **Gap in D-44's text:** confirmed series cover only some spending. Groceries and other un-scheduled spending have no dates, so a series-only path **overstates** cash. Recommendation: spread the average non-series monthly spending evenly by day with a cumulative half-up allocation (`spentByDay(d) = divideHalfUp(monthly × 12 × d, 365)`, applied as the difference between consecutive days so the total never drifts). This needs user confirmation because it is a modelling choice D-44 does not state.
+  - The purchase's monthly costs need a first date. Recommend `firstPaymentDate`, defaulting to asOf + 1 calendar month with the schedule's month-end clamp.
+  - Report the lowest (day, amount) per path. Ties go to the earliest day.
+  - `cash_dip` is hard below 0 and soft below the reserve. Skip it with `cash_path_unavailable` when there are no confirmed **income** series.
+- **D-45 future changes:** loop m = 1..12 over the months after `asOf`'s month. Whether the current month is month 0 is a planner decision; recommend months 1–12, since the current month is excluded from averages under D-10. Apply each change whose `[start, end]` contains the month. Take the worst `left`, with ties going to the earliest month. Report (month, shortfall). Worst-of guarantees a later raise never offsets an earlier shortfall. Property test: adding a positive change in a later month never improves the reported worst month before it.
+- **D-46 precedence:** evaluate `rough` first (under 3 months, Volatile, or first read), then `strong` (6 or more months and Steady), else `fair`. The text's conditions overlap; for example, 8 months and Volatile meet both "≥3" (fair) and "Volatile" (rough). Write a matrix test over months × steadiness.
+- **D-48:** see §C. The month test uses `highestMonthlyPayment`, and bisection monotonicity (Pitfall 4) must still hold. Extend the fast-check monotonicity property to plans with schedules.
+- **D-51/D-52 projections:**
+  - Deduplicate user rates with 0%. If a user enters 0, return 0% once and mark it as both.
+  - For the net-worth monthly series (d), compute each month's value with the **closed form at month m** (`scaledPow` per month, or an incremental exact rational), not by iterating rounded balances. Iterating drifts from the closed-form (a)/(b) values, and the series' last point should equal view (a)/(b) exactly.
+  - Cost: up to 4 rates × 2 paths × horizon (≤ 600) points. That is trivial.
+  - View (c) is `futureValue(pausedAmount, rate, horizon, 0)` per rate, alongside the paused amount.
+- **D-53 payback:** `paybackMonths = monthsBeforeStart + ceilDiv(totalCost, netMonthlyGain)`, where `netMonthlyGain = incomeChange − runningCostsNet`. Return null when ≤ 0. `ceilDiv` is a counting operation, not money rounding, so it does not conflict with D-20 (D-40 already uses ⌈⌉ for months). Define `totalCost` explicitly (my share of the final price plus total interest); this is a planner definition to confirm.
+  - Negative changes become D-45 changes.
+  - Positive changes produce a separate assessment and never enter the main verdict.
+- **D-54 runway lost:** `runwayWithout − runwayWith`, both computed via D-39 for each setback. If either is null (burn ≤ 0), the result is null.
+- **D-56 estimate bias:** per figure, include decisions with an actual and a non-zero estimate. Compute `bp_i = divideHalfUp((actual − estimate) × 10_000n, estimate)` and `bias = divideHalfUp(Σ bp_i, n)`, for n ≥ 3. Otherwise return null. `divideHalfUp` is symmetric for negative numerators (verified in rounding.ts). Note that this is an **average of ratios**, not a ratio of sums; decide which, and name it in the docblock.
+- **D-41 combined checks:** apply other open checks in creation order to a copy of the context before the current check. Return both the standalone and the combined verdict. Bisection runs on the combined position. Property: the combined verdict is never better than the standalone verdict, when ordered by severity.
+- **D-55 table:** a `Record<ItemType, readonly RunningCostCategory[]>` with `satisfies` and an exhaustiveness test. Loss of value is a non-cash figure and never enters the month test (named test).
+
+### F. Validation Architecture addendum (D-41..D-58)
+
+| Decision | Behaviour | Test type | Suggested file |
+|---|---|---|---|
+| D-41 | Stacked open checks, standalone vs combined verdict | unit + fast-check (combined never better than standalone) + named deviation | `decide/__tests__/combined.test.ts`, `deviations/d41-combined-checks.test.ts` |
+| D-42 | 3 / 4.5 / 6 / 6 months by steadiness; half-month exactness; a typed reserve wins | unit (boundary per tier, odd-cost rounding) + named deviation | `decide/__tests__/reserve.test.ts`, `deviations/d42-cushion-by-steadiness.test.ts` |
+| D-43 | `on_edge` per line, strict 5% boundary, zero-threshold fallback, zero-costs guard | unit (exactly 5%, 5% − 1 unit, threshold 0) | `decide/__tests__/edge.test.ts` |
+| D-44 | Daily path, lowest day, hard and soft `cash_dip`, `cash_path_unavailable`, no double-count of D-24 | unit + fast-check (with-purchase path ≤ without-purchase path every day) + named deviation | `decide/__tests__/cashPath.test.ts` |
+| D-45 | Worst of 12 months, raises never rescue earlier months | unit + fast-check property | `decide/__tests__/futureChanges.test.ts` |
+| D-46 | Confidence precedence matrix | unit (months × steadiness × first read) | `decide/__tests__/confidence.test.ts` |
+| D-47 | `one_off` lines excluded; basis detail count and amount | unit + named deviation (amends D-29) | `deviations/d47-one-off-lines.test.ts` |
+| D-48 | Rate segments, recast, promo outputs, deferred-interest retro charge, highest payment in the month test | unit + reference (0% then x% hand-computed) + fast-check (a single segment equals the flat-rate amortisation exactly) + bisection monotonicity property extended | `payoff/__tests__/rateSchedule.test.ts` |
+| D-49 | +2/+4pp stress (Percent units), verdict unchanged | unit (offset is `percent('2')`, not 0.02) | `decide/__tests__/stress.test.ts` |
+| D-50 | `fee × n`, n ≤ remaining instalments, optional cap | unit | `decide/__tests__/bnplFees.test.ts` |
+| D-51/D-52 | Per-rate FV views, 0% dedupe, series last point equals closed form | unit + fast-check (FV non-decreasing in rate for non-negative inputs) | `payoff/__tests__/projections.test.ts` |
+| D-53 | Negative change in the verdict; positive change separate; payback ceilDiv; null when the gain is ≤ 0 | unit + named deviation | `decide/__tests__/incomeChange.test.ts` |
+| D-54 | Runway lost per setback; null propagation | unit | `decide/__tests__/setbacks.test.ts` (extend) |
+| D-55 | Exhaustive item-type table; loss of value outside the month test | unit (exhaustiveness) | `decide/__tests__/runningCostPrompts.test.ts` |
+| D-56 | Bias in basis points, n ≥ 3, zero estimates excluded, negative half-up symmetric | unit + fast-check (bias of identical actual and estimate is 0) | `decide/__tests__/estimateBias.test.ts` |
+| D-57 | R1–R4 reference vectors; R2 and R3 final-row deviations documented | reference-table test + named deviation | `payoff/__tests__/amortise.reference.test.ts` |
+| D-58 | Every constant has a citation line; value boundary tests | static (grep `constants.ts` for one citation comment per export) + unit boundaries | `decide/__tests__/constants.test.ts` |
+
+**Wave 0 additions:** the test files above. No framework changes are needed, because `jest.config.js` already enforces 100% coverage on `decide/` and `payoff/`. Every new guard branch (zero threshold, zero costs, null runway, n < 3, zero estimate, empty schedule) needs a covering test.
+
+### G. Sources for this addendum
+
+**Primary (HIGH; fetched this session)**
+- Fannie Mae Selling Guide B3-6-02 (2025-04-02): https://selling-guide.fanniemae.com/sel/b3-6-02/debt-income-ratios
+- OSFI minimum qualifying rate (modified 2026-01-29): https://www.osfi-bsif.gc.ca/en/supervision/financial-institutions/banks/minimum-qualifying-rate-uninsured-mortgages
+- Bank of England FPC response, withdrawal of the affordability test (2022): https://www.bankofengland.co.uk/paper/2022/an-fpc-response-consultation-on-withdrawal-of-the-affordability-test-recommendation
+- FCA, interest rate stress test rule, MCOB 11.6.18R: https://www.fca.org.uk/firms/interest-rate-stress-test-rule
+- FCA Handbook CONC 6.7: https://www.handbook.fca.org.uk/handbook/CONC/6/7.html
+- FCA press releases, PS19/17 (2019-06-12) and deferred payment credit (2026-02-11): https://www.fca.org.uk/news/press-releases/fca-publishes-final-rules-buy-now-pay-later-products ; https://www.fca.org.uk/news/press-releases/new-protections-confirmed-buy-now-pay-later-borrowers
+- CFPB Reg Z §1026.55 and §1026.53; Ask CFPB on deferred interest: https://www.consumerfinance.gov/rules-policy/regulations/1026/55/ ; https://www.consumerfinance.gov/rules-policy/regulations/1026/53/ ; https://www.consumerfinance.gov/ask-cfpb/what-is-a-deferred-interest-promotion-en-40/
+- FCAC credit card agreement information-box example (2025-10-07): https://www.canada.ca/en/financial-consumer-agency/services/industry/bulletins/information-box-examples/credit-agreement-credit-card.html
+- Interest Act s.6: https://laws-lois.justice.gc.ca/eng/acts/i-15/page-1.html
+- OpenStax *Principles of Finance* §8.3: https://openstax.org/books/principles-finance/pages/8-3-loan-amortization ; OpenStax *Contemporary Mathematics* §6.8: https://openstax.org/books/contemporary-mathematics/pages/6-8-the-basics-of-loans
+- Sekhon & Bloom §6.5 (LibreTexts): https://math.libretexts.org/Bookshelves/Applied_Mathematics/Applied_Finite_Mathematics_(Sekhon_and_Bloom)/06:_Mathematics_of_Finance/6.05:_Miscellaneous_Application_Problems
+- JPMorgan Chase Institute, Weathering Volatility 2.0 (2019-10-23): https://www.jpmorganchase.com/institute/all-topics/household-financial-health/report-weathering-volatility-2-a-monthly-stress-test-to-guide-saving
+- Vanguard (2025-08-15) and Vanguard emergency-fund amount pages: https://investor.vanguard.com/investor-resources-education/article/understanding-income-volatility-and-emergency-saving ; https://investor.vanguard.com/investor-resources-education/emergency-fund/whats-the-right-emergency-fund-amount
+- Provider terms: Afterpay US, Klarna US Pay in 4, Klarna UK Pay in 3, Clearpay UK, PayPal US (URLs in the §D table)
+
+**Secondary (MEDIUM)**
+- CFPB DTI calculator tool PDF (wording via search extraction): https://files.consumerfinance.gov/f/documents/cfpb_your-money-your-goals_debt_income_calc_tool_2018-11_ADA.pdf
+- Consumer Protection BC relaying FCAC (2025-07-03): https://www.consumerprotectionbc.ca/2025/07/9545/ ; NS&I relaying MoneyHelper: https://www.nsandi.com/guide/emergency-fund
+- Experian, the 20/10 rule (2023-05-14): https://www.experian.com/blogs/ask-experian/what-is-the-20-10-rule/
+- Federal Reserve SHED (search summary): https://www.federalreserve.gov/publications/2024-economic-well-being-of-us-households-in-2023-income.htm
+
+**Tertiary (LOW)**
+- CMHC GDS/TDS 39/44 (search snippet; the page returned 403): https://cmhc-schl.gc.ca/en/hoficlincl/moloin/hopr/mupr_015.cfm
+- BoE 2005 unsecured-debt working paper and Oxera summary (PDFs not readable here): https://www.bankofengland.co.uk/-/media/boe/files/working-paper/2005/the-impact-of-unsecured-debt-on-financial-distress-among-british-households.pdf ; https://www.oxera.com/wp-content/uploads/2018/03/Over-indebtedness-3.pdf
+- DTI/BERR 25% unsecured-repayment indicator (TransUnion newsroom): https://newsroom.transunion.co.uk/spending-on-unsecured-debt-soars/
+- SupportAbility 5% budget warning: https://www.supportability.com.au/release/7-9/
+- Experian Q1 2026 auto loan term (single secondary write-up): https://www.crowdfundinsider.com/?p=282954
+
+### H. Assumptions added by this addendum
+
+| # | Claim | Section | Risk if wrong |
+|---|---|---|---|
+| A6 | Loans with rate segments recast the payment at each segment start (ARM convention) | §C | Medium: a lender quoting a fixed payment across segments gives different numbers; mitigated by letting the user enter the payment |
+| A7 | Spreading non-series spending by day is acceptable for D-44 | §E | Medium: without it the path overstates cash; with it, D-44's "confirmed series only" wording is extended. Needs the user's confirmation |
+| A8 | Stress applies only to post-promo segments of a variable plan | §E | Low: either choice is defensible; it is a planner decision |
+| A9 | D-56 averages per-decision ratios rather than taking a ratio of sums | §E | Low: either choice is defensible; name it in the docblock |
+
+**Valid until:** provider late-fee terms 30 days (they change often; Klarna UK's terms already pre-date July 2026 regulation). Regulatory citations 90 days. Amortisation vectors indefinitely.

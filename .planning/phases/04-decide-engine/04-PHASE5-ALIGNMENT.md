@@ -9,7 +9,7 @@ Phase 5 (decide-ui) is being planned in parallel against `05-CONTEXT.md` (D-01�
 - 100% branch coverage on `engine/decide` and `engine/payoff`.
 - No invented rates or amounts (D-05, D-07).
 
-**Waves and plan count:** unchanged. There are still 13 plans in 6 waves, so ROADMAP and STATE did not need to change.
+**Waves and plan count:** unchanged by the alignment revision (13 plans in 6 waves). **Superseded by the 2026-10-15 engine depth expansion:** 22 plans in 8 waves (04-22 split out of 04-06 after checker iteration 1); see "Engine depth expansion (D-41..D-58) — public API" at the end.
 
 ## Gap list
 
@@ -50,7 +50,7 @@ Status key:
 | # | Phase 5 need | Phase 4 source | Status |
 |---|---|---|---|
 | 17 | Verdict state and chip | `Verdict.state` | covered |
-| 18 | Warning codes and shortfalls, at most five, ordered | `Assessment.warnings` (`month`/`cash`/`dsr`/`owe`/`inv`) | covered |
+| 18 | Warning codes and shortfalls, up to six, ordered | `Assessment.warnings` (`month`/`cash`/`cash_dip`/`dsr`/`owe`/`inv`; `cash_dip` added by D-44) | covered |
 | 19 | The pause case: "closes only if $x a month of investing / saving / both pauses" | The `inv` warning (shortfall = `pauseNeeded`), `investingAtRisk`, `savingAtRisk`, `investingAfter`, `savingAfter` | covered |
 | 20 | Title "already {x} short. This makes it {y}" | `context.leftBefore < 0`, `left` | covered |
 | 21 | The dsr value "{pct}" and the line "Debt payments would reach {pct} of money in" | Missing: only money (`debtServiceAfter`) was returned | **fixed**: `debtServiceRatioBefore/After` (Percent, null when income is 0) (04-07) |
@@ -59,10 +59,10 @@ Status key:
 | 24 | Neutral fact `debt_rate_exceeds_return` | `Assessment.facts` (D-31) | covered |
 | 25 | Basis marker "Average / Worst month · {in}" | `context.money.basis`, `money.incomeBasis` | covered |
 | 26 | **The month line by line (Now/After)**: money in, living, debt payments, saving and investing, running costs or this contribution, left | Partial. The figures existed but no table did, and under D-35 the prototype's rows do not add up | **fixed** by D-38: `Assessment.monthTable { now, after }`, pre-pause, rows sum exactly (04-07 Task 4; named test 04-11) |
-| 27 | **The five ledgers** (Income, Expenses, Debt, Cash, Investments) with a direction dot | Missing. The total debt balance was not in the context at all | **fixed** by D-38: `Assessment.ledgers` (code, now, after, `better`/`worse`/`same`), `context.debtBalance`, `debtBalanceAfter` |
+| 27 | **The five ledgers** (Income, Expenses, Debt, Cash, Investments) with a direction dot | Missing. The total debt balance was not in the context at all | **fixed** by D-38: `Assessment.ledgers` (code, now, after, `better`/`worse`/`same`), `context.debtBalance`, `debtBalanceAfter`. The Cash row reads `context.cashAfterBills` (Now) → `Assessment.cashAfterBillsAndPurchase` (After), so the bills due within 90 days are off both sides and the change shown is the purchase alone, with or without a cash path |
 | 28 | Against your lines: cash cushion, month closes, debt service, **unsecured debt**, investing floor, saving floor | Ambiguous. `LimitChecks` had no `owe`, and the ratios were missing | **fixed**: `checks.owe`, plus the values from #21/#22 and `unsecuredAfter` vs `limits.unsecuredLine` |
-| 29 | "If something goes wrong": runway plus setbacks | Setbacks covered (`applySetbacks`, `DEFAULT_SETBACKS`); runway missing | **fixed** by D-39: `SetbackReport.runwayMonths` (04-10) |
-| 30 | Options list with action payloads | `buildOptions` → `affordable_price.price` (bisected, exact), `longer_term.termMonths/monthlyPayment/leftChange/monthCloses/extraInterest`, `cut_line.lineId/cut/gap/closesGap`, `earn_more.gap/percentOfIncome`, `save_first.need/months`, `do_without.keptMonthly/horizonMonths/projected` | covered. `affordable_price.price` is the **final** price; "Use this price" sets advertised = price − `adjustmentsNet` (the prototype's rule) |
+| 29 | "If something goes wrong": runway plus setbacks | Setbacks covered (`applySetbacks`, `DEFAULT_SETBACKS`); runway missing | **fixed** by D-39: `SetbackReport.runwayMonths` (04-10). Setbacks and runway start from `Assessment.cashAfterBillsAndPurchase` (purchase and D-24 bills taken off, even when a cash path exists) |
+| 30 | Options list with action payloads | `buildOptions` → `affordable_price.price` (bisected, exact), `longer_term.termMonths/monthlyPayment/leftChange/monthCloses/extraInterest`, `cut_line.lineId/cut/gap/closesGap`, `earn_more.gap/percentOfIncome`, `save_first.need/months`, `do_without.keptMonthly/horizonMonths/projected/byRate` (D-51) | covered. `affordable_price.price` is the **final** price; "Use this price" sets advertised = price − `adjustmentsNet` (the prototype's rule) |
 | 31 | Assumptions in play | `money.fullMonthsUsed`, `steadiness`, `basis`, `spendingBasis`; debt counts from the snapshot; `limits.projectionReturn`; running-cost counts from `RunningCosts` | covered (counts via #5) |
 | 32 | Who pays what (household; hidden until Phase 8) | Only `myPart` | **fixed**: `memberParts(total, share)` (04-02) |
 
@@ -80,7 +80,7 @@ Status key:
 |---|---|---|---|
 | 36 | Four rows: On the day / A month / Kept | `buildAlternatives` → `rows[].dayOne/monthly/projected/contributed/growth` | covered. The cheaper row's day-one and monthly figures are now specified |
 | 37 | Suppression reasons (six UI strings) | `Suppression.code` + `amount`: `month_short` (cheaper: "Month still {x} short on this plan"; wait/skip: "Month is {x} short — nothing spare"), `too_thin`, `nothing_freed`, `past_horizon` (with `Alternatives.monthsToBuy` and `horizonMonths`), `nothing_spare` ("No cash above cushion, no monthly surplus") | named differently: Phase 5 maps (row code, suppression code) to a string |
-| 38 | "Kept" at 0%, with an optional user rate shown as "Kept, at x%" | `DecideSnapshot.projectionReturn` (null = 0%, D-06), echoed as `Alternatives.projectionReturn` | named differently: the per-check "+ Add a rate" value goes into `snapshot.projectionReturn` |
+| 38 | "Kept" at 0%, with optional user rates shown as "Kept, at x%" | The engine returns every rate (D-51): `DecideSnapshot.projectionRates` (up to three user rates) → `context.limits.projectionRates` (0% first); each non-suppressed row carries `byRate: RateFigure[]` and `Alternatives.rates` echoes the list. The single `projected`/`contributed`/`growth` fields stay at `snapshot.projectionReturn` (null = 0%, D-06) for prototype parity | covered (revised after checker iteration 1): Phase 5 chooses which rate(s) to display; it no longer relies on 05-UI-SPEC assumption 17 |
 | 39 | The "Spend less" card and the trade line: not spent, "{x} less on the day, then {y} a month", "lowers the payment from {a} to {b}, but the month still only leaves {left}" | Missing | **fixed**: `Alternatives.cheaper` (`notSpent`, `dayDiff`, `monthlyDiff`, `keptOnDay`, `keptMonthly`, `leftAfter`, `monthlyPayment`, `ratioPercent`) (04-10) |
 | 40 | Wait row "Buy at month {n}, then keep the {pay} a month" | `monthsToBuy`, `rows[2].monthly` | covered |
 
@@ -89,7 +89,7 @@ Status key:
 | # | Phase 5 need | Phase 4 source | Status |
 |---|---|---|---|
 | 41 | Plan card: On the day / A month / Left after | `mineDayOne`, `newMonthly`, `left` | covered |
-| 42 | Go ahead, loan: the debt and a recurring payment series | `plan.financed`, the check's `apr`/`termMonths`, `plan.monthly`, `plan.months`; the last payment was missing | **fixed**: `Plan.finalMonthly`, so the series is `monthly × (months − 1) + finalMonthly`, exactly the total (D-20) |
+| 42 | Go ahead, loan: the debt and a recurring payment series | `plan.financed`, the check's `apr`/`termMonths`, `plan.monthly`, `plan.months`; the last payment was missing | **fixed**: write the series from `Plan.paymentSteps` (`{ fromMonth, toMonth, amount }` runs whose total is exactly the schedule's, D-20), the source of truth with or without a promo. `Plan.finalMonthly` is the last payment for display; `monthly × (months − 1) + finalMonthly` is exact only for single-rate plans (with a D-48 promo `monthly` is the highest payment) |
 | 43 | Go ahead: instalment, cash, card, running costs, "your investing drops to {amt}" | `plan.*`, `RunningCosts`, `investingAfter` | covered |
 | 44 | Wait and save: amount, ready-by date, "within what you have spare" | Missing | **fixed** by D-40: `buildWaitPlan(context, check, monthlyAmount)` → `WaitPlan` (04-10 Task 3) |
 | 45 | D-12 estimate figures (day-one cost and monthly cost, payment plus running costs) | `mineDayOne`, `newMonthly` (= `mineMonthly + mineRunning`). Phase 5 stores them on the decision at Go ahead | covered |
@@ -130,16 +130,16 @@ Status key:
 - **Verdict:** `assess(snapshot, check)` → `Verdict`; `prepareContext(snapshot)` → `ContextResult` (for Your month).
 - **Assessment fields:**
   - Core: `state`, `size`, `warnings`, `facts`, `plan`.
-  - Money: `mineDayOne`, `mineMonthly`, `mineRunning`, `newMonthly`, `left`, `cashAfter`.
+  - Money: `mineDayOne`, `mineMonthly`, `mineRunning`, `newMonthly`, `left`, `cashAfter` (the `cash` check/warning figure), `cashAfterBillsAndPurchase` (purchase and D-24 bills off, always; what the Cash ledger row's After, setbacks, runway and income at risk use).
   - Pause: `pauseNeeded`, `investingAtRisk`, `investingAfter`, `savingAtRisk`, `savingAfter`.
   - Debt: `debtServiceAfter`, `debtServiceRatioBefore`, `debtServiceRatioAfter`, `unsecuredAfter`, `debtBalanceAfter`.
   - Screens: `checks` (`cash`, `month`, `dsr`, `owe`, `inv`, `save`), `monthTable` (`now`/`after`: `income`, `living`, `debtPayments`, `savingInvesting`, `thisPurchase`, `outgoings`, `left`), `ledgers` (`code`, `now`, `after`, `direction`), `burn`, `context`.
-- **Context fields:** `context.limits` (`reserve`, `dsrLine`, `unsecuredLine`, `unsecuredIncomeMultiple`, `investingFloor`, `savingFloor`, `projectionReturn`), `context.money` (`incomeBasis`, `incomeAverage`, `incomeWorst`, `incomeBest`, `spendingBasis`, `steadiness`, `incomeCvPercent`, `basis`, `fullMonthsUsed`), `context.leftBefore`, `cashAvailable`, `billsDue`, `debtBalance`, `annualIncome`, `debtPayments`, `pausable`.
+- **Context fields:** `context.limits` (`reserve`, `dsrLine`, `unsecuredLine`, `unsecuredIncomeMultiple`, `investingFloor`, `savingFloor`, `projectionReturn`), `context.money` (`incomeBasis`, `incomeAverage`, `incomeWorst`, `incomeBest`, `spendingBasis`, `steadiness`, `incomeCvPercent`, `basis`, `fullMonthsUsed`), `context.leftBefore` (the D-45 worst month once positioned), `context.leftThisMonth` (this month's left over; what D-36 size uses), `cashAvailable` (path-aware: the `cash` check/warning and D-36 `from_savings` only), `cashAfterBills` (cash after bills due within 90 days, always: the Cash ledger row's Now, spare cash, wait, save first, income at risk, net worth), `billsDue`, `debtBalance`, `annualIncome`, `debtPayments`, `pausable`, `limits.projectionRates`.
 - **Plan fields:** `dayOne`, `monthly`, `months`, `financed`, `total`, `interest`, `finalMonthly`, `impliedAnnualRate`, `card` (`onCard`, `remainderOnDay`, `payoffMonths`, `minimumOutcome`). Per-method cards: `resolvePlan(check)`.
-- **Options:** `buildOptions(context, check, assessment)` → codes `affordable_price`, `longer_term`, `cut_line`, `earn_more`, `save_first`, `do_without`. Separately, `affordablePrice(context, check)`.
-- **Alternatives:** `buildAlternatives(context, check, assessment, cheaperRatioPercent)` → `rows` (`as_planned`, `cheaper`, `wait_and_save`, `skip`), `cheaper` (`CheaperDetail`), `spareCash`, `spareMonthly`, `monthsToBuy`, `waitMonths`, `horizonMonths`, `projectionReturn`. The suppression codes are `month_short`, `too_thin`, `nothing_freed`, `past_horizon` and `nothing_spare`.
-- **Setbacks:** `applySetbacks(assessment, setbacks)` → `results`, `combinedHit`, `stressedCash`, `stressedOutcome` (`absorbed`, `through_cushion` or `wiped_out`), `runwayMonths`. Defaults: `DEFAULT_SETBACKS`.
-- **Wait (D-40):** `buildWaitPlan(context, check, monthlyAmount | null)` → `WaitPlan { target, monthlyAmount, spareMonthly, withinSpare, months, readyBy }`. `readyBy` is null when months is null or exceeds SIMULATION_MONTH_CAP, and Phase 5 must handle the null.
+- **Options:** `buildOptions(context, check, assessment)` → codes `affordable_price`, `longer_term`, `cut_line`, `earn_more`, `save_first`, `do_without` (with `byRate`, D-51). Separately, `affordablePrice(context, check)`.
+- **Alternatives:** `buildAlternatives(context, check, assessment, cheaperRatioPercent)` → `rows` (`as_planned`, `cheaper`, `wait_and_save`, `skip`; each with `byRate: RateFigure[] | null`, D-51), `rates` (the `ProjectionRate` list), `cheaper` (`CheaperDetail`), `spareCash` (from `cashAfterBills`), `spareMonthly`, `monthsToBuy`, `waitMonths`, `horizonMonths`, `projectionReturn`. The suppression codes are `month_short`, `too_thin`, `nothing_freed`, `past_horizon` and `nothing_spare`.
+- **Setbacks:** `applySetbacks(assessment, setbacks)` → `results`, `combinedHit`, `stressedCash`, `stressedOutcome` (`absorbed`, `through_cushion` or `wiped_out`), `runwayMonths`, all from `assessment.cashAfterBillsAndPurchase`. Defaults: `DEFAULT_SETBACKS`.
+- **Wait (D-40):** `buildWaitPlan(context, check, monthlyAmount | null)` → `WaitPlan { target, monthlyAmount, spareMonthly, withinSpare, months, readyBy }` (spare cash from `context.cashAfterBills`). `readyBy` is null when months is null or exceeds SIMULATION_MONTH_CAP, and Phase 5 must handle the null.
 - **First read:** `firstRead(figures: RoughFigures, check)` → `FirstRead` (`state`, `size`, `plan`, `dayOne`, `monthly`, `cashAfter`, `leftAfter`, `roughCushion`, `warnings`, `basisMarker`).
 - **Household:** `memberParts(total, share)`, `myPart(total, share)`, `resolveShare(scope)`.
 - **Pre-fill only:** `suggestItemType(name)`, `suggestSecured(name)`. **Builder data:** `MARKET_DEFAULTS`, `minimumTermsFromDefaults`.
@@ -155,5 +155,99 @@ Items 1–4 are recorded in 04-CONTEXT as D-37…D-40, now confirmed. The plans 
 3. **D-40: wait target** = what spare cash above the cushion does not cover, consistent with the alternatives' wait row. The prototype used max(day-one cost, …), so a cash purchase waited for the whole price. Confirm.
 4. **D-37: a trade-in larger than the price** floors the price at 0 rather than raising an error. Confirm.
 5. **`snapshot.asOf` is the day the check is evaluated (today), not "When you need it".** The D-24 90-day window and the wait ready-by date run from it. Phase 5's snapshot builder must set it that way. If the user wants the window to follow the need-by date, that is a new decision.
-6. 04-REPLAN-NOTES interpretation 10 still stands: `Verdict.size` is null only when the context cannot be resolved (no full month), and Phase 5 uses `firstRead` there.
+6. 04-REPLAN-NOTES interpretation 10 of the first (D-23…D-36) section still stands: `Verdict.size` is null only when the context cannot be resolved (no full month), and Phase 5 uses `firstRead` there.
 7. The prototype's card-question warning cards and the "Your income does not support this" card were dropped by 05-UI-SPEC. The engine adds nothing for them.
+
+## Engine depth expansion (D-41..D-58) — public API
+
+Added 2026-10-15. Phase 5 consumes these through the `engine/decide` barrel (04-12, now 31 modules) and the `engine/payoff` barrel. Every output is codes and numbers (D-21); amounts are integer minor units in the check's currency; APRs and offsets are `Percent` (scaled bigint, percentage units). The names below are the ones the plans' acceptance criteria grep for.
+
+**Plans and waves after the expansion:** W1 04-01, 04-02, 04-03 · W2 04-04, 04-05 · W3 04-13, 04-14, 04-15, 04-16 · W4 04-06, 04-17 · W5 04-07, 04-08, 04-22 · W6 04-09, 04-10, 04-11, 04-18, 04-19 · W7 04-20, 04-21 · W8 04-12.
+
+### Entry point for a check
+
+| Need (05 decision) | Function | Input | Output fields and codes | Plan |
+|---|---|---|---|---|
+| The whole report for a check, combined with the other open checks (05 D-24, D-26, D-27, D-28, D-30, D-32) | `decide(snapshot, check, otherChecks?)` | `DecideSnapshot`, `PurchaseCheck`, `readonly StackedCheckInput[]` (default []) | `Decision { verdict, standalone, combinedDiffers, stacked, worstMonth, margins, stress, withExpectedIncome }` | 04-20 |
+| The combined verdict alone | `assess(snapshot, check, otherChecks?)` | as above | `Verdict` (= `decide(...).verdict`) | 04-18 (rewire of 04-07) |
+| The positioned contexts (for bisection, options, alternatives, setbacks, wait, investment views on the combined position) | `positionContext(base, check, otherChecks, options?)`; or simply `verdict.context` | `AssessContext` from `prepareContext`; `{ includeExpectedIncome?: boolean }` | `Position { combined, standalone, stacked }`; `AssessContext.position: PositionInfo { stacked, changes, worstMonth, expectedIncomeIncluded }` | 04-18 |
+
+### Combined checks (D-41, D-41 amended; 05 D-24)
+
+- Input: `StackedCheckInput { check: PurchaseCheck; purchaseRule: SplitRule | null }`. Pass **all** other open checks (D-41 amended); `purchaseRule` is each check's own resolved split, required in household scope and null in personal scope. The toggle "With my other open checks" off = call with `[]`.
+- Output: `Decision.verdict` (combined), `Decision.standalone` (`Verdict | null`, null when no other checks), `Decision.combinedDiffers` (boolean), `Decision.stacked: StackedCheck[] { index, status: 'applied' | 'missing', reasons: MissingReason[], mineDayOne, mineMonthly }`.
+- Bisection and options on the combined position: `affordablePrice(verdict.context, check)`, `buildOptions(verdict.context, check, verdict)` (unchanged signatures, 04-09).
+
+### Cushion by steadiness (D-42 as amended; 05 D-25)
+
+- `context.limits.reserve` (resolved), `context.limits.reserveHalfMonths: number | null` (6 / 9 / 12 halves = 3 / 4.5 / 6 months; 3 months under 3 full months (6 half-months), D-42 amended; null when the user typed a reserve), with the reason from `context.money.steadiness` (`steady` | `variable` | `volatile` | `insufficient`). Helper: `defaultReserve(monthCosts, steadiness)`, `reserveHalfMonthsFor(steadiness)` (04-15). The first read's cushion stays 3 × rough spending (04-08).
+
+### On the edge (D-43; 05 D-25)
+
+- `Decision.margins: LineMargin[] { line: 'month' | 'cash' | 'dsr' | 'owe' | 'inv' | 'cash_path', margin (signed: ≥ 0 passes, "holds by" / "misses by"), threshold, base, flag: 'on_edge' | null }`. Invest checks report only `month`, `cash` and `cash_path`. Helpers: `lineMargins(assessment, check)` (04-20), `edgeMargin`, `isOnEdge` (04-15). The verdict state is unchanged.
+
+### Cash path, day by day (D-44, D-24/D-44 amended; 05 D-26)
+
+- Snapshot input: `DecideSnapshot.incomeSeries: RecurringIncome[]` (confirmed pay series; same fields as `RecurringBill` minus `categoryId`).
+- Output on every assessment: `Assessment.cashPath: CashPathReport` = `{ status: 'unavailable', code: 'cash_path_unavailable' }` or `{ status: 'available', withoutPurchase: MinorUnits[91], withPurchase: MinorUnits[91], lowestWithout: CashPathPoint, lowestWith: CashPathPoint }` with `CashPathPoint { day, date: 'YYYY-MM-DD', amount }`; `Assessment.cashDip: 'hard' | 'soft' | null`; warning code `cash_dip` in `Assessment.warnings` (shortfall = the gap the dated flows add beyond the cash card); `Assessment.basisCodes` contains `cash_path_unavailable` when skipped. With a path, `context.cashAvailable` = cash on hand (bills due soon show only as `cash_dip` in the verdict, and `size`'s `from_savings` follows the same rule). `context.cashAfterBills` / `Assessment.cashAfterBillsAndPurchase` keep the D-24 deduction either way and feed every spare-money figure (alternatives, wait, save first, setbacks, runway, income at risk, net worth). The report always carries both `lowestWith` and `lowestWithout`, so Phase 5 can show either. Helpers: `cashPathForSnapshot`, `spreadUndatedSpending(spreadMonthly, day)`, `purchaseFlows`, `applyOutflows`, `lowestPoint`, `cashPathReport`, `dipShortfall(input)`, `classifyCashDip(input: CashDipInput { lowestWith, lowestWithout, reserve, cashAfter })` (04-17).
+- **Needs user confirmation (04-REPLAN-NOTES 2026-10-15 expansion, defaults 1 and 2):** the daily spread of undated spending and debt minimums (`spreadUndatedSpending`) and the `cash_dip` measure (`dipShortfall`: the gap beyond the `cash` card). Each lives in one function, so the alternative — measure the dip against `lowestWithout` — is a one-function change with no API change.
+- Warning cap: up to six warnings; `WARNING_ORDER` = `month`, `cash`, `cash_dip`, `dsr`, `owe`, `inv`.
+
+### Changes coming up and the worst month (D-45; 05 D-27)
+
+- Snapshot input: `DecideSnapshot.futureChanges: FutureChange[] { id, kind: 'income' | 'spending', monthlyAmount (signed), startMonth: 'YYYY-MM', endMonth: 'YYYY-MM' | null, currency }`.
+- Output: `Decision.worstMonth: WorstMonthReport { month, offset (1..12), leftAfter, leftAfterNow, shortfall, differsFromNow }` ("Fits now; from {month} the month is {shortfall} short" when `differsFromNow` and `shortfall > 0`); the verdict's month ledger already uses that month (`verdict.context.monthIncome`, `mySpendingBasis`, `leftBefore`). Helper: `worstFutureMonth(input)`, `monthAfter`, `changeActiveIn` (04-15).
+
+### Confidence (D-46; 05 D-28)
+
+- `Assessment.confidence`, the missing `Verdict.confidence` (from the money basis whenever it resolved; `under_3_full_months` only with no full month — `ContextResult`'s failure branch carries it) and `FirstRead.confidence`: `Confidence { level: 'strong' | 'fair' | 'rough', reasons: ('first_read' | 'under_3_full_months' | 'volatile_income' | 'under_6_full_months' | 'variable_income')[] }` (strong → reasons []). Helper: `confidenceOf({ fullMonths, steadiness, firstRead })` (04-15; wired in 04-07 and 04-08).
+
+### One-off lines (D-47; 05 D-29)
+
+- Snapshot input: `RecordLine.oneOff: boolean` (Record's new row field).
+- Output: `MoneyBasis.oneOffsExcluded { count, spending, income }` (also per month on `MonthSummary.oneOffs`), and basis code `one_offs_excluded` in `Assessment.basisCodes` when count > 0 (04-13, 04-07).
+
+### Credit terms (D-48, D-49, D-50; 05 D-30)
+
+- Check inputs (all optional; absent = none; never pre-filled): loan and card payments `promo?: PromoTerms { apr, months, deferredInterest }` and `variable?: boolean`; the loan's `apr` / the card record's `apr` is the rate after the promo. Instalment payment `lateFee?: MinorUnits`, `lateFeeCapTotal?: MinorUnits`.
+- Plan outputs (04-06 builds paymentSteps; 04-22 adds the credit terms): `Plan.paymentSteps: PaymentStep[] { fromMonth, toMonth, amount }` on every plan (THE source for writing recurring series, promo or not; `finalMonthly` is display only); `Plan.promo: PromoOutcome | null { promoMonths, promoApr, deferredInterest, paymentDuringPromo, paymentAfterPromo (null when it clears first), clearsBeforePromoEnd, interestAfterPromo (null when a minimum never clears), deferredInterestCharged, deferredInterestCode: 'deferred_interest_charged' | null, highestMonthlyPayment, paymentToClearInPromo }` — with a promo, `Plan.monthly` = `highestMonthlyPayment` ("The month test uses the highest payment, {x}"); `Plan.lateFees: LateFeeCost | null { feePerLatePayment, capTotal, oneLate, twoLate }`. Helper: `rateScheduleFor(apr, promo)` (04-22).
+- Stress (04-19): `Decision.stress: StressOutcome[] { offset (percent('2') / percent('4')), apr, monthly, mineMonthly, left, state: 'fits' | 'adjust' | 'no', monthCloses, dsrWithinLine }`, [] unless the loan or card plan is flagged variable; `stressTest(context, check)`.
+- Payoff layer (04-14, `engine/payoff`): `RateSegment`, `RateSchedule`, `singleRate`, `promoMonthsOf`, `amortiseSchedule`, `simulateMinimumSchedule` (Phase 6 can reuse them).
+
+### Investment views (D-51, D-52; 05 D-31)
+
+- Snapshot input: `DecideSnapshot.projectionRates: Percent[]` (up to three user rates, entry order; [] = 0% only), resolved once into `context.limits.projectionRates: ProjectionRate[]` by `resolveProjectionRates` (04-05). Every projection — alternatives rows, `do_without`, investment views — is returned at each of those rates (D-51); Phase 5 chooses which to display.
+- `investmentViews(context, check: BuyCheck, assessment, input: InvestmentViewsInput { horizonMonths: number | null })` → `InvestmentViews { horizonMonths, horizonSource: 'plan_term' | 'cash_default' | 'user', rates: ProjectionRate[] { rate, userEntered, label: 'projection_at_entered_rate' | 'held_not_grown' } (= context.limits.projectionRates), priceInvested { lump, byRate: RateFigure[] }, paymentsInvested { firstMonthPayment, paymentMonths, monthlyRunning, byRate }, pauseImpact { pausedMonthly, byRate } | null, netWorth: NetWorthPath[] { rate, withoutPurchase: MinorUnits[], withPurchase: MinorUnits[] } }` with `RateFigure { rate, contributed, projected, growth }` (04-21). Pass `verdict.context` and `verdict`. Snapshot input: `DecideSnapshot.investmentBalance`. The net-worth path starts from `context.cashAfterBills`. Payoff helper: `futureValuePath(monthly, apr, months, seed)`.
+- The alternatives' "Kept" column and `do_without` carry `byRate` for every rate in the same list (D-51). Their single `projected` field stays at `snapshot.projectionReturn` for prototype parity; the builder may set it to the first entered rate, but Phase 5 does not need it, because the engine returns all rates.
+
+### Income impact (D-53, D-54; 05 D-32)
+
+- Check input: `BuyCheck.incomeChange?: PurchaseIncomeChange { monthlyAmount (signed, non-zero), startDate, likelihood: 'likely' | 'uncertain' }`. A negative change is in the verdict (as a D-45 change); a positive one never is.
+- Output: `Decision.withExpectedIncome: ExpectedIncomeOutcome | null { monthlyAmount, likelihood, startMonth, assessment (state, left, context.monthIncome), payback: PaybackResult { months: number | null, totalCost, extraIncome, horizonMonths } }`. Helper: `paybackMonths(input)` (04-19).
+- Setbacks with the new plan (04-21): `incomeAtRisk(context, assessment, setbacks)` (cash from `context.cashAfterBills` without the purchase and `assessment.cashAfterBillsAndPurchase` with it) → `IncomeAtRiskReport { runwayWith, runwayWithout, runwayLost, setbacks: SetbackAtRisk[] { code, enabled, cashAfterWith, cashAfterWithout, paymentsMet ("New payments still met"), breaksBecauseOfPurchase, runwayWith, runwayWithout, runwayLost } }`. Helpers on setbacks.ts (04-10): `setbackHitFor(setback, basis: SetbackBasis)`, `runwayMonthsOf(cash, burn)`.
+
+### Running-cost prompts and estimate bias (D-55, D-56; 05 D-33, D-36)
+
+- `RUNNING_COST_PROMPTS` / `runningCostPrompts(itemType)` → `RunningCostCategory[]` from `insurance`, `fuel`, `maintenance`, `registration`, `loss_of_value` (vehicle: all five; general: insurance, maintenance, loss_of_value; rent_bill, loan_repayment, tax, insurance_premium: none); `isNonCashCategory(category)` (04-16). A `CostLine` carries `category?`; `netRunningCosts` returns `RunningCosts.nonCash` (counted loss of value) and keeps it out of `net` (04-06).
+- `estimateBias(decisions: PastDecision[], currency)` → three `EstimateBias { figure: 'day_one' | 'monthly_payment' | 'running_costs', decisionsUsed, biasBasisPoints: number | null }` (signed; + means actuals came in higher; null below 3 usable decisions) (04-16). Input `PastDecision { id, currency, estimate: { dayOne, monthlyPayment, runningCosts }, actual: { dayOne | null, monthlyPayment | null, runningCosts | null } }`.
+
+### Not engine work (Phase 5 or Record)
+
+- Storing future changes, the one-off row field and its Record UI, the combined toggle per check, stored decisions with actuals, the savings goal row (05 D-34), cooling-off (05 D-35) and currency conversion (05 D-37) are Phase 5 / Record. The engine only consumes the resulting snapshot and check fields listed above.
+
+## Checker revision (2026-10-15, iteration 1) — new public API names
+
+Added after the plan checker's first pass. All are codes and numbers (D-21).
+
+| Name | Kind | Where | Why |
+|---|---|---|---|
+| `AssessContext.cashAfterBills` | field | 04-05 / 04-07 | Cash after my share of D-24 bills due within 90 days, always (with or without a cash path). Feeds the D-38 Cash ledger row's Now and every spare-money figure |
+| `Assessment.cashAfterBillsAndPurchase` | field | 04-05 / 04-07 | `cashAfterBills − mineDayOne`. The D-38 Cash ledger row's After; setbacks, the D-39 runway and income at risk start from it. Equals `cashAfter` when there is no cash path |
+| `AssessContext.leftThisMonth` | field | 04-05 / 04-07 / 04-18 | This month's left over for the combined position. D-36 `size` reads it, never the D-45 worst month |
+| `DecideSnapshot.projectionRates` | input | 04-05 | Up to three user rates (D-51); [] = 0% only |
+| `ResolvedLimits.projectionRates`, `resolveProjectionRates(rates, fn)` | field, function | 04-05 / 04-07 | The one `ProjectionRate` list (0% first, deduplicated, entry order) |
+| `AlternativeRow.byRate`, `Alternatives.rates`, `do_without.byRate` | fields | 04-09 / 04-10 | Every projection at 0% and each user rate (D-51) |
+| `InvestmentViewsInput { horizonMonths }` | changed input | 04-21 | `rates` removed: the views read `context.limits.projectionRates` |
+| `CashDipInput { lowestWith, lowestWithout, reserve, cashAfter }`, `dipShortfall(input)`, `spreadUndatedSpending(spreadMonthly, day)` | type, functions | 04-05 / 04-17 | 04-REPLAN-NOTES expansion defaults 1 and 2 isolated in one function each; `classifyCashDip(input)` now takes the object |
+| `ContextResult` failure `confidence` | field | 04-05 / 04-07 | The missing verdict's confidence comes from the money basis whenever it resolved |
+| `rateScheduleFor` | function | 04-22 (moved from 04-06) | D-48 credit terms now live in their own plan |

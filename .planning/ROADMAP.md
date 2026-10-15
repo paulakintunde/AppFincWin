@@ -556,11 +556,11 @@ Plans:
 **Success Criteria** (what must be TRUE — test-suite observable, no UI in this phase):
   1. The engine computes an amortised monthly payment for any principal/APR/term including the zero-rate case, and future value of a monthly contribution plus a seed including the zero-rate case.
   2. A credit card at 22.9% APR with a 1% minimum payment is correctly reported as never clearing, via an explicit payment-vs-interest check rather than inference from hitting the simulation's month cap.
-  3. The engine resolves paid-in-full, deposit-plus-loan, instalment-plan and credit-card payment methods into a comparable plan, flags a plan incomplete when its terms are unspecified, and returns a verdict of fits/adjust/no/missing with up to five warnings ordered by shortfall size.
+  3. The engine resolves paid-in-full, deposit-plus-loan, instalment-plan and credit-card payment methods into a comparable plan, flags a plan incomplete when its terms are unspecified, and returns a verdict of fits/adjust/no/missing with up to six warnings ordered by shortfall size (five ledgers plus the D-44 `cash_dip`).
   4. The engine derives income steadiness from the coefficient of variation across logged months (not a user-stated answer), computes a household's cost share under the active split rule, finds the largest affordable price by bisection (handling both "nothing is affordable" and "the full price already fits"), and determines card eligibility as blocked/capped/permitted.
   5. The full engine suite is green at the agreed branch-coverage threshold, runs with no React, no I/O and no database access, and `dsecured` reads a boolean field on the loan record rather than matching its name.
   6. The engine produces the options list, the four-way alternatives (suppressing and labelling rows whose money is not genuinely spare) and setback re-assessments, and returns a cash-level first read from rough figures when no full month exists — all as codes and numbers, with no English strings (04-CONTEXT D-11, D-19, D-21).
-**Plans**: 13 plans in 6 waves (revised 2026-10-15 against 04-CONTEXT D-23…D-36; choices in 04-REPLAN-NOTES.md)
+**Plans**: 22 plans in 8 waves (revised 2026-10-15 against 04-CONTEXT D-23…D-58 incl. the engine depth expansion and its consistency amendments; choices in 04-REPLAN-NOTES.md)
 Plans:
 **Wave 1**
 - [ ] 04-01-PLAN.md — payoff foundation: Percent type, amortise (DEC-01), futureValue (DEC-02)
@@ -569,23 +569,36 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 04-04-PLAN.md — simulateMinimum with explicit never-clears (DEC-03, SC-2), payoff barrel, payoff parity
-- [ ] 04-05-PLAN.md — Decide contracts (Record lines, recurring bills, one currency per check, two shares), behaviour constants, per-market defaults (US/CA/CA-QC/UK), currency guard, monthly equivalents and bills due in 90 days (DEC-12)
+- [ ] 04-05-PLAN.md — Decide contracts incl. D-41..D-56 types, cited behaviour constants (D-58), per-market defaults, currency guard, series maths, projection rates (DEC-12)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 04-06-PLAN.md — resolvePlan for cash/loan/instalment/card/invest with missing reason codes (DEC-04/05/10)
-- [ ] 04-13-PLAN.md — deriveMoney over Record lines: paid only, refunds netted, series smoothed, household shares, exact CV steadiness (DEC-07/08)
+- [ ] 04-13-PLAN.md — deriveMoney over Record lines: paid only, refunds netted, series smoothed, one-off lines excluded (D-47), exact CV steadiness (DEC-07/08)
+- [ ] 04-14-PLAN.md — payoff rate schedules (D-48) and independent published amortisation reference tests (D-57)
+- [ ] 04-15-PLAN.md — steadiness-scaled cushion (D-42), confidence (D-46), on-the-edge margins (D-43), worst of 12 future months (D-45)
+- [ ] 04-16-PLAN.md — running-cost prompt table (D-55) and estimate bias (D-56)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 04-07-PLAN.md — prepareContext + assess: two shares, bills due in 90 days, pausable saving/investing, invest-check rules, D-31 basis fact, D-36 purchase size, ordered warnings (DEC-06)
-- [ ] 04-08-PLAN.md — cash-level first read from rough figures with a rough cushion and D-36 purchase size (DEC-16)
+- [ ] 04-06-PLAN.md — resolvePlan for cash/loan/instalment/card/invest with missing reason codes, check inputs (DEC-04/05/10)
+- [ ] 04-17-PLAN.md — day-by-day 90-day cash path and `cash_dip`, one card per cause (D-44)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 04-09-PLAN.md — exact integer bisection and the ordered options list (DEC-09/13)
-- [ ] 04-10-PLAN.md — four-way alternatives with suppression, setbacks (DEC-14/15)
-- [ ] 04-11-PLAN.md — decide golden parity and named deviation tests D-02/D-08/D-12, D-11 amended, D-24, D-33, D-34, D-35, D-36 (D-22)
+- [ ] 04-07-PLAN.md — prepareContext + assess: two shares, two cash figures, cash path, pausable saving/investing, confidence, D-36 size, ordered warnings (DEC-06)
+- [ ] 04-08-PLAN.md — cash-level first read from rough figures with a rough cushion, D-36 size and confidence (DEC-16)
+- [ ] 04-22-PLAN.md — credit terms: promotional rates and deferred interest (D-48), variable flag (D-49), BNPL late fees (D-50)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 04-12-PLAN.md — public barrel, codes-only guard, phase gate (DEC-12)
+- [ ] 04-09-PLAN.md — exact integer bisection and the ordered options list on the combined position, per-rate projections (DEC-09/13)
+- [ ] 04-10-PLAN.md — four-way alternatives with suppression and per-rate projections, setbacks, wait plan (DEC-14/15)
+- [ ] 04-11-PLAN.md — decide golden parity and named deviation tests (D-22)
+- [ ] 04-18-PLAN.md — position layer: combined open checks (D-41), future changes and purchase-linked income loss (D-45, D-53)
+- [ ] 04-19-PLAN.md — variable-rate stress (D-49) and payback months (D-53)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 04-20-PLAN.md — `decide()` report: combined and standalone verdicts, worst month, margins, stress, expected income; named tests D-41/D-43/D-44
+- [ ] 04-21-PLAN.md — investment views at 0% and user rates (D-51, D-52) and income at risk (D-54)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 04-12-PLAN.md — public barrel, codes-only guard, cross-suite phase gate (DEC-12)
 **UI hint**: no (pure TypeScript engine; deliverable is a green suite and a coverage report)
 
 ### Phase 5: Decide UI
