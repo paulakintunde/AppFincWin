@@ -66,6 +66,15 @@ describe('filterChipModels', () => {
     expect(filterChipModels(f({ categoryIds: [null] }), deps)[0]!.label).toBe('record.sheet.uncategorised');
     expect(filterChipModels(f({ categoryIds: ['gone'] }), deps)[0]!.label).toBe('activity.filter.category');
   });
+  it('WR-05: counts the whole selection, Uncategorised and unknown first ids included', () => {
+    const label = (ids: (string | null)[]) => filterChipModels(f({ categoryIds: ids }), deps)[0]!.label;
+    expect(label([null, 'c1'])).toBe(t('activity.filterChip.more', { label: 'record.sheet.uncategorised', count: 1 }));
+    expect(label(['c1', null])).toBe(t('activity.filterChip.more', { label: 'Groceries', count: 1 }));
+    expect(label(['gone', 'c1', 'c3'])).toBe(t('activity.filterChip.more', { label: 'Groceries', count: 2 }));
+    expect(filterChipModels(f({ accountIds: ['gone', 'a1'] }), deps)[0]!.label).toBe(
+      t('activity.filterChip.more', { label: 'Cash', count: 1 })
+    );
+  });
   it('labels accounts', () => {
     expect(filterChipModels(f({ accountIds: ['a1'] }), deps)[0]!.label).toBe('Cash');
     expect(filterChipModels(f({ accountIds: ['a1', 'a2'] }), deps)[0]!.label).toBe(

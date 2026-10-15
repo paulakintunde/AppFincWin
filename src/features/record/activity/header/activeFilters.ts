@@ -31,25 +31,25 @@ export function countActiveFilters(f: ActivityFilter): number {
   return n;
 }
 
-/** First selected name, plus "+N" when more are selected; unknown ids fall back to a generic label. */
+/**
+ * The first selected name that resolves, plus "+N" for every other selected value (review WR-05:
+ * the count is the whole selection, so an unknown or deleted first id, or an Uncategorised pick,
+ * never hides the rest). Nothing resolvable falls back to the generic label.
+ */
 function firstPlus(
-  ids: readonly string[],
-  nameOf: (id: string) => string,
+  names: readonly string[],
   fallbackKey: 'activity.filter.category' | 'activity.filter.account',
   t: TFunction
 ): string {
-  const first = ids[0];
-  const name = first === undefined ? '' : nameOf(first);
-  if (name === '') return t(fallbackKey);
-  if (ids.length > 1) return t('activity.filterChip.more', { label: name, count: ids.length - 1 });
-  return name;
+  const first = names.find((n) => n !== '');
+  if (first === undefined) return t(fallbackKey);
+  if (names.length > 1) return t('activity.filterChip.more', { label: first, count: names.length - 1 });
+  return first;
 }
 
 function categoryLabel(ids: readonly (string | null)[], deps: ChipLabelDeps): string {
-  const { t } = deps;
-  if (ids.length === 1 && ids[0] === null) return t('record.sheet.uncategorised');
-  const named = ids.filter((id): id is string => id !== null);
-  return firstPlus(named, deps.categoryName, 'activity.filter.category', t);
+  const names = ids.map((id) => (id === null ? deps.t('record.sheet.uncategorised') : deps.categoryName(id)));
+  return firstPlus(names, 'activity.filter.category', deps.t);
 }
 
 function amountLabel(f: ActivityFilter, deps: ChipLabelDeps): string {
@@ -71,7 +71,7 @@ export function filterChipModels(f: ActivityFilter, deps: ChipLabelDeps): Filter
   if (f.accountIds !== null) {
     out.push({
       kind: 'account',
-      label: firstPlus(f.accountIds, deps.accountName, 'activity.filter.account', deps.t),
+      label: firstPlus(f.accountIds.map(deps.accountName), 'activity.filter.account', deps.t),
     });
   }
   if (hasAmount(f)) out.push({ kind: 'amount', label: amountLabel(f, deps) });
