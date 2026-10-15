@@ -139,14 +139,16 @@ Status key:
 - **Options:** `buildOptions(context, check, assessment)` → codes `affordable_price`, `longer_term`, `cut_line`, `earn_more`, `save_first`, `do_without`. Separately, `affordablePrice(context, check)`.
 - **Alternatives:** `buildAlternatives(context, check, assessment, cheaperRatioPercent)` → `rows` (`as_planned`, `cheaper`, `wait_and_save`, `skip`), `cheaper` (`CheaperDetail`), `spareCash`, `spareMonthly`, `monthsToBuy`, `waitMonths`, `horizonMonths`, `projectionReturn`. The suppression codes are `month_short`, `too_thin`, `nothing_freed`, `past_horizon` and `nothing_spare`.
 - **Setbacks:** `applySetbacks(assessment, setbacks)` → `results`, `combinedHit`, `stressedCash`, `stressedOutcome` (`absorbed`, `through_cushion` or `wiped_out`), `runwayMonths`. Defaults: `DEFAULT_SETBACKS`.
-- **Wait (D-40):** `buildWaitPlan(context, check, monthlyAmount | null)` → `WaitPlan { target, monthlyAmount, spareMonthly, withinSpare, months, readyBy }`.
+- **Wait (D-40):** `buildWaitPlan(context, check, monthlyAmount | null)` → `WaitPlan { target, monthlyAmount, spareMonthly, withinSpare, months, readyBy }`. `readyBy` is null when months is null or exceeds SIMULATION_MONTH_CAP, and Phase 5 must handle the null.
 - **First read:** `firstRead(figures: RoughFigures, check)` → `FirstRead` (`state`, `size`, `plan`, `dayOne`, `monthly`, `cashAfter`, `leftAfter`, `roughCushion`, `warnings`, `basisMarker`).
 - **Household:** `memberParts(total, share)`, `myPart(total, share)`, `resolveShare(scope)`.
 - **Pre-fill only:** `suggestItemType(name)`, `suggestSecured(name)`. **Builder data:** `MARKET_DEFAULTS`, `minimumTermsFromDefaults`.
 
-## Still open (for the user or for Phase 5)
+## Resolved 2026-10-15 (formerly "Still open")
 
-Items 1–4 are recorded in 04-CONTEXT as D-37…D-40 with status "proposed, pending the user's confirmation before execution". The plans implement them as written.
+**The user confirmed all five items as proposed on 2026-10-15** (04-CONTEXT D-37…D-40 and the as-of note).
+
+Items 1–4 are recorded in 04-CONTEXT as D-37…D-40, now confirmed. The plans implement them as written.
 
 1. **D-38: the month table is pre-pause** (rows add up; the pause shows beside the table). The alternative is the prototype's display, which lowers the saving row while showing the pre-pause left. Confirm.
 2. **D-39: runway** counts whole months from cash *after* the purchase. The prototype used cash before it, to one decimal. Confirm, or ask for tenths.

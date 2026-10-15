@@ -2,7 +2,7 @@
 
 **Gathered:** 2026-09-26
 **Updated:** 2026-10-15 (D-23…D-35; amends D-01, D-03, D-05, D-08, D-11, D-12, D-15, D-16, D-22). D-36 and, for Phase 5 alignment, D-37…D-40 were added the same day.
-**Status:** Ready for replanning. The 12 plans dated 2026-09-27 predate the 2026-10-15 update and must be revised before execution.
+**Status:** Replanned 2026-10-15: 13 plans in 6 waves, aligned with Phase 5. The plan checker passed. D-37…D-40 were confirmed by the user on 2026-10-15. Ready to execute.
 
 <domain>
 ## Phase Boundary
@@ -141,7 +141,7 @@ Phase 02.2 added recurring series (weekly to yearly, `src/engine/recurring/`), r
 
 Phase 5's quick check and steps 2–5 (05-CONTEXT D-05…D-23, 05-UI-SPEC) render figures the engine did not yet return. These four decisions keep every such figure in the engine, as integer minor units and codes (D-20, D-21). See `04-PHASE5-ALIGNMENT.md`.
 
-**Status: proposed by the alignment review and planned in full, pending the user's confirmation before execution.** The open points are D-37's floor at 0, D-38's pre-pause table, D-39's whole-month runway from cash after the purchase, and D-40's wait target; they are listed in `04-PHASE5-ALIGNMENT.md` "Still open". If the user chooses otherwise, only the named deviation tests and the formulas in 04-06 Task 3, 04-07 Task 4 and 04-10 Tasks 2–3 change.
+**Status: confirmed by the user 2026-10-15.** D-37's floor at 0, D-38's pre-pause month table, D-39's whole-month runway from cash after the purchase, and D-40's wait target are all accepted as proposed. **The as-of date is confirmed too:** `snapshot.asOf` is the day the check runs (today), not the "When you need it" date. The D-24 90-day bills window and D-40's ready-by date both count from it.
 
 - **D-37 (added 2026-10-15 for Phase 5 alignment):** **The engine resolves a buy check's price inputs.** This ports the prototype's `dprice` and `downNet`, which no plan had ported.
   - Final price = advertised price + every counted adjustment, floored at 0. "Adds to the price" counts as positive and "takes off the price" as negative.
