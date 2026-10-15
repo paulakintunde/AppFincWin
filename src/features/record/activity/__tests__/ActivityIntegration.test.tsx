@@ -240,21 +240,24 @@ describe('detail sheet and row actions', () => {
   it('a tap in select mode toggles selection and does not open the detail sheet', async () => {
     mockRows = [row({ id: 'p1', status: 'pending', local_date: '2026-09-28' })];
     const screen = await renderScreen();
-    await fireEvent.press(screen.getByText('Select'));
+    await fireEvent.press(screen.getByLabelText('More actions. Opens a menu.'));
+    await fireEvent.press(screen.getByText('Select entries'));
     await fireEvent.press(screen.getByTestId('activity-row-p1'));
     expect(screen.queryByText('Edit transaction')).toBeNull();
   });
 });
 
 describe('views and offers', () => {
-  it('Calendar is the fifth view, hides Select and the sort pill, and keeps the filters', async () => {
+  it('Calendar is the fifth view, offers no Select and no Sort section, and keeps the filter icon', async () => {
     mockRows = [row({ id: 'g1', local_date: '2026-09-20' })];
     const screen = await renderScreen();
-    await fireEvent.press(screen.getByLabelText(/^View:/));
+    await fireEvent.press(screen.getByLabelText(/display options$/));
     await fireEvent.press(screen.getByLabelText(/^Calendar/));
-    expect(screen.queryByText('Select')).toBeNull();
-    expect(screen.queryByLabelText(/^Sort:/)).toBeNull();
-    expect(screen.getByText('Filter')).toBeTruthy();
+    expect(screen.queryByText('Sort by')).toBeNull();
+    await fireEvent.press(screen.getByText('Done'));
+    await fireEvent.press(screen.getByLabelText('More actions. Opens a menu.'));
+    expect(screen.queryByText('Select entries')).toBeNull();
+    expect(screen.getByLabelText('Filter')).toBeTruthy();
   });
 
   it('shows the series offer card in the list view and opens the review sheet', async () => {
