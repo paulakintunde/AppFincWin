@@ -8,6 +8,7 @@ import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
+import { RadioDot } from '@/ui/RadioDot';
 import { Row } from '@/ui/Row';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
@@ -46,15 +47,6 @@ function Chevron({ direction, color }: { direction: 'left' | 'right'; color: str
         { borderColor: color, transform: [{ rotate: direction === 'left' ? '-135deg' : '45deg' }] },
       ]}
     />
-  );
-}
-
-function RadioDot({ selected }: { selected: boolean }) {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.radio, { borderColor: selected ? colors.accent : colors.inkFaint }]}>
-      {selected ? <View style={[styles.radioFill, { backgroundColor: colors.accent }]} /> : null}
-    </View>
   );
 }
 
@@ -160,15 +152,6 @@ const styles = StyleSheet.create({
     minHeight: space.touchMin,
     justifyContent: 'center',
   },
-  radio: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioFill: { width: 8, height: 8, borderRadius: 4 },
   chevron: {
     width: 10,
     height: 10,
