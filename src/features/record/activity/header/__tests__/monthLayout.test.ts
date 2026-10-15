@@ -9,7 +9,7 @@ describe('chooseMonthLayout (D-55)', () => {
     });
   });
   it('shortens the name before moving icons', () => {
-    expect(chooseMonthLayout({ ...base, rowWidth: 368, longWidth: 130, shortWidth: 80 })).toEqual({
+    expect(chooseMonthLayout({ ...base, rowWidth: 368, longWidth: 140, shortWidth: 80 })).toEqual({
       name: 'short',
       icons: 'inline',
     });
