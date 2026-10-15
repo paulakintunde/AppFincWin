@@ -77,6 +77,11 @@ describe('ThisMonthCard', () => {
     expect(style(getByText('Unpaid')).textTransform).toBe('uppercase');
   });
 
+  it('WR-04: a month of net refunds shows Out with a plus, same as Activity', async () => {
+    const { getByLabelText } = await draw({ position: { ...position, paidOut: 5000 } });
+    expect(getByLabelText('Out, +£50.00')).toBeTruthy();
+  });
+
   it('uses danger for a negative left', async () => {
     const { getByText } = await draw({ position: { ...position, left: -2500 } });
     expect(style(getByText(formatter.formatMoney({ amount: -2500, currency: 'GBP' } as never))).color).toBe(colors.danger);

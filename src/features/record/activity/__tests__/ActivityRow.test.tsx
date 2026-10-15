@@ -327,3 +327,39 @@ describe('ActivityRow tags, refunds, swipe and balance note (02.2-21)', () => {
     expect(screen.getByText('Paid')).toBeTruthy();
   });
 });
+
+describe('ActivityRow long-press (D-63, 03.1)', () => {
+  const swipeHandlers = { onSwipeDelete: jest.fn() };
+  const actionsOf = (screen: Awaited<ReturnType<typeof renderRow>>['screen']) =>
+    screen.getAllByLabelText(/^Coffee/).find((el) => Array.isArray(el.props.accessibilityActions))?.props.accessibilityActions;
+
+  it('long-press calls onLongPress with the row once', async () => {
+    const onLongPress = jest.fn();
+    const r = row({});
+    const { screen } = await renderRow(r, 'only', jest.fn(), { onLongPress });
+    await fireEvent(screen.getByTestId('activity-row-r1'), 'longPress');
+    expect(onLongPress).toHaveBeenCalledTimes(1);
+    expect(onLongPress).toHaveBeenCalledWith(r);
+  });
+
+  it('is ignored while selectable', async () => {
+    const onLongPress = jest.fn();
+    const onPress = jest.fn();
+    const { screen } = await renderRow(row({}), 'only', jest.fn(), { onLongPress, onPress, selectable: true });
+    await fireEvent(screen.getByTestId('activity-row-r1'), 'longPress');
+    // fireEvent falls through to ActivityRow's own prop (called with no arguments) when the
+    // Pressable has no handler; the row's handler would be called with the row.
+    expect(onLongPress.mock.calls.filter((c) => c.length > 0)).toHaveLength(0);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('exposes a named Select action on a swipeable row', async () => {
+    const { screen } = await renderRow(row({}), 'only', jest.fn(), { ...swipeHandlers, onLongPress: jest.fn() });
+    expect(actionsOf(screen)).toContainEqual({ name: 'select', label: 'Select Coffee' });
+  });
+
+  it('offers no Select action without onLongPress', async () => {
+    const { screen } = await renderRow(row({}), 'only', jest.fn(), swipeHandlers);
+    expect(JSON.stringify(actionsOf(screen))).not.toContain('select');
+  });
+});

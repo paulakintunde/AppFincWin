@@ -98,6 +98,71 @@ describe('SearchBar', () => {
     await fireEvent.press(screen.getByLabelText('Clear search'));
     expect(onTerm).toHaveBeenCalledWith('');
   });
+
+  it('renders Cancel only when onCancel is given, and calls it', async () => {
+    const without = await wrap(
+      <SearchBar term="" scope="month" monthLabel="September 2026" onTermChange={jest.fn()} onScopeChange={jest.fn()} />
+    );
+    expect(without.queryByLabelText('Cancel search')).toBeNull();
+  });
+
+  it('calls onCancel from the Cancel button', async () => {
+    const onCancel = jest.fn();
+    const screen = await wrap(
+      <SearchBar
+        term=""
+        scope="month"
+        monthLabel="September 2026"
+        onTermChange={jest.fn()}
+        onScopeChange={jest.fn()}
+        onCancel={onCancel}
+      />
+    );
+    expect(screen.getByText('Cancel')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Cancel search'));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('passes autoFocus and the input ref to the TextInput', async () => {
+    const ref = React.createRef<never>();
+    const screen = await wrap(
+      <SearchBar
+        term=""
+        scope="month"
+        monthLabel="September 2026"
+        onTermChange={jest.fn()}
+        onScopeChange={jest.fn()}
+        autoFocus
+        inputRef={ref}
+      />
+    );
+    expect(screen.getByPlaceholderText('Search September 2026').props.autoFocus).toBe(true);
+    expect((ref as React.RefObject<unknown>).current).toBeTruthy();
+  });
+
+  it('drops a pending term when the bar unmounts on Cancel (no stale onTermChange)', async () => {
+    const onTerm = jest.fn();
+    function Host() {
+      const [open, setOpen] = React.useState(true);
+      return open ? (
+        <SearchBar
+          term=""
+          scope="month"
+          monthLabel="September 2026"
+          onTermChange={onTerm}
+          onScopeChange={jest.fn()}
+          onCancel={() => setOpen(false)}
+        />
+      ) : null;
+    }
+    const screen = await wrap(<Host />);
+    await fireEvent.changeText(screen.getByPlaceholderText('Search September 2026'), 'cof');
+    await fireEvent.press(screen.getByLabelText('Cancel search'));
+    await act(() => {
+      jest.advanceTimersByTime(250);
+    });
+    expect(onTerm).not.toHaveBeenCalledWith('cof');
+  });
 });
 
 const categories = [

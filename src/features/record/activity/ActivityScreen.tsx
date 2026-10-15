@@ -4,8 +4,10 @@
 // Shell (03-15): Activity is a tab root; the FAB and its quick menu replace the Add button and
 // sheet (D-11); the header avatar replaces the You link (D-04). Search (this month or every month),
 // filters and bulk select layer on top (ACT-03, ACT-04, ACT-05); the list keeps visual priority.
-import React, { useCallback, useState } from 'react';
-import { Pressable, type ScrollView, StyleSheet, View } from 'react-native';
+// 03.1 D-43: the header is four bands (title row, month row with Search/Filter/More, summary card,
+// Display row) rendered by ActivityHeaderBands; Display and More live in their own sheets.
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { type ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
 import { FlashList } from '@shopify/flash-list';
@@ -23,27 +25,33 @@ import { showToast } from '@/state/undoToast';
 import { useHideFab } from '@/shell/fab/FabProvider';
 import { useTabRootChrome } from '@/shell/screen/useTabRootChrome';
 import { useTheme } from '@/theme/ThemeProvider';
+import { monthOf } from '@/engine/time';
+import { money } from '@/engine/money';
+import { categoryName } from '@/features/record/categoryName';
+import { focusAccessibility } from '@/shell/a11yFocus';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
-import { Chip } from '@/ui/Chip';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { EmptyState } from '@/ui/EmptyState';
 import { Pill } from '@/ui/Pill';
 import { ActivityRow, ProjectionRow, type CardPosition } from './ActivityRow';
-import { ActivityHeader } from './ActivityHeader';
 import { getActivityItemType, type ActivityItem } from './activitySections';
 import { BulkBar } from './BulkBar';
 import { CloneMonthSheet } from './CloneMonthSheet';
 import { FilterSheet } from './FilterSheet';
 import { GroupHeader } from './GroupHeader';
 import { monthRefreshKeys } from './refreshKeys';
-import { UnpaidBanner } from './UnpaidBanner';
 import { formatMonthLabel } from './MonthSwitcher';
 import { RecurringReviewSheet } from './RecurringReviewSheet';
 import { SeriesOfferCard } from './SeriesOfferCard';
 import { TransactionDetailSheet } from './TransactionDetailSheet';
 import { CalendarView } from './views/CalendarView';
-import { SearchBar } from './SearchBar';
+import { ActivityHeaderBands } from './header/ActivityHeaderBands';
+import { ActivityMoreMenu, type MoreAction } from './header/ActivityMoreMenu';
+import { DisplaySheet } from './header/DisplaySheet';
+import { HeaderIconCluster } from './header/HeaderIconCluster';
+import { clearAllExceptUnpaid, clearOne, countActiveFilters, filterChipModels } from './header/activeFilters';
+import { compactMonthLabel } from './header/monthLayout';
 import { useActivityViewModel, useRowFlow, type ActivityView } from './useActivityViewModel';
 import { useRowActions } from './useRowActions';
 
@@ -85,10 +93,6 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
     accountName,
   });
   const flow = useRowFlow(rowActions, month);
-  const chrome = useTabRootChrome({
-    title: t('shell.title.activity'),
-    refreshKeys: monthRefreshKeys(rc.householdId, month),
-  });
   // D-10: the FAB steps aside while rows are being selected.
   useHideFab('bulkSelect', selection.active);
 
@@ -98,11 +102,66 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
   const { markUnpaid: bulkMarkUnpaid } = useBulkMarkUnpaid();
 
   const [filterOpen, setFilterOpen] = useState(false);
+  const [displayOpen, setDisplayOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const searchIconRef = useRef<View>(null);
+  const displayChipRef = useRef<View>(null);
   // D-42: the expected row whose read-only detail is open.
   const [projection, setProjection] = useState<ProjectionView | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   // S-WR-02: why the last bulk action did nothing, shown whatever the selected count.
   const [hint, setHint] = useState<BulkHint | null>(null);
+
+  const activeFilterCount = countActiveFilters(filter);
+  const chips = filterChipModels(filter, {
+    categoryName: (id) => {
+      const c = categories.byId.get(id);
+      return c === undefined ? '' : categoryName(c, t);
+    },
+    accountName,
+    formatAmount: (minor) => formatter.formatMoney(money(minor, rc.homeCurrency)),
+    t,
+  });
+
+  // D-59..D-61: Search opens on This month; Cancel clears the term and returns focus to the icon.
+  // Review WR-08: only a user Cancel returns focus. The HOME-01 intent also closes search, and
+  // there the tab change owns focus (Phase 3 D-20), so the close it causes must not move it.
+  const focusIconOnClose = useRef(false);
+  const openSearch = () => vm.setSearchOpen(true);
+  const cancelSearch = () => {
+    focusIconOnClose.current = true;
+    vm.setTerm('');
+    vm.setScope('month');
+    vm.setSearchOpen(false);
+  };
+  const wasSearchOpen = useRef(vm.searchOpen);
+  useEffect(() => {
+    if (wasSearchOpen.current && !vm.searchOpen && focusIconOnClose.current) {
+      focusAccessibility(searchIconRef.current);
+    }
+    if (!vm.searchOpen) focusIconOnClose.current = false;
+    wasSearchOpen.current = vm.searchOpen;
+  }, [vm.searchOpen]);
+
+  // D-58, D-44: compact header 'Activity · {short month}' with the three icons and no avatar.
+  const chrome = useTabRootChrome({
+    title: t('shell.title.activity'),
+    refreshKeys: monthRefreshKeys(rc.householdId, month),
+    compactTitle: t('activity.compactTitle', { month: compactMonthLabel(month, monthOf(rc.today), formatter.locale) }),
+    compactTitleRole: 'sheetTitle',
+    compactTrailing: ({ scrollToTop }) => (
+      <HeaderIconCluster
+        testIDPrefix="compact"
+        activeFilterCount={activeFilterCount}
+        onSearch={() => {
+          scrollToTop();
+          openSearch();
+        }}
+        onFilter={() => setFilterOpen(true)}
+        onMore={() => setMoreOpen(true)}
+      />
+    ),
+  });
 
   const selectedRows = itemRows.filter((r) => selection.isSelected(r.id));
   const bulkCtx = rc.householdId !== null && rc.userId !== null ? { householdId: rc.householdId, ownerId: rc.userId } : null;
@@ -160,7 +219,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
     selection.clear();
   };
 
-  const renderActivityRow = (row: ActivityRowView, cardPosition: CardPosition) => (
+  const renderActivityRow = (row: ActivityRowView, cardPosition: CardPosition, allowLongPress = true) => (
     <ActivityRow
       row={row}
       categories={categories}
@@ -171,6 +230,15 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
       selectable={selection.active}
       selected={selection.isSelected(row.id)}
       onToggleSelect={onToggleSelect}
+      onLongPress={
+        allowLongPress
+          ? (r) => {
+              setHint(null);
+              selection.enter();
+              selection.toggle(r.id);
+            }
+          : undefined
+      }
       onPress={flow.openDetail}
       onMarkPaid={rowActions.pay}
       onSwipePay={() => rowActions.pay(row)}
@@ -217,85 +285,87 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
 
   const calendar = vm.view === 'calendar';
 
-  const links: { label: string; onPress: () => void }[] = [
-    { label: t('activity.accounts'), onPress: onOpenAccounts },
-    { label: t('activity.history'), onPress: onOpenHistory },
-  ];
+  const onMoreSelect = (a: MoreAction) => {
+    if (a === 'select') {
+      setHint(null);
+      selection.enter();
+    } else if (a === 'clone') vm.monthTools.openClone();
+    else if (a === 'paste') vm.monthTools.openPaste();
+    else if (a === 'accounts') onOpenAccounts();
+    else onOpenHistory();
+  };
+
+  // D-68: Calendar has no select mode, so choosing it leaves any active selection.
+  const onViewChange = (v: ActivityView) => {
+    if (v === 'calendar' && selection.active) selection.exit();
+    vm.setView(v);
+  };
 
   const listHeader = (
     <>
       {chrome.largeHeader}
       <View style={styles.pad}>
-        {/* D-41: Clear removes only the Unpaid filter; any other filter the user set stays. */}
-        {filter.unpaidOnly ? <UnpaidBanner onClear={() => vm.setFilter({ ...filter, unpaidOnly: false })} /> : null}
-        <ActivityHeader
+        <ActivityHeaderBands
           month={month}
           months={vm.months}
+          locale={formatter.locale}
           onMonthChange={vm.setMonth}
-          totals={vm.totals}
-          showTotals={!flat}
-          homeCurrency={rc.homeCurrency}
-          formatter={formatter}
-          views={SUPPORTED_VIEWS}
-          view={vm.view}
-          onViewChange={vm.setView}
-          sort={vm.sort}
-          onSortChange={vm.setSort}
           counts={vm.monthTools.counts}
           addMonth={vm.monthTools.addMonth}
           onAddMonth={vm.monthTools.onAddMonth}
-          prevMonthName={vm.monthTools.prevMonthName}
-          onMore={(key) => (key === 'clone' ? vm.monthTools.openClone() : vm.monthTools.openPaste())}
-        />
-        {vm.balanceHeader === undefined ? null : (
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
-            {vm.balanceHeader.inexact
-              ? t('activity.balance.waiting')
-              : vm.balanceHeader.allAccounts
-                ? t('activity.balance.allAccounts')
-                : ''}
-          </Text>
-        )}
-        {/* Equal-width links on their own row: they shrink and ellipsise rather than overflow at 320pt. */}
-        <View testID="activity-nav-links" style={styles.links}>
-          {links.map((l) => (
-            <Pressable key={l.label} accessibilityRole="link" accessibilityLabel={l.label} onPress={l.onPress} style={styles.link}>
-              <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
-                {l.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <SearchBar
+          activeFilterCount={activeFilterCount}
+          onOpenFilters={() => setFilterOpen(true)}
+          onOpenMore={() => setMoreOpen(true)}
+          searchIconRef={searchIconRef}
+          searchOpen={vm.searchOpen}
+          onOpenSearch={openSearch}
+          onCancelSearch={cancelSearch}
           term={vm.term}
           scope={vm.scope}
-          monthLabel={formatMonthLabel(month, formatter.locale)}
           onTermChange={vm.setTerm}
           onScopeChange={vm.setScope}
+          // Review WR-03: count the rows the results list shows (transfers and skipped included).
+          resultsCount={searching ? itemRows.length : null}
+          monthEmpty={vm.monthEmpty}
+          loading={vm.monthLoading}
+          card={{
+            position: vm.position,
+            unconvertedCount: vm.monthView.totals.unconvertedCount,
+            entryCount: vm.entryCount,
+            balanceNote: vm.balanceHeader,
+            unavailable: vm.monthUnavailable,
+            formatter,
+            homeCurrency: rc.homeCurrency,
+          }}
+          view={vm.view}
+          sort={vm.sort}
+          onOpenDisplay={() => setDisplayOpen(true)}
+          displayChipRef={displayChipRef}
+          filterChips={chips}
+          onRemoveFilter={(k) => vm.setFilter(clearOne(filter, k))}
+          onClearAllFilters={() => vm.setFilter(clearAllExceptUnpaid(filter))}
+          selectionActive={selection.active}
+          selectionCount={selection.count}
+          onSelectAll={() => {
+            setHint(null);
+            selection.selectAll(itemRows.map((r) => r.id));
+          }}
+          onSelectNone={() => {
+            setHint(null);
+            selection.clear();
+          }}
+          onSelectDone={() => {
+            setHint(null);
+            selection.exit();
+          }}
+          unpaidOnly={filter.unpaidOnly}
+          onClearUnpaid={() => vm.setFilter({ ...filter, unpaidOnly: false })}
+          offerCard={
+            vm.offers.length > 0 ? (
+              <SeriesOfferCard offers={vm.offers} rowsById={vm.rowsById} onReview={() => vm.setReviewOpen(true)} />
+            ) : null
+          }
         />
-        <View testID="activity-tools-row" style={[styles.header, styles.wrapRow]}>
-          <Chip label={t('activity.filter.title')} selected={filtering} onPress={() => setFilterOpen(true)} />
-          {selection.active ? (
-            <View style={styles.links}>
-              <Pill label={t('activity.selectAll')} variant="secondary" onPress={() => { setHint(null); selection.selectAll(itemRows.map((r) => r.id)); }} />
-              <Pill label={t('activity.selectNone')} variant="secondary" onPress={() => { setHint(null); selection.clear(); }} />
-            </View>
-          ) : null}
-          {calendar ? null : (
-            <Pill
-              label={selection.active ? t('activity.done') : t('activity.select')}
-              variant="secondary"
-              onPress={() => {
-                setHint(null);
-                if (selection.active) selection.exit();
-                else selection.enter();
-              }}
-            />
-          )}
-        </View>
-        {vm.offers.length > 0 ? (
-          <SeriesOfferCard offers={vm.offers} rowsById={vm.rowsById} onReview={() => vm.setReviewOpen(true)} />
-        ) : null}
       </View>
     </>
   );
@@ -328,7 +398,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
             rows={vm.itemRows}
             today={rc.today}
             onRowPress={flow.openDetail}
-            renderRow={(row) => renderActivityRow(row, 'only')}
+            renderRow={(row) => renderActivityRow(row, 'only', false)}
           />
           </View>
           </Animated.ScrollView>
@@ -361,6 +431,14 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
                     ? t('activity.searchFailed')
                     : t('activity.searching')}
               </Text>
+            ) : vm.monthUnavailable !== null ? (
+              // CR-01 / T-03-22-01: a failed or offline-uncached read is never an empty month. The
+              // card carries Home's copy; while search hides the card, the list says it instead.
+              vm.searchOpen ? (
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+                  {t(vm.monthUnavailable === 'error' ? 'home.state.monthError' : 'home.state.monthOffline')}
+                </Text>
+              ) : null
             ) : searching || filtering ? (
               <EmptyState heading={t('activity.noMatchHeading')} body={t('activity.noMatchBody')} />
             ) : (
@@ -394,7 +472,6 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
       {selection.active ? (
         <View style={styles.pad}>
           <BulkBar
-            count={selection.count}
             hint={hint === null ? null : t(BULK_HINT_KEYS[hint])}
             onMarkPaid={onBulkMarkPaid}
             onMarkUnpaid={onBulkMarkUnpaid}
@@ -428,6 +505,22 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
           setFilterOpen(false);
         }}
         onClose={() => setFilterOpen(false)}
+      />
+      <DisplaySheet
+        visible={displayOpen}
+        onClose={() => setDisplayOpen(false)}
+        views={SUPPORTED_VIEWS}
+        view={vm.view}
+        onViewChange={onViewChange}
+        sort={vm.sort}
+        onSortChange={vm.setSort}
+      />
+      <ActivityMoreMenu
+        visible={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        calendar={calendar}
+        prevMonthName={vm.monthTools.prevMonthName}
+        onSelect={onMoreSelect}
       />
       <TransactionDetailSheet {...flow.detail} today={rc.today} />
       <ProjectionDetailSheet
@@ -477,27 +570,10 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   pad: { paddingHorizontal: space.screenH },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: space.gapMd,
-  },
-  wrapRow: {
-    flexWrap: 'wrap',
-  },
   links: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.gapSm,
-  },
-  link: {
-    flex: 1,
-    minWidth: 0,
-    minHeight: space.touchMin,
-    paddingHorizontal: space.gapSm,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   list: {
     flex: 1,

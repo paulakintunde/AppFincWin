@@ -8,6 +8,7 @@ import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
+import { RadioDot } from '@/ui/RadioDot';
 import { Row } from '@/ui/Row';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
@@ -29,6 +30,8 @@ export interface MonthSwitcherProps {
   /** ACT-15: the month the last row would add, or null (no row) at 12 months ahead. */
   addMonth?: string | null;
   onAddMonth?: (month: string) => void;
+  /** 03.1 D-54: visible name; the screen reader always hears the long name. */
+  displayLabel?: string;
 }
 
 function monthName(month: string, locale: string): string {
@@ -49,16 +52,7 @@ function Chevron({ direction, color }: { direction: 'left' | 'right'; color: str
   );
 }
 
-function RadioDot({ selected }: { selected: boolean }) {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.radio, { borderColor: selected ? colors.accent : colors.inkFaint }]}>
-      {selected ? <View style={[styles.radioFill, { backgroundColor: colors.accent }]} /> : null}
-    </View>
-  );
-}
-
-export function MonthSwitcher({ month, months, locale, onChange, counts, addMonth = null, onAddMonth }: MonthSwitcherProps) {
+export function MonthSwitcher({ month, months, locale, onChange, counts, addMonth = null, onAddMonth, displayLabel }: MonthSwitcherProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const [listOpen, setListOpen] = useState(false);
@@ -85,13 +79,12 @@ export function MonthSwitcher({ month, months, locale, onChange, counts, addMont
       </Pressable>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={t('activity.monthSwitcher.label')}
-        accessibilityValue={{ text: formatMonthLabel(month, locale) }}
+        accessibilityLabel={t('activity.monthSwitcher.nameA11y', { month: formatMonthLabel(month, locale) })}
         onPress={() => setListOpen(true)}
         style={styles.label}
       >
-        <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
-          {formatMonthLabel(month, locale)}
+        <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+          {displayLabel ?? formatMonthLabel(month, locale)}
         </Text>
       </Pressable>
       <Pressable
@@ -160,15 +153,6 @@ const styles = StyleSheet.create({
     minHeight: space.touchMin,
     justifyContent: 'center',
   },
-  radio: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioFill: { width: 8, height: 8, borderRadius: 4 },
   chevron: {
     width: 10,
     height: 10,

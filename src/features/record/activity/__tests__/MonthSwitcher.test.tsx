@@ -24,7 +24,7 @@ async function open(props: Partial<React.ComponentProps<typeof MonthSwitcher>> =
       <MonthSwitcher month="2026-10" months={MONTHS} locale="en-GB" onChange={onChange} counts={COUNTS} {...props} />
     </ThemeProvider>
   );
-  await fireEvent.press(utils.getByLabelText('Choose month'));
+  await fireEvent.press(utils.getByLabelText('October 2026, choose month'));
   return { ...utils, onChange };
 }
 
@@ -37,8 +37,8 @@ describe('MonthSwitcher list', () => {
   });
 
   it('marks the current month as selected', async () => {
-    const { getByLabelText } = await open();
-    expect(getByLabelText(/^October 2026/).props.accessibilityState).toEqual({ selected: true });
+    const { getAllByLabelText } = await open();
+    expect(getAllByLabelText(/^October 2026/).some((el) => el.props.accessibilityState?.selected === true)).toBe(true);
   });
 
   it('offers Add {Month} and selects it', async () => {
@@ -53,5 +53,14 @@ describe('MonthSwitcher list', () => {
   it('has no Add row when no month is addable', async () => {
     const { queryByText } = await open({ addMonth: null, onAddMonth: jest.fn() });
     expect(queryByText('Repeating lines carry over')).toBeNull();
+  });
+
+  it('shows displayLabel while the label stays long, in the sheetTitle role', async () => {
+    const { getByText, getByLabelText } = await open({ displayLabel: 'Oct 2026' });
+    expect(getByLabelText('October 2026, choose month')).toBeTruthy();
+    const style = [getByText('Oct 2026').props.style].flat(3).reduce((a, b) => ({ ...a, ...b }), {});
+    expect(style.fontSize).toBe(16);
+    expect(getByText('Oct 2026').props.numberOfLines).toBeUndefined();
+    expect(getByText('Choose month')).toBeTruthy();
   });
 });

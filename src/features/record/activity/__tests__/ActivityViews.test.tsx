@@ -1,6 +1,6 @@
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import './activityScreenMocks';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { ACTIVITY_VIEW_KEY, DEFAULT_VIEW_PREFS, loadViewPrefs } from '../activityViewPrefs';
@@ -93,9 +93,12 @@ function renderScreen() {
   );
 }
 
-async function choose(screen: Awaited<ReturnType<typeof renderScreen>>, trigger: string, option: string) {
-  await fireEvent.press(screen.getByLabelText(trigger));
+// D-64: view and sort are chosen in the Display sheet, which stays open after a choice,
+// so close it with Done to keep later queries unambiguous.
+async function choose(screen: Awaited<ReturnType<typeof renderScreen>>, option: string) {
+  await fireEvent.press(screen.getByLabelText(/display options$/));
   await fireEvent.press(screen.getByLabelText(new RegExp(`^${option}`)));
+  await fireEvent.press(screen.getByText('Done'));
 }
 
 beforeEach(async () => {
@@ -122,7 +125,7 @@ describe('view preference', () => {
   it('saves a change under a fincwin: key', async () => {
     mockRows = [row({})];
     const screen = await renderScreen();
-    await choose(screen, 'View: By day. Opens a menu.', 'By week');
+    await choose(screen, 'By week');
     await waitFor(async () => expect(JSON.parse((await AsyncStorage.getItem(ACTIVITY_VIEW_KEY)) ?? '{}')).toEqual({ view: 'week', sort: 'newest' }));
     expect(ACTIVITY_VIEW_KEY.startsWith('fincwin:')).toBe(true);
   });
@@ -131,16 +134,15 @@ describe('view preference', () => {
     await AsyncStorage.setItem(ACTIVITY_VIEW_KEY, JSON.stringify({ view: 'split', sort: 'biggest' }));
     mockRows = [row({})];
     const screen = await renderScreen();
-    await waitFor(() => expect(screen.getByLabelText('View: In / out. Opens a menu.')).toBeTruthy());
-    expect(screen.getByLabelText('Sort: Biggest. Opens a menu.')).toBeTruthy();
+    await waitFor(() => expect(screen.getByLabelText('In / out · Biggest, display options')).toBeTruthy());
   });
 });
 
 describe('Activity list views', () => {
-  it('shows the view and sort pills with their accessibility labels', async () => {
+  it('shows the Display chip with the view and sort in its accessibility label', async () => {
+    mockRows = [row({})];
     const screen = await renderScreen();
-    expect(screen.getByLabelText('View: By day. Opens a menu.')).toBeTruthy();
-    expect(screen.getByLabelText('Sort: Newest. Opens a menu.')).toBeTruthy();
+    expect(screen.getByLabelText('By day · Newest, display options')).toBeTruthy();
   });
 
   it('By day groups rows under a day header with count and net', async () => {
@@ -155,7 +157,7 @@ describe('Activity list views', () => {
   it('By week shows week groups with a range and omits empty weeks', async () => {
     mockRows = [row({ id: 'a', local_date: '2026-10-02' }), row({ id: 'c', local_date: '2026-10-20' })];
     const screen = await renderScreen();
-    await choose(screen, 'View: By day. Opens a menu.', 'By week');
+    await choose(screen, 'By week');
     expect(screen.getByText('Week 1')).toBeTruthy();
     expect(screen.getByText('Week 4')).toBeTruthy();
     expect(screen.queryByText('Week 2')).toBeNull();
@@ -168,7 +170,7 @@ describe('Activity list views', () => {
       row({ id: 'r', name: 'Return', original_amount: 3000, amountHome: 3000, is_refund: true } as Partial<ActivityRowView>),
     ];
     const screen = await renderScreen();
-    await choose(screen, 'View: By day. Opens a menu.', 'In / out');
+    await choose(screen, 'In / out');
     const labels = screen
       .getAllByRole('header')
       .map((h) => h.props.accessibilityLabel as string | undefined)
@@ -184,11 +186,11 @@ describe('Activity list views', () => {
       row({ id: 'b', name: 'Rent', local_date: '2026-10-05', status: 'pending', original_amount: -20000, amountHome: -20000 }),
     ];
     const screen = await renderScreen();
-    await choose(screen, 'View: By day. Opens a menu.', 'Running balance');
+    await choose(screen, 'Running balance');
     // opening 500.00 + 100.00 paid before - 10.00 = 590.00
     expect(screen.getByText(/balance £590\.00 after/)).toBeTruthy();
     expect(screen.getByText('not yet counted')).toBeTruthy();
-    expect(screen.getByText('Balance across all accounts')).toBeTruthy();
+    expect(within(screen.getByTestId('activity-summary-card')).getByText('Balance across all accounts')).toBeTruthy();
   });
 
   it('Running balance shows Waiting for a rate when a foreign opening has no rate', async () => {
@@ -198,8 +200,8 @@ describe('Activity list views', () => {
     ];
     mockRows = [row({})];
     const screen = await renderScreen();
-    await choose(screen, 'View: By day. Opens a menu.', 'Running balance');
-    expect(screen.getByText('Waiting for a rate')).toBeTruthy();
+    await choose(screen, 'Running balance');
+    expect(within(screen.getByTestId('activity-summary-card')).getByText('Waiting for a rate')).toBeTruthy();
   });
 
   it('sort applies within groups and leaves group order alone', async () => {
@@ -208,7 +210,7 @@ describe('Activity list views', () => {
       row({ id: 'big', name: 'Big', original_amount: -9000, amountHome: -9000 }),
     ];
     const screen = await renderScreen();
-    await choose(screen, 'Sort: Newest. Opens a menu.', 'Biggest');
+    await choose(screen, 'Biggest');
     const names = screen.getAllByText(/^(Small|Big)$/).map((n) => n.props.children as string);
     expect(names).toEqual(['Big', 'Small']);
   });
@@ -216,13 +218,14 @@ describe('Activity list views', () => {
   it('shows the transaction count, singular and plural', async () => {
     mockRows = [row({ id: 'a' })];
     const screen = await renderScreen();
-    expect(screen.getAllByText('1 transaction').length).toBeGreaterThan(0);
+    expect(screen.getByText(/1 entry/)).toBeTruthy();
   });
 
   it('keeps the Phase 2 search working in another view', async () => {
     mockRows = [row({ id: 'a', name: 'Coffee' }), row({ id: 'b', name: 'Rent' })];
     const screen = await renderScreen();
-    await choose(screen, 'View: By day. Opens a menu.', 'By week');
+    await choose(screen, 'By week');
+    await fireEvent.press(screen.getByLabelText('Search'));
     jest.useFakeTimers();
     await fireEvent.changeText(screen.getByPlaceholderText('Search October 2026'), 'Rent');
     await act(async () => {

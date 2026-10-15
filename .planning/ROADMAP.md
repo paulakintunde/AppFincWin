@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2.2: Record polish** (INSERTED) - Activity views and subtotals, sort, recurring-from-history, clone, detail sheet and swipe, entry-sheet extras, paste import, sample data (completed 2026-10-10; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 2.3: Record follow-ups** (INSERTED) - Import reconcile-or-new choice, description auto-categorise rules, signed-out account chooser, compact amount, Add account from the picker, bulk Add to list (completed 2026-10-13; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content (completed 2026-10-14)
+- [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [ ] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
@@ -511,6 +512,42 @@ Plans:
 **Gap wave 4** *(blocked on gap wave 3)*
 - [x] 03-38-PLAN.md — Pixel 9 re-check: A7, A9, A15, Accounts row, import from Home, H7/H8/M3 quick checks (checkpoint)
 **UI hint**: yes — heaviest design-fidelity phase in the roadmap: bespoke SVG tab glyphs, sheet infrastructure, seven named animations.
+
+### Phase 03.1: Activity header redesign (INSERTED)
+
+**Goal:** The Activity tab's header shrinks from up to ten stacked bands to four (title; month row with Search, Filter and More; one summary card; a Display chip with active-filter chips), with no feature lost and the first entry above the fold.
+**Requirements**: no new IDs; refines the Phase 2 Activity header (ACT-02 month switcher, ACT-03 search) and keeps Phase 3's D-41 Unpaid banner
+**Proposal**: https://claude.ai/artifact/BNKMdaVimhwxtkev8PJ8Yp (approved 2026-10-15)
+**Depends on:** Phase 3
+**Plans:** 15/15 plans complete
+
+Plans:
+**Wave 1**
+- [x] 03.1-01-PLAN.md — Copy catalogue for the new header, DURATION.searchFade, shared RadioDot
+- [x] 03.1-02-PLAN.md — Pure helpers: active filters (count, chips, clear) and month layout / Intl labels (TDD)
+- [x] 03.1-03-PLAN.md — Hand-drawn Search / Filter / More glyphs and HeaderIconButton with count badge
+- [x] 03.1-04-PLAN.md — Row long-press and the Select accessibility action (SwipeRow, ActivityRow)
+- [x] 03.1-05-PLAN.md — Chrome: compact title / role / trailing slot, avatar dropped, scrollToTop
+- [x] 03.1-06-PLAN.md — Shared month-figure helper (Home parity), VM position / monthEmpty / entryCount / searchOpen
+
+**Wave 2** *(blocked on wave 1)*
+- [x] 03.1-07-PLAN.md — ActivitySummaryCard (left after everything, In/Out, still to come, D-70 count)
+- [x] 03.1-08-PLAN.md — Display chip and two-section Display sheet; Chip focus ref
+- [x] 03.1-09-PLAN.md — Filter chips with per-chip ×, sideways scroll and Clear all
+- [x] 03.1-10-PLAN.md — More menu (three groups) and SelectBar
+- [x] 03.1-11-PLAN.md — Month row with icon cluster and measured long / short / wrap fallback
+
+**Wave 3** *(blocked on wave 2)*
+- [x] 03.1-12-PLAN.md — ActivityHeaderBands composition and search Cancel / cross-fade
+
+**Wave 4** *(blocked on wave 3)*
+- [x] 03.1-13-PLAN.md — ActivityScreen wiring, compact header, long-press select; screen tests
+
+**Wave 5** *(blocked on wave 4)*
+- [x] 03.1-14-PLAN.md — Remaining Activity suites, Home-intent closes search, retired components and keys removed
+
+**Wave 6** *(blocked on wave 5)*
+- [x] 03.1-15-PLAN.md — Pixel 9 device acceptance record (checkpoint)
 
 ### Phase 4: Decide Engine
 **Goal**: The affordability engine computes correct verdicts in complete isolation, before any UI exists.

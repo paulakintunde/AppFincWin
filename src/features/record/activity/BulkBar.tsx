@@ -1,6 +1,8 @@
-// The bulk action bar shown while Activity is in select mode (ACT-05, D-06): the selected
-// count and Mark paid / Mark unpaid / Delete. Ink surface with surface text, per the
-// prototype's bulk bar, using Pills for the actions. The screen owns the data hooks.
+// The bulk action bar shown while Activity is in select mode (ACT-05, D-06): Mark paid /
+// Mark unpaid / Delete. The selected count lives in the header's SelectBar only (Phase
+// 3.1), so this bar shows text just for the hint after an action with nothing to act on.
+// Ink surface with surface text, per the prototype's bulk bar, using Pills for the actions.
+// The screen owns the data hooks.
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -11,22 +13,23 @@ import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
 
 export interface BulkBarProps {
-  count: number;
-  /** Shown instead of the count after an action with nothing to act on. */
+  /** Shown after an action with nothing to act on. */
   hint?: string | null;
   onMarkPaid: () => void;
   onMarkUnpaid: () => void;
   onDelete: () => void;
 }
 
-export function BulkBar({ count, hint = null, onMarkPaid, onMarkUnpaid, onDelete }: BulkBarProps) {
+export function BulkBar({ hint = null, onMarkPaid, onMarkUnpaid, onDelete }: BulkBarProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   return (
     <View testID="bulk-bar" style={[styles.bar, { backgroundColor: colors.ink }]}>
-      <Text accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), color: colors.surface }}>
-        {hint ?? t('activity.selected', { count })}
-      </Text>
+      {hint !== null ? (
+        <Text accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), color: colors.surface }}>
+          {hint}
+        </Text>
+      ) : null}
       <View style={styles.actions}>
         <Pill label={t('activity.bulkMarkPaid')} variant="secondary" onPress={onMarkPaid} />
         <Pill label={t('activity.bulkMarkUnpaid')} variant="secondary" onPress={onMarkUnpaid} />

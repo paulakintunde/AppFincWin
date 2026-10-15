@@ -13,13 +13,8 @@ import {
 import type { MonthDataState } from '@/data/queries/monthDataState';
 import { monthRefreshKeys } from '@/features/record/activity/refreshKeys';
 import type { AccountRow } from '@/db/rows';
-import {
-  monthPosition,
-  type MonthFigureProjection,
-  type MonthFigureRow,
-  type MonthPosition,
-  type MonthTotals,
-} from '@/engine/activity';
+import { type MonthPosition, type MonthTotals } from '@/engine/activity';
+import { monthPositionOf } from '@/features/record/activity/monthFigureInputs';
 import { monthOf } from '@/engine/time';
 import { useRecordContext, type RecordContext } from '@/features/record/useRecordContext';
 import { useRowFlow } from '@/features/record/activity/useActivityViewModel';
@@ -66,24 +61,14 @@ export function useHomeViewModel(): {
   );
   const { balances, isLoading: balancesLoading } = useAccountBalances(rc.householdId, allAccounts);
 
-  const figureRows: MonthFigureRow[] = useMemo(
-    () =>
-      monthView.rows.map((r) => ({
-        status: r.status,
-        isTransfer: r.transfer_id !== null,
-        isRefund: r.is_refund,
-        originalAmount: r.original_amount,
-        amountHome: r.amountHome,
-      })),
-    [monthView.rows]
-  );
-  const figureProjections: MonthFigureProjection[] = useMemo(
-    () => monthView.projections.map((p) => ({ amount: p.amount, amountHome: p.amountHome })),
-    [monthView.projections]
-  );
   const position = useMemo(
-    () => monthPosition(monthView.totals, figureRows, figureProjections),
-    [monthView.totals, figureRows, figureProjections]
+    () =>
+      monthPositionOf({
+        rows: monthView.rows,
+        projections: monthView.projections,
+        totals: monthView.totals,
+      }),
+    [monthView.rows, monthView.projections, monthView.totals]
   );
 
   const coming = useMemo(

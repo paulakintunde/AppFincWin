@@ -16,14 +16,17 @@ export interface ChipProps {
   selected?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
+  /** Host Pressable ref, so a caller can move screen-reader focus to the chip. */
+  pressableRef?: React.Ref<View>;
 }
 
-export function Chip({ label, selected = false, onPress, accessibilityLabel }: ChipProps) {
+export function Chip({ label, selected = false, onPress, accessibilityLabel, pressableRef }: ChipProps) {
   const { colors, pairing } = useTheme();
     const textColor = selected ? colors.accent : colors.ink;
 
   return (
     <Pressable
+      ref={pressableRef}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       accessibilityLabel={accessibilityLabel ?? label}

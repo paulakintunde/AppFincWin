@@ -7,7 +7,7 @@ import { Text } from '@/ui/Text';
 import { useBackHistory } from '@/shell/backHistory/BackHistoryProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space, useScreenInsets } from '@/theme/layout';
-import { textRole } from '@/theme/typography';
+import { textRole, type TextRole } from '@/theme/typography';
 import { AvatarButton } from './AvatarButton';
 import { BackButton } from './BackButton';
 import { SyncProblemLine } from './SyncProblemLine';
@@ -20,6 +20,10 @@ export interface CompactHeaderProps {
   animatedStyle?: StyleProp<ViewStyle>;
   showAvatar?: boolean;
   titleRef?: React.Ref<TextRef>;
+  /** 03.1 D-58: controls shown after the title (Activity's Search / Filter / More). */
+  trailing?: React.ReactNode;
+  /** 03.1 D-58: title text role; defaults to the Phase 3 compact 'heading'. */
+  titleRole?: Extract<TextRole, 'heading' | 'sheetTitle'>;
 }
 
 export function CompactHeader({
@@ -28,6 +32,8 @@ export function CompactHeader({
   animatedStyle,
   showAvatar,
   titleRef,
+  trailing,
+  titleRole,
 }: CompactHeaderProps): React.JSX.Element {
   const { colors, pairing } = useTheme();
   const insets = useScreenInsets();
@@ -66,10 +72,11 @@ export function CompactHeader({
           ref={titleRef}
           accessibilityRole="header"
           numberOfLines={1}
-          style={{ ...textRole(pairing, 'heading'), color: colors.ink, flex: 1 }}
+          style={{ ...textRole(pairing, titleRole ?? 'heading'), color: colors.ink, flex: 1 }}
         >
           {title}
         </Text>
+        {trailing}
         {showAvatar !== false ? <AvatarButton /> : null}
       </View>
       <SyncProblemLine />

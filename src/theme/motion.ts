@@ -8,7 +8,8 @@ export const EASING = Easing.bezier(...EASING_CURVE);
 
 /** BUILD-PROMPT.md §2 durations, in ms: `.55s` progress bars, `.22s` entrances,
  * `.26s` tab slide (fw-slideL/R) and sheet rise (fw-up), `.24s` detail push (fw-push) and drag
- * slide-out / snap-back, `.18s` backdrop fade (D-24, 03-UI-SPEC Animations). */
+ * slide-out / snap-back, `.18s` backdrop fade (D-24, 03-UI-SPEC Animations),
+ * `.15s` Activity search cross-fade (03.1 D-62). */
 export const DURATION = {
   entrance: 220,
   progress: 550,
@@ -18,6 +19,7 @@ export const DURATION = {
   sheetUp: 260,
   backdrop: 180,
   sheetDrag: 240,
+  searchFade: 150,
 } as const;
 
 /**
