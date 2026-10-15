@@ -3,6 +3,7 @@ import {
   isMonthEmpty,
   monthFigureInputs,
   monthPositionOf,
+  paidOutText,
 } from '@/features/record/activity/monthFigureInputs';
 
 type Row = Parameters<typeof monthFigureInputs>[0]['rows'][number];
@@ -76,5 +77,16 @@ describe('isMonthEmpty', () => {
     const r = [row({ original_amount: 50000, amountHome: 50000 })];
     const totals = totalsOf(r, []);
     expect(isMonthEmpty(totals, monthPositionOf({ rows: r, projections: [], totals }))).toBe(false);
+  });
+});
+
+describe('paidOutText (review WR-04)', () => {
+  const fmt = (n: number) => `£${(n / 100).toFixed(2)}`;
+  it('prints a real outflow as a plain amount', () => {
+    expect(paidOutText(-76500, fmt)).toBe('£765.00');
+    expect(paidOutText(0, fmt)).toBe('£0.00');
+  });
+  it('keeps the plus on net refunds so they never read as money spent', () => {
+    expect(paidOutText(5000, fmt)).toBe('+£50.00');
   });
 });

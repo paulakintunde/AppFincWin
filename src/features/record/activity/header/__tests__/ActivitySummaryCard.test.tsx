@@ -91,6 +91,14 @@ describe('ActivitySummaryCard', () => {
     expect(getByText('£765.00')).toBeTruthy();
   });
 
+  it('WR-04: a month of net refunds shows Out with a plus, in the line and the label', async () => {
+    const { getByText, getByTestId } = await draw({ position: { ...position, paidOut: 5000, unpaid: 0 } });
+    expect(getByText('+£50.00')).toBeTruthy();
+    expect(getByTestId('activity-summary-card').props.accessibilityLabel).toBe(
+      '+£1,234.00 left after everything, 48 entries. In £2,000.00. Out +£50.00.'
+    );
+  });
+
   it('replaces In / Out with the balance note', async () => {
     const all = await draw({ balanceNote: { allAccounts: true, inexact: false } });
     expect(all.getByText('Balance across all accounts')).toBeTruthy();
