@@ -131,3 +131,24 @@ Choices made under D-43 / planner discretion (recorded for review):
 - Pass fires no commit haptic (selection only); Go ahead and Wait fire the medium haptic.
 
 Phase 4 cross-check (read only, 04-05 / 04-12 / 04-PHASE5-ALIGNMENT as of this revision): D-61 (`ScheduledOutflow`, `scheduledOutflowsDue`, `outflowsDueNow` / `outflowsDueAhead`) and D-62 (re-exports, newMonthly invariant, InvestCheck stacking, estimateBias home currency, incomeAtRisk setbacks) are present in 04-05 / 04-12; 04-PHASE5-ALIGNMENT confirms D-40 needs no engine change. No mismatch found; 05-01's gate stops Phase 5 if the executed barrel lacks any of them.
+
+## D-44 (with 04 D-63) and DCU-12..DCU-24 (user, 2026-10-15) — revision 6
+
+Plan count 53, 10 waves, unchanged; no new plan, no dependency change.
+
+| Item | Resolution | Plans / files |
+|------|------------|---------------|
+| Loss of value | Replaces the OQ-A9 "no amount field" reading. `CheckInputs.lossOfValue: { kind: 'amount', monthly } \| { kind: 'percent_per_year', percentText } \| null` (05-01); 05-07 adds one counted `loss_of_value` CostLine with `lossOfValueMonthly(entry, resolvedPrice.price)`, so the figure is `running.nonCash` only (property: runningCostsNet and the verdict ignore it); legacy `loss_of_value` InputLines are dropped. Step 2 row: "A month" \| "% a year", blank, "Not a monthly cash cost", "About {x} a month. Shown here, not counted in your month." | 05-01, 05-07, 05-31, 05-37, 05-44, UI-SPEC |
+| Holding fee | `CheckInputs.investHoldingFeeText` (05-01); 05-07 passes `holdingFee` to `investmentViews`; 05-45 `HoldingFeeInput` under the rates row; 05-37 labels rows "{r}% a year, {net}% after fees" from `netRates` and swaps captions to the fee forms. The four D-52 views only; the Kept column and alternatives never say "after fees" (04-PHASE5-ALIGNMENT fee scope) | 05-01, 05-07, 05-31, 05-37, 05-45, UI-SPEC |
+| Card costs | `CheckInputs.card.fees` (05-01) → `cardFees` only when > 0 (05-07); 05-14's tile reads `plan.card.cardCosts` (null → the Interest tile's word); 05-53 adds "Card fees (optional)" and the "{interest} interest plus {fees} in card fees." line (`cardCostsCopy`). The price card's Fees adjustment is unchanged; the sub-copy points other fees there so no fee is asked twice | 05-01, 05-07, 05-14, 05-31, 05-53, UI-SPEC |
+| DCU-12..DCU-24 | Added to `requirements:` only where a plan implements the traced decision (REQUIREMENTS.md D-number traces); VALIDATION gains one row per ID plus a D-44 row | 30 plans (see below), 05-VALIDATION |
+
+DCU → plans: DCU-12 05-07/09/13/28; DCU-13 05-07/12/13/21/30/36/37/41; DCU-14 05-35/36/37/41/42/49; DCU-15 05-06/12/32/37/38/40/48; DCU-16 05-06/31/32/34/50; DCU-17 05-01/07/31/37/42/43/53; DCU-18 05-01/07/31/35/37/45; DCU-19 05-07/37/42/43; DCU-20 05-01/07/19/20/31/32/37/39/44; DCU-21 05-19/20/32/34/36/37/38/39/46/47; DCU-22 05-11/20/21/32/46; DCU-23 05-06/09/13/15/33/37/39/49; DCU-24 05-03/05/06/15/19/30/41/53.
+
+Choices made under planner discretion (recorded for review):
+- A loss-of-value percent is a share of the final price per year, bounded 0..100 (the engine's own bound); a typed 0 counts as no entry.
+- Card fees are one optional total for this purchase (the engine's `cardFees`), paid on the day; no per-fee breakdown.
+- A null `cardCosts` (minimum never clears) reads "Endless", as the Interest tile does.
+- With a holding fee the 0% row reads "0% a year, −1% after fees" (negative net shown with U+2212, 04 D-63 "net rate may go below 0").
+
+Phase 4 cross-check (read only; 04-05, 04-06, 04-12, 04-21, 04-PHASE5-ALIGNMENT as of this revision, uncommitted edits in progress): `LossOfValueInput`, `lossOfValueMonthly`, the card payment's `cardFees`, `CardPlanDetail.fees` / `cardCosts`, `InvestmentViewsInput.holdingFee`, `InvestmentViews.holdingFee` / `netRates`, `NetProjectionRate` and `payoff.futureValueNet` are all present with these names. No mismatch found; 05-01's gate stops Phase 5 if the executed barrel lacks any of them.
