@@ -494,7 +494,6 @@ const en = {
     bulkDeleteProceed: 'Delete',
     view: {
       title: 'View',
-      triggerA11y: 'View: {{view}}. Opens a menu.',
       list: 'By day',
       listSub: 'Everything together, newest first',
       week: 'By week',
@@ -503,13 +502,11 @@ const en = {
       splitSub: 'Income and expenses apart',
       balance: 'Running balance',
       balanceSub: 'What is left after each line',
-      balanceTrigger: 'Balance',
       calendar: 'Calendar',
       calendarSub: 'Due dates on a grid',
     },
     sort: {
       title: 'Sort by',
-      triggerA11y: 'Sort: {{sort}}. Opens a menu.',
       newest: 'Newest',
       oldest: 'Oldest',
       biggest: 'Biggest',
@@ -681,8 +678,6 @@ const en = {
     totals: {
       in: 'In',
       out: 'Out',
-      net: 'Net',
-      stillToCome: 'Still to come',
       unconverted_one: '{{count}} line waiting for a rate',
       unconverted_other: '{{count}} lines waiting for a rate',
     },
