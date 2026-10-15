@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
+status: planning
 stopped_at: Phase 3 UI-SPEC approved (2026-10-13 update)
-last_updated: "2026-10-14T18:38:29.639Z"
-last_activity: 2026-10-14 -- Phase 3 execution started
+last_updated: "2026-10-15T01:20:21.956Z"
+last_activity: 2026-10-14
 progress:
-  total_phases: 20
+  total_phases: 21
   completed_phases: 6
   total_plans: 208
-  completed_plans: 180
-  percent: 30
+  completed_plans: 194
+  percent: 93
 ---
 
 # Project State
@@ -77,6 +77,7 @@ Last activity: 2026-10-14
 
 - Phase 2.1 inserted after Phase 2: PDF statement import: text PDFs, generic parser with balance reconciliation, server worker and privacy decision (split from Record's import extension, 2026-09-25)
 - Phase 2.2 inserted 2026-10-07: Record polish (prototype depth for Activity and Record, ACT-06..18, REC-19..25). Runs before 2.1 because it changes the import commit path (decided 2026-10-09).
+- Phase 03.1 inserted after Phase 3: Activity header redesign (approved proposal 2026-10-15)
 
 ### Decisions
 
