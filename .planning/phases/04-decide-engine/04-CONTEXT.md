@@ -1,7 +1,8 @@
 # Phase 4: Decide Engine - Context
 
 **Gathered:** 2026-09-26
-**Status:** Ready for planning
+**Updated:** 2026-10-15 (D-23…D-35; amends D-01, D-03, D-05, D-08, D-11, D-12, D-15, D-16, D-22)
+**Status:** Ready for replanning. The 12 plans dated 2026-09-27 predate the 2026-10-15 update and must be revised before execution.
 
 <domain>
 ## Phase Boundary
@@ -97,12 +98,48 @@ Decision numbers are local to this phase. "Phase 0 D-21" and "Phase 1 D-21" refe
   - Every deliberate deviation gets its own named test and a note in the test file. Examples: D-02 costs, D-06 return, D-07 APR, D-08 averages, D-17 cap outcome, D-18 cap remainder, and D-20 exact bisection.
   - Known amortisation tables and fast-check property tests cover the rest (brief §4 test focus).
 
+### Update 2026-10-15: what changed since Record shipped recurring series, refunds and pending lines
+
+Phase 02.2 added recurring series (weekly to yearly, `src/engine/recurring/`), refund flags, transfer pairing and pending/paid/skipped status on rows. None of these existed when D-02 and D-08 were written. Where a decision below amends an earlier one, the later decision wins.
+
+#### Lumpy and scheduled bills
+- **D-23:** **Non-monthly recurring bills are smoothed through their series** (amends D-08). For each series, its raw occurrences are removed from the monthly averages and its monthly equivalent is added instead (yearly ÷ 12, quarterly ÷ 3, and so on; weekly and fortnightly convert at 52/12 and 26/12). The verdict therefore no longer depends on whether a yearly bill happened to fall inside the 6-month window. The snapshot passes the series in. The smoothed figure also feeds "a month's costs" (D-02) and so the cushion (D-01).
+- **D-24:** **Non-monthly series bills due in the next 90 days are deducted from cash before the cash/cushion test** (amends D-01's cash ledger). `cashAfter = cashOnHand − my day-one cost − my share of series bills due within 90 days of the check date`. Monthly-or-more-frequent series are not deducted, because the month test already covers them. The next due date is the first scheduled occurrence after the last paid occurrence, so a bill already paid this cycle is not deducted.
+- **D-25:** **Only confirmed series count** for D-23 and D-24: series the user created or accepted in Record. Unaccepted `detect.ts` suggestions are ignored. The verdict rests only on what the user has confirmed.
+- **D-26:** **A series uses its latest scheduled amount**, not an average of past occurrences, so a renewal price rise shows at once.
+
+#### What a month's spending is
+- **D-27:** **Refunds are netted against spending in the month they land.** A refund is never income, so it never raises the income basis or affects steadiness. A month's net spending is floored at 0.
+- **D-28:** **Only `paid` lines count toward past months' figures.** `pending` and `skipped` lines in past full months are ignored. Upcoming bills are handled by D-24.
+- **D-29:** **One-off spikes stay in.** No trimming or outlier handling: the averages and the worst month remain "from your last 6 months", exactly as logged.
+- **D-30:** **The engine has no notion of past checks.** A purchase approved by an earlier check enters the snapshot only once it shows up in records (as a debt, a recurring series or logged lines). This keeps the engine stateless. The open-check recompute question stays with Phase 5.
+
+#### Investment-mode checks (previously deferred)
+- **D-31:** **Interest-bearing unsecured debt during an invest check yields a neutral fact code, never a warning.** If any unsecured debt has an APR above the projection return (D-06), the verdict carries a non-blocking basis code such as `debt_rate_exceeds_return`, with the highest such APR and the projection rate. It does not change `fits`/`adjust`/`no`. Phase 5 phrases it declaratively; it is not advice (DCU-09).
+- **D-32:** **A recorded monthly investment then behaves like existing investing.** It joins `monthlyInvesting`: pausable, excluded from a month's costs (D-02), and counted towards the investing floor.
+- **D-33:** **Invest checks never emit the `inv` warning.** Only `month` and `cash` apply (debt lines were already excluded, as in the prototype). New investing squeezing old investing is circular. This is a named deviation test (D-22).
+
+#### Resolving contradictions in D-01…D-22
+- **D-34:** **Two separate shares in household scope** (amends D-03 and D-15). My share of the household's *existing* spending (the cushion, the month ledger and the 90-day bills) comes from the household split rule, or from per-category shares the snapshot supplies. Only the *purchase* uses D-15's per-check resolved split. Overriding a purchase to `mine` must not change my share of the household's rent and groceries. Plan 04-07's single `resolveShare(scope)` applied to both is the defect this fixes.
+- **D-35:** **Saving and investing are treated as pausable in the verdict, as D-02 already says** (amends DEC-06's state rule and the `inv` ledger). Let `pausable = monthlySaving + monthlyInvesting`.
+  - `left ≥ 0` → the month closes; no `month` warning.
+  - `left < 0` but `−left ≤ pausable` → state at most `adjust`. The `inv` warning carries the amount that would need to be paused, taken from investing first and then saving. A pause that stays at or above the D-05 floors is still reported, so the user sees it.
+  - `−left > pausable` → `no`, with the `month` warning carrying the shortfall that remains after pausing everything.
+  - `cashAfter < 0` remains `no`.
+  - This replaces the prototype's behaviour, where `inv` could only ever duplicate `month` alongside a `no`. It is a named deviation test (D-22). The `inv` code covers saving too; Phase 5 decides the wording.
+- **D-11 amended:** **The first read flags a cash level below the cushion.** The rough cushion is 3 × the rough monthly spending (mirroring D-01). `cashAfter ≥ 0` but below the rough cushion returns `adjust` with a `cash` warning, so the first read agrees with the full verdict once a real month exists. The first read is still cash-level only: no debt lines, steadiness or squeeze. Plan 04-08's "never `adjust`" is superseded.
+- **D-12 amended:** **Short history is cautious on both sides.** Below 3 full months, the income basis is the worst (lowest) month *and* the spending basis is the highest-spending month.
+- **D-16 clarified:** **The engine sees one currency per check.** The snapshot builder (Phase 5) converts card terms (floor), balances and figures into the check's home currency before calling the engine. The engine rejects mixed currencies rather than converting them.
+- **D-22 extended:** D-23, D-24, D-27, D-33, D-34, D-35 and the amended D-11/D-12 each get a named deviation test, in addition to the D-22 list.
+
 ### Claude's Discretion
+- How the snapshot carries series (frequency, latest amount, next due date, which rows each series covers) for D-23 and D-24.
+- The exact name and payload of the D-31 basis code.
 - The snapshot and verdict types, file layout inside `engine/decide/` and `engine/payoff/`, and the scaled representation of APR and ratios.
 - The exact per-market default table values for US, CA and UK (card minimum percent and floor, dealer cap). They must be sourced and cited in research, never invented. D-07 still forbids a default APR.
 - How the "cut a named expense line" option picks its candidate lines, given category averages in the snapshot.
 - The instalment path. The prototype returns `miss: true` unconditionally, which looks like a bug. The correct behaviour: `missing` only when the instalment amount or count is absent.
-- Investment-mode (`dKind === 'invest'`) handling, which follows the prototype's branch unless research finds a problem.
+- Investment-mode (`dKind === 'invest'`) handling follows the prototype's branch, as amended by D-31…D-33.
 
 </decisions>
 
@@ -126,6 +163,12 @@ Decision numbers are local to this phase. "Phase 0 D-21" and "Phase 1 D-21" refe
 - `.planning/phases/01-money-core/01-CONTEXT.md` D-21: one rounding mode (half-up, symmetric), with largest-remainder splits.
 - `.planning/PROJECT.md` Constraints: engine purity (no imports from db, state, services, ui or react, enforced by dependency-cruiser), integer money, and the compliance voice.
 - `.planning/research/LAUNCH-POSITIONING.md` §4: why the first read matters (the store name "FincWin: Can I Afford It?").
+
+### Record data the 2026-10-15 update depends on
+- `src/engine/recurring/schedule.ts`: `RecurringFreq` and schedule maths, for D-23 smoothing and D-24 next due dates.
+- `src/engine/recurring/detect.ts`: suggested series. These are excluded from the verdict (D-25).
+- `src/engine/recurring/cloneMonth.ts`: row shape with `status` (`pending`/`paid`/`skipped`), `is_refund`, `transfer_id` and `recurring_series_id`, for D-27 and D-28.
+- `src/engine/transfer/`: transfer pairing. Transfer legs are not spending.
 
 </canonical_refs>
 
@@ -165,7 +208,8 @@ Decision numbers are local to this phase. "Phase 0 D-21" and "Phase 1 D-21" refe
 ## Deferred Ideas
 
 - Per-market default values beyond US, CA and UK: add them when the app ships to more markets.
-- Other gray areas offered but not discussed: investment-mode checks, how open checks recompute, and where limits are stored (per user or per check). The last two are Phase 5 concerns.
+- Gray areas offered but not discussed: how open checks recompute, and where limits are stored (per user or per check). Both are Phase 5 concerns. Investment-mode checks were settled on 2026-10-15 (D-31…D-33).
+- User-marked "one-off, won't recur" lines excluded from averages (considered for D-29, not chosen). This would need a new row field and Record UI.
 
 </deferred>
 
