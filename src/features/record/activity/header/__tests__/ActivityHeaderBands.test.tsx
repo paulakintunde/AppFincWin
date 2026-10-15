@@ -183,6 +183,19 @@ describe('ActivityHeaderBands', () => {
     expect(u.getByTestId('activity-summary-card')).toBeTruthy();
   });
 
+  it('WR-02: keeps the SelectBar (count and Done) while searching and in an empty month', async () => {
+    const searching = await draw({ searchOpen: true, selectionActive: true, selectionCount: 1 });
+    expect(searching.getByTestId('activity-select-bar')).toBeTruthy();
+    expect(searching.getByText('1 selected')).toBeTruthy();
+    expect(searching.getByText('Done')).toBeTruthy();
+    expect(searching.queryByTestId('activity-summary-card')).toBeNull();
+    await searching.unmount();
+    const empty = await draw({ monthEmpty: true, selectionActive: true, selectionCount: 0 });
+    expect(empty.getByTestId('activity-select-bar')).toBeTruthy();
+    expect(empty.getByText('0 selected')).toBeTruthy();
+    expect(empty.queryByLabelText(DISPLAY)).toBeNull();
+  });
+
   it('shows the Unpaid banner after the Display row and before the offer card (D-66)', async () => {
     const onClearUnpaid = jest.fn();
     const u = await draw({ unpaidOnly: true, onClearUnpaid });

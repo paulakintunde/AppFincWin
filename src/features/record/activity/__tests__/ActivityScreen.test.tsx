@@ -578,6 +578,18 @@ describe('ActivityScreen search, filters and bulk select', () => {
     expect(screen.queryByLabelText(/display options$/)).toBeNull();
   });
 
+  it('WR-02: long-pressing a search result shows the SelectBar with its count and Done', async () => {
+    mockRows = [row({ id: 'g1', name: 'Coffee' }), row({ id: 'g2', name: 'Rent' })];
+    const screen = await renderScreen();
+    await type(screen, 'Search September 2026', 'cof');
+    await fireEvent(screen.getByTestId('activity-row-g1'), 'longPress');
+    const bar = within(screen.getByTestId('activity-select-bar'));
+    expect(bar.getByText('1 selected')).toBeTruthy();
+    await fireEvent.press(bar.getByText('Done'));
+    expect(screen.queryByTestId('activity-select-bar')).toBeNull();
+    expect(screen.queryByLabelText('Delete')).toBeNull();
+  });
+
   it('D-68: choosing Calendar exits select mode, keeps the header and drops Select from More', async () => {
     mockRows = [row({ id: 'g1', name: 'Coffee' })];
     const screen = await renderScreen();
