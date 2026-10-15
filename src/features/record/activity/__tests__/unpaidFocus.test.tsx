@@ -190,12 +190,15 @@ describe('Activity shared month and Unpaid focus', () => {
   it('applies a focus request while mounted: month, Unpaid filter, cleared search, intent consumed', async () => {
     mockRows = [row({ id: 'r', name: 'Coffee' })];
     const screen = await renderScreen({ initialMonth: '2026-10' });
-    expect(screen.getByLabelText('Filter').props.accessibilityState.selected).toBeFalsy();
+    expect(screen.getByLabelText('Filter')).toBeTruthy();
     await act(async () => {
       requestActivityFocus({ month: '2026-09', filter: UNPAID });
     });
     expect(screen.getByText('September 2026')).toBeTruthy();
-    expect(screen.getByLabelText('Filter').props.accessibilityState.selected).toBe(true);
+    // D-57 / D-66: Unpaid is not counted, so the icon keeps its plain label and has no badge.
+    expect(screen.getByLabelText('Filter')).toBeTruthy();
+    expect(screen.queryByTestId('header-icon-badge', { includeHiddenElements: true })).toBeNull();
+    expect(screen.getByTestId('unpaid-banner')).toBeTruthy();
     expect(consumeActivityFilterIntent()).toBeNull();
   });
 
@@ -232,6 +235,7 @@ describe('Activity shared month and Unpaid focus', () => {
     mockProjections = [PROJECTION];
     mockRows = [row({ id: 'r', name: 'Coffee' })];
     const screen = await renderScreen();
+    await fireEvent.press(screen.getByLabelText('Search'));
     await fireEvent.changeText(screen.getByPlaceholderText('Search September 2026'), 'cof');
     await act(async () => {
       jest.advanceTimersByTime(1000);
@@ -252,7 +256,7 @@ describe('Activity shared month and Unpaid focus', () => {
     await fireEvent.press(screen.getByLabelText('Clear the unpaid filter'));
     expect(screen.queryByTestId('unpaid-banner')).toBeNull();
     // The category filter the user also set stays on.
-    expect(screen.getByLabelText('Filter').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByLabelText('Filter, 1 active')).toBeTruthy();
   });
 
   it('Clear leaves the Filter chip unselected when Unpaid was the only filter', async () => {
@@ -262,7 +266,27 @@ describe('Activity shared month and Unpaid focus', () => {
       requestActivityFocus({ month: '2026-09', filter: UNPAID });
     });
     await fireEvent.press(screen.getByLabelText('Clear the unpaid filter'));
-    expect(screen.getByLabelText('Filter').props.accessibilityState.selected).toBeFalsy();
+    expect(screen.getByLabelText('Filter')).toBeTruthy();
+  });
+
+  it('D-59 / D-60: a Home intent while a search is open closes the search and lands on the filtered month', async () => {
+    mockRows = [row({ id: 'r', name: 'Coffee' })];
+    const screen = await renderScreen({ initialMonth: '2026-10' });
+    await fireEvent.press(screen.getByLabelText('Search'));
+    jest.useFakeTimers();
+    await fireEvent.changeText(screen.getByPlaceholderText('Search October 2026'), 'cof');
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    jest.useRealTimers();
+    await act(async () => {
+      requestActivityFocus({ month: '2026-09', filter: UNPAID });
+    });
+    expect(screen.queryByLabelText('Search September 2026')).toBeNull();
+    expect(screen.queryByPlaceholderText(/^Search /)).toBeNull();
+    expect(screen.getByText('September 2026')).toBeTruthy();
+    expect(screen.getByTestId('unpaid-banner')).toBeTruthy();
+    expect(screen.getByLabelText('Search')).toBeTruthy();
   });
 
   it('has no banner under a non-unpaid filter', async () => {
