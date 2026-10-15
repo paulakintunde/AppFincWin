@@ -519,7 +519,7 @@ Plans:
 **Requirements**: no new IDs; refines the Phase 2 Activity header (ACT-02 month switcher, ACT-03 search) and keeps Phase 3's D-41 Unpaid banner
 **Proposal**: https://claude.ai/artifact/BNKMdaVimhwxtkev8PJ8Yp (approved 2026-10-15)
 **Depends on:** Phase 3
-**Plans:** 11/15 plans executed
+**Plans:** 12/15 plans executed
 
 Plans:
 **Wave 1**
@@ -538,7 +538,7 @@ Plans:
 - [x] 03.1-11-PLAN.md — Month row with icon cluster and measured long / short / wrap fallback
 
 **Wave 3** *(blocked on wave 2)*
-- [ ] 03.1-12-PLAN.md — ActivityHeaderBands composition and search Cancel / cross-fade
+- [x] 03.1-12-PLAN.md — ActivityHeaderBands composition and search Cancel / cross-fade
 
 **Wave 4** *(blocked on wave 3)*
 - [ ] 03.1-13-PLAN.md — ActivityScreen wiring, compact header, long-press select; screen tests
