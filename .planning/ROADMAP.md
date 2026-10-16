@@ -575,7 +575,7 @@ Plans:
 - [x] 04-13-PLAN.md — deriveMoney over Record lines: paid only, refunds netted, series smoothed, one-off lines excluded (D-47), exact CV steadiness (DEC-07/08)
 - [x] 04-14-PLAN.md — payoff rate schedules (D-48) and independent published amortisation reference tests (D-57)
 - [x] 04-15-PLAN.md — steadiness-scaled cushion (D-42), confidence (D-46), on-the-edge margins (D-43), worst of 12 future months (D-45)
-- [ ] 04-16-PLAN.md — running-cost prompt table (D-55) and estimate bias (D-56)
+- [x] 04-16-PLAN.md — running-cost prompt table (D-55) and estimate bias (D-56)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 04-06-PLAN.md — resolvePlan for cash/loan/instalment/card/invest with missing reason codes, check inputs (DEC-04/05/10)
