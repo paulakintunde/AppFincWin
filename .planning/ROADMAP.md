@@ -630,7 +630,7 @@ Plans:
 - [x] 05-07-PLAN.md — Check inputs, quick-to-full carry, computeQuick/computeCheck/computeChip over decide()
 - [x] 05-08-PLAN.md — parseQuick, date offsets, estimate-vs-actual, canUse, DateField past-date guard
 - [x] 05-09-PLAN.md — Exhaustive code-to-copy maps (verdict, warnings, quick line, suppression, options)
-- [ ] 05-10-PLAN.md — Display and choice primitives (StateChip, WarningCard, StepBar, ...)
+- [x] 05-10-PLAN.md — Display and choice primitives (StateChip, WarningCard, StepBar, ...)
 - [ ] 05-11-PLAN.md — expo-notifications ~57, Wait and cooling-off reminders, tap observer
 - [ ] 05-28-PLAN.md — Input primitives (StepSlider, RateInput, MoneyInput)
 - [ ] 05-31-PLAN.md — Depth copy catalogue (D-24..D-37) and extended DCU-09 guard
