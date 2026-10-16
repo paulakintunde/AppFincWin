@@ -118,7 +118,7 @@ describe('worstFutureMonth', () => {
     expect(bad(chg('income', 1, '2026-13'))).toThrow(/^worstFutureMonth: /);
     expect(bad(chg('income', 1, '2026-09', '2026-08'))).toThrow(/^worstFutureMonth: /);
     expect(bad(chg('income', 1, '2026-09', '2026-1'))).toThrow(/^worstFutureMonth: /);
-    expect(bad(chg('income', 1.5, '2026-09'))).toThrow(/^worstFutureMonth: /);
+    expect(bad({ ...chg('income', 1, '2026-09'), monthlyAmount: 1.5 as never })).toThrow(/^worstFutureMonth: /);
     expect(bad({ ...chg('income', 1, '2026-09'), kind: 'other' as never })).toThrow(/^worstFutureMonth: /);
     expect(() => worstFutureMonth(input([], { asOf: '2026-02-30' }))).toThrow(/^worstFutureMonth: /);
     expect(() => worstFutureMonth(input([], { fixedOutgoings: -1 as never }))).toThrow(/^worstFutureMonth: /);
