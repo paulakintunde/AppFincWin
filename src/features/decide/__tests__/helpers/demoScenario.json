@@ -1,0 +1,56 @@
+{
+  "currency": "USD",
+  "region": "US",
+  "pastMonths": 6,
+  "settings": { "investingFloor": 0 },
+  "accounts": [
+    { "key": "everyday", "name": "Everyday account", "kind": "checking", "opening": 2400 },
+    { "key": "card", "name": "Credit card", "kind": "credit", "opening": 0 },
+    { "key": "cash", "name": "Cash", "kind": "cash", "opening": 80 },
+    { "key": "savings", "name": "Savings", "kind": "savings", "opening": 7200 },
+    { "key": "investments", "name": "Investments", "kind": "investment", "opening": 2000 }
+  ],
+  "salary": { "name": "Salary", "day": 5, "major": 4400, "key": "Income", "account": "everyday" },
+  "template": [
+    { "day": 2, "name": "Rent", "major": -1600, "key": "Housing", "account": "everyday" },
+    { "day": 4, "name": "Weekly shop", "major": -140, "key": "Groceries", "account": "everyday" },
+    { "day": 11, "name": "Weekly shop", "major": -140, "key": "Groceries", "account": "everyday" },
+    { "day": 18, "name": "Weekly shop", "major": -140, "key": "Groceries", "account": "everyday" },
+    { "day": 25, "name": "Weekly shop", "major": -140, "key": "Groceries", "account": "everyday" },
+    { "day": 6, "name": "Utilities", "major": -170, "key": "Utilities", "account": "everyday" },
+    { "day": 8, "name": "Transport", "major": -220, "key": "Transport", "account": "everyday" },
+    { "day": 12, "name": "Dining out", "major": -180, "key": "Dining", "account": "everyday" },
+    { "day": 1, "name": "Subscriptions", "major": -40, "key": "Subscriptions", "account": "everyday" },
+    { "day": 20, "name": "Insurance", "major": -150, "key": "Insurance", "account": "everyday" },
+    { "day": 22, "name": "Student loan", "major": -190, "key": "Debt", "account": "everyday" }
+  ],
+  "transfers": [
+    { "day": 3, "name": "To savings", "major": 500, "from": "everyday", "to": "savings" },
+    { "day": 3, "name": "To investments", "major": 400, "from": "everyday", "to": "investments" }
+  ],
+  "debts": [
+    { "name": "Student loan", "kind": "loan", "balance": 6200, "minimum": 190, "apr": "5.5", "secured": false }
+  ],
+  "cardDebt": { "name": "Credit card", "account": "card", "paid_in_full": true },
+  "sofa": {
+    "name": "Sofa",
+    "itemType": "general",
+    "advertised": 180000,
+    "method": "cash",
+    "combine": false
+  },
+  "car": {
+    "name": "Car",
+    "itemType": "vehicle",
+    "advertised": 1450000,
+    "method": "loan",
+    "combine": true,
+    "loan": { "deposit": 700000, "termMonths": 24, "aprText": "6.9", "secured": true },
+    "runningCosts": [
+      { "name": "Insurance", "amount": 16000, "category": "insurance" },
+      { "name": "Fuel", "amount": 14000, "category": "fuel" },
+      { "name": "Parking", "amount": 6000, "category": null }
+    ],
+    "replaces": [{ "name": "Bus pass", "amount": 12000, "category": null }]
+  }
+}

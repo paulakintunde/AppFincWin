@@ -56,7 +56,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **ANL-03**: Every event is drawn from a typed catalogue whose properties cannot carry amounts, payee names, account names or free text
 - [x] **ANL-04**: Session replay is excluded from production builds
 - [x] **ANL-05**: Drop-off from signup through first entry and first statement import is measurable
-- [ ] **ANL-06**: Checks started, completed, their verdict state and decisions recorded are measurable, with no amounts attached
+- [x] **ANL-06**: Checks started, completed, their verdict state and decisions recorded are measurable, with no amounts attached
 - [ ] **ANL-07**: Onboarding asks for analytics consent once, in plain language
 - [ ] **ANL-08**: The level onboarding assigns, and any later change the user makes to it, is measurable
 
@@ -222,15 +222,15 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 ### Decide — Experience
 
-- [ ] **DCU-01**: User can get a cash answer from an item and a price without entering a multi-step flow
-- [ ] **DCU-02**: User can work through the five steps — item, price and payment, impact, alternatives, decision
+- [x] **DCU-01**: User can get a cash answer from an item and a price without entering a multi-step flow
+- [x] **DCU-02**: User can work through the five steps — item, price and payment, impact, alternatives, decision
 - [ ] **DCU-03**: User can leave a check open and return to it with its verdict recomputed against current figures
 - [ ] **DCU-04**: User can abandon an open check
 - [ ] **DCU-05**: User sees four alternatives — as planned, cheaper, wait and save, skip entirely — each with its outcome
 - [ ] **DCU-06**: An alternative is suppressed and labelled when the money it assumes is not genuinely spare
 - [ ] **DCU-07**: User can record a decision and later compare what they estimated against what actually happened
 - [ ] **DCU-08**: Date selection refuses past dates and offers quick offsets
-- [ ] **DCU-09**: No verdict copy uses "advice", "recommendation" or "you should"
+- [x] **DCU-09**: No verdict copy uses "advice", "recommendation" or "you should"
 - [ ] **DCU-10**: A new user gets a first verdict in their first session, before any months are logged. It is labelled as a first read, says what it rests on, and is superseded by imported or logged history. Settled 2026-09-26 (04-CONTEXT D-11): rough figures give a cash-level first read only, computed by DEC-16; the full verdict needs one real full month
 - [ ] **DCU-11**: The verdict card, impact warnings and alternatives table stay legible when captured as phone store screenshots from the App Review demo account's sample scenario, with the verdict line visible without scrolling
 - [ ] **DCU-12**: Quick check takes amount, Cash or Credit, APR from 0% labelled "before any interest", a 12-60 month duration, and optional tax and fees, and shows a relative size label (05 D-21..D-23)
@@ -238,10 +238,10 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-14**: Verdict shows the cushion months and why, an on-the-edge tag, a confidence chip, and a 90-day day-by-day cash chart (05 D-25, D-26, D-28)
 - [ ] **DCU-15**: User can add, edit and remove dated income and spending changes that the verdict uses (05 D-27)
 - [ ] **DCU-16**: User can mark a Record line as a one-off that won't recur (05 D-29)
-- [ ] **DCU-17**: User can enter promotional rates with deferred interest, a variable-rate flag, and instalment late fees in the full check (05 D-30, D-42)
-- [ ] **DCU-18**: User sees what the price or payments would be worth invested instead, at 0% and up to three rates they enter, labelled as projections (05 D-31)
+- [x] **DCU-17**: User can enter promotional rates with deferred interest, a variable-rate flag, and instalment late fees in the full check (05 D-30, D-42)
+- [x] **DCU-18**: User sees what the price or payments would be worth invested instead, at 0% and up to three rates they enter, labelled as projections (05 D-31)
 - [ ] **DCU-19**: User can record how a purchase changes their income and see payback and runway lost (05 D-32)
-- [ ] **DCU-20**: User is prompted for running costs by item type with blank amounts, and sees their past estimate gap (05 D-33, D-36)
+- [x] **DCU-20**: User is prompted for running costs by item type with blank amounts, and sees their past estimate gap (05 D-33, D-36)
 - [ ] **DCU-21**: Wait and save creates a savings goal with progress (05 D-34)
 - [ ] **DCU-22**: User can set a 48-hour cooling-off reminder on a purchase that needs spreading (05 D-35)
 - [ ] **DCU-23**: Amounts in other currencies are converted at the stamped rate for past lines and the latest rate for balances, and the verdict says so (05 D-37, D-39)
@@ -444,7 +444,7 @@ Populated during roadmap creation.
 | ANL-03 | Phase 0 - Foundation | Complete |
 | ANL-04 | Phase 0 - Foundation | Complete |
 | ANL-05 | Phase 2 - Record | Complete |
-| ANL-06 | Phase 5 - Decide UI | Pending |
+| ANL-06 | Phase 5 - Decide UI | Complete |
 | ANL-07 | Phase 9 - Tiers & Onboarding | Pending |
 | ANL-08 | Phase 9 - Tiers & Onboarding | Pending |
 | ACC-01 | Phase 0 - Foundation | Complete |
@@ -583,15 +583,15 @@ Populated during roadmap creation.
 | DEC-35 | Phase 4 - Decide Engine | Complete |
 | DEC-36 | Phase 4 - Decide Engine | Complete |
 | DEC-37 | Phase 4 - Decide Engine | Complete |
-| DCU-01 | Phase 5 - Decide UI | Pending |
-| DCU-02 | Phase 5 - Decide UI | Pending |
+| DCU-01 | Phase 5 - Decide UI | Complete |
+| DCU-02 | Phase 5 - Decide UI | Complete |
 | DCU-03 | Phase 5 - Decide UI | Pending |
 | DCU-04 | Phase 5 - Decide UI | Pending |
 | DCU-05 | Phase 5 - Decide UI | Pending |
 | DCU-06 | Phase 5 - Decide UI | Pending |
 | DCU-07 | Phase 5 - Decide UI | Pending |
 | DCU-08 | Phase 5 - Decide UI | Pending |
-| DCU-09 | Phase 5 - Decide UI | Pending |
+| DCU-09 | Phase 5 - Decide UI | Complete |
 | DCU-10 | Phase 5 - Decide UI | Pending |
 | DCU-11 | Phase 5 - Decide UI | Pending |
 | DCU-12 | Phase 5 - Decide UI | Pending |
@@ -599,10 +599,10 @@ Populated during roadmap creation.
 | DCU-14 | Phase 5 - Decide UI | Pending |
 | DCU-15 | Phase 5 - Decide UI | Pending |
 | DCU-16 | Phase 5 - Decide UI | Pending |
-| DCU-17 | Phase 5 - Decide UI | Pending |
-| DCU-18 | Phase 5 - Decide UI | Pending |
+| DCU-17 | Phase 5 - Decide UI | Complete |
+| DCU-18 | Phase 5 - Decide UI | Complete |
 | DCU-19 | Phase 5 - Decide UI | Pending |
-| DCU-20 | Phase 5 - Decide UI | Pending |
+| DCU-20 | Phase 5 - Decide UI | Complete |
 | DCU-21 | Phase 5 - Decide UI | Pending |
 | DCU-22 | Phase 5 - Decide UI | Pending |
 | DCU-23 | Phase 5 - Decide UI | Pending |

@@ -62,6 +62,12 @@ describe('inverseOfInserts', () => {
     expect(() => inverseOfInserts('transactions', [{ id: 'a', version: 0 }])).toThrow(RangeError);
   });
 
+  it.each(['decide_checks', 'debts', 'decide_links', 'decide_changes', 'savings_goals'] as const)('soft-deletes a new %s row (05)', (entity) => {
+    expect(inverseOfInserts(entity, [{ id: 'a', version: 1 }])).toEqual([
+      { entity, id: 'a', expectedVersion: 1, patch: { deleted_at: '$now' } },
+    ]);
+  });
+
   it('throws via assertNever on an unrecognised entity', () => {
     expect(() => inverseOfInserts('unknown' as UndoEntity, [{ id: 'a', version: 1 }])).toThrow(
       /Unhandled UndoEntity/

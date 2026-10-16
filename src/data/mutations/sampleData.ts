@@ -28,6 +28,9 @@ export function useSampleData(ctx: { userId: string; householdId: string; today:
       void qc.invalidateQueries({ queryKey: queryKeys.recurringSeries(householdId) });
       void qc.invalidateQueries({ queryKey: queryKeys.categories(userId) });
       void qc.invalidateQueries({ queryKey: queryKeys.sampleExists(householdId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.decideChecks(userId, householdId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.debts(householdId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.decideLinks(userId, householdId) });
       if (withUndoLog) void qc.invalidateQueries({ queryKey: queryKeys.undoLog(userId) });
     },
     [qc, householdId, userId]

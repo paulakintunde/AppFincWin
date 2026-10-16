@@ -14,7 +14,14 @@ export type WriteEntity =
   | 'undo_log'
   | 'import_profiles'
   | 'households'
-  | 'dismissed_series_offers';
+  | 'dismissed_series_offers'
+  | 'decide_checks'
+  | 'debts'
+  | 'decide_links'
+  | 'decide_changes'
+  | 'savings_goals'
+  | 'decide_settings'
+  | 'statement_periods';
 
 /**
  * A PostgREST/Postgres error normalized into a typed shape. `code` is the Postgres or

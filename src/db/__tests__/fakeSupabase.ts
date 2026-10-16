@@ -81,6 +81,10 @@ export class FakeSupabase {
         record('ilike', [column, pattern]);
         return builder;
       },
+      or: (filters: string) => {
+        record('or', [filters]);
+        return builder;
+      },
       not: (column: string, operator: string, value: unknown) => {
         record('not', [column, operator, value]);
         return builder;

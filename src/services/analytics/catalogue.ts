@@ -57,6 +57,14 @@ export type EventCatalogue = {
   transfer_suggestion_answered: { accepted: boolean; kind: 'pair' | 'orphan' };
   pay_match_answered: { accepted: boolean };
   refund_suggestion_answered: { accepted: boolean };
+  // ANL-06 / 05 D-20: Decide lifecycle and verdict state only. No amounts, item names, size codes, methods or kinds; step is a string because the guard rejects numbers.
+  quick_check_run: { state: 'fits' | 'adjust' | 'no' | 'missing' };
+  check_started: Record<string, never>;
+  check_step_viewed: { step: '1' | '2' | '3' | '4' | '5' };
+  check_completed: { state: 'fits' | 'adjust' | 'no' | 'missing' };
+  check_abandoned: Record<string, never>;
+  decision_recorded: { decision: 'go' | 'wait' | 'pass' };
+  first_read_shown: { state: 'fits' | 'adjust' | 'no' | 'missing' };
 };
 
 export type EventName = keyof EventCatalogue;

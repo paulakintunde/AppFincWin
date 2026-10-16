@@ -9,30 +9,11 @@ import { PAYMENT_TYPES, type PaymentType, type TransactionPatch, type Transactio
 import type { AddTransactionInput } from '@/data/mutations/transactions';
 import type { AddTransferInput } from '@/data/mutations/transfers';
 
-export type Direction = 'out' | 'in' | 'transfer';
+import type { Direction, EntryMode } from './entryMode';
 
-export type EntryMode =
-  | {
-      kind: 'new';
-      direction: Direction;
-      accountId?: string | null;
-      localDate?: string | null;
-      /** CONTEXT D-15: a clone of an existing line, opened as a new pending line; nothing is written until Save. */
-      prefill?: EntryPrefill;
-    }
-  | { kind: 'edit'; row: TransactionRow }
-  | { kind: 'edit-transfer'; out: TransactionRow; in: TransactionRow };
-
-export interface EntryPrefill {
-  amountMinor: number;
-  currency: string;
-  name: string | null;
-  categoryId: string | null;
-  accountId: string;
-  paymentType: PaymentType | null;
-  isRefund: boolean;
-  isAutomatic: boolean;
-}
+// The open-mode types live in entryMode.ts (types only, no write path); re-exported here so
+// existing imports keep working.
+export type { Direction, EntryMode, EntryPrefill } from './entryMode';
 
 export interface FormState {
   direction: Direction;
@@ -54,6 +35,8 @@ export interface FormState {
   automatic: boolean;
   /** CONTEXT D-01: expense only; saves a positive amount with is_refund. */
   refund: boolean;
+  /** 05-50 (D-29): left out of Decide's averages; never on transfers or series lines. */
+  oneOff: boolean;
 }
 
 export interface FormContext {
@@ -104,6 +87,7 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
       amountInText: '',
       automatic: r.is_automatic ?? false,
       refund: r.is_refund ?? false,
+      oneOff: r.one_off === true,
     };
   }
   if (mode.kind === 'edit-transfer') {
@@ -129,6 +113,7 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
           : magnitudeText(inn.original_amount, inn.original_currency, ctx),
       automatic: false,
       refund: false,
+      oneOff: false,
     };
   }
   const localDate = mode.localDate ?? ctx.today;
@@ -154,6 +139,7 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
       amountInText: '',
       automatic: pf.isAutomatic,
       refund: pf.isRefund && mode.direction === 'out',
+      oneOff: false,
     };
   }
   return {
@@ -173,6 +159,7 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
     amountInText: '',
     automatic: false,
     refund: false,
+    oneOff: false,
   };
 }
 
@@ -202,11 +189,17 @@ export function withDirection(
       currency,
       automatic: false,
       refund: false,
+      oneOff: false,
     });
   }
   const allowed = PAYMENT_TYPES[direction] as readonly PaymentType[];
   const paymentType = state.paymentType !== null && allowed.includes(state.paymentType) ? state.paymentType : null;
   return { ...state, direction, paymentType, refund: direction === 'out' ? state.refund : false };
+}
+
+/** D-29: a transfer can never be a one-off. */
+export function withOneOff(state: FormState, on: boolean): FormState {
+  return { ...state, oneOff: state.direction === 'transfer' ? false : on };
 }
 
 export function withRefund(state: FormState, on: boolean): FormState {
@@ -278,6 +271,7 @@ export function toAddInput(
     status: state.status,
     isRefund: state.refund,
     isAutomatic: state.automatic,
+    ...(state.oneOff && state.direction !== 'transfer' ? { isOneOff: true } : {}),
   };
 }
 
@@ -298,6 +292,7 @@ export function toPatch(row: TransactionRow, state: FormState, amountMinor: numb
   if (note !== row.note) patch.note = note;
   if (state.refund !== (row.is_refund ?? false)) patch.is_refund = state.refund;
   if (state.automatic !== (row.is_automatic ?? false)) patch.is_automatic = state.automatic;
+  if (state.oneOff !== (row.one_off ?? false)) patch.one_off = state.oneOff;
   return patch;
 }
 

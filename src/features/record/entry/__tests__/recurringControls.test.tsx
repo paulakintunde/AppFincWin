@@ -244,7 +244,7 @@ describe('Repeats "On a date" against the entry date (S-CR-03)', () => {
     });
   });
 
-  it('refuses an end date before the entry date: no write, no Undo, a reason shown', async () => {
+  it('refuses an end date before the entry date at the picker (DCU-08): the earlier day is never applied', async () => {
     const { getByLabelText, getByText, getAllByText, getByTestId } = await open({ kind: 'new', direction: 'out', localDate: '2026-10-20' });
     await clearAmount(getByLabelText);
     for (const ch of '500') await fireEvent.press(getByLabelText(ch));
@@ -257,10 +257,9 @@ describe('Repeats "On a date" against the entry date (S-CR-03)', () => {
     await fireEvent(getByTestId('date-picker'), 'onChange', { nativeEvent: { timestamp: new Date(2026, 9, 1, 12).getTime() } });
     await fireEvent.press(getByText('Done'));
     await fireEvent.press(getByText('Save expense'));
-    expect(mockAdd).not.toHaveBeenCalled();
-    expect(mockCreate).not.toHaveBeenCalled();
-    expect(getToast()).toBeNull();
-    expect(getByText('The end date is before this entry’s date.')).toBeTruthy();
+    // The picker refused 2026-10-01, so the end date stays valid and no write carries it.
+    expect(mockCreate.mock.calls.some((c) => JSON.stringify(c).includes('2026-10-01'))).toBe(false);
+    expect(mockAdd.mock.calls.some((c) => JSON.stringify(c).includes('2026-10-01'))).toBe(false);
   });
 });
 

@@ -34,6 +34,7 @@ jest.mock('@/features/record/history/UndoToastHost', () => ({
 }));
 // Leaf stub: the entry host pulls in the whole transaction sheet (and the Supabase client).
 jest.mock('@/features/record/entry/ShellEntryHost', () => ({ ShellEntryHost: () => null }));
+jest.mock('@/features/decide/DecideShellHost', () => ({ DecideShellHost: () => null }));
 jest.mock('@/features/record/useDeviceHomeCurrencyDefault', () => ({ DeviceHomeCurrencyDefault: () => null }));
 jest.mock('@/features/record/samples/SampleBanner', () => ({ SampleBanner: () => null }));
 jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPrompts: () => null }));
@@ -111,6 +112,7 @@ async function mountRouter(initialUrl: string) {
       '(app)/(tabs)/_layout': TabsLayout,
       '(app)/(tabs)/home': leaf('home-root'),
       '(app)/(tabs)/activity': leaf('activity-root'),
+      '(app)/(tabs)/decide': leaf('decide-root'),
       '(app)/accounts/[id]': leaf('account-detail'),
       '(app)/accounts/index': leaf('accounts-root'),
       '(app)/categories': leaf('categories-root'),
@@ -145,25 +147,26 @@ beforeEach(() => {
 });
 
 describe('shell navigation on the real layouts', () => {
-  it('lands on Home from the root and shows only Home and Activity tabs (D-02, D-30)', async () => {
+  it('lands on Home from the root and shows the Home, Activity and Decide tabs (D-02, D-30, 05-21)', async () => {
     const { handle: r } = await mountRouter('/');
     expect(r.getPathname()).toBe('/home');
     expect(await screen.findByText('home-root')).toBeTruthy();
-    expect(screen.getByLabelText('Home, tab, 1 of 2')).toBeTruthy();
-    expect(screen.getByLabelText('Activity, tab, 2 of 2')).toBeTruthy();
-    expect(screen.queryByLabelText(/Decide, tab/)).toBeNull();
+    expect(screen.getByLabelText('Home, tab, 1 of 3')).toBeTruthy();
+    expect(screen.getByLabelText('Activity, tab, 2 of 3')).toBeTruthy();
+    expect(screen.getByLabelText('Decide, tab, 3 of 3')).toBeTruthy();
+    expect(screen.queryByLabelText(/Grow, tab/)).toBeNull();
   });
 
   it('pressing the Activity tab navigates to /activity', async () => {
     const { handle: r } = await mountRouter('/home');
-    await fireEvent.press(await screen.findByLabelText('Activity, tab, 2 of 2'));
+    await fireEvent.press(await screen.findByLabelText('Activity, tab, 2 of 3'));
     expect(r.getPathname()).toBe('/activity');
     expect(await screen.findByText('activity-root')).toBeTruthy();
   });
 
   it('hardware back from Activity (history [home]) returns to Home and is consumed (D-06 step 2)', async () => {
     const { handle: r } = await mountRouter('/home');
-    await fireEvent.press(await screen.findByLabelText('Activity, tab, 2 of 2'));
+    await fireEvent.press(await screen.findByLabelText('Activity, tab, 2 of 3'));
     expect(r.getPathname()).toBe('/activity');
     expect(await pressHardwareBack()).toBe(true);
     expect(r.getPathname()).toBe('/home');

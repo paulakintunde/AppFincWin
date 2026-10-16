@@ -1,0 +1,114 @@
+/**
+ * 05-13 (DCU-01, D-01, D-02, D-22, D-23, D-24, D-37, UI-SPEC "Quick check"): the result block of the quick check.
+ * One state chip, the size label, one line, and in Credit the monthly figure with its caption. Every word comes from the
+ * 05-09 copy layer. The group is one polite live region whose label settles after typing (useSettledLabel, D-56).
+ * The caption (monthly.paidOffMonth, D-45) keeps the chosen term and adds the payoff month on one line.
+ * Nothing here supplies a rate: the only rate on screen is one the user typed (D-02).
+ */
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+import { useT } from '@/i18n';
+import { Text } from '@/ui/Text';
+import { Pill } from '@/ui/Pill';
+import { useTheme } from '@/theme/ThemeProvider';
+import { radii, space } from '@/theme/layout';
+import { fontSize, textRole } from '@/theme/typography';
+import { quickResultCopy } from '../copy/quickCopy';
+import type { Fmt } from '../copy/types';
+import { joinSentences } from '../check/joinSentences';
+import { refText, type Translate } from '../check/refText';
+import { useSettledLabel } from '../check/useSettledLabel';
+import type { QuickComputation } from '../snapshot/types';
+import { CombineToggle } from '../ui/CombineToggle';
+import { StateChip, type StateChipTone } from '../ui/StateChip';
+
+export interface QuickResultProps {
+  computation: Exclude<QuickComputation, { kind: 'incomplete' }>;
+  mode: 'cash' | 'credit';
+  name: string;
+  fmt: Fmt;
+  fmtCents: Fmt;
+  onTryCredit: () => void;
+  /** D-24: the quick check is judged with every open check by default; session state in the hook. */
+  combine: boolean;
+  onCombine: (next: boolean) => void;
+  /** Other open checks before filtering; the pill shows only with two or more (UI-SPEC kept, OQ-A3 declined). */
+  openCount: number;
+  /** The first-read surface shows its own basis line under the answer. */
+  firstReadBasis?: boolean;
+}
+
+const SETTLE_MS = 150;
+const FIGURE_CAP = 1.3;
+
+/** How many other open checks the logged decision actually counted (status applied). */
+function appliedCount(c: QuickResultProps['computation']): number {
+  return c.kind === 'logged' ? c.decision.stacked.filter((s) => s.status === 'applied').length : 0;
+}
+
+export function QuickResult({ computation, mode, name, fmt, fmtCents, onTryCredit, combine, onCombine, openCount, firstReadBasis = false }: QuickResultProps) {
+  const t = useT() as Translate;
+  const { colors, pairing } = useTheme();
+  const copy = quickResultCopy(computation, mode, fmt, fmtCents);
+  const chipLabel = copy.chip ? t(copy.chip.key) : '';
+  const sizeText = copy.size ? t(copy.size) : '';
+  const lineText = refText(t, copy.line);
+  const settled = useSettledLabel(joinSentences([chipLabel, sizeText, lineText]), copy.chip?.tone ?? 'none', SETTLE_MS);
+  const caption = copy.caption ? refText(t, copy.caption) : '';
+  const basis = copy.basis ? t(copy.basis) : firstReadBasis ? t('decide.onboarding.basis') : '';
+
+  const applied = combine ? appliedCount(computation) : 0;
+  const showPill = openCount >= 2;
+  const footer = !showPill && applied >= 1 ? t('decide.depth.combined.quickWith', { count: applied }) : t('decide.quick.footer');
+
+  return (
+    <View style={styles.block}>
+      <View accessible accessibilityLiveRegion="polite" accessibilityLabel={settled} style={[styles.result, { backgroundColor: colors.fill1 }]}>
+        <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
+          {name === '' ? t('decide.quick.unnamed') : name}
+        </Text>
+        <View style={styles.chips}>
+          {copy.chip ? <StateChip tone={copy.chip.tone as StateChipTone} label={chipLabel} /> : null}
+          {sizeText ? (
+            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkMuted, textTransform: 'uppercase', letterSpacing: 1.2 }}>
+              {sizeText}
+            </Text>
+          ) : null}
+        </View>
+        <Text numberOfLines={3} maxFontSizeMultiplier={FIGURE_CAP} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+          {lineText}
+        </Text>
+        {copy.monthly ? (
+          <View style={styles.monthly}>
+            <Text maxFontSizeMultiplier={FIGURE_CAP} style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
+              {fmtCents(copy.monthly.amount)}
+            </Text>
+            <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+              {caption}
+            </Text>
+          </View>
+        ) : null}
+        {basis ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{basis}</Text> : null}
+        {copy.tryCredit ? (
+          <View style={styles.try}>
+            <Pill label={t('decide.quick.tryCredit')} accessibilityLabel={t('decide.quick.tryCreditA11y')} variant="secondary" onPress={onTryCredit} />
+          </View>
+        ) : null}
+      </View>
+      <View style={styles.footer}>
+        <Text style={[styles.footerText, { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }]}>{footer}</Text>
+        {showPill ? <CombineToggle value={combine} onChange={onCombine} /> : null}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  block: { gap: space.gapSm },
+  result: { borderRadius: radii.card, padding: space.cardPad, gap: space.gapSm },
+  chips: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, flexWrap: 'wrap' },
+  monthly: { gap: 2 },
+  try: { alignSelf: 'flex-start' },
+  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: space.touchMin, gap: space.gapMd },
+  footerText: { flex: 1 },
+});

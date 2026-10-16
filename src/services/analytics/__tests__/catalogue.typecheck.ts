@@ -51,3 +51,15 @@ track('import_pdf_unread', { failed_step: 'no_rows', pages: 3, has_date: true, h
 // Invalid: no extra free-form properties.
 // @ts-expect-error
 track('import_pdf_unread', { failed_step: 'no_rows', pages: '1', has_date: true, has_description: true, has_amount: true, has_debit_credit: false, has_balance: false, header: 'Date' });
+
+// ANL-06 (05-01): Decide events carry enums only.
+track('check_step_viewed', { step: '3' });
+track('decision_recorded', { decision: 'wait' });
+
+// Invalid: step is a string union, not a number.
+// @ts-expect-error
+track('check_step_viewed', { step: 3 });
+
+// Invalid: no amounts on Decide events.
+// @ts-expect-error
+track('quick_check_run', { state: 'fits', amount: 100 });

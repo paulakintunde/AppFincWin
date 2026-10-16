@@ -51,6 +51,30 @@ export const queryKeys = {
   // Under transactionsRoot so any transaction write refreshes the learned map (D-07).
   categorisedNames: (householdId: string, userId: string) =>
     ['transactions', householdId, 'categorised-names', userId] as const,
+  // Phase 5 (Decide)
+  // Row-derived: nested under transactionsRoot so every transaction write refreshes the verdict (D-15).
+  decideHistory: (householdId: string, from: string, to: string) =>
+    ['transactions', householdId, 'decide-history', from, to] as const,
+  decideUpcoming: (householdId: string, from: string) =>
+    ['transactions', householdId, 'decide-upcoming', from] as const, // rows dated after the history window (pending one-offs, 05-06)
+  decideLinkedLines: (householdId: string, checkId: string) =>
+    ['transactions', householdId, 'decide-linked', checkId] as const,
+  statementPeriods: (householdId: string) => ['transactions', householdId, 'statement-periods'] as const,
+  decideAttachCandidates: (householdId: string, from: string, to: string) =>
+    ['transactions', householdId, 'decide-attach', from, to] as const,
+  // Own keys (not row-derived).
+  decideChecks: (userId: string, householdId: string) => ['decide-checks', userId, householdId] as const,
+  decideSettings: (userId: string) => ['decide-settings', userId] as const,
+  debts: (householdId: string) => ['debts', householdId] as const,
+  decideLinks: (userId: string, householdId: string) => ['decide-links', userId, householdId] as const,
+  // Part 2 (05-12): depth reads.
+  decideChanges: (userId: string, householdId: string) => ['decide-changes', userId, householdId] as const, // D-27
+  savingsGoals: (userId: string, householdId: string) => ['savings-goals', userId, householdId] as const, // D-34
+  decidePaymentLinks: (userId: string, householdId: string) =>
+    ['decide-links', userId, householdId, 'payment'] as const, // 04 D-48 (prefix of decideLinks, so link writes refresh it)
+  decideWrittenRowLinks: (userId: string, householdId: string) =>
+    ['decide-links', userId, householdId, 'written-rows'] as const, // D-40 (same prefix, refreshed by link writes)
+  goalLines: (householdId: string, goalIds: string) => ['transactions', householdId, 'goal-lines', goalIds] as const, // D-34: row-derived
 };
 
 export const mutationKeys = {
@@ -91,6 +115,21 @@ export const mutationKeys = {
   addRule: ['category-rules', 'add'] as const,
   editRule: ['category-rules', 'edit'] as const,
   bulkAdd: ['transactions', 'bulk-add'] as const,
+  // Phase 5 (Decide)
+  createCheck: ['decide-checks', 'create'] as const,
+  saveCheckDraft: ['decide-checks', 'save-draft'] as const,
+  editCheck: ['decide-checks', 'edit'] as const,
+  decideGoAhead: ['decide-checks', 'go-ahead'] as const,
+  decideOutcome: ['decide-checks', 'outcome'] as const,
+  updateDecideSettings: ['decide-settings', 'update'] as const,
+  saveCardRate: ['debts', 'save-card-rate'] as const,
+  saveCardTerms: ['debts', 'save-card-terms'] as const, // D-40 (05-19 useSaveCardTerms)
+  attachLine: ['decide-links', 'attach'] as const,
+  editLink: ['decide-links', 'edit'] as const,
+  recordStatementPeriod: ['statement-periods', 'add'] as const,
+  // Part 2: D-27 change writes (05-40). Goal tagging uses Record's editTransaction key.
+  addChange: ['decide-changes', 'add'] as const,
+  editChange: ['decide-changes', 'edit'] as const,
 };
 
 // D-20: one scope means every paused write replays serially in the order it was queued --

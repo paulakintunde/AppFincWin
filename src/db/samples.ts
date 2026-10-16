@@ -16,6 +16,8 @@ export interface ClearSampleResult {
   series: number;
   accounts: number;
   categories: number;
+  checks: number;
+  debts: number;
   kept: number;
 }
 
@@ -56,6 +58,8 @@ export async function clearSampleData(client: DbClient, householdId: string): Pr
     series: num('series'),
     accounts: num('accounts'),
     categories: num('categories'),
+    checks: num('checks'),
+    debts: num('debts'),
     kept: num('kept'),
   };
 }

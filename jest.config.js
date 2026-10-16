@@ -40,6 +40,12 @@ for (const f of ['money', 'decide', 'payoff', 'split', 'recurring', 'csv', 'cate
   // D-21: 100% folders
   if (hasSource(`src/engine/${f}`)) coverageThreshold[`./src/engine/${f}/`] = FULL;
 }
+// 05-01: pure Decide builder/inputs (Core Value) and the estimate-vs-actual journal are 100% folders
+for (const d of ['src/features/decide/snapshot', 'src/features/decide/journal']) {
+  if (hasSource(d)) coverageThreshold[`./${d}/`] = FULL;
+}
+// 05-35: pure chart geometry (D-26, D-31)
+if (fs.existsSync('src/features/decide/charts/chartGeometry.ts')) coverageThreshold['./src/features/decide/charts/chartGeometry.ts'] = FULL;
 
 module.exports = {
   preset: 'jest-expo',

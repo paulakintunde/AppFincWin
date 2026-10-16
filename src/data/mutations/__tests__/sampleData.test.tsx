@@ -63,7 +63,7 @@ describe('useSampleData', () => {
   });
 
   it('clear removes the samples, marks the prompt answered and refreshes incl. the undo log', async () => {
-    mockClear.mockResolvedValue({ transactions: 1, series: 0, accounts: 0, categories: 0, kept: 0 });
+    mockClear.mockResolvedValue({ transactions: 1, series: 0, accounts: 0, categories: 0, checks: 0, debts: 0, kept: 0 });
     const spy = jest.spyOn(qc, 'invalidateQueries');
     expect(await call((h) => h.clear())).toBe(true);
     expect(mockClear).toHaveBeenCalledWith({ fake: true }, 'h1');

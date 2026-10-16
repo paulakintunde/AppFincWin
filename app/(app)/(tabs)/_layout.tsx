@@ -7,6 +7,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { StyleSheet, View } from 'react-native';
 import { useAccounts } from '@/data/queries/accounts';
 import { needsFirstAccount } from '@/features/record/setup/firstAccountGate';
+import { DecideShellHost } from '@/features/decide/DecideShellHost';
 import { ShellEntryHost } from '@/features/record/entry/ShellEntryHost';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { Fab } from '@/shell/fab/Fab';
@@ -50,6 +51,7 @@ export default function TabsLayout() {
         <Fab />
         <FabQuickMenu />
         <ShellEntryHost />
+        <DecideShellHost />
       </View>
     </FabProvider>
   );

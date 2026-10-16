@@ -1,0 +1,164 @@
+import React from 'react';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import type { DecideCheckRow } from '@/db/decideChecks';
+import { ThemeProvider } from '@/theme/ThemeProvider';
+import { showToast } from '@/state/undoToast';
+import { emptyCheckInputs } from '../../snapshot/checkInputs';
+import type { CheckInputs } from '../../snapshot/types';
+import { TODAY, loggedSource, month, noneSource, unconvertedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
+import { OpenChecksCard } from '../OpenChecksCard';
+
+jest.setTimeout(30000);
+
+const mockAbandon = jest.fn(() => 'step-1');
+const mockTrack = jest.fn();
+const mockPush = jest.fn();
+jest.mock('@/data/mutations/decideChecks', () => ({ useAbandonCheck: () => ({ abandon: mockAbandon }) }));
+jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...a: unknown[]) => mockTrack(...a) }) }));
+jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPush(...a) }));
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
+jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+
+beforeEach(() => jest.clearAllMocks());
+
+function inputs(over: Partial<CheckInputs> = {}): CheckInputs {
+  return { ...emptyCheckInputs('buy', TODAY), name: 'Laptop', advertised: 150_000, method: 'cash', ...over };
+}
+
+function checkRow(id: string, over: Partial<DecideCheckRow> = {}, inp: CheckInputs = inputs()): DecideCheckRow {
+  return {
+    id,
+    household_id: 'h1',
+    created_by: 'u1',
+    kind: inp.kind,
+    name: inp.name,
+    inputs: inp as unknown as Record<string, unknown>,
+    status: 'open',
+    furthest_step: 1,
+    last_seen_state: null,
+    last_seen_basis: null,
+    reopened_from: null,
+    decided_at: null,
+    verdict_at_decision: null,
+    estimate_day_one: null,
+    estimate_monthly: null,
+    wait_monthly: null,
+    ready_by: null,
+    broke_line: false,
+    cooling_off_at: null,
+    estimate_monthly_payment: null,
+    estimate_running: null,
+    is_sample: false,
+    deleted_at: null,
+    version: 1,
+    updated_by: null,
+    created_at: '2026-10-01T00:00:00Z',
+    updated_at: '2026-10-01T00:00:00Z',
+    ...over,
+  };
+}
+
+const whole = (n: number) => `$${Math.round(n / 100)}`;
+
+function tree(checks: DecideCheckRow[], source = loggedSource()) {
+  return (
+    <ThemeProvider>
+      <OpenChecksCard source={source} checks={checks} today={TODAY} whole={whole} currency="USD" />
+    </ThemeProvider>
+  );
+}
+const renderCard = (checks: DecideCheckRow[], source = loggedSource()) => render(tree(checks, source));
+
+const stressed = () =>
+  loggedSource({ months: ['2026-06', '2026-07', '2026-08', '2026-09'].map((m) => month(m, 500_000, 480_000)) });
+
+describe('OpenChecksCard', () => {
+  it('shows the empty state', async () => {
+    await renderCard([]);
+    expect(screen.getByText('No checks open')).toBeTruthy();
+    expect(screen.getByText('Start one above, or type an item and a price in the quick check.')).toBeTruthy();
+  });
+
+  it('shows a row with its chip and sub-line recomputed from the snapshot', async () => {
+    await renderCard([checkRow('a')]);
+    expect(screen.getByText('Laptop')).toBeTruthy();
+    expect(screen.getByText('It fits')).toBeTruthy();
+    expect(screen.getByText(/\$1500 · Paid in full · leaves \$\d+ a month/)).toBeTruthy();
+    expect(screen.queryByText(/Changed since you looked/)).toBeNull();
+  });
+
+  it('shows Draft and the quoted line when no payment method is chosen', async () => {
+    await renderCard([checkRow('a', {}, inputs({ method: null }))]);
+    expect(screen.getByText('Draft')).toBeTruthy();
+    expect(screen.getByText('$1500 quoted · no payment method yet')).toBeTruthy();
+  });
+
+  it('shows Missing terms when the snapshot is unconverted', async () => {
+    await renderCard([checkRow('a')], unconvertedSource());
+    expect(screen.getByText('Missing terms')).toBeTruthy();
+  });
+
+  it('shows no chip when there are no figures to judge against', async () => {
+    await renderCard([checkRow('a')], noneSource());
+    expect(screen.queryByText('It fits')).toBeNull();
+    expect(screen.queryByText('Draft')).toBeNull();
+  });
+
+  it('flips a fits check to adjust and says so in words when the snapshot gets worse; nothing is written', async () => {
+    const row = checkRow('a', { last_seen_state: 'fits' });
+    const view = await renderCard([row]);
+    expect(screen.queryByText(/Changed since you looked/)).toBeNull();
+    await view.rerender(tree([row], stressed()));
+    expect(screen.getByText('Needs adjustment')).toBeTruthy();
+    expect(screen.getByText('Changed since you looked · was It fits')).toBeTruthy();
+    expect(mockAbandon).not.toHaveBeenCalled();
+  });
+
+  it('does not show the marker when no state was seen yet', async () => {
+    await renderCard([checkRow('a', { last_seen_state: null })], stressed());
+    expect(screen.queryByText(/Changed since you looked/)).toBeNull();
+  });
+
+  it('another check can flip the changed marker', async () => {
+    const a = checkRow('a', { last_seen_state: 'fits' }, inputs({ advertised: 150_000 }));
+    const view = await renderCard([a]);
+    expect(screen.queryByText(/Changed since you looked/)).toBeNull();
+    const b = checkRow('b', { created_at: '2026-10-02T00:00:00Z' }, inputs({ name: 'Desk', advertised: 1_000_000 }));
+    await view.rerender(tree([a, b]));
+    expect(screen.getByText('Changed since you looked · was It fits')).toBeTruthy();
+    // With its own toggle off the check is judged alone again.
+    const alone = checkRow('a', { last_seen_state: 'fits' }, inputs({ advertised: 150_000, combine: false }));
+    await view.rerender(tree([alone, b]));
+    expect(screen.queryAllByText('Changed since you looked · was It fits')).toHaveLength(0);
+  });
+
+  it('opens a priced check at step 3 and an incomplete one at step 1', async () => {
+    await renderCard([checkRow('a'), checkRow('b', { created_at: '2026-10-02T00:00:00Z' }, inputs({ name: 'Bike', method: null }))]);
+    await fireEvent.press(screen.getByLabelText(/^Laptop/));
+    expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'a', step: '3' } });
+    await fireEvent.press(screen.getByLabelText(/^Bike/));
+    expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'b', step: '1' } });
+  });
+
+  it('abandons with an undoable destructive toast and a property-less event', async () => {
+    const row = checkRow('a');
+    await renderCard([row]);
+    await fireEvent.press(screen.getByLabelText('Abandon this check'));
+    expect(mockAbandon).toHaveBeenCalledWith(row);
+    expect(showToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.toast.abandoned' }, stepId: 'step-1' });
+    expect(mockTrack).toHaveBeenCalledWith('check_abandoned', {});
+  });
+
+  it('starts a new purchase or investment check from the heading links', async () => {
+    await renderCard([checkRow('a')]);
+    await fireEvent.press(screen.getByText('+ Purchase'));
+    expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'buy' } });
+    await fireEvent.press(screen.getByText('+ Investment'));
+    expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'invest' } });
+  });
+
+  it('ignores deleted and decided checks', async () => {
+    await renderCard([checkRow('a', { deleted_at: '2026-10-05T00:00:00Z' }), checkRow('b', { status: 'waiting' })]);
+    expect(screen.getByText('No checks open')).toBeTruthy();
+  });
+});

@@ -10,41 +10,20 @@
 import {
   convertMinorExact,
   crossRate,
-  customPerEur,
   EUR_PER_EUR,
   formatRate,
   minorUnits,
   parseRate,
   resolveExponent,
   type ConversionLeg,
-  type CustomLegRate,
-  type ScaledRate,
 } from '@/engine/money';
 import type { CustomCurrencyRow, FxLatestRow, RateSource, TransactionRow } from '@/db/rows';
+import { earlierDate, findCustom, resolvePerEur } from '@/data/queries/fxConvert';
 
 export type ProvisionalStamp = Pick<
   TransactionRow,
   'home_amount' | 'rate' | 'orig_per_eur' | 'home_per_eur' | 'rate_date' | 'rate_source' | 'rate_pending'
 >;
-
-interface PerEurResult {
-  readonly rate: ScaledRate;
-  /**
-   * IN-A01: EUR's own leg is dated the transaction's local_date, as per_eur_rate() does
-   * server-side (`rate_date := p_on`); '' when no local date was given, which never wins.
-   */
-  readonly rateDate: string;
-  readonly source: RateSource | null;
-  /**
-   * RD-03: the raw custom-currency stamp behind `rate` (the reference currency's own per-EUR
-   * rate plus this custom currency's declared unit_value), present only when this leg resolved
-   * through a custom currency. `rate` itself stays the rounded customPerEur value used for
-   * display (orig_per_eur/home_per_eur/rate); convertMinorExact substitutes this raw stamp
-   * instead so home_amount never rounds twice, mirroring per_eur_rate()'s
-   * custom_unit_value/custom_ref_per_eur out params.
-   */
-  readonly custom?: CustomLegRate;
-}
 
 export const PENDING_UNRESOLVED_STAMP: ProvisionalStamp = {
   home_amount: null,
@@ -55,65 +34,6 @@ export const PENDING_UNRESOLVED_STAMP: ProvisionalStamp = {
   rate_source: null,
   rate_pending: true,
 };
-
-function findCustom(code: string, customs: readonly CustomCurrencyRow[]): CustomCurrencyRow | undefined {
-  return customs.find((c) => c.code === code);
-}
-
-function findCachedRate(code: string, rates: readonly FxLatestRow[]): FxLatestRow | undefined {
-  return rates.find((r) => r.quote === code);
-}
-
-/** The lesser (earlier) of two rate dates; an empty string (EUR's own leg) never wins. */
-function earlierDate(a: string, b: string): string {
-  if (!a) return b;
-  if (!b) return a;
-  return a < b ? a : b;
-}
-
-/**
- * Resolves "units of `code` per 1 EUR", recursing through a custom currency's declared
- * reference currency the same way per_eur_rate() does server-side (D-07). Returns null when
- * no cached rate covers `code` at all -- the caller falls back to the fully-pending stamp.
- */
-function resolvePerEur(
-  code: string,
-  rates: readonly FxLatestRow[],
-  customs: readonly CustomCurrencyRow[],
-  onDate: string,
-  seen: ReadonlySet<string> = new Set()
-): PerEurResult | null {
-  if (code === 'EUR') {
-    return { rate: EUR_PER_EUR, rateDate: onDate, source: null };
-  }
-  if (seen.has(code)) return null; // guards a malformed reference cycle
-
-  const custom = findCustom(code, customs);
-  if (custom) {
-    const ref = resolvePerEur(custom.reference_currency, rates, customs, onDate, new Set([...seen, code]));
-    if (!ref) return null;
-    const unitValue = parseRate(custom.unit_value);
-    const rate = customPerEur(ref.rate, unitValue);
-    // IN-A02: a very large unit value rounds the per-EUR rate to 0 at 10 dp. A zero rate
-    // breaks the ScaledRate invariant -- as the target leg it would silently convert to 0 --
-    // so it counts as "no usable rate" and the row stays fully pending.
-    if (rate <= 0n) return null;
-    return {
-      rate,
-      rateDate: earlierDate(ref.rateDate, custom.as_of),
-      source: 'custom',
-      // RD-03: ref.rate is the reference currency's own per-EUR rate as resolved for this
-      // call -- itself never a custom leg (WR-B06: a custom currency's reference must be
-      // ISO) -- so it carries no further rounding of its own beyond customPerEur's 10dp
-      // quantisation above, which this raw stamp avoids passing on to convertMinorExact.
-      custom: { unitValue, referencePerEur: ref.rate },
-    };
-  }
-
-  const cached = findCachedRate(code, rates);
-  if (!cached) return null;
-  return { rate: parseRate(cached.rate), rateDate: cached.rate_date, source: cached.source };
-}
 
 /** Mirrors stamp_fx_rate()'s source precedence: open-er-api beats custom beats frankfurter-v2. */
 function combineSource(origSource: RateSource | null, homeSource: RateSource | null): RateSource {

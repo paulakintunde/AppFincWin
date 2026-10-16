@@ -20,7 +20,7 @@ describe('sample data wrappers', () => {
   it('clearSampleData returns counts and rejects bad shapes', async () => {
     const client = createFakeSupabase();
     client.respondWith({
-      data: { status: 'applied', transactions: 5, series: 1, accounts: 1, categories: 2, kept: 0 },
+      data: { status: 'applied', transactions: 5, series: 1, accounts: 1, categories: 2, checks: 2, debts: 2, kept: 0 },
       error: null,
       status: 200,
     });
@@ -30,6 +30,8 @@ describe('sample data wrappers', () => {
       series: 1,
       accounts: 1,
       categories: 2,
+      checks: 2,
+      debts: 2,
       kept: 0,
     });
     await expect(clearSampleData(client, 'hh')).rejects.toMatchObject({ code: 'bad-response' });

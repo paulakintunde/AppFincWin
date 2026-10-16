@@ -10,8 +10,8 @@
  * consumes (as untrusted input -- see the threat model in 02-05-PLAN.md).
  */
 
-/** The five entities an undo step can touch (transfers are two `transactions` rows). */
-export type UndoEntity = 'transactions' | 'categories' | 'recurring_series' | 'accounts' | 'category_rules';
+/** The entities an undo step can touch (transfers are two `transactions` rows; 05: Decide checks, debts and decision links). */
+export type UndoEntity = 'transactions' | 'categories' | 'recurring_series' | 'accounts' | 'category_rules' | 'decide_checks' | 'debts' | 'decide_links' | 'decide_changes' | 'savings_goals';
 
 /** A patch value as it travels over the wire to `apply_patches`. */
 export type PatchValue = string | number | boolean | null;
@@ -29,7 +29,8 @@ export interface PatchOp {
 
 // transfer* added for D-50: creating, editing or deleting a transfer is one undo step
 // covering both legs.
-export const UNDO_LABEL_KEYS = ['added','edited','deleted','deletedMany','markedPaid','markedPaidMany','markedUnpaidMany','skipped','imported','seriesCreated','seriesEdited','seriesEnded','categoryAdded','categoryEdited','categoryArchived','categoryMerged','accountAdded','accountEdited','accountArchived','transferAdded','transferEdited','transferDeleted','cloned','pasted','markedMonthly','monthAdded','accountDeleted','addedMany','ruleAdded','ruleEdited','ruleRemoved'] as const;
+// 05: Decide (DCU-04 abandon, D-09 Go ahead, D-11 remove, D-12 unlink; D-27 changes, D-34 goal tags)
+export const UNDO_LABEL_KEYS = ['added','edited','deleted','deletedMany','markedPaid','markedPaidMany','markedUnpaidMany','skipped','imported','seriesCreated','seriesEdited','seriesEnded','categoryAdded','categoryEdited','categoryArchived','categoryMerged','accountAdded','accountEdited','accountArchived','transferAdded','transferEdited','transferDeleted','cloned','pasted','markedMonthly','monthAdded','accountDeleted','addedMany','ruleAdded','ruleEdited','ruleRemoved','checkAbandoned','decisionWritten','decisionRemoved','lineUnlinked','changeAdded','changeEdited','changeRemoved','transferTagged','transferUntagged'] as const;
 
 export type UndoLabelKey = (typeof UNDO_LABEL_KEYS)[number];
 

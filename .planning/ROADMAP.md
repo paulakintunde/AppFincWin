@@ -617,56 +617,56 @@ Plans:
 **Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate).
 Plans:
 **Wave 1**
-- [ ] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
-- [ ] 05-02-PLAN.md — Decide copy catalogue, DCU-09 guard, undo vocabulary
-- [ ] 05-03-PLAN.md — Decide tables (checks, settings, debts, links, statement periods), RLS, grants, pgTAP
-- [ ] 05-33-PLAN.md — fxConvert read-side module (custom-currency aware) for D-37
-- [ ] 05-34-PLAN.md — Record data layer: one_off and goal_id fields
-- [ ] 05-38-PLAN.md — db modules for decide_changes and savings_goals
+- [x] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
+- [x] 05-02-PLAN.md — Decide copy catalogue, DCU-09 guard, undo vocabulary
+- [x] 05-03-PLAN.md — Decide tables (checks, settings, debts, links, statement periods), RLS, grants, pgTAP
+- [x] 05-33-PLAN.md — fxConvert read-side module (custom-currency aware) for D-37
+- [x] 05-34-PLAN.md — Record data layer: one_off and goal_id fields
+- [x] 05-38-PLAN.md — db modules for decide_changes and savings_goals
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 05-05-PLAN.md — db modules and RPC wrappers for the Decide tables
-- [ ] 05-06-PLAN.md — Pure snapshot builder: full months, pending one-offs, payments counted once, FX, one-offs, changes (100% coverage)
-- [ ] 05-07-PLAN.md — Check inputs, quick-to-full carry, computeQuick/computeCheck/computeChip over decide()
-- [ ] 05-08-PLAN.md — parseQuick, date offsets, estimate-vs-actual, canUse, DateField past-date guard
-- [ ] 05-09-PLAN.md — Exhaustive code-to-copy maps (verdict, warnings, quick line, suppression, options)
-- [ ] 05-10-PLAN.md — Display and choice primitives (StateChip, WarningCard, StepBar, ...)
-- [ ] 05-11-PLAN.md — expo-notifications ~57, Wait and cooling-off reminders, tap observer
-- [ ] 05-28-PLAN.md — Input primitives (StepSlider, RateInput, MoneyInput)
-- [ ] 05-31-PLAN.md — Depth copy catalogue (D-24..D-37) and extended DCU-09 guard
-- [ ] 05-32-PLAN.md — Depth migrations: decide_changes, savings_goals, cooling_off_at, split estimates, link roles, transactions.one_off/goal_id
+- [x] 05-05-PLAN.md — db modules and RPC wrappers for the Decide tables
+- [x] 05-06-PLAN.md — Pure snapshot builder: full months, pending one-offs, payments counted once, FX, one-offs, changes (100% coverage)
+- [x] 05-07-PLAN.md — Check inputs, quick-to-full carry, computeQuick/computeCheck/computeChip over decide()
+- [x] 05-08-PLAN.md — parseQuick, date offsets, estimate-vs-actual, canUse, DateField past-date guard
+- [x] 05-09-PLAN.md — Exhaustive code-to-copy maps (verdict, warnings, quick line, suppression, options)
+- [x] 05-10-PLAN.md — Display and choice primitives (StateChip, WarningCard, StepBar, ...)
+- [x] 05-11-PLAN.md — expo-notifications ~57, Wait and cooling-off reminders, tap observer
+- [x] 05-28-PLAN.md — Input primitives (StepSlider, RateInput, MoneyInput)
+- [x] 05-31-PLAN.md — Depth copy catalogue (D-24..D-37) and extended DCU-09 guard
+- [x] 05-32-PLAN.md — Depth migrations: decide_changes, savings_goals, cooling_off_at, split estimates, link roles, transactions.one_off/goal_id
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 05-04-PLAN.md — apply_patches allow-list, record_decide_go / record_decide_outcome RPCs, pgTAP
-- [ ] 05-12-PLAN.md — Query keys, read hooks, useDecideSnapshot, other open checks
-- [ ] 05-14-PLAN.md — Steps 1 and 2, line editor
-- [ ] 05-15-PLAN.md — Step 3 verdict card, warnings, core sections, Assumptions
-- [ ] 05-17-PLAN.md — Step 4 alternatives, step 5 decision, written lines
-- [ ] 05-18-PLAN.md — Demo fixture (6 steady months) and engine-backed demo-outcome test
-- [ ] 05-35-PLAN.md — Chart geometry, cash-path chart, net-worth chart
-- [ ] 05-36-PLAN.md — ConfidenceChip, EdgeTag, CombineToggle, GoalProgress
-- [ ] 05-37-PLAN.md — Depth copy maps (verdict and input sides)
-- [ ] 05-39-PLAN.md — Journal helpers: past decisions, attach roles, saved so far
-- [ ] 05-50-PLAN.md — Record one-off toggle
+- [x] 05-04-PLAN.md — apply_patches allow-list, record_decide_go / record_decide_outcome RPCs, pgTAP
+- [x] 05-12-PLAN.md — Query keys, read hooks, useDecideSnapshot, other open checks
+- [x] 05-14-PLAN.md — Steps 1 and 2, line editor
+- [x] 05-15-PLAN.md — Step 3 verdict card, warnings, core sections, Assumptions
+- [x] 05-17-PLAN.md — Step 4 alternatives, step 5 decision, written lines
+- [x] 05-18-PLAN.md — Demo fixture (6 steady months) and engine-backed demo-outcome test
+- [x] 05-35-PLAN.md — Chart geometry, cash-path chart, net-worth chart
+- [x] 05-36-PLAN.md — ConfidenceChip, EdgeTag, CombineToggle, GoalProgress
+- [x] 05-37-PLAN.md — Depth copy maps (verdict and input sides)
+- [x] 05-39-PLAN.md — Journal helpers: past decisions, attach roles, saved so far
+- [x] 05-50-PLAN.md — Record one-off toggle
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 05-13-PLAN.md — Quick-check form and result (home and first-read variants)
-- [ ] 05-16-PLAN.md — Step 3 setbacks and options, household scope toggle (hidden)
-- [ ] 05-19-PLAN.md — Queued mutations: checks, settings, links, card rate, statement periods
-- [ ] 05-41-PLAN.md — Step 3 verdict depth: combined line, worst month, confidence, edge, D-59 fact, warnings
-- [ ] 05-43-PLAN.md — Step 1 income change; step 2 promo, variable-rate stress, late fee
-- [ ] 05-44-PLAN.md — Step 2 running-cost prompts and estimate-gap notes
-- [ ] 05-45-PLAN.md — Step 4 "If it went into investing instead"
-- [ ] 05-46-PLAN.md — Step 5 cooling-off toggle, Wait goal preview, written lines
-- [ ] 05-51-PLAN.md — Demo seed v2 SQL, pgTAP, samples.ts, mirror check in CI
+- [x] 05-13-PLAN.md — Quick-check form and result (home and first-read variants)
+- [x] 05-16-PLAN.md — Step 3 setbacks and options, household scope toggle (hidden)
+- [x] 05-19-PLAN.md — Queued mutations: checks, settings, links, card rate, statement periods
+- [x] 05-41-PLAN.md — Step 3 verdict depth: combined line, worst month, confidence, edge, D-59 fact, warnings
+- [x] 05-43-PLAN.md — Step 1 income change; step 2 promo, variable-rate stress, late fee
+- [x] 05-44-PLAN.md — Step 2 running-cost prompts and estimate-gap notes
+- [x] 05-45-PLAN.md — Step 4 "If it went into investing instead"
+- [x] 05-46-PLAN.md — Step 5 cooling-off toggle, Wait goal preview, written lines
+- [x] 05-51-PLAN.md — Demo seed v2 SQL, pgTAP, samples.ts, mirror check in CI
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 05-20-PLAN.md — Go ahead (one undo step, incl. investment and card payoff), Wait (+goal, reminder), Pass
-- [ ] 05-21-PLAN.md — Decide tab root, FAB, open checks with stacked chips, reminder reconcile
-- [ ] 05-22-PLAN.md — Past decisions and detail sheet (estimate vs actual, attach/unlink)
-- [ ] 05-23-PLAN.md — Onboarding rough figures and first check (cash-only skip path)
-- [ ] 05-42-PLAN.md — Step 3 depth sections: day by day, expected income, cushion and margins, runway
-- [ ] 05-53-PLAN.md — Step 2 card terms: card minimum pre-fill, paid in full, card fees and costs (D-40, D-44)
+- [x] 05-20-PLAN.md — Go ahead (one undo step, incl. investment and card payoff), Wait (+goal, reminder), Pass
+- [x] 05-21-PLAN.md — Decide tab root, FAB, open checks with stacked chips, reminder reconcile
+- [x] 05-22-PLAN.md — Past decisions and detail sheet (estimate vs actual, attach/unlink)
+- [x] 05-23-PLAN.md — Onboarding rough figures and first check (cash-only skip path)
+- [x] 05-42-PLAN.md — Step 3 depth sections: day by day, expected income, cushion and margins, runway
+- [x] 05-53-PLAN.md — Step 2 card terms: card minimum pre-fill, paid in full, card fees and costs (D-40, D-44)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 05-24-PLAN.md — Check flow layout, swipe interceptor, useCheckDraft

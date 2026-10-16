@@ -29,6 +29,7 @@ const state: FormState = {
   amountInText: '6',
   automatic: true,
   refund: false,
+  oneOff: false,
 };
 
 describe('draftForm', () => {

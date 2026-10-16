@@ -25,6 +25,11 @@ import { registerDismissOffersMutations } from './dismissedOffers';
 import { registerRecordPrefsMutations } from './recordPrefs';
 import { registerCategoryRuleMutations } from './categoryRules';
 import { registerBulkAddMutations } from './bulkAdd';
+import { registerDecideCheckMutations } from './decideChecks';
+import { registerDecideSettingsMutations } from './decideSettings';
+import { registerDecideLinkMutations } from './decideLinks';
+import { registerDecideGoAheadMutations } from './decideGoAhead';
+import { registerDecideOutcomeMutations } from './decideOutcome';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -57,4 +62,11 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerCategoryRuleMutations(qc);
   // 02.3-13: entry-sheet list (one step, one Undo).
   registerBulkAddMutations(qc);
+  // 05-19: Decide checks, settings, links, card rates and statement periods.
+  registerDecideCheckMutations(qc);
+  registerDecideSettingsMutations(qc);
+  registerDecideLinkMutations(qc);
+  // 05-20: Go ahead / Wait / Pass.
+  registerDecideGoAheadMutations(qc);
+  registerDecideOutcomeMutations(qc);
 }

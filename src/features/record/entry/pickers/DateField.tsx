@@ -36,7 +36,13 @@ export function DateField({ label, value, display, onChange, minDate }: DateFiel
 
   const handle = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === 'android') setOpen(false);
-    if (event.type === 'set' && date) onChange(toLocalDateString(date));
+    // DCU-08 (05-08): minimumDate is only a picker hint; refuse an earlier day here (Pitfall 3).
+    // 'YYYY-MM-DD' compares lexically.
+    if (event.type === 'set' && date) {
+      const picked = toLocalDateString(date);
+      if (minDate !== undefined && picked < minDate) return;
+      onChange(picked);
+    }
   };
 
   const picker = open ? (

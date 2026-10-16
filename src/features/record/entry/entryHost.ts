@@ -3,7 +3,7 @@
 // 03-15). Activity keeps its own sheet for row edits.
 import { useSyncExternalStore } from 'react';
 import { registerWipeHandler } from '@/services/storage/wipe';
-import type { EntryMode } from './transactionForm';
+import type { EntryMode } from './entryMode';
 
 let mode: EntryMode | null = null;
 const listeners = new Set<() => void>();
