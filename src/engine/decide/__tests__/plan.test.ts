@@ -662,7 +662,7 @@ describe('resolvePlan: promotional rates (D-48)', () => {
 
   it('D-63: card costs on a promo plan are the schedule interest plus the one-off card fees', () => {
     const p = resolved(card({ kind: 'months', months: 12 }, { promo: PROMO6, cardFees: m(3_500) }));
-    expect(p.card!.cardCosts).toBe(p.interest + 3_500);
+    expect(p.card!.cardCosts).toBe(p.interest! + 3_500);
     expect(p.card!.fees).toBe(3_500);
     expect(p.dayOne).toBe(3_500);
     expect(p.total! - p.price).toBe(p.card!.cardCosts);

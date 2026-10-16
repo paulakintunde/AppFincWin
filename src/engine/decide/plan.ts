@@ -25,8 +25,21 @@
  * for this purchase (a transaction or balance-transfer fee), which are paid on day one. A recurring card fee is out of
  * scope and Phase 5 must not pass one here.
  *
- * Credit terms (promo, variable, late fees: D-48, D-49, D-50) arrive in 04-22; plans here carry promo null and
- * lateFees null. This file never imports suggestItemType, suggestSecured or marketDefaults (D-05, D-14).
+ * D-48: promotional terms are user data. A loan or card plan with `promo` follows the rate schedule: the payment is
+ * re-amortised at the promo end over the remaining months, deferred interest is added at the promo end only when the
+ * user flagged it and the balance is still open (code `deferred_interest_charged`), and `Plan.monthly` is the highest
+ * scheduled payment so the month test never understates a month. Allocation across several balances and forfeiture of
+ * a promo after late payments are out of scope (04-14; 04-REPLAN-NOTES 2026-10-15 expansion, default 3). Without a
+ * promo `monthly` stays the first payment, so plans without credit terms equal 04-06's exactly.
+ *
+ * D-49: `variable` is only validated; stress at higher rates is reported beside the verdict by 04-19's stressTest and
+ * the verdict stays on the entered rate (04-REPLAN-NOTES default 4).
+ *
+ * W3: `paymentSteps` is the series source for Phase 5. For a promo plan `monthly` is the highest payment, so
+ * `monthly * (months - 1) + finalMonthly` overstates the series; `finalMonthly` is a display figure.
+ *
+ * D-07: nothing in credit terms is defaulted or inferred; the rate after a promo is still required.
+ * This file never imports suggestItemType, suggestSecured or marketDefaults (D-05, D-14).
  */
 import { assertNever } from '../guards/assertNever';
 import { divideHalfUp } from '../money/rounding';
@@ -36,12 +49,16 @@ import {
   ONE_HUNDRED_PERCENT,
   SIMULATION_MONTH_CAP,
   ZERO_PERCENT,
+  amortise,
   amortiseSchedule,
   percentFromScaled,
   simulateMinimumSchedule,
   singleRate,
   type MinimumOutcome,
   type Percent,
+  type RateSchedule,
+  type ScheduledAmortisation,
+  type ScheduledMinimumResult,
 } from '../payoff';
 import { cardEligibility } from './cardRule';
 import { MONTHS_PER_YEAR } from './constants';
@@ -54,6 +71,8 @@ import type {
   Plan,
   PlanReason,
   PlanResult,
+  PromoOutcome,
+  PromoTerms,
   PurchaseCheck,
 } from './types';
 
@@ -99,6 +118,85 @@ function compressSteps(amounts: readonly MinorUnits[], fromMonth = 1): PaymentSt
 
 const NO_CREDIT_TERMS = { promo: null, lateFees: null } as const;
 
+/**
+ * The rate schedule for a balance: the check's own APR throughout, or the promotional APR for `promo.months` and then
+ * the APR (D-48). Nothing is defaulted.
+ */
+export function rateScheduleFor(apr: Percent, promo: PromoTerms | undefined): RateSchedule {
+  if (promo === undefined) return singleRate(apr);
+  assertTerm(promo.months, 'promo months');
+  if (promo.deferredInterest && promo.apr !== ZERO_PERCENT) {
+    throw new RangeError(`${FN}: deferred interest needs a 0% promotional rate`);
+  }
+  return {
+    segments: [
+      { fromMonth: 1, apr: promo.apr },
+      { fromMonth: promo.months + 1, apr },
+    ],
+    deferredInterest: promo.deferredInterest,
+  };
+}
+
+/** D-49: the flag is only validated; it changes nothing in the plan. */
+function assertVariable(variable: boolean | undefined): void {
+  if (variable !== undefined && typeof variable !== 'boolean') {
+    throw new RangeError(`${FN}: variable must be a boolean`);
+  }
+}
+
+function promoOutcome(
+  promo: PromoTerms,
+  principal: number,
+  first: MinorUnits,
+  after: MinorUnits | null,
+  clears: boolean,
+  interestAfter: MinorUnits | null,
+  charged: MinorUnits,
+  highest: MinorUnits
+): PromoOutcome {
+  return {
+    promoMonths: promo.months,
+    promoApr: promo.apr,
+    deferredInterest: promo.deferredInterest,
+    paymentDuringPromo: first,
+    paymentAfterPromo: after,
+    clearsBeforePromoEnd: clears,
+    interestAfterPromo: interestAfter,
+    deferredInterestCharged: charged,
+    deferredInterestCode: charged > 0 ? 'deferred_interest_charged' : null,
+    highestMonthlyPayment: highest,
+    // D-20 zero-rate rule: what clears the financed balance inside the promo
+    paymentToClearInPromo: amortise(m(principal), ZERO_PERCENT, promo.months).payment,
+  };
+}
+
+function promoFromAmortisation(promo: PromoTerms, principal: number, am: ScheduledAmortisation): PromoOutcome {
+  const clears = am.balanceAtPromoEnd === 0;
+  return promoOutcome(
+    promo,
+    principal,
+    am.payment,
+    clears ? null : am.paymentsByMonth[promo.months]!,
+    clears,
+    am.interestAfterPromo,
+    am.deferredInterestCharged,
+    am.highestPayment
+  );
+}
+
+function promoFromMinimum(promo: PromoTerms, principal: number, s: ScheduledMinimumResult): PromoOutcome {
+  return promoOutcome(
+    promo,
+    principal,
+    s.firstPayment,
+    s.paymentAfterPromo,
+    s.clearedBeforePromoEnd,
+    s.interestAfterPromo,
+    s.deferredInterestCharged,
+    s.highestPayment
+  );
+}
+
 function planCash(check: BuyCheck): PlanResult {
   return {
     status: 'resolved',
@@ -122,6 +220,7 @@ function planCash(check: BuyCheck): PlanResult {
 
 function planLoan(check: BuyCheck, p: Extract<BuyPayment, { method: 'loan' }>): PlanResult {
   assertMoney(p.deposit, 'deposit');
+  assertVariable(p.variable);
   if (p.termMonths !== null) assertTerm(p.termMonths, 'loan term');
   // Collect every reason before returning (customCurrency pattern): an early return on the first gap would hide the second.
   const reasons: PlanReason[] = [];
@@ -132,7 +231,8 @@ function planLoan(check: BuyCheck, p: Extract<BuyPayment, { method: 'loan' }>): 
   // Prototype dplan loan branch: the deposit cannot exceed what is left after the on-the-day fees.
   const deposit = Math.max(0, Math.min(p.deposit, check.price - check.dayFees));
   const financed = Math.max(0, check.price - deposit - check.dayFees);
-  const am = amortiseSchedule(m(financed), singleRate(p.apr), p.termMonths);
+  const am = amortiseSchedule(m(financed), rateScheduleFor(p.apr, p.promo), p.termMonths);
+  const promo = p.promo === undefined ? null : promoFromAmortisation(p.promo, financed, am);
   const dayOne = deposit + check.dayFees;
   const total = dayOne + am.totalPaid;
   return {
@@ -140,7 +240,8 @@ function planLoan(check: BuyCheck, p: Extract<BuyPayment, { method: 'loan' }>): 
     plan: {
       price: check.price,
       dayOne: m(dayOne),
-      monthly: am.payment,
+      // D-48: with a promo the month test uses the highest scheduled payment
+      monthly: promo === null ? am.payment : am.highestPayment,
       months: p.termMonths,
       financed: m(financed),
       total: m(total),
@@ -150,7 +251,8 @@ function planLoan(check: BuyCheck, p: Extract<BuyPayment, { method: 'loan' }>): 
       finalMonthly: am.finalPayment,
       impliedAnnualRate: null,
       paymentSteps: compressSteps(am.paymentsByMonth),
-      ...NO_CREDIT_TERMS,
+      promo,
+      lateFees: null,
     },
   };
 }
@@ -201,6 +303,7 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
   const { card, payoff, dealerCap } = p;
   const fees = p.cardFees ?? 0;
   assertMoney(fees, 'cardFees');
+  assertVariable(p.variable);
   if (dealerCap !== null) assertMoney(dealerCap, 'dealerCap');
   if (payoff.kind === 'months') assertTerm(payoff.months, 'card payoff months');
   if (card !== null) assertCurrency(check.currency, card.currency, `card ${card.id}`, FN);
@@ -232,13 +335,15 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
   let minimumOutcome: MinimumOutcome | null = null;
   let finalMonthly: MinorUnits | null = null;
   let steps: PaymentStep[] = [];
+  let promo: PromoOutcome | null = null;
 
   switch (payoff.kind) {
     case 'full':
       break;
     case 'months': {
-      const am = amortiseSchedule(m(onCard), singleRate(card!.apr!), payoff.months);
-      monthly = am.payment;
+      const am = amortiseSchedule(m(onCard), rateScheduleFor(card!.apr!, p.promo), payoff.months);
+      promo = p.promo === undefined ? null : promoFromAmortisation(p.promo, onCard, am);
+      monthly = promo === null ? am.payment : am.highestPayment;
       months = payoff.months;
       interest = am.totalInterest;
       payoffMonths = payoff.months;
@@ -247,8 +352,9 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
       break;
     }
     case 'minimum': {
-      const s = simulateMinimumSchedule(m(onCard), singleRate(card!.apr!), card!.minimumTerms!);
-      monthly = s.firstPayment;
+      const s = simulateMinimumSchedule(m(onCard), rateScheduleFor(card!.apr!, p.promo), card!.minimumTerms!);
+      promo = p.promo === undefined ? null : promoFromMinimum(p.promo, onCard, s);
+      monthly = promo === null ? s.firstPayment : s.highestPayment;
       months = s.months;
       minimumOutcome = s.outcome;
       steps = compressSteps(s.paymentsByMonth);
@@ -296,7 +402,8 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
       finalMonthly,
       impliedAnnualRate: null,
       paymentSteps: steps,
-      ...NO_CREDIT_TERMS,
+      promo,
+      lateFees: null,
     },
   };
 }
