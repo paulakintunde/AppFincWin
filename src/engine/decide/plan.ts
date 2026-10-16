@@ -38,6 +38,11 @@
  * W3: `paymentSteps` is the series source for Phase 5. For a promo plan `monthly` is the highest payment, so
  * `monthly * (months - 1) + finalMonthly` overstates the series; `finalMonthly` is a display figure.
  *
+ * D-50: an instalment plan with a user-entered `lateFee` reports the cost of one and two late payments as
+ * fee x n (n capped at the instalments remaining) and min(..., the user's optional total cap). The fee and the cap are
+ * what the user faces (Clearpay's second fee, Klarna's per-instalment cap); there is no default cap (04-RESEARCH
+ * addendum section D; 04-REPLAN-NOTES default 6). No other plan figure changes.
+ *
  * D-07: nothing in credit terms is defaulted or inferred; the rate after a promo is still required.
  * This file never imports suggestItemType, suggestSecured or marketDefaults (D-05, D-14).
  */
@@ -61,12 +66,13 @@ import {
   type ScheduledMinimumResult,
 } from '../payoff';
 import { cardEligibility } from './cardRule';
-import { MONTHS_PER_YEAR } from './constants';
+import { LATE_PAYMENT_COUNTS, MONTHS_PER_YEAR } from './constants';
 import { assertCurrency } from './currency';
 import type {
   BuyCheck,
   BuyPayment,
   InvestCheck,
+  LateFeeCost,
   PaymentStep,
   Plan,
   PlanReason,
@@ -257,7 +263,23 @@ function planLoan(check: BuyCheck, p: Extract<BuyPayment, { method: 'loan' }>): 
   };
 }
 
+/** D-50: min(fee x min(n, instalments remaining), cap), reported beside the plan. Nothing is defaulted. */
+function lateFeesFor(fee: MinorUnits | undefined, cap: MinorUnits | undefined, count: number): LateFeeCost | null {
+  if (fee === undefined) return null;
+  const cost = (n: number): MinorUnits => {
+    const raw = m(fee * Math.min(n, count));
+    return cap !== undefined && raw > cap ? cap : raw;
+  };
+  const [one, two] = LATE_PAYMENT_COUNTS as readonly [number, number];
+  return { feePerLatePayment: fee, capTotal: cap ?? null, oneLate: cost(one), twoLate: cost(two) };
+}
+
 function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'instalment' }>): PlanResult {
+  if (p.lateFee !== undefined) assertMoney(p.lateFee, 'lateFee');
+  if (p.lateFeeCapTotal !== undefined) {
+    if (p.lateFee === undefined) throw new RangeError(`${FN}: lateFeeCapTotal needs lateFee`);
+    assertMoney(p.lateFeeCapTotal, 'lateFeeCapTotal');
+  }
   if (p.instalmentAmount !== null) assertMoney(p.instalmentAmount, 'instalment amount');
   if (p.instalmentCount !== null) assertTerm(p.instalmentCount, 'instalment count');
   const reasons: PlanReason[] = [];
@@ -294,7 +316,8 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
       impliedAnnualRate,
       // The first instalment is paid on the day (dayOne); the rest follow in months 1..count-1.
       paymentSteps: compressSteps(Array.from({ length: count - 1 }, () => m(amount))),
-      ...NO_CREDIT_TERMS,
+      promo: null,
+      lateFees: lateFeesFor(p.lateFee, p.lateFeeCapTotal, count),
     },
   };
 }
