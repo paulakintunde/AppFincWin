@@ -29,6 +29,13 @@ describe.each(DATES)('demo scenario at %s', (today) => {
     expect(built.snapshot.incomeSeries).toHaveLength(1);
   });
 
+  it('a zero investing floor is not set, so neither demo check is on the edge at the investing line', () => {
+    for (const inputs of [sofaInputs, carInputs]) {
+      const margins = decide(built.snapshot, engine(inputs)).margins;
+      expect(margins.find((x) => x.line === 'inv')?.flag ?? null).toBeNull();
+    }
+  });
+
   it('the sofa fits', () => {
     expect(computeCheck(built, sofaInputs).verdict?.state).toBe('fits');
   });

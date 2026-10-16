@@ -12,11 +12,11 @@ jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
 
 type Loose = Record<string, unknown>;
 
-/** Six steady full months, so the engine reads a strong basis; investing set so no line sits on the edge. */
+/** Six steady full months, so the engine reads a strong basis; a zero investing floor is not set (04 D-65), so no line sits on the edge. */
 function strongSource(): SnapshotResult {
   const months = ['2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'].map((m) => month(m, 500_000, 300_000));
   const pay = { seriesId: 's-pay', confirmed: true, freq: 'monthly', anchorDate: '2026-04-01', endDate: null, occurrenceCount: null, latestAmount: 500_000, currency: 'USD', lastPaidDate: '2026-10-01' } as never;
-  const base = loggedSource({ cashOnHand: minorUnits(4_000_000), incomeSeries: [pay], months, monthlyInvesting: minorUnits(50_000), limits: { reserve: null, dsrLine: null, unsecuredIncomeMultiple: null, investingFloor: minorUnits(10_000), savingFloor: null, spareFloor: null } }, 4_000_000);
+  const base = loggedSource({ cashOnHand: minorUnits(4_000_000), incomeSeries: [pay], months, monthlyInvesting: minorUnits(0), limits: { reserve: null, dsrLine: null, unsecuredIncomeMultiple: null, investingFloor: minorUnits(0), savingFloor: null, spareFloor: null } }, 4_000_000);
   return { ...base, meta: { ...base.meta, fullMonths: 6 } };
 }
 
