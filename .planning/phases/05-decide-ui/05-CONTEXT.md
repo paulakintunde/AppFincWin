@@ -1,7 +1,7 @@
 # Phase 5: Decide UI - Context
 
 **Gathered:** 2026-10-15
-**Status:** Expanded 2026-10-15 with D-24…D-37. The UI-SPEC needs an update for these before planning completes.
+**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope). The UI-SPEC carries all of them.
 
 <domain>
 ## Phase Boundary
@@ -180,6 +180,17 @@ Engine decisions are 04 D-41…D-58. These are the Phase 5 UI and data counterpa
 - **D-43: The UI-SPEC touch-ups are applied as the planner resolved them** (05-PLANNING-NOTES OQ-A2/A3/A9 and the 7 recorded conflicts). The combine pill stays hidden with only 1 open check.
 
 - **D-44 (user, 2026-10-15): the UI takes user-entered loss of value and holding fees** (04 D-63). Step 2's "Loss of value" prompt takes an amount or %/year, shown as "not a monthly cash cost". The investing views take an optional holding fee %/year. The card-costs tile sums the user's card terms. Requirement IDs DCU-12..DCU-24 now trace D-21..D-43.
+
+### D-45+ (aligned 2026-10-16 to the executed Phase 4)
+Phase 4 was executed, code-reviewed (`04-REVIEW.md`: 4 high, 5 medium, 5 low, all fixed) and verified on `phase/04-decide-engine`. These decisions record how Phase 5 follows the executed engine (`src/engine/decide`, `src/engine/payoff`, 04-PHASE5-ALIGNMENT "04-REVIEW fixes (2026-10-16)"). They add no product scope: each is the existing UI meeting a new engine fact. Where a Phase 5 plan and the engine code disagree, the code wins.
+- **D-45: The term typed and the months paid are shown apart** (04 D-64, ME-03). Level payments round up to the cent, so `Plan.months` and `CardPlanDetail.payoffMonths` are the months actually paid and can be fewer than the term typed (`payment.termMonths`, `payoff.months`). Every term display shows the term typed; the payoff month is added only when it is earlier ("paid off in month {m}"). Go ahead writes from `Plan.paymentSteps` as before; the debt row keeps the term typed. The alternatives and investing horizons follow the engine's months paid.
+- **D-46: A card minimum still open at the 600-month cap states what is still owed** (04 HI-02, 04 D-17). The engine returns `remainingAtCap` and no cleared total, interest, card costs or payoff month; the UI reads "Not within 50 years" with "Still owing {x} after 50 years at the minimum.", told apart from "Never" / "Endless" by `minimumOutcome`.
+- **D-47: A projection too large to compute exactly reads "Too large to project at this rate"** (04 ME-01). Nullable `projected` / `growth` with `rangeCode: 'exceeds_range'` on RateFigure, do_without, AlternativeRow and NetWorthPath points; a null is never shown as 0, and the charts skip null points.
+- **D-48: Projection-rate fields are bounded at 100% a year** (04 `MAX_PROJECTION_RATE`, `projection_rate_out_of_range`). The fields refuse more with "Up to 100% a year"; stored rates above it are dropped by the parser; the code still has a title.
+- **D-49: Instalment terms follow the engine** (04 ME-02, LO-05, HI-03). On-the-day fees are paid on the day and the instalments cover the rest; amount × count below that is `instalment_total_below_price`, shown as "Below the price" with a note asking for the amount or the count; "Use this price" and "Use the cheaper price" rescale an instalment plan with the engine's own `withPrice` (and the cheaper row's loan deposit as the cheaper row does), so the rescored check is the one shown.
+- **D-50: No money in reads as such** (04 ME-05, LO-01). With an income basis of 0 any debt payment breaches the debt line and the ratio is null, so every dsr surface uses no-money-in wording; an all-zero-income history is Volatile and Your month says no money in is logged.
+- **D-51: The snapshot builder never passes a limit the engine refuses** (04 LO-03). Negative, fractional or unparsable stored limits become null (the default) before `prepareContext`, counted internally; one-off refunds netting against one-off spending (LO-02) and on-the-day fees clamped to the price (LO-04) need no UI change.
+- **D-52: "Left when it ends" comes from the engine's own schedule.** The UI-SPEC's promotion tile has no field on `PromoOutcome`; 05-07 reads the balance at the promotion end from the payoff barrel's `amortiseSchedule` / `simulateMinimumSchedule` with `rateScheduleFor`, exactly as the engine's plan builds it. `paymentToClearInPromo` (now rounded up) is not displayed in this phase.
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.

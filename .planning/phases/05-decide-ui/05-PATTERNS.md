@@ -29,12 +29,12 @@ percent, ZERO_PERCENT (values); Percent, CardMinimumTerms (types) // re-exported
 // also via export *: resolvePriceInputs / netRunningCosts (04-06, D-37)
 ```
 
-Key types (04-05-PLAN.md): `DecideSnapshot` L166-181, `RecordLine` L114-125, `MonthRecord` L130-134, `RecurringBill` L135-146, `DebtRecord` L147-152, `CardRecord` L153, `DecideLimits` L156-163, `BuyPayment` L186-190, `BuyCheck` L192, `PriceAdjustment`/`PriceInputs` L195-202, `CostLine`/`RunningCosts` L210-211, `InvestCheck` L212, `PlanReason` L216-218, `Plan` L227-239 (`finalMonthly` for the D-09 series), `VerdictState` L274, `WarningCode` L275, `MissingReason` L277, `BasisMarker` L278, `PurchaseSize` L283, `Assessment` L329-350, `Verdict` L351, `DecideOption` L355-361, `AlternativeCode`/`SuppressionCode` L365-366, `Alternatives` L382-388, `SetbackInput`/`SetbackReport` L392-399, `WaitPlan` L402-409, `RoughFigures`/`FirstRead` L412-419.
+Key types (04-05-PLAN.md; since 2026-10-16 the executed `src/engine/decide/types.ts` and `src/engine/payoff/types.ts` are the source of truth and win over these plan line numbers): `DecideSnapshot` L166-181, `RecordLine` L114-125, `MonthRecord` L130-134, `RecurringBill` L135-146, `DebtRecord` L147-152, `CardRecord` L153, `DecideLimits` L156-163, `BuyPayment` L186-190, `BuyCheck` L192, `PriceAdjustment`/`PriceInputs` L195-202, `CostLine`/`RunningCosts` L210-211, `InvestCheck` L212, `PlanReason` L216-218, `Plan` L227-239 (`paymentSteps` for the D-09 series; `finalMonthly` display only), `VerdictState` L274, `WarningCode` L275, `MissingReason` L277, `BasisMarker` L278, `PurchaseSize` L283, `Assessment` L329-350, `Verdict` L351, `DecideOption` L355-361, `AlternativeCode`/`SuppressionCode` L365-366, `Alternatives` L382-388, `SetbackInput`/`SetbackReport` L392-399, `WaitPlan` L402-409, `RoughFigures`/`FirstRead` L412-419.
 
 Code unions the copy maps must cover exhaustively (`satisfies Record<Code, string>`):
 - `VerdictState = 'fits'|'adjust'|'no'|'missing'`
-- `WarningCode = 'month'|'cash'|'dsr'|'owe'|'inv'`
-- `PlanReason = 'card_not_accepted'|'card_missing'|'card_apr_missing'|'card_minimum_terms_missing'|'dealer_cap_missing'|'loan_term_missing'|'loan_apr_missing'|'instalment_amount_missing'|'instalment_count_missing'|'invest_term_missing'`; `MissingReason = PlanReason | 'no_full_month'|'split_weights_zero'|'split_amounts_zero'`
+- `WarningCode = 'month'|'cash'|'cash_dip'|'dsr'|'owe'|'inv'`
+- `PlanReason = 'card_not_accepted'|'card_missing'|'card_apr_missing'|'card_minimum_terms_missing'|'dealer_cap_missing'|'loan_term_missing'|'loan_apr_missing'|'instalment_amount_missing'|'instalment_count_missing'|'instalment_total_below_price'|'invest_term_missing'`; `MissingReason = PlanReason | 'no_full_month'|'split_weights_zero'|'split_amounts_zero'|'projection_rate_out_of_range'` (as executed, 2026-10-16; `ProjectionRangeCode = 'exceeds_range'` on nullable projections)
 - `SuppressionCode = 'month_short'|'too_thin'|'nothing_freed'|'past_horizon'|'nothing_spare'`
 - `AlternativeCode = 'as_planned'|'cheaper'|'wait_and_save'|'skip'`
 - `OptionCode = 'affordable_price'|'longer_term'|'cut_line'|'earn_more'|'save_first'|'do_without'`
@@ -453,7 +453,7 @@ recordWrittenVersion('category_rules', vars.id, [vars.expectedVersion, expected]
 
 **Header convention** (L1-8): describe the replay key (step id minted once before `mutate()`; RPC replay returns `already-applied`).
 
-**Pure builder separated from the hook** (L61-157): `buildEntryListWrite(items, ctx, mint)` returns `{ rows, series }`; copy as `buildGoAheadWrite(check, verdict, ctx, mint)` returning `{ rows, series, debt, links }`. Sign rule (L109-115): expenses are negative `original_amount`. Series via `seriesInputFromRow(...)` (L131-148) from `./recurringSeries`; loan series count = `plan.months`, last payment `plan.finalMonthly` (04-05 L237).
+**Pure builder separated from the hook** (L61-157): `buildEntryListWrite(items, ctx, mint)` returns `{ rows, series }`; copy as `buildGoAheadWrite(check, verdict, ctx, mint)` returning `{ rows, series, debt, links }`. Sign rule (L109-115): expenses are negative `original_amount`. Series via `seriesInputFromRow(...)` (L131-148) from `./recurringSeries`; series are written from `plan.paymentSteps` (one series per multi-month run, a pending row for a one-month run; the source of truth, D-09 / 05-20), never from `plan.months` × `plan.monthly`; `plan.finalMonthly` is display only (alignment 2026-10-16: `plan.months` is the months actually paid, which the rounded-up level payment can make fewer than the term typed, 04 D-64).
 
 **Persisted vars are JSON only** (L160-168):
 ```typescript
@@ -569,7 +569,8 @@ Use `homeAmountFor` for rows, `projectionHomeAmount` for series amounts and acco
 ```typescript
 import type { WarningCode, SuppressionCode, PurchaseSize } from '@/engine/decide';
 export const WARNING_TITLE = { month: 'decide.warn.month.title', cash: 'decide.warn.cash.title',
-  dsr: 'decide.warn.dsr.title', owe: 'decide.warn.owe.title', inv: 'decide.warn.inv.title' } as const satisfies Record<WarningCode, string>;
+  cash_dip: 'decide.warn.cashDip.title', dsr: 'decide.warn.dsr.title', owe: 'decide.warn.owe.title', inv: 'decide.warn.inv.title' } as const satisfies Record<WarningCode, string>;
+// The pattern only; the real key names are 05-02's (e.g. 'decide.warn.cashDipTitle') and 05-09's maps.
 export const SIZE_LABEL = { from_spare_this_month: 'decide.size.spare', from_savings: 'decide.size.savings',
   needs_spreading: 'decide.size.spreading' } as const satisfies Record<PurchaseSize, string>;
 ```
