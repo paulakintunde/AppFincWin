@@ -45,6 +45,15 @@ export function minorFromBigInt(value: bigint, fn: string): MinorUnits {
   return minorUnits(Number(value));
 }
 
+/**
+ * 04-REVIEW ME-01: the non-throwing conversion for projections. A value past Number.MAX_SAFE_INTEGER (either sign) is
+ * null, which the caller reports with the 'exceeds_range' code; every other value converts exactly.
+ */
+export function minorOrNull(value: bigint): MinorUnits | null {
+  const maxSafe = BigInt(Number.MAX_SAFE_INTEGER);
+  return value > maxSafe || value < -maxSafe ? null : minorUnits(Number(value));
+}
+
 /** For counts such as months-to-save, and the D-64 rounded-up level payment; other money rounding uses divideHalfUp. */
 export function ceilDivide(n: bigint, d: bigint): bigint {
   if (d <= 0n) {

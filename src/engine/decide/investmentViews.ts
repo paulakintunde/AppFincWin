@@ -1,8 +1,8 @@
 import { minorUnits, type MinorUnits } from '../money/types';
 import { MAX_TERM_MONTHS } from '../payoff/constants';
-import { futureValueNet, futureValuePath } from '../payoff/futureValuePath';
+import { futureValueNetExact, futureValuePathExact } from '../payoff/futureValuePath';
 import { amortiseSchedule, simulateMinimumSchedule } from '../payoff/rateSchedule';
-import { ONE_HUNDRED_PERCENT, ZERO_PERCENT, type Percent } from '../payoff/types';
+import { ONE_HUNDRED_PERCENT, ZERO_PERCENT, minorOrNull, type Percent } from '../payoff/types';
 import { DEFAULT_PROJECTION_HORIZON_MONTHS } from './constants';
 import { rateScheduleFor } from './plan';
 import { myPart } from './share';
@@ -72,13 +72,18 @@ function debtScheduleOf(check: BuyCheck, plan: Plan): DebtSchedule {
   }
 }
 
-function figure(rate: Percent, contributed: number, projected: MinorUnits): RateFigure {
-  return {
-    rate,
-    contributed: minorUnits(contributed),
-    projected,
-    growth: minorUnits(projected - contributed),
-  };
+/** 04-REVIEW ME-01: an exact projection past the safe range is null with 'exceeds_range', never thrown. */
+function figure(rate: Percent, contributed: number, exact: bigint | null): RateFigure {
+  const projected = exact === null ? null : minorOrNull(exact);
+  return projected === null
+    ? { rate, contributed: minorUnits(contributed), projected: null, growth: null, rangeCode: 'exceeds_range' }
+    : {
+        rate,
+        contributed: minorUnits(contributed),
+        projected,
+        growth: minorUnits(projected - contributed),
+        rangeCode: null,
+      };
 }
 
 /**
@@ -147,7 +152,7 @@ export function investmentViews(
   const lump = myPart(plan.price, share);
   const priceInvested = {
     lump,
-    byRate: rates.map((r) => figure(r.rate, lump, futureValueNet(zero, r.rate, horizon, lump, fee))),
+    byRate: rates.map((r) => figure(r.rate, lump, futureValueNetExact(zero, r.rate, horizon, lump, fee))),
   };
 
   // (b)
@@ -158,16 +163,18 @@ export function investmentViews(
     monthlyRunning: minorUnits(running),
     byRate: rates.map((r) => {
       let contributed = running * horizon;
-      let projected: number = futureValueNet(minorUnits(running), r.rate, horizon, zero, fee);
+      let projected: bigint | null = futureValueNetExact(minorUnits(running), r.rate, horizon, zero, fee);
       for (const s of steps) {
         if (s.fromMonth > horizon) continue;
         const to = Math.min(s.toMonth, horizon);
         const length = to - s.fromMonth + 1;
         contributed += s.mine * length;
-        const atEnd = futureValueNet(s.mine, r.rate, length, zero, fee);
-        projected += futureValueNet(zero, r.rate, horizon - to, atEnd, fee);
+        // each run's value at its end, one rounding (D-20), then grown to the horizon; out of range at any step -> null
+        const atEnd = minorOrNull(futureValueNetExact(s.mine, r.rate, length, zero, fee));
+        projected =
+          projected === null || atEnd === null ? null : projected + futureValueNetExact(zero, r.rate, horizon - to, atEnd, fee);
       }
-      return figure(r.rate, contributed, minorUnits(projected));
+      return figure(r.rate, contributed, projected);
     }),
   };
 
@@ -177,7 +184,9 @@ export function investmentViews(
     paused > 0
       ? {
           pausedMonthly: paused,
-          byRate: rates.map((r) => figure(r.rate, paused * horizon, futureValueNet(paused, r.rate, horizon, zero, fee))),
+          byRate: rates.map((r) =>
+            figure(r.rate, paused * horizon, futureValueNetExact(paused, r.rate, horizon, zero, fee))
+          ),
         }
       : null;
 
@@ -185,11 +194,13 @@ export function investmentViews(
   const debt = debtScheduleOf(check, plan);
   const owedAfter = (m: number): number => (m === 0 ? debt.start : (debt.after[Math.min(m, debt.after.length) - 1] ?? 0));
   const monthlySurplus = context.leftBefore + snapshot.monthlySaving;
+  // 04-REVIEW ME-01: the invested part is exact (bigint); a point past the safe range is null and the path carries
+  // 'exceeds_range' instead of throwing.
   const netWorth: NetWorthPath[] = rates.map((r) => {
-    const investedWithout = futureValuePath(snapshot.monthlyInvesting, r.rate, horizon, snapshot.investmentBalance, fee);
-    const investedWith = futureValuePath(assessment.investingAfter, r.rate, horizon, snapshot.investmentBalance, fee);
-    const withoutPurchase: MinorUnits[] = [];
-    const withPurchase: MinorUnits[] = [];
+    const investedWithout = futureValuePathExact(snapshot.monthlyInvesting, r.rate, horizon, snapshot.investmentBalance, fee);
+    const investedWith = futureValuePathExact(assessment.investingAfter, r.rate, horizon, snapshot.investmentBalance, fee);
+    const withoutPurchase: (MinorUnits | null)[] = [];
+    const withPurchase: (MinorUnits | null)[] = [];
     let cashWithout: number = context.cashAfterBills;
     let cashWith: number = context.cashAfterBills - assessment.mineDayOne;
     for (let m = 0; m <= horizon; m += 1) {
@@ -197,10 +208,13 @@ export function investmentViews(
         cashWithout += monthlySurplus;
         cashWith += monthlySurplus + assessment.investingAtRisk - paymentAt[m]! - assessment.mineRunning;
       }
-      withoutPurchase.push(minorUnits(cashWithout + investedWithout[m]! - context.debtBalance));
-      withPurchase.push(minorUnits(cashWith + investedWith[m]! - context.debtBalance - owedAfter(m)));
+      withoutPurchase.push(minorOrNull(BigInt(cashWithout) + investedWithout[m]! - BigInt(context.debtBalance)));
+      withPurchase.push(
+        minorOrNull(BigInt(cashWith) + investedWith[m]! - BigInt(context.debtBalance) - BigInt(owedAfter(m)))
+      );
     }
-    return { rate: r.rate, withoutPurchase, withPurchase };
+    const outOfRange = withoutPurchase.includes(null) || withPurchase.includes(null);
+    return { rate: r.rate, withoutPurchase, withPurchase, rangeCode: outOfRange ? 'exceeds_range' : null };
   });
 
   return {

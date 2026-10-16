@@ -360,7 +360,14 @@ export interface Warning {
   readonly code: WarningCode;
   readonly shortfall: MinorUnits;
 }
-export type MissingReason = PlanReason | 'no_full_month' | 'split_weights_zero' | 'split_amounts_zero';
+// projection_rate_out_of_range: 04-REVIEW ME-01, an entered projection rate (projectionRates or projectionReturn) above
+// MAX_PROJECTION_RATE (100% a year) is invalid input, rejected with this code rather than thrown
+export type MissingReason =
+  | PlanReason
+  | 'no_full_month'
+  | 'split_weights_zero'
+  | 'split_amounts_zero'
+  | 'projection_rate_out_of_range';
 export type BasisMarker = 'logged_months' | 'first_read_rough_figures';
 export type BasisFactCode = 'debt_rate_exceeds_return' | 'cash_tight_before_payday'; // D-31, D-59
 // D-36: size of the purchase relative to the user's own money, judged as if paid in cash whatever the method.
@@ -561,7 +568,8 @@ export type DecideOption =
       readonly code: 'do_without';
       readonly keptMonthly: MinorUnits;
       readonly horizonMonths: number;
-      readonly projected: MinorUnits;
+      readonly projected: MinorUnits | null; // null exactly when rangeCode is 'exceeds_range' (ME-01)
+      readonly rangeCode: ProjectionRangeCode | null;
       readonly projectionReturn: Percent;
       readonly byRate: readonly RateFigure[];
     };
@@ -579,8 +587,9 @@ export interface AlternativeRow {
   readonly dayOne: MinorUnits | null;
   readonly monthly: MinorUnits | null;
   readonly contributed: MinorUnits | null;
-  readonly projected: MinorUnits | null; // null when suppressed or not applicable; at limits.projectionReturn (prototype parity)
+  readonly projected: MinorUnits | null; // null when suppressed, not applicable or out of range (rangeCode); at limits.projectionReturn (prototype parity)
   readonly growth: MinorUnits | null;
+  readonly rangeCode: ProjectionRangeCode | null; // ME-01: 'exceeds_range' when the projected figure is past Number.MAX_SAFE_INTEGER; null otherwise
   readonly byRate: readonly RateFigure[] | null; // D-51: one RateFigure per limits.projectionRates entry (0% first, then the user's rates); null exactly when contributed is null
   readonly suppression: Suppression | null;
 }
@@ -945,16 +954,21 @@ export interface NetProjectionRate {
   readonly netRateScaled: bigint;
 }
 export type HorizonSource = 'plan_term' | 'cash_default' | 'user';
+// 04-REVIEW ME-01: a projection past Number.MAX_SAFE_INTEGER (a high entered rate over a long horizon) is reported, never
+// thrown: the figure is null and carries 'exceeds_range'. Phase 5 words it; the engine never rounds or caps a figure.
+export type ProjectionRangeCode = 'exceeds_range';
 export interface RateFigure {
   readonly rate: Percent;
   readonly contributed: MinorUnits;
-  readonly projected: MinorUnits;
-  readonly growth: MinorUnits;
+  readonly projected: MinorUnits | null; // null exactly when rangeCode is 'exceeds_range' (ME-01)
+  readonly growth: MinorUnits | null; // null exactly when projected is null
+  readonly rangeCode: ProjectionRangeCode | null;
 }
 export interface NetWorthPath {
   readonly rate: Percent;
-  readonly withoutPurchase: readonly MinorUnits[];
-  readonly withPurchase: readonly MinorUnits[];
+  readonly withoutPurchase: readonly (MinorUnits | null)[]; // a point is null when it is out of range (ME-01)
+  readonly withPurchase: readonly (MinorUnits | null)[];
+  readonly rangeCode: ProjectionRangeCode | null; // 'exceeds_range' when any point of either path is null
 } // index m = 0..horizonMonths
 export interface InvestmentViews {
   readonly horizonMonths: number;

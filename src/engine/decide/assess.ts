@@ -24,6 +24,7 @@ import {
   BILLS_DUE_HORIZON_DAYS,
   CASH_PATH_DAYS,
   DEFAULT_DSR_LINE,
+  MAX_PROJECTION_RATE,
   DEFAULT_UNSECURED_INCOME_MULTIPLE,
   MONTHS_PER_YEAR,
   WARNING_ORDER,
@@ -141,7 +142,13 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
   if (!moneyResult.ok) addReason(moneyResult.reason);
   if (!purchase.ok) addReason(purchase.reason);
   if (!spending.ok) addReason(spending.reason);
-  if (!moneyResult.ok || !purchase.ok || !spending.ok) {
+  // 04-REVIEW ME-01: an entered projection rate above 100% a year is invalid input, reported with a code, never thrown.
+  const enteredRates = snapshot.projectionReturn === null
+    ? snapshot.projectionRates
+    : [...snapshot.projectionRates, snapshot.projectionReturn];
+  const rateOutOfRange = enteredRates.some((r) => r > MAX_PROJECTION_RATE);
+  if (rateOutOfRange) addReason('projection_rate_out_of_range');
+  if (!moneyResult.ok || !purchase.ok || !spending.ok || rateOutOfRange) {
     // D-46: from the money basis whenever it resolved; rough only when there is no full month
     const confidence = moneyResult.ok
       ? confidenceOf({

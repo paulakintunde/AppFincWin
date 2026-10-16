@@ -15,7 +15,7 @@
 import { divideHalfUp } from '../money/rounding';
 import type { MinorUnits } from '../money/types';
 import { MAX_TERM_MONTHS } from './constants';
-import { futureValue } from './futureValue';
+import { futureValueExact } from './futureValue';
 import { MONTHLY_RATE_DENOMINATOR, ONE_HUNDRED_PERCENT, ZERO_PERCENT, minorFromBigInt, type Percent } from './types';
 
 function assertInputs(fn: string, monthly: MinorUnits, months: number, seed: MinorUnits, holdingFee: Percent): void {
@@ -44,6 +44,31 @@ function valueAt(S: bigint, M: bigint, net: bigint, An: bigint, Dn: bigint, n: b
   return net < 0n ? divideHalfUp(-numerator, -denominator) : divideHalfUp(numerator, denominator);
 }
 
+/** The path as exact bigints, never range-checked (04-REVIEW ME-01; see futureValueExact). */
+export function futureValuePathExact(
+  monthly: MinorUnits,
+  apr: Percent,
+  months: number,
+  seed: MinorUnits,
+  holdingFee: Percent
+): readonly bigint[] {
+  assertInputs('futureValuePath', monthly, months, seed, holdingFee);
+  const net = apr - holdingFee;
+  const D = MONTHLY_RATE_DENOMINATOR;
+  const A = D + net;
+  const S = BigInt(seed);
+  const M = BigInt(monthly);
+  const path: bigint[] = [S];
+  let An = 1n;
+  let Dn = 1n;
+  for (let i = 1; i <= months; i += 1) {
+    An *= A;
+    Dn *= D;
+    path.push(valueAt(S, M, net, An, Dn, BigInt(i)));
+  }
+  return path;
+}
+
 export function futureValuePath(
   monthly: MinorUnits,
   apr: Percent,
@@ -51,21 +76,25 @@ export function futureValuePath(
   seed: MinorUnits,
   holdingFee: Percent
 ): readonly MinorUnits[] {
-  assertInputs('futureValuePath', monthly, months, seed, holdingFee);
-  const net = apr - holdingFee;
-  const D = MONTHLY_RATE_DENOMINATOR;
-  const A = D + net;
-  const S = BigInt(seed);
-  const M = BigInt(monthly);
-  const path: MinorUnits[] = [seed];
-  let An = 1n;
-  let Dn = 1n;
-  for (let i = 1; i <= months; i += 1) {
-    An *= A;
-    Dn *= D;
-    path.push(minorFromBigInt(valueAt(S, M, net, An, Dn, BigInt(i)), 'futureValuePath'));
+  return futureValuePathExact(monthly, apr, months, seed, holdingFee).map((v) => minorFromBigInt(v, 'futureValuePath'));
+}
+
+/** futureValueNet as an exact bigint, never range-checked (04-REVIEW ME-01). */
+export function futureValueNetExact(
+  monthly: MinorUnits,
+  apr: Percent,
+  months: number,
+  seed: MinorUnits,
+  holdingFee: Percent
+): bigint {
+  assertInputs('futureValueNet', monthly, months, seed, holdingFee);
+  if (holdingFee === ZERO_PERCENT) {
+    return futureValueExact(monthly, apr, months, seed);
   }
-  return path;
+  const net = apr - holdingFee;
+  const n = BigInt(months);
+  const A = MONTHLY_RATE_DENOMINATOR + net;
+  return valueAt(BigInt(seed), BigInt(monthly), net, A ** n, MONTHLY_RATE_DENOMINATOR ** n, n);
 }
 
 export function futureValueNet(
@@ -75,15 +104,5 @@ export function futureValueNet(
   seed: MinorUnits,
   holdingFee: Percent
 ): MinorUnits {
-  assertInputs('futureValueNet', monthly, months, seed, holdingFee);
-  if (holdingFee === ZERO_PERCENT) {
-    return futureValue(monthly, apr, months, seed);
-  }
-  const net = apr - holdingFee;
-  const n = BigInt(months);
-  const A = MONTHLY_RATE_DENOMINATOR + net;
-  return minorFromBigInt(
-    valueAt(BigInt(seed), BigInt(monthly), net, A ** n, MONTHLY_RATE_DENOMINATOR ** n, n),
-    'futureValueNet'
-  );
+  return minorFromBigInt(futureValueNetExact(monthly, apr, months, seed, holdingFee), 'futureValueNet');
 }

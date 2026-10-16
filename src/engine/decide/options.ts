@@ -1,8 +1,8 @@
 import { divideHalfUp } from '../money/rounding';
 import { minorUnits, type MinorUnits } from '../money/types';
 import { MAX_TERM_MONTHS } from '../payoff/constants';
-import { futureValue } from '../payoff/futureValue';
-import { ONE_HUNDRED_PERCENT, ceilDivide, minorFromBigInt, percentFromScaled } from '../payoff/types';
+import { futureValueExact } from '../payoff/futureValue';
+import { ONE_HUNDRED_PERCENT, ceilDivide, minorFromBigInt, minorOrNull, percentFromScaled } from '../payoff/types';
 import { assessPlan } from './assess';
 import { affordablePrice } from './bisect';
 import {
@@ -136,15 +136,23 @@ export function buildOptions(
   const keptMonthly = assessment.newMonthly > 0 ? assessment.newMonthly : minorUnits(0);
   const horizonMonths = plan.months > 0 ? plan.months : DO_WITHOUT_FALLBACK_HORIZON_MONTHS;
   const contributed = mu(big(keptMonthly) * big(horizonMonths));
+  // 04-REVIEW ME-01: a projection past the safe range is null with 'exceeds_range', never thrown, so one projected figure
+  // can no longer take down the affordable price, cut-line and save-first options.
   const byRate: RateFigure[] = context.limits.projectionRates.map((r) => {
-    const projected = futureValue(keptMonthly, r.rate, horizonMonths, minorUnits(0));
-    return { rate: r.rate, contributed, projected, growth: mu(big(projected) - big(contributed)) };
+    const projected = minorOrNull(futureValueExact(keptMonthly, r.rate, horizonMonths, minorUnits(0)));
+    return projected === null
+      ? { rate: r.rate, contributed, projected, growth: null, rangeCode: 'exceeds_range' }
+      : { rate: r.rate, contributed, projected, growth: mu(big(projected) - big(contributed)), rangeCode: null };
   });
+  const projected = minorOrNull(
+    futureValueExact(keptMonthly, context.limits.projectionReturn, horizonMonths, minorUnits(0))
+  );
   out.push({
     code: 'do_without',
     keptMonthly,
     horizonMonths,
-    projected: futureValue(keptMonthly, context.limits.projectionReturn, horizonMonths, minorUnits(0)),
+    projected,
+    rangeCode: projected === null ? 'exceeds_range' : null,
     projectionReturn: context.limits.projectionReturn,
     byRate,
   });

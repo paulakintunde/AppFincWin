@@ -263,7 +263,7 @@ describe('buildOptions order and content (DEC-13, D-19)', () => {
   it('do_without.byRate has 0% first and one entry per entered rate (D-51)', () => {
     const none = pick(optionsOf(BL(), BIG_LOAN), 'do_without');
     expect(none.byRate).toEqual([
-      { rate: ZERO_PERCENT, contributed: 191_667 * 12, projected: 191_667 * 12, growth: 0 },
+      { rate: ZERO_PERCENT, contributed: 191_667 * 12, projected: 191_667 * 12, growth: 0, rangeCode: null },
     ]);
     const s = BL({ projectionRates: [percent('5'), percent('7')], projectionReturn: percent('5') });
     const o = pick(optionsOf(s, BIG_LOAN), 'do_without');
@@ -271,7 +271,7 @@ describe('buildOptions order and content (DEC-13, D-19)', () => {
     for (const r of o.byRate) {
       expect(r.contributed).toBe(191_667 * 12);
       expect(r.projected).toBe(futureValue(mu(191_667), r.rate, 12, mu(0)));
-      expect(r.growth).toBe(r.projected - r.contributed);
+      expect(r.growth).toBe(r.projected! - r.contributed);
     }
     expect(o.projected).toBe(o.byRate[1]!.projected);
     expect(o.projectionReturn).toBe(percent('5'));

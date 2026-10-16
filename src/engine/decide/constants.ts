@@ -137,6 +137,10 @@ export const LATE_PAYMENT_COUNTS: readonly number[] = [1, 2]; // D-50
 // Cite: D-51: up to three user-entered rates, plus 0%.
 export const MAX_PROJECTION_RATES = 3; // D-51
 
+// Cite: 04-REVIEW ME-01 (user decision 2026-10-16): an entered projection rate above 100% a year is invalid input,
+// rejected with the code projection_rate_out_of_range (never thrown). The same bound as the D-63 holding fee.
+export const MAX_PROJECTION_RATE: Percent = percent('100'); // ME-01
+
 // Cite: FincWin behaviour constant (no published source; see 04-RESEARCH addendum §A). Behaviour constant: 5-year projection horizon for cash purchases with no term. User-editable.
 export const DEFAULT_PROJECTION_HORIZON_MONTHS = 60; // D-52
 

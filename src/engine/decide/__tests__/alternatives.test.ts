@@ -117,6 +117,7 @@ describe('buildAlternatives worked case B: everything spare (DEC-14)', () => {
       contributed: null,
       projected: null,
       growth: null,
+      rangeCode: null,
       byRate: null,
       suppression: null,
     });
@@ -344,6 +345,7 @@ describe('rates (D-51)', () => {
         contributed: seed + monthly * months,
         projected: futureValue(mu(monthly), five, months, mu(seed)),
         growth: futureValue(mu(monthly), five, months, mu(seed)) - (seed + monthly * months),
+        rangeCode: null,
       });
       expect(r.projected).toBe(r.byRate![0]!.projected); // projectionReturn null
     }

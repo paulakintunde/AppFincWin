@@ -179,6 +179,7 @@ describe('(a) price invested instead (D-52)', () => {
       contributed: 1_200_000,
       projected: 1_200_000,
       growth: 0,
+      rangeCode: null,
     });
     const p = futureValue(mu(0), pct('5'), 60, mu(1_200_000));
     expect(views.priceInvested.byRate[1]).toEqual({
@@ -186,6 +187,7 @@ describe('(a) price invested instead (D-52)', () => {
       contributed: 1_200_000,
       projected: p,
       growth: p - 1_200_000,
+      rangeCode: null,
     });
   });
   it('is my share of the price in a household', () => {
@@ -205,6 +207,7 @@ describe('(a) price invested instead (D-52)', () => {
       contributed: 1_200_000,
       projected: 1_465_196,
       growth: 265_196,
+      rangeCode: null,
     });
     expect(1_465_196).toBe(futureValue(mu(0), pct('4'), 60, mu(1_200_000)));
     const zero = at(views.priceInvested.byRate, ZERO_PERCENT);
@@ -252,7 +255,7 @@ describe('(b) payments invested instead (D-52)', () => {
     }
     const five = views.paymentsInvested.byRate[1]!;
     expect(five.projected).toBe(expected);
-    expect(five.growth).toBe(five.projected - five.contributed);
+    expect(five.growth).toBe(five.projected! - five.contributed);
   });
   it('D-63: a 1% fee at 5% is the same sum at 4%', () => {
     const fee = run(s, check, { horizonMonths: null, holdingFee: pct('1') }).views;
@@ -297,6 +300,7 @@ describe('(c) impact on current investing (D-35, D-52)', () => {
       contributed: 300_000,
       projected: 300_000,
       growth: 0,
+      rangeCode: null,
     });
     expect(views.pauseImpact!.byRate[1]!.projected).toBe(futureValue(mu(25_000), pct('5'), 12, mu(0)));
   });
@@ -307,6 +311,7 @@ describe('(c) impact on current investing (D-35, D-52)', () => {
       contributed: 300_000,
       projected: 299_313,
       growth: -687,
+      rangeCode: null,
     });
   });
 });

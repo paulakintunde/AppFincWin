@@ -1,7 +1,7 @@
 import { divideHalfUp } from '../money/rounding';
 import { minorUnits, type MinorUnits } from '../money/types';
-import { futureValue } from '../payoff/futureValue';
-import { ceilDivide, minorFromBigInt } from '../payoff/types';
+import { futureValueExact } from '../payoff/futureValue';
+import { ceilDivide, minorFromBigInt, minorOrNull, type Percent } from '../payoff/types';
 import { assessPlan } from './assess';
 import {
   ALTERNATIVES_HORIZON_FALLBACK,
@@ -87,11 +87,22 @@ export function buildAlternatives(
   const spareMonthly = minorUnits(atLeast0(context.leftBefore));
   const { mineDayOne, mineMonthly, newMonthly } = assessment;
 
+  // 04-REVIEW ME-01: a projection past the safe range is reported as 'exceeds_range' with null figures, never thrown.
+  const projectOne = (
+    rate: Percent,
+    monthly: number,
+    months: number,
+    seed: number
+  ): { readonly contributed: MinorUnits; readonly projected: MinorUnits | null; readonly growth: MinorUnits | null } => {
+    const contributed = mu(BigInt(seed) + BigInt(monthly) * BigInt(months));
+    const projected = minorOrNull(futureValueExact(minorUnits(monthly), rate, months, minorUnits(seed)));
+    const growth = projected === null ? null : minorUnits(atLeast0(projected - contributed));
+    return { contributed, projected, growth };
+  };
   const projectAt = (monthly: number, months: number, seed: number): readonly RateFigure[] =>
     rates.map((r) => {
-      const contributed = mu(BigInt(seed) + BigInt(monthly) * BigInt(months));
-      const projected = futureValue(minorUnits(monthly), r.rate, months, minorUnits(seed));
-      return { rate: r.rate, contributed, projected, growth: minorUnits(atLeast0(projected - contributed)) };
+      const f = projectOne(r.rate, monthly, months, seed);
+      return { rate: r.rate, ...f, rangeCode: f.projected === null ? 'exceeds_range' : null };
     });
 
   const row = (
@@ -102,17 +113,25 @@ export function buildAlternatives(
     suppression: Suppression | null
   ): AlternativeRow => {
     if (suppression !== null) {
-      return { code, dayOne, monthly, contributed: null, projected: null, growth: null, byRate: null, suppression };
+      return {
+        code,
+        dayOne,
+        monthly,
+        contributed: null,
+        projected: null,
+        growth: null,
+        rangeCode: null,
+        byRate: null,
+        suppression,
+      };
     }
-    const contributed = mu(BigInt(figures.seed) + BigInt(figures.monthly) * BigInt(figures.months));
-    const projected = futureValue(minorUnits(figures.monthly), ret, figures.months, minorUnits(figures.seed));
+    const f = projectOne(ret, figures.monthly, figures.months, figures.seed);
     return {
       code,
       dayOne,
       monthly,
-      contributed,
-      projected,
-      growth: minorUnits(atLeast0(projected - contributed)),
+      ...f,
+      rangeCode: f.projected === null ? 'exceeds_range' : null,
       byRate: projectAt(figures.monthly, figures.months, figures.seed),
       suppression: null,
     };
@@ -188,6 +207,7 @@ export function buildAlternatives(
         contributed: null,
         projected: null,
         growth: null,
+        rangeCode: null,
         byRate: null,
         suppression: null,
       },
