@@ -197,7 +197,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DEC-13**: Engine produces the options list in order: affordable price (bisected), longer term, cut a named expense line, earn more, save first, do without
 - [ ] **DEC-14**: Engine computes the four-way alternatives (as planned, cheaper, wait and save, skip), each with its outcome, and suppresses and labels any row whose money is not genuinely spare
 - [ ] **DEC-15**: Engine applies the four setbacks (unexpected expense, income drops, job or client loss, invoices pay late) to a plan and re-assesses it
-- [ ] **DEC-16**: With no full month of history, engine returns a cash-level first read from a balance and rough monthly figures (cash covers it, month closes), marked as resting on the user's figures
+- [x] **DEC-16**: With no full month of history, engine returns a cash-level first read from a balance and rough monthly figures (cash covers it, month closes), marked as resting on the user's figures
 - [ ] **DEC-17**: Engine judges each open check together with all other open checks and reports both the combined and the standalone verdict (04 D-41)
 - [ ] **DEC-18**: Engine sizes the default cash cushion by income steadiness: 3 months Steady, 4.5 Variable, 6 Volatile, 3 under three full months; a user-set cushion wins (04 D-42)
 - [ ] **DEC-19**: Engine reports each line's margin and flags any line passed or failed by under 5% as on the edge, without changing the verdict state (04 D-43)
@@ -561,7 +561,7 @@ Populated during roadmap creation.
 | DEC-13 | Phase 4 - Decide Engine | Complete |
 | DEC-14 | Phase 4 - Decide Engine | Pending |
 | DEC-15 | Phase 4 - Decide Engine | Pending |
-| DEC-16 | Phase 4 - Decide Engine | Pending |
+| DEC-16 | Phase 4 - Decide Engine | Complete |
 | DEC-17 | Phase 4 - Decide Engine | Pending |
 | DEC-18 | Phase 4 - Decide Engine | Pending |
 | DEC-19 | Phase 4 - Decide Engine | Pending |

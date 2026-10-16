@@ -589,7 +589,7 @@ Plans:
 **Wave 6** *(blocked on Wave 5 completion)*
 - [x] 04-09-PLAN.md — exact integer bisection and the ordered options list on the combined position, per-rate projections (DEC-09/13)
 - [x] 04-10-PLAN.md — four-way alternatives with suppression and per-rate projections, setbacks, wait plan (DEC-14/15)
-- [ ] 04-11-PLAN.md — decide golden parity and named deviation tests (D-22)
+- [x] 04-11-PLAN.md — decide golden parity and named deviation tests (D-22)
 - [ ] 04-18-PLAN.md — position layer: combined open checks (D-41), future changes and purchase-linked income loss (D-45, D-53)
 - [ ] 04-19-PLAN.md — variable-rate stress (D-49) and payback months (D-53)
 
