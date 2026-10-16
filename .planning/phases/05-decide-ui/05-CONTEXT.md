@@ -263,6 +263,7 @@ Engine decisions are 04 D-41…D-58. These are the Phase 5 UI and data counterpa
 - Household-scope screenshots and a 2-member demo → after Phase 8.
 - Real Free/Pro enforcement and the paywall → Phase 9, with D-17 amending PRICING.
 - Level gating of Decide sub-features → Phase 9 (03 D-03: the tab itself is never hidden).
+- A province field so Quebec users get the CA-QC market row for card minimum terms. Region is only known at country level today, so Quebec users get the rest-of-Canada row with a note (05 D-40). Deferred 2026-10-16.
 - A custom month-grid date picker → not planned. Revisit only if the native picker fails design review.
 
 </deferred>
