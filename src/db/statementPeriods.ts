@@ -1,0 +1,52 @@
+// 05-05: statement coverage periods (05-03). A period records that an account's statement
+// import covered [period_start, period_end]; re-inserting the same id is success (replay).
+
+import { toDbError } from './errors';
+import type { DbClient } from './rows';
+
+export interface StatementPeriodRow {
+  id: string;
+  household_id: string;
+  account_id: string;
+  period_start: string;
+  period_end: string;
+}
+
+const COLUMNS = 'id, household_id, account_id, period_start, period_end';
+const UNIQUE_VIOLATION = '23505';
+
+export async function fetchStatementPeriods(client: DbClient): Promise<StatementPeriodRow[]> {
+  const { data, error, status } = await client
+    .from('statement_periods')
+    .select(COLUMNS)
+    .order('period_start', { ascending: true });
+
+  if (error) throw toDbError(error, status);
+  return (data as StatementPeriodRow[] | null) ?? [];
+}
+
+/** Returns the stored row, or null when this id was already recorded (23505). */
+export async function insertStatementPeriod(
+  client: DbClient,
+  row: StatementPeriodRow
+): Promise<StatementPeriodRow | null> {
+  if (row.period_end < row.period_start) {
+    throw new RangeError('insertStatementPeriod: period_end is before period_start');
+  }
+
+  const { data, error, status } = await client
+    .from('statement_periods')
+    .insert({
+      id: row.id,
+      household_id: row.household_id,
+      account_id: row.account_id,
+      period_start: row.period_start,
+      period_end: row.period_end,
+    })
+    .select(COLUMNS)
+    .single();
+
+  if (!error) return data as StatementPeriodRow;
+  if (error.code === UNIQUE_VIOLATION) return null;
+  throw toDbError(error, status);
+}
