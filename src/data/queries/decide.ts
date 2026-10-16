@@ -318,3 +318,12 @@ export function useOtherChecks(excludeId: string | null): StackSelection {
     [result, checks, excludeId, rc.today]
   );
 }
+
+/** 05-22 (D-12): the household's lines in a window, for the attach picker. Row-derived (05-12 key). */
+export function useAttachCandidates(householdId: string | null, from: string, toInclusive: string, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.decideAttachCandidates(householdId ?? '', from, toInclusive),
+    queryFn: () => fetchTransactionsInRange(supabase, householdId as string, { from, toInclusive }),
+    enabled: enabled && Boolean(householdId),
+  });
+}
