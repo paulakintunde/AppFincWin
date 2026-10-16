@@ -8,3 +8,4 @@ export * from './constants';
 export * from './amortise';
 export * from './futureValue';
 export * from './simulateMinimum';
+export * from './rateSchedule';
