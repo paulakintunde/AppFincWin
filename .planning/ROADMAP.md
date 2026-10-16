@@ -614,7 +614,7 @@ Plans:
   6. A brand-new user reaches a first verdict within their first session, in roughly a minute, without having logged or imported a month, and the verdict says plainly what it rests on and how an import sharpens it.
   7. Store screenshots 1–3 (verdict, what breaks, alternatives) can be captured from the App Review demo account's sample scenario with nothing staged outside the real app.
 **Launch inputs** (from `research/LAUNCH-POSITIONING.md`, 2026-09-26): the store name is *FincWin: Can I Afford It?*, so the quick check is the product's public promise and stays in the free tier (see `research/PRICING.md`). The first-read question is settled (04-CONTEXT D-11: rough figures give a cash-level answer only, via DEC-16). Discuss-phase must still settle the demo-account scenario (sofa $1,800 in a household of two; car $14,500 on a loan). Onboarding order — welcome, consent, one account, rough month, first check, then "Bring your history" — is shared with Phase 2 (02-30) and Phase 9, where the level questions move after the first verdict.
-**Plans**: 52 plans in 10 waves (planned 2026-10-15 against 05-CONTEXT D-01..D-37 and the 22-plan Phase 4 `decide()` API; plan checker passed with 0 blockers after the scope expansion; defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate).
+**Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate).
 Plans:
 **Wave 1**
 - [ ] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
@@ -666,6 +666,7 @@ Plans:
 - [ ] 05-22-PLAN.md — Past decisions and detail sheet (estimate vs actual, attach/unlink)
 - [ ] 05-23-PLAN.md — Onboarding rough figures and first check (cash-only skip path)
 - [ ] 05-42-PLAN.md — Step 3 depth sections: day by day, expected income, cushion and margins, runway
+- [ ] 05-53-PLAN.md — Step 2 card terms: card minimum pre-fill, paid in full, card fees and costs (D-40, D-44)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 05-24-PLAN.md — Check flow layout, swipe interceptor, useCheckDraft
