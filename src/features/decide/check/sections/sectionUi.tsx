@@ -49,21 +49,24 @@ export interface TableRowProps {
   emphasis?: boolean;
   tone?: 'ink' | 'danger' | 'accent';
   a11yLabel?: string;
+  /** A margin or fact line under the sub text, in warn1 (05-42). */
+  extra?: string;
 }
 
-export function TableRow({ label, sub, value, leading, emphasis = false, tone = 'ink', a11yLabel }: TableRowProps) {
+export function TableRow({ label, sub, value, leading, emphasis = false, tone = 'ink', a11yLabel, extra }: TableRowProps) {
   const { colors, pairing } = useTheme();
   const valueColor = tone === 'danger' ? colors.danger : tone === 'accent' ? colors.accent : colors.ink;
   return (
     <View
       accessible
-      accessibilityLabel={a11yLabel ?? [label, value, sub].filter(Boolean).join(', ')}
+      accessibilityLabel={a11yLabel ?? [label, value, sub, extra].filter(Boolean).join(', ')}
       style={[styles.row, { borderTopColor: colors.line2 }]}
     >
       {leading}
       <View style={styles.text}>
         <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink, fontWeight: emphasis ? '700' : undefined }}>{label}</Text>
         {sub ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{sub}</Text> : null}
+        {extra ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{extra}</Text> : null}
       </View>
       {value ? (
         <Text scale="capped" style={{ ...textRole(pairing, 'label'), color: valueColor, textAlign: 'right' }}>

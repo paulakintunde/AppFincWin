@@ -8,6 +8,9 @@ import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { percentText } from '../../copy/percentText';
+import { cushionCopy, marginText } from '../../copy/depthVerdictCopy';
+import type { LineMargin, MarginLine } from '@/engine/decide';
+import { refText, type Translate } from '../refText';
 import { Dot, TableRow, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
 
 interface LineRow {
@@ -21,6 +24,7 @@ interface LineRow {
 export function LinesSection(props: SectionProps) {
   const { computation, whole, currency, expanded, onToggle } = props;
   const t = useT();
+  const tr = t as Translate;
   const { colors } = useTheme();
   const a = assessmentOf(computation);
   if (!a) return null;
@@ -40,7 +44,11 @@ export function LinesSection(props: SectionProps) {
       label: t('decide.section.lineCash'),
       ok: a.checks.cash,
       fail: t('decide.section.lineShort', { amount: fmt(cashShort) }),
-      desc: t('decide.section.lineCashDesc', { cushion: fmt(limits.reserve), cashAfter: fmt(a.cashAfter) }),
+      desc: t('decide.depth.cushion.row', {
+        cushion: fmt(limits.reserve),
+        cashAfter: fmt(a.cashAfter),
+        reason: refText(tr, cushionCopy(a.context)),
+      }),
     },
     {
       key: 'month',
@@ -72,6 +80,17 @@ export function LinesSection(props: SectionProps) {
       desc: t('decide.section.lineSavingDesc', { after: fmt(a.savingAfter), floor: fmt(limits.savingFloor) }),
     },
   ];
+  // D-25: each line's margin, shown under a flagged or missed line; the cash row also carries the cash-before-payday margin.
+  const margins = computation.decision?.margins ?? [];
+  const stackedApplied = computation.decision ? computation.decision.stacked.filter((s) => s.status === 'applied').length : 0;
+  const tightFact = a.cashPath.status === 'available' ? a.cashPath.tightBeforePayday : null;
+  const formatDate = (d: string) => whole.formatDate(d);
+  const shown = (m: LineMargin | undefined): LineMargin | undefined => (m && (m.flag === 'on_edge' || m.margin < 0) ? m : undefined);
+  const marginFor = (key: string): LineMargin | undefined => {
+    const find = (line: MarginLine) => margins.find((m) => m.line === line);
+    if (key === 'cash') return shown(find('cash')) ?? shown(find('cash_path'));
+    return key === 'save' ? undefined : shown(find(key as MarginLine));
+  };
   const clear = rows.filter((r) => r.ok).length;
   return (
     <CollapsibleSection
@@ -82,6 +101,8 @@ export function LinesSection(props: SectionProps) {
     >
       {rows.map((r) => {
         const word = r.ok ? t('decide.section.lineClear') : r.fail;
+        const m = marginFor(r.key);
+        const extra = m ? refText(tr, marginText(m, fmt, { fact: tightFact, stackedApplied, formatDate })) : undefined;
         return (
           <TableRow
             key={r.key}
@@ -89,8 +110,9 @@ export function LinesSection(props: SectionProps) {
             label={r.label}
             sub={r.desc}
             value={word}
+            extra={extra}
             tone={r.ok ? 'ink' : 'danger'}
-            a11yLabel={`${r.label}, ${word}. ${r.desc}`}
+            a11yLabel={[`${r.label}, ${word}. ${r.desc}`, extra].filter(Boolean).join('. ')}
           />
         );
       })}

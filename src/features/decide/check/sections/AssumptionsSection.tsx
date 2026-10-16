@@ -15,7 +15,10 @@ import { fontSize, textRole } from '@/theme/typography';
 import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { STEADINESS_LABEL } from '../../copy/codeMaps';
 import { percentText } from '../../copy/percentText';
-import type { SnapshotMeta } from '../../snapshot/types';
+import { conversionBasisCopy } from '../../copy/depthVerdictCopy';
+import type { CopyRef } from '../../copy/types';
+import type { ConversionNote, SnapshotMeta, StackSelection } from '../../snapshot/types';
+import { refText, type Translate } from '../refText';
 import { TableRow, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
 
 export interface AssumptionsSectionProps extends SectionProps {
@@ -23,7 +26,16 @@ export interface AssumptionsSectionProps extends SectionProps {
   meta: SnapshotMeta;
   /** D-40: opens the card terms sheet; without it the 'Card payments' row is plain. */
   onEditCardMinimum?: () => void;
+  /** 05-42: other open checks left out of the verdict (A16). */
+  stack?: StackSelection;
+  /** 05-42: one row per converted currency (D-37), from source.conversions. */
+  conversions?: readonly ConversionNote[];
+  /** 05-42: the basis row's facts, listed in full here (D-24, D-37); the card minimum item is skipped, the 'Card payments' row carries it. */
+  basisItems?: readonly CopyRef[];
+  formatDate?: (localDate: string) => string;
 }
+
+const CARD_MIN_KEY = 'decide.depth.cardMin.basis';
 
 interface Row {
   key: string;
@@ -32,8 +44,9 @@ interface Row {
 }
 
 export function AssumptionsSection(props: AssumptionsSectionProps) {
-  const { computation, whole, currency, expanded, onToggle, meta, onEditCardMinimum } = props;
+  const { computation, whole, currency, expanded, onToggle, meta, onEditCardMinimum, stack, conversions = [], basisItems = [], formatDate = (d: string) => d } = props;
   const t = useT();
+  const tr = t as Translate;
   const { colors, pairing } = useTheme();
   const a = assessmentOf(computation);
   const fmt = moneyOf(whole, currency);
@@ -85,6 +98,23 @@ export function AssumptionsSection(props: AssumptionsSectionProps) {
   if (meta.loansWithoutPayment > 0) {
     rows.push({ key: 'loan', label: t('decide.section.asLoanPayment'), value: t('decide.section.asLoanPaymentValue', { count: meta.loansWithoutPayment }) });
   }
+  // D-37, OQ-A1: one row per converted currency, and past lines keep the rate stamped when they were recorded.
+  const conversionRows = conversionBasisCopy(conversions, formatDate);
+  conversionRows.forEach((c, i) => {
+    rows.push({ key: `conv-${i}`, label: t('decide.depth.currency.assumptionTitle'), value: refText(tr, c) });
+  });
+  if (conversions.length > 0) rows.push({ key: 'pastLines', label: t('decide.depth.currency.assumptionTitle'), value: t('decide.depth.currency.pastLines') });
+  // A16: open checks left out of the combined position are counted, never silently dropped.
+  if (stack && stack.leftOutIncomplete > 0) {
+    rows.push({ key: 'leftIncomplete', label: t('decide.depth.combined.assumptionTitle'), value: t('decide.depth.combined.notCounted', { count: stack.leftOutIncomplete }) });
+  }
+  if (stack && stack.leftOutCurrency > 0) {
+    rows.push({ key: 'leftCurrency', label: t('decide.depth.combined.assumptionTitle'), value: t('decide.depth.combined.notCountedCurrency', { count: stack.leftOutCurrency }) });
+  }
+  // D-24, D-37: the basis facts in full, so a truncated basis row loses nothing.
+  basisItems
+    .filter((i) => i.key !== CARD_MIN_KEY)
+    .forEach((item, i) => rows.push({ key: `basis-${i}`, label: refText(tr, item), value: '' }));
   return (
     <CollapsibleSection
       title={t('decide.section.assumptionsTitle')}
@@ -109,7 +139,7 @@ export function AssumptionsSection(props: AssumptionsSectionProps) {
             <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>›</Text>
           </Pressable>
         ) : (
-          <TableRow key={r.key} label={r.label} sub={r.value} />
+          <TableRow key={r.key} label={r.label} sub={r.value || undefined} />
         ),
       )}
       <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkFaint, paddingTop: space.gapSm }}>

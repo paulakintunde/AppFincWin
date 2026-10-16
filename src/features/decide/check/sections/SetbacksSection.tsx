@@ -16,11 +16,13 @@ import { CloseGlyph } from '@/ui/CloseGlyph';
 import { hapticSelection } from '@/ui/haptics';
 import { Text } from '@/ui/Text';
 import { CASH_OUTCOME, SETBACK_LABEL } from '../../copy/codeMaps';
+import { runwayCopy } from '../../copy/depthInputsCopy';
+import { refText, type Translate } from '../refText';
 import { canUse } from '../../entitlements';
 import type { SetbackLine } from '../../snapshot/types';
 import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { LineEditorSheet, type LineEditorValue } from '../LineEditorSheet';
-import { Note, Tile, moneyOf, type SectionProps } from './sectionUi';
+import { Dot, Note, Tile, moneyOf, type SectionProps } from './sectionUi';
 
 const MAX_SETBACKS = 12;
 const DEFAULT_ASSUMED = { months: 3, percentDrop: 20, daysLate: 30 };
@@ -96,26 +98,35 @@ export function SetbacksSection(props: SectionProps) {
     update({ setbacks: [...lines, line] });
   };
 
+  // D-32: the runway lost to the purchase and, per setback, whether the new payments are still met.
+  const tr = t as Translate;
+  const runway = computation.incomeAtRisk ? runwayCopy(computation.incomeAtRisk) : null;
   const summary =
     report.runwayMonths === null
       ? t('decide.section.setbacksSummaryOpen')
-      : t('decide.section.setbacksSummary', { count: report.runwayMonths });
+      : runway?.summary
+        ? refText(tr, runway.summary)
+        : t('decide.section.setbacksSummary', { count: report.runwayMonths });
 
   return (
     <CollapsibleSection title={t('decide.section.setbacksTitle')} summary={summary} expanded={expanded} onToggle={onToggle}>
       <Note>{t('decide.section.setbacksNote')}</Note>
+      {runway?.lostLine ? <Note>{refText(tr, runway.lostLine)}</Note> : null}
       {lines.map((l, i) => {
         const r = report.results[i];
         if (!r) return null;
         const name = t(SETBACK_LABEL[l.code]);
         const after = r.outcome === 'wiped_out' ? t('decide.section.setbackWiped') : t('decide.section.setbackAfter', { amount: fmt(r.cashAfter) });
         const hit = t('decide.section.setbackHit', { amount: fmt(r.hit) });
+        const met = runway?.perSetback[i];
+        const metText = met ? refText(tr, met.line) : null;
+        const metOk = computation.incomeAtRisk?.setbacks[i]?.paymentsMet ?? true;
         return (
           <View key={l.id} style={[styles.row, { borderTopColor: colors.line2 }]}>
             <Pressable
               accessibilityRole="checkbox"
               accessibilityState={{ checked: l.enabled, disabled: readOnly }}
-              accessibilityLabel={`${name}, ${describe(l)}, ${hit}, ${after}`}
+              accessibilityLabel={[`${name}, ${describe(l)}, ${hit}, ${after}`, metText].filter(Boolean).join(', ')}
               disabled={readOnly}
               onPress={() => {
                 hapticSelection();
@@ -129,6 +140,12 @@ export function SetbacksSection(props: SectionProps) {
               <View style={styles.text}>
                 <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>{name}</Text>
                 <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{describe(l)}</Text>
+                {metText ? (
+                  <View style={styles.tag}>
+                    <Dot color={metOk ? colors.accent : colors.danger} />
+                    <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: metOk ? colors.inkMuted : colors.danger }}>{metText}</Text>
+                  </View>
+                ) : null}
               </View>
               <View style={styles.figures}>
                 <Text scale="capped" style={{ ...textRole(pairing, 'label'), color: colors.ink, textAlign: 'right' }}>
@@ -182,6 +199,7 @@ const styles = StyleSheet.create({
   main: { flex: 1, minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', gap: space.gapMd, paddingVertical: space.gapSm },
   box: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5 },
   text: { flex: 1, flexShrink: 1 },
+  tag: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
   figures: { alignItems: 'flex-end' },
   remove: { width: space.touchMin, height: space.touchMin, alignItems: 'center', justifyContent: 'center' },
   add: { minHeight: space.touchMin, justifyContent: 'center' },

@@ -56,7 +56,7 @@ describe('SetbacksSection', () => {
     const p = sectionProps(CASH_NO);
     await wrap(<SetbacksSection {...p} />);
     expect(screen.getByText('If something goes wrong')).toBeTruthy();
-    expect(screen.getByText('Runway 0 months')).toBeTruthy();
+    expect(screen.getByText('Runway 0 months, 3 less because of this')).toBeTruthy();
     for (const name of ['Unexpected expense', 'Income drops', 'Job or client loss', 'Invoices pay late']) {
       expect(screen.getByText(name)).toBeTruthy();
     }
