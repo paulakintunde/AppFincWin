@@ -187,7 +187,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DEC-03**: Engine simulates minimum payments on a revolving balance and correctly reports when the balance never clears
 - [x] **DEC-04**: Engine resolves any of four payment methods — paid in full, deposit plus loan, instalment plan, credit card — into a comparable plan
 - [x] **DEC-05**: Engine flags a plan as incomplete when its terms are not yet specified
-- [ ] **DEC-06**: Engine returns a verdict of fits, adjust, no, or missing, with up to six warnings ordered by shortfall size (the sixth, `cash_dip`, was added 2026-10-15, 04-CONTEXT D-44/D-59)
+- [x] **DEC-06**: Engine returns a verdict of fits, adjust, no, or missing, with up to six warnings ordered by shortfall size (the sixth, `cash_dip`, was added 2026-10-15, 04-CONTEXT D-44/D-59)
 - [ ] **DEC-07**: Engine derives income steadiness from the coefficient of variation across logged months, not from a user-stated answer
 - [x] **DEC-08**: Engine computes a household's share of a cost under the active split rule
 - [x] **DEC-09**: Engine finds the largest affordable price by bisection, and handles both "nothing is affordable" and "the full price already fits"
@@ -198,10 +198,10 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DEC-14**: Engine computes the four-way alternatives (as planned, cheaper, wait and save, skip), each with its outcome, and suppresses and labels any row whose money is not genuinely spare
 - [ ] **DEC-15**: Engine applies the four setbacks (unexpected expense, income drops, job or client loss, invoices pay late) to a plan and re-assesses it
 - [x] **DEC-16**: With no full month of history, engine returns a cash-level first read from a balance and rough monthly figures (cash covers it, month closes), marked as resting on the user's figures
-- [ ] **DEC-17**: Engine judges each open check together with all other open checks and reports both the combined and the standalone verdict (04 D-41)
+- [x] **DEC-17**: Engine judges each open check together with all other open checks and reports both the combined and the standalone verdict (04 D-41)
 - [ ] **DEC-18**: Engine sizes the default cash cushion by income steadiness: 3 months Steady, 4.5 Variable, 6 Volatile, 3 under three full months; a user-set cushion wins (04 D-42)
-- [ ] **DEC-19**: Engine reports each line's margin and flags any line passed or failed by under 5% as on the edge, without changing the verdict state (04 D-43)
-- [ ] **DEC-20**: Engine projects cash day by day for 90 days from confirmed pay and bill series and dated pending outflows, and raises `cash_dip` only when the purchase causes or deepens the dip (04 D-44, D-59, D-61)
+- [x] **DEC-19**: Engine reports each line's margin and flags any line passed or failed by under 5% as on the edge, without changing the verdict state (04 D-43)
+- [x] **DEC-20**: Engine projects cash day by day for 90 days from confirmed pay and bill series and dated pending outflows, and raises `cash_dip` only when the purchase causes or deepens the dip (04 D-44, D-59, D-61)
 - [ ] **DEC-21**: Engine applies user-entered dated income and spending changes and judges the month on the worst of the next 12 months (04 D-45)
 - [ ] **DEC-22**: Engine returns a confidence level (strong, fair, rough) with reasons on every verdict (04 D-46)
 - [x] **DEC-23**: Engine excludes user-marked one-off lines from averages and reports how many were left out (04 D-47)
@@ -209,7 +209,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DEC-25**: Engine stress-tests variable-rate plans at the entered rate plus 2 and plus 4 points, beside the verdict (04 D-49)
 - [ ] **DEC-26**: Engine reports the cost of one and two late instalment payments from a user-entered fee (04 D-50)
 - [ ] **DEC-27**: Engine projects the price invested instead, the payments invested instead, investing growth lost to a pause, and a net-worth path, at 0% and up to three user-entered rates, never a supplied rate (04 D-51, D-52)
-- [ ] **DEC-28**: Engine applies a purchase-linked income loss to the verdict, and shows a purchase-linked income gain only in a separate assessment with payback months (04 D-53)
+- [x] **DEC-28**: Engine applies a purchase-linked income loss to the verdict, and shows a purchase-linked income gain only in a separate assessment with payback months (04 D-53)
 - [ ] **DEC-29**: Engine re-runs the setbacks with the new plan and reports runway lost and which setbacks the new payments cannot survive (04 D-54)
 - [ ] **DEC-30**: Engine provides running-cost prompt categories by item type with no amounts, and treats user-entered loss of value and holding fees as non-cash figures (04 D-55, D-63)
 - [ ] **DEC-31**: Engine computes the average gap between past estimates and actuals once three decisions have actuals (04 D-56)
@@ -551,7 +551,7 @@ Populated during roadmap creation.
 | DEC-03 | Phase 4 - Decide Engine | Complete |
 | DEC-04 | Phase 4 - Decide Engine | Complete |
 | DEC-05 | Phase 4 - Decide Engine | Complete |
-| DEC-06 | Phase 4 - Decide Engine | Pending |
+| DEC-06 | Phase 4 - Decide Engine | Complete |
 | DEC-07 | Phase 4 - Decide Engine | Pending |
 | DEC-08 | Phase 4 - Decide Engine | Complete |
 | DEC-09 | Phase 4 - Decide Engine | Complete |
@@ -562,10 +562,10 @@ Populated during roadmap creation.
 | DEC-14 | Phase 4 - Decide Engine | Pending |
 | DEC-15 | Phase 4 - Decide Engine | Pending |
 | DEC-16 | Phase 4 - Decide Engine | Complete |
-| DEC-17 | Phase 4 - Decide Engine | Pending |
+| DEC-17 | Phase 4 - Decide Engine | Complete |
 | DEC-18 | Phase 4 - Decide Engine | Pending |
-| DEC-19 | Phase 4 - Decide Engine | Pending |
-| DEC-20 | Phase 4 - Decide Engine | Pending |
+| DEC-19 | Phase 4 - Decide Engine | Complete |
+| DEC-20 | Phase 4 - Decide Engine | Complete |
 | DEC-21 | Phase 4 - Decide Engine | Pending |
 | DEC-22 | Phase 4 - Decide Engine | Pending |
 | DEC-23 | Phase 4 - Decide Engine | Complete |
@@ -573,7 +573,7 @@ Populated during roadmap creation.
 | DEC-25 | Phase 4 - Decide Engine | Pending |
 | DEC-26 | Phase 4 - Decide Engine | Pending |
 | DEC-27 | Phase 4 - Decide Engine | Pending |
-| DEC-28 | Phase 4 - Decide Engine | Pending |
+| DEC-28 | Phase 4 - Decide Engine | Complete |
 | DEC-29 | Phase 4 - Decide Engine | Pending |
 | DEC-30 | Phase 4 - Decide Engine | Pending |
 | DEC-31 | Phase 4 - Decide Engine | Pending |

@@ -594,7 +594,7 @@ Plans:
 - [x] 04-19-PLAN.md — variable-rate stress (D-49) and payback months (D-53)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 04-20-PLAN.md — `decide()` report: combined and standalone verdicts, worst month, margins, stress, expected income; named tests D-41/D-43/D-44
+- [x] 04-20-PLAN.md — `decide()` report: combined and standalone verdicts, worst month, margins, stress, expected income; named tests D-41/D-43/D-44
 - [ ] 04-21-PLAN.md — investment views at 0% and user rates (D-51, D-52) and income at risk (D-54)
 
 **Wave 8** *(blocked on Wave 7 completion)*
