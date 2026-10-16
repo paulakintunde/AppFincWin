@@ -204,7 +204,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DEC-20**: Engine projects cash day by day for 90 days from confirmed pay and bill series and dated pending outflows, and raises `cash_dip` only when the purchase causes or deepens the dip (04 D-44, D-59, D-61)
 - [ ] **DEC-21**: Engine applies user-entered dated income and spending changes and judges the month on the worst of the next 12 months (04 D-45)
 - [ ] **DEC-22**: Engine returns a confidence level (strong, fair, rough) with reasons on every verdict (04 D-46)
-- [ ] **DEC-23**: Engine excludes user-marked one-off lines from averages and reports how many were left out (04 D-47)
+- [x] **DEC-23**: Engine excludes user-marked one-off lines from averages and reports how many were left out (04 D-47)
 - [ ] **DEC-24**: Engine models user-entered promotional rate schedules, including deferred interest, and tests the month on the highest scheduled payment (04 D-48)
 - [ ] **DEC-25**: Engine stress-tests variable-rate plans at the entered rate plus 2 and plus 4 points, beside the verdict (04 D-49)
 - [ ] **DEC-26**: Engine reports the cost of one and two late instalment payments from a user-entered fee (04 D-50)
@@ -214,7 +214,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DEC-30**: Engine provides running-cost prompt categories by item type with no amounts, and treats user-entered loss of value and holding fees as non-cash figures (04 D-55, D-63)
 - [ ] **DEC-31**: Engine computes the average gap between past estimates and actuals once three decisions have actuals (04 D-56)
 - [ ] **DEC-32**: Engine payment maths pass published reference amortisation tables, and every behaviour threshold carries a citation or is labelled a FincWin line (04 D-57, D-58)
-- [ ] **DEC-33**: Engine builds the month from paid Record lines only, nets refunds, skips transfers, and smooths confirmed non-monthly bills and weekly/fortnightly pay to monthly equivalents (04 D-23, D-25..D-28, D-60)
+- [x] **DEC-33**: Engine builds the month from paid Record lines only, nets refunds, skips transfers, and smooths confirmed non-monthly bills and weekly/fortnightly pay to monthly equivalents (04 D-23, D-25..D-28, D-60)
 - [ ] **DEC-34**: Engine deducts bills due in the next 90 days from cash when no cash path is available, and returns a relative purchase-size code (04 D-24, D-36)
 - [ ] **DEC-35**: Engine resolves the final price from the advertised price, user-entered sales tax and fees, and trade-ins, never below zero (04 D-37)
 - [ ] **DEC-36**: Engine returns the month table, the five ledgers, runway and the wait-and-save plan (04 D-38, D-39, D-40)
@@ -568,7 +568,7 @@ Populated during roadmap creation.
 | DEC-20 | Phase 4 - Decide Engine | Pending |
 | DEC-21 | Phase 4 - Decide Engine | Pending |
 | DEC-22 | Phase 4 - Decide Engine | Pending |
-| DEC-23 | Phase 4 - Decide Engine | Pending |
+| DEC-23 | Phase 4 - Decide Engine | Complete |
 | DEC-24 | Phase 4 - Decide Engine | Pending |
 | DEC-25 | Phase 4 - Decide Engine | Pending |
 | DEC-26 | Phase 4 - Decide Engine | Pending |
@@ -578,7 +578,7 @@ Populated during roadmap creation.
 | DEC-30 | Phase 4 - Decide Engine | Pending |
 | DEC-31 | Phase 4 - Decide Engine | Pending |
 | DEC-32 | Phase 4 - Decide Engine | Pending |
-| DEC-33 | Phase 4 - Decide Engine | Pending |
+| DEC-33 | Phase 4 - Decide Engine | Complete |
 | DEC-34 | Phase 4 - Decide Engine | Pending |
 | DEC-35 | Phase 4 - Decide Engine | Pending |
 | DEC-36 | Phase 4 - Decide Engine | Pending |
