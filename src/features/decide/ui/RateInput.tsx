@@ -23,9 +23,11 @@ export interface RateInputProps {
   placeholder?: string;
   /** Fires when the field loses focus (05-14: the card rate is saved on blur). */
   onBlur?: () => void;
+  /** 05-44: a decided check cannot be edited. */
+  readOnly?: boolean;
 }
 
-export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur }: RateInputProps) {
+export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur, readOnly = false }: RateInputProps) {
   const { colors, pairing } = useTheme();
   return (
     <View>
@@ -40,6 +42,7 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
           inputMode="decimal"
           accessibilityLabel={accessibilityLabel}
           placeholder={placeholder}
+          editable={!readOnly}
           placeholderTextColor={colors.inkFaint}
           style={[styles.input, { ...textRole(pairing, 'body'), color: colors.ink }]}
         />

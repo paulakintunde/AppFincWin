@@ -8,6 +8,7 @@ import type { CheckInputs, InputLine } from '../../../snapshot/types';
 jest.setTimeout(30000);
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+jest.mock('../../useEstimateBias', () => ({ useEstimateBias: () => ({ running: null, payment: null, dayOne: null }) }));
 
 type Over = Partial<CheckInputs>;
 const mockUpdate = (p: { update: unknown }) => p.update as jest.Mock;

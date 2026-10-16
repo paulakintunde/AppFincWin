@@ -18,6 +18,11 @@ import { isValidRateText } from '../../snapshot/checkInputs';
 import type { AdjustmentLine, CheckInputs, InputLine } from '../../snapshot/types';
 import { CheckRow } from '../../ui/CheckRow';
 import { LineEditorSheet, type LineEditorValue } from '../LineEditorSheet';
+import { runningPromptCopy } from '../../copy/depthInputsCopy';
+import { refText } from '../refText';
+import { useEstimateBias } from '../useEstimateBias';
+import { EstimateGapNote } from './step2/EstimateGapNote';
+import { RunningCostPrompts, promptedLineIds } from './step2/RunningCostPrompts';
 import { MethodPanels } from './step2/MethodPanels';
 import type { Step2Props } from './step2/types';
 import { PaymentMethods } from './step2/PaymentMethods';
@@ -51,6 +56,7 @@ export function Step2PriceAndPay(props: Step2Props) {
   const { inputs, update, computation, source, whole, exact, goToStep, readOnly } = props;
   const t = useT();
   const { colors, pairing } = useTheme();
+  const bias = useEstimateBias();
   const [editor, setEditor] = useState<'adjust' | 'running' | null>(null);
   const latest = useRef(inputs);
   useEffect(() => {
@@ -100,6 +106,7 @@ export function Step2PriceAndPay(props: Step2Props) {
     update({ runningCosts: [...inputs.runningCosts, line] });
   };
 
+  const ownedByPrompt = invest ? new Set<string>() : promptedLineIds(inputs, computation.runningCostPrompts);
   const countedReplaces = inputs.replaces.filter((l) => l.counted);
   const linkStyle = { ...textRole(pairing, 'label'), color: colors.accent };
 
@@ -150,6 +157,8 @@ export function Step2PriceAndPay(props: Step2Props) {
           <Eyebrow>{invest ? t('decide.pay.headInvest') : t('decide.pay.head')}</Eyebrow>
           <Meta tone="muted">{invest ? t('decide.pay.subInvest') : t('decide.pay.sub')}</Meta>
           <PaymentMethods {...props} />
+          <EstimateGapNote bias={bias.payment} />
+          <EstimateGapNote bias={bias.dayOne} />
           <MethodPanels {...props} />
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkFaint }}>{t('decide.flow.notLender')}</Text>
         </View>
@@ -162,8 +171,10 @@ export function Step2PriceAndPay(props: Step2Props) {
             <Meta>{t('decide.costs.aMonth')}</Meta>
           </View>
           <Meta>{invest ? t('decide.costs.bodyInvest') : t('decide.costs.body')}</Meta>
-          {inputs.runningCosts.map((l) => {
-            const name = l.name !== '' ? l.name : t('decide.pay.unnamedLine');
+          {invest ? null : <EstimateGapNote bias={bias.running} />}
+          {invest ? null : <RunningCostPrompts {...props} />}
+          {inputs.runningCosts.filter((l) => !ownedByPrompt.has(l.id)).map((l) => {
+            const name = l.name !== '' ? l.name : l.category !== null ? refText(t as Parameters<typeof refText>[0], runningPromptCopy(l.category).label) : t('decide.pay.unnamedLine');
             return (
               <CheckRow
                 key={l.id}

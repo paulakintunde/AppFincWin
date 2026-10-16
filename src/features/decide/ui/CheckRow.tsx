@@ -28,7 +28,7 @@ export function CheckRow({ checked, onToggle, name, source, amount, onRemove, re
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked, disabled }}
-        accessibilityLabel={source ? `${name}, ${source}, ${amount}` : `${name}, ${amount}`}
+        accessibilityLabel={[name, source, amount].filter((part) => part !== undefined && part !== '').join(', ')}
         disabled={disabled}
         onPress={() => {
           hapticSelection();

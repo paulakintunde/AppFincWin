@@ -18,9 +18,13 @@ export interface MoneyInputProps {
   label: string;
   accessibilityLabel: string;
   large?: boolean;
+  /** 05-44: a hint in the empty field (e.g. 'Add amount'). */
+  placeholder?: string;
+  /** 05-44: a decided check cannot be edited. */
+  readOnly?: boolean;
 }
 
-export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false }: MoneyInputProps) {
+export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
   const parser = useAmountParser();
   const [text, setText] = useState(() => (value === null ? '' : parser.toInputText(value, currency)));
@@ -63,6 +67,8 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
           onSubmitEditing={commit}
           inputMode="decimal"
           accessibilityLabel={accessibilityLabel}
+          placeholder={placeholder}
+          editable={!readOnly}
           placeholderTextColor={colors.inkFaint}
           style={[styles.input, { ...textRole(pairing, large ? 'body' : 'label'), color: colors.ink }]}
         />
