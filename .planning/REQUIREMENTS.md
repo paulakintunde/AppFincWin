@@ -190,11 +190,11 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DEC-06**: Engine returns a verdict of fits, adjust, no, or missing, with up to six warnings ordered by shortfall size (the sixth, `cash_dip`, was added 2026-10-15, 04-CONTEXT D-44/D-59)
 - [ ] **DEC-07**: Engine derives income steadiness from the coefficient of variation across logged months, not from a user-stated answer
 - [x] **DEC-08**: Engine computes a household's share of a cost under the active split rule
-- [ ] **DEC-09**: Engine finds the largest affordable price by bisection, and handles both "nothing is affordable" and "the full price already fits"
+- [x] **DEC-09**: Engine finds the largest affordable price by bisection, and handles both "nothing is affordable" and "the full price already fits"
 - [x] **DEC-10**: Engine determines card eligibility for an item, distinguishing blocked, capped and permitted
 - [x] **DEC-11**: Engine decides whether a debt is secured by reading a field on the record, not by matching its name
 - [ ] **DEC-12**: Engine runs with no React, no I/O and no database access, taking a snapshot in and returning a verdict out
-- [ ] **DEC-13**: Engine produces the options list in order: affordable price (bisected), longer term, cut a named expense line, earn more, save first, do without
+- [x] **DEC-13**: Engine produces the options list in order: affordable price (bisected), longer term, cut a named expense line, earn more, save first, do without
 - [ ] **DEC-14**: Engine computes the four-way alternatives (as planned, cheaper, wait and save, skip), each with its outcome, and suppresses and labels any row whose money is not genuinely spare
 - [ ] **DEC-15**: Engine applies the four setbacks (unexpected expense, income drops, job or client loss, invoices pay late) to a plan and re-assesses it
 - [ ] **DEC-16**: With no full month of history, engine returns a cash-level first read from a balance and rough monthly figures (cash covers it, month closes), marked as resting on the user's figures
@@ -554,11 +554,11 @@ Populated during roadmap creation.
 | DEC-06 | Phase 4 - Decide Engine | Pending |
 | DEC-07 | Phase 4 - Decide Engine | Pending |
 | DEC-08 | Phase 4 - Decide Engine | Complete |
-| DEC-09 | Phase 4 - Decide Engine | Pending |
+| DEC-09 | Phase 4 - Decide Engine | Complete |
 | DEC-10 | Phase 4 - Decide Engine | Complete |
 | DEC-11 | Phase 4 - Decide Engine | Complete |
 | DEC-12 | Phase 4 - Decide Engine | Pending |
-| DEC-13 | Phase 4 - Decide Engine | Pending |
+| DEC-13 | Phase 4 - Decide Engine | Complete |
 | DEC-14 | Phase 4 - Decide Engine | Pending |
 | DEC-15 | Phase 4 - Decide Engine | Pending |
 | DEC-16 | Phase 4 - Decide Engine | Pending |

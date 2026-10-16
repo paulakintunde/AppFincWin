@@ -587,7 +587,7 @@ Plans:
 - [x] 04-22-PLAN.md — credit terms: promotional rates and deferred interest (D-48), variable flag (D-49), BNPL late fees (D-50)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 04-09-PLAN.md — exact integer bisection and the ordered options list on the combined position, per-rate projections (DEC-09/13)
+- [x] 04-09-PLAN.md — exact integer bisection and the ordered options list on the combined position, per-rate projections (DEC-09/13)
 - [ ] 04-10-PLAN.md — four-way alternatives with suppression and per-rate projections, setbacks, wait plan (DEC-14/15)
 - [ ] 04-11-PLAN.md — decide golden parity and named deviation tests (D-22)
 - [ ] 04-18-PLAN.md — position layer: combined open checks (D-41), future changes and purchase-linked income loss (D-45, D-53)
