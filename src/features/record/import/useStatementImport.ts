@@ -51,6 +51,7 @@ import { useCustomCurrencies } from '@/data/queries/customCurrencies';
 import { useFxLatest } from '@/data/queries/fxLatest';
 import { latestPerEur } from '@/data/queries/homeAmount';
 import { useImportCommit } from '@/data/mutations/importFinalize';
+import { useRecordStatementPeriod } from '@/data/mutations/decideLinks';
 import { suggestionToSeries, useCreateSeries } from '@/data/mutations/recurringSeries';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { memberCategoriesOf, toStoredRule } from '@/features/record/useGuessContext';
@@ -347,6 +348,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const fx = useFxLatest();
   const { balances } = useAccountBalances(ctx.householdId, accounts);
   const importCommit = useImportCommit();
+  const recordPeriod = useRecordStatementPeriod();
   const createSeries = useCreateSeries();
 
   const [m, setM] = useState<Machine>(() => initialMachine(initialAccountId));
@@ -1420,6 +1422,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       format: preview.format,
       reconciliation: RECONCILIATION[preview.reconcile.file],
     });
+    // 05-19 (OQ3): a stated period makes the months it covers end to end count as full for Decide.
+    if (draft.periodStart !== null && draft.periodEnd !== null) recordPeriod.record({ householdId, accountId: account.id, start: draft.periodStart, end: draft.periodEnd });
 
     // D-21 / D-56: recurring suggestions come from the committed ordinary rows only; a linked
     // or counter transfer leg and a row that marked a bill paid are never fed to detection.
@@ -1441,7 +1445,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       suggestions,
       committedRows: ordinary.map((r) => ({ id: r.id, localDate: r.local_date, categoryId: r.category_id ?? null })),
     });
-  }, [accountById, accounts, clearPdf, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, exponentFor, gate.required, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, rowsChecked, transfersUnavailable]);
+  }, [accountById, accounts, clearPdf, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, exponentFor, gate.required, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, recordPeriod, rowsChecked, transfersUnavailable]);
 
   const acceptSuggestion = useCallback(
     (key: string): void => {
