@@ -666,7 +666,7 @@ Plans:
 - [x] 05-22-PLAN.md — Past decisions and detail sheet (estimate vs actual, attach/unlink)
 - [x] 05-23-PLAN.md — Onboarding rough figures and first check (cash-only skip path)
 - [x] 05-42-PLAN.md — Step 3 depth sections: day by day, expected income, cushion and margins, runway
-- [ ] 05-53-PLAN.md — Step 2 card terms: card minimum pre-fill, paid in full, card fees and costs (D-40, D-44)
+- [x] 05-53-PLAN.md — Step 2 card terms: card minimum pre-fill, paid in full, card fees and costs (D-40, D-44)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 05-24-PLAN.md — Check flow layout, swipe interceptor, useCheckDraft
