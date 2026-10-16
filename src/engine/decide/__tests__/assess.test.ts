@@ -1261,3 +1261,146 @@ describe('branch coverage helpers', () => {
     expect(p.withPurchase[90]).toBeLessThan(p.withoutPurchase[90]!);
   });
 });
+// ── Task 4: month table and ledgers (D-38) ──
+describe('month line by line (D-38, pre-pause)', () => {
+  const col = (income: number, living: number, debt: number, saving: number, purchase: number) => ({
+    income,
+    living,
+    debtPayments: debt,
+    savingInvesting: saving,
+    thisPurchase: purchase,
+    outgoings: living + debt + saving + purchase,
+    left: income - living - debt - saving - purchase,
+  });
+
+  it('is unchanged by a cash purchase', () => {
+    const a = run(BL(), buyCash(100_000));
+    expect(a.monthTable.now).toEqual(col(600_000, 300_000, 110_000, 65_000, 0));
+    expect(a.monthTable.after).toEqual(a.monthTable.now);
+  });
+
+  it('adds running costs as this purchase', () => {
+    const a = run(BL(), buyCash(100_000, { runningCostsNet: mu(5_500) }));
+    expect(a.monthTable.after).toEqual(col(600_000, 300_000, 110_000, 65_000, 5_500));
+    expect(a.monthTable.after.outgoings).toBe(480_500);
+    expect(a.monthTable.after.left).toBe(119_500);
+    expect(a.monthTable.after.left).toBe(a.left);
+  });
+
+  it('adds my share of the instalment to debt payments and does not apply the pause', () => {
+    const a = run(R(), INST(150_000));
+    expect(a.monthTable.after.debtPayments).toBe(260_000);
+    expect(a.monthTable.after.savingInvesting).toBe(65_000);
+    expect(a.monthTable.after.left).toBe(-25_000);
+    expect(a.investingAtRisk).toBe(25_000);
+  });
+
+  it('puts an invest contribution under this purchase, not debt', () => {
+    const a = run(R(), investMonthly(150_000, 24));
+    expect(a.monthTable.after.debtPayments).toBe(110_000);
+    expect(a.monthTable.after.thisPurchase).toBe(150_000);
+    expect(a.monthTable.after.left).toBe(-25_000);
+  });
+
+  it('shares only the purchase in a household', () => {
+    const c = ctxOf(BL(hhScope('even')));
+    const chk = INST(120_000);
+    const a = assessPlan(c, chk, resolvePlanStrict(chk));
+    expect(a.monthTable.after.debtPayments - a.monthTable.now.debtPayments).toBe(
+      myPart(a.plan.monthly, c.purchaseShare)
+    );
+    expect(a.monthTable.now.living).toBe(c.mySpendingBasis);
+    expect(a.monthTable.after.living).toBe(c.mySpendingBasis);
+  });
+
+  it('rows add up and the columns tie to leftBefore and left for random checks', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 400_000 }),
+        fc.integer({ min: -20_000, max: 20_000 }),
+        fc.boolean(),
+        (amount, running, invest) => {
+          const check: PurchaseCheck = invest
+            ? investMonthly(amount, 12)
+            : INST(amount, { runningCostsNet: mu(running) });
+          const a = run(R(), check);
+          for (const c of [a.monthTable.now, a.monthTable.after]) {
+            if (c.income - c.living - c.debtPayments - c.savingInvesting - c.thisPurchase !== c.left) return false;
+            if (c.outgoings !== c.living + c.debtPayments + c.savingInvesting + c.thisPurchase) return false;
+          }
+          return a.monthTable.now.left === a.context.leftBefore && a.monthTable.after.left === a.left;
+        }
+      )
+    );
+  });
+});
+
+describe('five ledgers (D-38)', () => {
+  const row = (a: Assessment, code: string) => a.ledgers.find((l) => l.code === code);
+
+  it('lists income, expenses, debt, cash and investments with a direction', () => {
+    const a = run(R(), INST(150_000));
+    expect(a.ledgers.map((l) => l.code)).toEqual(['income', 'expenses', 'debt', 'cash', 'investments']);
+    expect(row(a, 'income')).toEqual({ code: 'income', now: 1_000_000, after: 1_000_000, direction: 'same' });
+    expect(row(a, 'expenses')).toEqual({ code: 'expenses', now: 700_000, after: 700_000, direction: 'same' });
+    expect(row(a, 'debt')).toEqual({ code: 'debt', now: 15_800_000, after: 17_600_000, direction: 'worse' });
+    expect(row(a, 'cash')).toEqual({ code: 'cash', now: 2_000_000, after: 1_850_000, direction: 'worse' });
+    expect(row(a, 'investments')).toEqual({ code: 'investments', now: 40_000, after: 15_000, direction: 'worse' });
+  });
+
+  it('moves the expenses direction with the running costs', () => {
+    expect(row(run(BL(), buyCash(1_000, { runningCostsNet: mu(-3_000) })), 'expenses')?.direction).toBe('better');
+    expect(row(run(BL(), buyCash(1_000, { runningCostsNet: mu(5_500) })), 'expenses')?.direction).toBe('worse');
+  });
+
+  it('keeps the D-24 bill in the cash row so the change is the purchase alone', () => {
+    const a = run(BL({ bills: [YEARLY_DUE] }), buyCash(100_000));
+    expect(row(a, 'cash')).toEqual({ code: 'cash', now: 1_880_000, after: 1_780_000, direction: 'worse' });
+  });
+
+  it('reads ledgerCash, not the path-aware cash check, with a cash path', () => {
+    const a = run(PB({ bills: [YEARLY_DUE] }), buyCash(1_300_000));
+    expect(row(a, 'cash')).toEqual({ code: 'cash', now: 1_880_000, after: 580_000, direction: 'worse' });
+    expect(a.cashAfter).toBe(700_000);
+    expect(a.context.cashAvailable).toBe(2_000_000);
+  });
+
+  it('(D-61) leaves a future-dated outflow out of the cash row but in spare money', () => {
+    const a = run(PB({ scheduledOutflows: [OUT_AHEAD] }), buyCash(1_300_000));
+    expect(row(a, 'cash')).toEqual({ code: 'cash', now: 2_000_000, after: 700_000, direction: 'worse' });
+    expect(a.context.ledgerCash).toBe(2_000_000);
+    expect(a.ledgerCashAfterPurchase).toBe(700_000);
+    expect(a.context.cashAfterBills).toBe(1_950_000);
+    expect(a.cashAfterBillsAndPurchase).toBe(650_000);
+    const b = run(BL({ scheduledOutflows: [OUT_AHEAD] }), buyCash(1_300_000));
+    expect(row(b, 'cash')).toEqual({ code: 'cash', now: 2_000_000, after: 700_000, direction: 'worse' });
+    expect(b.cashAfter).toBe(b.ledgerCashAfterPurchase);
+    expect(b.cashAfterBillsAndPurchase).toBe(650_000);
+    const c = run(PB({ scheduledOutflows: [OUT_PAST] }), buyCash(1_300_000));
+    expect(row(c, 'cash')).toEqual({ code: 'cash', now: 1_950_000, after: 650_000, direction: 'worse' });
+  });
+
+  it('gives invest checks no pause relief in the investments row', () => {
+    expect(row(run(R(), investMonthly(150_000, 24)), 'investments')).toEqual({
+      code: 'investments',
+      now: 40_000,
+      after: 190_000,
+      direction: 'better',
+    });
+    const monthly = run(B(), investMonthly(50_000, 12));
+    expect(row(monthly, 'investments')).toEqual({
+      code: 'investments',
+      now: 40_000,
+      after: 90_000,
+      direction: 'better',
+    });
+    expect(row(monthly, 'debt')?.direction).toBe('same');
+    const lumpRun = run(B(), investLump(50_000));
+    expect(row(lumpRun, 'investments')).toEqual({ code: 'investments', now: 40_000, after: 40_000, direction: 'same' });
+    expect(row(lumpRun, 'cash')?.direction).toBe('worse');
+  });
+
+  it('shows no cash change for a plan with nothing due on the day', () => {
+    expect(row(run(BL(), loanCheck(120_000, 12)), 'cash')?.direction).toBe('same');
+  });
+});
