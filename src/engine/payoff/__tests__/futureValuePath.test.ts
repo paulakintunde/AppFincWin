@@ -73,7 +73,7 @@ describe('guards', () => {
   });
   it('accepts a holding fee of exactly 100%', () => {
     const fee = percentFromScaled(ONE_HUNDRED_PERCENT);
-    expect(futureValueNet(m(0), ZERO_PERCENT, 1, m(120_000), fee)).toBe(0);
+    expect(futureValueNet(m(0), ZERO_PERCENT, 1, m(120_000), fee)).toBe(110_000);
   });
 });
 

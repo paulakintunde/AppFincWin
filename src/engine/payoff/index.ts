@@ -9,3 +9,4 @@ export * from './amortise';
 export * from './futureValue';
 export * from './simulateMinimum';
 export * from './rateSchedule';
+export * from './futureValuePath';
