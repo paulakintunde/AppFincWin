@@ -569,7 +569,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [x] 04-04-PLAN.md — simulateMinimum with explicit never-clears (DEC-03, SC-2), payoff barrel, payoff parity
-- [ ] 04-05-PLAN.md — Decide contracts incl. D-41..D-56 types, cited behaviour constants (D-58), per-market defaults, currency guard, series maths, projection rates (DEC-12)
+- [x] 04-05-PLAN.md — Decide contracts incl. D-41..D-56 types, cited behaviour constants (D-58), per-market defaults, currency guard, series maths, projection rates (DEC-12)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 04-13-PLAN.md — deriveMoney over Record lines: paid only, refunds netted, series smoothed, one-off lines excluded (D-47), exact CV steadiness (DEC-07/08)
