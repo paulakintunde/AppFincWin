@@ -1,4 +1,4 @@
-import fc from 'fast-check';
+import * as fc from 'fast-check';
 import { ZERO_PERCENT, percent, resolvePlan, salesTaxAmount, withPrice } from '@/engine/decide';
 import type { BuyCheck, MinorUnits } from '@/engine/decide';
 import { minorUnits } from '@/engine/money';
@@ -241,6 +241,7 @@ describe('parseCheckInputs', () => {
   it('keeps a valid promo with no months and a valid income change', () => {
     const p = parseCheckInputs({ loan: { promo: { aprText: '', months: 12 } }, incomeChange: { direction: 'raises', amount: 100, startDate: '2027-02-01', likelihood: 'likely' } }, TODAY);
     expect(p.loan.promo).toEqual({ aprText: '', months: 12, deferredInterest: false });
+    expect(parseCheckInputs({ loan: { promo: { months: 5 } } }, TODAY).loan.promo).toEqual({ aprText: '', months: 5, deferredInterest: false });
     expect(p.incomeChange).toEqual({ direction: 'raises', amount: 100, startDate: '2027-02-01', likelihood: 'likely' });
   });
   it('keeps loss of value only as a positive amount or a percent up to 100', () => {
@@ -454,6 +455,11 @@ describe('repriceInputs', () => {
     const uncounted = buy({ advertised: 500_000, adjustments: [adj({ id: 'u', counted: false })] });
     expect(reprice(uncounted, 400_000).patch!.advertised).toBe(400_000);
     expect(reprice(buy({ advertised: 500_000, method: 'cash' }), 0).patch).toBeNull();
+    const mixed = buy({ advertised: 500_000, adjustments: [adj({ id: 'f', amount: 5_000 }), adj({ id: 't', taxPercentText: '10', amount: 50_000 })] });
+    const m = ok(mixed);
+    const patch = repriceInputs(mixed, m.check as BuyCheck, m.resolvedPrice, mu(400_000));
+    expect(patch!.adjustments![0]).toEqual(mixed.adjustments[0]);
+    expect(ok({ ...mixed, ...patch }).resolvedPrice.price).toBeLessThanOrEqual(400_000);
   });
 });
 
