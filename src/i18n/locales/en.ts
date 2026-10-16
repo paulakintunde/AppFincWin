@@ -1595,7 +1595,6 @@ const en = {
       bodyFits: '{{in}} in, {{out}} out once this is running.',
       bodyOther: '{{in}} in on your {{basis}} month; {{out}} out once this is running.',
       bodyShare: 'Your share of it is {{pct}}.',
-      a11y: '{{chip}}. {{size}}. {{title}}. {{body}}. {{basis}}',
     },
     warn: {
       groupA11y: '{{title}}, {{value}}. {{body}}',

@@ -21,6 +21,7 @@ import { basisMarker, missingRateCopy, stateChip, verdictBody, verdictTitle } fr
 import type { CheckComputation } from '../snapshot/types';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
 import { refText, type Translate } from './refText';
+import { joinSentences } from './joinSentences';
 import { useSettledLabel } from './useSettledLabel';
 
 export interface VerdictCardProps {
@@ -114,7 +115,7 @@ export function VerdictCard({ computation, lastSeenBasis, fmt }: VerdictCardProp
   const titleText = copy ? refText(t, copy.title) : '';
   const bodyText = copy?.body ? refText(t, copy.body) : '';
   const basisText = copy?.basis ? refText(t, copy.basis) : '';
-  const label = t('decide.verdict.a11y', { chip: chipLabel, size: sizeText, title: titleText, body: bodyText, basis: basisText });
+  const label = joinSentences([chipLabel, sizeText, titleText, bodyText, basisText]);
   const settled = useSettledLabel(label, copy?.chip?.tone ?? 'none', SETTLE_MS);
   if (!copy) return null;
 
