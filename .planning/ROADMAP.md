@@ -584,7 +584,7 @@ Plans:
 **Wave 5** *(blocked on Wave 4 completion)*
 - [x] 04-07-PLAN.md — prepareContext + assess: two shares, two cash figures, cash path, pausable saving/investing, confidence, D-36 size, ordered warnings (DEC-06)
 - [x] 04-08-PLAN.md — cash-level first read from rough figures with a rough cushion, D-36 size and confidence (DEC-16)
-- [ ] 04-22-PLAN.md — credit terms: promotional rates and deferred interest (D-48), variable flag (D-49), BNPL late fees (D-50)
+- [x] 04-22-PLAN.md — credit terms: promotional rates and deferred interest (D-48), variable flag (D-49), BNPL late fees (D-50)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 04-09-PLAN.md — exact integer bisection and the ordered options list on the combined position, per-rate projections (DEC-09/13)
