@@ -16,3 +16,4 @@ Orchestrated non-interactively on 2026-10-16 in worktree `C:\dev\fincwin-p4`, br
 (appended per plan)
 - 04-01: no checkpoints; futureValue property APR range limited to 10% (overflow guard is intended). Pre-existing tsc error: expo-blur missing in TabBar.tsx (out of scope).
 - 04-02: no checkpoints; no deviations. eslint shows fc default-import warnings (same as allocate tests).
+- 04-03: no checkpoints. Prototype method block is at line 4012 not 4057 (markers matched by text). Harness names the card debt 'Revolver' to dodge the prototype dsecured() 'car' regex. instalment-24 prototype state is 'missing' (known unconditional miss deviation).
