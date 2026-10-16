@@ -19,7 +19,7 @@ import { PAY_METHODS } from '../../../snapshot/types';
 import type { MethodKey } from '../../../snapshot/types';
 import { ChoiceCard } from '../../../ui/ChoiceCard';
 import { FigureStrip } from '../../../ui/FigureStrip';
-import type { Step2Props } from '../Step2PriceAndPay';
+import type { Step2Props } from './types';
 import { moneyFn } from '../stepUi';
 
 const INVEST_METHODS = ['monthly', 'lump'] as const satisfies readonly MethodKey[];

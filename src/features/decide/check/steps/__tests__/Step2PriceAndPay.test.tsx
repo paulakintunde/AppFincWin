@@ -230,3 +230,258 @@ describe('Step2PriceAndPay: costs that follow it', () => {
     expect(screen.getByText('+ Add a fee')).toBeTruthy();
   });
 });
+
+// ── Task 3: method panels ──
+function cardPlan(over: Record<string, unknown>, planOver: Record<string, unknown> = {}) {
+  return {
+    status: 'resolved',
+    plan: {
+      price: 150_000, dayOne: 0, monthly: 12_500, months: 12, financed: 150_000, total: 160_000, interest: 10_000, dayFees: 0,
+      finalMonthly: 12_500, impliedAnnualRate: null, paymentSteps: [], promo: null, lateFees: null,
+      card: { eligibility: 'permitted', onCard: 150_000, remainderOnDay: 0, payoff: 'minimum', payoffMonths: null, minimumOutcome: 'cleared', remainingAtCap: null, fees: 0, cardCosts: 10_000, ...over },
+      ...planOver,
+    },
+  } as never;
+}
+async function renderCard(planned: ReturnType<typeof cardPlan>, over: Over = {}) {
+  const base = buy({ method: 'card' });
+  const p = propsFor({ method: 'card', card: { ...base.card, accountId: 'acc-card', payoff: 'minimum' }, ...over });
+  const withPlan = { ...p, computation: { ...p.computation, methodPlans: { ...p.computation.methodPlans, card: planned } } };
+  await wrap(<Step2PriceAndPay {...withPlan} />);
+  return withPlan;
+}
+
+describe('MethodPanels', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('renders only the selected method panel', async () => {
+    const view = await renderStep({ method: 'cash' });
+    expect(screen.queryByLabelText('Deposit')).toBeNull();
+    expect(screen.queryByLabelText('Payment')).toBeNull();
+    expect(screen.queryByText('Rate on this card')).toBeNull();
+    await view.view.unmount();
+    await renderStep({ method: 'loan' });
+    expect(screen.getAllByLabelText('Deposit').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Rate on this card')).toBeNull();
+  });
+
+  describe('loan', () => {
+    it('leaves the rate empty until typed and never invents one', async () => {
+      await renderStep({ method: 'loan' });
+      expect(screen.getByLabelText('Annual rate, percent').props.value).toBe('');
+      expect(screen.getByText('Type the rate you were quoted')).toBeTruthy();
+    });
+
+    it('typing a rate updates aprText and clears the quick-check marker', async () => {
+      const base = buy({ method: 'loan' });
+      const { p } = await renderStep({ method: 'loan', loan: { ...base.loan, aprText: '0', aprFromQuick: true } });
+      await fireEvent.changeText(screen.getByLabelText('Annual rate, percent'), '7.5');
+      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ loan: expect.objectContaining({ aprText: '7.5', aprFromQuick: false }) });
+    });
+
+    it('a carried quick-check 0% reads "before any interest"', async () => {
+      const base = buy({ method: 'loan' });
+      await renderStep({ method: 'loan', loan: { ...base.loan, aprText: '0', aprFromQuick: true, termMonths: 12 } });
+      expect(screen.getAllByText('before any interest').length).toBeGreaterThan(0);
+    });
+
+    it('the term chips and input set the term as typed', async () => {
+      const { p } = await renderStep({ method: 'loan' });
+      await fireEvent.press(screen.getByLabelText('36 months'));
+      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ loan: expect.objectContaining({ termMonths: 36 }) });
+      await fireEvent.changeText(screen.getByLabelText('Term'), '9999');
+      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ loan: expect.objectContaining({ termMonths: 600 }) });
+    });
+
+    it('a payoff before the term is stated, the term stays as typed', async () => {
+      const base = buy({ method: 'loan', advertised: 1_000 });
+      await renderStep({ advertised: 1_000, method: 'loan', loan: { ...base.loan, aprText: '0', termMonths: 600 } });
+      expect(screen.getByText(/^Paid off in month \d+, with a last payment of \$/)).toBeTruthy();
+      expect(screen.getByLabelText('Term').props.value).toBe('600');
+      expect(screen.getByText(/^At 600 months you pay/)).toBeTruthy();
+    });
+
+    it('states no early payoff when the term is used in full', async () => {
+      const base = buy({ method: 'loan' });
+      await renderStep({ method: 'loan', loan: { ...base.loan, aprText: '8', termMonths: 24 } });
+      expect(screen.queryByText(/^Paid off in month/)).toBeNull();
+    });
+
+    it('shows Interest saved against no deposit and the cash left after', async () => {
+      const base = buy({ method: 'loan' });
+      await renderStep({ method: 'loan', loan: { ...base.loan, aprText: '10', termMonths: 24, deposit: 50_000 } });
+      expect(screen.getByText('Interest saved')).toBeTruthy();
+      expect(screen.getByText('Cash left after')).toBeTruthy();
+    });
+
+    it('secured stays where the user put it', async () => {
+      const base = buy({ method: 'loan', itemType: 'vehicle', itemTypeTouched: true });
+      const vehicle = { ...base, loan: { ...base.loan, secured: true } };
+      const p = { ...stepProps(vehicle), onSaveCardRate: jest.fn() };
+      await wrap(<Step2PriceAndPay {...p} />);
+      const toggle = screen.getByLabelText('Secured against what you’re buying');
+      expect(toggle.props.accessibilityState.checked).toBe(true);
+      await fireEvent.press(toggle);
+      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ loan: expect.objectContaining({ secured: false, securedTouched: true }) });
+    });
+  });
+
+  describe('instalment', () => {
+    const inst = (amount: number | null, count: number | null) => ({ amount, count, lateFee: null });
+
+    it('writes the count', async () => {
+      const { p } = await renderStep({ method: 'instalment' });
+      await fireEvent.changeText(screen.getByLabelText('How many'), '12');
+      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ instalment: expect.objectContaining({ count: 12 }) });
+    });
+
+    it('asks for both numbers until the plan resolves', async () => {
+      await renderStep({ method: 'instalment', instalment: inst(null, null) });
+      expect(screen.getByText('Add the payment and how many to score this.')).toBeTruthy();
+    });
+
+    it('states the implied rate only when the plan resolved', async () => {
+      await renderStep({ method: 'instalment', instalment: inst(13_000, 12) });
+      expect(screen.getByText(/^No rate was quoted\. 12 × \$130\.00 is \$1560 against a \$1500 price, about [\d.]+% a year\.$/)).toBeTruthy();
+    });
+
+    it('the instalment note totals the instalments without the fees', async () => {
+      const adjustments = [{ id: 'a2', name: '', amount: 2_000, note: 'fees', counted: true, effect: 'adds' as const, onDay: true, taxPercentText: null }];
+      await renderStep({ method: 'instalment', adjustments, instalment: inst(13_000, 12) });
+      expect(screen.getByText(/^No rate was quoted\. 12 × \$130\.00 is \$1560 against the \$1500 paid over time, about [\d.]+% a year\.$/)).toBeTruthy();
+    });
+
+    it('instalments below the price ask for the amount or count', async () => {
+      await renderStep({ method: 'instalment', instalment: inst(1_000, 2) });
+      expect(screen.getByText('2 × $10.00 is $20, less than the $1500 it has to cover. Change the payment or how many to score this.')).toBeTruthy();
+      expect(screen.queryByText('Add the payment and how many to score this.')).toBeNull();
+    });
+  });
+
+  describe('card', () => {
+    it('says a card is accepted for a general purchase', async () => {
+      await renderStep({ method: 'card' });
+      expect(screen.getByText('A card is accepted here')).toBeTruthy();
+    });
+
+    it('states the dealer cap for a vehicle', async () => {
+      await renderStep({ method: 'card', itemType: 'vehicle', itemTypeTouched: true, advertised: 6_000_000 });
+      expect(screen.getByText('Only part of this can go on a card')).toBeTruthy();
+      expect(screen.getByText('A dealer card cap of $50000 applies. The other $10000 is counted as cash on the day.')).toBeTruthy();
+    });
+
+    it('blocks rent and offers deposit and loan instead', async () => {
+      const { p } = await renderStep({ method: 'card', itemType: 'rent_bill', itemTypeTouched: true });
+      expect(screen.getByText('This cannot go on a card')).toBeTruthy();
+      expect(screen.queryByText('Rate on this card')).toBeNull();
+      await fireEvent.press(screen.getByText('Use deposit and loan instead'));
+      expect(mockUpdate(p)).toHaveBeenCalledWith({ method: 'loan' });
+    });
+
+    it('says when there is no card account yet', async () => {
+      const p = { ...propsFor({ method: 'card' }) };
+      await wrap(<Step2PriceAndPay {...p} source={{ ...p.source, cards: [] }} />);
+      expect(screen.getByText('No card account yet')).toBeTruthy();
+    });
+
+    it('picks a card account and the payoff style', async () => {
+      const { p } = await renderStep({ method: 'card' });
+      await fireEvent.press(screen.getByText('Visa'));
+      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ card: expect.objectContaining({ accountId: 'acc-card' }) });
+      await fireEvent.press(screen.getByText('Minimum only'));
+      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ card: expect.objectContaining({ payoff: 'minimum' }) });
+    });
+
+    it('the months stepper shows the months typed and stays within 1..600', async () => {
+      const base = buy({ method: 'card' });
+      const { p } = await renderStep({ method: 'card', card: { ...base.card, months: 12 } });
+      expect(screen.getAllByText('12 mo').length).toBeGreaterThan(0);
+      await fireEvent.press(screen.getByLabelText('More months'));
+      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ card: expect.objectContaining({ months: 13 }) });
+      await fireEvent.press(screen.getByLabelText('Fewer months'));
+      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ card: expect.objectContaining({ months: 11 }) });
+    });
+
+    it('saves the typed card rate on blur only when it is a valid rate', async () => {
+      const base = buy({ method: 'card' });
+      const onSaveCardRate = jest.fn();
+      await renderStep({ method: 'card', card: { ...base.card, accountId: 'acc-card' } }, { onSaveCardRate });
+      const rate = screen.getByLabelText('Rate on this card, percent');
+      expect(rate.props.value).toBe('19.99'); // the rate on the card record, never one the app supplies
+      await fireEvent.changeText(rate, '1000');
+      await fireEvent(rate, 'blur');
+      expect(onSaveCardRate).not.toHaveBeenCalled();
+      await fireEvent.changeText(rate, '25');
+      await fireEvent(rate, 'blur');
+      expect(onSaveCardRate).toHaveBeenCalledWith('acc-card', '25');
+    });
+
+    it('does not save a rate before a card account is picked', async () => {
+      const onSaveCardRate = jest.fn();
+      await renderStep({ method: 'card' }, { onSaveCardRate });
+      const rate = screen.getByLabelText('Rate on this card, percent');
+      await fireEvent.changeText(rate, '25');
+      await fireEvent(rate, 'blur');
+      expect(onSaveCardRate).not.toHaveBeenCalled();
+    });
+
+    it('shows Cleared as the months actually paid', async () => {
+      await renderCard(cardPlan({ payoff: 'months', payoffMonths: 9, minimumOutcome: null, cardCosts: 5_000 }));
+      expect(screen.getByLabelText('Cleared, 9 mo')).toBeTruthy();
+    });
+
+    it('the card costs tile reads the engine card costs', async () => {
+      await renderCard(cardPlan({ payoffMonths: 9, cardCosts: 12_340 }, { interest: 10_000 }));
+      expect(screen.getByLabelText('Card costs, $123')).toBeTruthy();
+      expect(screen.getByLabelText('Interest, $100')).toBeTruthy();
+    });
+
+    it('a card minimum that never clears reads Never and Endless', async () => {
+      await renderCard(cardPlan({ minimumOutcome: 'never_clears', payoffMonths: null, cardCosts: null }, { total: null, interest: null }));
+      expect(screen.getByLabelText('Cleared, Never')).toBeTruthy();
+      expect(screen.getByLabelText('Interest, Endless')).toBeTruthy();
+      expect(screen.getByLabelText('Card costs, Endless')).toBeTruthy();
+    });
+
+    it('a card open at 50 years shows what is still owed', async () => {
+      await renderCard(cardPlan({ minimumOutcome: 'exceeds_month_cap', payoffMonths: null, cardCosts: null, remainingAtCap: 250_000 }, { total: null, interest: null }));
+      expect(screen.getByLabelText('Cleared, Not within 50 years')).toBeTruthy();
+      expect(screen.getByLabelText('Interest, Not within 50 years')).toBeTruthy();
+      expect(screen.getByLabelText('Card costs, Not within 50 years')).toBeTruthy();
+      expect(screen.getByText('Still owing $2500 after 50 years at the minimum.')).toBeTruthy();
+    });
+
+    it('keeps the three card notes with no verdict effect', async () => {
+      const { p } = await renderStep({ method: 'card' });
+      expect(screen.getByText('0 of 3 answered')).toBeTruthy();
+      await fireEvent.press(screen.getAllByText('Yes')[0]!);
+      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ cardNotes: { incomeStops: 'yes', noNewSpending: null, jobLossCover: null } });
+    });
+
+    it('uses no lender wording', async () => {
+      await renderStep({ method: 'card' });
+      expect(screen.queryByText(/apply|approved|pre-qualif|offer/i)).toBeNull();
+    });
+  });
+
+  describe('investment', () => {
+    it('shows the money put in over the term, and no growth claim without a typed rate', async () => {
+      const { p } = await renderStep({ kind: 'invest', method: 'monthly', advertised: 20_000, investTermMonths: 24 });
+      expect(screen.getByText('$200.00 a month for 24 months is $4800 put in.')).toBeTruthy();
+      expect(screen.queryByText(/would be worth/)).toBeNull();
+      await fireEvent.press(screen.getByLabelText('60 months'));
+      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ investTermMonths: 60 });
+    });
+
+    it('with a rate entered, states what it would be worth as a projection', async () => {
+      await renderStep({ kind: 'invest', method: 'monthly', advertised: 20_000, investTermMonths: 12, projectionRates: ['5'] });
+      expect(screen.getByText(/^At 5% it would be worth about \$/)).toBeTruthy();
+      expect(screen.getByText('A projection at the rate you entered, not a forecast.')).toBeTruthy();
+    });
+
+    it('a lump sum has no panel', async () => {
+      await renderStep({ kind: 'invest', method: 'lump' });
+      expect(screen.queryByLabelText('60 months')).toBeNull();
+    });
+  });
+});

@@ -18,15 +18,12 @@ import { isValidRateText } from '../../snapshot/checkInputs';
 import type { AdjustmentLine, CheckInputs, InputLine } from '../../snapshot/types';
 import { CheckRow } from '../../ui/CheckRow';
 import { LineEditorSheet, type LineEditorValue } from '../LineEditorSheet';
-import type { StepProps } from '../stepTypes';
 import { MethodPanels } from './step2/MethodPanels';
+import type { Step2Props } from './step2/types';
 import { PaymentMethods } from './step2/PaymentMethods';
 import { Card, Eyebrow, Lock, Meta, moneyFn } from './stepUi';
 
-export interface Step2Props extends StepProps {
-  /** Wired by the flow screen (05-30) to the saveCardRate mutation (05-19). */
-  onSaveCardRate: (accountId: string, aprText: string) => void;
-}
+export type { Step2Props };
 
 const MAX_LINES = 30;
 

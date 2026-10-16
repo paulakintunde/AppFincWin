@@ -21,9 +21,11 @@ export interface RateInputProps {
   hint?: string;
   accessibilityLabel: string;
   placeholder?: string;
+  /** Fires when the field loses focus (05-14: the card rate is saved on blur). */
+  onBlur?: () => void;
 }
 
-export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder }: RateInputProps) {
+export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur }: RateInputProps) {
   const { colors, pairing } = useTheme();
   return (
     <View>
@@ -34,6 +36,7 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
           onChangeText={(text) => {
             if (TYPING.test(text)) onChange(text);
           }}
+          onBlur={onBlur}
           inputMode="decimal"
           accessibilityLabel={accessibilityLabel}
           placeholder={placeholder}
