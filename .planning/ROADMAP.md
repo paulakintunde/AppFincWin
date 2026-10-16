@@ -637,7 +637,7 @@ Plans:
 - [x] 05-32-PLAN.md — Depth migrations: decide_changes, savings_goals, cooling_off_at, split estimates, link roles, transactions.one_off/goal_id
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 05-04-PLAN.md — apply_patches allow-list, record_decide_go / record_decide_outcome RPCs, pgTAP
+- [x] 05-04-PLAN.md — apply_patches allow-list, record_decide_go / record_decide_outcome RPCs, pgTAP
 - [ ] 05-12-PLAN.md — Query keys, read hooks, useDecideSnapshot, other open checks
 - [ ] 05-14-PLAN.md — Steps 1 and 2, line editor
 - [ ] 05-15-PLAN.md — Step 3 verdict card, warnings, core sections, Assumptions
