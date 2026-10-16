@@ -336,7 +336,7 @@ export interface MoneyBasis {
   readonly spendingWorst: MinorUnits; // my share; worst spending = highest month (D-08, D-12 amended)
   readonly smoothedBillsMonthly: MinorUnits; // D-23: my share of the monthly equivalents, already inside every month's spending
   readonly steadiness: Steadiness;
-  readonly incomeCvPercent: number | null; // whole-percent CV of income, half-up, exact (bigint isqrt, no float); null below MIN_MONTHS_FOR_STEADINESS
+  readonly incomeCvPercent: number | null; // whole-percent CV of income, half-up, exact (bigint isqrt, no float); null below MIN_MONTHS_FOR_STEADINESS, and null when every month's income is 0 (LO-01: steadiness is then 'volatile')
   readonly basis: Basis;
   readonly incomeBasis: MinorUnits;
   readonly spendingBasis: MinorUnits;

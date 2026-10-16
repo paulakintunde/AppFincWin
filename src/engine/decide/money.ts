@@ -293,8 +293,11 @@ export function deriveMoney(input: MoneyInput): MoneyResult {
     steadiness = 'insufficient';
     incomeCvPercent = null;
   } else if (S === 0n) {
-    steadiness = 'steady'; // prototype parity: `avg ? sd / avg : 0` gives cv 0
-    incomeCvPercent = 0;
+    // 04-REVIEW LO-01, a named deviation from the prototype (`avg ? sd / avg : 0` gave cv 0 and Steady): no logged
+    // income is not steady income. It is Volatile, so the basis is the cautious worst one, the default cushion is the
+    // Volatile one and confidence is rough; the CV is undefined (null) with a mean of 0.
+    steadiness = 'volatile';
+    incomeCvPercent = null;
   } else {
     if (cvBelow(STEADY_CV_BELOW)) steadiness = 'steady';
     else if (cvBelow(VARIABLE_CV_BELOW)) steadiness = 'variable';

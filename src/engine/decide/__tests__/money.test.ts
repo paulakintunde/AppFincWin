@@ -365,10 +365,11 @@ describe('deriveMoney', () => {
     expect(three.basis).toBe('average');
   });
 
-  it('treats all-zero income as steady with a CV of 0', () => {
+  it('treats all-zero income as volatile with no CV (04-REVIEW LO-01; the prototype said steady)', () => {
     const money = ok({ months: incomes([0, 0, 0]) });
-    expect(money.steadiness).toBe('steady');
-    expect(money.incomeCvPercent).toBe(0);
+    expect(money.steadiness).toBe('volatile');
+    expect(money.incomeCvPercent).toBeNull();
+    expect(money.basis).toBe('worst');
   });
 
   it.each([
