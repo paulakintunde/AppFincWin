@@ -622,7 +622,7 @@ Plans:
 - [x] 05-03-PLAN.md — Decide tables (checks, settings, debts, links, statement periods), RLS, grants, pgTAP
 - [x] 05-33-PLAN.md — fxConvert read-side module (custom-currency aware) for D-37
 - [x] 05-34-PLAN.md — Record data layer: one_off and goal_id fields
-- [ ] 05-38-PLAN.md — db modules for decide_changes and savings_goals
+- [x] 05-38-PLAN.md — db modules for decide_changes and savings_goals
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 05-05-PLAN.md — db modules and RPC wrappers for the Decide tables

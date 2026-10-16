@@ -17,3 +17,4 @@ Non-interactive execution of `/gsd-execute-phase 5` (waves 1-8, plus 05-25 Task 
 - 05-03: Phase 4 gate passed; migration 20261016000100_decide_tables.sql + pgTAP 54 written. lint:migrations and verify:migrations pass; pgTAP not run locally (Docker down), CI rls job runs it.
 - 05-33: Phase 4 gate passed; fxConvert.ts extracted (resolvePerEur now returns null instead of throwing on zero-rounded custom rate; provisional behaviour unchanged), 100% branches.
 - 05-34: Phase 4 gate passed; one_off/goal_id added to row types, key lists, select and optimistic rows (isOneOff input); clone test added; no deviations. Requirement IDs left pending (span later plans).
+- 05-38: Phase 4 gate passed; decideChanges.ts and savingsGoals.ts written with tests (307 db tests green); no migrations; IDs left pending (span later plans).
