@@ -35,7 +35,7 @@ describe('futureValue guards', () => {
 
 describe('futureValue properties', () => {
   const amt = fc.integer({ min: 0, max: 10_000_000 });
-  const apr = fc.bigInt({ min: 0n, max: 500_000_000_000n });
+  const apr = fc.bigInt({ min: 0n, max: 100_000_000_000n }); // <= 10%: keeps 600-month growth inside the safe-integer range
   it('never loses money and grows with months', () => {
     fc.assert(
       fc.property(amt, amt, apr, fc.integer({ min: 0, max: 599 }), (mo, seed, a, n) => {
