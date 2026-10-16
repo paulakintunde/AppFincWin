@@ -1,6 +1,5 @@
 import * as fc from 'fast-check';
-import { currencyCode } from '../../money/types';
-import { minorUnits } from '../../money/types';
+import { currencyCode, minorUnits } from '../../money/types';
 import { estimateBias } from '../estimateBias';
 import type { PastDecision } from '../types';
 import { USD } from './helpers/fixtures';
@@ -149,7 +148,7 @@ describe('estimateBias (D-56)', () => {
           const rb = estimateBias(base, USD);
           const rs = estimateBias(scaled, USD);
           rb.forEach((b, j) => {
-            expect(Math.abs((b.biasBasisPoints as number) - (rs[j].biasBasisPoints as number))).toBeLessThanOrEqual(1);
+            expect(Math.abs((b.biasBasisPoints as number) - (rs[j]?.biasBasisPoints as number))).toBeLessThanOrEqual(1);
           });
         }
       )
