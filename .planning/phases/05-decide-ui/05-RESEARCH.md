@@ -285,7 +285,7 @@ qc.setMutationDefaults(mutationKeys.decideGoAhead, {
 - `cashOnHand` = sum of home-converted balances of `cash|checking|savings` accounts (archived/deleted excluded). Credit/loan accounts with negative balances become debts (see Open Question 1).
 - `asOf` = `rc.today` (the engine has no clock).
 - `limits` from `decide_settings` (nulls = engine defaults, D-14). `basisOverride` from settings (UI-SPEC assumption 10). `projectionReturn` from settings (D-07 "+ Add a rate"; recommend stored with the check, since the rate is entered per alternatives view; planner choice).
-- Market row for `MARKET_DEFAULTS`: `rc.region` → `'US'|'CA'|'CA-QC'|'UK'`, falling back to `CA` for Canada (04-RESEARCH L532). It is used only to prefill card minimum terms and the dealer cap.
+- Market row for `MARKET_DEFAULTS`: `getDeviceRegion(rc.region)` (override > device region > time zone, never IP; `rc.region` alone is only the explicit override and is usually null; corrected at plan-check 2026-10-16) → `'US'|'CA'|'CA-QC'|'UK'`, falling back to `CA` for Canada (04-RESEARCH L532). It is used only to prefill card minimum terms and the dealer cap.
 - **No bigint in persisted state.** `Percent` is a bigint (04-01). Never put a `Verdict`, `Percent` or `DecideSnapshot` into query data or mutation variables: the persister and paused-mutation dehydration use JSON. Store APRs as decimal strings and convert with `percent(s)` at the engine boundary.
 
 ### Pattern 3: Full-month flag (04 D-13) without stored statement periods

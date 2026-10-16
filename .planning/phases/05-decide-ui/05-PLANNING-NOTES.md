@@ -168,3 +168,9 @@ Choices made under planner discretion (recorded for review):
 - With several cards owing without a minimum, the step 3 notes open the first (account order); after a save the snapshot recomputes and the next becomes the target. One tap target keeps the basis row one line (DCU-11 budget).
 - "Has a series" for a loan account means a live recurring series whose `account_id` is that account; a Debt-category bill on another account cannot be tied to a specific loan, so the Assumptions copy says the payment "counts only if it is among your bills" rather than claiming it is missing.
 - The tap hint reuses one 05-02 key (`asCardMinimumHint`, "Opens the card minimum payment") for both notes; no new 05-31 key.
+
+## Plan-check 2026-10-16 (iteration 2): market region and Canada
+
+- Blocker fixed (05-12, 05-06): the snapshot source's `region` is `getDeviceRegion(rc.region) ?? null` (RD-02: override > device region > time-zone tiebreak; never IP), not `rc.region` (the explicit override, usually null). Named hook test "the market row follows the device region when no region is set"; acceptance greps `getDeviceRegion` in src/data/queries/decide.ts.
+- Decision (CA-QC): the region is country-level, so the CA-QC market row is unreachable. It needs a province field and is deferred; Quebec users get the CA row. A CA pre-fill shows `decide.depth.cardMin.marketNoteCa` "Pre-filled from the standard card terms outside Quebec. Your card’s own terms can differ." (05-31 key, wave 2; 05-53 selects it when the market pre-fill's floorCurrency is 'CAD', which only the CA row can produce since market terms apply only in the card's own currency). DCU-09-safe. UI-SPEC "Card minimum payment" (Pre-fill), Copywriting "Card minimum (D-40)" and changelog item 20 updated.
+- 05-51: the seed's debts inserts (Student loan and the Credit card's card-kind row) supply `id gen_random_uuid()`; debts.id has no default.
