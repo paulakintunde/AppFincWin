@@ -24,6 +24,7 @@ import { StepSlider } from '../../ui/StepSlider';
 import { refText, type Translate } from '../refText';
 import type { StepProps } from '../stepTypes';
 import { Card, Eyebrow, Lock, Meta, moneyFn } from './stepUi';
+import { InvestingInsteadSection } from './step4/InvestingInsteadSection';
 
 const MAX_RATES = 3;
 const MIN_RATIO = 30;
@@ -252,6 +253,8 @@ export function Step4Alternatives(props: StepProps) {
           </View>
         </Lock>
       </View>
+
+      <InvestingInsteadSection {...props} />
 
       <View style={styles.footer}>
         <Meta>{t('decide.alt.footer', { spareCash: fmt(alts.spareCash), spareMonth: fmt(alts.spareMonthly) })}</Meta>

@@ -1850,6 +1850,7 @@ const en = {
         rateNet: '{{rate}}% a year, {{net}}% after fees', captionFee: 'A projection at the rate you entered less the {{fee}}% fee, not a forecast.', captionZeroFee: 'At 0% the money is only held, and the {{fee}}% fee comes off it.',
         tooLarge: 'Too large to project at this rate', netWorthAltTooLarge: 'After {{months}} months the path is too large to project at {{rate}}%.', // D-47
         rateCap: 'Up to 100% a year', // D-48
+        horizonChip: '{{count}}', horizonA11y: 'Months to project', netWorthRateA11y: 'Rate for the net worth chart', // 05-45
       },
       cardCosts: { // D-44
         feesLabel: 'Card fees (optional)', feesA11y: 'Card fees for this purchase', feesSub: 'Fees the card charges for this purchase. Paid on the day; other fees go on the price card.',
