@@ -1,8 +1,9 @@
 import fixtures from './golden/prototype-decide.json';
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { assess, assessPlan, prepareContext } from '../assess';
+import { affordablePrice } from '../bisect';
 import { resolvePlan, resolvePlanStrict, withPrice } from '../plan';
-import type { PurchaseCheck, Steadiness } from '../types';
+import type { BuyCheck, Steadiness, WarningCode } from '../types';
 import {
   dollarsToMinor,
   expectedUnderAmendments,
@@ -142,37 +143,40 @@ describe.each(scenarios)('prototype parity: $name', (scn) => {
 
   // D-35: where the investing floor sits above investing the prototype's fits predicate differs, so bisection is skipped.
   const bisectIt = proto.bisect !== null && scn.limits.investingFloor <= scn.investing && !proto.plan.miss ? it : it.skip;
+  // 04-REVIEW ME-04: this calls the shipped search (affordablePrice -> bisectLargest), not a re-implementation.
   bisectIt('largest affordable price is within the prototype float bracket', () => {
     const ctx = context(scn);
-    const check: PurchaseCheck = toCheck(scn);
-    const price = check.kind === 'buy' ? check.price : check.amount;
-    const fits = (p: number): boolean => {
-      const c = withPrice(check, minorUnits(p) as MinorUnits);
-      return assessPlan(ctx, c, resolvePlanStrict(c)).state === 'fits';
-    };
-    let engine: number | null = null;
-    if (fits(0)) {
-      let lo = 0;
-      let hi: number = price;
-      while (lo < hi) {
-        const mid = Math.ceil((lo + hi) / 2);
-        if (fits(mid)) lo = mid;
-        else hi = mid - 1;
-      }
-      engine = lo;
-    }
+    const check = toCheck(scn) as BuyCheck; // every bisected fixture is a buy check
+    expect(check.kind).toBe('buy');
+    const price = check.price;
+    const found = affordablePrice(ctx, check);
+    const engine = found.kind === 'nothing_affordable' ? null : found.price;
     const best = proto.bisect!.best;
     if (best === null) {
       expect(engine).toBeNull();
       return;
     }
     expect(engine).not.toBeNull();
-    // D-20: the engine rounds each monthly payment half-up to a minor unit, the prototype keeps floats. A payment off by
-    // up to half a unit moves the price at which a payment-driven check flips by 0.5 / (monthly / price) units, so that
-    // bound (zero when nothing is paid monthly) is added to the prototype's own 22-iteration bracket width.
-    const atBoundary = withPrice(check, minorUnits(engine!) as MinorUnits);
-    const monthly = resolvePlanStrict(atBoundary).monthly;
-    const roundingBand = monthly > 0 ? Math.ceil((0.5 * price) / monthly) + 1 : 0;
+    // The rounding band applies only where the monthly payment decides the flip: the binding lines at the first price
+    // that no longer fits are month, dsr, cash_dip or inv (inv is the D-35 pause of a month shortfall). cash (day-one
+    // money) and owe (the financed amount) are exact integer comparisons, so they get no band.
+    // D-64 (amends D-20): the engine's payment is the exact one rounded UP (plus at most one D-64 step), the prototype's
+    // a float, so the engine pays up to 1 unit more a month. That moves a payment-driven flip by up to
+    // 1 / (monthly / price) units: ceil(price / monthly) + 1 (the D-20 half-up band was ceil(0.5 x price / monthly) + 1).
+    const PAYMENT_DRIVEN: readonly WarningCode[] = ['month', 'dsr', 'cash_dip', 'inv'];
+    let roundingBand = 0;
+    if (engine! < price) {
+      const over = withPrice(check, minorUnits(engine! + 1) as MinorUnits);
+      const binding = assessPlan(ctx, over, resolvePlanStrict(over)).warnings.map((w) => w.code);
+      const monthly = resolvePlanStrict(withPrice(check, minorUnits(engine!) as MinorUnits)).monthly;
+      if (monthly > 0 && binding.some((c) => PAYMENT_DRIVEN.includes(c))) {
+        roundingBand = Math.ceil(price / monthly) + 1;
+      }
+    }
+    // ME-04 regression: an owe-only or cash-only flip does not depend on the payment, so it gets no band (it was 44
+    // units on loan-owe-only); the payment-driven loan fixtures get ceil(price / monthly) + 1 (49 and 47 units).
+    if (['loan-owe-only', 'cash-no', 'cash-cushion-only'].includes(scn.name)) expect(roundingBand).toBe(0);
+    if (['loan-dsr-only', 'loan-month-and-inv'].includes(scn.name)) expect(roundingBand).toBeGreaterThan(0);
     within(engine!, dollarsToMinor(best), Math.ceil(price / 2 ** 22) + 1 + roundingBand);
   });
 });
