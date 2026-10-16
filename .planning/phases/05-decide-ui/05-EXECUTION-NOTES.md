@@ -1,0 +1,14 @@
+# Phase 05 Execution Notes
+
+Non-interactive execution of `/gsd-execute-phase 5` (waves 1-8, plus 05-25 Task 1 local gate) in worktree `C:\dev\fincwin-p5`, branch `phase/05-decide-ui`.
+
+## Orchestrator defaults taken (in place of user prompts)
+
+- Plans run one at a time in wave order on the worktree, no `isolation: "worktree"` (sequential mode), so commits never race. Parallelization deliberately off.
+- Executor model: `sonnet` (from `init.execute-phase`, profile `balanced`).
+- `workflow._auto_chain_active` config-set failed (unknown key in this gsd-sdk version); harmless, no `--auto` chain in use.
+- Docker is not running: local `supabase start` and pgTAP tests are skipped; CI's `rls` job runs the pgTAP suite.
+- Out of scope for this run (hard stops): 05-25 Task 2 (production `supabase db push`), 05-26 (device checks), EAS builds, phase completion.
+
+## Per-plan log
+
