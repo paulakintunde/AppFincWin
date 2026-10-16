@@ -531,6 +531,22 @@ export function resolvePlanStrict(check: PurchaseCheck): Plan {
   return result.plan;
 }
 
+/**
+ * The same check at another price (bisection, the alternatives' cheaper row).
+ *
+ * 04-REVIEW HI-03: an instalment plan's amount scales with the price, keeping the count, rounded UP to the minor unit
+ * (ceil(amount x price / original price)), so 12 x 150.00 on 1,800.00 becomes 12 x 100.00 on 1,200.00 and the scaled
+ * instalments still cover the scaled price. Before this the instalments stayed fixed, so no affordable price existed for
+ * a failing instalment check and the cheaper row falsely reported that the month still did not close. A check priced at
+ * 0 has nothing to scale against and keeps its amount. Loan deposits are not scaled here (bisection keeps the user's
+ * deposit; alternatives scales it itself).
+ */
 export function withPrice(check: PurchaseCheck, price: MinorUnits): PurchaseCheck {
-  return check.kind === 'buy' ? { ...check, price } : { ...check, amount: price };
+  if (check.kind === 'invest') return { ...check, amount: price };
+  const { payment } = check;
+  if (payment.method !== 'instalment' || payment.instalmentAmount === null || check.price === 0) {
+    return { ...check, price };
+  }
+  const scaled = ceilDivide(BigInt(payment.instalmentAmount) * BigInt(price), BigInt(check.price));
+  return { ...check, price, payment: { ...payment, instalmentAmount: minorFromBigInt(scaled, 'withPrice') } };
 }
