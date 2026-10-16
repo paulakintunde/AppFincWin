@@ -99,3 +99,50 @@ describe('decide copy length caps', () => {
     expect(interpolate(get(`decide.quick.line.${key}`)).length).toBeLessThanOrEqual(QUICK_NEW_CAP);
   });
 });
+
+describe('decide depth copy (05-31, DCU-09)', () => {
+  const depth = leaves.filter((l) => l.path.startsWith('decide.depth.'));
+  const INVESTING_BANNED = ['invest now', 'start investing', 'best rate', 'you will earn', 'you should invest'];
+
+  it('has depth leaves', () => {
+    expect(depth.length).toBeGreaterThan(150);
+  });
+
+  it.each(depth)('depth leaf passes the banned list: $path', ({ value }) => {
+    for (const re of BANNED) expect(value).not.toMatch(re);
+  });
+
+  it('never promises or pushes investing', () => {
+    for (const l of leaves) {
+      for (const phrase of INVESTING_BANNED) expect(l.value.toLowerCase()).not.toContain(phrase);
+    }
+  });
+
+  it('uses forecast only as "not a forecast"', () => {
+    const withForecast = leaves.filter((l) => /forecast/i.test(l.value));
+    expect(withForecast.length).toBeGreaterThan(0);
+    for (const l of withForecast) expect(l.value.toLowerCase()).toContain('not a forecast');
+  });
+
+  it('marks every depth leaf and the record one-off keys as draft copy', () => {
+    const drafts = new Set<string>(DRAFT_COPY_KEYS);
+    const required = [
+      ...depth.map((l) => l.path),
+      'record.sheet.toggle.oneOff',
+      'record.sheet.note.oneOff',
+      'activity.detail.oneOff',
+      'activity.detail.oneOffValue',
+    ];
+    expect(required.filter((p) => !drafts.has(p))).toEqual([]);
+  });
+
+  it('keeps the combined-check line within the verdict body cap at nine checks', () => {
+    expect(interpolate(get('decide.depth.combined.differs_other'), { count: '9' }).length).toBeLessThanOrEqual(64);
+  });
+
+  it('starts every cushion reason with because', () => {
+    const because = depth.filter((l) => l.path.startsWith('decide.depth.cushion.because.'));
+    expect(because.length).toBe(4);
+    for (const l of because) expect(l.value.startsWith('because')).toBe(true);
+  });
+});
