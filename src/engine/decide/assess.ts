@@ -7,7 +7,7 @@
  * (D-01, D-42: a month's costs by steadiness; DEFAULT_RESERVE_MONTHS = 3 is the steady and short-history value), the
  * investing and saving floors replace 1000 and 500 (D-05: what the user already puts in each month).
  *
- * D-34: there are two shares. `resolveShare(snapshot.scope)` is the purchase's per-check split; `resolveSpendingShare`
+ * D-34: there are two shares. `resolveShare` on the scope is the purchase's per-check split; `resolveSpendingShare`
  * is my share of existing spending, bills and the cushion. The 2026-09-27 plan used one share for both, which was the
  * defect: overriding the purchase to `mine` must not change my share of rent and groceries.
  * D-24: confirmed quarterly/yearly bills due within 90 days come off cash. D-30: nothing about earlier checks is read.
