@@ -1,11 +1,24 @@
 import { minorUnits, currencyCode } from '../../money/types';
-import { ZERO_PERCENT, percent } from '../../payoff/types';
+import { divideHalfUp } from '../../money/rounding';
+import { ONE_HUNDRED_PERCENT, ZERO_PERCENT, percent, percentFromScaled } from '../../payoff/types';
 import { CASH_PATH_DAYS } from '../constants';
 import { cashPathForSnapshot } from '../cashPath';
-import { prepareContext } from '../assess';
-import { SOLE_SHARE } from '../share';
-import type { AssessContext, DebtRecord, DecideLimits, DecideSnapshot, MonthRecord } from '../types';
-import { USD, bill, fullMonth, income, line, monthsOf, outflow, snapshotOf } from './helpers/fixtures';
+import { assessPlan, prepareContext } from '../assess';
+import { classifyCashDip, lowestPoint } from '../cashPath';
+import { resolvePlanStrict } from '../plan';
+import { SOLE_SHARE, myPart } from '../share';
+import type {
+  AssessContext,
+  Assessment,
+  BuyCheck,
+  DebtRecord,
+  DecideLimits,
+  DecideSnapshot,
+  InvestCheck,
+  MonthRecord,
+  PurchaseCheck,
+} from '../types';
+import { USD, bill, buyCash, fullMonth, income, line, monthsOf, outflow, snapshotOf } from './helpers/fixtures';
 
 const mu = minorUnits;
 const CAD = currencyCode('CAD');
@@ -445,5 +458,500 @@ describe('prepareContext (DEC-06; D-01..D-06, D-23, D-24, D-32, D-34)', () => {
       );
       expect(c.outflowsDueNow).toBe(50_000);
     });
+  });
+});
+
+// ── Task 2: assessPlan ──
+const INST = (a: number, over: Partial<BuyCheck> = {}): BuyCheck =>
+  buyCash(12 * a, {
+    payment: { method: 'instalment', instalmentAmount: mu(a), instalmentCount: 12 },
+    ...over,
+  });
+const investMonthly = (monthly: number, n: number): InvestCheck => ({
+  kind: 'invest',
+  currency: USD,
+  amount: mu(monthly),
+  payment: { method: 'monthly', termMonths: n },
+});
+const investLump = (amount: number): InvestCheck => ({
+  kind: 'invest',
+  currency: USD,
+  amount: mu(amount),
+  payment: { method: 'lump' },
+});
+const R = (over: Partial<DecideSnapshot> = {}): DecideSnapshot =>
+  BL({
+    months: monthsOf(
+      [
+        [1_000_000, 700_000],
+        [1_000_000, 700_000],
+        [1_000_000, 700_000],
+      ],
+      '2026-04'
+    ),
+    ...over,
+  });
+const BILL_BEFORE_PAY = bill({
+  seriesId: 's-ins',
+  freq: 'yearly',
+  anchorDate: '2025-07-24',
+  lastPaidDate: '2025-07-24',
+  latestAmount: 120_000,
+});
+function run(s: DecideSnapshot, check: PurchaseCheck): Assessment {
+  return assessPlan(ctxOf(s), check, resolvePlanStrict(check));
+}
+const w = (code: string, shortfall: number) => ({ code, shortfall });
+function percentOf(n: number, d: number) {
+  return percentFromScaled(divideHalfUp(BigInt(n) * ONE_HUNDRED_PERCENT, BigInt(d)));
+}
+function available(a: Assessment) {
+  if (a.cashPath.status !== 'available') throw new Error('expected an available cash path');
+  return a.cashPath;
+}
+
+describe('assessPlan ledgers and one warning at a time (DEC-06)', () => {
+  it('fits with nothing to report', () => {
+    const a = run(BL(), buyCash(100_000));
+    expect(a.state).toBe('fits');
+    expect(a.warnings).toEqual([]);
+    expect(a.cashAfter).toBe(1_900_000);
+    expect(a.left).toBe(125_000);
+    expect(a.pauseNeeded).toBe(0);
+    expect(a.remainingShortfall).toBe(0);
+    expect(a.checks).toEqual({ cash: true, month: true, dsr: true, owe: true, inv: true, save: true });
+    expect(a.facts).toEqual([]);
+    expect(a.basisMarker).toBe('logged_months');
+  });
+
+  it('cash below the cushion adjusts; cash below zero is no', () => {
+    expect(run(BL(), buyCash(1_500_000))).toMatchObject({ state: 'adjust', warnings: [w('cash', 100_000)] });
+    expect(run(BL(), buyCash(2_100_000))).toMatchObject({
+      state: 'no',
+      warnings: [w('cash', 700_000)],
+      cashAfter: -100_000,
+    });
+  });
+
+  it('deducts the bill due within 90 days from cash without a path (D-24 in the ledger)', () => {
+    const a = run(BL({ bills: [YEARLY_DUE] }), buyCash(1_300_000));
+    expect(a.cashAfter).toBe(580_000);
+    expect(a.warnings).toEqual([w('cash', 20_000)]);
+    expect(a.state).toBe('adjust');
+    const b = run(BL(), buyCash(1_300_000));
+    expect(b.cashAfter).toBe(700_000);
+    expect(b.warnings).toEqual([]);
+  });
+
+  it('the debt-service line breaches only strictly above it', () => {
+    const a = run(BL(), INST(120_000));
+    expect(a.warnings).toEqual([w('dsr', 14_000)]);
+    expect(a.left).toBe(5_000);
+    expect(a.state).toBe('adjust');
+    expect(a.debtServiceRatioBefore).toBe(percentOf(110_000, 600_000));
+    expect(a.debtServiceRatioAfter).toBe(percentOf(230_000, 600_000));
+    expect(a.checks.dsr).toBe(false);
+    expect(a.checks.owe).toBe(true);
+    const edge = run(BL(), INST(106_000)); // exactly 216_000
+    expect(edge.warnings).toEqual([]);
+    expect(edge.checks.dsr).toBe(true);
+  });
+
+  it('has no debt-service ratio or warning when the money basis is 0', () => {
+    const s = BL({
+      months: monthsOf(
+        [
+          [0, 300_000],
+          [0, 300_000],
+          [0, 300_000],
+        ],
+        '2026-04'
+      ),
+    });
+    const a = run(s, buyCash(1_000));
+    expect(a.debtServiceRatioBefore).toBeNull();
+    expect(a.debtServiceRatioAfter).toBeNull();
+    expect(a.warnings.map((x) => x.code)).not.toContain('dsr');
+  });
+
+  it('adds the financed amount to total debt on buy checks only', () => {
+    expect(run(BL(), INST(120_000)).debtBalanceAfter).toBe(15_800_000 + 1_440_000);
+    expect(run(BL(), buyCash(100_000)).debtBalanceAfter).toBe(15_800_000);
+    expect(run(BL(), investLump(50_000)).debtBalanceAfter).toBe(15_800_000);
+  });
+
+  it('the unsecured line breaches only strictly above it', () => {
+    const slow = (price: number) =>
+      buyCash(price, { payment: { method: 'instalment', instalmentAmount: mu(10_000), instalmentCount: 600 } });
+    const over = run(BL(), slow(6_500_001));
+    expect(over.unsecuredAfter).toBe(7_300_001);
+    expect(over.warnings).toEqual([w('owe', 100_001)]);
+    expect(over.state).toBe('adjust');
+    expect(over.checks.owe).toBe(false);
+    const edge = run(BL(), slow(6_400_000));
+    expect(edge.unsecuredAfter).toBe(7_200_000);
+    expect(edge.checks.owe).toBe(true);
+    expect(edge.warnings).toEqual([]);
+  });
+
+  it('running costs change the new monthly figure', () => {
+    expect(run(BL(), buyCash(100_000, { runningCostsNet: mu(5_500) })).newMonthly).toBe(5_500);
+    const down = run(BL(), buyCash(100_000, { runningCostsNet: mu(-3_000) }));
+    expect(down.newMonthly).toBe(-3_000);
+    expect(down.left).toBe(128_000);
+  });
+
+  it('uses the purchase share for the purchase only in a household (D-34)', () => {
+    const hh = (rule: 'even' | 'mine') =>
+      BL({
+        scope: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: rule } },
+        householdSpending: { rule: { kind: 'even' }, byCategory: [] },
+      });
+    const c = ctxOf(hh('even'));
+    const chk = INST(120_001);
+    const a = assessPlan(c, chk, resolvePlanStrict(chk));
+    expect(a.mineDayOne).toBe(myPart(a.plan.dayOne, c.purchaseShare));
+    expect(a.mineMonthly).toBe(myPart(a.plan.monthly, c.purchaseShare));
+    expect(a.unsecuredAfter).toBe(c.unsecuredDebt + myPart(a.plan.financed, c.purchaseShare));
+    const m = run(hh('mine'), buyCash(300_000));
+    expect(m.mineDayOne).toBe(300_000);
+    expect(m.context.mySpendingBasis).toBe(150_000);
+  });
+
+  it('burn adds this decision to the existing outgoings', () => {
+    const a = run(BL(), INST(10_000, { runningCostsNet: mu(500) }));
+    expect(a.burn).toBe(a.context.mySpendingBasis + a.context.debtPayments + a.newMonthly);
+  });
+});
+
+describe('assessPlan pause rule (D-35)', () => {
+  it('pauses investing first, then saving, and stays adjust within pausable', () => {
+    const a = run(R(), INST(150_000));
+    expect(a).toMatchObject({
+      left: -25_000,
+      investingAtRisk: 25_000,
+      savingAtRisk: 0,
+      pauseNeeded: 25_000,
+      remainingShortfall: 0,
+      state: 'adjust',
+      warnings: [w('inv', 25_000)],
+    });
+    expect(a.checks.month).toBe(true);
+    expect(a.checks.inv).toBe(false);
+    expect(a.investingAfter).toBe(15_000);
+    const b = run(R(), INST(180_000));
+    expect(b).toMatchObject({
+      left: -55_000,
+      investingAtRisk: 40_000,
+      savingAtRisk: 15_000,
+      savingAfter: 10_000,
+      state: 'adjust',
+    });
+    expect(b.warnings).toEqual([w('inv', 55_000)]);
+    expect(b.checks.save).toBe(false);
+    const c = run(R(), INST(190_000));
+    expect(c).toMatchObject({ left: -65_000, state: 'adjust' });
+    expect(c.warnings).toEqual([w('inv', 65_000)]);
+  });
+
+  it('is no when the month still does not close after pausing everything', () => {
+    const a = run(R(), INST(200_000));
+    expect(a).toMatchObject({ left: -75_000, pauseNeeded: 65_000, remainingShortfall: 10_000, state: 'no' });
+    expect(a.warnings).toEqual([w('inv', 65_000), w('month', 10_000)]);
+    expect(a.checks.month).toBe(false);
+  });
+
+  it('reports the pause even when floors are 0', () => {
+    const a = run(R({ limits: { ...LIMITS_BL, investingFloor: mu(0), savingFloor: mu(0) } }), INST(150_000));
+    expect(a.warnings).toEqual([w('inv', 25_000)]);
+  });
+
+  it('orders equal shortfalls by WARNING_ORDER', () => {
+    const a = run(R({ limits: { ...LIMITS_BL, reserve: mu(1_875_000) } }), INST(150_000));
+    expect(a.warnings).toEqual([w('cash', 25_000), w('inv', 25_000)]);
+  });
+
+  it('has no inv warning when nothing can be paused', () => {
+    const s = R({
+      monthlySaving: mu(0),
+      monthlyInvesting: mu(0),
+      limits: { ...LIMITS_BL, investingFloor: null, savingFloor: null },
+    });
+    const a = run(s, INST(200_000));
+    expect(a.state).toBe('no');
+    expect(a.warnings).toEqual([w('month', 10_000)]);
+  });
+
+  it('sorts a combination of all five by shortfall descending', () => {
+    const s = R({
+      limits: { ...LIMITS_BL, reserve: mu(1_900_000), dsrLine: percent('20'), unsecuredIncomeMultiple: 0 },
+    });
+    const a = run(s, INST(200_000));
+    expect(a.warnings).toEqual([
+      w('owe', 3_200_000),
+      w('dsr', 110_000),
+      w('cash', 100_000),
+      w('inv', 65_000),
+      w('month', 10_000),
+    ]);
+    expect(a.warnings.length).toBeLessThanOrEqual(6);
+  });
+});
+
+describe('assessPlan invest checks (D-33)', () => {
+  it('carries the whole shortfall as month and never inv', () => {
+    const a = run(R(), investMonthly(150_000, 24));
+    expect(a.state).toBe('no');
+    expect(a.warnings).toEqual([w('month', 25_000)]);
+    expect(a).toMatchObject({ investingAtRisk: 25_000, pauseNeeded: 25_000, remainingShortfall: 25_000, mineRunning: 0 });
+  });
+
+  it('never emits debt-line warnings', () => {
+    const s = BL({ limits: { ...LIMITS_BL, dsrLine: percent('10'), unsecuredIncomeMultiple: 0 } });
+    expect(
+      run(s, buyCash(50_000))
+        .warnings.map((x) => x.code)
+        .sort()
+    ).toEqual(['dsr', 'owe']);
+    const inv = run(s, investLump(50_000));
+    expect(inv.warnings).toEqual([]);
+    expect(inv.state).toBe('fits');
+  });
+});
+
+describe('assessPlan cash path (D-44, D-46, D-47, D-59, D-61)', () => {
+  const noReserve = { ...LIMITS_BL, reserve: mu(0) };
+
+  it('reports the path as unavailable without a confirmed pay series', () => {
+    const a = run(BL(), buyCash(100_000));
+    expect(a.cashPath).toEqual({ status: 'unavailable', code: 'cash_path_unavailable' });
+    expect(a.cashDip).toBeNull();
+    expect(a.basisCodes).toEqual(['cash_path_unavailable']);
+  });
+
+  it('carries both paths and their lowest days', () => {
+    const a = run(PB(), buyCash(100_000));
+    const p = available(a);
+    expect(p.withPurchase[0]).toBe(p.withoutPurchase[0]! - 100_000);
+    p.withPurchase.forEach((b, d) => expect(b).toBeLessThanOrEqual(p.withoutPurchase[d]!));
+    expect(p.lowestWith).toEqual(lowestPoint({ asOf: '2026-07-10', balances: p.withPurchase }));
+    expect(p.lowestWithout).toEqual(lowestPoint({ asOf: '2026-07-10', balances: p.withoutPurchase }));
+    expect(a.basisCodes).toEqual([]);
+  });
+
+  it('fires cash_dip exactly when classifyCashDip does', () => {
+    for (const price of [100_000, 1_300_000, 1_900_000]) {
+      const a = run(PB(), buyCash(price));
+      const p = available(a);
+      const dip = classifyCashDip({
+        lowestWith: p.lowestWith.amount,
+        lowestWithout: p.lowestWithout.amount,
+        reserve: a.context.limits.reserve,
+        cashAfter: a.cashAfter,
+        cashOnHand: a.context.cashAvailable,
+      });
+      const dips = a.warnings.filter((x) => x.code === 'cash_dip');
+      if (dip === null) {
+        expect(dips).toEqual([]);
+        expect(a.cashDip).toBeNull();
+      } else {
+        expect(dips).toEqual([w('cash_dip', dip.shortfall)]);
+        expect(a.cashDip).toBe(dip.severity);
+      }
+    }
+  });
+
+  it('a hard dip caused by the purchase is no', () => {
+    const a = run(PB({ cashOnHand: mu(250_000), limits: noReserve }), buyCash(100_000));
+    const p = available(a);
+    expect(a.cashAfter).toBe(150_000);
+    expect(p.lowestWithout).toEqual({ day: 14, date: '2026-07-24', amount: 47_808 });
+    expect(p.lowestWith.amount).toBe(-52_192);
+    expect(a.warnings).toEqual([w('cash_dip', 52_192)]);
+    expect(a.cashDip).toBe('hard');
+    expect(a.state).toBe('no');
+  });
+
+  it('counts only the extra depth when the path also dips without the purchase (D-59)', () => {
+    const a = run(PB({ cashOnHand: mu(150_000), limits: noReserve }), buyCash(100_000));
+    const p = available(a);
+    expect(a.cashAfter).toBe(50_000);
+    expect(p.lowestWithout).toEqual({ day: 14, date: '2026-07-24', amount: -52_192 });
+    expect(p.lowestWith.amount).toBe(-152_192);
+    expect(a.warnings).toEqual([w('cash_dip', 100_000)]);
+    expect(a.cashDip).toBe('hard');
+    expect(a.state).toBe('no');
+    const fact = { code: 'cash_tight_before_payday', date: '2026-07-24', amount: -52_192 };
+    expect(p.tightBeforePayday).toEqual(fact);
+    expect(a.facts).toEqual([fact]);
+  });
+
+  it('a purchase that does not lower the low raises no dip, only the fact (D-59)', () => {
+    const loan = buyCash(120_000, {
+      payment: { method: 'loan', deposit: mu(0), termMonths: 12, apr: ZERO_PERCENT },
+    });
+    const a = run(PB({ cashOnHand: mu(150_000), limits: noReserve }), loan);
+    const p = available(a);
+    const low = { day: 14, date: '2026-07-24', amount: -52_192 };
+    expect(p.lowestWith).toEqual(low);
+    expect(p.lowestWithout).toEqual(low);
+    expect(a.cashDip).toBeNull();
+    expect(a.warnings).toEqual([]);
+    expect(a.state).toBe('fits');
+    expect(a.facts).toEqual([{ code: 'cash_tight_before_payday', date: '2026-07-24', amount: -52_192 }]);
+    expect(p.withPurchase[45]).toBe(119_945);
+    expect(p.withPurchase[76]).toBe(292_082);
+    expect(p.withPurchase[90]).toBe(703_370);
+  });
+
+  it('deepens a soft dip below the cushion (D-59)', () => {
+    const a = run(PB({ cashOnHand: mu(400_000), limits: { ...LIMITS_BL, reserve: mu(200_000) } }), buyCash(100_000));
+    const p = available(a);
+    expect(a.cashAfter).toBe(300_000);
+    expect(p.lowestWithout.amount).toBe(197_808);
+    expect(p.lowestWith.amount).toBe(97_808);
+    expect(a.facts).toEqual([{ code: 'cash_tight_before_payday', date: '2026-07-24', amount: 197_808 }]);
+    expect(a.warnings).toEqual([w('cash_dip', 100_000)]);
+    expect(a.cashDip).toBe('soft');
+    expect(a.state).toBe('adjust');
+  });
+
+  it('shows one card per cause: a dated bill reaches the verdict through cash_dip', () => {
+    const a = run(PB({ bills: [BILL_BEFORE_PAY] }), buyCash(1_300_000));
+    expect(a.cashAfter).toBe(700_000);
+    expect(a.checks.cash).toBe(true);
+    expect(a.context.cashAfterBills).toBe(1_880_000);
+    expect(a.cashAfterBillsAndPurchase).toBe(580_000);
+    expect(available(a).lowestWith).toEqual({ day: 14, date: '2026-07-24', amount: 377_808 });
+    expect(a.warnings).toEqual([w('cash_dip', 222_192)]);
+    expect(a.cashDip).toBe('soft');
+    expect(a.state).toBe('adjust');
+    const plain = run(PB(), buyCash(1_300_000));
+    expect(available(plain).lowestWith.amount).toBe(497_808);
+    expect(plain.warnings).toEqual([w('cash_dip', 102_192)]);
+  });
+
+  it('keeps cashAfter equal to the ledger and bills-and-purchase figures when there is no path', () => {
+    const a = run(BL({ bills: [YEARLY_DUE] }), buyCash(1_300_000));
+    expect(a.cashAfter).toBe(580_000);
+    expect(a.ledgerCashAfterPurchase).toBe(580_000);
+    expect(a.cashAfterBillsAndPurchase).toBe(580_000);
+  });
+
+  it('flags one-off lines left out of the basis after cash_path_unavailable (D-47)', () => {
+    const months = [
+      fullMonth('2026-04', 600_000, 300_000, [
+        line({ id: 'x', date: '2026-04-20', direction: 'out', amount: 10_000, oneOff: true }),
+      ]),
+      fullMonth('2026-05', 600_000, 300_000),
+      fullMonth('2026-06', 600_000, 300_000),
+    ];
+    expect(run(BL({ months }), buyCash(1_000)).basisCodes).toEqual(['cash_path_unavailable', 'one_offs_excluded']);
+    expect(run(PB({ months }), buyCash(1_000)).basisCodes).toEqual(['one_offs_excluded']);
+  });
+
+  it('carries the confidence from the money basis (D-46)', () => {
+    expect(run(B(), buyCash(1_000)).confidence).toEqual({ level: 'fair', reasons: ['under_6_full_months'] });
+    const six = monthsOf(
+      Array.from({ length: 6 }, () => [600_000, 300_000] as const),
+      '2026-01'
+    );
+    expect(run(B({ months: six }), buyCash(1_000)).confidence).toEqual({ level: 'strong', reasons: [] });
+    const vol = monthsOf(
+      [
+        [400_000, 300_000],
+        [600_000, 300_000],
+        [800_000, 300_000],
+      ],
+      '2026-04'
+    );
+    expect(run(B({ months: vol }), buyCash(1_000)).confidence).toEqual({
+      level: 'rough',
+      reasons: ['volatile_income'],
+    });
+  });
+
+  it('(D-60) smoothed pay gives strong confidence end to end', () => {
+    const dates = [
+      '2026-01-02', '2026-01-16', '2026-01-30', '2026-02-13', '2026-02-27', '2026-03-13', '2026-03-27',
+      '2026-04-10', '2026-04-24', '2026-05-08', '2026-05-22', '2026-06-05', '2026-06-19',
+    ];
+    const months = ['01', '02', '03', '04', '05', '06'].map((mm) =>
+      fullMonth(
+        `2026-${mm}`,
+        0,
+        300_000,
+        dates
+          .filter((d) => d.slice(5, 7) === mm)
+          .map((d) => line({ id: `pay-${d}`, date: d, direction: 'in', amount: 200_000, seriesId: 'pay' }))
+      )
+    );
+    const payF = income({
+      seriesId: 'pay',
+      freq: 'fortnightly',
+      anchorDate: '2026-01-02',
+      lastPaidDate: '2026-06-19',
+      latestAmount: 200_000,
+    });
+    expect(run(snapshotOf({ months, incomeSeries: [payF] }), buyCash(100_000)).confidence).toEqual({
+      level: 'strong',
+      reasons: [],
+    });
+    expect(
+      run(snapshotOf({ months, incomeSeries: [{ ...payF, confirmed: false }] }), buyCash(100_000)).confidence
+    ).toEqual({ level: 'fair', reasons: ['variable_income'] });
+  });
+
+  it('puts an outflow dated after asOf on its date, off the cash check (D-61)', () => {
+    const a = run(PB({ scheduledOutflows: [OUT_AHEAD] }), buyCash(1_300_000));
+    const p = available(a);
+    expect(a.cashAfter).toBe(700_000);
+    expect(a.checks.cash).toBe(true);
+    expect(a.cashAfterBillsAndPurchase).toBe(650_000);
+    expect(p.lowestWith).toEqual({ day: 14, date: '2026-07-24', amount: 497_808 });
+    expect(p.lowestWithout.amount).toBe(1_797_808);
+    expect(p.withPurchase[20]).toBe(966_932);
+    expect(p.withPurchase[45]).toBe(629_945);
+    expect(p.withPurchase[76]).toBe(812_082);
+    expect(p.withPurchase[90]).toBe(1_223_370);
+    expect(a.warnings).toEqual([w('cash_dip', 102_192)]);
+    expect(a.cashDip).toBe('soft');
+    expect(a.state).toBe('adjust');
+  });
+
+  it('puts an outflow dated on or before asOf on day 0 and into the cash check (D-61)', () => {
+    for (const o of [OUT_PAST, OUT_TODAY]) {
+      const a = run(PB({ scheduledOutflows: [o] }), buyCash(1_300_000));
+      const p = available(a);
+      expect(a.cashAfter).toBe(650_000);
+      expect(p.lowestWith).toEqual({ day: 14, date: '2026-07-24', amount: 447_808 });
+      expect(p.lowestWithout.amount).toBe(1_747_808);
+      expect(a.warnings).toEqual([w('cash_dip', 152_192)]);
+      expect(a.state).toBe('adjust');
+    }
+    const b = run(PB({ scheduledOutflows: [OUT_PAST] }), buyCash(1_380_000));
+    expect(b.cashAfter).toBe(570_000);
+    expect(available(b).lowestWith.amount).toBe(367_808);
+    expect(b.warnings).toEqual([w('cash_dip', 202_192), w('cash', 30_000)]);
+    expect(b.state).toBe('adjust');
+  });
+
+  it('applies D-61 read literally without a path', () => {
+    const a = run(BL({ scheduledOutflows: [OUT_AHEAD] }), buyCash(1_380_000));
+    expect(a.cashAfter).toBe(620_000);
+    expect(a.ledgerCashAfterPurchase).toBe(620_000);
+    expect(a.cashAfterBillsAndPurchase).toBe(570_000);
+    expect(a.warnings).toEqual([]);
+    expect(a.state).toBe('fits');
+    const b = run(BL({ scheduledOutflows: [OUT_PAST] }), buyCash(1_380_000));
+    expect(b.cashAfter).toBe(570_000);
+    expect(b.warnings).toEqual([w('cash', 30_000)]);
+    expect(b.state).toBe('adjust');
+  });
+
+  it('orders a cash and a cash_dip warning with equal shortfalls cash first', () => {
+    const a = run(PB(), buyCash(1_602_192));
+    expect(a.warnings).toEqual([w('cash', 202_192), w('cash_dip', 202_192)]);
+    expect(a.state).toBe('adjust');
   });
 });
