@@ -641,7 +641,7 @@ Plans:
 - [x] 05-12-PLAN.md — Query keys, read hooks, useDecideSnapshot, other open checks
 - [x] 05-14-PLAN.md — Steps 1 and 2, line editor
 - [x] 05-15-PLAN.md — Step 3 verdict card, warnings, core sections, Assumptions
-- [ ] 05-17-PLAN.md — Step 4 alternatives, step 5 decision, written lines
+- [x] 05-17-PLAN.md — Step 4 alternatives, step 5 decision, written lines
 - [ ] 05-18-PLAN.md — Demo fixture (6 steady months) and engine-backed demo-outcome test
 - [ ] 05-35-PLAN.md — Chart geometry, cash-path chart, net-worth chart
 - [ ] 05-36-PLAN.md — ConfidenceChip, EdgeTag, CombineToggle, GoalProgress
