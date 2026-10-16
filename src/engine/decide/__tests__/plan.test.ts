@@ -332,7 +332,11 @@ describe('resolvePlan: card', () => {
     const p = resolved(card({ kind: 'minimum' }, { card: slow }, { price: m(1_000_000) }));
     expect(p.card!.minimumOutcome).toBe('exceeds_month_cap');
     expect(p.months).toBe(SIMULATION_MONTH_CAP);
-    expect(p.interest).not.toBeNull();
+    // 04-REVIEW HI-02: an open balance at the cap is not a cleared cost (was: a finite interest and total)
+    expect(p.interest).toBeNull();
+    expect(p.total).toBeNull();
+    expect(p.card!.payoffMonths).toBeNull();
+    expect(p.card!.remainingAtCap).toBeGreaterThan(0);
   });
 
   it.each<ItemType>(['rent_bill', 'loan_repayment', 'tax', 'insurance_premium'])('blocks %s (D-18)', (itemType) => {

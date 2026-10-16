@@ -264,10 +264,11 @@ export interface CardPlanDetail {
   readonly onCard: MinorUnits; // prototype cardCap
   readonly remainderOnDay: MinorUnits; // D-18: part above the dealer cap, paid as day-one cash
   readonly payoff: CardPayoff['kind'];
-  readonly payoffMonths: number | null; // null when the minimum never clears
+  readonly payoffMonths: number | null; // null when the minimum never clears or is still open at the 600-month cap (HI-02)
   readonly minimumOutcome: MinimumOutcome | null; // only for payoff 'minimum'
+  readonly remainingAtCap: MinorUnits | null; // 04-REVIEW HI-02 / D-17: the balance still owed after SIMULATION_MONTH_CAP months when minimumOutcome is 'exceeds_month_cap'; null otherwise
   readonly fees: MinorUnits; // D-63: the payment's cardFees, 0 when absent (absence is "none", not a default)
-  readonly cardCosts: MinorUnits | null; // D-63: Plan.interest (APR interest over the plan, incl. any D-48 promo / deferred interest) + fees; null exactly when Plan.interest is null (a minimum that never clears)
+  readonly cardCosts: MinorUnits | null; // D-63: Plan.interest (APR interest over the plan, incl. any D-48 promo / deferred interest) + fees; null exactly when Plan.interest is null (a minimum that never clears or is still open at the 600-month cap, HI-02)
 }
 export interface Plan {
   readonly price: MinorUnits;
@@ -275,7 +276,7 @@ export interface Plan {
   readonly monthly: MinorUnits; // prototype `mo`
   readonly months: number; // prototype `n`
   readonly financed: MinorUnits; // prototype `fin` (adds to debt; 0 for invest)
-  readonly total: MinorUnits | null; // null only when a card minimum never clears
+  readonly total: MinorUnits | null; // null only when a card minimum never clears or is still open at the 600-month cap (HI-02: never a finite "cleared" total)
   readonly interest: MinorUnits | null;
   readonly dayFees: MinorUnits;
   readonly card: CardPlanDetail | null;
@@ -726,7 +727,7 @@ export interface PromoOutcome {
   readonly paymentDuringPromo: MinorUnits; // the first scheduled payment
   readonly paymentAfterPromo: MinorUnits | null; // the first payment after the promo; null when the balance clears before it ends
   readonly clearsBeforePromoEnd: boolean;
-  readonly interestAfterPromo: MinorUnits | null; // all interest charged after the promo, including any deferred charge; null when a card minimum never clears
+  readonly interestAfterPromo: MinorUnits | null; // all interest charged after the promo, including any deferred charge; null when a card minimum never clears or is still open at the 600-month cap (HI-02)
   readonly deferredInterestCharged: MinorUnits; // 0 unless deferredInterest and the balance is open at promo end
   readonly deferredInterestCode: 'deferred_interest_charged' | null;
   readonly highestMonthlyPayment: MinorUnits; // = Plan.monthly; the month test uses it (D-48)

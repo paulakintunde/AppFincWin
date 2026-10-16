@@ -10,7 +10,9 @@
  *   invent one.
  * - D-16: card minimum terms come from the card record; absent terms are `card_minimum_terms_missing`.
  * - D-16 clarified: one currency per check; a card in another currency is a contract violation (RangeError).
- * - D-17: a card minimum that never clears has interest and total `null`; the prototype substituted `cap * 3`.
+ * - D-17: a card minimum that never clears has interest and total `null`; the prototype substituted `cap * 3`. A card
+ *   minimum still open at the 600-month cap is not a cleared cost either (04-REVIEW HI-02): interest, total, cardCosts
+ *   and payoffMonths are `null` and `card.remainingAtCap` carries the balance still owed.
  * - D-18: a vehicle on a card uses the card up to the dealer cap and the rest becomes day-one cash; the prototype
  *   marked the whole plan missing (`miss: rule === 'blocked' || rest > 0`).
  * - Instalment: the prototype returned `miss: true` unconditionally, treated as a bug (CONTEXT Claude's discretion).
@@ -200,7 +202,8 @@ function promoFromMinimum(promo: PromoTerms, principal: number, s: ScheduledMini
     s.firstPayment,
     s.paymentAfterPromo,
     s.clearedBeforePromoEnd,
-    s.interestAfterPromo,
+    // HI-02: a balance still open at the cap has no finite "interest after the promo" either.
+    s.outcome === 'exceeds_month_cap' ? null : s.interestAfterPromo,
     s.deferredInterestCharged,
     s.highestPayment
   );
@@ -359,6 +362,7 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
   let interest: number | null = 0;
   let payoffMonths: number | null = 1;
   let minimumOutcome: MinimumOutcome | null = null;
+  let remainingAtCap: MinorUnits | null = null;
   let finalMonthly: MinorUnits | null = null;
   let steps: PaymentStep[] = [];
   let promo: PromoOutcome | null = null;
@@ -391,6 +395,13 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
         payoffMonths = null;
         const last = steps[steps.length - 1]!;
         steps[steps.length - 1] = { ...last, toMonth: SIMULATION_MONTH_CAP };
+      } else if (s.outcome === 'exceeds_month_cap') {
+        // HI-02 (04-REVIEW), D-17: the balance is still open after SIMULATION_MONTH_CAP months. Its cost is not a cleared
+        // total: interest, total, cardCosts and payoffMonths are null, as for never_clears, and the open balance is
+        // reported as remainingAtCap. The prototype-style finite total understated the cost by the whole open balance.
+        interest = null;
+        payoffMonths = null;
+        remainingAtCap = s.remainingBalance;
       } else {
         interest = s.totalInterest;
         payoffMonths = s.months;
@@ -422,6 +433,7 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
         payoff: payoff.kind,
         payoffMonths,
         minimumOutcome,
+        remainingAtCap,
         fees: m(fees),
         cardCosts: interest === null ? null : m(interest + fees),
       },
