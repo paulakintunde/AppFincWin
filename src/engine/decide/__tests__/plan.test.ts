@@ -194,7 +194,8 @@ describe('resolvePlan: instalment', () => {
   });
 
   it('floors interest at zero and reports a zero implied rate when the total is not above the price', () => {
-    const p = resolved(inst(40_000, 24));
+    // LO-05: instalments below the price are now missing, so the edge is a total exactly equal to the price
+    const p = resolved(inst(40_000, 24, { price: m(960_000) }));
     expect(p.interest).toBe(0);
     expect(p.impliedAnnualRate).toBe(ZERO_PERCENT);
   });
@@ -237,7 +238,9 @@ describe('resolvePlan: instalment late fees (D-50)', () => {
   });
 
   it('caps n at the instalments remaining', () => {
-    expect(resolved(late(1, { lateFee: m(800) })).lateFees).toMatchObject({ oneLate: 800, twoLate: 800 });
+    // one instalment that covers the price (LO-05: instalments must cover the financed price)
+    const single = late(1, { lateFee: m(800), instalmentAmount: m(1_400_000) });
+    expect(resolved(single).lateFees).toMatchObject({ oneLate: 800, twoLate: 800 });
   });
 
   it('applies the total cap the user entered, and none otherwise', () => {

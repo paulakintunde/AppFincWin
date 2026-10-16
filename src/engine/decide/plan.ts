@@ -301,15 +301,20 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
   // cover the rest (financed = price - dayFees, floored at 0). Before this the fees left cash nowhere: dayOne was the
   // first instalment alone and total was amount x count, so the cash check was understated by the fees.
   const financed = Math.max(0, check.price - check.dayFees);
-  const instalmentsTotal = amount * count;
-  const total = instalmentsTotal + check.dayFees;
+  // 04-REVIEW LO-05: in bigint, and cross-checked against what the instalments must cover. Instalments that add up to
+  // less than the financed price are inconsistent terms, so the plan is `missing` with a code (the user fixes the
+  // amount or the count) rather than a verdict on a plan whose total sits below the price. Re-priced checks
+  // (withPrice, HI-03) never trip it: the amount is scaled up with the price.
+  const instalmentsTotal = BigInt(amount) * BigInt(count);
+  if (instalmentsTotal < BigInt(financed)) return missing(['instalment_total_below_price']);
+  const total = minorFromBigInt(instalmentsTotal + BigInt(check.dayFees), FN);
   // The prototype's flat figure (total/price - 1) x (12/n) x 100 on what the instalments finance, from the user's own
   // numbers (never a default, D-07). Without on-the-day fees this is the prototype's figure exactly.
   const impliedAnnualRate: Percent =
-    financed > 0 && instalmentsTotal > financed
+    financed > 0
       ? percentFromScaled(
           divideHalfUp(
-            BigInt(instalmentsTotal - financed) * BigInt(MONTHS_PER_YEAR) * ONE_HUNDRED_PERCENT,
+            (instalmentsTotal - BigInt(financed)) * BigInt(MONTHS_PER_YEAR) * ONE_HUNDRED_PERCENT,
             BigInt(financed) * BigInt(count)
           )
         )
@@ -322,7 +327,7 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
       monthly: m(amount),
       months: count,
       financed: m(financed),
-      total: m(total),
+      total,
       interest: m(Math.max(0, total - check.price)),
       dayFees: check.dayFees,
       card: null,

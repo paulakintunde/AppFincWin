@@ -605,7 +605,8 @@ describe('assessPlan ledgers and one warning at a time (DEC-06)', () => {
 
   it('the unsecured line breaches only strictly above it', () => {
     const slow = (price: number) =>
-      buyCash(price, { payment: { method: 'instalment', instalmentAmount: mu(10_000), instalmentCount: 600 } });
+      // LO-05: the instalments must cover the price, so 600 x 110.00 (= 66,000.00) covers both prices below
+      buyCash(price, { payment: { method: 'instalment', instalmentAmount: mu(11_000), instalmentCount: 600 } });
     const over = run(BL(), slow(6_500_001));
     expect(over.unsecuredAfter).toBe(7_300_001);
     expect(over.warnings).toEqual([w('owe', 100_001)]);

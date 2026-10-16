@@ -258,6 +258,7 @@ export type PlanReason =
   | 'loan_apr_missing'
   | 'instalment_amount_missing'
   | 'instalment_count_missing'
+  | 'instalment_total_below_price' // 04-REVIEW LO-05: amount x count is less than the financed price (price − dayFees)
   | 'invest_term_missing';
 export interface CardPlanDetail {
   readonly eligibility: Exclude<CardEligibility, 'blocked'>;
