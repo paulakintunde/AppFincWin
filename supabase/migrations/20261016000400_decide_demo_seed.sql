@@ -239,9 +239,12 @@ begin
     null, null, null, true, true);   -- demo:cardDebt.paidInFull=true
 
   -- 05: the typed limits the demo needs. investing_floor 0 (05-18 deviation 1); a row the user already has is kept.
-  insert into public.decide_settings (user_id, currency, investing_floor)
-  values (v_user, v_home, 0)   -- demo:settings.investingFloor=0
+  -- A new row is marked seeded (the guard trigger honours fincwin.decide_seed); an existing row is never marked.
+  perform set_config('fincwin.decide_seed', 'on', true);
+  insert into public.decide_settings (user_id, currency, investing_floor, seeded)
+  values (v_user, v_home, 0, true)   -- demo:settings.investingFloor=0
   on conflict (user_id) do update set investing_floor = 0 where public.decide_settings.investing_floor is null;
+  perform set_config('fincwin.decide_seed', '', true);
 
   -- 05: the two open checks.
   insert into public.decide_checks (id, household_id, created_by, kind, name, inputs, status, furthest_step, is_sample)
@@ -295,10 +298,8 @@ begin
   with d as (
     delete from public.debts where household_id = p_household_id and is_sample returning 1
   ) select count(*) into v_debts from d;
-  -- 05: the seed's typed limits row (investing_floor 0 and nothing else typed) goes with the sample figures.
-  delete from public.decide_settings
-   where user_id = v_user and investing_floor = 0 and rough_income is null and rough_spending is null and reserve is null
-     and dsr_line is null and unsecured_multiple is null and saving_floor is null and basis_override is null;
+  -- 05: the seed's typed limits row goes with the sample figures, only while it is still marked seeded (a user edit clears the mark).
+  delete from public.decide_settings where user_id = v_user and seeded;
 
   -- Transactions still flagged, soft-deleted ones included.
   with d as (

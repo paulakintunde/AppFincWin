@@ -107,6 +107,7 @@ create table public.decide_settings (
   investing_floor bigint check (investing_floor is null or investing_floor between 0 and 10000000000000),
   saving_floor bigint check (saving_floor is null or saving_floor between 0 and 10000000000000),
   basis_override text check (basis_override is null or basis_override in ('average', 'worst')),
+  seeded boolean not null default false,   -- true only on the row seed_sample_data wrote; any other write clears it
   version integer not null default 1,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -116,6 +117,8 @@ create or replace function public.fill_decide_settings()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
   if (select auth.uid()) is not null then new.user_id := (select auth.uid()); end if;
+  -- seeded is set only while seed_sample_data runs (fincwin.decide_seed); every other insert or update ends false
+  if coalesce(current_setting('fincwin.decide_seed', true), '') <> 'on' then new.seeded := false; end if;
   if tg_op = 'UPDATE' then
     new.created_at := old.created_at;
     new.updated_at := now();
