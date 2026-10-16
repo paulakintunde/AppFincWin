@@ -25,7 +25,7 @@ function withPlan(method: 'cash' | 'loan' | 'instalment' | 'card' | 'lump' | 'mo
   return { methodPlans: { [method]: { status: 'resolved', plan } }, running: null, verdict: null, waitPlan: null } as unknown as CheckComputation;
 }
 
-const keys = (lines: ReturnType<typeof writtenLines>): string[] => lines.map((l) => l.key.replace('decide.decision.', ''));
+const keys = (lines: ReturnType<typeof writtenLines>): string[] => lines.map((l) => l.key.replace('decide.decision.', '').replace('decide.', ''));
 
 describe('writtenLines', () => {
   it('no outcome writes nothing', () => {
@@ -91,7 +91,7 @@ describe('writtenLines', () => {
     expect(keys(writtenLines(base({ method: 'card' }), withPlan('card', { card }), ctx))).toEqual(['writtenCard', 'writtenUntouched']);
   });
 
-  it('a card paid over months lists its payment runs', () => {
+  it('a card paid over months lists its payment series', () => {
     const card = { onCard: 90_000, remainderOnDay: 0, fees: 0 };
     const plan = withPlan('card', { card, paymentSteps: [{ fromMonth: 1, toMonth: 9, amount: 10_000 }] });
     const lines = writtenLines(base({ method: 'card', card: { ...base().card, payoff: 'months' } }), plan, ctx);
@@ -130,13 +130,36 @@ describe('writtenLines', () => {
   it('wait lists the target, the reminder, and the unchanged-balances closing line', () => {
     const computation = { ...withPlan('cash', {}), waitPlan: { target: 90_000, monthlyAmount: 30_000, readyBy: '2027-01-15' } } as unknown as CheckComputation;
     const lines = writtenLines(base({ outcome: 'wait' }), computation, ctx);
-    expect(keys(lines)).toEqual(['writtenWaitTarget', 'writtenWaitReminder', 'writtenWaitNoChange', 'writtenWaitKept']);
+    expect(keys(lines)).toEqual(['writtenWaitTarget', 'depth.goal.written', 'writtenWaitReminder', 'writtenWaitNoChange', 'writtenWaitKept']);
     expect(lines[0]!.params).toEqual({ target: 'E90000', amount: 'E30000', date: 'on 2027-01-15' });
+    expect(lines[1]!.params).toEqual({ target: 'E90000', amount: 'E30000', date: 'on 2027-01-15' });
   });
 
-  it('wait with no ready-by date lists no target or reminder line', () => {
+  it('wait with no ready-by date lists the dateless goal but no target or reminder line', () => {
     const computation = { ...withPlan('cash', {}), waitPlan: { target: 90_000, monthlyAmount: 0, readyBy: null } } as unknown as CheckComputation;
+    const lines = writtenLines(base({ outcome: 'wait' }), computation, ctx);
+    expect(keys(lines)).toEqual(['depth.goal.writtenNoDate', 'writtenWaitNoChange', 'writtenWaitKept']);
+    expect(lines[0]!.params).toEqual({ target: 'E90000', amount: 'E0' });
+  });
+
+  it('wait with nothing to save lists no goal line', () => {
+    const computation = { ...withPlan('cash', {}), waitPlan: { target: 0, monthlyAmount: 0, readyBy: null } } as unknown as CheckComputation;
     expect(keys(writtenLines(base({ outcome: 'wait' }), computation, ctx))).toEqual(['writtenWaitNoChange', 'writtenWaitKept']);
+  });
+
+  describe('cooling-off reminder (D-35)', () => {
+    const sized = (size: string | null, c: CheckComputation = withPlan('cash', {})): CheckComputation => ({ ...c, verdict: { state: 'missing', size } }) as unknown as CheckComputation;
+    it('lists the reminder last for any outcome when the size needs spreading', () => {
+      for (const outcome of ['go', 'wait', 'pass'] as const) {
+        const lines = writtenLines(base({ outcome, coolingOff: true }), sized('needs_spreading'), ctx);
+        expect(lines[lines.length - 1]!.key).toBe('decide.depth.cooling.written');
+      }
+    });
+    it('lists nothing when off, for another size, or with no outcome', () => {
+      expect(keys(writtenLines(base({ outcome: 'pass', coolingOff: false }), sized('needs_spreading'), ctx))).not.toContain('depth.cooling.written');
+      expect(keys(writtenLines(base({ outcome: 'pass', coolingOff: true }), sized('from_savings'), ctx))).not.toContain('depth.cooling.written');
+      expect(writtenLines(base({ outcome: null, coolingOff: true }), sized('needs_spreading'), ctx)).toEqual([]);
+    });
   });
 
   it('pass lists the three pass lines', () => {

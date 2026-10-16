@@ -5,6 +5,7 @@
  * the screen turns each CopyRef into text with `refText`.
  */
 import type { Plan } from '@/engine/decide';
+import { goalCopy } from '../copy/depthInputsCopy';
 import { ref } from '../copy/types';
 import type { CopyRef, Fmt } from '../copy/types';
 import type { CheckComputation, CheckInputs } from '../snapshot/types';
@@ -120,8 +121,19 @@ function goLines(inputs: CheckInputs, computation: CheckComputation, plan: Plan,
   return out;
 }
 
+/** D-35: the cooling-off reminder is only set for a purchase whose size is 'needs_spreading' (the RPC applies the same rule, 05-20). */
+function coolingApplies(inputs: CheckInputs, computation: CheckComputation): boolean {
+  return inputs.coolingOff && computation.verdict !== null && computation.verdict.size === 'needs_spreading';
+}
+
 /** The lines for the chosen outcome; [] when nothing is chosen (or the plan has not resolved). */
 export function writtenLines(inputs: CheckInputs, computation: CheckComputation, ctx: WrittenCtx): CopyRef[] {
+  const lines = outcomeLines(inputs, computation, ctx);
+  if (inputs.outcome !== null && coolingApplies(inputs, computation)) lines.push(ref('decide.depth.cooling.written'));
+  return lines;
+}
+
+function outcomeLines(inputs: CheckInputs, computation: CheckComputation, ctx: WrittenCtx): CopyRef[] {
   switch (inputs.outcome) {
     case null:
       return [];
@@ -137,8 +149,14 @@ export function writtenLines(inputs: CheckInputs, computation: CheckComputation,
       if (wait !== null && wait.readyBy !== null) {
         out.push(
           ref('decide.decision.writtenWaitTarget', { target: ctx.fmtExact(wait.target), amount: ctx.fmtExact(wait.monthlyAmount), date: ctx.formatDate(wait.readyBy) }),
-          ref('decide.decision.writtenWaitReminder', { date: ctx.formatDate(wait.readyBy) }),
         );
+      }
+      // D-34: the goal Wait creates, listed when it has a target (the RPC creates it on target > 0).
+      if (wait !== null && wait.target > 0) {
+        out.push(goalCopy({ target: wait.target, monthly_amount: wait.monthlyAmount, ready_by: wait.readyBy }, 0, ctx.fmtExact, ctx.formatDate).written);
+      }
+      if (wait !== null && wait.readyBy !== null) {
+        out.push(ref('decide.decision.writtenWaitReminder', { date: ctx.formatDate(wait.readyBy) }));
       }
       out.push(ref('decide.decision.writtenWaitNoChange'), ref('decide.decision.writtenWaitKept'));
       return out;
