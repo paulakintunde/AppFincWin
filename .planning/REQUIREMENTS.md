@@ -217,7 +217,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DEC-33**: Engine builds the month from paid Record lines only, nets refunds, skips transfers, and smooths confirmed non-monthly bills and weekly/fortnightly pay to monthly equivalents (04 D-23, D-25..D-28, D-60)
 - [ ] **DEC-34**: Engine deducts bills due in the next 90 days from cash when no cash path is available, and returns a relative purchase-size code (04 D-24, D-36)
 - [x] **DEC-35**: Engine resolves the final price from the advertised price, user-entered sales tax and fees, and trade-ins, never below zero (04 D-37)
-- [ ] **DEC-36**: Engine returns the month table, the five ledgers, runway and the wait-and-save plan (04 D-38, D-39, D-40)
+- [x] **DEC-36**: Engine returns the month table, the five ledgers, runway and the wait-and-save plan (04 D-38, D-39, D-40)
 - [ ] **DEC-37**: Engine uses separate shares for existing household spending and the purchase, and treats saving and investing as pausable (a shortfall they cover is adjust, not no) (04 D-34, D-35)
 
 ### Decide — Experience
@@ -581,7 +581,7 @@ Populated during roadmap creation.
 | DEC-33 | Phase 4 - Decide Engine | Complete |
 | DEC-34 | Phase 4 - Decide Engine | Pending |
 | DEC-35 | Phase 4 - Decide Engine | Complete |
-| DEC-36 | Phase 4 - Decide Engine | Pending |
+| DEC-36 | Phase 4 - Decide Engine | Complete |
 | DEC-37 | Phase 4 - Decide Engine | Pending |
 | DCU-01 | Phase 5 - Decide UI | Pending |
 | DCU-02 | Phase 5 - Decide UI | Pending |
