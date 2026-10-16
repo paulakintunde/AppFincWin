@@ -1472,7 +1472,7 @@ const en = {
       saved: 'Saved', abandoned: 'Check abandoned — nothing was written', written: 'Written to your records',
       writtenBroke: 'Logged. The record notes it breaks a line.', waitSaved: 'Saved. Reminder set for {{date}}',
       waitNoNotify: 'Saved. Notifications are off, so no reminder will arrive.', passed: 'Passed. Nothing moved.',
-      unlinked: 'Line unlinked', removed: 'Decision removed', reopened: 'Opened as a new check', attached: 'Line attached',
+      unlinked: 'Line unlinked', lineRemoved: 'Removed · {{name}}', removed: 'Decision removed', reopened: 'Opened as a new check', attached: 'Line attached',
     },
     flow: {
       stepOf: 'Step {{n}} of 5', stepA11y: 'Step {{n}}, {{title}}', back: 'Back', saveClose: 'Save and close', saved: 'Saved',
@@ -1530,6 +1530,7 @@ const en = {
       noteCard: 'At {{apr}}%, the rate on your card record.', noteCardNoRate: 'Type the rate on your card to score months or minimum plans.',
       noteCardFull: 'Paid in full next statement, so no rate is needed.',
       noteInvestMonthly: '{{amount}} a month for {{count}} months is {{total}} put in.', noteInvestWorth: 'At {{rate}}% it would be worth about {{fv}}.',
+      noteInvestCaption: 'A projection at the rate you entered, not a forecast.', unnamedLine: 'Unnamed',
       loanDeposit: 'Deposit', loanInterestSaved: 'Interest saved', loanCashLeft: 'Cash left after', loanTerm: 'Term', loanTermUnit: 'mo',
       loanTermNote: 'At {{count}} months you pay {{payment}} a month and {{interest}} in interest. Every extra year lowers the payment and raises the total.',
       loanRate: 'Annual rate', loanRateHint: 'Type the rate you were quoted', loanSecured: 'Secured against what you’re buying',
