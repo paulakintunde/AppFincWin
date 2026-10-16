@@ -8,12 +8,24 @@ import {
   amortise,
   percent,
   percentFromScaled,
+  amortiseSchedule,
   simulateMinimum,
+  simulateMinimumSchedule,
+  singleRate,
   type CardMinimumTerms,
 } from '../../payoff';
 import type { ItemType } from '../cardRule';
-import { resolvePlan, resolvePlanStrict, withPrice } from '../plan';
-import type { BuyCheck, BuyPayment, CardRecord, InvestCheck, Plan, PlanResult, PurchaseCheck } from '../types';
+import { rateScheduleFor, resolvePlan, resolvePlanStrict, withPrice } from '../plan';
+import type {
+  BuyCheck,
+  BuyPayment,
+  CardRecord,
+  InvestCheck,
+  Plan,
+  PlanResult,
+  PromoTerms,
+  PurchaseCheck,
+} from '../types';
 import { USD } from './helpers/fixtures';
 
 const m = minorUnits;
@@ -488,6 +500,203 @@ describe('payment steps property', () => {
         }
       ),
       { numRuns: 150 }
+    );
+  });
+});
+
+const PROMO12: PromoTerms = { apr: ZERO_PERCENT, months: 12, deferredInterest: false };
+const PROMO6: PromoTerms = { apr: ZERO_PERCENT, months: 6, deferredInterest: false };
+
+function promoLoan(promo: PromoTerms | undefined, over: Partial<Extract<BuyPayment, { method: 'loan' }>> = {}): BuyCheck {
+  return loan(
+    { deposit: m(0), termMonths: 36, apr: pct('9.9'), ...(promo === undefined ? {} : { promo }), ...over },
+    { price: m(1_200_000) }
+  );
+}
+
+describe('rateScheduleFor', () => {
+  it('is a single rate without a promo and two segments with one', () => {
+    expect(rateScheduleFor(pct('9.9'), undefined)).toEqual(singleRate(pct('9.9')));
+    expect(rateScheduleFor(pct('9.9'), PROMO12)).toEqual({
+      segments: [
+        { fromMonth: 1, apr: ZERO_PERCENT },
+        { fromMonth: 13, apr: pct('9.9') },
+      ],
+      deferredInterest: false,
+    });
+  });
+});
+
+describe('resolvePlan: promotional rates (D-48)', () => {
+  it('follows the rate schedule on a loan; monthly is the highest payment', () => {
+    const p = resolved(promoLoan(PROMO12));
+    const am = amortiseSchedule(m(1_200_000), rateScheduleFor(pct('9.9'), PROMO12), 36);
+    expect(p.promo).toEqual({
+      promoMonths: 12,
+      promoApr: ZERO_PERCENT,
+      deferredInterest: false,
+      paymentDuringPromo: 33_333,
+      paymentAfterPromo: am.paymentsByMonth[12],
+      clearsBeforePromoEnd: false,
+      interestAfterPromo: am.interestAfterPromo,
+      deferredInterestCharged: 0,
+      deferredInterestCode: null,
+      highestMonthlyPayment: am.highestPayment,
+      paymentToClearInPromo: 100_000,
+    });
+    expect(p.monthly).toBe(am.highestPayment);
+    expect(p.total).toBe(p.dayOne + am.totalPaid);
+    expect(p.interest).toBe(p.total! - p.price);
+    expect(p.finalMonthly).toBe(am.finalPayment);
+    expect(p.paymentSteps[0]).toEqual({ fromMonth: 1, toMonth: 12, amount: 33_333 });
+    expect(p.lateFees).toBeNull();
+  });
+
+  it('W3: paymentSteps, not monthly x (months - 1) + finalMonthly, is the series source', () => {
+    const p = resolved(promoLoan(PROMO12));
+    const am = amortiseSchedule(m(1_200_000), rateScheduleFor(pct('9.9'), PROMO12), 36);
+    expect(sumSteps(p)).toBe(am.totalPaid);
+    expect(sumSteps(p)).toBe(p.total! - p.dayOne);
+    expect(sumSteps(p)).not.toBe(p.monthly * (p.months - 1) + p.finalMonthly!);
+    const plain = resolved(promoLoan(undefined));
+    expect(plain.promo).toBeNull();
+    expect(sumSteps(plain)).toBe(plain.monthly * (plain.months - 1) + plain.finalMonthly!);
+  });
+
+  it('charges deferred interest at the promo end when flagged and the balance is open', () => {
+    const terms: PromoTerms = { ...PROMO12, deferredInterest: true };
+    const p = resolved(promoLoan(terms));
+    const am = amortiseSchedule(m(1_200_000), rateScheduleFor(pct('9.9'), terms), 36);
+    expect(am.deferredInterestCharged).toBeGreaterThan(0);
+    expect(p.promo).toMatchObject({
+      deferredInterest: true,
+      deferredInterestCharged: am.deferredInterestCharged,
+      deferredInterestCode: 'deferred_interest_charged',
+    });
+    expect(p.monthly).toBe(am.highestPayment);
+    expect(p.monthly).toBeGreaterThan(resolved(promoLoan(PROMO12)).monthly);
+  });
+
+  it('a promo covering the whole term clears before the promo ends and charges nothing deferred', () => {
+    const p = resolved(promoLoan({ apr: ZERO_PERCENT, months: 36, deferredInterest: true }));
+    expect(p.promo).toMatchObject({
+      clearsBeforePromoEnd: true,
+      paymentAfterPromo: null,
+      interestAfterPromo: 0,
+      deferredInterestCharged: 0,
+      deferredInterestCode: null,
+    });
+  });
+
+  it('a card months plan uses the schedule; a vehicle above the dealer cap promotes onCard only (D-18)', () => {
+    const p = resolved(card({ kind: 'months', months: 12 }, { promo: PROMO6 }));
+    const am = amortiseSchedule(m(1_450_000), rateScheduleFor(pct('22.9'), PROMO6), 12);
+    expect(p.promo).toMatchObject({ paymentDuringPromo: am.payment, highestMonthlyPayment: am.highestPayment });
+    expect(p.monthly).toBe(am.highestPayment);
+    const v = resolved(
+      card({ kind: 'months', months: 12 }, { promo: PROMO6, dealerCap: m(1_000_000) }, { itemType: 'vehicle' })
+    );
+    const amV = amortiseSchedule(m(1_000_000), rateScheduleFor(pct('22.9'), PROMO6), 12);
+    expect(v.dayOne).toBe(450_000);
+    expect(v.promo!.highestMonthlyPayment).toBe(amV.highestPayment);
+  });
+
+  it('a card minimum with a promo reports the simulation outcome', () => {
+    const p = resolved(card({ kind: 'minimum' }, { promo: PROMO6 }));
+    const s = simulateMinimumSchedule(m(1_450_000), rateScheduleFor(pct('22.9'), PROMO6), TERMS);
+    expect(p.promo).toMatchObject({
+      paymentDuringPromo: s.firstPayment,
+      paymentAfterPromo: s.paymentAfterPromo,
+      clearsBeforePromoEnd: s.clearedBeforePromoEnd,
+      interestAfterPromo: s.interestAfterPromo,
+      highestMonthlyPayment: s.highestPayment,
+    });
+    expect(p.monthly).toBe(p.promo!.highestMonthlyPayment);
+    expect(p.promo!.paymentToClearInPromo).toBe(amortise(m(1_450_000), ZERO_PERCENT, 6).payment);
+  });
+
+  it('a card minimum that never clears after the promo has null interest and total', () => {
+    const hard: CardRecord = {
+      ...CARD,
+      apr: pct('30'),
+      minimumTerms: { minimumPercent: pct('0.5'), interestAdded: false, floor: m(0) },
+    };
+    const p = resolved(card({ kind: 'minimum' }, { card: hard, promo: PROMO6 }));
+    expect(p.card!.minimumOutcome).toBe('never_clears');
+    expect(p.promo!.interestAfterPromo).toBeNull();
+    expect(p.total).toBeNull();
+    expect(p.card!.cardCosts).toBeNull();
+  });
+
+  it('a full payoff with a promo has no promo outcome', () => {
+    expect(resolved(card({ kind: 'full' }, { promo: PROMO12 })).promo).toBeNull();
+  });
+
+  it('D-07: the rate after the promo is still required', () => {
+    expect(reasonsOf(promoLoan(PROMO12, { apr: null }))).toEqual(['loan_apr_missing']);
+    const noApr: CardRecord = { ...CARD, apr: null };
+    expect(reasonsOf(card({ kind: 'months', months: 12 }, { card: noApr, promo: PROMO12 }))).toEqual([
+      'card_apr_missing',
+    ]);
+  });
+
+  it('rejects bad promo terms', () => {
+    for (const months of [0, 1.5, 601]) {
+      expect(() => resolvePlan(promoLoan({ ...PROMO12, months }))).toThrow(/^resolvePlan: /);
+    }
+    expect(() => resolvePlan(promoLoan({ apr: pct('1'), months: 6, deferredInterest: true }))).toThrow(
+      /^resolvePlan: deferred interest needs a 0% promotional rate/
+    );
+  });
+
+  it('D-49: the variable flag changes nothing in the plan', () => {
+    const base = resolved(promoLoan(undefined));
+    expect(resolved(promoLoan(undefined, { variable: true }))).toEqual(base);
+    expect(resolved(promoLoan(undefined, { variable: false }))).toEqual(base);
+    expect(resolved(card({ kind: 'months', months: 12 }, { variable: true }))).toEqual(
+      resolved(card({ kind: 'months', months: 12 }))
+    );
+    expect(() => resolvePlan(promoLoan(undefined, { variable: 'yes' as never }))).toThrow(/^resolvePlan: /);
+    expect(() => resolvePlan(card({ kind: 'full' }, { variable: 1 as never }))).toThrow(/^resolvePlan: /);
+  });
+
+  it('D-63: card costs on a promo plan are the schedule interest plus the one-off card fees', () => {
+    const p = resolved(card({ kind: 'months', months: 12 }, { promo: PROMO6, cardFees: m(3_500) }));
+    expect(p.card!.cardCosts).toBe(p.interest + 3_500);
+    expect(p.card!.fees).toBe(3_500);
+    expect(p.dayOne).toBe(3_500);
+    expect(p.total! - p.price).toBe(p.card!.cardCosts);
+    const deferred: PromoTerms = { ...PROMO6, deferredInterest: true };
+    const d = resolved(card({ kind: 'months', months: 12 }, { promo: deferred, cardFees: m(3_500) }));
+    const am = amortiseSchedule(m(1_450_000), rateScheduleFor(pct('22.9'), deferred), 12);
+    expect(d.promo!.deferredInterestCharged).toBeGreaterThan(0);
+    expect(d.interest).toBe(am.totalInterest);
+    expect(d.card!.cardCosts).toBe(am.totalInterest + 3_500);
+    expect(d.total! - d.price).toBe(d.card!.cardCosts);
+  });
+
+  it('property: monthly is the highest step and the steps sum to the series', () => {
+    fc.assert(
+      fc.property(
+        fc.bigInt({ min: 0n, max: 300_000_000_000n }),
+        fc.integer({ min: 1, max: 36 }),
+        fc.integer({ min: 0, max: 36 }),
+        fc.boolean(),
+        fc.bigInt({ min: 0n, max: 300_000_000_000n }),
+        (postApr, promoMonths, extra, deferred, promoApr) => {
+          const terms: PromoTerms = {
+            apr: deferred ? ZERO_PERCENT : percentFromScaled(promoApr),
+            months: promoMonths,
+            deferredInterest: deferred,
+          };
+          const p = resolved(
+            promoLoan(terms, { termMonths: promoMonths + extra, apr: percentFromScaled(postApr) })
+          );
+          expect(p.monthly).toBe(Math.max(...p.paymentSteps.map((s) => s.amount)));
+          expect(sumSteps(p)).toBe(p.total! - p.dayOne);
+        }
+      ),
+      { numRuns: 100 }
     );
   });
 });
