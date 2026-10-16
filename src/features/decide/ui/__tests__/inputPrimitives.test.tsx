@@ -52,7 +52,7 @@ describe('StepSlider', () => {
     const { getByLabelText } = await wrap(
       <StepSlider min={100} max={1000} step={250} value={350} onChange={onChange} accessibilityLabel="S" />,
     );
-    const s = getByLabelText('S'); 
+    const s = getByLabelText('S');
     await fireEvent(s, 'accessibilityAction', action('increment'));
     await fireEvent(s, 'accessibilityAction', action('decrement'));
     expect(onChange).toHaveBeenCalled();
