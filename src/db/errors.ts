@@ -19,7 +19,9 @@ export type WriteEntity =
   | 'debts'
   | 'decide_links'
   | 'decide_changes'
-  | 'savings_goals';
+  | 'savings_goals'
+  | 'decide_settings'
+  | 'statement_periods';
 
 /**
  * A PostgREST/Postgres error normalized into a typed shape. `code` is the Postgres or
