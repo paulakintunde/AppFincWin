@@ -139,7 +139,7 @@ describe('applySetbacks (DEC-15, D-19)', () => {
     expect(r.anyEnabled).toBe(false);
     expect(r.combinedHit).toBe(0);
     expect(r.stressedCash).toBe(A.cashAfterBillsAndPurchase);
-    expect(r.stressedOutcome).toBe('through_cushion'); // 1_700_000 is not below the 1_230_000 cushion
+    expect(r.stressedOutcome).toBe('absorbed'); // 1_700_000 is not below the 1_230_000 cushion
   });
 
   it('classifies each result: absorbed, through the cushion, wiped out', () => {
