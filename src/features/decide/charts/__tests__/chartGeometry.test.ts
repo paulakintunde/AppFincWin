@@ -37,7 +37,6 @@ describe('pathFor', () => {
     expect(pathFor([100, 0, 50], box, ticks)).toBe('M 36 8 L 68 78 L 100 43');
   });
   it('a null point breaks the line', () => {
-    expect(pathFor([0, null, 100, 100], box, ticks)).toBe('M 36 78 M 68 8 L 100 8'.replace('M 68 8', 'M 68 8'.replace('68', '68')) === '' ? '' : pathFor([0, null, 100, 100], box, ticks));
     const p = pathFor([0, 50, null, 100, 100], box, ticks);
     expect(p.split('M').length - 1).toBe(2);
     expect(p).toBe('M 36 78 L 52 43 M 84 8 L 100 8');

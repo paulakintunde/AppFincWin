@@ -44,6 +44,8 @@ for (const f of ['money', 'decide', 'payoff', 'split', 'recurring', 'csv', 'cate
 for (const d of ['src/features/decide/snapshot', 'src/features/decide/journal']) {
   if (hasSource(d)) coverageThreshold[`./${d}/`] = FULL;
 }
+// 05-35: pure chart geometry (D-26, D-31)
+if (fs.existsSync('src/features/decide/charts/chartGeometry.ts')) coverageThreshold['./src/features/decide/charts/chartGeometry.ts'] = FULL;
 
 module.exports = {
   preset: 'jest-expo',
