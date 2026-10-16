@@ -142,6 +142,17 @@ describe('AssumptionsSection', () => {
     expect(screen.getByText(/does not lend money/)).toBeTruthy();
   });
 
+  it('the debt row counts one account in the singular', async () => {
+    await render(metaWith({ debtCount: 1 }));
+    expect(screen.getByText(/^1 account · .+ unsecured$/)).toBeTruthy();
+    expect(screen.queryByText(/1 accounts/)).toBeNull();
+  });
+
+  it('the debt row counts two accounts in the plural', async () => {
+    await render(metaWith({ debtCount: 2 }));
+    expect(screen.getByText(/^2 accounts · .+ unsecured$/)).toBeTruthy();
+  });
+
   it('names lines without a rate and derived balances', async () => {
     await render(metaWith({ unconvertedRows: 2, derivedDebts: 1 }));
     expect(screen.getByText('Lines without a rate')).toBeTruthy();

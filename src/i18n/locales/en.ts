@@ -1663,7 +1663,7 @@ const en = {
       assumptionsTitle: 'Assumptions in play', assumptionsSummary_one: '{{count}} assumption', assumptionsSummary_other: '{{count}} assumptions',
       asIncome: 'Money in', asIncomeValue: '{{count}} months logged · {{steadiness}} · {{basis}}',
       asExpenses: 'Expenses', asExpensesValue: '{{amount}} a month',
-      asDebt: 'Debt', asDebtValue: '{{count}} accounts · {{amount}} unsecured',
+      asDebt: 'Debt', asDebtValue_one: '{{count}} account · {{amount}} unsecured', asDebtValue_other: '{{count}} accounts · {{amount}} unsecured',
       asReturn: 'Return on money kept', asReturnValue: '{{rate}}%', asReturnZero: '0% unless you entered one',
       asRunning: 'Running costs', asRunningValue: '{{counted}} of {{total}} counted, net of {{ended}} ended',
       asUnconverted: 'Lines without a rate', asUnconvertedValue_one: '{{count}} line left out', asUnconvertedValue_other: '{{count}} lines left out',
