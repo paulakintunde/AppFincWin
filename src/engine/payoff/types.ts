@@ -45,7 +45,7 @@ export function minorFromBigInt(value: bigint, fn: string): MinorUnits {
   return minorUnits(Number(value));
 }
 
-/** For counts such as months-to-save; money rounding always uses divideHalfUp. */
+/** For counts such as months-to-save, and the D-64 rounded-up level payment; other money rounding uses divideHalfUp. */
 export function ceilDivide(n: bigint, d: bigint): bigint {
   if (d <= 0n) {
     throw new RangeError('ceilDivide: divisor must be positive');
@@ -57,9 +57,9 @@ export function ceilDivide(n: bigint, d: bigint): bigint {
 }
 
 export interface AmortisationResult {
-  /** Level monthly payment, months 1..n-1. */
+  /** Level monthly payment (D-64: rounded up), every month before the last paying month. */
   readonly payment: MinorUnits;
-  /** Month n: remaining balance plus that month's interest. */
+  /** Month n: remaining balance plus that month's interest; never more than `payment` (D-64). */
   readonly finalPayment: MinorUnits;
   readonly months: number;
   /** Exactly principal + totalInterest. */

@@ -105,9 +105,10 @@ describe('firstRead (DEC-16)', () => {
 
   it('onboarding first check with credit and extras: 12 months at 0% with day fees', () => {
     const r = resolved(firstRead(figures(), loan(1_545_000, 12, { dayFees: m(95_000) })));
-    expect(r).toMatchObject({ dayOne: 95_000, monthly: 120_833, cashAfter: 1_905_000, leftAfter: -50_833, state: 'no' });
+    // D-64: 14,500.00 / 12 = 1,208.333... rounds up to 1,208.34
+    expect(r).toMatchObject({ dayOne: 95_000, monthly: 120_834, cashAfter: 1_905_000, leftAfter: -50_834, state: 'no' });
     expect(r.plan.months).toBe(12);
-    expect(r.warnings).toEqual([{ code: 'month', shortfall: 50_833 }]);
+    expect(r.warnings).toEqual([{ code: 'month', shortfall: 50_834 }]);
     expect(r.size).toBe('needs_spreading');
   });
 

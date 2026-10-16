@@ -19,7 +19,8 @@
  *   The plan is `missing` only when the amount or the count is absent.
  *
  * D-20: figures come from amortiseSchedule / simulateMinimumSchedule with a single-rate schedule, which equal
- * amortise / simulateMinimum exactly for one segment (proved in 04-14). The residual sits in the last payment.
+ * amortise / simulateMinimum exactly for one segment (proved in 04-14). The residual sits in the last payment, and
+ * D-64 rounds the level payment up so that last payment is never more than `monthly` (04-REVIEW HI-04).
  * Phase 5 writes recurring series from `paymentSteps`, the source of truth (05 D-09); `finalMonthly` and
  * `impliedAnnualRate` are display figures derived from the user's own numbers, never defaults (D-07).
  *

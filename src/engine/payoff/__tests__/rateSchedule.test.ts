@@ -62,14 +62,15 @@ describe('schedule helpers', () => {
 });
 
 describe('amortiseSchedule', () => {
-  it('0% promo then 9.9%: promo payment is an even split, then a recast', () => {
+  it('0% promo then 9.9%: promo payment is an even split rounded up (D-64), then a recast', () => {
     const r = amortiseSchedule(m(1_200_000), PROMO, 36);
-    for (let i = 0; i < 12; i++) expect(r.paymentsByMonth[i]).toBe(33_333);
+    // D-64: 12,000.00 / 36 = 333.333..., rounded up to 333.34 (half-up was 333.33 and left 8,000.04 at promo end)
+    for (let i = 0; i < 12; i++) expect(r.paymentsByMonth[i]).toBe(33_334);
     expect(divideHalfUp(1_200_000n, 36n)).toBe(33_333n);
-    expect(r.balanceAtPromoEnd).toBe(800_004);
-    expect(r.paymentsByMonth[12]).toBe(amortise(m(800_004), pct('9.9'), 24).payment);
+    expect(r.balanceAtPromoEnd).toBe(799_992);
+    expect(r.paymentsByMonth[12]).toBe(amortise(m(799_992), pct('9.9'), 24).payment);
     expect(r.finalPayment).toBe(r.paymentsByMonth[35]);
-    expect(r.payment).toBe(33_333);
+    expect(r.payment).toBe(33_334);
     expect(r.balancesByMonth[35]).toBe(0);
     expect(r.totalPaid).toBe(1_200_000 + num(r.totalInterest));
     expect(r.interestAfterPromo).toBe(r.totalInterest);
@@ -82,11 +83,11 @@ describe('amortiseSchedule', () => {
     const r = amortiseSchedule(m(1_200_000), DEFERRED, 36);
     let expected = 0n;
     for (let i = 0; i < 12; i++) {
-      expected += divideHalfUp(BigInt(1_200_000 - 33_333 * i) * pct('9.9'), D);
+      expected += divideHalfUp(BigInt(1_200_000 - 33_334 * i) * pct('9.9'), D);
     }
     expect(r.deferredInterestCharged).toBe(Number(expected));
     expect(r.deferredInterestCharged).toBeGreaterThan(0);
-    expect(r.paymentsByMonth[12]).toBe(amortise(m(800_004 + num(r.deferredInterestCharged)), pct('9.9'), 24).payment);
+    expect(r.paymentsByMonth[12]).toBe(amortise(m(799_992 + num(r.deferredInterestCharged)), pct('9.9'), 24).payment);
     expect(r.interestAfterPromo).toBeGreaterThanOrEqual(r.deferredInterestCharged);
     expect(r.totalPaid).toBe(1_200_000 + num(r.totalInterest));
   });

@@ -57,7 +57,7 @@ function plan(check: BuyCheck): Plan {
 describe('D-48 promotional rates and D-50 late fees', () => {
   it('D-48: the month test uses the highest payment in the schedule, not the promotional one', () => {
     const p = plan(loan({ apr: ZERO_PERCENT, months: 12, deferredInterest: false }));
-    expect(p.promo!.paymentDuringPromo).toBe(33_333);
+    expect(p.promo!.paymentDuringPromo).toBe(33_334); // D-64: the level payment rounds up
     expect(p.monthly).toBe(p.promo!.highestMonthlyPayment);
     expect(p.monthly).toBeGreaterThan(p.promo!.paymentDuringPromo);
   });

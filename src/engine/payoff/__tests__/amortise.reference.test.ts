@@ -13,6 +13,13 @@
  *
  * Row figures come from a local helper that replays amortise's documented schedule and is
  * cross-checked against amortise's own totals, so the rows tested are amortise's rows.
+ *
+ * D-64 (amends D-20, ratified 2026-10-16): the engine's level payment rounds UP. Where the printed
+ * payment is the half-up figure (R1, R2, R4, the 0% split), the engine pays one minor unit more. The
+ * printed rows are still checked, by replaying the schedule at the printed payment (`rows(..., printed)`),
+ * so the engine's per-month interest arithmetic is verified against each reference; the engine's own
+ * payment, final payment and totals are asserted beside them as the named D-64 deviation (see also
+ * deviations/d64-level-payment-rounds-up.test.ts).
  */
 import { divideHalfUp } from '../../money/rounding';
 import { minorUnits } from '../../money/types';
@@ -27,8 +34,8 @@ interface Row {
   readonly balance: bigint;
 }
 
-function rows(principal: number, apr: Percent, n: number): Row[] {
-  const payment = BigInt(amortise(m(principal), apr, n).payment);
+function rows(principal: number, apr: Percent, n: number, printed?: bigint): Row[] {
+  const payment = printed ?? BigInt(amortise(m(principal), apr, n).payment);
   const out: Row[] = [];
   let bal = BigInt(principal);
   for (let k = 1; k <= n; k++) {
@@ -53,22 +60,26 @@ describe('D-57 published amortisation references', () => {
   it('R1 OpenStax Contemporary Mathematics 6.8: 10,000.00 at 4.75% over 240 months', () => {
     const apr = percent('4.75');
     const r = amortise(m(1_000_000), apr, 240);
-    const rs = rows(1_000_000, apr, 240);
-    expect(r.payment).toBe(6_462);
+    const rs = rows(1_000_000, apr, 240, 6_462n); // printed payment 64.62
     expect(rs[0]!.interest).toBe(3_958n);
     expect(rs[0]!.paid - rs[0]!.interest).toBe(2_504n);
     expect(rs[9]!.interest).toBe(3_868n);
     expect(rs[14]!.balance).toBe(961_383n);
-    expect(r.finalPayment).toBe(6_538);
-    expect(r.totalInterest).toBe(550_956);
+    expect(rs[239]!.paid).toBe(6_538n);
+    expect(rs.reduce((t, x) => t + x.interest, 0n)).toBe(550_956n);
+    // D-64: the exact payment is 64.6224..., so the engine pays 64.63; the final payment and the interest fall.
+    expect(r.payment).toBe(6_462 + 1);
+    expect(r.finalPayment).toBe(6_146);
+    expect(r.totalInterest).toBe(550_803);
     crossCheck(1_000_000, apr, 240);
   });
 
   it('R2 OpenStax Principles of Finance 8.3 car loan: 32,000.00 at 6% over 36 months', () => {
     const apr = percent('6');
     const r = amortise(m(3_200_000), apr, 36);
-    const rs = rows(3_200_000, apr, 36);
-    expect(r.payment).toBe(97_350);
+    const rs = rows(3_200_000, apr, 36, 97_350n); // printed payment 973.50
+    // D-64: the exact payment is 973.5019..., so the engine pays 973.51.
+    expect(r.payment).toBe(97_350 + 1);
     expect([rs[0]!.balance, rs[1]!.balance, rs[2]!.balance]).toEqual([3_118_650n, 3_036_893n, 2_954_727n]);
     expect([rs[0]!.interest, rs[1]!.interest, rs[2]!.interest]).toEqual([16_000n, 15_593n, 15_184n]);
     expect(rs[35]!.interest).toBe(484n);
@@ -90,8 +101,9 @@ describe('D-57 published amortisation references', () => {
   it('R4 Sekhon and Bloom 6.5: 500.00 at 12% over 6 months', () => {
     const apr = percent('12');
     const r = amortise(m(50_000), apr, 6);
-    const rs = rows(50_000, apr, 6);
-    expect(r.payment).toBe(8_627);
+    const rs = rows(50_000, apr, 6, 8_627n); // printed payment 86.27
+    // D-64: the exact payment is 86.2742..., so the engine pays 86.28.
+    expect(r.payment).toBe(8_627 + 1);
     expect(rs[0]!.interest).toBe(500n);
     expect(rs[0]!.paid - rs[0]!.interest).toBe(8_127n);
     expect(rs[0]!.balance).toBe(41_873n);
@@ -99,9 +111,11 @@ describe('D-57 published amortisation references', () => {
     crossCheck(50_000, apr, 6);
   });
 
-  it('zero rate is an even split with the remainder in the final payment', () => {
+  it('zero rate is an even split rounded up, with the final payment taking what is left (D-64)', () => {
     const r = amortise(m(100_000), ZERO_PERCENT, 12);
-    expect(r.payment).toBe(8_333);
-    expect(r.finalPayment).toBe(8_337);
+    // D-64: 1,000.00 / 12 = 83.333..., rounded up to 83.34 (half-up was 83.33 with a final 83.37)
+    expect(r.payment).toBe(8_334);
+    expect(r.finalPayment).toBe(8_326);
+    expect(11 * r.payment + r.finalPayment).toBe(100_000);
   });
 });

@@ -7,10 +7,13 @@ import { minorUnits } from '../../money/types';
 const m = minorUnits;
 
 describe('amortise known tables', () => {
+  // D-64 (amends D-20): the level payment rounds UP. The published half-up figures were 119,910, 59,955 and 39,602; the
+  // exact payments are 1,199.10..., 599.55... and 396.02..., so the engine's are one unit above (named in
+  // deviations/d64-level-payment-rounds-up.test.ts). 88.85 is exact to within a unit either way.
   it.each([
-    [20_000_000, '6', 360, 119_910],
-    [10_000_000, '6', 360, 59_955],
-    [2_000_000, '7', 60, 39_602],
+    [20_000_000, '6', 360, 119_911],
+    [10_000_000, '6', 360, 59_956],
+    [2_000_000, '7', 60, 39_603],
     [100_000, '12', 12, 8_885],
   ])('principal %i at %s%% over %i months', (p, apr, n, expected) => {
     expect(amortise(m(p), percent(apr), n).payment).toBe(expected);

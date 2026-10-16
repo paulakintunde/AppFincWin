@@ -8,7 +8,8 @@
  * Recast convention: at the start of each segment the remaining balance is re-amortised over the
  * remaining months at that segment's APR (ARM-style "recast at rate change", 04-RESEARCH addendum
  * assumption A6). A user whose lender quotes a fixed payment enters it as an instalment plan instead.
- * The final payment absorbs the rounding residual (D-20), so totalPaid === principal + totalInterest.
+ * The final payment absorbs the rounding residual (D-20), so totalPaid === principal + totalInterest. Each recast
+ * payment is amortise's D-64 level payment (rounded up), so within a segment no later payment exceeds it.
  *
  * Deferred interest (US Reg Z 1026.55(b)(1) comment 3.i and the CFPB explainer; UK FCA PS19/17):
  * while flagged, interest at the post-promo rate accrues on each promotional month's opening

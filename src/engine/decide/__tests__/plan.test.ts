@@ -586,7 +586,7 @@ describe('resolvePlan: promotional rates (D-48)', () => {
       promoMonths: 12,
       promoApr: ZERO_PERCENT,
       deferredInterest: false,
-      paymentDuringPromo: 33_333,
+      paymentDuringPromo: 33_334, // D-64: 12,000.00 / 36 rounded up
       paymentAfterPromo: am.paymentsByMonth[12],
       clearsBeforePromoEnd: false,
       interestAfterPromo: am.interestAfterPromo,
@@ -599,7 +599,7 @@ describe('resolvePlan: promotional rates (D-48)', () => {
     expect(p.total).toBe(p.dayOne + am.totalPaid);
     expect(p.interest).toBe(p.total! - p.price);
     expect(p.finalMonthly).toBe(am.finalPayment);
-    expect(p.paymentSteps[0]).toEqual({ fromMonth: 1, toMonth: 12, amount: 33_333 });
+    expect(p.paymentSteps[0]).toEqual({ fromMonth: 1, toMonth: 12, amount: 33_334 });
     expect(p.lateFees).toBeNull();
   });
 
