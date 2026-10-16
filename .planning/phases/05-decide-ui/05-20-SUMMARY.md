@@ -37,7 +37,7 @@ One undoable multi-write for Go ahead (pure builder from `Plan.paymentSteps`, ro
 - `useWaitAndSave().save` also takes `currency` (the goal needs it) and `check` is a `Pick` of the check row (id, created_by, household_id, name, inputs); `goAhead` takes `checkId`, `ownerId`, `homeCurrency` beside `inputs`, `assessment`, `running`, `ctx`.
 - `buildGoAheadWrite` throws a `TypeError` when a needed category (`debtCategoryId` for loan/card payoff, `savingsCategoryId` for a monthly investment) or the card account is null, rather than writing an uncounted line; callers (05-29) resolve these before confirming. A replaced series whose id is not in `ctx.replacedSeries` (already gone) is skipped.
 - Running-cost series use the counted line's full amount (household), as the plan states.
-- Wait/Pass failures park a failed-write record (no toast; the plan names none).
+- Wait/Pass failures park a failed-write record (superseded: see the post-plan fix below).
 - No engine edits.
 
 ## Known Stubs
@@ -47,3 +47,6 @@ None.
 None beyond the OS permission prompt for the Wait and cooling-off reminders (covered by 05-11).
 
 ## Self-Check: PASSED
+
+## Post-plan fix (user decision 2026-10-16)
+A failed Wait or Pass write now shows an error toast (`decide.toast.outcomeFailed`, a refusal toast) after the failed-write record is parked, in the same definitive-failure branch of `onError` that other mutations use. A write paused offline never reaches `onError`, so it shows no toast until it replays and fails for real. Go ahead is unchanged. Tests in `decideOutcome.test.tsx`.
