@@ -24,7 +24,7 @@ export type QuickState = 'fits' | 'adjust' | 'no' | 'missing';
 const FALLBACK_CURRENCY = 'USD';
 
 /** What the analytics event carries: a state word only. Nothing was judged for none, cash_only and unconverted. */
-function stateOf(c: QuickComputation): QuickState | null {
+export function quickStateOf(c: QuickComputation): QuickState | null {
   switch (c.kind) {
     case 'logged':
       return c.verdict.state;
@@ -68,7 +68,7 @@ export function useQuickCheck(source: SnapshotResult | null, surface: 'home' | '
   const fire = useCallback(
     (next: QuickInputs) => {
       if (surface !== 'home' || source === null) return;
-      const state = stateOf(computeQuick(source, next, { allowCashOnly, otherChecks: otherChecks ?? [] }));
+      const state = quickStateOf(computeQuick(source, next, { allowCashOnly, otherChecks: otherChecks ?? [] }));
       if (state !== null) getAnalytics().track('quick_check_run', { state });
     },
     [surface, source, allowCashOnly, otherChecks]
