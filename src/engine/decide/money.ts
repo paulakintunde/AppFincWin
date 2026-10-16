@@ -97,7 +97,8 @@ export function summariseMonth(month: MonthRecord, opts: SummariseOptions): Mont
   const net = new Map<string, bigint>();
   const paySeen = new Set<string>();
   let oneOffCount = 0;
-  let oneOffSpending = 0n;
+  // 04-REVIEW LO-02: one-off spending nets one-off refunds and is shared per category total, like ordinary spending.
+  const oneOffNet = new Map<string, bigint>();
   let oneOffIncome = 0n;
 
   for (const l of month.lines) {
@@ -124,13 +125,14 @@ export function summariseMonth(month: MonthRecord, opts: SummariseOptions): Mont
     }
 
     const cat = l.categoryId ?? '';
-    const share = shareForCategory(opts.spendingShare, l.categoryId);
     const amount = BigInt(l.amount);
     if (l.oneOff) {
       oneOffCount += 1; // D-47
       if (l.direction === 'out') {
-        oneOffSpending += BigInt(myPart(l.amount, share));
-      } else if (!l.isRefund) {
+        oneOffNet.set(cat, (oneOffNet.get(cat) ?? 0n) + amount);
+      } else if (l.isRefund) {
+        oneOffNet.set(cat, (oneOffNet.get(cat) ?? 0n) - amount); // LO-02: was counted but its amount dropped
+      } else {
         oneOffIncome += amount;
       }
       continue;
@@ -144,12 +146,18 @@ export function summariseMonth(month: MonthRecord, opts: SummariseOptions): Mont
     }
   }
 
-  let myNet = 0n;
-  for (const [cat, total] of net) {
-    myNet += BigInt(
-      myPart(minorFromBigInt(total, 'summariseMonth'), shareForCategory(opts.spendingShare, cat === '' ? null : cat))
-    );
-  }
+  const mineOf = (byCategory: ReadonlyMap<string, bigint>): bigint => {
+    let mine = 0n;
+    for (const [cat, total] of byCategory) {
+      mine += BigInt(
+        myPart(minorFromBigInt(total, 'summariseMonth'), shareForCategory(opts.spendingShare, cat === '' ? null : cat))
+      );
+    }
+    return mine;
+  };
+  const myNet = mineOf(net);
+  const myOneOff = mineOf(oneOffNet);
+  const oneOffSpending = myOneOff > 0n ? myOneOff : 0n; // LO-02: one-off refunds net against one-off spending, floored at 0
   const spending = (myNet > 0n ? myNet : 0n) + BigInt(opts.smoothedBillsMonthly); // D-27 floor first, then smoothed bills
   for (const id of paySeen) {
     income += BigInt(opts.smoothedPay.get(id)!);
