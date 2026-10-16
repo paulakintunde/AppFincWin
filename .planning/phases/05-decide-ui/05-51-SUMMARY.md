@@ -38,7 +38,7 @@ The real `seed_sample_data` now builds the 05-18 demo scenario (seven months fro
 - **Migration 20261016000400_decide_demo_seed.sql**: five accounts; Salary series (anchor 5th of the first seeded month, materialised through month end); loop over the current month and six past months inserting Salary (linked by recurring_series_id and occurrence_date), the 11-line template, and two transfer pairs per month; debts (Student loan; card-kind row with paid_in_full true, no minimum terms); decide_settings upsert; Sofa (combine false) and Car (typed aprText "6.9") checks. Returns accounts 5, series 1, checks 2, debts 2. 39 `-- demo:` markers.
 - **clear_sample_data**: deletes sample links, checks and debts first, then the v1 sequence; returns `checks` and `debts` counts. Rows written by Go ahead (never is_sample) survive.
 - **samples.ts**: `ClearSampleResult` and validation gain `checks` and `debts`; tests updated.
-- **pgTAP 57** (20 assertions) added; **48** updated for the v2 shape (5 accounts, no foreign/refund/category lines, JPY salary 660000).
+- **pgTAP 57** (20 assertions at 05-51; 27 after the seeded-flag fix) added; **48** updated for the v2 shape (5 accounts, no foreign/refund/category lines, JPY salary 660000).
 - **check-decide-demo-mirror.mjs**: 38 keys, exits 1 on any missing, extra, duplicated or mismatched key (verified by changing the fixture floor); wired as `check:decide-demo-mirror` and a CI step after the recurring mirror.
 
 ## Deviations from Plan
