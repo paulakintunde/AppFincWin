@@ -598,7 +598,7 @@ Plans:
 - [x] 04-21-PLAN.md — investment views at 0% and user rates (D-51, D-52) and income at risk (D-54)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 04-12-PLAN.md — public barrel, codes-only guard, cross-suite phase gate (DEC-12)
+- [x] 04-12-PLAN.md — public barrel, codes-only guard, cross-suite phase gate (DEC-12)
 **UI hint**: no (pure TypeScript engine; deliverable is a green suite and a coverage report)
 
 ### Phase 5: Decide UI

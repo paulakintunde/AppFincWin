@@ -193,7 +193,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DEC-09**: Engine finds the largest affordable price by bisection, and handles both "nothing is affordable" and "the full price already fits"
 - [x] **DEC-10**: Engine determines card eligibility for an item, distinguishing blocked, capped and permitted
 - [x] **DEC-11**: Engine decides whether a debt is secured by reading a field on the record, not by matching its name
-- [ ] **DEC-12**: Engine runs with no React, no I/O and no database access, taking a snapshot in and returning a verdict out
+- [x] **DEC-12**: Engine runs with no React, no I/O and no database access, taking a snapshot in and returning a verdict out
 - [x] **DEC-13**: Engine produces the options list in order: affordable price (bisected), longer term, cut a named expense line, earn more, save first, do without
 - [x] **DEC-14**: Engine computes the four-way alternatives (as planned, cheaper, wait and save, skip), each with its outcome, and suppresses and labels any row whose money is not genuinely spare
 - [x] **DEC-15**: Engine applies the four setbacks (unexpected expense, income drops, job or client loss, invoices pay late) to a plan and re-assesses it
@@ -211,7 +211,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DEC-27**: Engine projects the price invested instead, the payments invested instead, investing growth lost to a pause, and a net-worth path, at 0% and up to three user-entered rates, never a supplied rate (04 D-51, D-52)
 - [x] **DEC-28**: Engine applies a purchase-linked income loss to the verdict, and shows a purchase-linked income gain only in a separate assessment with payback months (04 D-53)
 - [x] **DEC-29**: Engine re-runs the setbacks with the new plan and reports runway lost and which setbacks the new payments cannot survive (04 D-54)
-- [ ] **DEC-30**: Engine provides running-cost prompt categories by item type with no amounts, and treats user-entered loss of value and holding fees as non-cash figures (04 D-55, D-63)
+- [x] **DEC-30**: Engine provides running-cost prompt categories by item type with no amounts, and treats user-entered loss of value and holding fees as non-cash figures (04 D-55, D-63)
 - [ ] **DEC-31**: Engine computes the average gap between past estimates and actuals once three decisions have actuals (04 D-56)
 - [ ] **DEC-32**: Engine payment maths pass published reference amortisation tables, and every behaviour threshold carries a citation or is labelled a FincWin line (04 D-57, D-58)
 - [x] **DEC-33**: Engine builds the month from paid Record lines only, nets refunds, skips transfers, and smooths confirmed non-monthly bills and weekly/fortnightly pay to monthly equivalents (04 D-23, D-25..D-28, D-60)
@@ -557,7 +557,7 @@ Populated during roadmap creation.
 | DEC-09 | Phase 4 - Decide Engine | Complete |
 | DEC-10 | Phase 4 - Decide Engine | Complete |
 | DEC-11 | Phase 4 - Decide Engine | Complete |
-| DEC-12 | Phase 4 - Decide Engine | Pending |
+| DEC-12 | Phase 4 - Decide Engine | Complete |
 | DEC-13 | Phase 4 - Decide Engine | Complete |
 | DEC-14 | Phase 4 - Decide Engine | Complete |
 | DEC-15 | Phase 4 - Decide Engine | Complete |
@@ -575,7 +575,7 @@ Populated during roadmap creation.
 | DEC-27 | Phase 4 - Decide Engine | Complete |
 | DEC-28 | Phase 4 - Decide Engine | Complete |
 | DEC-29 | Phase 4 - Decide Engine | Complete |
-| DEC-30 | Phase 4 - Decide Engine | Pending |
+| DEC-30 | Phase 4 - Decide Engine | Complete |
 | DEC-31 | Phase 4 - Decide Engine | Pending |
 | DEC-32 | Phase 4 - Decide Engine | Pending |
 | DEC-33 | Phase 4 - Decide Engine | Complete |
