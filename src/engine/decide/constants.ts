@@ -10,7 +10,7 @@
  * Every export sits under a comment block whose first line starts with the word Cite (enforced by constants.test.ts).
  */
 import { percent, type Percent } from '../payoff/types';
-import type { SetbackInput, WarningCode } from './types';
+import type { SetbackInput, Steadiness, WarningCode } from './types';
 
 // Cite: D-09 averaging window (the last 6 full months). FincWin behaviour constant, in line with the 6-month window in 04-CONTEXT D-09.
 export const AVERAGING_WINDOW_MONTHS = 6; // D-09
@@ -96,3 +96,52 @@ export const DEFAULT_CHEAPER_RATIO_PERCENT = 65;
 
 // Cite: DEC-15 prototype behaviour: a late invoice of N days counts as N / 30 of a month's income.
 export const LATE_INVOICE_DAYS_PER_MONTH = 30;
+
+// Cite: 3–6 months of expenses: FCAC (via Consumer Protection BC, 2025-07-03), MoneyHelper (via NS&I), Vanguard (2025-08-15). Vanguard: variable income needs a higher cash buffer. The 4.5 midpoint and the steadiness mapping are FincWin behaviour constants.
+// FincWin behaviour constant (no published source; see 04-RESEARCH addendum §A) for the 4.5 midpoint and the steadiness mapping. D-42 amended 2026-10-15: under 3 full months (insufficient history) the cushion is 3 months. Values are half-months so 4.5 stays exact in integers (x9 / 2, one half-up rounding).
+// https://www.consumerprotectionbc.ca/2025/07/9545/ ; https://www.nsandi.com/guide/emergency-fund ; https://investor.vanguard.com/investor-resources-education/article/understanding-income-volatility-and-emergency-saving
+export const RESERVE_HALF_MONTHS: Readonly<Record<Steadiness, number>> = {
+  steady: 6,
+  variable: 9,
+  volatile: 12,
+  insufficient: 6,
+}; // D-42
+
+// Cite: D-42 half-months per month (the unit of RESERVE_HALF_MONTHS).
+export const HALF_MONTHS_PER_MONTH = 2; // D-42
+
+// Cite: FincWin behaviour constant (no published source; see 04-RESEARCH addendum §A). Product behaviour constant. No published near-threshold tolerance standard found. Precedent only: software budget warnings default to a configurable 5% remaining.
+// https://www.supportability.com.au/release/7-9/
+export const EDGE_MARGIN_PERCENT = 5; // D-43
+
+// Cite: D-44: same window as the D-24 bills (one definition of "within 90 days"); see the BILLS_DUE_HORIZON_DAYS citation.
+export const CASH_PATH_DAYS = BILLS_DUE_HORIZON_DAYS; // D-44
+
+// Cite: calendar fact; the D-44 daily spread ignores leap days (at most one minor unit a day of drift is absorbed by the cumulative half-up spread).
+export const DAYS_PER_YEAR = 365; // D-44
+
+// Cite: FincWin behaviour constant (no published source; see 04-RESEARCH addendum §A). D-45: the month test looks 12 months ahead.
+export const FUTURE_CHANGE_MONTHS = 12; // D-45
+
+// Cite: FincWin behaviour constant (no published source; see 04-RESEARCH addendum §A). D-46: strong needs 6 full months (the D-09 window) and steady income.
+export const CONFIDENCE_STRONG_MIN_MONTHS = 6; // D-46
+
+// Cite: OSFI B-20 minimum qualifying rate: greater of contract rate + 2% or 5.25% (page modified 2026-01-29). The floor is not adopted: D-07 forbids invented rates. The +4pp case is a FincWin behaviour constant: a severe case above the Bank of England FPC's former +3pp reversion-rate stress (withdrawn 2022-08-01); FCA MCOB 11.6.18R prescribes no figure. Offsets are percentage points (percent('2') is 2.0, not 0.02).
+// https://www.osfi-bsif.gc.ca/en/supervision/financial-institutions/banks/minimum-qualifying-rate-uninsured-mortgages
+// https://www.bankofengland.co.uk/paper/2022/an-fpc-response-consultation-on-withdrawal-of-the-affordability-test-recommendation ; https://www.fca.org.uk/firms/interest-rate-stress-test-rule
+export const STRESS_OFFSETS: readonly Percent[] = [percent('2'), percent('4')]; // D-49
+
+// Cite: D-50: the cost of 1 and of 2 late payments.
+export const LATE_PAYMENT_COUNTS: readonly number[] = [1, 2]; // D-50
+
+// Cite: D-51: up to three user-entered rates, plus 0%.
+export const MAX_PROJECTION_RATES = 3; // D-51
+
+// Cite: FincWin behaviour constant (no published source; see 04-RESEARCH addendum §A). Behaviour constant: 5-year projection horizon for cash purchases with no term. User-editable.
+export const DEFAULT_PROJECTION_HORIZON_MONTHS = 60; // D-52
+
+// Cite: D-56: an estimate bias needs at least 3 decisions with actuals.
+export const ESTIMATE_BIAS_MIN_DECISIONS = 3; // D-56
+
+// Cite: D-56: basis points are hundredths of a percent (10,000 to the unit).
+export const BASIS_POINTS_PER_UNIT = 10_000; // D-56
