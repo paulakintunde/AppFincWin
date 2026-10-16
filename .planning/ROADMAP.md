@@ -629,7 +629,7 @@ Plans:
 - [x] 05-06-PLAN.md — Pure snapshot builder: full months, pending one-offs, payments counted once, FX, one-offs, changes (100% coverage)
 - [x] 05-07-PLAN.md — Check inputs, quick-to-full carry, computeQuick/computeCheck/computeChip over decide()
 - [x] 05-08-PLAN.md — parseQuick, date offsets, estimate-vs-actual, canUse, DateField past-date guard
-- [ ] 05-09-PLAN.md — Exhaustive code-to-copy maps (verdict, warnings, quick line, suppression, options)
+- [x] 05-09-PLAN.md — Exhaustive code-to-copy maps (verdict, warnings, quick line, suppression, options)
 - [ ] 05-10-PLAN.md — Display and choice primitives (StateChip, WarningCard, StepBar, ...)
 - [ ] 05-11-PLAN.md — expo-notifications ~57, Wait and cooling-off reminders, tap observer
 - [ ] 05-28-PLAN.md — Input primitives (StepSlider, RateInput, MoneyInput)
