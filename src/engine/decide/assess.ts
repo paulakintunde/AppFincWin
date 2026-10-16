@@ -42,6 +42,7 @@ import { deriveMoney, resolveSpendingShare, shareForCategory } from './money';
 import { resolveProjectionRates } from './projectionRates';
 import { defaultReserve, reserveHalfMonthsFor } from './reserve';
 import { resolvePlan } from './plan';
+import { positionContext } from './position';
 import { isSecured } from './secured';
 import { billsDueWithin, scheduledOutflowsDue } from './series';
 import { SOLE_SHARE, myPart, resolveShare } from './share';
@@ -62,6 +63,7 @@ import type {
   PurchaseSize,
   ResolvedLimits,
   SpendingShare,
+  StackedCheckInput,
   Verdict,
   Warning,
 } from './types';
@@ -475,15 +477,22 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
 }
 
 /**
- * The verdict for one snapshot and one check (DEC-06). D-16 clarified: the check must be in the snapshot's currency.
- * D-30: stateless. There is no input about earlier checks; an approved purchase reaches the engine only through the
- * records the snapshot is built from. D-31: neutral facts ride on the assessment, never as warnings. D-21: codes and
- * numbers only.
+ * The verdict for one snapshot and one check (DEC-06), judged on the combined position (D-41): the other open checks
+ * the caller passes are stacked first, then the worst of the next 12 months is taken (D-45) with the check's own
+ * expected income loss (D-53). With no other checks and no future changes every figure equals the single-check
+ * verdict. D-16 clarified: the check must be in the snapshot's currency.
+ * D-30: stateless. The other checks are a per-call argument, never snapshot state; an approved purchase reaches the
+ * engine only through the records the snapshot is built from. D-31: neutral facts ride on the assessment, never as
+ * warnings. D-21: codes and numbers only.
  *
- * A missing verdict carries the purchase size whenever the context resolves, and a confidence from the money basis
- * (rough ['under_3_full_months'] only when there is no full month, D-46).
+ * A missing verdict carries the purchase size whenever the context resolves (read from the combined position), and a
+ * confidence from the money basis (rough ['under_3_full_months'] only when there is no full month, D-46).
  */
-export function assess(snapshot: DecideSnapshot, check: PurchaseCheck): Verdict {
+export function assess(
+  snapshot: DecideSnapshot,
+  check: PurchaseCheck,
+  otherChecks: readonly StackedCheckInput[] = []
+): Verdict {
   assertCurrency(snapshot.currency, check.currency, 'check', 'assess');
   const ctx = prepareContext(snapshot);
   const planResult = resolvePlan(check);
@@ -491,19 +500,21 @@ export function assess(snapshot: DecideSnapshot, check: PurchaseCheck): Verdict 
     ...(ctx.ok ? [] : ctx.reasons),
     ...(planResult.status === 'missing' ? planResult.reasons : []),
   ];
-  if (!ctx.ok || planResult.status === 'missing') {
+  if (!ctx.ok) {
+    return { state: 'missing', reasons, size: null, confidence: ctx.confidence };
+  }
+  const combined = positionContext(ctx.context, check, otherChecks).combined;
+  if (planResult.status === 'missing') {
     return {
       state: 'missing',
       reasons,
-      size: ctx.ok ? purchaseSize(ctx.context, priceOf(check)) : null,
-      confidence: ctx.ok
-        ? confidenceOf({
-            fullMonths: ctx.context.money.fullMonthsUsed,
-            steadiness: ctx.context.money.steadiness,
-            firstRead: false,
-          })
-        : ctx.confidence,
+      size: purchaseSize(combined, priceOf(check)),
+      confidence: confidenceOf({
+        fullMonths: combined.money.fullMonthsUsed,
+        steadiness: combined.money.steadiness,
+        firstRead: false,
+      }),
     };
   }
-  return assessPlan(ctx.context, check, planResult.plan);
+  return assessPlan(combined, check, planResult.plan);
 }

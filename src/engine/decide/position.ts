@@ -13,9 +13,11 @@
  */
 import type { MinorUnits } from '../money/types';
 import { minorFromBigInt } from '../payoff/types';
+import { isValidLocalDate, monthOf } from '../time/localDate';
 import { CASH_PATH_DAYS } from './constants';
 import { applyOutflows, purchaseFlows } from './cashPath';
 import { assertCurrency } from './currency';
+import { worstFutureMonth } from './futureChanges';
 import { resolvePlan } from './plan';
 import { defaultReserve } from './reserve';
 import { SOLE_SHARE, myPart, resolveShare, type ResolvedShare } from './share';
@@ -125,20 +127,82 @@ export function stackCheck(
   };
 }
 
+/**
+ * D-45: applies the future changes to the month test (the worst of months 1..12 after asOf's month). It moves
+ * monthIncome, mySpendingBasis and leftBefore; leftThisMonth is deliberately not replaced (D-36 sizes against this
+ * month's money left over) and the debt-service income basis (money.incomeBasis) is untouched. Spending changes move
+ * the month test only, never a month's costs or the cushion (D-02). Records what was applied in context.position.
+ */
 export function applyChanges(
-  _context: AssessContext,
-  _changes: readonly FutureChange[],
-  _stacked: readonly StackedCheck[],
-  _expectedIncomeIncluded: boolean
+  context: AssessContext,
+  changes: readonly FutureChange[],
+  stacked: readonly StackedCheck[],
+  expectedIncomeIncluded: boolean
 ): AssessContext {
-  throw new Error('not implemented');
+  const w = worstFutureMonth({
+    asOf: context.snapshot.asOf,
+    currency: context.snapshot.currency,
+    monthIncome: context.monthIncome,
+    monthSpending: context.mySpendingBasis,
+    fixedOutgoings: mi(BigInt(context.debtPayments) + BigInt(context.pausable)),
+    changes,
+  });
+  return {
+    ...context,
+    monthIncome: w.income,
+    mySpendingBasis: w.spending,
+    leftBefore: w.leftBefore,
+    position: { stacked, changes, worstMonth: w, expectedIncomeIncluded },
+  };
 }
 
+/** D-53: a buy check's purchase-linked income change as a D-45 change; null when the check carries none. */
+function incomeChangeAsFutureChange(check: PurchaseCheck, id: string): FutureChange | null {
+  if (check.kind !== 'buy' || check.incomeChange === undefined) return null;
+  const { monthlyAmount, startDate } = check.incomeChange;
+  if (!Number.isSafeInteger(monthlyAmount) || monthlyAmount === 0) {
+    throw new RangeError(`${FN}: incomeChange monthlyAmount ${monthlyAmount} must be a non-zero integer`);
+  }
+  if (!isValidLocalDate(startDate)) {
+    throw new RangeError(`${FN}: incomeChange startDate "${startDate}" is not a valid local date`);
+  }
+  return { id, kind: 'income', monthlyAmount, startMonth: monthOf(startDate), endMonth: null, currency: check.currency };
+}
+
+/**
+ * The combined position (other open checks stacked, D-41) beside the standalone one (the same changes, no other
+ * checks). D-53: the current check's negative income change is applied; a positive one only with includeExpectedIncome,
+ * for the separate "with expected income" assessment. Negative changes of applied other checks join the combined
+ * position only; positive ones never. Refuses a context that is already positioned, so checks cannot stack twice.
+ */
 export function positionContext(
-  _base: AssessContext,
-  _check: PurchaseCheck,
-  _otherChecks: readonly StackedCheckInput[],
-  _options: { readonly includeExpectedIncome?: boolean } = {}
+  base: AssessContext,
+  check: PurchaseCheck,
+  otherChecks: readonly StackedCheckInput[],
+  options: { readonly includeExpectedIncome?: boolean } = {}
 ): Position {
-  throw new Error('not implemented');
+  if (base.position !== null) {
+    throw new RangeError(`${FN}: context is already positioned`);
+  }
+  const includeExpected = options.includeExpectedIncome === true;
+  const snapshotChanges = base.snapshot.futureChanges;
+
+  const ownChange = incomeChangeAsFutureChange(check, 'purchase-income');
+  const own: FutureChange[] = ownChange !== null && (ownChange.monthlyAmount < 0 || includeExpected) ? [ownChange] : [];
+  const standalone = applyChanges(base, [...snapshotChanges, ...own], [], includeExpected);
+
+  let ctx = base;
+  const stacked: StackedCheck[] = [];
+  const otherChanges: FutureChange[] = [];
+  otherChecks.forEach((input, index) => {
+    const r = stackCheck(ctx, input, index);
+    ctx = r.context;
+    stacked.push(r.stacked);
+    if (r.stacked.status === 'applied') {
+      const c = incomeChangeAsFutureChange(input.check, `other-${index}-income`);
+      if (c !== null && c.monthlyAmount < 0) otherChanges.push(c);
+    }
+  });
+  const combined = applyChanges(ctx, [...snapshotChanges, ...own, ...otherChanges], stacked, includeExpected);
+  return { combined, standalone, stacked };
 }
