@@ -625,7 +625,7 @@ Plans:
 - [x] 05-38-PLAN.md — db modules for decide_changes and savings_goals
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 05-05-PLAN.md — db modules and RPC wrappers for the Decide tables
+- [x] 05-05-PLAN.md — db modules and RPC wrappers for the Decide tables
 - [ ] 05-06-PLAN.md — Pure snapshot builder: full months, pending one-offs, payments counted once, FX, one-offs, changes (100% coverage)
 - [ ] 05-07-PLAN.md — Check inputs, quick-to-full carry, computeQuick/computeCheck/computeChip over decide()
 - [ ] 05-08-PLAN.md — parseQuick, date offsets, estimate-vs-actual, canUse, DateField past-date guard
