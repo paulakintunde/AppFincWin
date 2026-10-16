@@ -225,6 +225,12 @@ These decisions widen Phase 4. Where one amends an earlier decision, the later o
 
 - **D-63 (user, 2026-10-15): loss of value and holding fees are user-entered.** Loss of value is an optional user-typed amount or %/year on a check. It is a non-cash figure and never enters the month test (D-55). Investment holding fees are an optional user-typed %/year that reduces the D-52 projections (net rate = entered rate − fee). The card-costs figure sums the user's own card terms (APR, fees). Nothing is defaulted. Requirement IDs DEC-17..DEC-37 now trace D-23..D-63.
 
+#### Execution-review decisions (user, 2026-10-16)
+- **D-64: The level payment rounds up** (amends D-20). An amortised level payment is rounded **up** to the minor unit (ceiling), so it never undershoots. The final payment is the remaining balance plus interest, which is never more than the level payment. This removes the compounding residual on extreme terms (e.g. 1,000.00 at 22.9% over 600 months). Golden figures and the D-57 reference vectors are re-checked, and any changed case becomes a named deviation.
+- **Bisection tolerance accepted:** the prototype-parity comparison (04-11) tolerates `ceil(0.5 × price / monthly) + 1` because of float vs integer rounding. The engine's own bisection tests stay exact to the minor unit.
+- **`withExpectedIncome` confirmed:** its month income is base + the expected gain (e.g. 10,000 + 4,000 = 14,000). The plan's example (base only) was wrong.
+- **Per-setback `runwayWith` confirmed:** counted from the cash left after the setback hits.
+
 ### Claude's Discretion
 - How the snapshot carries series (frequency, latest amount, next due date, which rows each series covers) for D-23 and D-24.
 - The exact name and payload of the D-31 basis code.
