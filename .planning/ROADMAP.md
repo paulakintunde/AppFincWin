@@ -617,7 +617,7 @@ Plans:
 **Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate).
 Plans:
 **Wave 1**
-- [ ] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
+- [x] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
 - [ ] 05-02-PLAN.md — Decide copy catalogue, DCU-09 guard, undo vocabulary
 - [ ] 05-03-PLAN.md — Decide tables (checks, settings, debts, links, statement periods), RLS, grants, pgTAP
 - [ ] 05-33-PLAN.md — fxConvert read-side module (custom-currency aware) for D-37
