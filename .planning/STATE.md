@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 5 planned (53 plans, 10 waves); execution blocked on Phase 4
-last_updated: "2026-10-16T21:00:48.670Z"
+last_updated: "2026-10-16T21:10:18.045Z"
 last_activity: 2026-10-16
 progress:
   total_phases: 21
   completed_phases: 8
   total_plans: 286
-  completed_plans: 261
-  percent: 91
+  completed_plans: 262
+  percent: 92
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 ## Current Position
 
 Phase: 05 (decide-ui) — EXECUTING
-Plan: 30 of 53
+Plan: 31 of 53
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
@@ -195,6 +195,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-16T21:00:48.652Z
+Last session: 2026-10-16T21:10:18.024Z
 Stopped at: Phase 5 planned (53 plans, 10 waves); execution blocked on Phase 4
 Resume file: None
