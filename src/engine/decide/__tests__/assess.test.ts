@@ -1,10 +1,10 @@
+import fc from 'fast-check';
 import { minorUnits, currencyCode } from '../../money/types';
 import { divideHalfUp } from '../../money/rounding';
 import { ONE_HUNDRED_PERCENT, ZERO_PERCENT, percent, percentFromScaled } from '../../payoff/types';
 import { CASH_PATH_DAYS } from '../constants';
-import { cashPathForSnapshot } from '../cashPath';
-import { assessPlan, prepareContext } from '../assess';
-import { classifyCashDip, lowestPoint } from '../cashPath';
+import { cashPathForSnapshot, classifyCashDip, lowestPoint } from '../cashPath';
+import { assess, assessPlan, prepareContext, purchaseSize } from '../assess';
 import { resolvePlanStrict } from '../plan';
 import { SOLE_SHARE, myPart } from '../share';
 import type {
@@ -955,3 +955,248 @@ describe('assessPlan cash path (D-44, D-46, D-47, D-59, D-61)', () => {
     expect(a.state).toBe('adjust');
   });
 });
+
+// ── Task 3: assess composition, D-31 fact, D-36 size, currency rejection, statelessness, properties ──
+function deepFreeze<T>(value: T): T {
+  if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const v of Object.values(value)) deepFreeze(v);
+  }
+  return value;
+}
+const loanCheck = (price: number, termMonths: number | null): BuyCheck =>
+  buyCash(price, { payment: { method: 'loan', deposit: mu(0), termMonths, apr: ZERO_PERCENT } });
+const cardCheck = (price: number): BuyCheck =>
+  buyCash(price, {
+    payment: {
+      method: 'card',
+      card: { id: 'c1', apr: null, minimumTerms: null, currency: USD },
+      payoff: { kind: 'full' },
+      dealerCap: null,
+    },
+  });
+const hhScope = (rule: 'even' | 'mine') =>
+  ({
+    scope: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: rule } },
+    householdSpending: { rule: { kind: 'even' }, byCategory: [] },
+  }) as const;
+const sizeOf = (s: DecideSnapshot, c: PurchaseCheck) => {
+  const v = assess(s, c);
+  if (v.state === 'missing') return v.size;
+  return v.size;
+};
+
+describe('assess composition (DEC-06, D-16, D-30)', () => {
+  it('returns missing with the size when only the plan is missing, and the money-basis confidence', () => {
+    expect(assess(BL(), loanCheck(100_000, null))).toEqual({
+      state: 'missing',
+      reasons: ['loan_term_missing'],
+      size: 'from_spare_this_month',
+      confidence: { level: 'fair', reasons: ['under_6_full_months'] },
+    });
+  });
+
+  it('returns missing without a size when there is no full month, and merges reasons context first', () => {
+    expect(assess(BL({ months: [] }), buyCash(100_000))).toEqual({
+      state: 'missing',
+      reasons: ['no_full_month'],
+      size: null,
+      confidence: { level: 'rough', reasons: ['under_3_full_months'] },
+    });
+    expect(assess(BL({ months: [] }), loanCheck(100_000, null))).toEqual({
+      state: 'missing',
+      reasons: ['no_full_month', 'loan_term_missing'],
+      size: null,
+      confidence: { level: 'rough', reasons: ['under_3_full_months'] },
+    });
+  });
+
+  it('a zero purchase split alone is missing with fair confidence, never under_3_full_months', () => {
+    const s = BL({
+      scope: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'weight', weights: [0, 0] } },
+      householdSpending: { rule: { kind: 'even' }, byCategory: [] },
+    });
+    expect(assess(s, buyCash(100_000))).toEqual({
+      state: 'missing',
+      reasons: ['split_weights_zero'],
+      size: null,
+      confidence: { level: 'fair', reasons: ['under_6_full_months'] },
+    });
+  });
+
+  it('rejects a check in another currency (D-16)', () => {
+    expect(() => assess(BL(), buyCash(1_000, { currency: CAD }))).toThrow(/^assess: mixed currencies/);
+  });
+
+  it('returns a full assessment for a resolved plan', () => {
+    const v = assess(BL(), buyCash(100_000));
+    expect(v.state).toBe('fits');
+  });
+});
+
+describe('purchase size (D-36)', () => {
+  it('compares my part with this month, then with cash above the cushion', () => {
+    expect(sizeOf(BL(), buyCash(125_000))).toBe('from_spare_this_month');
+    expect(sizeOf(BL(), buyCash(125_001))).toBe('from_savings');
+    expect(sizeOf(BL(), buyCash(1_400_000))).toBe('from_savings');
+    expect(sizeOf(BL(), buyCash(1_400_001))).toBe('needs_spreading');
+  });
+
+  it('ignores the payment method', () => {
+    for (const c of [loanCheck(1_400_001, 12), INST(1, { price: mu(1_400_001) }), cardCheck(1_400_001)]) {
+      expect(sizeOf(BL(), c)).toBe('needs_spreading');
+    }
+    expect(sizeOf(BL(), loanCheck(125_000, 12))).toBe('from_spare_this_month');
+  });
+
+  it('follows the D-24 deduction without a path and cash on hand with one', () => {
+    expect(sizeOf(BL({ bills: [YEARLY_DUE] }), buyCash(1_300_000))).toBe('needs_spreading');
+    expect(sizeOf(BL(), buyCash(1_300_000))).toBe('from_savings');
+    expect(sizeOf(PB({ bills: [YEARLY_DUE] }), buyCash(1_300_000))).toBe('from_savings');
+  });
+
+  it('follows D-61 read literally', () => {
+    expect(sizeOf(BL({ scheduledOutflows: [OUT_AHEAD] }), buyCash(1_400_000))).toBe('from_savings');
+    expect(sizeOf(BL({ scheduledOutflows: [OUT_PAST] }), buyCash(1_400_000))).toBe('needs_spreading');
+  });
+
+  it('uses my part of the price in a household (D-34)', () => {
+    expect(ctxOf(BL(hhScope('even'))).leftBefore).toBe(275_000);
+    expect(sizeOf(BL(hhScope('even')), buyCash(550_000))).toBe('from_spare_this_month');
+    expect(sizeOf(BL({ ...hhScope('mine'), householdSpending: hhScope('mine').householdSpending }), buyCash(550_000))).toBe(
+      'from_savings'
+    );
+  });
+
+  it('is never spare when this month is negative, and sizes invest checks by the amount', () => {
+    const tight = BL({
+      months: monthsOf(
+        [
+          [600_000, 700_000],
+          [600_000, 700_000],
+          [600_000, 700_000],
+        ],
+        '2026-04'
+      ),
+    });
+    expect(ctxOf(tight).leftBefore).toBeLessThan(0);
+    expect(sizeOf(tight, buyCash(0))).toBe('from_savings');
+    expect(sizeOf(tight, investLump(10_000))).toBe('from_savings');
+    expect(sizeOf(BL(), investLump(125_000))).toBe('from_spare_this_month');
+    expect(sizeOf(BL(), investLump(125_001))).toBe('from_savings');
+  });
+
+  it('reads this month, not the worst month (D-36, D-45)', () => {
+    const c = ctxOf(BL());
+    expect(purchaseSize({ ...c, leftBefore: mu(-50_000) }, mu(125_000))).toBe('from_spare_this_month');
+    expect(purchaseSize({ ...c, leftThisMonth: mu(100_000) }, mu(125_000))).toBe('from_savings');
+  });
+});
+
+describe('D-31 basis fact', () => {
+  const lump = investLump(50_000);
+  it('D-31: an invest check beside a debt costing more than the projection carries the neutral fact', () => {
+    const v = assess(B(), lump);
+    if (v.state === 'missing') throw new Error('expected an assessment');
+    expect(v.facts).toEqual([
+      { code: 'debt_rate_exceeds_return', debtId: 'd1', debtApr: percent('19.9'), projectionReturn: ZERO_PERCENT },
+    ]);
+    const without = assess(B({ debts: [{ ...D1, apr: null }, D2] }), lump);
+    if (without.state === 'missing') throw new Error('expected an assessment');
+    expect(v.state).toBe(without.state);
+    expect(v.warnings).toEqual(without.warnings);
+  });
+
+  it('D-31: no fact at or below the projection rate, without an APR, for secured debt or on buy checks', () => {
+    const facts = (s: DecideSnapshot, c: PurchaseCheck) => {
+      const v = assess(s, c);
+      if (v.state === 'missing') throw new Error('expected an assessment');
+      return v.facts;
+    };
+    expect(facts(B({ projectionReturn: percent('25') }), lump)).toEqual([]);
+    expect(facts(B({ projectionReturn: percent('19.9') }), lump)).toEqual([]);
+    expect(facts(B({ debts: [{ ...D1, apr: null }, D2] }), lump)).toEqual([]);
+    expect(facts(B({ debts: [{ ...D2, apr: percent('30') }] }), lump)).toEqual([]);
+    expect(facts(B(), buyCash(50_000))).toEqual([]);
+  });
+});
+
+describe('recorded monthly investments (D-32)', () => {
+  it('D-32: are paused like existing investing', () => {
+    const s = R({ monthlyInvesting: mu(55_000) });
+    expect(ctxOf(s).pausable).toBe(80_000);
+    expect(ctxOf(s).leftBefore).toBe(110_000);
+    const v = assess(s, INST(160_000));
+    if (v.state === 'missing') throw new Error('expected an assessment');
+    expect(v).toMatchObject({ left: -50_000, investingAtRisk: 50_000, savingAtRisk: 0, state: 'adjust' });
+    expect(v.warnings).toEqual([w('inv', 50_000)]);
+  });
+});
+
+describe('the split-estimate relation', () => {
+  it('(D-62) newMonthly is mineMonthly plus mineRunning', () => {
+    const a = run(BL(), buyCash(100_000, { runningCostsNet: mu(5_500) }));
+    expect([a.mineMonthly, a.mineRunning, a.newMonthly]).toEqual([0, 5_500, 5_500]);
+    expect(run(BL(), INST(120_000, { runningCostsNet: mu(-3_000) })).newMonthly).toBe(117_000);
+    const c = ctxOf(BL(hhScope('even')));
+    const chk = INST(120_000, { runningCostsNet: mu(5_501) });
+    const h = assessPlan(c, chk, resolvePlanStrict(chk));
+    expect(h.mineMonthly).toBe(60_000);
+    expect(h.mineRunning).toBe(myPart(mu(5_501), c.purchaseShare));
+    expect(h.newMonthly).toBe(h.mineMonthly + h.mineRunning);
+    expect(run(BL(), investMonthly(10_000, 12)).mineRunning).toBe(0);
+  });
+});
+
+describe('statelessness (D-30)', () => {
+  it('returns the same verdict twice and never mutates the snapshot', () => {
+    const s = deepFreeze(PB({ bills: [YEARLY_DUE], scheduledOutflows: [OUT_AHEAD] }));
+    const c = buyCash(900_000);
+    expect(assess(s, c)).toEqual(assess(s, c));
+    // @ts-expect-error D-30: the engine takes no open checks
+    const withOpen: DecideSnapshot = { ...snapshotOf(), openChecks: [] };
+    expect(withOpen).toBeDefined();
+  });
+});
+
+describe('assess properties', () => {
+  const rank = { fits: 0, adjust: 1, no: 2 } as const;
+
+  it('cash purchases: a larger price never leaves more cash or a better state', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 4_000_000 }), fc.integer({ min: 0, max: 4_000_000 }), (x, y) => {
+        const [p1, p2] = x <= y ? [x, y] : [y, x];
+        const a = assess(BL(), buyCash(p1));
+        const b = assess(BL(), buyCash(p2));
+        if (a.state === 'missing' || b.state === 'missing') return false;
+        return a.cashAfter >= b.cashAfter && rank[a.state] <= rank[b.state];
+      })
+    );
+  });
+
+  it('(D-35, D-33, D-62) the pause invariant, invest rules and the split-estimate relation hold', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 100_000 }),
+        fc.integer({ min: 0, max: 100_000 }),
+        fc.integer({ min: 0, max: 400_000 }),
+        fc.integer({ min: -20_000, max: 20_000 }),
+        fc.boolean(),
+        (saving, investing, amount, running, invest) => {
+          const s = R({ monthlySaving: mu(saving), monthlyInvesting: mu(investing), limits: { ...LIMITS_BL, investingFloor: null, savingFloor: null } });
+          const check: PurchaseCheck = invest ? investMonthly(amount, 12) : INST(amount, { runningCostsNet: mu(running) });
+          const v = assess(s, check);
+          if (v.state === 'missing') return false;
+          const codes = v.warnings.map((x) => x.code);
+          const ok62 = v.newMonthly === v.mineMonthly + v.mineRunning && (!invest || v.mineRunning === 0);
+          if (invest) return ok62 && !codes.includes('inv') && !codes.includes('dsr') && !codes.includes('owe');
+          if (v.cashAfter >= 0 && -v.left <= saving + investing) {
+            return ok62 && v.state !== 'no' && !codes.includes('month');
+          }
+          return ok62;
+        }
+      )
+    );
+  });
+});
+
