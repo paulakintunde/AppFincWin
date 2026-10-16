@@ -161,9 +161,11 @@ describe('incomeAtRisk takes the same setbacks as applySetbacks (D-62)', () => {
     const risk = incomeAtRisk(ctx, A, list);
     const applied = applySetbacks(A, list);
     expect(risk.setbacks.map((s) => [s.code, s.enabled])).toEqual(applied.results.map((x) => [x.code, x.enabled]));
+    // The overall runway is applySetbacks' runwayMonths; the per-setback runway is the runway of the cash left after
+    // that setback (the plan's own example: income_drop 100% x 3 gives runwayWith 0), so it is not compared here.
+    expect(risk.runwayWith).toBe(applied.runwayMonths);
     risk.setbacks.forEach((s, i) => {
       expect(s.cashAfterWith).toBe(applied.results[i]!.cashAfter);
-      expect(s.runwayWith).toBe(applied.runwayMonths);
     });
   });
   it('an invalid setback fails the same way in both', () => {
