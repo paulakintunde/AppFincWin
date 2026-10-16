@@ -182,8 +182,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 ### Decide — Engine
 
-- [ ] **DEC-01**: Engine computes an amortised monthly payment for a principal, APR and term, including the zero-rate case
-- [ ] **DEC-02**: Engine computes future value of a monthly contribution plus a seed, including the zero-rate case
+- [x] **DEC-01**: Engine computes an amortised monthly payment for a principal, APR and term, including the zero-rate case
+- [x] **DEC-02**: Engine computes future value of a monthly contribution plus a seed, including the zero-rate case
 - [ ] **DEC-03**: Engine simulates minimum payments on a revolving balance and correctly reports when the balance never clears
 - [ ] **DEC-04**: Engine resolves any of four payment methods — paid in full, deposit plus loan, instalment plan, credit card — into a comparable plan
 - [ ] **DEC-05**: Engine flags a plan as incomplete when its terms are not yet specified
@@ -546,8 +546,8 @@ Populated during roadmap creation.
 | HOME-02 | Phase 3 - Shell | Complete |
 | HOME-03 | Phase 3 - Shell | Complete |
 | HOME-04 | Phase 3 - Shell | Complete |
-| DEC-01 | Phase 4 - Decide Engine | Pending |
-| DEC-02 | Phase 4 - Decide Engine | Pending |
+| DEC-01 | Phase 4 - Decide Engine | Complete |
+| DEC-02 | Phase 4 - Decide Engine | Complete |
 | DEC-03 | Phase 4 - Decide Engine | Pending |
 | DEC-04 | Phase 4 - Decide Engine | Pending |
 | DEC-05 | Phase 4 - Decide Engine | Pending |

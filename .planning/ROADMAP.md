@@ -563,7 +563,7 @@ Plans:
 **Plans**: 22 plans in 8 waves (revised 2026-10-15 against 04-CONTEXT D-23…D-58 incl. the engine depth expansion and its consistency amendments; choices in 04-REPLAN-NOTES.md)
 Plans:
 **Wave 1**
-- [ ] 04-01-PLAN.md — payoff foundation: Percent type, amortise (DEC-01), futureValue (DEC-02)
+- [x] 04-01-PLAN.md — payoff foundation: Percent type, amortise (DEC-01), futureValue (DEC-02)
 - [ ] 04-02-PLAN.md — card eligibility by item type, secured by field, household share under four split rules (DEC-08/10/11)
 - [ ] 04-03-PLAN.md — golden-fixture harness evaluating the prototype's own Decide code (D-22)
 
