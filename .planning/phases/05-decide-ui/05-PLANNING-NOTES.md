@@ -230,3 +230,24 @@ A "best version" pass over the plans, the UI-SPEC and the context after the alig
 2. **Cents on monthly payments.** Decide cards show whole currency units (UI-SPEC assumption 12), so an 83.34 payment reads "$83" on the quick check and the method cards while "What gets written" shows 83.34. Keep whole units, or show cents for monthly payments?
 3. **Long missing-state titles.** The 64-character title cap is tested only for `decide.verdict.title*`; several `decide.verdict.missing.*` titles run to 80+ characters (for example "No dealer card cap is on record for your region, so the card part cannot be scored.") and will clamp at 3 lines with the full text in the accessibility label. Shorten them (a copy change to locked UI-SPEC strings), or accept the clamp? None reaches the DCU-11 frames.
 4. **If the device recompute check (05-26 step 13) shows lag:** compute the step-4 and investing parts only for the visible step (an architecture change to 05-07 / 05-30), or debounce recompute by a few hundred ms (a UX change from "recomputes live on every edit").
+
+## Revision 2026-10-16 (plan-check and UI-check round on c68445a)
+
+Two plan checks and two UI checks ran on c68445a. Every item is fixed here; plan count, waves and titles are unchanged (05-30 gains a conditional Task 2 and two files; 05-17 gains the 05-31 dependency, which is earlier in the graph, so no wave moves).
+
+| Item | Fix | Plans |
+|---|---|---|
+| BLOCKER: verdicts led by `cash_dip` had no title or quick line (assess.ts sorts by shortfall; a hard dip is `no` on its own) | `ADJUST_TITLE`, `QUICK_CASH_LINE`, `QUICK_CREDIT_LINE` `satisfies Record<WarningCode, …>`; `no` precedence cash < 0 → month → hard dip; new keys `titleCashDip`, `titleNoCashDip`, `cashDip`, `cashDipHard`, `creditCashDip`, `creditCashDipHard` (all ≤ 64); dsr / owe Cash lines reuse the mode-neutral sentences; named tests | 05-02, 05-09, UI-SPEC |
+| W-1 acceptance greps that could not pass (several keys or names share a line) | Rewritten as `grep -oE … | wc -l` (or `cat … | grep -oE … | sort -u | wc -l`) with correct counts; `_Cap` / `_Range` / `_Term` one alias per line; the 05-31 comment no longer quotes the retired cushion wording | 05-01, 05-02, 05-09, 05-31 |
+| W-2 vacuous never-throw property; missing bounds | `fc.record`-shaped generator with out-of-range leaves and a "half the cases reach a logged, resolved verdict" assertion; parser: unique line ids, `isValidLocalDate` start dates, invalid tax % reset, setback months ≤ 600 / daysLate ≤ 365, money ≤ `MAX_INPUT_MINOR` (10^12), loan / promo APR ≤ `MAX_APR` (999.99%) via `isValidAprText` (also the card-rate field) | 05-07, 05-14 |
+| W-3 tax drift on re-price (also my post-commit note) | `repriceInputs` solves the advertised price including tax-% lines (largest advertised whose resolved price ≤ the target), scales instalments from the price actually reached; named 6% test | 05-07 (05-16, 05-17 use it) |
+| W-4 card fees never written | One day-one cash row of remainderOnDay + card fees; writtenLines matches; property: day-one writes sum to `plan.dayOne` (onCard counted only for payoff 'full') | 05-17, 05-20 |
+| W-5 instalment note total | `{total}` = amount × count = `plan.total − plan.dayFees`; named test | 05-14 |
+| W-6 null dealer cap | Builder maps a market row with no dealer cap (CA, UK) to null; the engine returns `dealer_cap_missing`; named CA test | 05-06 |
+| W-7 nothing financed | Payoff line / caption only when `plan.months > 0`; no written loan lines with empty steps; no debt row when `financed === 0`; named tests | 05-09, 05-14, 05-17, 05-20 |
+| W-8 plan-term chip | `planTerm = verdict.plan.months > 0 ? plan.months : null`; named test | 05-45 |
+| Info | 05-17 depends on 05-31; fixtures state `limitsReset: 0` and `promoBalanceAtEnd: {}`; card-minimum promo balance falls back to `remainingBalance` unless cleared; trade-line fallback `tradeKeptTooLarge`; 04-VERIFICATION body Status aligned to passed and the D-20 residual marked resolved by D-64 / ME-03 | 05-07, 05-17, 05-02, 04-VERIFICATION |
+| UI F1..F4 | Missing titles ≤ 64; card outcome words in the contract rows; "None in"; the 0% caption stated | UI-SPEC, 05-02, 05-09, 05-13 |
+| User D-53..D-56 | Promotion clear-in tile; cents on payments; missing titles ≤ 64; debounced details with a conditional lazy fallback | 05-CONTEXT, UI-SPEC, 05-02, 05-07, 05-09, 05-13, 05-14, 05-17, 05-26, 05-30, 05-31, 05-37, 05-43, 05-VALIDATION |
+
+The four "For the user" items in the quality review above are now decided: 1 → D-53, 2 → D-54, 3 → D-55, 4 → D-56.

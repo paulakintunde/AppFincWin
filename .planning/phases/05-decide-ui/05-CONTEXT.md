@@ -1,7 +1,7 @@
 # Phase 5: Decide UI - Context
 
 **Gathered:** 2026-10-15
-**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope). The UI-SPEC carries all of them.
+**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day. The UI-SPEC carries all of them.
 
 <domain>
 ## Phase Boundary
@@ -190,7 +190,13 @@ Phase 4 was executed, code-reviewed (`04-REVIEW.md`: 4 high, 5 medium, 5 low, al
 - **D-49: Instalment terms follow the engine** (04 ME-02, LO-05, HI-03). On-the-day fees are paid on the day and the instalments cover the rest; amount × count below that is `instalment_total_below_price`, shown as "Below the price" with a note asking for the amount or the count; "Use this price" and "Use the cheaper price" rescale an instalment plan with the engine's own `withPrice` (and the cheaper row's loan deposit as the cheaper row does), so the rescored check is the one shown.
 - **D-50: No money in reads as such** (04 ME-05, LO-01). With an income basis of 0 any debt payment breaches the debt line and the ratio is null, so every dsr surface uses no-money-in wording; an all-zero-income history is Volatile and Your month says no money in is logged.
 - **D-51: The snapshot builder never passes a limit the engine refuses** (04 LO-03). Negative, fractional or unparsable stored limits become null (the default) before `prepareContext`, counted internally; one-off refunds netting against one-off spending (LO-02) and on-the-day fees clamped to the price (LO-04) need no UI change.
-- **D-52: "Left when it ends" comes from the engine's own schedule.** The UI-SPEC's promotion tile has no field on `PromoOutcome`; 05-07 reads the balance at the promotion end from the payoff barrel's `amortiseSchedule` / `simulateMinimumSchedule` with `rateScheduleFor`, exactly as the engine's plan builds it. `paymentToClearInPromo` (now rounded up) is not displayed in this phase.
+- **D-52: "Left when it ends" comes from the engine's own schedule.** The UI-SPEC's promotion tile has no field on `PromoOutcome`; 05-07 reads the balance at the promotion end from the payoff barrel's `amortiseSchedule` / `simulateMinimumSchedule` with `rateScheduleFor`, exactly as the engine's plan builds it. `paymentToClearInPromo` (now rounded up) is shown by D-53.
+
+### User decisions (2026-10-16, after the alignment review)
+- **D-53: A "To clear it inside the promotion: {x} a month" tile on step 2.** Shown only when a promotion is entered and scored, from the engine's `promo.paymentToClearInPromo` (rounded up, so paying it for the promotion's months clears the balance and no interest is charged back). A figure, not an instruction.
+- **D-54: Monthly payments show cents.** Monthly payments, instalments and promotion payments show cents everywhere; large totals and balances stay whole units (amends UI-SPEC assumption 12). The fold budgets still hold.
+- **D-55: Every missing-state title is at most 64 characters**, like every other verdict title, so none clamps at 402 wide; the catalogue test asserts it.
+- **D-56: Live recompute is debounced for the details.** The verdict, warnings, step 2 method cards and quick-check result recompute on every keystroke; the step 3 sections, step 4 and the investing views recompute about 150 ms after typing stops. If the device check (05-26 step 13) still shows lag, step 4 and the investing views compute only while visible (05-30 Task 2, conditional).
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
