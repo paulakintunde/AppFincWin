@@ -224,9 +224,7 @@ const files = [
 if (process.argv.includes('--check')) {
   let bad = false;
   for (const [p, text] of files) {
-    if (!existsSync(p) || readFileSync(p, 'utf8').replace(/
-/g, '
-') !== text) {
+    if (!existsSync(p) || readFileSync(p, 'utf8').split('\r\n').join('\n') !== text) {
       console.error('golden fixture out of date: ' + p);
       bad = true;
     }
