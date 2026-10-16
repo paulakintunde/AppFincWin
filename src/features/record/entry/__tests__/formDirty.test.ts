@@ -18,6 +18,7 @@ const base: FormState = {
   amountInText: '',
   automatic: false,
   refund: false,
+  oneOff: false,
 };
 
 describe('isFormDirty', () => {

@@ -11,6 +11,7 @@ import {
   withDate,
   withAutomatic,
   withDirection,
+  withOneOff,
   withRefund,
   withStatus,
   type FormContext,
@@ -318,5 +319,35 @@ describe('refund, automatic and clone prefill (REC-20)', () => {
       automatic: true,
       refund: false,
     });
+  });
+});
+
+describe('one-off flag (05-50, D-29)', () => {
+  it('starts false, and opens true only for a one-off row', () => {
+    expect(newOut().oneOff).toBe(false);
+    expect(initialFormState({ kind: 'edit', row: row({ one_off: true }) }, ctx).oneOff).toBe(true);
+    expect(initialFormState({ kind: 'edit', row: row() }, ctx).oneOff).toBe(false);
+  });
+
+  it('sends isOneOff on the add input only for a non-transfer one-off line', () => {
+    const c = { householdId: 'h1', userId: 'u1', homeCurrency: 'GBP', timeZone: 'Europe/London' };
+    const on = withOneOff({ ...newOut(), accountId: 'a1' }, true);
+    expect(toAddInput(on, 500, c)).toMatchObject({ isOneOff: true });
+    expect(toAddInput({ ...on, oneOff: false }, 500, c)).not.toHaveProperty('isOneOff');
+    expect(toAddInput({ ...on, direction: 'transfer' }, 500, c)).not.toHaveProperty('isOneOff');
+  });
+
+  it('patches only one_off when only the toggle changed', () => {
+    const r = row();
+    const state = initialFormState({ kind: 'edit', row: r }, ctx);
+    expect(toPatch(r, withOneOff(state, true), Math.abs(r.original_amount))).toEqual({ one_off: true });
+    const r2 = row({ one_off: true });
+    const s2 = initialFormState({ kind: 'edit', row: r2 }, ctx);
+    expect(toPatch(r2, withOneOff(s2, false), Math.abs(r2.original_amount))).toEqual({ one_off: false });
+  });
+
+  it('resets on a move to transfer and refuses to turn on for a transfer', () => {
+    expect(withDirection(withOneOff(newOut(), true), 'transfer').oneOff).toBe(false);
+    expect(withOneOff({ ...newOut(), direction: 'transfer' }, true).oneOff).toBe(false);
   });
 });

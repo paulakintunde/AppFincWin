@@ -700,4 +700,52 @@ describe('TransactionSheet: keypad, toggles, notes and wording (REC-20)', () => 
     expect(getByText('This is a refund')).toBeTruthy();
     expect(getByText('Paid')).toBeTruthy();
   });
+
+  describe('one-off toggle (05-50, D-29)', () => {
+    const TOGGLE = 'One-off, won’t recur';
+
+    it('shows for expense and income with its sub-copy, hides for a transfer', async () => {
+      const { getByText, queryByText } = await open({ kind: 'new', direction: 'out' });
+      expect(getByText(TOGGLE)).toBeTruthy();
+      expect(getByText('Left out of the averages Decide uses.')).toBeTruthy();
+      await fireEvent.press(getByText('Money in'));
+      expect(getByText(TOGGLE)).toBeTruthy();
+      await fireEvent.press(getByText('Transfer'));
+      expect(queryByText(TOGGLE)).toBeNull();
+    });
+
+    it('saves isOneOff true when switched on', async () => {
+      const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out' });
+      await typeAmount(getByLabelText, '5');
+      await fireEvent.changeText(getByLabelText('What is it for?'), 'Gift');
+      await fireEvent.press(getByText(TOGGLE));
+      await fireEvent.press(getByText('Save expense'));
+      expect((mockAdd.mock.calls[0] as unknown[])[0]).toMatchObject({ isOneOff: true });
+    });
+
+    it('edit mode: switching it off saves a one-key patch', async () => {
+      const { getByText } = await open({ kind: 'edit', row: row({ one_off: true } as Partial<TransactionRow>) });
+      await fireEvent.press(getByText(TOGGLE));
+      await fireEvent.press(getByText('Save changes'));
+      const [vars] = mockEdit.mock.calls[0] as unknown as [Record<string, unknown>];
+      expect(vars).toMatchObject({ patch: { one_off: false } });
+      expect(Object.keys(vars.patch as object)).toEqual(['one_off']);
+    });
+
+    it('is hidden on a line that belongs to a series', async () => {
+      const { queryByText } = await open({
+        kind: 'edit',
+        row: row({ recurring_series_id: 's1' } as Partial<TransactionRow>),
+      });
+      expect(queryByText(TOGGLE)).toBeNull();
+    });
+
+    it('is hidden once Repeats is set', async () => {
+      const { getByText, getByLabelText, queryByText } = await open({ kind: 'new', direction: 'out' });
+      await fireEvent.press(getByLabelText('Repeats'));
+      await fireEvent.press(getByText('Every week'));
+      await fireEvent.press(getByText('Done'));
+      expect(queryByText(TOGGLE)).toBeNull();
+    });
+  });
 });

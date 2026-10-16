@@ -94,6 +94,7 @@ import {
   withAutomatic,
   withDate,
   withDirection,
+  withOneOff,
   withRefund,
   withStatus,
   withToAccount,
@@ -970,6 +971,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                 onChange={(v) => {
                   closePad();
                   setRepeats(v);
+                  if (v.freq !== 'never') setState((s) => withOneOff(s, false));
                 }}
                 formatDate={(d) => formatter.formatDate(d)}
                 today={rc.today}
@@ -994,6 +996,19 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                   setState((s) => withRefund(s, on));
                 }}
               />
+            ) : null}
+            {state.direction !== 'transfer' && !editRow?.recurring_series_id && repeats.freq === 'never' ? (
+              <>
+                <ToggleRow
+                  label={t('record.sheet.toggle.oneOff')}
+                  value={state.oneOff}
+                  onChange={(on) => {
+                    closePad();
+                    setState((s) => withOneOff(s, on));
+                  }}
+                />
+                <Text style={noteStyle}>{t('record.sheet.note.oneOff')}</Text>
+              </>
             ) : null}
           </>
         )}
