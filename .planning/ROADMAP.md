@@ -564,7 +564,7 @@ Plans:
 Plans:
 **Wave 1**
 - [x] 04-01-PLAN.md — payoff foundation: Percent type, amortise (DEC-01), futureValue (DEC-02)
-- [ ] 04-02-PLAN.md — card eligibility by item type, secured by field, household share under four split rules (DEC-08/10/11)
+- [x] 04-02-PLAN.md — card eligibility by item type, secured by field, household share under four split rules (DEC-08/10/11)
 - [ ] 04-03-PLAN.md — golden-fixture harness evaluating the prototype's own Decide code (D-22)
 
 **Wave 2** *(blocked on Wave 1 completion)*
