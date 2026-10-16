@@ -22,10 +22,10 @@ values ((select id from hh where owner_id = '11111111-1111-1111-1111-11111111111
 -- An account and two transactions in A's household (link targets), inserted as the table owner.
 insert into public.accounts (id, household_id, name, kind, currency, opening_balance)
 values ('a1111111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Wallet', 'cash', 'USD', 0);
-insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, name)
+insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, name, created_by)
 values
-  ('b1111111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -999, 'USD', current_date, 'UTC', 'Coffee'),
-  ('b1111111-1111-1111-1111-111111111112', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -499, 'USD', current_date, 'UTC', 'Tea');
+  ('b1111111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -999, 'USD', current_date, 'UTC', 'Coffee', '11111111-1111-1111-1111-111111111111'),
+  ('b1111111-1111-1111-1111-111111111112', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -499, 'USD', current_date, 'UTC', 'Tea', '11111111-1111-1111-1111-111111111111');
 
 select extensions.ok(
   (select count(*) = 2 and bool_and(relrowsecurity) from pg_class

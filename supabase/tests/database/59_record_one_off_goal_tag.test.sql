@@ -23,11 +23,11 @@ insert into public.accounts (id, household_id, name, kind, currency, opening_bal
 values
   ('a1111111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Current', 'cash', 'USD', 0),
   ('a1111111-1111-1111-1111-111111111112', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Savings', 'cash', 'USD', 0);
-insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, name, transfer_id)
+insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, name, transfer_id, created_by)
 values
-  ('b1111111-1111-1111-1111-111111111101', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -5000, 'USD', current_date, 'UTC', 'To savings', 'ee000000-0000-0000-0000-000000000001'),
-  ('b1111111-1111-1111-1111-111111111102', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111112', 5000, 'USD', current_date, 'UTC', 'From current', 'ee000000-0000-0000-0000-000000000001'),
-  ('b1111111-1111-1111-1111-111111111103', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -999, 'USD', current_date, 'UTC', 'Coffee', null);
+  ('b1111111-1111-1111-1111-111111111101', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -5000, 'USD', current_date, 'UTC', 'To savings', 'ee000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111'),
+  ('b1111111-1111-1111-1111-111111111102', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111112', 5000, 'USD', current_date, 'UTC', 'From current', 'ee000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111'),
+  ('b1111111-1111-1111-1111-111111111103', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -999, 'USD', current_date, 'UTC', 'Coffee', null, '11111111-1111-1111-1111-111111111111');
 
 -- Goals: A's live goal, B's goal in A's household, A's soft-deleted goal, C's goal in C's household.
 insert into public.savings_goals (id, household_id, created_by, name, currency, target, deleted_at)
