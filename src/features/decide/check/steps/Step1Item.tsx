@@ -25,6 +25,7 @@ import { CheckRow } from '../../ui/CheckRow';
 import { LineEditorSheet, type LineEditorValue, type RecurringBillOption } from '../LineEditorSheet';
 import type { StepProps } from '../stepTypes';
 import { Box, Card, Label, Lock, Meta, moneyFn } from './stepUi';
+import { IncomeChangeCard } from './step1/IncomeChangeCard';
 
 export interface Step1Props extends StepProps {
   /** Live outflow series, monthly-equivalent home amounts, for "From your recurring bills". */
@@ -209,6 +210,8 @@ export function Step1Item(props: Step1Props) {
           <Meta>{t('decide.item.whyNote')}</Meta>
         </Card>
       </Lock>
+
+      {invest ? null : <IncomeChangeCard inputs={inputs} update={update} today={today} readOnly={readOnly} source={source} exact={exact} />}
 
       {invest ? null : (
         <Lock locked={readOnly}>
