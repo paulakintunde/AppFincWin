@@ -219,6 +219,53 @@ describe('resolvePlan: instalment', () => {
   });
 });
 
+describe('resolvePlan: instalment late fees (D-50)', () => {
+  function late(
+    count: number,
+    over: Partial<Extract<BuyPayment, { method: 'instalment' }>> = {}
+  ): BuyCheck {
+    return buy(
+      { method: 'instalment', instalmentAmount: m(62_000), instalmentCount: count, ...over },
+      { price: m(1_400_000) }
+    );
+  }
+
+  it('reports the cost of one and two late payments, beside an unchanged plan', () => {
+    const p = resolved(late(24, { lateFee: m(800) }));
+    expect(p.lateFees).toEqual({ feePerLatePayment: 800, capTotal: null, oneLate: 800, twoLate: 1_600 });
+    expect({ ...p, lateFees: null }).toEqual(resolved(late(24)));
+  });
+
+  it('caps n at the instalments remaining', () => {
+    expect(resolved(late(1, { lateFee: m(800) })).lateFees).toMatchObject({ oneLate: 800, twoLate: 800 });
+  });
+
+  it('applies the total cap the user entered, and none otherwise', () => {
+    expect(resolved(late(24, { lateFee: m(800), lateFeeCapTotal: m(1_000) })).lateFees).toEqual({
+      feePerLatePayment: 800,
+      capTotal: 1_000,
+      oneLate: 800,
+      twoLate: 1_000,
+    });
+    expect(resolved(late(24, { lateFee: m(800), lateFeeCapTotal: m(5_000) })).lateFees).toMatchObject({
+      twoLate: 1_600,
+    });
+  });
+
+  it('a zero fee costs nothing; no fee entered is null', () => {
+    expect(resolved(late(24, { lateFee: m(0) })).lateFees).toMatchObject({ oneLate: 0, twoLate: 0 });
+    expect(resolved(late(24)).lateFees).toBeNull();
+  });
+
+  it('rejects negative amounts and a cap without a fee', () => {
+    expect(() => resolvePlan(late(24, { lateFee: m(-1) }))).toThrow(/^resolvePlan: /);
+    expect(() => resolvePlan(late(24, { lateFee: m(800), lateFeeCapTotal: m(-1) }))).toThrow(/^resolvePlan: /);
+    expect(() => resolvePlan(late(24, { lateFeeCapTotal: m(1_000) }))).toThrow(
+      /^resolvePlan: lateFeeCapTotal needs lateFee/
+    );
+  });
+});
+
 describe('resolvePlan: card', () => {
   it('full: paid at the next statement, no APR needed (D-07 refined)', () => {
     const p = resolved(card({ kind: 'full' }, { card: { ...CARD, apr: null, minimumTerms: null } }));
