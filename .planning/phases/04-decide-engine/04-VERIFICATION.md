@@ -21,7 +21,7 @@ human_verification:
 
 **Phase Goal:** The affordability engine computes correct verdicts in complete isolation, before any UI exists.
 **Branch:** phase/04-decide-engine. **Re-verification:** No.
-**Status:** human_needed (no blocking gaps; judgement and bookkeeping items only).
+**Status:** passed (2026-10-16, after the Resolution below; first recorded as human_needed with no blocking gaps, judgement and bookkeeping items only).
 
 ## Evidence run (this session)
 
@@ -58,7 +58,7 @@ No orphaned requirements. Bookkeeping gap (non-blocking): REQUIREMENTS.md still 
 
 | Item | Assessment |
 |---|---|
-| D-20 final-payment residual, extreme terms | Real but confined to absurd inputs (payment barely above month-1 interest; annuity factor about 4.4M). Final payment absorbs about 1.65M minor units of rounding. Engine is mathematically consistent (total paid = principal + interest), well-conditioned terms stay within ceil(n/2)+1. WARNING: Phase 5 should bound term/APR, or engine could spread the residual. Not a blocker. |
+| D-20 final-payment residual, extreme terms | **Resolved by D-64 / 04-REVIEW ME-03 (2026-10-16):** the level payment now rounds up, so the final payment never exceeds it, and `months` is the months actually paid (see the Resolution). Original assessment: real but confined to absurd inputs (payment barely above month-1 interest; annuity factor about 4.4M). Final payment absorbs about 1.65M minor units of rounding. Engine is mathematically consistent (total paid = principal + interest), well-conditioned terms stay within ceil(n/2)+1. WARNING: Phase 5 should bound term/APR, or engine could spread the residual. Not a blocker. |
 | 04-11 widened bisection tolerance | Acceptable. Band = 22-iteration bracket + ceil(0.5*price/monthly)+1, which is exactly the half-unit payment rounding effect; observed gaps 20 and 11 minor units matched. Exact integer bisection itself is separately tested (d20). |
 | 14 skipped golden tests | Legitimate. 13 are the bisect parity test skipped by design where prototype bisect is null, or investing floor exceeds investing (D-35 predicate differs), or plan miss; 1 is the verdict test for instalment-24 where the prototype flags miss unconditionally (named in instalment-path.test.ts). Engine behaviour in these cases is covered by named deviation tests. |
 | 04-20 monthIncome 1_400_000 vs plan 1_000_000 | Executor is right: withExpectedIncome assesses the worst of next 12 months, all including the +400_000 gain; main verdict's monthIncome stays 1_000_000 and test asserts both. Plan figure was wrong. |
