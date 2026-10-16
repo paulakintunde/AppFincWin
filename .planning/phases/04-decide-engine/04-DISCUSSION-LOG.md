@@ -63,3 +63,47 @@
 
 - Per-market defaults beyond US, CA and UK.
 - Investment-mode checks, how open checks recompute, and where limits are stored (offered, not discussed; the last two belong to Phase 5).
+
+---
+
+# Update session: 2026-10-15
+
+**Trigger:** the context predated Phase 02.2 (recurring series, refund flags, pending/paid status). Areas: Lumpy & scheduled bills, What a month's spending is, Investment-mode checks, Revisit locked decisions (the user asked for advice on what is important or contradictory).
+
+## Lumpy & scheduled bills
+
+| Question | Options | Selected |
+|---|---|---|
+| Non-monthly bills in the spending basis | Smooth via series · Raw 6-month average · Widen to 12 months | Smooth via series |
+| Upcoming bills and cash | Deduct bills due in 90 days · Deduct until next income · No, the cushion covers it | Deduct bills due in 90 days |
+| Which series count | Confirmed series only · Confirmed + detected | Confirmed series only |
+| Series amount after a change | Latest amount · Average of past hits | Latest amount |
+
+## What a month's spending is
+
+| Question | Options | Selected |
+|---|---|---|
+| Refunds | Net against spending · Net against original month · Ignore refunds | Net against spending |
+| Pending/skipped lines in past months | Paid only · Paid + pending | Paid only |
+| One-off spikes | Keep them in · User-marked one-offs excluded · Statistical trim | Keep them in |
+| Purchases from past approved checks | Via records as they happen · Engine takes open checks as input | Via records as they happen |
+
+## Investment-mode checks
+
+| Question | Options | Selected |
+|---|---|---|
+| Interest-bearing debt during an invest check | Neutral fact code · Prototype behaviour · Make it a warning | Neutral fact code |
+| Approved monthly investment later | Like existing investing · As a fixed commitment | Like existing investing |
+| `inv` warning on invest checks | Skip inv for invest checks · Keep prototype behaviour | Skip inv for invest checks |
+
+## Revisit locked decisions (Claude's review: two contradictions, two trust risks, one cleanup)
+
+| Finding | Options | Selected |
+|---|---|---|
+| D-03 vs D-15: one share used for both household spending and the purchase | Separate shares · Keep one share | Separate shares |
+| D-02 says investing is pausable, but the state rule says any shortfall is `no` (so `inv` only ever duplicates `month`) | Adjust, with the amount · Keep the prototype rule | Adjust, with the amount |
+| First read: "fits" can leave $0 | Flag below-cushion (adjust) · Non-blocking code only · Keep as planned | Flag below-cushion |
+| D-12: cautious on income, average on spending | Highest month · Keep the average | Highest month |
+| D-16: card floor in the card's currency, snapshot in home currency | (recorded without a question) | Snapshot builder converts; the engine rejects mixed currencies |
+
+Judged sound and left unchanged: D-04, D-06, D-07, D-17 (the SC-2 fixture uses interest-not-added), D-19…D-22.

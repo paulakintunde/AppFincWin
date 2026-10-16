@@ -303,3 +303,31 @@ Give each new barrel the same header-comment convention (who consumes it, stabil
 **Analog search scope:** `src/engine/money/` (all source + `__tests__`), `src/engine/split/` (source + test), `src/engine/time/`, `src/engine/guards/`, `jest.config.js`, `.dependency-cruiser.cjs`, `supabase/tests/fixtures/money-conversion-cases.json` (fixture-file shape reference).
 **Files scanned:** 26 (all pre-existing files under `src/engine/`, plus `jest.config.js` and `.dependency-cruiser.cjs`)
 **Pattern extraction date:** 2026-09-26
+
+## 2026-10-15 expansion
+
+Added after checker iteration 1 (W7). Each module created by plans 04-14 to 04-22 is mapped to its closest analog. Most analogs are Phase 4 modules planned earlier, so executors read those files once they exist.
+
+| New/Modified File | Plan | Role | Data Flow | Closest Analog | Match Quality |
+|---|---|---|---|---|---|
+| `src/engine/payoff/rateSchedule.ts` (`amortiseSchedule`, `simulateMinimumSchedule`) | 04-14 | utility | transform / bounded loop | `src/engine/payoff/amortise.ts` and `simulateMinimum.ts` (04-01, 04-04): the same exact rationals per segment, the same 600-month cap and never-clears check | exact (generalisation of the single-rate functions; must equal them for one segment) |
+| `src/engine/payoff/__tests__/amortise.reference.test.ts`, `deviations/d57-reference-residuals.test.ts` | 04-14 | test | — | `src/engine/payoff/__tests__/golden.test.ts` (`it.each` over a cited fixture table) and `deviations/d20-per-month-rounding.test.ts` (named-test header) | exact pattern match |
+| `src/engine/decide/projectionRates.ts` (`resolveProjectionRates`) | 04-05 | service | transform (validate + dedupe a list) | `src/engine/decide/series.ts` `assertValidBill` (RangeError guards with an `fn:` prefix) + `src/engine/money/customCurrency.ts` (small validated resolver) | role-match |
+| `src/engine/decide/reserve.ts` (`defaultReserve`, `reserveHalfMonthsFor`) | 04-15 | utility | transform | `src/engine/decide/series.ts` `monthlyEquivalent` (integer multiply then one `divideHalfUp`) | exact |
+| `src/engine/decide/confidence.ts` (`confidenceOf`) | 04-15 | service | request-response (classify) | `src/engine/decide/cardRule.ts` (field-driven classifier returning a code) | role-match |
+| `src/engine/decide/margins.ts` (`edgeMargin`, `isOnEdge`) | 04-15 | utility | transform | `src/engine/decide/assess.ts` dsr test (exact cross-multiplication, no float ratio) | role-match |
+| `src/engine/decide/futureChanges.ts` (`worstFutureMonth`) | 04-15 | utility | transform (fold over 12 months) | `src/engine/decide/money.ts` (worst/best month selection over MonthSummary, ties by order) | role-match |
+| `src/engine/decide/runningCostPrompts.ts` | 04-16 | config / model | — | `src/engine/decide/cardRule.ts` (exhaustive `ItemType` switch with `assertNever`) + `marketDefaults.ts` (readonly data table) | exact |
+| `src/engine/decide/estimateBias.ts` | 04-16 | utility | transform (aggregate) | `src/engine/money/rounding.ts` (symmetric half-up) + `src/engine/decide/money.ts` (averaging with a minimum count) | role-match |
+| `src/engine/decide/cashPath.ts` (`spreadUndatedSpending`, `buildCashPath`, `cashPathForSnapshot`, `purchaseFlows`, `dipShortfall`, `cashPathMargin`, `classifyCashDip`, `cashTightFact`) | 04-17 | service | batch (fixed 91-day array) | `src/engine/decide/series.ts` `billsDueWithin` (same window, `occurrencesBetween` from `recurring/schedule` only) + `src/engine/payoff/simulateMinimum.ts` (bounded per-period loop, bigint accumulators) | role-match |
+| `src/engine/decide/position.ts` (`stackCheck`, `applyChanges`, `positionContext`) | 04-18 | service | transform (context → context) | `src/engine/decide/assess.ts` `prepareContext` (builds every AssessContext field; position.ts adjusts the same fields immutably) | exact |
+| `src/engine/decide/stress.ts` (`stressTest`) | 04-19 | service | transform (re-assess under modified inputs) | `src/engine/decide/setbacks.ts` / `options.ts` `longer_term` (re-resolve the plan, re-run `assessPlan`) | exact |
+| `src/engine/decide/payback.ts` (`paybackMonths`) | 04-19 | utility | bounded loop | `src/engine/decide/wait.ts` (`ceilDivide` months, `occurrenceDate` months, SIMULATION_MONTH_CAP bound) | role-match |
+| `src/engine/decide/decision.ts` (`decide`, `lineMargins`) | 04-20 | service | composition | `src/engine/decide/assess.ts` `assess` (composition of prepareContext → plan → assessPlan with the missing branch) | exact |
+| `src/engine/payoff/futureValuePath.ts` | 04-21 | utility | transform (series) | `src/engine/payoff/futureValue.ts` (the same rational, computed incrementally) | exact |
+| `src/engine/decide/investmentViews.ts` | 04-21 | service | transform | `src/engine/decide/alternatives.ts` (projections via `futureValue`, purchase share via `myPart`, rates from `limits.projectionRates`) | exact |
+| `src/engine/decide/incomeAtRisk.ts` | 04-21 | service | transform (with / without) | `src/engine/decide/setbacks.ts` (`setbackHitFor`, `runwayMonthsOf`; the same outcome classes) | exact |
+| `src/engine/decide/plan.ts` credit terms (`rateScheduleFor`, promo, late fees) | 04-22 | service | transform | `src/engine/decide/plan.ts` loan/card branches (04-06) + `src/engine/money/customCurrency.ts` (collect reasons, then build) | exact |
+| `src/engine/decide/__tests__/deviations/d4x-*.test.ts`, `d5x-*.test.ts` (all new named tests) | 04-13 … 04-22 | test | — | `src/engine/payoff/__tests__/deviations/d17-never-clears-vs-cap.test.ts` (D-22 header; one named decision per file; "Added 2026-10-15" note) | exact pattern match |
+
+**Shared rules for the new modules:** integer minor units and one `divideHalfUp` per figure (see "One rounding function, called everywhere"); `Percent` scaled bigints for every rate, including the D-49 offsets (`percent('2')`, never `percent('0.02')`); exhaustive switches via `assertNever`; `recurring/schedule` imported directly, never the `../recurring` barrel (D-25); codes and numbers only (D-21).

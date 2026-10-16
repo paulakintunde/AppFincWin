@@ -1,0 +1,274 @@
+# Phase 5: Decide UI - Context
+
+**Gathered:** 2026-10-15
+**Status:** Expanded 2026-10-15 with D-24…D-37. The UI-SPEC needs an update for these before planning completes.
+
+<domain>
+## Phase Boundary
+
+The Decide tab and everything that feeds or follows a check:
+- the quick check, a one-line answer from an item and a price (DCU-01);
+- the five-step check: item → price and payment → impact → alternatives → decision (DCU-02);
+- open checks, recomputed live and abandonable (DCU-03, DCU-04);
+- the alternatives table with suppression (DCU-05, DCU-06);
+- recording a decision, and estimate-vs-actual (DCU-07);
+- the date picker that refuses past dates (DCU-08);
+- the no-advice copy rule (DCU-09);
+- the first read in onboarding (DCU-10);
+- demo-account screenshot readiness (DCU-11);
+- analytics with no amounts (ANL-06).
+
+Phase 5 also builds, outside `src/engine/`, the **snapshot builder** that queries Supabase and calls the Phase 4 engine. It maps engine codes to i18n copy, and it stores checks, limits and decisions.
+
+Requirements: DCU-01…DCU-11, ANL-06.
+
+Not in this phase:
+- the engine maths (Phase 4);
+- household members and the split UI's data model (Phase 8);
+- savings goals (Phase 6);
+- real paywalls and tiers (Phase 9);
+- level gating (Phase 9).
+
+</domain>
+
+<decisions>
+## Implementation Decisions
+
+Decision numbers are local to Phase 5. "04 D-xx" refers to `.planning/phases/04-decide-engine/04-CONTEXT.md`, and "03 D-xx" to the Shell context.
+
+### Quick check and first read
+- **D-01:** **With logged months, the quick check runs the full verdict as if paid in cash.** It calls the engine's `assess()` with the paid-in-full method and returns `fits`/`adjust`/`no`, including the cushion and the month. The result is one chip plus one line, so it can never disagree with the full check.
+- **D-02:** **When cash doesn't cover it, the quick check states the gap and offers the full check.** For example: "Not from cash: $x short of your cushion", then "Run the full check", which carries the name and price into step 1. The prototype's hardcoded 9.4% / 48-month line is removed. No rate the user didn't enter is ever shown (04 D-07).
+- **D-03:** **Phase 5 builds the onboarding first read, in the LAUNCH-POSITIONING order:** welcome → consent → one account and balance → **rough monthly in and out** (new) → **first check** (new) → "Bring your history" (import / fresh / sample). The two new steps slot into the existing `app/(app)/setup/*` routes after `SetupAccountScreen` and before `SetupHistoryScreen`. Target: a first verdict in about 60 seconds (success criterion 6). The first check uses the engine's `firstRead()` (04 DEC-16, amended 04 D-11: `adjust` when cash would fall below 3 × rough spending).
+- **D-04:** **Real history replaces the rough figures automatically.** As soon as one full month exists (logged or imported), the rough figures stop being used, open checks recompute, and the verdict's basis line changes visibly, e.g. "Now from your logged months". Until then the rough figures are editable. A first-read verdict always says what it rests on, and that an import sharpens it.
+
+- **D-23 (added 2026-10-15, user, supersedes D-21's "only when cash doesn't cover it" and refines D-01/D-02):** **Every quick check has four inputs, plus optional extras:**
+  - **Amount.** The item and price, parsed from "car 14500" as before.
+  - **Cash or Credit.** A two-way toggle. It starts on Cash.
+  - **APR.** Credit only. Starts at 0%, labelled "before any interest" until the user types a rate (04 D-07: never a default rate).
+  - **Duration.** Credit only. Chips for 12, 24, 36, 48 and 60 months; 12 is selected.
+  - **Optional extras.** A collapsed "+ Tax, fees" row. Sales tax is a user-typed % with no default; fees are a user-typed amount. Both add to the day-one price.
+  - Cash runs the paid-in-full plan. Credit runs the engine's loan plan (amortised at the entered APR, no deposit).
+  - Both go through `assess()`, so the result is the full verdict chip plus one line, the D-22 size label, and the monthly amount for Credit.
+  - When Cash doesn't cover the purchase, the result still states the gap and offers a one-tap "Try on credit", which flips the toggle and keeps the amount.
+  - "Run the full check" carries every field into steps 1–2. Credit maps to the loan method, taxes and fees to the step-2 adjustments.
+  - The first read in onboarding uses the same inputs, assessed by `firstRead()`.
+- **D-21 (added 2026-10-15, amends D-02; superseded in part by D-23):** **When cash doesn't cover it, the quick check also shows an editable spread line.** It reads "Spread it: [APR 0%] over [12 / 24 / 36 / 48 / 60 months] → $x a month. The month closes / is $y short."
+  - The APR field starts at 0% and is labelled "before any interest" until the user types a rate. That starting value is user-editable input, not a default rate the engine invents (04 D-07 holds).
+  - The term chips are 12, 24, 36, 48 and 60 months, with 12 selected.
+  - The result is computed by the engine's loan plan (amortised payment at the entered APR, no deposit). It is assessed through `assess()`, so it gets the same month, debt-service and unsecured-debt tests as the full check, and it recomputes on every edit.
+  - At 0% it is an upper bound: if the month doesn't close at 0%, no rate will make it close.
+  - "Run the full check" carries the APR and term into step 2's loan method.
+  - The spread line is not shown when cash covers the purchase.
+- **D-22 (added 2026-10-15):** **Every quick-check and full-check result carries a size label relative to the user's own money**, never a fixed dollar band. The engine returns it as a code (04 D-36):
+  - `from_spare_this_month`: the price is no more than this month's money left over.
+  - `from_savings`: paid from cash, it still stays above the cushion.
+  - `needs_spreading`: cash can't cover it above the cushion.
+  Phase 5 maps the codes to copy, e.g. "Out of this month's spare", "Out of savings", "Needs spreading".
+
+### Verdict and impact screen
+- **D-05:** **Step 3 puts the answer first.**
+  - At the top: the verdict card (chip, basis line, title, body), then up to five warning cards ordered by shortfall. The verdict line must be visible without scrolling at the phone screenshot size (DCU-11).
+  - Below, as collapsible sections, in the prototype's order:
+    - the month line by line (Now/After);
+    - where it lands (the five ledgers);
+    - who pays what (household only);
+    - against your lines;
+    - if something goes wrong (runway plus setbacks);
+    - what would make it work (the options list);
+    - assumptions in play.
+  - All prototype content is kept.
+- **D-06:** **The D-35 "pause" case is an amber warning card that states the amount.** Chip: "Needs adjustment". The card reads like "The month closes only if $x a month of investing pauses" (or saving, or both). It is declarative and never "you should pause". It counts as one of the warnings.
+- **D-07:** **Step 4's "If saved" column becomes "Kept".** At the 0% default return (04 D-06), it shows the money kept over N months. A "+ Add a rate" link lets the user enter their own return, and the column header then reads "Kept, at x%". The prototype's "keeps earning" framing is removed. Rows whose money isn't spare show "—" with an amber reason (DCU-06, from the engine's suppression codes).
+- **D-08:** **Step navigation: steps become tappable once reached.** The five-segment bar jumps to any step already reached. Jumping forward to step 3 or later needs steps 1–2 complete (a price and a payment method). The step flow is a full-screen stack (03 D-12), and the FAB is hidden during it (03 D-09/D-10).
+
+### The decision: what gets written
+- **D-09:** **"Go ahead" writes pending entries, depending on the payment method, after one confirm.** All entries are listed under "What gets written" and are written in one confirmed action, which supports undo (02.x undo stack):
+  - Cash: a pending expense dated on "When you need it".
+  - Loan: a debt record (with `secured` set from the item, 04 DEC-11), plus a recurring payment series.
+  - Instalment: a recurring series with a count.
+  - Card: a pending expense on the card account.
+  - Running costs: a recurring series.
+  - Breaking a line is allowed, and the record notes it ("This breaks a line you set. You can still log it — the record notes it.").
+- **D-10:** **"Wait and save" saves the decision with a monthly saving amount and a ready-by date.** A local notification on that date reopens the check, recomputed. No goal object is created. Phase 6's goals may adopt these later.
+- **D-11:** **"Pass" keeps the decision in Past decisions until the user deletes it.** It keeps its "why", sends no reminders, and can be reopened as a new check. This replaces the prototype's conflicting "filed for twelve months" / "kept until" copy.
+- **D-12:** **Estimate-vs-actual compares the estimate with the sum of the decision's linked lines, at 30 and 90 days.** Linked lines are the lines Go ahead wrote, plus any the user attaches to the decision. The comparison covers the day-one cost and the monthly cost (payment plus running costs), as numbers only, and needs no new data entry. The prototype's version is static seed data; this replaces it.
+- **D-13:** **Dates use the existing native `DateField`** (`minDate` = today, so past dates are refused), with quick-offset chips above it: "In a week", "In a month", "In 3 months" (DCU-08). There is no custom month grid.
+
+### Storage and recompute
+- **D-14:** **The "Lines you will not cross" limits are stored once per user and apply to every check.** They are edited on the Decide home screen. A blank line uses the engine default (04 D-01…D-05). Open checks are always judged against the current lines.
+- **D-15:** **Open-check verdicts are recomputed live from the current snapshot every time they're shown, and are never stored.** The engine is pure and fast. The last state the user saw is stored only so the chip can mark "changed since you last looked". This settles the open-check recompute question that 04 D-30 left to Phase 5.
+
+### Free/Pro, demo account and screenshots
+- **D-16:** **Each Pro-candidate feature goes through one `canUse(feature)` entitlement hook, which returns true for every feature for now** (PRICING §186). The Pro candidates are: more than one open check, setbacks, the decision journal with estimate-vs-actual, and card/loan payoff comparisons. Phase 9 switches them on without touching the screens.
+- **D-17:** **The alternatives table is free.** It is the ethical core of Decide (DCU-06) and a store promise ("Cheaper, later, or skip it"), and it appears in screenshot 3. This amends `.planning/research/PRICING.md` §2 (the alternatives table moves from Pro to Free). Phase 9 must take this as an input.
+- **D-18:** **Phase 5 builds the scope toggle and split-override UI, shown only when the household has more than one member.** Until Phase 8 that means the toggle is always hidden. The demo scenario and screenshots run in personal scope. Household screenshots are redone after Phase 8.
+- **D-19:** **The demo scenario uses two checks, sofa then car:**
+  - Screenshot 1: a sofa at $1,800 → "It fits".
+  - Screenshot 2: a car at $14,500 on a loan → "Needs adjustment", showing what breaks.
+  - Screenshot 3: the car's four alternatives.
+  - The data is seeded as the demo account's sample months plus these two open checks, so nothing is staged outside the real app (success criterion 7). The loan's APR is part of the seeded check, typed in as a user would; it is never a default.
+
+### Analytics
+- **D-20:** **ANL-06 events cover lifecycle and verdict state only:**
+  - `quick_check_run` (state)
+  - `check_started`
+  - `check_step_viewed` (step number)
+  - `check_completed` (state)
+  - `check_abandoned`
+  - `decision_recorded` (go / wait / pass)
+  - `first_read_shown` (state)
+  Only enums are sent, never amounts or item names. The existing catalogue guard in `src/services/analytics/catalogue.ts` enforces this.
+
+### Copy (carried and bound)
+- All copy lives in `src/i18n/locales/en.ts` and is marked as draft in `copyStatus.ts`. The engine's codes (04 D-21) map to catalogue keys. A test asserts that no Decide key contains "advice", "recommend" or "you should" (DCU-09). The voice is declarative, not prescriptive. Verdict strings are ported from the prototype (HTML 4476–4512) with typographic apostrophes, minus any that imply a rate the user didn't enter.
+- Haptics fire on the verdict reveal and on committing a decision (BUILD-PROMPT §155), using `notificationAsync`/`impactAsync` only.
+- No review prompt after a "You cannot afford this" verdict (LAUNCH §4).
+
+### Engine depth expansion: UI side (added 2026-10-15; user chose to fold everything into Phases 4 and 5)
+
+Engine decisions are 04 D-41…D-58. These are the Phase 5 UI and data counterparts.
+- **D-24: Combined checks.** With 2 or more open checks, the check screen and the quick check show a "With my other open checks" toggle, on by default. The verdict shows the combined position. When the standalone and combined verdicts differ, one line says so: "Fits on its own; not with your other 1 open check".
+- **D-25: Unsteady-income cushion and edge.** The cushion line in "Against your lines" shows how many months it uses and why ("6 months, because your income is volatile"). The "on the edge" flag shows as a small amber tag on the chip with the margin, e.g. "on the edge: the cushion holds by $120".
+- **D-26: Cash path.** Step 3 gets a "Day by day, next 90 days" section: a simple line chart (react-native-svg, §2 tokens only) of the two paths, with the lowest day marked. The `cash_dip` warning card names the date. When there are no confirmed pay series, the section says "Add your pay as a recurring series to see day-by-day cash".
+- **D-27: Future changes.** A "Changes coming up" list on the Decide home screen holds the user's dated changes (income or spending, amount, start, optional end; add, edit, remove). The verdict shows the worst-month line when it differs ("Fits now; from June the month is $90 short"). Changes are stored per user.
+- **D-28: Confidence chip.** Every verdict shows strong / fair / rough beside the basis line, and tapping it shows the reasons.
+- **D-29: One-off lines.** Record's line detail gets a "One-off, won't recur" toggle (a new field on rows). The verdict's basis line shows "1 one-off left out" when any are excluded. This touches Record's row editor, and the field must be included in the snapshot.
+- **D-30: Credit terms in step 2.**
+  - **Loan and card:** an optional "Promotional rate" (rate, months, then the rate after). The engine never pre-fills it.
+  - **Variable rate:** a toggle, with the stress results shown as "At +2 points: $x a month; at +4: $y".
+  - **Instalments:** an optional late fee, with "If 1 payment is late: +$x".
+  - The quick check (D-23) stays simple. It has no promo, variable or fee inputs; those live in the full check.
+- **D-31: Investment views (step 4).** A new "If it went into investing instead" section with the four views:
+  - price invested;
+  - payments invested;
+  - investing growth lost to a pause;
+  - a net-worth path chart, with and without the purchase.
+  - **Rates:** each view is shown at 0% plus up to three rates the user adds ("+ Add a rate", max 3). Every figure carries "A projection at the rate you entered, not a forecast". The app never suggests a rate.
+  - **Copy:** declarative only, never "you should invest".
+  - **Horizon:** a chip row, defaulting to the plan term (or 60 months for cash).
+- **D-32: Income impact.**
+  - Step 1 gets an optional "Does this change your income?" with these fields:
+    - raises or lowers;
+    - amount a month;
+    - start date;
+    - likely or uncertain.
+  - **Lowering:** feeds the verdict.
+  - **Raising:** shows a separate card: "With the expected $400 a month (uncertain): fits, pays for itself in 31 months". The main verdict never changes because of it.
+  - **Setbacks:** step 3's setbacks section shows the runway lost because of the purchase, and which setbacks the new payments can't survive.
+- **D-33: Running-cost prompts.** Step 2's "Costs that follow it" pre-lists the categories for the item type, with blank amounts (e.g. vehicle: insurance, fuel, maintenance, registration, loss of value). Loss of value is shown as "not a monthly cash cost".
+- **D-34: Minimal savings goal** (amends D-10). "Wait and save" creates a goal row with:
+  - the target (04 D-40);
+  - the monthly amount;
+  - the ready-by date;
+  - saved-so-far, from transfers the user tags to the goal.
+  It gets a progress bar in Past decisions and on the check. Phase 6 builds goals on this same table and does not replace it.
+- **D-35: Cooling-off.** For `needs_spreading` purchases (D-22), step 5 offers an optional "Check again in 48 hours" toggle, off by default. When it's on, a local notification reopens the check, recomputed. The reminder text carries no amount or item name.
+- **D-36: Learning from history.** Once 3 or more decisions have actuals, step 2 shows the estimate gap beside running costs and the payment ("Your running costs have come in about 20% higher than estimated"). The copy is declarative.
+- **D-37: Currency conversion.** The snapshot builder converts every account, line and debt into the check's home currency at the latest stored rate (Phase 1 `engine/money/rates.ts`) before calling the engine. The basis line says "Includes amounts converted from EUR at 1.47 on 14 Oct". If a needed rate is missing, the result is `missing` with a reason, never a guessed rate.
+
+- **D-24 amended (user, 2026-10-15): every open check is judged with all the others** (04 D-41 amended), so the sofa can read "Fits on its own; not with your other 1 open check". The combined toggle is remembered per check. **Demo frame 1** is captured on the sofa check with "With my other open checks" switched off. That is a real user setting, so nothing is staged. Frames 2–3 (car) use the combined position.
+- **Cushion for new users (04 D-42 amended):** under 3 full months the cushion row reads "3 months — your income steadiness isn't known yet", and the confidence chip shows "Rough".
+- **One card per cause (04 D-24/D-44 amended):** with a cash path, bills due soon appear only as the `cash_dip` card, and the cash-cushion card covers the day-one cost alone.
+
+### Planning-review decisions (user, 2026-10-15, after the 52-plan Phase 5 plan)
+- **D-38: Minimal `debts` table and a `statement_periods` table in Phase 5.** Debts carry balance, APR, `secured`, minimum terms and a "paid in full monthly" flag. Statement periods let imports mark complete months (04 D-13). Phase 6's payoff planner builds on the same debts table.
+- **D-39: Currency stamping** (amends D-37). Past lines (income, spending, refunds) are converted at the rate **stamped on each line when it was recorded**. Current balances and debts use the **latest** stored rate. A missing rate still gives `missing` with a reason.
+- **D-40: Card minimum payments are pre-filled from the per-market table** (04 D-05/D-16; e.g. US 1% + interest, $25 floor) on each card debt. They're shown and editable on the debt, and the month counts that minimum. A card marked "paid in full monthly" adds no minimum. A card with no terms and no market row shows "Minimum payment not set", and the verdict notes that card payments aren't counted until it's set.
+- **D-41: Store screenshots (success criterion 7) come from the sample-seeded account** (the same seed path as "Explore with sample figures") until the App Review sign-in (ACC-11) exists.
+- **D-42: A deferred-interest toggle** on step 2's promotional-rate row. When it's on, the verdict shows the back-interest charged if the balance isn't cleared by the promo end (04 D-48, `deferred_interest_charged`).
+- **D-43: The UI-SPEC touch-ups are applied as the planner resolved them** (05-PLANNING-NOTES OQ-A2/A3/A9 and the 7 recorded conflicts). The combine pill stays hidden with only 1 open check.
+
+- **D-44 (user, 2026-10-15): the UI takes user-entered loss of value and holding fees** (04 D-63). Step 2's "Loss of value" prompt takes an amount or %/year, shown as "not a monthly cash cost". The investing views take an optional holding fee %/year. The card-costs tile sums the user's card terms. Requirement IDs DCU-12..DCU-24 now trace D-21..D-43.
+
+### Claude's Discretion
+- The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
+- The table layout for checks, decisions and limits, with RLS per household or user, following the existing migration patterns.
+- The exact copy wording, kept to the prototype's voice and DCU-09.
+- How the quick check parses text ("car 14500"); port the prototype's parser.
+- Item-type pre-fill from the item name (04 D-14 regex suggestion) in step 1.
+
+</decisions>
+
+<canonical_refs>
+## Canonical References
+
+**Downstream agents MUST read these before planning or implementing.**
+
+### Decide UI design source
+- `FincWin United.dc.html`, the prototype:
+  - 955–1070: Decide home (your month strip, quick check, open checks).
+  - 1075–1391: the check flow, steps 1–5, and past decisions.
+  - 1960–1990 and 4830–4851: the date picker and its offsets.
+  - 4202–4787: Decide logic, verdict strings (4476–4512), warnings (4511–4553), options `adv` (4594–4630) and the alternatives table (4655–4704).
+  - 3994–4010: the `DSB` setbacks and the `DSEED` decisions.
+  - 6859–6867: FAB rules.
+- `BUILD-PROMPT.md`: §2 design tokens (25–90), §4 Decide (178–212), §5 i18n (225–240), §7 copy compliance (289–310), §8 phase scope (326).
+
+### Requirements, launch and pricing
+- `.planning/REQUIREMENTS.md`: DCU-01…DCU-11 (204–214) and ANL-06 (59).
+- `.planning/ROADMAP.md`: Phase 5 success criteria 1–7 and its launch inputs.
+- `.planning/research/LAUNCH-POSITIONING.md` §4–§5: onboarding order, screenshots 1–3, captions, no review prompt after "no".
+- `.planning/research/PRICING.md` §2 and §186: Free vs Pro (amended by D-17) and tier-agnostic gating.
+
+### Binding prior decisions
+- `.planning/phases/04-decide-engine/04-CONTEXT.md`: the engine contract. In particular D-07, D-11 (amended), D-14, D-15/D-34, D-21, D-23…D-35.
+- `.planning/phases/03-shell/03-CONTEXT.md`: D-01…D-04 (Decide is the centre tab and is never hidden by levels), D-09…D-12 (FAB "New check", full-screen step flow), D-20…D-26 (accessibility, reduced motion, backdrop, discard confirm).
+- `.planning/phases/02-record/02-CONTEXT.md`: D-22 (import as an optional onboarding step) and D-50 (transfers excluded from Decide totals).
+- `.planning/PROJECT.md`: compliance voice, and the allow-listed App Review demo sign-in (line 151).
+
+</canonical_refs>
+
+<code_context>
+## Existing Code Insights
+
+### Reusable Assets
+- `src/shell/tabBar/tabs.ts`, `availableTabs.ts` (`decide: false` → true), `TabGlyphs.tsx`: the Decide tab already exists, switched off.
+- `src/shell/fab/FabProvider.tsx`, `quickActions.ts` (`newCheck`), `shouldHideFab.ts`: Decide registers "New check".
+- `src/features/record/setup/` (`firstAccountGate.ts`, `SetupAccountScreen.tsx`, `SetupHistoryScreen.tsx`) and `app/(app)/setup/*`: where the D-03 steps go.
+- `src/db/samples.ts` and `supabase/migrations/20261010000600_sample_data.sql`: sample-data seeding, to extend for the D-19 demo scenario.
+- `src/ui/Sheet.tsx`, `ConfirmSheet.tsx`, `DetailSheet.tsx`, `SheetHeader.tsx`: sheets (RN Modal; `@gorhom/bottom-sheet` is not installed).
+- `src/features/record/entry/pickers/DateField.tsx`: native date picker with `minDate`.
+- `src/services/analytics/catalogue.ts` + `posthog.ts`: typed events with a no-amounts guard.
+- `src/i18n/locales/en.ts`, `src/i18n/copyStatus.ts`: copy catalogue and draft tracking.
+- `src/db/household.ts`: single household membership (no members yet).
+- Phase 02.x undo stack: used by D-09 writes.
+
+### Established Patterns
+- Engine purity: Phase 5 code calls `src/engine/decide` through its public barrel only, and the snapshot builder lives outside `engine/`.
+- TanStack Query persisted cache plus paused-mutation write queue for every Supabase write.
+- Supabase-direct with RLS; migrations go through `npm run supabase:db:push` (production only).
+
+### Integration Points
+- Snapshot builder: accounts and balances, full-month flags (04 D-13), paid rows, refunds, confirmed recurring series, debts, cards, limits → engine snapshot.
+- Go ahead writes into Record (rows, series, debts) through existing data-layer functions.
+- The local notification for Wait uses `expo-notifications`.
+
+</code_context>
+
+<specifics>
+## Specific Ideas
+
+- The quick check is the public promise ("FincWin: Can I Afford It?"). It stays free and must answer in one line.
+- The verdict must appear within 4 seconds of the store preview video (LAUNCH §5).
+- Store captions: "Can I afford it? Ask first." / "See what breaks before you buy" / "Cheaper, later, or skip it".
+- Phase 5 carries the roadmap's deepest design-iteration budget. Run `/gsd-ui-phase 5` before planning.
+
+</specifics>
+
+<deferred>
+## Deferred Ideas
+
+- Savings goals created by "Wait and save" → Phase 6 (Grow) may adopt Wait decisions.
+- Household-scope screenshots and a 2-member demo → after Phase 8.
+- Real Free/Pro enforcement and the paywall → Phase 9, with D-17 amending PRICING.
+- Level gating of Decide sub-features → Phase 9 (03 D-03: the tab itself is never hidden).
+- A province field so Quebec users get the CA-QC market row for card minimum terms. Region is only known at country level today, so Quebec users get the rest-of-Canada row with a note (05 D-40). Deferred 2026-10-16.
+- A custom month-grid date picker → not planned. Revisit only if the native picker fails design review.
+
+</deferred>
+
+---
+
+*Phase: 05-decide-ui*
+*Context gathered: 2026-10-15*
