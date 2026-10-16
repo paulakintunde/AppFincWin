@@ -285,6 +285,8 @@ Phase 4 was executed, code-reviewed (`04-REVIEW.md`: 4 high, 5 medium, 5 low, al
 
 </deferred>
 
+**Note (2026-10-16):** 04 D-65 — a zero investing floor means not set, so the investing margin never shows the On the edge tag at a zero floor (the demo scenario has `investing_floor` 0).
+
 ---
 
 *Phase: 05-decide-ui*
