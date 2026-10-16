@@ -7,7 +7,7 @@
  *   - the app has coverage of it end to end: either the earliest live row sits on or before the month's 1st (a
  *     1st-of-month coverage start), or one imported statement period covers the month from its 1st to its last day.
  *
- * Pure string arithmetic on 'YYYY-MM' / 'YYYY-MM-DD'; never Date#toISOString (MON-14).
+ * Pure string arithmetic on 'YYYY-MM' / 'YYYY-MM-DD'; never a Date-to-ISO round trip (MON-14).
  */
 import { daysInMonth } from '@/engine/recurring/schedule';
 import { monthOf } from '@/engine/time';
