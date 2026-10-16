@@ -650,7 +650,7 @@ Plans:
 - [x] 05-50-PLAN.md — Record one-off toggle
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 05-13-PLAN.md — Quick-check form and result (home and first-read variants)
+- [x] 05-13-PLAN.md — Quick-check form and result (home and first-read variants)
 - [ ] 05-16-PLAN.md — Step 3 setbacks and options, household scope toggle (hidden)
 - [ ] 05-19-PLAN.md — Queued mutations: checks, settings, links, card rate, statement periods
 - [ ] 05-41-PLAN.md — Step 3 verdict depth: combined line, worst month, confidence, edge, D-59 fact, warnings
