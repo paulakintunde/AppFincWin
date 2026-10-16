@@ -647,7 +647,7 @@ Plans:
 - [x] 05-36-PLAN.md — ConfidenceChip, EdgeTag, CombineToggle, GoalProgress
 - [x] 05-37-PLAN.md — Depth copy maps (verdict and input sides)
 - [x] 05-39-PLAN.md — Journal helpers: past decisions, attach roles, saved so far
-- [ ] 05-50-PLAN.md — Record one-off toggle
+- [x] 05-50-PLAN.md — Record one-off toggle
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 05-13-PLAN.md — Quick-check form and result (home and first-read variants)
