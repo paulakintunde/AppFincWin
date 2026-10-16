@@ -579,7 +579,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [x] 04-06-PLAN.md — resolvePlan for cash/loan/instalment/card/invest with missing reason codes, check inputs (DEC-04/05/10)
-- [ ] 04-17-PLAN.md — day-by-day 90-day cash path and `cash_dip`, one card per cause (D-44)
+- [x] 04-17-PLAN.md — day-by-day 90-day cash path and `cash_dip`, one card per cause (D-44)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 04-07-PLAN.md — prepareContext + assess: two shares, two cash figures, cash path, pausable saving/investing, confidence, D-36 size, ordered warnings (DEC-06)
