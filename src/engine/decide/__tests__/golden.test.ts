@@ -43,12 +43,12 @@ describe('expectedUnderAmendments (D-33/D-35 transform)', () => {
       prototype: { ...base.prototype, assess: { ...base.prototype.assess, ...over } },
     }) as FixtureScenario;
 
-  it('D-35: a shortfall inside saving + investing is adjust with inv carrying the pause', () => {
+  it('a shortfall inside saving + investing is adjust with inv carrying the pause (D-35)', () => {
     const e = expectedUnderAmendments(withProto({ left: -250, w: [{ k: 'month', short: 250 }] }));
     expect(e).toEqual({ state: 'adjust', warnings: [{ code: 'inv', shortfall: 25_000 }] });
   });
 
-  it('D-35: beyond the pausable amount the state is no and month carries the remainder', () => {
+  it('beyond the pausable amount the state is no and month carries the remainder (D-35)', () => {
     const e = expectedUnderAmendments(withProto({ left: -750 }));
     expect(e).toEqual({
       state: 'no',
@@ -59,12 +59,12 @@ describe('expectedUnderAmendments (D-33/D-35 transform)', () => {
     });
   });
 
-  it('D-35: an inv from a floor above investing is dropped when nothing is short', () => {
+  it('an inv from a floor above investing is dropped when nothing is short (D-35)', () => {
     const e = expectedUnderAmendments(withProto({ left: 10, w: [{ k: 'inv', short: 5 }] }));
     expect(e).toEqual({ state: 'fits', warnings: [] });
   });
 
-  it('D-33: an invest check keeps month and cash only', () => {
+  it('an invest check keeps month and cash only (D-33)', () => {
     const inv = withProto({ left: -100, w: [{ k: 'dsr', short: 3 }, { k: 'cash', short: 4 }] }, {
       check: { kind: 'invest', amount: 1, payment: { method: 'lump' } },
     });
