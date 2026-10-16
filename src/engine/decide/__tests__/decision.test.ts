@@ -1,4 +1,4 @@
-import { minorUnits } from '../../money/types';
+import { currencyCode, minorUnits } from '../../money/types';
 import { divideHalfUp } from '../../money/rounding';
 import { ONE_HUNDRED_PERCENT, ZERO_PERCENT, percent } from '../../payoff/types';
 import { SIMULATION_MONTH_CAP } from '../constants';
@@ -262,7 +262,9 @@ describe('decide (DEC-06)', () => {
       expect(w.monthlyAmount).toBe(400_000);
       expect(w.likelihood).toBe('uncertain');
       expect(w.startMonth).toBe('2026-08');
-      expect(w.assessment.context.monthIncome).toBe(1_000_000);
+      // the worst of the next 12 months includes the gain from August (D-45 applied to the separate assessment)
+      expect(w.assessment.context.monthIncome).toBe(1_400_000);
+      expect((d.verdict as Assessment).context.monthIncome).toBe(1_000_000);
       const plan = resolvePlanStrict(c);
       const share = resolveShare(snap.scope);
       if (!share.ok) throw new Error('share');
@@ -281,10 +283,7 @@ describe('decide (DEC-06)', () => {
     it('never puts the gain in the main verdict', () => {
       const withGain = decide(snap, buyCash(1_200_000, { incomeChange: gain })).verdict as Assessment;
       const without = decide(snap, buyCash(1_200_000)).verdict as Assessment;
-      expect(withGain).toEqual({
-        ...without,
-        // the check is the only difference; the context carries the same position
-      });
+      expect(withGain).toEqual(without);
     });
 
     it('is null for a negative change, none, an invest check or a missing plan', () => {
@@ -331,6 +330,16 @@ describe('decide (DEC-06)', () => {
       });
     });
 
+    it('an invest check with no term is missing with its size', () => {
+      const inv: InvestCheck = {
+        kind: 'invest',
+        currency: USD,
+        amount: mu(100_000),
+        payment: { method: 'monthly', termMonths: null },
+      };
+      expect(decide(BL(), inv).verdict).toMatchObject({ state: 'missing', size: 'from_spare_this_month' });
+    });
+
     it('a missing plan on a resolvable context reports the stacked checks and the size', () => {
       const c = buyCash(100_000, { payment: { method: 'loan', deposit: mu(0), termMonths: null, apr: percent('9') } });
       const d = decide(BL(), c, [other(buyCash(1_800_000))]);
@@ -347,7 +356,7 @@ describe('decide (DEC-06)', () => {
 
   it('rejects a check in another currency', () => {
     const c = buyCash(100_000);
-    expect(() => decide(BL(), { ...c, currency: 'CAD' as typeof c.currency })).toThrow(RangeError);
+    expect(() => decide(BL(), { ...c, currency: currencyCode('CAD') })).toThrow(RangeError);
   });
 
   it('uses positionContext for the same stacked figures as assess', () => {
