@@ -245,7 +245,7 @@ describe('(b) payments invested instead (D-52)', () => {
     expect(zero.growth).toBe(0);
   });
   it('5%: one rounding per step, grown to the horizon, plus running costs', () => {
-    let expected = futureValue(mu(RUN), pct('5'), 48, mu(0));
+    let expected: number = futureValue(mu(RUN), pct('5'), 48, mu(0));
     for (const st of a.plan.paymentSteps) {
       const len = st.toMonth - st.fromMonth + 1;
       expected += futureValue(mu(0), pct('5'), 48 - st.toMonth, futureValue(st.amount, pct('5'), len, mu(0)));
@@ -256,7 +256,7 @@ describe('(b) payments invested instead (D-52)', () => {
   });
   it('D-63: a 1% fee at 5% is the same sum at 4%', () => {
     const fee = run(s, check, { horizonMonths: null, holdingFee: pct('1') }).views;
-    let expected = futureValue(mu(RUN), pct('4'), 48, mu(0));
+    let expected: number = futureValue(mu(RUN), pct('4'), 48, mu(0));
     for (const st of a.plan.paymentSteps) {
       const len = st.toMonth - st.fromMonth + 1;
       expected += futureValue(mu(0), pct('4'), 48 - st.toMonth, futureValue(st.amount, pct('4'), len, mu(0)));
