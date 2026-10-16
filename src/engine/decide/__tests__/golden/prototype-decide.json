@@ -1,0 +1,1901 @@
+{
+  "source": "FincWin United.dc.html (dhh..dfits, evaluated via node:vm)",
+  "scenarios": [
+    {
+      "name": "cash-fits",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 300000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "cash"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 3000,
+          "mo": 0,
+          "n": 0,
+          "fin": 0,
+          "tot": 3000,
+          "interest": 0,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 800,
+          "cashAfter": 12000,
+          "dsr": 0,
+          "unsecAfter": 0,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 3000,
+          "minePay": 0,
+          "newMo": 0,
+          "w": []
+        },
+        "bisect": null
+      }
+    },
+    {
+      "name": "cash-no",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 1600000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "cash"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 16000,
+          "mo": 0,
+          "n": 0,
+          "fin": 0,
+          "tot": 16000,
+          "interest": 0,
+          "miss": false
+        },
+        "assess": {
+          "state": "no",
+          "left": 800,
+          "cashAfter": -1000,
+          "dsr": 0,
+          "unsecAfter": 0,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 16000,
+          "minePay": 0,
+          "newMo": 0,
+          "w": [
+            {
+              "k": "cash",
+              "short": 7000
+            }
+          ]
+        },
+        "bisect": {
+          "best": 9000
+        }
+      }
+    },
+    {
+      "name": "cash-cushion-only",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 1000000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "cash"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 10000,
+          "mo": 0,
+          "n": 0,
+          "fin": 0,
+          "tot": 10000,
+          "interest": 0,
+          "miss": false
+        },
+        "assess": {
+          "state": "adjust",
+          "left": 800,
+          "cashAfter": 5000,
+          "dsr": 0,
+          "unsecAfter": 0,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 10000,
+          "minePay": 0,
+          "newMo": 0,
+          "w": [
+            {
+              "k": "cash",
+              "short": 1000
+            }
+          ]
+        },
+        "bisect": {
+          "best": 8999.998569488525
+        }
+      }
+    },
+    {
+      "name": "loan-fits",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 600000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "loan",
+          "deposit": 300000,
+          "termMonths": 48,
+          "apr": "9.4"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 3000,
+          "mo": 75.22622856805648,
+          "n": 48,
+          "fin": 3000,
+          "tot": 6610.858971266711,
+          "interest": 610.8589712667108,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 724.7737714319435,
+          "cashAfter": 12000,
+          "dsr": 0.01446658241693394,
+          "unsecAfter": 3000,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 3000,
+          "minePay": 75.22622856805648,
+          "newMo": 75.22622856805648,
+          "w": []
+        },
+        "bisect": null
+      }
+    },
+    {
+      "name": "loan-dsr-only",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 250000
+        },
+        {
+          "income": 520000,
+          "spending": 250000
+        },
+        {
+          "income": 520000,
+          "spending": 250000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [
+        {
+          "id": "d1",
+          "balance": 1000000,
+          "minimumPayment": 100000,
+          "secured": false,
+          "rate": "9.9",
+          "revolving": false
+        }
+      ],
+      "saving": 20000,
+      "investing": 50000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 50000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 4100000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "loan",
+          "deposit": 500000,
+          "termMonths": 48,
+          "apr": "9.4"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 2500,
+          "debtPay": 1000,
+          "debtUnsec": 10000,
+          "left": 1000
+        },
+        "plan": {
+          "day": 5000,
+          "mo": 902.7147428166779,
+          "n": 48,
+          "fin": 36000,
+          "tot": 48330.30765520054,
+          "interest": 7330.307655200537,
+          "miss": false
+        },
+        "assess": {
+          "state": "adjust",
+          "left": 97.28525718332207,
+          "cashAfter": 10000,
+          "dsr": 0.3659066813108996,
+          "unsecAfter": 46000,
+          "investAtRisk": 0,
+          "investAfter": 500,
+          "mineCash": 5000,
+          "minePay": 902.7147428166779,
+          "newMo": 902.7147428166779,
+          "w": [
+            {
+              "k": "dsr",
+              "short": 30.714742816677965
+            }
+          ]
+        },
+        "bisect": {
+          "best": 39775.10380744934
+        }
+      }
+    },
+    {
+      "name": "loan-month-and-inv",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 356000
+        },
+        {
+          "income": 520000,
+          "spending": 356000
+        },
+        {
+          "income": 520000,
+          "spending": 356000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 20000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 90000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 2000000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "loan",
+          "deposit": 400000,
+          "termMonths": 24,
+          "apr": "9.4"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3560,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 440
+        },
+        "plan": {
+          "day": 4000,
+          "mo": 733.8958114263673,
+          "n": 24,
+          "fin": 16000,
+          "tot": 21613.499474232816,
+          "interest": 1613.4994742328163,
+          "miss": false
+        },
+        "assess": {
+          "state": "no",
+          "left": -293.89581142636735,
+          "cashAfter": 11000,
+          "dsr": 0.14113380988968602,
+          "unsecAfter": 16000,
+          "investAtRisk": 293.89581142636735,
+          "investAfter": 706.1041885736327,
+          "mineCash": 4000,
+          "minePay": 733.8958114263673,
+          "newMo": 733.8958114263673,
+          "w": [
+            {
+              "k": "month",
+              "short": 293.89581142636735
+            },
+            {
+              "k": "inv",
+              "short": 193.89581142636735
+            }
+          ]
+        },
+        "bisect": {
+          "best": 13592.638969421387
+        }
+      }
+    },
+    {
+      "name": "loan-owe-only",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 250000
+        },
+        {
+          "income": 520000,
+          "spending": 250000
+        },
+        {
+          "income": 520000,
+          "spending": 250000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [
+        {
+          "id": "d1",
+          "balance": 5800000,
+          "minimumPayment": 5000,
+          "secured": false,
+          "rate": "9.9",
+          "revolving": false
+        }
+      ],
+      "saving": 20000,
+      "investing": 50000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 50000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 1500000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "loan",
+          "deposit": 800000,
+          "termMonths": 48,
+          "apr": "9.4"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 2500,
+          "debtPay": 50,
+          "debtUnsec": 58000,
+          "left": 1950
+        },
+        "plan": {
+          "day": 8000,
+          "mo": 175.52786665879847,
+          "n": 48,
+          "fin": 7000,
+          "tot": 16425.337599622326,
+          "interest": 1425.3375996223258,
+          "miss": false
+        },
+        "assess": {
+          "state": "adjust",
+          "left": 1774.4721333412015,
+          "cashAfter": 7000,
+          "dsr": 0.043370743588230475,
+          "unsecAfter": 65000,
+          "investAtRisk": 0,
+          "investAfter": 500,
+          "mineCash": 8000,
+          "minePay": 175.52786665879847,
+          "newMo": 175.52786665879847,
+          "w": [
+            {
+              "k": "owe",
+              "short": 2600
+            }
+          ]
+        },
+        "bisect": {
+          "best": 12399.998903274536
+        }
+      }
+    },
+    {
+      "name": "loan-seed-car",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 250000
+        },
+        {
+          "income": 520000,
+          "spending": 250000
+        },
+        {
+          "income": 520000,
+          "spending": 250000
+        }
+      ],
+      "cash": 1800000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 1450000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "vehicle",
+        "payment": {
+          "method": "loan",
+          "deposit": 300000,
+          "termMonths": 48,
+          "apr": "9.4"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 2500,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 1400
+        },
+        "plan": {
+          "day": 3000,
+          "mo": 288.3672095108832,
+          "n": 48,
+          "fin": 11500,
+          "tot": 16841.626056522393,
+          "interest": 2341.626056522393,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 1111.6327904891168,
+          "cashAfter": 15000,
+          "dsr": 0.055455232598246765,
+          "unsecAfter": 11500,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 3000,
+          "minePay": 288.3672095108832,
+          "newMo": 288.3672095108832,
+          "w": []
+        },
+        "bisect": null
+      }
+    },
+    {
+      "name": "loan-zero-apr",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 600000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "loan",
+          "deposit": 240000,
+          "termMonths": 36,
+          "apr": "0"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 2400,
+          "mo": 100,
+          "n": 36,
+          "fin": 3600,
+          "tot": 6000,
+          "interest": 0,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 700,
+          "cashAfter": 12600,
+          "dsr": 0.019230769230769232,
+          "unsecAfter": 3600,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 2400,
+          "minePay": 100,
+          "newMo": 100,
+          "w": []
+        },
+        "bisect": null
+      }
+    },
+    {
+      "name": "card-full",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 500000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "card",
+          "payoff": "full",
+          "apr": "22.9",
+          "minimumTerms": {
+            "minimumPercent": "1",
+            "interestAdded": true,
+            "floor": 2500
+          },
+          "dealerCap": 500000
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 5000,
+          "mo": 0,
+          "n": 0,
+          "fin": 5000,
+          "tot": 5000,
+          "interest": 0,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 800,
+          "cashAfter": 10000,
+          "dsr": 0,
+          "unsecAfter": 5000,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 5000,
+          "minePay": 0,
+          "newMo": 0,
+          "w": []
+        },
+        "bisect": null
+      }
+    },
+    {
+      "name": "card-months-12",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 600000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "card",
+          "payoff": "months",
+          "months": 12,
+          "apr": "22.9",
+          "minimumTerms": {
+            "minimumPercent": "1",
+            "interestAdded": true,
+            "floor": 2500
+          },
+          "dealerCap": 500000
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 0,
+          "mo": 564.168402706475,
+          "n": 12,
+          "fin": 6000,
+          "tot": 6770.0208324777,
+          "interest": 770.0208324777004,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 235.83159729352496,
+          "cashAfter": 15000,
+          "dsr": 0.10849392359739904,
+          "unsecAfter": 6000,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 0,
+          "minePay": 564.168402706475,
+          "newMo": 564.168402706475,
+          "w": []
+        },
+        "bisect": null
+      }
+    },
+    {
+      "name": "card-minimum-clears",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 2000000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 400000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "card",
+          "payoff": "minimum",
+          "apr": "22.9",
+          "minimumTerms": {
+            "minimumPercent": "1",
+            "interestAdded": true,
+            "floor": 2500
+          },
+          "dealerCap": 500000
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 0,
+          "mo": 116.33333333333333,
+          "n": 210,
+          "fin": 4000,
+          "tot": 10545.268702391899,
+          "interest": 6545.268702391898,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 683.6666666666666,
+          "cashAfter": 20000,
+          "dsr": 0.02237179487179487,
+          "unsecAfter": 4000,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 0,
+          "minePay": 116.33333333333333,
+          "newMo": 116.33333333333333,
+          "w": []
+        },
+        "bisect": null
+      }
+    },
+    {
+      "name": "card-vehicle-under-cap",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 400000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "vehicle",
+        "payment": {
+          "method": "card",
+          "payoff": "months",
+          "months": 12,
+          "apr": "22.9",
+          "minimumTerms": {
+            "minimumPercent": "1",
+            "interestAdded": true,
+            "floor": 2500
+          },
+          "dealerCap": 500000
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 0,
+          "mo": 376.11226847098334,
+          "n": 12,
+          "fin": 4000,
+          "tot": 4513.3472216518,
+          "interest": 513.3472216518003,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 423.88773152901666,
+          "cashAfter": 15000,
+          "dsr": 0.07232928239826603,
+          "unsecAfter": 4000,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 0,
+          "minePay": 376.11226847098334,
+          "newMo": 376.11226847098334,
+          "w": []
+        },
+        "bisect": null
+      }
+    },
+    {
+      "name": "instalment-24",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 1180000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "instalment",
+          "instalmentAmount": 62000,
+          "instalmentCount": 24
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 620,
+          "mo": 620,
+          "n": 24,
+          "fin": 11800,
+          "tot": 14880,
+          "interest": 3080,
+          "miss": true
+        },
+        "assess": {
+          "state": "missing",
+          "left": 180,
+          "cashAfter": 14380,
+          "dsr": 0.11923076923076924,
+          "unsecAfter": 11800,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 620,
+          "minePay": 620,
+          "newMo": 620,
+          "w": []
+        },
+        "bisect": {
+          "best": null
+        }
+      }
+    },
+    {
+      "name": "household-even-2",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "household",
+        "memberCount": 2,
+        "myIndex": 0,
+        "rule": "even"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 1400000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "loan",
+          "deposit": 400000,
+          "termMonths": 36,
+          "apr": "9.4"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 4000,
+          "mo": 319.86224647115375,
+          "n": 36,
+          "fin": 10000,
+          "tot": 15515.040872961536,
+          "interest": 1515.0408729615356,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 640.0688767644231,
+          "cashAfter": 13000,
+          "dsr": 0.030755985237610937,
+          "unsecAfter": 5000,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 2000,
+          "minePay": 159.93112323557688,
+          "newMo": 159.93112323557688,
+          "w": []
+        },
+        "bisect": null
+      }
+    },
+    {
+      "name": "household-weight-3-1",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "household",
+        "memberCount": 2,
+        "myIndex": 0,
+        "rule": "weight",
+        "weights": [
+          3,
+          1
+        ]
+      },
+      "check": {
+        "kind": "buy",
+        "price": 1900000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "cash"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 19000,
+          "mo": 0,
+          "n": 0,
+          "fin": 0,
+          "tot": 19000,
+          "interest": 0,
+          "miss": false
+        },
+        "assess": {
+          "state": "adjust",
+          "left": 800,
+          "cashAfter": 750,
+          "dsr": 0,
+          "unsecAfter": 0,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 14250,
+          "minePay": 0,
+          "newMo": 0,
+          "w": [
+            {
+              "k": "cash",
+              "short": 5250
+            }
+          ]
+        },
+        "bisect": {
+          "best": 11999.999523162842
+        }
+      }
+    },
+    {
+      "name": "invest-lump",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "invest",
+        "amount": 500000,
+        "payment": {
+          "method": "lump"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 5000,
+          "mo": 0,
+          "n": 0,
+          "fin": 0,
+          "tot": 5000,
+          "interest": 0,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 800,
+          "cashAfter": 10000,
+          "dsr": 0,
+          "unsecAfter": 0,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 5000,
+          "minePay": 0,
+          "newMo": 0,
+          "w": []
+        },
+        "bisect": null
+      }
+    },
+    {
+      "name": "invest-monthly-24",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "invest",
+        "amount": 50000,
+        "payment": {
+          "method": "monthly",
+          "termMonths": 24
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 0,
+          "mo": 500,
+          "n": 24,
+          "fin": 0,
+          "tot": 12000,
+          "interest": 0,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 300,
+          "cashAfter": 15000,
+          "dsr": 0,
+          "unsecAfter": 0,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 0,
+          "minePay": 500,
+          "newMo": 500,
+          "w": []
+        },
+        "bisect": null
+      }
+    },
+    {
+      "name": "income-steady",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 530000,
+          "spending": 310000
+        },
+        {
+          "income": 525000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 1000000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "cash"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5237.5,
+          "worst": 5200,
+          "best": 5300,
+          "cv": 0.007915572292017661,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5237.5,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 837.5
+        },
+        "plan": {
+          "day": 10000,
+          "mo": 0,
+          "n": 0,
+          "fin": 0,
+          "tot": 10000,
+          "interest": 0,
+          "miss": false
+        },
+        "assess": {
+          "state": "adjust",
+          "left": 837.5,
+          "cashAfter": 5000,
+          "dsr": 0,
+          "unsecAfter": 0,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 10000,
+          "minePay": 0,
+          "newMo": 0,
+          "w": [
+            {
+              "k": "cash",
+              "short": 1000
+            }
+          ]
+        },
+        "bisect": {
+          "best": 8999.998569488525
+        }
+      }
+    },
+    {
+      "name": "income-variable",
+      "months": [
+        {
+          "income": 480000,
+          "spending": 310000
+        },
+        {
+          "income": 560000,
+          "spending": 310000
+        },
+        {
+          "income": 420000,
+          "spending": 310000
+        },
+        {
+          "income": 540000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 90000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 1000000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "cash"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5000,
+          "worst": 4200,
+          "best": 5600,
+          "cv": 0.10954451150103323,
+          "steady": "Variable",
+          "basis": "worst",
+          "inBasis": 4200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": -200
+        },
+        "plan": {
+          "day": 10000,
+          "mo": 0,
+          "n": 0,
+          "fin": 0,
+          "tot": 10000,
+          "interest": 0,
+          "miss": false
+        },
+        "assess": {
+          "state": "no",
+          "left": -200,
+          "cashAfter": 5000,
+          "dsr": 0,
+          "unsecAfter": 0,
+          "investAtRisk": 200,
+          "investAfter": 800,
+          "mineCash": 10000,
+          "minePay": 0,
+          "newMo": 0,
+          "w": [
+            {
+              "k": "cash",
+              "short": 1000
+            },
+            {
+              "k": "month",
+              "short": 200
+            },
+            {
+              "k": "inv",
+              "short": 100
+            }
+          ]
+        },
+        "bisect": {
+          "best": null
+        }
+      }
+    },
+    {
+      "name": "income-volatile",
+      "months": [
+        {
+          "income": 200000,
+          "spending": 310000
+        },
+        {
+          "income": 800000,
+          "spending": 310000
+        },
+        {
+          "income": 300000,
+          "spending": 310000
+        },
+        {
+          "income": 700000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 90000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 1000000,
+        "dayFees": 0,
+        "runningCostsNet": 0,
+        "itemType": "general",
+        "payment": {
+          "method": "cash"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5000,
+          "worst": 2000,
+          "best": 8000,
+          "cv": 0.5099019513592785,
+          "steady": "Volatile",
+          "basis": "worst",
+          "inBasis": 2000,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": -2400
+        },
+        "plan": {
+          "day": 10000,
+          "mo": 0,
+          "n": 0,
+          "fin": 0,
+          "tot": 10000,
+          "interest": 0,
+          "miss": false
+        },
+        "assess": {
+          "state": "no",
+          "left": -2400,
+          "cashAfter": 5000,
+          "dsr": 0,
+          "unsecAfter": 0,
+          "investAtRisk": 1000,
+          "investAfter": 0,
+          "mineCash": 10000,
+          "minePay": 0,
+          "newMo": 0,
+          "w": [
+            {
+              "k": "month",
+              "short": 2400
+            },
+            {
+              "k": "cash",
+              "short": 1000
+            },
+            {
+              "k": "inv",
+              "short": 900
+            }
+          ]
+        },
+        "bisect": {
+          "best": null
+        }
+      }
+    },
+    {
+      "name": "running-costs-and-day-fees",
+      "months": [
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        },
+        {
+          "income": 520000,
+          "spending": 310000
+        }
+      ],
+      "cash": 1500000,
+      "debts": [],
+      "saving": 30000,
+      "investing": 100000,
+      "limits": {
+        "reserve": 600000,
+        "dsr": "36",
+        "investingFloor": 100000
+      },
+      "return": "6.5",
+      "scope": {
+        "kind": "personal"
+      },
+      "check": {
+        "kind": "buy",
+        "price": 1200000,
+        "dayFees": 45000,
+        "runningCostsNet": 5500,
+        "itemType": "general",
+        "payment": {
+          "method": "loan",
+          "deposit": 300000,
+          "termMonths": 36,
+          "apr": "9.4"
+        }
+      },
+      "prototype": {
+        "money": {
+          "avg": 5200,
+          "worst": 5200,
+          "best": 5200,
+          "cv": 0,
+          "steady": "Steady",
+          "basis": "avg",
+          "inBasis": 5200,
+          "exp": 3100,
+          "debtPay": 0,
+          "debtUnsec": 0,
+          "left": 800
+        },
+        "plan": {
+          "day": 3450,
+          "mo": 273.4822207328365,
+          "n": 36,
+          "fin": 8550,
+          "tot": 13295.359946382114,
+          "interest": 1295.3599463821138,
+          "miss": false
+        },
+        "assess": {
+          "state": "fits",
+          "left": 471.5177792671635,
+          "cashAfter": 11550,
+          "dsr": 0.05259273475631471,
+          "unsecAfter": 8550,
+          "investAtRisk": 0,
+          "investAfter": 1000,
+          "mineCash": 3450,
+          "minePay": 273.4822207328365,
+          "newMo": 328.4822207328365,
+          "w": []
+        },
+        "bisect": null
+      }
+    }
+  ]
+}
