@@ -119,7 +119,7 @@ describe('SetupAccountScreen', () => {
     expect(getByText('Add the account you use most. More can be added later.')).toBeTruthy();
     expect(mockSheetProps!.mode).toEqual({ kind: 'new', context: 'onboarding' });
     fireEvent.press(getByText('sheet'));
-    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/setup/history', params: { accountId: 'acc-new' } });
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/setup/rough', params: { accountId: 'acc-new' } });
   });
 
   it('S-WR-11: Cancel closes the sheet and offers a way to You (sign out or delete) and back to the sheet', async () => {

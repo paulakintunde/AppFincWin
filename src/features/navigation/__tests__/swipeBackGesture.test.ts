@@ -32,7 +32,7 @@ describe('D-40 edge zone and drag offset', () => {
 });
 
 describe('isSwipeBackRoute', () => {
-  it.each(['(tabs)', 'consent', 'setup/account', 'setup/history'])('is off for %s', (r) => expect(isSwipeBackRoute(r)).toBe(false));
+  it.each(['(tabs)', 'consent', 'setup/account', 'setup/rough', 'setup/first-check', 'setup/history'])('is off for %s', (r) => expect(isSwipeBackRoute(r)).toBe(false));
   it.each(['accounts/index', 'accounts/[id]', 'categories', 'history', 'import', 'you'])('is on for %s', (r) =>
     expect(isSwipeBackRoute(r)).toBe(true)
   );
