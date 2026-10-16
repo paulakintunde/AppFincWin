@@ -1656,7 +1656,7 @@ const en = {
       optAffordable: 'At {{price}} instead', optAffordableDesc: '{{amount}} less than the price you were quoted.', optUsePrice: 'Use this price',
       optTerm: 'A {{count}}-month term', optTermValue: '+{{amount}}/mo', optTermStill: 'still short', optTermDesc: '{{payment}} a month, with {{interest}} more interest over the term.', optUseTerm: 'Use this term',
       optCut: 'A fifth off {{line}}', optCutDesc: '{{cut}} a month less on {{line}}, against a {{gap}} gap.', optOpenActivity: 'Open in Activity',
-      optEarn: '{{amount}} more a month coming in', optEarnDesc: 'That is {{pct}} more than your {{basis}} month brings in.',
+      optEarn: '{{amount}} more a month coming in', optEarnDesc: 'That is {{pct}}% more than your {{basis}} month brings in.',
       optSaveFirst: 'Save first, then buy', optSaveFirstDesc: '{{amount}} a month for {{count}} months covers it.', optSaveFirstOpen: '{{amount}} still to cover, with nothing spare each month.', optSwitchWait: 'Switch to wait',
       optWithout: 'Without it', optWithoutValue: '{{amount}}/mo kept', optWithoutDesc: 'Kept instead: {{amount}} over {{count}} months.', optWithoutDescTooLarge: 'Kept instead: too large to project over {{count}} months.', // D-47 (04 ME-01)
       assumptionsTitle: 'Assumptions in play', assumptionsSummary_one: '{{count}} assumption', assumptionsSummary_other: '{{count}} assumptions',
