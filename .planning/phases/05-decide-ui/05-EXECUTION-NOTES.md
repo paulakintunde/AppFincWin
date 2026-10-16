@@ -16,3 +16,4 @@ Non-interactive execution of `/gsd-execute-phase 5` (waves 1-8, plus 05-25 Task 
 - 05-02: Phase 4 gate passed; executed as written. Deviation (Rule 3): inverse.ts insertInversePatch and db/errors.ts WriteEntity widened for the new UndoEntity members so typecheck stays green (soft-delete via deleted_at, matching 05-04 allow-list).
 - 05-03: Phase 4 gate passed; migration 20261016000100_decide_tables.sql + pgTAP 54 written. lint:migrations and verify:migrations pass; pgTAP not run locally (Docker down), CI rls job runs it.
 - 05-33: Phase 4 gate passed; fxConvert.ts extracted (resolvePerEur now returns null instead of throwing on zero-rounded custom rate; provisional behaviour unchanged), 100% branches.
+- 05-34: Phase 4 gate passed; one_off/goal_id added to row types, key lists, select and optimistic rows (isOneOff input); clone test added; no deviations. Requirement IDs left pending (span later plans).
