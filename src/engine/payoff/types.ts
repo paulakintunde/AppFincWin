@@ -59,9 +59,12 @@ export function ceilDivide(n: bigint, d: bigint): bigint {
 export interface AmortisationResult {
   /** Level monthly payment (D-64: rounded up), every month before the last paying month. */
   readonly payment: MinorUnits;
-  /** Month n: remaining balance plus that month's interest; never more than `payment` (D-64). */
+  /** The last non-zero payment: remaining balance plus that month's interest; never more than `payment` (D-64). 0 when nothing is financed. */
   readonly finalPayment: MinorUnits;
+  /** 04-REVIEW ME-03: the last month with a payment, before termMonths when the rounded-up payment clears early; 0 when nothing is financed. */
   readonly months: number;
+  /** The term asked for. */
+  readonly termMonths: number;
   /** Exactly principal + totalInterest. */
   readonly totalPaid: MinorUnits;
   readonly totalInterest: MinorUnits;

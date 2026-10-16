@@ -39,7 +39,9 @@ function debtScheduleOf(check: BuyCheck, plan: Plan): DebtSchedule {
     case 'loan':
       return {
         start: plan.financed,
-        after: amortiseSchedule(plan.financed, rateScheduleFor(payment.apr!, payment.promo), plan.months).balancesByMonth,
+        // the term entered (plan.months is the months actually paid, 04-REVIEW ME-03)
+        after: amortiseSchedule(plan.financed, rateScheduleFor(payment.apr!, payment.promo), payment.termMonths!)
+          .balancesByMonth,
       };
     case 'instalment': {
       const owing = Math.max(0, plan.months - 1);

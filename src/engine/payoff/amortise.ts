@@ -32,8 +32,10 @@ function assertNonNegative(value: number, label: string): void {
 interface LevelWalk {
   /** Month 1's payment: the level payment, or less when the balance clears in month 1. */
   readonly firstPayment: bigint;
-  /** Month n's payment (0 when the balance cleared earlier). */
+  /** The last non-zero payment (04-REVIEW ME-03); 0 when nothing is financed. */
   readonly finalPayment: bigint;
+  /** The last month with a payment; 0 when nothing is financed. */
+  readonly lastMonth: number;
   readonly totalPaid: bigint;
   readonly totalInterest: bigint;
 }
@@ -45,6 +47,7 @@ function walkLevel(P: bigint, apr: Percent, months: number, payment: bigint): Le
   let totalInterest = 0n;
   let totalPaid = 0n;
   let finalPayment = 0n;
+  let lastMonth = 0;
   let firstPayment = 0n;
   for (let k = 1; k <= months; k++) {
     const interest = divideHalfUp(bal * apr, D);
@@ -54,10 +57,13 @@ function walkLevel(P: bigint, apr: Percent, months: number, payment: bigint): Le
     bal = due - paid;
     totalInterest += interest;
     totalPaid += paid;
-    finalPayment = paid;
     if (k === 1) firstPayment = paid;
+    if (paid > 0n) {
+      finalPayment = paid;
+      lastMonth = k;
+    }
   }
-  return { firstPayment, finalPayment, totalPaid, totalInterest };
+  return { firstPayment, finalPayment, lastMonth, totalPaid, totalInterest };
 }
 
 /**
@@ -68,6 +74,10 @@ function walkLevel(P: bigint, apr: Percent, months: number, payment: bigint): Le
  * time until the final payment fits under it. One step was the most ever needed across ~24,000 probed terms (0-999% APR,
  * 1-600 months, 0.01 to 90,000,000,000.00); the loop terminates because a payment of principal + first-month interest
  * clears in month 1.
+ *
+ * 04-REVIEW ME-03: a rounded-up payment can clear the balance before month n (1,000.00 at 22.9% over 600 months clears
+ * in month 421). `months` is then the last month with a payment, `finalPayment` that last non-zero payment, and
+ * `termMonths` the term asked for. With nothing financed, months and finalPayment are 0.
  */
 export function amortise(principal: MinorUnits, apr: Percent, months: number): AmortisationResult {
   assertMonths(months);
@@ -98,7 +108,8 @@ export function amortise(principal: MinorUnits, apr: Percent, months: number): A
     // loan clears in month 1 and that smaller amount is the payment (so amortiseSchedule's one-segment case is equal).
     payment: minorFromBigInt(walk.firstPayment, 'amortise'),
     finalPayment: minorFromBigInt(walk.finalPayment, 'amortise'),
-    months,
+    months: walk.lastMonth,
+    termMonths: months,
     totalPaid: minorFromBigInt(walk.totalPaid, 'amortise'),
     totalInterest: minorFromBigInt(walk.totalInterest, 'amortise'),
   };

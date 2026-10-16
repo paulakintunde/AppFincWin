@@ -255,7 +255,8 @@ function planLoan(check: BuyCheck, p: Extract<BuyPayment, { method: 'loan' }>): 
       dayOne: m(dayOne),
       // D-48: with a promo the month test uses the highest scheduled payment
       monthly: promo === null ? am.payment : am.highestPayment,
-      months: p.termMonths,
+      // 04-REVIEW ME-03: the months actually paid; a rounded-up payment (D-64) can clear before the term ends
+      months: am.months,
       financed: m(financed),
       total: m(total),
       interest: m(Math.max(0, total - check.price)),
@@ -375,9 +376,10 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
       const am = amortiseSchedule(m(onCard), rateScheduleFor(card!.apr!, p.promo), payoff.months);
       promo = p.promo === undefined ? null : promoFromAmortisation(p.promo, onCard, am);
       monthly = promo === null ? am.payment : am.highestPayment;
-      months = payoff.months;
+      // 04-REVIEW ME-03: the months actually paid, which can be fewer than the term entered (D-64 rounds up)
+      months = am.months;
       interest = am.totalInterest;
-      payoffMonths = payoff.months;
+      payoffMonths = am.months;
       finalMonthly = am.finalPayment;
       steps = compressSteps(am.paymentsByMonth);
       break;

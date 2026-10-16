@@ -127,10 +127,20 @@ describe('amortiseSchedule', () => {
     expect(r.totalPaid).toBe(2_000_000 + num(r.totalInterest));
   });
 
-  it('a clamped payment on a tiny balance still clears', () => {
+  it('a clamped payment on a tiny balance still clears, and the schedule ends at the clearing month (ME-03)', () => {
     const r = amortiseSchedule(m(5), singleRate(pct('30')), 12);
-    expect(r.balancesByMonth[11]).toBe(0);
+    expect(r.termMonths).toBe(12);
+    expect(r.months).toBeLessThan(12);
+    expect(r.balancesByMonth).toHaveLength(r.months);
+    expect(r.balancesByMonth[r.months - 1]).toBe(0);
+    expect(r.finalPayment).toBe(r.paymentsByMonth[r.months - 1]);
+    expect(r.finalPayment).toBeGreaterThan(0);
     expect(r.totalPaid).toBe(5 + num(r.totalInterest));
+  });
+
+  it('nothing financed: no paying months and a final payment of 0', () => {
+    const r = amortiseSchedule(m(0), PROMO, 12);
+    expect(r).toMatchObject({ months: 0, termMonths: 12, payment: 0, finalPayment: 0, paymentsByMonth: [] });
   });
 
   it.each([0, 601, 1.5])('rejects months %s', (months) => {
@@ -155,6 +165,7 @@ describe('amortiseSchedule', () => {
           const s = amortiseSchedule(m(principal), singleRate(apr as Percent), months);
           expect(s.payment).toBe(a.payment);
           expect(s.finalPayment).toBe(a.finalPayment);
+          expect(s.months).toBe(a.months);
           expect(s.totalPaid).toBe(a.totalPaid);
           expect(s.totalInterest).toBe(a.totalInterest);
         }
@@ -191,7 +202,10 @@ describe('amortiseSchedule', () => {
           const r = amortiseSchedule(m(principal), { segments, deferredInterest: deferred }, months);
           expect(num(r.totalPaid)).toBe(principal + num(r.totalInterest));
           expect(r.paymentsByMonth.every((p) => p >= 0)).toBe(true);
-          expect(r.balancesByMonth[months - 1]).toBe(0);
+          // 04-REVIEW ME-03: the schedule ends at the last paying month, which clears the balance
+          expect(r.balancesByMonth).toHaveLength(r.months);
+          if (r.months > 0) expect(r.balancesByMonth[r.months - 1]).toBe(0);
+          expect(r.months).toBeLessThanOrEqual(months);
           if (r.deferredInterestCharged > 0) expect(r.balanceAtPromoEnd).toBeGreaterThan(0);
         }
       ),

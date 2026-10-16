@@ -63,9 +63,11 @@ export function buildOptions(
     }
   }
 
-  // 2. longer term (loan only, until the 600-month cap)
-  if (check.kind === 'buy' && check.payment.method === 'loan' && plan.months < MAX_TERM_MONTHS) {
-    const termMonths = Math.min(MAX_TERM_MONTHS, plan.months + LONGER_TERM_STEP_MONTHS);
+  // 2. longer term (loan only, until the 600-month cap). From the term the user entered, not plan.months, which is the
+  // months actually paid and can be shorter (04-REVIEW ME-03). A resolved loan always has a term.
+  const loanTerm = check.kind === 'buy' && check.payment.method === 'loan' ? check.payment.termMonths! : null;
+  if (check.kind === 'buy' && check.payment.method === 'loan' && loanTerm! < MAX_TERM_MONTHS) {
+    const termMonths = Math.min(MAX_TERM_MONTHS, loanTerm! + LONGER_TERM_STEP_MONTHS);
     const longerCheck: PurchaseCheck = { ...check, payment: { ...check.payment, termMonths } };
     const longerPlan = resolvePlanStrict(longerCheck);
     const la = assessPlan(context, longerCheck, longerPlan);

@@ -51,6 +51,7 @@ export interface RateSchedule {
 }
 
 export interface ScheduledAmortisation extends AmortisationResult {
+  /** Months 1..`months` (04-REVIEW ME-03: the schedule ends at the last month with a payment, not at termMonths). */
   readonly paymentsByMonth: readonly MinorUnits[];
   readonly balancesByMonth: readonly MinorUnits[];
   readonly highestPayment: MinorUnits;
@@ -185,14 +186,19 @@ export function amortiseSchedule(principal: MinorUnits, schedule: RateSchedule, 
   interestAfter += charged;
 
   const totalPaid = payments.reduce((s, p) => s + p, 0n);
+  // 04-REVIEW ME-03: a rounded-up (D-64) payment can clear the balance before the term ends; every later month pays 0.
+  // The schedule then ends at the last month with a payment, which is what `months` and `finalPayment` report.
+  let paying = months;
+  while (paying > 0 && payments[paying - 1] === 0n) paying -= 1;
   return {
     payment: minorFromBigInt(payments[0]!, FN),
-    finalPayment: minorFromBigInt(payments[months - 1]!, FN),
-    months,
+    finalPayment: minorFromBigInt(paying === 0 ? 0n : payments[paying - 1]!, FN),
+    months: paying,
+    termMonths: months,
     totalPaid: minorFromBigInt(totalPaid, FN),
     totalInterest: minorFromBigInt(totalInterest, FN),
-    paymentsByMonth: payments.map((p) => minorFromBigInt(p, FN)),
-    balancesByMonth: balances.map((b) => minorFromBigInt(b, FN)),
+    paymentsByMonth: payments.slice(0, paying).map((p) => minorFromBigInt(p, FN)),
+    balancesByMonth: balances.slice(0, paying).map((b) => minorFromBigInt(b, FN)),
     highestPayment: minorFromBigInt(maxOf(payments), FN),
     promoMonths: promoEnd,
     balanceAtPromoEnd: minorFromBigInt(balanceAtPromoEnd, FN),

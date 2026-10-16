@@ -53,7 +53,10 @@ describe('amortise edge cases', () => {
     const r = amortise(m(400), ZERO_PERCENT, 600);
     expect(r.payment).toBe(1);
     expect(r.totalPaid).toBe(400);
-    expect(r.finalPayment).toBe(0);
+    // 04-REVIEW ME-03: it clears in month 400; the final payment is that month's 0.01, not the term's 0
+    expect(r.finalPayment).toBe(1);
+    expect(r.months).toBe(400);
+    expect(r.termMonths).toBe(600);
   });
 
   it.each([0, -1, 1.5, 601])('rejects months %p', (n) => {
