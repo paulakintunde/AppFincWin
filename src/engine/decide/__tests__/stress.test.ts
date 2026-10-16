@@ -70,10 +70,11 @@ describe('stressTest', () => {
   it('can turn a fitting plan into a tighter one at +4 while the verdict stays on the entered rate', () => {
     const snap = snapshotOf({ months: monthsOf([[600_000, 520_000], [600_000, 520_000], [600_000, 520_000]]) });
     const tight = ctx(snap);
-    const check = loanCheck(1_450_000, { deposit: m(0), termMonths: 24, apr: percent('5') });
+    const check = loanCheck(1_450_000, { deposit: m(0), termMonths: 19, apr: percent('5') });
     expect(assess(snap, check).state).toBe('fits');
     const out = stressTest(tight, check);
-    expect(out[1]!.state).not.toBe('fits');
+    expect(out[1]!.state).toBe('no');
+    expect(out[0]!.state).toBe('no');
   });
 
   it('is empty when not flagged variable, when not a loan or card, or when the terms are missing', () => {
