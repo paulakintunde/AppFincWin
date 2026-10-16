@@ -2,7 +2,7 @@
 
 **Gathered:** 2026-09-26
 **Updated:** 2026-10-15 (D-23…D-35; amends D-01, D-03, D-05, D-08, D-11, D-12, D-15, D-16, D-22). D-36 and, for Phase 5 alignment, D-37…D-40 were added the same day.
-**Status:** Needs replanning for D-41…D-58, added 2026-10-15 (the engine depth expansion the user chose to fold into Phase 4). The 13 plans cover D-01…D-40 only.
+**Status:** Planned. 22 plans in 8 waves cover D-01…D-63 and DEC-01…DEC-37. The plan checker passed on 2026-10-16. Ready to execute.
 
 <domain>
 ## Phase Boundary
@@ -161,7 +161,7 @@ Phase 5's quick check and steps 2–5 (05-CONTEXT D-05…D-23, 05-UI-SPEC) rende
   - The prototype divided cash *before* the purchase by burn and showed one decimal. The engine uses cash after the purchase, because the setbacks section tests cash "with this purchase already running". It rounds down, so runway is never overstated.
   - This is a named deviation test.
 - **D-40 (added 2026-10-15 for Phase 5 alignment):** **The engine computes the wait-and-save plan** (05 D-10; the prototype's step-5 wait panel).
-  - Waiting means buying outright later. So the target on a buy check = max(0, my part of the price − spare cash), where spare cash = max(0, `cashAvailable` − reserve), as in the alternatives (D-24). With the default amount, the months equal the alternatives' wait-and-save `monthsToBuy`. On an invest check the target is the amount.
+  - Waiting means buying outright later. So the target on a buy check = max(0, my part of the price − spare cash), where spare cash = max(0, `cashAfterBills` − reserve), as in the alternatives (D-24). Aligned 2026-10-16 with the plans: `cashAfterBills` always deducts the 90-day bills and future-dated outflows within 90 days (D-61). The path-aware `cashAvailable` feeds only the `cash` check and D-36. With the default amount, the months equal the alternatives' wait-and-save `monthsToBuy`. On an invest check the target is the amount.
   - The prototype's target was max(`mineCash`, …). For a cash purchase that made the target the whole price, even when cash above the cushion already covered most of it. It also disagreed with its own wait row. This is a named deviation test.
   - The monthly amount is the user's choice. It defaults to the monthly surplus before the purchase, max(0, `leftBefore`).
   - Months = max(1, ⌈target ÷ amount⌉), or null when the amount is 0.
