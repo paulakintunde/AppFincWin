@@ -578,7 +578,7 @@ describe('assessPlan ledgers and one warning at a time (DEC-06)', () => {
     expect(edge.checks.dsr).toBe(true);
   });
 
-  it('has no debt-service ratio or warning when the money basis is 0', () => {
+  it('has no debt-service ratio when the money basis is 0, and existing debt service breaches the dsr line (ME-05)', () => {
     const s = BL({
       months: monthsOf(
         [
@@ -592,7 +592,9 @@ describe('assessPlan ledgers and one warning at a time (DEC-06)', () => {
     const a = run(s, buyCash(1_000));
     expect(a.debtServiceRatioBefore).toBeNull();
     expect(a.debtServiceRatioAfter).toBeNull();
-    expect(a.warnings.map((x) => x.code)).not.toContain('dsr');
+    // 04-REVIEW ME-05: the line in money is 0, so the whole debt service is the shortfall (was: dsr silently skipped)
+    expect(a.checks.dsr).toBe(false);
+    expect(a.warnings.find((x) => x.code === 'dsr')!.shortfall).toBe(a.debtServiceAfter);
   });
 
   it('adds the financed amount to total debt on buy checks only', () => {

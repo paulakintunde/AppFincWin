@@ -44,8 +44,8 @@ function mi(value: bigint): MinorUnits {
 }
 
 /**
- * D-43, D-33: the signed margin of every applicable line. Buy checks get month, cash, dsr (when there is an income
- * basis), owe and inv; invest checks get month and cash only; the cash-path line is added when a path exists, on the
+ * D-43, D-33: the signed margin of every applicable line. Buy checks get month, cash, dsr (with an income basis of 0
+ * too, ME-05), owe and inv; invest checks get month and cash only; the cash-path line is added when a path exists, on the
  * D-59 measure from cashPathMargin (failed by exactly the cash_dip shortfall, otherwise the room left before one
  * would fire). The verdict state is unchanged by any of it.
  */
@@ -58,10 +58,10 @@ export function lineMargins(a: Assessment, check: PurchaseCheck): readonly LineM
     edgeMargin('cash', mi(BigInt(a.cashAfter) - BigInt(limits.reserve)), limits.reserve, mc),
   ];
   if (check.kind === 'buy') {
-    if (ctx.money.incomeBasis > 0) {
-      const lineMoney = mi(divideHalfUp(limits.dsrLine * BigInt(ctx.money.incomeBasis), ONE_HUNDRED_PERCENT));
-      out.push(edgeMargin('dsr', mi(BigInt(lineMoney) - BigInt(a.debtServiceAfter)), lineMoney, mc));
-    }
+    // 04-REVIEW ME-05: the dsr line is reported with an income basis of 0 too; the line in money is then 0, so any debt
+    // service fails it by its whole amount (assessPlan's dsr check agrees).
+    const lineMoney = mi(divideHalfUp(limits.dsrLine * BigInt(ctx.money.incomeBasis), ONE_HUNDRED_PERCENT));
+    out.push(edgeMargin('dsr', mi(BigInt(lineMoney) - BigInt(a.debtServiceAfter)), lineMoney, mc));
     out.push(
       edgeMargin(
         'owe',

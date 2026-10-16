@@ -141,12 +141,14 @@ describe('lineMargins (D-43, D-33)', () => {
     });
   });
 
-  it('has no dsr entry when there is no income basis', () => {
+  it('keeps the dsr entry when there is no income basis: the line is 0 and debt service fails it (ME-05)', () => {
     const s = BL({ months: monthsOf([[0, 300_000], [0, 300_000], [0, 300_000]], '2026-04') });
     const c = buyCash(100_000);
     const a = run(s, c);
     expect(a.context.money.incomeBasis).toBe(0);
-    expect(lineMargins(a, c).map((m) => m.line)).toEqual(['month', 'cash', 'owe', 'inv']);
+    const margins = lineMargins(a, c);
+    expect(margins.map((m) => m.line)).toEqual(['month', 'cash', 'dsr', 'owe', 'inv']);
+    expect(margins.find((m) => m.line === 'dsr')).toMatchObject({ threshold: 0, margin: -a.debtServiceAfter });
   });
 
   it('invest checks report only month and cash (+ cash_path)', () => {

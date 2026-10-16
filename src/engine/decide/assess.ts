@@ -303,8 +303,14 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
   // Debt lines apply to buy checks only (D-33).
   const debtServiceAfter = am(BigInt(context.debtPayments) + (isInvest ? 0n : BigInt(mineMonthly)));
   const dsrLine = limits.dsrLine;
+  // 04-REVIEW ME-05: with an income basis of 0 (e.g. one zero-income month under the cautious worst basis) any debt
+  // service breaches the line; the ratio is undefined (debtServiceRatio* stay null) and the shortfall is the whole
+  // debtServiceAfter (the line in money is 0). It used to be skipped, so checks.dsr read as passing.
   const dsrBreach =
-    !isInvest && incomeBasis > 0 && BigInt(debtServiceAfter) * ONE_HUNDRED_PERCENT > dsrLine * BigInt(incomeBasis);
+    !isInvest &&
+    (incomeBasis > 0
+      ? BigInt(debtServiceAfter) * ONE_HUNDRED_PERCENT > dsrLine * BigInt(incomeBasis)
+      : debtServiceAfter > 0);
   const financedMine = isInvest ? 0n : BigInt(myPart(plan.financed, p));
   const unsecuredAfter = am(BigInt(context.unsecuredDebt) + financedMine);
   const oweBreach = !isInvest && unsecuredAfter > limits.unsecuredLine;
