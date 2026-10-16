@@ -152,3 +152,19 @@ Choices made under planner discretion (recorded for review):
 - With a holding fee the 0% row reads "0% a year, −1% after fees" (negative net shown with U+2212, 04 D-63 "net rate may go below 0").
 
 Phase 4 cross-check (read only; 04-05, 04-06, 04-12, 04-21, 04-PHASE5-ALIGNMENT as of this revision, uncommitted edits in progress): `LossOfValueInput`, `lossOfValueMonthly`, the card payment's `cardFees`, `CardPlanDetail.fees` / `cardCosts`, `InvestmentViewsInput.holdingFee`, `InvestmentViews.holdingFee` / `netRates`, `NetProjectionRate` and `payoff.futureValueNet` are all present with these names. No mismatch found; 05-01's gate stops Phase 5 if the executed barrel lacks any of them.
+
+## Checker round (2026-10-16) — revision 7
+
+Plan count 53, 10 waves, unchanged; no dependency change (05-30 already has 05-41 and 05-53 as ancestors).
+
+| Item | Resolution | Plans / files |
+|------|------------|---------------|
+| B1 loss-of-value base | Corrects revision 6: the %/year is of the advertised price (before tax, fees and trade-ins), per 04-06 `lossOfValueMonthly(input, advertisedPrice)` and 04-PHASE5-ALIGNMENT. 05-07 calls `lossOfValueMonthly(entry, inputs.advertised)`, never `resolvedPrice.price`; new named test with a trade-in (10% of 1_450_000 → 12_083, not 11_542). The revision-6 table row above and the discretion bullet "share of the final price" are superseded. | 05-07, 05-01, 05-44, 05-31 (`running.lossModeA11y`), UI-SPEC touch-up 16, 05-VALIDATION |
+| B2 demo card terms | User decision: the sample "Credit card" gets a card-kind debts row with `paid_in_full = true` (pay in full is the common case, no minimum, no double count). 05-18 demoSource sets `region: 'US'` and asserts meta.cardsWithoutMinimum 0 and cardsMinimumWithoutRate 0; 05-51 seeds it with a `-- demo:cardDebt.paidInFull=true` marker, returns `'debts', 2`, pgTAP 57 and the mirror cover it, clear_sample_data removes it. | 05-18, 05-51, UI-SPEC touch-up 19 |
+| W1 D-40 "editable on the debt" | New `meta.cardsWithoutMinimumIds` (05-01 / 05-06). 05-41 makes the basis row a button when the card item is present and `onEditCardMinimum` is passed; 05-15 does the same for the Assumptions "Card payments" row (hint key `asCardMinimumHint`, 05-02); 05-30 (composition owner) opens CardMinimumSheet (05-53) for the first id and saves through the step 2 useSaveCardTerms handler; named tests in all three. | 05-01, 05-02, 05-06, 05-15, 05-30, 05-41, UI-SPEC touch-up 17 |
+| W2 D-38 minimal reading for DCU-24 | A live loan account without a debts row counts its payment only through its recurring payment series (a series with `account_id` = the loan account, or a Debt-category bill); loan terms entry beyond Go ahead is Phase 6. A loan account owing a balance with neither a debts row nor a series on it is counted in `meta.loansWithoutPayment` and named in Assumptions ("Loan payments", keys `asLoanPayment` / `asLoanPaymentValue_one|_other` in 05-02). | 05-01, 05-02, 05-06, 05-15, UI-SPEC touch-up 18 |
+
+Choices made under planner discretion (recorded for review):
+- With several cards owing without a minimum, the step 3 notes open the first (account order); after a save the snapshot recomputes and the next becomes the target. One tap target keeps the basis row one line (DCU-11 budget).
+- "Has a series" for a loan account means a live recurring series whose `account_id` is that account; a Debt-category bill on another account cannot be tied to a specific loan, so the Assumptions copy says the payment "counts only if it is among your bills" rather than claiming it is missing.
+- The tap hint reuses one 05-02 key (`asCardMinimumHint`, "Opens the card minimum payment") for both notes; no new 05-31 key.
