@@ -1865,6 +1865,7 @@ const en = {
         lineNever: 'With the expected {{amount}} a month ({{likelihood}}): {{state}}, does not pay for itself within {{months}} months.',
         state: { fits: 'fits', adjust: 'needs adjustment', no: 'does not fit' }, likelihood: { likely: 'likely', uncertain: 'uncertain' },
         rows: { income: 'Income with it', left: 'Month left', payback: 'Pays for itself', total: 'Total cost', state: 'State', sure: 'How sure' }, // addition
+        rowMonths_one: '{{count}} month', rowMonths_other: '{{count}} months', rowNever: 'Not within {{months}} months', // addition (05-42)
       },
       runway: { summary: 'Runway {{months}} months, {{lost}} less because of this', lost: 'Runway lost to this purchase: {{months}} months', met: 'New payments still met', notMet: 'New payments cannot be met' },
       running: { addAmount: 'Add amount', typeToCount: 'Type an amount to count it', insurance: 'Insurance', fuel: 'Fuel', maintenance: 'Maintenance', registration: 'Registration', loss_of_value: 'Loss of value', notCash: 'Not a monthly cash cost',
