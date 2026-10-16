@@ -656,7 +656,7 @@ Plans:
 - [x] 05-41-PLAN.md — Step 3 verdict depth: combined line, worst month, confidence, edge, D-59 fact, warnings
 - [x] 05-43-PLAN.md — Step 1 income change; step 2 promo, variable-rate stress, late fee
 - [x] 05-44-PLAN.md — Step 2 running-cost prompts and estimate-gap notes
-- [ ] 05-45-PLAN.md — Step 4 "If it went into investing instead"
+- [x] 05-45-PLAN.md — Step 4 "If it went into investing instead"
 - [ ] 05-46-PLAN.md — Step 5 cooling-off toggle, Wait goal preview, written lines
 - [ ] 05-51-PLAN.md — Demo seed v2 SQL, pgTAP, samples.ts, mirror check in CI
 
