@@ -14,7 +14,7 @@ type Over = Partial<CheckInputs>;
 const mockUpdate = (p: { update: unknown }) => p.update as jest.Mock;
 
 function propsFor(over: Over = {}, extra: Partial<Step2Props> = {}): Step2Props {
-  return { ...stepProps(buy(over)), onSaveCardRate: jest.fn(), ...extra };
+  return { ...stepProps(buy(over)), onSaveCardRate: jest.fn(), onSaveCardTerms: jest.fn(), ...extra };
 }
 async function renderStep(over: Over = {}, extra: Partial<Step2Props> = {}) {
   const p = propsFor(over, extra);
@@ -318,7 +318,7 @@ describe('MethodPanels', () => {
     it('secured stays where the user put it', async () => {
       const base = buy({ method: 'loan', itemType: 'vehicle', itemTypeTouched: true });
       const vehicle = { ...base, loan: { ...base.loan, secured: true } };
-      const p = { ...stepProps(vehicle), onSaveCardRate: jest.fn() };
+      const p = { ...stepProps(vehicle), onSaveCardRate: jest.fn(), onSaveCardTerms: jest.fn() };
       await wrap(<Step2PriceAndPay {...p} />);
       const toggle = screen.getByLabelText('Secured against what you’re buying');
       expect(toggle.props.accessibilityState.checked).toBe(true);

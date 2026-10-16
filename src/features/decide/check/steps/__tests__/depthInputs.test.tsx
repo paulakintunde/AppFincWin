@@ -51,6 +51,7 @@ function Harness({ initial, readOnly = false, onUpdate }: { initial: CheckInputs
         readOnly={readOnly}
         stack={EMPTY_STACK}
         onSaveCardRate={jest.fn()}
+        onSaveCardTerms={jest.fn()}
       />
     </>
   );

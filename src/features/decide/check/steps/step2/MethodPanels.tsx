@@ -18,6 +18,7 @@ import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { canUse } from '../../../entitlements';
+import { cardCostsCopy } from '../../../copy/cardTermsCopy';
 import { percentText } from '../../../copy/percentText';
 import { isValidAprText, toEngineCheck } from '../../../snapshot/checkInputs';
 import type { CardNoteAnswer, CheckInputs } from '../../../snapshot/types';
@@ -27,7 +28,9 @@ import { RateInput } from '../../../ui/RateInput';
 import { StepSlider } from '../../../ui/StepSlider';
 import type { Step2Props } from './types';
 import { Box, Card, Label, Meta, moneyFn } from '../stepUi';
+import { CardMinimumRow, CardMinimumSheet } from './CardMinimumSheet';
 import { LateFeeField, PromoRow, VariableRateCard } from './CreditTermsPanel';
+import { refText, type Translate as RefTranslate } from '../../refText';
 
 const TERM_CHIPS = [12, 24, 36, 48, 60, 84] as const;
 const MAX_TERM = 600;
@@ -254,7 +257,7 @@ function cardTiles(plan: Plan, fmt: Money, t: Translate) {
 }
 
 function CardPanel(props: Step2Props) {
-  const { inputs, update, source, whole, exact, computation, onSaveCardRate } = props;
+  const { inputs, update, source, whole, exact, computation, onSaveCardRate, onSaveCardTerms, readOnly } = props;
   const t = useT();
   const { colors, pairing } = useTheme();
   const wholeFmt = moneyFn(whole, source.currency);
@@ -265,6 +268,7 @@ function CardPanel(props: Step2Props) {
   const chosen = source.cards.find((c) => c.accountId === card.accountId);
   const recorded = chosen?.record.apr ? percentText(chosen.record.apr) : '';
   const [rate, setRate] = useState<{ id: string | null; text: string }>({ id: card.accountId, text: recorded });
+  const [termsOpen, setTermsOpen] = useState(false);
   if (rate.id !== card.accountId) setRate({ id: card.accountId, text: recorded });
   const setCard = (patch: Partial<CheckInputs['card']>) => update({ card: { ...card, ...patch } });
 
@@ -279,6 +283,8 @@ function CardPanel(props: Step2Props) {
         : t('decide.pay.cardBlockedBody');
   const background = eligibility === 'blocked' ? colors.dangerTint3 : eligibility === 'capped' ? categoryTint.Business : colors.fill1;
   const titleColor = eligibility === 'blocked' ? colors.danger : eligibility === 'capped' ? colors.warn1 : colors.ink;
+
+  const costsLine = plan !== null && plan.card !== null ? cardCostsCopy(plan.card, plan.interest, wholeFmt) : null;
 
   const saveRate = () => {
     if (card.accountId !== null && isValidAprText(rate.text)) onSaveCardRate(card.accountId, rate.text);
@@ -316,6 +322,30 @@ function CardPanel(props: Step2Props) {
             accessibilityLabel={t('decide.pay.cardRateA11y')}
           />
 
+          {chosen === undefined ? null : (
+            <>
+              <CardMinimumRow terms={chosen.terms} readOnly={readOnly} onPress={() => setTermsOpen(true)} whole={whole} />
+              {readOnly ? null : (
+                <CardMinimumSheet
+                  visible={termsOpen}
+                  terms={chosen.terms}
+                  onSave={(terms) => onSaveCardTerms(chosen.accountId, terms)}
+                  onClose={() => setTermsOpen(false)}
+                />
+              )}
+            </>
+          )}
+
+          <MoneyInput
+            value={card.fees}
+            currency={inputs.currency ?? source.currency}
+            onChange={(minor) => setCard({ fees: minor !== null && minor > 0 ? minor : null })}
+            label={t('decide.depth.cardCosts.feesLabel')}
+            accessibilityLabel={t('decide.depth.cardCosts.feesA11y')}
+            readOnly={readOnly}
+          />
+          <Meta tone="muted">{t('decide.depth.cardCosts.feesSub')}</Meta>
+
           <Label>{t('decide.pay.cardClearedHow')}</Label>
           <View accessibilityRole="radiogroup" style={styles.chips}>
             <Chip label={t('decide.pay.cardFull')} selected={card.payoff === 'full'} onPress={() => setCard({ payoff: 'full' })} />
@@ -349,6 +379,7 @@ function CardPanel(props: Step2Props) {
           {plan !== null && plan.card !== null && canUse('payoffComparisons') ? (
             <>
               <FigureStrip items={cardTiles(plan, wholeFmt, t)} />
+              {costsLine === null ? null : <Meta tone="muted">{refText(t as RefTranslate, costsLine)}</Meta>}
               {plan.card.minimumOutcome === 'exceeds_month_cap' && plan.card.remainingAtCap !== null ? (
                 <Meta tone="muted">{t('decide.pay.cardCapRemaining', { amount: wholeFmt(plan.card.remainingAtCap) })}</Meta>
               ) : null}

@@ -23,7 +23,7 @@ function Harness({ initial, readOnly = false, onUpdate }: { initial: CheckInputs
     onUpdate?.(patch);
     setInputs((cur) => ({ ...cur, ...patch }));
   };
-  const props: Step2Props = { ...stepProps(inputs, { update, readOnly }, source), computation: computeCheck(source, inputs), onSaveCardRate: jest.fn() };
+  const props: Step2Props = { ...stepProps(inputs, { update, readOnly }, source), computation: computeCheck(source, inputs), onSaveCardRate: jest.fn(), onSaveCardTerms: jest.fn() };
   return <Step2PriceAndPay {...props} />;
 }
 
