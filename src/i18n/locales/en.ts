@@ -1786,7 +1786,7 @@ const en = {
         ownLine: 'your own line', defaultTag: 'default · {{months}} months', editorInfo: 'The default is {{months}} months of your costs, {{because}}.',
       },
       edge: {
-        tag: 'On the edge', holdsBy: 'holds by {{amount}}', missesBy: 'misses by {{amount}}', chipA11y: '{{state}}, on the edge: {{line}} holds by {{amount}}',
+        tag: 'On the edge', holdsBy: 'holds by {{amount}}', missesBy: 'misses by {{amount}}', chipA11y: '{{state}}, on the edge: {{line}} holds by {{amount}}', chipA11yFact: '{{state}}, on the edge: {{fact}}', // addition (05-37: the D-59 fact in place of the amount)
         line: { cash: 'the cushion', month: 'the month', dsr: 'debt payments', owe: 'unsecured debt', inv: 'investing', cash_path: 'cash before payday' },
         tightHolds: 'Holds, with nothing to spare before {{date}}', // addition: the D-43 margin-0 case paired with the D-59 fact
       },
