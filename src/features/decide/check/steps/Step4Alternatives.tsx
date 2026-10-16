@@ -13,6 +13,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { useFontScale } from '@/theme/FontScaleProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
+import { CloseGlyph } from '@/ui/CloseGlyph';
 import { Text } from '@/ui/Text';
 import { cheaperDescriptor, keptHeader, suppressionReason } from '../../copy/alternativesCopy';
 import { percentText } from '../../copy/percentText';
@@ -25,7 +26,6 @@ import type { StepProps } from '../stepTypes';
 import { Card, Eyebrow, Lock, Meta, moneyFn } from './stepUi';
 
 const MAX_RATES = 3;
-const REMOVE_MARK = '×';
 const MIN_RATIO = 30;
 const MAX_RATIO = 100;
 const TWO_LINES_ABOVE = 1.3;
@@ -135,7 +135,7 @@ export function Step4Alternatives(props: StepProps) {
                 style={[styles.chip, { backgroundColor: colors.fill1 }]}
               >
                 <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{t('decide.alt.rateChip', { rate: rates[0] ?? '' })}</Text>
-                <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{REMOVE_MARK}</Text>
+                <CloseGlyph color={colors.inkMuted} testID="rate-chip-remove" />
               </Pressable>
             ) : null}
             {rates.length < MAX_RATES && !adding ? (

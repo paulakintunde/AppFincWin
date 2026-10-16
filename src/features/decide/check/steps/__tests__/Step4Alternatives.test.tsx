@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 import { percent } from '@/engine/decide';
 import type { AlternativeRow, Alternatives, SuppressionCode } from '@/engine/decide';
 import { Step4Alternatives } from '../Step4Alternatives';
@@ -186,6 +186,14 @@ describe('Step4Alternatives', () => {
     expect(screen.getByText('5% a year')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Remove the rate'));
     expect(p.update).toHaveBeenCalledWith({ projectionRates: ['7'] });
+  });
+
+  it('the rate chip draws the shared close glyph, never a literal ×', async () => {
+    await wrap(<Step4Alternatives {...props({ projectionRates: ['5'] })} />);
+    const chip = screen.getByLabelText('Remove the rate');
+    expect(within(chip).getByTestId('rate-chip-remove', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByText('×')).toBeNull();
+    expect(screen.queryByText(/×/)).toBeNull();
   });
 
   it('+ Add a rate is hidden at three rates', async () => {

@@ -15,6 +15,7 @@
 import React, { useEffect } from 'react';
 import { AccessibilityInfo, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { CloseGlyph } from '@/ui/CloseGlyph';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { DURATION } from '@/theme/motion';
@@ -90,16 +91,6 @@ export function ToastView({ message, actionLabel, onAction, onDismiss, dismissLa
   );
 }
 
-/** Phase 0 convention: a small rotated-border glyph, never an icon font. */
-function CloseGlyph({ color }: { color: string }) {
-  return (
-    <View style={styles.closeGlyph}>
-      <View style={[styles.closeBar, { backgroundColor: color, transform: [{ rotate: '45deg' }] }]} />
-      <View style={[styles.closeBar, { backgroundColor: color, transform: [{ rotate: '-45deg' }] }]} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
@@ -114,17 +105,5 @@ const styles = StyleSheet.create({
   control: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  closeGlyph: {
-    width: 12,
-    height: 12,
-  },
-  closeBar: {
-    position: 'absolute',
-    top: 5,
-    left: 0,
-    width: 12,
-    height: 2,
-    borderRadius: 1,
   },
 });
