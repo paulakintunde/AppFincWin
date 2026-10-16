@@ -54,8 +54,9 @@ import {
   ONE_HUNDRED_PERCENT,
   SIMULATION_MONTH_CAP,
   ZERO_PERCENT,
-  amortise,
   amortiseSchedule,
+  ceilDivide,
+  minorFromBigInt,
   percentFromScaled,
   simulateMinimumSchedule,
   singleRate,
@@ -171,8 +172,10 @@ function promoOutcome(
     deferredInterestCharged: charged,
     deferredInterestCode: charged > 0 ? 'deferred_interest_charged' : null,
     highestMonthlyPayment: highest,
-    // D-20 zero-rate rule: what clears the financed balance inside the promo
-    paymentToClearInPromo: amortise(m(principal), ZERO_PERCENT, promo.months).payment,
+    // HI-01 (04-REVIEW) and D-64: the smallest level payment that clears the financed balance inside the promo, so
+    // paying it for promo.months months leaves nothing open and no deferred interest is charged. Rounded up, never
+    // half-up: a half-up figure can leave a few minor units owing at the promo end and trigger the whole deferred charge.
+    paymentToClearInPromo: minorFromBigInt(ceilDivide(BigInt(principal), BigInt(promo.months)), FN),
   };
 }
 

@@ -730,7 +730,7 @@ export interface PromoOutcome {
   readonly deferredInterestCharged: MinorUnits; // 0 unless deferredInterest and the balance is open at promo end
   readonly deferredInterestCode: 'deferred_interest_charged' | null;
   readonly highestMonthlyPayment: MinorUnits; // = Plan.monthly; the month test uses it (D-48)
-  readonly paymentToClearInPromo: MinorUnits; // amortise(financed, ZERO_PERCENT, promoMonths).payment: what clears it inside the promo (D-20 zero-rate rule)
+  readonly paymentToClearInPromo: MinorUnits; // ceil(financed / promoMonths): the smallest level payment that clears it inside the promo, so paying it for promoMonths months charges no deferred interest (04-REVIEW HI-01, D-64)
 }
 // D-50: min(fee × min(n, instalments remaining), cap)
 export interface LateFeeCost {
