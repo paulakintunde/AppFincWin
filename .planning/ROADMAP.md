@@ -618,7 +618,7 @@ Plans:
 Plans:
 **Wave 1**
 - [x] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
-- [ ] 05-02-PLAN.md — Decide copy catalogue, DCU-09 guard, undo vocabulary
+- [x] 05-02-PLAN.md — Decide copy catalogue, DCU-09 guard, undo vocabulary
 - [ ] 05-03-PLAN.md — Decide tables (checks, settings, debts, links, statement periods), RLS, grants, pgTAP
 - [ ] 05-33-PLAN.md — fxConvert read-side module (custom-currency aware) for D-37
 - [ ] 05-34-PLAN.md — Record data layer: one_off and goal_id fields
