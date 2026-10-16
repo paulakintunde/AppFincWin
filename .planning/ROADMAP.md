@@ -652,7 +652,7 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 - [x] 05-13-PLAN.md — Quick-check form and result (home and first-read variants)
 - [x] 05-16-PLAN.md — Step 3 setbacks and options, household scope toggle (hidden)
-- [ ] 05-19-PLAN.md — Queued mutations: checks, settings, links, card rate, statement periods
+- [x] 05-19-PLAN.md — Queued mutations: checks, settings, links, card rate, statement periods
 - [ ] 05-41-PLAN.md — Step 3 verdict depth: combined line, worst month, confidence, edge, D-59 fact, warnings
 - [ ] 05-43-PLAN.md — Step 1 income change; step 2 promo, variable-rate stress, late fee
 - [ ] 05-44-PLAN.md — Step 2 running-cost prompts and estimate-gap notes
