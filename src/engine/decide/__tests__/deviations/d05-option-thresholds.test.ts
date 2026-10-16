@@ -43,9 +43,7 @@ describe('D-05 / D-06 option thresholds', () => {
       limits: LIMITS,
       expenseLines: [{ lineId: 'x', averageMonthly: mu(1_234), cuttable: true }],
     });
-    const o = optionsOf(s, buyCash(1_700_000)).find((x) => x.code === 'cut_line');
-    expect(o).toBeUndefined(); // no gap here, so no cut line; add a gap through running costs
-    const gapped = optionsOf(s, buyCash(100_000, { runningCostsNet: mu(400_000) })).find((x) => x.code === 'cut_line');
+    const gapped = optionsOf(s, buyCash(1_700_000)).find((x) => x.code === 'cut_line');
     expect(gapped).toMatchObject({ code: 'cut_line', lineAverage: 1_234, cut: 247 });
   });
 

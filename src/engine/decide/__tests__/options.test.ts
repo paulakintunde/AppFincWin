@@ -206,9 +206,10 @@ describe('buildOptions order and content (DEC-13, D-19)', () => {
     expect(o.percentOfIncome).toBeNull();
   });
 
-  it('omits earn_more and cut_line when the month has no gap', () => {
+  it('omits earn_more when the month has no gap, and cut_line then closes nothing', () => {
     const o = optionsOf(BL({ expenseLines: LINES }), buyCash(1_700_000));
-    expect(codes(o)).toEqual(['affordable_price', 'save_first', 'do_without']);
+    expect(codes(o)).toEqual(['affordable_price', 'cut_line', 'cut_line', 'save_first', 'do_without']);
+    expect(pick(o, 'cut_line')).toMatchObject({ gap: 0, closesGap: false });
   });
 
   it('save_first measures the cash need and the months to save it', () => {
