@@ -9,30 +9,11 @@ import { PAYMENT_TYPES, type PaymentType, type TransactionPatch, type Transactio
 import type { AddTransactionInput } from '@/data/mutations/transactions';
 import type { AddTransferInput } from '@/data/mutations/transfers';
 
-export type Direction = 'out' | 'in' | 'transfer';
+import type { Direction, EntryMode } from './entryMode';
 
-export type EntryMode =
-  | {
-      kind: 'new';
-      direction: Direction;
-      accountId?: string | null;
-      localDate?: string | null;
-      /** CONTEXT D-15: a clone of an existing line, opened as a new pending line; nothing is written until Save. */
-      prefill?: EntryPrefill;
-    }
-  | { kind: 'edit'; row: TransactionRow }
-  | { kind: 'edit-transfer'; out: TransactionRow; in: TransactionRow };
-
-export interface EntryPrefill {
-  amountMinor: number;
-  currency: string;
-  name: string | null;
-  categoryId: string | null;
-  accountId: string;
-  paymentType: PaymentType | null;
-  isRefund: boolean;
-  isAutomatic: boolean;
-}
+// The open-mode types live in entryMode.ts (types only, no write path); re-exported here so
+// existing imports keep working.
+export type { Direction, EntryMode, EntryPrefill } from './entryMode';
 
 export interface FormState {
   direction: Direction;
