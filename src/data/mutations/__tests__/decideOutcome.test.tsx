@@ -3,13 +3,14 @@
 globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto);
 
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { DbClient } from '@/db/rows';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { queryKeys } from '@/data/keys';
+import { getToast, resetToastForTests } from '@/state/undoToast';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { registerDecideOutcomeMutations, usePass, useWaitAndSave } from '../decideOutcome';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
@@ -85,6 +86,8 @@ beforeEach(() => {
   mockWait.mockResolvedValue({ scheduled: true, id: 'n1' });
   mockCooling.mockResolvedValue({ scheduled: true, id: 'n2' });
   (recordFailedWrite as jest.Mock).mockClear();
+  resetToastForTests();
+  onlineManager.setOnline(true);
 });
 
 describe('useWaitAndSave', () => {
@@ -180,6 +183,34 @@ describe('useWaitAndSave', () => {
     );
   });
 
+  it('a failed Wait and save write shows the failed-save toast', async () => {
+    const fake = setup();
+    fake.respondWith({ data: null, error: { message: 'bad', code: '22023' }, status: 400 });
+    const qc = newClient();
+    const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
+    await result.current.save(waitArgs);
+    await waitFor(() => expect(getToast()).not.toBeNull());
+    expect(getToast()?.kind).toBe('refusal');
+    expect(getToast()?.text).toEqual({ key: 'decide.toast.outcomeFailed' });
+  });
+
+  it('a write queued offline shows no toast', async () => {
+    const fake = setup();
+    fake.respondWith({ data: null, error: { message: 'bad', code: '22023' }, status: 400 });
+    onlineManager.setOnline(false);
+    try {
+      const qc = newClient();
+      const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
+      await result.current.save(waitArgs);
+      await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.isPaused).toBe(true));
+      expect(fake.calls.some((c) => c.method === 'rpc')).toBe(false);
+      expect(getToast()).toBeNull();
+      expect(recordFailedWrite).not.toHaveBeenCalled();
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+
   it('already-applied is success', async () => {
     const fake = setup();
     fake.respondWith(ok({ status: 'already-applied' }));
@@ -192,6 +223,16 @@ describe('useWaitAndSave', () => {
 });
 
 describe('usePass', () => {
+  it('a failed Pass write shows the failed-save toast', async () => {
+    const fake = setup();
+    fake.respondWith({ data: null, error: { message: 'bad', code: '22023' }, status: 400 });
+    const qc = newClient();
+    const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
+    result.current.pass({ check, verdict: 'no', coolingOff: false });
+    await waitFor(() => expect(getToast()).not.toBeNull());
+    expect(getToast()?.text).toEqual({ key: 'decide.toast.outcomeFailed' });
+  });
+
   it('queues the pass outcome, marks the check passed and sets no reminder', async () => {
     const fake = setup();
     fake.respondWith(applied());

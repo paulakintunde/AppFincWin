@@ -18,6 +18,7 @@ import {
   writeRetryDelay,
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { showToast } from '@/state/undoToast';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { writeClient } from './writeClient';
 import { coolingOffAt } from './decideGoAhead';
@@ -100,6 +101,8 @@ export function registerDecideOutcomeMutations(qc: QueryClient): void {
         code: settledWriteErrorCode(err),
         attempted: { outcome: vars.decision.outcome },
       });
+      // A definitive failure only: a write paused offline never reaches onError until it replays and settles.
+      showToast({ kind: 'refusal', text: { key: 'decide.toast.outcomeFailed' } });
     },
   });
 }

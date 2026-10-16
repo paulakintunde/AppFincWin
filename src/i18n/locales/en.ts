@@ -1472,7 +1472,7 @@ const en = {
       saved: 'Saved', abandoned: 'Check abandoned — nothing was written', written: 'Written to your records',
       writtenBroke: 'Logged. The record notes it breaks a line.', waitSaved: 'Saved. Reminder set for {{date}}',
       waitNoNotify: 'Saved. Notifications are off, so no reminder will arrive.', passed: 'Passed. Nothing moved.',
-      unlinked: 'Line unlinked', lineRemoved: 'Removed · {{name}}', removed: 'Decision removed', reopened: 'Opened as a new check', attached: 'Line attached',
+      outcomeFailed: 'That choice couldn’t be saved. Nothing was changed.', unlinked: 'Line unlinked', lineRemoved: 'Removed · {{name}}', removed: 'Decision removed', reopened: 'Opened as a new check', attached: 'Line attached',
     },
     flow: {
       stepOf: 'Step {{n}} of 5', stepA11y: 'Step {{n}}, {{title}}', back: 'Back', saveClose: 'Save and close', saved: 'Saved',
