@@ -275,7 +275,7 @@ export interface Plan {
   readonly dayOne: MinorUnits; // prototype `day`
   readonly monthly: MinorUnits; // prototype `mo`
   readonly months: number; // prototype `n`
-  readonly financed: MinorUnits; // prototype `fin` (adds to debt; 0 for invest)
+  readonly financed: MinorUnits; // prototype `fin` (adds to debt; 0 for invest). Loan and instalment: price − deposit − dayFees (instalment: no deposit; 04-REVIEW ME-02, the on-the-day fees are paid on day one and dayOne/total include them)
   readonly total: MinorUnits | null; // null only when a card minimum never clears or is still open at the 600-month cap (HI-02: never a finite "cleared" total)
   readonly interest: MinorUnits | null;
   readonly dayFees: MinorUnits;
@@ -284,7 +284,7 @@ export interface Plan {
   // invest monthly; null for cash, lump and card full/minimum. For display only: Phase 5 writes recurring series from
   // `paymentSteps`, the source of truth (05 D-09). With a promo (D-48) `monthly` is the highest payment.
   readonly finalMonthly: MinorUnits | null;
-  readonly impliedAnnualRate: Percent | null; // instalment only: the prototype's flat figure (total/price − 1) × 12/n, half-up; ZERO_PERCENT when total ≤ price; null for every other method. Derived from the user's own numbers, never a default (D-07)
+  readonly impliedAnnualRate: Percent | null; // instalment only: the prototype's flat figure (instalments/financed − 1) × 12/n, half-up, where financed = price − dayFees (ME-02; equals the prototype's total/price when there are no on-the-day fees); ZERO_PERCENT when the instalments ≤ financed; null for every other method. Derived from the user's own numbers, never a default (D-07)
   // every payment after day one, month k >= 1, household amounts, contiguous runs; [] for cash, invest lump and card full.
   // THE source of truth for writing recurring series (05 D-09): Σ amount × run length === total − dayOne, promo or not (D-48)
   readonly paymentSteps: readonly PaymentStep[];

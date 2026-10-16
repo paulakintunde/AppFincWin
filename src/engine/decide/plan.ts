@@ -297,14 +297,20 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
 
   const amount = p.instalmentAmount;
   const count = p.instalmentCount;
-  const total = amount * count;
-  // The prototype's flat figure (total/price - 1) x (12/n) x 100, from the user's own numbers (never a default, D-07).
+  // 04-REVIEW ME-02: the on-the-day fees inside the price are paid on the day, as on the loan path; the instalments
+  // cover the rest (financed = price - dayFees, floored at 0). Before this the fees left cash nowhere: dayOne was the
+  // first instalment alone and total was amount x count, so the cash check was understated by the fees.
+  const financed = Math.max(0, check.price - check.dayFees);
+  const instalmentsTotal = amount * count;
+  const total = instalmentsTotal + check.dayFees;
+  // The prototype's flat figure (total/price - 1) x (12/n) x 100 on what the instalments finance, from the user's own
+  // numbers (never a default, D-07). Without on-the-day fees this is the prototype's figure exactly.
   const impliedAnnualRate: Percent =
-    check.price > 0 && total > check.price
+    financed > 0 && instalmentsTotal > financed
       ? percentFromScaled(
           divideHalfUp(
-            BigInt(total - check.price) * BigInt(MONTHS_PER_YEAR) * ONE_HUNDRED_PERCENT,
-            BigInt(check.price) * BigInt(count)
+            BigInt(instalmentsTotal - financed) * BigInt(MONTHS_PER_YEAR) * ONE_HUNDRED_PERCENT,
+            BigInt(financed) * BigInt(count)
           )
         )
       : ZERO_PERCENT;
@@ -312,10 +318,10 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
     status: 'resolved',
     plan: {
       price: check.price,
-      dayOne: m(amount),
+      dayOne: m(amount + check.dayFees),
       monthly: m(amount),
       months: count,
-      financed: check.price,
+      financed: m(financed),
       total: m(total),
       interest: m(Math.max(0, total - check.price)),
       dayFees: check.dayFees,
