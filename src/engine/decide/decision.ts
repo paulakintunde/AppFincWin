@@ -1,17 +1,17 @@
-import type { MinorUnits } from '../money/types';
-import { divideHalfUp } from '../money/rounding';
-import { ONE_HUNDRED_PERCENT, minorFromBigInt } from '../payoff';
-import { monthOf } from '../time/localDate';
-import { assertCurrency } from './currency';
-import { SIMULATION_MONTH_CAP } from './constants';
-import { assessPlan, prepareContext, purchaseSize } from './assess';
-import { cashPathMargin } from './cashPath';
-import { confidenceOf } from './confidence';
-import { edgeMargin } from './margins';
-import { paybackMonths } from './payback';
-import { resolvePlan } from './plan';
-import { positionContext } from './position';
-import { stressTest } from './stress';
+import type { MinorUnits } from "../money/types";
+import { divideHalfUp } from "../money/rounding";
+import { ONE_HUNDRED_PERCENT, minorFromBigInt } from "../payoff";
+import { monthOf } from "../time/localDate";
+import { assertCurrency } from "./currency";
+import { SIMULATION_MONTH_CAP } from "./constants";
+import { assessPlan, prepareContext, purchaseSize } from "./assess";
+import { cashPathMargin } from "./cashPath";
+import { confidenceOf } from "./confidence";
+import { edgeMargin } from "./margins";
+import { paybackMonths } from "./payback";
+import { resolvePlan } from "./plan";
+import { positionContext } from "./position";
+import { stressTest } from "./stress";
 import type {
   AssessContext,
   Assessment,
@@ -24,7 +24,7 @@ import type {
   StackedCheckInput,
   Verdict,
   WorstMonthReport,
-} from './types';
+} from "./types";
 
 /**
  * The Decision report Phase 5 renders for one check (DEC-06): the verdict and everything that sits beside it, from
@@ -37,7 +37,7 @@ import type {
  * income change is assessed separately (`withExpectedIncome`) with its payback; the gain never enters `verdict`.
  * D-46: the confidence code lives on the verdict, so the Decision has one source for it.
  */
-const FN = 'lineMargins';
+const FN = "lineMargins";
 
 function mi(value: bigint): MinorUnits {
   return minorFromBigInt(value, FN);
@@ -49,35 +49,50 @@ function mi(value: bigint): MinorUnits {
  * D-59 measure from cashPathMargin (failed by exactly the cash_dip shortfall, otherwise the room left before one
  * would fire). The verdict state is unchanged by any of it.
  */
-export function lineMargins(a: Assessment, check: PurchaseCheck): readonly LineMargin[] {
+export function lineMargins(
+  a: Assessment,
+  check: PurchaseCheck,
+): readonly LineMargin[] {
   const ctx = a.context;
   const limits = ctx.limits;
   const mc = ctx.monthCosts;
   const out: LineMargin[] = [
-    edgeMargin('month', a.left, mi(0n), mc),
-    edgeMargin('cash', mi(BigInt(a.cashAfter) - BigInt(limits.reserve)), limits.reserve, mc),
+    edgeMargin("month", a.left, mi(0n), mc),
+    edgeMargin(
+      "cash",
+      mi(BigInt(a.cashAfter) - BigInt(limits.reserve)),
+      limits.reserve,
+      mc,
+    ),
   ];
-  if (check.kind === 'buy') {
+  if (check.kind === "buy") {
     // 04-REVIEW ME-05: the dsr line is reported with an income basis of 0 too; the line in money is then 0, so any debt
     // service fails it by its whole amount (assessPlan's dsr check agrees).
-    const lineMoney = mi(divideHalfUp(limits.dsrLine * BigInt(ctx.money.incomeBasis), ONE_HUNDRED_PERCENT));
-    out.push(edgeMargin('dsr', mi(BigInt(lineMoney) - BigInt(a.debtServiceAfter)), lineMoney, mc));
+    const lineMoney = mi(
+      divideHalfUp(
+        limits.dsrLine * BigInt(ctx.money.incomeBasis),
+        ONE_HUNDRED_PERCENT,
+      ),
+    );
     out.push(
       edgeMargin(
-        'owe',
+        "dsr",
+        mi(BigInt(lineMoney) - BigInt(a.debtServiceAfter)),
+        lineMoney,
+        mc,
+      ),
+    );
+    out.push(
+      edgeMargin(
+        "owe",
         mi(BigInt(limits.unsecuredLine) - BigInt(a.unsecuredAfter)),
         limits.unsecuredLine,
-        mc
+        mc,
       ),
-      edgeMargin(
-        'inv',
-        mi(BigInt(a.investingAfter) - BigInt(limits.investingFloor)),
-        limits.investingFloor,
-        mc
-      )
+      invMargin(a, limits.investingFloor, mc),
     );
   }
-  if (a.cashPath.status === 'available') {
+  if (a.cashPath.status === "available") {
     const margin = cashPathMargin({
       lowestWith: a.cashPath.lowestWith.amount,
       lowestWithout: a.cashPath.lowestWithout.amount,
@@ -85,20 +100,42 @@ export function lineMargins(a: Assessment, check: PurchaseCheck): readonly LineM
       cashAfter: a.cashAfter,
       cashOnHand: ctx.cashAvailable,
     });
-    out.push(edgeMargin('cash_path', margin, limits.reserve, mc));
+    out.push(edgeMargin("cash_path", margin, limits.reserve, mc));
   }
   return out;
+}
+
+/**
+ * D-65 (user decision 2026-10-16): a zero investing floor means "not set". The margin is still reported, but a floor of
+ * 0 (including a null floor resolved to a month's investing of 0) never flags the line on the edge by itself; the flag
+ * fires only for a thin margin above a real, non-zero floor.
+ */
+function invMargin(
+  a: Assessment,
+  floor: MinorUnits,
+  monthCosts: MinorUnits,
+): LineMargin {
+  const m = edgeMargin(
+    "inv",
+    mi(BigInt(a.investingAfter) - BigInt(floor)),
+    floor,
+    monthCosts,
+  );
+  return floor > 0 ? m : { ...m, flag: null };
 }
 
 function missingVerdict(
   reasons: readonly MissingReason[],
   context: AssessContext,
-  check: PurchaseCheck
+  check: PurchaseCheck,
 ): Verdict {
   return {
-    state: 'missing',
+    state: "missing",
     reasons,
-    size: purchaseSize(context, check.kind === 'buy' ? check.price : check.amount),
+    size: purchaseSize(
+      context,
+      check.kind === "buy" ? check.price : check.amount,
+    ),
     confidence: confidenceOf({
       fullMonths: context.money.fullMonthsUsed,
       steadiness: context.money.steadiness,
@@ -110,13 +147,18 @@ function missingVerdict(
 export function decide(
   snapshot: DecideSnapshot,
   check: PurchaseCheck,
-  otherChecks: readonly StackedCheckInput[] = []
+  otherChecks: readonly StackedCheckInput[] = [],
 ): Decision {
-  assertCurrency(snapshot.currency, check.currency, 'check', 'decide');
+  assertCurrency(snapshot.currency, check.currency, "check", "decide");
   const ctx = prepareContext(snapshot);
   const hasOthers = otherChecks.length > 0;
   if (!ctx.ok) {
-    const verdict: Verdict = { state: 'missing', reasons: ctx.reasons, size: null, confidence: ctx.confidence };
+    const verdict: Verdict = {
+      state: "missing",
+      reasons: ctx.reasons,
+      size: null,
+      confidence: ctx.confidence,
+    };
     return {
       verdict,
       standalone: hasOthers ? verdict : null,
@@ -131,10 +173,12 @@ export function decide(
 
   const planResult = resolvePlan(check);
   const pos = positionContext(ctx.context, check, otherChecks);
-  if (planResult.status === 'missing') {
+  if (planResult.status === "missing") {
     return {
       verdict: missingVerdict(planResult.reasons, pos.combined, check),
-      standalone: hasOthers ? missingVerdict(planResult.reasons, pos.standalone, check) : null,
+      standalone: hasOthers
+        ? missingVerdict(planResult.reasons, pos.standalone, check)
+        : null,
       combinedDiffers: false,
       stacked: pos.stacked,
       worstMonth: null,
@@ -161,9 +205,15 @@ export function decide(
   };
 
   let withExpectedIncome: ExpectedIncomeOutcome | null = null;
-  if (check.kind === 'buy' && check.incomeChange !== undefined && check.incomeChange.monthlyAmount > 0) {
+  if (
+    check.kind === "buy" &&
+    check.incomeChange !== undefined &&
+    check.incomeChange.monthlyAmount > 0
+  ) {
     const change = check.incomeChange;
-    const posE = positionContext(ctx.context, check, otherChecks, { includeExpectedIncome: true });
+    const posE = positionContext(ctx.context, check, otherChecks, {
+      includeExpectedIncome: true,
+    });
     withExpectedIncome = {
       monthlyAmount: change.monthlyAmount,
       likelihood: change.likelihood,
