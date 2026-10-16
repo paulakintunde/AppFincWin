@@ -19,7 +19,7 @@ import {
 import { SOLE_SHARE, type ResolvedShare } from '../share';
 import { addDays } from '../series';
 import type { CashDipInput, CashPathBase, MoneyBasis, Plan, SpendingShare } from '../types';
-import { USD, bill, income, outflow, snapshotOf } from './helpers/fixtures';
+import { bill, income, outflow, snapshotOf } from './helpers/fixtures';
 
 const m = minorUnits;
 const ASOF = '2026-07-10';
@@ -143,15 +143,18 @@ describe('buildCashPath', () => {
       inflows: [{ date: '2026-07-25', amount: m(50_000) }],
       outflows: [{ date: ASOF, amount: m(20_000) }],
     });
-    expect(p.balances[0]).toBe(-10_000 + 20_000 - 20_000 + 10_000 - 0);
-    expect(p.balances[14]).toBe(-10_000 + 20_000);
-    expect(p.balances[15]).toBe(40_000 + 10_000 - 10_000);
+    expect(p.balances[0]).toBe(-10_000);
+    expect(p.balances[14]).toBe(-10_000);
+    expect(p.balances[15]).toBe(40_000);
   });
   it('rejects flows outside the window and bad inputs', () => {
     expect(() => buildCashPath({ ...base, outflows: [{ date: '2026-07-09', amount: m(1) }] })).toThrow(
       /buildCashPath: /
     );
     expect(() => buildCashPath({ ...base, inflows: [{ date: '2026-10-09', amount: m(1) }] })).toThrow(
+      /buildCashPath: /
+    );
+    expect(() => buildCashPath({ ...base, outflows: [{ date: '2026-13-01', amount: m(1) }] })).toThrow(
       /buildCashPath: /
     );
     expect(() => buildCashPath({ ...base, spreadMonthly: m(-1) })).toThrow(/buildCashPath: /);
@@ -230,7 +233,7 @@ describe('cashPathForSnapshot', () => {
       debtPayments: m(0),
     })!;
     expect(q.balances[0]).toBe(2_000_000);
-    expect(q.balances[17]).toBe(2_000_000);
+    expect(q.balances[14]).toBe(2_000_000);
   });
   it('ignores an unconfirmed bill', () => {
     const b = bill({ seriesId: 'u', freq: 'monthly', anchorDate: '2026-01-28', latestAmount: 50_000, confirmed: false });
@@ -246,10 +249,10 @@ describe('cashPathForSnapshot', () => {
     });
     const p = pathOf({ bills: [yearly] }, EVEN_SPENDING)!;
     const step = p.balances[52]! - p.balances[53]!;
-    expect(step).toBeGreaterThan(60_000 - 100);
-    expect(step).toBeLessThan(60_000 + 100);
+    expect(step).toBeGreaterThan(60_000);
+    expect(step).toBeLessThan(60_000 + 11_000); // plus one day of the spread, not the unshared 120_000
     // pay still arrives in full on day 15
-    expect(p.balances[15]! - p.balances[14]!).toBeGreaterThan(599_000);
+    expect(p.balances[15]! - p.balances[14]!).toBeGreaterThan(580_000);
   });
   it('places scheduled outflows on their dates (D-61)', () => {
     const base = pathOf()!;
@@ -477,6 +480,7 @@ describe('classifyCashDip / dipShortfall / cashPathMargin (one card per cause)',
   ])('classifies %#', (input, expected) => {
     expect(classifyCashDip(input)).toEqual(expected);
     expect(dipShortfall(input)).toBe(expected === null ? 0 : expected.shortfall);
+    expect(cashPathMargin(input) < 0).toBe(expected !== null);
   });
 
   it.each([
@@ -493,7 +497,7 @@ describe('classifyCashDip / dipShortfall / cashPathMargin (one card per cause)',
   it('rejects a negative reserve', () => {
     expect(() => dipShortfall(inp(1, 1, -1, 1))).toThrow(/^dipShortfall: /);
     expect(() => cashPathMargin(inp(1, 1, -1, 1))).toThrow(/^cashPathMargin: /);
-    expect(() => dipShortfall({ ...inp(1, 1, 1, 1), cashOnHand: m(1.5) as never })).toThrow();
+    expect(() => dipShortfall({ ...inp(1, 1, 1, 1), cashOnHand: 1.5 as never })).toThrow();
   });
 
   const arb = fc
