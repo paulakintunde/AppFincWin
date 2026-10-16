@@ -35,7 +35,7 @@ describe('Step3Verdict', () => {
 
   it('the verdict live-region label never reads a doubled full stop', async () => {
     await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, loggedSource())} />);
-    const label = screen.getByLabelText(/^It fits\. /).props.accessibilityLabel as string;
+    const label = screen.getAllByLabelText(/^It fits/)[0]!.props.accessibilityLabel as string;
     expect(label).toMatch(/Out of this month’s spare/);
     expect(label).not.toMatch(/\.\s*\./);
   });
@@ -43,7 +43,7 @@ describe('Step3Verdict', () => {
   it('a first read with no body announces without an empty sentence', async () => {
     await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, roughSource())} />);
     const label = screen.getByLabelText(/^Needs adjustment\. /).props.accessibilityLabel as string;
-    expect(label).toBe('Needs adjustment. Out of this month’s spare. Your cash cushion breaks by $3000. First read · your figures');
+    expect(label).toBe('Needs adjustment. Out of this month’s spare. Rough basis. Your cash cushion breaks by $3000. First read · your figures');
     expect(label).not.toMatch(/\.\s*\./);
     expect(label).not.toMatch(/\.\s*$/);
   });
