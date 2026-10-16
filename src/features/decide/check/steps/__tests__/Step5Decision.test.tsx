@@ -8,6 +8,11 @@ import { loggedSource } from '../../../snapshot/__tests__/helpers/snapshotFixtur
 jest.setTimeout(30000);
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticSuccess: jest.fn(), hapticWarning: jest.fn(), hapticLight: jest.fn(), hapticMedium: jest.fn() }));
 
+// Step 5 imports the goal-progress data hooks (05-46); they are only called for a decided Waiting check.
+jest.mock('@/data/queries/decide', () => ({ useSavingsGoals: jest.fn(), useGoalLines: jest.fn() }));
+jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: jest.fn() }));
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: jest.fn() }));
+
 const CASH = [
   { id: 'a1', name: 'Everyday', balance: 200_000 },
   { id: 'a2', name: 'Savings pot', balance: 900_000 },

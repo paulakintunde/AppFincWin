@@ -12,7 +12,14 @@ import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { RadioDot } from '@/ui/RadioDot';
+import { ToggleRow } from '@/ui/ToggleRow';
 import { hapticSelection } from '@/ui/haptics';
+import { useFxLatest } from '@/data/queries/fxLatest';
+import { useGoalLines, useSavingsGoals } from '@/data/queries/decide';
+import { useRecordContext } from '@/features/record/useRecordContext';
+import { goalCopy } from '../../copy/depthInputsCopy';
+import { savedSoFar } from '../../journal/goalProgress';
+import { GoalProgress } from '../../ui/GoalProgress';
 import { ChoiceCard } from '../../ui/ChoiceCard';
 import { FigureStrip } from '../../ui/FigureStrip';
 import { StepSlider } from '../../ui/StepSlider';
@@ -24,6 +31,29 @@ import { Card, Eyebrow, Lock, Meta, moneyFn } from './stepUi';
 export interface Step5Props extends StepProps {
   cashAccounts: readonly { id: string; name: string; balance: number }[];
   investAccounts: readonly { id: string; name: string; currency: string }[];
+  /** The saved check's id and status (set by the flow shell for a decided check); a 'waiting' one shows its goal's progress. */
+  checkId?: string | null;
+  checkStatus?: string | null;
+}
+
+/** D-34: a decided Waiting check's goal progress, from the transfers tagged to it. Hooks live here so an undecided step 5 needs no data providers. */
+function DecidedGoalProgress({ checkId, whole, currency, fmt, formatDate }: { checkId: string; whole: Step5Props['whole']; currency: Step5Props['source']['currency']; fmt: (n: number) => string; formatDate: (d: string) => string }) {
+  const t = useT() as Translate;
+  const { colors, pairing } = useTheme();
+  const ctx = useRecordContext();
+  const goals = useSavingsGoals(ctx.userId ?? undefined, ctx.householdId ?? undefined);
+  const goal = (goals.data ?? []).find((g) => g.check_id === checkId && g.deleted_at === null) ?? null;
+  const lines = useGoalLines(ctx.householdId, goal === null ? [] : [goal.id]);
+  const rates = useFxLatest();
+  if (goal === null) return null;
+  const { saved, target } = savedSoFar({ goal, lines: lines.data ?? [], home: ctx.homeCurrency, rates: rates.data ?? [] });
+  const copy = goalCopy(goal, saved, fmt, formatDate);
+  return (
+    <View style={styles.goal}>
+      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>{refText(t, copy.caption)}</Text>
+      <GoalProgress saved={saved} target={target} whole={whole} currency={currency} />
+    </View>
+  );
 }
 
 const WAIT_STEP = 2_500;
@@ -37,7 +67,7 @@ export function largestAccountId(accounts: Step5Props['cashAccounts']): string |
 }
 
 export function Step5Decision(props: Step5Props) {
-  const { inputs, update, computation, source, whole, exact, today, readOnly, cashAccounts, investAccounts } = props;
+  const { inputs, update, computation, source, whole, exact, today, readOnly, cashAccounts, investAccounts, checkId, checkStatus } = props;
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
   const fmt = moneyFn(whole, source.currency);
@@ -176,6 +206,17 @@ export function Step5Decision(props: Step5Props) {
               valueText={cents(wait.monthlyAmount)}
             />
           </Lock>
+          {wait.target > 0 ? (
+            <View style={styles.goal}>
+              <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>
+                {refText(t, goalCopy({ target: wait.target, monthly_amount: wait.monthlyAmount, ready_by: wait.readyBy }, 0, cents, (d) => whole.formatDate(d)).preview)}
+              </Text>
+              {readOnly ? null : <GoalProgress saved={0} target={wait.target} whole={whole} currency={source.currency} />}
+            </View>
+          ) : null}
+          {readOnly && checkStatus === 'waiting' && checkId ? (
+            <DecidedGoalProgress checkId={checkId} whole={whole} currency={source.currency} fmt={cents} formatDate={(d) => whole.formatDate(d)} />
+          ) : null}
           <Meta tone="muted">
             {t(wait.withinSpare ? 'decide.decision.waitWithin' : 'decide.decision.waitBeyond', {
               target: fmt(wait.target),
@@ -210,6 +251,13 @@ export function Step5Decision(props: Step5Props) {
         </Card>
       ) : null}
 
+      {computation.verdict?.size === 'needs_spreading' ? (
+        <Card>
+          <ToggleRow label={t('decide.depth.cooling.toggle')} value={inputs.coolingOff} onChange={(coolingOff) => update({ coolingOff })} disabled={readOnly} />
+          <Meta tone="muted">{t('decide.depth.cooling.sub')}</Meta>
+        </Card>
+      ) : null}
+
       <View style={[styles.written, { backgroundColor: colors.fill1 }]}>
         <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
           {inputs.outcome === null ? t('decide.decision.writtenNone') : t('decide.decision.writtenHeading')}
@@ -230,6 +278,7 @@ const styles = StyleSheet.create({
   choices: { gap: space.gapSm },
   waitFigures: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   figure: { gap: 2 },
+  goal: { gap: space.gapSm },
   accountRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: space.touchMin },
   written: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapSm },
   bullet: { flexDirection: 'row', alignItems: 'flex-start', gap: space.gapSm },
