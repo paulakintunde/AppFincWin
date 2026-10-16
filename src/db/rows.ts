@@ -90,6 +90,9 @@ export interface TransactionRow {
   version: number;
   created_at: string;
   updated_at: string;
+  // 05-34 (D-29, D-34): every select returns both (TRANSACTION_COLUMNS); optional in the type only so the many pre-existing literal fixtures stay valid. Readers use `row.one_off === true` / `row.goal_id ?? null`.
+  one_off?: boolean;
+  goal_id?: string | null;
 }
 
 export interface AccountRow {
@@ -169,6 +172,9 @@ export interface NewTransaction {
   fx_fee_of?: string | null;
   is_refund?: boolean;
   is_automatic?: boolean;
+  // 05-34: D-29 one-off flag, D-34 savings-goal tag
+  one_off?: boolean;
+  goal_id?: string | null;
 }
 
 // D-45: raw_amount/raw_balance/external_id/import_format are insert-only provenance and are
@@ -185,6 +191,8 @@ export type TransactionPatch = Partial<
     transfer_id: string | null;
     is_refund: boolean;
     is_automatic: boolean;
+    one_off: boolean;
+    goal_id: string | null;
   }>;
 
 export interface NewAccount {
