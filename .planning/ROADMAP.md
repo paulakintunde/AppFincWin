@@ -661,7 +661,7 @@ Plans:
 - [x] 05-51-PLAN.md — Demo seed v2 SQL, pgTAP, samples.ts, mirror check in CI
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 05-20-PLAN.md — Go ahead (one undo step, incl. investment and card payoff), Wait (+goal, reminder), Pass
+- [x] 05-20-PLAN.md — Go ahead (one undo step, incl. investment and card payoff), Wait (+goal, reminder), Pass
 - [ ] 05-21-PLAN.md — Decide tab root, FAB, open checks with stacked chips, reminder reconcile
 - [ ] 05-22-PLAN.md — Past decisions and detail sheet (estimate vs actual, attach/unlink)
 - [ ] 05-23-PLAN.md — Onboarding rough figures and first check (cash-only skip path)
