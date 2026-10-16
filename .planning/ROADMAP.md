@@ -591,7 +591,7 @@ Plans:
 - [x] 04-10-PLAN.md — four-way alternatives with suppression and per-rate projections, setbacks, wait plan (DEC-14/15)
 - [x] 04-11-PLAN.md — decide golden parity and named deviation tests (D-22)
 - [x] 04-18-PLAN.md — position layer: combined open checks (D-41), future changes and purchase-linked income loss (D-45, D-53)
-- [ ] 04-19-PLAN.md — variable-rate stress (D-49) and payback months (D-53)
+- [x] 04-19-PLAN.md — variable-rate stress (D-49) and payback months (D-53)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 - [ ] 04-20-PLAN.md — `decide()` report: combined and standalone verdicts, worst month, margins, stress, expected income; named tests D-41/D-43/D-44
