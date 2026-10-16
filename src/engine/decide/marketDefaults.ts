@@ -61,5 +61,9 @@ export function minimumTermsFromDefaults(row: MarketDefaultsRow): CardMinimumTer
   if (row.minimumPercent === null || row.interestAdded === null || row.floor === null) {
     return null;
   }
-  return { minimumPercent: row.minimumPercent, interestAdded: row.interestAdded, floor: row.floor };
+  return {
+    minimumPercent: row.minimumPercent,
+    interestAdded: row.interestAdded,
+    floor: row.floor,
+  };
 }

@@ -94,7 +94,12 @@ describe('nextDueDate', () => {
   });
 
   it('is the anchor when nothing has been paid', () => {
-    const b = bill({ seriesId: 's', freq: 'yearly', anchorDate: '2025-09-01', latestAmount: 1 });
+    const b = bill({
+      seriesId: 's',
+      freq: 'yearly',
+      anchorDate: '2025-09-01',
+      latestAmount: 1,
+    });
     expect(nextDueDate(b)).toBe('2025-09-01');
   });
 
@@ -144,7 +149,12 @@ describe('billsDueWithin (D-24, D-25, D-26)', () => {
       categoryId: 'c1',
     });
     expect(billsDueWithin([b], asOf, 90)).toEqual([
-      { seriesId: 'ins', categoryId: 'c1', dates: ['2026-09-01'], amount: 120_000 },
+      {
+        seriesId: 'ins',
+        categoryId: 'c1',
+        dates: ['2026-09-01'],
+        amount: 120_000,
+      },
     ]);
   });
 
@@ -199,20 +209,40 @@ describe('billsDueWithin (D-24, D-25, D-26)', () => {
       latestAmount: 30_000,
     });
     expect(billsDueWithin([b], asOf, 90)).toEqual([
-      { seriesId: 'q', categoryId: null, dates: ['2026-07-15'], amount: 30_000 },
+      {
+        seriesId: 'q',
+        categoryId: null,
+        dates: ['2026-07-15'],
+        amount: 30_000,
+      },
     ]);
   });
 
   it('multiplies the amount by the number of occurrences', () => {
-    const b = bill({ seriesId: 'q', freq: 'quarterly', anchorDate: '2026-04-01', latestAmount: 7_000 });
+    const b = bill({
+      seriesId: 'q',
+      freq: 'quarterly',
+      anchorDate: '2026-04-01',
+      latestAmount: 7_000,
+    });
     expect(billsDueWithin([b], '2026-07-01', 92)).toEqual([
-      { seriesId: 'q', categoryId: null, dates: ['2026-07-01', '2026-10-01'], amount: 14_000 },
+      {
+        seriesId: 'q',
+        categoryId: null,
+        dates: ['2026-07-01', '2026-10-01'],
+        amount: 14_000,
+      },
     ]);
   });
 
   it('never returns monthly, weekly or fortnightly bills', () => {
     const bills = (['monthly', 'weekly', 'fortnightly'] as const).map((freq) =>
-      bill({ seriesId: freq, freq, anchorDate: '2026-07-11', latestAmount: 100 })
+      bill({
+        seriesId: freq,
+        freq,
+        anchorDate: '2026-07-11',
+        latestAmount: 100,
+      })
     );
     expect(billsDueWithin(bills, asOf, 90)).toEqual([]);
   });
@@ -251,7 +281,12 @@ describe('billsDueWithin (D-24, D-25, D-26)', () => {
   });
 
   describe('guards', () => {
-    const ok = bill({ seriesId: 's', freq: 'yearly', anchorDate: '2025-09-01', latestAmount: 100 });
+    const ok = bill({
+      seriesId: 's',
+      freq: 'yearly',
+      anchorDate: '2025-09-01',
+      latestAmount: 100,
+    });
     const bad = (over: object) => [{ ...ok, ...over }] as never;
 
     it('rejects malformed bills', () => {
@@ -290,7 +325,11 @@ describe('scheduledOutflowsDue (D-61)', () => {
   const asOf = '2026-07-10';
 
   it('is empty for no outflows', () => {
-    expect(scheduledOutflowsDue([], asOf, 90)).toEqual({ dueNow: 0, dueAhead: 0, dated: [] });
+    expect(scheduledOutflowsDue([], asOf, 90)).toEqual({
+      dueNow: 0,
+      dueAhead: 0,
+      dated: [],
+    });
   });
 
   it('puts an outflow dated before or on asOf on day 0', () => {
@@ -349,9 +388,7 @@ describe('scheduledOutflowsDue (D-61)', () => {
   it('rejects malformed input', () => {
     const good = outflow({ id: 'o', date: '2026-07-30', amount: 100 });
     for (const over of [{ amount: 0 }, { amount: -1 }, { amount: 1.5 }, { date: '2026-02-30' }]) {
-      expect(() => scheduledOutflowsDue([{ ...good, ...over } as never], asOf, 90)).toThrow(
-        /^scheduledOutflowsDue: /
-      );
+      expect(() => scheduledOutflowsDue([{ ...good, ...over } as never], asOf, 90)).toThrow(/^scheduledOutflowsDue: /);
     }
     expect(() => scheduledOutflowsDue([good], '2026-02-30', 90)).toThrow(/^scheduledOutflowsDue: /);
     expect(() => scheduledOutflowsDue([good], asOf, -1)).toThrow(/^scheduledOutflowsDue: /);

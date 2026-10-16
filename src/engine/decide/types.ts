@@ -152,9 +152,7 @@ export interface DecideSnapshot {
 
 // ── Check (in) ──
 export type CardPayoff =
-  | { readonly kind: 'full' }
-  | { readonly kind: 'months'; readonly months: number }
-  | { readonly kind: 'minimum' };
+  { readonly kind: 'full' } | { readonly kind: 'months'; readonly months: number } | { readonly kind: 'minimum' };
 export type BuyPayment =
   | { readonly method: 'cash' }
   | {
@@ -185,8 +183,7 @@ export type BuyPayment =
       readonly cardFees?: MinorUnits;
     };
 export type InvestPayment =
-  | { readonly method: 'lump' }
-  | { readonly method: 'monthly'; readonly termMonths: number | null };
+  { readonly method: 'lump' } | { readonly method: 'monthly'; readonly termMonths: number | null };
 // price/dayFees/runningCostsNet come from resolvePriceInputs / netRunningCosts (D-37, plan 04-06); incomeChange: D-53, absent = none
 export interface BuyCheck {
   readonly kind: 'buy';
@@ -301,11 +298,17 @@ export type PlanResult =
 export interface SpendingShare {
   // D-34: resolved existing-spending share
   readonly byDefault: ResolvedShare;
-  readonly byCategory: readonly { readonly categoryId: string; readonly share: ResolvedShare }[];
+  readonly byCategory: readonly {
+    readonly categoryId: string;
+    readonly share: ResolvedShare;
+  }[];
 }
 export type SpendingShareResult =
   | { readonly ok: true; readonly share: SpendingShare }
-  | { readonly ok: false; readonly reason: 'split_weights_zero' | 'split_amounts_zero' };
+  | {
+      readonly ok: false;
+      readonly reason: 'split_weights_zero' | 'split_amounts_zero';
+    };
 export interface MoneyInput {
   readonly currency: CurrencyCode;
   readonly months: readonly MonthRecord[];
@@ -339,8 +342,7 @@ export interface MoneyBasis {
   readonly oneOffsExcluded: OneOffsExcluded; // D-47: summed over monthsUsed
 }
 export type MoneyResult =
-  | { readonly ok: true; readonly money: MoneyBasis }
-  | { readonly ok: false; readonly reason: 'no_full_month' };
+  { readonly ok: true; readonly money: MoneyBasis } | { readonly ok: false; readonly reason: 'no_full_month' };
 
 // ── Bills due (D-24) ──
 export interface BillDue {
@@ -448,7 +450,10 @@ export interface AssessContext {
   // without-purchase cash, the D-52 net-worth start cash
   readonly cashAfterBills: MinorUnits;
   readonly ledgerCash: MinorUnits; // D-38 + D-61: cashOnHand − billsDue − outflowsDueNow, with or without a cash path; the D-38 Cash row's Now; equals cashAvailable when cashPath is null
-  readonly highestUnsecuredApr: { readonly debtId: string; readonly apr: Percent } | null; // D-31 input
+  readonly highestUnsecuredApr: {
+    readonly debtId: string;
+    readonly apr: Percent;
+  } | null; // D-31 input
   readonly monthIncome: MinorUnits; // D-45 hook: the month test's income — money.incomeBasis from prepareContext, the worst future month's income after positionContext; the dsr test keeps money.incomeBasis
   readonly cashPath: CashPathBase | null; // D-44: the 90-day path WITHOUT the purchase; null when no confirmed income series (cash_path_unavailable)
   readonly position: PositionInfo | null; // D-41 / D-45: null from prepareContext; set once by positionContext (04-18)
@@ -456,7 +461,11 @@ export interface AssessContext {
 // D-46: confidence from the money basis when it resolved (only a split failed); rough ['under_3_full_months'] only when there is no full month
 export type ContextResult =
   | { readonly ok: true; readonly context: AssessContext }
-  | { readonly ok: false; readonly reasons: readonly MissingReason[]; readonly confidence: Confidence };
+  | {
+      readonly ok: false;
+      readonly reasons: readonly MissingReason[];
+      readonly confidence: Confidence;
+    };
 export interface Assessment {
   readonly state: 'fits' | 'adjust' | 'no';
   readonly basisMarker: 'logged_months';
@@ -511,7 +520,11 @@ export type AffordablePrice =
   | { readonly kind: 'nothing_affordable' }
   | { readonly kind: 'found'; readonly price: MinorUnits };
 export type DecideOption =
-  | { readonly code: 'affordable_price'; readonly price: MinorUnits; readonly reduction: MinorUnits }
+  | {
+      readonly code: 'affordable_price';
+      readonly price: MinorUnits;
+      readonly reduction: MinorUnits;
+    }
   | {
       readonly code: 'longer_term';
       readonly termMonths: number;
@@ -597,10 +610,27 @@ export interface Alternatives {
 // ── Setbacks (DEC-15) ──
 export type SetbackCode = 'unexpected_expense' | 'income_drop' | 'job_loss' | 'late_invoice';
 export type SetbackInput =
-  | { readonly code: 'unexpected_expense'; readonly enabled: boolean; readonly amount: MinorUnits | null } // null → one month's costs (D-02 figure)
-  | { readonly code: 'income_drop'; readonly enabled: boolean; readonly percentDrop: number; readonly months: number }
-  | { readonly code: 'job_loss'; readonly enabled: boolean; readonly months: number }
-  | { readonly code: 'late_invoice'; readonly enabled: boolean; readonly daysLate: number };
+  | {
+      readonly code: 'unexpected_expense';
+      readonly enabled: boolean;
+      readonly amount: MinorUnits | null;
+    } // null → one month's costs (D-02 figure)
+  | {
+      readonly code: 'income_drop';
+      readonly enabled: boolean;
+      readonly percentDrop: number;
+      readonly months: number;
+    }
+  | {
+      readonly code: 'job_loss';
+      readonly enabled: boolean;
+      readonly months: number;
+    }
+  | {
+      readonly code: 'late_invoice';
+      readonly enabled: boolean;
+      readonly daysLate: number;
+    };
 export type CashOutcome = 'absorbed' | 'through_cushion' | 'wiped_out';
 export interface SetbackResult {
   readonly code: SetbackCode;
@@ -858,11 +888,7 @@ export interface Position {
 // ── Confidence and margins (D-46, D-43) ──
 export type ConfidenceLevel = 'strong' | 'fair' | 'rough';
 export type ConfidenceReason =
-  | 'first_read'
-  | 'under_3_full_months'
-  | 'volatile_income'
-  | 'under_6_full_months'
-  | 'variable_income';
+  'first_read' | 'under_3_full_months' | 'volatile_income' | 'under_6_full_months' | 'variable_income';
 export interface ConfidenceInput {
   readonly fullMonths: number;
   readonly steadiness: Steadiness | null;
@@ -935,14 +961,20 @@ export interface InvestmentViews {
   readonly rates: readonly ProjectionRate[];
   readonly holdingFee: Percent; // D-63: input.holdingFee, ZERO_PERCENT when null
   readonly netRates: readonly NetProjectionRate[]; // D-63: one per `rates` entry, same order; every byRate figure below keeps `rate` = the entered rate and is projected at its net rate
-  readonly priceInvested: { readonly lump: MinorUnits; readonly byRate: readonly RateFigure[] }; // (a)
+  readonly priceInvested: {
+    readonly lump: MinorUnits;
+    readonly byRate: readonly RateFigure[];
+  }; // (a)
   readonly paymentsInvested: {
     readonly firstMonthPayment: MinorUnits;
     readonly paymentMonths: number;
     readonly monthlyRunning: MinorUnits;
     readonly byRate: readonly RateFigure[];
   }; // (b)
-  readonly pauseImpact: { readonly pausedMonthly: MinorUnits; readonly byRate: readonly RateFigure[] } | null; // (c) null when nothing is paused
+  readonly pauseImpact: {
+    readonly pausedMonthly: MinorUnits;
+    readonly byRate: readonly RateFigure[];
+  } | null; // (c) null when nothing is paused
   readonly netWorth: readonly NetWorthPath[]; // (d)
 }
 

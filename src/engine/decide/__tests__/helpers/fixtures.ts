@@ -17,7 +17,7 @@ import type {
 export const USD: CurrencyCode = currencyCode('USD');
 
 export function line(
-  p: Partial<RecordLine> & Pick<RecordLine, 'id' | 'date' | 'direction'> & { amount: number }
+  p: Omit<Partial<RecordLine>, 'amount'> & Pick<RecordLine, 'id' | 'date' | 'direction'> & { amount: number }
 ): RecordLine {
   return {
     currency: USD,
@@ -42,8 +42,18 @@ export function fullMonth(
     month,
     full: true,
     lines: [
-      line({ id: `${month}-in`, date: `${month}-15`, direction: 'in', amount: income }),
-      line({ id: `${month}-out`, date: `${month}-15`, direction: 'out', amount: spending }),
+      line({
+        id: `${month}-in`,
+        date: `${month}-15`,
+        direction: 'in',
+        amount: income,
+      }),
+      line({
+        id: `${month}-out`,
+        date: `${month}-15`,
+        direction: 'out',
+        amount: spending,
+      }),
       ...extra,
     ],
   };
@@ -65,7 +75,10 @@ export function monthsOf(
 }
 
 export function bill(
-  p: Partial<RecurringBill> & Pick<RecurringBill, 'seriesId' | 'freq' | 'anchorDate'> & { latestAmount: number }
+  p: Omit<Partial<RecurringBill>, 'latestAmount'> &
+    Pick<RecurringBill, 'seriesId' | 'freq' | 'anchorDate'> & {
+      latestAmount: number;
+    }
 ): RecurringBill {
   return {
     confirmed: true,
@@ -80,7 +93,10 @@ export function bill(
 }
 
 export function income(
-  p: Partial<RecurringIncome> & Pick<RecurringIncome, 'seriesId' | 'freq' | 'anchorDate'> & { latestAmount: number }
+  p: Omit<Partial<RecurringIncome>, 'latestAmount'> &
+    Pick<RecurringIncome, 'seriesId' | 'freq' | 'anchorDate'> & {
+      latestAmount: number;
+    }
 ): RecurringIncome {
   return {
     confirmed: true,
@@ -94,7 +110,7 @@ export function income(
 }
 
 export function outflow(
-  p: Partial<ScheduledOutflow> & Pick<ScheduledOutflow, 'id' | 'date'> & { amount: number }
+  p: Omit<Partial<ScheduledOutflow>, 'amount'> & Pick<ScheduledOutflow, 'id' | 'date'> & { amount: number }
 ): ScheduledOutflow {
   return { currency: USD, ...p, amount: minorUnits(p.amount) };
 }
