@@ -22,7 +22,7 @@ import { moneyFn } from '../check/steps/stepUi';
 import { MoneyInput } from '../ui/MoneyInput';
 import { RateInput } from '../ui/RateInput';
 import { SegmentedToggle } from '../ui/SegmentedToggle';
-import { CREDIT_TERMS, type CheckInputs, type CreditTerm, type SnapshotResult } from '../snapshot/types';
+import { CREDIT_TERMS, type CheckInputs, type CreditTerm, type QuickComputation, type SnapshotResult } from '../snapshot/types';
 import { MAX_INPUT_MINOR, isValidAprText } from '../snapshot/checkInputs';
 import { QuickResult } from './QuickResult';
 import { quickStateOf, useQuickCheck, type QuickState } from './useQuickCheck';
@@ -36,7 +36,7 @@ export interface QuickCheckFormProps {
   onRunFull?: (inputs: CheckInputs) => void;
   onAddRough?: () => void; // home: 05-27 opens RoughFiguresSheet
   onRetry?: () => void; // 05-27: useDecideSnapshot().retry
-  onResult?: (state: QuickState) => void; // first-read analytics + haptic hook for 05-23
+  onResult?: (state: QuickState, computation: QuickComputation) => void; // first-read analytics + haptic hook for 05-23 (the computation tells a cash-only overdraw from a fit)
 }
 
 const AMOUNT_HEIGHT = 56;
@@ -100,7 +100,7 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
     const state = quickStateOf(computation);
     if (state === null) return;
     handled.current = tick;
-    onResult?.(state);
+    onResult?.(state, computation);
   }, [tick, computation, onResult]);
 
   const whole = moneyFn(wholeFmt, currencyCode(currency));
