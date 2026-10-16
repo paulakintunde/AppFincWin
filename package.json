@@ -98,7 +98,8 @@
     "lint:migrations": "node scripts/check-migration-compat.mjs",
     "verify:migrations": "node scripts/verify-migration-gate.mjs",
     "check:money-mirror": "node scripts/gen-money-mirror-test.mjs --check",
-    "check:recurring-mirror": "node scripts/gen-recurring-mirror-test.mjs --check"
+    "check:recurring-mirror": "node scripts/gen-recurring-mirror-test.mjs --check",
+    "check:decide-demo-mirror": "node scripts/check-decide-demo-mirror.mjs --check"
   },
   "private": true
 }
