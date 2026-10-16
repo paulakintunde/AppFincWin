@@ -213,7 +213,7 @@ export interface ResolvedPrice {
   readonly advertised: MinorUnits;
   readonly adjustmentsNet: MinorUnits; // signed: counted adds − counted takes_off
   readonly price: MinorUnits; // max(0, advertised + adjustmentsNet) → BuyCheck.price
-  readonly dayFees: MinorUnits; // counted, onDay, effect 'adds' → BuyCheck.dayFees
+  readonly dayFees: MinorUnits; // counted, onDay, effect 'adds' → BuyCheck.dayFees; never more than price (LO-04: clamped when take-off lines floor the price)
   readonly countedLines: number;
   readonly totalLines: number; // "{n} of {m} lines counted"
 }

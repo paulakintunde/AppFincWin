@@ -61,11 +61,15 @@ export function resolvePriceInputs(input: PriceInputs): ResolvedPrice {
   }
   const advertised = BigInt(input.advertised);
   const price = advertised + net > 0n ? advertised + net : 0n;
+  // 04-REVIEW LO-04: the on-the-day fees are part of the price, so they never exceed it. When take-off lines push the
+  // price to its floor, the fees are clamped with it (otherwise a loan's dayOne exceeded the price and showed the
+  // difference as interest).
+  const fees = dayFees < price ? dayFees : price;
   return {
     advertised: input.advertised,
     adjustmentsNet: minorFromBigInt(net, fn),
     price: minorFromBigInt(price, fn),
-    dayFees: minorFromBigInt(dayFees, fn),
+    dayFees: minorFromBigInt(fees, fn),
     countedLines: counted,
     totalLines: input.adjustments.length,
   };
