@@ -379,11 +379,13 @@ const en = {
       toggle: {
         automatic: 'Automatic payment',
         refund: 'This is a refund',
+        oneOff: 'One-off, won’t recur',
       },
       note: {
         refund:
           'A refund gives the money back to {{category}} instead of counting as income, so the envelope shows what you really spent.',
         marking: 'Marking this paid moves {{account}} by {{amount}}.',
+        oneOff: 'Left out of the averages Decide uses.',
       },
       uncategorised: 'Uncategorised',
       none: 'None',
@@ -596,6 +598,8 @@ const en = {
       to: 'To',
       kind: 'Kind',
       kindRefund: 'Refund to {{category}}',
+      oneOff: 'One-off',
+      oneOffValue: 'Left out of Decide’s averages',
       paymentType: 'Payment type',
       repeats: 'Repeats',
       method: 'Method',
@@ -1760,6 +1764,129 @@ const en = {
     missingRate: {
       chip: 'Missing terms', title: 'No rate is stored for {{currency}}, so this cannot be scored yet.',
       body: 'Lines in {{currency}} are waiting for a rate. Once one is stored, the check scores itself.', link: 'See lines waiting for a rate',
+    },
+    // Part 2 (05-31): depth surfaces D-24..D-37. UI-SPEC verbatim; copy-only additions marked "addition" are drafts flagged for the UI-SPEC touch-up (05-PLANNING-NOTES OQ-A9).
+    depth: {
+      basisJoin: ' · ',
+      combined: {
+        pill: 'With other checks', pillA11y: 'With my other open checks',
+        differs_one: 'Fits on its own; not with your other {{count}} open check', differs_other: 'Fits on its own; not with your other {{count}} open checks',
+        differsFromAdjust_one: 'Needs adjustment on its own; not affordable with your other {{count}} open check', differsFromAdjust_other: 'Needs adjustment on its own; not affordable with your other {{count}} open checks', // addition
+        quickWith_one: 'Worked out with your other open check.', quickWith_other: 'Worked out with your other {{count}} open checks.', // addition (OQ-A3)
+        notCounted_one: '{{count}} open check not counted: no price yet', notCounted_other: '{{count}} open checks not counted: no price yet', // addition (A16)
+        notCountedCurrency_one: '{{count}} open check not counted: its amounts are in another currency', notCountedCurrency_other: '{{count}} open checks not counted: their amounts are in another currency', // addition (D-37, A16)
+        assumptionTitle: 'Other open checks', // addition
+      },
+      cushion: {
+        row: '{{cushion}} protected · {{cashAfter}} left on the day · {{reason}}',
+        reason: '{{months}} months, {{because}}',
+        reasonInsufficient: '{{months}} months — your income steadiness isn’t known yet', // 05-CONTEXT amended wording
+        because: { steady: 'because your income is steady', variable: 'because your income varies', volatile: 'because your income is volatile', insufficient: 'because your income steadiness isn’t known yet' },
+        ownLine: 'your own line', defaultTag: 'default · {{months}} months', editorInfo: 'The default is {{months}} months of your costs, {{because}}.',
+      },
+      edge: {
+        tag: 'On the edge', holdsBy: 'holds by {{amount}}', missesBy: 'misses by {{amount}}', chipA11y: '{{state}}, on the edge: {{line}} holds by {{amount}}',
+        line: { cash: 'the cushion', month: 'the month', dsr: 'debt payments', owe: 'unsecured debt', inv: 'investing', cash_path: 'cash before payday' },
+        tightHolds: 'Holds, with nothing to spare before {{date}}', // addition: the D-43 margin-0 case paired with the D-59 fact
+      },
+      cashPath: {
+        section: 'Day by day, next 90 days', summary: 'Lowest with this: {{amount}} on {{date}}',
+        legendWith: 'With this', legendWithout: 'Without', zero: '0', cushion: 'Cushion', today: 'Today', plus30: '+30 d', plus60: '+60 d', plus90: '+90 d',
+        textAlt: 'Lowest with this: {{amount}} on {{date}}. Lowest without: {{amountWithout}} on {{dateWithout}}.',
+        scrub: '{{date}}: {{with}} with, {{without}} without',
+        unavailableSummary: 'Add your pay as a recurring series', unavailableBody: 'Add your pay as a recurring series to see day-by-day cash.', unavailableLink: 'Add a recurring series', basisUnavailable: 'Cash path unavailable',
+        tightFact: 'Without this purchase, your cash is lowest on {{date}}, at {{amount}}.', // addition (04 D-59 basis fact)
+        tightFactStacked: 'Without this purchase, and with your other open checks, your cash is lowest on {{date}}, at {{amount}}.', // addition (04 D-59, stacked)
+      },
+      changes: {
+        heading: 'Changes coming up', add: '+ Add a change', addTitle: 'Add a change', editTitle: 'Edit change',
+        income: 'Income', spending: 'Spending', goesUp: 'Goes up', goesDown: 'Goes down',
+        nameLabel: 'Name', namePlaceholder: 'What changes', amount: 'Amount a month', starts: 'Starts', ends: 'Ends', noEnd: 'No end date',
+        cancel: 'Cancel', save: 'Save change', removed: 'Change removed', removeA11y: 'Remove this change',
+        emptyTitle: 'Nothing dated yet', emptyBody: 'A raise, a rent change or a bill ending: add it and every check looks 12 months ahead.',
+        rowFrom: '{{sign}}{{amount}} a month · from {{month}}', rowUntil: ' · until {{month}}',
+        unnamedIncome: 'Income change', unnamedSpending: 'Spending change', // addition (a nameless row)
+        worstMonth: 'Fits now; from {{month}} the month is {{amount}} short.',
+      },
+      confidence: {
+        strong: 'Strong basis', fair: 'Fair basis', rough: 'Rough basis', a11y: 'Basis: {{strength}}, tap for reasons',
+        sheetTitle: 'What this rests on', fullMonths_one: '{{count}} full month logged', fullMonths_other: '{{count}} full months logged',
+        steady: 'Income is steady', variable: 'Income varies', volatile: 'Income is volatile', firstRead: 'This is a first read from the figures you gave',
+        under3: 'Fewer than 3 full months logged', under6: 'Fewer than 6 full months logged', // addition: one row per engine reason code
+        converted: 'Includes amounts converted from {{currency}}',
+        footer: 'Strong needs 6 full months with steady income; fair needs 3; anything less is rough.', close: 'Close',
+      },
+      oneOff: { basis_one: '{{count}} one-off left out', basis_other: '{{count}} one-offs left out' },
+      credit: {
+        promoAdd: '+ Promotional rate', promoRate: 'Promotional rate', promoFor: 'For', promoThen: 'Then', promoMonths: 'months',
+        promoSummary: '{{rate}}% for {{months}} months, then {{after}}%', afterPromo: 'Payment after the promotion: {{amount}} a month',
+        clearsBefore: 'The balance clears before it ends', leftWhenEnds: 'Left when it ends: {{amount}}', interestAfter: 'Interest after it ends: {{amount}}',
+        clearInPromo: 'To clear it inside the promotion: {{amount}} a month', // 05 D-53
+        highestPayment: 'The month test uses the highest payment, {{amount}}.',
+        variable: 'The rate can change', stress2: 'At +2 points: {{amount}} a month', stress4: 'At +4 points: {{amount}} a month', stressNote: 'The verdict stays on the rate you entered.',
+        lateFee: 'Late fee (optional)', late1: 'If 1 payment is late: +{{amount}}', late2: 'If 2 are late: +{{amount}}',
+        deferredToggle: 'Interest is charged back if it isn’t cleared', deferredSub: 'Only on a 0% promotion. Off unless you turn it on.', // D-42
+        deferredCharged: 'Charged back if it isn’t cleared by the end: {{amount}}', // D-42 step 2 tile
+        deferredNoticeTitle: 'Interest charged back', deferredNoticeBody: 'If the balance isn’t cleared when the {{months}}-month promotion ends, {{amount}} of interest is charged back.', // D-42 step 3 notice
+      },
+      cardMin: { // D-40
+        row: 'Minimum payment', summaryInterest: '{{percent}}% of the balance plus interest, at least {{floor}}', summaryNoInterest: '{{percent}}% of the balance, at least {{floor}}',
+        paidInFull: 'Paid in full monthly', notSet: 'Minimum payment not set',
+        marketNote: 'Pre-filled from the standard card terms for your region. Your card’s own terms can differ.',
+        marketNoteCa: 'Pre-filled from the standard card terms outside Quebec. Your card’s own terms can differ.',
+        sheetTitle: 'Card minimum payment', percentLabel: 'Percent of the balance', percentA11y: 'Percent of the balance, percent', interestLabel: 'Plus that month’s interest', floorLabel: 'At least',
+        paidInFullSub: 'No minimum is counted. The card’s spending is already in your month.', useMarket: 'Use the standard terms', save: 'Save terms', cancel: 'Cancel',
+        basis: 'Card payments not counted until the minimum is set',
+      },
+      invest: {
+        section: 'If it went into investing instead', summary: 'A projection at the rate you enter',
+        zero: '0%', rateChip: '{{rate}}% a year', addRate: '+ Add a rate', maxRates: 'Up to 3 rates', removeRateA11y: 'Remove the {{rate}}% rate', over: 'Over {{count}} months',
+        priceTitle: 'Price invested instead', priceLine: '{{amount}} put in once. After {{months}} months: {{value}}.',
+        paymentsTitle: 'Payments invested instead', paymentsLine: '{{amount}} a month for {{months}} months, running costs included. After {{months}} months: {{value}}.',
+        pauseTitle: 'Investing growth lost to a pause', pauseLine: '{{amount}} a month paused. Growth not earned over {{months}} months: {{value}}.', pauseNone: 'This plan pauses no investing.',
+        netWorthTitle: 'Net worth, with and without this', netWorthAlt: 'After {{months}} months: {{with}} with this, {{without}} without, at {{rate}}%.',
+        caption: 'A projection at the rate you entered, not a forecast.', captionZero: 'At 0% the money is only held, not grown.',
+        feeLabel: 'Holding fee (optional)', feeSuffix: 'a year', feeA11y: 'Holding fee, percent a year', feeSub: 'Platform and fund fees a year, if any. Nothing is assumed.', // D-44
+        rateNet: '{{rate}}% a year, {{net}}% after fees', captionFee: 'A projection at the rate you entered less the {{fee}}% fee, not a forecast.', captionZeroFee: 'At 0% the money is only held, and the {{fee}}% fee comes off it.',
+        tooLarge: 'Too large to project at this rate', netWorthAltTooLarge: 'After {{months}} months the path is too large to project at {{rate}}%.', // D-47
+        rateCap: 'Up to 100% a year', // D-48
+      },
+      cardCosts: { // D-44
+        feesLabel: 'Card fees (optional)', feesA11y: 'Card fees for this purchase', feesSub: 'Fees the card charges for this purchase. Paid on the day; other fees go on the price card.',
+        breakdown: '{{interest}} interest plus {{fees}} in card fees.',
+      },
+      income: {
+        card: 'Does this change your income?', toggle: 'This changes my income', raises: 'Raises', lowers: 'Lowers', amount: 'Amount a month', starts: 'Starts',
+        howSure: 'How sure', likely: 'Likely', uncertain: 'Uncertain',
+        noteLowers: 'Counted in the verdict.', noteRaises: 'Not counted in the verdict. It is shown separately on the Impact step.',
+        section: 'With the expected income',
+        line: 'With the expected {{amount}} a month ({{likelihood}}): {{state}}, pays for itself in {{months}} months.',
+        lineNever: 'With the expected {{amount}} a month ({{likelihood}}): {{state}}, does not pay for itself within {{months}} months.',
+        state: { fits: 'fits', adjust: 'needs adjustment', no: 'does not fit' }, likelihood: { likely: 'likely', uncertain: 'uncertain' },
+        rows: { income: 'Income with it', left: 'Month left', payback: 'Pays for itself', total: 'Total cost', state: 'State', sure: 'How sure' }, // addition
+      },
+      runway: { summary: 'Runway {{months}} months, {{lost}} less because of this', lost: 'Runway lost to this purchase: {{months}} months', met: 'New payments still met', notMet: 'New payments cannot be met' },
+      running: { addAmount: 'Add amount', typeToCount: 'Type an amount to count it', insurance: 'Insurance', fuel: 'Fuel', maintenance: 'Maintenance', registration: 'Registration', loss_of_value: 'Loss of value', notCash: 'Not a monthly cash cost',
+        lossMonth: 'A month', lossPercent: '% a year', lossModeA11y: 'Loss of value as an amount a month or a percent a year of the price before tax, fees and trade-ins', lossPercentPlaceholder: 'Type a % a year', lossAbout: 'About {{amount}} a month. Shown here, not counted in your month.' }, // D-44
+      estimateGap: {
+        running: 'Your running costs have come in about {{pct}}% {{direction}} than estimated.',
+        payment: 'Your payments have come in about {{pct}}% {{direction}} than estimated.',
+        dayOne: 'Your day-one costs have come in about {{pct}}% {{direction}} than estimated.', // addition
+        higher: 'higher', lower: 'lower',
+      },
+      goal: {
+        caption: '{{saved}} of {{target}} saved', a11y: '{{pct}} percent', preview: 'A savings goal of {{target}}, {{amount}} a month, ready {{date}}.',
+        previewNoDate: 'A savings goal of {{target}}, {{amount}} a month.', // addition
+        tag: 'Tag a transfer', tagTitle: 'Tag a transfer', tagEmpty: 'No transfers in the last 90 days.', untagA11y: 'Untag this transfer', tagged: 'Transfer tagged', untagged: 'Transfer untagged',
+        waitingRate: 'Waiting for a rate', written: 'A savings goal of {{target}}, {{amount}} a month, ready {{date}}.', writtenNoDate: 'A savings goal of {{target}}, {{amount}} a month.',
+      },
+      cooling: { toggle: 'Check again in 48 hours', sub: 'Reopens this check, recalculated. Off unless you turn it on.', written: 'A reminder in 48 hours that reopens this check, recalculated.' },
+      currency: {
+        basis: 'Includes amounts converted from {{currency}} at {{rate}} on {{date}}',
+        basisMany: 'Includes amounts converted from {{currencies}} at the latest stored rates, {{date}}',
+        assumptionTitle: 'Converted amounts', assumption: '{{currency}} at {{rate}} on {{date}}', // addition
+        pastLines: 'Past lines keep the rate they were stamped with', // addition (OQ-A1)
+      },
     },
   },
   a11y: {
