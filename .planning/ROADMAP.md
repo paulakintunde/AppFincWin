@@ -644,7 +644,7 @@ Plans:
 - [x] 05-17-PLAN.md — Step 4 alternatives, step 5 decision, written lines
 - [x] 05-18-PLAN.md — Demo fixture (6 steady months) and engine-backed demo-outcome test
 - [x] 05-35-PLAN.md — Chart geometry, cash-path chart, net-worth chart
-- [ ] 05-36-PLAN.md — ConfidenceChip, EdgeTag, CombineToggle, GoalProgress
+- [x] 05-36-PLAN.md — ConfidenceChip, EdgeTag, CombineToggle, GoalProgress
 - [ ] 05-37-PLAN.md — Depth copy maps (verdict and input sides)
 - [ ] 05-39-PLAN.md — Journal helpers: past decisions, attach roles, saved so far
 - [ ] 05-50-PLAN.md — Record one-off toggle
