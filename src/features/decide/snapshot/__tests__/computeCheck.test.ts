@@ -141,13 +141,13 @@ describe('computeCheck', () => {
     const c = computeCheck(loggedSource(), inputs);
     expect(c.options.length).toBeGreaterThan(0);
     expect(c.alternatives!.rows).toHaveLength(4);
-    expect(c.alternatives!.rows[1]!.ratioPercent).toBe(50);
+    expect(c.alternatives!.cheaper.ratioPercent).toBe(50);
     expect(c.setbacks!.anyEnabled).toBe(true);
     expect(c.setbacks!.results.map((r) => r.code)).toEqual(['unexpected_expense', 'income_drop', 'job_loss', 'late_invoice']);
     expect(c.waitPlan!.monthlyAmount).toBe(20_000);
-    expect(c.incomeAtRisk!.results.map((r) => r.code)).toEqual(c.setbacks!.results.map((r) => r.code));
+    expect(c.incomeAtRisk!.setbacks.map((r) => r.code)).toEqual(c.setbacks!.results.map((r) => r.code));
     expect(c.investmentViews!.horizonMonths).toBe(24);
-    expect(c.investmentViews!.rates.map((r) => r.rate)).toEqual([percent('4')]);
+    expect(c.investmentViews!.rates.map((r) => r.rate)).toEqual([ZERO_PERCENT, percent('4')]);
   });
   it('the holding fee reaches the investing views', () => {
     const withFee = computeCheck(loggedSource(), buy({ projectionRates: ['4', '6'], investHoldingFeeText: '1' }));

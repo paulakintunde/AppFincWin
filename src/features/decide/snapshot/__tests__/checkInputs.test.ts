@@ -463,7 +463,7 @@ describe('repriceInputs', () => {
   });
 });
 
-describe('no optional credit term is ever pre-filled', () => {
+describe('credit terms are only ever typed', () => {
   it('no optional credit term is ever pre-filled', () => {
     fc.assert(
       fc.property(fc.jsonValue(), fc.constantFrom('cash', 'loan', 'instalment', 'card'), (json, method) => {

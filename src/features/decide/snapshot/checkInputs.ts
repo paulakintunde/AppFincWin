@@ -358,14 +358,15 @@ export function parseCheckInputs(json: unknown, today: string): CheckInputs {
 export function quickToCheckInputs(q: QuickInputs, today: string): CheckInputs {
   const itemType = suggestItemType(q.name);
   const base = emptyCheckInputs('buy', today);
+  const price = q.price !== null && Number.isSafeInteger(q.price) && q.price > 0 && q.price <= MAX_INPUT_MINOR ? minorUnits(q.price) : null;
   const adjustments: AdjustmentLine[] = [];
-  if (q.price !== null && isPercentTo100(q.taxText)) {
+  if (price !== null && isPercentTo100(q.taxText)) {
     adjustments.push({
-      id: 'adj-tax', name: '', amount: salesTaxAmount(minorUnits(q.price), percent(q.taxText)), note: '', counted: true,
+      id: 'adj-tax', name: '', amount: salesTaxAmount(price, percent(q.taxText)), note: '', counted: true,
       effect: 'adds', onDay: true, taxPercentText: q.taxText,
     });
   }
-  if (q.fees !== null && q.fees > 0) {
+  if (q.fees !== null && Number.isSafeInteger(q.fees) && q.fees > 0 && q.fees <= MAX_INPUT_MINOR) {
     adjustments.push({ id: 'adj-fees', name: '', amount: q.fees, note: 'fees', counted: true, effect: 'adds', onDay: true, taxPercentText: null });
   }
   return {
@@ -481,7 +482,7 @@ function payment(inputs: CheckInputs, method: PayMethod, ctx: EngineCtx, price: 
 /** Stored inputs → the engine's check, the resolved price and the running costs. Pure; the caller supplies the context. */
 export function toEngineCheck(inputs: CheckInputs, ctx: EngineCtx): EngineCheckResult {
   const advertised = inputs.advertised;
-  if (advertised === null || advertised <= 0 || advertised > MAX_INPUT_MINOR) return { ok: false, missing: 'price' };
+  if (advertised === null || !Number.isSafeInteger(advertised) || advertised <= 0 || advertised > MAX_INPUT_MINOR) return { ok: false, missing: 'price' };
   const method = effectiveMethod(inputs);
   if (method === null) return { ok: false, missing: 'method' };
   const adv = minorUnits(advertised);

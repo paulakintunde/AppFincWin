@@ -126,6 +126,6 @@ export type ChipComputation =
   | { status: 'incomplete'; missingInput: 'price' | 'method'; price: MinorUnits | null }
   | { status: 'none'; price: MinorUnits; method: MethodKey }
   | { status: 'unconverted'; price: MinorUnits; method: MethodKey } // D-37: chip 'Missing terms'
-  | { status: 'first_read'; state: FirstRead['state']; price: MinorUnits; method: MethodKey; left: MinorUnits }
+  | { status: 'first_read'; state: FirstRead['state']; price: MinorUnits; method: MethodKey; left: MinorUnits | null } // left null when the first read is missing (no plan resolved)
   | { status: 'logged'; state: Verdict['state']; price: MinorUnits; method: MethodKey; left: MinorUnits | null }; // left null when the verdict is missing
 export type { AlternativeRow };
