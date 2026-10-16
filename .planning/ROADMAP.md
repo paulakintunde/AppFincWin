@@ -633,7 +633,7 @@ Plans:
 - [x] 05-10-PLAN.md — Display and choice primitives (StateChip, WarningCard, StepBar, ...)
 - [x] 05-11-PLAN.md — expo-notifications ~57, Wait and cooling-off reminders, tap observer
 - [x] 05-28-PLAN.md — Input primitives (StepSlider, RateInput, MoneyInput)
-- [ ] 05-31-PLAN.md — Depth copy catalogue (D-24..D-37) and extended DCU-09 guard
+- [x] 05-31-PLAN.md — Depth copy catalogue (D-24..D-37) and extended DCU-09 guard
 - [ ] 05-32-PLAN.md — Depth migrations: decide_changes, savings_goals, cooling_off_at, split estimates, link roles, transactions.one_off/goal_id
 
 **Wave 3** *(blocked on Wave 2 completion)*
