@@ -1818,7 +1818,7 @@ const en = {
       },
       oneOff: { basis_one: '{{count}} one-off left out', basis_other: '{{count}} one-offs left out' },
       credit: {
-        promoAdd: '+ Promotional rate', promoRate: 'Promotional rate', promoFor: 'For', promoThen: 'Then', promoMonths: 'months',
+        promoAdd: '+ Promotional rate', promoRate: 'Promotional rate', promoFor: 'For', promoThen: 'Then', promoThenAbove: 'Change it above', promoMonths: 'months',
         promoSummary: '{{rate}}% for {{months}} months, then {{after}}%', afterPromo: 'Payment after the promotion: {{amount}} a month',
         clearsBefore: 'The balance clears before it ends', leftWhenEnds: 'Left when it ends: {{amount}}', interestAfter: 'Interest after it ends: {{amount}}',
         clearInPromo: 'To clear it inside the promotion: {{amount}} a month', // 05 D-53

@@ -27,6 +27,7 @@ import { RateInput } from '../../../ui/RateInput';
 import { StepSlider } from '../../../ui/StepSlider';
 import type { Step2Props } from './types';
 import { Box, Card, Label, Meta, moneyFn } from '../stepUi';
+import { LateFeeField, PromoRow, VariableRateCard } from './CreditTermsPanel';
 
 const TERM_CHIPS = [12, 24, 36, 48, 60, 84] as const;
 const MAX_TERM = 600;
@@ -149,6 +150,19 @@ function LoanPanel(props: Step2Props) {
         hint={typedZero ? t('decide.quick.beforeInterest') : loan.aprText === '' ? t('decide.pay.loanRateHint') : undefined}
       />
 
+      <PromoRow
+        method="loan"
+        promo={loan.promo}
+        onChange={(promo) => setLoan({ promo })}
+        thenRateText={loan.aprText}
+        onThenRateChange={setApr}
+        computation={computation}
+        source={source}
+        whole={whole}
+        exact={exact}
+      />
+      <VariableRateCard value={loan.variable} onChange={(variable) => setLoan({ variable })} computation={computation} source={source} exact={exact} />
+
       <Pressable
         accessibilityRole="switch"
         accessibilityState={{ checked: loan.secured }}
@@ -207,6 +221,14 @@ function InstalmentPanel(props: Step2Props) {
       <Label>{t('decide.pay.instalmentCount')}</Label>
       <Box numeric value={inst.count === null ? '' : String(inst.count)} onChangeText={(x) => update({ instalment: { ...inst, count: termFrom(x) } })} accessibilityLabel={t('decide.pay.instalmentCount')} maxLength={3} />
       <Meta tone="muted">{note}</Meta>
+      <LateFeeField
+        value={inst.lateFee}
+        currency={inputs.currency ?? source.currency}
+        onChange={(lateFee) => update({ instalment: { ...inst, lateFee } })}
+        computation={computation}
+        source={source}
+        exact={exact}
+      />
     </Card>
   );
 }
@@ -232,7 +254,7 @@ function cardTiles(plan: Plan, fmt: Money, t: Translate) {
 }
 
 function CardPanel(props: Step2Props) {
-  const { inputs, update, source, whole, onSaveCardRate } = props;
+  const { inputs, update, source, whole, exact, computation, onSaveCardRate } = props;
   const t = useT();
   const { colors, pairing } = useTheme();
   const wholeFmt = moneyFn(whole, source.currency);
@@ -332,6 +354,18 @@ function CardPanel(props: Step2Props) {
               ) : null}
             </>
           ) : null}
+
+          <PromoRow
+            method="card"
+            promo={card.promo}
+            onChange={(promo) => setCard({ promo })}
+            thenRateText={rate.text}
+            computation={computation}
+            source={source}
+            whole={whole}
+            exact={exact}
+          />
+          <VariableRateCard value={card.variable} onChange={(variable) => setCard({ variable })} computation={computation} source={source} exact={exact} />
 
           <Label>{t('decide.pay.cardNotesHeading')}</Label>
           <Meta>{t('decide.pay.cardNotesCount', { count: answered })}</Meta>
