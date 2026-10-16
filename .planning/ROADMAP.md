@@ -634,7 +634,7 @@ Plans:
 - [x] 05-11-PLAN.md — expo-notifications ~57, Wait and cooling-off reminders, tap observer
 - [x] 05-28-PLAN.md — Input primitives (StepSlider, RateInput, MoneyInput)
 - [x] 05-31-PLAN.md — Depth copy catalogue (D-24..D-37) and extended DCU-09 guard
-- [ ] 05-32-PLAN.md — Depth migrations: decide_changes, savings_goals, cooling_off_at, split estimates, link roles, transactions.one_off/goal_id
+- [x] 05-32-PLAN.md — Depth migrations: decide_changes, savings_goals, cooling_off_at, split estimates, link roles, transactions.one_off/goal_id
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 05-04-PLAN.md — apply_patches allow-list, record_decide_go / record_decide_outcome RPCs, pgTAP
