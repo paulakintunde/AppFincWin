@@ -99,6 +99,15 @@ function validate(snapshot: DecideSnapshot): void {
   }
   assertNonNegative(snapshot.monthlySaving, 'monthlySaving');
   assertNonNegative(snapshot.monthlyInvesting, 'monthlyInvesting');
+  // 04-REVIEW LO-03: every user limit is checked up front (a negative reserve passed silently without a cash path).
+  const { reserve, investingFloor, savingFloor, spareFloor, dsrLine } = snapshot.limits;
+  if (reserve !== null) assertNonNegative(reserve, 'limits.reserve');
+  if (investingFloor !== null) assertNonNegative(investingFloor, 'limits.investingFloor');
+  if (savingFloor !== null) assertNonNegative(savingFloor, 'limits.savingFloor');
+  if (spareFloor !== null) assertNonNegative(spareFloor, 'limits.spareFloor');
+  if (dsrLine !== null && dsrLine < 0n) {
+    throw new RangeError(`${FN}: limits.dsrLine must be >= 0%`);
+  }
   const multiple = snapshot.limits.unsecuredIncomeMultiple;
   if (multiple !== null && (!Number.isSafeInteger(multiple) || multiple < 0)) {
     throw new RangeError(`${FN}: unsecuredIncomeMultiple ${multiple} must be a non-negative integer or null`);
