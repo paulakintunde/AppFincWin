@@ -98,6 +98,19 @@ describe('useCloneMonth', () => {
     expect(Haptics.notificationAsync).toHaveBeenCalled();
   });
 
+  it('a cloned month never copies one-off', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(inserted(['id-1', 'id-2'])).respondWith(ok);
+    const qc = newClient();
+    const { result } = await renderHook(() => useCloneMonth(), { wrapper: wrapper(qc) });
+    const oneOff = (n: number) => ({ ...cand(n), oneOff: true, one_off: true }) as CloneCandidate;
+    result.current.clone({ candidates: [oneOff(1), oneOff(2)], ...base });
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'upsert')).toBe(true));
+    const rows = fake.calls.find((c) => c.method === 'upsert')?.args[0] as Record<string, unknown>[];
+    expect(rows.some((r) => r.one_off === true)).toBe(false);
+  });
+
   it('refuses zero candidates and more than the undo cap before any write', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;

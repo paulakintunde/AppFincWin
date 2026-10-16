@@ -234,6 +234,8 @@ export function registerTransactionMutations(qc: QueryClient): void {
         transfer_id: vars.row.transfer_id ?? null,
         is_refund: vars.row.is_refund ?? false,
         is_automatic: vars.row.is_automatic ?? false,
+        one_off: vars.row.one_off ?? false,
+        goal_id: vars.row.goal_id ?? null,
         is_sample: false,
         version: 1,
         created_at: now,
@@ -424,6 +426,8 @@ export function registerTransactionMutations(qc: QueryClient): void {
           fx_fee_of: tx.fx_fee_of ?? null,
           is_refund: tx.is_refund ?? false,
           is_automatic: tx.is_automatic ?? false,
+          one_off: tx.one_off ?? false,
+          goal_id: tx.goal_id ?? null,
           is_sample: false,
           version: 1,
           created_at: now,
@@ -485,6 +489,8 @@ export interface AddTransactionInput {
   /** CONTEXT D-01/D-03: a refund is stored positive with is_refund; Automatic is a label only. */
   isRefund?: boolean;
   isAutomatic?: boolean;
+  /** 05-34 (D-29): Record's "One-off, won't recur"; left out of Decide's averages. */
+  isOneOff?: boolean;
   undo?: Omit<UndoCapture, 'ownerId'>;
 }
 
@@ -517,6 +523,7 @@ export function useAddTransaction(): { add(input: AddTransactionInput): string }
         status: input.status,
         ...(input.isRefund === undefined ? {} : { is_refund: input.isRefund }),
         ...(input.isAutomatic === undefined ? {} : { is_automatic: input.isAutomatic }),
+        ...(input.isOneOff === undefined ? {} : { one_off: input.isOneOff }),
       };
 
       mutation.mutate({
