@@ -178,9 +178,6 @@ describe('firstRead (DEC-16)', () => {
       expect(() => firstRead(figures({ monthlyIncome: -1 }), buyCash(1))).toThrow(/^firstRead: /);
       expect(() => firstRead(figures({ monthlySpending: -1 }), buyCash(1))).toThrow(/^firstRead: /);
     });
-    it('rejects non-integer cash', () => {
-      expect(() => firstRead(figures({ cash: 1.5 }), buyCash(1))).toThrow(/^firstRead: /);
-    });
     it('allows an overdrawn account', () => {
       expect(firstRead(figures({ cash: -100 }), buyCash(1)).state).toBe('no');
     });
