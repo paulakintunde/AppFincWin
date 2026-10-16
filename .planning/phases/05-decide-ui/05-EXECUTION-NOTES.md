@@ -14,3 +14,4 @@ Non-interactive execution of `/gsd-execute-phase 5` (waves 1-8, plus 05-25 Task 
 
 - 05-01: Phase 4 gate passed (22 SUMMARYs, verification passed); executed as written, no decisions needed.
 - 05-02: Phase 4 gate passed; executed as written. Deviation (Rule 3): inverse.ts insertInversePatch and db/errors.ts WriteEntity widened for the new UndoEntity members so typecheck stays green (soft-delete via deleted_at, matching 05-04 allow-list).
+- 05-03: Phase 4 gate passed; migration 20261016000100_decide_tables.sql + pgTAP 54 written. lint:migrations and verify:migrations pass; pgTAP not run locally (Docker down), CI rls job runs it.
