@@ -1,7 +1,7 @@
 ---
 phase: 04-decide-engine
 verified: 2026-10-16T00:00:00Z
-status: human_needed
+status: passed
 score: 6/6 roadmap criteria verified (37/37 DEC requirements implemented; 11 not yet ticked in REQUIREMENTS.md)
 overrides_applied: 0
 gaps: []
@@ -75,3 +75,7 @@ No blocking gaps. Goal achieved: the engine computes verdicts in isolation, with
 
 _Verified: 2026-10-16_
 _Verifier: Claude (gsd-verifier)_
+
+## Resolution (2026-10-16)
+
+The three human-verification items are closed. (1) The user ruled on the D-20 extreme-term residual as D-64 (the level payment rounds up), implemented in fe82b80 with named deviation tests. (2) The user ratified the per-setback `runwayWith` (cash left after the setback hits) and recorded it in D-62 and 04-PHASE5-ALIGNMENT.md (cac6545). (3) DEC-07, 18, 21, 22, 24, 25, 26, 31, 32, 34 and 37 are ticked in REQUIREMENTS.md, so DEC-01..DEC-37 are all complete. All 14 code-review findings (04-REVIEW.md) were fixed with regression tests. engine/decide and engine/payoff remain at 100% coverage, and golden parity holds.
