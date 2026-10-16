@@ -43,7 +43,7 @@ The real `seed_sample_data` now builds the 05-18 demo scenario (seven months fro
 
 ## Deviations from Plan
 
-1. **[Rule 1 - fixture carry-over] decide_settings row.** The plan did not list it; 05-18 requires investing_floor 0, so the seed upserts it and clear removes it when it is the seed's shape.
+1. **[Rule 1 - fixture carry-over] decide_settings row.** The plan did not list it; 05-18 requires investing_floor 0, so the seed upserts it and clear removes it when it is the seed's shape. Superseded 2026-10-16 by the decide_settings.seeded flag (user decision): clear now deletes the row only while seeded is true, and any user edit clears the flag.
 2. **[Interpretation] v1 extras dropped** (foreign line, refund, Weekend trips, Streaming) and 48 reworked accordingly, because they would break the fixture-matching verdicts.
 3. No engine edits.
 
