@@ -658,7 +658,7 @@ Plans:
 - [x] 05-44-PLAN.md — Step 2 running-cost prompts and estimate-gap notes
 - [x] 05-45-PLAN.md — Step 4 "If it went into investing instead"
 - [x] 05-46-PLAN.md — Step 5 cooling-off toggle, Wait goal preview, written lines
-- [ ] 05-51-PLAN.md — Demo seed v2 SQL, pgTAP, samples.ts, mirror check in CI
+- [x] 05-51-PLAN.md — Demo seed v2 SQL, pgTAP, samples.ts, mirror check in CI
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 05-20-PLAN.md — Go ahead (one undo step, incl. investment and card payoff), Wait (+goal, reminder), Pass
