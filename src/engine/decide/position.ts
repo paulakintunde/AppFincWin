@@ -187,7 +187,7 @@ export function positionContext(
   const includeExpected = options.includeExpectedIncome === true;
   const snapshotChanges = base.snapshot.futureChanges;
 
-  const ownChange = incomeChangeAsFutureChange(check, 'purchase-income');
+  const ownChange = incomeChangeAsFutureChange(check, 'purchase_income');
   const own: FutureChange[] = ownChange !== null && (ownChange.monthlyAmount < 0 || includeExpected) ? [ownChange] : [];
   const standalone = applyChanges(base, [...snapshotChanges, ...own], [], includeExpected);
 

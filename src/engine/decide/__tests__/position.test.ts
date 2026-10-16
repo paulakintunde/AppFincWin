@@ -389,7 +389,7 @@ describe('positionContext (D-41, D-45, D-53)', () => {
   it('a negative purchase income change is applied to combined and standalone (D-53)', () => {
     const p = positionContext(ctxOf(BL()), buyCash(100_000, { incomeChange: lossOf(-150_000) }), []);
     const expected = {
-      id: 'purchase-income',
+      id: 'purchase_income',
       kind: 'income',
       monthlyAmount: -150_000,
       startMonth: '2026-08',
