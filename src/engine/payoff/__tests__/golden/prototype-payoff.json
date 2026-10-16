@@ -1,0 +1,277 @@
+{
+  "dpmt": [
+    {
+      "name": "dpmt-200000-6-360",
+      "args": [
+        200000,
+        6,
+        360
+      ],
+      "raw": 1199.1010503055138,
+      "paymentMinor": 119910
+    },
+    {
+      "name": "dpmt-100000-6-360",
+      "args": [
+        100000,
+        6,
+        360
+      ],
+      "raw": 599.5505251527569,
+      "paymentMinor": 59955
+    },
+    {
+      "name": "dpmt-20000-7-60",
+      "args": [
+        20000,
+        7,
+        60
+      ],
+      "raw": 396.02397080698944,
+      "paymentMinor": 39602
+    },
+    {
+      "name": "dpmt-1000-12-12",
+      "args": [
+        1000,
+        12,
+        12
+      ],
+      "raw": 88.8487886783416,
+      "paymentMinor": 8885
+    },
+    {
+      "name": "dpmt-11500-9.4-48",
+      "args": [
+        11500,
+        9.4,
+        48
+      ],
+      "raw": 288.3672095108832,
+      "paymentMinor": 28837
+    },
+    {
+      "name": "dpmt-5000-0-12",
+      "args": [
+        5000,
+        0,
+        12
+      ],
+      "raw": 416.6666666666667,
+      "paymentMinor": 41667
+    },
+    {
+      "name": "dpmt-5000-9.4-1",
+      "args": [
+        5000,
+        9.4,
+        1
+      ],
+      "raw": 5039.166666666628,
+      "paymentMinor": 503917
+    },
+    {
+      "name": "dpmt-100000-22.9-600",
+      "args": [
+        100000,
+        22.9,
+        600
+      ],
+      "raw": 1908.3559714356495,
+      "paymentMinor": 190836
+    },
+    {
+      "name": "dpmt-14500-0-600",
+      "args": [
+        14500,
+        0,
+        600
+      ],
+      "raw": 24.166666666666668,
+      "paymentMinor": 2417
+    }
+  ],
+  "dfv": [
+    {
+      "name": "dfv-100-12-12-0",
+      "args": [
+        100,
+        12,
+        12,
+        0
+      ],
+      "raw": 1268.2503013196979,
+      "valueMinor": 126825
+    },
+    {
+      "name": "dfv-0-12-12-1000",
+      "args": [
+        0,
+        12,
+        12,
+        1000
+      ],
+      "raw": 1126.8250301319697,
+      "valueMinor": 112683
+    },
+    {
+      "name": "dfv-100-12-12-1000",
+      "args": [
+        100,
+        12,
+        12,
+        1000
+      ],
+      "raw": 2395.075331451668,
+      "valueMinor": 239508
+    },
+    {
+      "name": "dfv-250-0-24-500",
+      "args": [
+        250,
+        0,
+        24,
+        500
+      ],
+      "raw": 6500,
+      "valueMinor": 650000
+    },
+    {
+      "name": "dfv-100-6.5-0-700",
+      "args": [
+        100,
+        6.5,
+        0,
+        700
+      ],
+      "raw": 700,
+      "valueMinor": 70000
+    },
+    {
+      "name": "dfv-500-6.5-120-0",
+      "args": [
+        500,
+        6.5,
+        120,
+        0
+      ],
+      "raw": 84201.5771192353,
+      "valueMinor": 8420158
+    },
+    {
+      "name": "dfv-300-6.5-600-2000",
+      "args": [
+        300,
+        6.5,
+        600,
+        2000
+      ],
+      "raw": 1411660.9180622415,
+      "valueMinor": 141166092
+    }
+  ],
+  "dSimMin": [
+    {
+      "name": "dSimMin-5000-22.9",
+      "args": [
+        5000,
+        22.9
+      ],
+      "raw": {
+        "mo": 232,
+        "int": 8453.562463236685,
+        "first": 145.41666666666666,
+        "never": false
+      },
+      "firstMinor": 14542,
+      "interestMinor": 845356,
+      "months": 232,
+      "never": false
+    },
+    {
+      "name": "dSimMin-1000-22.9",
+      "args": [
+        1000,
+        22.9
+      ],
+      "raw": {
+        "mo": 72,
+        "int": 820.2598021916382,
+        "first": 29.083333333333332,
+        "never": false
+      },
+      "firstMinor": 2908,
+      "interestMinor": 82026,
+      "months": 72,
+      "never": false
+    },
+    {
+      "name": "dSimMin-20-22.9",
+      "args": [
+        20,
+        22.9
+      ],
+      "raw": {
+        "mo": 1,
+        "int": 0.3816666666666666,
+        "first": 20.381666666666668,
+        "never": false
+      },
+      "firstMinor": 2038,
+      "interestMinor": 38,
+      "months": 1,
+      "never": false
+    },
+    {
+      "name": "dSimMin-5000-29.99",
+      "args": [
+        5000,
+        29.99
+      ],
+      "raw": {
+        "mo": 245,
+        "int": 11264.361617961933,
+        "first": 174.95833333333331,
+        "never": false
+      },
+      "firstMinor": 17496,
+      "interestMinor": 1126436,
+      "months": 245,
+      "never": false
+    },
+    {
+      "name": "dSimMin-800-0",
+      "args": [
+        800,
+        0
+      ],
+      "raw": {
+        "mo": 32,
+        "int": 0,
+        "first": 25,
+        "never": false
+      },
+      "firstMinor": 2500,
+      "interestMinor": 0,
+      "months": 32,
+      "never": false
+    },
+    {
+      "name": "dSimMin-12000-18.5",
+      "args": [
+        12000,
+        18.5
+      ],
+      "raw": {
+        "mo": 310,
+        "int": 17524.315607320827,
+        "first": 305,
+        "never": false
+      },
+      "firstMinor": 30500,
+      "interestMinor": 1752432,
+      "months": 310,
+      "never": false
+    }
+  ]
+}

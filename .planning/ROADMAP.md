@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2.3: Record follow-ups** (INSERTED) - Import reconcile-or-new choice, description auto-categorise rules, signed-out account chooser, compact amount, Add account from the picker, bulk Add to list (completed 2026-10-13; Android verified, iOS pending Apple enrolment)
 - [x] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content (completed 2026-10-14)
 - [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
-- [ ] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3)
+- [x] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3) (completed 2026-10-16)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views
@@ -563,42 +563,42 @@ Plans:
 **Plans**: 22 plans in 8 waves (revised 2026-10-15 against 04-CONTEXT D-23…D-58 incl. the engine depth expansion and its consistency amendments; choices in 04-REPLAN-NOTES.md)
 Plans:
 **Wave 1**
-- [ ] 04-01-PLAN.md — payoff foundation: Percent type, amortise (DEC-01), futureValue (DEC-02)
-- [ ] 04-02-PLAN.md — card eligibility by item type, secured by field, household share under four split rules (DEC-08/10/11)
-- [ ] 04-03-PLAN.md — golden-fixture harness evaluating the prototype's own Decide code (D-22)
+- [x] 04-01-PLAN.md — payoff foundation: Percent type, amortise (DEC-01), futureValue (DEC-02)
+- [x] 04-02-PLAN.md — card eligibility by item type, secured by field, household share under four split rules (DEC-08/10/11)
+- [x] 04-03-PLAN.md — golden-fixture harness evaluating the prototype's own Decide code (D-22)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 04-04-PLAN.md — simulateMinimum with explicit never-clears (DEC-03, SC-2), payoff barrel, payoff parity
-- [ ] 04-05-PLAN.md — Decide contracts incl. D-41..D-56 types, cited behaviour constants (D-58), per-market defaults, currency guard, series maths, projection rates (DEC-12)
+- [x] 04-04-PLAN.md — simulateMinimum with explicit never-clears (DEC-03, SC-2), payoff barrel, payoff parity
+- [x] 04-05-PLAN.md — Decide contracts incl. D-41..D-56 types, cited behaviour constants (D-58), per-market defaults, currency guard, series maths, projection rates (DEC-12)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 04-13-PLAN.md — deriveMoney over Record lines: paid only, refunds netted, series smoothed, one-off lines excluded (D-47), exact CV steadiness (DEC-07/08)
-- [ ] 04-14-PLAN.md — payoff rate schedules (D-48) and independent published amortisation reference tests (D-57)
-- [ ] 04-15-PLAN.md — steadiness-scaled cushion (D-42), confidence (D-46), on-the-edge margins (D-43), worst of 12 future months (D-45)
-- [ ] 04-16-PLAN.md — running-cost prompt table (D-55) and estimate bias (D-56)
+- [x] 04-13-PLAN.md — deriveMoney over Record lines: paid only, refunds netted, series smoothed, one-off lines excluded (D-47), exact CV steadiness (DEC-07/08)
+- [x] 04-14-PLAN.md — payoff rate schedules (D-48) and independent published amortisation reference tests (D-57)
+- [x] 04-15-PLAN.md — steadiness-scaled cushion (D-42), confidence (D-46), on-the-edge margins (D-43), worst of 12 future months (D-45)
+- [x] 04-16-PLAN.md — running-cost prompt table (D-55) and estimate bias (D-56)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 04-06-PLAN.md — resolvePlan for cash/loan/instalment/card/invest with missing reason codes, check inputs (DEC-04/05/10)
-- [ ] 04-17-PLAN.md — day-by-day 90-day cash path and `cash_dip`, one card per cause (D-44)
+- [x] 04-06-PLAN.md — resolvePlan for cash/loan/instalment/card/invest with missing reason codes, check inputs (DEC-04/05/10)
+- [x] 04-17-PLAN.md — day-by-day 90-day cash path and `cash_dip`, one card per cause (D-44)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 04-07-PLAN.md — prepareContext + assess: two shares, two cash figures, cash path, pausable saving/investing, confidence, D-36 size, ordered warnings (DEC-06)
-- [ ] 04-08-PLAN.md — cash-level first read from rough figures with a rough cushion, D-36 size and confidence (DEC-16)
-- [ ] 04-22-PLAN.md — credit terms: promotional rates and deferred interest (D-48), variable flag (D-49), BNPL late fees (D-50)
+- [x] 04-07-PLAN.md — prepareContext + assess: two shares, two cash figures, cash path, pausable saving/investing, confidence, D-36 size, ordered warnings (DEC-06)
+- [x] 04-08-PLAN.md — cash-level first read from rough figures with a rough cushion, D-36 size and confidence (DEC-16)
+- [x] 04-22-PLAN.md — credit terms: promotional rates and deferred interest (D-48), variable flag (D-49), BNPL late fees (D-50)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 04-09-PLAN.md — exact integer bisection and the ordered options list on the combined position, per-rate projections (DEC-09/13)
-- [ ] 04-10-PLAN.md — four-way alternatives with suppression and per-rate projections, setbacks, wait plan (DEC-14/15)
-- [ ] 04-11-PLAN.md — decide golden parity and named deviation tests (D-22)
-- [ ] 04-18-PLAN.md — position layer: combined open checks (D-41), future changes and purchase-linked income loss (D-45, D-53)
-- [ ] 04-19-PLAN.md — variable-rate stress (D-49) and payback months (D-53)
+- [x] 04-09-PLAN.md — exact integer bisection and the ordered options list on the combined position, per-rate projections (DEC-09/13)
+- [x] 04-10-PLAN.md — four-way alternatives with suppression and per-rate projections, setbacks, wait plan (DEC-14/15)
+- [x] 04-11-PLAN.md — decide golden parity and named deviation tests (D-22)
+- [x] 04-18-PLAN.md — position layer: combined open checks (D-41), future changes and purchase-linked income loss (D-45, D-53)
+- [x] 04-19-PLAN.md — variable-rate stress (D-49) and payback months (D-53)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 04-20-PLAN.md — `decide()` report: combined and standalone verdicts, worst month, margins, stress, expected income; named tests D-41/D-43/D-44
-- [ ] 04-21-PLAN.md — investment views at 0% and user rates (D-51, D-52) and income at risk (D-54)
+- [x] 04-20-PLAN.md — `decide()` report: combined and standalone verdicts, worst month, margins, stress, expected income; named tests D-41/D-43/D-44
+- [x] 04-21-PLAN.md — investment views at 0% and user rates (D-51, D-52) and income at risk (D-54)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 04-12-PLAN.md — public barrel, codes-only guard, cross-suite phase gate (DEC-12)
+- [x] 04-12-PLAN.md — public barrel, codes-only guard, cross-suite phase gate (DEC-12)
 **UI hint**: no (pure TypeScript engine; deliverable is a green suite and a coverage report)
 
 ### Phase 5: Decide UI
@@ -822,8 +822,8 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
-| 4. Decide Engine | 0/13 | Planned | - |
-| 5. Decide UI | 0/TBD | Not started | - |
+| 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
+| 5. Decide UI | 0/53 | Planned | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |
