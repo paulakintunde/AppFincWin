@@ -41,6 +41,7 @@ import { confidenceOf } from './confidence';
 import { deriveMoney, resolveSpendingShare, shareForCategory } from './money';
 import { resolveProjectionRates } from './projectionRates';
 import { defaultReserve, reserveHalfMonthsFor } from './reserve';
+import { resolvePlan } from './plan';
 import { isSecured } from './secured';
 import { billsDueWithin, scheduledOutflowsDue } from './series';
 import { SOLE_SHARE, myPart, resolveShare } from './share';
@@ -61,6 +62,7 @@ import type {
   PurchaseSize,
   ResolvedLimits,
   SpendingShare,
+  Verdict,
   Warning,
 } from './types';
 
@@ -162,9 +164,7 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
   const monthCosts = mi(BigInt(money.spendingAverage) + debtPayments); // D-02
   const pausable = mi(BigInt(snapshot.monthlySaving) + BigInt(snapshot.monthlyInvesting)); // D-35, D-32
   const monthIncome = money.incomeBasis;
-  const leftBefore = mi(
-    BigInt(monthIncome) - BigInt(money.spendingBasis) - debtPayments - BigInt(pausable)
-  );
+  const leftBefore = mi(BigInt(monthIncome) - BigInt(money.spendingBasis) - debtPayments - BigInt(pausable));
 
   let billsDue = 0n;
   for (const b of billsDueDetail) billsDue += BigInt(myPart(b.amount, shareForCategory(spendingShare, b.categoryId)));
@@ -472,4 +472,38 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
     basisCodes,
     confidence: confidenceOf({ fullMonths: money.fullMonthsUsed, steadiness: money.steadiness, firstRead: false }),
   };
+}
+
+/**
+ * The verdict for one snapshot and one check (DEC-06). D-16 clarified: the check must be in the snapshot's currency.
+ * D-30: stateless. There is no input about earlier checks; an approved purchase reaches the engine only through the
+ * records the snapshot is built from. D-31: neutral facts ride on the assessment, never as warnings. D-21: codes and
+ * numbers only.
+ *
+ * A missing verdict carries the purchase size whenever the context resolves, and a confidence from the money basis
+ * (rough ['under_3_full_months'] only when there is no full month, D-46).
+ */
+export function assess(snapshot: DecideSnapshot, check: PurchaseCheck): Verdict {
+  assertCurrency(snapshot.currency, check.currency, 'check', 'assess');
+  const ctx = prepareContext(snapshot);
+  const planResult = resolvePlan(check);
+  const reasons: MissingReason[] = [
+    ...(ctx.ok ? [] : ctx.reasons),
+    ...(planResult.status === 'missing' ? planResult.reasons : []),
+  ];
+  if (!ctx.ok || planResult.status === 'missing') {
+    return {
+      state: 'missing',
+      reasons,
+      size: ctx.ok ? purchaseSize(ctx.context, priceOf(check)) : null,
+      confidence: ctx.ok
+        ? confidenceOf({
+            fullMonths: ctx.context.money.fullMonthsUsed,
+            steadiness: ctx.context.money.steadiness,
+            firstRead: false,
+          })
+        : ctx.confidence,
+    };
+  }
+  return assessPlan(ctx.context, check, planResult.plan);
 }

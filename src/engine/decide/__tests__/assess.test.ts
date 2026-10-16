@@ -288,10 +288,7 @@ describe('prepareContext (DEC-06; D-01..D-06, D-23, D-24, D-32, D-34)', () => {
     bad(B({ debts: [{ ...D1, minimumPayment: mu(-1) }] }), /^prepareContext: /);
     bad(B({ monthlySaving: -1 as never }), /^prepareContext: /);
     bad(B({ monthlyInvesting: -1 as never }), /^prepareContext: /);
-    bad(
-      B({ limits: { ...LIMITS_BL, unsecuredIncomeMultiple: 1.5 } }),
-      /^prepareContext: /
-    );
+    bad(B({ limits: { ...LIMITS_BL, unsecuredIncomeMultiple: 1.5 } }), /^prepareContext: /);
     bad(B({ limits: { ...LIMITS_BL, unsecuredIncomeMultiple: -1 } }), /^prepareContext: /);
     bad(B({ asOf: '2026-02-30' }), /^prepareContext: /);
     bad(B({ debts: [{ ...D1, currency: CAD }] }), /^prepareContext: mixed currencies/);
@@ -301,7 +298,10 @@ describe('prepareContext (DEC-06; D-01..D-06, D-23, D-24, D-32, D-34)', () => {
       /^resolveSpendingShare: /
     );
     bad(B({ incomeSeries: [{ ...PAY, currency: CAD }] }), /mixed currencies/);
-    bad(B({ scheduledOutflows: [{ ...OUT_PAST, currency: CAD }] }), /^prepareContext: mixed currencies.*scheduled outflow o_past/);
+    bad(
+      B({ scheduledOutflows: [{ ...OUT_PAST, currency: CAD }] }),
+      /^prepareContext: mixed currencies.*scheduled outflow o_past/
+    );
     bad(B({ scheduledOutflows: [{ ...OUT_PAST, amount: mu(0) }] }), /^scheduledOutflowsDue: /);
   });
 
@@ -333,7 +333,17 @@ describe('prepareContext (DEC-06; D-01..D-06, D-23, D-24, D-32, D-34)', () => {
     const vol = ctxOf(B({ months: volatileMonths }));
     expect(vol.limits.reserve).toBe(6 * vol.monthCosts);
     expect(vol.limits.reserveHalfMonths).toBe(12);
-    const two = ctxOf(B({ months: monthsOf([[600_000, 300_000], [600_000, 300_000]], '2026-05') }));
+    const two = ctxOf(
+      B({
+        months: monthsOf(
+          [
+            [600_000, 300_000],
+            [600_000, 300_000],
+          ],
+          '2026-05'
+        ),
+      })
+    );
     expect(two.limits.reserve).toBe(3 * two.monthCosts);
     expect(two.limits.reserveHalfMonths).toBe(6);
     const typed = ctxOf(B({ months: volatileMonths, limits: { ...LIMITS_BL, reserve: mu(600_000) } }));
@@ -366,8 +376,19 @@ describe('prepareContext (DEC-06; D-01..D-06, D-23, D-24, D-32, D-34)', () => {
 
   it('(D-60) smooths a confirmed fortnightly pay series before steadiness and the cushion', () => {
     const dates = [
-      '2026-01-02', '2026-01-16', '2026-01-30', '2026-02-13', '2026-02-27', '2026-03-13', '2026-03-27',
-      '2026-04-10', '2026-04-24', '2026-05-08', '2026-05-22', '2026-06-05', '2026-06-19',
+      '2026-01-02',
+      '2026-01-16',
+      '2026-01-30',
+      '2026-02-13',
+      '2026-02-27',
+      '2026-03-13',
+      '2026-03-27',
+      '2026-04-10',
+      '2026-04-24',
+      '2026-05-08',
+      '2026-05-22',
+      '2026-06-05',
+      '2026-06-19',
     ];
     const months = ['01', '02', '03', '04', '05', '06'].map((mm) =>
       fullMonth(
@@ -703,7 +724,12 @@ describe('assessPlan invest checks (D-33)', () => {
     const a = run(R(), investMonthly(150_000, 24));
     expect(a.state).toBe('no');
     expect(a.warnings).toEqual([w('month', 25_000)]);
-    expect(a).toMatchObject({ investingAtRisk: 25_000, pauseNeeded: 25_000, remainingShortfall: 25_000, mineRunning: 0 });
+    expect(a).toMatchObject({
+      investingAtRisk: 25_000,
+      pauseNeeded: 25_000,
+      remainingShortfall: 25_000,
+      mineRunning: 0,
+    });
   });
 
   it('never emits debt-line warnings', () => {
@@ -873,8 +899,19 @@ describe('assessPlan cash path (D-44, D-46, D-47, D-59, D-61)', () => {
 
   it('(D-60) smoothed pay gives strong confidence end to end', () => {
     const dates = [
-      '2026-01-02', '2026-01-16', '2026-01-30', '2026-02-13', '2026-02-27', '2026-03-13', '2026-03-27',
-      '2026-04-10', '2026-04-24', '2026-05-08', '2026-05-22', '2026-06-05', '2026-06-19',
+      '2026-01-02',
+      '2026-01-16',
+      '2026-01-30',
+      '2026-02-13',
+      '2026-02-27',
+      '2026-03-13',
+      '2026-03-27',
+      '2026-04-10',
+      '2026-04-24',
+      '2026-05-08',
+      '2026-05-22',
+      '2026-06-05',
+      '2026-06-19',
     ];
     const months = ['01', '02', '03', '04', '05', '06'].map((mm) =>
       fullMonth(
@@ -1063,9 +1100,9 @@ describe('purchase size (D-36)', () => {
   it('uses my part of the price in a household (D-34)', () => {
     expect(ctxOf(BL(hhScope('even'))).leftBefore).toBe(275_000);
     expect(sizeOf(BL(hhScope('even')), buyCash(550_000))).toBe('from_spare_this_month');
-    expect(sizeOf(BL({ ...hhScope('mine'), householdSpending: hhScope('mine').householdSpending }), buyCash(550_000))).toBe(
-      'from_savings'
-    );
+    expect(
+      sizeOf(BL({ ...hhScope('mine'), householdSpending: hhScope('mine').householdSpending }), buyCash(550_000))
+    ).toBe('from_savings');
   });
 
   it('is never spare when this month is negative, and sizes invest checks by the amount', () => {
@@ -1183,8 +1220,14 @@ describe('assess properties', () => {
         fc.integer({ min: -20_000, max: 20_000 }),
         fc.boolean(),
         (saving, investing, amount, running, invest) => {
-          const s = R({ monthlySaving: mu(saving), monthlyInvesting: mu(investing), limits: { ...LIMITS_BL, investingFloor: null, savingFloor: null } });
-          const check: PurchaseCheck = invest ? investMonthly(amount, 12) : INST(amount, { runningCostsNet: mu(running) });
+          const s = R({
+            monthlySaving: mu(saving),
+            monthlyInvesting: mu(investing),
+            limits: { ...LIMITS_BL, investingFloor: null, savingFloor: null },
+          });
+          const check: PurchaseCheck = invest
+            ? investMonthly(amount, 12)
+            : INST(amount, { runningCostsNet: mu(running) });
           const v = assess(s, check);
           if (v.state === 'missing') return false;
           const codes = v.warnings.map((x) => x.code);
@@ -1200,3 +1243,21 @@ describe('assess properties', () => {
   });
 });
 
+describe('branch coverage helpers', () => {
+  it('keeps the first of equal-APR debts when its id is smaller, and ignores a lower APR later', () => {
+    const a0: DebtRecord = { ...D1, id: 'a0' };
+    expect(ctxOf(B({ debts: [a0, D1, D2] })).highestUnsecuredApr?.debtId).toBe('a0');
+    const low: DebtRecord = { ...D1, id: 'z9', apr: percent('3') };
+    expect(ctxOf(B({ debts: [D1, low] })).highestUnsecuredApr?.debtId).toBe('d1');
+  });
+
+  it('runs the cash path for invest checks without running costs', () => {
+    const lump = run(PB(), investLump(100_000));
+    expect(lump.cashDip).toBeNull();
+    expect(available(lump).withPurchase[0]).toBe(available(lump).withoutPurchase[0]! - 100_000);
+    const monthly = run(PB(), investMonthly(50_000, 6));
+    const p = available(monthly);
+    expect(p.withPurchase[0]).toBe(p.withoutPurchase[0]);
+    expect(p.withPurchase[90]).toBeLessThan(p.withoutPurchase[90]!);
+  });
+});
