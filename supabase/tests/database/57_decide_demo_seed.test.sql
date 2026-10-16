@@ -61,7 +61,7 @@ select extensions.ok(
 select extensions.is((select investing_floor from public.decide_settings where user_id = '11111111-1111-1111-1111-111111111111'), 0::bigint, 'investing_floor is 0');
 select extensions.is((select seeded from public.decide_settings where user_id = '11111111-1111-1111-1111-111111111111'), true, 'the seeded settings row is marked seeded');
 select extensions.throws_ok(
-  $update public.decide_settings set seeded = true where user_id = '11111111-1111-1111-1111-111111111111'$,
+  $$update public.decide_settings set seeded = true where user_id = '11111111-1111-1111-1111-111111111111'$$,
   '42501', null, 'a client cannot set seeded (no column grant)');
 
 -- 6. Checks.
