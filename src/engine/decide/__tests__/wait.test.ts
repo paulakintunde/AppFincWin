@@ -1,4 +1,4 @@
-import { minorUnits } from '../../money/types';
+import { minorUnits, type MinorUnits } from '../../money/types';
 import { percent } from '../../payoff/types';
 import { buildAlternatives } from '../alternatives';
 import { assessPlan, prepareContext } from '../assess';
@@ -153,7 +153,7 @@ describe('buildWaitPlan (D-40)', () => {
 
   it('rejects a negative or fractional amount', () => {
     for (const bad of [-1, 1.5]) {
-      expect(() => buildWaitPlan(ctxOf(BL()), buyCash(1_700_000), mu(bad))).toThrow(/^buildWaitPlan: /);
+      expect(() => buildWaitPlan(ctxOf(BL()), buyCash(1_700_000), bad as MinorUnits)).toThrow(/^buildWaitPlan: /);
     }
   });
 });
