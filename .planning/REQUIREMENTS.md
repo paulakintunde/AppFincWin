@@ -185,8 +185,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DEC-01**: Engine computes an amortised monthly payment for a principal, APR and term, including the zero-rate case
 - [x] **DEC-02**: Engine computes future value of a monthly contribution plus a seed, including the zero-rate case
 - [x] **DEC-03**: Engine simulates minimum payments on a revolving balance and correctly reports when the balance never clears
-- [ ] **DEC-04**: Engine resolves any of four payment methods — paid in full, deposit plus loan, instalment plan, credit card — into a comparable plan
-- [ ] **DEC-05**: Engine flags a plan as incomplete when its terms are not yet specified
+- [x] **DEC-04**: Engine resolves any of four payment methods — paid in full, deposit plus loan, instalment plan, credit card — into a comparable plan
+- [x] **DEC-05**: Engine flags a plan as incomplete when its terms are not yet specified
 - [ ] **DEC-06**: Engine returns a verdict of fits, adjust, no, or missing, with up to six warnings ordered by shortfall size (the sixth, `cash_dip`, was added 2026-10-15, 04-CONTEXT D-44/D-59)
 - [ ] **DEC-07**: Engine derives income steadiness from the coefficient of variation across logged months, not from a user-stated answer
 - [x] **DEC-08**: Engine computes a household's share of a cost under the active split rule
@@ -216,7 +216,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DEC-32**: Engine payment maths pass published reference amortisation tables, and every behaviour threshold carries a citation or is labelled a FincWin line (04 D-57, D-58)
 - [x] **DEC-33**: Engine builds the month from paid Record lines only, nets refunds, skips transfers, and smooths confirmed non-monthly bills and weekly/fortnightly pay to monthly equivalents (04 D-23, D-25..D-28, D-60)
 - [ ] **DEC-34**: Engine deducts bills due in the next 90 days from cash when no cash path is available, and returns a relative purchase-size code (04 D-24, D-36)
-- [ ] **DEC-35**: Engine resolves the final price from the advertised price, user-entered sales tax and fees, and trade-ins, never below zero (04 D-37)
+- [x] **DEC-35**: Engine resolves the final price from the advertised price, user-entered sales tax and fees, and trade-ins, never below zero (04 D-37)
 - [ ] **DEC-36**: Engine returns the month table, the five ledgers, runway and the wait-and-save plan (04 D-38, D-39, D-40)
 - [ ] **DEC-37**: Engine uses separate shares for existing household spending and the purchase, and treats saving and investing as pausable (a shortfall they cover is adjust, not no) (04 D-34, D-35)
 
@@ -549,8 +549,8 @@ Populated during roadmap creation.
 | DEC-01 | Phase 4 - Decide Engine | Complete |
 | DEC-02 | Phase 4 - Decide Engine | Complete |
 | DEC-03 | Phase 4 - Decide Engine | Complete |
-| DEC-04 | Phase 4 - Decide Engine | Pending |
-| DEC-05 | Phase 4 - Decide Engine | Pending |
+| DEC-04 | Phase 4 - Decide Engine | Complete |
+| DEC-05 | Phase 4 - Decide Engine | Complete |
 | DEC-06 | Phase 4 - Decide Engine | Pending |
 | DEC-07 | Phase 4 - Decide Engine | Pending |
 | DEC-08 | Phase 4 - Decide Engine | Complete |
@@ -580,7 +580,7 @@ Populated during roadmap creation.
 | DEC-32 | Phase 4 - Decide Engine | Pending |
 | DEC-33 | Phase 4 - Decide Engine | Complete |
 | DEC-34 | Phase 4 - Decide Engine | Pending |
-| DEC-35 | Phase 4 - Decide Engine | Pending |
+| DEC-35 | Phase 4 - Decide Engine | Complete |
 | DEC-36 | Phase 4 - Decide Engine | Pending |
 | DEC-37 | Phase 4 - Decide Engine | Pending |
 | DCU-01 | Phase 5 - Decide UI | Pending |
