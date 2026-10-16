@@ -48,7 +48,7 @@ describe('D-05 / D-06 alternatives', () => {
 
   it('D-05: the too-thin floor is the user-editable spareFloor, default 0 (prototype FLOOR = 25)', () => {
     // 1_000 left over after the cheaper one; a prototype floor of 25.00 (2_500) would suppress it, the default 0 does not.
-    const months = monthsOf([[600_000, 424_000], [600_000, 424_000], [600_000, 424_000]]);
+    const months = monthsOf([[600_000, 599_000], [600_000, 599_000], [600_000, 599_000]]);
     const cashBuy = buyCash(1_000_000);
     const noFloor = altsOf(snapshotOf({ limits: LIMITS, cashOnHand: mu(600_000), months }), cashBuy);
     expect(noFloor.rows[1].suppression?.code).not.toBe('too_thin');

@@ -1,4 +1,3 @@
-import { divideHalfUp } from '../../money/rounding';
 import { minorUnits } from '../../money/types';
 import { futureValue } from '../../payoff/futureValue';
 import { ZERO_PERCENT, percent } from '../../payoff/types';
@@ -377,6 +376,6 @@ describe('invest checks', () => {
     };
     const a = altsOf(B(), check);
     expect(a.horizonMonths).toBe(24);
-    expect(a.cheaperPrice).toBe(divideHalfUp(50_000n * 65n, 100n));
+    expect(a.cheaperPrice).toBe(32_500);
   });
 });
