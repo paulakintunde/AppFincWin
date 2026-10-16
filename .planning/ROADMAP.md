@@ -663,7 +663,7 @@ Plans:
 **Wave 5** *(blocked on Wave 4 completion)*
 - [x] 05-20-PLAN.md — Go ahead (one undo step, incl. investment and card payoff), Wait (+goal, reminder), Pass
 - [x] 05-21-PLAN.md — Decide tab root, FAB, open checks with stacked chips, reminder reconcile
-- [ ] 05-22-PLAN.md — Past decisions and detail sheet (estimate vs actual, attach/unlink)
+- [x] 05-22-PLAN.md — Past decisions and detail sheet (estimate vs actual, attach/unlink)
 - [ ] 05-23-PLAN.md — Onboarding rough figures and first check (cash-only skip path)
 - [ ] 05-42-PLAN.md — Step 3 depth sections: day by day, expected income, cushion and margins, runway
 - [ ] 05-53-PLAN.md — Step 2 card terms: card minimum pre-fill, paid in full, card fees and costs (D-40, D-44)
