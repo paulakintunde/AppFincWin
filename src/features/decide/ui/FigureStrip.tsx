@@ -29,8 +29,9 @@ export function FigureStrip({ items, dark = false }: FigureStripProps) {
   const stacked = fontScale > FIGURE_STACK_ABOVE;
   const captionColor = dark ? colors.inkSoft1 : colors.inkMuted;
   const valueColor = (tone: FigureItem['tone']) => {
-    if (tone === 'positive') return colors.accent;
-    if (tone === 'negative') return colors.danger;
+    // UI-SPEC Color: on the ink card positive reads accentTint1 and negative dangerTint2 (the sign and words carry the meaning).
+    if (tone === 'positive') return dark ? colors.accentTint1 : colors.accent;
+    if (tone === 'negative') return dark ? colors.dangerTint2 : colors.danger;
     return dark ? colors.surface : colors.ink;
   };
   return (
