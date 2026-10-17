@@ -1,10 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { emptyCheckInputs } from '../../snapshot/checkInputs';
 import { TODAY, loggedSource, noneSource, roughSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import type { SnapshotResult } from '../../snapshot/types';
+import { wrap } from '../../check/steps/__tests__/helpers/stepProps';
 import { DecideHomeScreen } from '../DecideHomeScreen';
 
 jest.setTimeout(30000);
@@ -27,6 +28,8 @@ jest.mock('@/data/queries/decide', () => ({
   useDecideChecks: () => ({ data: mockChecks }),
   useDecideSettings: () => ({ data: null }),
 }));
+const mockSettingsUpdate = jest.fn();
+jest.mock('@/data/mutations/decideSettings', () => ({ useUpdateDecideSettings: () => ({ update: mockSettingsUpdate }) }));
 jest.mock('@/data/mutations/decideChecks', () => ({ useCreateCheck: () => ({ create: mockCreate }) }));
 jest.mock('../../notifications/waitReminder', () => ({ reconcileWaitReminders: (...a: unknown[]) => mockReconcile(...a) }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPush(...a) }));
@@ -54,7 +57,15 @@ jest.mock('../../quick/QuickCheckForm', () => {
   return {
     QuickCheckForm: (props: Record<string, unknown>) => {
       mockSeen.quick = props;
-      return R.createElement(Text, { testID: 'probe-quick' }, 'quick');
+      const { Pressable } = require('react-native');
+      return R.createElement(
+        Text,
+        { testID: 'probe-quick' },
+        'quick',
+        props.sourceStatus === 'error'
+          ? R.createElement(Pressable, { accessibilityRole: 'button', onPress: props.onRetry }, R.createElement(Text, null, 'Try again'))
+          : null
+      );
     },
   };
 });
@@ -121,6 +132,36 @@ beforeEach(() => {
 });
 
 describe('DecideHomeScreen', () => {
+  it('shows the cards in the UI-SPEC order', async () => {
+    await renderScreen();
+    const tree = JSON.stringify(screen.toJSON());
+    const order = ['probe-quick', 'your-month-card', 'probe-open', 'Past decisions', 'lines-card', '4 months of logged income'].map((needle) => tree.indexOf(needle));
+    expect(order.every((i) => i >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it('add rough figures opens the sheet', async () => {
+    mockSnap = ready(noneSource());
+    await wrap(<DecideHomeScreen />); // the sheet needs the safe-area provider
+    expect(screen.queryByText('Rough figures')).toBeNull();
+    await fireEvent.press(screen.getByText('Add rough figures'));
+    expect(screen.getByText('Rough figures')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Cancel'));
+    expect(screen.queryByText('Rough figures')).toBeNull();
+    // The quick check's own button opens the same sheet.
+    await act(async () => {
+      (mockSeen.quick!.onAddRough as () => void)();
+    });
+    expect(screen.getByText('Rough figures')).toBeTruthy();
+  });
+
+  it('try again retries the reads', async () => {
+    mockSnap = { status: 'error', result: null, source: null, retry: mockRetry };
+    await renderScreen();
+    await fireEvent.press(screen.getByText('Try again'));
+    expect(mockRetry).toHaveBeenCalledTimes(1);
+  });
+
   it('renders the header, the quick check first, then open checks, the past row and the sources note', async () => {
     await renderScreen();
     expect(screen.getByText('Decide')).toBeTruthy();

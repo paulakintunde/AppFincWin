@@ -1,7 +1,7 @@
 // 05-21 (DCU-01, DCU-03, DCU-04): the Decide tab root. Order per UI-SPEC: the quick check first, then Open checks, the
 // Past decisions row and the sources note. 05-27 places Your month under the quick check and Lines you will not cross
 // under the Past decisions row. No pull-to-refresh on Decide (no refreshKeys).
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import * as Crypto from 'expo-crypto';
 import { StyleSheet, View } from 'react-native';
 import { useCreateCheck } from '@/data/mutations/decideChecks';
@@ -19,8 +19,11 @@ import { Card } from '../check/steps/stepUi';
 import { QuickCheckForm } from '../quick/QuickCheckForm';
 import type { CheckInputs } from '../snapshot/types';
 import { checkHref, openNewCheck, PAST_HREF } from './checkHref';
+import { LinesCard } from './LinesCard';
 import { OpenChecksCard } from './OpenChecksCard';
+import { RoughFiguresSheet } from './RoughFiguresSheet';
 import { useDecideHomeViewModel } from './useDecideHomeViewModel';
+import { YourMonthCard } from './YourMonthCard';
 
 export function DecideHomeScreen() {
   const t = useT();
@@ -28,6 +31,7 @@ export function DecideHomeScreen() {
   const rc = useRecordContext();
   const vm = useDecideHomeViewModel();
   const { create } = useCreateCheck();
+  const [roughOpen, setRoughOpen] = useState(false);
 
   const fab = useMemo(
     () => ({
@@ -82,7 +86,15 @@ export function DecideHomeScreen() {
           today={vm.today}
           currency={vm.currency}
           onRunFull={runFull}
+          onAddRough={() => setRoughOpen(true)}
           onRetry={vm.retry}
+        />
+        <YourMonthCard
+          source={vm.source}
+          settings={vm.settings}
+          userId={rc.userId}
+          whole={vm.whole}
+          onEditRough={() => setRoughOpen(true)}
         />
         <OpenChecksCard
           source={vm.source}
@@ -99,10 +111,18 @@ export function DecideHomeScreen() {
             onPress={() => pushOnce(PAST_HREF)}
           />
         </Card>
+        <LinesCard source={vm.source} settings={vm.settings} userId={rc.userId} currency={vm.currency} whole={vm.whole} />
         {sources !== null ? (
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{sources}</Text>
         ) : null}
       </View>
+      <RoughFiguresSheet
+        visible={roughOpen}
+        userId={rc.userId}
+        currency={vm.currency}
+        settings={vm.settings}
+        onClose={() => setRoughOpen(false)}
+      />
     </TabRootScreen>
   );
 }
