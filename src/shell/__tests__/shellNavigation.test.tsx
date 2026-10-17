@@ -35,6 +35,7 @@ jest.mock('@/features/record/history/UndoToastHost', () => ({
 // Leaf stub: the entry host pulls in the whole transaction sheet (and the Supabase client).
 jest.mock('@/features/record/entry/ShellEntryHost', () => ({ ShellEntryHost: () => null }));
 jest.mock('@/features/decide/DecideShellHost', () => ({ DecideShellHost: () => null }));
+jest.mock('@/features/decide/notifications/useNotificationObserver', () => ({ useNotificationObserver: () => undefined }));
 jest.mock('@/features/record/useDeviceHomeCurrencyDefault', () => ({ DeviceHomeCurrencyDefault: () => null }));
 jest.mock('@/features/record/samples/SampleBanner', () => ({ SampleBanner: () => null }));
 jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPrompts: () => null }));
