@@ -1,4 +1,11 @@
-import { SWIPE_BACK_EDGE_WIDTH, dragOffset, isSwipeBackRoute, shouldSwipeBack } from '../swipeBackGesture';
+import {
+  SWIPE_BACK_EDGE_WIDTH,
+  dragOffset,
+  interceptSwipeBack,
+  isSwipeBackRoute,
+  setSwipeBackInterceptor,
+  shouldSwipeBack,
+} from '../swipeBackGesture';
 
 const s = (o: Partial<Parameters<typeof shouldSwipeBack>[0]> = {}) => ({
   startX: 5,
@@ -36,4 +43,20 @@ describe('isSwipeBackRoute', () => {
   it.each(['accounts/index', 'accounts/[id]', 'categories', 'history', 'import', 'you'])('is on for %s', (r) =>
     expect(isSwipeBackRoute(r)).toBe(true)
   );
+});
+
+describe('swipe-back interceptor (A8)', () => {
+  afterEach(() => setSwipeBackInterceptor(null));
+  it('is false when none is set', () => expect(interceptSwipeBack()).toBe(false));
+  it('returns the interceptor result', () => {
+    setSwipeBackInterceptor(() => true);
+    expect(interceptSwipeBack()).toBe(true);
+    setSwipeBackInterceptor(() => false);
+    expect(interceptSwipeBack()).toBe(false);
+  });
+  it('is false again once cleared', () => {
+    setSwipeBackInterceptor(() => true);
+    setSwipeBackInterceptor(null);
+    expect(interceptSwipeBack()).toBe(false);
+  });
 });

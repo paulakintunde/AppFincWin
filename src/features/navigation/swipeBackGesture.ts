@@ -37,3 +37,15 @@ export function dragOffset(translationX: number, translationY: number): number {
   if (translationX <= 0 || Math.abs(translationY) > translationX) return 0;
   return translationX;
 }
+
+let interceptor: (() => boolean) | null = null;
+
+/** A screen (the Decide check flow) claims the edge swipe to step back before it leaves; null releases it. */
+export function setSwipeBackInterceptor(fn: (() => boolean) | null): void {
+  interceptor = fn;
+}
+
+/** True when the screen handled the swipe itself, so the route must not pop. */
+export function interceptSwipeBack(): boolean {
+  return interceptor ? interceptor() : false;
+}
