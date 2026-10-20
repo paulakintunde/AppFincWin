@@ -6,6 +6,8 @@ import { computeCheck } from '../computeCheck';
 import type { CheckInputs } from '../types';
 import { withoutCheckWrites, type CheckWriteLink } from '../withoutCheckWrites';
 
+jest.mock('@/features/decide/notifications/waitReminder', () => ({ scheduleCoolingOffReminder: jest.fn() }));
+
 const TODAY = '2026-10-15';
 const CASH = 'demo-acct-everyday';
 
@@ -128,7 +130,7 @@ describe('withoutCheckWrites', () => {
     expect(write.rows).toHaveLength(1);
     const naive = computeCheck(logged(after.source), inputs).verdict;
     if (pre.verdict === null || pre.verdict.state === 'missing' || naive === null || naive.state === 'missing') throw new Error('verdicts');
-    expect(naive.cashAfter).toBe(pre.verdict.cashAfter - 180_000n);
+    expect(naive.cashAfter).toBe(pre.verdict.cashAfter - 180_000);
     const recalculated = computeCheck(logged(withoutCheckWrites(after.source, 'sofa', after.links, null)), inputs).verdict;
     expect(recalculated).toEqual(pre.verdict);
   });
@@ -218,6 +220,15 @@ describe('withoutCheckWrites', () => {
     expect(out.rows.some((r) => ['p1', 'p2', 'p3'].includes(r.id))).toBe(false);
     const pendingOnly = withoutCheckWrites(withRows, 'c1', links.slice(2), null);
     expect(pendingOnly.balances[CASH]).toBe(100_000);
+  });
+
+  it('a paid write on an account with no balance entry starts from zero', () => {
+    const source = demoSource(TODAY);
+    const account = { ...source.accounts[0]!, id: 'acct-new' };
+    const row = { ...source.rows[0]!, id: 'n1', account_id: 'acct-new', original_amount: -500, home_amount: -500, status: 'paid' as const, original_currency: account.currency };
+    const withNew: SnapshotSource = { ...source, accounts: [...source.accounts, account], rows: [...source.rows, row] };
+    const links: CheckWriteLink[] = [{ check_id: 'c1', entity: 'transactions', target_id: 'n1', source: 'written', deleted_at: null }];
+    expect(withoutCheckWrites(withNew, 'c1', links, null).balances['acct-new']).toBe(500);
   });
 
   it('upcoming rows, payment links and the debt tied by check_id are dropped', () => {
