@@ -42,6 +42,8 @@ jest.mock('@/features/record/history/UndoToastHost', () => {
   const { View } = require('react-native');
   return { UndoToastHost: () => R.createElement(View, { testID: 'undo-toast-host' }), SheetToastOverlay: () => null };
 });
+// 05-24: the layout mounts the Decide reminder observer, which needs a real router; wiring only here.
+jest.mock('@/features/decide/notifications/useNotificationObserver', () => ({ useNotificationObserver: () => undefined }));
 jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({ BackHistoryProvider: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('@/shell/backHistory/useAndroidBackHandler', () => ({ AndroidBackHandler: () => null }));
 jest.mock('@/shell/layout/ShellLayoutProvider', () => ({ ShellLayoutProvider: ({ children }: { children: React.ReactNode }) => children }));
