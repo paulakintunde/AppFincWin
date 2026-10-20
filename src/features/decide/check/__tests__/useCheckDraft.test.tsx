@@ -9,8 +9,14 @@ const mockTrack = jest.fn();
 let mockChecks: { data: DecideCheckRow[] | undefined } = { data: [] };
 let mockResult: { currency: string } | null = { currency: 'GBP' };
 
+let mockRc: { ready: boolean; userId: string | null; householdId: string | null; today: string } = {
+  ready: true,
+  userId: 'u1',
+  householdId: 'h1',
+  today: '2026-10-17',
+};
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ ready: true, userId: 'u1', householdId: 'h1', today: '2026-10-17' }),
+  useRecordContext: () => mockRc,
 }));
 jest.mock('@/data/queries/decide', () => ({
   useDecideChecks: () => mockChecks,
@@ -44,6 +50,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockChecks = { data: [] };
   mockResult = { currency: 'GBP' };
+  mockRc = { ready: true, userId: 'u1', householdId: 'h1', today: '2026-10-17' };
 });
 afterEach(() => {
   jest.useRealTimers();
@@ -89,6 +96,19 @@ describe('useCheckDraft', () => {
     await act(async () => result.current.update({ advertised: 2000 }));
     expect(mockTrack).toHaveBeenCalledTimes(1);
     expect(mockTrack).toHaveBeenCalledWith('check_started', {});
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('a first edit made before the household is known is created once it arrives', async () => {
+    mockRc = { ready: true, userId: 'u1', householdId: null, today: TODAY };
+    const hook = await renderHook(() => useCheckDraft('c9', 'buy', TODAY));
+    await act(async () => hook.result.current.update({ name: 'Bike' }));
+    expect(mockCreate).not.toHaveBeenCalled();
+    mockRc = { ready: true, userId: 'u1', householdId: 'h1', today: TODAY };
+    await hook.rerender({});
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(mockCreate.mock.calls[0][0]).toMatchObject({ id: 'c9', householdId: 'h1', name: 'Bike' });
+    await hook.rerender({});
     expect(mockCreate).toHaveBeenCalledTimes(1);
   });
 

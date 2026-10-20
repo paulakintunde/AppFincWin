@@ -82,6 +82,12 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
     doSave({ id, name: stamped.name.slice(0, 80), inputs: json, furthestStep: step });
   }, [id, kind]);
 
+  // A first edit made before the user and household ids resolve stays pending (flush returns early and keeps
+  // it); create it as soon as both ids arrive rather than waiting for a second edit.
+  useEffect(() => {
+    if (rc.userId && rc.householdId && pending.current && !row && !created.current) flush();
+  }, [rc.userId, rc.householdId, row, flush]);
+
   // Leaving never loses work: the pending save is flushed on unmount.
   useEffect(
     () => () => {
