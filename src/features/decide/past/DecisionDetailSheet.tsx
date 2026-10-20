@@ -5,12 +5,14 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRemoveDecision } from '@/data/mutations/decideChecks';
 import { useUnlinkLine } from '@/data/mutations/decideLinks';
+import { newStepId } from '@/data/mutations/undoCapture';
 import { useGoalLines, useSavingsGoals } from '@/data/queries/decide';
 import { homeAmountFor } from '@/data/queries/homeAmount';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import type { TransactionRow } from '@/db/rows';
 import { currencyCode } from '@/engine/money';
+import { monthOf } from '@/engine/time';
 import { useT } from '@/i18n';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -32,6 +34,7 @@ import { parseCheckInputs } from '../snapshot/checkInputs';
 import { GoalProgress } from '../ui/GoalProgress';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
 import { AttachLineSheet } from './AttachLineSheet';
+import { useGoalTagEdit } from './goalTagEdit';
 import { estimateInputFor, localDateOf, usePastContext, useReopenDecision } from './usePastDecisions';
 
 export interface DecisionDetailSheetProps {
@@ -59,9 +62,11 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
   const goals = useSavingsGoals(userId ?? undefined, householdId ?? undefined).data;
   const { remove } = useRemoveDecision();
   const { unlink } = useUnlinkLine();
+  const edit = useGoalTagEdit();
   const reopen = useReopenDecision(today);
   const [confirming, setConfirming] = useState(false);
   const [attaching, setAttaching] = useState(false);
+  const [tagging, setTagging] = useState(false);
   const goal = decision !== null && decision.status === 'waiting' ? ((goals ?? []).find((g) => g.check_id === decision.id && g.deleted_at === null) ?? null) : null;
   const goalLines = useGoalLines(householdId, goal === null ? [] : [goal.id]).data;
 
@@ -113,6 +118,29 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
     const stepId = unlink(v.link, v.name);
     showToast({ kind: 'destructive', text: { key: 'decide.toast.unlinked' }, stepId });
   };
+
+  // D-34: tagging a transfer to the goal is an ordinary undoable edit of goal_id; the server refuses a goal that is not the user's own.
+  const setGoalTag = (row: TransactionRow, goalId: string | null) => {
+    if (userId === null) return;
+    const stepId = newStepId();
+    const recorded = edit(
+      { id: row.id, householdId: row.household_id, month: monthOf(row.local_date), expectedVersion: row.version, patch: { goal_id: goalId } },
+      {
+        stepId,
+        ownerId: userId,
+        labelKey: goalId === null ? 'transferUntagged' : 'transferTagged',
+        labelParams: { name: row.name ?? row.note ?? '' },
+        before: { goal_id: goalId === null ? (goal?.id ?? null) : null },
+      }
+    );
+    showToast({
+      kind: 'ordinary',
+      text: { key: goalId === null ? 'decide.depth.goal.untagged' : 'decide.depth.goal.tagged' },
+      ...(recorded ? { stepId } : {}),
+    });
+  };
+
+  const tagged = goal === null ? [] : (goalLines ?? []).filter((l) => l.goal_id === goal.id && l.deleted_at === null);
 
   const onRemove = () => {
     if (decision === null) return;
@@ -235,6 +263,30 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
                   whole={wholeFmt}
                   currency={currencyCode(ctx.home)}
                 />
+                {tagged.map((l) => {
+                  const amount = homeAmountFor(l, ctx.home, ctx.rates);
+                  const name = l.name ?? l.note ?? '';
+                  return (
+                    <View key={l.id} style={styles.lineRow}>
+                      <View style={styles.lineText}>
+                        <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{name}</Text>
+                        <Text style={{ ...meta, color: colors.inkFaint }}>{formatDate(l.local_date)}</Text>
+                      </View>
+                      <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>
+                        {amount !== null ? whole(Math.abs(amount)) : t('decide.depth.goal.waitingRate')}
+                      </Text>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={t('decide.depth.goal.untagA11y')}
+                        onPress={() => setGoalTag(l, null)}
+                        style={styles.unlink}
+                      >
+                        <CloseGlyph color={colors.inkDim} />
+                      </Pressable>
+                    </View>
+                  );
+                })}
+                <Pill label={t('decide.depth.goal.tag')} variant="secondary" onPress={() => setTagging(true)} />
               </View>
             ) : null}
             {decidedDate !== null ? (
@@ -287,6 +339,17 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
         onConfirm={onRemove}
         onCancel={() => setConfirming(false)}
       />
+
+      {goal !== null && householdId !== null ? (
+        <AttachLineSheet
+          mode="transfer"
+          visible={tagging}
+          householdId={householdId}
+          excludeIds={tagged.map((l) => l.id)}
+          onPick={(row) => setGoalTag(row, goal.id)}
+          onClose={() => setTagging(false)}
+        />
+      ) : null}
 
       {decision !== null && userId !== null && householdId !== null ? (
         <AttachLineSheet

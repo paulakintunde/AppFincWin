@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useAttachCandidates } from '@/data/queries/decide';
 import { useAttachLine } from '@/data/mutations/decideLinks';
+import type { TransactionRow } from '@/db/rows';
 import { useT } from '@/i18n';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -16,16 +17,18 @@ import { usePastContext } from './usePastDecisions';
 
 export const ATTACH_WINDOW_DAYS = 90;
 
-export interface AttachLineSheetProps {
+interface AttachSheetBase {
   visible: boolean;
   householdId: string;
-  checkId: string;
-  userId: string;
-  decidedAt: string;
   /** Link targets already attached (transaction ids and series ids); their lines are left out. */
   excludeIds: readonly string[];
   onClose: () => void;
 }
+
+/** 'line' (default, 05-22) attaches a line to the decision; 'transfer' (05-47, D-34) hands a money-in transfer leg to `onPick`. */
+export type AttachLineSheetProps =
+  | (AttachSheetBase & { mode?: 'line'; checkId: string; userId: string; decidedAt: string })
+  | (AttachSheetBase & { mode: 'transfer'; onPick: (line: TransactionRow) => void });
 
 function shiftDays(date: string, days: number): string {
   const [y, m, d] = date.split('-').map((p) => parseInt(p, 10)) as [number, number, number];
@@ -33,7 +36,9 @@ function shiftDays(date: string, days: number): string {
   return `${String(t.getUTCFullYear()).padStart(4, '0')}-${String(t.getUTCMonth() + 1).padStart(2, '0')}-${String(t.getUTCDate()).padStart(2, '0')}`;
 }
 
-export function AttachLineSheet({ visible, householdId, checkId, userId, decidedAt, excludeIds, onClose }: AttachLineSheetProps) {
+export function AttachLineSheet(props: AttachLineSheetProps) {
+  const { visible, householdId, excludeIds, onClose } = props;
+  const transferMode = props.mode === 'transfer';
   const t = useT();
   const { colors, pairing } = useTheme();
   const { ctx, whole, formatDate } = usePastContext();
@@ -45,18 +50,22 @@ export function AttachLineSheet({ visible, householdId, checkId, userId, decided
     const skip = new Set(excludeIds);
     return (lines ?? [])
       .filter((l) => l.deleted_at === null && l.household_id === householdId)
+      // Transfer mode: live money-in legs of a transfer that no goal has claimed yet (D-34).
+      .filter((l) => !transferMode || (l.transfer_id !== null && l.original_amount > 0 && (l.goal_id ?? null) === null))
       .filter((l) => !skip.has(l.id) && !(l.recurring_series_id !== null && skip.has(l.recurring_series_id)))
       .sort((a, b) => (a.local_date < b.local_date ? 1 : a.local_date > b.local_date ? -1 : 0));
-  }, [lines, excludeIds, householdId]);
+  }, [lines, excludeIds, householdId, transferMode]);
+
+  const title = transferMode ? t('decide.depth.goal.tagTitle') : t('decide.past.pickTitle');
 
   return (
-    <Sheet visible={visible} onDismiss={onClose} accessibilityLabel={t('decide.past.pickTitle')}>
+    <Sheet visible={visible} onDismiss={onClose} accessibilityLabel={title}>
       <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink, paddingBottom: space.gapMd }}>
-        {t('decide.past.pickTitle')}
+        {title}
       </Text>
       <SheetScroll>
         {rows.length === 0 ? (
-          <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>{t('decide.past.pickEmpty')}</Text>
+          <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>{transferMode ? t('decide.depth.goal.tagEmpty') : t('decide.past.pickEmpty')}</Text>
         ) : (
           rows.map((line) => {
             const amount = homeAmountFor(line, ctx.home, ctx.rates);
@@ -69,6 +78,12 @@ export function AttachLineSheet({ visible, householdId, checkId, userId, decided
                   .filter((p): p is string => p !== null && p !== '')
                   .join(', ')}
                 onPress={() => {
+                  if (props.mode === 'transfer') {
+                    props.onPick(line);
+                    onClose();
+                    return;
+                  }
+                  const { checkId, userId, decidedAt } = props;
                   attach({
                     userId,
                     checkId,
