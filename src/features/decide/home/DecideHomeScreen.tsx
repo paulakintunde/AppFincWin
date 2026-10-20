@@ -5,6 +5,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import * as Crypto from 'expo-crypto';
 import { StyleSheet, View } from 'react-native';
 import { useCreateCheck } from '@/data/mutations/decideChecks';
+import { useDecideChanges } from '@/data/queries/decide';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
@@ -18,6 +19,7 @@ import { Text } from '@/ui/Text';
 import { Card } from '../check/steps/stepUi';
 import { QuickCheckForm } from '../quick/QuickCheckForm';
 import type { CheckInputs } from '../snapshot/types';
+import { ChangesCard } from './ChangesCard';
 import { checkHref, openNewCheck, PAST_HREF } from './checkHref';
 import { LinesCard } from './LinesCard';
 import { OpenChecksCard } from './OpenChecksCard';
@@ -31,6 +33,7 @@ export function DecideHomeScreen() {
   const rc = useRecordContext();
   const vm = useDecideHomeViewModel();
   const { create } = useCreateCheck();
+  const changes = useDecideChanges(rc.userId ?? undefined, rc.householdId ?? undefined).data;
   const [roughOpen, setRoughOpen] = useState(false);
 
   const fab = useMemo(
@@ -103,6 +106,7 @@ export function DecideHomeScreen() {
           whole={vm.whole}
           currency={vm.currency}
         />
+        <ChangesCard changes={changes ?? []} currency={vm.currency} whole={vm.whole} />
         <Card style={{ paddingVertical: 0 }}>
           <Row
             label={t('decide.home.pastRow')}

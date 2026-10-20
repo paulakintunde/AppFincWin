@@ -1807,6 +1807,7 @@ const en = {
         emptyTitle: 'Nothing dated yet', emptyBody: 'A raise, a rent change or a bill ending: add it and every check looks 12 months ahead.',
         rowFrom: '{{sign}}{{amount}} a month · from {{month}}', rowUntil: ' · until {{month}}',
         unnamedIncome: 'Income change', unnamedSpending: 'Spending change', // addition (a nameless row)
+        endBeforeStart: 'The end month is before the start month.', // addition (05-48 inline refusal)
         worstMonth: 'Fits now; from {{month}} the month is {{amount}} short.',
       },
       confidence: {

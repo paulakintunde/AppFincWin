@@ -27,6 +27,12 @@ jest.mock('@/data/queries/decide', () => ({
   useDecideSnapshot: () => mockSnap,
   useDecideChecks: () => ({ data: mockChecks }),
   useDecideSettings: () => ({ data: null }),
+  useDecideChanges: () => ({ data: [] }),
+}));
+jest.mock('@/data/mutations/decideChanges', () => ({
+  useAddChange: () => ({ add: jest.fn() }),
+  useEditChange: () => ({ edit: jest.fn() }),
+  useRemoveChange: () => ({ remove: jest.fn() }),
 }));
 const mockSettingsUpdate = jest.fn();
 jest.mock('@/data/mutations/decideSettings', () => ({ useUpdateDecideSettings: () => ({ update: mockSettingsUpdate }) }));
@@ -135,7 +141,7 @@ describe('DecideHomeScreen', () => {
   it('shows the cards in the UI-SPEC order', async () => {
     await renderScreen();
     const tree = JSON.stringify(screen.toJSON());
-    const order = ['probe-quick', 'your-month-card', 'probe-open', 'Past decisions', 'lines-card', '4 months of logged income'].map((needle) => tree.indexOf(needle));
+    const order = ['probe-quick', 'your-month-card', 'probe-open', 'Changes coming up', 'Past decisions', 'lines-card', '4 months of logged income'].map((needle) => tree.indexOf(needle));
     expect(order.every((i) => i >= 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
