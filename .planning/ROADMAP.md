@@ -672,7 +672,7 @@ Plans:
 - [x] 05-24-PLAN.md — Check flow layout, swipe interceptor, useCheckDraft
 - [x] 05-27-PLAN.md — Your month, Lines, limit and rough-figure sheets, home order
 - [x] 05-40-PLAN.md — Change mutations (add, edit, remove with undo)
-- [ ] 05-47-PLAN.md — Past decisions goal progress; tag and untag transfers to a goal
+- [x] 05-47-PLAN.md — Past decisions goal progress; tag and untag transfers to a goal
 - [ ] 05-52-PLAN.md — withoutCheckWrites and useBoughtCheckComputation
 
 **Wave 7** *(blocked on Wave 6 completion)*
