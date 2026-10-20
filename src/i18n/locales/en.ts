@@ -1486,11 +1486,12 @@ const en = {
         breaks: 'This breaks a line you set. You can still log it — the record notes it.',
       },
       notFound: { heading: 'This check isn’t here', body: 'It may have been abandoned or removed on another device.', back: 'Back to Decide' },
+      loadFailed: 'This check couldn’t load. Your records are unchanged.', retry: 'Try again',
       reopen: 'Reopen the check',
       notLender: 'FincWin records and plans. It does not lend money, arrange credit or hold your funds.',
     },
     scope: {
-      me: 'Just me', split: 'Split evenly across {{count}} people — your share is {{pct}}.', mine: 'Counted entirely against your own money.',
+      me: 'Just me', household: 'Household', split: 'Split evenly across {{count}} people — your share is {{pct}}.', mine: 'Counted entirely against your own money.',
       override: 'Split for this purchase', even: 'Even', weight: 'By weight', amounts: 'Set amounts', allMine: 'All mine', cancel: 'Cancel', save: 'Save split',
     },
     item: {
