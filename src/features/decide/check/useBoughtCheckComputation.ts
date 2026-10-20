@@ -23,21 +23,23 @@ export function useBoughtCheckComputation(row: DecideCheckRow | null, inputs: Ch
   const rc = useRecordContext();
   const bought = row !== null && inputs !== null && row.status === 'bought';
   const snapshot = useDecideSnapshot();
-  const stack = useOtherChecks(bought ? row.id : null);
-  const ids = useMemo(() => (bought ? [row.id] : NO_IDS), [bought, row?.id]);
+  const checkId = bought ? row.id : null;
+  const decidedAt = bought ? row.decided_at : null;
+  const stack = useOtherChecks(checkId);
+  const ids = useMemo(() => (checkId === null ? NO_IDS : [checkId]), [checkId]);
   const links = useDecideLinks(bought ? (rc.userId ?? undefined) : undefined, bought ? (rc.householdId ?? undefined) : undefined, ids);
 
   const source = snapshot.source;
   const linkRows = links.data;
   const computation = useMemo(() => {
-    if (!bought || source === null || linkRows === undefined) return null;
+    if (!bought || checkId === null || source === null || linkRows === undefined) return null;
     const replaced: ReplacedEnd = {
       seriesIds: inputs.replaces.map((l) => l.seriesId).filter((id): id is string => id !== null),
-      endedOn: inputs.needBy ?? localDateIn(new Date(row.decided_at ?? rc.today), rc.timeZone),
+      endedOn: inputs.needBy ?? (decidedAt === null ? rc.today : localDateIn(new Date(decidedAt), rc.timeZone)),
     };
-    const built = buildDecideSnapshot(withoutCheckWrites(source, row.id, linkRows, replaced));
+    const built = buildDecideSnapshot(withoutCheckWrites(source, checkId, linkRows, replaced));
     return computeCheck(built, inputs, stack.otherChecks);
-  }, [bought, source, linkRows, inputs, row, stack, rc.today, rc.timeZone]);
+  }, [bought, checkId, decidedAt, source, linkRows, inputs, stack, rc.today, rc.timeZone]);
 
   if (!bought) return IDLE;
   if (snapshot.status === 'error' || links.isError) return { status: 'error', computation: null };
