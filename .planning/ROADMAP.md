@@ -677,7 +677,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 - [x] 05-30-PLAN.md — Check flow route, screen, header, action bar, step 3 section order
-- [ ] 05-48-PLAN.md — Changes coming up card and sheet on Decide home
+- [x] 05-48-PLAN.md — Changes coming up card and sheet on Decide home
 - [ ] 05-49-PLAN.md — Cushion months on Lines; missing-rate state in Your month
 
 **Wave 8** *(blocked on Wave 7 completion)*
