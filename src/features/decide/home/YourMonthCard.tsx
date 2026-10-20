@@ -18,6 +18,8 @@ import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { hapticSelection } from '@/ui/haptics';
 import { STEADINESS_LABEL } from '../copy/codeMaps';
+import { missingRateCopy } from '../copy/verdictCopy';
+import { refText, type Translate } from '../check/refText';
 import { FigureStrip } from '../ui/FigureStrip';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
 import type { Money } from '../check/steps/stepUi';
@@ -61,6 +63,21 @@ export function YourMonthCard({ source, settings, userId, whole, onEditRough }: 
       {text}
     </Text>
   );
+
+  // ── D-37: a needed rate is missing, so no figure is shown on this card ──
+  if (source.unconverted !== null) {
+    const missing = missingRateCopy(source.unconverted);
+    const tr = t as Translate;
+    return (
+      <View style={[styles.card, { backgroundColor: colors.ink }]} testID="your-month-card">
+        {eyebrow(t('decide.month.eyebrow'))}
+        <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.surface }}>
+          {refText(tr, missing.title)}
+        </Text>
+        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkSoft1 }}>{refText(tr, missing.body)}</Text>
+      </View>
+    );
+  }
 
   // ── logged ──
   if (source.kind === 'logged') {
