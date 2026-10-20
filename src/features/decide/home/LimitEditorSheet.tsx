@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { useUpdateDecideSettings } from '@/data/mutations/decideSettings';
 import type { DecideSettingsPatch, DecideSettingsRow } from '@/db/decideSettings';
+import type { Steadiness } from '@/engine/decide';
 import { useT } from '@/i18n';
 import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -19,6 +20,7 @@ import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { Box, Label, type Money } from '../check/steps/stepUi';
+import { monthsText } from '../copy/depthVerdictCopy';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
 import type { SnapshotResult } from '../snapshot/types';
 import { MoneyInput } from '../ui/MoneyInput';
@@ -45,6 +47,8 @@ export interface LimitEditorSheetProps {
   settings: DecideSettingsRow | null;
   source: SnapshotResult | null;
   whole: Money;
+  /** D-25: the engine's cushion default in half-months with the steadiness behind it; null when the line is typed or unknown. */
+  cushion?: { halfMonths: number; steadiness: Steadiness } | null;
   onClose: () => void;
 }
 
@@ -60,7 +64,7 @@ interface Fields {
 
 const validMoney = (n: number | null): n is number => n !== null && Number.isSafeInteger(n) && n >= 0 && n <= MAX_INPUT_MINOR;
 
-function LimitForm({ limit, userId, currency, settings, source, whole, onClose }: LimitEditorSheetProps & { limit: LimitKey }) {
+function LimitForm({ limit, userId, currency, settings, source, whole, cushion = null, onClose }: LimitEditorSheetProps & { limit: LimitKey }) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const mutation = useUpdateDecideSettings(userId ?? '');
@@ -87,6 +91,10 @@ function LimitForm({ limit, userId, currency, settings, source, whole, onClose }
   let info: string;
   if (limit === 'reserve' && source !== null) {
     info = t('decide.lines.reserve.info', { cash: whole(source.cash), count: source.meta.accountCount });
+    if (cushion !== null) {
+      const because = t(`decide.depth.cushion.because.${cushion.steadiness}` as const);
+      info = `${info} ${t('decide.depth.cushion.editorInfo', { months: monthsText(cushion.halfMonths), because })}`;
+    }
   } else if ((limit === 'investing' || limit === 'saving') && source !== null && source.kind === 'logged') {
     const amount = limit === 'investing' ? source.snapshot.monthlyInvesting : source.snapshot.monthlySaving;
     info = t(`decide.lines.${limit}.info` as const, { amount: whole(amount) });

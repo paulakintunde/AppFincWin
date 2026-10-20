@@ -6,13 +6,14 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { DecideSettingsRow } from '@/db/decideSettings';
-import { prepareContext, type ResolvedLimits } from '@/engine/decide';
+import { prepareContext, type Steadiness } from '@/engine/decide';
 import { useT } from '@/i18n';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { Card, Meta, type Money } from '../check/steps/stepUi';
+import { monthsText } from '../copy/depthVerdictCopy';
 import { percentText } from '../copy/percentText';
 import type { SnapshotResult } from '../snapshot/types';
 import { LimitEditorSheet, type LimitKey } from './LimitEditorSheet';
@@ -32,11 +33,16 @@ export function LinesCard({ source, settings, userId, currency, whole }: LinesCa
   const { colors, pairing } = useTheme();
   const [editing, setEditing] = useState<LimitKey | null>(null);
 
-  const limits: ResolvedLimits | null = useMemo(() => {
+  // One prepareContext per render of the source: the limits for the defaults and the steadiness for the cushion note.
+  const context = useMemo(() => {
     if (source === null || source.kind !== 'logged') return null;
     const result = prepareContext(source.snapshot);
-    return result.ok ? result.context.limits : null;
+    return result.ok ? result.context : null;
   }, [source]);
+  const limits = context === null ? null : context.limits;
+  const reserveHalfMonths = limits === null ? null : limits.reserveHalfMonths;
+  const cushion: { halfMonths: number; steadiness: Steadiness } | null =
+    context === null || reserveHalfMonths === null ? null : { halfMonths: reserveHalfMonths, steadiness: context.money.steadiness };
 
   // The builder ignores money limits stamped in another currency, so they read as blank here too.
   const foreign = settings !== null && settings.currency !== null && settings.currency !== currency;
@@ -84,7 +90,11 @@ export function LinesCard({ source, settings, userId, currency, whole }: LinesCa
           const isDefault = own === null;
           const name = t(`decide.lines.${key}.name` as const);
           const desc = t(`decide.lines.${key}.desc` as const);
-          const tag = t('decide.lines.defaultTag');
+          // D-25: the cushion default says how many months it holds; a typed line never carries a default tag.
+          const tag =
+            key === 'reserve' && cushion !== null
+              ? t('decide.depth.cushion.defaultTag', { months: monthsText(cushion.halfMonths) })
+              : t('decide.lines.defaultTag');
           const a11y = [name, desc, value, isDefault ? tag : null].filter((p): p is string => p !== null && p !== '').join(', ');
           return (
             <Pressable
@@ -121,6 +131,7 @@ export function LinesCard({ source, settings, userId, currency, whole }: LinesCa
         currency={currency}
         settings={settings}
         source={source}
+        cushion={stored('reserve') === null ? cushion : null}
         whole={whole}
         onClose={() => setEditing(null)}
       />

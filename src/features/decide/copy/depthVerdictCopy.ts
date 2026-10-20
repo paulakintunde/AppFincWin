@@ -77,7 +77,7 @@ export function basisDetailItems(args: BasisArgs): CopyRef[] {
 }
 
 /** Half-months (integer) as '3', '4.5', '6'. */
-function monthsText(halves: number): string {
+export function monthsText(halves: number): string {
   return `${halves >> 1}${halves % 2 ? '.5' : ''}`;
 }
 

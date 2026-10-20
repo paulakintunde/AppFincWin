@@ -214,7 +214,8 @@ describe('LinesCard', () => {
     for (const name of ['Cash never below', 'Debt payments at most', 'Unsecured debt at most', 'Investing at least', 'Saving at least']) {
       expect(screen.getByText(name)).toBeTruthy();
     }
-    expect(screen.getAllByText('default')).toHaveLength(5);
+    expect(screen.getAllByText('default')).toHaveLength(4);
+    expect(screen.getByText('default · 3 months')).toBeTruthy();
     expect(screen.getByText('36%')).toBeTruthy();
     expect(screen.getByText('12 ×')).toBeTruthy();
   });
@@ -225,6 +226,7 @@ describe('LinesCard', () => {
     expect(screen.getByText('30%')).toBeTruthy();
     expect(screen.getByText('6 ×')).toBeTruthy();
     expect(screen.getAllByText('default')).toHaveLength(2);
+    expect(screen.queryByText(/^default · /)).toBeNull();
   });
 
   it('saves a cash line as one column plus the currency', async () => {
