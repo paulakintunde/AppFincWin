@@ -30,6 +30,7 @@ import { registerDecideSettingsMutations } from './decideSettings';
 import { registerDecideLinkMutations } from './decideLinks';
 import { registerDecideGoAheadMutations } from './decideGoAhead';
 import { registerDecideOutcomeMutations } from './decideOutcome';
+import { registerDecideChangeMutations } from './decideChanges';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -69,4 +70,6 @@ export function registerMutationDefaults(qc: QueryClient): void {
   // 05-20: Go ahead / Wait / Pass.
   registerDecideGoAheadMutations(qc);
   registerDecideOutcomeMutations(qc);
+  // 05-40: Changes coming up (D-27).
+  registerDecideChangeMutations(qc);
 }
