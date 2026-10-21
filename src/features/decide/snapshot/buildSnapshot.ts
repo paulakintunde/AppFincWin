@@ -320,6 +320,9 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     if (!isActive(s)) continue;
     const isSavings = savingsSeries.has(s.id);
     if (!isSavings && (coveredSeries.has(s.id) || s.amount === 0)) continue;
+    // WR-B02: a Transfer series moves money between the user's own accounts; it is neither a bill nor income. Its
+    // paid inbound legs already count as saving or investing through the history above.
+    if (keyOf(s.category_id) === 'Transfer') continue;
     const amount = need(Math.abs(s.amount), s.currency);
     if (amount === null) continue;
     if (isSavings) {
@@ -340,7 +343,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       lastPaidDate: lastPaid.get(s.id) ?? null,
     };
     if (s.amount < 0) bills.push({ ...common, categoryId: s.category_id });
-    else if (keyOf(s.category_id) !== 'Transfer') incomeSeries.push(common);
+    else incomeSeries.push(common);
   }
 
   // ── balances ──

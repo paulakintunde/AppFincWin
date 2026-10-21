@@ -519,6 +519,21 @@ describe('bills and income series', () => {
     expect(r.snapshot.bills).toEqual([]);
   });
 
+  it('WR-B02: an outgoing Transfer series is not a bill, and needs no rate', () => {
+    const r = logged(
+      withExtra({
+        rates: [USD_RATE],
+        series: [
+          series({ id: 's-xfer-out', amount: -40_000, category_id: 'c-xfer' }),
+          series({ id: 's-xfer-jpy', amount: -40_000, currency: 'JPY', category_id: 'c-xfer' }),
+          series({ id: 's-rent', amount: -40_000, category_id: 'c-house' }),
+        ],
+      })
+    );
+    expect(r.snapshot.bills.map((b) => b.seriesId)).toEqual(['s-rent']);
+    expect(r.unconverted).toBeNull();
+  });
+
   it('bills carry their latest amount, last settled date and skip ended series', () => {
     const r = logged(
       withExtra({
