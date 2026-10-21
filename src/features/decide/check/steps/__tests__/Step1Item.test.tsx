@@ -144,4 +144,14 @@ describe('Step1Item', () => {
     await renderStep({}, { readOnly: true });
     expect(screen.getByLabelText('What it is').props.editable).toBe(false);
   });
+
+  it('WR-C06: on a decided check the controls are announced disabled and a screen-reader removal shows no toast', async () => {
+    const { p } = await renderStep({ replaces: [line()] }, { readOnly: true });
+    expect(screen.getByLabelText('A purchase').props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
+    const remove = screen.getByLabelText('Remove Parking');
+    expect(remove.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
+    await fireEvent.press(remove);
+    expect(showToast).not.toHaveBeenCalled();
+    expect(mockUpdate(p)).not.toHaveBeenCalled();
+  });
 });

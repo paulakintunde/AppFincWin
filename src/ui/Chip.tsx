@@ -5,6 +5,7 @@
  */
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
@@ -22,14 +23,16 @@ export interface ChipProps {
 
 export function Chip({ label, selected = false, onPress, accessibilityLabel, pressableRef }: ChipProps) {
   const { colors, pairing } = useTheme();
+  const readOnly = useReadOnlyScope();
     const textColor = selected ? colors.accent : colors.ink;
 
   return (
     <Pressable
       ref={pressableRef}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
+      accessibilityState={readOnly ? { selected, disabled: true } : { selected }}
       accessibilityLabel={accessibilityLabel ?? label}
+      disabled={readOnly}
       onPress={onPress}
       style={[styles.chip, { backgroundColor: colors.fill1 }]}
     >

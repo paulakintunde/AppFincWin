@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
@@ -26,13 +27,15 @@ export interface ToggleRowProps {
 
 export function ToggleRow({ label, value, onChange, disabled = false, accessibilityHint }: ToggleRowProps) {
   const { colors, pairing } = useTheme();
+  const scoped = useReadOnlyScope();
+  const inert = disabled || scoped;
   return (
     <Pressable
       accessibilityRole="switch"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ checked: value, disabled }}
-      disabled={disabled}
+      accessibilityState={{ checked: value, disabled: inert }}
+      disabled={inert}
       onPress={() => onChange(!value)}
       style={[styles.row, { opacity: disabled ? 0.5 : 1 }]}
     >

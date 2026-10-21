@@ -126,8 +126,9 @@ export function Step5Decision(props: Step5Props) {
     <Pressable
       key={id ?? 'none'}
       accessibilityRole="radio"
-      accessibilityState={{ checked: selected }}
+      accessibilityState={readOnly ? { checked: selected, disabled: true } : { checked: selected }}
       accessibilityLabel={name}
+      disabled={readOnly}
       onPress={() => {
         hapticSelection();
         onPress();

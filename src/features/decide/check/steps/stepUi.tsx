@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { ReadOnlyScope, useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -85,12 +86,19 @@ export function Box({ value, onChangeText, accessibilityLabel, placeholder, maxL
   );
 }
 
-/** Wraps a control so a decided (read-only) check cannot edit it. */
+/**
+ * Wraps a control so a decided (read-only) check cannot edit it. WR-C06: `pointerEvents` stops touch only, so the region
+ * is also a ReadOnlyScope: the shared controls inside (chips, pills, switches, radio cards, check rows) are announced
+ * disabled and ignore a screen reader's activation, while their labels stay readable.
+ */
 export function Lock({ locked, children }: { locked: boolean; children: React.ReactNode }) {
+  const outer = useReadOnlyScope();
   return (
-    <View pointerEvents={locked ? 'none' : 'auto'} style={locked ? styles.locked : undefined}>
-      {children}
-    </View>
+    <ReadOnlyScope.Provider value={locked || outer}>
+      <View pointerEvents={locked ? 'none' : 'auto'} style={locked ? styles.locked : undefined}>
+        {children}
+      </View>
+    </ReadOnlyScope.Provider>
   );
 }
 

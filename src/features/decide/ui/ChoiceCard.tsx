@@ -1,6 +1,7 @@
 /** UI-SPEC Step 2: a radio card. Selected is an ink fill with surface text. */
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
@@ -20,11 +21,13 @@ export function ChoiceCard({ selected, onPress, title, flag, accessibilityLabel,
   const { colors, pairing } = useTheme();
   const textColor = selected ? colors.surface : colors.ink;
   const flagColor = selected ? colors.inkSoft1 : colors.inkMuted;
+  const readOnly = useReadOnlyScope();
   return (
     <Pressable
       accessibilityRole="radio"
-      accessibilityState={{ checked: selected }}
+      accessibilityState={readOnly ? { checked: selected, disabled: true } : { checked: selected }}
       accessibilityLabel={accessibilityLabel}
+      disabled={readOnly}
       onPress={() => {
         hapticSelection();
         onPress();

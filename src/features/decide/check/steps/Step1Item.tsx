@@ -91,6 +91,7 @@ export function Step1Item(props: Step1Props) {
     update({ replaces: inputs.replaces.map((l) => (l.id === id ? { ...l, counted: !l.counted } : l)) });
 
   const removeReplace = (line: InputLine) => {
+    if (readOnly) return; // WR-C06: no "Line removed" toast for a removal a decided check never makes
     const index = inputs.replaces.findIndex((l) => l.id === line.id);
     update({ replaces: inputs.replaces.filter((l) => l.id !== line.id) });
     showToast({

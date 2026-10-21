@@ -1,6 +1,7 @@
 /** UI-SPEC stack and offsets rows: a checkbox row with an optional 44x44 remove target. */
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, space } from '@/theme/layout';
@@ -23,13 +24,16 @@ export interface CheckRowProps {
 
 export function CheckRow({ checked, onToggle, name, source, amount, onRemove, removeA11yLabel, disabled = false }: CheckRowProps) {
   const { colors, pairing } = useTheme();
+  // WR-C06: inside a read-only region the row and its remove control are announced disabled and do nothing
+  const scoped = useReadOnlyScope();
+  const inert = disabled || scoped;
   return (
     <View style={styles.row}>
       <Pressable
         accessibilityRole="checkbox"
-        accessibilityState={{ checked, disabled }}
+        accessibilityState={{ checked, disabled: inert }}
         accessibilityLabel={[name, source, amount].filter((part) => part !== undefined && part !== '').join(', ')}
-        disabled={disabled}
+        disabled={inert}
         onPress={() => {
           hapticSelection();
           onToggle();
@@ -54,6 +58,8 @@ export function CheckRow({ checked, onToggle, name, source, amount, onRemove, re
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={removeA11yLabel}
+          accessibilityState={{ disabled: inert }}
+          disabled={inert}
           onPress={onRemove}
           style={styles.remove}
         >

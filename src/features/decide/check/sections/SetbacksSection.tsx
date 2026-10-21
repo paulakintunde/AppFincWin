@@ -68,6 +68,7 @@ export function SetbacksSection(props: SectionProps) {
   const toggle = (id: string) => update({ setbacks: lines.map((l) => (l.id === id ? { ...l, enabled: !l.enabled } : l)) });
 
   const remove = (line: SetbackLine, name: string) => {
+    if (readOnly) return; // WR-C06: a decided check removes nothing and says nothing
     const index = lines.findIndex((l) => l.id === line.id);
     update({ setbacks: lines.filter((l) => l.id !== line.id) });
     showToast({

@@ -74,6 +74,7 @@ export function Step2PriceAndPay(props: Step2Props) {
     l.name !== '' ? l.name : l.taxPercentText !== null ? t('decide.price.salesTax') : l.note === 'fees' ? t('decide.price.fees') : t('decide.pay.unnamedLine');
 
   const removeWithUndo = <K extends 'adjustments' | 'runningCosts'>(key: K, line: CheckInputs[K][number], name: string) => {
+    if (readOnly) return; // WR-C06: no "Line removed" toast for a removal a decided check never makes
     const list = inputs[key] as readonly { id: string }[];
     const index = list.findIndex((l) => l.id === line.id);
     update({ [key]: list.filter((l) => l.id !== line.id) } as Partial<CheckInputs>);
