@@ -68,9 +68,17 @@ export async function upsertDecideSettings(
 ): Promise<DecideSettingsRow> {
   assertAllowedKeys(patch, DECIDE_SETTINGS_PATCH_KEYS, 'upsertDecideSettings');
 
+  // CR-A01: PostgREST puts every payload column, user_id included, in the ON CONFLICT DO UPDATE SET list
+  // (20261021000100 grants UPDATE on user_id for that). The payload is built from the granted keys only, so
+  // `seeded` (server-managed: only seed_sample_data sets it) can never be sent, whatever the caller's object holds.
+  const payload: Record<string, unknown> = { user_id: userId };
+  for (const key of DECIDE_SETTINGS_PATCH_KEYS) {
+    if (patch[key] !== undefined) payload[key] = patch[key];
+  }
+
   const { data, error, status } = await client
     .from('decide_settings')
-    .upsert({ user_id: userId, ...patch }, { onConflict: 'user_id' })
+    .upsert(payload, { onConflict: 'user_id' })
     .select(DECIDE_SETTINGS_COLUMNS)
     .single();
 

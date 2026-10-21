@@ -46,4 +46,18 @@ describe('upsertDecideSettings', () => {
     expect(client.calls).toHaveLength(0);
     expect(DECIDE_SETTINGS_PATCH_KEYS).not.toContain('user_id');
   });
+
+  it('CR-A01: never sends seeded, and the payload holds only user_id and granted keys', async () => {
+    const client = createFakeSupabase();
+    await expect(
+      upsertDecideSettings(client, 'u1', { seeded: true } as unknown as DecideSettingsPatch)
+    ).rejects.toBeInstanceOf(TypeError);
+    expect(client.calls).toHaveLength(0);
+    expect(DECIDE_SETTINGS_PATCH_KEYS).not.toContain('seeded');
+
+    client.respondWith({ data: ROW, error: null, status: 200 });
+    await upsertDecideSettings(client, 'u1', { reserve: 5000, rough_income: undefined });
+    const payload = client.calls.find((c) => c.method === 'upsert')?.args[0] as Record<string, unknown>;
+    expect(Object.keys(payload).sort()).toEqual(['reserve', 'user_id']);
+  });
 });
