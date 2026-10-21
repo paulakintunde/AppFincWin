@@ -310,6 +310,22 @@ describe('analytics and the seen state', () => {
     expect(mockTrack.mock.calls.filter((c) => c[0] === 'check_completed')).toHaveLength(1);
   });
 
+  it('WR-C03: returning to step 3 after the verdict changed records the newly seen state', async () => {
+    mockRow = rowOf({ furthest_step: 3 });
+    await open({}, { initialStep: 3 });
+    expect(mockMarkSeen).toHaveBeenCalledTimes(1);
+    const first = mockMarkSeen.mock.calls[0]![1];
+    await fireEvent.press(screen.getByLabelText('Back'));
+    await fireEvent.press(screen.getByLabelText('Back'));
+    const price = screen.getByLabelText('Price you have been quoted');
+    await fireEvent.changeText(price, '200000');
+    await fireEvent(price, 'blur');
+    await fireEvent.press(screen.getByLabelText('Next: Price'));
+    await fireEvent.press(screen.getByLabelText('Next: Impact'));
+    expect(mockMarkSeen).toHaveBeenCalledTimes(2);
+    expect(mockMarkSeen.mock.calls[1]![1]).not.toBe(first);
+  });
+
   it('never fires check_completed before step 3', async () => {
     await open({}, { initialStep: 1 });
     expect(mockTrack.mock.calls.some((c) => c[0] === 'check_completed')).toBe(false);

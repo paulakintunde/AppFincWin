@@ -317,18 +317,27 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
   const seenState = computation === null ? null : computation.status === 'logged' && computation.verdict ? computation.verdict.state : computation.status === 'first_read' && computation.firstRead ? computation.firstRead.state : null;
   const seenBasis: SeenBasis = computation !== null && computation.status === 'first_read' ? 'first_read_rough_figures' : 'logged_months';
   const completed = useRef(false);
-  const marked = useRef(false);
+  // WR-C03: every step-3 visit records what was seen when it differs from what this screen last recorded (markSeen itself
+  // skips a call that changes nothing), so going back, changing the price and returning is recorded too.
+  const marked = useRef<string | null>(null);
+  const hasRow = row !== null;
+  const rowRef = useRef(row);
+  useEffect(() => {
+    rowRef.current = row;
+  });
   useEffect(() => {
     if (step !== 3 || seenState === null || readOnly) return;
     if (!completed.current) {
       completed.current = true;
       getAnalytics().track('check_completed', { state: seenState });
     }
-    if (!marked.current && row !== null) {
-      marked.current = true;
-      markSeen(row, seenState, seenBasis);
+    const current = rowRef.current;
+    const key = `${seenState}|${seenBasis}`;
+    if (marked.current !== key && current !== null) {
+      marked.current = key;
+      markSeen(current, seenState, seenBasis);
     }
-  }, [step, seenState, seenBasis, readOnly, row, markSeen]);
+  }, [step, seenState, seenBasis, readOnly, hasRow, markSeen]);
 
   // The basis the user saw last time, read once before this visit marks it (D-15 'Changed since you looked').
   const [lastSeenBasis, setLastSeenBasis] = useState<SeenBasis | null | undefined>(undefined);
