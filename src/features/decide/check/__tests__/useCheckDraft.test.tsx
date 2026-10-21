@@ -188,6 +188,21 @@ describe('useCheckDraft', () => {
     expect(mockSave.mock.calls[0][0].furthestStep).toBe(3);
   });
 
+  it('WR-C09: saveNow says whether there is a saved check, nothing, or an edit waiting for the account', async () => {
+    const fresh = await renderHook(() => useCheckDraft('c9', 'buy', TODAY));
+    expect(await fresh.result.current.saveNow()).toBe('nothing');
+    mockRc = { ready: true, userId: 'u1', householdId: null, today: TODAY };
+    const waiting = await renderHook(() => useCheckDraft('c8', 'buy', TODAY));
+    await act(async () => waiting.result.current.update({ name: 'Bike' }));
+    expect(await waiting.result.current.saveNow()).toBe('waiting');
+    mockRc = { ready: true, userId: 'u1', householdId: 'h1', today: TODAY };
+    mockChecks = { data: [row()] };
+    const existing = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
+    expect(await existing.result.current.saveNow()).toBe('saved');
+    await act(async () => existing.result.current.update({ advertised: 3 }));
+    expect(await existing.result.current.saveNow()).toBe('saved');
+  });
+
   it('saveNow flushes immediately', async () => {
     mockChecks = { data: [row()] };
     const { result } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));

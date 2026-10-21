@@ -19,9 +19,15 @@ export interface CheckDraft {
   row: DecideCheckRow | null;
   inputs: CheckInputs;
   update(patch: Partial<CheckInputs>, opts?: { step?: number }): void;
-  saveNow(): Promise<void>;
+  /**
+   * WR-C09: queues any pending edit now. 'saved': the check exists and every edit is written or queued; 'nothing': a new
+   * check that was never edited (nothing exists to save); 'waiting': the first edit is held until the account loads.
+   */
+  saveNow(): Promise<SaveResult>;
   isNew: boolean;
 }
+
+export type SaveResult = 'saved' | 'nothing' | 'waiting';
 
 const clampStep = (n: number): number => Math.min(5, Math.max(1, Math.trunc(n)));
 
@@ -51,13 +57,13 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
     live.current = { rc, row, create, save, currency };
   });
 
-  const flush = useCallback((): void => {
+  const flush = useCallback((): SaveResult => {
     if (timer.current) {
       clearTimeout(timer.current);
       timer.current = null;
     }
     const inputs = pending.current;
-    if (!inputs) return;
+    if (!inputs) return live.current.row !== null || created.current ? 'saved' : 'nothing';
     const { rc: ctx, row: current, create: doCreate, save: doSave, currency: homeCurrency } = live.current;
     // D-37: a check records the currency its amounts were typed in once, on first save, and never changes it. An unstamped
     // sample check is USD (IN-A01, D-67). CR-C06: the stamp is written back into the held inputs, so a later save in the
@@ -68,7 +74,7 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
     const step = Math.max(furthest.current, current?.furthest_step ?? 1);
     const json = stamped as unknown as Record<string, unknown>;
     if (!current && !created.current) {
-      if (!ctx.userId || !ctx.householdId) return;
+      if (!ctx.userId || !ctx.householdId) return 'waiting';
       pending.current = null;
       created.current = true;
       setCreatedState(true);
@@ -81,10 +87,11 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
         inputs: json,
         furthestStep: step,
       });
-      return;
+      return 'saved';
     }
     pending.current = null;
     doSave({ id, name: stamped.name.slice(0, 80), inputs: json, furthestStep: step });
+    return 'saved';
   }, [id, kind]);
 
   // A first edit made before the user and household ids resolve stays pending (flush returns early and keeps
@@ -148,9 +155,7 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
     [flush]
   );
 
-  const saveNow = useCallback(async (): Promise<void> => {
-    flush();
-  }, [flush]);
+  const saveNow = useCallback(async (): Promise<SaveResult> => flush(), [flush]);
 
   return { status, row, inputs, update, saveNow, isNew: row === null && !createdState };
 }

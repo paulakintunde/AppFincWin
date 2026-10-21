@@ -291,8 +291,14 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
     } else leaveFlow();
   }, [step]);
   const saveClose = useCallback(async (): Promise<void> => {
-    await draft.saveNow();
-    if (!readOnly) showToast({ kind: 'ordinary', text: { key: 'decide.flow.saved' } });
+    // WR-C09: "Saved" only when there is a check and every edit is written or queued. A first edit held until the account
+    // loads keeps the screen open (leaving would drop it); a new check never edited leaves without a toast.
+    const result = await draft.saveNow();
+    if (result === 'waiting') {
+      showToast({ kind: 'ordinary', text: { key: 'decide.flow.saveWaiting' } });
+      return;
+    }
+    if (!readOnly && result === 'saved') showToast({ kind: 'ordinary', text: { key: 'decide.flow.saved' } });
     leaveFlow();
   }, [draft, readOnly]);
 

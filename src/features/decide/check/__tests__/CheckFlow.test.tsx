@@ -24,6 +24,7 @@ let mockMembers = new Map<string, string>();
 let mockBought: { status: string; computation: CheckComputation | null } = { status: 'idle', computation: null };
 const mockUpdate = jest.fn();
 const mockSaveNow = jest.fn();
+let mockSaveResult: 'saved' | 'nothing' | 'waiting' = 'saved';
 const mockTrack = jest.fn();
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
@@ -58,7 +59,7 @@ jest.mock('../useCheckDraft', () => {
       }, []);
       const saveNow = R.useCallback(() => {
         mockSaveNow();
-        return Promise.resolve();
+        return Promise.resolve(mockSaveResult);
       }, []);
       return { status: mockStatus, row: mockRow, inputs, update, saveNow, isNew: mockRow === null };
     },
@@ -151,6 +152,7 @@ async function editPrice(value: string) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockStatus = 'ready';
+  mockSaveResult = 'saved';
   mockRow = null;
   mockSource = paySource();
   mockStack = EMPTY_STACK;
@@ -281,6 +283,22 @@ describe('back', () => {
     expect(mockSaveNow).toHaveBeenCalledTimes(1);
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ text: { key: 'decide.flow.saved' } }));
     expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('WR-C09: a new check never edited leaves without saying Saved', async () => {
+    mockSaveResult = 'nothing';
+    await open();
+    await fireEvent.press(screen.getByLabelText('Save and close'));
+    expect(mockToast).not.toHaveBeenCalled();
+    expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('WR-C09: an edit held until the account loads keeps the screen open and says so', async () => {
+    mockSaveResult = 'waiting';
+    await open();
+    await fireEvent.press(screen.getByLabelText('Save and close'));
+    expect(mockToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.flow.saveWaiting' } });
+    expect(mockBack).not.toHaveBeenCalled();
   });
 });
 
