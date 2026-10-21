@@ -109,15 +109,26 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
     return row ? parseCheckInputs(row.inputs, today) : emptyCheckInputs(kind, today);
   }, [edited, row, kind, today]);
 
+  // CR-C01: every `update` closure, including one a toast's Undo kept from an earlier render, reads the latest inputs and
+  // guards from these refs, so an Undo never rebuilds the check from a stale render and never edits a decided check.
+  const latestInputs = useRef<CheckInputs>(inputs);
+  const guard = useRef({ status, decided, row });
+  useEffect(() => {
+    latestInputs.current = inputs;
+    guard.current = { status, decided, row };
+  });
+
   const update = useCallback(
     (patch: Partial<CheckInputs>, opts?: { step?: number }): void => {
-      if (status !== 'ready' || decided) return;
-      const base = pending.current ?? edited ?? (row ? parseCheckInputs(row.inputs, today) : emptyCheckInputs(kind, today));
+      const { status: nowStatus, decided: nowDecided, row: nowRow } = guard.current;
+      if (nowStatus !== 'ready' || nowDecided) return;
+      const base = pending.current ?? latestInputs.current;
       const next: CheckInputs = { ...base, ...patch };
       if (opts?.step !== undefined) furthest.current = Math.max(furthest.current, clampStep(opts.step));
       setEdited(next);
       pending.current = next;
-      if (!row && !created.current) {
+      latestInputs.current = next;
+      if (!nowRow && !created.current) {
         // First edit of a new check: create now (ANL-06, D-20).
         if (!started.current) {
           started.current = true;
@@ -129,7 +140,7 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(flush, DRAFT_DEBOUNCE_MS);
     },
-    [status, decided, edited, row, today, kind, flush]
+    [flush]
   );
 
   const saveNow = useCallback(async (): Promise<void> => {

@@ -193,6 +193,41 @@ describe('useCheckDraft', () => {
     expect(result.current.inputs.advertised).toBe(90000);
   });
 
+  it('CR-C01: an update kept from an earlier render (a toast Undo) keeps every later edit', async () => {
+    mockChecks = { data: [row()] };
+    const { result } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
+    await act(async () => result.current.update({ name: 'Sofa bed' }));
+    const heldByToast = result.current.update;
+    await act(async () => {
+      jest.advanceTimersByTime(DRAFT_DEBOUNCE_MS);
+    });
+    await act(async () => result.current.update({ advertised: 123_00 }));
+    await act(async () => {
+      jest.advanceTimersByTime(DRAFT_DEBOUNCE_MS);
+    });
+    await act(async () => heldByToast({ adjustments: [] }));
+    expect(result.current.inputs.advertised).toBe(123_00);
+    expect(result.current.inputs.name).toBe('Sofa bed');
+    await act(async () => {
+      jest.advanceTimersByTime(DRAFT_DEBOUNCE_MS);
+    });
+    expect(mockSave.mock.calls.at(-1)?.[0].inputs.advertised).toBe(123_00);
+  });
+
+  it('CR-C01: an update kept from before the check was decided changes nothing', async () => {
+    mockChecks = { data: [row()] };
+    const { result, rerender } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
+    const heldByToast = result.current.update;
+    mockChecks = { data: [row({ status: 'passed' })] };
+    await rerender({});
+    await act(async () => heldByToast({ advertised: 5 }));
+    await act(async () => {
+      jest.advanceTimersByTime(DRAFT_DEBOUNCE_MS * 2);
+    });
+    expect(result.current.inputs.advertised).toBe(90000);
+    expect(mockSave).not.toHaveBeenCalled();
+  });
+
   it('a row that disappears resolves to not_found', async () => {
     mockChecks = { data: [row()] };
     const { result, rerender } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
