@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { showToast } from '@/state/undoToast';
 import { Step2PriceAndPay, step2Complete, type Step2Props } from '../Step2PriceAndPay';
 import { buy, stepProps, wrap } from './helpers/stepProps';
@@ -415,6 +415,40 @@ describe('MethodPanels', () => {
       await fireEvent.changeText(rate, '25');
       await fireEvent(rate, 'blur');
       expect(onSaveCardRate).toHaveBeenCalledWith('acc-card', '25');
+    });
+
+    it('WR-C04: a typed card rate is saved once after typing stops, without a blur, and on Done', async () => {
+      jest.useFakeTimers();
+      try {
+        const base = buy({ method: 'card' });
+        const onSaveCardRate = jest.fn();
+        await renderStep({ method: 'card', card: { ...base.card, accountId: 'acc-card' } }, { onSaveCardRate });
+        const rate = screen.getByLabelText('Rate on this card, percent');
+        await fireEvent.changeText(rate, '24');
+        await act(async () => {
+          jest.advanceTimersByTime(1_000);
+        });
+        expect(onSaveCardRate).toHaveBeenCalledTimes(1);
+        expect(onSaveCardRate).toHaveBeenCalledWith('acc-card', '24');
+        await fireEvent(rate, 'blur');
+        expect(onSaveCardRate).toHaveBeenCalledTimes(1);
+        await fireEvent.changeText(rate, '23');
+        await fireEvent(rate, 'submitEditing');
+        expect(onSaveCardRate).toHaveBeenLastCalledWith('acc-card', '23');
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('WR-C04: a decided check never saves the card rate and the field is not editable', async () => {
+      const base = buy({ method: 'card' });
+      const onSaveCardRate = jest.fn();
+      await renderStep({ method: 'card', card: { ...base.card, accountId: 'acc-card' } }, { onSaveCardRate, readOnly: true });
+      const rate = screen.getByLabelText('Rate on this card, percent');
+      expect(rate.props.editable).toBe(false);
+      await fireEvent.changeText(rate, '25');
+      await fireEvent(rate, 'blur');
+      expect(onSaveCardRate).not.toHaveBeenCalled();
     });
 
     it('does not save a rate before a card account is picked', async () => {

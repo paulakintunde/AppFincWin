@@ -3,7 +3,7 @@
  * "If it went into investing instead". The rate list is the check's one list (`inputs.projectionRates`, assumption 17).
  * The app never suggests or pre-fills a rate or a fee: every figure here is typed by the user.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { percent } from '@/engine/decide';
 import { useT } from '@/i18n';
@@ -43,6 +43,12 @@ export function RateChips({ rates, onChange, readOnly = false }: RateChipsProps)
       setAdding(false);
     }
   };
+  // WR-C04: a rate typed but not yet committed (Next does not blur the field) is committed when the step is left.
+  const commitLatest = useRef(commit);
+  useEffect(() => {
+    commitLatest.current = commit;
+  });
+  useEffect(() => () => commitLatest.current(), []);
 
   return (
     <View style={styles.block}>

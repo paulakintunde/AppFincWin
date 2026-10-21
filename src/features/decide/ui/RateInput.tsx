@@ -39,6 +39,9 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
             if (TYPING.test(text)) onChange(text);
           }}
           onBlur={onBlur}
+          // WR-C04: Done commits the rate the same way leaving the field does
+          onSubmitEditing={onBlur}
+          returnKeyType="done"
           inputMode="decimal"
           accessibilityLabel={accessibilityLabel}
           placeholder={placeholder}

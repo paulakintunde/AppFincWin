@@ -167,6 +167,17 @@ describe('Step4Alternatives', () => {
     expect(p.update).toHaveBeenCalledWith({ projectionRates: ['5'] });
   });
 
+  it('WR-C04: a typed rate never blurred is committed when the step is left, once', async () => {
+    const p = props();
+    const view = await wrap(<Step4Alternatives {...p} />);
+    await fireEvent.press(screen.getByText('+ Add a rate'));
+    await fireEvent.changeText(screen.getByLabelText('Return, percent'), '6');
+    expect(p.update).not.toHaveBeenCalled();
+    await view.unmount();
+    expect(p.update).toHaveBeenCalledTimes(1);
+    expect(p.update).toHaveBeenCalledWith({ projectionRates: ['6'] });
+  });
+
   it('a rate above 100% is refused with its hint', async () => {
     const p = props();
     await wrap(<Step4Alternatives {...p} />);

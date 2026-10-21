@@ -3,7 +3,7 @@
  * user's own numbers. No rate is ever pre-filled (the loan rate is empty until typed; the card rate is the one on the card
  * record, saved only from what the user typed), and nothing reads as a lending proposal.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { ZERO_PERCENT, cardEligibility, percent, resolvePlan } from '@/engine/decide';
 import type { Plan } from '@/engine/decide';
@@ -34,6 +34,7 @@ import { refText, type Translate as RefTranslate } from '../../refText';
 
 const TERM_CHIPS = [12, 24, 36, 48, 60, 84] as const;
 const MAX_TERM = 600;
+const CARD_RATE_SAVE_MS = 800;
 const DEPOSIT_STEP = 10_000; // 100 whole units, in minor units
 const MAX_APR_TYPED = 999.99; // gates keystrokes only; the stored value stays text (isValidAprText is the check)
 const NOTE_KEYS = [
@@ -286,9 +287,26 @@ function CardPanel(props: Step2Props) {
 
   const costsLine = plan !== null && plan.card !== null ? cardCostsCopy(plan.card, plan.interest, wholeFmt) : null;
 
-  const saveRate = () => {
-    if (card.accountId !== null && isValidAprText(rate.text)) onSaveCardRate(card.accountId, rate.text);
+  // WR-C04: a typed card rate is saved on blur, on submit and CARD_RATE_SAVE_MS after typing stops (and when the step is
+  // left), so tapping Next or a chip, which does not blur under keyboardShouldPersistTaps, never leaves the figures on a
+  // rate other than the one shown. A decided check saves nothing, and the same rate is not saved twice.
+  const lastSaved = useRef<string | null>(null);
+  const saveRate = (): void => {
+    if (readOnly || card.accountId === null || !isValidAprText(rate.text) || rate.text === recorded) return;
+    const key = `${card.accountId}|${rate.text}`;
+    if (lastSaved.current === key) return;
+    lastSaved.current = key;
+    onSaveCardRate(card.accountId, rate.text);
   };
+  const saveLatest = useRef(saveRate);
+  useEffect(() => {
+    saveLatest.current = saveRate;
+  });
+  useEffect(() => {
+    const timer = setTimeout(() => saveLatest.current(), CARD_RATE_SAVE_MS);
+    return () => clearTimeout(timer);
+  }, [rate.text]);
+  useEffect(() => () => saveLatest.current(), []);
   const answered = NOTE_KEYS.filter((k) => inputs.cardNotes[k.field] !== null).length;
   const setNote = (field: (typeof NOTE_KEYS)[number]['field'], answer: Exclude<CardNoteAnswer, null>) =>
     update({ cardNotes: { ...inputs.cardNotes, [field]: inputs.cardNotes[field] === answer ? null : answer } });
@@ -318,6 +336,7 @@ function CardPanel(props: Step2Props) {
             value={rate.text}
             onChange={(text) => setRate({ id: card.accountId, text })}
             onBlur={saveRate}
+            readOnly={readOnly}
             label={t('decide.pay.cardRate')}
             accessibilityLabel={t('decide.pay.cardRateA11y')}
           />

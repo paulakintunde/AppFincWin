@@ -4,7 +4,7 @@
  * suppression code, never a kept figure (DCU-06). Kept is at 0% unless the user adds a rate (D-07). The table is free: no lock,
  * no entitlement check (D-17). The check's single rate list is `inputs.projectionRates` (assumption 17).
  */
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { ZERO_PERCENT } from '@/engine/decide';
 import type { AlternativeRow } from '@/engine/decide';
@@ -38,6 +38,19 @@ export function Step4Alternatives(props: StepProps) {
   const fontScale = useFontScale();
   const [adding, setAdding] = useState(false);
   const [rateText, setRateText] = useState('');
+  // WR-C04: a rate typed but not yet committed (Next does not blur the field) is committed when the step is left.
+  const pendingRate = useRef({ text: rateText, rates: inputs.projectionRates, update });
+  useEffect(() => {
+    pendingRate.current = { text: rateText, rates: inputs.projectionRates, update };
+  });
+  useEffect(
+    () => () => {
+      const { text, rates: now, update: save } = pendingRate.current;
+      const typed = text.trim();
+      if (typed !== '' && isValidProjectionRateText(typed) && now.length < MAX_RATES && !now.includes(typed)) save({ projectionRates: [...now, typed] });
+    },
+    []
+  );
 
   const alts = computation.alternatives;
   const check = computation.check;

@@ -347,25 +347,25 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
   const [cardSheetFor, setCardSheetFor] = useState<string | null>(null);
   const saveCardRate = useCallback(
     (accountId: string, aprText: string): void => {
-      if (rc.userId === null || householdId === null) return;
+      if (readOnly || rc.userId === null || householdId === null) return; // WR-C04: a decided check never writes the card record
       const account = accountRows.find((a) => a.id === accountId);
       if (!account) return;
       const debtId = source?.cards.find((c) => c.accountId === accountId)?.terms.debtId ?? null;
       const existing = debtId === null ? null : (debts?.find((d) => d.id === debtId) ?? null);
       cardRate.save({ userId: rc.userId, householdId, accountId, existing, currency: account.currency, accountName: account.name, aprText });
     },
-    [rc.userId, householdId, accountRows, source, debts, cardRate]
+    [readOnly, rc.userId, householdId, accountRows, source, debts, cardRate]
   );
   const saveCardTerms = useCallback(
     (accountId: string, terms: CardTermsInput): void => {
-      if (rc.userId === null || householdId === null) return;
+      if (readOnly || rc.userId === null || householdId === null) return;
       const account = accountRows.find((a) => a.id === accountId);
       if (!account) return;
       const debtId = source?.cards.find((c) => c.accountId === accountId)?.terms.debtId ?? null;
       const existing = debtId === null ? null : (debts?.find((d) => d.id === debtId) ?? null);
       cardTerms.save({ userId: rc.userId, householdId, accountId, existing, currency: account.currency, accountName: account.name, terms });
     },
-    [rc.userId, householdId, accountRows, source, debts, cardTerms]
+    [readOnly, rc.userId, householdId, accountRows, source, debts, cardTerms]
   );
   const missingCard = source === null ? null : (source.cards.find((c) => c.accountId === source.meta.cardsWithoutMinimumIds[0]) ?? null);
   const onEditCardMinimum = !readOnly && missingCard !== null ? () => setCardSheetFor(missingCard.accountId) : undefined;
