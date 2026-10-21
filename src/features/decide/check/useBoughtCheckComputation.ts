@@ -37,7 +37,8 @@ export function useBoughtCheckComputation(row: DecideCheckRow | null, inputs: Ch
     if (!bought || checkId === null || source === null || linkRows === undefined) return null;
     const decidedOn = decidedAt === null ? rc.today : localDateIn(new Date(decidedAt), rc.timeZone);
     const replaced: ReplacedEnd = {
-      seriesIds: inputs.replaces.map((l) => l.seriesId).filter((id): id is string => id !== null),
+      // WR-B04: only the counted lines Go ahead actually ended (decideGoAhead skips the rest).
+      seriesIds: inputs.replaces.filter((l) => l.counted).map((l) => l.seriesId).filter((id): id is string => id !== null),
       endedOn: inputs.needBy ?? decidedOn,
       // WR-C02: Go ahead ended them on the tap day, which an offline replay can leave before decided_at.
       ...(inputs.needBy === null && typeof row.created_at === 'string' ? { endedFrom: localDateIn(new Date(row.created_at), rc.timeZone) } : {}),

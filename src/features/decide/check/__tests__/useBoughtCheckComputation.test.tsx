@@ -141,6 +141,23 @@ describe('useBoughtCheckComputation', () => {
     expect(replayed.computation?.verdict).toEqual(expectedLive.verdict);
   });
 
+  it('WR-B04: a replace line that was not counted is not reopened, since Go ahead never ended it', async () => {
+    const source = demoSource(TODAY);
+    const bus = { ...source.series[0]!, id: 's-bus', end_date: '2026-10-15' };
+    const withBus = { ...source, series: [...source.series, bus] };
+    const uncounted: CheckInputs = {
+      ...carInputs,
+      needBy: null,
+      replaces: [{ id: 'r', name: 'Bus', amount: 12_000, note: '', counted: false, seriesId: 's-bus', category: null }],
+    };
+    mockSnapshot.mockReturnValue(snapshotOf(withBus));
+    const result = await run(() => useBoughtCheckComputation(row({ id: 'car' }), uncounted));
+    const ended = computeCheck(buildDecideSnapshot(withBus), uncounted);
+    const reopened = computeCheck(buildDecideSnapshot({ ...source, series: [...source.series, { ...bus, end_date: null }] }), uncounted);
+    expect(ended.verdict).not.toEqual(reopened.verdict);
+    expect(result.computation?.verdict).toEqual(ended.verdict);
+  });
+
   it('WR-C02: a bought check whose Go ahead is still queued shows no figures rather than counting the purchase twice', async () => {
     const pending = { ...row(), pending: true } as DecideCheckRow;
     expect(await run(() => useBoughtCheckComputation(pending, inputs))).toEqual({ status: 'loading', computation: null });
