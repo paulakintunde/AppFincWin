@@ -22,7 +22,17 @@ export interface WrittenCtx {
   cardName: string;
   /** The tracked investment account a lump goes into, or null (a pending payment from the paying account). */
   investAccountName?: string | null;
+  /**
+   * CR-C03: whether the Transfer category is resolved. The write moves a lump into the investment account only with it, and
+   * otherwise records a pending outflow from the paying account, so the list says the same.
+   */
+  transferCategoryAvailable: boolean;
+  /** CR-C04: the recurring series the write actually ends (the replaced series it found); "closes N" counts only these. */
+  endedSeriesIds: readonly string[];
 }
+
+/** The part of the context that depends on the write rather than the inputs; useCommitDecision resolves it for both lists. */
+export type WrittenFacts = Pick<WrittenCtx, 'transferCategoryAvailable' | 'endedSeriesIds'>;
 
 function resolvedPlan(inputs: CheckInputs, computation: CheckComputation): Plan | null {
   if (inputs.method === null) return null;
@@ -40,7 +50,7 @@ function goLines(inputs: CheckInputs, computation: CheckComputation, plan: Plan,
   if (inputs.kind === 'invest') {
     if (inputs.method === 'monthly') {
       out.push(ref('decide.decision.writtenInvestMonthly', { amount: exact(plan.monthly), account, count: plan.months }));
-    } else if (inputs.investAccountId !== null && ctx.investAccountName) {
+    } else if (inputs.investAccountId !== null && ctx.investAccountName && ctx.transferCategoryAvailable) {
       out.push(ref('decide.decision.writtenInvestTransfer', { amount: exact(plan.dayOne), date: dated, account, to: ctx.investAccountName }));
     } else {
       out.push(ref('decide.decision.writtenInvestLump', { amount: exact(plan.dayOne), date: dated, account }));
@@ -101,7 +111,8 @@ function goLines(inputs: CheckInputs, computation: CheckComputation, plan: Plan,
 
   const running = computation.running;
   if (running !== null && (running.countedCosts > 0 || running.countedReplaced > 0)) {
-    const closed = inputs.replaces.filter((l) => l.counted && l.seriesId !== null).length;
+    const ended = new Set(ctx.endedSeriesIds);
+    const closed = new Set(inputs.replaces.flatMap((l) => (l.counted && l.seriesId !== null && ended.has(l.seriesId) ? [l.seriesId] : []))).size;
     const net = running.net;
     out.push(
       ref('decide.decision.writtenRunning', {

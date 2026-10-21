@@ -19,7 +19,7 @@ const CASH = [
 ];
 
 function props(over: Partial<CheckInputs> = {}, extra: Partial<Step5Props> = {}, source = loggedSource()): Step5Props {
-  return { ...stepProps(buy(over), {}, source), cashAccounts: CASH, investAccounts: [], ...extra };
+  return { ...stepProps(buy(over), {}, source), cashAccounts: CASH, investAccounts: [], written: { transferCategoryAvailable: true, endedSeriesIds: [] }, ...extra };
 }
 
 describe('Step5Decision', () => {

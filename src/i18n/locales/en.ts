@@ -1737,6 +1737,7 @@ const en = {
       goNeedsDebtCategory: 'The Debt category is archived or missing, so the payments can’t be written. Restore it in Categories first.',
       goNeedsSavingsCategory: 'The Savings category is archived or missing, so the schedule can’t be written. Restore it in Categories first.',
       goUnavailable: 'This can’t be written as it is set up. Check the price and how you pay.',
+      goSeriesLoading: 'Go ahead is ready once your recurring bills have loaded.',
       waitNeedsPlan: 'There is no saving plan to keep yet. Check the price and how you pay.',
     },
     past: {

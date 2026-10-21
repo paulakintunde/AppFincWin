@@ -12,6 +12,8 @@ const ctx: WrittenCtx = {
   accountName: 'Main',
   cardName: 'Visa',
   investAccountName: null,
+  transferCategoryAvailable: true,
+  endedSeriesIds: ['s1'],
 };
 
 const base = (over: Partial<CheckInputs> = {}): CheckInputs => ({ ...emptyCheckInputs('buy', TODAY), name: 'Thing', advertised: 100_000, method: 'cash', outcome: 'go', ...over });
@@ -125,6 +127,20 @@ describe('writtenLines', () => {
     const lines = writtenLines(inputs, computation, ctx);
     expect(keys(lines)).toEqual(['writtenCash', 'writtenRunning', 'writtenUntouched']);
     expect(lines[1]!.params).toEqual({ count: 2, amount: '−E2500', closed: 1 });
+  });
+
+  it('CR-C04: "closes N" counts only the series the write ends, each once', () => {
+    const computation = { ...withPlan('cash', { dayOne: 100 }), running: { net: -2_500, countedCosts: 0, countedReplaced: 3 } } as unknown as CheckComputation;
+    const line = { id: 'r1', name: 'Old', amount: 5_000, note: '', counted: true, seriesId: 's1', category: null };
+    const inputs = base({ replaces: [line, { ...line, id: 'r2' }, { ...line, id: 'r3', seriesId: 's-gone' }] });
+    expect(writtenLines(inputs, computation, ctx)[1]!.params).toMatchObject({ closed: 1 });
+    expect(writtenLines(inputs, computation, { ...ctx, endedSeriesIds: [] })[1]!.params).toMatchObject({ closed: 0 });
+  });
+
+  it('CR-C03: with no Transfer category a lump into an investment account is listed as the pending outflow it writes', () => {
+    const lump = base({ kind: 'invest', method: 'lump', investAccountId: 'inv-1' });
+    const lines = writtenLines(lump, withPlan('lump', { dayOne: 50_000 }), { ...ctx, investAccountName: 'Brokerage', transferCategoryAvailable: false });
+    expect(keys(lines)).toEqual(['writtenInvestLump', 'writtenUntouched']);
   });
 
   it('wait lists the target, the reminder, and the unchanged-balances closing line', () => {

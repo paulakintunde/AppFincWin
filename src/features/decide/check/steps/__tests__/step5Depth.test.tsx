@@ -22,7 +22,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
 const CASH = [{ id: 'a1', name: 'Everyday', balance: 200_000 }];
 
 function props(over: Partial<CheckInputs> = {}, extra: Partial<Step5Props> = {}): Step5Props {
-  return { ...stepProps(buy(over), {}, loggedSource()), cashAccounts: CASH, investAccounts: [], ...extra };
+  return { ...stepProps(buy(over), {}, loggedSource()), cashAccounts: CASH, investAccounts: [], written: { transferCategoryAvailable: true, endedSeriesIds: [] }, ...extra };
 }
 
 const SPREAD: Partial<CheckInputs> = { advertised: 9_000_000, method: 'cash' };

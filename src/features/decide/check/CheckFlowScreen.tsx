@@ -515,7 +515,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
           </View>
         );
       default:
-        return <Step5Decision {...p} cashAccounts={cashAccounts} investAccounts={investAccounts} checkId={row?.id ?? null} checkStatus={row?.status ?? null} />;
+        return <Step5Decision {...p} cashAccounts={cashAccounts} investAccounts={investAccounts} checkId={row?.id ?? null} checkStatus={row?.status ?? null} written={commit.written} />;
     }
   };
 

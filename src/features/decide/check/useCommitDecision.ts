@@ -20,7 +20,7 @@ import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { runningCostCategoryIds, useCommitMutations, type GoAheadAssessment, type GoAheadContext } from './commitMutations';
 import { moneyFn } from './steps/stepUi';
 import { refText, type Translate } from './refText';
-import { writtenLines } from './writtenLines';
+import { writtenLines, type WrittenFacts } from './writtenLines';
 import type { CheckComputation, CheckInputs, SnapshotResult } from '../snapshot/types';
 
 type Outcome = NonNullable<CheckInputs['outcome']>;
@@ -58,6 +58,7 @@ export function useCommitDecision(args: CommitArgs): {
   /** The i18n key of the one-line reason the chosen outcome cannot be committed yet, or null. */
   blockedKey: string | null;
   confirm: CommitConfirm;
+  written: WrittenFacts;
 } {
   const { row, inputs, computation, source, whole, exact, cashAccounts, investAccounts, onDone } = args;
   const t = useT() as Translate;
@@ -103,6 +104,8 @@ export function useCommitDecision(args: CommitArgs): {
     if (computation !== null && (computation.status === 'first_read' || computation.status === 'none')) return 'decide.decision.goNeedsMonth';
     if (!logged || assessed === null) return 'decide.decision.goUnavailable';
     if (ctx === null) return 'decide.decision.goNeedsAccount';
+    // CR-C04: the series a replaced bill ends are only known once the series list has loaded.
+    if (seriesQuery.data === undefined && inputs.replaces.some((l) => l.counted && l.seriesId !== null)) return 'decide.decision.goSeriesLoading';
     if (
       mutations.canWrite({
         inputs,
@@ -117,7 +120,13 @@ export function useCommitDecision(args: CommitArgs): {
     if (inputs.kind === 'buy' && inputs.method === 'card' && ctx.cardAccountId === null) return 'decide.decision.goNeedsCard';
     if (ctx.debtCategoryId === null) return 'decide.decision.goNeedsDebtCategory';
     return 'decide.decision.goUnavailable';
-  }, [logged, assessed, ctx, inputs, computation, mutations]);
+  }, [logged, assessed, ctx, inputs, computation, mutations, seriesQuery.data]);
+
+  /** What the write will do beyond the inputs, shared with Step 5's "What gets written" so both lists match the write. */
+  const written = useMemo<WrittenFacts>(
+    () => ({ transferCategoryAvailable: lookup.transferCategoryId !== null, endedSeriesIds: ctx === null ? [] : ctx.replacedSeries.map((s) => s.id) }),
+    [lookup.transferCategoryId, ctx]
+  );
 
   const waitBlocked = computation?.waitPlan == null ? 'decide.decision.waitNeedsPlan' : null;
   const blockedKey = inputs.outcome === 'go' ? goBlocked : inputs.outcome === 'wait' ? waitBlocked : null;
@@ -137,8 +146,9 @@ export function useCommitDecision(args: CommitArgs): {
       accountName: account?.name ?? '',
       cardName,
       investAccountName: into,
+      ...written,
     }).map((r) => refText(t, r));
-  }, [asking, computation, source, ctx, whole, exact, cashAccounts, investAccounts, inputs, t]);
+  }, [asking, computation, source, ctx, whole, exact, cashAccounts, investAccounts, inputs, t, written]);
 
   const cancel = useCallback(() => setAsking(false), []);
 
@@ -226,5 +236,6 @@ export function useCommitDecision(args: CommitArgs): {
     requestCommit,
     blockedKey,
     confirm: { visible: asking, lines, onConfirm: confirmGo, onCancel: cancel },
+    written,
   };
 }

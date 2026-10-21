@@ -25,7 +25,7 @@ import { FigureStrip } from '../../ui/FigureStrip';
 import { StepSlider } from '../../ui/StepSlider';
 import { refText, type Translate } from '../refText';
 import type { StepProps } from '../stepTypes';
-import { writtenLines } from '../writtenLines';
+import { writtenLines, type WrittenFacts } from '../writtenLines';
 import { Card, Eyebrow, Lock, Meta, moneyFn } from './stepUi';
 
 export interface Step5Props extends StepProps {
@@ -34,6 +34,8 @@ export interface Step5Props extends StepProps {
   /** The saved check's id and status (set by the flow shell for a decided check); a 'waiting' one shows its goal's progress. */
   checkId?: string | null;
   checkStatus?: string | null;
+  /** From useCommitDecision: what the write itself resolves (the Transfer category, the series it ends). */
+  written: WrittenFacts;
 }
 
 /** D-34: a decided Waiting check's goal progress, from the transfers tagged to it. Hooks live here so an undecided step 5 needs no data providers. */
@@ -67,7 +69,7 @@ export function largestAccountId(accounts: Step5Props['cashAccounts']): string |
 }
 
 export function Step5Decision(props: Step5Props) {
-  const { inputs, update, computation, source, whole, exact, today, readOnly, cashAccounts, investAccounts, checkId, checkStatus } = props;
+  const { inputs, update, computation, source, whole, exact, today, readOnly, cashAccounts, investAccounts, checkId, checkStatus, written } = props;
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
   const fmt = moneyFn(whole, source.currency);
@@ -101,6 +103,7 @@ export function Step5Decision(props: Step5Props) {
     accountName: account?.name ?? '',
     cardName,
     investAccountName: investAccount?.name ?? null,
+    ...written,
   });
 
   const choose = (outcome: 'go' | 'wait' | 'pass') => update({ outcome });

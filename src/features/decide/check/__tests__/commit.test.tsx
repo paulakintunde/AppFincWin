@@ -22,7 +22,7 @@ let mockSource: SnapshotResult | null = null;
 let mockBought: { status: string; computation: CheckComputation | null } = { status: 'idle', computation: null };
 let mockBuiltin = new Map<string, string>();
 const mockStack = EMPTY_STACK;
-let mockSeries: { id: string; name: string; version: number }[] = [];
+let mockSeries: { id: string; name: string; version: number }[] | undefined = [];
 const mockToast = jest.fn();
 const mockBack = jest.fn();
 const mockPush = jest.fn();
@@ -191,6 +191,24 @@ describe('Go ahead', () => {
     await fireEvent.press(lastGoAhead());
     expect(screen.queryByText('Write this to your records?')).toBeNull();
     expect(mockGoAhead).not.toHaveBeenCalled();
+  });
+
+  it('CR-C04: a replaced bill waits for the series list before Go ahead, then the confirm lists the bill it closes', async () => {
+    const replaces = [{ id: 'rp-1', name: 'Parking', amount: 5_000, note: '', counted: true, seriesId: 's-park', category: null }];
+    mockSeries = undefined;
+    const view = await open({ outcome: 'go', replaces });
+    expect(screen.getByText('Go ahead is ready once your recurring bills have loaded.')).toBeTruthy();
+    expect(lastGoAhead().props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
+    mockSeries = [{ id: 's-park', name: 'Parking', version: 2 }];
+    await view.rerender(
+      <CommitMutationsContext.Provider value={mutations}>
+        <CheckFlowScreen id="c1" initialStep={5} />
+      </CommitMutationsContext.Provider>
+    );
+    await fireEvent.press(lastGoAhead());
+    await fireEvent.press(lastGoAhead());
+    const args = (mockGoAhead.mock.calls[0] as unknown[])[0] as { ctx: { replacedSeries: unknown } };
+    expect(args.ctx.replacedSeries).toEqual([{ id: 's-park', version: 2 }]);
   });
 
   it('a card purchase with no card chosen is not writable and says so', async () => {
