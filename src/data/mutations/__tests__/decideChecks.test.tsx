@@ -202,6 +202,23 @@ describe('useSaveCheckDraft', () => {
     expect(insertUndoStep).not.toHaveBeenCalled();
   });
 
+  it('WR-A03: a queued abandon built on the version before an autosave resolves past it instead of conflicting', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [check('k1', { version: 3 })]);
+    fake.respondWith(ok([check('k1', { name: 'Laptop 2', version: 4 })]));
+    fake.respondWith(ok([check('k1', { deleted_at: '2026-10-02T00:00:00Z', version: 5 })]));
+    const save = await renderHook(() => useSaveCheckDraft(), { wrapper: wrapper(qc) });
+    const abandon = await renderHook(() => useAbandonCheck(), { wrapper: wrapper(qc) });
+
+    save.result.current.save({ id: 'k1', name: 'Laptop 2', inputs: { kind: 'buy' }, furthestStep: 2 });
+    abandon.result.current.abandon(check('k1', { version: 3 }));
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+
+    expect(fake.calls.some((c) => c.method === 'eq' && c.args[0] === 'version' && c.args[1] === 4)).toBe(true);
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+    expect(lastStep().ops).toEqual([expect.objectContaining({ entity: 'decide_checks', expectedVersion: 5 })]);
+  });
+
   it('a decided or deleted check (not found) is parked as a failed write', async () => {
     const { fake, qc } = setup();
     qc.setQueryData(KEY, [check('k1')]);

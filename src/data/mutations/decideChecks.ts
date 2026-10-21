@@ -164,13 +164,18 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
 
   qc.setMutationDefaults(mutationKeys.saveCheckDraft, {
     mutationFn: (vars: SaveCheckDraftVars) =>
-      guardSession(vars, async () =>
-        saveDecideCheckDraft(await writeClient(), vars.id, {
+      guardSession(vars, async () => {
+        const row = await saveDecideCheckDraft(await writeClient(), vars.id, {
           name: vars.name,
           inputs: vars.inputs,
           furthest_step: vars.furthestStep,
-        })
-      ),
+        });
+        // WR-A03: the save is unconditional but bump_version still raises the version by exactly one. Record that in
+        // the chain, so a queued abandon / mark-seen / remove built on the cached version resolves past this save
+        // instead of reporting a false conflict.
+        recordWrittenVersion('decide_checks', vars.id, [row.version - 1], row.version);
+        return row;
+      }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
