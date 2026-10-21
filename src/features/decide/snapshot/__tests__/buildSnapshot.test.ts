@@ -347,6 +347,19 @@ describe('unconverted amounts (D-37)', () => {
     expect(r.conversions.map((c) => c.currency)).toEqual(['TOK']);
   });
 
+  it('WR-B01: a zero balance in a currency with no stored rate leaves the snapshot converted', () => {
+    const r = logged(
+      withExtra({
+        rates: [USD_RATE],
+        accounts: [account({ id: 'jpy-sav', kind: 'savings', currency: 'JPY' }), account({ id: 'nob', kind: 'cash', currency: 'CHF' })],
+        balances: { 'jpy-sav': 0 },
+      })
+    );
+    expect(r.unconverted).toBeNull();
+    expect(r.conversions.map((c) => c.currency)).not.toContain('JPY');
+    expect(r.snapshot.cashOnHand).toBe(700_000);
+  });
+
   it('a missing balance counts as zero', () => {
     const r = logged(withExtra({ accounts: [account({ id: 'no-bal', kind: 'cash' })] }));
     expect(r.snapshot.cashOnHand).toBe(700_000);

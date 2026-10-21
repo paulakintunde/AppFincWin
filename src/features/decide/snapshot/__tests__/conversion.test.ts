@@ -7,6 +7,14 @@ const make = (rates: readonly FxLatestRow[] = [USD_RATE, CAD_RATE, GBP_RATE], cu
   makeConverter({ home: 'USD', rates, customs, today: '2026-10-15' });
 
 describe('makeConverter', () => {
+  it('WR-B01: zero in a currency with no stored rate is 0 and adds no note', () => {
+    const c = make([USD_RATE]);
+    expect(c.toHome(0, 'JPY')).toBe(0);
+    expect(c.toHome(0, 'EUR')).toBe(0);
+    expect(c.notes()).toEqual([]);
+    expect(c.unconverted()).toBeNull();
+  });
+
   it('returns the amount unchanged for the home currency and adds no note', () => {
     const c = make();
     expect(c.toHome(1234, 'USD')).toBe(1234);

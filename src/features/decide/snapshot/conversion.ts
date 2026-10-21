@@ -8,7 +8,7 @@ import type { CustomCurrencyRow, FxLatestRow } from '@/db/rows';
 import type { ConversionNote, UnconvertedNote } from './types';
 
 export interface Converter {
-  /** `amount` of `currency` in the home currency at the latest stored rate, or null when no rate converts it. */
+  /** `amount` of `currency` in the home currency at the latest stored rate, or null when no rate converts it. Zero is always 0. */
   toHome(amount: number, currency: string): number | null;
   /** Record one needed amount in `currency` that could not be converted. */
   miss(currency: string): void;
@@ -27,6 +27,8 @@ export function makeConverter(args: {
   let missCount = 0;
   return {
     toHome(amount, currency) {
+      // WR-B01: zero is zero in any currency; it needs no rate and adds no basis note.
+      if (amount === 0) return 0;
       const result = convertLatest(amount, currency, args.home, args.rates, args.customs, args.today);
       if (result === null) return null;
       if (currency !== args.home && !noted.has(currency)) {
