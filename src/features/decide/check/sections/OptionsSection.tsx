@@ -58,6 +58,8 @@ export function OptionsSection(props: OptionsSectionProps) {
   const act = (o: DecideOption, action: OptionAction) => {
     if (action === 'openActivity') return onOpenActivity();
     if (action === 'switchWait') return onSwitchToWait();
+    // WR-C07: an option priced from figures that still follow older inputs is not applied until they settle
+    if (props.busy === true) return;
     const patch = patchFor(o);
     if (patch !== null) update(patch);
   };

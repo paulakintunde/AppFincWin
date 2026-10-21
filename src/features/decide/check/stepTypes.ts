@@ -11,5 +11,7 @@ export interface StepProps {
   exact: MoneyFormatter;   // exact minor units (month table, "What gets written")
   today: string;           // 'YYYY-MM-DD'
   readOnly: boolean;       // true for a decided (bought/waiting/passed) check
+  /** WR-C07: the slow figures (alternatives, options, the wait plan) still follow older inputs; actions built from them wait. */
+  busy?: boolean;
   stack: StackSelection;   // D-24 (part 2): other open checks and the left-out counts (05-12 selectOtherChecks; EMPTY_STACK when the toggle is off)
 }

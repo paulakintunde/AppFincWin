@@ -34,8 +34,11 @@ function freshId(lines: readonly { id: string }[]): string {
   return `sb-${n}`;
 }
 
-export function SetbacksSection(props: SectionProps) {
+export function SetbacksSection(props: SectionProps & { resultIds?: readonly string[] }) {
   const { computation, inputs, update, whole, currency, expanded, onToggle, readOnly } = props;
+  // WR-C07: the report is built from the settled inputs; its results are matched to the live lines by id, so a removal
+  // never pairs a result with the wrong line before the figures settle.
+  const resultIndex = new Map((props.resultIds ?? inputs.setbacks.map((s) => s.id)).map((id, i) => [id, i] as const));
   const t = useT();
   const { colors, pairing } = useTheme();
   const [editing, setEditing] = useState(false);
@@ -113,9 +116,10 @@ export function SetbacksSection(props: SectionProps) {
     <CollapsibleSection title={t('decide.section.setbacksTitle')} summary={summary} expanded={expanded} onToggle={onToggle}>
       <Note>{t('decide.section.setbacksNote')}</Note>
       {runway?.lostLine ? <Note>{refText(tr, runway.lostLine)}</Note> : null}
-      {lines.map((l, i) => {
-        const r = report.results[i];
-        if (!r) return null;
+      {lines.map((l) => {
+        const i = resultIndex.get(l.id);
+        const r = i === undefined ? undefined : report.results[i];
+        if (!r || i === undefined) return null;
         const name = t(SETBACK_LABEL[l.code]);
         const after = r.outcome === 'wiped_out' ? t('decide.section.setbackWiped') : t('decide.section.setbackAfter', { amount: fmt(r.cashAfter) });
         const hit = t('decide.section.setbackHit', { amount: fmt(r.hit) });

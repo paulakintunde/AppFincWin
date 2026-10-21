@@ -24,6 +24,8 @@ export interface SectionProps {
   expanded: boolean;
   onToggle: () => void;
   readOnly: boolean;
+  /** WR-C07: the figures still follow older inputs (150 ms); an option built from them is not applied yet. */
+  busy?: boolean;
 }
 
 /** The resolved assessment behind step 3's figure sections, or null (missing verdict, first read, none, unconverted). */

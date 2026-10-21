@@ -87,6 +87,16 @@ describe('Step5Decision', () => {
     expect(p.update).toHaveBeenCalledWith({ wait: { monthlyAmount: 52_500 } });
   });
 
+  it('WR-C07: the Wait slider follows the live amount while the plan is still settling', async () => {
+    const settled = props({ outcome: 'wait', advertised: 2_000_000, method: 'cash', wait: { monthlyAmount: 50_000 } });
+    const p = { ...settled, inputs: { ...settled.inputs, wait: { monthlyAmount: 55_000 } } };
+    await wrap(<Step5Decision {...p} />);
+    const slider = screen.getByLabelText('Monthly saving');
+    expect(slider.props.accessibilityValue.now).toBe(55_000);
+    await fireEvent(slider, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+    expect(p.update).toHaveBeenCalledWith({ wait: { monthlyAmount: 57_500 } });
+  });
+
   it('a Wait amount above what is spare is said plainly', async () => {
     const spare = props({ outcome: 'wait', advertised: 2_000_000, method: 'cash' }).computation.waitPlan!.spareMonthly;
     const p = props({ outcome: 'wait', advertised: 2_000_000, method: 'cash', wait: { monthlyAmount: spare + 10_000 } });

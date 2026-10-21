@@ -246,7 +246,10 @@ export function Step4Alternatives(props: StepProps) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('decide.alt.tradeUseCheaper')}
-                onPress={() => update(cheaperPatch)}
+                onPress={() => {
+                  // WR-C07: the cheaper price follows the settled inputs; it is applied once they have caught up
+                  if (props.busy !== true) update(cheaperPatch);
+                }}
                 style={({ pressed }) => [styles.button, { backgroundColor: colors.surface, opacity: pressed ? PRESSED_OPACITY : 1 }]}
               >
                 <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{t('decide.alt.tradeUseCheaper')}</Text>

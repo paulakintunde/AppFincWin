@@ -203,13 +203,14 @@ export function Step5Decision(props: Step5Props) {
           </View>
           <Lock locked={readOnly}>
             <StepSlider
-              value={Math.min(Math.max(wait.monthlyAmount, WAIT_STEP), 2 * Math.max(wait.spareMonthly, WAIT_STEP))}
+              // WR-C07: the slider follows the live amount, not the plan settled 150 ms later
+              value={Math.min(Math.max(inputs.wait.monthlyAmount ?? wait.monthlyAmount, WAIT_STEP), 2 * Math.max(wait.spareMonthly, WAIT_STEP))}
               min={WAIT_STEP}
               max={2 * Math.max(wait.spareMonthly, WAIT_STEP)}
               step={WAIT_STEP}
               onChange={(v) => update({ wait: { monthlyAmount: v } })}
               accessibilityLabel={t('decide.decision.waitSliderA11y')}
-              valueText={cents(wait.monthlyAmount)}
+              valueText={cents(inputs.wait.monthlyAmount ?? wait.monthlyAmount)}
             />
           </Lock>
           {wait.target > 0 ? (

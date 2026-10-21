@@ -97,6 +97,21 @@ describe('SetbacksSection', () => {
     expect(screen.getByText('Add a setback to test')).toBeTruthy();
   });
 
+  it('WR-C07: before the figures settle, each live line keeps its own result after another is removed', async () => {
+    const p = sectionProps(CASH_NO);
+    const ids = p.inputs.setbacks.map((s) => s.id);
+    const label = (re: RegExp) => screen.getByRole('checkbox', { name: re }).props.accessibilityLabel as string;
+    const full = await wrap(<SetbacksSection {...p} />);
+    const invoices = label(/^Invoices pay late/);
+    const job = label(/^Job or client loss/);
+    expect(invoices).not.toBe(job);
+    await full.unmount();
+    const live = { ...p.inputs, setbacks: p.inputs.setbacks.filter((s) => s.code !== 'income_drop') };
+    await wrap(<SetbacksSection {...p} inputs={live} resultIds={ids} />);
+    expect(label(/^Invoices pay late/)).toBe(invoices);
+    expect(label(/^Job or client loss/)).toBe(job);
+  });
+
   it('has no lock chrome and no literal close mark', async () => {
     await wrap(<SetbacksSection {...sectionProps(CASH_NO)} />);
     expect(screen.queryByText(/Pro|locked|Upgrade/i)).toBeNull();

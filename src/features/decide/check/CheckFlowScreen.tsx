@@ -440,6 +440,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
     today,
     readOnly,
     stack: inputs.combine === false ? EMPTY_STACK : stack,
+    busy,
   });
 
   const verdict = computation?.verdict ?? null;
@@ -452,7 +453,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
   else if (step === 5 && !readOnly && commit.blockedKey !== null) hint = t(commit.blockedKey);
   else if (step === 5 && inputs.outcome === 'go' && resolved !== null && resolved.state !== 'fits') hint = t('decide.flow.hint.breaks');
   else if (step === 5 && (inputs.outcome === 'wait' || inputs.outcome === 'pass')) hint = t('decide.flow.hint.waitPass');
-  const nextDisabled = readOnly ? false : step === 1 ? !complete1 : step === 2 ? !complete2 : step === 5 ? inputs.outcome === null || commit.blockedKey !== null || commit.committing : false;
+  const nextDisabled = readOnly ? false : step === 1 ? !complete1 : step === 2 ? !complete2 : step === 5 ? inputs.outcome === null || commit.blockedKey !== null || commit.committing || busy : false;
 
   // 05-29: a bought check goes back to Decide (a reopened copy would be judged against a snapshot that holds the purchase);
   // a waiting or passed one reopens as a new check at step 3. CR-C07: once per screen, so a double tap opens one copy.
@@ -483,7 +484,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
     }
     const p = stepProps(computation, source);
     const currency = source.currency;
-    const common = { computation, inputs, update, whole, exact, currency, readOnly };
+    const common = { computation, inputs, update, whole, exact, currency, readOnly, busy };
     switch (step) {
       case 1:
         return <Step1Item {...p} recurringBills={recurringBills} />;
@@ -526,7 +527,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
                 monthlyTotal={monthlyTotal}
               />
               <LinesSection {...common} {...section('lines')} />
-              <SetbacksSection {...common} {...section('setbacks')} />
+              <SetbacksSection {...common} {...section('setbacks')} resultIds={(bought ? inputs : settled).setbacks.map((s) => s.id)} />
               <ExpectedIncomeSection {...common} {...section('income')} />
               <OptionsSection
                 {...common}
