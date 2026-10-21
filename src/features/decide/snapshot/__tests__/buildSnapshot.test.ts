@@ -666,6 +666,28 @@ describe('card minimums (D-40)', () => {
     ...over,
   });
 
+  it('WR-B03: with only a card minimum counted, a Debt-category payment is that minimum, not spending as well', () => {
+    const terms = { kind: 'card' as const, account_id: 'card', min_percent: '2', min_interest_added: false, min_floor: 2_500 };
+    const payments = [row({ id: 'card-pay', local_date: '2026-09-25', original_amount: -15_000, category_id: 'c-debt' })];
+    const pendingPay = row({ id: 'card-pay-next', status: 'pending', local_date: '2026-11-25', original_amount: -15_000, category_id: 'c-debt' });
+    const r = logged(card(-120_000, { debts: [debt(terms)], rows: [...household().rows, ...payments], upcomingRows: [pendingPay] }));
+    expect(r.snapshot.debts.map((d) => d.minimumPayment)).toEqual([2_500]);
+    expect(r.snapshot.months.flatMap((m) => m.lines).some((l) => l.id === 'card-pay')).toBe(false);
+    expect(r.snapshot.expenseLines.some((l) => l.lineId === 'c-debt')).toBe(false);
+    expect(r.snapshot.scheduledOutflows).toEqual([]);
+    expect(r.meta.pendingOneOffs).toBe(0);
+  });
+
+  it('WR-B03: a recorded debt with no minimum leaves Debt-category payments as outgoings', () => {
+    const payments = [row({ id: 'dbt-pay', local_date: '2026-09-25', original_amount: -15_000, category_id: 'c-debt' })];
+    const pendingPay = row({ id: 'dbt-next', status: 'pending', local_date: '2026-11-25', original_amount: -15_000, category_id: 'c-debt' });
+    const r = logged({ ...household(), debts: [debt({ minimum_payment: 0 })], rows: [...household().rows, ...payments], upcomingRows: [pendingPay] });
+    expect(r.snapshot.months.flatMap((m) => m.lines).some((l) => l.id === 'dbt-pay')).toBe(true);
+    expect(r.snapshot.expenseLines.some((l) => l.lineId === 'c-debt')).toBe(true);
+    expect(r.snapshot.scheduledOutflows.map((o) => o.id)).toEqual(['dbt-next']);
+    expect(r.meta.pendingOneOffs).toBe(1);
+  });
+
   it('stored card terms set the card minimum', () => {
     const r = logged(card(-120_000, { debts: [debt({ id: 'card-d', kind: 'card', account_id: 'card', apr: '22.9', min_percent: '2', min_interest_added: false, min_floor: 2_500, version: 4 })] }));
     const expected = simulateMinimum(minorUnits(120_000), percent('22.9'), { minimumPercent: percent('2'), interestAdded: false, floor: minorUnits(2_500) }).firstPayment;

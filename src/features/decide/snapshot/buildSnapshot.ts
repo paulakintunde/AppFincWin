@@ -216,7 +216,6 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       currency: cur,
     });
   }
-  const rowDebtCount = debts.length;
 
   // ── series: one predicate for what is counted elsewhere ──
   const liveSeries = source.series.filter((s) => s.deleted_at === null);
@@ -236,10 +235,13 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   const fullKeys = monthKeys.filter((m) => flags.get(m) === true);
   const usedMonths = new Set(fullKeys.slice(0, AVERAGING_WINDOW_MONTHS));
 
-  const linesByMonth = new Map<string, RecordLine[]>();
+  // WR-B03: a Debt-category payment outside a series is that debt's minimum only when the snapshot counts a minimum,
+  // which is known only once the derived card debts below exist. Those lines and totals wait until then.
+  const lineEntries: { month: string; line: RecordLine; debtPayment: boolean }[] = [];
   let savingTotal = 0n;
   let investingTotal = 0n;
   const expenseTotals = new Map<string, bigint>();
+  const debtPaymentTotals = new Map<string, bigint>();
   const lastPaid = new Map<string, string>();
   let expenseLinesThisMonth = 0;
   for (const r of liveRows) {
@@ -262,12 +264,13 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     const key = keyOf(r.category_id);
     const isTransfer = r.transfer_id !== null;
     const paidUsed = used && r.status === 'paid';
+    let debtPayment = false;
     if (out && !isTransfer) {
       if (key === 'Savings') {
         if (paidUsed) savingTotal += BigInt(abs); // enters monthlySaving, not the lines
         continue;
       }
-      if (key === 'Debt' && r.recurring_series_id === null && rowDebtCount > 0) continue; // that debt's minimum
+      debtPayment = key === 'Debt' && r.recurring_series_id === null;
     }
     const oneOff = r.one_off === true && r.recurring_series_id === null && !isTransfer; // D-29
     const line: RecordLine = {
@@ -283,9 +286,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       categoryId: r.category_id,
       oneOff,
     };
-    const bucket = linesByMonth.get(month);
-    if (bucket) bucket.push(line);
-    else linesByMonth.set(month, [line]);
+    lineEntries.push({ month, line, debtPayment });
     if (!paidUsed) continue;
     if (!out && isTransfer) {
       const kind = accountById.get(r.account_id)?.kind;
@@ -294,22 +295,11 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     }
     if (out && !isTransfer && !oneOff) {
       const id = r.category_id ?? UNCATEGORISED;
-      expenseTotals.set(id, (expenseTotals.get(id) ?? 0n) + BigInt(abs));
+      const totals = debtPayment ? debtPaymentTotals : expenseTotals;
+      totals.set(id, (totals.get(id) ?? 0n) + BigInt(abs));
     }
   }
-  const months: MonthRecord[] = monthKeys.map((m) => ({ month: m, full: flags.get(m) === true, lines: linesByMonth.get(m) ?? [] }));
   const usedCount = usedMonths.size;
-
-  const expenseLines: ExpenseLine[] = [...expenseTotals.entries()]
-    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
-    .map(([lineId, total]) => {
-      const key = lineId === UNCATEGORISED ? null : keyOf(lineId);
-      return {
-        lineId,
-        averageMonthly: minorUnits(average(total, usedCount)),
-        cuttable: key === null || !NOT_CUTTABLE.has(key),
-      };
-    });
 
   // ── bills, income, savings series ──
   const bills: RecurringBill[] = [];
@@ -372,6 +362,8 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     allRows.push(r);
   }
   const scheduledOutflows: ScheduledOutflow[] = [];
+  /** WR-B03: pending Debt-category payments out of cash; counted below only when no debt minimum is counted. */
+  const pendingDebtPayments: ScheduledOutflow[] = [];
   const pendingByAccount = new Map<string, number>();
   const coveredByAccount = new Map<string, number>();
   let pendingOneOffs = 0;
@@ -383,7 +375,6 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       continue;
     }
     if (amt >= 0) continue;
-    if (keyOf(r.category_id) === 'Debt' && rowDebtCount > 0) continue; // already that debt's minimum
     const account = accountById.get(r.account_id);
     if (account === undefined || !isLive(account)) continue;
     if (cashLike(account.kind)) {
@@ -392,7 +383,12 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
         const partnerAccount = partner === undefined ? undefined : accountById.get(partner.account_id);
         if (partnerAccount !== undefined && isLive(partnerAccount) && cashLike(partnerAccount.kind)) continue; // an internal move
       }
-      scheduledOutflows.push({ id: r.id, date: r.local_date, amount: minorUnits(-amt), currency: cur });
+      const outflow: ScheduledOutflow = { id: r.id, date: r.local_date, amount: minorUnits(-amt), currency: cur };
+      if (keyOf(r.category_id) === 'Debt') {
+        pendingDebtPayments.push(outflow);
+        continue;
+      }
+      scheduledOutflows.push(outflow);
       pendingOneOffs += 1;
     } else if ((account.kind === 'credit' || account.kind === 'loan') && !namedByLoan.has(account.id)) {
       pendingByAccount.set(account.id, (pendingByAccount.get(account.id) ?? 0) + amt);
@@ -400,7 +396,6 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       pendingOneOffs += 1;
     }
   }
-  scheduledOutflows.sort((a, b) => (a.date === b.date ? (a.id < b.id ? -1 : 1) : a.date < b.date ? -1 : 1));
 
   // ── cards and derived debts ──
   const market = marketKeyFor(source.region);
@@ -488,6 +483,33 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     });
     derivedDebts += 1;
   }
+
+  // ── Debt-category payments (WR-B03): that debt's minimum when one is counted, otherwise ordinary outgoings ──
+  const minimumCounted = debts.some((d) => d.minimumPayment > 0);
+  const linesByMonth = new Map<string, RecordLine[]>();
+  for (const e of lineEntries) {
+    if (e.debtPayment && minimumCounted) continue;
+    const bucket = linesByMonth.get(e.month);
+    if (bucket) bucket.push(e.line);
+    else linesByMonth.set(e.month, [e.line]);
+  }
+  const months: MonthRecord[] = monthKeys.map((m) => ({ month: m, full: flags.get(m) === true, lines: linesByMonth.get(m) ?? [] }));
+  if (!minimumCounted) {
+    for (const [id, total] of debtPaymentTotals) expenseTotals.set(id, (expenseTotals.get(id) ?? 0n) + total);
+    scheduledOutflows.push(...pendingDebtPayments);
+    pendingOneOffs += pendingDebtPayments.length;
+  }
+  scheduledOutflows.sort((a, b) => (a.date === b.date ? (a.id < b.id ? -1 : 1) : a.date < b.date ? -1 : 1));
+  const expenseLines: ExpenseLine[] = [...expenseTotals.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([lineId, total]) => {
+      const key = lineId === UNCATEGORISED ? null : keyOf(lineId);
+      return {
+        lineId,
+        averageMonthly: minorUnits(average(total, usedCount)),
+        cuttable: key === null || !NOT_CUTTABLE.has(key),
+      };
+    });
 
   // ── limits (D-14, D-51) ──
   let limitsReset = 0;
