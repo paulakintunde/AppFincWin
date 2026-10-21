@@ -403,7 +403,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
     const names = new Map(series.map((s) => [s.id, s.name] as const));
     return source.snapshot.bills.flatMap((b) => {
       const name = names.get(b.seriesId);
-      return name === undefined ? [] : [{ id: b.seriesId, name, monthly: Number(monthlyEquivalent(b.latestAmount, b.freq)) }];
+      return name === undefined ? [] : [{ id: b.seriesId, name, monthly: monthlyEquivalent(b.latestAmount, b.freq) }];
     });
   }, [source, series]);
   const lineName = useCallback(
@@ -514,8 +514,8 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
             })
           : [];
         const a = resolved;
-        const dayOneTotal = a === null ? 0 : Number(a.plan.dayOne);
-        const monthlyTotal = a === null ? 0 : Number(a.plan.monthly);
+        const dayOneTotal: number = a === null ? 0 : a.plan.dayOne;
+        const monthlyTotal: number = a === null ? 0 : a.plan.monthly;
         return (
           <View style={styles.sections}>
             {bought && row !== null ? <DecidedHeader row={row} whole={whole} currency={currency} timeZone={rc.timeZone} /> : null}

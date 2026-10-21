@@ -16,6 +16,7 @@ import {
   repriceInputs,
   securedDefault,
   toEngineCheck,
+  typedRateAbove,
   uniqueReplaces,
   withItemType,
 } from '../checkInputs';
@@ -41,6 +42,14 @@ function ok(inputs: CheckInputs) {
 }
 
 describe('rate text', () => {
+  it('IN-C01: typedRateAbove compares typed text as a percent, allowing a trailing point', () => {
+    expect(typedRateAbove('1000', '999.99')).toBe(true);
+    expect(typedRateAbove('1000.', '999.99')).toBe(true);
+    expect(typedRateAbove('999.99', '999.99')).toBe(false);
+    expect(typedRateAbove('19.', '999.99')).toBe(false);
+    expect(typedRateAbove('', '999.99')).toBe(false);
+    expect(typedRateAbove('.', '999.99')).toBe(false);
+  });
   it('accepts only the engine percent grammar', () => {
     expect(isValidRateText('9.4')).toBe(true);
     expect(isValidRateText('0')).toBe(true);

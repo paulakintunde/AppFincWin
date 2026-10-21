@@ -15,7 +15,7 @@ import { Text } from '@/ui/Text';
 import { ToggleRow } from '@/ui/ToggleRow';
 import { lateFeeCopy, promoCopy, stressCopy } from '../../../copy/depthInputsCopy';
 import type { CopyRef } from '../../../copy/types';
-import { MAX_INPUT_MINOR } from '../../../snapshot/checkInputs';
+import { MAX_INPUT_MINOR, typedRateAbove } from '../../../snapshot/checkInputs';
 import type { PromoInput } from '../../../snapshot/types';
 import { MoneyInput } from '../../../ui/MoneyInput';
 import { RateInput } from '../../../ui/RateInput';
@@ -25,7 +25,7 @@ import { Box, Label, Meta, moneyFn } from '../stepUi';
 import type { Step2Props } from './types';
 
 const MAX_MONTHS = 600;
-const MAX_RATE_TYPED = 999.99; // gates keystrokes only; the stored value stays text
+const MAX_RATE_TYPED = '999.99'; // gates keystrokes only; the stored value stays text
 type Translate = Parameters<typeof refText>[0];
 
 /** Digits only, clamped to 1..MAX_MONTHS; anything else is "not set". */
@@ -97,7 +97,7 @@ export function PromoRow(props: PromoRowProps) {
       <RateInput
         value={promo?.aprText ?? ''}
         onChange={(text) => {
-          if (text !== '' && Number(text) > MAX_RATE_TYPED) return;
+          if (typedRateAbove(text, MAX_RATE_TYPED)) return;
           edit({ aprText: text });
         }}
         label={t('decide.depth.credit.promoRate')}

@@ -74,6 +74,14 @@ export function isValidRateText(s: string): boolean {
 export function isValidAprText(s: string): boolean {
   return isValidRateText(s) && percent(s) <= MAX_APR;
 }
+/**
+ * IN-C01: whether rate text being typed (a trailing point allowed) is above `max`, compared as a percent and never
+ * through Number(). Text that is not yet a rate is not above anything.
+ */
+export function typedRateAbove(text: string, max: string): boolean {
+  const whole = text.endsWith('.') ? text.slice(0, -1) : text;
+  return isValidRateText(whole) && percent(whole) > percent(max);
+}
 /** D-48: a projection rate is at most the engine's MAX_PROJECTION_RATE a year. */
 export function isValidProjectionRateText(s: string): boolean {
   return isValidRateText(s) && percent(s) <= MAX_PROJECTION_RATE;

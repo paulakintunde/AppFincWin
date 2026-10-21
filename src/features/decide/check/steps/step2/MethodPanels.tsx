@@ -20,7 +20,7 @@ import { Text } from '@/ui/Text';
 import { canUse } from '../../../entitlements';
 import { cardCostsCopy } from '../../../copy/cardTermsCopy';
 import { percentText } from '../../../copy/percentText';
-import { isValidAprText, toEngineCheck } from '../../../snapshot/checkInputs';
+import { isValidAprText, toEngineCheck, typedRateAbove } from '../../../snapshot/checkInputs';
 import type { CardNoteAnswer, CheckInputs } from '../../../snapshot/types';
 import { FigureStrip } from '../../../ui/FigureStrip';
 import { MoneyInput } from '../../../ui/MoneyInput';
@@ -36,7 +36,7 @@ const TERM_CHIPS = [12, 24, 36, 48, 60, 84] as const;
 const MAX_TERM = 600;
 const CARD_RATE_SAVE_MS = 800;
 const DEPOSIT_STEP = 10_000; // 100 whole units, in minor units
-const MAX_APR_TYPED = 999.99; // gates keystrokes only; the stored value stays text (isValidAprText is the check)
+const MAX_APR_TYPED = '999.99'; // gates keystrokes only; the stored value stays text (isValidAprText is the check)
 const NOTE_KEYS = [
   { field: 'incomeStops', question: 'decide.pay.cardQ1' },
   { field: 'noNewSpending', question: 'decide.pay.cardQ2' },
@@ -94,7 +94,7 @@ function LoanPanel(props: Step2Props) {
 
   const setLoan = (patch: Partial<CheckInputs['loan']>) => update({ loan: { ...loan, ...patch } });
   const setApr = (text: string) => {
-    if (text !== '' && Number(text) > MAX_APR_TYPED) return;
+    if (typedRateAbove(text, MAX_APR_TYPED)) return;
     setLoan({ aprText: text, aprFromQuick: false });
   };
   const typedZero = isValidAprText(loan.aprText) && percent(loan.aprText) === ZERO_PERCENT;
