@@ -567,7 +567,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
           </View>
         );
       default:
-        return <Step5Decision {...p} cashAccounts={cashAccounts} investAccounts={investAccounts} checkId={row?.id ?? null} checkStatus={row?.status ?? null} written={commit.written} />;
+        return <Step5Decision {...p} cashAccounts={cashAccounts} investAccounts={investAccounts} checkId={row?.id ?? null} checkStatus={row?.status ?? null} written={commit.written} decidedOn={row?.decided_at ? localDateIn(new Date(row.decided_at), rc.timeZone) : null} />;
     }
   };
 

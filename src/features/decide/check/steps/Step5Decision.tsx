@@ -34,6 +34,8 @@ export interface Step5Props extends StepProps {
   /** The saved check's id and status (set by the flow shell for a decided check); a 'waiting' one shows its goal's progress. */
   checkId?: string | null;
   checkStatus?: string | null;
+  /** The local date a decided check was decided on (IN-C04). */
+  decidedOn?: string | null;
   /** From useCommitDecision: what the write itself resolves (the Transfer category, the series it ends). */
   written: WrittenFacts;
 }
@@ -69,7 +71,7 @@ export function largestAccountId(accounts: Step5Props['cashAccounts']): string |
 }
 
 export function Step5Decision(props: Step5Props) {
-  const { inputs, update, computation, source, whole, exact, today, readOnly, cashAccounts, investAccounts, checkId, checkStatus, written } = props;
+  const { inputs, update, computation, source, whole, exact, today, readOnly, cashAccounts, investAccounts, checkId, checkStatus, written, decidedOn = null } = props;
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
   const fmt = moneyFn(whole, source.currency);
@@ -101,7 +103,8 @@ export function Step5Decision(props: Step5Props) {
     fmtWhole: fmt,
     fmtExact: cents,
     formatDate: (d) => whole.formatDate(d),
-    today,
+    // IN-C04: a decided check's lines are dated as they were written, from the decision date, not today
+    today: readOnly && decidedOn ? decidedOn : today,
     accountName: account?.name ?? '',
     cardName,
     investAccountName: investAccount?.name ?? null,

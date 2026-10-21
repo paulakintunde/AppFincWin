@@ -104,6 +104,12 @@ describe('Step5Decision', () => {
     expect(screen.getByText(/is more than you actually have spare — something else has to give\./)).toBeTruthy();
   });
 
+  it('IN-C04: a decided check with no need-by date lists its writes on the decision date', async () => {
+    const p = props({ outcome: 'go', needBy: null, goAccountId: 'a2' }, { readOnly: true, decidedOn: '2026-09-03' });
+    await wrap(<Step5Decision {...p} />);
+    expect(screen.getByText('A pending expense of $1500.00 on on 2026-09-03, in Savings pot.')).toBeTruthy();
+  });
+
   it('Go ahead on cash lists the pending expense in the largest account by default', async () => {
     const p = props({ outcome: 'go', needBy: '2026-11-20' });
     await wrap(<Step5Decision {...p} />);
