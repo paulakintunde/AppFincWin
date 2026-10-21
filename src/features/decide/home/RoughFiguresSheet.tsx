@@ -16,6 +16,7 @@ import { SheetHeader } from '@/ui/SheetHeader';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
 import { MoneyInput } from '../ui/MoneyInput';
+import { stampSettingsPatch } from './settingsPatch';
 
 export interface RoughFiguresSheetProps {
   visible: boolean;
@@ -52,7 +53,7 @@ function RoughFiguresForm({ userId, currency, settings, onClose }: RoughFiguresS
 
   const save = () => {
     if (userId === null || !validAmount(value.income) || !validAmount(value.spending)) return;
-    mutation.update({ rough_income: value.income, rough_spending: value.spending, currency });
+    mutation.update(stampSettingsPatch({ rough_income: value.income, rough_spending: value.spending }, settings, currency));
     onClose();
   };
 

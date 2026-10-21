@@ -1,7 +1,8 @@
 /**
  * 05-27 (D-14, DCU-03): the short-form editor behind each "Lines you will not cross" row. One field (money, % or ×),
- * an info line, "Use the default" (blanks the line, writes null) and "Save limit". Saving writes the one column and
- * stamps the currency through the 05-19 settings mutation (never `seeded`, which the server manages). Money is integer
+ * an info line, "Use the default" (blanks the line, writes null) and "Save limit". Saving writes the one column through
+ * the 05-19 settings mutation (never `seeded`, which the server manages); a money figure also stamps the currency and,
+ * when that currency differs from the stored one, clears the other money columns (CR-B01). Money is integer
  * minor units via MoneyInput; the debt line is kept as text and checked against the stored-column grammar before
  * anything is queued, so a queued write can never be refused by the server (05-03 dsr_line check).
  */
@@ -24,6 +25,7 @@ import { monthsText } from '../copy/depthVerdictCopy';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
 import type { SnapshotResult } from '../snapshot/types';
 import { MoneyInput } from '../ui/MoneyInput';
+import { stampSettingsPatch } from './settingsPatch';
 import { RateInput } from '../ui/RateInput';
 
 export type LimitKey = 'reserve' | 'dsr' | 'unsecured' | 'investing' | 'saving';
@@ -104,7 +106,7 @@ function LimitForm({ limit, userId, currency, settings, source, whole, cushion =
 
   const write = (patch: DecideSettingsPatch) => {
     if (userId === null) return;
-    mutation.update({ ...patch, currency });
+    mutation.update(stampSettingsPatch(patch, settings, currency));
     onClose();
   };
 

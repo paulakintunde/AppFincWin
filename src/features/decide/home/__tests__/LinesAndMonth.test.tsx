@@ -197,6 +197,21 @@ describe('RoughFiguresSheet', () => {
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
+  it('CR-B01: rough figures typed in a new currency clear the limits stored in the old one', async () => {
+    await wrap(sheet(settingsRow({ currency: 'EUR', reserve: 500_000, saving_floor: 10_000 })));
+    await typeMoney('Money in each month', '4200');
+    await typeMoney('Money out each month', '2000');
+    await fireEvent.press(screen.getByLabelText('Save figures'));
+    expect(mockUpdate).toHaveBeenCalledWith({
+      reserve: null,
+      investing_floor: null,
+      saving_floor: null,
+      rough_income: 420_000,
+      rough_spending: 200_000,
+      currency: 'USD',
+    });
+  });
+
   it('renders nothing while closed', async () => {
     await wrap(<RoughFiguresSheet visible={false} userId="u1" currency="USD" settings={null} onClose={jest.fn()} />);
     expect(screen.queryByText('Rough figures')).toBeNull();
@@ -250,7 +265,30 @@ describe('LinesCard', () => {
     await wrap(lines(settingsRow({ saving_floor: 50_000 })));
     await fireEvent.press(screen.getByTestId('line-row-saving'));
     await fireEvent.press(screen.getByLabelText('Use the default'));
-    expect(mockUpdate).toHaveBeenCalledWith({ saving_floor: null, currency: 'USD' });
+    expect(mockUpdate).toHaveBeenCalledWith({ saving_floor: null });
+  });
+
+  it('CR-B01: a non-money limit never restamps the currency of money stored in another one', async () => {
+    await wrap(lines(settingsRow({ currency: 'EUR', reserve: 500_000, investing_floor: 20_000 })));
+    await fireEvent.press(screen.getByTestId('line-row-unsecured'));
+    await fireEvent.changeText(fieldOf('Unsecured debt at most'), '8');
+    await fireEvent.press(screen.getByLabelText('Save limit'));
+    expect(mockUpdate).toHaveBeenCalledWith({ unsecured_multiple: 8 });
+  });
+
+  it('CR-B01: a money limit typed in a new currency clears the money stored in the old one', async () => {
+    await wrap(lines(settingsRow({ currency: 'EUR', reserve: 500_000, investing_floor: 20_000, rough_income: 1, rough_spending: 1 })));
+    await fireEvent.press(screen.getByTestId('line-row-saving'));
+    await typeMoney('Saving at least', '100');
+    await fireEvent.press(screen.getByLabelText('Save limit'));
+    expect(mockUpdate).toHaveBeenCalledWith({
+      reserve: null,
+      investing_floor: null,
+      saving_floor: 10_000,
+      rough_income: null,
+      rough_spending: null,
+      currency: 'USD',
+    });
   });
 
   it('saves the unsecured multiple as an integer', async () => {
@@ -258,7 +296,7 @@ describe('LinesCard', () => {
     await fireEvent.press(screen.getByTestId('line-row-unsecured'));
     await fireEvent.changeText(fieldOf('Unsecured debt at most'), '8');
     await fireEvent.press(screen.getByLabelText('Save limit'));
-    expect(mockUpdate).toHaveBeenCalledWith({ unsecured_multiple: 8, currency: 'USD' });
+    expect(mockUpdate).toHaveBeenCalledWith({ unsecured_multiple: 8 });
   });
 
   it('dsr line matches the stored grammar before queuing', async () => {
@@ -281,7 +319,7 @@ describe('LinesCard', () => {
     expect(save().props.accessibilityState.disabled).toBe(false);
     await fireEvent.press(save());
     expect(mockUpdate).toHaveBeenCalledTimes(1);
-    expect(mockUpdate).toHaveBeenCalledWith({ dsr_line: '36.5', currency: 'USD' });
+    expect(mockUpdate).toHaveBeenCalledWith({ dsr_line: '36.5' });
     expect(typeof mockUpdate.mock.calls[0]![0].dsr_line).toBe('string');
   });
 
