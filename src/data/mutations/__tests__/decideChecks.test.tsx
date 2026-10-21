@@ -301,23 +301,57 @@ describe('useRemoveDecision', () => {
     expect(new Set(fake.calls.filter((c) => c.method === 'update').map((c) => c.table))).toEqual(new Set(['decide_checks']));
   });
 
-  it('part 2: a Wait decision removes its goal in the same step and Undo restores both', async () => {
+  it('part 2 / WR-A04: a Wait decision and its goal are removed in ONE apply_patches call carrying the step', async () => {
     const { fake, qc } = setup();
     qc.setQueryData(KEY, [check('c1', { status: 'waiting' })]);
     qc.setQueryData(GOAL_KEY, [goal()]);
-    fake.respondWith(ok([check('c1', { status: 'waiting', deleted_at: '2026-10-02T00:00:00Z', version: 2 })]));
-    fake.respondWith(ok([goal({ deleted_at: '2026-10-02T00:00:00Z', version: 4 })]));
+    fake.respondWith(
+      ok({ status: 'applied', rows: [{ entity: 'decide_checks', id: 'c1', version: 2 }, { entity: 'savings_goals', id: 'g1', version: 4 }] })
+    );
     const { result } = await renderHook(() => useRemoveDecision(), { wrapper: wrapper(qc) });
 
-    result.current.remove(check('c1', { status: 'waiting' }), goal());
-    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    const stepId = result.current.remove(check('c1', { status: 'waiting' }), goal());
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
 
-    expect(fake.calls.filter((c) => c.method === 'update').map((c) => c.table)).toEqual(['decide_checks', 'savings_goals']);
-    expect(lastStep().ops).toEqual([
+    expect(fake.calls.filter((c) => c.method === 'update')).toHaveLength(0);
+    expect(insertUndoStep).not.toHaveBeenCalled();
+    const rpcs = fake.calls.filter((c) => c.method === 'rpc');
+    expect(rpcs).toHaveLength(1);
+    const [name, params] = rpcs[0]!.args as [string, { p_ops: unknown[]; p_undo_step: { id: string; label_key: string; ops: unknown[] } }];
+    expect(name).toBe('apply_patches');
+    expect(params.p_ops).toEqual([
+      expect.objectContaining({ entity: 'decide_checks', id: 'c1', expectedVersion: 1 }),
+      expect.objectContaining({ entity: 'savings_goals', id: 'g1', expectedVersion: 3 }),
+    ]);
+    expect(params.p_undo_step).toMatchObject({ id: stepId, label_key: 'decisionRemoved' });
+    expect(params.p_undo_step.ops).toEqual([
       expect.objectContaining({ entity: 'decide_checks', expectedVersion: 2, patch: { deleted_at: null } }),
       expect.objectContaining({ entity: 'savings_goals', expectedVersion: 4, patch: { deleted_at: null } }),
     ]);
+    await waitFor(() => expect(qc.getQueryData<DecideCheckRow[]>(KEY)).toEqual([]));
     expect(qc.getQueryData<SavingsGoalRow[]>(GOAL_KEY)).toEqual([]);
+  });
+
+  it('WR-A04: a goal that changed elsewhere refuses both deletes together and parks a conflict', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [check('c1', { status: 'waiting' })]);
+    qc.setQueryData(GOAL_KEY, [goal()]);
+    fake.respondWith(
+      ok({
+        status: 'conflict',
+        conflict: { entity: 'savings_goals', id: 'g1', updated_by: null, record_name: null, builtin_key: null, reason: 'changed' },
+      })
+    );
+    const { result } = await renderHook(() => useRemoveDecision(), { wrapper: wrapper(qc) });
+
+    result.current.remove(check('c1', { status: 'waiting' }), goal());
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
+    expect(recordFailedWrite.mock.calls[0]![0]).toMatchObject({ entity: 'decide_checks', entityId: 'c1', kind: 'conflict' });
+    expect(fake.calls.filter((c) => c.method === 'rpc')).toHaveLength(1);
+    expect(fake.calls.filter((c) => c.method === 'update')).toHaveLength(0);
+    expect(insertUndoStep).not.toHaveBeenCalled();
+    // the cache is refetched rather than patched with the conflict object
+    expect(qc.getQueryState(KEY)?.isInvalidated).toBe(true);
   });
 
   it('ignores a goal that belongs to another check or is already deleted', async () => {

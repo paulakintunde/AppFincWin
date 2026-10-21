@@ -10,8 +10,16 @@
 import * as Crypto from 'expo-crypto';
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
-import { buildStep, inverseOfPatches, type PatchOp, type PatchValue, type UndoLabelKey, type UndoLabelParams } from '@/engine/undo';
+import {
+  buildStep,
+  inverseOfPatches,
+  planBulkPatch,
+  type PatchValue,
+  type UndoLabelKey,
+  type UndoLabelParams,
+} from '@/engine/undo';
 import { VersionConflictError } from '@/db/errors';
+import { applyPatches } from '@/db/patches';
 import {
   insertDecideCheck,
   saveDecideCheckDraft,
@@ -21,7 +29,7 @@ import {
   type SeenBasis,
   type SeenState,
 } from '@/db/decideChecks';
-import { updateSavingsGoal, type SavingsGoalRow } from '@/db/savingsGoals';
+import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import {
@@ -78,6 +86,16 @@ export interface EditCheckVars {
     before: Readonly<Record<string, PatchValue>>;
   };
 }
+
+/** A Wait decision removed together with its goal (WR-A04): apply_patches returns versions, not the row. */
+interface RemovedWithGoal {
+  id: string;
+  deleted_at: string | null;
+  version: number;
+  removedWithGoal: true;
+}
+
+type EditCheckResult = DecideCheckRow | RemovedWithGoal;
 
 function patchChecks(qc: QueryClient, cache: CheckCacheKey, updater: (rows: CheckList) => CheckList): void {
   qc.setQueryData<CheckList>(queryKeys.decideChecks(cache.userId, cache.householdId), (old) => updater(old ?? []));
@@ -213,33 +231,55 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
   });
 
   qc.setMutationDefaults(mutationKeys.editCheck, {
-    mutationFn: (vars: EditCheckVars) =>
+    mutationFn: (vars: EditCheckVars): Promise<EditCheckResult> =>
       guardSession(vars, async () => {
         const expected = resolveExpectedVersion('decide_checks', vars.id, vars.expectedVersion);
         const client = await writeClient();
+
+        // WR-A04: a Wait decision and its goal are soft-deleted in ONE apply_patches call that also records the undo
+        // step, so they land or fail together (a goal conflict no longer leaves the check deleted with no Undo).
+        if (vars.goal) {
+          const goalExpected = resolveExpectedVersion('savings_goals', vars.goal.id, vars.goal.expectedVersion);
+          const deletedAt = vars.patch.deleted_at ?? null;
+          const { forward, inverse } = planBulkPatch([
+            {
+              entity: 'decide_checks',
+              id: vars.id,
+              expectedVersion: expected,
+              before: vars.undo?.before ?? { deleted_at: null },
+              patch: vars.patch as Readonly<Record<string, PatchValue>>,
+            },
+            {
+              entity: 'savings_goals',
+              id: vars.goal.id,
+              expectedVersion: goalExpected,
+              before: { deleted_at: null },
+              patch: { deleted_at: deletedAt },
+            },
+          ]);
+          const step = vars.undo ? buildStep(vars.undo.stepId, vars.undo.labelKey, vars.undo.labelParams, inverse) : null;
+          const applied = await applyPatches(client, forward, step);
+          const checkVersion = applied.find((r) => r.entity === 'decide_checks' && r.id === vars.id)?.version ?? expected + 1;
+          const goalVersion =
+            applied.find((r) => r.entity === 'savings_goals' && r.id === vars.goal!.id)?.version ?? goalExpected + 1;
+          recordWrittenVersion('decide_checks', vars.id, [vars.expectedVersion, expected], checkVersion);
+          recordWrittenVersion('savings_goals', vars.goal.id, [vars.goal.expectedVersion, goalExpected], goalVersion);
+          void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
+          return { id: vars.id, deleted_at: deletedAt, version: checkVersion, removedWithGoal: true };
+        }
+
         const row = await updateDecideCheck(client, vars.id, expected, vars.patch).catch((err: unknown) =>
           acceptIfAlreadyApplied<DecideCheckRow>(err, vars.patch)
         );
         recordWrittenVersion('decide_checks', vars.id, [vars.expectedVersion, expected], row.version);
 
-        let goalOps: PatchOp[] = [];
-        if (vars.goal) {
-          const goalExpected = resolveExpectedVersion('savings_goals', vars.goal.id, vars.goal.expectedVersion);
-          const goalPatch = { deleted_at: vars.patch.deleted_at ?? null };
-          const goal = await updateSavingsGoal(client, vars.goal.id, goalExpected, goalPatch).catch((err: unknown) =>
-            acceptIfAlreadyApplied<SavingsGoalRow>(err, goalPatch)
-          );
-          recordWrittenVersion('savings_goals', vars.goal.id, [vars.goal.expectedVersion, goalExpected], goal.version);
-          goalOps = inverseOfPatches('savings_goals', [
-            { id: goal.id, before: { deleted_at: null }, versionAfter: goal.version },
-          ]);
-        }
-
         if (vars.undo) {
-          const step = buildStep(vars.undo.stepId, vars.undo.labelKey, vars.undo.labelParams, [
-            ...inverseOfPatches('decide_checks', [{ id: row.id, before: vars.undo.before, versionAfter: row.version }]),
-            ...goalOps,
-          ]);
+          const step = buildStep(
+            vars.undo.stepId,
+            vars.undo.labelKey,
+            vars.undo.labelParams,
+            inverseOfPatches('decide_checks', [{ id: row.id, before: vars.undo.before, versionAfter: row.version }])
+          );
           await recordUndoStepSafely(qc, client, step, vars.ownerId);
         }
         return row;
@@ -257,17 +297,20 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
       );
       if (vars.goal && vars.patch.deleted_at) dropGoal(qc, vars.cache, vars.goal.id);
     },
-    onSuccess: (row: DecideCheckRow, vars: EditCheckVars) => {
-      patchChecks(qc, vars.cache, (rows) =>
-        row.deleted_at ? rows.filter((r) => r.id !== row.id) : rows.map((r) => (r.id === row.id ? row : r))
-      );
+    onSuccess: (row: EditCheckResult, vars: EditCheckVars) => {
+      if (row.deleted_at || 'removedWithGoal' in row) {
+        patchChecks(qc, vars.cache, (rows) => rows.filter((r) => r.id !== row.id));
+        return;
+      }
+      patchChecks(qc, vars.cache, (rows) => rows.map((r) => (r.id === row.id ? row : r)));
     },
     onError: async (err: unknown, vars: EditCheckVars) => {
       const cls = classifySettledWriteError(err);
       const attempted = { labelKey: vars.undo?.labelKey ?? 'seen', withGoal: Boolean(vars.goal) };
       if (cls === 'conflict' && err instanceof VersionConflictError) {
         const serverRow = err.serverRow as DecideCheckRow;
-        if (serverRow && typeof serverRow === 'object' && 'id' in serverRow) {
+        // A full check row (updateDecideCheck's conflict); apply_patches' conflict (WR-A04) names only an entity and id.
+        if (serverRow && typeof serverRow === 'object' && 'household_id' in serverRow) {
           patchChecks(qc, vars.cache, (rows) => {
             if (serverRow.deleted_at) return rows.filter((r) => r.id !== vars.id);
             return rows.some((r) => r.id === vars.id)
@@ -343,7 +386,7 @@ export function useSaveCheckDraft(): {
 }
 
 function useEditCheckMutation() {
-  return useMutation<DecideCheckRow, unknown, EditCheckVars>({
+  return useMutation<EditCheckResult, unknown, EditCheckVars>({
     mutationKey: mutationKeys.editCheck,
     scope: WRITE_SCOPE,
   });
