@@ -8,6 +8,7 @@ import { useDecideChecks, useDecideSnapshot } from '@/data/queries/decide';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { getAnalytics } from '@/services/analytics';
+import { SAMPLE_CURRENCY } from '../snapshot/checkCurrency';
 import { emptyCheckInputs, parseCheckInputs } from '../snapshot/checkInputs';
 import type { CheckInputs } from '../snapshot/types';
 
@@ -58,8 +59,12 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
     const inputs = pending.current;
     if (!inputs) return;
     const { rc: ctx, row: current, create: doCreate, save: doSave, currency: homeCurrency } = live.current;
-    // D-37: a check records the currency its amounts were typed in once, on first save, and never changes it.
-    const stamped: CheckInputs = inputs.currency === null && homeCurrency !== null ? { ...inputs, currency: homeCurrency } : inputs;
+    // D-37: a check records the currency its amounts were typed in once, on first save, and never changes it. An unstamped
+    // sample check is USD (IN-A01, D-67). CR-C06: the stamp is written back into the held inputs, so a later save in the
+    // same session re-uses it rather than stamping again from a home currency that may have changed since.
+    const typed = inputs.currency ?? (current?.is_sample === true ? SAMPLE_CURRENCY : homeCurrency);
+    const stamped: CheckInputs = inputs.currency === null && typed !== null ? { ...inputs, currency: typed } : inputs;
+    if (stamped !== inputs) setEdited((e) => (e !== null && e.currency === null ? { ...e, currency: stamped.currency } : e));
     const step = Math.max(furthest.current, current?.furthest_step ?? 1);
     const json = stamped as unknown as Record<string, unknown>;
     if (!current && !created.current) {

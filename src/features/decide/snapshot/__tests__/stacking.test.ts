@@ -76,6 +76,19 @@ describe('selectOtherChecks', () => {
     expect(r.otherChecks).toHaveLength(1);
   });
 
+  it('D-67: a check typed in another currency stacks at the latest stored rate, and an unstamped sample is USD', () => {
+    const fx = { rates: [{ quote: 'USD', rate: '1.0800000000', rate_date: '2026-10-14', source: 'frankfurter-v2' as const }, { quote: 'GBP', rate: '0.8600000000', rate_date: '2026-10-12', source: 'frankfurter-v2' as const }], customs: [], today: TODAY };
+    const r = select([checkRow('a', {}, inputs({ currency: 'GBP', advertised: 100_000 })), checkRow('b', {}, inputs({ currency: 'JPY' }))], null, { ...source, fx });
+    expect(r.leftOutCurrency).toBe(1);
+    expect(r.otherChecks).toHaveLength(1);
+    const first = r.otherChecks[0]!.check;
+    expect(first.kind === 'buy' ? first.price : null).toBe(125_581);
+    const gbp = { ...source, currency: 'GBP' as never, fx };
+    const sample = select([checkRow('s', { is_sample: true }, inputs({ currency: null, advertised: 108_00 }))], null, gbp);
+    const s = sample.otherChecks[0]!.check;
+    expect(s.kind === 'buy' ? s.price : null).toBe(86_00);
+  });
+
   it('counts checks typed in another currency', () => {
     const r = select([checkRow('a', {}, inputs({ currency: 'EUR' })), checkRow('b', {}, inputs({ currency: 'USD' })), checkRow('c', {}, inputs({ currency: null }))]);
     expect(r.leftOutCurrency).toBe(1);

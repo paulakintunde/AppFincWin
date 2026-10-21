@@ -7,6 +7,7 @@ import { useDecideLinks, useDecideSnapshot, useOtherChecks } from '@/data/querie
 import { useRecordContext } from '@/features/record/useRecordContext';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { buildDecideSnapshot } from '../snapshot/buildSnapshot';
+import { inHomeCurrency, sourceFor } from '../snapshot/checkCurrency';
 import { computeCheck } from '../snapshot/computeCheck';
 import type { CheckComputation, CheckInputs } from '../snapshot/types';
 import { withoutCheckWrites, type ReplacedEnd } from '../snapshot/withoutCheckWrites';
@@ -38,8 +39,10 @@ export function useBoughtCheckComputation(row: DecideCheckRow | null, inputs: Ch
       endedOn: inputs.needBy ?? (decidedAt === null ? rc.today : localDateIn(new Date(decidedAt), rc.timeZone)),
     };
     const built = buildDecideSnapshot(withoutCheckWrites(source, checkId, linkRows, replaced));
-    return computeCheck(built, inputs, stack.otherChecks);
-  }, [bought, checkId, decidedAt, source, linkRows, inputs, stack, rc.today, rc.timeZone]);
+    // D-67: amounts typed in another currency are judged at the latest stored rate (or read unconverted without one).
+    const view = inHomeCurrency(inputs, built, { isSample: row.is_sample });
+    return computeCheck(sourceFor(built, view), view.inputs, stack.otherChecks);
+  }, [bought, row, checkId, decidedAt, source, linkRows, inputs, stack, rc.today, rc.timeZone]);
 
   if (!bought) return IDLE;
   if (snapshot.status === 'error' || links.isError) return { status: 'error', computation: null };

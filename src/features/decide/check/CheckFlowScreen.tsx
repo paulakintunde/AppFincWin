@@ -44,6 +44,7 @@ import { stateChip } from '../copy/verdictCopy';
 import { checkHref } from '../home/checkHref';
 import { cancelCheckReminders } from '../notifications/waitReminder';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
+import { fromHomePatch, inHomeCurrency, sourceFor } from '../snapshot/checkCurrency';
 import { computeCore, computeDetails } from '../snapshot/computeCheck';
 import type { CheckCore } from '../snapshot/computeCheck';
 import { EMPTY_STACK } from '../snapshot/types';
@@ -66,7 +67,7 @@ import { Step2PriceAndPay, step2Complete } from './steps/Step2PriceAndPay';
 import { Step3Verdict } from './steps/Step3Verdict';
 import { Step4Alternatives } from './steps/Step4Alternatives';
 import { Step5Decision } from './steps/Step5Decision';
-import { moneyFn } from './steps/stepUi';
+import { Meta, moneyFn } from './steps/stepUi';
 import type { StepNumber, StepProps } from './stepTypes';
 import type { Translate } from './refText';
 import { useBoughtCheckComputation } from './useBoughtCheckComputation';
@@ -181,9 +182,29 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
   const rc = useRecordContext();
   const today = rc.today;
   const draft = useCheckDraft(id, kind, today);
-  const { inputs, row, update } = draft;
+  const { row } = draft;
   const snapshot = useDecideSnapshot();
-  const source = snapshot.result;
+  // D-67 (CR-C06, CR-B02): a check typed in another currency is shown, edited and judged in the snapshot currency at the
+  // latest stored rate; edits are converted back before they are saved, so the stored stamp never changes.
+  const isSample = row?.is_sample === true;
+  const typedIn = useMemo(
+    () => (snapshot.result === null ? null : inHomeCurrency(draft.inputs, snapshot.result, { isSample })),
+    [draft.inputs, snapshot.result, isSample]
+  );
+  const inputs = typedIn === null ? draft.inputs : typedIn.inputs;
+  const source = useMemo(() => (snapshot.result === null || typedIn === null ? snapshot.result : sourceFor(snapshot.result, typedIn)), [snapshot.result, typedIn]);
+  const conversion = useRef({ stored: draft.inputs, result: snapshot.result, isSample });
+  useEffect(() => {
+    conversion.current = { stored: draft.inputs, result: snapshot.result, isSample };
+  });
+  const draftUpdate = draft.update;
+  const update = useCallback<typeof draft.update>(
+    (patch, opts) => {
+      const c = conversion.current;
+      draftUpdate(c.result === null ? patch : fromHomePatch(patch, c.stored, c.result, { isSample: c.isSample }), opts);
+    },
+    [draftUpdate]
+  );
   const stack = useOtherChecks(id);
   const whole = useMoneyFormatter(false);
   const exact = useMoneyFormatter(true);
@@ -205,7 +226,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
 
   const readOnly = row !== null && row.status !== 'open';
   const bought = row !== null && row.status === 'bought';
-  const boughtState = useBoughtCheckComputation(row, row === null ? null : inputs);
+  const boughtState = useBoughtCheckComputation(row, row === null ? null : draft.inputs);
 
   // ── D-56: the verdict is live, the slow details follow the inputs 150 ms after they stop changing ──
   const core = useMemo(() => (source === null || bought ? null : computeCore(source, inputs, stack.otherChecks)), [source, inputs, stack, bought]);
@@ -563,6 +584,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
             memberNames={memberList}
             readOnly={readOnly}
           />
+          {typedIn?.kind === 'converted' ? <Meta>{t('decide.flow.typedIn', { from: typedIn.note.from, to: typedIn.note.to })}</Meta> : null}
           {body()}
         </ScrollView>
         <CheckActionBar

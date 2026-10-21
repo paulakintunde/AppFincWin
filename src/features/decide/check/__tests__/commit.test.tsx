@@ -285,6 +285,31 @@ describe('Go ahead', () => {
   });
 });
 
+describe('D-67 a check typed in another currency (CR-C06, CR-B02)', () => {
+  const RATES = [
+    { quote: 'USD', rate: '1.0800000000', rate_date: '2026-10-14', source: 'frankfurter-v2' as const },
+    { quote: 'GBP', rate: '0.8600000000', rate_date: '2026-10-12', source: 'frankfurter-v2' as const },
+  ];
+
+  it('is shown and written in the home currency at the latest stored rate, with a note', async () => {
+    mockSource = { ...paySource(), fx: { rates: RATES, customs: [], today: '2026-10-15' } };
+    await open({ outcome: 'go', currency: 'GBP', advertised: 20_000 });
+    expect(screen.getByText('Typed in GBP, shown in USD at the latest stored rate.')).toBeTruthy();
+    await fireEvent.press(lastGoAhead());
+    await fireEvent.press(lastGoAhead());
+    const args = (mockGoAhead.mock.calls[0] as unknown[])[0] as { inputs: CheckInputs; ctx: { currency: string } };
+    expect(args.ctx.currency).toBe('USD');
+    expect(args.inputs.advertised).toBe(25_116);
+  });
+
+  it('with no stored rate it is not judged and Go ahead is unavailable', async () => {
+    mockSource = { ...paySource(), fx: { rates: RATES, customs: [], today: '2026-10-15' } };
+    await open({ outcome: 'go', currency: 'JPY', advertised: 20_000 });
+    expect(screen.queryByText(/Typed in JPY/)).toBeNull();
+    expect(lastGoAhead().props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
+  });
+});
+
 describe('Wait and Pass', () => {
   it('Wait saves the plan with the commit haptic and toasts the reminder date', async () => {
     mockSource = paySource(100_000);

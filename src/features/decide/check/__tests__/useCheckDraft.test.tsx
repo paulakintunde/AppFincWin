@@ -129,6 +129,31 @@ describe('useCheckDraft', () => {
     expect(mockSave.mock.calls[0][0].inputs.currency).toBe('GBP');
   });
 
+  it('IN-A01: an unstamped sample check is stamped USD, not the home currency', async () => {
+    mockChecks = { data: [row({ is_sample: true, inputs: { ...emptyCheckInputs('buy', TODAY), name: 'Sofa' } as never })] };
+    const { result } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
+    await act(async () => result.current.update({ advertised: 5 }));
+    await act(async () => {
+      jest.advanceTimersByTime(DRAFT_DEBOUNCE_MS);
+    });
+    expect(mockSave.mock.calls[0][0].inputs.currency).toBe('USD');
+  });
+
+  it('CR-C06: the first stamp is kept for the session even if the home currency changes', async () => {
+    const { result, rerender } = await renderHook(() => useCheckDraft('c9', 'buy', TODAY));
+    await act(async () => result.current.update({ name: 'Bike' }));
+    expect(mockCreate.mock.calls[0][0].inputs.currency).toBe('GBP');
+    expect(result.current.inputs.currency).toBe('GBP');
+    mockResult = { currency: 'CAD' };
+    mockChecks = { data: [row({ id: 'c9', inputs: mockCreate.mock.calls[0][0].inputs })] };
+    await rerender({});
+    await act(async () => result.current.update({ advertised: 7 }));
+    await act(async () => {
+      jest.advanceTimersByTime(DRAFT_DEBOUNCE_MS);
+    });
+    expect(mockSave.mock.calls.at(-1)?.[0].inputs.currency).toBe('GBP');
+  });
+
   it('stamps the currency on an old draft that has none', async () => {
     mockChecks = { data: [row({ inputs: { ...emptyCheckInputs('buy', TODAY), name: 'Sofa' } as never })] };
     const { result } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));

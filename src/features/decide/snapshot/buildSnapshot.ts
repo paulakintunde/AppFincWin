@@ -580,6 +580,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     cash: minorUnits(cashOnHand),
     conversions: converter.notes(),
     unconverted,
+    fx: { rates: source.rates, customs: source.customCurrencies, today },
   };
 
   if (fullKeys.length > 0) {

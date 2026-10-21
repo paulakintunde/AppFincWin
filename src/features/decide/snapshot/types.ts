@@ -4,6 +4,7 @@
  * (RESEARCH Pitfall 8). Engine objects (Verdict, Percent) live only in memory, rebuilt on render (D-15).
  */
 import type { AlternativeRow, Alternatives, AssessContext, BuyCheck, CardRecord, CurrencyCode, Decision, DecideOption, DecideSnapshot, FirstRead, IncomeAtRiskReport, InvestmentViews, ItemType, MinorUnits, PlanResult, PurchaseCheck, ResolvedPrice, RoughFigures, RunningCostCategory, RunningCosts, SetbackCode, SetbackReport, StackedCheckInput, Verdict, WaitPlan } from '@/engine/decide'; // CurrencyCode / MinorUnits re-exported per 04 D-62
+import type { CustomCurrencyRow, FxLatestRow } from '@/db/rows';
 
 export interface SnapshotMeta {
   fullMonths: number;            // months the builder flagged full (04 D-13)
@@ -25,7 +26,9 @@ export interface CardChoice { accountId: string; name: string; record: CardRecor
 // D-37 (part 2): conversion facts for the basis line and Assumptions, and the missing-rate note. Plain JSON (rateText is the 10-dp string from 05-33, never a number).
 export interface ConversionNote { currency: string; rateText: string; rateDate: string } // home units per 1 unit of `currency` at the latest stored rate; rateDate = the earlier rate_date of the two legs
 export interface UnconvertedNote { currencies: readonly string[]; rowCount: number }   // a needed amount had no stored rate: every computation reports 'unconverted', never a guessed figure
-interface SnapshotBase { currency: CurrencyCode; meta: SnapshotMeta; cards: readonly CardChoice[]; dealerCap: MinorUnits | null; cash: MinorUnits; conversions: readonly ConversionNote[]; unconverted: UnconvertedNote | null }
+// D-67: the stored rates the snapshot was built with, so a check typed in another currency converts at the same latest stored rate (checkCurrency.ts). Absent (test fixtures) = no rate: such a check reads unconverted.
+export interface SnapshotFx { rates: readonly FxLatestRow[]; customs: readonly CustomCurrencyRow[]; today: string }
+interface SnapshotBase { currency: CurrencyCode; meta: SnapshotMeta; cards: readonly CardChoice[]; dealerCap: MinorUnits | null; cash: MinorUnits; conversions: readonly ConversionNote[]; unconverted: UnconvertedNote | null; fx?: SnapshotFx }
 export type SnapshotResult =
   | (SnapshotBase & { kind: 'logged'; snapshot: DecideSnapshot })
   | (SnapshotBase & { kind: 'rough'; figures: RoughFigures })

@@ -72,6 +72,24 @@ describe('useBoughtCheckComputation', () => {
     expect(naive.verdict).not.toEqual(expected.verdict);
   });
 
+  it('D-67 (CR-B02): a bought check typed in another currency is judged at the latest stored rate, or read unconverted without one', async () => {
+    const base = demoSource(TODAY);
+    const other = base.homeCurrency === 'GBP' ? 'CAD' : 'GBP';
+    const source: SnapshotSource = {
+      ...base,
+      rates: [
+        { quote: base.homeCurrency, rate: '1.0800000000', rate_date: '2026-10-14', source: 'frankfurter-v2' },
+        { quote: other, rate: '0.8600000000', rate_date: '2026-10-12', source: 'frankfurter-v2' },
+      ],
+    };
+    mockSnapshot.mockReturnValue(snapshotOf(source));
+    const result = await run(() => useBoughtCheckComputation(row(), { ...inputs, currency: other }));
+    expect(result.computation?.status).not.toBe('unconverted');
+    expect(result.computation?.resolvedPrice?.price).not.toBe(computeCheck(buildDecideSnapshot(source), inputs).resolvedPrice?.price);
+    const noRate = await run(() => useBoughtCheckComputation(row(), { ...inputs, currency: 'XQZ' }));
+    expect(noRate.computation?.status).toBe('unconverted');
+  });
+
   it('waits for links and reports an error', async () => {
     mockLinks.mockReturnValue({ data: undefined, isError: false });
     expect(await run(() => useBoughtCheckComputation(row(), inputs))).toEqual({ status: 'loading', computation: null });

@@ -1476,6 +1476,7 @@ const en = {
     },
     flow: {
       stepOf: 'Step {{n}} of 5', stepA11y: 'Step {{n}}, {{title}}', back: 'Back', saveClose: 'Save and close', saved: 'Saved',
+      typedIn: 'Typed in {{from}}, shown in {{to}} at the latest stored rate.',
       title: { item: 'The item', price: 'Price and how you pay', impact: 'Impact', alternatives: 'Alternatives', decision: 'The decision', investItem: 'The investment', investPrice: 'Amount and schedule' },
       next: { price: 'Next: Price', impact: 'Next: Impact', alternatives: 'Next: Alternatives', decide: 'Next: Decide' },
       commit: { go: 'Go ahead', wait: 'Save the plan', pass: 'Record as passed', none: 'Pick an outcome' },

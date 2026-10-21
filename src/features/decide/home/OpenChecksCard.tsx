@@ -19,6 +19,7 @@ import { type Translate } from '../check/refText';
 import { METHOD_LABEL } from '../copy/codeMaps';
 import { stateChip } from '../copy/verdictCopy';
 import { canUse } from '../entitlements';
+import { inHomeCurrency, sourceFor } from '../snapshot/checkCurrency';
 import { effectiveMethod, parseCheckInputs } from '../snapshot/checkInputs';
 import { computeChip } from '../snapshot/computeCheck';
 import { selectOtherChecks } from '../snapshot/stacking';
@@ -76,13 +77,18 @@ export function OpenChecksCard({ source, checks, today, whole, currency }: OpenC
   const views = useMemo<RowView[]>(
     () =>
       open.map((row) => {
-        const inputs = parseCheckInputs(row.inputs, today);
+        const stored = parseCheckInputs(row.inputs, today);
+        // D-67: a check typed in another currency is judged and priced in the home currency at the latest stored rate; with
+        // no stored rate it reads missing and no price is shown in the wrong currency.
+        const view = source === null ? null : inHomeCurrency(stored, source, { isSample: row.is_sample });
+        const inputs = view === null ? stored : view.inputs;
         const method = effectiveMethod(inputs);
         const chip =
-          source === null
+          source === null || view === null
             ? null
-            : computeChip(source, inputs, selectOtherChecks({ checks: open, excludeId: row.id, source, today }).otherChecks);
-        return { row, chip, hasPriceAndMethod: inputs.advertised !== null && method !== null, price: inputs.advertised, method };
+            : computeChip(sourceFor(source, view), inputs, selectOtherChecks({ checks: open, excludeId: row.id, source, today }).otherChecks);
+        const shown = view?.kind === 'missing' ? null : inputs.advertised;
+        return { row, chip, hasPriceAndMethod: inputs.advertised !== null && method !== null, price: shown, method };
       }),
     [open, source, today]
   );
@@ -124,7 +130,7 @@ export function OpenChecksCard({ source, checks, today, whole, currency }: OpenC
             const { row, chip } = v;
             const name = row.name || t('decide.quick.unnamed');
             const badge = chipLabel(chip, t);
-            const price = chip !== null && chip.status !== 'incomplete' ? chip.price : v.price;
+            const price = v.price !== null && chip !== null && chip.status !== 'incomplete' ? chip.price : v.price;
             const methodText = v.method !== null ? t(METHOD_LABEL[v.method]) : null;
             const left = chip !== null && (chip.status === 'logged' || chip.status === 'first_read') ? chip.left : null;
 

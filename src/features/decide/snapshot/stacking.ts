@@ -1,7 +1,8 @@
-// 05-12 part 2 (D-24 amended): every open check is judged with all the others; drafts and foreign-currency checks are left out and counted (A16).
+// 05-12 part 2 (D-24 amended): every open check is judged with all the others; drafts and checks typed in a currency no stored rate converts are left out and counted (A16, D-67).
 // Pure: no react, no I/O. Waiting, bought and passed checks never stack (OQ-A4).
 import type { StackedCheckInput } from '@/engine/decide';
 import type { DecideCheckRow } from '@/db/decideChecks';
+import { inHomeCurrency } from './checkCurrency';
 import { parseCheckInputs, toEngineCheck } from './checkInputs';
 import { EMPTY_STACK, type SnapshotResult, type StackSelection } from './types';
 
@@ -28,12 +29,13 @@ export function selectOtherChecks(args: {
   let leftOutIncomplete = 0;
   let leftOutCurrency = 0;
   for (const row of open) {
-    const inputs = parseCheckInputs(row.inputs, today);
-    if (inputs.currency !== null && inputs.currency !== source.currency) {
+    // D-67: a check typed in another currency stacks at the latest stored rate; only one with no rate is left out.
+    const view = inHomeCurrency(parseCheckInputs(row.inputs, today), source, { isSample: row.is_sample });
+    if (view.kind === 'missing') {
       leftOutCurrency += 1;
       continue;
     }
-    const engine = toEngineCheck(inputs, { currency: source.currency, cards: source.cards, dealerCap: source.dealerCap });
+    const engine = toEngineCheck(view.inputs, { currency: source.currency, cards: source.cards, dealerCap: source.dealerCap });
     if (!engine.ok) {
       leftOutIncomplete += 1;
       continue;

@@ -98,6 +98,21 @@ describe('OpenChecksCard', () => {
     expect(screen.getByText('Missing terms')).toBeTruthy();
   });
 
+  it('CR-B02 (D-67): a check typed in GBP is priced and judged in USD; one with no stored rate reads Missing terms with no price', async () => {
+    const fx = {
+      rates: [
+        { quote: 'USD', rate: '1.0800000000', rate_date: '2026-10-14', source: 'frankfurter-v2' as const },
+        { quote: 'GBP', rate: '0.8600000000', rate_date: '2026-10-12', source: 'frankfurter-v2' as const },
+      ],
+      customs: [],
+      today: TODAY,
+    };
+    await renderCard([checkRow('a', {}, inputs({ currency: 'GBP', advertised: 100_000 })), checkRow('b', { name: 'Yen' }, inputs({ name: 'Yen', currency: 'JPY' }))], { ...loggedSource(), fx });
+    expect(screen.getByText(/^\$1256 · Paid in full/)).toBeTruthy();
+    expect(screen.getByText('Missing terms')).toBeTruthy();
+    expect(screen.queryByText(/\$1500/)).toBeNull();
+  });
+
   it('shows no chip when there are no figures to judge against', async () => {
     await renderCard([checkRow('a')], noneSource());
     expect(screen.queryByText('It fits')).toBeNull();
