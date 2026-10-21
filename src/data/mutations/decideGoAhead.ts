@@ -289,7 +289,8 @@ export function buildGoAheadWrite(args: {
 
     if (running !== null) {
       for (const line of inputs.runningCosts) {
-        if (!line.counted || line.amount <= 0) continue;
+        // IN-C07: a legacy loss_of_value line is non-cash and the engine drops it, so nothing is written for it either
+        if (!line.counted || line.amount <= 0 || line.category === 'loss_of_value') continue;
         // WR-A11: a prompted line keeps the category the user picked it under; a line the user added has none.
         const categoryId = line.category === null ? null : (ctx.runningCostCategoryIds?.[line.category] ?? null);
         addSeries(ctx.cashAccountId, -line.amount, start, null, categoryId, 'running_cost', line.name.trim() || name);

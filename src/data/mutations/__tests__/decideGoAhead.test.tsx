@@ -258,6 +258,18 @@ describe('buildGoAheadWrite', () => {
     expect(w.endSeries).toEqual([{ id: 's-old', expected_version: 4, end_date: '2026-12-01' }]);
   });
 
+  it('IN-C07: a legacy loss_of_value running-cost line writes no series', () => {
+    const inputs = buyInputs({
+      method: 'cash',
+      runningCosts: [
+        { id: 'l1', name: 'Loss', amount: 9_999, note: '', counted: true, seriesId: null, category: 'loss_of_value' },
+        { id: 'r1', name: 'Insurance', amount: 4000, note: '', counted: true, seriesId: null, category: null },
+      ],
+    });
+    const w = build(inputs, makePlan(), {}, ctx, { ...RUNNING, countedCosts: 1 });
+    expect(w.series.map((s) => s.name)).toEqual(['Insurance']);
+  });
+
   it('CR-C02: a recurring bill named twice is ended once', () => {
     const twice = { id: 'p1', name: 'Old', amount: 3000, note: '', counted: true, seriesId: 's-old', category: null };
     const inputs = buyInputs({ method: 'cash', needBy: '2026-12-01', replaces: [twice, { ...twice, id: 'p2' }] });
