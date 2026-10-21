@@ -84,6 +84,37 @@ describe('useUpdateDecideSettings', () => {
     expect(qc.getQueryData<DecideSettingsRow>(KEY)?.reserve).toBeNull();
   });
 
+  it('WR-A07: two queued edits both refused end on the server value, not on the first edit', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, row({ reserve: 100, rough_income: 7 }));
+    fake.respondWith({ data: null, error: { message: 'no', code: '23514' }, status: 400 });
+    fake.respondWith({ data: null, error: { message: 'no', code: '23514' }, status: 400 });
+    const { result } = await renderHook(() => useUpdateDecideSettings('user-1'), { wrapper: wrapper(qc) });
+
+    result.current.update({ reserve: 200 });
+    result.current.update({ rough_income: 9 });
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(2));
+    expect(qc.getQueryData<DecideSettingsRow>(KEY)).toMatchObject({ reserve: 100, rough_income: 7 });
+  });
+
+  it('WR-A07: a refused edit keeps the edits still queued behind it', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, row({ reserve: 100, rough_income: 7 }));
+    fake.respondWith({ data: null, error: { message: 'no', code: '23514' }, status: 400 });
+    fake.respondWith({ data: row({ reserve: 100, rough_income: 9, version: 2 }), error: null, status: 200 });
+    const { result } = await renderHook(() => useUpdateDecideSettings('user-1'), { wrapper: wrapper(qc) });
+    let atFailure: DecideSettingsRow | undefined;
+    recordFailedWrite.mockImplementationOnce(async () => {
+      atFailure = qc.getQueryData<DecideSettingsRow>(KEY);
+    });
+
+    result.current.update({ reserve: 200 });
+    result.current.update({ rough_income: 9 });
+    await waitFor(() => expect(qc.getQueryData<DecideSettingsRow>(KEY)?.version).toBe(2));
+    // When the first edit was refused, the second (still queued) stayed on screen and the refused value left.
+    expect(atFailure).toMatchObject({ reserve: 100, rough_income: 9 });
+  });
+
   it('rolls back on a rejection and records field names only', async () => {
     const { fake, qc } = setup();
     qc.setQueryData(KEY, row({ reserve: 200000 }));

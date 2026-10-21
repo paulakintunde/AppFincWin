@@ -19,6 +19,7 @@ import {
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
+import { registerWipeHandler } from '@/services/storage/wipe';
 import { writeClient } from './writeClient';
 
 export interface UpdateDecideSettingsVars {
@@ -28,6 +29,28 @@ export interface UpdateDecideSettingsVars {
 
 interface SettingsContext {
   previous: DecideSettingsRow | null | undefined;
+}
+
+/**
+ * WR-A07: the last settings row the server confirmed, per user, captured by the oldest queued edit's onMutate (it
+ * reads the cache before any optimistic edit of the run) and on every success. A rejected edit rebuilds the cache from it
+ * plus the edits still queued, instead of restoring its own `previous`, which may hold an earlier edit's value.
+ * In memory only: after a restart a replayed edit falls back to `previous`, and the refetch below corrects it.
+ */
+const confirmed = new Map<string, DecideSettingsRow | null>();
+registerWipeHandler({
+  id: 'decide-settings-confirmed',
+  wipe: async () => {
+    confirmed.clear();
+  },
+});
+
+function pendingSettingsEdits(qc: QueryClient, userId: string): UpdateDecideSettingsVars[] {
+  return qc
+    .getMutationCache()
+    .findAll({ mutationKey: mutationKeys.updateDecideSettings, status: 'pending' })
+    .map((m) => m.state.variables as UpdateDecideSettingsVars | undefined)
+    .filter((v): v is UpdateDecideSettingsVars => v !== undefined && v.userId === userId);
 }
 
 export function registerDecideSettingsMutations(qc: QueryClient): void {
@@ -42,6 +65,8 @@ export function registerDecideSettingsMutations(qc: QueryClient): void {
       const key = queryKeys.decideSettings(vars.userId);
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<DecideSettingsRow | null>(key);
+      // The oldest queued edit read the cache before any optimistic edit of this run, so its `previous` is the server's.
+      if (pendingSettingsEdits(qc, vars.userId)[0] === vars && previous !== undefined) confirmed.set(vars.userId, previous);
       qc.setQueryData<DecideSettingsRow | null>(key, (old) => ({
         ...EMPTY_DECIDE_SETTINGS,
         user_id: vars.userId,
@@ -51,14 +76,28 @@ export function registerDecideSettingsMutations(qc: QueryClient): void {
       return { previous };
     },
     onSuccess: (row: DecideSettingsRow, vars: UpdateDecideSettingsVars) => {
+      confirmed.set(vars.userId, row);
       qc.setQueryData(queryKeys.decideSettings(vars.userId), row);
     },
     onError: async (err: unknown, vars: UpdateDecideSettingsVars, context: unknown) => {
       const cls = classifySettledWriteError(err);
       if (cls !== 'rejected' && cls !== 'not-found') return; // unconditional, never conflicts
+      const key = queryKeys.decideSettings(vars.userId);
       const ctx = context as SettingsContext | undefined;
-      if (ctx && ctx.previous !== undefined) qc.setQueryData(queryKeys.decideSettings(vars.userId), ctx.previous);
-      else void qc.invalidateQueries({ queryKey: queryKeys.decideSettings(vars.userId) });
+      const base = confirmed.has(vars.userId) ? confirmed.get(vars.userId) : ctx?.previous;
+      if (base !== undefined) {
+        // The server value plus every edit still queued (this one is still listed as pending while onError runs).
+        const queued = pendingSettingsEdits(qc, vars.userId).filter((v) => v !== vars);
+        qc.setQueryData<DecideSettingsRow | null>(key, () =>
+          queued.length === 0
+            ? base
+            : queued.reduce<DecideSettingsRow>(
+                (row, v) => ({ ...row, ...v.patch }),
+                { ...EMPTY_DECIDE_SETTINGS, user_id: vars.userId, ...(base ?? {}) }
+              )
+        );
+      }
+      void qc.invalidateQueries({ queryKey: key });
       await recordFailedWrite({
         entity: 'decide_settings',
         entityId: vars.userId,
