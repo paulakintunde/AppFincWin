@@ -143,7 +143,16 @@ function LineEditorForm({ context, currency, initial, recurringBills = [], forma
           <MoneyInput
             value={value.amount > 0 ? value.amount : null}
             currency={currency}
-            onChange={(minor) => set({ amount: minor ?? 0 })}
+            onChange={(minor) =>
+              // WR-C11: Go ahead ends a picked bill's whole series, so a changed amount is no longer that bill: the line
+              // keeps the typed amount and ends nothing.
+              setValue((v) => {
+                const amount = minor ?? 0;
+                const bill = v.seriesId === null ? undefined : recurringBills.find((b) => b.id === v.seriesId);
+                const keepsBill = bill === undefined || bill.monthly === amount;
+                return { ...v, amount, seriesId: keepsBill ? v.seriesId : null };
+              })
+            }
             label={t('decide.lineEditor.amount')}
             accessibilityLabel={t('decide.lineEditor.amount')}
           />

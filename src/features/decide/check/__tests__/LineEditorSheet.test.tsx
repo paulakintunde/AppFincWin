@@ -69,6 +69,23 @@ describe('LineEditorSheet', () => {
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ name: 'Parking', amount: 12_000, seriesId: 'ser-1' }));
   });
 
+  it('WR-C11: a picked bill whose amount is changed no longer ends its series', async () => {
+    const { onSave } = await open('replaces', { recurringBills: BILLS });
+    await fireEvent.press(screen.getByLabelText('Parking, $120.00'));
+    await typeAmount('80');
+    await fireEvent.press(screen.getByLabelText('Save line'));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ name: 'Parking', amount: 8_000, seriesId: null }));
+  });
+
+  it('WR-C11: a picked bill renamed with its amount unchanged still ends its series', async () => {
+    const { onSave } = await open('replaces', { recurringBills: BILLS });
+    await fireEvent.press(screen.getByLabelText('Parking, $120.00'));
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'Car park');
+    await typeAmount('120');
+    await fireEvent.press(screen.getByLabelText('Save line'));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ name: 'Car park', amount: 12_000, seriesId: 'ser-1' }));
+  });
+
   it('setbacks choose a kind and take months and a percent', async () => {
     const { onSave } = await open('setback');
     await fireEvent.press(screen.getByText('Income drops'));
