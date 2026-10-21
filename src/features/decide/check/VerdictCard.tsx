@@ -91,7 +91,8 @@ function cardCopy(c: CheckComputation, lastSeenBasis: VerdictCardProps['lastSeen
       return {
         chip: chipOf('missing', 'full', fr.reasons),
         size: ref(SIZE_LABEL[fr.size]),
-        title: ref(MISSING_TITLE[fr.reasons[0] ?? 'card_missing']),
+        // IN-C05: a missing first read with no reason gets the generic title, never the card one
+        title: fr.reasons[0] === undefined ? ref('decide.verdict.missingGeneric') : ref(MISSING_TITLE[fr.reasons[0]]),
         body: null,
         basis,
         link: null,

@@ -1577,6 +1577,7 @@ const en = {
       titleInvInvesting: 'The month closes only if {{amount}} a month of investing pauses.',
       titleInvSaving: 'The month closes only if {{amount}} a month of saving pauses.',
       titleInvBoth: 'The month closes only if {{amount}} a month of saving and investing pauses.',
+      missingGeneric: 'Some of the terms are missing, so this cannot be scored yet.',
       missing: {
         card_not_accepted: 'A credit card cannot settle this kind of payment at all.',
         card_missing: 'No card is chosen, so this cannot be scored yet.',

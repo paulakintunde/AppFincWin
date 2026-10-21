@@ -86,6 +86,15 @@ describe('Step3Verdict', () => {
     expect(screen.getByText('First read · your figures')).toBeTruthy();
   });
 
+  it('IN-C05: a missing first read with no reason has the generic missing title', async () => {
+    const p = propsFor({ advertised: 150_000, method: 'cash' }, roughSource());
+    const fr = p.computation.firstRead!;
+    const missing = { ...p, computation: { ...p.computation, firstRead: { ...fr, state: 'missing', reasons: [] } as never } };
+    await wrap(<Step3Verdict {...missing} />);
+    expect(screen.getByText('Some of the terms are missing, so this cannot be scored yet.')).toBeTruthy();
+    expect(screen.queryByText('No card is chosen, so this cannot be scored yet.')).toBeNull();
+  });
+
   it('a logged check last seen on the first read shows the new basis', async () => {
     await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, loggedSource(), { lastSeenBasis: 'first_read_rough_figures' })} />);
     expect(screen.getByText('Now from your logged months')).toBeTruthy();
