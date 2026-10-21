@@ -167,8 +167,26 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, conversions, full
   const danger = copy.chip?.tone === 'no';
   const background = danger ? colors.danger : colors.ink;
   const soft = colors.inkSoft1;
+  // WR-C05: the card is one accessible element, so its confidence chip and missing-rate link cannot be focused inside it;
+  // both are offered as the card's own accessibility actions instead.
+  const linkText = copy.link ? refText(t, copy.link) : '';
+  const openActivity = (): void => router.push('/activity' as Href);
+  const actions = [
+    ...(confidence ? [{ name: 'confidence', label: confidenceText }] : []),
+    ...(copy.link ? [{ name: 'openActivity', label: linkText }] : []),
+  ];
   const card = (
-    <View accessible accessibilityLiveRegion="polite" accessibilityLabel={settled} style={[styles.card, { backgroundColor: background }]}>
+    <View
+      accessible
+      accessibilityLiveRegion="polite"
+      accessibilityLabel={settled}
+      accessibilityActions={actions.length > 0 ? actions : undefined}
+      onAccessibilityAction={(e) => {
+        if (e.nativeEvent.actionName === 'confidence') setSheetOpen(true);
+        else if (e.nativeEvent.actionName === 'openActivity') openActivity();
+      }}
+      style={[styles.card, { backgroundColor: background }]}
+    >
       <View style={styles.top}>
         {copy.chip ? (
           <View accessible={onEdge} accessibilityLabel={onEdge ? chipName : undefined} style={styles.chips}>
@@ -205,10 +223,10 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, conversions, full
       {copy.link ? (
         <Pressable
           accessibilityRole="link"
-          onPress={() => router.push('/activity' as Href)}
+          onPress={openActivity}
           style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
         >
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{refText(t, copy.link)}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{linkText}</Text>
         </Pressable>
       ) : null}
     </View>

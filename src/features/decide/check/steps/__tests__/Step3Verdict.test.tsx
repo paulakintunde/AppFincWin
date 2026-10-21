@@ -113,6 +113,24 @@ describe('Step3Verdict', () => {
     expect(mockPush).toHaveBeenCalledWith('/activity');
   });
 
+  it('WR-C05: the missing-rate link is an accessibility action of the verdict card', async () => {
+    await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, unconvertedSource())} />);
+    const card = screen.queryAllByLabelText(/./).find((n) => Array.isArray(n.props.accessibilityActions));
+    expect(card).toBeDefined();
+    expect(card!.props.accessibilityActions).toEqual([{ name: 'openActivity', label: 'See lines waiting for a rate' }]);
+    await fireEvent(card!, 'accessibilityAction', { nativeEvent: { actionName: 'openActivity' } });
+    expect(mockPush).toHaveBeenCalledWith('/activity');
+  });
+
+  it('WR-C05: the confidence reasons open from an accessibility action of the verdict card', async () => {
+    await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, loggedSource())} />);
+    const card = screen.queryAllByLabelText(/./).find((n) => Array.isArray(n.props.accessibilityActions));
+    const action = (card?.props.accessibilityActions as { name: string }[] | undefined)?.find((a) => a.name === 'confidence');
+    expect(action).toBeDefined();
+    await fireEvent(card!, 'accessibilityAction', { nativeEvent: { actionName: 'confidence' } });
+    expect(screen.getAllByText('What this rests on').length).toBeGreaterThan(0);
+  });
+
   it('caps the title at three lines and the body at two, with a title of at most 64 characters', async () => {
     await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, loggedSource())} />);
     const title = screen.getByText(/It clears every line/);
