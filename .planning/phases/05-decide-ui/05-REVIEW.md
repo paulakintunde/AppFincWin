@@ -22,13 +22,13 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 
 | ID | Severity | File | Finding | Status |
 |----|----------|------|---------|--------|
-| CR-A01 | critical | `src/db/decideSettings.ts:73 together with supabase/migrations/20261016000100_decide_tables.sql:145-146` | Decide-settings upsert needs UPDATE on `user_id`, which is not granted, so every settings save fails | open |
+| CR-A01 | critical | `src/db/decideSettings.ts:73 together with supabase/migrations/20261016000100_decide_tables.sql:145-146` | Decide-settings upsert needs UPDATE on `user_id`, which is not granted, so every settings save fails | fixed (a6728ae3, 334878e6) |
 | CR-B01 | high | `src/features/decide/home/LimitEditorSheet.tsx:253-256` | Saving one limit or the rough figures changes the currency of every other stored money limit | open |
 | CR-B02 | high | `src/features/decide/snapshot/computeCheck.ts:127-166` | A check typed in a previous home currency is judged as if its amounts were in the current one | open |
 | CR-B03 | high | `src/features/decide/notifications/waitReminder.ts:58-65` | The reminder map is read and rewritten by overlapping calls; a lost id leaves a notification that nothing can cancel | open |
 | CR-B04 | high | `src/features/decide/quick/QuickResult.tsx:210-240` | "Try on credit" cannot be reached by screen readers inside the accessible result group — HIGH (a11y) | open |
 | CR-C01 | high | `src/features/decide/check/useCheckDraft.ts:112-133. The stale closures are captured at steps/Step2PriceAndPay.tsx:76-91` | A toast Undo reverts every edit made after the removal (stale `update` closure) | open |
-| CR-C02 | high | `src/features/decide/check/LineEditorSheet.tsx:113-128` | The same recurring bill can be "replaced" twice, giving a double-counted saving and a refused Go ahead | open |
+| CR-C02 | high | `src/features/decide/check/LineEditorSheet.tsx:113-128` | The same recurring bill can be "replaced" twice, giving a double-counted saving and a refused Go ahead | partly fixed (a6728ae3, 949092cb): a refused Go ahead leaves no rows; the replace dedupe is open for batch C |
 | CR-C03 | high | `src/features/decide/check/writtenLines.ts:485-489` | "What gets written" promises a transfer into the investment account, but the write records a pending expense | open |
 | CR-C04 | high | `src/features/decide/check/writtenLines.ts:544-555` | "Closes N recurring bills" can be listed while nothing is ended | open |
 | CR-C05 | high | `src/features/decide/check/useCommitDecision.ts:216` | Go ahead can write to an archived account or a different-currency account, then double counts the purchase | open |
@@ -37,13 +37,13 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | CR-D01 | high | `src/features/decide/ui/MoneyInput.tsx:43-67` | Onboarding rough figures can trap iOS users, and Skip silently discards them | open |
 | CR-D02 | high | `src/features/record/import/useStatementImport.ts:1425-1426` | The statement period outlives an undone or rejected import, so Decide counts empty months as complete | open |
 | CR-D03 | high | `src/features/navigation/swipeBackGesture.ts:41-51` | The swipe-back interceptor and back listener are global, without focus or ownership checks | open |
-| WR-A01 | high |  | Guard triggers undo the database's ON DELETE SET NULL, leaving dangling `check_id` / `reopened_from` | open |
-| WR-A02 | high | `src/data/mutations/decideGoAhead.ts:351-369 (onError at 410-436)` | Go ahead inserts its rows and records the decision in two requests, so a refused RPC leaves committed purchase lines and a double tap writes them twice | open |
-| WR-A03 | high | `src/data/mutations/decideChecks.ts:165-173 (saveCheckDraft)` | Draft autosave bumps the check version without recording it in the version chain, so queued mark-seen and abandon edits hit false conflicts | open |
-| WR-A04 | medium | `src/data/mutations/decideChecks.ts:215-239` | Removing a Wait decision writes the check and its goal in two requests, so a goal failure leaves the check deleted with no Undo and the goal still live | open |
-| WR-A05 | medium | `src/db/debts.ts:117-126` | Decide reads are not filtered by household, so a user in two households gets mixed debts, checks and links in one snapshot | open |
-| WR-A06 | medium | `src/data/mutations/decideGoAhead.ts:109-132 (addRow)` | Go-ahead purchase lines are written without `one_off`, so a lump purchase later inflates spending averages for every other check | open |
-| WR-A07 | medium | `src/data/mutations/decideSettings.ts:316-337` | Optimistic settings rollback restores a stale snapshot when two settings writes are queued | open |
+| WR-A01 | high |  | Guard triggers undo the database's ON DELETE SET NULL, leaving dangling `check_id` / `reopened_from` | fixed (a6728ae3) |
+| WR-A02 | high | `src/data/mutations/decideGoAhead.ts:351-369 (onError at 410-436)` | Go ahead inserts its rows and records the decision in two requests, so a refused RPC leaves committed purchase lines and a double tap writes them twice | fixed (a6728ae3, 949092cb); the confirmGo in-flight latch is left to CR-C07 |
+| WR-A03 | high | `src/data/mutations/decideChecks.ts:165-173 (saveCheckDraft)` | Draft autosave bumps the check version without recording it in the version chain, so queued mark-seen and abandon edits hit false conflicts | fixed (d1c828f3) |
+| WR-A04 | medium | `src/data/mutations/decideChecks.ts:215-239` | Removing a Wait decision writes the check and its goal in two requests, so a goal failure leaves the check deleted with no Undo and the goal still live | fixed (261aaad4) |
+| WR-A05 | medium | `src/db/debts.ts:117-126` | Decide reads are not filtered by household, so a user in two households gets mixed debts, checks and links in one snapshot | fixed (09bb8fa3) |
+| WR-A06 | medium | `src/data/mutations/decideGoAhead.ts:109-132 (addRow)` | Go-ahead purchase lines are written without `one_off`, so a lump purchase later inflates spending averages for every other check | fixed (5c072859), D-66 |
+| WR-A07 | medium | `src/data/mutations/decideSettings.ts:316-337` | Optimistic settings rollback restores a stale snapshot when two settings writes are queued | fixed (e10e18c2) |
 | WR-B01 | medium | `src/features/decide/snapshot/buildSnapshot.ts:164-168` | A zero balance in a currency with no stored rate makes the whole Decide tab unconverted | open |
 | WR-B02 | medium | `src/features/decide/snapshot/buildSnapshot.ts:342-343` | Transfer-category outflow series are counted as bills, while income series of the same category are left out | open |
 | WR-B03 | medium | `src/features/decide/snapshot/buildSnapshot.ts:270` | Debt-category one-off payments are excluded only when a `debts` row exists | open |
@@ -72,10 +72,10 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | IN-B06 | low | `src/features/decide/snapshot/checkInputs.ts:358-390` | "Run the full check" saves inputs with `currency: null` | open |
 | IN-B07 | low | `src/features/decide/copy/quickCopy.ts:127` | Fallback copy can say "short by 0" | open |
 | IN-B08 | low | `src/features/decide/home/RoughFiguresSheet.tsx:278` | Rough figures cannot record zero income | open |
-| WR-A08 | low | `supabase/migrations/20261016000300_decide_outcomes.sql:415-417` | A Wait queued offline for more than two days can be refused permanently | open |
-| WR-A09 | low | `src/data/mutations/sampleData.ts:24-36` | Clearing or seeding sample data does not refresh the settings, goals or changes caches | open |
-| WR-A10 | low | `src/data/mutations/decideLinks.ts:204-223` | Undoing an unlink collides with the live-unique index after the same line is re-attached | open |
-| WR-A11 | low | `src/data/mutations/decideGoAhead.ts:288` | Go-ahead running-cost series drop the category the user picked | open |
+| WR-A08 | low | `supabase/migrations/20261016000300_decide_outcomes.sql:415-417` | A Wait queued offline for more than two days can be refused permanently | fixed (a6728ae3) |
+| WR-A09 | low | `src/data/mutations/sampleData.ts:24-36` | Clearing or seeding sample data does not refresh the settings, goals or changes caches | fixed (2cce53d6) |
+| WR-A10 | low | `src/data/mutations/decideLinks.ts:204-223` | Undoing an unlink collides with the live-unique index after the same line is re-attached | no change: accepted refusal (the line is already attached again), documented in 48d553b2 |
+| WR-A11 | low | `src/data/mutations/decideGoAhead.ts:288` | Go-ahead running-cost series drop the category the user picked | fixed (8ef2deb3) |
 | WR-C07 | low | `src/features/decide/check/CheckFlowScreen.tsx:97-114` | Live inputs are mixed with settled (150 ms) detail figures | open |
 | WR-C08 | low | `src/features/decide/check/CheckFlowScreen.tsx:249-263` | The swipe-back interceptor is cleared unconditionally, and Reopen stacks a second flow | open |
 | WR-C09 | low | `src/features/decide/check/CheckFlowScreen.tsx:270-274` | "Save and close" says "Saved" when nothing was saved | open |
@@ -92,9 +92,9 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | WR-D11 | low | `src/shell/decide/CommitMutationsProvider.tsx:15-27` | CommitMutationsProvider value is not memoised, and canWrite hides all errors | open |
 | WR-D12 | low | `src/features/record/entry/pickers/DateField.tsx:43` | DateField refuses an earlier date without any feedback | open |
 | WR-D13 | low | `app/(app)/_layout.tsx:80` | Notification routing is enabled when the profile is missing | open |
-| IN-A01 | info | `supabase/migrations/20261016000400_decide_demo_seed.sql:253-261` | Demo check inputs are stored in USD minor units for every home currency | open |
-| IN-A02 | info | `jest.config.js:46-47` | Bare CR and mixed line endings in jest.config.js | open |
-| IN-A03 | info | `src/engine/decide/decision.ts:1-27 and throughout` | `decision.ts` reformatted to double quotes | open |
+| IN-A01 | info | `supabase/migrations/20261016000400_decide_demo_seed.sql:253-261` | Demo check inputs are stored in USD minor units for every home currency | no change: left to batch B old-currency "convert and note"; the seeded inputs carry no currency, so batch B must stamp them USD for that to apply |
+| IN-A02 | info | `jest.config.js:46-47` | Bare CR and mixed line endings in jest.config.js | fixed (165600e0) |
+| IN-A03 | info | `src/engine/decide/decision.ts:1-27 and throughout` | `decision.ts` reformatted to double quotes | fixed (f4a3b68d) |
 | IN-C01 | info | `src/features/decide/check/CheckFlowScreen.tsx:358` | `Number()` is used on money and on rate text | open |
 | IN-C02 | info | `src/features/decide/check/sections/LedgersSection.tsx:114 (" to ")` | Hard-coded English in accessibility and visible text | open |
 | IN-C03 | info | `src/features/decide/check/sections/LinesSection.tsx:287.` | The investing row prints "floor £0" when the floor is not set | open |
