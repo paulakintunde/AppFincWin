@@ -297,6 +297,12 @@ function acceptIfAlreadyDeleted(err: unknown): DecideLinkRow {
   throw err;
 }
 
+/**
+ * WR-A10 (accepted): attaching a line always inserts a new link. If the same line was unlinked earlier and is attached
+ * again, a later Undo of that unlink would revive a second live link for the same (check, line); decide_links_live_unique
+ * refuses it (23505) and undo_replay reports the step as changed. That refusal is the correct outcome, since the line is
+ * already attached, so the old undo step is left to fail closed rather than reusing the deleted link row here.
+ */
 export function useAttachLine(): {
   attach(input: {
     userId: string;
