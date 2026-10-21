@@ -43,7 +43,8 @@ export function useBoughtCheckComputation(row: DecideCheckRow | null, inputs: Ch
       // WR-C02: Go ahead ended them on the tap day, which an offline replay can leave before decided_at.
       ...(inputs.needBy === null && typeof row.created_at === 'string' ? { endedFrom: localDateIn(new Date(row.created_at), rc.timeZone) } : {}),
     };
-    const built = buildDecideSnapshot(withoutCheckWrites(source, checkId, linkRows, replaced));
+    // WR-B05: attached day-one and payment lines from the decided date on are the purchase itself.
+    const built = buildDecideSnapshot(withoutCheckWrites(source, checkId, linkRows, replaced, decidedOn));
     // D-67: amounts typed in another currency are judged at the latest stored rate (or read unconverted without one).
     const view = inHomeCurrency(inputs, built, { isSample: row.is_sample });
     return computeCheck(sourceFor(built, view), view.inputs, stack.otherChecks);

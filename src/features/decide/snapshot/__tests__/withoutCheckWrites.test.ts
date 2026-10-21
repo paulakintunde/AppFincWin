@@ -186,6 +186,24 @@ describe('withoutCheckWrites', () => {
     expect(out.rows).toHaveLength(source.rows.length);
   });
 
+  it('WR-B05: an attached day-one or payment line on or after the decided date is the purchase and is taken out', () => {
+    const source = demoSource(TODAY);
+    const base = source.rows[0]!;
+    const paid = (id: string, local_date: string) => ({ ...base, id, local_date, account_id: CASH, original_amount: -10_000, home_amount: -10_000, status: 'paid' as const, original_currency: 'USD', recurring_series_id: null });
+    const rows = [paid('bank-buy', TODAY), paid('bank-pay', '2026-11-15'), paid('earlier', '2026-10-01'), paid('running', TODAY), paid('gone', TODAY)];
+    const withRows: SnapshotSource = { ...source, rows: [...source.rows, ...rows], balances: { ...source.balances, [CASH]: 100_000 } };
+    const link = (target_id: string, role: CheckWriteLink['role'], deleted_at: string | null = null): CheckWriteLink => ({ check_id: 'c1', entity: 'transactions', target_id, source: 'attached', role, deleted_at });
+    const links = [link('bank-buy', 'day_one'), link('bank-pay', 'payment'), link('earlier', 'day_one'), link('running', 'running_cost'), link('gone', 'day_one', '2026-10-16T00:00:00Z')];
+    const out = withoutCheckWrites(withRows, 'c1', links, null, TODAY);
+    const ids = out.rows.map((r) => r.id);
+    expect(ids).not.toContain('bank-buy');
+    expect(ids).not.toContain('bank-pay');
+    expect(ids).toEqual(expect.arrayContaining(['earlier', 'running', 'gone']));
+    expect(out.balances[CASH]).toBe(120_000);
+    // without a decided date nothing attached is taken out
+    expect(withoutCheckWrites(withRows, 'c1', links, null).rows).toHaveLength(withRows.rows.length);
+  });
+
   it('an undone Go ahead removes nothing', () => {
     const source = demoSource(TODAY);
     const { after } = goAhead(source, { ...sofaInputs, needBy: null }, 'sofa');
