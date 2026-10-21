@@ -167,7 +167,12 @@ export function useCommitDecision(args: CommitArgs): {
 
   const confirmGo = useCallback((): void => {
     setAsking(false);
-    if (row === null || ctx === null || assessed === null || rc.userId === null || goBlocked !== null) return;
+    // WR-C10: the snapshot changed under the open sheet so that Go ahead can no longer be written: say why.
+    if (goBlocked !== null) {
+      showToast({ kind: 'ordinary', text: { key: goBlocked } });
+      return;
+    }
+    if (row === null || ctx === null || assessed === null || rc.userId === null) return;
     if (!claim()) return;
     const assessment: GoAheadAssessment = assessed;
     const running: RunningCosts | null = computation?.running ?? null;
@@ -235,7 +240,9 @@ export function useCommitDecision(args: CommitArgs): {
                 text: { key: 'decide.toast.saved' },
               });
             }
-          });
+          })
+          // WR-C10: the decision is queued before anything here can fail; a failure only loses the reminder detail.
+          .catch(() => showToast({ kind: 'ordinary', text: { key: 'decide.toast.saved' } }));
         onDone();
         return;
       }

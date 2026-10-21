@@ -49,8 +49,8 @@ async function render(over: Partial<CheckInputs> = {}) {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <CommitMutationsContext.Provider value={mutations}>{children}</CommitMutationsContext.Provider>
   );
-  const hook = await renderHook(() => useCommitDecision(args), { wrapper });
-  return { onDone, ...hook };
+  const hook = await renderHook((p: Partial<CommitArgs>) => useCommitDecision({ ...args, ...p }), { wrapper, initialProps: {} });
+  return { onDone, args, ...hook };
 }
 
 beforeEach(() => jest.clearAllMocks());
@@ -94,5 +94,27 @@ describe('useCommitDecision in-flight latch (CR-C07)', () => {
     });
     expect(mockWaitAndSave).toHaveBeenCalledTimes(1);
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useCommitDecision refusals (WR-C10)', () => {
+  it('a confirm after Go ahead became unavailable says why and writes nothing', async () => {
+    const { showToast } = jest.requireMock('@/state/undoToast') as { showToast: jest.Mock };
+    const { result, rerender, onDone } = await render();
+    await act(async () => result.current.requestCommit('go'));
+    await rerender({ cashAccounts: [] });
+    await act(async () => result.current.confirm.onConfirm());
+    expect(mockGoAhead).not.toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.decision.goNeedsAccount' } });
+  });
+
+  it('a failing Wait save still toasts that it was saved', async () => {
+    const { showToast } = jest.requireMock('@/state/undoToast') as { showToast: jest.Mock };
+    mockWaitAndSave.mockImplementationOnce(() => Promise.reject(new Error('scheduler')));
+    const { result } = await render();
+    await act(async () => result.current.requestCommit('wait'));
+    await act(async () => undefined);
+    expect(showToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.toast.saved' } });
   });
 });
