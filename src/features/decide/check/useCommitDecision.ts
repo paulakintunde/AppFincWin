@@ -36,6 +36,8 @@ export interface CommitArgs {
   investAccounts: readonly { id: string; name: string; currency: string }[];
   /** Leaves the flow for Decide once a commit has been handed to the write queue. */
   onDone: () => void;
+  /** WR-C01: queues the pending draft save now, so it lands before the commit in the write queue. */
+  flush: () => void;
 }
 
 export interface CommitConfirm {
@@ -62,7 +64,7 @@ export function useCommitDecision(args: CommitArgs): {
   /** CR-C07: a commit has been handed to the write queue; the primary button stays disabled while the flow leaves. */
   committing: boolean;
 } {
-  const { row, inputs, computation, source, whole, exact, cashAccounts, investAccounts, onDone } = args;
+  const { row, inputs, computation, source, whole, exact, cashAccounts, investAccounts, onDone, flush } = args;
   const t = useT() as Translate;
   const rc = useRecordContext();
   const lookup = useCategoryLookup(rc.userId ?? undefined);
@@ -174,6 +176,7 @@ export function useCommitDecision(args: CommitArgs): {
     }
     if (row === null || ctx === null || assessed === null || rc.userId === null) return;
     if (!claim()) return;
+    flush();
     const assessment: GoAheadAssessment = assessed;
     const running: RunningCosts | null = computation?.running ?? null;
     const stepId = mutations.goAhead({
@@ -194,7 +197,7 @@ export function useCommitDecision(args: CommitArgs): {
       stepId,
     });
     onDone();
-  }, [row, ctx, assessed, rc.userId, rc.homeCurrency, goBlocked, computation, mutations, inputs, onDone, claim]);
+  }, [row, ctx, assessed, rc.userId, rc.homeCurrency, goBlocked, computation, mutations, inputs, onDone, claim, flush]);
 
   const requestCommit = useCallback(
     (outcome: Outcome): void => {
@@ -205,13 +208,16 @@ export function useCommitDecision(args: CommitArgs): {
         if (goBlocked === null) setAsking(true);
         return;
       }
+      // WR-C01: the last edits are queued as a draft save ahead of the outcome, and the goal is named from them.
+      const check = { ...row, name: inputs.name.trim().slice(0, 80) || row.name };
       if (outcome === 'wait') {
         const plan = computation.waitPlan;
         if (plan === null || source === null || !claim()) return;
+        flush();
         hapticMedium();
         void mutations
           .waitAndSave({
-            check: row,
+            check,
             verdict: verdictState,
             currency: source.currency,
             monthlyAmount: plan.monthlyAmount,
@@ -247,11 +253,12 @@ export function useCommitDecision(args: CommitArgs): {
         return;
       }
       if (!claim()) return;
-      mutations.pass({ check: row, verdict: verdictState, coolingOff });
+      flush();
+      mutations.pass({ check, verdict: verdictState, coolingOff });
       showToast({ kind: 'ordinary', text: { key: 'decide.toast.passed' } });
       onDone();
     },
-    [row, computation, verdict, inputs.coolingOff, goBlocked, source, mutations, rc.today, whole, onDone, claim],
+    [row, computation, verdict, inputs.coolingOff, inputs.name, goBlocked, source, mutations, rc.today, whole, onDone, claim, flush],
   );
 
   return {

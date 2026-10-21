@@ -357,7 +357,11 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
     () => liveAccounts.filter((a) => a.kind === 'investment').map((a) => ({ id: a.id, name: a.name, currency: a.currency })),
     [liveAccounts]
   );
-  const commit = useCommitDecision({ row, inputs, computation, source, whole, exact, cashAccounts, investAccounts, onDone: leaveFlow });
+  const saveDraftNow = draft.saveNow;
+  const flushDraft = useCallback((): void => {
+    void saveDraftNow();
+  }, [saveDraftNow]);
+  const commit = useCommitDecision({ row, inputs, computation, source, whole, exact, cashAccounts, investAccounts, onDone: leaveFlow, flush: flushDraft });
   const recurringBills = useMemo(() => {
     if (source === null || source.kind !== 'logged' || series === undefined) return EMPTY_BILLS;
     const names = new Map(series.map((s) => [s.id, s.name] as const));

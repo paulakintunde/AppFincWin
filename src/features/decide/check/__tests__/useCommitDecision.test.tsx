@@ -35,7 +35,11 @@ const computation = {
 
 async function render(over: Partial<CheckInputs> = {}) {
   const onDone = jest.fn();
+  const flush = jest.fn(() => {
+    order.push('flush');
+  });
   const args: CommitArgs = {
+    flush,
     row,
     inputs: { ...emptyCheckInputs('buy', TODAY), advertised: 1_000, method: 'cash', goAccountId: 'a1', ...over },
     computation,
@@ -50,10 +54,36 @@ async function render(over: Partial<CheckInputs> = {}) {
     <CommitMutationsContext.Provider value={mutations}>{children}</CommitMutationsContext.Provider>
   );
   const hook = await renderHook((p: Partial<CommitArgs>) => useCommitDecision({ ...args, ...p }), { wrapper, initialProps: {} });
-  return { onDone, args, ...hook };
+  return { onDone, flush, args, ...hook };
 }
 
-beforeEach(() => jest.clearAllMocks());
+const order: string[] = [];
+beforeEach(() => {
+  jest.clearAllMocks();
+  order.length = 0;
+});
+
+describe('useCommitDecision flushes the draft first (WR-C01)', () => {
+  it.each(['pass', 'wait', 'go'] as const)('%s queues the pending draft save before the commit, naming it from the live inputs', async (outcome) => {
+    mockPass.mockImplementationOnce(() => {
+      order.push('commit');
+    });
+    mockWaitAndSave.mockImplementationOnce(() => {
+      order.push('commit');
+      return Promise.resolve({ reminder: 'none' as const });
+    });
+    mockGoAhead.mockImplementationOnce(() => {
+      order.push('commit');
+      return 'step-1';
+    });
+    const { result } = await render({ name: 'Corner sofa' });
+    await act(async () => result.current.requestCommit(outcome));
+    if (outcome === 'go') await act(async () => result.current.confirm.onConfirm());
+    expect(order).toEqual(['flush', 'commit']);
+    if (outcome === 'pass') expect((mockPass.mock.calls[0] as unknown as [{ check: { name: string } }])[0].check.name).toBe('Corner sofa');
+    if (outcome === 'wait') expect((mockWaitAndSave.mock.calls[0] as unknown as [{ check: { name: string } }])[0].check.name).toBe('Corner sofa');
+  });
+});
 
 describe('useCommitDecision in-flight latch (CR-C07)', () => {
   it('two confirms in one frame write Go ahead once', async () => {
