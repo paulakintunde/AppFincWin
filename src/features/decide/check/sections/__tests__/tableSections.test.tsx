@@ -86,6 +86,11 @@ describe('LedgersSection', () => {
     expect(screen.getByText('Debt')).toBeTruthy();
   });
 
+  it('IN-C02: each ledger row is read from the catalogue', async () => {
+    await wrap(<LedgersSection {...sectionProps(FITS, loggedSource())} />);
+    expect(screen.getAllByLabelText(/^Debt, .+ to .+, (Better|Worse|Same)$/).length).toBe(1);
+  });
+
   it('renders nothing without a logged verdict', async () => {
     await wrap(<LedgersSection {...sectionProps(FITS, roughSource())} />);
     expect(screen.queryByText('Where it lands')).toBeNull();

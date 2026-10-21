@@ -1635,6 +1635,7 @@ const en = {
       monthClosesAverage: 'The month still closes with {{amount}} spare, on your average month.',
       monthClosesWorst: 'The month still closes with {{amount}} spare, and that is your worst month, not your average.',
       ledgersTitle: 'Where it lands', ledgersSummary: 'Five ledgers', ledgersNote: 'Five ledgers. A purchase never touches only one.', colLedger: 'Ledger',
+      ledgerA11y: '{{ledger}}, {{now}} to {{after}}, {{direction}}', ratePercent: '{{rate}}%',
       ledger: { income: 'Income', expenses: 'Expenses', debt: 'Debt', cash: 'Cash', investments: 'Investments' },
       ledgerDesc: { income: 'What comes in each month', expenses: 'What goes out each month', debt: 'What you owe', cash: 'What you hold today', investments: 'What goes into investing each month' },
       direction: { better: 'Better', worse: 'Worse', same: 'Same' },

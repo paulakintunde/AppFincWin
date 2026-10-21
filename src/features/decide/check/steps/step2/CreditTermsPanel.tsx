@@ -136,7 +136,7 @@ export function PromoRow(props: PromoRowProps) {
       ) : (
         <View>
           <Label>{t('decide.depth.credit.promoThen')}</Label>
-          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{thenRateText === '' ? '' : `${thenRateText}%`}</Text>
+          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{thenRateText === '' ? '' : t('decide.section.ratePercent', { rate: thenRateText })}</Text>
           <Meta>{t('decide.depth.credit.promoThenAbove')}</Meta>
         </View>
       )}

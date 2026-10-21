@@ -30,7 +30,7 @@ export function LedgersSection(props: SectionProps) {
             label={t(LEDGER_LABEL[l.code])}
             sub={`${t(LEDGER_DESC[l.code])} · ${direction}`}
             value={`${fmt(l.now)} → ${fmt(l.after)}`}
-            a11yLabel={`${t(LEDGER_LABEL[l.code])}, ${fmt(l.now)} to ${fmt(l.after)}, ${direction}`}
+            a11yLabel={t('decide.section.ledgerA11y', { ledger: t(LEDGER_LABEL[l.code]), now: fmt(l.now), after: fmt(l.after), direction })}
           />
         );
       })}
