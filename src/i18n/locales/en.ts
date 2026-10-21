@@ -1646,7 +1646,7 @@ const en = {
       lineMonth: 'Month closes', lineMonthDesc: '{{left}} left at month end',
       lineDsr: 'Debt service', lineDsrDesc: '{{pct}} against your {{line}} line', lineDsrDescNoIncome: 'No money in on this basis, against your {{line}} line', // D-50
       lineOwe: 'Unsecured debt', lineOweDesc: '{{amount}} against your {{line}} line',
-      lineInvesting: 'Investing floor', lineInvestingDesc: '{{after}} a month against your {{floor}} floor',
+      lineInvesting: 'Investing floor', lineInvestingDesc: '{{after}} a month against your {{floor}} floor', lineInvestingNoFloor: '{{after}} a month, no floor set',
       lineSaving: 'Saving floor', lineSavingDesc: '{{after}} a month against your {{floor}} floor',
       setbacksTitle: 'If something goes wrong', setbacksSummary: 'Runway {{count}} months', setbacksSummaryOpen: 'Runway not limited',
       setbacksNote: 'Switch one on to see it hit your cash with this purchase already running.',

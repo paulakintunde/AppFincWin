@@ -121,6 +121,17 @@ describe('LinesSection', () => {
     expect(screen.getByLabelText(/^Debt service, Over\./)).toBeTruthy();
   });
 
+  it('IN-C03: a zero investing floor reads as no floor set; a set floor is named', async () => {
+    const base = sectionProps(FITS, loggedSource());
+    const a = assessment(base);
+    const at = (floor: number) => withAssessment(base, { context: { ...a.context, limits: { ...a.context.limits, investingFloor: floor as never } } });
+    const view = await wrap(<LinesSection {...at(0)} />);
+    expect(screen.getByText(/a month, no floor set$/)).toBeTruthy();
+    await view.unmount();
+    await wrap(<LinesSection {...at(50_000)} />);
+    expect(screen.getAllByText(/a month against your \$500 floor$/).length).toBeGreaterThan(0);
+  });
+
   it('renders nothing without a logged verdict', async () => {
     await wrap(<LinesSection {...sectionProps(FITS, noneSource())} />);
     expect(screen.queryByText('Against your lines')).toBeNull();

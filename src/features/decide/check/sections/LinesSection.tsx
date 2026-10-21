@@ -70,7 +70,11 @@ export function LinesSection(props: SectionProps) {
       label: t('decide.section.lineInvesting'),
       ok: a.checks.inv,
       fail: t('decide.section.lineSqueezed'),
-      desc: t('decide.section.lineInvestingDesc', { after: fmt(a.investingAfter), floor: fmt(limits.investingFloor) }),
+      // IN-C03 (D-65): a zero investing floor means none is set, not "a floor of 0"
+      desc:
+        limits.investingFloor === 0
+          ? t('decide.section.lineInvestingNoFloor', { after: fmt(a.investingAfter) })
+          : t('decide.section.lineInvestingDesc', { after: fmt(a.investingAfter), floor: fmt(limits.investingFloor) }),
     },
     {
       key: 'save',
