@@ -1,5 +1,6 @@
-// 05-20 (D-09): Go ahead = rows inserted with client uuids, then record_decide_go with the same step id (replay key;
-// 'already-applied' is success). One undo step removes everything. Vars are JSON only.
+// 05-20 (D-09): Go ahead = ONE record_decide_go call carrying the rows (client uuids) and the step id (replay key;
+// 'already-applied' is success). WR-A02 (20261021000100): the server inserts the rows in the same transaction as the
+// decision, so a refusal leaves nothing written. One undo step removes everything. Vars are JSON only.
 //
 // buildGoAheadWrite is pure and mirrors 05-17's writtenLines branch for branch: the user reads exactly what is written.
 // Payment lines come from Plan.paymentSteps (the source of truth, 04-05); their total is plan.total - plan.dayOne.
@@ -11,7 +12,7 @@
 //    transfers into the card, so the card's derived balance does not fall as the payments run. Phase 6 reconciles it.
 //  - A sample check's Go ahead writes ordinary, non-sample rows: once committed they are the user's own records.
 import * as Crypto from 'expo-crypto';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import type { Assessment, PaymentStep, RunningCosts } from '@/engine/decide';
 import { buildTransferLegs } from '@/engine/transfer';
@@ -31,7 +32,6 @@ import {
 } from '@/db/decideOutcomes';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { NewRecurringSeries } from '@/db/recurringSeries';
-import { IMPORT_CHUNK_MAX, insertTransactionsBatch } from '@/db/transactions';
 import type { NewTransaction } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
@@ -337,36 +337,22 @@ export interface GoAheadVars {
   stepId: string;
 }
 
-/**
- * Step ids whose rows are already inserted. The insert and record_decide_go are two requests, so a permanent refusal
- * of the second leaves committed rows without an undo step; onError reads this to tell that case from a refused insert.
- * In memory only: after a restart the replay re-runs the idempotent insert and re-adds the id.
- */
-const rowsLanded = new Set<string>();
-
 type CheckList = WithPending<DecideCheckRow>[];
 
 export function registerDecideGoAheadMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.decideGoAhead, {
     mutationFn: (vars: GoAheadVars) =>
-      guardSession(vars, async () => {
-        const client = await writeClient();
-        for (let i = 0; i < vars.rows.length; i += IMPORT_CHUNK_MAX) {
-          await insertTransactionsBatch(client, vars.rows.slice(i, i + IMPORT_CHUNK_MAX));
-        }
-        rowsLanded.add(vars.stepId);
-        const result = await recordDecideGo(client, {
+      guardSession(vars, async () =>
+        recordDecideGo(await writeClient(), {
           checkId: vars.checkId,
-          rowIds: vars.rows.map((r) => r.id),
+          rows: vars.rows,
           series: vars.series,
           endSeries: vars.endSeries,
           debt: vars.debt,
           decision: vars.decision,
           undo: { id: vars.stepId, labelKey: 'decisionWritten', labelParams: { name: vars.name } },
-        });
-        rowsLanded.delete(vars.stepId);
-        return result;
-      }),
+        })
+      ),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
@@ -410,14 +396,11 @@ export function registerDecideGoAheadMutations(qc: QueryClient): void {
     onError: async (err: unknown, vars: GoAheadVars) => {
       const cls = classifySettledWriteError(err);
       if (cls !== 'rejected' && cls !== 'not-found') return;
-      const landed = rowsLanded.delete(vars.stepId);
-      if (!landed) {
-        const ids = new Set(vars.rows.map((r) => r.id));
-        for (const month of new Set(vars.rows.map((r) => monthOf(r.local_date)))) {
-          patchMonthCacheIfLoaded(qc, vars.householdId, month, (rows) => rows.filter((r) => !ids.has(r.id)));
-        }
+      // One transaction (WR-A02): a refusal wrote nothing, so the optimistic rows leave every loaded month.
+      const ids = new Set(vars.rows.map((r) => r.id));
+      for (const month of new Set(vars.rows.map((r) => monthOf(r.local_date)))) {
+        patchMonthCacheIfLoaded(qc, vars.householdId, month, (rows) => rows.filter((r) => !ids.has(r.id)));
       }
-      // Rows that landed before a refused RPC reappear from the server rather than vanish.
       void qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
       void qc.invalidateQueries({ queryKey: queryKeys.decideChecks(vars.ownerId, vars.householdId) });
       void qc.invalidateQueries({ queryKey: queryKeys.recurringSeries(vars.householdId) });
@@ -432,7 +415,7 @@ export function registerDecideGoAheadMutations(qc: QueryClient): void {
       });
       // The check stays open after a refusal, so the cooling-off reminder scheduled at tap time must not fire.
       void reminders.cancelCheckReminders(vars.checkId).catch(() => undefined);
-      showToast({ kind: 'refusal', text: { key: landed ? 'undo.batchSavedNoUndo' : 'undo.batchRefused' } });
+      showToast({ kind: 'refusal', text: { key: 'decide.toast.outcomeFailed' } });
     },
   });
 }
@@ -451,6 +434,7 @@ export function useGoAhead(): {
   /** Returns the undo step id, minted once so a paused-mutation replay reuses it. */
   goAhead(args: GoAheadArgs): string;
 } {
+  const qc = useQueryClient();
   const mutation = useMutation<unknown, unknown, GoAheadVars>({
     mutationKey: mutationKeys.decideGoAhead,
     scope: WRITE_SCOPE,
@@ -458,6 +442,15 @@ export function useGoAhead(): {
 
   return {
     goAhead(args): string {
+      // WR-A02: a Go ahead for this check is already queued (a double tap, or a tap while offline), so this one
+      // would only be refused as "already decided" and cancel the first one's reminder. Hand back its step.
+      const queued = qc
+        .getMutationCache()
+        .findAll({ mutationKey: mutationKeys.decideGoAhead, status: 'pending' })
+        .map((m) => m.state.variables as GoAheadVars | undefined)
+        .find((v) => v?.checkId === args.checkId);
+      if (queued) return queued.stepId;
+
       const write = buildGoAheadWrite({
         inputs: args.inputs,
         assessment: args.assessment,

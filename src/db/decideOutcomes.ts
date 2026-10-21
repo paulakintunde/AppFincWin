@@ -1,18 +1,39 @@
 // 05-05: client side of record_decide_go / record_decide_outcome (05-04). JSON-only payloads
 // (no bigint): every money field is an integer minor-unit number within the server's bounds.
 //
-// record_decide_go(p_check_id, p_row_ids, p_series, p_end_series, p_debt, p_decision, p_undo_step)
+// record_decide_go(p_check_id, p_rows, p_series, p_end_series, p_debt, p_decision, p_undo_step)
 //   -> { status: 'applied' | 'already-applied', undo_step_id }
+//   WR-A02 (20261021000100): the row-payload overload. The server inserts the rows in the same transaction as
+//   the decision, so a refusal leaves nothing behind; the old row-id overload (rows inserted first in a
+//   separate request) is no longer called.
 // record_decide_outcome(p_check_id, p_outcome 'wait' | 'pass', p_decision)
 //   -> { status: 'applied' | 'already-applied' }
 
 import { DbError, toDbError } from './errors';
 import type { NewRecurringSeries } from './recurringSeries';
 import { BAD_RESPONSE } from './recurringSeries';
-import type { DbClient } from './rows';
+import { assertAllowedKeys, type DbClient, type NewTransaction } from './rows';
 
 export const DECIDE_GO_MAX_ROWS = 60;
 export const DECIDE_GO_MAX_SERIES = 24;
+
+/** The transaction keys the row-payload overload accepts (20261021000100); the server refuses any other key. */
+export const DECIDE_GO_ROW_KEYS = [
+  'id',
+  'household_id',
+  'account_id',
+  'original_amount',
+  'original_currency',
+  'local_date',
+  'time_zone',
+  'note',
+  'name',
+  'category_id',
+  'payment_type',
+  'status',
+  'transfer_id',
+  'one_off',
+] as const satisfies readonly (keyof NewTransaction)[];
 
 export interface DecideGoDebt {
   id: string;
@@ -52,7 +73,8 @@ export interface DecideGoDecision {
 
 export interface DecideGoInput {
   checkId: string;
-  rowIds: readonly string[];
+  /** The pending rows Go ahead writes; the server inserts them (client uuids, so a replay never doubles them). */
+  rows: readonly NewTransaction[];
   series: readonly NewRecurringSeries[];
   endSeries: readonly DecideGoEndSeries[];
   debt: DecideGoDebt | null;
@@ -62,12 +84,12 @@ export interface DecideGoInput {
 
 export type DecideGoResult = { status: 'applied' | 'already-applied'; undoStepId: string };
 
-/** Go ahead: one RPC writes the rows, series, debt and decision and records a single undo step. */
+/** Go ahead: one RPC (one transaction) writes the rows, series, debt and decision and records a single undo step. */
 export async function recordDecideGo(client: DbClient, input: DecideGoInput): Promise<DecideGoResult> {
-  const { rowIds, series, endSeries, debt, decision } = input;
+  const { rows, series, endSeries, debt, decision } = input;
 
-  if (rowIds.length > DECIDE_GO_MAX_ROWS) {
-    throw new RangeError(`recordDecideGo: at most ${DECIDE_GO_MAX_ROWS} rows, got ${rowIds.length}`);
+  if (rows.length > DECIDE_GO_MAX_ROWS) {
+    throw new RangeError(`recordDecideGo: at most ${DECIDE_GO_MAX_ROWS} rows, got ${rows.length}`);
   }
   if (series.length > DECIDE_GO_MAX_SERIES) {
     throw new RangeError(`recordDecideGo: at most ${DECIDE_GO_MAX_SERIES} series, got ${series.length}`);
@@ -75,19 +97,27 @@ export async function recordDecideGo(client: DbClient, input: DecideGoInput): Pr
   if (endSeries.length > DECIDE_GO_MAX_SERIES) {
     throw new RangeError(`recordDecideGo: at most ${DECIDE_GO_MAX_SERIES} ended series, got ${endSeries.length}`);
   }
-  if (rowIds.length + series.length === 0 && debt === null) {
+  if (rows.length + series.length === 0 && debt === null) {
     throw new RangeError('recordDecideGo: nothing to write');
   }
-  if (decision.row_roles.length !== rowIds.length) {
-    throw new RangeError('recordDecideGo: row_roles must match rowIds one to one');
+  if (decision.row_roles.length !== rows.length) {
+    throw new RangeError('recordDecideGo: row_roles must match rows one to one');
   }
   if (decision.series_roles.length !== series.length) {
     throw new RangeError('recordDecideGo: series_roles must match series one to one');
   }
+  const rowPayloads = rows.map((tx) => {
+    assertAllowedKeys(tx as unknown as Record<string, unknown>, DECIDE_GO_ROW_KEYS, 'recordDecideGo');
+    const row: Record<string, unknown> = {};
+    for (const key of DECIDE_GO_ROW_KEYS) {
+      if (tx[key] !== undefined) row[key] = tx[key];
+    }
+    return row;
+  });
 
   const { data, error, status } = await client.rpc('record_decide_go', {
     p_check_id: input.checkId,
-    p_row_ids: rowIds,
+    p_rows: rowPayloads,
     p_series: series,
     p_end_series: endSeries,
     p_debt: debt,

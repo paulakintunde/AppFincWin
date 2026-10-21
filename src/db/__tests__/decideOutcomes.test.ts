@@ -1,14 +1,30 @@
 import { DbError } from '../errors';
 import { recordDecideGo, recordDecideOutcome, type DecideGoInput } from '../decideOutcomes';
 import type { NewRecurringSeries } from '../recurringSeries';
+import type { NewTransaction } from '../rows';
 import { createFakeSupabase } from './fakeSupabase';
 
 const SERIES = { id: 's1' } as unknown as NewRecurringSeries;
 
+const txRow = (id: string, over: Partial<NewTransaction> = {}): NewTransaction => ({
+  id,
+  household_id: 'h1',
+  account_id: 'a1',
+  original_amount: -1000,
+  original_currency: 'USD',
+  local_date: '2026-10-21',
+  time_zone: 'UTC',
+  note: null,
+  name: 'Laptop',
+  category_id: null,
+  status: 'pending',
+  ...over,
+});
+
 function goInput(overrides: Partial<DecideGoInput> = {}): DecideGoInput {
   return {
     checkId: 'k1',
-    rowIds: ['r1', 'r2'],
+    rows: [txRow('r1', { one_off: true }), txRow('r2')],
     series: [SERIES],
     endSeries: [{ id: 'e1', expected_version: 1, end_date: '2026-10-31' }],
     debt: null,
@@ -38,9 +54,10 @@ describe('recordDecideGo', () => {
     const [name, args] = client.calls.find((c) => c.method === 'rpc')?.args as [string, Record<string, unknown>];
     expect(name).toBe('record_decide_go');
     expect(Object.keys(args).sort()).toEqual(
-      ['p_check_id', 'p_row_ids', 'p_series', 'p_end_series', 'p_debt', 'p_decision', 'p_undo_step'].sort()
+      ['p_check_id', 'p_rows', 'p_series', 'p_end_series', 'p_debt', 'p_decision', 'p_undo_step'].sort()
     );
-    expect(args.p_row_ids).toEqual(['r1', 'r2']);
+    // WR-A02: the rows travel in the same call (the server inserts them in the decision's transaction).
+    expect(args.p_rows).toEqual([txRow('r1', { one_off: true }), txRow('r2')]);
     expect(args.p_undo_step).toEqual({ id: 'u1', label_key: 'decisionWritten', label_params: { name: 'Laptop' } });
     expect(args.p_decision).toMatchObject({
       verdict: 'fits',
@@ -53,10 +70,10 @@ describe('recordDecideGo', () => {
 
   it('rejects out-of-bounds input before any request', async () => {
     const client = createFakeSupabase();
-    const many = (n: number) => Array.from({ length: n }, (_, i) => `r${i}`);
+    const many = (n: number) => Array.from({ length: n }, (_, i) => txRow(`r${i}`));
     const dec = goInput().decision;
     await expect(
-      recordDecideGo(client, goInput({ rowIds: many(61), decision: { ...dec, row_roles: Array(61).fill('day_one') } }))
+      recordDecideGo(client, goInput({ rows: many(61), decision: { ...dec, row_roles: Array(61).fill('day_one') } }))
     ).rejects.toBeInstanceOf(RangeError);
     await expect(
       recordDecideGo(client, goInput({ series: Array(25).fill(SERIES), decision: { ...dec, series_roles: Array(25).fill('payment') } }))
@@ -65,8 +82,15 @@ describe('recordDecideGo', () => {
       recordDecideGo(client, goInput({ endSeries: Array(25).fill({ id: 'e', expected_version: 1, end_date: '2026-10-31' }) }))
     ).rejects.toBeInstanceOf(RangeError);
     await expect(
-      recordDecideGo(client, goInput({ rowIds: [], series: [], decision: { ...dec, row_roles: [], series_roles: [] } }))
+      recordDecideGo(client, goInput({ rows: [], series: [], decision: { ...dec, row_roles: [], series_roles: [] } }))
     ).rejects.toBeInstanceOf(RangeError);
+    expect(client.calls).toHaveLength(0);
+  });
+
+  it('refuses a row key the server would refuse, before any request', async () => {
+    const client = createFakeSupabase();
+    const sneaky = { ...txRow('r1'), goal_id: 'g1' };
+    await expect(recordDecideGo(client, goInput({ rows: [sneaky, txRow('r2')] }))).rejects.toBeInstanceOf(TypeError);
     expect(client.calls).toHaveLength(0);
   });
 

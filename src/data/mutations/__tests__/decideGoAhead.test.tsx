@@ -414,7 +414,6 @@ function wrapper(client: QueryClient) {
 }
 
 const ok = (data: unknown) => ({ data, error: null, status: 200 });
-const inserted = (n: number) => ok(Array.from({ length: n }, (_v, i) => ({ id: `r${i}`, local_date: TODAY, version: 1, rate_pending: false })));
 const applied = () => ok({ status: 'applied', undo_step_id: 'step-1' });
 
 function newClient(): QueryClient {
@@ -459,7 +458,7 @@ describe('useGoAhead', () => {
     result.current.goAhead(args({ coolingOff: true }));
     await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
     expect(getToast()?.kind).toBe('refusal');
-    expect(getToast()?.text).toEqual({ key: 'undo.batchRefused' });
+    expect(getToast()?.text).toEqual({ key: 'decide.toast.outcomeFailed' });
     expect(mockCancelReminders).toHaveBeenCalledWith('chk1');
   });
 
@@ -477,10 +476,10 @@ describe('useGoAhead', () => {
     expect(mockCancelReminders).not.toHaveBeenCalled();
   });
 
-  it('inserts the rows then records the step with the same step id, marks the check bought and tracks go', async () => {
+  it('writes the rows and the decision in ONE record_decide_go call with the step id, marks the check bought and tracks go', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
-    fake.respondWith(inserted(1)).respondWith(applied());
+    fake.respondWith(applied());
     const qc = newClient();
     qc.setQueryData(queryKeys.decideChecks('u1', 'h1'), [checkRow()]);
     const { result } = await renderHook(() => useGoAhead(), { wrapper: wrapper(qc) });
@@ -489,15 +488,17 @@ describe('useGoAhead', () => {
     await waitFor(() => expect(qc.getQueryData<DecideCheckRow[]>(queryKeys.decideChecks('u1', 'h1'))?.[0]?.status).toBe('bought'));
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
 
-    const upsertAt = fake.calls.findIndex((c) => c.method === 'upsert');
-    const rpcAt = fake.calls.findIndex((c) => c.method === 'rpc');
-    expect(upsertAt).toBeGreaterThanOrEqual(0);
-    expect(rpcAt).toBeGreaterThan(upsertAt);
-    const [name, payload] = fake.calls[rpcAt]!.args as [string, Record<string, unknown>];
+    // WR-A02: no separate insert request; the server inserts the rows in the decision's transaction.
+    expect(fake.calls.some((c) => c.method === 'upsert' || c.method === 'insert')).toBe(false);
+    const rpcs = fake.calls.filter((c) => c.method === 'rpc');
+    expect(rpcs).toHaveLength(1);
+    const [name, payload] = rpcs[0]!.args as [string, Record<string, unknown>];
     expect(name).toBe('record_decide_go');
     expect(payload.p_undo_step).toMatchObject({ id: stepId, label_key: 'decisionWritten' });
     expect(payload.p_check_id).toBe('chk1');
-    expect((payload.p_row_ids as string[]).length).toBe(1);
+    expect(payload).not.toHaveProperty('p_row_ids');
+    expect(payload.p_rows as unknown[]).toHaveLength(1);
+    expect((payload.p_rows as Record<string, unknown>[])[0]).toMatchObject({ account_id: 'cash', original_amount: -20000, status: 'pending' });
     expect(payload.p_debt).toMatchObject({ kind: 'loan', balance: 80000 });
     expect(mockTrack).toHaveBeenCalledWith('decision_recorded', { decision: 'go' });
     expect(mockCooling).not.toHaveBeenCalled();
@@ -506,7 +507,7 @@ describe('useGoAhead', () => {
   it('schedules the cooling-off reminder when the decision asks for it', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
-    fake.respondWith(inserted(1)).respondWith(applied());
+    fake.respondWith(applied());
     const qc = newClient();
     const { result } = await renderHook(() => useGoAhead(), { wrapper: wrapper(qc) });
     result.current.goAhead(args({ coolingOff: true }));
@@ -517,31 +518,40 @@ describe('useGoAhead', () => {
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
   });
 
-  it('a refused record keeps the landed rows and says no undo is available', async () => {
+  it('WR-A02: a refused decision (e.g. already decided) leaves nothing written: the rows leave the cache and the toast says nothing was changed', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
-    fake.respondWith(inserted(1)).respondWith({ data: null, error: { message: 'bad', code: '22023' }, status: 400 });
-    const qc = newClient();
-    const { result } = await renderHook(() => useGoAhead(), { wrapper: wrapper(qc) });
-    result.current.goAhead(args());
-    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
-    expect(recordFailedWrite).toHaveBeenCalledWith(
-      expect.objectContaining({ entity: 'decide_checks', entityId: 'chk1', attempted: { checkId: 'chk1', count: 1 } })
-    );
-    expect(getToast()?.text).toEqual({ key: 'undo.batchSavedNoUndo' });
-  });
-
-  it('a refused insert removes the optimistic rows and says nothing was changed', async () => {
-    const fake = createFakeSupabase() as FakeSupabase & DbClient;
-    mockActiveClient = fake;
-    fake.respondWith({ data: null, error: { message: 'denied', code: '42501' }, status: 403 });
+    fake.respondWith({ data: null, error: { message: 'bad', code: '22023' }, status: 400 });
     const qc = newClient();
     qc.setQueryData(queryKeys.transactionsMonth('h1', '2026-10'), []);
     const { result } = await renderHook(() => useGoAhead(), { wrapper: wrapper(qc) });
-    result.current.goAhead(args());
+    result.current.goAhead(args({ coolingOff: true }));
     await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
+    // The single request was the RPC; no insert ran before it, so there is nothing landed to keep.
+    expect(fake.calls.filter((c) => c.method === 'rpc')).toHaveLength(1);
+    expect(fake.calls.some((c) => c.method === 'upsert' || c.method === 'insert')).toBe(false);
     expect(qc.getQueryData<unknown[]>(queryKeys.transactionsMonth('h1', '2026-10'))).toEqual([]);
-    expect(getToast()?.text).toEqual({ key: 'undo.batchRefused' });
+    expect(recordFailedWrite).toHaveBeenCalledWith(
+      expect.objectContaining({ entity: 'decide_checks', entityId: 'chk1', attempted: { checkId: 'chk1', count: 1 } })
+    );
+    expect(JSON.stringify((recordFailedWrite as jest.Mock).mock.calls[0])).not.toContain('Sofa');
+    expect(getToast()?.text).toEqual({ key: 'decide.toast.outcomeFailed' });
+    expect(mockCancelReminders).toHaveBeenCalledWith('chk1');
+  });
+
+  it('WR-A02: a second Go ahead for a check whose Go ahead is still queued returns the same step and queues nothing', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+    const qc = newClient();
+    const { result } = await renderHook(() => useGoAhead(), { wrapper: wrapper(qc) });
+    const first = result.current.goAhead(args({ coolingOff: true }));
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.isPaused).toBe(true));
+    const second = result.current.goAhead(args({ coolingOff: true }));
+    expect(second).toBe(first);
+    expect(qc.getMutationCache().getAll()).toHaveLength(1);
+    expect(mockCooling).toHaveBeenCalledTimes(1);
+    expect(mockTrack).toHaveBeenCalledTimes(1);
   });
 
   it('a loan with nothing to insert still records the step', async () => {
