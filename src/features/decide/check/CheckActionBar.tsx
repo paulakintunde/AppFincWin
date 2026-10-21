@@ -36,7 +36,7 @@ export interface CheckActionBarProps {
   onSaveClose: () => void;
   onCommit: (outcome: Outcome) => void;
   /** A decided check's one action (Reopen the check / Back to Decide, 05-29): replaces the primary button from step 3 on. */
-  decidedAction?: { label: string; onPress: () => void } | null;
+  decidedAction?: { label: string; onPress: () => void; disabled?: boolean } | null;
 }
 
 export function CheckActionBar({ step, hint, nextDisabled, outcome, readOnly, onNext, onSaveClose, onCommit, decidedAction = null }: CheckActionBarProps) {
@@ -45,7 +45,7 @@ export function CheckActionBar({ step, hint, nextDisabled, outcome, readOnly, on
   const insets = useScreenInsets();
   const last = step === 5;
   const primary = readOnly && decidedAction !== null && step >= 3 ? (
-    <Pill variant="primary" label={decidedAction.label} onPress={decidedAction.onPress} />
+    <Pill variant="primary" label={decidedAction.label} disabled={decidedAction.disabled === true} onPress={decidedAction.onPress} />
   ) : last ? (
     readOnly ? null : (
       <Pill

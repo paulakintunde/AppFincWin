@@ -200,6 +200,8 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
   const cardRate = useSaveCardRate();
   const cardTerms = useSaveCardTerms();
   const { reopen } = useReopenCheck();
+  const reopening = useRef(false);
+  const [reopened, setReopened] = useState(false);
 
   const readOnly = row !== null && row.status !== 'open';
   const bought = row !== null && row.status === 'bought';
@@ -416,18 +418,20 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
   else if (step === 5 && !readOnly && commit.blockedKey !== null) hint = t(commit.blockedKey);
   else if (step === 5 && inputs.outcome === 'go' && resolved !== null && resolved.state !== 'fits') hint = t('decide.flow.hint.breaks');
   else if (step === 5 && (inputs.outcome === 'wait' || inputs.outcome === 'pass')) hint = t('decide.flow.hint.waitPass');
-  const nextDisabled = readOnly ? false : step === 1 ? !complete1 : step === 2 ? !complete2 : step === 5 ? inputs.outcome === null || commit.blockedKey !== null : false;
+  const nextDisabled = readOnly ? false : step === 1 ? !complete1 : step === 2 ? !complete2 : step === 5 ? inputs.outcome === null || commit.blockedKey !== null || commit.committing : false;
 
   // 05-29: a bought check goes back to Decide (a reopened copy would be judged against a snapshot that holds the purchase);
-  // a waiting or passed one reopens as a new check at step 3.
+  // a waiting or passed one reopens as a new check at step 3. CR-C07: once per screen, so a double tap opens one copy.
   const reopenCheck = (): void => {
-    if (row === null) return;
+    if (row === null || reopening.current) return;
+    reopening.current = true;
+    setReopened(true);
     void cancelCheckReminders(row.id).catch(() => undefined);
     const newId = reopen(row, today);
     showToast({ kind: 'ordinary', text: { key: 'decide.toast.reopened' } });
     pushOnce(checkHref(newId, { step: '3' }));
   };
-  const decidedAction = row === null || !readOnly ? null : bought ? { label: t('decide.flow.notFound.back'), onPress: leaveFlow } : { label: t('decide.flow.reopen'), onPress: reopenCheck };
+  const decidedAction = row === null || !readOnly ? null : bought ? { label: t('decide.flow.notFound.back'), onPress: leaveFlow } : { label: t('decide.flow.reopen'), onPress: reopenCheck, disabled: reopened };
 
   const combine = !readOnly && stack.openCount >= 1 ? { value: inputs.combine, onChange: (v: boolean) => update({ combine: v }) } : null;
 

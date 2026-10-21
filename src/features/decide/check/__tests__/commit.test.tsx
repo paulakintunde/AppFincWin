@@ -174,6 +174,18 @@ describe('Go ahead', () => {
     expect(mockBack).toHaveBeenCalledTimes(1);
   });
 
+  it('CR-C07: a double tap on the confirm writes once', async () => {
+    await open({ outcome: 'go' });
+    await fireEvent.press(lastGoAhead());
+    const confirm = lastGoAhead();
+    await fireEvent.press(confirm);
+    await fireEvent.press(confirm);
+    expect(mockGoAhead).toHaveBeenCalledTimes(1);
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    await fireEvent.press(lastGoAhead());
+    expect(screen.queryByText('Write this to your records?')).toBeNull();
+  });
+
   it('CR-C05: a stored archived or other-currency account is never written to', async () => {
     mockAccounts.push(
       { id: 'a-eur', name: 'Euro', kind: 'checking', currency: 'EUR', archived_at: null, deleted_at: null },
@@ -297,6 +309,27 @@ describe('Wait and Pass', () => {
     expect(mockToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.toast.waitNoNotify' } });
   });
 
+  it('CR-C07: a double tap on Pass or Wait commits once and leaves once', async () => {
+    await open({ outcome: 'pass' });
+    const pass = screen.getByLabelText('Record as passed');
+    await fireEvent.press(pass);
+    await fireEvent.press(pass);
+    await fireEvent.press(screen.getByLabelText('Record as passed'));
+    expect(mockPass).toHaveBeenCalledTimes(1);
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('Record as passed').props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
+  });
+
+  it('CR-C07: a double tap on Wait saves once', async () => {
+    mockSource = paySource(100_000);
+    await open({ outcome: 'wait', advertised: 500_000 });
+    const save = screen.getByLabelText('Save the plan');
+    await fireEvent.press(save);
+    await fireEvent.press(save);
+    expect(mockWait).toHaveBeenCalledTimes(1);
+    expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
   it('Pass saves with Passed. Nothing moved. and no commit haptic', async () => {
     await open({ outcome: 'pass' });
     await fireEvent.press(screen.getByLabelText('Record as passed'));
@@ -369,7 +402,10 @@ describe('decided checks', () => {
     await open({ outcome: status === 'waiting' ? 'wait' : 'pass' }, 3);
     expect(core).toHaveBeenCalled();
     expect(screen.queryByText('Estimated on the day')).toBeNull();
-    await fireEvent.press(screen.getByLabelText('Reopen the check'));
+    const reopenButton = screen.getByLabelText('Reopen the check');
+    // CR-C07: a double tap reopens one copy.
+    await fireEvent.press(reopenButton);
+    await fireEvent.press(reopenButton);
     expect(mockCancelReminders).toHaveBeenCalledWith('c1');
     expect(mockReopen).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-check', step: '3' } });

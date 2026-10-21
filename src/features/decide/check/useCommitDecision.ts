@@ -7,7 +7,7 @@
  * with a one-line reason instead of the builder's defensive throw. The builder itself is the check (a dry run with throwaway
  * ids), so this hook and the real write can never disagree about what is missing.
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import type { DecideCheckRow } from '@/db/decideChecks';
@@ -59,6 +59,8 @@ export function useCommitDecision(args: CommitArgs): {
   blockedKey: string | null;
   confirm: CommitConfirm;
   written: WrittenFacts;
+  /** CR-C07: a commit has been handed to the write queue; the primary button stays disabled while the flow leaves. */
+  committing: boolean;
 } {
   const { row, inputs, computation, source, whole, exact, cashAccounts, investAccounts, onDone } = args;
   const t = useT() as Translate;
@@ -67,6 +69,16 @@ export function useCommitDecision(args: CommitArgs): {
   const seriesQuery = useRecurringSeries(rc.householdId ?? undefined);
   const mutations = useCommitMutations();
   const [asking, setAsking] = useState(false);
+  // CR-C07: one commit per check. The ref closes the window before the re-render (a double tap in one frame); the state
+  // disables the button. Neither is reset: a commit always leaves the flow.
+  const latch = useRef(false);
+  const [committing, setCommitting] = useState(false);
+  const claim = useCallback((): boolean => {
+    if (latch.current) return false;
+    latch.current = true;
+    setCommitting(true);
+    return true;
+  }, []);
 
   const verdict = computation?.verdict ?? null;
   const assessed = verdict !== null && verdict.state !== 'missing' ? verdict : null;
@@ -156,6 +168,7 @@ export function useCommitDecision(args: CommitArgs): {
   const confirmGo = useCallback((): void => {
     setAsking(false);
     if (row === null || ctx === null || assessed === null || rc.userId === null || goBlocked !== null) return;
+    if (!claim()) return;
     const assessment: GoAheadAssessment = assessed;
     const running: RunningCosts | null = computation?.running ?? null;
     const stepId = mutations.goAhead({
@@ -176,11 +189,11 @@ export function useCommitDecision(args: CommitArgs): {
       stepId,
     });
     onDone();
-  }, [row, ctx, assessed, rc.userId, rc.homeCurrency, goBlocked, computation, mutations, inputs, onDone]);
+  }, [row, ctx, assessed, rc.userId, rc.homeCurrency, goBlocked, computation, mutations, inputs, onDone, claim]);
 
   const requestCommit = useCallback(
     (outcome: Outcome): void => {
-      if (row === null || computation === null) return;
+      if (row === null || computation === null || latch.current) return;
       const verdictState = verdict === null ? 'missing' : verdict.state;
       const coolingOff = inputs.coolingOff && verdict !== null && verdict.state !== 'missing' && verdict.size === 'needs_spreading';
       if (outcome === 'go') {
@@ -189,7 +202,7 @@ export function useCommitDecision(args: CommitArgs): {
       }
       if (outcome === 'wait') {
         const plan = computation.waitPlan;
-        if (plan === null || source === null) return;
+        if (plan === null || source === null || !claim()) return;
         hapticMedium();
         void mutations
           .waitAndSave({
@@ -226,11 +239,12 @@ export function useCommitDecision(args: CommitArgs): {
         onDone();
         return;
       }
+      if (!claim()) return;
       mutations.pass({ check: row, verdict: verdictState, coolingOff });
       showToast({ kind: 'ordinary', text: { key: 'decide.toast.passed' } });
       onDone();
     },
-    [row, computation, verdict, inputs.coolingOff, goBlocked, source, mutations, rc.today, whole, onDone],
+    [row, computation, verdict, inputs.coolingOff, goBlocked, source, mutations, rc.today, whole, onDone, claim],
   );
 
   return {
@@ -238,5 +252,6 @@ export function useCommitDecision(args: CommitArgs): {
     blockedKey,
     confirm: { visible: asking, lines, onConfirm: confirmGo, onCancel: cancel },
     written,
+    committing,
   };
 }
