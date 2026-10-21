@@ -4,12 +4,14 @@
  * The screen owns the step, the rules about which steps can be entered, back handling and the engine calls. Everything shown
  * is recomputed from the typed inputs and the current snapshot and never stored (D-15): `computeCore` runs on every edit (the
  * verdict, warnings and step 2 cards never lag) and `computeDetails` on the inputs settled for 150 ms (the slow figures).
- * Committing a decision is 05-29: the screen takes it as `onCommit`. Leaving never prompts and never loses work.
+ * Committing a decision is 05-29 (`useCommitDecision`, called here). A decided check opens read-only: a bought one recalculated
+ * without its own writes (05-52) beside what was decided, a waiting or passed one recomputed with 'Reopen the check'.
+ * Leaving never prompts and never loses work.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
-import { useMarkCheckSeen } from '@/data/mutations/decideChecks';
+import { useMarkCheckSeen, useReopenCheck } from '@/data/mutations/decideChecks';
 import { useSaveCardRate, useSaveCardTerms, type CardTermsInput } from '@/data/mutations/decideLinks';
 import { useAccounts } from '@/data/queries/accounts';
 import { useAccountBalances, useHouseholdMemberNames } from '@/data/queries/activity';
@@ -19,7 +21,9 @@ import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { SOLE_SHARE, monthlyEquivalent, resolveShare } from '@/engine/decide';
 import type { ResolvedShare, SplitRule } from '@/engine/decide';
 import { minorUnits } from '@/engine/money';
+import { localDateIn } from '@/engine/time';
 import { setSwipeBackInterceptor } from '@/features/navigation/swipeBackGesture';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { categoryName } from '@/features/record/categoryName';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
@@ -27,12 +31,19 @@ import { getAnalytics } from '@/services/analytics';
 import { focusAccessibility, useScreenTitleFocus } from '@/shell/a11yFocus';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space, useScreenInsets } from '@/theme/layout';
+import { radii, space, useScreenInsets } from '@/theme/layout';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { EmptyState } from '@/ui/EmptyState';
-import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import { useMoneyFormatter, type MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
+import { fontSize, textRole } from '@/theme/typography';
+import type { DecideCheckRow } from '@/db/decideChecks';
 import { basisDetailItems } from '../copy/depthVerdictCopy';
+import { stateChip } from '../copy/verdictCopy';
+import { checkHref } from '../home/checkHref';
+import { cancelCheckReminders } from '../notifications/waitReminder';
+import { StateChip, type StateChipTone } from '../ui/StateChip';
 import { computeCore, computeDetails } from '../snapshot/computeCheck';
 import type { CheckCore } from '../snapshot/computeCheck';
 import { EMPTY_STACK } from '../snapshot/types';
@@ -55,10 +66,12 @@ import { Step2PriceAndPay, step2Complete } from './steps/Step2PriceAndPay';
 import { Step3Verdict } from './steps/Step3Verdict';
 import { Step4Alternatives } from './steps/Step4Alternatives';
 import { Step5Decision } from './steps/Step5Decision';
+import { moneyFn } from './steps/stepUi';
 import type { StepNumber, StepProps } from './stepTypes';
 import type { Translate } from './refText';
 import { useBoughtCheckComputation } from './useBoughtCheckComputation';
 import { useCheckDraft } from './useCheckDraft';
+import { useCommitDecision } from './useCommitDecision';
 import { useDebouncedValue } from './useDebouncedValue';
 
 type Outcome = NonNullable<CheckInputs['outcome']>;
@@ -73,8 +86,6 @@ export interface CheckFlowScreenProps {
   /** From the route's `step` param; null lets the screen pick (step 3 once a price and method exist, else step 1). */
   initialStep?: StepNumber | null;
   kind?: 'buy' | 'invest';
-  /** Step 5's primary button (05-29's useCommitDecision). */
-  onCommit?: (outcome: Outcome) => void;
 }
 
 function leaveFlow(): void {
@@ -137,7 +148,33 @@ export function CheckNotFound(): React.JSX.Element {
   );
 }
 
-export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', onCommit }: CheckFlowScreenProps): React.JSX.Element {
+/** D-12: what was decided (the stored verdict and estimates), shown above the recalculation on a bought check. */
+function DecidedHeader({ row, whole, currency, timeZone }: { row: DecideCheckRow; whole: MoneyFormatter; currency: string; timeZone: string }): React.JSX.Element | null {
+  const t = useT() as Translate;
+  const { colors, pairing } = useTheme();
+  const state = row.verdict_at_decision;
+  const chip = state === null ? null : stateChip(state, 'full');
+  const money = moneyFn(whole, currency as never);
+  const decidedOn = row.decided_at === null ? null : whole.formatDate(localDateIn(new Date(row.decided_at), timeZone));
+  const line = (label: string, value: number | null): React.JSX.Element => (
+    <View style={styles.decidedRow}>
+      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{label}</Text>
+      <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{value === null ? '—' : money(value)}</Text>
+    </View>
+  );
+  return (
+    <View style={[styles.decided, { backgroundColor: colors.surface }]}>
+      <View style={styles.decidedRow}>
+        {chip === null ? null : <StateChip tone={chip.tone as StateChipTone} label={t(chip.key)} />}
+        {decidedOn === null ? null : <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('decide.past.decided', { date: decidedOn })}</Text>}
+      </View>
+      {line(t('decide.past.estDay'), row.estimate_day_one)}
+      {line(t('decide.past.estMonth'), row.estimate_monthly)}
+    </View>
+  );
+}
+
+export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckFlowScreenProps): React.JSX.Element {
   const t = useT() as Translate;
   const { colors } = useTheme();
   const insets = useScreenInsets();
@@ -162,15 +199,16 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', onCommit
   const { markSeen } = useMarkCheckSeen();
   const cardRate = useSaveCardRate();
   const cardTerms = useSaveCardTerms();
+  const { reopen } = useReopenCheck();
 
   const readOnly = row !== null && row.status !== 'open';
   const bought = row !== null && row.status === 'bought';
   const boughtState = useBoughtCheckComputation(row, row === null ? null : inputs);
 
   // ── D-56: the verdict is live, the slow details follow the inputs 150 ms after they stop changing ──
-  const core = useMemo(() => (source === null ? null : computeCore(source, inputs, stack.otherChecks)), [source, inputs, stack]);
+  const core = useMemo(() => (source === null || bought ? null : computeCore(source, inputs, stack.otherChecks)), [source, inputs, stack, bought]);
   const settled = useDebouncedValue(inputs);
-  const settledCore = useMemo(() => (source === null ? null : computeCore(source, settled, stack.otherChecks)), [settled, source, stack]);
+  const settledCore = useMemo(() => (source === null || bought ? null : computeCore(source, settled, stack.otherChecks)), [settled, source, stack, bought]);
   const details = useMemo(() => (settledCore === null ? null : computeDetails(settledCore, settled)), [settledCore, settled]);
   const live = useMemo(() => (core === null || details === null ? null : withCore(details, core)), [core, details]);
   // 05-52: a bought check is recomputed without its own Go-ahead writes, so the purchase is never counted twice.
@@ -311,6 +349,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', onCommit
     () => liveAccounts.filter((a) => a.kind === 'investment').map((a) => ({ id: a.id, name: a.name, currency: a.currency })),
     [liveAccounts]
   );
+  const commit = useCommitDecision({ row, inputs, computation, source, whole, exact, cashAccounts, investAccounts, onDone: leaveFlow });
   const recurringBills = useMemo(() => {
     if (source === null || source.kind !== 'logged' || series === undefined) return EMPTY_BILLS;
     const names = new Map(series.map((s) => [s.id, s.name] as const));
@@ -368,9 +407,21 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', onCommit
   else if (step === 1 && !(inputs.advertised !== null && inputs.advertised > 0)) hint = t('decide.flow.hint.noPrice');
   else if (step === 2 && !complete2 && !readOnly) hint = t('decide.flow.hint.needsSteps');
   else if (step === 3) hint = t('decide.flow.hint.impact');
+  else if (step === 5 && !readOnly && commit.blockedKey !== null) hint = t(commit.blockedKey);
   else if (step === 5 && inputs.outcome === 'go' && resolved !== null && resolved.state !== 'fits') hint = t('decide.flow.hint.breaks');
   else if (step === 5 && (inputs.outcome === 'wait' || inputs.outcome === 'pass')) hint = t('decide.flow.hint.waitPass');
-  const nextDisabled = readOnly ? false : step === 1 ? !complete1 : step === 2 ? !complete2 : step === 5 ? inputs.outcome === null : false;
+  const nextDisabled = readOnly ? false : step === 1 ? !complete1 : step === 2 ? !complete2 : step === 5 ? inputs.outcome === null || commit.blockedKey !== null : false;
+
+  // 05-29: a bought check goes back to Decide (a reopened copy would be judged against a snapshot that holds the purchase);
+  // a waiting or passed one reopens as a new check at step 3.
+  const reopenCheck = (): void => {
+    if (row === null) return;
+    void cancelCheckReminders(row.id).catch(() => undefined);
+    const newId = reopen(row, today);
+    showToast({ kind: 'ordinary', text: { key: 'decide.toast.reopened' } });
+    pushOnce(checkHref(newId, { step: '3' }));
+  };
+  const decidedAction = row === null || !readOnly ? null : bought ? { label: t('decide.flow.notFound.back'), onPress: leaveFlow } : { label: t('decide.flow.reopen'), onPress: reopenCheck };
 
   const combine = !readOnly && stack.openCount >= 1 ? { value: inputs.combine, onChange: (v: boolean) => update({ combine: v }) } : null;
 
@@ -415,6 +466,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', onCommit
         const monthlyTotal = a === null ? 0 : Number(a.plan.monthly);
         return (
           <View style={styles.sections}>
+            {bought && row !== null ? <DecidedHeader row={row} whole={whole} currency={currency} timeZone={rc.timeZone} /> : null}
             <Step3Verdict {...p} lastSeenBasis={lastSeenBasis ?? null} revealKey={id} onEditCardMinimum={onEditCardMinimum} />
             <View accessibilityState={{ busy }} style={styles.sections}>
               <MonthSection {...common} {...section('month')} />
@@ -507,9 +559,19 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', onCommit
           readOnly={readOnly}
           onNext={() => go(Math.min(5, step + 1) as StepNumber)}
           onSaveClose={() => void saveClose()}
-          onCommit={(o) => onCommit?.(o)}
+          onCommit={commit.requestCommit}
+          decidedAction={decidedAction}
         />
       </KeyboardAvoidingView>
+      <ConfirmSheet
+        visible={commit.confirm.visible}
+        title={t('decide.decision.confirmTitle')}
+        body={commit.confirm.lines.join('\n')}
+        cancelLabel={t('decide.decision.confirmNotYet')}
+        confirmLabel={t('decide.decision.confirmGo')}
+        onConfirm={commit.confirm.onConfirm}
+        onCancel={commit.confirm.onCancel}
+      />
       {sheetCard ? (
         <CardMinimumSheet
           visible
@@ -530,4 +592,6 @@ const styles = StyleSheet.create({
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.groupGap, paddingHorizontal: space.screenH },
   centered: { alignItems: 'center', gap: space.groupGap, paddingTop: space.groupGap },
   sections: { gap: space.gapMd },
+  decided: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapSm },
+  decidedRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapSm },
 });

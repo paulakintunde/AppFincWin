@@ -1731,6 +1731,13 @@ const en = {
       writtenPassNotSaving: 'Nothing added to savings or net worth. Not spending is not saving.',
       writtenPassNoReminders: 'No reminders. It stays until you delete it.',
       confirmTitle: 'Write this to your records?', confirmGo: 'Go ahead', confirmNotYet: 'Not yet',
+      goNeedsMonth: 'Go ahead waits for a full logged month. Until then this is a rough first read.',
+      goNeedsAccount: 'Choose a cash or checking account to pay from first.',
+      goNeedsCard: 'Choose the card this goes on first.',
+      goNeedsDebtCategory: 'The Debt category is archived or missing, so the payments can’t be written. Restore it in Categories first.',
+      goNeedsSavingsCategory: 'The Savings category is archived or missing, so the schedule can’t be written. Restore it in Categories first.',
+      goUnavailable: 'This can’t be written as it is set up. Check the price and how you pay.',
+      waitNeedsPlan: 'There is no saving plan to keep yet. Check the price and how you pay.',
     },
     past: {
       title: 'Past decisions', sub: 'What you decided, and what it actually cost once it was running.', reopen: 'Reopen',

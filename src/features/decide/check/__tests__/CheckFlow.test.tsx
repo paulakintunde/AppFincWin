@@ -32,6 +32,7 @@ const mockMarkSeen = jest.fn();
 const mockSaveTerms = jest.fn();
 const mockSaveRate = jest.fn();
 const mockBoughtHook = jest.fn();
+const mockRequestCommit = jest.fn();
 const backHandlers: (() => boolean)[] = [];
 let mockDebts: { id: string }[] = [];
 
@@ -63,6 +64,11 @@ jest.mock('../useCheckDraft', () => {
     },
   };
 });
+jest.mock('../useCommitDecision', () => ({
+  useCommitDecision: () => ({ requestCommit: (...a: unknown[]) => mockRequestCommit(...a), blockedKey: null, confirm: { visible: false, lines: [], onConfirm: jest.fn(), onCancel: jest.fn() } }),
+}));
+jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
+jest.mock('../../notifications/waitReminder', () => ({ cancelCheckReminders: jest.fn(() => Promise.resolve()) }));
 jest.mock('../useBoughtCheckComputation', () => ({ useBoughtCheckComputation: (...a: unknown[]) => (mockBoughtHook(...a), mockBought) }));
 jest.mock('../useEstimateBias', () => ({ useEstimateBias: () => ({ running: null, payment: null, dayOne: null }) }));
 jest.mock('@/data/queries/decide', () => ({
@@ -80,7 +86,10 @@ jest.mock('@/data/queries/activity', () => ({
 }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [] }) }));
 jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: [] }) }));
-jest.mock('@/data/mutations/decideChecks', () => ({ useMarkCheckSeen: () => ({ markSeen: (...a: unknown[]) => mockMarkSeen(...a) }) }));
+jest.mock('@/data/mutations/decideChecks', () => ({
+  useMarkCheckSeen: () => ({ markSeen: (...a: unknown[]) => mockMarkSeen(...a) }),
+  useReopenCheck: () => ({ reopen: jest.fn(() => 'new-id') }),
+}));
 jest.mock('@/data/mutations/decideLinks', () => ({
   useSaveCardRate: () => ({ save: (...a: unknown[]) => mockSaveRate(...a) }),
   useSaveCardTerms: () => ({ save: (...a: unknown[]) => mockSaveTerms(...a) }),
@@ -356,11 +365,10 @@ describe('step 5', () => {
     expect(screen.getByLabelText('Brokerage')).toBeTruthy();
   });
 
-  it('the primary button hands the chosen outcome to onCommit', async () => {
-    const onCommit = jest.fn();
-    await open({ outcome: 'pass' }, { initialStep: 5, onCommit });
+  it('the primary button hands the chosen outcome to useCommitDecision', async () => {
+    await open({ outcome: 'pass' }, { initialStep: 5 });
     await fireEvent.press(screen.getByLabelText('Record as passed'));
-    expect(onCommit).toHaveBeenCalledWith('pass');
+    expect(mockRequestCommit).toHaveBeenCalledWith('pass');
   });
 
   it('names the outcome on the primary button', async () => {

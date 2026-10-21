@@ -1,7 +1,7 @@
 /**
  * 05-30 (DCU-02, UI-SPEC Bottom action bar): pinned above the keyboard and the safe area. An optional hint line, 'Save and
  * close' and the primary button: 'Next: ...' on steps 1 to 4; on step 5 the outcome's own words, calling `onCommit` with the
- * chosen outcome (05-29 implements the commit). A decided (read-only) check has no primary button on step 5.
+ * chosen outcome (05-29's useCommitDecision). A decided (read-only) check has no primary button on step 5.
  */
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -35,14 +35,18 @@ export interface CheckActionBarProps {
   onNext: () => void;
   onSaveClose: () => void;
   onCommit: (outcome: Outcome) => void;
+  /** A decided check's one action (Reopen the check / Back to Decide, 05-29): replaces the primary button from step 3 on. */
+  decidedAction?: { label: string; onPress: () => void } | null;
 }
 
-export function CheckActionBar({ step, hint, nextDisabled, outcome, readOnly, onNext, onSaveClose, onCommit }: CheckActionBarProps) {
+export function CheckActionBar({ step, hint, nextDisabled, outcome, readOnly, onNext, onSaveClose, onCommit, decidedAction = null }: CheckActionBarProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const insets = useScreenInsets();
   const last = step === 5;
-  const primary = last ? (
+  const primary = readOnly && decidedAction !== null && step >= 3 ? (
+    <Pill variant="primary" label={decidedAction.label} onPress={decidedAction.onPress} />
+  ) : last ? (
     readOnly ? null : (
       <Pill
         variant="primary"
