@@ -49,4 +49,10 @@ None beyond the OS permission prompt for the Wait and cooling-off reminders (cov
 ## Self-Check: PASSED
 
 ## Post-plan fix (user decision 2026-10-16)
-A failed Wait or Pass write now shows an error toast (`decide.toast.outcomeFailed`, a refusal toast) after the failed-write record is parked, in the same definitive-failure branch of `onError` that other mutations use. A write paused offline never reaches `onError`, so it shows no toast until it replays and fails for real. Go ahead is unchanged. Tests in `decideOutcome.test.tsx`.
+A failed Wait or Pass write now shows an error toast (`decide.toast.outcomeFailed`, a refusal toast) after the failed-write record is parked, in the same definitive-failure branch of `onError` that other mutations use. A write paused offline never reaches `onError`, so it shows no toast until it replays and fails for real. Tests in `decideOutcome.test.tsx`. Go ahead already toasted on a definitive failure from 05-20 (`undo.batchRefused` when nothing landed, `undo.batchSavedNoUndo` when the rows landed but `record_decide_go` was refused) and keeps that copy: `decide.toast.outcomeFailed` ("Nothing was changed") would be false in the landed case, because Go ahead is a row insert followed by a separate RPC.
+
+## Post-plan fix (user decision 2026-10-21): Go ahead failures
+
+- Kept Go ahead's existing truthful refusal toasts (see above); did not switch to `decide.toast.outcomeFailed`.
+- A definitive Go ahead failure now also cancels the check's reminders (`cancelCheckReminders`): the cooling-off reminder is scheduled at tap time (so it works offline) and would otherwise fire for a check that stayed open.
+- Tests (`decideGoAhead.test.tsx`): "a failed Go ahead write shows the failed-save toast and cancels its cooling-off reminder", "a Go ahead queued offline shows no toast".
