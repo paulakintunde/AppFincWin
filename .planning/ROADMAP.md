@@ -681,7 +681,7 @@ Plans:
 - [x] 05-49-PLAN.md — Cushion months on Lines; missing-rate state in Your month
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 05-29-PLAN.md — Commit a decision; decided checks (bought checks recalculated without their own writes)
+- [x] 05-29-PLAN.md — Commit a decision; decided checks (bought checks recalculated without their own writes)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 05-25-PLAN.md — Full local gate and [BLOCKING] human-gated production push (npm run supabase:db:push)
