@@ -11,13 +11,23 @@ export interface CheckWriteLink {
   deleted_at: string | null;
 }
 
-/** inputs.replaces[].seriesId (non-null) and the date Go ahead ended them: inputs.needBy ?? local date of decided_at. */
+/**
+ * inputs.replaces[].seriesId (non-null) and the date Go ahead ended them: inputs.needBy ?? local date of decided_at.
+ * WR-C02: with no need-by date, Go ahead ended them on the day it was tapped, which an offline replay can leave before the
+ * server's decided_at; `endedFrom` (the day the check was created) opens the window, so an end date from endedFrom to
+ * endedOn counts as this check's.
+ */
 export interface ReplacedEnd {
   seriesIds: readonly string[];
   endedOn: string;
+  endedFrom?: string;
 }
 
 type Row = SnapshotSource['rows'][number];
+
+function endedByCheck(endDate: string | null, replaced: ReplacedEnd): boolean {
+  return endDate !== null && endDate <= replaced.endedOn && endDate >= (replaced.endedFrom ?? replaced.endedOn);
+}
 
 /**
  * The source without one check's Go-ahead writes. Only live 'written' links of this check count; attached lines and
@@ -55,7 +65,7 @@ export function withoutCheckWrites(
     balances: dropped.some((r) => r.status === 'paid') ? balances : source.balances,
     series: source.series
       .filter((s) => !seriesIds.has(s.id))
-      .map((s) => (replaced !== null && endedAgain.has(s.id) && s.end_date === replaced.endedOn ? { ...s, end_date: null } : s)),
+      .map((s) => (replaced !== null && endedAgain.has(s.id) && endedByCheck(s.end_date, replaced) ? { ...s, end_date: null } : s)),
     debts: source.debts.filter((d) => !debtIds.has(d.id)),
     paymentLinks: source.paymentLinks.filter((l) => l.check_id !== checkId),
     writtenRowLinks: source.writtenRowLinks.filter((l) => l.check_id !== checkId),

@@ -126,6 +126,26 @@ describe('useBoughtCheckComputation', () => {
     expect(byNeed.computation?.verdict).toEqual(computeCheck(buildDecideSnapshot(withBus), needBy).verdict);
   });
 
+  it('WR-C02: a Go ahead replayed after midnight still reopens the series it ended on the tap day', async () => {
+    const source = demoSource(TODAY);
+    const bus = { ...source.series[0]!, id: 's-bus', end_date: '2026-10-15' };
+    const withBus = { ...source, series: [...source.series, bus] };
+    const withReplace: CheckInputs = {
+      ...carInputs,
+      needBy: null,
+      replaces: [{ id: 'r', name: 'Bus', amount: 12_000, note: '', counted: true, seriesId: 's-bus', category: null }],
+    };
+    mockSnapshot.mockReturnValue(snapshotOf(withBus));
+    const replayed = await run(() => useBoughtCheckComputation(row({ id: 'car', created_at: '2026-10-12T12:00:00Z', decided_at: '2026-10-17T12:00:00Z' }), withReplace));
+    const expectedLive = computeCheck(buildDecideSnapshot({ ...source, series: [...source.series, { ...bus, end_date: null }] }), withReplace);
+    expect(replayed.computation?.verdict).toEqual(expectedLive.verdict);
+  });
+
+  it('WR-C02: a bought check whose Go ahead is still queued shows no figures rather than counting the purchase twice', async () => {
+    const pending = { ...row(), pending: true } as DecideCheckRow;
+    expect(await run(() => useBoughtCheckComputation(pending, inputs))).toEqual({ status: 'loading', computation: null });
+  });
+
   it('falls back to today when decided_at is missing', async () => {
     const result = { current: await run(() => useBoughtCheckComputation(row({ decided_at: null }), inputs)) };
     expect(result.current.status).toBe('ready');

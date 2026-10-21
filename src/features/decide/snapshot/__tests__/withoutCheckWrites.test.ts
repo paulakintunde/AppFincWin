@@ -207,6 +207,15 @@ describe('withoutCheckWrites', () => {
     expect(untouched.series.find((s) => s.id === 's-bus')?.end_date).toBe('2026-10-15');
   });
 
+  it('WR-C02: an end date from endedFrom to endedOn counts as this check\'s; one outside the window or none stays', () => {
+    const source = demoSource(TODAY);
+    const at = (id: string, end_date: string | null) => ({ ...source.series[0]!, id, end_date });
+    const withSeries: SnapshotSource = { ...source, series: [...source.series, at('in', '2026-10-13'), at('before', '2026-10-01'), at('after', '2026-10-20'), at('open', null)] };
+    const out = withoutCheckWrites(withSeries, 'c1', [], { seriesIds: ['in', 'before', 'after', 'open'], endedFrom: '2026-10-10', endedOn: '2026-10-15' });
+    const end = (id: string) => out.series.find((s) => s.id === id)?.end_date;
+    expect([end('in'), end('before'), end('after'), end('open')]).toEqual([null, '2026-10-01', '2026-10-20', null]);
+  });
+
   it('a paid write is added back to its balance', () => {
     const source = demoSource(TODAY);
     const base = source.rows[0]!;

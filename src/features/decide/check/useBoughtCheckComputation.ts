@@ -6,6 +6,7 @@ import { localDateIn } from '@/engine/time';
 import { useDecideLinks, useDecideSnapshot, useOtherChecks } from '@/data/queries/decide';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import type { DecideCheckRow } from '@/db/decideChecks';
+import type { WithPending } from '@/data/types';
 import { buildDecideSnapshot } from '../snapshot/buildSnapshot';
 import { inHomeCurrency, sourceFor } from '../snapshot/checkCurrency';
 import { computeCheck } from '../snapshot/computeCheck';
@@ -34,9 +35,12 @@ export function useBoughtCheckComputation(row: DecideCheckRow | null, inputs: Ch
   const linkRows = links.data;
   const computation = useMemo(() => {
     if (!bought || checkId === null || source === null || linkRows === undefined) return null;
+    const decidedOn = decidedAt === null ? rc.today : localDateIn(new Date(decidedAt), rc.timeZone);
     const replaced: ReplacedEnd = {
       seriesIds: inputs.replaces.map((l) => l.seriesId).filter((id): id is string => id !== null),
-      endedOn: inputs.needBy ?? (decidedAt === null ? rc.today : localDateIn(new Date(decidedAt), rc.timeZone)),
+      endedOn: inputs.needBy ?? decidedOn,
+      // WR-C02: Go ahead ended them on the tap day, which an offline replay can leave before decided_at.
+      ...(inputs.needBy === null && typeof row.created_at === 'string' ? { endedFrom: localDateIn(new Date(row.created_at), rc.timeZone) } : {}),
     };
     const built = buildDecideSnapshot(withoutCheckWrites(source, checkId, linkRows, replaced));
     // D-67: amounts typed in another currency are judged at the latest stored rate (or read unconverted without one).
@@ -46,6 +50,9 @@ export function useBoughtCheckComputation(row: DecideCheckRow | null, inputs: Ch
 
   if (!bought) return IDLE;
   if (snapshot.status === 'error' || links.isError) return { status: 'error', computation: null };
+  // WR-C02: while the Go ahead is still queued its rows are in the cache but no 'written' link exists yet, so they cannot
+  // be taken out: the purchase would count twice. Nothing is shown until the write has landed.
+  if ((row as WithPending<DecideCheckRow>).pending === true) return { status: 'loading', computation: null };
   if (computation === null) return { status: 'loading', computation: null };
   return { status: 'ready', computation };
 }
