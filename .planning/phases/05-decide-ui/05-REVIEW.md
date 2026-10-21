@@ -24,16 +24,16 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 |----|----------|------|---------|--------|
 | CR-A01 | critical | `src/db/decideSettings.ts:73 together with supabase/migrations/20261016000100_decide_tables.sql:145-146` | Decide-settings upsert needs UPDATE on `user_id`, which is not granted, so every settings save fails | fixed (a6728ae3, 334878e6) |
 | CR-B01 | high | `src/features/decide/home/LimitEditorSheet.tsx:253-256` | Saving one limit or the rough figures changes the currency of every other stored money limit | open |
-| CR-B02 | high | `src/features/decide/snapshot/computeCheck.ts:127-166` | A check typed in a previous home currency is judged as if its amounts were in the current one | open |
+| CR-B02 | high | `src/features/decide/snapshot/computeCheck.ts:127-166` | A check typed in a previous home currency is judged as if its amounts were in the current one | fixed (d0157b22), D-67 convert and note |
 | CR-B03 | high | `src/features/decide/notifications/waitReminder.ts:58-65` | The reminder map is read and rewritten by overlapping calls; a lost id leaves a notification that nothing can cancel | open |
 | CR-B04 | high | `src/features/decide/quick/QuickResult.tsx:210-240` | "Try on credit" cannot be reached by screen readers inside the accessible result group — HIGH (a11y) | open |
-| CR-C01 | high | `src/features/decide/check/useCheckDraft.ts:112-133. The stale closures are captured at steps/Step2PriceAndPay.tsx:76-91` | A toast Undo reverts every edit made after the removal (stale `update` closure) | open |
-| CR-C02 | high | `src/features/decide/check/LineEditorSheet.tsx:113-128` | The same recurring bill can be "replaced" twice, giving a double-counted saving and a refused Go ahead | partly fixed (a6728ae3, 949092cb): a refused Go ahead leaves no rows; the replace dedupe is open for batch C |
-| CR-C03 | high | `src/features/decide/check/writtenLines.ts:485-489` | "What gets written" promises a transfer into the investment account, but the write records a pending expense | open |
-| CR-C04 | high | `src/features/decide/check/writtenLines.ts:544-555` | "Closes N recurring bills" can be listed while nothing is ended | open |
-| CR-C05 | high | `src/features/decide/check/useCommitDecision.ts:216` | Go ahead can write to an archived account or a different-currency account, then double counts the purchase | open |
-| CR-C06 | high | `src/features/decide/check/useCheckDraft.ts:47` | The check's stamped currency is never reconciled with the snapshot currency | open |
-| CR-C07 | high | `src/features/decide/check/useCommitDecision.ts:284-307 (confirmGo) and 309-362 (requestCommit)` | No in-flight guard on commit or Reopen, so a double tap can double-write | open |
+| CR-C01 | high | `src/features/decide/check/useCheckDraft.ts:112-133. The stale closures are captured at steps/Step2PriceAndPay.tsx:76-91` | A toast Undo reverts every edit made after the removal (stale `update` closure) | fixed (4fcf03ec) |
+| CR-C02 | high | `src/features/decide/check/LineEditorSheet.tsx:113-128` | The same recurring bill can be "replaced" twice, giving a double-counted saving and a refused Go ahead | fixed (a6728ae3, 949092cb, 5a48a5e9): a refused Go ahead leaves no rows (batch A); a bill is replaced at most once |
+| CR-C03 | high | `src/features/decide/check/writtenLines.ts:485-489` | "What gets written" promises a transfer into the investment account, but the write records a pending expense | fixed (210800e4) |
+| CR-C04 | high | `src/features/decide/check/writtenLines.ts:544-555` | "Closes N recurring bills" can be listed while nothing is ended | fixed (210800e4); a replaced bill whose series no longer exists is left out of the closed count, with no separate notice |
+| CR-C05 | high | `src/features/decide/check/useCommitDecision.ts:216` | Go ahead can write to an archived account or a different-currency account, then double counts the purchase | fixed (674da01a) |
+| CR-C06 | high | `src/features/decide/check/useCheckDraft.ts:47` | The check's stamped currency is never reconciled with the snapshot currency | fixed (d0157b22), D-67 convert and note |
+| CR-C07 | high | `src/features/decide/check/useCommitDecision.ts:284-307 (confirmGo) and 309-362 (requestCommit)` | No in-flight guard on commit or Reopen, so a double tap can double-write | fixed (a7846dff) |
 | CR-D01 | high | `src/features/decide/ui/MoneyInput.tsx:43-67` | Onboarding rough figures can trap iOS users, and Skip silently discards them | open |
 | CR-D02 | high | `src/features/record/import/useStatementImport.ts:1425-1426` | The statement period outlives an undone or rejected import, so Decide counts empty months as complete | open |
 | CR-D03 | high | `src/features/navigation/swipeBackGesture.ts:41-51` | The swipe-back interceptor and back listener are global, without focus or ownership checks | open |
@@ -54,12 +54,12 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | WR-B08 | medium | `src/features/decide/quickParse.ts:262-276` | Quick-check parsing takes the first number, so "iPhone 15 Pro 1199" is judged at 15 | open |
 | WR-B09 | medium | `src/features/decide/home/YourMonthCard.tsx:93 (string src/i18n/locales/en.ts:1448` | Compliance — Your month says the average "is safe to plan on" | open |
 | WR-B10 | medium | `src/features/decide/notifications/waitReminder.ts:153-166` | Reconcile never fixes a reminder whose time changed or that the OS dropped | open |
-| WR-C01 | medium | `src/features/decide/check/useCommitDecision.ts:318-359` | Wait and Pass commit without flushing the pending draft, so stored inputs miss the last edits | open |
-| WR-C02 | medium | `src/features/decide/check/useBoughtCheckComputation.ts:35-41.` | The bought-check recompute can still double count | open |
-| WR-C03 | medium | `src/features/decide/check/CheckFlowScreen.tsx:296-308. Related: src/data/mutations/decideChecks.ts (useMarkCheckSeen uses expectedVersion: row.version` | Seen-state is lost to a version conflict and is marked only once per mount | open |
-| WR-C04 | medium | `src/features/decide/check/steps/step2/MethodPanels.tsx:270-323` | The card APR is saved only on blur, and that write is not guarded on a decided check | open |
-| WR-C05 | medium | `src/features/decide/check/VerdictCard.tsx:235-277.` | The confidence chip and the missing-rate link inside VerdictCard are unreachable for screen readers | open |
-| WR-C06 | medium | `src/features/decide/check/steps/stepUi.tsx:89-95.` | `Lock` hides controls from touch only, so read-only controls stay announced and activatable | open |
+| WR-C01 | medium | `src/features/decide/check/useCommitDecision.ts:318-359` | Wait and Pass commit without flushing the pending draft, so stored inputs miss the last edits | fixed (9e1a40fc) |
+| WR-C02 | medium | `src/features/decide/check/useBoughtCheckComputation.ts:35-41.` | The bought-check recompute can still double count | fixed (433160b9): a queued Go ahead shows no figures until it lands; replaced series reopen across an offline replay |
+| WR-C03 | medium | `src/features/decide/check/CheckFlowScreen.tsx:296-308. Related: src/data/mutations/decideChecks.ts (useMarkCheckSeen uses expectedVersion: row.version` | Seen-state is lost to a version conflict and is marked only once per mount | fixed (d1c828f3 version chain, d292b5e4 seen per visit) |
+| WR-C04 | medium | `src/features/decide/check/steps/step2/MethodPanels.tsx:270-323` | The card APR is saved only on blur, and that write is not guarded on a decided check | fixed (15799eec) |
+| WR-C05 | medium | `src/features/decide/check/VerdictCard.tsx:235-277.` | The confidence chip and the missing-rate link inside VerdictCard are unreachable for screen readers | fixed (950caa78) |
+| WR-C06 | medium | `src/features/decide/check/steps/stepUi.tsx:89-95.` | `Lock` hides controls from touch only, so read-only controls stay announced and activatable | fixed (3934dc38) |
 | WR-D01 | medium | `src/features/record/entry/transactionForm.ts:39. The gap is in src/features/record/entry/draftForm.ts:29-48` | The one-off flag is not saved in the entry draft and is lost on restore | open |
 | WR-D02 | medium | `src/features/decide/ui/StepSlider.tsx:216-220` | StepSlider jumps to the touched value before the pan activates, so scrolling can change the deposit | open |
 | WR-D03 | medium | `src/features/decide/ui/RateInput.tsx:9` | RateInput rejects comma decimal separators | open |
@@ -76,13 +76,13 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | WR-A09 | low | `src/data/mutations/sampleData.ts:24-36` | Clearing or seeding sample data does not refresh the settings, goals or changes caches | fixed (2cce53d6) |
 | WR-A10 | low | `src/data/mutations/decideLinks.ts:204-223` | Undoing an unlink collides with the live-unique index after the same line is re-attached | no change: accepted refusal (the line is already attached again), documented in 48d553b2 |
 | WR-A11 | low | `src/data/mutations/decideGoAhead.ts:288` | Go-ahead running-cost series drop the category the user picked | fixed (8ef2deb3) |
-| WR-C07 | low | `src/features/decide/check/CheckFlowScreen.tsx:97-114` | Live inputs are mixed with settled (150 ms) detail figures | open |
-| WR-C08 | low | `src/features/decide/check/CheckFlowScreen.tsx:249-263` | The swipe-back interceptor is cleared unconditionally, and Reopen stacks a second flow | open |
-| WR-C09 | low | `src/features/decide/check/CheckFlowScreen.tsx:270-274` | "Save and close" says "Saved" when nothing was saved | open |
-| WR-C10 | low | `src/features/decide/check/useCommitDecision.ts:284-307` | Silent no-op in `confirmGo` and an unhandled promise chain | open |
-| WR-C11 | low | `src/features/decide/check/LineEditorSheet.tsx:121` | An edited "replaced" bill still ends the whole original series | open |
-| WR-C12 | low | `src/features/decide/check/useEstimateBias.ts:140-141.` | The estimate gap note can be built from a silently truncated set of lines | open |
-| WR-C13 | low | `src/features/decide/check/steps/step4/RateChips.tsx:414-427` | Local text state drifts from the stored value in the fee and loss-of-value inputs | open |
+| WR-C07 | low | `src/features/decide/check/CheckFlowScreen.tsx:97-114` | Live inputs are mixed with settled (150 ms) detail figures | fixed (030d980c) |
+| WR-C08 | low | `src/features/decide/check/CheckFlowScreen.tsx:249-263` | The swipe-back interceptor is cleared unconditionally, and Reopen stacks a second flow | fixed (418c3fa0); focus-based claiming is CR-D03 |
+| WR-C09 | low | `src/features/decide/check/CheckFlowScreen.tsx:270-274` | "Save and close" says "Saved" when nothing was saved | fixed (7594be71) |
+| WR-C10 | low | `src/features/decide/check/useCommitDecision.ts:284-307` | Silent no-op in `confirmGo` and an unhandled promise chain | fixed (f59ef11b) |
+| WR-C11 | low | `src/features/decide/check/LineEditorSheet.tsx:121` | An edited "replaced" bill still ends the whole original series | fixed (a7fde02d) |
+| WR-C12 | low | `src/features/decide/check/useEstimateBias.ts:140-141.` | The estimate gap note can be built from a silently truncated set of lines | fixed (a08c7cd9) |
+| WR-C13 | low | `src/features/decide/check/steps/step4/RateChips.tsx:414-427` | Local text state drifts from the stored value in the fee and loss-of-value inputs | fixed (d8b63cc0) |
 | WR-D05 | low | `src/features/decide/ui/MoneyInput.tsx:35-41` | MoneyInput does not clear when the value is reset to null from outside | open |
 | WR-D06 | low | `src/features/decide/ui/StepSlider.tsx:184-189` | snapToStep cannot reach max, and step <= 0 gives NaN | open |
 | WR-D07 | low | `src/features/decide/charts/chartGeometry.ts:84-89` | Cash path x labels are positional and can mislabel short series | open |
@@ -92,16 +92,16 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | WR-D11 | low | `src/shell/decide/CommitMutationsProvider.tsx:15-27` | CommitMutationsProvider value is not memoised, and canWrite hides all errors | open |
 | WR-D12 | low | `src/features/record/entry/pickers/DateField.tsx:43` | DateField refuses an earlier date without any feedback | open |
 | WR-D13 | low | `app/(app)/_layout.tsx:80` | Notification routing is enabled when the profile is missing | open |
-| IN-A01 | info | `supabase/migrations/20261016000400_decide_demo_seed.sql:253-261` | Demo check inputs are stored in USD minor units for every home currency | no change: left to batch B old-currency "convert and note"; the seeded inputs carry no currency, so batch B must stamp them USD for that to apply |
+| IN-A01 | info | `supabase/migrations/20261016000400_decide_demo_seed.sql:253-261` | Demo check inputs are stored in USD minor units for every home currency | fixed client-side in batch C (d0157b22, D-67): an unstamped sample check reads and is stamped as USD; no SQL |
 | IN-A02 | info | `jest.config.js:46-47` | Bare CR and mixed line endings in jest.config.js | fixed (165600e0) |
 | IN-A03 | info | `src/engine/decide/decision.ts:1-27 and throughout` | `decision.ts` reformatted to double quotes | fixed (f4a3b68d) |
-| IN-C01 | info | `src/features/decide/check/CheckFlowScreen.tsx:358` | `Number()` is used on money and on rate text | open |
-| IN-C02 | info | `src/features/decide/check/sections/LedgersSection.tsx:114 (" to ")` | Hard-coded English in accessibility and visible text | open |
-| IN-C03 | info | `src/features/decide/check/sections/LinesSection.tsx:287.` | The investing row prints "floor £0" when the floor is not set | open |
-| IN-C04 | info | `src/features/decide/check/writtenLines.ts:480` | A decided bought check's "What gets written" is dated today | open |
-| IN-C05 | info | `src/features/decide/check/VerdictCard.tsx:158.` | First-read "missing" with no reasons falls back to the card-missing title | open |
-| IN-C06 | info | `src/features/decide/check/CheckFlowScreen.tsx:372.` | The household share silently falls back to member 0 | open |
-| IN-C07 | info | `src/data/mutations/decideGoAhead.ts:286-289` | The write builder does not mirror the engine's filter on loss-of-value running-cost lines | open |
+| IN-C01 | info | `src/features/decide/check/CheckFlowScreen.tsx:358` | `Number()` is used on money and on rate text | fixed (d2142064, d8b63cc0) |
+| IN-C02 | info | `src/features/decide/check/sections/LedgersSection.tsx:114 (" to ")` | Hard-coded English in accessibility and visible text | fixed (1046e7ed) |
+| IN-C03 | info | `src/features/decide/check/sections/LinesSection.tsx:287.` | The investing row prints "floor £0" when the floor is not set | fixed (318e9bae) |
+| IN-C04 | info | `src/features/decide/check/writtenLines.ts:480` | A decided bought check's "What gets written" is dated today | fixed (aa789565) |
+| IN-C05 | info | `src/features/decide/check/VerdictCard.tsx:158.` | First-read "missing" with no reasons falls back to the card-missing title | fixed (bf20a779) |
+| IN-C06 | info | `src/features/decide/check/CheckFlowScreen.tsx:372.` | The household share silently falls back to member 0 | fixed (aa4e53f0) |
+| IN-C07 | info | `src/data/mutations/decideGoAhead.ts:286-289` | The write builder does not mirror the engine's filter on loss-of-value running-cost lines | fixed (3ab6b3ea) |
 | IN-D01 | info | `StateChip.tsx:24` | A category tint is reused as the warning tint | open |
 | IN-D02 | info | `FigureStrip.tsx:41 (key={item.caption})` | React keys come from display strings | open |
 | IN-D03 | info | `CashPathChart.tsx:213` | Chart text alternatives are announced twice | open |
