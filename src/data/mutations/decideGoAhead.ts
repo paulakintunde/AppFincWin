@@ -430,6 +430,8 @@ export function registerDecideGoAheadMutations(qc: QueryClient): void {
         code: settledWriteErrorCode(err),
         attempted: { checkId: vars.checkId, count: vars.rows.length },
       });
+      // The check stays open after a refusal, so the cooling-off reminder scheduled at tap time must not fire.
+      void reminders.cancelCheckReminders(vars.checkId).catch(() => undefined);
       showToast({ kind: 'refusal', text: { key: landed ? 'undo.batchSavedNoUndo' : 'undo.batchRefused' } });
     },
   });

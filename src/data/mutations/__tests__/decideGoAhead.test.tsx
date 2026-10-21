@@ -4,7 +4,7 @@ globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto)
 
 import React from 'react';
 import fc from 'fast-check';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { Assessment, PaymentStep, Plan, RunningCosts } from '@/engine/decide';
 import type { DbClient } from '@/db/rows';
@@ -38,8 +38,10 @@ jest.mock('@/services/supabase', () => ({
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => `id-${++mockUuid}`) }));
 jest.mock('@/data/sync/failedWrites', () => ({ recordFailedWrite: jest.fn(async () => undefined) }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...a: unknown[]) => mockTrack(...a) }) }));
+const mockCancelReminders = jest.fn(async () => undefined);
 jest.mock('@/features/decide/notifications/waitReminder', () => ({
   scheduleCoolingOffReminder: (...a: unknown[]) => (mockCooling as (...x: unknown[]) => Promise<unknown>)(...a),
+  cancelCheckReminders: (...a: unknown[]) => (mockCancelReminders as (...x: unknown[]) => Promise<unknown>)(...a),
 }));
 
 const TODAY = '2026-10-16';
@@ -442,8 +444,37 @@ describe('useGoAhead', () => {
     mockUuid = 0;
     mockTrack.mockClear();
     mockCooling.mockClear();
+    mockCancelReminders.mockClear();
     (recordFailedWrite as jest.Mock).mockClear();
     resetToastForTests();
+    onlineManager.setOnline(true);
+  });
+
+  it('a failed Go ahead write shows the failed-save toast and cancels its cooling-off reminder', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: null, error: { message: 'denied', code: '42501' }, status: 403 });
+    const qc = newClient();
+    const { result } = await renderHook(() => useGoAhead(), { wrapper: wrapper(qc) });
+    result.current.goAhead(args({ coolingOff: true }));
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
+    expect(getToast()?.kind).toBe('refusal');
+    expect(getToast()?.text).toEqual({ key: 'undo.batchRefused' });
+    expect(mockCancelReminders).toHaveBeenCalledWith('chk1');
+  });
+
+  it('a Go ahead queued offline shows no toast', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    onlineManager.setOnline(false);
+    const qc = newClient();
+    const { result } = await renderHook(() => useGoAhead(), { wrapper: wrapper(qc) });
+    result.current.goAhead(args());
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.isPaused).toBe(true));
+    expect(fake.calls).toHaveLength(0);
+    expect(getToast()).toBeNull();
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+    expect(mockCancelReminders).not.toHaveBeenCalled();
   });
 
   it('inserts the rows then records the step with the same step id, marks the check bought and tracks go', async () => {
