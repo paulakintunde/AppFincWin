@@ -114,8 +114,9 @@ function withCore(details: CheckComputation, core: CheckCore): CheckComputation 
 }
 
 /** The purchase share the household sections show (D-18). Personal scope, one member or unusable figures give the whole. */
-function shareFor(inputs: CheckInputs, memberCount: number, myIndex: number): ResolvedShare {
-  if (inputs.scope !== 'household' || memberCount <= 1) return SOLE_SHARE;
+export function shareFor(inputs: CheckInputs, memberCount: number, myIndex: number): ResolvedShare {
+  // IN-C06: a user not found among the members (myIndex -1) is never given member 0's share
+  if (inputs.scope !== 'household' || memberCount <= 1 || myIndex < 0) return SOLE_SHARE;
   const split = inputs.split;
   let rule: SplitRule = { kind: 'even' };
   if (split?.kind === 'mine') rule = { kind: 'mine' };
@@ -417,7 +418,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
   // ── household (D-18) ──
   const memberCount = memberNames.size;
   const memberList = useMemo(() => [...memberNames.values()], [memberNames]);
-  const myIndex = Math.max(0, [...memberNames.keys()].indexOf(rc.userId ?? ''));
+  const myIndex = [...memberNames.keys()].indexOf(rc.userId ?? '');
   const share = useMemo(() => shareFor(inputs, memberCount, myIndex), [inputs, memberCount, myIndex]);
 
   // ── step 3 sections: collapsed by default, expanded state kept while the flow is open ──

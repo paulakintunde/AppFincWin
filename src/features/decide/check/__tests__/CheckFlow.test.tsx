@@ -5,7 +5,8 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { minorUnits } from '@/engine/money';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { interceptSwipeBack, setSwipeBackInterceptor } from '@/features/navigation/swipeBackGesture';
-import { CheckFlowScreen } from '../CheckFlowScreen';
+import { CheckFlowScreen, shareFor } from '../CheckFlowScreen';
+import { SOLE_SHARE } from '@/engine/decide';
 import { emptyCheckInputs } from '../../snapshot/checkInputs';
 import { EMPTY_STACK, type CheckComputation, type CheckInputs, type SnapshotResult, type StackSelection } from '../../snapshot/types';
 import { CARD_CHOICE, TODAY, loggedSource, month, noneSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
@@ -588,5 +589,13 @@ describe('D-56 debounced recompute', () => {
     await view.rerender(<CheckFlowScreen id="c1" initialStep={3} />);
     expect(buildAlternatives).toHaveBeenCalled();
     buildAlternatives.mockRestore();
+  });
+});
+
+describe('shareFor (IN-C06)', () => {
+  it('a user not found among the household members gets the whole, never member 0’s share', () => {
+    const household = { ...inputsOf(), scope: 'household' as const, split: { kind: 'weight' as const, weights: [3, 1], amounts: [] } };
+    expect(shareFor(household, 2, -1)).toBe(SOLE_SHARE);
+    expect(shareFor(household, 2, 1)).not.toBe(SOLE_SHARE);
   });
 });
