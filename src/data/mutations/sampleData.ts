@@ -31,6 +31,10 @@ export function useSampleData(ctx: { userId: string; householdId: string; today:
       void qc.invalidateQueries({ queryKey: queryKeys.decideChecks(userId, householdId) });
       void qc.invalidateQueries({ queryKey: queryKeys.debts(householdId) });
       void qc.invalidateQueries({ queryKey: queryKeys.decideLinks(userId, householdId) });
+      // WR-A09: the seed writes (and clear removes) the seeded settings row, sample goals and dated changes too.
+      void qc.invalidateQueries({ queryKey: queryKeys.decideSettings(userId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.savingsGoals(userId, householdId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.decideChanges(userId, householdId) });
       if (withUndoLog) void qc.invalidateQueries({ queryKey: queryKeys.undoLog(userId) });
     },
     [qc, householdId, userId]

@@ -49,6 +49,10 @@ describe('useSampleData', () => {
       queryKeys.recurringSeries('h1'),
       queryKeys.categories('u1'),
       queryKeys.sampleExists('h1'),
+      // WR-A09
+      queryKeys.decideSettings('u1'),
+      queryKeys.savingsGoals('u1', 'h1'),
+      queryKeys.decideChanges('u1', 'h1'),
     ]) {
       expect(spy).toHaveBeenCalledWith({ queryKey: key });
     }
@@ -70,6 +74,7 @@ describe('useSampleData', () => {
     expect(mockMark).toHaveBeenCalledTimes(1);
     expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.undoLog('u1') });
     expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.sampleExists('h1') });
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.decideSettings('u1') }); // WR-A09: the seeded row is deleted
   });
 
   it('clear failure resolves false and does not mark the prompt', async () => {
