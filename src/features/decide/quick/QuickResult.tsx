@@ -63,32 +63,35 @@ export function QuickResult({ computation, mode, name, fmt, fmtCents, onTryCredi
 
   return (
     <View style={styles.block}>
-      <View accessible accessibilityLiveRegion="polite" accessibilityLabel={settled} style={[styles.result, { backgroundColor: colors.fill1 }]}>
-        <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
-          {name === '' ? t('decide.quick.unnamed') : name}
-        </Text>
-        <View style={styles.chips}>
-          {copy.chip ? <StateChip tone={copy.chip.tone as StateChipTone} label={chipLabel} /> : null}
-          {sizeText ? (
-            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkMuted, textTransform: 'uppercase', letterSpacing: 1.2 }}>
-              {sizeText}
-            </Text>
-          ) : null}
-        </View>
-        <Text numberOfLines={3} maxFontSizeMultiplier={FIGURE_CAP} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
-          {lineText}
-        </Text>
-        {copy.monthly ? (
-          <View style={styles.monthly}>
-            <Text maxFontSizeMultiplier={FIGURE_CAP} style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
-              {fmtCents(copy.monthly.amount)}
-            </Text>
-            <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
-              {caption}
-            </Text>
+      <View style={[styles.result, { backgroundColor: colors.fill1 }]}>
+        {/* CR-B04: the live region holds only the text, so "Try on credit" below stays its own focusable button. */}
+        <View testID="quick-result-live" accessible accessibilityLiveRegion="polite" accessibilityLabel={settled} style={styles.live}>
+          <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
+            {name === '' ? t('decide.quick.unnamed') : name}
+          </Text>
+          <View style={styles.chips}>
+            {copy.chip ? <StateChip tone={copy.chip.tone as StateChipTone} label={chipLabel} /> : null}
+            {sizeText ? (
+              <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkMuted, textTransform: 'uppercase', letterSpacing: 1.2 }}>
+                {sizeText}
+              </Text>
+            ) : null}
           </View>
-        ) : null}
-        {basis ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{basis}</Text> : null}
+          <Text numberOfLines={3} maxFontSizeMultiplier={FIGURE_CAP} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+            {lineText}
+          </Text>
+          {copy.monthly ? (
+            <View style={styles.monthly}>
+              <Text maxFontSizeMultiplier={FIGURE_CAP} style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
+                {fmtCents(copy.monthly.amount)}
+              </Text>
+              <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+                {caption}
+              </Text>
+            </View>
+          ) : null}
+          {basis ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{basis}</Text> : null}
+        </View>
         {copy.tryCredit ? (
           <View style={styles.try}>
             <Pill label={t('decide.quick.tryCredit')} accessibilityLabel={t('decide.quick.tryCreditA11y')} variant="secondary" onPress={onTryCredit} />
@@ -106,6 +109,7 @@ export function QuickResult({ computation, mode, name, fmt, fmtCents, onTryCredi
 const styles = StyleSheet.create({
   block: { gap: space.gapSm },
   result: { borderRadius: radii.card, padding: space.cardPad, gap: space.gapSm },
+  live: { gap: space.gapSm },
   chips: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, flexWrap: 'wrap' },
   monthly: { gap: 2 },
   try: { alignSelf: 'flex-start' },

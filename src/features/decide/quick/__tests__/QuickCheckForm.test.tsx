@@ -71,6 +71,16 @@ describe('QuickCheckForm: home', () => {
     expect(mockTrack).toHaveBeenCalledTimes(1);
   });
 
+  it('CR-B04: Try on credit sits outside the accessible live region, so screen readers can focus it', async () => {
+    await renderForm();
+    await checkIt('car 14500');
+    expect(screen.getByTestId('quick-result-live').props.accessible).toBe(true);
+    const button = screen.getByLabelText('Try on credit, keeps the amount');
+    for (let node = button.parent; node !== null; node = node.parent) {
+      expect(node.props.accessible === true).toBe(false);
+    }
+  });
+
   it('shows a rate hint of a year once a rate above zero is typed, and no rate the user did not type', async () => {
     await renderForm();
     await checkIt('car 14500');
