@@ -110,7 +110,8 @@ describe('debts', () => {
   it('fetchDebts selects live debts', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [debtRow()], error: null, status: 200 });
-    await expect(fetchDebts(client)).resolves.toEqual([debtRow()]);
+    await expect(fetchDebts(client, 'h1')).resolves.toEqual([debtRow()]);
+    expect(client.calls.find((c) => c.method === 'eq')?.args).toEqual(['household_id', 'h1']);
     expect(client.calls.find((c) => c.method === 'is')?.args).toEqual(['deleted_at', null]);
   });
 
@@ -219,9 +220,10 @@ describe('decide links', () => {
   it('fetchPaymentLinks reads live written payment series links', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [{ check_id: 'k1', target_id: 's1' }], error: null, status: 200 });
-    await expect(fetchPaymentLinks(client)).resolves.toEqual([{ check_id: 'k1', target_id: 's1' }]);
+    await expect(fetchPaymentLinks(client, 'h1')).resolves.toEqual([{ check_id: 'k1', target_id: 's1' }]);
     const eqs = client.calls.filter((c) => c.method === 'eq').map((c) => c.args);
     expect(eqs).toEqual([
+      ['household_id', 'h1'],
       ['entity', 'recurring_series'],
       ['source', 'written'],
       ['role', 'payment'],
@@ -232,9 +234,10 @@ describe('decide links', () => {
   it('fetchWrittenRowLinks reads live written transaction links', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [{ check_id: 'k1', target_id: 't1' }], error: null, status: 200 });
-    await expect(fetchWrittenRowLinks(client)).resolves.toEqual([{ check_id: 'k1', target_id: 't1' }]);
+    await expect(fetchWrittenRowLinks(client, 'h1')).resolves.toEqual([{ check_id: 'k1', target_id: 't1' }]);
     const eqs = client.calls.filter((c) => c.method === 'eq').map((c) => c.args);
     expect(eqs).toEqual([
+      ['household_id', 'h1'],
       ['entity', 'transactions'],
       ['source', 'written'],
     ]);
@@ -253,7 +256,8 @@ describe('statement periods', () => {
   it('fetchStatementPeriods returns rows', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [PERIOD], error: null, status: 200 });
-    await expect(fetchStatementPeriods(client)).resolves.toEqual([PERIOD]);
+    await expect(fetchStatementPeriods(client, 'h1')).resolves.toEqual([PERIOD]);
+    expect(client.calls.find((c) => c.method === 'eq')?.args).toEqual(['household_id', 'h1']);
   });
 
   it('insertStatementPeriod returns the row, and null on a duplicate', async () => {

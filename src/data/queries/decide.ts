@@ -39,7 +39,7 @@ export const DECIDE_UPCOMING_MONTHS = 120; // pending one-offs dated after this 
 export function useDecideChecks(userId?: string, householdId?: string): UseQueryResult<DecideCheckRow[]> {
   return useQuery({
     queryKey: queryKeys.decideChecks(userId ?? '', householdId ?? ''),
-    queryFn: () => fetchDecideChecks(supabase),
+    queryFn: () => fetchDecideChecks(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
   });
 }
@@ -55,7 +55,7 @@ export function useDecideSettings(userId?: string): UseQueryResult<DecideSetting
 export function useDebts(householdId?: string): UseQueryResult<DebtRow[]> {
   return useQuery({
     queryKey: queryKeys.debts(householdId ?? ''),
-    queryFn: () => fetchDebts(supabase),
+    queryFn: () => fetchDebts(supabase, householdId as string),
     enabled: Boolean(householdId),
   });
 }
@@ -63,7 +63,7 @@ export function useDebts(householdId?: string): UseQueryResult<DebtRow[]> {
 export function useStatementPeriods(householdId?: string): UseQueryResult<StatementPeriodRow[]> {
   return useQuery({
     queryKey: queryKeys.statementPeriods(householdId ?? ''),
-    queryFn: () => fetchStatementPeriods(supabase),
+    queryFn: () => fetchStatementPeriods(supabase, householdId as string),
     enabled: Boolean(householdId),
   });
 }
@@ -189,12 +189,12 @@ export function useDecideSnapshot(): DecideSnapshotState {
   const checksQuery = useDecideChecks(userKey, hhId);
   const paymentQuery = useQuery({
     queryKey: queryKeys.decidePaymentLinks(userId ?? '', hh ?? ''),
-    queryFn: () => fetchPaymentLinks(supabase),
+    queryFn: () => fetchPaymentLinks(supabase, hh as string),
     enabled: enabled && Boolean(userId),
   });
   const writtenQuery = useQuery({
     queryKey: queryKeys.decideWrittenRowLinks(userId ?? '', hh ?? ''),
-    queryFn: () => fetchWrittenRowLinks(supabase),
+    queryFn: () => fetchWrittenRowLinks(supabase, hh as string),
     enabled: enabled && Boolean(userId),
   });
 

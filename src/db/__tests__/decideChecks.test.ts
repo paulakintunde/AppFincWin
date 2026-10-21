@@ -67,7 +67,8 @@ describe('fetchDecideChecks', () => {
   it('selects live rows newest-updated first', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [checkRow()], error: null, status: 200 });
-    await expect(fetchDecideChecks(client)).resolves.toEqual([checkRow()]);
+    await expect(fetchDecideChecks(client, 'h1')).resolves.toEqual([checkRow()]);
+    expect(client.calls.find((c) => c.method === 'eq')?.args).toEqual(['household_id', 'h1']);
     expect(client.calls.find((c) => c.method === 'is')?.args).toEqual(['deleted_at', null]);
     expect(client.calls.find((c) => c.method === 'order')?.args).toEqual(['updated_at', { ascending: false }]);
   });
@@ -75,7 +76,7 @@ describe('fetchDecideChecks', () => {
   it('maps an error to a DbError', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: null, error: { message: 'boom', code: '500' }, status: 500 });
-    await expect(fetchDecideChecks(client)).rejects.toBeInstanceOf(DbError);
+    await expect(fetchDecideChecks(client, 'h1')).rejects.toBeInstanceOf(DbError);
   });
 });
 

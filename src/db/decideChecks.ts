@@ -91,11 +91,12 @@ export const DECIDE_CHECK_PATCH_KEYS = [
 const ENTITY = 'decide_checks' as const;
 const UNIQUE_VIOLATION = '23505';
 
-/** Live checks, newest-updated first (RLS keeps them the caller's own). */
-export async function fetchDecideChecks(client: DbClient): Promise<DecideCheckRow[]> {
+/** Live checks in one household, newest-updated first (RLS keeps them the caller's own; WR-A05 the household). */
+export async function fetchDecideChecks(client: DbClient, householdId: string): Promise<DecideCheckRow[]> {
   const { data, error, status } = await client
     .from('decide_checks')
     .select(DECIDE_CHECK_COLUMNS)
+    .eq('household_id', householdId)
     .is('deleted_at', null)
     .order('updated_at', { ascending: false });
 

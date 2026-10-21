@@ -146,12 +146,13 @@ type LinkTarget = Pick<DecideLinkRow, 'check_id' | 'target_id'>;
 
 /**
  * D-48: live written payment links (series paying a Go-ahead purchase), for the snapshot's
- * covered-series rule. RLS keeps them the caller's own.
+ * covered-series rule. RLS keeps them the caller's own; WR-A05 keeps them to one household.
  */
-export async function fetchPaymentLinks(client: DbClient): Promise<LinkTarget[]> {
+export async function fetchPaymentLinks(client: DbClient, householdId: string): Promise<LinkTarget[]> {
   const { data, error, status } = await client
     .from('decide_links')
     .select('check_id, target_id')
+    .eq('household_id', householdId)
     .eq('entity', 'recurring_series')
     .eq('source', 'written')
     .eq('role', 'payment')
@@ -163,12 +164,13 @@ export async function fetchPaymentLinks(client: DbClient): Promise<LinkTarget[]>
 
 /**
  * D-40: live written transaction links, so the snapshot can leave a Go-ahead card purchase
- * paid by its payoff series out of the card's minimum.
+ * paid by its payoff series out of the card's minimum. One household only (WR-A05).
  */
-export async function fetchWrittenRowLinks(client: DbClient): Promise<LinkTarget[]> {
+export async function fetchWrittenRowLinks(client: DbClient, householdId: string): Promise<LinkTarget[]> {
   const { data, error, status } = await client
     .from('decide_links')
     .select('check_id, target_id')
+    .eq('household_id', householdId)
     .eq('entity', 'transactions')
     .eq('source', 'written')
     .is('deleted_at', null);

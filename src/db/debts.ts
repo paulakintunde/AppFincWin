@@ -113,11 +113,12 @@ export const DEBT_PATCH_KEYS = [
 const ENTITY = 'debts' as const;
 const UNIQUE_VIOLATION = '23505';
 
-/** Live debts (RLS limits them to the caller's households). */
-export async function fetchDebts(client: DbClient): Promise<DebtRow[]> {
+/** Live debts of one household (WR-A05: RLS alone would return every household the caller belongs to). */
+export async function fetchDebts(client: DbClient, householdId: string): Promise<DebtRow[]> {
   const { data, error, status } = await client
     .from('debts')
     .select(DEBT_COLUMNS)
+    .eq('household_id', householdId)
     .is('deleted_at', null)
     .order('created_at', { ascending: true });
 

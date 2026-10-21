@@ -15,10 +15,12 @@ export interface StatementPeriodRow {
 const COLUMNS = 'id, household_id, account_id, period_start, period_end';
 const UNIQUE_VIOLATION = '23505';
 
-export async function fetchStatementPeriods(client: DbClient): Promise<StatementPeriodRow[]> {
+/** One household's statement periods (WR-A05: RLS alone would return every household the caller belongs to). */
+export async function fetchStatementPeriods(client: DbClient, householdId: string): Promise<StatementPeriodRow[]> {
   const { data, error, status } = await client
     .from('statement_periods')
     .select(COLUMNS)
+    .eq('household_id', householdId)
     .order('period_start', { ascending: true });
 
   if (error) throw toDbError(error, status);

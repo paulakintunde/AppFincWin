@@ -213,6 +213,14 @@ describe('useDecideSnapshot', () => {
     expect(hook.result.current.source).toBeNull();
   });
 
+  it('WR-A05: every Decide read is filtered to the snapshot household', async () => {
+    await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(newClient()) });
+    await waitFor(() => expect(mockFetch.written).toHaveBeenCalled());
+    for (const read of [mockFetch.checks, mockFetch.debts, mockFetch.periods, mockFetch.payment, mockFetch.written]) {
+      expect(read).toHaveBeenCalledWith(expect.anything(), 'h1');
+    }
+  });
+
   it('reads 12 months of history and the pending window after this month, and caches rows only', async () => {
     const client = newClient();
     const { result } = await ready(client);
