@@ -16,6 +16,7 @@ import {
   repriceInputs,
   securedDefault,
   toEngineCheck,
+  uniqueReplaces,
   withItemType,
 } from '../checkInputs';
 import type { AdjustmentLine, CheckInputs, InputLine } from '../types';
@@ -400,6 +401,11 @@ describe('toEngineCheck', () => {
     const r = ok(buy({ adjustments: [adj({ id: 'trade', name: 'Trade-in', amount: 65_000, effect: 'takes_off', onDay: false })], lossOfValue: { kind: 'percent_per_year', percentText: '10' } }));
     expect(r.resolvedPrice.price).toBe(1_385_000);
     expect(r.running.nonCash).toBe(12_083);
+  });
+  it('CR-C02: one recurring bill replaced twice is subtracted once', () => {
+    const r = ok(buy({ replaces: [ln({ id: 'p1', amount: 10_000, seriesId: 's1' }), ln({ id: 'p2', amount: 10_000, seriesId: 's1' }), ln({ id: 'p3', amount: 2_000 })] }));
+    expect(r.running.replaced).toBe(12_000);
+    expect(uniqueReplaces([ln({ id: 'a', seriesId: 's1', counted: false }), ln({ id: 'b', seriesId: 's1' }), ln({ id: 'c', seriesId: 's1' })]).map((l) => l.id)).toEqual(['a', 'b']);
   });
   it('a legacy loss_of_value running-cost line is dropped', () => {
     const r = ok(buy({ runningCosts: [ln({ id: 'l1', amount: 9_999, category: 'loss_of_value' }), ln({ id: 'r2', amount: 1_000 })], replaces: [ln({ id: 'p9', amount: 7_000, category: 'loss_of_value' })] }));

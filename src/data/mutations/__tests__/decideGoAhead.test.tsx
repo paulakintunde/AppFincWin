@@ -258,6 +258,13 @@ describe('buildGoAheadWrite', () => {
     expect(w.endSeries).toEqual([{ id: 's-old', expected_version: 4, end_date: '2026-12-01' }]);
   });
 
+  it('CR-C02: a recurring bill named twice is ended once', () => {
+    const twice = { id: 'p1', name: 'Old', amount: 3000, note: '', counted: true, seriesId: 's-old', category: null };
+    const inputs = buyInputs({ method: 'cash', needBy: '2026-12-01', replaces: [twice, { ...twice, id: 'p2' }] });
+    const w = build(inputs, makePlan(), {}, { ...ctx, replacedSeries: [{ id: 's-old', version: 4 }] }, { ...RUNNING, countedReplaced: 1 });
+    expect(w.endSeries).toEqual([{ id: 's-old', expected_version: 4, end_date: '2026-12-01' }]);
+  });
+
   it('a lump investment into a tracked account writes a pending transfer', () => {
     const plan = makePlan({ dayOne: asMoney(50000), total: asMoney(50000) });
     const inputs = { ...emptyCheckInputs('invest', TODAY), name: 'Fund', method: 'lump' as const, investAccountId: 'inv' };

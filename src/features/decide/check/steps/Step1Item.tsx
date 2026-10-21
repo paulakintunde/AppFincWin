@@ -108,13 +108,18 @@ export function Step1Item(props: Step1Props) {
 
   const addReplace = (v: LineEditorValue) => {
     setAdding(false);
+    // CR-C02: a recurring bill is replaced once; a second line naming the same series is refused.
+    if (v.seriesId !== null && inputs.replaces.some((l) => l.seriesId === v.seriesId)) return;
     const line: InputLine = {
       id: freshId(inputs.replaces, 'rp-'), name: v.name, amount: v.amount, note: v.note, counted: true, seriesId: v.seriesId, category: null,
     };
     update({ replaces: [...inputs.replaces, line] });
   };
 
-  const bills: RecurringBillOption[] = recurringBills.map((b) => ({ id: b.id, name: b.name, monthly: b.monthly }));
+  // CR-C02: a bill already in the list is not offered again.
+  const bills: RecurringBillOption[] = recurringBills
+    .filter((b) => !inputs.replaces.some((l) => l.seriesId === b.id))
+    .map((b) => ({ id: b.id, name: b.name, monthly: b.monthly }));
 
   return (
     <View style={styles.column}>

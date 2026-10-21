@@ -128,6 +128,12 @@ describe('Step1Item', () => {
     });
   });
 
+  it('CR-C02: a bill already replaced is not offered again', async () => {
+    await renderStep({ replaces: [line()] });
+    await fireEvent.press(screen.getByText('+ Add an expense it replaces'));
+    expect(screen.queryByLabelText('Parking, $120.00')).toBeNull();
+  });
+
   it('hides the replaces card for an investment', async () => {
     await renderStep({ kind: 'invest' });
     expect(screen.queryByText('Expenses it replaces')).toBeNull();

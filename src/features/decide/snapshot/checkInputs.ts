@@ -424,6 +424,20 @@ function costLine(l: InputLine): CostLine {
     : { id: l.id, amount: minorUnits(l.amount), counted, category: l.category };
 }
 
+/**
+ * CR-C02: one recurring bill is replaced at most once. A later counted line naming a series an earlier counted line already
+ * replaces is dropped, so the saving is never subtracted twice. Lines with no series, and uncounted lines, are kept.
+ */
+export function uniqueReplaces(lines: readonly InputLine[]): InputLine[] {
+  const taken = new Set<string>();
+  return lines.filter((l) => {
+    if (l.seriesId === null || !l.counted) return true;
+    if (taken.has(l.seriesId)) return false;
+    taken.add(l.seriesId);
+    return true;
+  });
+}
+
 function lossLine(entry: LossOfValueInput, inputs: { readonly advertised: MinorUnits }): CostLine {
   return { id: 'loss_of_value', amount: lossOfValueMonthly(entry, inputs.advertised), counted: true, category: 'loss_of_value' };
 }
@@ -501,7 +515,7 @@ export function toEngineCheck(inputs: CheckInputs, ctx: EngineCtx): EngineCheckR
   const costs = inputs.runningCosts.filter((l) => l.category !== 'loss_of_value').map(costLine);
   const loss = inputs.lossOfValue === null ? null : lossInput(inputs.lossOfValue);
   if (loss !== null) costs.push(lossLine(loss, { advertised: adv }));
-  const replaced = inputs.replaces.filter((l) => l.category !== 'loss_of_value').map(costLine);
+  const replaced = uniqueReplaces(inputs.replaces).filter((l) => l.category !== 'loss_of_value').map(costLine);
   const running = netRunningCosts(costs, replaced);
   const check: BuyCheck = {
     kind: 'buy',

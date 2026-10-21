@@ -297,8 +297,8 @@ export function buildGoAheadWrite(args: {
       for (const line of inputs.replaces) {
         if (!line.counted || line.seriesId === null) continue;
         const found = ctx.replacedSeries.find((s) => s.id === line.seriesId);
-        // A series that is already gone has nothing left to end.
-        if (found) endSeries.push({ id: found.id, expected_version: found.version, end_date: start });
+        // A series that is already gone has nothing left to end; one named twice is ended once (CR-C02).
+        if (found && !endSeries.some((e) => e.id === found.id)) endSeries.push({ id: found.id, expected_version: found.version, end_date: start });
       }
     }
   }
