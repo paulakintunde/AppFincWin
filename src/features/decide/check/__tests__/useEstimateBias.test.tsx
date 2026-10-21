@@ -94,6 +94,17 @@ describe('useEstimateBias', () => {
     expect(result.current).toEqual({ running: null, payment: null, dayOne: null });
   });
 
+  it('WR-C12: more linked lines than one fetch returns gives no figure rather than a partial one', async () => {
+    setup(3);
+    const extra = Array.from({ length: 201 }, (_, i) => link(`x${i}`, 'c1', `extra-${String(i).padStart(3, '0')}`));
+    mockFetch.links.mockResolvedValue([...['c1', 'c2', 'c3'].map((id, i) => link(`k${i}`, id, `t${i}`)), ...extra]);
+    const { result } = await render();
+    await waitFor(() => expect(mockFetch.links).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetch.fx).toHaveBeenCalled());
+    expect(mockFetch.linked).not.toHaveBeenCalled();
+    expect(result.current).toEqual({ running: null, payment: null, dayOne: null });
+  });
+
   it('never stores a computed figure in the query cache', async () => {
     setup(3);
     const { result, client } = await render();

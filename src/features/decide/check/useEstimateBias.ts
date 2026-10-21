@@ -55,10 +55,12 @@ export function useEstimateBias(): EstimateBiasFigures {
     return {
       transactionIds: [...tx].sort().slice(0, MAX_TARGETS),
       seriesIds: [...series].sort().slice(0, MAX_TARGETS),
+      // WR-C12: more lines than one fetch returns would give a gap from partial actuals; no note is shown instead.
+      truncated: tx.size > MAX_TARGETS || series.size > MAX_TARGETS,
     };
   }, [linkRows]);
 
-  const hasTargets = targets.transactionIds.length > 0 || targets.seriesIds.length > 0;
+  const hasTargets = !targets.truncated && (targets.transactionIds.length > 0 || targets.seriesIds.length > 0);
   // Row-derived prefix (['transactions', hh, ...]) so a line edit refreshes it.
   const linesQuery = useQuery({
     queryKey: [
@@ -70,7 +72,7 @@ export function useEstimateBias(): EstimateBiasFigures {
       targets.transactionIds.join(','),
       targets.seriesIds.join(','),
     ],
-    queryFn: () => fetchLinkedLines(supabase, hh as string, targets),
+    queryFn: () => fetchLinkedLines(supabase, hh as string, { transactionIds: targets.transactionIds, seriesIds: targets.seriesIds }),
     enabled: Boolean(hh) && hasTargets,
   });
 
@@ -87,7 +89,7 @@ export function useEstimateBias(): EstimateBiasFigures {
   const today = rc.today;
 
   return useMemo(() => {
-    if (!rc.ready || !loaded || bought.length === 0) return NONE;
+    if (!rc.ready || !loaded || bought.length === 0 || targets.truncated) return NONE;
     try {
       const decisions = toPastDecisions({
         decisions: bought,
@@ -104,5 +106,5 @@ export function useEstimateBias(): EstimateBiasFigures {
     } catch {
       return NONE; // a gap note is never worth breaking step 2
     }
-  }, [rc.ready, loaded, bought, linkRows, lineRows, today, home, rates, customs]);
+  }, [rc.ready, loaded, bought, linkRows, lineRows, today, home, rates, customs, targets.truncated]);
 }
