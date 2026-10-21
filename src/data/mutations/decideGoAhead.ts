@@ -126,6 +126,9 @@ export function buildGoAheadWrite(args: {
       name,
       category_id: null,
       status: 'pending',
+      // D-66 (WR-A06): the day-one lump (cash, deposit, card purchase and its remainder) won't recur, so it is a
+      // one-off (D-29) and stays out of later checks' spending averages. Payment rows stay regular.
+      ...(role === 'day_one' ? { one_off: true } : {}),
       ...extra,
     });
     rowRoles.push(role);

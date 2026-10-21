@@ -398,6 +398,39 @@ describe('buildGoAheadWrite', () => {
     );
   });
 
+  it('D-66 (WR-A06): the day-one purchase lump is one-off; payment rows and transfer legs stay regular', () => {
+    // cash
+    const cash = build(buyInputs({ method: 'cash' }), makePlan());
+    expect(cash.rows.map((r) => r.one_off)).toEqual([true]);
+    // loan: the deposit is one-off; a one-month final payment row is a payment and stays regular
+    const loanPlan = makePlan({ dayOne: asMoney(5000), financed: asMoney(10000), monthly: asMoney(4000), months: 3, total: asMoney(15000), paymentSteps: [step(1, 2, 4000), step(3, 3, 2000)] });
+    const loan = build(buyInputs({ method: 'loan' }), loanPlan);
+    expect(loan.decision.row_roles).toEqual(['day_one', 'payment']);
+    expect(loan.rows.map((r) => r.one_off)).toEqual([true, undefined]);
+    // credit: the purchase on the card and the cash remainder are both one-off
+    const cardPlan = makePlan({
+      dayOne: asMoney(1500),
+      total: asMoney(121500),
+      paymentSteps: [step(1, 12, 10000)],
+      card: { eligibility: 'ok', onCard: asMoney(98500), remainderOnDay: asMoney(1000), payoff: 'months', payoffMonths: 12, minimumOutcome: null, remainingAtCap: null, fees: asMoney(500), cardCosts: null } as never,
+    });
+    const card = build(buyInputs({ method: 'card', card: { ...emptyCheckInputs('buy', TODAY).card, payoff: 'months' } }), cardPlan);
+    expect(card.rows.map((r) => [r.account_id, r.one_off])).toEqual([['card', true], ['cash', true]]);
+    // running costs and payment runs are series, which carry no one-off flag
+    expect(card.series.every((s) => !('one_off' in s))).toBe(true);
+    // a lump into a tracked investment account is a transfer, never a one-off expense
+    const lump = build(
+      { ...emptyCheckInputs('invest', TODAY), name: 'Fund', method: 'lump' as const, investAccountId: 'inv' },
+      makePlan({ dayOne: asMoney(50000), total: asMoney(50000) }),
+      {},
+      { ...ctx, investAccount: { id: 'inv', currency: 'USD' } }
+    );
+    expect(lump.rows.map((r) => r.one_off)).toEqual([undefined, undefined]);
+    // with no tracked account the lump is a plain outflow, and one-off like a purchase
+    const plain = build({ ...emptyCheckInputs('invest', TODAY), name: 'Fund', method: 'lump' as const }, makePlan({ dayOne: asMoney(50000), total: asMoney(50000) }));
+    expect(plain.rows.map((r) => r.one_off)).toEqual([true]);
+  });
+
   it('refuses a card plan with no card account', () => {
     const plan = makePlan({ card: { eligibility: 'ok', onCard: asMoney(1), remainderOnDay: asMoney(0), payoff: 'full', payoffMonths: 1, minimumOutcome: null, remainingAtCap: null, fees: asMoney(0), cardCosts: null } as never });
     expect(() => build(buyInputs({ method: 'card' }), plan, {}, { ...ctx, cardAccountId: null })).toThrow(TypeError);
