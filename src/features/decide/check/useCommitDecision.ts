@@ -74,7 +74,8 @@ export function useCommitDecision(args: CommitArgs): {
 
   const ctx = useMemo<GoAheadContext | null>(() => {
     if (rc.householdId === null || source === null) return null;
-    const cashAccountId = inputs.goAccountId ?? largestCash(cashAccounts);
+    // CR-C05: a stored account that is no longer offered (archived, deleted, another currency) is never written to.
+    const cashAccountId = inputs.goAccountId !== null && cashAccounts.some((a) => a.id === inputs.goAccountId) ? inputs.goAccountId : largestCash(cashAccounts);
     if (cashAccountId === null) return null;
     const card = inputs.card.accountId === null ? null : (source.cards.find((c) => c.accountId === inputs.card.accountId) ?? null);
     const investAccount =

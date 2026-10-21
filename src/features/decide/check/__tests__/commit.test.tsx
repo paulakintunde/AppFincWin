@@ -174,6 +174,26 @@ describe('Go ahead', () => {
     expect(mockBack).toHaveBeenCalledTimes(1);
   });
 
+  it('CR-C05: a stored archived or other-currency account is never written to', async () => {
+    mockAccounts.push(
+      { id: 'a-eur', name: 'Euro', kind: 'checking', currency: 'EUR', archived_at: null, deleted_at: null },
+      { id: 'a-old', name: 'Old', kind: 'checking', currency: 'USD', archived_at: '2026-09-01T00:00:00Z' as never, deleted_at: null }
+    );
+    try {
+      for (const stale of ['a-eur', 'a-old']) {
+        mockGoAhead.mockClear();
+        const view = await open({ outcome: 'go', goAccountId: stale });
+        await fireEvent.press(lastGoAhead());
+        await fireEvent.press(lastGoAhead());
+        const args = (mockGoAhead.mock.calls[0] as unknown[])[0] as { ctx: Record<string, unknown> };
+        expect(args.ctx.cashAccountId).toBe('a1');
+        await view.unmount();
+      }
+    } finally {
+      mockAccounts.splice(1);
+    }
+  });
+
   it('a card paid over months resolves the card account and the Debt category before the confirm', async () => {
     await open({ outcome: 'go', ...cardInputs('acc-card') });
     await fireEvent.press(lastGoAhead());

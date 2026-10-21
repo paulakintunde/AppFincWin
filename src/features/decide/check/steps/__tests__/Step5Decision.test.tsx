@@ -103,6 +103,13 @@ describe('Step5Decision', () => {
     expect(screen.getByText('Your saving and investing continue untouched.')).toBeTruthy();
   });
 
+  it('CR-C05: a stored paying account that is no longer offered is replaced by the largest one', async () => {
+    const p = props({ outcome: 'go', needBy: '2026-11-20', goAccountId: 'archived' });
+    await wrap(<Step5Decision {...p} />);
+    expect(p.update).toHaveBeenCalledWith({ goAccountId: 'a2' });
+    expect(screen.getByText('A pending expense of $1500.00 on on 2026-11-20, in Savings pot.')).toBeTruthy();
+  });
+
   it('picking another paying account writes goAccountId', async () => {
     const p = props({ outcome: 'go', goAccountId: 'a2' });
     await wrap(<Step5Decision {...p} />);

@@ -341,9 +341,15 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
 
   // ── lists the steps read ──
   const liveAccounts = useMemo(() => accountRows.filter((a) => a.archived_at === null && a.deleted_at === null), [accountRows]);
+  // CR-C05: Go ahead writes in the home currency, so only live cash accounts in that currency can pay (and their balances
+  // compare like for like).
+  const payCurrency = source?.currency ?? rc.homeCurrency;
   const cashAccounts = useMemo(
-    () => liveAccounts.filter((a) => a.kind === 'cash' || a.kind === 'checking').map((a) => ({ id: a.id, name: a.name, balance: balances.get(a.id)?.balance ?? 0 })),
-    [liveAccounts, balances]
+    () =>
+      liveAccounts
+        .filter((a) => (a.kind === 'cash' || a.kind === 'checking') && a.currency === payCurrency)
+        .map((a) => ({ id: a.id, name: a.name, balance: balances.get(a.id)?.balance ?? 0 })),
+    [liveAccounts, balances, payCurrency]
   );
   const investAccounts = useMemo(
     () => liveAccounts.filter((a) => a.kind === 'investment').map((a) => ({ id: a.id, name: a.name, currency: a.currency })),

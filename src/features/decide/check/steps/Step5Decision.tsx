@@ -85,11 +85,13 @@ export function Step5Decision(props: Step5Props) {
 
   const needsAccount = inputs.outcome === 'go';
   const defaultAccount = largestAccountId(cashAccounts);
+  // CR-C05: a stored account that is no longer offered (archived, deleted, another currency) is replaced by the default.
+  const storedOffered = inputs.goAccountId !== null && cashAccounts.some((a) => a.id === inputs.goAccountId);
   useEffect(() => {
-    if (!readOnly && needsAccount && inputs.goAccountId === null && defaultAccount !== null) update({ goAccountId: defaultAccount });
-  }, [readOnly, needsAccount, inputs.goAccountId, defaultAccount, update]);
+    if (!readOnly && needsAccount && !storedOffered && defaultAccount !== null && inputs.goAccountId !== defaultAccount) update({ goAccountId: defaultAccount });
+  }, [readOnly, needsAccount, storedOffered, inputs.goAccountId, defaultAccount, update]);
 
-  const accountId = inputs.goAccountId ?? defaultAccount;
+  const accountId = storedOffered ? inputs.goAccountId : defaultAccount;
   const account = cashAccounts.find((a) => a.id === accountId) ?? null;
   const intoOptions = inputs.kind === 'invest' && inputs.method === 'lump' ? investAccounts.filter((a) => a.currency === source.currency) : [];
   const investAccount = intoOptions.find((a) => a.id === inputs.investAccountId) ?? null;
