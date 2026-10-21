@@ -26,6 +26,7 @@ let mockSeries: { id: string; name: string; version: number }[] | undefined = []
 const mockToast = jest.fn();
 const mockBack = jest.fn();
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 const mockReopen = jest.fn(() => 'new-check');
 const mockCancelReminders = jest.fn(() => Promise.resolve());
 const mockGoAhead = jest.fn(() => 'step-1');
@@ -39,7 +40,7 @@ jest.mock('@/shell/a11yFocus', () => ({ useScreenTitleFocus: jest.fn(), focusAcc
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPush(...a) }));
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn() }),
-  router: { back: (...a: unknown[]) => mockBack(...a), canGoBack: () => true, replace: jest.fn(), navigate: jest.fn() },
+  router: { back: (...a: unknown[]) => mockBack(...a), canGoBack: () => true, replace: (...a: unknown[]) => mockReplace(...a), navigate: jest.fn() },
 }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: jest.fn() }) }));
 jest.mock('@/features/record/useRecordContext', () => ({
@@ -436,7 +437,8 @@ describe('decided checks', () => {
     await fireEvent.press(reopenButton);
     expect(mockCancelReminders).toHaveBeenCalledWith('c1');
     expect(mockReopen).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-check', step: '3' } });
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-check', step: '3' } });
+    expect(mockPush).not.toHaveBeenCalled();
     core.mockRestore();
   });
 });

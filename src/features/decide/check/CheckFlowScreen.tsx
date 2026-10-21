@@ -23,7 +23,6 @@ import type { ResolvedShare, SplitRule } from '@/engine/decide';
 import { minorUnits } from '@/engine/money';
 import { localDateIn } from '@/engine/time';
 import { setSwipeBackInterceptor } from '@/features/navigation/swipeBackGesture';
-import { pushOnce } from '@/shell/navigation/pushOnce';
 import { categoryName } from '@/features/record/categoryName';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
@@ -277,11 +276,12 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
       setStep(previous);
       return true;
     };
-    setSwipeBackInterceptor(stepBack);
+    // WR-C08: release only this screen's own claim
+    const release = setSwipeBackInterceptor(stepBack);
     const sub = BackHandler.addEventListener('hardwareBackPress', stepBack);
     return () => {
       sub.remove();
-      setSwipeBackInterceptor(null);
+      release();
     };
   }, [step]);
   const back = useCallback((): void => {
@@ -464,7 +464,8 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
     void cancelCheckReminders(row.id).catch(() => undefined);
     const newId = reopen(row, today);
     showToast({ kind: 'ordinary', text: { key: 'decide.toast.reopened' } });
-    pushOnce(checkHref(newId, { step: '3' }));
+    // WR-C08: the reopened check replaces the decided one, so finishing it returns to Decide, not to the old view
+    router.replace(checkHref(newId, { step: '3' }));
   };
   const decidedAction = row === null || !readOnly ? null : bought ? { label: t('decide.flow.notFound.back'), onPress: leaveFlow } : { label: t('decide.flow.reopen'), onPress: reopenCheck, disabled: reopened };
 

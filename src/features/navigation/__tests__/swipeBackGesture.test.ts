@@ -59,4 +59,22 @@ describe('swipe-back interceptor (A8)', () => {
     setSwipeBackInterceptor(null);
     expect(interceptSwipeBack()).toBe(false);
   });
+  it('WR-C08: a screen leaving gives the claim back to the screen underneath, and releases only its own claim', () => {
+    const lower = jest.fn(() => true);
+    const upper = jest.fn(() => true);
+    const releaseLower = setSwipeBackInterceptor(lower);
+    const releaseUpper = setSwipeBackInterceptor(upper);
+    expect(interceptSwipeBack()).toBe(true);
+    expect(upper).toHaveBeenCalledTimes(1);
+    releaseUpper();
+    expect(interceptSwipeBack()).toBe(true);
+    expect(lower).toHaveBeenCalledTimes(1);
+    releaseUpper(); // twice is harmless
+    releaseLower();
+    expect(interceptSwipeBack()).toBe(false);
+    const again = setSwipeBackInterceptor(upper);
+    setSwipeBackInterceptor(null)();
+    expect(interceptSwipeBack()).toBe(false);
+    again();
+  });
 });

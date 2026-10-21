@@ -38,14 +38,28 @@ export function dragOffset(translationX: number, translationY: number): number {
   return translationX;
 }
 
-let interceptor: (() => boolean) | null = null;
+// WR-C08: the claims form a stack, newest on top. A screen that leaves releases only its own claim, so the screen still
+// underneath it keeps (or gets back) its claim.
+let claims: (() => boolean)[] = [];
 
-/** A screen (the Decide check flow) claims the edge swipe to step back before it leaves; null releases it. */
-export function setSwipeBackInterceptor(fn: (() => boolean) | null): void {
-  interceptor = fn;
+/**
+ * A screen (the Decide check flow) claims the edge swipe to step back before it leaves; null releases every claim.
+ * Returns the release for this claim.
+ */
+export function setSwipeBackInterceptor(fn: (() => boolean) | null): () => void {
+  if (fn === null) {
+    claims = [];
+    return () => undefined;
+  }
+  claims = [...claims, fn];
+  return () => {
+    const at = claims.lastIndexOf(fn);
+    if (at >= 0) claims = [...claims.slice(0, at), ...claims.slice(at + 1)];
+  };
 }
 
 /** True when the screen handled the swipe itself, so the route must not pop. */
 export function interceptSwipeBack(): boolean {
-  return interceptor ? interceptor() : false;
+  const top = claims[claims.length - 1];
+  return top ? top() : false;
 }
