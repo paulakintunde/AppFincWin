@@ -14,7 +14,7 @@
 import * as Crypto from 'expo-crypto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
-import type { Assessment, PaymentStep, RunningCosts } from '@/engine/decide';
+import type { Assessment, PaymentStep, RunningCostCategory, RunningCosts } from '@/engine/decide';
 import { buildTransferLegs } from '@/engine/transfer';
 import { occurrenceDate } from '@/engine/recurring/schedule';
 import { monthOf } from '@/engine/time';
@@ -65,6 +65,8 @@ export interface GoAheadContext {
   investAccount: { id: string; currency: string } | null;
   /** The recurring expenses the user said this purchase replaces, with the version to end them at. */
   replacedSeries: readonly { id: string; version: number }[];
+  /** WR-A11: the user's category id for each running-cost prompt (D-33); built by the check flow's runningCostCategoryIds. */
+  runningCostCategoryIds?: Readonly<Partial<Record<RunningCostCategory, string>>>;
 }
 
 export type GoAheadAssessment = Pick<
@@ -288,7 +290,9 @@ export function buildGoAheadWrite(args: {
     if (running !== null) {
       for (const line of inputs.runningCosts) {
         if (!line.counted || line.amount <= 0) continue;
-        addSeries(ctx.cashAccountId, -line.amount, start, null, null, 'running_cost', line.name.trim() || name);
+        // WR-A11: a prompted line keeps the category the user picked it under; a line the user added has none.
+        const categoryId = line.category === null ? null : (ctx.runningCostCategoryIds?.[line.category] ?? null);
+        addSeries(ctx.cashAccountId, -line.amount, start, null, categoryId, 'running_cost', line.name.trim() || name);
       }
       for (const line of inputs.replaces) {
         if (!line.counted || line.seriesId === null) continue;

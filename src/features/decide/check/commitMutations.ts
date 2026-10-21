@@ -4,7 +4,8 @@
 // writes nothing and refuses Go ahead, so a screen mounted without a provider shows the "can't be written" reason
 // instead of crashing or pretending to commit.
 import { createContext, useContext } from 'react';
-import type { Assessment, RunningCosts } from '@/engine/decide';
+import type { BuiltinCategoryKey } from '@/engine/categorize';
+import type { Assessment, RunningCostCategory, RunningCosts } from '@/engine/decide';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { CheckInputs } from '../snapshot/types';
 
@@ -21,6 +22,28 @@ export interface GoAheadContext {
   transferCategoryId: string | null;
   investAccount: { id: string; currency: string } | null;
   replacedSeries: readonly { id: string; version: number }[];
+  /** WR-A11: the user's category id for each running-cost prompt (D-33), from runningCostCategoryIds. */
+  runningCostCategoryIds?: Readonly<Partial<Record<RunningCostCategory, string>>>;
+}
+
+/** WR-A11: the built-in category a running-cost prompt's series is filed under. Loss of value is non-cash: none. */
+export const RUNNING_COST_BUILTIN: Readonly<Partial<Record<RunningCostCategory, BuiltinCategoryKey>>> = {
+  insurance: 'Insurance',
+  fuel: 'Transport',
+  maintenance: 'Transport',
+  registration: 'Transport',
+};
+
+/** The category id for each running-cost prompt, from the user's built-in category ids (a missing one is left out). */
+export function runningCostCategoryIds(
+  builtinIds: ReadonlyMap<BuiltinCategoryKey, string>
+): Partial<Record<RunningCostCategory, string>> {
+  const out: Partial<Record<RunningCostCategory, string>> = {};
+  for (const [prompt, key] of Object.entries(RUNNING_COST_BUILTIN) as [RunningCostCategory, BuiltinCategoryKey][]) {
+    const id = builtinIds.get(key);
+    if (id !== undefined) out[prompt] = id;
+  }
+  return out;
 }
 
 export type GoAheadAssessment = Pick<Assessment, 'state' | 'plan' | 'size' | 'mineDayOne' | 'mineMonthly' | 'mineRunning' | 'newMonthly'>;

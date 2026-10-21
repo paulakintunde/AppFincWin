@@ -398,6 +398,27 @@ describe('buildGoAheadWrite', () => {
     );
   });
 
+  it('WR-A11: a prompted running cost keeps its category; a line the user added has none', () => {
+    const inputs = buyInputs({
+      method: 'cash',
+      runningCosts: [
+        { id: 'r1', name: 'Insurance', amount: 4000, note: '', counted: true, seriesId: null, category: 'insurance' },
+        { id: 'r2', name: 'Fuel', amount: 9000, note: '', counted: true, seriesId: null, category: 'fuel' },
+        { id: 'r3', name: 'Parking', amount: 1500, note: '', counted: true, seriesId: null, category: null },
+        { id: 'r4', name: 'Registration', amount: 800, note: '', counted: true, seriesId: null, category: 'registration' },
+      ],
+    });
+    const w = build(inputs, makePlan(), {}, { ...ctx, runningCostCategoryIds: { insurance: 'cat-ins', fuel: 'cat-trans' } }, { ...RUNNING, countedCosts: 4 });
+    expect(w.series.map((s) => [s.name, s.category_id])).toEqual([
+      ['Insurance', 'cat-ins'],
+      ['Fuel', 'cat-trans'],
+      ['Parking', null],
+      ['Registration', null],
+    ]);
+    // without the map (an older context) every running cost stays uncategorised
+    expect(build(inputs, makePlan(), {}, ctx, RUNNING).series.every((s) => s.category_id === null)).toBe(true);
+  });
+
   it('D-66 (WR-A06): the day-one purchase lump is one-off; payment rows and transfer legs stay regular', () => {
     // cash
     const cash = build(buyInputs({ method: 'cash' }), makePlan());

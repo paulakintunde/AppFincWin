@@ -17,7 +17,7 @@ import { useT } from '@/i18n';
 import { showToast } from '@/state/undoToast';
 import { hapticMedium } from '@/ui/haptics';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
-import { useCommitMutations, type GoAheadAssessment, type GoAheadContext } from './commitMutations';
+import { runningCostCategoryIds, useCommitMutations, type GoAheadAssessment, type GoAheadContext } from './commitMutations';
 import { moneyFn } from './steps/stepUi';
 import { refText, type Translate } from './refText';
 import { writtenLines } from './writtenLines';
@@ -94,6 +94,7 @@ export function useCommitDecision(args: CommitArgs): {
       transferCategoryId: lookup.transferCategoryId,
       investAccount: investAccount === null ? null : { id: investAccount.id, currency: investAccount.currency },
       replacedSeries,
+      runningCostCategoryIds: runningCostCategoryIds(lookup.builtinIds),
     };
   }, [rc.householdId, rc.timeZone, rc.today, source, inputs, cashAccounts, investAccounts, lookup, seriesQuery.data]);
 
