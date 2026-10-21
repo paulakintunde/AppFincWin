@@ -684,7 +684,7 @@ Plans:
 - [x] 05-29-PLAN.md — Commit a decision; decided checks (bought checks recalculated without their own writes)
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 05-25-PLAN.md — Full local gate and [BLOCKING] human-gated production push (npm run supabase:db:push)
+- [x] 05-25-PLAN.md — Full local gate and [BLOCKING] human-gated production push (npm run supabase:db:push)
 
 **Wave 10** *(blocked on Wave 9 completion)*
 - [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots at 402x874, 60 s first read, reminders, haptics, back

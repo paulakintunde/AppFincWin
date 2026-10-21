@@ -3,15 +3,15 @@ phase: 05-decide-ui
 plan: 25
 subsystem: release-gate
 tags: [gate, coverage, migrations, production-push]
-status: partial
-tasks_completed: 1
+status: complete
+tasks_completed: 2
 tasks_total: 2
 completed: 2026-10-21
 ---
 
 # Phase 5 Plan 25: Local gate and production push — Summary
 
-**Task 1 (full local gate) is done and green. Task 2 (the production `supabase db push`) is NOT done: it is human-gated and waits for the user's explicit go-ahead.**
+**Both tasks are done. Task 1 (full local gate) was green on 2026-10-21. Task 2 (the production `supabase db push`) was run on 2026-10-21 from the main session by the orchestrator, with the user's explicit approval.**
 
 ## Task 1: full local gate — DONE (2026-10-21, worktree C:\dev\fincwin-p5, branch phase/05-decide-ui)
 
@@ -49,9 +49,16 @@ Run in the plan's order; every command exited 0. No fixes were needed.
 
 Local pgTAP could not run (Docker down). CI's `rls` job on PR #82 runs `supabase db reset` plus `supabase test db` against a fresh local stack on every push. Run 39526523141 (head dddb863, the last code-identical-for-SQL run) reports `54_decide_tables`, `55_decide_patches`, `56_decide_outcomes`, `57_decide_demo_seed`, `58_decide_depth_tables` and `59_record_one_off_goal_tag` all `ok`. The run for this commit is recorded in STATE.md / the PR.
 
-## Task 2: push the Phase 5 migrations to production — PENDING (human-gated)
+## Task 2: push the Phase 5 migrations to production — DONE (2026-10-21)
 
-Not run. Needs the user's explicit yes. From `C:\dev\fincwin-p5` in Git Bash:
+Run by the orchestrator in the main session with the user's explicit approval (not by an executor).
+
+- Preflight passed: `supabase/config.toml` project_id matched `SUPABASE_PROD_PROJECT_REF` (cohmcbdfgqmiwykztrdg, the single production project).
+- A dry run listed exactly the six Phase 5 migrations as pending; the push applied all six: 20261016000100, 20261016000110, 20261016000120, 20261016000200, 20261016000300, 20261016000400.
+- Verified: `npx supabase migration list --linked` shows all six in both Local and Remote, and a second dry run reports "Remote database is up to date."
+- No token or password appears in any log or this SUMMARY; the Supabase MCP connector was not used. The worktree was linked by copying the gitignored `supabase/.temp` from the main checkout.
+
+The command as run, for the record. From `C:\dev\fincwin-p5` in Git Bash:
 
 ```
 cd /c/dev/fincwin-p5 && set -a && . C:/dev/fincwin/.env.local && set +a && npm run supabase:db:push

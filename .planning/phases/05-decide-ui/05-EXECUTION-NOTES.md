@@ -77,6 +77,7 @@ Non-interactive execution of `/gsd-execute-phase 5` (waves 1-8, plus 05-25 Task 
 
 - Go ahead failures (user request 2026-10-21): Go ahead already showed a refusal toast on a definitive failure (05-20: `undo.batchRefused`, or `undo.batchSavedNoUndo` when rows landed before `record_decide_go` was refused). The orchestrator kept that copy, because `decide.toast.outcomeFailed` ("Nothing was changed") is false in the landed case: Go ahead is a row insert followed by a separate RPC. Added: a definitive failure cancels the check's cooling-off reminder; tests for that and for no toast while queued offline.
 - 05-25 Task 1 (2026-10-21): full local gate green, no fixes needed (lint, typecheck, depcruise, check:ignores, test:coverage with every 100% path at 100%, verify:gates, migration lint/verify, three mirror checks). `supabase db reset --local` / `supabase test db` skipped (Docker down); CI rls runs pgTAP 54-59. 05-25-SUMMARY.md has status partial: Task 2 (production push) not run, ROADMAP 05-25 left unticked.
+- 05-25 Task 2 (2026-10-21): production push run by the orchestrator in the main session with the user's explicit approval. Preflight matched the prod ref; dry run listed exactly the six 20261016000* migrations; all six applied; `migration list --linked` shows them in Local and Remote; second dry run "Remote database is up to date". 05-25 complete, ROADMAP ticked. Worktree linked via a copied, gitignored `supabase/.temp`.
 
 ## Carry-overs for 05-30 (check flow screen)
 
