@@ -136,16 +136,25 @@ export interface HoldingFeeInputProps {
 export function HoldingFeeInput({ value, onChange, readOnly = false }: HoldingFeeInputProps) {
   const t = useT();
   const [text, setText] = useState(value ?? '');
+  const shown = (s: string): string => (s.endsWith('.') ? s.slice(0, -1) : s);
+  // WR-C13: a stored value changed from outside (an undo, a reopen, another device) replaces the text; the text's own
+  // value (with a trailing point still being typed) does not.
+  const [seen, setSeen] = useState(value);
+  if (value !== seen) {
+    setSeen(value);
+    if ((value ?? '') !== shown(text)) setText(value ?? '');
+  }
   const change = (next: string) => {
     if (next === '') {
       setText('');
       onChange(null);
       return;
     }
-    const whole = next.endsWith('.') ? next.slice(0, -1) : next;
+    const whole = shown(next);
     if (!isValidRateText(whole) || percent(whole) > HUNDRED) return;
     setText(next);
-    if (next === whole) onChange(next); // a trailing point is still being typed
+    // WR-C13: "5." while typing stores 5, so the figures never keep a value the field no longer shows
+    onChange(whole);
   };
   return (
     <View style={styles.block}>

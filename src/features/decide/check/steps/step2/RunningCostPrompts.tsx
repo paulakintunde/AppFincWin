@@ -6,6 +6,7 @@
  */
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { percent } from '@/engine/decide';
 import type { RunningCostCategory } from '@/engine/decide';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -26,6 +27,7 @@ import type { Step2Props } from './types';
 type Translate = Parameters<typeof refText>[0];
 type Props = Pick<Step2Props, 'inputs' | 'update' | 'computation' | 'source' | 'whole' | 'exact' | 'readOnly'>;
 
+const HUNDRED = percent('100');
 const LOSS: RunningCostCategory = 'loss_of_value';
 
 /** The cash categories shown as prompt rows (loss of value has its own row). */
@@ -114,7 +116,16 @@ function LossOfValueRow({ inputs, update, computation, source, whole, readOnly }
   const entry: LossOfValueEntry | null = inputs.lossOfValue;
   const [chosen, setChosen] = useState<'amount' | 'percent_per_year'>('amount');
   const mode = entry?.kind ?? chosen;
-  const [percentText, setPercentText] = useState(entry?.kind === 'percent_per_year' ? entry.percentText : '');
+  const stored = entry?.kind === 'percent_per_year' ? entry.percentText : '';
+  const [percentText, setPercentText] = useState(stored);
+  const typed = (s: string): string => (s.endsWith('.') ? s.slice(0, -1) : s);
+  // WR-C13: a stored percent changed from outside (an undo, a reopen, another device) replaces the text; the text's own
+  // value (with a trailing point still being typed) does not.
+  const [seen, setSeen] = useState(stored);
+  if (stored !== seen) {
+    setSeen(stored);
+    if (stored !== typed(percentText)) setPercentText(stored);
+  }
   const copy = lossOfValueCopy(entry, computation.running?.nonCash ?? null, wholeFmt);
   const name = refText(t, runningPromptCopy(LOSS).label);
 
@@ -127,10 +138,13 @@ function LossOfValueRow({ inputs, update, computation, source, whole, readOnly }
   };
 
   const typePercent = (text: string) => {
-    if (text !== '' && isValidRateText(text) && Number(text) > 100) return; // above 100% a year: ignored
+    const value = typed(text);
+    // above 100% a year: ignored (IN-C01: compared as a percent, never through Number())
+    if (value !== '' && isValidRateText(value) && percent(value) > HUNDRED) return;
     setPercentText(text);
     if (text === '') update({ lossOfValue: null });
-    else if (isValidRateText(text)) update({ lossOfValue: { kind: 'percent_per_year', percentText: text } });
+    // WR-C13: "5." while typing stores 5, so the figures never keep a value the field no longer shows
+    else if (isValidRateText(value) && value !== stored) update({ lossOfValue: { kind: 'percent_per_year', percentText: value } });
   };
 
   return (

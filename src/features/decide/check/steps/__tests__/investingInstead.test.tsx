@@ -101,6 +101,18 @@ describe('HoldingFeeInput', () => {
     await fireEvent.changeText(screen.getByLabelText('Holding fee, percent a year'), '');
     expect(onChange).toHaveBeenLastCalledWith(null);
   });
+
+  it('WR-C13: 5.5 edited to 5. stores 5, and a value changed from outside replaces the text', async () => {
+    const onChange = jest.fn();
+    const view = await wrap(<HoldingFeeInput value="5.5" onChange={onChange} />);
+    const field = () => screen.getByLabelText('Holding fee, percent a year');
+    await fireEvent.changeText(field(), '5.');
+    expect(onChange).toHaveBeenLastCalledWith('5');
+    await view.rerender(<HoldingFeeInput value="5" onChange={onChange} />);
+    expect(field().props.value).toBe('5.');
+    await view.rerender(<HoldingFeeInput value={null} onChange={onChange} />);
+    expect(field().props.value).toBe('');
+  });
 });
 
 describe('InvestingInsteadSection', () => {

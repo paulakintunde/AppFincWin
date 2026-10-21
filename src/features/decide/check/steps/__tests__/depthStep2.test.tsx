@@ -123,6 +123,23 @@ describe('Step 2 running-cost prompts', () => {
     await fireEvent.changeText(screen.getByLabelText('Loss of value, percent a year'), '');
     expect(updates.at(-1)).toEqual({ lossOfValue: null });
   });
+
+  it('WR-C13: editing 5.5 down to 5. stores 5, and a stored percent changed from outside replaces the text', async () => {
+    const update = jest.fn();
+    const at = (percentText: string): Step2Props => {
+      const inputs = buy({ itemType: 'vehicle', advertised: 1_450_000, lossOfValue: { kind: 'percent_per_year', percentText } });
+      return { ...stepProps(inputs, { update }, source), computation: computeCheck(source, inputs), onSaveCardRate: jest.fn(), onSaveCardTerms: jest.fn() };
+    };
+    const view = await wrap(<Step2PriceAndPay {...at('5.5')} />);
+    const field = () => screen.getByLabelText('Loss of value, percent a year');
+    expect(field().props.value).toBe('5.5');
+    await fireEvent.changeText(field(), '5.');
+    expect(update).toHaveBeenLastCalledWith({ lossOfValue: { kind: 'percent_per_year', percentText: '5' } });
+    await view.rerender(<Step2PriceAndPay {...at('5')} />);
+    expect(field().props.value).toBe('5.');
+    await view.rerender(<Step2PriceAndPay {...at('9')} />);
+    expect(field().props.value).toBe('9');
+  });
 });
 
 describe('Step 2 estimate gap notes', () => {
