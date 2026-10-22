@@ -1,7 +1,7 @@
 # Phase 5: Decide UI - Context
 
 **Gathered:** 2026-10-15
-**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day. The UI-SPEC carries all of them.
+**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-77 the Decide UX refresh 2026-10-22. The UI-SPEC carries all of them.
 
 <domain>
 ## Phase Boundary
@@ -201,6 +201,45 @@ Phase 4 was executed, code-reviewed (`04-REVIEW.md`: 4 high, 5 medium, 5 low, al
 - **D-67 (user, 2026-10-21): A check typed in a previous home currency is converted and noted** (amends D-37; review CR-C06, CR-B02; carries IN-A01). When a check's stamped `inputs.currency` differs from the snapshot (home) currency, every money amount in its inputs is converted at the latest STORED rate (the snapshot's own rates through `convertLatest`, never the FX fetch door) before anything is computed, and the check flow shows "Typed in {from}, shown in {to} at the latest stored rate." The flow shows and edits the converted amounts; each edit is converted back into the typed currency before it is saved, and an amount the edit did not change keeps its exact stored value. The stored stamp is never changed. A currency no stored rate converts gives the usual unconverted state (no figure, Go ahead and Wait unavailable, Missing terms on the home row, left out of other checks' stacks and counted). The same applies everywhere a check is computed: the check flow, the open-checks chips, the bought recompute and stacking. Seeded sample checks with no stamp read as USD (the demo seed's units), client-side, and are stamped USD on their first save. Pure helper `snapshot/checkCurrency.ts`; tests "D-67".
 - **D-68 (user, 2026-10-22): A Debt-category one-off payment is a debt's minimum only when it is a transfer into that card or loan** (review WR-B03 remainder; replaces the "any debt recorded" and then "any minimum counted" heuristics). A Debt-category payment outside a series is left out of spending only when it is a transfer whose other leg lands in a tracked credit or loan account whose debt has a counted minimum (a derived card or loan debt keyed by the account, or a recorded loan naming the account, with `minimumPayment > 0`): that minimum already carries it. Every other Debt-category one-off stays spending, in the month lines, the expense lines and, when pending, the scheduled outflows: a payment that is not a transfer went to an account the app does not track, and a transfer into a card or loan with no counted minimum (paid in full, no terms, a loan with no minimum) is the only place that payment shows. A transfer leg in the history is never spending anyway (D-28), so the history rule reduces to "not a transfer, so spending"; the target match decides the pending one-offs. Tests "WR-B03 (D-68)" in `buildSnapshot.test.ts`.
 - **D-69 (user, 2026-10-22): Provisional latest rate for a line whose own rate is pending** (amends D-37; builds on D-67). A past or pending transaction line saved while its rate was pending has no usable stamp (`orig_per_eur` null, `home_amount` null or in another home currency), so `homeAmountFor` returns null. Decide's snapshot builder no longer counts such a line as missing when a rate is stored: it converts it at the latest STORED rate for its original currency against home (`provisionalHomeAmount` in `snapshot/conversion.ts`, through `convertLatest`, so custom currencies resolve through their reference; never the FX fetch door) and flags it provisional. A currency with no stored rate at all is still missing (D-37 unchanged). The stamp always wins when it is usable; `homeAmountFor` is unchanged for Record, Activity and every other caller. The provisional figure is display and maths only and is never written anywhere; once the sweep stamps the real rate the next build reads the stamp. The snapshot carries `provisional { rowCount, rateDate }` (lines counted once, only when their month is used or the pending outflow is counted; rateDate is the earliest rate date used), shown as the declarative basis item "{{count}} line(s) converted at the {{date}} rate while its/their own rate(s) load" on Step 3 and in Assumptions. The engine gets a plain flag, `DecideSnapshot.provisionalRates`: `confidenceOf` then never returns strong (at most fair, "Medium"), adds the reason `provisional_rates`, and the confidence sheet lists "Some lines use the latest stored rate until their own rate arrives". Tests "D-69" (engine `deviations/d69-provisional-rates.test.ts`, `snapshot/__tests__/provisional.test.ts`, copy and Step 3).
+
+### Decide UX refresh (user, 2026-10-22)
+The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy and checks; where it conflicts with an earlier UI-SPEC section, it wins.
+- **D-70: Explanations open a small sheet, never a bubble.** A small ⓘ after a term opens the app's `Sheet` with the term, 1–3 plain declarative sentences and a "What this changes" line (e.g. "Replaces: ends this bill from the purchase date. Your income is unchanged."). There are no floating tooltips. The term list (31 keys, `INFO_TERMS`) and every explanation's copy are in UI-SPEC R3. The ⓘ is labelled "About {term}" with a 44pt target, and stays active on decided checks.
+- **D-71: Variable inputs take a typed custom value.**
+  - Every preset chip row gains a last "Custom" chip that opens an inline typed field with a range line.
+  - Duration fields run 1–120 months: the quick-check duration, card months, investment term, promotion length and the Wait period (new 3/6/12/24 chips).
+  - The investing horizon runs 1–600 months.
+  - Rates have no preset chips (04 D-07). The typed field is the custom input, bounded at 0–999.99% for APRs and 0–100% for projection rates and fees (D-48).
+  - The deposit, Wait amount and cheaper-price sliders each get a tap-to-type money field beside them. A typed value is used exactly, never snapped.
+  - An invalid entry is not applied, and the range line shows the bounds.
+- **D-72: Empty Decide home cards stay hidden.** Open checks appears once a check is saved, and Changes coming up once a change exists. While there are no changes, one slim "+ Add a change coming up" row sits under the quick-check card. The "No checks open" and "Nothing dated yet" empty blocks are retired.
+- **D-73: Clear and Delete, each with Undo; Go ahead's lines are never deleted.**
+  - "Clear" in the check header discards the current open check (a soft delete as one undo step, after flushing its pending edit), opens a fresh empty check, and toasts "Check cleared. Nothing was written." with Undo.
+  - Saved checks are deleted from Open checks and Past decisions by swipe or the ⋯ menu → Delete, then a confirm sheet, then an Undo toast. This replaces the no-confirm "x" abandon (DCU-04's intent holds) and the word "Remove".
+  - Deleting a decided check never removes or edits the lines Go ahead wrote or the transfers tagged to its goal, and the confirm sheet says so.
+- **D-74: Step 3 is summary first.**
+  - **The verdict card holds:** the state words as the heading, the old title as a one-line reason, and three key figures: Left a month, Cushion (engine `runwayMonths`, in months) and A month (net monthly cost).
+  - **Below the card:** one list of folded rows, each a title, a one-line preview and a chevron, with only one open at a time. The rows are What breaks, The month, Cash path, Where it lands, Setbacks, Options, If invested (moved from step 4), With the expected income, Who pays what and Assumptions.
+  - **Warnings and "Against your lines"** move into What breaks. It opens by default when warnings exist, so DCU-11 frame 2 still shows two full warnings.
+- **D-75: Tap-to-reveal is signalled four ways.**
+  - Every fold row has a chevron and a preview line.
+  - Hidden parts of a block use "Show details" / "Hide details" text links.
+  - A one-time hint, "Tap a row to see the detail", shows on the first verdict and is dismissed by the first fold or details tap. It is stored per user and per device in AsyncStorage (`fincwin:decide-hints:{userId}`).
+  - Each reveal has a pressed state and a `selectionAsync` haptic (amends the "no haptic on section toggles" rule; `impactAsync` and `selectionAsync` only).
+- **D-76: No word ever breaks mid-word, overlaps, or is cut off in Decide.**
+  - Android text uses `textBreakStrategy="simple"` and `android_hyphenationFrequency="none"`.
+  - Labels wrap at word boundaries, nothing that holds text has a fixed height, and rows grow with their content.
+  - Only one-line figures use `numberOfLines={1}` with `adjustsFontSizeToFit` (minimum scale 0.8).
+  - Chips wrap to new lines rather than squeezing.
+  - Side-by-side text stacks below 360 wide, above 1.3x text, or for a value longer than 16 characters. "Where it lands" and "What gets written" use stacked label-over-value rows.
+  - System-copy clamps are removed; the caps hold through copy length.
+  - Every Decide screen is checked at 402×874 and 320 wide, at text scale 1.0 and 2.0.
+- **D-77: The draft and save contract.**
+  - **Saving:** a new check is created on its first edit. Later edits debounce 600 ms into the write queue. Leaving, unmounting and app backgrounding flush at once, and leaving never prompts.
+  - **Indicator:** the header shows "Saved" / "Saving…" / "Offline, will save" / "Not saved", derived per check from the create and save mutations, the debounce and `useSyncStatus`.
+  - **Clear:** flushes, then deletes, then disarms the draft so no later save targets the cleared check.
+  - **Delete:** queued behind any save in `WRITE_SCOPE`. It never conflicts (WR-A03), and a save that arrives after it never undeletes and never records a failed write.
+  - **Verification:** `useCheckDraft`, `useCreateCheck`, `useSaveCheckDraft`, `useAbandonCheck`, `useRemoveDecision`, the `setMutationDefaults` registration, `useSyncStatus` and the undo stack are checked by tests named "D-77".
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.

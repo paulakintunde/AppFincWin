@@ -1,8 +1,9 @@
 ---
 phase: 5
 slug: 05-decide-ui
-status: approved
+status: draft
 reviewed_at: 2026-10-16
+amended: 2026-10-22
 shadcn_initialized: false
 preset: none
 created: 2026-10-15
@@ -15,6 +16,8 @@ created: 2026-10-15
 > **This file extends `03-UI-SPEC.md` and `03.1-UI-SPEC.md`; it does not replace them.** Anything not stated here is inherited unchanged: theme tokens, `space`/`size`/`radii`, type roles, Sheet engine (backdrop, drag, stacking, dismissal rules), toast, sync line, back history, FAB rules, reduced motion. All decisions come from `05-CONTEXT.md` (D-01..D-56, locked; D-38..D-44 applied in the 2026-10-15 planning-review touch-ups D-45..D-52 in the 2026-10-16 alignment to the executed Phase 4 and D-53..D-56 in the same day's revision, see the changelog at the end) and `04-CONTEXT.md` (engine codes; where a plan and the executed engine disagree, the engine code in `src/engine/decide` and `src/engine/payoff` wins). Prototype source: `FincWin United.dc.html` L955-1391 (home, steps 1-2), L1415-1723 (steps 3-5 and the action bar), L1725-1757 (past decisions), L1933-1958 (past-decision sheet), L1960-1990 and L4830-4851 (date picker), L4202-4787 (logic and strings).
 
 **Platform note:** React Native / Expo SDK 57. No shadcn, no CSS. Styling is `StyleSheet` plus the typed theme (`useTheme()`, `textRole()`, `src/theme/*`). The CLAUDE.md fidelity rule holds: **no new colour, gradient, shadow, type size or icon set.** The prototype's Decide screens use about a dozen hex values outside the §2 palette; every one is mapped to an existing token below (Color, Deviations Register). Colours are cited by token name only; `noRawColours.test.ts` must keep passing.
+
+**Amended 2026-10-22 (D-70..D-77):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Status returns to draft until the checker re-approves.
 
 **Surface in this phase:**
 1. Decide tab root (quick check, Your month, Open checks, Past decisions link, Lines you will not cross).
@@ -870,3 +873,603 @@ Status stays approved. The DCU-11 budgets are unchanged (every new line replaces
 7. **D-54:** monthly payments, instalments and promotion payments show cents; totals and balances stay whole (assumption 12 amended, fold check recorded there).
 8. **D-56:** the verdict, warnings, method cards and quick result recompute on every keystroke; the sections, step 4 and the investing views 150 ms after typing stops, with a conditional lazy fallback. Section: Interaction states and motion.
 9. Card fees are now written at Go ahead as part of the day-one cash line; an instalment's written lines start with the day-one line (first instalment and fees). Section: Step 5 "What gets written".
+
+---
+
+## Decide UX refresh (2026-10-22)
+
+Source: the user's request of 2026-10-22 and the locked decisions **05-CONTEXT D-70..D-77**. **Where this section conflicts with an earlier section of this file, this section wins**; every conflict is listed in "Conflicts resolved" at the end. Tokens, spacing, radii, type roles, motion and haptics are the existing ones only: **no new colour, type size, weight, shadow, gradient, motion token or icon set**. Every glyph below is hand-drawn (`react-native-svg` or Views), like the existing chevrons, and `MoreGlyph` is the shipped one from `src/features/record/activity/header/HeaderGlyphs.tsx`.
+
+**Summary of the refresh:**
+1. ⓘ explanations: a small info button after a term opens a small bottom sheet with the term, 1-3 sentences, and a "What this changes" line (D-70).
+2. Custom values: a "Custom" chip next to every preset chip row, and a typed field beside each amount slider (D-71).
+3. Decide home: Open checks and Changes coming up are hidden while empty; one slim "+ Add a change coming up" row sits under the quick check (D-72).
+4. Clear and Delete, each with Undo; deleting a decided check never removes what Go ahead wrote (D-73).
+5. Step 3 summary first: the verdict, a one-line reason and three key figures, then one list of folded rows, only one open at a time (D-74).
+6. Obvious tap-to-reveal: a chevron and preview on every fold, "Show details" / "Hide details" links, a one-time hint, and a pressed state with a haptic (D-75).
+7. Text fit: no mid-word breaks, no overlap, no truncation of system copy, checked at 402 and 320 wide and at 1.0x and 2.0x text (D-76).
+8. Drafts and saving: autosave timing, a save indicator, and how Clear and Delete interact with a queued save (D-77).
+
+### R1. New and changed components
+
+#### `InfoButton` (new, `src/features/decide/ui/InfoButton.tsx`)
+
+| Property | Value |
+|---|---|
+| Visual | A 16px circle, 1.5px stroke, with an "i" (stem 1.5 x 6, dot 2) drawn in `react-native-svg`. The geometry is a declared drawing exception, like the chevrons. Colour `inkMuted` on light surfaces and `inkSoft1` on `ink` or `danger` cards. No fill. |
+| Target | 44 x 44 (`space.touchMin`) through `hitSlop` (14 each side). The hit area may overlap plain text only, never another control. When the next sibling is a control, the row adds `space.gapMd` (12) between them. |
+| Placement | Directly after the term's label: `space.gapSm` (8) gap, in a `flexDirection: 'row'` group of the form `[label Text, flexShrink 1][InfoButton]`, with `alignItems: 'flex-start'`. The button is vertically centred on the label's **first line** (`marginTop = (lineHeight − 16) / 2`). When the label wraps, the ⓘ stays beside the label block and never lands on top of a word. |
+| Pressed | `PRESSED_OPACITY` (0.72) plus `hapticSelection()` (`selectionAsync`). |
+| Role | `accessibilityRole="button"`, label **"About {term}"**, hint "Opens an explanation". |
+| Read-only checks | Still active on a decided check: explanations are reading, not editing. Not wrapped by `Lock`. |
+| Inside a fold header | See FoldRow: the ⓘ is drawn beside the title and is also exposed as a custom accessibility action "About {term}" on the fold row, because a nested button is not separately focusable inside an accessible row. |
+
+#### `InfoSheet` (new, `src/features/decide/ui/InfoSheet.tsx`)
+
+One shared sheet that every `InfoButton` opens with a key into `INFO_TERMS` (R3). It is the app's own `Sheet`: standard backdrop, drag, Android back and stacking (03 rules). It is never dirty, so it never asks "Discard changes?". **No floating bubbles or tooltips anywhere.**
+
+| Part | Spec |
+|---|---|
+| Container | `Sheet`, content padding `space.sheetCornerPad` (22) on the sides, bottom `space.sheetPadBottom` (30) plus the inset; gap `space.gapMd` (12). Height is set by the content and grows with it (no fixed height); it scrolls only if taller than the sheet cap. |
+| Term | `sheetTitle` (16/600), `ink`, `accessibilityRole="header"`. It receives focus when the sheet opens. |
+| Body | 1-3 sentences, `body` (15/500/1.5), `inkDim`. |
+| What this changes | A `fill1` tile, radius 16, padding `space.cardPad` (16), gap 4: eyebrow "What this changes" (`eyebrow`, `inkMuted`), then the line (`s13_5`, `ink`). |
+| Close | One secondary `Pill`, "Close", full width, 48 high. Focus returns to the ⓘ that opened the sheet. |
+| Stacking | Opens over another sheet (the limit editor, the line editor, card terms, the decision detail) under the existing stacking rule. Only one InfoSheet is open at a time. |
+| Dynamic values | A body may carry the user's own figures (e.g. the cushion months and reason, the provisional rate date). With no figure available, the static sentence shows; a placeholder is never shown. |
+
+#### `CustomValue` chip and field (new, `src/features/decide/ui/CustomValueChips.tsx`)
+
+Wraps the shipped `Chip` row. The same component serves every preset row in R4.
+
+- **Row:** the preset chips, then one more `Chip` **"Custom"**, last. `flexDirection: 'row'`, `flexWrap: 'wrap'`, row and column gap `space.gapSm` (8). `accessibilityRole="radiogroup"` with the existing group label (e.g. "Over how many months"). Chips are never `flex: 1` and never shrink, so a chip row that does not fit wraps to a new line (R6).
+- **Custom chip label:** "Custom" while unselected. When the current value matches no preset, the Custom chip is selected and reads the value with its unit: "{n} months", "{n} month", or "{x}%" for a percent field. Its accessibility label is "Custom, {value}".
+- **Field:** tapping Custom (selected or not) opens an inline field row **directly under the chip row**, inside the same card, with `fw-rise`; under reduced motion it appears at once. It is not a sheet. The row holds:
+  - a `Box`, numeric, 44 high, width 96 (grows with text scale; never a fixed height);
+  - the unit word after it (`body`, `inkDim`: "months" / "% a year");
+  - under it the range line (`meta`, `inkFaint`), e.g. "1 to 120 months".
+  
+  It takes focus with the numeric keyboard (`inputMode="numeric"`, or `"decimal"` for rates), return key "Done".
+- **Applying:** a valid value applies **on every keystroke** (D-56 live recompute). An out-of-range or unparsable value is not applied: the last valid value stays in force, and the range line turns `warn1` with the same words. That is the whole error state: no toast and no red. Blur or "Done" closes the field. On close an empty or invalid entry is dropped and the previous value stays. A typed value equal to a preset selects that preset chip instead of Custom.
+- **Rounding:** months are whole numbers (a decimal mark is refused at the keystroke). Percent fields keep the existing rate grammar (`RateInput` text, never a float). Amounts keep `MoneyInput` minor units.
+- **Read-only:** inside `Lock` on a decided check (chips announced disabled; no field opens).
+
+#### Slider with a typed amount (changed: `StepSlider` call sites)
+
+For the loan deposit (step 2), the Wait amount (step 5) and the cheaper price (step 4):
+
+- **Layout at 402 and 1.0x:** one row: `StepSlider` (flex 1), `space.gapMd` (12), then a compact `MoneyInput` (pill, `fill1`, width 128, 44 high, `body` figure, currency prefix). The field's label is the slider's label, shown once above the row (`meta`, `inkMuted`).
+- **Stacks** (field full width above the slider) when the window is narrower than 360 or the text scale is above 1.3x (R6 rule S).
+- **Two-way:**
+  - Dragging updates the field (whole currency for the deposit and the cheaper price, cents for Wait, D-54).
+  - Typing moves the thumb. A typed value is **not snapped** to the slider step: it is used exactly as typed.
+  - A typed value beyond the slider's track pins the thumb at the end. A `meta` line under the row reads "Above the slider’s range" or "Below the slider’s range"; the typed value still applies.
+- **Validation:** each field's range is in R4. An out-of-range entry is not applied, and the field's hint shows the range in `warn1`.
+- **Removed:** the separate deposit `MoneyInput` above the slider (step 2 loan) is replaced by this row. There is one deposit field, not two.
+
+#### `FoldRow` and `FoldList` (new; replace `CollapsibleSection` on step 3)
+
+`FoldList` is **one white card** (`surface`, `radii.card`, `shadows.card`). It holds every fold in order, with 1px `fill2` separators between rows and padding `space.cardPadLg` (20) on the sides. It owns `openKey: SectionKey | null`. **Only one fold is open at a time:** opening one closes the one that was open, and tapping the open one closes it. `openKey` is kept while the flow is open (it replaces the per-section `open` map in `CheckFlowScreen`).
+
+| Part | Spec |
+|---|---|
+| Row | A `Pressable`: `minHeight` 64, padding `space.rowPadDense` (13) top and bottom, `flexDirection: 'row'`, `alignItems: 'center'`, gap `space.gapMd`. |
+| Left block (flex 1, flexShrink 1) | Line 1: the title (`sheetTitle`, 16/600, `ink`; wraps at word boundaries), optionally followed by an ⓘ (InfoButton rules). Line 2: the **preview** (`meta`, 12.5/500, `inkMuted`). It is one line at 402 and 1.0x by copy length (R3 caps previews at 44 characters with demo-scale amounts), wraps at larger text, and is **never truncated**. |
+| Chevron | The existing 8px chevron (`size.chevronCompact`, 2px borders, `inkSoft3`). It points right when folded and down when open (rotated 90°, no animation, as before), with `flexShrink: 0`. |
+| Pressed | Row background `fill6` while pressed, then `hapticSelection()`. |
+| Open body | Mounts under the row, inside the same card, with `fw-rise` (`DURATION.entrance`); under reduced motion it appears at once. Bottom padding `space.cardPad` (16). The body content is the existing section content, restyled to R6 where noted. |
+| Scroll on open | After the body lays out, if the opened row's top is above the viewport (because a longer fold above closed), the screen scrolls so the row sits `space.gapMd` below the sticky header. The scroll is animated, except under reduced motion. |
+| A11y | `accessibilityRole="button"`, `accessibilityState={{ expanded }}`, label "{title}, {preview}", hint "Shows the detail" or "Hides the detail". When the title has an ⓘ, the row also has `accessibilityActions=[{ name: 'about', label: 'About {term}' }]`. Announcements: see R7. |
+| Dark content | A fold whose content was a dark card (Options, "What would make it work") renders that content in an inner `ink` tile (radius 16, padding `space.gapMd` / `space.cardPad`) inside the white body. This keeps the "no more than two dark cards visible" rule: at most the verdict card and this tile. |
+
+`CollapsibleSection` stays for step 2 and step 5 uses (promotional rate, card notes, investing rows that remain there), with the R6 fix: title and summary stack in a column, plus the chevron. Its title and summary no longer sit side by side.
+
+#### "Show details" / "Hide details" link (new, `DetailsToggle`)
+
+A text button (`label`, `accent`, 44 high, left aligned) under a visible part of a block. It reveals the rest of that block **in place**. The words flip between "Show details" and "Hide details". `accessibilityRole="button"`, `accessibilityState.expanded`, label "Show details, {block}" or "Hide details, {block}". It uses the same pressed state and `hapticSelection()`. Where it is used is listed in R5.
+
+#### First-run hint (new, `FoldHint`)
+
+- **Where:** step 3 only, on the first verdict this user sees on this device. It sits directly above the `FoldList`, 8 below the verdict card (or below the notices when they show).
+- **Look:** a `fill1` tile, radius 16, padding `space.gapMd` / `space.cardPad`. One line of text, `meta` 600, `inkDim`: **"Tap a row to see the detail"**. A small chevron (8px, `inkSoft3`) points down towards the list. No close button, no colour, no motion beyond `fw-rise` on first show.
+- **Dismissal:** the first tap on any `FoldRow` (opening or closing), or on any `DetailsToggle`, hides the hint for good. It fades out with `DURATION.entrance`; under reduced motion it disappears at once. Leaving step 3 without tapping keeps it for the next verdict.
+- **Storage:** AsyncStorage key `fincwin:decide-hints:{userId}`, holding JSON `{ "v": 1, "foldHintSeen": true }`, written once on dismissal. It follows the `activityViewPrefs.ts` pattern.
+  - It is per user and per device, not synced, and never sent to analytics.
+  - It is removed with the user's other local data on sign-out cleanup and on account deletion.
+  - A read failure counts as "not seen". A write failure is swallowed, so the hint can show once more.
+- **Budget:** the hint adds about 50 when present. It is outside the DCU-11 frames, because the capture device has already dismissed it (R8).
+
+#### Empty-state add row (new, home)
+
+- **Look:** a slim row directly **under the quick-check card**: a `Pressable`, `minHeight` 44, no card and no fill (it sits on `canvas`), left aligned with the cards' content edge.
+- **Content:** a hand-drawn "+" (two 1.5px bars, 10px, `accent`), then `space.gapSm`, then **"Add a change coming up"** (`label`, `accent`). The label wraps at word boundaries.
+- **Behaviour:** pressed opacity `PRESSED_OPACITY`. It opens the existing `ChangeSheet` in add mode.
+- **A11y:** `accessibilityRole="button"`, label "Add a change coming up".
+- **Visibility:** shown **only while the user has no changes**. Once one exists, the Changes coming up card appears and carries its own "+ Add a change" link, and this row is gone.
+
+#### Swipe and ⋯ delete (changed: Open checks rows, Past decisions rows)
+
+- **Swipe:** each row is wrapped in the shipped `SwipeRow`, with a **`right` action only** (revealed by swiping left), word **"Delete"**, tone `danger`. A full swipe fires `hapticLight` (as shipped), **closes the row, and opens the confirm sheet**. It never deletes directly. The `left` (swipe-right) action is unused.
+- **⋯ button:** the trailing 44 x 44 target. It **replaces the old "x" abandon target** on Open checks and is added to Past decisions rows. The `MoreGlyph` is drawn in `inkMuted`. It opens the shipped `Dropdown` in action-menu mode with a glyph trigger (an extension: `variant="glyph"`).
+  - Menu title: the check's name.
+  - Open checks options: "Open", "Delete".
+  - Past decisions options: "Open", "Reopen" (Waiting and Passed only), "Delete".
+  - The "Delete" option text is `danger` (an extension: `tone: 'danger'` on an option).
+- **Row a11y:** `SwipeRow` exposes a "Delete" accessibility action. The ⋯ button is labelled "More for {name}". The row's own press still opens the check.
+- **Confirm:** the shipped `ConfirmSheet`, `destructive`, copy in R3 "Delete". "Keep it" is the cancel action; backdrop, drag and Android back count as "Keep it".
+- **After confirming:** a soft delete as one undo step (`useAbandonCheck` for an open check, `useRemoveDecision` for a decided one), then a destructive toast with **Undo**, at the standard destructive timing (about 6 s).
+
+#### Check header (changed: `CheckFlowHeader`)
+
+- **Title row:**
+  - back circle;
+  - the title block (flex 1);
+  - the right slot, which holds the combine pill (when shown) and then **"Clear"**.
+  
+  "Clear" is a text button: `label`, `inkDim`, no fill, `minHeight` and `minWidth` 44, padding `space.gapSm` on the sides. It is shown only on an **open check that exists** (a row has been created) and never on a decided check.
+- **Title block:** line 1 is the eyebrow "Step {n} of 5", then " · ", then **the save status** (R9). Both are in the eyebrow style and wrap together at word boundaries. Line 2 is the step title (`sheetTitle`). **The title is no longer clamped to one line**: it wraps (R6).
+- **Wrapping:** at 402 and 1.0x the right slot stays on the title row. When the window is narrower than 360, or the text scale is above 1.3x, the right slot moves to its own row under the title row, right aligned (`flexWrap: 'wrap'`), so the title never shares a line with two controls at small widths.
+- **Budget:** the step 3 and step 4 titles ("Impact", "Alternatives"; investment checks use the same words) stay one line beside the pill and Clear at 402, so the 141 header budget holds. The step 2 title "Price and how you pay" can wrap to two lines (+19). Step 2 has no fold budget.
+
+### R2. Step 3 ("Can I afford it?"): summary first
+
+This replaces the "Verdict card" layout and the always-open warning stack of Step 3. The title and body copy tables, the warning copy and every section's content are kept unless stated here.
+
+**Order, top to bottom:**
+1. Flow header (R1).
+2. **Verdict card** (summary).
+3. Basis detail row (optional; unchanged).
+4. Notices: the neutral fact cards (unchanged; there are none in the demo).
+5. First-run hint (R1, once).
+6. **FoldList.**
+7. Bottom action bar (unchanged).
+
+#### Verdict card (rebuilt)
+
+`ink` fill (`danger` for `no`), `radii.card`, padding `space.cardPadLg` (20), no shadow. Inner width 330 at 402.
+
+| Row | Content | Height at 402, 1.0x |
+|---|---|---|
+| 1 | Left: the **size label** (`eyebrow`, `inkSoft1`, upper-cased: "Out of this month’s spare" / "Out of savings" / "Needs spreading") with an ⓘ (`size`), then the "On the edge" tag (when on) with an ⓘ (`edge`). Right: the **confidence chip** (unchanged words), now drawn with a 12px ⓘ glyph after its label inside the chip, so it reads as tappable. It opens the confidence sheet (R3 `confidence`). The row is `flexWrap: 'wrap'`; the chip drops to its own line when it does not fit. | 27 |
+| 2 (10 below) | **The verdict:** the state words in `heading` (26/700, `surface`, capped 1.3x): "It fits" / "Needs adjustment" / "You cannot afford this" / "Missing terms". It wraps at word boundaries (two lines at 320). `accessibilityRole="header"`. | 30 |
+| 3 (6 below) | **The one-line reason:** the existing **title copy** from the Step 3 title table (at most 64 characters, or the recorded 72-character `inv` exception), now in `body` (15/500/1.5), `surface`. That is at most 2 lines at 402 and never clamped. | 45 |
+| 3b (optional, 8 below) | The **difference line** (combined first, then worst month, D-24/D-27), in `meta` 600, `inkSoft2`. One line at 402, wraps above that. | 25 |
+| 4 (12 below) | **Key figures**: a 3-column `FigureStrip` on the dark card (described below). | 38 |
+| 5 (8 below) | **Basis marker** (`meta`, `inkSoft1`): "Average month · {in} in" / "Worst month · {in} in" / "First read · your figures" / "Now from your logged months". It wraps at large text. | 17.5 |
+
+**The key figures, in this order:**
+
+| Caption (`tabLabel`, `inkSoft1`) | Figure (`sheetTitle`, `surface`, capped 1.3x) | Source |
+|---|---|---|
+| "Left a month" | The month-end amount left after this (the "Left at month end" After figure). It shows a leading minus in `dangerTint2` when negative. Whole units. | `assessment.month` after |
+| "Cushion" + ⓘ (`cushionMonths`) | "{n} months" / "1 month" / "Under 1 month" (0) / "Not limited" (no monthly costs, null). | engine `runwayMonths` (D-39: cash after the purchase and the 90-day bills, over the monthly costs, in whole months) |
+| "A month" (invest checks: "Put in a month") | The net monthly cost of this purchase (payment plus counted running costs, less the bills it ends), in cents (D-54). "None" when 0. | `decision` / plan monthly + `running.net` |
+
+- Each figure is `numberOfLines={1}` with `adjustsFontSizeToFit` and `minimumFontScale={0.8}` (R6 rule N). The strip stacks to rows (caption left, figure right) above 1.3x or below 360 wide (rule S).
+- **States:**
+  - `missing`: no strip. Row 3 shows the missing title and its link, as now.
+  - First read: the strip uses the first-read figures, and "Cushion" uses rough spending.
+  - A decided bought check: the strip shows the recalculated figures (05-52).
+
+**Accessibility (replaces "one accessibility element"):** three focus stops in this order.
+1. **Summary group** (polite live region, debounced as D-56): "{state}{, on the edge}. {size}. {reason}. {difference}. {basis}."
+2. The edge ⓘ and the confidence chip, in visual order.
+3. **Key-figures group**: "Left each month after this: {x}. Cushion: {n} months of costs. Monthly cost: {y}.", then the Cushion ⓘ.
+
+The size ⓘ follows the summary group.
+
+**Haptic on first reveal:** unchanged (`notificationAsync` Success or Warning, once per visit).
+
+#### FoldList on step 3: order, previews and defaults
+
+| # | Fold (title) | ⓘ | Preview (one line at 402 at 1.0x) | Present when | Body |
+|---|---|---|---|---|---|
+| 1 | **What breaks** | `whatBreaks` | "{count} line breaks" / "{count} lines break", plus " · on the edge" when an edge flag is on; fits: "Every line holds" (or "Every line holds · on the edge") | any logged or first-read verdict | The **warnings** (all of them, ordered by shortfall, card reasons included) as **warning rows** (described below), then a `DetailsToggle` that reveals **"Every line"**: the former "Against your lines" rows, unchanged in content (cushion, month, debt service, unsecured, investing floor, saving floor, cash-path minimum, with margins). With no warnings, the "Every line" rows show at once and there is no toggle. |
+| 2 | The month, line by line | — | "Left at month end: {now} now, {after} after" | as before | Unchanged table, restyled to R6 (three columns at 402; stacks under rule S). |
+| 3 | **Cash path, next 90 days** (was "Day by day, next 90 days") | `cashPath` | "Lowest with this: {amount} on {date}" / "Add your pay as a recurring series" | always | Unchanged chart and text alternative. |
+| 4 | **Where it lands** | `whereItLands` | "{better} better · {worse} worse · {same} unchanged" (zero parts left out; all same: "No ledger moves") | logged verdict | **Stacked ledger rows** (R6, "Where it lands"). |
+| 5 | If something goes wrong | `setbacks` | "Runway {n} months, {m} less because of this" / "Runway not limited" | as before | Unchanged; the setback rows wrap per R6. |
+| 6 | What would make it work | — | "{count} options" | state is not fits | The inner `ink` tile (R1). |
+| 7 | **If it went into investing instead** (moved from step 4) | `ifInvested` | "A projection at the rate you enter" / with a rate: "{fv} after {n} months at {r}%" | always (invest checks included) | The existing section content: rates, holding fee, horizon (now with Custom, R4), four views. Views 2-4 sit behind a `DetailsToggle`. |
+| 8 | With the expected income | `incomeChange` | "{state} with the expected {amount} a month" | a raise is set | Unchanged. |
+| 9 | Who pays what | — | "{count} people" | household only (hidden until Phase 8) | Unchanged. |
+| 10 | Assumptions in play | — | "{count} assumptions" | always | Rows (R6 stacked label/value). After the first 5 rows, a `DetailsToggle` reveals the rest. The provisional-rate row carries an ⓘ (`provisionalRate`). |
+
+- **Default open fold:** on arriving at step 3, **What breaks is open when there is at least one warning**; otherwise every fold is closed. Leaving and returning keeps the last `openKey` while the flow is open.
+- **Warning row** (the `WarningCard` content as a row, so two fit in the screenshot frame):
+  - padding `space.rowPadDense` (13) top and bottom, 1px `fill2` separators;
+  - line 1: an 8px dot (`danger` hard, `warn1` soft), then the title (`s13_5` 600, `danger` or `warn1`, flex 1, wraps), then the value (`meta` 600, same colour, `flexShrink: 0`, right aligned);
+  - line 2: the description (`meta` 500, `inkDim`), indented to the title's start.
+  
+  It is a group with the label "{title}, {value}. {description}". The tinted card backgrounds are dropped in this list: the dot, the coloured title and the words carry the tone (never colour alone). `WarningCard` itself is unchanged where it is used elsewhere.
+- **Notices** stay as `fill1` note cards above the hint and the list. The deferred-interest notice gets an ⓘ (`deferredInterest`).
+
+#### Fold budgets at 402 x 874 (DCU-11; replaces the step 3 row of the budget table)
+
+Header 141, gap 12, so the card starts at y = 156.
+
+**Verdict card:**
+- 20 padding;
+- row 1: 27;
+- 10 gap;
+- verdict: 30;
+- 6 gap;
+- reason: 45;
+- 12 gap;
+- key figures: 38;
+- 8 gap;
+- basis marker: 17.5;
+- 20 padding.
+
+That totals **233.5**, so the card ends at **y = 390**. With the difference line it is 258.5 and ends at y = 415.
+
+**FoldList (frame 2), after a 12 gap:**
+- What breaks row: 64;
+- two warning rows of at most 102.5 each (13 + 20 + 4 + 52.5 description capped at 3 lines by copy length + 13).
+
+The second warning row ends at **y = 402 + 64 + 205 = 671**, or 696 with the difference line, or **729** with the difference line and the 25 + 8 basis detail row. The bar starts at **y = 735**, so frame 2 shows the verdict, the three key figures and **two full warnings**.
+
+Frame 1 (sofa, fits): the card ends at y = 390, and What breaks ("Every line holds") is closed, followed by at least four closed fold rows above the bar. The first-run hint is not in any frame (R8).
+
+### R3. Copy (every new string; declarative, DCU-09 guard applies)
+
+The banned list and the 2026-10-22 reassurance and money-imperative guard apply to every string here. "Tap a row to see the detail", "Clear", "Delete", "Open", "Reopen", "Keep it", "Show details", "Hide details", "Close" and "Add a change coming up" are UI controls. They join the guard's keyed list of buttons and field captions; none is a money imperative. Number-and-unit pairs are written with a no-break space (`{{count}} months`) so a number never wraps away from its unit (R6 rule U).
+
+#### ⓘ explanations (`INFO_TERMS`, keys `decide.info.{key}.term|body|changes`)
+
+| Key | Where the ⓘ sits | Term | Body | What this changes |
+|---|---|---|---|---|
+| `replaces` | Step 1 "Expenses it replaces" header; step 2 read-only "{name} ends" rows | Expenses it replaces | A bill you already pay that stops once this purchase starts, such as a bus pass a car makes unneeded. Its amount comes off the purchase’s monthly cost, so the check scores the net change. | Replaces: ends this bill from the purchase date. Your income is unchanged. |
+| `incomeChange` | Step 1 "Does this change your income?" title; step 3 fold 8 | A change to your income | Some purchases change what comes in, such as a van that brings in delivery work or a course that means fewer paid hours. A drop is counted in the verdict. A rise is shown in its own section and is never counted, because it has not arrived yet. | Lowers: money in drops from the start date. Raises: the verdict is unchanged; the Impact step shows it separately. |
+| `runningCosts` | Step 2 "Costs that follow it" header | Costs that follow it | What owning it costs each month, such as insurance, fuel or a subscription. Only rows with an amount count. Bills it ends come off, so the check uses the net monthly change. | Adds each counted cost to your monthly spending from the purchase date. |
+| `netMonthly` | Step 2 "Net monthly change" rule | Net monthly change | The running costs added, less the bills this purchase ends. It is the monthly figure the check uses for owning it, on top of any payment. | The month is tested with this figure added. |
+| `lossOfValue` | Step 2 "Loss of value" row | Loss of value | How fast the item’s value falls, as an amount a month or a percent a year of the price before tax, fees and trade-ins. It is not money leaving an account, so it is shown beside the running costs and not counted in your month. | Nothing in the verdict. The figure is shown beside the costs only. |
+| `beforeInterest` | Quick check "Annual rate"; step 2 loan rate when 0 | Before any interest | A rate of 0% here means no rate has been typed. The payment is the amount divided by the months, so any real rate makes it higher. | The check is scored on the rate shown. A typed rate rescores it. |
+| `promoRate` | Step 2 "+ Promotional rate" (expanded header) | Promotional rate | A lower rate for a set number of months, such as 0% for 12 months, then the rate after it. The month test uses the highest payment across the whole term. | Payments and interest follow the promotion, then the rate after it. |
+| `deferredInterest` | Step 2 deferred-interest toggle; step 3 "Interest charged back" notice | Interest charged back | On some 0% promotions, interest for the whole promotion is added back if the balance is not cleared by the end. It applies only when the agreement says so, so the toggle is off unless turned on. | When on, the check adds that interest if the balance is still open when the promotion ends. |
+| `variableRate` | Step 2 "The rate can change" toggle | The rate can change | Shows the payment if the rate rises by 2 and by 4 points, with the state each would give. | Nothing in the verdict, which stays on the rate you entered. |
+| `cardMinimum` | Step 2 "Minimum payment" row; card terms sheet title | Card minimum payment | What the card asks for each month when only the minimum is paid: usually a percent of the balance, sometimes plus that month’s interest, with a floor amount. The terms are kept on the card, so they count in every check. | The minimum is added to your monthly debt payments. Paid in full monthly adds none. |
+| `size` | Verdict row 1 size label; quick-check size chip | How big this is | Measured against your own money, at the cash price. Out of this month’s spare: the price fits in what this month leaves after saving and investing. Out of savings: it does not, but cash still stays above your cushion. Needs spreading: paying it at once would take cash under your cushion. | Nothing in the verdict. Cooling-off is offered only for purchases that need spreading. |
+| `edge` | Verdict "On the edge" tag | On the edge | At least one line holds or misses by less than 5% of the line. A small change in the price, the rate or a monthly figure can flip the verdict. | The verdict stays as shown. The margins are listed under What breaks. |
+| `confidence` | Confidence chip (top of the existing "What this rests on" sheet) | Basis | How much history the verdict rests on. Strong needs 6 full months with steady income, fair needs 3, and anything less is rough. Lines converted at a stand-in rate keep it at fair at most. | Nothing in the figures. It states how firm they are. |
+| `cushionMonths` | Key figure "Cushion" | Cushion | How many months of your costs the cash left would cover, after this purchase and the bills due in the next 90 days. {dynamic: "Your line is {n} months, {reason}."} | It drops when the purchase takes cash on the day, and a higher monthly cost lowers it further. |
+| `reserve` | Lines card "Cash never below"; limit editor title; What breaks cushion row | Cash never below | The cash cushion no purchase may break, on the day or before the next payday. Left blank, it is a number of months of your costs: 3 when income is steady, 4.5 when it varies, 6 when it is volatile. | A purchase that leaves less cash than this needs adjustment. It applies to every check. |
+| `dsrLine` | Lines card "Debt payments at most"; What breaks debt-service row and `dsr` warning | Debt payments at most | The share of money in each month that may go to debt payments, with every debt counted, including this purchase when it is paid over time. Left blank, it is 36%. With no money in, any debt payment is over the line. | A purchase that takes debt payments above this share needs adjustment. It applies to every check. |
+| `unsecuredMultiple` | Lines card "Unsecured debt at most"; `owe` warning | Unsecured debt at most | A cap on debt not backed by something you own, such as cards and personal loans, measured in months of average income. Left blank, it is 12, about a year’s income. A loan secured against what it bought is not counted. | A purchase that takes unsecured debt above this needs adjustment. It applies to every check. |
+| `investingFloor` | Lines card "Investing at least"; What breaks investing row and `inv` warning | Investing at least | The monthly investing amount no purchase may push below. Left blank, it is what you invest now. When the month closes only by pausing some investing, the check states how much and whether that goes under this line. | A check that pauses investing below this line needs adjustment. It applies to every check. |
+| `savingFloor` | Lines card "Saving at least"; What breaks saving row | Saving at least | The monthly amount into goals no purchase may push below. Left blank, it is what you save now. | A check that pauses saving below this line needs adjustment. It applies to every check. |
+| `basisMonth` | Your month "Worst · / Average ·" control | Average or worst month | With steady income the check uses your average month. When income varies, it uses your worst month unless the average is chosen, so a purchase is judged on a tight month. | The average month raises money in for every check; the worst month lowers it. |
+| `combined` | "With other checks" pill (long-press and a11y action), quick-check footer line | With other checks | Your other open checks are counted as if they were bought too, so two purchases that each fit on their own are not both shown as fitting. | Off: this check is judged on its own. |
+| `whatBreaks` | Fold 1 title | What breaks | The lines you set that this purchase crosses, largest first, and how far. "Every line" lists all of them with their margins. | Nothing on its own. Each line is changed under Lines you will not cross on Decide. |
+| `cashPath` | Fold 3 title | Cash path | Your cash balance day by day for the next 90 days, with and without this purchase, from your confirmed pay and bills. The lowest day is marked, since a cushion breaks there first. | A dip under your cushion before payday adds a warning. A dip below zero means the cash runs out. |
+| `whereItLands` | Fold 4 title | Where it lands | A purchase touches more than one part of your money. These five show each one now and after: what comes in, what goes out, what you owe, the cash you hold and what goes into investing. | Nothing on its own. It shows where the figures above come from. |
+| `setbacks` | Fold 5 title | If something goes wrong | A test of your cash with this purchase running and something going wrong: an unexpected bill, income dropping, a lost job or client, or invoices paid late. Each one can be switched on. Runway is how many months your cash would last. | Nothing in the verdict. The runway figure shows how much of it this purchase uses. |
+| `ifInvested` | Fold 7 title | If it went into investing instead | What the price, or the monthly payments, would grow to at a rate you enter, over the months you pick. At 0% the money is only held. A projection at the rate you entered, not a forecast. | Nothing in the verdict. |
+| `kept` | Step 4 "Kept" column header | Kept | The money that stays yours on that route: the cash kept on the day plus the payments never made, counted only up to what is actually spare. At 0% it is held, not grown. | Nothing in the verdict. |
+| `provisionalRate` | Basis detail item and Assumptions row (D-69) | Latest stored rate | Some lines were saved while their own exchange rate was still loading. Until it arrives they are converted at the latest stored rate, dated {date}. | Figures may move a little once their own rates arrive, and the basis stays fair at most until then. |
+| `coolingOff` | Step 5 "Check again in 48 hours" | Check again in 48 hours | A reminder 48 hours after you record this, which reopens the check recalculated on the figures of that day. It is offered for purchases that need spreading. | Adds one reminder. No balance changes. |
+| `waitGoal` | Step 5 Wait outcome card and "Set aside each month" | Wait and save | Recording Wait sets a monthly amount and a ready-by date and starts a savings goal for this purchase. On the ready-by date a reminder reopens the check, recalculated. | Creates one savings goal and one reminder. Balances and limits stay as they are. |
+| `whatGetsWritten` | Step 5 "What gets written" heading; Go ahead confirm title | What gets written | The lines Go ahead adds to your records, listed before anything is saved. Each appears in Activity linked to this check. Wait creates a savings goal and a reminder, and Pass writes nothing. | Nothing is written until Go ahead is confirmed, and Undo removes the whole set in one step. |
+
+That is 31 entries. Each body is at most 3 sentences (the `ifInvested` caption counts as its third). Every entry is checked by the DCU-09 test, and a new test asserts that each `INFO_TERMS` key has term, body and changes.
+
+#### Fold, figure and hint copy (`decide.fold.*`, `decide.verdict.*`)
+
+| Element | Copy |
+|---|---|
+| Fold titles | "What breaks" · "The month, line by line" · "Cash path, next 90 days" · "Where it lands" · "If something goes wrong" · "What would make it work" · "If it went into investing instead" · "With the expected income" · "Who pays what" · "Assumptions in play" |
+| What breaks preview | "{{count}} line breaks" (one) / "{{count}} lines break" (other) · suffix " · on the edge" · "Every line holds" · "Every line holds · on the edge" |
+| Where it lands preview | "{{count}} better" · "{{count}} worse" · "{{count}} unchanged" (joined " · ", zero parts dropped) · "No ledger moves" |
+| If invested preview | "A projection at the rate you enter" · "{{fv}} after {{count}} months at {{rate}}%" |
+| Expected income preview | "{{state}} with the expected {{amount}} a month" ({{state}}: "Fits" / "Needs adjustment" / "Does not fit") |
+| Every line sub-head | "Every line" (`eyebrow`) |
+| Key figures | "Left a month" · "Cushion" · "A month" · "Put in a month" · "{{count}} months" / "1 month" · "Under 1 month" · "Not limited" · "None"; a11y "Left each month after this: {{left}}. Cushion: {{months}} of costs. Monthly cost: {{monthly}}." |
+| Fold a11y | label "{{title}}, {{preview}}"; hints "Shows the detail" / "Hides the detail"; announcements "{{title}} expanded" · "{{title}} collapsed" · "{{title}} expanded. {{previous}} collapsed." |
+| Details toggle | "Show details" · "Hide details"; a11y "Show details, {{block}}" / "Hide details, {{block}}" |
+| First-run hint | "Tap a row to see the detail" |
+| Info button | a11y "About {{term}}"; hint "Opens an explanation"; sheet "What this changes" · "Close" |
+| Slider range lines | "Above the slider’s range" · "Below the slider’s range" |
+
+#### Custom values (`decide.custom.*`)
+
+| Element | Copy |
+|---|---|
+| Chip | "Custom"; selected "{{count}} months" / "1 month" / "{{rate}}%"; a11y "Custom, {{value}}" |
+| Unit words | "months" · "% a year" · "%" |
+| Range lines | "1 to 120 months" · "1 to 600 months" · "0 to 999.99% a year" · "Up to 100% a year" (D-48, unchanged) · "0 to 100%" · "Up to the price, {{price}}" · "From {{min}} to {{max}}" |
+
+#### Home (`decide.home.*`)
+
+| Element | Copy |
+|---|---|
+| Add row | "Add a change coming up" (with the drawn "+"); a11y "Add a change coming up" |
+
+#### Clear and Delete (`decide.clear.*`, `decide.delete.*`, undo labels)
+
+| Element | Copy |
+|---|---|
+| Header button | "Clear"; a11y "Clear this check"; hint "Discards this check and starts an empty one" |
+| Clear toast | "Check cleared. Nothing was written." + "Undo"; undo-stack label "Check cleared · {{name}}" |
+| Swipe word / menu option | "Delete" |
+| ⋯ menu | trigger a11y "More for {{name}}"; options "Open" · "Reopen" · "Delete" |
+| Open check confirm | Title "Delete this check?"; body "It leaves Open checks. Nothing was written, so no balance changes."; actions "Keep it" / "Delete" (`danger`) |
+| Bought decision confirm | Title "Delete this decision?"; body "It leaves Past decisions. The {{count}} lines Go ahead wrote stay in Activity, and every figure that uses them stays the same." (one line: "The line Go ahead wrote stays in Activity, and every figure that uses it stays the same."); actions "Keep it" / "Delete" |
+| Waiting decision confirm | Title "Delete this decision?"; body "It leaves Past decisions with its savings goal and reminder. Transfers tagged to the goal stay in Activity."; actions "Keep it" / "Delete" |
+| Passed decision confirm | Title "Delete this decision?"; body "It leaves Past decisions. Nothing else changes."; actions "Keep it" / "Delete" |
+| Toasts | Open check "Check deleted. Nothing was written." + Undo; decision "Decision deleted" + Undo; undo-stack labels "Check deleted · {{name}}" / "Decision deleted · {{name}}" |
+| Replaced strings | "Abandon this check" (a11y), "Check abandoned — nothing was written", "Check abandoned · {{name}}", "Remove", "Remove this decision?", "Decision removed" are **retired** (keys removed from `en.ts` and `copyStatus.ts`) |
+
+#### Save status (`decide.save.*`)
+
+| Element | Copy |
+|---|---|
+| Header status | "Saved" · "Saving…" · "Offline, will save" · "Not saved" |
+| a11y announcement | "Offline. This check will save when you’re back online." · "This check wasn’t saved. The sync line has the detail." |
+
+**Copy rules held:**
+- Every info body is declarative and states what the term is, never what to do.
+- "You" appears only as the owner of figures.
+- No "should", "recommend", "advice", "safe" or "worth".
+- No future promise ("will earn", "forecast" only as "not a forecast").
+- "Offline, will save" describes the app, not the user's money.
+
+### R4. Custom inputs: where, presets and ranges
+
+| Field | Screen | Presets (chips) | Custom range | Notes |
+|---|---|---|---|---|
+| Duration (Credit) | Quick check (home and onboarding first check) | 12 · 24 · 36 · 48 · 60 | **1 to 120 months**, whole | "Over {n} months" label follows the value. "Run the full check" carries it to the loan term. The fold budget excludes the open field. |
+| Loan term | Step 2 loan panel | 12 · 24 · 36 · 48 · 60 · 84 | 1 to 600 months (unchanged engine-aligned range; see Questions) | The separate "mo" box is replaced by the Custom chip and field (one input, not two). |
+| Card "Over a few months" | Step 2 card panel | stepper (− / +) | **1 to 120 months** | The months figure "{n} mo" becomes tappable (44 hit) and opens the same inline field. The stepper clamps at 120 (was 600). |
+| Investment term (monthly contribution) | Step 2 invest panel | 12 · 24 · 36 · 48 · 60 · 84 | **1 to 120 months** | |
+| Promotion length ("For") | Step 2 promo row | none (typed) | **1 to 120 months**, and no longer than the term | The existing field gets the range line. |
+| Wait period ("Ready in") | Step 5 Wait panel | **3 · 6 · 12 · 24** (new chips under the "Ready by" figure) | **1 to 120 months** | Picking a period sets the monthly amount to target ÷ months, **rounded up to the cent**, and the slider and field follow. Moving the slider or typing an amount deselects the period chips unless the derived months equal one. "Ready by" stays derived. |
+| Wait amount | Step 5 Wait panel | slider 25 .. 2 x spare, step 25 | typed **{one minor unit} to the target**, cents allowed | R1 slider-with-field. Above 2 x spare the thumb pins and "Above the slider’s range" shows. |
+| Deposit | Step 2 loan panel | slider 0 .. price, step 100 | typed **0 to the price**, cents allowed | R1 slider-with-field. Above the price: not applied, range line "Up to the price, {price}". |
+| Cheaper price | Step 4 "The cheaper one" | slider 30% .. 100%, step 1 | typed amount **30% to 100% of the price**, whole units | R1 slider-with-field; the field shows money, and the note keeps "{pct}% of {price}". |
+| Investing horizon | Step 3 "If it went into investing instead" | 12 · 24 · 36 · 60 · 120 (+ the plan term) | **1 to 600 months** | The engine's 600-month cap. A figure out of range reads "Too large to project at this rate" (D-47). |
+| Return rates | Quick check APR; step 2 loan, card, promo and "Then" rates | **none (typed only; no preset rate chips, 04 D-07)** | **0 to 999.99% a year** (`MAX_APR`) | The typed field *is* the custom input. The range line appears only on a refused keystroke. |
+| Projection return, holding fee | Step 3 If invested; step 4 "+ Add a rate" | none; the typed rates appear as chips (up to 3) | **0 to 100% a year** (D-48) | Unchanged hint "Up to 100% a year". |
+| Sales tax | Quick check "+ Tax, fees" | none | **0 to 100%** | |
+| Loss of value, % a year | Step 2 costs | none | **0 to 100%** | |
+
+### R5. Tap-to-reveal: every place, with its four cues (D-75)
+
+| Reveal | Chevron + preview | "Show/Hide details" | Pressed + haptic | Counts for the first-run hint |
+|---|---|---|---|---|
+| Step 3 fold rows | yes | — | `fill6` + `selectionAsync` | yes |
+| What breaks: "Every line" | — | yes | opacity + `selectionAsync` | yes |
+| If invested: views 2-4 | — | yes | same | yes |
+| Assumptions: rows after 5 | — | yes | same | yes |
+| Step 2 "+ Promotional rate", "Your notes on this card" (`CollapsibleSection`) | chevron + summary | — | same | no |
+| Quick check "+ Tax, fees" | chevron added after the label, summary "+{amt}" kept | — | same | no |
+| Decision detail sheet: linked lines beyond 3 | — | yes | same | no |
+| Every ⓘ | — (ⓘ glyph) | — | opacity + `selectionAsync` | no |
+| Confidence chip | ⓘ glyph inside the chip | — | opacity + `selectionAsync` | no |
+
+This **amends** "Haptics (the complete list)": section and detail toggles and ⓘ taps now fire `selectionAsync` (`hapticSelection`). Nothing else changes. Text entry still fires nothing.
+
+### R6. Text fit (critical; applies to every screen and sheet in Decide)
+
+**The goal:** no word is ever broken mid-word, no two pieces of text overlap, and no system copy is cut off. A platform will split a word that is wider than its line whatever the settings, so the layout has to guarantee the width, and the props alone are not enough.
+
+| Rule | Spec |
+|---|---|
+| **H. Hyphenation off** | `src/ui/Text` defaults to `textBreakStrategy="simple"` and `android_hyphenationFrequency="none"` (Android; harmless on iOS); a caller may override. This is the app-wide shared Text (see Questions). `TextInput`s in Decide take the same props. |
+| **W. Wrap at words** | Every label and sentence wraps at word boundaries: `flexShrink: 1` on Text inside a row, and `flex: 1` on the text column beside a fixed control. Numbers and units stay joined with U+00A0 in the catalogue (rule U), and so do "{amount} a month" pairs where the formatter allows. |
+| **T. No truncation of system copy** | No `numberOfLines` on system copy anywhere in Decide. This **removes** the existing clamps:<br>• the verdict title's 3 lines and body's 2 lines;<br>• the quick-check result line's 3 lines;<br>• the quick-check item name;<br>• the flow header title;<br>• the descriptors' 1 line (step 4).<br>The DCU-11 caps hold through **copy length** (catalogue tests assert the 64, 44 and 33 character caps at demo-scale amounts), not through clamping. User-typed names are the only exception: `numberOfLines={2}`, `ellipsizeMode="tail"`, full name in the accessibility label. |
+| **F. No fixed heights** | No `height` or `maxHeight` on any View that holds text in Decide. Targets use `minHeight` (44, 56, 64). Allowed fixed sizes are drawing geometry only: dots, the step segments, the slider track and thumb, glyphs, chart, progress bar. |
+| **G. Rows grow** | Every row, tile, chip, button, pill, card and sheet grows with its content. Pills and buttons use `minHeight` 44/48 with vertical padding. A two-line button label is allowed at 2.0x (wrapping at words, centred). |
+| **N. One-line numbers** | Only money and count figures that must read as one figure use `numberOfLines={1}` with `adjustsFontSizeToFit` and `minimumFontScale={0.8}`:<br>• the key figures;<br>• `FigureStrip` figures;<br>• Final price;<br>• the quick-check monthly figure;<br>• "Set aside each month";<br>• the Cheaper-one price and "Not spent";<br>• the slider fields' values.<br>No words are ever fitted this way. When 0.8 is still too small, rule S stacks the strip, so the figure gets the full width. |
+| **C. Chips wrap** | Every chip row is `flexWrap: 'wrap'` with gap 8 both ways. Chips size to their label and never shrink or squeeze. The **flex chips** are:<br>• step 1 "A purchase" / "An investment";<br>• the date offsets "In a week", "In a month", "In 3 months".<br>They become full-width stacked chips under rule S. |
+| **S. Stack rule** | A row that puts two text blocks side by side (label and value, figure columns, segmented controls, header slots) **stacks** (label above value, or one option per line) when **the window is narrower than 360, or the text scale is above 1.3x**, and additionally for label/value rows **when the value string is longer than 16 characters**. It is one pure helper, `shouldStack({ width, fontScale, valueLength })`, unit-tested. |
+| **Seg. Segmented controls** | Cash / Credit, Income / Spending, Goes up / Goes down, Raises / Lowers, Likely / Uncertain, "A month" / "% a year", Just me / {household} and Worst / Average keep equal segments at 402 and 1.0x. Under rule S they become a **vertical radio list** (each option a 44 row with the shipped `RadioDot`, same `radiogroup` semantics). |
+| **I. ⓘ placement** | Per `InfoButton`: never inline inside a Text run, never absolutely positioned, always the next flex sibling of its label. |
+| **O. No overlap** | No absolute positioning of text in Decide except chart labels and the scrub readout, which are clamped inside the plot bounds. No negative margins. Badges and tags sit in flow (`flexWrap`), never over text. |
+| **P. Placeholders** | Placeholders are at most 24 characters, or they shorten above 1.3x: the quick-check placeholder becomes "car 14500" above 1.3x. |
+| **U. Units** | Catalogue strings join a count and its unit with U+00A0: "{{count}} months", "{{count}} mo", "{{rate}}% a year". |
+| **E. Eyebrows** | Upper-cased eyebrows wrap at word boundaries. No eyebrow string is longer than 32 characters. |
+
+#### "Where it lands" (fold 4): rebuilt as stacked rows
+
+The old row was `[dot] [Income / What comes in each month · Better] [$5,200 → $5,200]`. It squeezed the description into a narrow column beside a long "now → after" value, so words broke and the arrow was read as "right arrow". Each ledger is now:
+
+```
+●  Cash                                   [Worse]
+   What you hold today
+   Now  $8,200        After  $6,400
+```
+
+- **Line 1:** a 6px dot (`accent` better, `danger` worse, `inkSoft1` same), then the ledger name (`s13_5` 600, `ink`, flex 1, wraps), then a direction tag at the right (`tabLabel` chip: "Better" accent-tint / "Worse" `dangerTint2`+`danger` / "Same" `fill1`+`inkDim`, `flexShrink: 0`).
+- **Line 2:** the description (`meta`, `inkMuted`), indented to the name's start.
+- **Line 3:** two caption/value pairs: "Now" and "After" (`tabLabel` captions, `inkMuted`; values `body`, `ink`, rule N), side by side with a `space.cardPad` gap. They stack to two lines under rule S.
+- **Removed:** the "→" glyph.
+- **A11y:** one group per ledger: "{ledger}, now {now}, after {after}, {direction}".
+- **Height:** each row is 13 + 20 + 17.5 + 4 + 38 + 13, about 106, separated by 1px `fill2`. The fold is below the fold line, so no budget applies.
+
+#### "What gets written" (step 5) and the Go ahead confirm: stacked bullets
+
+- Each line is a row: a 6px `accent` dot vertically centred on the **first** text line (`marginTop` = (20.25 − 6) / 2 ≈ 7), `space.gapSm`, then the sentence (`s13_5`, `inkDim`, flex 1, wraps).
+- **No side-by-side amount column:** amounts stay inside their sentences (rule U keeps "{n} months" together).
+- **Account names** longer than the line wrap at word boundaries. A single unbroken token longer than the line (a pasted account number) is the only case the platform may split; it is never truncated.
+- The heading ("Nothing is written yet" / "What gets written") carries the `whatGetsWritten` ⓘ.
+- The Go ahead `ConfirmSheet` body renders the **same list component**, not one joined string, so it wraps identically.
+
+#### Other places that used side-by-side text and now follow rule S
+
+- the Assumptions rows (name and source over value);
+- Lines you will not cross (name and description over value, with the "default" tag wrapping under the value);
+- the decision detail label/value tile;
+- step 2 tiles ("Interest saved" / "Cash left after", "Cleared" / "Interest" / "Card costs", "Payment" / "How many");
+- the month table (three columns; under rule S each line becomes a label with "Now {x} · After {y}" beneath);
+- Your month's three columns (already stacks above 1.3x; now also below 360);
+- step 5's plan card;
+- the step 4 option rows (already stack).
+
+#### Required layout checks
+
+Every Decide screen and sheet in the R10 checklist is checked at **402 x 874** and **320 x 568** (the window size in points), each at text scale **1.0x and 2.0x**, which is four combinations per screen:
+- on the iPhone XR (Settings › Accessibility › Larger Text);
+- on an Android emulator AVD at 320dp wide (`adb shell wm size` / `wm density`).
+
+The pass condition: no word split mid-word, no overlapping glyphs, no truncated system copy, every target 44 or larger, and every ⓘ and chevron visible. Captures are attached to the phase's verification. The automated guards are:
+1. `decideTextFit.test.ts` (static) fails on any `numberOfLines` in `src/features/decide/**` outside an allowlist, which covers the user-name sites and the rule-N figure sites (those must also set `adjustsFontSizeToFit`). It also fails on `height:` or `maxHeight:` in a Decide `StyleSheet` outside the geometry allowlist.
+2. A unit test for `shouldStack`.
+3. RNTL render tests at `fontScale` 2 that assert the stacked variants (`Where it lands`, the key figures, the segmented controls) render their stacked form.
+
+### R7. Accessibility (additions)
+
+- **Targets:** every ⓘ, the ⋯, Clear, the Custom chip, the slider fields, the fold rows (64) and the Details toggles are at least 44.
+- **Labels:** each ⓘ is "About {term}". The ⋯ is "More for {name}". Clear is "Clear this check". Fold rows are "{title}, {preview}" with `expanded`. Details toggles are "Show details, {block}" or "Hide details, {block}". Swipe rows carry the "Delete" action.
+- **Fold announcements:** toggling calls `AccessibilityInfo.announceForAccessibility`:
+  - "{title} expanded" or "{title} collapsed";
+  - when opening one closes another: "{title} expanded. {previous} collapsed.".
+  
+  Focus stays on the row that was pressed; the opened body is the next item in the reading order.
+- **Step 3 reading order:**
+  1. header: back, the step eyebrow with the save status, the title, the combine pill, Clear, then the step bar;
+  2. the verdict summary group, then the edge ⓘ, the confidence chip, the key-figures group, the Cushion ⓘ and the size ⓘ;
+  3. the basis detail row;
+  4. the notices;
+  5. the first-run hint (plain text, not a live region);
+  6. each fold row, and its body when open;
+  7. the action bar.
+- **InfoSheet:** opening moves focus to the term heading. The sheet's label is "About {term}". Closing returns focus to the ⓘ.
+- **Custom field:** opening moves focus into the field. Its label is "{group label}, custom, {unit}" and the range is its hint. A refused value announces the range once (polite).
+- **Delete:** the confirm sheet focuses its title. After Delete, the toast is announced as shipped (destructive toast with Undo).
+- **Clear:** after Clear, focus moves to the step 1 title of the empty check and the toast is announced.
+- **Save status:** the status text is not a live region (it would announce on every keystroke). Only the transitions to "Offline, will save" and "Not saved" are announced (R3 copy).
+- **Colour:** never the only signal. Warning rows keep the dot, the coloured title and the words. The direction tags carry words. "Delete" is red and also the word.
+
+### R8. DCU-11 frames after the refresh
+
+| Frame | What shows above the bar at 402 x 874 |
+|---|---|
+| 1 Sofa, fits | Header, then the verdict card: "OUT OF THIS MONTH’S SPARE", confidence chip, "It fits", the reason, three key figures and the basis marker (ends y = 390). Then the FoldList: "What breaks · Every line holds" closed, followed by the closed fold rows. |
+| 2 Car, needs adjustment | Header with the combine pill and Clear, then the verdict card ("Needs adjustment", "NEEDS SPREADING", reason, key figures) ending at y = 390 (or 415 with the difference line). Then What breaks **open**, with **two full warning rows** ending at or above y = 696. |
+| 3 Car, step 4 | Unchanged budget. Moving "If it went into investing instead" to step 3 removes a closed section from below step 4's fold. The header adds Clear with no height. |
+
+**Capture rules:**
+- The capture device has dismissed the first-run hint (the `foldHintSeen` key is set by one tap before capture).
+- The seed still has no notices, no one-offs and no basis detail row.
+- The demo's two open checks make the combine pill show.
+- Store caption 2, "See what breaks before you buy", now matches a fold titled "What breaks".
+
+### R9. Drafts and saving (D-77): expected behaviour and what to verify
+
+**Autosave timing:**
+- **New check:** nothing is created on open. The **first edit creates the check at once** (`useCreateCheck`, `check_started`).
+- **Ids not resolved yet:** if the user and household ids have not resolved, the edit is held (`'waiting'`) and created as soon as they arrive.
+- **Later edits:** they debounce **600 ms** (`DRAFT_DEBOUNCE_MS`) into one `saveCheckDraft` through the write queue (`WRITE_SCOPE`, serial, paused offline, persisted, replayed by `setMutationDefaults`).
+- **Leaving:** leaving by back, Android back, edge swipe, "Save and close" or unmount flushes the pending edit at once.
+- **Backgrounding (new requirement):** the app going to `background` or `inactive` (`AppState`) also flushes the pending edit at once. The persister then writes the paused mutation (verify `persistQueryClient` throttling does not lose a mutation queued less than 1 s before the app is killed; if it can, flush the persister on `background`).
+- **Leaving mid-edit:** never prompts and never loses the keystrokes already typed, because each keystroke updates the pending inputs.
+- **Decided checks:** never autosave.
+
+**Save indicator (header, R1)**, derived per check id from `useMutationState` over `mutationKeys.createCheck` and `mutationKeys.saveCheckDraft` (variables `id` = this check), plus the debounce timer and `useSyncStatus().isOnline`:
+
+| State | Shows | Rule |
+|---|---|---|
+| An edit is waiting on the debounce, or a create/save for this id is pending and not paused | "Saving…" | |
+| A create/save for this id is paused (offline) | "Offline, will save" | It also shows while offline with nothing pending, once an edit was made offline in this visit. |
+| No pending or paused write for this id, and the row exists | "Saved" | |
+| The last create/save for this id failed (rejected, or parked in failed writes) | "Not saved" (`warn1`) | The sync line carries the detail and the retry (03 D-15). |
+| New check with no edits, or a decided check | nothing (just "Step {n} of 5") | |
+
+**"Save and close":** flushes the pending edit, returns to Decide home and toasts "Saved", as now. Offline, the toast reads "Offline, will save" instead.
+
+**Clear versus autosave** (Clear exists only once the row exists):
+1. **Flush** the pending edit (so Undo restores exactly what was on screen).
+2. Queue the soft delete (`useAbandonCheck` path, a new undo label "Check cleared") in the same `WRITE_SCOPE`, so it runs **after** that save.
+3. **Disarm the draft for that id:** no later flush, timer or unmount save may write to it.
+4. `router.replace` to a **new check id** at step 1 with empty inputs (created only on its first edit).
+5. Show the toast "Check cleared. Nothing was written." with Undo.
+
+**Undo** restores `deleted_at = null`:
+- If the user is still on the untouched empty check, the route is replaced back to the restored check at the step it was on.
+- If the empty check has been edited, the restored check simply reappears in Open checks.
+
+**Delete versus a queued save:**
+- The delete is queued behind any save of the same check in the serial `WRITE_SCOPE`. WR-A03's version chaining (`recordWrittenVersion`) lets the version-conditional delete resolve past an earlier unconditional save, so it **never reports a false conflict**.
+- A draft save that reaches the server **after** a delete (from another device, or a stale replay) must never undelete. `saveDecideCheckDraft` filters `status = 'open'` but not `deleted_at`, so it updates a soft-deleted row without restoring it. That is acceptable, but it must not create a failed-write entry or a toast either.
+- Deleting from Open checks while the same check is open on another device leaves that device on "This check isn’t here" after its next refetch (existing not-found state).
+
+**Delete of a decided check:**
+- `useRemoveDecision` soft-deletes the decision and, for a Waiting one, its live goal, in one undo step. It also cancels the check's local reminders (`cancelCheckReminders`); Undo reschedules them when their date is still ahead.
+- **It never deletes or edits any line Go ahead wrote, or any tagged transfer.**
+
+**Hooks and functions to verify** (tests named "D-77 …"):
+1. `useCheckDraft`: first-edit create; `'waiting'` then create on id arrival; the 600 ms debounce coalesces; unmount flush; a new **AppState flush**; a new **`discard()`** that disarms the draft after Clear (no unmount flush to a cleared id); the stamp written once (D-37/D-67).
+2. `useCreateCheck` / `useSaveCheckDraft` / `useAbandonCheck` / `useRemoveDecision`: the same `WRITE_SCOPE`; a paused create then save then delete replays in order after a restart (persisted variables are plain JSON); the delete never conflicts behind a save (WR-A03); a save after a delete is silent.
+3. `setMutationDefaults` registration for `createCheck`, `saveCheckDraft` and `editCheck` runs before rehydration (so resumed mutations have a function).
+4. `useSyncStatus` / `syncStatusLabel`: the queued count includes Decide writes; "Offline, will save" agrees with the sync line.
+5. The undo stack: the "Check cleared" and "Check deleted" steps restore `deleted_at` only. "Decision deleted" restores the goal too.
+6. `CheckFlowScreen`: "Save and close" offline toast; Clear's `router.replace` and Undo's route-back rule.
+
+### R10. Per-screen checklist: where each piece lands
+
+| Screen / sheet | ⓘ (keys) | Custom / typed | Fold, details, hint | Delete / Clear | Text-fit items |
+|---|---|---|---|---|---|
+| **Decide home** | — | — | — | — | Header subtitle wraps; Open checks heading and its links wrap under the heading (rule S); the sources note wraps. |
+| Quick check card | `beforeInterest` (Annual rate), `size` (size chip), `combined` (footer line, when present) | Duration: Custom 1-120; APR 0-999.99; Sales tax 0-100 | "+ Tax, fees" gains a chevron | — | Cash / Credit becomes a radio list under S; the placeholder shortens above 1.3x; the result line is not clamped; the monthly figure follows rule N. |
+| Add row | — | — | — | — | **"+ Add a change coming up"** under the quick-check card, only with no changes. |
+| Your month | `basisMonth` (basis control) | — | — | — | 3 columns stack under S; Worst / Average becomes a radio list under S. |
+| Open checks card | — | — | — | Swipe "Delete" and ⋯ (Open, Delete), then the confirm, then the Undo toast; **the "x" is removed** | **Hidden while empty**; appears once a check is saved. Names get 2 lines and an ellipsis; the sub-line wraps; the chip wraps under the name. |
+| Changes coming up card | — | — | — | Unchanged "x" (undo toast "Change removed") | **Hidden while empty** (the add row replaces it). |
+| Past decisions row | — | — | — | — | Hidden while there are no decisions (R11 assumption). |
+| Lines you will not cross + limit editor sheet | `reserve`, `dsrLine`, `unsecuredMultiple`, `investingFloor`, `savingFloor` (row names; editor titles) | — | — | — | Rows stack under S; the "default · {n} months" tag wraps. |
+| Change sheet | — | — | — | — | Segmented controls follow Seg; DateField rows wrap. |
+| **Check header (all steps)** | — | — | — | **Clear** (open, existing check) | Save status; title wraps; the right slot wraps under S. |
+| Step 1 | `replaces`, `incomeChange` | — | — | — | Kind and offset chips stack under S; CheckRow names wrap; Raises / Lowers and Likely / Uncertain follow Seg. |
+| Step 2 price card and methods | `runningCosts`, `netMonthly`, `lossOfValue`, `replaces` ("ends" rows), `promoRate`, `deferredInterest`, `variableRate`, `cardMinimum`, `beforeInterest` | Loan term Custom 1-600; deposit slider + field; card months typed 1-120; invest term Custom 1-120; promo "For" 1-120; all rates 0-999.99; loss of value 0-100 | `CollapsibleSection` (promo, card notes) restyled with chevron and summary stacked | — | ChoiceCard strips stack under S; the flag chip wraps under the method name; tiles stack. |
+| Card terms sheet | `cardMinimum` (title) | Percent and floor fields (existing) | — | — | Toggle rows wrap. |
+| Line editor sheet | — | Setback months and % (existing fields; % 1-100) | — | — | "Adds to the price" / "Takes off the price" follows Seg. |
+| **Step 3** | `size`, `edge`, `confidence` (chip), `cushionMonths`, `whatBreaks`, `cashPath`, `whereItLands`, `setbacks`, `ifInvested`, `incomeChange`, `deferredInterest` (notice), `provisionalRate`, `reserve` / `dsrLine` / `unsecuredMultiple` / `investingFloor` / `savingFloor` (Every-line rows) | Investing horizon Custom 1-600; projection rates 0-100; holding fee 0-100 | **FoldList** (one open at a time; What breaks open by default with warnings); Details toggles in What breaks, If invested and Assumptions; **first-run hint** | — | Verdict card rebuilt (R2); warning rows; **Where it lands stacked**; the month table stacks under S; the chart readout is clamped. |
+| Confidence sheet | `confidence` body at the top | — | — | — | Reason rows wrap. |
+| Step 4 | `kept` (column header) | Cheaper slider + field (30-100% of the price); "+ Add a rate" 0-100 | — | — | Option rows stack (existing); descriptors no longer clamped (copy length holds the budget); "If it went into investing instead" **removed** (moved to step 3). |
+| Step 5 | `waitGoal`, `coolingOff`, `whatGetsWritten` | Wait period chips 3/6/12/24 + Custom 1-120; Wait amount slider + field | — | — | **What gets written stacked bullets**; plan card strip stacks; outcome ChoiceCards wrap. |
+| Go ahead confirm | `whatGetsWritten` (title) | — | — | — | Body is the same bullet list component. |
+| Past decisions list | — | — | Goal progress caption wraps | Swipe "Delete" and ⋯ (Open, Reopen, Delete), then the confirm, then the Undo toast | Delta strip stacks under S; names get 2 lines. |
+| Decision detail sheet | `whatGetsWritten` (Linked lines heading) | — | Linked lines beyond 3 behind "Show details" | **"Remove" becomes "Delete"**; confirm copy per outcome (R3) | The label/value tile stacks under S. |
+| Onboarding first check | `beforeInterest`, `size` | Duration Custom 1-120 (same as the quick check) | — | — | Same rules as the quick check. |
+| InfoSheet | — | — | — | — | The sheet grows with content; no fixed height. |
+
+### R11. Researcher assumptions (this refresh)
+
+1. **"Left after the purchase"** is read as the month-end amount left after it ("Left a month"). Cash after the purchase is already carried by "Cushion" (months of costs). See Questions.
+2. **Warnings move into the What breaks fold**, which opens by default when warnings exist. They render as rows, so two still fit frame 2.
+3. **"Against your lines" merges into What breaks** as "Every line", behind "Show details" when warnings exist. This keeps the fold count down.
+4. **"If it went into investing instead" moves from step 4 to step 3's folds**, because D-74 lists "If invested" among the verdict folds. Step 4 keeps the table, the cheaper card and the trade line.
+5. **Rates get no preset chips** (04 D-07: the app never suggests a rate). The typed field is the custom input.
+6. **The Past decisions row is hidden while there are no decisions**, by the same rule as D-72.
+7. **The first-run hint is stored per user and per device in AsyncStorage**, not in Supabase. A hint shown again after a reinstall costs one tap; a migration for a boolean does not pay for itself.
+8. **Clear is a soft delete and a fresh route**, not an in-place reset. That gives one undo step on the shared stack and keeps the cleared check out of Open checks.
+9. **The card "Over a few months" stepper clamps at 120** (was 600), to match the 1-120 duration range.
+10. **`textBreakStrategy="simple"` and `android_hyphenationFrequency="none"` become app-wide defaults** in `src/ui/Text`, because mid-word breaks are wrong everywhere. Record and Home get a visual pass on the same device matrix.
+
+### R12. Conflicts resolved with earlier sections of this file
+
+| Earlier text | Now | How |
+|---|---|---|
+| Open checks: "a 44x44 **remove** target … 'x' … Abandon (DCU-04): tapping remove deletes the open check at once (no confirm)" | Swipe or ⋯, then **Delete**, then the confirm sheet, then the Undo toast | D-73 is locked and later. DCU-04 ("abandonable, nothing written") still holds. The confirm is added; the toast copy changes to "Check deleted. Nothing was written." |
+| Open checks and Changes coming up "Empty" blocks ("No checks open", "Nothing dated yet") | Cards **hidden while empty**; one add row | D-72. The empty copy is retired. |
+| Past decisions: "Remove" / "Remove this decision?" / "Decision removed" | "Delete" wording with a per-outcome confirm body | D-73 says Delete; one word for one action across Decide. |
+| Step 3: "verdict card, notices, **warnings**, then collapsible sections"; warnings as stacked `WarningCard`s always visible; "All sections … collapsed by default" with independent expand state | Verdict summary, notices, hint, **one FoldList**; warnings live in **What breaks**, open by default when present; **only one fold open** | D-74. DCU-11 frame 2 still shows two full warnings (R2 budget: y ≤ 696). |
+| Verdict card: chip in row 1, size label row 2, title `heading` capped 3 lines, body 2 lines with ellipsis, single a11y element | State words as the `heading`; the old title as a `body` reason line; a key-figure strip; basis marker under it; three focus stops; **no clamps** | D-74 and D-76. The title copy caps (64/72) are kept and asserted by length, not clamped. |
+| `CollapsibleSection`: title and summary side by side, no chevron | Title over preview, chevron, pressed fill, haptic | D-75 and D-76. |
+| Haptics: "nothing on text entry **or section toggles**" | Fold rows, Details toggles and ⓘ fire `selectionAsync` | D-75. |
+| Flow header title "one line ellipsis"; quick-check item name "one line ellipsis"; step 4 descriptor "one line" | Wrap; user names get 2 lines | D-76 (no truncated words). Budgets hold by copy length at the demo amounts. |
+| Step 2 loan: "Term (numeric pill input 'mo', chips 12/24/36/48/60/84, up to 600 months)" | Chips plus **Custom** (one input); range kept at 1-600 | D-71 pattern applied. The range question is open (Questions). |
+| Card months stepper up to 600 | 1-120, typed or stepped | D-71 duration range. |
+| Step 4 Investing-instead section | Moved to step 3 fold 7 | D-74 list. |
+| Section 3 title "Day by day, next 90 days" | "Cash path, next 90 days" | D-74 names it "Cash path"; the chart content is unchanged. |
+| Deposit: separate money input above the slider | One field beside the slider | D-71. |
+| "Interaction states and motion": section expand `fw-rise` | Unchanged, plus the scroll-on-open rule | — |
+
+### R13. Questions only the user can answer
+
+1. **"Left after the purchase"**: the month-end amount left (as specified), or the cash left on the day after paying?
+2. **Loan term and instalment count**: keep 1-600 months (mortgage-length loans), or cap them at 120 like the other durations?
+3. **Wait period**: picking "Ready in 12 months" back-solves the monthly amount (target ÷ 12, rounded up to the cent). Is that what you meant by a custom wait period, or should the period be stored and the amount stay free?
+4. **"Main sheet page … Can I afford it"**: this refresh applies it to the step 3 verdict, as D-74 states. The Decide home (also titled "Can I afford it") gets only the empty-card hiding and the hidden Past decisions row. Should the home quick-check card also be simplified, for example with "+ Tax, fees" and the Credit fields in one fold?
+5. **What breaks open by default** when there are warnings, so the store frame 2 still shows them. Should every fold start closed instead, with frame 2 reshot?
+6. **App-wide** `textBreakStrategy="simple"` in the shared Text, or Decide only?
