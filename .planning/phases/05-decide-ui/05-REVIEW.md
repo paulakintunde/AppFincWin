@@ -91,7 +91,7 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | WR-D10 | low | `src/features/decide/ui/CheckRow.tsx:53-62` | CheckRow's remove control stays active when the row is disabled | fixed by 3934dc38 (WR-C06): the remove Pressable is disabled and announced disabled with the row |
 | WR-D11 | low | `src/shell/decide/CommitMutationsProvider.tsx:15-27` | CommitMutationsProvider value is not memoised, and canWrite hides all errors | fixed (55074e31): context value memoised (hooks read through a ref); canWrite reports non-refusal errors (isGoAheadRefusal) and still answers false |
 | WR-D12 | low | `src/features/record/entry/pickers/DateField.tsx:43` | DateField refuses an earlier date without any feedback | fixed (b4f63abf): a refused day moves the field to minDate and the iOS picker remounts on it |
-| WR-D13 | low | `app/(app)/_layout.tsx:80` | Notification routing is enabled when the profile is missing | fixed (a9ef5b64): observer enabled by consentAnswered (not loading and a recorded answer) |
+| WR-D13 | low | `app/(app)/_layout.tsx:80` | Notification routing is enabled when the profile is missing | fixed (a9ef5b64, f7d98d75): observer enabled by consentAnswered (not loading and a recorded answer) |
 | IN-A01 | info | `supabase/migrations/20261016000400_decide_demo_seed.sql:253-261` | Demo check inputs are stored in USD minor units for every home currency | fixed client-side in batch C (d0157b22, D-67): an unstamped sample check reads and is stamped as USD; no SQL |
 | IN-A02 | info | `jest.config.js:46-47` | Bare CR and mixed line endings in jest.config.js | fixed (165600e0) |
 | IN-A03 | info | `src/engine/decide/decision.ts:1-27 and throughout` | `decision.ts` reformatted to double quotes | fixed (f4a3b68d) |
