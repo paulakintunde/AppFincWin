@@ -107,7 +107,7 @@ Non-interactive execution of `/gsd-execute-phase 5` (waves 1-8, plus 05-25 Task 
 ## D-69 provisional latest rate (2026-10-22)
 - User decision "Provisional latest rate", built before the 05-26 device checks. A line with no usable stamp converts at the latest stored rate (`provisionalHomeAmount`), is flagged provisional, shows the basis line with count and date, and caps confidence at fair via the engine's plain `provisionalRates` flag. No migration; nothing provisional is written; `homeAmountFor` unchanged. 05-26 device item added above.
 
-## 05-26 device checklist additions (Decide UX refresh, 05-54..05-79, D-70..D-78)
+## 05-26 device checklist additions (Decide UX refresh, 05-54..05-87, D-70..D-84)
 
 Planned 2026-10-22. "Text-fit matrix" means 402x874 and 320x568 (points), each at text scale 1.0x and 2.0x: the Pixel (Settings > Display size and text) and an Android emulator AVD at 320dp (`adb shell wm size` / `wm density`); the iPhone XR when the iOS build exists. Pass: no word split mid-word, no overlap, no truncated system copy, every target 44 or larger, every ⓘ and chevron visible. TalkBack checks read every new control by its label.
 
@@ -137,3 +137,11 @@ Planned 2026-10-22. "Text-fit matrix" means 402x874 and 320x568 (points), each a
 - [ ] 05-77 Copy: History shows old "Check abandoned" undo entries with their label (kept keys); no retired string appears anywhere in Decide.
 - [ ] 05-78 Step 3 after wrapper removal: every fold opens and shows its body (spot-check all ten on a household fixture).
 - [ ] 05-79 Whole Decide pass at the text-fit matrix on every R10 screen and sheet; attach captures to the phase verification.
+- [ ] 05-80 R15 copy: read every new Step 2, item and investment ⓘ in context; "Needs: …" field words never split; summaries wrap at 2.0x.
+- [ ] 05-81 Engine E1: an instalment with a rate on the Pixel shows the same payment as a hand calculation (e.g. 1,200.00 at 12% over 12, first payment today: 105.57); "In a month" moves the first payment a month on in the cash path.
+- [ ] 05-82 Engine E2: step 4 cheaper row at a typed 1,234.56 reads exactly that price on the device.
+- [ ] 05-83 Inputs migration: a check saved before the update (old cheaper percent, no instalment rate) opens with the same figures it had.
+- [ ] 05-84 Step 2 accordion: at the text-fit matrix the method names, chips, chevron and "Needs:" line wrap; opening a card selects it and scrolls its header under the sticky header; TalkBack reads "{method}, Selected, {summary}" and announces "{method} selected. Details shown."; a decided check's cards open but the radio is read as disabled.
+- [ ] 05-85 Instalment card: Has a rate? and First payment become radio lists at 2.0x and 320; a quote that differs shows the "rate works out to" note; What gets written for "In a month" starts a month later.
+- [ ] 05-86 Custom item type: "Drone" with Treat like Vehicle turns the secured default on; a 40-character name wraps to 2 lines with an ellipsis and TalkBack reads it in full.
+- [ ] 05-87 Expected return: the verdict line after the basis marker wraps at 2.0x and is read with the key figures; the lump-sum horizon chips appear only once a return is typed.

@@ -250,6 +250,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-26**: User can type a custom value next to every preset chip row and amount slider in Decide, within stated bounds (durations 1-120 months, the investing horizon 1-600) (05 D-71)
 - [ ] **DCU-27**: Decide text never breaks mid-word, overlaps or cuts off system copy at 320-402 pt widths and 1.0-2.0x text size (05 D-76)
 - [ ] **DCU-28**: A check saves itself as the user edits, including when the app is backgrounded, and shows its save status; Clear and Delete each undo in one step and never remove what Go ahead wrote (05 D-73, D-77)
+- [ ] **DCU-29**: User can see each way to pay as its own card holding its inputs and results, and give an instalment plan a rate and a first-payment date (05 D-79, D-80)
+- [ ] **DCU-30**: User can name a custom item type that follows a built-in type's rules, and add an optional expected return to an investment check, shown as a projection only (05 D-81, D-82)
 
 ### Grow
 
@@ -615,6 +617,8 @@ Populated during roadmap creation.
 | DCU-26 | Phase 5 - Decide UI | Pending |
 | DCU-27 | Phase 5 - Decide UI | Pending |
 | DCU-28 | Phase 5 - Decide UI | Pending |
+| DCU-29 | Phase 5 - Decide UI | Pending |
+| DCU-30 | Phase 5 - Decide UI | Pending |
 | GRW-01 | Phase 6 - Grow | Pending |
 | GRW-02 | Phase 6 - Grow | Pending |
 | GRW-03 | Phase 6 - Grow | Pending |
@@ -692,8 +696,8 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 279 total (100 ticked)
-- Mapped to phases: 245
+- v1 requirements: 281 total (100 ticked)
+- Mapped to phases: 247
 - Unmapped: 0 ✓
 
 ---
@@ -703,6 +707,8 @@ Populated during roadmap creation.
 *2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 
 *2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
+*2026-10-22 — Decide UX refresh R15: DCU-29 (Step 2 method cards, instalment rate, D-79/D-80) and DCU-30 (custom item type, expected return, D-81/D-82) added (plans 05-80..05-87); D-83 maps to DCU-05 and D-84 to DCU-25; v1 total now 281.*
+
 *2026-10-22 — Decide UX refresh: DCU-25..DCU-28 added for 05-CONTEXT D-70, D-71, D-76 and D-73/D-77 (plans 05-54..05-79); D-72, D-74, D-75 and D-78 map to DCU-01, DCU-03, DCU-11 and DCU-14; v1 total now 279.*
 
 *2026-10-15 — Decide depth expansion: DEC-17..DEC-37 (Phase 4) and DCU-12..DCU-24 (Phase 5) added from 04-CONTEXT D-23..D-63 and 05-CONTEXT D-21..D-43; v1 total now 275.*
