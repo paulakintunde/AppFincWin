@@ -1,8 +1,11 @@
+import 'react-native-gesture-handler/jestSetup';
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { Pressable } from 'react-native';
+import { State } from 'react-native-gesture-handler';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { ThemeProvider } from '@/theme/ThemeProvider';
-import { StepSlider } from '../StepSlider';
+import { StepSlider, snapToStep, stepFrom } from '../StepSlider';
 import { RateInput } from '../RateInput';
 import { MoneyInput } from '../MoneyInput';
 
@@ -19,6 +22,62 @@ function action(name: 'increment' | 'decrement') {
 
 describe('StepSlider', () => {
   const base = { min: 0, max: 50000, step: 5000, accessibilityLabel: 'Deposit', valueText: '100 dollars' };
+
+  async function laidOut(onChange: jest.Mock) {
+    const view = await wrap(<StepSlider {...base} value={10000} onChange={onChange} />);
+    await fireEvent(view.getByLabelText('Deposit'), 'layout', { nativeEvent: { layout: { width: 100, height: 44, x: 0, y: 0 } } });
+    return view;
+  }
+
+  it('WR-D02: touch-down sets nothing; the pan fails on vertical motion and sets the value only once active', async () => {
+    const onChange = jest.fn();
+    await laidOut(onChange);
+    const pan = getByGestureTestId('step-slider-pan') as unknown as {
+      handlers: { onBegin?: unknown; onStart?: unknown };
+      config: { failOffsetYStart?: number; failOffsetYEnd?: number };
+    };
+    expect(pan.handlers.onBegin).toBeUndefined();
+    expect(pan.handlers.onStart).toBeDefined();
+    expect([pan.config.failOffsetYStart, pan.config.failOffsetYEnd]).toEqual([-10, 10]);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('WR-D02: an active horizontal pan and a tap set the touched value', async () => {
+    const onChange = jest.fn();
+    await laidOut(onChange);
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId('step-slider-pan'), [
+        { state: State.BEGAN, x: 20 },
+        { state: State.ACTIVE, x: 40 },
+        { state: State.END, x: 40 },
+      ]);
+    });
+    expect(onChange).toHaveBeenLastCalledWith(20000);
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId('step-slider-tap'), [
+        { state: State.BEGAN, x: 80 },
+        { state: State.ACTIVE, x: 80 },
+        { state: State.END, x: 80 },
+      ]);
+    });
+    expect(onChange).toHaveBeenLastCalledWith(40000);
+  });
+
+  it('WR-D06: max is reachable when it is off the step grid, and a bad step gives min', () => {
+    // grid 100, 350, 600, 850; max 1000
+    expect(snapToStep(1000, 100, 1000, 250)).toBe(1000);
+    expect(snapToStep(930, 100, 1000, 250)).toBe(1000);
+    expect(snapToStep(900, 100, 1000, 250)).toBe(850);
+    expect(snapToStep(-50, 100, 1000, 250)).toBe(100);
+    expect(stepFrom(850, 1, 100, 1000, 250)).toBe(1000);
+    expect(stepFrom(1000, -1, 100, 1000, 250)).toBe(850);
+    expect(stepFrom(1000, 1, 100, 1000, 250)).toBe(1000);
+    expect(stepFrom(860, -1, 100, 860, 250)).toBe(850);
+    expect(snapToStep(500, 100, 1000, 0)).toBe(100);
+    expect(snapToStep(500, 100, 1000, -5)).toBe(100);
+    expect(stepFrom(500, 1, 100, 1000, 0)).toBe(100);
+    expect(snapToStep(500, 100, 100, 250)).toBe(100);
+  });
 
   it('is adjustable with a spoken value', async () => {
     const { getByLabelText } = await wrap(<StepSlider {...base} value={10000} onChange={jest.fn()} />);

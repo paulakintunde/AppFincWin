@@ -1,7 +1,8 @@
 /**
  * UI-SPEC Design System: Slider row (Step 2 deposit, Step 4 cheaper ratio, Step 5 wait amount).
- * Accessible adjustable slider: every value handed to onChange is min + k x step, so a money
- * slider passes minor-unit steps. No slider package; a Gesture.Pan snaps to the step.
+ * Accessible adjustable slider: every value handed to onChange is min + k x step, or max itself (WR-D06: the one value
+ * allowed off the grid, so a price that is not a multiple of the step can still be reached), so a money slider passes
+ * minor-unit steps. No slider package; a Gesture.Pan snaps to the step.
  */
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View, type AccessibilityActionEvent, type LayoutChangeEvent } from 'react-native';
@@ -25,12 +26,25 @@ export interface StepSliderProps {
   valueText?: string;
 }
 
-/** Snaps v to min + k x step within [min, max]. */
+/**
+ * Snaps v to min + k x step within [min, max], or to max when v is nearer max than the last grid point below it
+ * (WR-D06). A step that is not above zero, or an empty range, gives min rather than NaN or Infinity.
+ */
 export function snapToStep(v: number, min: number, max: number, step: number): number {
-  const steps = Math.round((v - min) / step);
+  if (!(step > 0) || !(max > min)) return min;
   const maxSteps = Math.floor((max - min) / step);
-  const k = Math.min(Math.max(steps, 0), maxSteps);
+  const last = min + maxSteps * step;
+  if (last < max && v >= (last + max) / 2) return max;
+  const k = Math.min(Math.max(Math.round((v - min) / step), 0), maxSteps);
   return min + k * step;
+}
+
+/** One notch up or down from value: the next grid point (or max past the last one), never skipping one. */
+export function stepFrom(value: number, dir: 1 | -1, min: number, max: number, step: number): number {
+  if (!(step > 0)) return min;
+  const at = (value - min) / step;
+  const k = dir > 0 ? Math.floor(at) + 1 : Math.ceil(at) - 1;
+  return snapToStep(min + k * step, min, max, step);
 }
 
 export function StepSlider({ value, min, max, step, onChange, accessibilityLabel, valueText }: StepSliderProps) {
@@ -58,17 +72,29 @@ export function StepSlider({ value, min, max, step, onChange, accessibilityLabel
     [width, span, min, max, step, commit],
   );
 
+  // WR-D02: nothing moves on touch-down. The value follows the finger only once the pan is horizontal (a vertical scroll
+  // that lands on the row fails it), and a plain tap sets the touched value.
   const pan = Gesture.Pan()
     .runOnJS(true)
     .activeOffsetX([-8, 8])
-    .onBegin((e) => fromX(e.x))
+    .failOffsetY([-10, 10])
+    .withTestId('step-slider-pan')
+    .onStart((e) => fromX(e.x))
     .onUpdate((e) => fromX(e.x));
+  const tap = Gesture.Tap()
+    .runOnJS(true)
+    .maxDistance(10)
+    .withTestId('step-slider-tap')
+    .onEnd((e, success) => {
+      if (success) fromX(e.x);
+    });
+  const gesture = Gesture.Exclusive(pan, tap);
 
   const onAction = (e: AccessibilityActionEvent) => {
     const name = e.nativeEvent.actionName;
     const dir = name === 'increment' ? 1 : name === 'decrement' ? -1 : 0;
     if (dir === 0) return;
-    commit(snapToStep(value + dir * step, min, max, step));
+    commit(stepFrom(value, dir, min, max, step));
   };
 
   return (
@@ -81,7 +107,7 @@ export function StepSlider({ value, min, max, step, onChange, accessibilityLabel
       onAccessibilityAction={onAction}
       onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}
     >
-      <GestureDetector gesture={pan}>
+      <GestureDetector gesture={gesture}>
         <View style={styles.hit}>
           <View style={[styles.track, { backgroundColor: colors.line3 }]}>
             <View style={[styles.fill, { backgroundColor: colors.accent, width: `${frac * 100}%` }]} />
