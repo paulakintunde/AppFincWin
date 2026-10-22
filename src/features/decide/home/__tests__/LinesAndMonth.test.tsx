@@ -212,6 +212,18 @@ describe('RoughFiguresSheet', () => {
     });
   });
 
+  it('IN-B08: no current income can be saved as zero; zero spending cannot', async () => {
+    await wrap(sheet(null));
+    const save = () => screen.getByLabelText('Save figures');
+    await typeMoney('Money in each month', '0');
+    await typeMoney('Money out each month', '0');
+    expect(save().props.accessibilityState.disabled).toBe(true);
+    await typeMoney('Money out each month', '1800');
+    expect(save().props.accessibilityState.disabled).toBe(false);
+    await fireEvent.press(save());
+    expect(mockUpdate).toHaveBeenCalledWith({ rough_income: 0, rough_spending: 180_000, currency: 'USD' });
+  });
+
   it('renders nothing while closed', async () => {
     await wrap(<RoughFiguresSheet visible={false} userId="u1" currency="USD" settings={null} onClose={jest.fn()} />);
     expect(screen.queryByText('Rough figures')).toBeNull();

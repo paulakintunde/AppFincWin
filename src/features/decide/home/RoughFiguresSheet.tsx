@@ -27,6 +27,8 @@ export interface RoughFiguresSheetProps {
 }
 
 const validAmount = (n: number | null): n is number => n !== null && Number.isSafeInteger(n) && n > 0 && n <= MAX_INPUT_MINOR;
+/** IN-B08: no current income is a real answer (the engine and the column accept 0); spending stays above zero. */
+const validIncome = (n: number | null): n is number => n !== null && Number.isSafeInteger(n) && n >= 0 && n <= MAX_INPUT_MINOR;
 
 export function RoughFiguresSheet(props: RoughFiguresSheetProps) {
   return props.visible ? <RoughFiguresForm {...props} /> : null;
@@ -48,11 +50,11 @@ function RoughFiguresForm({ userId, currency, settings, onClose }: RoughFiguresS
   }));
   const [value, setValue] = useState<Fields>(start);
   const dirty = useIsDirty(start, value);
-  const canSave = userId !== null && validAmount(value.income) && validAmount(value.spending);
+  const canSave = userId !== null && validIncome(value.income) && validAmount(value.spending);
   const title = t('decide.rough.title');
 
   const save = () => {
-    if (userId === null || !validAmount(value.income) || !validAmount(value.spending)) return;
+    if (userId === null || !validIncome(value.income) || !validAmount(value.spending)) return;
     mutation.update(stampSettingsPatch({ rough_income: value.income, rough_spending: value.spending }, settings, currency));
     onClose();
   };

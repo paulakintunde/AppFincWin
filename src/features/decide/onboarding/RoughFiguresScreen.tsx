@@ -28,11 +28,13 @@ export function RoughFiguresScreen({ accountId }: RoughFiguresScreenProps) {
   const [income, setIncome] = useState<number | null>(null);
   const [spending, setSpending] = useState<number | null>(null);
   const valid = (n: number | null): n is number => n !== null && Number.isSafeInteger(n) && n > 0 && n <= MAX_INPUT_MINOR;
-  const canNext = valid(income) && valid(spending) && rc.userId !== null;
+  // IN-B08: no current income is a real answer; spending stays above zero.
+  const validIncome = (n: number | null): n is number => n !== null && Number.isSafeInteger(n) && n >= 0 && n <= MAX_INPUT_MINOR;
+  const canNext = validIncome(income) && valid(spending) && rc.userId !== null;
 
   const go = () => router.replace({ pathname: '/setup/first-check', params: accountId ? { accountId } : {} });
   const next = () => {
-    if (!valid(income) || !valid(spending) || rc.userId === null) return;
+    if (!validIncome(income) || !valid(spending) || rc.userId === null) return;
     settings.update({ rough_income: income, rough_spending: spending, currency: rc.homeCurrency });
     go();
   };
