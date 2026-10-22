@@ -40,8 +40,13 @@ interface LevelWalk {
   readonly totalInterest: bigint;
 }
 
-/** Walk the schedule at a level payment; month n pays whatever is left (the D-20 residual). */
-function walkLevel(P: bigint, apr: Percent, months: number, payment: bigint): LevelWalk {
+/**
+ * Walk the schedule at a level payment; the last payment absorbs whatever is left (the D-20 residual). Ordinary
+ * (`due` false): payments in months 1..months, interest accrues before each. Annuity-due (`due` true, D-80): payments
+ * in months 0..months-1, the first on the day with no interest yet. `lastMonth` is the count of payments up to the last
+ * non-zero one (equal to the last month index for an ordinary walk).
+ */
+function walkLevel(P: bigint, apr: Percent, months: number, payment: bigint, due: boolean): LevelWalk {
   const D = MONTHLY_RATE_DENOMINATOR;
   let bal = P;
   let totalInterest = 0n;
@@ -49,18 +54,21 @@ function walkLevel(P: bigint, apr: Percent, months: number, payment: bigint): Le
   let finalPayment = 0n;
   let lastMonth = 0;
   let firstPayment = 0n;
-  for (let k = 1; k <= months; k++) {
-    const interest = divideHalfUp(bal * apr, D);
-    const due = bal + interest;
-    // Clamp: a rounded-up payment would otherwise overpay and drive the balance negative. Month n absorbs the residual.
-    const paid = k === months || payment >= due ? due : payment;
-    bal = due - paid;
+  const offset = due ? 1 : 0;
+  const start = 1 - offset;
+  const end = months - offset;
+  for (let k = start; k <= end; k++) {
+    const interest = k === 0 ? 0n : divideHalfUp(bal * apr, D);
+    const owed = bal + interest;
+    // Clamp: a rounded-up payment would otherwise overpay and drive the balance negative. The last month absorbs the residual.
+    const paid = k === end || payment >= owed ? owed : payment;
+    bal = owed - paid;
     totalInterest += interest;
     totalPaid += paid;
-    if (k === 1) firstPayment = paid;
+    if (k === start) firstPayment = paid;
     if (paid > 0n) {
       finalPayment = paid;
-      lastMonth = k;
+      lastMonth = k + offset;
     }
   }
   return { firstPayment, finalPayment, lastMonth, totalPaid, totalInterest };
@@ -80,6 +88,20 @@ function walkLevel(P: bigint, apr: Percent, months: number, payment: bigint): Le
  * `termMonths` the term asked for. With nothing financed, months and finalPayment are 0.
  */
 export function amortise(principal: MinorUnits, apr: Percent, months: number): AmortisationResult {
+  return solve(principal, apr, months, false);
+}
+
+/**
+ * D-80 (UI-SPEC R15.7 E1.2): the same plan with the first payment on the day (an annuity-due). The exact payment is the
+ * ordinary one divided by (1 + r), P*r*(1+r)^(n-1) / ((1+r)^n - 1), in the same bigint form, then rounded up and stepped
+ * up exactly as D-64. The walk pays at month 0 before any interest, then accrues and pays in months 1..n-1. `months` is
+ * the number of payments (the last is paid in month `months - 1`); `termMonths` is the count asked for.
+ */
+export function amortiseDue(principal: MinorUnits, apr: Percent, months: number): AmortisationResult {
+  return solve(principal, apr, months, true);
+}
+
+function solve(principal: MinorUnits, apr: Percent, months: number, due: boolean): AmortisationResult {
   assertMonths(months);
   assertNonNegative(principal, 'principal');
 
@@ -95,12 +117,13 @@ export function amortise(principal: MinorUnits, apr: Percent, months: number): A
     // A ** n for n = 600 is a ~7,800-digit bigint and costs well under a millisecond.
     const An = (D + apr) ** n;
     const Dn = D ** n;
-    payment = ceilDivide(P * apr * An, D * (An - Dn));
+    // Due: divide by (1 + r) = (D + apr) / D, so the factor D in the denominator becomes D + apr.
+    payment = ceilDivide(P * apr * An, (due ? D + apr : D) * (An - Dn));
   }
-  let walk = walkLevel(P, apr, months, payment);
+  let walk = walkLevel(P, apr, months, payment, due);
   while (walk.finalPayment > payment) {
     payment += 1n;
-    walk = walkLevel(P, apr, months, payment);
+    walk = walkLevel(P, apr, months, payment, due);
   }
 
   return {
