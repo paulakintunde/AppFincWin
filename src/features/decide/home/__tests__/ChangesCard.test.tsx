@@ -206,6 +206,11 @@ describe('ChangesCard', () => {
     expect(screen.getByText('−$50 a month · from Dec 2026 · until Jun 2027')).toBeTruthy();
   });
 
+  it('IN-B04: a change typed in another currency is shown in that currency', async () => {
+    await wrap(<ChangesCard changes={[change({ currency: 'EUR', monthly_amount: 30_000 })]} currency="USD" whole={whole} />);
+    expect(screen.getByText(/^\+€\s?300 a month · from Nov 2026$/)).toBeTruthy();
+  });
+
   it('tap edits a row', async () => {
     await wrap(<ChangesCard changes={[change()]} currency="USD" whole={whole} />);
     await fireEvent.press(screen.getByText('Raise'));

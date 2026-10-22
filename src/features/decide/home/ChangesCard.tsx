@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRemoveChange } from '@/data/mutations/decideChanges';
 import type { DecideChangeRow } from '@/db/decideChanges';
+import { currencyCode } from '@/engine/money';
 import { useT } from '@/i18n';
 import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
@@ -18,9 +19,11 @@ import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Text } from '@/ui/Text';
 import { joinSentences } from '../check/joinSentences';
 import { refText, type Translate } from '../check/refText';
-import { Card, type Money } from '../check/steps/stepUi';
+import { Card, moneyFn, type Money } from '../check/steps/stepUi';
 import { changeRowCopy } from '../copy/depthInputsCopy';
 import { ChangeSheet, monthLabel } from './ChangeSheet';
+
+const CURRENCY_RE = /^[A-Z]{3}$/;
 
 export interface ChangesCardProps {
   changes: readonly DecideChangeRow[];
@@ -28,7 +31,7 @@ export interface ChangesCardProps {
   whole: Money;
 }
 
-export function ChangesCard({ changes, whole }: ChangesCardProps) {
+export function ChangesCard({ changes, currency, whole }: ChangesCardProps) {
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
   const fmt = useMoneyFormatter(false);
@@ -61,7 +64,9 @@ export function ChangesCard({ changes, whole }: ChangesCardProps) {
       ) : (
         <View style={[styles.list, { backgroundColor: colors.surface }, shadows.card]}>
           {rows.map((row, i) => {
-            const copy = changeRowCopy(row, whole, (m) => monthLabel(fmt.locale, m));
+            // IN-B04: a change is shown in the currency it was typed in (ChangeSheet edits it there; the builder converts it).
+            const rowMoney = row.currency === currency || !CURRENCY_RE.test(row.currency) ? whole : moneyFn(fmt, currencyCode(row.currency));
+            const copy = changeRowCopy(row, rowMoney, (m) => monthLabel(fmt.locale, m));
             const name = typeof copy.name === 'string' ? copy.name : refText(t, copy.name);
             const sub = refText(t, copy.from) + (copy.until !== null ? refText(t, copy.until) : '');
             const tag = t(row.kind === 'income' ? 'decide.depth.changes.income' : 'decide.depth.changes.spending');
