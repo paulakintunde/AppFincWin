@@ -34,10 +34,11 @@ describe('DateField minDate guard', () => {
     mockOnChange = undefined;
   });
 
-  it('refuses a day before minDate', async () => {
+  it('WR-D12: a day before minDate is refused and the field moves to minDate', async () => {
     const onChange = await setup('2026-10-15');
     await act(async () => mockOnChange!({ type: 'set' }, noon(2026, 10, 14)));
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('2026-10-15');
   });
 
   it('accepts minDate and later days', async () => {

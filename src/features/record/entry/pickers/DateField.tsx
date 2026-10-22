@@ -33,6 +33,8 @@ function fromLocalDateString(value: string): Date {
 export function DateField({ label, value, display, onChange, minDate }: DateFieldProps) {
   const t = useT();
   const [open, setOpen] = useState(false);
+  // WR-D12: bumped on a refused day so the iOS picker remounts on the stored date instead of showing the refused one.
+  const [resets, setResets] = useState(0);
 
   const handle = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === 'android') setOpen(false);
@@ -40,13 +42,20 @@ export function DateField({ label, value, display, onChange, minDate }: DateFiel
     // 'YYYY-MM-DD' compares lexically.
     if (event.type === 'set' && date) {
       const picked = toLocalDateString(date);
-      if (minDate !== undefined && picked < minDate) return;
+      if (minDate !== undefined && picked < minDate) {
+        // WR-D12: an earlier day is not silently dropped: the field moves to the earliest day allowed, so the row and
+        // the picker show the same date.
+        onChange(minDate);
+        setResets((n) => n + 1);
+        return;
+      }
       onChange(picked);
     }
   };
 
   const picker = open ? (
     <DateTimePicker
+      key={resets}
       testID="date-picker"
       value={fromLocalDateString(value)}
       mode="date"
