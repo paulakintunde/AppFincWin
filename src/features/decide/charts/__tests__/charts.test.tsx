@@ -71,6 +71,23 @@ describe('CashPathChart', () => {
     expect(hollow?.props.fill).toBeNull();
   });
 
+  it('WR-D07: a short path is labelled with the days it shows, and a one-point path draws nothing', async () => {
+    const short = (n: number): CashPathReport => ({
+      status: 'available',
+      tightBeforePayday: null,
+      withoutPurchase: without.slice(0, n),
+      withPurchase: withP.slice(0, n),
+      lowestWith: { day: n - 1, date: '2026-10-03', amount: m(100_000) },
+      lowestWithout: { day: n - 1, date: '2026-10-03', amount: m(200_000) },
+    });
+    const three = await wrap(<CashPathChart report={short(3)} reserve={m(0)} whole={whole} formatDate={formatDate} />);
+    for (const s of ['Today', '+1 d', '+2 d']) expect(three.getByText(s)).toBeTruthy();
+    expect(three.queryByText('+30 d')).toBeNull();
+    await three.unmount();
+    const one = await wrap(<CashPathChart report={short(1)} reserve={m(0)} whole={whole} formatDate={formatDate} />);
+    expect(one.toJSON()).toBeNull();
+  });
+
   it('colours the marker danger below zero, warn1 below the cushion and ink otherwise', async () => {
     const markFill = async (amount: number, reserve: number) => {
       const r = await wrap(

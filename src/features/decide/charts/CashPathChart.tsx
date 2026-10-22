@@ -77,7 +77,8 @@ export function CashPathChart({ report, reserve, whole, formatDate }: CashPathCh
         .onUpdate((e) => setCursor(indexAtX(e.x, length, box))),
     [length, box]
   );
-  if (!available || !ticks) return null;
+  // WR-D07: a path needs two points to draw, scrub and label; a shorter one shows nothing rather than a broken readout.
+  if (!available || !ticks || length < 2) return null;
 
   const withMark = markerPoint(available.lowestWith.day, available.withPurchase, box, ticks);
   const withoutMark = markerPoint(available.lowestWithout.day, available.withoutPurchase, box, ticks);
@@ -91,12 +92,9 @@ export function CashPathChart({ report, reserve, whole, formatDate }: CashPathCh
     dateWithout: formatDate(available.lowestWithout.date),
   });
   const labelStyle = { fontSize: fontSize.tabLabel, color: colors.inkMuted };
-  const xLabels = [
-    t('decide.depth.cashPath.today'),
-    t('decide.depth.cashPath.plus30'),
-    t('decide.depth.cashPath.plus60'),
-    t('decide.depth.cashPath.plus90'),
-  ];
+  // WR-D07: each tick is labelled from its own day index (index 0 is today), so a path of any length is labelled with the
+  // days it really shows.
+  const xLabel = (day: number): string => (day === 0 ? t('decide.depth.cashPath.today') : t('decide.depth.cashPath.plusDays', { count: day }));
   const cur = cursor === null ? null : Math.min(cursor, length - 1);
   const curX = cur === null ? 0 : xOf(cur, length, box);
 
@@ -157,13 +155,13 @@ export function CashPathChart({ report, reserve, whole, formatDate }: CashPathCh
               {whole.formatMoney(ticks.min as MinorUnits)}
             </Text>
           ) : null}
-          {xTicks(length).map((i, k) => (
+          {xTicks(length).map((i) => (
             <Text
               key={i}
               allowFontScaling={false}
               style={[styles.axis, labelStyle, { top: box.y1 + 6, left: xOf(i, length, box) - LABEL_W / 2, width: LABEL_W, textAlign: 'center' }]}
             >
-              {xLabels[k]}
+              {xLabel(i)}
             </Text>
           ))}
         </View>

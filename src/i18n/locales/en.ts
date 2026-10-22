@@ -1806,7 +1806,7 @@ const en = {
       },
       cashPath: {
         section: 'Day by day, next 90 days', summary: 'Lowest with this: {{amount}} on {{date}}',
-        legendWith: 'With this', legendWithout: 'Without', zero: '0', cushion: 'Cushion', today: 'Today', plus30: '+30 d', plus60: '+60 d', plus90: '+90 d',
+        legendWith: 'With this', legendWithout: 'Without', zero: '0', cushion: 'Cushion', today: 'Today', plusDays: '+{{count}} d',
         textAlt: 'Lowest with this: {{amount}} on {{date}}. Lowest without: {{amountWithout}} on {{dateWithout}}.',
         scrub: '{{date}}: {{with}} with, {{without}} without',
         unavailableSummary: 'Add your pay as a recurring series', unavailableBody: 'Add your pay as a recurring series to see day-by-day cash.', unavailableLink: 'Add a recurring series', basisUnavailable: 'Cash path unavailable',
