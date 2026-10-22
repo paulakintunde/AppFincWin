@@ -6,6 +6,9 @@
 --   3. WR-A08  record_decide_outcome moves a past ready_by to today instead of refusing a late replay.
 --   4. WR-A02  record_decide_go overload taking the rows themselves (p_rows jsonb), so Go ahead is ONE
 --              transaction: a refusal leaves no row behind (also CR-C02's "refused after the rows landed").
+--   5. CR-D02  statement_periods.import_batch_id and the statement_periods_live view: a period counts only while
+--              the import that stated it still has a live line, so an undone or refused import leaves no
+--              complete month behind.
 
 -- 1. CR-A01 -------------------------------------------------------------------------------------------------
 -- PostgREST sends upsert as INSERT .. ON CONFLICT (user_id) DO UPDATE SET user_id = excluded.user_id, ..., and
@@ -366,3 +369,31 @@ end;
 $$;
 revoke execute on function public.record_decide_go(uuid, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) from public, anon;
 grant execute on function public.record_decide_go(uuid, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) to authenticated;
+
+-- 5. CR-D02 -------------------------------------------------------------------------------------------------
+-- A stated statement period tells Decide that the months it covers are complete. It was recorded as its own write,
+-- so undoing the import (which soft-deletes the batch's lines) or a refused import left the period behind, and Decide
+-- counted empty months as complete. The period now carries the import's batch id, and Decide reads the
+-- statement_periods_live view: a period with a batch counts only while some line of that batch is live. Undo, a
+-- refused import and a later delete of every line all take the period out with no extra write. A period with no batch
+-- (recorded before this column) still counts. The unique key gains the batch, so re-importing the same statement after
+-- an undo records its own period instead of colliding with the dead one.
+alter table public.statement_periods add column import_batch_id uuid;
+grant insert (import_batch_id) on public.statement_periods to authenticated;
+
+drop index public.statement_periods_unique;
+create unique index statement_periods_unique on public.statement_periods
+  (household_id, account_id, period_start, period_end, import_batch_id) nulls not distinct;
+
+create view public.statement_periods_live
+  with (security_invoker = true) as
+  select p.id, p.household_id, p.account_id, p.period_start, p.period_end, p.import_batch_id
+  from public.statement_periods p
+  where p.import_batch_id is null
+     or exists (
+       select 1 from public.transactions t
+       where t.import_batch_id = p.import_batch_id
+         and t.household_id = p.household_id
+         and t.deleted_at is null);
+revoke all on public.statement_periods_live from anon, authenticated;
+grant select on public.statement_periods_live to authenticated;

@@ -251,12 +251,14 @@ describe('statement periods', () => {
     account_id: 'a1',
     period_start: '2026-09-01',
     period_end: '2026-09-30',
+    import_batch_id: 'b1',
   };
 
-  it('fetchStatementPeriods returns rows', async () => {
+  it('CR-D02 fetchStatementPeriods reads the live view', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [PERIOD], error: null, status: 200 });
     await expect(fetchStatementPeriods(client, 'h1')).resolves.toEqual([PERIOD]);
+    expect(client.calls.find((c) => c.method === 'eq')?.table).toBe('statement_periods_live');
     expect(client.calls.find((c) => c.method === 'eq')?.args).toEqual(['household_id', 'h1']);
   });
 

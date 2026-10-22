@@ -1,13 +1,14 @@
 -- pgTAP: Phase 5 code review fixes (20261021000100). CR-A01 the decide_settings upsert in the exact shape PostgREST
 -- sends; WR-A01 ON DELETE SET NULL now lands on debts, goals and reopened checks, and the orphan repair; WR-A02 the
--- record_decide_go overload that inserts its own rows, so a refusal leaves none; WR-A08 a late Wait replay.
+-- record_decide_go overload that inserts its own rows, so a refusal leaves none; WR-A08 a late Wait replay; CR-D02 a
+-- statement period counts only while its import has a live line.
 --
 -- Needs 20261016000100 .. 20261016000400 and 20261021000100.
 
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(38);
+select extensions.plan(46);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -320,6 +321,71 @@ set local role anon;
 select extensions.throws_ok(
   $$select public.record_decide_go('c6000000-0000-0000-0000-000000000006'::uuid, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, null::jsonb, '{}'::jsonb, '{}'::jsonb)$$,
   '42501', null, 'anon cannot execute the row-payload overload');
+
+reset role;
+
+-- ---------------------------------------------------------------------
+-- 6. CR-D02: a statement period follows its import (tests 39-46).
+-- ---------------------------------------------------------------------
+insert into public.transactions (id, household_id, created_by, account_id, original_amount, original_currency, local_date,
+                                 time_zone, name, import_batch_id) values
+  ('7d000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   '11111111-1111-1111-1111-111111111111', 'a6000000-0000-0000-0000-000000000001', -2500, 'USD', '2026-08-10', 'UTC',
+   'Imported line', '7b000000-0000-0000-0000-000000000001');
+
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+
+select extensions.lives_ok(
+  $$insert into public.statement_periods (id, household_id, account_id, period_start, period_end, import_batch_id)
+    values ('7a000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+            'a6000000-0000-0000-0000-000000000001', '2026-08-01', '2026-08-31', '7b000000-0000-0000-0000-000000000001'),
+           ('7a000000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+            'a6000000-0000-0000-0000-000000000001', '2026-07-01', '2026-07-31', '7b000000-0000-0000-0000-000000000002'),
+           ('7a000000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+            'a6000000-0000-0000-0000-000000000001', '2026-06-01', '2026-06-30', null)$$,
+  'A records statement periods with and without an import batch');
+
+select extensions.is(
+  (select string_agg(id::text, ',' order by id) from public.statement_periods_live),
+  '7a000000-0000-0000-0000-000000000001,7a000000-0000-0000-0000-000000000003',
+  'the live view keeps a period whose import has a live line and a period with no batch, not one whose import never landed');
+
+reset role;
+update public.transactions set deleted_at = now() where id = '7d000000-0000-0000-0000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+
+select extensions.is(
+  (select count(*) from public.statement_periods_live where id = '7a000000-0000-0000-0000-000000000001')::int,
+  0, 'once the import''s lines are soft-deleted (an undo) its period no longer counts');
+
+select extensions.is(
+  (select count(*) from public.statement_periods where id = '7a000000-0000-0000-0000-000000000001')::int,
+  1, 'the period row itself is kept, so a restored import counts again');
+
+select extensions.lives_ok(
+  $$insert into public.statement_periods (id, household_id, account_id, period_start, period_end, import_batch_id)
+    values ('7a000000-0000-0000-0000-000000000004', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+            'a6000000-0000-0000-0000-000000000001', '2026-08-01', '2026-08-31', '7b000000-0000-0000-0000-000000000004')$$,
+  're-importing the same statement after an undo records its own period');
+
+select extensions.throws_ok(
+  $$insert into public.statement_periods (id, household_id, account_id, period_start, period_end, import_batch_id)
+    values ('7a000000-0000-0000-0000-000000000005', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+            'a6000000-0000-0000-0000-000000000001', '2026-06-01', '2026-06-30', null)$$,
+  '23505', null, 'two periods with no batch over the same range are still one');
+
+select set_config('request.jwt.claims', '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
+select extensions.is(
+  (select count(*) from public.statement_periods_live)::int,
+  0, 'another household sees none of A''s live periods');
+
+reset role;
+set local role anon;
+select extensions.throws_ok(
+  $$select count(*) from public.statement_periods_live$$,
+  '42501', null, 'anon cannot read the live period view');
 
 reset role;
 select * from extensions.finish();

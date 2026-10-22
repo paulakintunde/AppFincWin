@@ -330,7 +330,7 @@ describe('useSaveCardTerms', () => {
 });
 
 describe('useRecordStatementPeriod', () => {
-  it('inserts a period and treats a duplicate id as success', async () => {
+  it('CR-D02 inserts a period tagged with its import batch and treats a duplicate id as success', async () => {
     const { fake, qc } = setup();
     fake.respondWith(
       ok({ id: 'id-1', household_id: 'hh-1', account_id: 'acc-1', period_start: '2026-09-01', period_end: '2026-09-30' })
@@ -338,7 +338,7 @@ describe('useRecordStatementPeriod', () => {
     fake.respondWith({ data: null, error: { message: 'dup', code: '23505' }, status: 409 });
     const { result } = await renderHook(() => useRecordStatementPeriod(), { wrapper: wrapper(qc) });
 
-    expect(result.current.record({ householdId: 'hh-1', accountId: 'acc-1', start: '2026-09-01', end: '2026-09-30' })).toBe(true);
+    expect(result.current.record({ householdId: 'hh-1', accountId: 'acc-1', start: '2026-09-01', end: '2026-09-30', batchId: 'batch-1' })).toBe(true);
     await waitFor(() => expect(inserts(fake)).toHaveLength(1));
     expect(inserts(fake)[0]!.args[0]).toEqual({
       id: 'id-1',
@@ -346,9 +346,10 @@ describe('useRecordStatementPeriod', () => {
       account_id: 'acc-1',
       period_start: '2026-09-01',
       period_end: '2026-09-30',
+      import_batch_id: 'batch-1',
     });
 
-    result.current.record({ householdId: 'hh-1', accountId: 'acc-1', start: '2026-09-01', end: '2026-09-30' });
+    result.current.record({ householdId: 'hh-1', accountId: 'acc-1', start: '2026-09-01', end: '2026-09-30', batchId: 'batch-1' });
     await waitFor(() => expect(inserts(fake)).toHaveLength(2));
     expect(recordFailedWrite).not.toHaveBeenCalled();
   });
@@ -356,7 +357,7 @@ describe('useRecordStatementPeriod', () => {
   it('queues nothing for a period that ends before it starts', async () => {
     const { fake, qc } = setup();
     const { result } = await renderHook(() => useRecordStatementPeriod(), { wrapper: wrapper(qc) });
-    expect(result.current.record({ householdId: 'hh-1', accountId: 'acc-1', start: '2026-09-30', end: '2026-09-01' })).toBe(false);
+    expect(result.current.record({ householdId: 'hh-1', accountId: 'acc-1', start: '2026-09-30', end: '2026-09-01', batchId: 'batch-1' })).toBe(false);
     expect(fake.calls).toHaveLength(0);
   });
 });

@@ -74,6 +74,8 @@ export interface RecordStatementPeriodVars {
   accountId: string;
   start: string;
   end: string;
+  /** CR-D02: the import batch that stated the period. Optional only for a write queued before the field existed. */
+  batchId?: string | null;
 }
 
 type DebtList = DebtRow[];
@@ -263,6 +265,7 @@ export function registerDecideLinkMutations(qc: QueryClient): void {
           account_id: vars.accountId,
           period_start: vars.start,
           period_end: vars.end,
+          import_batch_id: vars.batchId ?? null,
         })
       ),
     scope: WRITE_SCOPE,
@@ -455,9 +458,12 @@ export function useSaveCardTerms(): {
   };
 }
 
-/** OQ3: an import that states its period records it. Returns false (and queues nothing) for an unusable period. */
+/**
+ * OQ3: an import that states its period records it. Returns false (and queues nothing) for an unusable period.
+ * CR-D02: the period carries the import's batch id, so it counts only while that import has a live line.
+ */
 export function useRecordStatementPeriod(): {
-  record(input: { householdId: string; accountId: string; start: string; end: string }): boolean;
+  record(input: { householdId: string; accountId: string; start: string; end: string; batchId: string }): boolean;
 } {
   const mutation = useMutation<StatementPeriodRow | null, unknown, RecordStatementPeriodVars>({
     mutationKey: mutationKeys.recordStatementPeriod,

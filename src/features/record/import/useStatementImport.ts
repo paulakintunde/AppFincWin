@@ -66,6 +66,7 @@ import { supabase } from '@/services/supabase';
 import { showToast } from '@/state/undoToast';
 import { importExponentLookup, type ExponentLookup } from './currencyLookup';
 import { acceptedSuggestionCount, maxAcceptedSuggestions } from './suggestionCap';
+import { periodFullyImported } from './periodCoverage';
 import {
   buildPreview,
   inferCsvReading,
@@ -1423,7 +1424,19 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       reconciliation: RECONCILIATION[preview.reconcile.file],
     });
     // 05-19 (OQ3): a stated period makes the months it covers end to end count as full for Decide.
-    if (draft.periodStart !== null && draft.periodEnd !== null) recordPeriod.record({ householdId, accountId: account.id, start: draft.periodStart, end: draft.periodEnd });
+    // CR-D02: only when every line inside it is in the app (none left unticked), and tagged with this import's batch,
+    // so the period stops counting once the import is undone or never lands.
+    if (
+      draft.periodStart !== null &&
+      draft.periodEnd !== null &&
+      periodFullyImported(
+        preview.rows.map((r) => ({ localDate: r.converted.localDate, included: isIncluded(r), duplicate: r.duplicate !== null })),
+        draft.periodStart,
+        draft.periodEnd
+      )
+    ) {
+      recordPeriod.record({ householdId, accountId: account.id, start: draft.periodStart, end: draft.periodEnd, batchId });
+    }
 
     // D-21 / D-56: recurring suggestions come from the committed ordinary rows only; a linked
     // or counter transfer leg and a row that marked a bill paid are never fed to detection.

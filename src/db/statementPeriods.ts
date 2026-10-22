@@ -10,15 +10,24 @@ export interface StatementPeriodRow {
   account_id: string;
   period_start: string;
   period_end: string;
+  /**
+   * CR-D02: the import that stated this period. Decide reads statement_periods_live, which keeps a period only while
+   * some line of its batch is live, so an undone or refused import leaves no complete month behind. Null on a period
+   * recorded before the column existed.
+   */
+  import_batch_id: string | null;
 }
 
-const COLUMNS = 'id, household_id, account_id, period_start, period_end';
+const COLUMNS = 'id, household_id, account_id, period_start, period_end, import_batch_id';
 const UNIQUE_VIOLATION = '23505';
 
-/** One household's statement periods (WR-A05: RLS alone would return every household the caller belongs to). */
+/**
+ * One household's statement periods that still count (WR-A05: RLS alone would return every household the caller
+ * belongs to). CR-D02: read from statement_periods_live, so a period whose import was undone or never landed is left out.
+ */
 export async function fetchStatementPeriods(client: DbClient, householdId: string): Promise<StatementPeriodRow[]> {
   const { data, error, status } = await client
-    .from('statement_periods')
+    .from('statement_periods_live')
     .select(COLUMNS)
     .eq('household_id', householdId)
     .order('period_start', { ascending: true });
@@ -44,6 +53,7 @@ export async function insertStatementPeriod(
       account_id: row.account_id,
       period_start: row.period_start,
       period_end: row.period_end,
+      import_batch_id: row.import_batch_id,
     })
     .select(COLUMNS)
     .single();
