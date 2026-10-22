@@ -3,7 +3,8 @@
 //
 // Every payment is counted once (Core Value): a Savings-category series is saving, a series that pays a recorded loan is
 // that debt's minimum, a card owing a balance pays its stored or per-market minimum (simulateMinimum, D-40). A needed
-// amount with no stored rate makes the whole result unconverted (D-37); nothing is ever guessed.
+// amount with no stored rate makes the whole result unconverted (D-37); nothing is ever guessed. A past line saved while its
+// own rate was pending is converted at the latest stored rate and flagged provisional (D-69); that value is never written.
 import {
   AVERAGING_WINDOW_MONTHS,
   MARKET_DEFAULTS,
@@ -32,7 +33,7 @@ import { monthOf } from '@/engine/time';
 import { convertLatest } from '@/data/queries/fxConvert';
 import { homeAmountFor } from '@/data/queries/homeAmount';
 import type { AccountRow, CustomCurrencyRow, FxLatestRow, RecurringSeriesRow, TransactionRow } from '@/db/rows';
-import { makeConverter } from './conversion';
+import { makeConverter, provisionalHomeAmount, type ProvisionalAmount } from './conversion';
 import { fullMonthFlags } from './fullMonths';
 import type { CardChoice, CardTermsView, SnapshotMeta, SnapshotResult } from './types';
 
@@ -175,6 +176,16 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     missedRows.add(r.id);
     converter.miss(r.original_currency);
   };
+  /** A line's home amount: its own stamp (homeAmountFor), else the latest stored rate (D-69, provisional), else null. */
+  const homeOf = (r: SnapshotRow): ProvisionalAmount | null => {
+    const stamped = homeAmountFor(r, home, source.rates);
+    if (stamped !== null) return { amount: stamped, rateDate: null };
+    return provisionalHomeAmount(r, home, source.rates, source.customCurrencies, today);
+  };
+  /** D-69: count a line whose figure is in use and came from a provisional rate. */
+  const markProvisional = (r: SnapshotRow, conv: ProvisionalAmount): void => {
+    if (conv.rateDate !== null) converter.provisional(r.id, conv.rateDate);
+  };
   const keyOf = (categoryId: string | null): string | null =>
     categoryId === null ? null : (source.categories[categoryId] ?? null);
 
@@ -251,14 +262,16 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     }
     const month = r.local_date.slice(0, 7);
     if (!flags.has(month)) continue;
-    const amt = homeAmountFor(r, home, source.rates);
-    if (month === currentMonth && amt !== null && amt < 0) expenseLinesThisMonth += 1;
+    const conv = homeOf(r);
+    if (month === currentMonth && conv !== null && conv.amount < 0) expenseLinesThisMonth += 1;
     if (r.recurring_series_id !== null && elsewhere.has(r.recurring_series_id)) continue;
     const used = usedMonths.has(month);
-    if (amt === null) {
+    if (conv === null) {
       if (used) missRow(r);
       continue;
     }
+    if (used) markProvisional(r, conv);
+    const amt = conv.amount;
     const out = amt < 0;
     const abs = Math.abs(amt);
     const key = keyOf(r.category_id);
@@ -370,11 +383,12 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   let pendingOneOffs = 0;
   for (const r of allRows) {
     if (r.status !== 'pending' || r.recurring_series_id !== null) continue;
-    const amt = homeAmountFor(r, home, source.rates);
-    if (amt === null) {
+    const conv = homeOf(r);
+    if (conv === null) {
       missRow(r);
       continue;
     }
+    const amt = conv.amount;
     if (amt >= 0) continue;
     const account = accountById.get(r.account_id);
     if (account === undefined || !isLive(account)) continue;
@@ -385,6 +399,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
         partnerAccount = partner === undefined ? undefined : accountById.get(partner.account_id);
         if (partnerAccount !== undefined && isLive(partnerAccount) && cashLike(partnerAccount.kind)) continue; // an internal move
       }
+      markProvisional(r, conv);
       const outflow: ScheduledOutflow = { id: r.id, date: r.local_date, amount: minorUnits(-amt), currency: cur };
       if (keyOf(r.category_id) === 'Debt' && partnerAccount !== undefined && (partnerAccount.kind === 'credit' || partnerAccount.kind === 'loan')) {
         pendingDebtTransfers.push({ outflow, into: partnerAccount.id });
@@ -393,6 +408,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       scheduledOutflows.push(outflow);
       pendingOneOffs += 1;
     } else if ((account.kind === 'credit' || account.kind === 'loan') && !namedByLoan.has(account.id)) {
+      markProvisional(r, conv);
       pendingByAccount.set(account.id, (pendingByAccount.get(account.id) ?? 0) + amt);
       if (writtenTargets.has(r.id)) coveredByAccount.set(account.id, (coveredByAccount.get(account.id) ?? 0) - amt);
       pendingOneOffs += 1;
@@ -582,6 +598,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   }
 
   const unconverted = converter.unconverted();
+  const provisional = converter.provisionalNote();
   const meta: SnapshotMeta = {
     fullMonths: fullKeys.length,
     expenseLinesThisMonth,
@@ -604,6 +621,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     cash: minorUnits(cashOnHand),
     conversions: converter.notes(),
     unconverted,
+    provisional,
     fx: { rates: source.rates, customs: source.customCurrencies, today },
   };
 
@@ -628,6 +646,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       futureChanges,
       investmentBalance: minorUnits(investmentBalance),
       scheduledOutflows,
+      ...(provisional === null ? {} : { provisionalRates: true }), // D-69: caps confidence at fair
     };
     return { kind: 'logged', ...base, snapshot };
   }

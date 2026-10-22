@@ -26,9 +26,11 @@ export interface CardChoice { accountId: string; name: string; record: CardRecor
 // D-37 (part 2): conversion facts for the basis line and Assumptions, and the missing-rate note. Plain JSON (rateText is the 10-dp string from 05-33, never a number).
 export interface ConversionNote { currency: string; rateText: string; rateDate: string } // home units per 1 unit of `currency` at the latest stored rate; rateDate = the earlier rate_date of the two legs
 export interface UnconvertedNote { currencies: readonly string[]; rowCount: number }   // a needed amount had no stored rate: every computation reports 'unconverted', never a guessed figure
+// D-69: past lines saved while their own rate was pending, converted at the latest stored rate (display and maths only, never written). rateDate = the earliest rate date used.
+export interface ProvisionalNote { rowCount: number; rateDate: string }
 // D-67: the stored rates the snapshot was built with, so a check typed in another currency converts at the same latest stored rate (checkCurrency.ts). Absent (test fixtures) = no rate: such a check reads unconverted.
 export interface SnapshotFx { rates: readonly FxLatestRow[]; customs: readonly CustomCurrencyRow[]; today: string }
-interface SnapshotBase { currency: CurrencyCode; meta: SnapshotMeta; cards: readonly CardChoice[]; dealerCap: MinorUnits | null; cash: MinorUnits; conversions: readonly ConversionNote[]; unconverted: UnconvertedNote | null; fx?: SnapshotFx }
+interface SnapshotBase { currency: CurrencyCode; meta: SnapshotMeta; cards: readonly CardChoice[]; dealerCap: MinorUnits | null; cash: MinorUnits; conversions: readonly ConversionNote[]; unconverted: UnconvertedNote | null; provisional?: ProvisionalNote | null; fx?: SnapshotFx } // provisional: D-69, absent (test fixtures) = none
 export type SnapshotResult =
   | (SnapshotBase & { kind: 'logged'; snapshot: DecideSnapshot })
   | (SnapshotBase & { kind: 'rough'; figures: RoughFigures })

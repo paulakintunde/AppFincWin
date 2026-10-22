@@ -53,4 +53,16 @@ describe('makeConverter', () => {
     expect(c.toHome(1_000, 'TOK')).toBe(500);
     expect(c.notes()[0]?.currency).toBe('TOK');
   });
+
+  it('D-69: counts each provisional line once and keeps the earliest rate date', () => {
+    const c = make();
+    expect(c.provisionalNote()).toBeNull();
+    c.provisional('r1', '2026-10-14');
+    c.provisional('r1', '2026-10-01');
+    c.provisional('r2', '2026-10-13');
+    c.provisional('r3', '2026-10-14');
+    expect(c.provisionalNote()).toEqual({ rowCount: 3, rateDate: '2026-10-13' });
+    expect(c.unconverted()).toBeNull();
+    expect(c.notes()).toEqual([]);
+  });
 });
