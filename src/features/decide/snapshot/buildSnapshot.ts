@@ -235,13 +235,13 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   const fullKeys = monthKeys.filter((m) => flags.get(m) === true);
   const usedMonths = new Set(fullKeys.slice(0, AVERAGING_WINDOW_MONTHS));
 
-  // WR-B03: a Debt-category payment outside a series is that debt's minimum only when the snapshot counts a minimum,
-  // which is known only once the derived card debts below exist. Those lines and totals wait until then.
-  const lineEntries: { month: string; line: RecordLine; debtPayment: boolean }[] = [];
+  // WR-B03 (D-68): a Debt-category payment outside a series is spending unless it is a transfer into a card or loan
+  // whose minimum is counted. A transfer leg is never spending here anyway (D-28), so in the history every Debt-category
+  // payment that is not a transfer stays an ordinary outgoing: it went to an account the app does not track.
+  const linesByMonth = new Map<string, RecordLine[]>();
   let savingTotal = 0n;
   let investingTotal = 0n;
   const expenseTotals = new Map<string, bigint>();
-  const debtPaymentTotals = new Map<string, bigint>();
   const lastPaid = new Map<string, string>();
   let expenseLinesThisMonth = 0;
   for (const r of liveRows) {
@@ -264,13 +264,9 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     const key = keyOf(r.category_id);
     const isTransfer = r.transfer_id !== null;
     const paidUsed = used && r.status === 'paid';
-    let debtPayment = false;
-    if (out && !isTransfer) {
-      if (key === 'Savings') {
-        if (paidUsed) savingTotal += BigInt(abs); // enters monthlySaving, not the lines
-        continue;
-      }
-      debtPayment = key === 'Debt' && r.recurring_series_id === null;
+    if (out && !isTransfer && key === 'Savings') {
+      if (paidUsed) savingTotal += BigInt(abs); // enters monthlySaving, not the lines
+      continue;
     }
     const oneOff = r.one_off === true && r.recurring_series_id === null && !isTransfer; // D-29
     const line: RecordLine = {
@@ -286,7 +282,9 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       categoryId: r.category_id,
       oneOff,
     };
-    lineEntries.push({ month, line, debtPayment });
+    const bucket = linesByMonth.get(month);
+    if (bucket) bucket.push(line);
+    else linesByMonth.set(month, [line]);
     if (!paidUsed) continue;
     if (!out && isTransfer) {
       const kind = accountById.get(r.account_id)?.kind;
@@ -295,10 +293,10 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     }
     if (out && !isTransfer && !oneOff) {
       const id = r.category_id ?? UNCATEGORISED;
-      const totals = debtPayment ? debtPaymentTotals : expenseTotals;
-      totals.set(id, (totals.get(id) ?? 0n) + BigInt(abs));
+      expenseTotals.set(id, (expenseTotals.get(id) ?? 0n) + BigInt(abs));
     }
   }
+  const months: MonthRecord[] = monthKeys.map((m) => ({ month: m, full: flags.get(m) === true, lines: linesByMonth.get(m) ?? [] }));
   const usedCount = usedMonths.size;
 
   // ── bills, income, savings series ──
@@ -362,8 +360,11 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     allRows.push(r);
   }
   const scheduledOutflows: ScheduledOutflow[] = [];
-  /** WR-B03: pending Debt-category payments out of cash; counted below only when no debt minimum is counted. */
-  const pendingDebtPayments: ScheduledOutflow[] = [];
+  /**
+   * WR-B03 (D-68): pending Debt-category transfers out of cash into a card or loan account. Each is that debt's minimum
+   * when the minimum is counted (known only once the derived debts below exist); otherwise it is an ordinary outflow.
+   */
+  const pendingDebtTransfers: { outflow: ScheduledOutflow; into: string }[] = [];
   const pendingByAccount = new Map<string, number>();
   const coveredByAccount = new Map<string, number>();
   let pendingOneOffs = 0;
@@ -378,14 +379,15 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     const account = accountById.get(r.account_id);
     if (account === undefined || !isLive(account)) continue;
     if (cashLike(account.kind)) {
+      let partnerAccount: SnapshotSource['accounts'][number] | undefined;
       if (r.transfer_id !== null) {
         const partner = allRows.find((p) => p.transfer_id === r.transfer_id && p.id !== r.id && p.original_amount > 0);
-        const partnerAccount = partner === undefined ? undefined : accountById.get(partner.account_id);
+        partnerAccount = partner === undefined ? undefined : accountById.get(partner.account_id);
         if (partnerAccount !== undefined && isLive(partnerAccount) && cashLike(partnerAccount.kind)) continue; // an internal move
       }
       const outflow: ScheduledOutflow = { id: r.id, date: r.local_date, amount: minorUnits(-amt), currency: cur };
-      if (keyOf(r.category_id) === 'Debt') {
-        pendingDebtPayments.push(outflow);
+      if (keyOf(r.category_id) === 'Debt' && partnerAccount !== undefined && (partnerAccount.kind === 'credit' || partnerAccount.kind === 'loan')) {
+        pendingDebtTransfers.push({ outflow, into: partnerAccount.id });
         continue;
       }
       scheduledOutflows.push(outflow);
@@ -484,20 +486,17 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     derivedDebts += 1;
   }
 
-  // ── Debt-category payments (WR-B03): that debt's minimum when one is counted, otherwise ordinary outgoings ──
-  const minimumCounted = debts.some((d) => d.minimumPayment > 0);
-  const linesByMonth = new Map<string, RecordLine[]>();
-  for (const e of lineEntries) {
-    if (e.debtPayment && minimumCounted) continue;
-    const bucket = linesByMonth.get(e.month);
-    if (bucket) bucket.push(e.line);
-    else linesByMonth.set(e.month, [e.line]);
+  // ── Debt-category transfers (WR-B03, D-68): that debt's minimum when its minimum is counted, otherwise an outflow ──
+  // A derived debt is keyed by its account; a recorded loan names its account.
+  const minimumAccounts = new Set<string>();
+  for (const d of debts) if (d.minimumPayment > 0) minimumAccounts.add(d.id);
+  for (const d of loanDebts) {
+    if (d.account_id !== null && debts.some((x) => x.id === d.id && x.minimumPayment > 0)) minimumAccounts.add(d.account_id);
   }
-  const months: MonthRecord[] = monthKeys.map((m) => ({ month: m, full: flags.get(m) === true, lines: linesByMonth.get(m) ?? [] }));
-  if (!minimumCounted) {
-    for (const [id, total] of debtPaymentTotals) expenseTotals.set(id, (expenseTotals.get(id) ?? 0n) + total);
-    scheduledOutflows.push(...pendingDebtPayments);
-    pendingOneOffs += pendingDebtPayments.length;
+  for (const { outflow, into } of pendingDebtTransfers) {
+    if (minimumAccounts.has(into)) continue;
+    scheduledOutflows.push(outflow);
+    pendingOneOffs += 1;
   }
   scheduledOutflows.sort((a, b) => (a.date === b.date ? (a.id < b.id ? -1 : 1) : a.date < b.date ? -1 : 1));
   const expenseLines: ExpenseLine[] = [...expenseTotals.entries()]

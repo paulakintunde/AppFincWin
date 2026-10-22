@@ -487,12 +487,14 @@ describe('every payment is counted once', () => {
     expect(r.snapshot.months.flatMap((m) => m.lines).some((l) => l.id === 'dbt-1')).toBe(true);
   });
 
-  it('a Debt-category payment with no series is that debt\'s minimum only when a debt is recorded', () => {
+  it('WR-B03 (D-68): a Debt-category payment that is not a transfer is spending, even with a debt recorded', () => {
     const extra = [row({ id: 'dbt-loose', local_date: '2026-09-25', original_amount: -15_000, category_id: 'c-debt' })];
     const kept = logged(withExtra({ rows: extra }));
     expect(kept.snapshot.months.flatMap((m) => m.lines).some((l) => l.id === 'dbt-loose')).toBe(true);
-    const omitted = logged(withExtra({ rows: extra, debts: [debt({})] }));
-    expect(omitted.snapshot.months.flatMap((m) => m.lines).some((l) => l.id === 'dbt-loose')).toBe(false);
+    // a recorded loan with a minimum does not make an unmatched payment its minimum: it went to an untracked account
+    const withLoan = logged(withExtra({ rows: extra, debts: [debt({})] }));
+    expect(withLoan.snapshot.months.flatMap((m) => m.lines).some((l) => l.id === 'dbt-loose')).toBe(true);
+    expect(withLoan.snapshot.expenseLines.some((l) => l.lineId === 'c-debt')).toBe(true);
     // a Debt-category row inside a series is kept so the engine pairs it with its bill
     const inSeries = logged(
       withExtra({
@@ -603,12 +605,11 @@ describe('a purchase already committed (04 D-61)', () => {
     expect(r.meta).toMatchObject({ pendingOneOffs: 1, derivedDebts: 1, cardsWithoutMinimum: 1 });
   });
 
-  it('ignores pending Debt-category rows when a debt is recorded, money in, series rows and unknown accounts', () => {
+  it('ignores money in, series rows and unknown accounts', () => {
     const r = logged({
       ...household(),
       debts: [debt({})],
       upcomingRows: [
-        pending({ id: 'p-debt', category_id: 'c-debt' }),
         pending({ id: 'p-in', original_amount: 5_000 }),
         pending({ id: 'p-series', recurring_series_id: 's-pay' }),
         pending({ id: 'p-ghost', account_id: 'ghost' }),
@@ -666,16 +667,51 @@ describe('card minimums (D-40)', () => {
     ...over,
   });
 
-  it('WR-B03: with only a card minimum counted, a Debt-category payment is that minimum, not spending as well', () => {
+  it('WR-B03 (D-68): a Debt-category payment that is not a transfer stays spending beside a counted card minimum', () => {
     const terms = { kind: 'card' as const, account_id: 'card', min_percent: '2', min_interest_added: false, min_floor: 2_500 };
     const payments = [row({ id: 'card-pay', local_date: '2026-09-25', original_amount: -15_000, category_id: 'c-debt' })];
     const pendingPay = row({ id: 'card-pay-next', status: 'pending', local_date: '2026-11-25', original_amount: -15_000, category_id: 'c-debt' });
     const r = logged(card(-120_000, { debts: [debt(terms)], rows: [...household().rows, ...payments], upcomingRows: [pendingPay] }));
     expect(r.snapshot.debts.map((d) => d.minimumPayment)).toEqual([2_500]);
-    expect(r.snapshot.months.flatMap((m) => m.lines).some((l) => l.id === 'card-pay')).toBe(false);
-    expect(r.snapshot.expenseLines.some((l) => l.lineId === 'c-debt')).toBe(false);
+    expect(r.snapshot.months.flatMap((m) => m.lines).some((l) => l.id === 'card-pay')).toBe(true);
+    expect(r.snapshot.expenseLines.some((l) => l.lineId === 'c-debt')).toBe(true);
+    expect(r.snapshot.scheduledOutflows.map((o) => o.id)).toEqual(['card-pay-next']);
+    expect(r.meta.pendingOneOffs).toBe(1);
+  });
+
+  const legs = (id: string, to: string) => [
+    row({ id: `${id}-out`, status: 'pending', local_date: '2026-11-25', original_amount: -15_000, category_id: 'c-debt', transfer_id: id }),
+    row({ id: `${id}-in`, status: 'pending', local_date: '2026-11-25', original_amount: 15_000, category_id: 'c-debt', transfer_id: id, account_id: to }),
+  ];
+
+  it('WR-B03 (D-68): a pending Debt-category transfer into a card whose minimum is counted is that minimum', () => {
+    const terms = { kind: 'card' as const, account_id: 'card', min_percent: '2', min_interest_added: false, min_floor: 2_500 };
+    const r = logged(card(-120_000, { debts: [debt(terms)], upcomingRows: legs('t-card', 'card') }));
+    expect(r.snapshot.debts.map((d) => d.minimumPayment)).toEqual([2_500]);
     expect(r.snapshot.scheduledOutflows).toEqual([]);
     expect(r.meta.pendingOneOffs).toBe(0);
+  });
+
+  it('WR-B03 (D-68): a pending Debt-category transfer into a card with no counted minimum is an outflow', () => {
+    const paidInFull = { kind: 'card' as const, account_id: 'card', paid_in_full: true };
+    const r = logged(card(-120_000, { debts: [debt(paidInFull)], upcomingRows: legs('t-pif', 'card') }));
+    expect(r.snapshot.debts.map((d) => d.minimumPayment)).toEqual([0]);
+    expect(r.snapshot.scheduledOutflows.map((o) => o.id)).toEqual(['t-pif-out']);
+    expect(r.meta.pendingOneOffs).toBe(1);
+  });
+
+  it('WR-B03 (D-68): a pending Debt-category transfer into a recorded loan counts as its minimum only when one is set', () => {
+    const accounts = [...household().accounts, account({ id: 'loan-acct', kind: 'loan' })];
+    const withMinimum = logged({ ...household(), accounts, debts: [debt({ account_id: 'loan-acct' })], upcomingRows: legs('t-loan', 'loan-acct') });
+    expect(withMinimum.snapshot.scheduledOutflows).toEqual([]);
+    const noMinimum = logged({ ...household(), accounts, debts: [debt({ account_id: 'loan-acct', minimum_payment: 0 })], upcomingRows: legs('t-loan0', 'loan-acct') });
+    expect(noMinimum.snapshot.scheduledOutflows.map((o) => o.id)).toEqual(['t-loan0-out']);
+  });
+
+  it('WR-B03 (D-68): a pending Debt-category transfer to an untracked account or with no partner leg is an outflow', () => {
+    const lonely = row({ id: 'lonely', status: 'pending', local_date: '2026-11-25', original_amount: -15_000, category_id: 'c-debt', transfer_id: 't-lonely' });
+    const r = logged(card(-120_000, { upcomingRows: [...legs('t-ghost', 'ghost'), lonely] }));
+    expect(r.snapshot.scheduledOutflows.map((o) => o.id).sort()).toEqual(['lonely', 't-ghost-out']);
   });
 
   it('WR-B03: a recorded debt with no minimum leaves Debt-category payments as outgoings', () => {
