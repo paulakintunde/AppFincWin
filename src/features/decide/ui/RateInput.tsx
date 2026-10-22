@@ -3,6 +3,9 @@
  * form of the engine percent() grammar (up to 4 integer digits, up to 10 decimals); it is never
  * converted to a number here, so no rate is rounded or invented before the engine boundary
  * (D-02, D-21, D-23).
+ *
+ * WR-D03: the field shows and accepts the region's own decimal mark (a decimal comma in de, fr, es, nl and others, the
+ * only mark their decimal pad offers); the text handed to onChange always uses '.', the engine's form.
  */
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -11,8 +14,15 @@ import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
+import { localeSeparators } from '@/engine/money';
+import { useDeviceLocale } from '@/services/locale/deviceLocale';
 
 const TYPING = /^\d{0,4}(\.\d{0,10})?$/;
+
+/** The typed text in the engine's '.' form: the region's decimal mark (and '.', which every keyboard can send) is read as the point. */
+export function toRateText(typed: string, decimal: string): string {
+  return decimal === '.' ? typed : typed.split(decimal).join('.');
+}
 
 export interface RateInputProps {
   value: string;
@@ -29,13 +39,16 @@ export interface RateInputProps {
 
 export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur, readOnly = false }: RateInputProps) {
   const { colors, pairing } = useTheme();
+  const { locale, separators } = useDeviceLocale();
+  const decimal = (separators ?? localeSeparators(locale)).decimal;
   return (
     <View>
       <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
       <View style={[styles.field, { backgroundColor: colors.fill1 }]}>
         <TextInput
-          value={value}
-          onChangeText={(text) => {
+          value={decimal === '.' ? value : value.replace('.', decimal)}
+          onChangeText={(typed) => {
+            const text = toRateText(typed, decimal);
             if (TYPING.test(text)) onChange(text);
           }}
           onBlur={onBlur}

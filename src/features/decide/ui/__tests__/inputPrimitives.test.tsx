@@ -6,7 +6,8 @@ import { State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { StepSlider, snapToStep, stepFrom } from '../StepSlider';
-import { RateInput } from '../RateInput';
+import { RateInput, toRateText } from '../RateInput';
+import * as deviceLocale from '@/services/locale/deviceLocale';
 import { MoneyInput } from '../MoneyInput';
 
 jest.setTimeout(30000);
@@ -125,6 +126,28 @@ describe('StepSlider', () => {
 });
 
 describe('RateInput', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('WR-D03: a decimal-comma region types and sees a comma; the engine gets a point', async () => {
+    jest.spyOn(deviceLocale, 'useDeviceLocale').mockReturnValue({
+      locale: 'de-DE',
+      timeZone: 'Europe/Berlin',
+      separators: { decimal: ',', group: '.' },
+    });
+    const onChange = jest.fn();
+    const { getByLabelText } = await wrap(<RateInput value="4.5" onChange={onChange} label="Rate" accessibilityLabel="APR" />);
+    expect(getByLabelText('APR').props.value).toBe('4,5');
+    await fireEvent.changeText(getByLabelText('APR'), '7,25');
+    expect(onChange).toHaveBeenLastCalledWith('7.25');
+    await fireEvent.changeText(getByLabelText('APR'), '7,2,5');
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('WR-D03: toRateText leaves a point region untouched', () => {
+    expect(toRateText('1,5', '.')).toBe('1,5');
+    expect(toRateText('1,5', ',')).toBe('1.5');
+  });
+
   it('accepts digits and one decimal point, ignores everything else', async () => {
     const onChange = jest.fn();
     const { getByLabelText, getByText } = await wrap(
