@@ -5,7 +5,7 @@ import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
-import { ACCENT_TINT_OPACITY, categoryTint } from '@/theme/tokens';
+import { ACCENT_TINT_OPACITY, warnTint } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 
 export type ConfidenceLevel = 'strong' | 'fair' | 'rough';
@@ -25,7 +25,7 @@ export function ConfidenceChip({ level, onPress }: ConfidenceChipProps) {
   let background: string = colors.fill1;
   let textColor: string = colors.inkDim;
   if (level === 'rough') {
-    background = categoryTint.Business;
+    background = warnTint;
     textColor = colors.warn1;
   } else if (level === 'strong') {
     textColor = colors.accent;

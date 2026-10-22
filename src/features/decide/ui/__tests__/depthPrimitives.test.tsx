@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
-import { colors as base, categoryTint } from '@/theme/tokens';
+import { colors as base, warnTint } from '@/theme/tokens';
 import { ConfidenceChip } from '../ConfidenceChip';
 import { EdgeTag } from '../EdgeTag';
 import { CombineToggle } from '../CombineToggle';
@@ -53,7 +53,7 @@ describe('ConfidenceChip', () => {
   it('uses the ochre pair for rough and an accent tint for strong', async () => {
     const rough = await wrap(<ConfidenceChip level="rough" onPress={() => undefined} />);
     expect(style(rough.getByText('Rough basis').parent as never).color ?? style(rough.getByText('Rough basis')).color).toBe(base.warn1);
-    expect(style(rough.getByText('Rough basis').parent as never).backgroundColor).toBe(categoryTint.Business);
+    expect(style(rough.getByText('Rough basis').parent as never).backgroundColor).toBe(warnTint);
     await rough.unmount();
     const strong = await wrap(<ConfidenceChip level="strong" onPress={() => undefined} />);
     expect(strong.getByTestId('accent-tint')).toBeTruthy();
@@ -65,7 +65,7 @@ describe('EdgeTag', () => {
     const { getByText, queryByRole } = await wrap(<EdgeTag />);
     expect(getByText('On the edge')).toBeTruthy();
     expect(queryByRole('button')).toBeNull();
-    expect(style(getByText('On the edge').parent as never).backgroundColor).toBe(categoryTint.Business);
+    expect(style(getByText('On the edge').parent as never).backgroundColor).toBe(warnTint);
   });
 });
 

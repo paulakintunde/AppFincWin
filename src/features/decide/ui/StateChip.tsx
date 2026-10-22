@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
-import { ACCENT_TINT_OPACITY, categoryTint } from '@/theme/tokens';
+import { ACCENT_TINT_OPACITY, warnTint } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 
 export type StateChipTone = 'fits' | 'adjust' | 'waiting' | 'no' | 'missing' | 'draft' | 'passed';
@@ -21,7 +21,7 @@ export function StateChip({ tone, label }: StateChipProps) {
   let background: string = colors.fill1;
   let textColor: string = colors.inkDim;
   if (tone === 'adjust' || tone === 'waiting') {
-    background = categoryTint.Business;
+    background = warnTint;
     textColor = colors.warn1;
   } else if (tone === 'no') {
     background = colors.dangerTint2;

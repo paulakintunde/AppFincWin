@@ -5,7 +5,7 @@ import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
-import { categoryTint } from '@/theme/tokens';
+import { warnTint } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 
 const PAD_V = 2;
@@ -14,7 +14,7 @@ export function EdgeTag() {
   const t = useT();
   const { colors, pairing } = useTheme();
   return (
-    <View style={[styles.pill, { backgroundColor: categoryTint.Business }]}>
+    <View style={[styles.pill, { backgroundColor: warnTint }]}>
       <Text scale="capped" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.tabLabel, color: colors.warn1 }}>
         {t('decide.depth.edge.tag')}
       </Text>

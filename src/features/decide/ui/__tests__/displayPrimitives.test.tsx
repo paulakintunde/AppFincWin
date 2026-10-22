@@ -3,7 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
-import { colors as base, categoryTint } from '@/theme/tokens';
+import { categorySwatch, colors as base, warnTint } from '@/theme/tokens';
 import { StateChip } from '../StateChip';
 import { FigureStrip } from '../FigureStrip';
 import { WarningCard } from '../WarningCard';
@@ -29,6 +29,12 @@ function wrap(ui: React.ReactElement, scale = 1) {
   );
 }
 
+describe('warnTint (IN-D01)', () => {
+  it('is the named §2 ochre tint every warning surface shares', () => {
+    expect(warnTint).toBe(categorySwatch.ochre.tint);
+  });
+});
+
 describe('StateChip', () => {
   it('renders the label and an accent tint for fits', async () => {
     const { getByText, getByTestId } = await wrap(<StateChip tone="fits" label="Fits" />);
@@ -40,7 +46,7 @@ describe('StateChip', () => {
     for (const tone of ['adjust', 'waiting'] as const) {
       const { getByText } = await wrap(<StateChip tone={tone} label={tone} />);
       expect(style(getByText(tone)).color).toBe(base.warn1);
-      expect(style(getByText(tone).parent as never).backgroundColor).toBe(categoryTint.Business);
+      expect(style(getByText(tone).parent as never).backgroundColor).toBe(warnTint);
     }
   });
 
@@ -98,7 +104,7 @@ describe('WarningCard', () => {
   it('uses ochre tint, line2 and warn1 for soft', async () => {
     const { getByLabelText, getByText } = await wrap(<WarningCard tone="soft" title="Cash" value="£20" body={['Tight.']} />);
     const s = style(getByLabelText('Cash, £20. Tight.'));
-    expect(s.backgroundColor).toBe(categoryTint.Business);
+    expect(s.backgroundColor).toBe(warnTint);
     expect(s.borderColor).toBe(base.line2);
     expect(style(getByText('Cash')).color).toBe(base.warn1);
   });

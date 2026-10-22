@@ -12,7 +12,7 @@ import { futureValue } from '@/engine/payoff';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
-import { categoryTint } from '@/theme/tokens';
+import { warnTint } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
@@ -282,7 +282,7 @@ function CardPanel(props: Step2Props) {
           ? null
           : t('decide.pay.cardCappedBody', { cap: wholeFmt(source.dealerCap), rest: wholeFmt(Math.max(price - source.dealerCap, 0)) })
         : t('decide.pay.cardBlockedBody');
-  const background = eligibility === 'blocked' ? colors.dangerTint3 : eligibility === 'capped' ? categoryTint.Business : colors.fill1;
+  const background = eligibility === 'blocked' ? colors.dangerTint3 : eligibility === 'capped' ? warnTint : colors.fill1;
   const titleColor = eligibility === 'blocked' ? colors.danger : eligibility === 'capped' ? colors.warn1 : colors.ink;
 
   const costsLine = plan !== null && plan.card !== null ? cardCostsCopy(plan.card, plan.interest, wholeFmt) : null;

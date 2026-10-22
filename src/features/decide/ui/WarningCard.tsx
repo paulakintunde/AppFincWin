@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
-import { categoryTint } from '@/theme/tokens';
+import { warnTint } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 
 const WARNING_BORDER = 1.5; // UI-SPEC warning card 1.5px border
@@ -20,7 +20,7 @@ export interface WarningCardProps {
 export function WarningCard({ tone, title, value, body }: WarningCardProps) {
   const { colors, pairing } = useTheme();
   const hard = tone === 'hard';
-  const background = hard ? colors.dangerTint3 : categoryTint.Business;
+  const background = hard ? colors.dangerTint3 : warnTint;
   const border = hard ? colors.dangerTint2 : colors.line2;
   const textColor = hard ? colors.danger : colors.warn1;
   return (
