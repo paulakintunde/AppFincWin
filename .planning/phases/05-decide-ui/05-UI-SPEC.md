@@ -17,7 +17,7 @@ created: 2026-10-15
 
 **Platform note:** React Native / Expo SDK 57. No shadcn, no CSS. Styling is `StyleSheet` plus the typed theme (`useTheme()`, `textRole()`, `src/theme/*`). The CLAUDE.md fidelity rule holds: **no new colour, gradient, shadow, type size or icon set.** The prototype's Decide screens use about a dozen hex values outside the §2 palette; every one is mapped to an existing token below (Color, Deviations Register). Colours are cited by token name only; `noRawColours.test.ts` must keep passing.
 
-**Amended 2026-10-22 (D-70..D-77):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Status returns to draft until the checker re-approves.
+**Amended 2026-10-22 (D-70..D-78):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Status returns to draft until the checker re-approves.
 
 **Surface in this phase:**
 1. Decide tab root (quick check, Your month, Open checks, Past decisions link, Lines you will not cross).
@@ -878,12 +878,12 @@ Status stays approved. The DCU-11 budgets are unchanged (every new line replaces
 
 ## Decide UX refresh (2026-10-22)
 
-Source: the user's request of 2026-10-22 and the locked decisions **05-CONTEXT D-70..D-77**. **Where this section conflicts with an earlier section of this file, this section wins**; every conflict is listed in "Conflicts resolved" at the end. Tokens, spacing, radii, type roles, motion and haptics are the existing ones only: **no new colour, type size, weight, shadow, gradient, motion token or icon set**. Every glyph below is hand-drawn (`react-native-svg` or Views), like the existing chevrons, and `MoreGlyph` is the shipped one from `src/features/record/activity/header/HeaderGlyphs.tsx`.
+Source: the user's request of 2026-10-22 and the locked decisions **05-CONTEXT D-70..D-78** (D-78 and the answers to R13 added the same day). **Where this section conflicts with an earlier section of this file, this section wins**; every conflict is listed in "Conflicts resolved" at the end. Tokens, spacing, radii, type roles, motion and haptics are the existing ones only: **no new colour, type size, weight, shadow, gradient, motion token or icon set**. Every glyph below is hand-drawn (`react-native-svg` or Views), like the existing chevrons, and `MoreGlyph` is the shipped one from `src/features/record/activity/header/HeaderGlyphs.tsx`.
 
 **Summary of the refresh:**
 1. ⓘ explanations: a small info button after a term opens a small bottom sheet with the term, 1-3 sentences, and a "What this changes" line (D-70).
 2. Custom values: a "Custom" chip next to every preset chip row, and a typed field beside each amount slider (D-71).
-3. Decide home: Open checks and Changes coming up are hidden while empty; one slim "+ Add a change coming up" row sits under the quick check (D-72).
+3. Decide home: Open checks and Changes coming up are hidden while empty; one slim "+ Add a change coming up" row sits under the quick check (D-72). The quick-check card is trimmed, Past decisions is one row and the Lines card folds (D-78, R2b).
 4. Clear and Delete, each with Undo; deleting a decided check never removes what Go ahead wrote (D-73).
 5. Step 3 summary first: the verdict, a one-line reason and three key figures, then one list of folded rows, only one open at a time (D-74).
 6. Obvious tap-to-reveal: a chevron and preview on every fold, "Show details" / "Hide details" links, a one-time hint, and a pressed state with a haptic (D-75).
@@ -1064,7 +1064,7 @@ The size ⓘ follows the summary group.
 
 | # | Fold (title) | ⓘ | Preview (one line at 402 at 1.0x) | Present when | Body |
 |---|---|---|---|---|---|
-| 1 | **What breaks** | `whatBreaks` | "{count} line breaks" / "{count} lines break", plus " · on the edge" when an edge flag is on; fits: "Every line holds" (or "Every line holds · on the edge") | any logged or first-read verdict | The **warnings** (all of them, ordered by shortfall, card reasons included) as **warning rows** (described below), then a `DetailsToggle` that reveals **"Every line"**: the former "Against your lines" rows, unchanged in content (cushion, month, debt service, unsecured, investing floor, saving floor, cash-path minimum, with margins). With no warnings, the "Every line" rows show at once and there is no toggle. |
+| 1 | **What breaks** | `whatBreaks` | "{count} line breaks" / "{count} lines break", plus " · on the edge" when an edge flag is on; nothing breaks: **"Nothing breaks"** (or "Nothing breaks · on the edge"), and the fold starts **folded** | any logged or first-read verdict | The **warnings** (all of them, ordered by shortfall, card reasons included) as **warning rows** (described below), then a `DetailsToggle` that reveals **"Every line"**: the former "Against your lines" rows, unchanged in content (cushion, month, debt service, unsecured, investing floor, saving floor, cash-path minimum, with margins). With no warnings, the "Every line" rows show at once and there is no toggle. |
 | 2 | The month, line by line | — | "Left at month end: {now} now, {after} after" | as before | Unchanged table, restyled to R6 (three columns at 402; stacks under rule S). |
 | 3 | **Cash path, next 90 days** (was "Day by day, next 90 days") | `cashPath` | "Lowest with this: {amount} on {date}" / "Add your pay as a recurring series" | always | Unchanged chart and text alternative. |
 | 4 | **Where it lands** | `whereItLands` | "{better} better · {worse} worse · {same} unchanged" (zero parts left out; all same: "No ledger moves") | logged verdict | **Stacked ledger rows** (R6, "Where it lands"). |
@@ -1109,7 +1109,56 @@ That totals **233.5**, so the card ends at **y = 390**. With the difference line
 
 The second warning row ends at **y = 402 + 64 + 205 = 671**, or 696 with the difference line, or **729** with the difference line and the 25 + 8 basis detail row. The bar starts at **y = 735**, so frame 2 shows the verdict, the three key figures and **two full warnings**.
 
-Frame 1 (sofa, fits): the card ends at y = 390, and What breaks ("Every line holds") is closed, followed by at least four closed fold rows above the bar. The first-run hint is not in any frame (R8).
+Frame 1 (sofa, fits): the card ends at y = 390, and What breaks ("Nothing breaks") is folded, followed by at least four closed fold rows above the bar. The first-run hint is not in any frame (R8).
+
+### R2b. Decide home, trimmed (D-78)
+
+The user confirmed (2026-10-22) that "the main page" means both screens. Step 3 is R2. Decide home is trimmed as follows; this replaces the "Decide home (tab root)" order and the quick-check layout list where they differ. The engine calls, the one-line copy table, the Credit fields' behaviour, "See it on credit", "Run the full check" carrying every field, and the states (loading, no figures, error, missing rate) are unchanged.
+
+**Order, top to bottom:**
+1. **Header**: unchanged (eyebrow "DECIDE", title "Can I afford it", one-line subtitle).
+2. **Quick-check card**, trimmed (below).
+3. **"+ Add a change coming up"** row: only while there are no changes (R1).
+4. **Your month**: unchanged.
+5. **Open checks**: only once a check is saved (D-72).
+6. **Changes coming up**: only once a change exists (D-72).
+7. **Past decisions**: one row (below), only once a decision exists.
+8. **Lines you will not cross**: one fold row (below).
+9. **Sources note**: unchanged (`meta`, `inkMuted`).
+
+The card gap stays `space.groupGap` (18) as shipped.
+
+#### Quick-check card, trimmed
+
+| State | What the card holds |
+|---|---|
+| **Idle** (nothing parsed yet) | **Only the amount pill** with "Check it" inside it: the card is the pill plus its 20 padding. No toggle, no extras, no buttons, no footer. |
+| **With a result** | 1. The amount pill.<br>2. The Cash / Credit toggle (now shown only once there is a result, with Cash selected).<br>3. **Result block**: Row A has the name and the `StateChip`. Row B is the size label, now a plain `meta` 600 `inkDim` line with the `size` ⓘ; the `fill1` chip fill is removed. Row C is the line. Row D (Credit) is the monthly figure and caption. Row E (Cash short) is "See it on credit".<br>4. **Credit only**: the APR field and the duration chips with Custom (unchanged), then the footer "Worked out from the figures you entered." The footer is the card-path guard, so it shows **in Credit only**; Cash has no footer.<br>5. "+ Tax, fees" collapsed row, now with a chevron.<br>6. **One button row**: "Run the full check" (`ink` pill, flex 1, 48 high), then a **"Clear"** text button (`label`, `inkDim`, 44 x 44 minimum, a11y "Clear the quick check"). It replaces the "Clear the check" `fill1` pill. |
+
+- **Clearing:** Clear empties the pill and returns the card to the idle state. Nothing was saved, so there is no toast and no Undo.
+- **Combined checks:** the combine pill and the one-open-check line "Worked out with your other open check." sit in the footer row in Credit mode. In Cash mode they sit in a footer row of their own, shown only when they apply.
+- **Budget:** every element removed shortens the card, so each ceiling in the "Decide home" budget row still holds as an upper bound. The size row drops from 27 + 8 to 17.5 + 8, the Cash footer goes, and the idle card is 96 high. Nothing new rises above the fold.
+
+#### Past decisions: one tidy row
+
+- **Card:** a white `radii.card` card holding a single `Row`: label "Past decisions" (`body`), value "{n} decisions" / "1 decision" (`meta`, `inkMuted`) and a chevron, 56 high, pressed opacity. It pushes the Past decisions screen as now.
+- **Hidden at zero:** the "Nothing decided yet" value is retired.
+- **A11y:** "Past decisions, {n} decisions".
+
+#### Lines you will not cross: one fold row
+
+- **Folded:** the five-row card becomes one white `radii.card` card with a `FoldRow`. The title is "Lines you will not cross". The preview is "{n} of 5 set by you" or "All at their defaults".
+- **Open:** opening it shows the existing sub-copy and the five rows inline, each with its ⓘ. Tapping a row still opens the limit editor sheet, unchanged.
+- **Default:** closed. Its open state is kept while the tab is mounted.
+- **Cues:** the fold uses the R1 pressed state and haptic. It does not count for the step 3 first-run hint.
+
+#### Home copy (new or retired)
+
+| Element | Copy |
+|---|---|
+| Quick check | "Clear" (a11y "Clear the quick check"); "Clear the check" **retired** |
+| Past decisions | "{{count}} decisions" / "1 decision"; "Nothing decided yet" (row value) **retired** |
+| Lines fold | Title "Lines you will not cross"; preview "{{count}} of 5 set by you" · "All at their defaults" |
 
 ### R3. Copy (every new string; declarative, DCU-09 guard applies)
 
@@ -1158,7 +1207,7 @@ That is 31 entries. Each body is at most 3 sentences (the `ifInvested` caption c
 | Element | Copy |
 |---|---|
 | Fold titles | "What breaks" · "The month, line by line" · "Cash path, next 90 days" · "Where it lands" · "If something goes wrong" · "What would make it work" · "If it went into investing instead" · "With the expected income" · "Who pays what" · "Assumptions in play" |
-| What breaks preview | "{{count}} line breaks" (one) / "{{count}} lines break" (other) · suffix " · on the edge" · "Every line holds" · "Every line holds · on the edge" |
+| What breaks preview | "{{count}} line breaks" (one) / "{{count}} lines break" (other) · suffix " · on the edge" · "Nothing breaks" · "Nothing breaks · on the edge" |
 | Where it lands preview | "{{count}} better" · "{{count}} worse" · "{{count}} unchanged" (joined " · ", zero parts dropped) · "No ledger moves" |
 | If invested preview | "A projection at the rate you enter" · "{{fv}} after {{count}} months at {{rate}}%" |
 | Expected income preview | "{{state}} with the expected {{amount}} a month" ({{state}}: "Fits" / "Needs adjustment" / "Does not fit") |
@@ -1176,7 +1225,7 @@ That is 31 entries. Each body is at most 3 sentences (the `ifInvested` caption c
 |---|---|
 | Chip | "Custom"; selected "{{count}} months" / "1 month" / "{{rate}}%"; a11y "Custom, {{value}}" |
 | Unit words | "months" · "% a year" · "%" |
-| Range lines | "1 to 120 months" · "1 to 600 months" · "0 to 999.99% a year" · "Up to 100% a year" (D-48, unchanged) · "0 to 100%" · "Up to the price, {{price}}" · "From {{min}} to {{max}}" |
+| Range lines | "1 to 120 months" · "1 to 120" · "1 to 600 months" (investing horizon only) · "0 to 999.99% a year" · "Up to 100% a year" (D-48, unchanged) · "0 to 100%" · "Up to the price, {{price}}" · "From {{min}} to {{max}}" |
 
 #### Home (`decide.home.*`)
 
@@ -1218,15 +1267,16 @@ That is 31 entries. Each body is at most 3 sentences (the `ifInvested` caption c
 | Field | Screen | Presets (chips) | Custom range | Notes |
 |---|---|---|---|---|
 | Duration (Credit) | Quick check (home and onboarding first check) | 12 · 24 · 36 · 48 · 60 | **1 to 120 months**, whole | "Over {n} months" label follows the value. "Run the full check" carries it to the loan term. The fold budget excludes the open field. |
-| Loan term | Step 2 loan panel | 12 · 24 · 36 · 48 · 60 · 84 | 1 to 600 months (unchanged engine-aligned range; see Questions) | The separate "mo" box is replaced by the Custom chip and field (one input, not two). |
+| Loan term | Step 2 loan panel | 12 · 24 · 36 · 48 · 60 · 84 | **1 to 120 months** (user 2026-10-22; was 1 to 600) | The separate "mo" box is replaced by the Custom chip and field (one input, not two). `MAX_TERM` in `MethodPanels.tsx` becomes 120. A stored check with a longer term opens showing it under the Custom chip, with the range line in `warn1`; it is scored as stored until the term is edited. |
+| Instalment count ("How many") | Step 2 instalment panel | none (typed tile) | **1 to 120** (user 2026-10-22; was 1 to 600) | The same `MAX_TERM` bound and stored-value rule as the loan term. |
 | Card "Over a few months" | Step 2 card panel | stepper (− / +) | **1 to 120 months** | The months figure "{n} mo" becomes tappable (44 hit) and opens the same inline field. The stepper clamps at 120 (was 600). |
 | Investment term (monthly contribution) | Step 2 invest panel | 12 · 24 · 36 · 48 · 60 · 84 | **1 to 120 months** | |
 | Promotion length ("For") | Step 2 promo row | none (typed) | **1 to 120 months**, and no longer than the term | The existing field gets the range line. |
-| Wait period ("Ready in") | Step 5 Wait panel | **3 · 6 · 12 · 24** (new chips under the "Ready by" figure) | **1 to 120 months** | Picking a period sets the monthly amount to target ÷ months, **rounded up to the cent**, and the slider and field follow. Moving the slider or typing an amount deselects the period chips unless the derived months equal one. "Ready by" stays derived. |
+| Wait period ("Ready in") | Step 5 Wait panel | **3 · 6 · 12 · 24** (new chips under the "Ready by" figure) | **1 to 120 months** | Picking a period (user-confirmed 2026-10-22) sets the monthly amount to target ÷ months, **rounded up to the cent**, and the slider and field follow. Moving the slider or typing an amount deselects the period chips unless the derived months equal one. "Ready by" stays derived. |
 | Wait amount | Step 5 Wait panel | slider 25 .. 2 x spare, step 25 | typed **{one minor unit} to the target**, cents allowed | R1 slider-with-field. Above 2 x spare the thumb pins and "Above the slider’s range" shows. |
 | Deposit | Step 2 loan panel | slider 0 .. price, step 100 | typed **0 to the price**, cents allowed | R1 slider-with-field. Above the price: not applied, range line "Up to the price, {price}". |
 | Cheaper price | Step 4 "The cheaper one" | slider 30% .. 100%, step 1 | typed amount **30% to 100% of the price**, whole units | R1 slider-with-field; the field shows money, and the note keeps "{pct}% of {price}". |
-| Investing horizon | Step 3 "If it went into investing instead" | 12 · 24 · 36 · 60 · 120 (+ the plan term) | **1 to 600 months** | The engine's 600-month cap. A figure out of range reads "Too large to project at this rate" (D-47). |
+| Investing horizon | Step 3 "If it went into investing instead" | 12 · 24 · 36 · 60 · 120 (+ the plan term) | **1 to 600 months** (kept: a projection horizon, not a borrowing term) | The engine's 600-month cap. A figure out of range reads "Too large to project at this rate" (D-47). |
 | Return rates | Quick check APR; step 2 loan, card, promo and "Then" rates | **none (typed only; no preset rate chips, 04 D-07)** | **0 to 999.99% a year** (`MAX_APR`) | The typed field *is* the custom input. The range line appears only on a refused keystroke. |
 | Projection return, holding fee | Step 3 If invested; step 4 "+ Add a rate" | none; the typed rates appear as chips (up to 3) | **0 to 100% a year** (D-48) | Unchanged hint "Up to 100% a year". |
 | Sales tax | Quick check "+ Tax, fees" | none | **0 to 100%** | |
@@ -1344,7 +1394,7 @@ The pass condition: no word split mid-word, no overlapping glyphs, no truncated 
 
 | Frame | What shows above the bar at 402 x 874 |
 |---|---|
-| 1 Sofa, fits | Header, then the verdict card: "OUT OF THIS MONTH’S SPARE", confidence chip, "It fits", the reason, three key figures and the basis marker (ends y = 390). Then the FoldList: "What breaks · Every line holds" closed, followed by the closed fold rows. |
+| 1 Sofa, fits | Header, then the verdict card: "OUT OF THIS MONTH’S SPARE", confidence chip, "It fits", the reason, three key figures and the basis marker (ends y = 390). Then the FoldList: "What breaks · Nothing breaks" folded, followed by the closed fold rows. |
 | 2 Car, needs adjustment | Header with the combine pill and Clear, then the verdict card ("Needs adjustment", "NEEDS SPREADING", reason, key figures) ending at y = 390 (or 415 with the difference line). Then What breaks **open**, with **two full warning rows** ending at or above y = 696. |
 | 3 Car, step 4 | Unchanged budget. Moving "If it went into investing instead" to step 3 removes a closed section from below step 4's fold. The header adds Clear with no height. |
 
@@ -1409,18 +1459,18 @@ The pass condition: no word split mid-word, no overlapping glyphs, no truncated 
 
 | Screen / sheet | ⓘ (keys) | Custom / typed | Fold, details, hint | Delete / Clear | Text-fit items |
 |---|---|---|---|---|---|
-| **Decide home** | — | — | — | — | Header subtitle wraps; Open checks heading and its links wrap under the heading (rule S); the sources note wraps. |
-| Quick check card | `beforeInterest` (Annual rate), `size` (size chip), `combined` (footer line, when present) | Duration: Custom 1-120; APR 0-999.99; Sales tax 0-100 | "+ Tax, fees" gains a chevron | — | Cash / Credit becomes a radio list under S; the placeholder shortens above 1.3x; the result line is not clamped; the monthly figure follows rule N. |
+| **Decide home** (R2b order) | — | — | Lines fold row | — | Trimmed per R2b. Header subtitle wraps; Open checks heading and its links wrap under the heading (rule S); the sources note wraps. |
+| Quick check card (R2b trimmed) | `beforeInterest` (Annual rate), `size` (size line), `combined` (footer line, when present) | Duration: Custom 1-120; APR 0-999.99; Sales tax 0-100 | "+ Tax, fees" gains a chevron | Text button "Clear" resets the card (no toast) | Idle state shows the pill only; toggle, result and buttons appear with a result; Credit-only footer. | Cash / Credit becomes a radio list under S; the placeholder shortens above 1.3x; the result line is not clamped; the monthly figure follows rule N. |
 | Add row | — | — | — | — | **"+ Add a change coming up"** under the quick-check card, only with no changes. |
 | Your month | `basisMonth` (basis control) | — | — | — | 3 columns stack under S; Worst / Average becomes a radio list under S. |
 | Open checks card | — | — | — | Swipe "Delete" and ⋯ (Open, Delete), then the confirm, then the Undo toast; **the "x" is removed** | **Hidden while empty**; appears once a check is saved. Names get 2 lines and an ellipsis; the sub-line wraps; the chip wraps under the name. |
 | Changes coming up card | — | — | — | Unchanged "x" (undo toast "Change removed") | **Hidden while empty** (the add row replaces it). |
-| Past decisions row | — | — | — | — | Hidden while there are no decisions (R11 assumption). |
-| Lines you will not cross + limit editor sheet | `reserve`, `dsrLine`, `unsecuredMultiple`, `investingFloor`, `savingFloor` (row names; editor titles) | — | — | — | Rows stack under S; the "default · {n} months" tag wraps. |
+| Past decisions row (R2b) | — | — | — | — | One row "Past decisions · {n} decisions" with a chevron; hidden while there are no decisions (D-78). |
+| Lines you will not cross (R2b fold row) + limit editor sheet | `reserve`, `dsrLine`, `unsecuredMultiple`, `investingFloor`, `savingFloor` (row names; editor titles) | — | One fold row, preview "{n} of 5 set by you" | — | Rows stack under S; the "default · {n} months" tag wraps. |
 | Change sheet | — | — | — | — | Segmented controls follow Seg; DateField rows wrap. |
 | **Check header (all steps)** | — | — | — | **Clear** (open, existing check) | Save status; title wraps; the right slot wraps under S. |
 | Step 1 | `replaces`, `incomeChange` | — | — | — | Kind and offset chips stack under S; CheckRow names wrap; Raises / Lowers and Likely / Uncertain follow Seg. |
-| Step 2 price card and methods | `runningCosts`, `netMonthly`, `lossOfValue`, `replaces` ("ends" rows), `promoRate`, `deferredInterest`, `variableRate`, `cardMinimum`, `beforeInterest` | Loan term Custom 1-600; deposit slider + field; card months typed 1-120; invest term Custom 1-120; promo "For" 1-120; all rates 0-999.99; loss of value 0-100 | `CollapsibleSection` (promo, card notes) restyled with chevron and summary stacked | — | ChoiceCard strips stack under S; the flag chip wraps under the method name; tiles stack. |
+| Step 2 price card and methods | `runningCosts`, `netMonthly`, `lossOfValue`, `replaces` ("ends" rows), `promoRate`, `deferredInterest`, `variableRate`, `cardMinimum`, `beforeInterest` | Loan term Custom 1-120; instalment count 1-120; deposit slider + field; card months typed 1-120; invest term Custom 1-120; promo "For" 1-120; all rates 0-999.99; loss of value 0-100 | `CollapsibleSection` (promo, card notes) restyled with chevron and summary stacked | — | ChoiceCard strips stack under S; the flag chip wraps under the method name; tiles stack. |
 | Card terms sheet | `cardMinimum` (title) | Percent and floor fields (existing) | — | — | Toggle rows wrap. |
 | Line editor sheet | — | Setback months and % (existing fields; % 1-100) | — | — | "Adds to the price" / "Takes off the price" follows Seg. |
 | **Step 3** | `size`, `edge`, `confidence` (chip), `cushionMonths`, `whatBreaks`, `cashPath`, `whereItLands`, `setbacks`, `ifInvested`, `incomeChange`, `deferredInterest` (notice), `provisionalRate`, `reserve` / `dsrLine` / `unsecuredMultiple` / `investingFloor` / `savingFloor` (Every-line rows) | Investing horizon Custom 1-600; projection rates 0-100; holding fee 0-100 | **FoldList** (one open at a time; What breaks open by default with warnings); Details toggles in What breaks, If invested and Assumptions; **first-run hint** | — | Verdict card rebuilt (R2); warning rows; **Where it lands stacked**; the month table stacks under S; the chart readout is clamped. |
@@ -1435,16 +1485,16 @@ The pass condition: no word split mid-word, no overlapping glyphs, no truncated 
 
 ### R11. Researcher assumptions (this refresh)
 
-1. **"Left after the purchase"** is read as the month-end amount left after it ("Left a month"). Cash after the purchase is already carried by "Cushion" (months of costs). See Questions.
+1. **"Left after the purchase"** is read as the month-end amount left after it ("Left a month"). Cash after the purchase is already carried by "Cushion" (months of costs). Confirmed by the user 2026-10-22.
 2. **Warnings move into the What breaks fold**, which opens by default when warnings exist. They render as rows, so two still fit frame 2.
 3. **"Against your lines" merges into What breaks** as "Every line", behind "Show details" when warnings exist. This keeps the fold count down.
 4. **"If it went into investing instead" moves from step 4 to step 3's folds**, because D-74 lists "If invested" among the verdict folds. Step 4 keeps the table, the cheaper card and the trade line.
 5. **Rates get no preset chips** (04 D-07: the app never suggests a rate). The typed field is the custom input.
-6. **The Past decisions row is hidden while there are no decisions**, by the same rule as D-72.
+6. **The Past decisions row is hidden while there are no decisions**, by the same rule as D-72 (D-78).
 7. **The first-run hint is stored per user and per device in AsyncStorage**, not in Supabase. A hint shown again after a reinstall costs one tap; a migration for a boolean does not pay for itself.
 8. **Clear is a soft delete and a fresh route**, not an in-place reset. That gives one undo step on the shared stack and keeps the cleared check out of Open checks.
-9. **The card "Over a few months" stepper clamps at 120** (was 600), to match the 1-120 duration range.
-10. **`textBreakStrategy="simple"` and `android_hyphenationFrequency="none"` become app-wide defaults** in `src/ui/Text`, because mid-word breaks are wrong everywhere. Record and Home get a visual pass on the same device matrix.
+9. **Every duration clamps at 120**: the card "Over a few months" stepper, the loan term and the instalment count (each was 600). The investing horizon keeps 600 because it is a projection, not a term.
+10. **`textBreakStrategy="simple"` and `android_hyphenationFrequency="none"` become app-wide defaults** in `src/ui/Text`, because mid-word breaks are wrong everywhere. Record and Home get a visual pass on the same device matrix. Confirmed app-wide by the user 2026-10-22.
 
 ### R12. Conflicts resolved with earlier sections of this file
 
@@ -1458,18 +1508,19 @@ The pass condition: no word split mid-word, no overlapping glyphs, no truncated 
 | `CollapsibleSection`: title and summary side by side, no chevron | Title over preview, chevron, pressed fill, haptic | D-75 and D-76. |
 | Haptics: "nothing on text entry **or section toggles**" | Fold rows, Details toggles and ⓘ fire `selectionAsync` | D-75. |
 | Flow header title "one line ellipsis"; quick-check item name "one line ellipsis"; step 4 descriptor "one line" | Wrap; user names get 2 lines | D-76 (no truncated words). Budgets hold by copy length at the demo amounts. |
-| Step 2 loan: "Term (numeric pill input 'mo', chips 12/24/36/48/60/84, up to 600 months)" | Chips plus **Custom** (one input); range kept at 1-600 | D-71 pattern applied. The range question is open (Questions). |
+| Step 2 loan: "Term (numeric pill input 'mo', chips 12/24/36/48/60/84, up to 600 months)" | Chips plus **Custom** (one input); **1-120 months**, and the instalment count 1-120 | D-71 as answered by the user 2026-10-22. The investing horizon alone keeps 1-600, as a projection horizon. |
 | Card months stepper up to 600 | 1-120, typed or stepped | D-71 duration range. |
 | Step 4 Investing-instead section | Moved to step 3 fold 7 | D-74 list. |
 | Section 3 title "Day by day, next 90 days" | "Cash path, next 90 days" | D-74 names it "Cash path"; the chart content is unchanged. |
 | Deposit: separate money input above the slider | One field beside the slider | D-71. |
+| Decide home order and the quick-check layout (toggle always shown, size chip row, footer in both modes, "Clear the check" pill); Past decisions row with "Nothing decided yet"; Lines card always expanded | Trimmed per R2b: pill-only idle card, size as a line, Credit-only footer, "Clear" text button; Past decisions one row, hidden at zero; Lines as one fold row | D-78 (user 2026-10-22: the main page means both screens). |
 | "Interaction states and motion": section expand `fw-rise` | Unchanged, plus the scroll-on-open rule | — |
 
 ### R13. Questions only the user can answer
 
-1. **"Left after the purchase"**: the month-end amount left (as specified), or the cash left on the day after paying?
-2. **Loan term and instalment count**: keep 1-600 months (mortgage-length loans), or cap them at 120 like the other durations?
-3. **Wait period**: picking "Ready in 12 months" back-solves the monthly amount (target ÷ 12, rounded up to the cent). Is that what you meant by a custom wait period, or should the period be stored and the amount stay free?
-4. **"Main sheet page … Can I afford it"**: this refresh applies it to the step 3 verdict, as D-74 states. The Decide home (also titled "Can I afford it") gets only the empty-card hiding and the hidden Past decisions row. Should the home quick-check card also be simplified, for example with "+ Tax, fees" and the Credit fields in one fold?
-5. **What breaks open by default** when there are warnings, so the store frame 2 still shows them. Should every fold start closed instead, with frame 2 reshot?
-6. **App-wide** `textBreakStrategy="simple"` in the shared Text, or Decide only?
+None open. The six questions raised on 2026-10-22 were answered the same day, in five replies:
+1. "Left" is left at month end.
+2. The main page means both screens (R2b).
+3. What breaks opens by default with warnings and is folded with "Nothing breaks" otherwise.
+4. Every duration is 1-120 months, including the loan term and the instalment count; the investing horizon stays 1-600 as a projection horizon; "Ready in N months" sets the amount to target ÷ N, rounded up to the cent.
+5. No-hyphenation applies app-wide in the shared Text.

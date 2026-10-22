@@ -1,7 +1,7 @@
 # Phase 5: Decide UI - Context
 
 **Gathered:** 2026-10-15
-**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-77 the Decide UX refresh 2026-10-22. The UI-SPEC carries all of them.
+**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22. The UI-SPEC carries all of them.
 
 <domain>
 ## Phase Boundary
@@ -207,8 +207,9 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
 - **D-70: Explanations open a small sheet, never a bubble.** A small ⓘ after a term opens the app's `Sheet` with the term, 1–3 plain declarative sentences and a "What this changes" line (e.g. "Replaces: ends this bill from the purchase date. Your income is unchanged."). There are no floating tooltips. The term list (31 keys, `INFO_TERMS`) and every explanation's copy are in UI-SPEC R3. The ⓘ is labelled "About {term}" with a 44pt target, and stays active on decided checks.
 - **D-71: Variable inputs take a typed custom value.**
   - Every preset chip row gains a last "Custom" chip that opens an inline typed field with a range line.
-  - Duration fields run 1–120 months: the quick-check duration, card months, investment term, promotion length and the Wait period (new 3/6/12/24 chips).
-  - The investing horizon runs 1–600 months.
+  - **Every duration runs 1–120 months** (user, 2026-10-22): the quick-check duration, the loan term, the instalment count, card months, investment term, promotion length and the Wait period (new 3/6/12/24 chips). The old 600-month UI bound goes. A stored longer term shows under Custom with its range line until edited.
+  - The investing horizon alone runs 1–600 months, because it is a projection horizon, not a borrowing term.
+  - "Ready in N months" sets the Wait amount to target ÷ N, rounded up to the cent.
   - Rates have no preset chips (04 D-07). The typed field is the custom input, bounded at 0–999.99% for APRs and 0–100% for projection rates and fees (D-48).
   - The deposit, Wait amount and cheaper-price sliders each get a tap-to-type money field beside them. A typed value is used exactly, never snapped.
   - An invalid entry is not applied, and the range line shows the bounds.
@@ -220,14 +221,15 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
 - **D-74: Step 3 is summary first.**
   - **The verdict card holds:** the state words as the heading, the old title as a one-line reason, and three key figures: Left a month, Cushion (engine `runwayMonths`, in months) and A month (net monthly cost).
   - **Below the card:** one list of folded rows, each a title, a one-line preview and a chevron, with only one open at a time. The rows are What breaks, The month, Cash path, Where it lands, Setbacks, Options, If invested (moved from step 4), With the expected income, Who pays what and Assumptions.
-  - **Warnings and "Against your lines"** move into What breaks. It opens by default when warnings exist, so DCU-11 frame 2 still shows two full warnings.
+  - **Warnings and "Against your lines"** move into What breaks. It opens by default when warnings exist, so DCU-11 frame 2 still shows two full warnings. When nothing breaks, it starts folded with the preview "Nothing breaks".
+  - "Left a month" is the amount left at month end after the purchase (user-confirmed).
 - **D-75: Tap-to-reveal is signalled four ways.**
   - Every fold row has a chevron and a preview line.
   - Hidden parts of a block use "Show details" / "Hide details" text links.
   - A one-time hint, "Tap a row to see the detail", shows on the first verdict and is dismissed by the first fold or details tap. It is stored per user and per device in AsyncStorage (`fincwin:decide-hints:{userId}`).
   - Each reveal has a pressed state and a `selectionAsync` haptic (amends the "no haptic on section toggles" rule; `impactAsync` and `selectionAsync` only).
 - **D-76: No word ever breaks mid-word, overlaps, or is cut off in Decide.**
-  - Android text uses `textBreakStrategy="simple"` and `android_hyphenationFrequency="none"`.
+  - Android text uses `textBreakStrategy="simple"` and `android_hyphenationFrequency="none"`, set **app-wide** as defaults in the shared `src/ui/Text` (user, 2026-10-22).
   - Labels wrap at word boundaries, nothing that holds text has a fixed height, and rows grow with their content.
   - Only one-line figures use `numberOfLines={1}` with `adjustsFontSizeToFit` (minimum scale 0.8).
   - Chips wrap to new lines rather than squeezing.
@@ -240,6 +242,13 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
   - **Clear:** flushes, then deletes, then disarms the draft so no later save targets the cleared check.
   - **Delete:** queued behind any save in `WRITE_SCOPE`. It never conflicts (WR-A03), and a save that arrives after it never undeletes and never records a failed write.
   - **Verification:** `useCheckDraft`, `useCreateCheck`, `useSaveCheckDraft`, `useAbandonCheck`, `useRemoveDecision`, the `setMutationDefaults` registration, `useSyncStatus` and the undo stack are checked by tests named "D-77".
+
+- **D-78 (user, 2026-10-22): Decide home is trimmed too.** "The main page" means both step 3 (D-74) and Decide home. The home order is: quick check, the add-change row, Your month, Open checks, Changes coming up, Past decisions, Lines you will not cross, sources note.
+  - **Quick-check card while idle:** only the amount pill. The Cash / Credit toggle appears once there is a result.
+  - **Quick-check card with a result:** the size label is a plain line with an ⓘ. The "Worked out from the figures you entered." footer shows in Credit only. One button row holds "Run the full check" and a "Clear" text button that resets the card with no toast.
+  - **Past decisions:** one row ("Past decisions · {n} decisions"), hidden while there are none.
+  - **Lines you will not cross:** one fold row with the preview "{n} of 5 set by you" or "All at their defaults".
+  - See UI-SPEC R2b.
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
