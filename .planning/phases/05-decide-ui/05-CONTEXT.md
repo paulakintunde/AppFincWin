@@ -50,7 +50,7 @@ Decision numbers are local to Phase 5. "04 D-xx" refers to `.planning/phases/04-
   - **Optional extras.** A collapsed "+ Tax, fees" row. Sales tax is a user-typed % with no default; fees are a user-typed amount. Both add to the day-one price.
   - Cash runs the paid-in-full plan. Credit runs the engine's loan plan (amortised at the entered APR, no deposit).
   - Both go through `assess()`, so the result is the full verdict chip plus one line, the D-22 size label, and the monthly amount for Credit.
-  - When Cash doesn't cover the purchase, the result still states the gap and offers a one-tap "Try on credit", which flips the toggle and keeps the amount.
+  - When Cash doesn't cover the purchase, the result still states the gap and offers a one-tap "See it on credit", which flips the toggle and keeps the amount.
   - "Run the full check" carries every field into steps 1–2. Credit maps to the loan method, taxes and fees to the step-2 adjustments.
   - The first read in onboarding uses the same inputs, assessed by `firstRead()`.
 - **D-21 (added 2026-10-15, amends D-02; superseded in part by D-23):** **When cash doesn't cover it, the quick check also shows an editable spread line.** It reads "Spread it: [APR 0%] over [12 / 24 / 36 / 48 / 60 months] → $x a month. The month closes / is $y short."
