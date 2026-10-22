@@ -256,7 +256,7 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
 - **D-79 (user, 2026-10-22): Step 2 methods are an accordion in place.**
   - Each method (Paid in full, Deposit and loan, Instalment plan, On a card; investments: Lump sum, Monthly contribution) is a white card whose inputs and outputs (strip, payment, interest, implied rate) open directly under its own header, with a chevron. The opened card scrolls into view.
   - One card is open at a time. Tapping a folded card selects and opens it (user-confirmed). The selected card has an `ink` border and radio dot instead of an `ink` fill.
-  - A card that cannot be scored shows "Needs: {fields}" (replacing "Rate needed"). A folded card shows a one-line summary, e.g. "$2,000 down · 36 months · 6.9%".
+  - A card that cannot be scored shows a "Needs: {fields}" line under its name (replacing "Rate needed"). A folded card shows a one-line summary, e.g. "$2,000 down · 36 months · 6.9%".
   - The Price card and the "How you pay" header are rebuilt with ⓘ.
   - See UI-SPEC R15.1-R15.2.
 - **D-80 (user, 2026-10-22): An instalment plan can carry a rate.**
@@ -265,7 +265,9 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
   - A typed "Payment as quoted" overrides it for scoring (user-confirmed), with the note "The rate works out to {x} a month; the quote is {y}."
   - **"First payment: Today / In a month"** (user, 2026-10-22), default Today (D-49), with or without a rate. Today is an annuity-due with the first instalment on the day. In a month is an ordinary annuity: only on-the-day fees are paid on the day.
   - A late-fee ⓘ is added.
-  - **Needs Phase 4 engine change E1** (UI-SPEC R15.7).
+  - **Inputs:** `instalment { amount, count, lateFee, hasRate, aprText, firstPayment }`. Old checks default to `hasRate: false` and `'today'`. "Payment" and "Payment as quoted" share `amount`.
+  - **Engine outputs:** "Below the price" applies whenever the total paid is under the amount financed, with or without a rate. `Plan.computedPayment` is present only with a rate. The new missing code is `instalment_rate_missing`.
+  - **Needs Phase 4 engine change E1** (UI-SPEC R15.7: `amortise`, annuity-due = ordinary ÷ (1 + r), rounded up with a final-payment adjustment).
 - **D-81 (user, 2026-10-22): Custom item type.**
   - Step 1's item type becomes chips with "Custom…", a typed name of 1–40 characters (e.g. "Drone") shown wherever the item type appears.
   - It follows General ("Other") rules for card eligibility, the secured default and running-cost prompts, unless an optional "Treat like" picks a built-in type's rules.
@@ -278,9 +280,10 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
   - Step 3 fold 7 on investment checks is "What it could grow to": the projection when a return is set, otherwise the preview "No expected return set". The purchase views do not apply there (`investmentViews` is null).
 - **D-83 (user, earlier 2026-10-22): The cheaper price is exact.**
   - A typed cheaper price on step 4 is applied as the exact amount, not the nearest whole percent. The slider still steps in 1%, and the percent shown is for display only.
-  - The deposit and instalment scale by the exact ratio, rounded half up to the minor unit.
+  - A worked-out instalment payment is recomputed on the cheaper financed amount. Only typed figures (deposit, no-rate payment, quoted payment) scale by cheaper ÷ price, rounded half up.
+  - The base is `advertised`, and the floor is ceil(30%) in minor units. `cheaperPrice` (minor units) replaces `cheaperRatioPercent`, with old percents converted on parse.
   - **Needs Phase 4 engine change E2** (UI-SPEC R15.7).
-- **D-84 (user, 2026-10-22): Every Step 2 header and term has an ⓘ** (extends D-70). There are 23 new `INFO_TERMS` keys (UI-SPEC R15.8), and the existing promo, deferred-interest, variable-rate, card-minimum and running-cost keys are reused. All copy is declarative, at most 3 sentences, with "What this changes", and passes DCU-09 (no "offer", "apply", advice or reassurance).
+- **D-84 (user, 2026-10-22): Every Step 2 header and term has an ⓘ** (extends D-70). There are 24 new `INFO_TERMS` keys (UI-SPEC R15.8), and the existing promo, deferred-interest, variable-rate, card-minimum and running-cost keys are reused. All copy is declarative, at most 3 sentences, with "What this changes", and passes DCU-09 (no "offer", "apply", advice or reassurance).
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
