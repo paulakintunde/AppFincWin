@@ -27,14 +27,6 @@ export interface UseConsentResult {
   setEnabled(on: boolean): Promise<boolean>;
 }
 
-/**
- * WR-D13: the consent prompt has a recorded answer (granted or declined). A missing or failed profile fetch has none, so
- * anything gated on "after consent" (the Decide reminder routing) stays off until an answer is on record.
- */
-export function consentAnswered(state: Pick<UseConsentResult, 'loading' | 'consent'>): boolean {
-  return !state.loading && state.consent !== null;
-}
-
 // WR-01: a user who declined on this device this session, even if the server write failed and
 // the stored row still reads 'granted'. Module-level so no other useConsent consumer (or a
 // later mount) re-enables analytics from that stale row; cleared by a successful grant().

@@ -12,7 +12,8 @@ import { render, renderHook, waitFor, act } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { queryKeys } from '@/data/keys';
 import { wipeDeviceData } from '@/services/storage/wipe';
-import { consentAnswered, useConsent, type UseConsentResult } from '../useConsent';
+import { useConsent, type UseConsentResult } from '../useConsent';
+import { consentAnswered } from '../consentAnswered';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 
