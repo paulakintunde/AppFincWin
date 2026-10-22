@@ -164,8 +164,9 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
           fullMonths: moneyResult.money.fullMonthsUsed,
           steadiness: moneyResult.money.steadiness,
           firstRead: false,
+          provisionalRates: snapshot.provisionalRates,
         })
-      : confidenceOf({ fullMonths: 0, steadiness: null, firstRead: false });
+      : confidenceOf({ fullMonths: 0, steadiness: null, firstRead: false, provisionalRates: snapshot.provisionalRates });
     return { ok: false, reasons, confidence };
   }
   const money = moneyResult.money;
@@ -494,7 +495,7 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
     cashPath,
     cashDip,
     basisCodes,
-    confidence: confidenceOf({ fullMonths: money.fullMonthsUsed, steadiness: money.steadiness, firstRead: false }),
+    confidence: confidenceOf({ fullMonths: money.fullMonthsUsed, steadiness: money.steadiness, firstRead: false, provisionalRates: snapshot.provisionalRates }),
   };
 }
 
@@ -535,6 +536,7 @@ export function assess(
         fullMonths: combined.money.fullMonthsUsed,
         steadiness: combined.money.steadiness,
         firstRead: false,
+        provisionalRates: combined.snapshot.provisionalRates,
       }),
     };
   }

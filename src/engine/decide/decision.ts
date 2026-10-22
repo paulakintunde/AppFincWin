@@ -108,6 +108,7 @@ function missingVerdict(
       fullMonths: context.money.fullMonthsUsed,
       steadiness: context.money.steadiness,
       firstRead: false,
+      provisionalRates: context.snapshot.provisionalRates,
     }),
   };
 }

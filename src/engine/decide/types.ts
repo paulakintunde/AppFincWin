@@ -148,6 +148,7 @@ export interface DecideSnapshot {
   readonly futureChanges: readonly FutureChange[]; // D-45: the user's dated income/spending changes; never inferred
   readonly investmentBalance: MinorUnits; // D-52(d): current value of my investments, >= 0, for the net-worth path
   readonly scheduledOutflows: readonly ScheduledOutflow[]; // D-61: dated pending one-off outflows; [] = none
+  readonly provisionalRates?: boolean; // D-69: some line was converted at the latest stored rate while its own rate is pending; caps confidence at fair. Absent = false
 }
 
 // ── Check (in) ──
@@ -899,11 +900,12 @@ export interface Position {
 // ── Confidence and margins (D-46, D-43) ──
 export type ConfidenceLevel = 'strong' | 'fair' | 'rough';
 export type ConfidenceReason =
-  'first_read' | 'under_3_full_months' | 'volatile_income' | 'under_6_full_months' | 'variable_income';
+  'first_read' | 'under_3_full_months' | 'volatile_income' | 'under_6_full_months' | 'variable_income' | 'provisional_rates';
 export interface ConfidenceInput {
   readonly fullMonths: number;
   readonly steadiness: Steadiness | null;
   readonly firstRead: boolean;
+  readonly provisionalRates?: boolean; // D-69: absent = false
 }
 export interface Confidence {
   readonly level: ConfidenceLevel;
