@@ -291,6 +291,13 @@ describe('quickToCheckInputs', () => {
     expect(quickToCheckInputs({ ...defaultQuickInputs(), price: 100, taxText: '150' }, TODAY).adjustments).toEqual([]);
     expect(quickToCheckInputs({ ...defaultQuickInputs(), price: null, taxText: '6', fees: 5 }, TODAY).adjustments).toHaveLength(1);
   });
+  it('IN-B06: records the currency the quick amounts were judged in, and only a validated price', () => {
+    const q = { ...defaultQuickInputs(), name: 'tv', price: 100_000 };
+    expect(quickToCheckInputs(q, TODAY, 'GBP').currency).toBe('GBP');
+    expect(quickToCheckInputs(q, TODAY).currency).toBeNull();
+    expect(quickToCheckInputs({ ...q, price: MAX_INPUT_MINOR + 1 }, TODAY, 'GBP').advertised).toBeNull();
+    expect(quickToCheckInputs({ ...q, price: 0 }, TODAY, 'GBP').advertised).toBeNull();
+  });
 });
 
 describe('toEngineCheck', () => {

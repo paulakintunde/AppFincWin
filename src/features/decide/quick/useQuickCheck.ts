@@ -136,7 +136,8 @@ export function useQuickCheck(source: SnapshotResult | null, surface: 'home' | '
       setInputs(defaultQuickInputs());
       setSubmitted(false);
     }, []),
-    toCheckInputs: useCallback((today: string): CheckInputs => quickToCheckInputs(inputs, today), [inputs]),
+    // IN-B06: the full check records the currency the quick amounts were parsed and judged in.
+    toCheckInputs: useCallback((today: string): CheckInputs => quickToCheckInputs(inputs, today, source?.currency ?? null), [inputs, source]),
     combine,
     setCombine,
     stack,

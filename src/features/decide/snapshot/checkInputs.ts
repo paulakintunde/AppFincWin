@@ -363,7 +363,7 @@ export function parseCheckInputs(json: unknown, today: string): CheckInputs {
 
 // ── quick carry (D-23) ──
 /** "Run the full check": every quick field becomes a full-check field. Names are labelled by the screen, never stored. */
-export function quickToCheckInputs(q: QuickInputs, today: string): CheckInputs {
+export function quickToCheckInputs(q: QuickInputs, today: string, currency: string | null = null): CheckInputs {
   const itemType = suggestItemType(q.name);
   const base = emptyCheckInputs('buy', today);
   const price = q.price !== null && Number.isSafeInteger(q.price) && q.price > 0 && q.price <= MAX_INPUT_MINOR ? minorUnits(q.price) : null;
@@ -379,10 +379,12 @@ export function quickToCheckInputs(q: QuickInputs, today: string): CheckInputs {
   }
   return {
     ...base,
+    // IN-B06: the currency the quick amounts were typed and judged in, and only a validated price.
+    currency,
     name: q.name.slice(0, 80),
     itemType,
     itemTypeTouched: false,
-    advertised: q.price,
+    advertised: price,
     method: q.mode === 'cash' ? 'cash' : 'loan',
     adjustments,
     loan: {
