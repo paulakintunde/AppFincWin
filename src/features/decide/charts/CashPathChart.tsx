@@ -166,7 +166,14 @@ export function CashPathChart({ report, reserve, whole, formatDate }: CashPathCh
           ))}
         </View>
       </GestureDetector>
-      <Text style={[styles.alt, { fontSize: fontSize.meta, color: colors.inkMuted }]}>{textAlt}</Text>
+      {/* IN-D03: the image above already carries this text for screen readers, so the visible copy is not read twice */}
+      <Text
+        importantForAccessibility="no"
+        accessibilityElementsHidden
+        style={[styles.alt, { fontSize: fontSize.meta, color: colors.inkMuted }]}
+      >
+        {textAlt}
+      </Text>
     </View>
   );
 }

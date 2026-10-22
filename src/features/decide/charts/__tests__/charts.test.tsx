@@ -55,7 +55,11 @@ describe('CashPathChart', () => {
     );
     const label = 'Lowest with this: $-50 on 2026-12-30. Lowest without: $2100 on 2026-12-30.';
     expect(getByRole('image').props.accessibilityLabel).toBe(label);
-    expect(getAllByText(label).length).toBeGreaterThan(0);
+    // IN-D03: shown as text, but hidden from screen readers so the image's label is the only reading
+    const shown = getAllByText(label, { includeHiddenElements: true });
+    expect(shown.length).toBe(1);
+    expect(shown[0]!.props.accessibilityElementsHidden).toBe(true);
+    expect(shown[0]!.props.importantForAccessibility).toBe('no');
   });
 
   it('draws legend words, axis labels and both dash styles', async () => {
@@ -159,7 +163,7 @@ describe('NetWorthChart', () => {
     );
     const alt = 'After 4 months: $1100 with this, $1400 without, at 5%.';
     expect(getByRole('image').props.accessibilityLabel).toBe(alt);
-    expect(getAllByText(alt).length).toBeGreaterThan(0);
+    expect(getAllByText(alt, { includeHiddenElements: true })[0]!.props.accessibilityElementsHidden).toBe(true); // IN-D03
     expect(getByText('Without: $1400')).toBeTruthy();
     expect(getByText('With this: $1100')).toBeTruthy();
     expect(getByText('Today')).toBeTruthy();
@@ -179,7 +183,7 @@ describe('NetWorthChart', () => {
     );
     const alt = 'After 4 months the path is too large to project at 9%.';
     expect(getByRole('image').props.accessibilityLabel).toBe(alt);
-    expect(getAllByText(alt).length).toBeGreaterThan(0);
+    expect(getAllByText(alt, { includeHiddenElements: true }).length).toBeGreaterThan(0);
     expect(all('Without: Too large to project at this rate').length).toBe(1);
     expect(all('With this: Too large to project at this rate').length).toBe(1);
   });

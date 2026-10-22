@@ -102,7 +102,10 @@ export function NetWorthChart({ path, horizonMonths, rateLabel, whole }: NetWort
           </Text>
         ))}
       </View>
-      <Text style={[styles.alt, metaStyle]}>{alt}</Text>
+      {/* IN-D03: the image above already carries this text for screen readers, so the visible copy is not read twice */}
+      <Text importantForAccessibility="no" accessibilityElementsHidden style={[styles.alt, metaStyle]}>
+        {alt}
+      </Text>
     </View>
   );
 }
