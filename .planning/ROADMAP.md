@@ -689,7 +689,7 @@ Plans:
 **Wave 10** *(Decide UX refresh; blocked on Wave 9 completion)*
 - [ ] 05-54-PLAN.md — Refresh copy catalogue: 31 ⓘ entries (INFO_TERMS), folds, custom values, Clear/Delete, save status, plural keys, undo vocabulary (D-70..D-78)
 - [ ] 05-55-PLAN.md — Text fit foundation: app-wide no-hyphenation Text, shouldStack, LabelValueRow, Seg radio list, one-line figures (D-76)
-- [ ] 05-81-PLAN.md — Engine E1: instalment plan with an optional APR and a first-payment date, amortiseDue (D-80)
+- [x] 05-81-PLAN.md — Engine E1: instalment plan with an optional APR and a first-payment date, amortiseDue (D-80)
 
 **Wave 11** *(blocked on Wave 10 completion)*
 - [ ] 05-56-PLAN.md — Draft save never touches a deleted check (silent); Clear/Delete undo labels; queue order tests (D-73, D-77; no migration)
