@@ -1554,7 +1554,7 @@ const en = {
       cardCleared: 'Cleared', cardInterest: 'Interest', cardCosts: 'Card costs', cardNever: 'Never', cardEndless: 'Endless', cardNotWithin: 'Not within 50 years',
       cardRate: 'Rate on this card', cardRateA11y: 'Rate on this card, percent',
       cardNotesHeading: 'Your notes on this card', cardNotesCount: '{{count}} of 3 answered',
-      cardQ1: 'If your income stopped, could the payment still be covered?', cardQ2: 'No new spending on this card while it clears?', cardQ3: 'Would these payments still be made after a job loss?',
+      cardQ1: 'If your income stopped, could the payment still be covered?', cardQ2: 'No new spending on this card while it clears?', cardQ3: 'Is something set aside to keep these payments going if income dips?',
       yes: 'Yes', no: 'No', unsure: 'Not sure',
     },
     costs: {

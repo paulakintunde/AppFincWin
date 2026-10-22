@@ -106,7 +106,7 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | IN-D02 | info | `FigureStrip.tsx:41 (key={item.caption})` | React keys come from display strings | fixed (4869774b): index-qualified keys |
 | IN-D03 | info | `CashPathChart.tsx:213` | Chart text alternatives are announced twice | fixed (eb5f75e0, 76602fec): visible alt copy hidden from screen readers |
 | IN-D04 | info | `app/(app)/decide/check/[id].tsx:7` | The UUID regex is duplicated in four places | fixed (9460c920): src/features/navigation/routeParams.ts (isUuid, oneParam, uuidParam) |
-| IN-D05 | info | `src/i18n/copyStatus.ts:135` | Unreviewed copy, and an insurance-style prompt | deferred to 05-26: the copy review happens on device during the 05-26 checks, then decide copyStatus flips draft→final (checklist item in 05-EXECUTION-NOTES.md). cardQ3 reworded keeping its polarity: "Would these payments still be made after a job loss?"; stored jobLossCover answers unchanged |
+| IN-D05 | info | `src/i18n/copyStatus.ts:135` | Unreviewed copy, and an insurance-style prompt | deferred to 05-26: the copy review happens on device during the 05-26 checks, then decide copyStatus flips draft→final (checklist item in 05-EXECUTION-NOTES.md). cardQ3 reworded keeping its polarity, then softened at the user's request (2026-10-22) to "Is something set aside to keep these payments going if income dips?"; stored jobLossCover answers unchanged |
 | IN-D06 | info | `src/features/decide/ui/CheckRow.tsx:70` | Magic numbers in CheckRow | fixed (f7f55ca0): named constants; the remove dash stays (CloseGlyph swap left as a design call) |
 
 # Detail
