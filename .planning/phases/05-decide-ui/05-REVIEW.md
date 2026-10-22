@@ -34,9 +34,9 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | CR-C05 | high | `src/features/decide/check/useCommitDecision.ts:216` | Go ahead can write to an archived account or a different-currency account, then double counts the purchase | fixed (674da01a) |
 | CR-C06 | high | `src/features/decide/check/useCheckDraft.ts:47` | The check's stamped currency is never reconciled with the snapshot currency | fixed (d0157b22), D-67 convert and note |
 | CR-C07 | high | `src/features/decide/check/useCommitDecision.ts:284-307 (confirmGo) and 309-362 (requestCommit)` | No in-flight guard on commit or Reopen, so a double tap can double-write | fixed (a7846dff) |
-| CR-D01 | high | `src/features/decide/ui/MoneyInput.tsx:43-67` | Onboarding rough figures can trap iOS users, and Skip silently discards them | open |
-| CR-D02 | high | `src/features/record/import/useStatementImport.ts:1425-1426` | The statement period outlives an undone or rejected import, so Decide counts empty months as complete | open |
-| CR-D03 | high | `src/features/navigation/swipeBackGesture.ts:41-51` | The swipe-back interceptor and back listener are global, without focus or ownership checks | open |
+| CR-D01 | high | `src/features/decide/ui/MoneyInput.tsx:43-67` | Onboarding rough figures can trap iOS users, and Skip silently discards them | fixed (8a6ab52f): MoneyInput reports as typed (error on blur), returnKeyType done; RoughFiguresScreen scrolls with the keyboard (Screen `form`) and keeps taps; Skip saves any valid figure. Onboarding rough figures stamp through settingsPatch (1337daf0, CR-B01 carry-over) |
+| CR-D02 | high | `src/features/record/import/useStatementImport.ts:1425-1426` | The statement period outlives an undone or rejected import, so Decide counts empty months as complete | fixed (97b03afa): period tagged with the import batch (statement_periods.import_batch_id) and read through the statement_periods_live view, which drops it once no line of the batch is live (undo, refused import); not recorded when a line inside the period was unticked; unique key gains the batch (pending migration 20261021000100 §5, pgTAP 60 tests 39-46) |
+| CR-D03 | high | `src/features/navigation/swipeBackGesture.ts:41-51` | The swipe-back interceptor and back listener are global, without focus or ownership checks | fixed (b8520712; claim stack 418c3fa0): the claim and the hardwareBackPress listener live in useFocusEffect, so a covered check gives both up and takes them back when uncovered |
 | WR-A01 | high |  | Guard triggers undo the database's ON DELETE SET NULL, leaving dangling `check_id` / `reopened_from` | fixed (a6728ae3) |
 | WR-A02 | high | `src/data/mutations/decideGoAhead.ts:351-369 (onError at 410-436)` | Go ahead inserts its rows and records the decision in two requests, so a refused RPC leaves committed purchase lines and a double tap writes them twice | fixed (a6728ae3, 949092cb); the confirmGo in-flight latch is left to CR-C07 |
 | WR-A03 | high | `src/data/mutations/decideChecks.ts:165-173 (saveCheckDraft)` | Draft autosave bumps the check version without recording it in the version chain, so queued mark-seen and abandon edits hit false conflicts | fixed (d1c828f3) |
@@ -46,13 +46,13 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | WR-A07 | medium | `src/data/mutations/decideSettings.ts:316-337` | Optimistic settings rollback restores a stale snapshot when two settings writes are queued | fixed (e10e18c2) |
 | WR-B01 | medium | `src/features/decide/snapshot/buildSnapshot.ts:164-168` | A zero balance in a currency with no stored rate makes the whole Decide tab unconverted | fixed (4fec9fe2) |
 | WR-B02 | medium | `src/features/decide/snapshot/buildSnapshot.ts:342-343` | Transfer-category outflow series are counted as bills, while income series of the same category are left out | fixed (9ef7259c): a Transfer series is neither bill nor income; its paid inbound legs still count as saving/investing |
-| WR-B03 | medium | `src/features/decide/snapshot/buildSnapshot.ts:270` | Debt-category one-off payments are excluded only when a `debts` row exists | fixed (afb95ec7), partial: excluded only when some debt (row or derived card) has a minimum above zero. Matching a payment to its creditor needs a payment-to-debt link the data does not carry; an unrelated loan with a minimum still drops other Debt-category one-offs (open for the user) |
+| WR-B03 | medium | `src/features/decide/snapshot/buildSnapshot.ts:270` | Debt-category one-off payments are excluded only when a `debts` row exists | fixed (afb95ec7, fa9fafd0): user decision D-68, match by transfer target. A Debt-category one-off is excluded only as a transfer into a tracked card or loan whose debt has a counted minimum; a payment that is not a transfer (untracked account) stays spending |
 | WR-B04 | medium | `src/features/decide/snapshot/withoutCheckWrites.ts:297-301` | The bought-check recompute does not reopen a replaced series when Go ahead was queued offline | fixed by 433160b9 (WR-C02 endedFrom window) for the offline replay; 44d70bd1 reopens only counted replace lines |
 | WR-B05 | medium | `src/features/decide/snapshot/withoutCheckWrites.ts:317` | Lines attached to a bought check stay in the "before" position, so the purchase can be counted twice | fixed (985ace91): attached day-one and payment lines on or after the local decided date are taken out; not covered by WR-C02/CR-C02 |
 | WR-B06 | medium | `src/features/decide/journal/estimateActual.ts:53-69` | Estimate-versus-actual shows "under by the full estimate" when nothing is linked or a rate is missing | fixed (345d1ecd) |
 | WR-B07 | medium | `src/features/decide/past/DecisionDetailSheet.tsx:80` | "Final price" in the decision detail shows the advertised price in the home currency | fixed (ce7ca636) |
 | WR-B08 | medium | `src/features/decide/quickParse.ts:262-276` | Quick-check parsing takes the first number, so "iPhone 15 Pro 1199" is judged at 15 | fixed (e228622c): last number is the price; the result echoes it |
-| WR-B09 | medium | `src/features/decide/home/YourMonthCard.tsx:93 (string src/i18n/locales/en.ts:1448` | Compliance — Your month says the average "is safe to plan on" | open: left for batch D, folded into WR-D04 (same string, which gives its own wording) |
+| WR-B09 | medium | `src/features/decide/home/YourMonthCard.tsx:93 (string src/i18n/locales/en.ts:1448` | Compliance — Your month says the average "is safe to plan on" | fixed (7760ff73) with WR-D04: steadyLine is now "…, so the check uses the average."; the copy guard fails "safe to" |
 | WR-B10 | medium | `src/features/decide/notifications/waitReminder.ts:153-166` | Reconcile never fixes a reminder whose time changed or that the OS dropped | fixed (c70d962d): map stores { id, at }; reconcile compares the server time and the OS list |
 | WR-C01 | medium | `src/features/decide/check/useCommitDecision.ts:318-359` | Wait and Pass commit without flushing the pending draft, so stored inputs miss the last edits | fixed (9e1a40fc) |
 | WR-C02 | medium | `src/features/decide/check/useBoughtCheckComputation.ts:35-41.` | The bought-check recompute can still double count | fixed (433160b9): a queued Go ahead shows no figures until it lands; replaced series reopen across an offline replay |
@@ -60,15 +60,15 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | WR-C04 | medium | `src/features/decide/check/steps/step2/MethodPanels.tsx:270-323` | The card APR is saved only on blur, and that write is not guarded on a decided check | fixed (15799eec) |
 | WR-C05 | medium | `src/features/decide/check/VerdictCard.tsx:235-277.` | The confidence chip and the missing-rate link inside VerdictCard are unreachable for screen readers | fixed (950caa78) |
 | WR-C06 | medium | `src/features/decide/check/steps/stepUi.tsx:89-95.` | `Lock` hides controls from touch only, so read-only controls stay announced and activatable | fixed (3934dc38) |
-| WR-D01 | medium | `src/features/record/entry/transactionForm.ts:39. The gap is in src/features/record/entry/draftForm.ts:29-48` | The one-off flag is not saved in the entry draft and is lost on restore | open |
-| WR-D02 | medium | `src/features/decide/ui/StepSlider.tsx:216-220` | StepSlider jumps to the touched value before the pan activates, so scrolling can change the deposit | open |
-| WR-D03 | medium | `src/features/decide/ui/RateInput.tsx:9` | RateInput rejects comma decimal separators | open |
-| WR-D04 | medium | `src/i18n/locales/en.ts` | Copy that reassures or prescribes gets past the banned list | open |
+| WR-D01 | medium | `src/features/record/entry/transactionForm.ts:39. The gap is in src/features/record/entry/draftForm.ts:29-48` | The one-off flag is not saved in the entry draft and is lost on restore | fixed (ef446554): DraftForm carries oneOff (never on a transfer); round-trip tests |
+| WR-D02 | medium | `src/features/decide/ui/StepSlider.tsx:216-220` | StepSlider jumps to the touched value before the pan activates, so scrolling can change the deposit | fixed (f24617b2): value set on pan activation (onStart) with failOffsetY, plus a separate tap |
+| WR-D03 | medium | `src/features/decide/ui/RateInput.tsx:9` | RateInput rejects comma decimal separators | fixed (91bf7ebb): RateInput shows and accepts the region decimal mark; onChange text stays in "." form |
+| WR-D04 | medium | `src/i18n/locales/en.ts` | Copy that reassures or prescribes gets past the banned list | fixed (7760ff73): steadyLine, spendTitle/spendSub, optSaveFirst, tryCredit, alt.row.skip, descWait, method.card and waitPutAside rewritten; decideCopy.test fails reassurance and a leading money imperative outside a keyed list of buttons |
 | IN-B01 | low | `src/features/decide/journal/pastDecisions.ts:143-146` | Decided dates use the device time zone, while the bought recompute uses the app's time zone | fixed (62f0af7c) |
 | IN-B02 | low | `src/features/decide/notifications/useNotificationObserver.ts:192` | The last notification response is never cleared | fixed (740eda89) |
 | IN-B03 | low | `src/features/decide/home/OpenChecksCard.tsx:176` | Row action buttons have identical, nameless screen-reader labels — LOW (a11y) | fixed (69d7291b) |
 | IN-B04 | low | `src/features/decide/home/ChangesCard.tsx:265` | Dated changes are formatted in the home currency, not the row's currency | fixed (e818d102) |
-| IN-B05 | low | `src/features/decide/past/PastDecisionsScreen.tsx:270-279` | Reopen can be pressed again on a decision that already has a live reopened check | fixed (7f29155b) on the client; not covered by CR-C07 (check flow only). No server guard (no unique index on reopened_from): two devices can still each reopen once |
+| IN-B05 | low | `src/features/decide/past/PastDecisionsScreen.tsx:270-279` | Reopen can be pressed again on a decision that already has a live reopened check | fixed (7f29155b client; 678122ff server): partial unique index decide_checks_reopened_once (after clearing the link on extra live reopens), and a unique violation on reopen opens the live reopened check (pgTAP 60 tests 47-50) |
 | IN-B06 | low | `src/features/decide/snapshot/checkInputs.ts:358-390` | "Run the full check" saves inputs with `currency: null` | fixed (a783fad5) |
 | IN-B07 | low | `src/features/decide/copy/quickCopy.ts:127` | Fallback copy can say "short by 0" | fixed (c9d37808) |
 | IN-B08 | low | `src/features/decide/home/RoughFiguresSheet.tsx:278` | Rough figures cannot record zero income | fixed (73bc9aef): income may be 0 (sheet and onboarding); spending stays above zero |
@@ -83,15 +83,15 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | WR-C11 | low | `src/features/decide/check/LineEditorSheet.tsx:121` | An edited "replaced" bill still ends the whole original series | fixed (a7fde02d) |
 | WR-C12 | low | `src/features/decide/check/useEstimateBias.ts:140-141.` | The estimate gap note can be built from a silently truncated set of lines | fixed (a08c7cd9) |
 | WR-C13 | low | `src/features/decide/check/steps/step4/RateChips.tsx:414-427` | Local text state drifts from the stored value in the fee and loss-of-value inputs | fixed (d8b63cc0) |
-| WR-D05 | low | `src/features/decide/ui/MoneyInput.tsx:35-41` | MoneyInput does not clear when the value is reset to null from outside | open |
-| WR-D06 | low | `src/features/decide/ui/StepSlider.tsx:184-189` | snapToStep cannot reach max, and step <= 0 gives NaN | open |
-| WR-D07 | low | `src/features/decide/charts/chartGeometry.ts:84-89` | Cash path x labels are positional and can mislabel short series | open |
-| WR-D08 | low | `src/features/decide/charts/NetWorthChart.tsx:312-319` | NetWorthChart axis labels are bare indices, and the alt text has gaps | open |
-| WR-D09 | low | `src/features/decide/ui/GoalProgress.tsx:26-31` | GoalProgress shows 0% for very large saved amounts and "of 0" without a target | open |
-| WR-D10 | low | `src/features/decide/ui/CheckRow.tsx:53-62` | CheckRow's remove control stays active when the row is disabled | open |
-| WR-D11 | low | `src/shell/decide/CommitMutationsProvider.tsx:15-27` | CommitMutationsProvider value is not memoised, and canWrite hides all errors | open |
-| WR-D12 | low | `src/features/record/entry/pickers/DateField.tsx:43` | DateField refuses an earlier date without any feedback | open |
-| WR-D13 | low | `app/(app)/_layout.tsx:80` | Notification routing is enabled when the profile is missing | open |
+| WR-D05 | low | `src/features/decide/ui/MoneyInput.tsx:35-41` | MoneyInput does not clear when the value is reset to null from outside | fixed (8a6ab52f): a parent reset to null clears text and error; a null answer to the field's own report keeps the text |
+| WR-D06 | low | `src/features/decide/ui/StepSlider.tsx:184-189` | snapToStep cannot reach max, and step <= 0 gives NaN | fixed (f24617b2): last notch snaps to an off-grid max; step <= 0 gives min; screen-reader notches step one grid point |
+| WR-D07 | low | `src/features/decide/charts/chartGeometry.ts:84-89` | Cash path x labels are positional and can mislabel short series | fixed (90348c03): ticks labelled from their day index (Today, +N d); a path under two points draws nothing |
+| WR-D08 | low | `src/features/decide/charts/NetWorthChart.tsx:312-319` | NetWorthChart axis labels are bare indices, and the alt text has gaps | fixed (ab9313e5): x labels "{{count}} mo"; an unprojectable end reads "Too large to project at this rate" in the alt text |
+| WR-D09 | low | `src/features/decide/ui/GoalProgress.tsx:26-31` | GoalProgress shows 0% for very large saved amounts and "of 0" without a target | fixed (9ce1655b): BigInt ratio past the safe range; captionNoTarget when there is no target |
+| WR-D10 | low | `src/features/decide/ui/CheckRow.tsx:53-62` | CheckRow's remove control stays active when the row is disabled | fixed by 3934dc38 (WR-C06): the remove Pressable is disabled and announced disabled with the row |
+| WR-D11 | low | `src/shell/decide/CommitMutationsProvider.tsx:15-27` | CommitMutationsProvider value is not memoised, and canWrite hides all errors | fixed (55074e31): context value memoised (hooks read through a ref); canWrite reports non-refusal errors (isGoAheadRefusal) and still answers false |
+| WR-D12 | low | `src/features/record/entry/pickers/DateField.tsx:43` | DateField refuses an earlier date without any feedback | fixed (b4f63abf): a refused day moves the field to minDate and the iOS picker remounts on it |
+| WR-D13 | low | `app/(app)/_layout.tsx:80` | Notification routing is enabled when the profile is missing | fixed (a9ef5b64): observer enabled by consentAnswered (not loading and a recorded answer) |
 | IN-A01 | info | `supabase/migrations/20261016000400_decide_demo_seed.sql:253-261` | Demo check inputs are stored in USD minor units for every home currency | fixed client-side in batch C (d0157b22, D-67): an unstamped sample check reads and is stamped as USD; no SQL |
 | IN-A02 | info | `jest.config.js:46-47` | Bare CR and mixed line endings in jest.config.js | fixed (165600e0) |
 | IN-A03 | info | `src/engine/decide/decision.ts:1-27 and throughout` | `decision.ts` reformatted to double quotes | fixed (f4a3b68d) |
@@ -102,12 +102,12 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | IN-C05 | info | `src/features/decide/check/VerdictCard.tsx:158.` | First-read "missing" with no reasons falls back to the card-missing title | fixed (bf20a779) |
 | IN-C06 | info | `src/features/decide/check/CheckFlowScreen.tsx:372.` | The household share silently falls back to member 0 | fixed (aa4e53f0) |
 | IN-C07 | info | `src/data/mutations/decideGoAhead.ts:286-289` | The write builder does not mirror the engine's filter on loss-of-value running-cost lines | fixed (3ab6b3ea) |
-| IN-D01 | info | `StateChip.tsx:24` | A category tint is reused as the warning tint | open |
-| IN-D02 | info | `FigureStrip.tsx:41 (key={item.caption})` | React keys come from display strings | open |
-| IN-D03 | info | `CashPathChart.tsx:213` | Chart text alternatives are announced twice | open |
-| IN-D04 | info | `app/(app)/decide/check/[id].tsx:7` | The UUID regex is duplicated in four places | open |
-| IN-D05 | info | `src/i18n/copyStatus.ts:135` | Unreviewed copy, and an insurance-style prompt | open |
-| IN-D06 | info | `src/features/decide/ui/CheckRow.tsx:70` | Magic numbers in CheckRow | open |
+| IN-D01 | info | `StateChip.tsx:24` | A category tint is reused as the warning tint | fixed (0a503718): warnTint token |
+| IN-D02 | info | `FigureStrip.tsx:41 (key={item.caption})` | React keys come from display strings | fixed (4869774b): index-qualified keys |
+| IN-D03 | info | `CashPathChart.tsx:213` | Chart text alternatives are announced twice | fixed (eb5f75e0, 76602fec): visible alt copy hidden from screen readers |
+| IN-D04 | info | `app/(app)/decide/check/[id].tsx:7` | The UUID regex is duplicated in four places | fixed (9460c920): src/features/navigation/routeParams.ts (isUuid, oneParam, uuidParam) |
+| IN-D05 | info | `src/i18n/copyStatus.ts:135` | Unreviewed copy, and an insurance-style prompt | open (user): the decide namespace is still draft copy (release gate: user copy review). cardQ3 rewording left as a product decision: the suggested question flips the answer's meaning for stored notes |
+| IN-D06 | info | `src/features/decide/ui/CheckRow.tsx:70` | Magic numbers in CheckRow | fixed (f7f55ca0): named constants; the remove dash stays (CloseGlyph swap left as a design call) |
 
 # Detail
 
