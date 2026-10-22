@@ -88,7 +88,7 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
   const [tick, setTick] = useState(0);
   const handled = useRef(0);
 
-  // Follow an external APR change (Try on credit, Clear) without clobbering a half-typed "9."
+  // Follow an external APR change (See it on credit, Clear) without clobbering a half-typed "9."
   if (inputs.aprText !== aprSeen) {
     setAprSeen(inputs.aprText);
     setAprDraft(inputs.aprText);

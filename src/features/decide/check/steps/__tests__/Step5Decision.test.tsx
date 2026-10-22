@@ -71,7 +71,7 @@ describe('Step5Decision', () => {
   it('Wait shows the amount, the ready-by date and the closing line about nothing else changing', async () => {
     const p = props({ outcome: 'wait', advertised: 2_000_000, method: 'cash' });
     await wrap(<Step5Decision {...p} />);
-    expect(screen.getByText('Put aside a month')).toBeTruthy();
+    expect(screen.getByText('Set aside each month')).toBeTruthy();
     expect(screen.getByText('Ready by')).toBeTruthy();
     expect(screen.getByLabelText('Monthly saving')).toBeTruthy();
     expect(screen.getByText('Nothing else changes: no balance or limit moves until you reopen it.')).toBeTruthy();

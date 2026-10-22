@@ -82,7 +82,7 @@ describe('Step2PriceAndPay: how you pay', () => {
 
   it('shows the four methods side by side, each resolved on its own', async () => {
     await renderStep();
-    for (const name of ['Paid in full', 'Deposit and loan', 'Instalment plan', 'Put it on a card']) expect(card(name)).toBeTruthy();
+    for (const name of ['Paid in full', 'Deposit and loan', 'Instalment plan', 'On a card']) expect(card(name)).toBeTruthy();
     const cash = within(card('Paid in full'));
     expect(cash.getByLabelText('On the day, $1500')).toBeTruthy();
     expect(cash.getByLabelText('A month, $0.00')).toBeTruthy();
@@ -93,7 +93,7 @@ describe('Step2PriceAndPay: how you pay', () => {
 
   it('selecting a method calls update({ method })', async () => {
     const { p } = await renderStep();
-    await fireEvent.press(card('Put it on a card'));
+    await fireEvent.press(card('On a card'));
     expect(mockUpdate(p)).toHaveBeenCalledWith({ method: 'card' });
   });
 
@@ -129,7 +129,7 @@ describe('Step2PriceAndPay: how you pay', () => {
 
   it('a card is flagged Not accepted for an item type a card cannot settle', async () => {
     await renderStep({ method: 'card', itemType: 'tax', itemTypeTouched: true });
-    expect(within(card('Put it on a card')).getByText('Not accepted')).toBeTruthy();
+    expect(within(card('On a card')).getByText('Not accepted')).toBeTruthy();
   });
 
   it('a capped vehicle shows Part on the card', async () => {
@@ -138,18 +138,18 @@ describe('Step2PriceAndPay: how you pay', () => {
       method: 'card', itemType: 'vehicle', itemTypeTouched: true, advertised: 6_000_000,
       card: { ...base.card, accountId: 'acc-card', payoff: 'full' },
     });
-    expect(within(card('Put it on a card')).getByText('Part on the card')).toBeTruthy();
+    expect(within(card('On a card')).getByText('Part on the card')).toBeTruthy();
   });
 
   it('a card paid in full next statement needs no rate; another payoff with no rate asks for the card rate', async () => {
     const base = buy({ method: 'card' });
     const view = await renderStep({ method: 'card', card: { ...base.card, accountId: 'acc-card', payoff: 'full' } });
-    expect(within(card('Put it on a card')).getByText('Paid in full next statement, so no rate is needed.')).toBeTruthy();
+    expect(within(card('On a card')).getByText('Paid in full next statement, so no rate is needed.')).toBeTruthy();
     await view.view.unmount();
     const source = { ...propsFor().source, cards: [] };
     const p = { ...propsFor({ method: 'card' }), source };
     await wrap(<Step2PriceAndPay {...p} />);
-    expect(within(card('Put it on a card')).getByText('Type the rate on your card to score months or minimum plans.')).toBeTruthy();
+    expect(within(card('On a card')).getByText('Type the rate on your card to score months or minimum plans.')).toBeTruthy();
   });
 
   it('a null total reads as words', async () => {
@@ -167,16 +167,16 @@ describe('Step2PriceAndPay: how you pay', () => {
         },
       }) as never;
     const view = await wrap(<Step2PriceAndPay {...p} computation={{ ...p.computation, methodPlans: { ...p.computation.methodPlans, card: open('never_clears') } }} />);
-    expect(within(card('Put it on a card')).getByLabelText('Total paid, Endless')).toBeTruthy();
+    expect(within(card('On a card')).getByLabelText('Total paid, Endless')).toBeTruthy();
     await view.rerender(<Step2PriceAndPay {...p} computation={{ ...p.computation, methodPlans: { ...p.computation.methodPlans, card: open('exceeds_month_cap') } }} />);
-    expect(within(card('Put it on a card')).getByLabelText('Total paid, Not within 50 years')).toBeTruthy();
+    expect(within(card('On a card')).getByLabelText('Total paid, Not within 50 years')).toBeTruthy();
   });
 
   it('an investment offers a monthly contribution or a lump sum', async () => {
     await renderStep({ kind: 'invest', method: 'lump' });
     expect(card('Monthly contribution')).toBeTruthy();
     expect(card('Lump sum').props.accessibilityState.checked).toBe(true);
-    expect(screen.queryByLabelText('Put it on a card')).toBeNull();
+    expect(screen.queryByLabelText('On a card')).toBeNull();
     expect(screen.getByText('How you put it in')).toBeTruthy();
   });
 
@@ -187,7 +187,7 @@ describe('Step2PriceAndPay: how you pay', () => {
 
   it('a decided (read only) check cannot change the method', async () => {
     const { p } = await renderStep({}, { readOnly: true });
-    await fireEvent.press(card('Put it on a card'));
+    await fireEvent.press(card('On a card'));
     expect(mockUpdate(p)).not.toHaveBeenCalledWith({ method: 'card' });
   });
 });

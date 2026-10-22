@@ -33,7 +33,7 @@ describe('Step4Alternatives', () => {
   it('shows four rows in engine order with the three figures', async () => {
     await wrap(<Step4Alternatives {...props()} />);
     expect(screen.getByText('Four ways, same 12 months')).toBeTruthy();
-    for (const name of ['As planned', 'Cheaper one', 'Wait and save', 'Skip it entirely']) expect(screen.getAllByText(name).length).toBeGreaterThan(0);
+    for (const name of ['As planned', 'Cheaper one', 'Wait and save', 'Not buying it']) expect(screen.getAllByText(name).length).toBeGreaterThan(0);
     expect(screen.getAllByText('On the day').length).toBe(4);
     expect(screen.getAllByText('A month').length).toBe(4);
     expect(screen.getAllByText('Kept').length).toBe(4);

@@ -19,6 +19,30 @@ function collectLeaves(node: unknown, prefix = ''): Leaf[] {
 
 const leaves = collectLeaves(en.decide, 'decide');
 
+// WR-D04 / WR-B09: reassurance about the future ("safe to plan on") is advice in another form; the record states what
+// the figures are and what the check does with them.
+const REASSURING = [/\bsafe to\b/i, /\bdon[’']t worry\b/i, /\bnothing to worry\b/i, /\bno problem\b/i, /\bgo for it\b/i, /\byou can afford\b/i, /\bworth it\b/i, /\byou[’']re fine\b/i, /\byou[’']ll be fine\b/i, /\bsafely\b/i];
+// WR-D04: copy that describes money never opens with an order to spend, save, buy or borrow. Option titles read as
+// states ("Saving first, then buying"), not instructions.
+const IMPERATIVE_LEAD = /^(Spend|Save|Try|Keep|Buy|Borrow|Skip|Put|Cut|Pay|Invest|Sell|Stop)\b/;
+// Controls and field labels name an action the user takes in the app (a button, a dialog choice, a field caption); they
+// are not a prescription about money. Each one is listed by key so a new descriptive string cannot slip through.
+const ACTION_LABELS = new Set([
+  'decide.quick.payWith', // field caption: "Pay with" Cash / Credit
+  'decide.quick.error.retry', // button
+  'decide.flow.retry', // button
+  'decide.rough.save', // button
+  'decide.lines.save', // button
+  'decide.flow.saveClose', // button
+  'decide.flow.commit.wait', // button: "Save the plan" commits the Wait decision the user chose
+  'decide.scope.save', // button
+  'decide.lineEditor.save', // button
+  'decide.depth.changes.save', // button
+  'decide.depth.cardMin.save', // button
+  'decide.past.removeKeep', // dialog choice: keep the decision record
+  'decide.onboarding.skip', // button: skip this onboarding step
+  'decide.onboarding.checkTitle', // invites the user to try the check itself, not a purchase
+]);
 const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
 
 // Demo-scale values (05-18 demo: income $4,400 a month, car loan over 48 months). Four-digit amounts are the widest a
@@ -49,6 +73,25 @@ describe('decide copy (DCU-09)', () => {
 
   it.each(leaves)('uses no banned word: $path', ({ value }) => {
     for (const re of BANNED) expect(value).not.toMatch(re);
+  });
+
+  it.each(leaves)('does not reassure about the future: $path', ({ value }) => {
+    for (const re of REASSURING) expect(value).not.toMatch(re);
+  });
+
+  it.each(leaves.filter((l) => !ACTION_LABELS.has(l.path)))('does not open with an order about money: $path', ({ value }) => {
+    expect(value).not.toMatch(IMPERATIVE_LEAD);
+  });
+
+  it('every listed action label exists and still opens with its verb (WR-D04)', () => {
+    for (const path of ACTION_LABELS) expect(get(path)).toMatch(IMPERATIVE_LEAD);
+  });
+
+  it('the guard catches the wording WR-D04 and WR-B09 replaced', () => {
+    for (const old of ['The average is safe to plan on.']) expect(REASSURING.some((re) => re.test(old))).toBe(true);
+    for (const old of ['Spend less, keep the rest working', 'Save first, then buy', 'Try on credit', 'Skip it entirely', 'Buy at month 3, then keep the $1 a month', 'Put it on a card']) {
+      expect(old).toMatch(IMPERATIVE_LEAD);
+    }
   });
 
   it('uses the word lend only in the not-a-lender footer', () => {

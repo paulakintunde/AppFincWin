@@ -53,7 +53,7 @@ describe('QuickCheckForm: home', () => {
     expect(screen.queryByText('Run the full check')).toBeNull();
   });
 
-  it('gives one chip, the size and one line, and Try on credit keeps the amount at 0 and 12 months', async () => {
+  it('gives one chip, the size and one line, and See it on credit keeps the amount at 0 and 12 months', async () => {
     await renderForm();
     await checkIt('car 14500');
     expect(screen.getByText('Not from cash')).toBeTruthy();
@@ -61,7 +61,7 @@ describe('QuickCheckForm: home', () => {
     expect(screen.getByText(/^Car at \$14,500(\.00)?$/)).toBeTruthy();
     expect(mockTrack).toHaveBeenCalledTimes(1);
     expect(mockTrack).toHaveBeenCalledWith('quick_check_run', { state: 'no' });
-    await fireEvent.press(screen.getByText('Try on credit'));
+    await fireEvent.press(screen.getByText('See it on credit'));
     expect(screen.getByLabelText('Credit').props.accessibilityState).toMatchObject({ checked: true });
     expect(screen.getByLabelText('Annual rate, percent').props.value).toBe('0');
     expect(screen.getByText('before any interest')).toBeTruthy();
@@ -77,11 +77,11 @@ describe('QuickCheckForm: home', () => {
     expect(screen.getByText(/^iPhone 15 Pro at \$1,199(\.00)?$/)).toBeTruthy();
   });
 
-  it('CR-B04: Try on credit sits outside the accessible live region, so screen readers can focus it', async () => {
+  it('CR-B04: See it on credit sits outside the accessible live region, so screen readers can focus it', async () => {
     await renderForm();
     await checkIt('car 14500');
     expect(screen.getByTestId('quick-result-live').props.accessible).toBe(true);
-    const button = screen.getByLabelText('Try on credit, keeps the amount');
+    const button = screen.getByLabelText('See it on credit, keeps the amount');
     for (let node = button.parent; node !== null; node = node.parent) {
       expect(node.props.accessible === true).toBe(false);
     }

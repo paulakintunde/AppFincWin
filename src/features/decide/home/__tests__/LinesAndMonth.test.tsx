@@ -87,7 +87,7 @@ describe('YourMonthCard', () => {
     expect(screen.getByLabelText('Comes in, $5000')).toBeTruthy();
     expect(screen.getByLabelText('Goes out, $3000')).toBeTruthy();
     expect(screen.getByLabelText('Left, $1800')).toBeTruthy(); // 5000 - 3000 - 200 debt minimum
-    expect(screen.getByText('4 months of income within 0% of each other. The average is safe to plan on.')).toBeTruthy();
+    expect(screen.getByText('4 months of income within 0% of each other, so the check uses the average.')).toBeTruthy();
     expect(screen.getByLabelText('Worst · $5000')).toBeTruthy();
     expect(screen.getByLabelText('Average · $5000')).toBeTruthy();
   });

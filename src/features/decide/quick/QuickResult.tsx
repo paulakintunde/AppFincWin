@@ -67,7 +67,7 @@ export function QuickResult({ computation, mode, name, price = null, fmt, fmtCen
   return (
     <View style={styles.block}>
       <View style={[styles.result, { backgroundColor: colors.fill1 }]}>
-        {/* CR-B04: the live region holds only the text, so "Try on credit" below stays its own focusable button. */}
+        {/* CR-B04: the live region holds only the text, so "See it on credit" below stays its own focusable button. */}
         <View testID="quick-result-live" accessible accessibilityLiveRegion="polite" accessibilityLabel={settled} style={styles.live}>
           <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
             {price != null ? t('decide.quick.nameAt', { name: shownName, price: fmtCents(price) }) : shownName}
