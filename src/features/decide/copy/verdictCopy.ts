@@ -4,7 +4,7 @@
  */
 import type { Assessment, MissingReason, MoneyBasis, Verdict, VerdictState, Warning, WarningCode } from '@/engine/decide';
 import type { UnconvertedNote } from '../snapshot/types';
-import { MISSING_TITLE } from './codeMaps';
+import { MISSING_TITLE, UNEXPLAINED } from './codeMaps';
 import { percentText } from './percentText';
 import { ref } from './types';
 import type { CopyRef, Fmt } from './types';
@@ -80,7 +80,9 @@ export function verdictTitle(verdict: Verdict, fmt: Fmt): CopyRef {
     if (lead === 'cash_empty') return ref('decide.verdict.titleNoEmptyCash');
     if (lead === 'month') {
       const month = findWarning(a, 'month');
-      const short = fmt(month ? month.shortfall : 0);
+      // IN-B07: never a zero-amount shortfall claim when the warning is unexpectedly missing.
+      if (!month) return ref(UNEXPLAINED);
+      const short = fmt(month.shortfall);
       if (a.context.leftBefore < 0) {
         return ref('decide.verdict.titleNoAlreadyShort', { already: fmt(-a.context.leftBefore), short }, { basis: basisWordKey(a.context.money.basis) });
       }
@@ -89,8 +91,8 @@ export function verdictTitle(verdict: Verdict, fmt: Fmt): CopyRef {
     return ref('decide.verdict.titleNoCashDip');
   }
   const lead = a.warnings[0];
-  // adjust always carries a warning; an empty list falls back to the month line rather than throwing
-  if (!lead) return ref('decide.verdict.titleNoMonthShort', { short: fmt(0) });
+  // adjust always carries a warning; an empty list falls back to a plain line rather than throwing (IN-B07: no zero claim)
+  if (!lead) return ref(UNEXPLAINED);
   return ADJUST_TITLE[lead.code](a, lead, fmt);
 }
 

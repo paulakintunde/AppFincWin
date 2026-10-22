@@ -7,6 +7,9 @@ import type {
 } from '@/engine/decide';
 import type { MethodKey } from '../snapshot/types';
 
+/** IN-B07: the defensive line when a verdict's lead warning is unexpectedly missing; never a zero-amount claim. */
+export const UNEXPLAINED = 'decide.verdict.titleUnexplained';
+
 export const SIZE_LABEL = {
   from_spare_this_month: 'decide.size.from_spare_this_month',
   from_savings: 'decide.size.from_savings',

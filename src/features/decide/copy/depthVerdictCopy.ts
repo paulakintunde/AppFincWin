@@ -134,7 +134,8 @@ export interface EdgeA11y {
 /** The edge chip's spoken label: the first on-edge line and its margin, or the tight fact for the cash path case. */
 export function edgeChipA11y(stateWord: string, decision: Pick<Decision, 'margins' | 'stacked' | 'verdict'>, fmt: Fmt, formatDate: FormatDate): EdgeA11y {
   const margin = decision.margins.find((m) => m.flag === 'on_edge');
-  if (!margin) return { label: ref(`${D}edge.chipA11y`, { state: stateWord, amount: fmt(0) }, { line: `${D}edge.line.cash` }), fact: null };
+  // IN-B07: with no on-edge margin there is no amount to name, so none is claimed.
+  if (!margin) return { label: ref(`${D}edge.chipA11yPlain`, { state: stateWord }), fact: null };
   const verdict = decision.verdict;
   const tightFact = 'cashPath' in verdict && verdict.cashPath.status === 'available' ? verdict.cashPath.tightBeforePayday : null;
   if (isTightEdge(margin) && tightFact) {

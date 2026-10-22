@@ -85,8 +85,8 @@ describe('verdictTitle', () => {
     expect(JSON.stringify([t, card])).not.toMatch(/null/);
   });
 
-  it('an adjust verdict with no warning still has a title', () => {
-    expect(verdictTitle(assessmentOf({ state: 'adjust', warnings: [] }), fmt).key).toBe('decide.verdict.titleNoMonthShort');
+  it('IN-B07: an adjust verdict with no warning, or a month lead with no month warning, has a plain title and no zero claim', () => {
+    expect(verdictTitle(assessmentOf({ state: 'adjust', warnings: [] }), fmt)).toEqual({ key: 'decide.verdict.titleUnexplained' });
   });
 });
 

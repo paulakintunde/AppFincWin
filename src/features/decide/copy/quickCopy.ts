@@ -6,7 +6,7 @@
 import { ZERO_PERCENT } from '@/engine/decide';
 import type { Assessment, BuyCheck, FirstRead, Warning, WarningCode } from '@/engine/decide';
 import type { QuickComputation } from '../snapshot/types';
-import { MISSING_TITLE, SIZE_LABEL } from './codeMaps';
+import { MISSING_TITLE, SIZE_LABEL, UNEXPLAINED } from './codeMaps';
 import { percentText } from './percentText';
 import { ref } from './types';
 import type { CopyRef, Fmt } from './types';
@@ -124,7 +124,8 @@ function assessedCopy(a: Assessment, mode: 'cash' | 'credit', check: BuyCheck, f
     }
     if (a.state === 'adjust') {
       const lead = a.warnings[0];
-      return finish(lead ? QUICK_CASH_LINE[lead.code](a, lead, fmt) : ref('decide.quick.line.cashMonthShort', { short: fmt(0) }));
+      // IN-B07: an adjust with no warning (defensive) never claims a zero shortfall.
+      return finish(lead ? QUICK_CASH_LINE[lead.code](a, lead, fmt) : ref(UNEXPLAINED));
     }
     const kind = noLead(a);
     if (kind === 'cash_empty') {
@@ -133,7 +134,7 @@ function assessedCopy(a: Assessment, mode: 'cash' | 'credit', check: BuyCheck, f
     }
     if (kind === 'month') {
       const month = findWarning(a, 'month');
-      return finish(ref('decide.quick.line.cashMonthShort', { short: fmt(month ? month.shortfall : 0) }));
+      return finish(month ? ref('decide.quick.line.cashMonthShort', { short: fmt(month.shortfall) }) : ref(UNEXPLAINED));
     }
     return finish(ref('decide.quick.line.cashDipHard'));
   }
@@ -153,7 +154,7 @@ function assessedCopy(a: Assessment, mode: 'cash' | 'credit', check: BuyCheck, f
     lead = kind === 'month' ? findWarning(a, 'month') : kind === 'cash_empty' ? findWarning(a, 'cash') : findWarning(a, 'cash_dip');
   }
   lead = lead ?? a.warnings[0];
-  if (!lead) return finish(creditShort(0, ctx));
+  if (!lead) return finish(ref(UNEXPLAINED));
   return finish(QUICK_CREDIT_LINE[lead.code](a, lead, ctx));
 }
 
@@ -163,7 +164,7 @@ function firstReadCopy(fr: FirstRead, mode: 'cash' | 'credit', check: BuyCheck, 
     return {
       chip: stateChip('missing', surface, fr.reasons),
       size: SIZE_LABEL[fr.size],
-      line: ref(MISSING_TITLE[fr.reasons[0] ?? 'card_missing']),
+      line: fr.reasons[0] !== undefined ? ref(MISSING_TITLE[fr.reasons[0]]) : ref(UNEXPLAINED),
       monthly: null,
       caption: null,
       tryCredit: false,
@@ -186,7 +187,7 @@ function firstReadCopy(fr: FirstRead, mode: 'cash' | 'credit', check: BuyCheck, 
     } else if (lead && lead.code === 'cash') {
       line = ref('decide.quick.line.cashBelowCushion', { cashAfter: fmt(fr.cashAfter), short: fmt(lead.shortfall), cushion: fmt(fr.roughCushion) });
     } else {
-      line = ref('decide.quick.line.cashMonthShort', { short: fmt(monthWarning ? monthWarning.shortfall : 0) });
+      line = monthWarning ? ref('decide.quick.line.cashMonthShort', { short: fmt(monthWarning.shortfall) }) : ref(UNEXPLAINED);
     }
   } else if (fr.state === 'fits') {
     line = ref(zeroRate ? 'decide.quick.line.creditFitsZero' : 'decide.quick.line.creditFits', { payment, count: termMonths, left: fmt(fr.leftAfter) });

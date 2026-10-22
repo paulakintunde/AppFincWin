@@ -92,7 +92,8 @@ describe('quickResultCopy: Cash', () => {
     expect(noIncome.line.key).toBe('decide.quick.line.creditDsrNoIncome');
     const saving = run(logged(assessmentOf({ state: 'adjust', warnings: [w('inv', 7)], savingAtRisk: 7, pauseNeeded: 7 })), 'cash');
     expect(saving.line.key).toBe('decide.quick.line.pauseSaving');
-    expect(run(logged(assessmentOf({ state: 'adjust', warnings: [] })), 'cash').line.key).toBe('decide.quick.line.cashMonthShort');
+    // IN-B07: no warning gives the plain line, never "$0 short"
+    expect(run(logged(assessmentOf({ state: 'adjust', warnings: [] })), 'cash').line).toEqual({ key: 'decide.verdict.titleUnexplained' });
   });
 
   it('no: empty cash, month, hard dip; each offers credit', () => {
@@ -176,8 +177,8 @@ describe('quickResultCopy: Credit', () => {
     expect(hard.line).toEqual({ key: 'decide.quick.line.creditCashDipHard', params: { payment: '$850.00' } });
   });
 
-  it('a credit adjust with no warning still has a line', () => {
-    expect(run(logged(assessmentOf({ state: 'adjust', warnings: [] }), check12), 'credit').line.key).toBe('decide.quick.line.creditShort');
+  it('IN-B07: a credit adjust with no warning has the plain line, not a zero shortfall', () => {
+    expect(run(logged(assessmentOf({ state: 'adjust', warnings: [] }), check12), 'credit').line).toEqual({ key: 'decide.verdict.titleUnexplained' });
   });
 });
 
@@ -194,7 +195,8 @@ describe('quickResultCopy: first read', () => {
     expect(no.line).toEqual({ key: 'decide.quick.line.cashNo', params: { short: '$105' } });
     expect(no.tryCredit).toBe(true);
     expect(run(fr({ state: 'no', cashAfter: -5, warnings: [] }), 'cash').line.params).toEqual({ short: '$5' });
-    expect(run(fr({ state: 'adjust', warnings: [] }), 'cash').line.params).toEqual({ short: '$0' });
+    // IN-B07: no zero-amount claim
+    expect(run(fr({ state: 'adjust', warnings: [] }), 'cash').line).toEqual({ key: 'decide.verdict.titleUnexplained' });
   });
 
   it('credit: fits, short, cash', () => {
@@ -212,7 +214,8 @@ describe('quickResultCopy: first read', () => {
     const r = run(fr({ state: 'missing', reasons: ['card_missing'], size: 'needs_spreading' }), 'cash');
     expect(r.chip!.key).toBe('decide.state.cardLimits');
     expect(r.size).toBe('decide.size.needs_spreading');
-    expect(run(fr({ state: 'missing', reasons: [], size: 'from_savings' }), 'cash').line.key).toBe('decide.verdict.missing.card_missing');
+    // IN-B07: an empty reasons list is not reported as a missing card
+    expect(run(fr({ state: 'missing', reasons: [], size: 'from_savings' }), 'cash').line.key).toBe('decide.verdict.titleUnexplained');
   });
 });
 

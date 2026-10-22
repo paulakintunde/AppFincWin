@@ -212,10 +212,10 @@ describe('marginText and the edge chip', () => {
     expect(edgeChipA11y('Fits', decisionOf({ margins: [tightMargin], verdict: { state: 'missing' } }), fmt, fmtDate).fact).toBeNull();
   });
 
-  it('with no line on the edge the tag is off and the label falls back to the cushion', () => {
+  it('IN-B07: with no line on the edge the tag is off and the label names no amount', () => {
     const d = decisionOf({ margins: [margin('month', 900)] });
     expect(edgeOn(d)).toBe(false);
-    expect(edgeChipA11y('Fits', d, fmt, fmtDate).label.key).toBe(`${D}edge.chipA11y`);
+    expect(edgeChipA11y('Fits', d, fmt, fmtDate).label).toEqual({ key: `${D}edge.chipA11yPlain`, params: { state: 'Fits' } });
   });
 });
 
