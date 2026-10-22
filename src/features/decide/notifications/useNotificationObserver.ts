@@ -3,8 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter, type Href } from 'expo-router';
 import * as Notifications from 'expo-notifications';
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { isUuid } from '@/features/navigation/routeParams';
 
 export function checkIdFromResponse(r: Notifications.NotificationResponse | null): string | null {
   if (!r || r.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return null;
@@ -12,7 +11,7 @@ export function checkIdFromResponse(r: Notifications.NotificationResponse | null
   const checkId = data?.checkId;
   const kind = data?.kind;
   if (kind !== 'wait' && kind !== 'cooling_off') return null;
-  return typeof checkId === 'string' && UUID.test(checkId) ? checkId : null;
+  return isUuid(checkId) ? checkId : null;
 }
 
 export function useNotificationObserver(enabled: boolean): void {
