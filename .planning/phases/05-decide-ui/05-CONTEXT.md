@@ -1,7 +1,7 @@
 # Phase 5: Decide UI - Context
 
 **Gathered:** 2026-10-15
-**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22. The UI-SPEC carries all of them.
+**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22; D-79…D-84 the Step 2, item and invest refresh the same day. The UI-SPEC carries all of them.
 
 <domain>
 ## Phase Boundary
@@ -252,6 +252,32 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
   - **Past decisions:** one row ("Past decisions · {n} decisions"), hidden while there are none.
   - **Lines you will not cross:** one fold row with the preview "{n} of 5 set by you" or "All at their defaults".
   - See UI-SPEC R2b.
+
+- **D-79 (user, 2026-10-22): Step 2 methods are an accordion in place.**
+  - Each method (Paid in full, Deposit and loan, Instalment plan, On a card; investments: Lump sum, Monthly contribution) is a white card whose inputs and outputs (strip, payment, interest, implied rate) open directly under its own header, with a chevron. The opened card scrolls into view.
+  - One card is open at a time. Tapping a folded card selects and opens it. The selected card has an `ink` border and radio dot instead of an `ink` fill.
+  - A card that cannot be scored shows "Needs: {fields}" (replacing "Rate needed"). A folded card shows a one-line summary, e.g. "$2,000 down · 36 months · 6.9%".
+  - The Price card and the "How you pay" header are rebuilt with ⓘ.
+  - See UI-SPEC R15.1-R15.2.
+- **D-80 (user, 2026-10-22): An instalment plan can carry a rate.**
+  - An optional "Has a rate?" segmented control. **No** is the default and keeps today's behaviour: amount × count, no interest, the implied-rate note, "Below the price".
+  - **Yes** takes the count (1–120) and a user-typed APR (0–999.99, never pre-filled, 04 D-07). The engine works out the payment: an annuity-due at APR ÷ 12 with the first payment on the day (D-49), rounded up to the cent, with the last payment adjusted.
+  - A typed "Payment as quoted" overrides it for scoring, and a note states the difference.
+  - A late-fee ⓘ is added.
+  - **Needs Phase 4 engine change E1** (UI-SPEC R15.7).
+- **D-81 (user, 2026-10-22): Custom item type.**
+  - Step 1's item type becomes chips with "Custom…", a typed name of 1–40 characters (e.g. "Drone") shown wherever the item type appears.
+  - It follows General ("Other") rules for card eligibility, the secured default and running-cost prompts, unless an optional "Treat like" picks a built-in type's rules.
+  - It is stored in the check inputs JSON as `customItemType { name, treatLike }`, with `itemType` holding the rules type. No migration and no engine change.
+- **D-82 (user, 2026-10-22): Optional expected return on investment checks.**
+  - "Expected return, % a year (optional)", 0–100, blank by default and never pre-filled, stored as `inputs.investReturnText`.
+  - When set, step 2, the verdict card and the Assumptions fold show the projected value at the horizon (the term, or 60 months by default for a lump sum), labelled "Not a forecast".
+  - It never changes whether the investment fits and does not feed the net-worth chart or the step 3 rate list. It uses the existing `futureValue`; no engine change.
+- **D-83 (user, earlier 2026-10-22): The cheaper price is exact.**
+  - A typed cheaper price on step 4 is applied as the exact amount, not the nearest whole percent. The slider still steps in 1%, and the percent shown is for display only.
+  - The deposit and instalment scale by the exact ratio, rounded half up to the minor unit.
+  - **Needs Phase 4 engine change E2** (UI-SPEC R15.7).
+- **D-84 (user, 2026-10-22): Every Step 2 header and term has an ⓘ** (extends D-70). There are 23 new `INFO_TERMS` keys (UI-SPEC R15.8), and the existing promo, deferred-interest, variable-rate, card-minimum and running-cost keys are reused. All copy is declarative, at most 3 sentences, with "What this changes", and passes DCU-09 (no "offer", "apply", advice or reassurance).
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.

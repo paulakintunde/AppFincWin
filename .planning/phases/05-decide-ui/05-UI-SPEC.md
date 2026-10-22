@@ -1,7 +1,7 @@
 ---
 phase: 5
 slug: 05-decide-ui
-status: approved
+status: draft
 reviewed_at: 2026-10-22
 amended: 2026-10-22
 shadcn_initialized: false
@@ -17,7 +17,7 @@ created: 2026-10-15
 
 **Platform note:** React Native / Expo SDK 57. No shadcn, no CSS. Styling is `StyleSheet` plus the typed theme (`useTheme()`, `textRole()`, `src/theme/*`). The CLAUDE.md fidelity rule holds: **no new colour, gradient, shadow, type size or icon set.** The prototype's Decide screens use about a dozen hex values outside the §2 palette; every one is mapped to an existing token below (Color, Deviations Register). Colours are cited by token name only; `noRawColours.test.ts` must keep passing.
 
-**Amended 2026-10-22 (D-70..D-78):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Re-approved by the UI checker on 2026-10-22, with its recommendations folded in (R14).
+**Amended 2026-10-22 (D-70..D-84):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Re-approved by the UI checker on 2026-10-22, with its recommendations folded in (R14). R15 (Step 2, item and invest refresh, D-79..D-84) returns the status to draft for a re-check.
 
 **Surface in this phase:**
 1. Decide tab root (quick check, Your month, Open checks, Past decisions link, Lines you will not cross).
@@ -900,6 +900,7 @@ Source: the user's request of 2026-10-22 and the locked decisions **05-CONTEXT D
 6. Obvious tap-to-reveal: a chevron and preview on every fold, "Show details" / "Hide details" links, a one-time hint, and a pressed state with a haptic (D-75).
 7. Text fit: no mid-word breaks, no overlap, no truncation of system copy, checked at 402 and 320 wide and at 1.0x and 2.0x text (D-76).
 8. Drafts and saving: autosave timing, a save indicator, and how Clear and Delete interact with a queued save (D-77).
+9. Step 2 accordion method cards, instalment rates, custom item types, an optional investment return, the exact cheaper price and Step 2 ⓘ entries (D-79..D-84, R15).
 
 ### R1. New and changed components
 
@@ -1203,7 +1204,7 @@ The banned list and the 2026-10-22 reassurance and money-imperative guard apply 
 | `deferredInterest` | Step 2 deferred-interest toggle; step 3 "Interest charged back" notice | Interest charged back | On some 0% promotions, interest for the whole promotion is added back if the balance is not cleared by the end. It applies only when the agreement says so, so the toggle is off unless turned on. | When on, the check adds that interest if the balance is still open when the promotion ends. |
 | `variableRate` | Step 2 "The rate can change" toggle | The rate can change | Shows the payment if the rate rises by 2 and by 4 points, with the state each would give. | Nothing in the verdict, which stays on the rate you entered. |
 | `cardMinimum` | Step 2 "Minimum payment" row; card terms sheet title | Card minimum payment | What the card asks for each month when only the minimum is paid: usually a percent of the balance, sometimes plus that month’s interest, with a floor amount. The terms are kept on the card, so they count in every check. | The minimum is added to your monthly debt payments. Paid in full monthly adds none. |
-| `size` | Verdict row 1 size label; quick-check size chip | How big this is | How big the cash price is against your own money. Out of this month’s spare means it fits in what this month leaves after saving and investing; out of savings means cash still stays above your cushion. Needs spreading means paying it at once would take cash under your cushion. | Nothing in the verdict. Cooling-off is offered only for purchases that need spreading. |
+| `size` | Verdict row 1 size label; quick-check size chip | How big this is | How big the cash price is against your own money. Out of this month’s spare means it fits in what this month leaves after saving and investing; out of savings means cash still stays above your cushion. Needs spreading means paying it at once would take cash under your cushion. | Nothing in the verdict. Cooling-off appears only for purchases that need spreading. |
 | `edge` | Verdict "On the edge" tag | On the edge | At least one line holds or misses by less than 5% of the line. A small change in the price, the rate or a monthly figure can flip the verdict. | The verdict stays as shown. The margins are listed under What breaks. |
 | `confidence` | Confidence chip (top of the existing "What this rests on" sheet) | Basis | How much history the verdict rests on. Strong needs 6 full months with steady income, fair needs 3, and anything less is rough. Lines converted at a stand-in rate keep it at fair at most. | Nothing in the figures. It states how firm they are. |
 | `cushionMonths` | Key figure "Cushion" | Cushion | How many months of your costs the cash left would cover, after this purchase and the bills due in the next 90 days. {dynamic: "Your line is {n} months, {reason}."} | It drops when the purchase takes cash on the day, and a higher monthly cost lowers it further. |
@@ -1221,7 +1222,7 @@ The banned list and the 2026-10-22 reassurance and money-imperative guard apply 
 | `ifInvested` | Fold 7 title | If it went into investing instead | What the price, or the monthly payments, would grow to at a rate you enter, over the months you pick. At 0% the money is only held. A projection at the rate you entered, not a forecast. | Nothing in the verdict. |
 | `kept` | Step 4 "Kept" column header | Kept | The money that stays yours on that route: the cash kept on the day plus the payments never made, counted only up to what is actually spare. At 0% it is held, not grown. | Nothing in the verdict. |
 | `provisionalRate` | Basis detail item and Assumptions row (D-69) | Latest stored rate | Some lines were saved while their own exchange rate was still loading. Until it arrives they are converted at the latest stored rate, dated {date}. | Figures may move a little once their own rates arrive, and the basis stays fair at most until then. |
-| `coolingOff` | Step 5 "Check again in 48 hours" | Check again in 48 hours | A reminder 48 hours after you record this, which reopens the check recalculated on the figures of that day. It is offered for purchases that need spreading. | Adds one reminder. No balance changes. |
+| `coolingOff` | Step 5 "Check again in 48 hours" | Check again in 48 hours | A reminder 48 hours after you record this, which reopens the check recalculated on the figures of that day. It appears for purchases that need spreading. | Adds one reminder. No balance changes. |
 | `waitGoal` | Step 5 Wait outcome card and "Set aside each month" | Wait and save | Recording Wait sets a monthly amount and a ready-by date and starts a savings goal for this purchase. On the ready-by date a reminder reopens the check, recalculated. | Creates one savings goal and one reminder. Balances and limits stay as they are. |
 | `whatGetsWritten` | Step 5 "What gets written" heading; Go ahead confirm title | What gets written | The lines Go ahead adds to your records, listed before anything is saved. Each appears in Activity linked to this check. Wait creates a savings goal and a reminder, and Pass writes nothing. | Nothing is written until Go ahead is confirmed, and Undo removes the whole set in one step. |
 
@@ -1313,13 +1314,16 @@ That is 31 entries. Each body is at most 3 sentences (the `ifInvested` caption c
 | Duration (Credit) | Quick check (home and onboarding first check) | 12 · 24 · 36 · 48 · 60 | **1 to 120 months**, whole | "Over {n} months" label follows the value. "Run the full check" carries it to the loan term. The fold budget excludes the open field. |
 | Loan term | Step 2 loan panel | 12 · 24 · 36 · 48 · 60 · 84 | **1 to 120 months** (user 2026-10-22; was 1 to 600) | The separate "mo" box is replaced by the Custom chip and field (one input, not two). `MAX_TERM` in `MethodPanels.tsx` becomes 120. A stored check with a longer term opens showing it under the Custom chip, with the range line in `warn1`; it is scored as stored until the term is edited. |
 | Instalment count ("How many") | Step 2 instalment panel | none (typed tile) | **1 to 120** (user 2026-10-22; was 1 to 600) | The same `MAX_TERM` bound and stored-value rule as the loan term. |
+| Instalment rate (Has a rate? = Yes) | Step 2 instalment card | none (typed only) | **0 to 999.99% a year** | D-80; the payment is worked out unless "Payment as quoted" is typed (R15.3). |
+| Expected return | Step 2 investment cards | none (typed only) | **0 to 100% a year**, blank by default | D-82; projection only (R15.5). |
+| Custom item type name | Step 1 | — | **1 to 40 characters** | D-81 (R15.4). |
 | Card "Over a few months" | Step 2 card panel | stepper (− / +) | **1 to 120 months** | The months figure "{n} mo" becomes tappable (44 hit) and opens the same inline field. The stepper clamps at 120 (was 600). |
 | Investment term (monthly contribution) | Step 2 invest panel | 12 · 24 · 36 · 48 · 60 · 84 | **1 to 120 months** | |
 | Promotion length ("For") | Step 2 promo row | none (typed) | **1 to 120 months**, and no longer than the term | The existing field gets the range line. |
 | Wait period ("Ready in") | Step 5 Wait panel | **3 · 6 · 12 · 24** (new chips under the "Ready by" figure) | **1 to 120 months** | Picking a period (user-confirmed 2026-10-22) sets the monthly amount to target ÷ months, **rounded up to the cent**, and the slider and field follow. The derived months are ceil(target ÷ amount). When they match a preset (3, 6, 12 or 24), that chip is selected. Otherwise **Custom** is selected and reads "{n} months". "Ready by" stays derived. |
 | Wait amount | Step 5 Wait panel | slider from min(25, its max) to **min(2 x spare, target)**, step 25 | typed **from ceil(target ÷ 120), rounded up to the cent, up to the target**, cents allowed. Range line "From {{min}} to {{max}}" | R1 slider-with-field. The lower bound keeps the derived period within 120 months. Above the slider's top the thumb pins and "Above the slider’s range" shows. |
 | Deposit | Step 2 loan panel | slider 0 .. price, step 100 | typed **0 to the price**, cents allowed | R1 slider-with-field. Above the price: not applied, range line "Up to the price, {price}". |
-| Cheaper price | Step 4 "The cheaper one" | slider 30% .. 100%, step 1 | typed amount **30% to 100% of the price**, whole units | R1 slider-with-field; the field shows money, and the note keeps "{pct}% of {price}". |
+| Cheaper price | Step 4 "The cheaper one" | slider 30% .. 100%, step 1 | typed amount **30% to 100% of the price**, whole units | R1 slider-with-field; the field shows money. **The typed amount is applied exactly** (D-83, engine change E2); the note "{pct}% of {price}" shows the percent rounded for display only. |
 | Investing horizon | Step 3 "If it went into investing instead" | 12 · 24 · 36 · 60 · 120 (+ the plan term) | **1 to 600 months** (kept: a projection horizon, not a borrowing term) | The engine's 600-month cap. A figure out of range reads "Too large to project at this rate" (D-47). |
 | Return rates | Quick check APR; step 2 loan, card, promo and "Then" rates | **none (typed only; no preset rate chips, 04 D-07)** | **0 to 999.99% a year** (`MAX_APR`) | The typed field *is* the custom input. The range line appears only on a refused keystroke. |
 | Projection return, holding fee | Step 3 If invested; step 4 "+ Add a rate" | none; the typed rates appear as chips (up to 3) | **0 to 100% a year** (D-48) | Unchanged hint "Up to 100% a year". |
@@ -1532,6 +1536,8 @@ The pass condition: no word split mid-word, no overlapping glyphs, no truncated 
 | Onboarding first check | `beforeInterest`, `size` | Duration Custom 1-120 (same as the quick check) | — | — | Same rules as the quick check. |
 | InfoSheet | — | — | — | — | The sheet grows with content; no fixed height. |
 
+Step 1, Step 2 and the investment additions from R15 are listed in R15.10.
+
 ### R11. Researcher assumptions (this refresh)
 
 1. **"Left after the purchase"** is read as the month-end amount left after it ("Left a month"). Cash after the purchase is already carried by "Cushion" (months of costs). Confirmed by the user 2026-10-22.
@@ -1594,9 +1600,196 @@ The pass condition: no word split mid-word, no overlapping glyphs, no truncated 
 - **Accent list:** extended.
 - **Spacing:** the card gap is 18 and the derived-geometry exceptions are declared.
 
+### R15. Step 2, item and invest refresh (2026-10-22)
+
+Source: the user's request of 2026-10-22 ("price and how you pay … needs a good reveal for each section", "the installment plan needs a rate should it require one", custom item type, an optional return rate on investments) and the locked decisions **05-CONTEXT D-79..D-84**. This part wins over the Step 1, Step 2 and Step 4 sections above where they differ. Tokens, roles, motion and haptics are the existing ones only, and R6 text fit applies throughout.
+
+#### R15.1 Step 2 layout (D-79)
+
+**Order, top to bottom:**
+1. Flow header.
+2. **Price card.**
+3. **"How you pay"** header.
+4. **Method cards** (an accordion).
+5. Not-a-lender footer.
+6. **"Costs that follow it"** card.
+7. Estimate-gap notes.
+8. Bottom action bar.
+
+There are no free-floating method panels any more: **every input and every output lives inside the card it belongs to.**
+
+**Price card** (white, `radii.card`, padding `space.cardPadLg`, gap `space.gapMd`):
+
+| Part | Spec |
+|---|---|
+| Header row | The eyebrow "Price" (investment: "Amount") with ⓘ `price`. At the right sits "Edit" (`label`, `accent`, 44 hit), which jumps to step 1. They wrap under rule S. |
+| Figure | The advertised figure (`sheetTitle`, rule N). |
+| Sub-header | "Tax, fees and trade-ins" (`meta` 600, `inkMuted`) with ⓘ `taxFees`. Under it are the adjustment `CheckRow`s, as before. A row that takes off the price shows the tag "Trade-in or discount" (`tabLabel`, `fill1` / `inkDim`) with ⓘ `tradeIn`. Then the pill "+ Add a cost, fee or trade-in". |
+| Total | A rule (1.5px `ink` top border), then "Final price" with ⓘ `finalPrice`, the math line "{n} of {m} lines counted" and the figure (`heading`, rule N). |
+
+**"How you pay" header:** the eyebrow "How you pay" (investment: "How you put it in") with ⓘ `howYouPay`, and the one-line sub-copy (`meta`, `inkMuted`) "The same purchase, four ways. The verdict follows the one selected." (investment: "The same amount, two ways. The verdict follows the one selected.").
+
+**Method card (`MethodCard`, replaces the step 2 `ChoiceCard` plus its separate panel):** one white card per method, gap `space.gapMd` between cards. Purchases have Paid in full, Deposit and loan, Instalment plan and On a card. Investments have Lump sum and Monthly contribution.
+
+| Part | Spec |
+|---|---|
+| Container | `surface`, `radii.card`, padding `space.cardPad` (16). A **1.5px `line1` border** when not selected and a **1.5px `ink` border** when selected. No ink fill: the selected card holds inputs, so it stays white. This is a deviation from the earlier "selected `ChoiceCard` is `ink`" rule on step 2 only. |
+| Header (a `Pressable`, `minHeight` 64) | Left to right:<br>• the radio ring (19px, `inkSoft3`; selected: `ink` ring with a 9px `ink` dot);<br>• the method name (`sheetTitle`, flex 1, wraps) with its ⓘ;<br>• the status chips, wrapping under the name under rule S;<br>• the 8px chevron (`inkSoft3`), pointing right when folded and down when open. |
+| Status chips (`tabLabel`) | **"Needs: {fields}"** (`categoryTint.Business` / `warn1`) while the method cannot be scored, e.g. "Needs: rate, months". The fields are listed in R15.2. The existing engine flags stay: "Not accepted", "Part on the card", "Below the price". "Rate needed" is retired, because "Needs: rate" replaces it. |
+| Summary line (folded only) | `meta`, `inkMuted`, wraps (never truncated), under the header and aligned with the name. Copy is in R15.2. While the card is open, the summary is hidden, because its inputs are visible. |
+| Open body | `fw-rise` (instant under reduced motion), gap `space.gapMd`. First the **inputs** of R15.2, then the **outputs tile**: `fill6`, radius 16, padding `space.cardPad`, eyebrow "What it comes to". It holds the `FigureStrip` (On the day / A month / Total paid; rule N, stacks under rule S) and the method's output notes (term note, interest, paid-off month, implied rate, card tiles). Then any sub-reveals: "+ Promotional rate" and "Your notes on this card" as `CollapsibleSection` with a chevron, and the stress card and late-fee lines as `DetailsToggle`. |
+| Accordion | **One card open at a time.**<br>• Tapping a folded card's header **selects that method and opens it**, closing the card that was open. It fires `selectionAsync`.<br>• Tapping the open card's header folds it; it stays selected.<br>• On arrival, the selected method's card is open; with no method selected, every card is folded.<br>• After the body lays out, the screen scrolls so the opened card's header sits `space.gapMd` under the sticky header (animated; instant under reduced motion). The inputs are therefore always seen under their own header, never left at the bottom of the step. |
+| A11y | The header has `accessibilityRole="radio"` and `accessibilityState={{ checked, expanded }}`. Its label is "{method}, {Selected|Not selected}, {summary}{, needs {fields}}", with the hint "Selects this way to pay and shows its details". The ⓘ is also exposed as the custom action "About {method}". When a card opens, the app announces "{method} selected. Details shown." The radio group is labelled "How you pay". |
+| Read-only | On a decided check, headers still open and fold (reading), but cannot change the selection. Inputs are inside `Lock`. |
+
+**"Costs that follow it" card:** unchanged content, with the header ⓘ `runningCosts` (R3). Under rule S, its "a month" caption wraps under the title.
+
+#### R15.2 Per-method inputs, outputs, "Needs" fields and summaries
+
+| Method | Inputs (in order) | Outputs (in the "What it comes to" tile) | "Needs:" fields | Folded summary |
+|---|---|---|---|---|
+| Paid in full ⓘ `paidInFull` | none | Strip, plus the note "Leaves {cash} in cash. No interest, nothing owed after." | "price" (only when the price is 0) | "{price} on the day · leaves {cash}" |
+| Deposit and loan ⓘ `depositAndLoan` | Deposit (slider + field, ⓘ `deposit`); Loan term chips + Custom 1-120 (ⓘ `loanTerm`); Annual rate (ⓘ `apr`; "before any interest" at 0); "+ Promotional rate" (ⓘ `promoRate`, with `deferredInterest` inside); "The rate can change" (ⓘ `variableRate`); "Secured against what you’re buying" (ⓘ `secured`) | Strip; "Interest saved" / "Cash left after" tiles; the term note "At {n} months the payment is {pay} a month and the interest {int}." (pluralised per F6); the paid-off line; the promotion tiles | "rate", "months" | "{deposit} down · {n} months · {apr}%" (a missing part is left out, e.g. "$2,000 down · 36 months") |
+| Instalment plan ⓘ `instalmentPlan` | "Has a rate?" segmented "No" / "Yes" (ⓘ `hasRate`; default **No**; the R6 Seg rule applies). **No:** the "Payment" and "How many" tiles (count 1-120). **Yes:** "How many" (1-120), "Annual rate" (0-999.99, ⓘ `apr`), and "Payment as quoted (optional)" (money). Then "Late fee (optional)" with ⓘ `lateFee`. | Strip. **No:** the existing implied-rate note ("No rate was quoted. {n} × {pay} is {total} against … about {pct}% a year.") and the "Below the price" note. **Yes:** "{n} payments of {pay} at {apr}%, the first on the day. Interest over the plan is {int}." When a typed payment differs from the worked-out one by at least one minor unit: "At {apr}% the worked-out payment is {calc}. The quoted {typed} is {diff} {higher|lower}; the check uses the quoted payment." Late-fee lines behind "Show details". | No: "payment", "how many". Yes: "how many", "rate" | No: "{n} × {pay} · no rate". Yes: "{n} × {pay} · {apr}%" |
+| On a card ⓘ `onCard` | The eligibility box; "How it gets cleared" chips; months (typed or stepped, 1-120); the "Minimum payment" row (ⓘ `cardMinimum`; its sheet carries `paidInFullMonthly`); "Card fees (optional)"; "+ Promotional rate"; "The rate can change"; "Your notes on this card" | Strip; the "Cleared" / "Interest" / "Card costs" tiles and their notes | "card rate" (months or minimum clearing with no rate), "minimum terms", "dealer cap" | "{card} · in full next statement" / "{card} · over {n} months" / "{card} · minimum only" |
+| Lump sum ⓘ `lumpSum` (investment) | Amount (on step 1); "Expected return, % a year (optional)" (ⓘ `expectedReturn`, R15.5); "Over {n} months" horizon chips 12 · 24 · 36 · 60 · 120 + Custom 1-600 (default 60), shown only when a return is typed | Strip; with a return: "About {fv} after {n} months at {r}% a year. A projection at the rate you entered, not a forecast." | "amount" | "{amount} once" (with a return: "{amount} once · {r}% a year") |
+| Monthly contribution ⓘ `monthlyContribution` (investment) | Term chips + Custom 1-120; "Expected return, % a year (optional)" | Strip; "{amt} a month for {n} months is {total} put in."; with a return: "About {fv} after {n} months at {r}% a year. A projection at the rate you entered, not a forecast." | "amount", "months" | "{amt} a month · {n} months" |
+
+"Needs" field words: "price", "rate", "months", "payment", "how many", "card rate", "minimum terms", "dealer cap", "amount". They are joined with ", ". The chip wraps but its words never split (rule C).
+
+#### R15.3 Instalment plan with a rate (D-80; needs engine change E1)
+
+- **Has a rate? = No** (default): exactly today's behaviour. The total is amount × count, no interest is counted, and the implied-rate note and the "Below the price" rule (D-49) stand.
+- **Has a rate? = Yes:**
+  - The user types the count (1-120) and the APR (0-999.99, user-typed only, never pre-filled, 04 D-07).
+  - **The payment is worked out** by the engine: an annuity-due over `count` payments at a monthly rate of APR ÷ 12. The first payment is on the day with any on-the-day fees, as D-49 has it. The payment is rounded up to the cent, and the last payment is adjusted so the plan clears exactly (as 04 D-64).
+  - A **typed "Payment as quoted"** overrides the worked-out payment for scoring. The difference note above states both figures.
+  - "Below the price" does not apply with a rate. The interest is the total paid less the amount financed.
+- **Switching back to No** keeps the typed APR in the inputs (hidden) and scores without it.
+- **Alternatives:** the cheaper row and "Use the cheaper price" recompute the worked-out payment from the new price. A quoted payment is scaled by the exact price ratio (D-83).
+- **"What gets written"** follows the engine's payment runs, as for loans.
+
+#### R15.4 Custom item type (D-81)
+
+Step 1's item type becomes a **chip group**: General, Vehicle, Rent or bill, Loan repayment, Tax, Insurance premium, **"Custom…"**. It replaces the `Row` + `Dropdown`, and the chips wrap (rule C). The group carries ⓘ `itemType`.
+- **Suggestion from the name:** it still selects a built-in chip, with the `meta` line "Suggested from the name" until the user touches the group.
+- **"Custom…":** opens an inline text field (the CustomValue pattern):
+  - a `Box`, placeholder "Drone", 1-40 characters, trimmed;
+  - an empty entry is not applied;
+  - the range line reads "1 to 40 characters".
+  
+  Once named, the chip reads the name (e.g. "Drone") and is selected. Its a11y label is "Custom item type, {name}". The field carries ⓘ `customItemType`.
+- **"Treat like" (optional):** a `Row` with a chevron under the field, opening the `Dropdown` with "General (default)", Vehicle, Rent or bill, Loan repayment, Tax and Insurance premium. It carries ⓘ `treatLike`.
+- **Rules:** without Treat like, the custom type follows **General** rules: card eligibility, the secured default off, General running-cost prompts. With Treat like, the custom type follows that type's rules.
+- **Shown name:** the custom name is shown wherever the item type appears (step 1 chip, Assumptions "Item type" row, decision detail). The rules type appears only as "treated like {type}".
+- **Storage:** stored in the check's inputs JSON as `customItemType: { name: string; treatLike: ItemType | null } | null`. `itemType` holds the rules type (`treatLike ?? 'general'`). **No migration and no engine change**: the engine sees only `itemType`. `parseCheckInputs` accepts and validates the new field (1-40 characters, a known `treatLike`), and drops it when invalid.
+
+#### R15.5 Expected return on investment checks (D-82)
+
+- **Field:** "Expected return, % a year (optional)" on both investment method cards (R15.2). `RateInput`, 0-100 (the D-48 bound, hint "Up to 100% a year"). It is **blank by default and never pre-filled**. It is stored as `inputs.investReturnText: string | null`.
+- **Effect:** none on the verdict state, the warnings, the month or the alternatives. It is a projection only and does not feed the net-worth chart or the step 3 investing-instead rate list (which stays the check's own rate list, assumption 17). The step 2 monthly note that used `projectionRates[0]` now uses this field.
+- **Where it shows when set:**
+  - **Verdict card (investment checks only):** a `meta` line (`inkSoft2`) after the key figures: "At {r}% a year: about {fv} after {n} months. Not a forecast." It wraps under rule W. Investment checks are not in the DCU-11 frames, so there is no fold budget.
+  - **Folds:** "Assumptions in play" gains the row "Expected return" · "{r}% a year, used for the projection only". "The month, line by line" is unchanged.
+  - **Horizon:** the contribution term (monthly) or the horizon chips (lump sum, default 60).
+- **Computing:** the projection uses the existing money function `futureValue` from the engine's public barrel (already used on step 2). No engine change. An out-of-range figure reads "Too large to project at this rate" (D-47).
+
+#### R15.6 Exact cheaper price (D-83; needs engine change E2)
+
+On step 4, a typed cheaper price is applied **as the exact amount** (in minor units), not rounded to the nearest whole percent.
+- The slider still moves in 1% steps.
+- The note "{pct}% of {price}" shows the percent rounded to a whole number for display only.
+- "Use the cheaper price" and the trade line write the exact amount.
+- The loan deposit and the instalment amount (or the worked-out instalment payment, R15.3) scale by the exact ratio cheaper ÷ price, rounded half up to the minor unit.
+
+This replaces R4's "Cheaper price" note, which implied the percent drove the figure.
+
+#### R15.7 Engine changes required (Phase 4 code, user decisions)
+
+| # | Change | Precisely |
+|---|---|---|
+| **E1** (D-80) | **Instalment plan with an optional APR** | In `src/engine/decide`:<br>• the instalment payment method gains `apr?: Percent` and makes `amount` optional when `apr` is present;<br>• with `apr`, the payment is an annuity-due over `count` payments at the monthly rate `apr ÷ 12` on the financed amount (price plus fees not paid on the day). The first payment is on the day with on-the-day fees (D-49). It is rounded up to the cent, with a final-payment adjustment (04 D-64). `Plan.interest` = the total paid less the amount financed;<br>• a typed `amount` alongside `apr` is scored as given, and the plan also returns `computedPayment` for the difference note;<br>• `instalment_total_below_price` is evaluated only without `apr`;<br>• alternatives rescale the worked-out payment from the cheaper price (HI-03 path);<br>• `apr` is validated against `MAX_APR`.<br>Branch coverage stays at the CI threshold, with named tests "D-80". |
+| **E2** (D-83) | **Exact cheaper price in the alternatives** | The alternatives input takes `cheaperPrice: MinorUnits` (clamped to [ceil(30% of the price), price]) in place of a whole-percent fraction. The cheaper row's deposit and instalment scale by the exact rational ratio, rounded half up to the minor unit. The bisection of "At {price} instead" is unchanged. Named tests "D-83". |
+| — | Custom item type, expected return | **No engine change** (rules type mapping; the existing `futureValue`). |
+
+#### R15.8 New ⓘ entries (D-84; added to `INFO_TERMS`, 23 new keys)
+
+Existing keys reused on step 2: `runningCosts`, `netMonthly`, `lossOfValue`, `beforeInterest`, `promoRate`, `deferredInterest`, `variableRate`, `cardMinimum`, `replaces`.
+
+| Key | Where | Term | Body | What this changes |
+|---|---|---|---|---|
+| `price` | Price card eyebrow | Price | The price you were quoted, before tax, fees and trade-ins. Every figure on this step starts from it. | Changing it rescores every way to pay and the verdict. |
+| `taxFees` | "Tax, fees and trade-ins" sub-header | Tax and fees | Costs added to the price, such as sales tax, delivery or setup. A line marked Paid on the day counts on the day; the others are paid with the rest of the price. | Raises the final price, and the day-one cost when paid on the day. |
+| `tradeIn` | "Trade-in or discount" tag; "Takes off the price" in the line editor | Trade-in or discount | Something that takes off the price, such as an old car handed over or a discount agreed. It is entered as an amount. | Lowers the final price and everything worked out from it. |
+| `finalPrice` | "Final price" | Final price | The price with every counted tax, fee and trade-in line added or taken off. The ways to pay below are all worked out on it. | The verdict uses this figure, not the advertised price. |
+| `howYouPay` | "How you pay" header | How you pay | The same purchase, paid different ways. Each card shows what it takes on the day and each month, and the verdict follows the one selected. | Selecting a card rescores the verdict on that way to pay. |
+| `paidInFull` | Paid in full card | Paid in full | The whole final price leaves your cash on the day. Nothing is owed after, and no interest is counted. | Cash drops by the final price on the purchase date. |
+| `depositAndLoan` | Deposit and loan card | Deposit and loan | Part is paid on the day and the rest is borrowed and repaid monthly, at the rate typed, over the months chosen. The payment is worked out from those three figures. | Adds a monthly payment and a debt, and lowers cash by the deposit. |
+| `deposit` | Deposit field | Deposit | The part paid on the day. A larger deposit lowers the amount borrowed, the payment and the interest, and leaves less cash. | Moves money between cash on the day and the monthly payment. |
+| `loanTerm` | Loan term chips | Loan term | How many months the loan runs, from 1 to 120. More months lower each payment and raise the total interest. | Changes the monthly payment and the total paid. |
+| `apr` | Annual rate fields (loan, instalment with a rate, card) | Annual rate (APR) | The yearly interest rate on the agreement, as quoted. The app never fills one in, and 0% is counted as no interest. | Sets the interest in each payment and the total paid. |
+| `secured` | "Secured against what you’re buying" | Secured | A secured loan is backed by the item, such as a car loan against the car. Secured debt is left out of the unsecured-debt line. | On: this loan does not count toward Unsecured debt at most. |
+| `instalmentPlan` | Instalment plan card | Instalment plan | A set number of payments, the first on the day and the rest monthly. Some plans charge interest and some do not. | Adds the later payments as a monthly cost until the count runs out. |
+| `hasRate` | "Has a rate?" | Has a rate? | No: the payments are the amount times the count, and the note shows any rate they imply. Yes: the payment is worked out from the count and the rate typed, unless a quoted payment is entered. | Yes counts interest on the plan and can raise the monthly cost. |
+| `lateFee` | "Late fee (optional)" | Late fee | The fee the plan charges when a payment is late, as typed from the agreement. The lines show what one or two late payments would add. | Nothing in the verdict. |
+| `onCard` | On a card card | On a card | The purchase goes on a credit card and is cleared in full at the next statement, over a few months, or at the minimum. Interest is counted at the rate on the card record. | Adds the card payment to your month until it is cleared. |
+| `paidInFullMonthly` | "Paid in full monthly" toggle (card terms sheet) | Paid in full monthly | The card balance is cleared every statement, so no minimum payment is counted. Its spending is already in your month. | No card minimum is added to debt payments. |
+| `lumpSum` | Lump sum card | Lump sum | One amount put in on the start date. It leaves cash on that day and adds nothing to later months. | Cash drops by the amount on the start date. |
+| `monthlyContribution` | Monthly contribution card | Monthly contribution | The same amount put in every month for the months chosen. It is tested in each month like any other regular outgoing. | Adds the contribution to your monthly outgoings. |
+| `expectedReturn` | "Expected return, % a year (optional)" | Expected return | A yearly growth rate you type, from 0 to 100%. It is used only to show what the money could be worth at the end, and stays blank unless typed. | Nothing in the verdict. A projection at the rate you entered, not a forecast. |
+| `itemType` | Step 1 item type group | Item type | What kind of purchase this is. It decides whether a card can be used, whether a loan starts as secured, and which running costs are listed. | Changing it can change the card rules and the costs listed. |
+| `customItemType` | "Custom…" field | Custom item type | A name of your own for the kind of item, such as Drone. It follows the General rules unless Treat like is set. | Only the name shown changes; the rules stay General. |
+| `treatLike` | "Treat like" row | Treat like | Borrows the rules of a built-in type, such as Vehicle, for card use, the secured default and the running costs listed. | The rules follow the chosen type; the name stays yours. |
+| `cardClearing` | "How it gets cleared" chips | How it gets cleared | In full next statement means no interest is counted. Over a few months or the minimum count interest at the card’s rate until the balance reaches zero. | Changes the monthly card payment and the interest. |
+
+Every body is at most 3 sentences. None contains "offer", "apply", "advice", "recommend", "should", reassurance, or an opening money imperative. The R3 test that every `INFO_TERMS` key has term, body and changes covers these 23 keys.
+
+#### R15.9 New strings (besides R15.8)
+
+| Element | Copy |
+|---|---|
+| Price card | "Price" · "Amount" · "Tax, fees and trade-ins" · tag "Trade-in or discount" · "Final price" |
+| How you pay | "How you pay" · "How you put it in" · "The same purchase, four ways. The verdict follows the one selected." · "The same amount, two ways. The verdict follows the one selected." |
+| Method card | "Needs: {{fields}}" · fields "price", "rate", "months", "payment", "how many", "card rate", "minimum terms", "dealer cap", "amount" · "What it comes to" · a11y "Selected" / "Not selected" · hint "Selects this way to pay and shows its details" · announcement "{{method}} selected. Details shown." |
+| Summaries | "{{price}} on the day · leaves {{cash}}" · "{{deposit}} down · {{count}} months · {{apr}}%" · "{{count}} × {{payment}} · no rate" · "{{count}} × {{payment}} · {{apr}}%" · "{{card}} · in full next statement" · "{{card}} · over {{count}} months" · "{{card}} · minimum only" · "{{amount}} once" · "{{amount}} once · {{rate}}% a year" · "{{amount}} a month · {{count}} months" |
+| Loan term note (F6 plural) | "At {{count}} months the payment is {{payment}} a month and the interest {{interest}}." (`_one`: "At 1 month …"). This replaces "At {n} months you pay …" because "you pay" read as an instruction to some readers. |
+| Instalment with a rate | "Has a rate?" · "No" · "Yes" · "Payment as quoted (optional)" · "{{count}} payments of {{payment}} at {{apr}}%, the first on the day. Interest over the plan is {{interest}}." · "At {{apr}}% the worked-out payment is {{calc}}. The quoted {{typed}} is {{diff}} higher; the check uses the quoted payment." / "… {{diff}} lower; …" |
+| Custom item type | "Custom…" · placeholder "Drone" · "1 to 40 characters" · a11y "Custom item type, {{name}}" · "Treat like" · "General (default)" · "treated like {{type}}" |
+| Expected return | "Expected return, % a year (optional)" · "About {{fv}} after {{count}} months at {{rate}}% a year. A projection at the rate you entered, not a forecast." · verdict "At {{rate}}% a year: about {{fv}} after {{count}} months. Not a forecast." · Assumptions "Expected return" · "{{rate}}% a year, used for the projection only" |
+
+#### R15.10 Checklist
+
+| Screen | ⓘ keys | Inputs / ranges | Reveal | Text fit |
+|---|---|---|---|---|
+| Step 1 | `itemType`, `customItemType`, `treatLike` (plus `replaces`, `incomeChange`) | Custom item type 1-40 characters; Treat like | Inline Custom field | Item type chips wrap (rule C); "treated like {type}" wraps |
+| Step 2 Price card | `price`, `taxFees`, `tradeIn`, `finalPrice` | — | — | The header and Edit wrap under S; Final price follows rule N |
+| Step 2 How you pay and method cards | `howYouPay`, `paidInFull`, `depositAndLoan`, `deposit`, `loanTerm`, `apr`, `secured`, `promoRate`, `deferredInterest`, `variableRate`, `instalmentPlan`, `hasRate`, `lateFee`, `onCard`, `cardClearing`, `cardMinimum`, `paidInFullMonthly`, `lumpSum`, `monthlyContribution`, `expectedReturn` | Term and count 1-120; APR 0-999.99; expected return 0-100; horizon 1-600 | **Accordion in place, one open, scroll into view, "Needs:" chip, folded summary**; outputs tile inside the card | The name, chips and chevron wrap; summaries wrap; strips stack under S |
+| Step 2 Costs that follow it | `runningCosts`, `netMonthly`, `lossOfValue` | — | — | unchanged |
+| Step 3 (investment checks) | — | — | — | Expected-return line in the verdict card; Assumptions row |
+| Step 4 | `kept` | Exact cheaper price | — | — |
+
+#### R15.11 Conflicts resolved
+
+| Earlier text | Now | How |
+|---|---|---|
+| Step 2: method `ChoiceCard`s with the selected card in `ink`, and one method panel below the cards ("one visible at a time") | Method cards with inputs and outputs inside, selected by an `ink` border and dot, accordion | D-79 |
+| Flag chip "Rate needed" | "Needs: rate" (and the other fields) | D-79 |
+| Instalment: no rate, implied-rate note only | Optional "Has a rate?" | D-80, with engine change E1 |
+| Step 1 item type `Row` + `Dropdown` | A chip group with "Custom…" and "Treat like" | D-81 |
+| Step 2 investment note using the first projection rate | Uses the optional expected return | D-82 |
+| R4 cheaper price "the note keeps {pct}% of {price}" (percent-driven) | Exact amount; the percent is for display only | D-83, with engine change E2 |
+| Loan term note "At {n} months you pay …" | "At {n} months the payment is …" | Declarative voice |
+
+#### R15.12 Questions only the user can answer
+
+1. **Instalment with a rate and a typed payment:** this spec scores the **quoted** payment and notes the difference. Should the worked-out payment be scored instead?
+2. **First instalment on the day with a rate:** this spec keeps D-49's structure (the first payment on the day, an annuity-due). Some agreements take the first payment a month later. Should there be a toggle, or does this one rule hold?
+3. **Opening a method card selects it:** that keeps one card open and one selected. Should a user be able to open a card just to look, without changing the selected method?
+4. **Lump-sum projection horizon:** the default is 60 months with chips. Is that the horizon wanted?
+
 ### R13. Questions only the user can answer
 
-None open. The six questions raised on 2026-10-22 were answered the same day, in five replies:
+None open for R1-R14 (R15 has its own questions in R15.12). The six questions raised on 2026-10-22 were answered the same day, in five replies:
 1. "Left" is left at month end.
 2. The main page means both screens (R2b).
 3. What breaks opens by default with warnings and is folded with "Nothing breaks" otherwise.
