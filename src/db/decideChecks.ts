@@ -127,8 +127,27 @@ export async function insertDecideCheck(client: DbClient, row: NewDecideCheck): 
   if (error.code === UNIQUE_VIOLATION) {
     const existing = await fetchDecideCheck(client, row.id);
     if (existing) return existing;
+    // IN-B05: decide_checks_reopened_once allows one live check reopened from a decision. Another device got there
+    // first: the answer is that check, which the caller opens instead of the one it tried to write.
+    if (row.reopened_from) {
+      const reopened = await fetchReopenedCheck(client, row.reopened_from);
+      if (reopened) return reopened;
+    }
   }
   throw toDbError(error, status);
+}
+
+/** IN-B05: the live check reopened from a decision, or null. */
+export async function fetchReopenedCheck(client: DbClient, decisionId: string): Promise<DecideCheckRow | null> {
+  const { data, error, status } = await client
+    .from('decide_checks')
+    .select(DECIDE_CHECK_COLUMNS)
+    .eq('reopened_from', decisionId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) throw toDbError(error, status);
+  return (data as DecideCheckRow | null) ?? null;
 }
 
 /**

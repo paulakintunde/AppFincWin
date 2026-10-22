@@ -1,14 +1,14 @@
 -- pgTAP: Phase 5 code review fixes (20261021000100). CR-A01 the decide_settings upsert in the exact shape PostgREST
 -- sends; WR-A01 ON DELETE SET NULL now lands on debts, goals and reopened checks, and the orphan repair; WR-A02 the
 -- record_decide_go overload that inserts its own rows, so a refusal leaves none; WR-A08 a late Wait replay; CR-D02 a
--- statement period counts only while its import has a live line.
+-- statement period counts only while its import has a live line; IN-B05 one live reopened check per decision.
 --
 -- Needs 20261016000100 .. 20261016000400 and 20261021000100.
 
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(46);
+select extensions.plan(50);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -388,5 +388,36 @@ select extensions.throws_ok(
   '42501', null, 'anon cannot read the live period view');
 
 reset role;
+
+-- ---------------------------------------------------------------------
+-- 7. IN-B05: one live reopened check per decision (tests 47-50).
+-- ---------------------------------------------------------------------
+insert into public.decide_checks (id, household_id, created_by, kind, name) values
+  ('c6000000-0000-0000-0000-0000000000b0', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'buy', 'Decided once');
+
+select extensions.ok(
+  exists (select 1 from pg_indexes where schemaname = 'public' and indexname = 'decide_checks_reopened_once'
+            and indexdef ilike '%unique%' and indexdef ilike '%deleted_at IS NULL%'),
+  'decide_checks_reopened_once is a partial unique index over live reopened checks');
+
+select extensions.lives_ok(
+  $$insert into public.decide_checks (id, household_id, created_by, kind, name, reopened_from)
+    values ('c6000000-0000-0000-0000-0000000000b1', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+            '11111111-1111-1111-1111-111111111111', 'buy', 'Reopen one', 'c6000000-0000-0000-0000-0000000000b0')$$,
+  'the first reopen of a decision lands');
+
+select extensions.throws_ok(
+  $$insert into public.decide_checks (id, household_id, created_by, kind, name, reopened_from)
+    values ('c6000000-0000-0000-0000-0000000000b2', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+            '11111111-1111-1111-1111-111111111111', 'buy', 'Reopen two', 'c6000000-0000-0000-0000-0000000000b0')$$,
+  '23505', null, 'a second live reopen of the same decision is refused');
+
+update public.decide_checks set deleted_at = now() where id = 'c6000000-0000-0000-0000-0000000000b1';
+select extensions.lives_ok(
+  $$insert into public.decide_checks (id, household_id, created_by, kind, name, reopened_from)
+    values ('c6000000-0000-0000-0000-0000000000b2', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+            '11111111-1111-1111-1111-111111111111', 'buy', 'Reopen two', 'c6000000-0000-0000-0000-0000000000b0')$$,
+  'once the reopened check is deleted the decision can be reopened again');
+
 select * from extensions.finish();
 rollback;

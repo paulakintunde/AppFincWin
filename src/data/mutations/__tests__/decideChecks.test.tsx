@@ -19,6 +19,7 @@ import {
   useCreateCheck,
   useMarkCheckSeen,
   useReopenCheck,
+  useReopenRedirect,
   useRemoveDecision,
   useSaveCheckDraft,
   type CreateCheckVars,
@@ -387,5 +388,21 @@ describe('useReopenCheck', () => {
       reopened_from: 'k1',
       inputs: { kind: 'buy', outcome: null, wait: { monthlyAmount: null }, why: 'x' },
     });
+  });
+
+  it('IN-B05: a reopen refused by the one-live-reopen index lands on the live reopened check instead', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [check('k1', { status: 'passed' })]);
+    fake.respondWith({ data: null, error: { message: 'duplicate key value violates unique constraint "decide_checks_reopened_once"', code: '23505' }, status: 409 });
+    fake.respondWith({ data: null, error: null, status: 200 }); // the tried id never landed
+    fake.respondWith(ok(check('live-1', { reopened_from: 'k1' })));
+    const { result } = await renderHook(() => useReopenCheck(), { wrapper: wrapper(qc) });
+    const tried = result.current.reopen(check('k1', { status: 'passed' }), '2026-10-10');
+    const redirect = await renderHook(() => useReopenRedirect(tried), { wrapper: wrapper(qc) });
+    await waitFor(() => expect(redirect.result.current).toBe('live-1'));
+    const ids = (qc.getQueryData<DecideCheckRow[]>(KEY) ?? []).map((r) => r.id);
+    expect(ids).toContain('live-1');
+    expect(ids).not.toContain(tried);
+    expect(fake.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toContainEqual(['reopened_from', 'k1']);
   });
 });

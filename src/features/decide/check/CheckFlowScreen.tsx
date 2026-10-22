@@ -11,7 +11,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { router, useFocusEffect, type Href } from 'expo-router';
-import { useMarkCheckSeen, useReopenCheck } from '@/data/mutations/decideChecks';
+import { useMarkCheckSeen, useReopenCheck, useReopenRedirect } from '@/data/mutations/decideChecks';
 import { useSaveCardRate, useSaveCardTerms, type CardTermsInput } from '@/data/mutations/decideLinks';
 import { useAccounts } from '@/data/queries/accounts';
 import { useAccountBalances, useHouseholdMemberNames } from '@/data/queries/activity';
@@ -183,6 +183,11 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
   const today = rc.today;
   const draft = useCheckDraft(id, kind, today);
   const { row } = draft;
+  // IN-B05: a reopen that found the decision already reopened on another device opens that live check instead.
+  const reopenedElsewhere = useReopenRedirect(id);
+  useEffect(() => {
+    if (reopenedElsewhere !== null) router.replace(checkHref(reopenedElsewhere));
+  }, [reopenedElsewhere]);
   const snapshot = useDecideSnapshot();
   // D-67 (CR-C06, CR-B02): a check typed in another currency is shown, edited and judged in the snapshot currency at the
   // latest stored rate; edits are converted back before they are saved, so the stored stamp never changes.

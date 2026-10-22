@@ -83,6 +83,7 @@ jest.mock('@/data/queries/categories', () => ({
 jest.mock('@/data/mutations/decideChecks', () => ({
   useMarkCheckSeen: () => ({ markSeen: jest.fn() }),
   useReopenCheck: () => ({ reopen: (...a: unknown[]) => (mockReopen as (...x: unknown[]) => string)(...a) }),
+  useReopenRedirect: () => null,
 }));
 jest.mock('@/data/mutations/decideLinks', () => ({ useSaveCardRate: () => ({ save: jest.fn() }), useSaveCardTerms: () => ({ save: jest.fn() }) }));
 jest.mock('../../notifications/waitReminder', () => ({ cancelCheckReminders: (...a: unknown[]) => (mockCancelReminders as (...x: unknown[]) => Promise<void>)(...a) }));

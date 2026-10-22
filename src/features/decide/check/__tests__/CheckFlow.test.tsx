@@ -98,9 +98,11 @@ jest.mock('@/data/queries/activity', () => ({
 }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [] }) }));
 jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: [] }) }));
+let mockRedirect: string | null = null;
 jest.mock('@/data/mutations/decideChecks', () => ({
   useMarkCheckSeen: () => ({ markSeen: (...a: unknown[]) => mockMarkSeen(...a) }),
   useReopenCheck: () => ({ reopen: jest.fn(() => 'new-id') }),
+  useReopenRedirect: () => mockRedirect,
 }));
 jest.mock('@/data/mutations/decideLinks', () => ({
   useSaveCardRate: () => ({ save: (...a: unknown[]) => mockSaveRate(...a) }),
@@ -172,6 +174,7 @@ beforeEach(() => {
   mockDebts = [];
   mockBought = { status: 'idle', computation: null };
   setSwipeBackInterceptor(null);
+  mockRedirect = null;
   backHandlers.length = 0;
   jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_e, handler) => {
     backHandlers.push(handler as () => boolean);
@@ -296,6 +299,12 @@ describe('back', () => {
       expect(interceptSwipeBack()).toBe(true);
     });
     expect(screen.getByText(stepText(2))).toBeTruthy();
+  });
+
+  it('IN-B05: a reopen that found the decision already reopened opens that live check', async () => {
+    mockRedirect = 'c6000000-0000-0000-0000-0000000000b1';
+    await open({}, { initialStep: 3 });
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'c6000000-0000-0000-0000-0000000000b1' } });
   });
 
   it('releases the swipe-back interceptor on unmount', async () => {

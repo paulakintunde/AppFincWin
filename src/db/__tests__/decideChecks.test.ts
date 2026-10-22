@@ -94,6 +94,31 @@ describe('insertDecideCheck', () => {
     await expect(insertDecideCheck(client, NEW_CHECK)).resolves.toEqual(checkRow());
   });
 
+  it('IN-B05: a reopen refused as a second live reopen returns the live reopened check', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'dup', code: '23505' }, status: 409 });
+    client.respondWith({ data: null, error: null, status: 200 });
+    client.respondWith({ data: checkRow({ id: 'live', reopened_from: 'k0' }), error: null, status: 200 });
+    await expect(insertDecideCheck(client, { ...NEW_CHECK, reopened_from: 'k0' })).resolves.toMatchObject({ id: 'live' });
+  });
+
+  it('IN-B05: a duplicate that is neither a replay nor a reopen still throws', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'dup', code: '23505' }, status: 409 });
+    client.respondWith({ data: null, error: null, status: 200 });
+    await expect(insertDecideCheck(client, NEW_CHECK)).rejects.toBeTruthy();
+    const reopen = createFakeSupabase();
+    reopen.respondWith({ data: null, error: { message: 'dup', code: '23505' }, status: 409 });
+    reopen.respondWith({ data: null, error: null, status: 200 });
+    reopen.respondWith({ data: null, error: null, status: 200 });
+    await expect(insertDecideCheck(reopen, { ...NEW_CHECK, reopened_from: 'k0' })).rejects.toBeTruthy();
+    const broken = createFakeSupabase();
+    broken.respondWith({ data: null, error: { message: 'dup', code: '23505' }, status: 409 });
+    broken.respondWith({ data: null, error: null, status: 200 });
+    broken.respondWith({ data: null, error: { message: 'down', code: '500' }, status: 500 });
+    await expect(insertDecideCheck(broken, { ...NEW_CHECK, reopened_from: 'k0' })).rejects.toBeTruthy();
+  });
+
   it('rejects a key outside the insert list before any request', async () => {
     const client = createFakeSupabase();
     await expect(insertDecideCheck(client, { ...NEW_CHECK, status: 'bought' } as unknown as NewDecideCheck)).rejects.toBeInstanceOf(

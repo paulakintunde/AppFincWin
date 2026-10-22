@@ -8,6 +8,7 @@
 // and field counts only, never the item name or any amount (privacy). Variables are plain JSON so a paused
 // mutation survives a restart.
 import * as Crypto from 'expo-crypto';
+import { useSyncExternalStore } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import {
@@ -107,6 +108,25 @@ function dropGoal(qc: QueryClient, cache: CheckCacheKey, goalId: string): void {
   );
 }
 
+// IN-B05: a reopen that finds the decision already reopened (decide_checks_reopened_once, another device first) lands on
+// that check instead. The id it tried maps to the live one, so a screen opened on the tried id can move there.
+const reopenRedirects = new Map<string, string>();
+const redirectListeners = new Set<() => void>();
+function redirectReopen(triedId: string, liveId: string): void {
+  reopenRedirects.set(triedId, liveId);
+  for (const listener of redirectListeners) listener();
+}
+function subscribeRedirects(listener: () => void): () => void {
+  redirectListeners.add(listener);
+  return () => {
+    redirectListeners.delete(listener);
+  };
+}
+/** IN-B05: the live check a reopen of `id` resolved to, when it found the decision already reopened; otherwise null. */
+export function useReopenRedirect(id: string): string | null {
+  return useSyncExternalStore(subscribeRedirects, () => reopenRedirects.get(id) ?? null);
+}
+
 export function registerDecideCheckMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.createCheck, {
     mutationFn: (vars: CreateCheckVars) =>
@@ -162,7 +182,14 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
       patchChecks(qc, cache, (rows) => upsertRow(rows, optimistic, 'start'));
     },
     onSuccess: (row: DecideCheckRow, vars: CreateCheckVars) => {
-      patchChecks(qc, { userId: vars.userId, householdId: vars.householdId }, (rows) => upsertRow(rows, row, 'start'));
+      const cache = { userId: vars.userId, householdId: vars.householdId };
+      if (row.id !== vars.id) {
+        // IN-B05: the decision was already reopened; the optimistic copy goes and the live one is opened instead.
+        patchChecks(qc, cache, (rows) => upsertRow(rows.filter((r) => r.id !== vars.id), row, 'start'));
+        redirectReopen(vars.id, row.id);
+        return;
+      }
+      patchChecks(qc, cache, (rows) => upsertRow(rows, row, 'start'));
     },
     onError: async (err: unknown, vars: CreateCheckVars) => {
       const cls = classifySettledWriteError(err);

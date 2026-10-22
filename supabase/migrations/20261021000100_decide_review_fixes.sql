@@ -9,6 +9,8 @@
 --   5. CR-D02  statement_periods.import_batch_id and the statement_periods_live view: a period counts only while
 --              the import that stated it still has a live line, so an undone or refused import leaves no
 --              complete month behind.
+--   6. IN-B05  decide_checks_reopened_once: a decision has at most one live reopened check (after clearing the link
+--              on any extra ones already there), so two devices cannot each reopen it.
 
 -- 1. CR-A01 -------------------------------------------------------------------------------------------------
 -- PostgREST sends upsert as INSERT .. ON CONFLICT (user_id) DO UPDATE SET user_id = excluded.user_id, ..., and
@@ -397,3 +399,23 @@ create view public.statement_periods_live
          and t.deleted_at is null);
 revoke all on public.statement_periods_live from anon, authenticated;
 grant select on public.statement_periods_live to authenticated;
+
+-- 6. IN-B05 -------------------------------------------------------------------------------------------------
+-- Past decisions' Reopen writes a new open check with reopened_from = the decision. The client opens the live check
+-- already reopened from a decision instead of writing another (7f29155b), but two devices could still each reopen it
+-- once. A partial unique index makes it one live reopened check per decision; a soft-deleted one frees the decision to
+-- be reopened again. Before the index, any extra live checks reopened from the same decision keep everything but the
+-- link: the oldest (created_at, then id) stays the reopened check and the others become ordinary open checks. Nothing
+-- is deleted. The guard lets a NULL reopened_from through (WR-A01, section 2).
+with ranked as (
+  select id, row_number() over (partition by reopened_from order by created_at, id) as n
+  from public.decide_checks
+  where reopened_from is not null and deleted_at is null
+)
+update public.decide_checks c
+   set reopened_from = null
+  from ranked r
+ where c.id = r.id and r.n > 1;
+
+create unique index decide_checks_reopened_once on public.decide_checks (reopened_from)
+  where reopened_from is not null and deleted_at is null;
