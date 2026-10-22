@@ -312,6 +312,8 @@ export function useAttachLine(): {
     targetId: string;
     decidedAt: string;
     lineDate: string;
+    /** IN-B01: the app's time zone, which sets the decided date the role is measured from. */
+    timeZone: string;
   }): string;
 } {
   const mutation = useMutation<DecideLinkRow, unknown, AttachLineVars>({
@@ -322,7 +324,7 @@ export function useAttachLine(): {
     attach(input) {
       const id = Crypto.randomUUID();
       // Part 2 (D-36, A17): a line gets its role from its date; there is no input for it.
-      const role = input.entity === 'transactions' ? attachRoleFor(input.decidedAt, input.lineDate) : null;
+      const role = input.entity === 'transactions' ? attachRoleFor(input.decidedAt, input.lineDate, input.timeZone) : null;
       mutation.mutate({
         userId: input.userId,
         id,

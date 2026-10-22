@@ -92,6 +92,7 @@ export function AttachLineSheet(props: AttachLineSheetProps) {
                     targetId: line.id,
                     decidedAt,
                     lineDate: line.local_date,
+                    timeZone: ctx.timeZone,
                   });
                   showToast({ kind: 'ordinary', text: { key: 'decide.toast.attached' } });
                   onClose();

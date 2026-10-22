@@ -134,6 +134,7 @@ describe('useAttachLine', () => {
       householdId: 'hh-1',
       entity: 'transactions' as const,
       decidedAt: '2026-10-01T12:00:00Z',
+      timeZone: 'UTC',
     };
 
     result.current.attach({ ...base, targetId: 't1', lineDate: '2026-10-05' });

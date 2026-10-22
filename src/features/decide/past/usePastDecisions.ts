@@ -13,6 +13,7 @@ import type { DecideLinkRow } from '@/db/decideLinks';
 import type { CustomCurrencyRow, FxLatestRow, TransactionRow } from '@/db/rows';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { currencyCode } from '@/engine/money';
+import { localDateIn } from '@/engine/time';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
@@ -25,14 +26,9 @@ import { parseCheckInputs } from '../snapshot/checkInputs';
 
 const PAST_LINES_KEY = 'past-decisions';
 
-function pad(n: number, width: number): string {
-  return String(n).padStart(width, '0');
-}
-
-/** The device-local calendar date of a timestamptz instant, as 'YYYY-MM-DD'. */
-export function localDateOf(timestamp: string): string {
-  const d = new Date(timestamp);
-  return `${pad(d.getFullYear(), 4)}-${pad(d.getMonth() + 1, 2)}-${pad(d.getDate(), 2)}`;
+/** IN-B01: the calendar date of a timestamptz instant in the app's time zone (rc.timeZone), as 'YYYY-MM-DD'. */
+export function localDateOf(timestamp: string, timeZone: string): string {
+  return localDateIn(new Date(timestamp), timeZone);
 }
 
 export interface PastContext {
@@ -40,6 +36,7 @@ export interface PastContext {
   rates: readonly FxLatestRow[];
   customs: readonly CustomCurrencyRow[];
   today: string;
+  timeZone: string;
 }
 
 /** Linked transaction rows as the pure journal helper's lines: home minor units, null where no stored rate exists. */
@@ -68,7 +65,7 @@ export function estimateInputFor(
   const monthly = toHome(decision.estimate_monthly ?? 0);
   if (dayOne === null || monthly === null) return null;
   return {
-    decidedDate: localDateOf(decision.decided_at),
+    decidedDate: localDateOf(decision.decided_at, ctx.timeZone),
     estimateDayOne: dayOne,
     estimateMonthly: monthly,
     lines: toLinkedLines(lines, ctx.home, ctx.rates),
@@ -133,8 +130,8 @@ export function usePastContext() {
   );
   const formatDate = useMemo(() => (d: string) => fmt.formatDate(d), [fmt]);
   const ctx = useMemo<PastContext>(
-    () => ({ home: rc.homeCurrency, rates: rates ?? [], customs: customs ?? [], today: rc.today }),
-    [rc.homeCurrency, rates, customs, rc.today]
+    () => ({ home: rc.homeCurrency, rates: rates ?? [], customs: customs ?? [], today: rc.today, timeZone: rc.timeZone }),
+    [rc.homeCurrency, rates, customs, rc.today, rc.timeZone]
   );
   return { userId: rc.userId, householdId: rc.householdId, today: rc.today, ctx, whole, wholeIn, formatDate };
 }

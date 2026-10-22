@@ -87,6 +87,7 @@ export function useEstimateBias(): EstimateBiasFigures {
     (!hasTargets || lineRows !== undefined);
   const home = rc.homeCurrency;
   const today = rc.today;
+  const timeZone = rc.timeZone;
 
   return useMemo(() => {
     if (!rc.ready || !loaded || bought.length === 0 || targets.truncated) return NONE;
@@ -99,6 +100,7 @@ export function useEstimateBias(): EstimateBiasFigures {
         home,
         rates: rates ?? [],
         customs: customs ?? [],
+        timeZone,
       });
       const [dayOne, payment, running] = estimateBias(decisions, currencyCode(home));
       const pick = (b: EstimateBias | undefined): EstimateBias | null => (b !== undefined && b.biasBasisPoints !== null ? b : null);
@@ -106,5 +108,5 @@ export function useEstimateBias(): EstimateBiasFigures {
     } catch {
       return NONE; // a gap note is never worth breaking step 2
     }
-  }, [rc.ready, loaded, bought, linkRows, lineRows, today, home, rates, customs, targets.truncated]);
+  }, [rc.ready, loaded, bought, linkRows, lineRows, today, home, rates, customs, timeZone, targets.truncated]);
 }

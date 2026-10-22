@@ -44,7 +44,7 @@ export function PastDecisionsScreen() {
 
   const selected = decisions.find((d) => d.id === openId) ?? null;
 
-  const dateOf = (d: DecideCheckRow) => formatDate(d.decided_at !== null ? localDateOf(d.decided_at) : localDateOf(d.updated_at));
+  const dateOf = (d: DecideCheckRow) => formatDate(d.decided_at !== null ? localDateOf(d.decided_at, ctx.timeZone) : localDateOf(d.updated_at, ctx.timeZone));
 
   const subLine = (d: DecideCheckRow): string | null => {
     const inputs = parseCheckInputs(d.inputs, model.today);

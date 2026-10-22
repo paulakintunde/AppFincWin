@@ -21,7 +21,7 @@ const mockToast = jest.fn();
 const mockPush = jest.fn();
 
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', today: '2026-10-15', ready: true }),
+  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', today: '2026-10-15', timeZone: 'UTC', ready: true }),
 }));
 jest.mock('@/data/queries/decide', () => ({
   useSavingsGoals: () => ({ data: mockGoals }),
@@ -140,6 +140,7 @@ describe('DecisionDetailSheet', () => {
       targetId: 'c1',
       decidedAt: '2026-08-01T12:00:00Z',
       lineDate: '2026-10-02',
+      timeZone: 'UTC',
     });
   });
 

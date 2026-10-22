@@ -3,6 +3,7 @@
 // line of its role is null, never zero (04 D-56); a line with no stored rate makes its figure null (D-39).
 import type { PastDecision } from '@/engine/decide';
 import { currencyCode, divideHalfUp, minorUnits } from '@/engine/money';
+import { localDateIn } from '@/engine/time';
 import { convertLatest } from '@/data/queries/fxConvert';
 import { homeAmountFor } from '@/data/queries/homeAmount';
 import type { DecideCheckRow } from '@/db/decideChecks';
@@ -12,14 +13,9 @@ import { compareEstimate } from './estimateActual';
 
 const ATTACH_DAY_ONE_WINDOW_DAYS = 7;
 
-function pad(n: number, width: number): string {
-  return String(n).padStart(width, '0');
-}
-
-/** The device-local calendar date of a timestamptz instant, as 'YYYY-MM-DD'. */
-function localDateOf(timestamp: string): string {
-  const d = new Date(timestamp);
-  return `${pad(d.getFullYear(), 4)}-${pad(d.getMonth() + 1, 2)}-${pad(d.getDate(), 2)}`;
+/** IN-B01: the calendar date of a timestamptz instant in the app's time zone (rc.timeZone), as 'YYYY-MM-DD'. */
+function localDateOf(timestamp: string, timeZone: string): string {
+  return localDateIn(new Date(timestamp), timeZone);
 }
 
 function dayNumber(date: string): number {
@@ -28,8 +24,8 @@ function dayNumber(date: string): number {
 }
 
 /** A17: a line within 7 days of the decision (on the day or after) is a day-one cost, otherwise a running cost. */
-export function attachRoleFor(decidedAt: string, lineDate: string): 'day_one' | 'running_cost' {
-  const gap = dayNumber(lineDate) - dayNumber(localDateOf(decidedAt));
+export function attachRoleFor(decidedAt: string, lineDate: string, timeZone: string): 'day_one' | 'running_cost' {
+  const gap = dayNumber(lineDate) - dayNumber(localDateOf(decidedAt, timeZone));
   return gap >= 0 && gap <= ATTACH_DAY_ONE_WINDOW_DAYS ? 'day_one' : 'running_cost';
 }
 
@@ -48,10 +44,12 @@ export interface ToPastDecisionsArgs {
   home: string;
   rates: readonly FxLatestRow[];
   customs: readonly CustomCurrencyRow[];
+  /** IN-B01: the app's time zone, which sets each decided date. */
+  timeZone: string;
 }
 
 export function toPastDecisions(args: ToPastDecisionsArgs): PastDecision[] {
-  const { decisions, links, lines, today, home, rates, customs } = args;
+  const { decisions, links, lines, today, home, rates, customs, timeZone } = args;
   const lineById = new Map(lines.filter((l) => l.deleted_at === null).map((l) => [l.id, l]));
   const out: PastDecision[] = [];
 
@@ -59,7 +57,7 @@ export function toPastDecisions(args: ToPastDecisionsArgs): PastDecision[] {
     if (check.status !== 'bought' || check.deleted_at !== null || check.decided_at === null) continue;
     if (check.estimate_monthly_payment === null) continue;
 
-    const decidedDate = localDateOf(check.decided_at);
+    const decidedDate = localDateOf(check.decided_at, timeZone);
     const [c30, c90] = compareEstimate(
       { decidedDate, estimateDayOne: 0, estimateMonthly: 0, lines: [] },
       today

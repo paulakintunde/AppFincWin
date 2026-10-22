@@ -76,7 +76,7 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
   const status = decision?.status ?? 'bought';
   const chip = stateChip(status === 'open' ? 'draft' : status, 'full');
   const inputs = decision !== null ? parseCheckInputs(decision.inputs, today) : null;
-  const decidedDate = decision?.decided_at != null ? localDateOf(decision.decided_at) : null;
+  const decidedDate = decision?.decided_at != null ? localDateOf(decision.decided_at, ctx.timeZone) : null;
   // WR-B07: the quoted price before tax, fees and trade-ins; a bought check's final price after them. Both in the currency
   // the check was typed in; the estimates and actuals below are in the home currency.
   const price = inputs?.advertised ?? null;

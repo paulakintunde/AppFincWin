@@ -20,7 +20,7 @@ const mockPush = jest.fn();
 const mockToast = jest.fn();
 
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', today: '2026-10-15', ready: true }),
+  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', today: '2026-10-15', timeZone: 'UTC', ready: true }),
 }));
 jest.mock('@/data/queries/decide', () => ({
   useDecideChecks: () => ({ data: mockChecks }),

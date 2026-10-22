@@ -37,15 +37,22 @@ const rates: FxLatestRow[] = [
   { quote: 'USD', rate: '1.10', rate_date: '2026-03-01', source: 'frankfurter-v2' },
   { quote: 'GBP', rate: '0.85', rate_date: '2026-03-01', source: 'frankfurter-v2' },
 ];
-const base = { rates, customs: [], home: 'USD' };
+const base = { rates, customs: [], home: 'USD', timeZone: 'UTC' };
 
 describe('attachRoleFor', () => {
   it('is a day-one cost within 7 days of the decision, else a running cost', () => {
     const at = '2026-01-10T12:00:00Z';
-    expect(attachRoleFor(at, '2026-01-10')).toBe('day_one');
-    expect(attachRoleFor(at, '2026-01-17')).toBe('day_one');
-    expect(attachRoleFor(at, '2026-01-18')).toBe('running_cost');
-    expect(attachRoleFor(at, '2026-01-09')).toBe('running_cost');
+    expect(attachRoleFor(at, '2026-01-10', 'UTC')).toBe('day_one');
+    expect(attachRoleFor(at, '2026-01-17', 'UTC')).toBe('day_one');
+    expect(attachRoleFor(at, '2026-01-18', 'UTC')).toBe('running_cost');
+    expect(attachRoleFor(at, '2026-01-09', 'UTC')).toBe('running_cost');
+  });
+
+  it('IN-B01: the decided date is taken in the app time zone, not the device one', () => {
+    const lateEvening = '2026-01-11T06:00:00Z'; // 22:00 on the 10th in Los Angeles
+    expect(attachRoleFor(lateEvening, '2026-01-17', 'America/Los_Angeles')).toBe('day_one');
+    expect(attachRoleFor(lateEvening, '2026-01-10', 'America/Los_Angeles')).toBe('day_one');
+    expect(attachRoleFor(lateEvening, '2026-01-10', 'Asia/Tokyo')).toBe('running_cost');
   });
 });
 
