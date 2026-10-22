@@ -39,20 +39,22 @@ export function NetWorthChart({ path, horizonMonths, rateLabel, whole }: NetWort
   const endWithout = lastValue(path.withoutPurchase);
   const outOfRange = path.rangeCode === 'exceeds_range';
   const allNull = endWith === null && endWithout === null;
-  const alt = outOfRange
-    ? t('decide.depth.invest.netWorthAltTooLarge', { months: horizonMonths, rate: rateLabel })
-    : t('decide.depth.invest.netWorthAlt', {
-        months: horizonMonths,
-        with: endWith ? whole.formatMoney(endWith.value as MinorUnits) : '',
-        without: endWithout ? whole.formatMoney(endWithout.value as MinorUnits) : '',
-        rate: rateLabel,
-      });
-  const labelStyle = { fontSize: fontSize.tabLabel, color: colors.inkMuted };
-  const metaStyle = { fontSize: fontSize.meta, color: colors.inkMuted };
   const endLabel = (path_: readonly (number | null)[], end: { value: number } | null) =>
     end !== null && path_[path_.length - 1] !== null && path_[path_.length - 1] !== undefined
       ? whole.formatMoney(end.value as MinorUnits)
       : t('decide.depth.invest.tooLarge');
+  // WR-D08: an end the engine could not project reads "Too large to project" in the alt text too, matching the end
+  // labels, never an empty slot.
+  const alt = outOfRange
+    ? t('decide.depth.invest.netWorthAltTooLarge', { months: horizonMonths, rate: rateLabel })
+    : t('decide.depth.invest.netWorthAlt', {
+        months: horizonMonths,
+        with: endLabel(path.withPurchase, endWith),
+        without: endLabel(path.withoutPurchase, endWithout),
+        rate: rateLabel,
+      });
+  const labelStyle = { fontSize: fontSize.tabLabel, color: colors.inkMuted };
+  const metaStyle = { fontSize: fontSize.meta, color: colors.inkMuted };
   const yOf = (v: number) => box.y0 + ((ticks.max - v) / (ticks.max - ticks.min)) * (box.y1 - box.y0);
   const length = path.withPurchase.length;
   const xOf = (i: number) => (length > 1 ? box.x0 + ((box.x1 - box.x0) * i) / (length - 1) : box.x0);
@@ -95,7 +97,8 @@ export function NetWorthChart({ path, horizonMonths, rateLabel, whole }: NetWort
             allowFontScaling={false}
             style={[styles.axis, labelStyle, { top: box.y1 + 6, left: xOf(i) - LABEL_W / 2, width: LABEL_W, textAlign: 'center' }]}
           >
-            {i === 0 ? t('decide.depth.cashPath.today') : String(i)}
+            {/* WR-D08: the index is a month on the horizon, labelled with its unit */}
+            {i === 0 ? t('decide.depth.cashPath.today') : t('decide.depth.invest.axisMonths', { count: i })}
           </Text>
         ))}
       </View>

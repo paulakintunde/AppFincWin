@@ -1864,7 +1864,7 @@ const en = {
         caption: 'A projection at the rate you entered, not a forecast.', captionZero: 'At 0% the money is only held, not grown.',
         feeLabel: 'Holding fee (optional)', feeSuffix: 'a year', feeA11y: 'Holding fee, percent a year', feeSub: 'Platform and fund fees a year, if any. Nothing is assumed.', // D-44
         rateNet: '{{rate}}% a year, {{net}}% after fees', captionFee: 'A projection at the rate you entered less the {{fee}}% fee, not a forecast.', captionZeroFee: 'At 0% the money is only held, and the {{fee}}% fee comes off it.',
-        tooLarge: 'Too large to project at this rate', netWorthAltTooLarge: 'After {{months}} months the path is too large to project at {{rate}}%.', // D-47
+        tooLarge: 'Too large to project at this rate', axisMonths: '{{count}} mo', netWorthAltTooLarge: 'After {{months}} months the path is too large to project at {{rate}}%.', // D-47
         rateCap: 'Up to 100% a year', // D-48
         horizonChip: '{{count}}', horizonA11y: 'Months to project', netWorthRateA11y: 'Rate for the net worth chart', // 05-45
       },

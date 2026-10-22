@@ -163,7 +163,7 @@ describe('NetWorthChart', () => {
     expect(getByText('Without: $1400')).toBeTruthy();
     expect(getByText('With this: $1100')).toBeTruthy();
     expect(getByText('Today')).toBeTruthy();
-    expect(getByText('4')).toBeTruthy();
+    expect(getByText('4 mo')).toBeTruthy(); // WR-D08: the month index carries its unit
     const paths = nodes(toJSON(), 'RNSVGPath');
     expect(paths.map((p) => p.props.strokeDasharray)).toEqual([['4', '4'], undefined]);
   });
@@ -206,6 +206,14 @@ describe('NetWorthChart', () => {
     const { getByText } = await wrap(<NetWorthChart path={mixed} horizonMonths={1} rateLabel="9" whole={whole} />);
     expect(getByText('With this: $950')).toBeTruthy();
     expect(getByText('Without: Too large to project at this rate')).toBeTruthy();
+  });
+
+  it('WR-D08: one line all out of range without the range code never leaves an empty slot in the alt text', async () => {
+    const gap = nw({ withoutPurchase: [null, null], withPurchase: [m(90_000), m(95_000)] });
+    const { getByRole } = await wrap(<NetWorthChart path={gap} horizonMonths={1} rateLabel="5" whole={whole} />);
+    expect(getByRole('image').props.accessibilityLabel).toBe(
+      'After 1 months: $950 with this, Too large to project at this rate without, at 5%.'
+    );
   });
 });
 
