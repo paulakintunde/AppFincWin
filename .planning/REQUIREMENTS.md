@@ -246,6 +246,10 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-22**: User can set a 48-hour cooling-off reminder on a purchase that needs spreading (05 D-35)
 - [ ] **DCU-23**: Amounts in other currencies are converted at the stamped rate for past lines and the latest rate for balances, and the verdict says so (05 D-37, D-39)
 - [ ] **DCU-24**: User can record debts with minimum terms (pre-filled from the market table for cards) and imports can mark complete statement months (05 D-38, D-40)
+- [ ] **DCU-25**: User can tap an ⓘ beside a Decide term to read, in a small sheet, what it is and what it changes in the check (05 D-70)
+- [ ] **DCU-26**: User can type a custom value next to every preset chip row and amount slider in Decide, within stated bounds (durations 1-120 months, the investing horizon 1-600) (05 D-71)
+- [ ] **DCU-27**: Decide text never breaks mid-word, overlaps or cuts off system copy at 320-402 pt widths and 1.0-2.0x text size (05 D-76)
+- [ ] **DCU-28**: A check saves itself as the user edits, including when the app is backgrounded, and shows its save status; Clear and Delete each undo in one step and never remove what Go ahead wrote (05 D-73, D-77)
 
 ### Grow
 
@@ -607,6 +611,10 @@ Populated during roadmap creation.
 | DCU-22 | Phase 5 - Decide UI | Pending |
 | DCU-23 | Phase 5 - Decide UI | Pending |
 | DCU-24 | Phase 5 - Decide UI | Pending |
+| DCU-25 | Phase 5 - Decide UI | Pending |
+| DCU-26 | Phase 5 - Decide UI | Pending |
+| DCU-27 | Phase 5 - Decide UI | Pending |
+| DCU-28 | Phase 5 - Decide UI | Pending |
 | GRW-01 | Phase 6 - Grow | Pending |
 | GRW-02 | Phase 6 - Grow | Pending |
 | GRW-03 | Phase 6 - Grow | Pending |
@@ -684,8 +692,8 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 275 total (100 ticked)
-- Mapped to phases: 241
+- v1 requirements: 279 total (100 ticked)
+- Mapped to phases: 245
 - Unmapped: 0 ✓
 
 ---
@@ -695,6 +703,8 @@ Populated during roadmap creation.
 *2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 
 *2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
+*2026-10-22 — Decide UX refresh: DCU-25..DCU-28 added for 05-CONTEXT D-70, D-71, D-76 and D-73/D-77 (plans 05-54..05-79); D-72, D-74, D-75 and D-78 map to DCU-01, DCU-03, DCU-11 and DCU-14; v1 total now 279.*
+
 *2026-10-15 — Decide depth expansion: DEC-17..DEC-37 (Phase 4) and DCU-12..DCU-24 (Phase 5) added from 04-CONTEXT D-23..D-63 and 05-CONTEXT D-21..D-43; v1 total now 275.*
 
 *2026-10-09 — Phase 2.2 implemented: ACT-06..ACT-18 and REC-19..REC-25 marked "Implemented, awaiting device walkthrough and verification" (ticked only after 02.2-VERIFICATION.md, as for Phase 1); coverage recounted to 231/231 v1 requirements mapped.*

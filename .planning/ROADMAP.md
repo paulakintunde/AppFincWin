@@ -604,7 +604,7 @@ Plans:
 ### Phase 5: Decide UI
 **Goal**: A user gets a trustworthy, explained affordability verdict computed from their own logged months.
 **Depends on**: Phase 4 (engine), Phase 1 (data layer to source the snapshot)
-**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09, DCU-10, DCU-11, DCU-12, DCU-13, DCU-14, DCU-15, DCU-16, DCU-17, DCU-18, DCU-19, DCU-20, DCU-21, DCU-22, DCU-23, DCU-24, ANL-06
+**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09, DCU-10, DCU-11, DCU-12, DCU-13, DCU-14, DCU-15, DCU-16, DCU-17, DCU-18, DCU-19, DCU-20, DCU-21, DCU-22, DCU-23, DCU-24, DCU-25, DCU-26, DCU-27, DCU-28, ANL-06
 **Success Criteria** (what must be TRUE):
   1. A user can get a cash answer from just an item and a price without entering the multi-step flow, and can work through the five steps — item, price and payment, impact, alternatives, decision — for the full picture.
   2. A user can leave a check open, return to it later and see its verdict recomputed against current figures, or abandon it.
@@ -614,7 +614,7 @@ Plans:
   6. A brand-new user reaches a first verdict within their first session, in roughly a minute, without having logged or imported a month, and the verdict says plainly what it rests on and how an import sharpens it.
   7. Store screenshots 1–3 (verdict, what breaks, alternatives) can be captured from the App Review demo account's sample scenario with nothing staged outside the real app.
 **Launch inputs** (from `research/LAUNCH-POSITIONING.md`, 2026-09-26): the store name is *FincWin: Can I Afford It?*, so the quick check is the product's public promise and stays in the free tier (see `research/PRICING.md`). The first-read question is settled (04-CONTEXT D-11: rough figures give a cash-level answer only, via DEC-16). Discuss-phase must still settle the demo-account scenario (sofa $1,800 in a household of two; car $14,500 on a loan). Onboarding order — welcome, consent, one account, rough month, first check, then "Bring your history" — is shared with Phase 2 (02-30) and Phase 9, where the level questions move after the first verdict.
-**Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate).
+**Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate). **Decide UX refresh (2026-10-22):** 26 more plans, 05-54..05-79 in waves 10-16, for 05-CONTEXT D-70..D-78 (UI-SPEC "Decide UX refresh" R1-R14; DCU-25..DCU-28 added); 05-26 moves to wave 17 so the device pass covers the refresh. Total 79 plans in 17 waves.
 Plans:
 **Wave 1**
 - [x] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
@@ -686,8 +686,48 @@ Plans:
 **Wave 9** *(blocked on Wave 8 completion)*
 - [x] 05-25-PLAN.md — Full local gate and [BLOCKING] human-gated production push (npm run supabase:db:push)
 
-**Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots at 402x874, 60 s first read, reminders, haptics, back
+**Wave 10** *(Decide UX refresh; blocked on Wave 9 completion)*
+- [ ] 05-54-PLAN.md — Refresh copy catalogue: 31 ⓘ entries (INFO_TERMS), folds, custom values, Clear/Delete, save status, plural keys, undo vocabulary (D-70..D-78)
+- [ ] 05-55-PLAN.md — Text fit foundation: app-wide no-hyphenation Text, shouldStack, LabelValueRow, Seg radio list, one-line figures (D-76)
+- [ ] 05-57-PLAN.md — Draft contract: AppState flush, discard(), unthrottled persist on background, per-check save status (D-77)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 05-56-PLAN.md — Draft save never touches a deleted check (silent); Clear/Delete undo labels; queue order tests (D-73, D-77; no migration)
+- [ ] 05-58-PLAN.md — InfoButton, InfoSheet, useInfoSheet, InfoLabel (D-70)
+- [ ] 05-59-PLAN.md — FoldRow, FoldList, DetailsToggle, reveal-tap context, CollapsibleSection restyle (D-74, D-75)
+- [ ] 05-60-PLAN.md — First-run fold hint: AsyncStorage store, hook, tile (D-75)
+- [ ] 05-61-PLAN.md — Custom values: pure bounds and Wait maths, Custom chips and field, slider with a typed field (D-71)
+- [ ] 05-62-PLAN.md — Delete pattern: Dropdown glyph trigger, ConfirmSheet body, DeletableRow (D-73)
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 05-63-PLAN.md — Verdict card summary-first: state words, reason, three key figures, ⓘ, three focus stops (D-74)
+- [ ] 05-64-PLAN.md — What breaks fold (warning rows, Every line) and the ten fold previews (D-74)
+- [ ] 05-65-PLAN.md — Fold bodies: month, Where it lands (stacked rows), Assumptions (D-74, D-76)
+- [ ] 05-66-PLAN.md — Fold bodies: cash path, setbacks, options, expected income, who pays (D-74)
+- [ ] 05-67-PLAN.md — Step 2 method panels: Custom 1-120 terms, deposit slider field, credit-term ⓘ (D-71, D-70)
+- [ ] 05-68-PLAN.md — Steps 1-2 price card ⓘ and stacking chips (D-70, D-76)
+- [ ] 05-69-PLAN.md — Step 4: cheaper price field, Kept ⓘ, no clamps; investing body with Custom horizon (D-71, D-74)
+- [ ] 05-70-PLAN.md — Step 5: Wait period chips and typed amount, WrittenList (D-71, D-76)
+- [ ] 05-71-PLAN.md — Decide home trimmed: order, add-change row, Check an investment, Past decisions row, Lines fold (D-72, D-78)
+- [ ] 05-72-PLAN.md — Open checks and Changes coming up: hidden when empty, swipe/⋯ Delete with confirm and Undo (D-72, D-73)
+- [ ] 05-73-PLAN.md — Past decisions: Delete with per-outcome confirm, detail sheet reveal and stacking (D-73)
+- [ ] 05-76-PLAN.md — Quick check trimmed: pill-only idle card, Custom duration 1-120, Clear text button (D-78, D-71)
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [ ] 05-74-PLAN.md — Step 3 composition: FoldList, default open fold, scroll-on-open, hint; investing moves from step 4 (D-74, D-75)
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [ ] 05-75-PLAN.md — Check header: Clear with Undo route-back, save status, wrapping title; Go ahead confirm as a list (D-73, D-77)
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [ ] 05-77-PLAN.md — Retire replaced copy; rules U and E, plural keys and caps tests (D-76, DCU-09)
+- [ ] 05-78-PLAN.md — Delete the transitional step 3 section wrappers (D-74)
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [ ] 05-79-PLAN.md — Static text-fit guards (rules T, F, N, O) and fontScale-2 render guard; full gate (D-76)
+
+**Wave 17** *(blocked on Wave 16 completion)*
+- [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots at 402x874 (R8 frames), 60 s first read, reminders, haptics, back, and the refresh text-fit/TalkBack checklist
 **UI hint**: yes — this phase should carry the deepest testing and design-iteration budget in the roadmap; it is the product's actual moat.
 
 ### Phase 6: Grow
@@ -823,7 +863,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 0/53 | Planned | - |
+| 5. Decide UI | 52/79 | Executing (Decide UX refresh planned 2026-10-22) | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |

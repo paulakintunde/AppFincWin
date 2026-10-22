@@ -106,3 +106,34 @@ Non-interactive execution of `/gsd-execute-phase 5` (waves 1-8, plus 05-25 Task 
 
 ## D-69 provisional latest rate (2026-10-22)
 - User decision "Provisional latest rate", built before the 05-26 device checks. A line with no usable stamp converts at the latest stored rate (`provisionalHomeAmount`), is flagged provisional, shows the basis line with count and date, and caps confidence at fair via the engine's plain `provisionalRates` flag. No migration; nothing provisional is written; `homeAmountFor` unchanged. 05-26 device item added above.
+
+## 05-26 device checklist additions (Decide UX refresh, 05-54..05-79, D-70..D-78)
+
+Planned 2026-10-22. "Text-fit matrix" means 402x874 and 320x568 (points), each at text scale 1.0x and 2.0x: the Pixel (Settings > Display size and text) and an Android emulator AVD at 320dp (`adb shell wm size` / `wm density`); the iPhone XR when the iOS build exists. Pass: no word split mid-word, no overlap, no truncated system copy, every target 44 or larger, every ⓘ and chevron visible. TalkBack checks read every new control by its label.
+
+- [ ] 05-54 Copy: read every new ⓘ explanation and fold preview in context (no advice, no imperative); confirm "120 months" never breaks between the number and the unit.
+- [ ] 05-55 App-wide Text: Record (entry sheet, Activity rows and header) and Home cards at the text-fit matrix show no hyphenated or mid-word breaks after the shared Text change; segmented controls become radio lists at 2.0x and at 320.
+- [ ] 05-56 Delete data: delete an open check on one phone while it is open on the second; the second shows "This check isn't here" after refetch, and no failed-write entry appears in the sync line.
+- [ ] 05-57 Background save: type into a check, background the app within 1 s and swipe it away; reopen: the edit is there. Offline: the header reads "Offline, will save" and TalkBack announces it once.
+- [ ] 05-58 ⓘ: an ⓘ at the text-fit matrix sits beside its label, never over a word; TalkBack reads "About {term}, button"; the sheet opens with focus on the term and Close returns focus to the ⓘ; an ⓘ inside the card terms sheet stacks over it.
+- [ ] 05-59 Folds: fold rows at the text-fit matrix (previews never truncated); one open at a time; TalkBack announces "{title} expanded. {previous} collapsed."; the about action reaches a fold's ⓘ; selection haptic on each tap.
+- [ ] 05-60 Hint: first verdict on a fresh install shows "Tap a row to see the detail"; one fold tap hides it for good (kill and reopen: still hidden); sign out and in as another user: it shows again.
+- [ ] 05-61 Custom values: the Custom field at the text-fit matrix; the numeric keyboard has no decimal key for months; "Above the slider's range" shows when typing past the track.
+- [ ] 05-62 Delete pattern: full swipe opens the confirm (light haptic) and never deletes; the ⋯ menu reads "More for {name}"; Android back on the confirm keeps the row.
+- [ ] 05-63 Verdict card: DCU-11 frames 1-2 at 402x874 show the state words, reason, three key figures and basis marker with the card ending above the folds; at 320 and 2.0x the key figures stack and "Under 1 month" / "Not limited" wrap; TalkBack stops: summary, edge ⓘ and chip, key figures, Cushion ⓘ.
+- [ ] 05-64 What breaks: car frame 2 shows two full warning rows above the action bar; a long value stacks under its title at 2.0x; Show details reveals Every line with its ⓘ.
+- [ ] 05-65 Where it lands: Now / After read on their own line at 2.0x and at 320; no arrow; TalkBack reads "{ledger}, now {x}, after {y}, {direction}"; Assumptions shows 5 rows then Show details.
+- [ ] 05-66 Fold bodies: cash path without a pay series reads the new copy and the link opens Record's recurring series; the options tile is dark inside the white fold; setbacks wrap at 2.0x.
+- [ ] 05-67 Step 2: loan term Custom 90 months; a 600-month stored check opens with the range line in warn; the deposit field and slider at the text-fit matrix; TalkBack reads the Custom field's range hint.
+- [ ] 05-68 Steps 1-2 ⓘ: each ⓘ opens its explanation; step 1 kind and offset chips stack full width at 2.0x and at 320.
+- [ ] 05-69 Step 4: typing a cheaper amount moves the slider; the field shows the applied amount on blur; descriptors wrap at 2.0x; Kept ⓘ readable.
+- [ ] 05-70 Step 5: Ready in 6 sets the amount (rounded up to the cent); a typed amount selects Custom with its months; What gets written rows wrap at the text-fit matrix.
+- [ ] 05-71 Decide home: order per R2b on a fresh account (only the quick check, the add row with "Check an investment", Your month, Lines fold); the add row stacks at 2.0x; Lines fold preview and rows with ⓘ.
+- [ ] 05-72 Open checks and changes: swipe and ⋯ Delete with confirm and Undo; both cards hide when empty; names truncate at 2 lines with the full name read by TalkBack.
+- [ ] 05-73 Past decisions: delete a Waiting decision, then Undo: the goal and its reminder come back (reminder only if its date is ahead); a bought decision's lines stay in Activity after delete.
+- [ ] 05-74 Step 3: sofa frame shows "Nothing breaks" folded; car frame What breaks open; opening a fold low on the screen scrolls it under the header; with Remove animations on, nothing animates.
+- [ ] 05-75 Header: Clear on an open check, Undo returns to it while the empty check is untouched; the save status reads Saving…/Saved and wraps under the eyebrow at 2.0x and 320; the right slot wraps to its own row at 320; the Go ahead confirm list wraps like step 5.
+- [ ] 05-76 Quick check: idle card is one pill; with a result the Credit footer stays above the fold at 402x874 (R2b budget); six duration chips wrap to two rows; Clear resets with no toast; the onboarding first check matches.
+- [ ] 05-77 Copy: History shows old "Check abandoned" undo entries with their label (kept keys); no retired string appears anywhere in Decide.
+- [ ] 05-78 Step 3 after wrapper removal: every fold opens and shows its body (spot-check all ten on a household fixture).
+- [ ] 05-79 Whole Decide pass at the text-fit matrix on every R10 screen and sheet; attach captures to the phase verification.
