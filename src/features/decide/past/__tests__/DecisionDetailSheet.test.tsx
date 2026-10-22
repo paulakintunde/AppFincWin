@@ -25,6 +25,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
 }));
 jest.mock('@/data/queries/decide', () => ({
   useSavingsGoals: () => ({ data: mockGoals }),
+  useDecideChecks: () => ({ data: [] }),
   useGoalLines: () => ({ data: [] }),
   useAttachCandidates: () => ({ data: mockCandidates }),
 }));

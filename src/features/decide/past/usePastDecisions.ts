@@ -1,7 +1,7 @@
 // 05-22 (DCU-07, D-11, D-12): the Past decisions view model. Reads the decided checks, their links and the lines
 // those links point at, and turns a decision plus its linked lines into the numbers the list and the detail sheet show.
 // Integer minor units throughout; a figure that cannot be converted at stored rates is left out, never guessed.
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useReopenCheck } from '@/data/mutations/decideChecks';
 import { convertLatest } from '@/data/queries/fxConvert';
 import { homeAmountFor } from '@/data/queries/homeAmount';
@@ -223,9 +223,20 @@ export function usePastDecisions(): PastDecisionsModel {
 /** Reopening a waiting or passed decision: its reminders are cancelled and a new open check starts at step 1 (D-10, D-11). */
 export function useReopenDecision(today: string): (row: DecideCheckRow) => void {
   const { reopen } = useReopenCheck();
+  const rc = useRecordContext();
+  const checks = useDecideChecks(rc.userId ?? undefined, rc.householdId ?? undefined).data;
+  // IN-B05: one reopen per decision. A second press (even in the same frame, before the cache holds the new check)
+  // opens the live check already reopened from it instead of writing another.
+  const opened = useRef(new Map<string, string>());
   return (row) => {
+    const live = (checks ?? []).find((c) => c.reopened_from === row.id && c.deleted_at === null)?.id ?? opened.current.get(row.id);
+    if (live !== undefined) {
+      pushOnce(checkHref(live));
+      return;
+    }
     cancelCheckReminders(row.id).catch(() => {});
     const id = reopen(row, today);
+    opened.current.set(row.id, id);
     showToast({ kind: 'ordinary', text: { key: 'decide.toast.reopened' } });
     pushOnce(checkHref(id, { step: '1' }));
   };

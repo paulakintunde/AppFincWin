@@ -158,6 +158,28 @@ describe('PastDecisionsScreen', () => {
     expect(mockPush).toHaveBeenCalledTimes(1);
   });
 
+  it('IN-B05: Reopen writes one check; a second press, or a decision already reopened, opens the live check', async () => {
+    mockChecks = [decision('p', { name: 'Watch', status: 'passed', decided_at: '2026-09-01T12:00:00Z' })];
+    mockReopen.mockReturnValue('new-check');
+    await renderScreen();
+    await fireEvent.press(screen.getByText('Reopen'));
+    await fireEvent.press(screen.getByText('Reopen'));
+    expect(mockReopen).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-check' } });
+  });
+
+  it('IN-B05: a decision with a live reopened check opens that check instead of writing another', async () => {
+    mockChecks = [
+      decision('p', { name: 'Watch', status: 'passed', decided_at: '2026-09-01T12:00:00Z' }),
+      decision('again', { name: 'Watch', status: 'open', reopened_from: 'p', decided_at: null }),
+    ];
+    await renderScreen();
+    await fireEvent.press(screen.getByText('Reopen'));
+    expect(mockReopen).not.toHaveBeenCalled();
+    expect(mockCancel).not.toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'again' } });
+  });
+
   it('opens the decision detail when a row is pressed', async () => {
     mockChecks = [decision('b', { name: 'Laptop' })];
     await renderScreen();
