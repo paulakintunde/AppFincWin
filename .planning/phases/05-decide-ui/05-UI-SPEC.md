@@ -1290,7 +1290,7 @@ That is 31 entries. Each body is at most 3 sentences (the `ifInvested` caption c
 | `decide.quick.monthlyCaption` | "a month for 1\u00A0month" | "a month for {{count}}\u00A0months" | 22 characters. |
 | `decide.quick.monthlyCaptionZero` | "a month for 1\u00A0month, before any interest" | "a month for {{count}}\u00A0months, before any interest" | 43 characters, so the F4 cap of 43 holds. |
 | `decide.quick.monthlyCaptionPaidOff` | "a month for 1\u00A0month · paid off in month {{paid}}" (unreachable: a 1-month term cannot pay off earlier, kept for completeness) | "a month for {{count}}\u00A0months · paid off in month {{paid}}" | "a month for 120 months · paid off in month 119" is 46 characters, so the cap of 46 holds and the line stays one `meta` line at 402. |
-| `decide.pay.loanTermNote` | "At 1\u00A0month you pay {{payment}} a month and {{interest}} in interest. Every extra year lowers the payment and raises the total." | "At {{count}}\u00A0months you pay …" (same tail) | Wraps (body copy, no cap). |
+| `decide.pay.loanTermNote` | "At 1\u00A0month the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total." | "At {{count}}\u00A0months the payment is …" (same tail; R15.9) | Wraps (body copy, no cap). |
 | `decide.pay.monthsShort` | "1\u00A0mo" | "{{count}}\u00A0mo" | "120 mo" is 6 characters. |
 
 #### Save status (`decide.save.*`)
