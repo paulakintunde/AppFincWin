@@ -158,7 +158,8 @@ describe('OpenChecksCard', () => {
   it('abandons with an undoable destructive toast and a property-less event', async () => {
     const row = checkRow('a');
     await renderCard([row]);
-    await fireEvent.press(screen.getByLabelText('Abandon this check'));
+    // IN-B03: the x names its row
+    await fireEvent.press(screen.getByLabelText('Abandon Laptop'));
     expect(mockAbandon).toHaveBeenCalledWith(row);
     expect(showToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.toast.abandoned' }, stepId: 'step-1' });
     expect(mockTrack).toHaveBeenCalledWith('check_abandoned', {});

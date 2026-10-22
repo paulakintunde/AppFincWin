@@ -215,7 +215,8 @@ describe('ChangesCard', () => {
   it('the x removes with the Change removed toast and Undo step', async () => {
     const row = change();
     await wrap(<ChangesCard changes={[row]} currency="USD" whole={whole} />);
-    await fireEvent.press(screen.getByLabelText('Remove this change'));
+    // IN-B03: the x names its row
+    await fireEvent.press(screen.getByLabelText('Remove Raise'));
     expect(mockRemove).toHaveBeenCalledWith(row);
     expect(showToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.depth.changes.removed' }, stepId: 's-remove' });
   });

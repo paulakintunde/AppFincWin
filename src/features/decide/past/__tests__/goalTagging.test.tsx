@@ -150,7 +150,8 @@ describe('tagging transfers from the detail sheet', () => {
     mockGoalLines = [leg('x1', { goal_id: 'g1', name: 'Move to goal' })];
     await renderSheet(waiting());
     expect(screen.getByText('Move to goal')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Untag this transfer' }));
+    // IN-B03: the x names its row
+    await fireEvent.press(screen.getByRole('button', { name: 'Untag Move to goal' }));
     expect(mockEdit).toHaveBeenCalledWith(
       { id: 'x1', householdId: 'h1', month: '2026-08', expectedVersion: 4, patch: { goal_id: null } },
       { stepId: 'step-1', ownerId: 'u1', labelKey: 'transferUntagged', labelParams: { name: 'Move to goal' }, before: { goal_id: 'g1' } }

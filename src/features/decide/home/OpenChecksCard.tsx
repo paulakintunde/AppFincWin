@@ -179,7 +179,7 @@ export function OpenChecksCard({ source, checks, today, whole, currency }: OpenC
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={t('decide.open.abandonA11y')}
+                  accessibilityLabel={t('decide.open.abandonA11y', { name })}
                   onPress={() => onAbandon(row)}
                   style={styles.remove}
                 >

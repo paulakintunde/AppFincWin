@@ -127,6 +127,13 @@ describe('DecisionDetailSheet', () => {
     );
   });
 
+  it('IN-B03: a nameless linked line is named by its date and amount in the Unlink label', async () => {
+    const links = [link('l1', 'b', { target_id: 'tx1' })];
+    await renderSheet(decision('b'), links, [line('tx1', { name: null, note: null })]);
+    expect(screen.getByRole('button', { name: /^Unlink .+, \$500$/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Unlink ' })).toBeNull();
+  });
+
   it('attaches a line from the last 90 days, passing the decision date and the line date', async () => {
     mockCandidates = [line('c1', { name: 'Gadget', local_date: '2026-10-02', home_amount: -4_000 })];
     await renderSheet(decision('b'));

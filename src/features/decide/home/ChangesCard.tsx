@@ -99,7 +99,7 @@ export function ChangesCard({ changes, whole }: ChangesCardProps) {
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={t('decide.depth.changes.removeA11y')}
+                  accessibilityLabel={t('decide.depth.changes.removeA11y', { name: name || tag })}
                   onPress={() => onRemove(row)}
                   style={styles.remove}
                 >

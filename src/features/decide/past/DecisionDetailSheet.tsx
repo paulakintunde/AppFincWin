@@ -82,7 +82,14 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
   const price = inputs?.advertised ?? null;
   const finalPrice = inputs !== null ? finalPriceOf(inputs) : null;
   const typed = wholeIn(inputs?.currency ?? null);
-  const money =(n: number | null) => (n === null ? DASH : whole(n));
+  const money = (n: number | null) => (n === null ? DASH : whole(n));
+  /** IN-B03: a row action names its row; a line with no name is named by its date and amount. */
+  const rowName = (name: string, date: string | null, amount: number | null): string =>
+    name !== ''
+      ? name
+      : [date !== null ? formatDate(date) : null, amount !== null ? whole(Math.abs(amount)) : null]
+          .filter((p): p is string => p !== null)
+          .join(', ') || t('decide.quick.unnamed');
 
   const toneOf = (tone: Tone): 'danger' | 'accent' => (tone === 'over' ? 'danger' : 'accent');
   const diffText = (tone: Tone, diff: number) =>
@@ -288,7 +295,7 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
                       </Text>
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel={t('decide.depth.goal.untagA11y')}
+                        accessibilityLabel={t('decide.depth.goal.untagA11y', { name: rowName(name, l.local_date, amount) })}
                         onPress={() => setGoalTag(l, null)}
                         style={styles.unlink}
                       >
@@ -327,7 +334,7 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
                 ) : null}
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={t('decide.past.unlinkA11y', { name: v.name })}
+                  accessibilityLabel={t('decide.past.unlinkA11y', { name: rowName(v.name, v.date, v.amount) })}
                   onPress={() => onUnlink(v)}
                   style={styles.unlink}
                 >

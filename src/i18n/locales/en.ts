@@ -1455,7 +1455,7 @@ const en = {
     },
     rough: { title: 'Rough figures', in: 'Money in each month', out: 'Money out each month', cancel: 'Cancel', save: 'Save figures' },
     open: {
-      heading: 'Open checks', purchase: '+ Purchase', investment: '+ Investment', abandonA11y: 'Abandon this check',
+      heading: 'Open checks', purchase: '+ Purchase', investment: '+ Investment', abandonA11y: 'Abandon {{name}}',
       sub: '{{price}} · {{method}} · leaves {{left}} a month', subDraft: '{{price}} quoted · no payment method yet', saved: ' · saved',
       changed: 'Changed since you looked', was: ' · was {{state}}',
       emptyHeading: 'No checks open', emptyBody: 'Start one above, or type an item and a price in the quick check.',
@@ -1816,7 +1816,7 @@ const en = {
         heading: 'Changes coming up', add: '+ Add a change', addTitle: 'Add a change', editTitle: 'Edit change',
         income: 'Income', spending: 'Spending', goesUp: 'Goes up', goesDown: 'Goes down',
         nameLabel: 'Name', namePlaceholder: 'What changes', amount: 'Amount a month', starts: 'Starts', ends: 'Ends', noEnd: 'No end date',
-        cancel: 'Cancel', save: 'Save change', removed: 'Change removed', removeA11y: 'Remove this change',
+        cancel: 'Cancel', save: 'Save change', removed: 'Change removed', removeA11y: 'Remove {{name}}',
         emptyTitle: 'Nothing dated yet', emptyBody: 'A raise, a rent change or a bill ending: add it and every check looks 12 months ahead.',
         rowFrom: '{{sign}}{{amount}} a month · from {{month}}', rowUntil: ' · until {{month}}',
         unnamedIncome: 'Income change', unnamedSpending: 'Spending change', // addition (a nameless row)
@@ -1895,7 +1895,7 @@ const en = {
       goal: {
         caption: '{{saved}} of {{target}} saved', a11y: '{{pct}} percent', preview: 'A savings goal of {{target}}, {{amount}} a month, ready {{date}}.',
         previewNoDate: 'A savings goal of {{target}}, {{amount}} a month.', // addition
-        tag: 'Tag a transfer', tagTitle: 'Tag a transfer', tagEmpty: 'No transfers in the last 90 days.', untagA11y: 'Untag this transfer', tagged: 'Transfer tagged', untagged: 'Transfer untagged',
+        tag: 'Tag a transfer', tagTitle: 'Tag a transfer', tagEmpty: 'No transfers in the last 90 days.', untagA11y: 'Untag {{name}}', tagged: 'Transfer tagged', untagged: 'Transfer untagged',
         waitingRate: 'Waiting for a rate', written: 'A savings goal of {{target}}, {{amount}} a month, ready {{date}}.', writtenNoDate: 'A savings goal of {{target}}, {{amount}} a month.',
       },
       cooling: { toggle: 'Check again in 48 hours', sub: 'Reopens this check, recalculated. Off unless you turn it on.', written: 'A reminder in 48 hours that reopens this check, recalculated.' },
