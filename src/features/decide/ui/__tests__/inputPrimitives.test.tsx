@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
+import { Pressable } from 'react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { StepSlider } from '../StepSlider';
 import { RateInput } from '../RateInput';
@@ -102,6 +103,46 @@ describe('MoneyInput', () => {
     await fireEvent.changeText(input, '1,234.56');
     await fireEvent(input, 'blur');
     expect(onChange).toHaveBeenLastCalledWith(123456);
+  });
+
+  it('CR-D01: reports the parsed figure as it is typed, before any blur', async () => {
+    const onChange = jest.fn();
+    const { getByLabelText, queryByText } = await wrap(
+      <MoneyInput value={null} currency="USD" onChange={onChange} label="Loan" accessibilityLabel="Loan amount" />,
+    );
+    await fireEvent.changeText(getByLabelText('Loan amount'), '12.5');
+    expect(onChange).toHaveBeenLastCalledWith(1250);
+    await fireEvent.changeText(getByLabelText('Loan amount'), 'abc');
+    expect(onChange).toHaveBeenLastCalledWith(null);
+    // The parser error waits for the blur.
+    expect(queryByText(/amount/i)).toBeNull();
+  });
+
+  it('WR-D05: a parent reset to null clears the text; a null answer to its own report keeps it', async () => {
+    function Host() {
+      const [value, setValue] = React.useState<number | null>(null);
+      return (
+        <>
+          <MoneyInput
+            value={value}
+            currency="USD"
+            // The parent keeps only positive figures, as several step-2 panels do.
+            onChange={(minor) => setValue(minor !== null && minor > 0 ? minor : null)}
+            label="Loan"
+            accessibilityLabel="Loan amount"
+          />
+          <Pressable accessibilityLabel="Reset" onPress={() => setValue(null)} />
+        </>
+      );
+    }
+    const { getByLabelText } = await wrap(<Host />);
+    const input = getByLabelText('Loan amount');
+    await fireEvent.changeText(input, '0');
+    expect(getByLabelText('Loan amount').props.value).toBe('0');
+    await fireEvent.changeText(input, '0.5');
+    expect(getByLabelText('Loan amount').props.value).toBe('0.5');
+    await fireEvent.press(getByLabelText('Reset'));
+    expect(getByLabelText('Loan amount').props.value).toBe('');
   });
 
   it('shows the parser error and reports null for invalid text', async () => {

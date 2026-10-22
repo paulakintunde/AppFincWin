@@ -7,6 +7,11 @@ export interface ScreenProps {
   children: ReactNode;
   /** Renders inside a ScrollView instead of a plain View. Defaults to false. */
   scroll?: boolean;
+  /**
+   * CR-D01: a scrolling form screen. Taps on buttons land while a field keeps focus, and the content moves above the
+   * keyboard (iOS insets; Android resizes the window). Only applies with `scroll`.
+   */
+  form?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -19,7 +24,7 @@ export interface ScreenProps {
  * clipped there rather than drawn beneath it (Android forced edge-to-edge). Only `headerExtra`
  * stays as content padding, so the resting layout is identical to the non-scroll case.
  */
-export function Screen({ children, scroll = false, style }: ScreenProps) {
+export function Screen({ children, scroll = false, form = false, style }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useScreenInsets();
 
@@ -28,6 +33,8 @@ export function Screen({ children, scroll = false, style }: ScreenProps) {
       <View style={[styles.base, { backgroundColor: colors.canvas, paddingTop: insets.top }]}>
         <ScrollView
           style={[styles.base, { backgroundColor: colors.canvas }]}
+          keyboardShouldPersistTaps={form ? 'handled' : undefined}
+          automaticallyAdjustKeyboardInsets={form}
           contentContainerStyle={[
             { paddingTop: space.headerExtra, paddingBottom: insets.bottom, paddingHorizontal: space.screenH },
             style,

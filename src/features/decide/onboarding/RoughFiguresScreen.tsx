@@ -1,5 +1,7 @@
 // 05-23 (DCU-10, D-03): onboarding step 3, rough monthly in and out. Next saves the figures through the 05-19 settings
-// mutation (never `seeded`, which is server-managed); Skip goes on without saving and the first check answers cash-only.
+// mutation (never `seeded`, which is server-managed); Skip goes on, and with no figures the first check answers cash-only.
+// CR-D01: the fields report as the user types and the screen scrolls with the keyboard, so Next never waits on a blur
+// the iOS decimal pad cannot give. Skip saves whichever figure is already valid rather than dropping it unseen.
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
@@ -38,9 +40,19 @@ export function RoughFiguresScreen({ accountId }: RoughFiguresScreenProps) {
     settings.update({ rough_income: income, rough_spending: spending, currency: rc.homeCurrency });
     go();
   };
+  const skip = () => {
+    if (rc.userId !== null && (validIncome(income) || valid(spending))) {
+      settings.update({
+        ...(validIncome(income) ? { rough_income: income } : {}),
+        ...(valid(spending) ? { rough_spending: spending } : {}),
+        currency: rc.homeCurrency,
+      });
+    }
+    go();
+  };
 
   return (
-    <Screen>
+    <Screen scroll form>
       <SyncProblemLine inset={false} />
       <View style={styles.block}>
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
@@ -64,7 +76,7 @@ export function RoughFiguresScreen({ accountId }: RoughFiguresScreenProps) {
       </View>
       <View style={styles.actions}>
         <Pill label={t('decide.onboarding.next')} variant="primary" disabled={!canNext} onPress={next} />
-        <Pill label={t('decide.onboarding.skip')} variant="secondary" onPress={go} />
+        <Pill label={t('decide.onboarding.skip')} variant="secondary" onPress={skip} />
       </View>
     </Screen>
   );

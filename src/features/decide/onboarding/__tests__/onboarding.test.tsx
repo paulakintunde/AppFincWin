@@ -73,6 +73,24 @@ describe('RoughFiguresScreen', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
+  it('CR-D01: Next counts figures typed without a blur (the iOS decimal pad has no return key)', async () => {
+    await wrap(<RoughFiguresScreen accountId="acc-1" />);
+    await fireEvent.changeText(screen.getByLabelText('Money in each month'), '4000');
+    await fireEvent.changeText(screen.getByLabelText('Money out each month'), '2500');
+    await fireEvent.press(screen.getByText('Next'));
+    expect(mockUpdate).toHaveBeenCalledWith({ rough_income: 400000, rough_spending: 250000, currency: 'USD' });
+    expect(mockReplace).toHaveBeenCalledTimes(1);
+  });
+
+  it('CR-D01: Skip saves a valid figure already typed instead of dropping it', async () => {
+    await wrap(<RoughFiguresScreen accountId="acc-1" />);
+    await fireEvent.changeText(screen.getByLabelText('Money in each month'), '4000');
+    await fireEvent.changeText(screen.getByLabelText('Money out each month'), 'abc');
+    await fireEvent.press(screen.getByText('Skip for now'));
+    expect(mockUpdate).toHaveBeenCalledWith({ rough_income: 400000, currency: 'USD' });
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/setup/first-check', params: { accountId: 'acc-1' } });
+  });
+
   it('Skip for now goes on without saving', async () => {
     await wrap(<RoughFiguresScreen accountId="acc-1" />);
     await fireEvent.press(screen.getByText('Skip for now'));
