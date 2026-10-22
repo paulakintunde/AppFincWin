@@ -149,3 +149,6 @@ export const ESTIMATE_BIAS_MIN_DECISIONS = 3; // D-56
 
 // Cite: D-56: basis points are hundredths of a percent (10,000 to the unit).
 export const BASIS_POINTS_PER_UNIT = 10_000; // D-56
+
+// Cite: D-80 (UI-SPEC R15.7 E1.8): the largest annual rate an instalment plan accepts, 999.99% a year in the engine's Percent units. FincWin input bound (no published source); it matches the 0-999% range the level-payment maths is probed over (D-64).
+export const MAX_APR_PERCENT: Percent = percent('999.99'); // D-80

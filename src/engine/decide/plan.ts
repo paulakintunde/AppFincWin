@@ -57,12 +57,15 @@ import {
   ONE_HUNDRED_PERCENT,
   SIMULATION_MONTH_CAP,
   ZERO_PERCENT,
+  amortise,
+  amortiseDue,
   amortiseSchedule,
   ceilDivide,
   minorFromBigInt,
   percentFromScaled,
   simulateMinimumSchedule,
   singleRate,
+  type AmortisationResult,
   type MinimumOutcome,
   type Percent,
   type RateSchedule,
@@ -70,7 +73,7 @@ import {
   type ScheduledMinimumResult,
 } from '../payoff';
 import { cardEligibility } from './cardRule';
-import { LATE_PAYMENT_COUNTS, MONTHS_PER_YEAR } from './constants';
+import { LATE_PAYMENT_COUNTS, MAX_APR_PERCENT, MONTHS_PER_YEAR } from './constants';
 import { assertCurrency } from './currency';
 import type {
   BuyCheck,
@@ -282,6 +285,11 @@ function lateFeesFor(fee: MinorUnits | undefined, cap: MinorUnits | undefined, c
   return { feePerLatePayment: fee, capTotal: cap ?? null, oneLate: cost(one), twoLate: cost(two) };
 }
 
+/** The payments of a worked-out schedule: the level payment, then the adjusted final one (D-64). */
+function scheduleOf(am: AmortisationResult): MinorUnits[] {
+  return Array.from({ length: am.months }, (_, i) => (i === am.months - 1 ? am.finalPayment : am.payment));
+}
+
 function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'instalment' }>): PlanResult {
   if (p.lateFee !== undefined) assertMoney(p.lateFee, 'lateFee');
   if (p.lateFeeCapTotal !== undefined) {
@@ -290,53 +298,67 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
   }
   if (p.instalmentAmount !== null) assertMoney(p.instalmentAmount, 'instalment amount');
   if (p.instalmentCount !== null) assertTerm(p.instalmentCount, 'instalment count');
+  if (p.apr != null && p.apr > MAX_APR_PERCENT) throw new RangeError(`${FN}: instalment apr is above the maximum`);
+  // D-80: apr absent = no rate on this plan; apr null = a rate is expected and not given; a Percent = work the payment out.
+  const rateExpected = p.apr !== undefined;
   const reasons: PlanReason[] = [];
-  if (p.instalmentAmount === null) reasons.push('instalment_amount_missing');
+  if (!rateExpected && p.instalmentAmount === null) reasons.push('instalment_amount_missing');
   if (p.instalmentCount === null) reasons.push('instalment_count_missing');
-  if (p.instalmentAmount === null || p.instalmentCount === null) return missing(reasons);
+  if (p.apr === null) reasons.push('instalment_rate_missing');
+  if (reasons.length > 0) return missing(reasons);
 
-  const amount = p.instalmentAmount;
-  const count = p.instalmentCount;
+  const count = p.instalmentCount!;
+  const today = (p.firstPayment ?? 'today') === 'today';
   // 04-REVIEW ME-02: the on-the-day fees inside the price are paid on the day, as on the loan path; the instalments
   // cover the rest (financed = price - dayFees, floored at 0). Before this the fees left cash nowhere: dayOne was the
   // first instalment alone and total was amount x count, so the cash check was understated by the fees.
   const financed = Math.max(0, check.price - check.dayFees);
-  // 04-REVIEW LO-05: in bigint, and cross-checked against what the instalments must cover. Instalments that add up to
-  // less than the financed price are inconsistent terms, so the plan is `missing` with a code (the user fixes the
-  // amount or the count) rather than a verdict on a plan whose total sits below the price. Re-priced checks
-  // (withPrice, HI-03) never trip it: the amount is scaled up with the price.
-  const instalmentsTotal = BigInt(amount) * BigInt(count);
-  if (instalmentsTotal < BigInt(financed)) return missing(['instalment_total_below_price']);
-  const total = minorFromBigInt(instalmentsTotal + BigInt(check.dayFees), FN);
+  // D-80: with a rate the payment is worked out on the financed amount. 'today' is an annuity-due (first payment on the
+  // day), 'next_month' an ordinary annuity. A typed amount is always the one scored; computedPayment is the worked-out one.
+  const computed =
+    p.apr === undefined || p.apr === null ? null : (today ? amortiseDue : amortise)(m(financed), p.apr, count);
+  const amounts: MinorUnits[] =
+    p.instalmentAmount !== null ? Array.from({ length: count }, () => m(p.instalmentAmount!)) : scheduleOf(computed!);
+  // 04-REVIEW LO-05 (and D-80, with or without a rate): payments that add up to less than the financed amount are
+  // inconsistent terms, so the plan is `missing` with a code rather than a verdict on a plan whose total sits below the
+  // price. Re-priced checks (withPrice, HI-03) never trip it: a typed amount is scaled up with the price.
+  const paid = amounts.reduce((sum, a) => sum + BigInt(a), 0n);
+  if (paid < BigInt(financed)) return missing(['instalment_total_below_price']);
+  const total = minorFromBigInt(paid + BigInt(check.dayFees), FN);
   // The prototype's flat figure (total/price - 1) x (12/n) x 100 on what the instalments finance, from the user's own
-  // numbers (never a default, D-07). Without on-the-day fees this is the prototype's figure exactly.
-  const impliedAnnualRate: Percent =
-    financed > 0
+  // numbers (never a default, D-07). Without on-the-day fees this is the prototype's figure exactly. With a rate the
+  // plan carries the rate itself, so there is nothing to imply.
+  const impliedAnnualRate: Percent | null = rateExpected
+    ? null
+    : financed > 0
       ? percentFromScaled(
           divideHalfUp(
-            (instalmentsTotal - BigInt(financed)) * BigInt(MONTHS_PER_YEAR) * ONE_HUNDRED_PERCENT,
+            (paid - BigInt(financed)) * BigInt(MONTHS_PER_YEAR) * ONE_HUNDRED_PERCENT,
             BigInt(financed) * BigInt(count)
           )
         )
       : ZERO_PERCENT;
+  const first = today && amounts.length > 0 ? amounts[0]! : m(0);
   return {
     status: 'resolved',
     plan: {
       price: check.price,
-      dayOne: m(amount + check.dayFees),
-      monthly: m(amount),
-      months: count,
+      dayOne: m(first + check.dayFees),
+      monthly: p.instalmentAmount !== null ? m(p.instalmentAmount) : computed!.payment,
+      months: amounts.length,
       financed: m(financed),
       total,
-      interest: m(Math.max(0, total - check.price)),
+      interest: rateExpected ? minorFromBigInt(paid - BigInt(financed), FN) : m(Math.max(0, total - check.price)),
       dayFees: check.dayFees,
       card: null,
-      finalMonthly: m(amount),
+      finalMonthly: p.instalmentAmount !== null ? m(p.instalmentAmount) : computed!.finalPayment,
       impliedAnnualRate,
-      // The first instalment is paid on the day (dayOne); the rest follow in months 1..count-1.
-      paymentSteps: compressSteps(Array.from({ length: count - 1 }, () => m(amount))),
+      // 'today': the first instalment is paid on the day (dayOne), the rest follow in months 1..count-1.
+      // 'next_month': nothing but the fees on the day, payments in months 1..count.
+      paymentSteps: compressSteps(today ? amounts.slice(1) : amounts),
       promo: null,
       lateFees: lateFeesFor(p.lateFee, p.lateFeeCapTotal, count),
+      ...(computed === null ? {} : { computedPayment: computed.payment }),
     },
   };
 }

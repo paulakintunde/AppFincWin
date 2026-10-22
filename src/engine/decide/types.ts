@@ -168,6 +168,10 @@ export type BuyPayment =
       readonly method: 'instalment';
       readonly instalmentAmount: MinorUnits | null;
       readonly instalmentCount: number | null;
+      // D-80: absent = the plan has no rate; null = a rate is expected but not given (instalment_rate_missing); a Percent
+      // works the payment out at APR / 12 over the count on the amount financed. A typed instalmentAmount is still the one scored.
+      readonly apr?: Percent | null;
+      readonly firstPayment?: 'today' | 'next_month'; // D-80 / D-49: absent = 'today' (an annuity-due: the first payment is on the day)
       readonly lateFee?: MinorUnits;
       readonly lateFeeCapTotal?: MinorUnits; // D-50: user-entered fee per missed instalment and optional total cap; absent = none
     }
@@ -259,6 +263,7 @@ export type PlanReason =
   | 'loan_apr_missing'
   | 'instalment_amount_missing'
   | 'instalment_count_missing'
+  | 'instalment_rate_missing' // D-80: the plan is expected to carry a rate and has none
   | 'instalment_total_below_price' // 04-REVIEW LO-05: amount x count is less than the financed price (price − dayFees)
   | 'invest_term_missing';
 export interface CardPlanDetail {
@@ -292,6 +297,7 @@ export interface Plan {
   readonly paymentSteps: readonly PaymentStep[];
   readonly promo: PromoOutcome | null; // D-48: present only for a loan or card-months/minimum plan with PromoTerms; then `monthly` = promo.highestMonthlyPayment
   readonly lateFees: LateFeeCost | null; // D-50: present only for an instalment plan with a user-entered lateFee; never changes any other figure
+  readonly computedPayment?: MinorUnits; // D-80: present only for an instalment plan with a rate: the worked-out payment (a typed amount, when given, is the one scored)
 }
 export type PlanResult =
   | { readonly status: 'resolved'; readonly plan: Plan }

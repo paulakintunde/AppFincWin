@@ -26,6 +26,8 @@ export const MISSING_TITLE = {
   loan_apr_missing: 'decide.verdict.missing.loan_apr_missing',
   instalment_amount_missing: 'decide.verdict.missing.instalment_amount_missing',
   instalment_count_missing: 'decide.verdict.missing.instalment_count_missing',
+  // Temporary pointer at an existing key; 05-80 adds the real string and repoints this.
+  instalment_rate_missing: 'decide.verdict.missing.instalment_count_missing',
   instalment_total_below_price: 'decide.verdict.missing.instalment_total_below_price',
   invest_term_missing: 'decide.verdict.missing.invest_term_missing',
   no_full_month: 'decide.verdict.missing.no_full_month',
