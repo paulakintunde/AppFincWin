@@ -33,9 +33,9 @@ const state: FormState = {
 };
 
 describe('draftForm', () => {
-  it('copies all 16 fields plus repeats and round-trips with known ids', () => {
+  it('copies all 16 fields plus repeats and one-off and round-trips with known ids', () => {
     const form = toDraftForm(state, never);
-    expect(Object.keys(form)).toHaveLength(17);
+    expect(Object.keys(form)).toHaveLength(18);
     expect({ ...state, ...fromDraftForm(form, ctx).patch }).toEqual(state);
   });
 
@@ -80,6 +80,17 @@ describe('draftForm', () => {
     expect(fromDraftForm({ ...base, toCurrency: 'ZZZ' }, ctx).patch.toCurrency).toBe('EUR');
     expect(fromDraftForm({ ...base, toCurrency: 'ZZZ', toAccountId: 'gone' }, ctx).patch.toCurrency).toBeNull();
     expect(fromDraftForm({ ...base, toCurrency: 'JPY' }, ctx).patch.toCurrency).toBe('JPY');
+  });
+
+  it('WR-D01 a one-off new entry comes back one-off; a transfer never does', () => {
+    const out: FormState = { ...state, direction: 'out', toAccountId: null, toCurrency: null, oneOff: true };
+    const form = toDraftForm(out, never);
+    expect(form.oneOff).toBe(true);
+    expect(fromDraftForm(form, ctx).patch.oneOff).toBe(true);
+    expect(toDraftForm({ ...state, oneOff: true }, never).oneOff).toBe(false);
+    const { oneOff: _drop, ...older } = form;
+    void _drop;
+    expect(fromDraftForm(older, ctx).patch.oneOff).toBe(false);
   });
 
   it('maps skipped to paid', () => {
