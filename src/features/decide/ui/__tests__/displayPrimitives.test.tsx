@@ -78,6 +78,19 @@ describe('FigureStrip', () => {
     expect(style(getByText('£40')).color).toBe(base.danger);
   });
 
+  it('IN-D02: repeated captions each render, with no key collision', async () => {
+    const error = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const twice = [
+      { caption: 'Out', value: '£40' },
+      { caption: 'Out', value: '£50' },
+    ];
+    const { getByText } = await wrap(<FigureStrip items={twice} />);
+    expect(getByText('£40')).toBeTruthy();
+    expect(getByText('£50')).toBeTruthy();
+    expect(error.mock.calls.some((c) => String(c[0]).includes('same key'))).toBe(false);
+    error.mockRestore();
+  });
+
   it('lays out as a row at normal scale and stacks above 1.3x', async () => {
     const normal = await wrap(<FigureStrip items={items} />);
     expect(style(normal.getByLabelText('Left, £100').parent as never).flexDirection).toBe('row');

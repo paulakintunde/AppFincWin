@@ -36,9 +36,10 @@ export function FigureStrip({ items, dark = false }: FigureStripProps) {
   };
   return (
     <View style={stacked ? styles.stack : styles.row}>
-      {items.map((item) => (
+      {items.map((item, i) => (
         <View
-          key={item.caption}
+          // IN-D02: captions can repeat, so the key carries the position too
+          key={`${i}-${item.caption}`}
           accessible
           accessibilityLabel={`${item.caption}, ${item.value}`}
           style={stacked ? styles.stackItem : styles.cell}

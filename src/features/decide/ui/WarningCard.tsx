@@ -33,8 +33,9 @@ export function WarningCard({ tone, title, value, body }: WarningCardProps) {
         <Text style={{ ...textRole(pairing, 'label'), color: textColor, flexShrink: 1 }}>{title}</Text>
         <Text scale="capped" style={{ ...textRole(pairing, 'sheetTitle'), color: textColor }}>{value}</Text>
       </View>
-      {body.map((line) => (
-        <Text key={line} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.inkDim }}>
+      {body.map((line, i) => (
+        // IN-D02: body lines can repeat, so the key carries the position too
+        <Text key={`${i}-${line}`} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.inkDim }}>
           {line}
         </Text>
       ))}
