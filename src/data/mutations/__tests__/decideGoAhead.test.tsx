@@ -18,6 +18,7 @@ import { getToast, resetToastForTests } from '@/state/undoToast';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import {
   buildGoAheadWrite,
+  isGoAheadRefusal,
   registerDecideGoAheadMutations,
   useGoAhead,
   type GoAheadAssessment,
@@ -474,6 +475,19 @@ describe('buildGoAheadWrite', () => {
   it('refuses a card plan with no card account', () => {
     const plan = makePlan({ card: { eligibility: 'ok', onCard: asMoney(1), remainderOnDay: asMoney(0), payoff: 'full', payoffMonths: 1, minimumOutcome: null, remainingAtCap: null, fees: asMoney(0), cardCosts: null } as never });
     expect(() => build(buyInputs({ method: 'card' }), plan, {}, { ...ctx, cardAccountId: null })).toThrow(TypeError);
+  });
+
+  it('WR-D11: a deliberate refusal is marked as one; any other error is not', () => {
+    const plan = makePlan({ card: { eligibility: 'ok', onCard: asMoney(1), remainderOnDay: asMoney(0), payoff: 'full', payoffMonths: 1, minimumOutcome: null, remainingAtCap: null, fees: asMoney(0), cardCosts: null } as never });
+    let caught: unknown = null;
+    try {
+      build(buyInputs({ method: 'card' }), plan, {}, { ...ctx, cardAccountId: null });
+    } catch (error) {
+      caught = error;
+    }
+    expect(isGoAheadRefusal(caught)).toBe(true);
+    expect(isGoAheadRefusal(new TypeError('x is undefined'))).toBe(false);
+    expect(isGoAheadRefusal('not an error')).toBe(false);
   });
 });
 

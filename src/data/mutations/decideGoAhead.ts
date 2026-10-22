@@ -82,10 +82,22 @@ export interface GoAheadWrite {
   decision: DecideGoDecision;
 }
 
+// WR-D11: every refusal buildGoAheadWrite throws on purpose is recorded here, so a dry run (CommitMutationsProvider's
+// canWrite) can tell "this check cannot be written" from a programming error, which it reports instead of hiding.
+const refusals = new WeakSet<Error>();
+function refuse<E extends Error>(error: E): E {
+  refusals.add(error);
+  return error;
+}
+/** True for an error buildGoAheadWrite threw to refuse a write (bad inputs or missing context), not a bug. */
+export function isGoAheadRefusal(error: unknown): boolean {
+  return error instanceof Error && refusals.has(error);
+}
+
 const runOf = (s: PaymentStep): number => s.toMonth - s.fromMonth + 1;
 
 function assertSafeInteger(label: string, n: number): void {
-  if (!Number.isSafeInteger(n)) throw new RangeError(`buildGoAheadWrite: ${label} is not a safe integer`);
+  if (!Number.isSafeInteger(n)) throw refuse(new RangeError(`buildGoAheadWrite: ${label} is not a safe integer`));
 }
 
 /** Pure: exactly the rows, series, ended series, debt and decision that Go ahead writes. */
@@ -167,7 +179,7 @@ export function buildGoAheadWrite(args: {
   };
 
   const needDebtCategory = (): string => {
-    if (ctx.debtCategoryId === null) throw new TypeError('buildGoAheadWrite: debtCategoryId is required');
+    if (ctx.debtCategoryId === null) throw refuse(new TypeError('buildGoAheadWrite: debtCategoryId is required'));
     return ctx.debtCategoryId;
   };
 
@@ -182,7 +194,7 @@ export function buildGoAheadWrite(args: {
 
   if (inputs.kind === 'invest') {
     if (inputs.method === 'monthly') {
-      if (ctx.savingsCategoryId === null) throw new TypeError('buildGoAheadWrite: savingsCategoryId is required');
+      if (ctx.savingsCategoryId === null) throw refuse(new TypeError('buildGoAheadWrite: savingsCategoryId is required'));
       addSeries(ctx.cashAccountId, -plan.monthly, start, plan.months, ctx.savingsCategoryId, 'payment', name);
     } else if (
       ctx.investAccount !== null &&
@@ -199,7 +211,7 @@ export function buildGoAheadWrite(args: {
         amountIn: plan.dayOne,
         localDate: start,
       });
-      if (!built.ok) throw new TypeError(`buildGoAheadWrite: invalid transfer (${built.error})`);
+      if (!built.ok) throw refuse(new TypeError(`buildGoAheadWrite: invalid transfer (${built.error})`));
       for (const leg of built.legs) {
         assertSafeInteger('a transfer leg', leg.amount);
         rows.push({
@@ -260,8 +272,8 @@ export function buildGoAheadWrite(args: {
         break;
       case 'card': {
         const card = plan.card;
-        if (card === null) throw new TypeError('buildGoAheadWrite: a card plan is required');
-        if (ctx.cardAccountId === null) throw new TypeError('buildGoAheadWrite: cardAccountId is required');
+        if (card === null) throw refuse(new TypeError('buildGoAheadWrite: a card plan is required'));
+        if (ctx.cardAccountId === null) throw refuse(new TypeError('buildGoAheadWrite: cardAccountId is required'));
         addRow(ctx.cardAccountId, -card.onCard, start, 'day_one');
         const dayCash = card.remainderOnDay + card.fees;
         if (dayCash > 0) addRow(ctx.cashAccountId, -dayCash, start, 'day_one');
@@ -305,10 +317,10 @@ export function buildGoAheadWrite(args: {
   }
 
   if (rows.length > DECIDE_GO_MAX_ROWS) {
-    throw new RangeError(`buildGoAheadWrite: ${rows.length} rows is over ${DECIDE_GO_MAX_ROWS}`);
+    throw refuse(new RangeError(`buildGoAheadWrite: ${rows.length} rows is over ${DECIDE_GO_MAX_ROWS}`));
   }
   if (series.length > DECIDE_GO_MAX_SERIES || endSeries.length > DECIDE_GO_MAX_SERIES) {
-    throw new RangeError(`buildGoAheadWrite: more than ${DECIDE_GO_MAX_SERIES} series`);
+    throw refuse(new RangeError(`buildGoAheadWrite: more than ${DECIDE_GO_MAX_SERIES} series`));
   }
 
   const decision: DecideGoDecision = {
