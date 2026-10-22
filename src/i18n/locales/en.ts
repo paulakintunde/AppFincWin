@@ -1399,6 +1399,7 @@ const en = {
     quick: {
       placeholder: 'Something and a price — car 14500', a11y: 'Quick check', check: 'Check it',
       parseError: 'Add a figure — “car 14500” works', unnamed: 'Unnamed',
+      nameAt: '{{name}} at {{price}}', // WR-B08: the result echoes the price it read from the text
       payWith: 'Pay with', cash: 'Cash', credit: 'Credit',
       aprLabel: 'Annual rate', aprA11y: 'Annual rate, percent', beforeInterest: 'before any interest', aYear: 'a year',
       overMonths: 'Over {{count}} months', termsA11y: 'Over how many months', termChipA11y: '{{count}} months',

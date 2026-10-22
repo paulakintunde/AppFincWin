@@ -231,6 +231,7 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
           computation={computation}
           mode={inputs.mode}
           name={inputs.name}
+          price={inputs.price}
           fmt={whole}
           fmtCents={exact}
           onTryCredit={q.tryCredit}

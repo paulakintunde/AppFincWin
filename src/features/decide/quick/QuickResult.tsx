@@ -26,6 +26,8 @@ export interface QuickResultProps {
   computation: Exclude<QuickComputation, { kind: 'incomplete' }>;
   mode: 'cash' | 'credit';
   name: string;
+  /** WR-B08: the price read from the text, echoed next to the name so a misread figure is visible. */
+  price?: number | null;
   fmt: Fmt;
   fmtCents: Fmt;
   onTryCredit: () => void;
@@ -46,8 +48,9 @@ function appliedCount(c: QuickResultProps['computation']): number {
   return c.kind === 'logged' ? c.decision.stacked.filter((s) => s.status === 'applied').length : 0;
 }
 
-export function QuickResult({ computation, mode, name, fmt, fmtCents, onTryCredit, combine, onCombine, openCount, firstReadBasis = false }: QuickResultProps) {
+export function QuickResult({ computation, mode, name, price = null, fmt, fmtCents, onTryCredit, combine, onCombine, openCount, firstReadBasis = false }: QuickResultProps) {
   const t = useT() as Translate;
+  const shownName = name === '' ? t('decide.quick.unnamed') : name;
   const { colors, pairing } = useTheme();
   const copy = quickResultCopy(computation, mode, fmt, fmtCents);
   const chipLabel = copy.chip ? t(copy.chip.key) : '';
@@ -67,7 +70,7 @@ export function QuickResult({ computation, mode, name, fmt, fmtCents, onTryCredi
         {/* CR-B04: the live region holds only the text, so "Try on credit" below stays its own focusable button. */}
         <View testID="quick-result-live" accessible accessibilityLiveRegion="polite" accessibilityLabel={settled} style={styles.live}>
           <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
-            {name === '' ? t('decide.quick.unnamed') : name}
+            {price != null ? t('decide.quick.nameAt', { name: shownName, price: fmtCents(price) }) : shownName}
           </Text>
           <View style={styles.chips}>
             {copy.chip ? <StateChip tone={copy.chip.tone as StateChipTone} label={chipLabel} /> : null}

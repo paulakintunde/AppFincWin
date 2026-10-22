@@ -58,7 +58,7 @@ describe('QuickCheckForm: home', () => {
     await checkIt('car 14500');
     expect(screen.getByText('Not from cash')).toBeTruthy();
     expect(screen.getByText('Worked out from the figures you entered.')).toBeTruthy();
-    expect(screen.getByText('Car')).toBeTruthy();
+    expect(screen.getByText(/^Car at \$14,500(\.00)?$/)).toBeTruthy();
     expect(mockTrack).toHaveBeenCalledTimes(1);
     expect(mockTrack).toHaveBeenCalledWith('quick_check_run', { state: 'no' });
     await fireEvent.press(screen.getByText('Try on credit'));
@@ -69,6 +69,12 @@ describe('QuickCheckForm: home', () => {
     expect(screen.getByLabelText('12 months').props.accessibilityState).toMatchObject({ checked: true });
     expect(screen.getAllByText(/a month for 12 months, before any interest/).length).toBeGreaterThan(0);
     expect(mockTrack).toHaveBeenCalledTimes(1);
+  });
+
+  it('WR-B08: a model number is not read as the price, and the result echoes the price it read', async () => {
+    await renderForm();
+    await checkIt('iPhone 15 Pro 1199');
+    expect(screen.getByText(/^iPhone 15 Pro at \$1,199(\.00)?$/)).toBeTruthy();
   });
 
   it('CR-B04: Try on credit sits outside the accessible live region, so screen readers can focus it', async () => {
