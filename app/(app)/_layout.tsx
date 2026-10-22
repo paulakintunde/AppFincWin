@@ -9,7 +9,7 @@ import { SwipeBack } from '@/features/navigation/SwipeBack';
 import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
 import { useReduceMotion } from '@/theme/motion';
 import { useNotificationObserver } from '@/features/decide/notifications/useNotificationObserver';
-import { useConsent } from '@/features/consent/useConsent';
+import { consentAnswered, useConsent } from '@/features/consent/useConsent';
 import { DeviceHomeCurrencyDefault } from '@/features/record/useDeviceHomeCurrencyDefault';
 import { SheetToastOverlay, UndoToastHost } from '@/features/record/history/UndoToastHost';
 import { SampleBanner } from '@/features/record/samples/SampleBanner';
@@ -31,7 +31,7 @@ function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
 export { RouteErrorBoundary as ErrorBoundary };
 
 export default function AppLayout() {
-  const { loading, needsPrompt } = useConsent();
+  const { loading, needsPrompt, consent } = useConsent();
   const pathname = usePathname();
   const reduceMotion = useReduceMotion();
   const animation = Platform.OS === 'android' ? (reduceMotion ? 'none' : 'slide_from_right') : 'default';
@@ -77,7 +77,8 @@ export default function AppLayout() {
             </Stack>
             <SampleBanner />
             <UndoToastHost />
-            <DecideNotificationObserver enabled={!needsPrompt} />
+            {/* WR-D13: a reminder tap routes only once consent is on record; a missing profile is not consent */}
+            <DecideNotificationObserver enabled={consentAnswered({ loading, consent })} />
             <SampleClearPrompts />
             <DeviceHomeCurrencyDefault />
           </View>
