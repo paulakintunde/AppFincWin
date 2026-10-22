@@ -101,6 +101,12 @@ describe('wholePercent', () => {
     expect(wholePercent(100, null)).toBe(0);
     expect(wholePercent(null, 100)).toBe(0);
   });
+
+  it('WR-D09: a nearly saved goal past the safe-integer range is not empty', () => {
+    const target = Number.MAX_SAFE_INTEGER;
+    expect(wholePercent(target - 1, target)).toBe(99);
+    expect(wholePercent(Math.floor(target / 2), target)).toBe(49);
+  });
 });
 
 function Goal({ saved, target }: { saved: number | null; target: number | null }) {
@@ -132,6 +138,9 @@ describe('GoalProgress', () => {
     await full.unmount();
     const none = await wrap(<Goal saved={300} target={null} />);
     expect(none.getByTestId('goal-track').props.accessibilityValue).toEqual({ text: '0 percent' });
+    // WR-D09: no target, so no "of 0"
+    expect(none.queryByText(/ of /)).toBeNull();
+    expect(none.getByText(/saved$/)).toBeTruthy();
   });
 
   it('says it is waiting for a rate when saved is null', async () => {

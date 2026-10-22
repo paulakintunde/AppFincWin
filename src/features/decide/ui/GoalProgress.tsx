@@ -22,11 +22,15 @@ export interface GoalProgressProps {
   currency: CurrencyCode;
 }
 
-/** Whole percent with integer maths, capped at 100. Unsafe integers cannot be scaled exactly, so they fall back to full or empty. */
+/**
+ * Whole percent with integer maths, capped at 100. WR-D09: when saved x 100 is past the safe-integer range the ratio is
+ * taken in BigInt, so a very large goal that is nearly saved never reads as empty. The result is a percent (0 to 99),
+ * never money.
+ */
 export function wholePercent(saved: number | null, target: number | null): number {
   if (saved === null || target === null || target <= 0 || saved <= 0) return 0;
   if (saved >= target) return 100;
-  if (!Number.isSafeInteger(saved * 100)) return 0;
+  if (!Number.isSafeInteger(saved * 100)) return Number((BigInt(saved) * 100n) / BigInt(target));
   return Math.min(100, Math.floor((saved * 100) / target));
 }
 
@@ -41,10 +45,13 @@ export function GoalProgress({ saved, target, whole, currency }: GoalProgressPro
   }, [pct, reduced, width]);
   const fillStyle = useAnimatedStyle(() => ({ width: `${width.value}%` }));
   const fmt = (n: number) => whole.formatMoney({ amount: minorUnits(n), currency });
+  // WR-D09: with no target the caption names only what is saved, never "of 0".
   const caption =
     saved === null
       ? t('decide.depth.goal.waitingRate')
-      : t('decide.depth.goal.caption', { saved: fmt(saved), target: fmt(target ?? 0) });
+      : target === null || target <= 0
+        ? t('decide.depth.goal.captionNoTarget', { saved: fmt(saved) })
+        : t('decide.depth.goal.caption', { saved: fmt(saved), target: fmt(target) });
   return (
     <View>
       <View

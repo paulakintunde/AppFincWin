@@ -1894,7 +1894,7 @@ const en = {
         higher: 'higher', lower: 'lower',
       },
       goal: {
-        caption: '{{saved}} of {{target}} saved', a11y: '{{pct}} percent', preview: 'A savings goal of {{target}}, {{amount}} a month, ready {{date}}.',
+        caption: '{{saved}} of {{target}} saved', captionNoTarget: '{{saved}} saved', a11y: '{{pct}} percent', preview: 'A savings goal of {{target}}, {{amount}} a month, ready {{date}}.',
         previewNoDate: 'A savings goal of {{target}}, {{amount}} a month.', // addition
         tag: 'Tag a transfer', tagTitle: 'Tag a transfer', tagEmpty: 'No transfers in the last 90 days.', untagA11y: 'Untag {{name}}', tagged: 'Transfer tagged', untagged: 'Transfer untagged',
         waitingRate: 'Waiting for a rate', written: 'A savings goal of {{target}}, {{amount}} a month, ready {{date}}.', writtenNoDate: 'A savings goal of {{target}}, {{amount}} a month.',
