@@ -233,7 +233,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DCU-09**: No verdict copy uses "advice", "recommendation" or "you should"
 - [ ] **DCU-10**: A new user gets a first verdict in their first session, before any months are logged. It is labelled as a first read, says what it rests on, and is superseded by imported or logged history. Settled 2026-09-26 (04-CONTEXT D-11): rough figures give a cash-level first read only, computed by DEC-16; the full verdict needs one real full month
 - [ ] **DCU-11**: The verdict card, impact warnings and alternatives table stay legible when captured as phone store screenshots from the App Review demo account's sample scenario, with the verdict line visible without scrolling
-- [ ] **DCU-12**: Quick check takes amount, Cash or Credit, APR from 0% labelled "before any interest", a 12-60 month duration, and optional tax and fees, and shows a relative size label (05 D-21..D-23)
+- [ ] **DCU-12**: Quick check takes amount, Cash or Credit, APR from 0% labelled "before any interest", a 1-120 month duration (05 D-71), and optional tax and fees, and shows a relative size label (05 D-21..D-23)
 - [ ] **DCU-13**: User can see each check with and without their other open checks (05 D-24)
 - [ ] **DCU-14**: Verdict shows the cushion months and why, an on-the-edge tag, a confidence chip, and a 90-day day-by-day cash chart (05 D-25, D-26, D-28)
 - [ ] **DCU-15**: User can add, edit and remove dated income and spending changes that the verdict uses (05 D-27)

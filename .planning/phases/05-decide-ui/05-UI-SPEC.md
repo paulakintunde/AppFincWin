@@ -1088,7 +1088,7 @@ The size ⓘ follows the summary group.
 | 4 | **Where it lands** | `whereItLands` | "{better} better · {worse} worse · {same} unchanged" (zero parts left out; all same: "No ledger moves") | logged verdict | **Stacked ledger rows** (R6, "Where it lands"). |
 | 5 | If something goes wrong | `setbacks` | "Runway {n} months, {m} less because of this" / "Runway not limited" | as before | Unchanged; the setback rows wrap per R6. |
 | 6 | What would make it work | — | "{count} options" | state is not fits | The inner `ink` tile (R1). |
-| 7 | **If it went into investing instead** (moved from step 4) | `ifInvested` | "A projection at the rate you enter" / with a rate: "{fv} after {n} months at {r}%" | always (invest checks included) | The existing section content: rates, holding fee, horizon (now with Custom, R4), four views. Views 2-4 sit behind a `DetailsToggle`. |
+| 7 | **If it went into investing instead** (moved from step 4) | `ifInvested` | Purchase checks: "A projection at the rate you enter" / with a rate: "{fv} after {n} months at {r}%". **Investment checks:** "{fv} after {n} months at {r}% a year" when an expected return is set (D-82), otherwise **"No expected return set"** | always (investment checks included) | **Purchase checks:** the existing section content: rates, holding fee, horizon (now with Custom, R4), four views. Views 2-4 sit behind a `DetailsToggle`. **Investment checks** (`computeCheck` returns `investmentViews: null` for them, so the four views never apply): the title reads **"What it could grow to"** (ⓘ `expectedReturn`). The body is the D-82 projection at the horizon: "About {fv} after {n} months at {r}% a year. A projection at the rate you entered, not a forecast." It sits beside the horizon (the contribution term, or the lump-sum horizon chips of R15.2). With no expected return, the body is the one `meta` line "No expected return set. One can be typed on the How you pay step." and a text link "Go to How you pay" (`accent`, 44 hit), which jumps to step 2 with the investment card open. Out of range: "Too large to project at this rate" (D-47). |
 | 8 | With the expected income | `incomeChange` | "{state} with the expected {amount} a month" | a raise is set | Unchanged. |
 | 9 | Who pays what | — | "{count} people" | household only (hidden until Phase 8) | Unchanged. |
 | 10 | Assumptions in play | — | "{count} assumptions" | always | Rows (R6 stacked label/value). After the first 5 rows, a `DetailsToggle` reveals the rest. The provisional-rate row carries an ⓘ (`provisionalRate`). |
@@ -1272,7 +1272,7 @@ That is 31 entries. Each body is at most 3 sentences (the `ifInvested` caption c
 | Waiting decision confirm | Title "Delete this decision?"; body "It leaves Past decisions with its savings goal and reminder. Transfers tagged to the goal stay in Activity."; actions "Keep it" / "Delete" |
 | Passed decision confirm | Title "Delete this decision?"; body "It leaves Past decisions. Nothing else changes."; actions "Keep it" / "Delete" |
 | Toasts | Open check "Check deleted. Nothing was written." + Undo; decision "Decision deleted" + Undo; undo-stack labels "Check deleted · {{name}}" / "Decision deleted · {{name}}" |
-| Replaced strings | "Abandon this check" (a11y), "Check abandoned — nothing was written", "Check abandoned · {{name}}", "Remove", "Remove this decision?", "Decision removed" are **retired** (keys removed from `en.ts` and `copyStatus.ts`) |
+| Replaced strings | "Abandon this check" (a11y), "Check abandoned — nothing was written", "Check abandoned · {{name}}", "Remove", "Remove this decision?", "Decision removed" are **retired** as visible copy. **Exception:** the undo-stack label keys `checkAbandoned`, `decisionRemoved` and `changeRemoved` **stay in `en.ts`**, because saved undo rows still name them. New steps use the new labels (`checkCleared`, `checkDeleted`, `decisionDeleted`, `changeDeleted`), and old steps keep rendering with their stored key. |
 
 #### Additions from the checker round (2026-10-22)
 
@@ -1316,6 +1316,8 @@ That is 31 entries. Each body is at most 3 sentences (the `ifInvested` caption c
 | Instalment count ("How many") | Step 2 instalment panel | none (typed tile) | **1 to 120** (user 2026-10-22; was 1 to 600) | The same `MAX_TERM` bound and stored-value rule as the loan term. |
 | Instalment rate (Has a rate? = Yes) | Step 2 instalment card | none (typed only) | **0 to 999.99% a year** | D-80; the payment is worked out unless "Payment as quoted" is typed (R15.3). |
 | Expected return | Step 2 investment cards | none (typed only) | **0 to 100% a year**, blank by default | D-82; projection only (R15.5). |
+| Lump-sum projection horizon | Step 2 lump-sum card | 1 year · 5 years · 10 years · 20 years (12/60/120/240 months) | **1 to 600 months**, default 60 | D-82 as answered 2026-10-22; shown only once an expected return is typed. |
+| Instalment first payment | Step 2 instalment card | "Today" / "In a month" (segmented, default Today) | — | D-80 as answered 2026-10-22; engine change E1. |
 | Custom item type name | Step 1 | — | **1 to 40 characters** | D-81 (R15.4). |
 | Card "Over a few months" | Step 2 card panel | stepper (− / +) | **1 to 120 months** | The months figure "{n} mo" becomes tappable (44 hit) and opens the same inline field. The stepper clamps at 120 (was 600). |
 | Investment term (monthly contribution) | Step 2 invest panel | 12 · 24 · 36 · 48 · 60 · 84 | **1 to 120 months** | |
@@ -1650,9 +1652,9 @@ There are no free-floating method panels any more: **every input and every outpu
 |---|---|---|---|---|
 | Paid in full ⓘ `paidInFull` | none | Strip, plus the note "Leaves {cash} in cash. No interest, nothing owed after." | "price" (only when the price is 0) | "{price} on the day · leaves {cash}" |
 | Deposit and loan ⓘ `depositAndLoan` | Deposit (slider + field, ⓘ `deposit`); Loan term chips + Custom 1-120 (ⓘ `loanTerm`); Annual rate (ⓘ `apr`; "before any interest" at 0); "+ Promotional rate" (ⓘ `promoRate`, with `deferredInterest` inside); "The rate can change" (ⓘ `variableRate`); "Secured against what you’re buying" (ⓘ `secured`) | Strip; "Interest saved" / "Cash left after" tiles; the term note "At {n} months the payment is {pay} a month and the interest {int}." (pluralised per F6); the paid-off line; the promotion tiles | "rate", "months" | "{deposit} down · {n} months · {apr}%" (a missing part is left out, e.g. "$2,000 down · 36 months") |
-| Instalment plan ⓘ `instalmentPlan` | "Has a rate?" segmented "No" / "Yes" (ⓘ `hasRate`; default **No**; the R6 Seg rule applies). **No:** the "Payment" and "How many" tiles (count 1-120). **Yes:** "How many" (1-120), "Annual rate" (0-999.99, ⓘ `apr`), and "Payment as quoted (optional)" (money). Then "Late fee (optional)" with ⓘ `lateFee`. | Strip. **No:** the existing implied-rate note ("No rate was quoted. {n} × {pay} is {total} against … about {pct}% a year.") and the "Below the price" note. **Yes:** "{n} payments of {pay} at {apr}%, the first on the day. Interest over the plan is {int}." When a typed payment differs from the worked-out one by at least one minor unit: "At {apr}% the worked-out payment is {calc}. The quoted {typed} is {diff} {higher|lower}; the check uses the quoted payment." Late-fee lines behind "Show details". | No: "payment", "how many". Yes: "how many", "rate" | No: "{n} × {pay} · no rate". Yes: "{n} × {pay} · {apr}%" |
+| Instalment plan ⓘ `instalmentPlan` | "Has a rate?" segmented "No" / "Yes" (ⓘ `hasRate`; default **No**; the R6 Seg rule applies). **No:** the "Payment" and "How many" tiles (count 1-120). **Yes:** "How many" (1-120), "Annual rate" (0-999.99, ⓘ `apr`), and "Payment as quoted (optional)" (money). **In both modes:** "First payment" segmented "Today" / "In a month" (ⓘ `firstPayment`; default **Today**, D-49; Seg rule). Then "Late fee (optional)" with ⓘ `lateFee`. | Strip. **No:** the existing implied-rate note ("No rate was quoted. {n} × {pay} is {total} against … about {pct}% a year.") and the "Below the price" note. **Yes:** "{n} payments of {pay} at {apr}%, the first on the day. Interest over the plan is {int}." (with "In a month": "…, the first in a month."). When a typed payment differs from the worked-out one by at least one minor unit: **"The rate works out to {calc} a month; the quote is {typed}."** The verdict scores the quoted payment (user-confirmed). Late-fee lines behind "Show details". | No: "payment", "how many". Yes: "how many", "rate" | No: "{n} × {pay} · no rate". Yes: "{n} × {pay} · {apr}%". With "In a month", the suffix " · first in a month" is added. |
 | On a card ⓘ `onCard` | The eligibility box; "How it gets cleared" chips; months (typed or stepped, 1-120); the "Minimum payment" row (ⓘ `cardMinimum`; its sheet carries `paidInFullMonthly`); "Card fees (optional)"; "+ Promotional rate"; "The rate can change"; "Your notes on this card" | Strip; the "Cleared" / "Interest" / "Card costs" tiles and their notes | "card rate" (months or minimum clearing with no rate), "minimum terms", "dealer cap" | "{card} · in full next statement" / "{card} · over {n} months" / "{card} · minimum only" |
-| Lump sum ⓘ `lumpSum` (investment) | Amount (on step 1); "Expected return, % a year (optional)" (ⓘ `expectedReturn`, R15.5); "Over {n} months" horizon chips 12 · 24 · 36 · 60 · 120 + Custom 1-600 (default 60), shown only when a return is typed | Strip; with a return: "About {fv} after {n} months at {r}% a year. A projection at the rate you entered, not a forecast." | "amount" | "{amount} once" (with a return: "{amount} once · {r}% a year") |
+| Lump sum ⓘ `lumpSum` (investment) | Amount (on step 1); "Expected return, % a year (optional)" (ⓘ `expectedReturn`, R15.5); "Over" horizon chips **1 year · 5 years · 10 years · 20 years** (12, 60, 120 and 240 months) + Custom 1-600 months (default **60 months, the 5-year chip**; user-confirmed), shown only when a return is typed | Strip; with a return: "About {fv} after {n} months at {r}% a year. A projection at the rate you entered, not a forecast." | "amount" | "{amount} once" (with a return: "{amount} once · {r}% a year") |
 | Monthly contribution ⓘ `monthlyContribution` (investment) | Term chips + Custom 1-120; "Expected return, % a year (optional)" | Strip; "{amt} a month for {n} months is {total} put in."; with a return: "About {fv} after {n} months at {r}% a year. A projection at the rate you entered, not a forecast." | "amount", "months" | "{amt} a month · {n} months" |
 
 "Needs" field words: "price", "rate", "months", "payment", "how many", "card rate", "minimum terms", "dealer cap", "amount". They are joined with ", ". The chip wraps but its words never split (rule C).
@@ -1662,8 +1664,11 @@ There are no free-floating method panels any more: **every input and every outpu
 - **Has a rate? = No** (default): exactly today's behaviour. The total is amount × count, no interest is counted, and the implied-rate note and the "Below the price" rule (D-49) stand.
 - **Has a rate? = Yes:**
   - The user types the count (1-120) and the APR (0-999.99, user-typed only, never pre-filled, 04 D-07).
-  - **The payment is worked out** by the engine: an annuity-due over `count` payments at a monthly rate of APR ÷ 12. The first payment is on the day with any on-the-day fees, as D-49 has it. The payment is rounded up to the cent, and the last payment is adjusted so the plan clears exactly (as 04 D-64).
-  - A **typed "Payment as quoted"** overrides the worked-out payment for scoring. The difference note above states both figures.
+  - **The payment is worked out** by the engine at a monthly rate of APR ÷ 12. It is rounded up to the cent, and the last payment is adjusted so the plan clears exactly (as 04 D-64).
+    - With **"First payment: Today"** (the default, D-49), it is an **annuity-due**: the first payment is on the day with any on-the-day fees.
+    - With **"In a month"**, it is an **ordinary annuity**: there is no payment on the day (only on-the-day fees), and the first payment falls one month after the purchase date.
+  - A **typed "Payment as quoted"** overrides the worked-out payment for scoring (user-confirmed). The note reads "The rate works out to {calc} a month; the quote is {typed}."
+- **"First payment" applies with or without a rate.** With No rate and "In a month", the day-one cost is only the on-the-day fees, and all `count` instalments are monthly. The "Below the price" rule compares amount × count with the full amount financed.
   - "Below the price" does not apply with a rate. The interest is the total paid less the amount financed.
 - **Switching back to No** keeps the typed APR in the inputs (hidden) and scores without it.
 - **Alternatives:** the cheaper row and "Use the cheaper price" recompute the worked-out payment from the new price. A quoted payment is scaled by the exact price ratio (D-83).
@@ -1690,7 +1695,7 @@ Step 1's item type becomes a **chip group**: General, Vehicle, Rent or bill, Loa
 - **Effect:** none on the verdict state, the warnings, the month or the alternatives. It is a projection only and does not feed the net-worth chart or the step 3 investing-instead rate list (which stays the check's own rate list, assumption 17). The step 2 monthly note that used `projectionRates[0]` now uses this field.
 - **Where it shows when set:**
   - **Verdict card (investment checks only):** a `meta` line (`inkSoft2`) after the key figures: "At {r}% a year: about {fv} after {n} months. Not a forecast." It wraps under rule W. Investment checks are not in the DCU-11 frames, so there is no fold budget.
-  - **Folds:** "Assumptions in play" gains the row "Expected return" · "{r}% a year, used for the projection only". "The month, line by line" is unchanged.
+  - **Folds:** "Assumptions in play" gains the row "Expected return" · "{r}% a year, used for the projection only". **Fold 7 on investment checks** is "What it could grow to" (R2 fold table). "The month, line by line" is unchanged.
   - **Horizon:** the contribution term (monthly) or the horizon chips (lump sum, default 60).
 - **Computing:** the projection uses the existing money function `futureValue` from the engine's public barrel (already used on step 2). No engine change. An out-of-range figure reads "Too large to project at this rate" (D-47).
 
@@ -1708,11 +1713,11 @@ This replaces R4's "Cheaper price" note, which implied the percent drove the fig
 
 | # | Change | Precisely |
 |---|---|---|
-| **E1** (D-80) | **Instalment plan with an optional APR** | In `src/engine/decide`:<br>• the instalment payment method gains `apr?: Percent` and makes `amount` optional when `apr` is present;<br>• with `apr`, the payment is an annuity-due over `count` payments at the monthly rate `apr ÷ 12` on the financed amount (price plus fees not paid on the day). The first payment is on the day with on-the-day fees (D-49). It is rounded up to the cent, with a final-payment adjustment (04 D-64). `Plan.interest` = the total paid less the amount financed;<br>• a typed `amount` alongside `apr` is scored as given, and the plan also returns `computedPayment` for the difference note;<br>• `instalment_total_below_price` is evaluated only without `apr`;<br>• alternatives rescale the worked-out payment from the cheaper price (HI-03 path);<br>• `apr` is validated against `MAX_APR`.<br>Branch coverage stays at the CI threshold, with named tests "D-80". |
+| **E1** (D-80) | **Instalment plan with an optional APR** | In `src/engine/decide`:<br>• the instalment payment method gains `apr?: Percent` and makes `amount` optional when `apr` is present;<br>• a new `firstPayment: 'today' | 'next_month'` (default `'today'`, D-49) on every instalment plan, with or without `apr`. `'today'` keeps the first instalment on the day; `'next_month'` moves it one month after the purchase date and leaves only the on-the-day fees as the day-one cost;<br>• with `apr`, the payment is worked out over `count` payments at the monthly rate `apr ÷ 12` on the financed amount (price plus fees not paid on the day): an **annuity-due** with `'today'`, an **ordinary annuity** with `'next_month'`. It is rounded up to the cent, with a final-payment adjustment (04 D-64). `Plan.interest` = the total paid less the amount financed;<br>• a typed `amount` alongside `apr` is scored as given, and the plan also returns `computedPayment` for the difference note;<br>• `instalment_total_below_price` is evaluated only without `apr`;<br>• alternatives rescale the worked-out payment from the cheaper price (HI-03 path);<br>• `apr` is validated against `MAX_APR`.<br>Branch coverage stays at the CI threshold, with named tests "D-80". |
 | **E2** (D-83) | **Exact cheaper price in the alternatives** | The alternatives input takes `cheaperPrice: MinorUnits` (clamped to [ceil(30% of the price), price]) in place of a whole-percent fraction. The cheaper row's deposit and instalment scale by the exact rational ratio, rounded half up to the minor unit. The bisection of "At {price} instead" is unchanged. Named tests "D-83". |
 | — | Custom item type, expected return | **No engine change** (rules type mapping; the existing `futureValue`). |
 
-#### R15.8 New ⓘ entries (D-84; added to `INFO_TERMS`, 23 new keys)
+#### R15.8 New ⓘ entries (D-84; added to `INFO_TERMS`, 24 new keys)
 
 Existing keys reused on step 2: `runningCosts`, `netMonthly`, `lossOfValue`, `beforeInterest`, `promoRate`, `deferredInterest`, `variableRate`, `cardMinimum`, `replaces`.
 
@@ -1730,7 +1735,8 @@ Existing keys reused on step 2: `runningCosts`, `netMonthly`, `lossOfValue`, `be
 | `apr` | Annual rate fields (loan, instalment with a rate, card) | Annual rate (APR) | The yearly interest rate on the agreement, as quoted. The app never fills one in, and 0% is counted as no interest. | Sets the interest in each payment and the total paid. |
 | `secured` | "Secured against what you’re buying" | Secured | A secured loan is backed by the item, such as a car loan against the car. Secured debt is left out of the unsecured-debt line. | On: this loan does not count toward Unsecured debt at most. |
 | `instalmentPlan` | Instalment plan card | Instalment plan | A set number of payments, the first on the day and the rest monthly. Some plans charge interest and some do not. | Adds the later payments as a monthly cost until the count runs out. |
-| `hasRate` | "Has a rate?" | Has a rate? | No: the payments are the amount times the count, and the note shows any rate they imply. Yes: the payment is worked out from the count and the rate typed, unless a quoted payment is entered. | Yes counts interest on the plan and can raise the monthly cost. |
+| `hasRate` | "Has a rate?" | Has a rate? | No: the payments are the amount times the count, and the note shows any rate they imply. Yes: the payment is worked out from the count and the rate typed, and a quoted payment, when entered, is the one the check uses. | Yes counts interest on the plan and can raise the monthly cost. |
+| `firstPayment` | "First payment" | First payment | Today: the first instalment is paid on the purchase date, along with any fees due on the day. In a month: nothing but those fees is paid on the day, and the instalments start a month later. | Changes the cash on the day and the month the payments end. |
 | `lateFee` | "Late fee (optional)" | Late fee | The fee the plan charges when a payment is late, as typed from the agreement. The lines show what one or two late payments would add. | Nothing in the verdict. |
 | `onCard` | On a card card | On a card | The purchase goes on a credit card and is cleared in full at the next statement, over a few months, or at the minimum. Interest is counted at the rate on the card record. | Adds the card payment to your month until it is cleared. |
 | `paidInFullMonthly` | "Paid in full monthly" toggle (card terms sheet) | Paid in full monthly | The card balance is cleared every statement, so no minimum payment is counted. Its spending is already in your month. | No card minimum is added to debt payments. |
@@ -1742,7 +1748,7 @@ Existing keys reused on step 2: `runningCosts`, `netMonthly`, `lossOfValue`, `be
 | `treatLike` | "Treat like" row | Treat like | Borrows the rules of a built-in type, such as Vehicle, for card use, the secured default and the running costs listed. | The rules follow the chosen type; the name stays yours. |
 | `cardClearing` | "How it gets cleared" chips | How it gets cleared | In full next statement means no interest is counted. Over a few months or the minimum count interest at the card’s rate until the balance reaches zero. | Changes the monthly card payment and the interest. |
 
-Every body is at most 3 sentences. None contains "offer", "apply", "advice", "recommend", "should", reassurance, or an opening money imperative. The R3 test that every `INFO_TERMS` key has term, body and changes covers these 23 keys.
+Every body is at most 3 sentences. None contains "offer", "apply", "advice", "recommend", "should", reassurance, or an opening money imperative. The R3 test that every `INFO_TERMS` key has term, body and changes covers these 24 keys.
 
 #### R15.9 New strings (besides R15.8)
 
@@ -1753,8 +1759,10 @@ Every body is at most 3 sentences. None contains "offer", "apply", "advice", "re
 | Method card | "Needs: {{fields}}" · fields "price", "rate", "months", "payment", "how many", "card rate", "minimum terms", "dealer cap", "amount" · "What it comes to" · a11y "Selected" / "Not selected" · hint "Selects this way to pay and shows its details" · announcement "{{method}} selected. Details shown." |
 | Summaries | "{{price}} on the day · leaves {{cash}}" · "{{deposit}} down · {{count}} months · {{apr}}%" · "{{count}} × {{payment}} · no rate" · "{{count}} × {{payment}} · {{apr}}%" · "{{card}} · in full next statement" · "{{card}} · over {{count}} months" · "{{card}} · minimum only" · "{{amount}} once" · "{{amount}} once · {{rate}}% a year" · "{{amount}} a month · {{count}} months" |
 | Loan term note (F6 plural) | "At {{count}} months the payment is {{payment}} a month and the interest {{interest}}." (`_one`: "At 1 month …"). This replaces "At {n} months you pay …" because "you pay" read as an instruction to some readers. |
-| Instalment with a rate | "Has a rate?" · "No" · "Yes" · "Payment as quoted (optional)" · "{{count}} payments of {{payment}} at {{apr}}%, the first on the day. Interest over the plan is {{interest}}." · "At {{apr}}% the worked-out payment is {{calc}}. The quoted {{typed}} is {{diff}} higher; the check uses the quoted payment." / "… {{diff}} lower; …" |
+| Instalment with a rate | "Has a rate?" · "No" · "Yes" · "Payment as quoted (optional)" · "{{count}} payments of {{payment}} at {{apr}}%, the first on the day. Interest over the plan is {{interest}}." · "The rate works out to {{calc}} a month; the quote is {{typed}}." · "…, the first in a month." · "First payment" · "Today" · "In a month" · " · first in a month" |
 | Custom item type | "Custom…" · placeholder "Drone" · "1 to 40 characters" · a11y "Custom item type, {{name}}" · "Treat like" · "General (default)" · "treated like {{type}}" |
+| Investment fold 7 | Title "What it could grow to"; preview "{{fv}} after {{count}} months at {{rate}}% a year" / "No expected return set"; body "No expected return set. One can be typed on the How you pay step."; link "Go to How you pay" |
+| Lump-sum horizon | "Over" · chips "1 year" · "5 years" · "10 years" · "20 years" · "Custom" |
 | Expected return | "Expected return, % a year (optional)" · "About {{fv}} after {{count}} months at {{rate}}% a year. A projection at the rate you entered, not a forecast." · verdict "At {{rate}}% a year: about {{fv}} after {{count}} months. Not a forecast." · Assumptions "Expected return" · "{{rate}}% a year, used for the projection only" |
 
 #### R15.10 Checklist
@@ -1782,14 +1790,15 @@ Every body is at most 3 sentences. None contains "offer", "apply", "advice", "re
 
 #### R15.12 Questions only the user can answer
 
-1. **Instalment with a rate and a typed payment:** this spec scores the **quoted** payment and notes the difference. Should the worked-out payment be scored instead?
-2. **First instalment on the day with a rate:** this spec keeps D-49's structure (the first payment on the day, an annuity-due). Some agreements take the first payment a month later. Should there be a toggle, or does this one rule hold?
-3. **Opening a method card selects it:** that keeps one card open and one selected. Should a user be able to open a card just to look, without changing the selected method?
-4. **Lump-sum projection horizon:** the default is 60 months with chips. Is that the horizon wanted?
+None open. Answered 2026-10-22:
+1. The verdict scores the quoted payment, with the note "The rate works out to {x} a month; the quote is {y}."
+2. A "First payment: Today / In a month" toggle is added, default Today (E1 covers both annuity forms).
+3. Opening a method card selects it.
+4. The lump-sum horizon defaults to 60 months, with chips for 1, 5, 10 and 20 years plus Custom (1-600 months).
 
 ### R13. Questions only the user can answer
 
-None open for R1-R14 (R15 has its own questions in R15.12). The six questions raised on 2026-10-22 were answered the same day, in five replies:
+None open (R15.12 is answered too). The six questions raised on 2026-10-22 were answered the same day, in five replies:
 1. "Left" is left at month end.
 2. The main page means both screens (R2b).
 3. What breaks opens by default with warnings and is folded with "Nothing breaks" otherwise.

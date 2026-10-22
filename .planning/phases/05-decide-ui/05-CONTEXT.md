@@ -255,14 +255,15 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
 
 - **D-79 (user, 2026-10-22): Step 2 methods are an accordion in place.**
   - Each method (Paid in full, Deposit and loan, Instalment plan, On a card; investments: Lump sum, Monthly contribution) is a white card whose inputs and outputs (strip, payment, interest, implied rate) open directly under its own header, with a chevron. The opened card scrolls into view.
-  - One card is open at a time. Tapping a folded card selects and opens it. The selected card has an `ink` border and radio dot instead of an `ink` fill.
+  - One card is open at a time. Tapping a folded card selects and opens it (user-confirmed). The selected card has an `ink` border and radio dot instead of an `ink` fill.
   - A card that cannot be scored shows "Needs: {fields}" (replacing "Rate needed"). A folded card shows a one-line summary, e.g. "$2,000 down · 36 months · 6.9%".
   - The Price card and the "How you pay" header are rebuilt with ⓘ.
   - See UI-SPEC R15.1-R15.2.
 - **D-80 (user, 2026-10-22): An instalment plan can carry a rate.**
   - An optional "Has a rate?" segmented control. **No** is the default and keeps today's behaviour: amount × count, no interest, the implied-rate note, "Below the price".
   - **Yes** takes the count (1–120) and a user-typed APR (0–999.99, never pre-filled, 04 D-07). The engine works out the payment: an annuity-due at APR ÷ 12 with the first payment on the day (D-49), rounded up to the cent, with the last payment adjusted.
-  - A typed "Payment as quoted" overrides it for scoring, and a note states the difference.
+  - A typed "Payment as quoted" overrides it for scoring (user-confirmed), with the note "The rate works out to {x} a month; the quote is {y}."
+  - **"First payment: Today / In a month"** (user, 2026-10-22), default Today (D-49), with or without a rate. Today is an annuity-due with the first instalment on the day. In a month is an ordinary annuity: only on-the-day fees are paid on the day.
   - A late-fee ⓘ is added.
   - **Needs Phase 4 engine change E1** (UI-SPEC R15.7).
 - **D-81 (user, 2026-10-22): Custom item type.**
@@ -273,6 +274,8 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
   - "Expected return, % a year (optional)", 0–100, blank by default and never pre-filled, stored as `inputs.investReturnText`.
   - When set, step 2, the verdict card and the Assumptions fold show the projected value at the horizon (the term, or 60 months by default for a lump sum), labelled "Not a forecast".
   - It never changes whether the investment fits and does not feed the net-worth chart or the step 3 rate list. It uses the existing `futureValue`; no engine change.
+  - The lump-sum horizon defaults to 60 months, with chips 1 / 5 / 10 / 20 years plus Custom (1–600 months) (user, 2026-10-22).
+  - Step 3 fold 7 on investment checks is "What it could grow to": the projection when a return is set, otherwise the preview "No expected return set". The purchase views do not apply there (`investmentViews` is null).
 - **D-83 (user, earlier 2026-10-22): The cheaper price is exact.**
   - A typed cheaper price on step 4 is applied as the exact amount, not the nearest whole percent. The slider still steps in 1%, and the percent shown is for display only.
   - The deposit and instalment scale by the exact ratio, rounded half up to the minor unit.
