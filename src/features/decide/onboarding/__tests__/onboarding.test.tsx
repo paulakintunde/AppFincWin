@@ -36,7 +36,9 @@ jest.mock('@/features/record/useRecordContext', () => ({
 const mockUpdate = jest.fn();
 jest.mock('@/data/mutations/decideSettings', () => ({ useUpdateDecideSettings: () => ({ update: (...a: unknown[]) => mockUpdate(...a) }) }));
 let mockResult: SnapshotResult | null = null;
+let mockStored: Record<string, unknown> | null = null;
 jest.mock('@/data/queries/decide', () => ({
+  useDecideSettings: () => ({ data: mockStored }),
   useOtherChecks: () => ({ otherChecks: [], openCount: 0, notCounted: 0, notCountedCurrency: 0 }),
   useDecideSnapshot: () => ({ status: 'ready', result: mockResult, source: null, retry: jest.fn() }),
 }));
@@ -44,6 +46,7 @@ jest.mock('@/data/queries/decide', () => ({
 beforeEach(() => {
   jest.clearAllMocks();
   mockResult = null;
+  mockStored = null;
 });
 
 const wrap = (node: React.ReactElement) => render(<ThemeProvider>{node}</ThemeProvider>);
@@ -89,6 +92,30 @@ describe('RoughFiguresScreen', () => {
     await fireEvent.press(screen.getByText('Skip for now'));
     expect(mockUpdate).toHaveBeenCalledWith({ rough_income: 400000, currency: 'USD' });
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/setup/first-check', params: { accountId: 'acc-1' } });
+  });
+
+  it('CR-B01: figures in a new currency clear the other stored money columns', async () => {
+    mockStored = { currency: 'EUR', reserve: 50000, investing_floor: null, saving_floor: 10000, rough_income: 1, rough_spending: 1 };
+    await wrap(<RoughFiguresScreen accountId="acc-1" />);
+    await fireEvent.changeText(screen.getByLabelText('Money in each month'), '4000');
+    await fireEvent.changeText(screen.getByLabelText('Money out each month'), '2500');
+    await fireEvent.press(screen.getByText('Next'));
+    expect(mockUpdate).toHaveBeenCalledWith({
+      reserve: null,
+      investing_floor: null,
+      saving_floor: null,
+      rough_income: 400000,
+      rough_spending: 250000,
+      currency: 'USD',
+    });
+  });
+
+  it('CR-B01: figures in the stored currency leave the other money columns alone', async () => {
+    mockStored = { currency: 'USD', reserve: 50000, investing_floor: null, saving_floor: 10000, rough_income: null, rough_spending: null };
+    await wrap(<RoughFiguresScreen accountId="acc-1" />);
+    await fireEvent.changeText(screen.getByLabelText('Money out each month'), '2500');
+    await fireEvent.press(screen.getByText('Skip for now'));
+    expect(mockUpdate).toHaveBeenCalledWith({ rough_spending: 250000, currency: 'USD' });
   });
 
   it('Skip for now goes on without saving', async () => {

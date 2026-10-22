@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { useUpdateDecideSettings } from '@/data/mutations/decideSettings';
+import { useDecideSettings } from '@/data/queries/decide';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
@@ -17,6 +18,7 @@ import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { MoneyInput } from '../ui/MoneyInput';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
+import { stampSettingsPatch } from '../home/settingsPatch';
 
 export interface RoughFiguresScreenProps {
   accountId: string | null;
@@ -27,6 +29,8 @@ export function RoughFiguresScreen({ accountId }: RoughFiguresScreenProps) {
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const settings = useUpdateDecideSettings(rc.userId ?? '');
+  // CR-B01: figures typed in a currency other than the stored one clear the other money columns in the same patch.
+  const stored = useDecideSettings(rc.userId ?? undefined).data ?? null;
   const [income, setIncome] = useState<number | null>(null);
   const [spending, setSpending] = useState<number | null>(null);
   const valid = (n: number | null): n is number => n !== null && Number.isSafeInteger(n) && n > 0 && n <= MAX_INPUT_MINOR;
@@ -37,16 +41,18 @@ export function RoughFiguresScreen({ accountId }: RoughFiguresScreenProps) {
   const go = () => router.replace({ pathname: '/setup/first-check', params: accountId ? { accountId } : {} });
   const next = () => {
     if (!validIncome(income) || !valid(spending) || rc.userId === null) return;
-    settings.update({ rough_income: income, rough_spending: spending, currency: rc.homeCurrency });
+    settings.update(stampSettingsPatch({ rough_income: income, rough_spending: spending }, stored, rc.homeCurrency));
     go();
   };
   const skip = () => {
     if (rc.userId !== null && (validIncome(income) || valid(spending))) {
-      settings.update({
-        ...(validIncome(income) ? { rough_income: income } : {}),
-        ...(valid(spending) ? { rough_spending: spending } : {}),
-        currency: rc.homeCurrency,
-      });
+      settings.update(
+        stampSettingsPatch(
+          { ...(validIncome(income) ? { rough_income: income } : {}), ...(valid(spending) ? { rough_spending: spending } : {}) },
+          stored,
+          rc.homeCurrency,
+        ),
+      );
     }
     go();
   };
