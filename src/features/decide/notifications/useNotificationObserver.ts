@@ -30,6 +30,8 @@ export function useNotificationObserver(enabled: boolean): void {
       if (routed.current.has(requestId)) return;
       routed.current.add(requestId);
       router.push({ pathname: '/decide/check/[id]', params: { id, step: '3' } } as Href);
+      // IN-B02: `routed` is per mount; a remounted host would read the same last response and push the check again.
+      void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
     };
 
     void Notifications.getLastNotificationResponseAsync().then((r) => {

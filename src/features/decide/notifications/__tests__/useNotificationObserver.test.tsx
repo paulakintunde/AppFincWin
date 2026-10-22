@@ -17,6 +17,7 @@ type MockName =
   | 'cancelScheduledNotificationAsync'
   | 'cancelAllScheduledNotificationsAsync'
   | 'getLastNotificationResponseAsync'
+  | 'clearLastNotificationResponseAsync'
   | 'addNotificationResponseReceivedListener';
 const N = Notifications as unknown as Record<MockName, jest.Mock>;
 const ID = '11111111-1111-4111-8111-111111111111';
@@ -55,6 +56,21 @@ describe('useNotificationObserver', () => {
     await waitFor(() =>
       expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: ID, step: '3' } }),
     );
+  });
+
+  it('IN-B02: a routed tap clears the last response, so a remount does not push the check again', async () => {
+    let last: unknown = resp({ checkId: ID, kind: 'wait' });
+    N.getLastNotificationResponseAsync.mockImplementation(async () => last);
+    N.clearLastNotificationResponseAsync.mockImplementation(async () => {
+      last = null;
+    });
+    const first = await renderHook(() => useNotificationObserver(true));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledTimes(1));
+    expect(N.clearLastNotificationResponseAsync).toHaveBeenCalledTimes(1);
+    await first.unmount();
+    await renderHook(() => useNotificationObserver(true));
+    await waitFor(() => expect(N.getLastNotificationResponseAsync).toHaveBeenCalledTimes(2));
+    expect(mockPush).toHaveBeenCalledTimes(1);
   });
 
   it('a cooling-off tap routes a bought check like any other', async () => {

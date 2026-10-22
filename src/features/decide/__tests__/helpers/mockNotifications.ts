@@ -11,6 +11,7 @@ export function notificationsMock() {
     cancelAllScheduledNotificationsAsync: jest.fn().mockResolvedValue(undefined),
     getAllScheduledNotificationsAsync: jest.fn().mockResolvedValue([]),
     getLastNotificationResponseAsync: jest.fn().mockResolvedValue(null),
+    clearLastNotificationResponseAsync: jest.fn().mockResolvedValue(undefined),
     addNotificationResponseReceivedListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
     SchedulableTriggerInputTypes: { DATE: 'date' },
     AndroidImportance: { DEFAULT: 3 },
