@@ -97,8 +97,12 @@ Non-interactive execution of `/gsd-execute-phase 5` (waves 1-8, plus 05-25 Task 
 - [ ] iOS date picker (WR-D12): a day before the minimum moves the field and the picker to the earliest allowed day.
 - [ ] Screen reader (IN-D03): each chart is read once; axis labels read "+N d" and "N mo" (WR-D07, WR-D08).
 - [ ] After the pending migration 20261021000100 is pushed: import a statement that states its period, then Undo; those months no longer count as complete (CR-D02). Reopen the same decision on two devices; the second lands on the first device's check (IN-B05).
+- [ ] Provisional rate (D-69): Save a foreign-currency purchase offline (or with rate pending); Decide shows the provisional basis line and Medium confidence, then switches when the rate arrives.
 - [ ] Copy fit: "See it on credit", "On a card", "Set aside each month", the steady line and "Is something set aside to keep these payments going if income dips?".
 
 ## Review-fixes migration pushed (2026-10-22)
 - `20261021000100_decide_review_fixes.sql` applied to production (`cohmcbdfgqmiwykztrdg`) from the main session with the user's approval, after CI (pgTAP 60, plan 50) passed at 7106fb7. Dry run listed only this migration; `migration list --linked` shows it Local and Remote; a second dry run reports "Remote database is up to date". Production is now at 20261021000100.
 - Code review: 86 findings, 85 fixed or resolved, IN-D05 (copy review) deferred to 05-26.
+
+## D-69 provisional latest rate (2026-10-22)
+- User decision "Provisional latest rate", built before the 05-26 device checks. A line with no usable stamp converts at the latest stored rate (`provisionalHomeAmount`), is flagged provisional, shows the basis line with count and date, and caps confidence at fair via the engine's plain `provisionalRates` flag. No migration; nothing provisional is written; `homeAmountFor` unchanged. 05-26 device item added above.
