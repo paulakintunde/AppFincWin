@@ -64,9 +64,9 @@ describe('DayByDaySection', () => {
     expect(p.computation.status).toBe('logged');
     await wrap(<DayByDaySection {...dayProps(p)} />);
     expect(screen.getByText('Day by day, next 90 days')).toBeTruthy();
-    // the collapsed-header summary and the always-visible text alternative
-    expect(screen.getAllByText(/^Lowest with this: \$\d+ on on /).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText(/Lowest without:/).length).toBeGreaterThan(0);
+    // the collapsed-header summary and the always-visible text alternative (hidden from screen readers, IN-D03)
+    expect(screen.getAllByText(/^Lowest with this: \$\d+ on on /, { includeHiddenElements: true }).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText(/Lowest without:/, { includeHiddenElements: true }).length).toBeGreaterThan(0);
   });
 
   it('is collapsed by default behaviour: no chart while collapsed', async () => {
