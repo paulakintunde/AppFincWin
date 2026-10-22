@@ -41,7 +41,17 @@ let mockDebts: { id: string }[] = [];
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticSuccess: jest.fn(), hapticWarning: jest.fn(), hapticLight: jest.fn(), hapticMedium: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockToast(...a) }));
 jest.mock('@/shell/a11yFocus', () => ({ useScreenTitleFocus: jest.fn(), focusAccessibility: jest.fn() }));
+// CR-D03: a focused screen runs the focus callback; mockSetFocus(false) blurs it (another screen pushed on top).
+let mockSetFocus: ((focused: boolean) => void) | null = null;
 jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void | (() => void)) => {
+    const R = jest.requireActual<typeof import('react')>('react');
+    const [focused, setFocused] = R.useState(true);
+    R.useEffect(() => {
+      mockSetFocus = setFocused;
+    }, []);
+    R.useEffect(() => (focused ? cb() : undefined), [cb, focused]);
+  },
   useRouter: () => ({ push: jest.fn() }),
   router: { back: (...a: unknown[]) => mockBack(...a), canGoBack: () => true, replace: (...a: unknown[]) => mockReplace(...a), navigate: jest.fn() },
 }));
@@ -267,6 +277,25 @@ describe('back', () => {
     });
     expect(screen.getByText(stepText(1))).toBeTruthy();
     expect(interceptSwipeBack()).toBe(false);
+  });
+
+  it('CR-D03: a covered check gives up back and the edge swipe, and takes them back when uncovered', async () => {
+    await open({}, { initialStep: 3 });
+    expect(backHandlers).toHaveLength(1);
+    await act(async () => {
+      mockSetFocus?.(false);
+    });
+    expect(backHandlers).toHaveLength(0);
+    expect(interceptSwipeBack()).toBe(false);
+    expect(screen.getByText(stepText(3))).toBeTruthy();
+    await act(async () => {
+      mockSetFocus?.(true);
+    });
+    expect(backHandlers).toHaveLength(1);
+    await act(async () => {
+      expect(interceptSwipeBack()).toBe(true);
+    });
+    expect(screen.getByText(stepText(2))).toBeTruthy();
   });
 
   it('releases the swipe-back interceptor on unmount', async () => {

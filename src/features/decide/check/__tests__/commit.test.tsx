@@ -39,6 +39,10 @@ jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockToas
 jest.mock('@/shell/a11yFocus', () => ({ useScreenTitleFocus: jest.fn(), focusAccessibility: jest.fn() }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPush(...a) }));
 jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void | (() => void)) => {
+    const { useEffect } = jest.requireActual<typeof import('react')>('react');
+    useEffect(cb, [cb]);
+  },
   useRouter: () => ({ push: jest.fn() }),
   router: { back: (...a: unknown[]) => mockBack(...a), canGoBack: () => true, replace: (...a: unknown[]) => mockReplace(...a), navigate: jest.fn() },
 }));

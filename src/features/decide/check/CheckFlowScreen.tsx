@@ -10,7 +10,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { router, type Href } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import { useMarkCheckSeen, useReopenCheck } from '@/data/mutations/decideChecks';
 import { useSaveCardRate, useSaveCardTerms, type CardTermsInput } from '@/data/mutations/decideLinks';
 import { useAccounts } from '@/data/queries/accounts';
@@ -269,22 +269,27 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
 
   // Back steps back before it leaves (A5, A8). The edge swipe and the Android button are claimed only past step 1, and
   // released on every change of step and on unmount: the interceptor is a module-level singleton.
-  useEffect(() => {
-    if (step === null || step <= 1) return undefined;
-    const previous = (step - 1) as StepNumber;
-    const stepBack = (): boolean => {
-      setBlocked(false);
-      setStep(previous);
-      return true;
-    };
-    // WR-C08: release only this screen's own claim
-    const release = setSwipeBackInterceptor(stepBack);
-    const sub = BackHandler.addEventListener('hardwareBackPress', stepBack);
-    return () => {
-      sub.remove();
-      release();
-    };
-  }, [step]);
+  // CR-D03: claimed only while this screen is focused. A check covered by another screen (a reminder tap pushes a second
+  // check, or any detail opens above it) gives up both claims, so back and the edge swipe go to the screen on top; they
+  // come back when it is uncovered again.
+  useFocusEffect(
+    useCallback(() => {
+      if (step === null || step <= 1) return undefined;
+      const previous = (step - 1) as StepNumber;
+      const stepBack = (): boolean => {
+        setBlocked(false);
+        setStep(previous);
+        return true;
+      };
+      // WR-C08: release only this screen's own claim
+      const release = setSwipeBackInterceptor(stepBack);
+      const sub = BackHandler.addEventListener('hardwareBackPress', stepBack);
+      return () => {
+        sub.remove();
+        release();
+      };
+    }, [step])
+  );
   const back = useCallback((): void => {
     if (step !== null && step > 1) {
       setBlocked(false);
