@@ -1,4 +1,6 @@
 import type { CashPathReport, Confidence, Decision, LineMargin } from '@/engine/decide';
+import { i18n } from '@/i18n';
+import { refText } from '../../check/refText';
 import {
   basisDetailItems,
   cashPathCopy,
@@ -11,6 +13,7 @@ import {
   edgeChipA11y,
   edgeOn,
   marginText,
+  provisionalItem,
   verdictLineOne,
   worstMonthLine,
 } from '../depthVerdictCopy';
@@ -20,6 +23,8 @@ import type { CopyRef } from '../types';
 
 const monthName = (m: string): string => `M:${m}`;
 const D = 'decide.depth.';
+const t = (key: string, params?: Record<string, string | number>): string => String((i18n.t as (k: string, o?: Record<string, string | number>) => unknown)(key, params));
+const text = (r: CopyRef): string => refText(t, r);
 
 // plural bases resolve through _one / _other
 const resolves = (key: string): boolean => resolvesInEn(key) || resolvesInEn(`${key}_one`) || resolvesInEn(`${key}_other`);
@@ -249,6 +254,46 @@ describe('confidence', () => {
     expect(confidenceReasons(strong, { fullMonths: 6, steadiness: 'steady', oneOffs: 0, conversions: [] }).map((r) => r.key)).toEqual([`${D}confidence.fullMonths`, `${D}confidence.steady`]);
     expect(confidenceReasons(strong, { fullMonths: 1, steadiness: 'insufficient', oneOffs: 0, conversions: [] })).toHaveLength(1);
     expect(confidenceReasons(strong, { fullMonths: 1, steadiness: null, oneOffs: 0, conversions: [] })).toHaveLength(1);
+  });
+
+  it('D-69: a provisional rate is listed as a reason when the engine caps the read', () => {
+    const capped: Confidence = { level: 'fair', reasons: ['provisional_rates'] };
+    const rows = confidenceReasons(capped, { fullMonths: 6, steadiness: 'steady', oneOffs: 0, conversions: [] });
+    expect(rows.map((r) => r.key)).toEqual([`${D}confidence.fullMonths`, `${D}confidence.steady`, `${D}confidence.provisional`]);
+    expectInDepth(rows);
+    expect(text(rows[2]!)).toBe('Some lines use the latest stored rate until their own rate arrives');
+  });
+});
+
+describe('D-69 provisional basis line', () => {
+  const base = { conversions: [], cardsWithoutMinimum: 0, fmt, monthName, formatDate: fmtDate };
+
+  it('the basis line shows the count and date, after any conversion item', () => {
+    const one = basisDetailItems({ ...base, decision: decisionOf(), provisional: { rowCount: 1, rateDate: '2026-10-14' } });
+    expect(one).toEqual([{ key: `${D}currency.provisional`, params: { count: 1, date: fmtDate('2026-10-14') } }]);
+    expect(text(one[0]!)).toBe(`1 line converted at the ${fmtDate('2026-10-14')} rate while its own rate loads`);
+    const many = basisDetailItems({
+      ...base,
+      decision: decisionOf(),
+      conversions: [{ currency: 'EUR', rateText: '1.1000000000', rateDate: '2026-10-14' }],
+      provisional: { rowCount: 3, rateDate: '2026-10-13' },
+    });
+    expect(many.map((r) => r.key)).toEqual([`${D}currency.basis`, `${D}currency.provisional`]);
+    expect(text(many[1]!)).toBe(`3 lines converted at the ${fmtDate('2026-10-13')} rate while their own rates load`);
+    expectInDepth(many);
+  });
+
+  it('absent or null adds nothing', () => {
+    expect(basisDetailItems({ ...base, decision: decisionOf(), provisional: null })).toEqual([]);
+    expect(provisionalItem(undefined, fmtDate)).toBeNull();
+  });
+
+  it('reads as a record, not advice (DCU-09)', () => {
+    for (const count of [1, 2]) {
+      const s = text(provisionalItem({ rowCount: count, rateDate: '2026-10-14' }, fmtDate)!);
+      expect(s).not.toMatch(/\{\{|undefined|NaN|should|recommend|advice|safe|worry/i);
+      expect(s).not.toMatch(/^(Spend|Save|Try|Keep|Buy|Borrow|Skip|Put|Cut|Pay|Invest|Sell|Stop|Wait)\b/);
+    }
   });
 });
 

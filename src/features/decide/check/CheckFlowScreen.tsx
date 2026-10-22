@@ -518,6 +518,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
           ? basisDetailItems({
               decision,
               conversions: source.conversions,
+              provisional: source.provisional,
               cardsWithoutMinimum: source.meta.cardsWithoutMinimum,
               fmt: (n: number) => whole.formatMoney({ amount: minorUnits(n), currency }),
               monthName,

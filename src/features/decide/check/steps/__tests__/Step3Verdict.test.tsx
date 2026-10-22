@@ -140,6 +140,16 @@ describe('Step3Verdict', () => {
     expect(screen.getAllByText('What this rests on').length).toBeGreaterThan(0);
   });
 
+  it('D-69: a provisional line shows the basis line with its count and date, Fair basis, and the reason on the sheet', async () => {
+    const source: SnapshotResult = { ...loggedSource({ provisionalRates: true }), provisional: { rowCount: 2, rateDate: '2026-10-14' } };
+    await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, source)} />);
+    expect(screen.getByText(/2 lines converted at the on 2026-10-14 rate while their own rates load/)).toBeTruthy();
+    expect(screen.getAllByText('Fair basis').length).toBeGreaterThan(0);
+    const card = screen.queryAllByLabelText(/./).find((n) => Array.isArray(n.props.accessibilityActions));
+    await fireEvent(card!, 'accessibilityAction', { nativeEvent: { actionName: 'confidence' } });
+    expect(screen.getByText('Some lines use the latest stored rate until their own rate arrives')).toBeTruthy();
+  });
+
   it('caps the title at three lines and the body at two, with a title of at most 64 characters', async () => {
     await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, loggedSource())} />);
     const title = screen.getByText(/It clears every line/);

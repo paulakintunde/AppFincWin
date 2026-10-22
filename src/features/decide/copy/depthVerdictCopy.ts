@@ -5,7 +5,7 @@
  */
 import type { CashPathReport, CashTightFact, Confidence, Decision, LineMargin, Steadiness } from '@/engine/decide';
 import { displayRate } from '@/data/queries/fxConvert';
-import type { ConversionNote } from '../snapshot/types';
+import type { ConversionNote, ProvisionalNote } from '../snapshot/types';
 import { ref } from './types';
 import type { CopyRef, Fmt } from './types';
 
@@ -46,18 +46,26 @@ function conversionItem(conversions: readonly ConversionNote[], formatDate: Form
   return ref(`${D}currency.basisMany`, { currencies: conversions.map((c) => c.currency).join(', '), date: formatDate(earliest) });
 }
 
+/** D-69: past lines converted at the latest stored rate while their own rate is pending. */
+export function provisionalItem(note: ProvisionalNote | null | undefined, formatDate: FormatDate): CopyRef | null {
+  if (!note) return null;
+  return ref(`${D}currency.provisional`, { count: note.rowCount, date: formatDate(note.rateDate) });
+}
+
 export interface BasisArgs {
   decision: Pick<Decision, 'combinedDiffers' | 'standalone' | 'stacked' | 'worstMonth' | 'verdict'>;
   conversions: readonly ConversionNote[];
+  /** D-69: SnapshotResult.provisional; absent or null = none. */
+  provisional?: ProvisionalNote | null;
   cardsWithoutMinimum: number;
   fmt: Fmt;
   monthName: MonthName;
   formatDate: FormatDate;
 }
 
-/** D-24/D-27/D-29/D-37/D-40: the one ' · '-joined basis detail row, in the UI-SPEC priority. */
+/** D-24/D-27/D-29/D-37/D-40/D-69: the one ' · '-joined basis detail row, in the UI-SPEC priority. */
 export function basisDetailItems(args: BasisArgs): CopyRef[] {
-  const { decision, conversions, cardsWithoutMinimum, fmt, monthName, formatDate } = args;
+  const { decision, conversions, provisional, cardsWithoutMinimum, fmt, monthName, formatDate } = args;
   const items: CopyRef[] = [];
   // the worst-month line moves here only when the combined line holds line one
   if (combinedLine(decision)) {
@@ -71,6 +79,8 @@ export function basisDetailItems(args: BasisArgs): CopyRef[] {
   }
   const conversion = conversionItem(conversions, formatDate);
   if (conversion) items.push(conversion);
+  const provisionalLine = provisionalItem(provisional, formatDate);
+  if (provisionalLine) items.push(provisionalLine);
   if (codes.includes('cash_path_unavailable')) items.push(ref(`${D}cashPath.basisUnavailable`));
   if (cardsWithoutMinimum > 0) items.push(ref(`${D}cardMin.basis`));
   return items;
@@ -167,6 +177,7 @@ export function confidenceReasons(confidence: Confidence, facts: ConfidenceFacts
   if (confidence.reasons.includes('under_6_full_months')) rows.push(ref(`${D}confidence.under6`));
   if (facts.oneOffs > 0) rows.push(ref(`${D}oneOff.basis`, { count: facts.oneOffs }));
   for (const c of facts.conversions) rows.push(ref(`${D}confidence.converted`, { currency: c.currency }));
+  if (confidence.reasons.includes('provisional_rates')) rows.push(ref(`${D}confidence.provisional`));
   return rows;
 }
 

@@ -1830,6 +1830,7 @@ const en = {
         steady: 'Income is steady', variable: 'Income varies', volatile: 'Income is volatile', firstRead: 'This is a first read from the figures you gave',
         under3: 'Fewer than 3 full months logged', under6: 'Fewer than 6 full months logged', // addition: one row per engine reason code
         converted: 'Includes amounts converted from {{currency}}',
+        provisional: 'Some lines use the latest stored rate until their own rate arrives', // D-69: the reason a read is fair at most
         footer: 'Strong needs 6 full months with steady income; fair needs 3; anything less is rough.', close: 'Close',
       },
       oneOff: { basis_one: '{{count}} one-off left out', basis_other: '{{count}} one-offs left out' },
@@ -1905,6 +1906,8 @@ const en = {
         basisMany: 'Includes amounts converted from {{currencies}} at the latest stored rates, {{date}}',
         assumptionTitle: 'Converted amounts', assumption: '{{currency}} at {{rate}} on {{date}}', // addition
         pastLines: 'Past lines keep the rate they were stamped with', // addition (OQ-A1)
+        provisional_one: '{{count}} line converted at the {{date}} rate while its own rate loads', // D-69
+        provisional_other: '{{count}} lines converted at the {{date}} rate while their own rates load', // D-69
       },
     },
   },
