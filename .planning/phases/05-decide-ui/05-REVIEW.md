@@ -23,10 +23,10 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | ID | Severity | File | Finding | Status |
 |----|----------|------|---------|--------|
 | CR-A01 | critical | `src/db/decideSettings.ts:73 together with supabase/migrations/20261016000100_decide_tables.sql:145-146` | Decide-settings upsert needs UPDATE on `user_id`, which is not granted, so every settings save fails | fixed (a6728ae3, 334878e6) |
-| CR-B01 | high | `src/features/decide/home/LimitEditorSheet.tsx:253-256` | Saving one limit or the rough figures changes the currency of every other stored money limit | open |
+| CR-B01 | high | `src/features/decide/home/LimitEditorSheet.tsx:253-256` | Saving one limit or the rough figures changes the currency of every other stored money limit | fixed (21648cf4): currency stamped only with a money figure; a new currency clears the other money columns |
 | CR-B02 | high | `src/features/decide/snapshot/computeCheck.ts:127-166` | A check typed in a previous home currency is judged as if its amounts were in the current one | fixed (d0157b22), D-67 convert and note |
-| CR-B03 | high | `src/features/decide/notifications/waitReminder.ts:58-65` | The reminder map is read and rewritten by overlapping calls; a lost id leaves a notification that nothing can cancel | open |
-| CR-B04 | high | `src/features/decide/quick/QuickResult.tsx:210-240` | "Try on credit" cannot be reached by screen readers inside the accessible result group — HIGH (a11y) | open |
+| CR-B03 | high | `src/features/decide/notifications/waitReminder.ts:58-65` | The reminder map is read and rewritten by overlapping calls; a lost id leaves a notification that nothing can cancel | fixed (c70d962d): one module queue for every map operation; reconcile cancels orphaned Decide notifications |
+| CR-B04 | high | `src/features/decide/quick/QuickResult.tsx:210-240` | "Try on credit" cannot be reached by screen readers inside the accessible result group — HIGH (a11y) | fixed (dc1dc041); not covered by WR-C05, which touched VerdictCard only |
 | CR-C01 | high | `src/features/decide/check/useCheckDraft.ts:112-133. The stale closures are captured at steps/Step2PriceAndPay.tsx:76-91` | A toast Undo reverts every edit made after the removal (stale `update` closure) | fixed (4fcf03ec) |
 | CR-C02 | high | `src/features/decide/check/LineEditorSheet.tsx:113-128` | The same recurring bill can be "replaced" twice, giving a double-counted saving and a refused Go ahead | fixed (a6728ae3, 949092cb, 5a48a5e9): a refused Go ahead leaves no rows (batch A); a bill is replaced at most once |
 | CR-C03 | high | `src/features/decide/check/writtenLines.ts:485-489` | "What gets written" promises a transfer into the investment account, but the write records a pending expense | fixed (210800e4) |
@@ -44,16 +44,16 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | WR-A05 | medium | `src/db/debts.ts:117-126` | Decide reads are not filtered by household, so a user in two households gets mixed debts, checks and links in one snapshot | fixed (09bb8fa3) |
 | WR-A06 | medium | `src/data/mutations/decideGoAhead.ts:109-132 (addRow)` | Go-ahead purchase lines are written without `one_off`, so a lump purchase later inflates spending averages for every other check | fixed (5c072859), D-66 |
 | WR-A07 | medium | `src/data/mutations/decideSettings.ts:316-337` | Optimistic settings rollback restores a stale snapshot when two settings writes are queued | fixed (e10e18c2) |
-| WR-B01 | medium | `src/features/decide/snapshot/buildSnapshot.ts:164-168` | A zero balance in a currency with no stored rate makes the whole Decide tab unconverted | open |
-| WR-B02 | medium | `src/features/decide/snapshot/buildSnapshot.ts:342-343` | Transfer-category outflow series are counted as bills, while income series of the same category are left out | open |
-| WR-B03 | medium | `src/features/decide/snapshot/buildSnapshot.ts:270` | Debt-category one-off payments are excluded only when a `debts` row exists | open |
-| WR-B04 | medium | `src/features/decide/snapshot/withoutCheckWrites.ts:297-301` | The bought-check recompute does not reopen a replaced series when Go ahead was queued offline | open |
-| WR-B05 | medium | `src/features/decide/snapshot/withoutCheckWrites.ts:317` | Lines attached to a bought check stay in the "before" position, so the purchase can be counted twice | open |
-| WR-B06 | medium | `src/features/decide/journal/estimateActual.ts:53-69` | Estimate-versus-actual shows "under by the full estimate" when nothing is linked or a rate is missing | open |
-| WR-B07 | medium | `src/features/decide/past/DecisionDetailSheet.tsx:80` | "Final price" in the decision detail shows the advertised price in the home currency | open |
-| WR-B08 | medium | `src/features/decide/quickParse.ts:262-276` | Quick-check parsing takes the first number, so "iPhone 15 Pro 1199" is judged at 15 | open |
-| WR-B09 | medium | `src/features/decide/home/YourMonthCard.tsx:93 (string src/i18n/locales/en.ts:1448` | Compliance — Your month says the average "is safe to plan on" | open |
-| WR-B10 | medium | `src/features/decide/notifications/waitReminder.ts:153-166` | Reconcile never fixes a reminder whose time changed or that the OS dropped | open |
+| WR-B01 | medium | `src/features/decide/snapshot/buildSnapshot.ts:164-168` | A zero balance in a currency with no stored rate makes the whole Decide tab unconverted | fixed (4fec9fe2) |
+| WR-B02 | medium | `src/features/decide/snapshot/buildSnapshot.ts:342-343` | Transfer-category outflow series are counted as bills, while income series of the same category are left out | fixed (9ef7259c): a Transfer series is neither bill nor income; its paid inbound legs still count as saving/investing |
+| WR-B03 | medium | `src/features/decide/snapshot/buildSnapshot.ts:270` | Debt-category one-off payments are excluded only when a `debts` row exists | fixed (afb95ec7), partial: excluded only when some debt (row or derived card) has a minimum above zero. Matching a payment to its creditor needs a payment-to-debt link the data does not carry; an unrelated loan with a minimum still drops other Debt-category one-offs (open for the user) |
+| WR-B04 | medium | `src/features/decide/snapshot/withoutCheckWrites.ts:297-301` | The bought-check recompute does not reopen a replaced series when Go ahead was queued offline | fixed by 433160b9 (WR-C02 endedFrom window) for the offline replay; 44d70bd1 reopens only counted replace lines |
+| WR-B05 | medium | `src/features/decide/snapshot/withoutCheckWrites.ts:317` | Lines attached to a bought check stay in the "before" position, so the purchase can be counted twice | fixed (985ace91): attached day-one and payment lines on or after the local decided date are taken out; not covered by WR-C02/CR-C02 |
+| WR-B06 | medium | `src/features/decide/journal/estimateActual.ts:53-69` | Estimate-versus-actual shows "under by the full estimate" when nothing is linked or a rate is missing | fixed (345d1ecd) |
+| WR-B07 | medium | `src/features/decide/past/DecisionDetailSheet.tsx:80` | "Final price" in the decision detail shows the advertised price in the home currency | fixed (ce7ca636) |
+| WR-B08 | medium | `src/features/decide/quickParse.ts:262-276` | Quick-check parsing takes the first number, so "iPhone 15 Pro 1199" is judged at 15 | fixed (e228622c): last number is the price; the result echoes it |
+| WR-B09 | medium | `src/features/decide/home/YourMonthCard.tsx:93 (string src/i18n/locales/en.ts:1448` | Compliance — Your month says the average "is safe to plan on" | open: left for batch D, folded into WR-D04 (same string, which gives its own wording) |
+| WR-B10 | medium | `src/features/decide/notifications/waitReminder.ts:153-166` | Reconcile never fixes a reminder whose time changed or that the OS dropped | fixed (c70d962d): map stores { id, at }; reconcile compares the server time and the OS list |
 | WR-C01 | medium | `src/features/decide/check/useCommitDecision.ts:318-359` | Wait and Pass commit without flushing the pending draft, so stored inputs miss the last edits | fixed (9e1a40fc) |
 | WR-C02 | medium | `src/features/decide/check/useBoughtCheckComputation.ts:35-41.` | The bought-check recompute can still double count | fixed (433160b9): a queued Go ahead shows no figures until it lands; replaced series reopen across an offline replay |
 | WR-C03 | medium | `src/features/decide/check/CheckFlowScreen.tsx:296-308. Related: src/data/mutations/decideChecks.ts (useMarkCheckSeen uses expectedVersion: row.version` | Seen-state is lost to a version conflict and is marked only once per mount | fixed (d1c828f3 version chain, d292b5e4 seen per visit) |
@@ -64,14 +64,14 @@ Four parallel gsd-code-reviewer passes over the Phase 5 source diff (b4fc4bc..HE
 | WR-D02 | medium | `src/features/decide/ui/StepSlider.tsx:216-220` | StepSlider jumps to the touched value before the pan activates, so scrolling can change the deposit | open |
 | WR-D03 | medium | `src/features/decide/ui/RateInput.tsx:9` | RateInput rejects comma decimal separators | open |
 | WR-D04 | medium | `src/i18n/locales/en.ts` | Copy that reassures or prescribes gets past the banned list | open |
-| IN-B01 | low | `src/features/decide/journal/pastDecisions.ts:143-146` | Decided dates use the device time zone, while the bought recompute uses the app's time zone | open |
-| IN-B02 | low | `src/features/decide/notifications/useNotificationObserver.ts:192` | The last notification response is never cleared | open |
-| IN-B03 | low | `src/features/decide/home/OpenChecksCard.tsx:176` | Row action buttons have identical, nameless screen-reader labels — LOW (a11y) | open |
-| IN-B04 | low | `src/features/decide/home/ChangesCard.tsx:265` | Dated changes are formatted in the home currency, not the row's currency | open |
-| IN-B05 | low | `src/features/decide/past/PastDecisionsScreen.tsx:270-279` | Reopen can be pressed again on a decision that already has a live reopened check | open |
-| IN-B06 | low | `src/features/decide/snapshot/checkInputs.ts:358-390` | "Run the full check" saves inputs with `currency: null` | open |
-| IN-B07 | low | `src/features/decide/copy/quickCopy.ts:127` | Fallback copy can say "short by 0" | open |
-| IN-B08 | low | `src/features/decide/home/RoughFiguresSheet.tsx:278` | Rough figures cannot record zero income | open |
+| IN-B01 | low | `src/features/decide/journal/pastDecisions.ts:143-146` | Decided dates use the device time zone, while the bought recompute uses the app's time zone | fixed (62f0af7c) |
+| IN-B02 | low | `src/features/decide/notifications/useNotificationObserver.ts:192` | The last notification response is never cleared | fixed (740eda89) |
+| IN-B03 | low | `src/features/decide/home/OpenChecksCard.tsx:176` | Row action buttons have identical, nameless screen-reader labels — LOW (a11y) | fixed (69d7291b) |
+| IN-B04 | low | `src/features/decide/home/ChangesCard.tsx:265` | Dated changes are formatted in the home currency, not the row's currency | fixed (e818d102) |
+| IN-B05 | low | `src/features/decide/past/PastDecisionsScreen.tsx:270-279` | Reopen can be pressed again on a decision that already has a live reopened check | fixed (7f29155b) on the client; not covered by CR-C07 (check flow only). No server guard (no unique index on reopened_from): two devices can still each reopen once |
+| IN-B06 | low | `src/features/decide/snapshot/checkInputs.ts:358-390` | "Run the full check" saves inputs with `currency: null` | fixed (a783fad5) |
+| IN-B07 | low | `src/features/decide/copy/quickCopy.ts:127` | Fallback copy can say "short by 0" | fixed (c9d37808) |
+| IN-B08 | low | `src/features/decide/home/RoughFiguresSheet.tsx:278` | Rough figures cannot record zero income | fixed (73bc9aef): income may be 0 (sheet and onboarding); spending stays above zero |
 | WR-A08 | low | `supabase/migrations/20261016000300_decide_outcomes.sql:415-417` | A Wait queued offline for more than two days can be refused permanently | fixed (a6728ae3) |
 | WR-A09 | low | `src/data/mutations/sampleData.ts:24-36` | Clearing or seeding sample data does not refresh the settings, goals or changes caches | fixed (2cce53d6) |
 | WR-A10 | low | `src/data/mutations/decideLinks.ts:204-223` | Undoing an unlink collides with the live-unique index after the same line is re-attached | no change: accepted refusal (the line is already attached again), documented in 48d553b2 |
