@@ -86,3 +86,15 @@ Non-interactive execution of `/gsd-execute-phase 5` (waves 1-8, plus 05-25 Task 
 - [x] (05-30) Wire `onSaveCardTerms` to `useSaveCardTerms` (05-53); pass `meta` to `AssumptionsSection` (05-15) and the optional `stack`/`conversions`/`basisItems`/`formatDate` (05-42); pass `checkId`/`checkStatus` to Step5Decision (05-46); household props for ScopeToggle/WhoPaysSection (05-16).
 - [x] (05-29, done in 05-29; not done in 05-30; bought checks now open through `useBoughtCheckComputation` in 05-30) 05-29: resolve debt/savings categories and the card account before Go ahead confirm (05-20 `buildGoAheadWrite` throws when null); pass `today`/`investAccountName` to `writtenLines` (05-17); bought checks open through `useBoughtCheckComputation` (05-52).
 - Wave 6 gate (orchestrator): full jest failed on src/features/record/__tests__/routes.test.tsx (the layout now mounts useNotificationObserver, 05-24; its expo-router mock has no useRouter). Fixed by mocking the observer as shellNavigation.test.tsx does. Test runs log "No route named ... exists" for the four new Stack.Screen entries because the tests mock a reduced route tree; on device decide/check/[id] has no screen file until 05-30.
+
+## 05-26 device checklist additions (code review batch D, 2026-10-22)
+
+- [ ] Copy review of all decide strings in context; then flip decide copyStatus draft→final (review IN-D05; `src/i18n/copyStatus.ts` lists the whole `decide` namespace as draft).
+- [ ] iOS onboarding rough figures (CR-D01): type both figures on the decimal pad and tap Next without leaving a field; the screen scrolls above the keyboard; Skip with one figure typed saves it.
+- [ ] Android back and edge swipe (CR-D03): with a check at step 3 covered by another screen (a reminder tap opening a second check, or any detail), back acts on the top screen; uncovered, back steps the check back.
+- [ ] Sliders (WR-D02): a vertical scroll over the Step 2, 4 and 5 sliders changes nothing; a tap sets the value.
+- [ ] Decimal-comma region (WR-D03): "4,5" can be typed in a rate field (de or fr region).
+- [ ] iOS date picker (WR-D12): a day before the minimum moves the field and the picker to the earliest allowed day.
+- [ ] Screen reader (IN-D03): each chart is read once; axis labels read "+N d" and "N mo" (WR-D07, WR-D08).
+- [ ] After the pending migration 20261021000100 is pushed: import a statement that states its period, then Undo; those months no longer count as complete (CR-D02). Reopen the same decision on two devices; the second lands on the first device's check (IN-B05).
+- [ ] Copy fit: "See it on credit", "On a card", "Set aside each month", the steady line and "Would these payments still be made after a job loss?".
