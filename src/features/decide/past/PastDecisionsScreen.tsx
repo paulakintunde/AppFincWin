@@ -16,7 +16,7 @@ import { METHOD_LABEL } from '../copy/codeMaps';
 import { stateChip } from '../copy/verdictCopy';
 import { canUse } from '../entitlements';
 import { savedSoFar } from '../journal/goalProgress';
-import { parseCheckInputs } from '../snapshot/checkInputs';
+import { finalPriceOf, parseCheckInputs } from '../snapshot/checkInputs';
 import { GoalProgress } from '../ui/GoalProgress';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
 import { DecisionDetailSheet } from './DecisionDetailSheet';
@@ -38,7 +38,7 @@ export function PastDecisionsScreen() {
   const wholeFmt = useMoneyFormatter(false);
   const reopen = useReopenDecision(model.today);
   const [openId, setOpenId] = useState<string | null>(null);
-  const { decisions, whole, formatDate, ctx } = model;
+  const { decisions, whole, wholeIn, formatDate, ctx } = model;
 
   if (!canUse('decisionJournal')) return null;
 
@@ -49,18 +49,21 @@ export function PastDecisionsScreen() {
   const subLine = (d: DecideCheckRow): string | null => {
     const inputs = parseCheckInputs(d.inputs, model.today);
     const price = inputs.advertised;
+    // WR-B07: the check's own figures in the currency they were typed in; a bought one shows its final price.
+    const typed = wholeIn(inputs.currency);
     const date = dateOf(d);
     if (d.status === 'bought') {
-      if (price === null) return date;
+      const final = finalPriceOf(inputs);
+      if (final === null) return date;
       const method = inputs.method !== null ? t(METHOD_LABEL[inputs.method]) : '';
-      return method === '' ? `${whole(price)} · ${date}` : t('decide.past.subBought', { price: whole(price), method, date });
+      return method === '' ? `${typed(final)} · ${date}` : t('decide.past.subBought', { price: typed(final), method, date });
     }
     if (d.status === 'waiting') {
       const goal = model.goalByCheck.get(d.id);
       const target = goal?.target ?? price;
       if (target === null) return date;
       return t('decide.past.subWaiting', {
-        target: whole(target),
+        target: goal?.target != null ? whole(target) : typed(target),
         amount: whole(d.wait_monthly ?? 0),
         date: d.ready_by !== null ? formatDate(d.ready_by) : date,
       });
@@ -68,8 +71,8 @@ export function PastDecisionsScreen() {
     if (price === null) return date;
     const why = inputs.why.trim();
     return why === ''
-      ? t('decide.past.subPassedNoWhy', { price: whole(price), date })
-      : t('decide.past.subPassed', { price: whole(price), why, date });
+      ? t('decide.past.subPassedNoWhy', { price: typed(price), date })
+      : t('decide.past.subPassed', { price: typed(price), why, date });
   };
 
   const renderDelta = (delta: RowDelta) => {

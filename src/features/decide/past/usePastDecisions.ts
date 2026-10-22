@@ -115,6 +115,7 @@ export interface PastDecisionsModel {
   householdId: string | null;
   today: string;
   whole: Money;
+  wholeIn: (typed: string | null) => Money;
   formatDate: (localDate: string) => string;
 }
 
@@ -125,16 +126,21 @@ export function usePastContext() {
   const rates = useFxLatest().data;
   const customs = useCustomCurrencies(rc.userId ?? undefined).data;
   const whole = useMemo(() => moneyFn(fmt, currencyCode(rc.homeCurrency)), [fmt, rc.homeCurrency]);
+  // WR-B07: a check's own amounts are formatted in the currency they were typed in (null: the current home).
+  const wholeIn = useMemo(
+    () => (typed: string | null): Money => (typed === null || typed === rc.homeCurrency ? whole : moneyFn(fmt, currencyCode(typed))),
+    [fmt, whole, rc.homeCurrency]
+  );
   const formatDate = useMemo(() => (d: string) => fmt.formatDate(d), [fmt]);
   const ctx = useMemo<PastContext>(
     () => ({ home: rc.homeCurrency, rates: rates ?? [], customs: customs ?? [], today: rc.today }),
     [rc.homeCurrency, rates, customs, rc.today]
   );
-  return { userId: rc.userId, householdId: rc.householdId, today: rc.today, ctx, whole, formatDate };
+  return { userId: rc.userId, householdId: rc.householdId, today: rc.today, ctx, whole, wholeIn, formatDate };
 }
 
 export function usePastDecisions(): PastDecisionsModel {
-  const { userId: uid, householdId: hid, today, ctx, whole, formatDate } = usePastContext();
+  const { userId: uid, householdId: hid, today, ctx, whole, wholeIn, formatDate } = usePastContext();
   const userId = uid ?? undefined;
   const householdId = hid ?? undefined;
   const checks = useDecideChecks(userId, householdId).data;
@@ -212,6 +218,7 @@ export function usePastDecisions(): PastDecisionsModel {
     householdId: hid,
     today,
     whole,
+    wholeIn,
     formatDate,
   };
 }

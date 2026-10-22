@@ -98,6 +98,17 @@ describe('DecisionDetailSheet', () => {
     expect(screen.queryByText(/you should|worth confirming/i)).toBeNull();
   });
 
+  it('WR-B07: Final price is the price after fees and trade-ins, in the currency the check was typed in', async () => {
+    const adjustments = [
+      { id: 'fee', name: 'Delivery', amount: 5_000, note: '', counted: true, effect: 'adds', onDay: true, taxPercentText: null },
+      { id: 'trade', name: 'Trade-in', amount: 20_000, note: '', counted: true, effect: 'takes_off', onDay: false, taxPercentText: null },
+    ];
+    await renderSheet(decision('b', { inputs: inputs({ currency: 'EUR', advertised: 100_000, adjustments: adjustments as never }) }));
+    expect(screen.getByText('Final price')).toBeTruthy();
+    expect(screen.getByText(/^€\s?850$/)).toBeTruthy();
+    expect(screen.queryByText(/^\$1,?000$/)).toBeNull();
+  });
+
   it('WR-B06: with no linked line of a kind the actual is a dash and nothing says "under"', async () => {
     const links = [link('l1', 'b', { target_id: 'tx1' })];
     await renderSheet(decision('b'), links, [line('tx1', { local_date: '2026-08-01', home_amount: -50_000 })]);

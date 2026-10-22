@@ -30,7 +30,7 @@ import { canUse } from '../entitlements';
 import { compareEstimate, type Checkpoint } from '../journal/estimateActual';
 import { savedSoFar } from '../journal/goalProgress';
 import { cancelCheckReminders } from '../notifications/waitReminder';
-import { parseCheckInputs } from '../snapshot/checkInputs';
+import { finalPriceOf, parseCheckInputs } from '../snapshot/checkInputs';
 import { GoalProgress } from '../ui/GoalProgress';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
 import { AttachLineSheet } from './AttachLineSheet';
@@ -57,7 +57,7 @@ interface LinkView {
 export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: DecisionDetailSheetProps) {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
-  const { userId, householdId, today, ctx, whole, formatDate } = usePastContext();
+  const { userId, householdId, today, ctx, whole, wholeIn, formatDate } = usePastContext();
   const wholeFmt = useMoneyFormatter(false);
   const goals = useSavingsGoals(userId ?? undefined, householdId ?? undefined).data;
   const { remove } = useRemoveDecision();
@@ -77,8 +77,12 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
   const chip = stateChip(status === 'open' ? 'draft' : status, 'full');
   const inputs = decision !== null ? parseCheckInputs(decision.inputs, today) : null;
   const decidedDate = decision?.decided_at != null ? localDateOf(decision.decided_at) : null;
+  // WR-B07: the quoted price before tax, fees and trade-ins; a bought check's final price after them. Both in the currency
+  // the check was typed in; the estimates and actuals below are in the home currency.
   const price = inputs?.advertised ?? null;
-  const money = (n: number | null) => (n === null ? DASH : whole(n));
+  const finalPrice = inputs !== null ? finalPriceOf(inputs) : null;
+  const typed = wholeIn(inputs?.currency ?? null);
+  const money =(n: number | null) => (n === null ? DASH : whole(n));
 
   const toneOf = (tone: Tone): 'danger' | 'accent' => (tone === 'over' ? 'danger' : 'accent');
   const diffText = (tone: Tone, diff: number) =>
@@ -188,7 +192,7 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
       >
         {decision !== null && status === 'bought' ? (
           <>
-            <DetailRow label={t('decide.past.finalPrice')} value={price !== null ? whole(price) : null} emptyText={DASH} />
+            <DetailRow label={t('decide.past.finalPrice')} value={finalPrice !== null ? typed(finalPrice) : null} emptyText={DASH} />
             <DetailRow
               label={t('decide.past.paidHow')}
               value={inputs?.method != null ? t(METHOD_LABEL[inputs.method]) : null}
@@ -254,7 +258,7 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
           </>
         ) : decision !== null ? (
           <>
-            <DetailRow label={t('decide.past.quoted')} value={price !== null ? whole(price) : null} emptyText={DASH} />
+            <DetailRow label={t('decide.past.quoted')} value={price !== null ? typed(price) : null} emptyText={DASH} />
             {status === 'passed' ? (
               <DetailRow
                 label={t('decide.past.whyPassed')}

@@ -432,6 +432,13 @@ function costLine(l: InputLine): CostLine {
     : { id: l.id, amount: minorUnits(l.amount), counted, category: l.category };
 }
 
+/** WR-B07: the price after tax, fees and trade-ins, in the currency the check was typed in; null with no price. */
+export function finalPriceOf(inputs: Pick<CheckInputs, 'advertised' | 'adjustments'>): MinorUnits | null {
+  if (inputs.advertised === null) return null;
+  const adv = minorUnits(inputs.advertised);
+  return resolvePriceInputs({ advertised: adv, adjustments: priceAdjustments(inputs.adjustments, adv) }).price;
+}
+
 /**
  * CR-C02: one recurring bill is replaced at most once. A later counted line naming a series an earlier counted line already
  * replaces is dropped, so the saving is never subtracted twice. Lines with no series, and uncounted lines, are kept.

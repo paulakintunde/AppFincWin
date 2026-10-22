@@ -11,6 +11,7 @@ import {
   isValidAprText,
   isValidProjectionRateText,
   isValidRateText,
+  finalPriceOf,
   parseCheckInputs,
   quickToCheckInputs,
   repriceInputs,
@@ -421,6 +422,14 @@ describe('toEngineCheck', () => {
     expect(r.running.nonCash).toBe(0);
     expect(r.running.gross).toBe(1_000);
     expect(r.running.replaced).toBe(0);
+  });
+});
+
+describe('finalPriceOf', () => {
+  it('WR-B07: is the price after tax, fees and trade-ins; null with no price', () => {
+    expect(finalPriceOf({ advertised: null, adjustments: [] })).toBeNull();
+    const adjustments = [adj({ id: 'tax', taxPercentText: '10', amount: 0 }), adj({ id: 'fee', amount: 5_000 }), adj({ id: 'trade', effect: 'takes_off', amount: 20_000 }), adj({ id: 'off', counted: false, amount: 99_999 })];
+    expect(finalPriceOf({ advertised: mu(100_000), adjustments })).toBe(95_000);
   });
 });
 
