@@ -210,14 +210,17 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
   - **Every duration runs 1–120 months** (user, 2026-10-22): the quick-check duration, the loan term, the instalment count, card months, investment term, promotion length and the Wait period (new 3/6/12/24 chips). The old 600-month UI bound goes. A stored longer term shows under Custom with its range line until edited.
   - The investing horizon alone runs 1–600 months, because it is a projection horizon, not a borrowing term.
   - "Ready in N months" sets the Wait amount to target ÷ N, rounded up to the cent.
+  - The Wait amount can be typed from ceil(target ÷ 120), rounded up to the cent, up to the target. Its slider is capped at min(2 × spare, target).
+  - The Wait chip matching the derived months (3/6/12/24) is selected; otherwise Custom is selected and reads "{n} months".
   - Rates have no preset chips (04 D-07). The typed field is the custom input, bounded at 0–999.99% for APRs and 0–100% for projection rates and fees (D-48).
   - The deposit, Wait amount and cheaper-price sliders each get a tap-to-type money field beside them. A typed value is used exactly, never snapped.
   - An invalid entry is not applied, and the range line shows the bounds.
-- **D-72: Empty Decide home cards stay hidden.** Open checks appears once a check is saved, and Changes coming up once a change exists. While there are no changes, one slim "+ Add a change coming up" row sits under the quick-check card. The "No checks open" and "Nothing dated yet" empty blocks are retired.
+- **D-72: Empty Decide home cards stay hidden.** Open checks appears once a check is saved, and Changes coming up once a change exists. While there are no changes, one slim "+ Add a change coming up" row sits under the quick-check card. While Open checks is hidden, the same line carries a "Check an investment" link. Purchase checks start from the FAB, and investment checks from that link or the step 1 kind chip. The "No checks open" and "Nothing dated yet" empty blocks are retired.
 - **D-73: Clear and Delete, each with Undo; Go ahead's lines are never deleted.**
   - "Clear" in the check header discards the current open check (a soft delete as one undo step, after flushing its pending edit), opens a fresh empty check, and toasts "Check cleared. Nothing was written." with Undo.
   - Saved checks are deleted from Open checks and Past decisions by swipe or the ⋯ menu → Delete, then a confirm sheet, then an Undo toast. This replaces the no-confirm "x" abandon (DCU-04's intent holds) and the word "Remove".
   - Deleting a decided check never removes or edits the lines Go ahead wrote or the transfers tagged to its goal, and the confirm sheet says so.
+  - Changes coming up rows follow the same pattern (amended 2026-10-22): swipe or ⋯ → Delete, then a confirm, then the Undo toast "Change deleted". The "x" and the word "removed" are retired.
 - **D-74: Step 3 is summary first.**
   - **The verdict card holds:** the state words as the heading, the old title as a one-line reason, and three key figures: Left a month, Cushion (engine `runwayMonths`, in months) and A month (net monthly cost).
   - **Below the card:** one list of folded rows, each a title, a one-line preview and a chevron, with only one open at a time. The rows are What breaks, The month, Cash path, Where it lands, Setbacks, Options, If invested (moved from step 4), With the expected income, Who pays what and Assumptions.
@@ -227,25 +230,25 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
   - Every fold row has a chevron and a preview line.
   - Hidden parts of a block use "Show details" / "Hide details" text links.
   - A one-time hint, "Tap a row to see the detail", shows on the first verdict and is dismissed by the first fold or details tap. It is stored per user and per device in AsyncStorage (`fincwin:decide-hints:{userId}`).
-  - Each reveal has a pressed state and a `selectionAsync` haptic (amends the "no haptic on section toggles" rule; `impactAsync` and `selectionAsync` only).
+  - Each reveal has a pressed state and a `selectionAsync` haptic (amends the "no haptic on section toggles" rule; `impactAsync` and `selectionAsync` only). A full swipe on a delete row keeps the shipped `hapticLight` (`impactAsync` Light).
 - **D-76: No word ever breaks mid-word, overlaps, or is cut off in Decide.**
   - Android text uses `textBreakStrategy="simple"` and `android_hyphenationFrequency="none"`, set **app-wide** as defaults in the shared `src/ui/Text` (user, 2026-10-22).
   - Labels wrap at word boundaries, nothing that holds text has a fixed height, and rows grow with their content.
-  - Only one-line figures use `numberOfLines={1}` with `adjustsFontSizeToFit` (minimum scale 0.8).
+  - Only one-line money and count figures use `numberOfLines={1}` with `adjustsFontSizeToFit` (minimum scale 0.8). Word values ("Under 1 month", "Not limited", "None") wrap.
   - Chips wrap to new lines rather than squeezing.
   - Side-by-side text stacks below 360 wide, above 1.3x text, or for a value longer than 16 characters. "Where it lands" and "What gets written" use stacked label-over-value rows.
   - System-copy clamps are removed; the caps hold through copy length.
   - Every Decide screen is checked at 402×874 and 320 wide, at text scale 1.0 and 2.0.
 - **D-77: The draft and save contract.**
   - **Saving:** a new check is created on its first edit. Later edits debounce 600 ms into the write queue. Leaving, unmounting and app backgrounding flush at once, and leaving never prompts.
-  - **Indicator:** the header shows "Saved" / "Saving…" / "Offline, will save" / "Not saved", derived per check from the create and save mutations, the debounce and `useSyncStatus`.
+  - **Indicator:** the header shows "Saved" / "Saving…" / "Offline, will save" / "Not saved" as its own small Text beside the "Step {n} of 5" eyebrow (never part of the eyebrow string). It is derived per check from the create and save mutations, the debounce and `useSyncStatus`.
   - **Clear:** flushes, then deletes, then disarms the draft so no later save targets the cleared check.
   - **Delete:** queued behind any save in `WRITE_SCOPE`. It never conflicts (WR-A03), and a save that arrives after it never undeletes and never records a failed write.
   - **Verification:** `useCheckDraft`, `useCreateCheck`, `useSaveCheckDraft`, `useAbandonCheck`, `useRemoveDecision`, the `setMutationDefaults` registration, `useSyncStatus` and the undo stack are checked by tests named "D-77".
 
 - **D-78 (user, 2026-10-22): Decide home is trimmed too.** "The main page" means both step 3 (D-74) and Decide home. The home order is: quick check, the add-change row, Your month, Open checks, Changes coming up, Past decisions, Lines you will not cross, sources note.
   - **Quick-check card while idle:** only the amount pill. The Cash / Credit toggle appears once there is a result.
-  - **Quick-check card with a result:** the size label is a plain line with an ⓘ. The "Worked out from the figures you entered." footer shows in Credit only. One button row holds "Run the full check" and a "Clear" text button that resets the card with no toast.
+  - **Quick-check card with a result:** the size label is a plain line with an ⓘ. The "Worked out from the figures you entered." footer shows in Credit only, as the last line of the result block, so it never falls below the fold. One button row holds "Run the full check" and a "Clear" text button that resets the card with no toast.
   - **Past decisions:** one row ("Past decisions · {n} decisions"), hidden while there are none.
   - **Lines you will not cross:** one fold row with the preview "{n} of 5 set by you" or "All at their defaults".
   - See UI-SPEC R2b.
