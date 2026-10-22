@@ -117,6 +117,15 @@ describe('PastDecisionsScreen', () => {
     expect(screen.getByText('$120 (+$20 over)')).toBeTruthy();
   });
 
+  it('WR-B06: a decision with no linked running cost shows no "under" strip after day 30', async () => {
+    mockChecks = [decision('b')];
+    mockLinks = [];
+    mockLines = [];
+    await renderScreen();
+    expect(screen.queryByText(/to run, actually/)).toBeNull();
+    expect(screen.queryByText(/under/)).toBeNull();
+  });
+
   it('shows no delta before day 30', async () => {
     mockChecks = [decision('b', { decided_at: '2026-10-05T12:00:00Z' })];
     await renderScreen();

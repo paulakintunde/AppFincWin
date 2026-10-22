@@ -14,7 +14,7 @@ describe('compareEstimate', () => {
       { decidedDate: '2026-01-10', estimateDayOne: 500, estimateMonthly: 100, lines: [line({ id: 'a' })] },
       '2026-02-08'
     );
-    expect(r.checkpoints[0]).toMatchObject({ days: 30, date: '2026-02-09', reached: false, dayOneActual: 0 });
+    expect(r.checkpoints[0]).toMatchObject({ days: 30, date: '2026-02-09', reached: false, dayOneActual: null, diffDayOne: null, toneDayOne: null });
     expect(r.checkpoints[1]).toMatchObject({ days: 90, date: '2026-04-10', reached: false });
   });
 
@@ -29,7 +29,6 @@ describe('compareEstimate', () => {
       line({ id: 'g', amount: 999, date: '2026-01-20', status: 'pending' }),
       line({ id: 'h', amount: 999, date: '2026-01-05' }),
       line({ id: 'i', amount: 999, date: '2026-06-01', seriesId: 's' }),
-      line({ id: 'j', amount: null, date: '2026-01-21', seriesId: 's' }),
     ];
     const r = compareEstimate(
       { decidedDate: '2026-01-10', estimateDayOne: 700, estimateMonthly: 100, lines },
@@ -53,7 +52,33 @@ describe('compareEstimate', () => {
       toneDayOne: 'over',
       toneMonthly: 'under',
     });
-    expect(r.skipped).toBe(1);
+    expect(r.skipped).toBe(0);
+  });
+
+  it('WR-B06: no linked line of a kind, or one without a stored rate, gives null rather than "under by the estimate"', () => {
+    const none = compareEstimate({ decidedDate: '2026-01-10', estimateDayOne: 700, estimateMonthly: 100, lines: [] }, '2026-05-01');
+    expect(none.checkpoints[1]).toMatchObject({
+      reached: true,
+      dayOneActual: null,
+      monthlyActual: null,
+      diffDayOne: null,
+      diffMonthly: null,
+      toneDayOne: null,
+      toneMonthly: null,
+    });
+    const lines: LinkedLine[] = [
+      line({ id: 'a', amount: 700, date: '2026-01-10' }),
+      line({ id: 'b', amount: 100, date: '2026-01-20', seriesId: 's' }),
+      line({ id: 'j', amount: null, date: '2026-01-21', seriesId: 's' }),
+    ];
+    const missing = compareEstimate({ decidedDate: '2026-01-10', estimateDayOne: 700, estimateMonthly: 100, lines }, '2026-05-01');
+    expect(missing.checkpoints[0]).toMatchObject({ dayOneActual: 700, toneDayOne: 'at', monthlyActual: null, toneMonthly: null });
+    expect(missing.skipped).toBe(1);
+    const noRateDayOne = compareEstimate(
+      { decidedDate: '2026-01-10', estimateDayOne: 700, estimateMonthly: 100, lines: [line({ id: 'a', amount: 700 }), line({ id: 'x', amount: null })] },
+      '2026-05-01'
+    );
+    expect(noRateDayOne.checkpoints[0].dayOneActual).toBeNull();
   });
 
   it('rolls dates over month and year ends', () => {

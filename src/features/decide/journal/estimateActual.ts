@@ -16,16 +16,20 @@ export interface EstimateInput {
   lines: readonly LinkedLine[];
 }
 export type Tone = 'over' | 'at' | 'under';
+/**
+ * WR-B06: an actual (and its diff and tone) is null before the checkpoint, when no paid line of its kind falls in the
+ * window, or when one of them has no stored rate: a figure with no linked line is null, never zero (04 D-56, D-39).
+ */
 export interface Checkpoint {
   days: 30 | 90;
   date: string;
   reached: boolean;
-  dayOneActual: number;
-  monthlyActual: number;
-  diffDayOne: number;
-  diffMonthly: number;
-  toneDayOne: Tone;
-  toneMonthly: Tone;
+  dayOneActual: number | null;
+  monthlyActual: number | null;
+  diffDayOne: number | null;
+  diffMonthly: number | null;
+  toneDayOne: Tone | null;
+  toneMonthly: Tone | null;
 }
 
 function addDays(date: string, days: number): string {
@@ -53,30 +57,36 @@ function halfUpDivide(total: number, divisor: number): number {
 function checkpoint(input: EstimateInput, days: 30 | 90, today: string): Checkpoint {
   const date = addDays(input.decidedDate, days);
   const reached = today >= date;
-  let dayOne = 0;
-  let series = 0;
+  const dayOne = { total: 0, count: 0, missing: false };
+  const series = { total: 0, count: 0, missing: false };
   if (reached) {
     for (const line of input.lines) {
-      if (line.status !== 'paid' || line.amount === null) continue;
+      if (line.status !== 'paid') continue;
       if (line.date < input.decidedDate || line.date > date) continue;
-      const abs = Math.abs(line.amount);
-      if (line.seriesId === null) dayOne += abs;
-      else if (line.date > input.decidedDate) series += abs;
+      if (line.seriesId !== null && line.date <= input.decidedDate) continue;
+      const kind = line.seriesId === null ? dayOne : series;
+      if (line.amount === null) kind.missing = true;
+      else {
+        kind.total += Math.abs(line.amount);
+        kind.count += 1;
+      }
     }
   }
-  const monthlyActual = halfUpDivide(series, days / 30);
-  const diffDayOne = reached ? dayOne - input.estimateDayOne : 0;
-  const diffMonthly = reached ? monthlyActual - input.estimateMonthly : 0;
+  const known = (k: typeof dayOne) => k.count > 0 && !k.missing;
+  const dayOneActual = known(dayOne) ? dayOne.total : null;
+  const monthlyActual = known(series) ? halfUpDivide(series.total, days / 30) : null;
+  const diffDayOne = dayOneActual === null ? null : dayOneActual - input.estimateDayOne;
+  const diffMonthly = monthlyActual === null ? null : monthlyActual - input.estimateMonthly;
   return {
     days,
     date,
     reached,
-    dayOneActual: dayOne,
+    dayOneActual,
     monthlyActual,
     diffDayOne,
     diffMonthly,
-    toneDayOne: toneOf(diffDayOne),
-    toneMonthly: toneOf(diffMonthly),
+    toneDayOne: diffDayOne === null ? null : toneOf(diffDayOne),
+    toneMonthly: diffMonthly === null ? null : toneOf(diffMonthly),
   };
 }
 

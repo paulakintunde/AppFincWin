@@ -98,6 +98,14 @@ describe('DecisionDetailSheet', () => {
     expect(screen.queryByText(/you should|worth confirming/i)).toBeNull();
   });
 
+  it('WR-B06: with no linked line of a kind the actual is a dash and nothing says "under"', async () => {
+    const links = [link('l1', 'b', { target_id: 'tx1' })];
+    await renderSheet(decision('b'), links, [line('tx1', { local_date: '2026-08-01', home_amount: -50_000 })]);
+    expect(screen.getByText('On the day at 30 days: $500 against $500 (at)')).toBeTruthy();
+    expect(screen.queryByText(/A month at \d+ days/)).toBeNull();
+    expect(screen.queryByText(/under/)).toBeNull();
+  });
+
   it('unlinks a line with an Undo toast', async () => {
     const links = [link('l1', 'b', { target_id: 'tx1' })];
     await renderSheet(decision('b'), links, [line('tx1')]);

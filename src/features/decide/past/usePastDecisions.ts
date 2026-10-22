@@ -76,7 +76,7 @@ export function estimateInputFor(
 }
 
 export type RowDelta =
-  | { kind: 'monthly'; estimate: number; actual: number; diff: number; tone: Checkpoint['toneMonthly'] }
+  | { kind: 'monthly'; estimate: number; actual: number; diff: number; tone: NonNullable<Checkpoint['toneMonthly']> }
   | { kind: 'schedule'; paid: number; due: number };
 
 /** The list row's delta strip: the monthly comparison at the latest reached checkpoint, or the schedule match for a plan. */
@@ -92,6 +92,8 @@ export function deltaFor(decision: DecideCheckRow, lines: readonly TransactionRo
     const { paid, due } = scheduleMatch(input.lines.filter((l) => l.seriesId !== null), ctx.today);
     return due > 0 ? { kind: 'schedule', paid, due } : null;
   }
+  // WR-B06: no linked running cost (or one without a rate) has no actual to compare, so no strip.
+  if (latest.monthlyActual === null || latest.diffMonthly === null || latest.toneMonthly === null) return null;
   if (input.estimateMonthly <= 0 && latest.monthlyActual <= 0) return null;
   return {
     kind: 'monthly',

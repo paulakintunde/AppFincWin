@@ -170,7 +170,7 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
         title={decision?.name || t('decide.quick.unnamed')}
         trailing={<StateChip tone={chip.tone as StateChipTone} label={t(chip.key)} />}
         note={
-          latest !== null && latest.toneMonthly === 'over' ? (
+          latest !== null && latest.toneMonthly === 'over' && latest.diffMonthly !== null ? (
             <Text style={{ ...meta, color: colors.inkDim, paddingBottom: space.gapSm }}>
               {t('decide.past.runningOver', { amount: whole(Math.abs(latest.diffMonthly)) })}
             </Text>
@@ -201,7 +201,7 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
             />
             <DetailRow
               label={t('decide.past.actDay')}
-              value={latest !== null ? whole(latest.dayOneActual) : null}
+              value={latest !== null && latest.dayOneActual !== null ? whole(latest.dayOneActual) : null}
               emptyText={DASH}
             />
             <DetailRow
@@ -211,7 +211,7 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
             />
             <DetailRow
               label={t('decide.past.actMonth')}
-              value={latest !== null ? whole(latest.monthlyActual) : null}
+              value={latest !== null && latest.monthlyActual !== null ? whole(latest.monthlyActual) : null}
               emptyText={DASH}
             />
             <DetailRow label={t('decide.past.reviewed')} value={t('decide.past.reviewedValue')} emptyText={DASH} />
@@ -221,28 +221,35 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
               </Text>
             ) : null}
             {input !== null
-              ? reached.map((c) => (
-                  <View key={c.days} style={styles.compare}>
-                    <Text style={{ ...meta, color: colors[toneOf(c.toneDayOne)] }}>
-                      {t('decide.past.compare', {
-                        label: t('decide.past.dayOneLabel'),
-                        days: c.days,
-                        actual: money(c.dayOneActual),
-                        estimate: money(input.estimateDayOne),
-                        diff: diffText(c.toneDayOne, c.diffDayOne),
-                      })}
-                    </Text>
-                    <Text style={{ ...meta, color: colors[toneOf(c.toneMonthly)] }}>
-                      {t('decide.past.compare', {
-                        label: t('decide.past.monthlyLabel'),
-                        days: c.days,
-                        actual: money(c.monthlyActual),
-                        estimate: money(input.estimateMonthly),
-                        diff: diffText(c.toneMonthly, c.diffMonthly),
-                      })}
-                    </Text>
-                  </View>
-                ))
+              ? reached.map((c) =>
+                  // WR-B06: a kind with no known actual has no comparison line (its row above shows the dash).
+                  c.toneDayOne === null && c.toneMonthly === null ? null : (
+                    <View key={c.days} style={styles.compare}>
+                      {c.toneDayOne !== null && c.diffDayOne !== null ? (
+                        <Text style={{ ...meta, color: colors[toneOf(c.toneDayOne)] }}>
+                          {t('decide.past.compare', {
+                            label: t('decide.past.dayOneLabel'),
+                            days: c.days,
+                            actual: money(c.dayOneActual),
+                            estimate: money(input.estimateDayOne),
+                            diff: diffText(c.toneDayOne, c.diffDayOne),
+                          })}
+                        </Text>
+                      ) : null}
+                      {c.toneMonthly !== null && c.diffMonthly !== null ? (
+                        <Text style={{ ...meta, color: colors[toneOf(c.toneMonthly)] }}>
+                          {t('decide.past.compare', {
+                            label: t('decide.past.monthlyLabel'),
+                            days: c.days,
+                            actual: money(c.monthlyActual),
+                            estimate: money(input.estimateMonthly),
+                            diff: diffText(c.toneMonthly, c.diffMonthly),
+                          })}
+                        </Text>
+                      ) : null}
+                    </View>
+                  )
+                )
               : null}
           </>
         ) : decision !== null ? (
