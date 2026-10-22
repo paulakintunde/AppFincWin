@@ -10,6 +10,9 @@ import { hapticSelection } from '@/ui/haptics';
 
 const BOX_SIZE = 22; // UI-SPEC check box
 const BOX_BORDER = 1.5; // UI-SPEC check box outline
+const BOX_RADIUS = 6; // UI-SPEC check box corner (IN-D06: named, not a radii token; no §2 radius is this small)
+// IN-D06: the remove mark is a short dash (a minus, "take this line out"), distinct from the chips' close cross.
+const REMOVE_MARK = { width: 12, height: 2, radius: 1 } as const;
 
 export interface CheckRowProps {
   checked: boolean;
@@ -73,8 +76,8 @@ export function CheckRow({ checked, onToggle, name, source, amount, onRemove, re
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   main: { flex: 1, minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
-  box: { width: BOX_SIZE, height: BOX_SIZE, borderRadius: 6, borderWidth: BOX_BORDER },
+  box: { width: BOX_SIZE, height: BOX_SIZE, borderRadius: BOX_RADIUS, borderWidth: BOX_BORDER },
   text: { flex: 1 },
   remove: { width: space.touchMin, height: space.touchMin, alignItems: 'center', justifyContent: 'center' },
-  removeBar: { width: 12, height: 2, borderRadius: 1 },
+  removeBar: { width: REMOVE_MARK.width, height: REMOVE_MARK.height, borderRadius: REMOVE_MARK.radius },
 });
