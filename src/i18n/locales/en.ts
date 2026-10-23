@@ -1558,6 +1558,127 @@ const en = {
         body: 'The lines Go ahead adds to your records, listed before anything is saved. Each appears in Activity linked to this check. Wait creates a savings goal and a reminder, and Pass writes nothing.',
         changes: 'Nothing is written until Go ahead is confirmed, and Undo removes the whole set in one step.',
       },
+      // 05-80 (D-84, R15.8): the 24 Step 2, item and investment terms.
+      price: {
+        term: 'Price',
+        body: 'The price you were quoted, before tax, fees and trade-ins. Every figure on this step starts from it.',
+        changes: 'Changing it rescores every way to pay and the verdict.',
+      },
+      taxFees: {
+        term: 'Tax and fees',
+        body: 'Costs added to the price, such as sales tax, delivery or setup. A line marked Paid on the day counts on the day; the others are paid with the rest of the price.',
+        changes: 'Raises the final price, and the day-one cost when paid on the day.',
+      },
+      tradeIn: {
+        term: 'Trade-in or discount',
+        body: 'Something that takes off the price, such as an old car handed over or a discount agreed. It is entered as an amount.',
+        changes: 'Lowers the final price and everything worked out from it.',
+      },
+      finalPrice: {
+        term: 'Final price',
+        body: 'The price with every counted tax, fee and trade-in line added or taken off. The ways to pay below are all worked out on it.',
+        changes: 'The verdict uses this figure, not the advertised price.',
+      },
+      howYouPay: {
+        term: 'How you pay',
+        body: 'The same purchase, paid different ways. Each card shows what it takes on the day and each month, and the verdict follows the one selected.',
+        changes: 'Selecting a card rescores the verdict on that way to pay.',
+      },
+      paidInFull: {
+        term: 'Paid in full',
+        body: 'The whole final price leaves your cash on the day. Nothing is owed after, and no interest is counted.',
+        changes: 'Cash drops by the final price on the purchase date.',
+      },
+      depositAndLoan: {
+        term: 'Deposit and loan',
+        body: 'Part is paid on the day and the rest is borrowed and repaid monthly, at the rate typed, over the months chosen. The payment is worked out from those three figures.',
+        changes: 'Adds a monthly payment and a debt, and lowers cash by the deposit.',
+      },
+      deposit: {
+        term: 'Deposit',
+        body: 'The part paid on the day. A larger deposit lowers the amount borrowed, the payment and the interest, and leaves less cash.',
+        changes: 'Moves money between cash on the day and the monthly payment.',
+      },
+      loanTerm: {
+        term: 'Loan term',
+        body: 'How many months the loan runs, from 1 to 120. More months lower each payment and raise the total interest at any rate above 0.',
+        changes: 'Changes the monthly payment and the total paid.',
+      },
+      apr: {
+        term: 'Annual rate (APR)',
+        body: 'The yearly interest rate on the agreement, as quoted. The app never fills one in, and 0% is counted as no interest; on step 2 this ⓘ replaces "Before any interest".',
+        changes: 'Sets the interest in each payment and the total paid.',
+      },
+      secured: {
+        term: 'Secured',
+        body: 'A secured loan is backed by the item, such as a car loan against the car. Secured debt is left out of the unsecured-debt line.',
+        changes: 'On: this loan does not count toward Unsecured debt at most.',
+      },
+      instalmentPlan: {
+        term: 'Instalment plan',
+        body: 'A set number of monthly payments, the first on the day or a month later. Some plans charge interest and some do not.',
+        changes: 'Adds the later payments as a monthly cost until the count runs out.',
+      },
+      hasRate: {
+        term: 'Has a rate?',
+        body: 'No: the payments are the amount times the count, and the note shows any rate they imply. Yes: the payment is worked out from the count and the rate typed, and a quoted payment, when entered, is the one the check uses.',
+        changes: 'Yes counts interest on the plan and can raise the monthly cost.',
+      },
+      firstPayment: {
+        term: 'First payment',
+        body: 'Today: the first instalment is paid on the purchase date, along with any fees due on the day. In a month: nothing but those fees is paid on the day, and the instalments start a month later.',
+        changes: 'Changes the cash on the day and the month the payments end.',
+      },
+      lateFee: {
+        term: 'Late fee',
+        body: 'The fee the plan charges when a payment is late, as typed from the agreement. The lines show what one or two late payments would add.',
+        changes: 'Nothing in the verdict.',
+      },
+      onCard: {
+        term: 'On a card',
+        body: 'The purchase goes on a credit card and is cleared in full at the next statement, over a few months, or at the minimum. Interest is counted at the rate on the card record.',
+        changes: 'Adds the card payment to your month until it is cleared.',
+      },
+      paidInFullMonthly: {
+        term: 'Paid in full monthly',
+        body: 'The card balance is cleared every statement, so no minimum payment is counted. Its spending is already in your month.',
+        changes: 'No card minimum is added to debt payments.',
+      },
+      lumpSum: {
+        term: 'Lump sum',
+        body: 'One amount put in on the start date. It leaves cash on that day and adds nothing to later months.',
+        changes: 'Cash drops by the amount on the start date.',
+      },
+      monthlyContribution: {
+        term: 'Monthly contribution',
+        body: 'The same amount put in every month for the months chosen. It is tested in each month like any other regular outgoing.',
+        changes: 'Adds the contribution to your monthly outgoings.',
+      },
+      expectedReturn: {
+        term: 'Expected return',
+        body: 'A yearly growth rate, from 0 to 100%, typed by hand. It is used only to show what the money could grow to by the end, and stays blank unless typed.',
+        changes: 'Nothing in the verdict. A projection at the rate you entered, not a forecast.',
+      },
+      itemType: {
+        term: 'Item type',
+        body: 'What kind of purchase this is. It decides whether a card can be used, whether a loan starts as secured, and which running costs are listed.',
+        changes: 'Changing it can change the card rules and the costs listed.',
+      },
+      customItemType: {
+        term: 'Custom item type',
+        body: 'A name of your own for the kind of item, such as Drone. It follows the General rules unless Treat like is set.',
+        changes: 'Only the name shown changes. The rules are General unless Treat like is set.',
+      },
+      treatLike: {
+        term: 'Treat like',
+        body: 'Borrows the rules of a built-in type, such as Vehicle, for card use, the secured default and the running costs listed.',
+        changes: 'The rules follow the chosen type; the name stays yours.',
+      },
+      cardClearing: {
+        term: 'How it gets cleared',
+        body: 'In full next statement means no interest is counted. Over a few months or the minimum count interest at the card’s rate until the balance reaches zero.',
+        changes: 'Changes the monthly card payment and the interest.',
+      },
     },
     infoButton: { a11y: 'About {{term}}', hint: 'Opens an explanation', sheetChanges: 'What this changes', close: 'Close' },
     hint: { foldTap: 'Tap a row to see the detail' },

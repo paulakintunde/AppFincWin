@@ -1,5 +1,5 @@
 /**
- * The 31 ⓘ explanations of the Decide UX refresh (05-54, D-70, UI-SPEC R3). Pure: keys and params only, no t(), no React.
+ * The 55 ⓘ explanations of the Decide UX refresh (31 from 05-54, D-70, UI-SPEC R3; 24 from 05-80, D-84, R15.8). Pure: keys and params only, no t(), no React.
  * Each key reads decide.info.{key}.term | body | changes from the catalogue.
  */
 import { ref, type CopyRef } from './types';
@@ -9,6 +9,10 @@ export const INFO_KEYS = [
   'variableRate', 'cardMinimum', 'size', 'edge', 'confidence', 'cushionMonths', 'reserve', 'dsrLine', 'unsecuredMultiple',
   'investingFloor', 'savingFloor', 'basisMonth', 'combined', 'whatBreaks', 'cashPath', 'whereItLands', 'setbacks', 'ifInvested',
   'kept', 'provisionalRate', 'coolingOff', 'waitGoal', 'whatGetsWritten',
+  // 05-80 (D-84, R15.8)
+  'price', 'taxFees', 'tradeIn', 'finalPrice', 'howYouPay', 'paidInFull', 'depositAndLoan', 'deposit', 'loanTerm', 'apr', 'secured',
+  'instalmentPlan', 'hasRate', 'firstPayment', 'lateFee', 'onCard', 'paidInFullMonthly', 'lumpSum', 'monthlyContribution',
+  'expectedReturn', 'itemType', 'customItemType', 'treatLike', 'cardClearing',
 ] as const;
 
 export type InfoKey = (typeof INFO_KEYS)[number];

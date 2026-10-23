@@ -7,11 +7,25 @@ const str = (path: string): string | undefined => (typeof node(path) === 'string
 const sentences = (s: string): number => (s.match(/[.!?](?=\s|$)/g) ?? []).length;
 
 describe('infoTerms', () => {
-  it('D-70 INFO_TERMS has the 31 R3 keys', () => {
-    expect(INFO_KEYS).toHaveLength(31);
-    expect(new Set(INFO_KEYS).size).toBe(31);
+  it('D-70 / D-84 INFO_TERMS has the 31 R3 keys and the 24 R15.8 keys', () => {
+    expect(INFO_KEYS).toHaveLength(55);
+    expect(new Set(INFO_KEYS).size).toBe(55);
     expect(INFO_KEYS[0]).toBe('replaces');
     expect(INFO_KEYS[30]).toBe('whatGetsWritten');
+    expect(INFO_KEYS[31]).toBe('price');
+    expect(INFO_KEYS[54]).toBe('cardClearing');
+  });
+
+  it('D-84 every R15.8 entry has a term, a body of at most 3 sentences and what this changes', () => {
+    for (const key of INFO_KEYS.slice(31)) {
+      const c = infoCopy(key);
+      expect(str(c.term.key)).toBeTruthy();
+      expect(str(c.changes.key)).toBeTruthy();
+      const body = c.body.map((b) => str(b.key)).join(' ');
+      expect(body).toBeTruthy();
+      expect(sentences(body)).toBeLessThanOrEqual(3);
+    }
+    expect(str('decide.info.apr.body')).toContain('Before any interest');
   });
 
   it('D-70 every info entry has a term, a body of at most 3 sentences and what this changes', () => {
