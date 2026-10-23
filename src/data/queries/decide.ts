@@ -44,6 +44,26 @@ export function useDecideChecks(userId?: string, householdId?: string): UseQuery
   });
 }
 
+function selectOpenChecks(rows: DecideCheckRow[]): DecideCheckRow[] {
+  return rows
+    .filter((c) => c.deleted_at == null && c.status === 'open')
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
+}
+
+/**
+ * D-88 (R16.4 item 2): the live open checks, newest first, selected with stable equality. TanStack Query structurally
+ * shares a `select` result with the previous one, so a draft save in one check gives that row a new object and leaves
+ * every other row (and, when nothing changed, the whole array) at its old identity.
+ */
+export function useOpenChecks(userId?: string, householdId?: string): UseQueryResult<DecideCheckRow[]> {
+  return useQuery({
+    queryKey: queryKeys.decideChecks(userId ?? '', householdId ?? ''),
+    queryFn: () => fetchDecideChecks(supabase, householdId as string),
+    enabled: Boolean(userId) && Boolean(householdId),
+    select: selectOpenChecks,
+  });
+}
+
 export function useDecideSettings(userId?: string): UseQueryResult<DecideSettingsRow | null> {
   return useQuery({
     queryKey: queryKeys.decideSettings(userId ?? ''),
@@ -143,6 +163,38 @@ export interface DecideSnapshotState {
   result: SnapshotResult | null;
   source: SnapshotSource | null; // the assembled builder input (memoised with result); 05-52 rebuilds a bought check's position from it without the check's own writes
   retry: () => void;
+}
+
+// D-88 (R16.4 item 1): one snapshot per source key. Every consumer (quick check, open-checks chips, the flow) builds its own
+// `source` from the same cached reads; this memo hands them all the first one built, so the engine runs once per key.
+// The key is household, today, home currency and region; the data version is the reads' data references, which TanStack
+// Query keeps stable across a refetch that returns equal data (T-05-105-01). A changed or replaced read can never be
+// served a stale snapshot, and a refetch that changed nothing does not rebuild.
+interface SharedSnapshot {
+  key: string;
+  deps: readonly unknown[];
+  source: SnapshotSource;
+  result: SnapshotResult;
+}
+const SHARED_SNAPSHOTS_MAX = 4;
+const sharedSnapshots = new Map<string, SharedSnapshot>();
+
+function sharedSnapshot(key: string, deps: readonly unknown[], source: SnapshotSource): SharedSnapshot {
+  const hit = sharedSnapshots.get(key);
+  if (hit && hit.deps.length === deps.length && hit.deps.every((d, i) => d === deps[i])) return hit;
+  const entry: SharedSnapshot = { key, deps, source, result: buildDecideSnapshot(source) };
+  sharedSnapshots.delete(key);
+  sharedSnapshots.set(key, entry);
+  if (sharedSnapshots.size > SHARED_SNAPSHOTS_MAX) {
+    const oldest = sharedSnapshots.keys().next().value;
+    if (oldest !== undefined) sharedSnapshots.delete(oldest);
+  }
+  return entry;
+}
+
+/** Test seam: forget every shared snapshot. */
+export function clearSharedSnapshots(): void {
+  sharedSnapshots.clear();
 }
 
 export function useDecideSnapshot(): DecideSnapshotState {
@@ -288,7 +340,16 @@ export function useDecideSnapshot(): DecideSnapshotState {
     writtenQuery.data,
   ]);
 
-  const result = useMemo(() => (source === null ? null : buildDecideSnapshot(source)), [source]);
+  const sourceKey = [hh ?? '', rc.today, rc.homeCurrency, region ?? ''].join('|');
+  const sourceDeps = reads.map((q) => q.data);
+  const shared = useMemo(
+    () => (source === null ? null : sharedSnapshot(sourceKey, sourceDeps, source)),
+    // sourceDeps is rebuilt each render from the same references; `source` and the key say when they changed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [source, sourceKey]
+  );
+  const result = shared === null ? null : shared.result;
+  const sharedSource = shared === null ? null : shared.source;
 
   const refetches = reads.map((q) => q.refetch);
   const failedFlags = reads.map((q) => q.isError).join(',');
@@ -302,7 +363,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
   }, [failedFlags]);
 
   const status: DecideSnapshotState['status'] = failed ? 'error' : result === null ? 'loading' : 'ready';
-  return { status, result, source, retry };
+  return { status, result, source: sharedSource, retry };
 }
 
 /** D-24 (part 2): the other open checks a check is judged with, counted and memoised. */

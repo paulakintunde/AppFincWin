@@ -4,6 +4,7 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { TransactionRow } from '@/db/rows';
+import * as buildModule from '@/features/decide/snapshot/buildSnapshot';
 import { queryKeys } from '../../keys';
 import {
   useDecideChecks,
@@ -11,7 +12,9 @@ import {
   useDecideSettings,
   useDecideSnapshot,
   useGoalLines,
+  clearSharedSnapshots,
   useLinkedLines,
+  useOpenChecks,
   useOtherChecks,
   useSavingsGoals,
   useStatementPeriods,
@@ -122,6 +125,7 @@ function history(): TransactionRow[] {
 }
 
 function resetMocks(): void {
+  clearSharedSnapshots();
   mockCtx.ready = true;
   mockCtx.userId = 'u1';
   mockCtx.householdId = 'h1';
@@ -326,6 +330,90 @@ describe('useDecideSnapshot', () => {
     });
     expect(result.current.status).toBe('ready');
     expect(result.current.result).not.toBeNull();
+  });
+});
+
+describe('D-88 shared snapshot', () => {
+  it('D-88 snapshot built once per source', async () => {
+    const spy = jest.spyOn(buildModule, 'buildDecideSnapshot');
+    const client = newClient();
+    const a = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(client) });
+    const b = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(client) });
+    const c = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(client) });
+    await waitFor(() => {
+      expect(a.result.current.status).toBe('ready');
+      expect(b.result.current.status).toBe('ready');
+      expect(c.result.current.status).toBe('ready');
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(b.result.current.result).toBe(a.result.current.result);
+    expect(c.result.current.result).toBe(a.result.current.result);
+    expect(b.result.current.source).toBe(a.result.current.source);
+    spy.mockRestore();
+  });
+
+  it('D-88 a data change rebuilds the shared snapshot for every consumer', async () => {
+    const spy = jest.spyOn(buildModule, 'buildDecideSnapshot');
+    const client = newClient();
+    const a = await ready(client);
+    const b = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(client) });
+    await waitFor(() => expect(b.result.current.status).toBe('ready'));
+    const calls = spy.mock.calls.length;
+    const before = a.result.current.result;
+    await act(async () => {
+      client.setQueryData(queryKeys.decideHistory('h1', '2025-10-01', '2026-10-31'), [
+        ...history(),
+        txRow({ id: 'extra', local_date: '2026-10-03' }),
+      ]);
+    });
+    await waitFor(() => expect(a.result.current.result).not.toBe(before));
+    expect(spy.mock.calls.length).toBe(calls + 1);
+    expect(b.result.current.result).toBe(a.result.current.result);
+    spy.mockRestore();
+  });
+
+  it('D-88 a changed home currency or region is a different source', async () => {
+    const spy = jest.spyOn(buildModule, 'buildDecideSnapshot');
+    const client = newClient();
+    const us = await ready(client);
+    const calls = spy.mock.calls.length;
+    mockRegion = 'US';
+    await us.rerender({});
+    await waitFor(() => expect(us.result.current.source?.region).toBe('US'));
+    expect(spy.mock.calls.length).toBe(calls + 1);
+    spy.mockRestore();
+  });
+});
+
+describe('useOpenChecks', () => {
+  it('D-88 selects the live open checks newest first and keeps row identity across a refetch of equal data', async () => {
+    const row = (id: string, created_at: string, over: Record<string, unknown> = {}) => ({
+      id,
+      status: 'open',
+      deleted_at: null,
+      created_at,
+      ...over,
+    });
+    const rows = () => [
+      row('a', '2026-10-01T00:00:00Z'),
+      row('b', '2026-10-02T00:00:00Z'),
+      row('d', '2026-10-03T00:00:00Z', { deleted_at: 'x' }),
+      row('e', '2026-10-04T00:00:00Z', { status: 'bought' }),
+    ];
+    mockFetch.checks.mockImplementation(async () => rows());
+    const client = newClient();
+    const hook = await renderHook(() => useOpenChecks('u1', 'h1'), { wrapper: wrapper(client) });
+    await waitFor(() => expect(hook.result.current.data).toBeDefined());
+    expect(hook.result.current.data?.map((r) => r.id)).toEqual(['b', 'a']);
+    const [b0, a0] = hook.result.current.data as object[];
+    const list0 = hook.result.current.data;
+    await act(async () => {
+      client.setQueryData(queryKeys.decideChecks('u1', 'h1'), [...rows().slice(0, 1).map((r) => ({ ...r, name: 'typed' })), ...rows().slice(1)]);
+    });
+    await waitFor(() => expect(hook.result.current.data).not.toBe(list0));
+    const [b1, a1] = hook.result.current.data as object[];
+    expect(b1).toBe(b0);
+    expect(a1).not.toBe(a0);
   });
 });
 
