@@ -39,7 +39,6 @@ const ACTION_LABELS = new Set([
   'decide.lineEditor.save', // button
   'decide.depth.changes.save', // button
   'decide.depth.cardMin.save', // button
-  'decide.past.removeKeep', // dialog choice: keep the decision record
   'decide.onboarding.skip', // button: skip this onboarding step
   'decide.onboarding.checkTitle', // invites the user to try the check itself, not a purchase
   'decide.delete.keep', // dialog choice: keep the record instead of deleting it

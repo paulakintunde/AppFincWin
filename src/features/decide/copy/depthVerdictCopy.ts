@@ -183,17 +183,13 @@ export function confidenceReasons(confidence: Confidence, facts: ConfidenceFacts
 
 export type CashPathCopy =
   | { available: true; summary: CopyRef; textAlt: CopyRef }
-  | { available: false; summary: CopyRef; body: CopyRef; link: CopyRef };
+  | { available: false };
 
 /** D-44: the day-by-day section's summary line and text alternative, or the unavailable prompt. */
 export function cashPathCopy(report: CashPathReport, fmt: Fmt, formatDate: FormatDate): CashPathCopy {
   if (report.status === 'unavailable') {
-    return {
-      available: false,
-      summary: ref(`${D}cashPath.unavailableSummary`),
-      body: ref(`${D}cashPath.unavailableBody`),
-      link: ref(`${D}cashPath.unavailableLink`),
-    };
+    // D-74: the section renders its own unavailable preview, body and link (decide.fold.cashPath.*)
+    return { available: false };
   }
   const { lowestWith, lowestWithout } = report;
   return {

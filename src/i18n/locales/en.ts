@@ -1759,7 +1759,7 @@ const en = {
       overMonths_one: 'Over 1\u00A0month', overMonths_other: 'Over {{count}}\u00A0months', termsA11y: 'Over how many months', termChipA11y: '{{count}} months',
       extras: '+ Tax, fees', extrasSummary: '+{{amount}}', salesTax: 'Sales tax', salesTaxA11y: 'Sales tax, percent', taxPlaceholder: 'Type the rate', fees: 'Fees',
       tryCredit: 'See it on credit', tryCreditA11y: 'See it on credit, keeps the amount',
-      runFull: 'Run the full check', clear: 'Clear the check', clearText: 'Clear', clearA11y: 'Clear the quick check', placeholderShort: 'car 14500', footer: 'Worked out from the figures you entered.',
+      runFull: 'Run the full check', clearText: 'Clear', clearA11y: 'Clear the quick check', placeholderShort: 'car 14500', footer: 'Worked out from the figures you entered.',
       monthlyCaption_one: 'a month for 1\u00A0month', monthlyCaption_other: 'a month for {{count}}\u00A0months', loading: 'Checking',
       monthlyCaptionPaidOff_one: 'a month for 1\u00A0month · paid off in month {{paid}}', monthlyCaptionPaidOff_other: 'a month for {{count}}\u00A0months · paid off in month {{paid}}', // D-45 (04 D-64): count = the entered term, paid = plan.months, shown only when 0 < plan.months < the term and the rate is above 0
       monthlyCaptionZero_one: 'a month for 1\u00A0month, before any interest', monthlyCaptionZero_other: 'a month for {{count}}\u00A0months, before any interest', // UI-check F4: at 0% this is the whole caption and the payoff suffix is dropped
@@ -1796,7 +1796,7 @@ const en = {
       noFigures: { heading: 'Nothing to judge against yet', body: 'Add roughly what comes in and goes out, or import a statement. Then every check has something to rest on.', addRough: 'Add rough figures', import: 'Import a statement' },
       sources: '{{months}} months of logged income, {{lines}} expense lines this month, {{debts}} debts and {{accounts}} accounts. Change any of them in Activity or Grow and every figure here rescores.',
       sourcesRough: 'Rough figures you entered. A statement import or one full logged month replaces them.',
-      pastRow: 'Past decisions', pastCount_one: '{{count}} decision', pastCount_other: '{{count}} decisions', pastNone: 'Nothing decided yet',
+      pastRow: 'Past decisions', pastCount_one: '{{count}} decision', pastCount_other: '{{count}} decisions',
       addChange: 'Add a change coming up', checkInvestment: 'Check an investment',
       linesFold: { title: 'Lines you will not cross', preview_one: '{{count}} of 5 set by you', preview_other: '{{count}} of 5 set by you', allDefault: 'All at their defaults' },
     },
@@ -1811,10 +1811,9 @@ const en = {
     },
     rough: { title: 'Rough figures', in: 'Money in each month', out: 'Money out each month', cancel: 'Cancel', save: 'Save figures' },
     open: {
-      heading: 'Open checks', purchase: '+ Purchase', investment: '+ Investment', abandonA11y: 'Abandon {{name}}',
+      heading: 'Open checks', purchase: '+ Purchase', investment: '+ Investment',
       sub: '{{price}} · {{method}} · leaves {{left}} a month', subDraft: '{{price}} quoted · no payment method yet', saved: ' · saved',
       changed: 'Changed since you looked', was: ' · was {{state}}',
-      emptyHeading: 'No checks open', emptyBody: 'Start one above, or type an item and a price in the quick check.',
     },
     lines: {
       heading: 'Lines you will not cross', sub: 'These decide what counts as affordable. Tap any of them to change it.',
@@ -1826,10 +1825,10 @@ const en = {
       saving: { name: 'Saving at least', desc: 'A month, into goals', info: 'Your automatic contributions come to {{amount}} a month.' },
     },
     toast: {
-      saved: 'Saved', abandoned: 'Check abandoned — nothing was written', written: 'Written to your records',
+      saved: 'Saved', written: 'Written to your records',
       writtenBroke: 'Logged. The record notes it breaks a line.', waitSaved: 'Saved. Reminder set for {{date}}',
       waitNoNotify: 'Saved. Notifications are off, so no reminder will arrive.', passed: 'Passed. Nothing moved.',
-      outcomeFailed: 'That choice couldn’t be saved. Nothing was changed.', unlinked: 'Line unlinked', lineRemoved: 'Removed · {{name}}', removed: 'Decision removed', reopened: 'Opened as a new check', attached: 'Line attached',
+      outcomeFailed: 'That choice couldn’t be saved. Nothing was changed.', unlinked: 'Line unlinked', lineRemoved: 'Removed · {{name}}', reopened: 'Opened as a new check', attached: 'Line attached',
     },
     flow: {
       stepOf: 'Step {{n}} of 5', stepA11y: 'Step {{n}}, {{title}}', back: 'Back', saveClose: 'Save and close', saved: 'Saved',
@@ -1873,8 +1872,8 @@ const en = {
       once: 'Once', drop: 'Income drops', loss: 'Job or client loss', late: 'Invoices pay late', months: 'Months', percent: 'Drop, percent', days: 'Days late',
     },
     price: {
-      advertised: 'Advertised', amount: 'Amount', edit: 'Edit', onDayTag: 'On the day', addAdjust: '+ Add a cost, fee or trade-in',
-      final: 'Final price', committed: 'Amount committed', counted: '{{counted}} of {{total}} lines counted', salesTax: 'Sales tax', fees: 'Fees',
+      onDayTag: 'On the day', addAdjust: '+ Add a cost, fee or trade-in',
+      committed: 'Amount committed', counted: '{{counted}} of {{total}} lines counted', salesTax: 'Sales tax', fees: 'Fees',
     },
     pay: {
       // 05-80 (D-79..D-84, R15.9)
@@ -1914,20 +1913,11 @@ const en = {
       projection_one: 'About {{fv}} after 1 month at {{rate}}% a year. A projection at the rate you entered, not a forecast.',
       projection_other: 'About {{fv}} after {{count}} months at {{rate}}% a year. A projection at the rate you entered, not a forecast.',
       assumptionReturn: 'Expected return', assumptionReturnValue: '{{rate}}% a year, used for the projection only',
-      head: 'How you pay', headInvest: 'How you put it in',
-      sub: 'The same thing, four ways. Everything downstream is worked out on the one you pick.',
-      subInvest: 'The same amount, two ways. Everything downstream is worked out on the one you pick.',
       onDay: 'On the day', aMonth: 'A month', total: 'Total paid',
-      flagRateNeeded: 'Rate needed', flagNotAccepted: 'Not accepted', flagPartOnCard: 'Part on the card', flagBelowPrice: 'Below the price', // flagBelowPrice: D-49 (04 LO-05) instalment_total_below_price
+      flagNotAccepted: 'Not accepted', flagPartOnCard: 'Part on the card', flagBelowPrice: 'Below the price', // flagBelowPrice: D-49 (04 LO-05) instalment_total_below_price
       noteCash: 'Leaves {{cash}} in cash. No interest, nothing owed after.',
-      noteLoan: '{{deposit}} down, {{count}} months at {{apr}}%. Interest over the term is {{interest}}.',
-      noteLoanZero: '{{deposit}} down, {{count}} months, before any interest.',
-      noteLoanNoRate: 'Type the rate you were quoted to score this.',
-      noteInstalment: '{{count}} × {{payment}} as quoted. That implies {{extra}} on top of the price.',
-      noteCard: 'At {{apr}}%, the rate on your card record.', noteCardNoRate: 'Type the rate on your card to score months or minimum plans.',
-      noteCardFull: 'Paid in full next statement, so no rate is needed.',
-      noteInvestMonthly: '{{amount}} a month for {{count}} months is {{total}} put in.', noteInvestWorth: 'At {{rate}}% it would be worth about {{fv}}.',
-      noteInvestCaption: 'A projection at the rate you entered, not a forecast.', unnamedLine: 'Unnamed',
+      noteInvestMonthly: '{{amount}} a month for {{count}} months is {{total}} put in.',
+      unnamedLine: 'Unnamed',
       loanDeposit: 'Deposit', loanInterestSaved: 'Interest saved', loanCashLeft: 'Cash left after', loanTerm: 'Term', loanTermUnit: 'mo',
       loanTermNote_one: 'At 1\u00A0month the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total.',
       loanTermNote_other: 'At {{count}}\u00A0months the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total.',
@@ -2162,9 +2152,8 @@ const en = {
       diffOver: '+{{amount}} over', diffAt: 'at', diffUnder: '−{{amount}} under',
       runningOver: 'Running {{amount}} a month over the estimate.',
       dayOneLabel: 'On the day', monthlyLabel: 'A month',
-      attach: 'Attach a line', unlinkA11y: 'Unlink {{name}}', remove: 'Remove', reopenCheck: 'Reopen the check', close: 'Close',
+      attach: 'Attach a line', unlinkA11y: 'Unlink {{name}}', reopenCheck: 'Reopen the check', close: 'Close',
       pickTitle: 'Attach a line', pickEmpty: 'No lines in the last 90 days.',
-      removeTitle: 'Remove this decision?', removeBody: 'It leaves Past decisions. Lines it wrote stay in Activity.', removeKeep: 'Keep it', removeConfirm: 'Remove',
     },
     onboarding: {
       roughTitle: 'Roughly, what comes in and goes out?', roughBody: 'Round figures are fine for a first look. Real months replace them.',
@@ -2211,7 +2200,7 @@ const en = {
         legendWith: 'With this', legendWithout: 'Without', zero: '0', cushion: 'Cushion', today: 'Today', plusDays: '+{{count}} d',
         textAlt: 'Lowest with this: {{amount}} on {{date}}. Lowest without: {{amountWithout}} on {{dateWithout}}.',
         scrub: '{{date}}: {{with}} with, {{without}} without',
-        unavailableSummary: 'Add your pay as a recurring series', unavailableBody: 'Add your pay as a recurring series to see day-by-day cash.', unavailableLink: 'Add a recurring series', basisUnavailable: 'Cash path unavailable',
+        basisUnavailable: 'Cash path unavailable',
         tightFact: 'Without this purchase, your cash is lowest on {{date}}, at {{amount}}.', // addition (04 D-59 basis fact)
         tightFactStacked: 'Without this purchase, and with your other open checks, your cash is lowest on {{date}}, at {{amount}}.', // addition (04 D-59, stacked)
       },
@@ -2219,8 +2208,7 @@ const en = {
         heading: 'Changes coming up', add: '+ Add a change', addTitle: 'Add a change', editTitle: 'Edit change',
         income: 'Income', spending: 'Spending', goesUp: 'Goes up', goesDown: 'Goes down',
         nameLabel: 'Name', namePlaceholder: 'What changes', amount: 'Amount a month', starts: 'Starts', ends: 'Ends', noEnd: 'No end date',
-        cancel: 'Cancel', save: 'Save change', removed: 'Change removed', removeA11y: 'Remove {{name}}',
-        emptyTitle: 'Nothing dated yet', emptyBody: 'A raise, a rent change or a bill ending: add it and every check looks 12 months ahead.',
+        cancel: 'Cancel', save: 'Save change',
         rowFrom: '{{sign}}{{amount}} a month · from {{month}}', rowUntil: ' · until {{month}}',
         unnamedIncome: 'Income change', unnamedSpending: 'Spending change', // addition (a nameless row)
         endBeforeStart: 'The end month is before the start month.', // addition (05-48 inline refusal)
@@ -2259,7 +2247,7 @@ const en = {
       },
       invest: {
         section: 'If it went into investing instead', summary: 'A projection at the rate you enter',
-        zero: '0%', rateChip: '{{rate}}% a year', addRate: '+ Add a rate', maxRates: 'Up to 3 rates', removeRateA11y: 'Remove the {{rate}}% rate', over: 'Over {{count}} months',
+        zero: '0%', rateChip: '{{rate}}% a year', addRate: '+ Add a rate', maxRates: 'Up to 3 rates', removeRateA11y: 'Remove the {{rate}}% rate',
         priceTitle: 'Price invested instead', priceLine: '{{amount}} put in once. After {{months}} months: {{value}}.',
         paymentsTitle: 'Payments invested instead', paymentsLine: '{{amount}} a month for {{months}} months, running costs included. After {{months}} months: {{value}}.',
         pauseTitle: 'Investing growth lost to a pause', pauseLine: '{{amount}} a month paused. Growth not earned over {{months}} months: {{value}}.', pauseNone: 'This plan pauses no investing.',
@@ -2269,7 +2257,7 @@ const en = {
         rateNet: '{{rate}}% a year, {{net}}% after fees', captionFee: 'A projection at the rate you entered less the {{fee}}% fee, not a forecast.', captionZeroFee: 'At 0% the money is only held, and the {{fee}}% fee comes off it.',
         tooLarge: 'Too large to project at this rate', axisMonths: '{{count}} mo', netWorthAltTooLarge: 'After {{months}} months the path is too large to project at {{rate}}%.', // D-47
         rateCap: 'Up to 100% a year', // D-48
-        horizonChip: '{{count}}', horizonA11y: 'Months to project', netWorthRateA11y: 'Rate for the net worth chart', // 05-45
+        horizonA11y: 'Months to project', netWorthRateA11y: 'Rate for the net worth chart', // 05-45
       },
       cardCosts: { // D-44
         feesLabel: 'Card fees (optional)', feesA11y: 'Card fees for this purchase', feesSub: 'Fees the card charges for this purchase. Paid on the day; other fees go on the price card.',

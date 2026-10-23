@@ -319,13 +319,7 @@ describe('cashPathCopy / cashTightFactCopy / conversionBasisCopy', () => {
 
   it('unavailable gives the prompt', () => {
     const c = cashPathCopy({ status: 'unavailable', code: 'cash_path_unavailable' }, fmt, fmtDate);
-    expect(c).toEqual({
-      available: false,
-      summary: { key: `${D}cashPath.unavailableSummary` },
-      body: { key: `${D}cashPath.unavailableBody` },
-      link: { key: `${D}cashPath.unavailableLink` },
-    });
-    if (!c.available) expectInDepth([c.summary, c.body, c.link]);
+    expect(c).toEqual({ available: false });
   });
 
   it('the tight fact is null without a fact and stacked with other open checks', () => {
