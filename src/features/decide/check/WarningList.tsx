@@ -32,6 +32,8 @@ const DOT = 8;
 export interface WarningListProps {
   verdict: Verdict | null;
   fmt: Fmt;
+  /** D-94: amounts as a screen reader speaks them; the visible text is unchanged. */
+  fmtA11y?: Fmt;
   fmtDate: (localDate: string) => string;
   /** D-59: how many of the other open checks the combined position applies (picks the stacked wording). */
   stackedApplied?: number;
@@ -88,12 +90,22 @@ export interface WarningRowsProps {
   verdict: Verdict | null;
   firstRead?: FirstRead | null;
   fmt: Fmt;
+  /** D-94: amounts as a screen reader speaks them; the visible text is unchanged. */
+  fmtA11y?: Fmt;
   fmtDate: (localDate: string) => string;
 }
 
-export function WarningRows({ verdict, firstRead, fmt, fmtDate }: WarningRowsProps) {
+/** D-94: a warning card's whole label with every amount spoken by currency name. */
+function spokenCardLabel(t: Translate, spoken: WarnCard): string {
+  const title = refText(t, spoken.title);
+  const description = spoken.body.map((b) => refText(t, b)).join(' ');
+  return spoken.value ? `${title}, ${refText(t, spoken.value)}. ${description}` : `${title}. ${description}`;
+}
+
+export function WarningRows({ verdict, firstRead, fmt, fmtA11y = fmt, fmtDate }: WarningRowsProps) {
   const t = useT() as Translate;
   const cards = warnCardsOf(verdict, firstRead, fmt, fmtDate);
+  const spokenCards = warnCardsOf(verdict, firstRead, fmtA11y, fmtDate);
   if (cards.length === 0) return null;
   return (
     <View>
@@ -105,6 +117,7 @@ export function WarningRows({ verdict, firstRead, fmt, fmtDate }: WarningRowsPro
           title: refText(t, c.title),
           value: c.value ? refText(t, c.value) : '',
           body: c.body.map((b) => refText(t, b)),
+          a11yLabel: spokenCards[i] ? spokenCardLabel(t, spokenCards[i]) : undefined,
         };
         const key = `${c.title.key}-${i}`;
         return infoKey ? <InfoWarningRow key={key} infoKey={infoKey} {...props} /> : <WarningRow key={key} {...props} />;
@@ -119,6 +132,7 @@ interface RowProps {
   title: string;
   value: string;
   body: string[];
+  a11yLabel?: string;
 }
 
 function InfoWarningRow({ infoKey, ...rest }: RowProps & { infoKey: InfoKey }) {
@@ -126,7 +140,7 @@ function InfoWarningRow({ infoKey, ...rest }: RowProps & { infoKey: InfoKey }) {
   return <WarningRow {...rest} info={info} />;
 }
 
-function WarningRow({ first, tone, title, value, body, info }: RowProps & { info?: InfoSheetHandle }) {
+function WarningRow({ first, tone, title, value, body, a11yLabel, info }: RowProps & { info?: InfoSheetHandle }) {
   const { colors, pairing } = useTheme();
   const stacked = useShouldStack(value.length);
   const color = tone === 'hard' ? colors.danger : colors.warn1;
@@ -143,7 +157,7 @@ function WarningRow({ first, tone, title, value, body, info }: RowProps & { info
   return (
     <View
       accessible
-      accessibilityLabel={label}
+      accessibilityLabel={a11yLabel ?? label}
       accessibilityActions={info ? [info.aboutAction] : undefined}
       onAccessibilityAction={info?.onAccessibilityAction}
       style={[styles.row, first ? null : { borderTopWidth: 1, borderTopColor: colors.fill2 }]}
@@ -191,16 +205,19 @@ function Notice({ title, body }: { title: string; body: string }) {
   );
 }
 
-export function WarningList({ verdict, fmt, fmtDate, stackedApplied = 0, warnings = true }: WarningListProps) {
+export function WarningList({ verdict, fmt, fmtA11y = fmt, fmtDate, stackedApplied = 0, warnings = true }: WarningListProps) {
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
   if (!verdict) return null;
   const cards = warnings ? warnCardsOf(verdict, null, fmt, fmtDate) : [];
+  const spokenCards = warnings ? warnCardsOf(verdict, null, fmtA11y, fmtDate) : [];
   const a: Assessment | null = verdict.state === 'missing' ? null : verdict;
   const fact = a?.facts.find((f) => f.code === 'debt_rate_exceeds_return');
   const tight = a?.facts.find((f) => f.code === 'cash_tight_before_payday');
   const tightRef = tight && tight.code === 'cash_tight_before_payday' ? cashTightFactCopy(tight, stackedApplied, fmt, fmtDate) : null;
   const tightBody = tightRef ? refText(t, tightRef) : null;
+  const tightRefSpoken = tight && tight.code === 'cash_tight_before_payday' ? cashTightFactCopy(tight, stackedApplied, fmtA11y, fmtDate) : null;
+  const tightSpoken = tightRefSpoken ? refText(t, tightRefSpoken) : null;
   // D-42: a neutral notice, never a warning; the engine reports the charge only when the toggle is on.
   const promo = a?.plan.promo ?? null;
   const notice = promo && promo.deferredInterestCode === 'deferred_interest_charged' ? promoCopy(null, '', promo, null, fmt, fmt).notice : null;
@@ -215,6 +232,7 @@ export function WarningList({ verdict, fmt, fmtDate, stackedApplied = 0, warning
           title={refText(t, c.title)}
           value={c.value ? refText(t, c.value) : ''}
           body={c.body.map((b) => refText(t, b))}
+          a11yLabel={spokenCards[i] ? spokenCardLabel(t, spokenCards[i]) : undefined}
         />
       ))}
       {factBody ? (
@@ -228,7 +246,7 @@ export function WarningList({ verdict, fmt, fmtDate, stackedApplied = 0, warning
         </View>
       ) : null}
       {tightBody ? (
-        <View accessible style={[styles.fact, { borderColor: colors.line2, backgroundColor: colors.surface }]} accessibilityLabel={tightBody}>
+        <View accessible style={[styles.fact, { borderColor: colors.line2, backgroundColor: colors.surface }]} accessibilityLabel={tightSpoken ?? tightBody}>
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.inkDim }}>{tightBody}</Text>
         </View>
       ) : null}

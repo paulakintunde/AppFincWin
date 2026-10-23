@@ -38,7 +38,7 @@ describe('Step4Alternatives', () => {
     expect(screen.getAllByText('A month').length).toBe(4);
     expect(screen.getAllByText('Kept').length).toBe(5); // four columns and the header with its ⓘ
     // the month column carries cents, the day and kept columns do not
-    expect(screen.getAllByLabelText('A month, $527.50').length).toBe(3);
+    expect(screen.getAllByLabelText('A month, 527.50 dollars').length).toBe(3);
     expect(screen.getByLabelText('Kept, $2215')).toBeTruthy();
   });
 

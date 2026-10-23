@@ -17,7 +17,7 @@ import { PRESSED_OPACITY, radii, size, space } from '@/theme/layout';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { currencyCode } from '@/engine/money';
-import { moneyFn } from '../check/steps/stepUi';
+import { moneyA11yFn, moneyFn } from '../check/steps/stepUi';
 import { MoneyInput } from '../ui/MoneyInput';
 import { RateInput } from '../ui/RateInput';
 import { CustomValueChips } from '../ui/CustomValueChips';
@@ -86,6 +86,8 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
 
   const whole = moneyFn(wholeFmt, currencyCode(currency));
   const exact = moneyFn(exactFmt, currencyCode(currency));
+  const wholeA11y = moneyA11yFn(wholeFmt, currencyCode(currency));
+  const exactA11y = moneyA11yFn(exactFmt, currencyCode(currency));
   const label = { ...textRole(pairing, 'label'), color: colors.inkDim };
 
   if (sourceStatus === 'loading' || (sourceStatus === 'ready' && source === null)) {
@@ -219,6 +221,8 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
           price={inputs.price}
           fmt={whole}
           fmtCents={exact}
+          fmtA11y={wholeA11y}
+          fmtCentsA11y={exactA11y}
           onTryCredit={q.tryCredit}
           combine={q.combine}
           onCombine={q.setCombine}

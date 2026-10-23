@@ -27,7 +27,7 @@ import { useShouldStack } from '../../ui/textFit';
 import { InfoTitle } from '../InfoTitle';
 import { refText, type Translate } from '../refText';
 import type { StepProps } from '../stepTypes';
-import { Card, Eyebrow, Lock, Meta, moneyFn } from './stepUi';
+import { Card, Eyebrow, Lock, Meta, moneyA11yFn, moneyFn } from './stepUi';
 
 const MAX_RATES = 3;
 const MIN_RATIO = 30;
@@ -64,6 +64,8 @@ export function Step4Alternatives(props: StepProps) {
 
   const fmt = moneyFn(whole, source.currency);
   const cents = moneyFn(exact, source.currency);
+  const fmtA11y = moneyA11yFn(whole, source.currency);
+  const centsA11y = moneyA11yFn(exact, source.currency);
   const methodName = t(`decide.method.${inputs.method ?? 'none'}`);
   const rates = inputs.projectionRates;
   const rateSet = alts.projectionReturn !== ZERO_PERCENT;
@@ -243,8 +245,8 @@ export function Step4Alternatives(props: StepProps) {
                 <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkFaint }}>{descriptor(row)}</Text>
                 <FigureStrip
                   items={[
-                    { caption: t('decide.alt.onDay'), value: row.dayOne === null ? t('decide.alt.dash') : fmt(row.dayOne) },
-                    { caption: t('decide.alt.aMonth'), value: row.monthly === null ? t('decide.alt.dash') : cents(row.monthly) },
+                    { caption: t('decide.alt.onDay'), value: row.dayOne === null ? t('decide.alt.dash') : fmt(row.dayOne), a11yValue: row.dayOne === null ? undefined : fmtA11y(row.dayOne) },
+                    { caption: t('decide.alt.aMonth'), value: row.monthly === null ? t('decide.alt.dash') : cents(row.monthly), a11yValue: row.monthly === null ? undefined : centsA11y(row.monthly) },
                     { caption: refText(t, keptHeader(alts)), value: keptValue(row) },
                   ]}
                 />
@@ -265,11 +267,11 @@ export function Step4Alternatives(props: StepProps) {
         <View style={styles.figures}>
           <View style={styles.figure}>
             <Meta>{t('decide.alt.spendCheaper')}</Meta>
-            <Text style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>{fmt(alts.cheaperPrice)}</Text>
+            <Text accessibilityLabel={fmtA11y(alts.cheaperPrice)} style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>{fmt(alts.cheaperPrice)}</Text>
           </View>
           <View style={styles.figure}>
             <Meta>{t('decide.alt.spendNotSpent')}</Meta>
-            <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.accent }}>{fmt(alts.cheaper.notSpent)}</Text>
+            <Text accessibilityLabel={fmtA11y(alts.cheaper.notSpent)} style={{ ...textRole(pairing, 'sheetTitle'), color: colors.accent }}>{fmt(alts.cheaper.notSpent)}</Text>
           </View>
         </View>
         <Meta tone="muted">{spendNote}</Meta>

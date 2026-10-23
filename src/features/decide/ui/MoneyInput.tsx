@@ -17,6 +17,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { useAmountParser } from '@/ui/money/useAmountParser';
+import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import { currencyCode, minorUnits } from '@/engine/money';
 
 export interface MoneyInputProps {
   value: number | null;
@@ -42,6 +44,7 @@ const COMPACT_MIN_WIDTH = 128;
 export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false, compact = false, onBlur, labelAccessory }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
   const parser = useAmountParser();
+  const speaker = useMoneyFormatter(false);
   const [text, setText] = useState(() => (value === null ? '' : parser.toInputText(value, currency)));
   const [error, setError] = useState<string | null>(null);
 
@@ -101,6 +104,17 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
     onBlur?.();
   };
 
+  // D-94: a screen reader speaks the committed figure by currency name, not as a bare number. A custom code Intl
+  // cannot read leaves the plain text to be spoken.
+  let spoken: string | undefined;
+  if (value !== null) {
+    try {
+      spoken = speaker.formatMoneyA11y({ amount: minorUnits(value), currency: currencyCode(currency) });
+    } catch {
+      spoken = undefined;
+    }
+  }
+
   return (
     <View>
       {compact ? null : labelAccessory ? (
@@ -123,6 +137,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
           returnKeyType="done"
           inputMode="decimal"
           accessibilityLabel={accessibilityLabel}
+          accessibilityValue={spoken === undefined ? undefined : { text: spoken }}
           placeholder={placeholder}
           editable={!readOnly}
           placeholderTextColor={colors.inkFaint}

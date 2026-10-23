@@ -16,11 +16,13 @@ export { TODAY };
 
 export const whole: MoneyFormatter = {
   formatMoney: (m) => `$${Math.round(Number(m.amount) / 100)}`,
+  formatMoneyA11y: (m) => `${Math.round(Number(m.amount) / 100)} dollars`,
   formatDate: (d) => `on ${d}`,
   locale: 'en-US',
 };
 export const exact: MoneyFormatter = {
   formatMoney: (m) => `$${(Number(m.amount) / 100).toFixed(2)}`,
+  formatMoneyA11y: (m) => `${(Number(m.amount) / 100).toFixed(2)} dollars`,
   formatDate: (d) => `on ${d}`,
   locale: 'en-US',
 };

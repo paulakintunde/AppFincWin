@@ -15,9 +15,11 @@ export interface WarningCardProps {
   title: string;
   value: string;
   body: string[];
+  /** D-94: the whole card read with each amount spoken by currency name; defaults to the visible text. */
+  a11yLabel?: string;
 }
 
-export function WarningCard({ tone, title, value, body }: WarningCardProps) {
+export function WarningCard({ tone, title, value, body, a11yLabel }: WarningCardProps) {
   const { colors, pairing } = useTheme();
   const hard = tone === 'hard';
   const background = hard ? colors.dangerTint3 : warnTint;
@@ -26,7 +28,7 @@ export function WarningCard({ tone, title, value, body }: WarningCardProps) {
   return (
     <View
       accessible
-      accessibilityLabel={`${title}, ${value}. ${body.join(' ')}`}
+      accessibilityLabel={a11yLabel ?? `${title}, ${value}. ${body.join(' ')}`}
       style={[styles.card, { backgroundColor: background, borderColor: border }]}
     >
       <View style={styles.head}>

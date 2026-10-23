@@ -38,6 +38,11 @@ export function moneyOf(f: MoneyFormatter, currency: string): Money {
   return (n) => f.formatMoney({ amount: minorUnits(n), currency: currency as never });
 }
 
+/** D-94: the same amount as a screen reader speaks it ("1,500 Canadian dollars"). */
+export function moneyA11yOf(f: MoneyFormatter, currency: string): Money {
+  return (n) => f.formatMoneyA11y({ amount: minorUnits(n), currency: currency as never });
+}
+
 export function Dot({ color }: { color: string }) {
   return <View accessibilityElementsHidden importantForAccessibility="no" style={[styles.dot, { backgroundColor: color }]} />;
 }

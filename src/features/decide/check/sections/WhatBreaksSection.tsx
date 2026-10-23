@@ -13,7 +13,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { DetailsToggle } from '../../ui/DetailsToggle';
 import { WarningRows, warnCardsOf } from '../WarningList';
 import { EveryLineRows } from './LinesSection';
-import { assessmentOf, moneyOf, type SectionProps } from './sectionUi';
+import { assessmentOf, moneyA11yOf, moneyOf, type SectionProps } from './sectionUi';
 
 export type WhatBreaksBodyProps = SectionProps;
 
@@ -23,6 +23,7 @@ export function WhatBreaksBody(props: WhatBreaksBodyProps) {
   const { colors, pairing } = useTheme();
   const [showLines, setShowLines] = useState(false);
   const fmt = moneyOf(whole, currency);
+  const fmtA11y = moneyA11yOf(whole, currency);
   const fmtDate = (d: string) => whole.formatDate(d);
   const verdict = computation.status === 'logged' ? computation.verdict : null;
   const firstRead = computation.status === 'first_read' ? computation.firstRead : null;
@@ -39,7 +40,7 @@ export function WhatBreaksBody(props: WhatBreaksBodyProps) {
   );
   return (
     <View style={styles.body}>
-      <WarningRows verdict={verdict} firstRead={firstRead} fmt={fmt} fmtDate={fmtDate} />
+      <WarningRows verdict={verdict} firstRead={firstRead} fmt={fmt} fmtA11y={fmtA11y} fmtDate={fmtDate} />
       {hasLines ? (
         warningCount > 0 ? (
           <View>

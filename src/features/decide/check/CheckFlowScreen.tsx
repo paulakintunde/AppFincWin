@@ -216,8 +216,8 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
     [draftUpdate]
   );
   const stack = useOtherChecks(id);
-  const whole = useMoneyFormatter(false);
-  const exact = useMoneyFormatter(true);
+  const whole = useMoneyFormatter(false, rc.homeCurrency);
+  const exact = useMoneyFormatter(true, rc.homeCurrency);
 
   const householdId = rc.householdId;
   const accountsQuery = useAccounts(householdId ?? undefined);

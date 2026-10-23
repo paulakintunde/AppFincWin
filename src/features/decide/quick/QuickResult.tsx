@@ -16,7 +16,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { quickResultCopy } from '../copy/quickCopy';
 import type { Fmt } from '../copy/types';
 import { joinSentences } from '../check/joinSentences';
-import { refText, type Translate } from '../check/refText';
+import { refText, refTextA11y, type Translate } from '../check/refText';
 import { useSettledLabel } from '../check/useSettledLabel';
 import type { QuickComputation } from '../snapshot/types';
 import { CombineToggle } from '../ui/CombineToggle';
@@ -32,6 +32,9 @@ export interface QuickResultProps {
   price?: number | null;
   fmt: Fmt;
   fmtCents: Fmt;
+  /** D-94: the same amounts as a screen reader speaks them; the visible text is unchanged. Default to fmt / fmtCents. */
+  fmtA11y?: Fmt;
+  fmtCentsA11y?: Fmt;
   onTryCredit: () => void;
   /** D-24: the quick check is judged with every open check by default; session state in the hook. */
   combine: boolean;
@@ -51,16 +54,19 @@ function appliedCount(c: QuickResultProps['computation']): number {
   return c.kind === 'logged' ? c.decision.stacked.filter((s) => s.status === 'applied').length : 0;
 }
 
-export function QuickResult({ computation, mode, name, price = null, fmt, fmtCents, onTryCredit, combine, onCombine, openCount, firstReadBasis = false }: QuickResultProps) {
+export function QuickResult({ computation, mode, name, price = null, fmt, fmtCents, fmtA11y = fmt, fmtCentsA11y = fmtCents, onTryCredit, combine, onCombine, openCount, firstReadBasis = false }: QuickResultProps) {
   const t = useT() as Translate;
   const shownName = name === '' ? t('decide.quick.unnamed') : name;
   const { colors, pairing } = useTheme();
   const fullName = price != null ? t('decide.quick.nameAt', { name: shownName, price: fmtCents(price) }) : shownName;
   const copy = quickResultCopy(computation, mode, fmt, fmtCents);
+  const spoken = quickResultCopy(computation, mode, fmtA11y, fmtCentsA11y);
+  const spokenName = price != null ? t('decide.quick.nameAt', { name: shownName, price: fmtCentsA11y(price) }) : shownName;
   const chipLabel = copy.chip ? t(copy.chip.key) : '';
   const sizeText = copy.size ? t(copy.size) : '';
   const lineText = refText(t, copy.line);
-  const settled = useSettledLabel(joinSentences([chipLabel, sizeText, lineText]), copy.chip?.tone ?? 'none', SETTLE_MS);
+  const spokenLine = refTextA11y(t, copy.line, spoken.line.params);
+  const settled = useSettledLabel(joinSentences([chipLabel, sizeText, spokenLine]), copy.chip?.tone ?? 'none', SETTLE_MS);
   const caption = copy.caption ? refText(t, copy.caption) : '';
   const basis = copy.basis ? t(copy.basis) : firstReadBasis ? t('decide.onboarding.basis') : '';
 
@@ -80,7 +86,7 @@ export function QuickResult({ computation, mode, name, price = null, fmt, fmtCen
       <View style={[styles.result, { backgroundColor: colors.fill1 }]}>
         {/* CR-B04: the live region holds only the text, so "See it on credit" below stays its own focusable button. */}
         <View testID="quick-result-live" accessible accessibilityLiveRegion="polite" accessibilityLabel={settled} style={styles.live}>
-          <Text numberOfLines={2} ellipsizeMode="tail" accessibilityLabel={fullName} style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
+          <Text numberOfLines={2} ellipsizeMode="tail" accessibilityLabel={spokenName} style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
             {fullName}
           </Text>
           {copy.chip ? (
@@ -103,6 +109,7 @@ export function QuickResult({ computation, mode, name, price = null, fmt, fmtCen
                 adjustsFontSizeToFit
                 minimumFontScale={FIGURE_MIN_FONT_SCALE}
                 maxFontSizeMultiplier={FIGURE_CAP}
+                accessibilityLabel={fmtCentsA11y(copy.monthly.amount)}
                 style={{ ...textRole(pairing, 'heading'), color: colors.ink }}
               >
                 {fmtCents(copy.monthly.amount)}

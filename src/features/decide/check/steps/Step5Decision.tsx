@@ -31,7 +31,7 @@ import { DURATION_MAX, DURATION_MIN, waitAmountForMonths, waitMonthsFor, waitSli
 import { refText, type Translate } from '../refText';
 import type { StepProps } from '../stepTypes';
 import { writtenLines, type WrittenFacts } from '../writtenLines';
-import { Card, Eyebrow, Lock, Meta, moneyFn } from './stepUi';
+import { Card, Eyebrow, Lock, Meta, moneyA11yFn, moneyFn } from './stepUi';
 
 export interface Step5Props extends StepProps {
   cashAccounts: readonly { id: string; name: string; balance: number }[];
@@ -81,6 +81,8 @@ export function Step5Decision(props: Step5Props) {
   const { colors, pairing } = useTheme();
   const fmt = moneyFn(whole, source.currency);
   const cents = moneyFn(exact, source.currency);
+  const fmtA11y = moneyA11yFn(whole, source.currency);
+  const centsA11y = moneyA11yFn(exact, source.currency);
 
   const verdict = computation.verdict;
   const assessed = verdict !== null && verdict.state !== 'missing' ? verdict : null;
@@ -168,9 +170,9 @@ export function Step5Decision(props: Step5Props) {
         </Text>
         <FigureStrip
           items={[
-            { caption: t('decide.decision.onDay'), value: dayOne === null ? dash : fmt(dayOne) },
-            { caption: t('decide.decision.aMonth'), value: monthly === null ? dash : cents(monthly) },
-            { caption: t('decide.decision.leftAfter'), value: left === null ? dash : fmt(left), tone: left !== null && left < 0 ? 'negative' : 'neutral' },
+            { caption: t('decide.decision.onDay'), value: dayOne === null ? dash : fmt(dayOne), a11yValue: dayOne === null ? undefined : fmtA11y(dayOne) },
+            { caption: t('decide.decision.aMonth'), value: monthly === null ? dash : cents(monthly), a11yValue: monthly === null ? undefined : centsA11y(monthly) },
+            { caption: t('decide.decision.leftAfter'), value: left === null ? dash : fmt(left), a11yValue: left === null ? undefined : fmtA11y(left), tone: left !== null && left < 0 ? 'negative' : 'neutral' },
           ]}
         />
       </Card>
@@ -214,7 +216,7 @@ export function Step5Decision(props: Step5Props) {
               <InfoTitle info={goalSetInfo} lineHeight={metaLine}>
                 <Meta>{t('decide.decision.waitPutAside')}</Meta>
               </InfoTitle>
-              <Text style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>{cents(wait.monthlyAmount)}</Text>
+              <Text accessibilityLabel={centsA11y(wait.monthlyAmount)} style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>{cents(wait.monthlyAmount)}</Text>
             </View>
             <View style={styles.figure}>
               <Meta>{t('decide.decision.waitReadyBy')}</Meta>

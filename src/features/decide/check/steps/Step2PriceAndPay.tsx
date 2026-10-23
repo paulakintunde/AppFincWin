@@ -27,7 +27,7 @@ import { EstimateGapNote } from './step2/EstimateGapNote';
 import { RunningCostPrompts, promptedLineIds } from './step2/RunningCostPrompts';
 import type { Step2Props } from './step2/types';
 import { PaymentMethods } from './step2/PaymentMethods';
-import { Card, Eyebrow, Label, Lock, Meta, moneyFn } from './stepUi';
+import { Card, Eyebrow, Label, Lock, Meta, moneyA11yFn, moneyFn } from './stepUi';
 
 export type { Step2Props };
 
@@ -107,6 +107,7 @@ export function Step2PriceAndPay(props: Step2Props) {
   const currency = inputs.currency ?? source.currency;
   const wholeFmt = moneyFn(whole, source.currency);
   const exactFmt = moneyFn(exact, source.currency);
+  const wholeA11y = moneyA11yFn(whole, source.currency);
   const resolved = computation.resolvedPrice;
   const running = computation.running;
 
@@ -163,7 +164,7 @@ export function Step2PriceAndPay(props: Step2Props) {
               <Text style={linkStyle}>{t('decide.pay.price.edit')}</Text>
             </Pressable>
           </View>
-          <Text scale="capped" maxFontSizeMultiplier={1.3} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+          <Text scale="capped" maxFontSizeMultiplier={1.3} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} accessibilityLabel={wholeA11y(inputs.advertised ?? 0)} style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
             {wholeFmt(inputs.advertised ?? 0)}
           </Text>
 
@@ -200,7 +201,7 @@ export function Step2PriceAndPay(props: Step2Props) {
                 <Meta>{t('decide.price.counted', { counted: resolved?.countedLines ?? 0, total: resolved?.totalLines ?? inputs.adjustments.length })}</Meta>
               ) : null}
             </View>
-            <Text scale="capped" maxFontSizeMultiplier={1.3} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'heading'), color: colors.ink, flexShrink: 1 }}>
+            <Text scale="capped" maxFontSizeMultiplier={1.3} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} accessibilityLabel={wholeA11y(resolved?.price ?? inputs.advertised ?? 0)} style={{ ...textRole(pairing, 'heading'), color: colors.ink, flexShrink: 1 }}>
               {wholeFmt(resolved?.price ?? inputs.advertised ?? 0)}
             </Text>
           </View>

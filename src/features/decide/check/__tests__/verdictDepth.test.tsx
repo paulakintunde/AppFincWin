@@ -110,7 +110,7 @@ describe('verdict depth: step 3 top', () => {
     await wrap(<Step3Verdict {...p} />);
     expect(screen.getByText('On the edge')).toBeTruthy();
     expect(screen.getByText('It fits')).toBeTruthy();
-    expect(screen.getByLabelText(/^It fits, on the edge: the month holds by \$120\. /)).toBeTruthy();
+    expect(screen.getByLabelText(/^It fits, on the edge: the month holds by 120 dollars\. /)).toBeTruthy();
   });
 
   it('a first read still carries a rough basis chip', async () => {

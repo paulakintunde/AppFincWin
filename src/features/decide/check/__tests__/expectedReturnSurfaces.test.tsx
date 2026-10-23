@@ -56,7 +56,7 @@ describe('Expected return surfaces (05-87, D-82)', () => {
 
   it('D-82 the line is read in the key-figures group', async () => {
     await wrap(<Step3Verdict {...verdictProps(invest({ investReturnText: '5' }))} />);
-    expect(screen.getByLabelText(/Cushion: .*\. At 5% a year: about \$\d+ after 60 months\. Not a forecast$/)).toBeTruthy();
+    expect(screen.getByLabelText(/Cushion: .*\. At 5% a year: about \d+ dollars after 60 months\. Not a forecast$/)).toBeTruthy();
   });
 
   it('D-82 the horizon the user picks is the one projected', async () => {

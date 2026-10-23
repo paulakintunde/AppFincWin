@@ -22,6 +22,11 @@ export function moneyFn(f: MoneyFormatter, currency: CurrencyCode): Money {
   return (n) => f.formatMoney({ amount: minorUnits(n), currency });
 }
 
+/** D-94: the same amount as a screen reader speaks it ("1,500 Canadian dollars"). */
+export function moneyA11yFn(f: MoneyFormatter, currency: CurrencyCode): Money {
+  return (n) => f.formatMoneyA11y({ amount: minorUnits(n), currency });
+}
+
 export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
   const { colors } = useTheme();
   return <View style={[styles.card, { backgroundColor: colors.surface }, shadows.card, style]}>{children}</View>;

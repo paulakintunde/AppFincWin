@@ -41,6 +41,9 @@ export interface VerdictCardProps {
   fmt: Fmt;
   /** Exact (cents) formatter for the monthly cost key figure (D-54). */
   fmtCents: Fmt;
+  /** D-94: the same amounts as a screen reader speaks them; the visible text is unchanged. Default to fmt / fmtCents. */
+  fmtA11y?: Fmt;
+  fmtCentsA11y?: Fmt;
   /** Rough monthly spending when the source is a first read: the cushion's burn (R2). */
   roughBurn?: MinorUnits | null;
   /** D-28: converted currencies, listed as reasons on the sheet. */
@@ -140,25 +143,30 @@ function cardCopy(c: CheckComputation, lastSeenBasis: VerdictCardProps['lastSeen
 /** Standalone text the summary label already reads: no focus stop of its own (R2 Accessibility). */
 const NOT_A_STOP = { accessible: false, importantForAccessibility: 'no' } as const;
 
-export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, roughBurn = null, conversions, fullMonths, formatDate, locale, projection = null }: VerdictCardProps) {
+export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, fmtA11y = fmt, fmtCentsA11y = fmtCents, roughBurn = null, conversions, fullMonths, formatDate, locale, projection = null }: VerdictCardProps) {
   const t = useT() as Translate;
   const router = useRouter();
   const { colors, pairing } = useTheme();
   const reduced = useReduceMotion();
   const [sheetOpen, setSheetOpen] = useState(false);
   const copy = cardCopy(computation, lastSeenBasis, fmt);
+  const spokenCopy = cardCopy(computation, lastSeenBasis, fmtA11y);
   const decision = computation.status === 'logged' ? computation.decision : null;
   const lineOne = decision ? verdictLineOne(decision, fmt, monthNameIn(locale)) : null;
   const lineOneText = lineOne ? refText(t, lineOne) : '';
+  const lineOneSpokenRef = decision ? verdictLineOne(decision, fmtA11y, monthNameIn(locale)) : null;
+  const lineOneSpoken = lineOneSpokenRef ? refText(t, lineOneSpokenRef) : '';
   const chipLabel = copy?.chip ? t(copy.chip.key) : '';
   const sizeText = copy?.size ? refText(t, copy.size) : '';
   const titleText = copy ? refText(t, copy.title) : '';
+  const titleSpoken = spokenCopy ? refText(t, spokenCopy.title) : '';
   const basisText = copy?.basis ? refText(t, copy.basis) : '';
+  const basisSpoken = spokenCopy?.basis ? refText(t, spokenCopy.basis) : '';
   const confidence = copy?.confidence ?? null;
   const onEdge = decision !== null && edgeOn(decision);
   let stateWords = chipLabel;
   if (decision && onEdge) {
-    const a11y = edgeChipA11y(chipLabel, decision, fmt, formatDate);
+    const a11y = edgeChipA11y(chipLabel, decision, fmtA11y, formatDate);
     const params = { ...(a11y.label.params ?? {}), ...(a11y.fact ? { fact: refText(t, a11y.fact) } : {}) };
     stateWords = refText(t, { ...a11y.label, params });
   }
@@ -168,6 +176,7 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, roughBu
   // D-74: the three figures; null for missing, none and unconverted
   const figures = copy ? keyFigureInputs(computation, roughBurn) : null;
   const keys = figures ? keyFigures(figures, fmt, fmtCents, (r) => refText(t, r)) : null;
+  const keysSpoken = figures ? keyFigures(figures, fmtA11y, fmtCentsA11y, (r) => refText(t, r)) : null;
 
   // D-70: the user's own reserve months and why, when the snapshot gives them
   const halves = resolved ? resolved.context.limits.reserveHalfMonths : null;
@@ -185,8 +194,14 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, roughBu
       : projection.fv === null
         ? t('decide.alt.reasonTooLarge')
         : t('decide.verdict.projection', { count: projection.months, fv: fmt(projection.fv), rate: projection.rateText });
+  const projectionSpoken =
+    projection === null || computation.check?.kind !== 'invest'
+      ? ''
+      : projection.fv === null
+        ? t('decide.alt.reasonTooLarge')
+        : t('decide.verdict.projection', { count: projection.months, fv: fmtA11y(projection.fv), rate: projection.rateText });
 
-  const label = joinSentences([stateWords, sizeText, titleText, lineOneText, basisText]);
+  const label = joinSentences([stateWords, sizeText, titleSpoken, lineOneSpoken, basisSpoken]);
   const settled = useSettledLabel(label, copy?.chip?.tone ?? 'none', SETTLE_MS);
   if (!copy) return null;
 
@@ -208,6 +223,7 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, roughBu
     ? keys.items.map((item, i) => ({
         caption: item.caption,
         value: item.value,
+        a11yValue: keysSpoken?.items[i]?.value,
         kind: item.kind,
         tone: item.negative ? ('negative' as const) : ('neutral' as const),
         ...(i === 1 ? { captionAccessory: cushionInfo.button('dark') } : {}),
@@ -271,7 +287,7 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, roughBu
           <FigureStrip
             dark
             items={figureItems}
-            group={{ label: joinSentences([refText(t, keys.a11y), projectionText]), actions: [cushionInfo.aboutAction], onAction: cushionInfo.onAccessibilityAction }}
+            group={{ label: joinSentences([refText(t, (keysSpoken ?? keys).a11y), projectionSpoken]), actions: [cushionInfo.aboutAction], onAction: cushionInfo.onAccessibilityAction }}
           />
         </View>
       ) : null}

@@ -8,7 +8,7 @@ import { basisDetailItems } from '../../copy/depthVerdictCopy';
 import { BasisDetailRow } from '../BasisDetailRow';
 import { hapticSuccess, hapticWarning } from '@/ui/haptics';
 import { space } from '@/theme/layout';
-import { moneyFn } from './stepUi';
+import { moneyA11yFn, moneyFn } from './stepUi';
 import { VerdictCard } from '../VerdictCard';
 import { expectedReturnProjection } from '../../snapshot/expectedReturn';
 import { WarningList } from '../WarningList';
@@ -25,6 +25,8 @@ export function Step3Verdict(props: Step3Props) {
   const { computation, source, whole, lastSeenBasis, revealKey, onEditCardMinimum } = props;
   const fmt = moneyFn(whole, source.currency);
   const fmtCents = moneyFn(props.exact, source.currency);
+  const fmtA11y = moneyA11yFn(whole, source.currency);
+  const fmtCentsA11y = moneyA11yFn(props.exact, source.currency);
   const verdict = computation.status === 'logged' ? computation.verdict : null;
   const state = verdict ? verdict.state : computation.status === 'first_read' && computation.firstRead ? computation.firstRead.state : null;
   const fired = useRef<string | null>(null);
@@ -52,6 +54,8 @@ export function Step3Verdict(props: Step3Props) {
           lastSeenBasis={lastSeenBasis}
           fmt={fmt}
           fmtCents={fmtCents}
+          fmtA11y={fmtA11y}
+          fmtCentsA11y={fmtCentsA11y}
           roughBurn={source.kind === 'rough' ? source.figures.monthlySpending : null}
           conversions={source.conversions}
           fullMonths={source.meta.fullMonths}
@@ -61,7 +65,7 @@ export function Step3Verdict(props: Step3Props) {
         />
         <BasisDetailRow items={basisItems} onPressCardMinimum={onEditCardMinimum} />
       </View>
-      <WarningList verdict={verdict} fmt={fmt} fmtDate={formatDate} stackedApplied={stackedApplied} warnings={false} />
+      <WarningList verdict={verdict} fmt={fmt} fmtA11y={fmtA11y} fmtDate={formatDate} stackedApplied={stackedApplied} warnings={false} />
     </View>
   );
 }
