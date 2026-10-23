@@ -10,6 +10,10 @@ import { GoalTagEditContext } from '../goalTagEdit';
 import { decision, goal, inputs, line } from './helpers/pastFixtures';
 
 jest.setTimeout(30000);
+jest.mock('react-native-safe-area-context', () => ({
+  ...jest.requireActual('react-native-safe-area-context'),
+  useSafeAreaInsets: () => ({ top: 47, bottom: 12, left: 0, right: 0 }),
+}));
 
 let mockChecks: DecideCheckRow[] = [];
 let mockGoals: SavingsGoalRow[] = [];

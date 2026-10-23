@@ -9,6 +9,10 @@ import { DecisionDetailSheet } from '../DecisionDetailSheet';
 import { decision, goal, inputs, line, link } from './helpers/pastFixtures';
 
 jest.setTimeout(30000);
+jest.mock('react-native-safe-area-context', () => ({
+  ...jest.requireActual('react-native-safe-area-context'),
+  useSafeAreaInsets: () => ({ top: 47, bottom: 12, left: 0, right: 0 }),
+}));
 
 let mockGoals: SavingsGoalRow[] = [];
 let mockCandidates: TransactionRow[] = [];
@@ -159,24 +163,58 @@ describe('DecisionDetailSheet', () => {
     expect(screen.getByText('No lines in the last 90 days.')).toBeTruthy();
   });
 
-  it('removes only after asking once, takes the live goal with it, cancels reminders and offers Undo', async () => {
+  it('D-73 the detail sheet deletes through the per-outcome confirm', async () => {
     mockGoals = [goal('w')];
     const d = decision('w', { status: 'waiting', wait_monthly: 20_000, ready_by: '2027-01-15' });
     await renderSheet(d);
-    await fireEvent.press(screen.getByText('Remove'));
+    expect(screen.queryByText('Remove')).toBeNull();
+    await fireEvent.press(screen.getByText('Delete'));
     expect(mockRemove).not.toHaveBeenCalled();
-    expect(screen.getByText('Remove this decision?')).toBeTruthy();
-    expect(screen.getByText('It leaves Past decisions. Lines it wrote stay in Activity.')).toBeTruthy();
+    expect(screen.getByText('Delete this decision?')).toBeTruthy();
+    expect(screen.getByText(/with its savings goal and reminder/)).toBeTruthy();
     await fireEvent.press(screen.getByText('Keep it'));
     expect(mockRemove).not.toHaveBeenCalled();
-    await fireEvent.press(screen.getByText('Remove'));
-    await fireEvent.press(screen.getAllByText('Remove').at(-1)!);
+    await fireEvent.press(screen.getByText('Delete'));
+    await fireEvent.press(screen.getAllByText('Delete').at(-1)!);
     expect(mockRemove).toHaveBeenCalledWith(d, mockGoals[0]);
     expect(mockCancel).toHaveBeenCalledWith('w');
     expect(onClose).toHaveBeenCalled();
     expect(mockToast).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'destructive', stepId: 'step-remove', text: { key: 'decide.toast.removed' } })
+      expect.objectContaining({ kind: 'destructive', stepId: 'step-remove', text: { key: 'decide.delete.toastDecision' } })
     );
+  });
+
+  it('D-73 a bought decision confirm counts only the lines Go ahead wrote', async () => {
+    const links = [link('l1', 'b', { target_id: 'tx1' }), link('l2', 'b', { target_id: 'tx2', source: 'attached' })];
+    await renderSheet(decision('b'), links, [line('tx1'), line('tx2')]);
+    await fireEvent.press(screen.getByText('Delete'));
+    expect(screen.getByText(/The line Go ahead wrote stays in Activity/)).toBeTruthy();
+  });
+
+  it('D-75 linked lines beyond 3 sit behind Show details', async () => {
+    const ids = ['a', 'b2', 'c', 'd', 'e'];
+    const links = ids.map((id) => link(`l-${id}`, 'b', { target_id: `tx-${id}` }));
+    const lines = ids.map((id, i) => line(`tx-${id}`, { name: `Item ${id}`, local_date: `2026-08-0${i + 1}` }));
+    await renderSheet(decision('b'), links, lines);
+    expect(screen.getByText('Item a')).toBeTruthy();
+    expect(screen.getByText('Item c')).toBeTruthy();
+    expect(screen.queryByText('Item d')).toBeNull();
+    await fireEvent.press(screen.getByText('Show details'));
+    expect(screen.getByText('Item d')).toBeTruthy();
+    expect(screen.getByText('Item e')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Hide details'));
+    expect(screen.queryByText('Item e')).toBeNull();
+  });
+
+  it('D-75 three or fewer linked lines show no Show details', async () => {
+    await renderSheet(decision('b'), [link('l1', 'b')], [line('tx1')]);
+    expect(screen.queryByText('Show details')).toBeNull();
+  });
+
+  it('D-70 the linked lines heading carries whatGetsWritten', async () => {
+    await renderSheet(decision('b'));
+    await fireEvent.press(screen.getByLabelText('About What gets written'));
+    expect(screen.getByText(/The lines Go ahead adds to your records/)).toBeTruthy();
   });
 
   it('shows a passed decision with its why, no expiry wording and a Reopen action', async () => {
