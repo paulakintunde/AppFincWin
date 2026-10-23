@@ -376,7 +376,7 @@ UI-SPEC R17 carries the layout, budgets, states, copy and wireframes. It replace
 - **D-95: Decide home is dark-card first (layout A).**
   - A lean header ("Can I afford it" and the avatar; no eyebrow or subtitle).
   - Then one `ink` card holding:
-    - "This month" with a quiet basis;
+    - the label "Your worst month" / "Your average month", following the user's setting (user, 2026-10-23);
     - the hero "Left this month";
     - "In · Out";
     - the quick-check field with the only primary action, "Check it";
@@ -385,19 +385,19 @@ UI-SPEC R17 carries the layout, budgets, states, copy and wireframes. It replace
   - Below, after 32 of space, up to four quiet rows: Open checks · N, Changes coming up, Past decisions · N, Lines you will not cross.
   - Your month's details and the sources note move to a Month details sheet.
 - **D-96: Problems show as one quiet notice row.**
-  - "{n} items need a look ›" under the header opens a "Needs a look" sheet. Each entry has what it affects and one action: missing figures, a missing exchange rate, failed saves and conflicts (via `FailedWritesSheet`), a card minimum not set, a rate older than 7 days, and offline or waiting writes.
+  - "{n} items need a look ›" under the header opens a "Needs a look" sheet. Each entry has what it affects and one action: missing figures, a missing exchange rate, failed saves and conflicts (via `FailedWritesSheet`), a card minimum not set, a rate older than 30 days (user, 2026-10-23), and offline or waiting writes.
   - It replaces the red sync text and the sync problem line on this screen. There is no red on the main screen unless a figure is wrong or unavailable.
 - **D-97: The hero figure is "Left this month"** for the judged month (worst or average), after bills and saving.
   - It reads "{amount} left", or "{amount} short this month" with the amount in the danger family (`dangerTint2` on the ink card).
   - When it can't be computed, the card shows a declarative "Not worked out yet" with its reason and the one fixing action, never a wrong number.
-  - It uses the shipped `display` role, one line with fit-to-shrink at 0.8.
+  - It uses the Home net-worth size, `netWorth` 42 (user, 2026-10-23), on one line with fit-to-shrink (a hero-only minimum of 0.75, so a 10-character amount stays on one line at 320 wide and 2.0x). Budget: the card ends at y ≈ 450, the rows at y ≈ 690.
 - **D-98: Fewer entry points, same reach.**
-  - The FAB is removed on Decide home ("Check it" and "Full check" cover it; it stays on the other tabs and in You › Add, D-85).
+  - The FAB is removed on Decide home (user-confirmed) ("Check it" and "Full check" cover it; it stays on the other tabs and in You › Add, D-85).
   - The "+ Add a change coming up" row is folded into the Changes coming up row at zero.
   - "Check an investment" is folded into Full check, then the step 1 kind chip.
   - This amends 03 D-09 and D-72.
 - **D-99: Lists move to their own screens.**
-  - Open checks, Changes coming up and Lines you will not cross open pushed screens that keep today's lists, swipe and ⋯ Delete, markers and editors.
+  - Open checks, Changes coming up and Lines you will not cross open pushed screens (user-confirmed) that keep today's lists, swipe and ⋯ Delete, markers and editors.
   - The hiding rules hold: Open checks and Past decisions are hidden at 0; Changes coming up shows as its add row at 0; Lines always shows.
   - Calm comes from layout, never from reassuring words (DCU-09).
 
