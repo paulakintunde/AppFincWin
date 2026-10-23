@@ -1,4 +1,5 @@
 import { DbError, VersionConflictError, NotFoundError, SessionUnavailableError } from '@/db/errors';
+import { LONG_OP_TIMEOUT_MARKER, RequestTimeoutError } from '@/services/supabase/timeoutFetch';
 import { SessionWipedError } from './sessionEpoch';
 
 /**
@@ -84,12 +85,22 @@ export function classifyWriteError(err: unknown): WriteErrorClass {
  * is parked as failed. Every mutation shares one scope (WRITE_SCOPE), so a write that always
  * fails server-side (a trigger error surfacing as a 500, a PostgREST bug on one payload)
  * would otherwise block every later write forever. With writeRetryDelay's backoff this is
- * roughly six and a half minutes of trying.
+ * roughly a minute and a half of trying with the 12 s cap.
  */
 export const MAX_SERVER_ERROR_RETRIES = 10;
 
 /** The failed-write code recorded when WR-A02's retry budget runs out. */
 export const RETRY_EXHAUSTED_CODE = 'retry-exhausted';
+
+/**
+ * D-88: a timed-out long operation (import upload, storage, purge, long RPC). The error is a
+ * RequestTimeoutError, or, after postgrest-js flattens it to a status-0 DbError, carries the
+ * marker in its message.
+ */
+function isLongOperationTimeout(err: unknown): boolean {
+  if (err instanceof RequestTimeoutError) return err.longOp;
+  return err instanceof Error && err.message.includes(LONG_OP_TIMEOUT_MARKER) && /timed out/i.test(err.message);
+}
 
 /** A connectivity failure: the request never got an HTTP answer at all. */
 function isConnectivityError(err: unknown): boolean {
@@ -107,6 +118,7 @@ function isConnectivityError(err: unknown): boolean {
  * `failureCount` is query-core's count of failures before this one (0 on the first).
  */
 export function shouldRetryWrite(failureCount: number, err: unknown): boolean {
+  if (isLongOperationTimeout(err)) return false; // D-88: 120 s operations are never auto-retried
   const cls = classifyWriteError(err);
   if (cls === 'auth') return true;
   if (cls !== 'transient') return false;
@@ -132,7 +144,7 @@ export function settledWriteErrorCode(err: unknown): string {
   return err instanceof Error && 'code' in err ? String((err as { code: unknown }).code) : '';
 }
 
-/** Exponential backoff, capped at 60 seconds. */
+/** Exponential backoff from 1 s, capped at 12 s while online (D-88). Offline writes are paused, not delayed. */
 export function writeRetryDelay(attempt: number): number {
-  return Math.min(1000 * 2 ** attempt, 60_000);
+  return Math.min(1000 * 2 ** attempt, 12_000);
 }

@@ -15,6 +15,8 @@ const LONG_OP_PATTERNS: readonly RegExp[] = [
   /\/rest\/v1\/rpc\/(seed_sample_data|clear_sample_data|change_home_currency|delete_account|purge_account|commit_statement_import)(\/|\?|$)/,
 ];
 
+export const LONG_OP_TIMEOUT_MARKER = '(long operation)';
+
 export function isLongOperationUrl(url: string): boolean {
   return LONG_OP_PATTERNS.some((p) => p.test(url));
 }
@@ -22,7 +24,9 @@ export function isLongOperationUrl(url: string): boolean {
 export class RequestTimeoutError extends TypeError {
   readonly longOp: boolean;
   constructor(timeoutMs: number, longOp: boolean) {
-    super(`Network request timed out after ${timeoutMs} ms`);
+    // postgrest-js flattens a fetch failure to its message text, so the long-operation marker
+    // lives in the message for writeErrors to read back (LONG_OP_TIMEOUT_MARKER).
+    super(`Network request timed out after ${timeoutMs} ms${longOp ? ` ${LONG_OP_TIMEOUT_MARKER}` : ''}`);
     this.name = 'RequestTimeoutError';
     this.longOp = longOp;
   }
