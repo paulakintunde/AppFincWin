@@ -4,7 +4,7 @@
  * the folded summary and a chevron. Open, it holds that method's inputs and its "What it comes to" tile. On a decided check
  * the radio is announced disabled but the card still opens and closes (reading), so `disabled` is only ever announced here.
  */
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useT } from '@/i18n';
@@ -52,6 +52,16 @@ export function MethodCard({ name, infoKey, selected, open, needs, summary, chip
   const info = useInfoSheet(infoKey);
   const scrollIntoView = useScrollIntoView();
   const headerRef = useRef<View>(null);
+  // Scroll once per opening, when the body first lays out; later layouts (typing grows the body) must not move the screen.
+  const scrolledForOpen = useRef(false);
+  useEffect(() => {
+    if (!open) scrolledForOpen.current = false;
+  }, [open]);
+  const onBodyLayout = () => {
+    if (scrolledForOpen.current) return;
+    scrolledForOpen.current = true;
+    scrollIntoView(headerRef.current, 'top');
+  };
   const needsLine = needs === null ? null : needsText(t as Translate, needs);
 
   const label = [
@@ -65,11 +75,11 @@ export function MethodCard({ name, infoKey, selected, open, needs, summary, chip
   const actions = [info.aboutAction, ...(edit ? [{ name: 'edit', label: t('decide.pay.price.edit') }] : [])];
   const body = open ? (
     reduced ? (
-      <View style={styles.body} onLayout={() => scrollIntoView(headerRef.current)}>
+      <View style={styles.body} onLayout={onBodyLayout}>
         {children}
       </View>
     ) : (
-      <Animated.View style={styles.body} entering={FadeIn.duration(DURATION.entrance)} onLayout={() => scrollIntoView(headerRef.current)}>
+      <Animated.View style={styles.body} entering={FadeIn.duration(DURATION.entrance)} onLayout={onBodyLayout}>
         {children}
       </Animated.View>
     )

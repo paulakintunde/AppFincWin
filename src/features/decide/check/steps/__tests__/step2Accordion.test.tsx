@@ -2,6 +2,7 @@ import React from 'react';
 import { Text } from 'react-native';
 import { fireEvent, screen, within } from '@testing-library/react-native';
 import { MethodCard } from '../step2/MethodCard';
+import { ScrollIntoViewContext } from '../../../ui/scrollIntoView';
 import { Step2PriceAndPay } from '../Step2PriceAndPay';
 import { buy, stepProps, wrap } from './helpers/stepProps';
 import type { CheckInputs } from '../../../snapshot/types';
@@ -36,6 +37,28 @@ function card(over: Partial<React.ComponentProps<typeof MethodCard>> = {}) {
 
 describe('MethodCard', () => {
   beforeEach(() => jest.clearAllMocks());
+
+  it('opening a card scrolls its header node into view (aligned to the top), once per opening', async () => {
+    const scrollIntoView = jest.fn();
+    const layout = { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 200 } } };
+    const tree = (open: boolean) => (
+      <ScrollIntoViewContext.Provider value={scrollIntoView}>
+        <MethodCard {...card({ open })} />
+      </ScrollIntoViewContext.Provider>
+    );
+    const view = await wrap(tree(false));
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    await view.rerender(tree(true));
+    await fireEvent(screen.getByText(BODY), 'layout', layout);
+    await fireEvent(screen.getByText(BODY), 'layout', layout); // typing grows the body: no second scroll
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView.mock.calls[0]![0]).not.toBeNull();
+    expect(scrollIntoView.mock.calls[0]![1]).toBe('top');
+    await view.rerender(tree(false));
+    await view.rerender(tree(true));
+    await fireEvent(screen.getByText(BODY), 'layout', layout);
+    expect(scrollIntoView).toHaveBeenCalledTimes(2);
+  });
 
   it('D-79 a method card header is a radio with checked and expanded state', async () => {
     const p = card({ selected: true, open: true, needs: NEEDS_RATE });

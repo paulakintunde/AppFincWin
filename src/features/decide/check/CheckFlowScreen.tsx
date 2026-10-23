@@ -49,7 +49,7 @@ import { FoldHint } from '../ui/FoldHint';
 import { WrittenList } from '../ui/WrittenList';
 import { useInfoSheet } from '../ui/useInfoSheet';
 import { RevealTapContext } from '../ui/revealTap';
-import { ScrollIntoViewContext } from '../ui/scrollIntoView';
+import { ScrollIntoViewContext, scrollTargetY, type ScrollAlign } from '../ui/scrollIntoView';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
 import { useFoldHint } from '../hints/useFoldHint';
 import { fromHomePatch, inHomeCurrency, sourceFor } from '../snapshot/checkCurrency';
@@ -489,15 +489,15 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
     scrollOffset.current = e.nativeEvent.contentOffset.y;
   }, []);
   const scrollIntoView = useCallback(
-    (target: React.ComponentRef<typeof View> | null): void => {
+    (target: React.ComponentRef<typeof View> | null, align: ScrollAlign = 'ifAbove'): void => {
       const scroller = scrollRef.current;
       const content = (scroller as unknown as { getInnerViewRef?: () => React.ComponentRef<typeof View> | null } | null)?.getInnerViewRef?.();
       if (!target || !scroller || !content) return;
       target.measureLayout(
         content,
         (_x, y) => {
-          const wanted = Math.max(0, y - space.gapMd);
-          if (y < scrollOffset.current + space.gapMd) scroller.scrollTo({ y: wanted, animated: !reduceMotion });
+          const next = scrollTargetY({ y, offset: scrollOffset.current, align });
+          if (next !== null) scroller.scrollTo({ y: next, animated: !reduceMotion });
         },
         () => undefined
       );
