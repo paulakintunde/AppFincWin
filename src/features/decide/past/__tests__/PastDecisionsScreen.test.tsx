@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import type { TransactionRow } from '@/db/rows';
@@ -15,6 +15,8 @@ let mockLinks: DecideLinkRow[] = [];
 let mockLines: TransactionRow[] = [];
 let mockGoals: SavingsGoalRow[] = [];
 const mockReopen = jest.fn(() => 'new-check');
+const mockRemove = jest.fn(() => 'step-remove');
+const mockSwipe: { props: Record<string, any> } = { props: {} };
 const mockCancel = jest.fn(() => Promise.resolve());
 const mockPush = jest.fn();
 const mockToast = jest.fn();
@@ -34,7 +36,7 @@ jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) 
 jest.mock('@/data/queries/customCurrencies', () => ({ useCustomCurrencies: () => ({ data: [] }) }));
 jest.mock('@/data/mutations/decideChecks', () => ({
   useReopenCheck: () => ({ reopen: mockReopen }),
-  useRemoveDecision: () => ({ remove: jest.fn() }),
+  useRemoveDecision: () => ({ remove: (...a: unknown[]) => mockRemove(...(a as [])) }),
 }));
 jest.mock('@/data/mutations/decideLinks', () => ({
   useUnlinkLine: () => ({ unlink: jest.fn() }),
@@ -44,6 +46,18 @@ jest.mock('../../notifications/waitReminder', () => ({ cancelCheckReminders: (..
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPush(...a) }));
 jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockToast(...a) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
+jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
+  const R = require('react');
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: R.forwardRef((props: any, ref: any) => {
+      mockSwipe.props = props;
+      R.useImperativeHandle(ref, () => ({ close: jest.fn() }));
+      return <View>{props.children}</View>;
+    }),
+  };
+});
 jest.mock('@/shell/screen/DetailScreen', () => {
   const R = require('react');
   const { View, Text } = require('react-native');
@@ -144,26 +158,36 @@ describe('PastDecisionsScreen', () => {
     expect(screen.getByText('1 of 2')).toBeTruthy();
   });
 
-  it('reopens a passed decision as a new check, cancelling its reminders; a bought one has no Reopen', async () => {
-    mockChecks = [
-      decision('b', { name: 'Laptop' }),
-      decision('p', { name: 'Watch', status: 'passed', decided_at: '2026-09-01T12:00:00Z' }),
-    ];
+  async function pressMenu(name: string, option: string) {
+    await fireEvent.press(screen.getByLabelText(`More for ${name}`));
+    await fireEvent.press(screen.getByLabelText(option));
+  }
+
+  it('D-73 Reopen is offered only for Waiting and Passed', async () => {
+    mockChecks = [decision('b', { name: 'Laptop' })];
     await renderScreen();
-    expect(screen.getAllByText('Reopen')).toHaveLength(1);
-    await fireEvent.press(screen.getByText('Reopen'));
+    await fireEvent.press(screen.getByLabelText('More for Laptop'));
+    expect(screen.getByLabelText('Open')).toBeTruthy();
+    expect(screen.queryByLabelText('Reopen')).toBeNull();
+    expect(screen.getByLabelText('Delete')).toBeTruthy();
+  });
+
+  it('D-73 Reopen is offered for a Passed decision and reopens it as a new check, cancelling its reminders', async () => {
+    mockChecks = [decision('p', { name: 'Watch', status: 'passed', decided_at: '2026-09-01T12:00:00Z' })];
+    await renderScreen();
+    await pressMenu('Watch', 'Reopen');
     expect(mockReopen).toHaveBeenCalledWith(expect.objectContaining({ id: 'p' }), TODAY);
     expect(mockCancel).toHaveBeenCalledWith('p');
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ text: { key: 'decide.toast.reopened' } }));
     expect(mockPush).toHaveBeenCalledTimes(1);
   });
 
-  it('IN-B05: Reopen writes one check; a second press, or a decision already reopened, opens the live check', async () => {
+  it('IN-B05: Reopen writes one check; a second press opens the live check', async () => {
     mockChecks = [decision('p', { name: 'Watch', status: 'passed', decided_at: '2026-09-01T12:00:00Z' })];
     mockReopen.mockReturnValue('new-check');
     await renderScreen();
-    await fireEvent.press(screen.getByText('Reopen'));
-    await fireEvent.press(screen.getByText('Reopen'));
+    await pressMenu('Watch', 'Reopen');
+    await pressMenu('Watch', 'Reopen');
     expect(mockReopen).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-check' } });
   });
@@ -174,16 +198,93 @@ describe('PastDecisionsScreen', () => {
       decision('again', { name: 'Watch', status: 'open', reopened_from: 'p', decided_at: null }),
     ];
     await renderScreen();
-    await fireEvent.press(screen.getByText('Reopen'));
+    await pressMenu('Watch', 'Reopen');
     expect(mockReopen).not.toHaveBeenCalled();
     expect(mockCancel).not.toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'again' } });
   });
 
+  it('D-73 a bought decision confirm says its written lines stay in Activity', async () => {
+    mockChecks = [decision('b', { name: 'Laptop' })];
+    mockLinks = [
+      link('l1', 'b', { target_id: 'tx1' }),
+      link('l2', 'b', { target_id: 'tx2' }),
+      link('l3', 'b', { target_id: 'tx3', source: 'attached' }),
+    ];
+    await renderScreen();
+    await pressMenu('Laptop', 'Delete');
+    expect(screen.getByText('Delete this decision?')).toBeTruthy();
+    expect(
+      screen.getByText('It leaves Past decisions. The 2 lines Go ahead wrote stay in Activity, and every figure that uses them stays the same.')
+    ).toBeTruthy();
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
+  it('D-73 the bought confirm uses the singular for one written line', async () => {
+    mockChecks = [decision('b', { name: 'Laptop' })];
+    mockLinks = [link('l1', 'b')];
+    await renderScreen();
+    await pressMenu('Laptop', 'Delete');
+    expect(screen.getByText(/The line Go ahead wrote stays in Activity/)).toBeTruthy();
+  });
+
+  it('D-73 Waiting and Passed confirms use their own copy', async () => {
+    mockChecks = [
+      decision('w', { name: 'Sofa', status: 'waiting', decided_at: '2026-10-10T12:00:00Z', wait_monthly: 20_000, ready_by: '2027-01-15' }),
+      decision('p', { name: 'Watch', status: 'passed', decided_at: '2026-09-01T12:00:00Z' }),
+    ];
+    mockGoals = [goal('w')];
+    await renderScreen();
+    await pressMenu('Watch', 'Delete');
+    expect(screen.getByText('It leaves Past decisions. Nothing else changes.')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Keep it'));
+    await pressMenu('Sofa', 'Delete');
+    expect(screen.getByText(/with its savings goal and reminder/)).toBeTruthy();
+  });
+
+  it('D-73 deleting a Waiting decision deletes its goal in one step and cancels its reminders', async () => {
+    mockChecks = [
+      decision('w', { name: 'Sofa', status: 'waiting', decided_at: '2026-10-10T12:00:00Z', wait_monthly: 20_000, ready_by: '2027-01-15' }),
+    ];
+    mockGoals = [goal('w')];
+    await renderScreen();
+    await pressMenu('Sofa', 'Delete');
+    expect(mockRemove).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getAllByText('Delete').at(-1)!);
+    expect(mockRemove).toHaveBeenCalledTimes(1);
+    expect(mockRemove).toHaveBeenCalledWith(expect.objectContaining({ id: 'w' }), mockGoals[0]);
+    expect(mockCancel).toHaveBeenCalledWith('w');
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'destructive', stepId: 'step-remove', text: { key: 'decide.delete.toastDecision' } })
+    );
+  });
+
+  it('D-73 deleting a decision never touches a written line', async () => {
+    mockChecks = [decision('b', { name: 'Laptop' })];
+    mockLinks = [link('l1', 'b')];
+    mockLines = [line('tx1')];
+    await renderScreen();
+    await pressMenu('Laptop', 'Delete');
+    await fireEvent.press(screen.getAllByText('Delete').at(-1)!);
+    // The only write is the remove call: the check row (and, for Waiting, its goal). No line, link or transfer is passed.
+    expect(mockRemove).toHaveBeenCalledTimes(1);
+    expect(mockRemove).toHaveBeenCalledWith(expect.objectContaining({ id: 'b' }), null);
+  });
+
+  it('D-73 a full swipe opens the confirm and does not delete', async () => {
+    mockChecks = [decision('p', { name: 'Watch', status: 'passed', decided_at: '2026-09-01T12:00:00Z' })];
+    await renderScreen();
+    await act(async () => {
+      mockSwipe.props.onSwipeableOpen('left');
+    });
+    expect(screen.getByText('Delete this decision?')).toBeTruthy();
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
   it('opens the decision detail when a row is pressed', async () => {
     mockChecks = [decision('b', { name: 'Laptop' })];
     await renderScreen();
-    await fireEvent.press(screen.getByRole('button', { name: /^Laptop, Bought/ }));
+    await fireEvent.press(screen.getByLabelText(/^Laptop, Bought/));
     expect(screen.getByText('Final price')).toBeTruthy();
   });
 });

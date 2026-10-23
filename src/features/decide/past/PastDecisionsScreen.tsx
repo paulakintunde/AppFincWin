@@ -1,13 +1,13 @@
 // 05-22 (DCU-07, D-11, D-12): Past decisions. Every bought, waiting and passed decision, newest first, with its state in
 // words. A bought one shows its estimate against what the linked lines add up to once day 30 is reached. Numbers only.
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { currencyCode } from '@/engine/money';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { useT } from '@/i18n';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { useTheme } from '@/theme/ThemeProvider';
-import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
+import { radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { shadows } from '@/theme/tokens';
 import { EmptyState } from '@/ui/EmptyState';
@@ -17,9 +17,12 @@ import { stateChip } from '../copy/verdictCopy';
 import { canUse } from '../entitlements';
 import { savedSoFar } from '../journal/goalProgress';
 import { finalPriceOf, parseCheckInputs } from '../snapshot/checkInputs';
+import { DeletableRow } from '../ui/DeletableRow';
 import { GoalProgress } from '../ui/GoalProgress';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
+import { useShouldStack } from '../ui/textFit';
 import { DecisionDetailSheet } from './DecisionDetailSheet';
+import { useDeleteDecision, writtenCount } from './useDeleteDecision';
 import { deltaFor, localDateOf, useReopenDecision, usePastDecisions, type RowDelta } from './usePastDecisions';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 
@@ -31,14 +34,29 @@ function diffText(t: T, tone: 'over' | 'at' | 'under', diff: number, whole: (n: 
   return t('decide.past.diffAt');
 }
 
+/** D-76 rule S: the estimate and the actual sit side by side, and stack when the width, text scale or value would not fit. */
+function DeltaStrip({ label, value, color }: { label: string; value: string; color: string }) {
+  const { colors, pairing } = useTheme();
+  const stacked = useShouldStack(value.length);
+  return (
+    <View style={[styles.delta, stacked ? styles.deltaStacked : null, { backgroundColor: colors.fill6 }]}>
+      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim, flexShrink: 1 }}>{label}</Text>
+      <Text style={{ ...textRole(pairing, 'label'), color, flexShrink: 1, textAlign: stacked ? 'left' : 'right' }}>{value}</Text>
+    </View>
+  );
+}
+
 export function PastDecisionsScreen() {
   const t = useT() as T;
   const { colors, pairing } = useTheme();
   const model = usePastDecisions();
   const wholeFmt = useMoneyFormatter(false);
   const reopen = useReopenDecision(model.today);
+  const del = useDeleteDecision();
   const [openId, setOpenId] = useState<string | null>(null);
   const { decisions, whole, wholeIn, formatDate, ctx } = model;
+
+  const goalList = useMemo(() => [...model.goalByCheck.values()], [model.goalByCheck]);
 
   if (!canUse('decisionJournal')) return null;
 
@@ -76,29 +94,21 @@ export function PastDecisionsScreen() {
   };
 
   const renderDelta = (delta: RowDelta) => {
-    const strip = { backgroundColor: colors.fill6 };
     if (delta.kind === 'schedule') {
       return (
-        <View style={[styles.delta, strip]}>
-          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim, flex: 1 }}>
-            {t('decide.past.matched')}
-          </Text>
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>
-            {t('decide.past.matchedValue', { count: delta.paid, total: delta.due })}
-          </Text>
-        </View>
+        <DeltaStrip
+          label={t('decide.past.matched')}
+          value={t('decide.past.matchedValue', { count: delta.paid, total: delta.due })}
+          color={colors.ink}
+        />
       );
     }
-    const color = delta.tone === 'over' ? colors.danger : colors.accent;
     return (
-      <View style={[styles.delta, strip]}>
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim, flex: 1 }}>
-          {t('decide.past.estimated', { amount: whole(delta.estimate) })}
-        </Text>
-        <Text style={{ ...textRole(pairing, 'label'), color }}>
-          {`${whole(delta.actual)} (${diffText(t, delta.tone, delta.diff, whole)})`}
-        </Text>
-      </View>
+      <DeltaStrip
+        label={t('decide.past.estimated', { amount: whole(delta.estimate) })}
+        value={`${whole(delta.actual)} (${diffText(t, delta.tone, delta.diff, whole)})`}
+        color={delta.tone === 'over' ? colors.danger : colors.accent}
+      />
     );
   };
 
@@ -119,20 +129,29 @@ export function PastDecisionsScreen() {
             const sub = subLine(d);
             const goal = d.status === 'waiting' ? (model.goalByCheck.get(d.id) ?? null) : null;
             const progress = goal === null ? null : savedSoFar({ goal, lines: model.goalLines, home: ctx.home, rates: ctx.rates });
+            const a11y = [name, t(chip.key), sub].filter((p): p is string => p !== null && p !== '').join(', ');
+            const open = () => setOpenId(d.id);
+            const menu = [
+              { key: 'open', label: t('decide.delete.menuOpen'), onSelect: open },
+              ...(d.status !== 'bought' ? [{ key: 'reopen', label: t('decide.delete.menuReopen'), onSelect: () => reopen(d) }] : []),
+            ];
             return (
-              <View
-                key={d.id}
-                style={[styles.row, i > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line4 } : null]}
-              >
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={[name, t(chip.key), sub].filter((p): p is string => p !== null && p !== '').join(', ')}
-                  onPress={() => setOpenId(d.id)}
-                  style={({ pressed }) => [styles.main, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+              <View key={d.id} style={i > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line4 } : null}>
+                <DeletableRow
+                  name={name}
+                  accessibilityLabel={a11y}
+                  onOpen={open}
+                  menu={menu}
+                  confirm={del.confirmCopy(d, writtenCount(model.linksByCheck.get(d.id)))}
+                  onDelete={() => del.deleteDecision(d, goalList)}
                 >
                   <View style={styles.text}>
-                    <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{name}</Text>
-                    <StateChip tone={chip.tone as StateChipTone} label={t(chip.key)} />
+                    <Text numberOfLines={2} ellipsizeMode="tail" style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+                      {name}
+                    </Text>
+                    <View style={styles.chipRow}>
+                      <StateChip tone={chip.tone as StateChipTone} label={t(chip.key)} />
+                    </View>
                     {sub !== null ? (
                       <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkFaint }}>{sub}</Text>
                     ) : null}
@@ -146,18 +165,7 @@ export function PastDecisionsScreen() {
                     ) : null}
                     {delta !== null ? renderDelta(delta) : null}
                   </View>
-                  <View style={[styles.chevron, { borderColor: colors.inkFaint }]} />
-                </Pressable>
-                {d.status !== 'bought' ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`${t('decide.past.reopen')} ${name}`}
-                    onPress={() => reopen(d)}
-                    style={[styles.reopen, { backgroundColor: colors.fill1 }]}
-                  >
-                    <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{t('decide.past.reopen')}</Text>
-                  </Pressable>
-                ) : null}
+                </DeletableRow>
               </View>
             );
           })}
@@ -173,35 +181,18 @@ export function PastDecisionsScreen() {
   );
 }
 
-const CHEVRON = 8;
 const styles = StyleSheet.create({
   list: { borderRadius: radii.card, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  main: {
-    flex: 1,
-    minHeight: space.touchMin,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.gapMd,
-    paddingVertical: space.rowPad,
-    paddingLeft: 18,
-  },
-  text: { flex: 1, gap: 4 },
+  text: { gap: 4, paddingVertical: space.rowPad, paddingLeft: 18, minHeight: space.touchMin, justifyContent: 'center' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap' },
   delta: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: space.gapMd,
     borderRadius: radii.card,
     paddingVertical: space.gapSm,
     paddingHorizontal: space.gapMd,
   },
-  chevron: { width: CHEVRON, height: CHEVRON, borderTopWidth: 2, borderRightWidth: 2, transform: [{ rotate: '45deg' }] },
-  reopen: {
-    minHeight: space.touchMin,
-    paddingHorizontal: space.cardPad,
-    marginRight: space.gapMd,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  deltaStacked: { flexDirection: 'column', alignItems: 'flex-start', gap: 2 },
 });
