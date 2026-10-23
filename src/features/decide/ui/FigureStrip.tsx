@@ -15,6 +15,8 @@ const CAPTION_GAP = 2; // UI-SPEC caption-to-figure gap
 export interface FigureItem {
   caption: string;
   value: string;
+  /** D-94: the value read by currency name; falls back to `value`. */
+  a11yValue?: string;
   tone?: 'neutral' | 'positive' | 'negative';
   /** 'figure' (default) must read as one figure and stays on one line; 'words' wraps. */
   kind?: 'figure' | 'words';
@@ -54,7 +56,7 @@ export function FigureStrip({ items, dark = false, group }: FigureStripProps) {
         <View
           // IN-D02: captions can repeat, so the key carries the position too
           key={`${i}-${item.caption}`}
-          {...(group ? {} : { accessible: true, accessibilityLabel: `${item.caption}, ${item.value}` })}
+          {...(group ? {} : { accessible: true, accessibilityLabel: `${item.caption}, ${item.a11yValue ?? item.value}` })}
           style={stacked ? styles.stackItem : styles.cell}
         >
           <View style={styles.captionRow}>
@@ -69,6 +71,7 @@ export function FigureStrip({ items, dark = false, group }: FigureStripProps) {
           <Text
             scale="capped"
             maxFontSizeMultiplier={FIGURE_MAX_SCALE}
+            accessibilityLabel={item.a11yValue}
             {...(item.kind === 'words'
               ? {}
               : { numberOfLines: 1, adjustsFontSizeToFit: true, minimumFontScale: FIGURE_MIN_FONT_SCALE })}

@@ -78,6 +78,14 @@ describe('FigureStrip', () => {
     expect(style(getByText('£40')).color).toBe(base.danger);
   });
 
+  it('D-94 a money figure reads its currency name', async () => {
+    const { getByText, getByLabelText } = await wrap(
+      <FigureStrip items={[{ caption: 'Left', value: 'CA$100', a11yValue: '100 Canadian dollars' }]} />
+    );
+    expect(getByText('CA$100').props.accessibilityLabel).toBe('100 Canadian dollars');
+    expect(getByLabelText('Left, 100 Canadian dollars')).toBeTruthy();
+  });
+
   it('IN-D02: repeated captions each render, with no key collision', async () => {
     const error = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     const twice = [

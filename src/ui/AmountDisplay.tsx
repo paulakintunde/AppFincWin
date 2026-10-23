@@ -13,15 +13,18 @@ export interface AmountDisplayProps {
   text: string;
   /** 'dim' (inkDim) is the transfer figure: money moving, not earned or spent (D-50). */
   tone?: 'default' | 'danger' | 'dim';
+  /** D-94: the amount read by currency name ("1,500 Canadian dollars"); the visible text is unchanged. */
+  a11yValue?: string;
 }
 
-export function AmountDisplay({ text, tone = 'default' }: AmountDisplayProps) {
+export function AmountDisplay({ text, tone = 'default', a11yValue }: AmountDisplayProps) {
   const { colors, fonts } = useTheme();
   const color = tone === 'danger' ? colors.danger : tone === 'dim' ? colors.inkDim : colors.ink;
 
   return (
     <Text
       scale="capped"
+      accessibilityLabel={a11yValue}
       style={{
         fontFamily: fonts.body[500],
         fontSize: fontSize.amountDisplay,
