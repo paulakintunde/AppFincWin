@@ -156,6 +156,24 @@ describe('saveDecideCheckDraft', () => {
   it('throws NotFoundError on zero rows', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [], error: null, status: 200 });
+    client.respondWith({ data: null, error: null, status: 200 });
+    await expect(saveDecideCheckDraft(client, 'k1', { name: 'x' })).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('D-77 a draft save never touches a deleted check', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [], error: null, status: 200 });
+    client.respondWith({ data: { id: 'k1', status: 'open', deleted_at: '2026-10-02T00:00:00Z' }, error: null, status: 200 });
+    await expect(saveDecideCheckDraft(client, 'k1', { name: 'x' })).resolves.toBeNull();
+    expect(client.calls.some((c) => c.method === 'is' && c.args[0] === 'deleted_at' && c.args[1] === null)).toBe(true);
+    // exactly one write: the state read is a select, never an update
+    expect(client.calls.filter((c) => c.method === 'update')).toHaveLength(1);
+  });
+
+  it('D-77 a draft save to a decided check still reports not found', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [], error: null, status: 200 });
+    client.respondWith({ data: { id: 'k1', status: 'bought', deleted_at: null }, error: null, status: 200 });
     await expect(saveDecideCheckDraft(client, 'k1', { name: 'x' })).rejects.toBeInstanceOf(NotFoundError);
   });
 });

@@ -215,6 +215,8 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
           inputs: vars.inputs,
           furthest_step: vars.furthestStep,
         });
+        // D-77: the check was soft-deleted; the stale save is skipped without a trace.
+        if (row === null) return null;
         // WR-A03: the save is unconditional but bump_version still raises the version by exactly one. Record that in
         // the chain, so a queued abandon / mark-seen / remove built on the cached version resolves past this save
         // instead of reporting a false conflict.
@@ -237,7 +239,8 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
           : old
       );
     },
-    onSuccess: (row: DecideCheckRow) => {
+    onSuccess: (row: DecideCheckRow | null) => {
+      if (row === null) return;
       qc.setQueriesData<CheckList>({ queryKey: ['decide-checks'] }, (old) =>
         Array.isArray(old) ? old.map((r) => (r.id === row.id ? row : r)) : old
       );
@@ -401,7 +404,7 @@ export function useCreateCheck(): {
 export function useSaveCheckDraft(): {
   save(input: { id: string; name: string; inputs: Record<string, unknown>; furthestStep: number }): void;
 } {
-  const mutation = useMutation<DecideCheckRow, unknown, SaveCheckDraftVars>({
+  const mutation = useMutation<DecideCheckRow | null, unknown, SaveCheckDraftVars>({
     mutationKey: mutationKeys.saveCheckDraft,
     scope: WRITE_SCOPE,
   });
@@ -424,10 +427,10 @@ function cacheOf(row: DecideCheckRow): CheckCacheKey {
 }
 
 /** DCU-04 / A5: abandoning an open check is one undo step. Returns the step id for the toast's Undo. */
-export function useAbandonCheck(): { abandon(row: DecideCheckRow): string } {
+export function useAbandonCheck(): { abandon(row: DecideCheckRow, reason?: 'cleared' | 'deleted'): string } {
   const mutation = useEditCheckMutation();
   return {
-    abandon(row) {
+    abandon(row, reason = 'deleted') {
       const stepId = newStepId();
       mutation.mutate({
         id: row.id,
@@ -435,7 +438,12 @@ export function useAbandonCheck(): { abandon(row: DecideCheckRow): string } {
         cache: cacheOf(row),
         expectedVersion: row.version,
         patch: { deleted_at: new Date().toISOString() },
-        undo: { stepId, labelKey: 'checkAbandoned', labelParams: { name: row.name }, before: { deleted_at: null } },
+        undo: {
+          stepId,
+          labelKey: reason === 'cleared' ? 'checkCleared' : 'checkDeleted',
+          labelParams: { name: row.name },
+          before: { deleted_at: null },
+        },
       });
       return stepId;
     },
@@ -477,7 +485,7 @@ export function useRemoveDecision(): { remove(row: DecideCheckRow, goal?: Saving
         expectedVersion: row.version,
         patch: { deleted_at: new Date().toISOString() },
         goal: liveGoal ? { id: liveGoal.id, expectedVersion: liveGoal.version } : null,
-        undo: { stepId, labelKey: 'decisionRemoved', labelParams: { name: row.name }, before: { deleted_at: null } },
+        undo: { stepId, labelKey: 'decisionDeleted', labelParams: { name: row.name }, before: { deleted_at: null } },
       });
       return stepId;
     },

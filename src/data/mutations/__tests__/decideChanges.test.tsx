@@ -179,7 +179,7 @@ describe('useEditChange', () => {
 });
 
 describe('useRemoveChange', () => {
-  it('soft deletes, drops the cached row and the step restores deleted_at null', async () => {
+  it('D-73 a deleted change is one undo step labelled Change deleted', async () => {
     const { fake, qc } = setup();
     qc.setQueryData(KEY, [change('c1')]);
     fake.respondWith(ok([change('c1', { deleted_at: '2026-10-02T00:00:00Z', version: 2 })]));
@@ -193,7 +193,7 @@ describe('useRemoveChange', () => {
     expect(typeof patch.deleted_at).toBe('string');
     expect(lastStep()).toMatchObject({
       id: stepId,
-      labelKey: 'changeRemoved',
+      labelKey: 'changeDeleted',
       ops: [{ entity: 'decide_changes', expectedVersion: 2, patch: { deleted_at: null } }],
     });
     expect(qc.getQueryData<DecideChangeRow[]>(KEY)).toEqual([]);

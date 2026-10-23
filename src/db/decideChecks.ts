@@ -158,7 +158,7 @@ export async function saveDecideCheckDraft(
   client: DbClient,
   id: string,
   patch: Pick<DecideCheckPatch, 'name' | 'inputs' | 'furthest_step'>
-): Promise<DecideCheckRow> {
+): Promise<DecideCheckRow | null> {
   assertAllowedKeys(patch, ['name', 'inputs', 'furthest_step'], 'saveDecideCheckDraft');
 
   const payload: DecideCheckPatch = { ...patch };
@@ -170,12 +170,28 @@ export async function saveDecideCheckDraft(
     .update(payload)
     .eq('id', id)
     .eq('status', 'open')
+    .is('deleted_at', null)
     .select(DECIDE_CHECK_COLUMNS);
 
   if (error) throw toDbError(error, status);
   const rows = (data as DecideCheckRow[] | null) ?? [];
   if (rows.length === 1) return rows[0] as DecideCheckRow;
+  // D-77: a save that reaches a soft-deleted check is stale; it touches nothing and says nothing.
+  if (await isSoftDeleted(client, id)) return null;
   throw new NotFoundError(ENTITY, id);
+}
+
+/** D-77: whether the caller's own row exists and is soft-deleted (RLS scopes the read; no deleted_at filter here). */
+async function isSoftDeleted(client: DbClient, id: string): Promise<boolean> {
+  const { data, error, status } = await client
+    .from('decide_checks')
+    .select('id, status, deleted_at')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw toDbError(error, status);
+  const row = data as { deleted_at: string | null } | null;
+  return row !== null && row.deleted_at !== null;
 }
 
 export async function updateDecideCheck(

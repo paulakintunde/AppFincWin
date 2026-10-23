@@ -53,7 +53,7 @@ export interface EditChangeVars {
   patch: DecideChangePatch;
   undo: {
     stepId: string;
-    labelKey: 'changeEdited' | 'changeRemoved';
+    labelKey: 'changeEdited' | 'changeRemoved' | 'changeDeleted';
     labelParams: UndoLabelParams;
     before: Readonly<Record<string, PatchValue>>;
   };
@@ -268,7 +268,7 @@ export function useRemoveChange(): { remove(row: DecideChangeRow): string } {
         cache: cacheOf(row),
         expectedVersion: row.version,
         patch: { deleted_at: new Date().toISOString() },
-        undo: { stepId, labelKey: 'changeRemoved', labelParams: labelParams(row.name), before: { deleted_at: null } },
+        undo: { stepId, labelKey: 'changeDeleted', labelParams: labelParams(row.name), before: { deleted_at: null } },
       });
       return stepId;
     },
