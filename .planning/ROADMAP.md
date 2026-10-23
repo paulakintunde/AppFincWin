@@ -741,11 +741,11 @@ Plans:
 - [x] 05-79-PLAN.md — Static text-fit guards (rules T, F, N, O) and fontScale-2 render guard; full gate (D-76)
 
 **Wave 20** *(device-walkthrough refinements; blocked on Wave 19 completion)*
-- [ ] 05-88-PLAN.md — R16 copy: 4 new and 2 updated ⓘ entries, the M6 instalment table, card, tax and tuition notes, sync line strings (D-85..D-93)
-- [ ] 05-89-PLAN.md — Engine E3a: amortise and amortiseDue take periods per year (D-89)
-- [ ] 05-90-PLAN.md — Engine E4: impliedApr true-APR solver, bigint bisection (D-90)
+- [x] 05-88-PLAN.md — R16 copy: 4 new and 2 updated ⓘ entries, the M6 instalment table, card, tax and tuition notes, sync line strings (D-85..D-93)
+- [x] 05-89-PLAN.md — Engine E3a: amortise and amortiseDue take periods per year (D-89)
+- [x] 05-90-PLAN.md — Engine E4: impliedApr true-APR solver, bigint bisection (D-90)
 - [ ] 05-96-PLAN.md — "$" always means USD: formatAmount markers, formatMoneyA11y, a11y labels (D-94)
-- [ ] 05-97-PLAN.md — FAB root cause: null-in-tabs surface rule and the sheet-stack watchdog (D-85)
+- [x] 05-97-PLAN.md — FAB root cause: null-in-tabs surface rule and the sheet-stack watchdog (D-85)
 - [x] 05-100-PLAN.md — Record entry: new lines default to the home currency (D-93)
 - [x] 05-107-PLAN.md — Sync transport: request timeouts, 12 s backoff cap, resume, Supabase reachability, post-restore refetch (D-88)
 
