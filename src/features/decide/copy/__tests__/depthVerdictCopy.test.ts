@@ -217,6 +217,13 @@ describe('marginText and the edge chip', () => {
     expect(edgeChipA11y('Fits', decisionOf({ margins: [tightMargin], verdict: { state: 'missing' } }), fmt, fmtDate).fact).toBeNull();
   });
 
+  it('a no verdict never shows the edge tag, even with a line on the edge; fits and adjust still do', () => {
+    const margins = [margin('dsr', 400, 'on_edge')];
+    expect(edgeOn(decisionOf({ margins, verdict: verdictWith({ state: 'no' }) }))).toBe(false);
+    expect(edgeOn(decisionOf({ margins, verdict: verdictWith({ state: 'adjust' }) }))).toBe(true);
+    expect(edgeOn(decisionOf({ margins, verdict: verdictWith({ state: 'fits' }) }))).toBe(true);
+  });
+
   it('IN-B07: with no line on the edge the tag is off and the label names no amount', () => {
     const d = decisionOf({ margins: [margin('month', 900)] });
     expect(edgeOn(d)).toBe(false);

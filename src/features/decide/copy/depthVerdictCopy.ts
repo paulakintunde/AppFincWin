@@ -129,9 +129,13 @@ export function marginText(margin: LineMargin, fmt: Fmt, tight: TightArgs | null
   return ref(margin.margin >= 0 ? `${D}edge.holdsBy` : `${D}edge.missesBy`, { amount });
 }
 
-/** True when any line of the decision sits on the edge (D-43). */
-export function edgeOn(decision: Pick<Decision, 'margins'>): boolean {
-  return decision.margins.some((m) => m.flag === 'on_edge');
+/**
+ * True when any line of the decision sits on the edge (D-43) and the verdict is not already a no. "On the edge" says a
+ * passing or adjustable plan has a thin margin; beside "Doesn't fit right now" it contradicts the verdict, so the tag is
+ * suppressed here, in the copy layer. The engine's margin flags are unchanged.
+ */
+export function edgeOn(decision: Pick<Decision, 'margins' | 'verdict'>): boolean {
+  return decision.verdict.state !== 'no' && decision.margins.some((m) => m.flag === 'on_edge');
 }
 
 export interface EdgeA11y {
