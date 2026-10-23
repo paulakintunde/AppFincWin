@@ -41,7 +41,7 @@ export function ChoiceCard({ selected, onPress, title, flag, accessibilityLabel,
       <View style={styles.head}>
         <Text style={{ ...textRole(pairing, 'sheetTitle'), color: textColor, flexShrink: 1 }}>{title}</Text>
         {flag ? (
-          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: flagColor }}>{flag}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: flagColor, flexShrink: 1 }}>{flag}</Text>
         ) : null}
       </View>
       {children}
@@ -57,5 +57,6 @@ const styles = StyleSheet.create({
     padding: space.cardPad,
     gap: space.gapSm,
   },
-  head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.gapMd },
+  // D-76 / R10: the flag chip wraps under the name instead of squeezing it; nothing is clipped.
+  head: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', columnGap: space.gapMd, rowGap: space.gapSm },
 });

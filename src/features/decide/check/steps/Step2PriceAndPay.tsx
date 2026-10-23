@@ -17,6 +17,8 @@ import { Text } from '@/ui/Text';
 import { isValidRateText } from '../../snapshot/checkInputs';
 import type { AdjustmentLine, CheckInputs, InputLine } from '../../snapshot/types';
 import { CheckRow } from '../../ui/CheckRow';
+import { useInfoSheet } from '../../ui/useInfoSheet';
+import { InfoTitle } from '../InfoTitle';
 import { LineEditorSheet, type LineEditorValue } from '../LineEditorSheet';
 import { runningPromptCopy } from '../../copy/depthInputsCopy';
 import { refText } from '../refText';
@@ -52,11 +54,29 @@ function lineAmount(line: AdjustmentLine, advertised: number | null): number {
   return line.amount;
 }
 
+/** A read-only "{name} ends" row; its replaces ⓘ sits outside the locked row so it stays reachable. */
+function EndsRow({ amount, confirmed, removeLabel, ends }: { amount: string; confirmed: string; removeLabel: string; ends: string }) {
+  const info = useInfoSheet('replaces');
+  return (
+    <View style={styles.endsRow}>
+      <View style={styles.endsMain}>
+        <Lock locked>
+          <CheckRow checked disabled onToggle={() => undefined} name={ends} source={confirmed} amount={amount} removeA11yLabel={removeLabel} />
+        </Lock>
+      </View>
+      {info.button()}
+      {info.sheet}
+    </View>
+  );
+}
+
 export function Step2PriceAndPay(props: Step2Props) {
   const { inputs, update, computation, source, whole, exact, goToStep, readOnly } = props;
   const t = useT();
   const { colors, pairing } = useTheme();
   const bias = useEstimateBias();
+  const runningInfo = useInfoSheet('runningCosts');
+  const netInfo = useInfoSheet('netMonthly');
   const [editor, setEditor] = useState<'adjust' | 'running' | null>(null);
   const latest = useRef(inputs);
   useEffect(() => {
@@ -168,7 +188,9 @@ export function Step2PriceAndPay(props: Step2Props) {
       <Lock locked={readOnly}>
         <Card>
           <View style={styles.head}>
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, flexShrink: 1 }}>{invest ? t('decide.costs.headInvest') : t('decide.costs.head')}</Text>
+            <InfoTitle info={runningInfo} lineHeight={textRole(pairing, 'label').lineHeight}>
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{invest ? t('decide.costs.headInvest') : t('decide.costs.head')}</Text>
+            </InfoTitle>
             <Meta>{t('decide.costs.aMonth')}</Meta>
           </View>
           <Meta>{invest ? t('decide.costs.bodyInvest') : t('decide.costs.body')}</Meta>
@@ -192,17 +214,13 @@ export function Step2PriceAndPay(props: Step2Props) {
           {invest
             ? null
             : countedReplaces.map((l) => (
-                <Lock key={`ends-${l.id}`} locked>
-                  <CheckRow
-                    checked
-                    disabled
-                    onToggle={() => undefined}
-                    name={t('decide.costs.ends', { name: l.name })}
-                    source={t('decide.costs.confirmed')}
-                    amount={`−${exactFmt(l.amount)}`}
-                    removeA11yLabel={t('decide.lineEditor.removeA11y', { name: l.name })}
-                  />
-                </Lock>
+                <EndsRow
+                  key={`ends-${l.id}`}
+                  ends={t('decide.costs.ends', { name: l.name })}
+                  confirmed={t('decide.costs.confirmed')}
+                  amount={`−${exactFmt(l.amount)}`}
+                  removeLabel={t('decide.lineEditor.removeA11y', { name: l.name })}
+                />
               ))}
           <Pill
             label={invest ? t('decide.costs.addFee') : t('decide.costs.add')}
@@ -212,7 +230,9 @@ export function Step2PriceAndPay(props: Step2Props) {
           />
           <View style={[styles.final, { borderTopColor: colors.line1 }]}>
             <View style={styles.finalText}>
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{t('decide.costs.net')}</Text>
+              <InfoTitle info={netInfo} lineHeight={textRole(pairing, 'label').lineHeight}>
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{t('decide.costs.net')}</Text>
+              </InfoTitle>
               <Meta>{t('decide.costs.math', { gross: exactFmt(running?.gross ?? 0), replaced: exactFmt(running?.replaced ?? 0) })}</Meta>
             </View>
             <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{exactFmt(running?.net ?? 0)}</Text>
@@ -247,4 +267,6 @@ const styles = StyleSheet.create({
   link: { minHeight: space.touchMin, justifyContent: 'center' },
   final: { borderTopWidth: 1.5, paddingTop: space.gapMd, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.gapMd },
   finalText: { flexShrink: 1 },
+  endsRow: { flexDirection: 'row', alignItems: 'center' },
+  endsMain: { flex: 1 },
 });

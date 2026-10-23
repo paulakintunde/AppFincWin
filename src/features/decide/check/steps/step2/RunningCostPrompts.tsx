@@ -20,6 +20,8 @@ import { CheckRow } from '../../../ui/CheckRow';
 import { MoneyInput } from '../../../ui/MoneyInput';
 import { RateInput } from '../../../ui/RateInput';
 import { SegmentedToggle } from '../../../ui/SegmentedToggle';
+import { useInfoSheet } from '../../../ui/useInfoSheet';
+import { InfoTitle } from '../../InfoTitle';
 import { refText } from '../../refText';
 import { Meta, moneyFn } from '../stepUi';
 import type { Step2Props } from './types';
@@ -28,6 +30,7 @@ type Translate = Parameters<typeof refText>[0];
 type Props = Pick<Step2Props, 'inputs' | 'update' | 'computation' | 'source' | 'whole' | 'exact' | 'readOnly'>;
 
 const HUNDRED = percent('100');
+const LOSS_MAX = '100';
 const LOSS: RunningCostCategory = 'loss_of_value';
 
 /** The cash categories shown as prompt rows (loss of value has its own row). */
@@ -128,6 +131,7 @@ function LossOfValueRow({ inputs, update, computation, source, whole, readOnly }
   }
   const copy = lossOfValueCopy(entry, computation.running?.nonCash ?? null, wholeFmt);
   const name = refText(t, runningPromptCopy(LOSS).label);
+  const info = useInfoSheet('lossOfValue');
 
   const switchMode = (key: string) => {
     const next = key === 'percent_per_year' ? 'percent_per_year' : 'amount';
@@ -149,7 +153,9 @@ function LossOfValueRow({ inputs, update, computation, source, whole, readOnly }
 
   return (
     <View style={styles.loss}>
-      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>{name}</Text>
+      <InfoTitle info={info} lineHeight={textRole(pairing, 'label').lineHeight}>
+        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>{name}</Text>
+      </InfoTitle>
       <Meta>{refText(t, copy.note)}</Meta>
       <SegmentedToggle
         options={copy.modes.map((m, i) => ({ key: i === 0 ? 'amount' : 'percent_per_year', label: refText(t, m) }))}
@@ -177,6 +183,8 @@ function LossOfValueRow({ inputs, update, computation, source, whole, readOnly }
           accessibilityLabel={t('decide.depth.running.lossPercentA11y')}
           placeholder={refText(t, copy.placeholder)}
           readOnly={readOnly}
+          max={LOSS_MAX}
+          rangeText={t('decide.custom.range.percent')}
         />
       )}
       {copy.about ? <Meta tone="muted">{refText(t, copy.about)}</Meta> : null}

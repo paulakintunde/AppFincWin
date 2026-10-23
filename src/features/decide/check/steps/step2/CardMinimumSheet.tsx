@@ -13,7 +13,6 @@ import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
-import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
 import { ToggleRow } from '@/ui/ToggleRow';
 import { useIsDirty } from '@/ui/useIsDirty';
@@ -22,11 +21,14 @@ import type { CardTermsValues } from '../../../copy/cardTermsCopy';
 import type { CardTermsView } from '../../../snapshot/types';
 import { MoneyInput } from '../../../ui/MoneyInput';
 import { RateInput } from '../../../ui/RateInput';
+import { useInfoSheet } from '../../../ui/useInfoSheet';
+import { InfoTitle } from '../../InfoTitle';
 import { refText, type Translate } from '../../refText';
 import { Meta, moneyFn } from '../stepUi';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 
 const CHEVRON = 8;
+const CANCEL_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 
 export interface CardMinimumRowProps {
   terms: CardTermsView;
@@ -39,6 +41,7 @@ export interface CardMinimumRowProps {
 export function CardMinimumRow({ terms, readOnly, onPress, whole }: CardMinimumRowProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
+  const info = useInfoSheet('cardMinimum');
   const fmt = (minor: number, currency: string): string => moneyFn(whole, currency as CurrencyCode)(minor);
   const summary = cardTermsSummary(terms, fmt);
   const value = refText(t as Translate, summary.value);
@@ -54,18 +57,24 @@ export function CardMinimumRow({ terms, readOnly, onPress, whole }: CardMinimumR
   );
   return (
     <View>
-      {readOnly ? (
-        <View accessible accessibilityLabel={`${label}, ${value}`}>{body}</View>
-      ) : (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${label}, ${value}`}
-          onPress={onPress}
-          style={({ pressed }) => ({ minHeight: space.touchMin, justifyContent: 'center', opacity: pressed ? PRESSED_OPACITY : 1 })}
-        >
-          {body}
-        </Pressable>
-      )}
+      <View style={styles.infoRow}>
+        <View style={styles.text}>
+          {readOnly ? (
+            <View accessible accessibilityLabel={`${label}, ${value}`}>{body}</View>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${label}, ${value}`}
+              onPress={onPress}
+              style={({ pressed }) => ({ minHeight: space.touchMin, justifyContent: 'center', opacity: pressed ? PRESSED_OPACITY : 1 })}
+            >
+              {body}
+            </Pressable>
+          )}
+        </View>
+        {info.button()}
+        {info.sheet}
+      </View>
       {summary.note === null ? null : <Meta tone="muted">{refText(t as Translate, summary.note)}</Meta>}
     </View>
   );
@@ -93,6 +102,8 @@ export function CardMinimumSheet(props: CardMinimumSheetProps) {
 function CardMinimumForm({ terms, onSave, onClose }: CardMinimumSheetProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
+  const info = useInfoSheet('cardMinimum');
+  const paidInfo = useInfoSheet('paidInFullMonthly');
   const [start] = useState<FormState>(() => ({
     percentText: terms.percentText ?? '',
     interestAdded: terms.interestAdded ?? false,
@@ -131,7 +142,20 @@ function CardMinimumForm({ terms, onSave, onClose }: CardMinimumSheetProps) {
 
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={title} dirty={dirty}>
-      <SheetHeader title={title} cancelLabel={t('decide.depth.cardMin.cancel')} onCancel={onClose} />
+      <View style={styles.header}>
+        <InfoTitle info={info} lineHeight={textRole(pairing, 'sheetTitle').lineHeight}>
+          <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{title}</Text>
+        </InfoTitle>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('decide.depth.cardMin.cancel')}
+          onPress={onClose}
+          style={styles.cancel}
+          hitSlop={CANCEL_HIT_SLOP}
+        >
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('decide.depth.cardMin.cancel')}</Text>
+        </Pressable>
+      </View>
       <SheetScroll contentContainerStyle={styles.column}>
         <RateInput
           value={form.percentText}
@@ -157,7 +181,13 @@ function CardMinimumForm({ terms, onSave, onClose }: CardMinimumSheetProps) {
           readOnly={off}
         />
         {error === 'floor' ? <Text style={{ ...textRole(pairing, 'label'), color: colors.danger }}>{t('money.amountInput.error.invalid')}</Text> : null}
-        <ToggleRow label={t('decide.depth.cardMin.paidInFull')} value={form.paidInFull} onChange={(paidInFull) => set({ paidInFull })} />
+        <View style={styles.infoRow}>
+          <View style={styles.text}>
+            <ToggleRow label={t('decide.depth.cardMin.paidInFull')} value={form.paidInFull} onChange={(paidInFull) => set({ paidInFull })} />
+          </View>
+          {paidInfo.button()}
+          {paidInfo.sheet}
+        </View>
         <Meta tone="muted">{t('decide.depth.cardMin.paidInFullSub')}</Meta>
         <Pill label={t('decide.depth.cardMin.save')} variant="primary" onPress={save} />
         {terms.source === 'stored' && terms.marketAvailable ? <Pill label={t('decide.depth.cardMin.useMarket')} variant="secondary" onPress={useMarket} /> : null}
@@ -170,5 +200,8 @@ const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapMd },
   row: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd },
   text: { flex: 1 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd, minHeight: space.touchMin },
+  cancel: { minHeight: space.touchMin, justifyContent: 'center' },
   chevron: { width: CHEVRON, height: CHEVRON, borderTopWidth: 2, borderRightWidth: 2, transform: [{ rotate: '45deg' }] },
 });
