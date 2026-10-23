@@ -16,7 +16,7 @@ import { optionCopy, type OptionAction } from '../../copy/optionCopy';
 import { repriceInputs } from '../../snapshot/checkInputs';
 import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { refText, type Translate } from '../refText';
-import { assessmentOf, moneyOf, type SectionProps } from './sectionUi';
+import { assessmentOf, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
 
 export interface OptionsSectionProps extends SectionProps {
   onOpenActivity: () => void;
@@ -31,15 +31,25 @@ const ACTION_LABEL = {
   switchWait: 'decide.section.optSwitchWait',
 } as const satisfies Record<OptionAction, string>;
 
-export function OptionsSection(props: OptionsSectionProps) {
-  const { computation, inputs, update, whole, exact, currency, expanded, onToggle, readOnly, onOpenActivity, onSwitchToWait, lineName } = props;
+export interface OptionsBodyProps extends SectionBodyProps {
+  onOpenActivity: () => void;
+  onSwitchToWait: () => void;
+  lineName: (lineId: string) => string;
+}
+
+/** True when the check has options to show (the verdict is not fits or missing). */
+function hasOptions(computation: SectionProps['computation']): boolean {
+  const verdict = computation.verdict;
+  return assessmentOf(computation) !== null && verdict !== null && verdict.state !== 'fits' && computation.options.length > 0;
+}
+
+export function OptionsBody(props: OptionsBodyProps) {
+  const { computation, inputs, update, whole, exact, currency, readOnly, onOpenActivity, onSwitchToWait, lineName } = props;
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
-  const verdict = computation.verdict;
   const a = assessmentOf(computation);
-  if (!a || verdict === null || verdict.state === 'fits') return null;
+  if (!a || !hasOptions(computation)) return null;
   const options = computation.options;
-  if (options.length === 0) return null;
   const fmt = moneyOf(whole, currency);
   const fmtCents = moneyOf(exact, currency);
   const check = computation.check;
@@ -68,57 +78,61 @@ export function OptionsSection(props: OptionsSectionProps) {
 
   return (
     <View style={[styles.card, { backgroundColor: colors.ink }]}>
-      <CollapsibleSection
-        dark
-        title={t('decide.section.optionsTitle')}
-        summary={t('decide.section.optionsSummary', { count: options.length })}
-        expanded={expanded}
-        onToggle={onToggle}
-      >
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkSoft1, paddingBottom: space.gapSm }}>{lead}</Text>
-        {options.map((o, i) => {
-          const copy = optionCopy(o, { fmt, fmtCents, lineName });
-          const name = refText(t, copy.name);
-          const value = copy.value ? refText(t, copy.value) : null;
-          const desc = copy.desc ? refText(t, copy.desc) : null;
-          const action = copy.action;
-          const pillHidden = action === null || readOnly || ((action === 'usePrice' || action === 'useTerm') && patchFor(o) === null);
-          return (
-            <View key={`${o.code}-${i}`} style={[styles.row, { borderTopColor: colors.inkSoft1 }]}>
-              <View
-                accessible
-                accessibilityLabel={[name, value, desc].filter(Boolean).join(', ')}
-                style={styles.text}
-              >
-                <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.surface }}>{name}</Text>
-                {desc ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkSoft1 }}>{desc}</Text> : null}
-              </View>
-              {value ? (
-                <Text scale="capped" style={{ ...textRole(pairing, 'label'), color: colors.surface, textAlign: 'right' }}>
-                  {value}
-                </Text>
-              ) : null}
-              {!pillHidden && action !== null ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t(ACTION_LABEL[action])}
-                  onPress={() => act(o, action)}
-                  style={({ pressed }) => [styles.pill, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
-                >
-                  <View style={[StyleSheet.absoluteFill, styles.pillFill, { backgroundColor: colors.surface }]} />
-                  <Text style={{ ...textRole(pairing, 'label'), color: colors.surface }}>{t(ACTION_LABEL[action])}</Text>
-                </Pressable>
-              ) : null}
+      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkSoft1, paddingBottom: space.gapSm }}>{lead}</Text>
+      {options.map((o, i) => {
+        const copy = optionCopy(o, { fmt, fmtCents, lineName });
+        const name = refText(t, copy.name);
+        const value = copy.value ? refText(t, copy.value) : null;
+        const desc = copy.desc ? refText(t, copy.desc) : null;
+        const action = copy.action;
+        const pillHidden = action === null || readOnly || ((action === 'usePrice' || action === 'useTerm') && patchFor(o) === null);
+        return (
+          <View key={`${o.code}-${i}`} style={[styles.row, { borderTopColor: colors.inkSoft1 }]}>
+            <View accessible accessibilityLabel={[name, value, desc].filter(Boolean).join(', ')} style={styles.text}>
+              <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.surface }}>{name}</Text>
+              {desc ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkSoft1 }}>{desc}</Text> : null}
             </View>
-          );
-        })}
-      </CollapsibleSection>
+            {value ? (
+              <Text scale="capped" style={{ ...textRole(pairing, 'label'), color: colors.surface, textAlign: 'right' }}>
+                {value}
+              </Text>
+            ) : null}
+            {!pillHidden && action !== null ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t(ACTION_LABEL[action])}
+                onPress={() => act(o, action)}
+                style={({ pressed }) => [styles.pill, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+              >
+                <View style={[StyleSheet.absoluteFill, styles.pillFill, { backgroundColor: colors.surface }]} />
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.surface }}>{t(ACTION_LABEL[action])}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        );
+      })}
     </View>
   );
 }
 
+export function OptionsSection(props: OptionsSectionProps) {
+  const { computation, expanded, onToggle } = props;
+  const t = useT();
+  if (!hasOptions(computation)) return null;
+  return (
+    <CollapsibleSection
+      title={t('decide.section.optionsTitle')}
+      summary={t('decide.section.optionsSummary', { count: computation.options.length })}
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      <OptionsBody {...props} />
+    </CollapsibleSection>
+  );
+}
+
 const styles = StyleSheet.create({
-  card: { borderRadius: radii.card, paddingHorizontal: space.cardPad, paddingBottom: space.gapSm },
+  card: { borderRadius: 16, paddingHorizontal: space.cardPad, paddingVertical: space.gapMd },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, paddingVertical: space.gapSm, borderTopWidth: StyleSheet.hairlineWidth },
   text: { flex: 1, flexShrink: 1 },
   pill: {

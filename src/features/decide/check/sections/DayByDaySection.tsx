@@ -5,7 +5,7 @@
  * Record's entry sheet on a money-in line. Exported for 05-30, which places it; renders nothing without a resolved verdict.
  */
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -17,15 +17,20 @@ import { CashPathChart } from '../../charts/CashPathChart';
 import { cashPathCopy, cashTightFactCopy } from '../../copy/depthVerdictCopy';
 import type { StackSelection } from '../../snapshot/types';
 import { refText, type Translate } from '../refText';
-import { Note, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
+import { Note, assessmentOf, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
 
 export interface DayByDaySectionProps extends SectionProps {
   stack: StackSelection;
   formatDate: (localDate: string) => string;
 }
 
-export function DayByDaySection(props: DayByDaySectionProps) {
-  const { computation, whole, currency, expanded, onToggle, formatDate } = props;
+export interface DayByDayBodyProps extends SectionBodyProps {
+  stack: StackSelection;
+  formatDate: (localDate: string) => string;
+}
+
+export function DayByDayBody(props: DayByDayBodyProps) {
+  const { computation, whole, currency, formatDate } = props;
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
   const a = assessmentOf(computation);
@@ -35,18 +40,20 @@ export function DayByDaySection(props: DayByDaySectionProps) {
   const copy = cashPathCopy(report, fmt, formatDate);
 
   if (!copy.available) {
+    // D-74: declarative body and a link to where a recurring series is made
+    const link = t('decide.fold.cashPath.recurringLink');
     return (
-      <CollapsibleSection title={t('decide.depth.cashPath.section')} summary={refText(t, copy.summary)} expanded={expanded} onToggle={onToggle}>
-        <Note>{refText(t, copy.body)}</Note>
+      <View>
+        <Note>{t('decide.fold.cashPath.unavailableBody')}</Note>
         <Pressable
           accessibilityRole="link"
-          accessibilityLabel={refText(t, copy.link)}
+          accessibilityLabel={link}
           onPress={() => openEntry({ kind: 'new', direction: 'in' })}
           style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
         >
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{refText(t, copy.link)}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.accent, flexShrink: 1 }}>{link}</Text>
         </Pressable>
-      </CollapsibleSection>
+      </View>
     );
   }
 
@@ -54,18 +61,25 @@ export function DayByDaySection(props: DayByDaySectionProps) {
   const tight = report.status === 'available' ? report.tightBeforePayday : null;
   const factRef = cashTightFactCopy(tight, stackedApplied, fmt, formatDate);
   return (
-    <CollapsibleSection title={t('decide.depth.cashPath.section')} summary={refText(t, copy.summary)} expanded={expanded} onToggle={onToggle}>
-      <CashPathChart
-        report={report}
-        reserve={a.context.limits.reserve}
-        whole={{ formatMoney: (n) => fmt(n) }}
-        formatDate={formatDate}
-      />
+    <View>
+      <CashPathChart report={report} reserve={a.context.limits.reserve} whole={{ formatMoney: (n) => fmt(n) }} formatDate={formatDate} />
       {factRef ? (
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted, paddingTop: space.gapSm }}>
-          {refText(t, factRef)}
-        </Text>
+        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted, paddingTop: space.gapSm }}>{refText(t, factRef)}</Text>
       ) : null}
+    </View>
+  );
+}
+
+export function DayByDaySection(props: DayByDaySectionProps) {
+  const { computation, whole, currency, expanded, onToggle, formatDate } = props;
+  const t = useT() as Translate;
+  const a = assessmentOf(computation);
+  if (!a) return null;
+  const copy = cashPathCopy(a.cashPath, moneyOf(whole, currency), formatDate);
+  const summary = copy.available ? refText(t, copy.summary) : t('decide.fold.cashPath.unavailablePreview');
+  return (
+    <CollapsibleSection title={t('decide.depth.cashPath.section')} summary={summary} expanded={expanded} onToggle={onToggle}>
+      <DayByDayBody {...props} />
     </CollapsibleSection>
   );
 }

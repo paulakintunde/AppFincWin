@@ -90,9 +90,9 @@ describe('DayByDaySection', () => {
   it('with no pay series asks for one and opens Record on a money-in line', async () => {
     const p = sectionProps(loggedSource());
     await wrap(<DayByDaySection {...dayProps(p)} />);
-    expect(screen.getAllByText('Add your pay as a recurring series').length).toBeGreaterThan(0);
-    expect(screen.getByText('Add your pay as a recurring series to see day-by-day cash.')).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('Add a recurring series'));
+    expect(screen.getAllByText('No recurring pay series yet').length).toBeGreaterThan(0);
+    expect(screen.getByText('Day-by-day cash needs your pay as a recurring series.')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Recurring series in Record'));
     expect(openEntry).toHaveBeenCalledWith({ kind: 'new', direction: 'in' });
   });
 
