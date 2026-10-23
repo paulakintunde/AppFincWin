@@ -758,7 +758,7 @@ Plans:
 **Wave 22** *(blocked on Wave 21 completion)*
 - [x] 05-92-PLAN.md — Engine E3c: cash path real dates by frequency; payback and investing views by monthly equivalent (D-89)
 - [x] 05-93-PLAN.md — Engine E5a: property, cash-like, tuition; region-aware card rules; phrase suggestions; new prompts (D-92)
-- [ ] 05-102-PLAN.md — Instalment copy table (frequency x rate x timing) and the true APR on the settled path (D-89, D-90)
+- [x] 05-102-PLAN.md — Instalment copy table (frequency x rate x timing) and the true APR on the settled path (D-89, D-90)
 - [x] 05-105-PLAN.md — Speed, data: one snapshot per source; autosave keeps other rows stable (D-88)
 
 **Wave 23** *(blocked on Wave 22 completion)*
@@ -930,7 +930,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 86/118 | Executing (R16 refinements and R17 home redesign planned 2026-10-23) | - |
+| 5. Decide UI | 101/118 | Executing (R16 refinements and R17 home redesign planned 2026-10-23) | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |
