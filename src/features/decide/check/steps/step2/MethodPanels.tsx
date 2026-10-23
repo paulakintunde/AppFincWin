@@ -6,8 +6,8 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { ZERO_PERCENT, cardEligibility, percent, resolvePlan } from '@/engine/decide';
-import type { Plan } from '@/engine/decide';
+import { MAX_INSTALMENTS, ZERO_PERCENT, cardEligibility, percent, resolvePlan } from '@/engine/decide';
+import type { InstalmentFreq, Plan } from '@/engine/decide';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
@@ -40,6 +40,8 @@ import { refText, type Translate as RefTranslate } from '../../refText';
 const TERM_CHIPS = [12, 24, 36, 48, 60, 84] as const;
 const MAX_TERM = 120; // D-71: the UI bound; the snapshot parser keeps 600 so a stored longer term still reads
 const MIN_TERM = 1;
+const INSTALMENT_FREQS = ['weekly', 'fortnightly', 'monthly', 'quarterly'] as const satisfies readonly InstalmentFreq[];
+const IMPLIED_APR_NOTES: readonly string[] = ['decide.pay.instRateAbout', 'decide.pay.instRateAbove', 'decide.pay.instRateZero'];
 const CARD_RATE_SAVE_MS = 800;
 const DEPOSIT_STEP = 10_000; // 100 whole units, in minor units
 const MAX_APR_TYPED = '999.99'; // gates keystrokes only; the stored value stays text (isValidAprText is the check)
@@ -263,9 +265,12 @@ function InstalmentPanel(props: Step2Props) {
   const hasRateInfo = useInfoSheet('hasRate');
   const aprInfo = useInfoSheet('apr');
   const firstInfo = useInfoSheet('firstPayment');
+  const freqInfo = useInfoSheet('instalmentFrequency');
+  const impliedInfo = useInfoSheet('impliedApr');
   const wholeFmt = moneyFn(whole, source.currency);
   const exactFmt = moneyFn(exact, source.currency);
   const inst = inputs.instalment;
+  const freq: InstalmentFreq = inst.freq ?? 'monthly';
   const hasRate = inst.hasRate === true;
   const result = computation.methodPlans.instalment;
   const plan = result?.status === 'resolved' ? result.plan : null;
@@ -281,8 +286,8 @@ function InstalmentPanel(props: Step2Props) {
       <CustomValueField
         value={inst.count}
         min={MIN_TERM}
-        max={MAX_TERM}
-        rangeText={t('decide.custom.range.count')}
+        max={MAX_INSTALMENTS}
+        rangeText={t('decide.pay.instalmentCountRange')}
         unitWord={t('decide.pay.instalmentCountUnit')}
         groupLabel={t('decide.pay.instalmentCount')}
         onChange={(n) => setInst({ count: n })}
@@ -292,6 +297,15 @@ function InstalmentPanel(props: Step2Props) {
 
   return (
     <View style={styles.panel}>
+      <InfoTitle info={freqInfo} lineHeight={labelLine}>
+        <Label>{t('decide.pay.freq.label')}</Label>
+      </InfoTitle>
+      <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.pay.freq.label')} style={styles.chips}>
+        {INSTALMENT_FREQS.map((f) => (
+          <Chip key={f} label={t(`decide.pay.freq.${f}`)} selected={freq === f} onPress={() => setInst({ freq: f })} />
+        ))}
+      </View>
+
       <InfoTitle info={hasRateInfo} lineHeight={labelLine}>
         <Label>{t('decide.pay.instalmentHasRate')}</Label>
       </InfoTitle>
@@ -348,10 +362,10 @@ function InstalmentPanel(props: Step2Props) {
       <SegmentedToggle
         options={[
           { key: 'today', label: t('decide.pay.instalmentToday') },
-          { key: 'next_month', label: t('decide.pay.instalmentInMonth') },
+          { key: 'next_period', label: t(`decide.pay.firstPayment.${freq}`) },
         ]}
-        value={inst.firstPayment ?? 'today'}
-        onChange={(key) => setInst({ firstPayment: key === 'next_month' ? 'next_month' : 'today' })}
+        value={(inst.firstPayment ?? 'today') === 'today' ? 'today' : 'next_period'} // a stored next_month is the same choice (D-89)
+        onChange={(key) => setInst({ firstPayment: key === 'next_period' ? 'next_period' : 'today' })}
         accessibilityLabel={t('decide.pay.instalmentFirst')}
       />
 
@@ -365,11 +379,21 @@ function InstalmentPanel(props: Step2Props) {
       />
       <OutputsTile>
         <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
-        {notes.map((note) => (
-          <Meta key={note.key} tone="muted">
-            {refText(t as RefTranslate, note)}
-          </Meta>
-        ))}
+        {notes.map((note) => {
+          const line = (
+            <Meta key={note.key} tone="muted">
+              {refText(t as RefTranslate, note)}
+            </Meta>
+          );
+          // D-90: the worked-out rate is not a quoted one, so its clause carries the ⓘ that says so
+          return IMPLIED_APR_NOTES.includes(note.key) ? (
+            <InfoTitle key={note.key} info={impliedInfo} lineHeight={labelLine}>
+              {line}
+            </InfoTitle>
+          ) : (
+            line
+          );
+        })}
       </OutputsTile>
     </View>
   );

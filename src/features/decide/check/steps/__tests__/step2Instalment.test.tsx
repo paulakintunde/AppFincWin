@@ -49,6 +49,7 @@ async function mount(initial: CheckInputs) {
 }
 
 const radio = (name: string) => screen.getByRole('radio', { name });
+const chip = (name: string) => screen.getByLabelText(name); // a Chip is a button with a selected state
 
 describe('InstalmentPanel (D-80)', () => {
   it('D-80 Has a rate? defaults to No with today’s fields', async () => {
@@ -102,10 +103,57 @@ describe('InstalmentPanel (D-80)', () => {
     expect(screen.getByText(/^No rate was quoted: about [\d.]+% a year, worked out from the figures you typed\.$/)).toBeTruthy();
   });
 
+  it('D-89 How often defaults to Monthly and sets freq', async () => {
+    await mount(instalment());
+    expect(screen.getByLabelText('How often')).toBeTruthy();
+    expect(chip('Monthly').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByLabelText('About How often')).toBeTruthy();
+    for (const [label, freq] of [['Weekly', 'weekly'], ['Every 2 weeks', 'fortnightly'], ['Quarterly', 'quarterly'], ['Monthly', 'monthly']] as const) {
+      await fireEvent.press(chip(label));
+      expect(store.current.instalment.freq).toBe(freq);
+      expect(chip(label).props.accessibilityState.selected).toBe(true);
+    }
+  });
+
+  it('D-89 How many runs to 500', async () => {
+    await mount(instalment({ amount: 1_000, count: 600 }));
+    expect(screen.getByText('1 to 500')).toBeTruthy(); // a stored 600 shows with the range line, scored as stored
+    const field = screen.getByLabelText('How many, custom, payments');
+    await fireEvent.changeText(field, '501');
+    expect(store.current.instalment.count).toBe(600);
+    await fireEvent.changeText(field, '500');
+    expect(store.current.instalment.count).toBe(500);
+  });
+
+  it('D-89 the first-payment label follows the frequency', async () => {
+    await mount(instalment({ hasRate: true, aprText: '12', count: 12 }));
+    expect(screen.getByLabelText('In a month')).toBeTruthy();
+    for (const [freq, label] of [['weekly', 'In a week'], ['fortnightly', 'In 2 weeks'], ['quarterly', 'In 3 months'], ['monthly', 'In a month']] as const) {
+      await fireEvent.press(chip({ weekly: 'Weekly', fortnightly: 'Every 2 weeks', quarterly: 'Quarterly', monthly: 'Monthly' }[freq]));
+      await fireEvent.press(radio(label));
+      expect(store.current.instalment.firstPayment).toBe('next_period');
+      expect(radio('Today').props.accessibilityState.checked).toBe(false);
+    }
+    await fireEvent.press(radio('Today'));
+    expect(store.current.instalment.firstPayment).toBe('today');
+  });
+
+  it('D-89 the difference note follows the frequency', async () => {
+    await mount(instalment({ hasRate: true, aprText: '12', count: 12, amount: 14_000, freq: 'weekly' }));
+    expect(screen.getByText(/^The rate works out to \$[\d.,]+ a week; the quote is \$140\.00\.$/)).toBeTruthy();
+    expect(screen.queryByText(/ a month; the quote is/)).toBeNull();
+  });
+
+  it('D-90 the true APR note carries its ⓘ', async () => {
+    await mount(instalment({ amount: 14_000, count: 12 }));
+    expect(screen.getByText(/^No rate was quoted: about [\d.]+% a year/)).toBeTruthy();
+    expect(screen.getByLabelText('About Rate worked out from the figures')).toBeTruthy();
+  });
+
   it('D-80 first payment In a month changes the note', async () => {
     await mount(instalment({ hasRate: true, aprText: '12', count: 12 }));
     await fireEvent.press(radio('In a month'));
-    expect(store.current.instalment.firstPayment).toBe('next_month');
+    expect(store.current.instalment.firstPayment).toBe('next_period');
     expect(screen.getByText(/the first in a month\. Interest over the plan is/)).toBeTruthy();
     await fireEvent.press(radio('Today'));
     expect(store.current.instalment.firstPayment).toBe('today');

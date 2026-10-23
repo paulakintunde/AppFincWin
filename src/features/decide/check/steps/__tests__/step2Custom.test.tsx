@@ -14,7 +14,7 @@ jest.mock('../../useEstimateBias', () => ({ useEstimateBias: () => ({ running: n
 const source = loggedSource();
 const NBSP = ' ';
 const RANGE_MONTHS = '1 to 120 months';
-const RANGE_COUNT = '1 to 120';
+const RANGE_COUNT = '1 to 500'; // D-89: an instalment runs to 500 payments
 const RANGE_APR = '0 to 999.99% a year';
 const TERM_FIELD = 'Term, custom, months';
 const COUNT_FIELD = 'How many, custom, payments';
@@ -71,15 +71,15 @@ describe('Step 2 custom values (05-67)', () => {
     expect(onUpdate).not.toHaveBeenCalled();
   });
 
-  it('D-71 the instalment count refuses 121', async () => {
+  it('D-71 the instalment count refuses 501', async () => {
     const onUpdate = jest.fn();
     await wrap(<Harness initial={buy({ method: 'instalment' })} onUpdate={onUpdate} />);
     const field = screen.getByLabelText(COUNT_FIELD);
-    await fireEvent.changeText(field, '121');
+    await fireEvent.changeText(field, '501');
     expect(onUpdate).not.toHaveBeenCalled();
     expect(screen.getByText(RANGE_COUNT)).toBeTruthy();
-    await fireEvent.changeText(field, '120');
-    expect(onUpdate.mock.calls.at(-1)?.[0].instalment.count).toBe(120);
+    await fireEvent.changeText(field, '500');
+    expect(onUpdate.mock.calls.at(-1)?.[0].instalment.count).toBe(500);
   });
 
   it('D-71 the card months stepper stops at 120 and its figure opens the field', async () => {
