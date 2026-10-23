@@ -1888,7 +1888,7 @@ const en = {
         needs: 'Needs: {{fields}}',
         field: { price: 'price', rate: 'rate', months: 'months', payment: 'payment', howMany: 'how many', cardRate: 'card rate', minimumTerms: 'minimum terms', dealerCap: 'dealer cap', amount: 'amount' },
         comesTo: 'What it comes to', selected: 'Selected', notSelected: 'Not selected',
-        hint: 'Selects this way to pay and shows its details', hintReadOnly: 'Shows its details',
+        a11yNeeds: 'needs {{fields}}', hint: 'Selects this way to pay and shows its details', hintReadOnly: 'Shows its details',
         announce: '{{method}} selected. Details shown.',
       },
       summaryDay: '{{price}} on the day · leaves {{cash}}',
@@ -1899,6 +1899,9 @@ const en = {
       summaryCardMonths_one: '{{card}} · over 1 month', summaryCardMonths_other: '{{card}} · over {{count}} months',
       summaryLump: '{{amount}} once', summaryLumpRate: '{{amount}} once · {{rate}}% a year',
       summaryContribution_one: '{{amount}} a month · 1 month', summaryContribution_other: '{{amount}} a month · {{count}} months',
+      // 05-84: the pieces of a folded summary, used when a part is missing (R15.2 "a missing part is left out")
+      summaryDown: '{{deposit}} down', summaryMonths_one: '1 month', summaryMonths_other: '{{count}} months', summaryApr: '{{apr}}%',
+      summaryTimes: '{{count}} × {{payment}}',
       instalmentHasRate: 'Has a rate?', instalmentNo: 'No', instalmentYes: 'Yes', instalmentQuoted: 'Payment as quoted (optional)',
       instalmentRateNote_one: '1 payment of {{payment}} at {{apr}}%, on the day. Interest over the plan is {{interest}}.',
       instalmentRateNote_other: '{{count}} payments of {{payment}} at {{apr}}%, the first on the day. Interest over the plan is {{interest}}.',
