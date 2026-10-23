@@ -687,58 +687,58 @@ Plans:
 - [x] 05-25-PLAN.md — Full local gate and [BLOCKING] human-gated production push (npm run supabase:db:push)
 
 **Wave 10** *(Decide UX refresh; blocked on Wave 9 completion)*
-- [ ] 05-54-PLAN.md — Refresh copy catalogue: 31 ⓘ entries (INFO_TERMS), folds, custom values, Clear/Delete, save status, plural keys, undo vocabulary (D-70..D-78)
-- [ ] 05-55-PLAN.md — Text fit foundation: app-wide no-hyphenation Text, shouldStack, LabelValueRow, Seg radio list, one-line figures (D-76)
+- [x] 05-54-PLAN.md — Refresh copy catalogue: 31 ⓘ entries (INFO_TERMS), folds, custom values, Clear/Delete, save status, plural keys, undo vocabulary (D-70..D-78)
+- [x] 05-55-PLAN.md — Text fit foundation: app-wide no-hyphenation Text, shouldStack, LabelValueRow, Seg radio list, one-line figures (D-76)
 - [x] 05-81-PLAN.md — Engine E1: instalment plan with an optional APR and a first-payment date, amortiseDue (D-80)
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 05-56-PLAN.md — Draft save never touches a deleted check (silent); Clear/Delete undo labels; queue order tests (D-73, D-77; no migration)
-- [ ] 05-57-PLAN.md — Draft contract: AppState flush, discard(), unthrottled persist on background, per-check save status (D-77)
-- [ ] 05-58-PLAN.md — InfoButton, InfoSheet, useInfoSheet, InfoLabel (D-70)
-- [ ] 05-59-PLAN.md — FoldRow, FoldList, DetailsToggle, reveal-tap and scroll-into-view contexts, CollapsibleSection restyle (D-74, D-75)
-- [ ] 05-60-PLAN.md — First-run fold hint: AsyncStorage store, hook, tile (D-75)
-- [ ] 05-61-PLAN.md — Custom values: pure bounds, Wait and cheaper maths, Custom chips and field, slider field, bounded RateInput (D-71, D-83)
-- [ ] 05-62-PLAN.md — Delete pattern: Dropdown glyph trigger, ConfirmSheet body, DeletableRow (D-73)
-- [ ] 05-80-PLAN.md — R15 copy: 24 new ⓘ entries, R15.9 strings, R15 plural keys (D-79..D-84)
-- [ ] 05-82-PLAN.md — Engine E2: exact cheaper price in the alternatives (D-83)
+- [x] 05-56-PLAN.md — Draft save never touches a deleted check (silent); Clear/Delete undo labels; queue order tests (D-73, D-77; no migration)
+- [x] 05-57-PLAN.md — Draft contract: AppState flush, discard(), unthrottled persist on background, per-check save status (D-77)
+- [x] 05-58-PLAN.md — InfoButton, InfoSheet, useInfoSheet, InfoLabel (D-70)
+- [x] 05-59-PLAN.md — FoldRow, FoldList, DetailsToggle, reveal-tap and scroll-into-view contexts, CollapsibleSection restyle (D-74, D-75)
+- [x] 05-60-PLAN.md — First-run fold hint: AsyncStorage store, hook, tile (D-75)
+- [x] 05-61-PLAN.md — Custom values: pure bounds, Wait and cheaper maths, Custom chips and field, slider field, bounded RateInput (D-71, D-83)
+- [x] 05-62-PLAN.md — Delete pattern: Dropdown glyph trigger, ConfirmSheet body, DeletableRow (D-73)
+- [x] 05-80-PLAN.md — R15 copy: 24 new ⓘ entries, R15.9 strings, R15 plural keys (D-79..D-84)
+- [x] 05-82-PLAN.md — Engine E2: exact cheaper price in the alternatives (D-83)
 
 **Wave 12** *(blocked on Wave 11 completion)*
-- [ ] 05-63-PLAN.md — Verdict card summary-first: state words, reason, three key figures, ⓘ, three focus stops (D-74)
-- [ ] 05-64-PLAN.md — What breaks fold (warning rows, Every line) and the fold previews incl. investment fold 7 (D-74, D-82)
-- [ ] 05-67-PLAN.md — Step 2 method panels: Custom 1-120 terms, deposit slider field, bounded rates, credit-term ⓘ (D-71, D-70)
-- [ ] 05-68-PLAN.md — Steps 1-2 price card ⓘ, stacking chips, ChoiceCard wrap, bounded loss of value (D-70, D-76)
-- [ ] 05-70-PLAN.md — Step 5: Wait period chips and typed amount, WrittenList (D-71, D-76)
-- [ ] 05-71-PLAN.md — Decide home trimmed: order, add-change row, Check an investment, Past decisions row, Lines fold (D-72, D-78)
-- [ ] 05-72-PLAN.md — Open checks and Changes coming up: hidden when empty, swipe/⋯ Delete with confirm and Undo (D-72, D-73)
-- [ ] 05-73-PLAN.md — Past decisions: Delete with per-outcome confirm, detail sheet reveal and stacking (D-73)
-- [ ] 05-83-PLAN.md — R15 inputs and snapshot: instalment rate fields, exact cheaper price, custom item type, expected return projection (D-80..D-83)
+- [x] 05-63-PLAN.md — Verdict card summary-first: state words, reason, three key figures, ⓘ, three focus stops (D-74)
+- [x] 05-64-PLAN.md — What breaks fold (warning rows, Every line) and the fold previews incl. investment fold 7 (D-74, D-82)
+- [x] 05-67-PLAN.md — Step 2 method panels: Custom 1-120 terms, deposit slider field, bounded rates, credit-term ⓘ (D-71, D-70)
+- [x] 05-68-PLAN.md — Steps 1-2 price card ⓘ, stacking chips, ChoiceCard wrap, bounded loss of value (D-70, D-76)
+- [x] 05-70-PLAN.md — Step 5: Wait period chips and typed amount, WrittenList (D-71, D-76)
+- [x] 05-71-PLAN.md — Decide home trimmed: order, add-change row, Check an investment, Past decisions row, Lines fold (D-72, D-78)
+- [x] 05-72-PLAN.md — Open checks and Changes coming up: hidden when empty, swipe/⋯ Delete with confirm and Undo (D-72, D-73)
+- [x] 05-73-PLAN.md — Past decisions: Delete with per-outcome confirm, detail sheet reveal and stacking (D-73)
+- [x] 05-83-PLAN.md — R15 inputs and snapshot: instalment rate fields, exact cheaper price, custom item type, expected return projection (D-80..D-83)
 
 **Wave 13** *(blocked on Wave 12 completion)*
-- [ ] 05-65-PLAN.md — Fold bodies: month, Where it lands (stacked rows), Assumptions (D-74, D-76)
-- [ ] 05-69-PLAN.md — Step 4: exact cheaper price field, Kept ⓘ, no clamps; investing body with Custom horizon (D-83, D-74)
-- [ ] 05-76-PLAN.md — Quick check trimmed: pill-only idle card, Custom duration 1-120, bounded APR and tax, Clear text button (D-78, D-71)
-- [ ] 05-84-PLAN.md — Step 2 accordion of method cards and the rebuilt Price card (D-79, D-84)
+- [x] 05-65-PLAN.md — Fold bodies: month, Where it lands (stacked rows), Assumptions (D-74, D-76)
+- [x] 05-69-PLAN.md — Step 4: exact cheaper price field, Kept ⓘ, no clamps; investing body with Custom horizon (D-83, D-74)
+- [x] 05-76-PLAN.md — Quick check trimmed: pill-only idle card, Custom duration 1-120, bounded APR and tax, Clear text button (D-78, D-71)
+- [x] 05-84-PLAN.md — Step 2 accordion of method cards and the rebuilt Price card (D-79, D-84)
 
 **Wave 14** *(blocked on Wave 13 completion)*
-- [ ] 05-66-PLAN.md — Fold bodies: cash path, setbacks, options, expected income, who pays (D-74)
-- [ ] 05-85-PLAN.md — Instalment card: Has a rate?, APR, first payment, quote note; written lines follow the schedule (D-80)
-- [ ] 05-86-PLAN.md — Custom item type with Treat like; name in Assumptions and the decision detail (D-81)
+- [x] 05-66-PLAN.md — Fold bodies: cash path, setbacks, options, expected income, who pays (D-74)
+- [x] 05-85-PLAN.md — Instalment card: Has a rate?, APR, first payment, quote note; written lines follow the schedule (D-80)
+- [x] 05-86-PLAN.md — Custom item type with Treat like; name in Assumptions and the decision detail (D-81)
 
 **Wave 15** *(blocked on Wave 14 completion)*
-- [ ] 05-74-PLAN.md — Step 3 composition: FoldList, default open fold, scroll-on-open, hint, investment fold 7; investing moves from step 4 (D-74, D-75, D-82)
+- [x] 05-74-PLAN.md — Step 3 composition: FoldList, default open fold, scroll-on-open, hint, investment fold 7; investing moves from step 4 (D-74, D-75, D-82)
 
 **Wave 16** *(blocked on Wave 15 completion)*
-- [ ] 05-75-PLAN.md — Check header: Clear with Undo route-back, save status, wrapping title; Go ahead confirm as a list (D-73, D-77)
-- [ ] 05-87-PLAN.md — Expected return on investment checks: step 2 field and horizon, verdict line, Assumptions row (D-82)
+- [x] 05-75-PLAN.md — Check header: Clear with Undo route-back, save status, wrapping title; Go ahead confirm as a list (D-73, D-77)
+- [x] 05-87-PLAN.md — Expected return on investment checks: step 2 field and horizon, verdict line, Assumptions row (D-82)
 
 **Wave 17** *(blocked on Wave 16 completion)*
-- [ ] 05-77-PLAN.md — Retire replaced copy; rules U and E, plural keys and caps tests (D-76, DCU-09)
+- [x] 05-77-PLAN.md — Retire replaced copy; rules U and E, plural keys and caps tests (D-76, DCU-09)
 
 **Wave 18** *(blocked on Wave 17 completion)*
-- [ ] 05-78-PLAN.md — Delete the transitional step 3 section wrappers (D-74)
+- [x] 05-78-PLAN.md — Delete the transitional step 3 section wrappers (D-74)
 
 **Wave 19** *(blocked on Wave 18 completion)*
-- [ ] 05-79-PLAN.md — Static text-fit guards (rules T, F, N, O) and fontScale-2 render guard; full gate (D-76)
+- [x] 05-79-PLAN.md — Static text-fit guards (rules T, F, N, O) and fontScale-2 render guard; full gate (D-76)
 
 **Wave 20** *(blocked on Wave 19 completion)*
 - [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots at 402x874 (R8 frames), 60 s first read, reminders, haptics, back, and the refresh text-fit/TalkBack checklist
