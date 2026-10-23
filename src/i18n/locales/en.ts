@@ -114,6 +114,13 @@ const en = {
       importCsv: 'Import statement',
       history: 'History',
     },
+    // 05-88 (D-85, R16.1): the always-reachable Add group on the You screen
+    add: {
+      section: 'Add',
+      expense: 'Add expense', income: 'Add income', transfer: 'Transfer', importStatement: 'Import statement', newCheck: 'New check',
+      expenseHint: 'Opens the entry sheet', incomeHint: 'Opens the entry sheet', transferHint: 'Opens the transfer sheet',
+      importStatementHint: 'Opens statement import', newCheckHint: 'Starts a new affordability check',
+    },
     accent: {
       label: 'Accent',
       green: 'Green',
@@ -239,6 +246,12 @@ const en = {
     conflict_one: '{{count}} edit couldn’t save — changed elsewhere',
     conflict_other: '{{count}} edits couldn’t save — changed elsewhere',
     pendingRow: 'queued',
+    // 05-88 (D-88, R16.4): the status line says "waiting" and "Saving…"; the "queued" keys above are retired in 05-109
+    saving: 'Saving…',
+    waiting_one: '{{count}}\u00A0change waiting',
+    waiting_other: '{{count}}\u00A0changes waiting',
+    offlineWaiting_one: 'offline · {{count}}\u00A0change waiting',
+    offlineWaiting_other: 'offline · {{count}}\u00A0changes waiting',
     checkNotSaved: 'This check didn’t save. Its draft is kept under Changes that couldn’t save.',
     failedSheet: {
       openHint: 'Opens the list of changes that did not save',
@@ -1757,6 +1770,7 @@ const en = {
     details: { show: 'Show details', hide: 'Hide details', showA11y: 'Show details, {{block}}', hideA11y: 'Hide details, {{block}}' },
     slider: { above: 'Above the slider’s range', below: 'Below the slider’s range' },
     fold: {
+      updating: 'Updating', // 05-88 (D-88, R16.4): a detail fold's preview while computeDetails is pending
       // 05-80 (R15.9): investment fold 7 with an expected return.
       investPreview_one: '{{fv}} after 1\u00A0month at {{rate}}%\u00A0a year', investPreview_other: '{{fv}} after {{count}}\u00A0months at {{rate}}%\u00A0a year',
       noReturn: { preview: 'No expected return set', body: 'No expected return set. One can be typed on the Amount and schedule step.', link: 'Amount and schedule' },
@@ -1772,7 +1786,7 @@ const en = {
         investWithRate_one: '{{fv}} after 1\u00A0month at {{rate}}%', investWithRate_other: '{{fv}} after {{count}}\u00A0months at {{rate}}%',
         income: '{{state}} with the expected {{amount}} a month', incomeFits: 'Fits', incomeAdjust: 'Needs adjustment', incomeNo: 'Does not fit',
         month: 'Left at month end: {{now}} now, {{after}} after',
-        setbacks_one: 'Runway 1\u00A0month, {{less}} less because of this', setbacks_other: 'Runway {{count}}\u00A0months, {{less}} less because of this', setbacksNone: 'Runway not limited',
+        setbacks_one: 'Runway 1\u00A0month, {{less}} less because of this', setbacks_other: 'Runway {{count}}\u00A0months, {{less}} less because of this', setbacksNone: 'Runway not limited', setbacksOver50: 'Runway over 50 years',
         options_one: '{{count}} option', options_other: '{{count}} options',
         who_one: '{{count}} person', who_other: '{{count}} people',
         assumptions_one: '{{count}} assumption', assumptions_other: '{{count}} assumptions',
@@ -1929,7 +1943,7 @@ const en = {
       purchase: 'A purchase', investment: 'An investment', what: 'What it is', whatInvest: 'What you are putting money into',
       price: 'Price you have been quoted', amountMonthly: 'Amount a month', amount: 'Amount', source: 'Who quoted it', sourceInvest: 'Where it is held',
       type: 'Item type', suggested: 'Suggested from the name',
-      itemType: { general: 'General', vehicle: 'Vehicle', rent_bill: 'Rent or bill', loan_repayment: 'Loan repayment', tax: 'Tax', insurance_premium: 'Insurance premium' },
+      itemType: { general: 'General', vehicle: 'Vehicle', rent_bill: 'Rent or bill', loan_repayment: 'Loan repayment', tax: 'Tax', insurance_premium: 'Insurance premium', property: 'Property', cash_equivalent: 'Cash-like', tuition: 'Tuition' }, // property, cash_equivalent, tuition: D-92 (05-88)
       when: 'When you need it', whenInvest: 'Start on', inWeek: 'In a week', inMonth: 'In a month', in3Months: 'In 3 months',
       awayToday: 'Today', awayTomorrow: 'Tomorrow', awayDays: 'In {{count}} days', awayMonths_one: 'In {{count}}\u00A0month', awayMonths_other: 'In {{count}}\u00A0months',
       passed: 'This date has passed',
@@ -1958,7 +1972,7 @@ const en = {
       },
       card: {
         needs: 'Needs: {{fields}}',
-        field: { price: 'price', rate: 'rate', months: 'months', payment: 'payment', howMany: 'how many', cardRate: 'card rate', minimumTerms: 'minimum terms', dealerCap: 'dealer cap', amount: 'amount' },
+        field: { price: 'price', rate: 'rate', months: 'months', payment: 'payment', howMany: 'how many', cardRate: 'card rate', minimumTerms: 'minimum terms', dealerCap: 'dealer cap', amount: 'amount', usdRate: 'USD rate' },
         comesTo: 'What it comes to', selected: 'Selected', notSelected: 'Not selected',
         a11yNeeds: 'needs {{fields}}', hint: 'Selects this way to pay and shows its details', hintReadOnly: 'Shows its details',
         announce: '{{method}} selected. Details shown.',
@@ -2012,6 +2026,58 @@ const en = {
       cardRate: 'Rate on this card', cardRateA11y: 'Rate on this card, percent',
       cardNotesHeading: 'Your notes on this card', cardNotesCount: '{{count}} of 3 answered',
       cardQ1: 'If income paused for a while, could the payment still be covered?', cardQ2: 'No new spending on this card while it clears?', cardQ3: 'Is something set aside to keep these payments going if income dips?',
+      // 05-88 (D-86, D-89..D-92, UI-SPEC R16.2, R16.5-R16.8, R16.16 M6): count-bearing strings carry _one/_other and U+00A0 after the count
+      loanInterestSavedByDeposit: 'Interest saved by the deposit', loanInterestPaid: 'Interest paid',
+      loanSavedLine_one: '{{saved}} less interest than borrowing the full {{financedNoDeposit}} with no deposit. The deposit lowers the amount borrowed to {{financed}} over the same 1\u00A0month at {{apr}}%.',
+      loanSavedLine_other: '{{saved}} less interest than borrowing the full {{financedNoDeposit}} with no deposit. The deposit lowers the amount borrowed to {{financed}} over the same {{count}}\u00A0months at {{apr}}%.',
+      freq: { label: 'How often', weekly: 'Weekly', fortnightly: 'Every 2 weeks', monthly: 'Monthly', quarterly: 'Quarterly' },
+      firstPayment: { today: 'Today', weekly: 'In a week', fortnightly: 'In 2 weeks', monthly: 'In a month', quarterly: 'In 3 months' },
+      when: { today: 'on the day', weekly: 'in a week', fortnightly: 'in 2 weeks', monthly: 'in a month', quarterly: 'in 3 months' },
+      instalmentCountRange: '1 to 500',
+      // R16.16 M6: the Has a rate? = No note is the lead (by frequency) followed by one rate clause; the Yes note and the folded summary are whole.
+      instNoRate: {
+        weekly_one: '1\u00A0weekly payment of {{payment}}, about {{monthly}} a month.',
+        weekly_other: '{{count}}\u00A0weekly payments of {{payment}}, about {{monthly}} a month.',
+        fortnightly_one: '1\u00A0payment of {{payment}} every 2 weeks, about {{monthly}} a month.',
+        fortnightly_other: '{{count}}\u00A0payments of {{payment}} every 2 weeks, about {{monthly}} a month.',
+        monthly_one: '1\u00A0monthly payment of {{payment}}.',
+        monthly_other: '{{count}}\u00A0monthly payments of {{payment}}.',
+        quarterly_one: '1\u00A0quarterly payment of {{payment}}, about {{monthly}} a month.',
+        quarterly_other: '{{count}}\u00A0quarterly payments of {{payment}}, about {{monthly}} a month.',
+      },
+      instRateAbout: 'No rate was quoted: about {{apr}}% a year, worked out from the figures you typed.',
+      instRateAbove: 'No rate was quoted: above 999.99% a year, worked out from the figures you typed.',
+      instRateZero: 'No rate was quoted: 0% a year, worked out from the figures you typed.',
+      instRateBelow: 'The payments total {{total}}, below the {{financed}} paid over time.',
+      instRate: {
+        weekly_one: '1\u00A0weekly payment of {{payment}} at {{apr}}%, {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}.',
+        weekly_other: '{{count}}\u00A0weekly payments of {{payment}} at {{apr}}%, the first {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}.',
+        fortnightly_one: '1\u00A0payment of {{payment}} every 2 weeks at {{apr}}%, {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}.',
+        fortnightly_other: '{{count}}\u00A0payments of {{payment}} every 2 weeks at {{apr}}%, the first {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}.',
+        monthly_one: '1\u00A0monthly payment of {{payment}} at {{apr}}%, {{when}}. Interest over the plan is {{interest}}.',
+        monthly_other: '{{count}}\u00A0monthly payments of {{payment}} at {{apr}}%, the first {{when}}. Interest over the plan is {{interest}}.',
+        quarterly_one: '1\u00A0quarterly payment of {{payment}} at {{apr}}%, {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}.',
+        quarterly_other: '{{count}}\u00A0quarterly payments of {{payment}} at {{apr}}%, the first {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}.',
+      },
+      // Folded summaries: the count is followed by " ×", so the unit rule does not apply; _one/_other carry the same text.
+      instSummary: {
+        weekly_one: '{{count}} × {{payment}} weekly', weekly_other: '{{count}} × {{payment}} weekly',
+        fortnightly_one: '{{count}} × {{payment}} every 2 weeks', fortnightly_other: '{{count}} × {{payment}} every 2 weeks',
+        monthly_one: '{{count}} × {{payment}} a month', monthly_other: '{{count}} × {{payment}} a month',
+        quarterly_one: '{{count}} × {{payment}} a quarter', quarterly_other: '{{count}} × {{payment}} a quarter',
+      },
+      instSummaryNoRate: ' · no rate', instSummaryRate: ' · {{apr}}%', instSummaryFirst: ' · first {{when}}',
+      // R16.7, R16.8: the card cap in checks and the item-type notes
+      cardLimitBody: 'Only {{cap}} of this goes on a card in checks. The other {{rest}} is counted as cash on the day.',
+      cardLimitNote: 'This is a limit of these checks, not of your card issuer.',
+      cardLimitBasis: 'Card limit converted at the {{date}} USD rate',
+      cardNote: {
+        property: 'A property purchase or deposit is not counted on a card in these checks.',
+        cash_equivalent: 'Money orders, wires, gift cards, crypto, shares and gambling count as cash advances on a card, so a card is not counted here.',
+        tuition_fee: 'Card payments for tuition often carry a processing fee. Any fee goes in Card fees.',
+        tax_processing_fee: 'Card payments for tax go through a payment processor that charges a fee. Any fee goes in Card fees.',
+        tax_gb: 'HMRC has not taken personal credit cards since 2018.',
+      },
       yes: 'Yes', no: 'No', unsure: 'Not sure',
     },
     costs: {
@@ -2025,6 +2091,7 @@ const en = {
       key: {
         leftCaption: 'Left a month', cushionCaption: 'Cushion', monthlyCaption: 'A month', putInCaption: 'Put in a month',
         months_one: '1\u00A0month', months_other: '{{count}}\u00A0months', underOne: 'Under 1\u00A0month', notLimited: 'Not limited', none: 'None',
+        over50Years: 'Over 50 years', over50YearsA11y: 'Cushion: over 50 years of costs', // 05-88 (D-93): runwayMonths above 600
         a11y: 'Left each month after this: {{left}}. Cushion: {{months}} of costs. Monthly cost: {{monthly}}.',
       },
       projection_one: 'At {{rate}}%\u00A0a year: about {{fv}} after 1\u00A0month. Not a forecast.',
@@ -2056,6 +2123,7 @@ const en = {
         instalment_amount_missing: 'Instalment amount or count is missing, so this can’t be scored.',
         instalment_count_missing: 'Instalment amount or count is missing, so this can’t be scored.',
         instalment_rate_missing: 'No rate is typed for the instalment plan, so it can’t be scored.', // D-80 (05-80, E1)
+        card_limit_rate_missing: 'No USD rate is stored, so the card part can’t be scored.', // D-91 (05-88, E5)
         invest_term_missing: 'No term was entered, so this cannot be scored yet.',
         no_full_month: 'No full month is logged yet, so only a first read is possible.',
         split_weights_zero: 'The split adds up to nothing, so your share can’t be worked out.',
@@ -2119,7 +2187,7 @@ const en = {
       lineOwe: 'Unsecured debt', lineOweDesc: '{{amount}} against your {{line}} line',
       lineInvesting: 'Investing floor', lineInvestingDesc: '{{after}} a month against your {{floor}} floor', lineInvestingNoFloor: '{{after}} a month, no floor set',
       lineSaving: 'Saving floor', lineSavingDesc: '{{after}} a month against your {{floor}} floor',
-      setbacksTitle: 'If something goes wrong', setbacksSummary: 'Runway {{count}}\u00A0months', setbacksSummaryOpen: 'Runway not limited',
+      setbacksTitle: 'If something goes wrong', setbacksSummary: 'Runway {{count}}\u00A0months', setbacksSummaryOpen: 'Runway not limited', setbacksSummaryOver50: 'Runway over 50 years',
       setbacksNote: 'Switching one on shows it hitting your cash with this purchase already running.',
       setback: { unexpected_expense: 'Unexpected expense', income_drop: 'Income drops', job_loss: 'Job or client loss', late_invoice: 'Invoices pay late' },
       setbackDesc: { unexpected_expense: 'One month’s costs, once', unexpectedAmount: '{{amount}}, once', income_drop: '{{pct}}% less for {{count}}\u00A0months', job_loss: 'No income for {{count}}\u00A0months', late_invoice: 'Paid {{count}} days late' },
@@ -2351,7 +2419,9 @@ const en = {
         rowMonths_one: '{{count}}\u00A0month', rowMonths_other: '{{count}}\u00A0months', rowNever: 'Not within {{months}} months', // addition (05-42)
       },
       runway: { summary: 'Runway {{months}} months, {{lost}} less because of this', lost: 'Runway lost to this purchase: {{months}} months', met: 'New payments still met', notMet: 'New payments cannot be met' },
-      running: { addAmount: 'Add amount', typeToCount: 'Counted once an amount is typed', insurance: 'Insurance', fuel: 'Fuel', maintenance: 'Maintenance', registration: 'Registration', loss_of_value: 'Loss of value', notCash: 'Not a monthly cash cost',
+      running: { amountPlaceholder: 'Amount', amountFieldA11y: '{{name}} amount', rowA11yEmpty: '{{name}}, not counted yet; counted once an amount is typed.', rowA11yCounted: '{{name}}, {{amount}} a month, counted', notCounted: 'Not counted',
+        propertyTax: 'Property tax', homeInsurance: 'Home insurance', utilities: 'Utilities', serviceCharge: 'Service charge', booksMaterials: 'Books and materials', travel: 'Travel', accommodation: 'Accommodation', // D-92 per-type rows (05-88)
+        addAmount: 'Add amount', typeToCount: 'Counted once an amount is typed', insurance: 'Insurance', fuel: 'Fuel', maintenance: 'Maintenance', registration: 'Registration', loss_of_value: 'Loss of value', notCash: 'Not a monthly cash cost',
         amountA11y: '{{name}}, amount a month', lossAmountA11y: 'Loss of value, amount a month', lossPercentA11y: 'Loss of value, percent a year',
         lossMonth: 'A month', lossPercent: '% a year', lossModeA11y: 'Loss of value as an amount a month or a percent a year of the price before tax, fees and trade-ins', lossPercentPlaceholder: '% a year', lossAbout: 'About {{amount}} a month. Shown here, not counted in your month.' }, // D-44
       estimateGap: {

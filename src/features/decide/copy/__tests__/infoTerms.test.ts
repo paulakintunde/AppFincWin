@@ -180,4 +180,75 @@ describe('infoTerms', () => {
     expect(str('decide.quick.overMonths_other')).toBe(`Over {{count}}${NB}months`);
     expect(str('decide.pay.loanTermNote_other')).toMatch(new RegExp(`^At \\{\\{count\\}\\}${NB}months the payment is`));
   });
+
+  const R16_KEYS = [
+    'you.add.section', 'you.add.expense', 'you.add.income', 'you.add.transfer', 'you.add.importStatement', 'you.add.newCheck',
+    'you.add.expenseHint', 'you.add.incomeHint', 'you.add.transferHint', 'you.add.importStatementHint', 'you.add.newCheckHint',
+    'sync.saving', 'sync.waiting', 'sync.offlineWaiting',
+    'decide.fold.updating', 'decide.verdict.key.over50Years', 'decide.verdict.key.over50YearsA11y', 'decide.fold.preview.setbacksOver50',
+    'decide.section.setbacksSummaryOver50', 'decide.verdict.missing.card_limit_rate_missing', 'decide.pay.card.field.usdRate',
+    'decide.item.itemType.property', 'decide.item.itemType.cash_equivalent', 'decide.item.itemType.tuition',
+    'decide.pay.loanInterestSavedByDeposit', 'decide.pay.loanInterestPaid', 'decide.pay.loanSavedLine',
+    'decide.pay.freq.label', 'decide.pay.freq.weekly', 'decide.pay.freq.fortnightly', 'decide.pay.freq.monthly', 'decide.pay.freq.quarterly',
+    'decide.pay.firstPayment.today', 'decide.pay.firstPayment.weekly', 'decide.pay.firstPayment.fortnightly', 'decide.pay.firstPayment.monthly',
+    'decide.pay.firstPayment.quarterly', 'decide.pay.when.today', 'decide.pay.when.weekly', 'decide.pay.when.fortnightly', 'decide.pay.when.monthly',
+    'decide.pay.when.quarterly', 'decide.pay.instalmentCountRange', 'decide.pay.instRateAbout', 'decide.pay.instRateAbove', 'decide.pay.instRateZero',
+    'decide.pay.instRateBelow', 'decide.pay.instSummaryNoRate', 'decide.pay.instSummaryRate', 'decide.pay.instSummaryFirst',
+    'decide.pay.cardLimitBody', 'decide.pay.cardLimitNote', 'decide.pay.cardLimitBasis', 'decide.pay.cardNote.property', 'decide.pay.cardNote.cash_equivalent',
+    'decide.pay.cardNote.tuition_fee', 'decide.pay.cardNote.tax_processing_fee', 'decide.pay.cardNote.tax_gb',
+    'decide.depth.running.amountPlaceholder', 'decide.depth.running.amountFieldA11y', 'decide.depth.running.rowA11yEmpty', 'decide.depth.running.rowA11yCounted',
+    'decide.depth.running.notCounted', 'decide.depth.running.propertyTax', 'decide.depth.running.homeInsurance', 'decide.depth.running.utilities',
+    'decide.depth.running.serviceCharge', 'decide.depth.running.booksMaterials', 'decide.depth.running.travel', 'decide.depth.running.accommodation',
+  ];
+  const FREQS = ['weekly', 'fortnightly', 'monthly', 'quarterly'] as const;
+
+  it('D-85..D-93 R16 strings resolve', () => {
+    for (const k of R16_KEYS) {
+      const v = str(k) ?? str(`${k}_other`);
+      expect({ k, ok: typeof v === 'string' && v.length > 0 }).toEqual({ k, ok: true });
+    }
+    for (const f of FREQS) {
+      for (const g of ['instNoRate', 'instRate', 'instSummary']) {
+        expect({ k: `${g}.${f}_one`, ok: !!str(`decide.pay.${g}.${f}_one`) }).toEqual({ k: `${g}.${f}_one`, ok: true });
+        expect({ k: `${g}.${f}_other`, ok: !!str(`decide.pay.${g}.${f}_other`) }).toEqual({ k: `${g}.${f}_other`, ok: true });
+      }
+    }
+    expect(str('decide.pay.cardLimitBody')).toBe('Only {{cap}} of this goes on a card in checks. The other {{rest}} is counted as cash on the day.');
+  });
+
+  it('R16 plural keys carry U+00A0 after the count', () => {
+    for (const f of FREQS) {
+      expect(str(`decide.pay.instNoRate.${f}_one`)).toMatch(new RegExp(`^1${NB}`));
+      expect(str(`decide.pay.instNoRate.${f}_other`)).toMatch(new RegExp(`^\{\{count\}\}${NB}`));
+      expect(str(`decide.pay.instRate.${f}_one`)).toMatch(new RegExp(`^1${NB}`));
+      expect(str(`decide.pay.instRate.${f}_other`)).toMatch(new RegExp(`^\{\{count\}\}${NB}`));
+    }
+    expect(str('decide.pay.loanSavedLine_one')).toContain(`same 1${NB}month at`);
+    expect(str('decide.pay.loanSavedLine_other')).toContain(`same {{count}}${NB}months at`);
+    expect(str('sync.waiting_one')).toBe(`{{count}}${NB}change waiting`);
+    expect(str('sync.waiting_other')).toBe(`{{count}}${NB}changes waiting`);
+    expect(str('sync.offlineWaiting_one')).toBe(`offline · {{count}}${NB}change waiting`);
+    expect(str('sync.offlineWaiting_other')).toBe(`offline · {{count}}${NB}changes waiting`);
+  });
+
+  it('R16.16 M6 the no-rate note reads as the spec table (lead plus clause)', () => {
+    const about = str('decide.pay.instRateAbout');
+    expect(`${str('decide.pay.instNoRate.weekly_other')} ${about}`).toBe(
+      `{{count}}${NB}weekly payments of {{payment}}, about {{monthly}} a month. No rate was quoted: about {{apr}}% a year, worked out from the figures you typed.`
+    );
+    expect(`${str('decide.pay.instNoRate.monthly_other')} ${about}`).toBe(
+      `{{count}}${NB}monthly payments of {{payment}}. No rate was quoted: about {{apr}}% a year, worked out from the figures you typed.`
+    );
+    expect(str('decide.pay.instRateAbove')).toContain('above 999.99% a year');
+    expect(str('decide.pay.instRateZero')).toContain('0% a year');
+    expect(str('decide.pay.instRate.fortnightly_other')).toBe(
+      `{{count}}${NB}payments of {{payment}} every 2 weeks at {{apr}}%, the first {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}.`
+    );
+    expect(str('decide.pay.instRate.monthly_other')).not.toContain('{{monthly}}');
+  });
+
+  it('R16 the old queued strings stay until 05-109 and the new ones do not say queued', () => {
+    expect(str('sync.queued_other')).toBeTruthy();
+    for (const k of ['sync.saving', 'sync.waiting_one', 'sync.waiting_other', 'sync.offlineWaiting_one', 'sync.offlineWaiting_other']) expect(str(k)).not.toMatch(/queued/);
+  });
 });
