@@ -6,7 +6,10 @@ import { pushOnce } from '@/shell/navigation/pushOnce';
 
 export type CheckKind = 'buy' | 'invest';
 
-export function checkHref(id: string, params: { kind?: CheckKind; step?: '1' | '2' | '3' } = {}): Href {
+type CheckStepParam = '1' | '2' | '3' | '4' | '5';
+
+/** `cleared` and `clearedStep` (05-75, D-77) name the check Clear just removed, so Undo can route back to it. */
+export function checkHref(id: string, params: { kind?: CheckKind; step?: CheckStepParam; cleared?: string; clearedStep?: CheckStepParam } = {}): Href {
   return { pathname: '/decide/check/[id]', params: { id, ...params } } as Href;
 }
 

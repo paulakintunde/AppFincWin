@@ -32,6 +32,14 @@ const mockBack = jest.fn();
 const mockReplace = jest.fn();
 const mockToast = jest.fn();
 const mockMarkSeen = jest.fn();
+const mockAbandon = jest.fn(() => 'step-1');
+const mockDiscard = jest.fn();
+const mockCallOrder: string[] = [];
+let mockOnline = true;
+let mockSaveStatus: 'saving' | 'offline' | 'saved' | 'failed' | null = null;
+let mockChecks: { id: string; status: string; deleted_at: string | null }[] | undefined;
+let mockPendingEdit = false;
+let mockConfirm = { visible: false, lines: [] as string[], onConfirm: jest.fn(), onCancel: jest.fn() };
 const mockSaveTerms = jest.fn();
 const mockSaveRate = jest.fn();
 const mockBoughtHook = jest.fn();
@@ -71,14 +79,15 @@ jest.mock('../useCheckDraft', () => {
       }, []);
       const saveNow = R.useCallback(() => {
         mockSaveNow();
+        mockCallOrder.push('save');
         return Promise.resolve(mockSaveResult);
       }, []);
-      return { status: mockStatus, row: mockRow, inputs, update, saveNow, isNew: mockRow === null };
+      return { status: mockStatus, row: mockRow, inputs, update, saveNow, isNew: mockRow === null, discard: mockDiscard, pendingEdit: mockPendingEdit, editedOffline: false };
     },
   };
 });
 jest.mock('../useCommitDecision', () => ({
-  useCommitDecision: () => ({ requestCommit: (...a: unknown[]) => mockRequestCommit(...a), blockedKey: null, confirm: { visible: false, lines: [], onConfirm: jest.fn(), onCancel: jest.fn() } }),
+  useCommitDecision: () => ({ requestCommit: (...a: unknown[]) => mockRequestCommit(...a), blockedKey: null, confirm: mockConfirm }),
 }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('../../notifications/waitReminder', () => ({ cancelCheckReminders: jest.fn(() => Promise.resolve()) }));
@@ -87,6 +96,7 @@ jest.mock('../useEstimateBias', () => ({ useEstimateBias: () => ({ running: null
 jest.mock('@/data/queries/decide', () => ({
   useDecideSnapshot: () => ({ status: 'ready', result: mockSource, source: null, retry: jest.fn() }),
   useOtherChecks: () => mockStack,
+  useDecideChecks: () => ({ data: mockChecks }),
   useDebts: () => ({ data: mockDebts }),
   useSavingsGoals: jest.fn(),
   useGoalLines: jest.fn(),
@@ -103,12 +113,20 @@ let mockRedirect: string | null = null;
 jest.mock('@/data/mutations/decideChecks', () => ({
   useMarkCheckSeen: () => ({ markSeen: (...a: unknown[]) => mockMarkSeen(...a) }),
   useReopenCheck: () => ({ reopen: jest.fn(() => 'new-id') }),
+  useAbandonCheck: () => ({
+    abandon: (...a: unknown[]) => {
+      mockCallOrder.push('abandon');
+      return (mockAbandon as (...x: unknown[]) => string)(...a);
+    },
+  }),
   useReopenRedirect: () => mockRedirect,
 }));
 jest.mock('@/data/mutations/decideLinks', () => ({
   useSaveCardRate: () => ({ save: (...a: unknown[]) => mockSaveRate(...a) }),
   useSaveCardTerms: () => ({ save: (...a: unknown[]) => mockSaveTerms(...a) }),
 }));
+jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => ({ isOnline: mockOnline, queued: 0, failed: 0, lastSyncedAt: null }) }));
+jest.mock('../useCheckSaveStatus', () => ({ useCheckSaveStatus: () => mockSaveStatus, useAnnounceSaveStatus: jest.fn() }));
 jest.mock('@/features/record/entry/entryHost', () => ({ openEntry: jest.fn() }));
 // the chart is drawn by the day-by-day section; its geometry is covered by its own tests
 jest.mock('../../charts/CashPathChart', () => ({ CashPathChart: () => null }));
@@ -148,6 +166,12 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockStatus = 'ready';
   mockSaveResult = 'saved';
+  mockCallOrder.length = 0;
+  mockOnline = true;
+  mockSaveStatus = null;
+  mockChecks = undefined;
+  mockPendingEdit = false;
+  mockConfirm = { visible: false, lines: [], onConfirm: jest.fn(), onCancel: jest.fn() };
   mockRow = null;
   mockSource = paySource();
   mockStack = EMPTY_STACK;
@@ -687,5 +711,82 @@ describe('shareFor (IN-C06)', () => {
     const household = { ...inputsOf(), scope: 'household' as const, split: { kind: 'weight' as const, weights: [3, 1], amounts: [] } };
     expect(shareFor(household, 2, -1)).toBe(SOLE_SHARE);
     expect(shareFor(household, 2, 1)).not.toBe(SOLE_SHARE);
+  });
+});
+
+describe('Clear, the save status and the Go ahead list (05-75)', () => {
+  const checkHrefOf = (call: unknown[]) => call[0] as { pathname: string; params: Record<string, string> };
+
+  it('D-77 Clear flushes, then deletes, then disarms and opens an empty check', async () => {
+    mockRow = rowOf();
+    await open({}, { initialStep: 3 });
+    await fireEvent.press(screen.getByLabelText('Clear this check'));
+    await act(async () => undefined);
+    expect(mockCallOrder).toEqual(['save', 'abandon']);
+    expect(mockAbandon).toHaveBeenCalledWith(mockRow, 'cleared');
+    expect(mockDiscard).toHaveBeenCalledTimes(1);
+    expect(mockAbandon.mock.invocationCallOrder[0]).toBeLessThan(mockDiscard.mock.invocationCallOrder[0]!);
+    const href = checkHrefOf(mockReplace.mock.calls[0]!);
+    expect(href.params).toEqual(expect.objectContaining({ step: '1', kind: 'buy', cleared: 'c1', clearedStep: '3' }));
+    expect(href.params.id).not.toBe('c1');
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ kind: 'destructive', text: { key: 'decide.clear.toast' }, stepId: 'step-1' }));
+  });
+
+  it('D-73 Clear is absent on a new unedited check and on a decided check', async () => {
+    mockRow = null;
+    const view = await open();
+    expect(screen.queryByLabelText('Clear this check')).toBeNull();
+    await view.unmount();
+    mockRow = rowOf({ status: 'bought' });
+    await open();
+    expect(screen.queryByLabelText('Clear this check')).toBeNull();
+  });
+
+  it('D-77 Undo on the untouched empty check returns to the restored check', async () => {
+    mockRow = null;
+    mockChecks = [{ id: 'old', status: 'open', deleted_at: '2026-10-15T00:00:00Z' }];
+    const view = await open({}, { initialStep: 1, cleared: 'old', clearedStep: 4 } as never);
+    expect(mockReplace).not.toHaveBeenCalled();
+    mockChecks = [{ id: 'old', status: 'open', deleted_at: null }];
+    await view.rerender(<CheckFlowScreen id="c1" initialStep={1} cleared="old" clearedStep={4} />);
+    expect(mockReplace).toHaveBeenCalledTimes(1);
+    expect(checkHrefOf(mockReplace.mock.calls[0]!).params).toEqual({ id: 'old', step: '4' });
+  });
+
+  it('D-77 Undo does nothing once the empty check was edited', async () => {
+    mockRow = null;
+    mockChecks = [{ id: 'old', status: 'open', deleted_at: '2026-10-15T00:00:00Z' }];
+    const view = await open({}, { initialStep: 1 });
+    mockPendingEdit = true;
+    mockChecks = [{ id: 'old', status: 'open', deleted_at: null }];
+    await view.rerender(<CheckFlowScreen id="c1" initialStep={1} cleared="old" clearedStep={4} />);
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('D-77 the header shows the save status', async () => {
+    mockRow = rowOf();
+    mockSaveStatus = 'offline';
+    await open({}, { initialStep: 3 });
+    expect(screen.getByText('Offline, will save')).toBeTruthy();
+  });
+
+  it('D-77 Save and close says Offline, will save when offline', async () => {
+    mockRow = rowOf();
+    mockOnline = false;
+    await open({}, { initialStep: 3 });
+    await fireEvent.press(screen.getByLabelText('Save and close'));
+    await act(async () => undefined);
+    expect(mockToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.save.offline' } });
+  });
+
+  it('D-76 the Go ahead confirm lists what gets written as rows', async () => {
+    mockRow = rowOf();
+    mockConfirm = { visible: true, lines: ['Records a $1,500 purchase', 'Marks the check as bought'], onConfirm: jest.fn(), onCancel: jest.fn() };
+    await open({}, { initialStep: 3 });
+    expect(screen.getByText('Records a $1,500 purchase')).toBeTruthy();
+    expect(screen.getByText('Marks the check as bought')).toBeTruthy();
+    expect(screen.queryByText(/purchase\sMarks/)).toBeNull();
+    expect(screen.getByText('Write this to your records?')).toBeTruthy();
+    expect(screen.getByLabelText('About What gets written')).toBeTruthy();
   });
 });

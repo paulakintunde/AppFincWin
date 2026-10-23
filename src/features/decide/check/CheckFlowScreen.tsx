@@ -11,12 +11,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { router, useFocusEffect, type Href } from 'expo-router';
-import { useMarkCheckSeen, useReopenCheck, useReopenRedirect } from '@/data/mutations/decideChecks';
+import * as Crypto from 'expo-crypto';
+import { useAbandonCheck, useMarkCheckSeen, useReopenCheck, useReopenRedirect } from '@/data/mutations/decideChecks';
 import { useSaveCardRate, useSaveCardTerms, type CardTermsInput } from '@/data/mutations/decideLinks';
 import { useAccounts } from '@/data/queries/accounts';
 import { useAccountBalances, useHouseholdMemberNames } from '@/data/queries/activity';
 import { useCategories } from '@/data/queries/categories';
-import { useDebts, useDecideSnapshot, useOtherChecks } from '@/data/queries/decide';
+import { useDebts, useDecideChecks, useDecideSnapshot, useOtherChecks } from '@/data/queries/decide';
+import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { SOLE_SHARE, monthlyEquivalent, resolveShare } from '@/engine/decide';
 import type { ResolvedShare, SplitRule } from '@/engine/decide';
@@ -44,6 +46,8 @@ import { stateChip } from '../copy/verdictCopy';
 import { checkHref } from '../home/checkHref';
 import { cancelCheckReminders } from '../notifications/waitReminder';
 import { FoldHint } from '../ui/FoldHint';
+import { WrittenList } from '../ui/WrittenList';
+import { useInfoSheet } from '../ui/useInfoSheet';
 import { RevealTapContext } from '../ui/revealTap';
 import { ScrollIntoViewContext } from '../ui/scrollIntoView';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
@@ -55,6 +59,7 @@ import { EMPTY_STACK } from '../snapshot/types';
 import type { CheckComputation, CheckInputs } from '../snapshot/types';
 import { CheckActionBar } from './CheckActionBar';
 import { CheckFlowHeader } from './CheckFlowHeader';
+import { InfoTitle } from './InfoTitle';
 import { Step3FoldList, defaultOpenFold, type SectionKey } from './step3Folds';
 import { ScopeToggle } from './ScopeToggle';
 import { CardMinimumSheet } from './steps/step2/CardMinimumSheet';
@@ -67,6 +72,7 @@ import { Meta, moneyFn } from './steps/stepUi';
 import type { StepNumber, StepProps } from './stepTypes';
 import type { Translate } from './refText';
 import { useBoughtCheckComputation } from './useBoughtCheckComputation';
+import { useAnnounceSaveStatus, useCheckSaveStatus } from './useCheckSaveStatus';
 import { useCheckDraft } from './useCheckDraft';
 import { useCommitDecision } from './useCommitDecision';
 import { useDebouncedValue } from './useDebouncedValue';
@@ -82,6 +88,9 @@ export interface CheckFlowScreenProps {
   /** From the route's `step` param; null lets the screen pick (step 3 once a price and method exist, else step 1). */
   initialStep?: StepNumber | null;
   kind?: 'buy' | 'invest';
+  /** 05-75 (D-77): the check Clear just removed and the step it was on, so Undo on the untouched empty check returns to it. */
+  cleared?: string | null;
+  clearedStep?: StepNumber | null;
 }
 
 function leaveFlow(): void {
@@ -171,9 +180,9 @@ function DecidedHeader({ row, whole, currency, timeZone }: { row: DecideCheckRow
   );
 }
 
-export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckFlowScreenProps): React.JSX.Element {
+export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared = null, clearedStep = null }: CheckFlowScreenProps): React.JSX.Element {
   const t = useT() as Translate;
-  const { colors } = useTheme();
+  const { colors, pairing } = useTheme();
   const insets = useScreenInsets();
   const rc = useRecordContext();
   const today = rc.today;
@@ -222,6 +231,9 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
   const cardRate = useSaveCardRate();
   const cardTerms = useSaveCardTerms();
   const { reopen } = useReopenCheck();
+  const { abandon } = useAbandonCheck();
+  const { isOnline } = useSyncStatus();
+  const writtenInfo = useInfoSheet('whatGetsWritten');
   const reopening = useRef(false);
   const [reopened, setReopened] = useState(false);
 
@@ -305,9 +317,42 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
       showToast({ kind: 'ordinary', text: { key: 'decide.flow.saveWaiting' } });
       return;
     }
-    if (!readOnly && result === 'saved') showToast({ kind: 'ordinary', text: { key: 'decide.flow.saved' } });
+    if (!readOnly && result === 'saved') showToast({ kind: 'ordinary', text: { key: isOnline ? 'decide.flow.saved' : 'decide.save.offline' } });
     leaveFlow();
-  }, [draft, readOnly]);
+  }, [draft, readOnly, isOnline]);
+
+  // ── D-73, D-77: the save status beside the eyebrow, Clear, and the route back after Undo ──
+  const saveStatus = useCheckSaveStatus({ id, rowExists: row !== null, decided: readOnly, pendingEdit: draft.pendingEdit, editedOffline: draft.editedOffline });
+  useAnnounceSaveStatus(saveStatus);
+  const { discard: discardDraft, saveNow: saveBeforeClear } = draft;
+  const clearKind = inputs.kind;
+  const clear = useCallback(async (): Promise<void> => {
+    if (row === null || step === null) return;
+    // flush first, so the delete is queued behind the last save; discard then stops every later save for this id
+    await saveBeforeClear();
+    const stepId = abandon(row, 'cleared');
+    discardDraft();
+    router.replace(checkHref(Crypto.randomUUID(), { step: '1', kind: clearKind, cleared: row.id, clearedStep: String(step) as '1' | '2' | '3' | '4' | '5' }));
+    showToast({ kind: 'destructive', text: { key: 'decide.clear.toast' }, stepId });
+  }, [row, step, saveBeforeClear, abandon, discardDraft, clearKind]);
+  // Undo on the untouched empty check goes back to the restored one. It fires only after the cleared check was seen gone,
+  // so the optimistic delete cannot bounce the user straight back.
+  const clearedChecks = useDecideChecks(rc.userId ?? undefined, householdId ?? undefined).data;
+  const clearedLive = cleared === null || clearedChecks === undefined ? null : clearedChecks.some((c) => c.id === cleared && c.status === 'open' && c.deleted_at === null);
+  const untouched = draft.isNew && !draft.pendingEdit;
+  const clearedGone = useRef(false);
+  const returned = useRef(false);
+  useEffect(() => {
+    if (cleared === null || clearedLive === null) return;
+    if (!clearedLive) {
+      clearedGone.current = true;
+      return;
+    }
+    if (clearedGone.current && untouched && !returned.current) {
+      returned.current = true;
+      router.replace(checkHref(cleared, clearedStep === null ? {} : { step: String(clearedStep) as '1' | '2' | '3' | '4' | '5' }));
+    }
+  }, [cleared, clearedStep, clearedLive, untouched]);
 
   // Focus moves to the title on each step change (not on the first render, which the push focus covers).
   const titleRef = useRef<React.ComponentRef<typeof Text>>(null);
@@ -606,6 +651,8 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
         onBack={back}
         titleRef={titleRef}
         combine={combine}
+        onClear={!readOnly && row !== null ? () => void clear() : null}
+        saveStatus={saveStatus}
       />
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
@@ -643,13 +690,18 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
       </KeyboardAvoidingView>
       <ConfirmSheet
         visible={commit.confirm.visible}
-        title={t('decide.decision.confirmTitle')}
-        body={commit.confirm.lines.join('\n')}
         cancelLabel={t('decide.decision.confirmNotYet')}
         confirmLabel={t('decide.decision.confirmGo')}
         onConfirm={commit.confirm.onConfirm}
         onCancel={commit.confirm.onCancel}
-      />
+      >
+        <InfoTitle info={writtenInfo} lineHeight={textRole(pairing, 'sheetTitle').lineHeight}>
+          <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+            {t('decide.decision.confirmTitle')}
+          </Text>
+        </InfoTitle>
+        <WrittenList lines={commit.confirm.lines} />
+      </ConfirmSheet>
       {sheetCard ? (
         <CardMinimumSheet
           visible

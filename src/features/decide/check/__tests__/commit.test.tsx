@@ -56,7 +56,7 @@ jest.mock('../useCheckDraft', () => {
     useCheckDraft: () => {
       const [inputs, setInputs] = R.useState(mockInitial);
       const update = R.useCallback((patch: Partial<CheckInputs>) => setInputs((p: CheckInputs) => ({ ...p, ...patch })), []);
-      return { status: 'ready', row: mockRow, inputs, update, saveNow: () => Promise.resolve(), isNew: mockRow === null };
+      return { status: 'ready', row: mockRow, inputs, update, saveNow: () => Promise.resolve(), isNew: mockRow === null, discard: jest.fn(), pendingEdit: false, editedOffline: false };
     },
   };
 });
@@ -65,6 +65,7 @@ jest.mock('../useEstimateBias', () => ({ useEstimateBias: () => ({ running: null
 jest.mock('@/data/queries/decide', () => ({
   useDecideSnapshot: () => ({ status: 'ready', result: mockSource, source: null, retry: jest.fn() }),
   useOtherChecks: () => mockStack,
+  useDecideChecks: () => ({ data: undefined }),
   useDebts: () => ({ data: [] }),
   useSavingsGoals: jest.fn(),
   useGoalLines: jest.fn(),
@@ -82,9 +83,12 @@ jest.mock('@/data/queries/categories', () => ({
 }));
 jest.mock('@/data/mutations/decideChecks', () => ({
   useMarkCheckSeen: () => ({ markSeen: jest.fn() }),
+  useAbandonCheck: () => ({ abandon: jest.fn(() => 'step-x') }),
   useReopenCheck: () => ({ reopen: (...a: unknown[]) => (mockReopen as (...x: unknown[]) => string)(...a) }),
   useReopenRedirect: () => null,
 }));
+jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => ({ isOnline: true, queued: 0, failed: 0, lastSyncedAt: null }) }));
+jest.mock('../useCheckSaveStatus', () => ({ useCheckSaveStatus: () => null, useAnnounceSaveStatus: jest.fn() }));
 jest.mock('@/data/mutations/decideLinks', () => ({ useSaveCardRate: () => ({ save: jest.fn() }), useSaveCardTerms: () => ({ save: jest.fn() }) }));
 jest.mock('../../notifications/waitReminder', () => ({ cancelCheckReminders: (...a: unknown[]) => (mockCancelReminders as (...x: unknown[]) => Promise<void>)(...a) }));
 jest.mock('@/features/record/entry/entryHost', () => ({ openEntry: jest.fn() }));
