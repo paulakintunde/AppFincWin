@@ -29,9 +29,15 @@ export interface MoneyInputProps {
   placeholder?: string;
   /** 05-44: a decided check cannot be edited. */
   readOnly?: boolean;
+  /** 05-61: the compact field beside a slider (pill, fill1, 128 wide, currency prefix). The label is not drawn; the caller shows it once. */
+  compact?: boolean;
+  /** 05-61: fires when the field loses focus, after the figure is committed. */
+  onBlur?: () => void;
 }
 
-export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false }: MoneyInputProps) {
+const COMPACT_MIN_WIDTH = 128;
+
+export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false, compact = false, onBlur }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
   const parser = useAmountParser();
   const [text, setText] = useState(() => (value === null ? '' : parser.toInputText(value, currency)));
@@ -88,14 +94,20 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
     }
   };
 
+  const handleBlur = () => {
+    commit();
+    onBlur?.();
+  };
+
   return (
     <View>
-      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
-      <View style={[styles.field, { backgroundColor: colors.fill1 }]}>
+      {compact ? null : <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>}
+      <View style={[styles.field, compact && styles.compact, { backgroundColor: colors.fill1 }]}>
+        {compact ? <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{currency}</Text> : null}
         <TextInput
           value={text}
           onChangeText={onText}
-          onBlur={commit}
+          onBlur={handleBlur}
           onSubmitEditing={commit}
           returnKeyType="done"
           inputMode="decimal"
@@ -103,7 +115,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
           placeholder={placeholder}
           editable={!readOnly}
           placeholderTextColor={colors.inkFaint}
-          style={[styles.input, { ...textRole(pairing, large ? 'body' : 'label'), color: colors.ink }]}
+          style={[styles.input, compact && styles.compactInput, { ...textRole(pairing, large || compact ? 'body' : 'label'), color: colors.ink }]}
         />
       </View>
       {error ? <Text style={{ ...textRole(pairing, 'label'), color: colors.danger }}>{error}</Text> : null}
@@ -119,4 +131,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   input: { minHeight: space.touchMin, padding: 0 },
+  compact: { minWidth: COMPACT_MIN_WIDTH, flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  compactInput: { flex: 1 },
 });

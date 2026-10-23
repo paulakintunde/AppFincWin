@@ -3,8 +3,19 @@ import { AccessibilityInfo } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { CustomValueChips } from '../CustomValueChips';
+import { SliderWithField } from '../SliderWithField';
+import { RateInput } from '../RateInput';
 
 jest.setTimeout(30000);
+
+let mockWidth = 402;
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => ({ width: mockWidth, height: 800, scale: 2, fontScale: 1 }),
+}));
+beforeEach(() => {
+  mockWidth = 402;
+});
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
 
 function wrap(ui: React.ReactElement) {
@@ -57,6 +68,7 @@ describe('CustomValueChips', () => {
 
   it('D-71 an out-of-range value keeps the last value and warns', async () => {
     const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
+    announce.mockClear();
     const onValue = jest.fn();
     const view = await wrap(<Harness onValue={onValue} />);
     await fireEvent.press(view.getByText('Custom'));
@@ -134,5 +146,153 @@ describe('CustomValueChips', () => {
     await fireEvent.press(view.getByText('Custom'));
     expect(view.queryByLabelText(FIELD)).toBeNull();
     expect(view.getByLabelText('6 months').props.accessibilityState).toMatchObject({ disabled: true });
+  });
+});
+
+const RANGE_WORDS = 'From $1.00 to $5,000.00';
+
+function SliderHarness({ onValue }: { onValue?: (n: number) => void }) {
+  const [value, setValue] = React.useState(50_000);
+  return (
+    <SliderWithField
+      label="Deposit"
+      value={value}
+      sliderMin={0}
+      sliderMax={100_000}
+      step={5_000}
+      typedMin={100}
+      typedMax={500_000}
+      rangeText={RANGE_WORDS}
+      currency="USD"
+      wholeUnits
+      onChange={(n) => {
+        onValue?.(n);
+        setValue(n);
+      }}
+      sliderA11y="Deposit slider"
+      fieldA11y="Deposit amount"
+    />
+  );
+}
+
+describe('SliderWithField', () => {
+  it('D-71 a typed slider value is used exactly, not snapped', async () => {
+    const onValue = jest.fn();
+    const view = await wrap(<SliderHarness onValue={onValue} />);
+    await fireEvent.changeText(view.getByLabelText('Deposit amount'), '123.45');
+    expect(onValue).toHaveBeenLastCalledWith(12_345);
+    expect(view.getByLabelText('Deposit slider').props.accessibilityValue).toMatchObject({ now: 12_345 });
+    expect(view.queryByText('Above the slider’s range')).toBeNull();
+  });
+
+  it('D-71 beyond the track pins the thumb and says Above the slider’s range', async () => {
+    const onValue = jest.fn();
+    const view = await wrap(<SliderHarness onValue={onValue} />);
+    await fireEvent.changeText(view.getByLabelText('Deposit amount'), '1500');
+    expect(onValue).toHaveBeenLastCalledWith(150_000);
+    expect(view.getByLabelText('Deposit slider').props.accessibilityValue).toMatchObject({ now: 100_000 });
+    expect(view.getByText('Above the slider’s range')).toBeTruthy();
+  });
+
+  it('D-71 below the track says Below the slider’s range', async () => {
+    const view = await wrap(
+      <SliderWithField
+        label="Wait"
+        value={500}
+        sliderMin={2_500}
+        sliderMax={60_000}
+        step={2_500}
+        typedMin={100}
+        typedMax={60_000}
+        rangeText={RANGE_WORDS}
+        currency="USD"
+        wholeUnits={false}
+        onChange={() => {}}
+        sliderA11y="Wait slider"
+        fieldA11y="Wait amount"
+      />,
+    );
+    expect(view.getByText('Below the slider’s range')).toBeTruthy();
+    expect(view.getByLabelText('Wait slider').props.accessibilityValue).toMatchObject({ now: 2_500 });
+  });
+
+  it('D-71 a typed value outside the range is not applied', async () => {
+    const onValue = jest.fn();
+    const view = await wrap(<SliderHarness onValue={onValue} />);
+    await fireEvent.changeText(view.getByLabelText('Deposit amount'), '9999');
+    expect(onValue).not.toHaveBeenCalled();
+    expect(view.getByText(RANGE_WORDS).props.style.color).toBe('#8A5A1B');
+    await fireEvent.changeText(view.getByLabelText('Deposit amount'), '400');
+    expect(onValue).toHaveBeenLastCalledWith(40_000);
+    expect(view.queryByText(RANGE_WORDS)).toBeNull();
+    await fireEvent.changeText(view.getByLabelText('Deposit amount'), '');
+    expect(view.queryByText(RANGE_WORDS)).toBeNull();
+  });
+
+  it('D-71 a drag snaps to whole currency units and clears the range warning', async () => {
+    const onValue = jest.fn();
+    const view = await wrap(<SliderHarness onValue={onValue} />);
+    await fireEvent.changeText(view.getByLabelText('Deposit amount'), '9999');
+    await fireEvent(view.getByLabelText('Deposit slider'), 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+    expect(onValue).toHaveBeenLastCalledWith(55_000);
+    expect(view.queryByText(RANGE_WORDS)).toBeNull();
+  });
+
+  it('D-76 the slider field stacks below 360 wide', async () => {
+    const wide = await wrap(<SliderHarness />);
+    expect(wide.getByLabelText('Deposit slider').parent?.props.style).toEqual(expect.objectContaining({ flex: 1 }));
+    mockWidth = 320;
+    const narrow = await wrap(<SliderHarness />);
+    expect(narrow.getByLabelText('Deposit slider').parent?.props.style).toEqual(expect.objectContaining({ alignSelf: 'stretch' }));
+  });
+});
+
+describe('RateInput bounds', () => {
+  function RateHarness({ onValue }: { onValue?: (t: string) => void }) {
+    const [text, setText] = React.useState('');
+    return (
+      <RateInput
+        value={text}
+        onChange={(n) => {
+          onValue?.(n);
+          setText(n);
+        }}
+        label="Rate"
+        accessibilityLabel="APR"
+        max="999.99"
+        rangeText="0 to 999.99% a year"
+      />
+    );
+  }
+
+  it('R4 a rate keystroke above the max is refused and shows the range line', async () => {
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
+    announce.mockClear();
+    const onValue = jest.fn();
+    const view = await wrap(<RateHarness onValue={onValue} />);
+    await fireEvent.changeText(view.getByLabelText('APR'), '999');
+    onValue.mockClear();
+    await fireEvent.changeText(view.getByLabelText('APR'), '9999');
+    expect(onValue).not.toHaveBeenCalled();
+    expect(view.getByLabelText('APR').props.value).toBe('999');
+    expect(view.getByText('0 to 999.99% a year').props.style.color).toBe('#8A5A1B');
+    await fireEvent.changeText(view.getByLabelText('APR'), '9998');
+    expect(announce).toHaveBeenCalledTimes(1);
+    announce.mockRestore();
+  });
+
+  it('R4 the rate range line clears on the next valid keystroke', async () => {
+    const view = await wrap(<RateHarness />);
+    await fireEvent.changeText(view.getByLabelText('APR'), '1000');
+    expect(view.queryByText('0 to 999.99% a year')).toBeTruthy();
+    await fireEvent.changeText(view.getByLabelText('APR'), '99');
+    expect(view.queryByText('0 to 999.99% a year')).toBeNull();
+  });
+
+  it('R4 without a max the field behaves as before', async () => {
+    const onValue = jest.fn();
+    const view = await wrap(<RateInput value="" onChange={onValue} label="Rate" accessibilityLabel="APR" />);
+    await fireEvent.changeText(view.getByLabelText('APR'), '1000');
+    expect(onValue).toHaveBeenCalledWith('1000');
   });
 });

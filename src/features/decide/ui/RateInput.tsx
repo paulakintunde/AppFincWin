@@ -7,13 +7,14 @@
  * WR-D03: the field shows and accepts the region's own decimal mark (a decimal comma in de, fr, es, nl and others, the
  * only mark their decimal pad offers); the text handed to onChange always uses '.', the engine's form.
  */
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useState } from 'react';
+import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+import { typedRateAbove } from '../snapshot/checkInputs';
 import { TextInput } from '@/ui/TextInput';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
-import { textRole } from '@/theme/typography';
+import { fontSize, textRole } from '@/theme/typography';
 import { localeSeparators } from '@/engine/money';
 import { useDeviceLocale } from '@/services/locale/deviceLocale';
 
@@ -35,12 +36,20 @@ export interface RateInputProps {
   onBlur?: () => void;
   /** 05-44: a decided check cannot be edited. */
   readOnly?: boolean;
+  /**
+   * 05-61 (R4): the largest rate the field takes, in the engine's '.' text form (e.g. '999.99'). A keystroke that would
+   * exceed it is refused (onChange is not called, the shown text stays). Compared as a percent, never through Number().
+   */
+  max?: string;
+  /** 05-61: the bounds in words, shown in warn1 under the field after a refused keystroke. */
+  rangeText?: string;
 }
 
-export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur, readOnly = false }: RateInputProps) {
+export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur, readOnly = false, max, rangeText }: RateInputProps) {
   const { colors, pairing } = useTheme();
   const { locale, separators } = useDeviceLocale();
   const decimal = (separators ?? localeSeparators(locale)).decimal;
+  const [refused, setRefused] = useState(false);
   return (
     <View>
       <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
@@ -49,7 +58,14 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
           value={decimal === '.' ? value : value.replace('.', decimal)}
           onChangeText={(typed) => {
             const text = toRateText(typed, decimal);
-            if (TYPING.test(text)) onChange(text);
+            if (!TYPING.test(text)) return;
+            if (max !== undefined && typedRateAbove(text, max)) {
+              if (!refused && rangeText) AccessibilityInfo.announceForAccessibility(rangeText);
+              setRefused(true);
+              return;
+            }
+            setRefused(false);
+            onChange(text);
           }}
           onBlur={onBlur}
           // WR-C04: Done commits the rate the same way leaving the field does
@@ -64,6 +80,7 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
         />
         <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>%</Text>
       </View>
+      {refused && rangeText ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{rangeText}</Text> : null}
       {hint ? <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{hint}</Text> : null}
     </View>
   );

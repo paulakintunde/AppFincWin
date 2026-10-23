@@ -18,7 +18,7 @@ import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { DURATION, useReduceMotion } from '@/theme/motion';
 import { space } from '@/theme/layout';
-import { textRole } from '@/theme/typography';
+import { fontSize, textRole } from '@/theme/typography';
 import { acceptsMonthsKeystroke, parseWholeInRange, presetFor } from '../snapshot/customValues';
 
 const FIELD_WIDTH = 96;
@@ -105,7 +105,7 @@ export function CustomValueField({ value, min, max, rangeText, unitWord, groupLa
         </View>
         <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim, flexShrink: 1 }}>{unitWord}</Text>
       </View>
-      <Text style={{ ...textRole(pairing, 'meta'), color: warn ? colors.warn1 : colors.inkFaint }}>{rangeText}</Text>
+      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: warn ? colors.warn1 : colors.inkFaint }}>{rangeText}</Text>
     </View>
   );
   return reduced ? body : <Animated.View entering={FadeIn.duration(DURATION.entrance)}>{body}</Animated.View>;
@@ -173,7 +173,7 @@ export function CustomValueChips({
             autoFocus
           />
         ) : storedAbove ? (
-          <Text style={{ ...textRole(pairing, 'meta'), color: colors.warn1 }}>{rangeText}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{rangeText}</Text>
         ) : null}
       </View>
     </ReadOnlyScope.Provider>
