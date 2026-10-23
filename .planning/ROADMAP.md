@@ -604,7 +604,7 @@ Plans:
 ### Phase 5: Decide UI
 **Goal**: A user gets a trustworthy, explained affordability verdict computed from their own logged months.
 **Depends on**: Phase 4 (engine), Phase 1 (data layer to source the snapshot)
-**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09, DCU-10, DCU-11, DCU-12, DCU-13, DCU-14, DCU-15, DCU-16, DCU-17, DCU-18, DCU-19, DCU-20, DCU-21, DCU-22, DCU-23, DCU-24, DCU-25, DCU-26, DCU-27, DCU-28, DCU-29, DCU-30, ANL-06
+**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09, DCU-10, DCU-11, DCU-12, DCU-13, DCU-14, DCU-15, DCU-16, DCU-17, DCU-18, DCU-19, DCU-20, DCU-21, DCU-22, DCU-23, DCU-24, DCU-25, DCU-26, DCU-27, DCU-28, DCU-29, DCU-30, DCU-31, DCU-32, DCU-33, MON-15, ANL-06
 **Success Criteria** (what must be TRUE):
   1. A user can get a cash answer from just an item and a price without entering the multi-step flow, and can work through the five steps — item, price and payment, impact, alternatives, decision — for the full picture.
   2. A user can leave a check open, return to it later and see its verdict recomputed against current figures, or abandon it.
@@ -614,7 +614,7 @@ Plans:
   6. A brand-new user reaches a first verdict within their first session, in roughly a minute, without having logged or imported a month, and the verdict says plainly what it rests on and how an import sharpens it.
   7. Store screenshots 1–3 (verdict, what breaks, alternatives) can be captured from the App Review demo account's sample scenario with nothing staged outside the real app.
 **Launch inputs** (from `research/LAUNCH-POSITIONING.md`, 2026-09-26): the store name is *FincWin: Can I Afford It?*, so the quick check is the product's public promise and stays in the free tier (see `research/PRICING.md`). The first-read question is settled (04-CONTEXT D-11: rough figures give a cash-level answer only, via DEC-16). Discuss-phase must still settle the demo-account scenario (sofa $1,800 in a household of two; car $14,500 on a loan). Onboarding order — welcome, consent, one account, rough month, first check, then "Bring your history" — is shared with Phase 2 (02-30) and Phase 9, where the level questions move after the first verdict.
-**Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate). **Decide UX refresh (2026-10-22):** 34 more plans, 05-54..05-87 in waves 10-19, for 05-CONTEXT D-70..D-84 (UI-SPEC "Decide UX refresh" R1-R15; DCU-25..DCU-30 added; engine changes E1/E2 in 05-81/05-82, user decisions D-80/D-83); revised 2026-10-22 for the plan-check findings (6 blockers, 12 warnings); 05-26 moves to wave 20 so the device pass covers the refresh. Total 87 plans in 20 waves.
+**Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate). **Decide UX refresh (2026-10-22):** 34 more plans, 05-54..05-87 in waves 10-19, for 05-CONTEXT D-70..D-84 (UI-SPEC "Decide UX refresh" R1-R15; DCU-25..DCU-30 added; engine changes E1/E2 in 05-81/05-82, user decisions D-80/D-83); revised 2026-10-22 for the plan-check findings (6 blockers, 12 warnings); 05-26 moves to wave 20 so the device pass covers the refresh. Total 87 plans in 20 waves. **Device-walkthrough refinements (2026-10-23):** 22 more plans, 05-88..05-109 in waves 20-26, for 05-CONTEXT D-85..D-94 (UI-SPEC R16; engine changes E3-E5 in 05-89/05-91/05-92, 05-90, 05-93..05-95; DCU-31..DCU-33 and MON-15 added); 05-26 moves to wave 27. Total 109 plans in 27 waves.
 Plans:
 **Wave 1**
 - [x] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
@@ -740,8 +740,44 @@ Plans:
 **Wave 19** *(blocked on Wave 18 completion)*
 - [x] 05-79-PLAN.md — Static text-fit guards (rules T, F, N, O) and fontScale-2 render guard; full gate (D-76)
 
-**Wave 20** *(blocked on Wave 19 completion)*
-- [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots at 402x874 (R8 frames), 60 s first read, reminders, haptics, back, and the refresh text-fit/TalkBack checklist
+**Wave 20** *(device-walkthrough refinements; blocked on Wave 19 completion)*
+- [ ] 05-88-PLAN.md — R16 copy: 4 new and 2 updated ⓘ entries, the M6 instalment table, card, tax and tuition notes, sync line strings (D-85..D-93)
+- [ ] 05-89-PLAN.md — Engine E3a: amortise and amortiseDue take periods per year (D-89)
+- [ ] 05-90-PLAN.md — Engine E4: impliedApr true-APR solver, bigint bisection (D-90)
+- [ ] 05-96-PLAN.md — "$" always means USD: formatAmount markers, formatMoneyA11y, a11y labels (D-94)
+- [ ] 05-97-PLAN.md — FAB root cause: null-in-tabs surface rule and the sheet-stack watchdog (D-85)
+- [ ] 05-100-PLAN.md — Record entry: new lines default to the home currency (D-93)
+- [ ] 05-107-PLAN.md — Sync transport: request timeouts, 12 s backoff cap, resume, Supabase reachability, post-restore refetch (D-88)
+
+**Wave 21** *(blocked on Wave 20 completion)*
+- [ ] 05-91-PLAN.md — Engine E3b: instalment frequency, next_period, MAX_INSTALMENTS, monthly equivalent; inputs carry freq (D-89)
+- [ ] 05-98-PLAN.md — You: the "Add" group, run after dismiss on transitionEnd; old import row removed (D-85)
+- [ ] 05-99-PLAN.md — No back on a tab root; cushion and runway "Over 50 years" (D-93)
+- [ ] 05-108-PLAN.md — Draft-save coalescing, age-aware sync line, idempotent replay test (D-88)
+
+**Wave 22** *(blocked on Wave 21 completion)*
+- [ ] 05-92-PLAN.md — Engine E3c: cash path real dates by frequency; payback and investing views by monthly equivalent (D-89)
+- [ ] 05-93-PLAN.md — Engine E5a: property, cash-like, tuition; region-aware card rules; phrase suggestions; new prompts (D-92)
+- [ ] 05-102-PLAN.md — Instalment copy table (frequency x rate x timing) and the true APR on the settled path (D-89, D-90)
+- [ ] 05-105-PLAN.md — Speed, data: one snapshot per source; autosave keeps other rows stable (D-88)
+
+**Wave 23** *(blocked on Wave 22 completion)*
+- [ ] 05-94-PLAN.md — Engine E5b: card check limit in plan building, card_limit_rate_missing (D-91)
+- [ ] 05-103-PLAN.md — Instalment card: How often, 1-500, first-payment labels; written lines and Go ahead by frequency (D-89)
+- [ ] 05-106-PLAN.md — Speed, flow: settledCore reuse, selected method only, idle details with Updating, perf harness (D-88)
+
+**Wave 24** *(blocked on Wave 23 completion)*
+- [ ] 05-95-PLAN.md — Engine E5c: the snapshot converts the card limit (rational, floored) and passes it with the region (D-91)
+- [ ] 05-101-PLAN.md — Interest saved by the deposit; running-cost rows with the dashed Amount field (D-86, D-87)
+
+**Wave 25** *(blocked on Wave 24 completion)*
+- [ ] 05-104-PLAN.md — Card limit box, fee and block notes, card-limit basis item; Step 1 new item types (D-91, D-92)
+
+**Wave 26** *(blocked on Wave 25 completion)*
+- [ ] 05-109-PLAN.md — Retire R16-replaced copy, drop the next_month alias, extend the copy and text-fit guards (D-76, DCU-09)
+
+**Wave 27** *(blocked on Wave 26 completion)*
+- [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots at 402x874 (R8 frames), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist and the D-88 speed budgets
 **UI hint**: yes — this phase should carry the deepest testing and design-iteration budget in the roadmap; it is the product's actual moat.
 
 ### Phase 6: Grow
@@ -877,7 +913,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 52/87 | Executing (Decide UX refresh planned 2026-10-22) | - |
+| 5. Decide UI | 86/109 | Executing (R16 refinements planned 2026-10-23) | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |

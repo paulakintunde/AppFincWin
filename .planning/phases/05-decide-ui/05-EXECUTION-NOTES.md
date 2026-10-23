@@ -108,7 +108,7 @@ Non-interactive execution of `/gsd-execute-phase 5` (waves 1-8, plus 05-25 Task 
 ## D-69 provisional latest rate (2026-10-22)
 - User decision "Provisional latest rate", built before the 05-26 device checks. A line with no usable stamp converts at the latest stored rate (`provisionalHomeAmount`), is flagged provisional, shows the basis line with count and date, and caps confidence at fair via the engine's plain `provisionalRates` flag. No migration; nothing provisional is written; `homeAmountFor` unchanged. 05-26 device item added above.
 
-## 05-26 device checklist additions (Decide UX refresh, 05-54..05-87, D-70..D-84)
+## 05-26 device checklist additions (Decide UX refresh, 05-54..05-109, D-70..D-94)
 
 Planned 2026-10-22. "Text-fit matrix" means 402x874 and 320x568 (points), each at text scale 1.0x and 2.0x: the Pixel (Settings > Display size and text) and an Android emulator AVD at 320dp (`adb shell wm size` / `wm density`); the iPhone XR when the iOS build exists. Pass: no word split mid-word, no overlap, no truncated system copy, every target 44 or larger, every ⓘ and chevron visible. TalkBack checks read every new control by its label.
 
@@ -146,3 +146,25 @@ Planned 2026-10-22. "Text-fit matrix" means 402x874 and 320x568 (points), each a
 - [ ] 05-85 Instalment card: Has a rate? and First payment become radio lists at 2.0x and 320; a quote that differs shows the "rate works out to" note; What gets written for "In a month" starts a month later. Also (both devices): the Has a rate? No/Yes switch keeps the typed payment; the rate field refuses 1000 and shows its range line; the Show details toggles open and close the late-fee and stress lines; the three new ⓘ open over the card; the written list for "In a month" shows only the fees on the day.
 - [ ] 05-86 Custom item type: "Drone" with Treat like Vehicle turns the secured default on; a 40-character name wraps to 2 lines with an ellipsis and TalkBack reads it in full.
 - [ ] 05-87 Expected return: the verdict line after the basis marker wraps at 2.0x and is read with the key figures; the lump-sum horizon chips appear only once a return is typed.
+- [ ] 05-88 R16 copy: read the new ⓘ entries, the frequency notes and the card/tax/tuition notes in context; counts never split from units.
+- [ ] 05-89 E3a: a weekly 52 x plan on the device shows the same payment as a hand calculation.
+- [ ] 05-90 E4: a no-rate 12 x 105.00 plan on 1,200.00 shows the solved rate rounded up; E4 at n = 500 under 30 ms in the perf harness on the Pixel 9.
+- [ ] 05-91 E3b: a fortnightly plan counts its monthly equivalent in the month line.
+- [ ] 05-92 E3c: the cash path shows weekly instalments on their weekly dates.
+- [ ] 05-93 E5a: 'house deposit' suggests Property and blocks the card; 'home gym' stays General; tax in a GB region blocks the card, elsewhere shows the fee note.
+- [ ] 05-94 E5b: a 150,000 purchase on a card puts 100,000 (in home terms) on the card and the rest on the day.
+- [ ] 05-95 E5c: a GBP-home check shows the card limit floored at the latest stored USD rate; with no USD rate the card reads 'Needs: USD rate'.
+- [ ] 05-96 D-94: a CAD-home account in en-CA shows CA$ for CAD and $ for USD across Record, Activity, Home and Decide; TalkBack reads 'Canadian dollars' / 'US dollars'.
+- [ ] 05-97 D-85: force-close a sheet mid-animation (background the app during the close), return to a tab root: the FAB is back within 2 s.
+- [ ] 05-98 D-85: You > Add > each of the five rows closes You and opens the right sheet or route over the tab root; TalkBack reads the hints.
+- [ ] 05-99 D-93: open and close a check, the Decide root shows no back arrow; a very large cash balance reads 'Over 50 years'.
+- [ ] 05-100 D-93: with a GBP account and USD home, a new expense starts in USD and can be switched per line.
+- [ ] 05-101 D-86/D-87: the deposit line and tiles at the text-fit matrix; tapping a running-cost row focuses the dashed field; the checkbox appears without moving the field.
+- [ ] 05-102 D-89/D-90: each frequency x rate x timing note reads as the M6 table.
+- [ ] 05-103 D-89: How often chips wrap at 2.0x; a weekly plan's Go ahead writes a weekly series visible in Record.
+- [ ] 05-104 D-91/D-92: the card limit box and the 'not of your card issuer' line at the text-fit matrix; Property, Tuition and Cash-like chips wrap.
+- [ ] 05-105 D-88: typing in one open check does not visibly recompute other checks' chips.
+- [ ] 05-106 D-88: on the Pixel 9 release build, median and p95 over 30 keystrokes on the demo car check (deposit field): verdict median < 50 ms, details median < 300 ms; 'Updating' shows briefly on folds.
+- [ ] 05-107 D-88: airplane mode on during a save, off again: the write resumes within seconds without reopening the app; a slow network shows no stall beyond 20 s.
+- [ ] 05-108 D-88: offline, type into a check for a minute, reconnect: one save travels; the sync line stays hidden for quick saves and reads 'N changes waiting' only after 5 s.
+- [ ] 05-109 R16 close-out: no retired R16 string appears anywhere; whole Decide pass at the text-fit matrix for the R16 screens.

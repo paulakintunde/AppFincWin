@@ -93,6 +93,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **MON-12**: When Frankfurter cannot be reached, rates refresh from open.er-api instead, and its required attribution is shown in the app
 - [x] **MON-13**: Each currency's decimal places come from ISO 4217 — 0 for JPY, KRW and VND, 3 for KWD, BHD and OMR — and a custom currency declares its own
 - [x] **MON-14**: A transaction stores its local calendar date and time zone, so its month and any recurring schedule never shift across time zones or clock changes
+- [ ] **MON-15**: "$" always means the US dollar wherever money is shown; other dollar currencies keep their marker (CA$, A$ …), and screen readers read currency names (05 D-94)
 
 ### Offline & Sync
 
@@ -252,6 +253,9 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-28**: A check saves itself as the user edits, including when the app is backgrounded, and shows its save status; Clear and Delete each undo in one step and never remove what Go ahead wrote (05 D-73, D-77)
 - [ ] **DCU-29**: User can see each way to pay as its own card holding its inputs and results, and give an instalment plan a rate and a first-payment date (05 D-79, D-80)
 - [ ] **DCU-30**: User can name a custom item type that follows a built-in type's rules, and add an optional expected return to an investment check, shown as a projection only (05 D-81, D-82)
+- [ ] **DCU-31**: User can set an instalment plan's frequency (weekly, every 2 weeks, monthly or quarterly, up to 500 payments) and sees the true yearly rate implied by a plan with no quoted rate (05 D-89, D-90)
+- [ ] **DCU-32**: A check counts at most US$100,000 (converted at the latest stored rate) on a card, never counts property or cash-like purchases on a card, and treats tax and tuition by region with a fee note (05 D-91, D-92)
+- [ ] **DCU-33**: The check flow keeps the verdict within 50 ms of a keystroke and the details within 300 ms after typing stops on the test device (05 D-88)
 
 ### Grow
 
@@ -619,6 +623,10 @@ Populated during roadmap creation.
 | DCU-28 | Phase 5 - Decide UI | Pending |
 | DCU-29 | Phase 5 - Decide UI | Pending |
 | DCU-30 | Phase 5 - Decide UI | Pending |
+| DCU-31 | Phase 5 - Decide UI | Pending |
+| DCU-32 | Phase 5 - Decide UI | Pending |
+| DCU-33 | Phase 5 - Decide UI | Pending |
+| MON-15 | Phase 5 - Decide UI | Pending |
 | GRW-01 | Phase 6 - Grow | Pending |
 | GRW-02 | Phase 6 - Grow | Pending |
 | GRW-03 | Phase 6 - Grow | Pending |
@@ -696,8 +704,8 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 281 total (100 ticked)
-- Mapped to phases: 247
+- v1 requirements: 285 total (100 ticked)
+- Mapped to phases: 251
 - Unmapped: 0 ✓
 
 ---
@@ -707,6 +715,8 @@ Populated during roadmap creation.
 *2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 
 *2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
+*2026-10-23 — Device-walkthrough refinements R16: DCU-31 (instalment frequency and true APR, D-89/D-90), DCU-32 (card limit and card rules, D-91/D-92), DCU-33 (check-flow speed budget, D-88) and MON-15 ("$" means USD, D-94) added (plans 05-88..05-109); D-85 maps to NAV-05/REC-01/REC-02/REC-09, D-86/D-87 to DCU-29/DCU-20, D-88 sync to SYN-02/SYN-03/SYN-06, D-93 to NAV-02/DCU-14/REC-01; v1 total now 285.*
+
 *2026-10-22 — Decide UX refresh R15: DCU-29 (Step 2 method cards, instalment rate, D-79/D-80) and DCU-30 (custom item type, expected return, D-81/D-82) added (plans 05-80..05-87); D-83 maps to DCU-05 and D-84 to DCU-25; v1 total now 281.*
 
 *2026-10-22 — Decide UX refresh: DCU-25..DCU-28 added for 05-CONTEXT D-70, D-71, D-76 and D-73/D-77 (plans 05-54..05-79); D-72, D-74, D-75 and D-78 map to DCU-01, DCU-03, DCU-11 and DCU-14; v1 total now 279.*
