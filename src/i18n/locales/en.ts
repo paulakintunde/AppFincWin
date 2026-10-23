@@ -1684,7 +1684,8 @@ const en = {
       },
       onCard: {
         term: 'On a card',
-        body: 'The purchase goes on a credit card and is cleared in full at the next statement, over a few months, or at the minimum. Interest is counted at the rate on the card record.',
+        body: 'The purchase goes on a credit card and is cleared in full at the next statement, over a few months, or at the minimum. Interest is counted at the rate on the card record. At most {{cap}} goes on a card in checks.',
+        bodyNoCap: 'The purchase goes on a credit card and is cleared in full at the next statement, over a few months, or at the minimum. Interest is counted at the rate on the card record.',
         changes: 'Adds the card payment to your month until it is cleared.',
       },
       paidInFullMonthly: {
@@ -1709,7 +1710,7 @@ const en = {
       },
       itemType: {
         term: 'Item type',
-        body: 'What kind of purchase this is. It decides whether a card can be used, whether a loan starts as secured, and which running costs are listed.',
+        body: 'What kind of purchase this is. It decides whether a card is counted, whether a loan starts as secured, and which running costs are listed. Property and cash-like purchases are never counted on a card.',
         changes: 'Changing it can change the card rules and the costs listed.',
       },
       customItemType: {
@@ -1726,6 +1727,29 @@ const en = {
         term: 'How it gets cleared',
         body: 'In full next statement means no interest is counted. Over a few months or the minimum count interest at the card’s rate until the balance reaches zero.',
         changes: 'Changes the monthly card payment and the interest.',
+      },
+      // 05-88 (D-86, D-89, D-90, D-91, UI-SPEC R16.10)
+      interestSaved: {
+        term: 'Interest saved by the deposit',
+        body: 'Compared with the same loan with no deposit: same price, months and rate. The saving comes only from borrowing less.',
+        changes: 'Nothing in the verdict.',
+      },
+      instalmentFrequency: {
+        term: 'How often',
+        body: 'Payments can fall weekly, every 2 weeks, monthly or quarterly. The month is tested with the monthly equivalent, and the cash path uses the real dates.',
+        changes: 'Changes the monthly equivalent and the dates on the cash path.',
+      },
+      impliedApr: {
+        term: 'Rate worked out from the figures',
+        body: 'The yearly rate that makes the payments add up to the amount paid over time, counting their timing. It is worked out from the figures you typed and is not a quoted rate.',
+        changes: 'Nothing in the verdict; the plan is scored on its payments.',
+      },
+      cardCheckLimit: {
+        term: 'Card limit in checks',
+        body: 'Checks count at most {{cap}} of a purchase on a card, which is {{usdLimit}} at the latest stored rate. It is a limit of this app’s checks, not of any card issuer.',
+        bodyUsdHome: 'Checks count at most {{usdLimit}} of a purchase on a card. It is a limit of this app’s checks, not of any card issuer.',
+        bodyNoLimit: 'Checks count only a capped part of a purchase on a card, at the latest stored rate. It is a limit of this app’s checks, not of any card issuer.',
+        changes: 'The part above it is counted as cash on the day.',
       },
     },
     infoButton: { a11y: 'About {{term}}', hint: 'Opens an explanation', sheetChanges: 'What this changes', close: 'Close' },

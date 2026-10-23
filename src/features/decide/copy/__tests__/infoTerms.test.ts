@@ -1,5 +1,5 @@
 import en from '@/i18n/locales/en';
-import { INFO_KEYS, infoCopy } from '../infoTerms';
+import { INFO_KEYS, infoCopy, type InfoDynamic } from '../infoTerms';
 import { ref } from '../types';
 
 const node = (path: string): unknown => path.split('.').reduce<unknown>((n, p) => (n && typeof n === 'object' ? (n as Record<string, unknown>)[p] : undefined), en);
@@ -7,13 +7,51 @@ const str = (path: string): string | undefined => (typeof node(path) === 'string
 const sentences = (s: string): number => (s.match(/[.!?](?=\s|$)/g) ?? []).length;
 
 describe('infoTerms', () => {
-  it('D-70 / D-84 INFO_TERMS has the 31 R3 keys and the 24 R15.8 keys', () => {
-    expect(INFO_KEYS).toHaveLength(55);
-    expect(new Set(INFO_KEYS).size).toBe(55);
+  it('D-84 / R16 INFO_TERMS has 59 keys', () => {
+    expect(INFO_KEYS).toHaveLength(59);
+    expect(new Set(INFO_KEYS).size).toBe(59);
     expect(INFO_KEYS[0]).toBe('replaces');
     expect(INFO_KEYS[30]).toBe('whatGetsWritten');
     expect(INFO_KEYS[31]).toBe('price');
     expect(INFO_KEYS[54]).toBe('cardClearing');
+    expect(INFO_KEYS.slice(55)).toEqual(['interestSaved', 'instalmentFrequency', 'impliedApr', 'cardCheckLimit']);
+  });
+
+  it('R16 the card limit explanation has a USD-home variant', () => {
+    const conv = infoCopy('cardCheckLimit', { cardCheckLimit: { cap: '£78,000', usdLimit: '$100,000' } });
+    expect(conv.body).toEqual([ref('decide.info.cardCheckLimit.body', { cap: '£78,000', usdLimit: '$100,000' })]);
+    const usd = infoCopy('cardCheckLimit', { cardCheckLimit: { usdLimit: '$100,000', usdHome: true } });
+    expect(usd.body).toEqual([ref('decide.info.cardCheckLimit.bodyUsdHome', { usdLimit: '$100,000' })]);
+    expect(str('decide.info.cardCheckLimit.bodyUsdHome')).not.toContain('{{cap}}');
+    expect(str('decide.info.cardCheckLimit.body')).toContain('{{cap}}');
+    expect(str('decide.info.cardCheckLimit.body')).toContain('{{usdLimit}}');
+  });
+
+  it('R16 the On a card explanation falls back without a cap', () => {
+    expect(infoCopy('onCard', { onCard: { cap: '$100,000' } }).body).toEqual([ref('decide.info.onCard.body', { cap: '$100,000' })]);
+    expect(str('decide.info.onCard.body')).toContain('At most {{cap}} goes on a card in checks.');
+    expect(infoCopy('onCard').body).toEqual([ref('decide.info.onCard.bodyNoCap')]);
+    expect(str('decide.info.onCard.bodyNoCap')).not.toContain('{{');
+    expect(infoCopy('cardCheckLimit').body).toEqual([ref('decide.info.cardCheckLimit.bodyNoLimit')]);
+  });
+
+  it('R16 no rendered explanation contains a raw placeholder', () => {
+    const dyn: InfoDynamic[] = [
+      {},
+      { cushionMonths: { months: 3, reason: ref('x') }, provisionalRate: { date: '1 Oct' }, onCard: { cap: '$1' }, cardCheckLimit: { cap: '£1', usdLimit: '$1' } },
+      { cardCheckLimit: { usdLimit: '$1', usdHome: true } },
+    ];
+    for (const key of INFO_KEYS) {
+      for (const d of dyn) {
+        const c = infoCopy(key, d);
+        for (const r of [c.term, c.changes, ...c.body]) {
+          const raw = str(r.key) ?? str(`${r.key}_other`) ?? '';
+          // a ref with params supplies them; strip the names it carries, then nothing may remain
+          const left = raw.replace(/\{\{(\w+)\}\}/g, (m, n: string) => (r.params && n in r.params ? '' : n === 'reason' && c.reason ? '' : m));
+          expect({ key: r.key, left: left.includes('{{') }).toEqual({ key: r.key, left: false });
+        }
+      }
+    }
   });
 
   it('D-84 every R15.8 entry has a term, a body of at most 3 sentences and what this changes', () => {
