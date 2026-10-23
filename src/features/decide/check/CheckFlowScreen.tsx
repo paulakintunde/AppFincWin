@@ -53,7 +53,8 @@ import { ScrollIntoViewContext, scrollTargetY, type ScrollAlign } from '../ui/sc
 import { StateChip, type StateChipTone } from '../ui/StateChip';
 import { useFoldHint } from '../hints/useFoldHint';
 import { fromHomePatch, inHomeCurrency, sourceFor } from '../snapshot/checkCurrency';
-import { computeCore, computeDetails } from '../snapshot/computeCheck';
+import { effectiveMethod } from '../snapshot/checkInputs';
+import { computeCore, computeDetails, sameInputs, settledCoreFor } from '../snapshot/computeCheck';
 import type { CheckCore } from '../snapshot/computeCheck';
 import { EMPTY_STACK } from '../snapshot/types';
 import type { CheckComputation, CheckInputs } from '../snapshot/types';
@@ -76,6 +77,8 @@ import { useAnnounceSaveStatus, useCheckSaveStatus } from './useCheckSaveStatus'
 import { useCheckDraft } from './useCheckDraft';
 import { useCommitDecision } from './useCommitDecision';
 import { useDebouncedValue } from './useDebouncedValue';
+import { perfMark } from '../perf/perfMarks';
+import { scheduleIdle } from './scheduleIdle';
 
 type Outcome = NonNullable<CheckInputs['outcome']>;
 type SeenBasis = 'logged_months' | 'first_read_rough_figures';
@@ -242,14 +245,53 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
   const boughtState = useBoughtCheckComputation(row, row === null ? null : draft.inputs);
 
   // ── D-56: the verdict is live, the slow details follow the inputs 150 ms after they stop changing ──
-  const core = useMemo(() => (source === null || bought ? null : computeCore(source, inputs, stack.otherChecks)), [source, inputs, stack, bought]);
+  // D-88: the slow figures are stored once computed (in an idle callback) with the core they came from; they are what the
+  // folds read until the next ones arrive.
   const settled = useDebouncedValue(inputs);
-  const settledCore = useMemo(() => (source === null || bought ? null : computeCore(source, settled, stack.otherChecks)), [settled, source, stack, bought]);
-  const details = useMemo(() => (settledCore === null ? null : computeDetails(settledCore, settled)), [settledCore, settled]);
-  const live = useMemo(() => (core === null || details === null ? null : withCore(details, core)), [core, details]);
+  const typing = !bought && !sameInputs(settled, inputs);
+  const [shown, setShown] = useState<{ core: CheckCore; details: CheckComputation } | null>(null);
+  const detailFor = effectiveMethod(inputs);
+  const prior = typing ? (shown?.details ?? null) : null; // only a typing pass reads it, so a settle never rebuilds the core
+  // speed 4: while typing only the selected method's plan is resolved; the others carry over until the inputs settle
+  const core = useMemo(
+    () => {
+      if (source === null || bought) return null;
+      perfMark('verdict:start');
+      const next = computeCore(source, inputs, stack.otherChecks, typing ? { detailFor, prior } : {});
+      perfMark('verdict:end');
+      return next;
+    },
+    [source, inputs, stack, bought, typing, detailFor, prior]
+  );
+  // speed 3: settled and live inputs equal means one core, not two
+  const settledCore = useMemo(
+    () => (source === null || core === null || typing ? null : settledCoreFor(source, settled, stack.otherChecks, { inputs, core, narrowed: false })),
+    [source, settled, stack, inputs, core, typing]
+  );
+  if (shown === null) {
+    // the first figures are computed in place (nothing is on screen to keep); later ones follow in idle time
+    const seed = settledCore ?? core;
+    if (seed !== null) setShown({ core: seed, details: computeDetails(seed, settledCore === null ? inputs : settled) });
+  }
+  const detailsPending = settledCore !== null && shown?.core !== settledCore;
+  // speed 5: computeDetails runs after interactions; a newer settle cancels the one waiting
+  useEffect(() => {
+    if (settledCore === null || !detailsPending) return undefined;
+    return scheduleIdle(() => {
+      perfMark('details:start');
+      const details = computeDetails(settledCore, settled);
+      perfMark('details:end');
+      setShown({ core: settledCore, details });
+    });
+  }, [settledCore, settled, detailsPending]);
+  const details = shown === null ? null : shown.details;
+  const live = useMemo(() => {
+    if (core === null || details === null) return null;
+    return withCore(details, core);
+  }, [core, details]);
   // 05-52: a bought check is recomputed without its own Go-ahead writes, so the purchase is never counted twice.
   const computation: CheckComputation | null = bought ? boughtState.computation : live;
-  const busy = !bought && settled !== inputs;
+  const busy = !bought && (typing || detailsPending);
 
   // ── the step ──
   const complete1 = step1Complete(inputs, today);

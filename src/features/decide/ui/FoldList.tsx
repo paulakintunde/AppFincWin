@@ -16,6 +16,8 @@ export interface FoldSpec<K extends string = string> {
   key: K;
   title: string;
   preview: string;
+  /** 05-106 (D-88): the preview is waiting on the settled figures. */
+  busy?: boolean;
   info?: FoldInfo;
   body: React.ReactNode;
 }
@@ -71,6 +73,7 @@ export function FoldList<K extends string>({ folds, openKey, onOpenChange, onOpe
           <FoldRow
             title={fold.title}
             preview={fold.preview}
+            busy={fold.busy}
             expanded={openKey === fold.key}
             onToggle={() => toggle(fold)}
             info={fold.info}

@@ -155,6 +155,9 @@ export function useStep3Folds(args: Step3FoldArgs): FoldSpec<SectionKey>[] {
   const formatDate = (d: string): string => whole.formatDate(d);
   const common = { computation, inputs, update, whole, exact, currency, readOnly, busy };
   const join = (p: Preview): string => joinPreview(t, p);
+  // D-88 (R16.4 item 6): a fold built from the slow figures reads 'Updating' (and busy) until they settle. No motion.
+  const pending = busy === true;
+  const slow = (p: Preview): { preview: string; busy: boolean } => ({ preview: pending ? t('decide.fold.updating') : join(p), busy: pending });
   const a = assessmentOf(computation);
   const verdict = computation.status === 'logged' ? computation.verdict : null;
   const firstRead = computation.status === 'first_read' ? computation.firstRead : null;
@@ -198,7 +201,7 @@ export function useStep3Folds(args: Step3FoldArgs): FoldSpec<SectionKey>[] {
     if (setbackReport.runwayMonths === null) preview = setbacksPreview(null, null);
     else if (lost !== null && lost > 0 && runwayWith !== null) preview = setbacksPreview(runwayWith, lost);
     else preview = ref('decide.section.setbacksSummary', { count: setbackReport.runwayMonths });
-    folds.push({ key: 'setbacks', title: title('setbacks'), preview: join(preview), info: infoOf(setbacksInfo), body: <SetbacksBody {...common} resultIds={setbackResultIds} /> });
+    folds.push({ key: 'setbacks', title: title('setbacks'), ...slow(preview), info: infoOf(setbacksInfo), body: <SetbacksBody {...common} resultIds={setbackResultIds} /> });
   }
 
   // 6 What would make it work: the state is not fits
@@ -206,7 +209,7 @@ export function useStep3Folds(args: Step3FoldArgs): FoldSpec<SectionKey>[] {
     folds.push({
       key: 'options',
       title: title('options'),
-      preview: join(optionsPreview(computation.options.length)),
+      ...slow(optionsPreview(computation.options.length)),
       body: <OptionsBody {...common} lineName={lineName} onSwitchToWait={onSwitchToWait} onOpenActivity={onOpenActivity} />,
     });
   }
@@ -226,7 +229,7 @@ export function useStep3Folds(args: Step3FoldArgs): FoldSpec<SectionKey>[] {
         rateIndex < 0 || figure === undefined || figure.projected === null || figure.rangeCode !== null
           ? null
           : { fv: fmt(figure.projected), months: views.horizonMonths, rate: percentText(figure.rate) };
-      folds.push({ key: 'ifInvested', title: title('ifInvested'), preview: join(ifInvestedPreview(shown)), info: infoOf(investedInfo), body: <InvestingInsteadBody {...step} /> });
+      folds.push({ key: 'ifInvested', title: title('ifInvested'), ...slow(ifInvestedPreview(shown)), info: infoOf(investedInfo), body: <InvestingInsteadBody {...step} /> });
     }
   }
 

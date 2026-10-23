@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler/jestSetup';
 import React from 'react';
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { minorUnits } from '@/engine/money';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { buildGoAheadWrite } from '@/data/mutations/decideGoAhead';
@@ -207,7 +207,8 @@ describe('Go ahead', () => {
         const view = await open({ outcome: 'go', goAccountId: stale });
         // Step 5 replaces the stale account (an edit); commit waits for the figures to settle (WR-C07)
         expect(lastGoAhead().props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
-        await act(() => new Promise((resolve) => setTimeout(resolve, 200)));
+        // the 150 ms settle, then the details in an idle callback (D-88)
+        await waitFor(() => expect(lastGoAhead().props.accessibilityState).not.toEqual(expect.objectContaining({ disabled: true })), { timeout: 5000 });
         await fireEvent.press(lastGoAhead());
         await fireEvent.press(lastGoAhead());
         const args = (mockGoAhead.mock.calls[0] as unknown[])[0] as { ctx: Record<string, unknown> };

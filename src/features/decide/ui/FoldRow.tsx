@@ -28,6 +28,7 @@ export interface FoldInfo {
 export interface FoldRowProps {
   title: string;
   preview: string;
+  busy?: boolean;
   expanded: boolean;
   onToggle: () => void;
   info?: FoldInfo;
@@ -35,7 +36,7 @@ export interface FoldRowProps {
   children?: React.ReactNode;
 }
 
-export function FoldRow({ title, preview, expanded, onToggle, info, onBodyLayout, children }: FoldRowProps) {
+export function FoldRow({ title, preview, busy, expanded, onToggle, info, onBodyLayout, children }: FoldRowProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const reduced = useReduceMotion();
@@ -45,7 +46,7 @@ export function FoldRow({ title, preview, expanded, onToggle, info, onBodyLayout
     <View>
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ expanded }}
+        accessibilityState={busy ? { expanded, busy: true } : { expanded }}
         accessibilityLabel={t('decide.fold.a11y.label', { title, preview })}
         accessibilityHint={t(expanded ? 'decide.fold.a11y.hideHint' : 'decide.fold.a11y.showHint')}
         accessibilityActions={info ? [{ name: 'about', label: info.aboutLabel }] : undefined}

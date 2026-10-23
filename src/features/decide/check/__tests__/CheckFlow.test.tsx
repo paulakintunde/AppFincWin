@@ -5,6 +5,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { minorUnits } from '@/engine/money';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { interceptSwipeBack, setSwipeBackInterceptor } from '@/features/navigation/swipeBackGesture';
+import * as planModule from '@/engine/decide/plan';
 import * as decideHints from '../../hints/decideHints';
 import { CheckFlowScreen, shareFor } from '../CheckFlowScreen';
 import { SOLE_SHARE } from '@/engine/decide';
@@ -645,6 +646,13 @@ describe('not found and bought', () => {
   });
 });
 
+/** D-88: let the idle callback that computes the details run. */
+async function flushIdle() {
+  await act(async () => {
+    jest.advanceTimersByTime(100);
+  });
+}
+
 describe('D-56 debounced recompute', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
@@ -683,6 +691,9 @@ describe('D-56 debounced recompute', () => {
     await act(async () => {
       jest.advanceTimersByTime(1);
     });
+    // D-88: the settle only schedules the details; they run in the idle callback
+    expect(buildAlternatives).not.toHaveBeenCalled();
+    await flushIdle();
     expect(buildAlternatives).toHaveBeenCalledTimes(1);
     buildAlternatives.mockRestore();
   });
@@ -704,19 +715,60 @@ describe('D-56 debounced recompute', () => {
     await act(async () => {
       jest.advanceTimersByTime(150);
     });
+    await flushIdle();
     expect(buildAlternatives).toHaveBeenCalledTimes(1);
     expect(investmentViews).toHaveBeenCalledTimes(1);
     buildAlternatives.mockRestore();
     investmentViews.mockRestore();
   });
 
-  it('a snapshot change recomputes the verdict and the details at once', async () => {
+  it('a snapshot change recomputes the verdict at once and the details in the next idle slot', async () => {
     const buildAlternatives = jest.spyOn(alternatives, 'buildAlternatives');
     const view = await open({}, { initialStep: 3 });
     buildAlternatives.mockClear();
     mockSource = paySource({ fullMonths: 5 });
     await view.rerender(<CheckFlowScreen id="c1" initialStep={3} />);
+    await flushIdle();
     expect(buildAlternatives).toHaveBeenCalled();
+    buildAlternatives.mockRestore();
+  });
+
+  it('D-88 keystroke computes full detail for the selected method only', async () => {
+    const resolve = jest.spyOn(planModule, 'resolvePlan');
+    await open({}, { initialStep: 1 });
+    resolve.mockClear();
+    await editPrice('1600');
+    // only the selected method (cash) is resolved, on every pass the edit caused
+    const typing = resolve.mock.calls.length;
+    expect(typing).toBeGreaterThan(0);
+    expect(resolve.mock.calls.every(([check]) => (check as { payment?: { method?: string } }).payment?.method === 'cash')).toBe(true);
+    // the other methods follow when the inputs settle
+    resolve.mockClear();
+    await act(async () => {
+      jest.advanceTimersByTime(150);
+    });
+    await flushIdle();
+    expect(resolve.mock.calls.length).toBeGreaterThan(typing);
+    expect(resolve.mock.calls.some(([check]) => (check as { payment?: { method?: string } }).payment?.method === 'loan')).toBe(true);
+    resolve.mockRestore();
+  });
+
+  it('D-88 details run after idle and show Updating meanwhile', async () => {
+    const buildAlternatives = jest.spyOn(alternatives, 'buildAlternatives');
+    const view = await open({ advertised: 9_000_000 }, { initialStep: 3 });
+    const fold = () => screen.getByLabelText(/^If something goes wrong, /);
+    expect(fold().props.accessibilityLabel).not.toContain('Updating');
+    buildAlternatives.mockClear();
+    mockSource = paySource({ fullMonths: 5 });
+    await view.rerender(<CheckFlowScreen id="c1" initialStep={3} />);
+    // the verdict is on screen, the slow figures are still the old ones and say so
+    expect(buildAlternatives).not.toHaveBeenCalled();
+    expect(fold().props.accessibilityLabel).toContain('Updating');
+    expect(fold().props.accessibilityState).toEqual({ expanded: false, busy: true });
+    await flushIdle();
+    expect(buildAlternatives).toHaveBeenCalledTimes(1);
+    expect(fold().props.accessibilityLabel).not.toContain('Updating');
+    expect(fold().props.accessibilityState).toEqual({ expanded: false });
     buildAlternatives.mockRestore();
   });
 });
