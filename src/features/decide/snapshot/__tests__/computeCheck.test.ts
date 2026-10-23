@@ -4,6 +4,7 @@ import type { BuyCheck, StackedCheckInput } from '@/engine/decide';
 import * as assessModule from '@/engine/decide/assess';
 import * as decisionModule from '@/engine/decide/decision';
 import * as firstReadModule from '@/engine/decide/firstRead';
+import * as impliedAprModule from '@/engine/payoff/impliedApr';
 import { minorUnits } from '@/engine/money';
 import { amortiseSchedule } from '@/engine/payoff';
 import { computeChip, computeCheck, computeCore, computeDetails, computeQuick } from '../computeCheck';
@@ -51,6 +52,68 @@ describe('D-83 the exact cheaper price', () => {
     expect(withReturn.verdict).toEqual(without.verdict);
     expect(withReturn.alternatives).toEqual(without.alternatives);
     expect(withReturn.decision).toEqual(without.decision);
+  });
+});
+
+describe('D-90 the true APR of a no-rate instalment plan', () => {
+  const noRate = (over: Partial<CheckInputs['instalment']> = {}, rest: Partial<CheckInputs> = {}): CheckInputs =>
+    buy({ method: 'instalment', instalment: { ...emptyCheckInputs('buy', TODAY).instalment, amount: 15_000, count: 12, ...over }, ...rest });
+
+  it('D-90 the true APR is solved on the settled path only', () => {
+    const spy = jest.spyOn(impliedAprModule, 'impliedApr');
+    const inputs = noRate();
+    const core = computeCore(loggedSource(), inputs);
+    expect(core.impliedApr).toBeNull();
+    expect(spy).not.toHaveBeenCalled();
+    const settled = computeDetails(core, inputs);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith({ financed: 150_000, payment: 15_000, count: 12, periodsPerYear: 12, timing: 'due' });
+    expect(settled.impliedApr).toEqual({ apr: expect.any(BigInt) });
+    expect(computeCheck(loggedSource(), inputs).impliedApr).toEqual(settled.impliedApr);
+  });
+
+  it('D-90 the solver reads the frequency and the first payment timing', () => {
+    const spy = jest.spyOn(impliedAprModule, 'impliedApr');
+    const inputs = noRate({ freq: 'weekly', firstPayment: 'next_period' }, { advertised: 150_000 });
+    computeCheck(loggedSource(), inputs);
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ periodsPerYear: 52, timing: 'ordinary' }));
+    spy.mockClear();
+    computeCheck(loggedSource(), noRate({ freq: 'quarterly', firstPayment: 'next_month' }));
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ periodsPerYear: 4, timing: 'ordinary' }));
+  });
+
+  it('D-90 a rated plan has no implied APR', () => {
+    const spy = jest.spyOn(impliedAprModule, 'impliedApr');
+    const c = computeCheck(loggedSource(), noRate({ hasRate: true, aprText: '9', amount: null }));
+    expect(c.methodPlans.instalment!.status).toBe('resolved');
+    expect(c.impliedApr).toBeNull();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('D-90 a total equal to the amount financed is 0%, and one above the cap says so', () => {
+    expect(computeCheck(loggedSource(), noRate({ amount: 12_500 })).impliedApr).toEqual({ apr: 0n });
+    expect(computeCheck(loggedSource(), noRate({ amount: 10_000_000, count: 2, firstPayment: 'next_period' })).impliedApr).toEqual({ aboveMax: true });
+  });
+
+  it('D-90 nothing is solved without a resolved plan, for a total below the price, or for an invest check', () => {
+    const spy = jest.spyOn(impliedAprModule, 'impliedApr');
+    expect(computeCheck(loggedSource(), noRate({ amount: null })).impliedApr).toBeNull();
+    const below = computeCheck(loggedSource(), noRate({ amount: 1_000, count: 2 }));
+    expect(below.methodPlans.instalment!.status).toBe('missing');
+    expect(below.impliedApr).toBeNull();
+    const invest = { ...emptyCheckInputs('invest', TODAY), name: 'Fund', advertised: 20_000, method: 'monthly' as const, investTermMonths: 24 };
+    expect(computeCheck(loggedSource(), invest).impliedApr).toBeNull();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('D-90 a single payment on the day carries no rate', () => {
+    expect(computeCheck(loggedSource(), noRate({ amount: 150_000, count: 1 })).impliedApr).toBeNull();
+  });
+
+  it('D-90 the verdict does not move with the solved rate', () => {
+    const inputs = noRate();
+    const core = computeCore(loggedSource(), inputs);
+    expect(computeDetails(core, inputs).verdict).toEqual(core.verdict);
   });
 });
 

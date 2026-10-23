@@ -4,6 +4,7 @@
  * (RESEARCH Pitfall 8). Engine objects (Verdict, Percent) live only in memory, rebuilt on render (D-15).
  */
 import type { AlternativeRow, Alternatives, AssessContext, BuyCheck, CardRecord, CurrencyCode, Decision, DecideOption, DecideSnapshot, FirstRead, IncomeAtRiskReport, InstalmentFreq, InvestmentViews, ItemType, MinorUnits, PlanResult, PurchaseCheck, ResolvedPrice, RoughFigures, RunningCostCategory, RunningCosts, SetbackCode, SetbackReport, StackedCheckInput, Verdict, WaitPlan } from '@/engine/decide'; // CurrencyCode / MinorUnits re-exported per 04 D-62
+import type { ImpliedAprResult } from '@/engine/payoff';
 import type { CustomCurrencyRow, FxLatestRow } from '@/db/rows';
 
 export interface SnapshotMeta {
@@ -123,6 +124,7 @@ export interface CheckComputation {
   investmentViews: InvestmentViews | null;       // D-31: buy checks on a resolved verdict, investmentViews(verdict.context, check, verdict, { horizonMonths, holdingFee }) (holdingFee: D-44 / 04 D-63)
   incomeAtRisk: IncomeAtRiskReport | null;       // D-32: incomeAtRisk(verdict.context, verdict, setbacks)
   runningCostPrompts: readonly RunningCostCategory[]; // D-33: runningCostPrompts(inputs.itemType) for buy checks, from the inputs alone (step 2 shows them before a price exists)
+  impliedApr: ImpliedAprResult; // D-90 (R16.6): the true nominal APR of a no-rate instalment plan, solved in computeDetails (the settled path) only, never in computeCore and never in the verdict; a read-out that never fills the rate field (04 D-07). null for a rated plan, a single payment on the day, a total below the amount financed (the D-49 note) or no resolved instalment plan
   promoBalanceAtEnd: Partial<Record<'loan' | 'card', MinorUnits>>; // D-52: the balance left when a typed promotion ends ("Left when it ends: {x}", UI-SPEC D-30), per method plan with a promo that resolved; the engine's PromoOutcome has no such field, so 05-07 reads `balanceAtPromoEnd` / `balancesByMonth` from the payoff barrel's schedule functions; {} otherwise
 }
 

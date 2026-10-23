@@ -9,8 +9,10 @@
  */
 import {
   amortiseSchedule,
+  impliedApr,
   simulateMinimumSchedule,
 } from '@/engine/payoff';
+import type { ImpliedAprResult } from '@/engine/payoff';
 import {
   applySetbacks,
   assess,
@@ -97,7 +99,28 @@ const NO_FIGURES = {
   investmentViews: null,
   incomeAtRisk: null,
   promoBalanceAtEnd: {},
+  impliedApr: null,
 } as const;
+
+// D-89: instalments per year of each frequency (the engine's own table is private to plan.ts).
+const PERIODS_PER_YEAR = { weekly: 52, fortnightly: 26, monthly: 12, quarterly: 4 } as const;
+
+/**
+ * D-90 (R16.6): the true APR of a no-rate instalment plan. Called from computeDetails only, so a keystroke never pays
+ * for it. The plan resolving without a rate means the typed amount and count are both present.
+ */
+function solveImpliedApr(core: CheckCore, inputs: CheckInputs): ImpliedAprResult {
+  const result = core.methodPlans.instalment;
+  const inst = inputs.instalment;
+  if (result?.status !== 'resolved' || inst.hasRate === true) return null;
+  return impliedApr({
+    financed: result.plan.financed,
+    payment: minorUnits(inst.amount!),
+    count: inst.count!,
+    periodsPerYear: PERIODS_PER_YEAR[inst.freq ?? 'monthly'],
+    timing: (inst.firstPayment ?? 'today') === 'today' ? 'due' : 'ordinary',
+  });
+}
 
 // D-52: "Left when it ends" has no engine field; it is read from the same schedule the engine's plan used.
 function promoBalances(checks: Partial<Record<MethodKey, PurchaseCheck>>, plans: Partial<Record<MethodKey, PlanResult>>): CheckComputation['promoBalanceAtEnd'] {
@@ -173,7 +196,8 @@ function cheaperOf(inputs: CheckInputs, planPrice: MinorUnits): { price: MinorUn
 
 /** The slow figures, from the core's combined verdict and context: options, alternatives, setbacks, wait plan, views. */
 export function computeDetails(core: CheckCore, inputs: CheckInputs): CheckComputation {
-  const { inputs: _inputs, ...base } = core;
+  const { inputs: _inputs, ...rest } = core;
+  const base = { ...rest, impliedApr: solveImpliedApr(core, inputs) };
   const { verdict, check } = core;
   if (verdict === null || verdict.state === 'missing' || check === null) return base;
   const context = verdict.context;
