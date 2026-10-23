@@ -196,7 +196,9 @@ export function Step2PriceAndPay(props: Step2Props) {
               <InfoTitle info={finalInfo} lineHeight={textRole(pairing, 'label').lineHeight}>
                 <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{invest ? t('decide.price.committed') : t('decide.pay.price.final')}</Text>
               </InfoTitle>
-              <Meta>{t('decide.price.counted', { counted: resolved?.countedLines ?? 0, total: resolved?.totalLines ?? inputs.adjustments.length })}</Meta>
+              {(resolved?.totalLines ?? inputs.adjustments.length) > 0 ? (
+                <Meta>{t('decide.price.counted', { counted: resolved?.countedLines ?? 0, total: resolved?.totalLines ?? inputs.adjustments.length })}</Meta>
+              ) : null}
             </View>
             <Text scale="capped" maxFontSizeMultiplier={1.3} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'heading'), color: colors.ink, flexShrink: 1 }}>
               {wholeFmt(resolved?.price ?? inputs.advertised ?? 0)}

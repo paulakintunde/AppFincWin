@@ -46,6 +46,11 @@ describe('Step2PriceAndPay: price card', () => {
     expect(p.goToStep).toHaveBeenCalledWith(1);
   });
 
+  it('hides the lines-counted caption when there are no lines', async () => {
+    await renderStep({ adjustments: [] });
+    expect(screen.queryByText(/lines counted/)).toBeNull();
+  });
+
   it('adds, toggles and removes a line (removal has a local undo)', async () => {
     const adj = { id: 'a1', name: 'Delivery', amount: 3_000, note: '', counted: true, effect: 'adds' as const, onDay: false, taxPercentText: null };
     const { p, view } = await renderStep({ adjustments: [adj] });
