@@ -62,6 +62,15 @@ describe('TabRootScreen', () => {
     expect(JSON.stringify(r.toJSON())).toContain('"paddingBottom":82');
   });
 
+  it('D-93 a tab root never shows a back control after a push and pop', async () => {
+    // After a push and pop the app history is non-empty, so canGoBack is true; a tab root ignores it.
+    await renderWithShellProviders(<TabRootScreen title="Decide" />, {
+      backHistory: { canGoBack: true, history: [{ kind: 'tab', tab: 'decide' } as never] },
+    });
+    expect(screen.queryByLabelText('Back', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryAllByRole('button', { name: /back/i, includeHiddenElements: true }).length).toBe(0);
+  });
+
   it('renders the overlay outside the scroll view', async () => {
     await renderWithShellProviders(
       <TabRootScreen title="Overview" overlay={<RNText testID="ov">{'sheet'}</RNText>}>

@@ -20,9 +20,11 @@ export interface TabHeaderProps {
   showAvatar?: boolean;
   /** Screen-owned controls placed before the avatar (e.g. Activity's month arrows). */
   trailing?: React.ReactNode;
+  /** D-93: false hides the back control (a tab root). Omitted: shown when the history can go back. */
+  showBack?: boolean;
 }
 
-export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing }: TabHeaderProps): React.JSX.Element {
+export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing, showBack }: TabHeaderProps): React.JSX.Element {
   const { colors, fonts, pairing } = useTheme();
   const insets = useScreenInsets();
   const { canGoBack, goBack } = useBackHistory();
@@ -39,7 +41,7 @@ export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing }: Ta
         gap: space.tabHeaderGap,
       }}
     >
-      {canGoBack ? <BackButton variant="compact" onPress={goBack} /> : null}
+      {showBack ?? canGoBack ?<BackButton variant="compact" onPress={goBack} /> : null}
       <View style={{ flex: 1, minWidth: 0 }}>
         {eyebrow ? (
           <Text

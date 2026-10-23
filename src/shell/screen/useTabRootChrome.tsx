@@ -79,6 +79,11 @@ export interface TabRootChrome {
   refreshControl: React.ReactElement<RefreshControlProps> | undefined;
 }
 
+// D-93: every screen built from this hook is a tab root (under (tabs)). Whether to show the back
+// control follows that, never the app history or router.canGoBack(), which is non-empty after a
+// push and pop, a reload onto a tab or returning from Android Settings.
+const isTabRoot = true;
+
 export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
   const { title, eyebrow, trailing, refreshKeys, compactTitle, compactTitleRole, compactTrailing } = options;
   const { colors } = useTheme();
@@ -153,7 +158,7 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
 
   const largeHeader = (
     <View onLayout={onLargeLayout}>
-      <TabHeader title={title} eyebrow={eyebrow} trailing={trailing} titleRef={largeTitleRef} />
+      <TabHeader title={title} eyebrow={eyebrow} trailing={trailing} titleRef={largeTitleRef} showBack={!isTabRoot} />
       <SyncProblemLine />
     </View>
   );
@@ -163,6 +168,7 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
       titleRole={compactTitleRole}
       trailing={trailingNode}
       showAvatar={compactTrailing === undefined}
+      showBack={!isTabRoot}
       visible={compactVisible}
       animatedStyle={opacityStyle as unknown as StyleProp<ViewStyle>}
       titleRef={compactTitleRef}

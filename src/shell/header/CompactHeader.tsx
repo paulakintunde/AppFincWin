@@ -24,6 +24,8 @@ export interface CompactHeaderProps {
   trailing?: React.ReactNode;
   /** 03.1 D-58: title text role; defaults to the Phase 3 compact 'heading'. */
   titleRole?: Extract<TextRole, 'heading' | 'sheetTitle'>;
+  /** D-93: false hides the back control (a tab root). Omitted: shown when the history can go back. */
+  showBack?: boolean;
 }
 
 export function CompactHeader({
@@ -34,6 +36,7 @@ export function CompactHeader({
   titleRef,
   trailing,
   titleRole,
+  showBack,
 }: CompactHeaderProps): React.JSX.Element {
   const { colors, pairing } = useTheme();
   const insets = useScreenInsets();
@@ -67,7 +70,7 @@ export function CompactHeader({
           gap: space.gapMd,
         }}
       >
-        {canGoBack ? <BackButton variant="compact" onPress={goBack} /> : null}
+        {showBack ?? canGoBack ?<BackButton variant="compact" onPress={goBack} /> : null}
         <Text
           ref={titleRef}
           accessibilityRole="header"
