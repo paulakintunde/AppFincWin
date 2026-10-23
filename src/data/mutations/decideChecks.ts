@@ -104,6 +104,20 @@ function patchChecks(qc: QueryClient, cache: CheckCacheKey, updater: (rows: Chec
   qc.setQueryData<CheckList>(queryKeys.decideChecks(cache.userId, cache.householdId), (old) => updater(old ?? []));
 }
 
+/**
+ * D-73: true while a delete of this check is queued or in flight. A write that lands first (the create, an autosave) must not
+ * put the row back from its server copy: the optimistic delete stands until the delete itself settles.
+ */
+function hasPendingDelete(qc: QueryClient, id: string): boolean {
+  return qc
+    .getMutationCache()
+    .findAll({ mutationKey: mutationKeys.editCheck, status: 'pending' })
+    .some((m) => {
+      const vars = m.state.variables as EditCheckVars | undefined;
+      return vars?.id === id && Boolean(vars.patch.deleted_at);
+    });
+}
+
 function dropGoal(qc: QueryClient, cache: CheckCacheKey, goalId: string): void {
   qc.setQueryData<GoalList>(queryKeys.savingsGoals(cache.userId, cache.householdId), (old) =>
     old ? old.filter((g) => g.id !== goalId) : old
@@ -191,6 +205,7 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
         redirectReopen(vars.id, row.id);
         return;
       }
+      if (hasPendingDelete(qc, vars.id)) return;
       patchChecks(qc, cache, (rows) => upsertRow(rows, row, 'start'));
     },
     onError: async (err: unknown, vars: CreateCheckVars) => {

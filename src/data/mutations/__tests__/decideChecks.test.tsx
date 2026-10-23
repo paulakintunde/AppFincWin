@@ -3,7 +3,7 @@
 globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto);
 
 import React from 'react';
-import { QueryClient, QueryClientProvider, dehydrate, hydrate, onlineManager } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery, dehydrate, hydrate, onlineManager } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { DbClient } from '@/db/rows';
 import type { DecideCheckRow } from '@/db/decideChecks';
@@ -300,6 +300,57 @@ describe('useSaveCheckDraft', () => {
 });
 
 describe('useAbandonCheck', () => {
+  it('D-73 a create that lands after the delete does not bring the deleted row back', async () => {
+    const { fake, qc } = setup();
+    let open: (() => void) | undefined;
+    fake.sessionGate = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    fake.respondWith(ok(check('k1')));
+    fake.respondWith(ok([check('k1', { deleted_at: '2026-10-02T00:00:00Z', version: 2 })]));
+    const created = await renderHook(() => useCreateCheck(), { wrapper: wrapper(qc) });
+    const abandon = await renderHook(() => useAbandonCheck(), { wrapper: wrapper(qc) });
+    created.result.current.create({ userId: 'user-1', id: 'k1', householdId: 'hh-1', kind: 'buy', name: 'Laptop', inputs: { kind: 'buy' }, furthestStep: 1 });
+    await waitFor(() => expect(qc.getQueryData<DecideCheckRow[]>(KEY)?.map((r) => r.id)).toEqual(['k1']));
+
+    abandon.result.current.abandon(check('k1'));
+    await waitFor(() => expect(qc.getQueryData<DecideCheckRow[]>(KEY)).toEqual([]));
+    const seen: number[] = [];
+    const unsubscribe = qc.getQueryCache().subscribe(() => seen.push(qc.getQueryData<DecideCheckRow[]>(KEY)?.length ?? 0));
+    await act(async () => {
+      open?.();
+    });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    unsubscribe();
+    expect(seen.every((n) => n === 0)).toBe(true);
+    expect(qc.getQueryData<DecideCheckRow[]>(KEY)).toEqual([]);
+  });
+
+  it('D-73 the row leaves the list at once, before any server answer, even with a fetch in flight and an earlier write queued', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [check('k1'), check('k2', { name: 'Desk' })]);
+    // the list is mounted with a refetch that never answers, as on the Decide tab
+    let release: (() => void) | undefined;
+    const hold = new Promise<DecideCheckRow[]>((resolve) => {
+      release = () => resolve([check('k1'), check('k2', { name: 'Desk' })]);
+    });
+    const list = await renderHook(() => useQuery({ queryKey: KEY, queryFn: () => hold, staleTime: 0 }), { wrapper: wrapper(qc) });
+    // an earlier autosave in the same scope holds the queue: it never answers
+    fake.respondWith(new Promise(() => undefined) as never);
+    const save = await renderHook(() => useSaveCheckDraft(), { wrapper: wrapper(qc) });
+    save.result.current.save({ id: 'k2', name: 'Desk', inputs: {}, furthestStep: 2 });
+    const { result } = await renderHook(() => useAbandonCheck(), { wrapper: wrapper(qc) });
+
+    result.current.abandon(check('k1'));
+    await waitFor(() => expect(list.result.current.data?.map((r) => r.id)).toEqual(['k2']));
+    expect(insertUndoStep).not.toHaveBeenCalled();
+    // a refetch that lands after the delete must not bring the row back before the server write does
+    await act(async () => {
+      release?.();
+    });
+    expect(list.result.current.data?.map((r) => r.id)).toEqual(['k2']);
+  });
+
   it('soft deletes, drops the row, records one checkAbandoned step restoring null and returns the step id', async () => {
     const { fake, qc } = setup();
     qc.setQueryData(KEY, [check('k1')]);
