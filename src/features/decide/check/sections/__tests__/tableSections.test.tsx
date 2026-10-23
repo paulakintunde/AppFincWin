@@ -175,6 +175,7 @@ describe('AssumptionsSection', () => {
     await render(metaWith({ unconvertedRows: 2, derivedDebts: 1 }));
     expect(screen.getByText('Lines without a rate')).toBeTruthy();
     expect(screen.getByText('2 lines left out')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Show details'));
     expect(screen.getByText('1 balance counted as debt')).toBeTruthy();
   });
 

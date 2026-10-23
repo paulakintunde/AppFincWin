@@ -1,7 +1,12 @@
 import React from 'react';
-import { screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import type { Assessment } from '@/engine/decide';
+import * as textFit from '../../ui/textFit';
 import { LedgersBody } from '../sections/LedgersSection';
+import { MonthBody } from '../sections/MonthSection';
+import { AssumptionsBody } from '../sections/AssumptionsSection';
+import { ref } from '../../copy/types';
+import { META } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { TableRow, type SectionBodyProps } from '../sections/sectionUi';
 import { buy, exact, stepProps, whole, wrap } from '../steps/__tests__/helpers/stepProps';
 import { loggedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
@@ -56,5 +61,47 @@ describe('Shared TableRow', () => {
   it('keeps the value on the right when it is short', async () => {
     await wrap(<TableRow label="Label" value="$5" />);
     expect(screen.getByText('$5').props.style).toEqual(expect.objectContaining({ textAlign: 'right' }));
+  });
+});
+
+describe('Month body', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('keeps three columns when there is room', async () => {
+    await wrap(<MonthBody {...bodyProps()} />);
+    expect(screen.getByText('Line')).toBeTruthy();
+    expect(screen.getByText('Now')).toBeTruthy();
+    expect(screen.getByText('After')).toBeTruthy();
+  });
+
+  it('D-76 the month table stacks below 360 wide', async () => {
+    jest.spyOn(textFit, 'useShouldStack').mockReturnValue(true);
+    await wrap(<MonthBody {...bodyProps()} />);
+    expect(screen.queryByText('Line')).toBeNull();
+    expect(screen.getByText('Now $5000.00 · After $5000.00')).toBeTruthy();
+    expect(screen.getByLabelText(/^Money in, Now \$5000\.00, After \$5000\.00$/)).toBeTruthy();
+  });
+});
+
+describe('Assumptions body', () => {
+  afterEach(() => jest.restoreAllMocks());
+  const asProps = (extra: Record<string, unknown> = {}) => ({ ...bodyProps(), meta: { ...META, unconvertedRows: 2, derivedDebts: 1 }, ...extra });
+
+  it('D-75 Assumptions shows 5 rows, then Show details', async () => {
+    await wrap(<AssumptionsBody {...asProps()} />);
+    expect(screen.getByText('Lines without a rate')).toBeTruthy();
+    expect(screen.queryByText('1 balance counted as debt')).toBeNull();
+    await fireEvent.press(screen.getByText('Show details'));
+    expect(screen.getByText('1 balance counted as debt')).toBeTruthy();
+    expect(screen.getByText('Hide details')).toBeTruthy();
+  });
+
+  it('D-70 the provisional rate row carries its ⓘ', async () => {
+    const basisItems = [ref('decide.depth.currency.provisional', { count: 2, date: '2026-10-14' })];
+    await wrap(<AssumptionsBody {...asProps({ basisItems })} />);
+    // six rows before it: the row is moved into the visible five, never hidden behind Show details
+    expect(screen.getAllByLabelText(/^About /)).toHaveLength(1);
+    await fireEvent.press(screen.getByLabelText(/^About /));
+    expect(screen.getByText(/dated 2026-10-14/)).toBeTruthy();
   });
 });

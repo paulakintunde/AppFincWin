@@ -235,6 +235,7 @@ describe('AssumptionsSection new rows', () => {
     ];
     await wrap(<AssumptionsSection {...base({ conversions, formatDate })} />);
     expect(screen.getByText('EUR at 1.47 on on 2026-10-14')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Show details'));
     expect(screen.getByText('GBP at 1.31 on on 2026-10-14')).toBeTruthy();
     expect(screen.getByText('Past lines keep the rate they were stamped with')).toBeTruthy();
   });
@@ -243,6 +244,7 @@ describe('AssumptionsSection new rows', () => {
     const stack = { ...EMPTY_STACK, leftOutIncomplete: 1, leftOutCurrency: 2 };
     await wrap(<AssumptionsSection {...base({ stack })} />);
     expect(screen.getByText('1 open check not counted: no price yet')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Show details'));
     expect(screen.getByText('2 open checks not counted: their amounts are in another currency')).toBeTruthy();
     expect(screen.queryByText(/deferred/i)).toBeNull();
   });
