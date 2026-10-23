@@ -1247,6 +1247,10 @@ const en = {
       changeRemoved: 'Change removed',
       transferTagged: 'Transfer tagged · {{name}}',
       transferUntagged: 'Transfer untagged',
+      checkCleared: 'Check cleared · {{name}}',
+      checkDeleted: 'Check deleted · {{name}}',
+      decisionDeleted: 'Decision deleted · {{name}}',
+      changeDeleted: 'Change deleted',
     },
     // C-WR-06: shown instead of the matching `label` entry when the row has no name, so a
     // nameless row never renders a raw "{{name}}" (picked by src/i18n/undoLabel.ts).
@@ -1280,6 +1284,9 @@ const en = {
       changeAdded: 'Change added',
       changeEdited: 'Change edited',
       transferTagged: 'Transfer tagged',
+      checkCleared: 'Check cleared',
+      checkDeleted: 'Check deleted',
+      decisionDeleted: 'Decision deleted',
     },
     reverted: 'Undone · {{label}}',
     batchRefused: 'That batch couldn’t be saved. Nothing was changed.',
@@ -1391,6 +1398,223 @@ const en = {
   decide: {
     tab: { eyebrow: 'Decide', title: 'Can I afford it', subtitle: 'Judged on your real accounts, not the price tag.' },
     fab: { label: 'New check', a11y: 'Start a new affordability check' },
+    // 05-54 (D-70..D-78, UI-SPEC R2b and R3): the Decide UX refresh copy. Count-and-unit pairs use U+00A0 (R6 rule U).
+    info: {
+      replaces: {
+        term: 'Expenses it replaces',
+        body: 'A bill you already pay that stops once this purchase starts, such as a bus pass a car makes unneeded. Its amount comes off the purchase’s monthly cost, so the check scores the net change.',
+        changes: 'Replaces: ends this bill from the purchase date. Your income is unchanged.',
+      },
+      incomeChange: {
+        term: 'A change to your income',
+        body: 'Some purchases change what comes in, such as a van that brings in delivery work or a course that means fewer paid hours. A drop is counted in the verdict. A rise is shown in its own section and is never counted, because it has not arrived yet.',
+        changes: 'Lowers: money in drops from the start date. Raises: the verdict is unchanged; the Impact step shows it separately.',
+      },
+      runningCosts: {
+        term: 'Costs that follow it',
+        body: 'What owning it costs each month, such as insurance, fuel or a subscription. Only rows with an amount count. Bills it ends come off, so the check uses the net monthly change.',
+        changes: 'Adds each counted cost to your monthly spending from the purchase date.',
+      },
+      netMonthly: {
+        term: 'Net monthly change',
+        body: 'The running costs added, less the bills this purchase ends. It is the monthly figure the check uses for owning it, on top of any payment.',
+        changes: 'The month is tested with this figure added.',
+      },
+      lossOfValue: {
+        term: 'Loss of value',
+        body: 'How fast the item’s value falls, as an amount a month or a percent a year of the price before tax, fees and trade-ins. It is not money leaving an account, so it is shown beside the running costs and not counted in your month.',
+        changes: 'Nothing in the verdict. The figure is shown beside the costs only.',
+      },
+      beforeInterest: {
+        term: 'Before any interest',
+        body: 'At 0% no interest is counted. The payment is the amount divided by the months, so any rate above 0 makes it higher.',
+        changes: 'The check is scored on the rate shown. A typed rate rescores it.',
+      },
+      promoRate: {
+        term: 'Promotional rate',
+        body: 'A lower rate for a set number of months, such as 0% for 12 months, then the rate after it. The month test uses the highest payment across the whole term.',
+        changes: 'Payments and interest follow the promotion, then the rate after it.',
+      },
+      deferredInterest: {
+        term: 'Interest charged back',
+        body: 'On some 0% promotions, interest for the whole promotion is added back if the balance is not cleared by the end. It applies only when the agreement says so, so the toggle is off unless turned on.',
+        changes: 'When on, the check adds that interest if the balance is still open when the promotion ends.',
+      },
+      variableRate: {
+        term: 'The rate can change',
+        body: 'Shows the payment if the rate rises by 2 and by 4 points, with the state each would give.',
+        changes: 'Nothing in the verdict, which stays on the rate you entered.',
+      },
+      cardMinimum: {
+        term: 'Card minimum payment',
+        body: 'What the card asks for each month when only the minimum is paid: usually a percent of the balance, sometimes plus that month’s interest, with a floor amount. The terms are kept on the card, so they count in every check.',
+        changes: 'The minimum is added to your monthly debt payments. Paid in full monthly adds none.',
+      },
+      size: {
+        term: 'How big this is',
+        body: 'How big the cash price is against your own money. Out of this month’s spare means it fits in what this month leaves after saving and investing; out of savings means cash still stays above your cushion. Needs spreading means paying it at once would take cash under your cushion.',
+        changes: 'Nothing in the verdict. Cooling-off appears only for purchases that need spreading.',
+      },
+      edge: {
+        term: 'On the edge',
+        body: 'At least one line holds or misses by less than 5% of the line. A small change in the price, the rate or a monthly figure can flip the verdict.',
+        changes: 'The verdict stays as shown. The margins are listed under What breaks.',
+      },
+      confidence: {
+        term: 'Basis',
+        body: 'How much history the verdict rests on. Strong needs 6 full months with steady income, fair needs 3, and anything less is rough. Lines converted at a stand-in rate keep it at fair at most.',
+        changes: 'Nothing in the figures. It states how firm they are.',
+      },
+      cushionMonths: {
+        term: 'Cushion',
+        body: 'How many months of your costs the cash left would cover, after this purchase and the bills due in the next 90 days.',
+        line_one: 'Your line is 1\u00A0month, {{reason}}.',
+        line_other: 'Your line is {{count}}\u00A0months, {{reason}}.',
+        changes: 'It drops when the purchase takes cash on the day, and a higher monthly cost lowers it further.',
+      },
+      reserve: {
+        term: 'Cash never below',
+        body: 'The cash cushion no purchase may break, on the day or before the next payday. Left blank, it is a number of months of your costs: 3 when income is steady, 4.5 when it varies, 6 when it is volatile.',
+        changes: 'A purchase that leaves less cash than this needs adjustment. It applies to every check.',
+      },
+      dsrLine: {
+        term: 'Debt payments at most',
+        body: 'The share of money in each month that may go to debt payments, with every debt counted, including this purchase when it is paid over time. Left blank, it is 36%. With no money in, any debt payment is over the line.',
+        changes: 'A purchase that takes debt payments above this share needs adjustment. It applies to every check.',
+      },
+      unsecuredMultiple: {
+        term: 'Unsecured debt at most',
+        body: 'A cap on debt not backed by something you own, such as cards and personal loans, measured in months of average income. Left blank, it is 12, about a year’s income. A loan secured against what it bought is not counted.',
+        changes: 'A purchase that takes unsecured debt above this needs adjustment. It applies to every check.',
+      },
+      investingFloor: {
+        term: 'Investing at least',
+        body: 'The monthly investing amount no purchase may push below. Left blank, it is the amount invested at present. When the month closes only by pausing some investing, the check states how much and whether that goes under this line.',
+        changes: 'A check that pauses investing below this line needs adjustment. It applies to every check.',
+      },
+      savingFloor: {
+        term: 'Saving at least',
+        body: 'The monthly amount into goals no purchase may push below. Left blank, it is what you save now.',
+        changes: 'A check that pauses saving below this line needs adjustment. It applies to every check.',
+      },
+      basisMonth: {
+        term: 'Average or worst month',
+        body: 'With steady income the check uses your average month. When income varies, it uses your worst month unless the average is chosen, so a purchase is judged on a tight month.',
+        changes: 'The average month raises money in for every check; the worst month lowers it.',
+      },
+      combined: {
+        term: 'With other checks',
+        body: 'Your other open checks are counted as if they were bought too, so two purchases that each fit on their own are not both shown as fitting.',
+        changes: 'Off: this check is judged on its own.',
+      },
+      whatBreaks: {
+        term: 'What breaks',
+        body: 'The lines you set that this purchase crosses, largest first, and how far. “Every line” lists all of them with their margins.',
+        changes: 'Nothing on its own. Each line is changed under Lines you will not cross on Decide.',
+      },
+      cashPath: {
+        term: 'Cash path',
+        body: 'Your cash balance day by day for the next 90 days, with and without this purchase, from your confirmed pay and bills. The lowest day is marked, since a cushion breaks there first.',
+        changes: 'A dip under your cushion before payday adds a warning. A dip below zero means the cash runs out.',
+      },
+      whereItLands: {
+        term: 'Where it lands',
+        body: 'A purchase touches more than one part of your money. These five show each one now and after: what comes in, what goes out, what you owe, the cash you hold and what goes into investing.',
+        changes: 'Nothing on its own. It shows where the figures above come from.',
+      },
+      setbacks: {
+        term: 'If something goes wrong',
+        body: 'A test of your cash with this purchase running and something going wrong: an unexpected bill, income dropping, a lost job or client, or invoices paid late. Each one can be switched on. Runway is how many months your cash would last.',
+        changes: 'Nothing in the verdict. The runway figure shows how much of it this purchase uses.',
+      },
+      ifInvested: {
+        term: 'If it went into investing instead',
+        body: 'What the price, or the monthly payments, would grow to at a rate you enter, over the months you pick. At 0% the money is only held. A projection at the rate you entered, not a forecast.',
+        changes: 'Nothing in the verdict.',
+      },
+      kept: {
+        term: 'Kept',
+        body: 'The money that stays yours on that route: the cash kept on the day plus the payments never made, counted only up to what is actually spare. At 0% it is held, not grown.',
+        changes: 'Nothing in the verdict.',
+      },
+      provisionalRate: {
+        term: 'Latest stored rate',
+        body: 'Some lines were saved while their own exchange rate was still loading. Until it arrives they are converted at the latest stored rate, dated {{date}}.',
+        bodyNoDate: 'Some lines were saved while their own exchange rate was still loading. Until it arrives they are converted at the latest stored rate.',
+        changes: 'Figures may move a little once their own rates arrive, and the basis stays fair at most until then.',
+      },
+      coolingOff: {
+        term: 'Check again in 48 hours',
+        body: 'A reminder 48 hours after you record this, which reopens the check recalculated on the figures of that day. It appears for purchases that need spreading.',
+        changes: 'Adds one reminder. No balance changes.',
+      },
+      waitGoal: {
+        term: 'Wait and save',
+        body: 'Recording Wait sets a monthly amount and a ready-by date and starts a savings goal for this purchase. On the ready-by date a reminder reopens the check, recalculated.',
+        changes: 'Creates one savings goal and one reminder. Balances and limits stay as they are.',
+      },
+      whatGetsWritten: {
+        term: 'What gets written',
+        body: 'The lines Go ahead adds to your records, listed before anything is saved. Each appears in Activity linked to this check. Wait creates a savings goal and a reminder, and Pass writes nothing.',
+        changes: 'Nothing is written until Go ahead is confirmed, and Undo removes the whole set in one step.',
+      },
+    },
+    infoButton: { a11y: 'About {{term}}', hint: 'Opens an explanation', sheetChanges: 'What this changes', close: 'Close' },
+    hint: { foldTap: 'Tap a row to see the detail' },
+    details: { show: 'Show details', hide: 'Hide details', showA11y: 'Show details, {{block}}', hideA11y: 'Hide details, {{block}}' },
+    slider: { above: 'Above the slider’s range', below: 'Below the slider’s range' },
+    fold: {
+      title: {
+        whatBreaks: 'What breaks', month: 'The month, line by line', cashPath: 'Cash path, next 90 days', whereItLands: 'Where it lands', setbacks: 'If something goes wrong',
+        workIt: 'What would make it work', invest: 'If it went into investing instead', income: 'With the expected income', who: 'Who pays what', assumptions: 'Assumptions in play',
+      },
+      preview: {
+        whatBreaks_one: '{{count}} line breaks', whatBreaks_other: '{{count}} lines break', edgeSuffix: ' · on the edge', nothingBreaks: 'Nothing breaks', nothingBreaksEdge: 'Nothing breaks · on the edge',
+        landsBetter: '{{count}} better', landsWorse: '{{count}} worse', landsSame: '{{count}} unchanged', noMoves: 'No ledger moves',
+        investIdle: 'A projection at the rate you enter',
+        investWithRate_one: '{{fv}} after 1\u00A0month at {{rate}}%', investWithRate_other: '{{fv}} after {{count}}\u00A0months at {{rate}}%',
+        income: '{{state}} with the expected {{amount}} a month', incomeFits: 'Fits', incomeAdjust: 'Needs adjustment', incomeNo: 'Does not fit',
+        month: 'Left at month end: {{now}} now, {{after}} after',
+        setbacks_one: 'Runway 1\u00A0month, {{less}} less because of this', setbacks_other: 'Runway {{count}}\u00A0months, {{less}} less because of this', setbacksNone: 'Runway not limited',
+        options_one: '{{count}} option', options_other: '{{count}} options',
+        who_one: '{{count}} person', who_other: '{{count}} people',
+        assumptions_one: '{{count}} assumption', assumptions_other: '{{count}} assumptions',
+      },
+      cashPath: {
+        preview: 'Lowest with this: {{amount}} on {{date}}', unavailablePreview: 'No recurring pay series yet',
+        unavailableBody: 'Day-by-day cash needs your pay as a recurring series.', recurringLink: 'Recurring series in Record',
+      },
+      everyLine: 'Every line',
+      a11y: {
+        label: '{{title}}, {{preview}}', showHint: 'Shows the detail', hideHint: 'Hides the detail',
+        expanded: '{{title}} expanded', collapsed: '{{title}} collapsed', expandedCollapsed: '{{title}} expanded. {{previous}} collapsed.',
+      },
+    },
+    custom: {
+      chip: 'Custom', chipA11y: 'Custom, {{value}}', months_one: '1\u00A0month', months_other: '{{count}}\u00A0months', ratePercent: '{{rate}}%',
+      unit: { months: 'months', apr: '% a year', percent: '%' },
+      range: {
+        months: '1 to 120 months', count: '1 to 120', horizon: '1 to 600 months', apr: '0 to 999.99% a year', aprUpTo: 'Up to 100% a year', percent: '0 to 100%',
+        upToPrice: 'Up to the price, {{price}}', from: 'From {{min}} to {{max}}',
+      },
+      fieldA11y: '{{group}}, custom, {{unit}}',
+    },
+    clear: { button: 'Clear', a11y: 'Clear this check', hint: 'Discards this check and starts an empty one', toast: 'Check cleared. Nothing was written.' },
+    delete: {
+      word: 'Delete', menuOpen: 'Open', menuReopen: 'Reopen', menuEdit: 'Edit', moreA11y: 'More for {{name}}', keep: 'Keep it', confirm: 'Delete',
+      checkTitle: 'Delete this check?', checkBody: 'It leaves Open checks. Nothing was written, so no balance changes.',
+      decisionTitle: 'Delete this decision?',
+      boughtBody_one: 'It leaves Past decisions. The line Go ahead wrote stays in Activity, and every figure that uses it stays the same.',
+      boughtBody_other: 'It leaves Past decisions. The {{count}} lines Go ahead wrote stay in Activity, and every figure that uses them stays the same.',
+      waitingBody: 'It leaves Past decisions with its savings goal and reminder. Transfers tagged to the goal stay in Activity.',
+      passedBody: 'It leaves Past decisions. Nothing else changes.',
+      changeTitle: 'Delete this change?', changeBody: 'It leaves Changes coming up, and checks stop counting it.',
+      toastCheck: 'Check deleted. Nothing was written.', toastDecision: 'Decision deleted', toastChange: 'Change deleted',
+    },
+    save: {
+      saved: 'Saved', saving: 'Saving…', offline: 'Offline, will save', failed: 'Not saved',
+      offlineA11y: 'Offline. This check will save when you’re back online.', failedA11y: 'This check wasn’t saved. The sync line has the detail.',
+    },
     state: { fits: 'It fits', adjust: 'Needs adjustment', no: 'You cannot afford this', noCash: 'Not from cash', noCredit: 'Not from credit', missing: 'Missing terms', cardLimits: 'Card limits apply', draft: 'Draft', bought: 'Bought', waiting: 'Waiting', passed: 'Passed' },
     size: { from_spare_this_month: 'Out of this month’s spare', from_savings: 'Out of savings', needs_spreading: 'Needs spreading' },
     basis: { average: 'Average month · {{amount}} in', worst: 'Worst month · {{amount}} in', firstRead: 'First read · your figures', nowLogged: 'Now from your logged months', cashOnly: 'Cash only · no monthly figures yet' },
@@ -1402,13 +1626,13 @@ const en = {
       nameAt: '{{name}} at {{price}}', // WR-B08: the result echoes the price it read from the text
       payWith: 'Pay with', cash: 'Cash', credit: 'Credit',
       aprLabel: 'Annual rate', aprA11y: 'Annual rate, percent', beforeInterest: 'before any interest', aYear: 'a year',
-      overMonths: 'Over {{count}} months', termsA11y: 'Over how many months', termChipA11y: '{{count}} months',
+      overMonths_one: 'Over 1\u00A0month', overMonths_other: 'Over {{count}}\u00A0months', termsA11y: 'Over how many months', termChipA11y: '{{count}} months',
       extras: '+ Tax, fees', extrasSummary: '+{{amount}}', salesTax: 'Sales tax', salesTaxA11y: 'Sales tax, percent', taxPlaceholder: 'Type the rate', fees: 'Fees',
       tryCredit: 'See it on credit', tryCreditA11y: 'See it on credit, keeps the amount',
-      runFull: 'Run the full check', clear: 'Clear the check', footer: 'Worked out from the figures you entered.',
-      monthlyCaption: 'a month for {{count}} months', loading: 'Checking',
-      monthlyCaptionPaidOff: 'a month for {{count}} months · paid off in month {{paid}}', // D-45 (04 D-64): count = the entered term, paid = plan.months, shown only when 0 < plan.months < the term and the rate is above 0
-      monthlyCaptionZero: 'a month for {{count}} months, before any interest', // UI-check F4: at 0% this is the whole caption and the payoff suffix is dropped
+      runFull: 'Run the full check', clear: 'Clear the check', clearText: 'Clear', clearA11y: 'Clear the quick check', placeholderShort: 'car 14500', footer: 'Worked out from the figures you entered.',
+      monthlyCaption_one: 'a month for 1\u00A0month', monthlyCaption_other: 'a month for {{count}}\u00A0months', loading: 'Checking',
+      monthlyCaptionPaidOff_one: 'a month for 1\u00A0month · paid off in month {{paid}}', monthlyCaptionPaidOff_other: 'a month for {{count}}\u00A0months · paid off in month {{paid}}', // D-45 (04 D-64): count = the entered term, paid = plan.months, shown only when 0 < plan.months < the term and the rate is above 0
+      monthlyCaptionZero_one: 'a month for 1\u00A0month, before any interest', monthlyCaptionZero_other: 'a month for {{count}}\u00A0months, before any interest', // UI-check F4: at 0% this is the whole caption and the payoff suffix is dropped
       resultA11y: '{{chip}}. {{size}}. {{line}}',
       line: {
         cashFits: 'Paid outright today your cash lands at {{cashAfter}}, above your {{cushion}} cushion, and the month still closes with {{left}} spare.',
@@ -1443,6 +1667,8 @@ const en = {
       sources: '{{months}} months of logged income, {{lines}} expense lines this month, {{debts}} debts and {{accounts}} accounts. Change any of them in Activity or Grow and every figure here rescores.',
       sourcesRough: 'Rough figures you entered. A statement import or one full logged month replaces them.',
       pastRow: 'Past decisions', pastCount_one: '{{count}} decision', pastCount_other: '{{count}} decisions', pastNone: 'Nothing decided yet',
+      addChange: 'Add a change coming up', checkInvestment: 'Check an investment',
+      linesFold: { title: 'Lines you will not cross', preview_one: '{{count}} of 5 set by you', preview_other: '{{count}} of 5 set by you', allDefault: 'All at their defaults' },
     },
     month: {
       eyebrow: 'Your month', activity: 'Activity', in: 'Comes in', out: 'Goes out', left: 'Left',
@@ -1536,7 +1762,8 @@ const en = {
       noteInvestMonthly: '{{amount}} a month for {{count}} months is {{total}} put in.', noteInvestWorth: 'At {{rate}}% it would be worth about {{fv}}.',
       noteInvestCaption: 'A projection at the rate you entered, not a forecast.', unnamedLine: 'Unnamed',
       loanDeposit: 'Deposit', loanInterestSaved: 'Interest saved', loanCashLeft: 'Cash left after', loanTerm: 'Term', loanTermUnit: 'mo',
-      loanTermNote: 'At {{count}} months you pay {{payment}} a month and {{interest}} in interest. Every extra year lowers the payment and raises the total.',
+      loanTermNote_one: 'At 1\u00A0month the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total.',
+      loanTermNote_other: 'At {{count}}\u00A0months the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total.',
       loanRate: 'Annual rate', loanRateHint: 'Type the rate you were quoted', loanSecured: 'Secured against what you’re buying',
       instalmentPayment: 'Payment', instalmentCount: 'How many',
       instalmentNote: 'No rate was quoted. {{count}} × {{payment}} is {{total}} against a {{price}} price, about {{pct}}% a year.',
@@ -1550,7 +1777,7 @@ const en = {
       cardBlockedTitle: 'This cannot go on a card', cardBlockedBody: 'Rent, bills, loan repayments, tax and premiums are not card payments. A cash advance carries interest from the first day.',
       cardUseLoan: 'Use deposit and loan instead', cardAccount: 'Card', cardNone: 'No card account yet',
       cardClearedHow: 'How it gets cleared', cardFull: 'In full next statement', cardMonths: 'Over a few months', cardMinimum: 'Minimum only',
-      cardMonthsValue: '{{count}} mo', cardFewer: 'Fewer months', cardMore: 'More months',
+      cardMonthsValue_one: '1\u00A0mo', cardMonthsValue_other: '{{count}}\u00A0mo', cardFewer: 'Fewer months', cardMore: 'More months',
       cardCleared: 'Cleared', cardInterest: 'Interest', cardCosts: 'Card costs', cardNever: 'Never', cardEndless: 'Endless', cardNotWithin: 'Not within 50 years',
       cardRate: 'Rate on this card', cardRateA11y: 'Rate on this card, percent',
       cardNotesHeading: 'Your notes on this card', cardNotesCount: '{{count}} of 3 answered',
@@ -1565,6 +1792,11 @@ const en = {
       net: 'Net monthly change', math: '{{gross}} added, {{replaced}} ends',
     },
     verdict: {
+      key: {
+        leftCaption: 'Left a month', cushionCaption: 'Cushion', monthlyCaption: 'A month', putInCaption: 'Put in a month',
+        months_one: '1\u00A0month', months_other: '{{count}}\u00A0months', underOne: 'Under 1 month', notLimited: 'Not limited', none: 'None',
+        a11y: 'Left each month after this: {{left}}. Cushion: {{months}} of costs. Monthly cost: {{monthly}}.',
+      },
       titleNoAlreadyShort: 'Your {{basis}} month is already {{already}} short. This makes it {{short}}.',
       titleNoMonthShort: 'The month ends {{short}} short.',
       titleUnexplained: 'The detail behind this answer is not available.', // IN-B07: a defensive fallback in place of a zero-amount claim
@@ -1638,7 +1870,7 @@ const en = {
       monthClosesAverage: 'The month still closes with {{amount}} spare, on your average month.',
       monthClosesWorst: 'The month still closes with {{amount}} spare, and that is your worst month, not your average.',
       ledgersTitle: 'Where it lands', ledgersSummary: 'Five ledgers', ledgersNote: 'Five ledgers. A purchase never touches only one.', colLedger: 'Ledger',
-      ledgerA11y: '{{ledger}}, {{now}} to {{after}}, {{direction}}', ratePercent: '{{rate}}%',
+      ledgerA11y: '{{ledger}}, now {{now}}, after {{after}}, {{direction}}', ratePercent: '{{rate}}%',
       ledger: { income: 'Income', expenses: 'Expenses', debt: 'Debt', cash: 'Cash', investments: 'Investments' },
       ledgerDesc: { income: 'What comes in each month', expenses: 'What goes out each month', debt: 'What you owe', cash: 'What you hold today', investments: 'What goes into investing each month' },
       direction: { better: 'Better', worse: 'Worse', same: 'Same' },
