@@ -4,22 +4,25 @@
  * rounded UP to the minor unit; the schedule is then walked and the final
  * payment absorbs the residual, so totalPaid === principal + totalInterest
  * exactly and the final payment never exceeds the level payment.
- * No default APR exists: callers always pass a Percent.
+ * No default APR exists: callers always pass a Percent. D-89: `periodsPerYear` (default 12) sets the period length;
+ * the count `months` is then a count of periods.
  */
 import { divideHalfUp } from '../money/rounding';
 import type { MinorUnits } from '../money/types';
 import { MAX_TERM_MONTHS } from './constants';
 import {
-  MONTHLY_RATE_DENOMINATOR,
   ceilDivide,
   minorFromBigInt,
+  rateDenominator,
   type AmortisationResult,
   type Percent,
+  type PeriodsPerYear,
 } from './types';
 
-function assertMonths(months: number): void {
-  if (!Number.isInteger(months) || months < 1 || months > MAX_TERM_MONTHS) {
-    throw new RangeError(`amortise: months ${months} must be an integer between 1 and ${MAX_TERM_MONTHS}`);
+/** D-89: the count is of periods (months by default); the cap is the same 600. */
+function assertPeriods(periods: number): void {
+  if (!Number.isInteger(periods) || periods < 1 || periods > MAX_TERM_MONTHS) {
+    throw new RangeError(`amortise: periods ${periods} must be an integer between 1 and ${MAX_TERM_MONTHS}`);
   }
 }
 
@@ -46,8 +49,14 @@ interface LevelWalk {
  * in months 0..months-1, the first on the day with no interest yet. `lastMonth` is the count of payments up to the last
  * non-zero one (equal to the last month index for an ordinary walk).
  */
-function walkLevel(P: bigint, apr: Percent, months: number, payment: bigint, due: boolean): LevelWalk {
-  const D = MONTHLY_RATE_DENOMINATOR;
+function walkLevel(
+  P: bigint,
+  apr: Percent,
+  months: number,
+  payment: bigint,
+  due: boolean,
+  D: bigint,
+): LevelWalk {
   let bal = P;
   let totalInterest = 0n;
   let totalPaid = 0n;
@@ -87,8 +96,13 @@ function walkLevel(P: bigint, apr: Percent, months: number, payment: bigint, due
  * in month 421). `months` is then the last month with a payment, `finalPayment` that last non-zero payment, and
  * `termMonths` the term asked for. With nothing financed, months and finalPayment are 0.
  */
-export function amortise(principal: MinorUnits, apr: Percent, months: number): AmortisationResult {
-  return solve(principal, apr, months, false);
+export function amortise(
+  principal: MinorUnits,
+  apr: Percent,
+  months: number,
+  periodsPerYear: PeriodsPerYear = 12,
+): AmortisationResult {
+  return solve(principal, apr, months, false, periodsPerYear);
 }
 
 /**
@@ -97,15 +111,27 @@ export function amortise(principal: MinorUnits, apr: Percent, months: number): A
  * up exactly as D-64. The walk pays at month 0 before any interest, then accrues and pays in months 1..n-1. `months` is
  * the number of payments (the last is paid in month `months - 1`); `termMonths` is the count asked for.
  */
-export function amortiseDue(principal: MinorUnits, apr: Percent, months: number): AmortisationResult {
-  return solve(principal, apr, months, true);
+export function amortiseDue(
+  principal: MinorUnits,
+  apr: Percent,
+  months: number,
+  periodsPerYear: PeriodsPerYear = 12,
+): AmortisationResult {
+  return solve(principal, apr, months, true, periodsPerYear);
 }
 
-function solve(principal: MinorUnits, apr: Percent, months: number, due: boolean): AmortisationResult {
-  assertMonths(months);
+function solve(
+  principal: MinorUnits,
+  apr: Percent,
+  months: number,
+  due: boolean,
+  periodsPerYear: PeriodsPerYear,
+): AmortisationResult {
+  assertPeriods(months);
   assertNonNegative(principal, 'principal');
 
-  const D = MONTHLY_RATE_DENOMINATOR;
+  // D-89: the rate per period is apr / (100 x periodsPerYear x scale); 12 is the monthly denominator, unchanged.
+  const D = rateDenominator(periodsPerYear);
   const P = BigInt(principal);
   const n = BigInt(months);
 
@@ -120,10 +146,10 @@ function solve(principal: MinorUnits, apr: Percent, months: number, due: boolean
     // Due: divide by (1 + r) = (D + apr) / D, so the factor D in the denominator becomes D + apr.
     payment = ceilDivide(P * apr * An, (due ? D + apr : D) * (An - Dn));
   }
-  let walk = walkLevel(P, apr, months, payment, due);
+  let walk = walkLevel(P, apr, months, payment, due, D);
   while (walk.finalPayment > payment) {
     payment += 1n;
-    walk = walkLevel(P, apr, months, payment, due);
+    walk = walkLevel(P, apr, months, payment, due, D);
   }
 
   return {

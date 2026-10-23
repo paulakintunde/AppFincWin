@@ -1,6 +1,13 @@
 import fc from 'fast-check';
 import { amortise, amortiseDue } from '../amortise';
-import { ZERO_PERCENT, percent, percentFromScaled } from '../types';
+import {
+  MONTHLY_RATE_DENOMINATOR,
+  PERCENT_SCALE,
+  ZERO_PERCENT,
+  percent,
+  percentFromScaled,
+  rateDenominator,
+} from '../types';
 import { divideHalfUp } from '../../money/rounding';
 import { minorUnits } from '../../money/types';
 
@@ -179,5 +186,62 @@ describe('D-80 amortiseDue (first payment on the day)', () => {
   it('D-80 amortiseDue rejects a bad term or a negative principal', () => {
     expect(() => amortiseDue(m(100), percent('5'), 0)).toThrow(RangeError);
     expect(() => amortiseDue(-1 as never, percent('5'), 6)).toThrow(RangeError);
+  });
+});
+
+describe('D-89 periodsPerYear', () => {
+  const PPYS = [12, 26, 52, 4] as const;
+
+  it('D-89 a weekly plan uses the per-week rate and clears exactly', () => {
+    const r = amortise(m(120_000), percent('12'), 52, 52);
+    expect(r.termMonths).toBe(52);
+    expect(r.totalPaid).toBe(120_000 + r.totalInterest);
+    expect(r.finalPayment).toBeLessThanOrEqual(r.payment);
+    // Per-week rate 12/5200 of the balance: first week's interest is round(120000 * 12 / 5200) = 277.
+    // About 1,200 x 1.066 / 52 = 24.6 a week (average balance about half over the year).
+    expect(r.payment).toBeGreaterThan(2_400);
+    expect(r.payment).toBeLessThan(2_500);
+    const monthly = amortise(m(120_000), percent('12'), 12);
+    expect(r.totalInterest).toBeLessThan(monthly.totalInterest);
+    expect(rateDenominator(52)).toBe(100n * 52n * PERCENT_SCALE);
+  });
+
+  it('D-89 periodsPerYear 12 is unchanged', () => {
+    for (const a of ['0', '5', '22.9']) {
+      for (const n of [1, 12, 360]) {
+        expect(amortise(m(1_234_567), percent(a), n, 12)).toEqual(amortise(m(1_234_567), percent(a), n));
+        expect(amortiseDue(m(1_234_567), percent(a), n, 12)).toEqual(amortiseDue(m(1_234_567), percent(a), n));
+      }
+    }
+    expect(amortise(m(100_000), percent('12'), 12).payment).toBe(8_885);
+    expect(rateDenominator(12)).toBe(MONTHLY_RATE_DENOMINATOR);
+  });
+
+  it('D-89 500 periods pass assertPeriods', () => {
+    expect(() => amortise(m(100_000), percent('5'), 500, 52)).not.toThrow();
+    expect(() => amortise(m(100_000), percent('5'), 601, 52)).toThrow(/^amortise: periods/);
+    expect(() => amortiseDue(m(100_000), percent('5'), 0, 4)).toThrow(RangeError);
+  });
+
+  it('D-89 grid over periodsPerYear x apr x n clears exactly', () => {
+    for (const ppy of PPYS) {
+      for (const a of ['0', '4.9', '22.9', '299']) {
+        for (const n of [1, 2, 13, 52, 156, 500]) {
+          for (const p of [1, 99_999, 1_234_567]) {
+            for (const fn of [amortise, amortiseDue]) {
+              const r = fn(m(p), percent(a), n, ppy);
+              expect(r.totalPaid).toBe(p + r.totalInterest);
+              expect(r.finalPayment).toBeLessThanOrEqual(r.payment);
+              expect(r.termMonths).toBe(n);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it('D-89 quarterly interest at 4 a year uses apr / 400', () => {
+    // 1,000.00 at 8% over 2 quarters: 2% a quarter; payment ceil(1000 x .02 x 1.0404 / .0404) = 515.05.
+    expect(amortise(m(100_000), percent('8'), 2, 4).payment).toBe(51_505);
   });
 });
