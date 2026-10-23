@@ -143,6 +143,23 @@ describe('instalmentNotes', () => {
     expect(oneUnit).toHaveLength(2);
   });
 
+  it('D-89 the difference note names the frequency, never "a month" for a weekly quote', () => {
+    const PERIOD: Record<InstalmentFreq, string> = { weekly: 'a week', fortnightly: 'every 2 weeks', monthly: 'a month', quarterly: 'a quarter' };
+    for (const freq of FREQS) {
+      const notes = instalmentNotes(
+        inputs({ hasRate: true, aprText: '9.9', amount: 12_500, count: 12, freq }),
+        plan({ monthly: 12_500, computedPayment: 13_000 }),
+        [],
+        fmt,
+        null,
+      );
+      expect(say(notes[1]!)).toBe(`The rate works out to E13000 ${PERIOD[freq]}; the quote is E12500.`);
+      expect(notes[1]!.key).toBe(freq === 'monthly' ? 'decide.pay.instalmentCalcNote' : `decide.pay.instalmentCalcNoteBy.${freq}`);
+      if (freq !== 'monthly') expect(say(notes[1]!)).not.toContain('a month');
+    }
+    for (const f of ['weekly', 'fortnightly', 'quarterly']) expect(resolvesInEn(`decide.pay.instalmentCalcNoteBy.${f}`)).toBe(true);
+  });
+
   it('D-80 a rate with no plan says what is missing, or that the quote is below the price', () => {
     const i = inputs({ hasRate: true, aprText: '', amount: null, count: null });
     expect(instalmentNotes(i, null, ['instalment_rate_missing'], fmt, null)).toEqual([{ key: 'decide.pay.instalmentMissing' }]);

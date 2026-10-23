@@ -1994,6 +1994,12 @@ const en = {
       instalmentRateNoteMonth_one: '1 payment of {{payment}} at {{apr}}%, in a month. Interest over the plan is {{interest}}.',
       instalmentRateNoteMonth_other: '{{count}} payments of {{payment}} at {{apr}}%, the first in a month. Interest over the plan is {{interest}}.',
       instalmentCalcNote: 'The rate works out to {{calc}} a month; the quote is {{typed}}.',
+      // D-89: the same note for a quote that falls weekly, every 2 weeks or quarterly ({{calc}} is the payment for one period)
+      instalmentCalcNoteBy: {
+        weekly: 'The rate works out to {{calc}} a week; the quote is {{typed}}.',
+        fortnightly: 'The rate works out to {{calc}} every 2 weeks; the quote is {{typed}}.',
+        quarterly: 'The rate works out to {{calc}} a quarter; the quote is {{typed}}.',
+      },
       instalmentFirst: 'First payment', instalmentToday: 'Today', instalmentInMonth: 'In a month',
       horizonOver: 'Over', horizonCustom: 'Custom', horizonYears_one: '1\u00A0year', horizonYears_other: '{{count}}\u00A0years',
       expectedReturn: 'Expected return, % a year (optional)',
@@ -2256,6 +2262,18 @@ const en = {
       writtenLoanSecured: 'A debt of {{amount}}, secured, at {{apr}}%, and a recurring payment of {{payment}} a month for {{count}}\u00A0months.',
       writtenLoanThen: 'Then {{payment}} a month for {{count}}\u00A0months.', writtenLoanFinal: 'A last payment of {{payment}} in month {{count}}.', // D-45: one line per later paymentSteps run (a promotion's second run, a one-month final run), so the list matches 05-20's writes
       writtenInstalment: 'A recurring payment of {{payment}} a month, {{count}} times.',
+      // D-89: a weekly, fortnightly or quarterly instalment is written at its own frequency; the first line carries the date of its first payment
+      writtenInstalmentBy: {
+        weekly: 'A recurring payment of {{payment}} a week from {{date}}, {{count}} times.',
+        fortnightly: 'A recurring payment of {{payment}} every 2 weeks from {{date}}, {{count}} times.',
+        quarterly: 'A recurring payment of {{payment}} a quarter from {{date}}, {{count}} times.',
+      },
+      writtenInstalmentThenBy: {
+        weekly: 'Then {{payment}} a week, {{count}} times.',
+        fortnightly: 'Then {{payment}} every 2 weeks, {{count}} times.',
+        quarterly: 'Then {{payment}} a quarter, {{count}} times.',
+      },
+      writtenInstalmentFinal: 'A last payment of {{payment}} on {{date}}.',
       writtenCard: 'A pending expense of {{amount}} on {{card}}.',
       writtenCardPayoff: 'A recurring payment of {{payment}} a month toward {{card}}, {{count}} times, from {{account}}.',
       writtenInvestLump: 'A pending payment of {{amount}} on {{date}}, from {{account}}.',

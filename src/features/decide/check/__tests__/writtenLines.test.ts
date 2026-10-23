@@ -106,6 +106,30 @@ describe('writtenLines', () => {
     expect(keys(writtenLines(base({ method: 'instalment' }), none, ctx))).toEqual(['writtenInstalment', 'writtenUntouched']);
   });
 
+  it('D-89 written lines name the frequency', () => {
+    const steps = [{ fromMonth: 1, toMonth: 11, amount: 2_000 }, { fromMonth: 12, toMonth: 12, amount: 1_500 }];
+    const inputs = base({ method: 'instalment', needBy: '2026-11-02' });
+    const weekly = writtenLines(inputs, withPlan('instalment', { dayOne: 2_000, months: 3, freq: 'weekly', paymentSteps: steps }), ctx);
+    expect(keys(weekly)).toEqual(['writtenDeposit', 'writtenInstalmentBy.weekly', 'writtenInstalmentFinal', 'writtenUntouched']);
+    // dates come from occurrenceDate: one week on, and twelve weeks on
+    expect(weekly[1]!.params).toEqual({ payment: 'E2000', date: 'on 2026-11-09', count: 11 });
+    expect(weekly[2]!.params).toEqual({ payment: 'E1500', date: 'on 2027-01-25' });
+    const fortnightly = writtenLines(inputs, withPlan('instalment', { dayOne: 0, months: 6, freq: 'fortnightly', paymentSteps: [steps[0]!, { fromMonth: 12, toMonth: 14, amount: 900 }] }), ctx);
+    expect(keys(fortnightly)).toEqual(['writtenInstalmentBy.fortnightly', 'writtenInstalmentThenBy.fortnightly', 'writtenUntouched']);
+    expect(fortnightly[0]!.params!.date).toBe('on 2026-11-16');
+    const quarterly = writtenLines(inputs, withPlan('instalment', { dayOne: 0, months: 12, freq: 'quarterly', paymentSteps: [{ fromMonth: 1, toMonth: 4, amount: 25_000 }] }), ctx);
+    expect(keys(quarterly)).toEqual(['writtenInstalmentBy.quarterly', 'writtenUntouched']);
+    expect(quarterly[0]!.params!.date).toBe('on 2027-02-02');
+  });
+
+  it('D-89 monthly writes are unchanged', () => {
+    const steps = [{ fromMonth: 1, toMonth: 11, amount: 5_000 }, { fromMonth: 12, toMonth: 12, amount: 4_900 }];
+    const bare = writtenLines(base({ method: 'instalment' }), withPlan('instalment', { dayOne: 0, months: 12, paymentSteps: steps }), ctx);
+    const monthly = writtenLines(base({ method: 'instalment' }), withPlan('instalment', { dayOne: 0, months: 12, freq: 'monthly', paymentSteps: steps }), ctx);
+    expect(keys(bare)).toEqual(['writtenInstalment', 'writtenLoanFinal', 'writtenUntouched']);
+    expect(monthly).toEqual(bare);
+  });
+
   it('a card lists the card expense and the day-one cash above the cap plus fees', () => {
     const card = { onCard: 90_000, remainderOnDay: 10_000, fees: 500 };
     const lines = writtenLines(base({ method: 'card' }), withPlan('card', { card }), ctx);

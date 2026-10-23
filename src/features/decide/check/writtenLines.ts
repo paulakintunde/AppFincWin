@@ -5,6 +5,7 @@
  * the screen turns each CopyRef into text with `refText`.
  */
 import type { Plan } from '@/engine/decide';
+import { occurrenceDate } from '@/engine/recurring/schedule';
 import { goalCopy } from '../copy/depthInputsCopy';
 import { ref } from '../copy/types';
 import type { CopyRef, Fmt } from '../copy/types';
@@ -89,8 +90,16 @@ function goLines(inputs: CheckInputs, computation: CheckComputation, plan: Plan,
       // D-80 (R15.3): the day-one line only when there is a day-one cost (with 'In a month' that is the fees alone); then one
       // line per payment run, as the engine scored them: a level run, then an adjusted last payment for a worked-out plan.
       if (plan.dayOne > 0) out.push(ref('decide.decision.writtenDeposit', { amount: exact(plan.dayOne), date: dated, account }));
+      const freq = plan.freq ?? 'monthly';
+      const startDate = inputs.needBy ?? ctx.today; // the date Go ahead anchors the schedule on
+      const at = (period: number): string => ctx.formatDate(occurrenceDate(startDate, freq, period));
       plan.paymentSteps.forEach((step, i) => {
-        if (i === 0 && length(step) >= 2) out.push(ref('decide.decision.writtenInstalment', { payment: exact(step.amount), count: length(step) }));
+        if (freq !== 'monthly') {
+          // D-89: steps are indexed by payment period; each date is the schedule's own occurrenceDate
+          if (i === 0 && length(step) >= 2) out.push(ref(`decide.decision.writtenInstalmentBy.${freq}`, { payment: exact(step.amount), date: at(step.fromMonth), count: length(step) }));
+          else if (i > 0 && length(step) >= 2) out.push(ref(`decide.decision.writtenInstalmentThenBy.${freq}`, { payment: exact(step.amount), count: length(step) }));
+          else out.push(ref('decide.decision.writtenInstalmentFinal', { payment: exact(step.amount), date: at(step.toMonth) }));
+        } else if (i === 0 && length(step) >= 2) out.push(ref('decide.decision.writtenInstalment', { payment: exact(step.amount), count: length(step) }));
         else if (i > 0 && length(step) >= 2) out.push(ref('decide.decision.writtenLoanThen', { payment: exact(step.amount), count: length(step) }));
         else out.push(ref('decide.decision.writtenLoanFinal', { payment: exact(step.amount), count: step.toMonth }));
       });

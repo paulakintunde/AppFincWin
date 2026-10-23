@@ -2,8 +2,11 @@
 /* eslint-disable import/first, @typescript-eslint/no-require-imports */
 globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto);
 
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import React from 'react';
 import fc from 'fast-check';
+import { RECURRING_FREQS } from '@/engine/recurring/schedule';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { Assessment, PaymentStep, Plan, RunningCosts } from '@/engine/decide';
@@ -193,6 +196,33 @@ describe('buildGoAheadWrite', () => {
     expect(w.series).toHaveLength(1);
     expect(w.series[0]).toMatchObject({ amount: -5000, occurrence_count: 12, category_id: null });
     expect(w.debt).toBeNull();
+  });
+
+  it('D-89 Go ahead writes a weekly instalment series', () => {
+    // paid today: the first payment is in dayOne, the series starts one period later
+    const plan = makePlan({ dayOne: asMoney(1000), financed: asMoney(52_000), monthly: asMoney(4333), months: 12, total: asMoney(53_000), freq: 'weekly', paymentSteps: [step(1, 51, 1000)] });
+    const weekly = build(buyInputs({ method: 'instalment' }), plan);
+    expect(weekly.series).toHaveLength(1);
+    expect(weekly.series[0]).toMatchObject({ amount: -1000, freq: 'weekly', anchor_date: '2026-10-23', occurrence_count: 51 });
+    // fortnightly and quarterly step by their own period; a last payment is one pending row on that period's date
+    const fortnight = build(buyInputs({ method: 'instalment' }), makePlan({ freq: 'fortnightly', months: 6, paymentSteps: [step(1, 11, 2000), step(12, 12, 1500)] }));
+    expect(fortnight.series[0]).toMatchObject({ freq: 'fortnightly', anchor_date: '2026-10-30', occurrence_count: 11 });
+    expect(fortnight.rows.at(-1)).toMatchObject({ original_amount: -1500, local_date: '2027-04-02' });
+    const quarter = build(buyInputs({ method: 'instalment' }), makePlan({ freq: 'quarterly', months: 12, paymentSteps: [step(1, 4, 25_000)] }));
+    expect(quarter.series[0]).toMatchObject({ freq: 'quarterly', anchor_date: '2027-01-16', occurrence_count: 4 });
+    // no migration: the database already allows these frequencies on a series
+    const migration = readFileSync(join(__dirname, '../../../../supabase/migrations/20260926000300_recurring_series.sql'), 'utf8');
+    for (const freq of ['weekly', 'fortnightly', 'quarterly']) {
+      expect(RECURRING_FREQS).toContain(freq);
+      expect(migration).toContain(`'${freq}'`);
+    }
+  });
+
+  it('D-89 monthly writes are unchanged', () => {
+    const bare = build(buyInputs({ method: 'instalment' }), makePlan({ months: 12, paymentSteps: [step(1, 12, 5000)] }));
+    const monthly = build(buyInputs({ method: 'instalment' }), makePlan({ freq: 'monthly', months: 12, paymentSteps: [step(1, 12, 5000)] }));
+    expect(bare.series[0]).toMatchObject({ freq: 'monthly', anchor_date: '2026-11-16', occurrence_count: 12 });
+    expect(monthly.series[0]).toMatchObject({ freq: 'monthly', anchor_date: '2026-11-16', occurrence_count: 12 });
   });
 
   it('D-80 Go ahead writes the next_month instalment schedule', () => {

@@ -58,7 +58,8 @@ export function instalmentNotes(
       ];
       // a typed quote that differs by at least one minor unit from the worked-out payment
       if (plan.computedPayment !== undefined && inst.amount !== null && inst.amount !== plan.computedPayment) {
-        out.push(ref(`${P}instalmentCalcNote`, { calc: exact(plan.computedPayment), typed: exact(inst.amount) }));
+        // D-89: "a month" is wrong for a weekly, fortnightly or quarterly quote, so those read the payment per period
+        out.push(ref(freq === 'monthly' ? `${P}instalmentCalcNote` : `${P}instalmentCalcNoteBy.${freq}`, { calc: exact(plan.computedPayment), typed: exact(inst.amount) }));
       }
       return out;
     }

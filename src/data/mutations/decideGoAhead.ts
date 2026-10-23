@@ -17,6 +17,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { Assessment, PaymentStep, RunningCostCategory, RunningCosts } from '@/engine/decide';
 import { buildTransferLegs } from '@/engine/transfer';
 import { occurrenceDate } from '@/engine/recurring/schedule';
+import type { RecurringFreq } from '@/engine/recurring/schedule';
 import { monthOf } from '@/engine/time';
 import type { CheckInputs } from '@/features/decide/snapshot/types';
 import * as reminders from '@/features/decide/notifications/waitReminder';
@@ -155,7 +156,8 @@ export function buildGoAheadWrite(args: {
     count: number | null,
     categoryId: string | null,
     role: DecideLinkRole,
-    seriesName: string
+    seriesName: string,
+    freq: RecurringFreq = 'monthly'
   ): string => {
     assertSafeInteger('a series amount', amount);
     const id = mint();
@@ -168,7 +170,7 @@ export function buildGoAheadWrite(args: {
       currency: ctx.currency,
       category_id: categoryId,
       payment_type: null,
-      freq: 'monthly',
+      freq,
       anchor_date: anchor,
       time_zone: ctx.timeZone,
       end_date: null,
@@ -184,10 +186,15 @@ export function buildGoAheadWrite(args: {
   };
 
   /** A payment run: a series for two months or more, a single pending row for one month. Returns the series id or null. */
-  const addPaymentRun = (step: PaymentStep, categoryId: string | null, rowCategory: string | null): string | null => {
-    const first = occurrenceDate(start, 'monthly', step.fromMonth);
+  const addPaymentRun = (
+    step: PaymentStep,
+    categoryId: string | null,
+    rowCategory: string | null,
+    freq: RecurringFreq = 'monthly'
+  ): string | null => {
+    const first = occurrenceDate(start, freq, step.fromMonth);
     const run = runOf(step);
-    if (run >= 2) return addSeries(ctx.cashAccountId, -step.amount, first, run, categoryId, 'payment', name);
+    if (run >= 2) return addSeries(ctx.cashAccountId, -step.amount, first, run, categoryId, 'payment', name, freq);
     addRow(ctx.cashAccountId, -step.amount, first, 'payment', { category_id: rowCategory });
     return null;
   };
@@ -268,7 +275,8 @@ export function buildGoAheadWrite(args: {
       }
       case 'instalment':
         if (plan.dayOne > 0) addRow(ctx.cashAccountId, -plan.dayOne, start, 'day_one');
-        for (const step of plan.paymentSteps) addPaymentRun(step, null, null);
+        // D-89: an instalment plan's steps are indexed by payment period, so the series falls at the plan's frequency.
+        for (const step of plan.paymentSteps) addPaymentRun(step, null, null, plan.freq ?? 'monthly');
         break;
       case 'card': {
         const card = plan.card;
