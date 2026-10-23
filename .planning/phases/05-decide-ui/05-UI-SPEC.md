@@ -1,7 +1,7 @@
 ---
 phase: 5
 slug: 05-decide-ui
-status: approved
+status: draft
 reviewed_at: 2026-10-23
 amended: 2026-10-22
 shadcn_initialized: false
@@ -17,7 +17,7 @@ created: 2026-10-15
 
 **Platform note:** React Native / Expo SDK 57. No shadcn, no CSS. Styling is `StyleSheet` plus the typed theme (`useTheme()`, `textRole()`, `src/theme/*`). The CLAUDE.md fidelity rule holds: **no new colour, gradient, shadow, type size or icon set.** The prototype's Decide screens use about a dozen hex values outside the §2 palette; every one is mapped to an existing token below (Color, Deviations Register). Colours are cited by token name only; `noRawColours.test.ts` must keep passing.
 
-**Amended 2026-10-22 and 2026-10-23 (D-70..D-94):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Re-approved by the UI checker on 2026-10-22, with its recommendations folded in (R14). R15 (Step 2, item and invest refresh, D-79..D-84) was re-approved the same day with its must-fix items folded in (R15.13). R16 (device-walkthrough refinements, D-85..D-94, 2026-10-23) was re-approved on 2026-10-23 with its must-fix items folded in (R16.16).
+**Amended 2026-10-22 and 2026-10-23 (D-70..D-99):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Re-approved by the UI checker on 2026-10-22, with its recommendations folded in (R14). R15 (Step 2, item and invest refresh, D-79..D-84) was re-approved the same day with its must-fix items folded in (R15.13). R16 (device-walkthrough refinements, D-85..D-94, 2026-10-23) was re-approved on 2026-10-23 with its must-fix items folded in (R16.16). R17 (Decide home redesign, D-95..D-99) returns the status to draft for a re-check.
 
 **Surface in this phase:**
 1. Decide tab root (quick check, Your month, Open checks, Past decisions link, Lines you will not cross).
@@ -2222,3 +2222,297 @@ None open. Answered 2026-10-23:
   - R16.1 `transitionEnd`;
   - D-93.3 R16.12 row;
   - R16.15 marker readings and the custom-"$" test.
+
+### R17. Decide home redesign (2026-10-23)
+
+Source: the user's brief of 2026-10-23 ("financial clarity, improved error communication, better spacing, and a refined layout … start with the dark card … minimalistic and free … calm, and reassuring of result") and the locked decisions **05-CONTEXT D-95..D-99**. **R17 replaces the Decide home layout** of "Decide home (tab root)", R2b, the D-72 add row and the D-78 trim. Where it conflicts with them, R17 wins (R17.10).
+
+**Constraints:**
+- Tokens, roles, motion and haptics are the existing ones only.
+- Copy is declarative (DCU-09) with **no reassuring words**. The calm comes from space, hierarchy and quiet type, never from phrases like "all good" or "you’re fine".
+- Every R6 text-fit rule applies.
+
+#### R17.1 Principles
+
+1. **One focal point:** the dark card. Nothing else on the screen is `ink`, accent-filled or large.
+2. **One primary action:** "Check it" (accent). Everything else is a quiet text link or row (`label`/`body` `ink` labels, `meta` `inkMuted` values).
+3. **Space:**
+   - 32 (two 16 steps on the 4-grid) between the card and the rows;
+   - 12 inside groups;
+   - the rows carry no card chrome.
+4. **At most 5 elements below the card on first view:** up to four rows. The "Full check ›" link lives inside the card.
+5. **Problems are one quiet row**, never red text, unless a figure is actually wrong or unavailable (R17.5).
+
+#### R17.2 Layout and y-budget (402 × 874, 1.0x, iPhone 16 Pro insets top 62 / bottom 34; the tab bar's top edge at about y = 789)
+
+```
+y   83 ┌ Can I afford it                                   (◯) ┐  lean header: heading, 42px avatar
+   125 └──────────────────────────────────────────────────────┘
+       [ • 2 items need a look                            › ]     notice row (only with problems), 44
+   151 ┌──────────────────── dark card (ink) ─────────────────┐
+       │ THIS MONTH · WORST MONTH                   Details › │  eyebrow row 20 (44 hit on Details)
+       │                                                      │
+       │ $1,240 left                                          │  hero, display 34 (one line, fit 0.8)
+       │ after bills and saving                               │  meta, inkSoft1
+       │ In $4,800 · Out $3,560                               │  s13_5, inkSoft2
+       │                                                      │
+       │ ┌ Something and a price ─────────────── [Check it] ┐ │  field pill 56 (surface @.12)
+       │ └──────────────────────────────────────────────────┘ │
+       │                                        Full check › │  text link, 44 hit
+   444 └──────────────────────────────────────────────────────┘
+       (32)
+   476   Open checks                                     2  ›     quiet rows, 52 each,
+         Changes coming up                               1  ›     1px line1 separators,
+         Past decisions                                  4  ›     no card
+         Lines you will not cross        2 of 5 set by you  ›
+   684
+       (free space to the tab bar at about 789)
+```
+
+**Budget:**
+- **Header:** top 83 (insets.top + 21), title row 42 (heading 30 beside the 42 avatar), then `space.tabHeaderPadBottom` 10 → it ends at 135. The card starts at 151 (16 gap). With the notice row: + 44 + 8 → the card starts at 203.
+- **Card ≤ 293.5:**
+  - padding 20, eyebrow row 20, 12;
+  - hero 40 (display 34 with descenders), 4;
+  - "after bills and saving" 17.5, 12;
+  - In/Out 20, 20;
+  - field 56, 8;
+  - Full check row 44, padding 20.
+  
+  It ends at **y = 444.5**, or 496.5 with the notice row.
+- **Rows:** 32 gap, then four rows of 52 (body 22.5 + 13 × 2, plus a separator). They end at **y = 684.5**, or 736.5 with the notice row. That is under the tab bar at about 789, so the whole first view fits without scrolling and leaves free space.
+
+**With a quick-check result** (DCU-11 alternate frame 1, "sofa 1800", Cash) inside the card:
+- the field ends at 372.5;
+- 12, then the result block 135.5 (R2b rows A-C) → 520;
+- 12, then the Cash / Credit toggle 52 → 584;
+- 12, then the button row 48;
+- padding 20.
+
+The card ends at **y = 664**, with the chip, size line and result line all above the fold. The rows then scroll.
+
+#### R17.3 Components
+
+**Lean header:**
+- The `TabRootScreen` title is "Can I afford it", with the 42px avatar. The "DECIDE" eyebrow and the subtitle are **removed** on this screen.
+- The tab-header `SyncProblemLine` is **suppressed on Decide home only** and folded into the notice row (R17.5). Other tabs keep the R16 line.
+
+**Dark card (`HomeSummaryCard`):** `ink`, `radii.card`, padding `space.cardPadLg`, no shadow.
+
+| Part | Spec |
+|---|---|
+| Eyebrow row | Left: "This month" (`eyebrow`, `inkSoft1`, upper-cased), then " · " and the basis in the same quiet style: "Worst month" / "Average month" / "Your figures" (first read, D-04) / "Now from your logged months" (just switched, D-04). Right: the **"Details ›"** text button (`label`, `inkSoft1`, 44 × 44), which opens the Month details sheet. The row wraps under rule S. |
+| Hero | `textRole('display')` (34, the display face, lh 1.0: the shipped §2 display role, not a new size), `surface`, `numberOfLines={1}`, `adjustsFontSizeToFit`, `minimumFontScale={0.8}` (rule N), capped at 1.3x. Words: **"{{amount}} left"**, or with a negative month **"{{amount}} short this month"**. When short, the amount is in `dangerTint2`, the dark-surface form of the danger token already used for negatives on dark cards (contrast above 10:1), and the words stay `surface`. No other alarm styling. Tapping the hero area also opens Month details. |
+| Sub-line | "after bills and saving" (`meta`, `inkSoft1`). |
+| Second line | "In {{in}} · Out {{out}}" (`s13_5`, `inkSoft2`). It wraps at " · " under rule S (U+00A0 inside each pair). |
+| Quick-check field | It replaces the white quick-check card. A pill 56 high, fill `surface` at 0.12 over `ink` (the existing dark-card derivation), placeholder **"Something and a price"** (`inkSoft2`; above 1.3x or below 360 it becomes "car 14500", rule P). Text is `surface`. **"Check it"** sits inside it (accent fill, `surface` `label`, 44 high), the screen's only primary action. The parser, the toast "Add a figure — “car 14500” works" and live recompute are unchanged. |
+| Quick result (once parsed) | It opens below a 1px `surface`@.12 rule, inside the card, with `fw-rise`. In order:<br>1. the R2b result block (name and `StateChip`, size line with ⓘ, result line `s13_5` `surface`, the Credit monthly figure `heading` `surface`, the Credit footer as the result block's last line);<br>2. the Cash / Credit toggle (dark variant: track `surface`@.12, selected `surface` fill with `ink` text, unselected `inkSoft2`);<br>3. the Credit block (APR, duration chips with Custom: the dark variant of `Chip`, selected `surface`@.12 tint with `surface` text);<br>4. "+ Tax, fees" (`label`, `inkSoft1`, chevron);<br>5. the button row: "Run the full check" (`surface` fill, `ink` text; secondary to "Check it", so not accent) and "Clear" (`label`, `inkSoft1`).<br>The combine pill sits in the result's footer row as before (dark variant). "See it on credit" uses the `surface`@.12 pill. |
+| "Full check ›" | A text link at the card's bottom right (`label`, `inkSoft1`, 44 hit). It starts a new purchase check at step 1, where the kind chip "An investment" starts an investment check (D-98). It is hidden while a quick result shows, because "Run the full check" carries the fields then. |
+| Card a11y | The card is **not** one element. The **summary group** comes first: "This month, {{basis}}: {{amount}} left after bills and saving. In {{in}}, out {{out}}." (short: "{{amount}} short this month"). It uses `formatMoneyA11y` amounts and carries the hint "Opens month details". Then the Details button, the field ("Quick check, something and a price"), "Check it", the result group (polite live region, D-56 debounce) and "Full check". |
+
+**Quiet rows (`HomeRow`):**
+- **Look:** a full-width `Pressable` on `canvas`, `minHeight` 52, padding `space.rowPadDense` (13) top and bottom, 1px `line1` separators between rows (none above the first or below the last), and the cards' side margin. No card chrome.
+- **Content:** label `body` 500 `ink` (flex 1, wraps); value `meta` 600 `inkMuted` (right, wraps under the label per rule S); the 8px chevron `inkSoft3`. An optional second line in `meta` `warn1` (Open checks: "{{count}} changed since you looked").
+- **Pressed and a11y:** pressed `fill6` with `hapticSelection`. A11y: "{{label}}, {{value}}", role button.
+
+| Row | Shown | Value | Opens |
+|---|---|---|---|
+| Open checks | from the first saved check (D-72) | "{{count}}"; second line "{{count}} changed since you looked" when any | The pushed **Open checks** screen (`app/(app)/decide/open.tsx`): the R1 list with swipe and ⋯ Delete, the changed markers and the combine behaviour, with the heading links "+ Purchase" and "+ Investment" |
+| Changes coming up | always | "{{count}}"; at zero the row reads **"Add a change coming up"** with no value (D-98) | With changes: the pushed **Changes coming up** screen (the list with swipe and ⋯ Delete, plus "+ Add a change"). At zero: the `ChangeSheet` in add mode |
+| Past decisions | from the first decision (D-78) | "{{count}}" | The Past decisions screen (unchanged) |
+| Lines you will not cross | always | "{{count}} of 5 set by you" / "All at their defaults" | The pushed **Lines you will not cross** screen: the sub-copy, the five rows with their ⓘ, each opening the limit editor sheet |
+
+**Month details sheet (`MonthDetailsSheet`, the app's `Sheet`):** it holds what "Your month" showed inline, which is **no longer shown on the home screen**.
+- title "This month";
+- the steadiness chip;
+- the basis control (Worst · {amt} / Average · {amt}, D-14, from 3 full months);
+- the basis line (steady, varies, under 3 months, no money in: unchanged copy);
+- the three columns (Comes in / Goes out / Left, stacking per rule S);
+- the "Activity" link;
+- before a full month exists, the rough figures and "Edit" (opens `RoughFiguresSheet` stacked);
+- the **sources note** (moved here from the bottom of the screen);
+- a `Pill` "Close".
+
+The sheet grows with its content, with no fixed height.
+
+#### R17.4 States (copy and wireframes)
+
+**Normal:** as in R17.2.
+
+**First run / empty** (no full month and no rough figures):
+```
+┌──────────────────── dark card ─────────────────────┐
+│ THIS MONTH                                         │
+│ Not worked out yet                                 │  sheetTitle, surface
+│ There is no full month or rough figure to work     │  meta, inkSoft1
+│ from.                                              │
+│ [ Add rough figures ]                              │  surface pill, ink text, 44
+│                                                    │
+│ ┌ Something and a price ─────────── [Check it] ┐   │
+│                                     Full check ›   │
+└────────────────────────────────────────────────────┘
+  Changes coming up      Add a change coming up    ›
+  Lines you will not cross    All at their defaults ›
+```
+A quick check run here shows the existing "Missing terms" result in the card.
+
+**Short (negative month):**
+```
+│ THIS MONTH · WORST MONTH                 Details › │
+│ $420 short this month                              │  "$420" in dangerTint2
+│ after bills and saving                             │
+│ In $3,200 · Out $3,620                             │
+```
+
+**Unavailable** (the figure can't be computed: a missing exchange rate for lines in the judged month, or no money-in basis that can be converted). It never shows a wrong number:
+```
+│ THIS MONTH                                         │
+│ Not worked out yet                                 │
+│ Lines in EUR are waiting for an exchange rate.     │
+│ [ See lines waiting for a rate ]                   │
+```
+
+**With problems:** the notice row sits above the card. The card and rows are unchanged.
+```
+[ • 2 items need a look                           › ]
+┌──────────────────── dark card ─────────────────────┐
+```
+
+**Offline:** the notice row reads "Offline · 3 changes waiting", or "Offline" with nothing waiting. Figures come from the cached snapshot and the card is unchanged.
+```
+[ • Offline · 3 changes waiting                   › ]
+```
+
+**With a quick result:**
+```
+│ ┌ sofa 1800 ────────────────────────── [Check it] ┐│
+│ ────────────────────────────────────────────────── │
+│ Sofa                                     [It fits] │
+│ Out of this month’s spare  ⓘ                       │
+│ Paid outright today your cash lands at $6,200,     │
+│ above your $5,400 cushion, and the month still …   │
+│ [ Cash | Credit ]                                  │
+│ [ Run the full check ]                    Clear    │
+```
+
+#### R17.5 Notice row and the "Needs a look" sheet (D-96)
+
+**Notice row:**
+- **Look:** directly under the header, full width, `minHeight` 44, no fill. An 8px `warn1` dot, then the text (`label`, `ink`), then the chevron (`inkSoft3`).
+- **Shown** only when the sheet would list at least one entry. When the only entry is offline, writes in flight for more than 5 s, or waiting writes (R16 sync rules), the row text is that sync state. Otherwise it reads "{{count}} item needs a look" / "{{count}} items need a look". It is never red.
+- **A11y:** role button, label "{{text}}", hint "Opens the list".
+
+**"Needs a look" sheet (`HomeProblemsSheet`, the app's `Sheet`):**
+- **Look:** title "Needs a look". One entry per problem, in this order, each separated by 1px `fill2`. Each entry has a title (`s13_5` 600, `ink`), an "Affects: …" line (`meta`, `inkMuted`) and **one** action (`label`, `accent`, 44 hit) or a declarative no-action line.
+- **Recompute and dismiss:** entries recompute live, and an entry disappears once fixed. The sheet closes by itself when the list becomes empty, and the row then hides.
+
+| # | Problem (source) | Title | Affects | Action |
+|---|---|---|---|---|
+| 1 | No full month and no rough figures | "No month of figures yet" | "Left this month and every check" | "Add rough figures" → `RoughFiguresSheet` |
+| 2 | A needed exchange rate is missing (D-37) | "No exchange rate stored for {{currency}}" | "{{count}} lines and every check that uses them" | "See lines waiting for a rate" → Activity |
+| 3 | Failed saves (`failedWrites`) | "{{count}} change didn’t save" / "{{count}} changes didn’t save" | "Records on this device" | "Review" → the shipped `FailedWritesSheet` (stacked) |
+| 4 | Conflicts (sync) | "{{count}} edit changed on another device" / "{{count}} edits changed on another device" | "Records on this device" | "Review" → `FailedWritesSheet` (its conflict section) |
+| 5 | A card owing a balance has no minimum (D-40) | "Card minimum payment not set for {{card}}" | "Monthly debt payments in every check" | "Card minimum payment" → the card terms sheet |
+| 6 | A rate used in the figures is older than 7 days | "The {{currency}} rate is from {{date}}" | "Amounts converted from {{currency}}" | "Exchange rates" → You › Currencies |
+| 7 | Offline with writes waiting / writes stuck for more than 5 s | "Offline · {{count}} change waiting" / "… changes waiting" (or "Saving…") | "Saves on this device" | no action; the line "They send when the connection returns." |
+
+**What moves here:**
+- The red "{{count}} changes couldn’t save" (`sync.failed`) and the conflict text, which are no longer shown on this screen.
+- The quick-check card's error state "Your figures didn't load" stays in the card, because it is about the figure (R17.4 unavailable pattern, with "Try again").
+
+#### R17.6 Copy (keys `decide.home.*`, with `_one`/`_other` and U+00A0 after counts)
+
+| Element | Copy |
+|---|---|
+| Header | "Can I afford it" |
+| Card eyebrow | "This month" · basis "Worst month" / "Average month" / "Your figures" / "Now from your logged months" · "Details" (a11y "Month details") |
+| Hero | "{{amount}} left" · "{{amount}} short this month" · "after bills and saving" · "In {{in}} · Out {{out}}" |
+| Unavailable | "Not worked out yet" · "There is no full month or rough figure to work from." · "Lines in {{currency}} are waiting for an exchange rate." · "Add rough figures" · "See lines waiting for a rate" · "Your figures didn't load" / "Try again" (unchanged) |
+| Field | placeholder "Something and a price" (short form "car 14500") · "Check it" · "Full check" |
+| Rows | "Open checks" · "{{count}}" · "{{count}} changed since you looked" · "Changes coming up" · "Add a change coming up" · "Past decisions" · "Lines you will not cross" · "{{count}} of 5 set by you" · "All at their defaults" |
+| Notice row | "{{count}} item needs a look" / "{{count}} items need a look" · "Offline" · "Offline · {{count}} change waiting" / "Offline · {{count}} changes waiting" · "Saving…"; hint "Opens the list" |
+| Problems sheet | "Needs a look" · the titles, "Affects:" lines and actions in R17.5 · "They send when the connection returns." · "Close" |
+| Month details sheet | "This month" · existing Your-month copy · existing sources note · "Close" |
+| Card a11y | "This month, {{basis}}: {{amount}} left after bills and saving. In {{in}}, out {{out}}." · "… {{amount}} short this month …" · hint "Opens month details" |
+| Retired | "DECIDE" eyebrow on this screen · "Judged on your real accounts, not the price tag." · "Your month" card heading · the white quick-check card's "Clear the check" · "No checks open" / "Nothing dated yet" (already retired) · the inline sources note |
+
+None of the copy carries reassurance, advice or an opening money imperative. "Check it", "Full check", "Review", "Add rough figures", "Exchange rates" and "Card minimum payment" are UI controls on the guard's keyed list.
+
+#### R17.7 Text fit and accessibility
+
+**Text fit:**
+- The hero is one line under rule N (fit to 0.8), capped at 1.3x. At 2.0x and 320 wide, a fitted hero can still be too long. When the fitted size would fall below 0.8, the hero wraps at the space before "left" / "short this month", so the amount stays whole on line 1.
+- Word states ("Not worked out yet") wrap freely.
+- The eyebrow row, the In/Out line, row labels and values, the notice text and the sheet entries all wrap at words (rules W, S). Rows grow.
+- Checked on the R6 matrix: 402 and 320 wide, at 1.0x and 2.0x.
+
+**Accessibility:**
+- **Reading order:** header; the notice row ("2 items need a look, button"); the card summary group (figure, then basis, then In/Out); Details; the field; Check it; the result group; Full check; then each row.
+- **Targets:** every target is at least 44 (rows 52, Details 44 × 44, Full check 44).
+- **Problems sheet:** focus starts on its title, and each entry is a group "{{title}}. Affects {{affects}}." followed by its action button.
+- **Colour:** the notice dot is never the only cue (text carries it); the short state says "short" in words.
+
+#### R17.8 Element mapping (everything that works today keeps working)
+
+| Today | R17 |
+|---|---|
+| Header eyebrow "DECIDE" and subtitle | Removed on this screen |
+| White quick-check card (R2b) | **Inside the dark card** (field, result, toggle, Credit block, extras, Run the full check, Clear). Logic is unchanged. |
+| Combine pill (2+ open checks) | Unchanged in the quick result's footer row (dark variant) and in the flow header |
+| Your month dark card | Hero and In/Out in the dark card. Steadiness, the basis control, ranges, Activity and rough Edit go to **Month details sheet** |
+| `AddChangeRow` "+ Add a change coming up" | Folded into the **Changes coming up** row at zero |
+| "Check an investment" link (D-72 amended) | Folded into **Full check ›**, then the step 1 kind chip "An investment" |
+| `OpenChecksCard` (hidden at 0) | **Open checks · N** row (hidden at 0), opening the Open checks screen with the same list, Delete and markers |
+| `ChangesCard` | **Changes coming up · N** row, opening the Changes screen (list, Delete, "+ Add a change") |
+| Past decisions row (hidden at 0) | **Past decisions · N** row (hidden at 0), unchanged target |
+| Lines fold (D-78) | **Lines you will not cross** row, opening the Lines screen; the limit editor sheet is unchanged |
+| Sources note | Month details sheet footer |
+| Tab-header sync problem line / red "N changes couldn't save" | **Notice row**, then the Needs a look sheet (`FailedWritesSheet` reused) |
+| FAB "New check" on Decide home | **Removed** on this screen (D-98). The FAB stays on the other tabs; New check is still in You › Add (D-85) |
+| `RoughFiguresSheet` | Opened from the unavailable state, Month details and the problems sheet |
+| Sample data banner | Unchanged where it is shipped (`SampleBanner`, You screen). The Decide body adds none |
+| Onboarding first check (D-03) | Unchanged screen. It uses the white result block, not the dark card |
+| R16 You "Add" group | Unchanged |
+| D-72 hiding rules | Open checks hidden at 0 and Past decisions hidden at 0 hold. Changes coming up shows as its add row at 0 (R17.10) |
+
+#### R17.9 DCU-11 store frame 1
+
+- **The primary frame 1 is unchanged:** step 3 of the sofa check (R8).
+- **The alternate frame 1 (Decide home)** now shows the lean header and the dark card with "This month · Average month", the hero "$x left", "after bills and saving", the In/Out line, and the field holding "sofa 1800" with its result **inside the card**: the "It fits" chip, the size line and the result line, all above y = 520 (R17.2). The seed has no problems, so there is no notice row.
+
+#### R17.10 Conflicts resolved
+
+| Earlier | Now | How |
+|---|---|---|
+| "Decide home (tab root)" order, the budget row and R2b's trimmed white quick-check card | The dark card first, holding the quick check; quiet rows; the R17.2 budget | D-95 |
+| D-72: Changes coming up hidden at 0 with a separate add row; the "Check an investment" link | The Changes row at 0 *is* the add row; investment checks start from Full check → the step 1 chip | D-98 (one element instead of two; the step 1 kind chip already exists) |
+| D-78: the Past decisions row; Lines as a fold row; the trimmed card | Past decisions unchanged as a row; Lines becomes a row opening its own screen; the card moves into the dark card | D-95, D-99 |
+| The Your month card inline | The hero plus Month details sheet | D-95, D-99 |
+| R16 sync line on every tab root | Folded into the notice row on Decide home only | D-96 |
+| 03 D-09: Decide registers the FAB "New check" | No FAB on Decide home; "Check it" and "Full check" cover it | D-98 |
+| "No more than two dark cards visible" | One dark card | — |
+| The Typography table (Decide uses 8 sizes) | Adds the shipped §2 `display` role (34) for the hero only | D-97 (an existing role, not a new size) |
+| Red `sync.failed` text on this screen | The notice row and sheet; red only for a figure that is wrong or unavailable | D-96 |
+
+#### R17.11 Checklist
+
+| Item | Where |
+|---|---|
+| Lean header, no eyebrow or subtitle, sync line suppressed | `DecideHomeScreen`, `TabRootScreen` props |
+| Dark card: eyebrow and basis, Details, hero, sub, In/Out, field, Check it, Full check, in-card result | New `HomeSummaryCard`; `QuickCheckForm` gains a `variant="dark"` |
+| Unavailable and first-run states | `HomeSummaryCard` |
+| Month details sheet | New `MonthDetailsSheet` (absorbs `YourMonthCard` content and the sources note) |
+| Quiet rows | New `HomeRow`; rows for Open checks, Changes, Past decisions and Lines |
+| Pushed screens | `decide/open.tsx` (from `OpenChecksCard`), `decide/changes.tsx` (from `ChangesCard`), `decide/lines.tsx` (from `LinesCard`) |
+| Notice row and Needs a look sheet | New `HomeNoticeRow` and `HomeProblemsSheet` (reusing `FailedWritesSheet`, `RoughFiguresSheet` and the card terms sheet) |
+| No FAB on Decide home | `useRegisterFab` removed from `DecideHomeScreen` |
+| Text fit and a11y | The R6 matrix at 320/402 × 1.0/2.0; the reading order of R17.7 |
+| Tests | RNTL tests: the home renders the card first; at most 4 rows; rows hidden at 0 as specified; the notice row count; the unavailable state shows no figure; the problems sheet entries and actions; no FAB registered; the alternate frame 1 budget |
+
+#### R17.12 Questions only the user can answer
+
+1. **"This month" with a worst-month basis:** the hero is the judged month (worst or average), which is not always the current calendar month. Should the eyebrow read "This month · worst month" as specified, or "Your worst month" / "Your average month"?
+2. **Stale-rate threshold:** this spec flags a rate older than **7 days** as "needs a look". Is that the right age?
+3. **Pushed screens:** Open checks, Changes coming up and Lines you will not cross open their own screens rather than sheets, for long lists with swipe actions. Is that the right choice?
+4. **No FAB on Decide home:** confirm that removing it here is wanted. It stays on the other tabs and in You › Add.
+5. **Hero size:** this spec uses the `display` role (34). The Home tab's net-worth figure uses 42 (`netWorth`). Which should the Decide hero use?

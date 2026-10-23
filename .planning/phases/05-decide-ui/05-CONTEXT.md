@@ -1,7 +1,7 @@
 # Phase 5: Decide UI - Context
 
 **Gathered:** 2026-10-15
-**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22; D-79…D-84 the Step 2, item and invest refresh the same day; D-85…D-94 the device-walkthrough refinements 2026-10-23. The UI-SPEC carries all of them.
+**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22; D-79…D-84 the Step 2, item and invest refresh the same day; D-85…D-94 the device-walkthrough refinements 2026-10-23; D-95…D-99 the Decide home redesign the same day. The UI-SPEC carries all of them.
 
 <domain>
 ## Phase Boundary
@@ -370,6 +370,36 @@ UI-SPEC R16 carries the layouts, copy, ⓘ entries and engine notes (E3-E5).
   - It is implemented once in `formatAmount()` (`src/engine/money/formatAmount.ts`, reached through `useMoneyFormatter`): `narrowSymbol` for USD, and a fixed marker map for any other currency that would render as a bare "$".
   - Screen readers get `formatMoneyA11y`: "dollars" for USD at USD home, "US dollars" otherwise, full names for the rest.
   - Display tests and snapshots asserting "US$" are updated. The statement parser's "US$" input handling is unchanged. See UI-SPEC R16.15.
+
+### Decide home redesign (user, 2026-10-23)
+UI-SPEC R17 carries the layout, budgets, states, copy and wireframes. It replaces the home layout of R2b, the D-72 add row and the D-78 trim.
+- **D-95: Decide home is dark-card first (layout A).**
+  - A lean header ("Can I afford it" and the avatar; no eyebrow or subtitle).
+  - Then one `ink` card holding:
+    - "This month" with a quiet basis;
+    - the hero "Left this month";
+    - "In · Out";
+    - the quick-check field with the only primary action, "Check it";
+    - the quick result, which appears inside the card;
+    - a quiet "Full check ›" link.
+  - Below, after 32 of space, up to four quiet rows: Open checks · N, Changes coming up, Past decisions · N, Lines you will not cross.
+  - Your month's details and the sources note move to a Month details sheet.
+- **D-96: Problems show as one quiet notice row.**
+  - "{n} items need a look ›" under the header opens a "Needs a look" sheet. Each entry has what it affects and one action: missing figures, a missing exchange rate, failed saves and conflicts (via `FailedWritesSheet`), a card minimum not set, a rate older than 7 days, and offline or waiting writes.
+  - It replaces the red sync text and the sync problem line on this screen. There is no red on the main screen unless a figure is wrong or unavailable.
+- **D-97: The hero figure is "Left this month"** for the judged month (worst or average), after bills and saving.
+  - It reads "{amount} left", or "{amount} short this month" with the amount in the danger family (`dangerTint2` on the ink card).
+  - When it can't be computed, the card shows a declarative "Not worked out yet" with its reason and the one fixing action, never a wrong number.
+  - It uses the shipped `display` role, one line with fit-to-shrink at 0.8.
+- **D-98: Fewer entry points, same reach.**
+  - The FAB is removed on Decide home ("Check it" and "Full check" cover it; it stays on the other tabs and in You › Add, D-85).
+  - The "+ Add a change coming up" row is folded into the Changes coming up row at zero.
+  - "Check an investment" is folded into Full check, then the step 1 kind chip.
+  - This amends 03 D-09 and D-72.
+- **D-99: Lists move to their own screens.**
+  - Open checks, Changes coming up and Lines you will not cross open pushed screens that keep today's lists, swipe and ⋯ Delete, markers and editors.
+  - The hiding rules hold: Open checks and Past decisions are hidden at 0; Changes coming up shows as its add row at 0; Lines always shows.
+  - Calm comes from layout, never from reassuring words (DCU-09).
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
