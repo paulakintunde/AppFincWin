@@ -266,6 +266,17 @@ describe('(b) payments invested instead (D-52)', () => {
     }
     expect(fee.paymentsInvested.byRate[1]!.projected).toBe(expected);
   });
+  it('D-89 investing views read monthly steps', () => {
+    const fortnightly = buyCash(260_000, {
+      payment: { method: 'instalment', instalmentAmount: mu(10_000), instalmentCount: 26, freq: 'fortnightly' },
+    } as Partial<BuyCheck>);
+    const { views, a } = run(BL(), fortnightly);
+    expect(a.plan.freq).toBe('fortnightly');
+    expect(views.paymentsInvested.paymentMonths).toBe(a.plan.months);
+    expect(views.paymentsInvested.firstMonthPayment).toBe(a.plan.monthly);
+    const remaining = a.plan.paymentSteps.reduce((t, st) => t + st.amount * (st.toMonth - st.fromMonth + 1), 0);
+    expect(views.paymentsInvested.byRate[0]!.contributed).toBe(remaining);
+  });
   it('a cash purchase has no payment months, only running costs', () => {
     const v = run(BL(), buyCash(500_000, { runningCostsNet: mu(RUN) })).views;
     expect(v.paymentsInvested.paymentMonths).toBe(0);
