@@ -3,7 +3,7 @@
  * added to the engine without a key here fails the typecheck (DCU-09). Values are `decide.*` keys only.
  */
 import type {
-  AlternativeCode, CashOutcome, ItemType, LedgerCode, LedgerDirection, MissingReason, PurchaseSize, SetbackCode, Steadiness, WarningCode,
+  AlternativeCode, CashOutcome, ItemType, LedgerCode, LedgerDirection, MissingReason, PurchaseSize, RunningCostCategory, SetbackCode, Steadiness, WarningCode,
 } from '@/engine/decide';
 import type { MethodKey } from '../snapshot/types';
 
@@ -84,7 +84,26 @@ export const ITEM_TYPE_LABEL = {
   loan_repayment: 'decide.item.itemType.loan_repayment',
   tax: 'decide.item.itemType.tax',
   insurance_premium: 'decide.item.itemType.insurance_premium',
+  property: 'decide.item.itemType.property',
+  cash_equivalent: 'decide.item.itemType.cash_equivalent',
+  tuition: 'decide.item.itemType.tuition',
 } as const satisfies Record<ItemType, string>;
+
+// D-92: the label of each running-cost prompt (keys from 05-88, camelCase under decide.depth.running)
+export const RUNNING_COST_LABEL = {
+  insurance: 'decide.depth.running.insurance',
+  fuel: 'decide.depth.running.fuel',
+  maintenance: 'decide.depth.running.maintenance',
+  registration: 'decide.depth.running.registration',
+  loss_of_value: 'decide.depth.running.loss_of_value',
+  property_tax: 'decide.depth.running.propertyTax',
+  home_insurance: 'decide.depth.running.homeInsurance',
+  utilities: 'decide.depth.running.utilities',
+  service_charge: 'decide.depth.running.serviceCharge',
+  books_materials: 'decide.depth.running.booksMaterials',
+  travel: 'decide.depth.running.travel',
+  accommodation: 'decide.depth.running.accommodation',
+} as const satisfies Record<RunningCostCategory, string>;
 
 export const METHOD_LABEL = {
   cash: 'decide.method.cash',

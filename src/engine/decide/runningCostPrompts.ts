@@ -25,9 +25,20 @@ export const RUNNING_COST_CATEGORIES: readonly RunningCostCategory[] = Object.fr
   'maintenance',
   'registration',
   'loss_of_value',
+  'property_tax',
+  'home_insurance',
+  'utilities',
+  'service_charge',
+  'books_materials',
+  'travel',
+  'accommodation',
 ] as const);
 
 export const RUNNING_COST_PROMPTS = Object.freeze({
+  // D-92 (R16.8); category names are Claude's discretion
+  property: Object.freeze(['property_tax', 'home_insurance', 'maintenance', 'utilities', 'service_charge'] as const),
+  cash_equivalent: Object.freeze([] as const),
+  tuition: Object.freeze(['books_materials', 'travel', 'accommodation'] as const),
   vehicle: Object.freeze(['insurance', 'fuel', 'maintenance', 'registration', 'loss_of_value'] as const),
   rent_bill: Object.freeze([] as const),
   loan_repayment: Object.freeze([] as const),
@@ -50,6 +61,12 @@ export function runningCostPrompts(itemType: ItemType): readonly RunningCostCate
       return RUNNING_COST_PROMPTS.insurance_premium;
     case 'general':
       return RUNNING_COST_PROMPTS.general;
+    case 'property':
+      return RUNNING_COST_PROMPTS.property;
+    case 'cash_equivalent':
+      return RUNNING_COST_PROMPTS.cash_equivalent;
+    case 'tuition':
+      return RUNNING_COST_PROMPTS.tuition;
     default:
       return assertNever(itemType, 'itemType');
   }

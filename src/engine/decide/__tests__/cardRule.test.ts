@@ -4,12 +4,11 @@ describe('cardEligibility', () => {
   it.each<[ItemType, string]>([
     ['rent_bill', 'blocked'],
     ['loan_repayment', 'blocked'],
-    ['tax', 'blocked'],
     ['insurance_premium', 'blocked'],
     ['vehicle', 'capped'],
     ['general', 'permitted'],
   ])('%s -> %s', (t, e) => {
-    expect(cardEligibility(t)).toBe(e);
+    expect(cardEligibility(t, null)).toEqual({ eligibility: e, note: null });
   });
 
   it('covers every item type', () => {
@@ -20,11 +19,14 @@ describe('cardEligibility', () => {
       'tax',
       'insurance_premium',
       'general',
+      'property',
+      'cash_equivalent',
+      'tuition',
     ]);
   });
 
   it('throws for an invalid runtime value', () => {
-    expect(() => cardEligibility('boat' as never)).toThrow('Unhandled itemType: "boat"');
+    expect(() => cardEligibility('boat' as never, null)).toThrow('Unhandled itemType: "boat"');
   });
 });
 

@@ -71,7 +71,7 @@ describe('Phase 4 barrel gate', () => {
       expect.arrayContaining(['unexpected_expense', 'income_drop', 'job_loss', 'late_invoice']),
     );
     expect(Object.keys(decide.MARKET_DEFAULTS).sort()).toEqual(['CA', 'CA-QC', 'UK', 'US']);
-    expect(decide.ITEM_TYPES).toEqual(['vehicle', 'rent_bill', 'loan_repayment', 'tax', 'insurance_premium', 'general']);
+    expect(decide.ITEM_TYPES).toEqual(['vehicle', 'rent_bill', 'loan_repayment', 'tax', 'insurance_premium', 'general', 'property', 'cash_equivalent', 'tuition']);
     expect(Object.keys(decide.RUNNING_COST_PROMPTS).length).toBeGreaterThan(0);
     expect(decide.MAX_PROJECTION_RATE).toBe(decide.percent('100'));
   });

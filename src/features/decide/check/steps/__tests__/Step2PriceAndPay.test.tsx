@@ -136,7 +136,7 @@ describe('Step2PriceAndPay: how you pay', () => {
   });
 
   it('a card is flagged Not accepted for an item type a card cannot settle', async () => {
-    await renderStep({ method: 'card', itemType: 'tax', itemTypeTouched: true });
+    await renderStep({ method: 'card', itemType: 'loan_repayment', itemTypeTouched: true }); // D-92: tax is blocked in GB only
     expect(within(box('card')).getByText('Not accepted')).toBeTruthy();
   });
 

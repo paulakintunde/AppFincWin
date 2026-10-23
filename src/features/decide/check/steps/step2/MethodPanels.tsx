@@ -408,7 +408,7 @@ function CardPanel(props: Step2Props) {
   const exactFmt = moneyFn(exact, source.currency);
   const card = inputs.card;
   const plan = resolvedPlan(props, 'card');
-  const eligibility = cardEligibility(inputs.itemType);
+  const eligibility = cardEligibility(inputs.itemType, null).eligibility; // D-92: the region (RD-02) is wired by the snapshot plan; null reads tax as permitted
   const price = props.computation.resolvedPrice?.price ?? 0;
   const chosen = source.cards.find((c) => c.accountId === card.accountId);
   const recorded = chosen?.record.apr ? percentText(chosen.record.apr) : '';

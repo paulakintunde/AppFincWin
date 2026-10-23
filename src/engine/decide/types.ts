@@ -184,6 +184,7 @@ export type BuyPayment =
       readonly card: CardRecord | null;
       readonly payoff: CardPayoff;
       readonly dealerCap: MinorUnits | null; // D-18, defaulted from the market table by the builder
+      readonly region?: string | null; // D-92: the RD-02 country code; tax is blocked on a card in GB only
       readonly promo?: PromoTerms;
       readonly variable?: boolean; // D-48 / D-49: card.apr is the standard rate after any promo
       // D-63: one-off card fees the user typed that are charged for this purchase (e.g. a transaction or balance-transfer fee),
@@ -721,7 +722,9 @@ export type FirstRead =
     };
 
 // ── Running costs and one-offs (D-55, D-47) ──
-export type RunningCostCategory = 'insurance' | 'fuel' | 'maintenance' | 'registration' | 'loss_of_value'; // loss_of_value is non-cash (D-55)
+export type RunningCostCategory =
+  | 'insurance' | 'fuel' | 'maintenance' | 'registration' | 'loss_of_value'
+  | 'property_tax' | 'home_insurance' | 'utilities' | 'service_charge' | 'books_materials' | 'travel' | 'accommodation'; // D-92 adds the last seven; loss_of_value is non-cash (D-55)
 // D-47: paid, non-transfer lines marked oneOff in the averaged months; spending = my share of their money-out amounts,
 // income = their money-in (non-refund) amounts; a one-off refund counts only in `count`
 export interface OneOffsExcluded {

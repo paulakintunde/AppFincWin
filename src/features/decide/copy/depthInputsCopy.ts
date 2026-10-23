@@ -15,6 +15,7 @@ import type {
   StressOutcome,
 } from '@/engine/decide';
 import type { LossOfValueEntry, PromoInput } from '../snapshot/types';
+import { RUNNING_COST_LABEL } from './codeMaps';
 import { percentText } from './percentText';
 import { stateChip } from './verdictCopy';
 import { ref } from './types';
@@ -206,7 +207,7 @@ export function runwayCopy(report: IncomeAtRiskReport): RunwayCopy {
 /** D-33/D-44: a running-cost prompt row; loss of value is a non-cash entry. */
 export function runningPromptCopy(category: RunningCostCategory): { label: CopyRef; note: CopyRef | null; entry: 'cash' | 'loss_of_value' } {
   const lossOfValue = category === 'loss_of_value';
-  return { label: ref(`${D}running.${category}`), note: lossOfValue ? ref(`${D}running.notCash`) : null, entry: lossOfValue ? 'loss_of_value' : 'cash' };
+  return { label: ref(RUNNING_COST_LABEL[category]), note: lossOfValue ? ref(`${D}running.notCash`) : null, entry: lossOfValue ? 'loss_of_value' : 'cash' };
 }
 
 /** D-44 (04 D-63): the loss-of-value row. `nonCash` is the engine's `running.nonCash`. */

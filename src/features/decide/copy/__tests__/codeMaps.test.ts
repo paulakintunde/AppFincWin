@@ -1,9 +1,9 @@
 import {
   ALT_ROW_NAME, CASH_OUTCOME, DIRECTION_LABEL, ITEM_TYPE_LABEL, LEDGER_DESC, LEDGER_LABEL, METHOD_LABEL, MISSING_TITLE, SETBACK_LABEL,
-  SIZE_LABEL, STEADINESS_LABEL, WARNING_TITLE, WARNING_TONE,
+  RUNNING_COST_LABEL, SIZE_LABEL, STEADINESS_LABEL, WARNING_TITLE, WARNING_TONE,
 } from '../codeMaps';
 import { percentText } from '../percentText';
-import { percent, ZERO_PERCENT } from '@/engine/decide';
+import { ITEM_TYPES, RUNNING_COST_PROMPTS, percent, ZERO_PERCENT } from '@/engine/decide';
 import { resolvesInEn } from './helpers/enKeys';
 
 const MAPS: Record<string, { map: Record<string, string>; codes: string[] }> = {
@@ -18,7 +18,7 @@ const MAPS: Record<string, { map: Record<string, string>; codes: string[] }> = {
   SETBACK_LABEL: { map: SETBACK_LABEL, codes: ['unexpected_expense', 'income_drop', 'job_loss', 'late_invoice'] },
   CASH_OUTCOME: { map: CASH_OUTCOME, codes: ['absorbed', 'through_cushion', 'wiped_out'] },
   STEADINESS_LABEL: { map: STEADINESS_LABEL, codes: ['steady', 'variable', 'volatile', 'insufficient'] },
-  ITEM_TYPE_LABEL: { map: ITEM_TYPE_LABEL, codes: ['vehicle', 'rent_bill', 'loan_repayment', 'tax', 'insurance_premium', 'general'] },
+  ITEM_TYPE_LABEL: { map: ITEM_TYPE_LABEL, codes: ['vehicle', 'rent_bill', 'loan_repayment', 'tax', 'insurance_premium', 'general', 'property', 'cash_equivalent', 'tuition'] },
   METHOD_LABEL: { map: METHOD_LABEL, codes: ['cash', 'loan', 'instalment', 'card', 'lump', 'monthly'] },
   ALT_ROW_NAME: { map: ALT_ROW_NAME, codes: ['as_planned', 'cheaper', 'wait_and_save', 'skip'] },
   WARNING_TITLE: { map: WARNING_TITLE, codes: ['month', 'cash', 'cash_dip', 'dsr', 'owe', 'inv'] },
@@ -38,6 +38,16 @@ describe('code maps', () => {
     expect(MISSING_TITLE.instalment_rate_missing).toBe('decide.verdict.missing.instalment_rate_missing');
     expect(MISSING_TITLE.instalment_rate_missing).not.toBe(MISSING_TITLE.instalment_count_missing);
     expect(resolvesInEn(MISSING_TITLE.instalment_rate_missing)).toBe(true);
+  });
+
+  it('D-92 every item type and running-cost category has a label', () => {
+    for (const type of ITEM_TYPES) {
+      expect(ITEM_TYPE_LABEL[type]).toBeDefined();
+      expect(resolvesInEn(ITEM_TYPE_LABEL[type])).toBe(true);
+    }
+    const prompted = new Set(Object.values(RUNNING_COST_PROMPTS).flat());
+    expect(Object.keys(RUNNING_COST_LABEL).sort()).toEqual([...prompted].sort());
+    for (const key of Object.values(RUNNING_COST_LABEL)) expect(resolvesInEn(key)).toBe(true);
   });
 
   it('WARNING_TONE covers every warning code', () => {

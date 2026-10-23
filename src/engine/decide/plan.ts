@@ -409,7 +409,7 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
   if (payoff.kind === 'months') assertTerm(payoff.months, 'card payoff months');
   if (card !== null) assertCurrency(check.currency, card.currency, `card ${card.id}`, FN);
 
-  const eligibility = cardEligibility(check.itemType);
+  const eligibility = cardEligibility(check.itemType, p.region ?? null).eligibility;
   // D-18: a blocked item is simply not accepted; no further reasons.
   if (eligibility === 'blocked') return missing(['card_not_accepted']);
 
