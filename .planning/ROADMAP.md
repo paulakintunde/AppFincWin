@@ -750,7 +750,7 @@ Plans:
 - [x] 05-107-PLAN.md — Sync transport: request timeouts, 12 s backoff cap, resume, Supabase reachability, post-restore refetch (D-88)
 
 **Wave 21** *(blocked on Wave 20 completion)*
-- [ ] 05-91-PLAN.md — Engine E3b: instalment frequency, next_period, MAX_INSTALMENTS, monthly equivalent; inputs carry freq (D-89)
+- [x] 05-91-PLAN.md — Engine E3b: instalment frequency, next_period, MAX_INSTALMENTS, monthly equivalent; inputs carry freq (D-89)
 - [x] 05-98-PLAN.md — You: the "Add" group, run after dismiss on transitionEnd; old import row removed (D-85)
 - [ ] 05-99-PLAN.md — No back on a tab root; cushion and runway "Over 50 years" (D-93)
 - [ ] 05-108-PLAN.md — Draft-save coalescing, age-aware sync line, idempotent replay test (D-88)
