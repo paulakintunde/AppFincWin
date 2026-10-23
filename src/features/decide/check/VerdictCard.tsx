@@ -22,6 +22,7 @@ import type { CopyRef, Fmt } from '../copy/types';
 import { basisMarker, missingRateCopy, stateChip, verdictTitle } from '../copy/verdictCopy';
 import { cushionCopy, edgeChipA11y, edgeOn, verdictLineOne } from '../copy/depthVerdictCopy';
 import { keyFigureInputs, keyFigures } from '../copy/keyFiguresCopy';
+import type { ExpectedReturn } from '../snapshot/expectedReturn';
 import type { CheckComputation, ConversionNote } from '../snapshot/types';
 import { ConfidenceChip } from '../ui/ConfidenceChip';
 import { EdgeTag } from '../ui/EdgeTag';
@@ -48,6 +49,8 @@ export interface VerdictCardProps {
   fullMonths: number;
   formatDate: (localDate: string) => string;
   locale: string;
+  /** 05-87 (D-82, R15.5): the investment projection at the user's own rate. Display only: nothing here reads it to decide anything. */
+  projection?: ExpectedReturn | null;
 }
 
 /** 'YYYY-MM' to the month's display name in the user's locale. */
@@ -137,7 +140,7 @@ function cardCopy(c: CheckComputation, lastSeenBasis: VerdictCardProps['lastSeen
 /** Standalone text the summary label already reads: no focus stop of its own (R2 Accessibility). */
 const NOT_A_STOP = { accessible: false, importantForAccessibility: 'no' } as const;
 
-export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, roughBurn = null, conversions, fullMonths, formatDate, locale }: VerdictCardProps) {
+export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, roughBurn = null, conversions, fullMonths, formatDate, locale, projection = null }: VerdictCardProps) {
   const t = useT() as Translate;
   const router = useRouter();
   const { colors, pairing } = useTheme();
@@ -174,6 +177,11 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, roughBu
     'cushionMonths',
     resolved && halves !== null ? { cushionMonths: { months: halves / 2, reason: cushionCopy(resolved.context) } } : undefined,
   );
+
+  const projectionText =
+    projection !== null && projection.fv !== null && computation.check?.kind === 'invest'
+      ? t('decide.verdict.projection', { count: projection.months, fv: fmt(projection.fv), rate: projection.rateText })
+      : '';
 
   const label = joinSentences([stateWords, sizeText, titleText, lineOneText, basisText]);
   const settled = useSettledLabel(label, copy?.chip?.tone ?? 'none', SETTLE_MS);
@@ -260,13 +268,18 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, roughBu
           <FigureStrip
             dark
             items={figureItems}
-            group={{ label: refText(t, keys.a11y), actions: [cushionInfo.aboutAction], onAction: cushionInfo.onAccessibilityAction }}
+            group={{ label: joinSentences([refText(t, keys.a11y), projectionText]), actions: [cushionInfo.aboutAction], onAction: cushionInfo.onAccessibilityAction }}
           />
         </View>
       ) : null}
       {basisText ? (
         <Text {...NOT_A_STOP} style={[styles.basis, { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: soft }]}>
           {basisText}
+        </Text>
+      ) : null}
+      {projectionText ? (
+        <Text {...NOT_A_STOP} testID="verdict-projection" style={[styles.basis, { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkSoft2 }]}>
+          {projectionText}
         </Text>
       ) : null}
     </View>

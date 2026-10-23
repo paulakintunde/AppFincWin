@@ -10,6 +10,7 @@ import { hapticSuccess, hapticWarning } from '@/ui/haptics';
 import { space } from '@/theme/layout';
 import { moneyFn } from './stepUi';
 import { VerdictCard } from '../VerdictCard';
+import { expectedReturnProjection } from '../../snapshot/expectedReturn';
 import { WarningList } from '../WarningList';
 import type { StepProps } from '../stepTypes';
 
@@ -56,6 +57,7 @@ export function Step3Verdict(props: Step3Props) {
           fullMonths={source.meta.fullMonths}
           formatDate={formatDate}
           locale={whole.locale}
+          projection={expectedReturnProjection(props.inputs, computation.check)}
         />
         <BasisDetailRow items={basisItems} onPressCardMinimum={onEditCardMinimum} />
       </View>

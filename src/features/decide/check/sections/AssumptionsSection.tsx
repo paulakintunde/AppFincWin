@@ -21,6 +21,7 @@ import { STEADINESS_LABEL } from '../../copy/codeMaps';
 import { percentText } from '../../copy/percentText';
 import { conversionBasisCopy } from '../../copy/depthVerdictCopy';
 import { itemTypeDisplay } from '../../copy/itemTypeCopy';
+import { expectedReturnProjection } from '../../snapshot/expectedReturn';
 import type { CopyRef } from '../../copy/types';
 import type { ConversionNote, SnapshotMeta, StackSelection } from '../../snapshot/types';
 import { refText, type Translate } from '../refText';
@@ -130,6 +131,11 @@ export function assumptionRows(props: AssumptionsBodyProps | AssumptionsSectionP
       ...(shown.treatedLike !== null ? { sub: refText(tr, shown.treatedLike) } : {}),
       userText: typeof shown.name === 'string',
     });
+  }
+  // D-82: the expected return, only when typed on an investment check; it is used for the projection only.
+  const projection = expectedReturnProjection(props.inputs, computation.check);
+  if (projection !== null) {
+    rows.push({ key: 'expectedReturn', label: t('decide.pay.assumptionReturn'), value: t('decide.pay.assumptionReturnValue', { rate: projection.rateText }) });
   }
   if (meta.unconvertedRows > 0) {
     rows.push({ key: 'unconverted', label: t('decide.section.asUnconverted'), value: t('decide.section.asUnconvertedValue', { count: meta.unconvertedRows }) });
