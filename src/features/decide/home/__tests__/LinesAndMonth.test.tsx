@@ -447,4 +447,17 @@ describe('Lines fold and Your month (05-71)', () => {
     expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(2);
     expect(screen.getByLabelText('Average · $5000').props.accessibilityState.checked).toBe(true);
   });
+
+  it('D-76 Seg: a Worst / Average label past 16 characters stacks the control at 402 and 1.0x', async () => {
+    const long = (n: number) => `US$${(n / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    const source = loggedSource({ months: monthsOf([['2026-06', 715_666, 300_000], ['2026-07', 715_666, 300_000], ['2026-08', 715_666, 300_000], ['2026-09', 715_666, 300_000]]) });
+    await wrap(<YourMonthCard source={source} settings={null} userId="u1" whole={long} onEditRough={jest.fn()} />);
+    expect(screen.getByLabelText('Average · US$7,156.66').props.accessibilityState.checked).toBe(true);
+    expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(2);
+  });
+
+  it('D-76 Seg: short labels keep the side-by-side segments at 402 and 1.0x', async () => {
+    await wrap(card(loggedSource()));
+    expect(screen.queryAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(0);
+  });
 });

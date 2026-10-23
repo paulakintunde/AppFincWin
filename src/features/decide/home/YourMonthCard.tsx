@@ -52,7 +52,6 @@ export function YourMonthCard({ source, settings, userId, whole, onEditRough }: 
   const t = useT();
   const { colors, pairing } = useTheme();
   const settingsMutation = useUpdateDecideSettings(userId ?? '');
-  const stack = useShouldStack();
   const basisInfo = useInfoSheet('basisMonth');
 
   const context = useMemo(() => {
@@ -60,6 +59,20 @@ export function YourMonthCard({ source, settings, userId, whole, onEditRough }: 
     const result = prepareContext(source.snapshot);
     return result.ok ? result.context : null;
   }, [source]);
+
+  // Rule S by label length (as SegmentedToggle): the Worst / Average labels carry an amount, and an equal segment at 402
+  // holds about 16 characters, so a longer label stacks the control as the radio list.
+  const basisLabels = useMemo(
+    () =>
+      context === null
+        ? null
+        : {
+            worst: t('decide.month.worstChip', { amount: whole(context.money.incomeWorst) }),
+            average: t('decide.month.averageChip', { amount: whole(context.money.incomeAverage) }),
+          },
+    [context, t, whole]
+  );
+  const stack = useShouldStack(basisLabels === null ? undefined : Math.max(basisLabels.worst.length, basisLabels.average.length));
 
   if (source === null) return null;
 
@@ -108,8 +121,8 @@ export function YourMonthCard({ source, settings, userId, whole, onEditRough }: 
     const left = context.leftBefore;
     const steadinessLabel = t(STEADINESS_LABEL[m.steadiness]);
     const options = [
-      { key: 'worst', label: t('decide.month.worstChip', { amount: whole(m.incomeWorst) }) },
-      { key: 'average', label: t('decide.month.averageChip', { amount: whole(m.incomeAverage) }) },
+      { key: 'worst', label: basisLabels?.worst ?? '' },
+      { key: 'average', label: basisLabels?.average ?? '' },
     ] as const;
 
     return (
