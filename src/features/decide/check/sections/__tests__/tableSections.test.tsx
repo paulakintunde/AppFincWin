@@ -104,6 +104,8 @@ describe('LinesSection', () => {
     expect(screen.getAllByText('Clear')).toHaveLength(6);
     expect(screen.getByText('Cash cushion')).toBeTruthy();
     expect(screen.getByText('Saving floor')).toBeTruthy();
+    // D-70: the label sits in an InfoTitle beside its ⓘ (five of the six rows carry one)
+    expect(screen.getAllByLabelText(/^About /)).toHaveLength(5);
   });
 
   it('names a short cash line with its amount', async () => {

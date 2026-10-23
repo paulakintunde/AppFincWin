@@ -5,7 +5,7 @@ import { minorUnits } from '@/engine/money';
 import { openEntry } from '@/features/record/entry/entryHost';
 import { DayByDaySection } from '../DayByDaySection';
 import { ExpectedIncomeSection } from '../ExpectedIncomeSection';
-import { LinesSection } from '../LinesSection';
+import { EveryLineRows } from '../LinesSection';
 import { SetbacksSection } from '../SetbacksSection';
 import { AssumptionsSection } from '../AssumptionsSection';
 import type { SectionProps } from '../sectionUi';
@@ -154,21 +154,21 @@ describe('ExpectedIncomeSection', () => {
   });
 });
 
-describe('LinesSection depth rows', () => {
+describe('EveryLineRows depth rows', () => {
   it('names the cushion and why', async () => {
-    await wrap(<LinesSection {...sectionProps()} />);
+    await wrap(<EveryLineRows {...sectionProps()} />);
     expect(screen.getByText(/protected · \$\d+ left on the day · 3 months, because your income is steady/)).toBeTruthy();
   });
 
   it('reads misses by under a missed line', async () => {
     const margins = [{ line: 'cash', margin: -5_000, threshold: 100_000, base: 100_000, flag: null }];
-    await wrap(<LinesSection {...withFields(sectionProps(), { margins })} />);
+    await wrap(<EveryLineRows {...withFields(sectionProps(), { margins })} />);
     expect(screen.getByText('misses by $50')).toBeTruthy();
   });
 
   it('reads holds by under a line on the edge', async () => {
     const margins = [{ line: 'month', margin: 2_000, threshold: 0, base: 300_000, flag: 'on_edge' }];
-    await wrap(<LinesSection {...withFields(sectionProps(), { margins })} />);
+    await wrap(<EveryLineRows {...withFields(sectionProps(), { margins })} />);
     expect(screen.getByText('holds by $20')).toBeTruthy();
   });
 
@@ -177,13 +177,13 @@ describe('LinesSection depth rows', () => {
     const verdict = base.computation.verdict as unknown as { cashPath: Loose };
     const cashPath = { ...verdict.cashPath, tightBeforePayday: { code: 'cash_tight_before_payday', date: '2026-11-01', amount: 12_000 } };
     const margins = [{ line: 'cash_path', margin: 0, threshold: 0, base: 0, flag: 'on_edge' }];
-    await wrap(<LinesSection {...withFields(base, { margins }, { cashPath })} />);
+    await wrap(<EveryLineRows {...withFields(base, { margins }, { cashPath })} />);
     expect(screen.getByText('Without this purchase, your cash is lowest on on 2026-11-01, at $120.')).toBeTruthy();
   });
 
   it('shows no margin line on a comfortable line', async () => {
     const margins = [{ line: 'cash', margin: 90_000, threshold: 100_000, base: 100_000, flag: null }];
-    await wrap(<LinesSection {...withFields(sectionProps(), { margins })} />);
+    await wrap(<EveryLineRows {...withFields(sectionProps(), { margins })} />);
     expect(screen.queryByText(/holds by|misses by/)).toBeNull();
   });
 });

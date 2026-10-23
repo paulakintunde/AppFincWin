@@ -4,14 +4,30 @@
  * without a resolved logged verdict.
  */
 import React from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
+import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
+import { space } from '@/theme/layout';
+import { fontSize, textRole } from '@/theme/typography';
+import type { InfoKey } from '../../copy/infoTerms';
+import { useInfoSheet, type InfoSheetHandle } from '../../ui/useInfoSheet';
+import { InfoTitle } from '../InfoTitle';
 import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { percentText } from '../../copy/percentText';
 import { cushionCopy, marginText } from '../../copy/depthVerdictCopy';
 import type { LineMargin, MarginLine } from '@/engine/decide';
 import { refText, type Translate } from '../refText';
-import { Dot, TableRow, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
+import { Dot, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
+
+/** D-70 / R3 "Where": each Every-line row's ⓘ (the month row has none). */
+const LINE_INFO: Record<string, InfoKey | undefined> = {
+  cash: 'reserve',
+  dsr: 'dsrLine',
+  owe: 'unsecuredMultiple',
+  inv: 'investingFloor',
+  save: 'savingFloor',
+};
 
 interface LineRow {
   key: string;
@@ -21,8 +37,9 @@ interface LineRow {
   desc: string;
 }
 
-export function LinesSection(props: SectionProps) {
-  const { computation, whole, currency, expanded, onToggle } = props;
+/** 05-64: the six rows without the section chrome; "What breaks" shows them as "Every line". */
+export function EveryLineRows(props: Omit<SectionProps, 'expanded' | 'onToggle'>) {
+  const { computation, whole, currency } = props;
   const t = useT();
   const tr = t as Translate;
   const { colors } = useTheme();
@@ -95,31 +112,103 @@ export function LinesSection(props: SectionProps) {
     if (key === 'cash') return shown(find('cash')) ?? shown(find('cash_path'));
     return key === 'save' ? undefined : shown(find(key as MarginLine));
   };
-  const clear = rows.filter((r) => r.ok).length;
   return (
-    <CollapsibleSection
-      title={t('decide.section.linesTitle')}
-      summary={t('decide.section.linesSummary', { clear, over: rows.length - clear })}
-      expanded={expanded}
-      onToggle={onToggle}
-    >
+    <View>
       {rows.map((r) => {
         const word = r.ok ? t('decide.section.lineClear') : r.fail;
         const m = marginFor(r.key);
         const extra = m ? refText(tr, marginText(m, fmt, { fact: tightFact, stackedApplied, formatDate })) : undefined;
-        return (
-          <TableRow
-            key={r.key}
-            leading={<Dot color={r.ok ? colors.accent : colors.danger} />}
-            label={r.label}
-            sub={r.desc}
-            value={word}
-            extra={extra}
-            tone={r.ok ? 'ink' : 'danger'}
-            a11yLabel={[`${r.label}, ${word}. ${r.desc}`, extra].filter(Boolean).join('. ')}
-          />
-        );
+        const rowProps: LineViewProps = {
+          dot: r.ok ? colors.accent : colors.danger,
+          label: r.label,
+          sub: r.desc,
+          value: word,
+          extra,
+          danger: !r.ok,
+          a11yLabel: [`${r.label}, ${word}. ${r.desc}`, extra].filter(Boolean).join('. '),
+        };
+        const infoKey = LINE_INFO[r.key];
+        return infoKey ? <InfoLineRow key={r.key} infoKey={infoKey} {...rowProps} /> : <LineView key={r.key} {...rowProps} />;
       })}
+    </View>
+  );
+}
+
+/** The former "Against your lines" section; deleted in 05-78 once step 3 composes the folds (05-74). */
+export function LinesSection(props: SectionProps) {
+  const t = useT();
+  const a = assessmentOf(props.computation);
+  if (!a) return null;
+  const { expanded, onToggle, ...rest } = props;
+  const c = a.checks;
+  const clear = [c.cash, c.month, c.dsr, c.owe, c.inv, c.save].filter(Boolean).length;
+  return (
+    <CollapsibleSection
+      title={t('decide.section.linesTitle')}
+      summary={t('decide.section.linesSummary', { clear, over: 6 - clear })}
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      <EveryLineRows {...rest} />
     </CollapsibleSection>
   );
 }
+
+interface LineViewProps {
+  dot: string;
+  label: string;
+  sub: string;
+  value: string;
+  extra?: string;
+  danger: boolean;
+  a11yLabel: string;
+}
+
+function InfoLineRow({ infoKey, ...rest }: LineViewProps & { infoKey: InfoKey }) {
+  const info = useInfoSheet(infoKey);
+  return <LineView {...rest} info={info} />;
+}
+
+/** The TableRow layout with the label in an InfoTitle when the row has an ⓘ. */
+function LineView({ dot, label, sub, value, extra, danger, a11yLabel, info }: LineViewProps & { info?: InfoSheetHandle }) {
+  const { colors, pairing } = useTheme();
+  const labelRole = { ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink };
+  const labelText = <Text style={labelRole}>{label}</Text>;
+  return (
+    <View
+      accessible
+      accessibilityLabel={a11yLabel}
+      accessibilityActions={info ? [info.aboutAction] : undefined}
+      onAccessibilityAction={info?.onAccessibilityAction}
+      style={[styles.row, { borderTopColor: colors.line2 }]}
+    >
+      <Dot color={dot} />
+      <View style={styles.text}>
+        {info ? (
+          <InfoTitle info={info} lineHeight={labelRole.lineHeight}>
+            {labelText}
+          </InfoTitle>
+        ) : (
+          labelText
+        )}
+        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{sub}</Text>
+        {extra ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{extra}</Text> : null}
+      </View>
+      <Text scale="capped" style={{ ...textRole(pairing, 'label'), color: danger ? colors.danger : colors.ink, textAlign: 'right' }}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.gapMd,
+    minHeight: space.touchMin,
+    paddingVertical: space.gapSm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  text: { flex: 1, flexShrink: 1 },
+});
