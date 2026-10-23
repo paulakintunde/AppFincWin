@@ -114,6 +114,13 @@ describe('useCheckDraft', () => {
     expect(mockCreate).toHaveBeenCalledTimes(1);
   });
 
+  it('a first edit that switches Buy/Invest creates the check with the kind its inputs now carry', async () => {
+    const { result } = await renderHook(() => useCheckDraft('c9', 'buy', TODAY));
+    await act(async () => result.current.update({ kind: 'invest' }));
+    expect(mockCreate.mock.calls[0][0]).toMatchObject({ kind: 'invest' });
+    expect(mockCreate.mock.calls[0][0].inputs.kind).toBe('invest');
+  });
+
   it('a new check records its currency', async () => {
     const { result } = await renderHook(() => useCheckDraft('c9', 'buy', TODAY));
     await act(async () => result.current.update({ name: 'Bike' }));

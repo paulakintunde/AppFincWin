@@ -1,6 +1,8 @@
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import * as decideChecks from '@/data/mutations/decideChecks';
 import * as failedWrites from '@/data/sync/failedWrites';
 import type { FailedWrite } from '@/data/sync/failedWrites';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
@@ -18,6 +20,12 @@ jest.mock('../Sheet', () => {
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: jest.fn() }));
 
 jest.setTimeout(20000);
+
+const withClient = (ui: React.ReactElement) => (
+  <QueryClientProvider client={new QueryClient()}>
+    <ThemeProvider>{ui}</ThemeProvider>
+  </QueryClientProvider>
+);
 
 const entry = (over: Partial<FailedWrite>): FailedWrite => ({
   id: 'w1',
@@ -38,7 +46,7 @@ function mount(list: readonly FailedWrite[]) {
   jest.spyOn(failedWrites, 'getFailedWrites').mockReturnValue(list);
   const dismiss = jest.spyOn(failedWrites, 'dismissFailedWrite').mockResolvedValue(undefined);
   const onClose = jest.fn();
-  return { dismiss, onClose, ui: render(<ThemeProvider><FailedWritesSheet visible onClose={onClose} /></ThemeProvider>) };
+  return { dismiss, onClose, ui: render(withClient(<FailedWritesSheet visible onClose={onClose} />)) };
 }
 
 describe('FailedWritesSheet', () => {
@@ -70,8 +78,23 @@ describe('FailedWritesSheet', () => {
     expect(dismiss).not.toHaveBeenCalled();
     await fireEvent.press(getByText('Dismiss all'));
     const confirmButtons = getAllByLabelText('Dismiss all');
-    await fireEvent.press(confirmButtons[confirmButtons.length - 1]);
+    const confirm = confirmButtons[confirmButtons.length - 1];
+    if (!confirm) throw new Error('no confirm button');
+    await fireEvent.press(confirm);
     expect(dismiss.mock.calls.map((c) => c[0])).toEqual(['w1', 'w2']);
+  });
+
+  it('offers Try again only for a refused check create, and re-creates it', async () => {
+    const parked = entry({
+      id: 'w3',
+      attempted: { op: 'create', name: 'Sofa', kind: 'buy', furthestStep: 2, inputs: { kind: 'buy' }, householdId: 'h1', userId: 'u1' },
+    });
+    const retry = jest.spyOn(decideChecks, 'useRetryCheckCreate').mockReturnValue({ retry: jest.fn(() => true) });
+    const { ui } = mount([parked, entry({ id: 'w4' })]);
+    const { getAllByLabelText, getByLabelText } = await ui;
+    expect(getAllByLabelText(/^Try again/)).toHaveLength(1);
+    await fireEvent.press(getByLabelText('Try again: Decide check: Sofa'));
+    expect(retry.mock.results[0]?.value.retry).toHaveBeenCalledWith(parked);
   });
 
   it('shows the empty line and no Dismiss all for an empty list, and closes from the header', async () => {
@@ -93,7 +116,7 @@ describe('SyncStatusLine failed-saves button', () => {
   it('is a button that opens the list, for failed and for conflicting writes', async () => {
     jest.spyOn(failedWrites, 'getFailedWrites').mockReturnValue(two);
     (useSyncStatus as jest.Mock).mockReturnValue({ isOnline: true, queued: 0, failed: 2, conflicts: 1, lastSyncedAt: Date.now() });
-    const { getByText, queryByText, getAllByRole } = await render(<ThemeProvider><SyncStatusLine /></ThemeProvider>);
+    const { getByText, queryByText, getAllByRole } = await render(withClient(<SyncStatusLine />));
     expect(queryByText('Changes that couldn’t save')).toBeNull();
     expect(getAllByRole('button')).toHaveLength(2);
     await fireEvent.press(getByText('2 changes couldn’t save'));
@@ -106,7 +129,7 @@ describe('SyncStatusLine failed-saves button', () => {
 
   it('has no button or sheet when nothing failed', async () => {
     (useSyncStatus as jest.Mock).mockReturnValue({ isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: Date.now() });
-    const { queryAllByRole } = await render(<ThemeProvider><SyncStatusLine /></ThemeProvider>);
+    const { queryAllByRole } = await render(withClient(<SyncStatusLine />));
     expect(queryAllByRole('button')).toHaveLength(0);
   });
 });

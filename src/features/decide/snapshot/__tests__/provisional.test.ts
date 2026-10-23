@@ -185,7 +185,6 @@ describe('own-currency lines after a home-currency change', () => {
       home_currency: 'GBP',
       home_amount: -10_000,
       orig_per_eur: null,
-      rate_source: 'same-currency',
       rate_pending: false,
       ...over,
     });

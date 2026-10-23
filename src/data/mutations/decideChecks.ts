@@ -23,6 +23,7 @@ import { VersionConflictError } from '@/db/errors';
 import { applyPatches } from '@/db/patches';
 import {
   insertDecideCheck,
+  kindFollowingInputs,
   saveDecideCheckDraft,
   updateDecideCheck,
   type DecideCheckPatch,
@@ -39,7 +40,8 @@ import {
   shouldRetryWrite,
   writeRetryDelay,
 } from '@/data/sync/writeErrors';
-import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { dismissFailedWrite, recordFailedWrite, type FailedWrite } from '@/data/sync/failedWrites';
+import { showToast } from '@/state/undoToast';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { writeClient } from './writeClient';
@@ -153,7 +155,7 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
         id: vars.id,
         household_id: vars.householdId,
         created_by: vars.userId,
-        kind: vars.kind,
+        kind: kindFollowingInputs(vars.kind, vars.inputs),
         name: vars.name,
         inputs: vars.inputs,
         status: 'open',
@@ -197,13 +199,25 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
       patchChecks(qc, { userId: vars.userId, householdId: vars.householdId }, (rows) =>
         rows.filter((r) => r.id !== vars.id)
       );
+      // The draft is kept on this device (encrypted with the rest of the parked writes): "Try again" in the failed-saves
+      // list re-creates it from here. The toast says so at the time, so a refused first save is never silent.
       await recordFailedWrite({
         entity: 'decide_checks',
         entityId: vars.id,
         kind: cls,
         code: settledWriteErrorCode(err),
-        attempted: { kind: vars.kind, furthestStep: vars.furthestStep },
+        attempted: {
+          op: 'create',
+          name: vars.name,
+          kind: vars.kind,
+          furthestStep: vars.furthestStep,
+          inputs: vars.inputs,
+          householdId: vars.householdId,
+          userId: vars.userId,
+          ...(vars.reopenedFrom ? { reopenedFrom: vars.reopenedFrom } : {}),
+        },
       });
+      showToast({ kind: 'refusal', tone: 'warning', text: { key: 'sync.checkNotSaved' } });
     },
   });
 
@@ -397,6 +411,45 @@ export function useCreateCheck(): {
   return {
     create(input) {
       mutation.mutate({ ...input });
+    },
+  };
+}
+
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+}
+
+/** The create a parked decide_checks failure can be retried with, or null when it holds no recoverable draft. */
+export function recoverableCheckCreate(entry: Pick<FailedWrite, 'entity' | 'entityId' | 'attempted'>): CreateCheckVars | null {
+  if (entry.entity !== 'decide_checks') return null;
+  const a = entry.attempted;
+  const inputs = asRecord(a.inputs);
+  if (a.op !== 'create' || inputs === null) return null;
+  if (typeof a.userId !== 'string' || typeof a.householdId !== 'string' || typeof a.name !== 'string') return null;
+  const kind = a.kind === 'invest' ? 'invest' : 'buy';
+  const furthestStep = typeof a.furthestStep === 'number' ? a.furthestStep : 1;
+  return {
+    userId: a.userId,
+    id: entry.entityId,
+    householdId: a.householdId,
+    kind,
+    name: a.name,
+    inputs,
+    furthestStep,
+    ...(typeof a.reopenedFrom === 'string' ? { reopenedFrom: a.reopenedFrom } : {}),
+  };
+}
+
+/** Re-creates a check whose first save was refused, from the draft its parked failure kept; then clears that failure. */
+export function useRetryCheckCreate(): { retry(entry: FailedWrite): boolean } {
+  const { create } = useCreateCheck();
+  return {
+    retry(entry) {
+      const vars = recoverableCheckCreate(entry);
+      if (vars === null) return false;
+      create(vars);
+      void dismissFailedWrite(entry.id);
+      return true;
     },
   };
 }

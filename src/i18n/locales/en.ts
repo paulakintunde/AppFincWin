@@ -239,10 +239,13 @@ const en = {
     conflict_one: '{{count}} edit couldn’t save — changed elsewhere',
     conflict_other: '{{count}} edits couldn’t save — changed elsewhere',
     pendingRow: 'queued',
+    checkNotSaved: 'This check didn’t save. Its draft is kept under Changes that couldn’t save.',
     failedSheet: {
       openHint: 'Opens the list of changes that did not save',
       title: 'Changes that couldn’t save',
       empty: 'Nothing is waiting here.',
+      tryAgain: 'Try again',
+      tryAgainA11y: 'Try again: {{what}}',
       dismiss: 'Dismiss',
       dismissA11y: 'Dismiss {{what}}',
       dismissAll: 'Dismiss all',

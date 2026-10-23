@@ -117,8 +117,18 @@ export async function fetchDecideCheck(client: DbClient, id: string): Promise<De
   return (data as DecideCheckRow | null) ?? null;
 }
 
-export async function insertDecideCheck(client: DbClient, row: NewDecideCheck): Promise<DecideCheckRow> {
-  assertAllowedKeys(row as unknown as Record<string, unknown>, DECIDE_CHECK_INSERT_KEYS, 'insertDecideCheck');
+/**
+ * decide_checks_kind_matches_inputs: the kind column must equal inputs.kind. A check whose first edit switched Buy/Invest
+ * carries a column kind from before that edit, so the column follows the inputs here, as saveDecideCheckDraft does.
+ */
+export function kindFollowingInputs(kind: 'buy' | 'invest', inputs: Record<string, unknown>): 'buy' | 'invest' {
+  const fromInputs = inputs.kind;
+  return fromInputs === 'buy' || fromInputs === 'invest' ? fromInputs : kind;
+}
+
+export async function insertDecideCheck(client: DbClient, newRow: NewDecideCheck): Promise<DecideCheckRow> {
+  assertAllowedKeys(newRow as unknown as Record<string, unknown>, DECIDE_CHECK_INSERT_KEYS, 'insertDecideCheck');
+  const row: NewDecideCheck = { ...newRow, kind: kindFollowingInputs(newRow.kind, newRow.inputs) };
 
   const { data, error, status } = await client.from('decide_checks').insert(row).select(DECIDE_CHECK_COLUMNS).single();
   if (!error) return data as DecideCheckRow;

@@ -4,6 +4,7 @@ import {
   DECIDE_CHECK_PATCH_KEYS,
   fetchDecideChecks,
   insertDecideCheck,
+  kindFollowingInputs,
   saveDecideCheckDraft,
   updateDecideCheck,
   type DecideCheckPatch,
@@ -85,6 +86,20 @@ describe('insertDecideCheck', () => {
     const client = createFakeSupabase();
     client.respondWith({ data: checkRow(), error: null, status: 201 });
     await expect(insertDecideCheck(client, NEW_CHECK)).resolves.toEqual(checkRow());
+  });
+
+  it('writes the kind column from inputs.kind, so a first edit that switched Buy/Invest is not refused (kind_matches_inputs)', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: checkRow({ kind: 'invest' }), error: null, status: 201 });
+    await insertDecideCheck(client, { ...NEW_CHECK, kind: 'buy', inputs: { kind: 'invest' } });
+    const insert = client.calls.find((c) => c.method === 'insert');
+    expect(insert?.args[0]).toMatchObject({ kind: 'invest', inputs: { kind: 'invest' } });
+  });
+
+  it('keeps the given kind when the inputs carry none', () => {
+    expect(kindFollowingInputs('invest', {})).toBe('invest');
+    expect(kindFollowingInputs('invest', { kind: 'other' })).toBe('invest');
+    expect(kindFollowingInputs('buy', { kind: 'invest' })).toBe('invest');
   });
 
   it('returns the existing row on a duplicate id (replay)', async () => {

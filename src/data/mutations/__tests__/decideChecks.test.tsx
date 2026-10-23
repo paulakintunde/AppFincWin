@@ -4,7 +4,7 @@ globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto)
 
 import React from 'react';
 import { QueryClient, QueryClientProvider, dehydrate, hydrate, onlineManager } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { DbClient } from '@/db/rows';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
@@ -19,8 +19,10 @@ import {
   useAbandonCheck,
   useCreateCheck,
   useMarkCheckSeen,
+  recoverableCheckCreate,
   useReopenCheck,
   useReopenRedirect,
+  useRetryCheckCreate,
   useRemoveDecision,
   useSaveCheckDraft,
   type CreateCheckVars,
@@ -42,6 +44,7 @@ jest.mock('expo-crypto', () => ({
 
 jest.mock('@/data/sync/failedWrites', () => ({
   recordFailedWrite: jest.fn(async () => undefined),
+  dismissFailedWrite: jest.fn(async () => undefined),
 }));
 
 jest.mock('@/db/undoLog', () => ({
@@ -50,6 +53,8 @@ jest.mock('@/db/undoLog', () => ({
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { recordFailedWrite } = require('@/data/sync/failedWrites') as { recordFailedWrite: jest.Mock };
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { dismissFailedWrite } = require('@/data/sync/failedWrites') as { dismissFailedWrite: jest.Mock };
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { insertUndoStep } = require('@/db/undoLog') as { insertUndoStep: jest.Mock };
 
@@ -131,6 +136,7 @@ beforeEach(() => {
   clearVersionChains();
   resetToastForTests();
   recordFailedWrite.mockClear();
+  dismissFailedWrite.mockClear();
   insertUndoStep.mockClear();
 });
 
@@ -172,6 +178,47 @@ describe('useCreateCheck', () => {
     result.current.create({ userId: 'user-1', id: 'k1', householdId: 'hh-1', kind: 'buy', name: 'Laptop', inputs: {}, furthestStep: 1 });
     await waitFor(() => expect(qc.getQueryData<WithPending<DecideCheckRow>[]>(KEY)?.[0]?.pending).toBeUndefined());
     expect(recordFailedWrite).not.toHaveBeenCalled();
+  });
+
+  it('a refused create tells the user at once, drops the optimistic row and keeps the draft to try again', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith({ data: null, error: { message: 'violates check constraint', code: '23514' }, status: 400 });
+    const { result } = await renderHook(() => useCreateCheck(), { wrapper: wrapper(qc) });
+
+    result.current.create({
+      userId: 'user-1',
+      id: 'k9',
+      householdId: 'hh-1',
+      kind: 'buy',
+      name: 'Sofa',
+      inputs: { kind: 'buy', advertised: 150000 },
+      furthestStep: 2,
+    });
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
+
+    expect(qc.getQueryData<DecideCheckRow[]>(KEY)).toEqual([]);
+    expect(undoToast.getToast()).toMatchObject({ kind: 'refusal', tone: 'warning', text: { key: 'sync.checkNotSaved' } });
+    const parked = recordFailedWrite.mock.calls[0]![0];
+    expect(parked).toMatchObject({ entity: 'decide_checks', entityId: 'k9', kind: 'rejected', code: '23514' });
+    expect(recoverableCheckCreate({ ...parked, id: 'w1', at: 'now' })).toEqual({
+      userId: 'user-1',
+      id: 'k9',
+      householdId: 'hh-1',
+      kind: 'buy',
+      name: 'Sofa',
+      inputs: { kind: 'buy', advertised: 150000 },
+      furthestStep: 2,
+    });
+  });
+
+  it('the optimistic row and the insert follow inputs.kind', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith(ok(check('k1', { kind: 'invest', inputs: { kind: 'invest' } })));
+    const { result } = await renderHook(() => useCreateCheck(), { wrapper: wrapper(qc) });
+    result.current.create({ userId: 'user-1', id: 'k1', householdId: 'hh-1', kind: 'buy', name: '', inputs: { kind: 'invest' }, furthestStep: 1 });
+    await waitFor(() => expect(qc.getQueryData<DecideCheckRow[]>(KEY)?.[0]?.kind).toBe('invest'));
+    await waitFor(() => expect(qc.getQueryData<WithPending<DecideCheckRow>[]>(KEY)?.[0]?.pending).toBeUndefined());
+    expect(fake.calls.find((c) => c.method === 'insert')?.args[0]).toMatchObject({ kind: 'invest' });
   });
 
   it('variables survive a JSON round trip', () => {
@@ -502,5 +549,63 @@ describe('useReopenCheck', () => {
     expect(ids).toContain('live-1');
     expect(ids).not.toContain(tried);
     expect(fake.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toContainEqual(['reopened_from', 'k1']);
+  });
+});
+
+describe('recoverableCheckCreate and useRetryCheckCreate', () => {
+  const parkedEntry = (attempted: Record<string, unknown>, entity: 'decide_checks' | 'decide_settings' = 'decide_checks') => ({
+    id: 'w1',
+    entity,
+    entityId: 'k9',
+    kind: 'rejected' as const,
+    code: '23514',
+    attempted,
+    at: '2026-10-23T10:00:00.000Z',
+  });
+  const full = { op: 'create', name: 'Sofa', kind: 'invest', furthestStep: 3, inputs: { kind: 'invest' }, householdId: 'hh-1', userId: 'user-1', reopenedFrom: 'd1' };
+
+  it('reads a complete create, with its reopened-from link and kind', () => {
+    expect(recoverableCheckCreate(parkedEntry(full))).toEqual({
+      userId: 'user-1',
+      id: 'k9',
+      householdId: 'hh-1',
+      kind: 'invest',
+      name: 'Sofa',
+      inputs: { kind: 'invest' },
+      furthestStep: 3,
+      reopenedFrom: 'd1',
+    });
+  });
+
+  it('defaults the kind and step, and reads nothing from a save, another entity or a partial payload', () => {
+    expect(recoverableCheckCreate(parkedEntry({ ...full, kind: 'x', furthestStep: 'x', reopenedFrom: undefined }))).toMatchObject({ kind: 'buy', furthestStep: 1 });
+    expect(recoverableCheckCreate(parkedEntry({ furthestStep: 2 }))).toBeNull();
+    expect(recoverableCheckCreate(parkedEntry(full, 'decide_settings'))).toBeNull();
+    expect(recoverableCheckCreate(parkedEntry({ ...full, inputs: [] }))).toBeNull();
+    expect(recoverableCheckCreate(parkedEntry({ ...full, inputs: null }))).toBeNull();
+    expect(recoverableCheckCreate(parkedEntry({ ...full, userId: 1 }))).toBeNull();
+    expect(recoverableCheckCreate(parkedEntry({ ...full, householdId: 1 }))).toBeNull();
+    expect(recoverableCheckCreate(parkedEntry({ ...full, name: 1 }))).toBeNull();
+  });
+
+  it('Try again queues the create again and clears the parked failure', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith(ok(check('k9', { kind: 'invest', inputs: { kind: 'invest' } })));
+    const { result } = await renderHook(() => useRetryCheckCreate(), { wrapper: wrapper(qc) });
+    let started = false;
+    await act(async () => {
+      started = result.current.retry(parkedEntry(full));
+    });
+    expect(started).toBe(true);
+    expect(dismissFailedWrite).toHaveBeenCalledWith('w1');
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'insert')).toBe(true));
+    expect(fake.calls.find((c) => c.method === 'insert')?.args[0]).toMatchObject({ id: 'k9', name: 'Sofa', kind: 'invest' });
+  });
+
+  it('Try again does nothing for a failure with no draft to recover', async () => {
+    const { qc } = setup();
+    const { result } = await renderHook(() => useRetryCheckCreate(), { wrapper: wrapper(qc) });
+    expect(result.current.retry(parkedEntry({ furthestStep: 2 }))).toBe(false);
+    expect(dismissFailedWrite).not.toHaveBeenCalled();
   });
 });

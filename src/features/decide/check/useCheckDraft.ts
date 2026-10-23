@@ -95,7 +95,7 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
         userId: ctx.userId,
         id,
         householdId: ctx.householdId,
-        kind,
+        kind: stamped.kind, // the column follows the inputs (kind_matches_inputs); a first edit may have switched Buy/Invest
         name: stamped.name.slice(0, 80),
         inputs: json,
         furthestStep: step,
@@ -106,7 +106,7 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
     setPendingEdit(false);
     doSave({ id, name: stamped.name.slice(0, 80), inputs: json, furthestStep: step });
     return 'saved';
-  }, [id, kind]);
+  }, [id]);
 
   // A first edit made before the user and household ids resolve stays pending (flush returns early and keeps
   // it); create it as soon as both ids arrive rather than waiting for a second edit.
