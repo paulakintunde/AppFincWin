@@ -9,6 +9,7 @@ import { ShellTestProviders } from '@/shell/__tests__/testUtils';
 jest.mock('expo-router', () => ({
   useScrollToTop: jest.fn(),
   useFocusEffect: jest.fn(),
+  useSegments: () => [],
   router: { push: jest.fn(), navigate: jest.fn() },
 }));
 jest.mock('@/shell/a11yFocus', () => ({

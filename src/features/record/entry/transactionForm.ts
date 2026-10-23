@@ -222,8 +222,12 @@ export function withStatus(state: FormState, status: FormState['status']): FormS
   return { ...state, status, statusTouched: true };
 }
 
-/** Picking an account moves the currency with it (the Currency row can still override it). */
+/**
+ * D-93: an expense or income keeps its current currency when the account changes (the home
+ * default or the user's pick); a transfer's from-leg follows its account.
+ */
 export function withAccount(state: FormState, account: { id: string; currency: string }): FormState {
+  if (state.direction !== 'transfer') return { ...state, accountId: account.id };
   return dropStaleAmountIn({ ...state, accountId: account.id, currency: account.currency });
 }
 

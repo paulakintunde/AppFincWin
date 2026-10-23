@@ -9,6 +9,7 @@ import {
   validateForm,
   validateTransfer,
   withDate,
+  withAccount,
   withAutomatic,
   withDirection,
   withOneOff,
@@ -70,6 +71,16 @@ describe('initialFormState', () => {
   it('D-93 a new expense defaults to the home currency', () => {
     expect(newOut().currency).toBe('USD');
     expect(initialFormState({ kind: 'new', direction: 'in', accountId: 'a2' }, ctx).currency).toBe('USD');
+  });
+
+  it("D-93 changing the account keeps an expense's currency", () => {
+    expect(withAccount(newOut(), { id: 'a2', currency: 'EUR' })).toMatchObject({ accountId: 'a2', currency: 'USD' });
+    expect(withAccount({ ...newOut(), currency: 'JPY' }, { id: 'a2', currency: 'EUR' }).currency).toBe('JPY');
+  });
+
+  it('D-93 a transfer still follows its accounts', () => {
+    const t = initialFormState({ kind: 'new', direction: 'transfer' }, ctx);
+    expect(withAccount(t, { id: 'a2', currency: 'EUR' })).toMatchObject({ accountId: 'a2', currency: 'EUR' });
   });
 
   it('D-93 an edit keeps its stored currency', () => {

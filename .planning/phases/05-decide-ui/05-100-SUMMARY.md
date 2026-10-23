@@ -45,9 +45,10 @@ A new expense or income line opens in the home currency (a USD-home user with a 
 **1. [Rule 3 - Blocking] Existing tests asserted the old default**
 - `TransactionSheet.test.tsx` FX-note test relied on a new line taking the EUR account's currency; it now picks EUR through the Currency control. `transactionForm.test.ts` and `listForm.test.ts` contexts gained `homeCurrency`.
 
-## Open point for the user
+## Post-plan fixes (coordinator direction: the currency follows the selected currency)
 
-Choosing a different account in the sheet (`withAccount`) still sets the line currency to that account's currency, so picking an account after opening switches a new expense away from home. The plan limited the change to `initialFormState`; say if the account picker should also keep the currency for expense/income.
+- `withAccount` now keeps an expense or income line's current currency when the account changes (home default or the user's pick); transfers still follow their accounts. Tests: "D-93 changing the account keeps an expense's currency", "D-93 a transfer still follows its accounts".
+- The Activity suites' shared `activityShellHarness.tsx` `expo-router` mock gained `useSegments: () => []` (05-97's FabProvider calls it).
 
 ## Device items
 
