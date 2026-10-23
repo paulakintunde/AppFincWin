@@ -3,7 +3,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { SOLE_SHARE } from '@/engine/decide';
 import { ScopeToggle } from '../ScopeToggle';
 import { SplitOverrideSheet } from '../SplitOverrideSheet';
-import { WhoPaysSection } from '../sections/WhoPaysSection';
+import { WhoPaysBody } from '../sections/WhoPaysSection';
 import type { SectionProps } from '../sections/sectionUi';
 import { buy, exact, stepProps, whole, wrap } from '../steps/__tests__/helpers/stepProps';
 import type { CheckInputs } from '../../snapshot/types';
@@ -26,7 +26,7 @@ function scope(over: Partial<CheckInputs> = {}, extra: Partial<React.ComponentPr
     ...extra,
   };
 }
-function who(over: Partial<CheckInputs>, extra: Partial<React.ComponentProps<typeof WhoPaysSection>> = {}) {
+function who(over: Partial<CheckInputs>, extra: Partial<React.ComponentProps<typeof WhoPaysBody>> = {}) {
   const p = stepProps(buy(over));
   const base: SectionProps = {
     computation: p.computation,
@@ -35,8 +35,6 @@ function who(over: Partial<CheckInputs>, extra: Partial<React.ComponentProps<typ
     whole,
     exact,
     currency: 'USD',
-    expanded: true,
-    onToggle: jest.fn(),
     readOnly: false,
   };
   return { ...base, memberCount: 2, memberNames: NAMES, share: TWO, dayOneTotal: 100_001, monthlyTotal: 5_001, ...extra };
@@ -50,15 +48,15 @@ describe('household scope UI: hidden for every Phase 5 household', () => {
     expect(screen.queryByText('Our home')).toBeNull();
     expect(screen.queryByText('Split for this purchase')).toBeNull();
 
-    await wrap(<WhoPaysSection {...who({ scope: 'household' }, { memberCount: 1, share: SOLE_SHARE })} />);
+    await wrap(<WhoPaysBody {...who({ scope: 'household' }, { memberCount: 1, share: SOLE_SHARE })} />);
     expect(screen.queryByText('Who pays what')).toBeNull();
 
     await wrap(<SplitOverrideSheet visible={false} split={null} memberNames={['Ana']} currency="USD" onSave={jest.fn()} onCancel={jest.fn()} />);
     expect(screen.queryByText('Even')).toBeNull();
   });
 
-  it('WhoPaysSection is omitted in personal scope even with several members', async () => {
-    await wrap(<WhoPaysSection {...who({ scope: 'personal' })} />);
+  it('WhoPaysBody is omitted in personal scope even with several members', async () => {
+    await wrap(<WhoPaysBody {...who({ scope: 'personal' })} />);
     expect(screen.queryByText('Who pays what')).toBeNull();
   });
 });
@@ -108,11 +106,9 @@ describe('ScopeToggle with two members', () => {
   });
 });
 
-describe('WhoPaysSection with two members in household scope', () => {
+describe('WhoPaysBody with two members in household scope', () => {
   it('lists each member part from memberParts, remainders kept', async () => {
-    await wrap(<WhoPaysSection {...who({ scope: 'household' })} />);
-    expect(screen.getByText('Who pays what')).toBeTruthy();
-    expect(screen.getByText('2 people')).toBeTruthy();
+    await wrap(<WhoPaysBody {...who({ scope: 'household' })} />);
     // 100001 splits 50001 / 50000 (largest remainder), 5001 splits 2501 / 2500; the parts add back to the totals
     expect(screen.getByLabelText('Ana, On the day $500, A month $25.01')).toBeTruthy();
     expect(screen.getByLabelText('Ben, On the day $500, A month $25.00')).toBeTruthy();

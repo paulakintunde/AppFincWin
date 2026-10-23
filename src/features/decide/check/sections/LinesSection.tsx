@@ -13,7 +13,6 @@ import { fontSize, textRole } from '@/theme/typography';
 import type { InfoKey } from '../../copy/infoTerms';
 import { useInfoSheet, type InfoSheetHandle } from '../../ui/useInfoSheet';
 import { InfoTitle } from '../InfoTitle';
-import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { percentText } from '../../copy/percentText';
 import { cushionCopy, marginText } from '../../copy/depthVerdictCopy';
 import type { LineMargin, MarginLine } from '@/engine/decide';
@@ -38,7 +37,7 @@ interface LineRow {
 }
 
 /** 05-64: the six rows without the section chrome; "What breaks" shows them as "Every line". */
-export function EveryLineRows(props: Omit<SectionProps, 'expanded' | 'onToggle'>) {
+export function EveryLineRows(props: SectionProps) {
   const { computation, whole, currency } = props;
   const t = useT();
   const tr = t as Translate;
@@ -131,26 +130,6 @@ export function EveryLineRows(props: Omit<SectionProps, 'expanded' | 'onToggle'>
         return infoKey ? <InfoLineRow key={r.key} infoKey={infoKey} {...rowProps} /> : <LineView key={r.key} {...rowProps} />;
       })}
     </View>
-  );
-}
-
-/** The former "Against your lines" section; deleted in 05-78 once step 3 composes the folds (05-74). */
-export function LinesSection(props: SectionProps) {
-  const t = useT();
-  const a = assessmentOf(props.computation);
-  if (!a) return null;
-  const { expanded, onToggle, ...rest } = props;
-  const c = a.checks;
-  const clear = [c.cash, c.month, c.dsr, c.owe, c.inv, c.save].filter(Boolean).length;
-  return (
-    <CollapsibleSection
-      title={t('decide.section.linesTitle')}
-      summary={t('decide.section.linesSummary', { clear, over: 6 - clear })}
-      expanded={expanded}
-      onToggle={onToggle}
-    >
-      <EveryLineRows {...rest} />
-    </CollapsibleSection>
   );
 }
 

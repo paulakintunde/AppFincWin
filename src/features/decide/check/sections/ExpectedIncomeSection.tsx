@@ -5,12 +5,10 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useT } from '@/i18n';
-import { CollapsibleSection } from '../../ui/CollapsibleSection';
-import { expectedIncomeCopy } from '../../copy/depthInputsCopy';
-import { refText, type Translate } from '../refText';
-import { TableRow, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
+import type { Translate } from '../refText';
+import { TableRow, moneyOf, type SectionProps } from './sectionUi';
 
-export function ExpectedIncomeBody(props: SectionBodyProps) {
+export function ExpectedIncomeBody(props: SectionProps) {
   const { computation, whole, currency } = props;
   const t = useT() as Translate;
   const outcome = computation.status === 'logged' ? (computation.decision?.withExpectedIncome ?? null) : null;
@@ -37,16 +35,3 @@ export function ExpectedIncomeBody(props: SectionBodyProps) {
   );
 }
 
-export function ExpectedIncomeSection(props: SectionProps) {
-  const { computation, whole, currency, expanded, onToggle } = props;
-  const t = useT() as Translate;
-  const outcome = computation.status === 'logged' ? (computation.decision?.withExpectedIncome ?? null) : null;
-  if (!outcome) return null;
-  const line = expectedIncomeCopy(outcome, moneyOf(whole, currency));
-  if (!line) return null;
-  return (
-    <CollapsibleSection title={t('decide.depth.income.section')} summary={refText(t, line)} expanded={expanded} onToggle={onToggle}>
-      <ExpectedIncomeBody {...props} />
-    </CollapsibleSection>
-  );
-}

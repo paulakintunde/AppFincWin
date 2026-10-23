@@ -14,7 +14,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import type { CheckComputation, CheckInputs } from '../../snapshot/types';
 import { useShouldStack } from '../../ui/textFit';
 
-/** Declared per section file in the plan; kept here once for the four sections of 05-15 (structurally identical). */
+/** The props every step 3 fold body takes (05-78: the collapsible wrappers are gone). */
 export interface SectionProps {
   computation: CheckComputation;
   inputs: CheckInputs;
@@ -22,15 +22,10 @@ export interface SectionProps {
   whole: MoneyFormatter;
   exact: MoneyFormatter;
   currency: string;
-  expanded: boolean;
-  onToggle: () => void;
   readOnly: boolean;
   /** WR-C07: the figures still follow older inputs (150 ms); an option built from them is not applied yet. */
   busy?: boolean;
 }
-
-/** 05-65: a section's content without its CollapsibleSection chrome (the FoldList places it). */
-export type SectionBodyProps = Omit<SectionProps, 'expanded' | 'onToggle'>;
 
 /** The resolved assessment behind step 3's figure sections, or null (missing verdict, first read, none, unconverted). */
 export function assessmentOf(c: CheckComputation): Assessment | null {

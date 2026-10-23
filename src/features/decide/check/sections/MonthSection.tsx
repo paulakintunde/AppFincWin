@@ -10,13 +10,12 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MonthColumn } from '@/engine/decide';
-import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { useShouldStack } from '../../ui/textFit';
-import { Note, Tile, assessmentOf, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
+import { Note, Tile, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
 
 type Line = { key: string; label: string; pick: (c: MonthColumn) => number; emphasis?: boolean };
 
-export function MonthBody(props: SectionBodyProps) {
+export function MonthBody(props: SectionProps) {
   const { computation, inputs, exact, currency } = props;
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -96,25 +95,6 @@ export function MonthBody(props: SectionBodyProps) {
       })}
       <Tile>{closing}</Tile>
     </View>
-  );
-}
-
-export function MonthSection(props: SectionProps) {
-  const { computation, whole, currency, expanded, onToggle } = props;
-  const t = useT();
-  const a = assessmentOf(computation);
-  if (!a) return null;
-  const fmtWhole = moneyOf(whole, currency);
-  const { now, after } = a.monthTable;
-  return (
-    <CollapsibleSection
-      title={t('decide.section.monthTitle')}
-      summary={t('decide.section.monthSummary', { now: fmtWhole(now.left), after: fmtWhole(after.left) })}
-      expanded={expanded}
-      onToggle={onToggle}
-    >
-      <MonthBody {...props} />
-    </CollapsibleSection>
   );
 }
 

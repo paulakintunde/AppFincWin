@@ -2,8 +2,8 @@ import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { withPrice, type BuyCheck } from '@/engine/decide';
 import { showToast } from '@/state/undoToast';
-import { SetbacksSection } from '../SetbacksSection';
-import { OptionsSection } from '../OptionsSection';
+import { SetbacksBody } from '../SetbacksSection';
+import { OptionsBody } from '../OptionsSection';
 import type { SectionProps } from '../sectionUi';
 import { buy, exact, stepProps, whole, wrap } from '../../steps/__tests__/helpers/stepProps';
 import { loggedSource } from '../../../snapshot/__tests__/helpers/snapshotFixtures';
@@ -23,8 +23,6 @@ function sectionProps(over: Partial<CheckInputs>, extra: Partial<SectionProps> =
     whole,
     exact,
     currency: 'USD',
-    expanded: true,
-    onToggle: jest.fn(),
     readOnly: false,
     ...extra,
   };
@@ -49,14 +47,12 @@ const optionProps = (over: Partial<CheckInputs>, extra: Partial<SectionProps> = 
   lineName: (id: string) => `Line ${id}`,
 });
 
-describe('SetbacksSection', () => {
+describe('SetbacksBody', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('lists the four defaults, each unchecked, with a hit and cash after, and the runway in the summary', async () => {
+  it('lists the four defaults, each unchecked, with a hit and cash after', async () => {
     const p = sectionProps(CASH_NO);
-    await wrap(<SetbacksSection {...p} />);
-    expect(screen.getByText('If something goes wrong')).toBeTruthy();
-    expect(screen.getByText('Runway 0 months, 3 less because of this')).toBeTruthy();
+    await wrap(<SetbacksBody {...p} />);
     for (const name of ['Unexpected expense', 'Income drops', 'Job or client loss', 'Invoices pay late']) {
       expect(screen.getByText(name)).toBeTruthy();
     }
@@ -67,29 +63,22 @@ describe('SetbacksSection', () => {
     expect(p.computation.setbacks?.runwayMonths).toBe(0);
   });
 
-  it('reads Runway not limited when there is no burn to run out of', async () => {
-    const p = sectionProps(CASH_NO);
-    const setbacks = { ...(p.computation.setbacks as NonNullable<typeof p.computation.setbacks>), runwayMonths: null };
-    await wrap(<SetbacksSection {...p} computation={{ ...p.computation, setbacks }} />);
-    expect(screen.getByText('Runway not limited')).toBeTruthy();
-  });
-
   it('toggling a setback updates inputs.setbacks and the outcome tile shows once one is on', async () => {
     const p = sectionProps(LOAN_NO);
-    await wrap(<SetbacksSection {...p} />);
+    await wrap(<SetbacksBody {...p} />);
     await fireEvent.press(screen.getByRole('checkbox', { name: /^Income drops/ }));
     const next = (p.update as jest.Mock).mock.calls[0][0].setbacks as CheckInputs['setbacks'];
     expect(next.map((s) => s.enabled)).toEqual([false, true, false, false]);
 
     const on = sectionProps({ ...LOAN_NO, setbacks: next });
-    await wrap(<SetbacksSection {...on} />);
+    await wrap(<SetbacksBody {...on} />);
     expect(on.computation.setbacks?.anyEnabled).toBe(true);
     expect(screen.getByText(/The cushion absorbs it\. Cash left:/)).toBeTruthy();
   });
 
   it('removes a setback with a local undo toast and opens the editor for a new one', async () => {
     const p = sectionProps(CASH_NO);
-    await wrap(<SetbacksSection {...p} />);
+    await wrap(<SetbacksBody {...p} />);
     await fireEvent.press(screen.getByLabelText('Remove Income drops'));
     expect(((p.update as jest.Mock).mock.calls[0][0].setbacks as unknown[]).length).toBe(3);
     expect((showToast as jest.Mock).mock.calls[0][0].text.key).toBe('decide.toast.lineRemoved');
@@ -101,19 +90,19 @@ describe('SetbacksSection', () => {
     const p = sectionProps(CASH_NO);
     const ids = p.inputs.setbacks.map((s) => s.id);
     const label = (re: RegExp) => screen.getByRole('checkbox', { name: re }).props.accessibilityLabel as string;
-    const full = await wrap(<SetbacksSection {...p} />);
+    const full = await wrap(<SetbacksBody {...p} />);
     const invoices = label(/^Invoices pay late/);
     const job = label(/^Job or client loss/);
     expect(invoices).not.toBe(job);
     await full.unmount();
     const live = { ...p.inputs, setbacks: p.inputs.setbacks.filter((s) => s.code !== 'income_drop') };
-    await wrap(<SetbacksSection {...p} inputs={live} resultIds={ids} />);
+    await wrap(<SetbacksBody {...p} inputs={live} resultIds={ids} />);
     expect(label(/^Invoices pay late/)).toBe(invoices);
     expect(label(/^Job or client loss/)).toBe(job);
   });
 
   it('has no lock chrome and no literal close mark', async () => {
-    await wrap(<SetbacksSection {...sectionProps(CASH_NO)} />);
+    await wrap(<SetbacksBody {...sectionProps(CASH_NO)} />);
     expect(screen.queryByText(/Pro|locked|Upgrade/i)).toBeNull();
     expect(screen.queryByText('×')).toBeNull();
     expect(screen.queryByText('x')).toBeNull();
@@ -121,23 +110,22 @@ describe('SetbacksSection', () => {
 
   it('renders nothing without a computed report', async () => {
     const p = sectionProps(CASH_NO);
-    await wrap(<SetbacksSection {...p} computation={{ ...p.computation, setbacks: null }} />);
+    await wrap(<SetbacksBody {...p} computation={{ ...p.computation, setbacks: null }} />);
     expect(screen.queryByText('If something goes wrong')).toBeNull();
   });
 });
 
-describe('OptionsSection', () => {
+describe('OptionsBody', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('is omitted when the verdict fits', async () => {
-    await wrap(<OptionsSection {...optionProps({ advertised: 150_000, method: 'cash' })} />);
-    expect(screen.queryByText('What would make it work')).toBeNull();
+    await wrap(<OptionsBody {...optionProps({ advertised: 150_000, method: 'cash' })} />);
+    expect(screen.queryByText('In order of how much they move. The first two change the purchase; the rest change your month.')).toBeNull();
   });
 
   it('lists options as noun phrases and none starts with an imperative verb', async () => {
     const p = optionProps(LOAN_NO);
-    await wrap(<OptionsSection {...p} />);
-    expect(screen.getByText('What would make it work')).toBeTruthy();
+    await wrap(<OptionsBody {...p} />);
     expect(screen.getByText('In order of how much they move. The first two change the purchase; the rest change your month.')).toBeTruthy();
     const names = p.computation.options.map((o) => {
       switch (o.code) {
@@ -158,7 +146,7 @@ describe('OptionsSection', () => {
 
   it('Use this term sets the loan term the engine proposed', async () => {
     const p = optionProps(LOAN_NO);
-    await wrap(<OptionsSection {...p} />);
+    await wrap(<OptionsBody {...p} />);
     await fireEvent.press(screen.getByRole('button', { name: 'Use this term' }));
     const term = p.computation.options.find((o) => o.code === 'longer_term');
     expect((p.update as jest.Mock).mock.calls[0][0].loan.termMonths).toBe((term as { termMonths: number }).termMonths);
@@ -166,7 +154,7 @@ describe('OptionsSection', () => {
 
   it('Use this price re-prices the check through repriceInputs', async () => {
     const p = optionProps(CASH_NO);
-    await wrap(<OptionsSection {...p} />);
+    await wrap(<OptionsBody {...p} />);
     await fireEvent.press(screen.getByRole('button', { name: 'Use this price' }));
     const patch = (p.update as jest.Mock).mock.calls[0][0] as Partial<CheckInputs>;
     const option = p.computation.options.find((o) => o.code === 'affordable_price') as { price: number };
@@ -176,7 +164,7 @@ describe('OptionsSection', () => {
   it('use this price on an instalment plan rescales the instalments', async () => {
     const p = optionProps(INSTALMENT_TAX);
     expect(p.computation.options.some((o) => o.code === 'affordable_price')).toBe(true);
-    await wrap(<OptionsSection {...p} />);
+    await wrap(<OptionsBody {...p} />);
     await fireEvent.press(screen.getByRole('button', { name: 'Use this price' }));
     const patch = (p.update as jest.Mock).mock.calls[0][0] as Partial<CheckInputs>;
     const next = { ...p.inputs, ...patch };
@@ -192,7 +180,7 @@ describe('OptionsSection', () => {
 
   it('Switch to wait and Open in Activity call their handlers; Without it has no pill', async () => {
     const p = optionProps(CASH_NO);
-    await wrap(<OptionsSection {...p} />);
+    await wrap(<OptionsBody {...p} />);
     await fireEvent.press(screen.getByRole('button', { name: 'Switch to wait' }));
     expect(p.onSwitchToWait).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Without it')).toBeTruthy();
@@ -200,7 +188,7 @@ describe('OptionsSection', () => {
   });
 
   it('hides the pills on a decided (read-only) check', async () => {
-    await wrap(<OptionsSection {...optionProps(LOAN_NO, { readOnly: true })} />);
+    await wrap(<OptionsBody {...optionProps(LOAN_NO, { readOnly: true })} />);
     expect(screen.queryByRole('button', { name: 'Use this term' })).toBeNull();
   });
 });

@@ -1,10 +1,10 @@
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import type { Assessment } from '@/engine/decide';
-import { MonthSection } from '../MonthSection';
-import { LedgersSection } from '../LedgersSection';
-import { LinesSection } from '../LinesSection';
-import { AssumptionsSection } from '../AssumptionsSection';
+import { MonthBody } from '../MonthSection';
+import { LedgersBody } from '../LedgersSection';
+import { EveryLineRows } from '../LinesSection';
+import { AssumptionsBody } from '../AssumptionsSection';
 import type { SectionProps } from '../sectionUi';
 import { buy, exact, stepProps, whole, wrap } from '../../steps/__tests__/helpers/stepProps';
 import { META, loggedSource, noneSource, roughSource } from '../../../snapshot/__tests__/helpers/snapshotFixtures';
@@ -21,8 +21,6 @@ function sectionProps(over: Partial<CheckInputs>, source: SnapshotResult, extra:
     whole,
     exact,
     currency: 'USD',
-    expanded: true,
-    onToggle: jest.fn(),
     readOnly: false,
     ...extra,
   };
@@ -35,17 +33,10 @@ const withAssessment = (p: SectionProps, patch: Partial<Assessment>): SectionPro
 });
 const metaWith = (over: Partial<SnapshotMeta>): SnapshotMeta => ({ ...META, ...over });
 
-describe('MonthSection', () => {
-  it('is collapsed by default and summarises Left at month end', async () => {
-    await wrap(<MonthSection {...sectionProps(FITS, loggedSource(), { expanded: false })} />);
-    expect(screen.getByText('The month, line by line')).toBeTruthy();
-    expect(screen.getByText('Left at month end: $1800 now, $1800 after')).toBeTruthy();
-    expect(screen.queryByText('Money in')).toBeNull();
-  });
-
+describe('MonthBody', () => {
   it('rows are exact and add up for both columns', async () => {
     const p = sectionProps(FITS, loggedSource());
-    await wrap(<MonthSection {...p} />);
+    await wrap(<MonthBody {...p} />);
     const { now, after } = assessment(p).monthTable;
     for (const c of [now, after]) {
       expect(c.income - c.outgoings).toBe(c.left);
@@ -62,23 +53,22 @@ describe('MonthSection', () => {
       method: 'loan',
       loan: { deposit: 0, termMonths: 12, aprText: '10', secured: false, securedTouched: true, aprFromQuick: false, promo: null, variable: false },
     };
-    await wrap(<MonthSection {...sectionProps(loan, loggedSource())} />);
+    await wrap(<MonthBody {...sectionProps(loan, loggedSource())} />);
     expect(screen.getByText(/The month would be \$\d+\.\d\d short/)).toBeTruthy();
   });
 
   it('renders nothing for a first read or no figures', async () => {
-    await wrap(<MonthSection {...sectionProps(FITS, roughSource())} />);
+    await wrap(<MonthBody {...sectionProps(FITS, roughSource())} />);
     expect(screen.queryByText('The month, line by line')).toBeNull();
-    await wrap(<MonthSection {...sectionProps(FITS, noneSource())} />);
+    await wrap(<MonthBody {...sectionProps(FITS, noneSource())} />);
     expect(screen.queryByText('The month, line by line')).toBeNull();
   });
 });
 
-describe('LedgersSection', () => {
+describe('LedgersBody', () => {
   it('shows five ledgers with a direction word beside each dot', async () => {
     const p = sectionProps(FITS, loggedSource());
-    await wrap(<LedgersSection {...p} />);
-    expect(screen.getByText('Five ledgers')).toBeTruthy();
+    await wrap(<LedgersBody {...p} />);
     for (const l of assessment(p).ledgers) {
       const word = { better: 'Better', worse: 'Worse', same: 'Same' }[l.direction];
       expect(screen.getAllByText(word).length).toBeGreaterThan(0);
@@ -87,20 +77,19 @@ describe('LedgersSection', () => {
   });
 
   it('IN-C02: each ledger row is read from the catalogue', async () => {
-    await wrap(<LedgersSection {...sectionProps(FITS, loggedSource())} />);
+    await wrap(<LedgersBody {...sectionProps(FITS, loggedSource())} />);
     expect(screen.getAllByLabelText(/^Debt, now .+, after .+, (Better|Worse|Same)$/).length).toBe(1);
   });
 
   it('renders nothing without a logged verdict', async () => {
-    await wrap(<LedgersSection {...sectionProps(FITS, roughSource())} />);
+    await wrap(<LedgersBody {...sectionProps(FITS, roughSource())} />);
     expect(screen.queryByText('Where it lands')).toBeNull();
   });
 });
 
-describe('LinesSection', () => {
-  it('lists six lines with words and counts clear and over', async () => {
-    await wrap(<LinesSection {...sectionProps(FITS, loggedSource())} />);
-    expect(screen.getByText('6 clear · 0 over')).toBeTruthy();
+describe('EveryLineRows', () => {
+  it('lists six lines with words', async () => {
+    await wrap(<EveryLineRows {...sectionProps(FITS, loggedSource())} />);
     expect(screen.getAllByText('Clear')).toHaveLength(6);
     expect(screen.getByText('Cash cushion')).toBeTruthy();
     expect(screen.getByText('Saving floor')).toBeTruthy();
@@ -110,15 +99,14 @@ describe('LinesSection', () => {
 
   it('names a short cash line with its amount', async () => {
     const p = sectionProps({ advertised: 1_150_000, method: 'cash' }, loggedSource());
-    await wrap(<LinesSection {...p} />);
+    await wrap(<EveryLineRows {...p} />);
     expect(screen.getByText(/^Short \$\d+$/)).toBeTruthy();
-    expect(screen.getByText('5 clear · 1 over')).toBeTruthy();
   });
 
   it('debt service with no money in reads as over the line', async () => {
     const base = sectionProps(FITS, loggedSource());
     const p = withAssessment(base, { debtServiceRatioAfter: null, checks: { ...assessment(base).checks, dsr: false }, debtServiceAfter: 20_000 as never });
-    await wrap(<LinesSection {...p} />);
+    await wrap(<EveryLineRows {...p} />);
     expect(screen.getByText(/No money in on this basis, against your .* line/)).toBeTruthy();
     expect(screen.getByLabelText(/^Debt service, Over\./)).toBeTruthy();
   });
@@ -127,22 +115,22 @@ describe('LinesSection', () => {
     const base = sectionProps(FITS, loggedSource());
     const a = assessment(base);
     const at = (floor: number) => withAssessment(base, { context: { ...a.context, limits: { ...a.context.limits, investingFloor: floor as never } } });
-    const view = await wrap(<LinesSection {...at(0)} />);
+    const view = await wrap(<EveryLineRows {...at(0)} />);
     expect(screen.getByText(/a month, no floor set$/)).toBeTruthy();
     await view.unmount();
-    await wrap(<LinesSection {...at(50_000)} />);
+    await wrap(<EveryLineRows {...at(50_000)} />);
     expect(screen.getAllByText(/a month against your \$500 floor$/).length).toBeGreaterThan(0);
   });
 
   it('renders nothing without a logged verdict', async () => {
-    await wrap(<LinesSection {...sectionProps(FITS, noneSource())} />);
+    await wrap(<EveryLineRows {...sectionProps(FITS, noneSource())} />);
     expect(screen.queryByText('Against your lines')).toBeNull();
   });
 });
 
-describe('AssumptionsSection', () => {
+describe('AssumptionsBody', () => {
   const render = (meta: SnapshotMeta, source: SnapshotResult = loggedSource(), extra: { onEditCardMinimum?: () => void } = {}) =>
-    wrap(<AssumptionsSection {...sectionProps(FITS, source)} meta={meta} {...extra} />);
+    wrap(<AssumptionsBody {...sectionProps(FITS, source)} meta={meta} {...extra} />);
 
   it('lists the money in, expenses, debt and return rows plus the not-a-lender line', async () => {
     await render(META);
@@ -155,8 +143,6 @@ describe('AssumptionsSection', () => {
 
   it('still renders with only the not-a-lender line when there is no verdict', async () => {
     await render(META, noneSource());
-    expect(screen.getByText('Assumptions in play')).toBeTruthy();
-    expect(screen.getByText('0 assumptions')).toBeTruthy();
     expect(screen.getByText(/does not lend money/)).toBeTruthy();
   });
 

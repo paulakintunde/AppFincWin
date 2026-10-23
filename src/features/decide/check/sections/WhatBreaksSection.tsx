@@ -15,7 +15,7 @@ import { WarningRows, warnCardsOf } from '../WarningList';
 import { EveryLineRows } from './LinesSection';
 import { assessmentOf, moneyOf, type SectionProps } from './sectionUi';
 
-export type WhatBreaksBodyProps = Omit<SectionProps, 'expanded' | 'onToggle'>;
+export type WhatBreaksBodyProps = SectionProps;
 
 export function WhatBreaksBody(props: WhatBreaksBodyProps) {
   const { computation, whole, currency } = props;

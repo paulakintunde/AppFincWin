@@ -2,12 +2,14 @@ import 'react-native-gesture-handler/jestSetup';
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { minorUnits } from '@/engine/money';
+import { useT } from '@/i18n';
+import { Text } from '@/ui/Text';
 import { openEntry } from '@/features/record/entry/entryHost';
-import { DayByDaySection } from '../DayByDaySection';
-import { ExpectedIncomeSection } from '../ExpectedIncomeSection';
+import { DayByDayBody } from '../DayByDaySection';
+import { ExpectedIncomeBody } from '../ExpectedIncomeSection';
 import { EveryLineRows } from '../LinesSection';
-import { SetbacksSection } from '../SetbacksSection';
-import { AssumptionsSection } from '../AssumptionsSection';
+import { SetbacksBody } from '../SetbacksSection';
+import { AssumptionsBody, assumptionRows } from '../AssumptionsSection';
 import type { SectionProps } from '../sectionUi';
 import { ref } from '../../../copy/types';
 import { buy, exact, stepProps, whole, wrap } from '../../steps/__tests__/helpers/stepProps';
@@ -38,8 +40,6 @@ function sectionProps(source: SnapshotResult = paySource(), extra: Partial<Secti
     whole,
     exact,
     currency: 'USD',
-    expanded: true,
-    onToggle: jest.fn(),
     readOnly: false,
     ...extra,
   };
@@ -56,22 +56,16 @@ function withFields(p: SectionProps, decisionOver: Loose = {}, verdictOver: Loos
 const formatDate = (d: string) => `on ${d}`;
 const dayProps = (p: SectionProps) => ({ ...p, stack: EMPTY_STACK, formatDate });
 
-describe('DayByDaySection', () => {
+describe('DayByDayBody', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('summarises the lowest point and shows the chart text alternative', async () => {
     const p = sectionProps();
     expect(p.computation.status).toBe('logged');
-    await wrap(<DayByDaySection {...dayProps(p)} />);
-    expect(screen.getByText('Day by day, next 90 days')).toBeTruthy();
-    // the collapsed-header summary and the always-visible text alternative (hidden from screen readers, IN-D03)
-    expect(screen.getAllByText(/^Lowest with this: \$\d+ on on /, { includeHiddenElements: true }).length).toBeGreaterThanOrEqual(2);
+    await wrap(<DayByDayBody {...dayProps(p)} />);
+    // the always-visible text alternative (hidden from screen readers, IN-D03)
+    expect(screen.getAllByText(/^Lowest with this: \$\d+ on on /, { includeHiddenElements: true }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Lowest without:/, { includeHiddenElements: true }).length).toBeGreaterThan(0);
-  });
-
-  it('is collapsed by default behaviour: no chart while collapsed', async () => {
-    await wrap(<DayByDaySection {...dayProps(sectionProps(paySource(), { expanded: false }))} />);
-    expect(screen.queryByText(/Lowest without:/)).toBeNull();
   });
 
   it('states a dip before payday as a neutral fact, with the stacked wording when checks are stacked', async () => {
@@ -79,25 +73,24 @@ describe('DayByDaySection', () => {
     const verdict = base.computation.verdict as unknown as { cashPath: Loose };
     const cashPath = { ...verdict.cashPath, tightBeforePayday: { code: 'cash_tight_before_payday', date: '2026-11-01', amount: 12_000 } };
     const plain = withFields(base, {}, { cashPath });
-    const view = await wrap(<DayByDaySection {...dayProps(plain)} />);
+    const view = await wrap(<DayByDayBody {...dayProps(plain)} />);
     expect(screen.getByText('Without this purchase, your cash is lowest on on 2026-11-01, at $120.')).toBeTruthy();
     await view.unmount();
     const stacked = withFields(base, { stacked: [{ status: 'applied' }] }, { cashPath });
-    await wrap(<DayByDaySection {...dayProps(stacked)} />);
+    await wrap(<DayByDayBody {...dayProps(stacked)} />);
     expect(screen.getByText(/and with your other open checks/)).toBeTruthy();
   });
 
   it('with no pay series asks for one and opens Record on a money-in line', async () => {
     const p = sectionProps(loggedSource());
-    await wrap(<DayByDaySection {...dayProps(p)} />);
-    expect(screen.getAllByText('No recurring pay series yet').length).toBeGreaterThan(0);
+    await wrap(<DayByDayBody {...dayProps(p)} />);
     expect(screen.getByText('Day-by-day cash needs your pay as a recurring series.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Recurring series in Record'));
     expect(openEntry).toHaveBeenCalledWith({ kind: 'new', direction: 'in' });
   });
 
   it('renders nothing for a first read', async () => {
-    const view = await wrap(<DayByDaySection {...dayProps(sectionProps(roughSource()))} />);
+    const view = await wrap(<DayByDayBody {...dayProps(sectionProps(roughSource()))} />);
     expect(view.toJSON()).not.toBeNull(); // only the provider wrapper
     expect(screen.queryByRole('button')).toBeNull();
   });
@@ -111,7 +104,7 @@ describe('DayByDaySection', () => {
   });
 });
 
-describe('ExpectedIncomeSection', () => {
+describe('ExpectedIncomeBody', () => {
   function raise(p: SectionProps): SectionProps {
     const verdict = p.computation.verdict as unknown as Loose & { context: Loose & { money: Loose } };
     const assessment = { ...verdict, state: 'fits', left: 90_000, context: { ...verdict.context, money: { ...verdict.context.money, incomeBasis: 540_000 } } };
@@ -126,15 +119,13 @@ describe('ExpectedIncomeSection', () => {
   }
 
   it('renders nothing without a raise', async () => {
-    const view = await wrap(<ExpectedIncomeSection {...sectionProps()} />);
+    const view = await wrap(<ExpectedIncomeBody {...sectionProps()} />);
     expect(view.toJSON()).not.toBeNull(); // only the provider wrapper
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('reads the one-line outcome and expands to the six figures', async () => {
-    await wrap(<ExpectedIncomeSection {...raise(sectionProps())} />);
-    expect(screen.getByText('With the expected income')).toBeTruthy();
-    expect(screen.getByText('With the expected $400 a month (uncertain): fits, pays for itself in 31 months.')).toBeTruthy();
+  it('shows the six figures', async () => {
+    await wrap(<ExpectedIncomeBody {...raise(sectionProps())} />);
     for (const label of ['Income with it', 'Month left', 'Pays for itself', 'Total cost', 'State', 'How sure']) {
       expect(screen.getByText(label)).toBeTruthy();
     }
@@ -142,13 +133,8 @@ describe('ExpectedIncomeSection', () => {
     expect(screen.getByText('$5400')).toBeTruthy();
   });
 
-  it('is collapsed without its figures when not expanded', async () => {
-    await wrap(<ExpectedIncomeSection {...raise(sectionProps(paySource(), { expanded: false }))} />);
-    expect(screen.queryByText('Income with it')).toBeNull();
-  });
-
   it('renders nothing for a first read', async () => {
-    const view = await wrap(<ExpectedIncomeSection {...sectionProps(roughSource())} />);
+    const view = await wrap(<ExpectedIncomeBody {...sectionProps(roughSource())} />);
     expect(view.toJSON()).not.toBeNull(); // only the provider wrapper
     expect(screen.queryByRole('button')).toBeNull();
   });
@@ -188,7 +174,7 @@ describe('EveryLineRows depth rows', () => {
   });
 });
 
-describe('SetbacksSection runway', () => {
+describe('SetbacksBody runway', () => {
   const setbackRows = [
     { code: 'unexpected_expense', enabled: false, paymentsMet: true },
     { code: 'income_drop', enabled: false, paymentsMet: false },
@@ -198,33 +184,35 @@ describe('SetbacksSection runway', () => {
   const risk = { runwayWith: 3, runwayWithout: 5, runwayLost: 2, setbacks: setbackRows };
 
   it('states the runway lost and per-setback whether new payments are met', async () => {
-    await wrap(<SetbacksSection {...withFields(sectionProps(), {}, {}, { incomeAtRisk: risk })} />);
-    expect(screen.getByText('Runway 3 months, 2 less because of this')).toBeTruthy();
+    await wrap(<SetbacksBody {...withFields(sectionProps(), {}, {}, { incomeAtRisk: risk })} />);
     expect(screen.getByText('Runway lost to this purchase: 2 months')).toBeTruthy();
     expect(screen.getAllByText('New payments still met')).toHaveLength(3);
     expect(screen.getAllByText('New payments cannot be met')).toHaveLength(1);
   });
 
-  it('keeps the plain runway summary when nothing was lost', async () => {
+  it('omits the runway lost when nothing was lost', async () => {
     const calm = { ...risk, runwayLost: 0 };
-    await wrap(<SetbacksSection {...withFields(sectionProps(), {}, {}, { incomeAtRisk: calm })} />);
+    await wrap(<SetbacksBody {...withFields(sectionProps(), {}, {}, { incomeAtRisk: calm })} />);
     expect(screen.queryByText(/Runway lost to this purchase/)).toBeNull();
     expect(screen.queryByText(/less because of this/)).toBeNull();
   });
 });
 
-describe('AssumptionsSection new rows', () => {
-  const rowCount = (): number => {
-    const summary = screen.getByText(/^\d+ assumptions?$/);
-    return Number((summary.props.children as string).split(' ')[0]);
-  };
+/** The row count the Step 3 fold preview uses, rendered so the tests can read it. */
+function RowCount(props: React.ComponentProps<typeof AssumptionsBody>) {
+  const t = useT();
+  return <Text testID="assumption-row-count">{assumptionRows(props, t).length}</Text>;
+}
+
+describe('AssumptionsBody new rows', () => {
+  const rowCount = (): number => Number(screen.getByTestId('assumption-row-count').props.children);
   const base = (extra: Record<string, unknown> = {}) => ({ ...sectionProps(), meta: META, ...extra });
 
   it('adds nothing for the demo-like fixture', async () => {
-    const view = await wrap(<AssumptionsSection {...base()} />);
+    const view = await wrap(<RowCount {...base()} />);
     const plain = rowCount();
     await view.unmount();
-    await wrap(<AssumptionsSection {...base({ stack: EMPTY_STACK, conversions: [], basisItems: [], formatDate })} />);
+    await wrap(<RowCount {...base({ stack: EMPTY_STACK, conversions: [], basisItems: [], formatDate })} />);
     expect(rowCount()).toBe(plain);
   });
 
@@ -233,7 +221,7 @@ describe('AssumptionsSection new rows', () => {
       { currency: 'EUR', rateText: '1.47', rateDate: '2026-10-14' },
       { currency: 'GBP', rateText: '1.31', rateDate: '2026-10-14' },
     ];
-    await wrap(<AssumptionsSection {...base({ conversions, formatDate })} />);
+    await wrap(<AssumptionsBody {...base({ conversions, formatDate })} />);
     expect(screen.getByText('EUR at 1.47 on on 2026-10-14')).toBeTruthy();
     await fireEvent.press(screen.getByText('Show details'));
     expect(screen.getByText('GBP at 1.31 on on 2026-10-14')).toBeTruthy();
@@ -242,7 +230,7 @@ describe('AssumptionsSection new rows', () => {
 
   it('counts the open checks left out, and has no deferred-interest row', async () => {
     const stack = { ...EMPTY_STACK, leftOutIncomplete: 1, leftOutCurrency: 2 };
-    await wrap(<AssumptionsSection {...base({ stack })} />);
+    await wrap(<AssumptionsBody {...base({ stack })} />);
     expect(screen.getByText('1 open check not counted: no price yet')).toBeTruthy();
     await fireEvent.press(screen.getByText('Show details'));
     expect(screen.getByText('2 open checks not counted: their amounts are in another currency')).toBeTruthy();
@@ -251,7 +239,7 @@ describe('AssumptionsSection new rows', () => {
 
   it('lists the basis facts in full except the card minimum item', async () => {
     const basisItems = [ref('decide.depth.cashPath.basisUnavailable'), ref('decide.depth.cardMin.basis')];
-    await wrap(<AssumptionsSection {...base({ basisItems })} />);
+    await wrap(<AssumptionsBody {...base({ basisItems })} />);
     expect(screen.getAllByText('Cash path unavailable').length).toBe(1);
     expect(screen.queryByText(/card minimum/i)).toBeNull();
   });

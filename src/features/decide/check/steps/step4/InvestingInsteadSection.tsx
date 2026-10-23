@@ -15,7 +15,6 @@ import { Text } from '@/ui/Text';
 import { investViewCopy } from '../../../copy/depthInputsCopy';
 import { percentText } from '../../../copy/percentText';
 import { NetWorthChart } from '../../../charts/NetWorthChart';
-import { CollapsibleSection } from '../../../ui/CollapsibleSection';
 import { DetailsToggle } from '../../../ui/DetailsToggle';
 import { SegmentedToggle } from '../../../ui/SegmentedToggle';
 import { refText, type Translate } from '../../refText';
@@ -102,26 +101,6 @@ export function InvestingInsteadBody(props: StepProps) {
           </View>
         </>
       ) : null}
-    </View>
-  );
-}
-
-/** The step 4 wrapper (collapsed section over the body) until 05-74 moves the body to step 3. */
-export function InvestingInsteadSection(props: StepProps) {
-  const t = useT() as Translate;
-  const { colors } = useTheme();
-  const [expanded, setExpanded] = useState(false);
-  if (props.computation.investmentViews === null) return null;
-  return (
-    <View style={[styles.outer, { backgroundColor: colors.fill1 }]}>
-      <CollapsibleSection
-        title={t('decide.depth.invest.section')}
-        summary={t('decide.depth.invest.summary')}
-        expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
-      >
-        <InvestingInsteadBody {...props} />
-      </CollapsibleSection>
     </View>
   );
 }

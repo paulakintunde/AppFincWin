@@ -12,10 +12,9 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { ACCENT_TINT_OPACITY } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
-import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { useShouldStack } from '../../ui/textFit';
 import { LEDGER_DESC, LEDGER_LABEL } from '../../copy/codeMaps';
-import { Dot, Note, assessmentOf, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
+import { Dot, Note, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
 
 type Direction = 'better' | 'worse' | 'same';
 
@@ -90,7 +89,7 @@ function LedgerRow({ name, desc, directionWord, direction, now, after, a11yLabel
   );
 }
 
-export function LedgersBody(props: SectionBodyProps) {
+export function LedgersBody(props: SectionProps) {
   const { computation, exact, currency } = props;
   const t = useT();
   const a = assessmentOf(computation);
@@ -118,17 +117,6 @@ export function LedgersBody(props: SectionBodyProps) {
         );
       })}
     </View>
-  );
-}
-
-export function LedgersSection(props: SectionProps) {
-  const { computation, expanded, onToggle } = props;
-  const t = useT();
-  if (!assessmentOf(computation)) return null;
-  return (
-    <CollapsibleSection title={t('decide.section.ledgersTitle')} summary={t('decide.section.ledgersSummary')} expanded={expanded} onToggle={onToggle}>
-      <LedgersBody {...props} />
-    </CollapsibleSection>
   );
 }
 

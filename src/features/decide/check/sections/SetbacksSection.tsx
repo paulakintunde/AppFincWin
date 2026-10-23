@@ -20,9 +20,8 @@ import { runwayCopy } from '../../copy/depthInputsCopy';
 import { refText, type Translate } from '../refText';
 import { canUse } from '../../entitlements';
 import type { SetbackLine } from '../../snapshot/types';
-import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { LineEditorSheet, type LineEditorValue } from '../LineEditorSheet';
-import { Dot, Note, Tile, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
+import { Dot, Note, Tile, moneyOf, type SectionProps } from './sectionUi';
 
 const MAX_SETBACKS = 12;
 const DEFAULT_ASSUMED = { months: 3, percentDrop: 20, daysLate: 30 };
@@ -34,16 +33,7 @@ function freshId(lines: readonly { id: string }[]): string {
   return `sb-${n}`;
 }
 
-export type SetbacksBodyProps = SectionBodyProps & { resultIds?: readonly string[] };
-
-/** The closed-fold line: the runway after the purchase, or the open wording when nothing limits it. */
-function setbacksSummary(computation: SectionProps['computation'], t: ReturnType<typeof useT>): string | null {
-  const report = computation.setbacks;
-  if (report === null) return null;
-  const runway = computation.incomeAtRisk ? runwayCopy(computation.incomeAtRisk) : null;
-  if (report.runwayMonths === null) return t('decide.section.setbacksSummaryOpen');
-  return runway?.summary ? refText(t as Translate, runway.summary) : t('decide.section.setbacksSummary', { count: report.runwayMonths });
-}
+export type SetbacksBodyProps = SectionProps & { resultIds?: readonly string[] };
 
 export function SetbacksBody(props: SetbacksBodyProps) {
   const { computation, inputs, update, whole, currency, readOnly } = props;
@@ -197,18 +187,6 @@ export function SetbacksBody(props: SetbacksBodyProps) {
       ) : null}
       <LineEditorSheet visible={editing} context="setback" currency={currency} formatMoney={fmt} onSave={save} onCancel={() => setEditing(false)} />
     </View>
-  );
-}
-
-export function SetbacksSection(props: SectionProps & { resultIds?: readonly string[] }) {
-  const { computation, expanded, onToggle } = props;
-  const t = useT();
-  const summary = canUse('setbacks') ? setbacksSummary(computation, t) : null;
-  if (summary === null) return null;
-  return (
-    <CollapsibleSection title={t('decide.section.setbacksTitle')} summary={summary} expanded={expanded} onToggle={onToggle}>
-      <SetbacksBody {...props} />
-    </CollapsibleSection>
   );
 }
 

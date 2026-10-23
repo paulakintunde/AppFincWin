@@ -14,9 +14,8 @@ import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { optionCopy, type OptionAction } from '../../copy/optionCopy';
 import { repriceInputs } from '../../snapshot/checkInputs';
-import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { refText, type Translate } from '../refText';
-import { assessmentOf, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
+import { assessmentOf, moneyOf, type SectionProps } from './sectionUi';
 
 export interface OptionsSectionProps extends SectionProps {
   onOpenActivity: () => void;
@@ -31,7 +30,7 @@ const ACTION_LABEL = {
   switchWait: 'decide.section.optSwitchWait',
 } as const satisfies Record<OptionAction, string>;
 
-export interface OptionsBodyProps extends SectionBodyProps {
+export interface OptionsBodyProps extends SectionProps {
   onOpenActivity: () => void;
   onSwitchToWait: () => void;
   lineName: (lineId: string) => string;
@@ -112,22 +111,6 @@ export function OptionsBody(props: OptionsBodyProps) {
         );
       })}
     </View>
-  );
-}
-
-export function OptionsSection(props: OptionsSectionProps) {
-  const { computation, expanded, onToggle } = props;
-  const t = useT();
-  if (!hasOptions(computation)) return null;
-  return (
-    <CollapsibleSection
-      title={t('decide.section.optionsTitle')}
-      summary={t('decide.section.optionsSummary', { count: computation.options.length })}
-      expanded={expanded}
-      onToggle={onToggle}
-    >
-      <OptionsBody {...props} />
-    </CollapsibleSection>
   );
 }
 

@@ -12,7 +12,6 @@ import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
-import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { DetailsToggle } from '../../ui/DetailsToggle';
 import { LabelValueRow } from '../../ui/LabelValueRow';
 import { useInfoSheet } from '../../ui/useInfoSheet';
@@ -25,7 +24,7 @@ import { expectedReturnProjection } from '../../snapshot/expectedReturn';
 import type { CopyRef } from '../../copy/types';
 import type { ConversionNote, SnapshotMeta, StackSelection } from '../../snapshot/types';
 import { refText, type Translate } from '../refText';
-import { TableRow, assessmentOf, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
+import { TableRow, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
 
 export interface AssumptionsBodyExtras {
   /** source.meta, passed by the flow screen (05-30). */
@@ -42,7 +41,7 @@ export interface AssumptionsBodyExtras {
 }
 
 export interface AssumptionsSectionProps extends SectionProps, AssumptionsBodyExtras {}
-export interface AssumptionsBodyProps extends SectionBodyProps, AssumptionsBodyExtras {}
+export interface AssumptionsBodyProps extends SectionProps, AssumptionsBodyExtras {}
 
 const CARD_MIN_KEY = 'decide.depth.cardMin.basis';
 const PROVISIONAL_KEY = 'decide.depth.currency.provisional';
@@ -82,7 +81,7 @@ function ProvisionalRow({ label, date }: { label: string; date: string }) {
   );
 }
 
-/** Every assumption row in order; shared by the body and the wrapper's count (05-65 keeps the old summary working). */
+/** Every assumption row in order; shared by the body and the Step 3 fold preview count. */
 export function assumptionRows(props: AssumptionsBodyProps | AssumptionsSectionProps, t: ReturnType<typeof useT>): Row[] {
   const { computation, whole, currency, meta, stack, conversions = [], basisItems = [], formatDate = (d: string) => d } = props;
   const tr = t as Translate;
@@ -235,22 +234,6 @@ export function AssumptionsBody(props: AssumptionsBodyProps) {
         {t('decide.flow.notLender')}
       </Text>
     </View>
-  );
-}
-
-export function AssumptionsSection(props: AssumptionsSectionProps) {
-  const { expanded, onToggle, ...rest } = props;
-  const t = useT();
-  const count = assumptionRows(props, t).length;
-  return (
-    <CollapsibleSection
-      title={t('decide.section.assumptionsTitle')}
-      summary={t('decide.section.assumptionsSummary', { count })}
-      expanded={expanded}
-      onToggle={onToggle}
-    >
-      <AssumptionsBody {...rest} />
-    </CollapsibleSection>
   );
 }
 

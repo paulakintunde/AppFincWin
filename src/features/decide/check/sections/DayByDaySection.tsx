@@ -12,19 +12,18 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { openEntry } from '@/features/record/entry/entryHost';
-import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { CashPathChart } from '../../charts/CashPathChart';
 import { cashPathCopy, cashTightFactCopy } from '../../copy/depthVerdictCopy';
 import type { StackSelection } from '../../snapshot/types';
 import { refText, type Translate } from '../refText';
-import { Note, assessmentOf, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
+import { Note, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
 
 export interface DayByDaySectionProps extends SectionProps {
   stack: StackSelection;
   formatDate: (localDate: string) => string;
 }
 
-export interface DayByDayBodyProps extends SectionBodyProps {
+export interface DayByDayBodyProps extends SectionProps {
   stack: StackSelection;
   formatDate: (localDate: string) => string;
 }
@@ -67,20 +66,6 @@ export function DayByDayBody(props: DayByDayBodyProps) {
         <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted, paddingTop: space.gapSm }}>{refText(t, factRef)}</Text>
       ) : null}
     </View>
-  );
-}
-
-export function DayByDaySection(props: DayByDaySectionProps) {
-  const { computation, whole, currency, expanded, onToggle, formatDate } = props;
-  const t = useT() as Translate;
-  const a = assessmentOf(computation);
-  if (!a) return null;
-  const copy = cashPathCopy(a.cashPath, moneyOf(whole, currency), formatDate);
-  const summary = copy.available ? refText(t, copy.summary) : t('decide.fold.cashPath.unavailablePreview');
-  return (
-    <CollapsibleSection title={t('decide.depth.cashPath.section')} summary={summary} expanded={expanded} onToggle={onToggle}>
-      <DayByDayBody {...props} />
-    </CollapsibleSection>
   );
 }
 

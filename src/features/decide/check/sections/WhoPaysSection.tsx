@@ -7,10 +7,9 @@ import { View } from 'react-native';
 import { memberParts, type ResolvedShare } from '@/engine/decide';
 import { minorUnits } from '@/engine/money';
 import { useT } from '@/i18n';
-import { CollapsibleSection } from '../../ui/CollapsibleSection';
-import { TableRow, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
+import { TableRow, moneyOf, type SectionProps } from './sectionUi';
 
-export interface WhoPaysBodyProps extends SectionBodyProps {
+export interface WhoPaysBodyProps extends SectionProps {
   memberCount: number;
   memberNames: readonly string[];
   share: ResolvedShare;
@@ -49,18 +48,3 @@ export function WhoPaysBody(props: WhoPaysBodyProps) {
   );
 }
 
-export function WhoPaysSection(props: WhoPaysSectionProps) {
-  const { inputs, expanded, onToggle, memberCount } = props;
-  const t = useT();
-  if (inputs.scope !== 'household' || memberCount <= 1) return null;
-  return (
-    <CollapsibleSection
-      title={t('decide.section.whoTitle')}
-      summary={t('decide.section.whoSummary', { count: memberCount })}
-      expanded={expanded}
-      onToggle={onToggle}
-    >
-      <WhoPaysBody {...props} />
-    </CollapsibleSection>
-  );
-}

@@ -8,7 +8,7 @@ import { OptionsBody } from '../sections/OptionsSection';
 import { SetbacksBody } from '../sections/SetbacksSection';
 import { ExpectedIncomeBody } from '../sections/ExpectedIncomeSection';
 import { WhoPaysBody } from '../sections/WhoPaysSection';
-import type { SectionBodyProps } from '../sections/sectionUi';
+import type { SectionProps } from '../sections/sectionUi';
 import { buy, exact, stepProps, whole, wrap } from '../steps/__tests__/helpers/stepProps';
 import { loggedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { EMPTY_STACK, type CheckComputation, type CheckInputs } from '../../snapshot/types';
@@ -25,13 +25,13 @@ const LOAN_NO: Partial<CheckInputs> = {
   loan: { deposit: 0, termMonths: 12, aprText: '10', secured: false, securedTouched: true, aprFromQuick: false, promo: null, variable: false },
 };
 
-function bodyProps(over: Partial<CheckInputs>): SectionBodyProps {
+function bodyProps(over: Partial<CheckInputs>): SectionProps {
   const p = stepProps(buy(over), {}, loggedSource());
   return { computation: p.computation, inputs: p.inputs, update: jest.fn(), whole, exact, currency: 'USD', readOnly: false };
 }
 
 /** Real computation with a raise set, as depthSections does. */
-function withRaise(p: SectionBodyProps): SectionBodyProps {
+function withRaise(p: SectionProps): SectionProps {
   const c = p.computation as unknown as { decision: Record<string, unknown>; verdict: { context: { money: Record<string, unknown> } } };
   const verdict = c.verdict as unknown as Record<string, unknown> & { context: Record<string, unknown> & { money: Record<string, unknown> } };
   const assessment = { ...verdict, state: 'fits', left: 90_000, context: { ...verdict.context, money: { ...verdict.context.money, incomeBasis: 540_000 } } };

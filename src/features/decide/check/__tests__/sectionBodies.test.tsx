@@ -6,7 +6,7 @@ import { LedgersBody } from '../sections/LedgersSection';
 import { MonthBody } from '../sections/MonthSection';
 import { AssumptionsBody } from '../sections/AssumptionsSection';
 import { ref } from '../../copy/types';
-import { TableRow, type SectionBodyProps } from '../sections/sectionUi';
+import { TableRow, type SectionProps } from '../sections/sectionUi';
 import { buy, exact, stepProps, whole, wrap } from '../steps/__tests__/helpers/stepProps';
 import { META, loggedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import type { CheckInputs } from '../../snapshot/types';
@@ -15,11 +15,11 @@ jest.setTimeout(30000);
 
 const FITS: Partial<CheckInputs> = { advertised: 150_000, method: 'cash' };
 
-function bodyProps(over: Partial<CheckInputs> = FITS): SectionBodyProps {
+function bodyProps(over: Partial<CheckInputs> = FITS): SectionProps {
   const p = stepProps(buy(over), {}, loggedSource());
   return { computation: p.computation, inputs: p.inputs, update: jest.fn(), whole, exact, currency: 'USD', readOnly: false };
 }
-const assessment = (p: SectionBodyProps): Assessment => p.computation.verdict as Assessment;
+const assessment = (p: SectionProps): Assessment => p.computation.verdict as Assessment;
 
 describe('Where it lands body', () => {
   it('D-76 Where it lands has no arrow and reads now and after', async () => {
