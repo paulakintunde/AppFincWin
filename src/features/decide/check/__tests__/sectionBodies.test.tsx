@@ -6,10 +6,9 @@ import { LedgersBody } from '../sections/LedgersSection';
 import { MonthBody } from '../sections/MonthSection';
 import { AssumptionsBody } from '../sections/AssumptionsSection';
 import { ref } from '../../copy/types';
-import { META } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { TableRow, type SectionBodyProps } from '../sections/sectionUi';
 import { buy, exact, stepProps, whole, wrap } from '../steps/__tests__/helpers/stepProps';
-import { loggedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
+import { META, loggedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import type { CheckInputs } from '../../snapshot/types';
 
 jest.setTimeout(30000);
