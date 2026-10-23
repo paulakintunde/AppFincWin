@@ -7,10 +7,17 @@ import { FONT_SCALE } from '@/theme/fontScale';
 export type { TextInputProps };
 
 export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextInput(
-  { maxFontSizeMultiplier = FONT_SCALE.body, ...rest },
+  { maxFontSizeMultiplier = FONT_SCALE.body, textBreakStrategy = 'simple', ...rest },
   ref,
 ) {
-  return <RNTextInput ref={ref} maxFontSizeMultiplier={maxFontSizeMultiplier} {...rest} />;
+  return (
+    <RNTextInput
+      ref={ref}
+      maxFontSizeMultiplier={maxFontSizeMultiplier}
+      textBreakStrategy={textBreakStrategy}
+      {...rest}
+    />
+  );
 });
 
 // Instance type, so `useRef<TextInput>(null)` keeps working like the react-native class did.
