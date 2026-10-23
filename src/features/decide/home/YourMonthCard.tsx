@@ -17,10 +17,14 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { hapticSelection } from '@/ui/haptics';
+import { RadioDot } from '@/ui/RadioDot';
 import { STEADINESS_LABEL } from '../copy/codeMaps';
 import { missingRateCopy } from '../copy/verdictCopy';
 import { refText, type Translate } from '../check/refText';
 import { FigureStrip } from '../ui/FigureStrip';
+import { InfoLabel } from '../ui/InfoLabel';
+import { useInfoSheet } from '../ui/useInfoSheet';
+import { useShouldStack } from '../ui/textFit';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
 import type { Money } from '../check/steps/stepUi';
 import type { SnapshotResult } from '../snapshot/types';
@@ -41,12 +45,15 @@ const STEADINESS_TONE: Record<MoneyBasis['steadiness'], StateChipTone> = {
   volatile: 'no',
   insufficient: 'draft',
 };
+const LABEL_LINE = 18; // the label role's line height, to centre the glyph on the first line
 const SURFACE_ON_INK_OPACITY = 0.12; // UI-SPEC Color: surface at .12 over the ink card
 
 export function YourMonthCard({ source, settings, userId, whole, onEditRough }: YourMonthCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const settingsMutation = useUpdateDecideSettings(userId ?? '');
+  const stack = useShouldStack();
+  const basisInfo = useInfoSheet('basisMonth');
 
   const context = useMemo(() => {
     if (source === null || source.kind !== 'logged') return null;
@@ -128,33 +135,59 @@ export function YourMonthCard({ source, settings, userId, whole, onEditRough }: 
         />
         <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkSoft2 }}>{basisLine}</Text>
         {fewMonths ? null : (
-          <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.month.basisA11y')} style={styles.basis}>
-            {options.map((option) => {
-              const selected = m.basis === option.key;
-              return (
-                <Pressable
-                  key={option.key}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: selected }}
-                  accessibilityLabel={option.label}
-                  onPress={() => {
-                    if (selected || userId === null) return;
-                    hapticSelection();
-                    settingsMutation.update({ basis_override: option.key });
-                  }}
-                  style={[styles.segment, { backgroundColor: selected ? colors.surface : 'transparent' }]}
-                >
-                  {selected ? null : (
-                    <View
-                      pointerEvents="none"
-                      style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
-                    />
-                  )}
-                  <Text style={{ ...textRole(pairing, 'label'), color: selected ? colors.ink : colors.inkSoft2 }}>{option.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <>
+            <InfoLabel term={basisInfo.term} onInfo={basisInfo.open} tone="dark" lineHeight={LABEL_LINE}>
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkSoft2 }}>{t('decide.month.basisA11y')}</Text>
+            </InfoLabel>
+            <View
+              accessibilityRole="radiogroup"
+              accessibilityLabel={t('decide.month.basisA11y')}
+              style={stack ? styles.basisStack : styles.basis}
+            >
+              {options.map((option) => {
+                const selected = m.basis === option.key;
+                const choose = () => {
+                  if (selected || userId === null) return;
+                  hapticSelection();
+                  settingsMutation.update({ basis_override: option.key });
+                };
+                if (stack) {
+                  return (
+                    <Pressable
+                      key={option.key}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: selected }}
+                      accessibilityLabel={option.label}
+                      onPress={choose}
+                      style={styles.radioRow}
+                    >
+                      <RadioDot selected={selected} />
+                      <Text style={{ ...textRole(pairing, 'label'), color: colors.surface, flexShrink: 1 }}>{option.label}</Text>
+                    </Pressable>
+                  );
+                }
+                return (
+                  <Pressable
+                    key={option.key}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={option.label}
+                    onPress={choose}
+                    style={[styles.segment, { backgroundColor: selected ? colors.surface : 'transparent' }]}
+                  >
+                    {selected ? null : (
+                      <View
+                        pointerEvents="none"
+                        style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
+                      />
+                    )}
+                    <Text style={{ ...textRole(pairing, 'label'), color: selected ? colors.ink : colors.inkSoft2 }}>{option.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {basisInfo.sheet}
+          </>
         )}
       </View>
     );
@@ -239,6 +272,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   basis: { flexDirection: 'row', gap: space.gapSm },
+  basisStack: { gap: 0 },
+  radioRow: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
   segment: {
     flex: 1,
     minHeight: space.touchMin,

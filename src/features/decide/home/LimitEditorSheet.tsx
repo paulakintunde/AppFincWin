@@ -25,6 +25,8 @@ import { monthsText } from '../copy/depthVerdictCopy';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
 import type { SnapshotResult } from '../snapshot/types';
 import { MoneyInput } from '../ui/MoneyInput';
+import { useInfoSheet } from '../ui/useInfoSheet';
+import type { InfoKey } from '../copy/infoTerms';
 import { stampSettingsPatch } from './settingsPatch';
 import { RateInput } from '../ui/RateInput';
 
@@ -33,6 +35,15 @@ export type LimitKey = 'reserve' | 'dsr' | 'unsecured' | 'investing' | 'saving';
 /** The 05-03 column check on decide_settings.dsr_line: up to 3 digits and 4 decimals. */
 export const DSR_LINE_RE = /^\d{1,3}(\.\d{1,4})?$/;
 const MAX_MULTIPLE = 120; // the builder's MAX_UNSECURED_MULTIPLE: a larger stored value would be reset to the default
+
+/** D-70: the ⓘ on the editor title is the one on the line it edits. */
+export const LIMIT_INFO_KEY = {
+  reserve: 'reserve',
+  dsr: 'dsrLine',
+  unsecured: 'unsecuredMultiple',
+  investing: 'investingFloor',
+  saving: 'savingFloor',
+} as const satisfies Record<LimitKey, InfoKey>;
 
 const COLUMN = {
   reserve: 'reserve',
@@ -70,6 +81,7 @@ function LimitForm({ limit, userId, currency, settings, source, whole, cushion =
   const t = useT();
   const { colors, pairing } = useTheme();
   const mutation = useUpdateDecideSettings(userId ?? '');
+  const lineInfo = useInfoSheet(LIMIT_INFO_KEY[limit]);
   const foreign = settings !== null && settings.currency !== null && settings.currency !== currency;
 
   const [start] = useState<Fields>(() => {
@@ -128,7 +140,7 @@ function LimitForm({ limit, userId, currency, settings, source, whole, cushion =
 
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={name} dirty={dirty}>
-      <SheetHeader title={name} cancelLabel={t('decide.lines.cancel')} onCancel={onClose} />
+      <SheetHeader title={name} cancelLabel={t('decide.lines.cancel')} onCancel={onClose} titleAccessory={lineInfo.button()} />
       <SheetScroll contentContainerStyle={styles.column}>
         {isMoney ? (
           <MoneyInput
@@ -168,6 +180,7 @@ function LimitForm({ limit, userId, currency, settings, source, whole, cushion =
         </Pressable>
         <Pill label={t('decide.lines.save')} variant="primary" disabled={!canSave} onPress={save} />
       </SheetScroll>
+      {lineInfo.sheet}
     </Sheet>
   );
 }

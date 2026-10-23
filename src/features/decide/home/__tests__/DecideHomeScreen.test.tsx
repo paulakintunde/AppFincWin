@@ -1,7 +1,6 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 import type { DecideCheckRow } from '@/db/decideChecks';
-import { ThemeProvider } from '@/theme/ThemeProvider';
 import { emptyCheckInputs } from '../../snapshot/checkInputs';
 import { TODAY, loggedSource, noneSource, roughSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import type { SnapshotResult } from '../../snapshot/types';
@@ -131,11 +130,7 @@ function ready(result: SnapshotResult): Snap {
 }
 
 async function renderScreen() {
-  return render(
-    <ThemeProvider>
-      <DecideHomeScreen />
-    </ThemeProvider>
-  );
+  return wrap(<DecideHomeScreen />); // the info sheets need the safe-area provider
 }
 
 beforeEach(() => {
@@ -289,11 +284,7 @@ describe('DecideHomeScreen', () => {
       row('o', { status: 'open' }),
     ];
     const view = await renderScreen();
-    await view.rerender(
-      <ThemeProvider>
-        <DecideHomeScreen />
-      </ThemeProvider>
-    );
+    await view.rerender(<DecideHomeScreen />);
     expect(mockReconcile).toHaveBeenCalledTimes(1);
     expect(mockReconcile).toHaveBeenCalledWith(
       [{ id: 'w', readyBy: '2026-11-01' }],
@@ -323,11 +314,7 @@ describe('DecideHomeScreen', () => {
       row('old', { status: 'waiting', ready_by: '2026-11-01', cooling_off_at: '2026-10-20T09:00:00Z' }),
       row('child', { status: 'open', reopened_from: 'old', deleted_at: '2026-10-16T00:00:00Z' }),
     ];
-    await view.rerender(
-      <ThemeProvider>
-        <DecideHomeScreen />
-      </ThemeProvider>
-    );
+    await view.rerender(<DecideHomeScreen />);
     expect(mockReconcile).toHaveBeenLastCalledWith(
       [{ id: 'old', readyBy: '2026-11-01' }],
       '2026-10-15',

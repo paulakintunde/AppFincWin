@@ -15,6 +15,12 @@ import { YourMonthCard } from '../YourMonthCard';
 
 jest.setTimeout(30000);
 
+let mockWidth = 402;
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => ({ width: mockWidth, height: 800, scale: 2, fontScale: 1 }),
+}));
+
 const mockUpdate = jest.fn();
 const mockNavigate = jest.fn();
 const mockPush = jest.fn();
@@ -37,6 +43,7 @@ jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockWidth = 402;
   mockOnUpdate = null;
 });
 
@@ -230,13 +237,19 @@ describe('RoughFiguresSheet', () => {
   });
 });
 
+/** D-78: the Lines fold is closed by default, so the editor tests open it first. */
+async function wrapOpen(ui: React.ReactElement) {
+  await wrap(ui);
+  await fireEvent.press(screen.getByText('Lines you will not cross'));
+}
+
 describe('LinesCard', () => {
   const lines = (settings: DecideSettingsRow | null = null, source = loggedSource()) => (
     <LinesCard source={source} settings={settings} userId="u1" currency="USD" whole={whole} />
   );
 
   it('shows the engine defaults with a default tag on every blank line', async () => {
-    await wrap(lines());
+    await wrapOpen(lines());
     expect(screen.getByText('Lines you will not cross')).toBeTruthy();
     for (const name of ['Cash never below', 'Debt payments at most', 'Unsecured debt at most', 'Investing at least', 'Saving at least']) {
       expect(screen.getByText(name)).toBeTruthy();
@@ -248,7 +261,7 @@ describe('LinesCard', () => {
   });
 
   it('shows the user value without a tag where a line is set', async () => {
-    await wrap(lines(settingsRow({ reserve: 250_000, dsr_line: '30', unsecured_multiple: 6 })));
+    await wrapOpen(lines(settingsRow({ reserve: 250_000, dsr_line: '30', unsecured_multiple: 6 })));
     expect(screen.getByText('$2500')).toBeTruthy();
     expect(screen.getByText('30%')).toBeTruthy();
     expect(screen.getByText('6 ×')).toBeTruthy();
@@ -257,7 +270,7 @@ describe('LinesCard', () => {
   });
 
   it('saves a cash line as one column plus the currency', async () => {
-    await wrap(lines());
+    await wrapOpen(lines());
     await fireEvent.press(screen.getByTestId('line-row-reserve'));
     expect(screen.getByText(/You hold \$12000 across 1 accounts today\./)).toBeTruthy();
     await typeMoney('Cash never below', '3000');
@@ -266,7 +279,7 @@ describe('LinesCard', () => {
   });
 
   it('saves a zero floor as zero (an integer, not blank)', async () => {
-    await wrap(lines());
+    await wrapOpen(lines());
     await fireEvent.press(screen.getByTestId('line-row-investing'));
     await typeMoney('Investing at least', '0');
     await fireEvent.press(screen.getByLabelText('Save limit'));
@@ -274,14 +287,14 @@ describe('LinesCard', () => {
   });
 
   it('Use the default blanks the line', async () => {
-    await wrap(lines(settingsRow({ saving_floor: 50_000 })));
+    await wrapOpen(lines(settingsRow({ saving_floor: 50_000 })));
     await fireEvent.press(screen.getByTestId('line-row-saving'));
     await fireEvent.press(screen.getByLabelText('Use the default'));
     expect(mockUpdate).toHaveBeenCalledWith({ saving_floor: null });
   });
 
   it('CR-B01: a non-money limit never restamps the currency of money stored in another one', async () => {
-    await wrap(lines(settingsRow({ currency: 'EUR', reserve: 500_000, investing_floor: 20_000 })));
+    await wrapOpen(lines(settingsRow({ currency: 'EUR', reserve: 500_000, investing_floor: 20_000 })));
     await fireEvent.press(screen.getByTestId('line-row-unsecured'));
     await fireEvent.changeText(fieldOf('Unsecured debt at most'), '8');
     await fireEvent.press(screen.getByLabelText('Save limit'));
@@ -289,7 +302,7 @@ describe('LinesCard', () => {
   });
 
   it('CR-B01: a money limit typed in a new currency clears the money stored in the old one', async () => {
-    await wrap(lines(settingsRow({ currency: 'EUR', reserve: 500_000, investing_floor: 20_000, rough_income: 1, rough_spending: 1 })));
+    await wrapOpen(lines(settingsRow({ currency: 'EUR', reserve: 500_000, investing_floor: 20_000, rough_income: 1, rough_spending: 1 })));
     await fireEvent.press(screen.getByTestId('line-row-saving'));
     await typeMoney('Saving at least', '100');
     await fireEvent.press(screen.getByLabelText('Save limit'));
@@ -304,7 +317,7 @@ describe('LinesCard', () => {
   });
 
   it('saves the unsecured multiple as an integer', async () => {
-    await wrap(lines());
+    await wrapOpen(lines());
     await fireEvent.press(screen.getByTestId('line-row-unsecured'));
     await fireEvent.changeText(fieldOf('Unsecured debt at most'), '8');
     await fireEvent.press(screen.getByLabelText('Save limit'));
@@ -316,7 +329,7 @@ describe('LinesCard', () => {
     expect(DSR_LINE_RE.test('36.5')).toBe(true);
     expect(DSR_LINE_RE.test('36.12345')).toBe(false);
     expect(DSR_LINE_RE.test('1000')).toBe(false);
-    await wrap(lines());
+    await wrapOpen(lines());
     await fireEvent.press(screen.getByTestId('line-row-dsr'));
     const field = fieldOf('Debt payments at most');
     const save = () => screen.getByLabelText('Save limit');
@@ -374,10 +387,64 @@ describe('LinesCard', () => {
       </QueryClientProvider>
     );
     expect(screen.getByText('It fits')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Lines you will not cross'));
     await fireEvent.press(screen.getByTestId('line-row-reserve'));
     await typeMoney('Cash never below', '20000'); // above the $12000 held
     await fireEvent.press(screen.getByLabelText('Save limit'));
     expect(screen.queryByText('It fits')).toBeNull();
     expect(screen.getByText('$20000')).toBeTruthy();
+  });
+});
+
+describe('Lines fold and Your month (05-71)', () => {
+  const linesUi = (settings: DecideSettingsRow | null = null) => (
+    <LinesCard source={loggedSource()} settings={settings} userId="u1" currency="USD" whole={whole} />
+  );
+
+  it('D-78 Lines is one fold row with the set-by-you preview', async () => {
+    await wrap(linesUi());
+    expect(screen.getByLabelText('Lines you will not cross, All at their defaults').props.accessibilityState.expanded).toBe(false);
+    expect(screen.queryByTestId('line-row-reserve')).toBeNull();
+    await screen.unmount();
+    await wrap(linesUi(settingsRow({ reserve: 250_000, dsr_line: '30' })));
+    expect(screen.getByLabelText('Lines you will not cross, 2 of 5 set by you')).toBeTruthy();
+  });
+
+  it('D-78 opening the Lines fold shows five rows, each with its ⓘ', async () => {
+    await wrap(linesUi());
+    await fireEvent.press(screen.getByText('Lines you will not cross'));
+    for (const key of ['reserve', 'dsr', 'unsecured', 'investing', 'saving']) {
+      expect(screen.getByTestId(`line-row-${key}`)).toBeTruthy();
+    }
+    expect(screen.getByLabelText('About Cash never below')).toBeTruthy();
+    expect(screen.getByLabelText('About Debt payments at most')).toBeTruthy();
+    expect(screen.getByLabelText('About Unsecured debt at most')).toBeTruthy();
+    expect(screen.getByLabelText('About Investing at least')).toBeTruthy();
+    expect(screen.getByLabelText('About Saving at least')).toBeTruthy();
+  });
+
+  it('D-70 the limit editor title carries its line ⓘ', async () => {
+    await wrap(linesUi());
+    await fireEvent.press(screen.getByText('Lines you will not cross'));
+    await fireEvent.press(screen.getByTestId('line-row-dsr'));
+    // one in the row and one in the editor title
+    expect(screen.getAllByLabelText('About Debt payments at most').length).toBe(2);
+  });
+
+  it('D-70 the basis control carries basisMonth', async () => {
+    await wrap(card(loggedSource()));
+    expect(screen.getByLabelText('About Average or worst month')).toBeTruthy();
+  });
+
+  it('D-76 Your month stacks below 360 wide', async () => {
+    await wrap(card(loggedSource()));
+    expect(screen.getByLabelText('Comes in, $5000').props.style).toMatchObject({ flex: 1 });
+    await screen.unmount();
+    mockWidth = 320;
+    await wrap(card(loggedSource()));
+    expect(screen.getByLabelText('Comes in, $5000').props.style).not.toMatchObject({ flex: 1 });
+    // the Worst / Average control becomes a radio list with a dot in each row
+    expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(2);
+    expect(screen.getByLabelText('Average · $5000').props.accessibilityState.checked).toBe(true);
   });
 });

@@ -6,6 +6,12 @@ import { wrap } from '../../check/steps/__tests__/helpers/stepProps';
 import { LinesCard } from '../LinesCard';
 import { YourMonthCard } from '../YourMonthCard';
 
+/** D-78: the Lines fold is closed by default. */
+async function wrapOpen(ui: React.ReactElement) {
+  await wrap(ui);
+  await fireEvent.press(screen.getByText('Lines you will not cross'));
+}
+
 jest.setTimeout(30000);
 
 const mockUpdate = jest.fn();
@@ -44,7 +50,7 @@ const lines = (source = loggedSource(), settings: DecideSettingsRow | null = nul
 
 describe('Lines card cushion months (D-25)', () => {
   it('steady income reads default · 3 months and the editor explains why', async () => {
-    await wrap(lines());
+    await wrapOpen(lines());
     expect(screen.getByText('default · 3 months')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('line-row-reserve'));
     expect(screen.getByText(/The default is 3 months of your costs, because your income is steady\./)).toBeTruthy();
@@ -52,20 +58,20 @@ describe('Lines card cushion months (D-25)', () => {
 
   it('volatile income reads default · 6 months', async () => {
     const months = [month('2026-06', 900_000, 300_000), month('2026-07', 100_000, 300_000), month('2026-08', 800_000, 300_000), month('2026-09', 50_000, 300_000)];
-    await wrap(lines(loggedSource({ months })));
+    await wrapOpen(lines(loggedSource({ months })));
     expect(screen.getByText(/^default · (4\.5|6) months$/)).toBeTruthy();
   });
 
   it('under 3 full months reads default · 3 months with the not-known-yet reason', async () => {
     const months = [month('2026-08', 500_000, 300_000), month('2026-09', 500_000, 300_000)];
-    await wrap(lines(loggedSource({ months })));
+    await wrapOpen(lines(loggedSource({ months })));
     expect(screen.getByText('default · 3 months')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('line-row-reserve'));
     expect(screen.getByText(/because your income steadiness isn’t known yet\./)).toBeTruthy();
   });
 
   it('a typed cushion carries no default tag and no months note', async () => {
-    await wrap(lines(loggedSource(), settingsRow({ reserve: 250_000 })));
+    await wrapOpen(lines(loggedSource(), settingsRow({ reserve: 250_000 })));
     expect(screen.getByText('$2500')).toBeTruthy();
     expect(screen.queryByText(/^default · /)).toBeNull();
     await fireEvent.press(screen.getByTestId('line-row-reserve'));
@@ -73,7 +79,7 @@ describe('Lines card cushion months (D-25)', () => {
   });
 
   it('the other four lines keep the plain default tag', async () => {
-    await wrap(lines());
+    await wrapOpen(lines());
     expect(screen.getAllByText('default')).toHaveLength(4);
   });
 });
