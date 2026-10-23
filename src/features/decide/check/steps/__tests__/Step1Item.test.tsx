@@ -57,7 +57,6 @@ describe('Step1Item', () => {
     const touched = { ...base, loan: { ...base.loan, secured: true, securedTouched: true } };
     const p = stepProps(touched);
     await wrap(<Step1Item {...p} recurringBills={BILLS} />);
-    await fireEvent.press(screen.getByLabelText('Item type, Vehicle'));
     await fireEvent.press(screen.getByLabelText('General'));
     const patch = mockUpdate(p).mock.calls.at(-1)[0];
     expect(patch.itemType).toBe('general');

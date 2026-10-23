@@ -19,9 +19,11 @@ export interface ChipProps {
   accessibilityLabel?: string;
   /** Host Pressable ref, so a caller can move screen-reader focus to the chip. */
   pressableRef?: React.Ref<View>;
+  /** User text under Decide rule T: wrap to this many lines, then a tail ellipsis. */
+  numberOfLines?: number;
 }
 
-export function Chip({ label, selected = false, onPress, accessibilityLabel, pressableRef }: ChipProps) {
+export function Chip({ label, selected = false, onPress, accessibilityLabel, pressableRef, numberOfLines }: ChipProps) {
   const { colors, pairing } = useTheme();
   const readOnly = useReadOnlyScope();
     const textColor = selected ? colors.accent : colors.ink;
@@ -46,7 +48,12 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, pre
           ]}
         />
       ) : null}
-      <Text style={{ ...textRole(pairing, 'label'), color: textColor }}>{label}</Text>
+      <Text
+        {...(numberOfLines !== undefined ? { numberOfLines, ellipsizeMode: 'tail' as const } : {})}
+        style={{ ...textRole(pairing, 'label'), color: textColor }}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }

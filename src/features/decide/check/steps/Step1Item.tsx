@@ -5,12 +5,12 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { ITEM_TYPES, suggestItemType } from '@/engine/decide';
+import { ITEM_TYPES, suggestItemType, type ItemType } from '@/engine/decide';
 import { useT } from '@/i18n';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
-import { textRole } from '@/theme/typography';
+import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { Dropdown } from '@/ui/Dropdown';
 import { Pill } from '@/ui/Pill';
@@ -62,6 +62,120 @@ function ChipRow({ children }: { children: React.ReactNode }) {
       {React.Children.map(children, (child) => (
         <View style={stacked ? styles.chipFull : styles.chipFlex}>{child}</View>
       ))}
+    </View>
+  );
+}
+
+const CUSTOM_MAX = 40;
+
+/**
+ * 05-86 (D-81, R15.4): the item type as a wrapping chip group with "Custom…". A trimmed 1 to 40 character name applies as
+ * it is typed; an empty one is not applied. The name is the user's (rule T: two lines, tail ellipsis, the full name in the
+ * label). "Treat like" picks the rules type; without it the rules are General. The engine only ever sees the rules type.
+ */
+function ItemTypeGroup({ inputs, update, readOnly }: Pick<Step1Props, 'inputs' | 'update' | 'readOnly'>) {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  const typeInfo = useInfoSheet('itemType');
+  const customInfo = useInfoSheet('customItemType');
+  const treatInfo = useInfoSheet('treatLike');
+  const custom = inputs.customItemType;
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(custom?.name ?? '');
+  const [draftTreat, setDraftTreat] = useState<ItemType | null>(custom?.treatLike ?? null);
+  const [emptyWarn, setEmptyWarn] = useState(false);
+  const active = custom !== null || open;
+  const treat = custom !== null ? custom.treatLike : draftTreat;
+  const label = textRole(pairing, 'label');
+
+  const apply = (name: string, treatLike: ItemType | null) =>
+    update({ ...withItemType(inputs, treatLike ?? 'general', true), customItemType: { name, treatLike } });
+
+  const pickBuiltIn = (key: ItemType) => {
+    setOpen(false);
+    setDraft('');
+    setDraftTreat(null);
+    setEmptyWarn(false);
+    update({ ...withItemType(inputs, key, true), customItemType: null });
+  };
+
+  const onName = (text: string) => {
+    setDraft(text);
+    const name = text.trim();
+    if (name.length >= 1 && name.length <= CUSTOM_MAX) {
+      setEmptyWarn(false);
+      apply(name, treat);
+    }
+  };
+
+  const onBlur = () => {
+    if (draft.trim() === '') {
+      if (custom !== null) setDraft(custom.name); // an empty entry is not applied: the last name stays
+      else setEmptyWarn(true);
+    }
+  };
+
+  const onTreat = (key: 'general' | ItemType) => {
+    const treatLike = key === 'general' ? null : key;
+    setDraftTreat(treatLike);
+    if (custom !== null) apply(custom.name, treatLike);
+  };
+
+  return (
+    <View style={styles.typeGroup}>
+      <InfoTitle info={typeInfo} lineHeight={label.lineHeight}>
+        <Text style={{ ...label, fontSize: fontSize.meta, color: colors.inkMuted }}>{t('decide.item.type')}</Text>
+      </InfoTitle>
+      <View accessibilityRole="radiogroup" style={styles.typeChips}>
+        {ITEM_TYPES.map((key) => (
+          <Chip key={key} label={t(ITEM_TYPE_LABEL[key])} selected={!active && inputs.itemType === key} onPress={() => pickBuiltIn(key)} />
+        ))}
+        <View style={styles.customChip}>
+          <Chip
+            label={custom !== null ? custom.name : t('decide.customType.chip')}
+            accessibilityLabel={custom !== null ? t('decide.customType.a11y', { name: custom.name }) : t('decide.customType.chip')}
+            selected={active}
+            numberOfLines={2}
+            onPress={() => setOpen(true)}
+          />
+        </View>
+      </View>
+      {inputs.itemTypeTouched ? null : <Meta>{t('decide.item.suggested')}</Meta>}
+      {active ? (
+        <View style={styles.typeGroup}>
+          <Box
+            value={draft}
+            onChangeText={onName}
+            onBlur={onBlur}
+            accessibilityLabel={t('decide.customType.chip')}
+            placeholder={t('decide.customType.placeholder')}
+            maxLength={CUSTOM_MAX}
+            readOnly={readOnly}
+          />
+          <InfoTitle info={customInfo} lineHeight={label.lineHeight}>
+            <Meta tone={emptyWarn ? 'warn' : 'faint'}>{t('decide.customType.range')}</Meta>
+          </InfoTitle>
+          <View style={styles.treatRow}>
+            <View style={styles.treatTrigger}>
+              <Dropdown
+                variant="row"
+                rowLabel={t('decide.customType.treatLike')}
+                title={t('decide.customType.treatLike')}
+                triggerA11yLabel={`${t('decide.customType.treatLike')}, ${treat === null ? t('decide.customType.general') : t(ITEM_TYPE_LABEL[treat])}`}
+                value={treat ?? 'general'}
+                disabled={readOnly}
+                options={[
+                  { key: 'general' as const, label: t('decide.customType.general') },
+                  ...ITEM_TYPES.filter((k) => k !== 'general').map((key) => ({ key, label: t(ITEM_TYPE_LABEL[key]) })),
+                ]}
+                onSelect={onTreat}
+              />
+            </View>
+            {treatInfo.button()}
+            {treatInfo.sheet}
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -178,21 +292,7 @@ export function Step1Item(props: Step1Props) {
             readOnly={readOnly}
           />
 
-          {invest ? null : (
-            <View>
-              <Dropdown
-                variant="row"
-                rowLabel={t('decide.item.type')}
-                title={t('decide.item.type')}
-                triggerA11yLabel={`${t('decide.item.type')}, ${t(ITEM_TYPE_LABEL[inputs.itemType])}`}
-                value={inputs.itemType}
-                disabled={readOnly}
-                options={ITEM_TYPES.map((key) => ({ key, label: t(ITEM_TYPE_LABEL[key]) }))}
-                onSelect={(key) => update(withItemType(inputs, key, true))}
-              />
-              {inputs.itemTypeTouched ? null : <Meta>{t('decide.item.suggested')}</Meta>}
-            </View>
-          )}
+          {invest ? null : <ItemTypeGroup inputs={inputs} update={update} readOnly={readOnly} />}
         </Card>
       </Lock>
 
@@ -288,5 +388,10 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
   chipFlex: { flex: 1 },
   chipFull: { width: '100%' },
+  typeGroup: { gap: space.gapSm },
+  typeChips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
+  customChip: { maxWidth: '100%' },
+  treatRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  treatTrigger: { flex: 1 },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.gapMd },
 });
