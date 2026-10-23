@@ -40,6 +40,7 @@ import type {
 } from '@/engine/decide';
 import { minorUnits } from '@/engine/money';
 import { PAY_METHODS } from './types';
+import { perfMark } from '../perf/perfMarks';
 import { cheaperFinalPrice, effectiveMethod, quickToCheckInputs, toEngineCheck } from './checkInputs';
 import type { EngineCheckResult, EngineCtx } from './checkInputs';
 import type { CheckComputation, CheckInputs, ChipComputation, MethodKey, QuickComputation, QuickInputs, SetbackLine, SnapshotResult } from './types';
@@ -113,23 +114,49 @@ function solveImpliedApr(core: CheckCore, inputs: CheckInputs): ImpliedAprResult
   const result = core.methodPlans.instalment;
   const inst = inputs.instalment;
   if (result?.status !== 'resolved' || inst.hasRate === true) return null;
-  return impliedApr({
+  perfMark('e4:start');
+  const solved = impliedApr({
     financed: result.plan.financed,
     payment: minorUnits(inst.amount!),
     count: inst.count!,
     periodsPerYear: PERIODS_PER_YEAR[inst.freq ?? 'monthly'],
     timing: (inst.firstPayment ?? 'today') === 'today' ? 'due' : 'ordinary',
   });
+  perfMark('e4:end');
+  return solved;
 }
 
 // D-52: "Left when it ends" has no engine field; it is read from the same schedule the engine's plan used.
-function promoBalances(checks: Partial<Record<MethodKey, PurchaseCheck>>, plans: Partial<Record<MethodKey, PlanResult>>): CheckComputation['promoBalanceAtEnd'] {
+function promoBalances(
+  checks: Partial<Record<MethodKey, PurchaseCheck>>,
+  plans: Partial<Record<MethodKey, PlanResult>>,
+  carried: ReadonlySet<MethodKey>,
+  prior: CheckComputation['promoBalanceAtEnd']
+): CheckComputation['promoBalanceAtEnd'] {
   const out: { loan?: MinorUnits; card?: MinorUnits } = {};
+  // D-88: a method whose plan was carried over from the settled core carries its balance too
+  if (carried.has('loan')) {
+    if (prior.loan !== undefined) out.loan = prior.loan;
+  } else {
+    promoLoan(checks, plans, out);
+  }
+  if (carried.has('card')) {
+    if (prior.card !== undefined) out.card = prior.card;
+  } else {
+    promoCard(checks, plans, out);
+  }
+  return out;
+}
+
+function promoLoan(checks: Partial<Record<MethodKey, PurchaseCheck>>, plans: Partial<Record<MethodKey, PlanResult>>, out: { loan?: MinorUnits; card?: MinorUnits }): void {
   const loanPlan = plans.loan!;
   if (loanPlan.status === 'resolved' && loanPlan.plan.promo !== null) {
     const pay = (checks.loan as BuyCheck).payment as Extract<BuyPayment, { method: 'loan' }>;
     out.loan = amortiseSchedule(loanPlan.plan.financed, rateScheduleFor(pay.apr!, pay.promo), pay.termMonths!).balanceAtPromoEnd;
   }
+}
+
+function promoCard(checks: Partial<Record<MethodKey, PurchaseCheck>>, plans: Partial<Record<MethodKey, PlanResult>>, out: { loan?: MinorUnits; card?: MinorUnits }): void {
   const cardPlan = plans.card!;
   if (cardPlan.status === 'resolved' && cardPlan.plan.promo !== null) {
     const pay = (checks.card as BuyCheck).payment as Extract<BuyPayment, { method: 'card' }>;
@@ -143,11 +170,26 @@ function promoBalances(checks: Partial<Record<MethodKey, PurchaseCheck>>, plans:
       out.card = s.balancesByMonth[cardPlan.plan.promo.promoMonths - 1] ?? (s.outcome === 'cleared' ? minorUnits(0) : s.remainingBalance);
     }
   }
-  return out;
+}
+
+/** What a core carries over from the last settled computation for the methods that are not being typed on. */
+export interface CarriedPlans {
+  methodPlans: CheckComputation['methodPlans'];
+  promoBalanceAtEnd: CheckComputation['promoBalanceAtEnd'];
+}
+
+/**
+ * D-88 speed 4: with `detailFor` only that method's plan is resolved. Every other method reuses the plan in `prior` (the
+ * last settled computation), and resolves its own only when `prior` has none. The verdict never reads a method plan, so it
+ * is the same either way.
+ */
+export interface CoreOptions {
+  detailFor?: MethodKey | null;
+  prior?: CarriedPlans | null;
 }
 
 /** The core of a full check: status, the engine check, the method plans and the verdict. No options or projections. */
-export function computeCore(source: SnapshotResult, inputs: CheckInputs, otherChecks: readonly StackedCheckInput[] = []): CheckCore {
+export function computeCore(source: SnapshotResult, inputs: CheckInputs, otherChecks: readonly StackedCheckInput[] = [], opts: CoreOptions = {}): CheckCore {
   const prompts = inputs.kind === 'buy' ? runningCostPrompts(inputs.itemType) : [];
   const ctx = ctxOf(source);
   const r = toEngineCheck(inputs, ctx);
@@ -156,10 +198,17 @@ export function computeCore(source: SnapshotResult, inputs: CheckInputs, otherCh
   const methods: readonly MethodKey[] = inputs.kind === 'buy' ? PAY_METHODS : ['lump', 'monthly'];
   const checks: Partial<Record<MethodKey, PurchaseCheck>> = {};
   const methodPlans: Partial<Record<MethodKey, PlanResult>> = {};
+  const carried = new Set<MethodKey>();
   for (const m of methods) {
     // each method is built from the same inputs and resolved on its own; the price is already known to be valid
     checks[m] = (toEngineCheck({ ...inputs, method: m }, ctx) as EngineOk).check;
-    methodPlans[m] = resolvePlan(checks[m]);
+    const earlier = opts.detailFor != null && m !== opts.detailFor ? opts.prior?.methodPlans[m] : undefined;
+    if (earlier === undefined) {
+      methodPlans[m] = resolvePlan(checks[m]);
+    } else {
+      methodPlans[m] = earlier;
+      carried.add(m);
+    }
   }
   const base = {
     ...NO_FIGURES,
@@ -168,7 +217,7 @@ export function computeCore(source: SnapshotResult, inputs: CheckInputs, otherCh
     resolvedPrice: r.resolvedPrice,
     running: r.running,
     methodPlans,
-    promoBalanceAtEnd: inputs.kind === 'buy' ? promoBalances(checks, methodPlans) : {},
+    promoBalanceAtEnd: inputs.kind === 'buy' ? promoBalances(checks, methodPlans, carried, opts.prior?.promoBalanceAtEnd ?? {}) : {},
     runningCostPrompts: prompts,
     inputs,
   };
@@ -187,6 +236,27 @@ export function computeCore(source: SnapshotResult, inputs: CheckInputs, otherCh
     case 'none':
       return { ...base, status: 'none' };
   }
+}
+
+/** The same inputs, by reference or field by field (an edit that wrote back equal values). */
+export function sameInputs(a: CheckInputs, b: CheckInputs): boolean {
+  if (a === b) return true;
+  const keys = Object.keys(a) as (keyof CheckInputs)[];
+  return keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k]);
+}
+
+/**
+ * D-88 speed 3: the settled core. When the settled inputs equal the live ones it is the live `core` itself (no second
+ * pass of the engine); a live core that was narrowed with `detailFor` is not reused, since its other plans may be older.
+ */
+export function settledCoreFor(
+  source: SnapshotResult,
+  settled: CheckInputs,
+  otherChecks: readonly StackedCheckInput[],
+  live: { inputs: CheckInputs; core: CheckCore; narrowed: boolean }
+): CheckCore {
+  if (!live.narrowed && sameInputs(live.inputs, settled)) return live.core;
+  return computeCore(source, settled, otherChecks);
 }
 
 function cheaperOf(inputs: CheckInputs, planPrice: MinorUnits): { price: MinorUnits } | undefined {

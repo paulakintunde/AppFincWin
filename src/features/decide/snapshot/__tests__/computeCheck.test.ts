@@ -4,10 +4,11 @@ import type { BuyCheck, StackedCheckInput } from '@/engine/decide';
 import * as assessModule from '@/engine/decide/assess';
 import * as decisionModule from '@/engine/decide/decision';
 import * as firstReadModule from '@/engine/decide/firstRead';
+import * as planModule from '@/engine/decide/plan';
 import * as impliedAprModule from '@/engine/payoff/impliedApr';
 import { minorUnits } from '@/engine/money';
 import { amortiseSchedule } from '@/engine/payoff';
-import { computeChip, computeCheck, computeCore, computeDetails, computeQuick } from '../computeCheck';
+import { computeChip, computeCheck, computeCore, computeDetails, computeQuick, sameInputs, settledCoreFor } from '../computeCheck';
 import { defaultQuickInputs, emptyCheckInputs, parseCheckInputs, quickToCheckInputs, toEngineCheck } from '../checkInputs';
 import { CREDIT_TERMS } from '../types';
 import type { CardChoice, CheckInputs, QuickInputs, SnapshotResult } from '../types';
@@ -544,5 +545,102 @@ describe('resolvePlan stays consistent with the carried quick check', () => {
     const r = toEngineCheck(quickToCheckInputs(quick({ mode: 'credit' }), TODAY), CTX);
     if (!r.ok) throw new Error('missing');
     expect(resolvePlan(r.check).status).toBe('resolved');
+  });
+});
+
+describe('D-88 the settled core and the selected method', () => {
+  // resolvePlan runs once per method and once more inside the engine's own verdict path
+  const EXTRA = 1;
+  const methodsOf = (kind: 'buy' | 'invest') => (kind === 'buy' ? ['cash', 'card', 'loan', 'instalment'] : ['lump', 'monthly']);
+  const loanBase = emptyCheckInputs('buy', TODAY).loan;
+  const promoLoan = buy({ advertised: 1_200_000, method: 'loan', loan: { ...loanBase, aprText: '9.9', termMonths: 48, promo: { aprText: '0', months: 12, deferredInterest: false } } });
+
+  it('D-88 settledCore reuses core when inputs settle unchanged', () => {
+    const source = loggedSource();
+    const inputs = buy();
+    const core = computeCore(source, inputs);
+    const spy = jest.spyOn(planModule, 'resolvePlan');
+    // the same object, and an equal copy (an edit that wrote the same values back)
+    expect(settledCoreFor(source, inputs, [], { inputs, core, narrowed: false })).toBe(core);
+    expect(settledCoreFor(source, { ...inputs }, [], { inputs, core, narrowed: false })).toBe(core);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('D-88 settledCore computes a full core when the inputs differ or the live core was narrowed', () => {
+    const source = loggedSource();
+    const inputs = buy();
+    const core = computeCore(source, inputs);
+    const changed = { ...inputs, advertised: 160_000 };
+    const spy = jest.spyOn(planModule, 'resolvePlan');
+    const next = settledCoreFor(source, changed, [], { inputs, core, narrowed: false });
+    expect(next).not.toBe(core);
+    expect(next.inputs).toBe(changed);
+    expect(spy).toHaveBeenCalledTimes(4 + EXTRA);
+    spy.mockClear();
+    expect(settledCoreFor(source, inputs, [], { inputs, core, narrowed: true })).not.toBe(core);
+    expect(spy).toHaveBeenCalledTimes(4 + EXTRA);
+  });
+
+  it('D-88 sameInputs compares field by field', () => {
+    const inputs = buy();
+    expect(sameInputs(inputs, inputs)).toBe(true);
+    expect(sameInputs(inputs, { ...inputs })).toBe(true);
+    expect(sameInputs(inputs, { ...inputs, name: 'Phone' })).toBe(false);
+    expect(sameInputs(inputs, { ...inputs, extra: 1 } as unknown as CheckInputs)).toBe(false);
+  });
+
+  it('D-88 detailFor resolves the selected method only and carries the others from the settled core', () => {
+    const source = loggedSource();
+    const settled = computeCore(source, buy());
+    const spy = jest.spyOn(planModule, 'resolvePlan');
+    const typed = computeCore(source, buy({ advertised: 160_000 }), [], { detailFor: 'cash', prior: settled });
+    expect(spy).toHaveBeenCalledTimes(1 + EXTRA);
+    for (const m of methodsOf('buy').filter((x) => x !== 'cash')) expect(typed.methodPlans[m as 'card']).toBe(settled.methodPlans[m as 'card']);
+    // the verdict is the full core's verdict
+    const full = computeCore(source, buy({ advertised: 160_000 }));
+    expect(typed.verdict).toEqual(full.verdict);
+    expect(typed.methodPlans.cash).toEqual(full.methodPlans.cash);
+  });
+
+  it('D-88 detailFor with nothing to carry resolves every method, and an invest check carries too', () => {
+    const source = loggedSource();
+    const spy = jest.spyOn(planModule, 'resolvePlan');
+    computeCore(source, buy(), [], { detailFor: 'cash', prior: null });
+    expect(spy).toHaveBeenCalledTimes(4 + EXTRA);
+    spy.mockClear();
+    computeCore(source, buy(), [], { detailFor: null });
+    expect(spy).toHaveBeenCalledTimes(4 + EXTRA);
+    spy.mockClear();
+    const invest = { ...emptyCheckInputs('invest', TODAY), name: 'Fund', advertised: 20_000, method: 'lump' as const };
+    const prior = computeCore(source, invest);
+    spy.mockClear();
+    const typed = computeCore(source, { ...invest, advertised: 30_000 }, [], { detailFor: 'lump', prior });
+    expect(spy).toHaveBeenCalledTimes(1 + EXTRA);
+    expect(typed.methodPlans.monthly).toBe(prior.methodPlans.monthly);
+    expect(typed.promoBalanceAtEnd).toEqual({});
+  });
+
+  it('D-88 a carried loan or card keeps its promotion balance, and one without a balance stays without', () => {
+    const source = loggedSource();
+    const settled = computeCore(source, promoLoan);
+    expect(settled.promoBalanceAtEnd.loan).toBeGreaterThan(0);
+    // typing on cash: the loan plan and its balance come from the settled core
+    const typed = computeCore(source, { ...promoLoan, method: 'cash' }, [], { detailFor: 'cash', prior: settled });
+    expect(typed.promoBalanceAtEnd.loan).toBe(settled.promoBalanceAtEnd.loan);
+    expect(typed.promoBalanceAtEnd.card).toBeUndefined();
+    // the typed method recomputes its own balance
+    const loanTyped = computeCore(source, promoLoan, [], { detailFor: 'loan', prior: settled });
+    expect(loanTyped.promoBalanceAtEnd.loan).toBe(settled.promoBalanceAtEnd.loan);
+    // a prior with no balances (a carried loan with none) gives none
+    const bare = computeCore(source, buy());
+    const none = computeCore(source, buy({ advertised: 150_000 }), [], { detailFor: 'cash', prior: { methodPlans: bare.methodPlans, promoBalanceAtEnd: {} } });
+    expect(none.promoBalanceAtEnd).toEqual({});
+    // a carried card keeps its balance
+    const cardBase = { ...emptyCheckInputs('buy', TODAY).card, accountId: 'acc-card', promo: { aprText: '0', months: 6, deferredInterest: false } };
+    const cardInputs = buy({ advertised: 600_000, method: 'card', card: { ...cardBase, payoff: 'months', months: 24 } });
+    const cardCore = computeCore(source, cardInputs);
+    expect(cardCore.promoBalanceAtEnd.card).toBeGreaterThan(0);
+    const onCash = computeCore(source, { ...cardInputs, method: 'cash' }, [], { detailFor: 'cash', prior: cardCore });
+    expect(onCash.promoBalanceAtEnd.card).toBe(cardCore.promoBalanceAtEnd.card);
   });
 });
