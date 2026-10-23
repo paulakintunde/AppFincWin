@@ -1,4 +1,6 @@
 import { act, renderHook } from '@testing-library/react-native';
+import { AppState } from 'react-native';
+import { onlineManager } from '@tanstack/react-query';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { emptyCheckInputs } from '../../snapshot/checkInputs';
 import { DRAFT_DEBOUNCE_MS, useCheckDraft } from '../useCheckDraft';
@@ -275,5 +277,105 @@ describe('useCheckDraft', () => {
     mockChecks = { data: [] };
     await rerender({});
     expect(result.current.status).toBe('not_found');
+  });
+
+  describe('D-77 draft and save contract', () => {
+    function captureAppState() {
+      const handlers: ((s: string) => void)[] = [];
+      const remove = jest.fn();
+      jest.spyOn(AppState, 'addEventListener').mockImplementation(((_t: string, h: (s: string) => void) => {
+        handlers.push(h);
+        return { remove };
+      }) as never);
+      return { handlers, remove };
+    }
+    afterEach(() => jest.restoreAllMocks());
+
+    it('D-77 the app going to background flushes the pending edit', async () => {
+      const cap = captureAppState();
+      mockChecks = { data: [row()] };
+      const { result, unmount } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
+      await act(async () => result.current.update({ advertised: 5 }));
+      expect(mockSave).not.toHaveBeenCalled();
+      expect(result.current.pendingEdit).toBe(true);
+      await act(async () => cap.handlers.forEach((h) => h('background')));
+      expect(mockSave).toHaveBeenCalledTimes(1);
+      expect(result.current.pendingEdit).toBe(false);
+      await act(async () => cap.handlers.forEach((h) => h('active')));
+      await unmount();
+      expect(cap.remove).toHaveBeenCalled();
+    });
+
+    it('D-77 inactive flushes too', async () => {
+      const cap = captureAppState();
+      mockChecks = { data: [row()] };
+      const { result } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
+      await act(async () => result.current.update({ advertised: 5 }));
+      await act(async () => cap.handlers.forEach((h) => h('inactive')));
+      expect(mockSave).toHaveBeenCalledTimes(1);
+    });
+
+    it('D-77 discard disarms the draft: no unmount save to a cleared id', async () => {
+      const cap = captureAppState();
+      mockChecks = { data: [row()] };
+      const { result, unmount } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
+      await act(async () => result.current.update({ advertised: 5 }));
+      await act(async () => result.current.discard());
+      expect(result.current.pendingEdit).toBe(false);
+      await act(async () => {
+        jest.advanceTimersByTime(DRAFT_DEBOUNCE_MS * 2);
+      });
+      await act(async () => result.current.update({ advertised: 6 }));
+      await act(async () => cap.handlers.forEach((h) => h('background')));
+      expect(await result.current.saveNow()).toBe('nothing');
+      await unmount();
+      expect(mockSave).not.toHaveBeenCalled();
+      expect(mockCreate).not.toHaveBeenCalled();
+    });
+
+    it('D-77 the 600 ms debounce coalesces edits into one save', async () => {
+      mockChecks = { data: [row()] };
+      const { result } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
+      await act(async () => result.current.update({ advertised: 1 }));
+      await act(async () => {
+        jest.advanceTimersByTime(DRAFT_DEBOUNCE_MS - 100);
+      });
+      await act(async () => result.current.update({ advertised: 2 }));
+      await act(async () => {
+        jest.advanceTimersByTime(DRAFT_DEBOUNCE_MS - 100);
+      });
+      expect(mockSave).not.toHaveBeenCalled();
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+      expect(mockSave).toHaveBeenCalledTimes(1);
+      expect(mockSave.mock.calls[0][0].inputs.advertised).toBe(2);
+    });
+
+    it('D-77 the first edit creates the check at once', async () => {
+      const { result } = await renderHook(() => useCheckDraft('c9', 'buy', TODAY));
+      await act(async () => result.current.update({ name: 'Bike' }));
+      expect(mockCreate).toHaveBeenCalledTimes(1);
+      expect(mockSave).not.toHaveBeenCalled();
+    });
+
+    it('D-77 the currency stamp is written once', async () => {
+      const { result } = await renderHook(() => useCheckDraft('c9', 'buy', TODAY));
+      await act(async () => result.current.update({ name: 'Bike' }));
+      expect(mockCreate.mock.calls[0][0].inputs.currency).toBe('GBP');
+      mockResult = { currency: 'USD' };
+      await act(async () => result.current.update({ advertised: 3 }));
+      await act(async () => result.current.saveNow());
+      expect(mockSave.mock.calls.at(-1)?.[0].inputs.currency).toBe('GBP');
+    });
+
+    it('D-77 editedOffline is set when an edit is made offline', async () => {
+      jest.spyOn(onlineManager, 'isOnline').mockReturnValue(false);
+      mockChecks = { data: [row()] };
+      const { result } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
+      expect(result.current.editedOffline).toBe(false);
+      await act(async () => result.current.update({ advertised: 5 }));
+      expect(result.current.editedOffline).toBe(true);
+    });
   });
 });

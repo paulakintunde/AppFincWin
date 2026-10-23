@@ -3,6 +3,8 @@
 // check is read-only. Leaving flushes a pending save and nothing here creates an undo step (A5).
 // Only the typed inputs (plain JSON) are stored or held here; nothing computed ever reaches the queue.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
+import { onlineManager } from '@tanstack/react-query';
 import { useCreateCheck, useSaveCheckDraft } from '@/data/mutations/decideChecks';
 import { useDecideChecks, useDecideSnapshot } from '@/data/queries/decide';
 import type { DecideCheckRow } from '@/db/decideChecks';
@@ -25,6 +27,12 @@ export interface CheckDraft {
    */
   saveNow(): Promise<SaveResult>;
   isNew: boolean;
+  /** D-77: Clear disarms the draft: no later update, flush, timer or unmount save writes to this id. */
+  discard(): void;
+  /** True while an edit waits on the debounce or on the account ids; false once flushed or discarded. */
+  pendingEdit: boolean;
+  /** True once an edit was made while the device was offline in this visit. */
+  editedOffline: boolean;
 }
 
 export type SaveResult = 'saved' | 'nothing' | 'waiting';
@@ -48,6 +56,9 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
   const furthest = useRef(1);
   const pending = useRef<CheckInputs | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const disarmed = useRef(false);
+  const [pendingEdit, setPendingEdit] = useState(false);
+  const [editedOffline, setEditedOffline] = useState(false);
   // Derived-state pattern: remember that the row existed, so its later disappearance reads as not_found.
   if (row && !seenRow) setSeenRow(true);
 
@@ -58,6 +69,7 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
   });
 
   const flush = useCallback((): SaveResult => {
+    if (disarmed.current) return 'nothing';
     if (timer.current) {
       clearTimeout(timer.current);
       timer.current = null;
@@ -76,6 +88,7 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
     if (!current && !created.current) {
       if (!ctx.userId || !ctx.householdId) return 'waiting';
       pending.current = null;
+      setPendingEdit(false);
       created.current = true;
       setCreatedState(true);
       doCreate({
@@ -90,6 +103,7 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
       return 'saved';
     }
     pending.current = null;
+    setPendingEdit(false);
     doSave({ id, name: stamped.name.slice(0, 80), inputs: json, furthestStep: step });
     return 'saved';
   }, [id, kind]);
@@ -99,6 +113,15 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
   useEffect(() => {
     if (rc.userId && rc.householdId && pending.current && !row && !created.current) flush();
   }, [rc.userId, rc.householdId, row, flush]);
+
+  // D-77 (R9): the app leaving the foreground flushes the pending edit at once, so the write is queued before the OS can
+  // kill the app. The persister flushes the queue to disk on the next tick (startPersistOnBackground).
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'background' || s === 'inactive') flush();
+    });
+    return () => sub.remove();
+  }, [flush]);
 
   // Leaving never loses work: the pending save is flushed on unmount.
   useEffect(
@@ -132,12 +155,15 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
 
   const update = useCallback(
     (patch: Partial<CheckInputs>, opts?: { step?: number }): void => {
+      if (disarmed.current) return;
       const { status: nowStatus, decided: nowDecided, row: nowRow } = guard.current;
       if (nowStatus !== 'ready' || nowDecided) return;
       const base = pending.current ?? latestInputs.current;
       const next: CheckInputs = { ...base, ...patch };
       if (opts?.step !== undefined) furthest.current = Math.max(furthest.current, clampStep(opts.step));
       setEdited(next);
+      setPendingEdit(true);
+      if (!onlineManager.isOnline()) setEditedOffline(true);
       pending.current = next;
       latestInputs.current = next;
       if (!nowRow && !created.current) {
@@ -157,5 +183,15 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
 
   const saveNow = useCallback(async (): Promise<SaveResult> => flush(), [flush]);
 
-  return { status, row, inputs, update, saveNow, isNew: row === null && !createdState };
+  const discard = useCallback((): void => {
+    disarmed.current = true;
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    pending.current = null;
+    setPendingEdit(false);
+  }, []);
+
+  return { status, row, inputs, update, saveNow, isNew: row === null && !createdState, discard, pendingEdit, editedOffline };
 }
