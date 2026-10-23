@@ -747,7 +747,7 @@ Plans:
 - [ ] 05-96-PLAN.md — "$" always means USD: formatAmount markers, formatMoneyA11y, a11y labels (D-94)
 - [ ] 05-97-PLAN.md — FAB root cause: null-in-tabs surface rule and the sheet-stack watchdog (D-85)
 - [x] 05-100-PLAN.md — Record entry: new lines default to the home currency (D-93)
-- [ ] 05-107-PLAN.md — Sync transport: request timeouts, 12 s backoff cap, resume, Supabase reachability, post-restore refetch (D-88)
+- [x] 05-107-PLAN.md — Sync transport: request timeouts, 12 s backoff cap, resume, Supabase reachability, post-restore refetch (D-88)
 
 **Wave 21** *(blocked on Wave 20 completion)*
 - [ ] 05-91-PLAN.md — Engine E3b: instalment frequency, next_period, MAX_INSTALMENTS, monthly equivalent; inputs carry freq (D-89)
