@@ -22,7 +22,7 @@ import { canUse } from '../../entitlements';
 import type { SetbackLine } from '../../snapshot/types';
 import { CollapsibleSection } from '../../ui/CollapsibleSection';
 import { LineEditorSheet, type LineEditorValue } from '../LineEditorSheet';
-import { Dot, Note, Tile, moneyOf, type SectionProps } from './sectionUi';
+import { Dot, Note, Tile, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
 
 const MAX_SETBACKS = 12;
 const DEFAULT_ASSUMED = { months: 3, percentDrop: 20, daysLate: 30 };
@@ -34,8 +34,19 @@ function freshId(lines: readonly { id: string }[]): string {
   return `sb-${n}`;
 }
 
-export function SetbacksSection(props: SectionProps & { resultIds?: readonly string[] }) {
-  const { computation, inputs, update, whole, currency, expanded, onToggle, readOnly } = props;
+export type SetbacksBodyProps = SectionBodyProps & { resultIds?: readonly string[] };
+
+/** The closed-fold line: the runway after the purchase, or the open wording when nothing limits it. */
+function setbacksSummary(computation: SectionProps['computation'], t: ReturnType<typeof useT>): string | null {
+  const report = computation.setbacks;
+  if (report === null) return null;
+  const runway = computation.incomeAtRisk ? runwayCopy(computation.incomeAtRisk) : null;
+  if (report.runwayMonths === null) return t('decide.section.setbacksSummaryOpen');
+  return runway?.summary ? refText(t as Translate, runway.summary) : t('decide.section.setbacksSummary', { count: report.runwayMonths });
+}
+
+export function SetbacksBody(props: SetbacksBodyProps) {
+  const { computation, inputs, update, whole, currency, readOnly } = props;
   // WR-C07: the report is built from the settled inputs; its results are matched to the live lines by id, so a removal
   // never pairs a result with the wrong line before the figures settle.
   const resultIndex = new Map((props.resultIds ?? inputs.setbacks.map((s) => s.id)).map((id, i) => [id, i] as const));
@@ -105,15 +116,9 @@ export function SetbacksSection(props: SectionProps & { resultIds?: readonly str
   // D-32: the runway lost to the purchase and, per setback, whether the new payments are still met.
   const tr = t as Translate;
   const runway = computation.incomeAtRisk ? runwayCopy(computation.incomeAtRisk) : null;
-  const summary =
-    report.runwayMonths === null
-      ? t('decide.section.setbacksSummaryOpen')
-      : runway?.summary
-        ? refText(tr, runway.summary)
-        : t('decide.section.setbacksSummary', { count: report.runwayMonths });
 
   return (
-    <CollapsibleSection title={t('decide.section.setbacksTitle')} summary={summary} expanded={expanded} onToggle={onToggle}>
+    <View>
       <Note>{t('decide.section.setbacksNote')}</Note>
       {runway?.lostLine ? <Note>{refText(tr, runway.lostLine)}</Note> : null}
       {lines.map((l) => {
@@ -139,9 +144,7 @@ export function SetbacksSection(props: SectionProps & { resultIds?: readonly str
               }}
               style={({ pressed }) => [styles.main, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
             >
-              <View
-                style={[styles.box, { borderColor: l.enabled ? colors.ink : colors.line4, backgroundColor: l.enabled ? colors.ink : 'transparent' }]}
-              />
+              <View style={[styles.box, { borderColor: l.enabled ? colors.ink : colors.line4, backgroundColor: l.enabled ? colors.ink : 'transparent' }]} />
               <View style={styles.text}>
                 <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>{name}</Text>
                 <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{describe(l)}</Text>
@@ -158,7 +161,12 @@ export function SetbacksSection(props: SectionProps & { resultIds?: readonly str
                 </Text>
                 <Text
                   scale="capped"
-                  style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: r.outcome === 'wiped_out' ? colors.danger : colors.inkMuted, textAlign: 'right' }}
+                  style={{
+                    ...textRole(pairing, 'label'),
+                    fontSize: fontSize.meta,
+                    color: r.outcome === 'wiped_out' ? colors.danger : colors.inkMuted,
+                    textAlign: 'right',
+                  }}
                 >
                   {after}
                 </Text>
@@ -187,14 +195,19 @@ export function SetbacksSection(props: SectionProps & { resultIds?: readonly str
           {t(CASH_OUTCOME[report.stressedOutcome])} {fmt(report.stressedCash)}
         </Tile>
       ) : null}
-      <LineEditorSheet
-        visible={editing}
-        context="setback"
-        currency={currency}
-        formatMoney={fmt}
-        onSave={save}
-        onCancel={() => setEditing(false)}
-      />
+      <LineEditorSheet visible={editing} context="setback" currency={currency} formatMoney={fmt} onSave={save} onCancel={() => setEditing(false)} />
+    </View>
+  );
+}
+
+export function SetbacksSection(props: SectionProps & { resultIds?: readonly string[] }) {
+  const { computation, expanded, onToggle } = props;
+  const t = useT();
+  const summary = canUse('setbacks') ? setbacksSummary(computation, t) : null;
+  if (summary === null) return null;
+  return (
+    <CollapsibleSection title={t('decide.section.setbacksTitle')} summary={summary} expanded={expanded} onToggle={onToggle}>
+      <SetbacksBody {...props} />
     </CollapsibleSection>
   );
 }
@@ -205,7 +218,7 @@ const styles = StyleSheet.create({
   box: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5 },
   text: { flex: 1, flexShrink: 1 },
   tag: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
-  figures: { alignItems: 'flex-end' },
+  figures: { alignItems: 'flex-end', flexShrink: 1 },
   remove: { width: space.touchMin, height: space.touchMin, alignItems: 'center', justifyContent: 'center' },
   add: { minHeight: space.touchMin, justifyContent: 'center' },
 });

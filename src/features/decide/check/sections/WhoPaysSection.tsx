@@ -3,13 +3,14 @@
  * Omitted entirely (no empty frame) in personal scope or with one member, which is every household until Phase 8 (D-05, D-18).
  */
 import React from 'react';
+import { View } from 'react-native';
 import { memberParts, type ResolvedShare } from '@/engine/decide';
 import { minorUnits } from '@/engine/money';
 import { useT } from '@/i18n';
 import { CollapsibleSection } from '../../ui/CollapsibleSection';
-import { TableRow, moneyOf, type SectionProps } from './sectionUi';
+import { TableRow, moneyOf, type SectionBodyProps, type SectionProps } from './sectionUi';
 
-export interface WhoPaysSectionProps extends SectionProps {
+export interface WhoPaysBodyProps extends SectionBodyProps {
   memberCount: number;
   memberNames: readonly string[];
   share: ResolvedShare;
@@ -18,8 +19,10 @@ export interface WhoPaysSectionProps extends SectionProps {
   monthlyTotal: number;
 }
 
-export function WhoPaysSection(props: WhoPaysSectionProps) {
-  const { inputs, whole, exact, currency, expanded, onToggle, memberCount, memberNames, share, dayOneTotal, monthlyTotal } = props;
+export type WhoPaysSectionProps = WhoPaysBodyProps & SectionProps;
+
+export function WhoPaysBody(props: WhoPaysBodyProps) {
+  const { inputs, whole, exact, currency, memberCount, memberNames, share, dayOneTotal, monthlyTotal } = props;
   const t = useT();
   if (inputs.scope !== 'household' || memberCount <= 1) return null;
   const day = memberParts(minorUnits(dayOneTotal), share);
@@ -27,12 +30,7 @@ export function WhoPaysSection(props: WhoPaysSectionProps) {
   const fmtDay = moneyOf(whole, currency);
   const fmtMonth = moneyOf(exact, currency);
   return (
-    <CollapsibleSection
-      title={t('decide.section.whoTitle')}
-      summary={t('decide.section.whoSummary', { count: memberCount })}
-      expanded={expanded}
-      onToggle={onToggle}
-    >
+    <View>
       {share.weights.map((_, i) => {
         const name = memberNames[i] ?? String(i + 1);
         const dayText = fmtDay(day[i] ?? 0);
@@ -47,6 +45,22 @@ export function WhoPaysSection(props: WhoPaysSectionProps) {
           />
         );
       })}
+    </View>
+  );
+}
+
+export function WhoPaysSection(props: WhoPaysSectionProps) {
+  const { inputs, expanded, onToggle, memberCount } = props;
+  const t = useT();
+  if (inputs.scope !== 'household' || memberCount <= 1) return null;
+  return (
+    <CollapsibleSection
+      title={t('decide.section.whoTitle')}
+      summary={t('decide.section.whoSummary', { count: memberCount })}
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      <WhoPaysBody {...props} />
     </CollapsibleSection>
   );
 }
