@@ -168,3 +168,6 @@ Planned 2026-10-22. "Text-fit matrix" means 402x874 and 320x568 (points), each a
 - [ ] 05-107 D-88: airplane mode on during a save, off again: the write resumes within seconds without reopening the app; a slow network shows no stall beyond 20 s.
 - [ ] 05-108 D-88: offline, type into a check for a minute, reconnect: one save travels; the sync line stays hidden for quick saves and reads 'N changes waiting' only after 5 s.
 - [ ] 05-109 R16 close-out: no retired R16 string appears anywhere; whole Decide pass at the text-fit matrix for the R16 screens.
+
+## ROADMAP ticks for three-digit plans (05-100 onward)
+`gsd-sdk` tooling may mis-tick ROADMAP checkboxes for plans 05-100..05-109 (prefix overlap with 05-10/05-1x). After every `roadmap update-plan-progress`, open .planning/ROADMAP.md, confirm only the intended plan's checkbox changed, and untick any stray tick by hand. Do not patch the GSD tools.
