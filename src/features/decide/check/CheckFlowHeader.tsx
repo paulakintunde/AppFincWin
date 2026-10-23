@@ -57,7 +57,10 @@ export function CheckFlowHeader({
   const t = useT();
   const { colors, pairing, fonts } = useTheme();
   const insets = useScreenInsets();
-  const stacked = useShouldStack();
+  // 05-75 / R6 rule S: the right slot takes its own row whenever the pill is present (it is wide enough to squeeze the title to
+  // three lines and to break "Alternatives" mid-word) or whenever the width or text scale says so. The title then always has
+  // the full row beside the back circle, which fits its longest word at any supported width.
+  const stacked = useShouldStack() || combine !== null;
   const hasRight = combine !== null || onClear !== null;
   const right = hasRight ? (
     <View testID="check-header-right" style={[styles.right, stacked && styles.rightStacked]}>

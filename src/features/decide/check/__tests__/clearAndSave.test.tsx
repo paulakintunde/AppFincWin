@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler/jestSetup';
 import React from 'react';
 import * as RN from 'react-native';
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { CheckFlowHeader, type CheckFlowHeaderProps } from '../CheckFlowHeader';
 import { wrap } from '../steps/__tests__/helpers/stepProps';
 
@@ -98,5 +98,20 @@ describe('the check header (D-73, D-76, D-77)', () => {
     await view.rerender(header({ title: long, onClear: jest.fn() }));
     const stacked = RN.StyleSheet.flatten(screen.getByTestId('check-header-right').props.style);
     expect(stacked.alignSelf).toBe('flex-end');
+  });
+  const stepTitles = ['The item', 'Price and how you pay', 'Impact', 'Alternatives', 'Decide'] as const;
+  it.each([402, 320])('the pill sits on its own row under the title at %i wide, for every step title', async (width) => {
+    mockWidth = width;
+    const combine = { value: true, onChange: jest.fn() };
+    const view = await wrap(header({ title: stepTitles[0], combine, onClear: jest.fn() }));
+    for (let i = 0; i < stepTitles.length; i += 1) {
+      await view.rerender(header({ step: (i + 1) as 1, title: stepTitles[i]!, titles: stepTitles, combine, onClear: jest.fn() }));
+      const right = screen.getByTestId('check-header-right');
+      expect(RN.StyleSheet.flatten(right.props.style).alignSelf).toBe('flex-end');
+      // the title row holds only the back circle and the titles, never the right slot, so the title keeps the full row width
+      const titleRow = screen.getByText(stepTitles[i]!).parent!.parent!;
+      expect(within(titleRow).queryByTestId('check-header-right')).toBeNull();
+      expect(screen.getByText('Clear')).toBeTruthy();
+    }
   });
 });
