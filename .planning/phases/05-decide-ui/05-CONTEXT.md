@@ -1,7 +1,7 @@
 # Phase 5: Decide UI - Context
 
 **Gathered:** 2026-10-15
-**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22; D-79…D-84 the Step 2, item and invest refresh the same day; D-85…D-93 the device-walkthrough refinements 2026-10-23. The UI-SPEC carries all of them.
+**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22; D-79…D-84 the Step 2, item and invest refresh the same day; D-85…D-94 the device-walkthrough refinements 2026-10-23. The UI-SPEC carries all of them.
 
 <domain>
 ## Phase Boundary
@@ -290,6 +290,7 @@ UI-SPEC R16 carries the layouts, copy, ⓘ entries and engine notes (E3-E5).
 - **D-85: Add is always reachable.**
   - The You screen gains a first "Add" group: Add expense, Add income, Transfer, Import statement, New check. It uses the shipped `SettingsGroup` and row styles.
   - Each row closes You, then runs the same handler as the FAB quick action with that `QuickActionId`. A row with no registered handler is not shown.
+  - "Import statement" lives only in the Add group; the old Money-group import row is removed (user, 2026-10-23).
   - **FAB root cause:**
     - `fabSurface` treats a null navigation location under `(tabs)` as `tabRoot`;
     - a sheet-stack watchdog drops sheet ids whose sheet is no longer mounted, and clears the stack when nothing is visible for more than 1 s, so a leaked id cannot hide the FAB.
@@ -329,7 +330,9 @@ UI-SPEC R16 carries the layouts, copy, ⓘ entries and engine notes (E3-E5).
   - It is the nominal APR solved from the payments, count, frequency and timing by exact bigint bisection (no floats), labelled "worked out from the figures you typed".
   - It replaces the flat-rate note. It is a read-out only: it never fills a field or feeds the verdict (04 D-07).
   - **Engine change E4**, with full tests and 100% coverage.
-- **D-91: A card check limit.** `CARD_MAX_PURCHASE` = 100,000 in the home currency.
+- **D-91: A card check limit.** `CARD_MAX_PURCHASE` = **US$100,000**, converted to the home currency at the latest stored rate and rounded down (about £78k or CA$137k) (user, 2026-10-23).
+  - The snapshot builder converts it; the engine receives `cardMaxPurchase`.
+  - With no stored USD rate, the On a card method is not scored ("Needs: USD rate", reason `card_limit_rate_missing`). That is the conservative choice; an older stored rate follows D-69.
   - Above it, the rest counts as cash on the day through the dealer-cap mechanism.
   - Note: "Only {{cap}} of this goes on a card in checks. The other {{rest}} is counted as cash on the day.", stated as the app's limit, not the issuer's.
   - **Engine change E5.**
@@ -338,13 +341,19 @@ UI-SPEC R16 carries the layouts, copy, ⓘ entries and engine notes (E3-E5).
     - `property`: card blocked, "A property purchase or deposit is not paid by card.";
     - `cash_equivalent`: card blocked;
     - `tuition`: card permitted with a fee note.
-  - Tax is region-aware: GB blocked (HMRC, since 2018); US and CA permitted with a processing-fee note.
+  - Tax is region-aware: blocked only in GB (HMRC, since 2018); permitted with a processing-fee note everywhere else (user, 2026-10-23).
   - Research sources: Fannie Mae B3-4.3-16, HMRC, Experian / The Points Guy.
   - **Engine change E5.**
 - **D-93: Walkthrough fixes.**
   - A tab root never shows a back button.
   - A cushion or runway above 600 months reads "Over 50 years" (a word value).
-  - A new expense defaults to the selected account's own currency, or home when the account has none. The walkthrough's GBP case is a verify item.
+  - A new expense or income line defaults to the **home (selected) currency**, not the account's currency (user, 2026-10-23). This is set in `initialFormState` in `src/features/record/entry/transactionForm.ts`. The currency stays changeable per line; prefilled and edited entries keep their stored currency.
+
+- **D-94 (user, 2026-10-23): "$" always means the US dollar, app-wide.**
+  - USD shows as "$1,500", never "US$". Other dollar currencies always keep their marker ("CA$", "A$", "NZ$", "HK$" …), whatever the home currency and the locale. Other currencies keep their usual symbol.
+  - It is implemented once in `formatAmount()` (`src/engine/money/formatAmount.ts`, reached through `useMoneyFormatter`): `narrowSymbol` for USD, and a fixed marker map for any other currency that would render as a bare "$".
+  - Screen readers get `formatMoneyA11y`: "dollars" for USD at USD home, "US dollars" otherwise, full names for the rest.
+  - Display tests and snapshots asserting "US$" are updated. The statement parser's "US$" input handling is unchanged. See UI-SPEC R16.15.
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.

@@ -17,7 +17,7 @@ created: 2026-10-15
 
 **Platform note:** React Native / Expo SDK 57. No shadcn, no CSS. Styling is `StyleSheet` plus the typed theme (`useTheme()`, `textRole()`, `src/theme/*`). The CLAUDE.md fidelity rule holds: **no new colour, gradient, shadow, type size or icon set.** The prototype's Decide screens use about a dozen hex values outside the §2 palette; every one is mapped to an existing token below (Color, Deviations Register). Colours are cited by token name only; `noRawColours.test.ts` must keep passing.
 
-**Amended 2026-10-22 and 2026-10-23 (D-70..D-93):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Re-approved by the UI checker on 2026-10-22, with its recommendations folded in (R14). R15 (Step 2, item and invest refresh, D-79..D-84) was re-approved the same day with its must-fix items folded in (R15.13). R16 (device-walkthrough refinements, D-85..D-93, 2026-10-23) returns the status to draft for a re-check.
+**Amended 2026-10-22 and 2026-10-23 (D-70..D-94):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Re-approved by the UI checker on 2026-10-22, with its recommendations folded in (R14). R15 (Step 2, item and invest refresh, D-79..D-84) was re-approved the same day with its must-fix items folded in (R15.13). R16 (device-walkthrough refinements, D-85..D-93, 2026-10-23) returns the status to draft for a re-check.
 
 **Surface in this phase:**
 1. Decide tab root (quick check, Your month, Open checks, Past decisions link, Lines you will not cross).
@@ -1848,7 +1848,7 @@ Source: the user's device walkthrough and the research report of 2026-10-23, aga
   - Tapping a row **closes You first**: `router.dismissTo` the tab root it was opened from.
   - The handler then runs after the transition (`InteractionManager.runAfterInteractions`), so the right sheet opens over a tab root, or the route is pushed (import, new check).
   - A row whose quick action has no registered handler is not shown, using the same availability rule as the quick menu (`availableQuickActions`).
-- **Duplicate import:** the existing "Money" import row stays. Both rows open the same import route.
+- **Import moves:** the old "Money" group import row (`you.record.importCsv` in `MONEY_ROWS`) is **removed** (user, 2026-10-23). "Import statement" lives only in the "Add" group and opens the same import route with `entry: 'you'`.
 
 **FAB root cause (shell):**
 1. **Surface:** `fabSurface()` returns `'tabRoot'` when the navigation `current` location is `null` **and** the active route segments include `(tabs)`. Today `null` gives `'unknown'`, which hides the FAB. `null` outside `(tabs)` stays `'unknown'`.
@@ -1956,7 +1956,8 @@ Each has a `_one` form ("1\u00A0weekly payment of {{payment}}", and so on). The 
 
 #### R16.7 Card check limit (D-91; engine change E5)
 
-- **The limit:** at most **`CARD_MAX_PURCHASE` = 100,000 in the home currency** goes on a card in any check. That is 100,000 major units, converted to minor units by the currency's exponent (see Questions). The rest counts as **cash on the day**, through the same mechanism as the dealer cap (D-18): the card portion is min(price, dealer cap when present, `CARD_MAX_PURCHASE`).
+- **The limit:** at most **`CARD_MAX_PURCHASE` = US$100,000**, converted into the home currency at the **latest stored rate** (`convertLatest`, never the FX fetch door), goes on a card in any check. That is about £78k or CA$137k. The rest counts as **cash on the day**, through the same mechanism as the dealer cap (D-18): the card portion is min(price, dealer cap when present, the converted limit). The converted limit is rounded **down** to the minor unit.
+- **Missing USD rate (conservative choice):** when no USD rate to the home currency is stored at all, the limit cannot be converted. The **On a card** method is then **not scored**: its card shows "Needs: USD rate" and the D-37 missing-rate wording for USD, and the other methods are unaffected. This is more conservative than applying no limit, which could put more on a card than the check allows. A stored rate with an older date is used as the D-69 provisional rule has it: the latest stored rate, with the basis item and the confidence capped at fair. Home currency USD needs no rate.
 - **UI:** the eligibility box shows the capped state, and the flag chip "Part on the card" is reused. Body: **"Only {{cap}} of this goes on a card in checks. The other {{rest}} is counted as cash on the day."** A second `meta` line follows: **"This is a limit of these checks, not of your card issuer."**
 - **When both caps apply:** the lower cap's note shows. With the dealer cap lower, the existing dealer-cap copy shows.
 
@@ -1976,7 +1977,7 @@ Each has a `_one` form ("1\u00A0weekly payment of {{payment}}", and so on). The 
 |---|---|---|
 | GB | **blocked** | "HMRC has not taken personal credit cards since 2018." |
 | US, CA | **permitted, with a fee note** | "Card payments for tax go through a payment processor that charges a fee. Any fee goes in Card fees." |
-| any other region, or none | **blocked**, as now (see Questions) | the existing blocked copy |
+| any other region, or none | **permitted, with the fee note** (user, 2026-10-23) | "Card payments for tax go through a payment processor that charges a fee. Any fee goes in Card fees." |
 
 **Also updated:**
 - `suggestItemType` order: property, then cash_equivalent, then the existing blocked types, then tuition, vehicle and general.
@@ -2002,10 +2003,13 @@ These support the block and note copy. The copy states facts and never advises.
    - The key figure "Cushion" shows **"Over 50 years"** when `runwayMonths` > 600 (the walkthrough showed "7676 months"). It is a word value under rule N (wraps, not font-fitted).
    - The same rule applies to the setbacks preview: "Runway over 50 years".
    - The a11y label is "Cushion: over 50 years of costs".
-3. **New-expense currency default** (Record entry sheet; verify item):
-   - The currency defaults to **the selected account's own currency**: GBP for a GBP account, even with USD at home. That is correct.
-   - When the account has no currency, it falls back to **home**. Last-used currency never leaks into a new entry.
-   - Verify with the walkthrough's case: if that account is in USD and the sheet showed GBP, it is a bug in the default. If the account is in GBP, the behaviour is correct and is documented as such.
+3. **New-expense currency default** (Record entry sheet; user, 2026-10-23):
+   - A new expense or income line defaults to the **selected (home) currency**, not the account's currency. For the user, that is USD while the account is GBP.
+   - The user can still change it per line with the existing currency control.
+   - **Where:** `initialFormState(mode, ctx)` in `src/features/record/entry/transactionForm.ts` (about L119-122) sets `currency` from `ctx.accountCurrency(accountId) ?? ctx.defaultAccount.currency`. It becomes the home currency, which `FormContext` gains as `homeCurrency` (the caller `TransactionSheet.tsx` already knows it).
+   - A prefilled entry (`mode.prefill`, an edit, a clone) keeps its own stored currency.
+   - Transfers keep each leg's account currency (the cross-currency rules are unchanged).
+   - Tests: the entry-form tests that assert the account-currency default are updated to assert home.
 
 #### R16.10 ⓘ entries (new and updated)
 
@@ -2014,7 +2018,7 @@ These support the block and note copy. The copy states facts and never advises.
 | `interestSaved` (new) | "Interest saved by the deposit" caption | Interest saved by the deposit | Compared with the same loan with no deposit: same price, months and rate. The saving comes only from borrowing less. | Nothing in the verdict. |
 | `instalmentFrequency` (new) | Frequency chips | How often | Payments can fall weekly, every 2 weeks, monthly or quarterly. The month is tested with the monthly equivalent, and the cash path uses the real dates. | Changes the monthly equivalent and the dates on the cash path. |
 | `impliedApr` (new) | The no-rate note | Rate worked out from the figures | The yearly rate that makes the payments add up to the amount paid over time, counting their timing. It is worked out from the figures you typed and is not a quoted rate. | Nothing in the verdict; the plan is scored on its payments. |
-| `cardCheckLimit` (new) | The capped eligibility box | Card limit in checks | Checks count at most {{cap}} of a purchase on a card. It is a limit of this app’s checks, not of any card issuer. | The part above it is counted as cash on the day. |
+| `cardCheckLimit` (new) | The capped eligibility box | Card limit in checks | Checks count at most {{cap}} of a purchase on a card: US$100,000 at the latest stored rate. It is a limit of this app’s checks, not of any card issuer. | The part above it is counted as cash on the day. |
 | `itemType` (updated) | Step 1 item type | Item type | What kind of purchase this is. It decides whether a card is counted, whether a loan starts as secured, and which running costs are listed. Property and cash-like purchases are never counted on a card. | Changing it can change the card rules and the costs listed. |
 | `onCard` (updated) | On a card card | On a card | The purchase goes on a credit card and is cleared in full at the next statement, over a few months, or at the minimum. Interest is counted at the rate on the card record. At most {{cap}} goes on a card in checks. | Adds the card payment to your month until it is cleared. |
 
@@ -2038,12 +2042,12 @@ That brings `INFO_TERMS` to 31 + 24 + 4 = **59 keys**.
 - It is pure, read-out only, and never enters `assess()` (04 D-07). Property tests (fast-check): the round-trip with E1/E3 at the solved rate reproduces the payment within one minor unit; monotonic in payment. 100% coverage.
 
 **E5 (D-91, D-92): card cap and card rules.**
-- `CARD_MAX_PURCHASE` = 100,000 major units of the snapshot's home currency, in minor units by that currency's exponent. It is applied in plan building as an extra cap alongside the dealer cap: card portion = min(price, dealer cap, `CARD_MAX_PURCHASE`), and the rest is cash on the day (the existing capped path). It reports reason `card_check_limit` when it binds.
+- `CARD_MAX_PURCHASE_USD` = 10,000,000 USD minor units (US$100,000). The snapshot builder converts it to the home currency at the latest stored rate (`convertLatest`, rounded down) and passes it in the snapshot as `cardMaxPurchase: MinorUnits | null`. A null (no stored USD rate) makes the card method `missing` with the new reason `card_limit_rate_missing`. The engine stays free of rates. It is applied in plan building as an extra cap alongside the dealer cap: card portion = min(price, dealer cap, `CARD_MAX_PURCHASE`), and the rest is cash on the day (the existing capped path). It reports reason `card_check_limit` when it binds.
 - `ITEM_TYPES` gains `property`, `cash_equivalent` and `tuition`.
 - `cardEligibility(itemType, region)` returns `{ eligibility, note: 'tuition_fee' | 'tax_processing_fee' | 'tax_gb' | null }`:
   - property and cash_equivalent: blocked;
   - tuition: permitted with `tuition_fee`;
-  - tax: blocked with `tax_gb` in GB, permitted with `tax_processing_fee` in US and CA, blocked elsewhere;
+  - tax: blocked with `tax_gb` in GB only; permitted with `tax_processing_fee` everywhere else, including no region;
   - the rest as now.
 - `suggestItemType` gains the keywords in R16.8.
 - `runningCostPrompts` gains the per-type lists.
@@ -2067,7 +2071,7 @@ The check inputs JSON accepts the new `itemType` values and `instalment.freq` (d
 
 | Screen | What lands |
 |---|---|
-| You | The "Add" group (5 rows, first); rows close You, then run the quick action |
+| You | The "Add" group (5 rows, first); rows close You, then run the quick action; the Money-group import row is removed |
 | Shell / FAB | `fabSurface` null-in-tabs rule; sheet-stack watchdog |
 | Every tab root | No back control (D-93); sync line only for problems or writes over 5 s |
 | Step 1 | Item chips with Property, Tuition and Cash-like; `itemType` ⓘ updated; keywords |
@@ -2077,11 +2081,53 @@ The check inputs JSON accepts the new `itemType` values and `instalment.freq` (d
 | Step 2 Costs that follow it | Dashed Amount fields; tap-row-to-focus; checkbox on an amount; per-type prompts |
 | Step 3 | "Over 50 years" cushion and runway; "Updating" on detail folds |
 | Check flow (all) | Speed contract; draft coalescing; header status unchanged |
-| Record entry sheet | Currency default verify item |
+| Record entry sheet | New lines default to the home currency (`initialFormState`), still changeable per line |
+| Everywhere money shows | The D-94 currency display rule (R16.15) |
 
 #### R16.14 Questions only the user can answer
 
-1. **`CARD_MAX_PURCHASE` in other currencies:** is it 100,000 major units in every home currency (¥100,000 is about $650), or $100,000 converted into the home currency at the latest stored rate?
-2. **Tax by card outside GB, US and CA:** blocked, as today, or permitted with the processing-fee note?
-3. **Import statement** now appears in both You groups ("Add" and "Money"). Should the "Money" row go?
-4. **The expense-currency case from the walkthrough:** was that account in GBP? If it was, the GBP default is intended and only documented. If not, it is a Record bug to fix.
+None open. Answered 2026-10-23:
+1. The card limit is US$100,000 converted at the latest stored rate. With no USD rate stored, the card method is not scored (the conservative option).
+2. Tax by card is blocked only in GB, and permitted with the fee note everywhere else.
+3. "Import statement" lives only in the Add group.
+4. A new expense defaults to the home currency, still changeable per line.
+
+#### R16.15 Currency display rule (D-94, app-wide)
+
+**Rule:** **"$" always means the US dollar**, whatever the home currency and the device locale.
+- **USD** shows as **"$1,500"**, never "US$1,500".
+- **Other dollar currencies** always keep their marker, even in their own locale: "CA$", "A$", "NZ$", "HK$", "S$", "NT$", "MX$". A CAD-home user in en-CA sees "CA$1,500" for CAD and "$1,500" for USD.
+- **Other currencies** keep their usual symbol (£, €, ¥, ₹ …), as now. Custom currencies keep their own symbol.
+
+**Where:** the one money formatter, `formatAmount()` in `src/engine/money/formatAmount.ts`, which every display path reaches through `useMoneyFormatter` (`src/ui/money/useMoneyFormatter.ts`). That covers Record, Activity, Home, Grow, Decide, sheets and toasts alike. Today it uses `currencyDisplay: 'symbol'`, which gives "US$" in en-GB and en-CA and "$" for CAD in en-CA.
+- **USD** is formatted with `currencyDisplay: 'narrowSymbol'` ("$").
+- **Every other currency** keeps `'symbol'`. If the currency part (`formatToParts`) comes out as a bare "$", it is replaced from a fixed marker map:
+
+| Currency | Marker |
+|---|---|
+| CAD | CA$ |
+| AUD | A$ |
+| NZD | NZ$ |
+| HKD | HK$ |
+| SGD | S$ |
+| TWD | NT$ |
+| MXN | MX$ |
+| any other | the ISO code and a no-break space |
+
+- The true minus (U+2212) and the D-23 fraction rules are unchanged.
+- The formatter stays pure (it lives in `engine/money`, with no React).
+
+**Accessibility:** money read aloud uses a new `formatMoneyA11y` on the same formatter (`Intl.NumberFormat` with `currencyDisplay: 'name'`), and the shared money components (`AmountDisplay`, `FigureStrip` figures, key figures, the Decide figure Texts) set it as their `accessibilityLabel`.
+- USD reads "1,500 dollars" when the home currency is USD, and "1,500 US dollars" otherwise.
+- Other currencies read their full name, e.g. "1,500 Canadian dollars" or "1,500 British pounds".
+- Sentences that embed amounts keep the visible text; screen readers read "$" as "dollars", which is now unambiguous.
+
+**Fallout, checked 2026-10-23:**
+- **`US$` in the source:** it appears in 7 files under `src`. Those that assert display, and need updating to "$", are:
+  - `src/engine/money/__tests__/formatAmount.test.ts` (the en-CA and en-GB expectations);
+  - `src/features/decide/home/__tests__/LinesAndMonth.test.tsx`;
+  - `src/features/decide/ui/__tests__/textFit.test.tsx`;
+  - `src/features/decide/ui/SegmentedToggle.tsx` (a comment or sample).
+- **Do not change:** `src/engine/statement/foreign.ts` and its test **parse** "US$" from imported statements. That is input, not display.
+- **Elsewhere:** any Jest snapshot showing "US$" is regenerated after review. Copy strings never hard-code a symbol (they interpolate formatted money), so no catalogue change is needed.
+- **New tests:** USD in en-US, en-GB, en-CA and fr-CA always starts "$" (or ends with " $" in fr-CA's suffix order; the marker rule is about the symbol, and its position follows the locale); CAD in en-CA is "CA$"; AUD in en-AU is "A$"; GBP and EUR are unchanged.
