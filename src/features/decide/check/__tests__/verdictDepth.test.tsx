@@ -153,7 +153,7 @@ describe('verdict depth: step 3 top', () => {
     expect(screen.getByText(/If the balance isn’t cleared when the 12-month promotion ends, \$250 of interest is charged back\./)).toBeTruthy();
   });
 
-  it('shows one-offs left out and converted amounts on one basis line', async () => {
+  it('shows one-offs left out and converted amounts on one basis line that wraps (D-76 rule T)', async () => {
     const base = propsFor(strongSource());
     const verdict = base.computation.verdict as unknown as { basisCodes: string[]; context: { money: Loose } };
     const p = withDecision(base, {}, {
@@ -163,7 +163,7 @@ describe('verdict depth: step 3 top', () => {
     const source = { ...p.source, conversions: [{ currency: 'EUR', rateText: '1.4700000000', rateDate: '2026-10-14' }] } as SnapshotResult;
     await wrap(<Step3Verdict {...p} source={source} />);
     const row = screen.getByText(/^2 one-offs left out · Includes amounts converted from EUR at 1\.47 on /);
-    expect(row.props.numberOfLines).toBe(1);
+    expect(row.props.numberOfLines).toBeUndefined();
   });
 
   it('the card minimum basis item opens the card terms', async () => {

@@ -337,7 +337,7 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
 const styles = StyleSheet.create({
   card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapMd },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
-  amount: { flex: 1, height: AMOUNT_HEIGHT, borderRadius: radii.pill, paddingLeft: space.cardPad, paddingRight: PILL_INSET, flexDirection: 'row', alignItems: 'center' },
+  amount: { flex: 1, minHeight: AMOUNT_HEIGHT, borderRadius: radii.pill, paddingLeft: space.cardPad, paddingRight: PILL_INSET, flexDirection: 'row', alignItems: 'center' },
   amountInput: { flex: 1, padding: 0, minHeight: CHECK_HEIGHT },
   fields: { gap: space.gapMd },
   field: { minHeight: space.touchMin, borderRadius: radii.pill, paddingHorizontal: space.gapMd, justifyContent: 'center' },

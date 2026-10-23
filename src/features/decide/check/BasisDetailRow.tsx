@@ -31,7 +31,7 @@ export function BasisDetailRow({ items, onPressCardMinimum }: BasisDetailRowProp
   if (items.length === 0) return null;
   const text = items.map((i) => refText(t, i)).join(' · ');
   const body = (
-    <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+    <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
       {text}
     </Text>
   );

@@ -53,7 +53,8 @@ export function CombineToggle({ value, onChange }: CombineToggleProps) {
 const styles = StyleSheet.create({
   hit: { minHeight: HIT, minWidth: HIT, alignSelf: 'flex-start', justifyContent: 'center' },
   pill: {
-    height: VISUAL,
+    minHeight: VISUAL,
+    paddingVertical: 2,
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.gapSm,
