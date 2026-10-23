@@ -31,7 +31,7 @@ import { PERCENT_SCALE, simulateMinimum } from '@/engine/payoff';
 import { currencyCode, divideHalfUp, minorUnits } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import { convertLatest } from '@/data/queries/fxConvert';
-import { homeAmountFor } from '@/data/queries/homeAmount';
+import { homeAmountFor, isOwnCurrencyRow } from '@/data/queries/homeAmount';
 import type { AccountRow, CustomCurrencyRow, FxLatestRow, RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import { makeConverter, provisionalHomeAmount, type ProvisionalAmount } from './conversion';
 import { fullMonthFlags } from './fullMonths';
@@ -178,12 +178,16 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   };
   /** A line's home amount: its own stamp (homeAmountFor), else the latest stored rate (D-69, provisional), else null. */
   const homeOf = (r: SnapshotRow): ProvisionalAmount | null => {
-    const stamped = homeAmountFor(r, home, source.rates);
-    if (stamped !== null) return { amount: stamped, rateDate: null };
+    const stamped = homeAmountFor(r, home, source.rates, source.customCurrencies);
+    if (stamped !== null) {
+      // The home currency changed after this line was saved in its own currency: a normal latest-rate conversion (D-37 note), not provisional.
+      return isOwnCurrencyRow(r, home) ? { amount: stamped, rateDate: null, latestFrom: r.original_currency } : { amount: stamped, rateDate: null };
+    }
     return provisionalHomeAmount(r, home, source.rates, source.customCurrencies, today);
   };
   /** D-69: count a line whose figure is in use and came from a provisional rate. */
   const markProvisional = (r: SnapshotRow, conv: ProvisionalAmount): void => {
+    if (conv.latestFrom !== undefined) converter.toHome(r.original_amount, conv.latestFrom); // records the D-37 conversion note
     if (conv.rateDate !== null) converter.provisional(r.id, conv.rateDate);
   };
   const keyOf = (categoryId: string | null): string | null =>

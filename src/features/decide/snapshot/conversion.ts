@@ -15,6 +15,8 @@ import type { ConversionNote, ProvisionalNote, UnconvertedNote } from './types';
 export interface ProvisionalAmount {
   amount: number;
   rateDate: string | null;
+  /** The currency of a line saved in its own currency before the home currency changed: converted at the latest rate, noted like D-37, never provisional. */
+  latestFrom?: string;
 }
 
 /**

@@ -172,3 +172,41 @@ describe('provisionalHomeAmount', () => {
     expect(provisionalHomeAmount({ original_amount: -10_000, original_currency: 'JPY' }, 'USD', [USD_RATE], [], '2026-10-15')).toBeNull();
   });
 });
+
+describe('own-currency lines after a home-currency change', () => {
+  const GBP_RATE = { quote: 'GBP', rate: '0.8', rate_date: '2026-10-12', source: 'frankfurter-v2' } as const;
+  /** Saved while home was GBP: same-currency stamp, no orig_per_eur. Read now under USD. */
+  const gbpLine = (over: Partial<SourceRow> = {}): SourceRow =>
+    row({
+      id: 'gbp-old',
+      local_date: '2026-09-20',
+      original_amount: -10_000,
+      original_currency: 'GBP',
+      home_currency: 'GBP',
+      home_amount: -10_000,
+      orig_per_eur: null,
+      rate_source: 'same-currency',
+      rate_pending: false,
+      ...over,
+    });
+
+  it('converts at the latest stored rate as a normal conversion, not a provisional one', () => {
+    const r = logged(withRows([gbpLine()], { rates: [USD_RATE, GBP_RATE] }));
+    expect(lineOf(r, '2026-09', 'gbp-old')?.amount).toBe(13_750); // 100.00 GBP at 1.375 USD per GBP
+    expect(r.provisional).toBeNull();
+    expect(r.snapshot.provisionalRates).toBeUndefined();
+    expect(r.unconverted).toBeNull();
+    expect(r.conversions).toEqual([{ currency: 'GBP', rateText: '1.3750000000', rateDate: '2026-10-12' }]);
+  });
+
+  it('stays missing, never guessed, when no GBP rate is stored', () => {
+    const r = logged(withRows([gbpLine()], { rates: [USD_RATE] }));
+    expect(lineOf(r, '2026-09', 'gbp-old')).toBeUndefined();
+    expect(r.unconverted).toEqual({ currencies: ['GBP'], rowCount: 1 });
+  });
+
+  it('adds no conversion note for a line outside the used months', () => {
+    const r = logged(withRows([gbpLine({ id: 'gbp-early', local_date: '2025-11-20' })], { rates: [USD_RATE, GBP_RATE] }));
+    expect(r.conversions).toEqual([]);
+  });
+});
