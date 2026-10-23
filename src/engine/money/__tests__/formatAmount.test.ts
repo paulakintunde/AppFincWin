@@ -1,4 +1,4 @@
-import { formatAmount, toDecimalString } from '../formatAmount';
+import { formatAmount, formatMoneyA11y, toDecimalString } from '../formatAmount';
 import { currencyCode, minorUnits } from '../types';
 
 describe('toDecimalString', () => {
@@ -68,19 +68,75 @@ describe('formatAmount: ar-KW KWD shows three fraction digits for a non-whole am
   });
 });
 
-describe('formatAmount: ambiguous dollar symbol disambiguation (D-23)', () => {
+describe('formatAmount: ambiguous dollar symbol disambiguation (D-23, D-94)', () => {
+  const usd = { amount: minorUnits(150000), currency: currencyCode('USD') };
+  const at = (code: string, locale: string, amount = 150000) =>
+    formatAmount({ amount: minorUnits(amount), currency: currencyCode(code) }, { locale, showCents: false });
+
   it('shows CA$ for CAD in en-US', () => {
-    const money = { amount: minorUnits(1000), currency: currencyCode('CAD') };
-    expect(formatAmount(money, { locale: 'en-US', showCents: false }).startsWith('CA$')).toBe(
-      true
-    );
+    expect(at('CAD', 'en-US', 1000).startsWith('CA$')).toBe(true);
   });
 
-  it('shows US$ for USD in en-CA', () => {
-    const money = { amount: minorUnits(1000), currency: currencyCode('USD') };
-    expect(formatAmount(money, { locale: 'en-CA', showCents: false }).startsWith('US$')).toBe(
-      true
+  it('D-94 USD always shows $', () => {
+    for (const locale of ['en-US', 'en-GB', 'en-CA']) {
+      expect(formatAmount(usd, { locale, showCents: false })).toBe('$1,500');
+    }
+    const fr = formatAmount(usd, { locale: 'fr-CA', showCents: false });
+    expect(fr).toMatch(/^1\s500\s\$$/u);
+    expect(fr).not.toContain('US');
+  });
+
+  it('D-94 other dollar currencies keep their marker', () => {
+    expect(at('CAD', 'en-CA')).toBe('CA$1,500');
+    expect(at('AUD', 'en-AU')).toBe('A$1,500');
+    expect(at('NZD', 'en-NZ')).toBe('NZ$1,500');
+    expect(at('HKD', 'en-HK')).toBe('HK$1,500');
+    expect(at('SGD', 'en-SG')).toBe('S$1,500');
+    expect(at('TWD', 'zh-TW')).toBe('NT$1,500');
+    expect(at('MXN', 'es-MX')).toBe('MX$1,500');
+    expect(at('MXN', 'es-MX', -150000)).toBe('−MX$1,500');
+  });
+
+  it('D-94 any other bare-$ currency takes its ISO code and a no-break space', () => {
+    const ars = at('ARS', 'es-AR');
+    expect(ars.startsWith('ARS ')).toBe(true);
+    expect(ars).not.toContain('$');
+    expect(ars).not.toMatch(/ [  ]/);
+  });
+
+  it('D-94 non-dollar symbols are unchanged', () => {
+    const gbp = { amount: minorUnits(150000), currency: currencyCode('GBP') };
+    const eur = { amount: minorUnits(150000), currency: currencyCode('EUR') };
+    expect(formatAmount(gbp, { locale: 'en-GB', showCents: false })).toBe('£1,500');
+    expect(formatAmount(eur, { locale: 'en-IE', showCents: false })).toBe('€1,500');
+  });
+});
+
+describe('formatMoneyA11y (D-94)', () => {
+  const read = (code: string, locale: string, home: string, amount = 150000) =>
+    formatMoneyA11y(
+      { amount: minorUnits(amount), currency: currencyCode(code) },
+      { locale, showCents: false, homeCurrency: home }
     );
+
+  it('D-94 money reads currency names aloud', () => {
+    expect(read('USD', 'en-US', 'USD')).toBe('1,500 dollars');
+    expect(read('USD', 'en-CA', 'CAD')).toBe('1,500 US dollars');
+    expect(read('CAD', 'en-CA', 'CAD')).toBe('1,500 Canadian dollars');
+    expect(read('GBP', 'en-GB', 'GBP')).toBe('1,500 British pounds');
+    expect(read('MXN', 'es-MX', 'MXN').length).toBeGreaterThan(0);
+    expect(read('USD', 'en-US', 'USD', -150050)).toBe('−1,500.50 dollars');
+  });
+
+  it('D-94 a custom $ currency keeps its symbol', () => {
+    const money = { amount: minorUnits(2500), currency: currencyCode('GLD') };
+    const base = { locale: 'en-US', showCents: false, exponent: 0, customSymbol: '$' };
+    expect(formatAmount(money, base)).toBe('$2,500');
+    expect(formatMoneyA11y(money, { ...base, customName: 'Gold coins' })).toBe('2,500 Gold coins');
+    expect(formatMoneyA11y(money, base)).toBe('2,500 $');
+    expect(
+      formatMoneyA11y({ amount: minorUnits(-2500), currency: currencyCode('GLD') }, base)
+    ).toBe('−2,500 $');
   });
 });
 
