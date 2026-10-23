@@ -6,6 +6,7 @@
 export * from './types';
 export * from './constants';
 export * from './amortise';
+export * from './impliedApr';
 export * from './futureValue';
 export * from './simulateMinimum';
 export * from './rateSchedule';
