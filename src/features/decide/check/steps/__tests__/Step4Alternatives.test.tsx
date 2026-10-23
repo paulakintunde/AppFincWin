@@ -101,7 +101,7 @@ describe('Step4Alternatives', () => {
 
   it('the trade line is idle until the slider is used', async () => {
     await wrap(<Step4Alternatives {...props()} />);
-    expect(screen.getByText('Move the slider and the trade appears.')).toBeTruthy();
+    expect(screen.getByText('The trade appears as the slider moves.')).toBeTruthy();
   });
 
   it('the trade line states what is kept once a ratio is chosen', async () => {

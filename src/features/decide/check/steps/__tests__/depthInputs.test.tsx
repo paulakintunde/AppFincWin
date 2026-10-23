@@ -206,7 +206,7 @@ describe('credit terms', () => {
     const base = buy({ method: 'card' });
     const card = source.cards[0];
     await wrap(<Harness initial={{ ...base, card: { ...base.card, accountId: card?.accountId ?? null, promo: { aprText: '0', months: 6, deferredInterest: false } } }} />);
-    expect(screen.getByText('Change it above')).toBeTruthy();
+    expect(screen.getByText('The rate above')).toBeTruthy();
   });
 
   it('the quick check has none of these inputs', () => {

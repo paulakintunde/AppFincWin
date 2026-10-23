@@ -210,7 +210,7 @@ describe('QuickCheckForm: home', () => {
     expect(row.props.accessibilityState).toMatchObject({ expanded: false });
     expect(screen.queryByLabelText('Sales tax, percent')).toBeNull();
     await fireEvent.press(row);
-    expect(screen.getByLabelText('Sales tax, percent').props.placeholder).toBe('Type the rate');
+    expect(screen.getByLabelText('Sales tax, percent').props.placeholder).toBe('The rate');
     await fireEvent.changeText(screen.getByLabelText('Sales tax, percent'), '10');
     await fireEvent.press(row);
     expect(screen.getByLabelText(/^\+ Tax, fees, \+/).props.accessibilityState).toMatchObject({ expanded: false });

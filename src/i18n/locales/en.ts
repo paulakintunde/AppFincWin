@@ -1752,12 +1752,12 @@ const en = {
     method: { cash: 'Paid in full', loan: 'Deposit and loan', instalment: 'Instalment plan', card: 'On a card', monthly: 'Monthly contribution', lump: 'Lump sum', none: 'no payment method yet' },
     quick: {
       a11y: 'Quick check', check: 'Check it',
-      parseError: 'Add a figure — “car 14500” works', unnamed: 'Unnamed',
+      parseError: 'A figure is needed — “car 14500” works', unnamed: 'Unnamed',
       nameAt: '{{name}} at {{price}}', // WR-B08: the result echoes the price it read from the text
       payWith: 'Pay with', cash: 'Cash', credit: 'Credit',
       aprLabel: 'Annual rate', aprA11y: 'Annual rate, percent', beforeInterest: 'before any interest', aYear: 'a year',
       overMonths_one: 'Over 1\u00A0month', overMonths_other: 'Over {{count}}\u00A0months', termsA11y: 'Over how many months', termChipA11y: '{{count}}\u00A0months',
-      extras: '+ Tax, fees', extrasSummary: '+{{amount}}', salesTax: 'Sales tax', salesTaxA11y: 'Sales tax, percent', taxPlaceholder: 'Type the rate', fees: 'Fees',
+      extras: '+ Tax, fees', extrasSummary: '+{{amount}}', salesTax: 'Sales tax', salesTaxA11y: 'Sales tax, percent', taxPlaceholder: 'The rate', fees: 'Fees',
       tryCredit: 'See it on credit', tryCreditA11y: 'See it on credit, keeps the amount',
       runFull: 'Run the full check', clearText: 'Clear', clearA11y: 'Clear the quick check', placeholderShort: 'car 14500', footer: 'Worked out from the figures you entered.',
       monthlyCaption_one: 'a month for 1\u00A0month', monthlyCaption_other: 'a month for {{count}}\u00A0months', loading: 'Checking',
@@ -1793,8 +1793,8 @@ const en = {
       error: { heading: 'Your figures didn’t load', body: 'A check needs your latest figures.', retry: 'Try again' },
     },
     home: {
-      noFigures: { heading: 'Nothing to judge against yet', body: 'Add roughly what comes in and goes out, or import a statement. Then every check has something to rest on.', addRough: 'Add rough figures', import: 'Import a statement' },
-      sources: '{{months}} months of logged income, {{lines}} expense lines this month, {{debts}} debts and {{accounts}} accounts. Change any of them in Activity or Grow and every figure here rescores.',
+      noFigures: { heading: 'Nothing to judge against yet', body: 'Rough figures for what comes in and goes out, or an imported statement, give every check something to rest on.', addRough: 'Add rough figures', import: 'Import a statement' },
+      sources: '{{months}} months of logged income, {{lines}} expense lines this month, {{debts}} debts and {{accounts}} accounts. Every figure here rescores when they change in Activity.',
       sourcesRough: 'Rough figures you entered. A statement import or one full logged month replaces them.',
       pastRow: 'Past decisions', pastCount_one: '{{count}} decision', pastCount_other: '{{count}} decisions',
       addChange: 'Add a change coming up', checkInvestment: 'Check an investment',
@@ -1838,7 +1838,7 @@ const en = {
       next: { price: 'Next: Price', impact: 'Next: Impact', alternatives: 'Next: Alternatives', decide: 'Next: Decide' },
       commit: { go: 'Go ahead', wait: 'Save the plan', pass: 'Record as passed', none: 'Pick an outcome' },
       hint: {
-        noPrice: 'Add a price to continue.', needsSteps: 'A price and a payment method come first.',
+        noPrice: 'A price comes first.', needsSteps: 'A price and a payment method come first.',
         impact: 'Nothing here changes your balances. Step five is where anything gets written.',
         waitPass: 'Waiting and passing leave every balance exactly as it is.',
         breaks: 'This breaks a line you set. You can still log it — the record notes it.',
@@ -1921,10 +1921,10 @@ const en = {
       loanDeposit: 'Deposit', loanInterestSaved: 'Interest saved', loanCashLeft: 'Cash left after', loanTerm: 'Term', loanTermUnit: 'mo',
       loanTermNote_one: 'At 1\u00A0month the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total.',
       loanTermNote_other: 'At {{count}}\u00A0months the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total.',
-      loanRate: 'Annual rate', loanRateHint: 'Type the rate you were quoted', loanSecured: 'Secured against what you’re buying',
+      loanRate: 'Annual rate', loanRateHint: 'The rate on the quote', loanSecured: 'Secured against what you’re buying',
       instalmentPayment: 'Payment', instalmentCount: 'How many', instalmentCountUnit: 'payments',
       instalmentNote: 'No rate was quoted. {{count}} × {{payment}} is {{total}} against a {{price}} price, about {{pct}}% a year.',
-      instalmentMissing: 'Add the payment and how many to score this.',
+      instalmentMissing: 'The payment and how many are needed to score this.',
       instalmentNoteFees: 'No rate was quoted. {{count}} × {{payment}} is {{total}} against the {{financed}} paid over time, about {{pct}}% a year.', // D-49 (04 ME-02): with on-the-day fees the rate is on plan.financed = price − dayFees
       instalmentBelowPrice: '{{count}} × {{payment}} is {{total}}, less than the {{financed}} it has to cover. Change the payment or how many to score this.', // D-49 (04 LO-05)
       loanPaidOff: 'Paid off in month {{count}}, with a last payment of {{final}}.', // D-45 (04 D-64): shown under the loan notes only when plan.months < the entered term
@@ -2044,7 +2044,7 @@ const en = {
       lineInvesting: 'Investing floor', lineInvestingDesc: '{{after}} a month against your {{floor}} floor', lineInvestingNoFloor: '{{after}} a month, no floor set',
       lineSaving: 'Saving floor', lineSavingDesc: '{{after}} a month against your {{floor}} floor',
       setbacksTitle: 'If something goes wrong', setbacksSummary: 'Runway {{count}}\u00A0months', setbacksSummaryOpen: 'Runway not limited',
-      setbacksNote: 'Switch one on to see it hit your cash with this purchase already running.',
+      setbacksNote: 'Switching one on shows it hitting your cash with this purchase already running.',
       setback: { unexpected_expense: 'Unexpected expense', income_drop: 'Income drops', job_loss: 'Job or client loss', late_invoice: 'Invoices pay late' },
       setbackDesc: { unexpected_expense: 'One month’s costs, once', unexpectedAmount: '{{amount}}, once', income_drop: '{{pct}}% less for {{count}}\u00A0months', job_loss: 'No income for {{count}}\u00A0months', late_invoice: 'Paid {{count}} days late' },
       setbackHit: '−{{amount}}', setbackAfter: '{{amount}} left', setbackWiped: 'wiped out', setbackAdd: '+ Add a setback to test',
@@ -2087,7 +2087,7 @@ const en = {
       spendCheaper: 'Cheaper one', spendNotSpent: 'Not spent', spendDayMonth: '{{day}} less on the day, then {{month}} a month',
       spendAllOnDay: 'All of it on the day', spendMonthOnly: '{{month}} a month, nothing on the day', spendNothing: 'Nothing changes on this plan',
       spendSliderA11y: 'Cheaper price', spendSliderValue: '{{pct}} percent of {{price}}', spendRatio: '{{pct}}% of {{price}}',
-      tradeEyebrow: 'The trade, in one line', tradeIdle: 'Move the slider and the trade appears.',
+      tradeEyebrow: 'The trade, in one line', tradeIdle: 'The trade appears as the slider moves.',
       tradeThin: 'Buying at {{cheaper}} lowers the payment from {{from}} to {{to}}, but the month still only leaves {{left}} — nothing you could reliably set aside.',
       tradeKept: 'Buying at {{cheaper}} leaves {{today}} today and {{monthly}} a month kept. Kept up until month {{count}}, that is {{fv}} — {{own}} of your own money.',
       tradeKeptGrowth: 'Buying at {{cheaper}} leaves {{today}} today and {{monthly}} a month kept. Kept up until month {{count}}, that is {{fv}} — {{own}} of your own money and {{growth}} it earned.',
@@ -2130,8 +2130,8 @@ const en = {
       writtenPassNoReminders: 'No reminders. It stays until you delete it.',
       confirmTitle: 'Write this to your records?', confirmGo: 'Go ahead', confirmNotYet: 'Not yet',
       goNeedsMonth: 'Go ahead waits for a full logged month. Until then this is a rough first read.',
-      goNeedsAccount: 'Choose a cash or checking account to pay from first.',
-      goNeedsCard: 'Choose the card this goes on first.',
+      goNeedsAccount: 'A cash or checking account to pay from comes first.',
+      goNeedsCard: 'The card this goes on comes first.',
       goNeedsDebtCategory: 'The Debt category is archived or missing, so the payments can’t be written. Restore it in Categories first.',
       goNeedsSavingsCategory: 'The Savings category is archived or missing, so the schedule can’t be written. Restore it in Categories first.',
       goUnavailable: 'This can’t be written as it is set up. Check the price and how you pay.',
@@ -2225,7 +2225,7 @@ const en = {
       },
       oneOff: { basis_one: '{{count}} one-off left out', basis_other: '{{count}} one-offs left out' },
       credit: {
-        promoAdd: '+ Promotional rate', promoRate: 'Promotional rate', promoFor: 'For', promoThen: 'Then', promoThenAbove: 'Change it above', promoMonths: 'months',
+        promoAdd: '+ Promotional rate', promoRate: 'Promotional rate', promoFor: 'For', promoThen: 'Then', promoThenAbove: 'The rate above', promoMonths: 'months',
         promoSummary: '{{rate}}% for {{months}} months, then {{after}}%', afterPromo: 'Payment after the promotion: {{amount}} a month',
         clearsBefore: 'The balance clears before it ends', leftWhenEnds: 'Left when it ends: {{amount}}', interestAfter: 'Interest after it ends: {{amount}}',
         clearInPromo: 'To clear it inside the promotion: {{amount}} a month', // 05 D-53
@@ -2275,9 +2275,9 @@ const en = {
         rowMonths_one: '{{count}}\u00A0month', rowMonths_other: '{{count}}\u00A0months', rowNever: 'Not within {{months}} months', // addition (05-42)
       },
       runway: { summary: 'Runway {{months}} months, {{lost}} less because of this', lost: 'Runway lost to this purchase: {{months}} months', met: 'New payments still met', notMet: 'New payments cannot be met' },
-      running: { addAmount: 'Add amount', typeToCount: 'Type an amount to count it', insurance: 'Insurance', fuel: 'Fuel', maintenance: 'Maintenance', registration: 'Registration', loss_of_value: 'Loss of value', notCash: 'Not a monthly cash cost',
+      running: { addAmount: 'Add amount', typeToCount: 'Counted once an amount is typed', insurance: 'Insurance', fuel: 'Fuel', maintenance: 'Maintenance', registration: 'Registration', loss_of_value: 'Loss of value', notCash: 'Not a monthly cash cost',
         amountA11y: '{{name}}, amount a month', lossAmountA11y: 'Loss of value, amount a month', lossPercentA11y: 'Loss of value, percent a year',
-        lossMonth: 'A month', lossPercent: '% a year', lossModeA11y: 'Loss of value as an amount a month or a percent a year of the price before tax, fees and trade-ins', lossPercentPlaceholder: 'Type a % a year', lossAbout: 'About {{amount}} a month. Shown here, not counted in your month.' }, // D-44
+        lossMonth: 'A month', lossPercent: '% a year', lossModeA11y: 'Loss of value as an amount a month or a percent a year of the price before tax, fees and trade-ins', lossPercentPlaceholder: '% a year', lossAbout: 'About {{amount}} a month. Shown here, not counted in your month.' }, // D-44
       estimateGap: {
         running: 'Your running costs have come in about {{pct}}% {{direction}} than estimated.',
         payment: 'Your payments have come in about {{pct}}% {{direction}} than estimated.',

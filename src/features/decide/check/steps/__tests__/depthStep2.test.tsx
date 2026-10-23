@@ -44,7 +44,7 @@ describe('Step 2 running-cost prompts', () => {
   it('pre-lists a vehicle\'s categories as unchecked rows with blank amounts', async () => {
     await wrap(<Harness initial={buy({ itemType: 'vehicle' })} />);
     for (const name of ['Insurance', 'Fuel', 'Maintenance', 'Registration']) {
-      const row = screen.getByLabelText(`${name}, Type an amount to count it`);
+      const row = screen.getByLabelText(`${name}, Counted once an amount is typed`);
       expect(row.props.accessibilityState).toMatchObject({ checked: false });
     }
     expect(screen.getAllByPlaceholderText('Add amount').length).toBeGreaterThanOrEqual(5); // four rows and the loss-of-value field
@@ -55,12 +55,12 @@ describe('Step 2 running-cost prompts', () => {
 
   it('lists insurance and maintenance for a general item and nothing for a bill', async () => {
     const view = await wrap(<Harness initial={buy({ itemType: 'general' })} />);
-    expect(screen.getByLabelText('Insurance, Type an amount to count it')).toBeTruthy();
-    expect(screen.getByLabelText('Maintenance, Type an amount to count it')).toBeTruthy();
-    expect(screen.queryByLabelText('Fuel, Type an amount to count it')).toBeNull();
+    expect(screen.getByLabelText('Insurance, Counted once an amount is typed')).toBeTruthy();
+    expect(screen.getByLabelText('Maintenance, Counted once an amount is typed')).toBeTruthy();
+    expect(screen.queryByLabelText('Fuel, Counted once an amount is typed')).toBeNull();
     await view.unmount();
     await wrap(<Harness initial={buy({ itemType: 'rent_bill' })} />);
-    expect(screen.queryByLabelText('Insurance, Type an amount to count it')).toBeNull();
+    expect(screen.queryByLabelText('Insurance, Counted once an amount is typed')).toBeNull();
     expect(screen.queryByText('Loss of value')).toBeNull();
   });
 
@@ -76,7 +76,7 @@ describe('Step 2 running-cost prompts', () => {
     expect(updates.at(-1)?.runningCosts).toEqual([
       { id: 'prompt-insurance', name: '', amount: 0, note: '', counted: false, seriesId: null, category: 'insurance' },
     ]);
-    expect(screen.getByLabelText('Insurance, Type an amount to count it').props.accessibilityState).toMatchObject({ checked: false });
+    expect(screen.getByLabelText('Insurance, Counted once an amount is typed').props.accessibilityState).toMatchObject({ checked: false });
   });
 
   it('does not list a category twice when a line for it already exists', async () => {

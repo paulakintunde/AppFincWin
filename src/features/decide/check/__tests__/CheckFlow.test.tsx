@@ -212,7 +212,7 @@ describe('the five steps', () => {
   it('opens on step 1 with no price, and Next waits for one', async () => {
     await open({ advertised: null, method: null });
     expect(screen.getByText(stepText(1))).toBeTruthy();
-    expect(screen.getByText('Add a price to continue.')).toBeTruthy();
+    expect(screen.getByText('A price comes first.')).toBeTruthy();
     expect(screen.getByLabelText('Next: Price').props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
   });
 

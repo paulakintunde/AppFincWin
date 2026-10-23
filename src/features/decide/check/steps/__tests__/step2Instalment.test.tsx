@@ -72,7 +72,7 @@ describe('InstalmentPanel (D-80)', () => {
     expect(rate.props.value).toBe(''); // never pre-filled
     expect(screen.getByLabelText('Payment as quoted (optional)')).toBeTruthy();
     expect(screen.queryByLabelText('Payment')).toBeNull();
-    expect(screen.getByText('Add the payment and how many to score this.')).toBeTruthy();
+    expect(screen.getByText('The payment and how many are needed to score this.')).toBeTruthy();
   });
 
   it('D-80 a quote that differs shows the rate works out note and is scored', async () => {

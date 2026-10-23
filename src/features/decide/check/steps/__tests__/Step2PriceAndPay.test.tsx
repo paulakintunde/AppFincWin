@@ -274,7 +274,7 @@ describe('MethodPanels', () => {
     it('leaves the rate empty until typed and never invents one', async () => {
       await renderStep({ method: 'loan' });
       expect(screen.getByLabelText('Annual rate, percent').props.value).toBe('');
-      expect(screen.getByText('Type the rate you were quoted')).toBeTruthy();
+      expect(screen.getByText('The rate on the quote')).toBeTruthy();
     });
 
     it('typing a rate updates aprText and clears the quick-check marker', async () => {
@@ -340,7 +340,7 @@ describe('MethodPanels', () => {
 
     it('asks for both numbers until the plan resolves', async () => {
       await renderStep({ method: 'instalment', instalment: inst(null, null) });
-      expect(screen.getByText('Add the payment and how many to score this.')).toBeTruthy();
+      expect(screen.getByText('The payment and how many are needed to score this.')).toBeTruthy();
     });
 
     it('states the implied rate only when the plan resolved', async () => {
@@ -357,7 +357,7 @@ describe('MethodPanels', () => {
     it('instalments below the price ask for the amount or count', async () => {
       await renderStep({ method: 'instalment', instalment: inst(1_000, 2) });
       expect(screen.getByText('2 × $10.00 is $20, less than the $1500 it has to cover. Change the payment or how many to score this.')).toBeTruthy();
-      expect(screen.queryByText('Add the payment and how many to score this.')).toBeNull();
+      expect(screen.queryByText('The payment and how many are needed to score this.')).toBeNull();
     });
   });
 

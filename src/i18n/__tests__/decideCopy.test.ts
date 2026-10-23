@@ -44,6 +44,25 @@ const ACTION_LABELS = new Set([
   'decide.delete.keep', // dialog choice: keep the record instead of deleting it
   'decide.verdict.key.putInCaption', // field caption: the key figure "Put in a month" (investing amount)
 ]);
+// 2026-10-23 walkthrough: sentences, hints and placeholders are declarative ("A price comes first"), never an order to the
+// user ("Add a price to continue", "Type the rate"). Buttons, dialog titles and field captions that name an action in the
+// app are listed by key; any other string that opens with an instruction verb fails.
+const INSTRUCTION_LEAD = /^(Add|Type|Choose|Pick|Enter|Switch|Move|Tap|Change (it|any|the))\b/;
+const CONTROL_LABELS = new Set([
+  'decide.home.noFigures.addRough', // button
+  'decide.home.addChange', // button
+  'decide.lineEditor.titleAdjust', // sheet title
+  'decide.lineEditor.titleRunning', // sheet title
+  'decide.lineEditor.titleReplaces', // sheet title
+  'decide.lineEditor.titleSetback', // sheet title
+  'decide.lineEditor.titleFee', // sheet title
+  'decide.past.pickTitle', // sheet title
+  'decide.depth.changes.addTitle', // sheet title
+  'decide.depth.running.addAmount', // button
+  'decide.section.optSwitchWait', // button
+  'decide.flow.commit.none', // disabled primary button label
+  'decide.hint.foldTap', // reveal hint named in UI-SPEC as a control
+]);
 const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
 
 // Demo-scale values (05-18 demo: income $4,400 a month, car loan over 48 months). Four-digit amounts are the widest a
@@ -82,6 +101,18 @@ describe('decide copy (DCU-09)', () => {
 
   it.each(leaves.filter((l) => !ACTION_LABELS.has(l.path)))('does not open with an order about money: $path', ({ value }) => {
     expect(value).not.toMatch(IMPERATIVE_LEAD);
+  });
+
+  it('2026-10-23: no sentence, hint or placeholder opens with an instruction verb', () => {
+    const offenders = leaves.filter((l) => !CONTROL_LABELS.has(l.path) && INSTRUCTION_LEAD.test(l.value)).map((l) => l.path);
+    expect(offenders).toEqual([]);
+    for (const old of ['Add a price to continue.', 'Type the rate you were quoted', 'Choose the card this goes on first.', 'Switch one on to see it hit your cash.']) {
+      expect(old).toMatch(INSTRUCTION_LEAD);
+    }
+  });
+
+  it('names no tab that does not exist (Grow)', () => {
+    expect(leaves.filter((l) => /\bGrow\b/.test(l.value)).map((l) => l.path)).toEqual([]);
   });
 
   it('every listed action label exists and still opens with its verb (WR-D04)', () => {
