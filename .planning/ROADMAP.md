@@ -764,7 +764,7 @@ Plans:
 **Wave 23** *(blocked on Wave 22 completion)*
 - [x] 05-94-PLAN.md — Engine E5b: card check limit in plan building, card_limit_rate_missing (D-91)
 - [x] 05-103-PLAN.md — Instalment card: How often, 1-500, first-payment labels; written lines and Go ahead by frequency (D-89)
-- [ ] 05-106-PLAN.md — Speed, flow: settledCore reuse, selected method only, idle details with Updating, perf harness (D-88)
+- [x] 05-106-PLAN.md — Speed, flow: settledCore reuse, selected method only, idle details with Updating, perf harness (D-88)
 
 **Wave 24** *(blocked on Wave 23 completion)*
 - [ ] 05-95-PLAN.md — Engine E5c: the snapshot converts the card limit (rational, floored) and passes it with the region (D-91)
