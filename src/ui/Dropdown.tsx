@@ -20,6 +20,8 @@ export interface DropdownOption<K extends string> {
   label: string;
   subLabel?: string;
   triggerLabel?: string;
+  /** 05 D-73: renders the label in the danger colour (a destructive action). */
+  tone?: 'danger';
 }
 
 export interface DropdownProps<K extends string> {
@@ -34,8 +36,10 @@ export interface DropdownProps<K extends string> {
   onSelect: (key: K) => void;
   triggerA11yLabel: string;
   disabled?: boolean;
-  variant?: 'pill' | 'row';
+  variant?: 'pill' | 'row' | 'glyph';
   rowLabel?: string;
+  /** The 'glyph' variant trigger: a 44x44 target showing only this glyph. */
+  glyph?: React.ReactNode;
 }
 
 // Component geometry (not tokens): radio dot and chevron sizes.
@@ -53,6 +57,7 @@ export function Dropdown<K extends string>({
   disabled = false,
   variant = 'pill',
   rowLabel,
+  glyph,
 }: DropdownProps<K>) {
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -73,16 +78,24 @@ export function Dropdown<K extends string>({
         disabled={disabled}
         onPress={() => setOpen(true)}
         style={
-          variant === 'pill'
-            ? [styles.pillTrigger, { backgroundColor: colors.fill1, opacity: disabled ? 0.5 : 1 }]
-            : [styles.rowTrigger, { opacity: disabled ? 0.5 : 1 }]
+          variant === 'glyph'
+            ? [styles.glyphTrigger, { opacity: disabled ? 0.5 : 1 }]
+            : variant === 'pill'
+              ? [styles.pillTrigger, { backgroundColor: colors.fill1, opacity: disabled ? 0.5 : 1 }]
+              : [styles.rowTrigger, { opacity: disabled ? 0.5 : 1 }]
         }
       >
-        {variant === 'row' ? (
-          <Text style={[body, styles.rowLabel, { color: colors.ink }]}>{rowLabel}</Text>
-        ) : null}
-        <Text style={{ ...label, color: variant === 'pill' ? colors.ink : colors.inkMuted }}>{currentLabel}</Text>
-        <View style={[styles.chevron, { borderColor: colors.inkMuted }]} />
+        {variant === 'glyph' ? (
+          glyph
+        ) : (
+          <>
+            {variant === 'row' ? (
+              <Text style={[body, styles.rowLabel, { color: colors.ink }]}>{rowLabel}</Text>
+            ) : null}
+            <Text style={{ ...label, color: variant === 'pill' ? colors.ink : colors.inkMuted }}>{currentLabel}</Text>
+            <View style={[styles.chevron, { borderColor: colors.inkMuted }]} />
+          </>
+        )}
       </Pressable>
       <Modal
         transparent
@@ -129,7 +142,7 @@ export function Dropdown<K extends string>({
                     </View>
                   )}
                   <View style={styles.optionText}>
-                    <Text style={{ ...body, color: colors.ink }}>{o.label}</Text>
+                    <Text style={{ ...body, color: o.tone === 'danger' ? colors.danger : colors.ink }}>{o.label}</Text>
                     {o.subLabel ? <Text style={{ ...label, color: colors.inkMuted }}>{o.subLabel}</Text> : null}
                   </View>
                 </Pressable>
@@ -157,6 +170,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.gapSm,
+  },
+  glyphTrigger: {
+    width: space.touchMin,
+    height: space.touchMin,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   rowLabel: { flex: 1 },
   chevron: {
