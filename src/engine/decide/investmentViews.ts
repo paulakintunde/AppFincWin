@@ -4,7 +4,7 @@ import { futureValueNetExact, futureValuePathExact } from '../payoff/futureValue
 import { amortiseSchedule, simulateMinimumSchedule } from '../payoff/rateSchedule';
 import { ONE_HUNDRED_PERCENT, ZERO_PERCENT, minorOrNull, type Percent } from '../payoff/types';
 import { DEFAULT_PROJECTION_HORIZON_MONTHS } from './constants';
-import { rateScheduleFor } from './plan';
+import { monthlyStepsOf, rateScheduleFor } from './plan';
 import { myPart } from './share';
 import type {
   Assessment,
@@ -140,7 +140,7 @@ export function investmentViews(
   const zero = minorUnits(0);
 
   // My payment in each month 1..horizon, from the plan's own steps (household amounts, my part each).
-  const steps = plan.paymentSteps.map((s) => ({ ...s, mine: myPart(s.amount, share) }));
+  const steps = monthlyStepsOf(plan).map((s) => ({ ...s, mine: myPart(s.amount, share) }));
   const paymentAt = new Array<number>(horizon + 1).fill(0);
   for (const s of steps) {
     for (let k = s.fromMonth; k <= Math.min(s.toMonth, horizon); k += 1) {

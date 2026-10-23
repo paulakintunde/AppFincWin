@@ -171,7 +171,11 @@ export type BuyPayment =
       // D-80: absent = the plan has no rate; null = a rate is expected but not given (instalment_rate_missing); a Percent
       // works the payment out at APR / 12 over the count on the amount financed. A typed instalmentAmount is still the one scored.
       readonly apr?: Percent | null;
-      readonly firstPayment?: 'today' | 'next_month'; // D-80 / D-49: absent = 'today' (an annuity-due: the first payment is on the day)
+      // D-89 (R16.11 E3): how often the instalment falls; absent = 'monthly'. The payment is worked out at APR / periodsPerYear.
+      readonly freq?: InstalmentFreq;
+      // D-80 / D-49: absent = 'today' (an annuity-due: the first payment is on the day). D-89: 'next_period' is the first
+      // payment one period on; 'next_month' is its deprecated alias until 05-109.
+      readonly firstPayment?: 'today' | 'next_period' | 'next_month';
       readonly lateFee?: MinorUnits;
       readonly lateFeeCapTotal?: MinorUnits; // D-50: user-entered fee per missed instalment and optional total cap; absent = none
     }
@@ -295,6 +299,7 @@ export interface Plan {
   // every payment after day one, month k >= 1, household amounts, contiguous runs; [] for cash, invest lump and card full.
   // THE source of truth for writing recurring series (05 D-09): Σ amount × run length === total − dayOne, promo or not (D-48)
   readonly paymentSteps: readonly PaymentStep[];
+  readonly freq?: InstalmentFreq; // D-89: present on instalment plans; paymentSteps are then indexed by payment period (see PaymentStep)
   readonly promo: PromoOutcome | null; // D-48: present only for a loan or card-months/minimum plan with PromoTerms; then `monthly` = promo.highestMonthlyPayment
   readonly lateFees: LateFeeCost | null; // D-50: present only for an instalment plan with a user-entered lateFee; never changes any other figure
   readonly computedPayment?: MinorUnits; // D-80: present only for an instalment plan with a rate: the worked-out payment (a typed amount, when given, is the one scored)
@@ -732,11 +737,18 @@ export interface PromoTerms {
   readonly months: number;
   readonly deferredInterest: boolean;
 } // user-entered, never defaulted (D-07); months integer 1..MAX_TERM_MONTHS; deferredInterest needs apr 0
+/**
+ * D-89: `fromMonth` / `toMonth` are payment-period indexes, inclusive, k >= 1 after day one; household amount. They are
+ * calendar months only when `Plan.freq` is 'monthly' or absent. A weekly, fortnightly or quarterly instalment plan counts
+ * periods (week 1, week 2, ...), so a month-indexed consumer must read `monthlyStepsOf(plan)`, never `plan.paymentSteps`.
+ */
 export interface PaymentStep {
   readonly fromMonth: number;
   readonly toMonth: number;
   readonly amount: MinorUnits;
-} // inclusive month range k >= 1 after day one; household amount
+}
+/** D-89: how often an instalment plan's payment falls. */
+export type InstalmentFreq = 'weekly' | 'fortnightly' | 'monthly' | 'quarterly';
 export interface PromoOutcome {
   readonly promoMonths: number;
   readonly promoApr: Percent;

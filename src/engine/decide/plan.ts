@@ -68,6 +68,7 @@ import {
   type AmortisationResult,
   type MinimumOutcome,
   type Percent,
+  type PeriodsPerYear,
   type RateSchedule,
   type ScheduledAmortisation,
   type ScheduledMinimumResult,
@@ -75,9 +76,11 @@ import {
 import { cardEligibility } from './cardRule';
 import { LATE_PAYMENT_COUNTS, MAX_APR_PERCENT, MONTHS_PER_YEAR } from './constants';
 import { assertCurrency } from './currency';
+import { monthlyEquivalent } from './series';
 import type {
   BuyCheck,
   BuyPayment,
+  InstalmentFreq,
   InvestCheck,
   LateFeeCost,
   PaymentStep,
@@ -290,6 +293,32 @@ function scheduleOf(am: AmortisationResult): MinorUnits[] {
   return Array.from({ length: am.months }, (_, i) => (i === am.months - 1 ? am.finalPayment : am.payment));
 }
 
+/** D-89: payments per year of each instalment frequency (the amortise periodsPerYear). */
+const PERIODS_PER_YEAR: Readonly<Record<InstalmentFreq, PeriodsPerYear>> = {
+  weekly: 52,
+  fortnightly: 26,
+  monthly: 12,
+  quarterly: 4,
+};
+
+/**
+ * D-89: the plan's steps as calendar-month runs. A monthly or frequency-less plan already is month-indexed and is returned
+ * as it is. Otherwise each month 1..plan.months carries the monthly equivalent (M6, half-up once), capped at what is left,
+ * and the last month carries the remainder, so the total equals the instalments after day one. Every month-indexed
+ * consumer reads this, never `plan.paymentSteps` (see PaymentStep).
+ */
+export function monthlyStepsOf(plan: Plan): readonly PaymentStep[] {
+  if (plan.freq === undefined || plan.freq === 'monthly') return plan.paymentSteps;
+  let remaining = plan.paymentSteps.reduce((sum, s) => sum + BigInt(s.amount) * BigInt(s.toMonth - s.fromMonth + 1), 0n);
+  const amounts: MinorUnits[] = [];
+  for (let month = 1; month <= plan.months; month += 1) {
+    const take = month === plan.months || BigInt(plan.monthly) > remaining ? remaining : BigInt(plan.monthly);
+    amounts.push(minorFromBigInt(take, 'monthlyStepsOf'));
+    remaining -= take;
+  }
+  return compressSteps(amounts);
+}
+
 function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'instalment' }>): PlanResult {
   if (p.lateFee !== undefined) assertMoney(p.lateFee, 'lateFee');
   if (p.lateFeeCapTotal !== undefined) {
@@ -308,6 +337,9 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
   if (reasons.length > 0) return missing(reasons);
 
   const count = p.instalmentCount!;
+  const freq: InstalmentFreq = p.freq ?? 'monthly';
+  const ppy = PERIODS_PER_YEAR[freq];
+  // D-89: 'next_month' is the deprecated alias of 'next_period'; either way the first payment is not on the day.
   const today = (p.firstPayment ?? 'today') === 'today';
   // 04-REVIEW ME-02: the on-the-day fees inside the price are paid on the day, as on the loan path; the instalments
   // cover the rest (financed = price - dayFees, floored at 0). Before this the fees left cash nowhere: dayOne was the
@@ -316,7 +348,7 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
   // D-80: with a rate the payment is worked out on the financed amount. 'today' is an annuity-due (first payment on the
   // day), 'next_month' an ordinary annuity. A typed amount is always the one scored; computedPayment is the worked-out one.
   const computed =
-    p.apr === undefined || p.apr === null ? null : (today ? amortiseDue : amortise)(m(financed), p.apr, count);
+    p.apr === undefined || p.apr === null ? null : (today ? amortiseDue : amortise)(m(financed), p.apr, count, ppy);
   const amounts: MinorUnits[] =
     p.instalmentAmount !== null ? Array.from({ length: count }, () => m(p.instalmentAmount!)) : scheduleOf(computed!);
   // 04-REVIEW LO-05 (and D-80, with or without a rate): payments that add up to less than the financed amount are
@@ -333,19 +365,22 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
     : financed > 0
       ? percentFromScaled(
           divideHalfUp(
-            (paid - BigInt(financed)) * BigInt(MONTHS_PER_YEAR) * ONE_HUNDRED_PERCENT,
+            (paid - BigInt(financed)) * BigInt(ppy) * ONE_HUNDRED_PERCENT,
             BigInt(financed) * BigInt(count)
           )
         )
       : ZERO_PERCENT;
   const first = today && amounts.length > 0 ? amounts[0]! : m(0);
+  // D-89 (M6): the level payment's monthly equivalent, rounded half-up once; a monthly plan is unchanged.
+  const level = p.instalmentAmount !== null ? m(p.instalmentAmount) : computed!.payment;
   return {
     status: 'resolved',
     plan: {
       price: check.price,
       dayOne: m(first + check.dayFees),
-      monthly: p.instalmentAmount !== null ? m(p.instalmentAmount) : computed!.payment,
-      months: amounts.length,
+      monthly: monthlyEquivalent(level, freq),
+      // D-89: the months the plan spans, ceil(payments x 12 / periodsPerYear); a monthly plan's payments are its months
+      months: freq === 'monthly' ? amounts.length : Math.ceil((amounts.length * MONTHS_PER_YEAR) / ppy),
       financed: m(financed),
       total,
       interest: rateExpected ? minorFromBigInt(paid - BigInt(financed), FN) : m(Math.max(0, total - check.price)),
@@ -359,6 +394,8 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
       promo: null,
       lateFees: lateFeesFor(p.lateFee, p.lateFeeCapTotal, count),
       ...(computed === null ? {} : { computedPayment: computed.payment }),
+      // D-89: carried when the check names a frequency, so a plan with none stays exactly as it was
+      ...(p.freq === undefined ? {} : { freq: p.freq }),
     },
   };
 }

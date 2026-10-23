@@ -152,3 +152,6 @@ export const BASIS_POINTS_PER_UNIT = 10_000; // D-56
 
 // Cite: D-80 (UI-SPEC R15.7 E1.8): the largest annual rate an instalment plan accepts, 999.99% a year in the engine's Percent units. FincWin input bound (no published source); it matches the 0-999% range the level-payment maths is probed over (D-64).
 export const MAX_APR_PERCENT: Percent = percent('999.99'); // D-80
+
+// Cite: D-89 (UI-SPEC R16.16 M6): the most payments a new instalment plan accepts, split from the loan term cap (120). FincWin input bound (no published source); the engine still scores any stored count up to 600.
+export const MAX_INSTALMENTS = 500; // D-89
