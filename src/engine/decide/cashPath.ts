@@ -215,6 +215,24 @@ export function purchaseFlows(input: {
   if (dayOne !== 0) flows.push({ date: asOf, amount: dayOne });
   const windowEnd = addDays(asOf, days);
   const running = BigInt(myPart(runningNet, share));
+  if (plan.freq !== undefined && plan.freq !== 'monthly') {
+    // D-89: paymentSteps are indexed by payment period; payment k falls on occurrenceDate(asOf, freq, k). The monthly
+    // running costs keep their monthly dates as separate flows.
+    for (let k = 1; ; k++) {
+      const date = occurrenceDate(asOf, plan.freq, k);
+      if (date > windowEnd) break;
+      const amount = myPart(stepAmount(plan, k), share);
+      if (amount !== 0) flows.push({ date, amount });
+    }
+    if (running !== 0n) {
+      for (let k = 1; ; k++) {
+        const date = occurrenceDate(asOf, 'monthly', k);
+        if (date > windowEnd) break;
+        flows.push({ date, amount: minorFromBigInt(running, 'purchaseFlows') });
+      }
+    }
+    return flows;
+  }
   for (let k = 1; ; k++) {
     const date = occurrenceDate(asOf, 'monthly', k);
     if (date > windowEnd) break;
