@@ -603,7 +603,7 @@ export interface AlternativeRow {
 }
 export interface CheaperDetail {
   // step 4 "Spend less" card and the trade line
-  readonly ratioPercent: number; // the slider value used
+  readonly ratioPercent: number; // cheaper over price, half-up whole percent, display only (D-83)
   readonly notSpent: MinorUnits; // plan.price − cheaperPrice
   readonly dayDiff: MinorUnits; // my day-one saving against as planned (>= 0)
   readonly monthlyDiff: MinorUnits; // my monthly saving against as planned (>= 0)

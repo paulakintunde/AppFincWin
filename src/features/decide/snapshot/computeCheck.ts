@@ -36,7 +36,7 @@ import type {
   SetbackInput,
   StackedCheckInput,
 } from '@/engine/decide';
-import { minorUnits } from '@/engine/money';
+import { divideHalfUp, minorUnits } from '@/engine/money';
 import { PAY_METHODS } from './types';
 import { effectiveMethod, quickToCheckInputs, toEngineCheck } from './checkInputs';
 import type { EngineCheckResult, EngineCtx } from './checkInputs';
@@ -177,7 +177,15 @@ export function computeDetails(core: CheckCore, inputs: CheckInputs): CheckCompu
   return {
     ...base,
     options: buildOptions(context, check, verdict),
-    alternatives: buildAlternatives(context, check, verdict, inputs.cheaperRatioPercent ?? undefined),
+    // Bridge until 05-83: the stored percent becomes the exact cheaper price the engine now takes (D-83).
+    alternatives: buildAlternatives(
+      context,
+      check,
+      verdict,
+      inputs.cheaperRatioPercent === null
+        ? undefined
+        : { price: minorUnits(Number(divideHalfUp(BigInt(verdict.plan.price) * BigInt(inputs.cheaperRatioPercent), 100n))) }
+    ),
     setbacks: applySetbacks(verdict, setbacks),
     waitPlan: buildWaitPlan(context, check, inputs.wait.monthlyAmount === null ? null : minorUnits(inputs.wait.monthlyAmount)),
     investmentViews: buyer
