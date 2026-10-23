@@ -22,7 +22,6 @@ import { MoneyInput } from '../ui/MoneyInput';
 import { RateInput } from '../ui/RateInput';
 import { CustomValueChips } from '../ui/CustomValueChips';
 import { useInfoSheet } from '../ui/useInfoSheet';
-import { useShouldStack } from '../ui/textFit';
 import { SegmentedToggle } from '../ui/SegmentedToggle';
 import { CREDIT_TERMS, type CheckInputs, type QuickComputation, type SnapshotResult } from '../snapshot/types';
 import { DURATION_MAX, DURATION_MIN } from '../snapshot/customValues';
@@ -58,7 +57,6 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
   const wholeFmt = useMoneyFormatter(false);
   const exactFmt = useMoneyFormatter(true);
   const q = useQuickCheck(source, surface);
-  const stacked = useShouldStack();
   const aprInfo = useInfoSheet('beforeInterest');
   const { inputs, submitted, computation } = q.state;
 
@@ -159,7 +157,7 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
               onSubmitEditing={check}
               returnKeyType="go"
               accessibilityLabel={t('decide.quick.a11y')}
-              placeholder={stacked ? t('decide.quick.placeholderShort') : t('decide.quick.placeholder')}
+              placeholder={t('decide.quick.placeholderShort')} // R6 rule P: the pill also holds "Check it", so the long variant always clipped
               placeholderTextColor={colors.inkFaint}
               style={[styles.amountInput, { ...textRole(pairing, 'body'), color: colors.ink }]}
             />

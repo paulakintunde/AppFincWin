@@ -1751,7 +1751,7 @@ const en = {
     steadiness: { steady: 'Steady', variable: 'Variable', volatile: 'Volatile', insufficient: 'Not enough history yet' },
     method: { cash: 'Paid in full', loan: 'Deposit and loan', instalment: 'Instalment plan', card: 'On a card', monthly: 'Monthly contribution', lump: 'Lump sum', none: 'no payment method yet' },
     quick: {
-      placeholder: 'Something and a price — car 14500', a11y: 'Quick check', check: 'Check it',
+      a11y: 'Quick check', check: 'Check it',
       parseError: 'Add a figure — “car 14500” works', unnamed: 'Unnamed',
       nameAt: '{{name}} at {{price}}', // WR-B08: the result echoes the price it read from the text
       payWith: 'Pay with', cash: 'Cash', credit: 'Credit',

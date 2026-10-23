@@ -10,7 +10,6 @@ import { EMPTY_STACK, type QuickComputation, type StackSelection } from '../../s
 import { TODAY, loggedSource, noneSource, roughSource, unconvertedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { QuickCheckForm, type QuickCheckFormProps } from '../QuickCheckForm';
 import { QuickResult } from '../QuickResult';
-import * as textFit from '../../ui/textFit';
 import { toEngineOther } from './helpers/otherCheck';
 
 jest.setTimeout(30000);
@@ -52,7 +51,7 @@ async function checkIt(text: string) {
 describe('QuickCheckForm: home', () => {
   it('starts on Cash with no result, a 12 month default hidden until Credit', async () => {
     await renderForm();
-    expect(screen.getByPlaceholderText('Something and a price — car 14500')).toBeTruthy();
+    expect(screen.getByPlaceholderText('car 14500')).toBeTruthy();
     expect(screen.queryByLabelText('Cash')).toBeNull();
     expect(screen.queryByText('Worked out from the figures you entered.')).toBeNull();
     expect(screen.queryByLabelText('Annual rate, percent')).toBeNull();
@@ -114,15 +113,10 @@ describe('QuickCheckForm: home', () => {
     expect(JSON.stringify(screen.toJSON())).not.toContain('"numberOfLines":3');
   });
 
-  it('D-76 the placeholder shortens below 360 wide', async () => {
-    const spy = jest.spyOn(textFit, 'useShouldStack').mockReturnValue(true);
-    try {
-      await renderForm();
-      expect(screen.getByPlaceholderText('car 14500')).toBeTruthy();
-      expect(screen.queryByPlaceholderText('Something and a price — car 14500')).toBeNull();
-    } finally {
-      spy.mockRestore();
-    }
+  it('D-76 rule P: the idle pill always shows the short placeholder, since the Check it button shares the pill', async () => {
+    await renderForm();
+    expect(screen.getByPlaceholderText('car 14500')).toBeTruthy();
+    expect(screen.queryByPlaceholderText(/Something and a price/)).toBeNull();
   });
 
   it('R4 the quick APR refuses 1000% and shows the range line', async () => {
