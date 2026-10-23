@@ -64,9 +64,11 @@ describe('methodCardCopy', () => {
     expect(summary('cash', base())).toBeNull();
     const inst = (over: Partial<NonNullable<CheckInputs['instalment']>>) =>
       base({ instalment: { amount: 5_000, count: 12, lateFee: null, hasRate: false, aprText: '', firstPayment: 'today', ...over } });
-    expect(summary('instalment', inst({}))).toBe('12 × $50.00 · no rate');
-    expect(summary('instalment', inst({ hasRate: true, aprText: '9' }))).toBe('12 × $50.00 · 9%');
-    expect(summary('instalment', inst({ firstPayment: 'next_month' }))).toBe('12 × $50.00 · no rate · first in a month');
+    // D-89 (R16.16 M6): the summary names the frequency; the full table is in instalmentCopy.test.ts
+    expect(summary('instalment', inst({}))).toBe('12 × $50.00 a month · no rate');
+    expect(summary('instalment', inst({ hasRate: true, aprText: '9' }))).toBe('12 × $50.00 a month · 9%');
+    expect(summary('instalment', inst({ freq: 'weekly' }))).toBe('12 × $50.00 weekly · no rate');
+    expect(summary('instalment', inst({ firstPayment: 'next_month' }))).toBe('12 × $50.00 a month · no rate · first in a month');
     expect(summary('instalment', inst({ count: null }))).toBeNull();
     const card = (over: Partial<CheckInputs['card']>) => base({ card: { ...base().card, accountId: 'c1', ...over } });
     expect(summary('card', card({ payoff: 'full' }))).toBe('Visa · in full next statement');

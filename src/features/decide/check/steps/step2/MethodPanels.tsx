@@ -273,7 +273,7 @@ function InstalmentPanel(props: Step2Props) {
   const currency = inputs.currency ?? source.currency;
   const labelLine = textRole(pairing, 'label').lineHeight;
 
-  const notes = instalmentNotes(inputs, plan, reasons, { whole: wholeFmt, exact: exactFmt }, computation.resolvedPrice);
+  const notes = instalmentNotes(inputs, plan, reasons, { whole: wholeFmt, exact: exactFmt }, computation.resolvedPrice, computation.impliedApr);
   const setInst = (patch: Partial<CheckInputs['instalment']>) => update({ instalment: { ...inst, ...patch } });
   const count = (
     <>

@@ -132,7 +132,7 @@ describe('Step2PriceAndPay: how you pay', () => {
 
   it('instalments that cover the price fold to the count, the payment and no rate', async () => {
     await renderStep({ method: 'cash', instalment: { amount: 13_000, count: 12, lateFee: null } });
-    expect(within(box('instalment')).getByText('12 × $130.00 · no rate')).toBeTruthy();
+    expect(within(box('instalment')).getByText('12 × $130.00 a month · no rate')).toBeTruthy();
   });
 
   it('a card is flagged Not accepted for an item type a card cannot settle', async () => {
@@ -345,13 +345,16 @@ describe('MethodPanels', () => {
 
     it('states the implied rate only when the plan resolved', async () => {
       await renderStep({ method: 'instalment', instalment: inst(13_000, 12) });
-      expect(screen.getByText(/^No rate was quoted\. 12 × \$130\.00 is \$1560 against a \$1500 price, about [\d.]+% a year\.$/)).toBeTruthy();
+      expect(screen.getByText(/^12\smonthly payments of \$130\.00\.$/)).toBeTruthy();
+      expect(screen.getByText(/^No rate was quoted: about [\d.]+% a year, worked out from the figures you typed\.$/)).toBeTruthy();
     });
 
     it('the instalment note totals the instalments without the fees', async () => {
       const adjustments = [{ id: 'a2', name: '', amount: 2_000, note: 'fees', counted: true, effect: 'adds' as const, onDay: true, taxPercentText: null }];
       await renderStep({ method: 'instalment', adjustments, instalment: inst(13_000, 12) });
-      expect(screen.getByText(/^No rate was quoted\. 12 × \$130\.00 is \$1560 against the \$1500 paid over time, about [\d.]+% a year\.$/)).toBeTruthy();
+      // the rate is on what the instalments finance (the price less the on-the-day fees), not on the total with them
+      expect(screen.getByText(/^12\smonthly payments of \$130\.00\.$/)).toBeTruthy();
+      expect(screen.getByText(/^No rate was quoted: about [\d.]+% a year, worked out from the figures you typed\.$/)).toBeTruthy();
     });
 
     it('instalments below the price ask for the amount or count', async () => {

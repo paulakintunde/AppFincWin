@@ -77,11 +77,11 @@ describe('InstalmentPanel (D-80)', () => {
 
   it('D-80 a quote that differs shows the rate works out note and is scored', async () => {
     await mount(instalment({ hasRate: true, aprText: '12', count: 12 }));
-    expect(screen.getByText(/^12 payments of \$\d+\.\d\d at 12%, the first on the day\. Interest over the plan is \$\d+\.$/)).toBeTruthy();
+    expect(screen.getByText(/^12\smonthly payments of \$\d+\.\d\d at 12%, the first on the day\. Interest over the plan is \$\d+\.$/)).toBeTruthy();
     expect(screen.queryByText(/The rate works out to/)).toBeNull();
     await fireEvent.changeText(screen.getByLabelText('Payment as quoted (optional)'), '140');
     expect(store.current.instalment.amount).toBe(14_000);
-    expect(screen.getByText(/^12 payments of \$140\.00 at 12%/)).toBeTruthy(); // the quote is the one scored
+    expect(screen.getByText(/^12\smonthly payments of \$140\.00 at 12%/)).toBeTruthy(); // the quote is the one scored
     expect(screen.getByText(/^The rate works out to \$1\d\d\.\d\d a month; the quote is \$140\.00\.$/)).toBeTruthy();
   });
 
@@ -97,7 +97,9 @@ describe('InstalmentPanel (D-80)', () => {
     expect(store.current.instalment.aprText).toBe('7.5'); // the typed rate is kept, hidden and unused
     expect(screen.getByLabelText('Payment').props.value).toMatch(/140/);
     expect(screen.queryByLabelText('Annual rate, percent')).toBeNull();
-    expect(screen.getByText(/^No rate was quoted\. 12 × \$140\.00/)).toBeTruthy();
+    expect(screen.getByText(/^12\smonthly payments of \$140\.00\.$/)).toBeTruthy();
+    // D-90: the true APR, worked out from the figures typed; the rate field stays empty
+    expect(screen.getByText(/^No rate was quoted: about [\d.]+% a year, worked out from the figures you typed\.$/)).toBeTruthy();
   });
 
   it('D-80 first payment In a month changes the note', async () => {

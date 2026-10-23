@@ -107,15 +107,17 @@ export function methodSummary({ method, inputs, plan, cash, whole, exact, cards 
       const inst = inputs.instalment;
       const payment = inst.amount ?? (inst.hasRate === true && plan !== null ? plan.monthly : null);
       if (inst.count === null || payment === null) return null;
-      const params = { count: inst.count, payment: exact(payment) };
-      const parts: CopyRef[] = [];
-      if (inst.hasRate === true) {
-        const apr = inst.aprText ?? '';
-        parts.push(isValidAprText(apr) ? ref(`${P}summaryInstalmentRate`, { ...params, apr }) : ref(`${P}summaryTimes`, params));
+      // D-89 / R16.16 M6: "{count} × {payment} weekly | every 2 weeks | a month | a quarter", then " · no rate" or " · {apr}%",
+      // then " · first {when}" when the first payment is not on the day
+      const freq = inst.freq ?? 'monthly';
+      const parts: CopyRef[] = [ref(`${P}instSummary.${freq}`, { count: inst.count, payment: exact(payment) })];
+      if (inst.hasRate !== true) {
+        parts.push(ref(`${P}instSummaryNoRate`));
       } else {
-        parts.push(ref(`${P}summaryInstalmentNoRate`, params));
+        const apr = inst.aprText ?? '';
+        if (isValidAprText(apr)) parts.push(ref(`${P}instSummaryRate`, { apr }));
       }
-      if (inst.firstPayment === 'next_month') parts.push(ref(`${P}summaryFirstInMonth`));
+      if ((inst.firstPayment ?? 'today') !== 'today') parts.push(ref(`${P}instSummaryFirst`, undefined, { when: `${P}when.${freq}` }));
       return parts;
     }
     case 'card': {
