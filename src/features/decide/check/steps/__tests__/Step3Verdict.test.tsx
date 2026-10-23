@@ -40,10 +40,10 @@ describe('Step3Verdict', () => {
     expect(label).not.toMatch(/\.\s*\./);
   });
 
-  it('a first read with no body announces without an empty sentence', async () => {
+  it('a first read announces without an empty sentence', async () => {
     await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, roughSource())} />);
     const label = screen.getByLabelText(/^Needs adjustment\. /).props.accessibilityLabel as string;
-    expect(label).toBe('Needs adjustment. Out of this month’s spare. Rough basis. Your cash cushion breaks by $3000. First read · your figures');
+    expect(label).toBe('Needs adjustment. Out of this month’s spare. Your cash cushion breaks by $3000. First read · your figures');
     expect(label).not.toMatch(/\.\s*\./);
     expect(label).not.toMatch(/\.\s*$/);
   });
@@ -122,22 +122,20 @@ describe('Step3Verdict', () => {
     expect(mockPush).toHaveBeenCalledWith('/activity');
   });
 
-  it('WR-C05: the missing-rate link is an accessibility action of the verdict card', async () => {
+  it('WR-C05: the missing-rate link is its own link outside the summary group', async () => {
     await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, unconvertedSource())} />);
-    const card = screen.queryAllByLabelText(/./).find((n) => Array.isArray(n.props.accessibilityActions));
-    expect(card).toBeDefined();
-    expect(card!.props.accessibilityActions).toEqual([{ name: 'openActivity', label: 'See lines waiting for a rate' }]);
-    await fireEvent(card!, 'accessibilityAction', { nativeEvent: { actionName: 'openActivity' } });
+    const link = screen.getByRole('link');
+    expect(link.props.accessibilityLabel ?? 'See lines waiting for a rate').toBeTruthy();
+    await fireEvent.press(link);
     expect(mockPush).toHaveBeenCalledWith('/activity');
   });
 
-  it('WR-C05: the confidence reasons open from an accessibility action of the verdict card', async () => {
+  it('D-70: the confidence chip opens the reasons, with the Basis explanation at the top', async () => {
     await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, loggedSource())} />);
-    const card = screen.queryAllByLabelText(/./).find((n) => Array.isArray(n.props.accessibilityActions));
-    const action = (card?.props.accessibilityActions as { name: string }[] | undefined)?.find((a) => a.name === 'confidence');
-    expect(action).toBeDefined();
-    await fireEvent(card!, 'accessibilityAction', { nativeEvent: { actionName: 'confidence' } });
+    await fireEvent.press(screen.getByLabelText(/^Basis: .*, tap for reasons$/));
     expect(screen.getAllByText('What this rests on').length).toBeGreaterThan(0);
+    expect(screen.getByText('Basis')).toBeTruthy();
+    expect(screen.getByText(/How much history the verdict rests on/)).toBeTruthy();
   });
 
   it('D-69: a provisional line shows the basis line with its count and date, Fair basis, and the reason on the sheet', async () => {
@@ -145,17 +143,16 @@ describe('Step3Verdict', () => {
     await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, source)} />);
     expect(screen.getByText(/2 lines converted at the on 2026-10-14 rate while their own rates load/)).toBeTruthy();
     expect(screen.getAllByText('Fair basis').length).toBeGreaterThan(0);
-    const card = screen.queryAllByLabelText(/./).find((n) => Array.isArray(n.props.accessibilityActions));
-    await fireEvent(card!, 'accessibilityAction', { nativeEvent: { actionName: 'confidence' } });
+    await fireEvent.press(screen.getByLabelText(/^Basis: Fair basis/));
     expect(screen.getByText('Some lines use the latest stored rate until their own rate arrives')).toBeTruthy();
   });
 
-  it('caps the title at three lines and the body at two, with a title of at most 64 characters', async () => {
+  it('D-76 the verdict card clamps no system copy', async () => {
     await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, loggedSource())} />);
     const title = screen.getByText(/It clears every line/);
-    expect(title.props.numberOfLines).toBe(3);
+    expect(title.props.numberOfLines).toBeUndefined();
     expect(String(title.props.children).length).toBeLessThanOrEqual(64);
-    const body = screen.getByText(/ in, .* out once this is running/);
-    expect(body.props.numberOfLines).toBe(2);
+    expect(screen.getByText('It fits').props.numberOfLines).toBeUndefined();
+    expect(screen.queryByText(/ in, .* out once this is running/)).toBeNull();
   });
 });

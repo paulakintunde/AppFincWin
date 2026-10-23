@@ -1,7 +1,7 @@
 /** UI-SPEC Typography: a strip of captioned figures. Figures cap at 1.3x text size, fit one line
  * by scaling to 0.8 (rule N), and the strip stacks to one row per item under rule S (DCU-11). */
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type AccessibilityActionEvent } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
@@ -18,14 +18,22 @@ export interface FigureItem {
   tone?: 'neutral' | 'positive' | 'negative';
   /** 'figure' (default) must read as one figure and stays on one line; 'words' wraps. */
   kind?: 'figure' | 'words';
+  /** A control drawn after the caption (an info button). Used with `group`, since a cell is then not a focus stop. */
+  captionAccessory?: React.ReactNode;
 }
 
 export interface FigureStripProps {
   items: FigureItem[];
   dark?: boolean;
+  /** One focus stop for the whole strip (05-63 key figures); the cells are not separate stops. Accessories stay reachable. */
+  group?: {
+    label: string;
+    actions?: { name: string; label: string }[];
+    onAction?: (e: AccessibilityActionEvent) => void;
+  };
 }
 
-export function FigureStrip({ items, dark = false }: FigureStripProps) {
+export function FigureStrip({ items, dark = false, group }: FigureStripProps) {
   const { colors, pairing } = useTheme();
   const stacked = useShouldStack();
   const captionColor = dark ? colors.inkSoft1 : colors.inkMuted;
@@ -36,21 +44,28 @@ export function FigureStrip({ items, dark = false }: FigureStripProps) {
     return dark ? colors.surface : colors.ink;
   };
   return (
-    <View style={stacked ? styles.stack : styles.row}>
+    <View
+      style={stacked ? styles.stack : styles.row}
+      {...(group
+        ? { accessible: true, accessibilityLabel: group.label, accessibilityActions: group.actions, onAccessibilityAction: group.onAction }
+        : {})}
+    >
       {items.map((item, i) => (
         <View
           // IN-D02: captions can repeat, so the key carries the position too
           key={`${i}-${item.caption}`}
-          accessible
-          accessibilityLabel={`${item.caption}, ${item.value}`}
+          {...(group ? {} : { accessible: true, accessibilityLabel: `${item.caption}, ${item.value}` })}
           style={stacked ? styles.stackItem : styles.cell}
         >
-          <Text
-            scale="capped"
-            style={{ ...textRole(pairing, 'label'), fontSize: fontSize.tabLabel, color: captionColor, textTransform: 'uppercase' }}
-          >
-            {item.caption}
-          </Text>
+          <View style={styles.captionRow}>
+            <Text
+              scale="capped"
+              style={{ ...textRole(pairing, 'label'), fontSize: fontSize.tabLabel, color: captionColor, textTransform: 'uppercase', flexShrink: 1 }}
+            >
+              {item.caption}
+            </Text>
+            {item.captionAccessory ?? null}
+          </View>
           <Text
             scale="capped"
             maxFontSizeMultiplier={FIGURE_MAX_SCALE}
@@ -70,6 +85,7 @@ export function FigureStrip({ items, dark = false }: FigureStripProps) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: space.gapMd },
   cell: { flex: 1, gap: CAPTION_GAP },
+  captionRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm, flexShrink: 1 },
   stack: { gap: space.gapSm },
   stackItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.gapMd },
 });

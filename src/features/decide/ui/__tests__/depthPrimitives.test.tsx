@@ -45,7 +45,7 @@ describe('ConfidenceChip', () => {
     expect(getByText(word)).toBeTruthy();
     const button = getByLabelText(`Basis: ${word}, tap for reasons`);
     expect(button.props.accessibilityRole).toBe('button');
-    expect(style(button).minHeight).toBe(44);
+    expect(button.props.hitSlop).toEqual({ top: 9, bottom: 9, left: 9, right: 9 });
     await fireEvent.press(button);
     expect(onPress).toHaveBeenCalledTimes(1);
   });

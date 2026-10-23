@@ -1,4 +1,4 @@
-/** D-28: the confidence chip. Words carry the strength; colour only backs them. A 44 hit button that opens the reasons sheet. */
+/** D-28: the confidence chip. Words carry the strength; colour only backs them. A 44pt target (hitSlop) button that opens the reasons sheet. */
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -16,8 +16,9 @@ export interface ConfidenceChipProps {
   onPress: () => void;
 }
 
-const HIT = 44;
 const CHIP_PAD_V = 4;
+// 05-63: the chip is its visible height; hitSlop brings the target to 44pt without a layout cost or negative margins
+const HIT_SLOP = { top: 9, bottom: 9, left: 9, right: 9 } as const;
 
 export function ConfidenceChip({ level, onPress }: ConfidenceChipProps) {
   const t = useT();
@@ -36,6 +37,7 @@ export function ConfidenceChip({ level, onPress }: ConfidenceChipProps) {
       accessibilityRole="button"
       accessibilityLabel={t('decide.depth.confidence.a11y', { strength: label })}
       onPress={onPress}
+      hitSlop={HIT_SLOP}
       style={({ pressed }) => [styles.hit, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
     >
       <View style={[styles.chip, { backgroundColor: background }]}>
@@ -59,7 +61,7 @@ export function ConfidenceChip({ level, onPress }: ConfidenceChipProps) {
 }
 
 const styles = StyleSheet.create({
-  hit: { minHeight: HIT, minWidth: HIT, alignSelf: 'flex-start', justifyContent: 'center' },
+  hit: { alignSelf: 'flex-start' },
   chip: {
     alignSelf: 'flex-start',
     paddingHorizontal: space.gapMd,

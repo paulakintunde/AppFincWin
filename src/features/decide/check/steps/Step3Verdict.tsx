@@ -23,6 +23,7 @@ export interface Step3Props extends StepProps {
 export function Step3Verdict(props: Step3Props) {
   const { computation, source, whole, lastSeenBasis, revealKey, onEditCardMinimum } = props;
   const fmt = moneyFn(whole, source.currency);
+  const fmtCents = moneyFn(props.exact, source.currency);
   const verdict = computation.status === 'logged' ? computation.verdict : null;
   const state = verdict ? verdict.state : computation.status === 'first_read' && computation.firstRead ? computation.firstRead.state : null;
   const fired = useRef<string | null>(null);
@@ -49,6 +50,8 @@ export function Step3Verdict(props: Step3Props) {
           computation={computation}
           lastSeenBasis={lastSeenBasis}
           fmt={fmt}
+          fmtCents={fmtCents}
+          roughBurn={source.kind === 'rough' ? source.figures.monthlySpending : null}
           conversions={source.conversions}
           fullMonths={source.meta.fullMonths}
           formatDate={formatDate}

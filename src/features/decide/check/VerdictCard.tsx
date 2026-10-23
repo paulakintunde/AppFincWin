@@ -1,7 +1,9 @@
 /**
- * 05-15 Step 3 verdict card (D-05, D-04, D-22, D-37, DCU-10, DCU-11): the answer first. Chip, basis marker, size label,
- * title (3 lines), body (2 lines). Declarative voice only; every string comes from the 05-09 copy layer. The card is one
- * polite live region whose label settles after typing (useSettledLabel).
+ * 05-63 Step 3 verdict card (D-74, D-70, D-76, UI-SPEC R2), summary first: size label and edge tag with their info
+ * buttons and the confidence chip, the state words as the heading, the one-line reason, the difference line, three key
+ * figures and the basis marker. Nothing is clamped. Declarative voice only; every string comes from the copy layer.
+ * Three focus stops: the summary group (a polite live region whose label settles after typing, useSettledLabel), the
+ * size/edge info buttons and the chip, then the key-figures group (its Cushion info button inside it).
  */
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -13,16 +15,20 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { DURATION, useReduceMotion } from '@/theme/motion';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
-import type { Confidence, Verdict } from '@/engine/decide';
+import type { Confidence, MinorUnits, Verdict } from '@/engine/decide';
 import { MISSING_TITLE, SIZE_LABEL } from '../copy/codeMaps';
 import { ref } from '../copy/types';
 import type { CopyRef, Fmt } from '../copy/types';
-import { basisMarker, missingRateCopy, stateChip, verdictBody, verdictTitle } from '../copy/verdictCopy';
-import { confidenceCopy, edgeChipA11y, edgeOn, verdictLineOne } from '../copy/depthVerdictCopy';
+import { basisMarker, missingRateCopy, stateChip, verdictTitle } from '../copy/verdictCopy';
+import { cushionCopy, edgeChipA11y, edgeOn, verdictLineOne } from '../copy/depthVerdictCopy';
+import { keyFigureInputs, keyFigures } from '../copy/keyFiguresCopy';
 import type { CheckComputation, ConversionNote } from '../snapshot/types';
 import { ConfidenceChip } from '../ui/ConfidenceChip';
 import { EdgeTag } from '../ui/EdgeTag';
-import { StateChip, type StateChipTone } from '../ui/StateChip';
+import { FigureStrip } from '../ui/FigureStrip';
+import { InfoLabel } from '../ui/InfoLabel';
+import { useInfoSheet } from '../ui/useInfoSheet';
+import type { StateChipTone } from '../ui/StateChip';
 import { refText, type Translate } from './refText';
 import { joinSentences } from './joinSentences';
 import { useSettledLabel } from './useSettledLabel';
@@ -32,6 +38,10 @@ export interface VerdictCardProps {
   computation: CheckComputation;
   lastSeenBasis: 'logged_months' | 'first_read_rough_figures' | null;
   fmt: Fmt;
+  /** Exact (cents) formatter for the monthly cost key figure (D-54). */
+  fmtCents: Fmt;
+  /** Rough monthly spending when the source is a first read: the cushion's burn (R2). */
+  roughBurn?: MinorUnits | null;
   /** D-28: converted currencies, listed as reasons on the sheet. */
   conversions: readonly ConversionNote[];
   /** D-28: full months logged (SnapshotMeta.fullMonths), the first reason row. */
@@ -52,14 +62,13 @@ interface CardCopy {
   chip: { key: string; tone: StateChipTone } | null;
   size: CopyRef | null;
   title: CopyRef;
-  body: CopyRef | null;
   basis: CopyRef | null;
   link: CopyRef | null;
   confidence: Confidence | null;
 }
 
 const SETTLE_MS = 150;
-const FIGURE_CAP = 1.3;
+const SIZE_LINE = 16; // the eyebrow's first-line height, so the size info button centres on it (rule I)
 
 /** Only fits, adjust, no and missing arise on this card, all of which the chip draws. */
 function chipOf(...args: Parameters<typeof stateChip>): { key: string; tone: StateChipTone } {
@@ -79,10 +88,10 @@ function firstReadTitle(fr: Exclude<NonNullable<CheckComputation['firstRead']>, 
 function cardCopy(c: CheckComputation, lastSeenBasis: VerdictCardProps['lastSeenBasis'], fmt: Fmt): CardCopy | null {
   if (c.status === 'unconverted' && c.unconverted) {
     const m = missingRateCopy(c.unconverted);
-    return { chip: { key: m.chip.key, tone: 'missing' }, size: null, title: m.title, body: m.body, basis: null, link: m.link, confidence: null };
+    return { chip: { key: m.chip.key, tone: 'missing' }, size: null, title: m.title, basis: null, link: m.link, confidence: null };
   }
   if (c.status === 'none') {
-    return { chip: null, size: null, title: ref('decide.quick.line.missing'), body: null, basis: null, link: null, confidence: null };
+    return { chip: null, size: null, title: ref('decide.quick.line.missing'), basis: null, link: null, confidence: null };
   }
   if (c.status === 'first_read' && c.firstRead) {
     const fr = c.firstRead;
@@ -93,13 +102,12 @@ function cardCopy(c: CheckComputation, lastSeenBasis: VerdictCardProps['lastSeen
         size: ref(SIZE_LABEL[fr.size]),
         // IN-C05: a missing first read with no reason gets the generic title, never the card one
         title: fr.reasons[0] === undefined ? ref('decide.verdict.missingGeneric') : ref(MISSING_TITLE[fr.reasons[0]]),
-        body: null,
         basis,
         link: null,
         confidence: fr.confidence,
       };
     }
-    return { chip: chipOf(fr.state, 'full'), size: ref(SIZE_LABEL[fr.size]), title: firstReadTitle(fr, fmt), body: null, basis, link: null, confidence: fr.confidence };
+    return { chip: chipOf(fr.state, 'full'), size: ref(SIZE_LABEL[fr.size]), title: firstReadTitle(fr, fmt), basis, link: null, confidence: fr.confidence };
   }
   if (c.status === 'logged' && c.verdict) {
     const v: Verdict = c.verdict;
@@ -108,7 +116,6 @@ function cardCopy(c: CheckComputation, lastSeenBasis: VerdictCardProps['lastSeen
         chip: chipOf('missing', 'full', v.reasons),
         size: v.size ? ref(SIZE_LABEL[v.size]) : null,
         title: verdictTitle(v, fmt),
-        body: null,
         basis: null,
         link: null,
         confidence: v.confidence,
@@ -118,7 +125,6 @@ function cardCopy(c: CheckComputation, lastSeenBasis: VerdictCardProps['lastSeen
       chip: chipOf(v.state, 'full'),
       size: ref(SIZE_LABEL[v.size]),
       title: verdictTitle(v, fmt),
-      body: verdictBody(v, fmt),
       basis: basisMarker({ kind: 'logged', money: v.context.money, lastSeenBasis }, fmt),
       link: null,
       confidence: v.confidence,
@@ -127,7 +133,11 @@ function cardCopy(c: CheckComputation, lastSeenBasis: VerdictCardProps['lastSeen
   return null;
 }
 
-export function VerdictCard({ computation, lastSeenBasis, fmt, conversions, fullMonths, formatDate, locale }: VerdictCardProps) {
+
+/** Standalone text the summary label already reads: no focus stop of its own (R2 Accessibility). */
+const NOT_A_STOP = { accessible: false, importantForAccessibility: 'no' } as const;
+
+export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, roughBurn = null, conversions, fullMonths, formatDate, locale }: VerdictCardProps) {
   const t = useT() as Translate;
   const router = useRouter();
   const { colors, pairing } = useTheme();
@@ -140,24 +150,35 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, conversions, full
   const chipLabel = copy?.chip ? t(copy.chip.key) : '';
   const sizeText = copy?.size ? refText(t, copy.size) : '';
   const titleText = copy ? refText(t, copy.title) : '';
-  const sentenceText = copy?.body ? refText(t, copy.body) : '';
   const basisText = copy?.basis ? refText(t, copy.basis) : '';
   const confidence = copy?.confidence ?? null;
-  const confidenceText = confidence ? refText(t, confidenceCopy(confidence.level)) : '';
   const onEdge = decision !== null && edgeOn(decision);
-  let chipName = chipLabel;
+  let stateWords = chipLabel;
   if (decision && onEdge) {
     const a11y = edgeChipA11y(chipLabel, decision, fmt, formatDate);
     const params = { ...(a11y.label.params ?? {}), ...(a11y.fact ? { fact: refText(t, a11y.fact) } : {}) };
-    chipName = refText(t, { ...a11y.label, params });
+    stateWords = refText(t, { ...a11y.label, params });
   }
-  const bodyText = [lineOneText, sentenceText].filter((x) => x !== '').join('\n');
-  const label = joinSentences([chipName, sizeText, confidenceText, titleText, lineOneText, sentenceText, basisText]);
+  const verdict = computation.status === 'logged' ? computation.verdict : null;
+  const resolved = verdict && verdict.state !== 'missing' ? verdict : null;
+
+  // D-74: the three figures; null for missing, none and unconverted
+  const figures = copy ? keyFigureInputs(computation, roughBurn) : null;
+  const keys = figures ? keyFigures(figures, fmt, fmtCents, (r) => refText(t, r)) : null;
+
+  // D-70: the user's own reserve months and why, when the snapshot gives them
+  const halves = resolved ? resolved.context.limits.reserveHalfMonths : null;
+  const sizeInfo = useInfoSheet('size');
+  const edgeInfo = useInfoSheet('edge');
+  const cushionInfo = useInfoSheet(
+    'cushionMonths',
+    resolved && halves !== null ? { cushionMonths: { months: halves / 2, reason: cushionCopy(resolved.context) } } : undefined,
+  );
+
+  const label = joinSentences([stateWords, sizeText, titleText, lineOneText, basisText]);
   const settled = useSettledLabel(label, copy?.chip?.tone ?? 'none', SETTLE_MS);
   if (!copy) return null;
 
-  const verdict = computation.status === 'logged' ? computation.verdict : null;
-  const resolved = verdict && verdict.state !== 'missing' ? verdict : null;
   const codes = resolved ? resolved.basisCodes : [];
   const facts = {
     fullMonths,
@@ -168,59 +189,63 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, conversions, full
   const danger = copy.chip?.tone === 'no';
   const background = danger ? colors.danger : colors.ink;
   const soft = colors.inkSoft1;
-  // WR-C05: the card is one accessible element, so its confidence chip and missing-rate link cannot be focused inside it;
-  // both are offered as the card's own accessibility actions instead.
   const linkText = copy.link ? refText(t, copy.link) : '';
   const openActivity = (): void => router.push('/activity' as Href);
-  const actions = [
-    ...(confidence ? [{ name: 'confidence', label: confidenceText }] : []),
-    ...(copy.link ? [{ name: 'openActivity', label: linkText }] : []),
-  ];
+  const sizeLine = { ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: soft, textTransform: 'uppercase' as const, letterSpacing: 1.2 };
+
+  const figureItems = keys
+    ? keys.items.map((item, i) => ({
+        caption: item.caption,
+        value: item.value,
+        kind: item.kind,
+        tone: item.negative ? ('negative' as const) : ('neutral' as const),
+        ...(i === 1 ? { captionAccessory: cushionInfo.button('dark') } : {}),
+      }))
+    : null;
+
   const card = (
-    <View
-      accessible
-      accessibilityLiveRegion="polite"
-      accessibilityLabel={settled}
-      accessibilityActions={actions.length > 0 ? actions : undefined}
-      onAccessibilityAction={(e) => {
-        if (e.nativeEvent.actionName === 'confidence') setSheetOpen(true);
-        else if (e.nativeEvent.actionName === 'openActivity') openActivity();
-      }}
-      style={[styles.card, { backgroundColor: background }]}
-    >
+    <View style={[styles.card, { backgroundColor: background }]}>
+      {/* column-reverse: the summary group is first in focus order and the info buttons and chip follow it, while the
+          size / edge / chip row is drawn above the verdict (R2 focus order) */}
       <View style={styles.top}>
-        {copy.chip ? (
-          <View accessible={onEdge} accessibilityLabel={onEdge ? chipName : undefined} style={styles.chips}>
-            <StateChip tone={copy.chip.tone} label={chipLabel} />
-            {onEdge ? <EdgeTag /> : null}
+        <View accessible accessibilityLiveRegion="polite" accessibilityLabel={settled} style={styles.summary}>
+          {chipLabel ? (
+            <Text accessibilityRole="header" scale="capped" style={{ ...textRole(pairing, 'heading'), color: colors.surface }}>
+              {chipLabel}
+            </Text>
+          ) : null}
+          <Text style={{ ...textRole(pairing, 'body'), color: colors.surface }}>{titleText}</Text>
+          {lineOneText ? (
+            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, fontWeight: '600', color: colors.inkSoft2 }}>
+              {lineOneText}
+            </Text>
+          ) : null}
+        </View>
+        {sizeText || confidence || onEdge ? (
+          <View style={styles.chips}>
+            {sizeText ? (
+              <InfoLabel term={sizeInfo.term} onInfo={sizeInfo.open} tone="dark" lineHeight={SIZE_LINE}>
+                <Text {...NOT_A_STOP} style={sizeLine}>
+                  {sizeText}
+                </Text>
+              </InfoLabel>
+            ) : null}
+            {onEdge ? (
+              <View style={styles.edge}>
+                <View accessible={false} importantForAccessibility="no">
+                  <EdgeTag />
+                </View>
+                {edgeInfo.button('dark')}
+              </View>
+            ) : null}
+            {confidence ? (
+              <View style={styles.chip}>
+                <ConfidenceChip level={confidence.level} onPress={() => setSheetOpen(true)} />
+              </View>
+            ) : null}
           </View>
-        ) : (
-          <View />
-        )}
-        {basisText ? (
-          <Text style={[styles.basis, { ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: soft }]}>{basisText}</Text>
         ) : null}
       </View>
-      {sizeText || confidence ? (
-        <View style={styles.sizeRow}>
-          {sizeText ? (
-            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: soft, textTransform: 'uppercase', letterSpacing: 1.2 }}>
-              {sizeText}
-            </Text>
-          ) : (
-            <View />
-          )}
-          {confidence ? <ConfidenceChip level={confidence.level} onPress={() => setSheetOpen(true)} /> : null}
-        </View>
-      ) : null}
-      <Text numberOfLines={3} maxFontSizeMultiplier={FIGURE_CAP} scale="capped" style={{ ...textRole(pairing, 'heading'), color: colors.surface }}>
-        {titleText}
-      </Text>
-      {bodyText ? (
-        <Text numberOfLines={2} maxFontSizeMultiplier={FIGURE_CAP} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: soft }}>
-          {bodyText}
-        </Text>
-      ) : null}
       {copy.link ? (
         <Pressable
           accessibilityRole="link"
@@ -230,22 +255,42 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, conversions, full
           <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{linkText}</Text>
         </Pressable>
       ) : null}
+      {figureItems && keys ? (
+        <View style={styles.figures}>
+          <FigureStrip
+            dark
+            items={figureItems}
+            group={{ label: refText(t, keys.a11y), actions: [cushionInfo.aboutAction], onAction: cushionInfo.onAccessibilityAction }}
+          />
+        </View>
+      ) : null}
+      {basisText ? (
+        <Text {...NOT_A_STOP} style={[styles.basis, { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: soft }]}>
+          {basisText}
+        </Text>
+      ) : null}
     </View>
   );
   return (
     <>
       {reduced ? card : <Animated.View entering={FadeInDown.duration(DURATION.entrance)}>{card}</Animated.View>}
+      {sizeText ? sizeInfo.sheet : null}
+      {onEdge ? edgeInfo.sheet : null}
+      {figureItems ? cushionInfo.sheet : null}
       {confidence ? <ConfidenceSheet visible={sheetOpen} confidence={confidence} facts={facts} onClose={() => setSheetOpen(false)} /> : null}
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapSm },
-  top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.gapMd },
-  chips: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
-  // the chip's 44 hit target overflows the 27-high row visually; the negative margin keeps the layout budget (DCU-11)
-  sizeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: -8 },
-  basis: { flexShrink: 1, textAlign: 'right' },
+  card: { borderRadius: radii.card, padding: space.cardPadLg },
+  // the summary group is first in the tree and drawn below the chips row
+  top: { flexDirection: 'column-reverse', gap: 10 },
+  summary: { gap: 6 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: space.gapMd, rowGap: space.gapSm },
+  edge: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm, flexShrink: 1 },
+  chip: { marginLeft: 'auto' },
+  figures: { marginTop: space.gapMd },
+  basis: { marginTop: space.gapSm },
   link: { minHeight: space.touchMin, justifyContent: 'center' },
 });

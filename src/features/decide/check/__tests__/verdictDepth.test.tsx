@@ -51,7 +51,7 @@ describe('verdict depth: step 3 top', () => {
     const p = withDecision(base, { combinedDiffers: true, standalone, stacked: [{ status: 'applied' }] });
     await wrap(<Step3Verdict {...p} />);
     const body = screen.getByText(/Fits on its own; not with your other 1 open check/);
-    expect(body.props.numberOfLines).toBe(2);
+    expect(body.props.numberOfLines).toBeUndefined();
   });
 
   it('without a combined difference there is no such line', async () => {
@@ -110,7 +110,7 @@ describe('verdict depth: step 3 top', () => {
     await wrap(<Step3Verdict {...p} />);
     expect(screen.getByText('On the edge')).toBeTruthy();
     expect(screen.getByText('It fits')).toBeTruthy();
-    expect(screen.getByLabelText('It fits, on the edge: the month holds by $120')).toBeTruthy();
+    expect(screen.getByLabelText(/^It fits, on the edge: the month holds by \$120\. /)).toBeTruthy();
   });
 
   it('a first read still carries a rough basis chip', async () => {
