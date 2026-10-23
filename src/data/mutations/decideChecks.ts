@@ -9,7 +9,7 @@
 // mutation survives a restart.
 import * as Crypto from 'expo-crypto';
 import { useSyncExternalStore } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import {
   buildStep,
@@ -41,6 +41,7 @@ import {
   writeRetryDelay,
 } from '@/data/sync/writeErrors';
 import { dismissFailedWrite, recordFailedWrite, type FailedWrite } from '@/data/sync/failedWrites';
+import { coalesceDraftSave } from '@/data/sync/coalesceDrafts';
 import { showToast } from '@/state/undoToast';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
@@ -472,12 +473,15 @@ export function useRetryCheckCreate(): { retry(entry: FailedWrite): boolean } {
 export function useSaveCheckDraft(): {
   save(input: { id: string; name: string; inputs: Record<string, unknown>; furthestStep: number }): void;
 } {
+  const qc = useQueryClient();
   const mutation = useMutation<DecideCheckRow | null, unknown, SaveCheckDraftVars>({
     mutationKey: mutationKeys.saveCheckDraft,
     scope: WRITE_SCOPE,
   });
   return {
     save(input) {
+      // D-88: only the latest draft of a check travels; an older one still waiting is dropped first.
+      coalesceDraftSave(qc, input.id);
       mutation.mutate({ ...input });
     },
   };
