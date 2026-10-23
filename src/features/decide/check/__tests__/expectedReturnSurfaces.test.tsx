@@ -74,9 +74,8 @@ describe('Expected return surfaces (05-87, D-82)', () => {
   it('D-82 nothing shows without a return', async () => {
     const view = await wrap(<Step3Verdict {...verdictProps(invest())} />);
     expect(screen.queryByText(/Not a forecast/)).toBeNull();
-    view.unmount();
     const p = stepProps(invest(), {}, strongSource());
-    await wrap(<AssumptionsBody computation={p.computation} inputs={p.inputs} update={jest.fn()} whole={whole} exact={exact} currency="USD" readOnly={false} meta={META} />);
+    await view.rerender(<AssumptionsBody computation={p.computation} inputs={p.inputs} update={jest.fn()} whole={whole} exact={exact} currency="USD" readOnly={false} meta={META} />);
     expect(screen.queryByText('Expected return')).toBeNull();
   });
 
@@ -84,9 +83,8 @@ describe('Expected return surfaces (05-87, D-82)', () => {
     const inputs = buy({ investReturnText: '5' });
     const view = await wrap(<Step3Verdict {...verdictProps(inputs)} />);
     expect(screen.queryByText(/Not a forecast/)).toBeNull();
-    view.unmount();
     const p = stepProps(inputs, {}, strongSource());
-    await wrap(<AssumptionsBody computation={p.computation} inputs={p.inputs} update={jest.fn()} whole={whole} exact={exact} currency="USD" readOnly={false} meta={META} />);
+    await view.rerender(<AssumptionsBody computation={p.computation} inputs={p.inputs} update={jest.fn()} whole={whole} exact={exact} currency="USD" readOnly={false} meta={META} />);
     expect(screen.queryByText('Expected return')).toBeNull();
   });
 
@@ -109,8 +107,14 @@ describe('Expected return surfaces (05-87, D-82)', () => {
   it('D-82 the verdict card reads the same state words with and without a return', async () => {
     const view = await wrap(<Step3Verdict {...verdictProps(invest())} />);
     expect(await screen.findByLabelText(/^It fits./)).toBeTruthy();
-    view.unmount();
-    await wrap(<Step3Verdict {...verdictProps(invest({ investReturnText: '5' }))} />);
+    await view.rerender(<Step3Verdict {...verdictProps(invest({ investReturnText: '5' }))} />);
     expect(await screen.findByLabelText(/^It fits./)).toBeTruthy();
+  });
+
+  it('D-82 a projection beyond the supported range reads Too large to project at this rate', async () => {
+    await wrap(<Step3Verdict {...verdictProps(invest({ investReturnText: '100', lumpHorizonMonths: 600 }))} />);
+    expect(screen.getByText('Too large to project at this rate')).toBeTruthy();
+    expect(screen.queryByText(/Not a forecast/)).toBeNull();
+    expect(screen.getByLabelText(/Cushion: .*. Too large to project at this rate$/)).toBeTruthy();
   });
 });

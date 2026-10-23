@@ -178,10 +178,13 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, roughBu
     resolved && halves !== null ? { cushionMonths: { months: halves / 2, reason: cushionCopy(resolved.context) } } : undefined,
   );
 
+  // D-82: a projection beyond the supported range says so (as step 2 does) rather than showing a figure or nothing
   const projectionText =
-    projection !== null && projection.fv !== null && computation.check?.kind === 'invest'
-      ? t('decide.verdict.projection', { count: projection.months, fv: fmt(projection.fv), rate: projection.rateText })
-      : '';
+    projection === null || computation.check?.kind !== 'invest'
+      ? ''
+      : projection.fv === null
+        ? t('decide.alt.reasonTooLarge')
+        : t('decide.verdict.projection', { count: projection.months, fv: fmt(projection.fv), rate: projection.rateText });
 
   const label = joinSentences([stateWords, sizeText, titleText, lineOneText, basisText]);
   const settled = useSettledLabel(label, copy?.chip?.tone ?? 'none', SETTLE_MS);
