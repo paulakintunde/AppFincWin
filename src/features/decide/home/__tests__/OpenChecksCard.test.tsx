@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -244,6 +245,15 @@ describe('OpenChecksCard', () => {
     expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'buy' } });
     await fireEvent.press(screen.getByText('+ Investment'));
     expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'invest' } });
+  });
+
+  it('R6 rule W: the heading never shrinks or wraps and the links wrap below it as a group', async () => {
+    await renderCard([checkRow('a')]);
+    const heading = StyleSheet.flatten(screen.getByTestId('open-checks-heading').props.style) as Record<string, unknown>;
+    expect(heading.flexShrink).toBe(0);
+    expect(heading.flex).toBeUndefined();
+    const row = StyleSheet.flatten(screen.getByTestId('open-checks-heading').parent!.props.style) as Record<string, unknown>;
+    expect(row.flexWrap).toBe('wrap');
   });
 
   it('ignores deleted and decided checks', async () => {

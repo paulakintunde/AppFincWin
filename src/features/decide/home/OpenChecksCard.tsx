@@ -111,15 +111,18 @@ export function OpenChecksCard({ source, checks, today, whole, currency }: OpenC
   return (
     <View style={styles.wrap}>
       <View style={styles.heading}>
-        <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink, flex: 1 }}>
+        {/* R6 rule W: the heading never wraps (flexShrink 0); when the links do not fit beside it they wrap below it as a group. */}
+        <Text testID="open-checks-heading" accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink, flexShrink: 0 }}>
           {t('decide.open.heading')}
         </Text>
-        <Pressable accessibilityRole="button" onPress={() => start('buy')} style={styles.link}>
-          <Text style={link}>{t('decide.open.purchase')}</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" onPress={() => start('invest')} style={styles.link}>
-          <Text style={link}>{t('decide.open.investment')}</Text>
-        </Pressable>
+        <View style={styles.links}>
+          <Pressable accessibilityRole="button" onPress={() => start('buy')} style={styles.link}>
+            <Text style={[link, styles.noShrink]}>{t('decide.open.purchase')}</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => start('invest')} style={styles.link}>
+            <Text style={[link, styles.noShrink]}>{t('decide.open.investment')}</Text>
+          </Pressable>
+        </View>
       </View>
       <View style={[styles.list, { backgroundColor: colors.surface }, shadows.card]}>
         {views.map((v, i) => {
@@ -189,7 +192,9 @@ export function OpenChecksCard({ source, checks, today, whole, currency }: OpenC
 
 const styles = StyleSheet.create({
   wrap: { gap: space.gapSm },
-  heading: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  heading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: space.gapSm },
+  links: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: space.gapMd },
+  noShrink: { flexShrink: 0 },
   link: { minHeight: space.touchMin, justifyContent: 'center' },
   list: { borderRadius: radii.card, overflow: 'hidden' },
   text: { gap: 4, paddingVertical: space.rowPad, paddingLeft: 18, minHeight: space.touchMin, justifyContent: 'center' },
