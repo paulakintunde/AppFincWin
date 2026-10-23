@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler/jestSetup';
 import React from 'react';
-import { BackHandler } from 'react-native';
+import { BackHandler, ScrollView } from 'react-native';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { minorUnits } from '@/engine/money';
 import type { DecideCheckRow } from '@/db/decideChecks';
@@ -252,6 +252,21 @@ describe('the five steps', () => {
 });
 
 describe('back', () => {
+  it('every step change resets the shared ScrollView to y = 0 with no animation', async () => {
+    const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo').mockImplementation(() => undefined);
+    await open({}, { initialStep: 1 });
+    scrollTo.mockClear();
+    await fireEvent.press(screen.getByLabelText('Next: Price'));
+    await fireEvent.press(screen.getByLabelText('Next: Impact'));
+    await fireEvent.press(screen.getByLabelText('Next: Alternatives'));
+    await fireEvent.press(screen.getByLabelText('Next: Decide'));
+    expect(scrollTo).toHaveBeenCalledTimes(4);
+    for (const call of scrollTo.mock.calls) expect(call[0]).toEqual({ y: 0, animated: false });
+    await fireEvent.press(screen.getByLabelText('Back'));
+    expect(scrollTo).toHaveBeenCalledTimes(5);
+    scrollTo.mockRestore();
+  });
+
   it('the header back steps back before it leaves, and never prompts', async () => {
     await open({}, { initialStep: 3 });
     await fireEvent.press(screen.getByLabelText('Back'));

@@ -8,7 +8,7 @@
  * without its own writes (05-52) beside what was decided, a waiting or passed one recomputed with 'Reopen the check'.
  * Leaving never prompts and never loses work.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import * as Crypto from 'expo-crypto';
@@ -485,6 +485,15 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
   const reduceMotion = useReduceMotion();
   const scrollRef = useRef<ScrollView>(null);
   const scrollOffset = useRef(0);
+  // Every step change starts at the top (all five steps share this one ScrollView, which would keep the old offset): the
+  // scroll position and the offset ref reset before the new step paints, and a scroll-into-view still measuring on the old
+  // step is dropped by the generation.
+  const scrollGeneration = useRef(0);
+  useLayoutEffect(() => {
+    scrollGeneration.current += 1;
+    scrollOffset.current = 0;
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [step]);
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     scrollOffset.current = e.nativeEvent.contentOffset.y;
   }, []);
@@ -493,9 +502,11 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
       const scroller = scrollRef.current;
       const content = (scroller as unknown as { getInnerViewRef?: () => React.ComponentRef<typeof View> | null } | null)?.getInnerViewRef?.();
       if (!target || !scroller || !content) return;
+      const generation = scrollGeneration.current;
       target.measureLayout(
         content,
         (_x, y) => {
+          if (generation !== scrollGeneration.current) return;
           const next = scrollTargetY({ y, offset: scrollOffset.current, align });
           if (next !== null) scroller.scrollTo({ y: next, animated: !reduceMotion });
         },
