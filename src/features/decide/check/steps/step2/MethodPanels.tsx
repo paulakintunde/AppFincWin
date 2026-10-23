@@ -170,8 +170,9 @@ function LoanPanel(props: Step2Props) {
 
       <Pressable
         accessibilityRole="switch"
-        accessibilityState={{ checked: loan.secured }}
+        accessibilityState={readOnly ? { checked: loan.secured, disabled: true } : { checked: loan.secured }}
         accessibilityLabel={t('decide.pay.loanSecured')}
+        disabled={readOnly}
         onPress={() => update({ loan: { ...loan, secured: !loan.secured, securedTouched: true } })}
         style={({ pressed }) => [styles.toggle, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
       >
@@ -395,7 +396,8 @@ function CardPanel(props: Step2Props) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('decide.pay.cardFewer')}
-                disabled={card.months <= 1}
+                accessibilityState={{ disabled: readOnly || card.months <= 1 }}
+                disabled={readOnly || card.months <= 1}
                 onPress={() => setCard({ months: Math.max(1, card.months - 1) })}
                 style={[styles.stepButton, { backgroundColor: colors.fill1, opacity: card.months <= 1 ? 0.5 : 1 }]}
               >
@@ -404,6 +406,7 @@ function CardPanel(props: Step2Props) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`${t('decide.pay.cardMonthsEdit')}, ${t('decide.pay.cardMonthsValue', { count: card.months })}`}
+                accessibilityState={{ disabled: readOnly }}
                 disabled={readOnly}
                 onPress={() => setMonthsOpen(true)}
                 style={styles.monthsFigure}
@@ -413,7 +416,8 @@ function CardPanel(props: Step2Props) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('decide.pay.cardMore')}
-                disabled={card.months >= MAX_TERM}
+                accessibilityState={{ disabled: readOnly || card.months >= MAX_TERM }}
+                disabled={readOnly || card.months >= MAX_TERM}
                 onPress={() => setCard({ months: Math.min(MAX_TERM, card.months + 1) })}
                 style={[styles.stepButton, { backgroundColor: colors.fill1, opacity: card.months >= MAX_TERM ? 0.5 : 1 }]}
               >

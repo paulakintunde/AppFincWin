@@ -13,7 +13,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { Chip } from '@/ui/Chip';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
-import { ReadOnlyScope } from '@/ui/ReadOnlyScope';
+import { ReadOnlyScope, useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { DURATION, useReduceMotion } from '@/theme/motion';
@@ -138,8 +138,10 @@ export function CustomValueChips({
   unitWord,
   formatPreset,
   chipA11y,
-  readOnly = false,
+  readOnly: readOnlyProp = false,
 }: CustomValueChipsProps) {
+  const outer = useReadOnlyScope();
+  const readOnly = readOnlyProp || outer; // inside a decided check's region the chips stay read-only
   const { colors, pairing } = useTheme();
   const t = useT();
   const [open, setOpen] = useState(false);

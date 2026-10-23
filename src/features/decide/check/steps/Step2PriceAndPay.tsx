@@ -137,7 +137,7 @@ export function Step2PriceAndPay(props: Step2Props) {
         <Card>
           <View style={styles.head}>
             <Eyebrow>{invest ? t('decide.price.amount') : t('decide.price.advertised')}</Eyebrow>
-            <Pressable accessibilityRole="button" accessibilityLabel={t('decide.price.edit')} onPress={() => goToStep(1)} style={styles.link}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('decide.price.edit')} accessibilityState={{ disabled: readOnly }} disabled={readOnly} onPress={() => goToStep(1)} style={styles.link}>
               <Text style={linkStyle}>{t('decide.price.edit')}</Text>
             </Pressable>
           </View>

@@ -151,6 +151,8 @@ export function Step4Alternatives(props: StepProps) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('decide.alt.removeRateA11y')}
+                accessibilityState={{ disabled: readOnly }}
+                disabled={readOnly}
                 onPress={() => update({ projectionRates: rates.slice(1) })}
                 style={[styles.chip, { backgroundColor: colors.fill1 }]}
               >
@@ -159,7 +161,7 @@ export function Step4Alternatives(props: StepProps) {
               </Pressable>
             ) : null}
             {rates.length < MAX_RATES && !adding ? (
-              <Pressable accessibilityRole="button" accessibilityLabel={t('decide.alt.addRate')} onPress={() => setAdding(true)} style={styles.link}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('decide.alt.addRate')} accessibilityState={{ disabled: readOnly }} disabled={readOnly} onPress={() => setAdding(true)} style={styles.link}>
                 <Text style={linkStyle}>{t('decide.alt.addRate')}</Text>
               </Pressable>
             ) : null}
@@ -252,6 +254,8 @@ export function Step4Alternatives(props: StepProps) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('decide.alt.tradeUseCheaper')}
+                accessibilityState={{ disabled: readOnly }}
+                disabled={readOnly}
                 onPress={() => {
                   // WR-C07: the cheaper price follows the settled inputs; it is applied once they have caught up
                   if (props.busy !== true) update(cheaperPatch);
@@ -264,6 +268,8 @@ export function Step4Alternatives(props: StepProps) {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('decide.alt.tradeWait')}
+              accessibilityState={{ disabled: readOnly }}
+              disabled={readOnly}
               onPress={() => {
                 update({ outcome: 'wait' });
                 goToStep(5);

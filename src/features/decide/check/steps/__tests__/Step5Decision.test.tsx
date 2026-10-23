@@ -160,8 +160,10 @@ describe('Step5Decision', () => {
 
   it('a decided check disables the choices', async () => {
     const p = { ...props({ outcome: 'pass' }), readOnly: true };
-    const view = await wrap(<Step5Decision {...p} />);
-    expect(JSON.stringify(view.toJSON())).toContain('"pointerEvents":"none"');
+    await wrap(<Step5Decision {...p} />);
+    // D-70: the region no longer blocks touch (it would block the ⓘ); each choice is announced disabled and does nothing
+    expect(screen.getByLabelText('Pass').props.accessibilityState).toMatchObject({ disabled: true });
+    await fireEvent.press(screen.getByLabelText('Wait and save'));
     expect(p.update).not.toHaveBeenCalled();
   });
 
@@ -193,8 +195,9 @@ describe('Step5Decision Wait period and amount (05-70)', () => {
 
   it('D-71 the chip matching the derived months is selected', async () => {
     await wrap(<Step5Decision {...waitProps(Math.ceil(target() / 12))} />);
-    expect(screen.getByText(`12${NB}months`)).toBeTruthy();
-    expect(screen.getByText('Custom')).toBeTruthy();
+    expect(screen.getByLabelText(`12${NB}months`).props.accessibilityState).toMatchObject({ selected: true });
+    expect(screen.getByLabelText('Custom').props.accessibilityState).toMatchObject({ selected: false });
+    expect(screen.getByLabelText(`24${NB}months`).props.accessibilityState).toMatchObject({ selected: false });
   });
 
   it('D-71 an amount matching no preset selects Custom with its months', async () => {

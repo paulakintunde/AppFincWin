@@ -10,6 +10,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { hapticSelection } from '@/ui/haptics';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 
 /** UI-SPEC slider: 4px track, 28px visual thumb inside a 44px hit area. */
 const TRACK_HEIGHT = 4;
@@ -49,17 +50,18 @@ export function stepFrom(value: number, dir: 1 | -1, min: number, max: number, s
 
 export function StepSlider({ value, min, max, step, onChange, accessibilityLabel, valueText }: StepSliderProps) {
   const { colors } = useTheme();
+  const readOnly = useReadOnlyScope(); // a decided check shows the value but the thumb does not move
   const [width, setWidth] = useState(0);
   const span = max - min;
   const frac = span > 0 ? Math.min(Math.max((value - min) / span, 0), 1) : 0;
 
   const commit = useCallback(
     (next: number) => {
-      if (next === value) return;
+      if (readOnly || next === value) return;
       hapticSelection();
       onChange(next);
     },
-    [onChange, value],
+    [onChange, value, readOnly],
   );
 
   const fromX = useCallback(
@@ -75,6 +77,7 @@ export function StepSlider({ value, min, max, step, onChange, accessibilityLabel
   // WR-D02: nothing moves on touch-down. The value follows the finger only once the pan is horizontal (a vertical scroll
   // that lands on the row fails it), and a plain tap sets the touched value.
   const pan = Gesture.Pan()
+    .enabled(!readOnly)
     .runOnJS(true)
     .activeOffsetX([-8, 8])
     .failOffsetY([-10, 10])
@@ -82,6 +85,7 @@ export function StepSlider({ value, min, max, step, onChange, accessibilityLabel
     .onStart((e) => fromX(e.x))
     .onUpdate((e) => fromX(e.x));
   const tap = Gesture.Tap()
+    .enabled(!readOnly)
     .runOnJS(true)
     .maxDistance(10)
     .withTestId('step-slider-tap')
@@ -102,6 +106,7 @@ export function StepSlider({ value, min, max, step, onChange, accessibilityLabel
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={readOnly ? { disabled: true } : undefined}
       accessibilityValue={{ min, max, now: value, text: valueText }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={onAction}

@@ -8,6 +8,7 @@ import { Row } from '@/ui/Row';
 import { Sheet } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useT } from '@/i18n';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 
 export interface DateFieldProps {
   label: string;
@@ -32,6 +33,7 @@ function fromLocalDateString(value: string): Date {
 
 export function DateField({ label, value, display, onChange, minDate }: DateFieldProps) {
   const t = useT();
+  const readOnly = useReadOnlyScope(); // a date inside a decided Decide check is shown, not opened
   const [open, setOpen] = useState(false);
   // WR-D12: bumped on a refused day so the iOS picker remounts on the stored date instead of showing the refused one.
   const [resets, setResets] = useState(0);
@@ -67,7 +69,7 @@ export function DateField({ label, value, display, onChange, minDate }: DateFiel
 
   return (
     <>
-      <Row label={label} value={display} dense chevron onPress={() => setOpen(true)} />
+      <Row label={label} value={display} dense chevron disabled={readOnly} onPress={() => setOpen(true)} />
       {Platform.OS === 'ios' ? (
         <Sheet visible={open} onDismiss={() => setOpen(false)} accessibilityLabel={label}>
           <SheetHeader title={label} cancelLabel={t('record.sheet.cancel')} onCancel={() => setOpen(false)} />

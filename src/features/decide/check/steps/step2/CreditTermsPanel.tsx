@@ -13,6 +13,7 @@ import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { ToggleRow } from '@/ui/ToggleRow';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { lateFeeCopy, promoCopy, stressCopy } from '../../../copy/depthInputsCopy';
 import type { CopyRef } from '../../../copy/types';
 import { MAX_INPUT_MINOR } from '../../../snapshot/checkInputs';
@@ -62,6 +63,7 @@ export function PromoRow(props: PromoRowProps) {
   const promoInfo = useInfoSheet('promoRate');
   const deferredInfo = useInfoSheet('deferredInterest');
   const thenInfo = useInfoSheet('apr');
+  const readOnly = useReadOnlyScope();
   const [open, setOpen] = useState(promo !== null);
   const wholeFmt = moneyFn(whole, source.currency);
   const exactFmt = moneyFn(exact, source.currency);
@@ -87,6 +89,8 @@ export function PromoRow(props: PromoRowProps) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t('decide.depth.credit.promoAdd')}
+        accessibilityState={{ disabled: readOnly }}
+        disabled={readOnly}
         onPress={() => setOpen(true)}
         style={({ pressed }) => [styles.add, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
       >

@@ -3,19 +3,23 @@
 import React, { forwardRef } from 'react';
 import { TextInput as RNTextInput, type TextInputProps } from 'react-native';
 import { FONT_SCALE } from '@/theme/fontScale';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 
 export type { TextInputProps };
 
 export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextInput(
-  { maxFontSizeMultiplier = FONT_SCALE.body, textBreakStrategy = 'simple', ...rest },
+  { maxFontSizeMultiplier = FONT_SCALE.body, textBreakStrategy = 'simple', editable, ...rest },
   ref,
 ) {
+  // a field inside a read-only region (a decided Decide check) cannot be edited
+  const readOnly = useReadOnlyScope();
   return (
     <RNTextInput
       ref={ref}
       maxFontSizeMultiplier={maxFontSizeMultiplier}
       textBreakStrategy={textBreakStrategy}
       {...rest}
+      editable={readOnly ? false : editable}
     />
   );
 });

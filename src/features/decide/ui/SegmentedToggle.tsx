@@ -3,6 +3,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
@@ -30,6 +31,7 @@ export function SegmentedToggle({ options, value, onChange, accessibilityLabel, 
   const selectedText = dark ? colors.ink : colors.surface;
   const idleText = dark ? colors.inkSoft1 : colors.inkDim;
   const stacked = useShouldStack();
+  const readOnly = useReadOnlyScope(); // a decided check shows the choice but cannot change it
   if (stacked) {
     // D-76 Seg: under rule S the equal segments become a vertical radio list.
     return (
@@ -40,8 +42,9 @@ export function SegmentedToggle({ options, value, onChange, accessibilityLabel, 
             <Pressable
               key={option.key}
               accessibilityRole="radio"
-              accessibilityState={{ checked: selected }}
+              accessibilityState={readOnly ? { checked: selected, disabled: true } : { checked: selected }}
               accessibilityLabel={option.a11yLabel ?? option.label}
+              disabled={readOnly ? true : undefined}
               onPress={() => {
                 if (selected) return;
                 hapticSelection();
@@ -67,8 +70,9 @@ export function SegmentedToggle({ options, value, onChange, accessibilityLabel, 
           <Pressable
             key={option.key}
             accessibilityRole="radio"
-            accessibilityState={{ checked: selected }}
+            accessibilityState={readOnly ? { checked: selected, disabled: true } : { checked: selected }}
             accessibilityLabel={option.a11yLabel ?? option.label}
+            disabled={readOnly ? true : undefined}
             onPress={() => {
               if (selected) return;
               hapticSelection();

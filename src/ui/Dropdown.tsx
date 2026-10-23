@@ -14,6 +14,7 @@ import { BACKDROP_OPACITY } from '@/ui/sheetDrag';
 import { useReduceMotion } from '@/theme/motion';
 import { textRole } from '@/theme/typography';
 import { hapticSelection } from '@/ui/haptics';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 
 export interface DropdownOption<K extends string> {
   key: K;
@@ -54,7 +55,7 @@ export function Dropdown<K extends string>({
   triggerLabel,
   onSelect,
   triggerA11yLabel,
-  disabled = false,
+  disabled: disabledProp = false,
   variant = 'pill',
   rowLabel,
   glyph,
@@ -62,6 +63,8 @@ export function Dropdown<K extends string>({
   const t = useT();
   const { colors, pairing } = useTheme();
   const reduced = useReduceMotion();
+  const scoped = useReadOnlyScope(); // a menu inside a decided Decide check is shown, not opened
+  const disabled = disabledProp || scoped;
   const [open, setOpen] = useState(false);
   const actionMenu = value === undefined;
   const current = options.find((o) => o.key === value);

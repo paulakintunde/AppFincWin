@@ -87,17 +87,16 @@ export function Box({ value, onChangeText, accessibilityLabel, placeholder, maxL
 }
 
 /**
- * Wraps a control so a decided (read-only) check cannot edit it. WR-C06: `pointerEvents` stops touch only, so the region
- * is also a ReadOnlyScope: the shared controls inside (chips, pills, switches, radio cards, check rows) are announced
- * disabled and ignore a screen reader's activation, while their labels stay readable.
+ * Wraps a control so a decided (read-only) check cannot edit it. The region is a ReadOnlyScope: every control inside
+ * (inputs, chips, pills, switches, radio cards, check rows, sliders, pickers) is announced disabled and ignores touch and
+ * a screen reader's activation, while labels stay readable. D-70: the region does not block touch itself, because that
+ * would also block the ⓘ buttons, which explain a term on a decided check too.
  */
 export function Lock({ locked, children }: { locked: boolean; children: React.ReactNode }) {
   const outer = useReadOnlyScope();
   return (
     <ReadOnlyScope.Provider value={locked || outer}>
-      <View pointerEvents={locked ? 'none' : 'auto'} style={locked ? styles.locked : undefined}>
-        {children}
-      </View>
+      <View style={locked ? styles.locked : undefined}>{children}</View>
     </ReadOnlyScope.Provider>
   );
 }
