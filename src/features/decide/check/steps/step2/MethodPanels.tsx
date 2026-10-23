@@ -20,6 +20,7 @@ import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { canUse } from '../../../entitlements';
 import { cardCostsCopy } from '../../../copy/cardTermsCopy';
+import { instalmentNotes } from '../../../copy/instalmentCopy';
 import { percentText } from '../../../copy/percentText';
 import { isValidAprText, toEngineCheck } from '../../../snapshot/checkInputs';
 import type { CardNoteAnswer, CheckInputs, MethodKey } from '../../../snapshot/types';
@@ -27,6 +28,7 @@ import { FigureStrip } from '../../../ui/FigureStrip';
 import { CustomValueChips, CustomValueField } from '../../../ui/CustomValueChips';
 import { MoneyInput } from '../../../ui/MoneyInput';
 import { RateInput } from '../../../ui/RateInput';
+import { SegmentedToggle } from '../../../ui/SegmentedToggle';
 import { SliderWithField } from '../../../ui/SliderWithField';
 import { useInfoSheet } from '../../../ui/useInfoSheet';
 import type { Step2Props } from './types';
@@ -254,46 +256,28 @@ function LoanPanel(props: Step2Props) {
 }
 
 // ── Instalment ──
+/** D-80 (R15.2, R15.3): Has a rate? No / Yes, the payment or the quote, how many, the rate, the first payment and the notes. */
 function InstalmentPanel(props: Step2Props) {
-  const { inputs, update, computation, source, whole, exact } = props;
+  const { inputs, update, computation, source, whole, exact, readOnly } = props;
   const t = useT();
+  const { pairing } = useTheme();
+  const hasRateInfo = useInfoSheet('hasRate');
+  const aprInfo = useInfoSheet('apr');
+  const firstInfo = useInfoSheet('firstPayment');
   const wholeFmt = moneyFn(whole, source.currency);
   const exactFmt = moneyFn(exact, source.currency);
   const inst = inputs.instalment;
+  const hasRate = inst.hasRate === true;
   const result = computation.methodPlans.instalment;
   const plan = result?.status === 'resolved' ? result.plan : null;
-  const belowPrice = result?.status === 'missing' && result.reasons.includes('instalment_total_below_price');
-  const resolved = computation.resolvedPrice;
+  const reasons = result?.status === 'missing' ? result.reasons : [];
+  const currency = inputs.currency ?? source.currency;
+  const labelLine = textRole(pairing, 'label').lineHeight;
 
-  let note: string;
-  if (plan !== null && inst.amount !== null && inst.count !== null) {
-    // the instalments alone: amount x count, which is plan.total less any on-the-day fees
-    const total = wholeFmt((plan.total ?? 0) - plan.dayFees);
-    const pct = plan.impliedAnnualRate === null ? '' : percentText(plan.impliedAnnualRate);
-    note =
-      plan.dayFees > 0
-        ? t('decide.pay.instalmentNoteFees', { count: inst.count, payment: exactFmt(inst.amount), total, financed: wholeFmt(plan.financed), pct })
-        : t('decide.pay.instalmentNote', { count: inst.count, payment: exactFmt(inst.amount), total, price: wholeFmt(plan.price), pct });
-  } else if (belowPrice && inst.amount !== null && inst.count !== null && resolved !== null) {
-    note = t('decide.pay.instalmentBelowPrice', {
-      count: inst.count,
-      payment: exactFmt(inst.amount),
-      total: wholeFmt(inst.amount * inst.count),
-      financed: wholeFmt(resolved.price - resolved.dayFees),
-    });
-  } else {
-    note = t('decide.pay.instalmentMissing');
-  }
-
-  return (
-    <View style={styles.panel}>
-      <MoneyInput
-        value={inst.amount}
-        currency={inputs.currency ?? source.currency}
-        onChange={(minor) => update({ instalment: { ...inst, amount: minor !== null && minor > 0 ? minor : null } })}
-        label={t('decide.pay.instalmentPayment')}
-        accessibilityLabel={t('decide.pay.instalmentPayment')}
-      />
+  const notes = instalmentNotes(inputs, plan, reasons, { whole: wholeFmt, exact: exactFmt }, computation.resolvedPrice);
+  const setInst = (patch: Partial<CheckInputs['instalment']>) => update({ instalment: { ...inst, ...patch } });
+  const count = (
+    <>
       <Label>{t('decide.pay.instalmentCount')}</Label>
       <CustomValueField
         value={inst.count}
@@ -302,19 +286,91 @@ function InstalmentPanel(props: Step2Props) {
         rangeText={t('decide.custom.range.count')}
         unitWord={t('decide.pay.instalmentCountUnit')}
         groupLabel={t('decide.pay.instalmentCount')}
-        onChange={(n) => update({ instalment: { ...inst, count: n } })}
+        onChange={(n) => setInst({ count: n })}
       />
+    </>
+  );
+
+  return (
+    <View style={styles.panel}>
+      <InfoTitle info={hasRateInfo} lineHeight={labelLine}>
+        <Label>{t('decide.pay.instalmentHasRate')}</Label>
+      </InfoTitle>
+      <SegmentedToggle
+        options={[
+          { key: 'no', label: t('decide.pay.instalmentNo') },
+          { key: 'yes', label: t('decide.pay.instalmentYes') },
+        ]}
+        value={hasRate ? 'yes' : 'no'}
+        onChange={(key) => setInst({ hasRate: key === 'yes' })}
+        accessibilityLabel={t('decide.pay.instalmentHasRate')}
+      />
+
+      {hasRate ? (
+        <>
+          {count}
+          <RateInput
+            value={inst.aprText ?? ''}
+            onChange={(text) => setInst({ aprText: text })}
+            readOnly={readOnly}
+            label={t('decide.pay.loanRate')}
+            accessibilityLabel={t('decide.quick.aprA11y')}
+            max={MAX_APR_TYPED}
+            rangeText={t('decide.custom.range.apr')}
+            labelAccessory={aprInfo.button()}
+          />
+          {aprInfo.sheet}
+          <MoneyInput
+            value={inst.amount}
+            currency={currency}
+            onChange={(minor) => setInst({ amount: minor !== null && minor > 0 ? minor : null })}
+            readOnly={readOnly}
+            label={t('decide.pay.instalmentQuoted')}
+            accessibilityLabel={t('decide.pay.instalmentQuoted')}
+          />
+        </>
+      ) : (
+        <>
+          <MoneyInput
+            value={inst.amount}
+            currency={currency}
+            onChange={(minor) => setInst({ amount: minor !== null && minor > 0 ? minor : null })}
+            readOnly={readOnly}
+            label={t('decide.pay.instalmentPayment')}
+            accessibilityLabel={t('decide.pay.instalmentPayment')}
+          />
+          {count}
+        </>
+      )}
+
+      <InfoTitle info={firstInfo} lineHeight={labelLine}>
+        <Label>{t('decide.pay.instalmentFirst')}</Label>
+      </InfoTitle>
+      <SegmentedToggle
+        options={[
+          { key: 'today', label: t('decide.pay.instalmentToday') },
+          { key: 'next_month', label: t('decide.pay.instalmentInMonth') },
+        ]}
+        value={inst.firstPayment ?? 'today'}
+        onChange={(key) => setInst({ firstPayment: key === 'next_month' ? 'next_month' : 'today' })}
+        accessibilityLabel={t('decide.pay.instalmentFirst')}
+      />
+
       <LateFeeField
         value={inst.lateFee}
-        currency={inputs.currency ?? source.currency}
-        onChange={(lateFee) => update({ instalment: { ...inst, lateFee } })}
+        currency={currency}
+        onChange={(lateFee) => setInst({ lateFee })}
         computation={computation}
         source={source}
         exact={exact}
       />
       <OutputsTile>
         <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
-        <Meta tone="muted">{note}</Meta>
+        {notes.map((note) => (
+          <Meta key={note.key} tone="muted">
+            {refText(t as RefTranslate, note)}
+          </Meta>
+        ))}
       </OutputsTile>
     </View>
   );

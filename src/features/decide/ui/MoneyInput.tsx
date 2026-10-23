@@ -33,11 +33,13 @@ export interface MoneyInputProps {
   compact?: boolean;
   /** 05-61: fires when the field loses focus, after the figure is committed. */
   onBlur?: () => void;
+  /** 05-85 (D-70, rule I): a control after the label, as its next flex sibling (an info button). */
+  labelAccessory?: React.ReactNode;
 }
 
 const COMPACT_MIN_WIDTH = 128;
 
-export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false, compact = false, onBlur }: MoneyInputProps) {
+export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false, compact = false, onBlur, labelAccessory }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
   const parser = useAmountParser();
   const [text, setText] = useState(() => (value === null ? '' : parser.toInputText(value, currency)));
@@ -101,7 +103,16 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
 
   return (
     <View>
-      {compact ? null : <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>}
+      {compact ? null : labelAccessory ? (
+        <View style={styles.labelRow}>
+          <View style={styles.labelText}>
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
+          </View>
+          {labelAccessory}
+        </View>
+      ) : (
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
+      )}
       <View style={[styles.field, compact && styles.compact, { backgroundColor: colors.fill1 }]}>
         {compact ? <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{currency}</Text> : null}
         <TextInput
@@ -124,6 +135,8 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
 }
 
 const styles = StyleSheet.create({
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  labelText: { flexShrink: 1 },
   field: {
     minHeight: space.touchMin,
     borderRadius: radii.pill,

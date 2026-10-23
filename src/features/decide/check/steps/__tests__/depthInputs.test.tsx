@@ -172,6 +172,8 @@ describe('credit terms', () => {
     await wrap(<Harness initial={loanInputs()} />);
     expect(screen.queryByText(/At \+2 points/)).toBeNull();
     await fireEvent.press(screen.getByLabelText('The rate can change'));
+    expect(screen.queryByText(/At \+2 points/)).toBeNull(); // the lines sit behind Show details
+    await fireEvent.press(screen.getByLabelText('Show details, The rate can change'));
     expect(screen.getByText(/At \+2 points: \$\d/)).toBeTruthy();
     expect(screen.getByText(/At \+4 points: \$\d/)).toBeTruthy();
     expect(screen.getByText('The verdict stays on the rate you entered.')).toBeTruthy();
@@ -187,6 +189,8 @@ describe('credit terms', () => {
     const field = screen.getByLabelText('Late fee (optional)');
     await fireEvent.changeText(field, '15');
     await fireEvent(field, 'blur');
+    expect(screen.queryByText(/If 1 payment is late/)).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Show details, Late fee (optional)'));
     expect(screen.getByText('If 1 payment is late: +$15.00')).toBeTruthy();
     expect(screen.getByText('If 2 are late: +$30.00')).toBeTruthy();
   });

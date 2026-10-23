@@ -19,6 +19,7 @@ import type { CopyRef } from '../../../copy/types';
 import { MAX_INPUT_MINOR } from '../../../snapshot/checkInputs';
 import type { PromoInput } from '../../../snapshot/types';
 import { CustomValueField } from '../../../ui/CustomValueChips';
+import { DetailsToggle } from '../../../ui/DetailsToggle';
 import { MoneyInput } from '../../../ui/MoneyInput';
 import { RateInput } from '../../../ui/RateInput';
 import { StateChip, type StateChipTone } from '../../../ui/StateChip';
@@ -177,6 +178,7 @@ export function VariableRateCard(props: VariableRateCardProps) {
   const { colors, pairing } = useTheme();
   const exactFmt = moneyFn(exact, source.currency);
   const info = useInfoSheet('variableRate');
+  const [showStress, setShowStress] = useState(false);
   const stress: readonly StressOutcome[] = computation.status === 'incomplete' ? [] : (computation.decision?.stress ?? []);
   const lines = value ? stressCopy(stress, exactFmt, exactFmt) : [];
   return (
@@ -188,7 +190,8 @@ export function VariableRateCard(props: VariableRateCardProps) {
         {info.button()}
       </View>
       {info.sheet}
-      {value ? (
+      {value ? <DetailsToggle expanded={showStress} onToggle={() => setShowStress((v) => !v)} block={t('decide.depth.credit.variable')} /> : null}
+      {value && showStress ? (
         <View style={[styles.results, { backgroundColor: colors.fill1 }]}>
           {lines.map(({ line, stateKey }) => (
             <View key={line.key} style={styles.stressLine}>
@@ -221,6 +224,8 @@ export function LateFeeField(props: LateFeeFieldProps) {
   const t = useT() as Translate;
   const { colors } = useTheme();
   const exactFmt = moneyFn(exact, source.currency);
+  const info = useInfoSheet('lateFee');
+  const [showLines, setShowLines] = useState(false);
   const result = computation.methodPlans.instalment;
   const lateFees = computation.status !== 'incomplete' && result?.status === 'resolved' ? result.plan.lateFees : null;
   const lines = value !== null && value > 0 ? lateFeeCopy(lateFees, exactFmt, exactFmt) : [];
@@ -232,8 +237,11 @@ export function LateFeeField(props: LateFeeFieldProps) {
         onChange={(minor) => onChange(minor !== null && minor > 0 && minor <= MAX_INPUT_MINOR ? minor : null)}
         label={t('decide.depth.credit.lateFee')}
         accessibilityLabel={t('decide.depth.credit.lateFee')}
+        labelAccessory={info.button()}
       />
-      {lines.length > 0 ? (
+      {info.sheet}
+      {lines.length > 0 ? <DetailsToggle expanded={showLines} onToggle={() => setShowLines((v) => !v)} block={t('decide.depth.credit.lateFee')} /> : null}
+      {lines.length > 0 && showLines ? (
         <View style={[styles.results, { backgroundColor: colors.fill1 }]}>
           <Lines lines={lines} t={t} />
         </View>
