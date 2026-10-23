@@ -93,6 +93,47 @@ describe('infoTerms', () => {
     }
   });
 
+  const R15_KEYS = [
+    'decide.pay.price.head', 'decide.pay.price.amount', 'decide.pay.price.taxFees', 'decide.pay.price.tradeInTag', 'decide.pay.price.final', 'decide.pay.price.edit',
+    'decide.pay.howYouPay.head', 'decide.pay.howYouPay.headInvest', 'decide.pay.howYouPay.sub', 'decide.pay.howYouPay.subInvest',
+    'decide.pay.card.needs', 'decide.pay.card.field.price', 'decide.pay.card.field.rate', 'decide.pay.card.field.months', 'decide.pay.card.field.payment',
+    'decide.pay.card.field.howMany', 'decide.pay.card.field.cardRate', 'decide.pay.card.field.minimumTerms', 'decide.pay.card.field.dealerCap',
+    'decide.pay.card.field.amount', 'decide.pay.card.comesTo', 'decide.pay.card.selected', 'decide.pay.card.notSelected', 'decide.pay.card.hint',
+    'decide.pay.card.hintReadOnly', 'decide.pay.card.announce',
+    'decide.pay.summaryDay', 'decide.pay.summaryLoan', 'decide.pay.summaryInstalmentNoRate', 'decide.pay.summaryInstalmentRate', 'decide.pay.summaryFirstInMonth',
+    'decide.pay.summaryCardFull', 'decide.pay.summaryCardMinimum', 'decide.pay.summaryCardMonths', 'decide.pay.summaryLump', 'decide.pay.summaryLumpRate',
+    'decide.pay.summaryContribution',
+    'decide.pay.instalmentHasRate', 'decide.pay.instalmentNo', 'decide.pay.instalmentYes', 'decide.pay.instalmentQuoted', 'decide.pay.instalmentRateNote',
+    'decide.pay.instalmentRateNoteMonth', 'decide.pay.instalmentCalcNote', 'decide.pay.instalmentFirst', 'decide.pay.instalmentToday', 'decide.pay.instalmentInMonth',
+    'decide.customType.chip', 'decide.customType.placeholder', 'decide.customType.range', 'decide.customType.a11y', 'decide.customType.treatLike',
+    'decide.customType.general', 'decide.customType.treatedLike',
+    'decide.fold.title.grow', 'decide.fold.investPreview', 'decide.fold.noReturn.preview', 'decide.fold.noReturn.body', 'decide.fold.noReturn.link',
+    'decide.pay.horizonOver', 'decide.pay.horizonCustom', 'decide.pay.horizonYears',
+    'decide.pay.expectedReturn', 'decide.pay.projection', 'decide.verdict.projection', 'decide.pay.assumptionReturn', 'decide.pay.assumptionReturnValue',
+    'decide.verdict.missing.instalment_rate_missing',
+  ];
+
+  it('D-79..D-84 R15 strings resolve', () => {
+    for (const k of R15_KEYS) {
+      const v = str(k) ?? str(`${k}_other`);
+      expect({ k, ok: typeof v === 'string' && v.length > 0 }).toEqual({ k, ok: true });
+    }
+  });
+
+  it('R15 plural keys exist as _one and _other with a no-break space between count and unit', () => {
+    const PLURALS = [
+      'decide.pay.summaryLoan', 'decide.pay.summaryCardMonths', 'decide.pay.summaryContribution', 'decide.pay.projection',
+      'decide.verdict.projection', 'decide.fold.investPreview', 'decide.pay.horizonYears',
+    ];
+    for (const k of PLURALS) {
+      expect(str(`${k}_one`)).toContain(`1${NB}`);
+      expect(str(`${k}_other`)).toMatch(new RegExp(`\\{\\{count\\}\\}${NB}(months|years)`));
+    }
+    expect(str('decide.pay.instalmentRateNote_one')).toMatch(/^1 payment of/);
+    expect(str('decide.pay.instalmentRateNote_other')).toMatch(/^\{\{count\}\} payments of/);
+    expect(str('decide.pay.instalmentRateNoteMonth_other')).toContain('the first in a month');
+  });
+
   it('R3 F6 plural keys exist as _one and _other with a no-break space before the unit', () => {
     for (const k of ['decide.quick.overMonths', 'decide.quick.monthlyCaption', 'decide.quick.monthlyCaptionZero', 'decide.quick.monthlyCaptionPaidOff', 'decide.pay.loanTermNote', 'decide.pay.cardMonthsValue']) {
       expect(str(`${k}_one`)).toContain(`1${NB}mo`);

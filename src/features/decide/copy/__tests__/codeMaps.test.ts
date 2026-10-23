@@ -34,6 +34,12 @@ describe('code maps', () => {
     }
   });
 
+  it('D-80 instalment_rate_missing has its own missing title', () => {
+    expect(MISSING_TITLE.instalment_rate_missing).toBe('decide.verdict.missing.instalment_rate_missing');
+    expect(MISSING_TITLE.instalment_rate_missing).not.toBe(MISSING_TITLE.instalment_count_missing);
+    expect(resolvesInEn(MISSING_TITLE.instalment_rate_missing)).toBe(true);
+  });
+
   it('WARNING_TONE covers every warning code', () => {
     expect(Object.keys(WARNING_TONE).sort()).toEqual(['cash', 'cash_dip', 'dsr', 'inv', 'month', 'owe']);
     expect(WARNING_TONE.month).toBe('hard');

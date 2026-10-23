@@ -1685,7 +1685,11 @@ const en = {
     details: { show: 'Show details', hide: 'Hide details', showA11y: 'Show details, {{block}}', hideA11y: 'Hide details, {{block}}' },
     slider: { above: 'Above the slider’s range', below: 'Below the slider’s range' },
     fold: {
+      // 05-80 (R15.9): investment fold 7 with an expected return.
+      investPreview_one: '{{fv}} after 1 month at {{rate}}% a year', investPreview_other: '{{fv}} after {{count}} months at {{rate}}% a year',
+      noReturn: { preview: 'No expected return set', body: 'No expected return set. One can be typed on the Amount and schedule step.', link: 'Amount and schedule' },
       title: {
+        grow: 'What it could grow to',
         whatBreaks: 'What breaks', month: 'The month, line by line', cashPath: 'Cash path, next 90 days', whereItLands: 'Where it lands', setbacks: 'If something goes wrong',
         workIt: 'What would make it work', invest: 'If it went into investing instead', income: 'With the expected income', who: 'Who pays what', assumptions: 'Assumptions in play',
       },
@@ -1710,6 +1714,11 @@ const en = {
         label: '{{title}}, {{preview}}', showHint: 'Shows the detail', hideHint: 'Hides the detail',
         expanded: '{{title}} expanded', collapsed: '{{title}} collapsed', expandedCollapsed: '{{title}} expanded. {{previous}} collapsed.',
       },
+    },
+    // 05-80 (D-81, R15.9): custom item type on step 1.
+    customType: {
+      chip: 'Custom…', placeholder: 'Drone', range: '1 to 40 characters', a11y: 'Custom item type, {{name}}',
+      treatLike: 'Treat like', general: 'General (default)', treatedLike: 'treated like {{type}}',
     },
     custom: {
       chip: 'Custom', chipA11y: 'Custom, {{value}}', months_one: '1\u00A0month', months_other: '{{count}}\u00A0months', ratePercent: '{{rate}}%',
@@ -1868,6 +1877,40 @@ const en = {
       final: 'Final price', committed: 'Amount committed', counted: '{{counted}} of {{total}} lines counted', salesTax: 'Sales tax', fees: 'Fees',
     },
     pay: {
+      // 05-80 (D-79..D-84, R15.9)
+      price: { head: 'Price', amount: 'Amount', taxFees: 'Tax, fees and trade-ins', tradeInTag: 'Trade-in or discount', final: 'Final price', edit: 'Edit' },
+      howYouPay: {
+        head: 'How you pay', headInvest: 'How you put it in',
+        sub: 'The same purchase, four ways. The verdict follows the one selected.',
+        subInvest: 'The same amount, two ways. The verdict follows the one selected.',
+      },
+      card: {
+        needs: 'Needs: {{fields}}',
+        field: { price: 'price', rate: 'rate', months: 'months', payment: 'payment', howMany: 'how many', cardRate: 'card rate', minimumTerms: 'minimum terms', dealerCap: 'dealer cap', amount: 'amount' },
+        comesTo: 'What it comes to', selected: 'Selected', notSelected: 'Not selected',
+        hint: 'Selects this way to pay and shows its details', hintReadOnly: 'Shows its details',
+        announce: '{{method}} selected. Details shown.',
+      },
+      summaryDay: '{{price}} on the day · leaves {{cash}}',
+      summaryLoan_one: '{{deposit}} down · 1 month · {{apr}}%', summaryLoan_other: '{{deposit}} down · {{count}} months · {{apr}}%',
+      summaryInstalmentNoRate: '{{count}} × {{payment}} · no rate', summaryInstalmentRate: '{{count}} × {{payment}} · {{apr}}%',
+      summaryFirstInMonth: ' · first in a month',
+      summaryCardFull: '{{card}} · in full next statement', summaryCardMinimum: '{{card}} · minimum only',
+      summaryCardMonths_one: '{{card}} · over 1 month', summaryCardMonths_other: '{{card}} · over {{count}} months',
+      summaryLump: '{{amount}} once', summaryLumpRate: '{{amount}} once · {{rate}}% a year',
+      summaryContribution_one: '{{amount}} a month · 1 month', summaryContribution_other: '{{amount}} a month · {{count}} months',
+      instalmentHasRate: 'Has a rate?', instalmentNo: 'No', instalmentYes: 'Yes', instalmentQuoted: 'Payment as quoted (optional)',
+      instalmentRateNote_one: '1 payment of {{payment}} at {{apr}}%, on the day. Interest over the plan is {{interest}}.',
+      instalmentRateNote_other: '{{count}} payments of {{payment}} at {{apr}}%, the first on the day. Interest over the plan is {{interest}}.',
+      instalmentRateNoteMonth_one: '1 payment of {{payment}} at {{apr}}%, in a month. Interest over the plan is {{interest}}.',
+      instalmentRateNoteMonth_other: '{{count}} payments of {{payment}} at {{apr}}%, the first in a month. Interest over the plan is {{interest}}.',
+      instalmentCalcNote: 'The rate works out to {{calc}} a month; the quote is {{typed}}.',
+      instalmentFirst: 'First payment', instalmentToday: 'Today', instalmentInMonth: 'In a month',
+      horizonOver: 'Over', horizonCustom: 'Custom', horizonYears_one: '1 year', horizonYears_other: '{{count}} years',
+      expectedReturn: 'Expected return, % a year (optional)',
+      projection_one: 'About {{fv}} after 1 month at {{rate}}% a year. A projection at the rate you entered, not a forecast.',
+      projection_other: 'About {{fv}} after {{count}} months at {{rate}}% a year. A projection at the rate you entered, not a forecast.',
+      assumptionReturn: 'Expected return', assumptionReturnValue: '{{rate}}% a year, used for the projection only',
       head: 'How you pay', headInvest: 'How you put it in',
       sub: 'The same thing, four ways. Everything downstream is worked out on the one you pick.',
       subInvest: 'The same amount, two ways. Everything downstream is worked out on the one you pick.',
@@ -1918,6 +1961,8 @@ const en = {
         months_one: '1\u00A0month', months_other: '{{count}}\u00A0months', underOne: 'Under 1 month', notLimited: 'Not limited', none: 'None',
         a11y: 'Left each month after this: {{left}}. Cushion: {{months}} of costs. Monthly cost: {{monthly}}.',
       },
+      projection_one: 'At {{rate}}% a year: about {{fv}} after 1 month. Not a forecast.',
+      projection_other: 'At {{rate}}% a year: about {{fv}} after {{count}} months. Not a forecast.',
       titleNoAlreadyShort: 'Your {{basis}} month is already {{already}} short. This makes it {{short}}.',
       titleNoMonthShort: 'The month ends {{short}} short.',
       titleUnexplained: 'The detail behind this answer is not available.', // IN-B07: a defensive fallback in place of a zero-amount claim
@@ -1943,6 +1988,7 @@ const en = {
         loan_apr_missing: 'No rate was entered, so the loan cannot be scored yet.',
         instalment_amount_missing: 'Instalment amount or count is missing, so this can’t be scored.',
         instalment_count_missing: 'Instalment amount or count is missing, so this can’t be scored.',
+        instalment_rate_missing: 'No rate is typed for the instalment plan, so it can’t be scored.', // D-80 (05-80, E1)
         invest_term_missing: 'No term was entered, so this cannot be scored yet.',
         no_full_month: 'No full month is logged yet, so only a first read is possible.',
         split_weights_zero: 'The split adds up to nothing, so your share can’t be worked out.',
