@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { Step3Verdict, type Step3Props } from '../Step3Verdict';
+import { WhatBreaksBody } from '../../sections/WhatBreaksSection';
 import { buy, stepProps, wrap } from './helpers/stepProps';
 import type { CheckInputs, SnapshotResult } from '../../../snapshot/types';
 import { loggedSource, noneSource, roughSource, unconvertedSource } from '../../../snapshot/__tests__/helpers/snapshotFixtures';
@@ -21,8 +22,21 @@ function propsFor(over: Partial<CheckInputs>, source: SnapshotResult, extra: Par
   return { ...stepProps(buy(over), {}, source), lastSeenBasis: null, revealKey: 'k1', ...extra };
 }
 
+/** D-74: the warnings moved from the top of step 3 to the "What breaks" fold body; same cards, same copy. */
+function breaks(p: Step3Props): React.JSX.Element {
+  return <WhatBreaksBody computation={p.computation} inputs={p.inputs} update={p.update} whole={p.whole} exact={p.exact} currency={p.source.currency} readOnly={false} />;
+}
+
 describe('Step3Verdict', () => {
   beforeEach(() => jest.clearAllMocks());
+
+  it('D-74 step 3 shows notices above the folds and no warning cards', async () => {
+    const p = propsFor({ ...loan(2_000_000) }, loggedSource({ monthlyInvesting: 10_000 as never }));
+    await wrap(<Step3Verdict {...p} />);
+    expect(screen.getByText('Needs adjustment')).toBeTruthy();
+    expect(screen.queryByText('Debt takes a large share of your income')).toBeNull();
+    expect(screen.queryByText('Investing pauses to close the month')).toBeNull();
+  });
 
   it('a fitting check shows the chip, the size label, the title and the basis marker, and one success haptic', async () => {
     await wrap(<Step3Verdict {...propsFor({ advertised: 150_000, method: 'cash' }, loggedSource())} />);
@@ -50,7 +64,12 @@ describe('Step3Verdict', () => {
 
   it('adjust with two warnings renders the card and both warning titles, with a warning haptic', async () => {
     const p = propsFor({ ...loan(2_000_000) }, loggedSource({ monthlyInvesting: 10_000 as never }));
-    await wrap(<Step3Verdict {...p} />);
+    await wrap(
+      <>
+        <Step3Verdict {...p} />
+        {breaks(p)}
+      </>
+    );
     expect(screen.getByText('Needs adjustment')).toBeTruthy();
     expect(screen.getByText('Debt takes a large share of your income')).toBeTruthy();
     expect(screen.getByText('Investing pauses to close the month')).toBeTruthy();
@@ -59,13 +78,24 @@ describe('Step3Verdict', () => {
 
   it('the pause warning states the amount and never says should', async () => {
     const p = propsFor({ ...loan(2_000_000) }, loggedSource({ monthlyInvesting: 10_000 as never }));
-    const view = await wrap(<Step3Verdict {...p} />);
+    const view = await wrap(
+      <>
+        <Step3Verdict {...p} />
+        {breaks(p)}
+      </>
+    );
     expect(screen.getByText(/The month closes only if .* a month of investing pauses/)).toBeTruthy();
     expect(JSON.stringify(view.toJSON()).toLowerCase()).not.toContain('should');
   });
 
   it('a no check uses the no chip', async () => {
-    await wrap(<Step3Verdict {...propsFor(loan(3_000_000), loggedSource())} />);
+    const p = propsFor(loan(3_000_000), loggedSource());
+    await wrap(
+      <>
+        <Step3Verdict {...p} />
+        {breaks(p)}
+      </>
+    );
     expect(screen.getByText('You cannot afford this')).toBeTruthy();
     expect(screen.getByText('The month does not close')).toBeTruthy();
   });

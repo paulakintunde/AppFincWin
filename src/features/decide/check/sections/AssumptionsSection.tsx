@@ -82,7 +82,7 @@ function ProvisionalRow({ label, date }: { label: string; date: string }) {
 }
 
 /** Every assumption row in order; shared by the body and the wrapper's count (05-65 keeps the old summary working). */
-function assumptionRows(props: AssumptionsBodyProps | AssumptionsSectionProps, t: ReturnType<typeof useT>): Row[] {
+export function assumptionRows(props: AssumptionsBodyProps | AssumptionsSectionProps, t: ReturnType<typeof useT>): Row[] {
   const { computation, whole, currency, meta, stack, conversions = [], basisItems = [], formatDate = (d: string) => d } = props;
   const tr = t as Translate;
   const a = assessmentOf(computation);

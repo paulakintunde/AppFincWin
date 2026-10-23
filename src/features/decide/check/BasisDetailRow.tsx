@@ -10,9 +10,12 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import type { CopyRef } from '../copy/types';
+import { useInfoSheet } from '../ui/useInfoSheet';
+import { InfoTitle } from './InfoTitle';
 import { refText, type Translate } from './refText';
 
 const CARD_MIN_KEY = 'decide.depth.cardMin.basis';
+const PROVISIONAL_KEY = 'decide.depth.currency.provisional';
 
 export interface BasisDetailRowProps {
   items: readonly CopyRef[];
@@ -22,6 +25,9 @@ export interface BasisDetailRowProps {
 export function BasisDetailRow({ items, onPressCardMinimum }: BasisDetailRowProps) {
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
+  // D-70: the provisional-rate item carries its own explanation, dated by the stored rate
+  const provisional = items.find((i) => i.key === PROVISIONAL_KEY && i.params?.date !== undefined);
+  const info = useInfoSheet('provisionalRate', { provisionalRate: { date: String(provisional?.params?.date ?? '') } });
   if (items.length === 0) return null;
   const text = items.map((i) => refText(t, i)).join(' · ');
   const body = (
@@ -30,8 +36,11 @@ export function BasisDetailRow({ items, onPressCardMinimum }: BasisDetailRowProp
     </Text>
   );
   const opens = onPressCardMinimum !== undefined && items.some((i) => i.key === CARD_MIN_KEY);
-  if (!opens) return body;
-  return (
+  const lineHeight = textRole(pairing, 'label').lineHeight;
+  const withInfo = (node: React.ReactNode): React.JSX.Element =>
+    provisional === undefined ? <>{node}</> : <InfoTitle info={info} lineHeight={lineHeight}>{node}</InfoTitle>;
+  if (!opens) return withInfo(body);
+  return withInfo(
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={text}

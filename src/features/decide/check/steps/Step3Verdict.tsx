@@ -1,6 +1,6 @@
 /**
- * 05-15 Step 3, the top: the verdict card and the warnings (D-05). Holds no sections: the flow screen (05-30) places every
- * collapsible section below it. One haptic per visit (success for fits, warning otherwise), keyed by `revealKey`.
+ * 05-15 Step 3, the top: the verdict card, the basis row and the notices (D-05, D-74). The warnings live in the "What breaks" fold;
+ * the flow screen places the hint and the FoldList below this. One haptic per visit (success for fits, warning otherwise), keyed by `revealKey`.
  */
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -59,7 +59,7 @@ export function Step3Verdict(props: Step3Props) {
         />
         <BasisDetailRow items={basisItems} onPressCardMinimum={onEditCardMinimum} />
       </View>
-      <WarningList verdict={verdict} fmt={fmt} fmtDate={formatDate} stackedApplied={stackedApplied} />
+      <WarningList verdict={verdict} fmt={fmt} fmtDate={formatDate} stackedApplied={stackedApplied} warnings={false} />
     </View>
   );
 }
