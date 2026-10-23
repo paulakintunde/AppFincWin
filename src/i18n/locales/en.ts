@@ -1860,7 +1860,8 @@ const en = {
     rough: { title: 'Rough figures', in: 'Money in each month', out: 'Money out each month', cancel: 'Cancel', save: 'Save figures' },
     open: {
       heading: 'Open checks', purchase: '+ Purchase', investment: '+ Investment',
-      sub: '{{price}} · {{method}} · leaves {{left}} a month', subDraft: '{{price}} quoted · no payment method yet', saved: ' · saved',
+      sub: '{{price}} · {{method}} · leaves {{left}} a month',
+      subWithOthers: '{{price}} · {{method}} · with the other open checks, leaves {{left}} a month', subDraft: '{{price}} quoted · no payment method yet', saved: ' · saved',
       changed: 'Changed since you looked', was: ' · was {{state}}',
     },
     lines: {

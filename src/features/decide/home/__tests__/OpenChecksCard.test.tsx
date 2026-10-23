@@ -122,6 +122,29 @@ describe('OpenChecksCard', () => {
     expect(screen.queryByText(/Changed since you looked/)).toBeNull();
   });
 
+  it('E: with two complete open checks each row says its month figure counts the other check, so both read the same', async () => {
+    const house = checkRow('house', { name: 'House' }, inputs({ name: 'House', advertised: 300_000, method: 'cash' }));
+    const claude = checkRow('claude', { name: 'Claude', created_at: '2026-10-02T00:00:00Z' }, inputs({ name: 'Claude', advertised: 20_000, method: 'cash' }));
+    await renderCard([house, claude]);
+    const lines = screen.getAllByText(/with the other open checks, leaves \$-?\d+ a month/);
+    expect(lines).toHaveLength(2);
+    const figures = lines.map((l) => String(l.props.children).match(/leaves (\$-?\d+)/)?.[1]);
+    expect(figures[0]).toBe(figures[1]);
+    expect(screen.queryByText(/Paid in full · leaves/)).toBeNull();
+  });
+
+  it('E: a check judged on its own (combine off) or alone keeps the plain leaves line', async () => {
+    const alone = inputs({ name: 'Alone', advertised: 20_000, method: 'cash' });
+    await renderCard([checkRow('a', {}, alone)]);
+    expect(screen.getByText(/\$200 · Paid in full · leaves \$-?\d+ a month/)).toBeTruthy();
+    await screen.unmount();
+    const own = checkRow('own', {}, inputs({ name: 'Own', advertised: 20_000, method: 'cash', combine: false }));
+    const other = checkRow('other', { created_at: '2026-10-02T00:00:00Z' }, inputs({ name: 'Other', advertised: 30_000, method: 'cash' }));
+    await renderCard([own, other]);
+    expect(screen.getAllByText(/with the other open checks, leaves/)).toHaveLength(1); // only the row that combines
+    expect(screen.getByText(/\$200 · Paid in full · leaves \$-?\d+ a month/)).toBeTruthy();
+  });
+
   it('shows Draft and the quoted line when no payment method is chosen', async () => {
     await renderCard([checkRow('a', {}, inputs({ method: null }))]);
     expect(screen.getByText('Draft')).toBeTruthy();

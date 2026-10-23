@@ -42,6 +42,8 @@ interface RowView {
   hasPriceAndMethod: boolean;
   price: number | null;
   method: ReturnType<typeof effectiveMethod>;
+  /** The month's left on this row counts the other open checks too (stacked), not this check alone. */
+  withOthers: boolean;
 }
 
 function seenOf(chip: ChipComputation | null): SeenState | null {
@@ -82,12 +84,11 @@ export function OpenChecksCard({ source, checks, today, whole, currency }: OpenC
         const view = source === null ? null : inHomeCurrency(stored, source, { isSample: row.is_sample });
         const inputs = view === null ? stored : view.inputs;
         const method = effectiveMethod(inputs);
-        const chip =
-          source === null || view === null
-            ? null
-            : computeChip(sourceFor(source, view), inputs, selectOtherChecks({ checks: open, excludeId: row.id, source, today }).otherChecks);
+        const others = source === null || view === null ? [] : selectOtherChecks({ checks: open, excludeId: row.id, source, today }).otherChecks;
+        const chip = source === null || view === null ? null : computeChip(sourceFor(source, view), inputs, others);
         const shown = view?.kind === 'missing' ? null : inputs.advertised;
-        return { row, chip, hasPriceAndMethod: inputs.advertised !== null && method !== null, price: shown, method };
+        const withOthers = inputs.combine !== false && others.length > 0;
+        return { row, chip, hasPriceAndMethod: inputs.advertised !== null && method !== null, price: shown, method, withOthers };
       }),
     [open, source, today]
   );
@@ -139,7 +140,7 @@ export function OpenChecksCard({ source, checks, today, whole, currency }: OpenC
           } else if (price !== null && methodText !== null) {
             sub =
               left !== null
-                ? t('decide.open.sub', { price: whole(price), method: methodText, left: whole(left) })
+                ? t(v.withOthers ? 'decide.open.subWithOthers' : 'decide.open.sub', { price: whole(price), method: methodText, left: whole(left) })
                 : `${whole(price)} · ${methodText}`;
           } else if (price !== null) {
             sub = t('decide.open.subDraft', { price: whole(price) });
