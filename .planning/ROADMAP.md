@@ -604,7 +604,7 @@ Plans:
 ### Phase 5: Decide UI
 **Goal**: A user gets a trustworthy, explained affordability verdict computed from their own logged months.
 **Depends on**: Phase 4 (engine), Phase 1 (data layer to source the snapshot)
-**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09, DCU-10, DCU-11, DCU-12, DCU-13, DCU-14, DCU-15, DCU-16, DCU-17, DCU-18, DCU-19, DCU-20, DCU-21, DCU-22, DCU-23, DCU-24, DCU-25, DCU-26, DCU-27, DCU-28, DCU-29, DCU-30, DCU-31, DCU-32, DCU-33, MON-15, ANL-06
+**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09, DCU-10, DCU-11, DCU-12, DCU-13, DCU-14, DCU-15, DCU-16, DCU-17, DCU-18, DCU-19, DCU-20, DCU-21, DCU-22, DCU-23, DCU-24, DCU-25, DCU-26, DCU-27, DCU-28, DCU-29, DCU-30, DCU-31, DCU-32, DCU-33, DCU-34, MON-15, ANL-06
 **Success Criteria** (what must be TRUE):
   1. A user can get a cash answer from just an item and a price without entering the multi-step flow, and can work through the five steps — item, price and payment, impact, alternatives, decision — for the full picture.
   2. A user can leave a check open, return to it later and see its verdict recomputed against current figures, or abandon it.
@@ -614,7 +614,7 @@ Plans:
   6. A brand-new user reaches a first verdict within their first session, in roughly a minute, without having logged or imported a month, and the verdict says plainly what it rests on and how an import sharpens it.
   7. Store screenshots 1–3 (verdict, what breaks, alternatives) can be captured from the App Review demo account's sample scenario with nothing staged outside the real app.
 **Launch inputs** (from `research/LAUNCH-POSITIONING.md`, 2026-09-26): the store name is *FincWin: Can I Afford It?*, so the quick check is the product's public promise and stays in the free tier (see `research/PRICING.md`). The first-read question is settled (04-CONTEXT D-11: rough figures give a cash-level answer only, via DEC-16). Discuss-phase must still settle the demo-account scenario (sofa $1,800 in a household of two; car $14,500 on a loan). Onboarding order — welcome, consent, one account, rough month, first check, then "Bring your history" — is shared with Phase 2 (02-30) and Phase 9, where the level questions move after the first verdict.
-**Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate). **Decide UX refresh (2026-10-22):** 34 more plans, 05-54..05-87 in waves 10-19, for 05-CONTEXT D-70..D-84 (UI-SPEC "Decide UX refresh" R1-R15; DCU-25..DCU-30 added; engine changes E1/E2 in 05-81/05-82, user decisions D-80/D-83); revised 2026-10-22 for the plan-check findings (6 blockers, 12 warnings); 05-26 moves to wave 20 so the device pass covers the refresh. Total 87 plans in 20 waves. **Device-walkthrough refinements (2026-10-23):** 22 more plans, 05-88..05-109 in waves 20-26, for 05-CONTEXT D-85..D-94 (UI-SPEC R16; engine changes E3-E5 in 05-89/05-91/05-92, 05-90, 05-93..05-95; DCU-31..DCU-33 and MON-15 added); 05-26 moves to wave 27. Total 109 plans in 27 waves.
+**Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate). **Decide UX refresh (2026-10-22):** 34 more plans, 05-54..05-87 in waves 10-19, for 05-CONTEXT D-70..D-84 (UI-SPEC "Decide UX refresh" R1-R15; DCU-25..DCU-30 added; engine changes E1/E2 in 05-81/05-82, user decisions D-80/D-83); revised 2026-10-22 for the plan-check findings (6 blockers, 12 warnings); 05-26 moves to wave 20 so the device pass covers the refresh. Total 87 plans in 20 waves. **Device-walkthrough refinements (2026-10-23):** 22 more plans, 05-88..05-109 in waves 20-26, for 05-CONTEXT D-85..D-94 (UI-SPEC R16; engine changes E3-E5 in 05-89/05-91/05-92, 05-90, 05-93..05-95; DCU-31..DCU-33 and MON-15 added); 05-26 moves to wave 27. Total 109 plans in 27 waves. **Decide home redesign (2026-10-23):** 9 more plans, 05-110..05-118 in waves 27-30, for 05-CONTEXT D-95..D-99 (UI-SPEC R17; DCU-34 added); 05-26 moves to wave 31. Total 118 plans in 31 waves.
 Plans:
 **Wave 1**
 - [x] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
@@ -776,8 +776,25 @@ Plans:
 **Wave 26** *(blocked on Wave 25 completion)*
 - [ ] 05-109-PLAN.md — Retire R16-replaced copy, drop the next_month alias, extend the copy and text-fit guards (D-76, DCU-09)
 
-**Wave 27** *(blocked on Wave 26 completion)*
-- [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots at 402x874 (R8 frames), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist and the D-88 speed budgets
+**Wave 27** *(Decide home redesign; blocked on Wave 26 completion)*
+- [ ] 05-110-PLAN.md — R17 copy, the tightestFigures ⓘ and the homeBasisSeen flag (D-95..D-99)
+- [ ] 05-111-PLAN.md — Pure home models: card state by engine basis, problems list and notice row counts (D-96, D-97)
+- [ ] 05-112-PLAN.md — Dark variants: quick check, toggle and chips for the ink card (D-95)
+- [ ] 05-113-PLAN.md — Pushed Open checks, Changes coming up and Lines screens (D-99)
+
+**Wave 28** *(blocked on Wave 27 completion)*
+- [ ] 05-114-PLAN.md — HomeSummaryCard: label, two-Text hero at 42, In/Out, quick check, states (D-95, D-97)
+- [ ] 05-115-PLAN.md — Month details sheet and the quiet HomeRow (D-95, D-99)
+- [ ] 05-116-PLAN.md — Notice row and the Needs a look sheet (D-96)
+
+**Wave 29** *(blocked on Wave 28 completion)*
+- [ ] 05-117-PLAN.md — Decide home composition: lean header, card, rows, no FAB (D-95, D-98, D-99)
+
+**Wave 30** *(blocked on Wave 29 completion)*
+- [ ] 05-118-PLAN.md — Retire R17-replaced copy and components; guards over R17 (D-76, DCU-09)
+
+**Wave 31** *(blocked on Wave 30 completion)*
+- [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots (R8 frames, R17.9 alternate frame 1 with the onLayout/Maestro budget), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist, the D-88 speed budgets and the per-pairing hero check
 **UI hint**: yes — this phase should carry the deepest testing and design-iteration budget in the roadmap; it is the product's actual moat.
 
 ### Phase 6: Grow
@@ -913,7 +930,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 86/109 | Executing (R16 refinements planned 2026-10-23) | - |
+| 5. Decide UI | 86/118 | Executing (R16 refinements and R17 home redesign planned 2026-10-23) | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |

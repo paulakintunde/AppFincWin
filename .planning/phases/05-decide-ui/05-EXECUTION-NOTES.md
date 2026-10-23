@@ -108,7 +108,7 @@ Non-interactive execution of `/gsd-execute-phase 5` (waves 1-8, plus 05-25 Task 
 ## D-69 provisional latest rate (2026-10-22)
 - User decision "Provisional latest rate", built before the 05-26 device checks. A line with no usable stamp converts at the latest stored rate (`provisionalHomeAmount`), is flagged provisional, shows the basis line with count and date, and caps confidence at fair via the engine's plain `provisionalRates` flag. No migration; nothing provisional is written; `homeAmountFor` unchanged. 05-26 device item added above.
 
-## 05-26 device checklist additions (Decide UX refresh, 05-54..05-109, D-70..D-94)
+## 05-26 device checklist additions (Decide UX refresh, 05-54..05-118, D-70..D-99)
 
 Planned 2026-10-22. "Text-fit matrix" means 402x874 and 320x568 (points), each at text scale 1.0x and 2.0x: the Pixel (Settings > Display size and text) and an Android emulator AVD at 320dp (`adb shell wm size` / `wm density`); the iPhone XR when the iOS build exists. Pass: no word split mid-word, no overlap, no truncated system copy, every target 44 or larger, every ⓘ and chevron visible. TalkBack checks read every new control by its label.
 
@@ -168,6 +168,15 @@ Planned 2026-10-22. "Text-fit matrix" means 402x874 and 320x568 (points), each a
 - [ ] 05-107 D-88: airplane mode on during a save, off again: the write resumes within seconds without reopening the app; a slow network shows no stall beyond 20 s.
 - [ ] 05-108 D-88: offline, type into a check for a minute, reconnect: one save travels; the sync line stays hidden for quick saves and reads 'N changes waiting' only after 5 s.
 - [ ] 05-109 R16 close-out: no retired R16 string appears anywhere; whole Decide pass at the text-fit matrix for the R16 screens.
+- [ ] 05-110 R17 copy: read the home, notice row and Needs a look copy in context; nothing reassures; the 'Your tightest figures' ⓘ reads correctly.
+- [ ] 05-111 Home models: on a fresh account the card shows 'Not worked out yet' and no notice row; with a 31-day-old EUR rate the row reads '1 item needs a look'.
+- [ ] 05-112 Dark quick check: 'Check it' (surface/ink) is legible; the dark toggle and chips at the text-fit matrix; TalkBack reads them as before.
+- [ ] 05-113 Pushed lists: Open checks, Changes and Lines screens keep swipe/⋯ Delete with Undo and the editors; back returns to Decide home.
+- [ ] 05-114 Dark card: hero at 402 and 320, 1.0x and 2.0x for each font pairing; short state in the danger tint; the hero shrinks while a result is open; TalkBack reads the summary group first.
+- [ ] 05-115 Month details: the basis control changes the label and hero; Edit opens rough figures stacked; the sheet scrolls at 2.0x.
+- [ ] 05-116 Needs a look: each action opens its target (rough figures, currency settings, failed saves, card terms); the sheet closes when the last problem is fixed.
+- [ ] 05-117 Decide home: no FAB on Decide, FAB on other tabs; rows hidden at 0 as specified; 32 space under the card; the header shows no sync line on Decide only.
+- [ ] 05-118 R17 close-out: no retired home string anywhere; the whole home at the text-fit matrix.
 
 ## ROADMAP ticks for three-digit plans (05-100 onward)
 `gsd-sdk` tooling may mis-tick ROADMAP checkboxes for plans 05-100..05-109 (prefix overlap with 05-10/05-1x). After every `roadmap update-plan-progress`, open .planning/ROADMAP.md, confirm only the intended plan's checkbox changed, and untick any stray tick by hand. Do not patch the GSD tools.
