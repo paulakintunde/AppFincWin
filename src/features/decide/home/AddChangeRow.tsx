@@ -1,7 +1,7 @@
 /**
  * 05-71 (D-72, UI-SPEC R1 "Empty-state add row"): the slim line under the quick-check card. Left, "+ Add a change coming up"
  * (only while there are no changes); right, "Check an investment" (only while Open checks is hidden). No card, no fill.
- * Under rule S the two items stack, each on its own 44 line. Renders nothing when neither shows.
+ * Under rule S, and whenever both show, the two items stack, each on its own 44 line (so neither label wraps beside the other). Renders nothing when neither shows.
  */
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -35,7 +35,8 @@ function PlusGlyph() {
 export function AddChangeRow({ showAdd, showInvest, onAdd, onInvest }: AddChangeRowProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const stack = useShouldStack();
+  // Both labels are long ("+ Add a change coming up" and "Check an investment"): side by side at 402 the first wraps.
+  const stack = useShouldStack() || (showAdd && showInvest);
   if (!showAdd && !showInvest) return null;
   const labelStyle = { ...textRole(pairing, 'label'), color: colors.accent };
   const addLabel = t('decide.home.addChange');
