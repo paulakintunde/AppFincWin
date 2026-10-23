@@ -6,8 +6,9 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { DURATION, useReduceMotion } from '@/theme/motion';
-import { PRESSED_OPACITY, space } from '@/theme/layout';
+import { PRESSED_OPACITY, size, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
+import { hapticSelection } from '@/ui/haptics';
 
 const SECTION_HEADER_MIN = 56; // UI-SPEC collapsible header height
 
@@ -31,13 +32,24 @@ export function CollapsibleSection({ title, summary, expanded, onToggle, dark = 
         accessibilityRole="button"
         accessibilityState={{ expanded }}
         accessibilityLabel={summary ? `${title}, ${summary}` : title}
-        onPress={onToggle}
+        onPress={() => {
+          hapticSelection();
+          onToggle();
+        }}
         style={({ pressed }) => [styles.header, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
       >
-        <Text style={{ ...textRole(pairing, 'sheetTitle'), color: titleColor, flexShrink: 1 }}>{title}</Text>
-        {summary ? (
-          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: summaryColor }}>{summary}</Text>
-        ) : null}
+        <View style={styles.text}>
+          <Text style={{ ...textRole(pairing, 'sheetTitle'), color: titleColor }}>{title}</Text>
+          {summary ? (
+            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: summaryColor }}>{summary}</Text>
+          ) : null}
+        </View>
+        <View
+          style={[
+            styles.chevron,
+            { borderColor: dark ? colors.inkSoft1 : colors.inkSoft3, transform: [{ rotate: expanded ? '135deg' : '45deg' }] },
+          ]}
+        />
       </Pressable>
       {expanded ? (
         reduced ? (
@@ -55,7 +67,14 @@ const styles = StyleSheet.create({
     minHeight: SECTION_HEADER_MIN,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: space.gapMd,
+  },
+  text: { flex: 1, flexShrink: 1 },
+  chevron: {
+    width: size.chevronCompact,
+    height: size.chevronCompact,
+    borderTopWidth: 2,
+    borderRightWidth: 2,
+    flexShrink: 0,
   },
 });
