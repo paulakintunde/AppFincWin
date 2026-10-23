@@ -1,8 +1,8 @@
 ---
 phase: 5
 slug: 05-decide-ui
-status: draft
-reviewed_at: 2026-10-22
+status: approved
+reviewed_at: 2026-10-23
 amended: 2026-10-22
 shadcn_initialized: false
 preset: none
@@ -17,7 +17,7 @@ created: 2026-10-15
 
 **Platform note:** React Native / Expo SDK 57. No shadcn, no CSS. Styling is `StyleSheet` plus the typed theme (`useTheme()`, `textRole()`, `src/theme/*`). The CLAUDE.md fidelity rule holds: **no new colour, gradient, shadow, type size or icon set.** The prototype's Decide screens use about a dozen hex values outside the §2 palette; every one is mapped to an existing token below (Color, Deviations Register). Colours are cited by token name only; `noRawColours.test.ts` must keep passing.
 
-**Amended 2026-10-22 and 2026-10-23 (D-70..D-94):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Re-approved by the UI checker on 2026-10-22, with its recommendations folded in (R14). R15 (Step 2, item and invest refresh, D-79..D-84) was re-approved the same day with its must-fix items folded in (R15.13). R16 (device-walkthrough refinements, D-85..D-93, 2026-10-23) returns the status to draft for a re-check.
+**Amended 2026-10-22 and 2026-10-23 (D-70..D-94):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Re-approved by the UI checker on 2026-10-22, with its recommendations folded in (R14). R15 (Step 2, item and invest refresh, D-79..D-84) was re-approved the same day with its must-fix items folded in (R15.13). R16 (device-walkthrough refinements, D-85..D-94, 2026-10-23) was re-approved on 2026-10-23 with its must-fix items folded in (R16.16).
 
 **Surface in this phase:**
 1. Decide tab root (quick check, Your month, Open checks, Past decisions link, Lines you will not cross).
@@ -829,6 +829,8 @@ Each item is a choice I made instead of asking, picking the option most consiste
 **Re-approval 2026-10-22 (Decide UX refresh, D-70..D-78):** approved with recommendations; every recommendation is folded in (R14).
 
 **Re-approval 2026-10-22 (R15, D-79..D-84):** approved with must-fix items M1-M8 and nits; all are folded in (R15.13).
+
+**Re-approval 2026-10-23 (R16, D-85..D-94):** approved with must-fix items M1-M7 and nits; all are folded in (R16.16).
 
 **User review 2026-10-15:** assumptions 2, 3, 5 and 9 were confirmed as written. The others stand as written unless revised at planning.
 
@@ -1674,13 +1676,13 @@ There are no free-floating method panels any more: **every input and every outpu
 - **Has a rate? = No** (default): exactly today's behaviour. The total is amount × count, no interest is counted, and the implied-rate note and the "Below the price" rule (D-49) stand.
 - **Has a rate? = Yes:**
   - The user types the count (1-120) and the APR (0-999.99, user-typed only, never pre-filled, 04 D-07).
-  - **The payment is worked out** by the engine at a monthly rate of APR ÷ 12. It is rounded up to the cent, and the last payment is adjusted so the plan clears exactly (as 04 D-64).
+  - **The payment is worked out** by the engine at a **per-period** rate of APR ÷ 100 ÷ periods per year (12 for monthly; 52, 26 or 4 under D-89). It is rounded up to the cent, and the last payment is adjusted so the plan clears exactly (as 04 D-64).
     - With **"First payment: Today"** (the default, D-49), it is an **annuity-due**: the first payment is on the day with any on-the-day fees.
     - With **"In a month"**, it is an **ordinary annuity**: there is no payment on the day (only on-the-day fees), and the first payment falls one month after the purchase date.
   - A **typed "Payment as quoted"** overrides the worked-out payment for scoring (user-confirmed). The note reads "The rate works out to {calc} a month; the quote is {typed}."
 - **"First payment" applies with or without a rate.** With No rate and "In a month", the day-one cost is only the on-the-day fees, and all `count` instalments are monthly. The "Below the price" rule compares amount × count with the full amount financed.
   - "Below the price" does not apply with a rate. The interest is the total paid less the amount financed.
-- **Inputs (plain JSON):** `instalment: { amount, count, lateFee, hasRate: boolean, aprText: string, firstPayment: 'today' | 'next_month' }`. `parseCheckInputs` defaults old checks to `hasRate: false` and `'today'`. "Payment" (No) and "Payment as quoted" (Yes) are the **one stored field `amount`**, so a typed figure survives switching.
+- **Inputs (plain JSON):** `instalment: { amount, count, lateFee, hasRate: boolean, aprText: string, firstPayment: 'today' | 'next_period' }`. `parseCheckInputs` defaults old checks to `hasRate: false` and `'today'`. "Payment" (No) and "Payment as quoted" (Yes) are the **one stored field `amount`**, so a typed figure survives switching.
 - **Switching back to No** keeps `aprText` in the inputs (hidden) and scores without it.
 - **Alternatives:** the cheaper row and "Use the cheaper price": A worked-out instalment payment (Has a rate? = Yes, no quote) is **recomputed by E1 on the cheaper financed amount**. Only typed figures (the loan deposit, the no-rate instalment payment, a quoted payment) scale by cheaper ÷ price, rounded half up to the minor unit (M4).
 - **"What gets written"** follows the engine's payment runs, as for loans.
@@ -1745,9 +1747,9 @@ Existing keys reused on step 2: `runningCosts`, `netMonthly`, `lossOfValue`, `pr
 | `loanTerm` | Loan term chips | Loan term | How many months the loan runs, from 1 to 120. More months lower each payment and raise the total interest at any rate above 0. | Changes the monthly payment and the total paid. |
 | `apr` | Annual rate fields (loan, instalment with a rate, card) | Annual rate (APR) | The yearly interest rate on the agreement, as quoted. The app never fills one in, and 0% is counted as no interest; on step 2 this ⓘ replaces "Before any interest". | Sets the interest in each payment and the total paid. |
 | `secured` | "Secured against what you’re buying" | Secured | A secured loan is backed by the item, such as a car loan against the car. Secured debt is left out of the unsecured-debt line. | On: this loan does not count toward Unsecured debt at most. |
-| `instalmentPlan` | Instalment plan card | Instalment plan | A set number of monthly payments, the first on the day or a month later. Some plans charge interest and some do not. | Adds the later payments as a monthly cost until the count runs out. |
+| `instalmentPlan` | Instalment plan card | Instalment plan | A set number of payments, weekly, every 2 weeks, monthly or quarterly, the first on the day or one period later. Some plans charge interest and some do not. | Adds the later payments as a monthly cost until the count runs out. |
 | `hasRate` | "Has a rate?" | Has a rate? | No: the payments are the amount times the count, and the note shows any rate they imply. Yes: the payment is worked out from the count and the rate typed, and a quoted payment, when entered, is the one the check uses. | Yes counts interest on the plan and can raise the monthly cost. |
-| `firstPayment` | "First payment" | First payment | Today: the first instalment is paid on the purchase date, along with any fees due on the day. In a month: nothing but those fees is paid on the day, and the instalments start a month later. | Changes the cash on the day and the month the payments end. |
+| `firstPayment` | "First payment" | First payment | Today: the first instalment is paid on the purchase date, along with any fees due on the day. One period later (a week, 2 weeks, a month or 3 months): nothing but those fees is paid on the day, and the instalments start one period after the purchase. | Changes the cash on the day and the date the payments end. |
 | `lateFee` | "Late fee (optional)" | Late fee | The fee the plan charges when a payment is late, as typed from the agreement. The lines show what one or two late payments would add. | Nothing in the verdict. |
 | `onCard` | On a card card | On a card | The purchase goes on a credit card and is cleared in full at the next statement, over a few months, or at the minimum. Interest is counted at the rate on the card record. | Adds the card payment to your month until it is cleared. |
 | `paidInFullMonthly` | "Paid in full monthly" toggle (card terms sheet) | Paid in full monthly | The card balance is cleared every statement, so no minimum payment is counted. Its spending is already in your month. | No card minimum is added to debt payments. |
@@ -1846,7 +1848,7 @@ Source: the user's device walkthrough and the research report of 2026-10-23, aga
 - **Labels:** each row's label wraps at word boundaries (rule W). A11y: `accessibilityRole="button"`, with the hints "Opens the entry sheet" (expense and income), "Opens the transfer sheet", "Opens statement import" and "Starts a new affordability check".
 - **Behaviour:** each row runs the **same handler as the FAB quick action** with the same `QuickActionId` (`addExpense`, `addIncome`, `transfer`, `importStatement`, `newCheck`).
   - Tapping a row **closes You first**: `router.dismissTo` the tab root it was opened from.
-  - The handler then runs after the transition (`InteractionManager.runAfterInteractions`), so the right sheet opens over a tab root, or the route is pushed (import, new check).
+  - The handler then runs after the transition: on the navigation `transitionEnd` event of the tab root (not `InteractionManager`, which is deprecated in recent React Native and is to be verified for RN 0.86 before any use), so the right sheet opens over a tab root, or the route is pushed (import, new check).
   - A row whose quick action has no registered handler is not shown, using the same availability rule as the quick menu (`availableQuickActions`).
 - **Import moves:** the old "Money" group import row (`you.record.importCsv` in `MONEY_ROWS`) is **removed** (user, 2026-10-23). "Import statement" lives only in the "Add" group and opens the same import route with `entry: 'you'`.
 
@@ -1865,8 +1867,9 @@ On the Deposit and loan card's "What it comes to" tile (R15.1):
 - **"Interest saved by the deposit"** (caption, with ⓘ `interestSaved`) and **"Interest paid"** sit side by side (the strip stacks under rule S).
   - "Interest saved by the deposit" is **hidden when the deposit is 0**.
   - "Interest paid" is the plan's own interest (`plan.interest`; at 0% it is "None").
-- **Inline line** (`meta`, `inkMuted`, wraps), shown only when the deposit is above 0: **"{{saved}} less interest than borrowing the full {{price}} with no deposit. The deposit lowers the amount borrowed to {{financed}} over the same {{term}} months at {{apr}}%."**
-  - `{{price}}` is the amount financed with no deposit (the final price less on-the-day costs), and `{{financed}}` is that amount less the deposit.
+- **Inline line** (`meta`, `inkMuted`, wraps), shown only when the deposit is above 0: **"{{saved}} less interest than borrowing the full {{financedNoDeposit}} with no deposit. The deposit lowers the amount borrowed to {{financed}} over the same {{count}}\u00A0months at {{apr}}%."**
+  - `{{financedNoDeposit}}` is the amount financed with no deposit (the final price less on-the-day costs), and `{{financed}}` is that amount less the deposit. The term is `{{count}}` (one placeholder name for every count, M-nit).
+  - **"Cash left after" stays** in the tile. The tile's captions are **top-aligned**, so a two-line caption never pushes its neighbour's figure down out of line.
   - Plural keys: `_one` "…over the same 1\u00A0month at {{apr}}%." and `_other` "…over the same {{count}}\u00A0months at {{apr}}%.".
   - At 0% the saving is 0, so the tile and the line are hidden.
 - **Retired:** the old caption "Interest saved".
@@ -1877,8 +1880,8 @@ Applies to every row in "Costs that follow it" that needs an amount: the D-33 pr
 
 | Part | Spec |
 |---|---|
-| Layout at 402 and 1.0x | **Left:** the name (`s13_5`, wraps), with **"Counted once an amount is typed"** (`meta`, `inkMuted`) under it while empty. **Right:** an **Amount field**: a 44-high pill, width 112 (grows with the text scale), **1.5px dashed `line4` border**, transparent fill, placeholder "Amount" (`inkFaint`). |
-| With an amount | The border becomes solid `line1` on `fill6`. The sub-line becomes the row's note or source. A **checkbox appears** at the left, **checked**. Unchecking keeps the amount but stops counting it ("Not counted" sub-line). |
+| Layout at 402 and 1.0x | **Left:** a reserved 44-wide checkbox column (empty until an amount exists), then the name (`s13_5`, wraps), with **"Counted once an amount is typed"** (`meta`, `inkMuted`) under it while empty. **Right:** an **Amount field**: a 44-high pill, width 112 (grows with the text scale), **1.5px dashed `line4` border**, transparent fill, placeholder "Amount" (`inkFaint`). |
+| With an amount | The border becomes solid `line1` on `fill6`. The sub-line becomes the row's note or source. A **checkbox appears** at the left, **checked**. **The checkbox column (44 wide) is reserved from the start**, empty while there is no amount, so nothing shifts when it appears and the field keeps focus. Unchecking keeps the amount but stops counting it ("Not counted" sub-line). |
 | Tap target | **Tapping anywhere on the row focuses the Amount field** (numeric keyboard). The checkbox, once shown, keeps its own 44 target. |
 | Loss of value | The same dashed field, with the "A month" / "% a year" segmented control above it (rule Seg). It has no checkbox, because it is never counted (D-44), and keeps the sub-line "Not a monthly cash cost". |
 | Rule S | Below 360 wide or above 1.3x, the field moves under the name at full width. |
@@ -1894,7 +1897,7 @@ The dashed border is a border style on an existing token (`line4`), not a new co
 2. **Autosave doesn't churn the cache:** a draft save patches only its own row's `inputs`, `name` and `furthest_step` with structural sharing, so other rows keep their identity. List consumers use `select` with stable equality, so a keystroke in one check does not recompute the other open checks' chips.
 3. **`settledCore` reuses `core`** when the settled inputs equal the live inputs (reference or shallow-equal), instead of recomputing.
 4. **On a keystroke, only the selected method** gets full detail (`methodPlans` for it). The other methods' strips recompute when the inputs settle.
-5. **`computeDetails`** runs after interactions (`InteractionManager.runAfterInteractions`, then the existing 150 ms settle). While it is pending, each detail fold's preview shows **"Updating"** (`meta`, `inkMuted`, no new colour), with `accessibilityState.busy`. The figures then replace it with no motion.
+5. **`computeDetails`** runs after interactions (`requestIdleCallback` where available, else a 0 ms timeout, then the existing 150 ms settle; `InteractionManager` is not used unless verified non-deprecated in RN 0.86). While it is pending, each detail fold's preview shows **"Updating"** (`meta`, `inkMuted`, no new colour), with `accessibilityState.busy`. The figures then replace it with no motion.
 6. **Budgets** on the Pixel test device, release build: the verdict (core) in **under 50 ms** from the keystroke, and the details in **under 300 ms** after the settle. They are measured with `performance.now()` marks in a dev-only harness, and recorded in the verification.
 
 **Sync:**
@@ -1904,7 +1907,7 @@ The dashed border is a border style on an existing token (`line4`), not a new co
 | Request timeout | The Supabase client gets a custom `global.fetch` with an `AbortController`: **15 s** for reads and **20 s** for writes (RPC and mutations). A timeout counts as a network error, so it is retried and paused offline. |
 | Backoff while online | Exponential from 1 s, **capped at 12 s** (within the 10-15 s band) in `writeRetryDelay`. Offline writes stay paused, with no retries. |
 | Resume | On `AppState` → `active`, and on a NetInfo change to reachable: `onlineManager.setOnline(true)`, `resumePausedMutations()`, then refetch the stale queries. |
-| Coalesce drafts | At most **one queued draft save per check**. A newer `saveCheckDraft` for the same id replaces a queued (not yet sent) one, so only the latest inputs travel. A save already in flight is left alone. |
+| Coalesce drafts | At most **one queued draft save per check**. A newer `saveCheckDraft` for the same id **removes the paused (not yet sent) one from the `MutationCache`, then adds the new one**, so only the latest inputs travel. Ordering in `WRITE_SCOPE` is kept relative to any queued create or delete of the same check: a save never moves ahead of its create or behind its delete. WR-A03 version chaining is kept. A save already in flight is left alone. Test: "D-88 a paused create, save, save then delete replays as create, save, delete". |
 | Post-restore | After the persister restores the cache, `invalidateQueries` runs **at once**, in parallel with resuming mutations, and does not wait for writes to drain. |
 | Reachability | `NetInfo.configure({ reachabilityUrl: <SUPABASE_URL>/rest/v1/, reachabilityTest: (r) => r.status < 500 })`. Any answer from the Supabase endpoint, even 401, means reachable. It is checked against that endpoint, not a generic internet host. |
 
@@ -1957,7 +1960,7 @@ Each has a `_one` form ("1\u00A0weekly payment of {{payment}}", and so on). The 
 #### R16.7 Card check limit (D-91; engine change E5)
 
 - **The limit:** at most **`CARD_MAX_PURCHASE` = US$100,000**, converted into the home currency at the **latest stored rate** (`convertLatest`, never the FX fetch door), goes on a card in any check. That is about £78k or CA$137k. The rest counts as **cash on the day**, through the same mechanism as the dealer cap (D-18): the card portion is min(price, dealer cap when present, the converted limit). The converted limit is rounded **down** to the minor unit.
-- **Missing USD rate (conservative choice):** when no USD rate to the home currency is stored at all, the limit cannot be converted. The **On a card** method is then **not scored**: its card shows "Needs: USD rate" and the D-37 missing-rate wording for USD, and the other methods are unaffected. This is more conservative than applying no limit, which could put more on a card than the check allows. A stored rate with an older date is used as the D-69 provisional rule has it: the latest stored rate, with the basis item and the confidence capped at fair. Home currency USD needs no rate.
+- **Missing USD rate (conservative choice):** when no USD rate to the home currency is stored at all, the limit cannot be converted. The **On a card** method is then **not scored**: its card shows "Needs: USD rate" and the D-37 missing-rate wording for USD, and the other methods are unaffected. This is more conservative than applying no limit, which could put more on a card than the check allows. A stored rate with an older date is used as the latest stored rate, with **only a basis note** naming the rate date ("Card limit converted at the {{date}} USD rate"); the confidence chip is **not** affected (M4). Home currency USD needs no rate.
 - **UI:** the eligibility box shows the capped state, and the flag chip "Part on the card" is reused. Body: **"Only {{cap}} of this goes on a card in checks. The other {{rest}} is counted as cash on the day."** A second `meta` line follows: **"This is a limit of these checks, not of your card issuer."**
 - **When both caps apply:** the lower cap's note shows. With the dealer cap lower, the existing dealer-cap copy shows.
 
@@ -1967,8 +1970,8 @@ Each has a `_one` form ("1\u00A0weekly payment of {{payment}}", and so on). The 
 
 | Type | Chip label | Suggest keywords (whole words, `suggestItemType`) | Card | Copy | Running-cost prompts |
 |---|---|---|---|---|---|
-| `property` | "Property" | house, home, flat, condo, apartment, land, deposit, "down payment", "mortgage deposit" | **blocked** | "A property purchase or deposit is not paid by card." | Property tax, Home insurance, Maintenance, Utilities, Service charge |
-| `cash_equivalent` | "Cash-like" | "money order", wire, "gift card", crypto, bitcoin, shares, stocks, casino, gambling, bet | **blocked** | "Money orders, wires, gift cards, crypto, shares and gambling count as cash advances on a card, so a card is not counted here." | none |
+| `property` | "Property" | "house deposit", "down payment", "mortgage deposit", "buy a house", property, condo, "apartment purchase" (phrases only; bare home, flat, land and deposit are dropped, M5) | **blocked** | "A property purchase or deposit is not counted on a card in these checks." | Property tax, Home insurance, Maintenance, Utilities, Service charge |
+| `cash_equivalent` | "Cash-like" | "wire transfer", "money order", "gift card", crypto, bitcoin, casino, gambling, betting (bare wire, bet, shares and stocks are dropped, M5) | **blocked** | "Money orders, wires, gift cards, crypto, shares and gambling count as cash advances on a card, so a card is not counted here." | none |
 | `tuition` | "Tuition" | tuition, "school fees", "course fees", college, university | **permitted, with a fee note** | "Card payments for tuition often carry a processing fee. Any fee goes in Card fees." | Books and materials, Travel, Accommodation |
 
 **Tax becomes region-aware** (the region is from RD-02, at country level):
@@ -2018,7 +2021,7 @@ These support the block and note copy. The copy states facts and never advises.
 | `interestSaved` (new) | "Interest saved by the deposit" caption | Interest saved by the deposit | Compared with the same loan with no deposit: same price, months and rate. The saving comes only from borrowing less. | Nothing in the verdict. |
 | `instalmentFrequency` (new) | Frequency chips | How often | Payments can fall weekly, every 2 weeks, monthly or quarterly. The month is tested with the monthly equivalent, and the cash path uses the real dates. | Changes the monthly equivalent and the dates on the cash path. |
 | `impliedApr` (new) | The no-rate note | Rate worked out from the figures | The yearly rate that makes the payments add up to the amount paid over time, counting their timing. It is worked out from the figures you typed and is not a quoted rate. | Nothing in the verdict; the plan is scored on its payments. |
-| `cardCheckLimit` (new) | The capped eligibility box | Card limit in checks | Checks count at most {{cap}} of a purchase on a card: US$100,000 at the latest stored rate. It is a limit of this app’s checks, not of any card issuer. | The part above it is counted as cash on the day. |
+| `cardCheckLimit` (new) | The capped eligibility box | Card limit in checks | Checks count at most {{cap}} of a purchase on a card, which is {{usdLimit}} at the latest stored rate. It is a limit of this app’s checks, not of any card issuer. **USD-home variant:** "Checks count at most {{usdLimit}} of a purchase on a card. It is a limit of this app’s checks, not of any card issuer." (`{{usdLimit}}` = `formatAmount` of USD 10,000,000 minor units, "$100,000"; `{{cap}}` = the converted `snapshot.cardMaxPurchase`.) | The part above it is counted as cash on the day. |
 | `itemType` (updated) | Step 1 item type | Item type | What kind of purchase this is. It decides whether a card is counted, whether a loan starts as secured, and which running costs are listed. Property and cash-like purchases are never counted on a card. | Changing it can change the card rules and the costs listed. |
 | `onCard` (updated) | On a card card | On a card | The purchase goes on a credit card and is cleared in full at the next statement, over a few months, or at the minimum. Interest is counted at the rate on the card record. At most {{cap}} goes on a card in checks. | Adds the card payment to your month until it is cleared. |
 
@@ -2038,11 +2041,15 @@ That brings `INFO_TERMS` to 31 + 24 + 4 = **59 keys**.
 - `impliedApr({ financed, payment, count, periodsPerYear, timing: 'due' | 'ordinary' }): { apr: Percent } | { aboveMax: true } | null`.
 - **Exact integer bisection on the percent scale:** search apr in [0, `MAX_APR`]. At each midpoint, compare PV(payments at apr ÷ 100 ÷ ppy) with `financed` by **cross-multiplied bigint rationals**, with no floats. PV is monotonic decreasing in apr.
 - It stops when the bracket is 1 unit of `PERCENT_SCALE` wide and returns the upper bound (the conservative side).
-- It returns `null` when the total ≤ financed (Below the price), and `{ aboveMax: true }` when PV at `MAX_APR` still exceeds financed.
+- It returns `null` when the total < financed (Below the price), `{ apr: 0 }` when the total = financed, `null` when `count = 1` with `'due'` (a single payment on the day carries no rate, so there is no rate line), and `{ aboveMax: true }` when PV at `MAX_APR` still exceeds financed.
+- **financed** is exactly as in D-49: the price plus fees not paid on the day. With `'due'` the PV includes the day-one instalment; the on-the-day fees are not part of it.
+- **Powers** use exponentiation by squaring on bigints.
+- **Display:** rounded to one decimal, **up** (a test pins 18.41 → "18.5").
+- **Where it runs:** E4 runs on the **settled path only** (never per keystroke). Its micro-budget is **under 30 ms at n = 500 on the Pixel 9**, tested in the perf harness.
 - It is pure, read-out only, and never enters `assess()` (04 D-07). Property tests (fast-check): the round-trip with E1/E3 at the solved rate reproduces the payment within one minor unit; monotonic in payment. 100% coverage.
 
 **E5 (D-91, D-92): card cap and card rules.**
-- `CARD_MAX_PURCHASE_USD` = 10,000,000 USD minor units (US$100,000). The snapshot builder converts it to the home currency at the latest stored rate (`convertLatest`, rounded down) and passes it in the snapshot as `cardMaxPurchase: MinorUnits | null`. A null (no stored USD rate) makes the card method `missing` with the new reason `card_limit_rate_missing`. The engine stays free of rates. It is applied in plan building as an extra cap alongside the dealer cap: card portion = min(price, dealer cap, `CARD_MAX_PURCHASE`), and the rest is cash on the day (the existing capped path). It reports reason `card_check_limit` when it binds.
+- `CARD_MAX_PURCHASE_USD` = 10,000,000 USD minor units (US$100,000). The snapshot builder converts it to the home currency at the latest stored rate with **rational arithmetic, then floors it to the minor unit** (tested at a rate that would round up), and the engine uses `snapshot.cardMaxPurchase` and passes it in the snapshot as `cardMaxPurchase: MinorUnits | null`. A null (no stored USD rate) makes the card method `missing` with the new reason `card_limit_rate_missing`, which maps to the R15 "Needs" word **"USD rate"**. New E5 code targets 100% coverage. The engine stays free of rates. It is applied in plan building as an extra cap alongside the dealer cap: card portion = min(price, dealer cap, `CARD_MAX_PURCHASE`), and the rest is cash on the day (the existing capped path). It reports reason `card_check_limit` when it binds.
 - `ITEM_TYPES` gains `property`, `cash_equivalent` and `tuition`.
 - `cardEligibility(itemType, region)` returns `{ eligibility, note: 'tuition_fee' | 'tax_processing_fee' | 'tax_gb' | null }`:
   - property and cash_equivalent: blocked;
@@ -2066,6 +2073,11 @@ The check inputs JSON accepts the new `itemType` values and `instalment.freq` (d
 | Running-cost prompts "Add amount" / "Type an amount to count it", checkbox always shown | The dashed Amount field, "Counted once an amount is typed", checkbox only with an amount | D-87 |
 | Sync line always shown with "… queued" / "synced … ago" | Shown only for problems or writes over 5 s; "waiting" wording | D-88 (amends 03 D-15 for the line) |
 | Cushion key figure "{n} months" at any size | "Over 50 years" above 600 | D-93 |
+| Record entry default currency: `initialFormState` used the account's currency | The home currency; changeable per line | D-93.3 (amends the Record entry default) |
+| R15.3 / E1 "monthly rate of APR ÷ 12"; `firstPayment: 'next_month'` | Per-period rate APR ÷ 100 ÷ periods per year; `'next_period'` (`'next_month'` parsed as an alias) | D-89 with M6 |
+| `MAX_TERM` (120) bounding the instalment count | `MAX_INSTALMENTS = 500` for instalments; `MAX_TERM` stays 120 for loans | D-89 with M6 |
+| R16.6 single note copy and R15.9 instalment notes | The frequency × rate × timing table (R16.16) | M6 |
+| Idempotency: no change needed | Every retried write was checked; **none needs a migration** (R16.16) | M2 |
 
 #### R16.13 Per-screen checklist
 
@@ -2119,6 +2131,7 @@ None open. Answered 2026-10-23:
 
 **Accessibility:** money read aloud uses a new `formatMoneyA11y` on the same formatter (`Intl.NumberFormat` with `currencyDisplay: 'name'`), and the shared money components (`AmountDisplay`, `FigureStrip` figures, key figures, the Decide figure Texts) set it as their `accessibilityLabel`.
 - USD reads "1,500 dollars" when the home currency is USD, and "1,500 US dollars" otherwise.
+- Markers read as names, never letters: "CA$1,500" reads "1,500 Canadian dollars", "A$" "Australian dollars", "NZ$" "New Zealand dollars", "HK$" "Hong Kong dollars", "S$" "Singapore dollars", "NT$" "New Taiwan dollars", "MX$" "Mexican pesos". In sentences, a money Text span carries its own `accessibilityLabel` where the platform allows; otherwise the sentence's label is built with `formatMoneyA11y` for each amount.
 - Other currencies read their full name, e.g. "1,500 Canadian dollars" or "1,500 British pounds".
 - Sentences that embed amounts keep the visible text; screen readers read "$" as "dollars", which is now unambiguous.
 
@@ -2130,4 +2143,82 @@ None open. Answered 2026-10-23:
   - `src/features/decide/ui/SegmentedToggle.tsx` (a comment or sample).
 - **Do not change:** `src/engine/statement/foreign.ts` and its test **parse** "US$" from imported statements. That is input, not display.
 - **Elsewhere:** any Jest snapshot showing "US$" is regenerated after review. Copy strings never hard-code a symbol (they interpolate formatted money), so no catalogue change is needed.
-- **New tests:** USD in en-US, en-GB, en-CA and fr-CA always starts "$" (or ends with " $" in fr-CA's suffix order; the marker rule is about the symbol, and its position follows the locale); CAD in en-CA is "CA$"; AUD in en-AU is "A$"; GBP and EUR are unchanged.
+- **New tests:** a custom currency whose own symbol is "$" keeps that symbol (custom currencies bypass the marker map) and reads its own name; USD in en-US, en-GB, en-CA and fr-CA always starts "$" (or ends with " $" in fr-CA's suffix order; the marker rule is about the symbol, and its position follows the locale); CAD in en-CA is "CA$"; AUD in en-AU is "A$"; GBP and EUR are unchanged.
+
+#### R16.16 UI-checker must-fix items folded in (2026-10-23)
+
+**M2: sync timeouts and idempotent retries.** A 15 or 20 s timeout can abort a request that the server then completes, so **every retried mutation must be idempotent**. Each was checked against the code at `ffa6032c`:
+
+| Mutation | Replay protection today |
+|---|---|
+| Go ahead commit (`record_decide_go`) | The undo step id is the replay key; returns `already-applied` (05-56, WR-A02); client uuids on its rows |
+| Wait / Pass outcome (`record_decide_outcome`) | Returns `already-applied` on a repeat |
+| `createCheck` | Client id; a duplicate id is success (MON-08, `insertDecideCheck`) |
+| `saveCheckDraft` | Last write wins on the same row; a repeat is harmless |
+| `editCheck` (abandon, delete, mark seen) | Version-conditional with the undo step id; a landed replay is accepted |
+| Record inserts (`transactions`, `accounts`, `debts`, `customCurrencies`, `statementPeriods`, `decideChanges`, `decideLinks`) | Client ids; a 23505 duplicate is read back as landed (MON-08) |
+| Transfers and bulk edits (`apply_patches`) | Keyed on the undo step id (D-WR-03); returns `already-applied` |
+| Series RPCs (`create_recurring_series`, `…_batch`), `add_activity_month` | Undo step id; `already-applied` |
+| `change_home_currency` | Naturally idempotent: a repeat returns `unchanged` |
+
+**Result: no mutation needs a migration or a production push for idempotency.** Test: "D-88 timeout retry is idempotent", which aborts after the server commit, replays, and asserts one row and one undo step for Go ahead, a transaction insert and a transfer.
+
+**Timeout exemptions:** these use a **120 s** timeout instead of 15/20 s, and are not retried automatically after a timeout:
+- statement-import upload and Storage requests;
+- the account-deletion purge;
+- long RPCs (`seed_sample_data`, `clear_sample_data`, `change_home_currency`, statement import commits).
+
+**M6: frequency, rate and timing.**
+- **Rate:** the rate is per period: r = APR ÷ 100 ÷ periods per year.
+- **First payment:** `firstPayment` is `'today' | 'next_period'`; `parseCheckInputs` reads a stored `'next_month'` as `'next_period'`.
+- **Count bound:** `MAX_INSTALMENTS = 500` is split from `MAX_TERM` (120, loans). The "How many" range line reads "1 to 500". A stored count above 500 shows under the field with the range line in `warn1` and is scored as stored until edited.
+- **Monthly equivalent:** `monthlyEquivalent` (`src/engine/decide/series.ts`) rounds **half-up once** (D-23, D-20), applied to the level payment. That is kept for consistency with every other series in the month. It is not changed to round up.
+
+**One copy table (supersedes the instalment notes and summaries in R15.2, R15.9 and R16.5-R16.6):**
+- `{{when}}` = "on the day" (`'today'`) or, with `'next_period'`, "in a week" / "in 2 weeks" / "in a month" / "in 3 months".
+- The summary adds " · first {{when}}" with `'next_period'` only.
+- Every string has `_one`/`_other` keys and U+00A0 after counts.
+
+| Frequency | Has a rate? = No (note) | Has a rate? = Yes (note) | Folded summary |
+|---|---|---|---|
+| Weekly | "{{count}} weekly payments of {{payment}}, about {{monthly}} a month. No rate was quoted: about {{apr}}% a year, worked out from the figures you typed." | "{{count}} weekly payments of {{payment}} at {{apr}}%, the first {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}." | "{{count}} × {{payment}} weekly · no rate" / "· {{apr}}%" |
+| Every 2 weeks | "{{count}} payments of {{payment}} every 2 weeks, about {{monthly}} a month. No rate was quoted: about {{apr}}% a year, worked out from the figures you typed." | "{{count}} payments of {{payment}} every 2 weeks at {{apr}}%, the first {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}." | "{{count}} × {{payment}} every 2 weeks · no rate" / "· {{apr}}%" |
+| Monthly | "{{count}} monthly payments of {{payment}}. No rate was quoted: about {{apr}}% a year, worked out from the figures you typed." | "{{count}} monthly payments of {{payment}} at {{apr}}%, the first {{when}}. Interest over the plan is {{interest}}." | "{{count}} × {{payment}} a month · no rate" / "· {{apr}}%" |
+| Quarterly | "{{count}} quarterly payments of {{payment}}, about {{monthly}} a month. No rate was quoted: about {{apr}}% a year, worked out from the figures you typed." | "{{count}} quarterly payments of {{payment}} at {{apr}}%, the first {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}." | "{{count}} × {{payment}} a quarter · no rate" / "· {{apr}}%" |
+
+**Exceptions to the table:**
+- **No-rate exceptions:** when the total is below the amount financed, the rate clause is replaced by the D-49 "Below the price" note. A total equal to the amount financed reads "… No rate was quoted: 0% a year, worked out from the figures you typed." With `count = 1` and `'today'`, there is no rate clause.
+- **Above the cap:** "about {{apr}}% a year" becomes "above 999.99% a year".
+- **Quoted payment:** the existing difference note follows the Yes note.
+
+**M7: speed measurement and tests.**
+- **Measurement:** on the **Pixel 9**, the median and p95 over **30 keystrokes** on the demo car check (step 2, typing into the deposit field). The harness runs only when `EXPO_PUBLIC_PERF=1`. Budgets: verdict median under 50 ms (p95 recorded), details median under 300 ms, and E4 under 30 ms at n = 500.
+- **Named tests:**
+  - "D-88 snapshot built once per source";
+  - "D-88 draft save keeps other rows' identity";
+  - "D-88 settledCore reuses core when inputs settle unchanged";
+  - "D-88 keystroke computes full detail for the selected method only";
+  - "D-88 a paused create, save, save then delete replays as create, save, delete";
+  - "D-88 timeout retry is idempotent".
+
+**M5 negative suggestion tests (D-92):** `suggestItemType` must **not** return `property` or `cash_equivalent` for:
+- "home gym";
+- "home printer";
+- "flat screen tv";
+- "car deposit" (vehicle signals win over a weak property keyword: it is `vehicle`);
+- "rental deposit";
+- "wire fence";
+- "lego land set";
+- "board game bet".
+
+**Index of the other folded items:**
+- **M1:** `{{usdLimit}}` and the USD-home variant (R16.10).
+- **M3:** E4 edge cases, rounding, powers and budget (R16.11).
+- **M4:** E5 rational conversion floored, no confidence effect, "USD rate" Needs word, 100% coverage (R16.7, R16.11).
+- **Nits:**
+  - R16.2 placeholders, "Cash left after" kept, captions top-aligned;
+  - R16.3 reserved checkbox column;
+  - property copy;
+  - R16.1 `transitionEnd`;
+  - D-93.3 R16.12 row;
+  - R16.15 marker readings and the custom-"$" test.

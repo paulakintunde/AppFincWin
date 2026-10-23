@@ -320,19 +320,32 @@ UI-SPEC R16 carries the layouts, copy, ⓘ entries and engine notes (E3-E5).
     - the post-restore invalidate does not wait for writes;
     - NetInfo reachability checks the Supabase endpoint.
   - **Sync line:** shown only for problems or writes older than 5 s: "Saving…" or "{{count}} changes waiting" ("offline · …" when offline). "queued" is retired.
+  - **Idempotent retries:** every retried mutation was checked (Go ahead, the outcome RPCs, `createCheck`, Record inserts, transfers, the series RPCs). All are already replay-safe through client ids or undo-step keys, so **no migration is needed**. Test: "D-88 timeout retry is idempotent".
+  - **Long operations** (import upload and storage, the account-deletion purge, long RPCs) use a 120 s timeout and no automatic retry after a timeout.
+  - **Draft coalescing:** a newer save removes the paused one from the `MutationCache`, then is added, keeping its `WRITE_SCOPE` order and WR-A03 chaining.
+  - **Measured** on the Pixel 9: median and p95 over 30 keystrokes, with the harness behind `EXPO_PUBLIC_PERF=1`. Named "D-88" tests.
 - **D-89: Instalments can be weekly, every 2 weeks, monthly or quarterly** (no semi-monthly), with up to 500 payments (amends D-71's 1–120 for instalments only).
   - The verdict uses the monthly equivalent (×52/12, ×26/12, ×1/3), and the cash path uses the real dates.
   - Go ahead writes the series with that `freq` (no migration).
   - Copy: "{{count}} weekly payments of {{payment}}, about {{monthly}} a month".
   - Loans stay monthly.
-  - **Engine change E3:** a periods-per-year `amortise`/`amortiseDue` and dated payment steps.
+  - **Engine change E3:** a periods-per-year `amortise`/`amortiseDue` (rate per period = APR ÷ 100 ÷ periods per year) and dated payment steps.
+  - `firstPayment` becomes `'today' | 'next_period'` (`'next_month'` parsed as an alias).
+  - `MAX_INSTALMENTS = 500` is split from `MAX_TERM` (120, loans).
+  - `monthlyEquivalent` keeps its single half-up rounding (D-23).
+  - One frequency × rate × timing copy table (UI-SPEC R16.16).
 - **D-90: The no-rate instalment note shows a true APR.**
   - It is the nominal APR solved from the payments, count, frequency and timing by exact bigint bisection (no floats), labelled "worked out from the figures you typed".
   - It replaces the flat-rate note. It is a read-out only: it never fills a field or feeds the verdict (04 D-07).
   - **Engine change E4**, with full tests and 100% coverage.
+  - Edge cases: total < financed gives Below the price; total = financed gives 0%; one payment due today gives no rate line.
+  - The display is rounded up to one decimal. Powers use exponentiation by squaring.
+  - It runs on the settled path only, under 30 ms at n = 500 on the Pixel 9.
+  - financed is as defined in D-49.
 - **D-91: A card check limit.** `CARD_MAX_PURCHASE` = **US$100,000**, converted to the home currency at the latest stored rate and rounded down (about £78k or CA$137k) (user, 2026-10-23).
   - The snapshot builder converts it; the engine receives `cardMaxPurchase`.
-  - With no stored USD rate, the On a card method is not scored ("Needs: USD rate", reason `card_limit_rate_missing`). That is the conservative choice; an older stored rate follows D-69.
+  - With no stored USD rate, the On a card method is not scored ("Needs: USD rate", reason `card_limit_rate_missing`). That is the conservative choice. An older stored rate is used with a basis note naming its date and **no** confidence effect.
+  - The conversion is rational, then floored to the minor unit. The ⓘ shows `{{usdLimit}}` ("$100,000"), with a USD-home variant.
   - Above it, the rest counts as cash on the day through the dealer-cap mechanism.
   - Note: "Only {{cap}} of this goes on a card in checks. The other {{rest}} is counted as cash on the day.", stated as the app's limit, not the issuer's.
   - **Engine change E5.**
@@ -343,6 +356,9 @@ UI-SPEC R16 carries the layouts, copy, ⓘ entries and engine notes (E3-E5).
     - `tuition`: card permitted with a fee note.
   - Tax is region-aware: blocked only in GB (HMRC, since 2018); permitted with a processing-fee note everywhere else (user, 2026-10-23).
   - Research sources: Fannie Mae B3-4.3-16, HMRC, Experian / The Points Guy.
+  - **Suggestion keywords are phrases only** (checker M5): "house deposit", "down payment", "mortgage deposit", "buy a house", property, condo, "apartment purchase"; "wire transfer", "money order", "gift card", crypto, bitcoin, casino, gambling, betting. Vehicle signals win over a weak property keyword.
+  - **Negative tests**, none suggesting property or cash-like: "home gym", "home printer", "flat screen tv", "car deposit", "rental deposit", "wire fence", "lego land set", "board game bet".
+  - Property copy: "A property purchase or deposit is not counted on a card in these checks."
   - **Engine change E5.**
 - **D-93: Walkthrough fixes.**
   - A tab root never shows a back button.
