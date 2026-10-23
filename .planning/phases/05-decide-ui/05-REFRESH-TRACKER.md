@@ -22,6 +22,16 @@ Started 2026-10-22. Updated at each milestone. Status: ✅ done · 🔄 in progr
 | N | Investment checks: optional expected return (projection only) | D-79+ | 🔄 spec being written |
 | O | Step 4 cheaper price applied exactly (engine change) | D-79+ | 🔄 spec being written |
 
+| P | Pixel walkthrough fixes rounds 1–3 (text fit, scroll, header, copy, FX gap, failed-saves screen, kind constraint, delete undo) | — | ✅ pushed ffa6032c |
+| Q | Always-reachable Add (You screen group + FAB root cause) | D-85 | 🔄 spec |
+| R | "Interest saved" explained | D-86 | 🔄 spec |
+| S | Running-cost rows tappable before an amount | D-87 | 🔄 spec |
+| T | Speed (shared snapshot, autosave churn) + sync (timeout, backoff, coalesce, labels) | D-88 | 🔄 spec |
+| U | Instalment frequency + up to 500 payments (engine) | D-89 | 🔄 spec |
+| V | True APR from payments (engine) | D-90 | 🔄 spec |
+| W | Card cap 100k home currency + card rules (property, cash-like, tuition, tax by region) | D-91, D-92 | 🔄 spec |
+| X | Walkthrough leftovers: back arrow on Decide root, "7676 months", expense currency default | D-93 | 🔄 spec |
+
 ## Pipeline
 
 | Step | Status |
