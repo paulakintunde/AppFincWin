@@ -218,4 +218,35 @@ describe('useQuickCheck', () => {
     expect(result.current.combine).toBe(false);
     expect(mockTrack).not.toHaveBeenCalled();
   });
+
+  it('D-71 the quick duration accepts 1 to 120 months', async () => {
+    const { result } = await renderHook(() => useQuickCheck(logged, 'home'));
+    for (const n of [1, 90, 120]) {
+      await act(async () => {
+        result.current.setTerm(n);
+      });
+      expect(result.current.state.inputs.termMonths).toBe(n);
+    }
+    await act(async () => {
+      result.current.setTerm(36);
+    });
+    for (const bad of [0, 121, -3, 2.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      await act(async () => {
+        result.current.setTerm(bad);
+      });
+      expect(result.current.state.inputs.termMonths).toBe(36);
+    }
+  });
+
+  it('D-71 a custom duration carries to the full check', async () => {
+    const { result } = await renderHook(() => useQuickCheck(logged, 'home'));
+    await act(async () => {
+      result.current.submit('car 14500');
+    });
+    await act(async () => {
+      result.current.setMode('credit');
+      result.current.setTerm(90);
+    });
+    expect(result.current.toCheckInputs('2026-10-15').loan.termMonths).toBe(90);
+  });
 });

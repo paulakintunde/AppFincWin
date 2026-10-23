@@ -11,7 +11,8 @@ import { useAmountParser } from '@/ui/money/useAmountParser';
 import { parseQuick } from '../quickParse';
 import { MAX_INPUT_MINOR, defaultQuickInputs, quickToCheckInputs } from '../snapshot/checkInputs';
 import { computeQuick } from '../snapshot/computeCheck';
-import type { CheckInputs, CreditTerm, QuickComputation, QuickInputs, SnapshotResult, StackSelection } from '../snapshot/types';
+import { DURATION_MAX, DURATION_MIN } from '../snapshot/customValues';
+import type { CheckInputs, QuickComputation, QuickInputs, SnapshotResult, StackSelection } from '../snapshot/types';
 
 export interface QuickCheckState {
   inputs: QuickInputs;
@@ -127,7 +128,13 @@ export function useQuickCheck(source: SnapshotResult | null, surface: 'home' | '
     submitFields,
     setMode: useCallback((mode: 'cash' | 'credit') => patch({ mode }), [patch]),
     setApr: useCallback((aprText: string) => patch({ aprText }), [patch]),
-    setTerm: useCallback((termMonths: CreditTerm) => patch({ termMonths }), [patch]),
+    // D-71 (T-05-76-01): only a whole duration from 1 to DURATION_MAX reaches the engine; the bound lives here, not only in the chips.
+    setTerm: useCallback(
+      (termMonths: number) => {
+        if (Number.isInteger(termMonths) && termMonths >= DURATION_MIN && termMonths <= DURATION_MAX) patch({ termMonths });
+      },
+      [patch]
+    ),
     setTax: useCallback((taxText: string) => patch({ taxText }), [patch]),
     setFees,
     setText,
