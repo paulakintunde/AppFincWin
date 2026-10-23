@@ -333,7 +333,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
     const stepId = abandon(row, 'cleared');
     discardDraft();
     router.replace(checkHref(Crypto.randomUUID(), { step: '1', kind: clearKind, cleared: row.id, clearedStep: String(step) as '1' | '2' | '3' | '4' | '5' }));
-    showToast({ kind: 'destructive', text: { key: 'decide.clear.toast' }, stepId });
+    showToast({ kind: 'destructive', text: { key: 'decide.clear.toast', params: { name: row.name } }, stepId });
   }, [row, step, saveBeforeClear, abandon, discardDraft, clearKind]);
   // Undo on the untouched empty check goes back to the restored one. It fires only after the cleared check was seen gone,
   // so the optimistic delete cannot bounce the user straight back.

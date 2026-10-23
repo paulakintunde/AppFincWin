@@ -100,7 +100,7 @@ export function OpenChecksCard({ source, checks, today, whole, currency }: OpenC
 
   const onDelete = (row: DecideCheckRow) => {
     const stepId = abandon(row, 'deleted');
-    showToast({ kind: 'destructive', text: { key: 'decide.delete.toastCheck' }, stepId });
+    showToast({ kind: 'destructive', text: { key: 'decide.delete.toastCheck', params: { name: row.name } }, stepId });
     getAnalytics().track('check_abandoned', {});
   };
 

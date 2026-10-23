@@ -224,7 +224,7 @@ describe('OpenChecksCard', () => {
     await fireEvent.press(screen.getByText('Delete', { exact: true }));
     expect(mockAbandon).toHaveBeenCalledTimes(1);
     expect(mockAbandon).toHaveBeenCalledWith(row, 'deleted');
-    expect(showToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.delete.toastCheck' }, stepId: 'step-1' });
+    expect(showToast).toHaveBeenCalledWith({ kind: 'destructive', text: expect.objectContaining({ key: 'decide.delete.toastCheck' }), stepId: 'step-1' });
     expect(mockTrack).toHaveBeenCalledWith('check_abandoned', {});
   });
 

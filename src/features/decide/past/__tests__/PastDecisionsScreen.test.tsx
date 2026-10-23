@@ -259,7 +259,7 @@ describe('PastDecisionsScreen', () => {
     expect(mockRemove).toHaveBeenCalledWith(expect.objectContaining({ id: 'w' }), mockGoals[0]);
     expect(mockCancel).toHaveBeenCalledWith('w');
     expect(mockToast).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'destructive', stepId: 'step-remove', text: { key: 'decide.delete.toastDecision' } })
+      expect.objectContaining({ kind: 'destructive', stepId: 'step-remove', text: expect.objectContaining({ key: 'decide.delete.toastDecision' }) })
     );
   });
 

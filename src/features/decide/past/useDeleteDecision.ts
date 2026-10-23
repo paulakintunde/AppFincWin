@@ -36,7 +36,7 @@ export function useDeleteDecision() {
     const liveGoal = (goals ?? []).find((g) => g.check_id === decision.id && g.deleted_at === null) ?? null;
     const stepId = remove(decision, liveGoal);
     cancelCheckReminders(decision.id).catch(() => {});
-    showToast({ kind: 'destructive', text: { key: 'decide.delete.toastDecision' }, stepId });
+    showToast({ kind: 'destructive', text: { key: 'decide.delete.toastDecision', params: { name: decision.name } }, stepId });
   };
 
   return { confirmCopy, deleteDecision };

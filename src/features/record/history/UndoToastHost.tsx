@@ -32,12 +32,24 @@ function asNumber(v: unknown): number | undefined {
   return typeof v === 'number' ? v : undefined;
 }
 
-/** Derives the engine label key and params from a toast's `undo.label[Unnamed].<key>` text. */
+// 05-72 / D-73: the Decide toasts keep their own words ("Check deleted. Nothing was written.") but replay an undo step like any
+// other, so each carries the engine label key of the step it recorded. Without this map their text is not an `undo.label.*` key,
+// `undoableLabel` returns null and the toast shows no Undo.
+const DECIDE_TOAST_LABEL: Readonly<Record<string, UndoLabelKey>> = {
+  'decide.delete.toastCheck': 'checkDeleted',
+  'decide.clear.toast': 'checkCleared',
+  'decide.delete.toastDecision': 'decisionDeleted',
+  'decide.delete.toastChange': 'changeDeleted',
+  'decide.toast.unlinked': 'lineUnlinked',
+};
+
+/** Derives the engine label key and params from a toast's `undo.label[Unnamed].<key>` text (or a Decide toast's own key). */
 function undoableLabel(toast: ToastState): { labelKey: UndoLabelKey; labelParams: UndoLabelParams } | null {
   const key = toast.text?.key;
+  const decideLabel = key ? DECIDE_TOAST_LABEL[key] : undefined;
   const prefix = key ? labelPrefixOf(key) : undefined;
-  if (!key || prefix === undefined) return null;
-  const labelKey = key.slice(prefix.length);
+  if (!key || (prefix === undefined && decideLabel === undefined)) return null;
+  const labelKey = decideLabel ?? key.slice(prefix?.length ?? 0);
   if (!(UNDO_LABEL_KEYS as readonly string[]).includes(labelKey)) return null;
   const params = toast.text?.params ?? {};
   const n = asNumber(params.n) ?? asNumber(params.count);

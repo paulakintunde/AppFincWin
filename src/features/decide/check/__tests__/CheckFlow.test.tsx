@@ -744,7 +744,7 @@ describe('Clear, the save status and the Go ahead list (05-75)', () => {
     const href = checkHrefOf(mockReplace.mock.calls[0]!);
     expect(href.params).toEqual(expect.objectContaining({ step: '1', kind: 'buy', cleared: 'c1', clearedStep: '3' }));
     expect(href.params.id).not.toBe('c1');
-    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ kind: 'destructive', text: { key: 'decide.clear.toast' }, stepId: 'step-1' }));
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ kind: 'destructive', text: expect.objectContaining({ key: 'decide.clear.toast' }), stepId: 'step-1' }));
   });
 
   it('D-73 Clear is absent on a new unedited check and on a decided check', async () => {

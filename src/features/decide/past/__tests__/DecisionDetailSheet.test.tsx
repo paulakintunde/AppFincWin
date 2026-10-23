@@ -190,7 +190,7 @@ describe('DecisionDetailSheet', () => {
     expect(mockCancel).toHaveBeenCalledWith('w');
     expect(onClose).toHaveBeenCalled();
     expect(mockToast).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'destructive', stepId: 'step-remove', text: { key: 'decide.delete.toastDecision' } })
+      expect.objectContaining({ kind: 'destructive', stepId: 'step-remove', text: expect.objectContaining({ key: 'decide.delete.toastDecision' }) })
     );
   });
 
