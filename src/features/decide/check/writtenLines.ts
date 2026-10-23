@@ -86,9 +86,14 @@ function goLines(inputs: CheckInputs, computation: CheckComputation, plan: Plan,
       break;
     }
     case 'instalment': {
-      out.push(ref('decide.decision.writtenDeposit', { amount: exact(plan.dayOne), date: dated, account }));
-      const first = plan.paymentSteps[0];
-      if (first !== undefined) out.push(ref('decide.decision.writtenInstalment', { payment: exact(first.amount), count: length(first) }));
+      // D-80 (R15.3): the day-one line only when there is a day-one cost (with 'In a month' that is the fees alone); then one
+      // line per payment run, as the engine scored them: a level run, then an adjusted last payment for a worked-out plan.
+      if (plan.dayOne > 0) out.push(ref('decide.decision.writtenDeposit', { amount: exact(plan.dayOne), date: dated, account }));
+      plan.paymentSteps.forEach((step, i) => {
+        if (i === 0 && length(step) >= 2) out.push(ref('decide.decision.writtenInstalment', { payment: exact(step.amount), count: length(step) }));
+        else if (i > 0 && length(step) >= 2) out.push(ref('decide.decision.writtenLoanThen', { payment: exact(step.amount), count: length(step) }));
+        else out.push(ref('decide.decision.writtenLoanFinal', { payment: exact(step.amount), count: step.toMonth }));
+      });
       break;
     }
     case 'card': {

@@ -195,6 +195,24 @@ describe('buildGoAheadWrite', () => {
     expect(w.debt).toBeNull();
   });
 
+  it('D-80 Go ahead writes the next_month instalment schedule', () => {
+    // In a month: the fees alone on the day, the first instalment one month after the start date
+    const plan = makePlan({ dayOne: asMoney(2000), financed: asMoney(60000), monthly: asMoney(5000), months: 12, total: asMoney(62000), dayFees: asMoney(2000), paymentSteps: [step(1, 12, 5000)] });
+    const next = build(buyInputs({ method: 'instalment' }), plan);
+    expect(next.rows).toHaveLength(1);
+    expect(next.rows[0]).toMatchObject({ original_amount: -2000, local_date: TODAY });
+    expect(next.series).toHaveLength(1);
+    expect(next.series[0]).toMatchObject({ amount: -5000, anchor_date: '2026-11-16', occurrence_count: 12 });
+    // a worked-out plan: a level run, then its adjusted final payment as a pending row in the last month
+    const worked = makePlan({ dayOne: asMoney(0), financed: asMoney(60000), monthly: asMoney(5000), months: 12, total: asMoney(59900), paymentSteps: [step(1, 11, 5000), step(12, 12, 4900)] });
+    const w = build(buyInputs({ method: 'instalment' }), worked);
+    expect(w.series).toHaveLength(1);
+    expect(w.series[0]).toMatchObject({ amount: -5000, anchor_date: '2026-11-16', occurrence_count: 11 });
+    expect(w.rows).toHaveLength(1);
+    expect(w.rows[0]).toMatchObject({ original_amount: -4900, local_date: '2027-10-16' });
+    expect(w.decision.row_roles).toEqual(['payment']);
+  });
+
   it('a card paid over months writes its payment series', () => {
     const plan = makePlan({
       dayOne: asMoney(1500),

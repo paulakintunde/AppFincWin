@@ -80,6 +80,32 @@ describe('writtenLines', () => {
     expect(lines[1]!.params).toEqual({ payment: 'E15000', count: 11 });
   });
 
+  it('D-80 written lines list every instalment run', () => {
+    const plan = withPlan('instalment', {
+      dayOne: 20_000, months: 12,
+      paymentSteps: [{ fromMonth: 1, toMonth: 10, amount: 15_000 }, { fromMonth: 11, toMonth: 11, amount: 14_800 }],
+    });
+    const lines = writtenLines(base({ method: 'instalment' }), plan, ctx);
+    expect(keys(lines)).toEqual(['writtenDeposit', 'writtenInstalment', 'writtenLoanFinal', 'writtenUntouched']);
+    expect(lines[1]!.params).toEqual({ payment: 'E15000', count: 10 });
+    expect(lines[2]!.params).toEqual({ payment: 'E14800', count: 11 });
+    const two = withPlan('instalment', {
+      dayOne: 0, months: 8,
+      paymentSteps: [{ fromMonth: 1, toMonth: 5, amount: 1_000 }, { fromMonth: 6, toMonth: 8, amount: 900 }],
+    });
+    expect(keys(writtenLines(base({ method: 'instalment' }), two, ctx))).toEqual(['writtenInstalment', 'writtenLoanThen', 'writtenUntouched']);
+  });
+
+  it('D-80 In a month writes only the fees on the day', () => {
+    const fees = withPlan('instalment', { dayOne: 2_000, dayFees: 2_000, months: 12, paymentSteps: [{ fromMonth: 1, toMonth: 12, amount: 5_000 }] });
+    const lines = writtenLines(base({ method: 'instalment' }), fees, ctx);
+    expect(keys(lines)).toEqual(['writtenDeposit', 'writtenInstalment', 'writtenUntouched']);
+    expect(lines[0]!.params!.amount).toBe('E2000');
+    expect(lines[1]!.params).toEqual({ payment: 'E5000', count: 12 });
+    const none = withPlan('instalment', { dayOne: 0, months: 12, paymentSteps: [{ fromMonth: 1, toMonth: 12, amount: 5_000 }] });
+    expect(keys(writtenLines(base({ method: 'instalment' }), none, ctx))).toEqual(['writtenInstalment', 'writtenUntouched']);
+  });
+
   it('a card lists the card expense and the day-one cash above the cap plus fees', () => {
     const card = { onCard: 90_000, remainderOnDay: 10_000, fees: 500 };
     const lines = writtenLines(base({ method: 'card' }), withPlan('card', { card }), ctx);
