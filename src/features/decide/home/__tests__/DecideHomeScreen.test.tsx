@@ -13,6 +13,7 @@ jest.setTimeout(30000);
 type Snap = { status: 'loading' | 'error' | 'ready'; result: SnapshotResult | null; source: unknown; retry: () => void };
 let mockSnap: Snap;
 let mockChecks: DecideCheckRow[] | undefined;
+let mockChanges: unknown[] = [];
 const mockRetry = jest.fn();
 const mockCreate = jest.fn();
 const mockPush = jest.fn();
@@ -27,7 +28,7 @@ jest.mock('@/data/queries/decide', () => ({
   useDecideSnapshot: () => mockSnap,
   useDecideChecks: () => ({ data: mockChecks }),
   useDecideSettings: () => ({ data: null }),
-  useDecideChanges: () => ({ data: [] }),
+  useDecideChanges: () => ({ data: mockChanges }),
 }));
 jest.mock('@/data/mutations/decideChanges', () => ({
   useAddChange: () => ({ add: jest.fn() }),
@@ -86,6 +87,12 @@ jest.mock('../OpenChecksCard', () => {
   };
 });
 
+jest.mock('../ChangesCard', () => {
+  const R = require('react');
+  const { Text } = require('react-native');
+  return { ChangesCard: () => R.createElement(Text, { testID: 'probe-changes' }, 'changes') };
+});
+
 function row(id: string, over: Partial<DecideCheckRow> = {}): DecideCheckRow {
   return {
     id,
@@ -135,13 +142,16 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockSnap = ready(loggedSource());
   mockChecks = [];
+  mockChanges = [];
 });
 
 describe('DecideHomeScreen', () => {
-  it('shows the cards in the UI-SPEC order', async () => {
+  it('D-78 Decide home follows the R2b order', async () => {
+    mockChecks = [row('a', { status: 'bought' })];
+    mockChanges = [{ id: 'c1' }];
     await renderScreen();
     const tree = JSON.stringify(screen.toJSON());
-    const order = ['probe-quick', 'your-month-card', 'probe-open', 'Changes coming up', 'Past decisions', 'lines-card', '4 months of logged income'].map((needle) => tree.indexOf(needle));
+    const order = ['probe-quick', 'your-month-card', 'probe-open', 'probe-changes', 'Past decisions', 'lines-card', '4 months of logged income'].map((needle) => tree.indexOf(needle));
     expect(order.every((i) => i >= 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
@@ -175,11 +185,50 @@ describe('DecideHomeScreen', () => {
     expect(screen.getByText('Judged on your real accounts, not the price tag.')).toBeTruthy();
     expect(screen.getByTestId('probe-quick')).toBeTruthy();
     expect(screen.getByTestId('probe-open')).toBeTruthy();
-    expect(screen.getByText('Past decisions')).toBeTruthy();
-    expect(screen.getByText('Nothing decided yet')).toBeTruthy();
+    expect(screen.queryByText('Nothing decided yet')).toBeNull();
     expect(screen.getByText(/4 months of logged income/)).toBeTruthy();
     expect(mockSeen.quick).toMatchObject({ surface: 'home', sourceStatus: 'ready', today: '2026-10-15', currency: 'USD' });
     expect(screen.getByTestId('tab-root').props.refreshKeys).toBeUndefined();
+  });
+
+  it('D-78 Past decisions is one row, hidden at zero', async () => {
+    await renderScreen();
+    expect(screen.queryByText('Past decisions')).toBeNull();
+    expect(screen.queryByText('Nothing decided yet')).toBeNull();
+    mockChecks = [row('a', { status: 'bought' })];
+    await renderScreen();
+    expect(screen.getByText('1 decision')).toBeTruthy();
+    expect(screen.getByLabelText('Past decisions, 1 decision')).toBeTruthy();
+  });
+
+  it('D-72 the add row shows only with no changes and opens the change sheet in add mode', async () => {
+    await wrap(<DecideHomeScreen />);
+    expect(screen.getByLabelText('Add a change coming up')).toBeTruthy();
+    expect(screen.queryByText('Add a change')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Add a change coming up'));
+    expect(screen.getByText('Add a change')).toBeTruthy();
+  });
+
+  it('D-72 the add row is gone once a change exists', async () => {
+    mockChanges = [{ id: 'c1' }];
+    await renderScreen();
+    expect(screen.queryByLabelText('Add a change coming up')).toBeNull();
+    expect(screen.getByLabelText('Check an investment')).toBeTruthy();
+  });
+
+  it('D-72 Check an investment shows while Open checks is hidden and opens an investment check', async () => {
+    await renderScreen();
+    await fireEvent.press(screen.getByLabelText('Check an investment'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'invest' } });
+  });
+
+  it('D-72 Check an investment is gone once a check is open', async () => {
+    mockChecks = [row('o', { status: 'open' })];
+    await renderScreen();
+    expect(screen.queryByLabelText('Check an investment')).toBeNull();
+    mockChecks = [row('d', { status: 'open', deleted_at: '2026-10-02T00:00:00Z' })];
+    await renderScreen();
+    expect(screen.getAllByLabelText('Check an investment').length).toBe(1);
   });
 
   it('says rough figures were entered when the snapshot is rough, and nothing when there are none', async () => {

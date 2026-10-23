@@ -19,6 +19,8 @@ import { Text } from '@/ui/Text';
 import { Card } from '../check/steps/stepUi';
 import { QuickCheckForm } from '../quick/QuickCheckForm';
 import type { CheckInputs } from '../snapshot/types';
+import { AddChangeRow } from './AddChangeRow';
+import { ChangeSheet } from './ChangeSheet';
 import { ChangesCard } from './ChangesCard';
 import { checkHref, openNewCheck, PAST_HREF } from './checkHref';
 import { LinesCard } from './LinesCard';
@@ -35,6 +37,9 @@ export function DecideHomeScreen() {
   const { create } = useCreateCheck();
   const changes = useDecideChanges(rc.userId ?? undefined, rc.householdId ?? undefined).data;
   const [roughOpen, setRoughOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const noChanges = (changes ?? []).length === 0;
+  const noLiveOpen = !vm.openChecks.some((c) => c.status === 'open' && c.deleted_at === null);
 
   const fab = useMemo(
     () => ({
@@ -65,6 +70,7 @@ export function DecideHomeScreen() {
     [create, rc.userId, rc.householdId]
   );
 
+  const pastCount = t('decide.home.pastCount', { count: vm.decidedCount });
   const meta = vm.source !== null && vm.source.kind === 'logged' ? vm.source.meta : null;
   const sources =
     meta !== null
@@ -92,6 +98,12 @@ export function DecideHomeScreen() {
           onAddRough={() => setRoughOpen(true)}
           onRetry={vm.retry}
         />
+        <AddChangeRow
+          showAdd={noChanges}
+          showInvest={noLiveOpen}
+          onAdd={() => setAddOpen(true)}
+          onInvest={() => openNewCheck('invest')}
+        />
         <YourMonthCard
           source={vm.source}
           settings={vm.settings}
@@ -107,19 +119,23 @@ export function DecideHomeScreen() {
           currency={vm.currency}
         />
         <ChangesCard changes={changes ?? []} currency={vm.currency} whole={vm.whole} />
-        <Card style={{ paddingVertical: 0 }}>
-          <Row
-            label={t('decide.home.pastRow')}
-            value={vm.decidedCount > 0 ? t('decide.home.pastCount', { count: vm.decidedCount }) : t('decide.home.pastNone')}
-            chevron
-            onPress={() => pushOnce(PAST_HREF)}
-          />
-        </Card>
+        {vm.decidedCount > 0 ? (
+          <Card style={{ paddingVertical: 0 }}>
+            <Row
+              label={t('decide.home.pastRow')}
+              value={pastCount}
+              accessibilityLabel={`${t('decide.home.pastRow')}, ${pastCount}`}
+              chevron
+              onPress={() => pushOnce(PAST_HREF)}
+            />
+          </Card>
+        ) : null}
         <LinesCard source={vm.source} settings={vm.settings} userId={rc.userId} currency={vm.currency} whole={vm.whole} />
         {sources !== null ? (
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{sources}</Text>
         ) : null}
       </View>
+      <ChangeSheet visible={addOpen} row={null} onClose={() => setAddOpen(false)} />
       <RoughFiguresSheet
         visible={roughOpen}
         userId={rc.userId}
