@@ -3,7 +3,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import type { CheckComputation } from '../../../snapshot/types';
 import { Step4Alternatives } from '../Step4Alternatives';
 import { HoldingFeeInput, HorizonChips, RateChips } from '../step4/RateChips';
-import { InvestingInsteadSection } from '../step4/InvestingInsteadSection';
+import { InvestingInsteadBody, InvestingInsteadSection } from '../step4/InvestingInsteadSection';
 import { buy, stepProps, wrap } from './helpers/stepProps';
 import type { CheckInputs } from '../../../snapshot/types';
 import type { StepProps } from '../../stepTypes';
@@ -17,6 +17,10 @@ function props(over: Partial<CheckInputs> = {}, extra: Partial<StepProps> = {}):
 
 async function open() {
   await fireEvent.press(screen.getByLabelText(/If it went into investing instead/));
+}
+
+async function details() {
+  await fireEvent.press(screen.getByLabelText(/Show details, If it went into investing instead/));
 }
 
 describe('RateChips', () => {
@@ -74,17 +78,40 @@ describe('HorizonChips', () => {
     const onChange = jest.fn();
     const ui = (value: number | null) => <HorizonChips value={value} planTerm={18} onChange={onChange} />;
     const { rerender } = await wrap(ui(null));
-    expect(screen.getByLabelText('Over 18 months').props.accessibilityState.checked).toBe(true);
-    await fireEvent.press(screen.getByLabelText('Over 36 months'));
+    expect(screen.getByLabelText('18 months').props.accessibilityState.selected).toBe(true);
+    await fireEvent.press(screen.getByLabelText('36 months'));
     expect(onChange).toHaveBeenCalledWith(36);
     await rerender(ui(36));
-    expect(screen.getByLabelText('Over 18 months')).toBeTruthy();
-    expect(screen.getByLabelText('Over 36 months').props.accessibilityState.checked).toBe(true);
+    expect(screen.getByLabelText('18 months')).toBeTruthy();
+    expect(screen.getByLabelText('36 months').props.accessibilityState.selected).toBe(true);
   });
 
   it('defaults to 60 months for cash', async () => {
     await wrap(<HorizonChips value={null} planTerm={null} onChange={jest.fn()} />);
-    expect(screen.getByLabelText('Over 60 months').props.accessibilityState.checked).toBe(true);
+    expect(screen.getByLabelText('60 months').props.accessibilityState.selected).toBe(true);
+  });
+});
+
+describe('HorizonChips custom', () => {
+  it('D-71 the investing horizon takes Custom from 1 to 600', async () => {
+    const onChange = jest.fn();
+    await wrap(<HorizonChips value={60} planTerm={null} onChange={onChange} />);
+    await fireEvent.press(screen.getByLabelText('Custom'));
+    const field = screen.getByLabelText('Months to project, custom, months');
+    await fireEvent.changeText(field, '600');
+    expect(onChange).toHaveBeenLastCalledWith(600);
+    await fireEvent.changeText(field, '1');
+    expect(onChange).toHaveBeenLastCalledWith(1);
+    onChange.mockClear();
+    await fireEvent.changeText(field, '601');
+    await fireEvent.changeText(field, '0');
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('1 to 600 months')).toBeTruthy();
+  });
+
+  it('D-71 a stored horizon off the presets reads on the Custom chip', async () => {
+    await wrap(<HorizonChips value={84} planTerm={null} onChange={jest.fn()} />);
+    expect(screen.getByLabelText('Custom, 84 months').props.accessibilityState.selected).toBe(true);
   });
 });
 
@@ -126,6 +153,7 @@ describe('InvestingInsteadSection', () => {
   it('shows the four views, each captioned as a projection', async () => {
     await wrap(<InvestingInsteadSection {...props({ projectionRates: ['5'] })} />);
     await open();
+    await details();
     for (const title of ['Price invested instead', 'Payments invested instead', 'Investing growth lost to a pause', 'Net worth, with and without this'])
       expect(screen.getByText(title)).toBeTruthy();
     expect(screen.getAllByText('A projection at the rate you entered, not a forecast.').length).toBeGreaterThanOrEqual(2);
@@ -137,7 +165,7 @@ describe('InvestingInsteadSection', () => {
     const p = props({ projectionRates: ['5'] });
     await wrap(<InvestingInsteadSection {...p} />);
     await open();
-    await fireEvent.press(screen.getByLabelText('Over 24 months'));
+    await fireEvent.press(screen.getByLabelText('24 months'));
     expect(p.update).toHaveBeenCalledWith({ investHorizonMonths: 24 });
     await fireEvent.changeText(screen.getByLabelText('Holding fee, percent a year'), '1');
     expect(p.update).toHaveBeenCalledWith({ investHoldingFeeText: '1' });
@@ -149,6 +177,7 @@ describe('InvestingInsteadSection', () => {
     const p = props({ projectionRates: ['5'], investHoldingFeeText: '1' });
     await wrap(<Step4Alternatives {...p} />);
     await open();
+    await details();
     expect(screen.getAllByText('0% a year, −1% after fees').length).toBeGreaterThan(0);
     expect(screen.getAllByText('5% a year, 4% after fees').length).toBeGreaterThan(0);
     expect(screen.getAllByText('A projection at the rate you entered less the 1% fee, not a forecast.').length).toBeGreaterThan(0);
@@ -171,6 +200,25 @@ describe('InvestingInsteadSection', () => {
     expect(screen.getAllByText('Too large to project at this rate').length).toBeGreaterThan(0);
   });
 
+  it('D-74 investing views 2-4 sit behind Show details', async () => {
+    await wrap(<InvestingInsteadBody {...props({ projectionRates: ['5'] })} />);
+    expect(screen.getByText('Price invested instead')).toBeTruthy();
+    for (const title of ['Payments invested instead', 'Investing growth lost to a pause', 'Net worth, with and without this'])
+      expect(screen.queryByText(title)).toBeNull();
+    await details();
+    for (const title of ['Payments invested instead', 'Investing growth lost to a pause', 'Net worth, with and without this'])
+      expect(screen.getByText(title)).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText(/Hide details, If it went into investing instead/));
+    expect(screen.queryByText('Payments invested instead')).toBeNull();
+  });
+
+  it('the body renders nothing without investment views', async () => {
+    const p = props();
+    const computation = { ...p.computation, investmentViews: null } as CheckComputation;
+    await wrap(<InvestingInsteadBody {...p} computation={computation} />);
+    expect(screen.queryByText('Price invested instead')).toBeNull();
+  });
+
   it('renders nothing without investment views', async () => {
     const p = props();
     const computation = { ...p.computation, investmentViews: null } as CheckComputation;
@@ -181,6 +229,7 @@ describe('InvestingInsteadSection', () => {
   it('never tells the reader to invest', async () => {
     await wrap(<InvestingInsteadSection {...props({ projectionRates: ['5'], investHoldingFeeText: '1' })} />);
     await open();
+    await details();
     const text = JSON.stringify(screen.toJSON());
     expect(text).not.toMatch(/should|invest now|start investing|advice|recommend/i);
   });

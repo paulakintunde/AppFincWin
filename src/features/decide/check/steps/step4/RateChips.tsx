@@ -13,12 +13,14 @@ import { textRole } from '@/theme/typography';
 import { CloseGlyph } from '@/ui/CloseGlyph';
 import { Text } from '@/ui/Text';
 import { isValidProjectionRateText, isValidRateText } from '../../../snapshot/checkInputs';
+import { DURATION_MIN, HORIZON_MAX } from '../../../snapshot/customValues';
+import { CustomValueChips } from '../../../ui/CustomValueChips';
 import { RateInput } from '../../../ui/RateInput';
 import { Meta } from '../stepUi';
 
 const MAX_RATES = 3;
-const HORIZONS = [12, 24, 36, 60, 120] as const;
-const DEFAULT_HORIZON = 60;
+export const HORIZONS = [12, 24, 36, 60, 120] as const;
+export const DEFAULT_HORIZON = 60;
 const HUNDRED = percent('100');
 
 export interface RateChipsProps {
@@ -99,30 +101,23 @@ export interface HorizonChipsProps {
 
 export function HorizonChips({ value, planTerm, onChange, readOnly = false }: HorizonChipsProps) {
   const t = useT();
-  const { colors, pairing } = useTheme();
   const selected = value ?? planTerm ?? DEFAULT_HORIZON;
   const options: number[] = [...HORIZONS];
   if (planTerm !== null && !options.includes(planTerm)) options.push(planTerm);
   options.sort((a, b) => a - b);
+  // D-71: the presets plus a Custom chip from 1 to 600 months
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.depth.invest.horizonA11y')} style={styles.chips}>
-      {options.map((months) => {
-        const on = months === selected;
-        return (
-          <Pressable
-            key={months}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: on }}
-            accessibilityLabel={t('decide.depth.invest.over', { count: months })}
-            disabled={readOnly}
-            onPress={() => onChange(months)}
-            style={({ pressed }) => [styles.chip, { backgroundColor: on ? colors.ink : colors.fill1, opacity: pressed ? PRESSED_OPACITY : 1 }]}
-          >
-            <Text style={{ ...textRole(pairing, 'label'), color: on ? colors.surface : colors.ink }}>{t('decide.depth.invest.horizonChip', { count: months })}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <CustomValueChips
+      presets={options}
+      value={selected}
+      onChange={onChange}
+      groupLabel={t('decide.depth.invest.horizonA11y')}
+      min={DURATION_MIN}
+      max={HORIZON_MAX}
+      rangeText={t('decide.custom.range.horizon')}
+      unitWord={t('decide.custom.unit.months')}
+      readOnly={readOnly}
+    />
   );
 }
 

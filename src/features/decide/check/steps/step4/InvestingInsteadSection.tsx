@@ -16,6 +16,7 @@ import { investViewCopy } from '../../../copy/depthInputsCopy';
 import { percentText } from '../../../copy/percentText';
 import { NetWorthChart } from '../../../charts/NetWorthChart';
 import { CollapsibleSection } from '../../../ui/CollapsibleSection';
+import { DetailsToggle } from '../../../ui/DetailsToggle';
 import { SegmentedToggle } from '../../../ui/SegmentedToggle';
 import { refText, type Translate } from '../../refText';
 import type { StepProps } from '../../stepTypes';
@@ -28,11 +29,15 @@ interface TileRow {
   caption: string;
 }
 
-export function InvestingInsteadSection(props: StepProps) {
+/**
+ * 05-69 (D-74): the investing projection as a fold body. Rates, holding fee, horizon and the price view are visible;
+ * the payments, pause and net worth views sit behind "Show details". Returns null without investment views.
+ */
+export function InvestingInsteadBody(props: StepProps) {
   const { inputs, update, computation, source, whole, readOnly } = props;
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
-  const [expanded, setExpanded] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [chosen, setChosen] = useState(0);
 
   const views = computation.investmentViews;
@@ -68,18 +73,14 @@ export function InvestingInsteadSection(props: StepProps) {
   const pickedRow = netRows[picked];
 
   return (
-    <View style={[styles.outer, { backgroundColor: colors.fill1 }]}>
-      <CollapsibleSection
-        title={t('decide.depth.invest.section')}
-        summary={t('decide.depth.invest.summary')}
-        expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
-      >
-        <View style={styles.body}>
-          <RateChips rates={inputs.projectionRates} onChange={(rates) => update({ projectionRates: rates })} readOnly={readOnly} />
-          <HoldingFeeInput value={inputs.investHoldingFeeText} onChange={(text) => update({ investHoldingFeeText: text })} readOnly={readOnly} />
-          <HorizonChips value={inputs.investHorizonMonths} planTerm={planTerm} onChange={(months) => update({ investHorizonMonths: months })} readOnly={readOnly} />
-          {tile(refText(t, copy.price.title), rowsOf(copy.price.rows))}
+    <View style={styles.body}>
+      <RateChips rates={inputs.projectionRates} onChange={(rates) => update({ projectionRates: rates })} readOnly={readOnly} />
+      <HoldingFeeInput value={inputs.investHoldingFeeText} onChange={(text) => update({ investHoldingFeeText: text })} readOnly={readOnly} />
+      <HorizonChips value={inputs.investHorizonMonths} planTerm={planTerm} onChange={(months) => update({ investHorizonMonths: months })} readOnly={readOnly} />
+      {tile(refText(t, copy.price.title), rowsOf(copy.price.rows))}
+      <DetailsToggle expanded={showDetails} onToggle={() => setShowDetails((v) => !v)} block={t('decide.depth.invest.section')} />
+      {showDetails ? (
+        <>
           {tile(refText(t, copy.payments.title), rowsOf(copy.payments.rows))}
           {tile(refText(t, copy.pause.title), rowsOf(copy.pause.rows), copy.pause.none ? refText(t, copy.pause.none) : null)}
           <View style={[styles.tile, { backgroundColor: colors.surface }]}>
@@ -99,7 +100,27 @@ export function InvestingInsteadSection(props: StepProps) {
               </>
             ) : null}
           </View>
-        </View>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+/** The step 4 wrapper (collapsed section over the body) until 05-74 moves the body to step 3. */
+export function InvestingInsteadSection(props: StepProps) {
+  const t = useT() as Translate;
+  const { colors } = useTheme();
+  const [expanded, setExpanded] = useState(false);
+  if (props.computation.investmentViews === null) return null;
+  return (
+    <View style={[styles.outer, { backgroundColor: colors.fill1 }]}>
+      <CollapsibleSection
+        title={t('decide.depth.invest.section')}
+        summary={t('decide.depth.invest.summary')}
+        expanded={expanded}
+        onToggle={() => setExpanded((v) => !v)}
+      >
+        <InvestingInsteadBody {...props} />
       </CollapsibleSection>
     </View>
   );
