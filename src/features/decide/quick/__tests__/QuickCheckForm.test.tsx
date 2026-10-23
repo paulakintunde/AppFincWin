@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { showToast } from '@/state/undoToast';
 import { minorUnits } from '@/engine/money';
@@ -9,9 +10,13 @@ import { EMPTY_STACK, type QuickComputation, type StackSelection } from '../../s
 import { TODAY, loggedSource, noneSource, roughSource, unconvertedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { QuickCheckForm, type QuickCheckFormProps } from '../QuickCheckForm';
 import { QuickResult } from '../QuickResult';
+import * as textFit from '../../ui/textFit';
 import { toEngineOther } from './helpers/otherCheck';
 
 jest.setTimeout(30000);
+
+const METRICS = { frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
+const safe = (node: React.ReactNode) => <SafeAreaProvider initialMetrics={METRICS}>{node}</SafeAreaProvider>;
 
 const mockTrack = jest.fn();
 let mockStack: StackSelection = EMPTY_STACK;
@@ -31,9 +36,11 @@ function formProps(over: Partial<QuickCheckFormProps> = {}): QuickCheckFormProps
 async function renderForm(over: Partial<QuickCheckFormProps> = {}) {
   const props = formProps(over);
   const view = await render(
-    <ThemeProvider>
-      <QuickCheckForm {...props} />
-    </ThemeProvider>
+    safe(
+      <ThemeProvider>
+        <QuickCheckForm {...props} />
+      </ThemeProvider>
+    )
   );
   return { props, view };
 }
@@ -46,27 +53,123 @@ describe('QuickCheckForm: home', () => {
   it('starts on Cash with no result, a 12 month default hidden until Credit', async () => {
     await renderForm();
     expect(screen.getByPlaceholderText('Something and a price — car 14500')).toBeTruthy();
-    expect(screen.getByLabelText('Cash').props.accessibilityState).toMatchObject({ checked: true });
-    expect(screen.getByLabelText('Credit').props.accessibilityState).toMatchObject({ checked: false });
+    expect(screen.queryByLabelText('Cash')).toBeNull();
     expect(screen.queryByText('Worked out from the figures you entered.')).toBeNull();
     expect(screen.queryByLabelText('Annual rate, percent')).toBeNull();
     expect(screen.queryByText('Run the full check')).toBeNull();
+  });
+
+  it('D-78 the idle card is the pill only', async () => {
+    await renderForm();
+    expect(screen.getByText('Check it')).toBeTruthy();
+    for (const absent of ['Cash', 'Credit', '+ Tax, fees', 'Clear', 'Run the full check']) {
+      expect(screen.queryByLabelText(absent)).toBeNull();
+    }
+    expect(screen.queryByLabelText('Clear the quick check')).toBeNull();
+    expect(screen.queryByText('Worked out from the figures you entered.')).toBeNull();
+  });
+
+  it('D-78 the toggle appears with a result, Cash selected', async () => {
+    await renderForm();
+    await checkIt('car 14500');
+    expect(screen.getByLabelText('Cash').props.accessibilityState).toMatchObject({ checked: true });
+    expect(screen.getByLabelText('Credit').props.accessibilityState).toMatchObject({ checked: false });
+  });
+
+  it('D-78 the Credit footer is the last line of the result block and Cash has none', async () => {
+    await renderForm();
+    await checkIt('car 14500');
+    expect(screen.queryByText('Worked out from the figures you entered.')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Credit'));
+    expect(screen.getByText('Worked out from the figures you entered.')).toBeTruthy();
+    const tree = JSON.stringify(screen.toJSON());
+    const at = (needle: string) => tree.indexOf(needle);
+    expect(at('Worked out from the figures you entered.')).toBeGreaterThan(-1);
+    expect(at('Worked out from the figures you entered.')).toBeLessThan(at('Annual rate, percent'));
+    expect(at('Worked out from the figures you entered.')).toBeLessThan(at('+ Tax, fees'));
+  });
+
+  it('D-78 Clear returns the card to idle with no toast', async () => {
+    await renderForm();
+    await checkIt('car 14500');
+    await fireEvent.press(screen.getByLabelText('Clear the quick check'));
+    expect(screen.queryByLabelText('Cash')).toBeNull();
+    expect(screen.queryByLabelText('Clear the quick check')).toBeNull();
+    expect(screen.getByLabelText('Quick check').props.value).toBe('');
+    expect(showToast).not.toHaveBeenCalled();
+  });
+
+  it('D-70 the size line and the annual rate carry their ⓘ', async () => {
+    await renderForm();
+    await checkIt('car 14500');
+    expect(screen.getAllByLabelText(/^About /).length).toBeGreaterThanOrEqual(1);
+    await fireEvent.press(screen.getByLabelText('Credit'));
+    expect(screen.getAllByLabelText(/^About /).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByLabelText('About Before any interest')).toBeTruthy();
+  });
+
+  it('D-76 the quick result line is not clamped', async () => {
+    await renderForm();
+    await checkIt('car 14500');
+    expect(JSON.stringify(screen.toJSON())).not.toContain('"numberOfLines":3');
+  });
+
+  it('D-76 the placeholder shortens below 360 wide', async () => {
+    const spy = jest.spyOn(textFit, 'useShouldStack').mockReturnValue(true);
+    try {
+      await renderForm();
+      expect(screen.getByPlaceholderText('car 14500')).toBeTruthy();
+      expect(screen.queryByPlaceholderText('Something and a price — car 14500')).toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('R4 the quick APR refuses 1000% and shows the range line', async () => {
+    await renderForm();
+    await checkIt('car 14500');
+    await fireEvent.press(screen.getByLabelText('Credit'));
+    await fireEvent.changeText(screen.getByLabelText('Annual rate, percent'), '1000');
+    expect(screen.getByLabelText('Annual rate, percent').props.value).toBe('0');
+    expect(screen.getByText('0 to 999.99% a year')).toBeTruthy();
+  });
+
+  it('R4 the sales tax refuses 101% and shows the range line', async () => {
+    await renderForm();
+    await checkIt('car 14500');
+    await fireEvent.press(screen.getByLabelText('+ Tax, fees'));
+    await fireEvent.changeText(screen.getByLabelText('Sales tax, percent'), '101');
+    expect(screen.getByLabelText('Sales tax, percent').props.value).toBe('');
+    expect(screen.getByText('0 to 100%')).toBeTruthy();
+  });
+
+  it('D-71 a custom duration drives the label and carries to the full check', async () => {
+    const onRunFull = jest.fn();
+    await renderForm({ onRunFull });
+    await checkIt('car 14500');
+    await fireEvent.press(screen.getByLabelText('Credit'));
+    await fireEvent.press(screen.getByText('Custom'));
+    await fireEvent.changeText(screen.getByLabelText('Over how many months, custom, months'), '90');
+    expect(screen.getByText(/^Over 90\s+months$/)).toBeTruthy();
+    await fireEvent.press(screen.getByText('Run the full check'));
+    expect(onRunFull.mock.calls[0][0].loan.termMonths).toBe(90);
   });
 
   it('gives one chip, the size and one line, and See it on credit keeps the amount at 0 and 12 months', async () => {
     await renderForm();
     await checkIt('car 14500');
     expect(screen.getByText('Not from cash')).toBeTruthy();
-    expect(screen.getByText('Worked out from the figures you entered.')).toBeTruthy();
     expect(screen.getByText(/^Car at \$14,500(\.00)?$/)).toBeTruthy();
     expect(mockTrack).toHaveBeenCalledTimes(1);
     expect(mockTrack).toHaveBeenCalledWith('quick_check_run', { state: 'no' });
+    expect(screen.queryByText('Worked out from the figures you entered.')).toBeNull();
     await fireEvent.press(screen.getByText('See it on credit'));
+    expect(screen.getByText('Worked out from the figures you entered.')).toBeTruthy();
     expect(screen.getByLabelText('Credit').props.accessibilityState).toMatchObject({ checked: true });
     expect(screen.getByLabelText('Annual rate, percent').props.value).toBe('0');
     expect(screen.getByText('before any interest')).toBeTruthy();
     expect(screen.getByLabelText('Over how many months')).toBeTruthy();
-    expect(screen.getByLabelText('12 months').props.accessibilityState).toMatchObject({ checked: true });
+    expect(screen.getByLabelText('12 months').props.accessibilityState).toMatchObject({ selected: true });
     expect(screen.getAllByText(/a month for 12\s+months, before any interest/).length).toBeGreaterThan(0);
     expect(mockTrack).toHaveBeenCalledTimes(1);
   });
@@ -95,8 +198,8 @@ describe('QuickCheckForm: home', () => {
     expect(screen.getByText('a year')).toBeTruthy();
     expect(screen.queryByText('before any interest')).toBeNull();
     await fireEvent.press(screen.getByLabelText('36 months'));
-    expect(screen.getByLabelText('36 months').props.accessibilityState).toMatchObject({ checked: true });
-    expect(screen.getByLabelText('12 months').props.accessibilityState).toMatchObject({ checked: false });
+    expect(screen.getByLabelText('36 months').props.accessibilityState).toMatchObject({ selected: true });
+    expect(screen.getByLabelText('12 months').props.accessibilityState).toMatchObject({ selected: false });
   });
 
   it('shows no rate or term the user did not enter', async () => {
@@ -132,10 +235,10 @@ describe('QuickCheckForm: home', () => {
     expect(inputs.loan.aprText).toBe('0');
   });
 
-  it('Clear the check hides the result again', async () => {
+  it('Clear hides the result again', async () => {
     await renderForm();
     await checkIt('car 14500');
-    await fireEvent.press(screen.getByText('Clear the check'));
+    await fireEvent.press(screen.getByText('Clear'));
     expect(screen.queryByText('Not from cash')).toBeNull();
     expect(screen.getByLabelText('Quick check').props.value).toBe('');
   });
@@ -157,7 +260,7 @@ describe('QuickCheckForm: home', () => {
     expect(screen.queryByText('Run the full check')).toBeNull();
     await fireEvent.press(screen.getByText('Add rough figures'));
     expect(onAddRough).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Clear the check')).toBeTruthy();
+    expect(screen.getByText('Clear')).toBeTruthy();
   });
 
   it('a missing rate disables the full check', async () => {
@@ -265,21 +368,22 @@ describe('QuickResult', () => {
     if (c.kind !== 'cash_only') throw new Error(c.kind);
     return c;
   };
-  const show = (computation: Exclude<QuickComputation, { kind: 'incomplete' }>) => (
-    <ThemeProvider>
-      <QuickResult
-        computation={computation}
-        mode="credit"
-        name="Car"
-        fmt={plain}
-        fmtCents={cents}
-        onTryCredit={jest.fn()}
-        combine
-        onCombine={jest.fn()}
-        openCount={0}
-      />
-    </ThemeProvider>
-  );
+  const show = (computation: Exclude<QuickComputation, { kind: 'incomplete' }>) =>
+    safe(
+      <ThemeProvider>
+        <QuickResult
+          computation={computation}
+          mode="credit"
+          name="Car"
+          fmt={plain}
+          fmtCents={cents}
+          onTryCredit={jest.fn()}
+          combine
+          onCombine={jest.fn()}
+          openCount={0}
+        />
+      </ThemeProvider>
+    );
 
   it('the caption keeps the chosen term and adds the payoff month', async () => {
     await render(show({ ...base(), months: 10 }));

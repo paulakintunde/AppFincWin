@@ -10,19 +10,22 @@ import { useT } from '@/i18n';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { Pill } from '@/ui/Pill';
-import { hapticSelection } from '@/ui/haptics';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
-import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
-import { ACCENT_TINT_OPACITY, shadows } from '@/theme/tokens';
+import { PRESSED_OPACITY, radii, size, space } from '@/theme/layout';
+import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { currencyCode } from '@/engine/money';
 import { moneyFn } from '../check/steps/stepUi';
 import { MoneyInput } from '../ui/MoneyInput';
 import { RateInput } from '../ui/RateInput';
+import { CustomValueChips } from '../ui/CustomValueChips';
+import { useInfoSheet } from '../ui/useInfoSheet';
+import { useShouldStack } from '../ui/textFit';
 import { SegmentedToggle } from '../ui/SegmentedToggle';
-import { CREDIT_TERMS, type CheckInputs, type CreditTerm, type QuickComputation, type SnapshotResult } from '../snapshot/types';
+import { CREDIT_TERMS, type CheckInputs, type QuickComputation, type SnapshotResult } from '../snapshot/types';
+import { DURATION_MAX, DURATION_MIN } from '../snapshot/customValues';
 import { MAX_INPUT_MINOR, isValidAprText } from '../snapshot/checkInputs';
 import { QuickResult } from './QuickResult';
 import { quickStateOf, useQuickCheck, type QuickState } from './useQuickCheck';
@@ -43,33 +46,11 @@ const AMOUNT_HEIGHT = 56;
 const NAME_MAX = 80;
 const ZERO_RATE = /^0*\.?0*$/; // '' and any spelling of zero
 const TRAILING_DOT = /^\d{1,4}\.$/;
-
-function TermChip({ months, selected, onPress }: { months: CreditTerm; selected: boolean; onPress: () => void }) {
-  const t = useT();
-  const { colors, pairing } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityState={{ checked: selected }}
-      accessibilityLabel={t('decide.quick.termChipA11y', { count: months })}
-      onPress={() => {
-        if (selected) return;
-        hapticSelection();
-        onPress();
-      }}
-      style={[styles.termChip, { backgroundColor: colors.fill1 }]}
-    >
-      {selected ? (
-        <View
-          testID="accent-tint"
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor: colors.accent, opacity: ACCENT_TINT_OPACITY, borderRadius: radii.pill }]}
-        />
-      ) : null}
-      <Text style={{ ...textRole(pairing, 'label'), color: selected ? colors.accent : colors.ink }}>{String(months)}</Text>
-    </Pressable>
-  );
-}
+const MAX_APR_TYPED = '999.99'; // gates keystrokes only; isValidAprText is the check
+const MAX_TAX_TYPED = '100';
+const RUN_HEIGHT = 48;
+const PILL_INSET = 6;
+const CHECK_HEIGHT = 44;
 
 export function QuickCheckForm({ surface, source, sourceStatus, today, currency, onRunFull, onAddRough, onRetry, onResult }: QuickCheckFormProps) {
   const t = useT();
@@ -77,6 +58,8 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
   const wholeFmt = useMoneyFormatter(false);
   const exactFmt = useMoneyFormatter(true);
   const q = useQuickCheck(source, surface);
+  const stacked = useShouldStack();
+  const aprInfo = useInfoSheet('beforeInterest');
   const { inputs, submitted, computation } = q.state;
 
   const [text, setText] = useState('');
@@ -176,12 +159,14 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
               onSubmitEditing={check}
               returnKeyType="go"
               accessibilityLabel={t('decide.quick.a11y')}
-              placeholder={t('decide.quick.placeholder')}
+              placeholder={stacked ? t('decide.quick.placeholderShort') : t('decide.quick.placeholder')}
               placeholderTextColor={colors.inkFaint}
               style={[styles.amountInput, { ...textRole(pairing, 'body'), color: colors.ink }]}
             />
+            <View style={styles.checkInside}>
+              <Pill label={t('decide.quick.check')} variant="primary" onPress={check} />
+            </View>
           </View>
-          <Pill label={t('decide.quick.check')} variant="primary" onPress={check} />
         </View>
       ) : (
         <View style={styles.fields}>
@@ -216,15 +201,17 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
         </View>
       )}
 
-      <SegmentedToggle
-        accessibilityLabel={t('decide.quick.payWith')}
-        options={[
-          { key: 'cash', label: t('decide.quick.cash') },
-          { key: 'credit', label: t('decide.quick.credit') },
-        ]}
-        value={inputs.mode}
-        onChange={(key) => q.setMode(key === 'credit' ? 'credit' : 'cash')}
-      />
+      {showResult ? (
+        <SegmentedToggle
+          accessibilityLabel={t('decide.quick.payWith')}
+          options={[
+            { key: 'cash', label: t('decide.quick.cash') },
+            { key: 'credit', label: t('decide.quick.credit') },
+          ]}
+          value={inputs.mode}
+          onChange={(key) => q.setMode(key === 'credit' ? 'credit' : 'cash')}
+        />
+      ) : null}
 
       {showResult ? (
         <QuickResult
@@ -242,7 +229,7 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
         />
       ) : null}
 
-      {credit ? (
+      {showResult && credit ? (
         <View style={styles.fields}>
           <RateInput
             value={aprDraft}
@@ -250,15 +237,28 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
             label={t('decide.quick.aprLabel')}
             hint={ZERO_RATE.test(aprDraft) ? t('decide.quick.beforeInterest') : t('decide.quick.aYear')}
             accessibilityLabel={t('decide.quick.aprA11y')}
+            max={MAX_APR_TYPED}
+            rangeText={t('decide.custom.range.apr')}
+            labelAccessory={aprInfo.button()}
           />
-          <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.quick.termsA11y')} style={styles.terms}>
-            {CREDIT_TERMS.map((months) => (
-              <TermChip key={months} months={months} selected={inputs.termMonths === months} onPress={() => q.setTerm(months)} />
-            ))}
+          {aprInfo.sheet}
+          <View style={styles.terms}>
+            <Text style={label}>{t('decide.quick.overMonths', { count: inputs.termMonths })}</Text>
+            <CustomValueChips
+              presets={CREDIT_TERMS}
+              value={inputs.termMonths}
+              onChange={q.setTerm}
+              groupLabel={t('decide.quick.termsA11y')}
+              min={DURATION_MIN}
+              max={DURATION_MAX}
+              rangeText={t('decide.custom.range.months')}
+              unitWord={t('decide.custom.unit.months')}
+            />
           </View>
         </View>
       ) : null}
 
+      {showResult ? (
       <View>
         <Pressable
           accessibilityRole="button"
@@ -271,6 +271,10 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
           {extrasSummary !== '' ? (
             <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{extrasSummary}</Text>
           ) : null}
+          <View
+            testID="extras-chevron"
+            style={[styles.chevron, { borderColor: colors.inkSoft3, transform: [{ rotate: extrasOpen ? '135deg' : '45deg' }] }]}
+          />
         </Pressable>
         {extrasOpen ? (
           <View style={styles.fields}>
@@ -280,6 +284,8 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
               label={t('decide.quick.salesTax')}
               accessibilityLabel={t('decide.quick.salesTaxA11y')}
               placeholder={t('decide.quick.taxPlaceholder')}
+              max={MAX_TAX_TYPED}
+              rangeText={t('decide.custom.range.percent')}
             />
             <MoneyInput
               value={inputs.fees}
@@ -291,19 +297,37 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
           </View>
         ) : null}
       </View>
+      ) : null}
 
       {showResult ? (
         <View style={styles.actions}>
           {none ? <Pill label={t('decide.home.noFigures.addRough')} variant="primary" onPress={onAddRough} /> : null}
           {surface === 'home' && !none ? (
-            <Pill
-              label={t('decide.quick.runFull')}
-              variant="primary"
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('decide.quick.runFull')}
+              accessibilityState={{ disabled: unconverted }}
               disabled={unconverted}
-              onPress={unconverted ? undefined : () => onRunFull?.(q.toCheckInputs(today))}
-            />
+              onPress={() => onRunFull?.(q.toCheckInputs(today))}
+              style={({ pressed }) => [styles.run, { backgroundColor: colors.ink, opacity: unconverted ? 0.5 : pressed ? PRESSED_OPACITY : 1 }]}
+            >
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.surface }}>{t('decide.quick.runFull')}</Text>
+            </Pressable>
           ) : null}
-          <Pill label={t('decide.quick.clear')} variant="secondary" onPress={() => { q.clear(); setText(''); setName(''); setFieldPrice(null); }} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('decide.quick.clearA11y')}
+            onPress={() => {
+              q.clear();
+              setText('');
+              setName('');
+              setFieldPrice(null);
+              setExtrasOpen(false);
+            }}
+            style={({ pressed }) => [styles.clear, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+          >
+            <Text style={label}>{t('decide.quick.clearText')}</Text>
+          </Pressable>
         </View>
       ) : null}
     </View>
@@ -313,21 +337,17 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
 const styles = StyleSheet.create({
   card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapMd },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
-  amount: { flex: 1, height: AMOUNT_HEIGHT, borderRadius: radii.pill, paddingHorizontal: space.cardPad, justifyContent: 'center' },
-  amountInput: { padding: 0, minHeight: space.touchMin },
+  amount: { flex: 1, height: AMOUNT_HEIGHT, borderRadius: radii.pill, paddingLeft: space.cardPad, paddingRight: PILL_INSET, flexDirection: 'row', alignItems: 'center' },
+  amountInput: { flex: 1, padding: 0, minHeight: CHECK_HEIGHT },
   fields: { gap: space.gapMd },
   field: { minHeight: space.touchMin, borderRadius: radii.pill, paddingHorizontal: space.gapMd, justifyContent: 'center' },
   fieldInput: { minHeight: space.touchMin, padding: 0 },
-  terms: { flexDirection: 'row', gap: space.gapSm },
-  termChip: {
-    flex: 1,
-    minHeight: space.touchMin,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
+  terms: { gap: space.gapSm },
   extrasRow: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  actions: { gap: space.gapSm },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
+  run: { flex: 1, minHeight: RUN_HEIGHT, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.cardPad },
+  clear: { minWidth: space.touchMin, minHeight: space.touchMin, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.gapSm },
+  chevron: { width: size.chevronCompact, aspectRatio: 1, borderTopWidth: 2, borderRightWidth: 2, flexShrink: 0 },
+  checkInside: { marginLeft: space.gapSm },
   skeleton: { borderRadius: radii.pill },
 });
