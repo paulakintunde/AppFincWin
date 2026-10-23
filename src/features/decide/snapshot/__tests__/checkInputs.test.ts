@@ -142,12 +142,13 @@ describe('parseCheckInputs', () => {
       lossOfValue: { kind: 'percent_per_year', percentText: '15' },
       method: 'loan',
       loan: { deposit: 100_000, termMonths: 36, aprText: '9.5', secured: true, securedTouched: true, aprFromQuick: true, promo: { aprText: '0', months: 12, deferredInterest: true }, variable: true },
-      instalment: { amount: 5_000, count: 12, lateFee: 500 },
+      instalment: { amount: 5_000, count: 12, lateFee: 500, hasRate: true, aprText: '7.5', firstPayment: 'next_month' },
       card: { accountId: 'acc-card', payoff: 'minimum', months: 24, promo: { aprText: '1.5', months: null, deferredInterest: false }, variable: true, fees: 3_500 },
       investTermMonths: 24, projectionRates: ['4', '6.5', '8'], investHorizonMonths: 120, investHoldingFeeText: '1',
       combine: false, coolingOff: true,
       incomeChange: { direction: 'lowers', amount: 50_000, startDate: '2027-01-01', likelihood: 'uncertain' },
-      cheaperRatioPercent: 65, wait: { monthlyAmount: 20_000 }, outcome: 'wait', goAccountId: 'g', investAccountId: 'i', scope: 'household',
+      cheaperRatioPercent: 65, cheaperPrice: 1_000_000, customItemType: { name: 'Boat', treatLike: 'vehicle' }, investReturnText: '6.5', lumpHorizonMonths: 36,
+      wait: { monthlyAmount: 20_000 }, outcome: 'wait', goAccountId: 'g', investAccountId: 'i', scope: 'household',
       split: { kind: 'weight', weights: [1, 2], amounts: [] }, cardNotes: { incomeStops: 'yes', noNewSpending: 'no', jobLossCover: 'unsure' },
     });
     full.setbacks[0] = { ...full.setbacks[0]!, enabled: true, amount: 5_000 };
@@ -189,7 +190,7 @@ describe('parseCheckInputs', () => {
     expect(new Set(p.runningCosts.map((r) => r.id)).size).toBe(3);
     expect(p.replaces).toEqual([]);
     expect(p.loan).toMatchObject({ deposit: 0, termMonths: null, aprText: '', promo: null });
-    expect(p.instalment).toEqual({ amount: null, count: null, lateFee: null });
+    expect(p.instalment).toEqual({ amount: null, count: null, lateFee: null, hasRate: false, aprText: '', firstPayment: 'today' });
     expect(p.card).toMatchObject({ payoff: 'months', months: 12, fees: null, promo: null });
     expect(p.investTermMonths).toBeNull();
     expect(p.projectionRates).toEqual(['4', '5', '6']);
@@ -300,6 +301,73 @@ describe('quickToCheckInputs', () => {
   });
 });
 
+describe('R15 inputs (D-80..D-83)', () => {
+  it('D-80 an old instalment parses with no rate and first payment today', () => {
+    const p = parseCheckInputs({ instalment: { amount: 5_000, count: 12, lateFee: 100 } }, TODAY);
+    expect(p.instalment).toEqual({ amount: 5_000, count: 12, lateFee: 100, hasRate: false, aprText: '', firstPayment: 'today' });
+    const bad = parseCheckInputs({ instalment: { hasRate: 'yes', aprText: '5000', firstPayment: 'never' } }, TODAY);
+    expect(bad.instalment).toMatchObject({ hasRate: false, aprText: '', firstPayment: 'today' });
+    const old = ok({ ...buy({ method: 'instalment' }), instalment: { amount: 150_000, count: 12, lateFee: null } }).check as BuyCheck;
+    expect('apr' in old.payment).toBe(false);
+    expect((old.payment as { firstPayment: string }).firstPayment).toBe('today');
+  });
+  it('D-80 a rate is mapped to apr; a blank rate is instalment_rate_missing', () => {
+    const base = emptyCheckInputs('buy', TODAY).instalment;
+    const rated = ok(buy({ method: 'instalment', instalment: { ...base, amount: 150_000, count: 12, hasRate: true, aprText: '7.5', firstPayment: 'next_month' } })).check as BuyCheck;
+    expect(rated.payment).toMatchObject({ apr: percent('7.5'), firstPayment: 'next_month', instalmentAmount: 150_000 });
+    const blank = ok(buy({ method: 'instalment', instalment: { ...base, amount: 150_000, count: 12, hasRate: true } })).check as BuyCheck;
+    expect((blank.payment as { apr: unknown }).apr).toBeNull();
+    const invalid = ok(buy({ method: 'instalment', instalment: { ...base, count: 12, hasRate: true, aprText: '5000' } })).check as BuyCheck;
+    expect(invalid.payment).toMatchObject({ apr: null, instalmentAmount: null });
+    expect(resolvePlan(blank)).toMatchObject({ status: 'missing' });
+    expect(resolvePlan(ok(buy({ method: 'instalment', instalment: { ...base, count: 12, hasRate: true } })).check as BuyCheck)).toMatchObject({ status: 'missing', reasons: ['instalment_rate_missing'] });
+    // switching back to No keeps the typed rate text but sends no apr
+    const kept = ok(buy({ method: 'instalment', instalment: { ...base, amount: 150_000, count: 12, hasRate: false, aprText: '7.5' } })).check as BuyCheck;
+    expect('apr' in kept.payment).toBe(false);
+  });
+  it('D-83 an old cheaper percent converts to ceil(advertised x percent / 100)', () => {
+    expect(parseCheckInputs({ advertised: 1_000_001, cheaperRatioPercent: 65 }, TODAY).cheaperPrice).toBe(650_001);
+    expect(parseCheckInputs({ advertised: 1_000_000, cheaperRatioPercent: 65 }, TODAY).cheaperPrice).toBe(650_000);
+    expect(parseCheckInputs({ advertised: 1_000_000, cheaperRatioPercent: 20 }, TODAY).cheaperPrice).toBeNull();
+    expect(parseCheckInputs({ cheaperRatioPercent: 65 }, TODAY).cheaperPrice).toBeNull();
+    expect(parseCheckInputs({ advertised: 1_000_000, cheaperPrice: 500_000, cheaperRatioPercent: 65 }, TODAY).cheaperPrice).toBe(500_000);
+    expect(parseCheckInputs({ advertised: 1_000_000, cheaperPrice: 299_999 }, TODAY).cheaperPrice).toBeNull();
+    expect(parseCheckInputs({ advertised: 1_000_000, cheaperPrice: 1_000_001 }, TODAY).cheaperPrice).toBeNull();
+    expect(parseCheckInputs({ advertised: 1_000_000, cheaperPrice: 300_000 }, TODAY).cheaperPrice).toBe(300_000);
+    expect(parseCheckInputs({ advertised: 1_000_000, cheaperPrice: 650_000.5 }, TODAY).cheaperPrice).toBeNull();
+  });
+  it('D-81 a custom item type sets the rules type and keeps the name out of the engine', () => {
+    const p = parseCheckInputs({ itemType: 'tax', customItemType: { name: '  Boat  ', treatLike: 'vehicle' } }, TODAY);
+    expect(p.customItemType).toEqual({ name: 'Boat', treatLike: 'vehicle' });
+    expect(p.itemType).toBe('vehicle');
+    expect(p.loan.secured).toBe(true);
+    const none = parseCheckInputs({ itemType: 'tax', customItemType: { name: 'Kayak', treatLike: null } }, TODAY);
+    expect(none.customItemType).toEqual({ name: 'Kayak', treatLike: null });
+    expect(none.itemType).toBe('general');
+    const missing = parseCheckInputs({ customItemType: { name: 'Kayak' } }, TODAY);
+    expect(missing.customItemType).toEqual({ name: 'Kayak', treatLike: null });
+    const r = ok({ ...none, advertised: 1_450_000, method: 'cash' });
+    expect(JSON.stringify(r.check)).not.toContain('Kayak');
+    expect((r.check as BuyCheck).itemType).toBe('general');
+  });
+  it('D-81 an invalid custom item type is dropped', () => {
+    for (const bad of [null, 'x', { name: '' }, { name: '   ' }, { name: 5 }, { name: 'n'.repeat(41) }, { name: 'Boat', treatLike: 'spaceship' }]) {
+      const p = parseCheckInputs({ itemType: 'vehicle', customItemType: bad }, TODAY);
+      expect(p.customItemType).toBeNull();
+      expect(p.itemType).toBe('vehicle');
+    }
+    expect(parseCheckInputs({ customItemType: { name: 'n'.repeat(40) } }, TODAY).customItemType?.name).toHaveLength(40);
+  });
+  it('D-82 an expected return outside 0-100 is dropped', () => {
+    expect(parseCheckInputs({ investReturnText: '7.5' }, TODAY).investReturnText).toBe('7.5');
+    expect(parseCheckInputs({ investReturnText: '0' }, TODAY).investReturnText).toBe('0');
+    expect(parseCheckInputs({ investReturnText: '100' }, TODAY).investReturnText).toBe('100');
+    for (const bad of ['101', '250', 'x', '', 7, null]) expect(parseCheckInputs({ investReturnText: bad }, TODAY).investReturnText).toBeNull();
+    expect(parseCheckInputs({ lumpHorizonMonths: 36 }, TODAY).lumpHorizonMonths).toBe(36);
+    expect(parseCheckInputs({ lumpHorizonMonths: 0 }, TODAY).lumpHorizonMonths).toBeNull();
+  });
+});
+
 describe('toEngineCheck', () => {
   it('reports what is missing', () => {
     expect(toEngineCheck(buy({ advertised: null }), CTX)).toEqual({ ok: false, missing: 'price' });
@@ -333,7 +401,7 @@ describe('toEngineCheck', () => {
     const huge = ok(buy({ method: 'loan', loan: { ...emptyCheckInputs('buy', TODAY).loan, aprText: '5000' } })).check as BuyCheck;
     expect((huge.payment as { apr: unknown }).apr).toBeNull();
     const inst = ok(buy({ method: 'instalment', instalment: { amount: 150_000, count: 12, lateFee: 0 } })).check as BuyCheck;
-    expect(inst.payment).toEqual({ method: 'instalment', instalmentAmount: 150_000, instalmentCount: 12 });
+    expect(inst.payment).toEqual({ method: 'instalment', instalmentAmount: 150_000, instalmentCount: 12, firstPayment: 'today' });
     const late = ok(buy({ method: 'instalment', instalment: { amount: 150_000, count: 12, lateFee: 500 } })).check as BuyCheck;
     expect(late.payment).toMatchObject({ lateFee: 500 });
     expect(JSON.stringify(late.payment)).not.toContain('lateFeeCap');

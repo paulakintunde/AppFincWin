@@ -37,8 +37,9 @@ import type {
   SetbackCode,
 } from '@/engine/decide';
 import { divideHalfUp, minorUnits } from '@/engine/money';
-import { ONE_HUNDRED_PERCENT, PERCENT_SCALE, percentFromScaled } from '@/engine/payoff';
+import { ONE_HUNDRED_PERCENT, PERCENT_SCALE, ceilDivide, percentFromScaled } from '@/engine/payoff';
 import { isValidLocalDate } from '@/engine/time';
+import { cheaperBounds } from './customValues';
 import { PAY_METHODS } from './types';
 import type {
   AdjustmentLine,
@@ -62,6 +63,7 @@ export const MAX_INPUT_MINOR = 1_000_000_000_000;
 const MAX_LINES = 30;
 const MAX_SETBACKS = 12;
 const MAX_TERM = 600;
+const CUSTOM_NAME_MAX = 40;
 const HUNDRED: Percent = percent('100');
 const RATE_PATTERN = /^\d{1,4}(\.\d{1,10})?$/;
 const CURRENCY_PATTERN = /^[A-Z0-9]{2,4}$/;
@@ -151,7 +153,7 @@ export function emptyCheckInputs(kind: 'buy' | 'invest', _today: string): CheckI
     replaces: [],
     method: null,
     loan: { deposit: 0, termMonths: 48, aprText: '', secured: false, securedTouched: false, aprFromQuick: false, promo: null, variable: false },
-    instalment: { amount: null, count: null, lateFee: null },
+    instalment: { amount: null, count: null, lateFee: null, hasRate: false, aprText: '', firstPayment: 'today' },
     card: { accountId: null, payoff: 'months', months: 12, promo: null, variable: false, fees: null },
     investTermMonths: null,
     setbacks: defaultSetbackLines(),
@@ -162,6 +164,10 @@ export function emptyCheckInputs(kind: 'buy' | 'invest', _today: string): CheckI
     coolingOff: false,
     incomeChange: null,
     cheaperRatioPercent: null,
+    cheaperPrice: null,
+    customItemType: null,
+    investReturnText: null,
+    lumpHorizonMonths: null,
     wait: { monthlyAmount: null },
     outcome: null,
     goAccountId: null,
@@ -275,6 +281,26 @@ function parseRates(o: Obj): string[] {
   return unique.length === 0 && typeof legacy === 'string' && isValidProjectionRateText(legacy) ? [legacy] : unique;
 }
 
+/** D-83: the exact cheaper price; an old whole-percent ratio becomes ceil(advertised x percent / 100) so the figure is kept to the cent. */
+function parseCheaperPrice(o: Obj, advertised: number | null): number | null {
+  if (advertised === null || advertised <= 0) return null;
+  const { min, max } = cheaperBounds(advertised);
+  const exact = intIn(o.cheaperPrice, min, max);
+  if (exact !== null) return exact;
+  const pct = intIn(o.cheaperRatioPercent, 30, 100);
+  return pct === null ? null : Number(ceilDivide(BigInt(advertised) * BigInt(pct), 100n));
+}
+
+/** D-81 / R15.4: a custom item type is kept only with a 1-40 character name and a known (or no) rules type. */
+function parseCustomItemType(v: unknown): CheckInputs['customItemType'] {
+  const o = asObj(v);
+  const name = typeof o.name === 'string' ? o.name.trim() : '';
+  if (name.length < 1 || name.length > CUSTOM_NAME_MAX) return null;
+  if (o.treatLike === null || o.treatLike === undefined) return { name, treatLike: null };
+  const treatLike = oneOf(o.treatLike, ITEM_TYPES);
+  return treatLike === null ? null : { name, treatLike };
+}
+
 function parseIncomeChange(v: unknown): CheckInputs['incomeChange'] {
   const o = asObj(v);
   const direction = oneOf(o.direction, ['raises', 'lowers'] as const);
@@ -300,7 +326,9 @@ export function parseCheckInputs(json: unknown, today: string): CheckInputs {
   if (typeof json !== 'object' || json === null || Array.isArray(json)) return emptyCheckInputs('buy', today);
   const o = json as Obj;
   const empty = emptyCheckInputs(o.kind === 'invest' ? 'invest' : 'buy', today);
-  const itemType = oneOf(o.itemType, ITEM_TYPES) ?? empty.itemType;
+  const customItemType = parseCustomItemType(o.customItemType);
+  const itemType = customItemType === null ? (oneOf(o.itemType, ITEM_TYPES) ?? empty.itemType) : (customItemType.treatLike ?? 'general');
+  const advertised = minor(o.advertised);
   const loan = asObj(o.loan);
   const inst = asObj(o.instalment);
   const card = asObj(o.card);
@@ -315,7 +343,7 @@ export function parseCheckInputs(json: unknown, today: string): CheckInputs {
     source: text(o.source, 80),
     itemType,
     itemTypeTouched: flag(o.itemTypeTouched, false),
-    advertised: minor(o.advertised),
+    advertised,
     needBy: typeof o.needBy === 'string' && isValidLocalDate(o.needBy) ? o.needBy : null,
     why: text(o.why, 500),
     adjustments: parseAdjustments(o.adjustments),
@@ -333,7 +361,14 @@ export function parseCheckInputs(json: unknown, today: string): CheckInputs {
       promo: parsePromo(loan.promo),
       variable: flag(loan.variable, false),
     },
-    instalment: { amount: minor(inst.amount), count: intIn(inst.count, 1, MAX_TERM), lateFee: minor(inst.lateFee) },
+    instalment: {
+      amount: minor(inst.amount),
+      count: intIn(inst.count, 1, MAX_TERM),
+      lateFee: minor(inst.lateFee),
+      hasRate: flag(inst.hasRate, false),
+      aprText: typeof inst.aprText === 'string' && isValidAprText(inst.aprText) ? inst.aprText : '',
+      firstPayment: oneOf(inst.firstPayment, ['today', 'next_month'] as const) ?? 'today',
+    },
     card: {
       accountId: idText(card.accountId),
       payoff: oneOf(card.payoff, ['full', 'months', 'minimum'] as const) ?? 'months',
@@ -351,6 +386,10 @@ export function parseCheckInputs(json: unknown, today: string): CheckInputs {
     coolingOff: flag(o.coolingOff, false),
     incomeChange: parseIncomeChange(o.incomeChange),
     cheaperRatioPercent: intIn(o.cheaperRatioPercent, 30, 100),
+    cheaperPrice: parseCheaperPrice(o, advertised),
+    customItemType,
+    investReturnText: typeof o.investReturnText === 'string' && isValidProjectionRateText(o.investReturnText) ? o.investReturnText : null,
+    lumpHorizonMonths: intIn(o.lumpHorizonMonths, 1, MAX_TERM),
     wait: { monthlyAmount: minor(asObj(o.wait).monthlyAmount) },
     outcome: oneOf(o.outcome, ['go', 'wait', 'pass'] as const),
     goAccountId: idText(o.goAccountId),
@@ -486,13 +525,18 @@ function payment(inputs: CheckInputs, method: PayMethod, ctx: EngineCtx, price: 
         ...(inputs.loan.variable ? { variable: true } : {}),
       };
     }
-    case 'instalment':
+    case 'instalment': {
+      const inst = inputs.instalment;
       return {
         method: 'instalment',
-        instalmentAmount: inputs.instalment.amount === null ? null : minorUnits(inputs.instalment.amount),
-        instalmentCount: inputs.instalment.count,
-        ...(inputs.instalment.lateFee !== null && inputs.instalment.lateFee > 0 ? { lateFee: minorUnits(inputs.instalment.lateFee) } : {}),
+        instalmentAmount: inst.amount === null ? null : minorUnits(inst.amount),
+        instalmentCount: inst.count,
+        // D-80: no rate = apr absent; a rate = the typed APR, or null (instalment_rate_missing) when blank or invalid
+        ...(inst.hasRate === true ? { apr: inst.aprText !== undefined && isValidAprText(inst.aprText) ? percent(inst.aprText) : null } : {}),
+        firstPayment: inst.firstPayment ?? 'today',
+        ...(inst.lateFee !== null && inst.lateFee > 0 ? { lateFee: minorUnits(inst.lateFee) } : {}),
       };
+    }
     case 'card': {
       const c = inputs.card;
       const promo = promoTerms(c.promo);

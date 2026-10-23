@@ -68,7 +68,8 @@ export interface CheckInputs {
   replaces: InputLine[];           // <= 30
   method: MethodKey | null;
   loan: { deposit: number; termMonths: number | null; aprText: string; secured: boolean; securedTouched: boolean; aprFromQuick: boolean; promo: PromoInput | null; variable: boolean }; // promo/variable: D-30, absent = none // secured follows itemType === 'vehicle' until the user touches the toggle (securedTouched, 05-07/05-14; 04 DEC-11)
-  instalment: { amount: number | null; count: number | null; lateFee: number | null }; // lateFee: D-30, user-typed, never changes the verdict
+  // lateFee: D-30, user-typed, never changes the verdict. D-80 (R15.3): hasRate false = the payment is the stored amount with no rate; true = the amount is the dealer's quote and aprText the typed rate (kept when switching back to No). firstPayment: today by default. Optional in the type so older fixtures compile; parseCheckInputs always fills them.
+  instalment: { amount: number | null; count: number | null; lateFee: number | null; hasRate?: boolean; aprText?: string; firstPayment?: 'today' | 'next_month' };
   card: { accountId: string | null; payoff: 'full' | 'months' | 'minimum'; months: number; promo: PromoInput | null; variable: boolean; fees: number | null }; // fees: D-44 / 04 D-63 cardFees, user-typed card fees for this purchase (minor units), null = none (absent in stored JSON = null)
   investTermMonths: number | null;
   setbacks: SetbackLine[];         // <= 12
@@ -78,7 +79,12 @@ export interface CheckInputs {
   combine: boolean;                // D-24 "With my other open checks": default true, remembered per check (A13); autosaved, no undo step
   coolingOff: boolean;             // D-35 "Check again in 48 hours": default false; honoured only when the size is needs_spreading
   incomeChange: { direction: 'raises' | 'lowers'; amount: number | null; startDate: string | null; likelihood: 'likely' | 'uncertain' } | null; // D-32; null = "This changes my income" off
-  cheaperRatioPercent: number | null; // 30..100; null = engine default
+  /** @deprecated read only by the migration; removed in Task 2 */
+  cheaperRatioPercent?: number | null;
+  cheaperPrice: number | null;     // D-83: the exact cheaper advertised price, minor units in [ceil(30% of advertised), advertised]; null = engine default
+  customItemType: { name: string; treatLike: ItemType | null } | null; // D-81 / R15.4: the name (1-40) never reaches the engine; the rules type is treatLike ?? 'general'
+  investReturnText: string | null; // D-82 / R15.5: expected return % a year, decimal string 0..100, display only; null = none
+  lumpHorizonMonths: number | null; // D-82: the lump-sum projection horizon; null = LUMP_HORIZON_DEFAULT (60)
   wait: { monthlyAmount: number | null };
   outcome: 'go' | 'wait' | 'pass' | null;
   goAccountId: string | null;      // A6: the cash account Go ahead writes to (buy and invest)
@@ -88,7 +94,7 @@ export interface CheckInputs {
   cardNotes: { incomeStops: CardNoteAnswer; noNewSpending: CardNoteAnswer; jobLossCover: CardNoteAnswer };
 }
 
-export interface QuickInputs { name: string; price: number | null; mode: 'cash' | 'credit'; aprText: string; termMonths: CreditTerm; taxText: string; fees: number | null }
+export interface QuickInputs { name: string; price: number | null; mode: 'cash' | 'credit'; aprText: string; termMonths: number; taxText: string; fees: number | null }
 
 // 'none' = no full month and no rough figures: status 'none', copy "There is nothing to judge this against yet." (no chip, no size).
 // 'cash_only' = the onboarding skip path (rough figures skipped): cash only, never a cushion or a month claim (05-07, 05-09, 05-23).

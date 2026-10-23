@@ -182,7 +182,7 @@ export function computeDetails(core: CheckCore, inputs: CheckInputs): CheckCompu
       context,
       check,
       verdict,
-      inputs.cheaperRatioPercent === null
+      inputs.cheaperRatioPercent === null || inputs.cheaperRatioPercent === undefined
         ? undefined
         : { price: minorUnits(Number(divideHalfUp(BigInt(verdict.plan.price) * BigInt(inputs.cheaperRatioPercent), 100n))) }
     ),
