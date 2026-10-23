@@ -33,7 +33,7 @@ describe('keyFiguresCopy', () => {
   });
 
   it('D-74 cushion reads Under 1 month and Not limited as words', () => {
-    expect(run({ cushionMonths: 0 }).items[1]).toMatchObject({ value: 'Under 1 month', kind: 'words' });
+    expect(run({ cushionMonths: 0 }).items[1]).toMatchObject({ value: 'Under 1 month', kind: 'words' });
     expect(run({ cushionMonths: null }).items[1]).toMatchObject({ value: 'Not limited', kind: 'words' });
     expect(run({ monthly: minorUnits(0) }).items[2]).toMatchObject({ value: 'None', kind: 'words' });
   });

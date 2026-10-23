@@ -1686,7 +1686,7 @@ const en = {
     slider: { above: 'Above the slider’s range', below: 'Below the slider’s range' },
     fold: {
       // 05-80 (R15.9): investment fold 7 with an expected return.
-      investPreview_one: '{{fv}} after 1 month at {{rate}}% a year', investPreview_other: '{{fv}} after {{count}} months at {{rate}}% a year',
+      investPreview_one: '{{fv}} after 1\u00A0month at {{rate}}%\u00A0a year', investPreview_other: '{{fv}} after {{count}}\u00A0months at {{rate}}%\u00A0a year',
       noReturn: { preview: 'No expected return set', body: 'No expected return set. One can be typed on the Amount and schedule step.', link: 'Amount and schedule' },
       title: {
         grow: 'What it could grow to',
@@ -1756,7 +1756,7 @@ const en = {
       nameAt: '{{name}} at {{price}}', // WR-B08: the result echoes the price it read from the text
       payWith: 'Pay with', cash: 'Cash', credit: 'Credit',
       aprLabel: 'Annual rate', aprA11y: 'Annual rate, percent', beforeInterest: 'before any interest', aYear: 'a year',
-      overMonths_one: 'Over 1\u00A0month', overMonths_other: 'Over {{count}}\u00A0months', termsA11y: 'Over how many months', termChipA11y: '{{count}} months',
+      overMonths_one: 'Over 1\u00A0month', overMonths_other: 'Over {{count}}\u00A0months', termsA11y: 'Over how many months', termChipA11y: '{{count}}\u00A0months',
       extras: '+ Tax, fees', extrasSummary: '+{{amount}}', salesTax: 'Sales tax', salesTaxA11y: 'Sales tax, percent', taxPlaceholder: 'Type the rate', fees: 'Fees',
       tryCredit: 'See it on credit', tryCreditA11y: 'See it on credit, keeps the amount',
       runFull: 'Run the full check', clearText: 'Clear', clearA11y: 'Clear the quick check', placeholderShort: 'car 14500', footer: 'Worked out from the figures you entered.',
@@ -1772,10 +1772,10 @@ const en = {
         pauseInvesting: 'The month closes only if {{amount}} a month of investing pauses.',
         pauseSaving: 'The month closes only if {{amount}} a month of saving pauses.',
         pauseBoth: 'The month closes only if {{amount}} a month of saving and investing pauses.',
-        creditFits: '{{payment}} a month for {{count}} months. The month closes with {{left}} spare.',
-        creditFitsZero: '{{payment}} a month for {{count}} months, before any interest. The month closes with {{left}} spare. Any rate adds to this.',
-        creditShort: '{{payment}} a month for {{count}} months. The month is {{short}} short.',
-        creditShortZero: '{{payment}} a month for {{count}} months, before any interest. Still {{short}} short, so no rate makes it fit.',
+        creditFits: '{{payment}} a month for {{count}}\u00A0months. The month closes with {{left}} spare.',
+        creditFitsZero: '{{payment}} a month for {{count}}\u00A0months, before any interest. The month closes with {{left}} spare. Any rate adds to this.',
+        creditShort: '{{payment}} a month for {{count}}\u00A0months. The month is {{short}} short.',
+        creditShortZero: '{{payment}} a month for {{count}}\u00A0months, before any interest. Still {{short}} short, so no rate makes it fit.',
         creditCash: 'On the day {{day}} leaves your cash at {{cashAfter}}, {{short}} under your {{cushion}} cushion.',
         creditDsr: 'Debt payments would reach {{pct}} of money in.',
         creditOwe: 'Unsecured debt would pass a year’s income.',
@@ -1802,9 +1802,9 @@ const en = {
     },
     month: {
       eyebrow: 'Your month', activity: 'Activity', in: 'Comes in', out: 'Goes out', left: 'Left',
-      steadyLine: '{{count}} months of income within {{pct}} of each other, so the check uses the average.',
-      variableLine: '{{count}} months ranging {{worst}} to {{best}}. Affordability is judged on the worst month unless you say otherwise.',
-      noIncomeLine: 'No money in is logged in these {{count}} months, so every check is judged on that.', // D-50 (04 LO-01): every averaged month has 0 income (steadiness 'volatile', CV null)
+      steadyLine: '{{count}}\u00A0months of income within {{pct}} of each other, so the check uses the average.',
+      variableLine: '{{count}}\u00A0months ranging {{worst}} to {{best}}. Affordability is judged on the worst month unless you say otherwise.',
+      noIncomeLine: 'No money in is logged in these {{count}}\u00A0months, so every check is judged on that.', // D-50 (04 LO-01): every averaged month has 0 income (steadiness 'volatile', CV null)
       fewLine: 'Fewer than 3 full months so far, so this uses your lowest month for money in and your highest for spending.',
       worstChip: 'Worst · {{amount}}', averageChip: 'Average · {{amount}}', basisA11y: 'Judge on',
       roughEyebrow: 'From the figures you gave', edit: 'Edit', editA11y: 'Edit rough figures',
@@ -1858,7 +1858,7 @@ const en = {
       type: 'Item type', suggested: 'Suggested from the name',
       itemType: { general: 'General', vehicle: 'Vehicle', rent_bill: 'Rent or bill', loan_repayment: 'Loan repayment', tax: 'Tax', insurance_premium: 'Insurance premium' },
       when: 'When you need it', whenInvest: 'Start on', inWeek: 'In a week', inMonth: 'In a month', in3Months: 'In 3 months',
-      awayToday: 'Today', awayTomorrow: 'Tomorrow', awayDays: 'In {{count}} days', awayMonths_one: 'In {{count}} month', awayMonths_other: 'In {{count}} months',
+      awayToday: 'Today', awayTomorrow: 'Tomorrow', awayDays: 'In {{count}} days', awayMonths_one: 'In {{count}}\u00A0month', awayMonths_other: 'In {{count}}\u00A0months',
       passed: 'This date has passed',
       why: 'Why', whyPlaceholder: 'Why this, and why now', whyNote: 'Kept on the record so the check never treats doing nothing as free.',
       replacesHeading: 'Expenses it replaces', replacesSum: '−{{amount}}/mo', replacesNone: 'none yet',
@@ -1891,15 +1891,15 @@ const en = {
         announce: '{{method}} selected. Details shown.',
       },
       summaryDay: '{{price}} on the day · leaves {{cash}}',
-      summaryLoan_one: '{{deposit}} down · 1 month · {{apr}}%', summaryLoan_other: '{{deposit}} down · {{count}} months · {{apr}}%',
+      summaryLoan_one: '{{deposit}} down · 1\u00A0month · {{apr}}%', summaryLoan_other: '{{deposit}} down · {{count}}\u00A0months · {{apr}}%',
       summaryInstalmentNoRate: '{{count}} × {{payment}} · no rate', summaryInstalmentRate: '{{count}} × {{payment}} · {{apr}}%',
       summaryFirstInMonth: ' · first in a month',
       summaryCardFull: '{{card}} · in full next statement', summaryCardMinimum: '{{card}} · minimum only',
-      summaryCardMonths_one: '{{card}} · over 1 month', summaryCardMonths_other: '{{card}} · over {{count}} months',
-      summaryLump: '{{amount}} once', summaryLumpRate: '{{amount}} once · {{rate}}% a year',
-      summaryContribution_one: '{{amount}} a month · 1 month', summaryContribution_other: '{{amount}} a month · {{count}} months',
+      summaryCardMonths_one: '{{card}} · over 1\u00A0month', summaryCardMonths_other: '{{card}} · over {{count}}\u00A0months',
+      summaryLump: '{{amount}} once', summaryLumpRate: '{{amount}} once · {{rate}}%\u00A0a year',
+      summaryContribution_one: '{{amount}} a month · 1\u00A0month', summaryContribution_other: '{{amount}} a month · {{count}}\u00A0months',
       // 05-84: the pieces of a folded summary, used when a part is missing (R15.2 "a missing part is left out")
-      summaryDown: '{{deposit}} down', summaryMonths_one: '1 month', summaryMonths_other: '{{count}} months', summaryApr: '{{apr}}%',
+      summaryDown: '{{deposit}} down', summaryMonths_one: '1\u00A0month', summaryMonths_other: '{{count}}\u00A0months', summaryApr: '{{apr}}%',
       summaryTimes: '{{count}} × {{payment}}',
       instalmentHasRate: 'Has a rate?', instalmentNo: 'No', instalmentYes: 'Yes', instalmentQuoted: 'Payment as quoted (optional)',
       instalmentRateNote_one: '1 payment of {{payment}} at {{apr}}%, on the day. Interest over the plan is {{interest}}.',
@@ -1908,15 +1908,15 @@ const en = {
       instalmentRateNoteMonth_other: '{{count}} payments of {{payment}} at {{apr}}%, the first in a month. Interest over the plan is {{interest}}.',
       instalmentCalcNote: 'The rate works out to {{calc}} a month; the quote is {{typed}}.',
       instalmentFirst: 'First payment', instalmentToday: 'Today', instalmentInMonth: 'In a month',
-      horizonOver: 'Over', horizonCustom: 'Custom', horizonYears_one: '1 year', horizonYears_other: '{{count}} years',
+      horizonOver: 'Over', horizonCustom: 'Custom', horizonYears_one: '1\u00A0year', horizonYears_other: '{{count}}\u00A0years',
       expectedReturn: 'Expected return, % a year (optional)',
-      projection_one: 'About {{fv}} after 1 month at {{rate}}% a year. A projection at the rate you entered, not a forecast.',
-      projection_other: 'About {{fv}} after {{count}} months at {{rate}}% a year. A projection at the rate you entered, not a forecast.',
-      assumptionReturn: 'Expected return', assumptionReturnValue: '{{rate}}% a year, used for the projection only',
+      projection_one: 'About {{fv}} after 1\u00A0month at {{rate}}%\u00A0a year. A projection at the rate you entered, not a forecast.',
+      projection_other: 'About {{fv}} after {{count}}\u00A0months at {{rate}}%\u00A0a year. A projection at the rate you entered, not a forecast.',
+      assumptionReturn: 'Expected return', assumptionReturnValue: '{{rate}}%\u00A0a year, used for the projection only',
       onDay: 'On the day', aMonth: 'A month', total: 'Total paid',
       flagNotAccepted: 'Not accepted', flagPartOnCard: 'Part on the card', flagBelowPrice: 'Below the price', // flagBelowPrice: D-49 (04 LO-05) instalment_total_below_price
       noteCash: 'Leaves {{cash}} in cash. No interest, nothing owed after.',
-      noteInvestMonthly: '{{amount}} a month for {{count}} months is {{total}} put in.',
+      noteInvestMonthly: '{{amount}} a month for {{count}}\u00A0months is {{total}} put in.',
       unnamedLine: 'Unnamed',
       loanDeposit: 'Deposit', loanInterestSaved: 'Interest saved', loanCashLeft: 'Cash left after', loanTerm: 'Term', loanTermUnit: 'mo',
       loanTermNote_one: 'At 1\u00A0month the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total.',
@@ -1951,11 +1951,11 @@ const en = {
     verdict: {
       key: {
         leftCaption: 'Left a month', cushionCaption: 'Cushion', monthlyCaption: 'A month', putInCaption: 'Put in a month',
-        months_one: '1\u00A0month', months_other: '{{count}}\u00A0months', underOne: 'Under 1 month', notLimited: 'Not limited', none: 'None',
+        months_one: '1\u00A0month', months_other: '{{count}}\u00A0months', underOne: 'Under 1\u00A0month', notLimited: 'Not limited', none: 'None',
         a11y: 'Left each month after this: {{left}}. Cushion: {{months}} of costs. Monthly cost: {{monthly}}.',
       },
-      projection_one: 'At {{rate}}% a year: about {{fv}} after 1 month. Not a forecast.',
-      projection_other: 'At {{rate}}% a year: about {{fv}} after {{count}} months. Not a forecast.',
+      projection_one: 'At {{rate}}%\u00A0a year: about {{fv}} after 1\u00A0month. Not a forecast.',
+      projection_other: 'At {{rate}}%\u00A0a year: about {{fv}} after {{count}}\u00A0months. Not a forecast.',
       titleNoAlreadyShort: 'Your {{basis}} month is already {{already}} short. This makes it {{short}}.',
       titleNoMonthShort: 'The month ends {{short}} short.',
       titleUnexplained: 'The detail behind this answer is not available.', // IN-B07: a defensive fallback in place of a zero-amount claim
@@ -2015,7 +2015,7 @@ const en = {
       cardNotAcceptedTitle: 'Not accepted on a card', cardNotAcceptedValue: 'Declined',
       cardRemainderTitle: '{{rest}} is counted as cash on the day',
       cardRemainderBody: 'The card covers {{cap}} of a {{price}} price. The rest is tested as cash on the day, like any other day-one cost.',
-      cardMinimumTitle: 'Minimum payments do not clear it', cardMinimumNever: 'Never clears', cardMinimumYears: '{{count}} years',
+      cardMinimumTitle: 'Minimum payments do not clear it', cardMinimumNever: 'Never clears', cardMinimumYears: '{{count}}\u00A0years',
       cardMinimumNeverBody: 'At the minimum, interest matches what you pay, so the balance never reaches zero.',
       cardMinimumBody: 'It takes {{months}} months — {{years}} years — and {{interest}} in interest on a {{balance}} balance.',
       cardCapTitle: 'Not cleared within 50 years', cardCapValue: '{{amount}} left', cardCapBody: 'At the minimum, {{amount}} is still owed after 50 years on a {{balance}} balance.', // D-46 (04 HI-02): card.remainingAtCap
@@ -2043,10 +2043,10 @@ const en = {
       lineOwe: 'Unsecured debt', lineOweDesc: '{{amount}} against your {{line}} line',
       lineInvesting: 'Investing floor', lineInvestingDesc: '{{after}} a month against your {{floor}} floor', lineInvestingNoFloor: '{{after}} a month, no floor set',
       lineSaving: 'Saving floor', lineSavingDesc: '{{after}} a month against your {{floor}} floor',
-      setbacksTitle: 'If something goes wrong', setbacksSummary: 'Runway {{count}} months', setbacksSummaryOpen: 'Runway not limited',
+      setbacksTitle: 'If something goes wrong', setbacksSummary: 'Runway {{count}}\u00A0months', setbacksSummaryOpen: 'Runway not limited',
       setbacksNote: 'Switch one on to see it hit your cash with this purchase already running.',
       setback: { unexpected_expense: 'Unexpected expense', income_drop: 'Income drops', job_loss: 'Job or client loss', late_invoice: 'Invoices pay late' },
-      setbackDesc: { unexpected_expense: 'One month’s costs, once', unexpectedAmount: '{{amount}}, once', income_drop: '{{pct}}% less for {{count}} months', job_loss: 'No income for {{count}} months', late_invoice: 'Paid {{count}} days late' },
+      setbackDesc: { unexpected_expense: 'One month’s costs, once', unexpectedAmount: '{{amount}}, once', income_drop: '{{pct}}% less for {{count}}\u00A0months', job_loss: 'No income for {{count}}\u00A0months', late_invoice: 'Paid {{count}} days late' },
       setbackHit: '−{{amount}}', setbackAfter: '{{amount}} left', setbackWiped: 'wiped out', setbackAdd: '+ Add a setback to test',
       outcome: { wiped_out: 'With those running, cash runs out. Cash left:', through_cushion: 'That takes you through the cushion you set. Cash left:', absorbed: 'The cushion absorbs it. Cash left:' },
       optionsTitle: 'What would make it work', optionsSummary_one: '{{count}} option', optionsSummary_other: '{{count}} options',
@@ -2056,10 +2056,10 @@ const en = {
       optTerm: 'A {{count}}-month term', optTermValue: '+{{amount}}/mo', optTermStill: 'still short', optTermDesc: '{{payment}} a month, with {{interest}} more interest over the term.', optUseTerm: 'Use this term',
       optCut: 'A fifth off {{line}}', optCutDesc: '{{cut}} a month less on {{line}}, against a {{gap}} gap.', optOpenActivity: 'Open in Activity',
       optEarn: '{{amount}} more a month coming in', optEarnDesc: 'That is {{pct}}% more than your {{basis}} month brings in.',
-      optSaveFirst: 'Saving first, then buying', optSaveFirstDesc: '{{amount}} a month for {{count}} months covers it.', optSaveFirstOpen: '{{amount}} still to cover, with nothing spare each month.', optSwitchWait: 'Switch to wait',
-      optWithout: 'Without it', optWithoutValue: '{{amount}}/mo kept', optWithoutDesc: 'Kept instead: {{amount}} over {{count}} months.', optWithoutDescTooLarge: 'Kept instead: too large to project over {{count}} months.', // D-47 (04 ME-01)
+      optSaveFirst: 'Saving first, then buying', optSaveFirstDesc: '{{amount}} a month for {{count}}\u00A0months covers it.', optSaveFirstOpen: '{{amount}} still to cover, with nothing spare each month.', optSwitchWait: 'Switch to wait',
+      optWithout: 'Without it', optWithoutValue: '{{amount}}/mo kept', optWithoutDesc: 'Kept instead: {{amount}} over {{count}}\u00A0months.', optWithoutDescTooLarge: 'Kept instead: too large to project over {{count}}\u00A0months.', // D-47 (04 ME-01)
       assumptionsTitle: 'Assumptions in play', assumptionsSummary_one: '{{count}} assumption', assumptionsSummary_other: '{{count}} assumptions',
-      asIncome: 'Money in', asIncomeValue: '{{count}} months logged · {{steadiness}} · {{basis}}',
+      asIncome: 'Money in', asIncomeValue: '{{count}}\u00A0months logged · {{steadiness}} · {{basis}}',
       asExpenses: 'Expenses', asExpensesValue: '{{amount}} a month',
       asDebt: 'Debt', asDebtValue_one: '{{count}} account · {{amount}} unsecured', asDebtValue_other: '{{count}} accounts · {{amount}} unsecured',
       asReturn: 'Return on money kept', asReturnValue: '{{rate}}%', asReturnZero: '0% unless you entered one',
@@ -2071,19 +2071,19 @@ const en = {
       asCardNoRate: 'Card interest', asCardNoRateValue: 'Card minimums are counted without interest until the card’s rate is set.',
     },
     alt: {
-      heading: 'Four ways, same {{count}} months', subZero: 'Kept at 0% unless you add a rate', subRate: 'Kept, at {{rate}}% a year',
-      addRate: '+ Add a rate', rateA11y: 'Return, percent', rateChip: '{{rate}}% a year', removeRateA11y: 'Remove the rate',
+      heading: 'Four ways, same {{count}}\u00A0months', subZero: 'Kept at 0% unless you add a rate', subRate: 'Kept, at {{rate}}%\u00A0a year',
+      addRate: '+ Add a rate', rateA11y: 'Return, percent', rateChip: '{{rate}}%\u00A0a year', removeRateA11y: 'Remove the rate',
       row: { as_planned: 'As planned', cheaper: 'Cheaper one', wait_and_save: 'Wait and save', skip: 'Not buying it' },
       descPlanned: '{{price}} · {{method}}', descCheaper: '{{price}} · deposit scaled to match', descCheaperInstalments: '{{price}} · instalments scaled to match', descCheaperPlain: '{{price}} · {{method}}', reasonTooLarge: 'Too large to project at this rate', descWait: 'Bought at month {{count}}, then {{payment}} a month kept', descSkip: 'You own nothing',
       onDay: 'On the day', aMonth: 'A month', kept: 'Kept', keptRate: 'Kept, at {{rate}}%', dash: '—',
       reasonMonthShortCheaper: 'Month still {{amount}} short on this plan', reasonMonthShort: 'Month is {{amount}} short — nothing spare',
       reasonTooThin: 'Only {{amount}} a month left — too thin to count', reasonNothingFreed: 'Nothing freed against buying as planned',
-      reasonPastHorizon: 'Takes {{count}} months — past the {{horizon}}-month horizon', reasonNothingSpare: 'No cash above cushion, no monthly surplus',
+      reasonPastHorizon: 'Takes {{count}}\u00A0months — past the {{horizon}}-month horizon', reasonNothingSpare: 'No cash above cushion, no monthly surplus',
       footer: 'The last figure is money kept: the cash you keep on the day plus the payment you never make, capped at what is genuinely spare — {{spareCash}} above your cushion and {{spareMonth}} a month. Each row is measured against buying as planned — money set aside, plus growth only if you add a rate, no tax or fees, and no guarantee.',
       footerPlanned: 'Nothing is freed to save on the planned route.',
       footerCheaper: 'The cheaper row starts with the {{amount}} kept on the day.',
       footerWait: 'Waiting buys outright at month {{count}} and then keeps the {{payment}} a month you no longer owe.',
-      spendTitle: 'The cheaper one, and what it leaves', spendSub: 'The difference stays yours for the whole {{count}} months.',
+      spendTitle: 'The cheaper one, and what it leaves', spendSub: 'The difference stays yours for the whole {{count}}\u00A0months.',
       spendCheaper: 'Cheaper one', spendNotSpent: 'Not spent', spendDayMonth: '{{day}} less on the day, then {{month}} a month',
       spendAllOnDay: 'All of it on the day', spendMonthOnly: '{{month}} a month, nothing on the day', spendNothing: 'Nothing changes on this plan',
       spendSliderA11y: 'Cheaper price', spendSliderValue: '{{pct}} percent of {{price}}', spendRatio: '{{pct}}% of {{price}}',
@@ -2091,7 +2091,7 @@ const en = {
       tradeThin: 'Buying at {{cheaper}} lowers the payment from {{from}} to {{to}}, but the month still only leaves {{left}} — nothing you could reliably set aside.',
       tradeKept: 'Buying at {{cheaper}} leaves {{today}} today and {{monthly}} a month kept. Kept up until month {{count}}, that is {{fv}} — {{own}} of your own money.',
       tradeKeptGrowth: 'Buying at {{cheaper}} leaves {{today}} today and {{monthly}} a month kept. Kept up until month {{count}}, that is {{fv}} — {{own}} of your own money and {{growth}} it earned.',
-      tradeKeptTooLarge: 'Buying at {{cheaper}} leaves {{today}} today and {{monthly}} a month kept. Over {{count}} months it is too large to project at this rate.', // D-47: the cheaper row's projected is null
+      tradeKeptTooLarge: 'Buying at {{cheaper}} leaves {{today}} today and {{monthly}} a month kept. Over {{count}}\u00A0months it is too large to project at this rate.', // D-47: the cheaper row's projected is null
       tradeUseCheaper: 'Use the cheaper price', tradeWait: 'Wait and save',
     },
     decision: {
@@ -2108,9 +2108,9 @@ const en = {
       writtenNone: 'Nothing is written yet', writtenHeading: 'What gets written',
       writtenCash: 'A pending expense of {{amount}} on {{date}}, in {{account}}.',
       writtenDeposit: 'A pending expense of {{amount}} on {{date}} for the day-one cost, in {{account}}.',
-      writtenLoan: 'A debt of {{amount}} at {{apr}}%, and a recurring payment of {{payment}} a month for {{count}} months.',
-      writtenLoanSecured: 'A debt of {{amount}}, secured, at {{apr}}%, and a recurring payment of {{payment}} a month for {{count}} months.',
-      writtenLoanThen: 'Then {{payment}} a month for {{count}} months.', writtenLoanFinal: 'A last payment of {{payment}} in month {{count}}.', // D-45: one line per later paymentSteps run (a promotion's second run, a one-month final run), so the list matches 05-20's writes
+      writtenLoan: 'A debt of {{amount}} at {{apr}}%, and a recurring payment of {{payment}} a month for {{count}}\u00A0months.',
+      writtenLoanSecured: 'A debt of {{amount}}, secured, at {{apr}}%, and a recurring payment of {{payment}} a month for {{count}}\u00A0months.',
+      writtenLoanThen: 'Then {{payment}} a month for {{count}}\u00A0months.', writtenLoanFinal: 'A last payment of {{payment}} in month {{count}}.', // D-45: one line per later paymentSteps run (a promotion's second run, a one-month final run), so the list matches 05-20's writes
       writtenInstalment: 'A recurring payment of {{payment}} a month, {{count}} times.',
       writtenCard: 'A pending expense of {{amount}} on {{card}}.',
       writtenCardPayoff: 'A recurring payment of {{payment}} a month toward {{card}}, {{count}} times, from {{account}}.',
@@ -2247,15 +2247,15 @@ const en = {
       },
       invest: {
         section: 'If it went into investing instead', summary: 'A projection at the rate you enter',
-        zero: '0%', rateChip: '{{rate}}% a year', addRate: '+ Add a rate', maxRates: 'Up to 3 rates', removeRateA11y: 'Remove the {{rate}}% rate',
+        zero: '0%', rateChip: '{{rate}}%\u00A0a year', addRate: '+ Add a rate', maxRates: 'Up to 3 rates', removeRateA11y: 'Remove the {{rate}}% rate',
         priceTitle: 'Price invested instead', priceLine: '{{amount}} put in once. After {{months}} months: {{value}}.',
         paymentsTitle: 'Payments invested instead', paymentsLine: '{{amount}} a month for {{months}} months, running costs included. After {{months}} months: {{value}}.',
         pauseTitle: 'Investing growth lost to a pause', pauseLine: '{{amount}} a month paused. Growth not earned over {{months}} months: {{value}}.', pauseNone: 'This plan pauses no investing.',
         netWorthTitle: 'Net worth, with and without this', netWorthAlt: 'After {{months}} months: {{with}} with this, {{without}} without, at {{rate}}%.',
         caption: 'A projection at the rate you entered, not a forecast.', captionZero: 'At 0% the money is only held, not grown.',
         feeLabel: 'Holding fee (optional)', feeSuffix: 'a year', feeA11y: 'Holding fee, percent a year', feeSub: 'Platform and fund fees a year, if any. Nothing is assumed.', // D-44
-        rateNet: '{{rate}}% a year, {{net}}% after fees', captionFee: 'A projection at the rate you entered less the {{fee}}% fee, not a forecast.', captionZeroFee: 'At 0% the money is only held, and the {{fee}}% fee comes off it.',
-        tooLarge: 'Too large to project at this rate', axisMonths: '{{count}} mo', netWorthAltTooLarge: 'After {{months}} months the path is too large to project at {{rate}}%.', // D-47
+        rateNet: '{{rate}}%\u00A0a year, {{net}}% after fees', captionFee: 'A projection at the rate you entered less the {{fee}}% fee, not a forecast.', captionZeroFee: 'At 0% the money is only held, and the {{fee}}% fee comes off it.',
+        tooLarge: 'Too large to project at this rate', axisMonths: '{{count}}\u00A0mo', netWorthAltTooLarge: 'After {{months}} months the path is too large to project at {{rate}}%.', // D-47
         rateCap: 'Up to 100% a year', // D-48
         horizonA11y: 'Months to project', netWorthRateA11y: 'Rate for the net worth chart', // 05-45
       },
@@ -2272,7 +2272,7 @@ const en = {
         lineNever: 'With the expected {{amount}} a month ({{likelihood}}): {{state}}, does not pay for itself within {{months}} months.',
         state: { fits: 'fits', adjust: 'needs adjustment', no: 'does not fit' }, likelihood: { likely: 'likely', uncertain: 'uncertain' },
         rows: { income: 'Income with it', left: 'Month left', payback: 'Pays for itself', total: 'Total cost', state: 'State', sure: 'How sure' }, // addition
-        rowMonths_one: '{{count}} month', rowMonths_other: '{{count}} months', rowNever: 'Not within {{months}} months', // addition (05-42)
+        rowMonths_one: '{{count}}\u00A0month', rowMonths_other: '{{count}}\u00A0months', rowNever: 'Not within {{months}} months', // addition (05-42)
       },
       runway: { summary: 'Runway {{months}} months, {{lost}} less because of this', lost: 'Runway lost to this purchase: {{months}} months', met: 'New payments still met', notMet: 'New payments cannot be met' },
       running: { addAmount: 'Add amount', typeToCount: 'Type an amount to count it', insurance: 'Insurance', fuel: 'Fuel', maintenance: 'Maintenance', registration: 'Registration', loss_of_value: 'Loss of value', notCash: 'Not a monthly cash cost',

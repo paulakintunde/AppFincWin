@@ -227,7 +227,7 @@ describe('investViewCopy', () => {
       }),
       fmt,
     );
-    expect(c.price.rows.map((r) => text(r.label))).toEqual(['0% a year, −1% after fees', '5% a year, 4% after fees']);
+    expect(c.price.rows.map((r) => text(r.label))).toEqual(['0% a year, −1% after fees', '5% a year, 4% after fees']);
     expect(c.price.rows[0]?.caption).toEqual({ key: `${D}invest.captionZeroFee`, params: { fee: '1' } });
     expect(c.price.rows[1]?.caption).toEqual({ key: `${D}invest.captionFee`, params: { fee: '1' } });
     expect(text(c.price.rows[1]!.caption)).toBe('A projection at the rate you entered less the 1% fee, not a forecast.');

@@ -100,8 +100,8 @@ describe('foldCopy', () => {
   it('D-82 investment fold 7 reads What it could grow to with its preview', () => {
     expect(t(FOLD_TITLE_INVEST.ifInvested ?? '')).toBe('What it could grow to');
     expect(FOLD_INFO_INVEST.ifInvested).toBe('expectedReturn');
-    expect(text(investPreview({ fv: '$1,234', months: 120, rate: '7' }))).toBe('$1,234 after 120 months at 7% a year');
-    expect(text(investPreview({ fv: '$1,234', months: 1, rate: '7' }))).toBe('$1,234 after 1 month at 7% a year');
+    expect(text(investPreview({ fv: '$1,234', months: 120, rate: '7' }))).toBe('$1,234 after 120\u00A0months at 7%\u00A0a year');
+    expect(text(investPreview({ fv: '$1,234', months: 1, rate: '7' }))).toBe('$1,234 after 1\u00A0month at 7%\u00A0a year');
     expect(text(investPreview(null))).toBe('No expected return set');
     expect(text(investPreview('outOfRange'))).toBe('Too large to project at this rate');
   });
