@@ -32,6 +32,13 @@ export const RUNNING_COST_BUILTIN: Readonly<Partial<Record<RunningCostCategory, 
   fuel: 'Transport',
   maintenance: 'Transport',
   registration: 'Transport',
+  // D-92: there is no Education built-in, so books_materials stays unmapped (its Go ahead line falls back as unmapped prompts do)
+  property_tax: 'Tax',
+  home_insurance: 'Insurance',
+  utilities: 'Utilities',
+  service_charge: 'Housing',
+  accommodation: 'Housing',
+  travel: 'Transport',
 };
 
 /** The category id for each running-cost prompt, from the user's built-in category ids (a missing one is left out). */
