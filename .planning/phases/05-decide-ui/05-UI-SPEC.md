@@ -2440,7 +2440,7 @@ A quick check run here shows the existing "Missing terms" result in the card.
 | Notice row | "{{count}} item needs a look" / "{{count}} items need a look" · "Offline" · "Offline · {{count}} change waiting" / "Offline · {{count}} changes waiting" · "Saving…"; hint "Opens the list" |
 | Problems sheet | "Needs a look" · the titles, "Affects:" lines and actions in R17.5 · "They send when the connection returns." · "Close" |
 | Month details sheet | title = the card label · existing Your-month copy · existing sources note · "Close" |
-| Card a11y | "{{cardLabel}}: {{amount}} left after spending, debts and saving. In {{in}}, out {{out}}." · "… {{amount}} short this month …" · hint "Opens month details" |
+| Card a11y | "{{cardLabel}}: {{amount}} left after spending, debts and saving. In {{in}}, out {{out}}." · "… {{amount}} short after spending, debts and saving …" · hint "Opens month details" |
 | Retired | "DECIDE" eyebrow on this screen · "Judged on your real accounts, not the price tag." · "Your month" card heading · the white quick-check card's "Clear the check" · "No checks open" / "Nothing dated yet" (already retired) · the inline sources note |
 
 None of the copy carries reassurance, advice or an opening money imperative. "Check it", "Full check", "Review changes", "Review edits", "Add rough figures", "Exchange rates" and "Card minimum payment" are UI controls on the guard's keyed list.
