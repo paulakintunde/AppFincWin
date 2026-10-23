@@ -517,10 +517,9 @@ describe('MethodPanels', () => {
       expect(mockUpdate(p)).toHaveBeenLastCalledWith({ investTermMonths: 60 });
     });
 
-    it('with a rate entered, states what it would be worth as a projection', async () => {
-      await renderStep({ kind: 'invest', method: 'monthly', advertised: 20_000, investTermMonths: 12, projectionRates: ['5'] });
-      expect(screen.getByText(/^At 5% it would be worth about \$/)).toBeTruthy();
-      expect(screen.getByText('A projection at the rate you entered, not a forecast.')).toBeTruthy();
+    it('with an expected return entered, states what it could grow to as a projection', async () => {
+      await renderStep({ kind: 'invest', method: 'monthly', advertised: 20_000, investTermMonths: 12, investReturnText: '5' });
+      expect(screen.getByText(/^About \$\d+ after 12 months at 5% a year\. A projection at the rate you entered, not a forecast\./)).toBeTruthy();
     });
 
     it('a lump sum has no panel', async () => {

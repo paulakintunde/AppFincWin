@@ -8,8 +8,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { ZERO_PERCENT, cardEligibility, percent, resolvePlan } from '@/engine/decide';
 import type { Plan } from '@/engine/decide';
-import { minorUnits } from '@/engine/money';
-import { futureValue } from '@/engine/payoff';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
@@ -22,7 +20,8 @@ import { canUse } from '../../../entitlements';
 import { cardCostsCopy } from '../../../copy/cardTermsCopy';
 import { instalmentNotes } from '../../../copy/instalmentCopy';
 import { percentText } from '../../../copy/percentText';
-import { isValidAprText, toEngineCheck } from '../../../snapshot/checkInputs';
+import { isValidAprText, isValidProjectionRateText, toEngineCheck } from '../../../snapshot/checkInputs';
+import { LUMP_HORIZON_DEFAULT, expectedReturnProjection } from '../../../snapshot/expectedReturn';
 import type { CardNoteAnswer, CheckInputs, MethodKey } from '../../../snapshot/types';
 import { FigureStrip } from '../../../ui/FigureStrip';
 import { CustomValueChips, CustomValueField } from '../../../ui/CustomValueChips';
@@ -614,18 +613,85 @@ function CardPanel(props: Step2Props) {
   );
 }
 
+// ── Investment: shared expected-return field and projection note (D-82, R15.5) ──
+const RETURN_MAX_TYPED = '100'; // gates keystrokes only; isValidProjectionRateText is the check
+const HORIZON_CHIPS = [12, 60, 120, 240] as const;
+const HORIZON_MAX = 600;
+
+/** The optional expected return: blank by default, never pre-filled, kept as text and bounded 0-100. */
+function ExpectedReturnField({ inputs, update, readOnly }: Pick<Step2Props, 'inputs' | 'update' | 'readOnly'>) {
+  const t = useT();
+  const returnInfo = useInfoSheet('expectedReturn');
+  return (
+    <>
+      <RateInput
+        value={inputs.investReturnText ?? ''}
+        onChange={(text) => update({ investReturnText: text === '' ? null : text })}
+        label={t('decide.pay.expectedReturn')}
+        accessibilityLabel={t('decide.pay.expectedReturn')}
+        hint={t('decide.custom.range.aprUpTo')}
+        max={RETURN_MAX_TYPED}
+        rangeText={t('decide.custom.range.aprUpTo')}
+        readOnly={readOnly}
+        labelAccessory={returnInfo.button()}
+      />
+      {returnInfo.sheet}
+    </>
+  );
+}
+
+/** "About {fv} after {n} months at {r}% a year. A projection ..., not a forecast." Display only. */
+function ProjectionNote({ props }: { props: Step2Props }) {
+  const { inputs, computation, source, whole } = props;
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  const wholeFmt = moneyFn(whole, source.currency);
+  const projection = expectedReturnProjection(inputs, computation.check);
+  if (projection === null) return null;
+  return (
+    <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>
+      {projection.fv === null
+        ? t('decide.depth.invest.tooLarge')
+        : t('decide.pay.projection', { count: projection.months, fv: wholeFmt(projection.fv), rate: projection.rateText })}
+    </Text>
+  );
+}
+
 // ── Investment: lump sum ──
 function InvestLumpPanel(props: Step2Props) {
-  const { source, whole, exact } = props;
+  const { inputs, update, source, whole, exact, readOnly } = props;
   const t = useT();
   const wholeFmt = moneyFn(whole, source.currency);
   const exactFmt = moneyFn(exact, source.currency);
   const plan = resolvedPlan(props, 'lump');
-  if (plan === null) return null;
+  const hasReturn = inputs.investReturnText !== null && isValidProjectionRateText(inputs.investReturnText);
   return (
-    <OutputsTile>
-      <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
-    </OutputsTile>
+    <View style={styles.panel}>
+      <ExpectedReturnField inputs={inputs} update={update} readOnly={readOnly} />
+      {hasReturn ? (
+        <>
+          <Label>{t('decide.pay.horizonOver')}</Label>
+          <CustomValueChips
+            presets={HORIZON_CHIPS}
+            value={inputs.lumpHorizonMonths ?? LUMP_HORIZON_DEFAULT}
+            onChange={(n) => update({ lumpHorizonMonths: n })}
+            groupLabel={t('decide.pay.horizonOver')}
+            min={MIN_TERM}
+            max={HORIZON_MAX}
+            rangeText={t('decide.custom.range.horizon')}
+            unitWord={t('decide.custom.unit.months')}
+            formatPreset={(n) => (n % 12 === 0 && HORIZON_CHIPS.some((c) => c === n) ? t('decide.pay.horizonYears', { count: n / 12 }) : t('decide.custom.months', { count: n }))}
+            readOnly={readOnly}
+          />
+        </>
+      ) : null}
+      {plan !== null || hasReturn ? (
+        <OutputsTile>
+          <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
+          <ProjectionNote props={props} />
+        </OutputsTile>
+      ) : null}
+    </View>
   );
 }
 
@@ -638,17 +704,7 @@ function InvestMonthlyPanel(props: Step2Props) {
   const exactFmt = moneyFn(exact, source.currency);
   const term = inputs.investTermMonths;
   const monthly = inputs.advertised;
-  const rateText = inputs.projectionRates[0];
   const plan = resolvedPlan(props, 'monthly');
-
-  let worth: string | null = null;
-  if (term !== null && monthly !== null && monthly > 0 && rateText !== undefined) {
-    try {
-      worth = wholeFmt(futureValue(minorUnits(monthly), percent(rateText), term, minorUnits(0)));
-    } catch {
-      worth = null; // a figure past the safe range is not shown, never guessed
-    }
-  }
 
   return (
     <View style={styles.panel}>
@@ -664,6 +720,7 @@ function InvestMonthlyPanel(props: Step2Props) {
         unitWord={t('decide.custom.unit.months')}
         readOnly={props.readOnly}
       />
+      <ExpectedReturnField inputs={inputs} update={update} readOnly={props.readOnly} />
       {plan !== null || (term !== null && monthly !== null && monthly > 0) ? (
         <OutputsTile>
           <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
@@ -672,12 +729,7 @@ function InvestMonthlyPanel(props: Step2Props) {
               {t('decide.pay.noteInvestMonthly', { amount: exactFmt(monthly), count: term, total: wholeFmt(monthly * term) })}
             </Text>
           ) : null}
-          {worth !== null && rateText !== undefined ? (
-            <>
-              <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>{t('decide.pay.noteInvestWorth', { rate: rateText, fv: worth })}</Text>
-              <Meta>{t('decide.pay.noteInvestCaption')}</Meta>
-            </>
-          ) : null}
+          <ProjectionNote props={props} />
         </OutputsTile>
       ) : null}
     </View>
