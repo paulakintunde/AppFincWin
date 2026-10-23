@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { colors as base, warnTint } from '@/theme/tokens';
@@ -28,9 +29,11 @@ const style = (node: { props: { style?: unknown } }) =>
 
 function wrap(ui: React.ReactElement) {
   return render(
+    <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top: 62, bottom: 34, left: 0, right: 0 } }}>
     <ThemeProvider>
       <FontScaleProvider value={1}>{ui}</FontScaleProvider>
-    </ThemeProvider>,
+    </ThemeProvider>
+    </SafeAreaProvider>,
   );
 }
 
