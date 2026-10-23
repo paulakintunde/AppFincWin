@@ -638,7 +638,10 @@ describe('TransactionSheet: keypad, toggles, notes and wording (REC-20)', () => 
 
   it('shows the FX note with the stored rate for a foreign line', async () => {
     mockRates = [{ quote: 'GBP', rate: '0.86', rate_date: '2026-09-24', source: 'frankfurter-v2' }];
-    const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out', accountId: 'a3' });
+    const { getByLabelText, getByText, getByTestId } = await open({ kind: 'new', direction: 'out', accountId: 'a3' });
+    // D-93: a new line starts in the home currency; pick the foreign one on the line.
+    await fireEvent.press(getByLabelText('Currency'));
+    await fireEvent.press(within(getByTestId('currency-section-popular')).getByText('EUR · Euro'));
     await typeAmount(getByLabelText, '10');
     expect(getByText(/Saves as £8\.60 in GBP at 1 EUR = .* GBP\. The original €10\.00 stays on the record\./)).toBeTruthy();
   });

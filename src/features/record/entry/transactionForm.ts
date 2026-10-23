@@ -42,6 +42,8 @@ export interface FormState {
 export interface FormContext {
   today: string;
   defaultAccount: { id: string; currency: string } | null;
+  /** D-93.3: the household's home currency, the default for a new expense or income line. */
+  homeCurrency: string;
   /**
    * S-CR-01: the unsigned magnitude of a stored amount as field text, in the resolved
    * region's own decimal mark and the currency's own exponent (useAmountParser's
@@ -118,8 +120,11 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
   }
   const localDate = mode.localDate ?? ctx.today;
   const accountId = mode.accountId ?? ctx.defaultAccount?.id ?? null;
-  const currency =
+  const accountCurrency =
     (accountId !== null ? ctx.accountCurrency?.(accountId) : undefined) ?? ctx.defaultAccount?.currency ?? '';
+  // D-93.3: a new expense or income starts in the home currency; a transfer's from-leg is always
+  // in its account's own currency. Prefill (below) keeps its stored currency.
+  const currency = mode.direction === 'transfer' ? accountCurrency : ctx.homeCurrency || accountCurrency;
   const pf = mode.prefill;
   if (pf) {
     return {

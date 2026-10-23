@@ -191,6 +191,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const formCtx: FormContext = {
     today: rc.today,
     defaultAccount: activeAccounts[0] ? { id: activeAccounts[0].id, currency: activeAccounts[0].currency } : null,
+    homeCurrency: rc.homeCurrency,
     amountInputText: (minor, code) => parser.toInputText(minor, code, exponentFor(code)),
     accountCurrency: (id) => accounts.find((a) => a.id === id)?.currency,
   };

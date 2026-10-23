@@ -21,6 +21,8 @@ import {
 const ctx: FormContext = {
   today: '2026-09-25',
   defaultAccount: { id: 'a1', currency: 'GBP' },
+  homeCurrency: 'USD',
+  accountCurrency: (id) => (id === 'a1' ? 'GBP' : id === 'a2' ? 'EUR' : undefined),
   amountInputText: (minor, code) => toDecimalString(minorUnits(minor), resolveExponent(code)),
 };
 
@@ -56,13 +58,54 @@ describe('initialFormState', () => {
       name: '',
       categoryId: null,
       accountId: 'a1',
-      currency: 'GBP',
+      currency: 'USD',
       localDate: '2026-09-25',
       status: 'paid',
       statusTouched: false,
       paymentType: null,
       note: '',
     });
+  });
+
+  it('D-93 a new expense defaults to the home currency', () => {
+    expect(newOut().currency).toBe('USD');
+    expect(initialFormState({ kind: 'new', direction: 'in', accountId: 'a2' }, ctx).currency).toBe('USD');
+  });
+
+  it('D-93 an edit keeps its stored currency', () => {
+    const s = initialFormState({ kind: 'edit', row: row({ original_currency: 'GBP' }) }, ctx);
+    expect(s.currency).toBe('GBP');
+  });
+
+  it('D-93 a prefill keeps its stored currency', () => {
+    const s = initialFormState(
+      {
+        kind: 'new',
+        direction: 'out',
+        prefill: {
+          amountMinor: 500,
+          currency: 'GBP',
+          name: 'Rent',
+          categoryId: null,
+          accountId: 'a1',
+          paymentType: null,
+          isAutomatic: false,
+          isRefund: false,
+        },
+      } as Parameters<typeof initialFormState>[0],
+      ctx
+    );
+    expect(s.currency).toBe('GBP');
+  });
+
+  it('D-93 transfer legs keep their account currencies', () => {
+    const s = initialFormState({ kind: 'new', direction: 'transfer', accountId: 'a2' }, ctx);
+    expect(s.currency).toBe('EUR');
+    const out = row({ id: 'o', original_currency: 'GBP', original_amount: -1000, transfer_id: 't' });
+    const inn = row({ id: 'i', account_id: 'a2', original_currency: 'EUR', original_amount: 1100, transfer_id: 't' });
+    const e = initialFormState({ kind: 'edit-transfer', out, in: inn }, ctx);
+    expect(e.currency).toBe('GBP');
+    expect(e.toCurrency).toBe('EUR');
   });
 
   it('takes every value from an edited row', () => {
@@ -163,7 +206,7 @@ describe('toAddInput', () => {
 
   it('signs by direction, trims the name and nulls an empty note', () => {
     const out = toAddInput({ ...newOut(), name: '  Tea ', amountText: '4.20' }, 420, c);
-    expect(out).toMatchObject({ amount: -420, name: 'Tea', note: null, accountId: 'a1', currency: 'GBP' });
+    expect(out).toMatchObject({ amount: -420, name: 'Tea', note: null, accountId: 'a1', currency: 'USD' });
     const inc = toAddInput({ ...withDirection(newOut(), 'in'), name: 'Pay', note: 'x' }, 420, c);
     expect(inc).toMatchObject({ amount: 420, note: 'x' });
   });
