@@ -9,7 +9,7 @@
 // inside the component body or an effect.
 import type { ReactNode } from 'react';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { persistOptions, resumeRestoredMutations, trackServerFetches } from './cache/persister';
+import { persistOptions, resumeRestoredMutations, startPersistOnBackground, trackServerFetches } from './cache/persister';
 import { queryClient } from './queryClient';
 import { startOnlineManager } from './onlineManager';
 import { registerMutationDefaults } from './mutations';
@@ -18,6 +18,7 @@ import { hydrateLastSynced, trackSyncActivity } from './sync/lastSynced';
 import { startRatePendingSweep } from './sync/ratePendingSweep';
 
 registerMutationDefaults(queryClient);
+startPersistOnBackground(queryClient); // D-77: the write queue hits disk the moment the app backgrounds
 startOnlineManager();
 startRatePendingSweep(queryClient); // 02-47: retries rate_pending lines and failed account rate checks
 trackSyncActivity(queryClient);
