@@ -744,7 +744,7 @@ Plans:
 - [x] 05-88-PLAN.md — R16 copy: 4 new and 2 updated ⓘ entries, the M6 instalment table, card, tax and tuition notes, sync line strings (D-85..D-93)
 - [x] 05-89-PLAN.md — Engine E3a: amortise and amortiseDue take periods per year (D-89)
 - [x] 05-90-PLAN.md — Engine E4: impliedApr true-APR solver, bigint bisection (D-90)
-- [ ] 05-96-PLAN.md — "$" always means USD: formatAmount markers, formatMoneyA11y, a11y labels (D-94)
+- [x] 05-96-PLAN.md — "$" always means USD: formatAmount markers, formatMoneyA11y, a11y labels (D-94)
 - [x] 05-97-PLAN.md — FAB root cause: null-in-tabs surface rule and the sheet-stack watchdog (D-85)
 - [x] 05-100-PLAN.md — Record entry: new lines default to the home currency (D-93)
 - [x] 05-107-PLAN.md — Sync transport: request timeouts, 12 s backoff cap, resume, Supabase reachability, post-restore refetch (D-88)
@@ -752,7 +752,7 @@ Plans:
 **Wave 21** *(blocked on Wave 20 completion)*
 - [x] 05-91-PLAN.md — Engine E3b: instalment frequency, next_period, MAX_INSTALMENTS, monthly equivalent; inputs carry freq (D-89)
 - [x] 05-98-PLAN.md — You: the "Add" group, run after dismiss on transitionEnd; old import row removed (D-85)
-- [ ] 05-99-PLAN.md — No back on a tab root; cushion and runway "Over 50 years" (D-93)
+- [x] 05-99-PLAN.md — No back on a tab root; cushion and runway "Over 50 years" (D-93)
 - [x] 05-108-PLAN.md — Draft-save coalescing, age-aware sync line, idempotent replay test (D-88)
 
 **Wave 22** *(blocked on Wave 21 completion)*
