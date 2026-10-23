@@ -36,6 +36,8 @@ export interface SliderWithFieldProps {
   onChange: (minor: number) => void;
   sliderA11y: string;
   fieldA11y: string;
+  /** 05-84: a control drawn after the label (an info button); its sheet is mounted by the caller. */
+  labelAccessory?: React.ReactNode;
 }
 
 export function SliderWithField({
@@ -52,6 +54,7 @@ export function SliderWithField({
   onChange,
   sliderA11y,
   fieldA11y,
+  labelAccessory,
 }: SliderWithFieldProps) {
   const { colors, pairing } = useTheme();
   const t = useT();
@@ -89,7 +92,10 @@ export function SliderWithField({
 
   return (
     <View style={styles.block}>
-      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{label}</Text>
+      <View style={styles.labelRow}>
+        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted, flexShrink: 1 }}>{label}</Text>
+        {labelAccessory ?? null}
+      </View>
       {stacked ? (
         <View style={styles.stack}>
           {field}
@@ -112,6 +118,7 @@ export function SliderWithField({
 
 const styles = StyleSheet.create({
   block: { gap: space.gapSm / 2 },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
   stack: { gap: space.gapSm },
   slider: { flex: 1 },

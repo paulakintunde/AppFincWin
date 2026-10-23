@@ -10,7 +10,7 @@ import { minorUnits } from '@/engine/money';
 import { useT } from '@/i18n';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space } from '@/theme/layout';
+import { radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
@@ -25,10 +25,9 @@ import { refText } from '../refText';
 import { useEstimateBias } from '../useEstimateBias';
 import { EstimateGapNote } from './step2/EstimateGapNote';
 import { RunningCostPrompts, promptedLineIds } from './step2/RunningCostPrompts';
-import { MethodPanels } from './step2/MethodPanels';
 import type { Step2Props } from './step2/types';
 import { PaymentMethods } from './step2/PaymentMethods';
-import { Card, Eyebrow, Lock, Meta, moneyFn } from './stepUi';
+import { Card, Eyebrow, Label, Lock, Meta, moneyFn } from './stepUi';
 
 export type { Step2Props };
 
@@ -70,6 +69,24 @@ function EndsRow({ amount, confirmed, removeLabel, ends }: { amount: string; con
   );
 }
 
+/** R15.1: the tag on a line that takes off the price, with its tradeIn explanation beside it. */
+function TradeInTag() {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  const info = useInfoSheet('tradeIn');
+  return (
+    <View style={styles.tagRow}>
+      <View style={[styles.tag, { backgroundColor: colors.fill1 }]}>
+        <Text scale="capped" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.tabLabel, color: colors.inkDim }}>
+          {t('decide.pay.price.tradeInTag')}
+        </Text>
+      </View>
+      {info.button()}
+      {info.sheet}
+    </View>
+  );
+}
+
 export function Step2PriceAndPay(props: Step2Props) {
   const { inputs, update, computation, source, whole, exact, goToStep, readOnly } = props;
   const t = useT();
@@ -77,6 +94,9 @@ export function Step2PriceAndPay(props: Step2Props) {
   const bias = useEstimateBias();
   const runningInfo = useInfoSheet('runningCosts');
   const netInfo = useInfoSheet('netMonthly');
+  const priceInfo = useInfoSheet('price');
+  const taxFeesInfo = useInfoSheet('taxFees');
+  const finalInfo = useInfoSheet('finalPrice');
   const [editor, setEditor] = useState<'adjust' | 'running' | null>(null);
   const latest = useRef(inputs);
   useEffect(() => {
@@ -135,38 +155,50 @@ export function Step2PriceAndPay(props: Step2Props) {
     <View style={styles.column}>
       <Lock locked={readOnly}>
         <Card>
-          <View style={styles.head}>
-            <Eyebrow>{invest ? t('decide.price.amount') : t('decide.price.advertised')}</Eyebrow>
-            <Pressable accessibilityRole="button" accessibilityLabel={t('decide.price.edit')} accessibilityState={{ disabled: readOnly }} disabled={readOnly} onPress={() => goToStep(1)} style={styles.link}>
-              <Text style={linkStyle}>{t('decide.price.edit')}</Text>
+          <View style={styles.headWrap}>
+            <InfoTitle info={priceInfo} lineHeight={textRole(pairing, 'label').lineHeight}>
+              <Eyebrow>{invest ? t('decide.pay.price.amount') : t('decide.pay.price.head')}</Eyebrow>
+            </InfoTitle>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('decide.pay.price.edit')} accessibilityState={{ disabled: readOnly }} disabled={readOnly} onPress={() => goToStep(1)} style={styles.link}>
+              <Text style={linkStyle}>{t('decide.pay.price.edit')}</Text>
             </Pressable>
           </View>
-          <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{wholeFmt(inputs.advertised ?? 0)}</Text>
+          <Text scale="capped" maxFontSizeMultiplier={1.3} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+            {wholeFmt(inputs.advertised ?? 0)}
+          </Text>
+
+          <InfoTitle info={taxFeesInfo} lineHeight={textRole(pairing, 'label').lineHeight}>
+            <Label>{t('decide.pay.price.taxFees')}</Label>
+          </InfoTitle>
 
           {inputs.adjustments.map((l) => {
             const amount = lineAmount(l, inputs.advertised);
             const tag = [l.onDay ? t('decide.price.onDayTag') : null, l.note !== '' && l.note !== 'fees' ? l.note : null].filter(Boolean).join(' · ');
             return (
-              <CheckRow
-                key={l.id}
-                checked={l.counted}
-                onToggle={() => update({ adjustments: inputs.adjustments.map((x) => (x.id === l.id ? { ...x, counted: !x.counted } : x)) })}
-                name={adjustmentName(l)}
-                source={tag === '' ? undefined : tag}
-                amount={`${l.effect === 'takes_off' ? '−' : '+'}${exactFmt(amount)}`}
-                onRemove={() => removeWithUndo('adjustments', l, adjustmentName(l))}
-                removeA11yLabel={t('decide.lineEditor.removeA11y', { name: adjustmentName(l) })}
-              />
+              <View key={l.id}>
+                <CheckRow
+                  checked={l.counted}
+                  onToggle={() => update({ adjustments: inputs.adjustments.map((x) => (x.id === l.id ? { ...x, counted: !x.counted } : x)) })}
+                  name={adjustmentName(l)}
+                  source={tag === '' ? undefined : tag}
+                  amount={`${l.effect === 'takes_off' ? '−' : '+'}${exactFmt(amount)}`}
+                  onRemove={() => removeWithUndo('adjustments', l, adjustmentName(l))}
+                  removeA11yLabel={t('decide.lineEditor.removeA11y', { name: adjustmentName(l) })}
+                />
+                {l.effect === 'takes_off' ? <TradeInTag /> : null}
+              </View>
             );
           })}
           <Pill label={t('decide.price.addAdjust')} variant="secondary" disabled={inputs.adjustments.length >= MAX_LINES} onPress={() => setEditor('adjust')} />
 
           <View style={[styles.final, { borderTopColor: colors.ink }]}>
             <View style={styles.finalText}>
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{invest ? t('decide.price.committed') : t('decide.price.final')}</Text>
+              <InfoTitle info={finalInfo} lineHeight={textRole(pairing, 'label').lineHeight}>
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{invest ? t('decide.price.committed') : t('decide.pay.price.final')}</Text>
+              </InfoTitle>
               <Meta>{t('decide.price.counted', { counted: resolved?.countedLines ?? 0, total: resolved?.totalLines ?? inputs.adjustments.length })}</Meta>
             </View>
-            <Text scale="capped" maxFontSizeMultiplier={1.3} style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
+            <Text scale="capped" maxFontSizeMultiplier={1.3} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'heading'), color: colors.ink, flexShrink: 1 }}>
               {wholeFmt(resolved?.price ?? inputs.advertised ?? 0)}
             </Text>
           </View>
@@ -175,12 +207,7 @@ export function Step2PriceAndPay(props: Step2Props) {
 
       <Lock locked={readOnly}>
         <View style={styles.section}>
-          <Eyebrow>{invest ? t('decide.pay.headInvest') : t('decide.pay.head')}</Eyebrow>
-          <Meta tone="muted">{invest ? t('decide.pay.subInvest') : t('decide.pay.sub')}</Meta>
           <PaymentMethods {...props} />
-          <EstimateGapNote bias={bias.payment} />
-          <EstimateGapNote bias={bias.dayOne} />
-          <MethodPanels {...props} />
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkFaint }}>{t('decide.flow.notLender')}</Text>
         </View>
       </Lock>
@@ -240,6 +267,9 @@ export function Step2PriceAndPay(props: Step2Props) {
         </Card>
       </Lock>
 
+      <EstimateGapNote bias={bias.payment} />
+      <EstimateGapNote bias={bias.dayOne} />
+
       <LineEditorSheet
         visible={editor === 'adjust'}
         context="adjust"
@@ -264,6 +294,9 @@ const styles = StyleSheet.create({
   column: { gap: space.cardPad },
   section: { gap: space.gapSm },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.gapMd },
+  headWrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', columnGap: space.gapMd },
+  tagRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm, marginLeft: space.touchMin / 2 },
+  tag: { paddingHorizontal: space.gapMd, paddingVertical: 2, borderRadius: radii.pill },
   link: { minHeight: space.touchMin, justifyContent: 'center' },
   final: { borderTopWidth: 1.5, paddingTop: space.gapMd, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.gapMd },
   finalText: { flexShrink: 1 },

@@ -1,5 +1,6 @@
 /**
- * 05-14 Step 2 method panels: the selected method's terms, one panel at a time. Every figure here is arithmetic on the
+ * 05-14 Step 2 method panels: a method's terms. 05-84 (D-79): each panel is the body of its own method card, inputs first and then
+ * the "What it comes to" outputs tile; the panels no longer render below the cards. Every figure here is arithmetic on the
  * user's own numbers. No rate is ever pre-filled (the loan rate is empty until typed; the card rate is the one on the card
  * record, saved only from what the user typed), and nothing reads as a lending proposal.
  */
@@ -21,7 +22,7 @@ import { canUse } from '../../../entitlements';
 import { cardCostsCopy } from '../../../copy/cardTermsCopy';
 import { percentText } from '../../../copy/percentText';
 import { isValidAprText, toEngineCheck } from '../../../snapshot/checkInputs';
-import type { CardNoteAnswer, CheckInputs } from '../../../snapshot/types';
+import type { CardNoteAnswer, CheckInputs, MethodKey } from '../../../snapshot/types';
 import { FigureStrip } from '../../../ui/FigureStrip';
 import { CustomValueChips, CustomValueField } from '../../../ui/CustomValueChips';
 import { MoneyInput } from '../../../ui/MoneyInput';
@@ -29,7 +30,8 @@ import { RateInput } from '../../../ui/RateInput';
 import { SliderWithField } from '../../../ui/SliderWithField';
 import { useInfoSheet } from '../../../ui/useInfoSheet';
 import type { Step2Props } from './types';
-import { Card, Label, Meta, moneyFn } from '../stepUi';
+import { Eyebrow, Label, Meta, moneyFn } from '../stepUi';
+import { InfoTitle } from '../../InfoTitle';
 import { CardMinimumRow, CardMinimumSheet } from './CardMinimumSheet';
 import { LateFeeField, PromoRow, VariableRateCard } from './CreditTermsPanel';
 import { refText, type Translate as RefTranslate } from '../../refText';
@@ -49,24 +51,74 @@ const NOTE_KEYS = [
 type Money = ReturnType<typeof moneyFn>;
 type Translate = ReturnType<typeof useT>;
 
+/** The selected method's body (kept for callers that render one panel). */
 export function MethodPanels(props: Step2Props) {
-  const { inputs } = props;
-  if (inputs.kind === 'invest') return inputs.method === 'monthly' ? <InvestMonthlyPanel {...props} /> : null;
-  switch (inputs.method) {
+  return props.inputs.method === null ? null : <MethodBody {...props} method={props.inputs.method} />;
+}
+
+/** D-79: the body of one method card, whichever method is selected. */
+export function MethodBody(props: Step2Props & { method: MethodKey }) {
+  switch (props.method) {
+    case 'cash':
+      return <CashPanel {...props} />;
     case 'loan':
       return <LoanPanel {...props} />;
     case 'instalment':
       return <InstalmentPanel {...props} />;
     case 'card':
       return <CardPanel {...props} />;
-    default:
-      return null;
+    case 'lump':
+      return <InvestLumpPanel {...props} />;
+    case 'monthly':
+      return <InvestMonthlyPanel {...props} />;
   }
 }
 
-function resolvedPlan(props: Step2Props, method: 'loan' | 'instalment' | 'card'): Plan | null {
+function resolvedPlan(props: Step2Props, method: MethodKey): Plan | null {
   const result = props.computation.methodPlans[method];
   return result?.status === 'resolved' ? result.plan : null;
+}
+
+/** R15.1: the outputs of a method, in a fill6 tile under its inputs. */
+function OutputsTile({ children }: { children: React.ReactNode }) {
+  const t = useT();
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.tile, { backgroundColor: colors.fill6 }]}>
+      <Eyebrow>{t('decide.pay.card.comesTo')}</Eyebrow>
+      {children}
+    </View>
+  );
+}
+
+/** On the day / A month / Total paid for one resolved plan. */
+function PlanStrip({ plan, whole, exact, t }: { plan: Plan | null; whole: Money; exact: Money; t: Translate }) {
+  if (plan === null) return null;
+  return (
+    <FigureStrip
+      items={[
+        { caption: t('decide.pay.onDay'), value: whole(plan.dayOne) },
+        { caption: t('decide.pay.aMonth'), value: exact(plan.monthly) },
+        { caption: t('decide.pay.total'), value: plan.total === null ? openWord(plan, false, t) : whole(plan.total) },
+      ]}
+    />
+  );
+}
+
+// ── Paid in full ──
+function CashPanel(props: Step2Props) {
+  const { source, whole, exact } = props;
+  const t = useT();
+  const wholeFmt = moneyFn(whole, source.currency);
+  const exactFmt = moneyFn(exact, source.currency);
+  const plan = resolvedPlan(props, 'cash');
+  if (plan === null) return null;
+  return (
+    <OutputsTile>
+      <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
+      <Meta tone="muted">{t('decide.pay.noteCash', { cash: wholeFmt(source.cash - plan.dayOne) })}</Meta>
+    </OutputsTile>
+  );
 }
 
 // ── Loan ──
@@ -75,6 +127,9 @@ function LoanPanel(props: Step2Props) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const aprInfo = useInfoSheet('apr');
+  const depositInfo = useInfoSheet('deposit');
+  const termInfo = useInfoSheet('loanTerm');
+  const securedInfo = useInfoSheet('secured');
   const wholeFmt = moneyFn(whole, source.currency);
   const exactFmt = moneyFn(exact, source.currency);
   const loan = inputs.loan;
@@ -99,8 +154,9 @@ function LoanPanel(props: Step2Props) {
   const paidEarly = plan !== null && term !== null && plan.months > 0 && plan.months < term;
   const saved = plan !== null && noDeposit !== null && plan.interest !== null && noDeposit.interest !== null ? noDeposit.interest - plan.interest : null;
 
+  const showStrip = canUse('payoffComparisons');
   return (
-    <Card>
+    <View style={styles.panel}>
       <SliderWithField
         label={t('decide.pay.loanDeposit')}
         value={deposit}
@@ -115,17 +171,13 @@ function LoanPanel(props: Step2Props) {
         onChange={(minor) => setLoan({ deposit: minor })}
         sliderA11y={t('decide.pay.loanDeposit')}
         fieldA11y={t('decide.pay.loanDeposit')}
+        labelAccessory={depositInfo.button()}
       />
-      {canUse('payoffComparisons') ? (
-        <FigureStrip
-          items={[
-            ...(saved === null ? [] : [{ caption: t('decide.pay.loanInterestSaved'), value: wholeFmt(saved), tone: 'positive' as const }]),
-            { caption: t('decide.pay.loanCashLeft'), value: wholeFmt(source.cash - (plan?.dayOne ?? deposit)) },
-          ]}
-        />
-      ) : null}
+      {depositInfo.sheet}
 
-      <Label>{t('decide.pay.loanTerm')}</Label>
+      <InfoTitle info={termInfo} lineHeight={textRole(pairing, 'label').lineHeight}>
+        <Label>{t('decide.pay.loanTerm')}</Label>
+      </InfoTitle>
       <CustomValueChips
         presets={TERM_CHIPS}
         value={term}
@@ -137,10 +189,6 @@ function LoanPanel(props: Step2Props) {
         unitWord={t('decide.custom.unit.months')}
         readOnly={readOnly}
       />
-      {plan !== null && term !== null && plan.interest !== null ? (
-        <Meta tone="muted">{t('decide.pay.loanTermNote', { count: term, payment: exactFmt(plan.monthly), interest: wholeFmt(plan.interest) })}</Meta>
-      ) : null}
-      {paidEarly ? <Meta tone="muted">{t('decide.pay.loanPaidOff', { count: plan.months, final: exactFmt(plan.finalMonthly ?? plan.monthly) })}</Meta> : null}
 
       <RateInput
         value={loan.aprText}
@@ -168,18 +216,40 @@ function LoanPanel(props: Step2Props) {
       />
       <VariableRateCard value={loan.variable} onChange={(variable) => setLoan({ variable })} computation={computation} source={source} exact={exact} />
 
-      <Pressable
-        accessibilityRole="switch"
-        accessibilityState={readOnly ? { checked: loan.secured, disabled: true } : { checked: loan.secured }}
-        accessibilityLabel={t('decide.pay.loanSecured')}
-        disabled={readOnly}
-        onPress={() => update({ loan: { ...loan, secured: !loan.secured, securedTouched: true } })}
-        style={({ pressed }) => [styles.toggle, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
-      >
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 1 }}>{t('decide.pay.loanSecured')}</Text>
-        <Text style={{ ...textRole(pairing, 'label'), color: loan.secured ? colors.accent : colors.inkMuted }}>{loan.secured ? t('decide.pay.yes') : t('decide.pay.no')}</Text>
-      </Pressable>
-    </Card>
+      <View style={styles.toggleWithInfo}>
+        <Pressable
+          accessibilityRole="switch"
+          accessibilityState={readOnly ? { checked: loan.secured, disabled: true } : { checked: loan.secured }}
+          accessibilityLabel={t('decide.pay.loanSecured')}
+          disabled={readOnly}
+          onPress={() => update({ loan: { ...loan, secured: !loan.secured, securedTouched: true } })}
+          style={({ pressed }) => [styles.toggle, styles.toggleMain, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+        >
+          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 1 }}>{t('decide.pay.loanSecured')}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), color: loan.secured ? colors.accent : colors.inkMuted }}>{loan.secured ? t('decide.pay.yes') : t('decide.pay.no')}</Text>
+        </Pressable>
+        {securedInfo.button()}
+      </View>
+      {securedInfo.sheet}
+
+      {plan !== null ? (
+        <OutputsTile>
+          <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
+          {showStrip ? (
+            <FigureStrip
+              items={[
+                ...(saved === null ? [] : [{ caption: t('decide.pay.loanInterestSaved'), value: wholeFmt(saved), tone: 'positive' as const }]),
+                { caption: t('decide.pay.loanCashLeft'), value: wholeFmt(source.cash - plan.dayOne) },
+              ]}
+            />
+          ) : null}
+          {term !== null && plan.interest !== null ? (
+            <Meta tone="muted">{t('decide.pay.loanTermNote', { count: term, payment: exactFmt(plan.monthly), interest: wholeFmt(plan.interest) })}</Meta>
+          ) : null}
+          {paidEarly ? <Meta tone="muted">{t('decide.pay.loanPaidOff', { count: plan.months, final: exactFmt(plan.finalMonthly ?? plan.monthly) })}</Meta> : null}
+        </OutputsTile>
+      ) : null}
+    </View>
   );
 }
 
@@ -216,7 +286,7 @@ function InstalmentPanel(props: Step2Props) {
   }
 
   return (
-    <Card>
+    <View style={styles.panel}>
       <MoneyInput
         value={inst.amount}
         currency={inputs.currency ?? source.currency}
@@ -234,7 +304,6 @@ function InstalmentPanel(props: Step2Props) {
         groupLabel={t('decide.pay.instalmentCount')}
         onChange={(n) => update({ instalment: { ...inst, count: n } })}
       />
-      <Meta tone="muted">{note}</Meta>
       <LateFeeField
         value={inst.lateFee}
         currency={inputs.currency ?? source.currency}
@@ -243,7 +312,11 @@ function InstalmentPanel(props: Step2Props) {
         source={source}
         exact={exact}
       />
-    </Card>
+      <OutputsTile>
+        <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
+        <Meta tone="muted">{note}</Meta>
+      </OutputsTile>
+    </View>
   );
 }
 
@@ -275,7 +348,9 @@ function CardPanel(props: Step2Props) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const aprInfo = useInfoSheet('apr');
+  const clearingInfo = useInfoSheet('cardClearing');
   const wholeFmt = moneyFn(whole, source.currency);
+  const exactFmt = moneyFn(exact, source.currency);
   const card = inputs.card;
   const plan = resolvedPlan(props, 'card');
   const eligibility = cardEligibility(inputs.itemType);
@@ -326,8 +401,9 @@ function CardPanel(props: Step2Props) {
   const setNote = (field: (typeof NOTE_KEYS)[number]['field'], answer: Exclude<CardNoteAnswer, null>) =>
     update({ cardNotes: { ...inputs.cardNotes, [field]: inputs.cardNotes[field] === answer ? null : answer } });
 
+  const cardStrip = plan !== null && plan.card !== null && canUse('payoffComparisons');
   return (
-    <Card>
+    <View style={styles.panel}>
       <View style={[styles.eligibility, { backgroundColor: background }]}>
         <Text style={{ ...textRole(pairing, 'sheetTitle'), color: titleColor }}>{t(titleKey)}</Text>
         {body === null ? null : <Meta tone="muted">{body}</Meta>}
@@ -384,7 +460,9 @@ function CardPanel(props: Step2Props) {
           />
           <Meta tone="muted">{t('decide.depth.cardCosts.feesSub')}</Meta>
 
-          <Label>{t('decide.pay.cardClearedHow')}</Label>
+          <InfoTitle info={clearingInfo} lineHeight={textRole(pairing, 'label').lineHeight}>
+            <Label>{t('decide.pay.cardClearedHow')}</Label>
+          </InfoTitle>
           <View accessibilityRole="radiogroup" style={styles.chips}>
             <Chip label={t('decide.pay.cardFull')} selected={card.payoff === 'full'} onPress={() => setCard({ payoff: 'full' })} />
             <Chip label={t('decide.pay.cardMonths')} selected={card.payoff === 'months'} onPress={() => setCard({ payoff: 'months' })} />
@@ -440,16 +518,6 @@ function CardPanel(props: Step2Props) {
             </>
           ) : null}
 
-          {plan !== null && plan.card !== null && canUse('payoffComparisons') ? (
-            <>
-              <FigureStrip items={cardTiles(plan, wholeFmt, t)} />
-              {costsLine === null ? null : <Meta tone="muted">{refText(t as RefTranslate, costsLine)}</Meta>}
-              {plan.card.minimumOutcome === 'exceeds_month_cap' && plan.card.remainingAtCap !== null ? (
-                <Meta tone="muted">{t('decide.pay.cardCapRemaining', { amount: wholeFmt(plan.card.remainingAtCap) })}</Meta>
-              ) : null}
-            </>
-          ) : null}
-
           <PromoRow
             method="card"
             promo={card.promo}
@@ -476,7 +544,32 @@ function CardPanel(props: Step2Props) {
           ))}
         </>
       )}
-    </Card>
+      {cardStrip && plan !== null && plan.card !== null ? (
+        <OutputsTile>
+          <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
+          <FigureStrip items={cardTiles(plan, wholeFmt, t)} />
+          {costsLine === null ? null : <Meta tone="muted">{refText(t as RefTranslate, costsLine)}</Meta>}
+          {plan.card.minimumOutcome === 'exceeds_month_cap' && plan.card.remainingAtCap !== null ? (
+            <Meta tone="muted">{t('decide.pay.cardCapRemaining', { amount: wholeFmt(plan.card.remainingAtCap) })}</Meta>
+          ) : null}
+        </OutputsTile>
+      ) : null}
+    </View>
+  );
+}
+
+// ── Investment: lump sum ──
+function InvestLumpPanel(props: Step2Props) {
+  const { source, whole, exact } = props;
+  const t = useT();
+  const wholeFmt = moneyFn(whole, source.currency);
+  const exactFmt = moneyFn(exact, source.currency);
+  const plan = resolvedPlan(props, 'lump');
+  if (plan === null) return null;
+  return (
+    <OutputsTile>
+      <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
+    </OutputsTile>
   );
 }
 
@@ -490,6 +583,7 @@ function InvestMonthlyPanel(props: Step2Props) {
   const term = inputs.investTermMonths;
   const monthly = inputs.advertised;
   const rateText = inputs.projectionRates[0];
+  const plan = resolvedPlan(props, 'monthly');
 
   let worth: string | null = null;
   if (term !== null && monthly !== null && monthly > 0 && rateText !== undefined) {
@@ -501,7 +595,7 @@ function InvestMonthlyPanel(props: Step2Props) {
   }
 
   return (
-    <Card>
+    <View style={styles.panel}>
       <Label>{t('decide.pay.loanTerm')}</Label>
       <CustomValueChips
         presets={TERM_CHIPS}
@@ -514,22 +608,31 @@ function InvestMonthlyPanel(props: Step2Props) {
         unitWord={t('decide.custom.unit.months')}
         readOnly={props.readOnly}
       />
-      {term !== null && monthly !== null && monthly > 0 ? (
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>
-          {t('decide.pay.noteInvestMonthly', { amount: exactFmt(monthly), count: term, total: wholeFmt(monthly * term) })}
-        </Text>
+      {plan !== null || (term !== null && monthly !== null && monthly > 0) ? (
+        <OutputsTile>
+          <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
+          {term !== null && monthly !== null && monthly > 0 ? (
+            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>
+              {t('decide.pay.noteInvestMonthly', { amount: exactFmt(monthly), count: term, total: wholeFmt(monthly * term) })}
+            </Text>
+          ) : null}
+          {worth !== null && rateText !== undefined ? (
+            <>
+              <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>{t('decide.pay.noteInvestWorth', { rate: rateText, fv: worth })}</Text>
+              <Meta>{t('decide.pay.noteInvestCaption')}</Meta>
+            </>
+          ) : null}
+        </OutputsTile>
       ) : null}
-      {worth !== null && rateText !== undefined ? (
-        <>
-          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>{t('decide.pay.noteInvestWorth', { rate: rateText, fv: worth })}</Text>
-          <Meta>{t('decide.pay.noteInvestCaption')}</Meta>
-        </>
-      ) : null}
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  panel: { gap: space.gapMd },
+  tile: { borderRadius: space.cardPad, padding: space.cardPad, gap: space.gapMd },
+  toggleWithInfo: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  toggleMain: { flex: 1 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
   monthsFigure: { minHeight: space.touchMin, minWidth: space.touchMin, justifyContent: 'center', alignItems: 'center' },
   toggle: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd },

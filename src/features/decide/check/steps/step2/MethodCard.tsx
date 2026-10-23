@@ -40,10 +40,12 @@ export interface MethodCardProps {
   /** The "· Edit" route for a missing price or amount (step 1). */
   onEdit: () => void;
   readOnly: boolean;
+  /** A stable handle for the card as a whole (header and body), for tests and Maestro. */
+  testID?: string;
   children?: React.ReactNode;
 }
 
-export function MethodCard({ name, infoKey, selected, open, needs, summary, chips, onHeaderPress, onEdit, readOnly, children }: MethodCardProps) {
+export function MethodCard({ name, infoKey, selected, open, needs, summary, chips, onHeaderPress, onEdit, readOnly, testID, children }: MethodCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const reduced = useReduceMotion();
@@ -74,7 +76,7 @@ export function MethodCard({ name, infoKey, selected, open, needs, summary, chip
   ) : null;
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: selected ? colors.ink : colors.line1 }]}>
+    <View testID={testID} style={[styles.card, { backgroundColor: colors.surface, borderColor: selected ? colors.ink : colors.line1 }]}>
       <Pressable
         ref={headerRef}
         accessibilityRole="radio"

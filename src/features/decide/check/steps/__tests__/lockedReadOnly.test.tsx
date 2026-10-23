@@ -76,7 +76,7 @@ describe('a decided check (D-70)', () => {
     await fireEvent.press(screen.getByLabelText('Edit'));
     expect(p2.goToStep).not.toHaveBeenCalled();
     expect(screen.getByLabelText('Edit').props.accessibilityState).toMatchObject({ disabled: true });
-    await fireEvent.press(screen.getByLabelText('On a card'));
+    await fireEvent.press(screen.getByRole('radio', { name: /^On a card/ })); // opens to read; the method never changes
     expect(mockUpdate(p2)).not.toHaveBeenCalled();
     await view2.unmount();
 

@@ -21,7 +21,10 @@ async function renderStep(over: Over = {}, extra: Partial<Step2Props> = {}) {
   const view = await wrap(<Step2PriceAndPay {...p} />);
   return { p, view };
 }
-const card = (name: string) => screen.getByLabelText(name);
+/** A method card's radio header, found by its name (the label is "{name}, Selected|Not selected, ...") . */
+const card = (name: string) => screen.getByRole('radio', { name: new RegExp(`^${name},`) });
+/** The whole method card: header and, while open, its inputs and outputs. */
+const box = (method: string) => screen.getByTestId(`method-${method}`);
 
 describe('Step2PriceAndPay: price card', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -33,7 +36,7 @@ describe('Step2PriceAndPay: price card', () => {
       { id: 'a3', name: 'Trade-in', amount: 10_000, note: '', counted: false, effect: 'takes_off' as const, onDay: false, taxPercentText: null },
     ];
     const { p } = await renderStep({ adjustments });
-    expect(screen.getByText('Advertised')).toBeTruthy();
+    expect(screen.getByText('Price')).toBeTruthy();
     expect(screen.getByLabelText('Sales tax, On the day, +$150.00')).toBeTruthy();
     expect(screen.getByLabelText('Fees, On the day, +$20.00')).toBeTruthy();
     expect(screen.getByLabelText('Trade-in, −$100.00')).toBeTruthy();
@@ -83,7 +86,7 @@ describe('Step2PriceAndPay: how you pay', () => {
   it('shows the four methods side by side, each resolved on its own', async () => {
     await renderStep();
     for (const name of ['Paid in full', 'Deposit and loan', 'Instalment plan', 'On a card']) expect(card(name)).toBeTruthy();
-    const cash = within(card('Paid in full'));
+    const cash = within(box('cash'));
     expect(cash.getByLabelText('On the day, $1500')).toBeTruthy();
     expect(cash.getByLabelText('A month, $0.00')).toBeTruthy();
     expect(cash.getByLabelText('Total paid, $1500')).toBeTruthy();
@@ -97,39 +100,39 @@ describe('Step2PriceAndPay: how you pay', () => {
     expect(mockUpdate(p)).toHaveBeenCalledWith({ method: 'card' });
   });
 
-  it('a loan with no rate typed says so and shows no percentage', async () => {
+  it('D-79 a loan with no rate typed says what it needs and shows no percentage', async () => {
     await renderStep({ method: 'loan' });
-    const loan = within(card('Deposit and loan'));
-    expect(loan.getByText('Rate needed')).toBeTruthy();
-    expect(loan.getByText('Type the rate you were quoted to score this.')).toBeTruthy();
+    const loan = within(box('loan'));
+    expect(loan.getByText('Needs: rate')).toBeTruthy();
+    expect(loan.queryByText('Rate needed')).toBeNull();
     expect(screen.queryAllByText(/\d%/)).toHaveLength(0);
   });
 
-  it('a loan with a typed rate shows the term typed, the rate and the interest', async () => {
-    const base = buy({ method: 'loan' });
-    await renderStep({ method: 'loan', loan: { ...base.loan, aprText: '8', termMonths: 24, deposit: 30_000 } });
-    expect(within(card('Deposit and loan')).getByText(/\$300 down, 24 months at 8%\. Interest over the term is \$/)).toBeTruthy();
+  it('a loan with a typed rate folds to its summary: the deposit, the term and the rate', async () => {
+    const base = buy({ method: 'cash' });
+    await renderStep({ method: 'cash', loan: { ...base.loan, aprText: '8', termMonths: 24, deposit: 30_000 } });
+    expect(within(box('loan')).getByText(/^\$300 down · 24.months · 8%$/)).toBeTruthy();
   });
 
-  it('a loan at 0% reads "before any interest"', async () => {
-    const base = buy({ method: 'loan' });
-    await renderStep({ method: 'loan', loan: { ...base.loan, aprText: '0', termMonths: 12, aprFromQuick: true } });
-    expect(within(card('Deposit and loan')).getByText('$0 down, 12 months, before any interest.')).toBeTruthy();
+  it('a loan at 0% folds to a summary that says 0%', async () => {
+    const base = buy({ method: 'cash' });
+    await renderStep({ method: 'cash', loan: { ...base.loan, aprText: '0', termMonths: 12, aprFromQuick: true } });
+    expect(within(box('loan')).getByText(/^\$0 down · 12.months · 0%$/)).toBeTruthy();
   });
 
   it('instalments that add up to less than the price carry the Below the price flag', async () => {
     await renderStep({ method: 'instalment', instalment: { amount: 1_000, count: 2, lateFee: null } });
-    expect(within(card('Instalment plan')).getByText('Below the price')).toBeTruthy();
+    expect(within(box('instalment')).getByText('Below the price')).toBeTruthy();
   });
 
-  it('instalments that cover the price state the amount on top, as typed', async () => {
-    await renderStep({ method: 'instalment', instalment: { amount: 13_000, count: 12, lateFee: null } });
-    expect(within(card('Instalment plan')).getByText(/12 × \$130\.00 as quoted\. That implies \$60 on top of the price\./)).toBeTruthy();
+  it('instalments that cover the price fold to the count, the payment and no rate', async () => {
+    await renderStep({ method: 'cash', instalment: { amount: 13_000, count: 12, lateFee: null } });
+    expect(within(box('instalment')).getByText('12 × $130.00 · no rate')).toBeTruthy();
   });
 
   it('a card is flagged Not accepted for an item type a card cannot settle', async () => {
     await renderStep({ method: 'card', itemType: 'tax', itemTypeTouched: true });
-    expect(within(card('On a card')).getByText('Not accepted')).toBeTruthy();
+    expect(within(box('card')).getByText('Not accepted')).toBeTruthy();
   });
 
   it('a capped vehicle shows Part on the card', async () => {
@@ -138,18 +141,14 @@ describe('Step2PriceAndPay: how you pay', () => {
       method: 'card', itemType: 'vehicle', itemTypeTouched: true, advertised: 6_000_000,
       card: { ...base.card, accountId: 'acc-card', payoff: 'full' },
     });
-    expect(within(card('On a card')).getByText('Part on the card')).toBeTruthy();
+    expect(within(box('card')).getByText('Part on the card')).toBeTruthy();
   });
 
-  it('a card paid in full next statement needs no rate; another payoff with no rate asks for the card rate', async () => {
-    const base = buy({ method: 'card' });
-    const view = await renderStep({ method: 'card', card: { ...base.card, accountId: 'acc-card', payoff: 'full' } });
-    expect(within(card('On a card')).getByText('Paid in full next statement, so no rate is needed.')).toBeTruthy();
-    await view.view.unmount();
-    const source = { ...propsFor().source, cards: [] };
-    const p = { ...propsFor({ method: 'card' }), source };
-    await wrap(<Step2PriceAndPay {...p} />);
-    expect(within(card('On a card')).getByText('Type the rate on your card to score months or minimum plans.')).toBeTruthy();
+  it('a card paid in full next statement folds to its summary and needs no rate', async () => {
+    const base = buy({ method: 'cash' });
+    await renderStep({ method: 'cash', card: { ...base.card, accountId: 'acc-card', payoff: 'full' } });
+    expect(within(box('card')).getByText('Visa · in full next statement')).toBeTruthy();
+    expect(within(box('card')).queryByText(/^Needs:/)).toBeNull();
   });
 
   it('a null total reads as words', async () => {
@@ -167,9 +166,9 @@ describe('Step2PriceAndPay: how you pay', () => {
         },
       }) as never;
     const view = await wrap(<Step2PriceAndPay {...p} computation={{ ...p.computation, methodPlans: { ...p.computation.methodPlans, card: open('never_clears') } }} />);
-    expect(within(card('On a card')).getByLabelText('Total paid, Endless')).toBeTruthy();
+    expect(within(box('card')).getByLabelText('Total paid, Endless')).toBeTruthy();
     await view.rerender(<Step2PriceAndPay {...p} computation={{ ...p.computation, methodPlans: { ...p.computation.methodPlans, card: open('exceeds_month_cap') } }} />);
-    expect(within(card('On a card')).getByLabelText('Total paid, Not within 50 years')).toBeTruthy();
+    expect(within(box('card')).getByLabelText('Total paid, Not within 50 years')).toBeTruthy();
   });
 
   it('an investment offers a monthly contribution or a lump sum', async () => {

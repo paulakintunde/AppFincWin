@@ -18,6 +18,7 @@ import { Text } from '@/ui/Text';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { MoneyInput } from '../ui/MoneyInput';
 import { SegmentedToggle } from '../ui/SegmentedToggle';
+import { useInfoSheet } from '../ui/useInfoSheet';
 import { Box, Label } from './steps/stepUi';
 
 export type LineContext = 'adjust' | 'running' | 'replaces' | 'setback' | 'fee';
@@ -95,6 +96,7 @@ function LineEditorForm({ context, currency, initial, recurringBills = [], forma
   const [value, setValue] = useState<LineEditorValue>(start);
   const set = (patch: Partial<LineEditorValue>) => setValue((v) => ({ ...v, ...patch }));
   const dirty = useIsDirty(start, value);
+  const tradeInInfo = useInfoSheet('tradeIn'); // R15.8: "Takes off the price" explains itself, stacked over this sheet
 
   const isSetback = context === 'setback';
   const needsAmount = !isSetback || value.code === 'unexpected_expense';
@@ -185,15 +187,20 @@ function LineEditorForm({ context, currency, initial, recurringBills = [], forma
 
         {context === 'adjust' ? (
           <>
-            <SegmentedToggle
-              accessibilityLabel={t('decide.lineEditor.titleAdjust')}
-              value={value.effect}
-              onChange={(key) => set({ effect: key === 'takes_off' ? 'takes_off' : 'adds' })}
-              options={[
-                { key: 'adds', label: t('decide.lineEditor.adds') },
-                { key: 'takes_off', label: t('decide.lineEditor.takesOff') },
-              ]}
-            />
+            <View style={styles.effectRow}>
+              <View style={styles.effectToggle}>
+                <SegmentedToggle
+                  accessibilityLabel={t('decide.lineEditor.titleAdjust')}
+                  value={value.effect}
+                  onChange={(key) => set({ effect: key === 'takes_off' ? 'takes_off' : 'adds' })}
+                  options={[
+                    { key: 'adds', label: t('decide.lineEditor.adds') },
+                    { key: 'takes_off', label: t('decide.lineEditor.takesOff') },
+                  ]}
+                />
+              </View>
+              {tradeInInfo.button()}
+            </View>
             <Pressable
               accessibilityRole="switch"
               accessibilityState={{ checked: value.onDay }}
@@ -211,6 +218,7 @@ function LineEditorForm({ context, currency, initial, recurringBills = [], forma
 
         <Pill label={t('decide.lineEditor.save')} variant="primary" disabled={!canSave} onPress={save} />
       </SheetScroll>
+      {tradeInInfo.sheet}
     </Sheet>
   );
 }
@@ -218,6 +226,8 @@ function LineEditorForm({ context, currency, initial, recurringBills = [], forma
 const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapMd },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
+  effectRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  effectToggle: { flex: 1 },
   bill: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd },
   toggle: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd },
 });
