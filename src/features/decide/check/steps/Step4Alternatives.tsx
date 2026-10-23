@@ -17,7 +17,8 @@ import { CloseGlyph } from '@/ui/CloseGlyph';
 import { Text } from '@/ui/Text';
 import { cheaperDescriptor, keptHeader, suppressionReason } from '../../copy/alternativesCopy';
 import { percentText } from '../../copy/percentText';
-import { isValidProjectionRateText, repriceInputs } from '../../snapshot/checkInputs';
+import { cheaperPriceForPercent, isValidProjectionRateText, repriceInputs } from '../../snapshot/checkInputs';
+import { cheaperThumbPercent } from '../../snapshot/customValues';
 import { FigureStrip } from '../../ui/FigureStrip';
 import { RateInput } from '../../ui/RateInput';
 import { StepSlider } from '../../ui/StepSlider';
@@ -89,7 +90,9 @@ export function Step4Alternatives(props: StepProps) {
   const rateTooHigh = rateText.trim() !== '' && !isValidProjectionRateText(rateText.trim());
 
   const linkStyle = { ...textRole(pairing, 'label'), color: colors.accent };
-  const cheaperRatio = alts.cheaper.ratioPercent;
+  // 05-83 bridge (05-69 builds the typed field): the thumb is read from the exact cheaper price, display only
+  const cheaperRatio =
+    inputs.cheaperPrice !== null && inputs.advertised !== null ? cheaperThumbPercent(inputs.cheaperPrice, inputs.advertised) : alts.cheaper.ratioPercent;
   const { dayDiff, monthlyDiff } = alts.cheaper;
   const spendNote =
     dayDiff > 0 && monthlyDiff > 0
@@ -101,7 +104,7 @@ export function Step4Alternatives(props: StepProps) {
           : t('decide.alt.spendNothing');
 
   const trade = ((): string => {
-    if (inputs.cheaperRatioPercent === null) return t('decide.alt.tradeIdle');
+    if (inputs.cheaperPrice === null) return t('decide.alt.tradeIdle');
     const c = alts.cheaper;
     const floor = computation.context?.limits.spareFloor ?? 0;
     const common = { cheaper: fmt(alts.cheaperPrice), today: fmt(c.keptOnDay), monthly: cents(c.keptMonthly), count: alts.horizonMonths };
@@ -121,7 +124,10 @@ export function Step4Alternatives(props: StepProps) {
   })();
 
   const cheaperPatch =
-    check.kind === 'buy' ? repriceInputs(inputs, check, resolved, alts.cheaperPrice, { cheaperRatioPercent: alts.cheaper.ratioPercent }) : null;
+    check.kind === 'buy' ? repriceInputs(inputs, check, resolved, alts.cheaperPrice, {
+          // bridge: with no typed price the engine's default row is used, as its whole percent of the advertised price
+          cheaperPrice: inputs.cheaperPrice ?? (inputs.advertised === null ? undefined : cheaperPriceForPercent(inputs.advertised, alts.cheaper.ratioPercent)),
+        }) : null;
 
   const keptValue = (row: AlternativeRow): string => {
     if (row.code === 'as_planned' || row.suppression !== null || row.projected === null) return t('decide.alt.dash');
@@ -227,7 +233,7 @@ export function Step4Alternatives(props: StepProps) {
             min={MIN_RATIO}
             max={MAX_RATIO}
             step={1}
-            onChange={(v) => update({ cheaperRatioPercent: v })}
+            onChange={(v) => update({ cheaperPrice: inputs.advertised === null ? null : cheaperPriceForPercent(inputs.advertised, v) })}
             accessibilityLabel={t('decide.alt.spendSliderA11y')}
             valueText={t('decide.alt.spendSliderValue', { pct: cheaperRatio, price: fmt(resolved.price) })}
           />

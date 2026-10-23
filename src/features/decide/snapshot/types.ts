@@ -79,8 +79,6 @@ export interface CheckInputs {
   combine: boolean;                // D-24 "With my other open checks": default true, remembered per check (A13); autosaved, no undo step
   coolingOff: boolean;             // D-35 "Check again in 48 hours": default false; honoured only when the size is needs_spreading
   incomeChange: { direction: 'raises' | 'lowers'; amount: number | null; startDate: string | null; likelihood: 'likely' | 'uncertain' } | null; // D-32; null = "This changes my income" off
-  /** @deprecated read only by the migration; removed in Task 2 */
-  cheaperRatioPercent?: number | null;
   cheaperPrice: number | null;     // D-83: the exact cheaper advertised price, minor units in [ceil(30% of advertised), advertised]; null = engine default
   customItemType: { name: string; treatLike: ItemType | null } | null; // D-81 / R15.4: the name (1-40) never reaches the engine; the rules type is treatLike ?? 'general'
   investReturnText: string | null; // D-82 / R15.5: expected return % a year, decimal string 0..100, display only; null = none

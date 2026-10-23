@@ -36,9 +36,9 @@ import type {
   SetbackInput,
   StackedCheckInput,
 } from '@/engine/decide';
-import { divideHalfUp, minorUnits } from '@/engine/money';
+import { minorUnits } from '@/engine/money';
 import { PAY_METHODS } from './types';
-import { effectiveMethod, quickToCheckInputs, toEngineCheck } from './checkInputs';
+import { cheaperFinalPrice, effectiveMethod, quickToCheckInputs, toEngineCheck } from './checkInputs';
 import type { EngineCheckResult, EngineCtx } from './checkInputs';
 import type { CheckComputation, CheckInputs, ChipComputation, MethodKey, QuickComputation, QuickInputs, SetbackLine, SnapshotResult } from './types';
 
@@ -166,6 +166,11 @@ export function computeCore(source: SnapshotResult, inputs: CheckInputs, otherCh
   }
 }
 
+function cheaperOf(inputs: CheckInputs, planPrice: MinorUnits): { price: MinorUnits } | undefined {
+  const price = cheaperFinalPrice(inputs, planPrice);
+  return price === null ? undefined : { price };
+}
+
 /** The slow figures, from the core's combined verdict and context: options, alternatives, setbacks, wait plan, views. */
 export function computeDetails(core: CheckCore, inputs: CheckInputs): CheckComputation {
   const { inputs: _inputs, ...base } = core;
@@ -177,15 +182,8 @@ export function computeDetails(core: CheckCore, inputs: CheckInputs): CheckCompu
   return {
     ...base,
     options: buildOptions(context, check, verdict),
-    // Bridge until 05-83: the stored percent becomes the exact cheaper price the engine now takes (D-83).
-    alternatives: buildAlternatives(
-      context,
-      check,
-      verdict,
-      inputs.cheaperRatioPercent === null || inputs.cheaperRatioPercent === undefined
-        ? undefined
-        : { price: minorUnits(Number(divideHalfUp(BigInt(verdict.plan.price) * BigInt(inputs.cheaperRatioPercent), 100n))) }
-    ),
+    // D-83: the exact cheaper price, judged with the check's own tax, fee and trade-in lines.
+    alternatives: buildAlternatives(context, check, verdict, cheaperOf(inputs, verdict.plan.price)),
     setbacks: applySetbacks(verdict, setbacks),
     waitPlan: buildWaitPlan(context, check, inputs.wait.monthlyAmount === null ? null : minorUnits(inputs.wait.monthlyAmount)),
     investmentViews: buyer

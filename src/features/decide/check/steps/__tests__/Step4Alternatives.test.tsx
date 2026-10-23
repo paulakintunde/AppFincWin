@@ -93,7 +93,7 @@ describe('Step4Alternatives', () => {
   });
 
   it('the trade line survives an out-of-range figure', async () => {
-    const p = patchRow(props({ cheaperRatioPercent: 65 }), 1, { projected: null, growth: null, rangeCode: 'exceeds_range' });
+    const p = patchRow(props({ cheaperPrice: 390_000 }), 1, { projected: null, growth: null, rangeCode: 'exceeds_range' });
     await wrap(<Step4Alternatives {...p} />);
     expect(screen.getByText(/too large to project at this rate/)).toBeTruthy();
     expect(screen.queryByText(/null|NaN/)).toBeNull();
@@ -105,19 +105,19 @@ describe('Step4Alternatives', () => {
   });
 
   it('the trade line states what is kept once a ratio is chosen', async () => {
-    await wrap(<Step4Alternatives {...props({ cheaperRatioPercent: 65 })} />);
+    await wrap(<Step4Alternatives {...props({ cheaperPrice: 390_000 })} />);
     expect(screen.getByText(/leaves \$0 today and \$184.62 a month kept\. Kept up until month 12, that is \$2215 — \$2215 of your own money\.$/)).toBeTruthy();
   });
 
   it('the trade line adds growth only when a rate is set', async () => {
-    const p = props({ cheaperRatioPercent: 65, projectionRates: ['5'] });
+    const p = props({ cheaperPrice: 390_000, projectionRates: ['5'] });
     const grown = patchRow(p, 1, { projected: 230_000 as never, growth: 8_456 as never }, { projectionReturn: percent('5') });
     await wrap(<Step4Alternatives {...grown} />);
     expect(screen.getByText(/of your own money and \$85 it earned\.$/)).toBeTruthy();
   });
 
   it('a thin month reads the thin trade line', async () => {
-    const p = patchRow(props({ cheaperRatioPercent: 65 }), 1, {}, { cheaper: { ...props().computation.alternatives!.cheaper, keptMonthly: 0 as never } });
+    const p = patchRow(props({ cheaperPrice: 390_000 }), 1, {}, { cheaper: { ...props().computation.alternatives!.cheaper, keptMonthly: 0 as never } });
     await wrap(<Step4Alternatives {...p} />);
     expect(screen.getByText(/lowers the payment from .* to .*, but the month still only leaves/)).toBeTruthy();
   });
@@ -128,7 +128,7 @@ describe('Step4Alternatives', () => {
     const slider = screen.getByLabelText('Cheaper price');
     expect(slider.props.accessibilityValue.text).toBe('65 percent of $6000');
     await fireEvent(slider, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
-    expect(p.update).toHaveBeenCalledWith({ cheaperRatioPercent: 66 });
+    expect(p.update).toHaveBeenCalledWith({ cheaperPrice: 396_000 });
   });
 
   it('shows the cheaper price and what is not spent', async () => {

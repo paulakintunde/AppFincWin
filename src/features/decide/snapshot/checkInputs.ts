@@ -163,7 +163,6 @@ export function emptyCheckInputs(kind: 'buy' | 'invest', _today: string): CheckI
     combine: true,
     coolingOff: false,
     incomeChange: null,
-    cheaperRatioPercent: null,
     cheaperPrice: null,
     customItemType: null,
     investReturnText: null,
@@ -288,7 +287,12 @@ function parseCheaperPrice(o: Obj, advertised: number | null): number | null {
   const exact = intIn(o.cheaperPrice, min, max);
   if (exact !== null) return exact;
   const pct = intIn(o.cheaperRatioPercent, 30, 100);
-  return pct === null ? null : Number(ceilDivide(BigInt(advertised) * BigInt(pct), 100n));
+  return pct === null ? null : cheaperPriceForPercent(advertised, pct);
+}
+
+/** ceil(advertised x percent / 100): the exact cheaper price for a whole percent of the advertised price. */
+export function cheaperPriceForPercent(advertised: number, percentOfAdvertised: number): number {
+  return Number(ceilDivide(BigInt(advertised) * BigInt(percentOfAdvertised), 100n));
 }
 
 /** D-81 / R15.4: a custom item type is kept only with a 1-40 character name and a known (or no) rules type. */
@@ -385,7 +389,6 @@ export function parseCheckInputs(json: unknown, today: string): CheckInputs {
     combine: flag(o.combine, true),
     coolingOff: flag(o.coolingOff, false),
     incomeChange: parseIncomeChange(o.incomeChange),
-    cheaperRatioPercent: intIn(o.cheaperRatioPercent, 30, 100),
     cheaperPrice: parseCheaperPrice(o, advertised),
     customItemType,
     investReturnText: typeof o.investReturnText === 'string' && isValidProjectionRateText(o.investReturnText) ? o.investReturnText : null,
@@ -478,6 +481,19 @@ export function finalPriceOf(inputs: Pick<CheckInputs, 'advertised' | 'adjustmen
   if (inputs.advertised === null) return null;
   const adv = minorUnits(inputs.advertised);
   return resolvePriceInputs({ advertised: adv, adjustments: priceAdjustments(inputs.adjustments, adv) }).price;
+}
+
+/**
+ * D-83: the cheaper row's final price. The exact cheaper advertised price goes through the check's own tax, fee and trade-in
+ * lines (tax follows the cheaper price; fixed fees and trade-ins stay), then is clamped to [1, planPrice]. Null = no cheaper
+ * price typed (the engine default applies).
+ */
+export function cheaperFinalPrice(inputs: CheckInputs, planPrice: MinorUnits): MinorUnits | null {
+  if (inputs.cheaperPrice === null) return null;
+  const adv = minorUnits(inputs.cheaperPrice);
+  const lines = inputs.kind === 'buy' ? priceAdjustments(inputs.adjustments, adv) : [];
+  const price = resolvePriceInputs({ advertised: adv, adjustments: lines }).price;
+  return minorUnits(Math.min(Math.max(price, 1), planPrice));
 }
 
 /**
@@ -608,8 +624,10 @@ export function repriceInputs(
   check: BuyCheck,
   _resolvedPrice: ResolvedPrice,
   finalPrice: MinorUnits,
-  opts: { cheaperRatioPercent?: number } = {}
+  opts: { cheaperPrice?: number } = {}
 ): Partial<CheckInputs> | null {
+  const exact = opts.cheaperPrice;
+  if (exact !== undefined) return repriceExact(inputs, check, exact);
   let taxScaled = 0n;
   let fixed = 0n;
   for (const l of inputs.adjustments.filter((x) => x.counted)) {
@@ -633,22 +651,37 @@ export function repriceInputs(
     }
   }
   if (advertised === null) return null;
+  return finishReprice(inputs, check, advertised, minorUnits(reached));
+}
+
+/** D-83: "Use the cheaper price" writes advertised = the cheaper price exactly (no search). */
+function repriceExact(inputs: CheckInputs, check: BuyCheck, cheaperPrice: number): Partial<CheckInputs> | null {
+  if (!Number.isSafeInteger(cheaperPrice) || cheaperPrice < 1 || cheaperPrice > MAX_INPUT_MINOR) return null;
+  const advertised = minorUnits(cheaperPrice);
+  const reached = resolvePriceInputs({ advertised, adjustments: priceAdjustments(inputs.adjustments, advertised) }).price;
+  const patch = finishReprice(inputs, check, advertised, reached);
+  const pay = check.payment;
+  // M4: the deposit scales half up by the cheaper final price over the price, like the engine's cheaper row
+  if (pay.method === 'loan' && check.price > 0) {
+    patch.loan = { ...inputs.loan, deposit: Number(divideHalfUp(BigInt(pay.deposit) * BigInt(reached), BigInt(check.price))) };
+  }
+  return patch;
+}
+
+/** The patch shared by both re-prices: the advertised price, tax lines rescaled to it, and a scaled instalment amount. */
+function finishReprice(inputs: CheckInputs, check: BuyCheck, advertised: MinorUnits, reached: MinorUnits): Partial<CheckInputs> {
   const patch: Partial<CheckInputs> = { advertised };
-  const advertisedNow = advertised;
   if (inputs.adjustments.some((l) => taxPercentOf(l) !== null)) {
     patch.adjustments = inputs.adjustments.map((l) => {
       const tax = taxPercentOf(l);
-      return tax === null ? l : { ...l, amount: salesTaxAmount(advertisedNow, tax) };
+      return tax === null ? l : { ...l, amount: salesTaxAmount(advertised, tax) };
     });
   }
   const pay = check.payment;
   if (pay.method === 'instalment') {
     // the engine's own scaling, so the re-priced check is exactly the one the engine judged
-    const scaled = withPrice(check, minorUnits(reached)) as BuyCheck;
+    const scaled = withPrice(check, reached) as BuyCheck;
     patch.instalment = { ...inputs.instalment, amount: (scaled.payment as { instalmentAmount: MinorUnits | null }).instalmentAmount };
-  }
-  if (pay.method === 'loan' && opts.cheaperRatioPercent !== undefined) {
-    patch.loan = { ...inputs.loan, deposit: Number(divideHalfUp(BigInt(pay.deposit) * BigInt(opts.cheaperRatioPercent), 100n)) };
   }
   return patch;
 }

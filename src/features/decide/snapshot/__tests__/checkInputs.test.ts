@@ -7,6 +7,8 @@ import {
   MAX_INPUT_MINOR,
   defaultQuickInputs,
   effectiveMethod,
+  cheaperFinalPrice,
+  cheaperPriceForPercent,
   emptyCheckInputs,
   isValidAprText,
   isValidProjectionRateText,
@@ -82,7 +84,7 @@ describe('emptyCheckInputs', () => {
       instalment: { amount: null, count: null, lateFee: null },
       card: { accountId: null, payoff: 'months', months: 12, promo: null, variable: false, fees: null },
       investTermMonths: null, projectionRates: [], investHorizonMonths: null, investHoldingFeeText: null, combine: true, coolingOff: false,
-      incomeChange: null, currency: null, cheaperRatioPercent: null, wait: { monthlyAmount: null }, outcome: null, goAccountId: null,
+      incomeChange: null, currency: null, cheaperPrice: null, customItemType: null, investReturnText: null, lumpHorizonMonths: null, wait: { monthlyAmount: null }, outcome: null, goAccountId: null,
       investAccountId: null, scope: 'personal', split: null, cardNotes: { incomeStops: null, noNewSpending: null, jobLossCover: null },
     });
     expect(e.setbacks.map((s) => [s.id, s.code, s.enabled, s.amount])).toEqual([
@@ -147,7 +149,7 @@ describe('parseCheckInputs', () => {
       investTermMonths: 24, projectionRates: ['4', '6.5', '8'], investHorizonMonths: 120, investHoldingFeeText: '1',
       combine: false, coolingOff: true,
       incomeChange: { direction: 'lowers', amount: 50_000, startDate: '2027-01-01', likelihood: 'uncertain' },
-      cheaperRatioPercent: 65, cheaperPrice: 1_000_000, customItemType: { name: 'Boat', treatLike: 'vehicle' }, investReturnText: '6.5', lumpHorizonMonths: 36,
+      cheaperPrice: 1_000_000, customItemType: { name: 'Boat', treatLike: 'vehicle' }, investReturnText: '6.5', lumpHorizonMonths: 36,
       wait: { monthlyAmount: 20_000 }, outcome: 'wait', goAccountId: 'g', investAccountId: 'i', scope: 'household',
       split: { kind: 'weight', weights: [1, 2], amounts: [] }, cardNotes: { incomeStops: 'yes', noNewSpending: 'no', jobLossCover: 'unsure' },
     });
@@ -200,7 +202,7 @@ describe('parseCheckInputs', () => {
     expect(p.combine).toBe(true);
     expect(p.coolingOff).toBe(false);
     expect(p.incomeChange).toBeNull();
-    expect(p.cheaperRatioPercent).toBeNull();
+    expect(p.cheaperPrice).toBeNull();
     expect(p.wait.monthlyAmount).toBeNull();
     expect(p.outcome).toBeNull();
     expect(p.goAccountId).toBeNull();
@@ -302,6 +304,16 @@ describe('quickToCheckInputs', () => {
 });
 
 describe('R15 inputs (D-80..D-83)', () => {
+  it('D-83 cheaperFinalPrice is null with no cheaper price and clamps to [1, plan price]', () => {
+    expect(cheaperFinalPrice(buy(), mu(100))).toBeNull();
+    expect(cheaperFinalPrice(buy({ cheaperPrice: 500 }), mu(100))).toBe(100);
+    expect(cheaperFinalPrice(buy({ cheaperPrice: 50 }), mu(100))).toBe(50);
+    expect(cheaperFinalPrice(buy({ cheaperPrice: 50, adjustments: [adj({ effect: 'takes_off', amount: 9_999 })] }), mu(100))).toBe(1);
+    expect(cheaperFinalPrice({ ...emptyCheckInputs('invest', TODAY), cheaperPrice: 70, adjustments: [adj()] }, mu(100))).toBe(70);
+  });
+  it('D-83 cheaperPriceForPercent rounds up to the cent', () => {
+    expect(cheaperPriceForPercent(1_000_001, 65)).toBe(650_001);
+  });
   it('D-80 an old instalment parses with no rate and first payment today', () => {
     const p = parseCheckInputs({ instalment: { amount: 5_000, count: 12, lateFee: 100 } }, TODAY);
     expect(p.instalment).toEqual({ amount: 5_000, count: 12, lateFee: 100, hasRate: false, aprText: '', firstPayment: 'today' });
@@ -509,7 +521,7 @@ describe('finalPriceOf', () => {
 });
 
 describe('repriceInputs', () => {
-  function reprice(inputs: CheckInputs, finalPrice: number, opts: { cheaperRatioPercent?: number } = {}) {
+  function reprice(inputs: CheckInputs, finalPrice: number, opts: { cheaperPrice?: number } = {}) {
     const r = ok(inputs);
     return { r, patch: repriceInputs(inputs, r.check as BuyCheck, r.resolvedPrice, mu(finalPrice), opts) };
   }
@@ -526,9 +538,40 @@ describe('repriceInputs', () => {
     const inputs = buy({ advertised: 1_000_000, method: 'loan', loan: { ...emptyCheckInputs('buy', TODAY).loan, deposit: 100_001, aprText: '5' } });
     const keep = reprice(inputs, 800_000).patch!;
     expect(keep.loan).toBeUndefined();
-    const { patch } = reprice(inputs, 650_000, { cheaperRatioPercent: 65 });
+    const { patch } = reprice(inputs, 650_000, { cheaperPrice: 650_000 });
     expect(patch!.loan!.deposit).toBe(65_001); // 100_001 x 65 / 100 = 65_000.65, half-up
     expect(patch!.advertised).toBe(650_000);
+  });
+  it('D-83 Use the cheaper price writes advertised = cheaperPrice exactly', () => {
+    const inputs = buy({ advertised: 1_000_000, adjustments: [adj({ id: 't', taxPercentText: '10', amount: 100_000 }), adj({ id: 'f', amount: 7_000 })] });
+    const { patch } = reprice(inputs, 0, { cheaperPrice: 612_345 });
+    expect(patch!.advertised).toBe(612_345);
+    expect(patch!.adjustments![0]!.amount).toBe(61_235);
+    expect(patch!.adjustments![1]).toEqual(inputs.adjustments[1]);
+    expect(reprice(inputs, 0, { cheaperPrice: 0 }).patch).toBeNull();
+    expect(reprice(inputs, 0, { cheaperPrice: 1.5 }).patch).toBeNull();
+    expect(reprice(inputs, 0, { cheaperPrice: MAX_INPUT_MINOR + 1 }).patch).toBeNull();
+    const plain = reprice(buy({ advertised: 1_000_000 }), 0, { cheaperPrice: 300_000 }).patch!;
+    expect(plain.adjustments).toBeUndefined();
+    expect(plain.loan).toBeUndefined();
+    expect(plain.instalment).toBeUndefined();
+  });
+  it('D-83 a loan deposit scales half up by cheaper over advertised', () => {
+    const inputs = buy({ advertised: 1_000_000, method: 'loan', loan: { ...emptyCheckInputs('buy', TODAY).loan, deposit: 100_001, aprText: '5' } });
+    expect(reprice(inputs, 0, { cheaperPrice: 650_000 }).patch!.loan!.deposit).toBe(65_001);
+    expect(reprice(inputs, 0, { cheaperPrice: 300_000 }).patch!.loan!.deposit).toBe(30_000);
+  });
+  it('D-83 an instalment amount follows the cheaper price; a worked-out payment gets no amount', () => {
+    const inputs = buy({ advertised: 180_000, method: 'instalment', instalment: { amount: 15_000, count: 12, lateFee: null } });
+    expect(reprice(inputs, 0, { cheaperPrice: 120_000 }).patch!.instalment!.amount).toBe(10_000);
+    const worked = buy({ advertised: 180_000, method: 'instalment', instalment: { amount: null, count: 12, lateFee: null, hasRate: true, aprText: '5' } });
+    expect(reprice(worked, 0, { cheaperPrice: 120_000 }).patch!.instalment!.amount).toBeNull();
+  });
+  it('D-83 a zero-price loan check leaves the deposit alone on an exact reprice', () => {
+    const base = buy({ advertised: 1_000_000, method: 'loan', loan: { ...emptyCheckInputs('buy', TODAY).loan, deposit: 100, aprText: '5' } });
+    const r = ok(base);
+    const zero = { ...(r.check as BuyCheck), price: mu(0) };
+    expect(repriceInputs(base, zero, r.resolvedPrice, mu(0), { cheaperPrice: 500_000 })!.loan).toBeUndefined();
   });
   it('a 6% sales tax line does not drift the re-price', () => {
     const inputs = buy({ advertised: 1_500_000, adjustments: [adj({ id: 'tax', taxPercentText: '6', amount: 90_000 })] });

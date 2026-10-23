@@ -27,6 +27,33 @@ function quick(over: Partial<QuickInputs> = {}): QuickInputs {
 }
 afterEach(() => jest.restoreAllMocks());
 
+describe('D-83 the exact cheaper price', () => {
+  const tax = { id: 'tax', name: '', amount: 0, note: '', counted: true, effect: 'adds' as const, onDay: true, taxPercentText: '10' };
+  const fee = { id: 'fee', name: '', amount: 10_000, note: '', counted: true, effect: 'adds' as const, onDay: true, taxPercentText: null };
+  it('D-83 the cheaper row is judged at the exact cheaper price with the check’s own tax lines', () => {
+    const inputs = buy({ advertised: 1_000_000, cheaperPrice: 600_000, adjustments: [tax, fee] });
+    const c = computeCheck(loggedSource(), inputs);
+    // tax follows the cheaper advertised price, the fixed fee stays: 600_000 + 60_000 + 10_000
+    expect(c.alternatives!.cheaperPrice).toBe(670_000);
+  });
+  it('D-83 no cheaper price leaves the engine default and a stale price above the plan is clamped', () => {
+    const none = computeCheck(loggedSource(), buy({ advertised: 1_000_000 }));
+    expect(none.alternatives!.cheaper.ratioPercent).toBe(65);
+    const stale = computeCheck(loggedSource(), buy({ advertised: 500_000, cheaperPrice: 700_000 }));
+    expect(stale.alternatives!.cheaperPrice).toBe(500_000);
+    const low = computeCheck(loggedSource(), buy({ advertised: 100_000, cheaperPrice: 30_000, adjustments: [{ ...fee, effect: 'takes_off', amount: 90_000 }] }));
+    expect(low.alternatives!.cheaperPrice).toBeGreaterThanOrEqual(1);
+  });
+  it('D-82 the verdict is identical with and without an expected return', () => {
+    const base = { ...emptyCheckInputs('invest', TODAY), name: 'Fund', advertised: 20_000, method: 'monthly' as const, investTermMonths: 24 };
+    const without = computeCheck(loggedSource(), base);
+    const withReturn = computeCheck(loggedSource(), { ...base, investReturnText: '7.5', lumpHorizonMonths: 36 });
+    expect(withReturn.verdict).toEqual(without.verdict);
+    expect(withReturn.alternatives).toEqual(without.alternatives);
+    expect(withReturn.decision).toEqual(without.decision);
+  });
+});
+
 describe('computeQuick', () => {
   it('is incomplete without a price', () => {
     expect(computeQuick(loggedSource(), quick({ price: null }), { allowCashOnly: false })).toEqual({ kind: 'incomplete' });
@@ -135,7 +162,7 @@ describe('computeCheck', () => {
   });
   it('fills the options, alternatives, setbacks, wait plan, views and income at risk from the combined verdict', () => {
     const inputs = buy({
-      advertised: 1_450_000, projectionRates: ['4'], cheaperRatioPercent: 50, wait: { monthlyAmount: 20_000 }, investHorizonMonths: 24, investHoldingFeeText: '1',
+      advertised: 1_450_000, projectionRates: ['4'], cheaperPrice: 725_000, wait: { monthlyAmount: 20_000 }, investHorizonMonths: 24, investHoldingFeeText: '1',
       setbacks: emptyCheckInputs('buy', TODAY).setbacks.map((s) => ({ ...s, enabled: true, amount: s.code === 'unexpected_expense' ? 5_000 : null })),
     });
     const c = computeCheck(loggedSource(), inputs);
@@ -381,7 +408,7 @@ const inputsArb = fc.record({
   replaces: fc.array(line, { maxLength: 2 }),
   lossOfValue: wrap(fc.constantFrom({ kind: 'amount', monthly: 10_000 }, { kind: 'percent_per_year', percentText: '15' }), fc.constant({ kind: 'percent_per_year', percentText: '250' })),
   loan: fc.record({ deposit: money, termMonths: months, aprText: rate, promo, variable: fc.boolean(), secured: fc.boolean() }),
-  instalment: fc.record({ amount: money, count: months, lateFee: money }),
+  instalment: fc.record({ amount: money, count: months, lateFee: money, hasRate: fc.boolean(), aprText: rate, firstPayment: fc.constantFrom('today', 'next_month', 'x') }),
   card: fc.record({ accountId: fc.constantFrom('acc-card', 'nope', null), payoff: fc.constantFrom('full', 'months', 'minimum', 'x'), months, promo, variable: fc.boolean(), fees: money }),
   investTermMonths: months,
   investHorizonMonths: months,
@@ -393,6 +420,10 @@ const inputsArb = fc.record({
   ),
   incomeChange: wrap(fc.record({ direction: fc.constantFrom('raises', 'lowers'), amount: money, startDate: wrap(fc.constant('2027-01-01'), fc.constant('2026-02-30')), likelihood: fc.constantFrom('likely', 'uncertain') }), fc.constant(null)),
   cheaperRatioPercent: wrap(fc.integer({ min: 30, max: 100 }), BAD_NUMBER),
+  cheaperPrice: wrap(fc.integer({ min: 300, max: 3_000_000 }), BAD_NUMBER),
+  customItemType: wrap(fc.record({ name: fc.constantFrom('Boat', ' ', 'Kayak'), treatLike: fc.constantFrom('vehicle', 'tax', null, 'bogus') }), fc.constant(null)),
+  investReturnText: wrap(fc.constantFrom('0', '7.5', '100'), fc.constantFrom('250', 'abc')),
+  lumpHorizonMonths: months,
   wait: fc.record({ monthlyAmount: money }),
   combine: fc.boolean(),
 });
