@@ -23,6 +23,19 @@ jest.mock('@/features/record/useRecordContext', () => ({
 }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn(), hapticSuccess: jest.fn(), hapticMedium: jest.fn() }));
+const mockSwipe: { props: Record<string, any> } = { props: {} };
+jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
+  const R = require('react');
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: R.forwardRef((props: any, ref: any) => {
+      mockSwipe.props = props;
+      R.useImperativeHandle(ref, () => ({ close: jest.fn() }));
+      return <View>{props.children}</View>;
+    }),
+  };
+});
 jest.mock('@react-native-community/datetimepicker', () => ({
   __esModule: true,
   default: (props: { onChange: (e: { type: string }, d?: Date) => void }) => {
@@ -178,11 +191,16 @@ describe('ChangeSheet edit mode', () => {
 });
 
 describe('ChangesCard', () => {
-  it('shows the empty state and opens the add sheet', async () => {
+  it('D-72 Changes coming up is hidden while empty', async () => {
     await wrap(<ChangesCard changes={[]} currency="USD" whole={whole} />);
-    expect(screen.getByText('Changes coming up')).toBeTruthy();
-    expect(screen.getByText('Nothing dated yet')).toBeTruthy();
-    expect(screen.getByText('A raise, a rent change or a bill ending: add it and every check looks 12 months ahead.')).toBeTruthy();
+    expect(screen.queryByText('Changes coming up')).toBeNull();
+    expect(screen.queryByText('Nothing dated yet')).toBeNull();
+    await wrap(<ChangesCard changes={[change({ deleted_at: '2026-10-05T00:00:00Z' })]} currency="USD" whole={whole} />);
+    expect(screen.queryByText('Changes coming up')).toBeNull();
+  });
+
+  it('the heading link opens the add sheet', async () => {
+    await wrap(<ChangesCard changes={[change()]} currency="USD" whole={whole} />);
     await fireEvent.press(screen.getByText('+ Add a change'));
     expect(screen.getByText('Add a change')).toBeTruthy();
   });
@@ -217,12 +235,29 @@ describe('ChangesCard', () => {
     expect(screen.getByText('Edit change')).toBeTruthy();
   });
 
-  it('the x removes with the Change removed toast and Undo step', async () => {
+  it('D-73 deleting a change confirms and toasts Change deleted with Undo', async () => {
     const row = change();
     await wrap(<ChangesCard changes={[row]} currency="USD" whole={whole} />);
-    // IN-B03: the x names its row
-    await fireEvent.press(screen.getByLabelText('Remove Raise'));
+    expect(screen.queryByLabelText('Remove Raise')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('More for Raise'));
+    await fireEvent.press(screen.getByLabelText('Delete'));
+    expect(screen.getByText('Delete this change?')).toBeTruthy();
+    expect(screen.getByText('It leaves Changes coming up, and checks stop counting it.')).toBeTruthy();
+    expect(mockRemove).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByText('Delete', { exact: true }));
     expect(mockRemove).toHaveBeenCalledWith(row);
-    expect(showToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.depth.changes.removed' }, stepId: 's-remove' });
+    expect(showToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.delete.toastChange' }, stepId: 's-remove' });
+  });
+
+  it('D-73 Keep it leaves the change and the menu Edit opens it', async () => {
+    await wrap(<ChangesCard changes={[change()]} currency="USD" whole={whole} />);
+    await act(async () => {
+      mockSwipe.props.onSwipeableOpen('left');
+    });
+    await fireEvent.press(screen.getByText('Keep it'));
+    expect(mockRemove).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText('More for Raise'));
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    expect(screen.getByText('Edit change')).toBeTruthy();
   });
 });
