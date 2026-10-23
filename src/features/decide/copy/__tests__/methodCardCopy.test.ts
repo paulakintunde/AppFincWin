@@ -41,11 +41,18 @@ describe('methodCardCopy', () => {
     expect(fields('card', ['dealer_cap_missing', 'card_minimum_terms_missing', 'card_apr_missing'])).toEqual(['cardRate', 'minimumTerms', 'dealerCap']);
     expect(fields('lump', [], base({ advertised: null }))).toEqual(['amount']);
     expect(fields('monthly', ['invest_term_missing'], base({ advertised: null }))).toEqual(['amount', 'months']);
-    const all: NeedsField[] = ['price', 'rate', 'months', 'payment', 'howMany', 'cardRate', 'minimumTerms', 'dealerCap', 'amount'];
+    const all: NeedsField[] = ['price', 'rate', 'months', 'payment', 'howMany', 'cardRate', 'minimumTerms', 'dealerCap', 'usdRate', 'amount'];
     expect(all.every((f) => resolvesInEn(`decide.pay.card.field.${f}`))).toBe(true);
     const needs = needsFields('loan', ['loan_apr_missing', 'loan_term_missing'], base());
     expect(needs).not.toBeNull();
     expect(needsText(t, needs!)).toEqual({ line: 'Needs: rate, months', fields: 'rate, months' });
+  });
+
+  it('D-91 Needs reads USD rate', () => {
+    const needs = needsFields('card', ['card_limit_rate_missing'], base());
+    expect(needs?.fields).toEqual(['usdRate']);
+    expect(needs?.edit).toBe(false);
+    expect(needsText(t, needs!)).toEqual({ line: 'Needs: USD rate', fields: 'USD rate' });
   });
 
   it('D-79 Needs price and amount offer Edit, other fields do not', () => {

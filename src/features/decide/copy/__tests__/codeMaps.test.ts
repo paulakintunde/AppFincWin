@@ -10,7 +10,7 @@ const MAPS: Record<string, { map: Record<string, string>; codes: string[] }> = {
   SIZE_LABEL: { map: SIZE_LABEL, codes: ['from_spare_this_month', 'from_savings', 'needs_spreading'] },
   MISSING_TITLE: {
     map: MISSING_TITLE,
-    codes: ['card_not_accepted', 'card_missing', 'card_apr_missing', 'card_minimum_terms_missing', 'dealer_cap_missing', 'loan_term_missing', 'loan_apr_missing', 'instalment_amount_missing', 'instalment_count_missing', 'instalment_rate_missing', 'instalment_total_below_price', 'invest_term_missing', 'no_full_month', 'split_weights_zero', 'split_amounts_zero', 'projection_rate_out_of_range'],
+    codes: ['card_not_accepted', 'card_missing', 'card_apr_missing', 'card_minimum_terms_missing', 'dealer_cap_missing', 'card_limit_rate_missing', 'loan_term_missing', 'loan_apr_missing', 'instalment_amount_missing', 'instalment_count_missing', 'instalment_rate_missing', 'instalment_total_below_price', 'invest_term_missing', 'no_full_month', 'split_weights_zero', 'split_amounts_zero', 'projection_rate_out_of_range'],
   },
   LEDGER_LABEL: { map: LEDGER_LABEL, codes: ['income', 'expenses', 'debt', 'cash', 'investments'] },
   LEDGER_DESC: { map: LEDGER_DESC, codes: ['income', 'expenses', 'debt', 'cash', 'investments'] },
@@ -32,6 +32,11 @@ describe('code maps', () => {
       expect(key.startsWith('decide.')).toBe(true);
       expect(resolvesInEn(key)).toBe(true);
     }
+  });
+
+  it('D-91 card_limit_rate_missing has its missing title', () => {
+    expect(MISSING_TITLE.card_limit_rate_missing).toBe('decide.verdict.missing.card_limit_rate_missing');
+    expect(MISSING_TITLE.card_limit_rate_missing).not.toBe(MISSING_TITLE.dealer_cap_missing);
   });
 
   it('D-80 instalment_rate_missing has its own missing title', () => {
