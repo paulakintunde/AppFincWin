@@ -1,7 +1,7 @@
 # Phase 5: Decide UI - Context
 
 **Gathered:** 2026-10-15
-**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22; D-79…D-84 the Step 2, item and invest refresh the same day. The UI-SPEC carries all of them.
+**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22; D-79…D-84 the Step 2, item and invest refresh the same day; D-85…D-93 the device-walkthrough refinements 2026-10-23. The UI-SPEC carries all of them.
 
 <domain>
 ## Phase Boundary
@@ -284,6 +284,67 @@ The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy a
   - The base is `advertised`, and the floor is ceil(30%) in minor units. `cheaperPrice` (minor units) replaces `cheaperRatioPercent`, with old percents converted on parse.
   - **Needs Phase 4 engine change E2** (UI-SPEC R15.7).
 - **D-84 (user, 2026-10-22): Every Step 2 header and term has an ⓘ** (extends D-70). There are 24 new `INFO_TERMS` keys (UI-SPEC R15.8), and the existing promo, deferred-interest, variable-rate, card-minimum and running-cost keys are reused. All copy is declarative, at most 3 sentences, with "What this changes", and passes DCU-09 (no "offer", "apply", advice or reassurance).
+
+### Device-walkthrough refinements (user, 2026-10-23)
+UI-SPEC R16 carries the layouts, copy, ⓘ entries and engine notes (E3-E5).
+- **D-85: Add is always reachable.**
+  - The You screen gains a first "Add" group: Add expense, Add income, Transfer, Import statement, New check. It uses the shipped `SettingsGroup` and row styles.
+  - Each row closes You, then runs the same handler as the FAB quick action with that `QuickActionId`. A row with no registered handler is not shown.
+  - **FAB root cause:**
+    - `fabSurface` treats a null navigation location under `(tabs)` as `tabRoot`;
+    - a sheet-stack watchdog drops sheet ids whose sheet is no longer mounted, and clears the stack when nothing is visible for more than 1 s, so a leaked id cannot hide the FAB.
+- **D-86: Interest saved by the deposit is explained.**
+  - The Loan tile caption becomes "Interest saved by the deposit". It is hidden at deposit 0 and shown beside "Interest paid".
+  - The inline line reads "{{saved}} less interest than borrowing the full {{price}} with no deposit. The deposit lowers the amount borrowed to {{financed}} over the same {{term}} months at {{apr}}%." (plural keys, no-break spaces).
+  - A new ⓘ `interestSaved` explains it; it changes nothing in the verdict.
+- **D-87: Running-cost rows show where the amount goes.** Every prompt row (insurance, maintenance, loss of value and the rest) has:
+  - a dashed `line4` "Amount" field on the right;
+  - "Counted once an amount is typed" under the name;
+  - tap-anywhere-to-focus;
+  - a checkbox only once an amount exists.
+
+  The screen-reader label is declarative: "{name}, not counted yet; counted once an amount is typed."
+- **D-88: Speed and sync.**
+  - **Speed:**
+    - one shared snapshot per source;
+    - autosave patches only its own row (no cache churn), and `settledCore` reuses `core`;
+    - full detail only for the selected method on a keystroke;
+    - `computeDetails` runs after interactions, with "Updating" on the detail folds;
+    - budgets on the Pixel: verdict under 50 ms, details under 300 ms.
+  - **Sync:**
+    - 15 s read and 20 s write timeouts through a custom fetch;
+    - backoff capped at 12 s while online;
+    - resume and retry on app focus and NetInfo change;
+    - one queued draft save per check;
+    - the post-restore invalidate does not wait for writes;
+    - NetInfo reachability checks the Supabase endpoint.
+  - **Sync line:** shown only for problems or writes older than 5 s: "Saving…" or "{{count}} changes waiting" ("offline · …" when offline). "queued" is retired.
+- **D-89: Instalments can be weekly, every 2 weeks, monthly or quarterly** (no semi-monthly), with up to 500 payments (amends D-71's 1–120 for instalments only).
+  - The verdict uses the monthly equivalent (×52/12, ×26/12, ×1/3), and the cash path uses the real dates.
+  - Go ahead writes the series with that `freq` (no migration).
+  - Copy: "{{count}} weekly payments of {{payment}}, about {{monthly}} a month".
+  - Loans stay monthly.
+  - **Engine change E3:** a periods-per-year `amortise`/`amortiseDue` and dated payment steps.
+- **D-90: The no-rate instalment note shows a true APR.**
+  - It is the nominal APR solved from the payments, count, frequency and timing by exact bigint bisection (no floats), labelled "worked out from the figures you typed".
+  - It replaces the flat-rate note. It is a read-out only: it never fills a field or feeds the verdict (04 D-07).
+  - **Engine change E4**, with full tests and 100% coverage.
+- **D-91: A card check limit.** `CARD_MAX_PURCHASE` = 100,000 in the home currency.
+  - Above it, the rest counts as cash on the day through the dealer-cap mechanism.
+  - Note: "Only {{cap}} of this goes on a card in checks. The other {{rest}} is counted as cash on the day.", stated as the app's limit, not the issuer's.
+  - **Engine change E5.**
+- **D-92: Card rules by item type and region.**
+  - New item types, all with suggest keywords, Step 1 chips, `treatLike` choices, running-cost prompts, copy and ⓘ updates:
+    - `property`: card blocked, "A property purchase or deposit is not paid by card.";
+    - `cash_equivalent`: card blocked;
+    - `tuition`: card permitted with a fee note.
+  - Tax is region-aware: GB blocked (HMRC, since 2018); US and CA permitted with a processing-fee note.
+  - Research sources: Fannie Mae B3-4.3-16, HMRC, Experian / The Points Guy.
+  - **Engine change E5.**
+- **D-93: Walkthrough fixes.**
+  - A tab root never shows a back button.
+  - A cushion or runway above 600 months reads "Over 50 years" (a word value).
+  - A new expense defaults to the selected account's own currency, or home when the account has none. The walkthrough's GBP case is a verify item.
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
