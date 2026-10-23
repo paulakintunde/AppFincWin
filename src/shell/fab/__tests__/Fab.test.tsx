@@ -18,6 +18,7 @@ import {
 jest.mock('@/ui/haptics');
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ status: 'signedIn' }) }));
 jest.mock('expo-router', () => ({
+  useSegments: () => [],
   useFocusEffect: (cb: () => void | (() => void)) => {
     const { useEffect } = jest.requireActual<typeof import('react')>('react');
     useEffect(cb, [cb]);

@@ -8,6 +8,7 @@ jest.mock('@/features/auth/AuthProvider', () => ({
   useAuth: () => ({ status: 'signedIn' }),
 }));
 jest.mock('expo-router', () => ({
+  useSegments: () => [],
   useFocusEffect: (cb: () => void | (() => void)) => {
     const { useEffect: ue } = jest.requireActual<typeof import('react')>('react');
     ue(cb, [cb]);

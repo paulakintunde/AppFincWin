@@ -14,6 +14,7 @@ jest.mock('@/data/sync/useSyncStatus', () => ({
 jest.mock('expo-router', () => {
   const R = require('react');
   return {
+    useSegments: () => [],
     router: { push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
     Redirect: ({ href }: { href: unknown }) => {
       mockRedirectHref = href;

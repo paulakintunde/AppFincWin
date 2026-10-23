@@ -11,10 +11,11 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useSegments } from 'expo-router';
+import { addBreadcrumb } from '@sentry/react-native';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useT } from '@/i18n';
-import { useSheetCount } from '@/state/sheetStack';
+import { mountedSheetCount, noteVisible, prune, useSheetCount } from '@/state/sheetStack';
 import { useBackHistory } from '@/shell/backHistory/BackHistoryProvider';
 import { fabSurface, shouldHideFab, type FabHideReason } from './shouldHideFab';
 import { availableQuickActions, type QuickActionId } from './quickActions';
@@ -54,6 +55,7 @@ export function FabProvider({ children }: { children: React.ReactNode }): React.
   const { status } = useAuth();
   const { current } = useBackHistory();
   const sheetOpen = useSheetCount() > 0;
+  const segments = useSegments();
 
   const [screenConfig, setScreenConfig] = useState<FabConfig | null>(null);
   // Functions held in state need the wrapper form so React does not call them as updaters.
@@ -95,6 +97,31 @@ export function FabProvider({ children }: { children: React.ReactNode }): React.
   const openQuickMenu = useCallback((): void => setQuickMenuOpen(true), []);
   const closeQuickMenu = useCallback((): void => setQuickMenuOpen(false), []);
 
+  const surface = fabSurface(current, segments);
+  const onTabRoot = surface === 'tabRoot';
+
+  // D-85 / R16.1 watchdog: on tab-root focus and every 2 s while focused, drop ids whose sheet is
+  // not mounted, and clear a stack that has had nothing visible for over 1 s. Only store calls here.
+  useEffect(() => {
+    if (!onTabRoot) return undefined;
+    const tick = (): void => {
+      const now = Date.now();
+      const dropped = prune(now);
+      const cleared = noteVisible(now, mountedSheetCount() > 0);
+      if (dropped + cleared > 0) {
+        // Counts only: never sheet ids or names.
+        addBreadcrumb({
+          category: 'sheetStack',
+          message: 'sheet stack watchdog',
+          data: { dropped, cleared },
+        });
+      }
+    };
+    tick();
+    const handle = setInterval(tick, 2000);
+    return () => clearInterval(handle);
+  }, [onTabRoot]);
+
   const defaultFn = defaultAction?.fn ?? null;
   const labelAdd = t('shell.fab.add');
   const labelAddA11y = t('shell.fab.addA11y');
@@ -106,7 +133,7 @@ export function FabProvider({ children }: { children: React.ReactNode }): React.
 
   const hidden = shouldHideFab({
     signedIn: status === 'signedIn',
-    surface: fabSurface(current),
+    surface,
     sheetOpen,
     hideReasons: holds,
     hasAction: config !== null,

@@ -12,6 +12,7 @@ jest.setTimeout(30000);
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ status: 'signedIn' }) }));
 jest.mock('expo-router', () => ({
   useFocusEffect: jest.fn(),
+  useSegments: () => [],
   router: { push: jest.fn() },
 }));
 const mockSheet = jest.fn();
