@@ -2,7 +2,7 @@
 // (D-10, D-35): both lists leave out any decided check that a live check names in `reopened_from`, so a
 // reminder cancelled on reopen is never scheduled again (T-05-21-04).
 import { useEffect, useMemo } from 'react';
-import { useDecideChecks, useDecideSettings, useDecideSnapshot } from '@/data/queries/decide';
+import { useDecideChecks, useDecideSettings, useDecideSnapshot, useOpenChecks } from '@/data/queries/decide';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { DecideSettingsRow } from '@/db/decideSettings';
 import { currencyCode } from '@/engine/money';
@@ -26,10 +26,14 @@ export interface DecideHomeViewModel {
   exact: Money;
 }
 
+const NO_OPEN: DecideCheckRow[] = [];
+
 export function useDecideHomeViewModel(): DecideHomeViewModel {
   const rc = useRecordContext();
   const snapshot = useDecideSnapshot();
   const checks = useDecideChecks(rc.userId ?? undefined, rc.householdId ?? undefined).data;
+  // D-88: the open list is selected with stable equality, so a draft save in one check leaves the other rows' identity.
+  const openRows = useOpenChecks(rc.userId ?? undefined, rc.householdId ?? undefined).data;
   const settings = useDecideSettings(rc.userId ?? undefined).data ?? null;
   const wholeFmt = useMoneyFormatter(false);
   const exactFmt = useMoneyFormatter(true);
@@ -38,7 +42,6 @@ export function useDecideHomeViewModel(): DecideHomeViewModel {
   const lists = useMemo(() => {
     const live = (checks ?? []).filter((c) => c.deleted_at == null);
     const reopened = new Set(live.filter((c) => c.reopened_from != null).map((c) => c.reopened_from));
-    const open = live.filter((c) => c.status === 'open').sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
     const decided = live.filter((c) => c.status !== 'open');
     const waiting = decided
       .filter((c) => c.status === 'waiting' && !reopened.has(c.id))
@@ -46,7 +49,7 @@ export function useDecideHomeViewModel(): DecideHomeViewModel {
     const coolingOff = decided
       .filter((c) => !reopened.has(c.id))
       .map((c) => ({ id: c.id, coolingOffAt: c.cooling_off_at }));
-    return { open, decidedCount: decided.length, waiting, coolingOff };
+    return { decidedCount: decided.length, waiting, coolingOff };
   }, [checks]);
 
   // D-10 / D-35: reconcile once the checks and the snapshot have loaded, and again only when the lists change.
@@ -66,7 +69,7 @@ export function useDecideHomeViewModel(): DecideHomeViewModel {
     status: snapshot.status,
     source: snapshot.result,
     retry: snapshot.retry,
-    openChecks: lists.open,
+    openChecks: openRows ?? NO_OPEN,
     decidedCount: lists.decidedCount,
     waiting: lists.waiting,
     settings,

@@ -101,6 +101,18 @@ interface RemovedWithGoal {
 
 type EditCheckResult = DecideCheckRow | RemovedWithGoal;
 
+/** D-88: replaces one row by id. Returns the same list when no row matches or the row comes back unchanged. */
+function replaceRow(old: CheckList | undefined, id: string, next: (r: CheckList[number]) => CheckList[number]): CheckList | undefined {
+  if (!Array.isArray(old)) return old;
+  const i = old.findIndex((r) => r.id === id);
+  if (i < 0) return old;
+  const replaced = next(old[i]!);
+  if (replaced === old[i]) return old;
+  const out = old.slice();
+  out[i] = replaced;
+  return out;
+}
+
 function patchChecks(qc: QueryClient, cache: CheckCacheKey, updater: (rows: CheckList) => CheckList): void {
   qc.setQueryData<CheckList>(queryKeys.decideChecks(cache.userId, cache.householdId), (old) => updater(old ?? []));
 }
@@ -259,21 +271,19 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
     onMutate: (vars: SaveCheckDraftVars) => {
       markSession(vars);
       // The only queries under this prefix are the per-user check lists, so the draft is patched wherever it lives.
+      // D-88: structural sharing. Only the matching row is replaced; every other row, and the list when nothing matches,
+      // keeps its identity.
       qc.setQueriesData<CheckList>({ queryKey: ['decide-checks'] }, (old) =>
-        Array.isArray(old)
-          ? old.map((r) =>
-              r.id === vars.id
-                ? { ...r, name: vars.name, inputs: vars.inputs, furthest_step: vars.furthestStep, pending: true }
-                : r
-            )
-          : old
+        replaceRow(old, vars.id, (r) =>
+          r.name === vars.name && r.inputs === vars.inputs && r.furthest_step === vars.furthestStep && r.pending === true
+            ? r
+            : { ...r, name: vars.name, inputs: vars.inputs, furthest_step: vars.furthestStep, pending: true }
+        )
       );
     },
     onSuccess: (row: DecideCheckRow | null) => {
       if (row === null) return;
-      qc.setQueriesData<CheckList>({ queryKey: ['decide-checks'] }, (old) =>
-        Array.isArray(old) ? old.map((r) => (r.id === row.id ? row : r)) : old
-      );
+      qc.setQueriesData<CheckList>({ queryKey: ['decide-checks'] }, (old) => replaceRow(old, row.id, () => row));
     },
     onError: async (err: unknown, vars: SaveCheckDraftVars) => {
       const cls = classifySettledWriteError(err);

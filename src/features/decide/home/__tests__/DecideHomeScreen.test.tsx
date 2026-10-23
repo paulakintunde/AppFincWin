@@ -26,6 +26,11 @@ jest.mock('@/features/record/useRecordContext', () => ({
 jest.mock('@/data/queries/decide', () => ({
   useDecideSnapshot: () => mockSnap,
   useDecideChecks: () => ({ data: mockChecks }),
+  useOpenChecks: () => ({
+    data: mockChecks
+      ?.filter((c) => c.deleted_at == null && c.status === 'open')
+      .sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0)),
+  }),
   useDecideSettings: () => ({ data: null }),
   useDecideChanges: () => ({ data: mockChanges }),
 }));

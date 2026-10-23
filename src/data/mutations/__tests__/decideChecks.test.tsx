@@ -251,6 +251,33 @@ describe('useSaveCheckDraft', () => {
     expect(insertUndoStep).not.toHaveBeenCalled();
   });
 
+  it("D-88 draft save keeps other rows' identity", async () => {
+    const { fake, qc } = setup();
+    const k1 = check('k1');
+    const k2 = check('k2');
+    const k3 = check('k3');
+    qc.setQueryData(KEY, [k1, k2, k3]);
+    const other = [check('k9')];
+    qc.setQueryData(queryKeys.decideChecks('user-2', 'hh-2'), other);
+    fake.respondWith(ok([check('k2', { name: 'Laptop 2', furthest_step: 2, version: 2 })]));
+    const { result } = await renderHook(() => useSaveCheckDraft(), { wrapper: wrapper(qc) });
+
+    result.current.save({ id: 'k2', name: 'Laptop 2', inputs: { kind: 'buy' }, furthestStep: 2 });
+    await waitFor(() => expect(qc.getQueryData<WithPending<DecideCheckRow>[]>(KEY)?.[1]?.pending).toBe(true));
+    const optimistic = qc.getQueryData<WithPending<DecideCheckRow>[]>(KEY)!;
+    expect(optimistic[0]).toBe(k1);
+    expect(optimistic[2]).toBe(k3);
+    expect(optimistic[1]).not.toBe(k2);
+    expect(optimistic[1]).toMatchObject({ name: 'Laptop 2', furthest_step: 2 });
+
+    await waitFor(() => expect(qc.getQueryData<DecideCheckRow[]>(KEY)?.[1]?.version).toBe(2));
+    const settled = qc.getQueryData<DecideCheckRow[]>(KEY)!;
+    expect(settled[0]).toBe(k1);
+    expect(settled[2]).toBe(k3);
+    // A list that does not hold the check is left as the same object.
+    expect(qc.getQueryData(queryKeys.decideChecks('user-2', 'hh-2'))).toBe(other);
+  });
+
   it('WR-A03: a queued abandon built on the version before an autosave resolves past it instead of conflicting', async () => {
     const { fake, qc } = setup();
     qc.setQueryData(KEY, [check('k1', { version: 3 })]);
