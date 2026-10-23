@@ -14,10 +14,12 @@ export interface ChoiceCardProps {
   title: string;
   flag?: string;
   accessibilityLabel: string;
+  /** 05-70: a control drawn after the title (an info button). Its sheet is mounted by the caller, outside this card. */
+  titleAccessory?: React.ReactNode;
   children?: React.ReactNode;
 }
 
-export function ChoiceCard({ selected, onPress, title, flag, accessibilityLabel, children }: ChoiceCardProps) {
+export function ChoiceCard({ selected, onPress, title, flag, accessibilityLabel, titleAccessory, children }: ChoiceCardProps) {
   const { colors, pairing } = useTheme();
   const textColor = selected ? colors.surface : colors.ink;
   const flagColor = selected ? colors.inkSoft1 : colors.inkMuted;
@@ -40,6 +42,7 @@ export function ChoiceCard({ selected, onPress, title, flag, accessibilityLabel,
     >
       <View style={styles.head}>
         <Text style={{ ...textRole(pairing, 'sheetTitle'), color: textColor, flexShrink: 1 }}>{title}</Text>
+        {titleAccessory ?? null}
         {flag ? (
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: flagColor, flexShrink: 1 }}>{flag}</Text>
         ) : null}

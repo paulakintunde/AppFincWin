@@ -22,7 +22,12 @@ import { savedSoFar } from '../../journal/goalProgress';
 import { GoalProgress } from '../../ui/GoalProgress';
 import { ChoiceCard } from '../../ui/ChoiceCard';
 import { FigureStrip } from '../../ui/FigureStrip';
-import { StepSlider } from '../../ui/StepSlider';
+import { CustomValueChips } from '../../ui/CustomValueChips';
+import { SliderWithField } from '../../ui/SliderWithField';
+import { WrittenList } from '../../ui/WrittenList';
+import { useInfoSheet } from '../../ui/useInfoSheet';
+import { InfoTitle } from '../InfoTitle';
+import { DURATION_MAX, DURATION_MIN, waitAmountForMonths, waitMonthsFor, waitSliderBounds, waitTypedBounds } from '../../snapshot/customValues';
 import { refText, type Translate } from '../refText';
 import type { StepProps } from '../stepTypes';
 import { writtenLines, type WrittenFacts } from '../writtenLines';
@@ -61,7 +66,7 @@ function DecidedGoalProgress({ checkId, whole, currency, fmt, formatDate }: { ch
 }
 
 const WAIT_STEP = 2_500;
-const BULLET = 6;
+const WAIT_PRESETS = [3, 6, 12, 24] as const;
 
 /** The cash account with the largest balance (A6); the first of equals. */
 export function largestAccountId(accounts: Step5Props['cashAccounts']): string | null {
@@ -84,6 +89,12 @@ export function Step5Decision(props: Step5Props) {
   const plan = assessed !== null ? assessed.plan : planResult !== undefined && planResult.status === 'resolved' ? planResult.plan : null;
   const methodName = t(`decide.method.${inputs.method ?? 'none'}`);
   const wait = computation.waitPlan;
+  const goalCardInfo = useInfoSheet('waitGoal');
+  const goalSetInfo = useInfoSheet('waitGoal');
+  const coolingInfo = useInfoSheet('coolingOff');
+  const writtenInfo = useInfoSheet('whatGetsWritten');
+  const metaLine = textRole(pairing, 'label').lineHeight;
+  const headLine = textRole(pairing, 'sheetTitle').lineHeight;
 
   const needsAccount = inputs.outcome === 'go';
   const defaultAccount = largestAccountId(cashAccounts);
@@ -110,6 +121,10 @@ export function Step5Decision(props: Step5Props) {
     investAccountName: investAccount?.name ?? null,
     ...written,
   });
+
+  const amount = inputs.wait.monthlyAmount ?? wait?.monthlyAmount ?? 0;
+  const track = wait === null ? { min: 0, max: 0 } : waitSliderBounds(wait.target, wait.spareMonthly, WAIT_STEP);
+  const typed = wait === null ? { min: 0, max: 0 } : waitTypedBounds(wait.target);
 
   const choose = (outcome: 'go' | 'wait' | 'pass') => update({ outcome });
   const short = assessed !== null && assessed.left < 0;
@@ -176,6 +191,7 @@ export function Step5Decision(props: Step5Props) {
             onPress={() => choose('wait')}
             title={t('decide.decision.waitName')}
             accessibilityLabel={t('decide.decision.waitName')}
+            titleAccessory={goalCardInfo.button(inputs.outcome === 'wait' ? 'dark' : 'light')}
           >
             {body(inputs.outcome === 'wait', t('decide.decision.waitDesc'))}
           </ChoiceCard>
@@ -189,12 +205,15 @@ export function Step5Decision(props: Step5Props) {
           </ChoiceCard>
         </View>
       </Lock>
+      {goalCardInfo.sheet}
 
       {inputs.outcome === 'wait' && wait !== null ? (
         <Card>
           <View style={styles.waitFigures}>
             <View style={styles.figure}>
-              <Meta>{t('decide.decision.waitPutAside')}</Meta>
+              <InfoTitle info={goalSetInfo} lineHeight={metaLine}>
+                <Meta>{t('decide.decision.waitPutAside')}</Meta>
+              </InfoTitle>
               <Text style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>{cents(wait.monthlyAmount)}</Text>
             </View>
             <View style={styles.figure}>
@@ -204,16 +223,35 @@ export function Step5Decision(props: Step5Props) {
               </Text>
             </View>
           </View>
+          {wait.target > 0 ? (
+            <CustomValueChips
+              presets={WAIT_PRESETS}
+              value={waitMonthsFor(wait.target, amount)}
+              onChange={(months) => update({ wait: { monthlyAmount: waitAmountForMonths(wait.target, months) } })}
+              groupLabel={t('decide.decision.waitReadyBy')}
+              min={DURATION_MIN}
+              max={DURATION_MAX}
+              rangeText={t('decide.custom.range.months')}
+              unitWord={t('decide.custom.unit.months')}
+              readOnly={readOnly}
+            />
+          ) : null}
           <Lock locked={readOnly}>
-            <StepSlider
+            <SliderWithField
+              label={t('decide.decision.waitSliderA11y')}
               // WR-C07: the slider follows the live amount, not the plan settled 150 ms later
-              value={Math.min(Math.max(inputs.wait.monthlyAmount ?? wait.monthlyAmount, WAIT_STEP), 2 * Math.max(wait.spareMonthly, WAIT_STEP))}
-              min={WAIT_STEP}
-              max={2 * Math.max(wait.spareMonthly, WAIT_STEP)}
+              value={amount}
+              sliderMin={track.min}
+              sliderMax={track.max}
               step={WAIT_STEP}
-              onChange={(v) => update({ wait: { monthlyAmount: v } })}
-              accessibilityLabel={t('decide.decision.waitSliderA11y')}
-              valueText={cents(inputs.wait.monthlyAmount ?? wait.monthlyAmount)}
+              typedMin={typed.min}
+              typedMax={typed.max}
+              rangeText={t('decide.custom.range.from', { min: cents(typed.min), max: cents(typed.max) })}
+              currency={source.currency}
+              wholeUnits={false}
+              onChange={(monthlyAmount) => update({ wait: { monthlyAmount } })}
+              sliderA11y={t('decide.decision.waitSliderA11y')}
+              fieldA11y={t('decide.custom.fieldA11y', { group: t('decide.decision.waitSliderA11y'), unit: t('decide.pay.card.field.amount') })}
             />
           </Lock>
           {wait.target > 0 ? (
@@ -263,21 +301,24 @@ export function Step5Decision(props: Step5Props) {
 
       {computation.verdict?.size === 'needs_spreading' ? (
         <Card>
-          <ToggleRow label={t('decide.depth.cooling.toggle')} value={inputs.coolingOff} onChange={(coolingOff) => update({ coolingOff })} disabled={readOnly} />
+          <View style={styles.coolingRow}>
+            <View style={styles.coolingToggle}>
+              <ToggleRow label={t('decide.depth.cooling.toggle')} value={inputs.coolingOff} onChange={(coolingOff) => update({ coolingOff })} disabled={readOnly} />
+            </View>
+            {coolingInfo.button()}
+          </View>
+          {coolingInfo.sheet}
           <Meta tone="muted">{t('decide.depth.cooling.sub')}</Meta>
         </Card>
       ) : null}
 
       <View style={[styles.written, { backgroundColor: colors.fill1 }]}>
-        <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
-          {inputs.outcome === null ? t('decide.decision.writtenNone') : t('decide.decision.writtenHeading')}
-        </Text>
-        {lines.map((line, i) => (
-          <View key={`${line.key}-${i}`} style={styles.bullet}>
-            <View style={[styles.dot, { backgroundColor: colors.accent }]} />
-            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.inkDim, flex: 1 }}>{refText(t, line)}</Text>
-          </View>
-        ))}
+        <InfoTitle info={writtenInfo} lineHeight={headLine}>
+          <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+            {inputs.outcome === null ? t('decide.decision.writtenNone') : t('decide.decision.writtenHeading')}
+          </Text>
+        </InfoTitle>
+        <WrittenList lines={lines.map((line) => refText(t, line))} />
       </View>
     </View>
   );
@@ -291,6 +332,6 @@ const styles = StyleSheet.create({
   goal: { gap: space.gapSm },
   accountRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: space.touchMin },
   written: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapSm },
-  bullet: { flexDirection: 'row', alignItems: 'flex-start', gap: space.gapSm },
-  dot: { width: BULLET, height: BULLET, borderRadius: BULLET / 2, marginTop: 7 },
+  coolingRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
+  coolingToggle: { flex: 1 },
 });

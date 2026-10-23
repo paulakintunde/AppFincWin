@@ -177,3 +177,52 @@ describe('Step5Decision', () => {
     expect(text).not.toContain('advice');
   });
 });
+
+describe('Step5Decision Wait period and amount (05-70)', () => {
+  const NB = ' ';
+  const waitProps = (amount?: number) =>
+    props({ outcome: 'wait', advertised: 2_000_000, method: 'cash', ...(amount === undefined ? {} : { wait: { monthlyAmount: amount } }) });
+  const target = () => waitProps().computation.waitPlan!.target;
+
+  it('D-71 Ready in 12 months sets the amount to the target over 12 rounded up to the cent', async () => {
+    const p = waitProps();
+    await wrap(<Step5Decision {...p} />);
+    await fireEvent.press(screen.getByText(`12${NB}months`));
+    expect(p.update).toHaveBeenCalledWith({ wait: { monthlyAmount: Math.ceil(target() / 12) } });
+  });
+
+  it('D-71 the chip matching the derived months is selected', async () => {
+    await wrap(<Step5Decision {...waitProps(Math.ceil(target() / 12))} />);
+    expect(screen.getByText(`12${NB}months`)).toBeTruthy();
+    expect(screen.getByText('Custom')).toBeTruthy();
+  });
+
+  it('D-71 an amount matching no preset selects Custom with its months', async () => {
+    await wrap(<Step5Decision {...waitProps(Math.ceil(target() / 9))} />);
+    expect(screen.getByText(`9${NB}months`)).toBeTruthy();
+    expect(screen.queryByText('Custom')).toBeNull();
+  });
+
+  it('D-71 a typed amount under ceil(target over 120) is refused', async () => {
+    const p = waitProps(Math.ceil(target() / 12));
+    await wrap(<Step5Decision {...p} />);
+    const floor = Math.ceil(target() / 120);
+    await fireEvent.changeText(screen.getByLabelText('Monthly saving, custom, amount'), ((floor - 1) / 100).toFixed(2));
+    expect(p.update).not.toHaveBeenCalled();
+    expect(screen.getByText(/^From \$/)).toBeTruthy();
+  });
+
+  it('D-71 above the slider top the thumb pins', async () => {
+    const p = waitProps(target());
+    await wrap(<Step5Decision {...p} />);
+    const top = screen.getByLabelText('Monthly saving').props.accessibilityValue.max;
+    expect(top).toBeLessThan(target());
+    expect(screen.getByText('Above the slider’s range')).toBeTruthy();
+  });
+
+  it('D-70 step 5 carries waitGoal, coolingOff and whatGetsWritten', async () => {
+    await wrap(<Step5Decision {...waitProps()} />);
+    expect(screen.getAllByLabelText(/Wait and save/).length).toBeGreaterThanOrEqual(3);
+    expect(screen.getByLabelText(/What gets written/)).toBeTruthy();
+  });
+});
