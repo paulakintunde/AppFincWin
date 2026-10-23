@@ -22,6 +22,9 @@ import { MAX_INPUT_MINOR, withItemType } from '../../snapshot/checkInputs';
 import type { CheckInputs, InputLine } from '../../snapshot/types';
 import { MoneyInput } from '../../ui/MoneyInput';
 import { CheckRow } from '../../ui/CheckRow';
+import { useShouldStack } from '../../ui/textFit';
+import { useInfoSheet } from '../../ui/useInfoSheet';
+import { InfoTitle } from '../InfoTitle';
 import { LineEditorSheet, type LineEditorValue, type RecurringBillOption } from '../LineEditorSheet';
 import type { StepProps } from '../stepTypes';
 import { Box, Card, Label, Lock, Meta, moneyFn } from './stepUi';
@@ -48,11 +51,27 @@ function freshId(lines: readonly InputLine[], prefix: string): string {
   return `${prefix}${n}`;
 }
 
+/**
+ * D-76 / R6 rule C: a row of flex chips that stack full width under rule S. Each chip sits in a column wrapper so it
+ * stretches; names wrap at words and nothing is clipped.
+ */
+function ChipRow({ children }: { children: React.ReactNode }) {
+  const stacked = useShouldStack();
+  return (
+    <View accessibilityRole="radiogroup" style={styles.chips}>
+      {React.Children.map(children, (child) => (
+        <View style={stacked ? styles.chipFull : styles.chipFlex}>{child}</View>
+      ))}
+    </View>
+  );
+}
+
 export function Step1Item(props: Step1Props) {
   const { inputs, update, source, exact, today, readOnly, recurringBills } = props;
   const t = useT();
   const { colors, pairing } = useTheme();
   const [adding, setAdding] = useState(false);
+  const replacesInfo = useInfoSheet('replaces');
   const latest = useRef(inputs);
   useEffect(() => {
     latest.current = inputs; // read by the local undo, which runs after later edits
@@ -126,10 +145,10 @@ export function Step1Item(props: Step1Props) {
     <View style={styles.column}>
       <Lock locked={readOnly}>
         <Card>
-          <View accessibilityRole="radiogroup" style={styles.chips}>
+          <ChipRow>
             <Chip label={t('decide.item.purchase')} selected={!invest} onPress={() => setKind('buy')} />
             <Chip label={t('decide.item.investment')} selected={invest} onPress={() => setKind('invest')} />
-          </View>
+          </ChipRow>
 
           <Label>{invest ? t('decide.item.whatInvest') : t('decide.item.what')}</Label>
           <Box
@@ -180,7 +199,7 @@ export function Step1Item(props: Step1Props) {
       <Lock locked={readOnly}>
         <Card>
           <Label>{invest ? t('decide.item.whenInvest') : t('decide.item.when')}</Label>
-          <View accessibilityRole="radiogroup" style={styles.chips}>
+          <ChipRow>
             {OFFSETS.map((o) => (
               <Chip
                 key={o.key}
@@ -189,7 +208,7 @@ export function Step1Item(props: Step1Props) {
                 onPress={() => update({ needBy: offsetDate(today, o.key) })}
               />
             ))}
-          </View>
+          </ChipRow>
           <DateField
             label={invest ? t('decide.item.whenInvest') : t('decide.item.when')}
             value={inputs.needBy ?? today}
@@ -223,7 +242,9 @@ export function Step1Item(props: Step1Props) {
         <Lock locked={readOnly}>
           <Card>
             <View style={styles.head}>
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, flexShrink: 1 }}>{t('decide.item.replacesHeading')}</Text>
+              <InfoTitle info={replacesInfo} lineHeight={textRole(pairing, 'label').lineHeight}>
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('decide.item.replacesHeading')}</Text>
+              </InfoTitle>
               <Meta tone="accent">{replacedSum > 0 ? t('decide.item.replacesSum', { amount: exactFmt(replacedSum) }) : t('decide.item.replacesNone')}</Meta>
             </View>
             <Meta>{t('decide.item.replacesBody')}</Meta>
@@ -265,5 +286,7 @@ export function Step1Item(props: Step1Props) {
 const styles = StyleSheet.create({
   column: { gap: space.cardPad },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
+  chipFlex: { flex: 1 },
+  chipFull: { width: '100%' },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.gapMd },
 });

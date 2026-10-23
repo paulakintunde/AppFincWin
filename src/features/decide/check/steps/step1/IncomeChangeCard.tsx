@@ -6,6 +6,8 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
+import { useTheme } from '@/theme/ThemeProvider';
+import { textRole } from '@/theme/typography';
 import { space } from '@/theme/layout';
 import { DateField } from '@/features/record/entry/pickers/DateField';
 import { ToggleRow } from '@/ui/ToggleRow';
@@ -13,6 +15,8 @@ import { MAX_INPUT_MINOR } from '../../../snapshot/checkInputs';
 import type { CheckInputs, SnapshotResult } from '../../../snapshot/types';
 import { MoneyInput } from '../../../ui/MoneyInput';
 import { SegmentedToggle } from '../../../ui/SegmentedToggle';
+import { useInfoSheet } from '../../../ui/useInfoSheet';
+import { InfoTitle } from '../../InfoTitle';
 import { Card, Label, Lock, Meta } from '../stepUi';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 
@@ -32,6 +36,8 @@ const OFF_DEFAULT: IncomeChange = { direction: 'raises', amount: null, startDate
 export function IncomeChangeCard(props: IncomeChangeCardProps) {
   const { inputs, update, readOnly, source, exact } = props;
   const t = useT();
+  const { pairing } = useTheme();
+  const info = useInfoSheet('incomeChange');
   const change = inputs.incomeChange;
   const currency = inputs.currency ?? source.currency;
   const set = (patch: Partial<IncomeChange>) => update({ incomeChange: { ...(change ?? OFF_DEFAULT), ...patch } });
@@ -39,7 +45,9 @@ export function IncomeChangeCard(props: IncomeChangeCardProps) {
   return (
     <Lock locked={readOnly}>
       <Card>
-        <Label>{t('decide.depth.income.card')}</Label>
+        <InfoTitle info={info} lineHeight={textRole(pairing, 'label').lineHeight}>
+          <Label>{t('decide.depth.income.card')}</Label>
+        </InfoTitle>
         <ToggleRow
           label={t('decide.depth.income.toggle')}
           value={change !== null}
