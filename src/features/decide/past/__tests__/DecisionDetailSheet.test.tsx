@@ -77,6 +77,16 @@ describe('DecisionDetailSheet', () => {
     expect(screen.queryByText('Final price')).toBeNull();
   });
 
+  it('D-81 the decision detail shows the custom name', async () => {
+    const custom = inputs({ itemType: 'vehicle', customItemType: { name: 'Drone', treatLike: 'vehicle' } });
+    await renderSheet(decision('b', { inputs: custom }));
+    const name = screen.getByText('Drone');
+    expect(name.props.numberOfLines).toBe(2);
+    expect(name.props.ellipsizeMode).toBe('tail');
+    expect(screen.getByText('treated like Vehicle')).toBeTruthy();
+    expect(screen.getByLabelText('Item type, Drone, treated like Vehicle')).toBeTruthy();
+  });
+
   it('before day 30 says when the comparison will happen and shows no delta', async () => {
     await renderSheet(decision('b', { decided_at: '2026-10-05T12:00:00Z' }));
     expect(screen.getByText(/Compared at 30 days — /)).toBeTruthy();

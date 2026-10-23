@@ -20,6 +20,7 @@ import { InfoTitle } from '../InfoTitle';
 import { STEADINESS_LABEL } from '../../copy/codeMaps';
 import { percentText } from '../../copy/percentText';
 import { conversionBasisCopy } from '../../copy/depthVerdictCopy';
+import { itemTypeDisplay } from '../../copy/itemTypeCopy';
 import type { CopyRef } from '../../copy/types';
 import type { ConversionNote, SnapshotMeta, StackSelection } from '../../snapshot/types';
 import { refText, type Translate } from '../refText';
@@ -53,6 +54,9 @@ interface Row {
   value: string;
   /** D-70: the provisional-rate row carries its date for the ⓘ. */
   provisionalDate?: string;
+  /** D-81: the item type row; the value is the user's own name when custom (rule T), with a treated-like line. */
+  sub?: string;
+  userText?: boolean;
 }
 
 /** D-70, D-69: the basis fact for provisional rates, with the provisionalRate ⓘ and the stored rate's date. */
@@ -115,6 +119,17 @@ function assumptionRows(props: AssumptionsBodyProps | AssumptionsSectionProps, t
         value: t('decide.section.asRunningValue', { counted: running.countedCosts, total: running.totalCosts, ended: running.countedReplaced }),
       });
     }
+  }
+  // D-81: shown when the user named their own type; a built-in type is the default and adds no row.
+  if (props.inputs.kind === 'buy' && props.inputs.customItemType !== null) {
+    const shown = itemTypeDisplay(props.inputs);
+    rows.push({
+      key: 'itemType',
+      label: t('decide.item.type'),
+      value: typeof shown.name === 'string' ? shown.name : refText(tr, shown.name),
+      ...(shown.treatedLike !== null ? { sub: refText(tr, shown.treatedLike) } : {}),
+      userText: typeof shown.name === 'string',
+    });
   }
   if (meta.unconvertedRows > 0) {
     rows.push({ key: 'unconverted', label: t('decide.section.asUnconverted'), value: t('decide.section.asUnconvertedValue', { count: meta.unconvertedRows }) });
@@ -198,7 +213,13 @@ export function AssumptionsBody(props: AssumptionsBodyProps) {
         ) : r.provisionalDate !== undefined ? (
           <ProvisionalRow key={r.key} label={r.label} date={r.provisionalDate} />
         ) : r.value ? (
-          <LabelValueRow key={r.key} label={r.label} value={r.value} />
+          <LabelValueRow
+            key={r.key}
+            label={r.label}
+            value={r.value}
+            {...(r.sub !== undefined ? { sub: r.sub } : {})}
+            {...(r.userText ? { valueLines: 2 } : {})}
+          />
         ) : (
           <TableRow key={r.key} label={r.label} />
         ),

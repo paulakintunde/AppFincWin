@@ -24,9 +24,11 @@ import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { METHOD_LABEL } from '../copy/codeMaps';
+import { itemTypeDisplay } from '../copy/itemTypeCopy';
 import { stateChip } from '../copy/verdictCopy';
 import { canUse } from '../entitlements';
 import { InfoTitle } from '../check/InfoTitle';
+import { refText } from '../check/refText';
 import { compareEstimate, type Checkpoint } from '../journal/estimateActual';
 import { savedSoFar } from '../journal/goalProgress';
 import { finalPriceOf, parseCheckInputs } from '../snapshot/checkInputs';
@@ -93,6 +95,7 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
   const price = inputs?.advertised ?? null;
   const finalPrice = inputs !== null ? finalPriceOf(inputs) : null;
   const typed = wholeIn(inputs?.currency ?? null);
+  const typeShown = inputs !== null && inputs.kind === 'buy' && inputs.customItemType !== null ? itemTypeDisplay(inputs) : null;
   const money = (n: number | null) => (n === null ? DASH : whole(n));
   /** IN-B03: a row action names its row; a line with no name is named by its date and amount. */
   const rowName = (name: string, date: string | null, amount: number | null): string =>
@@ -206,6 +209,14 @@ export function DecisionDetailSheet({ decision, links, linkedLines, onClose }: D
           </>
         }
       >
+        {typeShown !== null ? (
+          <LabelValueRow
+            label={t('decide.item.type')}
+            value={typeof typeShown.name === 'string' ? typeShown.name : refText(t, typeShown.name)}
+            valueLines={typeof typeShown.name === 'string' ? 2 : undefined}
+            {...(typeShown.treatedLike !== null ? { sub: refText(t, typeShown.treatedLike) } : {})}
+          />
+        ) : null}
         {decision !== null && status === 'bought' ? (
           <>
             <Row label={t('decide.past.finalPrice')} value={finalPrice !== null ? typed(finalPrice) : null} emptyText={DASH} />

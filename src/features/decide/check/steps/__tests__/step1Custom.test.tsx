@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { Step1Item } from '../Step1Item';
+import { AssumptionsBody } from '../../sections/AssumptionsSection';
+import { META, loggedSource } from '../../../snapshot/__tests__/helpers/snapshotFixtures';
 import type { CheckInputs } from '../../../snapshot/types';
-import { buy, stepProps, wrap } from './helpers/stepProps';
+import { buy, exact, stepProps, whole, wrap } from './helpers/stepProps';
 
 jest.setTimeout(30000);
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
@@ -82,5 +84,18 @@ describe('Step 1 custom item type (05-86)', () => {
     await fireEvent.press(screen.getByLabelText('Tax'));
     expect(last(onUpdate).customItemType).toBeNull();
     expect(last(onUpdate).itemType).toBe('tax');
+  });
+
+  it('D-81 Assumptions shows the custom name and treated like', async () => {
+    const inputs = buy({ itemType: 'vehicle', customItemType: { name: 'Drone', treatLike: 'vehicle' } });
+    const p = stepProps(inputs, {}, loggedSource());
+    await wrap(
+      <AssumptionsBody computation={p.computation} inputs={inputs} update={jest.fn()} whole={whole} exact={exact} currency="USD" readOnly={false} meta={META} />,
+    );
+    const name = screen.getByText('Drone');
+    expect(name.props.numberOfLines).toBe(2);
+    expect(name.props.ellipsizeMode).toBe('tail');
+    expect(screen.getByText('treated like Vehicle')).toBeTruthy();
+    expect(screen.getByLabelText('Item type, Drone, treated like Vehicle')).toBeTruthy();
   });
 });
