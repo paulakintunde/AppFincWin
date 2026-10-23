@@ -13,7 +13,8 @@ import { persistOptions, resumeRestoredMutations, startPersistOnBackground, trac
 import { queryClient } from './queryClient';
 import { startOnlineManager } from './onlineManager';
 import { registerMutationDefaults } from './mutations';
-import { hydrateFailedWrites } from './sync/failedWrites';
+import { captureFailedWrite } from '@/services/errors';
+import { hydrateFailedWrites, setFailureReporter } from './sync/failedWrites';
 import { hydrateLastSynced, trackSyncActivity } from './sync/lastSynced';
 import { startRatePendingSweep } from './sync/ratePendingSweep';
 
@@ -23,6 +24,7 @@ startOnlineManager();
 startRatePendingSweep(queryClient); // 02-47: retries rate_pending lines and failed account rate checks
 trackSyncActivity(queryClient);
 trackServerFetches(queryClient); // IN-A05
+setFailureReporter(captureFailedWrite); // entity, kind and code only; never the payload
 void hydrateFailedWrites();
 void hydrateLastSynced();
 

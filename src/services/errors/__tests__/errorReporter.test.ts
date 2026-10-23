@@ -10,6 +10,7 @@ import { Platform } from 'react-native';
 import {
   initErrorReporting,
   captureError,
+  captureFailedWrite,
   installFatalPersistDelay,
   defaultFatalPersistDelayMs,
   FATAL_PERSIST_DELAY_MS,
@@ -533,5 +534,24 @@ describe('fatal persist delay', () => {
 
     expect(errorUtils.setGlobalHandler).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+});
+
+describe('captureFailedWrite', () => {
+  it('sends only entity, kind and code, as tags on a warning message', () => {
+    const sentry = { ...makeFakeSentry(), captureMessage: jest.fn() };
+    initErrorReporting(makeEnv(), sentry);
+    captureFailedWrite({ entity: 'decide_checks', kind: 'rejected', code: '42501' });
+    expect(sentry.captureMessage).toHaveBeenCalledWith('A write failed to save', {
+      level: 'warning',
+      tags: { area: 'sync', entity: 'decide_checks', kind: 'rejected', code: '42501' },
+    });
+  });
+
+  it('is a no-op before init, and when the client has no captureMessage', () => {
+    initErrorReporting(makeEnv({ sentryDsn: undefined }), makeFakeSentry());
+    expect(() => captureFailedWrite({ entity: 'x', kind: 'y', code: 'z' })).not.toThrow();
+    initErrorReporting(makeEnv(), makeFakeSentry());
+    expect(() => captureFailedWrite({ entity: 'x', kind: 'y', code: 'z' })).not.toThrow();
   });
 });
