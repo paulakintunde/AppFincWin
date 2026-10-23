@@ -26,11 +26,13 @@ export interface DeletableRowProps {
   children: React.ReactNode;
   /** A read-only context: no ⋯, no swipe. */
   disabled?: boolean;
+  /** The row read as one sentence (carries the full name when the visible one is clamped). */
+  accessibilityLabel?: string;
 }
 
 const DELETE_KEY = 'delete';
 
-export function DeletableRow({ name, onOpen, menu, confirm, onDelete, children, disabled = false }: DeletableRowProps) {
+export function DeletableRow({ name, onOpen, menu, confirm, onDelete, children, disabled = false, accessibilityLabel }: DeletableRowProps) {
   const t = useT();
   const { colors } = useTheme();
   const [confirming, setConfirming] = useState(false);
@@ -49,6 +51,7 @@ export function DeletableRow({ name, onOpen, menu, confirm, onDelete, children, 
         right={{ word, a11yLabel: word, tone: 'danger', onCommit: () => setConfirming(true) }}
         disabled={disabled}
         onPress={onOpen}
+        accessibilityLabel={accessibilityLabel}
       >
         <View style={styles.row}>
           <View style={styles.content}>{children}</View>

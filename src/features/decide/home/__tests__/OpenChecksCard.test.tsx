@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { showToast } from '@/state/undoToast';
@@ -18,6 +18,39 @@ jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...a: 
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPush(...a) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({
+  hapticLight: jest.fn(),
+  hapticSelection: jest.fn(),
+  hapticWarning: jest.fn(),
+  hapticSuccess: jest.fn(),
+  hapticMedium: jest.fn(),
+}));
+const mockSwipe: { props: Record<string, any> } = { props: {} };
+jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
+  const R = require('react');
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: R.forwardRef((props: any, ref: any) => {
+      mockSwipe.props = props;
+      R.useImperativeHandle(ref, () => ({ close: jest.fn() }));
+      return <View>{props.children}</View>;
+    }),
+  };
+});
+// Stands in for the sheet so the confirm renders inline.
+jest.mock('@/ui/Sheet', () => {
+  const { Pressable, View } = require('react-native');
+  return {
+    Sheet: ({ visible, onDismiss, children }: { visible: boolean; onDismiss: () => void; children: React.ReactNode }) =>
+      visible ? (
+        <View>
+          <Pressable accessibilityLabel="sheet-dismiss" onPress={onDismiss} />
+          {children}
+        </View>
+      ) : null,
+  };
+});
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -73,10 +106,11 @@ const stressed = () =>
   loggedSource({ months: ['2026-06', '2026-07', '2026-08', '2026-09'].map((m) => month(m, 500_000, 480_000)) });
 
 describe('OpenChecksCard', () => {
-  it('shows the empty state', async () => {
+  it('D-72 Open checks is hidden while empty', async () => {
     await renderCard([]);
-    expect(screen.getByText('No checks open')).toBeTruthy();
-    expect(screen.getByText('Start one above, or type an item and a price in the quick check.')).toBeTruthy();
+    expect(screen.queryByText('Open checks')).toBeNull();
+    expect(screen.queryByText('No checks open')).toBeNull();
+    expect(screen.queryByText('+ Purchase')).toBeNull();
   });
 
   it('shows a row with its chip and sub-line recomputed from the snapshot', async () => {
@@ -149,20 +183,59 @@ describe('OpenChecksCard', () => {
 
   it('opens a priced check at step 3 and an incomplete one at step 1', async () => {
     await renderCard([checkRow('a'), checkRow('b', { created_at: '2026-10-02T00:00:00Z' }, inputs({ name: 'Bike', method: null }))]);
-    await fireEvent.press(screen.getByLabelText(/^Laptop/));
+    await fireEvent.press(screen.getByText('Laptop'));
     expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'a', step: '3' } });
-    await fireEvent.press(screen.getByLabelText(/^Bike/));
+    await fireEvent.press(screen.getByText('Bike'));
     expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'b', step: '1' } });
   });
 
-  it('abandons with an undoable destructive toast and a property-less event', async () => {
+  it('D-73 deleting an open check confirms, soft-deletes in one undo step and toasts Check deleted with Undo', async () => {
     const row = checkRow('a');
     await renderCard([row]);
-    // IN-B03: the x names its row
-    await fireEvent.press(screen.getByLabelText('Abandon Laptop'));
-    expect(mockAbandon).toHaveBeenCalledWith(row);
-    expect(showToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.toast.abandoned' }, stepId: 'step-1' });
+    await fireEvent.press(screen.getByLabelText('More for Laptop'));
+    await fireEvent.press(screen.getByLabelText('Delete'));
+    expect(screen.getByText('Delete this check?')).toBeTruthy();
+    expect(screen.getByText('It leaves Open checks. Nothing was written, so no balance changes.')).toBeTruthy();
+    expect(mockAbandon).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByText('Delete', { exact: true }));
+    expect(mockAbandon).toHaveBeenCalledTimes(1);
+    expect(mockAbandon).toHaveBeenCalledWith(row, 'deleted');
+    expect(showToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.delete.toastCheck' }, stepId: 'step-1' });
     expect(mockTrack).toHaveBeenCalledWith('check_abandoned', {});
+  });
+
+  it('D-73 Keep it leaves the open check; a swipe only opens the confirm', async () => {
+    await renderCard([checkRow('a')]);
+    await act(async () => {
+      mockSwipe.props.onSwipeableOpen('left');
+    });
+    expect(screen.getByText('Delete this check?')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Keep it'));
+    expect(screen.queryByText('Delete this check?')).toBeNull();
+    expect(mockAbandon).not.toHaveBeenCalled();
+    expect(showToast).not.toHaveBeenCalled();
+    expect(screen.getByText('Laptop')).toBeTruthy();
+  });
+
+  it('D-73 the menu Open opens the check', async () => {
+    await renderCard([checkRow('a')]);
+    await fireEvent.press(screen.getByLabelText('More for Laptop'));
+    await fireEvent.press(screen.getByLabelText('Open'));
+    expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'a', step: '3' } });
+  });
+
+  it('D-73 no x remains on open check rows', async () => {
+    await renderCard([checkRow('a')]);
+    expect(screen.queryByLabelText('Abandon Laptop')).toBeNull();
+  });
+
+  it('D-76 the name clamps at two lines and the full name is in the row label', async () => {
+    const long = 'A very long laptop name that the user typed and that goes on and on past two lines of text';
+    await renderCard([checkRow('a', { name: long }, inputs({ name: long }))]);
+    const text = screen.getByText(long);
+    expect(text.props.numberOfLines).toBe(2);
+    expect(text.props.ellipsizeMode).toBe('tail');
+    expect(screen.getByLabelText(new RegExp('^' + long))).toBeTruthy();
   });
 
   it('starts a new purchase or investment check from the heading links', async () => {
@@ -175,6 +248,6 @@ describe('OpenChecksCard', () => {
 
   it('ignores deleted and decided checks', async () => {
     await renderCard([checkRow('a', { deleted_at: '2026-10-05T00:00:00Z' }), checkRow('b', { status: 'waiting' })]);
-    expect(screen.getByText('No checks open')).toBeTruthy();
+    expect(screen.queryByText('Open checks')).toBeNull();
   });
 });
