@@ -31,9 +31,9 @@ Started 2026-10-22. Updated at each milestone. Status: ✅ done · 🔄 in progr
 | 3. UI-SPEC R15 (Step 2, item, invest) + re-check | ✅ approved 2e0e6a9a (D-79..D-84) |
 | 4. Plans 05-54..05-79 written | ✅ e6fab900 |
 | 5. Plan check of 05-54..79 | ✅ ran: 6 blockers, 12 warnings → revision queued with step 6 |
-| 6. Revise 05-54..79 (6 blockers, 12 warnings) + add R15 plans (05-80+); re-check | 🔄 |
-| 7. Execute waves 10–17 (pause after each wave) | ⏳ |
-| 8. Gate + CI after each wave | ⏳ |
+| 6. Revise 05-54..79 + add R15 plans 05-80..87; two re-checks | ✅ 20d42001 |
+| 7. Execute waves 10–19 (pause after each wave) | 🔄 wave 10 ✅ (05-54, 05-55, 05-81); next wave 11 |
+| 8. Gate + CI after each wave | 🔄 wave 10 green at 809c2dde |
 | 9. Screenshots on the Pixel 9 (402/320 × 1.0/2.0) | ⏳ |
 | 10. 05-26 device checks with the user, incl. copy review | ⏳ |
 | 11. Verification, PR #82 ready, merge | ⏳ |
@@ -42,3 +42,7 @@ Started 2026-10-22. Updated at each milestone. Status: ✅ done · 🔄 in progr
 
 - None open. Also answered 2026-10-22: quoted instalment payment is scored (note shows the rate maths); first-payment toggle Today / In a month (default Today); opening a method card selects it; lump-sum horizon 60 months with 1/5/10/20-year chips + Custom.
 - Earlier answers 2026-10-22: Left = month end; both screens; What breaks open with warnings; durations 1–120; no-hyphenation app-wide; exact cheaper price; drop verdict body sentence; pause after each wave; Step 2 accordion; instalment APR toggle; custom item type with "Treat like"; invest return projection only.
+
+## Progress
+
+- 2026-10-23: refresh ~42% (design and planning done; build 3 of 34 plans). Phase 5: 56 of 87 plans built. Wave 10 gate: local 539/539 suites, CI green at 809c2dde.
