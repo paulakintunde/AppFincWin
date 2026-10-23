@@ -2083,7 +2083,7 @@ const en = {
       footerPlanned: 'Nothing is freed to save on the planned route.',
       footerCheaper: 'The cheaper row starts with the {{amount}} kept on the day.',
       footerWait: 'Waiting buys outright at month {{count}} and then keeps the {{payment}} a month you no longer owe.',
-      spendTitle: 'The cheaper one, and what it leaves', spendSub: 'The difference stays yours for the whole {{count}}\u00A0months.',
+      spendTitle: 'Cheaper, and what it leaves', spendSub: 'The difference stays yours for the whole {{count}}\u00A0months.',
       spendCheaper: 'Cheaper one', spendNotSpent: 'Not spent', spendDayMonth: '{{day}} less on the day, then {{month}} a month',
       spendAllOnDay: 'All of it on the day', spendMonthOnly: '{{month}} a month, nothing on the day', spendNothing: 'Nothing changes on this plan',
       spendSliderA11y: 'Cheaper price', spendSliderValue: '{{pct}} percent of {{price}}', spendRatio: '{{pct}}% of {{price}}',

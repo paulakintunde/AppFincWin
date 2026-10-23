@@ -75,22 +75,13 @@ describe('decide copy fit (R6)', () => {
     { key: 'decide.verdict.key.putInCaption', source: 'ui/FigureStrip.tsx (caption)' },
   ];
   const EYEBROW_CAP = 32;
-  // 'The cheaper one, and what it leaves' is 35 characters. The title was amended and user-accepted on 2026-10-22
-  // (UI-SPEC "cheaper one" card, WR-D04), so it is capped at its own length here and flagged for the user in the 05-77
-  // summary rather than reworded in a copy-retirement plan.
-  const EYEBROW_CAP_EXCEPTIONS: Record<string, number> = { 'decide.alt.spendTitle': 35 };
 
   it('D-76 rule E: every Decide eyebrow is at most 32 characters', () => {
     expect(EYEBROWS.length).toBeGreaterThan(15);
-    const tooLong = EYEBROWS.filter(({ key, params }) => fill(get(key), params ?? {}).toUpperCase().length > (EYEBROW_CAP_EXCEPTIONS[key] ?? EYEBROW_CAP)).map(
+    const tooLong = EYEBROWS.filter(({ key, params }) => fill(get(key), params ?? {}).toUpperCase().length > EYEBROW_CAP).map(
       (e) => `${e.key} (${e.source})`
     );
     expect(tooLong).toEqual([]);
-  });
-
-  it('D-76 rule E: the only eyebrow past 32 is the recorded exception', () => {
-    expect(Object.keys(EYEBROW_CAP_EXCEPTIONS)).toEqual(['decide.alt.spendTitle']);
-    expect(get('decide.alt.spendTitle').length).toBeGreaterThan(EYEBROW_CAP);
   });
 
   // R3 "Plural keys (F6)". decide.pay.monthsShort ("1 mo" / "{{count}} mo") is in the table but no screen renders it,
