@@ -38,6 +38,12 @@ const text = (p: Preview) => joinPreview(t, p);
 const FV = '$1,234';
 
 describe('foldCopy', () => {
+  it('D-93 the runway preview reads Runway over 50 years', () => {
+    expect(text(setbacksPreview(601, 2))).toBe('Runway over 50 years');
+    expect(text(setbacksPreview(7676, 3))).toBe('Runway over 50 years');
+    expect(text(setbacksPreview(600, 2))).toContain('Runway 600');
+  });
+
   it('D-74 fold previews follow the R2 table', () => {
     expect(text(whatBreaksPreview(1, false))).toBe('1 line breaks');
     expect(text(whatBreaksPreview(3, false))).toBe('3 lines break');

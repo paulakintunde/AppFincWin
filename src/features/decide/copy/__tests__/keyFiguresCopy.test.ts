@@ -32,6 +32,14 @@ describe('keyFiguresCopy', () => {
     expect(k.items[1]!.negative).toBe(false);
   });
 
+  it('D-93 a cushion over 600 months reads Over 50 years', () => {
+    const over = run({ cushionMonths: 7676 });
+    expect(over.items[1]).toMatchObject({ value: 'Over 50 years', kind: 'words' });
+    expect(text(over.a11y)).toContain('Cushion: over 50 years of costs');
+    expect(run({ cushionMonths: 601 }).items[1]!.value).toBe('Over 50 years');
+    expect(run({ cushionMonths: 600 }).items[1]).toMatchObject({ value: `600${NBSP}months`, kind: 'figure' });
+  });
+
   it('D-74 cushion reads Under 1 month and Not limited as words', () => {
     expect(run({ cushionMonths: 0 }).items[1]).toMatchObject({ value: 'Under 1 month', kind: 'words' });
     expect(run({ cushionMonths: null }).items[1]).toMatchObject({ value: 'Not limited', kind: 'words' });

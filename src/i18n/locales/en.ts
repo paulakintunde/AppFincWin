@@ -2091,7 +2091,7 @@ const en = {
       key: {
         leftCaption: 'Left a month', cushionCaption: 'Cushion', monthlyCaption: 'A month', putInCaption: 'Put in a month',
         months_one: '1\u00A0month', months_other: '{{count}}\u00A0months', underOne: 'Under 1\u00A0month', notLimited: 'Not limited', none: 'None',
-        over50Years: 'Over 50 years', over50YearsA11y: 'Cushion: over 50 years of costs', // 05-88 (D-93): runwayMonths above 600
+        over50Years: 'Over 50 years', over50YearsA11y: 'Cushion: over 50 years of costs', over50YearsSpoken: 'over 50 years', // 05-88 (D-93): runwayMonths above 600
         a11y: 'Left each month after this: {{left}}. Cushion: {{months}} of costs. Monthly cost: {{monthly}}.',
       },
       projection_one: 'At {{rate}}%\u00A0a year: about {{fv}} after 1\u00A0month. Not a forecast.',

@@ -38,9 +38,15 @@ export interface KeyFigures {
 
 export type TextOf = (r: CopyRef) => string;
 
-function cushionRef(months: number | null): { value: CopyRef; words: boolean } {
+/** D-93.2: a cushion above 600 months (50 years) reads as words, never as a four-digit month count. */
+export const OVER_50_YEARS_MONTHS = 600;
+
+function cushionRef(months: number | null): { value: CopyRef; words: boolean; spoken?: CopyRef } {
   if (months === null) return { value: ref(`${K}notLimited`), words: true };
   if (months <= 0) return { value: ref(`${K}underOne`), words: true };
+  if (months > OVER_50_YEARS_MONTHS) {
+    return { value: ref(`${K}over50Years`), words: true, spoken: ref(`${K}over50YearsSpoken`) };
+  }
   return { value: ref(`${K}months`, { count: months }), words: false };
 }
 
@@ -61,7 +67,7 @@ export function keyFigures(inputs: KeyFigureInputs, fmt: Fmt, fmtCents: Fmt, tex
         negative: false,
       },
     ],
-    a11y: ref(`${K}a11y`, { left: leftText, months: cushionText, monthly: monthlyText }),
+    a11y: ref(`${K}a11y`, { left: leftText, months: cushion.spoken ? text(cushion.spoken) : cushionText, monthly: monthlyText }),
   };
 }
 

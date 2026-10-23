@@ -4,6 +4,7 @@
  */
 import type { LedgerDirection } from '@/engine/decide';
 import type { InfoKey } from './infoTerms';
+import { OVER_50_YEARS_MONTHS } from './keyFiguresCopy';
 import { ref, type CopyRef } from './types';
 
 export type SectionKey =
@@ -112,6 +113,7 @@ export function whereItLandsPreview(ledgers: readonly { direction: LedgerDirecti
 /** Fold 5: runway with the purchase and the months lost; null runway is not limited. */
 export function setbacksPreview(runwayWith: number | null, lost: number | null): Preview {
   if (runwayWith === null || lost === null || lost <= 0) return ref(`${P}setbacksNone`);
+  if (runwayWith > OVER_50_YEARS_MONTHS) return ref(`${P}setbacksOver50`);
   return ref(`${P}setbacks`, { count: runwayWith, less: lost });
 }
 
