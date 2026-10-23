@@ -36,7 +36,7 @@ describe('Step4Alternatives', () => {
     for (const name of ['As planned', 'Cheaper one', 'Wait and save', 'Not buying it']) expect(screen.getAllByText(name).length).toBeGreaterThan(0);
     expect(screen.getAllByText('On the day').length).toBe(4);
     expect(screen.getAllByText('A month').length).toBe(4);
-    expect(screen.getAllByText('Kept').length).toBe(4);
+    expect(screen.getAllByText('Kept').length).toBe(5); // four columns and the header with its ⓘ
     // the month column carries cents, the day and kept columns do not
     expect(screen.getAllByLabelText('A month, $527.50').length).toBe(3);
     expect(screen.getByLabelText('Kept, $2215')).toBeTruthy();
@@ -192,7 +192,7 @@ describe('Step4Alternatives', () => {
   it('a set rate renames the header, shows the chip and removing it clears the first rate', async () => {
     const p = props({ projectionRates: ['5', '7'] });
     await wrap(<Step4Alternatives {...p} />);
-    expect(screen.getAllByText('Kept, at 5%').length).toBe(4);
+    expect(screen.getAllByText('Kept, at 5%').length).toBe(5);
     expect(screen.getByText('Kept, at 5% a year')).toBeTruthy();
     expect(screen.getByText('5% a year')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Remove the rate'));
@@ -223,8 +223,79 @@ describe('Step4Alternatives', () => {
     expect(screen.queryByText(/Four ways/)).toBeNull();
   });
 
-  it('stacks the descriptor to two lines above 1.3x text', async () => {
-    await wrap(<Step4Alternatives {...props()} />, 1.6);
-    expect(screen.getByText('$3900 · deposit scaled to match').props.numberOfLines).toBe(2);
+  it('D-76 step 4 descriptors and reasons are not clamped', async () => {
+    const p = patchRow(props(), 1, { suppression: { code: 'month_short', amount: 5_000 as never }, projected: null, contributed: null, growth: null });
+    await wrap(<Step4Alternatives {...p} />, 1.6);
+    expect(screen.getByText('$3900 · deposit scaled to match').props.numberOfLines).toBeUndefined();
+    expect(screen.getByText(/Month still \$50 short on this plan/).props.numberOfLines).toBeUndefined();
+  });
+
+  describe('D-83 the exact cheaper price', () => {
+    const big = { advertised: 200_000 };
+    const field = () => screen.getByLabelText('Cheaper price, custom, amount');
+
+    it('D-83 a typed cheaper price is applied exactly, never snapped', async () => {
+      const p = props(big);
+      await wrap(<Step4Alternatives {...p} />);
+      await fireEvent.changeText(field(), '1234.56');
+      expect(p.update).toHaveBeenLastCalledWith({ cheaperPrice: 123_456 });
+    });
+
+    it('D-83 the engine row follows the typed amount exactly', async () => {
+      const p = props({ ...big, cheaperPrice: 123_456 });
+      expect(p.computation.alternatives!.cheaper.ratioPercent).toBe(62);
+      await wrap(<Step4Alternatives {...p} />);
+      expect(field().props.value).toBe('1234.56');
+      expect(screen.getByText('62% of $2000')).toBeTruthy();
+    });
+
+    it('D-83 the slider percent is display only', async () => {
+      const p = props({ ...big, cheaperPrice: 100_000 });
+      await wrap(<Step4Alternatives {...p} />);
+      const slider = screen.getByLabelText('Cheaper price', { exact: true });
+      expect(slider.props.accessibilityValue.text).toBe('50 percent of $2000');
+      await fireEvent(slider, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+      expect(p.update).toHaveBeenCalledWith({ cheaperPrice: 102_000 });
+    });
+
+    it('D-83 Use the cheaper price writes the exact amount', async () => {
+      const p = props({ ...big, cheaperPrice: 123_456 });
+      await wrap(<Step4Alternatives {...p} />);
+      await fireEvent.press(screen.getByLabelText('Use the cheaper price'));
+      const patch = (p.update as jest.Mock).mock.calls[0][0];
+      expect(patch.advertised).toBe(123_456);
+    });
+
+    it('D-83 after Use the cheaper price the typed cheaper amount is reset to the default', async () => {
+      const p = props({ ...big, cheaperPrice: 123_456 });
+      await wrap(<Step4Alternatives {...p} />);
+      await fireEvent.press(screen.getByLabelText('Use the cheaper price'));
+      const patch = (p.update as jest.Mock).mock.calls[0][0];
+      expect(patch).toHaveProperty('cheaperPrice', null);
+    });
+
+    it('D-71 a cheaper amount under ceil(30%) of the price is refused', async () => {
+      const p = props(big);
+      await wrap(<Step4Alternatives {...p} />);
+      await fireEvent.changeText(field(), '599.99');
+      expect(p.update).not.toHaveBeenCalled();
+      expect(screen.getByText('From $600.00 to $2000.00')).toBeTruthy();
+      await fireEvent.changeText(field(), '600');
+      expect(p.update).toHaveBeenLastCalledWith({ cheaperPrice: 60_000 });
+      expect(screen.queryByText('From $600.00 to $2000.00')).toBeNull();
+    });
+
+    it('D-71 an amount above the advertised price is refused', async () => {
+      const p = props(big);
+      await wrap(<Step4Alternatives {...p} />);
+      await fireEvent.changeText(field(), '2000.01');
+      expect(p.update).not.toHaveBeenCalled();
+    });
+  });
+
+  it('D-70 the Kept header carries its ⓘ', async () => {
+    await wrap(<Step4Alternatives {...props()} />);
+    await fireEvent.press(screen.getByLabelText('About Kept'));
+    expect(screen.getByText(/The money that stays yours on that route/)).toBeTruthy();
   });
 });

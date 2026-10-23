@@ -10,7 +10,6 @@ import { ZERO_PERCENT } from '@/engine/decide';
 import type { AlternativeRow } from '@/engine/decide';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { useFontScale } from '@/theme/FontScaleProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { CloseGlyph } from '@/ui/CloseGlyph';
@@ -18,10 +17,14 @@ import { Text } from '@/ui/Text';
 import { cheaperDescriptor, keptHeader, suppressionReason } from '../../copy/alternativesCopy';
 import { percentText } from '../../copy/percentText';
 import { cheaperPriceForPercent, isValidProjectionRateText, repriceInputs } from '../../snapshot/checkInputs';
-import { cheaperThumbPercent } from '../../snapshot/customValues';
+import { cheaperBounds, cheaperThumbPercent } from '../../snapshot/customValues';
 import { FigureStrip } from '../../ui/FigureStrip';
+import { MoneyInput } from '../../ui/MoneyInput';
 import { RateInput } from '../../ui/RateInput';
 import { StepSlider } from '../../ui/StepSlider';
+import { useInfoSheet } from '../../ui/useInfoSheet';
+import { useShouldStack } from '../../ui/textFit';
+import { InfoTitle } from '../InfoTitle';
 import { refText, type Translate } from '../refText';
 import type { StepProps } from '../stepTypes';
 import { Card, Eyebrow, Lock, Meta, moneyFn } from './stepUi';
@@ -30,13 +33,15 @@ import { InvestingInsteadSection } from './step4/InvestingInsteadSection';
 const MAX_RATES = 3;
 const MIN_RATIO = 30;
 const MAX_RATIO = 100;
-const TWO_LINES_ABOVE = 1.3;
 
 export function Step4Alternatives(props: StepProps) {
   const { inputs, update, computation, source, whole, exact, goToStep, readOnly } = props;
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
-  const fontScale = useFontScale();
+  const stacked = useShouldStack();
+  const keptInfo = useInfoSheet('kept');
+  const metaLine = textRole(pairing, 'label').lineHeight;
+  const [outside, setOutside] = useState(false);
   const [adding, setAdding] = useState(false);
   const [rateText, setRateText] = useState('');
   // WR-C04: a rate typed but not yet committed (Next does not blur the field) is committed when the step is left.
@@ -90,9 +95,50 @@ export function Step4Alternatives(props: StepProps) {
   const rateTooHigh = rateText.trim() !== '' && !isValidProjectionRateText(rateText.trim());
 
   const linkStyle = { ...textRole(pairing, 'label'), color: colors.accent };
-  // 05-83 bridge (05-69 builds the typed field): the thumb is read from the exact cheaper price, display only
-  const cheaperRatio =
-    inputs.cheaperPrice !== null && inputs.advertised !== null ? cheaperThumbPercent(inputs.cheaperPrice, inputs.advertised) : alts.cheaper.ratioPercent;
+  // D-83: the typed amount is exact, in minor units of the advertised price; the percent is display only
+  const advertised = inputs.advertised ?? 0;
+  const bounds = cheaperBounds(advertised);
+  const cheaperAmount = inputs.cheaperPrice ?? cheaperPriceForPercent(advertised, alts.cheaper.ratioPercent);
+  const cheaperRatio = cheaperThumbPercent(cheaperAmount, advertised);
+  const rangeText = t('decide.custom.range.from', { min: cents(bounds.min), max: cents(bounds.max) });
+  const onCheaperTyped = (minor: number | null) => {
+    if (minor === null) {
+      setOutside(false);
+      return;
+    }
+    if (minor < bounds.min || minor > bounds.max) {
+      setOutside(true);
+      return;
+    }
+    setOutside(false);
+    update({ cheaperPrice: minor });
+  };
+  const onCheaperDrag = (pct: number) => {
+    setOutside(false);
+    update({ cheaperPrice: cheaperPriceForPercent(advertised, pct) });
+  };
+  const cheaperField = (
+    <MoneyInput
+      compact
+      value={cheaperAmount}
+      currency={source.currency}
+      onChange={onCheaperTyped}
+      label={t('decide.alt.spendSliderA11y')}
+      accessibilityLabel={t('decide.custom.fieldA11y', { group: t('decide.alt.spendSliderA11y'), unit: t('decide.pay.card.field.amount') })}
+      readOnly={readOnly}
+    />
+  );
+  const cheaperSlider = (
+    <StepSlider
+      value={cheaperRatio}
+      min={MIN_RATIO}
+      max={MAX_RATIO}
+      step={1}
+      onChange={onCheaperDrag}
+      accessibilityLabel={t('decide.alt.spendSliderA11y')}
+      valueText={t('decide.alt.spendSliderValue', { pct: cheaperRatio, price: fmt(resolved.price) })}
+    />
+  );
   const { dayDiff, monthlyDiff } = alts.cheaper;
   const spendNote =
     dayDiff > 0 && monthlyDiff > 0
@@ -123,11 +169,11 @@ export function Step4Alternatives(props: StepProps) {
     });
   })();
 
-  const cheaperPatch =
-    check.kind === 'buy' ? repriceInputs(inputs, check, resolved, alts.cheaperPrice, {
-          // bridge: with no typed price the engine's default row is used, as its whole percent of the advertised price
-          cheaperPrice: inputs.cheaperPrice ?? (inputs.advertised === null ? undefined : cheaperPriceForPercent(inputs.advertised, alts.cheaper.ratioPercent)),
-        }) : null;
+  // D-83: one exact amount drives the field, the engine row and the reprice. Untouched, it is the engine's default row.
+  const reprice =
+    check.kind === 'buy' ? repriceInputs(inputs, check, resolved, alts.cheaperPrice, { cheaperPrice: cheaperAmount ?? undefined }) : null;
+  // 05-83: once applied the cheaper amount is the new advertised price; reset it so the cheaper row returns to the default
+  const cheaperPatch = reprice === null ? null : { ...reprice, cheaperPrice: null };
 
   const keptValue = (row: AlternativeRow): string => {
     if (row.code === 'as_planned' || row.suppression !== null || row.projected === null) return t('decide.alt.dash');
@@ -178,6 +224,10 @@ export function Step4Alternatives(props: StepProps) {
           </View>
         </Lock>
 
+        <InfoTitle info={keptInfo} lineHeight={metaLine}>
+          <Meta>{refText(t, keptHeader(alts))}</Meta>
+        </InfoTitle>
+
         <View>
           {alts.rows.map((row, index) => {
             const reason = suppressionReason(row, alts, fmt);
@@ -191,12 +241,7 @@ export function Step4Alternatives(props: StepProps) {
                 ]}
               >
                 <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{t(`decide.alt.row.${row.code}`)}</Text>
-                <Text
-                  numberOfLines={fontScale > TWO_LINES_ABOVE ? 2 : 1}
-                  style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkFaint }}
-                >
-                  {descriptor(row)}
-                </Text>
+                <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkFaint }}>{descriptor(row)}</Text>
                 <FigureStrip
                   items={[
                     { caption: t('decide.alt.onDay'), value: row.dayOne === null ? t('decide.alt.dash') : fmt(row.dayOne) },
@@ -205,7 +250,7 @@ export function Step4Alternatives(props: StepProps) {
                   ]}
                 />
                 {reason !== null ? (
-                  <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>
+                  <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>
                     {refText(t, reason)}
                   </Text>
                 ) : null}
@@ -230,15 +275,21 @@ export function Step4Alternatives(props: StepProps) {
         </View>
         <Meta tone="muted">{spendNote}</Meta>
         <Lock locked={readOnly}>
-          <StepSlider
-            value={cheaperRatio}
-            min={MIN_RATIO}
-            max={MAX_RATIO}
-            step={1}
-            onChange={(v) => update({ cheaperPrice: inputs.advertised === null ? null : cheaperPriceForPercent(inputs.advertised, v) })}
-            accessibilityLabel={t('decide.alt.spendSliderA11y')}
-            valueText={t('decide.alt.spendSliderValue', { pct: cheaperRatio, price: fmt(resolved.price) })}
-          />
+          <View style={styles.cheaperBlock}>
+            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('decide.alt.spendSliderA11y')}</Text>
+            {stacked ? (
+              <View style={styles.cheaperStack}>
+                {cheaperField}
+                {cheaperSlider}
+              </View>
+            ) : (
+              <View style={styles.cheaperRow}>
+                <View style={styles.cheaperSliderFill}>{cheaperSlider}</View>
+                {cheaperField}
+              </View>
+            )}
+            {outside ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{rangeText}</Text> : null}
+          </View>
         </Lock>
         <Meta>{t('decide.alt.spendRatio', { pct: cheaperRatio, price: fmt(resolved.price) })}</Meta>
       </Card>
@@ -305,6 +356,10 @@ const styles = StyleSheet.create({
   row: { paddingVertical: space.rowPadDense, gap: 4 },
   figures: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   figure: { gap: 2 },
+  cheaperBlock: { gap: space.gapSm / 2 },
+  cheaperRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
+  cheaperStack: { gap: space.gapSm },
+  cheaperSliderFill: { flex: 1 },
   trade: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapMd },
   buttons: { flexDirection: 'row', gap: space.gapSm, flexWrap: 'wrap' },
   button: { minHeight: space.touchMin, borderRadius: radii.pill, paddingHorizontal: space.cardPad, justifyContent: 'center' },
