@@ -5,7 +5,7 @@
 import type { Assessment, MissingReason, MoneyBasis, Verdict, VerdictState, Warning, WarningCode } from '@/engine/decide';
 import type { UnconvertedNote } from '../snapshot/types';
 import { MISSING_TITLE, UNEXPLAINED } from './codeMaps';
-import { percentText } from './percentText';
+import { percentLabel } from './percentText';
 import { ref } from './types';
 import type { CopyRef, Fmt } from './types';
 
@@ -66,7 +66,7 @@ export const ADJUST_TITLE = {
   dsr: (a) =>
     a.debtServiceRatioAfter === null
       ? ref('decide.verdict.titleDsrNoIncome')
-      : ref('decide.verdict.titleDsr', { pct: percentText(a.debtServiceRatioAfter) }),
+      : ref('decide.verdict.titleDsr', { pct: percentLabel(a.debtServiceRatioAfter) }),
   owe: () => ref('decide.verdict.titleOwe'),
   inv: (a, _w, fmt) => ref(`decide.verdict.titleInv${invKind(a)}`, { amount: fmt(a.pauseNeeded) }),
 } as const satisfies Record<WarningCode, TitleFn>;
@@ -84,7 +84,10 @@ export function verdictTitle(verdict: Verdict, fmt: Fmt): CopyRef {
       if (!month) return ref(UNEXPLAINED);
       const short = fmt(month.shortfall);
       if (a.context.leftBefore < 0) {
-        return ref('decide.verdict.titleNoAlreadyShort', { already: fmt(-a.context.leftBefore), short }, { basis: basisWordKey(a.context.money.basis) });
+        const basis = { basis: basisWordKey(a.context.money.basis) };
+        // the purchase adds nothing to the monthly cost: the gap is the same before and after, so no "this makes it"
+        if (a.left === a.context.leftBefore) return ref('decide.verdict.titleNoAlreadyShortSame', { already: fmt(-a.context.leftBefore) }, basis);
+        return ref('decide.verdict.titleNoAlreadyShort', { already: fmt(-a.context.leftBefore), short: fmt(-a.left) }, basis);
       }
       return ref('decide.verdict.titleNoMonthShort', { short });
     }

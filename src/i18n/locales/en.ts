@@ -2006,6 +2006,7 @@ const en = {
       projection_one: 'At {{rate}}%\u00A0a year: about {{fv}} after 1\u00A0month. Not a forecast.',
       projection_other: 'At {{rate}}%\u00A0a year: about {{fv}} after {{count}}\u00A0months. Not a forecast.',
       titleNoAlreadyShort: 'Your {{basis}} month is already {{already}} short. This makes it {{short}}.',
+      titleNoAlreadyShortSame: 'Your {{basis}} month is already {{already}} short either way.',
       titleNoMonthShort: 'The month ends {{short}} short.',
       titleUnexplained: 'The detail behind this answer is not available.', // IN-B07: a defensive fallback in place of a zero-amount claim
       titleNoEmptyCash: 'This would empty your cash.',
@@ -2046,7 +2047,9 @@ const en = {
     warn: {
       groupA11y: '{{title}}, {{value}}. {{body}}',
       monthTitle: 'The month does not close', monthValue: '−{{amount}}',
-      monthAlready: 'Your {{basis}} month is already {{already}} short before this purchase. Adding {{added}} takes the gap to {{short}}. That gap is borrowed money covering ordinary bills.',
+      monthAlready: 'Your {{basis}} month is already {{already}} short before this purchase. Adding {{added}} takes the gap to {{gap}}. That gap is borrowed money covering ordinary bills.',
+      monthAlreadySame: 'Your {{basis}} month is already {{already}} short before this purchase, and this purchase adds nothing to the monthly cost. That gap is borrowed money covering ordinary bills.',
+      monthPaused: 'Pausing saving and investing covers {{paused}} of it, leaving {{short}}.',
       monthBody: 'Every month would need {{short}} more than comes in.',
       cashTitle: 'Cash cushion broken', cashValue: '−{{amount}}', cashBody: 'You protect {{cushion}} as a cushion. Paying {{day}} on the day leaves {{cashAfter}}.',
       cashDipTitle: 'Cash runs low before money comes in', cashDipValue: '−{{amount}}',

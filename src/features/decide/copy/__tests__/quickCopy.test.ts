@@ -163,7 +163,7 @@ describe('quickResultCopy: Credit', () => {
   });
 
   it('dsr, owe and cash lines', () => {
-    expect(run(logged(assessmentOf({ state: 'adjust', warnings: [w('dsr', 1)] }), check12), 'credit').line).toEqual({ key: 'decide.quick.line.creditDsr', params: { pct: '22.99' } });
+    expect(run(logged(assessmentOf({ state: 'adjust', warnings: [w('dsr', 1)] }), check12), 'credit').line).toEqual({ key: 'decide.quick.line.creditDsr', params: { pct: '22.99%' } });
     expect(run(logged(assessmentOf({ state: 'adjust', warnings: [w('dsr', 1)], debtServiceRatioAfter: null }), check12), 'credit').line.key).toBe('decide.quick.line.creditDsrNoIncome');
     expect(run(logged(assessmentOf({ state: 'adjust', warnings: [w('owe', 1)] }), check12), 'credit').line.key).toBe('decide.quick.line.creditOwe');
     const cash = run(logged(assessmentOf({ state: 'no', cashAfter: -5, mineDayOne: 20, warnings: [w('cash', 25)] }), check12), 'credit');

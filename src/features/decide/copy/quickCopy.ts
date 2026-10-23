@@ -7,7 +7,7 @@ import { ZERO_PERCENT } from '@/engine/decide';
 import type { Assessment, BuyCheck, FirstRead, Warning, WarningCode } from '@/engine/decide';
 import type { QuickComputation } from '../snapshot/types';
 import { MISSING_TITLE, SIZE_LABEL, UNEXPLAINED } from './codeMaps';
-import { percentText } from './percentText';
+import { percentLabel } from './percentText';
 import { ref } from './types';
 import type { CopyRef, Fmt } from './types';
 import { findWarning, invKind, noLead, stateChip } from './verdictCopy';
@@ -45,7 +45,7 @@ export const QUICK_CASH_LINE = {
   dsr: (a) =>
     a.debtServiceRatioAfter === null
       ? ref('decide.quick.line.creditDsrNoIncome')
-      : ref('decide.quick.line.creditDsr', { pct: percentText(a.debtServiceRatioAfter) }),
+      : ref('decide.quick.line.creditDsr', { pct: percentLabel(a.debtServiceRatioAfter) }),
   owe: () => ref('decide.quick.line.creditOwe'),
   inv: (a, _w, fmt) => ref(`decide.quick.line.pause${invKind(a)}`, { amount: fmt(a.pauseNeeded) }),
   month: (_a, w, fmt) => ref('decide.quick.line.cashMonthShort', { short: fmt(w.shortfall) }),
@@ -58,7 +58,7 @@ export const QUICK_CREDIT_LINE = {
   dsr: (a) =>
     a.debtServiceRatioAfter === null
       ? ref('decide.quick.line.creditDsrNoIncome')
-      : ref('decide.quick.line.creditDsr', { pct: percentText(a.debtServiceRatioAfter) }),
+      : ref('decide.quick.line.creditDsr', { pct: percentLabel(a.debtServiceRatioAfter) }),
   owe: () => ref('decide.quick.line.creditOwe'),
   // deposit 0 in the quick check, so only the on-the-day fees reach cash
   cash: (a, w, c) =>

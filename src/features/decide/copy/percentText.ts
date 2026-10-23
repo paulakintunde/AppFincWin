@@ -10,3 +10,10 @@ export function percentText(p: Percent): string {
   const frac = (hundredths % 100n).toString().padStart(2, '0').replace(/0+$/, '');
   return frac === '' ? whole.toString() : `${whole}.${frac}`;
 }
+
+/** A Percent for display: thousands grouped and the sign attached, "1,565.6%". Bigint arithmetic only; inputs keep `percentText`. */
+export function percentLabel(p: Percent): string {
+  const [whole = '0', frac] = percentText(p).split('.');
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return frac === undefined ? `${grouped}%` : `${grouped}.${frac}%`;
+}

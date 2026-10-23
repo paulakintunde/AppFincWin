@@ -4,9 +4,9 @@
  */
 import type { Assessment, Verdict, Warning } from '@/engine/decide';
 import { WARNING_TONE } from './codeMaps';
-import { percentText } from './percentText';
+import { percentLabel } from './percentText';
 import { ref } from './types';
-import type { Fmt, WarnCard } from './types';
+import type { CopyRef, Fmt, WarnCard } from './types';
 import { basisWordKey, invKind } from './verdictCopy';
 
 export function warningCard(w: Warning, a: Assessment, fmt: Fmt, fmtDate: (localDate: string) => string): WarnCard {
@@ -16,11 +16,22 @@ export function warningCard(w: Warning, a: Assessment, fmt: Fmt, fmtDate: (local
     case 'month': {
       const short = fmt(w.shortfall);
       const leftBefore = a.context.leftBefore;
-      const body =
-        leftBefore < 0
-          ? ref('decide.warn.monthAlready', { already: fmt(-leftBefore), added: fmt(leftBefore - a.left), short }, { basis: basisWordKey(a.context.money.basis) })
-          : ref('decide.warn.monthBody', { short });
-      return { title: ref('decide.warn.monthTitle'), value: ref('decide.warn.monthValue', { amount: short }), body: [body], tone };
+      // Before, adding and after are one basis and one check set: a.context is the combined context, a.left is leftBefore less the
+      // purchase's monthly cost. The shortfall (w.shortfall) is what remains after pausing saving and investing (D-35), so it is
+      // named as that and never set beside "adding" as if the purchase did the closing.
+      const gap = fmt(-a.left);
+      const added = leftBefore - a.left;
+      const body: CopyRef[] = [];
+      if (leftBefore < 0) {
+        const basis = { basis: basisWordKey(a.context.money.basis) };
+        body.push(
+          added === 0
+            ? ref('decide.warn.monthAlreadySame', { already: fmt(-leftBefore) }, basis)
+            : ref('decide.warn.monthAlready', { already: fmt(-leftBefore), added: fmt(added), gap }, basis)
+        );
+        if (-a.left !== w.shortfall) body.push(ref('decide.warn.monthPaused', { paused: fmt(-a.left - w.shortfall), short }));
+      } else body.push(ref('decide.warn.monthBody', { short }));
+      return { title: ref('decide.warn.monthTitle'), value: ref('decide.warn.monthValue', { amount: short }), body, tone };
     }
     case 'cash':
       return {
@@ -43,14 +54,14 @@ export function warningCard(w: Warning, a: Assessment, fmt: Fmt, fmtDate: (local
       };
     }
     case 'dsr': {
-      const line = percentText(limits.dsrLine);
+      const line = percentLabel(limits.dsrLine);
       const debt = fmt(a.debtServiceAfter);
       if (a.debtServiceRatioAfter === null) {
         return { title: ref('decide.warn.dsrTitle'), value: ref('decide.warn.dsrValueNoIncome'), body: [ref('decide.warn.dsrBodyNoIncome', { line, debt })], tone };
       }
       return {
         title: ref('decide.warn.dsrTitle'),
-        value: ref('decide.warn.dsrValue', { pct: percentText(a.debtServiceRatioAfter) }),
+        value: ref('decide.warn.dsrValue', { pct: percentLabel(a.debtServiceRatioAfter) }),
         body: [ref('decide.warn.dsrBody', { line, debt, in: fmt(a.context.money.incomeBasis) })],
         tone,
       };

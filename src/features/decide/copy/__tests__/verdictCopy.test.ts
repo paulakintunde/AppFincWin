@@ -44,10 +44,13 @@ describe('verdictTitle', () => {
   it('no: a month short, plain or already short', () => {
     const plain = assessmentOf({ state: 'no', warnings: [w('month', 100)] });
     expect(verdictTitle(plain, fmt)).toEqual({ key: 'decide.verdict.titleNoMonthShort', params: { short: '$100' } });
-    const already = assessmentOf({ state: 'no', warnings: [w('month', 300)], ...withContext({ leftBefore: -200 }) });
+    const already = assessmentOf({ state: 'no', warnings: [w('month', 300)], left: -300, ...withContext({ leftBefore: -200 }) });
     const t = verdictTitle(already, fmt);
     expect(t.key).toBe('decide.verdict.titleNoAlreadyShort');
     expect(t.params).toEqual({ already: '$200', short: '$300' });
+    // a purchase that adds nothing never says "this makes it"
+    const same = assessmentOf({ state: 'no', warnings: [w('month', 200)], left: -200, ...withContext({ leftBefore: -200 }) });
+    expect(verdictTitle(same, fmt)).toEqual({ key: 'decide.verdict.titleNoAlreadyShortSame', params: { already: '$200' }, keyParams: expect.any(Object) });
     expect(t.keyParams).toEqual({ basis: 'decide.verdict.basisAverage' });
     const worst = verdictTitle(assessmentOf({ state: 'no', warnings: [w('month', 300)], ...withContext({ leftBefore: -1, money: { basis: 'worst', incomeBasis: 1 } }) }), fmt);
     expect(worst.keyParams).toEqual({ basis: 'decide.verdict.basisWorst' });
@@ -68,7 +71,7 @@ describe('verdictTitle', () => {
     expect(lead('cash').key).toBe('decide.verdict.titleCash');
     expect(lead('month').key).toBe('decide.verdict.titleNoMonthShort');
     expect(lead('owe').key).toBe('decide.verdict.titleOwe');
-    expect(lead('dsr')).toEqual({ key: 'decide.verdict.titleDsr', params: { pct: '22.99' } });
+    expect(lead('dsr')).toEqual({ key: 'decide.verdict.titleDsr', params: { pct: '22.99%' } });
     expect(lead('inv', { investingAtRisk: 5, pauseNeeded: 5 }).key).toBe('decide.verdict.titleInvInvesting');
     expect(lead('inv', { savingAtRisk: 5, pauseNeeded: 5 }).key).toBe('decide.verdict.titleInvSaving');
     expect(lead('inv', { investingAtRisk: 5, savingAtRisk: 5, pauseNeeded: 10 })).toEqual({ key: 'decide.verdict.titleInvBoth', params: { amount: '$10' } });
@@ -81,7 +84,7 @@ describe('verdictTitle', () => {
     expect(t).toEqual({ key: 'decide.verdict.titleDsrNoIncome' });
     const card = warningCard(w('dsr', 10), a, fmt, fmtDate);
     expect(card.value).toEqual({ key: 'decide.warn.dsrValueNoIncome' });
-    expect(card.body[0]).toEqual({ key: 'decide.warn.dsrBodyNoIncome', params: { line: '36', debt: '$85000' } });
+    expect(card.body[0]).toEqual({ key: 'decide.warn.dsrBodyNoIncome', params: { line: '36%', debt: '$85000' } });
     expect(JSON.stringify([t, card])).not.toMatch(/null/);
   });
 
@@ -116,7 +119,36 @@ describe('warningCard', () => {
     expect(plain.body[0]!.key).toBe('decide.warn.monthBody');
     const already = warningCard(w('month', 300), assessmentOf({ left: -300, ...withContext({ leftBefore: -200 }) }), fmt, fmtDate);
     expect(already.body[0]!.key).toBe('decide.warn.monthAlready');
-    expect(already.body[0]!.params).toEqual({ already: '$200', added: '$100', short: '$300' });
+    expect(already.body[0]!.params).toEqual({ already: '$200', added: '$100', gap: '$300' });
+  });
+
+  it('month, already short, adding nothing: before, adding and after agree and the pause is named (combined view, paid in full)', () => {
+    // before 12,536.39 short, a monthly cost of 0, saving paused for 556.61: the card says the gap stays, then what the pause covers
+    const a = assessmentOf({ left: -1_253_639, ...withContext({ leftBefore: -1_253_639 }) });
+    const card = warningCard(w('month', 1_197_978), a, fmt, fmtDate);
+    expect(card.body.map((b) => b.key)).toEqual(['decide.warn.monthAlreadySame', 'decide.warn.monthPaused']);
+    expect(card.body[0]!.params).toEqual({ already: '$1253639' });
+    expect(card.body[1]!.params).toEqual({ paused: '$55661', short: '$1197978' });
+    const noPause = warningCard(w('month', 1_253_639), a, fmt, fmtDate);
+    expect(noPause.body.map((b) => b.key)).toEqual(['decide.warn.monthAlreadySame']);
+    for (const key of ['decide.warn.monthAlreadySame', 'decide.warn.monthPaused']) expect(resolvesInEn(key)).toBe(true);
+    expect(JSON.stringify(card)).not.toMatch(/Adding/);
+  });
+
+  it('dsr percent values are grouped and carry the percent sign, for the value, the line and the no-income body', () => {
+    const big = assessmentOf({ debtServiceRatioAfter: percent('1565.6') } as never);
+    expect(warningCard(w('dsr', 1), big, fmt, fmtDate).value).toEqual({ key: 'decide.warn.dsrValue', params: { pct: '1,565.6%' } });
+    expect(warningCard(w('dsr', 1), assessmentOf({ debtServiceRatioAfter: percent('12') } as never), fmt, fmtDate).value!.params).toEqual({ pct: '12%' });
+  });
+
+  it('every warning code gives a value with its unit: amounts through fmt, the dsr as a percent', () => {
+    const a = assessmentOf({ investingAtRisk: 5_000, investingAfter: 15_000, pauseNeeded: 5_000, cashDip: 'soft' });
+    expect(warningCard(w('month', 100), a, fmt, fmtDate).value!.params).toEqual({ amount: '$100' });
+    expect(warningCard(w('cash', 40), a, fmt, fmtDate).value!.params).toEqual({ amount: '$40' });
+    expect(warningCard(w('cash_dip', 70), a, fmt, fmtDate).value!.params).toEqual({ amount: '$70' });
+    expect(warningCard(w('dsr', 1), a, fmt, fmtDate).value!.params).toEqual({ pct: '22.99%' });
+    expect(warningCard(w('owe', 1), a, fmt, fmtDate).value!.params).toEqual({ amount: '$1000000' });
+    expect(warningCard(w('inv', 5_000), a, fmt, fmtDate).value!.params).toEqual({ amount: '$5000' });
   });
 
   it('cash states the cushion and the figure left', () => {
@@ -141,7 +173,7 @@ describe('warningCard', () => {
 
   it('dsr with a ratio, and owe', () => {
     const d = warningCard(w('dsr', 1), assessmentOf({}), fmt, fmtDate);
-    expect(d.value).toEqual({ key: 'decide.warn.dsrValue', params: { pct: '22.99' } });
+    expect(d.value).toEqual({ key: 'decide.warn.dsrValue', params: { pct: '22.99%' } });
     expect(d.body[0]!.key).toBe('decide.warn.dsrBody');
     const o = warningCard(w('owe', 1), assessmentOf({}), fmt, fmtDate);
     expect(o.tone).toBe('hard');

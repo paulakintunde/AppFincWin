@@ -13,7 +13,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import type { InfoKey } from '../../copy/infoTerms';
 import { useInfoSheet, type InfoSheetHandle } from '../../ui/useInfoSheet';
 import { InfoTitle } from '../InfoTitle';
-import { percentText } from '../../copy/percentText';
+import { percentLabel } from '../../copy/percentText';
 import { cushionCopy, marginText } from '../../copy/depthVerdictCopy';
 import type { LineMargin, MarginLine } from '@/engine/decide';
 import { refText, type Translate } from '../refText';
@@ -52,8 +52,8 @@ export function EveryLineRows(props: SectionProps) {
   const monthShort = monthWarning ? monthWarning.shortfall : Math.max(0, -a.left);
   const dsrDesc =
     a.debtServiceRatioAfter === null
-      ? t('decide.section.lineDsrDescNoIncome', { line: percentText(limits.dsrLine) })
-      : t('decide.section.lineDsrDesc', { pct: percentText(a.debtServiceRatioAfter), line: percentText(limits.dsrLine) });
+      ? t('decide.section.lineDsrDescNoIncome', { line: percentLabel(limits.dsrLine) })
+      : t('decide.section.lineDsrDesc', { pct: percentLabel(a.debtServiceRatioAfter), line: percentLabel(limits.dsrLine) });
   const rows: LineRow[] = [
     {
       key: 'cash',
