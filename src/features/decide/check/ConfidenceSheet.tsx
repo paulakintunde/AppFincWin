@@ -13,6 +13,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { confidenceReasons, type ConfidenceFacts } from '../copy/depthVerdictCopy';
+import { infoCopy } from '../copy/infoTerms';
 import { refText, type Translate } from './refText';
 
 export interface ConfidenceSheetProps {
@@ -27,6 +28,7 @@ export function ConfidenceSheet({ visible, confidence, facts, onClose }: Confide
   const { colors, pairing } = useTheme();
   const rows = confidenceReasons(confidence, facts);
   const title = t('decide.depth.confidence.sheetTitle');
+  const basis = infoCopy('confidence');
   return (
     <DetailSheet
       visible={visible}
@@ -36,6 +38,14 @@ export function ConfidenceSheet({ visible, confidence, facts, onClose }: Confide
       actions={<Pill label={t('decide.depth.confidence.close')} variant="secondary" onPress={onClose} />}
     >
       <View style={styles.rows}>
+        <View style={styles.basis}>
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{refText(t, basis.term)}</Text>
+          {basis.body.map((b, i) => (
+            <Text key={`${b.key}-${i}`} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+              {refText(t, b)}
+            </Text>
+          ))}
+        </View>
         {rows.map((r, i) => (
           <Text key={`${r.key}-${i}`} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
             {refText(t, r)}
@@ -49,4 +59,4 @@ export function ConfidenceSheet({ visible, confidence, facts, onClose }: Confide
   );
 }
 
-const styles = StyleSheet.create({ rows: { gap: space.gapMd } });
+const styles = StyleSheet.create({ rows: { gap: space.gapMd }, basis: { gap: space.gapSm } });

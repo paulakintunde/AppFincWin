@@ -86,7 +86,7 @@ describe('verdict depth: step 3 top', () => {
     await fireEvent.press(screen.getByLabelText('Basis: Strong basis, tap for reasons'));
     expect(screen.getByText('What this rests on')).toBeTruthy();
     expect(screen.getByText('6 full months logged')).toBeTruthy();
-    expect(screen.getByText(/Strong needs 6 full months/)).toBeTruthy();
+    expect(screen.getAllByText(/Strong needs 6 full months/).length).toBeGreaterThan(0);
     await fireEvent.press(screen.getByText('Close'));
     expect(screen.queryByText('What this rests on')).toBeNull();
   });

@@ -7,6 +7,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { ACCENT_TINT_OPACITY, warnTint } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
+import { InfoGlyph } from './InfoButton';
 
 export type ConfidenceLevel = 'strong' | 'fair' | 'rough';
 
@@ -51,6 +52,7 @@ export function ConfidenceChip({ level, onPress }: ConfidenceChipProps) {
         <Text scale="capped" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: textColor }}>
           {label}
         </Text>
+        <InfoGlyph size={12} color={textColor} />
       </View>
     </Pressable>
   );
@@ -64,5 +66,8 @@ const styles = StyleSheet.create({
     paddingVertical: CHIP_PAD_V,
     borderRadius: radii.pill,
     overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.gapSm,
   },
 });
