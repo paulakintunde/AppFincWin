@@ -5,6 +5,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { minorUnits } from '@/engine/money';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { interceptSwipeBack, setSwipeBackInterceptor } from '@/features/navigation/swipeBackGesture';
+import * as decideHints from '../../hints/decideHints';
 import { CheckFlowScreen, shareFor } from '../CheckFlowScreen';
 import { SOLE_SHARE } from '@/engine/decide';
 import { emptyCheckInputs } from '../../snapshot/checkInputs';
@@ -136,25 +137,6 @@ async function open(over: Partial<CheckInputs> = {}, props: Partial<React.Compon
 }
 
 const stepText = (n: number) => `Step ${n} of 5`;
-
-/** Every string in the rendered tree, in document order. */
-function textsInOrder(): string[] {
-  const out: string[] = [];
-  const walk = (node: unknown): void => {
-    if (node === null || node === undefined) return;
-    if (typeof node === 'string') {
-      out.push(node);
-      return;
-    }
-    if (Array.isArray(node)) {
-      node.forEach(walk);
-      return;
-    }
-    walk((node as { children?: unknown }).children);
-  };
-  walk(screen.toJSON());
-  return out;
-}
 
 async function editPrice(value: string) {
   const field = screen.getByLabelText('Price you have been quoted');
@@ -390,9 +372,22 @@ describe('analytics and the seen state', () => {
 });
 
 describe('step 3', () => {
-  const ORDER = ['The month, line by line', 'Where it lands', 'Day by day, next 90 days', 'Who pays what', 'Against your lines', 'If something goes wrong', 'With the expected income', 'What would make it work', 'Assumptions in play'];
+  const ORDER = [
+    'What breaks',
+    'The month, line by line',
+    'Cash path, next 90 days',
+    'Where it lands',
+    'If something goes wrong',
+    'What would make it work',
+    'If it went into investing instead',
+    'With the expected income',
+    'Who pays what',
+    'Assumptions in play',
+  ];
+  const foldRow = (title: string) => screen.getByLabelText(new RegExp(`^${title}, `));
+  const expandedOf = (title: string) => foldRow(title).props.accessibilityState.expanded as boolean;
 
-  it('step 3 sections follow the UI-SPEC order', async () => {
+  it('D-74 step 3 folds follow the R2 order', async () => {
     // a price that breaks a line (options), a raise (expected income) and two household members (who pays what)
     mockSource = paySource();
     mockMembers = new Map([
@@ -407,11 +402,68 @@ describe('step 3', () => {
       },
       { initialStep: 3 }
     );
-    const found = ORDER.map((title) => screen.queryByText(title));
-    const missing = ORDER.filter((_, i) => found[i] === null);
-    expect(missing).toEqual([]);
-    const seen = textsInOrder().filter((v) => ORDER.includes(v));
+    const labels = screen.getAllByRole('button').map((b) => String(b.props.accessibilityLabel ?? ''));
+    const seen = ORDER.filter((title) => labels.some((l) => l.startsWith(`${title}, `)));
     expect(seen).toEqual(ORDER);
+    const at = ORDER.map((title) => labels.findIndex((l) => l.startsWith(`${title}, `)));
+    expect([...at].sort((a, b) => a - b)).toEqual(at);
+  });
+
+  it('D-74 What breaks is open on arrival when there are warnings', async () => {
+    await open({ advertised: 9_000_000 }, { initialStep: 3 });
+    expect(expandedOf('What breaks')).toBe(true);
+    expect(expandedOf('The month, line by line')).toBe(false);
+    expect(screen.getByText('Cash cushion broken')).toBeTruthy();
+  });
+
+  it('D-74 every fold is closed on arrival when nothing breaks', async () => {
+    await open({ advertised: 150_000 }, { initialStep: 3 });
+    expect(foldRow('What breaks').props.accessibilityState.expanded).toBe(false);
+    expect(screen.getByLabelText('What breaks, Nothing breaks')).toBeTruthy();
+    expect(screen.queryByText('Every line')).toBeNull();
+  });
+
+  it('D-74 only one fold is open and the choice is kept between steps', async () => {
+    await open({ advertised: 9_000_000 }, { initialStep: 3 });
+    await fireEvent.press(foldRow('The month, line by line'));
+    expect(expandedOf('The month, line by line')).toBe(true);
+    expect(expandedOf('What breaks')).toBe(false);
+    await fireEvent.press(screen.getByLabelText('Back'));
+    expect(screen.getByText(stepText(2))).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Next: Impact'));
+    expect(screen.getByText(stepText(3))).toBeTruthy();
+    expect(expandedOf('The month, line by line')).toBe(true);
+    expect(expandedOf('What breaks')).toBe(false);
+    // closing every fold is a choice too: it is kept, and the default does not reopen What breaks
+    await fireEvent.press(foldRow('The month, line by line'));
+    expect(expandedOf('The month, line by line')).toBe(false);
+    expect(expandedOf('What breaks')).toBe(false);
+  });
+
+  it('D-75 the first fold tap dismisses the hint for good', async () => {
+    const load = jest.spyOn(decideHints, 'loadFoldHintSeen').mockResolvedValue(false);
+    const mark = jest.spyOn(decideHints, 'markFoldHintSeen').mockResolvedValue(undefined);
+    await open({ advertised: 9_000_000 }, { initialStep: 3 });
+    expect(await screen.findByText('Tap a row to see the detail')).toBeTruthy();
+    await fireEvent.press(foldRow('Where it lands'));
+    expect(screen.queryByText('Tap a row to see the detail')).toBeNull();
+    expect(mark).toHaveBeenCalledWith('u1');
+    expect(load).toHaveBeenCalledWith('u1');
+  });
+
+  it('D-75 a user who has seen the hint never gets it again', async () => {
+    jest.spyOn(decideHints, 'loadFoldHintSeen').mockResolvedValue(true);
+    await open({ advertised: 9_000_000 }, { initialStep: 3 });
+    await act(async () => undefined);
+    expect(screen.queryByText('Tap a row to see the detail')).toBeNull();
+  });
+
+  it('D-74 the investing section is on step 3, not step 4', async () => {
+    await open({ advertised: 150_000, projectionRates: ['5'] }, { initialStep: 3 });
+    expect(screen.getByLabelText(/^If it went into investing instead, /)).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Next: Alternatives'));
+    expect(screen.getByText(stepText(4))).toBeTruthy();
+    expect(screen.queryByText('If it went into investing instead')).toBeNull();
   });
 
   it('leaves out who pays what for one member and the expected income without a raise', async () => {

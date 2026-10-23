@@ -9,7 +9,7 @@
  * Leaving never prompts and never loses work.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useMarkCheckSeen, useReopenCheck, useReopenRedirect } from '@/data/mutations/decideChecks';
 import { useSaveCardRate, useSaveCardTerms, type CardTermsInput } from '@/data/mutations/decideLinks';
@@ -31,6 +31,7 @@ import { focusAccessibility, useScreenTitleFocus } from '@/shell/a11yFocus';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space, useScreenInsets } from '@/theme/layout';
+import { useReduceMotion } from '@/theme/motion';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { EmptyState } from '@/ui/EmptyState';
 import { useMoneyFormatter, type MoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -42,7 +43,11 @@ import { basisDetailItems } from '../copy/depthVerdictCopy';
 import { stateChip } from '../copy/verdictCopy';
 import { checkHref } from '../home/checkHref';
 import { cancelCheckReminders } from '../notifications/waitReminder';
+import { FoldHint } from '../ui/FoldHint';
+import { RevealTapContext } from '../ui/revealTap';
+import { ScrollIntoViewContext } from '../ui/scrollIntoView';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
+import { useFoldHint } from '../hints/useFoldHint';
 import { fromHomePatch, inHomeCurrency, sourceFor } from '../snapshot/checkCurrency';
 import { computeCore, computeDetails } from '../snapshot/computeCheck';
 import type { CheckCore } from '../snapshot/computeCheck';
@@ -50,15 +55,7 @@ import { EMPTY_STACK } from '../snapshot/types';
 import type { CheckComputation, CheckInputs } from '../snapshot/types';
 import { CheckActionBar } from './CheckActionBar';
 import { CheckFlowHeader } from './CheckFlowHeader';
-import { AssumptionsSection } from './sections/AssumptionsSection';
-import { DayByDaySection } from './sections/DayByDaySection';
-import { ExpectedIncomeSection } from './sections/ExpectedIncomeSection';
-import { LedgersSection } from './sections/LedgersSection';
-import { LinesSection } from './sections/LinesSection';
-import { MonthSection } from './sections/MonthSection';
-import { OptionsSection } from './sections/OptionsSection';
-import { SetbacksSection } from './sections/SetbacksSection';
-import { WhoPaysSection } from './sections/WhoPaysSection';
+import { Step3FoldList, defaultOpenFold, type SectionKey } from './step3Folds';
 import { ScopeToggle } from './ScopeToggle';
 import { CardMinimumSheet } from './steps/step2/CardMinimumSheet';
 import { Step1Item, step1Complete } from './steps/Step1Item';
@@ -77,7 +74,6 @@ import { useDebouncedValue } from './useDebouncedValue';
 type Outcome = NonNullable<CheckInputs['outcome']>;
 type SeenBasis = 'logged_months' | 'first_read_rough_figures';
 type Titles = readonly [string, string, string, string, string];
-type SectionKey = 'month' | 'ledgers' | 'dayByDay' | 'whoPays' | 'lines' | 'setbacks' | 'income' | 'options' | 'assumptions';
 
 const EMPTY_BILLS: readonly { id: string; name: string; monthly: number }[] = [];
 
@@ -431,9 +427,38 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
   const myIndex = [...memberNames.keys()].indexOf(rc.userId ?? '');
   const share = useMemo(() => shareFor(inputs, memberCount, myIndex), [inputs, memberCount, myIndex]);
 
-  // ── step 3 sections: collapsed by default, expanded state kept while the flow is open ──
-  const [open, setOpen] = useState<Partial<Record<SectionKey, boolean>>>({});
-  const section = (key: SectionKey) => ({ expanded: open[key] === true, onToggle: () => setOpen((o) => ({ ...o, [key]: o[key] !== true })) });
+  // ── step 3 folds (D-74): one open at a time. `undefined` is "not chosen yet", so arriving applies the default (What breaks
+  // when anything breaks) and a choice, including closing every fold, is kept while the flow is open. Derived, no effect. ──
+  const [chosenFold, setChosenFold] = useState<SectionKey | null | undefined>(undefined);
+  const openFold = chosenFold === undefined ? defaultOpenFold(computation) : chosenFold;
+  // D-75: the first-run hint, dismissed by the first fold or Show details tap
+  const foldHint = useFoldHint(rc.userId);
+
+  // R1 "Scroll on open": an opened row (a fold, a step 2 method card) that lies above the viewport is scrolled to
+  // space.gapMd below the top of the scroll area, which sits directly under the sticky header. The offset is read from
+  // onScroll into a ref that only this callback reads, never during render.
+  const reduceMotion = useReduceMotion();
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollOffset = useRef(0);
+  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>): void => {
+    scrollOffset.current = e.nativeEvent.contentOffset.y;
+  }, []);
+  const scrollIntoView = useCallback(
+    (target: React.ComponentRef<typeof View> | null): void => {
+      const scroller = scrollRef.current;
+      const content = (scroller as unknown as { getInnerViewRef?: () => React.ComponentRef<typeof View> | null } | null)?.getInnerViewRef?.();
+      if (!target || !scroller || !content) return;
+      target.measureLayout(
+        content,
+        (_x, y) => {
+          const wanted = Math.max(0, y - space.gapMd);
+          if (y < scrollOffset.current + space.gapMd) scroller.scrollTo({ y: wanted, animated: !reduceMotion });
+        },
+        () => undefined
+      );
+    },
+    [reduceMotion]
+  );
 
   const titles: Titles = useMemo(
     () =>
@@ -502,7 +527,6 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
     }
     const p = stepProps(computation, source);
     const currency = source.currency;
-    const common = { computation, inputs, update, whole, exact, currency, readOnly, busy };
     switch (step) {
       case 1:
         return <Step1Item {...p} recurringBills={recurringBills} />;
@@ -525,49 +549,35 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
               formatDate: (d: string) => whole.formatDate(d),
             })
           : [];
-        const a = resolved;
-        const dayOneTotal: number = a === null ? 0 : a.plan.dayOne;
-        const monthlyTotal: number = a === null ? 0 : a.plan.monthly;
         return (
           <View style={styles.sections}>
             {bought && row !== null ? <DecidedHeader row={row} whole={whole} currency={currency} timeZone={rc.timeZone} /> : null}
             <Step3Verdict {...p} lastSeenBasis={lastSeenBasis ?? null} revealKey={id} onEditCardMinimum={onEditCardMinimum} />
-            <View accessibilityState={{ busy }} style={styles.sections}>
-              <MonthSection {...common} {...section('month')} />
-              <LedgersSection {...common} {...section('ledgers')} />
-              <DayByDaySection {...common} {...section('dayByDay')} stack={p.stack} formatDate={(d) => whole.formatDate(d)} />
-              <WhoPaysSection
-                {...common}
-                {...section('whoPays')}
-                memberCount={memberCount}
-                memberNames={memberList}
-                share={share}
-                dayOneTotal={dayOneTotal}
-                monthlyTotal={monthlyTotal}
-              />
-              <LinesSection {...common} {...section('lines')} />
-              <SetbacksSection {...common} {...section('setbacks')} resultIds={(bought ? inputs : settled).setbacks.map((s) => s.id)} />
-              <ExpectedIncomeSection {...common} {...section('income')} />
-              <OptionsSection
-                {...common}
-                {...section('options')}
-                lineName={lineName}
-                onSwitchToWait={() => {
-                  update({ outcome: 'wait' });
-                  go(5);
-                }}
-                onOpenActivity={() => router.navigate('/activity' as Href)}
-              />
-              <AssumptionsSection
-                {...common}
-                {...section('assumptions')}
-                meta={source.meta}
-                onEditCardMinimum={onEditCardMinimum}
-                stack={p.stack}
-                conversions={source.conversions}
-                basisItems={basisItems}
-                formatDate={(d) => whole.formatDate(d)}
-              />
+            <FoldHint visible={foldHint.visible} />
+            <View accessibilityState={{ busy }}>
+              <RevealTapContext.Provider value={foldHint.dismiss}>
+                <Step3FoldList
+                  step={p}
+                  household={{ memberCount, memberNames: memberList, share }}
+                  setbackResultIds={(bought ? inputs : settled).setbacks.map((s) => s.id)}
+                  lineName={lineName}
+                  onOpenActivity={() => router.navigate('/activity' as Href)}
+                  onSwitchToWait={() => {
+                    update({ outcome: 'wait' });
+                    go(5);
+                  }}
+                  assumptions={{
+                    meta: source.meta,
+                    onEditCardMinimum,
+                    stack: p.stack,
+                    conversions: source.conversions,
+                    basisItems,
+                    formatDate: (d) => whole.formatDate(d),
+                  }}
+                  openKey={openFold}
+                  onOpenChange={setChosenFold}
+                />
+              </RevealTapContext.Provider>
             </View>
           </View>
         );
@@ -599,6 +609,9 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
       />
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
+          ref={scrollRef}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           style={styles.fill}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingHorizontal: space.screenH, paddingTop: space.groupGap, paddingBottom: insets.bottom + space.groupGap, gap: space.groupGap }}
@@ -614,7 +627,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy' }: CheckF
             readOnly={readOnly}
           />
           {typedIn?.kind === 'converted' ? <Meta>{t('decide.flow.typedIn', { from: typedIn.note.from, to: typedIn.note.to })}</Meta> : null}
-          {body()}
+          <ScrollIntoViewContext.Provider value={scrollIntoView}>{body()}</ScrollIntoViewContext.Provider>
         </ScrollView>
         <CheckActionBar
           step={step}

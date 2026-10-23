@@ -143,10 +143,9 @@ describe('HoldingFeeInput', () => {
 });
 
 describe('InvestingInsteadSection', () => {
-  it('sits collapsed after the trade in step 4 with its summary', async () => {
+  it('D-74 the investing section is on step 3, not step 4', async () => {
     await wrap(<Step4Alternatives {...props()} />);
-    expect(screen.getByText('If it went into investing instead')).toBeTruthy();
-    expect(screen.getByText('A projection at the rate you enter')).toBeTruthy();
+    expect(screen.queryByText('If it went into investing instead')).toBeNull();
     expect(screen.queryByText('Price invested instead')).toBeNull();
   });
 
@@ -175,14 +174,17 @@ describe('InvestingInsteadSection', () => {
 
   it('the holding fee shows on the investing views only', async () => {
     const p = props({ projectionRates: ['5'], investHoldingFeeText: '1' });
-    await wrap(<Step4Alternatives {...p} />);
+    await wrap(<InvestingInsteadSection {...p} />);
     await open();
     await details();
     expect(screen.getAllByText('0% a year, −1% after fees').length).toBeGreaterThan(0);
     expect(screen.getAllByText('5% a year, 4% after fees').length).toBeGreaterThan(0);
     expect(screen.getAllByText('A projection at the rate you entered less the 1% fee, not a forecast.').length).toBeGreaterThan(0);
     expect(screen.getAllByText('At 0% the money is only held, and the 1% fee comes off it.').length).toBeGreaterThan(0);
-    // the Kept column header never mentions fees
+  });
+
+  it('the holding fee never reaches the Kept column on step 4', async () => {
+    await wrap(<Step4Alternatives {...props({ projectionRates: ['5'], investHoldingFeeText: '1' })} />);
     for (const node of screen.getAllByText(/^Kept/)) expect(node.props.children).not.toMatch(/after fees/);
     expect(screen.queryAllByLabelText(/^Kept.*after fees/).length).toBe(0);
   });
