@@ -4,16 +4,19 @@
 // sign-out row. The destructive colour stays reserved for the confirm-dialog copy only — the
 // row label itself is plain ink (00-UI-SPEC.md Color).
 import { useCallback } from 'react';
-import { router, type Href } from 'expo-router';
+import { router, useNavigation, type Href } from 'expo-router';
 import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Screen } from '@/ui/Screen';
-import { space } from '@/theme/layout';
+import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { BackButton } from '@/shell/header/BackButton';
 import { useBackHistory } from '@/shell/backHistory/BackHistoryProvider';
 import { fontSize } from '@/theme/typography';
+import { useFab } from '@/shell/fab/FabProvider';
+import { runQuickActionAfterDismiss } from '@/shell/fab/runQuickActionAfterDismiss';
+import type { QuickActionId } from '@/shell/fab/quickActions';
 import { SyncStatusLine } from '@/ui/SyncStatusLine';
 import { EXCHANGE_RATE_API_URL } from '@/i18n/mandatedCopy';
 import { useConsent } from '@/features/consent/useConsent';
@@ -29,17 +32,34 @@ import { HomeCurrencyRow } from './components/HomeCurrencyRow';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { DevSyncProbe } from './components/DevSyncProbe';
 
-// 02-30: Record entry points (D-32, D-39). The import row opens the statement import with the
-// 'you' entry. Hrefs are cast once because generated route types may lag the route files.
+// 02-30: Record entry points (D-32, D-39). Hrefs are cast once because generated route types may
+// lag the route files. The statement import lives in the Add group (D-85), not here.
 const MONEY_ROWS: readonly {
-  label: 'you.record.activity' | 'you.record.accounts' | 'you.record.categories' | 'you.record.importCsv' | 'you.record.history';
+  label: 'you.record.activity' | 'you.record.accounts' | 'you.record.categories' | 'you.record.history';
   href: Href;
 }[] = [
   { label: 'you.record.activity', href: ACTIVITY_HREF },
   { label: 'you.record.accounts', href: '/accounts' as Href },
   { label: 'you.record.categories', href: '/categories' as Href },
-  { label: 'you.record.importCsv', href: { pathname: '/import', params: { entry: 'you' } } as Href },
   { label: 'you.record.history', href: '/history' as Href },
+];
+
+// D-85 / R16.1: the Add group rows, in order. Each runs the FAB quick action with the same id.
+const ADD_ROWS: readonly {
+  id: QuickActionId;
+  label: 'you.add.expense' | 'you.add.income' | 'you.add.transfer' | 'you.add.importStatement' | 'you.add.newCheck';
+  hint:
+    | 'you.add.expenseHint'
+    | 'you.add.incomeHint'
+    | 'you.add.transferHint'
+    | 'you.add.importStatementHint'
+    | 'you.add.newCheckHint';
+}[] = [
+  { id: 'addExpense', label: 'you.add.expense', hint: 'you.add.expenseHint' },
+  { id: 'addIncome', label: 'you.add.income', hint: 'you.add.incomeHint' },
+  { id: 'transfer', label: 'you.add.transfer', hint: 'you.add.transferHint' },
+  { id: 'importStatement', label: 'you.add.importStatement', hint: 'you.add.importStatementHint' },
+  { id: 'newCheck', label: 'you.add.newCheck', hint: 'you.add.newCheckHint' },
 ];
 
 export function YouScreen() {
@@ -48,7 +68,32 @@ export function YouScreen() {
   const { colors, fonts } = theme;
   const { profile, setAccent, setPairing } = useProfile();
   const { consent, setEnabled } = useConsent();
-  const { goBack } = useBackHistory();
+  const { goBack, history } = useBackHistory();
+  const { quickActions } = useFab();
+  const navigation = useNavigation();
+
+  // D-85: the tab root You was opened from (the last tab in the back history), else Activity.
+  const originHref = (() => {
+    for (let i = history.length - 1; i >= 0; i--) {
+      const entry = history[i];
+      if (entry && entry.area === 'tab') return entry.href as Href;
+    }
+    return ACTIVITY_HREF;
+  })();
+  const handlers: Partial<Record<QuickActionId, () => void>> = {};
+  for (const q of quickActions) handlers[q.id] = q.run;
+  const addRows = ADD_ROWS.filter((row) => handlers[row.id] !== undefined);
+
+  const runAdd = (id: QuickActionId): void => {
+    runQuickActionAfterDismiss(id, {
+      handlers,
+      dismissTo: () => router.dismissTo(originHref),
+      onTransitionEnd: (listener) =>
+        navigation.addListener('transitionEnd' as never, ((e: { data?: { closing?: boolean } }) => {
+          if (e.data?.closing) listener();
+        }) as never),
+    });
+  };
 
   // D-13: full_name, falling back to email when the name hasn't been captured; the email
   // itself is always also shown as the sub-label.
@@ -91,6 +136,22 @@ export function YouScreen() {
           ) : null}
         </View>
       </View>
+
+      {addRows.length > 0 ? (
+        <SettingsGroup title={t('you.add.section')}>
+          {addRows.map((row) => (
+            <Pressable
+              key={row.id}
+              accessibilityRole="button"
+              accessibilityHint={t(row.hint)}
+              onPress={() => runAdd(row.id)}
+              style={({ pressed }) => [styles.moneyRow, pressed && { opacity: PRESSED_OPACITY }]}
+            >
+              <Text style={[styles.rowLabel, { fontFamily: fonts.body[500], color: colors.ink }]}>{t(row.label)}</Text>
+            </Pressable>
+          ))}
+        </SettingsGroup>
+      ) : null}
 
       <SettingsGroup title={t('you.record.section')}>
         {MONEY_ROWS.map((row) => (
