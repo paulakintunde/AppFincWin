@@ -54,9 +54,15 @@ Both investment cards take an optional expected return (0-100% a year, blank, ne
 
 **2. Projection note shown for a lump sum with a return but no resolved plan.** The outputs tile appears when a valid return is typed even if the plan is null, so the figure is not hidden.
 
-**3. Too-large case.** The verdict line is omitted when `fv` is null (step 2 shows the existing `decide.depth.invest.tooLarge` copy). Flag if the spec wants a line there.
+**3. Too-large case.** Superseded by the post-plan fix below: the verdict card now shows the too-large line when `fv` is null.
 
 No new copy keys were added; all strings come from 05-80.
+
+## Post-plan fix (3efae655)
+
+- **Verdict card, out-of-range projection.** When `fv` is null, VerdictCard shows `decide.alt.reasonTooLarge` ("Too large to project at this rate"), the same line as step 2, read in the key-figures group and with no "Not a forecast" text. New test: "D-82 a projection beyond the supported range reads Too large to project at this rate" (100% over 600 months).
+- **Test fix.** "D-82 the verdict card reads the same state words with and without a return" failed at HEAD when run after the other tests. Cause: it called `view.unmount()` and then a second `wrap(...)`, which rendered an empty tree. The component was not at fault. Three tests used that pattern (that one, "nothing shows without a return" and the purchase-check test); the other two could have passed vacuously. All three now use `view.rerender(...)`, which keeps the providers mounted.
+- Verified: `jest src/features/decide src/data` 158 suites, 2107 tests green; typecheck and eslint clean.
 
 ## Device items
 
