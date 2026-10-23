@@ -406,6 +406,7 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
   assertMoney(fees, 'cardFees');
   assertVariable(p.variable);
   if (dealerCap !== null) assertMoney(dealerCap, 'dealerCap');
+  if (p.cardMaxPurchase !== undefined && p.cardMaxPurchase !== null) assertMoney(p.cardMaxPurchase, 'cardMaxPurchase');
   if (payoff.kind === 'months') assertTerm(payoff.months, 'card payoff months');
   if (card !== null) assertCurrency(check.currency, card.currency, `card ${card.id}`, FN);
 
@@ -423,10 +424,16 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
   if (card !== null && payoff.kind === 'minimum' && card.minimumTerms === null) {
     reasons.push('card_minimum_terms_missing');
   }
+  // D-91: a null limit means no USD rate was stored to convert it; undefined means no limit applies.
+  if (p.cardMaxPurchase === null) reasons.push('card_limit_rate_missing');
   if (reasons.length > 0) return missing(reasons);
 
   // D-18: the part above the dealer cap is day-one cash, not `missing`. dealerCap is non-null here when capped.
-  const onCard = eligibility === 'capped' ? Math.min(check.price, dealerCap!) : check.price;
+  const dealerLimit = eligibility === 'capped' ? Math.min(check.price, dealerCap!) : check.price;
+  // D-91: the card check limit is a second cap; the lower one wins and a tie reports the dealer cap.
+  const checkLimit = p.cardMaxPurchase ?? check.price;
+  const onCard = Math.min(dealerLimit, checkLimit);
+  const capBy = onCard === check.price ? null : onCard === dealerLimit ? 'dealer' : 'check_limit';
   const remainder = check.price - onCard;
 
   let monthly = 0;
@@ -503,6 +510,7 @@ function planCard(check: BuyCheck, p: CardPayment): PlanResult {
         eligibility,
         onCard: m(onCard),
         remainderOnDay: m(remainder),
+        capBy,
         payoff: payoff.kind,
         payoffMonths,
         minimumOutcome,

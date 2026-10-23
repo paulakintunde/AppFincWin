@@ -22,6 +22,7 @@ export const MISSING_TITLE = {
   card_apr_missing: 'decide.verdict.missing.card_apr_missing',
   card_minimum_terms_missing: 'decide.verdict.missing.card_minimum_terms_missing',
   dealer_cap_missing: 'decide.verdict.missing.dealer_cap_missing',
+  card_limit_rate_missing: 'decide.verdict.missing.card_limit_rate_missing',
   loan_term_missing: 'decide.verdict.missing.loan_term_missing',
   loan_apr_missing: 'decide.verdict.missing.loan_apr_missing',
   instalment_amount_missing: 'decide.verdict.missing.instalment_amount_missing',

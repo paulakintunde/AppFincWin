@@ -155,3 +155,6 @@ export const MAX_APR_PERCENT: Percent = percent('999.99'); // D-80
 
 // Cite: D-89 (UI-SPEC R16.16 M6): the most payments a new instalment plan accepts, split from the loan term cap (120). FincWin input bound (no published source); the engine still scores any stored count up to 600.
 export const MAX_INSTALMENTS = 500; // D-89
+
+// Cite: D-91 (R16.7): the most FincWin counts on a card in one check, US$100,000 in USD minor units. FincWin behaviour constant (no published source; a conservative single-purchase ceiling for card payments). The engine never converts currency: the snapshot converts it to the home currency (05-95) and passes it as `cardMaxPurchase`.
+export const CARD_MAX_PURCHASE_USD = 10_000_000; // D-91

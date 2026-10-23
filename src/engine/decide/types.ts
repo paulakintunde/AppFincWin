@@ -185,6 +185,9 @@ export type BuyPayment =
       readonly payoff: CardPayoff;
       readonly dealerCap: MinorUnits | null; // D-18, defaulted from the market table by the builder
       readonly region?: string | null; // D-92: the RD-02 country code; tax is blocked on a card in GB only
+      // D-91: the card check limit in the plan currency (CARD_MAX_PURCHASE_USD converted by the snapshot). Absent = no
+      // limit; null = no stored USD rate, so the card is `card_limit_rate_missing`.
+      readonly cardMaxPurchase?: MinorUnits | null;
       readonly promo?: PromoTerms;
       readonly variable?: boolean; // D-48 / D-49: card.apr is the standard rate after any promo
       // D-63: one-off card fees the user typed that are charged for this purchase (e.g. a transaction or balance-transfer fee),
@@ -264,6 +267,7 @@ export type PlanReason =
   | 'card_apr_missing'
   | 'card_minimum_terms_missing'
   | 'dealer_cap_missing'
+  | 'card_limit_rate_missing' // D-91: the card check limit has no stored USD rate to convert it
   | 'loan_term_missing'
   | 'loan_apr_missing'
   | 'instalment_amount_missing'
@@ -275,6 +279,7 @@ export interface CardPlanDetail {
   readonly eligibility: Exclude<CardEligibility, 'blocked'>;
   readonly onCard: MinorUnits; // prototype cardCap
   readonly remainderOnDay: MinorUnits; // D-18: part above the dealer cap, paid as day-one cash
+  readonly capBy: 'dealer' | 'check_limit' | null; // D-91: which cap bound the card part (R16.11 card_check_limit); null = none; a tie reports the dealer cap
   readonly payoff: CardPayoff['kind'];
   readonly payoffMonths: number | null; // null when the minimum never clears or is still open at the 600-month cap (HI-02)
   readonly minimumOutcome: MinimumOutcome | null; // only for payoff 'minimum'

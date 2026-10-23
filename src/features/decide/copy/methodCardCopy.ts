@@ -10,7 +10,7 @@ import { ref, type CopyRef, type Fmt } from './types';
 
 const P = 'decide.pay.';
 
-export type NeedsField = 'price' | 'rate' | 'months' | 'payment' | 'howMany' | 'cardRate' | 'minimumTerms' | 'dealerCap' | 'amount';
+export type NeedsField = 'price' | 'rate' | 'months' | 'payment' | 'howMany' | 'cardRate' | 'minimumTerms' | 'dealerCap' | 'usdRate' | 'amount';
 
 export interface Needs {
   /** The R15.2 field words, in order. */
@@ -60,6 +60,7 @@ export function needsFields(method: MethodKey, reasons: readonly PlanReason[], i
       if (has('card_apr_missing')) out.push('cardRate');
       if (has('card_minimum_terms_missing')) out.push('minimumTerms');
       if (has('dealer_cap_missing')) out.push('dealerCap');
+      if (has('card_limit_rate_missing')) out.push('usdRate');
       break;
     case 'lump':
       if (priceMissing) out.push('amount');
