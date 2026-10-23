@@ -763,7 +763,7 @@ Plans:
 
 **Wave 23** *(blocked on Wave 22 completion)*
 - [x] 05-94-PLAN.md — Engine E5b: card check limit in plan building, card_limit_rate_missing (D-91)
-- [ ] 05-103-PLAN.md — Instalment card: How often, 1-500, first-payment labels; written lines and Go ahead by frequency (D-89)
+- [x] 05-103-PLAN.md — Instalment card: How often, 1-500, first-payment labels; written lines and Go ahead by frequency (D-89)
 - [ ] 05-106-PLAN.md — Speed, flow: settledCore reuse, selected method only, idle details with Updating, perf harness (D-88)
 
 **Wave 24** *(blocked on Wave 23 completion)*
@@ -930,7 +930,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 101/118 | Executing (R16 refinements and R17 home redesign planned 2026-10-23) | - |
+| 5. Decide UI | 103/118 | Executing (R16 refinements and R17 home redesign planned 2026-10-23) | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |

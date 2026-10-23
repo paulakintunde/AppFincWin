@@ -253,7 +253,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DCU-28**: A check saves itself as the user edits, including when the app is backgrounded, and shows its save status; Clear and Delete each undo in one step and never remove what Go ahead wrote (05 D-73, D-77)
 - [ ] **DCU-29**: User can see each way to pay as its own card holding its inputs and results, and give an instalment plan a rate and a first-payment date (05 D-79, D-80)
 - [ ] **DCU-30**: User can name a custom item type that follows a built-in type's rules, and add an optional expected return to an investment check, shown as a projection only (05 D-81, D-82)
-- [ ] **DCU-31**: User can set an instalment plan's frequency (weekly, every 2 weeks, monthly or quarterly, up to 500 payments) and sees the true yearly rate implied by a plan with no quoted rate (05 D-89, D-90)
+- [x] **DCU-31**: User can set an instalment plan's frequency (weekly, every 2 weeks, monthly or quarterly, up to 500 payments) and sees the true yearly rate implied by a plan with no quoted rate (05 D-89, D-90)
 - [ ] **DCU-32**: A check counts at most US$100,000 (converted at the latest stored rate) on a card, never counts property or cash-like purchases on a card, and treats tax and tuition by region with a fee note (05 D-91, D-92)
 - [ ] **DCU-33**: The check flow keeps the verdict within 50 ms of a keystroke and the details within 300 ms after typing stops on the test device (05 D-88)
 - [ ] **DCU-34**: Decide home leads with one dark card stating the month left after spending, debts and saving, with the quick check inside it, the lists one quiet row each, and problems gathered in one notice row with a fixing action per problem (05 D-95..D-99)
@@ -624,7 +624,7 @@ Populated during roadmap creation.
 | DCU-28 | Phase 5 - Decide UI | Complete |
 | DCU-29 | Phase 5 - Decide UI | Pending |
 | DCU-30 | Phase 5 - Decide UI | Pending |
-| DCU-31 | Phase 5 - Decide UI | Pending |
+| DCU-31 | Phase 5 - Decide UI | Complete |
 | DCU-32 | Phase 5 - Decide UI | Pending |
 | DCU-33 | Phase 5 - Decide UI | Pending |
 | DCU-34 | Phase 5 - Decide UI | Pending |
