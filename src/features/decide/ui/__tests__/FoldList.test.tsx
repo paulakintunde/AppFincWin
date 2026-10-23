@@ -8,6 +8,7 @@ import { FoldList, type FoldSpec } from '../FoldList';
 import { DetailsToggle } from '../DetailsToggle';
 import { CollapsibleSection } from '../CollapsibleSection';
 import { RevealTapContext } from '../revealTap';
+import { ScrollIntoViewContext } from '../scrollIntoView';
 
 jest.setTimeout(30000);
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
@@ -119,6 +120,31 @@ describe('FoldList', () => {
     const { getByRole } = await wrap(<Harness />, onReveal);
     await fireEvent.press(getByRole('button', { name: `${ONE}, ${PREVIEW_ONE}` }));
     expect(onReveal).toHaveBeenCalledTimes(1);
+  });
+
+  it('step 3 arrival: a fold open by default does not scroll into view when its body lays out', async () => {
+    const scrollIntoView = jest.fn();
+    const { getByText } = await wrap(
+      <ScrollIntoViewContext.Provider value={scrollIntoView}>
+        <Harness initial="one" />
+      </ScrollIntoViewContext.Provider>,
+    );
+    await fireEvent(getByText(BODY_ONE), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 100 } } });
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('a fold the user opens scrolls into view once, with its row', async () => {
+    const scrollIntoView = jest.fn();
+    const { getByRole, getByText } = await wrap(
+      <ScrollIntoViewContext.Provider value={scrollIntoView}>
+        <Harness initial="one" />
+      </ScrollIntoViewContext.Provider>,
+    );
+    await fireEvent.press(getByRole('button', { name: `${TWO}, ${PREVIEW_TWO}` }));
+    const layout = { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 100 } } };
+    await fireEvent(getByText(BODY_TWO), 'layout', layout);
+    await fireEvent(getByText(BODY_TWO), 'layout', layout);
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
   it('renders nothing for zero folds', async () => {

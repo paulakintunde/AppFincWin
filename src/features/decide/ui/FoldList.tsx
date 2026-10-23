@@ -1,7 +1,7 @@
 /**
  * D-74 / UI-SPEC R1 "FoldList": one white card of fold rows, one open at a time. Controlled: the screen keeps `openKey`
  * while the flow is open. Toggling announces the change (R7) and, once an opened body has laid out, reports the row's y
- * so the screen can scroll it into view.
+ * so the screen can scroll it into view. Only a fold the user opens scrolls; the default open on arrival does not.
  */
 import React, { useRef } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
@@ -33,16 +33,21 @@ export function FoldList<K extends string>({ folds, openKey, onOpenChange, onOpe
   const scrollIntoView = useScrollIntoView();
   const rowRefs = useRef(new Map<K, View>());
   const rowYs = useRef(new Map<K, number>());
+  // The fold the user opened and whose body has not laid out yet. A fold open on arrival (the default) never scrolls: the screen
+  // must stay at the top, on the verdict.
+  const userOpened = useRef<K | null>(null);
 
   if (folds.length === 0) return null;
 
   const toggle = (fold: FoldSpec<K>) => {
     if (openKey === fold.key) {
+      userOpened.current = null;
       onOpenChange(null);
       AccessibilityInfo.announceForAccessibility(t('decide.fold.a11y.collapsed', { title: fold.title }));
       return;
     }
     const previous = openKey === null ? undefined : folds.find((f) => f.key === openKey);
+    userOpened.current = fold.key;
     onOpenChange(fold.key);
     AccessibilityInfo.announceForAccessibility(
       previous
@@ -71,6 +76,8 @@ export function FoldList<K extends string>({ folds, openKey, onOpenChange, onOpe
             info={fold.info}
             onBodyLayout={() => {
               onOpened?.(fold.key, rowYs.current.get(fold.key) ?? 0);
+              if (userOpened.current !== fold.key) return;
+              userOpened.current = null;
               scrollIntoView(rowRefs.current.get(fold.key) ?? null);
             }}
           >
