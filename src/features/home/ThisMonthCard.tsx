@@ -11,7 +11,6 @@ import type { MonthPosition, MonthTotals } from '@/engine/activity';
 import { money } from '@/engine/money';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { useFontScale } from '@/theme/FontScaleProvider';
 import { FONT_PAIRINGS } from '@/theme/fonts';
 import { radii, size, space } from '@/theme/layout';
 import { DURATION, EASING } from '@/theme/motion';
@@ -20,6 +19,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import type { MonthDataState } from '@/data/queries/monthDataState';
 import { isMonthEmpty, paidOutText } from '@/features/record/activity/monthFigureInputs';
+import { useShouldStack } from '@/features/decide/ui/textFit';
 import { MonthChips } from './MonthChips';
 
 // UI-SPEC Spacing "prototype-literal exceptions (Home)": the 12 / 14 / 16 px gaps between the
@@ -27,7 +27,8 @@ import { MonthChips } from './MonthChips';
 const HEADLINE_GAP = 12;
 const FIGURES_GAP = 14;
 const BAR_GAP = 16;
-const FIGURE_STACK_ABOVE = 1.3;
+const FIGURE_MIN_FONT_SCALE = 0.8; // D-76 rule N
+const FIGURE_MAX_SCALE = 1.3;
 const PLACEHOLDER_RADIUS = 8;
 
 export interface ThisMonthCardProps {
@@ -69,7 +70,6 @@ export function ThisMonthCard({
 }: ThisMonthCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const fontScale = useFontScale();
   const fmt = (amount: number) => formatter.formatMoney(money(amount, homeCurrency));
   const monthDate = Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1, 1);
   const monthName = new Intl.DateTimeFormat(formatter.locale, { month: 'long', timeZone: 'UTC' }).format(monthDate);
@@ -83,7 +83,14 @@ export function ThisMonthCard({
       ).format(monthDate);
   // T-03-22-01: empty only when nothing is recorded AND nothing is expected.
   const empty = isMonthEmpty(totals, position);
-  const stacked = fontScale > FIGURE_STACK_ABOVE;
+  // D-76 rules N and S: the three columns stack when the window is narrow, text is large or a
+  // figure is long; a figure is never broken across lines.
+  const longestFigure = Math.max(
+    fmt(position.paidIn).length,
+    paidOutText(position.paidOut, fmt).length,
+    fmt(position.unpaid).length
+  );
+  const stacked = useShouldStack(longestFigure);
 
   const header = (
     <View style={styles.header}>
@@ -146,7 +153,14 @@ export function ThisMonthCard({
         accessible
         accessibilityLabel={t('home.month.headlineA11y', { figure })}
       >
-        <Text scale="capped" style={{ ...textRole(pairing, 'heading'), color: headlineColor }}>
+        <Text
+          scale="capped"
+          maxFontSizeMultiplier={FIGURE_MAX_SCALE}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={FIGURE_MIN_FONT_SCALE}
+          style={{ ...textRole(pairing, 'heading'), color: headlineColor }}
+        >
           {figure}
         </Text>
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('home.month.caption')}</Text>
@@ -187,7 +201,14 @@ export function ThisMonthCard({
             >
               {c.label}
             </Text>
-            <Text scale="capped" style={{ ...textRole(pairing, 'sheetTitle'), color: c.color }}>
+            <Text
+              scale="capped"
+              maxFontSizeMultiplier={FIGURE_MAX_SCALE}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={FIGURE_MIN_FONT_SCALE}
+              style={{ ...textRole(pairing, 'sheetTitle'), color: c.color }}
+            >
               {c.value}
             </Text>
           </View>

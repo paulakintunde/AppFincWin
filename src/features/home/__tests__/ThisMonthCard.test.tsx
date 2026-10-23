@@ -77,6 +77,16 @@ describe('ThisMonthCard', () => {
     expect(style(getByText('Unpaid')).textTransform).toBe('uppercase');
   });
 
+  it('D-76 rule N: the IN, OUT and UNPAID figures stay on one line and fit down to 0.8', async () => {
+    const { getByText } = await draw({ position: { ...position, paidIn: 244738 } });
+    for (const text of ['£2,447.38', '£1,200.00', '£450.00']) {
+      const props = getByText(text).props;
+      expect(props.numberOfLines).toBe(1);
+      expect(props.adjustsFontSizeToFit).toBe(true);
+      expect(props.minimumFontScale).toBe(0.8);
+    }
+  });
+
   it('WR-04: a month of net refunds shows Out with a plus, same as Activity', async () => {
     const { getByLabelText } = await draw({ position: { ...position, paidOut: 5000 } });
     expect(getByLabelText('Out, +£50.00')).toBeTruthy();

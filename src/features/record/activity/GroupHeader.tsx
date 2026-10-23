@@ -54,7 +54,7 @@ export function GroupHeader({ item, month, homeCurrency, formatter }: GroupHeade
         <Text style={{ ...labelRole, color: colors.inkFaint }}>{t('activity.count', { count: item.count })}</Text>
       </View>
       <View style={styles.right}>
-        <Text style={{ ...labelRole, color: item.kind === 'in' && item.net > 0 ? colors.accent : colors.ink }}>{netText}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...labelRole, color: item.kind === 'in' && item.net > 0 ? colors.accent : colors.ink }}>{netText}</Text>
         {item.unconvertedCount > 0 ? (
           <Text style={{ ...labelRole, color: colors.inkFaint }}>
             {t('activity.group.unconverted', { count: item.unconvertedCount })}
