@@ -23,13 +23,20 @@ export function latestPerEur(rates: readonly FxLatestRow[], code: string): Scale
 
 /**
  * A same-currency row (original_currency === the home currency it was stamped with) carries no orig_per_eur: its
- * original amount is exact in its own currency. True when such a row is read under a different home currency.
+ * original amount is exact in its own currency. True when such a row (stamped, so with a home amount) is read under a
+ * different home currency.
  */
 export function isOwnCurrencyRow(
-  row: Pick<TransactionRow, 'home_currency' | 'original_currency' | 'orig_per_eur'>,
+  row: Pick<TransactionRow, 'home_currency' | 'home_amount' | 'original_currency' | 'orig_per_eur'>,
   homeCurrency: string
 ): boolean {
-  return row.orig_per_eur === null && row.original_currency === row.home_currency && row.home_currency !== homeCurrency;
+  // home_amount present = the same-currency stamp was written; a line still waiting for its stamp is not exact yet.
+  return (
+    row.orig_per_eur === null &&
+    row.home_amount !== null &&
+    row.original_currency === row.home_currency &&
+    row.home_currency !== homeCurrency
+  );
 }
 
 export function homeAmountFor(

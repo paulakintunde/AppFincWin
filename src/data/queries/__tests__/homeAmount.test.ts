@@ -62,5 +62,6 @@ describe('homeAmountFor for a row saved in its own currency before the home curr
     expect(isOwnCurrencyRow(sameCurrency, 'GBP')).toBe(false);
     expect(isOwnCurrencyRow({ ...sameCurrency, orig_per_eur: '0.8' }, 'USD')).toBe(false);
     expect(isOwnCurrencyRow(sameCurrency, 'USD')).toBe(true);
+    expect(isOwnCurrencyRow({ ...sameCurrency, home_amount: null }, 'USD')).toBe(false); // still waiting for its stamp
   });
 });
