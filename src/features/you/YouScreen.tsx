@@ -204,7 +204,7 @@ export function YouScreen() {
 
       <SettingsGroup title={t('you.section.connection')}>
         <ConnectionStatus />
-        <SyncStatusLine />
+        <SyncStatusLine detail />
       </SettingsGroup>
 
       <SettingsGroup title={t('you.section.account')}>

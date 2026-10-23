@@ -338,9 +338,9 @@ describe('YouScreen sign out', () => {
 });
 
 describe('YouScreen sync status', () => {
-  it("shows 'offline · 3 changes queued' in the Connection section", async () => {
+  it("shows 'offline · 3 changes waiting' in the Connection section", async () => {
     const { getByText } = await renderScreen();
-    expect(getByText('offline · 3 changes queued')).toBeTruthy();
+    expect(getByText('offline · 3 changes waiting')).toBeTruthy();
   });
 });
 

@@ -94,6 +94,39 @@ describe('useSyncStatus', () => {
     await waitFor(() => expect(status.current.queued).toBe(2));
   });
 
+  it('D-88 reports when the oldest write was submitted and which of them is on the wire', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    const { result: status } = await renderHook(() => useSyncStatus(), { wrapper: createWrapper(queryClient) });
+    expect(status.current.oldestPendingAt).toBeNull();
+    expect(status.current.inFlightOldestAt).toBeNull();
+
+    // A write that never answers is in flight; one behind it in the same scope is waiting its turn.
+    const scope = { id: 'test-scope' };
+    function useTwo() {
+      const a = useMutation({ mutationFn: () => new Promise<string>(() => undefined), scope });
+      const b = useMutation({ mutationFn: async () => 'b', scope });
+      return { a, b };
+    }
+    const { result: mutations } = await renderHook(() => useTwo(), { wrapper: createWrapper(queryClient) });
+    const before = Date.now();
+    await act(() => {
+      mutations.current.a.mutate();
+    });
+    await act(() => {
+      mutations.current.b.mutate();
+    });
+
+    await waitFor(() => expect(status.current.queued).toBe(2));
+    const submitted = queryClient
+      .getMutationCache()
+      .getAll()
+      .map((m) => m.state.submittedAt);
+    expect(status.current.oldestPendingAt).toBe(Math.min(...submitted));
+    expect(status.current.oldestPendingAt).toBeGreaterThanOrEqual(before);
+    // only the first is on the wire: the second waits behind it
+    expect(status.current.inFlightOldestAt).toBe(submitted[0]);
+  });
+
   it('splits failed writes into failed and conflicts by kind (D-18 conflicts are never last-write-wins)', async () => {
     const queryClient = new QueryClient();
     const { result } = await renderHook(() => useSyncStatus(), { wrapper: createWrapper(queryClient) });
