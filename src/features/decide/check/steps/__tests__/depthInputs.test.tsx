@@ -111,10 +111,10 @@ describe('credit terms', () => {
   it('a promotional row starts collapsed and empty', async () => {
     const onUpdate = jest.fn();
     await wrap(<Harness initial={loanInputs()} onUpdate={onUpdate} />);
-    expect(screen.queryByLabelText('For')).toBeNull();
+    expect(screen.queryByLabelText('For, custom, months')).toBeNull();
     await fireEvent.press(screen.getByLabelText('+ Promotional rate'));
     expect(screen.getByLabelText('Promotional rate').props.value).toBe('');
-    expect(screen.getByLabelText('For').props.value).toBe('');
+    expect(screen.getByLabelText('For, custom, months').props.value).toBe('');
     expect(onUpdate).not.toHaveBeenCalled();
     expect(screen.queryByText(/To clear it inside the promotion/)).toBeNull();
   });

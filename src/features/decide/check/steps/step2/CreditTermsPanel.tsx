@@ -15,24 +15,20 @@ import { Text } from '@/ui/Text';
 import { ToggleRow } from '@/ui/ToggleRow';
 import { lateFeeCopy, promoCopy, stressCopy } from '../../../copy/depthInputsCopy';
 import type { CopyRef } from '../../../copy/types';
-import { MAX_INPUT_MINOR, typedRateAbove } from '../../../snapshot/checkInputs';
+import { MAX_INPUT_MINOR } from '../../../snapshot/checkInputs';
 import type { PromoInput } from '../../../snapshot/types';
+import { CustomValueField } from '../../../ui/CustomValueChips';
 import { MoneyInput } from '../../../ui/MoneyInput';
 import { RateInput } from '../../../ui/RateInput';
 import { StateChip, type StateChipTone } from '../../../ui/StateChip';
+import { useInfoSheet } from '../../../ui/useInfoSheet';
 import { refText } from '../../refText';
-import { Box, Label, Meta, moneyFn } from '../stepUi';
+import { Label, Meta, moneyFn } from '../stepUi';
 import type { Step2Props } from './types';
 
-const MAX_MONTHS = 600;
-const MAX_RATE_TYPED = '999.99'; // gates keystrokes only; the stored value stays text
+const MAX_MONTHS = 120; // D-71: the promotion is no longer than 120 months, nor than the term it sits in
+const MAX_RATE_TYPED = '999.99'; // the RateInput bound (R4): a keystroke above it is refused and the range line shows
 type Translate = Parameters<typeof refText>[0];
-
-/** Digits only, clamped to 1..MAX_MONTHS; anything else is "not set". */
-function monthsFrom(text: string): number | null {
-  const n = parseInt(text.replace(/\D/g, ''), 10);
-  return Number.isSafeInteger(n) && n >= 1 ? Math.min(n, MAX_MONTHS) : null;
-}
 
 function Lines({ lines, t }: { lines: readonly CopyRef[]; t: Translate }) {
   const { colors, pairing } = useTheme();
@@ -54,13 +50,18 @@ export interface PromoRowProps extends Pick<Step2Props, 'computation' | 'source'
   /** The method's own rate, shown after the promotion. For a loan it is edited here; for a card it is read-only. */
   thenRateText: string;
   onThenRateChange?: (text: string) => void;
+  /** D-71: the term the promotion sits in; the promotion length cannot exceed it. Null when there is none to compare. */
+  termMonths?: number | null;
 }
 
 /** The collapsed '+ Promotional rate' row and, once opened, its three fields and the engine's results. */
 export function PromoRow(props: PromoRowProps) {
-  const { method, promo, onChange, thenRateText, onThenRateChange, computation, source, whole, exact } = props;
+  const { method, promo, onChange, thenRateText, onThenRateChange, termMonths = null, computation, source, whole, exact } = props;
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
+  const promoInfo = useInfoSheet('promoRate');
+  const deferredInfo = useInfoSheet('deferredInterest');
+  const thenInfo = useInfoSheet('apr');
   const [open, setOpen] = useState(promo !== null);
   const wholeFmt = moneyFn(whole, source.currency);
   const exactFmt = moneyFn(exact, source.currency);
@@ -79,6 +80,8 @@ export function PromoRow(props: PromoRowProps) {
     onChange(next.aprText === '' && next.months === null ? null : next);
   };
 
+  const monthsMax = termMonths !== null && termMonths >= 1 ? Math.min(MAX_MONTHS, termMonths) : MAX_MONTHS;
+
   if (!open) {
     return (
       <Pressable
@@ -96,42 +99,49 @@ export function PromoRow(props: PromoRowProps) {
     <View style={styles.block}>
       <RateInput
         value={promo?.aprText ?? ''}
-        onChange={(text) => {
-          if (typedRateAbove(text, MAX_RATE_TYPED)) return;
-          edit({ aprText: text });
-        }}
+        onChange={(text) => edit({ aprText: text })}
         label={t('decide.depth.credit.promoRate')}
         accessibilityLabel={t('decide.depth.credit.promoRate')}
+        max={MAX_RATE_TYPED}
+        rangeText={t('decide.custom.range.apr')}
+        labelAccessory={promoInfo.button()}
       />
+      {promoInfo.sheet}
       {copy.showDeferredToggle ? (
         <View>
-          <ToggleRow
-            label={t('decide.depth.credit.deferredToggle')}
-            value={promo?.deferredInterest === true}
-            onChange={(on) => edit({ deferredInterest: on })}
-          />
+          <View style={styles.toggleWithInfo}>
+            <View style={styles.toggleMain}>
+              <ToggleRow
+                label={t('decide.depth.credit.deferredToggle')}
+                value={promo?.deferredInterest === true}
+                onChange={(on) => edit({ deferredInterest: on })}
+              />
+            </View>
+            {deferredInfo.button()}
+          </View>
+          {deferredInfo.sheet}
           <Meta>{t('decide.depth.credit.deferredSub')}</Meta>
         </View>
       ) : null}
       <Label>{t('decide.depth.credit.promoFor')}</Label>
-      <View style={styles.monthsRow}>
-        <View style={styles.monthsBox}>
-          <Box
-            numeric
-            value={promo?.months == null ? '' : String(promo.months)}
-            onChangeText={(x) => edit({ months: monthsFrom(x) })}
-            accessibilityLabel={t('decide.depth.credit.promoFor')}
-            maxLength={3}
-          />
-        </View>
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.depth.credit.promoMonths')}</Text>
-      </View>
+      <CustomValueField
+        value={promo?.months ?? null}
+        min={1}
+        max={monthsMax}
+        rangeText={monthsMax === MAX_MONTHS ? t('decide.custom.range.months') : t('decide.custom.range.from', { min: 1, max: monthsMax })}
+        unitWord={t('decide.depth.credit.promoMonths')}
+        groupLabel={t('decide.depth.credit.promoFor')}
+        onChange={(n) => edit({ months: n })}
+      />
       {onThenRateChange ? (
         <RateInput
           value={thenRateText}
           onChange={onThenRateChange}
           label={t('decide.depth.credit.promoThen')}
           accessibilityLabel={t('decide.depth.credit.promoThen')}
+          max={MAX_RATE_TYPED}
+          rangeText={t('decide.custom.range.apr')}
+          labelAccessory={thenInfo.button()}
         />
       ) : (
         <View>
@@ -140,6 +150,7 @@ export function PromoRow(props: PromoRowProps) {
           <Meta>{t('decide.depth.credit.promoThenAbove')}</Meta>
         </View>
       )}
+      {onThenRateChange ? thenInfo.sheet : null}
       {copy.summary ? <Meta tone="muted">{refText(t, copy.summary)}</Meta> : null}
       {copy.results.length > 0 ? (
         <View style={[styles.results, { backgroundColor: colors.fill1 }]}>
@@ -161,11 +172,18 @@ export function VariableRateCard(props: VariableRateCardProps) {
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
   const exactFmt = moneyFn(exact, source.currency);
+  const info = useInfoSheet('variableRate');
   const stress: readonly StressOutcome[] = computation.status === 'incomplete' ? [] : (computation.decision?.stress ?? []);
   const lines = value ? stressCopy(stress, exactFmt, exactFmt) : [];
   return (
     <View>
-      <ToggleRow label={t('decide.depth.credit.variable')} value={value} onChange={onChange} />
+      <View style={styles.toggleWithInfo}>
+        <View style={styles.toggleMain}>
+          <ToggleRow label={t('decide.depth.credit.variable')} value={value} onChange={onChange} />
+        </View>
+        {info.button()}
+      </View>
+      {info.sheet}
       {value ? (
         <View style={[styles.results, { backgroundColor: colors.fill1 }]}>
           {lines.map(({ line, stateKey }) => (
@@ -223,8 +241,8 @@ export function LateFeeField(props: LateFeeFieldProps) {
 const styles = StyleSheet.create({
   block: { gap: space.gapMd },
   add: { minHeight: space.touchMin, justifyContent: 'center' },
-  monthsRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
-  monthsBox: { flex: 1 },
+  toggleWithInfo: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  toggleMain: { flex: 1 },
   results: { borderRadius: space.cardPad, padding: space.cardPad, gap: space.gapSm },
   stressLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd },
 });

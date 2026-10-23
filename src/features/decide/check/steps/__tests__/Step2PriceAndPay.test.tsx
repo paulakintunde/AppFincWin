@@ -286,19 +286,17 @@ describe('MethodPanels', () => {
       expect(screen.getAllByText('before any interest').length).toBeGreaterThan(0);
     });
 
-    it('the term chips and input set the term as typed', async () => {
+    it('the term chips set the term as typed', async () => {
       const { p } = await renderStep({ method: 'loan' });
-      await fireEvent.press(screen.getByLabelText('36 months'));
+      await fireEvent.press(screen.getByLabelText('36 months'));
       expect(mockUpdate(p)).toHaveBeenLastCalledWith({ loan: expect.objectContaining({ termMonths: 36 }) });
-      await fireEvent.changeText(screen.getByLabelText('Term'), '9999');
-      expect(mockUpdate(p)).toHaveBeenLastCalledWith({ loan: expect.objectContaining({ termMonths: 600 }) });
     });
 
     it('a payoff before the term is stated, the term stays as typed', async () => {
       const base = buy({ method: 'loan', advertised: 1_000 });
       await renderStep({ advertised: 1_000, method: 'loan', loan: { ...base.loan, aprText: '0', termMonths: 600 } });
       expect(screen.getByText(/^Paid off in month \d+, with a last payment of \$/)).toBeTruthy();
-      expect(screen.getByLabelText('Term').props.value).toBe('600');
+      expect(screen.getByLabelText('Custom, 600 months')).toBeTruthy();
       expect(screen.getByText(/^At 600\s+months the payment is/)).toBeTruthy();
     });
 
@@ -332,7 +330,7 @@ describe('MethodPanels', () => {
 
     it('writes the count', async () => {
       const { p } = await renderStep({ method: 'instalment' });
-      await fireEvent.changeText(screen.getByLabelText('How many'), '12');
+      await fireEvent.changeText(screen.getByLabelText('How many, custom, payments'), '12');
       expect(mockUpdate(p)).toHaveBeenLastCalledWith({ instalment: expect.objectContaining({ count: 12 }) });
     });
 
@@ -393,7 +391,7 @@ describe('MethodPanels', () => {
       expect(mockUpdate(p)).toHaveBeenLastCalledWith({ card: expect.objectContaining({ payoff: 'minimum' }) });
     });
 
-    it('the months stepper shows the months typed and stays within 1..600', async () => {
+    it('the months stepper shows the months typed and stays within 1..120', async () => {
       const base = buy({ method: 'card' });
       const { p } = await renderStep({ method: 'card', card: { ...base.card, months: 12 } });
       expect(screen.getAllByText('12\u00A0mo').length).toBeGreaterThan(0);
@@ -476,6 +474,18 @@ describe('MethodPanels', () => {
       expect(screen.getByLabelText('Cleared, Never')).toBeTruthy();
       expect(screen.getByLabelText('Interest, Endless')).toBeTruthy();
       expect(screen.getByLabelText('Card costs, Endless')).toBeTruthy();
+    });
+
+    it('R6 card word values wrap, never fitted', async () => {
+      await renderCard(cardPlan({ minimumOutcome: 'never_clears', payoffMonths: null, cardCosts: null }, { total: null, interest: null }));
+      // the card tiles' words wrap (the method card above carries its own copy of the word)
+      const fitted = screen.getAllByText('Endless').filter((n) => n.props.adjustsFontSizeToFit === true);
+      const wrapped = screen.getAllByText('Endless').filter((n) => n.props.numberOfLines === undefined && n.props.adjustsFontSizeToFit === undefined);
+      expect(wrapped.length).toBeGreaterThanOrEqual(2); // Interest and Card costs
+      expect(fitted.length).toBeLessThanOrEqual(1);
+      await renderCard(cardPlan({ payoffMonths: 9, cardCosts: 12_340 }, { interest: 10_000 }));
+      const figure = screen.getAllByText('$123')[0]!;
+      expect(figure.props.numberOfLines).toBe(1);
     });
 
     it('a card open at 50 years shows what is still owed', async () => {

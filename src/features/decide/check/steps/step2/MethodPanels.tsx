@@ -20,20 +20,23 @@ import { Text } from '@/ui/Text';
 import { canUse } from '../../../entitlements';
 import { cardCostsCopy } from '../../../copy/cardTermsCopy';
 import { percentText } from '../../../copy/percentText';
-import { isValidAprText, toEngineCheck, typedRateAbove } from '../../../snapshot/checkInputs';
+import { isValidAprText, toEngineCheck } from '../../../snapshot/checkInputs';
 import type { CardNoteAnswer, CheckInputs } from '../../../snapshot/types';
 import { FigureStrip } from '../../../ui/FigureStrip';
+import { CustomValueChips, CustomValueField } from '../../../ui/CustomValueChips';
 import { MoneyInput } from '../../../ui/MoneyInput';
 import { RateInput } from '../../../ui/RateInput';
-import { StepSlider } from '../../../ui/StepSlider';
+import { SliderWithField } from '../../../ui/SliderWithField';
+import { useInfoSheet } from '../../../ui/useInfoSheet';
 import type { Step2Props } from './types';
-import { Box, Card, Label, Meta, moneyFn } from '../stepUi';
+import { Card, Label, Meta, moneyFn } from '../stepUi';
 import { CardMinimumRow, CardMinimumSheet } from './CardMinimumSheet';
 import { LateFeeField, PromoRow, VariableRateCard } from './CreditTermsPanel';
 import { refText, type Translate as RefTranslate } from '../../refText';
 
 const TERM_CHIPS = [12, 24, 36, 48, 60, 84] as const;
-const MAX_TERM = 600;
+const MAX_TERM = 120; // D-71: the UI bound; the snapshot parser keeps 600 so a stored longer term still reads
+const MIN_TERM = 1;
 const CARD_RATE_SAVE_MS = 800;
 const DEPOSIT_STEP = 10_000; // 100 whole units, in minor units
 const MAX_APR_TYPED = '999.99'; // gates keystrokes only; the stored value stays text (isValidAprText is the check)
@@ -45,12 +48,6 @@ const NOTE_KEYS = [
 
 type Money = ReturnType<typeof moneyFn>;
 type Translate = ReturnType<typeof useT>;
-
-/** Digits only, clamped to 1..MAX_TERM; anything else is "not set". */
-function termFrom(text: string): number | null {
-  const n = parseInt(text.replace(/\D/g, ''), 10);
-  return Number.isSafeInteger(n) && n >= 1 ? Math.min(n, MAX_TERM) : null;
-}
 
 export function MethodPanels(props: Step2Props) {
   const { inputs } = props;
@@ -74,9 +71,10 @@ function resolvedPlan(props: Step2Props, method: 'loan' | 'instalment' | 'card')
 
 // ── Loan ──
 function LoanPanel(props: Step2Props) {
-  const { inputs, update, computation, source, whole, exact } = props;
+  const { inputs, update, computation, source, whole, exact, readOnly } = props;
   const t = useT();
   const { colors, pairing } = useTheme();
+  const aprInfo = useInfoSheet('apr');
   const wholeFmt = moneyFn(whole, source.currency);
   const exactFmt = moneyFn(exact, source.currency);
   const loan = inputs.loan;
@@ -94,7 +92,6 @@ function LoanPanel(props: Step2Props) {
 
   const setLoan = (patch: Partial<CheckInputs['loan']>) => update({ loan: { ...loan, ...patch } });
   const setApr = (text: string) => {
-    if (typedRateAbove(text, MAX_APR_TYPED)) return;
     setLoan({ aprText: text, aprFromQuick: false });
   };
   const typedZero = isValidAprText(loan.aprText) && percent(loan.aprText) === ZERO_PERCENT;
@@ -104,21 +101,20 @@ function LoanPanel(props: Step2Props) {
 
   return (
     <Card>
-      <MoneyInput
-        value={deposit > 0 ? deposit : null}
-        currency={inputs.currency ?? source.currency}
-        onChange={(minor) => setLoan({ deposit: Math.min(minor ?? 0, price) })}
+      <SliderWithField
         label={t('decide.pay.loanDeposit')}
-        accessibilityLabel={t('decide.pay.loanDeposit')}
-      />
-      <StepSlider
         value={deposit}
-        min={0}
-        max={price}
+        sliderMin={0}
+        sliderMax={price}
         step={DEPOSIT_STEP}
-        onChange={(v) => setLoan({ deposit: v })}
-        accessibilityLabel={t('decide.pay.loanDeposit')}
-        valueText={wholeFmt(deposit)}
+        typedMin={0}
+        typedMax={price}
+        rangeText={t('decide.custom.range.upToPrice', { price: wholeFmt(price) })}
+        currency={inputs.currency ?? source.currency}
+        wholeUnits
+        onChange={(minor) => setLoan({ deposit: minor })}
+        sliderA11y={t('decide.pay.loanDeposit')}
+        fieldA11y={t('decide.pay.loanDeposit')}
       />
       {canUse('payoffComparisons') ? (
         <FigureStrip
@@ -130,17 +126,17 @@ function LoanPanel(props: Step2Props) {
       ) : null}
 
       <Label>{t('decide.pay.loanTerm')}</Label>
-      <View style={styles.termRow}>
-        <View style={styles.termBox}>
-          <Box numeric value={term === null ? '' : String(term)} onChangeText={(x) => setLoan({ termMonths: termFrom(x) })} accessibilityLabel={t('decide.pay.loanTerm')} maxLength={3} />
-        </View>
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.pay.loanTermUnit')}</Text>
-      </View>
-      <View accessibilityRole="radiogroup" style={styles.chips}>
-        {TERM_CHIPS.map((n) => (
-          <Chip key={n} label={String(n)} selected={term === n} accessibilityLabel={t('decide.quick.termChipA11y', { count: n })} onPress={() => setLoan({ termMonths: n })} />
-        ))}
-      </View>
+      <CustomValueChips
+        presets={TERM_CHIPS}
+        value={term}
+        onChange={(n) => setLoan({ termMonths: n })}
+        groupLabel={t('decide.pay.loanTerm')}
+        min={MIN_TERM}
+        max={MAX_TERM}
+        rangeText={t('decide.custom.range.months')}
+        unitWord={t('decide.custom.unit.months')}
+        readOnly={readOnly}
+      />
       {plan !== null && term !== null && plan.interest !== null ? (
         <Meta tone="muted">{t('decide.pay.loanTermNote', { count: term, payment: exactFmt(plan.monthly), interest: wholeFmt(plan.interest) })}</Meta>
       ) : null}
@@ -152,7 +148,11 @@ function LoanPanel(props: Step2Props) {
         label={t('decide.pay.loanRate')}
         accessibilityLabel={t('decide.quick.aprA11y')}
         hint={typedZero ? t('decide.quick.beforeInterest') : loan.aprText === '' ? t('decide.pay.loanRateHint') : undefined}
+        max={MAX_APR_TYPED}
+        rangeText={t('decide.custom.range.apr')}
+        labelAccessory={aprInfo.button()}
       />
+      {aprInfo.sheet}
 
       <PromoRow
         method="loan"
@@ -160,6 +160,7 @@ function LoanPanel(props: Step2Props) {
         onChange={(promo) => setLoan({ promo })}
         thenRateText={loan.aprText}
         onThenRateChange={setApr}
+        termMonths={term}
         computation={computation}
         source={source}
         whole={whole}
@@ -223,7 +224,15 @@ function InstalmentPanel(props: Step2Props) {
         accessibilityLabel={t('decide.pay.instalmentPayment')}
       />
       <Label>{t('decide.pay.instalmentCount')}</Label>
-      <Box numeric value={inst.count === null ? '' : String(inst.count)} onChangeText={(x) => update({ instalment: { ...inst, count: termFrom(x) } })} accessibilityLabel={t('decide.pay.instalmentCount')} maxLength={3} />
+      <CustomValueField
+        value={inst.count}
+        min={MIN_TERM}
+        max={MAX_TERM}
+        rangeText={t('decide.custom.range.count')}
+        unitWord={t('decide.pay.instalmentCountUnit')}
+        groupLabel={t('decide.pay.instalmentCount')}
+        onChange={(n) => update({ instalment: { ...inst, count: n } })}
+      />
       <Meta tone="muted">{note}</Meta>
       <LateFeeField
         value={inst.lateFee}
@@ -247,13 +256,16 @@ function openWord(plan: Plan, cleared: boolean, t: Translate): string {
 /** Cleared reads the months actually paid; Interest and Card costs are the engine's figures, or words when it has none. */
 function cardTiles(plan: Plan, fmt: Money, t: Translate) {
   const detail = plan.card!;
+  // R6 rule N: a word an open figure reads as wraps (kind 'words'); a figure stays on one line.
+  const tile = (caption: string, figure: string | null, word: string) => ({
+    caption,
+    value: figure ?? word,
+    kind: figure === null ? ('words' as const) : ('figure' as const),
+  });
   return [
-    {
-      caption: t('decide.pay.cardCleared'),
-      value: detail.payoffMonths === null ? openWord(plan, true, t) : t('decide.pay.cardMonthsValue', { count: detail.payoffMonths }),
-    },
-    { caption: t('decide.pay.cardInterest'), value: plan.interest === null ? openWord(plan, false, t) : fmt(plan.interest) },
-    { caption: t('decide.pay.cardCosts'), value: detail.cardCosts === null ? openWord(plan, false, t) : fmt(detail.cardCosts) },
+    tile(t('decide.pay.cardCleared'), detail.payoffMonths === null ? null : t('decide.pay.cardMonthsValue', { count: detail.payoffMonths }), openWord(plan, true, t)),
+    tile(t('decide.pay.cardInterest'), plan.interest === null ? null : fmt(plan.interest), openWord(plan, false, t)),
+    tile(t('decide.pay.cardCosts'), detail.cardCosts === null ? null : fmt(detail.cardCosts), openWord(plan, false, t)),
   ];
 }
 
@@ -261,6 +273,7 @@ function CardPanel(props: Step2Props) {
   const { inputs, update, source, whole, exact, computation, onSaveCardRate, onSaveCardTerms, readOnly } = props;
   const t = useT();
   const { colors, pairing } = useTheme();
+  const aprInfo = useInfoSheet('apr');
   const wholeFmt = moneyFn(whole, source.currency);
   const card = inputs.card;
   const plan = resolvedPlan(props, 'card');
@@ -270,6 +283,7 @@ function CardPanel(props: Step2Props) {
   const recorded = chosen?.record.apr ? percentText(chosen.record.apr) : '';
   const [rate, setRate] = useState<{ id: string | null; text: string }>({ id: card.accountId, text: recorded });
   const [termsOpen, setTermsOpen] = useState(false);
+  const [monthsOpen, setMonthsOpen] = useState(false);
   if (rate.id !== card.accountId) setRate({ id: card.accountId, text: recorded });
   const setCard = (patch: Partial<CheckInputs['card']>) => update({ card: { ...card, ...patch } });
 
@@ -339,7 +353,11 @@ function CardPanel(props: Step2Props) {
             readOnly={readOnly}
             label={t('decide.pay.cardRate')}
             accessibilityLabel={t('decide.pay.cardRateA11y')}
+            max={MAX_APR_TYPED}
+            rangeText={t('decide.custom.range.apr')}
+            labelAccessory={aprInfo.button()}
           />
+          {aprInfo.sheet}
 
           {chosen === undefined ? null : (
             <>
@@ -372,6 +390,7 @@ function CardPanel(props: Step2Props) {
             <Chip label={t('decide.pay.cardMinimum')} selected={card.payoff === 'minimum'} onPress={() => setCard({ payoff: 'minimum' })} />
           </View>
           {card.payoff === 'months' ? (
+            <>
             <View style={styles.stepper}>
               <Pressable
                 accessibilityRole="button"
@@ -382,7 +401,15 @@ function CardPanel(props: Step2Props) {
               >
                 <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>−</Text>
               </Pressable>
-              <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{t('decide.pay.cardMonthsValue', { count: card.months })}</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${t('decide.pay.cardMonthsEdit')}, ${t('decide.pay.cardMonthsValue', { count: card.months })}`}
+                disabled={readOnly}
+                onPress={() => setMonthsOpen(true)}
+                style={styles.monthsFigure}
+              >
+                <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{t('decide.pay.cardMonthsValue', { count: card.months })}</Text>
+              </Pressable>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('decide.pay.cardMore')}
@@ -393,6 +420,20 @@ function CardPanel(props: Step2Props) {
                 <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>+</Text>
               </Pressable>
             </View>
+            {monthsOpen && !readOnly ? (
+              <CustomValueField
+                value={card.months}
+                min={MIN_TERM}
+                max={MAX_TERM}
+                rangeText={t('decide.custom.range.months')}
+                unitWord={t('decide.custom.unit.months')}
+                groupLabel={t('decide.pay.cardMonths')}
+                onChange={(n) => setCard({ months: n })}
+                onClose={() => setMonthsOpen(false)}
+                autoFocus
+              />
+            ) : null}
+            </>
           ) : null}
 
           {plan !== null && plan.card !== null && canUse('payoffComparisons') ? (
@@ -458,11 +499,17 @@ function InvestMonthlyPanel(props: Step2Props) {
   return (
     <Card>
       <Label>{t('decide.pay.loanTerm')}</Label>
-      <View accessibilityRole="radiogroup" style={styles.chips}>
-        {TERM_CHIPS.map((n) => (
-          <Chip key={n} label={String(n)} selected={term === n} accessibilityLabel={t('decide.quick.termChipA11y', { count: n })} onPress={() => update({ investTermMonths: n })} />
-        ))}
-      </View>
+      <CustomValueChips
+        presets={TERM_CHIPS}
+        value={term}
+        onChange={(n) => update({ investTermMonths: n })}
+        groupLabel={t('decide.pay.loanTerm')}
+        min={MIN_TERM}
+        max={MAX_TERM}
+        rangeText={t('decide.custom.range.months')}
+        unitWord={t('decide.custom.unit.months')}
+        readOnly={props.readOnly}
+      />
       {term !== null && monthly !== null && monthly > 0 ? (
         <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>
           {t('decide.pay.noteInvestMonthly', { amount: exactFmt(monthly), count: term, total: wholeFmt(monthly * term) })}
@@ -480,8 +527,7 @@ function InvestMonthlyPanel(props: Step2Props) {
 
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
-  termRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
-  termBox: { flex: 1 },
+  monthsFigure: { minHeight: space.touchMin, minWidth: space.touchMin, justifyContent: 'center', alignItems: 'center' },
   toggle: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd },
   eligibility: { borderRadius: space.cardPad, padding: space.cardPad, gap: space.gapSm },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },

@@ -1929,7 +1929,7 @@ const en = {
       loanTermNote_one: 'At 1\u00A0month the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total.',
       loanTermNote_other: 'At {{count}}\u00A0months the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total.',
       loanRate: 'Annual rate', loanRateHint: 'Type the rate you were quoted', loanSecured: 'Secured against what you’re buying',
-      instalmentPayment: 'Payment', instalmentCount: 'How many',
+      instalmentPayment: 'Payment', instalmentCount: 'How many', instalmentCountUnit: 'payments',
       instalmentNote: 'No rate was quoted. {{count}} × {{payment}} is {{total}} against a {{price}} price, about {{pct}}% a year.',
       instalmentMissing: 'Add the payment and how many to score this.',
       instalmentNoteFees: 'No rate was quoted. {{count}} × {{payment}} is {{total}} against the {{financed}} paid over time, about {{pct}}% a year.', // D-49 (04 ME-02): with on-the-day fees the rate is on plan.financed = price − dayFees
@@ -1941,7 +1941,7 @@ const en = {
       cardBlockedTitle: 'This cannot go on a card', cardBlockedBody: 'Rent, bills, loan repayments, tax and premiums are not card payments. A cash advance carries interest from the first day.',
       cardUseLoan: 'Use deposit and loan instead', cardAccount: 'Card', cardNone: 'No card account yet',
       cardClearedHow: 'How it gets cleared', cardFull: 'In full next statement', cardMonths: 'Over a few months', cardMinimum: 'Minimum only',
-      cardMonthsValue_one: '1\u00A0mo', cardMonthsValue_other: '{{count}}\u00A0mo', cardFewer: 'Fewer months', cardMore: 'More months',
+      cardMonthsValue_one: '1\u00A0mo', cardMonthsValue_other: '{{count}}\u00A0mo', cardMonthsEdit: 'Months, type a number', cardFewer: 'Fewer months', cardMore: 'More months',
       cardCleared: 'Cleared', cardInterest: 'Interest', cardCosts: 'Card costs', cardNever: 'Never', cardEndless: 'Endless', cardNotWithin: 'Not within 50 years',
       cardRate: 'Rate on this card', cardRateA11y: 'Rate on this card, percent',
       cardNotesHeading: 'Your notes on this card', cardNotesCount: '{{count}} of 3 answered',

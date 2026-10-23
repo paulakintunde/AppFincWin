@@ -43,16 +43,27 @@ export interface RateInputProps {
   max?: string;
   /** 05-61: the bounds in words, shown in warn1 under the field after a refused keystroke. */
   rangeText?: string;
+  /** 05-67 (D-70, rule I): a control after the label, as its next flex sibling (an info button). */
+  labelAccessory?: React.ReactNode;
 }
 
-export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur, readOnly = false, max, rangeText }: RateInputProps) {
+export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur, readOnly = false, max, rangeText, labelAccessory }: RateInputProps) {
   const { colors, pairing } = useTheme();
   const { locale, separators } = useDeviceLocale();
   const decimal = (separators ?? localeSeparators(locale)).decimal;
   const [refused, setRefused] = useState(false);
   return (
     <View>
-      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
+      {labelAccessory ? (
+        <View style={styles.labelRow}>
+          <View style={styles.labelText}>
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
+          </View>
+          {labelAccessory}
+        </View>
+      ) : (
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
+      )}
       <View style={[styles.field, { backgroundColor: colors.fill1 }]}>
         <TextInput
           value={decimal === '.' ? value : value.replace('.', decimal)}
@@ -87,6 +98,8 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
 }
 
 const styles = StyleSheet.create({
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  labelText: { flexShrink: 1 },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
