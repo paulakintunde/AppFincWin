@@ -12,6 +12,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import type { CheckComputation, CheckInputs } from '../../snapshot/types';
+import { useShouldStack } from '../../ui/textFit';
 
 /** Declared per section file in the plan; kept here once for the four sections of 05-15 (structurally identical). */
 export interface SectionProps {
@@ -27,6 +28,9 @@ export interface SectionProps {
   /** WR-C07: the figures still follow older inputs (150 ms); an option built from them is not applied yet. */
   busy?: boolean;
 }
+
+/** 05-65: a section's content without its CollapsibleSection chrome (the FoldList places it). */
+export type SectionBodyProps = Omit<SectionProps, 'expanded' | 'onToggle'>;
 
 /** The resolved assessment behind step 3's figure sections, or null (missing verdict, first read, none, unconverted). */
 export function assessmentOf(c: CheckComputation): Assessment | null {
@@ -57,24 +61,41 @@ export interface TableRowProps {
 
 export function TableRow({ label, sub, value, leading, emphasis = false, tone = 'ink', a11yLabel, extra }: TableRowProps) {
   const { colors, pairing } = useTheme();
+  const stacked = useShouldStack(value?.length);
   const valueColor = tone === 'danger' ? colors.danger : tone === 'accent' ? colors.accent : colors.ink;
+  const labelBlock = (
+    <View style={styles.text}>
+      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink, fontWeight: emphasis ? '700' : undefined }}>{label}</Text>
+      {sub ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{sub}</Text> : null}
+      {extra ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{extra}</Text> : null}
+    </View>
+  );
+  const valueText = value ? (
+    <Text scale="capped" style={{ ...textRole(pairing, 'label'), color: valueColor, textAlign: stacked ? 'left' : 'right' }}>
+      {value}
+    </Text>
+  ) : null;
   return (
     <View
       accessible
       accessibilityLabel={a11yLabel ?? [label, value, sub, extra].filter(Boolean).join(', ')}
       style={[styles.row, { borderTopColor: colors.line2 }]}
     >
-      {leading}
-      <View style={styles.text}>
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink, fontWeight: emphasis ? '700' : undefined }}>{label}</Text>
-        {sub ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{sub}</Text> : null}
-        {extra ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{extra}</Text> : null}
-      </View>
-      {value ? (
-        <Text scale="capped" style={{ ...textRole(pairing, 'label'), color: valueColor, textAlign: 'right' }}>
-          {value}
-        </Text>
-      ) : null}
+      {stacked ? (
+        <View style={styles.stackBody}>
+          <View style={styles.stackHead}>
+            {leading}
+            {labelBlock}
+          </View>
+          {valueText}
+        </View>
+      ) : (
+        <>
+          {leading}
+          {labelBlock}
+          {valueText}
+        </>
+      )}
     </View>
   );
 }
@@ -104,5 +125,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   text: { flex: 1, flexShrink: 1 },
+  stackBody: { flex: 1, gap: space.gapSm },
+  stackHead: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
   tile: { borderRadius: radii.glyphTile, padding: space.cardPad, marginTop: space.gapSm },
 });

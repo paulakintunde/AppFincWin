@@ -81,7 +81,7 @@ describe('LedgersSection', () => {
     expect(screen.getByText('Five ledgers')).toBeTruthy();
     for (const l of assessment(p).ledgers) {
       const word = { better: 'Better', worse: 'Worse', same: 'Same' }[l.direction];
-      expect(screen.getAllByText(new RegExp(`· ${word}$`)).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(word).length).toBeGreaterThan(0);
     }
     expect(screen.getByText('Debt')).toBeTruthy();
   });
