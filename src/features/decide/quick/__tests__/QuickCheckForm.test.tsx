@@ -67,7 +67,7 @@ describe('QuickCheckForm: home', () => {
     expect(screen.getByText('before any interest')).toBeTruthy();
     expect(screen.getByLabelText('Over how many months')).toBeTruthy();
     expect(screen.getByLabelText('12 months').props.accessibilityState).toMatchObject({ checked: true });
-    expect(screen.getAllByText(/a month for 12 months, before any interest/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/a month for 12\s+months, before any interest/).length).toBeGreaterThan(0);
     expect(mockTrack).toHaveBeenCalledTimes(1);
   });
 
@@ -283,12 +283,12 @@ describe('QuickResult', () => {
 
   it('the caption keeps the chosen term and adds the payoff month', async () => {
     await render(show({ ...base(), months: 10 }));
-    expect(screen.getByText('a month for 12 months · paid off in month 10')).toBeTruthy();
+    expect(screen.getByText('a month for 12\u00A0months · paid off in month 10')).toBeTruthy();
   });
 
   it('a full term keeps the plain caption', async () => {
     await render(show({ ...base(), months: 12 }));
-    expect(screen.getByText('a month for 12 months')).toBeTruthy();
+    expect(screen.getByText('a month for 12\u00A0months')).toBeTruthy();
   });
 
   it('the quick result is announced only after typing settles', async () => {

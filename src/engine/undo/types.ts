@@ -30,7 +30,8 @@ export interface PatchOp {
 // transfer* added for D-50: creating, editing or deleting a transfer is one undo step
 // covering both legs.
 // 05: Decide (DCU-04 abandon, D-09 Go ahead, D-11 remove, D-12 unlink; D-27 changes, D-34 goal tags)
-export const UNDO_LABEL_KEYS = ['added','edited','deleted','deletedMany','markedPaid','markedPaidMany','markedUnpaidMany','skipped','imported','seriesCreated','seriesEdited','seriesEnded','categoryAdded','categoryEdited','categoryArchived','categoryMerged','accountAdded','accountEdited','accountArchived','transferAdded','transferEdited','transferDeleted','cloned','pasted','markedMonthly','monthAdded','accountDeleted','addedMany','ruleAdded','ruleEdited','ruleRemoved','checkAbandoned','decisionWritten','decisionRemoved','lineUnlinked','changeAdded','changeEdited','changeRemoved','transferTagged','transferUntagged'] as const;
+// 05-54: the refresh names its steps checkCleared, checkDeleted, decisionDeleted, changeDeleted; the old checkAbandoned, decisionRemoved and changeRemoved stay because saved undo rows still carry them.
+export const UNDO_LABEL_KEYS = ['added','edited','deleted','deletedMany','markedPaid','markedPaidMany','markedUnpaidMany','skipped','imported','seriesCreated','seriesEdited','seriesEnded','categoryAdded','categoryEdited','categoryArchived','categoryMerged','accountAdded','accountEdited','accountArchived','transferAdded','transferEdited','transferDeleted','cloned','pasted','markedMonthly','monthAdded','accountDeleted','addedMany','ruleAdded','ruleEdited','ruleRemoved','checkAbandoned','decisionWritten','decisionRemoved','lineUnlinked','changeAdded','changeEdited','changeRemoved','transferTagged','transferUntagged','checkCleared','checkDeleted','decisionDeleted','changeDeleted'] as const;
 
 export type UndoLabelKey = (typeof UNDO_LABEL_KEYS)[number];
 

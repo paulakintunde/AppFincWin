@@ -299,7 +299,7 @@ describe('MethodPanels', () => {
       await renderStep({ advertised: 1_000, method: 'loan', loan: { ...base.loan, aprText: '0', termMonths: 600 } });
       expect(screen.getByText(/^Paid off in month \d+, with a last payment of \$/)).toBeTruthy();
       expect(screen.getByLabelText('Term').props.value).toBe('600');
-      expect(screen.getByText(/^At 600 months you pay/)).toBeTruthy();
+      expect(screen.getByText(/^At 600\s+months the payment is/)).toBeTruthy();
     });
 
     it('states no early payoff when the term is used in full', async () => {
@@ -396,7 +396,7 @@ describe('MethodPanels', () => {
     it('the months stepper shows the months typed and stays within 1..600', async () => {
       const base = buy({ method: 'card' });
       const { p } = await renderStep({ method: 'card', card: { ...base.card, months: 12 } });
-      expect(screen.getAllByText('12 mo').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('12\u00A0mo').length).toBeGreaterThan(0);
       await fireEvent.press(screen.getByLabelText('More months'));
       expect(mockUpdate(p)).toHaveBeenLastCalledWith({ card: expect.objectContaining({ months: 13 }) });
       await fireEvent.press(screen.getByLabelText('Fewer months'));

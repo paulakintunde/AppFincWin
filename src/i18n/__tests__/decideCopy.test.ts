@@ -42,6 +42,8 @@ const ACTION_LABELS = new Set([
   'decide.past.removeKeep', // dialog choice: keep the decision record
   'decide.onboarding.skip', // button: skip this onboarding step
   'decide.onboarding.checkTitle', // invites the user to try the check itself, not a purchase
+  'decide.delete.keep', // dialog choice: keep the record instead of deleting it
+  'decide.verdict.key.putInCaption', // field caption: the key figure "Put in a month" (investing amount)
 ]);
 const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
 
