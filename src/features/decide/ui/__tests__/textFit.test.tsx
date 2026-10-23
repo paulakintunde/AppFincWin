@@ -80,6 +80,17 @@ describe('SegmentedToggle', () => {
   });
 });
 
+describe('SegmentedToggle label length', () => {
+  it('D-76 Seg: a label past 16 characters stacks the segments at 402 and 1.0x', async () => {
+    const long = [
+      { key: 'worst', label: 'Worst · US$4,000.00' },
+      { key: 'avg', label: 'Average · US$7,156.66' },
+    ];
+    await wrap(<SegmentedToggle options={long} value="avg" onChange={() => undefined} accessibilityLabel="Judge on" />);
+    expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true })).toHaveLength(2);
+  });
+});
+
 describe('FigureStrip', () => {
   const items = [
     { caption: 'Left', value: '$1,234.56' },

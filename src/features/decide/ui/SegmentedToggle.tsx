@@ -30,7 +30,8 @@ export function SegmentedToggle({ options, value, onChange, accessibilityLabel, 
   const selectedBg = dark ? colors.surface : colors.ink;
   const selectedText = dark ? colors.ink : colors.surface;
   const idleText = dark ? colors.inkSoft1 : colors.inkDim;
-  const stacked = useShouldStack();
+  // Rule S by label length: an equal segment at 402 holds about 16 characters, so "Average · US$7,156.66" stacks.
+  const stacked = useShouldStack(Math.max(...options.map((option) => option.label.length)));
   const readOnly = useReadOnlyScope(); // a decided check shows the choice but cannot change it
   if (stacked) {
     // D-76 Seg: under rule S the equal segments become a vertical radio list.
