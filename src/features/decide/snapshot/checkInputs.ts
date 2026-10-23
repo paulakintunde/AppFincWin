@@ -25,6 +25,7 @@ import type {
   CurrencyCode,
   InvestCheck,
   ItemType,
+  InstalmentFreq,
   LossOfValueInput,
   MinorUnits,
   Percent,
@@ -63,6 +64,12 @@ export const MAX_INPUT_MINOR = 1_000_000_000_000;
 const MAX_LINES = 30;
 const MAX_SETBACKS = 12;
 const MAX_TERM = 600;
+const INSTALMENT_FREQS = ['weekly', 'fortnightly', 'monthly', 'quarterly'] as const satisfies readonly InstalmentFreq[];
+
+/** D-89: 'next_month' is the deprecated alias of 'next_period' (removed in 05-109). */
+function normaliseFirstPayment(value: 'today' | 'next_period' | 'next_month'): 'today' | 'next_period' {
+  return value === 'next_month' ? 'next_period' : value;
+}
 const CUSTOM_NAME_MAX = 40;
 const HUNDRED: Percent = percent('100');
 const RATE_PATTERN = /^\d{1,4}(\.\d{1,10})?$/;
@@ -153,7 +160,7 @@ export function emptyCheckInputs(kind: 'buy' | 'invest', _today: string): CheckI
     replaces: [],
     method: null,
     loan: { deposit: 0, termMonths: 48, aprText: '', secured: false, securedTouched: false, aprFromQuick: false, promo: null, variable: false },
-    instalment: { amount: null, count: null, lateFee: null, hasRate: false, aprText: '', firstPayment: 'today' },
+    instalment: { amount: null, count: null, lateFee: null, hasRate: false, aprText: '', firstPayment: 'today', freq: 'monthly' },
     card: { accountId: null, payoff: 'months', months: 12, promo: null, variable: false, fees: null },
     investTermMonths: null,
     setbacks: defaultSetbackLines(),
@@ -371,7 +378,10 @@ export function parseCheckInputs(json: unknown, today: string): CheckInputs {
       lateFee: minor(inst.lateFee),
       hasRate: flag(inst.hasRate, false),
       aprText: typeof inst.aprText === 'string' && isValidAprText(inst.aprText) ? inst.aprText : '',
-      firstPayment: oneOf(inst.firstPayment, ['today', 'next_month'] as const) ?? 'today',
+      // D-89: a stored 'next_month' reads as 'next_period'; an absent or unknown freq is 'monthly'. The count stays 1..600:
+      // a stored count above the new input bound of 500 is kept and scored as stored (R16.16 M6).
+      firstPayment: normaliseFirstPayment(oneOf(inst.firstPayment, ['today', 'next_period', 'next_month'] as const) ?? 'today'),
+      freq: oneOf(inst.freq, INSTALMENT_FREQS) ?? 'monthly',
     },
     card: {
       accountId: idText(card.accountId),
@@ -549,7 +559,8 @@ function payment(inputs: CheckInputs, method: PayMethod, ctx: EngineCtx, price: 
         instalmentCount: inst.count,
         // D-80: no rate = apr absent; a rate = the typed APR, or null (instalment_rate_missing) when blank or invalid
         ...(inst.hasRate === true ? { apr: inst.aprText !== undefined && isValidAprText(inst.aprText) ? percent(inst.aprText) : null } : {}),
-        firstPayment: inst.firstPayment ?? 'today',
+        freq: inst.freq ?? 'monthly',
+        firstPayment: normaliseFirstPayment(inst.firstPayment ?? 'today'),
         ...(inst.lateFee !== null && inst.lateFee > 0 ? { lateFee: minorUnits(inst.lateFee) } : {}),
       };
     }

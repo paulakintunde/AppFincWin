@@ -3,7 +3,7 @@
  * paused mutation variables), so: integer minor units as `number`, rates as decimal strings, never `Percent`/bigint
  * (RESEARCH Pitfall 8). Engine objects (Verdict, Percent) live only in memory, rebuilt on render (D-15).
  */
-import type { AlternativeRow, Alternatives, AssessContext, BuyCheck, CardRecord, CurrencyCode, Decision, DecideOption, DecideSnapshot, FirstRead, IncomeAtRiskReport, InvestmentViews, ItemType, MinorUnits, PlanResult, PurchaseCheck, ResolvedPrice, RoughFigures, RunningCostCategory, RunningCosts, SetbackCode, SetbackReport, StackedCheckInput, Verdict, WaitPlan } from '@/engine/decide'; // CurrencyCode / MinorUnits re-exported per 04 D-62
+import type { AlternativeRow, Alternatives, AssessContext, BuyCheck, CardRecord, CurrencyCode, Decision, DecideOption, DecideSnapshot, FirstRead, IncomeAtRiskReport, InstalmentFreq, InvestmentViews, ItemType, MinorUnits, PlanResult, PurchaseCheck, ResolvedPrice, RoughFigures, RunningCostCategory, RunningCosts, SetbackCode, SetbackReport, StackedCheckInput, Verdict, WaitPlan } from '@/engine/decide'; // CurrencyCode / MinorUnits re-exported per 04 D-62
 import type { CustomCurrencyRow, FxLatestRow } from '@/db/rows';
 
 export interface SnapshotMeta {
@@ -68,8 +68,8 @@ export interface CheckInputs {
   replaces: InputLine[];           // <= 30
   method: MethodKey | null;
   loan: { deposit: number; termMonths: number | null; aprText: string; secured: boolean; securedTouched: boolean; aprFromQuick: boolean; promo: PromoInput | null; variable: boolean }; // promo/variable: D-30, absent = none // secured follows itemType === 'vehicle' until the user touches the toggle (securedTouched, 05-07/05-14; 04 DEC-11)
-  // lateFee: D-30, user-typed, never changes the verdict. D-80 (R15.3): hasRate false = the payment is the stored amount with no rate; true = the amount is the dealer's quote and aprText the typed rate (kept when switching back to No). firstPayment: today by default. Optional in the type so older fixtures compile; parseCheckInputs always fills them.
-  instalment: { amount: number | null; count: number | null; lateFee: number | null; hasRate?: boolean; aprText?: string; firstPayment?: 'today' | 'next_month' };
+  // lateFee: D-30, user-typed, never changes the verdict. D-80 (R15.3): hasRate false = the payment is the stored amount with no rate; true = the amount is the dealer's quote and aprText the typed rate (kept when switching back to No). firstPayment: today by default; 'next_month' is the deprecated alias of 'next_period' (D-89, removed in 05-109). freq: D-89, absent = monthly. Optional in the type so older fixtures compile; parseCheckInputs always fills them.
+  instalment: { amount: number | null; count: number | null; lateFee: number | null; hasRate?: boolean; aprText?: string; firstPayment?: 'today' | 'next_period' | 'next_month'; freq?: InstalmentFreq };
   card: { accountId: string | null; payoff: 'full' | 'months' | 'minimum'; months: number; promo: PromoInput | null; variable: boolean; fees: number | null }; // fees: D-44 / 04 D-63 cardFees, user-typed card fees for this purchase (minor units), null = none (absent in stored JSON = null)
   investTermMonths: number | null;
   setbacks: SetbackLine[];         // <= 12
