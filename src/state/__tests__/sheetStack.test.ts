@@ -2,6 +2,10 @@ import { act, renderHook } from '@testing-library/react-native';
 import { wipeDeviceData } from '@/services/storage/wipe';
 import {
   getSheetStack,
+  markMounted,
+  markUnmounted,
+  noteVisible,
+  prune,
   pushSheet,
   removeSheet,
   resetSheetStackForTests,
@@ -75,5 +79,33 @@ describe('sheetStack', () => {
     pushSheet('a');
     resetSheetStackForTests();
     expect(getSheetStack()).toEqual([]);
+  });
+
+  it('D-85 the watchdog drops ids whose sheet is not mounted', () => {
+    pushSheet('a');
+    pushSheet('b');
+    markMounted('a');
+    expect(prune(0)).toBe(1);
+    expect(getSheetStack()).toEqual(['a']);
+    markUnmounted('a');
+    expect(prune(1)).toBe(1);
+    expect(getSheetStack()).toEqual([]);
+  });
+
+  it('D-85 a stale stack is cleared after 1 s with nothing visible', () => {
+    pushSheet('a');
+    expect(noteVisible(0, false)).toBe(0);
+    expect(noteVisible(1000, false)).toBe(0);
+    expect(getSheetStack()).toEqual(['a']);
+    expect(noteVisible(1001, false)).toBe(1);
+    expect(getSheetStack()).toEqual([]);
+  });
+
+  it('D-85 a visible sheet resets the stale timer', () => {
+    pushSheet('a');
+    noteVisible(0, false);
+    noteVisible(900, true);
+    expect(noteVisible(1500, false)).toBe(0);
+    expect(getSheetStack()).toEqual(['a']);
   });
 });
