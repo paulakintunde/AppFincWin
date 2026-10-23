@@ -753,7 +753,7 @@ Plans:
 - [x] 05-91-PLAN.md — Engine E3b: instalment frequency, next_period, MAX_INSTALMENTS, monthly equivalent; inputs carry freq (D-89)
 - [x] 05-98-PLAN.md — You: the "Add" group, run after dismiss on transitionEnd; old import row removed (D-85)
 - [ ] 05-99-PLAN.md — No back on a tab root; cushion and runway "Over 50 years" (D-93)
-- [ ] 05-108-PLAN.md — Draft-save coalescing, age-aware sync line, idempotent replay test (D-88)
+- [x] 05-108-PLAN.md — Draft-save coalescing, age-aware sync line, idempotent replay test (D-88)
 
 **Wave 22** *(blocked on Wave 21 completion)*
 - [ ] 05-92-PLAN.md — Engine E3c: cash path real dates by frequency; payback and investing views by monthly equivalent (D-89)

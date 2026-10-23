@@ -99,7 +99,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 - [x] **SYN-01**: User can browse previously loaded data with no network connection
 - [x] **SYN-02**: User can create and edit records with no network connection, and those writes flush automatically on reconnect
-- [ ] **SYN-03**: A queued write that is retried does not produce a duplicate record
+- [x] **SYN-03**: A queued write that is retried does not produce a duplicate record
 - [ ] **SYN-04**: The write queue survives a force-quit and resumes on next launch
 - [ ] **SYN-05**: The write queue is bounded, and the user is told when it cannot grow further
 - [x] **SYN-06**: User sees whether the app is offline and how many changes are waiting
@@ -250,7 +250,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-25**: User can tap an ⓘ beside a Decide term to read, in a small sheet, what it is and what it changes in the check (05 D-70)
 - [ ] **DCU-26**: User can type a custom value next to every preset chip row and amount slider in Decide, within stated bounds (durations 1-120 months, the investing horizon 1-600) (05 D-71)
 - [ ] **DCU-27**: Decide text never breaks mid-word, overlaps or cuts off system copy at 320-402 pt widths and 1.0-2.0x text size (05 D-76)
-- [ ] **DCU-28**: A check saves itself as the user edits, including when the app is backgrounded, and shows its save status; Clear and Delete each undo in one step and never remove what Go ahead wrote (05 D-73, D-77)
+- [x] **DCU-28**: A check saves itself as the user edits, including when the app is backgrounded, and shows its save status; Clear and Delete each undo in one step and never remove what Go ahead wrote (05 D-73, D-77)
 - [ ] **DCU-29**: User can see each way to pay as its own card holding its inputs and results, and give an instalment plan a rate and a first-payment date (05 D-79, D-80)
 - [ ] **DCU-30**: User can name a custom item type that follows a built-in type's rules, and add an optional expected return to an investment check, shown as a projection only (05 D-81, D-82)
 - [ ] **DCU-31**: User can set an instalment plan's frequency (weekly, every 2 weeks, monthly or quarterly, up to 500 payments) and sees the true yearly rate implied by a plan with no quoted rate (05 D-89, D-90)
@@ -488,7 +488,7 @@ Populated during roadmap creation.
 | MON-14 | Phase 1 - Money Core | Complete |
 | SYN-01 | Phase 1 - Money Core | Complete |
 | SYN-02 | Phase 1 - Money Core | Complete |
-| SYN-03 | Phase 10 - System | Pending |
+| SYN-03 | Phase 10 - System | Complete |
 | SYN-04 | Phase 10 - System | Pending |
 | SYN-05 | Phase 10 - System | Pending |
 | SYN-06 | Phase 1 - Money Core | Complete |
@@ -621,7 +621,7 @@ Populated during roadmap creation.
 | DCU-25 | Phase 5 - Decide UI | Pending |
 | DCU-26 | Phase 5 - Decide UI | Pending |
 | DCU-27 | Phase 5 - Decide UI | Pending |
-| DCU-28 | Phase 5 - Decide UI | Pending |
+| DCU-28 | Phase 5 - Decide UI | Complete |
 | DCU-29 | Phase 5 - Decide UI | Pending |
 | DCU-30 | Phase 5 - Decide UI | Pending |
 | DCU-31 | Phase 5 - Decide UI | Pending |
