@@ -96,7 +96,7 @@ describe('Step3Verdict', () => {
         {breaks(p)}
       </>
     );
-    expect(screen.getByText('You cannot afford this')).toBeTruthy();
+    expect(screen.getByText('Doesn’t fit right now')).toBeTruthy();
     expect(screen.getByText('The month does not close')).toBeTruthy();
   });
 

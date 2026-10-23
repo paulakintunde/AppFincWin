@@ -1,6 +1,6 @@
 /**
  * Quick-check result copy (05-09 Task 2, UI-SPEC "Quick check"). Both modes are scored by assess() (D-23); the "no" chip
- * reads "Not from cash" or "Not from credit", never "You cannot afford this". At a zero rate the line says "before any
+ * reads "Not from cash" or "Not from credit", never "Doesn’t fit right now". At a zero rate the line says "before any
  * interest" and, when short, that no rate makes it fit. Nothing here invents a rate: the rate is the one typed (D-02).
  */
 import { ZERO_PERCENT } from '@/engine/decide';

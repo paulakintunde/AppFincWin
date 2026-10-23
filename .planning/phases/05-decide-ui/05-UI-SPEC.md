@@ -163,7 +163,7 @@ Tokens only from `src/theme/tokens.ts` and the live accent. **Prototype hex to t
 - the "What gets written" bullets;
 - the "Better" direction tag (accent at `ACCENT_TINT_OPACITY` over `fill1`) in Where it lands. **Not** for: tab selection, backdrop, toast, verdict card fill, the step bar (that is `ink`), dark-card controls |
 | Warning | `warn1` on `categoryTint.Business` | Soft warnings, "Needs adjustment" and "Waiting" chips, suppressed-row reasons, "Changed" markers |
-| Destructive / loss | `danger` | Hard warnings, "You cannot afford this" chip and card, negative figures, "Over"/"Short" values, Remove. Always paired with words or a sign |
+| Destructive / loss | `danger` | Hard warnings, "Doesn’t fit right now" chip and card, negative figures, "Over"/"Short" values, Remove. Always paired with words or a sign |
 
 - Focus ring: 2px `accent`, 2px offset (BUILD-PROMPT §2).
 - The step bar's reached segments are `ink`, unreached `line3`. Selected radio cards are `ink` with a `surface` ring and dot.
@@ -173,7 +173,7 @@ Tokens only from `src/theme/tokens.ts` and the live accent. **Prototype hex to t
 |---|---|---|
 | fits | `accent`@.12 over `fill1` / `accent` | "It fits" |
 | adjust | `categoryTint.Business` / `warn1` | "Needs adjustment" |
-| no | `dangerTint2` / `danger` | "You cannot afford this" (full check), "Not from cash" or "Not from credit" (quick check) |
+| no | `dangerTint2` / `danger` | "Doesn’t fit right now" (full check), "Not from cash" or "Not from credit" (quick check) |
 | missing | `fill1` / `inkDim` | "Missing terms" or "Card limits apply" |
 | draft | `fill1` / `inkDim` | "Draft" |
 | bought / waiting / passed | accent-tint / `categoryTint.Business`+`warn1` / `fill1`+`inkDim` | "Bought" / "Waiting" / "Passed" |
@@ -231,7 +231,7 @@ D-23 supersedes the D-21 "spread line only when cash does not cover it" layout. 
 | Credit at 0%, fits | It fits | adds "Any rate adds to this." |
 | First read (no full month) | the state's chip | the same sentences from `firstRead()`, plus the basis line "First read, from the figures you gave." |
 
-The "no" chip is "Not from cash" in Cash mode and **"Not from credit"** in Credit mode: the quick check judges one payment route, so it never says "You cannot afford this" (the full check does). The prototype's hardcoded "Spread over 48 months ... 9.4%" sentence is removed (D-02, 04 D-07).
+The "no" chip is "Not from cash" in Cash mode and **"Not from credit"** in Credit mode: the quick check judges one payment route, so it never says "Doesn’t fit right now" (the full check does). The prototype's hardcoded "Spread over 48 months ... 9.4%" sentence is removed (D-02, 04 D-07).
 
 **"Run the full check" (D-23)** carries **every field**: name, price, mode, APR, duration, sales tax and fees. Cash maps to "Paid in full"; Credit maps to "Deposit and loan" with deposit 0, the entered rate and the chosen term; tax and fees become step-2 adjustment lines ("Sales tax", "Fees", both "Paid on the day"). A carried 0% shows "before any interest" in step 2 so it is not read as a quoted rate.
 
@@ -296,7 +296,7 @@ Step titles: 1 "The item", 2 "Price and how you pay", 3 "Impact", 4 "Alternative
 
 **Bottom action bar** (pinned, not scrolled; deviation from the prototype, where it sits at the end of the scroll): optional hint line above the buttons (`meta`, `inkFaint`), then **"Save and close"** (`fill1` pill, `ink` text; shows "Saved" for a moment) and the primary button (flex 1, accent fill, `surface` text, `label`). Primary labels: step 1 "Next: Price", step 2 "Next: Impact", step 3 "Next: Alternatives", step 4 "Next: Decide", step 5 "Go ahead" / "Save the plan" / "Record as passed" per the chosen outcome, or **"Pick an outcome"** (disabled: `line3` fill, `inkDim` text, `accessibilityState.disabled`). Hints: step 3 "Nothing here changes your balances. Step five is where anything gets written."; step 5 with Go ahead and a non-fitting verdict "This breaks a line you set. You can still log it — the record notes it."; step 5 otherwise "Waiting and passing leave every balance exactly as it is."; step 1 with no price "Add a price to continue." Keyboard: the bar rides above the keyboard; scroll views use `keyboardShouldPersistTaps="handled"`.
 
-**Reveal and haptics:** arriving on step 3, the verdict card enters with `fw-rise` (`DURATION.entrance`); one haptic fires on that first reveal per visit: `hapticSuccess` (`notificationAsync` Success) for "fits", `hapticWarning` (`notificationAsync` Warning) for "needs adjustment", "you cannot afford this" and "missing". Committing Go ahead or Wait fires `impactAsync` Medium (`hapticMedium`); Pass fires no haptic beyond the selection one. Choosing a payment method, a chip or a step segment fires `selectionAsync` (`hapticSelection`). Haptics are suppressed under reduced motion only if the OS haptic setting is off (03 rule). No sound.
+**Reveal and haptics:** arriving on step 3, the verdict card enters with `fw-rise` (`DURATION.entrance`); one haptic fires on that first reveal per visit: `hapticSuccess` (`notificationAsync` Success) for "fits", `hapticWarning` (`notificationAsync` Warning) for "needs adjustment", "doesn’t fit right now" and "missing". Committing Go ahead or Wait fires `impactAsync` Medium (`hapticMedium`); Pass fires no haptic beyond the selection one. Choosing a payment method, a chip or a step segment fires `selectionAsync` (`hapticSelection`). Haptics are suppressed under reduced motion only if the OS haptic setting is off (03 rule). No sound.
 
 ---
 
@@ -451,7 +451,7 @@ Sections 4 (Who pays what, household only), 6 (With the expected income, only wi
 - **Go ahead:** the primary button opens a `ConfirmSheet`: heading "Write this to your records?", body = the same "What gets written" list, actions "Go ahead" (primary) / "Not yet" (default; backdrop and Android back count as "Not yet"). Confirming writes everything in one step, fires `hapticMedium`, returns to Decide home and shows the toast "Written to your records" with Undo; when the verdict was not "fits" the toast reads "Logged. The record notes it breaks a line." Undo removes the whole set in one step (02.x undo stack). The check moves to Past decisions as "Bought".
 - **Wait and save:** no confirm. It saves the decision and creates its savings goal row (target, monthly amount, ready-by date) with amount and ready-by date, schedules the local reminder, returns to Decide home, toast "Saved. Reminder set for {date}". If notifications are not permitted at that moment the OS permission prompt is requested first; if declined the decision still saves and the toast reads "Saved. Notifications are off, so no reminder will arrive." The reminder text (no amounts, no item name, since it shows on a lock screen): title "Check ready", body "A plan you saved has reached its ready-by date. Open it to see where it stands now." Tapping it reopens the check at step 3, recomputed.
 - **Pass:** no confirm, no haptic beyond selection. Goes to Past decisions with the toast "Passed. Nothing moved."
-- **No review prompt is ever requested** after "You cannot afford this", after any `no`, or in the first session (LAUNCH §4). A prompt after an estimate-vs-actual that lands at or under the estimate belongs to a later phase.
+- **No review prompt is ever requested** after "Doesn’t fit right now", after any `no`, or in the first session (LAUNCH §4). A prompt after an estimate-vs-actual that lands at or under the estimate belongs to a later phase.
 
 ---
 
@@ -643,7 +643,7 @@ Voice: declarative, never prescriptive. **No catalogue key under Decide may cont
 | Primary CTA, flow | "Next: Price", "Next: Impact", "Next: Alternatives", "Next: Decide", "Go ahead", "Save the plan", "Record as passed"; disabled "Pick an outcome" |
 | Secondary CTA | "Save and close" (toast "Saved") |
 | Sheet buttons (noun-bearing) | Limit editor "Save limit"; line editor "Save line"; rough figures "Save figures"; split override "Save split"; all with "Cancel" |
-| State chips | "It fits" · "Needs adjustment" · "You cannot afford this" · "Not from cash" (quick check) · "Missing terms" · "Card limits apply" · "Draft" · "Bought" · "Waiting" · "Passed" |
+| State chips | "It fits" · "Needs adjustment" · "Doesn’t fit right now" · "Not from cash" (quick check) · "Missing terms" · "Card limits apply" · "Draft" · "Bought" · "Waiting" · "Passed" |
 | Size labels (D-22) | "Out of this month's spare" · "Out of savings" · "Needs spreading" |
 | Basis markers | "Average month · {in} in" · "Worst month · {in} in" · "First read · your figures" · "Now from your logged months" |
 | Steadiness | "Steady" · "Variable" · "Volatile" · "Not enough history yet" |
@@ -707,7 +707,7 @@ Voice: declarative, never prescriptive. **No catalogue key under Decide may cont
 - 44px minimum targets (`hitSlop` for checkboxes, "x", segments, thumbs, chips).
 - Radio groups (`ChoiceCard`) use `role="radio"`/`checked`; `CheckRow` uses `role="checkbox"`/`checked`; collapsible headers expose `expanded`; sliders are `adjustable` with increment/decrement; the step bar segments are `button`s with `disabled` when unreached.
 - Reading order step 3: header, verdict card (one element), notices, warnings (each a group "{title}, {value}. {description}"), sections.
-- Colour is never the only signal: state chips carry words; over/under carry "over/under/short"; pass/fail dots sit beside "Clear"/"Short"/"Over"; the changed marker is text; the dark `danger` verdict card is reinforced by the chip words "You cannot afford this".
+- Colour is never the only signal: state chips carry words; over/under carry "over/under/short"; pass/fail dots sit beside "Clear"/"Short"/"Over"; the changed marker is text; the dark `danger` verdict card is reinforced by the chip words "Doesn’t fit right now".
 - Text scaling: body and labels to 200% wrapping or stacking; verdict title, strip figures, Final price, Cheaper-one price cap 1.3x; strips stack above 1.3x. Test at the largest OS sizes and at 320pt wide.
 - Contrast: all new pairings are existing token pairs; the one new fill/text pair (`surface` on `danger`) is 5.4:1.
 
@@ -789,7 +789,7 @@ Each item is a choice I made instead of asking, picking the option most consiste
 2. **All step-3 sections (up to nine; seven in the personal-scope demo) are collapsed by default**, each with a one-line summary, so the verdict and warnings fill the screenshot frames. The alternative is leaving "The month, line by line" open.
 3. **A check autosaves on every edit**; "Save" means save and close; leaving never prompts. Abandon has no confirm, an Undo toast instead.
 4. **Dark cards:** `ink`, with `danger` for the `no` verdict card (white on `#B4472A` is 5.4:1). Inner dark fills are `surface` at 0.12 opacity.
-5. **Quick-check "no" chip says "Not from cash" in Cash mode and "Not from credit" in Credit mode**, not "You cannot afford this", because each quick check judges one payment route and another may still work. The first read uses the same D-23 inputs (toggle, APR, duration chips, tax and fees) through `firstRead()`; it only lacks "Run the full check".
+5. **Quick-check "no" chip says "Not from cash" in Cash mode and "Not from credit" in Credit mode**, not "Doesn’t fit right now", because each quick check judges one payment route and another may still work. The first read uses the same D-23 inputs (toggle, APR, duration chips, tax and fees) through `firstRead()`; it only lacks "Run the full check".
 6. **Label rule:** "before any interest" shows whenever the Credit APR is 0, not only while untouched, so it can never be read as a quoted rate. Duration chip "12" is selected on first show. "See it on credit" keeps the amount, tax and fees and starts APR at 0.
 7. **First read has no "Run the full check"** (the full verdict needs a full month); its Credit mode is scored by the cash-level `firstRead()` only. Skipping the rough figures is allowed and gives a cash-only answer.
 8. **Offset chips** are +7 days, +1 calendar month and +3 calendar months (prototype: +7/+30/+90 days).
@@ -1051,7 +1051,7 @@ This replaces the "Verdict card" layout and the always-open warning stack of Ste
 | Row | Content | Height at 402, 1.0x |
 |---|---|---|
 | 1 | Left: the **size label** (`eyebrow`, `inkSoft1`, upper-cased: "Out of this month’s spare" / "Out of savings" / "Needs spreading") with an ⓘ (`size`), then the "On the edge" tag (when on) with an ⓘ (`edge`). Right: the **confidence chip** (unchanged words), now drawn with a 12px ⓘ glyph after its label inside the chip, so it reads as tappable. It opens the confidence sheet (R3 `confidence`). The row is `flexWrap: 'wrap'`; the chip drops to its own line when it does not fit. | 27 |
-| 2 (10 below) | **The verdict:** the state words in `heading` (26/700, `surface`, capped 1.3x): "It fits" / "Needs adjustment" / "You cannot afford this" / "Missing terms". It wraps at word boundaries (two lines at 320). `accessibilityRole="header"`. | 30 |
+| 2 (10 below) | **The verdict:** the state words in `heading` (26/700, `surface`, capped 1.3x): "It fits" / "Needs adjustment" / "Doesn’t fit right now" / "Missing terms". It wraps at word boundaries (two lines at 320). `accessibilityRole="header"`. | 30 |
 | 3 (6 below) | **The one-line reason:** the existing **title copy** from the Step 3 title table (at most 64 characters, or the recorded 72-character `inv` exception), now in `body` (15/500/1.5), `surface`. That is at most 2 lines at 402 and never clamped. | 45 |
 | 3b (optional, 8 below) | The **difference line** (combined first, then worst month, D-24/D-27), in `meta` 600, `inkSoft2`. One line at 402, wraps above that. | 25 |
 | 4 (12 below) | **Key figures**: a 3-column `FigureStrip` on the dark card (described below). | 38 |

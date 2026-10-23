@@ -398,7 +398,7 @@ describe('decided checks', () => {
         <CheckFlowScreen id="c1" initialStep={3} />
       </CommitMutationsContext.Provider>
     );
-    const chips = { fits: 'It fits', adjust: 'Needs adjustment', no: 'You cannot afford this' } as const;
+    const chips = { fits: 'It fits', adjust: 'Needs adjustment', no: 'Doesn’t fit right now' } as const;
     const state = recalculated.verdict?.state;
     expect(state).toBeDefined();
     // The step-3 chip is the recalculation's, the decided header carries the stored verdict and the date.

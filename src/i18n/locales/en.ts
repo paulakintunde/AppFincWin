@@ -1745,7 +1745,7 @@ const en = {
       saved: 'Saved', saving: 'Saving…', offline: 'Offline, will save', failed: 'Not saved',
       offlineA11y: 'Offline. This check will save when you’re back online.', failedA11y: 'This check wasn’t saved. The sync line has the detail.',
     },
-    state: { fits: 'It fits', adjust: 'Needs adjustment', no: 'You cannot afford this', noCash: 'Not from cash', noCredit: 'Not from credit', missing: 'Missing terms', cardLimits: 'Card limits apply', draft: 'Draft', bought: 'Bought', waiting: 'Waiting', passed: 'Passed' },
+    state: { fits: 'It fits', adjust: 'Needs adjustment', no: 'Doesn’t fit right now', noCash: 'Not from cash', noCredit: 'Not from credit', missing: 'Missing terms', cardLimits: 'Card limits apply', draft: 'Draft', bought: 'Bought', waiting: 'Waiting', passed: 'Passed' },
     size: { from_spare_this_month: 'Out of this month’s spare', from_savings: 'Out of savings', needs_spreading: 'Needs spreading' },
     basis: { average: 'Average month · {{amount}} in', worst: 'Worst month · {{amount}} in', firstRead: 'First read · your figures', nowLogged: 'Now from your logged months', cashOnly: 'Cash only · no monthly figures yet' },
     steadiness: { steady: 'Steady', variable: 'Variable', volatile: 'Volatile', insufficient: 'Not enough history yet' },
