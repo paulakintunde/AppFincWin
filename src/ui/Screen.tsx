@@ -1,4 +1,4 @@
-import React, { type ReactNode } from 'react';
+import React, { type ReactNode, type Ref } from 'react';
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space, useScreenInsets } from '@/theme/layout';
@@ -13,6 +13,8 @@ export interface ScreenProps {
    */
   form?: boolean;
   style?: StyleProp<ViewStyle>;
+  /** The scroll view, for a screen that scrolls itself to a row (05-116). Only applies with `scroll`. */
+  scrollRef?: Ref<ScrollView>;
 }
 
 /**
@@ -24,7 +26,7 @@ export interface ScreenProps {
  * clipped there rather than drawn beneath it (Android forced edge-to-edge). Only `headerExtra`
  * stays as content padding, so the resting layout is identical to the non-scroll case.
  */
-export function Screen({ children, scroll = false, form = false, style }: ScreenProps) {
+export function Screen({ children, scroll = false, form = false, style, scrollRef }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useScreenInsets();
 
@@ -32,6 +34,7 @@ export function Screen({ children, scroll = false, form = false, style }: Screen
     return (
       <View style={[styles.base, { backgroundColor: colors.canvas, paddingTop: insets.top }]}>
         <ScrollView
+          ref={scrollRef}
           style={[styles.base, { backgroundColor: colors.canvas }]}
           keyboardShouldPersistTaps={form ? 'handled' : undefined}
           automaticallyAdjustKeyboardInsets={form}

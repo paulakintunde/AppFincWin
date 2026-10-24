@@ -1,7 +1,7 @@
 // REC-25: the Home currency row. Tapping opens the currency picker; choosing a different code
 // opens the all-or-nothing confirm sheet.
 import React, { useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, type LayoutChangeEvent, type View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 import { CurrencyPicker } from '@/features/record/entry/pickers/CurrencyPicker';
@@ -12,7 +12,13 @@ import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { HomeCurrencyChangeSheet } from './HomeCurrencyChangeSheet';
 
-export function HomeCurrencyRow() {
+export interface HomeCurrencyRowProps {
+  /** 05-116: the row's host, so the You screen can scroll to it and move focus to it. */
+  rowRef?: React.Ref<View>;
+  onRowLayout?: (event: LayoutChangeEvent) => void;
+}
+
+export function HomeCurrencyRow({ rowRef, onRowLayout }: HomeCurrencyRowProps = {}) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
@@ -23,6 +29,8 @@ export function HomeCurrencyRow() {
   return (
     <>
       <Pressable
+        ref={rowRef}
+        onLayout={onRowLayout}
         accessibilityRole="button"
         accessibilityLabel={t('you.homeCurrency.label')}
         onPress={() => setPicking(true)}
