@@ -91,6 +91,18 @@ describe('MonthDetailsSheet', () => {
     expect(onClose).toHaveBeenCalledTimes(2);
   });
 
+  it('the steadiness chip and the Activity pill share the header centre line', async () => {
+    await wrap(sheet(variable()));
+    const chip = screen.getByTestId('month-steadiness');
+    const header = chip.parent as unknown as { props: { style: never } };
+    // the header centres its children, the chip's wrapper does not opt out, and the pill is a sibling in the same row
+    const headerStyle = StyleSheet.flatten(header.props.style) as { flexDirection?: string; alignItems?: string };
+    expect(headerStyle.flexDirection).toBe('row');
+    expect(headerStyle.alignItems).toBe('center');
+    expect(StyleSheet.flatten(chip.props.style).alignSelf).toBe('center');
+    expect(screen.getByLabelText('Activity')).toBeTruthy();
+  });
+
   it('D-99 Edit opens the rough figures sheet stacked', async () => {
     await wrap(sheet(roughSource()));
     expect(screen.queryByText('Rough figures')).toBeNull();

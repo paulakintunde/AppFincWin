@@ -149,7 +149,10 @@ export function MonthDetailsBody({
       <View style={styles.body}>
         <View style={styles.header}>
           {eyebrow ?? null}
-          <StateChip tone={STEADINESS_TONE[m.steadiness]} label={steadinessLabel} />
+          {/* StateChip pins itself to flex-start; this wrapper puts it on the header's centre line, level with the taller pill */}
+          <View testID="month-steadiness" style={styles.headerChip}>
+            <StateChip tone={STEADINESS_TONE[m.steadiness]} label={steadinessLabel} />
+          </View>
           <View style={styles.spacer} />
           <ActionPill dark={dark} label={t('decide.month.activity')} onPress={onActivity} />
         </View>
@@ -346,6 +349,7 @@ const styles = StyleSheet.create({
   body: { gap: space.gapMd },
   card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapMd },
   header: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.gapSm },
+  headerChip: { alignSelf: 'center' },
   spacer: { flex: 1 },
   edit: { minHeight: space.touchMin, minWidth: space.touchMin, justifyContent: 'center', alignItems: 'center' },
   pill: {
