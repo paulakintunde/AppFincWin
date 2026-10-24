@@ -808,7 +808,7 @@ Plans:
 - [x] 05-124-PLAN.md — Snapshot builder and source: pots, tagged-leg and own-pot exclusion, housingMonthly, housingLine (D-100, D-101, D-103)
 
 **Wave 34** *(blocked on Wave 33 completion)*
-- [ ] 05-125-PLAN.md — Net free cash flow card: eyebrow, sub-lines, Out figure, Month details breakdown, Pots link (D-100)
+- [x] 05-125-PLAN.md — Net free cash flow card: eyebrow, sub-lines, Out figure, Month details breakdown, Pots link (D-100)
 
 **Wave 35** *(blocked on Wave 34 completion)*
 - [ ] 05-126-PLAN.md — Housing line UI: sixth Lines row, editor, loan switches, Every-line row, "of 6" (D-103)
