@@ -29,9 +29,11 @@ export interface ChangesCardProps {
   changes: readonly DecideChangeRow[];
   currency: string;
   whole: Money;
+  /** 05-113 (D-99): the pushed screen keeps "+ Add a change" with no rows; the home shows its own add row. */
+  showWhenEmpty?: boolean;
 }
 
-export function ChangesCard({ changes, currency, whole }: ChangesCardProps) {
+export function ChangesCard({ changes, currency, whole, showWhenEmpty = false }: ChangesCardProps) {
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
   const fmt = useMoneyFormatter(false);
@@ -48,7 +50,7 @@ export function ChangesCard({ changes, currency, whole }: ChangesCardProps) {
 
   // D-72: with no change the card is gone (the add row on home replaces the empty state). The sheet stays mounted
   // so deleting the last row never unmounts an open edit.
-  if (rows.length === 0 && editing === undefined) return null;
+  if (rows.length === 0 && editing === undefined && !showWhenEmpty) return null;
 
   return (
     <View style={styles.wrap}>
@@ -60,6 +62,7 @@ export function ChangesCard({ changes, currency, whole }: ChangesCardProps) {
           <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.depth.changes.add')}</Text>
         </Pressable>
       </View>
+      {rows.length === 0 ? null : (
       <View style={[styles.list, { backgroundColor: colors.surface }, shadows.card]}>
         {rows.map((row, i) => {
           // IN-B04: a change is shown in the currency it was typed in (ChangeSheet edits it there; the builder converts it).
@@ -103,6 +106,7 @@ export function ChangesCard({ changes, currency, whole }: ChangesCardProps) {
           );
         })}
       </View>
+      )}
       <ChangeSheet visible={editing !== undefined} row={editing ?? null} onClose={() => setEditing(undefined)} />
     </View>
   );

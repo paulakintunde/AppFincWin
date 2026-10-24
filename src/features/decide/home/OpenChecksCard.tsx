@@ -34,6 +34,8 @@ export interface OpenChecksCardProps {
   today: string;
   whole: Money;
   currency: string;
+  /** 05-113 (D-99): the pushed screen keeps the heading links with no checks; the home hides the card at 0. */
+  showWhenEmpty?: boolean;
 }
 
 interface RowView {
@@ -67,7 +69,7 @@ function chipLabel(chip: ChipComputation | null, t: Translate): { label: string;
   }
 }
 
-export function OpenChecksCard({ source, checks, today, whole, currency }: OpenChecksCardProps) {
+export function OpenChecksCard({ source, checks, today, whole, currency, showWhenEmpty = false }: OpenChecksCardProps) {
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
   const { abandon } = useAbandonCheck();
@@ -105,7 +107,7 @@ export function OpenChecksCard({ source, checks, today, whole, currency }: OpenC
   };
 
   // D-72: with no saved open check the card (heading included) is gone; the add row on home replaces it.
-  if (views.length === 0) return null;
+  if (views.length === 0 && !showWhenEmpty) return null;
 
   const link = { ...textRole(pairing, 'label'), color: colors.accent };
 
@@ -125,6 +127,7 @@ export function OpenChecksCard({ source, checks, today, whole, currency }: OpenC
           </Pressable>
         </View>
       </View>
+      {views.length === 0 ? null : (
       <View style={[styles.list, { backgroundColor: colors.surface }, shadows.card]}>
         {views.map((v, i) => {
           const { row, chip } = v;
@@ -187,6 +190,7 @@ export function OpenChecksCard({ source, checks, today, whole, currency }: OpenC
           );
         })}
       </View>
+      )}
     </View>
   );
 }

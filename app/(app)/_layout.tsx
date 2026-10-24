@@ -73,6 +73,9 @@ export default function AppLayout() {
               <Stack.Screen name="setup/first-check" />
               <Stack.Screen name="decide/check/[id]" />
               <Stack.Screen name="decide/past" />
+              <Stack.Screen name="decide/open" />
+              <Stack.Screen name="decide/changes" />
+              <Stack.Screen name="decide/lines" />
               <Stack.Screen name="you" />
               <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
             </Stack>

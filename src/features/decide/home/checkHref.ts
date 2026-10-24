@@ -19,3 +19,8 @@ export function openNewCheck(kind: CheckKind): void {
 }
 
 export const PAST_HREF = '/decide/past' as Href;
+
+// 05-113 (D-99): the lists' own pushed screens.
+export const OPEN_HREF = '/decide/open' as Href;
+export const CHANGES_HREF = '/decide/changes' as Href;
+export const LINES_HREF = '/decide/lines' as Href;

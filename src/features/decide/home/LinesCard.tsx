@@ -28,11 +28,13 @@ export interface LinesCardProps {
   userId: string | null;
   currency: string;
   whole: Money;
+  /** 05-113 (D-99): the pushed Lines screen shows the sub-copy and the five rows with no fold. */
+  flat?: boolean;
 }
 
 const KEYS: readonly LimitKey[] = ['reserve', 'dsr', 'unsecured', 'investing', 'saving'];
 
-export function LinesCard({ source, settings, userId, currency, whole }: LinesCardProps) {
+export function LinesCard({ source, settings, userId, currency, whole, flat = false }: LinesCardProps) {
   const t = useT();
   const [editing, setEditing] = useState<LimitKey | null>(null);
   // D-78: closed by default; the state lives as long as the tab keeps this card mounted.
@@ -93,35 +95,43 @@ export function LinesCard({ source, settings, userId, currency, whole }: LinesCa
   const setCount = KEYS.filter((key) => stored(key) !== null).length;
   const preview = setCount === 0 ? t('decide.home.linesFold.allDefault') : t('decide.home.linesFold.preview', { count: setCount });
 
+  const body = (
+    <View style={{ gap: space.gapSm }}>
+      <Meta>{t('decide.lines.sub')}</Meta>
+      {KEYS.map((key, i) => {
+        const own = stored(key);
+        // D-25: the cushion default says how many months it holds; a typed line never carries a default tag.
+        const tag =
+          key === 'reserve' && cushion !== null
+            ? t('decide.depth.cushion.defaultTag', {
+                months: monthsText(cushion.halfMonths),
+              })
+            : t('decide.lines.defaultTag');
+        return (
+          <LineRow
+            key={key}
+            lineKey={key}
+            first={i === 0}
+            value={own ?? fallback(key)}
+            isDefault={own === null}
+            tag={tag}
+            onPress={() => setEditing(key)}
+          />
+        );
+      })}
+    </View>
+  );
+
   return (
     <View testID="lines-card" style={styles.wrap}>
-      <Card style={{ paddingVertical: 0, paddingHorizontal: space.cardPadLg }}>
-        <FoldRow title={t('decide.home.linesFold.title')} preview={preview} expanded={open} onToggle={() => setOpen((v) => !v)}>
-          <View style={{ gap: space.gapSm }}>
-            <Meta>{t('decide.lines.sub')}</Meta>
-            {KEYS.map((key, i) => {
-              const own = stored(key);
-              // D-25: the cushion default says how many months it holds; a typed line never carries a default tag.
-              const tag =
-                key === 'reserve' && cushion !== null
-                  ? t('decide.depth.cushion.defaultTag', {
-                      months: monthsText(cushion.halfMonths),
-                    })
-                  : t('decide.lines.defaultTag');
-              return (
-                <LineRow
-                  key={key}
-                  lineKey={key}
-                  first={i === 0}
-                  value={own ?? fallback(key)}
-                  isDefault={own === null}
-                  tag={tag}
-                  onPress={() => setEditing(key)}
-                />
-              );
-            })}
-          </View>
-        </FoldRow>
+      <Card style={{ paddingVertical: flat ? space.gapSm : 0, paddingHorizontal: space.cardPadLg }}>
+        {flat ? (
+          body
+        ) : (
+          <FoldRow title={t('decide.home.linesFold.title')} preview={preview} expanded={open} onToggle={() => setOpen((v) => !v)}>
+            {body}
+          </FoldRow>
+        )}
       </Card>
       <LimitEditorSheet
         limit={editing}
