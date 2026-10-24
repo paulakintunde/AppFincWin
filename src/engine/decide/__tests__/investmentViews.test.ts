@@ -466,3 +466,62 @@ describe('D-63 guards and scope', () => {
   });
 });
 
+
+describe('D-104 invested-instead headline', () => {
+  const RUN = 2_000;
+  it('D-104 no typed non-zero rate gives no headline', () => {
+    expect(run(BL(), loan()).views.headline).toBeNull();
+    expect(run(BL({ projectionRates: [pct('0')] }), loan()).views.headline).toBeNull();
+  });
+
+  it('D-104 the first non-zero typed rate is used', () => {
+    const { views } = run(BL({ projectionRates: [pct('5'), pct('7')] }), loan());
+    expect(views.headline!.rate).toBe(pct('5'));
+    const second = run(BL({ projectionRates: [pct('7'), pct('5')] }), loan()).views;
+    expect(second.headline!.rate).toBe(pct('7'));
+  });
+
+  it('D-104 the headline is the deposit now plus payments and running costs grown to the horizon', () => {
+    const { views, a } = run(BL({ projectionRates: [pct('5')] }), loan({ runningCostsNet: mu(RUN) }));
+    const pay = views.paymentsInvested.byRate[1]!;
+    expect(a.mineDayOne).toBeGreaterThan(0);
+    expect(views.headline).toEqual({
+      rate: pct('5'),
+      contributed: a.mineDayOne + pay.contributed,
+      projected: futureValue(mu(0), pct('5'), 48, a.mineDayOne) + pay.projected!,
+      rangeCode: null,
+    });
+  });
+
+  it('D-104 a holding fee gives the net figure the fold shows', () => {
+    const s = BL({ projectionRates: [pct('5')] });
+    const fee = run(s, loan({ runningCostsNet: mu(RUN) }), { horizonMonths: null, holdingFee: pct('1') });
+    const pay = fee.views.paymentsInvested.byRate[1]!;
+    expect(fee.views.headline!.projected).toBe(futureValueNet(mu(0), pct('5'), 48, fee.a.mineDayOne, pct('1')) + pay.projected!);
+    expect(fee.views.headline!.projected).toBeLessThan(run(s, loan({ runningCostsNet: mu(RUN) })).views.headline!.projected!);
+  });
+
+  it('D-104 nothing contributed gives no headline', () => {
+    const { views } = run(BL({ projectionRates: [pct('5')] }), buyCash(0));
+    expect(views.headline).toBeNull();
+  });
+
+  it('D-104 a cash purchase contributes the amount on the day', () => {
+    const { views, a } = run(BL({ projectionRates: [pct('5')] }), buyCash(100_000));
+    expect(views.headline).toMatchObject({ contributed: a.mineDayOne, rangeCode: null });
+    expect(views.headline!.projected).toBe(futureValue(mu(0), pct('5'), 60, a.mineDayOne));
+  });
+
+  it('D-104 an out-of-range projection returns a range code and no figure', () => {
+    const opts = { horizonMonths: 600, holdingFee: null };
+    const rates = BL({ projectionRates: [pct('100')] });
+    // the amount on the day alone is past the safe range at 100% over 600 months
+    const lump = run(rates, buyCash(10_000_000_000), opts).views;
+    expect(lump.paymentsInvested.byRate[1]!.projected).toBe(0);
+    expect(lump.headline).toMatchObject({ contributed: 10_000_000_000, projected: null, rangeCode: 'exceeds_range' });
+    // the payments side is past it: its own figure is null and the headline follows
+    const pays = run(rates, buyCash(1_000, { runningCostsNet: mu(1_000_000_000) }), opts).views;
+    expect(pays.paymentsInvested.byRate[1]!.projected).toBeNull();
+    expect(pays.headline).toMatchObject({ projected: null, rangeCode: 'exceeds_range' });
+  });
+});

@@ -11,6 +11,7 @@ import type {
   AssessContext,
   BuyCheck,
   HorizonSource,
+  InvestmentHeadline,
   InvestmentViews,
   InvestmentViewsInput,
   NetWorthPath,
@@ -84,6 +85,25 @@ function figure(rate: Percent, contributed: number, exact: bigint | null): RateF
         growth: minorUnits(projected - contributed),
         rangeCode: null,
       };
+}
+
+/**
+ * D-104: what the money this check takes would be worth at the typed rate: the amount on the day grown from month 0
+ * (one rounding, D-20) plus the payments-and-running figure already computed for that rate, added exactly. Null when
+ * nothing is contributed; a sum past the safe range keeps the contribution and carries 'exceeds_range'.
+ */
+function headlineOf(
+  rate: Percent,
+  payments: RateFigure,
+  dayOne: MinorUnits,
+  horizon: number,
+  fee: Percent
+): InvestmentHeadline | null {
+  const contributed = minorUnits(dayOne + payments.contributed);
+  if (contributed === 0) return null;
+  const lump = futureValueNetExact(minorUnits(0), rate, horizon, dayOne, fee);
+  const projected = payments.projected === null ? null : minorOrNull(lump + BigInt(payments.projected));
+  return { rate, contributed, projected, rangeCode: projected === null ? 'exceeds_range' : null };
 }
 
 /**
@@ -178,6 +198,10 @@ export function investmentViews(
     }),
   };
 
+  // D-104: the invested-instead headline, for the first non-zero typed rate only (never a defaulted one, D-06/D-07)
+  const headlineAt = rates.findIndex((r) => r.rate !== ZERO_PERCENT);
+  const headline = headlineAt < 0 ? null : headlineOf(rates[headlineAt]!.rate, paymentsInvested.byRate[headlineAt]!, assessment.mineDayOne, horizon, fee);
+
   // (c)
   const paused = assessment.investingAtRisk;
   const pauseImpact =
@@ -226,6 +250,7 @@ export function investmentViews(
     netRates: rates.map((r) => ({ rate: r.rate, netRateScaled: r.rate - fee })),
     priceInvested,
     paymentsInvested,
+    headline,
     pauseImpact,
     netWorth,
   };
