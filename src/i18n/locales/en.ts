@@ -1374,7 +1374,7 @@ const en = {
         debts: 'this debt',
         decide_links: 'this linked line',
         decide_changes: 'this change',
-        savings_goals: 'this savings goal',
+        savings_goals: 'this pot',
       },
     },
     notRecorded: 'That change can’t be undone.',

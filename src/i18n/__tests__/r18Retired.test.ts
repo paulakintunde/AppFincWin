@@ -35,4 +35,8 @@ describe('R18 retired copy', () => {
     const stale = leaves(en.decide).filter(({ value }) => /\bof 5 set by you\b/.test(value)).map(({ path }) => path);
     expect(stale).toEqual([]);
   });
+
+  it('D-101 the undo refusal names a savings_goals record as a pot', () => {
+    expect(node('undo.refusal.record.savings_goals')).toBe('this pot');
+  });
 });
