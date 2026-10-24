@@ -158,3 +158,6 @@ export const MAX_INSTALMENTS = 500; // D-89
 
 // Cite: D-91 (R16.7): the most FincWin counts on a card in one check, US$100,000 in USD minor units. FincWin behaviour constant (no published source; a conservative single-purchase ceiling for card payments). The engine never converts currency: the snapshot converts it to the home currency (05-95) and passes it as `cardMaxPurchase`.
 export const CARD_MAX_PURCHASE_USD = 10_000_000; // D-91
+
+// Cite: D-101 / R18.2 FincWin's own bound: at most 50 live pots. With each pot's set-aside at most 10^13 minor units (the engine's amount ceiling), the sum is at most 5 x 10^14, inside the safe-integer range.
+export const MAX_POTS = 50;

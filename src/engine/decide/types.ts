@@ -128,6 +128,24 @@ export interface HouseholdSpendingRule {
   readonly rule: SplitRule;
   readonly byCategory: readonly CategoryShareRule[];
 } // D-34: existing spending only
+// ── Pots (D-101, R18.2) ──
+export type PotKind = 'wait' | 'pot';
+export interface PotInput {
+  readonly id: string;
+  readonly kind: PotKind;
+  readonly target: MinorUnits | null;
+  readonly monthlyAmount: MinorUnits | null;
+  readonly readyBy: string | null; // 'YYYY-MM-DD'
+  readonly saved: MinorUnits; // opening saved + tagged paid lines
+}
+export type PotState = 'active' | 'reached' | 'past_due';
+export interface PotLine {
+  readonly id: string;
+  readonly monthly: MinorUnits;
+  readonly months: number | null;
+  readonly state: PotState;
+}
+
 export interface DecideSnapshot {
   readonly currency: CurrencyCode; // D-16 clarified
   readonly asOf: string; // 'YYYY-MM-DD' check date; the engine has no clock (D-24 window)
@@ -148,6 +166,7 @@ export interface DecideSnapshot {
   readonly futureChanges: readonly FutureChange[]; // D-45: the user's dated income/spending changes; never inferred
   readonly investmentBalance: MinorUnits; // D-52(d): current value of my investments, >= 0, for the net-worth path
   readonly scheduledOutflows: readonly ScheduledOutflow[]; // D-61: dated pending one-off outflows; [] = none
+  readonly pots: readonly PotInput[]; // D-101: live, not-done pots in the home currency; [] = none. The builder drops a reopened check's own Wait pot
   readonly provisionalRates?: boolean; // D-69: some line was converted at the latest stored rate while its own rate is pending; caps confidence at fair. Absent = false
 }
 
@@ -431,8 +450,9 @@ export interface MonthColumn {
   readonly living: MinorUnits;
   readonly debtPayments: MinorUnits;
   readonly savingInvesting: MinorUnits;
+  readonly setAside: MinorUnits; // D-101: the monthly set-aside for pots
   readonly thisPurchase: MinorUnits;
-  readonly outgoings: MinorUnits; // living + debtPayments + savingInvesting + thisPurchase
+  readonly outgoings: MinorUnits; // living + debtPayments + savingInvesting + setAside + thisPurchase
   readonly left: MinorUnits; // income − outgoings, exactly
 }
 export interface MonthTable {
@@ -461,6 +481,9 @@ export interface AssessContext {
   readonly debtBalance: MinorUnits; // D-38: total balance owed, secured included (prototype debtBal)
   readonly annualIncome: MinorUnits; // incomeAverage × MONTHS_PER_YEAR (the owe description's "annual income")
   readonly pausable: MinorUnits; // D-35: monthlySaving + monthlyInvesting (D-32)
+  readonly setAside: MinorUnits; // D-101: sum of the pots' monthly set-asides; never paused
+  readonly potLines: readonly PotLine[]; // D-101: per-pot result, one source of truth for the Pots screen
+  readonly protectedCash: MinorUnits; // D-101: min(sum of saved over live pots, max(0, cashOnHand)); a check never spends it
   readonly leftBefore: MinorUnits; // prototype M.left; after positionContext (04-18) the worst future month's (D-45)
   readonly leftThisMonth: MinorUnits; // D-36: this month's left over for the combined position — prepareContext's leftBefore, lowered by stacked checks (D-41), never moved by D-45 future changes; purchaseSize reads it
   readonly billsDue: MinorUnits; // D-24: my share of confirmed quarterly/yearly bills due within 90 days

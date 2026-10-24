@@ -21,6 +21,7 @@ export * from './options';
 export * from './alternatives';
 export * from './setbacks';
 export * from './wait';
+export { potSetAside, totalSetAside } from './pots';
 export * from './firstRead';
 export * from './projectionRates';
 export * from './reserve';
