@@ -768,7 +768,7 @@ Plans:
 
 **Wave 24** *(blocked on Wave 23 completion)*
 - [x] 05-95-PLAN.md — Engine E5c: the snapshot converts the card limit (rational, floored) and passes it with the region (D-91)
-- [ ] 05-101-PLAN.md — Interest saved by the deposit; running-cost rows with the dashed Amount field (D-86, D-87)
+- [x] 05-101-PLAN.md — Interest saved by the deposit; running-cost rows with the dashed Amount field (D-86, D-87)
 
 **Wave 25** *(blocked on Wave 24 completion)*
 - [ ] 05-104-PLAN.md — Card limit box, fee and block notes, card-limit basis item; Step 1 new item types (D-91, D-92)
