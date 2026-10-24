@@ -29,6 +29,10 @@ export function MonthBody(props: SectionProps) {
     { key: 'rowLiving', label: t('decide.section.rowLiving'), pick: (c) => c.living },
     { key: 'rowDebt', label: t('decide.section.rowDebt'), pick: (c) => c.debtPayments },
     { key: 'rowSaving', label: t('decide.section.rowSaving'), pick: (c) => c.savingInvesting },
+    // D-101: pots' set-aside sits between saving and this purchase; hidden while it is 0 in both columns
+    ...(now.setAside === 0 && after.setAside === 0
+      ? []
+      : [{ key: 'rowPots', label: t('decide.section.monthPots'), pick: (c: MonthColumn) => c.setAside }]),
     { key: 'rowThis', label: inputs.kind === 'invest' ? t('decide.section.rowContribution') : t('decide.section.rowRunning'), pick: (c) => c.thisPurchase },
     { key: 'rowLeft', label: t('decide.section.rowLeft'), pick: (c) => c.left, emphasis: true },
   ];

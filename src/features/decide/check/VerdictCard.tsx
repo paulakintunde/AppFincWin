@@ -1,7 +1,7 @@
 /**
  * 05-63 Step 3 verdict card (D-74, D-70, D-76, UI-SPEC R2), summary first: size label and edge tag with their info
  * buttons and the confidence chip, the state words as the heading, the one-line reason, the difference line, three key
- * figures and the basis marker. Nothing is clamped. Declarative voice only; every string comes from the copy layer.
+ * figures, the optional total-cost and invested-instead rows (4b, 4c) and the basis marker. Nothing is clamped. Declarative voice only; every string comes from the copy layer.
  * Three focus stops: the summary group (a polite live region whose label settles after typing, useSettledLabel), the
  * size/edge info buttons and the chip, then the key-figures group (its Cushion info button inside it).
  */
@@ -21,7 +21,8 @@ import { ref } from '../copy/types';
 import type { CopyRef, Fmt } from '../copy/types';
 import { basisMarker, missingRateCopy, stateChip, verdictTitle } from '../copy/verdictCopy';
 import { cushionCopy, edgeChipA11y, edgeOn, verdictLineOne } from '../copy/depthVerdictCopy';
-import { keyFigureInputs, keyFigures } from '../copy/keyFiguresCopy';
+import { keyFigureInputs, keyFigures, keyFiguresLabel } from '../copy/keyFiguresCopy';
+import { investedRow, tcoRow } from '../copy/ownershipCopy';
 import type { ExpectedReturn } from '../snapshot/expectedReturn';
 import type { CheckComputation, ConversionNote } from '../snapshot/types';
 import { ConfidenceChip } from '../ui/ConfidenceChip';
@@ -54,6 +55,8 @@ export interface VerdictCardProps {
   locale: string;
   /** 05-87 (D-82, R15.5): the investment projection at the user's own rate. Display only: nothing here reads it to decide anything. */
   projection?: ExpectedReturn | null;
+  /** D-88: the slow figures behind rows 4b and 4c are settling; the rows keep their last value and read as busy, never half-computed. */
+  busy?: boolean;
 }
 
 /** 'YYYY-MM' to the month's display name in the user's locale. */
@@ -74,6 +77,7 @@ interface CardCopy {
 }
 
 const SETTLE_MS = 150;
+const META_LINE = 17.5; // the meta line height R18.3 budgets for rows 4b and 4c, so the info button centres on the first line
 const SIZE_LINE = 16; // the eyebrow's first-line height, so the size info button centres on it (rule I)
 
 /** Only fits, adjust, no and missing arise on this card, all of which the chip draws. */
@@ -143,7 +147,7 @@ function cardCopy(c: CheckComputation, lastSeenBasis: VerdictCardProps['lastSeen
 /** Standalone text the summary label already reads: no focus stop of its own (R2 Accessibility). */
 const NOT_A_STOP = { accessible: false, importantForAccessibility: 'no' } as const;
 
-export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, fmtA11y = fmt, fmtCentsA11y = fmtCents, roughBurn = null, conversions, fullMonths, formatDate, locale, projection = null }: VerdictCardProps) {
+export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, fmtA11y = fmt, fmtCentsA11y = fmtCents, roughBurn = null, conversions, fullMonths, formatDate, locale, projection = null, busy = false }: VerdictCardProps) {
   const t = useT() as Translate;
   const router = useRouter();
   const { colors, pairing } = useTheme();
@@ -177,6 +181,15 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, fmtA11y
   const figures = copy ? keyFigureInputs(computation, roughBurn) : null;
   const keys = figures ? keyFigures(figures, fmt, fmtCents, (r) => refText(t, r)) : null;
   const keysSpoken = figures ? keyFigures(figures, fmtA11y, fmtCentsA11y, (r) => refText(t, r)) : null;
+
+  // D-102 / D-104 (R18.3, R18.5): rows 4b and 4c read the slow figures the key figures sit beside. Only a resolved logged verdict
+  // shows them (the engine gives null for invest checks, a missing verdict, a null plan total or an out-of-range figure).
+  const views = resolved ? computation.investmentViews : null;
+  const tco = resolved ? tcoRow(computation.totalCost, fmt, fmtA11y) : null;
+  const invested =
+    views && views.headline ? investedRow(views.headline, views.horizonMonths, views.holdingFee, fmt, fmtA11y, (r) => refText(t, r)) : null;
+  const tcoInfo = useInfoSheet('totalCost');
+  const investedInfo = useInfoSheet('investedInstead');
 
   // D-70: the user's own reserve months and why, when the snapshot gives them
   const halves = resolved ? resolved.context.limits.reserveHalfMonths : null;
@@ -218,6 +231,8 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, fmtA11y
   const linkText = copy.link ? refText(t, copy.link) : '';
   const openActivity = (): void => router.push('/activity' as Href);
   const sizeLine = { ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: soft, textTransform: 'uppercase' as const, letterSpacing: 1.2 };
+
+  const ownText = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, fontWeight: '600' as const, color: colors.surface };
 
   const figureItems = keys
     ? keys.items.map((item, i) => ({
@@ -287,8 +302,30 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, fmtA11y
           <FigureStrip
             dark
             items={figureItems}
-            group={{ label: joinSentences([refText(t, (keysSpoken ?? keys).a11y), projectionSpoken]), actions: [cushionInfo.aboutAction], onAction: cushionInfo.onAccessibilityAction }}
+            group={{ label: joinSentences([keyFiguresLabel(refText(t, (keysSpoken ?? keys).a11y), tco ? refText(t, tco.spoken) : null, invested ? refText(t, invested.spoken) : null), projectionSpoken]), actions: [cushionInfo.aboutAction], onAction: cushionInfo.onAccessibilityAction }}
           />
+        </View>
+      ) : null}
+      {tco || invested ? (
+        <View accessibilityState={{ busy }} testID="verdict-ownership">
+          {tco ? (
+            <View style={styles.own} testID="verdict-tco">
+              <InfoLabel term={tcoInfo.term} onInfo={tcoInfo.open} tone="dark" lineHeight={META_LINE}>
+                <Text {...NOT_A_STOP} style={ownText}>
+                  {refText(t, tco.text)}
+                </Text>
+              </InfoLabel>
+            </View>
+          ) : null}
+          {invested ? (
+            <View style={styles.own} testID="verdict-invested">
+              <InfoLabel term={investedInfo.term} onInfo={investedInfo.open} tone="dark" lineHeight={META_LINE}>
+                <Text {...NOT_A_STOP} style={ownText}>
+                  {refText(t, invested.text)}
+                </Text>
+              </InfoLabel>
+            </View>
+          ) : null}
         </View>
       ) : null}
       {basisText ? (
@@ -309,6 +346,8 @@ export function VerdictCard({ computation, lastSeenBasis, fmt, fmtCents, fmtA11y
       {sizeText ? sizeInfo.sheet : null}
       {onEdge ? edgeInfo.sheet : null}
       {figureItems ? cushionInfo.sheet : null}
+      {tco ? tcoInfo.sheet : null}
+      {invested ? investedInfo.sheet : null}
       {confidence ? <ConfidenceSheet visible={sheetOpen} confidence={confidence} facts={facts} onClose={() => setSheetOpen(false)} /> : null}
     </>
   );
@@ -324,5 +363,6 @@ const styles = StyleSheet.create({
   chip: { marginLeft: 'auto' },
   figures: { marginTop: space.gapMd },
   basis: { marginTop: space.gapSm },
+  own: { marginTop: space.gapSm },
   link: { minHeight: space.touchMin, justifyContent: 'center' },
 });

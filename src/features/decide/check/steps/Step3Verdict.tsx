@@ -62,6 +62,7 @@ export function Step3Verdict(props: Step3Props) {
           formatDate={formatDate}
           locale={whole.locale}
           projection={expectedReturnProjection(props.inputs, computation.check)}
+          busy={props.busy === true}
         />
         <BasisDetailRow items={basisItems} onPressCardMinimum={onEditCardMinimum} />
       </View>

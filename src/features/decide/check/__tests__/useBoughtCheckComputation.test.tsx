@@ -90,6 +90,23 @@ describe('useBoughtCheckComputation', () => {
     expect(noRate.computation?.status).toBe('unconverted');
   });
 
+  it('D-102 a bought check recalculates rows 4b and 4c from the stored check', async () => {
+    const source = demoSource(TODAY);
+    mockSnapshot.mockReturnValue(snapshotOf(source));
+    const stored: CheckInputs = { ...carInputs, needBy: null, projectionRates: ['0', '7'] };
+    const result = await run(() => useBoughtCheckComputation(row({ id: 'car' }), stored));
+    const expected = computeCheck(buildDecideSnapshot(source), stored);
+    expect(result.computation?.totalCost).toEqual(expected.totalCost);
+    expect(result.computation?.totalCost).toMatchObject({ trivial: false });
+    expect(result.computation?.investmentViews?.headline).toEqual(expected.investmentViews?.headline);
+    expect(result.computation?.investmentViews?.headline).not.toBeNull();
+    // a different stored term gives different rows: they follow the stored check, not a cached figure
+    const longer: CheckInputs = { ...stored, loan: { ...stored.loan, termMonths: 60 } };
+    const again = await run(() => useBoughtCheckComputation(row({ id: 'car' }), longer));
+    expect(again.computation?.totalCost?.horizonMonths).toBe(60);
+    expect(again.computation?.totalCost).not.toEqual(result.computation?.totalCost);
+  });
+
   it('waits for links and reports an error', async () => {
     mockLinks.mockReturnValue({ data: undefined, isError: false });
     expect(await run(() => useBoughtCheckComputation(row(), inputs))).toEqual({ status: 'loading', computation: null });

@@ -709,3 +709,26 @@ describe('D-101 a reopened Waiting check drops its own pot', () => {
     expect(computeChip(rough, buy(), [], 'chk-1').status).toBe('first_read');
   });
 });
+
+describe('D-102 total cost in the computation', () => {
+  const loan = { deposit: 0, termMonths: 36, aprText: '6', secured: false, securedTouched: true, aprFromQuick: false, promo: null, variable: false };
+  const costs = [{ id: 'r', name: 'Insurance', amount: 10_000, note: '', counted: true, seriesId: null, category: null }];
+  it('D-102 computeCheck carries totalCost for a buy check and null for an invest check', () => {
+    const c = computeCheck(loggedSource(), buy({ advertised: 1_000_000, method: 'loan', loan, runningCosts: costs }));
+    expect(c.totalCost).toMatchObject({ horizonMonths: 36, trivial: false });
+    expect(c.totalCost!.total).toBeGreaterThan(1_000_000);
+    const invest = computeCheck(loggedSource(), { ...emptyCheckInputs('invest', TODAY), name: 'Fund', advertised: 20_000, method: 'monthly', investTermMonths: 24 });
+    expect(invest.totalCost).toBeNull();
+  });
+  it('D-102 a cash purchase with nothing else is trivial, a chosen horizon and a loss of value are carried in', () => {
+    const plain = computeCheck(loggedSource(), buy());
+    expect(plain.totalCost).toMatchObject({ horizonMonths: 60, total: 150_000, trivial: true });
+    const loss = computeCheck(loggedSource(), buy({ investHorizonMonths: 24, lossOfValue: { kind: 'amount', monthly: 1_000 } }));
+    expect(loss.totalCost).toMatchObject({ horizonMonths: 24, resale: 126_000, total: 24_000, trivial: false });
+  });
+  it('D-102 no totalCost without a resolved verdict, and the core never carries one', () => {
+    expect(computeCheck(roughSource(), buy()).totalCost).toBeNull();
+    expect(computeCheck(unconvertedSource(), buy()).totalCost).toBeNull();
+    expect(computeCore(loggedSource(), buy()).totalCost).toBeNull();
+  });
+});

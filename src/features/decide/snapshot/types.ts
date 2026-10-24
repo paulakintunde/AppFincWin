@@ -3,7 +3,7 @@
  * paused mutation variables), so: integer minor units as `number`, rates as decimal strings, never `Percent`/bigint
  * (RESEARCH Pitfall 8). Engine objects (Verdict, Percent) live only in memory, rebuilt on render (D-15).
  */
-import type { AlternativeRow, Alternatives, AssessContext, BuyCheck, CardRecord, CurrencyCode, Decision, DecideOption, DecideSnapshot, FirstRead, IncomeAtRiskReport, InstalmentFreq, InvestmentViews, ItemType, MinorUnits, PlanResult, PotInput, PurchaseCheck, ResolvedPrice, RoughFigures, RunningCostCategory, RunningCosts, SetbackCode, SetbackReport, StackedCheckInput, Verdict, WaitPlan } from '@/engine/decide'; // CurrencyCode / MinorUnits re-exported per 04 D-62
+import type { AlternativeRow, Alternatives, AssessContext, BuyCheck, CardRecord, CurrencyCode, Decision, DecideOption, DecideSnapshot, FirstRead, IncomeAtRiskReport, InstalmentFreq, InvestmentViews, ItemType, MinorUnits, PlanResult, PotInput, PurchaseCheck, ResolvedPrice, RoughFigures, RunningCostCategory, RunningCosts, SetbackCode, SetbackReport, StackedCheckInput, TotalCost, Verdict, WaitPlan } from '@/engine/decide'; // CurrencyCode / MinorUnits re-exported per 04 D-62
 import type { ImpliedAprResult } from '@/engine/payoff';
 import type { CustomCurrencyRow, FxLatestRow } from '@/db/rows';
 
@@ -127,6 +127,7 @@ export interface CheckComputation {
   waitPlan: WaitPlan | null;
   unconverted: UnconvertedNote | null;           // D-37
   investmentViews: InvestmentViews | null;       // D-31: buy checks on a resolved verdict, investmentViews(verdict.context, check, verdict, { horizonMonths, holdingFee }) (holdingFee: D-44 / 04 D-63)
+  totalCost: TotalCost | null;                   // D-102 (R18.3): totalCost(check, verdict, { horizonMonths, advertised, lossMonthly }) beside investmentViews (the slow path, so it keeps its last value while the inputs settle); null for invest checks, a missing verdict or first read, a null plan total, out of range
   incomeAtRisk: IncomeAtRiskReport | null;       // D-32: incomeAtRisk(verdict.context, verdict, setbacks)
   runningCostPrompts: readonly RunningCostCategory[]; // D-33: runningCostPrompts(inputs.itemType) for buy checks, from the inputs alone (step 2 shows them before a price exists)
   impliedApr: ImpliedAprResult; // D-90 (R16.6): the true nominal APR of a no-rate instalment plan, solved in computeDetails (the settled path) only, never in computeCore and never in the verdict; a read-out that never fills the rate field (04 D-07). null for a rated plan, a single payment on the day, a total below the amount financed (the D-49 note) or no resolved instalment plan

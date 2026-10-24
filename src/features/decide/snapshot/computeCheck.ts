@@ -27,6 +27,7 @@ import {
   rateScheduleFor,
   resolvePlan,
   runningCostPrompts,
+  totalCost,
 } from '@/engine/decide';
 import type {
   BuyCheck,
@@ -36,6 +37,8 @@ import type {
   PlanResult,
   PotInput,
   PurchaseCheck,
+  ResolvedPrice,
+  RunningCosts,
   SetbackInput,
   StackedCheckInput,
 } from '@/engine/decide';
@@ -99,6 +102,7 @@ const NO_FIGURES = {
   waitPlan: null,
   unconverted: null,
   investmentViews: null,
+  totalCost: null,
   incomeAtRisk: null,
   promoBalanceAtEnd: {},
   impliedApr: null,
@@ -303,6 +307,15 @@ export function computeDetails(core: CheckCore, inputs: CheckInputs): CheckCompu
       ? investmentViews(context, check, verdict, {
           horizonMonths: inputs.investHorizonMonths,
           holdingFee: inputs.investHoldingFeeText === null ? null : percent(inputs.investHoldingFeeText),
+        })
+      : null,
+    // D-102: the same horizon the views use; advertised and the non-cash loss come from the check's own resolved figures
+    // (a core with a check always carries both: computeCore sets them together with `check`)
+    totalCost: buyer
+      ? totalCost(check, verdict, {
+          horizonMonths: inputs.investHorizonMonths,
+          advertised: (core.resolvedPrice as ResolvedPrice).advertised,
+          lossMonthly: (core.running as RunningCosts).nonCash,
         })
       : null,
     incomeAtRisk: buyer ? incomeAtRisk(context, verdict, setbacks) : null,
