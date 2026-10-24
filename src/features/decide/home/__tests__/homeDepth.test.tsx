@@ -1,10 +1,9 @@
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import type { DecideSettingsRow, DecideSettingsPatch } from '@/db/decideSettings';
-import { loggedSource, month, unconvertedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
+import { loggedSource, month } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { wrap } from '../../check/steps/__tests__/helpers/stepProps';
 import { LinesCard } from '../LinesCard';
-import { YourMonthCard } from '../YourMonthCard';
 
 /** D-78: the Lines fold is closed by default. */
 async function wrapOpen(ui: React.ReactElement) {
@@ -81,24 +80,5 @@ describe('Lines card cushion months (D-25)', () => {
   it('the other four lines keep the plain default tag', async () => {
     await wrapOpen(lines());
     expect(screen.getAllByText('default')).toHaveLength(4);
-  });
-});
-
-describe('Your month under a missing rate (D-37)', () => {
-  const card = (source = unconvertedSource('logged')) => (
-    <YourMonthCard source={source} settings={null} userId="u1" whole={whole} onEditRough={jest.fn()} />
-  );
-
-  it('shows the missing-rate title and body naming the currency, and no figures', async () => {
-    await wrap(card());
-    expect(screen.getByText('No rate is stored for EUR, so this cannot be scored yet.')).toBeTruthy();
-    expect(screen.getByText(/Lines in EUR are waiting for a rate/)).toBeTruthy();
-    expect(screen.queryByText('Left')).toBeNull();
-  });
-
-  it('a source with no unconverted note renders the figures as before', async () => {
-    await wrap(card(loggedSource()));
-    expect(screen.queryByText(/No rate is stored/)).toBeNull();
-    expect(screen.getByTestId('your-month-card')).toBeTruthy();
   });
 });

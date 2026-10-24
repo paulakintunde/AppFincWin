@@ -5,13 +5,13 @@ import type { DecideCheckRow } from '@/db/decideChecks';
 import type { DecideSettingsRow, DecideSettingsPatch } from '@/db/decideSettings';
 import { minorUnits } from '@/engine/money';
 import { emptyCheckInputs } from '../../snapshot/checkInputs';
-import { TODAY, loggedSource, month, noneSource, roughSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
+import { TODAY, loggedSource, month, roughSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { wrap } from '../../check/steps/__tests__/helpers/stepProps';
 import { LinesCard } from '../LinesCard';
 import { DSR_LINE_RE } from '../LimitEditorSheet';
 import { OpenChecksCard } from '../OpenChecksCard';
 import { RoughFiguresSheet } from '../RoughFiguresSheet';
-import { YourMonthCard } from '../YourMonthCard';
+import { MonthDetailsBody } from '../YourMonthCard';
 
 jest.setTimeout(30000);
 
@@ -70,7 +70,7 @@ function settingsRow(over: Partial<DecideSettingsRow> = {}): DecideSettingsRow {
 const monthsOf = (rows: [string, number, number][]) => rows.map(([m, i, o]) => month(m, i, o));
 
 function card(source: ReturnType<typeof loggedSource> | null, settings: DecideSettingsRow | null = null, onEditRough = jest.fn()) {
-  return <YourMonthCard source={source} settings={settings} userId="u1" whole={whole} onEditRough={onEditRough} />;
+  return <MonthDetailsBody source={source} settings={settings} userId="u1" whole={whole} onEditRough={onEditRough} dark />;
 }
 
 /** The sheet and its field share a name, so pick the editable one. */
@@ -86,10 +86,9 @@ async function typeMoney(label: string, text: string) {
   await fireEvent(field, 'blur');
 }
 
-describe('YourMonthCard', () => {
+describe('MonthDetailsBody (dark, as on the home card before R17)', () => {
   it('shows the logged figures, the steadiness chip and the steady basis line', async () => {
     await wrap(card(loggedSource()));
-    expect(screen.getByText('Your month')).toBeTruthy();
     expect(screen.getByText('Steady')).toBeTruthy();
     expect(screen.getByLabelText('Comes in, $5000')).toBeTruthy();
     expect(screen.getByLabelText('Goes out, $3000')).toBeTruthy();
@@ -142,7 +141,6 @@ describe('YourMonthCard', () => {
   it('shows the rough figures with Edit before a full month exists', async () => {
     const onEdit = jest.fn();
     await wrap(card(roughSource(600_000, 400_000, 250_000), null, onEdit));
-    expect(screen.getByText('From the figures you gave')).toBeTruthy();
     expect(screen.getByLabelText('Comes in, $4000')).toBeTruthy();
     expect(screen.getByLabelText('Goes out, $2500')).toBeTruthy();
     expect(screen.getByLabelText('Left, $1500')).toBeTruthy();
@@ -150,28 +148,12 @@ describe('YourMonthCard', () => {
     expect(onEdit).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the empty state with both ways in when there is nothing to judge against', async () => {
-    const onEdit = jest.fn();
-    await wrap(card(noneSource(), null, onEdit));
-    expect(screen.getByText('Nothing to judge against yet')).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('Add rough figures'));
-    expect(onEdit).toHaveBeenCalledTimes(1);
-    await fireEvent.press(screen.getByLabelText('Import a statement'));
-    expect(mockPush).toHaveBeenCalledWith('/import');
-  });
-
   it('switches from the rough figures to the logged months the moment a full month exists', async () => {
     const view = await wrap(card(roughSource()));
-    expect(screen.getByText('From the figures you gave')).toBeTruthy();
+    expect(screen.getByLabelText('Edit rough figures')).toBeTruthy();
     await view.rerender(card(loggedSource()));
-    expect(screen.queryByText('From the figures you gave')).toBeNull();
     expect(screen.queryByLabelText('Edit rough figures')).toBeNull();
     expect(screen.getByText('Steady')).toBeTruthy();
-  });
-
-  it('renders nothing while the figures have not loaded', async () => {
-    await wrap(card(null));
-    expect(screen.queryByTestId('your-month-card')).toBeNull();
   });
 });
 
@@ -451,7 +433,7 @@ describe('Lines fold and Your month (05-71)', () => {
   it('D-76 Seg: a Worst / Average label past 16 characters stacks the control at 402 and 1.0x', async () => {
     const long = (n: number) => `$${(n / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     const source = loggedSource({ months: monthsOf([['2026-06', 715_666, 300_000], ['2026-07', 715_666, 300_000], ['2026-08', 715_666, 300_000], ['2026-09', 715_666, 300_000]]) });
-    await wrap(<YourMonthCard source={source} settings={null} userId="u1" whole={long} onEditRough={jest.fn()} />);
+    await wrap(<MonthDetailsBody source={source} settings={null} userId="u1" whole={long} onEditRough={jest.fn()} dark />);
     expect(screen.getByLabelText('Average · $7,156.66').props.accessibilityState.checked).toBe(true);
     expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(2);
   });

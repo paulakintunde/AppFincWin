@@ -106,7 +106,6 @@ const GEOMETRY_HEIGHT: { path: string; count: number; reason: string }[] = [
   { path: 'check/steps/step2/AmountRow.tsx', count: 3, reason: 'R16.3 remove target (44) and its dash glyph (no text)' },
   { path: 'check/steps/step2/CardMinimumSheet.tsx', count: 1, reason: 'chevron glyph' },
   { path: 'check/steps/step2/MethodPanels.tsx', count: 1, reason: 'stepper button target (glyph only)' },
-  { path: 'home/AddChangeRow.tsx', count: 2, reason: 'plus glyph bars' },
   { path: 'quick/QuickCheckForm.tsx', count: 2, reason: 'loading skeleton bar and the 1px result rule (no text)' },
   { path: 'ui/CheckRow.tsx', count: 4, reason: 'checkbox and remove glyphs (no text)' },
   { path: 'ui/CollapsibleSection.tsx', count: 1, reason: 'chevron glyph' },
@@ -121,7 +120,6 @@ const GEOMETRY_HEIGHT: { path: string; count: number; reason: string }[] = [
 const OVERLAY_ABSOLUTE: { path: string; count: number; reason: string }[] = [
   { path: 'charts/CashPathChart.tsx', count: 1, reason: 'chart axis labels, clamped to plot' },
   { path: 'charts/NetWorthChart.tsx', count: 1, reason: 'chart axis labels, clamped to plot' },
-  { path: 'home/AddChangeRow.tsx', count: 2, reason: 'plus glyph bars (no text)' },
   { path: 'ui/StepSlider.tsx', count: 1, reason: 'slider thumb' },
 ];
 
@@ -163,6 +161,23 @@ describe('D-76 static text-fit', () => {
     const allowed: Record<string, number> = {};
     for (const a of NUMBER_ALLOW) if (a.kind === 'figure') allowed[a.path] = a.count;
     expect(figures).toEqual(allowed);
+  });
+
+  it('R17 the hero is the only fit below 0.8', () => {
+    const below: Record<string, number[]> = {};
+    for (const f of FILES) {
+      const text = f.lines.join('\n');
+      const consts = new Map<string, number>();
+      for (const m of text.matchAll(/const\s+(\w+)\s*=\s*(\d*\.?\d+)\s*;/g)) consts.set(m[1], Number(m[2]));
+      for (const m of text.matchAll(/minimumFontScale\s*[=:]\s*\{?\s*([\w.]+)/g)) {
+        const value = /^\d*\.?\d+$/.test(m[1]) ? Number(m[1]) : consts.get(m[1]);
+        // a value this walk cannot resolve fails loudly rather than slipping under the floor
+        expect({ path: f.path, token: m[1], resolved: value !== undefined }).toEqual({ path: f.path, token: m[1], resolved: true });
+        if ((value as number) < 0.8) (below[f.path] ??= []).push(value as number);
+      }
+    }
+    // R17.13 M2 hero-only exception: the hero amount scales to 0.75, and nothing else goes under 0.8
+    expect(below).toEqual({ 'home/HomeSummaryCard.tsx': [0.75] });
   });
 
   it('D-76 rule F: no fixed height on text in Decide', () => {

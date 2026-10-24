@@ -4,8 +4,8 @@
  * Edit) and none (the empty state). The Worst / Average control appears only with 3 or more full months and writes
  * the per-user basis_override.
  *
- * 05-115 (D-99): the logged and rough content is `MonthDetailsBody`, shared with the Month details sheet. YourMonthCard
- * stays as the ink wrapper around it until 05-118 removes the card from the home.
+ * 05-115 (D-99): the logged and rough content is `MonthDetailsBody`, shared with the Month details sheet. 05-118 removed
+ * the ink YourMonthCard wrapper; only the body and its props type remain.
  */
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -14,7 +14,6 @@ import { useUpdateDecideSettings } from '@/data/mutations/decideSettings';
 import type { DecideSettingsRow } from '@/db/decideSettings';
 import { prepareContext, type MoneyBasis } from '@/engine/decide';
 import { useT } from '@/i18n';
-import { pushOnce } from '@/shell/navigation/pushOnce';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
@@ -23,8 +22,6 @@ import { Text } from '@/ui/Text';
 import { hapticSelection } from '@/ui/haptics';
 import { RadioDot } from '@/ui/RadioDot';
 import { STEADINESS_LABEL } from '../copy/codeMaps';
-import { missingRateCopy } from '../copy/verdictCopy';
-import { refText, type Translate } from '../check/refText';
 import { FigureStrip } from '../ui/FigureStrip';
 import { InfoLabel } from '../ui/InfoLabel';
 import { useInfoSheet } from '../ui/useInfoSheet';
@@ -243,68 +240,6 @@ export function MonthDetailsBody({ source, userId, whole, onEditRough, dark = fa
   }
 
   return null;
-}
-
-export function YourMonthCard({ source, settings, userId, whole, onEditRough }: YourMonthCardProps) {
-  const t = useT();
-  const { colors, pairing } = useTheme();
-
-  if (source === null) return null;
-
-  const eyebrow = (text: string) => (
-    <Text
-      style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkSoft1, textTransform: 'uppercase', letterSpacing: 1.2 }}
-    >
-      {text}
-    </Text>
-  );
-
-  // ── D-37: a needed rate is missing, so no figure is shown on this card ──
-  if (source.unconverted !== null) {
-    const missing = missingRateCopy(source.unconverted);
-    const tr = t as Translate;
-    return (
-      <View style={[styles.card, { backgroundColor: colors.ink }]} testID="your-month-card">
-        {eyebrow(t('decide.month.eyebrow'))}
-        <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.surface }}>
-          {refText(tr, missing.title)}
-        </Text>
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkSoft1 }}>{refText(tr, missing.body)}</Text>
-      </View>
-    );
-  }
-
-  // ── logged / rough ──
-  if (source.kind === 'logged' || source.kind === 'rough') {
-    return (
-      <View style={[styles.card, { backgroundColor: colors.ink }]} testID="your-month-card">
-        <MonthDetailsBody
-          source={source}
-          settings={settings}
-          userId={userId}
-          whole={whole}
-          onEditRough={onEditRough}
-          dark
-          eyebrow={eyebrow(source.kind === 'logged' ? t('decide.month.eyebrow') : t('decide.month.roughEyebrow'))}
-        />
-      </View>
-    );
-  }
-
-  // ── none ──
-  return (
-    <View style={[styles.card, { backgroundColor: colors.ink }]} testID="your-month-card">
-      {eyebrow(t('decide.month.eyebrow'))}
-      <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.surface }}>
-        {t('decide.home.noFigures.heading')}
-      </Text>
-      <Text style={{ ...textRole(pairing, 'body'), color: colors.inkSoft1 }}>{t('decide.home.noFigures.body')}</Text>
-      <View style={styles.actions}>
-        <DarkPill label={t('decide.home.noFigures.addRough')} selected onPress={onEditRough} />
-        <DarkPill label={t('decide.home.noFigures.import')} onPress={() => pushOnce('/import' as Href)} />
-      </View>
-    </View>
-  );
 }
 
 /** The ink-card pill on the card; the shared secondary Pill on the light sheet. */
