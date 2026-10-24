@@ -277,6 +277,9 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   // whose minimum is counted. A transfer leg is never spending here anyway (D-28), so in the history every Debt-category
   // payment that is not a transfer stays an ordinary outgoing: it went to an account the app does not track.
   const linesByMonth = new Map<string, RecordLine[]>();
+  // D-101: only a leg tagged to a LIVE pot or goal is that pot's set-aside. Once a pot is done or deleted its set-aside is
+  // 0, so a leg still tagged to it counts as saving again (otherwise the outflow would be understated).
+  const liveGoalIds = new Set(source.goals.filter((g) => g.deleted_at === null && g.done_at === null).map((g) => g.id));
   let savingTotal = 0n;
   let investingTotal = 0n;
   const expenseTotals = new Map<string, bigint>();
@@ -326,7 +329,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     if (bucket) bucket.push(line);
     else linesByMonth.set(month, [line]);
     if (!paidUsed) continue;
-    if (!out && isTransfer && (r.goal_id ?? null) === null) { // D-101: a leg tagged to a pot or goal is that pot's set-aside, not saving twice
+    if (!out && isTransfer && !liveGoalIds.has(r.goal_id ?? '')) { // D-101: a leg tagged to a live pot or goal is that pot's set-aside, not saving twice
       const kind = accountById.get(r.account_id)?.kind;
       if (kind === 'savings') savingTotal += BigInt(abs);
       else if (kind === 'investment') investingTotal += BigInt(abs);

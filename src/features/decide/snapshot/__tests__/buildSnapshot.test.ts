@@ -1133,6 +1133,21 @@ describe('pots (D-101, R18.2)', () => {
     expect(b.monthlyInvesting).toBe(2_000);
   });
 
+  it('D-101 a leg tagged to a done or deleted pot counts as saving again', () => {
+    const rows = (goalId: string | null) => [
+      sav('s-plain', '2026-09-03', 40_000),
+      sav('s-tagged', '2026-09-04', 60_000, goalId === null ? {} : { goal_id: goalId }),
+    ];
+    const untagged = logged(withExtra({ goals: [], rows: rows(null) })).snapshot;
+    const done = logged(withExtra({ goals: [goal({ id: 'g1', done_at: '2026-10-01T00:00:00Z' })], rows: rows('g1') })).snapshot;
+    const deleted = logged(withExtra({ goals: [goal({ id: 'g1', deleted_at: '2026-10-01T00:00:00Z' })], rows: rows('g1') })).snapshot;
+    const live = logged(withExtra({ goals: [goal({ id: 'g1' })], rows: rows('g1') })).snapshot;
+    expect(done.monthlySaving).toBe(untagged.monthlySaving);
+    expect(deleted.monthlySaving).toBe(untagged.monthlySaving);
+    expect(live.monthlySaving).toBeLessThan(untagged.monthlySaving);
+    expect(done.pots).toHaveLength(0);
+  });
+
   it('D-101 an untagged Savings series still counts as saving', () => {
     const r = logged(
       withExtra({
