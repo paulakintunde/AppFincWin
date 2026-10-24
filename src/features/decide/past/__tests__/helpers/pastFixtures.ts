@@ -101,6 +101,8 @@ export function goal(checkId: string, over: Partial<SavingsGoalRow> = {}): Savin
     monthly_amount: 20_000,
     ready_by: '2027-01-15',
     opening_saved: 0,
+    kind: 'wait',
+    done_at: null,
     is_sample: false,
     deleted_at: null,
     version: 1,

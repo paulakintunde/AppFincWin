@@ -23,6 +23,7 @@ export interface DebtRow {
   min_interest_added: boolean | null;
   min_floor: number | null;
   paid_in_full: boolean; // D-38 / D-40
+  is_housing: boolean; // D-103: counts toward the housing line; update grant only, the guard sets it on insert
   is_sample: boolean;
   deleted_at: string | null;
   version: number;
@@ -32,7 +33,7 @@ export interface DebtRow {
 }
 
 export const DEBT_COLUMNS =
-  'id, household_id, account_id, check_id, series_id, name, kind, currency, balance, apr, minimum_payment, secured, term_months, start_date, min_percent, min_interest_added, min_floor, paid_in_full, is_sample, deleted_at, version, updated_by, created_at, updated_at';
+  'id, household_id, account_id, check_id, series_id, name, kind, currency, balance, apr, minimum_payment, secured, term_months, start_date, min_percent, min_interest_added, min_floor, paid_in_full, is_housing, is_sample, deleted_at, version, updated_by, created_at, updated_at';
 
 export type NewDebt = Pick<
   DebtRow,
@@ -70,6 +71,7 @@ export type DebtPatch = Partial<
     | 'min_interest_added'
     | 'min_floor'
     | 'paid_in_full'
+    | 'is_housing'
     | 'deleted_at'
   >
 >;
@@ -107,6 +109,7 @@ export const DEBT_PATCH_KEYS = [
   'min_interest_added',
   'min_floor',
   'paid_in_full',
+  'is_housing',
   'deleted_at',
 ] as const satisfies readonly (keyof DebtPatch)[];
 

@@ -109,6 +109,8 @@ const goal = (overrides: Partial<SavingsGoalRow> = {}): SavingsGoalRow => ({
   monthly_amount: 10000,
   ready_by: null,
   opening_saved: 0,
+  kind: 'wait',
+  done_at: null,
   is_sample: false,
   deleted_at: null,
   version: 3,

@@ -1,5 +1,7 @@
-// 05-38 (D-34): minimal savings goal. Read and soft-delete only; record_decide_outcome (05-04)
-// inserts. Saved-so-far is computed from tagged lines (05-39), never stored.
+// 05-38 (D-34): savings goal. Saved-so-far is computed from tagged lines (05-39), never stored.
+// 05-122 (D-101): the same table now holds pots (kind 'pot', client-inserted) and Wait goals (kind 'wait', inserted
+// only by record_decide_outcome). Key lists mirror the 05-119 grants exactly: kind is written on insert and never
+// patched; a Wait goal's columns other than done_at and deleted_at are frozen by the guard.
 
 import { NotFoundError, VersionConflictError, toDbError } from './errors';
 import { assertAllowedKeys, type DbClient, type TransactionRow } from './rows';
@@ -16,6 +18,8 @@ export interface SavingsGoalRow {
   monthly_amount: number | null;
   ready_by: string | null;
   opening_saved: number;
+  kind: 'wait' | 'pot';
+  done_at: string | null;
   is_sample: boolean;
   deleted_at: string | null;
   version: number;
@@ -24,10 +28,50 @@ export interface SavingsGoalRow {
 }
 
 export const SAVINGS_GOAL_COLUMNS =
-  'id, household_id, created_by, check_id, name, currency, target, monthly_amount, ready_by, opening_saved, is_sample, deleted_at, version, created_at, updated_at';
+  'id, household_id, created_by, check_id, name, currency, target, monthly_amount, ready_by, opening_saved, kind, done_at, is_sample, deleted_at, version, created_at, updated_at';
 
-const SAVINGS_GOAL_PATCH_KEYS = ['deleted_at'] as const;
+/** A pot as a client inserts it: home currency, a target and a month end are required by the shape check. */
+export interface NewPot {
+  id: string;
+  household_id: string;
+  kind: 'pot';
+  name: string;
+  currency: string;
+  target: number;
+  ready_by: string;
+  opening_saved: number;
+}
+
+/** target and ready_by are never null in a patch: a pot's shape check needs both (a Wait goal's are frozen anyway). */
+export type SavingsGoalPatch = Partial<
+  Pick<SavingsGoalRow, 'name' | 'opening_saved' | 'done_at' | 'deleted_at'> & { target: number; ready_by: string }
+>;
+
+export const SAVINGS_GOAL_INSERT_KEYS = [
+  'id',
+  'household_id',
+  'kind',
+  'name',
+  'currency',
+  'target',
+  'ready_by',
+  'opening_saved',
+] as const satisfies readonly (keyof NewPot)[];
+
+export const SAVINGS_GOAL_PATCH_KEYS = [
+  'name',
+  'target',
+  'ready_by',
+  'opening_saved',
+  'done_at',
+  'deleted_at',
+] as const satisfies readonly (keyof SavingsGoalPatch)[];
+
 const ENTITY = 'savings_goals' as const;
+const UNIQUE_VIOLATION = '23505';
+const NAME_MAX = 80;
+const TARGET_MAX = 10 ** 13;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 export const GOAL_LINES_MAX = 200;
 
@@ -49,14 +93,44 @@ async function fetchSavingsGoal(client: DbClient, id: string): Promise<SavingsGo
   return (data as SavingsGoalRow | null) ?? null;
 }
 
-/** Only deleted_at is granted server-side (05-32). */
+function validatePot(p: { name?: string; target?: number; ready_by?: string; opening_saved?: number }): void {
+  if (p.name !== undefined && (p.name.trim().length < 1 || p.name.length > NAME_MAX)) {
+    throw new RangeError('pot: name must be 1 to 80 characters');
+  }
+  if (p.target !== undefined && (!Number.isInteger(p.target) || p.target < 1 || p.target > TARGET_MAX)) {
+    throw new RangeError('pot: target must be an integer from 1 to 10^13');
+  }
+  if (p.opening_saved !== undefined && (!Number.isInteger(p.opening_saved) || p.opening_saved < 0 || p.opening_saved > TARGET_MAX)) {
+    throw new RangeError('pot: opening_saved must be a non-negative integer');
+  }
+  if (p.ready_by !== undefined && !DATE_RE.test(p.ready_by)) throw new RangeError('pot: ready_by must be a date');
+}
+
+/** D-101: a client-inserted row is always a pot (the guard forces kind). A duplicate client id is read back as landed (MON-08). */
+export async function insertSavingsGoal(client: DbClient, pot: NewPot): Promise<SavingsGoalRow> {
+  assertAllowedKeys(pot as unknown as Record<string, unknown>, SAVINGS_GOAL_INSERT_KEYS, 'insertSavingsGoal');
+  if (pot.kind !== 'pot') throw new RangeError('insertSavingsGoal: only pots are inserted from the client');
+  validatePot(pot);
+
+  const { data, error, status } = await client.from('savings_goals').insert(pot).select(SAVINGS_GOAL_COLUMNS).single();
+  if (!error) return data as SavingsGoalRow;
+
+  if (error.code === UNIQUE_VIOLATION) {
+    const existing = await fetchSavingsGoal(client, pot.id);
+    if (existing) return existing;
+  }
+  throw toDbError(error, status);
+}
+
+/** The granted columns only (05-119): kind, check_id, currency and monthly_amount are never patched. */
 export async function updateSavingsGoal(
   client: DbClient,
   id: string,
   expectedVersion: number,
-  patch: { deleted_at: string | null }
+  patch: SavingsGoalPatch
 ): Promise<SavingsGoalRow> {
   assertAllowedKeys(patch, SAVINGS_GOAL_PATCH_KEYS, 'updateSavingsGoal');
+  validatePot(patch);
 
   const { data, error, status } = await client
     .from('savings_goals')

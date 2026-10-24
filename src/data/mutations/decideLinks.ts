@@ -137,6 +137,7 @@ function registerDebtWrite(qc: QueryClient, key: readonly unknown[]): void {
         const inserted: DebtRow = {
           ...newDebtRow(vars),
           check_id: null,
+          is_housing: false,
           is_sample: false,
           deleted_at: null,
           version: 1,

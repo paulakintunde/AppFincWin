@@ -15,7 +15,7 @@ import {
 import { fetchDecideSettings, type DecideSettingsRow } from '@/db/decideSettings';
 import { fetchAccountBalances } from '@/db/recordReads';
 import type { TransactionRow } from '@/db/rows';
-import { fetchGoalLines, fetchSavingsGoals } from '@/db/savingsGoals';
+import { fetchGoalLines, fetchSavingsGoals, type SavingsGoalRow } from '@/db/savingsGoals';
 import { fetchStatementPeriods, type StatementPeriodRow } from '@/db/statementPeriods';
 import { fetchTransactionsInRange } from '@/db/transactions';
 import { monthOf, monthRange } from '@/engine/time';
@@ -133,6 +133,43 @@ export function useSavingsGoals(userId?: string, householdId?: string) {
     queryKey: queryKeys.savingsGoals(userId ?? '', householdId ?? ''),
     queryFn: () => fetchSavingsGoals(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
+  });
+}
+
+/** D-101 (R18.2): the pots view of the savings_goals rows. */
+export interface PotsView {
+  /** Not deleted, not done: both kinds, oldest first. The list the Pots screen and the snapshot builder read. */
+  live: SavingsGoalRow[];
+  /** `kind = 'pot'` rows among `live`: the ones the user adds, edits and deletes here (the 50-pot cap counts these). */
+  plain: SavingsGoalRow[];
+  /** `kind = 'wait'` rows among `live`: made by a check; only Mark done / Reopen is offered. */
+  wait: SavingsGoalRow[];
+  /** Done (`done_at` set) and not deleted, newest first. A done pot stops counting. */
+  done: SavingsGoalRow[];
+}
+
+const doneFirst = (a: SavingsGoalRow, b: SavingsGoalRow): number =>
+  (a.done_at ?? '') < (b.done_at ?? '') ? 1 : (a.done_at ?? '') > (b.done_at ?? '') ? -1 : 0;
+
+/** Pure selector (exported for tests). Deleted rows are dropped even if a stale cache still carries one. */
+export function selectPots(rows: readonly SavingsGoalRow[]): PotsView {
+  const alive = rows.filter((r) => r.deleted_at == null);
+  const live = alive.filter((r) => r.done_at == null);
+  return {
+    live,
+    plain: live.filter((r) => r.kind === 'pot'),
+    wait: live.filter((r) => r.kind === 'wait'),
+    done: alive.filter((r) => r.done_at != null).sort(doneFirst),
+  };
+}
+
+/** D-101: pots on the savings_goals key (shared cache with useSavingsGoals; structural sharing keeps the view stable). */
+export function usePots(userId?: string, householdId?: string): UseQueryResult<PotsView> {
+  return useQuery({
+    queryKey: queryKeys.savingsGoals(userId ?? '', householdId ?? ''),
+    queryFn: () => fetchSavingsGoals(supabase, householdId as string),
+    enabled: Boolean(userId) && Boolean(householdId),
+    select: selectPots,
   });
 }
 

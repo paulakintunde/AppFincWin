@@ -17,6 +17,8 @@ import {
   useOpenChecks,
   useOtherChecks,
   useSavingsGoals,
+  usePots,
+  selectPots,
   useStatementPeriods,
 } from '../decide';
 
@@ -439,5 +441,34 @@ describe('useOtherChecks', () => {
     await act(async () => { release([row('a'), row('b')]); });
     await waitFor(() => expect(hook.result.current.openCount).toBe(1));
     expect(hook.result.current.otherChecks).toHaveLength(1);
+  });
+});
+
+describe('D-101 pots selector', () => {
+  const g = (id: string, over: Record<string, unknown> = {}) =>
+    ({ id, kind: 'pot', done_at: null, deleted_at: null, ...over }) as unknown as Parameters<typeof selectPots>[0][number];
+
+  it('D-101 the pots selector splits live, done and wait rows', () => {
+    const view = selectPots([
+      g('p1'),
+      g('w1', { kind: 'wait' }),
+      g('p2', { done_at: '2026-10-01T00:00:00Z' }),
+      g('p3', { done_at: '2026-10-09T00:00:00Z' }),
+      g('w2', { kind: 'wait', done_at: '2026-10-02T00:00:00Z' }),
+      g('gone', { deleted_at: '2026-10-02T00:00:00Z' }),
+    ]);
+    expect(view.live.map((r) => r.id)).toEqual(['p1', 'w1']);
+    expect(view.plain.map((r) => r.id)).toEqual(['p1']);
+    expect(view.wait.map((r) => r.id)).toEqual(['w1']);
+    expect(view.done.map((r) => r.id)).toEqual(['p3', 'w2', 'p2']);
+  });
+
+  it('D-101 usePots reads the savings goals key and selects the view', async () => {
+    mockFetch.goals.mockResolvedValue([g('p1'), g('p2', { done_at: '2026-10-01T00:00:00Z' })]);
+    const client = newClient();
+    const hook = await renderHook(() => usePots('u1', 'h1'), { wrapper: wrapper(client) });
+    await waitFor(() => expect(hook.result.current.data?.live.map((r) => r.id)).toEqual(['p1']));
+    expect(hook.result.current.data?.done.map((r) => r.id)).toEqual(['p2']);
+    expect(client.getQueryData(queryKeys.savingsGoals('u1', 'h1'))).toHaveLength(2);
   });
 });

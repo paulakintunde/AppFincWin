@@ -1,6 +1,16 @@
 import { NotFoundError, VersionConflictError } from '../errors';
 import * as goals from '../savingsGoals';
-import { fetchGoalLines, fetchSavingsGoals, updateSavingsGoal, type SavingsGoalRow } from '../savingsGoals';
+import {
+  SAVINGS_GOAL_COLUMNS,
+  SAVINGS_GOAL_INSERT_KEYS,
+  SAVINGS_GOAL_PATCH_KEYS,
+  fetchGoalLines,
+  fetchSavingsGoals,
+  insertSavingsGoal,
+  updateSavingsGoal,
+  type NewPot,
+  type SavingsGoalRow,
+} from '../savingsGoals';
 import { createFakeSupabase } from './fakeSupabase';
 
 const ID_A = '11111111-1111-4111-8111-111111111111';
@@ -18,6 +28,8 @@ function goalRow(overrides: Partial<SavingsGoalRow> = {}): SavingsGoalRow {
     monthly_amount: 10000,
     ready_by: '2027-06',
     opening_saved: 0,
+    kind: 'pot',
+    done_at: null,
     is_sample: false,
     deleted_at: null,
     version: 1,
@@ -28,8 +40,8 @@ function goalRow(overrides: Partial<SavingsGoalRow> = {}): SavingsGoalRow {
 }
 
 describe('savingsGoals module surface', () => {
-  it('exports no insert function', () => {
-    expect(Object.keys(goals).filter((k) => /^insert/i.test(k))).toEqual([]);
+  it('D-101 exports one insert function and it takes a pot', () => {
+    expect(Object.keys(goals).filter((k) => /^insert/i.test(k))).toEqual(['insertSavingsGoal']);
   });
 });
 
@@ -44,9 +56,31 @@ describe('fetchSavingsGoals', () => {
 });
 
 describe('updateSavingsGoal', () => {
-  it('refuses any key other than deleted_at before a request', async () => {
+  it('refuses a key outside the grant before a request', async () => {
     const client = createFakeSupabase();
-    await expect(updateSavingsGoal(client, ID_A, 1, { name: 'x' } as unknown as { deleted_at: string })).rejects.toBeInstanceOf(TypeError);
+    for (const bad of [{ kind: 'wait' }, { check_id: ID_B }, { currency: 'USD' }, { monthly_amount: 5 }]) {
+      await expect(updateSavingsGoal(client, ID_A, 1, bad as unknown as { deleted_at: string })).rejects.toBeInstanceOf(TypeError);
+    }
+    expect(client.calls).toHaveLength(0);
+  });
+
+  it('D-101 patches done_at, name, target, ready_by and opening_saved with a version check', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [goalRow({ version: 2 })], error: null, status: 200 });
+    await updateSavingsGoal(client, ID_A, 1, {
+      name: 'Car service',
+      target: 60000,
+      ready_by: '2027-03-31',
+      opening_saved: 0,
+      done_at: '2026-10-24T00:00:00Z',
+    });
+    expect(client.calls.find((c) => c.method === 'update')?.args[0]).toMatchObject({ name: 'Car service', target: 60000 });
+  });
+
+  it('refuses a bad target or name before a request', async () => {
+    const client = createFakeSupabase();
+    await expect(updateSavingsGoal(client, ID_A, 1, { target: 0 })).rejects.toBeInstanceOf(RangeError);
+    await expect(updateSavingsGoal(client, ID_A, 1, { name: '' })).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(0);
   });
 
@@ -87,6 +121,51 @@ describe('fetchGoalLines', () => {
     const client = createFakeSupabase();
     await expect(fetchGoalLines(client, 'h1', ['x),or(id.neq.0'])).rejects.toBeInstanceOf(RangeError);
     await expect(fetchGoalLines(client, 'h1', Array.from({ length: 201 }, () => ID_A))).rejects.toBeInstanceOf(RangeError);
+    expect(client.calls).toHaveLength(0);
+  });
+});
+
+describe('D-101 pot columns and keys', () => {
+  it('D-101 savings goal columns and patch keys match the grant', () => {
+    expect(SAVINGS_GOAL_COLUMNS.split(', ')).toEqual(expect.arrayContaining(['kind', 'done_at', 'opening_saved', 'ready_by']));
+    // grant insert (id, household_id, kind, name, currency, target, ready_by, opening_saved)
+    expect([...SAVINGS_GOAL_INSERT_KEYS].sort()).toEqual(
+      ['household_id', 'id', 'currency', 'kind', 'name', 'opening_saved', 'ready_by', 'target'].sort()
+    );
+    // grant update (name, target, ready_by, opening_saved, done_at, deleted_at)
+    expect([...SAVINGS_GOAL_PATCH_KEYS].sort()).toEqual(
+      ['deleted_at', 'done_at', 'name', 'opening_saved', 'ready_by', 'target'].sort()
+    );
+    expect(SAVINGS_GOAL_PATCH_KEYS).not.toContain('kind');
+    expect(SAVINGS_GOAL_PATCH_KEYS).not.toContain('check_id');
+  });
+
+  const pot: NewPot = {
+    id: ID_A,
+    household_id: 'h1',
+    kind: 'pot',
+    name: 'Car service',
+    currency: 'GBP',
+    target: 60000,
+    ready_by: '2027-03-31',
+    opening_saved: 0,
+  };
+
+  it('D-101 inserts a pot and reads a duplicate client id back as landed', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: goalRow(), error: null, status: 201 });
+    await expect(insertSavingsGoal(client, pot)).resolves.toMatchObject({ id: ID_A });
+    client.respondWith({ data: null, error: { message: 'dup', code: '23505' }, status: 409 });
+    client.respondWith({ data: goalRow({ version: 1 }), error: null, status: 200 });
+    await expect(insertSavingsGoal(client, pot)).resolves.toMatchObject({ id: ID_A });
+  });
+
+  it('D-101 refuses a client-sent wait kind, a stray key or a bad value before a request', async () => {
+    const client = createFakeSupabase();
+    await expect(insertSavingsGoal(client, { ...pot, kind: 'wait' } as unknown as NewPot)).rejects.toBeInstanceOf(RangeError);
+    await expect(insertSavingsGoal(client, { ...pot, check_id: ID_B } as unknown as NewPot)).rejects.toBeInstanceOf(TypeError);
+    await expect(insertSavingsGoal(client, { ...pot, target: 1.5 })).rejects.toBeInstanceOf(RangeError);
+    await expect(insertSavingsGoal(client, { ...pot, ready_by: '2027-03' })).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(0);
   });
 });

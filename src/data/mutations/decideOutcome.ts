@@ -71,6 +71,8 @@ export function registerDecideOutcomeMutations(qc: QueryClient): void {
           monthly_amount: wait.wait_monthly,
           ready_by: wait.ready_by,
           opening_saved: 0,
+          kind: 'wait',
+          done_at: null,
           is_sample: false,
           deleted_at: null,
           version: 1,

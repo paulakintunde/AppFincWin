@@ -1,5 +1,6 @@
 import { NotFoundError, VersionConflictError } from '../errors';
 import {
+  DEBT_COLUMNS,
   DEBT_INSERT_KEYS,
   DEBT_PATCH_KEYS,
   fetchDebts,
@@ -47,6 +48,7 @@ function debtRow(overrides: Partial<DebtRow> = {}): DebtRow {
     min_interest_added: null,
     min_floor: null,
     paid_in_full: false,
+    is_housing: false,
     is_sample: false,
     deleted_at: null,
     version: 1,
@@ -276,5 +278,14 @@ describe('statement periods', () => {
       insertStatementPeriod(client, { ...PERIOD, period_start: '2026-10-01', period_end: '2026-09-01' })
     ).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(0);
+  });
+});
+
+describe('D-103 housing marker', () => {
+  it('D-103 debt columns and patch keys carry is_housing', () => {
+    expect(DEBT_COLUMNS.split(', ')).toContain('is_housing');
+    expect(DEBT_PATCH_KEYS).toContain('is_housing');
+    // update grant only: the guard sets it on insert
+    expect(DEBT_INSERT_KEYS).not.toContain('is_housing');
   });
 });

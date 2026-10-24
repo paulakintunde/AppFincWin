@@ -76,6 +76,7 @@ const debt = (overrides: Partial<DebtRow> = {}): DebtRow => ({
   min_interest_added: null,
   min_floor: null,
   paid_in_full: false,
+  is_housing: false,
   is_sample: false,
   deleted_at: null,
   version: 1,

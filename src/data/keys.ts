@@ -130,6 +130,10 @@ export const mutationKeys = {
   // Part 2: D-27 change writes (05-40). Goal tagging uses Record's editTransaction key.
   addChange: ['decide-changes', 'add'] as const,
   editChange: ['decide-changes', 'edit'] as const,
+  // 05-122 (D-101, D-103): pots (savings_goals) and the housing marker on a debt.
+  addPot: ['savings-goals', 'add'] as const,
+  editPot: ['savings-goals', 'edit'] as const,
+  setDebtHousing: ['debts', 'set-housing'] as const,
 };
 
 // D-20: one scope means every paused write replays serially in the order it was queued --
