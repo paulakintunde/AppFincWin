@@ -112,6 +112,18 @@ export type QuickComputation =
   | { kind: 'logged'; decision: Decision; verdict: Verdict; check: BuyCheck; resolvedPrice: ResolvedPrice } // verdict === decision.verdict
   | { kind: 'first_read'; firstRead: FirstRead; check: BuyCheck; resolvedPrice: ResolvedPrice };
 
+/** D-107: one row of the verdict's "outcome on each basis" card. */
+export interface BasisOutcome {
+  basis: 'month' | 'worst' | 'average';
+  state: 'fits' | 'adjust' | 'no';
+  left: MinorUnits;
+  chosen: boolean;
+  /** The currencies still waiting for a rate when the month row shows the Worst result (D-106 addendum); null otherwise. */
+  waitingCurrencies: readonly string[] | null;
+}
+/** Rows in the order month, worst, average. */
+export interface BasisOutcomes { rows: readonly [BasisOutcome, BasisOutcome, BasisOutcome] }
+
 export interface CheckComputation {
   status: 'incomplete' | 'logged' | 'first_read' | 'none' | 'unconverted'; // 'unconverted': D-37, every engine field null, check/resolvedPrice/methodPlans still filled
   missingInput: 'price' | 'method' | null;
@@ -133,6 +145,7 @@ export interface CheckComputation {
   incomeAtRisk: IncomeAtRiskReport | null;       // D-32: incomeAtRisk(verdict.context, verdict, setbacks)
   runningCostPrompts: readonly RunningCostCategory[]; // D-33: runningCostPrompts(inputs.itemType) for buy checks, from the inputs alone (step 2 shows them before a price exists)
   impliedApr: ImpliedAprResult; // D-90 (R16.6): the true nominal APR of a no-rate instalment plan, solved in computeDetails (the settled path) only, never in computeCore and never in the verdict; a read-out that never fills the rate field (04 D-07). null for a rated plan, a single payment on the day, a total below the amount financed (the D-49 note) or no resolved instalment plan
+  basisOutcomes?: BasisOutcomes | null; // D-107: the same check under This month, Worst and Average; computed in computeDetails (idle time) only, never in computeCore; absent = null
   promoBalanceAtEnd: Partial<Record<'loan' | 'card', MinorUnits>>; // D-52: the balance left when a typed promotion ends ("Left when it ends: {x}", UI-SPEC D-30), per method plan with a promo that resolved; the engine's PromoOutcome has no such field, so 05-07 reads `balanceAtPromoEnd` / `balancesByMonth` from the payoff barrel's schedule functions; {} otherwise
 }
 

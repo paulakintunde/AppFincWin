@@ -30,6 +30,7 @@ import {
   totalCost,
 } from '@/engine/decide';
 import type {
+  Basis,
   BuyCheck,
   BuyPayment,
   DecideSnapshot,
@@ -41,18 +42,28 @@ import type {
   RunningCosts,
   SetbackInput,
   StackedCheckInput,
+  Verdict,
 } from '@/engine/decide';
 import { minorUnits } from '@/engine/money';
 import { PAY_METHODS } from './types';
 import { perfMark } from '../perf/perfMarks';
 import { cheaperFinalPrice, effectiveMethod, engineCtxOf, quickToCheckInputs, toEngineCheck } from './checkInputs';
 import type { EngineCheckResult, EngineCtx } from './checkInputs';
-import type { CheckComputation, CheckInputs, ChipComputation, MethodKey, QuickComputation, QuickInputs, SetbackLine, SnapshotResult } from './types';
+import type { BasisOutcome, BasisOutcomes, CheckComputation, CheckInputs, ChipComputation, MethodKey, QuickComputation, QuickInputs, SetbackLine, SnapshotResult } from './types';
 
 type EngineOk = Extract<EngineCheckResult, { ok: true }>;
 
 /** The computation before the slow detail figures: what the verdict card, warnings and step 2 read (D-56). */
-export type CheckCore = CheckComputation & { readonly inputs: CheckInputs };
+export type CheckCore = CheckComputation & { readonly inputs: CheckInputs; readonly engineRun?: EngineRun };
+
+/** D-107: what the idle pass needs to judge the same check on another basis. Memory only; computeDetails drops it. */
+export interface EngineRun {
+  readonly snapshot: DecideSnapshot;
+  readonly check: PurchaseCheck;
+  readonly others: readonly StackedCheckInput[];
+  readonly judgeOn: Basis | null;
+  readonly monthFallback: readonly string[] | null;
+}
 
 const ctxOf = (source: SnapshotResult): EngineCtx => engineCtxOf(source);
 
@@ -250,9 +261,12 @@ export function computeCore(source: SnapshotResult, inputs: CheckInputs, otherCh
   const judged = withoutOwnPot(source, opts.ownCheckId ?? null);
   switch (judged.kind) {
     case 'logged': {
-      const decision = decide(snapshotWithRates(judged.snapshot, inputs.projectionRates), r.check, inputs.combine === false ? [] : otherChecks);
+      const rated = snapshotWithRates(judged.snapshot, inputs.projectionRates);
+      const others = inputs.combine === false ? [] : otherChecks;
+      const decision = decide(rated, r.check, others);
       const verdict = decision.verdict;
-      return { ...base, status: 'logged', decision, verdict, context: verdict.state === 'missing' ? null : verdict.context };
+      const engineRun: EngineRun = { snapshot: rated, check: r.check, others, judgeOn: judged.judgeOn ?? null, monthFallback: judged.monthFallback?.currencies ?? null };
+      return { ...base, status: 'logged', decision, verdict, context: verdict.state === 'missing' ? null : verdict.context, engineRun };
     }
     case 'rough':
       return { ...base, status: 'first_read', firstRead: firstRead(judged.figures, r.check) };
@@ -288,10 +302,29 @@ function cheaperOf(inputs: CheckInputs, planPrice: MinorUnits): { price: MinorUn
   return price === null ? undefined : { price };
 }
 
+const BASIS_ORDER = ['month', 'worst', 'average'] as const;
+
+/**
+ * D-107: the verdict state and month figure of the same check under each basis. The row whose engine basis equals the
+ * snapshot's own (or the basis the verdict itself landed on) reuses the check's verdict; each other row is one decide() with only basisOverride changed. Idle time only.
+ */
+function basisOutcomesOf(run: EngineRun, verdict: Exclude<Verdict, { state: 'missing' }>): BasisOutcomes | null {
+  const chosenBasis = run.judgeOn ?? verdict.context.money.basis;
+  const rows: BasisOutcome[] = [];
+  for (const basis of BASIS_ORDER) {
+    const fellBack = basis === 'month' && run.monthFallback !== null;
+    const effective: Basis = fellBack ? 'worst' : basis;
+    const v = effective === run.snapshot.basisOverride || effective === verdict.context.money.basis ? verdict : decide({ ...run.snapshot, basisOverride: effective }, run.check, run.others).verdict;
+    if (v.state === 'missing') return null;
+    rows.push({ basis, state: v.state, left: v.left, chosen: basis === chosenBasis, waitingCurrencies: fellBack ? run.monthFallback : null });
+  }
+  return { rows: rows as unknown as BasisOutcomes['rows'] };
+}
+
 /** The slow figures, from the core's combined verdict and context: options, alternatives, setbacks, wait plan, views. */
 export function computeDetails(core: CheckCore, inputs: CheckInputs): CheckComputation {
-  const { inputs: _inputs, ...rest } = core;
-  const base = { ...rest, impliedApr: solveImpliedApr(core, inputs) };
+  const { inputs: _inputs, engineRun, ...rest } = core;
+  const base = { ...rest, impliedApr: solveImpliedApr(core, inputs), basisOutcomes: null };
   const { verdict, check } = core;
   if (verdict === null || verdict.state === 'missing' || check === null) return base;
   const context = verdict.context;
@@ -320,6 +353,7 @@ export function computeDetails(core: CheckCore, inputs: CheckInputs): CheckCompu
         })
       : null,
     incomeAtRisk: buyer ? incomeAtRisk(context, verdict, setbacks) : null,
+    basisOutcomes: engineRun === undefined ? null : basisOutcomesOf(engineRun, verdict),
   };
 }
 

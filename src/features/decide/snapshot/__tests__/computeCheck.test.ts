@@ -207,7 +207,8 @@ describe('computeCheck', () => {
   it('computeCheck calls decide once and reads the combined context', () => {
     const spy = jest.spyOn(decisionModule, 'decide');
     const c = computeCheck(loggedSource(), buy());
-    expect(spy).toHaveBeenCalledTimes(1);
+    // 05-144: one decide() for the verdict, plus at most two for the basis rows in the details pass (D-107)
+    expect(spy).toHaveBeenCalledTimes(3);
     expect(c.status).toBe('logged');
     expect(c.decision!.verdict).toBe(c.verdict);
     expect(c.verdict!.state).not.toBe('missing');
@@ -249,13 +250,13 @@ describe('computeCheck', () => {
   it('uses the check own rate list for the engine and memoises the snapshot', () => {
     const spy = jest.spyOn(decisionModule, 'decide');
     const src = loggedSource();
-    computeCheck(src, buy({ projectionRates: ['4', '6'] }));
-    computeCheck(src, buy({ projectionRates: ['4', '6'] }));
+    computeCore(src, buy({ projectionRates: ['4', '6'] }));
+    computeCore(src, buy({ projectionRates: ['4', '6'] }));
     const first = spy.mock.calls[0]![0];
     expect(first.projectionRates).toEqual([percent('4'), percent('6')]);
     expect(first.projectionReturn).toBe(percent('4'));
     expect(spy.mock.calls[1]![0]).toBe(first);
-    computeCheck(src, buy());
+    computeCore(src, buy());
     expect(spy.mock.calls[2]![0].projectionReturn).toBeNull();
   });
   it('resolves each method on its own', () => {
