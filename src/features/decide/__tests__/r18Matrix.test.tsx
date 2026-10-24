@@ -151,6 +151,8 @@ const cardProps = (source: SnapshotResult) => ({
   settings: null,
   status: "ready" as const,
   homeBasisSeen: true,
+  judgeOn: "month" as const,
+  onChooseJudgeOn: jest.fn(),
   currency: "USD",
   today: TODAY,
   onOpenDetails: jest.fn(),
@@ -204,6 +206,11 @@ describe("R18 matrix", () => {
         // the sub-line wraps: it is never clamped, and the hero is the one figure allowed to shrink
         expectFits({ clampCount: 1 });
         expectTargets("Month details", "Full check");
+        // D-107: the Judge-on dropdown joins the top row (a plain label under 3 full months)
+        if (source.kind === "logged" && source.snapshot.months.length >= 3) {
+          expect(screen.getByText("This month ▾")).toBeTruthy();
+          expectTargets(/^Judged on /);
+        }
         await view.unmount();
       }
     });

@@ -401,3 +401,138 @@ describe('HomeSummaryCard', () => {
     expect(screen.queryByText('Full check ›')).toBeNull();
   });
 });
+
+describe('HomeSummaryCard Judge-on (D-107)', () => {
+  const base = (over: Partial<HomeSummaryCardProps> = {}): HomeSummaryCardProps => ({
+    source: loggedSource({ months: months(4), basisOverride: 'month' }),
+    settings: null,
+    status: 'ready',
+    homeBasisSeen: true,
+    judgeOn: 'month',
+    onChooseJudgeOn: jest.fn(),
+    currency: 'USD',
+    today: TODAY,
+    onOpenDetails: jest.fn(),
+    onAddRough: jest.fn(),
+    onRetry: jest.fn(),
+    onRunFull: jest.fn(),
+    ...over,
+  });
+  const fallbackSource = () => ({
+    ...loggedSource({ months: months(4), basisOverride: 'worst' }),
+    monthFallback: { currencies: ['EUR', 'GBP'] },
+  });
+  const WAITING = 'This month is waiting for a EUR, GBP rate';
+
+  async function renderIt(over: Partial<HomeSummaryCardProps> = {}, scale = 1) {
+    await AsyncStorage.setItem(THEME_CACHE_KEY, JSON.stringify({ accent: 'green', pairing: 'bold' }));
+    const p = base(over);
+    await render(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <ThemeProvider>
+          <FontScaleProvider value={scale}>
+            <HomeSummaryCard {...p} />
+          </FontScaleProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+    return p;
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDims = { width: 402, fontScale: 1 };
+  });
+
+  it('D-107 the card top row shows This month with a dropdown arrow', async () => {
+    await renderIt();
+    expect(screen.getByText('This month ▾')).toBeTruthy();
+    expect(screen.getByLabelText('Judged on This month. Opens the choices.').props.accessibilityRole).toBe('button');
+  });
+
+  it('D-107 the dropdown opens the three choices with the current one checked', async () => {
+    await renderIt({ judgeOn: 'average' });
+    await fireEvent.press(screen.getByText('Average month ▾'));
+    expect(await screen.findByText('Judge on')).toBeTruthy();
+    expect(screen.getByLabelText('This month').props.accessibilityState).toMatchObject({ checked: false });
+    expect(screen.getByLabelText('Worst month').props.accessibilityState).toMatchObject({ checked: false });
+    expect(screen.getByLabelText('Average month').props.accessibilityState).toMatchObject({ checked: true });
+  });
+
+  it('D-107 choosing Worst calls choose and closes', async () => {
+    const p = await renderIt();
+    await fireEvent.press(screen.getByText('This month ▾'));
+    await fireEvent.press(await screen.findByLabelText('Worst month'));
+    expect(p.onChooseJudgeOn).toHaveBeenCalledWith('worst');
+    await waitFor(() => expect(screen.queryByText('Judge on')).toBeNull());
+  });
+
+  it('D-107 the button reads This month under a rate fallback while the sub-line names Worst', async () => {
+    await renderIt({ source: fallbackSource() });
+    expect(screen.getByText('This month ▾')).toBeTruthy();
+    expect(screen.getByText(SUB.worst)).toBeTruthy();
+  });
+
+  it('D-107 the waiting-for-a-rate line shows under the sub-line and hides with a quick result', async () => {
+    await renderIt({ source: fallbackSource() });
+    expect(screen.getByText(WAITING)).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Quick check, something and a price'), 'sofa 1800');
+    await fireEvent.press(screen.getByText('Check it'));
+    await screen.findByText('Run the full check');
+    // the hero block (and so the card's own line) is replaced; the quick result carries the note itself
+    expect(screen.getAllByText(WAITING)).toHaveLength(1);
+  });
+
+  it('D-107 under 3 full months the button is a plain This month label', async () => {
+    await renderIt({ source: loggedSource({ months: months(2) }) });
+    expect(screen.getByText('This month')).toBeTruthy();
+    expect(screen.queryByText('This month ▾')).toBeNull();
+    expect(screen.queryByLabelText(/Opens the choices/)).toBeNull();
+  });
+
+  it('D-107 nothing shows until the choice has been read', async () => {
+    await renderIt({ judgeOn: null });
+    expect(screen.getByLabelText('Loading your figures')).toBeTruthy();
+    expect(screen.queryByText(/This month/)).toBeNull();
+  });
+
+  it('D-107 the button and sheet rows are 44 high with radio roles', async () => {
+    await renderIt();
+    const pill = StyleSheet.flatten(screen.getByLabelText('Judged on This month. Opens the choices.').props.style);
+    expect(pill.minHeight).toBeGreaterThanOrEqual(44);
+    await fireEvent.press(screen.getByText('This month ▾'));
+    for (const name of ['This month', 'Worst month', 'Average month']) {
+      const row = await screen.findByLabelText(name);
+      expect(row.props.accessibilityRole).toBe('radio');
+      expect(StyleSheet.flatten(row.props.style).minHeight).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  it('D-107 the sheet names the missing rate under a fallback', async () => {
+    await renderIt({ source: fallbackSource() });
+    await fireEvent.press(screen.getByText('This month ▾'));
+    expect(await screen.findByText('This month is waiting for a EUR, GBP rate, so it shows the worst month.')).toBeTruthy();
+  });
+
+  it('D-107 the top row wraps at 320 wide and 2.0x without hiding Details', async () => {
+    mockDims = { width: 320, fontScale: 2 };
+    await renderIt({}, 2);
+    const details = screen.getByLabelText('Month details');
+    expect(StyleSheet.flatten(details.props.style).minHeight).toBeGreaterThanOrEqual(44);
+    const row = screen.getByText('Net free cash flow', { includeHiddenElements: true }).parent!.parent!.parent!.parent!;
+    expect(StyleSheet.flatten(row.props.style)).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap' });
+    expect(screen.getByText('This month ▾')).toBeTruthy();
+    expect(screen.getByText('Details ›')).toBeTruthy();
+  });
+
+  it('D-107 TalkBack reading order: summary, judge-on button, Details, field', async () => {
+    await renderIt();
+    const tree = JSON.stringify(screen.toJSON());
+    const at = (needle: string) => tree.indexOf(needle);
+    expect(at('Opens month details')).toBeGreaterThan(-1);
+    expect(at('Opens month details')).toBeLessThan(at('Opens the choices'));
+    expect(at('Opens the choices')).toBeLessThan(at('"Month details"'));
+    expect(at('"Month details"')).toBeLessThan(at('Quick check'));
+  });
+});
+

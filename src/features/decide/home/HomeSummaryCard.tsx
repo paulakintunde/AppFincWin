@@ -20,6 +20,7 @@ import { useInfoSheet } from '../ui/useInfoSheet';
 import { openNewCheck } from './checkHref';
 import { homeCardModel, type HomeCardLabel, type HomeCardModel, type HomeJudgeOn } from './homeCardModel';
 import { heroAmountText, heroOneLineMax } from './heroAmountText';
+import { canChooseJudgeOn, JudgeOnButton, JudgeOnSheet } from './JudgeOnControl';
 
 export { heroAmountText };
 
@@ -86,6 +87,8 @@ export interface HomeSummaryCardProps {
   homeBasisSeen: boolean;
   /** D-107: the Judge-on choice; undefined until the screen passes it (plan 05-140), null = not read yet. */
   judgeOn?: HomeJudgeOn | null;
+  /** D-107: the screen's choose(v) from useChooseJudgeOn; the dropdown's sheet calls it. */
+  onChooseJudgeOn?: (v: HomeJudgeOn) => void;
   currency: string;
   today: string;
   /** Opens the Month details sheet (Details, and a press on the hero area). */
@@ -105,6 +108,7 @@ export function HomeSummaryCard({
   status,
   homeBasisSeen,
   judgeOn,
+  onChooseJudgeOn,
   currency,
   today,
   onOpenDetails,
@@ -120,6 +124,7 @@ export function HomeSummaryCard({
   const tightestInfo = useInfoSheet('tightestFigures');
   const nfcfInfo = useInfoSheet('netFreeCashFlow');
   const [resultOpen, setResultOpen] = useState(false);
+  const [judgeOpen, setJudgeOpen] = useState(false);
 
   const model: HomeCardModel = homeCardModel(source, settings, { status, homeBasisSeen, today, judgeOn });
 
@@ -175,6 +180,9 @@ export function HomeSummaryCard({
   const subText = t(LABEL_KEY[model.label]);
   const infoShown = model.state === 'figure' && model.info === 'tightestFigures';
   const detailsShown = model.state !== 'first_run';
+  const judgeShown = model.state === 'figure' && source !== null && source.kind === 'logged';
+  const selected = model.state === 'figure' ? model.selected : null;
+  const fallback = model.state === 'figure' ? model.fallback : null;
 
   // R18.1: the constant eyebrow, then the ⓘ as the next flex sibling (rule I); "Details ›" stays at the right.
   const eyebrow = (
@@ -186,6 +194,7 @@ export function HomeSummaryCard({
           </Text>
         </InfoLabel>
       </View>
+      {judgeShown ? <JudgeOnButton selected={selected} canChoose={canChooseJudgeOn(source)} onPress={() => setJudgeOpen(true)} /> : null}
       {detailsShown ? (
         <Pressable
           accessibilityRole="button"
@@ -225,6 +234,11 @@ export function HomeSummaryCard({
               </InfoLabel>
             ) : (
               <Text style={{ ...metaStyle, color: colors.inkSoft1 }}>{subText}</Text>
+            )}
+            {model.fallback === null ? null : (
+              <Text style={{ ...metaStyle, color: colors.inkSoft1 }}>
+                {t('decide.home.hero.monthWaitingRate', { currency: model.fallback.currencies.join(', ') })}
+              </Text>
             )}
             <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.inkSoft2 }}>
               {t('decide.home.hero.inOut', { in: params.in, out: params.out })}
@@ -274,6 +288,15 @@ export function HomeSummaryCard({
       )}
       {tightestInfo.sheet}
       {nfcfInfo.sheet}
+      {judgeShown ? (
+        <JudgeOnSheet
+          visible={judgeOpen}
+          selected={selected}
+          fallback={fallback}
+          onChoose={(v) => onChooseJudgeOn?.(v)}
+          onClose={() => setJudgeOpen(false)}
+        />
+      ) : null}
     </View>
   );
 }

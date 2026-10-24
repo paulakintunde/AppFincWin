@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
@@ -488,5 +488,28 @@ describe('dark variant (D-95, R17.3)', () => {
     await fireEvent.press(screen.getByLabelText('Clear the quick check'));
     expect(onOpen).toHaveBeenLastCalledWith(false);
     expect(onOpen).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('QuickCheckForm: Judge-on fallback (D-107)', () => {
+  const fallback = () => ({ ...loggedSource(), monthFallback: { currencies: ['EUR', 'GBP'] } });
+  const NOTE = 'This month is waiting for a EUR, GBP rate';
+
+  it('D-107 the quick result says This month is waiting for a rate under a fallback', async () => {
+    await renderForm({ source: fallback() });
+    await checkIt('sofa 1800');
+    expect(screen.getByText(NOTE)).toBeTruthy();
+    // inside the polite live region text as well
+    await waitFor(() => expect(screen.getByTestId('quick-result-live').props.accessibilityLabel).toContain(NOTE));
+  });
+
+  it('D-107 the dark variant carries the note too, and no note without a fallback', async () => {
+    await renderForm({ source: fallback(), variant: 'dark' });
+    await checkIt('sofa 1800');
+    expect(screen.getByText(NOTE)).toBeTruthy();
+    await screen.unmount();
+    await renderForm();
+    await checkIt('sofa 1800');
+    expect(screen.queryByText(NOTE)).toBeNull();
   });
 });

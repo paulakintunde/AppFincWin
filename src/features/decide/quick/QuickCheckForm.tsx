@@ -208,6 +208,7 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
       onCombine={q.setCombine}
       openCount={q.stack.openCount}
       firstReadBasis={surface === 'firstRead'}
+      waitingCurrencies={source?.monthFallback?.currencies ?? null}
     />
   ) : null;
 

@@ -46,6 +46,8 @@ export interface QuickResultProps {
   firstReadBasis?: boolean;
   /** D-95: 'dark' sits in the ink card -- no fill of its own, surface / inkSoft text, a surface@.12 "See it on credit" pill. */
   variant?: 'light' | 'dark';
+  /** D-106 addendum / D-107: the currencies whose rate This month is waiting for; set when the check fell back to Worst. */
+  waitingCurrencies?: readonly string[] | null;
 }
 
 const SETTLE_MS = 150;
@@ -57,7 +59,7 @@ function appliedCount(c: QuickResultProps['computation']): number {
   return c.kind === 'logged' ? c.decision.stacked.filter((s) => s.status === 'applied').length : 0;
 }
 
-export function QuickResult({ computation, mode, name, price = null, fmt, fmtCents, fmtA11y = fmt, fmtCentsA11y = fmtCents, onTryCredit, combine, onCombine, openCount, firstReadBasis = false, variant = 'light' }: QuickResultProps) {
+export function QuickResult({ computation, mode, name, price = null, fmt, fmtCents, fmtA11y = fmt, fmtCentsA11y = fmtCents, onTryCredit, combine, onCombine, openCount, firstReadBasis = false, variant = 'light', waitingCurrencies = null }: QuickResultProps) {
   const t = useT() as Translate;
   const shownName = name === '' ? t('decide.quick.unnamed') : name;
   const { colors, pairing } = useTheme();
@@ -69,7 +71,8 @@ export function QuickResult({ computation, mode, name, price = null, fmt, fmtCen
   const sizeText = copy.size ? t(copy.size) : '';
   const lineText = refText(t, copy.line);
   const spokenLine = refTextA11y(t, copy.line, spoken.line.params);
-  const settled = useSettledLabel(joinSentences([chipLabel, sizeText, spokenLine]), copy.chip?.tone ?? 'none', SETTLE_MS);
+  const waiting = waitingCurrencies != null ? t('decide.home.hero.monthWaitingRate', { currency: waitingCurrencies.join(', ') }) : '';
+  const settled = useSettledLabel(joinSentences([chipLabel, sizeText, spokenLine, waiting]), copy.chip?.tone ?? 'none', SETTLE_MS);
   const caption = copy.caption ? refText(t, copy.caption) : '';
   const basis = copy.basis ? t(copy.basis) : firstReadBasis ? t('decide.onboarding.basis') : '';
 
@@ -124,6 +127,7 @@ export function QuickResult({ computation, mode, name, price = null, fmt, fmtCen
             </View>
           ) : null}
           {basis ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: soft }}>{basis}</Text> : null}
+          {waiting !== '' ? <Text style={{ ...metaRole, color: soft }}>{waiting}</Text> : null}
         </View>
         {copy.tryCredit ? (
           <View style={styles.try}>
