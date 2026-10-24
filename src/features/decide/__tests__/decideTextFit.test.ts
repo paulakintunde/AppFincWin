@@ -168,11 +168,12 @@ describe('D-76 static text-fit', () => {
     for (const f of FILES) {
       const text = f.lines.join('\n');
       const consts = new Map<string, number>();
-      for (const m of text.matchAll(/const\s+(\w+)\s*=\s*(\d*\.?\d+)\s*;/g)) consts.set(m[1], Number(m[2]));
+      for (const m of text.matchAll(/const\s+(\w+)\s*=\s*(\d*\.?\d+)\s*;/g)) consts.set(m[1] ?? '', Number(m[2]));
       for (const m of text.matchAll(/minimumFontScale\s*[=:]\s*\{?\s*([\w.]+)/g)) {
-        const value = /^\d*\.?\d+$/.test(m[1]) ? Number(m[1]) : consts.get(m[1]);
+        const token = m[1] ?? '';
+        const value = /^\d*\.?\d+$/.test(token) ? Number(token) : consts.get(token);
         // a value this walk cannot resolve fails loudly rather than slipping under the floor
-        expect({ path: f.path, token: m[1], resolved: value !== undefined }).toEqual({ path: f.path, token: m[1], resolved: true });
+        expect({ path: f.path, token, resolved: value !== undefined }).toEqual({ path: f.path, token, resolved: true });
         if ((value as number) < 0.8) (below[f.path] ??= []).push(value as number);
       }
     }
