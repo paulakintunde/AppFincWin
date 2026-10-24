@@ -32,6 +32,10 @@ import { housingShareLabel } from './housingShare';
 import { stampSettingsPatch } from './settingsPatch';
 import { RateInput } from '../ui/RateInput';
 
+/** D-105: the engine defaults (DEFAULT_DSR_LINE 36, DEFAULT_HOUSING_LINE 28) shown as the placeholder while the line is blank. */
+const DEFAULT_DSR_SHARE = '36';
+const DEFAULT_HOUSING_SHARE = '28';
+
 export type LimitKey = 'reserve' | 'dsr' | 'unsecured' | 'investing' | 'saving' | 'housing';
 
 /** The 05-03 column check on decide_settings.dsr_line: up to 3 digits and 4 decimals. */
@@ -169,8 +173,9 @@ function LimitForm({ limit, userId, currency, settings, source, whole, cushion =
           <RateInput
             value={value.text}
             onChange={(text) => setValue((v) => ({ ...v, text }))}
-            label={name}
+            label={t('decide.lines.shareField')}
             accessibilityLabel={name}
+            placeholder={limit === 'housing' ? DEFAULT_HOUSING_SHARE : DEFAULT_DSR_SHARE}
           />
         ) : (
           <>

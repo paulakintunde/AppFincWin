@@ -355,6 +355,29 @@ describe('LinesCard', () => {
     expect(mockUpdate).toHaveBeenCalledWith({ housing_line: '28.5' });
   });
 
+  it('D-105 the housing editor shows the 28 default as the placeholder and a short field label', async () => {
+    await wrap(
+      <LimitEditorSheet limit="housing" userId="u1" currency="USD" settings={settingsRow()} source={loggedSource()} whole={whole} onClose={jest.fn()} />
+    );
+    expect(fieldOf('Housing costs at most').props.placeholder).toBe('28');
+    expect(screen.getByText('Share of money in')).toBeTruthy();
+  });
+
+  it('D-105 the housing editor shows the stored value, not the placeholder, when one is set', async () => {
+    await wrap(
+      <LimitEditorSheet limit="housing" userId="u1" currency="USD" settings={settingsRow({ housing_line: '30' })} source={loggedSource()} whole={whole} onClose={jest.fn()} />
+    );
+    expect(fieldOf('Housing costs at most').props.value).toBe('30');
+  });
+
+  it('D-105 the debt editor matches: 36 default placeholder and the short label', async () => {
+    await wrap(
+      <LimitEditorSheet limit="dsr" userId="u1" currency="USD" settings={settingsRow()} source={loggedSource()} whole={whole} onClose={jest.fn()} />
+    );
+    expect(fieldOf('Debt payments at most').props.placeholder).toBe('36');
+    expect(screen.getByText('Share of money in')).toBeTruthy();
+  });
+
   it('D-103 Use the default clears housing_line', async () => {
     await wrap(
       <LimitEditorSheet limit="housing" userId="u1" currency="USD" settings={settingsRow({ housing_line: '30' })} source={loggedSource()} whole={whole} onClose={jest.fn()} />

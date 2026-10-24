@@ -97,7 +97,7 @@ describe('Step3Verdict', () => {
       </>
     );
     expect(screen.getByText('Doesn’t fit right now')).toBeTruthy();
-    expect(screen.getByText('The month does not close')).toBeTruthy();
+    expect(screen.getByText('Still short with saving paused')).toBeTruthy();
   });
 
   it('the haptic fires once per revealKey, not on re-render', async () => {

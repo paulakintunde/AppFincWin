@@ -1887,7 +1887,7 @@ const en = {
       line: {
         cashFits: 'Paid outright today your cash lands at {{cashAfter}}, above your {{cushion}} cushion, and the month still closes with {{left}} spare.',
         cashBelowCushion: 'Paid outright today your cash lands at {{cashAfter}}, {{short}} under your {{cushion}} cushion. The month still closes.',
-        cashMonthShort: 'Cash covers it, but the month would end {{short}} short.',
+        cashMonthShort: 'Cash covers it. Even with saving paused, the month would end {{short}} short.',
         cashNo: 'Not from cash: {{short}} short of your cushion.',
         pauseInvesting: 'The month closes only if {{amount}} a month of investing pauses.',
         pauseSaving: 'The month closes only if {{amount}} a month of saving pauses.',
@@ -2011,6 +2011,7 @@ const en = {
     lines: {
       heading: 'Lines you will not cross', sub: 'These decide what counts as affordable. Tap any of them to change it.',
       defaultTag: 'default', useDefault: 'Use the default', cancel: 'Cancel', save: 'Save limit',
+      shareField: 'Share of money in', // D-105: the % field label in the dsr and housing editors; the sheet title already carries the line name
       reserve: { name: 'Cash never below', desc: 'The cushion no purchase may break', info: 'You hold {{cash}} across {{count}} accounts today.' },
       dsr: { name: 'Debt payments at most', desc: 'Share of money in, all debts counted', value: '{{pct}}%' },
       unsecured: { name: 'Unsecured debt at most', desc: 'A multiple of your average monthly income', value: '{{count}} ×' },
@@ -2026,7 +2027,7 @@ const en = {
       add: '+ Pot', addA11y: 'Add a pot', limit: 'Up to 50 pots',
       summary_one: '{{amount}} a month across {{count}} pot', summary_other: '{{amount}} a month across {{count}} pots',
       loading: 'Loading your pots', loadError: 'Your pots didn’t load.',
-      empty: 'No pots yet. A pot keeps money for a cost with a set amount and a date, such as a car service in March.',
+      empty: 'No pots yet. A car service in March is one.',
       emptyAction: 'Add a pot',
       doneFold_one: 'Done · {{count}}', doneFold_other: 'Done · {{count}}', doneLine: 'Done {{date}}',
       stateActive: '{{amount}} a month · by {{month}}',
@@ -2043,6 +2044,8 @@ const en = {
       rowA11yDone: '{{name}}. {{saved}} of {{target}} saved. Done {{date}}.',
       rowHint: 'Opens the pot',
       menu: { markDone: 'Mark done', reopen: 'Reopen', delete: 'Delete', moreFor: 'More for {{name}}' },
+      // D-105: the delete confirm for a plain pot (the next executor wires it)
+      deleteConfirm: { title: 'Delete {{name}}?', body: 'Its set-aside stops coming off net free cash flow. Undo is available right after.', confirm: 'Delete', cancel: 'Cancel' },
       sheet: {
         titleNew: 'New pot', titleEdit: 'Edit pot', cancel: 'Cancel',
         name: 'Name', namePlaceholder: 'Car service', target: 'Target', by: 'By', byRange: 'Out of range: within 50 years', alreadySaved: 'Already saved',
@@ -2302,11 +2305,11 @@ const en = {
     },
     warn: {
       groupA11y: '{{title}}, {{value}}. {{body}}',
-      monthTitle: 'The month does not close', monthValue: '−{{amount}}',
+      monthTitle: 'Still short with saving paused', monthValue: '−{{amount}}',
       monthAlready: 'Your {{basis}} month is already {{already}} short before this purchase. Adding {{added}} takes the gap to {{gap}}. That gap is borrowed money covering ordinary bills.',
       monthAlreadySame: 'Your {{basis}} month is already {{already}} short before this purchase, and this purchase adds nothing to the monthly cost. That gap is borrowed money covering ordinary bills.',
       monthPaused: 'Pausing saving and investing covers {{paused}} of it, leaving {{short}}.',
-      monthBody: 'Every month would need {{short}} more than comes in.',
+      monthBody: 'Even with saving and investing paused, every month would need {{short}} more than comes in.',
       cashTitle: 'Cash cushion broken', cashValue: '−{{amount}}', cashBody: 'You protect {{cushion}} as a cushion. Paying {{day}} on the day leaves {{cashAfter}}.',
       cashDipTitle: 'Cash runs low before money comes in', cashDipValue: '−{{amount}}',
       cashDipBody: 'This purchase takes your lowest point before payday {{amount}} lower: {{lowest}} on {{date}}.',
