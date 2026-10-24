@@ -43,7 +43,10 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
   const rc = useRecordContext();
   const checks = useDecideChecks(rc.userId ?? undefined, rc.householdId ?? undefined);
   const snapshot = useDecideSnapshot();
-  const { create } = useCreateCheck();
+  const { create, pendingIds } = useCreateCheck();
+  // A create queued from another screen (Run the full check) has no row for a moment, or loses its optimistic row to a refetch
+  // while it waits its turn in the write queue. Either way the check is on its way, not missing.
+  const creating = pendingIds.includes(id);
   const { save } = useSaveCheckDraft();
 
   const row = useMemo(() => checks.data?.find((r) => r.id === id) ?? null, [checks.data, id]);
@@ -135,9 +138,11 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
   const loaded = checks.data !== undefined && rc.ready;
   const status: CheckDraft['status'] = !loaded
     ? 'loading'
-    : row === null && seenRow && !createdState
-      ? 'not_found'
-      : 'ready';
+    : row === null && creating && !createdState
+      ? 'loading'
+      : row === null && seenRow && !createdState
+        ? 'not_found'
+        : 'ready';
 
   const inputs = useMemo<CheckInputs>(() => {
     if (edited) return edited;

@@ -9,6 +9,7 @@ const mockCreate = jest.fn();
 const mockSave = jest.fn();
 const mockTrack = jest.fn();
 let mockChecks: { data: DecideCheckRow[] | undefined } = { data: [] };
+let mockPendingIds: string[] = [];
 let mockResult: { currency: string } | null = { currency: 'GBP' };
 
 let mockRc: { ready: boolean; userId: string | null; householdId: string | null; today: string } = {
@@ -25,7 +26,7 @@ jest.mock('@/data/queries/decide', () => ({
   useDecideSnapshot: () => ({ result: mockResult }),
 }));
 jest.mock('@/data/mutations/decideChecks', () => ({
-  useCreateCheck: () => ({ create: (...a: unknown[]) => mockCreate(...a) }),
+  useCreateCheck: () => ({ create: (...a: unknown[]) => mockCreate(...a), pendingIds: mockPendingIds }),
   useSaveCheckDraft: () => ({ save: (...a: unknown[]) => mockSave(...a) }),
 }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...a: unknown[]) => mockTrack(...a) }) }));
@@ -51,6 +52,7 @@ beforeEach(() => {
   jest.useFakeTimers();
   jest.clearAllMocks();
   mockChecks = { data: [] };
+  mockPendingIds = [];
   mockResult = { currency: 'GBP' };
   mockRc = { ready: true, userId: 'u1', householdId: 'h1', today: '2026-10-17' };
 });
@@ -281,6 +283,33 @@ describe('useCheckDraft', () => {
     mockChecks = { data: [row()] };
     const { result, rerender } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
     expect(result.current.status).toBe('ready');
+    mockChecks = { data: [] };
+    await rerender({});
+    expect(result.current.status).toBe('not_found');
+  });
+
+  it("a just-created check shows loading, never 'This check isn't here'", async () => {
+    // Run the full check: the create is queued from the Decide home; the optimistic row appears, then a refetch drops it
+    // while the create waits its turn in the write queue.
+    mockPendingIds = ['c1'];
+    mockChecks = { data: [row()] };
+    const { result, rerender } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
+    expect(result.current.status).toBe('ready');
+    mockChecks = { data: [] };
+    await rerender({});
+    expect(result.current.status).toBe('loading');
+    // the create settles and the row is back
+    mockPendingIds = [];
+    mockChecks = { data: [row()] };
+    await rerender({});
+    expect(result.current.status).toBe('ready');
+    expect(result.current.row?.id).toBe('c1');
+  });
+
+  it('a truly missing check still resolves to not_found once no create is pending for it', async () => {
+    mockPendingIds = ['someone-else'];
+    mockChecks = { data: [row()] };
+    const { result, rerender } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
     mockChecks = { data: [] };
     await rerender({});
     expect(result.current.status).toBe('not_found');

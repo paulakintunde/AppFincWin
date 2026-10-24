@@ -9,7 +9,7 @@
 // mutation survives a restart.
 import * as Crypto from 'expo-crypto';
 import { useSyncExternalStore } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useMutationState, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import {
   buildStep,
@@ -429,15 +429,22 @@ export function useCreateCheck(): {
     inputs: Record<string, unknown>;
     furthestStep: number;
   }): void;
+  /** Ids of checks whose create is queued or in flight (from any screen). A check in this list is on its way, not missing. */
+  pendingIds: readonly string[];
 } {
   const mutation = useMutation<DecideCheckRow, unknown, CreateCheckVars>({
     mutationKey: mutationKeys.createCheck,
     scope: WRITE_SCOPE,
   });
+  const pendingIds = useMutationState({
+    filters: { mutationKey: mutationKeys.createCheck, status: 'pending' },
+    select: (m) => (m.state.variables as CreateCheckVars | undefined)?.id ?? '',
+  });
   return {
     create(input) {
       mutation.mutate({ ...input });
     },
+    pendingIds,
   };
 }
 
