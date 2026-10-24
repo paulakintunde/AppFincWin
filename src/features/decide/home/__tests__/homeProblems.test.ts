@@ -154,4 +154,16 @@ describe('homeProblems', () => {
     const entry = homeProblems(input({ source })).find((e) => e.id === 'missing_rate' && e.variant === 'pots');
     expect(entry).toMatchObject({ currency: 'EUR', potCount: 2, counted: false, action: { kind: 'exchange_rates' } });
   });
+
+  it('D-101 the lines rate entry leaves out pots, which the pots entry counts', () => {
+    const mixed = withMeta({ unconvertedPots: 2 }, { unconverted: { currencies: ['EUR'], rowCount: 5 } });
+    const entries = homeProblems(input({ source: mixed })).filter((e) => e.id === 'missing_rate');
+    expect(entries.find((e) => e.variant === 'lines')).toMatchObject({ rowCount: 3 });
+    expect(entries.find((e) => e.variant === 'pots')).toMatchObject({ potCount: 2 });
+    // only pots wait for a rate: no lines entry at all, and the count never goes below 0
+    const potsOnly = withMeta({ unconvertedPots: 2 }, { unconverted: { currencies: ['EUR'], rowCount: 2 } });
+    expect(homeProblems(input({ source: potsOnly })).filter((e) => e.id === 'missing_rate').map((e) => (e as { variant: string }).variant)).toEqual(['pots']);
+    const over = withMeta({ unconvertedPots: 3 }, { unconverted: { currencies: ['EUR'], rowCount: 2 } });
+    expect(homeProblems(input({ source: over })).some((e) => e.id === 'missing_rate' && e.variant === 'lines')).toBe(false);
+  });
 });

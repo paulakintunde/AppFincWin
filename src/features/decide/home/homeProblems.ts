@@ -82,13 +82,15 @@ export function homeProblems(input: HomeProblemsInput): ProblemEntry[] {
 
   // 2: a missing rate. Lines: the card already shows it. The card limit and a D-67 check are counted.
   if (source !== null) {
-    if (source.unconverted !== null) {
+    // unconverted rows include pots with no stored rate; those are counted in the pots entry below, not here too
+    const lineRows = source.unconverted === null ? 0 : Math.max(0, source.unconverted.rowCount - source.meta.unconvertedPots);
+    if (source.unconverted !== null && lineRows > 0) {
       for (const currency of source.unconverted.currencies) {
         entries.push({
           id: 'missing_rate',
           variant: 'lines',
           currency,
-          rowCount: source.unconverted.rowCount,
+          rowCount: lineRows,
           counted: false,
           action: { kind: 'exchange_rates' },
         });
