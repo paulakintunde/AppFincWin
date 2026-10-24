@@ -614,7 +614,7 @@ Plans:
   6. A brand-new user reaches a first verdict within their first session, in roughly a minute, without having logged or imported a month, and the verdict says plainly what it rests on and how an import sharpens it.
   7. Store screenshots 1–3 (verdict, what breaks, alternatives) can be captured from the App Review demo account's sample scenario with nothing staged outside the real app.
 **Launch inputs** (from `research/LAUNCH-POSITIONING.md`, 2026-09-26): the store name is *FincWin: Can I Afford It?*, so the quick check is the product's public promise and stays in the free tier (see `research/PRICING.md`). The first-read question is settled (04-CONTEXT D-11: rough figures give a cash-level answer only, via DEC-16). Discuss-phase must still settle the demo-account scenario (sofa $1,800 in a household of two; car $14,500 on a loan). Onboarding order — welcome, consent, one account, rough month, first check, then "Bring your history" — is shared with Phase 2 (02-30) and Phase 9, where the level questions move after the first verdict.
-**Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate). **Decide UX refresh (2026-10-22):** 34 more plans, 05-54..05-87 in waves 10-19, for 05-CONTEXT D-70..D-84 (UI-SPEC "Decide UX refresh" R1-R15; DCU-25..DCU-30 added; engine changes E1/E2 in 05-81/05-82, user decisions D-80/D-83); revised 2026-10-22 for the plan-check findings (6 blockers, 12 warnings); 05-26 moves to wave 20 so the device pass covers the refresh. Total 87 plans in 20 waves. **Device-walkthrough refinements (2026-10-23):** 22 more plans, 05-88..05-109 in waves 20-26, for 05-CONTEXT D-85..D-94 (UI-SPEC R16; engine changes E3-E5 in 05-89/05-91/05-92, 05-90, 05-93..05-95; DCU-31..DCU-33 and MON-15 added); 05-26 moves to wave 27. Total 109 plans in 27 waves. **Decide home redesign (2026-10-23):** 9 more plans, 05-110..05-118 in waves 27-30, for 05-CONTEXT D-95..D-99 (UI-SPEC R17; DCU-34 added); 05-26 moves to wave 31. Total 118 plans in 31 waves. **Money concepts (2026-10-24):** 14 more plans, 05-119..05-132 in waves 31-37, for 05-CONTEXT D-100..D-104 (UI-SPEC R18; DCU-35..DCU-38 added; engine changes E6/E7/E8 in 05-120, 05-123, 05-121; migrations 20261024000100/200 in 05-119 pushed to production only by the human-gated 05-132); 05-26 moves to wave 38. Total 132 plans in 38 waves.
+**Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate). **Decide UX refresh (2026-10-22):** 34 more plans, 05-54..05-87 in waves 10-19, for 05-CONTEXT D-70..D-84 (UI-SPEC "Decide UX refresh" R1-R15; DCU-25..DCU-30 added; engine changes E1/E2 in 05-81/05-82, user decisions D-80/D-83); revised 2026-10-22 for the plan-check findings (6 blockers, 12 warnings); 05-26 moves to wave 20 so the device pass covers the refresh. Total 87 plans in 20 waves. **Device-walkthrough refinements (2026-10-23):** 22 more plans, 05-88..05-109 in waves 20-26, for 05-CONTEXT D-85..D-94 (UI-SPEC R16; engine changes E3-E5 in 05-89/05-91/05-92, 05-90, 05-93..05-95; DCU-31..DCU-33 and MON-15 added); 05-26 moves to wave 27. Total 109 plans in 27 waves. **Decide home redesign (2026-10-23):** 9 more plans, 05-110..05-118 in waves 27-30, for 05-CONTEXT D-95..D-99 (UI-SPEC R17; DCU-34 added); 05-26 moves to wave 31. Total 118 plans in 31 waves. **Money concepts (2026-10-24):** 16 more plans, 05-119..05-134 in waves 31-38, for 05-CONTEXT D-100..D-104 (UI-SPEC R18; DCU-35..DCU-38 added; engine changes E6/E7/E8 in 05-120, 05-123, 05-121; migrations 20261024000100/200 in 05-119 pushed to production only by the human-gated 05-132 in wave 38); 05-26 moves to wave 39. Total 134 plans in 39 waves.
 Plans:
 **Wave 1**
 - [x] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
@@ -794,35 +794,39 @@ Plans:
 - [x] 05-118-PLAN.md — Retire R17-replaced copy and components; guards over R17 (D-76, DCU-09)
 
 **Wave 31** *(Money concepts; blocked on Wave 30 completion)*
-- [ ] 05-119-PLAN.md — Migrations: pots on savings_goals, debts.is_housing, housing_line; pgTAP (D-101, D-103)
+- [ ] 05-119-PLAN.md — Migrations: pots on savings_goals, debts.is_housing, housing_line; pgTAP incl. account deletion (D-101, D-103)
 - [ ] 05-120-PLAN.md — Engine E6: potSetAside, set-aside off net free cash flow, protected cash (D-100, D-101)
-- [ ] 05-131-PLAN.md — R18 copy catalogue: new keys, INFO_KEYS 60 to 65, undo labels, Save pot on the keyed list (D-100..D-104, DCU-09)
+- [ ] 05-131-PLAN.md — R18 copy catalogue: new keys, INFO_KEYS 60 to 65, undo labels, copy-guard lists (D-100..D-104, DCU-09)
 
 **Wave 32** *(blocked on Wave 31 completion)*
-- [ ] 05-121-PLAN.md — Engine E8: housing line and warning, exhaustive cases, housing_line settings plumbing (D-103)
+- [ ] 05-121-PLAN.md — Engine E8: housing line and warning with every exhaustive WarningCode site (D-103)
 - [ ] 05-122-PLAN.md — Data layer: pot and debt-housing columns, queries, pot and housing mutations with undo (D-101, D-103)
+- [ ] 05-133-PLAN.md — housing_line settings plumbing and the LimitKey records (D-103)
 
 **Wave 33** *(blocked on Wave 32 completion)*
 - [ ] 05-123-PLAN.md — Engine E7: total cost of ownership and the invested-instead headline (D-102, D-104)
-- [ ] 05-124-PLAN.md — Snapshot builder: pots, tagged-leg and own-pot exclusion, housingMonthly, housingLine (D-100, D-101, D-103)
+- [ ] 05-124-PLAN.md — Snapshot builder and source: pots, tagged-leg and own-pot exclusion, housingMonthly, housingLine (D-100, D-101, D-103)
 
 **Wave 34** *(blocked on Wave 33 completion)*
 - [ ] 05-125-PLAN.md — Net free cash flow card: eyebrow, sub-lines, Out figure, Month details breakdown, Pots link (D-100)
 
 **Wave 35** *(blocked on Wave 34 completion)*
-- [ ] 05-126-PLAN.md — Housing line UI: sixth Lines row, editor, loan switches, "of 6" (D-103)
-- [ ] 05-127-PLAN.md — Pots UI: Pots screen and sheet, You row, Needs a look entries (D-101)
-- [ ] 05-128-PLAN.md — Verdict rows: total cost and invested instead, month-table pots row (D-102, D-104)
+- [ ] 05-126-PLAN.md — Housing line UI: sixth Lines row, editor, loan switches, Every-line row, "of 6" (D-103)
+- [ ] 05-127-PLAN.md — Pots UI: Pots screen, sheet and route (D-101)
+- [ ] 05-128-PLAN.md — Verdict rows: total cost and invested instead, ComputedCheck wiring, month-table pots row (D-102, D-104)
 
 **Wave 36** *(blocked on Wave 35 completion)*
 - [ ] 05-129-PLAN.md — Wait becomes a pot: copy and the own-pot test through computeCheck (D-101)
+- [ ] 05-134-PLAN.md — You › Money Pots row and Needs a look pot entries (D-101)
 
 **Wave 37** *(blocked on Wave 36 completion)*
 - [ ] 05-130-PLAN.md — Retire R18-replaced copy; R6 matrix, reading-order and copy guards (D-100..D-104, DCU-09)
-- [ ] 05-132-PLAN.md — Local gate, then the human-gated production push of the R18 migrations (D-101, D-103)
 
 **Wave 38** *(blocked on Wave 37 completion)*
-- [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots (R8 frames, R17.9 alternate frame 1 with the onLayout/Maestro budget), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist, the D-88 speed budgets, the per-pairing hero check and the Money concepts (R18) checklist
+- [ ] 05-132-PLAN.md — Local gate, then the human-gated production push of the R18 migrations (D-101, D-103)
+
+**Wave 39** *(blocked on Wave 38 completion)*
+- [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots (R8 frames, R18 alternate frame 1 with the onLayout/Maestro budget), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist, the D-88 speed budgets, the per-pairing hero check and the Money concepts (R18) checklist
 **UI hint**: yes — this phase should carry the deepest testing and design-iteration budget in the roadmap; it is the product's actual moat.
 
 ### Phase 6: Grow
@@ -958,7 +962,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 117/132 | Executing (R18 money concepts planned 2026-10-24) | - |
+| 5. Decide UI | 117/134 | Executing (R18 money concepts planned 2026-10-24) | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |

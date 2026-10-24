@@ -725,7 +725,7 @@ Populated during roadmap creation.
 *2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 
 *2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
-*2026-10-24 — Money concepts R18: DCU-35 (Net free cash flow, D-100), DCU-36 (pots, D-101), DCU-37 (total cost and invested instead, D-102/D-104) and DCU-38 (housing line, D-103) added (plans 05-119..05-132); v1 total now 290.*
+*2026-10-24 — Money concepts R18: DCU-35 (Net free cash flow, D-100), DCU-36 (pots, D-101), DCU-37 (total cost and invested instead, D-102/D-104) and DCU-38 (housing line, D-103) added (plans 05-119..05-134); v1 total now 290.*
 
 *2026-10-23 — Decide home redesign R17: DCU-34 added (D-95..D-99, plans 05-110..05-118); the redesign also maps to DCU-01 (quick check in the card), DCU-03 (open checks reachable), DCU-14 (the month figure and its basis), DCU-15 (changes coming up) and SYN-06 (the notice row); v1 total now 286.*
 

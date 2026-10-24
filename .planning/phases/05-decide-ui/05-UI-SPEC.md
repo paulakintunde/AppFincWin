@@ -2804,8 +2804,8 @@ Source: the 05-26 device walkthrough and the locked decisions **05-CONTEXT D-100
 
 **ⓘ `pots` (new):**
 - Term **"Pots"**.
-- Body: **"A pot is money kept for a cost with a set amount and a date. Each month, what is still needed is spread over the whole months left and taken off net free cash flow, rounded up. Money already in a pot is kept out of what a check can spend. A transfer tagged to a pot counts as the pot, not as saving."**
-- What this changes: **"While a pot is open, checks start from a lower net free cash flow and a lower cash balance. Marking it done releases both."**
+- Body (3 sentences, the `infoTerms` cap): **"A pot is money kept for a cost with a set amount and a date. Each month, what is still needed is spread over the whole months left, rounded up, and taken off net free cash flow. Money already in a pot is kept out of what a check can spend."**
+- What this changes: **"While a pot is open, checks start from a lower net free cash flow and a lower cash balance. A transfer tagged to a pot counts as the pot, not as saving. Marking it done releases both."**
 
 **Wait-and-save goals become one kind of pot (D-101):**
 - A Wait goal is a `savings_goals` row with `kind = 'wait'` (the default backfills every existing row). It keeps `check_id`, `monthly_amount` and `ready_by`, and the Wait RPC still inserts it. Its set-aside is min(`monthly_amount`, remaining) (rule 3 above).
@@ -2939,8 +2939,8 @@ resale   = 0                                            when no loss of value is
 
 **ⓘ `housingLine` (new):**
 - Term **"Housing costs at most"**.
-- Body: **"The share of money in each month that may go to housing: spending in the Housing category, plus the monthly payments on each loan marked as being for housing. Left blank, it is 28%. It is measured on the money in that you log, which is stricter than a lender's test on gross income. A loan paid from a Housing series or made from a property check starts marked. With no money in, any housing cost is over the line."**
-- What this changes: **"A property purchase that takes housing costs above this share needs adjustment. Other purchases are not tested against it."**
+- Body (3 sentences, no "lender": the copy guard bans the word): **"The share of money in each month that may go to housing: spending in the Housing category, plus the monthly payments on each loan marked as being for housing. Left blank, it is 28%. It is measured on the money in that you log, which is stricter than a test on gross income."**
+- What this changes: **"A property purchase that takes housing costs above this share needs adjustment. Other purchases are not tested against it. A loan paid from a Housing series or made from a property check starts marked, and with no money in, any housing cost is over the line."**
 - The same key serves the Lines row and the editor sheet (`LIMIT_INFO_KEY.housing = 'housingLine'`).
 
 #### R18.5 Opportunity cost headline row (D-104)
@@ -3011,7 +3011,7 @@ resale   = 0                                            when no loss of value is
 | Housing warning title, value, body, verdict titles; Lines name, description, info | "takes a large share", "would reach", "breaks your line": declarative, no advice. Pass. |
 | Pots screen: heading, sub-copy, summary, row states ("Target reached · nothing more to set aside", "Past its date · … still to save"), empty, sheet labels, preview lines | Facts about a pot. No reassurance. Pass. |
 | "This is for housing"; "Loans counted as housing"; the helper and empty line; toast "Housing setting changed" | Labels and facts. Pass. |
-| Buttons "Add a pot", "Save pot", "Mark done", "Reopen", "Delete", "Tag a transfer", "Pots ›", "+ Pot", "Cancel" | UI controls. **Only "Save pot" begins with a guarded imperative (Save), so only it is added to the guard's keyed button list**; "Add" is not in `IMPERATIVE_LEAD`. |
+| Buttons "Add a pot", "Save pot", "Mark done", "Reopen", "Delete", "Tag a transfer", "Pots ›", "+ Pot", "Cancel"; "Try again" | UI controls. The guard has two lists. **`ACTION_LABELS` (opening money imperative: Save, Try, …) gets `decide.pots.sheet.save` ("Save pot") only.** **`CONTROL_LABELS` (`INSTRUCTION_LEAD`: Add, Type, Choose, …) gets `decide.pots.emptyAction` and `decide.pots.addA11y` ("Add a pot").** "Try again" reuses the existing `decide.flow.retry`, already in `ACTION_LABELS`, so no new key opens with "Try". Also no new string contains "lender", "offer", "advice" or the other `BANNED` words. |
 | Toasts "Pot saved", "Pot deleted · {{name}}", "Marked done · {{name}}", "Reopened · {{name}}"; undo labels | Past-tense facts. Pass. |
 | Wait copy changes (R18.2) | Declarative. Pass. |
 | Needs a look entry 8 and the pot rate variant | Facts with an action control. Pass. |
@@ -3038,25 +3038,29 @@ resale   = 0                                            when no loss of value is
   - Account deletion: the in-app purge test asserts no `savings_goals` row with `kind = 'pot'` and no `debts` row remains (R18.2).
 - **Also tested outside the engine:** `buildSnapshot` leaves tagged legs out of saving; the own-pot exclusion for a reopened Waiting check; RNTL at 320 / 2.0x for the eyebrow row and the sub-line; the Month details breakdown sums to the hero; the Pots screen states; migrations applied to a local database (the guard cases, the shape constraint, `apply_patches` for each new column).
 
-#### R18.8 Plan split (waves continue from 30; plans 05-119 onward)
+#### R18.8 Plan split (waves continue from 30; plans 05-119 onward; revised in round 2)
 
-05-118 is wave 30. **05-26 (the device checks) moves from wave 31 to the last wave, 38**, and gains the R18 device items (below). `en.ts`, `types.ts` and `infoTerms.ts` are shared files, so a plan adds only its own namespace block and `INFO_KEYS` entries. Plans in one wave own disjoint source files.
+05-118 is wave 30. **05-26 (the device checks) moves from wave 31 to the last wave, 39**, and gains the R18 device items (below). `en.ts`, `types.ts` and `infoTerms.ts` are shared files, so a plan adds only its own namespace block and `INFO_KEYS` entries. Plans in one wave own disjoint source files.
 
 | Plan | Wave | Content | Depends on |
 |---|---|---|---|
-| **05-119** | 31 | Both migrations (R18.2, including `debts.is_housing`, its backfill and the `guard_debt()` default); local DB tests of the guards, shape constraint, backfill and `apply_patches`; preflight; a **blocking checkpoint**: the user's explicit approval before `supabase:db:push` to production. | — |
-| **05-120** | 31 | E6 engine: `pots.ts`, `prepareContext` set-aside and `protectedCash`, `MonthColumn.setAside`, `cashPath` opening, `position` fixed outgoings, `investmentViews` surplus. 100% coverage and property tests. | — |
-| **05-121** | 32 | E8 engine: `DEFAULT_HOUSING_LINE`, `WARNING_ORDER`, `housing` code, `Assessment` fields, margins, limits. **It also owns the minimal exhaustive cases** that keep typecheck green in waves 32-33: a `housing` case in `warningCopy.ts` (a placeholder-free minimal card using the final keys with their English text), the `housing` row in `LinesSection.tsx`, and `housing` in the `LimitKey` records (`LIMIT_INFO_KEY` and the label maps). 05-126 fills in the real copy and UI. | 05-120 (shares `assess.ts`, `types.ts`) |
-| **05-122** | 32 | Data layer for pots: `SavingsGoalRow`/columns, `decidePots.ts` and `debts.ts` (`useSetDebtHousing`) mutations, queries and keys, undo labels and `savings_goals` patch keys, `housing_line` in the settings row and patch. | 05-119 |
-| **05-123** | 33 | E7 engine: `ownership.ts` (`totalCost`), the `investmentViews` headline. | 05-120, 05-121 |
-| **05-124** | 33 | Snapshot builder: `pots`, tagged-leg exclusion, own-pot exclusion, `housingMonthly`, `housingLine` (loans with `is_housing`), pot currency conversion, `base.pots`. | 05-120, 05-121, 05-122 |
-| **05-125** | 34 | D-100 card: eyebrow, sub-lines, Out figure, `homeCardModel`, Month details breakdown and "Pots ›" link, retired keys, ⓘ `netFreeCashFlow`, budget probes. | 05-124 |
-| **05-126** | 34 | D-103 UI (**owns the home Lines-row text**: `homeRowsModel.ts` `linesSetCount`, `DecideHomeScreen.tsx` L163-185 and the `decide.home.rows.linesSet*` and `linesFold.preview*` keys in `en.ts`, "of 5" to "of 6"; 05-125 must not touch those lines): sixth Lines row and editor with the "Loans counted as housing" switches (`DebtHousingSwitch`), `linesSetCount`, "of 6", warning copy and verdict titles, Every line and Assumptions rows, ⓘ `housingLine`. | 05-124, 05-125 |
-| **05-127** | 35 | Pots UI: `PotsScreen`, `PotSheet`, You › Money row, Month details wiring, Needs a look entries, ⓘ `pots`, undo and toasts. | 05-122, 05-124, 05-125 |
-| **05-128** | 35 | Verdict rows 4b and 4c on step 3: rendering, hiding rules, a11y group, budgets, ⓘ `totalCost` and `investedInstead`; the month table's pots row. | 05-123, 05-124 |
-| **05-129** | 36 | Wait → pot: copy changes (R18.2), the Wait panel and Past decisions wording, own-pot exclusion test through `computeCheck`. | 05-127, 05-128 |
-| **05-130** | 37 | Guards and matrices: DCU-09 keyed list and scans, `INFO_KEYS` = 65, `noRawColours`, the R6 matrix (320/402 × 1.0/2.0) for the new surfaces, the a11y order tests. | 05-125..05-129 |
-| **05-26** | **38** | Device checks, now last. Adds: the eyebrow row at 320 / 2.0x; the card and rows `onLayout` reads (470 / 710, with the notice row 532 / 772); frame 2 at 721; a pot created offline then replayed; a Wait pot lowering the hero; a property check raising the housing warning; the production migrations applied. | 05-130 |
+| **05-119** | 31 | Both migrations (R18.2, including `debts.is_housing`, its backfill and the `guard_debt()` default); local DB tests of the guards, shape constraint, backfill and `apply_patches`; `36_account_deletion` extended (plan 19). Never touches production. | — |
+| **05-120** | 31 | E6 engine: `pots.ts`, `prepareContext` set-aside and `protectedCash`, `MonthColumn.setAside`, `cashPath` opening, `position` fixed outgoings, `investmentViews` surplus; `engineBarrel` export list. 100% coverage and property tests. | — |
+| **05-131** | 31 | The whole R18 copy catalogue (additive), `INFO_KEYS` 65, undo labels, the guard lists (`ACTION_LABELS`, `CONTROL_LABELS`). Added so that no other R18 plan edits the shared `en.ts`, `infoTerms.ts` or the copy guards. | — |
+| **05-121** | 32 | E8 engine: `DEFAULT_HOUSING_LINE`, `WARNING_ORDER`, the `housing` code, `Assessment` fields, margins, limits, and every exhaustive `WarningCode` site (`codeMaps.ts`, `quickCopy.ts`, `verdictCopy.ts`, `warningCopy.ts`, `golden/adapter.ts`) so typecheck stays green; `engineBarrel`. | 05-120, 05-131 |
+| **05-133** | 32 | `housing_line` settings plumbing (`db/decideSettings.ts`, `settingsPatch.ts`) and the `housing` entries in the `LimitKey` records (`LimitEditorSheet`, `LinesCard`), so typecheck stays green. | 05-131 |
+| **05-122** | 32 | Data layer for pots: `SavingsGoalRow`/columns, `decidePots.ts` and `debts.ts` (`useSetDebtHousing`) mutations, queries and keys, `savings_goals` patch keys. | 05-119, 05-131 |
+| **05-123** | 33 | E7 engine: `ownership.ts` (`totalCost`), the `investmentViews` headline; `engineBarrel`. | 05-120, 05-121, 05-131 |
+| **05-124** | 33 | Snapshot builder: `pots`, tagged-leg exclusion, own-pot exclusion, `housingMonthly`, `housingLine` (loans with `is_housing`), pot currency conversion, `base.pots`; the `SnapshotSource` assembler in `src/data/queries/decide.ts` gains the goals. | 05-120, 05-121, 05-122, 05-133 |
+| **05-125** | 34 | D-100 card: eyebrow, sub-lines, Out figure, `homeCardModel`, Month details breakdown and "Pots ›" link, ⓘ `netFreeCashFlow`, budget probes. Owns `DecideHomeScreen.tsx` in wave 34. | 05-124, 05-131 |
+| **05-126** | 35 | D-103 UI (**owns the home Lines-row text**: `homeRowsModel.ts` `linesSetCount`, `DecideHomeScreen.tsx` L163-185, the Six twin keys, "of 5" to "of 6"): sixth Lines row and editor with the "Loans counted as housing" switches (`DebtHousingSwitch`), Every-line row, Assumptions row. Moved from wave 34: it depends on 05-125. | 05-121, 05-122, 05-124, 05-125, 05-131, 05-133 |
+| **05-127** | 35 | Pots UI: `PotsScreen`, `PotSheet`, `PotRow`, the route, undo and toasts. | 05-122, 05-124, 05-125, 05-131 |
+| **05-128** | 35 | Verdict rows 4b and 4c on step 3: rendering, hiding rules, a11y group, ⓘ `totalCost` and `investedInstead`; the month table's pots row. | 05-123, 05-124, 05-131 |
+| **05-129** | 36 | Wait → pot: copy edits (R18.2), the Wait panel and Past decisions wording, own-pot exclusion test through `computeCheck`. | 05-124, 05-127, 05-128, 05-131 |
+| **05-134** | 36 | You › Money "Pots" row and the Needs a look entries (entry 8 and the pot rate variant). Split from 05-127. | 05-127, 05-131 |
+| **05-130** | 37 | Retire R18-replaced copy; the R6 matrix for the new surfaces, the a11y order tests, final guards and the full gate. | 05-125..05-129, 05-131, 05-133, 05-134 |
+| **05-132** | **38** | Local gate and the **blocking human-gated production push** of the two migrations (explicit user approval, `npm run supabase:db:push`, never the MCP connector). Wave 38 because it depends on 05-130. | 05-119, 05-122, 05-130 |
+| **05-26** | **39** | Device checks, now last. Adds: the eyebrow row at 320 / 2.0x; the card and rows `onLayout` reads (470 / 710, with the notice row 532 / 772); frame 2 at 721; a pot created offline then replayed; a Wait pot lowering the hero; a property check raising the housing warning; the production migrations applied. | 05-130, 05-132 |
 
 #### R18.9 Conflicts resolved and decisions worth a second look
 
@@ -3120,4 +3124,16 @@ resale   = 0                                            when no loss of value is
 | 7 | 746.5 "overlaps the bar by 11.5", so the page scrolls | R18.5 Budget |
 | 8 | Sub-line ends "after spending, debts and everything set aside" (user popup); fit rechecked, budgets unchanged | R18.1, R18.6, R18.9 |
 | 9 | Housing warning title "Housing costs go over your line"; "Loans counted as housing" heading is `label` 600 | R18.4 |
-| 10 | Only "Save pot" joins the keyed button list | R18.7 |
+| 10 | Only "Save pot" joins `ACTION_LABELS`; "Add a pot" (two keys) joins `CONTROL_LABELS`; "Try again" reuses `decide.flow.retry` (corrected in round 2, item 14) | R18.7 |
+
+#### R18.12 Plan-check round 2 (2026-10-24)
+
+| # | Item | Where folded in |
+|---|---|---|
+| 11 | 05-132 (production push) depended on 05-130 in the same wave: 05-132 moves to wave 38, 05-26 to wave 39 | R18.8 |
+| 12 | `pots` ⓘ body had 4 sentences and `housingLine` 5 (the `infoTerms` cap is 3), and `housingLine` said "lender" (banned word): both reworded, the loan-marking and no-income facts moved to "what this changes" | R18.2, R18.4 |
+| 13 | Guard lists: `decide.pots.sheet.save` to `ACTION_LABELS`; `decide.pots.emptyAction` and `decide.pots.addA11y` to `CONTROL_LABELS`; "Try again" reuses `decide.flow.retry` | R18.7, item 10 |
+| 14 | `engineBarrel.test.ts` exact export list updated by 05-120 (MAX_POTS, potSetAside, totalSetAside), 05-121 (DEFAULT_HOUSING_LINE) and 05-123 (totalCost) | R18.8 |
+| 15 | 05-121 split: the `housing` code with every `Record<WarningCode>`/switch site (`codeMaps.ts`, `quickCopy.ts`, `verdictCopy.ts`, `warningCopy.ts`, `golden/adapter.ts`) stays with the engine because adding the union member and its exhaustive sites cannot be separated without a red typecheck; the `housing_line` settings plumbing and the `LimitKey` records move to 05-133 | R18.8 |
+| 16 | 05-127 split: the You › Money row and the Needs a look entries move to 05-134 | R18.8 |
+| 17 | Pot sum has no unreachable range branch: each pot is range-asserted on entry (reachable), then the sum (at most 5 x 10^14) converts directly; no coverage-ignore | R18.2 |

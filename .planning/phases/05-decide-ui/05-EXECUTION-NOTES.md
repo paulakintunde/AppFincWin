@@ -178,7 +178,7 @@ Planned 2026-10-22. "Text-fit matrix" means 402x874 and 320x568 (points), each a
 - [ ] 05-117 Decide home: no FAB on Decide, FAB on other tabs; rows hidden at 0 as specified; 32 space under the card; the header shows no sync line on Decide only.
 - [ ] 05-118 R17 close-out: no retired home string anywhere; the whole home at the text-fit matrix.
 
-## 05-26 device checklist additions (Money concepts R18, 05-119..05-132, D-100..D-104)
+## 05-26 device checklist additions (Money concepts R18, 05-119..05-134, D-100..D-104)
 
 Planned 2026-10-24. "Text-fit matrix" is as above: 402x874 and 320x568, each at text scale 1.0x and 2.0x, on the Pixel and a 320dp AVD; TalkBack reads every new control by its label. The R18 migrations must be on production (05-132) before these are walked.
 
@@ -195,6 +195,8 @@ Planned 2026-10-24. "Text-fit matrix" is as above: 402x874 and 320x568, each at 
 - [ ] 05-129 Wait: choose Wait and save; the written lines read 'A pot of …' and 'No balance moves. … comes off net free cash flow.'; the hero lowers by the Wait's monthly amount; reopening the waiting check does not double count it; the delete confirm reads 'It leaves Past decisions with its pot and reminder…'.
 - [ ] 05-130 R18 close-out: no retired string anywhere ('Your average month' labels, 'Comes in / Goes out / Left' in Month details, any 'of 5'); the whole R18 surface at the text-fit matrix.
 - [ ] 05-131 Copy: read every new ⓘ (Net free cash flow, Pots, Total cost, Housing costs at most, Invested instead) in context: nothing advises or reassures.
+- [ ] 05-133 Settings: save a housing line of 30 and see it persist after a restart; 101 is refused before it is queued.
+- [ ] 05-134 Entry points: You › Money lists 'Pots' after History and opens the Pots screen; a pot past its date adds the 'pot is past its date' Needs a look entry whose 'Pots' action opens the Pots screen; the You › Add group and the FAB menu have no Pots action.
 - [ ] 05-132 Production: the push approved and applied; the preview build used for this pass was built after it.
 
 ## ROADMAP ticks for three-digit plans (05-100 onward)
