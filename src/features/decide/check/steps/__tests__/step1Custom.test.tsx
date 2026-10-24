@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
-import { Step1Item } from '../Step1Item';
+import { ITEM_TYPES } from '@/engine/decide';
+import { ITEM_CHIP_ORDER, Step1Item } from '../Step1Item';
 import { AssumptionsBody } from '../../sections/AssumptionsSection';
 import { META, loggedSource } from '../../../snapshot/__tests__/helpers/snapshotFixtures';
 import type { CheckInputs } from '../../../snapshot/types';
@@ -97,5 +98,40 @@ describe('Step 1 custom item type (05-86)', () => {
     expect(name.props.ellipsizeMode).toBe('tail');
     expect(screen.getByText('treated like Vehicle')).toBeTruthy();
     expect(screen.getByLabelText('Item type, Drone, treated like Vehicle')).toBeTruthy();
+  });
+});
+
+describe('Step 1 new item types (05-104, D-92)', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('D-92 step 1 offers Property, Tuition and Cash-like', async () => {
+    const onUpdate = jest.fn();
+    await wrap(<Harness initial={buy()} onUpdate={onUpdate} />);
+    const order = ['General', 'Vehicle', 'Property', 'Rent or bill', 'Loan repayment', 'Tax', 'Insurance premium', 'Tuition', 'Cash-like', 'Custom…'];
+    const chips = order.map((label) => screen.getByLabelText(label));
+    const group = chips[0]!.parent!.parent!.parent!;
+    const labelsInTree = (node: typeof group): string[] =>
+      node.children.flatMap((c) => (typeof c === 'string' ? [] : [...(typeof c.props.accessibilityLabel === 'string' ? [c.props.accessibilityLabel as string] : []), ...labelsInTree(c)]));
+    expect(labelsInTree(group).filter((l) => order.includes(l))).toEqual(order);
+    expect(ITEM_CHIP_ORDER).toHaveLength(ITEM_TYPES.length);
+    expect([...ITEM_CHIP_ORDER].sort()).toEqual([...ITEM_TYPES].sort());
+    await fireEvent.press(screen.getByLabelText('Property'));
+    expect(last(onUpdate).itemType).toBe('property');
+    await fireEvent.press(screen.getByLabelText('Cash-like'));
+    expect(last(onUpdate).itemType).toBe('cash_equivalent');
+    await fireEvent.press(screen.getByLabelText('Tuition'));
+    expect(last(onUpdate).itemType).toBe('tuition');
+  });
+
+  it('D-92 Treat like offers the new types', async () => {
+    const onUpdate = jest.fn();
+    await wrap(<Harness initial={buy()} onUpdate={onUpdate} />);
+    await fireEvent.press(screen.getByLabelText('Custom…'));
+    await fireEvent.changeText(screen.getByPlaceholderText('Drone'), 'Course');
+    await fireEvent.press(screen.getByLabelText('Treat like, General (default)'));
+    for (const label of ['Property', 'Tuition', 'Cash-like']) expect(screen.getAllByLabelText(label).length).toBeGreaterThan(1); // the chip and the option
+    await fireEvent.press(screen.getAllByLabelText('Tuition').at(-1)!);
+    expect(last(onUpdate).itemType).toBe('tuition');
+    expect(last(onUpdate).customItemType).toEqual({ name: 'Course', treatLike: 'tuition' });
   });
 });

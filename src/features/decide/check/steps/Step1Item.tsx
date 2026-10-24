@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { ITEM_TYPES, suggestItemType, type ItemType } from '@/engine/decide';
+import { suggestItemType, type ItemType } from '@/engine/decide';
 import { useT } from '@/i18n';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -50,6 +50,9 @@ function freshId(lines: readonly InputLine[], prefix: string): string {
   while (taken.has(`${prefix}${n}`)) n += 1;
   return `${prefix}${n}`;
 }
+
+/** R16.8 / rule C: the chip order, General first. Treat like lists the same types after its own General. */
+export const ITEM_CHIP_ORDER = ['general', 'vehicle', 'property', 'rent_bill', 'loan_repayment', 'tax', 'insurance_premium', 'tuition', 'cash_equivalent'] as const satisfies readonly ItemType[];
 
 /**
  * D-76 / R6 rule C: a row of flex chips that stack full width under rule S. Each chip sits in a column wrapper so it
@@ -127,7 +130,7 @@ function ItemTypeGroup({ inputs, update, readOnly }: Pick<Step1Props, 'inputs' |
         <Text style={{ ...label, fontSize: fontSize.meta, color: colors.inkMuted }}>{t('decide.item.type')}</Text>
       </InfoTitle>
       <View accessibilityRole="radiogroup" style={styles.typeChips}>
-        {ITEM_TYPES.map((key) => (
+        {ITEM_CHIP_ORDER.map((key) => (
           <Chip key={key} label={t(ITEM_TYPE_LABEL[key])} selected={!active && inputs.itemType === key} onPress={() => pickBuiltIn(key)} />
         ))}
         <View style={styles.customChip}>
@@ -166,7 +169,7 @@ function ItemTypeGroup({ inputs, update, readOnly }: Pick<Step1Props, 'inputs' |
                 disabled={readOnly}
                 options={[
                   { key: 'general' as const, label: t('decide.customType.general') },
-                  ...ITEM_TYPES.filter((k) => k !== 'general').map((key) => ({ key, label: t(ITEM_TYPE_LABEL[key]) })),
+                  ...ITEM_CHIP_ORDER.filter((k) => k !== 'general').map((key) => ({ key, label: t(ITEM_TYPE_LABEL[key]) })),
                 ]}
                 onSelect={onTreat}
               />
