@@ -15,6 +15,7 @@ import { useInfoSheet, type InfoSheetHandle } from '../../ui/useInfoSheet';
 import { InfoTitle } from '../InfoTitle';
 import { percentLabel } from '../../copy/percentText';
 import { cushionCopy, marginText } from '../../copy/depthVerdictCopy';
+import { isOverspent } from '../../copy/monthFigure';
 import type { LineMargin, MarginLine } from '@/engine/decide';
 import { refText, type Translate } from '../refText';
 import { Dot, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
@@ -76,8 +77,10 @@ export function EveryLineRows(props: SectionProps) {
       key: 'month',
       label: t('decide.section.lineMonth'),
       ok: a.checks.month,
-      fail: t('decide.section.lineShort', { amount: fmt(monthShort) }),
-      desc: t('decide.section.lineMonthDesc', { left: fmt(a.left) }),
+      fail: t('decide.section.lineOverspent', { amount: fmt(monthShort) }),
+      desc: isOverspent(a.left)
+        ? t('decide.section.lineMonthOverspent', { amount: fmt(-a.left) })
+        : t('decide.section.lineMonthFree', { amount: fmt(a.left) }),
     },
     { key: 'dsr', label: t('decide.section.lineDsr'), ok: a.checks.dsr, fail: t('decide.section.lineOver'), desc: dsrDesc },
     ...(inputs.kind === 'buy' && inputs.itemType === 'property'

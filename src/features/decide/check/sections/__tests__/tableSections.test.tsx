@@ -34,7 +34,7 @@ const withAssessment = (p: SectionProps, patch: Partial<Assessment>): SectionPro
 const metaWith = (over: Partial<SnapshotMeta>): SnapshotMeta => ({ ...META, ...over });
 
 describe('MonthBody', () => {
-  it('rows are exact and add up for both columns', async () => {
+  it('D-106 the month table result row prints free / overspent words; rows are exact and add up for both columns', async () => {
     const p = sectionProps(FITS, loggedSource());
     await wrap(<MonthBody {...p} />);
     const { now, after } = assessment(p).monthTable;
@@ -43,18 +43,20 @@ describe('MonthBody', () => {
       expect(c.living + c.debtPayments + c.savingInvesting + c.thisPurchase).toBe(c.outgoings);
     }
     expect(screen.getByLabelText(/^Money in, Now \$5000\.00, After \$5000\.00$/)).toBeTruthy();
-    expect(screen.getByLabelText(/^Left at month end, Now \$1800\.00/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Month end, Now \$1800\.00 free, After \$1800\.00 free/)).toBeTruthy(); // D-106: the result row prints free words
     expect(screen.getByText(/The month still closes with \$1800\.00 spare, on your average month\./)).toBeTruthy();
   });
 
-  it('says how short the month is when it does not close', async () => {
+  it('D-106 the Month closes line says overspent for a negative month', async () => {
     const loan: Partial<CheckInputs> = {
       advertised: 3_000_000,
       method: 'loan',
       loan: { deposit: 0, termMonths: 12, aprText: '10', secured: false, securedTouched: true, aprFromQuick: false, promo: null, variable: false },
     };
     await wrap(<MonthBody {...sectionProps(loan, loggedSource())} />);
-    expect(screen.getByText(/The month would be \$\d+\.\d\d short/)).toBeTruthy();
+    expect(screen.getByText(/The month would be \$\d+\.\d\d overspent\./)).toBeTruthy();
+    expect(screen.getByLabelText(/^Month end, Now \$\d+\.\d\d free, After \$\d+\.\d\d overspent$/)).toBeTruthy();
+    expect(screen.queryByText(/short/)).toBeNull();
   });
 
   it('renders nothing for a first read or no figures', async () => {
@@ -97,7 +99,24 @@ describe('EveryLineRows', () => {
     expect(screen.getAllByLabelText(/^About /)).toHaveLength(5);
   });
 
-  it('names a short cash line with its amount', async () => {
+  it('D-106 the month line says overspent and the cash line still says Short', async () => {
+    const loan: Partial<CheckInputs> = {
+      advertised: 3_000_000,
+      method: 'loan',
+      loan: { deposit: 0, termMonths: 12, aprText: '10', secured: false, securedTouched: true, aprFromQuick: false, promo: null, variable: false },
+    };
+    await wrap(<EveryLineRows {...sectionProps(loan, loggedSource())} />);
+    expect(screen.getByText(/^\$[\d,]+ overspent at month end$/)).toBeTruthy();
+    expect(screen.getByText(/^Overspent \$[\d,]+$/)).toBeTruthy();
+    expect(screen.queryByText(/left at month end/)).toBeNull();
+  });
+
+  it('D-106 a month that closes reads free at month end', async () => {
+    await wrap(<EveryLineRows {...sectionProps(FITS, loggedSource())} />);
+    expect(screen.getByText(/^\$[\d,]+ free at month end$/)).toBeTruthy();
+  });
+
+  it('D-106 the cash line still says Short: names a short cash line with its amount', async () => {
     const p = sectionProps({ advertised: 1_150_000, method: 'cash' }, loggedSource());
     await wrap(<EveryLineRows {...p} />);
     expect(screen.getByText(/^Short \$\d+$/)).toBeTruthy();

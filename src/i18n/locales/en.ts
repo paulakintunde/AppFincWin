@@ -1818,7 +1818,7 @@ const en = {
         investIdle: 'A projection at the rate you enter',
         investWithRate_one: '{{fv}} after 1\u00A0month at {{rate}}%', investWithRate_other: '{{fv}} after {{count}}\u00A0months at {{rate}}%',
         income: '{{state}} with the expected {{amount}} a month', incomeFits: 'Fits', incomeAdjust: 'Needs adjustment', incomeNo: 'Does not fit',
-        month: 'Left at month end: {{now}} now, {{after}} after',
+        month: 'Month end: {{after}}',
         setbacks_one: 'Runway 1\u00A0month, {{less}} less because of this', setbacks_other: 'Runway {{count}}\u00A0months, {{less}} less because of this', setbacksNone: 'Runway not limited', setbacksOver50: 'Runway over 50 years',
         options_one: '{{count}} option', options_other: '{{count}} options',
         who_one: '{{count}} person', who_other: '{{count}} people',
@@ -1867,7 +1867,8 @@ const en = {
     },
     state: { fits: 'It fits', adjust: 'Needs adjustment', no: 'Doesn’t fit right now', noCash: 'Not from cash', noCredit: 'Not from credit', missing: 'Missing terms', cardLimits: 'Card limits apply', draft: 'Draft', bought: 'Bought', waiting: 'Waiting', passed: 'Passed' },
     size: { from_spare_this_month: 'Out of this month’s spare', from_savings: 'Out of savings', needs_spreading: 'Needs spreading' },
-    basis: { average: 'Average month · {{amount}} in', worst: 'Worst month · {{amount}} in', firstRead: 'First read · your figures', nowLogged: 'Now from your logged months', cashOnly: 'Cash only · no monthly figures yet' },
+    fig: { free: '{{amount}} free', overspent: '{{amount}} overspent' }, // D-106: a month figure's words, see copy/monthFigure.ts
+    basis: { average: 'Average month · {{amount}} in', worst: 'Worst month · {{amount}} in', month: 'This month · {{amount}} in', firstRead: 'First read · your figures', nowLogged: 'Now from your logged months', cashOnly: 'Cash only · no monthly figures yet' },
     steadiness: { steady: 'Steady', variable: 'Variable', volatile: 'Volatile', insufficient: 'Not enough history yet' },
     method: { cash: 'Paid in full', loan: 'Deposit and loan', instalment: 'Instalment plan', card: 'On a card', monthly: 'Monthly contribution', lump: 'Lump sum', none: 'no payment method yet' },
     quick: {
@@ -1887,16 +1888,16 @@ const en = {
       line: {
         cashFits: 'Paid outright today your cash lands at {{cashAfter}}, above your {{cushion}} cushion, and the month still closes with {{left}} spare.',
         cashBelowCushion: 'Paid outright today your cash lands at {{cashAfter}}, {{short}} under your {{cushion}} cushion. The month still closes.',
-        cashMonthShort: 'Cash covers it. Even with saving paused, the month would end {{short}} short.',
-        cashMonthShortNoPause: 'Cash covers it, but the month would end {{short}} short.', // D-105: used only when nothing is pausable
+        cashMonthShort: 'Cash covers it. Even with saving paused, the month would end {{short}} overspent.',
+        cashMonthShortNoPause: 'Cash covers it, but the month would end {{short}} overspent.', // D-105: used only when nothing is pausable
         cashNo: 'Not from cash: {{short}} short of your cushion.',
         pauseInvesting: 'The month closes only if {{amount}} a month of investing pauses.',
         pauseSaving: 'The month closes only if {{amount}} a month of saving pauses.',
         pauseBoth: 'The month closes only if {{amount}} a month of saving and investing pauses.',
         creditFits: '{{payment}} a month for {{count}}\u00A0months. The month closes with {{left}} spare.',
         creditFitsZero: '{{payment}} a month for {{count}}\u00A0months, before any interest. The month closes with {{left}} spare. Any rate adds to this.',
-        creditShort: '{{payment}} a month for {{count}}\u00A0months. The month is {{short}} short.',
-        creditShortZero: '{{payment}} a month for {{count}}\u00A0months, before any interest. Still {{short}} short, so no rate makes it fit.',
+        creditShort: '{{payment}} a month for {{count}}\u00A0months. The month is {{short}} overspent.',
+        creditShortZero: '{{payment}} a month for {{count}}\u00A0months, before any interest. Still {{short}} overspent, so no rate makes it fit.',
         creditCash: 'On the day {{day}} leaves your cash at {{cashAfter}}, {{short}} under your {{cushion}} cushion.',
         creditDsr: 'Debt payments would reach {{pct}} of money in.',
         creditOwe: 'Unsecured debt would pass a year’s income.',
@@ -2239,10 +2240,11 @@ const en = {
     },
     verdict: {
       key: {
-        leftCaption: 'Left a month', cushionCaption: 'Cushion', monthlyCaption: 'A month', putInCaption: 'Put in a month',
+        freeCaption: 'Free a month', overspentCaption: 'Overspent a month', cushionCaption: 'Cushion', monthlyCaption: 'A month', putInCaption: 'Put in a month',
         months_one: '1\u00A0month', months_other: '{{count}}\u00A0months', underOne: 'Under 1\u00A0month', notLimited: 'Not limited', none: 'None',
         over50Years: 'Over 50 years', over50YearsA11y: 'Cushion: over 50 years of costs', over50YearsSpoken: 'over 50 years', // 05-88 (D-93): runwayMonths above 600
-        a11y: 'Left each month after this: {{left}}. Cushion: {{months}} of costs. Monthly cost: {{monthly}}.',
+        a11y: 'Free each month after this: {{left}}. Cushion: {{months}} of costs. Monthly cost: {{monthly}}.',
+        a11yOverspent: 'Overspent each month after this: {{left}}. Cushion: {{months}} of costs. Monthly cost: {{monthly}}.',
       },
       // 05-131 (D-102, R18.3): the total-cost row 4b. {{total}} is whole currency units.
       tco: {
@@ -2264,9 +2266,13 @@ const en = {
       titleHousingNoIncome: 'With no money coming in, any housing cost breaks your line.',
       projection_one: 'At {{rate}}%\u00A0a year: about {{fv}} after 1\u00A0month. Not a forecast.',
       projection_other: 'At {{rate}}%\u00A0a year: about {{fv}} after {{count}}\u00A0months. Not a forecast.',
-      titleNoAlreadyShort: 'Your {{basis}} month is already {{already}} short. This makes it {{short}}.',
-      titleNoAlreadyShortSame: 'Your {{basis}} month is already {{already}} short either way.',
-      titleNoMonthShort: 'The month ends {{short}} short.',
+      titleNoAlreadyShort: 'Your {{basis}} month is {{already}} overspent. This makes it {{short}}.',
+      titleNoAlreadyShortSame: 'Your {{basis}} month is already {{already}} overspent either way.',
+      titleNoMonthShort: 'The month ends {{short}} overspent.',
+      // D-107: the month basis names itself, so none of these reads 'your this month month'
+      titleNoAlreadyShortMonth: 'This month is {{already}} overspent. This makes it {{short}}.',
+      titleNoAlreadyShortSameMonth: 'This month is already {{already}} overspent either way.',
+      bodyOtherMonth: '{{in}} in this month; {{out}} out once this is running.',
       titleUnexplained: 'The detail behind this answer is not available.', // IN-B07: a defensive fallback in place of a zero-amount claim
       titleNoEmptyCash: 'This would empty your cash.',
       titleFits: 'It clears every line, with {{left}} still spare at month end.',
@@ -2307,10 +2313,13 @@ const en = {
     warn: {
       groupA11y: '{{title}}, {{value}}. {{body}}',
       monthTitleNoPause: 'The month does not close', monthBodyNoPause: 'Every month would need {{short}} more than comes in.', // D-105: used only when nothing is pausable
-      monthTitle: 'Still short with saving paused', monthValue: '−{{amount}}',
-      monthAlready: 'Your {{basis}} month is already {{already}} short before this purchase. Adding {{added}} takes the gap to {{gap}}. That gap is borrowed money covering ordinary bills.',
-      monthAlreadySame: 'Your {{basis}} month is already {{already}} short before this purchase, and this purchase adds nothing to the monthly cost. That gap is borrowed money covering ordinary bills.',
-      monthPaused: 'Pausing saving and investing covers {{paused}} of it, leaving {{short}}.',
+      monthTitle: 'Still overspent with saving paused', monthValue: '{{amount}}',
+      monthAlready: 'Your {{basis}} month is already {{already}} overspent before this purchase. Adding {{added}} takes the gap to {{gap}}. That gap is borrowed money covering ordinary bills.',
+      monthAlreadySame: 'Your {{basis}} month is already {{already}} overspent before this purchase, and this purchase adds nothing to the monthly cost. That gap is borrowed money covering ordinary bills.',
+      monthPaused: 'Pausing saving and investing covers {{paused}} of it, leaving {{short}} overspent.',
+      // D-107 month-basis variants
+      monthAlreadyMonth: 'This month is {{already}} overspent before this purchase. Adding {{added}} takes the gap to {{gap}}. That gap is borrowed money covering ordinary bills.',
+      monthAlreadySameMonth: 'This month is {{already}} overspent before this purchase, and this purchase adds nothing to the monthly cost. That gap is borrowed money covering ordinary bills.',
       monthBody: 'Even with saving and investing paused, every month would need {{short}} more than comes in.',
       cashTitle: 'Cash cushion broken', cashValue: '−{{amount}}', cashBody: 'You protect {{cushion}} as a cushion. Paying {{day}} on the day leaves {{cashAfter}}.',
       cashDipTitle: 'Cash runs low before money comes in', cashDipValue: '−{{amount}}',
@@ -2338,13 +2347,15 @@ const en = {
       factTitle: 'Debt rate and return', factBody: 'Your highest unsecured debt charges {{apr}}% a year. The return used here is {{rate}}%.',
     },
     section: {
-      monthTitle: 'The month, line by line', monthSummary: 'Left at month end: {{now}} now, {{after}} after',
+      monthTitle: 'The month, line by line', monthSummary: 'Month end: {{after}}',
       monthNote: 'Money in on your {{basis}} month, against everything that leaves.',
+      monthNoteMonth: 'Money in this month, against everything that leaves.',
       colLine: 'Line', colNow: 'Now', colAfter: 'After',
-      rowIncome: 'Money in', rowLiving: 'Living expenses', rowDebt: 'Debt payments', rowSaving: 'Saving and investing', rowRunning: 'Running costs of this', rowContribution: 'This contribution', rowLeft: 'Left at month end',
-      monthShort: 'The month would be {{amount}} short. That gap comes out of the cushion or goes onto borrowing.',
+      rowIncome: 'Money in', rowLiving: 'Living expenses', rowDebt: 'Debt payments', rowSaving: 'Saving and investing', rowRunning: 'Running costs of this', rowContribution: 'This contribution', rowLeft: 'Month end',
+      monthShort: 'The month would be {{amount}} overspent. That gap comes out of the cushion or goes onto borrowing.',
       monthClosesAverage: 'The month still closes with {{amount}} spare, on your average month.',
       monthClosesWorst: 'The month still closes with {{amount}} spare, and that is your worst month, not your average.',
+      monthClosesMonth: 'The month still closes with {{amount}} spare, as this month is expected to end.',
       ledgersTitle: 'Where it lands', ledgersSummary: 'Five ledgers', ledgersNote: 'Five ledgers. A purchase never touches only one.', colLedger: 'Ledger',
       ledgerA11y: '{{ledger}}, now {{now}}, after {{after}}, {{direction}}', ratePercent: '{{rate}}%',
       ledger: { income: 'Income', expenses: 'Expenses', debt: 'Debt', cash: 'Cash', investments: 'Investments' },
@@ -2352,9 +2363,9 @@ const en = {
       direction: { better: 'Better', worse: 'Worse', same: 'Same' },
       whoTitle: 'Who pays what', whoSummary_one: '{{count}} person', whoSummary_other: '{{count}} people', whoDayOne: 'On the day', whoMonthly: 'A month',
       linesTitle: 'Against your lines', linesSummary: '{{clear}} clear · {{over}} over',
-      lineClear: 'Clear', lineShort: 'Short {{amount}}', lineOver: 'Over', lineSqueezed: 'Squeezed',
+      lineClear: 'Clear', lineShort: 'Short {{amount}}', lineOverspent: 'Overspent {{amount}}', lineOver: 'Over', lineSqueezed: 'Squeezed',
       lineCash: 'Cash cushion', lineCashDesc: '{{cushion}} protected · {{cashAfter}} left on the day',
-      lineMonth: 'Month closes', lineMonthDesc: '{{left}} left at month end',
+      lineMonth: 'Month closes', lineMonthFree: '{{amount}} free at month end', lineMonthOverspent: '{{amount}} overspent at month end',
       lineDsr: 'Debt service', lineDsrDesc: '{{pct}} against your {{line}} line', lineDsrDescNoIncome: 'No money in on this basis, against your {{line}} line', // D-50
       // 05-131 (D-102, D-103, R18.2, R18.4)
       monthPots: 'Set aside for pots',
@@ -2374,11 +2385,11 @@ const en = {
       optAffordable: 'At {{price}} instead', optAffordableDesc: '{{amount}} less than the price you were quoted.', optUsePrice: 'Use this price',
       optTerm: 'A {{count}}-month term', optTermValue: '+{{amount}}/mo', optTermStill: 'still short', optTermDesc: '{{payment}} a month, with {{interest}} more interest over the term.', optUseTerm: 'Use this term',
       optCut: 'A fifth off {{line}}', optCutDesc: '{{cut}} a month less on {{line}}, against a {{gap}} gap.', optOpenActivity: 'Open in Activity',
-      optEarn: '{{amount}} more a month coming in', optEarnDesc: 'That is {{pct}}% more than your {{basis}} month brings in.',
+      optEarn: '{{amount}} more a month coming in', optEarnDesc: 'That is {{pct}}% more than your {{basis}} month brings in.', optEarnDescMonth: 'That is {{pct}}% more than this month is expected to bring in.',
       optSaveFirst: 'Saving first, then buying', optSaveFirstDesc: '{{amount}} a month for {{count}}\u00A0months covers it.', optSaveFirstOpen: '{{amount}} still to cover, with nothing spare each month.', optSwitchWait: 'Switch to wait',
       optWithout: 'Without it', optWithoutValue: '{{amount}}/mo kept', optWithoutDesc: 'Kept instead: {{amount}} over {{count}}\u00A0months.', optWithoutDescTooLarge: 'Kept instead: too large to project over {{count}}\u00A0months.', // D-47 (04 ME-01)
       assumptionsTitle: 'Assumptions in play', assumptionsSummary_one: '{{count}} assumption', assumptionsSummary_other: '{{count}} assumptions',
-      asIncome: 'Money in', asIncomeValue: '{{count}}\u00A0months logged · {{steadiness}} · {{basis}}',
+      asIncome: 'Money in', asIncomeValue: '{{count}}\u00A0months logged · {{steadiness}} · {{basis}}', asIncomeValueMonth: '{{count}}\u00A0months logged · {{steadiness}} · judged on this month',
       asExpenses: 'Expenses', asExpensesValue: '{{amount}} a month',
       asDebt: 'Debt', asDebtValue_one: '{{count}} account · {{amount}} unsecured', asDebtValue_other: '{{count}} accounts · {{amount}} unsecured',
       asReturn: 'Return on money kept', asReturnValue: '{{rate}}%', asReturnZero: '0% unless you entered one',

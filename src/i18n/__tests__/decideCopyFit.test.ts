@@ -67,7 +67,8 @@ describe('decide copy fit (R6)', () => {
     { key: 'decide.size.from_spare_this_month', source: 'check/VerdictCard.tsx (size line)' },
     { key: 'decide.size.from_savings', source: 'check/VerdictCard.tsx (size line)' },
     { key: 'decide.size.needs_spreading', source: 'check/VerdictCard.tsx (size line)' },
-    { key: 'decide.verdict.key.leftCaption', source: 'ui/FigureStrip.tsx (caption)' },
+    { key: 'decide.verdict.key.freeCaption', source: 'ui/FigureStrip.tsx (caption)' },
+    { key: 'decide.verdict.key.overspentCaption', source: 'ui/FigureStrip.tsx (caption)' },
     { key: 'decide.verdict.key.cushionCaption', source: 'ui/FigureStrip.tsx (caption)' },
     { key: 'decide.verdict.key.monthlyCaption', source: 'ui/FigureStrip.tsx (caption)' },
     { key: 'decide.verdict.key.putInCaption', source: 'ui/FigureStrip.tsx (caption)' },
@@ -128,6 +129,31 @@ describe('decide copy fit (R6)', () => {
     }
     expect(get('decide.alt.reasonTooLarge')).toHaveLength(33);
     expect(get('decide.depth.invest.tooLarge')).toHaveLength(33);
+  });
+
+  it('D-106 the month verdict titles stay within 64 characters at the demo and the wide amounts', () => {
+    const demo = { basis: 'average', already: '$412', short: '$1,234' };
+    const wide = { basis: 'average', already: '$123,456.78', short: '$123,456.78' };
+    for (const key of ['titleNoAlreadyShort', 'titleNoAlreadyShortSame', 'titleNoAlreadyShortMonth', 'titleNoAlreadyShortSameMonth', 'titleNoMonthShort']) {
+      expect({ key, len: fill(get(`decide.verdict.${key}`), demo).length <= 64 }).toEqual({ key, len: true });
+    }
+    for (const key of ['titleNoAlreadyShortMonth', 'titleNoAlreadyShortSameMonth', 'titleNoMonthShort']) {
+      expect({ key, len: fill(get(`decide.verdict.${key}`), wide).length <= 64 }).toEqual({ key, len: true });
+    }
+    // none of the month figure strings says "short" any more
+    for (const key of ['titleNoAlreadyShort', 'titleNoAlreadyShortSame', 'titleNoMonthShort', 'titleNoAlreadyShortMonth', 'titleNoAlreadyShortSameMonth']) {
+      expect(get(`decide.verdict.${key}`)).toMatch(/overspent/);
+      expect(get(`decide.verdict.${key}`)).not.toMatch(/short/);
+    }
+  });
+
+  it('D-106 the month fold previews fit 44 characters at $123,456.78', () => {
+    const preview = fill(get('decide.fold.preview.month'), { after: fill(get('decide.fig.overspent'), { amount: '$123,456.78' }) });
+    expect(preview).toBe('Month end: $123,456.78 overspent');
+    expect(preview.length).toBeLessThanOrEqual(44);
+    expect(fill(get('decide.section.monthSummary'), { after: fill(get('decide.fig.overspent'), { amount: '$123,456.78' }) }).length).toBeLessThanOrEqual(44);
+    // the What breaks preview shows the month warning's title only
+    expect(get('decide.warn.monthTitle').length).toBeLessThanOrEqual(44);
   });
 
   // R16 (05-88, D-86, D-88, D-89, D-93): the count-bearing strings added by the device-walkthrough refinements, and the

@@ -17,19 +17,23 @@ const base: KeyFigureInputs = { left: minorUnits(50_000), cushionMonths: 4, mont
 const run = (over: Partial<KeyFigureInputs> = {}) => keyFigures({ ...base, ...over }, fmt, fmtCents, text);
 
 describe('keyFiguresCopy', () => {
-  it('D-74 key figures are left a month, cushion months and the monthly cost', () => {
+  it('D-74 key figures are free a month, cushion months and the monthly cost', () => {
     const k = run();
-    expect(k.items.map((i) => i.caption)).toEqual(['Left a month', 'Cushion', 'A month']);
+    expect(k.items.map((i) => i.caption)).toEqual(['Free a month', 'Cushion', 'A month']);
     expect(k.items.map((i) => i.value)).toEqual(['$50000', `4${NBSP}months`, '$123.45']);
     expect(k.items.map((i) => i.kind)).toEqual(['figure', 'figure', 'figure']);
-    expect(text(k.a11y)).toBe(`Left each month after this: $50000. Cushion: 4${NBSP}months of costs. Monthly cost: $123.45.`);
+    expect(text(k.a11y)).toBe(`Free each month after this: $50000. Cushion: 4${NBSP}months of costs. Monthly cost: $123.45.`);
     expect(run({ cushionMonths: 1 }).items[1]!.value).toBe(`1${NBSP}month`);
   });
 
-  it('D-74 a negative left carries the minus and the negative flag', () => {
+  it('D-106 the key figure caption flips with the sign and carries no minus', () => {
     const k = run({ left: minorUnits(-2_000) });
-    expect(k.items[0]).toMatchObject({ value: '$-2000', negative: true });
+    expect(k.items[0]).toMatchObject({ caption: 'Overspent a month', value: '$2000', negative: true });
+    expect(k.items[0]!.value).not.toContain('-');
     expect(k.items[1]!.negative).toBe(false);
+    expect(text(k.a11y)).toBe(`Overspent each month after this: $2000. Cushion: 4${NBSP}months of costs. Monthly cost: $123.45.`);
+    // zero is free, not overspent
+    expect(run({ left: minorUnits(0) }).items[0]).toMatchObject({ caption: 'Free a month', value: '$0', negative: false });
   });
 
   it('D-93 a cushion over 600 months reads Over 50 years', () => {

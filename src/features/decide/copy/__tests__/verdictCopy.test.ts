@@ -4,6 +4,7 @@ import { cardReasonCards, warningCard } from '../warningCopy';
 import { ADJUST_TITLE, basisMarker, missingRateCopy, stateChip, verdictBody, verdictTitle } from '../verdictCopy';
 import { BASE_PLAN, assessmentOf, fmt, fmtDate, w, withContext } from './helpers/fixtures';
 import { resolvesInEn } from './helpers/enKeys';
+import en from '@/i18n/locales/en';
 import type { CopyRef } from '../types';
 
 const keysOf = (r: CopyRef): string[] => [r.key, ...Object.values(r.keyParams ?? {})];
@@ -109,6 +110,34 @@ describe('verdictBody and basisMarker', () => {
     expect(basisMarker({ kind: 'logged', money: avg, lastSeenBasis: 'first_read_rough_figures' }, fmt).key).toBe('decide.basis.nowLogged');
     expect(basisMarker({ kind: 'logged', money: avg, lastSeenBasis: 'logged_months' }, fmt)).toEqual({ key: 'decide.basis.average', params: { amount: '$400000' } });
     expect(basisMarker({ kind: 'logged', money: worst, lastSeenBasis: null }, fmt)).toEqual({ key: 'decide.basis.worst', params: { amount: '$300000' } });
+  });
+});
+
+describe('D-106 wording', () => {
+  const words = (s: string, p: Record<string, string | number> = {}) => s.replace(/\{\{(\w+)\}\}/g, (_m, n: string) => String(p[n] ?? `{{${n}}}`));
+
+  it('D-106 the headline says overspent, never short', () => {
+    const already = assessmentOf({ state: 'no', warnings: [w('month', 300)], left: -300, ...withContext({ leftBefore: -200 }) });
+    const same = assessmentOf({ state: 'no', warnings: [w('month', 200)], left: -200, ...withContext({ leftBefore: -200 }) });
+    const plain = assessmentOf({ state: 'no', warnings: [w('month', 100)] });
+    const resolved = [already, same, plain].map((a) => {
+      const t = verdictTitle(a, fmt);
+      const leaf = (en.decide.verdict as unknown as Record<string, string>)[t.key.replace('decide.verdict.', '')]!;
+      return words(leaf, { ...t.params, basis: 'average' });
+    });
+    expect(resolved).toEqual([
+      'Your average month is $200 overspent. This makes it $300.',
+      'Your average month is already $200 overspent either way.',
+      'The month ends $100 overspent.',
+    ]);
+    for (const r of resolved) expect(r).not.toMatch(/short/);
+  });
+
+  it('D-106 the month warning value is the absolute amount', () => {
+    const card = warningCard(w('month', 300), assessmentOf({ left: -300, ...withContext({ leftBefore: -200 }) }), fmt, fmtDate);
+    expect(card.value).toEqual({ key: 'decide.warn.monthValue', params: { amount: '$300' } });
+    expect(words(en.decide.warn.monthValue, card.value!.params)).toBe('$300');
+    expect(card.tone).toBe('hard');
   });
 });
 

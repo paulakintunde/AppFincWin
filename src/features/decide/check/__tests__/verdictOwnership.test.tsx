@@ -62,7 +62,7 @@ describe('VerdictCard rows 4b and 4c (05-128)', () => {
 
   it('D-102 the key-figures group reads figures, then the total cost', async () => {
     await wrap(<Step3Verdict {...propsOf(car60)} />);
-    expect(screen.getByLabelText(new RegExp(`^Left each month after this: .*Monthly cost: .*[.] Over 5.years, [0-9]+ dollars in all$`))).toBeTruthy();
+    expect(screen.getByLabelText(new RegExp(`^Overspent each month after this: .*Monthly cost: .*[.] Over 5.years, [0-9]+ dollars in all$`))).toBeTruthy();
   });
 
   it('D-104 invested instead shows only when a non-zero rate is typed', async () => {

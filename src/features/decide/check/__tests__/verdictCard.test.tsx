@@ -51,17 +51,17 @@ describe('VerdictCard (05-63)', () => {
     await wrap(<Step3Verdict {...propsFor()} />);
     expect(screen.getByRole('header').props.children).toBe('It fits');
     expect(screen.getByText(/It clears every line, with .* still spare at month end\./)).toBeTruthy();
-    expect(screen.getByText('Left a month')).toBeTruthy();
+    expect(screen.getByText('Free a month')).toBeTruthy();
     expect(screen.getByText('Cushion')).toBeTruthy();
     expect(screen.getByText('A month')).toBeTruthy();
-    expect(screen.getByLabelText(/^Left each month after this: .*\. Cushion: .* of costs\. Monthly cost: /)).toBeTruthy();
+    expect(screen.getByLabelText(/^Free each month after this: .*\. Cushion: .* of costs\. Monthly cost: /)).toBeTruthy();
     expect(screen.getByText(/Average month/)).toBeTruthy();
     expect(screen.queryByText(/ in, .* out once this is running/)).toBeNull();
   });
 
   it('D-74 a first read draws figures from rough spending', async () => {
     await wrap(<Step3Verdict {...propsFor(roughSource())} />);
-    expect(screen.getByLabelText(/^Left each month after this: /)).toBeTruthy();
+    expect(screen.getByLabelText(/^Free each month after this: /)).toBeTruthy();
     expect(screen.getByText('First read · your figures')).toBeTruthy();
   });
 
@@ -69,7 +69,7 @@ describe('VerdictCard (05-63)', () => {
     await wrap(<Step3Verdict {...propsFor(unconvertedSource())} />);
     expect(screen.getByRole('header').props.children).toBe('Missing terms');
     expect(screen.queryByText('Cushion')).toBeNull();
-    expect(screen.queryByLabelText(/^Left each month after this/)).toBeNull();
+    expect(screen.queryByLabelText(/^Free each month after this/)).toBeNull();
   });
 
   it('D-70 size, edge and cushion carry an ⓘ', async () => {
@@ -84,7 +84,7 @@ describe('VerdictCard (05-63)', () => {
     const view = await wrap(<Step3Verdict {...onTheEdge(propsFor())} />);
     const stops = focusStops(view.toJSON());
     const at = (re: RegExp): number => stops.findIndex((s) => re.test(s));
-    const order = [/^It fits, on the edge/, /^About How big this is$/, /^About On the edge$/, /^Basis: /, /^Left each month after this/, /^About Cushion$/].map(at);
+    const order = [/^It fits, on the edge/, /^About How big this is$/, /^About On the edge$/, /^Basis: /, /^Free each month after this/, /^About Cushion$/].map(at);
     expect(order.every((i) => i >= 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(screen.getAllByLabelText(/^It fits, on the edge/)[0]!.props.accessibilityLiveRegion).toBe('polite');

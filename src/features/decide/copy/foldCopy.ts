@@ -86,9 +86,9 @@ export function whatBreaksPreview(count: number, edge: boolean): Preview {
   return edge ? [base, ref(`${P}edgeSuffix`)] : base;
 }
 
-/** Fold 2. */
-export function monthPreview(now: string, after: string): Preview {
-  return ref(`${P}month`, { now, after });
+/** Fold 2 (D-106): the single month-end figure, already worded free / overspent by monthFigure. */
+export function monthPreview(after: string): Preview {
+  return ref(`${P}month`, { after });
 }
 
 /** Fold 3: the lowest cash point with the purchase, or null without a recurring pay series. */

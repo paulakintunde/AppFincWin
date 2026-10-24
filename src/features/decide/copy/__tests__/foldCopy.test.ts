@@ -50,7 +50,7 @@ describe('foldCopy', () => {
     expect(text(whatBreaksPreview(2, true))).toBe('2 lines break · on the edge');
     expect(text(whatBreaksPreview(0, false))).toBe('Nothing breaks');
     expect(text(whatBreaksPreview(0, true))).toBe('Nothing breaks · on the edge');
-    expect(text(monthPreview('$900', '$400'))).toBe('Left at month end: $900 now, $400 after');
+    expect(text(monthPreview('$400 free'))).toBe('Month end: $400 free');
     expect(text(cashPathPreview({ amount: '$120', date: '3 Nov' }))).toBe('Lowest with this: $120 on 3 Nov');
     expect(text(cashPathPreview(null))).toBe('No recurring pay series yet');
     const lands = (...d: ('better' | 'worse' | 'same')[]) => text(whereItLandsPreview(d.map((direction) => ({ direction }))));
@@ -76,7 +76,7 @@ describe('foldCopy', () => {
     const all: Preview[] = [
       whatBreaksPreview(6, true),
       whatBreaksPreview(0, true),
-      monthPreview('$1,234', '$1,234'),
+      monthPreview('$1,234 overspent'),
       cashPathPreview({ amount: '$1,234', date: '30 Nov' }),
       cashPathPreview(null),
       whereItLandsPreview([{ direction: 'better' }, { direction: 'better' }, { direction: 'worse' }, { direction: 'same' }, { direction: 'same' }]),

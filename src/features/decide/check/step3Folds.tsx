@@ -37,6 +37,7 @@ import {
   type ProjectionFigures,
   type SectionKey,
 } from '../copy/foldCopy';
+import { monthFigure } from '../copy/monthFigure';
 import { percentText } from '../copy/percentText';
 import { ref } from '../copy/types';
 import { expectedReturnProjection } from '../snapshot/expectedReturn';
@@ -175,7 +176,7 @@ export function useStep3Folds(args: Step3FoldArgs): FoldSpec<SectionKey>[] {
 
   if (a !== null) {
     // 2 The month, line by line
-    folds.push({ key: 'month', title: title('month'), preview: join(monthPreview(fmt(a.monthTable.now.left), fmt(a.monthTable.after.left))), body: <MonthBody {...common} /> });
+    folds.push({ key: 'month', title: title('month'), preview: join(monthPreview(joinPreview(t, monthFigure(a.monthTable.after.left, fmt)))), body: <MonthBody {...common} /> });
 
     // 3 Cash path
     const lowest = a.cashPath.status === 'available' ? { amount: fmt(a.cashPath.lowestWith.amount), date: formatDate(a.cashPath.lowestWith.date) } : null;

@@ -6,6 +6,7 @@
 import { runwayMonthsOf } from '@/engine/decide';
 import type { MinorUnits } from '@/engine/decide';
 import type { CheckComputation } from '../snapshot/types';
+import { isOverspent } from './monthFigure';
 import { ref } from './types';
 import type { CopyRef, Fmt } from './types';
 
@@ -27,7 +28,7 @@ export interface KeyFigureItem {
   caption: string;
   value: string;
   kind: 'figure' | 'words';
-  /** The value carries a minus: drawn in dangerTint2 on the dark card. */
+  /** The figure is overspent (D-106: no minus is printed): drawn in dangerTint2 on the dark card. */
   negative: boolean;
 }
 
@@ -51,14 +52,16 @@ function cushionRef(months: number | null): { value: CopyRef; words: boolean; sp
 }
 
 export function keyFigures(inputs: KeyFigureInputs, fmt: Fmt, fmtCents: Fmt, text: TextOf): KeyFigures {
-  const leftText = fmt(inputs.left);
+  // D-106: the amount is absolute; the caption carries free / overspent and `negative` keeps the danger tint
+  const overspent = isOverspent(inputs.left);
+  const leftText = fmt(Math.abs(inputs.left));
   const cushion = cushionRef(inputs.cushionMonths);
   const cushionText = text(cushion.value);
   const monthlyNone = inputs.monthly === 0;
   const monthlyText = monthlyNone ? text(ref(`${K}none`)) : fmtCents(inputs.monthly);
   return {
     items: [
-      { caption: text(ref(`${K}leftCaption`)), value: leftText, kind: 'figure', negative: inputs.left < 0 },
+      { caption: text(ref(overspent ? `${K}overspentCaption` : `${K}freeCaption`)), value: leftText, kind: 'figure', negative: overspent },
       { caption: text(ref(`${K}cushionCaption`)), value: cushionText, kind: cushion.words ? 'words' : 'figure', negative: false },
       {
         caption: text(ref(inputs.kind === 'invest' ? `${K}putInCaption` : `${K}monthlyCaption`)),
@@ -67,7 +70,7 @@ export function keyFigures(inputs: KeyFigureInputs, fmt: Fmt, fmtCents: Fmt, tex
         negative: false,
       },
     ],
-    a11y: ref(`${K}a11y`, { left: leftText, months: cushion.spoken ? text(cushion.spoken) : cushionText, monthly: monthlyText }),
+    a11y: ref(overspent ? `${K}a11yOverspent` : `${K}a11y`, { left: leftText, months: cushion.spoken ? text(cushion.spoken) : cushionText, monthly: monthlyText }),
   };
 }
 

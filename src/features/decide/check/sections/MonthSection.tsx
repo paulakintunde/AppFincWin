@@ -11,6 +11,8 @@ import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MonthColumn } from '@/engine/decide';
 import { useShouldStack } from '../../ui/textFit';
+import { monthFigure } from '../../copy/monthFigure';
+import { refText, type Translate } from '../refText';
 import { Note, Tile, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
 
 type Line = { key: string; label: string; pick: (c: MonthColumn) => number; emphasis?: boolean };
@@ -23,6 +25,9 @@ export function MonthBody(props: SectionProps) {
   const a = assessmentOf(computation);
   if (!a) return null;
   const fmtExact = moneyOf(exact, currency);
+  // D-106: the result row's cells are worded free / overspent through the shared helper; the other rows stay plain numbers
+  const cellText = (l: Line, c: MonthColumn): string =>
+    l.emphasis ? refText(t as Translate, monthFigure(l.pick(c), fmtExact)) : fmtExact(l.pick(c));
   const { now, after } = a.monthTable;
   const lines: Line[] = [
     { key: 'rowIncome', label: t('decide.section.rowIncome'), pick: (c) => c.income },
@@ -57,8 +62,8 @@ export function MonthBody(props: SectionProps) {
       )}
       {lines.map((l) => {
         const label = l.label;
-        const nowText = fmtExact(l.pick(now));
-        const afterText = fmtExact(l.pick(after));
+        const nowText = cellText(l, now);
+        const afterText = cellText(l, after);
         return (
           <View
             key={l.key}
@@ -83,7 +88,10 @@ export function MonthBody(props: SectionProps) {
               </Text>
             ) : (
               <>
-                <Text scale="capped" style={[styles.num, { ...textRole(pairing, 'label'), color: colors.inkDim }]}>
+                <Text
+                  scale="capped"
+                  style={[styles.num, { ...textRole(pairing, 'label'), color: l.emphasis && l.pick(now) < 0 ? colors.danger : colors.inkDim }]}
+                >
                   {nowText}
                 </Text>
                 <Text

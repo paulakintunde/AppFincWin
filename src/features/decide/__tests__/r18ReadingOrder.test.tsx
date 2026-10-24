@@ -183,14 +183,14 @@ describe('R18 reading order', () => {
     const car60: CheckInputs = { ...carInputs, loan: { ...carInputs.loan, termMonths: 60 }, projectionRates: ['0', '7'] };
     const src = buildDecideSnapshot(demoSource('2026-10-15'));
     await wrap(<Step3Verdict {...{ ...stepProps(car60, {}, src), lastSeenBasis: null, revealKey: 'k' }} />);
-    const group = screen.getByLabelText(/^Left each month after this: .*Monthly cost: .*[.] Over 5.years, [0-9]+ dollars in all/);
+    const group = screen.getByLabelText(/^Overspent each month after this: .*Monthly cost: .*[.] Over 5.years, [0-9]+ dollars in all/);
     const label = group.props.accessibilityLabel as string;
     // one group, spoken in this order: the figures, the total cost, then the invested sentence and its projection note
-    const at = ['Left each month after this', 'Cushion:', 'Monthly cost:', 'in all', 'Invested instead:', 'A projection, not a forecast'].map((n) => label.indexOf(n));
+    const at = ['Overspent each month after this', 'Cushion:', 'Monthly cost:', 'in all', 'Invested instead:', 'A projection, not a forecast'].map((n) => label.indexOf(n));
     expect(at.every((i) => i >= 0)).toBe(true);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
     // the information buttons follow in the same order
-    expectOrder(reads(), [/^Left each month after this/, 'About Cushion', 'About Total cost', 'About Invested instead']);
+    expectOrder(reads(), [/^Overspent each month after this/, 'About Cushion', 'About Total cost', 'About Invested instead']);
   });
 
   it('D-101 Pots rows read their per-state labels', async () => {
