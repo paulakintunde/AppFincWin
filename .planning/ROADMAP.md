@@ -780,7 +780,7 @@ Plans:
 - [x] 05-110-PLAN.md — R17 copy, the tightestFigures ⓘ and the homeBasisSeen flag (D-95..D-99)
 - [ ] 05-111-PLAN.md — Pure home models: card state by engine basis, problems list and notice row counts (D-96, D-97)
 - [ ] 05-112-PLAN.md — Dark variants: quick check, toggle and chips for the ink card (D-95)
-- [ ] 05-113-PLAN.md — Pushed Open checks, Changes coming up and Lines screens (D-99)
+- [x] 05-113-PLAN.md — Pushed Open checks, Changes coming up and Lines screens (D-99)
 
 **Wave 28** *(blocked on Wave 27 completion)*
 - [ ] 05-114-PLAN.md — HomeSummaryCard: label, two-Text hero at 42, In/Out, quick check, states (D-95, D-97)
