@@ -7,14 +7,61 @@ const str = (path: string): string | undefined => (typeof node(path) === 'string
 const sentences = (s: string): number => (s.match(/[.!?](?=\s|$)/g) ?? []).length;
 
 describe('infoTerms', () => {
-  it('D-84 / R16 INFO_TERMS has 59 keys', () => {
-    expect(INFO_KEYS).toHaveLength(59);
-    expect(new Set(INFO_KEYS).size).toBe(59);
+  it('D-95 INFO_TERMS has 60 keys with tightestFigures', () => {
+    expect(INFO_KEYS).toHaveLength(60);
+    expect(new Set(INFO_KEYS).size).toBe(60);
     expect(INFO_KEYS[0]).toBe('replaces');
     expect(INFO_KEYS[30]).toBe('whatGetsWritten');
     expect(INFO_KEYS[31]).toBe('price');
     expect(INFO_KEYS[54]).toBe('cardClearing');
-    expect(INFO_KEYS.slice(55)).toEqual(['interestSaved', 'instalmentFrequency', 'impliedApr', 'cardCheckLimit']);
+    expect(INFO_KEYS.slice(55)).toEqual(['interestSaved', 'instalmentFrequency', 'impliedApr', 'cardCheckLimit', 'tightestFigures']);
+    expect(str('decide.info.tightestFigures.term')).toBe('Your tightest figures');
+    expect(str('decide.info.tightestFigures.body')).toBe(
+      'Fewer than 3 full months are logged, so money in uses your lowest month and spending uses your highest. The figure combines the two, which can be tighter than any single month.'
+    );
+    expect(str('decide.info.tightestFigures.changes')).toBe('Once 3 full months exist, the label follows your worst or average month.');
+  });
+
+  it('D-95 R17 strings resolve', () => {
+    const NB = ' ';
+    const keys = [
+      'header', 'card.labelWorst', 'card.labelAverage', 'card.labelTightest', 'card.labelFigures', 'card.labelSwitched', 'card.details', 'card.detailsA11y', 'card.detailsHint',
+      'card.a11yLeft', 'card.a11yShort', 'card.loading', 'hero.left', 'hero.short', 'hero.leftWord', 'hero.shortWord', 'hero.sub', 'hero.inOut', 'hero.summary', 'hero.summaryShort',
+      'unavailable.title', 'unavailable.noFigures', 'unavailable.rate', 'unavailable.addRough', 'unavailable.seeLines',
+      'field.placeholder', 'field.placeholderShort', 'field.a11y', 'field.check', 'field.full', 'field.fullA11y',
+      'rows.open', 'rows.openChanged', 'rows.changes', 'rows.changesAdd', 'rows.past', 'rows.lines', 'rows.linesSet_one', 'rows.linesSet_other', 'rows.linesDefault', 'rows.a11y',
+      'notice.items_one', 'notice.items_other', 'notice.offline', 'notice.offlineWaiting_one', 'notice.offlineWaiting_other', 'notice.saving', 'notice.hint',
+      'problems.title', 'problems.affects', 'problems.entryA11y', 'problems.close',
+      'problems.noMonth.title', 'problems.noMonth.affects', 'problems.noMonth.action',
+      'problems.rate.title', 'problems.rate.action', 'problems.rate.affectsLines_one', 'problems.rate.affectsLines_other', 'problems.rate.affectsCardLimit',
+      'problems.rate.affectsChecks_one', 'problems.rate.affectsChecks_other',
+      'problems.failed_one', 'problems.failed_other', 'problems.failedAction', 'problems.conflict_one', 'problems.conflict_other', 'problems.conflictAction', 'problems.recordsOnDevice',
+      'problems.cardMin.title', 'problems.cardMin.affects', 'problems.cardMin.action', 'problems.stale.title', 'problems.stale.affects', 'problems.stale.action',
+      'problems.offline.offlineWaiting_one', 'problems.offline.offlineWaiting_other', 'problems.offline.saving', 'problems.offline.affects', 'problems.offline.note',
+      'monthDetails.close',
+    ];
+    for (const k of keys) expect({ k, v: str(`decide.home.${k}`) }).toEqual({ k, v: expect.any(String) });
+    const h = (k: string) => str(`decide.home.${k}`);
+    expect(h('hero.left')).toBe('{{amount}} left');
+    expect(h('hero.short')).toBe('{{amount}} short');
+    expect(h('hero.sub')).toBe('after spending, debts and saving');
+    expect(h('card.a11yLeft')).toBe('{{cardLabel}}: {{amount}} left after spending, debts and saving. In {{in}}, out {{out}}.');
+    expect(h('field.check')).toBe('Check it');
+    expect(h('field.full')).toBe('Full check');
+    expect(h('problems.failedAction')).toBe('Review changes');
+    expect(h('problems.conflictAction')).toBe('Review edits');
+    expect(h('problems.rate.action')).toBe('Exchange rates');
+    expect(h('problems.cardMin.action')).toBe('Card minimum payment');
+    expect(h('notice.items_one')).toBe(`{{count}}${NB}item needs a look`);
+    expect(h('notice.items_other')).toBe(`{{count}}${NB}items need a look`);
+    expect(h('notice.offlineWaiting_other')).toBe(`Offline · {{count}}${NB}changes waiting`);
+    expect(h('rows.openChanged')).toBe(`{{count}}${NB}changed since you looked`);
+    // every count is followed by a no-break space, never a plain one
+    const counted = keys.map((k) => ({ k, v: h(k) ?? '' })).filter(({ v }) => v.includes('{{count}}'));
+    expect(counted.length).toBeGreaterThan(10);
+    for (const { k, v } of counted.filter(({ k: kk }) => kk !== 'rows.linesSet_one' && kk !== 'rows.linesSet_other')) {
+      expect({ k, ok: !/\{\{count\}\} /.test(v) }).toEqual({ k, ok: true });
+    }
   });
 
   it('R16 the card limit explanation has a USD-home variant', () => {

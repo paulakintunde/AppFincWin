@@ -1759,6 +1759,12 @@ const en = {
         bodyNoLimit: 'Checks count only a capped part of a purchase on a card, at the latest stored rate. It is a limit of this app’s checks, not of any card issuer.',
         changes: 'The part above it is counted as cash on the day.',
       },
+      // 05-110 (D-95, R17.13 M3)
+      tightestFigures: {
+        term: 'Your tightest figures',
+        body: 'Fewer than 3 full months are logged, so money in uses your lowest month and spending uses your highest. The figure combines the two, which can be tighter than any single month.',
+        changes: 'Once 3 full months exist, the label follows your worst or average month.',
+      },
     },
     infoButton: { a11y: 'About {{term}}', hint: 'Opens an explanation', sheetChanges: 'What this changes', close: 'Close' },
     hint: { foldTap: 'Tap a row to see the detail' },
@@ -1880,6 +1886,56 @@ const en = {
       pastRow: 'Past decisions', pastCount_one: '{{count}} decision', pastCount_other: '{{count}} decisions',
       addChange: 'Add a change coming up', checkInvestment: 'Check an investment',
       linesFold: { title: 'Lines you will not cross', preview_one: '{{count}} of 5 set by you', preview_other: '{{count}} of 5 set by you', allDefault: 'All at their defaults' },
+      // 05-110 (D-95..D-99, UI-SPEC R17.6): the redesigned home, built by 05-111..05-118. The old keys above stay until 05-118 retires them.
+      header: 'Can I afford it',
+      card: {
+        labelWorst: 'Your worst month', labelAverage: 'Your average month', labelTightest: 'Your tightest figures', labelFigures: 'Your figures', labelSwitched: 'Now from your logged months',
+        details: 'Details', detailsA11y: 'Month details', detailsHint: 'Opens month details',
+        a11yLeft: '{{cardLabel}}: {{amount}} left after spending, debts and saving. In {{in}}, out {{out}}.',
+        a11yShort: '{{cardLabel}}: {{amount}} short after spending, debts and saving. In {{in}}, out {{out}}.',
+        loading: 'Loading your figures',
+      },
+      hero: {
+        left: '{{amount}} left', short: '{{amount}} short', leftWord: 'left', shortWord: 'short',
+        sub: 'after spending, debts and saving', inOut: 'In {{in}} · Out {{out}}', summary: '{{amount}} left · In {{in}} · Out {{out}}', summaryShort: '{{amount}} short · In {{in}} · Out {{out}}',
+      },
+      unavailable: {
+        title: 'Not worked out yet', noFigures: 'There is no full month or rough figure to work from.', rate: 'Lines in {{currency}} are waiting for an exchange rate.',
+        addRough: 'Add rough figures', seeLines: 'See lines waiting for a rate',
+      },
+      field: {
+        placeholder: 'Something and a price', placeholderShort: 'car 14500', a11y: 'Quick check, something and a price',
+        check: 'Check it', full: 'Full check', fullA11y: 'Full check',
+      },
+      rows: {
+        open: 'Open checks', openChanged: '{{count}} changed since you looked',
+        changes: 'Changes coming up', changesAdd: 'Add a change coming up',
+        past: 'Past decisions',
+        lines: 'Lines you will not cross', linesSet_one: '{{count}} of 5 set by you', linesSet_other: '{{count}} of 5 set by you', linesDefault: 'All at their defaults',
+        a11y: '{{label}}, {{value}}',
+      },
+      notice: {
+        items_one: '{{count}} item needs a look', items_other: '{{count}} items need a look',
+        offline: 'Offline', offlineWaiting_one: 'Offline · {{count}} change waiting', offlineWaiting_other: 'Offline · {{count}} changes waiting',
+        saving: 'Saving…', hint: 'Opens the list',
+      },
+      problems: {
+        title: 'Needs a look', affects: 'Affects: {{what}}', entryA11y: '{{title}}. Affects {{affects}}.', close: 'Close',
+        noMonth: { title: 'No month of figures yet', affects: 'Left this month and every check', action: 'Add rough figures' },
+        rate: {
+          title: 'No exchange rate stored for {{currency}}', action: 'Exchange rates',
+          affectsLines_one: '{{count}} line and every check that uses it', affectsLines_other: '{{count}} lines and every check that uses them',
+          affectsCardLimit: 'The card limit in checks',
+          affectsChecks_one: '{{count}} open check typed in {{currency}}', affectsChecks_other: '{{count}} open checks typed in {{currency}}',
+        },
+        failed_one: '{{count}} change didn’t save', failed_other: '{{count}} changes didn’t save', failedAction: 'Review changes',
+        conflict_one: '{{count}} edit changed on another device', conflict_other: '{{count}} edits changed on another device', conflictAction: 'Review edits',
+        recordsOnDevice: 'Records on this device',
+        cardMin: { title: 'Card minimum payment not set for {{card}}', affects: 'Monthly debt payments in every check', action: 'Card minimum payment' },
+        stale: { title: 'The {{currency}} rate is from {{date}}', affects: 'Amounts converted from {{currency}}', action: 'Exchange rates' },
+        offline: { offlineWaiting_one: 'Offline · {{count}} change waiting', offlineWaiting_other: 'Offline · {{count}} changes waiting', saving: 'Saving…', affects: 'Saves on this device', note: 'They send when the connection returns.' },
+      },
+      monthDetails: { close: 'Close' },
     },
     month: {
       eyebrow: 'Your month', activity: 'Activity', in: 'Comes in', out: 'Goes out', left: 'Left',

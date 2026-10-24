@@ -61,6 +61,18 @@ const CONTROL_LABELS = new Set([
   'decide.section.optSwitchWait', // button
   'decide.flow.commit.none', // disabled primary button label
   'decide.hint.foldTap', // reveal hint named in UI-SPEC as a control
+  // 05-110 (R17.6): UI controls on the keyed list; none is a prescription about money
+  'decide.home.field.check', // button: "Check it"
+  'decide.home.field.full', // text link: "Full check"
+  'decide.home.field.fullA11y', // the same link's accessibility label
+  'decide.home.problems.failedAction', // action: "Review changes"
+  'decide.home.problems.conflictAction', // action: "Review edits"
+  'decide.home.problems.noMonth.action', // action: "Add rough figures"
+  'decide.home.unavailable.addRough', // button: "Add rough figures"
+  'decide.home.rows.changesAdd', // row that adds a change: "Add a change coming up"
+  'decide.home.problems.rate.action', // action: "Exchange rates"
+  'decide.home.problems.stale.action', // action: "Exchange rates"
+  'decide.home.problems.cardMin.action', // action: "Card minimum payment"
 ]);
 const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
 
@@ -108,6 +120,20 @@ describe('decide copy (DCU-09)', () => {
     for (const old of ['Add a price to continue.', 'Type the rate you were quoted', 'Choose the card this goes on first.', 'Switch one on to see it hit your cash.']) {
       expect(old).toMatch(INSTRUCTION_LEAD);
     }
+  });
+
+  it('D-95 the R17 controls are on the keyed list and read as the spec words them', () => {
+    const words: Record<string, string> = {
+      'decide.home.field.check': 'Check it', 'decide.home.field.full': 'Full check', 'decide.home.problems.failedAction': 'Review changes',
+      'decide.home.problems.conflictAction': 'Review edits', 'decide.home.unavailable.addRough': 'Add rough figures',
+      'decide.home.problems.rate.action': 'Exchange rates', 'decide.home.problems.cardMin.action': 'Card minimum payment',
+    };
+    for (const [path, text] of Object.entries(words)) {
+      expect(get(path)).toBe(text);
+      expect(CONTROL_LABELS.has(path)).toBe(true);
+    }
+    const home = leaves.filter((l) => l.path.startsWith('decide.home.') && !CONTROL_LABELS.has(l.path));
+    expect(home.filter((l) => INSTRUCTION_LEAD.test(l.value) || IMPERATIVE_LEAD.test(l.value)).map((l) => l.path)).toEqual([]);
   });
 
   it('names no tab that does not exist (Grow)', () => {
