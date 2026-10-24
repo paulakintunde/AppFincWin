@@ -3,6 +3,9 @@
  * logged (the figures come from prepareContext only, never recomputed here), rough (the figures the user gave, with
  * Edit) and none (the empty state). The Worst / Average control appears only with 3 or more full months and writes
  * the per-user basis_override.
+ *
+ * 05-115 (D-99): the logged and rough content is `MonthDetailsBody`, shared with the Month details sheet. YourMonthCard
+ * stays as the ink wrapper around it until 05-118 removes the card from the home.
  */
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -15,6 +18,7 @@ import { pushOnce } from '@/shell/navigation/pushOnce';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
+import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { hapticSelection } from '@/ui/haptics';
 import { RadioDot } from '@/ui/RadioDot';
@@ -48,7 +52,25 @@ const STEADINESS_TONE: Record<MoneyBasis['steadiness'], StateChipTone> = {
 const LABEL_LINE = 18; // the label role's line height, to centre the glyph on the first line
 const SURFACE_ON_INK_OPACITY = 0.12; // UI-SPEC Color: surface at .12 over the ink card
 
-export function YourMonthCard({ source, settings, userId, whole, onEditRough }: YourMonthCardProps) {
+export interface MonthDetailsBodyProps extends YourMonthCardProps {
+  /** true on the ink card; false inside the Month details sheet (light surface, D-99). */
+  dark?: boolean;
+  /** Drawn first in the header row (the card's eyebrow). The sheet has its title instead. */
+  eyebrow?: React.ReactNode;
+  /** The Activity link; defaults to navigating to Activity. The sheet closes itself first. */
+  onActivity?: () => void;
+}
+
+const goActivity = () => {
+  router.navigate('/activity' as Href);
+};
+
+/**
+ * D-99: what Your month showed inline, without the card chrome: the steadiness chip, the Activity link, the three
+ * columns, the basis line and the Worst / Average control for a logged source; the columns and Edit for a rough one.
+ * Renders nothing for the other sources (the card and the sheet each word those themselves).
+ */
+export function MonthDetailsBody({ source, userId, whole, onEditRough, dark = false, eyebrow, onActivity = goActivity }: MonthDetailsBodyProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const settingsMutation = useUpdateDecideSettings(userId ?? '');
@@ -76,28 +98,8 @@ export function YourMonthCard({ source, settings, userId, whole, onEditRough }: 
 
   if (source === null) return null;
 
-  const eyebrow = (text: string) => (
-    <Text
-      style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkSoft1, textTransform: 'uppercase', letterSpacing: 1.2 }}
-    >
-      {text}
-    </Text>
-  );
-
-  // ── D-37: a needed rate is missing, so no figure is shown on this card ──
-  if (source.unconverted !== null) {
-    const missing = missingRateCopy(source.unconverted);
-    const tr = t as Translate;
-    return (
-      <View style={[styles.card, { backgroundColor: colors.ink }]} testID="your-month-card">
-        {eyebrow(t('decide.month.eyebrow'))}
-        <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.surface }}>
-          {refText(tr, missing.title)}
-        </Text>
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkSoft1 }}>{refText(tr, missing.body)}</Text>
-      </View>
-    );
-  }
+  const soft = dark ? colors.inkSoft2 : colors.inkMuted;
+  const text = dark ? colors.surface : colors.ink;
 
   // ── logged ──
   if (source.kind === 'logged') {
@@ -124,33 +126,32 @@ export function YourMonthCard({ source, settings, userId, whole, onEditRough }: 
       { key: 'worst', label: basisLabels?.worst ?? '' },
       { key: 'average', label: basisLabels?.average ?? '' },
     ] as const;
+    // Selected: surface on the ink card, ink on the sheet. Unselected: a tint of the opposite colour (fill1 on the sheet).
+    const selectedFill = dark ? colors.surface : colors.ink;
+    const selectedText = dark ? colors.ink : colors.surface;
+    const unselectedText = dark ? colors.inkSoft2 : colors.ink;
 
     return (
-      <View style={[styles.card, { backgroundColor: colors.ink }]} testID="your-month-card">
+      <View style={styles.body}>
         <View style={styles.header}>
-          {eyebrow(t('decide.month.eyebrow'))}
+          {eyebrow ?? null}
           <StateChip tone={STEADINESS_TONE[m.steadiness]} label={steadinessLabel} />
           <View style={styles.spacer} />
-          <DarkPill
-            label={t('decide.month.activity')}
-            onPress={() => {
-              router.navigate('/activity' as Href);
-            }}
-          />
+          <ActionPill dark={dark} label={t('decide.month.activity')} onPress={onActivity} />
         </View>
         <FigureStrip
-          dark
+          dark={dark}
           items={[
             { caption: t('decide.month.in'), value: whole(m.incomeBasis) },
             { caption: t('decide.month.out'), value: whole(m.spendingBasis) },
             { caption: t('decide.month.left'), value: whole(left), tone: left < 0 ? 'negative' : 'neutral' },
           ]}
         />
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkSoft2 }}>{basisLine}</Text>
+        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: soft }}>{basisLine}</Text>
         {fewMonths ? null : (
           <>
-            <InfoLabel term={basisInfo.term} onInfo={basisInfo.open} tone="dark" lineHeight={LABEL_LINE}>
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkSoft2 }}>{t('decide.month.basisA11y')}</Text>
+            <InfoLabel term={basisInfo.term} onInfo={basisInfo.open} tone={dark ? 'dark' : 'light'} lineHeight={LABEL_LINE}>
+              <Text style={{ ...textRole(pairing, 'label'), color: soft }}>{t('decide.month.basisA11y')}</Text>
             </InfoLabel>
             <View
               accessibilityRole="radiogroup"
@@ -175,10 +176,11 @@ export function YourMonthCard({ source, settings, userId, whole, onEditRough }: 
                       style={styles.radioRow}
                     >
                       <RadioDot selected={selected} />
-                      <Text style={{ ...textRole(pairing, 'label'), color: colors.surface, flexShrink: 1 }}>{option.label}</Text>
+                      <Text style={{ ...textRole(pairing, 'label'), color: text, flexShrink: 1 }}>{option.label}</Text>
                     </Pressable>
                   );
                 }
+                const unselectedFill = dark ? 'transparent' : colors.fill1;
                 return (
                   <Pressable
                     key={option.key}
@@ -186,15 +188,15 @@ export function YourMonthCard({ source, settings, userId, whole, onEditRough }: 
                     accessibilityState={{ checked: selected }}
                     accessibilityLabel={option.label}
                     onPress={choose}
-                    style={[styles.segment, { backgroundColor: selected ? colors.surface : 'transparent' }]}
+                    style={[styles.segment, { backgroundColor: selected ? selectedFill : unselectedFill }]}
                   >
-                    {selected ? null : (
+                    {selected || !dark ? null : (
                       <View
                         pointerEvents="none"
                         style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
                       />
                     )}
-                    <Text style={{ ...textRole(pairing, 'label'), color: selected ? colors.ink : colors.inkSoft2 }}>{option.label}</Text>
+                    <Text style={{ ...textRole(pairing, 'label'), color: selected ? selectedText : unselectedText }}>{option.label}</Text>
                   </Pressable>
                 );
               })}
@@ -211,26 +213,79 @@ export function YourMonthCard({ source, settings, userId, whole, onEditRough }: 
     const { monthlyIncome, monthlySpending } = source.figures;
     const left = monthlyIncome - monthlySpending;
     return (
-      <View style={[styles.card, { backgroundColor: colors.ink }]} testID="your-month-card">
+      <View style={styles.body}>
         <View style={styles.header}>
-          {eyebrow(t('decide.month.roughEyebrow'))}
+          {eyebrow ?? null}
           <View style={styles.spacer} />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('decide.month.editA11y')}
-            onPress={onEditRough}
-            style={({ pressed }) => [styles.edit, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
-          >
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.surface }}>{t('decide.month.edit')}</Text>
-          </Pressable>
+          {dark ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('decide.month.editA11y')}
+              onPress={onEditRough}
+              style={({ pressed }) => [styles.edit, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+            >
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.surface }}>{t('decide.month.edit')}</Text>
+            </Pressable>
+          ) : (
+            <Pill label={t('decide.month.edit')} accessibilityLabel={t('decide.month.editA11y')} variant="secondary" onPress={onEditRough} />
+          )}
         </View>
         <FigureStrip
-          dark
+          dark={dark}
           items={[
             { caption: t('decide.month.in'), value: whole(monthlyIncome) },
             { caption: t('decide.month.out'), value: whole(monthlySpending) },
             { caption: t('decide.month.left'), value: whole(left), tone: left < 0 ? 'negative' : 'neutral' },
           ]}
+        />
+      </View>
+    );
+  }
+
+  return null;
+}
+
+export function YourMonthCard({ source, settings, userId, whole, onEditRough }: YourMonthCardProps) {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+
+  if (source === null) return null;
+
+  const eyebrow = (text: string) => (
+    <Text
+      style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkSoft1, textTransform: 'uppercase', letterSpacing: 1.2 }}
+    >
+      {text}
+    </Text>
+  );
+
+  // ── D-37: a needed rate is missing, so no figure is shown on this card ──
+  if (source.unconverted !== null) {
+    const missing = missingRateCopy(source.unconverted);
+    const tr = t as Translate;
+    return (
+      <View style={[styles.card, { backgroundColor: colors.ink }]} testID="your-month-card">
+        {eyebrow(t('decide.month.eyebrow'))}
+        <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.surface }}>
+          {refText(tr, missing.title)}
+        </Text>
+        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkSoft1 }}>{refText(tr, missing.body)}</Text>
+      </View>
+    );
+  }
+
+  // ── logged / rough ──
+  if (source.kind === 'logged' || source.kind === 'rough') {
+    return (
+      <View style={[styles.card, { backgroundColor: colors.ink }]} testID="your-month-card">
+        <MonthDetailsBody
+          source={source}
+          settings={settings}
+          userId={userId}
+          whole={whole}
+          onEditRough={onEditRough}
+          dark
+          eyebrow={eyebrow(source.kind === 'logged' ? t('decide.month.eyebrow') : t('decide.month.roughEyebrow'))}
         />
       </View>
     );
@@ -250,6 +305,11 @@ export function YourMonthCard({ source, settings, userId, whole, onEditRough }: 
       </View>
     </View>
   );
+}
+
+/** The ink-card pill on the card; the shared secondary Pill on the light sheet. */
+function ActionPill({ label, onPress, dark }: { label: string; onPress: () => void; dark: boolean }) {
+  return dark ? <DarkPill label={label} onPress={onPress} /> : <Pill label={label} variant="secondary" onPress={onPress} />;
 }
 
 function DarkPill({ label, onPress, selected = false }: { label: string; onPress: () => void; selected?: boolean }) {
@@ -273,6 +333,7 @@ function DarkPill({ label, onPress, selected = false }: { label: string; onPress
 }
 
 const styles = StyleSheet.create({
+  body: { gap: space.gapMd },
   card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapMd },
   header: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.gapSm },
   spacer: { flex: 1 },
