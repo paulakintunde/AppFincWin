@@ -774,7 +774,7 @@ Plans:
 - [x] 05-104-PLAN.md — Card limit box, fee and block notes, card-limit basis item; Step 1 new item types (D-91, D-92)
 
 **Wave 26** *(blocked on Wave 25 completion)*
-- [ ] 05-109-PLAN.md — Retire R16-replaced copy, drop the next_month alias, extend the copy and text-fit guards (D-76, DCU-09)
+- [x] 05-109-PLAN.md — Retire R16-replaced copy, drop the next_month alias, extend the copy and text-fit guards (D-76, DCU-09)
 
 **Wave 27** *(Decide home redesign; blocked on Wave 26 completion)*
 - [ ] 05-110-PLAN.md — R17 copy, the tightestFigures ⓘ and the homeBasisSeen flag (D-95..D-99)
