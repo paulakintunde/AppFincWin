@@ -226,3 +226,79 @@ describe('homeCardModel', () => {
     });
   });
 });
+
+describe('homeCardModel D-107 judge-on basis', () => {
+  const figureOf = (m: HomeCardModel) => {
+    if (m.state !== 'figure') throw new Error('expected a figure');
+    return m;
+  };
+  const ctxOf = (source: SnapshotResult) => {
+    if (source.kind !== 'logged') throw new Error('fixture');
+    const ctx = prepareContext(source.snapshot);
+    if (!ctx.ok) throw new Error('fixture');
+    return ctx.context;
+  };
+
+  it('D-107 a month-basis snapshot is labelled month and the hero is leftBefore', () => {
+    const source = loggedSource({ months: months(4), basisOverride: 'month' });
+    const c = ctxOf(source);
+    expect(c.money.basis).toBe('month');
+    const m = figureOf(homeCardModel(source, settings(), { ...READY, judgeOn: 'month' }));
+    expect(m).toMatchObject({ label: 'month', info: null, selected: 'month', fallback: null });
+    expect(m.amount).toBe(Math.abs(c.leftBefore));
+    expect(m.short).toBe(c.leftBefore < 0);
+  });
+
+  it('D-107 In minus Out equals the hero on every basis', () => {
+    for (const basisOverride of ['month', 'worst', 'average'] as const) {
+      const source = loggedSource({ months: months(4), basisOverride });
+      const m = figureOf(homeCardModel(source, settings(), READY));
+      expect(m.inAmount - m.outAmount).toBe(ctxOf(source).leftBefore);
+    }
+  });
+
+  it('D-107 the month breakdown rows add up to the result', () => {
+    const b = figureOf(homeCardModel(loggedSource({ months: months(4), basisOverride: 'month' }), settings(), READY)).breakdown;
+    expect(b.income - b.spending - b.debts - b.saving - b.setAside).toBe(b.result);
+  });
+
+  it('D-107 average and worst are labelled and figured exactly as before', () => {
+    const avg = loggedSource({ months: months(4), basisOverride: 'average' });
+    const worst = loggedSource({ months: months(4), basisOverride: 'worst' });
+    expect(figureOf(homeCardModel(avg, settings(), READY))).toMatchObject({ label: 'average', amount: Math.abs(ctxOf(avg).leftBefore), selected: null, fallback: null });
+    expect(figureOf(homeCardModel(worst, settings(), READY))).toMatchObject({ label: 'worst', amount: Math.abs(ctxOf(worst).leftBefore) });
+  });
+
+  it('D-107 fewer than 3 full months on the month basis is still month, on worst it is tightest', () => {
+    expect(figureOf(homeCardModel(loggedSource({ months: months(2), basisOverride: 'month' }), settings(), READY))).toMatchObject({ label: 'month', info: null });
+    expect(figureOf(homeCardModel(loggedSource({ months: months(2), basisOverride: 'worst' }), settings(), READY))).toMatchObject({ label: 'tightest', info: 'tightestFigures' });
+  });
+
+  it('D-107 a fallback names Worst and carries the currencies', () => {
+    const source: SnapshotResult = { ...loggedSource({ months: months(4), basisOverride: 'worst' }), judgeOn: 'month', monthFallback: { currencies: ['EUR'] } };
+    expect(figureOf(homeCardModel(source, settings(), { ...READY, judgeOn: 'month' }))).toMatchObject({ label: 'worst', selected: 'month', fallback: { currencies: ['EUR'] } });
+    // the engine's own tightest label is replaced too: the sub-line names Worst
+    const few: SnapshotResult = { ...loggedSource({ months: months(2), basisOverride: 'worst' }), monthFallback: { currencies: ['EUR'] } };
+    expect(figureOf(homeCardModel(few, settings(), READY)).label).toBe('worst');
+  });
+
+  it('D-107 selected is the judgeOn flag and null flag means loading', () => {
+    const source = loggedSource({ months: months(4), basisOverride: 'average' });
+    expect(figureOf(homeCardModel(source, settings(), { ...READY, judgeOn: 'average' })).selected).toBe('average');
+    expect(figureOf(homeCardModel(source, settings(), { ...READY, judgeOn: undefined })).selected).toBeNull();
+    expect(homeCardModel(source, settings(), { ...READY, judgeOn: null })).toEqual({ state: 'loading' });
+  });
+
+  it('D-107 rough and none sources ignore the choice', () => {
+    const rough = homeCardModel(roughSource(600_000, 400_000, 250_000), settings({ rough_income: 400_000, rough_spending: 250_000 }), { ...READY, judgeOn: 'worst' });
+    expect(rough).toMatchObject({ state: 'figure', label: 'figures', selected: 'worst', fallback: null });
+    expect(homeCardModel(noneSource(), settings(), { ...READY, judgeOn: 'month' })).toMatchObject({ state: 'first_run', label: 'figures' });
+  });
+
+  it('D-106 the switched label still wins on the first visit', () => {
+    const source = loggedSource({ months: months(4), basisOverride: 'month' });
+    const m = homeCardModel(source, settings({ rough_income: 400_000 }), { ...READY, homeBasisSeen: false, judgeOn: 'month' });
+    expect(m).toMatchObject({ state: 'figure', label: 'switched' });
+  });
+});
+

@@ -14,7 +14,10 @@ import type { SnapshotResult } from '../snapshot/types';
 const MIN_FULL_MONTHS = 3;
 
 /** The card label. 'tightest' carries the tightestFigures info (R17.13 M3); 'switched' shows on the first visit after the switch only. */
-export type HomeCardLabel = 'average' | 'worst' | 'tightest' | 'figures' | 'switched';
+export type HomeCardLabel = 'month' | 'average' | 'worst' | 'tightest' | 'figures' | 'switched';
+
+/** The user's Judge-on choice (D-107). */
+export type HomeJudgeOn = 'month' | 'worst' | 'average';
 
 export type HomeCardUnavailable =
   /** No full month and no rough figure: action 'Add rough figures'. */
@@ -45,6 +48,10 @@ export type HomeCardModel =
       breakdown: MonthBreakdown;
       /** True when the home rendered with the logged basis: the caller then sets `homeBasisSeen`. */
       markBasisSeen: boolean;
+      /** D-107: the user's Judge-on choice (flags.judgeOn), null when not given. */
+      selected: HomeJudgeOn | null;
+      /** D-106 addendum: set when This month fell back to Worst for want of these currencies' rates. */
+      fallback: { currencies: readonly string[] } | null;
     };
 
 /**
@@ -103,6 +110,8 @@ export interface HomeCardFlags {
   today: string;
   /** The per-user `homeBasisSeen` flag (05-110); a failed read counts as not seen. */
   homeBasisSeen: boolean;
+  /** D-107: the Judge-on choice. undefined = unknown and ignored; null = not read yet (the card stays loading). */
+  judgeOn?: HomeJudgeOn | null;
 }
 
 function hasRough(settings: DecideSettingsRow | null): boolean {
@@ -112,6 +121,7 @@ function hasRough(settings: DecideSettingsRow | null): boolean {
 export function homeCardModel(source: SnapshotResult | null, settings: DecideSettingsRow | null, flags: HomeCardFlags): HomeCardModel {
   if (flags.status === 'loading') return { state: 'loading' };
   if (flags.status === 'error') return { state: 'error' };
+  if (flags.judgeOn === null) return { state: 'loading' };
   if (source === null) return { state: 'loading' };
 
   const loggedContext = source.kind === 'logged' ? prepareContext(source.snapshot) : null;
@@ -120,7 +130,10 @@ export function homeCardModel(source: SnapshotResult | null, settings: DecideSet
   // The label the engine's basis gives; "Your figures" before a logged month decides it (D-04).
   let label: HomeCardLabel = 'figures';
   if (money !== null) {
-    if (money.fullMonthsUsed < MIN_FULL_MONTHS) label = 'tightest';
+    // D-107: the label names the basis the snapshot was built on; a fallback shows Worst (D-106 addendum).
+    if (money.basis === 'month') label = 'month';
+    else if (source.monthFallback != null) label = 'worst';
+    else if (money.fullMonthsUsed < MIN_FULL_MONTHS) label = 'tightest';
     else label = money.basis === 'average' ? 'average' : 'worst';
     // D-95: the switch label replaces the normal one on the first visit after real history replaced rough figures.
     if (!flags.homeBasisSeen && hasRough(settings)) label = 'switched';
@@ -143,11 +156,18 @@ export function homeCardModel(source: SnapshotResult | null, settings: DecideSet
   if (breakdown === null) {
     return { state: 'unavailable', label: 'figures', unavailable: { reason: 'no_basis', action: 'add_rough' } };
   }
-  if (source.kind === 'rough') return figure('figures', null, breakdown);
-  return figure(label, label === 'tightest' ? 'tightestFigures' : null, breakdown);
+  const selected = flags.judgeOn ?? null;
+  if (source.kind === 'rough') return figure('figures', null, breakdown, selected, null);
+  return figure(label, label === 'tightest' ? 'tightestFigures' : null, breakdown, selected, source.monthFallback ?? null);
 }
 
-function figure(label: HomeCardLabel, info: 'tightestFigures' | null, breakdown: MonthBreakdown): HomeCardModel {
+function figure(
+  label: HomeCardLabel,
+  info: 'tightestFigures' | null,
+  breakdown: MonthBreakdown,
+  selected: HomeJudgeOn | null,
+  fallback: { currencies: readonly string[] } | null,
+): HomeCardModel {
   const left = breakdown.result;
   return {
     state: 'figure',
@@ -159,5 +179,7 @@ function figure(label: HomeCardLabel, info: 'tightestFigures' | null, breakdown:
     outAmount: breakdownOut(breakdown),
     breakdown,
     markBasisSeen: breakdown.source === 'logged',
+    selected,
+    fallback,
   };
 }

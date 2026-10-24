@@ -18,7 +18,7 @@ import { DarkPill } from '../ui/DarkPill';
 import { InfoLabel } from '../ui/InfoLabel';
 import { useInfoSheet } from '../ui/useInfoSheet';
 import { openNewCheck } from './checkHref';
-import { homeCardModel, type HomeCardLabel, type HomeCardModel } from './homeCardModel';
+import { homeCardModel, type HomeCardLabel, type HomeCardModel, type HomeJudgeOn } from './homeCardModel';
 import { heroAmountText, heroOneLineMax } from './heroAmountText';
 
 export { heroAmountText };
@@ -65,6 +65,7 @@ export function HomeHero({ amount, word, short }: HomeHeroProps) {
 
 /** R18.1: the basis moves from the eyebrow (now the constant card.eyebrow) to the sub-line, one key per engine basis. */
 const LABEL_KEY = {
+  month: 'decide.home.hero.subMonth',
   worst: 'decide.home.hero.subWorst',
   average: 'decide.home.hero.subAverage',
   tightest: 'decide.home.hero.subTightest',
@@ -83,6 +84,8 @@ export interface HomeSummaryCardProps {
   status: 'loading' | 'error' | 'ready';
   /** The per-user `homeBasisSeen` flag (05-110). The screen sets it after the logged basis rendered (model.markBasisSeen). */
   homeBasisSeen: boolean;
+  /** D-107: the Judge-on choice; undefined until the screen passes it (plan 05-140), null = not read yet. */
+  judgeOn?: HomeJudgeOn | null;
   currency: string;
   today: string;
   /** Opens the Month details sheet (Details, and a press on the hero area). */
@@ -101,6 +104,7 @@ export function HomeSummaryCard({
   settings,
   status,
   homeBasisSeen,
+  judgeOn,
   currency,
   today,
   onOpenDetails,
@@ -117,7 +121,7 @@ export function HomeSummaryCard({
   const nfcfInfo = useInfoSheet('netFreeCashFlow');
   const [resultOpen, setResultOpen] = useState(false);
 
-  const model: HomeCardModel = homeCardModel(source, settings, { status, homeBasisSeen, today });
+  const model: HomeCardModel = homeCardModel(source, settings, { status, homeBasisSeen, today, judgeOn });
 
   const eyebrowStyle = {
     ...textRole(pairing, 'label'),

@@ -27,6 +27,7 @@ import { RoughFiguresSheet } from './RoughFiguresSheet';
 
 /** R18.1: the basis the engine used, in the first meta line under the title. */
 const BASIS_KEY = {
+  month: 'decide.home.monthDetails.basisMonth',
   worst: 'decide.home.monthDetails.basisWorst',
   average: 'decide.home.monthDetails.basisAverage',
   tightest: 'decide.home.monthDetails.basisTightest',
