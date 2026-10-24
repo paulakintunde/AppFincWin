@@ -106,7 +106,7 @@ const GEOMETRY_HEIGHT: { path: string; count: number; reason: string }[] = [
   { path: 'check/steps/step2/CardMinimumSheet.tsx', count: 1, reason: 'chevron glyph' },
   { path: 'check/steps/step2/MethodPanels.tsx', count: 1, reason: 'stepper button target (glyph only)' },
   { path: 'home/AddChangeRow.tsx', count: 2, reason: 'plus glyph bars' },
-  { path: 'quick/QuickCheckForm.tsx', count: 3, reason: 'loading skeleton blocks (no text)' },
+  { path: 'quick/QuickCheckForm.tsx', count: 2, reason: 'loading skeleton bar and the 1px result rule (no text)' },
   { path: 'ui/CheckRow.tsx', count: 4, reason: 'checkbox and remove glyphs (no text)' },
   { path: 'ui/CollapsibleSection.tsx', count: 1, reason: 'chevron glyph' },
   { path: 'ui/CombineToggle.tsx', count: 1, reason: 'dot glyph' },
