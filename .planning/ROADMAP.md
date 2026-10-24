@@ -846,7 +846,7 @@ Plans:
 - [x] 05-140-PLAN.md — Judge-on dropdown on the card, the same choice in Month details, screen wiring, the quick-result fallback note, the FAB returns (D-107)
 
 **Wave 45** *(blocked on Wave 44 completion)*
-- [ ] 05-145-PLAN.md — The 'outcome on each basis' card and the fallback note in Step 3 (D-107)
+- [x] 05-145-PLAN.md — The 'outcome on each basis' card and the fallback note in Step 3 (D-107)
 
 **Wave 46** *(blocked on Wave 45 completion)*
 - [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots (R8 frames, R18 alternate frame 1 with the onLayout/Maestro budget), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist, the D-88 speed budgets, the per-pairing hero check and the Money concepts (R18) and Wording and This month (D-106) checklists
