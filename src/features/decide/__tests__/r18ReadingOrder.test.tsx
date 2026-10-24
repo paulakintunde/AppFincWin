@@ -196,6 +196,20 @@ describe('R18 reading order', () => {
     expectOrder(reads(), [/^Overspent each month after this/, 'About Cushion', 'About Total cost', 'About Invested instead']);
   });
 
+  it('D-107 Step 3 reads the verdict card, the basis row, then the outcome card, row by row', async () => {
+    const src = buildDecideSnapshot(demoSource('2026-10-15'));
+    await wrap(<Step3Verdict {...{ ...stepProps(carInputs, {}, src), lastSeenBasis: null, revealKey: 'k' }} />);
+    expectOrder(reads(), [
+      /^(It fits|Needs adjustment|Doesn’t fit right now)/,
+      'header:The outcome on each basis',
+      /^This month: .*(free|overspent)/,
+      /^Worst month: .*(free|overspent)/,
+      /^Average month: .*(free|overspent)/,
+    ]);
+    // exactly one stop per row: the chip and figure inside a row are not stops of their own
+    expect(reads().filter((r) => /^(This month|Worst month|Average month): /.test(r))).toHaveLength(3);
+  });
+
   it('D-101 Pots rows read their per-state labels', async () => {
     mockGoals = [
       goal('', { id: 'a', check_id: null, kind: 'pot', name: 'Car service', target: 60_000, monthly_amount: null, ready_by: '2027-03-31' }),

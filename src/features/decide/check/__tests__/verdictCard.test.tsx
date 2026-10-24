@@ -23,7 +23,9 @@ function strongSource(): SnapshotResult {
 }
 
 function propsFor(source: SnapshotResult = strongSource()): Step3Props {
-  return { ...stepProps(buy({ advertised: 150_000, method: 'cash' }), {}, source), lastSeenBasis: null, revealKey: 'k1' };
+  // D-107: these tests read the verdict card alone; the outcome card has its own tests
+  const base = stepProps(buy({ advertised: 150_000, method: 'cash' }), {}, source);
+  return { ...base, computation: { ...base.computation, basisOutcomes: null }, lastSeenBasis: null, revealKey: 'k1' };
 }
 
 function onTheEdge(p: Step3Props): Step3Props {

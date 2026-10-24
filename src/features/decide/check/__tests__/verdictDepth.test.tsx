@@ -21,7 +21,9 @@ function strongSource(): SnapshotResult {
 }
 
 function propsFor(source: SnapshotResult = loggedSource(), extra: Partial<Step3Props> = {}): Step3Props {
-  return { ...stepProps(buy({ advertised: 150_000, method: 'cash' }), {}, source), lastSeenBasis: null, revealKey: 'k1', ...extra };
+  // D-107: these tests read the verdict card alone; the outcome card has its own tests
+  const base = stepProps(buy({ advertised: 150_000, method: 'cash' }), {}, source);
+  return { ...base, computation: { ...base.computation, basisOutcomes: null }, lastSeenBasis: null, revealKey: 'k1', ...extra };
 }
 
 /** Real computation with a few decision/verdict fields overridden (the engine fields these paths read). */

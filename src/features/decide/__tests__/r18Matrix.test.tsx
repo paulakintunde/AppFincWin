@@ -307,6 +307,33 @@ describe("R18 matrix", () => {
     });
   });
 
+  it("D-107 the outcome card holds at the matrix, stacked or side by side, with a fallback variant", async () => {
+    await eachCell(async (m) => {
+      cell(m);
+      const src = buildDecideSnapshot(demoSource(TODAY));
+      for (const source of [src, { ...src, monthFallback: { currencies: ["EUR", "GBP"] } }]) {
+        const p = { ...stepProps(carInputs, {}, source), lastSeenBasis: null, revealKey: "k" };
+        expect(p.computation.basisOutcomes).toBeTruthy();
+        const view = await wrap(<Step3Verdict {...p} />, m.scale);
+        expect(screen.getByText("The outcome on each basis")).toBeTruthy();
+        const rows = screen.getAllByTestId(/^basis-outcome-(month|worst|average)$/);
+        expect(rows).toHaveLength(3);
+        const stacked = m.width < 360 || m.scale > 1.3;
+        for (const r of rows) {
+          const style = StyleSheet.flatten(r.props.style);
+          expect(style?.height).toBeUndefined();
+          expect(style?.position).toBeUndefined();
+          // side by side the three rows share the width; stacked each takes its own line
+          expect(style?.flex).toBe(stacked ? undefined : 1);
+        }
+        for (const t of screen.getAllByText(/ (free|overspent)$/)) {
+          expect(t.props.numberOfLines).toBeUndefined();
+        }
+        await view.unmount();
+      }
+    });
+  });
+
   it("D-103 the housing editor and loan switches hold at the matrix", async () => {
     await eachCell(async (m) => {
       cell(m);

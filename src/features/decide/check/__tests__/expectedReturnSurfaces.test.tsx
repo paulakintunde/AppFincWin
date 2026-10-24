@@ -25,7 +25,9 @@ function strongSource(): SnapshotResult {
 const invest = (over: Partial<CheckInputs> = {}): CheckInputs => ({ ...emptyCheckInputs('invest', TODAY), name: 'Fund', advertised: 100_000, method: 'lump', ...over });
 
 function verdictProps(inputs: CheckInputs): Step3Props {
-  return { ...stepProps(inputs, {}, strongSource()), lastSeenBasis: null, revealKey: 'k1' };
+  // D-107: these tests read the verdict card alone; the outcome card has its own tests
+  const base = stepProps(inputs, {}, strongSource());
+  return { ...base, computation: { ...base.computation, basisOutcomes: null }, lastSeenBasis: null, revealKey: 'k1' };
 }
 
 const LINE = /^At 5% a year: about \$\d+ after 60 months\. Not a forecast\.$/;

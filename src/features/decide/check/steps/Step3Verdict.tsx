@@ -1,13 +1,18 @@
 /**
- * 05-15 Step 3, the top: the verdict card, the basis row and the notices (D-05, D-74). The warnings live in the "What breaks" fold;
+ * 05-15 Step 3, the top: the verdict card, the basis row, the outcome on each basis and the notices (D-05, D-74). The warnings live in the "What breaks" fold;
  * the flow screen places the hint and the FoldList below this. One haptic per visit (success for fits, warning otherwise), keyed by `revealKey`.
  */
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { basisDetailItems } from '../../copy/depthVerdictCopy';
 import { BasisDetailRow } from '../BasisDetailRow';
+import { BasisOutcomeCard } from '../BasisOutcomeCard';
 import { hapticSuccess, hapticWarning } from '@/ui/haptics';
+import { useT } from '@/i18n';
+import { Text } from '@/ui/Text';
+import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
+import { fontSize, textRole } from '@/theme/typography';
 import { moneyA11yFn, moneyFn } from './stepUi';
 import { VerdictCard } from '../VerdictCard';
 import { expectedReturnProjection } from '../../snapshot/expectedReturn';
@@ -23,6 +28,8 @@ export interface Step3Props extends StepProps {
 
 export function Step3Verdict(props: Step3Props) {
   const { computation, source, whole, lastSeenBasis, revealKey, onEditCardMinimum } = props;
+  const t = useT();
+  const { colors, pairing } = useTheme();
   const fmt = moneyFn(whole, source.currency);
   const fmtCents = moneyFn(props.exact, source.currency);
   const fmtA11y = moneyA11yFn(whole, source.currency);
@@ -65,7 +72,13 @@ export function Step3Verdict(props: Step3Props) {
           busy={props.busy === true}
         />
         <BasisDetailRow items={basisItems} onPressCardMinimum={onEditCardMinimum} />
+        {source.monthFallback ? (
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+            {t('decide.home.hero.monthWaitingRate', { currency: source.monthFallback.currencies.join(', ') })}
+          </Text>
+        ) : null}
       </View>
+      <BasisOutcomeCard outcomes={computation.basisOutcomes ?? null} checkKey={revealKey} fmt={fmt} fmtA11y={fmtA11y} busy={props.busy === true} />
       <WarningList verdict={verdict} fmt={fmt} fmtA11y={fmtA11y} fmtDate={formatDate} stackedApplied={stackedApplied} warnings={false} />
     </View>
   );

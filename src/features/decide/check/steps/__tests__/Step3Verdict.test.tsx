@@ -19,7 +19,15 @@ const loan = (price: number): Partial<CheckInputs> => ({
 });
 
 function propsFor(over: Partial<CheckInputs>, source: SnapshotResult, extra: Partial<Step3Props> = {}): Step3Props {
-  return { ...stepProps(buy(over), {}, source), lastSeenBasis: null, revealKey: 'k1', ...extra };
+  const base = stepProps(buy(over), {}, source);
+  // D-107: the outcome card is covered by its own tests below; the older tests read the verdict card alone, so they start without it
+  return { ...base, computation: { ...base.computation, basisOutcomes: null }, lastSeenBasis: null, revealKey: 'k1', ...extra };
+}
+
+/** D-107: the same props with the real outcomes the engine computed in idle time. */
+function withOutcomes(over: Partial<CheckInputs>, source: SnapshotResult, extra: Partial<Step3Props> = {}): Step3Props {
+  const base = stepProps(buy(over), {}, source);
+  return { ...base, lastSeenBasis: null, revealKey: 'k1', ...extra };
 }
 
 /** D-74: the warnings moved from the top of step 3 to the "What breaks" fold body; same cards, same copy. */
@@ -184,5 +192,79 @@ describe('Step3Verdict', () => {
     expect(String(title.props.children).length).toBeLessThanOrEqual(64);
     expect(screen.getByText('It fits').props.numberOfLines).toBeUndefined();
     expect(screen.queryByText(/ in, .* out once this is running/)).toBeNull();
+  });
+
+  describe('D-107 the outcome on each basis', () => {
+    const cash = { advertised: 150_000, method: 'cash' as const };
+
+    it('D-107 Step 3 shows the outcome card after the basis row and before What breaks', async () => {
+      const p = withOutcomes(cash, loggedSource());
+      expect(p.computation.basisOutcomes).not.toBeNull();
+      await wrap(
+        <>
+          <Step3Verdict {...p} />
+          {breaks(p)}
+        </>
+      );
+      expect(screen.getByText('The outcome on each basis')).toBeTruthy();
+      expect(screen.getByTestId('basis-outcome-month')).toBeTruthy();
+      expect(screen.getByTestId('basis-outcome-worst')).toBeTruthy();
+      expect(screen.getByTestId('basis-outcome-average')).toBeTruthy();
+    });
+
+    it('D-107 the outcome card is hidden for a first read', async () => {
+      const p = withOutcomes(cash, roughSource());
+      expect(p.computation.status).toBe('first_read');
+      await wrap(<Step3Verdict {...p} />);
+      expect(screen.queryByText('The outcome on each basis')).toBeNull();
+    });
+
+    it("D-107 the outcome card follows the check's inputs after they settle", async () => {
+      const first = withOutcomes(loan(600_000), loggedSource());
+      const { rerender } = await wrap(<Step3Verdict {...first} busy />);
+      const before = screen.getByTestId('basis-outcome-month').props.accessibilityLabel as string;
+      const next = withOutcomes(loan(1_200_000), loggedSource());
+      await rerender(<Step3Verdict {...next} />);
+      expect(screen.getByTestId('basis-outcome-month').props.accessibilityLabel).not.toBe(before);
+    });
+
+    it('D-107 switching the Judge-on choice moves the chosen mark on an open check', async () => {
+      const marked = async (judgeOn: 'month' | 'worst' | 'average'): Promise<string[]> => {
+        const p = withOutcomes(cash, { ...loggedSource(), judgeOn });
+        const { unmount } = await wrap(<Step3Verdict {...p} />);
+        const chosen = (['month', 'worst', 'average'] as const).filter((b) => screen.getByTestId(`basis-outcome-${b}`).props.accessibilityState?.selected === true);
+        await unmount();
+        return chosen;
+      };
+      expect(await marked('month')).toEqual(['month']);
+      expect(await marked('worst')).toEqual(['worst']);
+      expect(await marked('average')).toEqual(['average']);
+    });
+
+    it('D-107 the reading order is verdict card, basis row, outcome card, What breaks', async () => {
+      const p = withOutcomes(cash, loggedSource());
+      await wrap(
+        <>
+          <Step3Verdict {...p} />
+          {breaks(p)}
+        </>
+      );
+      const json = JSON.stringify(screen.toJSON());
+      const at = ['It fits', 'The outcome on each basis'].map((w) => json.indexOf(w));
+      expect(at[0]).toBeGreaterThanOrEqual(0);
+      expect(at[1]).toBeGreaterThan(at[0]!);
+      expect(json.indexOf('Out of this month')).toBeLessThan(at[1]!);
+    });
+
+    it('D-107 Step 3 says This month is waiting for a rate under a fallback', async () => {
+      const source: SnapshotResult = { ...loggedSource(), monthFallback: { currencies: ['EUR', 'GBP'] } };
+      await wrap(<Step3Verdict {...withOutcomes(cash, source)} />);
+      expect(screen.getByText('This month is waiting for a EUR, GBP rate')).toBeTruthy();
+    });
+
+    it('D-107 no waiting line without a fallback', async () => {
+      await wrap(<Step3Verdict {...withOutcomes(cash, loggedSource())} />);
+      expect(screen.queryByText(/is waiting for a/)).toBeNull();
+    });
   });
 });
