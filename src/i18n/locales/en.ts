@@ -2029,7 +2029,6 @@ const en = {
       empty: 'No pots yet. A pot keeps money for a cost with a set amount and a date, such as a car service in March.',
       emptyAction: 'Add a pot',
       doneFold_one: 'Done · {{count}}', doneFold_other: 'Done · {{count}}', doneLine: 'Done {{date}}',
-      caption: '{{saved}} of {{target}}', progressA11y: '{{pct}} percent',
       stateActive: '{{amount}} a month · by {{month}}',
       stateReached: 'Target reached · nothing more to set aside',
       statePastDue: 'Past its date · {{remaining}} still to save',

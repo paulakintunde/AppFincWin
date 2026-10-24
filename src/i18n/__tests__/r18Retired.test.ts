@@ -23,6 +23,10 @@ describe('R18 retired copy', () => {
     }
   });
 
+  it('D-101 the unused pots caption and progress keys are gone (GoalProgress and decide.depth.goal.* serve the rows)', () => {
+    for (const k of ['decide.pots.caption', 'decide.pots.progressA11y']) expect({ k, v: node(k) }).toEqual({ k, v: undefined });
+  });
+
   it('D-103 no of-5 line text remains', () => {
     const gone = [
       'decide.home.rows.linesSet_one', 'decide.home.rows.linesSet_other', 'decide.home.linesFold.preview_one', 'decide.home.linesFold.preview_other',
