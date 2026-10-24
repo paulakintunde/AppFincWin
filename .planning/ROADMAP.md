@@ -817,7 +817,7 @@ Plans:
 
 **Wave 36** *(blocked on Wave 35 completion)*
 - [ ] 05-129-PLAN.md — Wait becomes a pot: copy and the own-pot test through computeCheck (D-101)
-- [ ] 05-134-PLAN.md — You › Money Pots row and Needs a look pot entries (D-101)
+- [x] 05-134-PLAN.md — You › Money Pots row and Needs a look pot entries (D-101)
 
 **Wave 37** *(blocked on Wave 36 completion)*
 - [ ] 05-130-PLAN.md — Retire R18-replaced copy; R6 matrix, reading-order and copy guards (D-100..D-104, DCU-09)
