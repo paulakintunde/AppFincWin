@@ -11,6 +11,7 @@ import { colors } from '@/theme/tokens';
 import { TODAY, loggedSource, month, noneSource, unconvertedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { homeCardModel } from '../homeCardModel';
 import { HomeHero, HomeSummaryCard, heroAmountText, type HomeSummaryCardProps } from '../HomeSummaryCard';
+import { heroOneLineMax } from '../heroAmountText';
 
 jest.setTimeout(30000);
 
@@ -66,6 +67,19 @@ describe('heroAmountText', () => {
     expect(text).not.toMatch(/\d\u200B\d/);
   });
 
+  it('D-97 the one-line limit follows the window width and text scale, never below 10', () => {
+    expect(heroOneLineMax(320, 2.0)).toBe(10);
+    expect(heroOneLineMax(320, 1.0)).toBeGreaterThanOrEqual(10);
+    // Pixel 9 at 411 wide and 1.15x: "CA$5,876.23" stays whole on one line
+    const pixel = heroOneLineMax(411, 1.15);
+    expect(pixel).toBeGreaterThanOrEqual(12);
+    expect(heroAmountText('CA$5,876.23', pixel)).toEqual({ text: 'CA$5,876.23', fitOneLine: true });
+    // past the 1.3x cap the limit stops shrinking
+    expect(heroOneLineMax(402, 3.0)).toBe(heroOneLineMax(402, 1.3));
+    // a long amount on a narrow, large-text screen still breaks at separators
+    expect(heroAmountText('$12,345,678.90', heroOneLineMax(320, 2.0)).fitOneLine).toBe(false);
+  });
+
   it('D-97 long amounts break at other locales\' separators but not at a decimal point', () => {
     expect(heroAmountText('1.234.567,00 €').text).toBe('1.\u200B234.\u200B567,00 €');
     expect(heroAmountText('$1,234,567.89').text).toBe('$1,\u200B234,\u200B567.89');
@@ -98,9 +112,9 @@ describe('HomeHero', () => {
     }
   });
 
-  it('D-97 an amount past 10 characters drops the one-line rule and splits only at separators', async () => {
-    await renderHero(<HomeHero amount="$12,345,678" word="left" short={false} />, 'bold', 1);
-    const amount = screen.getByText('$12,\u200B345,\u200B678');
+  it('D-97 an amount past the one-line limit drops the one-line rule and splits only at separators', async () => {
+    await renderHero(<HomeHero amount="$12,345,678,901,234,567" word="left" short={false} />, 'bold', 1);
+    const amount = screen.getByText('$12,\u200B345,\u200B678,\u200B901,\u200B234,\u200B567');
     expect(amount.props.numberOfLines).toBeUndefined();
   });
 

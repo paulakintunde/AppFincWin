@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import type { DecideSettingsRow } from '@/db/decideSettings';
 import { currencyCode } from '@/engine/money';
@@ -19,7 +19,7 @@ import { InfoLabel } from '../ui/InfoLabel';
 import { useInfoSheet } from '../ui/useInfoSheet';
 import { openNewCheck } from './checkHref';
 import { homeCardModel, type HomeCardLabel, type HomeCardModel } from './homeCardModel';
-import { heroAmountText } from './heroAmountText';
+import { heroAmountText, heroOneLineMax } from './heroAmountText';
 
 export { heroAmountText };
 
@@ -37,7 +37,8 @@ export interface HomeHeroProps {
 /** R17.13 M2: two Texts in a wrapping baseline row. The amount stays whole on line 1; the word wraps under it. */
 export function HomeHero({ amount, word, short }: HomeHeroProps) {
   const { colors, pairing } = useTheme();
-  const { text, fitOneLine } = heroAmountText(amount);
+  const { width, fontScale } = useWindowDimensions();
+  const { text, fitOneLine } = heroAmountText(amount, heroOneLineMax(width, fontScale));
   const base = {
     fontFamily: FONT_PAIRINGS[pairing].display,
     fontSize: fontSize.netWorth,
