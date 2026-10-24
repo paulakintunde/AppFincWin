@@ -3,7 +3,7 @@
  * paused mutation variables), so: integer minor units as `number`, rates as decimal strings, never `Percent`/bigint
  * (RESEARCH Pitfall 8). Engine objects (Verdict, Percent) live only in memory, rebuilt on render (D-15).
  */
-import type { AlternativeRow, Alternatives, AssessContext, BuyCheck, CardRecord, CurrencyCode, Decision, DecideOption, DecideSnapshot, FirstRead, IncomeAtRiskReport, InstalmentFreq, InvestmentViews, ItemType, MinorUnits, PlanResult, PotInput, PurchaseCheck, ResolvedPrice, RoughFigures, RunningCostCategory, RunningCosts, SetbackCode, SetbackReport, StackedCheckInput, TotalCost, Verdict, WaitPlan } from '@/engine/decide'; // CurrencyCode / MinorUnits re-exported per 04 D-62
+import type { AlternativeRow, Alternatives, AssessContext, Basis, BuyCheck, CardRecord, CurrencyCode, Decision, DecideOption, DecideSnapshot, FirstRead, IncomeAtRiskReport, InstalmentFreq, InvestmentViews, ItemType, MinorUnits, PlanResult, PotInput, PurchaseCheck, ResolvedPrice, RoughFigures, RunningCostCategory, RunningCosts, SetbackCode, SetbackReport, StackedCheckInput, TotalCost, Verdict, WaitPlan } from '@/engine/decide'; // CurrencyCode / MinorUnits re-exported per 04 D-62
 import type { ImpliedAprResult } from '@/engine/payoff';
 import type { CustomCurrencyRow, FxLatestRow } from '@/db/rows';
 
@@ -28,6 +28,8 @@ export interface CardChoice { accountId: string; name: string; record: CardRecor
 // D-37 (part 2): conversion facts for the basis line and Assumptions, and the missing-rate note. Plain JSON (rateText is the 10-dp string from 05-33, never a number).
 export interface ConversionNote { currency: string; rateText: string; rateDate: string } // home units per 1 unit of `currency` at the latest stored rate; rateDate = the earlier rate_date of the two legs
 export interface UnconvertedNote { currencies: readonly string[]; rowCount: number }   // a needed amount had no stored rate: every computation reports 'unconverted', never a guessed figure
+// D-106: current-month lines (paid or pending, not skipped) that no stored rate converts. Separate from `unconverted`: the history is untouched; only the month basis reads it (falls back to Worst, D-107). Sorted currency codes; rowsByCurrency counts rows.
+export interface MonthUnconvertedNote { currencies: readonly string[]; rowCount: number; rowsByCurrency: Readonly<Record<string, number>> }
 // D-69: past lines saved while their own rate was pending, converted at the latest stored rate (display and maths only, never written). rateDate = the earliest rate date used.
 export interface ProvisionalNote { rowCount: number; rateDate: string }
 // D-67: the stored rates the snapshot was built with, so a check typed in another currency converts at the same latest stored rate (checkCurrency.ts). Absent (test fixtures) = no rate: such a check reads unconverted.
@@ -36,7 +38,7 @@ export interface SnapshotFx { rates: readonly FxLatestRow[]; customs: readonly C
 export interface CardLimitRateNote { kind: 'card_limit_rate'; date: string }
 // D-101 (R18.2): pots = the live, not-done pots in the home currency, on every source kind (05-134 reads them; the rough hero takes the same set-asides off); potChecks = pot id → check id for the pots a check made (its Wait pot), so a reopened Waiting check drops its own pot (withoutOwnPot). Absent (test fixtures) = none
 // D-91 / D-92: cardMaxPurchase = CARD_MAX_PURCHASE_USD in the home currency, floored (null = no stored USD rate; absent in test fixtures = no limit); region = the RD-02 country code the card rules read (absent in fixtures = unknown); basisNotes: see CardLimitRateNote (absent = none)
-interface SnapshotBase { currency: CurrencyCode; meta: SnapshotMeta; pots?: readonly PotInput[]; potChecks?: Readonly<Record<string, string>>; cards: readonly CardChoice[]; dealerCap: MinorUnits | null; cardMaxPurchase?: MinorUnits | null; region?: string | null; basisNotes?: readonly CardLimitRateNote[]; cash: MinorUnits; conversions: readonly ConversionNote[]; unconverted: UnconvertedNote | null; provisional?: ProvisionalNote | null; fx?: SnapshotFx } // provisional: D-69, absent (test fixtures) = none
+interface SnapshotBase { currency: CurrencyCode; meta: SnapshotMeta; pots?: readonly PotInput[]; potChecks?: Readonly<Record<string, string>>; cards: readonly CardChoice[]; dealerCap: MinorUnits | null; cardMaxPurchase?: MinorUnits | null; region?: string | null; basisNotes?: readonly CardLimitRateNote[]; cash: MinorUnits; conversions: readonly ConversionNote[]; unconverted: UnconvertedNote | null; monthUnconverted?: MonthUnconvertedNote | null; judgeOn?: Basis | null; monthFallback?: { currencies: readonly string[] } | null; provisional?: ProvisionalNote | null; fx?: SnapshotFx } // provisional: D-69, absent (test fixtures) = none
 export type SnapshotResult =
   | (SnapshotBase & { kind: 'logged'; snapshot: DecideSnapshot })
   | (SnapshotBase & { kind: 'rough'; figures: RoughFigures })

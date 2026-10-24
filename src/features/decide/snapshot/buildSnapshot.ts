@@ -37,7 +37,7 @@ import { homeAmountFor, isOwnCurrencyRow } from '@/data/queries/homeAmount';
 import type { AccountRow, CustomCurrencyRow, FxLatestRow, RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import { convertCeiled, convertFloored, makeConverter, provisionalHomeAmount, type ProvisionalAmount } from './conversion';
 import { fullMonthFlags } from './fullMonths';
-import type { CardChoice, CardLimitRateNote, CardTermsView, SnapshotMeta, SnapshotResult } from './types';
+import type { CardChoice, CardLimitRateNote, CardTermsView, MonthUnconvertedNote, SnapshotMeta, SnapshotResult } from './types';
 
 // structurally identical to src/db/* (05-05); 05-12 passes 05-05 rows here, so its typecheck proves they agree
 export interface SettingsSource {
@@ -285,6 +285,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   const expenseTotals = new Map<string, bigint>();
   const lastPaid = new Map<string, string>();
   let expenseLinesThisMonth = 0;
+  const monthMissRows = new Map<string, string>(); // D-106: row id → currency, for current-month lines no stored rate converts
   for (const r of liveRows) {
     if (r.recurring_series_id !== null && r.status !== 'pending') {
       const seen = lastPaid.get(r.recurring_series_id);
@@ -298,6 +299,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     const used = usedMonths.has(month);
     if (conv === null) {
       if (used) missRow(r);
+      else if (month === currentMonth && r.status !== 'skipped') monthMissRows.set(r.id, r.original_currency); // D-106: a line of this month with no stored rate, reported not guessed
       continue;
     }
     if (used) markProvisional(r, conv);
@@ -695,6 +697,12 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   }
 
   const unconverted = converter.unconverted();
+  let monthUnconverted: MonthUnconvertedNote | null = null;
+  if (monthMissRows.size > 0) {
+    const rowsByCurrency: Record<string, number> = {};
+    for (const code of [...monthMissRows.values()].sort()) rowsByCurrency[code] = (rowsByCurrency[code] ?? 0) + 1;
+    monthUnconverted = { currencies: Object.keys(rowsByCurrency), rowCount: monthMissRows.size, rowsByCurrency };
+  }
   const provisional = converter.provisionalNote();
   const meta: SnapshotMeta = {
     fullMonths: fullKeys.length,
@@ -724,6 +732,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     cash: minorUnits(cashOnHand),
     conversions: converter.notes(),
     unconverted,
+    monthUnconverted,
     provisional,
     fx: { rates: source.rates, customs: source.customCurrencies, today },
   };

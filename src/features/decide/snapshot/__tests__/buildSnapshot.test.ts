@@ -1294,3 +1294,59 @@ describe('housing (D-103, R18.4)', () => {
     }
   });
 });
+
+describe('current-month lines without a stored rate (D-106)', () => {
+  const eur = (id: string, over: Partial<ReturnType<typeof row>> = {}) =>
+    row({ id, local_date: '2026-10-02', original_amount: -5_000, original_currency: 'EUR', home_currency: 'EUR', ...over });
+
+  it('D-106 a paid current-month line with no stored rate is reported in monthUnconverted', () => {
+    const base = logged(withExtra({}));
+    const r = logged(withExtra({ rows: [eur('e1')] }));
+    expect(r.monthUnconverted).toEqual({ currencies: ['EUR'], rowCount: 1, rowsByCurrency: { EUR: 1 } });
+    expect(r.unconverted).toBeNull();
+    expect(r.snapshot.months).toEqual(base.snapshot.months.map((m) => (m.month === '2026-10' ? { ...m, lines: [] } : m)));
+  });
+
+  it('D-106 a pending current-month line is reported too', () => {
+    const r = logged(withExtra({ rows: [eur('e1', { status: 'pending' })] }));
+    expect(r.monthUnconverted?.rowCount).toBe(1);
+  });
+
+  it('D-106 a skipped or deleted current-month line is not reported', () => {
+    const r = logged(withExtra({ rows: [eur('e1', { status: 'skipped' }), eur('e2', { deleted_at: '2026-10-03T00:00:00Z' })] }));
+    expect(r.monthUnconverted).toBeNull();
+  });
+
+  it('D-106 monthUnconverted lists each currency once, sorted, and counts rows', () => {
+    const r = logged(
+      withExtra({
+        rows: [eur('e1'), eur('e2'), eur('g1', { original_currency: 'GBP', home_currency: 'GBP' })],
+      })
+    );
+    expect(r.monthUnconverted).toEqual({ currencies: ['EUR', 'GBP'], rowCount: 3, rowsByCurrency: { EUR: 2, GBP: 1 } });
+  });
+
+  it('D-106 a current-month line that converts is not reported', () => {
+    const r = logged(withExtra({ rates: [USD_RATE], rows: [eur('e1')] }));
+    expect(r.monthUnconverted).toBeNull();
+  });
+
+  it("D-106 an older month's unconverted line is still handled as before", () => {
+    const used = logged(withExtra({ rows: [eur('e1', { local_date: '2026-09-20' })] }));
+    expect(used.unconverted).toEqual({ currencies: ['EUR'], rowCount: 1 });
+    expect(used.monthUnconverted).toBeNull();
+    const unused = logged(withExtra({ rows: [eur('old', { local_date: '2025-12-20' })] }));
+    expect(unused.unconverted).toBeNull();
+    expect(unused.monthUnconverted).toBeNull();
+  });
+
+  it('D-106 monthUnconverted is null when nothing is missing, on logged, rough and none results', () => {
+    expect(logged(withExtra({})).monthUnconverted).toBeNull();
+    expect(buildDecideSnapshot(sourceOf()).monthUnconverted).toBeNull();
+    const rough = buildDecideSnapshot(
+      sourceOf({ settings: settings({ rough_income: 400_000, rough_spending: 300_000 }), accounts: [account({ id: 'chk' })], balances: { chk: 1 } })
+    );
+    expect(rough.kind).toBe('rough');
+    expect(rough.monthUnconverted).toBeNull();
+  });
+});
