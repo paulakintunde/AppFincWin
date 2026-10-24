@@ -372,10 +372,11 @@ describe('HomeSummaryCard', () => {
     // the info button is the next flex sibling of the label (rule I)
     const infoRow = label.parent!.parent!;
     expect(StyleSheet.flatten(infoRow.props.style)).toMatchObject({ flexDirection: 'row' });
-    // the row wraps, so Details drops under the label and the info button rather than overlapping
+    // walkthrough 2: the eyebrow owns its line; the controls row below it wraps, so Details never overlaps the pill
     const left = infoRow.parent!;
     expect(StyleSheet.flatten(left.props.style)).toMatchObject({ flexShrink: 1 });
-    expect(StyleSheet.flatten(left.parent!.props.style)).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' });
+    expect(StyleSheet.flatten(left.parent!.props.style)).toMatchObject({ flexDirection: 'column' });
+    expect(StyleSheet.flatten(screen.getByTestId('home-card-controls').props.style)).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap' });
     // 44 x 44 targets: Details by its box, the info button by its 16 glyph and 14 slop
     const details = StyleSheet.flatten(screen.getByLabelText('Month details').props.style);
     expect(details.minHeight).toBeGreaterThanOrEqual(44);
@@ -519,10 +520,30 @@ describe('HomeSummaryCard Judge-on (D-107)', () => {
     await renderIt({}, 2);
     const details = screen.getByLabelText('Month details');
     expect(StyleSheet.flatten(details.props.style).minHeight).toBeGreaterThanOrEqual(44);
-    const row = screen.getByText('Net free cash flow', { includeHiddenElements: true }).parent!.parent!.parent!.parent!;
+    const row = screen.getByTestId('home-card-controls');
     expect(StyleSheet.flatten(row.props.style)).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap' });
     expect(screen.getByText('This month ▾')).toBeTruthy();
     expect(screen.getByText('Details ›')).toBeTruthy();
+  });
+
+  it.each([
+    ['month', 'This month ▾'],
+    ['worst', 'Worst month ▾'],
+    ['average', 'Average month ▾'],
+  ] as const)('D-107 the top row has the same structure for %s: eyebrow line, then pill left and Details right, caret present', async (judgeOn, label) => {
+    await renderIt({ judgeOn });
+    expect(screen.getByText(label)).toBeTruthy();
+    const controls = screen.getByTestId('home-card-controls');
+    expect(StyleSheet.flatten(controls.props.style)).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap' });
+    // the pill is the first child of the controls row, Details the last and pushed to the right
+    expect(controls.props.children.length).toBe(2);
+    expect(screen.getByTestId('judge-on-button').parent).toBe(controls);
+    const details = screen.getByLabelText('Month details');
+    expect(StyleSheet.flatten(details.props.style)).toMatchObject({ marginLeft: 'auto' });
+    expect(StyleSheet.flatten(details.props.style).minHeight).toBeGreaterThanOrEqual(44);
+    // the eyebrow is a sibling above the controls row, not inside it
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('Net free cash flow')).toBeLessThan(tree.indexOf('home-card-controls'));
   });
 
   it('D-107 TalkBack reading order: summary, judge-on button, Details, field', async () => {

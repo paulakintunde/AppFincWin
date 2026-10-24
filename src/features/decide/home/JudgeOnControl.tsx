@@ -59,7 +59,7 @@ export function JudgeOnButton({ selected, canChoose, onPress }: JudgeOnButtonPro
   }
   const name = t(JUDGE_ON_KEY[selected]);
   return (
-    <View testID="judge-on-button">
+    <View testID="judge-on-button" style={styles.button}>
       <DarkPill
         variant="tint"
         label={`${name} ${ARROW}`}
@@ -124,6 +124,7 @@ export function JudgeOnSheet({ visible, selected, fallback, onChoose, onClose }:
 }
 
 const styles = StyleSheet.create({
+  button: { flexShrink: 1 },
   plain: { minHeight: space.touchMin, justifyContent: 'center' },
   column: { gap: space.gapMd, paddingTop: space.gapMd },
   radioRow: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },

@@ -186,7 +186,7 @@ export function HomeSummaryCard({
 
   // R18.1: the constant eyebrow, then the ⓘ as the next flex sibling (rule I); "Details ›" stays at the right.
   const eyebrow = (
-    <View style={styles.eyebrowRow}>
+    <View style={styles.eyebrowBlock}>
       <View style={styles.eyebrowLeft}>
         <InfoLabel term={nfcfInfo.term} onInfo={nfcfInfo.open} tone="dark" lineHeight={EYEBROW_LINE}>
           <Text style={eyebrowStyle} accessibilityElementsHidden importantForAccessibility="no">
@@ -194,17 +194,21 @@ export function HomeSummaryCard({
           </Text>
         </InfoLabel>
       </View>
-      {judgeShown ? <JudgeOnButton selected={selected} canChoose={canChooseJudgeOn(source)} onPress={() => setJudgeOpen(true)} /> : null}
-      {detailsShown ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('decide.home.card.detailsA11y')}
-          onPress={onOpenDetails}
-          style={({ pressed }) => [styles.details, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
-        >
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkSoft1 }}>{`${t('decide.home.card.details')} ${CHEVRON}`}</Text>
-        </Pressable>
-      ) : null}
+      {/* Walkthrough 2: the same two-line structure for every label. Line 1 is the eyebrow; line 2 is the Judge-on pill
+          (left) and Details (right), wrapping only when they cannot share a line (rule S, 320 wide at 2.0x). */}
+      <View style={styles.controlsRow} testID="home-card-controls">
+        {judgeShown ? <JudgeOnButton selected={selected} canChoose={canChooseJudgeOn(source)} onPress={() => setJudgeOpen(true)} /> : null}
+        {detailsShown ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('decide.home.card.detailsA11y')}
+            onPress={onOpenDetails}
+            style={({ pressed }) => [styles.details, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+          >
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkSoft1 }}>{`${t('decide.home.card.details')} ${CHEVRON}`}</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 
@@ -316,9 +320,10 @@ const styles = StyleSheet.create({
   word: { flexShrink: 1 },
   card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapMd },
   top: { flexDirection: 'column-reverse', gap: space.gapMd },
-  eyebrowRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: space.gapSm },
-  eyebrowLeft: { flexShrink: 1 },
-  details: { minHeight: space.touchMin, minWidth: space.touchMin, justifyContent: 'center', alignItems: 'flex-end' },
+  eyebrowBlock: { flexDirection: 'column', alignItems: 'stretch' },
+  eyebrowLeft: { alignSelf: 'flex-start', flexShrink: 1 },
+  controlsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: space.gapSm },
+  details: { marginLeft: 'auto', minHeight: space.touchMin, minWidth: space.touchMin, justifyContent: 'center', alignItems: 'flex-end' },
   summary: { gap: 4 },
   group: { gap: space.gapSm },
   action: { flexDirection: 'row' },
