@@ -791,7 +791,7 @@ Plans:
 - [x] 05-117-PLAN.md — Decide home composition: lean header, card, rows, no FAB (D-95, D-98, D-99)
 
 **Wave 30** *(blocked on Wave 29 completion)*
-- [ ] 05-118-PLAN.md — Retire R17-replaced copy and components; guards over R17 (D-76, DCU-09)
+- [x] 05-118-PLAN.md — Retire R17-replaced copy and components; guards over R17 (D-76, DCU-09)
 
 **Wave 31** *(blocked on Wave 30 completion)*
 - [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots (R8 frames, R17.9 alternate frame 1 with the onLayout/Maestro budget), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist, the D-88 speed budgets and the per-pairing hero check
