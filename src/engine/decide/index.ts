@@ -36,6 +36,7 @@ export * from './stress';
 export * from './payback';
 export * from './decision';
 export * from './investmentViews';
+export * from './ownership';
 export * from './incomeAtRisk';
 export { percent, ZERO_PERCENT } from '../payoff/types';
 export type { CurrencyCode, MinorUnits } from '../money/types';

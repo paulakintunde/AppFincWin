@@ -1030,6 +1030,13 @@ export interface NetWorthPath {
   readonly withPurchase: readonly (MinorUnits | null)[];
   readonly rangeCode: ProjectionRangeCode | null; // 'exceeds_range' when any point of either path is null
 } // index m = 0..horizonMonths
+// D-104: the verdict headline for the first non-zero typed rate; projected is null (with rangeCode) past the safe range
+export interface InvestmentHeadline {
+  readonly rate: Percent;
+  readonly contributed: MinorUnits; // mineDayOne + the payments figure's contributed
+  readonly projected: MinorUnits | null;
+  readonly rangeCode: ProjectionRangeCode | null;
+}
 export interface InvestmentViews {
   readonly horizonMonths: number;
   readonly horizonSource: HorizonSource;
@@ -1046,6 +1053,7 @@ export interface InvestmentViews {
     readonly monthlyRunning: MinorUnits;
     readonly byRate: readonly RateFigure[];
   }; // (b)
+  readonly headline: InvestmentHeadline | null; // D-104: null with no non-zero typed rate or nothing contributed
   readonly pauseImpact: {
     readonly pausedMonthly: MinorUnits;
     readonly byRate: readonly RateFigure[];
@@ -1101,4 +1109,19 @@ export interface EstimateBias {
   readonly figure: EstimateFigure;
   readonly decisionsUsed: number;
   readonly biasBasisPoints: number | null; // signed; + means actuals came in higher; null below ESTIMATE_BIAS_MIN_DECISIONS
+}
+
+// ── Total cost of ownership (D-102) ──
+export interface TotalCostInput {
+  readonly horizonMonths: number | null; // the investing views' chosen horizon; null = the plan term, else DEFAULT_PROJECTION_HORIZON_MONTHS
+  readonly advertised: MinorUnits; // ResolvedPrice.advertised
+  readonly lossMonthly: MinorUnits; // RunningCosts.nonCash (D-63); 0 = no loss of value set
+}
+export interface TotalCost {
+  readonly horizonMonths: number; // never less than plan.months
+  readonly total: MinorUnits;
+  readonly interestAndFees: MinorUnits; // my part of plan.total less my part of the price
+  readonly running: MinorUnits; // max(0, mineRunning) x horizonMonths
+  readonly resale: MinorUnits; // expected value left after the loss of value; 0 when none is set
+  readonly trivial: boolean; // total equals my part of the price: nothing to add to the price
 }
