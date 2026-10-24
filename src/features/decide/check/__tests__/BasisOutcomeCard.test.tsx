@@ -9,9 +9,10 @@ import { colors } from '@/theme/tokens';
 jest.setTimeout(30000);
 
 let mockWidth = 402;
+let mockFontScale = 1;
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
-  default: () => ({ width: mockWidth, height: 800, scale: 2, fontScale: 1 }),
+  default: () => ({ width: mockWidth, height: 800, scale: 2, fontScale: mockFontScale }),
 }));
 
 const fmt = moneyFn(whole, 'USD' as never);
@@ -34,10 +35,12 @@ const ui = (p: P = {}): React.JSX.Element => (
 
 beforeEach(() => {
   mockWidth = 402;
+  mockFontScale = 1;
 });
 
 describe('BasisOutcomeCard', () => {
   it('D-107 the card shows This month, Worst and Average side by side with chips and free / overspent figures', async () => {
+    mockWidth = 1000; // columns only where every figure, name and chip fits its column on one line
     await wrap(ui());
     expect(screen.getByText('The outcome on each basis')).toBeTruthy();
     for (const w of ['This month', 'Worst month', 'Average month', 'It fits', 'Needs adjustment', 'Doesn’t fit right now', '$120 free', '$30 free', '$45 overspent']) {
@@ -47,6 +50,42 @@ describe('BasisOutcomeCard', () => {
     const worst = screen.getByTestId('basis-outcome-worst');
     expect(StyleFlat(month).flex).toBe(1);
     expect(StyleFlat(worst).flex).toBe(1);
+  });
+
+  it('D-107 outcome card never breaks an amount', async () => {
+    mockFontScale = 1.15;
+    mockWidth = 411;
+    await wrap(
+      ui({ outcomes: outcomes({ month: row('month', 'fits', 21_977_624, true), worst: row('worst', 'adjust', 2_500_470_94), average: row('average', 'no', -4_500) }) }),
+      1.15
+    );
+    const amount = screen.getByText("$219776 free");
+    // one unbroken line that shrinks to fit: never wraps inside a number
+    expect(amount.props.numberOfLines).toBe(1);
+    expect(amount.props.adjustsFontSizeToFit).toBe(true);
+    expect(amount.props.children).toBe("$219776 free");
+    for (const n of screen.getAllByText(/ (free|overspent)$/)) expect(n.props.numberOfLines).toBe(1);
+  });
+
+  it('D-107 outcome card stacks at 411 wide with real amounts', async () => {
+    mockFontScale = 1.15;
+    mockWidth = 411;
+    await wrap(ui({ outcomes: outcomes({ month: row('month', 'fits', 21_977_624, true), average: row('average', 'no', -4_500) }) }), 1.15);
+    for (const b of ['month', 'worst', 'average']) {
+      const r = StyleFlat(screen.getByTestId(`basis-outcome-${b}`));
+      expect(r.flex).toBeUndefined();
+      expect(r.alignSelf).toBe('stretch');
+    }
+    // the chip keeps its single-line width: it never shrinks, and the name and chip share a wrapping line
+    const chipBox = screen.getByText('Doesn’t fit right now').parent!.parent!;
+    expect(StyleFlat(chipBox).flexShrink).toBe(0);
+    expect(StyleFlat(chipBox.parent!).flexWrap).toBe('wrap');
+  });
+
+  it('D-107 the title uses the section title role of the sibling Step 3 cards', async () => {
+    await wrap(ui());
+    const title = StyleFlat(screen.getByText('The outcome on each basis'));
+    expect(title.fontSize).toBe(16);
   });
 
   it('D-107 the chosen basis is marked and announced', async () => {

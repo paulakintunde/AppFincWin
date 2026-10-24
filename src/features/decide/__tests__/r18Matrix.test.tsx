@@ -318,7 +318,8 @@ describe("R18 matrix", () => {
         expect(screen.getByText("The outcome on each basis")).toBeTruthy();
         const rows = screen.getAllByTestId(/^basis-outcome-(month|worst|average)$/);
         expect(rows).toHaveLength(3);
-        const stacked = m.width < 360 || m.scale > 1.3;
+        // 05-146: at 320 / 402 wide the real chip ("Doesn’t fit right now") never fits a third of the card on one line, so every cell stacks
+        const stacked = true;
         for (const r of rows) {
           const style = StyleSheet.flatten(r.props.style);
           expect(style?.height).toBeUndefined();
@@ -327,7 +328,9 @@ describe("R18 matrix", () => {
           expect(style?.flex).toBe(stacked ? undefined : 1);
         }
         for (const t of screen.getAllByText(/ (free|overspent)$/)) {
-          expect(t.props.numberOfLines).toBeUndefined();
+          // D-107: an amount is one unbroken line that shrinks to fit, never a mid-number break
+          expect(t.props.numberOfLines).toBe(1);
+          expect(t.props.adjustsFontSizeToFit).toBe(true);
         }
         await view.unmount();
       }

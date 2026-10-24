@@ -90,6 +90,7 @@ const NUMBER_ALLOW: { path: string; kind: NumberKind; count: number; reason: str
   { path: 'ui/LabelValueRow.tsx', kind: 'user-name', count: 1, reason: 'valueLines is passed only for user-typed values' },
   { path: 'check/steps/Step1Item.tsx', kind: 'forwarded', count: 1, reason: 'Chip prop for the user-typed custom type; Chip applies ellipsizeMode tail' },
   { path: 'check/steps/stepUi.tsx', kind: 'input', count: 1, reason: 'TextInput line count' },
+  { path: 'check/BasisOutcomeCard.tsx', kind: 'figure', count: 1, reason: 'rule N, D-107 basis figure shrinks to its line, never breaks mid-number' },
   { path: 'check/sections/LedgersSection.tsx', kind: 'figure', count: 1, reason: 'rule N Now/After value' },
   { path: 'check/steps/Step2PriceAndPay.tsx', kind: 'figure', count: 2, reason: 'rule N Final price and committed figure' },
   { path: 'quick/QuickResult.tsx', kind: 'figure', count: 1, reason: 'rule N quick-check monthly figure' },

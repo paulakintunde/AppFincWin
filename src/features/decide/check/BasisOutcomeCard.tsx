@@ -6,8 +6,9 @@
  * Rows stack one per line under rule S. Declarative voice only; every string is a catalogue key.
  */
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useT } from '@/i18n';
+import { useFontScale } from '@/theme/FontScaleProvider';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
@@ -18,6 +19,7 @@ import { stateChip } from '../copy/verdictCopy';
 import type { BasisOutcome, BasisOutcomes } from '../snapshot/types';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
 import { useShouldStack } from '../ui/textFit';
+import { basisRowsStack } from './basisOutcomeFit';
 import { refText, type Translate } from './refText';
 
 export interface BasisOutcomeCardProps {
@@ -35,7 +37,9 @@ interface Held { key: string; value: BasisOutcomes }
 export function BasisOutcomeCard({ outcomes, checkKey, fmt, fmtA11y = fmt, busy = false }: BasisOutcomeCardProps) {
   const t = useT() as Translate;
   const { colors, pairing } = useTheme();
-  const stacked = useShouldStack();
+  const { width } = useWindowDimensions();
+  const fontScale = useFontScale();
+  const ruleS = useShouldStack();
   // the held value is state adjusted during render (settles in one extra pass), so it follows the props without an effect
   const [held, setHeld] = useState<Held | null>(null);
   let current = held !== null && held.key === checkKey ? held : null;
@@ -47,6 +51,16 @@ export function BasisOutcomeCard({ outcomes, checkKey, fmt, fmtA11y = fmt, busy 
   if (current !== held) setHeld(current);
   const shown = outcomes ?? (busy ? current?.value ?? null : null);
   if (shown === null) return null;
+  // D-107: three columns only while every figure, name and chip fits its column on one line; otherwise one row per basis.
+  const stacked =
+    ruleS ||
+    basisRowsStack({
+      width,
+      fontScale,
+      figures: shown.rows.map((r) => refText(t, monthFigure(r.left, fmt))),
+      names: shown.rows.map((r) => t(`decide.verdict.compare.${r.basis}`)),
+      chips: shown.rows.map((r) => t(stateChip(r.state, 'full').key)),
+    });
 
   const row = (r: BasisOutcome): React.JSX.Element => {
     const chip = stateChip(r.state, 'full');
@@ -65,11 +79,23 @@ export function BasisOutcomeCard({ outcomes, checkKey, fmt, fmtA11y = fmt, busy 
         testID={`basis-outcome-${r.basis}`}
         style={[styles.row, stacked ? styles.rowStacked : styles.rowColumn, r.chosen ? { backgroundColor: colors.fill1 } : null]}
       >
-        <Text scale="capped" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
-          {basisName}
+        <View style={stacked ? styles.headLine : styles.headColumn}>
+          <Text scale="capped" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+            {basisName}
+          </Text>
+          <View style={styles.chipBox}>
+            <StateChip tone={chip.tone as StateChipTone} label={stateWord} />
+          </View>
+        </View>
+        {/* D-107: an amount never breaks inside a number; it shrinks to its line instead (the hero's rule, heroAmountText.ts). */}
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+          style={{ ...textRole(pairing, 'body'), fontWeight: '600', color: isOverspent(r.left) ? colors.danger : colors.ink }}
+        >
+          {figure}
         </Text>
-        <StateChip tone={chip.tone as StateChipTone} label={stateWord} />
-        <Text style={{ ...textRole(pairing, 'body'), fontWeight: '600', color: isOverspent(r.left) ? colors.danger : colors.ink }}>{figure}</Text>
         {r.chosen ? (
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('decide.verdict.compare.chosen')}</Text>
         ) : null}
@@ -80,7 +106,7 @@ export function BasisOutcomeCard({ outcomes, checkKey, fmt, fmtA11y = fmt, busy 
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]} testID="basis-outcome-card">
-      <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
+      <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
         {t('decide.verdict.compare.title')}
       </Text>
       <View accessibilityState={{ busy }} testID="basis-outcome-rows" style={stacked ? styles.rowsStacked : styles.rowsSide}>
@@ -97,4 +123,7 @@ const styles = StyleSheet.create({
   row: { borderRadius: radii.glyphTile, padding: space.gapMd, gap: space.gapSm },
   rowColumn: { flex: 1 },
   rowStacked: { alignSelf: 'stretch' },
+  headLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: space.gapSm, rowGap: space.gapSm },
+  headColumn: { gap: space.gapSm },
+  chipBox: { flexShrink: 0 },
 });
