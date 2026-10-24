@@ -823,7 +823,7 @@ Plans:
 - [x] 05-130-PLAN.md — Retire R18-replaced copy; R6 matrix, reading-order and copy guards (D-100..D-104, DCU-09)
 
 **Wave 38** *(blocked on Wave 37 completion)*
-- [ ] 05-132-PLAN.md — Local gate, then the human-gated production push of the R18 migrations (D-101, D-103)
+- [x] 05-132-PLAN.md — Local gate, then the human-gated production push of the R18 migrations (D-101, D-103)
 
 **Wave 39** *(blocked on Wave 38 completion)*
 - [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots (R8 frames, R18 alternate frame 1 with the onLayout/Maestro budget), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist, the D-88 speed budgets, the per-pairing hero check and the Money concepts (R18) checklist
