@@ -827,7 +827,7 @@ Plans:
 
 **Wave 40** *(D-106/D-107 wording and This month; blocked on Wave 38 completion)*
 - [x] 05-135-PLAN.md — Engine E9: expectedMonth and expectedMonthMoney, the current month as it is expected to end (D-106, D-107)
-- [ ] 05-136-PLAN.md — Free / overspent wording, part 1: verdict headline, key figures, What breaks, quick result, month table, and the month-basis strings (D-106, D-107, D-105 kept)
+- [x] 05-136-PLAN.md — Free / overspent wording, part 1: verdict headline, key figures, What breaks, quick result, month table, and the month-basis strings (D-106, D-107, D-105 kept)
 
 **Wave 41** *(blocked on Wave 40 completion)*
 - [ ] 05-137-PLAN.md — Free / overspent wording, part 2: alternatives, Step 5, expected-income row, worst-month line, open-check line (D-106)
