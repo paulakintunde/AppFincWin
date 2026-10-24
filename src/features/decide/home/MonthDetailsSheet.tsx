@@ -21,7 +21,7 @@ import { Text } from '@/ui/Text';
 import { InfoLabel } from '../ui/InfoLabel';
 import { useInfoSheet } from '../ui/useInfoSheet';
 import { POTS_HREF } from './checkHref';
-import type { HomeCardLabel, HomeCardModel } from './homeCardModel';
+import type { HomeCardLabel, HomeCardModel, HomeJudgeOn } from './homeCardModel';
 import { MonthDetailsBody, type YourMonthCardProps } from './YourMonthCard';
 import { RoughFiguresSheet } from './RoughFiguresSheet';
 
@@ -48,6 +48,8 @@ export interface MonthDetailsSheetProps extends Omit<YourMonthCardProps, 'onEdit
   currency: string;
   /** The sources note (built by the screen); null when there is none. */
   sourcesNote: string | null;
+  /** D-107: the screen's choose(v) from useChooseJudgeOn; the radio list calls it, the same function as the card's dropdown. */
+  onChooseJudgeOn?: (v: HomeJudgeOn) => void;
   onClose: () => void;
 }
 
@@ -63,6 +65,7 @@ export function MonthDetailsSheet({
   today,
   currency,
   sourcesNote,
+  onChooseJudgeOn,
   onClose,
 }: MonthDetailsSheetProps) {
   const t = useT();
@@ -93,7 +96,15 @@ export function MonthDetailsSheet({
         ) : (
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{basisText}</Text>
         )}
+        {card.fallback === null ? null : (
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+            {t('decide.home.hero.monthWaitingRate', { currency: card.fallback.currencies.join(', ') })}
+          </Text>
+        )}
         <MonthDetailsBody
+          selected={card.selected}
+          fallback={card.fallback}
+          onChooseJudgeOn={onChooseJudgeOn}
           source={source}
           settings={settings}
           userId={userId}

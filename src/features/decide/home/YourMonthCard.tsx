@@ -10,10 +10,9 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
-import { useUpdateDecideSettings } from '@/data/mutations/decideSettings';
 import type { DecideSettingsRow } from '@/db/decideSettings';
-import { prepareContext, type MoneyBasis } from '@/engine/decide';
-import { monthBreakdown, type MonthBreakdown } from './homeCardModel';
+import { expectedMonthMoney, prepareContext, type MoneyBasis } from '@/engine/decide';
+import { monthBreakdown, type HomeJudgeOn, type MonthBreakdown } from './homeCardModel';
 import { useT } from '@/i18n';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -27,7 +26,6 @@ import { monthFigure } from '../copy/monthFigure';
 import { refText, type Translate } from '../check/refText';
 import { InfoLabel } from '../ui/InfoLabel';
 import { useInfoSheet } from '../ui/useInfoSheet';
-import { useShouldStack } from '../ui/textFit';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
 import type { Money } from '../check/steps/stepUi';
 import type { SnapshotResult } from '../snapshot/types';
@@ -64,6 +62,12 @@ export interface MonthDetailsBodyProps extends YourMonthCardProps {
   onPots?: () => void;
   /** The Activity link; defaults to navigating to Activity. The sheet closes itself first. */
   onActivity?: () => void;
+  /** D-107: the card's Judge-on choice (card model `selected`); defaults to the basis the snapshot was built on. */
+  selected?: HomeJudgeOn | null;
+  /** D-106 addendum: This month is waiting for a rate; the This month label then carries no amount. */
+  fallback?: { currencies: readonly string[] } | null;
+  /** D-107: the screen's choose(v) from useChooseJudgeOn, the same function the card's dropdown calls. */
+  onChooseJudgeOn?: (v: HomeJudgeOn) => void;
 }
 
 const goActivity = () => {
@@ -86,10 +90,12 @@ export function MonthDetailsBody({
   dark = false,
   eyebrow,
   onActivity = goActivity,
+  selected: selectedProp = null,
+  fallback = null,
+  onChooseJudgeOn,
 }: MonthDetailsBodyProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const settingsMutation = useUpdateDecideSettings(userId ?? '');
   const basisInfo = useInfoSheet('basisMonth');
 
   const context = useMemo(() => {
@@ -98,19 +104,27 @@ export function MonthDetailsBody({
     return result.ok ? result.context : null;
   }, [source]);
 
-  // Rule S by label length (as SegmentedToggle): the Worst / Average labels carry an amount, and an equal segment at 402
-  // holds about 16 characters, so a longer label stacks the control as the radio list.
-  const basisLabels = useMemo(
-    () =>
-      context === null
-        ? null
-        : {
-            worst: t('decide.month.worstChip', { amount: whole(context.money.incomeWorst) }),
-            average: t('decide.month.averageChip', { amount: whole(context.money.incomeAverage) }),
-          },
-    [context, t, whole]
-  );
-  const stack = useShouldStack(basisLabels === null ? undefined : Math.max(basisLabels.worst.length, basisLabels.average.length));
+  // D-107: the amount each choice rests on. This month's is the expected money in (the snapshot's own when it is the
+  // basis in use, else worked out from the same snapshot); with a rate fallback or no figure it has no amount.
+  const basisLabels = useMemo(() => {
+    if (context === null) return null;
+    let monthIn: number | null = null;
+    if (fallback === null) {
+      if (context.money.basis === 'month') monthIn = context.money.incomeBasis;
+      else {
+        try {
+          monthIn = expectedMonthMoney(context.snapshot, context.spendingShare).income;
+        } catch {
+          monthIn = null;
+        }
+      }
+    }
+    return {
+      month: monthIn === null ? t('decide.home.card.judge.month') : t('decide.month.thisMonthChip', { amount: whole(monthIn) }),
+      worst: t('decide.month.worstChip', { amount: whole(context.money.incomeWorst) }),
+      average: t('decide.month.averageChip', { amount: whole(context.money.incomeAverage) }),
+    };
+  }, [context, fallback, t, whole]);
 
   if (source === null) return null;
 
@@ -122,6 +136,7 @@ export function MonthDetailsBody({
     if (context === null) return null;
     const m = context.money;
     const fewMonths = m.fullMonthsUsed < MIN_FULL_MONTHS_FOR_STEADINESS;
+    const selected: HomeJudgeOn = selectedProp ?? (m.basis === 'worst' || m.basis === 'average' ? m.basis : 'month');
     let basisLine: string;
     if (fewMonths) {
       basisLine = t('decide.month.fewLine');
@@ -139,13 +154,10 @@ export function MonthDetailsBody({
     const breakdown = monthBreakdown(source, today);
     const steadinessLabel = t(STEADINESS_LABEL[m.steadiness]);
     const options = [
+      { key: 'month', label: basisLabels?.month ?? '' },
       { key: 'worst', label: basisLabels?.worst ?? '' },
       { key: 'average', label: basisLabels?.average ?? '' },
     ] as const;
-    // Selected: surface on the ink card, ink on the sheet. Unselected: a tint of the opposite colour (fill1 on the sheet).
-    const selectedFill = dark ? colors.surface : colors.ink;
-    const selectedText = dark ? colors.ink : colors.surface;
-    const unselectedText = dark ? colors.inkSoft2 : colors.ink;
 
     return (
       <View style={styles.body}>
@@ -159,56 +171,33 @@ export function MonthDetailsBody({
           <ActionPill dark={dark} label={t('decide.month.activity')} onPress={onActivity} />
         </View>
         {breakdown === null ? null : <Breakdown b={breakdown} whole={whole} wholeA11y={wholeA11y ?? whole} dark={dark} onPots={onPots} />}
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: soft }}>{basisLine}</Text>
+        {selected === 'month' ? null : (
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: soft }}>{basisLine}</Text>
+        )}
         {fewMonths ? null : (
           <>
             <InfoLabel term={basisInfo.term} onInfo={basisInfo.open} tone={dark ? 'dark' : 'light'} lineHeight={LABEL_LINE}>
               <Text style={{ ...textRole(pairing, 'label'), color: soft }}>{t('decide.month.basisA11y')}</Text>
             </InfoLabel>
-            <View
-              accessibilityRole="radiogroup"
-              accessibilityLabel={t('decide.month.basisA11y')}
-              style={stack ? styles.basisStack : styles.basis}
-            >
+            <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.month.basisA11y')} style={styles.basisStack}>
               {options.map((option) => {
-                const selected = m.basis === option.key;
+                const checked = selected === option.key;
                 const choose = () => {
-                  if (selected || userId === null) return;
+                  if (checked || userId === null) return;
                   hapticSelection();
-                  settingsMutation.update({ basis_override: option.key });
+                  onChooseJudgeOn?.(option.key);
                 };
-                if (stack) {
-                  return (
-                    <Pressable
-                      key={option.key}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: selected }}
-                      accessibilityLabel={option.label}
-                      onPress={choose}
-                      style={styles.radioRow}
-                    >
-                      <RadioDot selected={selected} />
-                      <Text style={{ ...textRole(pairing, 'label'), color: text, flexShrink: 1 }}>{option.label}</Text>
-                    </Pressable>
-                  );
-                }
-                const unselectedFill = dark ? 'transparent' : colors.fill1;
                 return (
                   <Pressable
                     key={option.key}
                     accessibilityRole="radio"
-                    accessibilityState={{ checked: selected }}
+                    accessibilityState={{ checked }}
                     accessibilityLabel={option.label}
                     onPress={choose}
-                    style={[styles.segment, { backgroundColor: selected ? selectedFill : unselectedFill }]}
+                    style={styles.radioRow}
                   >
-                    {selected || !dark ? null : (
-                      <View
-                        pointerEvents="none"
-                        style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
-                      />
-                    )}
-                    <Text style={{ ...textRole(pairing, 'label'), color: selected ? selectedText : unselectedText }}>{option.label}</Text>
+                    <RadioDot selected={checked} />
+                    <Text style={{ ...textRole(pairing, 'label'), color: text, flexShrink: 1 }}>{option.label}</Text>
                   </Pressable>
                 );
               })}
@@ -362,16 +351,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  basis: { flexDirection: 'row', gap: space.gapSm },
   basisStack: { gap: 0 },
   radioRow: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
-  segment: {
-    flex: 1,
-    minHeight: space.touchMin,
-    borderRadius: radii.pill,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
   breakdown: { gap: space.gapSm },
   breakdownRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', columnGap: space.gapMd },

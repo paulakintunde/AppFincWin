@@ -14,6 +14,7 @@ import type { SnapshotResult } from '../../snapshot/types';
 jest.setTimeout(30000);
 
 const mockUpdate = jest.fn();
+const mockChoose = jest.fn();
 const mockNavigate = jest.fn();
 jest.mock('@/data/mutations/decideSettings', () => ({
   useUpdateDecideSettings: () => ({ update: (patch: DecideSettingsPatch) => mockUpdate(patch) }),
@@ -44,8 +45,8 @@ const amountOf = (label: string | undefined) => Number((label ?? '').split(', ')
 
 const SOURCES = '4 months of logged income, 12 expense lines this month, 1 debts and 2 accounts.';
 
-function sheet(source: SnapshotResult | null, over: { onClose?: () => void; note?: string | null } = {}) {
-  const card = homeCardModel(source, null, { status: 'ready', homeBasisSeen: true, today: TODAY });
+function sheet(source: SnapshotResult | null, over: { onClose?: () => void; note?: string | null; judgeOn?: 'month' | 'worst' | 'average' } = {}) {
+  const card = homeCardModel(source, null, { status: 'ready', homeBasisSeen: true, today: TODAY, judgeOn: over.judgeOn });
   return (
     <MonthDetailsSheet
       visible
@@ -58,6 +59,7 @@ function sheet(source: SnapshotResult | null, over: { onClose?: () => void; note
       whole={whole}
       currency="USD"
       sourcesNote={over.note === undefined ? SOURCES : over.note}
+      onChooseJudgeOn={mockChoose}
       onClose={over.onClose ?? jest.fn()}
     />
   );
@@ -82,7 +84,7 @@ describe('MonthDetailsSheet', () => {
     expect(screen.getByText(/4 months ranging \$1000 to \$9000\./)).toBeTruthy();
     expect(screen.getByLabelText('Worst · $1000').props.accessibilityState.checked).toBe(true);
     await fireEvent.press(screen.getByLabelText('Average · $5500'));
-    expect(mockUpdate).toHaveBeenCalledWith({ basis_override: 'average' });
+    expect(mockChoose).toHaveBeenCalledWith('average');
     expect(screen.getByText(SOURCES)).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Activity'));
     expect(onClose).toHaveBeenCalled();
@@ -211,5 +213,26 @@ describe('MonthDetailsSheet', () => {
     await wrap(sheet(source));
     expect(screen.getByText('Worked out on your tightest figures.')).toBeTruthy();
     expect(screen.getByLabelText('About Your tightest figures')).toBeTruthy();
+  });
+
+  it('D-107 the checked radio is the card choice, and the fallback line shows with This month checked', async () => {
+    const source = { ...variable(), monthFallback: { currencies: ['EUR'] } } as SnapshotResult;
+    await wrap(sheet(source, { judgeOn: 'month' }));
+    expect(screen.getByText('This month is waiting for a EUR rate')).toBeTruthy();
+    const radios = screen.getAllByRole('radio', { includeHiddenElements: true });
+    expect(radios.map((r) => r.props.accessibilityState.checked)).toEqual([true, false, false]);
+    expect(screen.getByText('Worked out on your worst month.')).toBeTruthy();
+  });
+
+  it('D-107 the Worked out on line follows the basis and no history line shows for This month', async () => {
+    await wrap(sheet(variable(), { judgeOn: 'worst' }));
+    expect(screen.getByText('Worked out on your worst month.')).toBeTruthy();
+    expect(screen.getByText(/4 months ranging/)).toBeTruthy();
+  });
+
+  it('D-107 no control with fewer than 3 full months', async () => {
+    const source = loggedSource({ months: [month('2026-08', 500_000, 300_000), month('2026-09', 500_000, 300_000)] });
+    await wrap(sheet(source, { judgeOn: 'month' }));
+    expect(screen.queryAllByRole('radio', { includeHiddenElements: true })).toHaveLength(0);
   });
 });

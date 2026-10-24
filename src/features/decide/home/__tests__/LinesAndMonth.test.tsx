@@ -11,6 +11,7 @@ import { LinesCard } from '../LinesCard';
 import { DSR_LINE_RE, LimitEditorSheet } from '../LimitEditorSheet';
 import { OpenChecksCard } from '../OpenChecksCard';
 import { RoughFiguresSheet } from '../RoughFiguresSheet';
+import { expectedMonthMoney, prepareContext } from '@/engine/decide';
 import { MonthDetailsBody } from '../YourMonthCard';
 
 jest.setTimeout(30000);
@@ -22,6 +23,7 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 }));
 
 const mockUpdate = jest.fn();
+const mockChoose = jest.fn();
 const mockNavigate = jest.fn();
 const mockPush = jest.fn();
 let mockOnUpdate: ((patch: DecideSettingsPatch) => void) | null = null;
@@ -73,8 +75,13 @@ function settingsRow(over: Partial<DecideSettingsRow> = {}): DecideSettingsRow {
 
 const monthsOf = (rows: [string, number, number][]) => rows.map(([m, i, o]) => month(m, i, o));
 
-function card(source: ReturnType<typeof loggedSource> | null, settings: DecideSettingsRow | null = null, onEditRough = jest.fn()) {
-  return <MonthDetailsBody source={source} settings={settings} userId="u1" whole={whole} today={TODAY} onEditRough={onEditRough} dark />;
+function card(
+  source: ReturnType<typeof loggedSource> | null,
+  settings: DecideSettingsRow | null = null,
+  onEditRough = jest.fn(),
+  extra: Partial<React.ComponentProps<typeof MonthDetailsBody>> = {}
+) {
+  return <MonthDetailsBody source={source} settings={settings} userId="u1" whole={whole} today={TODAY} onEditRough={onEditRough} dark onChooseJudgeOn={mockChoose} {...extra} />;
 }
 
 /** The sheet and its field share a name, so pick the editable one. */
@@ -103,22 +110,73 @@ describe('MonthDetailsBody (dark, as on the home card before R17)', () => {
     expect(screen.getByLabelText('Average · $5000')).toBeTruthy();
   });
 
+  it('D-107 Month details offers This month, Worst and Average in that order', async () => {
+    await wrap(card(loggedSource()));
+    const radios = screen.getAllByRole('radio', { includeHiddenElements: true });
+    expect(radios.map((r) => r.props.accessibilityLabel as string)).toEqual([expect.stringMatching(/^This month · /), 'Worst · $5000', 'Average · $5000']);
+  });
+
+  it('D-107 radio role and checked state on each option', async () => {
+    await wrap(card(loggedSource(), null, jest.fn(), { selected: 'worst' }));
+    const radios = screen.getAllByRole('radio', { includeHiddenElements: true });
+    expect(radios).toHaveLength(3);
+    expect(radios.map((r) => r.props.accessibilityState.checked)).toEqual([false, true, false]);
+    expect(screen.getByLabelText('Judge on').props.accessibilityRole).toBe('radiogroup');
+  });
+
+  it('D-107 the checked radio is the card choice, whatever basis the snapshot used', async () => {
+    await wrap(card(loggedSource(), null, jest.fn(), { selected: 'month' }));
+    expect(screen.getAllByRole('radio', { includeHiddenElements: true })[0]!.props.accessibilityState.checked).toBe(true);
+  });
+
+  it('D-107 choosing calls the shared choose; the checked one does nothing', async () => {
+    await wrap(card(loggedSource(), null, jest.fn(), { selected: 'month' }));
+    await fireEvent.press(screen.getByLabelText('Worst · $5000'));
+    expect(mockChoose).toHaveBeenCalledWith('worst');
+    mockChoose.mockClear();
+    await fireEvent.press(screen.getAllByRole('radio', { includeHiddenElements: true })[0]!);
+    expect(mockChoose).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled(); // the body never writes settings itself
+  });
+
+  it('D-107 the chip amounts are the expected money in, the worst month in and the average month in', async () => {
+    const source = loggedSource({ months: monthsOf([['2026-06', 500_000, 300_000], ['2026-07', 900_000, 300_000], ['2026-08', 100_000, 300_000], ['2026-09', 700_000, 300_000]]) });
+    await wrap(card(source));
+    const ctx = prepareContext(source.kind === 'logged' ? source.snapshot : (null as never));
+    if (!ctx.ok) throw new Error('fixture');
+    const expected = expectedMonthMoney(ctx.context.snapshot, ctx.context.spendingShare).income;
+    expect(screen.getByLabelText(`This month · ${whole(expected)}`)).toBeTruthy();
+    expect(screen.getByLabelText('Worst · $1000')).toBeTruthy();
+    expect(screen.getByLabelText('Average · $5500')).toBeTruthy();
+  });
+
+  it('D-107 the history line shows only for Worst and Average', async () => {
+    const source = loggedSource({ months: monthsOf([['2026-06', 500_000, 300_000], ['2026-07', 900_000, 300_000], ['2026-08', 100_000, 300_000], ['2026-09', 700_000, 300_000]]) });
+    await wrap(card(source, null, jest.fn(), { selected: 'month' }));
+    expect(screen.queryByText(/4 months ranging/)).toBeNull();
+    await screen.unmount();
+    await wrap(card(source, null, jest.fn(), { selected: 'average' }));
+    expect(screen.getByText(/4 months ranging \$1000 to \$9000\./)).toBeTruthy();
+  });
+
+  it('D-107 the fallback leaves This month without an amount and still checked', async () => {
+    await wrap(card(loggedSource(), null, jest.fn(), { selected: 'month', fallback: { currencies: ['EUR'] } }));
+    const first = screen.getAllByRole('radio', { includeHiddenElements: true })[0]!;
+    expect(first.props.accessibilityLabel).toBe('This month');
+    expect(first.props.accessibilityState.checked).toBe(true);
+  });
+
   it('words a negative result as overspent, amount absolute', async () => {
     const source = loggedSource({ months: monthsOf([['2026-06', 300_000, 500_000], ['2026-07', 300_000, 500_000], ['2026-08', 300_000, 500_000], ['2026-09', 300_000, 500_000]]) });
     await wrap(card(source));
     expect(screen.getByLabelText(/^Net free cash flow, \$\d+ overspent$/)).toBeTruthy();
   });
 
-  it('says the range when income is not steady and writes the basis choice', async () => {
+  it('says the range when income is not steady', async () => {
     const source = loggedSource({ months: monthsOf([['2026-06', 500_000, 300_000], ['2026-07', 900_000, 300_000], ['2026-08', 100_000, 300_000], ['2026-09', 700_000, 300_000]]) });
     await wrap(card(source));
     expect(screen.getByText(/4 months ranging \$1000 to \$9000\./)).toBeTruthy();
     expect(screen.getByLabelText('Worst · $1000').props.accessibilityState.checked).toBe(true);
-    await fireEvent.press(screen.getByLabelText('Average · $5500'));
-    expect(mockUpdate).toHaveBeenCalledWith({ basis_override: 'average' });
-    mockUpdate.mockClear();
-    await fireEvent.press(screen.getByLabelText('Worst · $1000')); // already selected
-    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it('under three full months shows the fixed line and no basis control', async () => {
@@ -494,25 +552,20 @@ describe('Lines fold and Your month (05-71)', () => {
     await wrap(card(loggedSource()));
     // R18.1: the breakdown rows wrap their label and value, so they stack on their own at any width
     expect(screen.getByLabelText('Money in, $5000').props.style).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap' });
-    expect(screen.queryAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(0);
+    // D-107: the three-option control is always the radio list, a dot in each row
+    expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(3);
     await screen.unmount();
     mockWidth = 320;
     await wrap(card(loggedSource()));
-    // the Worst / Average control becomes a radio list with a dot in each row
-    expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(2);
+    expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(3);
     expect(screen.getByLabelText('Average · $5000').props.accessibilityState.checked).toBe(true);
   });
 
-  it('D-76 Seg: a Worst / Average label past 16 characters stacks the control at 402 and 1.0x', async () => {
+  it('D-107 long amount labels keep the radio list at 402 and 1.0x', async () => {
     const long = (n: number) => `$${(n / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     const source = loggedSource({ months: monthsOf([['2026-06', 715_666, 300_000], ['2026-07', 715_666, 300_000], ['2026-08', 715_666, 300_000], ['2026-09', 715_666, 300_000]]) });
     await wrap(<MonthDetailsBody source={source} settings={null} userId="u1" whole={long} today={TODAY} onEditRough={jest.fn()} dark />);
     expect(screen.getByLabelText('Average · $7,156.66').props.accessibilityState.checked).toBe(true);
-    expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(2);
-  });
-
-  it('D-76 Seg: short labels keep the side-by-side segments at 402 and 1.0x', async () => {
-    await wrap(card(loggedSource()));
-    expect(screen.queryAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(0);
+    expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(3);
   });
 });
