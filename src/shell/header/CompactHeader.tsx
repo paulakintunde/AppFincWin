@@ -26,6 +26,8 @@ export interface CompactHeaderProps {
   titleRole?: Extract<TextRole, 'heading' | 'sheetTitle'>;
   /** D-93: false hides the back control (a tab root). Omitted: shown when the history can go back. */
   showBack?: boolean;
+  /** 05-117: Decide home shows its sync problem in the notice row instead. */
+  hideSyncLine?: boolean;
 }
 
 export function CompactHeader({
@@ -37,6 +39,7 @@ export function CompactHeader({
   trailing,
   titleRole,
   showBack,
+  hideSyncLine = false,
 }: CompactHeaderProps): React.JSX.Element {
   const { colors, pairing } = useTheme();
   const insets = useScreenInsets();
@@ -82,7 +85,7 @@ export function CompactHeader({
         {trailing}
         {showAvatar !== false ? <AvatarButton /> : null}
       </View>
-      <SyncProblemLine />
+      {hideSyncLine ? null : <SyncProblemLine />}
     </Animated.View>
   );
 }

@@ -67,6 +67,8 @@ export interface TabRootChromeOptions {
   compactTitleRole?: 'heading' | 'sheetTitle';
   /** 03.1 D-58: compact-only trailing controls; when given, the compact header drops the avatar. */
   compactTrailing?: React.ReactNode | ((api: { scrollToTop: () => void }) => React.ReactNode);
+  /** 05-117 (D-96): Decide home folds the sync problem into its notice row, so this screen alone drops the header line. */
+  hideSyncLine?: boolean;
 }
 
 export interface TabRootChrome {
@@ -85,7 +87,7 @@ export interface TabRootChrome {
 const isTabRoot = true;
 
 export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
-  const { title, eyebrow, trailing, refreshKeys, compactTitle, compactTitleRole, compactTrailing } = options;
+  const { title, eyebrow, trailing, refreshKeys, compactTitle, compactTitleRole, compactTrailing, hideSyncLine = false } = options;
   const { colors } = useTheme();
   const insets = useScreenInsets();
 
@@ -159,7 +161,7 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
   const largeHeader = (
     <View onLayout={onLargeLayout}>
       <TabHeader title={title} eyebrow={eyebrow} trailing={trailing} titleRef={largeTitleRef} showBack={!isTabRoot} />
-      <SyncProblemLine />
+      {hideSyncLine ? null : <SyncProblemLine />}
     </View>
   );
   const compactHeader = (
@@ -169,6 +171,7 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
       trailing={trailingNode}
       showAvatar={compactTrailing === undefined}
       showBack={!isTabRoot}
+      hideSyncLine={hideSyncLine}
       visible={compactVisible}
       animatedStyle={opacityStyle as unknown as StyleProp<ViewStyle>}
       titleRef={compactTitleRef}

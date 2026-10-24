@@ -62,6 +62,15 @@ describe('TabRootScreen', () => {
     expect(JSON.stringify(r.toJSON())).toContain('"paddingBottom":82');
   });
 
+  it('D-96 a tab root can hide the sync line, others keep it', async () => {
+    (useSyncStatus as jest.Mock).mockReturnValue({ isOnline: false, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null });
+    const first = await renderWithShellProviders(<TabRootScreen title="Decide" hideSyncLine />);
+    expect(screen.queryAllByTestId('sync-problem-line', { includeHiddenElements: true }).length).toBe(0);
+    await first.unmount();
+    await renderWithShellProviders(<TabRootScreen title="Other" />);
+    expect(screen.getAllByTestId('sync-problem-line').length).toBe(1);
+  });
+
   it('D-93 a tab root never shows a back control after a push and pop', async () => {
     // After a push and pop the app history is non-empty, so canGoBack is true; a tab root ignores it.
     await renderWithShellProviders(<TabRootScreen title="Decide" />, {
