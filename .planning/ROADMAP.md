@@ -834,7 +834,7 @@ Plans:
 - [x] 05-142-PLAN.md — Engine E10: a first-class 'month' basis in prepareContext, parity suite against worst, basis wording for all three bases (D-107)
 
 **Wave 42** *(blocked on Wave 41 completion)*
-- [ ] 05-138-PLAN.md — Snapshot: judgeOn becomes the basis, current-month rows without a rate fall back to Worst, integration tests incl. currency conversion and the quick check (D-106, D-107)
+- [x] 05-138-PLAN.md — Snapshot: judgeOn becomes the basis, current-month rows without a rate fall back to Worst, integration tests incl. currency conversion and the quick check (D-106, D-107)
 - [ ] 05-141-PLAN.md — Free / overspent wording, part 3: home card and Month details, the Judge-on and outcome-card strings and the wording guard (D-106, D-107)
 
 **Wave 43** *(blocked on Wave 42 completion)*
