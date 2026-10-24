@@ -219,6 +219,10 @@ describe('marginText and the edge chip', () => {
     const spoken = edgeChipA11y('Fits', d, fmt, fmtDate);
     expect(spoken.label).toEqual({ key: `${D}edge.chipA11y`, params: { state: 'Fits', amount: '$400' }, keyParams: { line: `${D}edge.line.dsr` } });
     expectInDepth([spoken.label]);
+    // D-103: an on-edge housing margin names its line in words, never a raw key
+    const housing = edgeChipA11y('Fits', decisionOf({ margins: [margin('housing', 250, 'on_edge')] }), fmt, fmtDate);
+    expect(housing.label.keyParams).toEqual({ line: `${D}edge.line.housing` });
+    expectInDepth([housing.label, { key: `${D}edge.line.housing` }]);
     // an unavailable cash path has no fact to speak
     const unavailable = decisionOf({ margins: [tightMargin] });
     expect(edgeChipA11y('Fits', unavailable, fmt, fmtDate).fact).toBeNull();

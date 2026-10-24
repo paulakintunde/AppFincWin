@@ -2522,7 +2522,7 @@ const en = {
       },
       edge: {
         tag: 'On the edge', holdsBy: 'holds by {{amount}}', missesBy: 'misses by {{amount}}', chipA11y: '{{state}}, on the edge: {{line}} holds by {{amount}}', chipA11yFact: '{{state}}, on the edge: {{fact}}', chipA11yPlain: '{{state}}, on the edge', // IN-B07: no margin to name // addition (05-37: the D-59 fact in place of the amount)
-        line: { cash: 'the cushion', month: 'the month', dsr: 'debt payments', owe: 'unsecured debt', inv: 'investing', cash_path: 'cash before payday' },
+        line: { cash: 'the cushion', month: 'the month', dsr: 'debt payments', owe: 'unsecured debt', inv: 'investing', cash_path: 'cash before payday', housing: 'housing costs' },
         tightHolds: 'Holds, with nothing to spare before {{date}}', // addition: the D-43 margin-0 case paired with the D-59 fact
       },
       cashPath: {
