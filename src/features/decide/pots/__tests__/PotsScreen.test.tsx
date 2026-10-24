@@ -85,7 +85,7 @@ jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
 jest.mock('@/shell/screen/DetailScreen', () => {
   const R = require('react');
   const { View, Text } = require('react-native');
-  return { DetailScreen: (p: { title: string; children: React.ReactNode }) => R.createElement(View, null, R.createElement(Text, null, p.title), p.children) };
+  return { DetailScreen: (p: { title: string; right?: React.ReactNode; children: React.ReactNode }) => R.createElement(View, null, R.createElement(Text, null, p.title), p.right, p.children) };
 });
 jest.mock('@/ui/Sheet', () => {
   const R = require('react');
@@ -218,6 +218,21 @@ describe('PotsScreen', () => {
     expect(mockRemove).not.toHaveBeenCalled();
     expect(mockToast).not.toHaveBeenCalled();
     expect(screen.queryByText('Delete Car service?')).toBeNull();
+  });
+
+  it('walkthrough 2: + Pot sits in the header right slot with the info button, so no empty row is left in the body', async () => {
+    mockGoals = [pot('a', { name: 'Car service' })];
+    await renderScreen();
+    const add = screen.getByLabelText('Add a pot');
+    let node = add.parent;
+    let inHeader = false;
+    while (node) {
+      if (node.props?.testID === 'pots-header-right') inHeader = true;
+      node = node.parent;
+    }
+    expect(inHeader).toBe(true);
+    expect(StyleSheet.flatten(add.props.style).minHeight).toBeGreaterThanOrEqual(44);
+    expect(screen.queryByTestId('pots-heading')).toBeNull();
   });
 
   it('D-105 the screen title is not repeated as a body heading, and the summary sits a gap below the description', async () => {

@@ -89,22 +89,27 @@ export function PotsScreen() {
   const meta = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
 
   return (
-    <DetailScreen title={t('decide.pots.title')} right={info.button()}>
-      <View style={styles.body}>
-      {loaded && !empty ? (
-        <View style={styles.heading}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('decide.pots.addA11y')}
-            accessibilityState={{ disabled: model.addDisabled }}
-            disabled={model.addDisabled}
-            onPress={() => setEditing(null)}
-            style={[styles.link, model.addDisabled ? { opacity: 0.5 } : null]}
-          >
-            <Text style={link}>{t('decide.pots.add')}</Text>
-          </Pressable>
+    <DetailScreen
+      title={t('decide.pots.title')}
+      right={
+        <View testID="pots-header-right" style={styles.headerRight}>
+          {loaded && !empty ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('decide.pots.addA11y')}
+              accessibilityState={{ disabled: model.addDisabled }}
+              disabled={model.addDisabled}
+              onPress={() => setEditing(null)}
+              style={[styles.link, model.addDisabled ? { opacity: 0.5 } : null]}
+            >
+              <Text style={link}>{t('decide.pots.add')}</Text>
+            </Pressable>
+          ) : null}
+          {info.button()}
         </View>
-      ) : null}
+      }
+    >
+      <View style={styles.body}>
       <Text style={meta}>{t('decide.pots.sub')}</Text>
       {loaded && model.addDisabled ? <Text style={meta}>{t('decide.pots.limit')}</Text> : null}
       {loaded && !empty ? (
@@ -182,8 +187,8 @@ export function PotsScreen() {
 
 const styles = StyleSheet.create({
   body: { gap: space.gapMd },
-  heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
-  link: { minHeight: space.touchMin, justifyContent: 'center' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  link: { minHeight: space.touchMin, justifyContent: 'center', paddingHorizontal: space.gapSm },
   list: { borderRadius: radii.card, overflow: 'hidden' },
   skeleton: { gap: space.gapMd, paddingVertical: space.gapMd },
   bar: { height: 16, borderRadius: radii.pill },
