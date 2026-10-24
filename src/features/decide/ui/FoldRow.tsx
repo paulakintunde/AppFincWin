@@ -47,7 +47,8 @@ export function FoldRow({ title, preview, busy, expanded, onToggle, info, onBody
       <Pressable
         accessibilityRole="button"
         accessibilityState={busy ? { expanded, busy: true } : { expanded }}
-        accessibilityLabel={t('decide.fold.a11y.label', { title, preview })}
+        // an empty preview leaves the title alone, so the spoken label has no dangling separator
+        accessibilityLabel={preview ? t('decide.fold.a11y.label', { title, preview }) : title}
         accessibilityHint={t(expanded ? 'decide.fold.a11y.hideHint' : 'decide.fold.a11y.showHint')}
         accessibilityActions={info ? [{ name: 'about', label: info.aboutLabel }] : undefined}
         onAccessibilityAction={
