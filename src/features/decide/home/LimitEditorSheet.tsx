@@ -30,10 +30,13 @@ import type { InfoKey } from '../copy/infoTerms';
 import { stampSettingsPatch } from './settingsPatch';
 import { RateInput } from '../ui/RateInput';
 
-export type LimitKey = 'reserve' | 'dsr' | 'unsecured' | 'investing' | 'saving';
+export type LimitKey = 'reserve' | 'dsr' | 'unsecured' | 'investing' | 'saving' | 'housing';
 
 /** The 05-03 column check on decide_settings.dsr_line: up to 3 digits and 4 decimals. */
 export const DSR_LINE_RE = /^\d{1,3}(\.\d{1,4})?$/;
+/** D-103: the 20261024000200 column check on housing_line: the dsr grammar and at most 100. */
+export const HOUSING_LINE_RE = DSR_LINE_RE;
+export const isHousingLine = (text: string): boolean => HOUSING_LINE_RE.test(text) && Number(text) <= 100;
 const MAX_MULTIPLE = 120; // the builder's MAX_UNSECURED_MULTIPLE: a larger stored value would be reset to the default
 
 /** D-70: the ⓘ on the editor title is the one on the line it edits. */
@@ -43,6 +46,7 @@ export const LIMIT_INFO_KEY = {
   unsecured: 'unsecuredMultiple',
   investing: 'investingFloor',
   saving: 'savingFloor',
+  housing: 'housingLine',
 } as const satisfies Record<LimitKey, InfoKey>;
 
 const COLUMN = {
@@ -51,6 +55,7 @@ const COLUMN = {
   unsecured: 'unsecured_multiple',
   investing: 'investing_floor',
   saving: 'saving_floor',
+  housing: 'housing_line',
 } as const satisfies Record<LimitKey, keyof DecideSettingsPatch>;
 
 export interface LimitEditorSheetProps {
@@ -88,7 +93,7 @@ function LimitForm({ limit, userId, currency, settings, source, whole, cushion =
     const s = settings;
     if (s === null) return { money: null, text: '' };
     const money = foreign ? null : limit === 'reserve' ? s.reserve : limit === 'investing' ? s.investing_floor : limit === 'saving' ? s.saving_floor : null;
-    const text = limit === 'dsr' ? (s.dsr_line ?? '') : limit === 'unsecured' ? (s.unsecured_multiple === null ? '' : String(s.unsecured_multiple)) : '';
+    const text = limit === 'dsr' ? (s.dsr_line ?? '') : limit === 'housing' ? (s.housing_line ?? '') : limit === 'unsecured' ? (s.unsecured_multiple === null ? '' : String(s.unsecured_multiple)) : '';
     return { money, text };
   });
   const [value, setValue] = useState<Fields>(start);
@@ -98,6 +103,7 @@ function LimitForm({ limit, userId, currency, settings, source, whole, cushion =
   let canSave = userId !== null;
   if (isMoney) canSave = canSave && validMoney(value.money);
   else if (limit === 'dsr') canSave = canSave && DSR_LINE_RE.test(value.text);
+  else if (limit === 'housing') canSave = canSave && isHousingLine(value.text);
   else canSave = canSave && /^\d{1,3}$/.test(value.text) && Number(value.text) <= MAX_MULTIPLE;
 
   const name = t(`decide.lines.${limit}.name` as const);
@@ -128,6 +134,9 @@ function LimitForm({ limit, userId, currency, settings, source, whole, cushion =
     if (isMoney) {
       if (!validMoney(value.money)) return;
       write({ [column]: value.money });
+    } else if (limit === 'housing') {
+      if (!isHousingLine(value.text)) return;
+      write({ housing_line: value.text });
     } else if (limit === 'dsr') {
       if (!DSR_LINE_RE.test(value.text)) return;
       write({ dsr_line: value.text });
@@ -150,7 +159,7 @@ function LimitForm({ limit, userId, currency, settings, source, whole, cushion =
             label={name}
             accessibilityLabel={name}
           />
-        ) : limit === 'dsr' ? (
+        ) : limit === 'dsr' || limit === 'housing' ? (
           <RateInput
             value={value.text}
             onChange={(text) => setValue((v) => ({ ...v, text }))}

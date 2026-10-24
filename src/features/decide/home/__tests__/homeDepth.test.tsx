@@ -33,6 +33,7 @@ function settingsRow(over: Partial<DecideSettingsRow> = {}): DecideSettingsRow {
     rough_spending: null,
     reserve: null,
     dsr_line: null,
+    housing_line: null,
     unsecured_multiple: null,
     investing_floor: null,
     saving_floor: null,

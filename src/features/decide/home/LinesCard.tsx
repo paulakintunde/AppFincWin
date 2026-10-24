@@ -64,6 +64,8 @@ export function LinesCard({ source, settings, userId, currency, whole, flat = fa
         return foreign || settings.saving_floor === null ? null : whole(settings.saving_floor);
       case 'dsr':
         return settings.dsr_line === null ? null : t('decide.lines.dsr.value', { pct: settings.dsr_line });
+      case 'housing':
+        return settings.housing_line === null ? null : t('decide.lines.housing.value', { pct: settings.housing_line });
       case 'unsecured':
         return settings.unsecured_multiple === null
           ? null
@@ -85,6 +87,8 @@ export function LinesCard({ source, settings, userId, currency, whole, flat = fa
         return t('decide.lines.dsr.value', {
           pct: percentText(limits.dsrLine),
         });
+      case 'housing':
+        return null; // the effective default arrives with the engine limits and the sixth row (05-126)
       case 'unsecured':
         return t('decide.lines.unsecured.value', {
           count: limits.unsecuredIncomeMultiple,

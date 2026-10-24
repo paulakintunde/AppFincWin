@@ -8,7 +8,7 @@ import { emptyCheckInputs } from '../../snapshot/checkInputs';
 import { TODAY, loggedSource, month, roughSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { wrap } from '../../check/steps/__tests__/helpers/stepProps';
 import { LinesCard } from '../LinesCard';
-import { DSR_LINE_RE } from '../LimitEditorSheet';
+import { DSR_LINE_RE, LimitEditorSheet } from '../LimitEditorSheet';
 import { OpenChecksCard } from '../OpenChecksCard';
 import { RoughFiguresSheet } from '../RoughFiguresSheet';
 import { MonthDetailsBody } from '../YourMonthCard';
@@ -57,6 +57,7 @@ function settingsRow(over: Partial<DecideSettingsRow> = {}): DecideSettingsRow {
     rough_spending: null,
     reserve: null,
     dsr_line: null,
+    housing_line: null,
     unsecured_multiple: null,
     investing_floor: null,
     saving_floor: null,
@@ -328,6 +329,40 @@ describe('LinesCard', () => {
     expect(mockUpdate).toHaveBeenCalledTimes(1);
     expect(mockUpdate).toHaveBeenCalledWith({ dsr_line: '36.5' });
     expect(typeof mockUpdate.mock.calls[0]![0].dsr_line).toBe('string');
+  });
+
+  it('D-103 the housing limit validates 0 to 100 and writes housing_line', async () => {
+    await wrap(
+      <LimitEditorSheet limit="housing" userId="u1" currency="USD" settings={settingsRow()} source={loggedSource()} whole={whole} onClose={jest.fn()} />
+    );
+    const field = fieldOf('Housing costs at most');
+    const save = () => screen.getByLabelText('Save limit');
+    for (const refused of ['100.5', '101', '36.12345']) {
+      await fireEvent.changeText(field, refused);
+      expect(save().props.accessibilityState.disabled).toBe(true);
+      await fireEvent.press(save());
+    }
+    expect(mockUpdate).not.toHaveBeenCalled();
+    await fireEvent.changeText(field, '100');
+    expect(save().props.accessibilityState.disabled).toBe(false);
+    await fireEvent.changeText(field, '28.5');
+    await fireEvent.press(save());
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    expect(mockUpdate).toHaveBeenCalledWith({ housing_line: '28.5' });
+  });
+
+  it('D-103 Use the default clears housing_line', async () => {
+    await wrap(
+      <LimitEditorSheet limit="housing" userId="u1" currency="USD" settings={settingsRow({ housing_line: '30' })} source={loggedSource()} whole={whole} onClose={jest.fn()} />
+    );
+    await fireEvent.press(screen.getByLabelText('Use the default'));
+    expect(mockUpdate).toHaveBeenCalledWith({ housing_line: null });
+  });
+
+  it('D-103 the Lines card still renders five rows', async () => {
+    await wrapOpen(lines(settingsRow({ housing_line: '30' })));
+    expect(screen.getAllByTestId(/^line-row-/)).toHaveLength(5);
+    expect(screen.queryByTestId('line-row-housing')).toBeNull();
   });
 
   it('a limit save recomputes an open check in the same render cycle (shared cache)', async () => {
