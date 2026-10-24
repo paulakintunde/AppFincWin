@@ -75,7 +75,7 @@ describe('verdictTitle', () => {
     expect(lead('inv', { investingAtRisk: 5, pauseNeeded: 5 }).key).toBe('decide.verdict.titleInvInvesting');
     expect(lead('inv', { savingAtRisk: 5, pauseNeeded: 5 }).key).toBe('decide.verdict.titleInvSaving');
     expect(lead('inv', { investingAtRisk: 5, savingAtRisk: 5, pauseNeeded: 10 })).toEqual({ key: 'decide.verdict.titleInvBoth', params: { amount: '$10' } });
-    expect(Object.keys(ADJUST_TITLE).sort()).toEqual(['cash', 'cash_dip', 'dsr', 'inv', 'month', 'owe']);
+    expect(Object.keys(ADJUST_TITLE).sort()).toEqual(['cash', 'cash_dip', 'dsr', 'housing', 'inv', 'month', 'owe']);
   });
 
   it('a zero-income dsr breach never prints a null ratio', () => {
@@ -133,6 +133,29 @@ describe('warningCard', () => {
     expect(noPause.body.map((b) => b.key)).toEqual(['decide.warn.monthAlreadySame']);
     for (const key of ['decide.warn.monthAlreadySame', 'decide.warn.monthPaused']) expect(resolvesInEn(key)).toBe(true);
     expect(JSON.stringify(card)).not.toMatch(/Adding/);
+  });
+
+  it('D-103 a leading housing warning picks titleHousing, or the no-income title', () => {
+    const a = assessmentOf({ state: 'adjust', warnings: [w('housing', 5)] });
+    expect(verdictTitle(a, fmt)).toEqual({ key: 'decide.verdict.titleHousing', params: { pct: '30%' } });
+    const none = assessmentOf({ state: 'adjust', warnings: [w('housing', 5)], housingRatioAfter: null });
+    expect(verdictTitle(none, fmt)).toEqual({ key: 'decide.verdict.titleHousingNoIncome' });
+    for (const key of ['decide.verdict.titleHousing', 'decide.verdict.titleHousingNoIncome']) expect(resolvesInEn(key)).toBe(true);
+  });
+
+  it('D-103 the housing warning card reads from the final keys, with and without income', () => {
+    const card = warningCard(w('housing', 5), assessmentOf({}), fmt, fmtDate);
+    expect(card.title).toEqual({ key: 'decide.warn.housingTitle' });
+    expect(card.value).toEqual({ key: 'decide.warn.housingValue', params: { pct: '30%' } });
+    expect(card.body).toEqual([{ key: 'decide.warn.housingBody', params: { line: '28%', housing: '$120000', in: '$400000' } }]);
+    expect(card.tone).toBe('soft');
+    const none = warningCard(w('housing', 5), assessmentOf({ housingRatioAfter: null }), fmt, fmtDate);
+    expect(none.value).toEqual({ key: 'decide.warn.housingValueNoIncome' });
+    expect(none.body).toEqual([{ key: 'decide.warn.housingBodyNoIncome', params: { line: '28%', housing: '$120000' } }]);
+    expect(none.tone).toBe('soft');
+    for (const key of ['housingTitle', 'housingValue', 'housingBody', 'housingValueNoIncome', 'housingBodyNoIncome']) {
+      expect(resolvesInEn('decide.warn.' + key)).toBe(true);
+    }
   });
 
   it('dsr percent values are grouped and carry the percent sign, for the value, the line and the no-income body', () => {
@@ -258,7 +281,7 @@ describe('every key resolves and no copy is prescriptive', () => {
   it('walks a fixture set', () => {
     const adjust = (code: Parameters<typeof w>[0]) => assessmentOf({ state: 'adjust', warnings: [w(code, 9)], cashDip: 'soft', cashPath: { status: 'available', lowestWith: { day: 1, date: '2026-11-01', amount: 1 } } as never, investingAtRisk: 1, pauseNeeded: 1 });
     const refs: CopyRef[] = [];
-    for (const code of ['month', 'cash', 'cash_dip', 'dsr', 'owe', 'inv'] as const) {
+    for (const code of ['month', 'cash', 'cash_dip', 'dsr', 'housing', 'owe', 'inv'] as const) {
       const a = adjust(code);
       refs.push(verdictTitle(a, fmt), verdictBody(a, fmt));
       const card = warningCard(w(code, 9), a, fmt, fmtDate);

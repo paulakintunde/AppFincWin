@@ -147,7 +147,8 @@ describe('a four-month household', () => {
       monthlyInvesting: 0,
       scope: { kind: 'personal' },
       householdSpending: null,
-      limits: { reserve: null, dsrLine: null, unsecuredIncomeMultiple: null, investingFloor: null, savingFloor: null, spareFloor: null },
+      housingMonthly: 0,
+      limits: { reserve: null, dsrLine: null, housingLine: null, unsecuredIncomeMultiple: null, investingFloor: null, savingFloor: null, spareFloor: null },
       projectionReturn: null,
       projectionRates: [],
       expenseLines: [
@@ -937,14 +938,14 @@ describe('limits', () => {
         settings: settings({ reserve: 100_000, dsr_line: '30.5', unsecured_multiple: 10, investing_floor: 5_000, saving_floor: 7_000, basis_override: 'worst' }),
       })
     );
-    expect(r.snapshot.limits).toEqual({ reserve: 100_000, dsrLine: percent('30.5'), unsecuredIncomeMultiple: 10, investingFloor: 5_000, savingFloor: 7_000, spareFloor: null });
+    expect(r.snapshot.limits).toEqual({ reserve: 100_000, dsrLine: percent('30.5'), housingLine: null, unsecuredIncomeMultiple: 10, investingFloor: 5_000, savingFloor: 7_000, spareFloor: null });
     expect(r.snapshot.basisOverride).toBe('worst');
     expect(r.meta.limitsReset).toBe(0);
   });
 
   it('a blank line stays null so the engine default applies', () => {
     const r = logged(household({ settings: settings() }));
-    expect(r.snapshot.limits).toEqual({ reserve: null, dsrLine: null, unsecuredIncomeMultiple: null, investingFloor: null, savingFloor: null, spareFloor: null });
+    expect(r.snapshot.limits).toEqual({ reserve: null, dsrLine: null, housingLine: null, unsecuredIncomeMultiple: null, investingFloor: null, savingFloor: null, spareFloor: null });
   });
 
   it('treats the money limits as null when they were typed in another currency', () => {

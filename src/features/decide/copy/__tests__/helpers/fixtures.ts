@@ -45,6 +45,8 @@ const BASE = {
   unsecuredAfter: 1_000_000,
   debtServiceRatioBefore: percent('10'),
   debtServiceRatioAfter: percent('22.99'),
+  housingAfter: 120_000,
+  housingRatioAfter: percent('30'),
   investingAtRisk: 0,
   investingAfter: 20_000,
   savingAtRisk: 0,
@@ -63,7 +65,7 @@ const BASE = {
     limits: {
       reserve: 100_000,
       dsrLine: percent('36'),
-      housingLine: null,
+      housingLine: percent('28'),
       investingFloor: 10_000,
       savingFloor: 10_000,
       unsecuredIncomeMultiple: 12,

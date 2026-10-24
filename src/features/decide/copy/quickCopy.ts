@@ -38,6 +38,14 @@ interface CreditCtx {
   payment: string; // the formatted monthly payment, with cents (D-54)
 }
 
+// D-103: the quick check never produces a housing warning (it is not a property check), but the maps stay exhaustive and reuse the warning-card body keys.
+function housingLine(a: Assessment, fmt: Fmt): CopyRef {
+  const limits = { line: percentLabel(a.context.limits.housingLine), housing: fmt(a.housingAfter) };
+  return a.housingRatioAfter === null
+    ? ref('decide.warn.housingBodyNoIncome', limits)
+    : ref('decide.warn.housingBody', { ...limits, in: fmt(a.context.money.incomeBasis) });
+}
+
 // Cash lines (a Cash result whose lead warning is each code)
 export const QUICK_CASH_LINE = {
   cash: (a, w, fmt) => ref('decide.quick.line.cashBelowCushion', { cashAfter: fmt(a.cashAfter), short: fmt(w.shortfall), cushion: fmt(a.context.limits.reserve) }),
@@ -47,6 +55,7 @@ export const QUICK_CASH_LINE = {
       ? ref('decide.quick.line.creditDsrNoIncome')
       : ref('decide.quick.line.creditDsr', { pct: percentLabel(a.debtServiceRatioAfter) }),
   owe: () => ref('decide.quick.line.creditOwe'),
+  housing: (a, _w, fmt) => housingLine(a, fmt),
   inv: (a, _w, fmt) => ref(`decide.quick.line.pause${invKind(a)}`, { amount: fmt(a.pauseNeeded) }),
   month: (_a, w, fmt) => ref('decide.quick.line.cashMonthShort', { short: fmt(w.shortfall) }),
 } as const satisfies Record<WarningCode, (a: Assessment, w: Warning, fmt: Fmt) => CopyRef>;
@@ -60,6 +69,7 @@ export const QUICK_CREDIT_LINE = {
       ? ref('decide.quick.line.creditDsrNoIncome')
       : ref('decide.quick.line.creditDsr', { pct: percentLabel(a.debtServiceRatioAfter) }),
   owe: () => ref('decide.quick.line.creditOwe'),
+  housing: (a, _w, c) => housingLine(a, c.fmt),
   // deposit 0 in the quick check, so only the on-the-day fees reach cash
   cash: (a, w, c) =>
     ref('decide.quick.line.creditCash', {

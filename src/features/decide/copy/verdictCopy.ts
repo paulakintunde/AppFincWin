@@ -67,6 +67,10 @@ export const ADJUST_TITLE = {
     a.debtServiceRatioAfter === null
       ? ref('decide.verdict.titleDsrNoIncome')
       : ref('decide.verdict.titleDsr', { pct: percentLabel(a.debtServiceRatioAfter) }),
+  housing: (a) =>
+    a.housingRatioAfter === null
+      ? ref('decide.verdict.titleHousingNoIncome')
+      : ref('decide.verdict.titleHousing', { pct: percentLabel(a.housingRatioAfter) }),
   owe: () => ref('decide.verdict.titleOwe'),
   inv: (a, _w, fmt) => ref(`decide.verdict.titleInv${invKind(a)}`, { amount: fmt(a.pauseNeeded) }),
 } as const satisfies Record<WarningCode, TitleFn>;

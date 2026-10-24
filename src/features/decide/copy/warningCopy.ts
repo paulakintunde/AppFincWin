@@ -66,6 +66,24 @@ export function warningCard(w: Warning, a: Assessment, fmt: Fmt, fmtDate: (local
         tone,
       };
     }
+    case 'housing': {
+      const line = percentLabel(limits.housingLine);
+      const housing = fmt(a.housingAfter);
+      if (a.housingRatioAfter === null) {
+        return {
+          title: ref('decide.warn.housingTitle'),
+          value: ref('decide.warn.housingValueNoIncome'),
+          body: [ref('decide.warn.housingBodyNoIncome', { line, housing })],
+          tone,
+        };
+      }
+      return {
+        title: ref('decide.warn.housingTitle'),
+        value: ref('decide.warn.housingValue', { pct: percentLabel(a.housingRatioAfter) }),
+        body: [ref('decide.warn.housingBody', { line, housing, in: fmt(a.context.money.incomeBasis) })],
+        tone,
+      };
+    }
     case 'owe':
       return {
         title: ref('decide.warn.oweTitle'),

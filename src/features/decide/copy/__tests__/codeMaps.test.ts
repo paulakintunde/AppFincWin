@@ -21,7 +21,7 @@ const MAPS: Record<string, { map: Record<string, string>; codes: string[] }> = {
   ITEM_TYPE_LABEL: { map: ITEM_TYPE_LABEL, codes: ['vehicle', 'rent_bill', 'loan_repayment', 'tax', 'insurance_premium', 'general', 'property', 'cash_equivalent', 'tuition'] },
   METHOD_LABEL: { map: METHOD_LABEL, codes: ['cash', 'loan', 'instalment', 'card', 'lump', 'monthly'] },
   ALT_ROW_NAME: { map: ALT_ROW_NAME, codes: ['as_planned', 'cheaper', 'wait_and_save', 'skip'] },
-  WARNING_TITLE: { map: WARNING_TITLE, codes: ['month', 'cash', 'cash_dip', 'dsr', 'owe', 'inv'] },
+  WARNING_TITLE: { map: WARNING_TITLE, codes: ['month', 'cash', 'cash_dip', 'dsr', 'housing', 'owe', 'inv'] },
 };
 
 describe('code maps', () => {
@@ -55,8 +55,14 @@ describe('code maps', () => {
     for (const key of Object.values(RUNNING_COST_LABEL)) expect(resolvesInEn(key)).toBe(true);
   });
 
+  it('D-103 the housing title and tone maps are exhaustive', () => {
+    expect(WARNING_TITLE.housing).toBe('decide.warn.housingTitle');
+    expect(WARNING_TONE.housing).toBe('soft');
+    expect(resolvesInEn(WARNING_TITLE.housing)).toBe(true);
+  });
+
   it('WARNING_TONE covers every warning code', () => {
-    expect(Object.keys(WARNING_TONE).sort()).toEqual(['cash', 'cash_dip', 'dsr', 'inv', 'month', 'owe']);
+    expect(Object.keys(WARNING_TONE).sort()).toEqual(['cash', 'cash_dip', 'dsr', 'housing', 'inv', 'month', 'owe']);
     expect(WARNING_TONE.month).toBe('hard');
     expect(WARNING_TONE.cash_dip).toBe('soft');
   });

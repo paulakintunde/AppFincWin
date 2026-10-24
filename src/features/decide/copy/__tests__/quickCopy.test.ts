@@ -80,6 +80,7 @@ describe('quickResultCopy: Cash', () => {
       cash: 'decide.quick.line.cashBelowCushion',
       cash_dip: 'decide.quick.line.cashDip',
       dsr: 'decide.quick.line.creditDsr',
+      housing: 'decide.warn.housingBody',
       owe: 'decide.quick.line.creditOwe',
       inv: 'decide.quick.line.pauseInvesting',
       month: 'decide.quick.line.cashMonthShort',
@@ -88,6 +89,8 @@ describe('quickResultCopy: Cash', () => {
       const r = run(logged(assessmentOf({ state: 'adjust', warnings: [w(code, 7)], investingAtRisk: 7, pauseNeeded: 7 })), 'cash');
       expect(r.line.key).toBe(expected[code]);
     }
+    const housingNone = run(logged(assessmentOf({ state: 'adjust', warnings: [w('housing', 7)], housingRatioAfter: null })), 'cash');
+    expect(housingNone.line).toEqual({ key: 'decide.warn.housingBodyNoIncome', params: { line: '28%', housing: '$120000' } });
     const noIncome = run(logged(assessmentOf({ state: 'adjust', warnings: [w('dsr', 7)], debtServiceRatioAfter: null })), 'cash');
     expect(noIncome.line.key).toBe('decide.quick.line.creditDsrNoIncome');
     const saving = run(logged(assessmentOf({ state: 'adjust', warnings: [w('inv', 7)], savingAtRisk: 7, pauseNeeded: 7 })), 'cash');
@@ -160,6 +163,13 @@ describe('quickResultCopy: Credit', () => {
     expect(zero.line.key).toBe('decide.quick.line.creditShortZero');
     expect(zero.chip!.key).toBe('decide.state.noCredit');
     expect(run(logged(assessmentOf({ state: 'adjust', warnings: [w('inv', 90)] }), check12), 'credit').line.key).toBe('decide.quick.line.creditShort');
+  });
+
+  it('D-103 the quick-check maps reuse the housing body keys', () => {
+    const credit = run(logged(assessmentOf({ state: 'adjust', warnings: [w('housing', 1)] }), check12), 'credit').line;
+    expect(credit).toEqual({ key: 'decide.warn.housingBody', params: { line: '28%', housing: '$120000', in: '$400000' } });
+    const none = run(logged(assessmentOf({ state: 'adjust', warnings: [w('housing', 1)], housingRatioAfter: null }), check12), 'credit').line;
+    expect(none.key).toBe('decide.warn.housingBodyNoIncome');
   });
 
   it('dsr, owe and cash lines', () => {

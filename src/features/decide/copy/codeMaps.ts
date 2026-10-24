@@ -127,6 +127,7 @@ export const WARNING_TITLE = {
   cash: 'decide.warn.cashTitle',
   cash_dip: 'decide.warn.cashDipTitle',
   dsr: 'decide.warn.dsrTitle',
+  housing: 'decide.warn.housingTitle',
   owe: 'decide.warn.oweTitle',
   inv: 'decide.warn.invTitleInvesting',
 } as const satisfies Record<WarningCode, string>;
@@ -138,5 +139,6 @@ export const WARNING_TONE = {
   cash: 'soft',
   cash_dip: 'soft',
   dsr: 'soft',
+  housing: 'soft',
   inv: 'soft',
 } as const satisfies Record<WarningCode, 'hard' | 'soft'>;
