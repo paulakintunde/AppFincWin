@@ -10,6 +10,7 @@ import {
   cheaperFinalPrice,
   cheaperPriceForPercent,
   emptyCheckInputs,
+  engineCtxOf,
   isValidAprText,
   isValidProjectionRateText,
   isValidRateText,
@@ -451,6 +452,23 @@ describe('toEngineCheck', () => {
     expect(min.payment).toMatchObject({ payoff: { kind: 'minimum' } });
     const unknown = ok(buy({ method: 'card', card: { ...base, accountId: 'other' } })).check as BuyCheck;
     expect((unknown.payment as { card: unknown }).card).toBeNull();
+  });
+  it('D-91 D-92 the converted card limit and the region reach the card payment', () => {
+    const inputs = buy({ method: 'card', card: { ...emptyCheckInputs('buy', TODAY).card, accountId: 'acc-card', payoff: 'full' } });
+    const withLimit = toEngineCheck(inputs, engineCtxOf({ ...CTX, cardMaxPurchase: mu(7_692_307), region: 'GB' }));
+    if (!withLimit.ok) throw new Error('expected ok');
+    expect((withLimit.check as BuyCheck).payment).toMatchObject({ method: 'card', cardMaxPurchase: 7_692_307, region: 'GB' });
+    const noRate = toEngineCheck(inputs, engineCtxOf({ ...CTX, cardMaxPurchase: null, region: null }));
+    if (!noRate.ok) throw new Error('expected ok');
+    const payment = (noRate.check as BuyCheck).payment as { cardMaxPurchase?: unknown; region?: unknown };
+    expect(payment.cardMaxPurchase).toBeNull();
+    expect(payment.region).toBeNull();
+    expect(resolvePlan(noRate.check as BuyCheck)).toMatchObject({ status: 'missing', reasons: ['card_limit_rate_missing'] });
+  });
+  it('D-91 a context without a limit or region leaves both off the card payment', () => {
+    const payment = (ok(buy({ method: 'card' })).check as BuyCheck).payment;
+    expect('cardMaxPurchase' in payment).toBe(false);
+    expect('region' in payment).toBe(false);
   });
   it('card fees reach the card plan', () => {
     const base = emptyCheckInputs('buy', TODAY).card;

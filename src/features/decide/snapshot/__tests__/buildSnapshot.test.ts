@@ -1,5 +1,6 @@
 import * as fc from 'fast-check';
 import {
+  CARD_MAX_PURCHASE_USD,
   MARKET_DEFAULTS,
   ZERO_PERCENT,
   decide,
@@ -888,6 +889,43 @@ describe('market defaults and the dealer cap', () => {
     const verdict = decide(r.snapshot, check).verdict;
     expect(verdict.state).toBe('missing');
     if (verdict.state === 'missing') expect(verdict.reasons).toContain('dealer_cap_missing');
+  });
+});
+
+describe('the card check limit (D-91)', () => {
+  it('D-91 the card limit converts at the latest stored rate and floors', () => {
+    // 10,000,000 USD cents at 1.3 USD per EUR = 7,692,307.69 EUR cents: a half-up conversion would give 7,692,308
+    const r = buildDecideSnapshot(sourceOf({ homeCurrency: 'EUR', rates: [{ ...USD_RATE, rate: '1.3' }] }));
+    expect(r.cardMaxPurchase).toBe(7_692_307);
+    expect(buildDecideSnapshot(sourceOf({ homeCurrency: 'EUR', rates: [USD_RATE] })).cardMaxPurchase).toBe(9_090_909);
+  });
+
+  it('D-91 no USD rate leaves the limit null', () => {
+    const r = buildDecideSnapshot(sourceOf({ homeCurrency: 'EUR' }));
+    expect(r.cardMaxPurchase).toBeNull();
+    expect(r.basisNotes).toEqual([]);
+    expect(buildDecideSnapshot(sourceOf({ homeCurrency: 'GBP', rates: [USD_RATE] })).cardMaxPurchase).toBeNull();
+  });
+
+  it('D-91 USD home needs no rate', () => {
+    const r = buildDecideSnapshot(sourceOf());
+    expect(r.cardMaxPurchase).toBe(CARD_MAX_PURCHASE_USD);
+    expect(r.basisNotes).toEqual([]);
+  });
+
+  it('D-91 an older rate adds only a basis note', () => {
+    const r = buildDecideSnapshot(sourceOf({ homeCurrency: 'EUR', rates: [USD_RATE] }));
+    expect(r.basisNotes).toEqual([{ kind: 'card_limit_rate', date: '2026-10-14' }]);
+    expect(r.conversions).toEqual([]);
+    expect(r.unconverted).toBeNull();
+    expect(r.provisional).toBeNull();
+    const dated = buildDecideSnapshot(sourceOf({ homeCurrency: 'EUR', rates: [{ ...USD_RATE, rate_date: '2026-10-15' }] }));
+    expect(dated.basisNotes).toEqual([]);
+  });
+
+  it('D-92 the RD-02 region is carried through', () => {
+    expect(buildDecideSnapshot(sourceOf({ region: 'GB' })).region).toBe('GB');
+    expect(buildDecideSnapshot(sourceOf({ region: null })).region).toBeNull();
   });
 });
 

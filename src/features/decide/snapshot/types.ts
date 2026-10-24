@@ -31,7 +31,10 @@ export interface UnconvertedNote { currencies: readonly string[]; rowCount: numb
 export interface ProvisionalNote { rowCount: number; rateDate: string }
 // D-67: the stored rates the snapshot was built with, so a check typed in another currency converts at the same latest stored rate (checkCurrency.ts). Absent (test fixtures) = no rate: such a check reads unconverted.
 export interface SnapshotFx { rates: readonly FxLatestRow[]; customs: readonly CustomCurrencyRow[]; today: string }
-interface SnapshotBase { currency: CurrencyCode; meta: SnapshotMeta; cards: readonly CardChoice[]; dealerCap: MinorUnits | null; cash: MinorUnits; conversions: readonly ConversionNote[]; unconverted: UnconvertedNote | null; provisional?: ProvisionalNote | null; fx?: SnapshotFx } // provisional: D-69, absent (test fixtures) = none
+// D-91 (05-95): a display-only basis note; never affects confidence (M4). date = the USD rate's date, shown when older than today.
+export interface CardLimitRateNote { kind: 'card_limit_rate'; date: string }
+// D-91 / D-92: cardMaxPurchase = CARD_MAX_PURCHASE_USD in the home currency, floored (null = no stored USD rate; absent in test fixtures = no limit); region = the RD-02 country code the card rules read (absent in fixtures = unknown); basisNotes: see CardLimitRateNote (absent = none)
+interface SnapshotBase { currency: CurrencyCode; meta: SnapshotMeta; cards: readonly CardChoice[]; dealerCap: MinorUnits | null; cardMaxPurchase?: MinorUnits | null; region?: string | null; basisNotes?: readonly CardLimitRateNote[]; cash: MinorUnits; conversions: readonly ConversionNote[]; unconverted: UnconvertedNote | null; provisional?: ProvisionalNote | null; fx?: SnapshotFx } // provisional: D-69, absent (test fixtures) = none
 export type SnapshotResult =
   | (SnapshotBase & { kind: 'logged'; snapshot: DecideSnapshot })
   | (SnapshotBase & { kind: 'rough'; figures: RoughFigures })

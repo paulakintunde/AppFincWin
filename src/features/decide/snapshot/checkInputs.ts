@@ -456,6 +456,20 @@ export interface EngineCtx {
   readonly currency: CurrencyCode;
   readonly cards: readonly CardChoice[];
   readonly dealerCap: MinorUnits | null;
+  /** D-91: the converted card check limit (null = no stored USD rate); absent = no limit (test fixtures). */
+  readonly cardMaxPurchase?: MinorUnits | null;
+  /** D-92: the RD-02 country code the card rules read; absent = unknown. */
+  readonly region?: string | null;
+}
+/** D-91 / D-92: the engine context from a built snapshot, carrying the converted card limit and the region. */
+export function engineCtxOf(source: {
+  readonly currency: CurrencyCode;
+  readonly cards: readonly CardChoice[];
+  readonly dealerCap: MinorUnits | null;
+  readonly cardMaxPurchase?: MinorUnits | null;
+  readonly region?: string | null;
+}): EngineCtx {
+  return { currency: source.currency, cards: source.cards, dealerCap: source.dealerCap, cardMaxPurchase: source.cardMaxPurchase, region: source.region };
 }
 export type EngineCheckResult =
   | { readonly ok: true; readonly check: PurchaseCheck; readonly resolvedPrice: ResolvedPrice; readonly running: RunningCosts }
@@ -573,6 +587,8 @@ function payment(inputs: CheckInputs, method: PayMethod, ctx: EngineCtx, price: 
         card: choice?.record ?? null,
         payoff: c.payoff === 'months' ? { kind: 'months', months: c.months } : { kind: c.payoff },
         dealerCap: ctx.dealerCap,
+        ...(ctx.cardMaxPurchase === undefined ? {} : { cardMaxPurchase: ctx.cardMaxPurchase }),
+        ...(ctx.region === undefined ? {} : { region: ctx.region }),
         ...(promo === undefined ? {} : { promo }),
         ...(c.variable ? { variable: true } : {}),
         ...(c.fees !== null && c.fees > 0 ? { cardFees: minorUnits(c.fees) } : {}),

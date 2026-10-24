@@ -3,7 +3,7 @@
 import type { StackedCheckInput } from '@/engine/decide';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { inHomeCurrency } from './checkCurrency';
-import { parseCheckInputs, toEngineCheck } from './checkInputs';
+import { engineCtxOf, parseCheckInputs, toEngineCheck } from './checkInputs';
 import { EMPTY_STACK, type SnapshotResult, type StackSelection } from './types';
 
 function byCreatedThenId(a: DecideCheckRow, b: DecideCheckRow): number {
@@ -35,7 +35,7 @@ export function selectOtherChecks(args: {
       leftOutCurrency += 1;
       continue;
     }
-    const engine = toEngineCheck(view.inputs, { currency: source.currency, cards: source.cards, dealerCap: source.dealerCap });
+    const engine = toEngineCheck(view.inputs, engineCtxOf(source));
     if (!engine.ok) {
       leftOutIncomplete += 1;
       continue;

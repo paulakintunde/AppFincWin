@@ -7,6 +7,7 @@
 // own rate was pending is converted at the latest stored rate and flagged provisional (D-69); that value is never written.
 import {
   AVERAGING_WINDOW_MONTHS,
+  CARD_MAX_PURCHASE_USD,
   MARKET_DEFAULTS,
   ZERO_PERCENT,
   minimumTermsFromDefaults,
@@ -33,9 +34,9 @@ import { monthOf } from '@/engine/time';
 import { convertLatest } from '@/data/queries/fxConvert';
 import { homeAmountFor, isOwnCurrencyRow } from '@/data/queries/homeAmount';
 import type { AccountRow, CustomCurrencyRow, FxLatestRow, RecurringSeriesRow, TransactionRow } from '@/db/rows';
-import { makeConverter, provisionalHomeAmount, type ProvisionalAmount } from './conversion';
+import { convertFloored, makeConverter, provisionalHomeAmount, type ProvisionalAmount } from './conversion';
 import { fullMonthFlags } from './fullMonths';
-import type { CardChoice, CardTermsView, SnapshotMeta, SnapshotResult } from './types';
+import type { CardChoice, CardLimitRateNote, CardTermsView, SnapshotMeta, SnapshotResult } from './types';
 
 // structurally identical to src/db/* (05-05); 05-12 passes 05-05 rows here, so its typecheck proves they agree
 export interface SettingsSource {
@@ -582,6 +583,12 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   const dealerCap =
     marketRow !== null && marketRow.dealerCap !== null ? peek(marketRow.dealerCap, marketRow.currency) : null;
 
+  // D-91 (R16.7): the card check limit in the home currency, floored (T-05-95-01), at the latest stored USD rate. USD home needs
+  // no rate; no stored USD rate is null (the engine reports card_limit_rate_missing). Stored rates only, never the fetch door.
+  const limit = convertFloored(CARD_MAX_PURCHASE_USD, 'USD', home, source.rates, source.customCurrencies, today);
+  const cardMaxPurchase = limit === null ? null : minorUnits(limit.amount);
+  const basisNotes: CardLimitRateNote[] = limit !== null && limit.rateDate < today ? [{ kind: 'card_limit_rate', date: limit.rateDate }] : [];
+
   const monthlySaving = minorUnits(average(savingTotal, usedCount) + seriesSaving);
   const monthlyInvesting = minorUnits(average(investingTotal, usedCount) + seriesInvesting);
 
@@ -622,6 +629,9 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     meta,
     cards,
     dealerCap: dealerCap === null ? null : minorUnits(dealerCap),
+    cardMaxPurchase,
+    region: source.region,
+    basisNotes,
     cash: minorUnits(cashOnHand),
     conversions: converter.notes(),
     unconverted,

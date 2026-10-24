@@ -7,7 +7,8 @@
  * for its currency (provisionalHomeAmount) and counted as provisional; the value is display and maths only, never
  * written anywhere. Once the sweep stamps the real rate, the next build reads the stamp instead.
  */
-import { basisRateText, convertLatest } from '@/data/queries/fxConvert';
+import { EUR_PER_EUR, resolveExponent } from '@/engine/money';
+import { basisRateText, convertLatest, earlierDate, findCustom, resolvePerEur } from '@/data/queries/fxConvert';
 import type { CustomCurrencyRow, FxLatestRow, TransactionRow } from '@/db/rows';
 import type { ConversionNote, ProvisionalNote, UnconvertedNote } from './types';
 
@@ -34,6 +35,45 @@ export function provisionalHomeAmount(
   if (row.original_amount === 0 || row.original_currency === home) return { amount: row.original_amount, rateDate: null };
   const result = convertLatest(row.original_amount, row.original_currency, home, rates, customs, today);
   return result === null ? null : { amount: result.amount, rateDate: result.rateDate };
+}
+
+/** D-91: a conversion rounded DOWN to the minor unit, with the date of the older stored rate used. */
+export interface FlooredConversion {
+  amount: number;
+  rateDate: string;
+}
+
+/**
+ * D-91 (T-05-95-01): `amount` minor units of `from` in `home` at the latest stored rates, FLOORED to the home minor unit so a
+ * limit is never rounded up. Exact rational maths in bigint (the same ratio as convertMinorExact, custom legs included),
+ * one floor at the end, no float. Stored rates only (never the FX fetch door). Null on any missing rate, unusable exponent or
+ * a result beyond a safe integer; never throws.
+ */
+export function convertFloored(
+  amount: number,
+  from: string,
+  home: string,
+  rates: readonly FxLatestRow[],
+  customs: readonly CustomCurrencyRow[],
+  today: string
+): FlooredConversion | null {
+  if (from === home) return { amount, rateDate: today };
+  try {
+    const orig = resolvePerEur(from, rates, customs, today);
+    const dest = resolvePerEur(home, rates, customs, today);
+    if (!orig || !dest) return null;
+    const fromExponent = resolveExponent(from, findCustom(from, customs)?.decimals);
+    const toExponent = resolveExponent(home, findCustom(home, customs)?.decimals);
+    const numerator =
+      BigInt(amount) * (dest.custom?.referencePerEur ?? dest.rate) * 10n ** BigInt(toExponent) * (orig.custom?.unitValue ?? EUR_PER_EUR);
+    const denominator =
+      (orig.custom?.referencePerEur ?? orig.rate) * 10n ** BigInt(fromExponent) * (dest.custom?.unitValue ?? EUR_PER_EUR);
+    const floored = numerator / denominator; // both positive: truncation is the floor
+    if (floored > BigInt(Number.MAX_SAFE_INTEGER)) return null;
+    return { amount: Number(floored), rateDate: earlierDate(orig.rateDate, dest.rateDate) };
+  } catch {
+    return null;
+  }
 }
 
 export interface Converter {

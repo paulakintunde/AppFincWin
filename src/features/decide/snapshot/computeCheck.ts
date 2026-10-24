@@ -41,7 +41,7 @@ import type {
 import { minorUnits } from '@/engine/money';
 import { PAY_METHODS } from './types';
 import { perfMark } from '../perf/perfMarks';
-import { cheaperFinalPrice, effectiveMethod, quickToCheckInputs, toEngineCheck } from './checkInputs';
+import { cheaperFinalPrice, effectiveMethod, engineCtxOf, quickToCheckInputs, toEngineCheck } from './checkInputs';
 import type { EngineCheckResult, EngineCtx } from './checkInputs';
 import type { CheckComputation, CheckInputs, ChipComputation, MethodKey, QuickComputation, QuickInputs, SetbackLine, SnapshotResult } from './types';
 
@@ -50,7 +50,7 @@ type EngineOk = Extract<EngineCheckResult, { ok: true }>;
 /** The computation before the slow detail figures: what the verdict card, warnings and step 2 read (D-56). */
 export type CheckCore = CheckComputation & { readonly inputs: CheckInputs };
 
-const ctxOf = (source: SnapshotResult): EngineCtx => ({ currency: source.currency, cards: source.cards, dealerCap: source.dealerCap });
+const ctxOf = (source: SnapshotResult): EngineCtx => engineCtxOf(source);
 
 // D-31 / 04 D-51: the check's one rate list is the engine's projectionRates; the first is the single projectionReturn.
 const ratedSnapshots = new WeakMap<DecideSnapshot, Map<string, DecideSnapshot>>();
