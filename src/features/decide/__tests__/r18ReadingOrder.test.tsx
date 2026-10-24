@@ -79,7 +79,7 @@ jest.mock('../notifications/waitReminder', () => ({ reconcileWaitReminders: () =
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('@/shell/fab/FabProvider', () => ({ useRegisterFab: jest.fn(), useProvideQuickAction: jest.fn() }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => mockSync }));
-jest.mock('../hints/decideHints', () => ({ loadHomeBasisSeen: () => Promise.resolve(true), markHomeBasisSeen: () => Promise.resolve() }));
+jest.mock('../hints/decideHints', () => ({ loadHomeBasisSeen: () => Promise.resolve(true), markHomeBasisSeen: () => Promise.resolve(), loadJudgeOn: () => Promise.resolve(null), saveJudgeOn: () => Promise.resolve() }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
 jest.mock('expo-router', () => ({ router: { navigate: jest.fn(), push: jest.fn(), replace: jest.fn() }, useRouter: () => ({ push: jest.fn() }) }));
 jest.mock('../home/checkHref', () => ({ openNewCheck: jest.fn() }));

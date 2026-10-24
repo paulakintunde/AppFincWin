@@ -64,6 +64,8 @@ jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => mockSync })
 jest.mock('../../hints/decideHints', () => ({
   loadHomeBasisSeen: () => Promise.resolve(mockBasisSeen),
   markHomeBasisSeen: (...a: unknown[]) => mockMarkSeen(...a),
+  loadJudgeOn: () => Promise.resolve(null),
+  saveJudgeOn: () => Promise.resolve(),
 }));
 jest.mock('../homeRowsModel', () => ({
   ...jest.requireActual('../homeRowsModel'),

@@ -22,6 +22,7 @@ import { monthOf, monthRange } from '@/engine/time';
 import { buildDecideSnapshot, type SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
 import { selectOtherChecks } from '@/features/decide/snapshot/stacking';
 import { EMPTY_STACK, type SnapshotResult, type StackSelection } from '@/features/decide/snapshot/types';
+import { useJudgeOn } from '@/features/decide/judgeOn/judgeOnStore';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { getDeviceRegion } from '@/services/locale/deviceLocale';
 import { supabase } from '@/services/supabase';
@@ -335,9 +336,11 @@ export function useDecideSnapshot(): DecideSnapshotState {
   }, [categoryRows]);
 
   const region = getDeviceRegion(rc.region) ?? null;
+  // D-107: the Judge-on choice (device view). null until it has been read, so no verdict flashes on the wrong basis.
+  const { judgeOn } = useJudgeOn(userId);
 
   const source = useMemo<SnapshotSource | null>(() => {
-    if (!rc.ready || missing) return null;
+    if (!rc.ready || missing || judgeOn === null) return null;
     return {
       today: rc.today,
       homeCurrency: rc.homeCurrency,
@@ -357,6 +360,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
       changes: changesQuery.data ?? [],
       paymentLinks,
       writtenRowLinks: writtenQuery.data ?? [],
+      judgeOn,
     };
   }, [
     rc.ready,
@@ -379,9 +383,10 @@ export function useDecideSnapshot(): DecideSnapshotState {
     changesQuery.data,
     paymentLinks,
     writtenQuery.data,
+    judgeOn,
   ]);
 
-  const sourceKey = [hh ?? '', rc.today, rc.homeCurrency, region ?? ''].join('|');
+  const sourceKey = [hh ?? '', rc.today, rc.homeCurrency, region ?? '', judgeOn ?? ''].join('|');
   const sourceDeps = reads.map((q) => q.data);
   const shared = useMemo(
     () => (source === null ? null : sharedSnapshot(sourceKey, sourceDeps, source)),
