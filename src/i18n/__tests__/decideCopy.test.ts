@@ -58,7 +58,6 @@ const CONTROL_LABELS = new Set([
   'decide.lineEditor.titleFee', // sheet title
   'decide.past.pickTitle', // sheet title
   'decide.depth.changes.addTitle', // sheet title
-  'decide.depth.running.addAmount', // button
   'decide.section.optSwitchWait', // button
   'decide.flow.commit.none', // disabled primary button label
   'decide.hint.foldTap', // reveal hint named in UI-SPEC as a control

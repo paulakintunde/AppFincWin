@@ -2424,8 +2424,8 @@ const en = {
       runway: { summary: 'Runway {{months}} months, {{lost}} less because of this', lost: 'Runway lost to this purchase: {{months}} months', met: 'New payments still met', notMet: 'New payments cannot be met' },
       running: { amountPlaceholder: 'Amount', amountFieldA11y: '{{name}} amount', rowA11yEmpty: '{{name}}, not counted yet; counted once an amount is typed.', rowA11yCounted: '{{name}}, {{amount}} a month, counted', notCounted: 'Not counted',
         propertyTax: 'Property tax', homeInsurance: 'Home insurance', utilities: 'Utilities', serviceCharge: 'Service charge', booksMaterials: 'Books and materials', travel: 'Travel', accommodation: 'Accommodation', // D-92 per-type rows (05-88)
-        addAmount: 'Add amount', typeToCount: 'Counted once an amount is typed', insurance: 'Insurance', fuel: 'Fuel', maintenance: 'Maintenance', registration: 'Registration', loss_of_value: 'Loss of value', notCash: 'Not a monthly cash cost',
-        amountA11y: '{{name}}, amount a month', lossAmountA11y: 'Loss of value, amount a month', lossPercentA11y: 'Loss of value, percent a year',
+        typeToCount: 'Counted once an amount is typed', insurance: 'Insurance', fuel: 'Fuel', maintenance: 'Maintenance', registration: 'Registration', loss_of_value: 'Loss of value', notCash: 'Not a monthly cash cost',
+        lossAmountA11y: 'Loss of value, amount a month', lossPercentA11y: 'Loss of value, percent a year',
         lossMonth: 'A month', lossPercent: '% a year', lossModeA11y: 'Loss of value as an amount a month or a percent a year of the price before tax, fees and trade-ins', lossPercentPlaceholder: '% a year', lossAbout: 'About {{amount}} a month. Shown here, not counted in your month.' }, // D-44
       estimateGap: {
         running: 'Your running costs have come in about {{pct}}% {{direction}} than estimated.',
