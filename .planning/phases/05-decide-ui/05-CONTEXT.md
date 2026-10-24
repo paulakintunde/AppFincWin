@@ -427,6 +427,10 @@ UI-SPEC R17 carries the layout, budgets, states, copy and wireframes. It replace
   - The home card's default basis becomes **This month (expected)**: the current calendar month as it is expected to end, money in and out logged so far plus the recurring pay, bills and other series still due before month end, minus debt minimum payments, saving and investing, and pot set-asides (the same Net Free Cash Flow formula). Its sub-line reads "this month, after spending, debts and everything set aside".
   - Month details' Judge on control offers This month / Worst / Average, defaulting to This month for the card. The stored basis preference keeps working; an explicit Worst or Average choice still wins.
   - Checks (verdicts) keep judging on the worst month by default (user chose card only); their basis setting is unchanged.
+- **D-106 addendum (user, 2026-10-24, popup):**
+  - Everyone starts on This month: the card opens on This month for every account, even one with a stored Worst or Average basis. The stored basis still governs checks. Only an explicit choice of Worst or Average in Month details (kept as a device view) keeps the card off This month.
+  - A current-month line with no stored rate does not blank the card: This month falls back to the Worst-month figure, the sub-line names Worst, a declarative line says "This month is waiting for a {{currency}} rate", and Needs a look lists the rate action. The card always shows a number.
+  - "spare" wordings stay as they are; only "left" and "short" for a month figure change.
 - **D-100 addendum:** the card's "In · Out" line counts everything that leaves (spending, debt payments, saving, investing and set-asides), so In − Out equals the hero; Month details shows the matching breakdown.
 
 ### Claude's Discretion

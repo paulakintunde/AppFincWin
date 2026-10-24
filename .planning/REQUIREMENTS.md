@@ -261,7 +261,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-36**: User can keep named pots (a name, a target and a month) whose monthly set-aside comes off net free cash flow and is protected from every check, add, edit, mark done and delete them with Undo, offline, and see Wait-and-save goals as one kind of pot (05 D-101)
 - [ ] **DCU-37**: A purchase verdict shows the total cost over the check's years (price, interest and fees, running costs, less expected resale where loss of value is set) and, only when the user has typed a rate, what the same money would have become invested instead, labelled a projection (05 D-102, D-104)
 - [ ] **DCU-38**: User can set a housing line (default 28% of money in) that counts housing-category spending and payments on loans marked "This is for housing", and a property check that pushes housing over it gets a warning like the debt-to-income line (05 D-103)
-- [ ] **DCU-39**: Decide words a month figure as "{amount} free" or "{amount} overspent" (amount absolute, no minus, overspent in the danger tint) everywhere it appears, and the home card judges "This month (expected)" by default - the current month as it is expected to end, with pay and bills still due counted - while Month details lets the user judge on This month, Worst or Average; checks keep their own basis (05 D-106)
+- [ ] **DCU-39**: Decide words a month figure as "{amount} free" or "{amount} overspent" (amount absolute, no minus, overspent in the danger tint) everywhere it appears, and the home card judges "This month (expected)" by default - the current month as it is expected to end, with pay and bills still due counted - while Month details lets the user judge on This month, Worst or Average (a missing rate falls back to the Worst figure with a stated reason); checks keep their own basis (05 D-106)
 
 ### Grow
 
@@ -727,7 +727,7 @@ Populated during roadmap creation.
 *2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 
 *2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
-*2026-10-24 — Free / overspent wording and the This-month card: DCU-39 added (D-106, plans 05-135..05-140); it also touches DCU-35 (the card basis), DCU-14 (the month figure and its basis) and DCU-09 (declarative wording); v1 total now 291.*
+*2026-10-24 — Free / overspent wording and the This-month card: DCU-39 added (D-106, plans 05-135..05-141); it also touches DCU-35 (the card basis), DCU-14 (the month figure and its basis) and DCU-09 (declarative wording); v1 total now 291.*
 
 *2026-10-24 — Money concepts R18: DCU-35 (Net free cash flow, D-100), DCU-36 (pots, D-101), DCU-37 (total cost and invested instead, D-102/D-104) and DCU-38 (housing line, D-103) added (plans 05-119..05-134); v1 total now 290.*
 
