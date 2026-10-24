@@ -28,6 +28,8 @@ const mockPush = jest.fn();
 const mockRegisterFab = jest.fn();
 const mockReconcile = jest.fn((..._a: unknown[]) => Promise.resolve());
 const mockSeen: Record<string, Record<string, unknown>> = {};
+let mockJudgeOn: 'month' | 'worst' | 'average' | null = 'month';
+const mockChoose = jest.fn();
 
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', today: '2026-10-15', ready: true }),
@@ -60,6 +62,10 @@ jest.mock('@/shell/fab/FabProvider', () => ({
   useRegisterFab: (...a: unknown[]) => mockRegisterFab(...a),
   useProvideQuickAction: (...a: unknown[]) => mockQuickAction(...a),
 }));
+jest.mock('../../judgeOn/judgeOnStore', () => ({
+  useJudgeOn: () => ({ judgeOn: mockJudgeOn, setJudgeOn: jest.fn() }),
+}));
+jest.mock('../../judgeOn/useChooseJudgeOn', () => ({ useChooseJudgeOn: () => ({ choose: (...a: unknown[]) => mockChoose(...a) }) }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => mockSync }));
 jest.mock('../../hints/decideHints', () => ({
   loadHomeBasisSeen: () => Promise.resolve(mockBasisSeen),
@@ -155,6 +161,7 @@ beforeEach(() => {
   mockSettings = null;
   mockSync = { isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null, inFlightOldestAt: null, oldestPendingAt: null };
   mockBasisSeen = true;
+  mockJudgeOn = 'month';
   mockChangedCount.n = 0;
   perfReset();
   delete process.env.EXPO_PUBLIC_PERF;
@@ -305,10 +312,43 @@ describe('DecideHomeScreen', () => {
     expect(screen.queryByLabelText(/^Net free cash flow: .* now from your logged months,/)).toBeNull();
   });
 
-  it('D-98 no FAB on Decide home', async () => {
+  it('D-107 Decide home registers the New check FAB', async () => {
     await renderScreen();
-    expect(mockRegisterFab).toHaveBeenCalledWith(null);
-    expect(mockRegisterFab.mock.calls.every((c) => c[0] === null)).toBe(true);
+    const fab = mockRegisterFab.mock.calls[mockRegisterFab.mock.calls.length - 1][0] as { label: string; accessibilityLabel: string; onPress: () => void };
+    expect(fab).not.toBeNull();
+    expect(fab.label).toBe('New check');
+    expect(fab.accessibilityLabel).toBe('Starts a new affordability check');
+    expect(mockRegisterFab.mock.calls.some((c) => c[0] === null)).toBe(false);
+  });
+
+  it('D-107 pressing the FAB starts a new purchase check', async () => {
+    await renderScreen();
+    const fab = mockRegisterFab.mock.calls[mockRegisterFab.mock.calls.length - 1][0] as { onPress: () => void };
+    fab.onPress();
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'buy' } });
+  });
+
+  it('D-107 the Judge-on dropdown is in the first screenful of the card (top row), not at the bottom where the FAB sits', async () => {
+    await renderScreen();
+    const tree = JSON.stringify(screen.toJSON());
+    const at = (n: string) => tree.indexOf(n);
+    expect(at('Opens the choices')).toBeGreaterThan(-1);
+    expect(at('Opens the choices')).toBeLessThan(at('probe-quick'));
+    expect(at('Opens the choices')).toBeLessThan(at('home-rows'));
+  });
+
+  it('D-107 the card is loading until the choice is read', async () => {
+    mockJudgeOn = null;
+    await renderScreen();
+    expect(screen.getByLabelText('Loading your figures')).toBeTruthy();
+    expect(screen.queryByLabelText(/Opens the choices/)).toBeNull();
+  });
+
+  it('D-107 the dropdown and Month details both call the shared choose', async () => {
+    await renderScreen();
+    await fireEvent.press(screen.getByLabelText('Judged on This month. Opens the choices.'));
+    await fireEvent.press(await screen.findByLabelText('Worst month'));
+    expect(mockChoose).toHaveBeenLastCalledWith('worst');
   });
 
   // The "FAB still shows on another tab root" test is in src/shell/fab/__tests__/Fab.test.tsx against the real provider.

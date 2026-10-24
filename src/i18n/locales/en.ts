@@ -1460,6 +1460,8 @@ const en = {
   },
   // Phase 5 (Decide). Claude-drafted, pending user review (copyStatus). Declarative voice only (DCU-09).
   decide: {
+    // 05-140 (D-107): the FAB is back on Decide home
+    fab: { label: 'New check', a11y: 'Starts a new affordability check' },
     // 05-54 (D-70..D-78, UI-SPEC R2b and R3): the Decide UX refresh copy. Count-and-unit pairs use U+00A0 (R6 rule U).
     info: {
       replaces: {

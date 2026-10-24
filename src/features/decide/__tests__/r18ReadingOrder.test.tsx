@@ -77,6 +77,8 @@ jest.mock('@/data/mutations/decideLinks', () => ({
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
 jest.mock('../notifications/waitReminder', () => ({ reconcileWaitReminders: () => Promise.resolve(), cancelCheckReminders: () => Promise.resolve() }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
+jest.mock('../judgeOn/judgeOnStore', () => ({ useJudgeOn: () => ({ judgeOn: 'month', setJudgeOn: jest.fn() }) }));
+jest.mock('../judgeOn/useChooseJudgeOn', () => ({ useChooseJudgeOn: () => ({ choose: jest.fn() }) }));
 jest.mock('@/shell/fab/FabProvider', () => ({ useRegisterFab: jest.fn(), useProvideQuickAction: jest.fn() }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => mockSync }));
 jest.mock('../hints/decideHints', () => ({ loadHomeBasisSeen: () => Promise.resolve(true), markHomeBasisSeen: () => Promise.resolve(), loadJudgeOn: () => Promise.resolve(null), saveJudgeOn: () => Promise.resolve() }));
@@ -174,7 +176,8 @@ describe('R18 reading order', () => {
     await fireEvent.press(screen.getByText('Check it'));
     await screen.findByText('Run the full check');
     const withResult = reads();
-    expectOrder(withResult, ['header:Can I afford it', /^Net free cash flow: /, 'Month details', 'Quick check, something and a price', 'Check it', /Run the full check/]);
+    // D-107: the Judge-on dropdown sits between the summary group and Details
+    expectOrder(withResult, ['header:Can I afford it', /^Net free cash flow: /, /^Judged on This month/, 'Month details', 'Quick check, something and a price', 'Check it', /Run the full check/]);
     expect(withResult).not.toContain('Full check');
     expect(withResult.findIndex((r) => /^Lines you will not cross/.test(r))).toBeGreaterThan(withResult.findIndex((r) => /Run the full check/.test(r)));
   });

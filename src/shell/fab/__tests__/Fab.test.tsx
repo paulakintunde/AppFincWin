@@ -2,6 +2,8 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { getAnimatedStyle } from 'react-native-reanimated';
+import en from '@/i18n/locales/en';
+import { useT } from '@/i18n';
 import { hapticLight, hapticMedium } from '@/ui/haptics';
 import { pushSheet } from '@/state/sheetStack';
 import { renderWithShellProviders, resetShellStores } from '@/shell/__tests__/testUtils';
@@ -172,5 +174,28 @@ describe('Fab', () => {
     expect(screen.queryByRole('button')).toBeNull();
     await act(async () => holder.switchTo?.('second'));
     expect(screen.getByRole('button', { name: 'Start a new thing' })).toBeTruthy();
+  });
+
+  it('D-107 the FAB strings resolve and Decide home registers New check', async () => {
+    expect(en.decide.fab).toEqual({ label: 'New check', a11y: 'Starts a new affordability check' });
+    const onPress = jest.fn();
+    function DecideLike(): null {
+      const t = useT();
+      useRegisterFab(
+        React.useMemo(() => ({ label: t('decide.fab.label'), accessibilityLabel: t('decide.fab.a11y'), onPress }), [t])
+      );
+      return null;
+    }
+    function Other(): null {
+      return null;
+    }
+    await renderWithShellProviders(<Switcher onDefault={jest.fn()} screens={{ first: <DecideLike />, second: <Other /> }} />);
+    const button = screen.getByRole('button', { name: 'Starts a new affordability check' });
+    expect(screen.getByText('New check')).toBeTruthy();
+    await fireEvent.press(button);
+    expect(onPress).toHaveBeenCalledTimes(1);
+    // leaving Decide returns the default Add FAB
+    await act(async () => holder.switchTo?.('second'));
+    expect(screen.getByRole('button', { name: 'Add a transaction' })).toBeTruthy();
   });
 });

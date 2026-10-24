@@ -1,8 +1,10 @@
 // 05-117 (D-95..D-99, UI-SPEC R17.2, R17.3, R17.8, R17.13 M1): the Decide tab root, dark card first.
 //   lean header (no eyebrow or subtitle, the header sync line suppressed) -> the notice row (only with counted problems)
 //   -> the dark card (HomeSummaryCard) -> 32 of space -> up to four quiet rows that open their own screens.
-// Month details, the problems sheet, RoughFiguresSheet and ChangeSheet are hosted here. No FAB on this screen
-// (`useRegisterFab(null)`): "Check it" and "Full check" start a check, and You > Add stays the always-reachable Add.
+// Month details, the problems sheet, RoughFiguresSheet and ChangeSheet are hosted here. D-107 (supersedes D-98's removal):
+// the FAB is back with its 'New check' action; the scroll content keeps its FAB_CLEARANCE bottom inset.
+// D-107: the Judge-on choice (useJudgeOn) drives the card, Month details and every check; `choose` is shared by the dropdown
+// on the card and the radio list in Month details.
 // No pull-to-refresh on Decide (no refreshKeys).
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as Crypto from 'expo-crypto';
@@ -11,6 +13,8 @@ import { useCreateCheck } from '@/data/mutations/decideChecks';
 import { useDecideChanges } from '@/data/queries/decide';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { useChooseJudgeOn } from '../judgeOn/useChooseJudgeOn';
+import { useJudgeOn } from '../judgeOn/judgeOnStore';
 import { useT } from '@/i18n';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
 import { useRegisterFab } from '@/shell/fab/FabProvider';
@@ -21,8 +25,8 @@ import { perfMark } from '../perf/perfMarks';
 import { parseCheckInputs } from '../snapshot/checkInputs';
 import type { CheckInputs } from '../snapshot/types';
 import { ChangeSheet } from './ChangeSheet';
-import { CHANGES_HREF, checkHref, LINES_HREF, OPEN_HREF, PAST_HREF } from './checkHref';
-import { homeCardModel } from './homeCardModel';
+import { CHANGES_HREF, checkHref, LINES_HREF, openNewCheck, OPEN_HREF, PAST_HREF } from './checkHref';
+import { homeCardModel, type HomeJudgeOn } from './homeCardModel';
 import { HomeNoticeRow } from './HomeNoticeRow';
 import { homeProblems, noticeRowModel } from './homeProblems';
 import { HomeProblemsSheet } from './HomeProblemsSheet';
@@ -58,14 +62,30 @@ export function DecideHomeScreen() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [problemsOpen, setProblemsOpen] = useState(false);
 
-  // R17.13 M1: no FAB on Decide home, actively.
-  useRegisterFab(null);
+  // D-107: the FAB returns on Decide home with its previous action.
+  const fab = useMemo(
+    () => ({
+      label: t('decide.fab.label'),
+      accessibilityLabel: t('decide.fab.a11y'),
+      onPress: () => openNewCheck('buy'),
+    }),
+    [t]
+  );
+  useRegisterFab(fab);
 
   // D-95: the "Now from your logged months" label shows on the first visit after the switch only. The stored flag is read
   // once per visit; until it has been read the normal label shows (a returning user never sees a flash of the switch label).
   // `visitBasisSeen` is never updated by the write below, so the label holds for the rest of the visit.
   const [visitBasisSeen, setVisitBasisSeen] = useState<boolean | null>(null);
   const userId = rc.userId;
+  const { judgeOn } = useJudgeOn(userId);
+  const { choose } = useChooseJudgeOn(userId ?? '');
+  const onChooseJudgeOn = useCallback(
+    (v: HomeJudgeOn) => {
+      if (userId !== null) choose(v);
+    },
+    [choose, userId]
+  );
   useEffect(() => {
     if (userId === null) return undefined;
     let live = true;
@@ -84,8 +104,8 @@ export function DecideHomeScreen() {
   const homeBasisSeen = visitBasisSeen ?? true;
 
   const card = useMemo(
-    () => homeCardModel(vm.source, vm.settings, { status: vm.status, homeBasisSeen, today: vm.today }),
-    [vm.source, vm.settings, vm.status, homeBasisSeen, vm.today]
+    () => homeCardModel(vm.source, vm.settings, { status: vm.status, homeBasisSeen, today: vm.today, judgeOn }),
+    [vm.source, vm.settings, vm.status, homeBasisSeen, vm.today, judgeOn]
   );
   const markedRef = useRef(false);
   const shouldMark = card.state === 'figure' && card.markBasisSeen && visitBasisSeen === false;
@@ -202,6 +222,8 @@ export function DecideHomeScreen() {
             settings={vm.settings}
             status={vm.status}
             homeBasisSeen={homeBasisSeen}
+            judgeOn={judgeOn}
+            onChooseJudgeOn={onChooseJudgeOn}
             currency={vm.currency}
             today={vm.today}
             onOpenDetails={() => setDetailsOpen(true)}
@@ -228,6 +250,7 @@ export function DecideHomeScreen() {
         today={vm.today}
         currency={vm.currency}
         sourcesNote={sourcesNote}
+        onChooseJudgeOn={onChooseJudgeOn}
         onClose={() => setDetailsOpen(false)}
       />
       <HomeProblemsSheet
