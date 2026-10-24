@@ -5,7 +5,7 @@ import type { DecideOption, OptionCode } from '@/engine/decide';
 import { percentText } from './percentText';
 import { ref } from './types';
 import type { CopyRef, Fmt } from './types';
-import { basisWordKey } from './verdictCopy';
+import { basisKeyParams, basisVariantKey } from './basisKey';
 
 export type OptionAction = 'usePrice' | 'useTerm' | 'openActivity' | 'switchWait';
 
@@ -58,7 +58,7 @@ export function optionCopy(o: DecideOption, ctx: OptionCtx): OptionCopy {
         name: ref('decide.section.optEarn', { amount: fmt(o.gap) }),
         value: null,
         // zero income: there is no percent of nothing to state
-        desc: o.percentOfIncome === null ? null : ref('decide.section.optEarnDesc', { pct: percentText(o.percentOfIncome) }, { basis: basisWordKey(o.basis) }),
+        desc: o.percentOfIncome === null ? null : ref(basisVariantKey('decide.section.optEarnDesc', o.basis), { pct: percentText(o.percentOfIncome) }, basisKeyParams(o.basis)),
         action,
       };
     case 'save_first':

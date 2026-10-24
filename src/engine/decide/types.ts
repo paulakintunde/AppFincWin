@@ -111,7 +111,10 @@ export interface ExpenseLine {
   readonly averageMonthly: MinorUnits;
   readonly cuttable: boolean;
 }
-export type Basis = 'average' | 'worst';
+/** D-107: 'month' judges on the current month as it is expected to end (expectedMonth); the others read the history. */
+export type Basis = 'average' | 'worst' | 'month';
+/** The bases the history alone can resolve; deriveMoney never sees 'month'. */
+export type HistoryBasis = Exclude<Basis, 'month'>;
 export interface DecideLimits {
   readonly reserve: MinorUnits | null; // D-01, D-42 (amended): null → month's costs × RESERVE_HALF_MONTHS[steadiness] ÷ 2, one half-up rounding
   readonly dsrLine: Percent | null; // D-04: null → DEFAULT_DSR_LINE (36%)
@@ -355,7 +358,7 @@ export interface MoneyInput {
   readonly months: readonly MonthRecord[];
   readonly bills: readonly RecurringBill[];
   readonly incomeSeries: readonly RecurringIncome[]; // D-60: = snapshot.incomeSeries; confirmed weekly/fortnightly pay is smoothed (04-13)
-  readonly basisOverride: Basis | null;
+  readonly basisOverride: HistoryBasis | null;
   readonly spendingShare: SpendingShare;
 }
 export type Steadiness = 'steady' | 'variable' | 'volatile' | 'insufficient';

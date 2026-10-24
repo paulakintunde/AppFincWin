@@ -4,6 +4,7 @@
  */
 import type { Assessment, MissingReason, MoneyBasis, Verdict, VerdictState, Warning, WarningCode } from '@/engine/decide';
 import type { UnconvertedNote } from '../snapshot/types';
+import { basisKeyParams, basisMarkerKey, basisVariantKey, basisWordKey } from './basisKey';
 import { MISSING_TITLE, UNEXPLAINED } from './codeMaps';
 import { percentLabel } from './percentText';
 import { ref } from './types';
@@ -48,7 +49,7 @@ export function noLead(a: Assessment): 'cash_empty' | 'month' | 'cash_dip' {
   return 'cash_dip';
 }
 
-export const basisWordKey = (basis: 'average' | 'worst'): string => (basis === 'worst' ? 'decide.verdict.basisWorst' : 'decide.verdict.basisAverage');
+export { basisWordKey };
 
 /** Which of investing / saving the inv warning pauses. */
 export function invKind(a: Pick<Assessment, 'investingAtRisk' | 'savingAtRisk'>): 'Investing' | 'Saving' | 'Both' {
@@ -88,10 +89,11 @@ export function verdictTitle(verdict: Verdict, fmt: Fmt): CopyRef {
       if (!month) return ref(UNEXPLAINED);
       const short = fmt(month.shortfall);
       if (a.context.leftBefore < 0) {
-        const basis = { basis: basisWordKey(a.context.money.basis) };
+        const mb = a.context.money.basis;
+        const basis = basisKeyParams(mb);
         // the purchase adds nothing to the monthly cost: the gap is the same before and after, so no "this makes it"
-        if (a.left === a.context.leftBefore) return ref('decide.verdict.titleNoAlreadyShortSame', { already: fmt(-a.context.leftBefore) }, basis);
-        return ref('decide.verdict.titleNoAlreadyShort', { already: fmt(-a.context.leftBefore), short: fmt(-a.left) }, basis);
+        if (a.left === a.context.leftBefore) return ref(basisVariantKey('decide.verdict.titleNoAlreadyShortSame', mb), { already: fmt(-a.context.leftBefore) }, basis);
+        return ref(basisVariantKey('decide.verdict.titleNoAlreadyShort', mb), { already: fmt(-a.context.leftBefore), short: fmt(-a.left) }, basis);
       }
       return ref('decide.verdict.titleNoMonthShort', { short });
     }
@@ -107,7 +109,8 @@ export function verdictBody(a: Assessment, fmt: Fmt): CopyRef {
   const income = fmt(a.context.money.incomeBasis);
   const out = fmt(a.monthTable.after.outgoings);
   if (a.state === 'fits') return ref('decide.verdict.bodyFits', { in: income, out });
-  return ref('decide.verdict.bodyOther', { in: income, out }, { basis: basisWordKey(a.context.money.basis) });
+  const mb = a.context.money.basis;
+  return ref(basisVariantKey('decide.verdict.bodyOther', mb), { in: income, out }, basisKeyParams(mb));
 }
 
 export function basisMarker(
@@ -116,7 +119,7 @@ export function basisMarker(
 ): CopyRef {
   if (args.kind === 'first_read' || args.money === null) return ref('decide.basis.firstRead');
   if (args.lastSeenBasis === 'first_read_rough_figures') return ref('decide.basis.nowLogged'); // D-04
-  return ref(args.money.basis === 'worst' ? 'decide.basis.worst' : 'decide.basis.average', { amount: fmt(args.money.incomeBasis) });
+  return ref(basisMarkerKey(args.money.basis), { amount: fmt(args.money.incomeBasis) });
 }
 
 /** D-37: an unconverted computation names the currency and shows no figure. */

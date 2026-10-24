@@ -40,6 +40,7 @@ import {
   purchaseFlows,
 } from './cashPath';
 import { confidenceOf } from './confidence';
+import { expectedMonthMoney } from './expectedMonth';
 import { deriveMoney, resolveSpendingShare, shareForCategory } from './money';
 import { resolveProjectionRates } from './projectionRates';
 import { defaultReserve, reserveHalfMonthsFor } from './reserve';
@@ -141,12 +142,14 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
   const purchase = resolveShare(snapshot.scope);
   const spending = resolveSpendingShare(snapshot.scope, snapshot.householdSpending);
   const spendingShare: SpendingShare = spending.ok ? spending.share : { byDefault: SOLE_SHARE, byCategory: [] };
+  // D-107: deriveMoney reads the history only. 'month' asks it for the worst basis, then overlays the expected month's money.
+  const historyOverride = snapshot.basisOverride === 'month' ? 'worst' : snapshot.basisOverride;
   const moneyResult = deriveMoney({
     currency: snapshot.currency,
     months: snapshot.months,
     bills: snapshot.bills,
     incomeSeries: snapshot.incomeSeries,
-    basisOverride: snapshot.basisOverride,
+    basisOverride: historyOverride,
     spendingShare,
   });
 
@@ -175,7 +178,11 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
       : confidenceOf({ fullMonths: 0, steadiness: null, firstRead: false, provisionalRates: snapshot.provisionalRates });
     return { ok: false, reasons, confidence };
   }
-  const money = moneyResult.money;
+  let money = moneyResult.money;
+  if (snapshot.basisOverride === 'month') {
+    const expected = expectedMonthMoney(snapshot, spendingShare);
+    money = { ...money, basis: 'month', incomeBasis: expected.income, spendingBasis: expected.spending };
+  }
   const purchaseShare = purchase.share;
 
   let debtPayments = 0n;

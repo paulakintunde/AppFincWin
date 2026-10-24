@@ -7,7 +7,8 @@ import { WARNING_TONE } from './codeMaps';
 import { percentLabel } from './percentText';
 import { ref } from './types';
 import type { CopyRef, Fmt, WarnCard } from './types';
-import { basisWordKey, invKind } from './verdictCopy';
+import { basisKeyParams, basisVariantKey } from './basisKey';
+import { invKind } from './verdictCopy';
 
 export function warningCard(w: Warning, a: Assessment, fmt: Fmt, fmtDate: (localDate: string) => string): WarnCard {
   const tone = WARNING_TONE[w.code];
@@ -25,11 +26,12 @@ export function warningCard(w: Warning, a: Assessment, fmt: Fmt, fmtDate: (local
       const added = leftBefore - a.left;
       const body: CopyRef[] = [];
       if (leftBefore < 0) {
-        const basis = { basis: basisWordKey(a.context.money.basis) };
+        const mb = a.context.money.basis;
+        const basis = basisKeyParams(mb);
         body.push(
           added === 0
-            ? ref('decide.warn.monthAlreadySame', { already: fmt(-leftBefore) }, basis)
-            : ref('decide.warn.monthAlready', { already: fmt(-leftBefore), added: fmt(added), gap }, basis)
+            ? ref(basisVariantKey('decide.warn.monthAlreadySame', mb), { already: fmt(-leftBefore) }, basis)
+            : ref(basisVariantKey('decide.warn.monthAlready', mb), { already: fmt(-leftBefore), added: fmt(added), gap }, basis)
         );
         if (-a.left !== w.shortfall) body.push(ref('decide.warn.monthPaused', { paused: fmt(-a.left - w.shortfall), short }));
       } else body.push(ref(noPause ? 'decide.warn.monthBodyNoPause' : 'decide.warn.monthBody', { short }));
