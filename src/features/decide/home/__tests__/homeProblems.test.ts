@@ -166,4 +166,30 @@ describe('homeProblems', () => {
     const over = withMeta({ unconvertedPots: 3 }, { unconverted: { currencies: ['EUR'], rowCount: 2 } });
     expect(homeProblems(input({ source: over })).some((e) => e.id === 'missing_rate' && e.variant === 'lines')).toBe(false);
   });
+
+  describe('D-107 current-month lines without a rate', () => {
+    const monthNote = { currencies: ['EUR', 'GBP'], rowCount: 5, rowsByCurrency: { EUR: 2, GBP: 3 } };
+    const lines = (source: SnapshotResult) =>
+      homeProblems(input({ source })).filter((e) => e.id === 'missing_rate' && e.variant === 'lines');
+
+    it('D-107 Needs a look lists the rate action for a current-month line without a rate and does not count it', () => {
+      const entries = lines({ ...loggedSource(), monthUnconverted: monthNote });
+      expect(entries).toEqual([
+        { id: 'missing_rate', variant: 'lines', currency: 'EUR', rowCount: 2, counted: false, action: { kind: 'exchange_rates' } },
+        { id: 'missing_rate', variant: 'lines', currency: 'GBP', rowCount: 3, counted: false, action: { kind: 'exchange_rates' } },
+      ]);
+      expect(noticeRowModel(homeProblems(input({ source: { ...loggedSource(), monthUnconverted: monthNote } })))).toEqual({ visible: false });
+    });
+
+    it('D-107 a currency already listed from unconverted is not listed twice', () => {
+      const source: SnapshotResult = { ...unconvertedSource('logged'), monthUnconverted: monthNote };
+      const entries = lines(source);
+      expect(entries.map((e) => (e.id === 'missing_rate' && e.variant === 'lines' ? e.currency : ''))).toEqual(['EUR', 'GBP']);
+    });
+
+    it('D-107 no entry without monthUnconverted', () => {
+      expect(lines(loggedSource())).toEqual([]);
+      expect(lines({ ...loggedSource(), monthUnconverted: null })).toEqual([]);
+    });
+  });
 });

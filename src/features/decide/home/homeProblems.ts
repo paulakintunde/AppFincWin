@@ -96,6 +96,21 @@ export function homeProblems(input: HomeProblemsInput): ProblemEntry[] {
         });
       }
     }
+    // D-107 / D-106 addendum: a current-month line without a rate. The card shows the Worst fallback, so not counted.
+    if (source.monthUnconverted != null) {
+      const listed = new Set(source.unconverted === null || lineRows === 0 ? [] : source.unconverted.currencies);
+      for (const currency of source.monthUnconverted.currencies) {
+        if (listed.has(currency)) continue;
+        entries.push({
+          id: 'missing_rate',
+          variant: 'lines',
+          currency,
+          rowCount: source.monthUnconverted.rowsByCurrency[currency] ?? 0,
+          counted: false,
+          action: { kind: 'exchange_rates' },
+        });
+      }
+    }
     if (source.meta.unconvertedPots > 0 && source.unconverted !== null) {
       entries.push({
         id: 'missing_rate',
