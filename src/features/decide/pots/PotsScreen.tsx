@@ -13,6 +13,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -42,6 +43,8 @@ export function PotsScreen() {
   const [editing, setEditing] = useState<SavingsGoalRow | null | undefined>(undefined);
   const [openCheckId, setOpenCheckId] = useState<string | null>(null);
   const [doneOpen, setDoneOpen] = useState(false);
+  // D-105: a plain pot is deleted only after this question; Undo still follows the toast.
+  const [deleting, setDeleting] = useState<SavingsGoalRow | null>(null);
 
   const { status, model } = read;
   const home = past.ctx.home;
@@ -51,7 +54,12 @@ export function PotsScreen() {
   const toast = (key: string, name: string, stepId: string) =>
     showToast({ kind: 'destructive', text: { key, params: { name } }, stepId });
 
-  const onDelete = (row: SavingsGoalRow) => toast('decide.pots.toast.deleted', row.name, remove(row));
+  const onDelete = (row: SavingsGoalRow) => setDeleting(row);
+  const confirmDelete = () => {
+    const row = deleting;
+    setDeleting(null);
+    if (row !== null) toast('decide.pots.toast.deleted', row.name, remove(row));
+  };
   const onToggleDone = (row: SavingsGoalRow) => {
     const done = row.done_at === null;
     toast(done ? 'decide.pots.toast.done' : 'decide.pots.toast.reopened', row.name, setDone(row, done));
@@ -81,15 +89,10 @@ export function PotsScreen() {
   const meta = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
 
   return (
-    <DetailScreen title={t('decide.pots.title')}>
-      <View style={styles.heading}>
-        <View style={styles.headingLeft}>
-          <Text testID="pots-heading" accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink, flexShrink: 0 }}>
-            {t('decide.pots.title')}
-          </Text>
-          {info.button()}
-        </View>
-        {loaded && !empty ? (
+    <DetailScreen title={t('decide.pots.title')} right={info.button()}>
+      <View style={styles.body}>
+      {loaded && !empty ? (
+        <View style={styles.heading}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('decide.pots.addA11y')}
@@ -100,8 +103,8 @@ export function PotsScreen() {
           >
             <Text style={link}>{t('decide.pots.add')}</Text>
           </Pressable>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
       <Text style={meta}>{t('decide.pots.sub')}</Text>
       {loaded && model.addDisabled ? <Text style={meta}>{t('decide.pots.limit')}</Text> : null}
       {loaded && !empty ? (
@@ -154,7 +157,18 @@ export function PotsScreen() {
         </FoldRow>
       ) : null}
 
+      </View>
       {info.sheet}
+      <ConfirmSheet
+        visible={deleting !== null}
+        title={t('decide.pots.deleteConfirm.title', { name: deleting?.name ?? '' })}
+        body={t('decide.pots.deleteConfirm.body')}
+        cancelLabel={t('decide.pots.deleteConfirm.cancel')}
+        confirmLabel={t('decide.pots.deleteConfirm.confirm')}
+        destructive
+        onCancel={() => setDeleting(null)}
+        onConfirm={confirmDelete}
+      />
       <PotSheet visible={editing !== undefined} pot={editing ?? null} onClose={() => setEditing(undefined)} />
       <DecisionDetailSheet
         decision={selected}
@@ -167,8 +181,8 @@ export function PotsScreen() {
 }
 
 const styles = StyleSheet.create({
-  heading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: space.gapSm },
-  headingLeft: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  body: { gap: space.gapMd },
+  heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   link: { minHeight: space.touchMin, justifyContent: 'center' },
   list: { borderRadius: radii.card, overflow: 'hidden' },
   skeleton: { gap: space.gapMd, paddingVertical: space.gapMd },
