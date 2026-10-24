@@ -805,7 +805,7 @@ Plans:
 
 **Wave 33** *(blocked on Wave 32 completion)*
 - [x] 05-123-PLAN.md — Engine E7: total cost of ownership and the invested-instead headline (D-102, D-104)
-- [ ] 05-124-PLAN.md — Snapshot builder and source: pots, tagged-leg and own-pot exclusion, housingMonthly, housingLine (D-100, D-101, D-103)
+- [x] 05-124-PLAN.md — Snapshot builder and source: pots, tagged-leg and own-pot exclusion, housingMonthly, housingLine (D-100, D-101, D-103)
 
 **Wave 34** *(blocked on Wave 33 completion)*
 - [ ] 05-125-PLAN.md — Net free cash flow card: eyebrow, sub-lines, Out figure, Month details breakdown, Pots link (D-100)
