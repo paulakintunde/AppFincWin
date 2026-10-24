@@ -78,7 +78,7 @@ describe('MonthDetailsSheet', () => {
     expect(screen.getByText('Worked out on your worst month.')).toBeTruthy();
     expect(screen.getByLabelText('Money in, $1000')).toBeTruthy();
     expect(screen.getByLabelText('Spending, $3000')).toBeTruthy();
-    expect(screen.getByLabelText('Net free cash flow, short by $2200')).toBeTruthy();
+    expect(screen.getByLabelText('Net free cash flow, $2200 overspent')).toBeTruthy();
     expect(screen.getByText(/4 months ranging \$1000 to \$9000\./)).toBeTruthy();
     expect(screen.getByLabelText('Worst · $1000').props.accessibilityState.checked).toBe(true);
     await fireEvent.press(screen.getByLabelText('Average · $5500'));
@@ -197,10 +197,11 @@ describe('MonthDetailsSheet', () => {
     expect(onClose.mock.invocationCallOrder[0]).toBeLessThan(mockPush.mock.invocationCallOrder[0]!);
   });
 
-  it('D-100 a negative result reads short by in the label and danger tone', async () => {
+  it('D-106 Month details result row prints the words, other rows stay plain', async () => {
     await wrap(sheet(variable()));
-    const result = screen.getByLabelText('Net free cash flow, short by $2200');
-    const value = screen.getByText('\u2212$2200');
+    const result = screen.getByLabelText('Net free cash flow, $2200 overspent');
+    const value = screen.getByText('$2200 overspent');
+    expect(screen.getByText('\u2212$3000')).toBeTruthy(); // the spending row keeps its minus
     expect(StyleSheet.flatten(value.props.style).color).toBe(colors.danger);
     expect(result).toBeTruthy();
   });

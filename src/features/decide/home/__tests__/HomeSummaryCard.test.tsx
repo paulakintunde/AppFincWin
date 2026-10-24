@@ -108,7 +108,7 @@ describe('heroAmountText', () => {
 describe('HomeHero', () => {
   it('D-97 the hero amount stays whole on line 1 at 320 and 2.0x for each font pairing', async () => {
     for (const pairing of Object.keys(FONT_PAIRINGS) as FontPairingKey[]) {
-      const { unmount } = await renderHero(<HomeHero amount="$1,234,567" word="left" short={false} />, pairing, 2);
+      const { unmount } = await renderHero(<HomeHero amount="$1,234,567" word="free" short={false} />, pairing, 2);
       const amount = screen.getByText('$1,234,567');
       const style = StyleSheet.flatten(amount.props.style);
       expect(amount.props.numberOfLines).toBe(1);
@@ -118,7 +118,7 @@ describe('HomeHero', () => {
       // 42 at the capped 1.3x tier (rule: display figures cap at 1.3x)
       expect(style.fontSize).toBeCloseTo(54.6, 1);
       // the words are a separate Text with no line limit, so they wrap under the amount
-      const word = screen.getByText('left');
+      const word = screen.getByText('free');
       expect(word).not.toBe(amount);
       expect(word.props.numberOfLines).toBeUndefined();
       expect(word.props.adjustsFontSizeToFit).toBeFalsy();
@@ -131,17 +131,17 @@ describe('HomeHero', () => {
   });
 
   it('D-97 an amount past the one-line limit drops the one-line rule and splits only at separators', async () => {
-    await renderHero(<HomeHero amount="$12,345,678,901,234,567" word="left" short={false} />, 'bold', 1);
+    await renderHero(<HomeHero amount="$12,345,678,901,234,567" word="free" short={false} />, 'bold', 1);
     const amount = screen.getByText('$12,\u200B345,\u200B678,\u200B901,\u200B234,\u200B567');
     expect(amount.props.numberOfLines).toBeUndefined();
   });
 
   it('D-97 short shows the absolute amount in the danger tint', async () => {
-    await renderHero(<HomeHero amount="$420" word="short" short />, 'bold', 1);
+    await renderHero(<HomeHero amount="$420" word="overspent" short />, 'bold', 1);
     const amount = screen.getByText('$420');
     expect(StyleSheet.flatten(amount.props.style).color).toBe(colors.dangerTint2);
     // the words keep the surface colour: no other alarm styling
-    expect(StyleSheet.flatten(screen.getByText('short').props.style).color).toBe(colors.surface);
+    expect(StyleSheet.flatten(screen.getByText('overspent').props.style).color).toBe(colors.surface);
     expect(screen.queryByText(/−|-/)).toBeNull();
   });
 });
@@ -197,12 +197,13 @@ describe('HomeSummaryCard', () => {
     mockDims = { width: 402, fontScale: 1 };
   });
 
-  it('D-95 the card reads label, hero, In and Out, then the quick check', async () => {
+  it('D-106 the card hero reads free with the amount absolute', async () => {
     const m = figures();
     await renderCard();
     expect(screen.getByText('Net free cash flow', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByText(usd(m.amount))).toBeTruthy();
-    expect(screen.getByText('left')).toBeTruthy();
+    expect(screen.getByText('free')).toBeTruthy();
+    expect(screen.queryByText('left')).toBeNull();
     expect(screen.getByText(SUB.worst)).toBeTruthy();
     expect(screen.getByText(`In ${usd(m.inAmount)} · Out ${usd(m.outAmount)}`)).toBeTruthy();
     expect(screen.getByLabelText('Quick check, something and a price')).toBeTruthy();
@@ -216,15 +217,15 @@ describe('HomeSummaryCard', () => {
     expect(style.elevation).toBeUndefined();
   });
 
-  it('D-97 the hero shrinks while a result is open', async () => {
+  it('D-106 the quick-result summary line says free while a result is open', async () => {
     const m = figures();
     await renderCard();
     await fireEvent.changeText(screen.getByLabelText('Quick check, something and a price'), 'sofa 1800');
     await fireEvent.press(screen.getByText('Check it'));
     await screen.findByText('Run the full check');
-    expect(screen.getByText(`${usd(m.amount)} left · In ${usd(m.inAmount)} · Out ${usd(m.outAmount)}`)).toBeTruthy();
+    expect(screen.getByText(`${usd(m.amount)} free · In ${usd(m.inAmount)} · Out ${usd(m.outAmount)}`)).toBeTruthy();
     expect(screen.queryByText(SUB.worst)).toBeNull();
-    expect(screen.queryByText('left')).toBeNull();
+    expect(screen.queryByText('free')).toBeNull();
     // Full check is hidden while a result shows: "Run the full check" carries the fields then
     expect(screen.queryByText('Full check ›')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Clear the quick check'));
@@ -232,21 +233,22 @@ describe('HomeSummaryCard', () => {
     expect(screen.getByText(SUB.worst)).toBeTruthy();
   });
 
-  it('D-97 the short month says short in words and shows the absolute amount', async () => {
+  it('D-106 an overspent hero is dangerTint2 with the word overspent and no minus', async () => {
     const source = loggedSource({ months: months(4, 300_000, 360_000), basisOverride: 'worst' });
     const m = figures({ source });
     expect(m.short).toBe(true);
     await renderCard({ source });
     expect(screen.getByText(usd(m.amount))).toBeTruthy();
-    expect(screen.getByText('short')).toBeTruthy();
-    expect(screen.getByLabelText(new RegExp(`short ${SUB.worst}`))).toBeTruthy();
+    expect(screen.getByText('overspent')).toBeTruthy();
+    expect(screen.queryByText(/−/)).toBeNull();
+    expect(screen.getByLabelText(new RegExp(`overspent ${SUB.worst}`))).toBeTruthy();
   });
 
   it('D-97 the unavailable state shows no figure and one action', async () => {
     const p = await renderCard({ source: unconvertedSource() });
     expect(screen.getByText('Not worked out yet')).toBeTruthy();
     expect(screen.getByText('Lines in EUR are waiting for an exchange rate.')).toBeTruthy();
-    expect(screen.queryByText('left')).toBeNull();
+    expect(screen.queryByText('free')).toBeNull();
     expect(screen.queryByText(SUB.worst)).toBeNull();
     expect(screen.queryByText(/^\$/)).toBeNull();
     await fireEvent.press(screen.getByText('See lines waiting for a rate'));
@@ -274,7 +276,7 @@ describe('HomeSummaryCard', () => {
   it('R17.7 the card offers the summary group first', async () => {
     const p = await renderCard();
     // formatMoneyA11y speaks the amount by currency name, so the label is matched by its shape
-    const group = screen.getByLabelText(/^Net free cash flow: .* left in your worst month, after spending, debts and everything set aside\. In .*, out .*\.$/);
+    const group = screen.getByLabelText(/^Net free cash flow: .* free in your worst month, after spending, debts and everything set aside\. In .*, out .*\.$/);
     expect(group.props.accessibilityHint).toBe('Opens month details');
     await fireEvent.press(group);
     expect(p.onOpenDetails).toHaveBeenCalledTimes(1);
@@ -334,7 +336,7 @@ describe('HomeSummaryCard', () => {
     // the sub-line wraps at words: no line limit
     expect(screen.getByText(SUB.worst).props.numberOfLines).toBeUndefined();
     const group = screen.getByLabelText(/^Net free cash flow: /);
-    expect(group.props.accessibilityLabel).toContain(`left ${SUB.worst}. In `);
+    expect(group.props.accessibilityLabel).toContain(`free ${SUB.worst}. In `);
     expect(group.props.accessibilityLabel).toMatch(/, out .*\.$/);
     expect(m.inAmount - m.outAmount).toBe(m.short ? -m.amount : m.amount);
     // the eyebrow Text stays out of the accessibility tree: the group carries it
@@ -343,10 +345,10 @@ describe('HomeSummaryCard', () => {
     expect(eyebrow.props.importantForAccessibility).toBe('no');
   });
 
-  it('D-100 a short month reads short by name in the summary group', async () => {
+  it('D-106 the card screen-reader line says free / overspent', async () => {
     const source = loggedSource({ months: months(4, 300_000, 360_000), basisOverride: 'worst' });
     await renderCard({ source });
-    expect(screen.getByLabelText(new RegExp(`^Net free cash flow: .* short ${SUB.worst}\\. In `))).toBeTruthy();
+    expect(screen.getByLabelText(new RegExp(`^Net free cash flow: .* overspent ${SUB.worst}\\. In `))).toBeTruthy();
   });
 
   it('D-100 the eyebrow row at 320 and 2.0x has no overlap and 44 targets', async () => {
@@ -388,7 +390,7 @@ describe('HomeSummaryCard', () => {
   it('D-97 loading is a busy skeleton with no figure', async () => {
     await renderCard({ status: 'loading', source: null });
     expect(screen.getByLabelText('Loading your figures').props.accessibilityState).toMatchObject({ busy: true });
-    expect(screen.queryByText('left')).toBeNull();
+    expect(screen.queryByText('free')).toBeNull();
   });
 
   it('D-97 a failed load shows the dark error with Try again', async () => {

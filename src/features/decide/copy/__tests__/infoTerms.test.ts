@@ -28,12 +28,12 @@ describe('infoTerms', () => {
   it('D-100 the R18 catalogue keys resolve and the sub-lines end as the user worded them', () => {
     const NBSP = ' ';
     const keys = [
-      'home.card.eyebrow', 'home.card.a11yNfcfLeft', 'home.card.a11yNfcfShort',
+      'home.card.eyebrow', 'home.card.a11yNfcfFree', 'home.card.a11yNfcfOverspent',
       'home.hero.subWorst', 'home.hero.subAverage', 'home.hero.subTightest', 'home.hero.subFigures', 'home.hero.subSwitched',
       'home.monthDetails.title', 'home.monthDetails.basisWorst', 'home.monthDetails.basisAverage', 'home.monthDetails.basisTightest',
       'home.monthDetails.basisFigures', 'home.monthDetails.basisSwitched', 'home.monthDetails.in', 'home.monthDetails.spending',
       'home.monthDetails.debts', 'home.monthDetails.saving', 'home.monthDetails.pots', 'home.monthDetails.result',
-      'home.monthDetails.resultShort', 'home.monthDetails.potsLink', 'home.monthDetails.rowA11y',
+      'home.monthDetails.resultOverspent', 'home.monthDetails.potsLink', 'home.monthDetails.rowA11y',
       'home.rows.linesSetSix', 'home.linesFold.previewSix', 'home.problems.potPastDue', 'home.problems.affectsPots',
       'home.problems.potPastDueAffects', 'home.problems.potPastDueAction',
       'pots.summary', 'pots.doneFold', 'pots.sheet.previewActive', 'verdict.tco.year', 'verdict.tco.month', 'verdict.tco.a11y_year',
@@ -90,7 +90,7 @@ describe('infoTerms', () => {
     const NB = ' ';
     const keys = [
       'header', 'card.eyebrow', 'card.details', 'card.detailsA11y', 'card.detailsHint',
-      'card.a11yNfcfLeft', 'card.a11yNfcfShort', 'card.loading', 'hero.left', 'hero.short', 'hero.leftWord', 'hero.shortWord', 'hero.subWorst', 'hero.inOut', 'hero.summary', 'hero.summaryShort',
+      'card.a11yNfcfFree', 'card.a11yNfcfOverspent', 'card.loading', 'hero.freeWord', 'hero.overspentWord', 'hero.subWorst', 'hero.inOut', 'hero.summary', 'hero.summaryOverspent',
       'unavailable.title', 'unavailable.noFigures', 'unavailable.rate', 'unavailable.addRough', 'unavailable.seeLines',
       'field.placeholder', 'field.placeholderShort', 'field.a11y', 'field.check', 'field.full', 'field.fullA11y',
       'rows.open', 'rows.openChanged', 'rows.changes', 'rows.changesAdd', 'rows.past', 'rows.lines', 'rows.linesSetSix_one', 'rows.linesSetSix_other', 'rows.linesDefault', 'rows.a11y',
@@ -106,10 +106,10 @@ describe('infoTerms', () => {
     ];
     for (const k of keys) expect({ k, v: str(`decide.home.${k}`) }).toEqual({ k, v: expect.any(String) });
     const h = (k: string) => str(`decide.home.${k}`);
-    expect(h('hero.left')).toBe('{{amount}} left');
-    expect(h('hero.short')).toBe('{{amount}} short');
+    expect(h('hero.freeWord')).toBe('free');
+    expect(h('hero.overspentWord')).toBe('overspent');
     expect(h('hero.subWorst')).toBe('in your worst month, after spending, debts and everything set aside');
-    expect(h('card.a11yNfcfLeft')).toBe('Net free cash flow: {{amount}} left {{basis}}. In {{in}}, out {{out}}.');
+    expect(h('card.a11yNfcfFree')).toBe('Net free cash flow: {{amount}} free {{basis}}. In {{in}}, out {{out}}.');
     expect(h('field.check')).toBe('Check it');
     expect(h('field.full')).toBe('Full check');
     expect(h('problems.failedAction')).toBe('Review changes');

@@ -18,7 +18,7 @@ describe('R18 retired copy', () => {
     ];
     for (const k of gone) expect({ k, v: node(k) }).toEqual({ k, v: undefined });
     // the twins that serve now
-    for (const k of ['decide.home.card.eyebrow', 'decide.home.card.a11yNfcfLeft', 'decide.home.card.a11yNfcfShort', 'decide.home.hero.subWorst']) {
+    for (const k of ['decide.home.card.eyebrow', 'decide.home.card.a11yNfcfFree', 'decide.home.card.a11yNfcfOverspent', 'decide.home.hero.subWorst']) {
       expect({ k, ok: typeof node(k) === 'string' }).toEqual({ k, ok: true });
     }
   });

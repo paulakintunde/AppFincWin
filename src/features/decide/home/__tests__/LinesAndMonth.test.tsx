@@ -103,10 +103,10 @@ describe('MonthDetailsBody (dark, as on the home card before R17)', () => {
     expect(screen.getByLabelText('Average · $5000')).toBeTruthy();
   });
 
-  it('shows a negative Left with the minus sign', async () => {
+  it('words a negative result as overspent, amount absolute', async () => {
     const source = loggedSource({ months: monthsOf([['2026-06', 300_000, 500_000], ['2026-07', 300_000, 500_000], ['2026-08', 300_000, 500_000], ['2026-09', 300_000, 500_000]]) });
     await wrap(card(source));
-    expect(screen.getByLabelText(/^Net free cash flow, short by \$/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Net free cash flow, \$\d+ overspent$/)).toBeTruthy();
   });
 
   it('says the range when income is not steady and writes the basis choice', async () => {

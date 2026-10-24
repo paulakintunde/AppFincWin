@@ -202,7 +202,7 @@ export function HomeSummaryCard({
     summary = (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={t(model.short ? 'decide.home.card.a11yNfcfShort' : 'decide.home.card.a11yNfcfLeft', a11yParams)}
+        accessibilityLabel={t(model.short ? 'decide.home.card.a11yNfcfOverspent' : 'decide.home.card.a11yNfcfFree', a11yParams)}
         accessibilityHint={t('decide.home.card.detailsHint')}
         onPress={onOpenDetails}
         style={({ pressed }) => [styles.summary, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
@@ -210,11 +210,11 @@ export function HomeSummaryCard({
         {resultOpen ? (
           // R17.2: while a result is open the hero shrinks to the In/Out size and the sub-line hides.
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.surface }}>
-            {t(model.short ? 'decide.home.hero.summaryShort' : 'decide.home.hero.summary', params)}
+            {t(model.short ? 'decide.home.hero.summaryOverspent' : 'decide.home.hero.summary', params)}
           </Text>
         ) : (
           <>
-            <HomeHero amount={params.amount} word={t(model.short ? 'decide.home.hero.shortWord' : 'decide.home.hero.leftWord')} short={model.short} />
+            <HomeHero amount={params.amount} word={t(model.short ? 'decide.home.hero.overspentWord' : 'decide.home.hero.freeWord')} short={model.short} />
             {infoShown ? (
               <InfoLabel term={tightestInfo.term} onInfo={tightestInfo.open} tone="dark" lineHeight={SUB_LINE}>
                 <Text style={{ ...metaStyle, color: colors.inkSoft1 }}>{subText}</Text>

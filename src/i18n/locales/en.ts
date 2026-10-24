@@ -1774,7 +1774,7 @@ const en = {
       // 05-131 (D-100..D-104, R18.1-R18.5)
       netFreeCashFlow: {
         term: 'Net free cash flow',
-        body: 'What is left of a month once everything planned has been taken off: money in, minus spending, minus debt payments, minus what goes to saving, to investing and to pots. It is worked out from your logged months, on the worst month or the average, as the line under it says. A pot is money kept for a set amount on a set date.',
+        body: 'What is left of a month once everything planned has been taken off: money in, minus spending, minus debt payments, minus what goes to saving, to investing and to pots. By default it is this month as it is expected to end: what is logged so far, plus pay and bills still due before month end; it can instead be worked out on your worst month or the average, as the line under it says, and checks use the same choice. A pot is money kept for a set amount on a set date.',
         changes: 'Every check starts from this figure. A purchase lowers it by its monthly cost, and only saving and investing can pause to cover a shortfall.',
       },
       pots: {
@@ -1928,17 +1928,26 @@ const en = {
         loading: 'Loading your figures',
         // 05-131 (D-100, R18.1): Net free cash flow twins of the basis-bearing label and a11y strings
         eyebrow: 'Net free cash flow',
-        a11yNfcfLeft: 'Net free cash flow: {{amount}} left {{basis}}. In {{in}}, out {{out}}.',
-        a11yNfcfShort: 'Net free cash flow: {{amount}} short {{basis}}. In {{in}}, out {{out}}.',
+        a11yNfcfFree: 'Net free cash flow: {{amount}} free {{basis}}. In {{in}}, out {{out}}.',
+        a11yNfcfOverspent: 'Net free cash flow: {{amount}} overspent {{basis}}. In {{in}}, out {{out}}.',
+        // 05-141 (D-107): the Judge-on dropdown and its sheet
+        judge: {
+          month: 'This month', worst: 'Worst month', average: 'Average month',
+          a11y: 'Judged on {{basis}}. Opens the choices.',
+          sheetTitle: 'Judge on', sheetBody: 'The card and every check use this choice.',
+          sheetWaiting: 'This month is waiting for a {{currency}} rate, so it shows the worst month.',
+        },
       },
       hero: {
-        left: '{{amount}} left', short: '{{amount}} short', leftWord: 'left', shortWord: 'short',
-        inOut: 'In {{in}} · Out {{out}}', summary: '{{amount}} left · In {{in}} · Out {{out}}', summaryShort: '{{amount}} short · In {{in}} · Out {{out}}',
+        freeWord: 'free', overspentWord: 'overspent',
+        inOut: 'In {{in}} · Out {{out}}', summary: '{{amount}} free · In {{in}} · Out {{out}}', summaryOverspent: '{{amount}} overspent · In {{in}} · Out {{out}}',
         // 05-131 (D-100, R18.1): the five sub-lines, by the basis the engine used
         subWorst: 'in your worst month, after spending, debts and everything set aside',
         subAverage: 'in your average month, after spending, debts and everything set aside',
         subTightest: 'from your tightest figures, after spending, debts and everything set aside',
         subFigures: 'from the figures you gave, after spending, debts and everything set aside',
+        subMonth: 'this month, after spending, debts and everything set aside',
+        monthWaitingRate: 'This month is waiting for a {{currency}} rate',
         subSwitched: 'now from your logged months, after spending, debts and everything set aside',
       },
       unavailable: {
@@ -1964,7 +1973,7 @@ const en = {
       },
       problems: {
         title: 'Needs a look', affects: 'Affects: {{what}}', entryA11y: '{{title}}. Affects {{affects}}.', close: 'Close',
-        noMonth: { title: 'No month of figures yet', affects: 'Left this month and every check', action: 'Add rough figures' },
+        noMonth: { title: 'No month of figures yet', affects: 'Net free cash flow and every check', action: 'Add rough figures' },
         rate: {
           title: 'No exchange rate stored for {{currency}}', action: 'Exchange rates',
           affectsLines_one: '{{count}} line and every check that uses it', affectsLines_other: '{{count}} lines and every check that uses them',
@@ -1986,10 +1995,11 @@ const en = {
         close: 'Close',
         // 05-131 (D-100, R18.1): the breakdown that adds up to the hero
         title: 'Net free cash flow',
+        basisMonth: 'Worked out on this month as it is expected to end.',
         basisWorst: 'Worked out on your worst month.', basisAverage: 'Worked out on your average month.', basisTightest: 'Worked out on your tightest figures.',
         basisFigures: 'Worked out from the figures you gave.', basisSwitched: 'Now worked out from your logged months.',
         in: 'Money in', spending: 'Spending', debts: 'Debt payments', saving: 'Saving and investing', pots: 'Set aside for pots',
-        result: 'Net free cash flow', resultShort: 'Net free cash flow, short by {{amount}}',
+        result: 'Net free cash flow', resultOverspent: 'Net free cash flow, {{amount}} overspent',
         potsLink: 'Pots', // the chevron is drawn by the component, as for card.details
         rowA11y: '{{label}}, {{value}}',
       },
@@ -2000,7 +2010,7 @@ const en = {
       variableLine: '{{count}}\u00A0months ranging {{worst}} to {{best}}. Affordability is judged on the worst month unless you say otherwise.',
       noIncomeLine: 'No money in is logged in these {{count}}\u00A0months, so every check is judged on that.', // D-50 (04 LO-01): every averaged month has 0 income (steadiness 'volatile', CV null)
       fewLine: 'Fewer than 3 full months so far, so this uses your lowest month for money in and your highest for spending.',
-      worstChip: 'Worst · {{amount}}', averageChip: 'Average · {{amount}}', basisA11y: 'Judge on',
+      thisMonthChip: 'This month · {{amount}}', worstChip: 'Worst · {{amount}}', averageChip: 'Average · {{amount}}', basisA11y: 'Judge on',
       edit: 'Edit', editA11y: 'Edit rough figures',
     },
     rough: { title: 'Rough figures', in: 'Money in each month', out: 'Money out each month', cancel: 'Cancel', save: 'Save figures' },
@@ -2239,6 +2249,15 @@ const en = {
       net: 'Net monthly change', math: '{{gross}} added, {{replaced}} ends',
     },
     verdict: {
+      // 05-141 (D-107): the outcome on each basis, side by side
+      compare: {
+        title: 'The outcome on each basis',
+        month: 'This month', worst: 'Worst month', average: 'Average month',
+        chosen: 'Used for this check',
+        rowA11y: '{{basis}}: {{state}}, {{figure}}',
+        rowA11yChosen: '{{basis}}: {{state}}, {{figure}}. Used for this check.',
+        waiting: 'Waiting for a {{currency}} rate, shown as the worst month',
+      },
       key: {
         freeCaption: 'Free a month', overspentCaption: 'Overspent a month', cushionCaption: 'Cushion', monthlyCaption: 'A month', putInCaption: 'Put in a month',
         months_one: '1\u00A0month', months_other: '{{count}}\u00A0months', underOne: 'Under 1\u00A0month', notLimited: 'Not limited', none: 'None',
@@ -2383,7 +2402,7 @@ const en = {
       optionsLead: 'In order of how much they move. The first two change the purchase; the rest change your month.',
       optionsLeadCloses: 'Each option rescores the figures above immediately.',
       optAffordable: 'At {{price}} instead', optAffordableDesc: '{{amount}} less than the price you were quoted.', optUsePrice: 'Use this price',
-      optTerm: 'A {{count}}-month term', optTermValue: '+{{amount}}/mo', optTermStill: 'still short', optTermDesc: '{{payment}} a month, with {{interest}} more interest over the term.', optUseTerm: 'Use this term',
+      optTerm: 'A {{count}}-month term', optTermValue: '+{{amount}}/mo', optTermStill: 'still overspent', optTermDesc: '{{payment}} a month, with {{interest}} more interest over the term.', optUseTerm: 'Use this term',
       optCut: 'A fifth off {{line}}', optCutDesc: '{{cut}} a month less on {{line}}, against a {{gap}} gap.', optOpenActivity: 'Open in Activity',
       optEarn: '{{amount}} more a month coming in', optEarnDesc: 'That is {{pct}}% more than your {{basis}} month brings in.', optEarnDescMonth: 'That is {{pct}}% more than this month is expected to bring in.',
       optSaveFirst: 'Saving first, then buying', optSaveFirstDesc: '{{amount}} a month for {{count}}\u00A0months covers it.', optSaveFirstOpen: '{{amount}} still to cover, with nothing spare each month.', optSwitchWait: 'Switch to wait',

@@ -66,7 +66,7 @@ describe('HomeProblemsSheet', () => {
     await wrap(<HomeProblemsSheet {...props([NO_FIGURES, RATE_CHECK, FAILED, CONFLICTS, CARD_MIN, STALE, OFFLINE])} />);
     expect(screen.getByText('Needs a look')).toBeTruthy();
     expect(screen.getByText('No month of figures yet')).toBeTruthy();
-    expect(screen.getByText('Affects: Left this month and every check')).toBeTruthy();
+    expect(screen.getByText('Affects: Net free cash flow and every check')).toBeTruthy();
     expect(screen.getByText('Add rough figures')).toBeTruthy();
     expect(screen.getByText('No exchange rate stored for JPY')).toBeTruthy();
     expect(screen.getByText(/^Affects: 1.open check typed in JPY$/)).toBeTruthy();
@@ -85,7 +85,7 @@ describe('HomeProblemsSheet', () => {
     // One action per actionable entry: 6 buttons plus Close.
     expect(screen.getAllByRole('button')).toHaveLength(7);
     // Each entry reads as one group followed by its action.
-    expect(screen.getByLabelText('No month of figures yet. Affects Left this month and every check.')).toBeTruthy();
+    expect(screen.getByLabelText('No month of figures yet. Affects Net free cash flow and every check.')).toBeTruthy();
   });
 
   it('D-96 Add rough figures stacks the rough figures sheet', async () => {

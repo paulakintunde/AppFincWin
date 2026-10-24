@@ -23,6 +23,8 @@ import { Text } from '@/ui/Text';
 import { hapticSelection } from '@/ui/haptics';
 import { RadioDot } from '@/ui/RadioDot';
 import { STEADINESS_LABEL } from '../copy/codeMaps';
+import { monthFigure } from '../copy/monthFigure';
+import { refText, type Translate } from '../check/refText';
 import { InfoLabel } from '../ui/InfoLabel';
 import { useInfoSheet } from '../ui/useInfoSheet';
 import { useShouldStack } from '../ui/textFit';
@@ -251,7 +253,7 @@ const MINUS = '−'; // a true minus for deductions (R18.1)
 
 /**
  * D-100 / R18.1: the stacked breakdown that adds up to the hero. Rows with nothing in them hide (debts, saving and pots at
- * 0), the result never does. A negative result reads in danger, and its a11y label says "short by". The "Pots ›" link is
+ * 0), the result never does. A negative result reads in danger, and its a11y label says "overspent". The "Pots ›" link is
  * always shown (D-101): it is the way in for a user with no pots yet.
  */
 function Breakdown({ b, whole, wholeA11y, dark, onPots }: { b: MonthBreakdown; whole: Money; wholeA11y: Money; dark: boolean; onPots?: () => void }) {
@@ -270,7 +272,8 @@ function Breakdown({ b, whole, wholeA11y, dark, onPots }: { b: MonthBreakdown; w
   if (b.setAside !== 0) rows.push({ key: 'pots', caption: t('decide.home.monthDetails.pots'), amount: b.setAside, sign: MINUS, info: true });
   const short = b.result < 0;
   const resultCaption = t('decide.home.monthDetails.result');
-  const resultValue = `${short ? MINUS : ''}${whole(short ? -b.result : b.result)}`;
+  const resultWords = monthFigure(b.result, whole); // D-106: '{amount} free' / '{amount} overspent', amount absolute
+  const resultValue = refText(t as Translate, resultWords);
   return (
     <View style={styles.breakdown}>
       {rows.map((r) => {
@@ -297,7 +300,7 @@ function Breakdown({ b, whole, wholeA11y, dark, onPots }: { b: MonthBreakdown; w
         accessible
         accessibilityLabel={
           short
-            ? t('decide.home.monthDetails.resultShort', { amount: wholeA11y(-b.result) })
+            ? t('decide.home.monthDetails.resultOverspent', { amount: wholeA11y(-b.result) })
             : t('decide.home.monthDetails.rowA11y', { label: resultCaption, value: wholeA11y(b.result) })
         }
         style={[styles.breakdownRow, styles.resultRow, { borderTopColor: dark ? colors.inkSoft2 : colors.line2 }]}
