@@ -42,7 +42,7 @@ Started 2026-10-22. Updated at each milestone. Status: ✅ done · 🔄 in progr
 | 4. Plans 05-54..05-79 written | ✅ e6fab900 |
 | 5. Plan check of 05-54..79 | ✅ ran: 6 blockers, 12 warnings → revision queued with step 6 |
 | 6. Revise 05-54..79 + add R15 plans 05-80..87; two re-checks | ✅ 20d42001 |
-| 7. Execute waves 10–19 (user 2026-10-23: no pauses from wave 12 on) | 🔄 waves 10 ✅, 11 ✅, 12 ✅ (05-63, 64, 67, 68, 70, 71, 72, 73, 83 + Lock fix b36c072f); 13 ✅ (05-65, 69, 76, 84; CI green 4c41e9f); 14 ✅ (05-66, 85, 86; CI green 6dbbd4c); wave 15 running (05-74) |
+| 7. Execute waves 10–30 (user 2026-10-23: no pauses from wave 12 on) | ✅ all 117 build plans (05-54..05-118) built; wave 30 gate 596/596 suites at 6beb94ac (2026-10-24) |
 | 8. Gate + CI after each wave | 🔄 wave 11 green at 885e0918 (CI); follow-up: jest open handle after 05-57 (markMonthly suite does not exit without --forceExit) — fix in 05-79 gate |
 | 9. Screenshots on the Pixel 9 (402/320 × 1.0/2.0) | ⏳ |
 | 10. 05-26 device checks with the user, incl. copy review | ⏳ |
@@ -55,4 +55,5 @@ Started 2026-10-22. Updated at each milestone. Status: ✅ done · 🔄 in progr
 
 ## Progress
 
+- 2026-10-24: build complete — 117 of 118 plans; only 05-26 device checks remain. Workstreams A–X built; R17 home redesign built (waves 27–30). Metro restarted on 8075 for the device checks. DCU-27 held pending until the device matrix.
 - 2026-10-23: refresh ~42% (design and planning done; build 3 of 34 plans). Phase 5: 56 of 87 plans built. Wave 10 gate: local 539/539 suites, CI green at 809c2dde.
