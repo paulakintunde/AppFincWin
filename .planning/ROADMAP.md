@@ -788,7 +788,7 @@ Plans:
 - [x] 05-116-PLAN.md — Notice row and the Needs a look sheet (D-96)
 
 **Wave 29** *(blocked on Wave 28 completion)*
-- [ ] 05-117-PLAN.md — Decide home composition: lean header, card, rows, no FAB (D-95, D-98, D-99)
+- [x] 05-117-PLAN.md — Decide home composition: lean header, card, rows, no FAB (D-95, D-98, D-99)
 
 **Wave 30** *(blocked on Wave 29 completion)*
 - [ ] 05-118-PLAN.md — Retire R17-replaced copy and components; guards over R17 (D-76, DCU-09)
