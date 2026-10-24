@@ -820,7 +820,7 @@ Plans:
 - [x] 05-134-PLAN.md — You › Money Pots row and Needs a look pot entries (D-101)
 
 **Wave 37** *(blocked on Wave 36 completion)*
-- [ ] 05-130-PLAN.md — Retire R18-replaced copy; R6 matrix, reading-order and copy guards (D-100..D-104, DCU-09)
+- [x] 05-130-PLAN.md — Retire R18-replaced copy; R6 matrix, reading-order and copy guards (D-100..D-104, DCU-09)
 
 **Wave 38** *(blocked on Wave 37 completion)*
 - [ ] 05-132-PLAN.md — Local gate, then the human-gated production push of the R18 migrations (D-101, D-103)
