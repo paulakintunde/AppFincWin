@@ -1,7 +1,7 @@
 /**
  * CR-B01: decide_settings has one `currency` column for every money column (reserve, the two floors and the rough
  * figures). A patch stamps the currency only when it writes a money figure, so editing the debt line, the unsecured
- * multiple or "Use the default" never relabels figures typed in another currency. When a money figure is written in
+ * multiple, the housing line (housing_line, D-103: a percentage, never a money column) or "Use the default" never relabels figures typed in another currency. When a money figure is written in
  * a currency other than the stored one, every other money column is cleared in the same patch: a figure is never
  * left carrying a currency it was not typed in.
  */
