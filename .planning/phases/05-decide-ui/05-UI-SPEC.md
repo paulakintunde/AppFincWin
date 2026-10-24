@@ -2707,20 +2707,21 @@ Source: the 05-26 device walkthrough and the locked decisions **05-CONTEXT D-100
 **Data model: one table, `savings_goals`, extended.**
 - **Reading of D-101:** the user's words are "new table", but `public.savings_goals` already exists (migration `20261016000110`). It already has the household-of-one RLS policy "own savings goals" (`created_by = auth.uid()` and `household_id in user_household_ids()`), a computed saved-so-far from tagged transfers (`transactions.goal_id`, no stored balance), soft delete, `check_id` provenance for the Wait goal, and the undo entity. Its own comment says Phase 6 builds on it.
 - **Why not a second table:** D-101 asks that Wait goals become a kind of pot and that Phase 6 builds on "this table rather than a second one". A second table would put `goal_id` behind a polymorphic foreign key and duplicate the saved-so-far, undo and sample-data wiring. So D-101 is met by **new columns, constraints and grants on `savings_goals`**.
-- **Fallback if the user wants a literally new table:** `sinking_funds` plus a data move, a retargeted `transactions.goal_id` foreign key and a rewritten `record_decide_outcome` (about six more files). Flagged in the report, not built.
+- User-confirmed 2026-10-24: pots extend `savings_goals`. (A separate `sinking_funds` table was the rejected alternative.)
 
-**Migration `supabase/migrations/20261024000100_savings_goals_pots.sql`** (the date-prefix pattern of the existing files; additive; every statement idempotent where Postgres allows):
+**Migration `supabase/migrations/20261024000100_pots_and_debt_housing.sql`** (it carries both the pots extension and the `debts.is_housing` flag of R18.4; the date-prefix pattern of the existing files; additive; every statement idempotent where Postgres allows):
 
 | Change | Precisely |
 |---|---|
 | `kind` | `text not null default 'wait' check (kind in ('wait','pot'))`. Existing rows backfill to `'wait'`. Phase 6 adds a kind by replacing this check. |
 | `done_at` | `timestamptz null`. A done pot stops counting and stops protecting cash. |
 | Shape constraint | `check (kind <> 'pot' or (target is not null and ready_by is not null and monthly_amount is null and check_id is null))` |
+| `debts.is_housing` | `boolean not null default false`; update grant; backfill; insert default in `guard_debt()`. Full rules in R18.4. |
 | Index | `savings_goals_live_idx on (household_id) where deleted_at is null and done_at is null` |
 | RLS | The existing policy "own savings goals" is kept (owner-private, household-of-one). No new policy. `revoke all … from anon` is unchanged. |
 | Grants | `grant insert (id, household_id, kind, name, currency, target, ready_by, opening_saved)` and `grant update (name, target, ready_by, opening_saved, done_at, deleted_at)` to `authenticated`. |
 | `guard_savings_goal()` | **Insert:** `kind` is forced to `'pot'` unless `fincwin.decide_rpc` is `on` (the Wait RPC). `created_by` is filled as now. **Update, kind `'wait'`:** unchanged freezing of `check_id`, `name`, `currency`, `target`, `monthly_amount`, `ready_by` and `opening_saved` outside the RPC, but `done_at` and `deleted_at` may change. **Update, kind `'pot'`:** `kind`, `check_id`, `currency` and `monthly_amount` are frozen; `name`, `target`, `ready_by`, `opening_saved`, `done_at` and `deleted_at` may change. |
-| `apply_patches` allow-list | `savings_goals` widens from `['deleted_at']` to `name`, `target`, `ready_by`, `opening_saved`, `done_at`, `deleted_at`, with the type-map rows (text, bigint, date, bigint, timestamptz, timestamptz). The function is re-created from its **latest** definition (`20261016000200_decide_patches.sql` or any later revision), not copied from memory. |
+| `apply_patches` allow-list | `savings_goals` widens from `['deleted_at']` to `name`, `target`, `ready_by`, `opening_saved`, `done_at`, `deleted_at`, with the type-map rows (text, bigint, date, bigint, timestamptz, timestamptz). `debts` gains `is_housing` (boolean; R18.4). The function is re-created from its **latest** definition (`20261016000200_decide_patches.sql` or any later revision), not copied from memory. |
 
 **Second migration `supabase/migrations/20261024000200_decide_settings_housing_line.sql`** (D-103): `alter table public.decide_settings add column housing_line text check (housing_line is null or (housing_line ~ '^\d{1,3}(\.\d{1,4})?$' and housing_line::numeric <= 100))`, plus the column added to both the `insert` and `update` column grants.
 
@@ -2885,11 +2886,17 @@ resale   = 0                                            when no loss of value is
 
 **What counts as housing** (the builder, `buildSnapshot.ts`; the engine sees one number, `DecideSnapshot.housingMonthly`, my share, ≥ 0):
 - **Housing spending:** the average, over the used months, of paid, non-one-off outflows in categories whose built-in key is **`Housing`** (the key `NOT_CUTTABLE` already names). It is the same `expenseTotals` that feed the spending basis, so rent logged as spending counts. Custom categories do not count, and the ⓘ names the Housing category.
-- **Housing debt payments:** `minimumPayment` of live loan debts (`kind` is not `card`) that are housing by either of two signals. A debt has no housing flag today, so no schema change is made:
-  1. its paying series (`debts.series_id`) is in a Housing-category series; or
-  2. it was created from a check whose item type is `property` (`debts.check_id` in `propertyCheckIds`, ids of the user's checks with `itemType = 'property'`, passed to the builder by the data layer from the checks it already holds).
+- **Housing debt payments:** `minimumPayment` of live loan debts (`kind` is not `card`) with **`is_housing` on** (user, 2026-10-24: an explicit flag replaces the automatic signals). The builder passes no check ids.
 - **No double count:** a debt-covered series is already left out of spending (`coveredSeries`), so a mortgage counts once.
-- **Limitation (disclosed in the ⓘ):** a hand-recorded mortgage with neither signal is not counted as housing until Phase 6's debt editor adds a flag.
+- **The flag, `debts.is_housing boolean not null default false`** (in migration `20261024000100_pots_and_debt_housing.sql`):
+  - **Backfill:** `update public.debts set is_housing = true where deleted_at is null and kind <> 'card' and (series_id in (select s.id from public.recurring_series s join public.categories c on c.id = s.category_id where c.builtin_key = 'Housing') or check_id in (select id from public.decide_checks where inputs ->> 'itemType' = 'property'))`. That is "on where the old automatic signals match"; every other row stays off.
+  - **Debt kinds:** `debts.kind` is `'loan' | 'card' | 'other'` and there is **no mortgage kind**, so the default is signal-based, not kind-based. Card debts are never housing: the switch is not offered for them and `guard_debt()` forces the flag false for `kind = 'card'`.
+  - **Default for new rows:** `guard_debt()` on insert (and on update under `fincwin.decide_rpc` when `series_id` or `check_id` is set) turns `is_housing` **on, never off**, when the debt is not a card and is paid by a Housing-category series or comes from a `property` check. So Go ahead on a property loan arrives with the switch on. Nothing in `record_decide_go` is rewritten.
+  - **Grants:** `grant update (is_housing) on public.debts`; no insert grant (the trigger sets it). `DebtRow`, `DEBT_COLUMNS` and `DEBT_PATCH_KEYS` gain `is_housing`.
+  - **Where the switch lives:** **there is no debt editor in `src` today.** Loan debts are created only by Go ahead (`record_decide_go`), and the one debt sheet (the card terms sheet) edits cards. Until Phase 6 builds the debt editor, the switch sits in a **"Loans counted as housing" section of the housing-line editor** (`LimitEditorSheet`, housing mode) and nowhere else; Phase 6's editor reuses the same `DebtHousingSwitch` component. Each live non-card debt is a row: the name (`body`, user text under rule T), its payment (`meta`, `inkMuted`, "{{amount}} a month"), and a `ToggleRow` (the shipped `src/ui/ToggleRow`) labelled **"This is for housing"**. The section is hidden when there are no live loan debts, with the `meta` line "No loans recorded yet. A loan from a check appears here."
+  - **Copy and a11y:** switch label **"This is for housing"**; section heading **"Loans counted as housing"**; helper (`meta`, `inkMuted`) **"A loan with this on counts toward the housing line."** The switch is `accessibilityRole="switch"`, label "This is for housing, {{name}}", `accessibilityState.checked`, hint "Counts this loan toward the housing line". The row is at least 44 high; the name wraps (rule W) and, under rule S, the switch drops under the name.
+  - **Offline and undo:** `useSetDebtHousing` (`src/data/mutations/debts.ts`) is a paused-mutation write, version-conditional with the undo step id as the replay key, and updates the `debts` cache optimistically, so the hero and the Lines value change at once. It is one undo step (`apply_patches`, entity `debts`, label `debtHousingChanged`: "Housing setting changed"), with the toast "Housing setting changed" and Undo. A version conflict is the existing "edit changed on another device" entry.
+  - **Sample data:** sample debts stay off.
 - `housingMonthly` is on the average of the used months whatever the Worst / Average basis. The ratio's denominator is `incomeBasis`.
 
 **When it is tested.** A purchase check is tested only when it **adds** housing cost: `itemType` is `property` (including a custom type treated like Property) and `mineMonthly + mineRunning > 0`.
@@ -2919,14 +2926,14 @@ resale   = 0                                            when no loss of value is
 
 **The sixth Lines row** (`LinesCard.tsx`, `LimitKey` gains `'housing'`; the order is reserve, dsr, **housing**, unsecured, investing, saving, so the two income-share lines sit together). Keys `decide.lines.housing.*`:
 - Name **"Housing costs at most"**; description **"Share of money in, rent or mortgage and home costs"**; value **"{{pct}}%"**; the stored or default value and the "default" tag as the other rows.
-- **Editor** (`LimitEditorSheet.tsx`): the `RateInput` as for `dsr`, with the range line "Out of range: 0 to 100%". "Use the default" and "Save limit" are unchanged. The info line (`meta`, `inkMuted`) is **"Your housing costs come to {{amount}} a month, {{pct}} of money in."**, using `housingMonthly`.
+- **Editor** (`LimitEditorSheet.tsx`): the `RateInput` as for `dsr`, with the range line "Out of range: 0 to 100%", then the "Loans counted as housing" section. "Use the default" and "Save limit" are unchanged. The info line (`meta`, `inkMuted`) is **"Your housing costs come to {{amount}} a month, {{pct}} of money in."**, using `housingMonthly`.
 - **Settings plumbing:** `decide_settings.housing_line` (the second migration); `DecideSettingsRow`, the patch keys and `settingsPatch.ts` gain `housing_line`; the builder parses it with the DSR pattern, capped at 100, and a bad value counts toward `limitsReset`. `LimitEditorSheet`'s pre-flight regex mirrors the column check.
 - **Counts:** the Lines row on Decide home reads **"{{count}} of 6 set by you"** (was of 5), and "All at their defaults" is unchanged. `linesSetCount` adds `housing_line`. R17.3, R17.6 and the pushed screen's sub-copy say "of 6".
 - **Every line** (step 3 What breaks) gets a row **"Housing costs"** · "{{pct}} of money in", with its margin, for property checks only. Assumptions in play gains **"Housing costs today"** · "{{amount}} a month" for property checks.
 
 **ⓘ `housingLine` (new):**
 - Term **"Housing costs at most"**.
-- Body: **"The share of money in each month that may go to housing: spending in the Housing category, plus the payments on loans that pay for a home. Left blank, it is 28%. It is measured on the money in that you log, which is stricter than a lender's test on gross income. A mortgage recorded without a link to a Housing series or a property check is not counted. With no money in, any housing cost is over the line."**
+- Body: **"The share of money in each month that may go to housing: spending in the Housing category, plus the monthly payments on each loan marked as being for housing. Left blank, it is 28%. It is measured on the money in that you log, which is stricter than a lender's test on gross income. A loan paid from a Housing series or made from a property check starts marked. With no money in, any housing cost is over the line."**
 - What this changes: **"A property purchase that takes housing costs above this share needs adjustment. Other purchases are not tested against it."**
 - The same key serves the Lines row and the editor sheet (`LIMIT_INFO_KEY.housing = 'housingLine'`).
 
@@ -2981,6 +2988,7 @@ resale   = 0                                            when no loss of value is
 | "If it went into investing instead" fold | Unchanged; the headline row reads its first non-zero rate |
 | You › Money rows | Adds "Pots" (navigation) |
 | Decide home rows | Unchanged: four rows, no pots row |
+| `debts` has no housing marker | `debts.is_housing` with a backfill, an insert default and a "This is for housing" switch in the housing-line editor |
 | FAB menu, You › Add | Unchanged |
 
 **Keeps working unchanged:** the quick check and its in-card result (the hero still shrinks to the summary line while a result is open); the notice row and Needs a look sheet (two entries added); Open checks, Changes and Past decisions rows and screens; the basis control and steadiness chip; the card hierarchy and "Check it" as the one primary action; the unavailable, first-run and loading states; the hero's two-Text fit; the DCU-11 primary frame 1 (step 3 of the sofa check), and frames 2 and 3 apart from the 25.5 budgeted above.
@@ -2996,6 +3004,7 @@ resale   = 0                                            when no loss of value is
 | Total cost row; Invested instead row | A figure and its basis. The projection is stated as a projection in the ⓘ and the a11y label, and the row begins "Invested" (past tense, not the imperative "Invest"). The plan confirms the guard matches on the whole word `Invest`; a guard test covers it. Pass. |
 | Housing warning title, value, body, verdict titles; Lines name, description, info | "takes a large share", "would reach", "breaks your line": declarative, no advice. Pass. |
 | Pots screen: heading, sub-copy, summary, row states ("Target reached · nothing more to set aside", "Past its date · … still to save"), empty, sheet labels, preview lines | Facts about a pot. No reassurance. Pass. |
+| "This is for housing"; "Loans counted as housing"; the helper and empty line; toast "Housing setting changed" | Labels and facts. Pass. |
 | Buttons "Add a pot", "Save pot", "Mark done", "Reopen", "Delete", "Tag a transfer", "Pots ›", "+ Pot", "Cancel" | UI controls. **"Save pot" and "Add a pot" begin with Save or a verb, so they are added to the guard's keyed button list**, as "Check it" and "Review changes" were. |
 | Toasts "Pot saved", "Pot deleted · {{name}}", "Marked done · {{name}}", "Reopened · {{name}}"; undo labels | Past-tense facts. Pass. |
 | Wait copy changes (R18.2) | Declarative. Pass. |
@@ -3017,7 +3026,9 @@ resale   = 0                                            when no loss of value is
   - Headline: no non-zero rate; the first non-zero rate chosen; a holding fee; out of range; zero `contributed`; the lump and payments parts rounded once each.
 - **E8 (housing):**
   - Boundary at exactly 28.00% (not a breach) and one minor unit over; `incomeBasis` 0; a non-property check with housing already over (no warning); a property check with `mineMonthly + mineRunning` ≤ 0 (no warning); `housingAfter` floored at 0 by replaced expenses; shortfall half-up; the `WARNING_ORDER` tie-break against `dsr` and `owe`; `lineMargins` and the edge flag; a custom type treated like Property; invest checks.
-  - Builder (not engine, in the feature suite): Housing-category spending; the series signal; the property-check signal; no double count with `coveredSeries`; an invalid `housing_line` counted in `limitsReset`.
+  - Builder (not engine, in the feature suite): Housing-category spending; payments of `is_housing` loans only (a card with the flag set is ignored); no double count with `coveredSeries`; an invalid `housing_line` counted in `limitsReset`.
+  - Database (local, in 05-119): the backfill matches each old signal and nothing else; the `guard_debt()` insert default turns on for a Housing series and a property check, never turns off, never applies to a card; `apply_patches` accepts `is_housing`.
+  - Feature: `useSetDebtHousing` optimistic update, undo and replay; the switch's a11y state.
 - **Also tested outside the engine:** `buildSnapshot` leaves tagged legs out of saving; the own-pot exclusion for a reopened Waiting check; RNTL at 320 / 2.0x for the eyebrow row and the sub-line; the Month details breakdown sums to the hero; the Pots screen states; migrations applied to a local database (the guard cases, the shape constraint, `apply_patches` for each new column).
 
 #### R18.8 Plan split (waves continue from 30; plans 05-119 onward)
@@ -3026,14 +3037,14 @@ resale   = 0                                            when no loss of value is
 
 | Plan | Wave | Content | Depends on |
 |---|---|---|---|
-| **05-119** | 31 | Both migrations (R18.2); local DB tests of the guard, shape constraint and `apply_patches`; preflight; a **blocking checkpoint**: the user's explicit approval before `supabase:db:push` to production. | — |
+| **05-119** | 31 | Both migrations (R18.2, including `debts.is_housing`, its backfill and the `guard_debt()` default); local DB tests of the guards, shape constraint, backfill and `apply_patches`; preflight; a **blocking checkpoint**: the user's explicit approval before `supabase:db:push` to production. | — |
 | **05-120** | 31 | E6 engine: `pots.ts`, `prepareContext` set-aside and `protectedCash`, `MonthColumn.setAside`, `cashPath` opening, `position` fixed outgoings, `investmentViews` surplus. 100% coverage and property tests. | — |
 | **05-121** | 32 | E8 engine: `DEFAULT_HOUSING_LINE`, `WARNING_ORDER`, `housing` code, `Assessment` fields, margins, limits. | 05-120 (shares `assess.ts`, `types.ts`) |
-| **05-122** | 32 | Data layer for pots: `SavingsGoalRow`/columns, `decidePots.ts` mutations, queries and keys, undo labels and `savings_goals` patch keys, `housing_line` in the settings row and patch. | 05-119 |
+| **05-122** | 32 | Data layer for pots: `SavingsGoalRow`/columns, `decidePots.ts` and `debts.ts` (`useSetDebtHousing`) mutations, queries and keys, undo labels and `savings_goals` patch keys, `housing_line` in the settings row and patch. | 05-119 |
 | **05-123** | 33 | E7 engine: `ownership.ts` (`totalCost`), the `investmentViews` headline. | 05-120, 05-121 |
-| **05-124** | 33 | Snapshot builder: `pots`, tagged-leg exclusion, own-pot exclusion, `housingMonthly`, `housingLine`, `propertyCheckIds`, pot currency conversion, `base.pots`. | 05-120, 05-121, 05-122 |
+| **05-124** | 33 | Snapshot builder: `pots`, tagged-leg exclusion, own-pot exclusion, `housingMonthly`, `housingLine` (loans with `is_housing`), pot currency conversion, `base.pots`. | 05-120, 05-121, 05-122 |
 | **05-125** | 34 | D-100 card: eyebrow, sub-lines, Out figure, `homeCardModel`, Month details breakdown and "Pots ›" link, retired keys, ⓘ `netFreeCashFlow`, budget probes. | 05-124 |
-| **05-126** | 34 | D-103 UI: sixth Lines row and editor, `linesSetCount`, "of 6", warning copy and verdict titles, Every line and Assumptions rows, ⓘ `housingLine`. | 05-124 |
+| **05-126** | 34 | D-103 UI: sixth Lines row and editor with the "Loans counted as housing" switches (`DebtHousingSwitch`), `linesSetCount`, "of 6", warning copy and verdict titles, Every line and Assumptions rows, ⓘ `housingLine`. | 05-124 |
 | **05-127** | 35 | Pots UI: `PotsScreen`, `PotSheet`, You › Money row, Month details wiring, Needs a look entries, ⓘ `pots`, undo and toasts. | 05-122, 05-124, 05-125 |
 | **05-128** | 35 | Verdict rows 4b and 4c on step 3: rendering, hiding rules, a11y group, budgets, ⓘ `totalCost` and `investedInstead`; the month table's pots row. | 05-123, 05-124 |
 | **05-129** | 36 | Wait → pot: copy changes (R18.2), the Wait panel and Past decisions wording, own-pot exclusion test through `computeCheck`. | 05-127, 05-128 |
@@ -3065,7 +3076,7 @@ resale   = 0                                            when no loss of value is
 3. **Pots entry points:** Month details link and You › Money (alternative: a fifth Decide row, shown from the first pot; it ends the stack at y = 762, or 824 with the notice row).
 4. **Past-due pots** set aside 0 and surface in Needs a look (alternative: the whole remainder in one month).
 5. **Rounding:** set-asides round up, whole months rounded down.
-6. **Housing:** only the Housing category and loans with a Housing series or a property check count; only `property` checks are tested (alternative: a `housing` flag on `debts` in Phase 6, and rent-type checks tested).
+6. **Housing:** housing spending is the Housing category; housing debt is `debts.is_housing` (user-confirmed 2026-10-24, with the switch in the housing-line editor because no debt editor exists yet); only `property` checks are tested (alternative: rent-type checks tested).
 7. **Housing line order:** third of six, beside the debt line.
 8. **Invested instead** is the future value of the amount on the day plus the payments and running costs, using the first non-zero typed rate.
 9. **Total-cost horizon** follows the investing views' horizon and is never below the plan term.
@@ -3077,8 +3088,9 @@ resale   = 0                                            when no loss of value is
 |---|---|
 | Eyebrow, ⓘ, sub-lines, Out figure, a11y | `HomeSummaryCard`, `homeCardModel`, `DecideHomeScreen` |
 | Month details breakdown and Pots link | `MonthDetailsSheet`, `YourMonthCard` (`MonthDetailsBody`) |
-| Pots schema, guard, grants, patches | migration `20261024000100_savings_goals_pots.sql` |
+| Pots schema, guard, grants, patches | migration `20261024000100_pots_and_debt_housing.sql` |
 | Housing setting | migration `20261024000200_decide_settings_housing_line.sql` |
+| Debt housing flag and switch | migration `20261024000100_pots_and_debt_housing.sql`, `src/db/debts.ts`, `src/data/mutations/debts.ts`, `DebtHousingSwitch` in `LimitEditorSheet` |
 | Set-aside, protected cash, month column | `src/engine/decide/pots.ts`, `assess.ts`, `cashPath.ts`, `position.ts`, `investmentViews.ts`, `types.ts` |
 | Pot builder inputs; tagged-leg exclusion | `buildSnapshot.ts`, `snapshot/types.ts`, `withoutCheckWrites.ts` |
 | Pots screen and sheet; You row | `PotsScreen`, `PotSheet`, `app/(app)/decide/pots.tsx`, `YouScreen.tsx` |
