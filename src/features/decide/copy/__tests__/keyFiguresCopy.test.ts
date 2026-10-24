@@ -2,7 +2,7 @@ import { minorUnits } from '@/engine/money';
 import { i18n } from '@/i18n';
 import { refText } from '../../check/refText';
 import { loggedSource, roughSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
-import { keyFigureInputs, keyFigures } from '../keyFiguresCopy';
+import { keyFigureInputs, keyFigures, keyFiguresLabel } from '../keyFiguresCopy';
 import type { KeyFigureInputs } from '../keyFiguresCopy';
 import { fmt, fmtCents } from './helpers/fixtures';
 import type { CopyRef } from '../types';
@@ -69,5 +69,19 @@ describe('keyFiguresCopy', () => {
     expect(inputs.monthly).toBe(fr.monthly);
     expect(inputs.cushionMonths).toBe(Math.floor(Math.max(0, fr.cashAfter) / 250_000));
     expect(keyFigureInputs(c, null)!.cushionMonths).toBeNull();
+  });
+});
+
+describe('keyFiguresLabel', () => {
+  it('D-102 the key figures a11y order is figures, total cost, invested', () => {
+    const figures = text(run().a11y);
+    const head = figures.slice(0, -1);
+    expect(keyFiguresLabel(figures, 'Over 3 years, 23,412 dollars in all', 'Invested instead: 5,000 dollars. A projection, not a forecast.')).toBe(
+      `${head}. Over 3 years, 23,412 dollars in all. Invested instead: 5,000 dollars. A projection, not a forecast.`
+    );
+    expect(keyFiguresLabel(figures, null, 'B')).toBe(`${head}. B.`);
+    expect(keyFiguresLabel(figures, 'A', null)).toBe(`${head}. A.`);
+    expect(keyFiguresLabel(figures, null, null)).toBe(figures);
+    expect(keyFiguresLabel('', null, null)).toBe('.');
   });
 });

@@ -92,3 +92,19 @@ export function keyFigureInputs(c: CheckComputation, roughBurn: MinorUnits | nul
   }
   return null;
 }
+
+const TRAILING_STOPS = /[.\s]+$/;
+
+/**
+ * 05-128 (D-102, D-104; R18.3 Accessibility): the key-figures group's spoken label. The figures sentence comes first, then the
+ * total-cost sentence, then the invested-instead sentence; a hidden row is left out. Each part's own full stop is trimmed
+ * and one is put back between parts, so the label never reads "..".
+ */
+export function keyFiguresLabel(figures: string, tco: string | null, invested: string | null): string {
+  return [figures, tco, invested]
+    .filter((p): p is string => p !== null)
+    .map((p) => p.trim().replace(TRAILING_STOPS, ''))
+    .filter((p) => p.length > 0)
+    .join('. ')
+    .concat('.');
+}
