@@ -156,12 +156,12 @@ describe('decide copy fit (R6)', () => {
       const one = get(`decide.pay.instRate.${freq}_one`);
       const other = get(`decide.pay.instRate.${freq}_other`);
       expect(one).toMatch(new RegExp(`^1${NBSP}`));
-      expect(other).toMatch(new RegExp(`^\{\{count\}\}${NBSP}`));
+      expect(other.startsWith(`{{count}}${NBSP}`)).toBe(true);
       expect(get(`decide.pay.instSummary.${freq}_one`)).toBeTruthy(); // "{{count}} ×": the unit rule does not apply
       expect(get(`decide.pay.instSummary.${freq}_other`)).toBeTruthy();
     }
     // no R16 count is followed by a plain space and a unit word
-    const plain = /(\{\{count\}\}|1) (changes?|payments?|weekly|monthly|quarterly|months?|years?)/;
+    const plain = /(\{\{count\}\}|\b1) (changes?|payments?|weekly|monthly|quarterly|months?|years?)\b/;
     const r16Leaves = leaves.filter((l) => /^decide\.pay\.(instRate|loanSavedLine)/.test(l.path));
     expect(r16Leaves.length).toBeGreaterThan(8);
     expect(r16Leaves.filter((l) => plain.test(l.value)).map((l) => l.path)).toEqual([]);
