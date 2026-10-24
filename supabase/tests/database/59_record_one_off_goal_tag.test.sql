@@ -30,12 +30,15 @@ values
   ('b1111111-1111-1111-1111-111111111103', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', -999, 'USD', current_date, 'UTC', 'Coffee', null, '11111111-1111-1111-1111-111111111111');
 
 -- Goals: A's live goal, B's goal in A's household, A's soft-deleted goal, C's goal in C's household.
+-- 05-119: Wait goals now arrive only through the Wait RPC, so the fixture insert runs with it on.
+select set_config('fincwin.decide_rpc', 'on', true);
 insert into public.savings_goals (id, household_id, created_by, name, currency, target, deleted_at)
 values
   ('f1000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'A live', 'USD', 120000, null),
   ('f1000000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'B goal', 'USD', 120000, null),
   ('f1000000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'A gone', 'USD', 120000, now()),
   ('f3000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'), '33333333-3333-3333-3333-333333333333', 'C goal', 'USD', 120000, null);
+select set_config('fincwin.decide_rpc', '', true);
 
 -- ---------------------------------------------------------------- As A: one-off
 set local role authenticated;

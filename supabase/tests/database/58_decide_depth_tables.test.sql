@@ -72,20 +72,24 @@ select extensions.throws_ok(
 select extensions.throws_ok(
   $$insert into public.savings_goals (id, household_id, name, currency, target)
     values ('f1000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Sofa fund', 'USD', 120000)$$,
-  '42501', null, 'goals have no client insert grant');
+  '23514', null, 'a client goal insert becomes a pot, and a pot with no ready_by is refused by the shape check (05-119)');
 reset role;
+-- 05-119: Wait goals now arrive only through the Wait RPC, so the fixture insert runs with it on.
+select set_config('fincwin.decide_rpc', 'on', true);
 insert into public.savings_goals (id, household_id, created_by, name, currency, target, monthly_amount)
 values ('f1000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
         '11111111-1111-1111-1111-111111111111', 'Sofa fund', 'USD', 120000, 10000);
+select set_config('fincwin.decide_rpc', '', true);
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
 select extensions.is(
   (select count(*)::int from public.savings_goals where id = 'f1000000-0000-0000-0000-000000000001'),
   1, 'A sees their own goal');
-select extensions.throws_ok(
-  $$update public.savings_goals set target = 1 where id = 'f1000000-0000-0000-0000-000000000001'$$,
-  '42501', null, 'a client update of the goal target has no column grant');
+update public.savings_goals set target = 1 where id = 'f1000000-0000-0000-0000-000000000001';
+select extensions.is(
+  (select target from public.savings_goals where id = 'f1000000-0000-0000-0000-000000000001'),
+  120000::bigint, 'a client update of a Wait goal target is put back by the guard (05-119: target now has an update grant for pots)');
 select extensions.lives_ok(
   $$update public.savings_goals set deleted_at = now() where id = 'f1000000-0000-0000-0000-000000000001'$$,
   'A soft-deletes their goal');

@@ -38,9 +38,12 @@ insert into public.decide_links (id, household_id, created_by, check_id, entity,
    'c4000000-0000-0000-0000-000000000001', 'transactions', 'd1000000-0000-0000-0000-000000000001');
 insert into public.decide_changes (id, household_id, created_by, kind, name, monthly_amount, currency, start_month) values
   ('dc000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'spending', 'Gym', -4000, 'USD', '2026-11');
+-- 05-119: Wait goals now arrive only through the Wait RPC, so the fixture insert runs with it on.
+select set_config('fincwin.decide_rpc', 'on', true);
 insert into public.savings_goals (id, household_id, created_by, name, currency, target) values
   ('5a000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'Trip fund', 'USD', 100000),
   ('5a000000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'Tag fund', 'USD', 50000);
+select set_config('fincwin.decide_rpc', '', true);
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);

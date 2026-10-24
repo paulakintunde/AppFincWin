@@ -42,9 +42,12 @@ insert into public.debts (id, household_id, created_by, check_id, name, kind, cu
   ('d6000000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'c6000000-0000-0000-0000-000000000003', 'Orphan loan', 'loan', 'USD'),
   ('d6000000-0000-0000-0000-000000000009', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'c6000000-0000-0000-0000-000000000009', 'Pinned loan', 'loan', 'USD');
 
+-- 05-119: Wait goals now arrive only through the Wait RPC, so the fixture insert runs with it on.
+select set_config('fincwin.decide_rpc', 'on', true);
 insert into public.savings_goals (id, household_id, created_by, check_id, name, currency) values
   ('b6000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'c6000000-0000-0000-0000-000000000001', 'Linked goal', 'USD'),
   ('b6000000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'c6000000-0000-0000-0000-000000000003', 'Orphan goal', 'USD');
+select set_config('fincwin.decide_rpc', '', true);
 
 -- Row payloads for the atomic Go ahead, prebuilt (the household ids are only known at run time).
 create temp table rx as
