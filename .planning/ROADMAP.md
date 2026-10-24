@@ -783,7 +783,7 @@ Plans:
 - [x] 05-113-PLAN.md — Pushed Open checks, Changes coming up and Lines screens (D-99)
 
 **Wave 28** *(blocked on Wave 27 completion)*
-- [ ] 05-114-PLAN.md — HomeSummaryCard: label, two-Text hero at 42, In/Out, quick check, states (D-95, D-97)
+- [x] 05-114-PLAN.md — HomeSummaryCard: label, two-Text hero at 42, In/Out, quick check, states (D-95, D-97)
 - [x] 05-115-PLAN.md — Month details sheet and the quiet HomeRow (D-95, D-99)
 - [x] 05-116-PLAN.md — Notice row and the Needs a look sheet (D-96)
 
