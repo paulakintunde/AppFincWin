@@ -30,6 +30,7 @@ export * from './margins';
 export * from './futureChanges';
 export * from './runningCostPrompts';
 export * from './estimateBias';
+export * from './expectedMonth';
 export * from './cashPath';
 export * from './position';
 export * from './stress';
