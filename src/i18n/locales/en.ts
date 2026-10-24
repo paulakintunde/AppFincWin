@@ -18,7 +18,7 @@
  *   release build, but still lives in the typed catalogue like every other string.
  * - money.fxNote.converted/kept, money.homeCurrency.title/note, money.customCurrency.title,
  *   money.customCurrency.error.codeMissing/codeExists, money.settings.showCents,
- *   sync.offlineQueued_one/other and sync.syncedMinutes_one/other are ported verbatim from
+ *   sync.syncedMinutes_one/other are ported verbatim from
  *   the prototype (with placeholders replacing its inline values).
  * - money.customCurrency.note and .error.valueInvalid adapt the prototype's "worth in USD"
  *   wording to the user's own chosen reference currency (D-07) rather than hard-pinning USD.
@@ -111,7 +111,6 @@ const en = {
       activity: 'Activity',
       accounts: 'Accounts',
       categories: 'Categories',
-      importCsv: 'Import statement',
       history: 'History',
     },
     // 05-88 (D-85, R16.1): the always-reachable Add group on the You screen
@@ -229,10 +228,6 @@ const en = {
   },
   sync: {
     offline: 'offline',
-    offlineQueued_one: 'offline · {{count}} change queued',
-    offlineQueued_other: 'offline · {{count}} changes queued',
-    queued_one: '{{count}} change queued',
-    queued_other: '{{count}} changes queued',
     syncedJustNow: 'synced just now',
     syncedMinutes_one: 'synced {{count}} minute ago',
     syncedMinutes_other: 'synced {{count}} minutes ago',
@@ -246,7 +241,7 @@ const en = {
     conflict_one: '{{count}} edit couldn’t save — changed elsewhere',
     conflict_other: '{{count}} edits couldn’t save — changed elsewhere',
     pendingRow: 'queued',
-    // 05-88 (D-88, R16.4): the status line says "waiting" and "Saving…"; the "queued" keys above are retired in 05-109
+    // 05-88 (D-88, R16.4): the status line says "waiting" and "Saving…"; the older "queued" wording is retired (05-109)
     saving: 'Saving…',
     waiting_one: '{{count}}\u00A0change waiting',
     waiting_other: '{{count}}\u00A0changes waiting',
@@ -1979,20 +1974,13 @@ const en = {
       },
       summaryDay: '{{price}} on the day · leaves {{cash}}',
       summaryLoan_one: '{{deposit}} down · 1\u00A0month · {{apr}}%', summaryLoan_other: '{{deposit}} down · {{count}}\u00A0months · {{apr}}%',
-      summaryInstalmentNoRate: '{{count}} × {{payment}} · no rate', summaryInstalmentRate: '{{count}} × {{payment}} · {{apr}}%',
-      summaryFirstInMonth: ' · first in a month',
       summaryCardFull: '{{card}} · in full next statement', summaryCardMinimum: '{{card}} · minimum only',
       summaryCardMonths_one: '{{card}} · over 1\u00A0month', summaryCardMonths_other: '{{card}} · over {{count}}\u00A0months',
       summaryLump: '{{amount}} once', summaryLumpRate: '{{amount}} once · {{rate}}%\u00A0a year',
       summaryContribution_one: '{{amount}} a month · 1\u00A0month', summaryContribution_other: '{{amount}} a month · {{count}}\u00A0months',
       // 05-84: the pieces of a folded summary, used when a part is missing (R15.2 "a missing part is left out")
       summaryDown: '{{deposit}} down', summaryMonths_one: '1\u00A0month', summaryMonths_other: '{{count}}\u00A0months', summaryApr: '{{apr}}%',
-      summaryTimes: '{{count}} × {{payment}}',
       instalmentHasRate: 'Has a rate?', instalmentNo: 'No', instalmentYes: 'Yes', instalmentQuoted: 'Payment as quoted (optional)',
-      instalmentRateNote_one: '1 payment of {{payment}} at {{apr}}%, on the day. Interest over the plan is {{interest}}.',
-      instalmentRateNote_other: '{{count}} payments of {{payment}} at {{apr}}%, the first on the day. Interest over the plan is {{interest}}.',
-      instalmentRateNoteMonth_one: '1 payment of {{payment}} at {{apr}}%, in a month. Interest over the plan is {{interest}}.',
-      instalmentRateNoteMonth_other: '{{count}} payments of {{payment}} at {{apr}}%, the first in a month. Interest over the plan is {{interest}}.',
       instalmentCalcNote: 'The rate works out to {{calc}} a month; the quote is {{typed}}.',
       // D-89: the same note for a quote that falls weekly, every 2 weeks or quarterly ({{calc}} is the payment for one period)
       instalmentCalcNoteBy: {
@@ -2000,7 +1988,7 @@ const en = {
         fortnightly: 'The rate works out to {{calc}} every 2 weeks; the quote is {{typed}}.',
         quarterly: 'The rate works out to {{calc}} a quarter; the quote is {{typed}}.',
       },
-      instalmentFirst: 'First payment', instalmentToday: 'Today', instalmentInMonth: 'In a month',
+      instalmentFirst: 'First payment', instalmentToday: 'Today',
       horizonOver: 'Over', horizonCustom: 'Custom', horizonYears_one: '1\u00A0year', horizonYears_other: '{{count}}\u00A0years',
       expectedReturn: 'Expected return, % a year (optional)',
       projection_one: 'About {{fv}} after 1\u00A0month at {{rate}}%\u00A0a year. A projection at the rate you entered, not a forecast.',
@@ -2011,20 +1999,18 @@ const en = {
       noteCash: 'Leaves {{cash}} in cash. No interest, nothing owed after.',
       noteInvestMonthly: '{{amount}} a month for {{count}}\u00A0months is {{total}} put in.',
       unnamedLine: 'Unnamed',
-      loanDeposit: 'Deposit', loanInterestSaved: 'Interest saved', loanCashLeft: 'Cash left after', loanTerm: 'Term', loanTermUnit: 'mo',
+      loanDeposit: 'Deposit', loanCashLeft: 'Cash left after', loanTerm: 'Term', loanTermUnit: 'mo',
       loanTermNote_one: 'At 1\u00A0month the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total.',
       loanTermNote_other: 'At {{count}}\u00A0months the payment is {{payment}} a month and the interest {{interest}}. Every extra year lowers the payment and raises the total.',
       loanRate: 'Annual rate', loanRateHint: 'The rate on the quote', loanSecured: 'Secured against what you’re buying',
       instalmentPayment: 'Payment', instalmentCount: 'How many', instalmentCountUnit: 'payments',
-      instalmentNote: 'No rate was quoted. {{count}} × {{payment}} is {{total}} against a {{price}} price, about {{pct}}% a year.',
       instalmentMissing: 'The payment and how many are needed to score this.',
-      instalmentNoteFees: 'No rate was quoted. {{count}} × {{payment}} is {{total}} against the {{financed}} paid over time, about {{pct}}% a year.', // D-49 (04 ME-02): with on-the-day fees the rate is on plan.financed = price − dayFees
       instalmentBelowPrice: '{{count}} × {{payment}} is {{total}}, less than the {{financed}} it has to cover. Change the payment or how many to score this.', // D-49 (04 LO-05)
       loanPaidOff: 'Paid off in month {{count}}, with a last payment of {{final}}.', // D-45 (04 D-64): shown under the loan notes only when plan.months < the entered term
       cardCapRemaining: 'Still owing {{amount}} after 50 years at the minimum.', // D-46 (04 HI-02): card.remainingAtCap when minimumOutcome is exceeds_month_cap
       cardOkTitle: 'A card is accepted here', cardOkBody: 'Nothing about this purchase blocks a card. What matters is how fast it comes back off.',
       cardCappedTitle: 'Only part of this can go on a card', cardCappedBody: 'A dealer card cap of {{cap}} applies. The other {{rest}} is counted as cash on the day.',
-      cardBlockedTitle: 'This cannot go on a card', cardBlockedBody: 'Rent, bills, loan repayments, tax and premiums are not card payments. A cash advance carries interest from the first day.',
+      cardBlockedTitle: 'This cannot go on a card', cardBlockedBody: 'Rent, bills, loan repayments and premiums are not card payments. A cash advance carries interest from the first day.',
       cardUseLoan: 'Use deposit and loan instead', cardAccount: 'Card', cardNone: 'No card account yet',
       cardClearedHow: 'How it gets cleared', cardFull: 'In full next statement', cardMonths: 'Over a few months', cardMinimum: 'Minimum only',
       cardMonthsValue_one: '1\u00A0mo', cardMonthsValue_other: '{{count}}\u00A0mo', cardMonthsEdit: 'Months, type a number', cardFewer: 'Fewer months', cardMore: 'More months',
@@ -2054,7 +2040,6 @@ const en = {
       instRateAbout: 'No rate was quoted: about {{apr}}% a year, worked out from the figures you typed.',
       instRateAbove: 'No rate was quoted: above 999.99% a year, worked out from the figures you typed.',
       instRateZero: 'No rate was quoted: 0% a year, worked out from the figures you typed.',
-      instRateBelow: 'The payments total {{total}}, below the {{financed}} paid over time.',
       instRate: {
         weekly_one: '1\u00A0weekly payment of {{payment}} at {{apr}}%, {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}.',
         weekly_other: '{{count}}\u00A0weekly payments of {{payment}} at {{apr}}%, the first {{when}}; about {{monthly}} a month. Interest over the plan is {{interest}}.',

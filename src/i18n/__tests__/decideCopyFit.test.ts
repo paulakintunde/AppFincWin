@@ -96,8 +96,6 @@ describe('decide copy fit (R6)', () => {
     'decide.pay.summaryLoan',
     'decide.pay.summaryCardMonths',
     'decide.pay.summaryContribution',
-    'decide.pay.instalmentRateNote',
-    'decide.pay.instalmentRateNoteMonth',
     'decide.pay.projection',
     'decide.verdict.projection',
     'decide.fold.investPreview',

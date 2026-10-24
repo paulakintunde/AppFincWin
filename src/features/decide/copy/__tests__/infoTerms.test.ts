@@ -138,11 +138,11 @@ describe('infoTerms', () => {
     'decide.pay.card.field.howMany', 'decide.pay.card.field.cardRate', 'decide.pay.card.field.minimumTerms', 'decide.pay.card.field.dealerCap',
     'decide.pay.card.field.amount', 'decide.pay.card.comesTo', 'decide.pay.card.selected', 'decide.pay.card.notSelected', 'decide.pay.card.hint',
     'decide.pay.card.hintReadOnly', 'decide.pay.card.announce',
-    'decide.pay.summaryDay', 'decide.pay.summaryLoan', 'decide.pay.summaryInstalmentNoRate', 'decide.pay.summaryInstalmentRate', 'decide.pay.summaryFirstInMonth',
+    'decide.pay.summaryDay', 'decide.pay.summaryLoan',
     'decide.pay.summaryCardFull', 'decide.pay.summaryCardMinimum', 'decide.pay.summaryCardMonths', 'decide.pay.summaryLump', 'decide.pay.summaryLumpRate',
     'decide.pay.summaryContribution',
-    'decide.pay.instalmentHasRate', 'decide.pay.instalmentNo', 'decide.pay.instalmentYes', 'decide.pay.instalmentQuoted', 'decide.pay.instalmentRateNote',
-    'decide.pay.instalmentRateNoteMonth', 'decide.pay.instalmentCalcNote', 'decide.pay.instalmentFirst', 'decide.pay.instalmentToday', 'decide.pay.instalmentInMonth',
+    'decide.pay.instalmentHasRate', 'decide.pay.instalmentNo', 'decide.pay.instalmentYes', 'decide.pay.instalmentQuoted',
+    'decide.pay.instalmentCalcNote', 'decide.pay.instalmentFirst', 'decide.pay.instalmentToday',
     'decide.customType.chip', 'decide.customType.placeholder', 'decide.customType.range', 'decide.customType.a11y', 'decide.customType.treatLike',
     'decide.customType.general', 'decide.customType.treatedLike',
     'decide.fold.title.grow', 'decide.fold.investPreview', 'decide.fold.noReturn.preview', 'decide.fold.noReturn.body', 'decide.fold.noReturn.link',
@@ -167,9 +167,6 @@ describe('infoTerms', () => {
       expect(str(`${k}_one`)).toContain(`1${NB}`);
       expect(str(`${k}_other`)).toMatch(new RegExp(`\\{\\{count\\}\\}${NB}(months|years)`));
     }
-    expect(str('decide.pay.instalmentRateNote_one')).toMatch(/^1 payment of/);
-    expect(str('decide.pay.instalmentRateNote_other')).toMatch(/^\{\{count\}\} payments of/);
-    expect(str('decide.pay.instalmentRateNoteMonth_other')).toContain('the first in a month');
   });
 
   it('R3 F6 plural keys exist as _one and _other with a no-break space before the unit', () => {
@@ -193,7 +190,7 @@ describe('infoTerms', () => {
     'decide.pay.firstPayment.today', 'decide.pay.firstPayment.weekly', 'decide.pay.firstPayment.fortnightly', 'decide.pay.firstPayment.monthly',
     'decide.pay.firstPayment.quarterly', 'decide.pay.when.today', 'decide.pay.when.weekly', 'decide.pay.when.fortnightly', 'decide.pay.when.monthly',
     'decide.pay.when.quarterly', 'decide.pay.instalmentCountRange', 'decide.pay.instRateAbout', 'decide.pay.instRateAbove', 'decide.pay.instRateZero',
-    'decide.pay.instRateBelow', 'decide.pay.instSummaryNoRate', 'decide.pay.instSummaryRate', 'decide.pay.instSummaryFirst',
+    'decide.pay.instSummaryNoRate', 'decide.pay.instSummaryRate', 'decide.pay.instSummaryFirst',
     'decide.pay.cardLimitBody', 'decide.pay.cardLimitNote', 'decide.pay.cardLimitBasis', 'decide.pay.cardNote.property', 'decide.pay.cardNote.cash_equivalent',
     'decide.pay.cardNote.tuition_fee', 'decide.pay.cardNote.tax_processing_fee', 'decide.pay.cardNote.tax_gb',
     'decide.depth.running.amountPlaceholder', 'decide.depth.running.amountFieldA11y', 'decide.depth.running.rowA11yEmpty', 'decide.depth.running.rowA11yCounted',
@@ -247,8 +244,9 @@ describe('infoTerms', () => {
     expect(str('decide.pay.instRate.monthly_other')).not.toContain('{{monthly}}');
   });
 
-  it('R16 the old queued strings stay until 05-109 and the new ones do not say queued', () => {
-    expect(str('sync.queued_other')).toBeTruthy();
+  it('R16 the old queued strings are gone and the new ones do not say queued', () => {
+    expect(str('sync.queued_other')).toBeUndefined();
+    expect(str('sync.offlineQueued_other')).toBeUndefined();
     for (const k of ['sync.saving', 'sync.waiting_one', 'sync.waiting_other', 'sync.offlineWaiting_one', 'sync.offlineWaiting_other']) expect(str(k)).not.toMatch(/queued/);
   });
 });
