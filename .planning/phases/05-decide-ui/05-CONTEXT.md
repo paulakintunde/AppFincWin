@@ -1,7 +1,7 @@
 # Phase 5: Decide UI - Context
 
 **Gathered:** 2026-10-15
-**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22; D-79…D-84 the Step 2, item and invest refresh the same day; D-85…D-94 the device-walkthrough refinements 2026-10-23; D-95…D-99 the Decide home redesign the same day. The UI-SPEC carries all of them.
+**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22; D-79…D-84 the Step 2, item and invest refresh the same day; D-85…D-94 the device-walkthrough refinements 2026-10-23; D-95…D-99 the Decide home redesign the same day; D-100…D-104 the money concepts (Net Free Cash Flow, sinking funds, total cost, 28/36, opportunity cost) 2026-10-24. The UI-SPEC carries all of them.
 
 <domain>
 ## Phase Boundary
@@ -404,6 +404,21 @@ UI-SPEC R17 carries the layout, budgets, states, copy and wireframes. It replace
   - Open checks, Changes coming up and Lines you will not cross open pushed screens (user-confirmed) that keep today's lists, swipe and ⋯ Delete, markers and editors.
   - The hiding rules hold: Open checks and Past decisions are hidden at 0; Changes coming up shows as its add row at 0; Lines always shows.
   - Calm comes from layout, never from reassuring words (DCU-09).
+
+**Money concepts (user, 2026-10-24, from the 05-26 device walkthrough):**
+- **D-100: The hero is Net Free Cash Flow.** The maths does not change: `leftBefore` already is monthly income − spending − debt payments − saving and investing (saving goals). All spending is taken off, not essentials only (user-chosen; no essential/non-essential split is added).
+  - The eyebrow reads **"NET FREE CASH FLOW"** (the full term), replacing "YOUR AVERAGE MONTH" / "YOUR WORST MONTH".
+  - Average/worst moves into the sub-line: "in your worst month, after spending, debts and saving goals" (and the average, tightest, rough-figures and switched variants).
+  - One figure, switchable in Month details, as today (user declined showing both). An ⓘ explains the formula.
+  - Sinking-fund set-asides (D-101) are taken off with saving goals.
+- **D-101: Sinking funds are named pots, counted.**
+  - A user creates a pot with a name, a target and a date ("Car service, $600 by March"). Its monthly set-aside comes off Net Free Cash Flow like saving goals and is protected in checks (a check never spends it).
+  - New table with RLS (household-of-one pattern) and a migration pushed to production with the usual explicit approval. Pots can be added, edited, marked done and deleted with Undo.
+  - Wait-and-save goals (D-10) become one kind of pot; the Wait plan's goal progress reads from the pot.
+  - Phase 6 (Grow, Goals) builds on this table rather than a second one.
+- **D-102: Total cost of ownership is one total line.** A verdict row "Over {n} years: {total} in all": price + interest and fees + running costs × years − expected resale where loss of value is set. The years follow the check's horizon; computed in the engine from figures the check already has (integer minor units, 100% coverage). No new inputs.
+- **D-103: The 28/36 rule gets a housing line.** A sixth line under "Lines you will not cross": housing costs at most **28%** of income (changeable, default 28). Housing = housing-category spending plus housing debt payments (mortgage, rent). A check that pushes housing over it gets a warning, as the 36% debt-to-income line does. Order and wording follow the existing warning rules.
+- **D-104: Opportunity cost gets a verdict headline.** One verdict-summary row "Invested instead: {fv} after {n} years at {r}%", shown only when a rate is set (typed, or the market default the check already uses); never an invented rate. The "If it went into investing instead" fold stays.
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
