@@ -1888,6 +1888,7 @@ const en = {
         cashFits: 'Paid outright today your cash lands at {{cashAfter}}, above your {{cushion}} cushion, and the month still closes with {{left}} spare.',
         cashBelowCushion: 'Paid outright today your cash lands at {{cashAfter}}, {{short}} under your {{cushion}} cushion. The month still closes.',
         cashMonthShort: 'Cash covers it. Even with saving paused, the month would end {{short}} short.',
+        cashMonthShortNoPause: 'Cash covers it, but the month would end {{short}} short.', // D-105: used only when nothing is pausable
         cashNo: 'Not from cash: {{short}} short of your cushion.',
         pauseInvesting: 'The month closes only if {{amount}} a month of investing pauses.',
         pauseSaving: 'The month closes only if {{amount}} a month of saving pauses.',
@@ -2305,6 +2306,7 @@ const en = {
     },
     warn: {
       groupA11y: '{{title}}, {{value}}. {{body}}',
+      monthTitleNoPause: 'The month does not close', monthBodyNoPause: 'Every month would need {{short}} more than comes in.', // D-105: used only when nothing is pausable
       monthTitle: 'Still short with saving paused', monthValue: '−{{amount}}',
       monthAlready: 'Your {{basis}} month is already {{already}} short before this purchase. Adding {{added}} takes the gap to {{gap}}. That gap is borrowed money covering ordinary bills.',
       monthAlreadySame: 'Your {{basis}} month is already {{already}} short before this purchase, and this purchase adds nothing to the monthly cost. That gap is borrowed money covering ordinary bills.',

@@ -47,9 +47,9 @@ function firstReadCards(fr: FirstRead, fmt: Fmt): WarnCard[] {
   return fr.warnings.map((w): WarnCard => {
     if (w.code === 'month') {
       return {
-        title: ref('decide.warn.monthTitle'),
+        title: ref('decide.warn.monthTitleNoPause'), // D-105: the rough first read has no saving or investing to pause
         value: ref('decide.warn.monthValue', { amount: fmt(w.shortfall) }),
-        body: [ref('decide.warn.monthBody', { short: fmt(w.shortfall) })],
+        body: [ref('decide.warn.monthBodyNoPause', { short: fmt(w.shortfall) })],
         tone: 'hard',
       };
     }

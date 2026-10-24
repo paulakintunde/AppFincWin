@@ -15,6 +15,8 @@ export function warningCard(w: Warning, a: Assessment, fmt: Fmt, fmtDate: (local
   switch (w.code) {
     case 'month': {
       const short = fmt(w.shortfall);
+      // D-105: with nothing to pause (saving + investing = 0) the shortfall is the plain one, so the pause is not named.
+      const noPause = a.context.pausable === 0;
       const leftBefore = a.context.leftBefore;
       // Before, adding and after are one basis and one check set: a.context is the combined context, a.left is leftBefore less the
       // purchase's monthly cost. The shortfall (w.shortfall) is what remains after pausing saving and investing (D-35), so it is
@@ -30,8 +32,8 @@ export function warningCard(w: Warning, a: Assessment, fmt: Fmt, fmtDate: (local
             : ref('decide.warn.monthAlready', { already: fmt(-leftBefore), added: fmt(added), gap }, basis)
         );
         if (-a.left !== w.shortfall) body.push(ref('decide.warn.monthPaused', { paused: fmt(-a.left - w.shortfall), short }));
-      } else body.push(ref('decide.warn.monthBody', { short }));
-      return { title: ref('decide.warn.monthTitle'), value: ref('decide.warn.monthValue', { amount: short }), body, tone };
+      } else body.push(ref(noPause ? 'decide.warn.monthBodyNoPause' : 'decide.warn.monthBody', { short }));
+      return { title: ref(noPause ? 'decide.warn.monthTitleNoPause' : 'decide.warn.monthTitle'), value: ref('decide.warn.monthValue', { amount: short }), body, tone };
     }
     case 'cash':
       return {

@@ -268,3 +268,17 @@ describe('copy params', () => {
     }
   });
 });
+
+describe('D-105 nothing to pause', () => {
+  it('D-105 nothing to pause uses the plain month wording', () => {
+    const none = assessmentOf({ state: 'no', warnings: [w('month', 50)], ...withContext({ pausable: 0 }) });
+    expect(run(logged(none), 'cash').line).toEqual({ key: 'decide.quick.line.cashMonthShortNoPause', params: { short: '$50' } });
+    const card = warningCard(w('month', 50), none, fmt, fmtDate);
+    expect(card.title.key).toBe('decide.warn.monthTitleNoPause');
+    expect(card.body.map((b) => b.key)).toEqual(['decide.warn.monthBodyNoPause']);
+    // something to pause still names the pause
+    const some = assessmentOf({ state: 'no', warnings: [w('month', 50)], ...withContext({ pausable: 900 }) });
+    expect(run(logged(some), 'cash').line.key).toBe('decide.quick.line.cashMonthShort');
+    expect(warningCard(w('month', 50), some, fmt, fmtDate).title.key).toBe('decide.warn.monthTitle');
+  });
+});

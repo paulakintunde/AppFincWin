@@ -32,4 +32,10 @@ describe('D-105 name the pause', () => {
       cancel: 'Cancel',
     });
   });
+
+  it('D-105 nothing to pause uses the plain month wording (strings)', () => {
+    expect(d.quick.line.cashMonthShortNoPause).toBe('Cash covers it, but the month would end {{short}} short.');
+    expect(d.warn.monthTitleNoPause).toBe('The month does not close');
+    expect(d.warn.monthBodyNoPause).toBe('Every month would need {{short}} more than comes in.');
+  });
 });

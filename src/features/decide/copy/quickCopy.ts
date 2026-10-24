@@ -47,6 +47,9 @@ function housingLine(a: Assessment, fmt: Fmt): CopyRef {
 }
 
 // Cash lines (a Cash result whose lead warning is each code)
+/** D-105: the pause is named only when something is pausable (saving + investing above zero). The first read has no pause, so it uses the plain key. */
+const monthShortKey = (a: Assessment) => (a.context.pausable === 0 ? 'decide.quick.line.cashMonthShortNoPause' : 'decide.quick.line.cashMonthShort');
+
 export const QUICK_CASH_LINE = {
   cash: (a, w, fmt) => ref('decide.quick.line.cashBelowCushion', { cashAfter: fmt(a.cashAfter), short: fmt(w.shortfall), cushion: fmt(a.context.limits.reserve) }),
   cash_dip: (_a, w, fmt) => ref('decide.quick.line.cashDip', { amount: fmt(w.shortfall) }),
@@ -57,7 +60,7 @@ export const QUICK_CASH_LINE = {
   owe: () => ref('decide.quick.line.creditOwe'),
   housing: (a, _w, fmt) => housingLine(a, fmt),
   inv: (a, _w, fmt) => ref(`decide.quick.line.pause${invKind(a)}`, { amount: fmt(a.pauseNeeded) }),
-  month: (_a, w, fmt) => ref('decide.quick.line.cashMonthShort', { short: fmt(w.shortfall) }),
+  month: (a, w, fmt) => ref(monthShortKey(a), { short: fmt(w.shortfall) }),
 } as const satisfies Record<WarningCode, (a: Assessment, w: Warning, fmt: Fmt) => CopyRef>;
 
 // Credit lines (a Credit result whose lead warning is each code)
@@ -144,7 +147,7 @@ function assessedCopy(a: Assessment, mode: 'cash' | 'credit', check: BuyCheck, f
     }
     if (kind === 'month') {
       const month = findWarning(a, 'month');
-      return finish(month ? ref('decide.quick.line.cashMonthShort', { short: fmt(month.shortfall) }) : ref(UNEXPLAINED));
+      return finish(month ? ref(monthShortKey(a), { short: fmt(month.shortfall) }) : ref(UNEXPLAINED));
     }
     return finish(ref('decide.quick.line.cashDipHard'));
   }
@@ -197,7 +200,7 @@ function firstReadCopy(fr: FirstRead, mode: 'cash' | 'credit', check: BuyCheck, 
     } else if (lead && lead.code === 'cash') {
       line = ref('decide.quick.line.cashBelowCushion', { cashAfter: fmt(fr.cashAfter), short: fmt(lead.shortfall), cushion: fmt(fr.roughCushion) });
     } else {
-      line = monthWarning ? ref('decide.quick.line.cashMonthShort', { short: fmt(monthWarning.shortfall) }) : ref(UNEXPLAINED);
+      line = monthWarning ? ref('decide.quick.line.cashMonthShortNoPause', { short: fmt(monthWarning.shortfall) }) : ref(UNEXPLAINED);
     }
   } else if (fr.state === 'fits') {
     line = ref(zeroRate ? 'decide.quick.line.creditFitsZero' : 'decide.quick.line.creditFits', { payment, count: termMonths, left: fmt(fr.leftAfter) });

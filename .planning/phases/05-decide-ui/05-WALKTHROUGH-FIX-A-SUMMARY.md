@@ -25,3 +25,10 @@ Both showed an empty field at default. Now the engine default is the placeholder
 
 ## Verify
 `npx jest src/features/decide src/i18n`: 143 suites, 17086 tests pass. eslint 0 errors. tsc: only errors are in the other executor's `MonthDetailsSheet.test.tsx` (lines 97-101), not mine.
+
+## Follow-up: no-pause variant
+When nothing is pausable (`assessment.context.pausable === 0`, saving + investing = 0) the pause is not named:
+- `decide.quick.line.cashMonthShortNoPause`: "Cash covers it, but the month would end {{short}} short."
+- `decide.warn.monthTitleNoPause`: "The month does not close"
+- `decide.warn.monthBodyNoPause`: "Every month would need {{short}} more than comes in."
+Chosen in `warningCopy.ts` (month card) and `quickCopy.ts` (`monthShortKey`). The rough first read (quick first-read line and `WarningList` first-read card) has no saving or investing, so it always uses the no-pause keys. Named test "D-105 nothing to pause uses the plain month wording" in `quickCopy.test.ts` and `decideNamePause.test.ts`; Step3Verdict test now expects the plain title for its no-saving fixture.
