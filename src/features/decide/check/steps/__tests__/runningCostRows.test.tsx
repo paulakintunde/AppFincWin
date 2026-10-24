@@ -4,7 +4,7 @@ import { StyleSheet } from 'react-native';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { Step2PriceAndPay, type Step2Props } from '../Step2PriceAndPay';
 import { computeCheck } from '../../../snapshot/computeCheck';
-import type { CheckInputs } from '../../../snapshot/types';
+import type { CheckInputs, InputLine } from '../../../snapshot/types';
 import { loggedSource } from '../../../snapshot/__tests__/helpers/snapshotFixtures';
 import { buy, stepProps, wrap } from './helpers/stepProps';
 
@@ -90,5 +90,51 @@ describe('running-cost rows (D-87)', () => {
     await fireEvent.press(screen.getByLabelText('% a year'));
     const rate = StyleSheet.flatten(screen.getByLabelText('Loss of value, percent a year').parent?.props.style);
     expect(rate).toMatchObject({ borderStyle: 'dashed' });
+  });
+
+  const parking = (over: Partial<InputLine> = {}): InputLine => ({ id: 'rc-1', name: 'Parking', amount: 0, note: '', counted: false, seriesId: null, category: null, ...over });
+  const EMPTY_PARKING = 'Parking, not counted yet; counted once an amount is typed.';
+
+  it('D-87 a user-added cost with no amount shows the dashed field, an empty checkbox column and the line', async () => {
+    await wrap(<Harness initial={buy({ runningCosts: [parking()] })} />);
+    expect(screen.getByLabelText(EMPTY_PARKING)).toBeTruthy();
+    expect(screen.getByLabelText('Parking amount').props.placeholder).toBe('Amount');
+    expect(StyleSheet.flatten(screen.getByLabelText('Parking amount').parent?.props.style)).toMatchObject({ borderWidth: 1.5, borderStyle: 'dashed', backgroundColor: 'transparent' });
+    expect(screen.queryByRole('checkbox', { name: /^Parking/ })).toBeNull();
+    expect(screen.getAllByText('Counted once an amount is typed').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Remove Parking' })).toBeTruthy();
+  });
+
+  it('D-87 a user-added cost with no amount takes a press on the row into its field', async () => {
+    mockFocus.mockClear();
+    await wrap(<Harness initial={buy({ runningCosts: [parking()] })} />);
+    await fireEvent.press(screen.getByText('Parking'));
+    expect(mockFocus).toHaveBeenCalledTimes(1);
+  });
+
+  it('D-87 a user-added cost with no amount is counted once an amount is typed, and the field stays mounted', async () => {
+    const updates: Partial<CheckInputs>[] = [];
+    await wrap(<Harness initial={buy({ runningCosts: [parking()] })} onUpdate={(p) => updates.push(p)} />);
+    await fireEvent.changeText(screen.getByLabelText('Parking amount'), '40');
+    expect(updates.at(-1)?.runningCosts?.[0]).toMatchObject({ id: 'rc-1', amount: 4_000, counted: true });
+    const checkbox = screen.getByRole('checkbox', { name: 'Parking, $40.00 a month, counted' });
+    expect(checkbox.props.accessibilityState).toMatchObject({ checked: true });
+    expect(screen.getByLabelText('Parking amount').props.value).toBe('40');
+    await fireEvent.press(checkbox);
+    expect(screen.getByRole('checkbox', { name: 'Parking, $40.00, Not counted' }).props.accessibilityState).toMatchObject({ checked: false });
+    expect(screen.getByLabelText('Parking amount').props.value).toBe('40');
+    // clearing the field returns the row to its empty state and counts nothing
+    await fireEvent.changeText(screen.getByLabelText('Parking amount'), '');
+    expect(updates.at(-1)?.runningCosts?.[0]).toMatchObject({ amount: 0, counted: false });
+    expect(screen.getByLabelText(EMPTY_PARKING)).toBeTruthy();
+  });
+
+  it('D-87 a user-added cost with no amount can be removed, and one with an amount stays the plain checkbox row', async () => {
+    const updates: Partial<CheckInputs>[] = [];
+    await wrap(<Harness initial={buy({ runningCosts: [parking(), parking({ id: 'rc-2', name: 'Tolls', amount: 2_500, counted: true })] })} onUpdate={(p) => updates.push(p)} />);
+    expect(screen.getByRole('checkbox', { name: /^Tolls/ })).toBeTruthy();
+    expect(screen.queryByLabelText('Tolls amount')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Remove Parking' }));
+    expect(updates.at(-1)?.runningCosts?.map((l) => l.id)).toEqual(['rc-2']);
   });
 });

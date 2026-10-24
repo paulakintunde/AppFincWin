@@ -25,6 +25,7 @@ import { refText } from '../refText';
 import { useEstimateBias } from '../useEstimateBias';
 import { EstimateGapNote } from './step2/EstimateGapNote';
 import { RunningCostPrompts, promptedLineIds } from './step2/RunningCostPrompts';
+import { UserCostRow } from './step2/UserCostRow';
 import type { Step2Props } from './step2/types';
 import { PaymentMethods } from './step2/PaymentMethods';
 import { Card, Eyebrow, Label, Lock, Meta, moneyA11yFn, moneyFn } from './stepUi';
@@ -228,16 +229,30 @@ export function Step2PriceAndPay(props: Step2Props) {
           {invest ? null : <RunningCostPrompts {...props} />}
           {inputs.runningCosts.filter((l) => !ownedByPrompt.has(l.id)).map((l) => {
             const name = l.name !== '' ? l.name : l.category !== null ? refText(t as Parameters<typeof refText>[0], runningPromptCopy(l.category).label) : t('decide.pay.unnamedLine');
+            const toggle = () => update({ runningCosts: inputs.runningCosts.map((x) => (x.id === l.id ? { ...x, counted: !x.counted } : x)) });
+            const removeLabel = t('decide.lineEditor.removeA11y', { name });
             return (
-              <CheckRow
+              <UserCostRow
                 key={l.id}
-                checked={l.counted}
-                onToggle={() => update({ runningCosts: inputs.runningCosts.map((x) => (x.id === l.id ? { ...x, counted: !x.counted } : x)) })}
+                line={l}
                 name={name}
-                source={l.note === '' ? undefined : l.note}
-                amount={exactFmt(l.amount)}
+                currency={currency}
+                format={exactFmt}
+                readOnly={readOnly}
+                onChange={(next) => update({ runningCosts: inputs.runningCosts.map((x) => (x.id === l.id ? next : x)) })}
                 onRemove={() => removeWithUndo('runningCosts', l, name)}
-                removeA11yLabel={t('decide.lineEditor.removeA11y', { name })}
+                removeA11yLabel={removeLabel}
+                plain={
+                  <CheckRow
+                    checked={l.counted}
+                    onToggle={toggle}
+                    name={name}
+                    source={l.note === '' ? undefined : l.note}
+                    amount={exactFmt(l.amount)}
+                    onRemove={() => removeWithUndo('runningCosts', l, name)}
+                    removeA11yLabel={removeLabel}
+                  />
+                }
               />
             );
           })}
