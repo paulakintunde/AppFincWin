@@ -158,7 +158,7 @@ describe('infoTerms', () => {
     'decide.infoButton.close', 'decide.slider.above', 'decide.slider.below', 'decide.custom.chip', 'decide.custom.chipA11y', 'decide.custom.months',
     'decide.custom.ratePercent', 'decide.custom.unit.months', 'decide.custom.unit.apr', 'decide.custom.unit.percent', 'decide.custom.range.months',
     'decide.custom.range.count', 'decide.custom.range.horizon', 'decide.custom.range.apr', 'decide.custom.range.aprUpTo', 'decide.custom.range.percent',
-    'decide.custom.range.upToPrice', 'decide.custom.range.from', 'decide.custom.fieldA11y', 'decide.home.addChange', 'decide.home.checkInvestment',
+    'decide.custom.range.upToPrice', 'decide.custom.range.from', 'decide.custom.fieldA11y', 'decide.custom.outOfRange',
     'decide.home.linesFold.title', 'decide.home.linesFold.preview', 'decide.home.linesFold.allDefault', 'decide.quick.clearText', 'decide.quick.clearA11y',
     'decide.quick.placeholderShort', 'decide.clear.button', 'decide.clear.a11y', 'decide.clear.hint', 'decide.clear.toast', 'decide.delete.word',
     'decide.delete.menuOpen', 'decide.delete.menuReopen', 'decide.delete.menuEdit', 'decide.delete.moreA11y', 'decide.delete.keep', 'decide.delete.confirm',

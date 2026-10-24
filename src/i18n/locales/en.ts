@@ -1452,8 +1452,6 @@ const en = {
   },
   // Phase 5 (Decide). Claude-drafted, pending user review (copyStatus). Declarative voice only (DCU-09).
   decide: {
-    tab: { eyebrow: 'Decide', title: 'Can I afford it', subtitle: 'Judged on your real accounts, not the price tag.' },
-    fab: { label: 'New check', a11y: 'Start a new affordability check' },
     // 05-54 (D-70..D-78, UI-SPEC R2b and R3): the Decide UX refresh copy. Count-and-unit pairs use U+00A0 (R6 rule U).
     info: {
       replaces: {
@@ -1884,8 +1882,6 @@ const en = {
       noFigures: { heading: 'Nothing to judge against yet', body: 'Rough figures for what comes in and goes out, or an imported statement, give every check something to rest on.', addRough: 'Add rough figures', import: 'Import a statement' },
       sources: '{{months}} months of logged income, {{lines}} expense lines this month, {{debts}} debts and {{accounts}} accounts. Every figure here rescores when they change in Activity.',
       sourcesRough: 'Rough figures you entered. A statement import or one full logged month replaces them.',
-      pastRow: 'Past decisions', pastCount_one: '{{count}} decision', pastCount_other: '{{count}} decisions',
-      addChange: 'Add a change coming up', checkInvestment: 'Check an investment',
       linesFold: { title: 'Lines you will not cross', preview_one: '{{count}} of 5 set by you', preview_other: '{{count}} of 5 set by you', allDefault: 'All at their defaults' },
       // 05-110 (D-95..D-99, UI-SPEC R17.6): the redesigned home, built by 05-111..05-118. The old keys above stay until 05-118 retires them.
       header: 'Can I afford it',
@@ -1939,13 +1935,13 @@ const en = {
       monthDetails: { close: 'Close' },
     },
     month: {
-      eyebrow: 'Your month', activity: 'Activity', in: 'Comes in', out: 'Goes out', left: 'Left',
+      activity: 'Activity', in: 'Comes in', out: 'Goes out', left: 'Left',
       steadyLine: '{{count}}\u00A0months of income within {{pct}} of each other, so the check uses the average.',
       variableLine: '{{count}}\u00A0months ranging {{worst}} to {{best}}. Affordability is judged on the worst month unless you say otherwise.',
       noIncomeLine: 'No money in is logged in these {{count}}\u00A0months, so every check is judged on that.', // D-50 (04 LO-01): every averaged month has 0 income (steadiness 'volatile', CV null)
       fewLine: 'Fewer than 3 full months so far, so this uses your lowest month for money in and your highest for spending.',
       worstChip: 'Worst · {{amount}}', averageChip: 'Average · {{amount}}', basisA11y: 'Judge on',
-      roughEyebrow: 'From the figures you gave', edit: 'Edit', editA11y: 'Edit rough figures',
+      edit: 'Edit', editA11y: 'Edit rough figures',
     },
     rough: { title: 'Rough figures', in: 'Money in each month', out: 'Money out each month', cancel: 'Cancel', save: 'Save figures' },
     open: {

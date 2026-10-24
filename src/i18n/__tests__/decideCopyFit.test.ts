@@ -64,8 +64,6 @@ describe('decide copy fit (R6)', () => {
     { key: 'decide.decision.account', source: 'check/steps/Step5Decision.tsx' },
     { key: 'decide.decision.investInto', source: 'check/steps/Step5Decision.tsx' },
     { key: 'decide.fold.everyLine', source: 'check/sections/WhatBreaksSection.tsx' },
-    { key: 'decide.month.eyebrow', source: 'home/YourMonthCard.tsx' },
-    { key: 'decide.month.roughEyebrow', source: 'home/YourMonthCard.tsx' },
     { key: 'decide.size.from_spare_this_month', source: 'check/VerdictCard.tsx (size line)' },
     { key: 'decide.size.from_savings', source: 'check/VerdictCard.tsx (size line)' },
     { key: 'decide.size.needs_spreading', source: 'check/VerdictCard.tsx (size line)' },
@@ -141,6 +139,18 @@ describe('decide copy fit (R6)', () => {
     return v;
   };
   const FREQS = ['weekly', 'fortnightly', 'monthly', 'quarterly'];
+
+  it('R17 home count strings have plural forms and read as plain statements', () => {
+    for (const base of ['decide.home.rows.linesSet', 'decide.home.notice.items', 'decide.home.notice.offlineWaiting']) {
+      expect(get(`${base}_one`)).toContain('{{count}}');
+      expect(get(`${base}_other`)).toContain('{{count}}');
+    }
+    expect(get('decide.home.rows.openChanged')).toContain('{{count}}');
+    // the retired pre-R17 keys stay gone
+    for (const gone of ['decide.home.pastRow', 'decide.home.pastCount_one', 'decide.home.addChange', 'decide.home.checkInvestment']) {
+      expect(() => get(gone)).toThrow();
+    }
+  });
 
   it('R16 count strings use a no-break space and have plural forms', () => {
     // sync waiting (D-88): the count and its unit are one word to the eye

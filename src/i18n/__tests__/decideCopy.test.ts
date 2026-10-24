@@ -50,7 +50,6 @@ const ACTION_LABELS = new Set([
 const INSTRUCTION_LEAD = /^(Add|Type|Choose|Pick|Enter|Switch|Move|Tap|Change (it|any|the))\b/;
 const CONTROL_LABELS = new Set([
   'decide.home.noFigures.addRough', // button
-  'decide.home.addChange', // button
   'decide.lineEditor.titleAdjust', // sheet title
   'decide.lineEditor.titleRunning', // sheet title
   'decide.lineEditor.titleReplaces', // sheet title
