@@ -811,7 +811,7 @@ Plans:
 - [x] 05-125-PLAN.md — Net free cash flow card: eyebrow, sub-lines, Out figure, Month details breakdown, Pots link (D-100)
 
 **Wave 35** *(blocked on Wave 34 completion)*
-- [ ] 05-126-PLAN.md — Housing line UI: sixth Lines row, editor, loan switches, Every-line row, "of 6" (D-103)
+- [x] 05-126-PLAN.md — Housing line UI: sixth Lines row, editor, loan switches, Every-line row, "of 6" (D-103)
 - [x] 05-127-PLAN.md — Pots UI: Pots screen, sheet and route (D-101)
 - [x] 05-128-PLAN.md — Verdict rows: total cost and invested instead, ComputedCheck wiring, month-table pots row (D-102, D-104)
 
