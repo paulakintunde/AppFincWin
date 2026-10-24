@@ -813,7 +813,7 @@ Plans:
 **Wave 35** *(blocked on Wave 34 completion)*
 - [ ] 05-126-PLAN.md — Housing line UI: sixth Lines row, editor, loan switches, Every-line row, "of 6" (D-103)
 - [x] 05-127-PLAN.md — Pots UI: Pots screen, sheet and route (D-101)
-- [ ] 05-128-PLAN.md — Verdict rows: total cost and invested instead, ComputedCheck wiring, month-table pots row (D-102, D-104)
+- [x] 05-128-PLAN.md — Verdict rows: total cost and invested instead, ComputedCheck wiring, month-table pots row (D-102, D-104)
 
 **Wave 36** *(blocked on Wave 35 completion)*
 - [ ] 05-129-PLAN.md — Wait becomes a pot: copy and the own-pot test through computeCheck (D-101)
