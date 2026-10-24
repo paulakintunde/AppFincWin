@@ -408,7 +408,7 @@ UI-SPEC R17 carries the layout, budgets, states, copy and wireframes. It replace
 **Money concepts (user, 2026-10-24, from the 05-26 device walkthrough):**
 - **D-100: The hero is Net Free Cash Flow.** The maths does not change: `leftBefore` already is monthly income − spending − debt payments − saving and investing (saving goals). All spending is taken off, not essentials only (user-chosen; no essential/non-essential split is added).
   - The eyebrow reads **"NET FREE CASH FLOW"** (the full term), replacing "YOUR AVERAGE MONTH" / "YOUR WORST MONTH".
-  - Average/worst moves into the sub-line: "in your worst month, after spending, debts and saving goals" (and the average, tightest, rough-figures and switched variants).
+  - Average/worst moves into the sub-line: "in your worst month, after spending, debts and everything set aside" (user, 2026-10-24; saving, investing and pots are all set aside) (and the average, tightest, rough-figures and switched variants).
   - One figure, switchable in Month details, as today (user declined showing both). An ⓘ explains the formula.
   - Sinking-fund set-asides (D-101) are taken off with saving goals.
 - **D-101: Sinking funds are named pots, counted.**
