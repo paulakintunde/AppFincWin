@@ -5,7 +5,8 @@
  * arrives as a prop so this component imports no data layer.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useT } from '@/i18n';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
@@ -15,6 +16,8 @@ import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, size, space } from '@/theme/layout';
 import { shadows } from '@/theme/tokens';
+import { DURATION, useReduceMotion } from '@/theme/motion';
+import { SURFACE_ON_INK_OPACITY } from '@/ui/Chip';
 import { fontSize, textRole } from '@/theme/typography';
 import { currencyCode } from '@/engine/money';
 import { moneyA11yFn, moneyFn } from '../check/steps/stepUi';
@@ -23,6 +26,7 @@ import { RateInput } from '../ui/RateInput';
 import { CustomValueChips } from '../ui/CustomValueChips';
 import { useInfoSheet } from '../ui/useInfoSheet';
 import { SegmentedToggle } from '../ui/SegmentedToggle';
+import { DarkPill } from '../ui/DarkPill';
 import { CREDIT_TERMS, type CheckInputs, type QuickComputation, type SnapshotResult } from '../snapshot/types';
 import { DURATION_MAX, DURATION_MIN } from '../snapshot/customValues';
 import { MAX_INPUT_MINOR, isValidAprText } from '../snapshot/checkInputs';
@@ -39,6 +43,14 @@ export interface QuickCheckFormProps {
   onAddRough?: () => void; // home: 05-27 opens RoughFiguresSheet
   onRetry?: () => void; // 05-27: useDecideSnapshot().retry
   onResult?: (state: QuickState, computation: QuickComputation) => void; // first-read analytics + haptic hook for 05-23 (the computation tells a cash-only overdraw from a fit)
+  /** D-95: 'dark' is hosted by the ink card -- no card chrome of its own, the R17.3 styling. The onboarding first check keeps 'light'. */
+  variant?: 'light' | 'dark';
+  /** The resolved field placeholder (05-114 passes the decide.home.* key through t()); without it the existing short placeholder shows. */
+  placeholder?: string;
+  /** The short form (rule P): shown above 1.3x text scale or below 360 wide. */
+  placeholderShort?: string;
+  /** Reports whether a quick result is open, so the host can shrink the hero. */
+  onResultOpenChange?: (open: boolean) => void;
 }
 
 const AMOUNT_HEIGHT = 56;
@@ -50,10 +62,19 @@ const MAX_TAX_TYPED = '100';
 const RUN_HEIGHT = 48;
 const PILL_INSET = 6;
 const CHECK_HEIGHT = 44;
+const PLACEHOLDER_SHORT_WIDTH = 360; // R6 rule P
+const PLACEHOLDER_SHORT_SCALE = 1.3;
 
-export function QuickCheckForm({ surface, source, sourceStatus, today, currency, onRunFull, onAddRough, onRetry, onResult }: QuickCheckFormProps) {
+export function QuickCheckForm({ surface, source, sourceStatus, today, currency, onRunFull, onAddRough, onRetry, onResult, variant = 'light', placeholder, placeholderShort, onResultOpenChange }: QuickCheckFormProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
+  const dark = variant === 'dark';
+  const reduced = useReduceMotion();
+  const { width, fontScale } = useWindowDimensions();
+  const shortPlaceholder = width < PLACEHOLDER_SHORT_WIDTH || fontScale > PLACEHOLDER_SHORT_SCALE;
+  const fieldPlaceholder =
+    placeholder === undefined ? t('decide.quick.placeholderShort') : shortPlaceholder ? (placeholderShort ?? placeholder) : placeholder;
+  const cardStyle = dark ? styles.cardDark : [styles.card, { backgroundColor: colors.surface }, shadows.card];
   const wholeFmt = useMoneyFormatter(false);
   const exactFmt = useMoneyFormatter(true);
   const q = useQuickCheck(source, surface);
@@ -84,11 +105,19 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
     onResult?.(state, computation);
   }, [tick, computation, onResult]);
 
+  const resultOpen = submitted && computation.kind !== 'incomplete';
+  const reportedOpen = useRef(false);
+  useEffect(() => {
+    if (reportedOpen.current === resultOpen) return;
+    reportedOpen.current = resultOpen;
+    onResultOpenChange?.(resultOpen);
+  }, [resultOpen, onResultOpenChange]);
+
   const whole = moneyFn(wholeFmt, currencyCode(currency));
   const exact = moneyFn(exactFmt, currencyCode(currency));
   const wholeA11y = moneyA11yFn(wholeFmt, currencyCode(currency));
   const exactA11y = moneyA11yFn(exactFmt, currencyCode(currency));
-  const label = { ...textRole(pairing, 'label'), color: colors.inkDim };
+  const label = { ...textRole(pairing, 'label'), color: dark ? colors.inkSoft1 : colors.inkDim };
 
   if (sourceStatus === 'loading' || (sourceStatus === 'ready' && source === null)) {
     return (
@@ -96,21 +125,25 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
         accessible
         accessibilityLabel={t('decide.quick.loading')}
         accessibilityState={{ busy: true }}
-        style={[styles.card, { backgroundColor: colors.surface }, shadows.card]}
+        style={cardStyle}
       >
-        <View style={[styles.skeleton, { height: AMOUNT_HEIGHT, backgroundColor: colors.fill1 }]} />
-        <View style={[styles.skeleton, { height: space.touchMin, backgroundColor: colors.fill1 }]} />
-        <View style={[styles.skeleton, { height: AMOUNT_HEIGHT, backgroundColor: colors.fill1 }]} />
+        <SkeletonBar height={AMOUNT_HEIGHT} dark={dark} />
+        <SkeletonBar height={space.touchMin} dark={dark} />
+        <SkeletonBar height={AMOUNT_HEIGHT} dark={dark} />
       </View>
     );
   }
   if (sourceStatus === 'error') {
     return (
-      <View style={[styles.card, { backgroundColor: colors.surface }, shadows.card]}>
-        <Text style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>{t('decide.quick.error.heading')}</Text>
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.quick.error.body')}</Text>
+      <View style={cardStyle}>
+        <Text style={{ ...textRole(pairing, dark ? 'sheetTitle' : 'heading'), color: dark ? colors.surface : colors.ink }}>{t('decide.quick.error.heading')}</Text>
+        <Text style={{ ...textRole(pairing, dark ? 'label' : 'body'), ...(dark ? { fontSize: fontSize.meta } : {}), color: dark ? colors.inkSoft1 : colors.inkDim }}>{t('decide.quick.error.body')}</Text>
         <View style={styles.row}>
-          <Pill label={t('decide.quick.error.retry')} variant="secondary" onPress={onRetry} />
+          {dark ? (
+            <DarkPill label={t('decide.quick.error.retry')} variant="solid" onPress={onRetry} />
+          ) : (
+            <Pill label={t('decide.quick.error.retry')} variant="secondary" onPress={onRetry} />
+          )}
         </View>
       </View>
     );
@@ -145,11 +178,48 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
   const none = computation.kind === 'none';
   const unconverted = computation.kind === 'unconverted';
 
+  const toggleEl = showResult ? (
+    <SegmentedToggle
+      dark={dark}
+      accessibilityLabel={t('decide.quick.payWith')}
+      options={[
+        { key: 'cash', label: t('decide.quick.cash') },
+        { key: 'credit', label: t('decide.quick.credit') },
+      ]}
+      value={inputs.mode}
+      onChange={(key) => q.setMode(key === 'credit' ? 'credit' : 'cash')}
+    />
+  ) : null;
+  const resultEl = showResult ? (
+    <QuickResult
+      variant={variant}
+      computation={computation}
+      mode={inputs.mode}
+      name={inputs.name}
+      price={inputs.price}
+      fmt={whole}
+      fmtCents={exact}
+      fmtA11y={wholeA11y}
+      fmtCentsA11y={exactA11y}
+      onTryCredit={q.tryCredit}
+      combine={q.combine}
+      onCombine={q.setCombine}
+      openCount={q.stack.openCount}
+      firstReadBasis={surface === 'firstRead'}
+    />
+  ) : null;
+
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface }, shadows.card]}>
+    <View style={cardStyle}>
       {surface === 'home' ? (
         <View style={styles.row}>
-          <View style={[styles.amount, { backgroundColor: colors.fill1 }]}>
+          <View style={[styles.amount, dark ? styles.amountDark : { backgroundColor: colors.fill1 }]}>
+            {dark ? (
+              <View
+                pointerEvents="none"
+                style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
+              />
+            ) : null}
             <TextInput
               value={text}
               onChangeText={(next) => {
@@ -159,12 +229,16 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
               onSubmitEditing={check}
               returnKeyType="go"
               accessibilityLabel={t('decide.quick.a11y')}
-              placeholder={t('decide.quick.placeholderShort')} // R6 rule P: the pill also holds "Check it", so the long variant always clipped
-              placeholderTextColor={colors.inkFaint}
-              style={[styles.amountInput, { ...textRole(pairing, 'body'), color: colors.ink }]}
+              placeholder={fieldPlaceholder} // R6 rule P: the pill also holds "Check it"; the light form always uses the short text
+              placeholderTextColor={dark ? colors.inkSoft2 : colors.inkFaint}
+              style={[styles.amountInput, { ...textRole(pairing, 'body'), color: dark ? colors.surface : colors.ink }]}
             />
             <View style={styles.checkInside}>
-              <Pill label={t('decide.quick.check')} variant="primary" onPress={check} />
+              {dark ? (
+                <DarkPill label={t('decide.quick.check')} variant="solid" onPress={check} minHeight={CHECK_HEIGHT} />
+              ) : (
+                <Pill label={t('decide.quick.check')} variant="primary" onPress={check} />
+              )}
             </View>
           </View>
         </View>
@@ -201,35 +275,24 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
         </View>
       )}
 
-      {showResult ? (
-        <SegmentedToggle
-          accessibilityLabel={t('decide.quick.payWith')}
-          options={[
-            { key: 'cash', label: t('decide.quick.cash') },
-            { key: 'credit', label: t('decide.quick.credit') },
-          ]}
-          value={inputs.mode}
-          onChange={(key) => q.setMode(key === 'credit' ? 'credit' : 'cash')}
-        />
-      ) : null}
-
-      {showResult ? (
-        <QuickResult
-          computation={computation}
-          mode={inputs.mode}
-          name={inputs.name}
-          price={inputs.price}
-          fmt={whole}
-          fmtCents={exact}
-          fmtA11y={wholeA11y}
-          fmtCentsA11y={exactA11y}
-          onTryCredit={q.tryCredit}
-          combine={q.combine}
-          onCombine={q.setCombine}
-          openCount={q.stack.openCount}
-          firstReadBasis={surface === 'firstRead'}
-        />
-      ) : null}
+      {dark && resultEl !== null ? (
+        <>
+          <DarkRule />
+          {reduced ? (
+            <View style={styles.darkResult}>{resultEl}</View>
+          ) : (
+            <Animated.View style={styles.darkResult} entering={FadeInDown.duration(DURATION.entrance)}>
+              {resultEl}
+            </Animated.View>
+          )}
+          {toggleEl}
+        </>
+      ) : (
+        <>
+          {toggleEl}
+          {resultEl}
+        </>
+      )}
 
       {showResult && credit ? (
         <View style={styles.fields}>
@@ -240,8 +303,9 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
             hint={ZERO_RATE.test(aprDraft) ? t('decide.quick.beforeInterest') : t('decide.quick.aYear')}
             accessibilityLabel={t('decide.quick.aprA11y')}
             max={MAX_APR_TYPED}
+            tone={variant}
             rangeText={t('decide.custom.range.apr')}
-            labelAccessory={aprInfo.button()}
+            labelAccessory={aprInfo.button(variant)}
           />
           {aprInfo.sheet}
           <View style={styles.terms}>
@@ -255,6 +319,7 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
               max={DURATION_MAX}
               rangeText={t('decide.custom.range.months')}
               unitWord={t('decide.custom.unit.months')}
+              tone={variant}
             />
           </View>
         </View>
@@ -269,13 +334,13 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
           onPress={() => setExtrasOpen((open) => !open)}
           style={({ pressed }) => [styles.extrasRow, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
         >
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.quick.extras')}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), color: dark ? colors.inkSoft1 : colors.inkDim }}>{t('decide.quick.extras')}</Text>
           {extrasSummary !== '' ? (
-            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{extrasSummary}</Text>
+            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: dark ? colors.inkSoft1 : colors.inkMuted }}>{extrasSummary}</Text>
           ) : null}
           <View
             testID="extras-chevron"
-            style={[styles.chevron, { borderColor: colors.inkSoft3, transform: [{ rotate: extrasOpen ? '135deg' : '45deg' }] }]}
+            style={[styles.chevron, { borderColor: dark ? colors.inkSoft1 : colors.inkSoft3, transform: [{ rotate: extrasOpen ? '135deg' : '45deg' }] }]}
           />
         </Pressable>
         {extrasOpen ? (
@@ -287,12 +352,14 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
               accessibilityLabel={t('decide.quick.salesTaxA11y')}
               placeholder={t('decide.quick.taxPlaceholder')}
               max={MAX_TAX_TYPED}
+              tone={variant}
               rangeText={t('decide.custom.range.percent')}
             />
             <MoneyInput
               value={inputs.fees}
               currency={currency}
               onChange={q.setFees}
+              tone={variant}
               label={t('decide.quick.fees')}
               accessibilityLabel={t('decide.quick.fees')}
             />
@@ -303,18 +370,35 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
 
       {showResult ? (
         <View style={styles.actions}>
-          {none ? <Pill label={t('decide.home.noFigures.addRough')} variant="primary" onPress={onAddRough} /> : null}
+          {none ? (
+            dark ? (
+              <DarkPill label={t('decide.home.noFigures.addRough')} variant="solid" onPress={onAddRough} />
+            ) : (
+              <Pill label={t('decide.home.noFigures.addRough')} variant="primary" onPress={onAddRough} />
+            )
+          ) : null}
           {surface === 'home' && !none ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('decide.quick.runFull')}
-              accessibilityState={{ disabled: unconverted }}
-              disabled={unconverted}
-              onPress={() => onRunFull?.(q.toCheckInputs(today))}
-              style={({ pressed }) => [styles.run, { backgroundColor: colors.ink, opacity: unconverted ? 0.5 : pressed ? PRESSED_OPACITY : 1 }]}
-            >
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.surface }}>{t('decide.quick.runFull')}</Text>
-            </Pressable>
+            dark ? (
+              <DarkPill
+                label={t('decide.quick.runFull')}
+                variant="tint"
+                grow
+                minHeight={RUN_HEIGHT}
+                disabled={unconverted}
+                onPress={() => onRunFull?.(q.toCheckInputs(today))}
+              />
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('decide.quick.runFull')}
+                accessibilityState={{ disabled: unconverted }}
+                disabled={unconverted}
+                onPress={() => onRunFull?.(q.toCheckInputs(today))}
+                style={({ pressed }) => [styles.run, { backgroundColor: colors.ink, opacity: unconverted ? 0.5 : pressed ? PRESSED_OPACITY : 1 }]}
+              >
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.surface }}>{t('decide.quick.runFull')}</Text>
+              </Pressable>
+            )
           ) : null}
           <Pressable
             accessibilityRole="button"
@@ -336,7 +420,28 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
   );
 }
 
+function SkeletonBar({ height, dark }: { height: number; dark: boolean }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.skeleton, { height, backgroundColor: dark ? 'transparent' : colors.fill1 }]}>
+      {dark ? (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]} />
+      ) : null}
+    </View>
+  );
+}
+
+/** R17.3: the quick result opens under a 1px surface@.12 rule. */
+function DarkRule() {
+  const { colors } = useTheme();
+  return <View testID="quick-result-rule" style={[styles.rule, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY }]} />;
+}
+
 const styles = StyleSheet.create({
+  cardDark: { gap: space.gapMd },
+  darkResult: { gap: space.gapSm },
+  rule: { height: 1 },
+  amountDark: { overflow: 'hidden' },
   card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapMd },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
   amount: { flex: 1, minHeight: AMOUNT_HEIGHT, borderRadius: radii.pill, paddingLeft: space.cardPad, paddingRight: PILL_INSET, flexDirection: 'row', alignItems: 'center' },
@@ -351,5 +456,5 @@ const styles = StyleSheet.create({
   clear: { minWidth: space.touchMin, minHeight: space.touchMin, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.gapSm },
   chevron: { width: size.chevronCompact, aspectRatio: 1, borderTopWidth: 2, borderRightWidth: 2, flexShrink: 0 },
   checkInside: { marginLeft: space.gapSm },
-  skeleton: { borderRadius: radii.pill },
+  skeleton: { borderRadius: radii.pill, overflow: 'hidden' },
 });

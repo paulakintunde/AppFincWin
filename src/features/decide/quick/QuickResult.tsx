@@ -19,6 +19,7 @@ import { joinSentences } from '../check/joinSentences';
 import { refText, refTextA11y, type Translate } from '../check/refText';
 import { useSettledLabel } from '../check/useSettledLabel';
 import type { QuickComputation } from '../snapshot/types';
+import { DarkPill } from '../ui/DarkPill';
 import { CombineToggle } from '../ui/CombineToggle';
 import { StateChip, type StateChipTone } from '../ui/StateChip';
 import { InfoLabel } from '../ui/InfoLabel';
@@ -43,6 +44,8 @@ export interface QuickResultProps {
   openCount: number;
   /** The first-read surface shows its own basis line under the answer. */
   firstReadBasis?: boolean;
+  /** D-95: 'dark' sits in the ink card -- no fill of its own, surface / inkSoft text, a surface@.12 "See it on credit" pill. */
+  variant?: 'light' | 'dark';
 }
 
 const SETTLE_MS = 150;
@@ -54,7 +57,7 @@ function appliedCount(c: QuickResultProps['computation']): number {
   return c.kind === 'logged' ? c.decision.stacked.filter((s) => s.status === 'applied').length : 0;
 }
 
-export function QuickResult({ computation, mode, name, price = null, fmt, fmtCents, fmtA11y = fmt, fmtCentsA11y = fmtCents, onTryCredit, combine, onCombine, openCount, firstReadBasis = false }: QuickResultProps) {
+export function QuickResult({ computation, mode, name, price = null, fmt, fmtCents, fmtA11y = fmt, fmtCentsA11y = fmtCents, onTryCredit, combine, onCombine, openCount, firstReadBasis = false, variant = 'light' }: QuickResultProps) {
   const t = useT() as Translate;
   const shownName = name === '' ? t('decide.quick.unnamed') : name;
   const { colors, pairing } = useTheme();
@@ -79,27 +82,30 @@ export function QuickResult({ computation, mode, name, price = null, fmt, fmtCen
   const footer = combinedLine ? t('decide.depth.combined.quickWith', { count: applied }) : credit ? t('decide.quick.footer') : '';
   const sizeInfo = useInfoSheet('size');
   const combinedInfo = useInfoSheet('combined');
+  const dark = variant === 'dark';
+  const soft = dark ? colors.inkSoft1 : colors.inkMuted;
+  const strong = dark ? colors.surface : colors.ink;
   const metaRole = { ...textRole(pairing, 'label'), fontSize: fontSize.meta };
 
   return (
     <View style={styles.block}>
-      <View style={[styles.result, { backgroundColor: colors.fill1 }]}>
+      <View style={[styles.result, dark ? styles.resultDark : { backgroundColor: colors.fill1 }]}>
         {/* CR-B04: the live region holds only the text, so "See it on credit" below stays its own focusable button. */}
         <View testID="quick-result-live" accessible accessibilityLiveRegion="polite" accessibilityLabel={settled} style={styles.live}>
-          <Text numberOfLines={2} ellipsizeMode="tail" accessibilityLabel={spokenName} style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
+          <Text numberOfLines={2} ellipsizeMode="tail" accessibilityLabel={spokenName} style={{ ...textRole(pairing, 'label'), color: dark ? colors.surface : colors.inkDim }}>
             {fullName}
           </Text>
           {copy.chip ? (
             <View style={styles.chips}>
-              <StateChip tone={copy.chip.tone as StateChipTone} label={chipLabel} />
+              <StateChip tone={copy.chip.tone as StateChipTone} label={chipLabel} onInk={dark} />
             </View>
           ) : null}
           {sizeText ? (
-            <InfoLabel term={sizeInfo.term} onInfo={sizeInfo.open} lineHeight={metaRole.lineHeight}>
-              <Text style={{ ...metaRole, fontWeight: '600', color: colors.inkDim }}>{sizeText}</Text>
+            <InfoLabel term={sizeInfo.term} onInfo={sizeInfo.open} lineHeight={metaRole.lineHeight} tone={variant}>
+              <Text style={{ ...metaRole, fontWeight: '600', color: dark ? colors.inkSoft1 : colors.inkDim }}>{sizeText}</Text>
             </InfoLabel>
           ) : null}
-          <Text maxFontSizeMultiplier={FIGURE_CAP} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+          <Text maxFontSizeMultiplier={FIGURE_CAP} style={{ ...textRole(pairing, dark ? 'label' : 'body'), ...(dark ? { fontSize: fontSize.s13_5 } : {}), color: strong }}>
             {lineText}
           </Text>
           {copy.monthly ? (
@@ -114,14 +120,18 @@ export function QuickResult({ computation, mode, name, price = null, fmt, fmtCen
               >
                 {fmtCents(copy.monthly.amount)}
               </Text>
-              <Text style={{ ...metaRole, color: colors.inkMuted }}>{caption}</Text>
+              <Text style={{ ...metaRole, color: soft }}>{caption}</Text>
             </View>
           ) : null}
-          {basis ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{basis}</Text> : null}
+          {basis ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: soft }}>{basis}</Text> : null}
         </View>
         {copy.tryCredit ? (
           <View style={styles.try}>
-            <Pill label={t('decide.quick.tryCredit')} accessibilityLabel={t('decide.quick.tryCreditA11y')} variant="secondary" onPress={onTryCredit} />
+            {dark ? (
+              <DarkPill label={t('decide.quick.tryCredit')} accessibilityLabel={t('decide.quick.tryCreditA11y')} variant="tint" onPress={onTryCredit} />
+            ) : (
+              <Pill label={t('decide.quick.tryCredit')} accessibilityLabel={t('decide.quick.tryCreditA11y')} variant="secondary" onPress={onTryCredit} />
+            )}
           </View>
         ) : null}
       </View>
@@ -130,17 +140,17 @@ export function QuickResult({ computation, mode, name, price = null, fmt, fmtCen
           {footer !== '' ? (
             combinedLine ? (
               <View style={styles.footerText}>
-                <InfoLabel term={combinedInfo.term} onInfo={combinedInfo.open} lineHeight={metaRole.lineHeight}>
-                  <Text style={{ ...metaRole, color: colors.inkMuted }}>{footer}</Text>
+                <InfoLabel term={combinedInfo.term} onInfo={combinedInfo.open} lineHeight={metaRole.lineHeight} tone={variant}>
+                  <Text style={{ ...metaRole, color: soft }}>{footer}</Text>
                 </InfoLabel>
               </View>
             ) : (
-              <Text style={[styles.footerText, { ...metaRole, color: colors.inkMuted }]}>{footer}</Text>
+              <Text style={[styles.footerText, { ...metaRole, color: soft }]}>{footer}</Text>
             )
           ) : (
             <View style={styles.footerText} />
           )}
-          {showPill ? <CombineToggle value={combine} onChange={onCombine} /> : null}
+          {showPill ? <CombineToggle value={combine} onChange={onCombine} dark={dark} /> : null}
         </View>
       ) : null}
       {sizeInfo.sheet}
@@ -152,6 +162,7 @@ export function QuickResult({ computation, mode, name, price = null, fmt, fmtCen
 const styles = StyleSheet.create({
   block: { gap: space.gapSm },
   result: { borderRadius: radii.card, padding: space.cardPad, gap: space.gapSm },
+  resultDark: { padding: 0 },
   live: { gap: space.gapSm },
   chips: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, flexWrap: 'wrap' },
   monthly: { gap: 2 },

@@ -1,7 +1,9 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider } from '@/theme/ThemeProvider';
+import { StyleSheet } from 'react-native';
+import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
+import { ACCENT_KEYS } from '@/theme/accents';
 import { showToast } from '@/state/undoToast';
 import { minorUnits } from '@/engine/money';
 import { computeQuick } from '../../snapshot/computeCheck';
@@ -17,6 +19,12 @@ jest.setTimeout(30000);
 const METRICS = { frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 const safe = (node: React.ReactNode) => <SafeAreaProvider initialMetrics={METRICS}>{node}</SafeAreaProvider>;
 
+let mockDims = { width: 402, fontScale: 1 };
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => ({ width: mockDims.width, height: 874, scale: 2, fontScale: mockDims.fontScale }),
+}));
+
 const mockTrack = jest.fn();
 let mockStack: StackSelection = EMPTY_STACK;
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...a: unknown[]) => mockTrack(...a) }) }));
@@ -26,6 +34,7 @@ jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockDims = { width: 402, fontScale: 1 };
   mockStack = EMPTY_STACK;
 });
 
@@ -406,5 +415,69 @@ describe('QuickResult', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+describe('dark variant (D-95, R17.3)', () => {
+  const SURFACE = '#FFFFFF';
+  const INK = '#14150F';
+  const flat = (node: { props: { style?: unknown } }) => StyleSheet.flatten(node.props.style as never) as Record<string, unknown>;
+  let theme: ReturnType<typeof useTheme>;
+  function Grab() {
+    theme = useTheme();
+    return null;
+  }
+  async function renderDark(over: Partial<QuickCheckFormProps> = {}) {
+    const props = formProps({ variant: 'dark', ...over });
+    await render(
+      safe(
+        <ThemeProvider>
+          <Grab />
+          <QuickCheckForm {...props} />
+        </ThemeProvider>
+      )
+    );
+  }
+
+  it('D-95 the dark quick check uses a surface Check it with ink text for every accent', async () => {
+    await renderDark();
+    for (const key of ACCENT_KEYS) {
+      await act(async () => theme.applyRemote(key, theme.pairing));
+      const button = screen.getByLabelText('Check it');
+      expect(flat(button).backgroundColor).toBe(SURFACE);
+      expect(flat(screen.getByText('Check it')).color).toBe(INK);
+    }
+  });
+
+  it('D-95 the dark result opens under the rule', async () => {
+    await renderDark();
+    expect(screen.queryByTestId('quick-result-rule')).toBeNull();
+    await checkIt('car 14500');
+    expect(screen.getByTestId('quick-result-rule')).toBeTruthy();
+    expect(flat(screen.getByText('Run the full check')).color).toBe(SURFACE);
+    expect(screen.getByLabelText('Run the full check')).toBeTruthy();
+    expect(flat(screen.getByText('Clear')).color).toBe('#A8A79C');
+  });
+
+  it('D-95 the placeholders resolve from props, short below 360 wide', async () => {
+    await renderDark({ placeholder: 'Something and a price', placeholderShort: 'car 14500' });
+    expect(screen.getByLabelText('Quick check').props.placeholder).toBe('Something and a price');
+  });
+
+  it('D-95 the short placeholder shows above 1.3x text scale', async () => {
+    mockDims = { width: 402, fontScale: 1.5 };
+    await renderDark({ placeholder: 'Something and a price', placeholderShort: 'car 14500' });
+    expect(screen.getByLabelText('Quick check').props.placeholder).toBe('car 14500');
+  });
+
+  it('D-95 a result open is reported to the host', async () => {
+    const onOpen = jest.fn();
+    await renderDark({ onResultOpenChange: onOpen });
+    expect(onOpen).not.toHaveBeenCalled();
+    await checkIt('car 14500');
+    expect(onOpen).toHaveBeenLastCalledWith(true);
+    await fireEvent.press(screen.getByLabelText('Clear the quick check'));
+    expect(onOpen).toHaveBeenLastCalledWith(false);
+    expect(onOpen).toHaveBeenCalledTimes(2);
   });
 });
