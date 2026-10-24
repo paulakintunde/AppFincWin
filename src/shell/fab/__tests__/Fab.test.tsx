@@ -12,6 +12,7 @@ import {
   useFab,
   useProvideDefaultFabAction,
   useProvideQuickAction,
+  useRegisterFab,
   type FabContextValue,
 } from '../FabProvider';
 
@@ -25,9 +26,10 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-const holder: { fab: FabContextValue | null; setToast: ((h: number) => void) | null } = {
+const holder: { fab: FabContextValue | null; setToast: ((h: number) => void) | null; switchTo: ((s: string) => void) | null } = {
   fab: null,
   setToast: null,
+  switchTo: null,
 };
 
 function Wire({
@@ -130,5 +132,45 @@ describe('Fab', () => {
     await act(async () => jest.advanceTimersByTime(300));
     expect(getAnimatedStyle(wrapper!).transform).toEqual([{ translateY: 0 }]);
     jest.useRealTimers();
+  });
+
+  function Switcher({ screens, onDefault }: { screens: Record<string, React.ReactNode>; onDefault: () => void }): React.JSX.Element {
+    const [which, setWhich] = React.useState('first');
+    React.useEffect(() => {
+      holder.switchTo = setWhich;
+    }, []);
+    return (
+      <FabProvider>
+        <Wire onDefault={onDefault} />
+        {screens[which]}
+        <Fab />
+      </FabProvider>
+    );
+  }
+
+  it('D-98 a screen registering null hides the default FAB while it is shown', async () => {
+    function NoFabScreen(): null {
+      useRegisterFab(null);
+      return null;
+    }
+    await renderWithShellProviders(<Switcher onDefault={jest.fn()} screens={{ first: <NoFabScreen />, second: null }} />);
+    expect(screen.queryByRole('button')).toBeNull();
+    await act(async () => holder.switchTo?.('second'));
+    expect(screen.getByRole('button', { name: 'Add a transaction' })).toBeTruthy();
+  });
+
+  it('D-98 the FAB still shows on another tab root that registers one', async () => {
+    function NoFabScreen(): null {
+      useRegisterFab(null);
+      return null;
+    }
+    function Other(): null {
+      useRegisterFab(React.useMemo(() => ({ label: 'New thing', accessibilityLabel: 'Start a new thing', onPress: jest.fn() }), []));
+      return null;
+    }
+    await renderWithShellProviders(<Switcher onDefault={jest.fn()} screens={{ first: <NoFabScreen />, second: <Other /> }} />);
+    expect(screen.queryByRole('button')).toBeNull();
+    await act(async () => holder.switchTo?.('second'));
+    expect(screen.getByRole('button', { name: 'Start a new thing' })).toBeTruthy();
   });
 });
