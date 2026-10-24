@@ -40,6 +40,7 @@ export function linesSetCount(settings: DecideSettingsRow | null, currency: stri
     !foreign && settings.investing_floor !== null,
     !foreign && settings.saving_floor !== null,
     settings.dsr_line !== null,
+    settings.housing_line !== null,
     settings.unsecured_multiple !== null,
   ];
   return flags.filter(Boolean).length;

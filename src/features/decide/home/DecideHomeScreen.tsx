@@ -174,7 +174,7 @@ export function DecideHomeScreen() {
   rows.push({
     key: 'lines',
     label: t('decide.home.rows.lines'),
-    value: setCount === 0 ? t('decide.home.rows.linesDefault') : t('decide.home.rows.linesSet', { count: setCount }),
+    value: setCount === 0 ? t('decide.home.rows.linesDefault') : t('decide.home.rows.linesSetSix', { count: setCount }),
     onPress: () => pushOnce(LINES_HREF),
   });
 

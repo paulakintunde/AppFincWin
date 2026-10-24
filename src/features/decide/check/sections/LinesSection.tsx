@@ -1,5 +1,5 @@
 /**
- * 05-15 section 4, "Against your lines": six rows from assessment.checks, each with its word (Clear / Short / Over /
+ * 05-15 section 4, "Against your lines": six rows (seven for a property check, D-103) from assessment.checks, each with its word (Clear / Short / Over /
  * Squeezed) beside the dot and a description that names the user's own line. Collapsed by default; renders nothing
  * without a resolved logged verdict.
  */
@@ -23,6 +23,7 @@ import { Dot, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
 const LINE_INFO: Record<string, InfoKey | undefined> = {
   cash: 'reserve',
   dsr: 'dsrLine',
+  housing: 'housingLine',
   owe: 'unsecuredMultiple',
   inv: 'investingFloor',
   save: 'savingFloor',
@@ -38,7 +39,7 @@ interface LineRow {
 
 /** 05-64: the six rows without the section chrome; "What breaks" shows them as "Every line". */
 export function EveryLineRows(props: SectionProps) {
-  const { computation, whole, currency } = props;
+  const { computation, whole, currency, inputs } = props;
   const t = useT();
   const tr = t as Translate;
   const { colors } = useTheme();
@@ -54,6 +55,11 @@ export function EveryLineRows(props: SectionProps) {
     a.debtServiceRatioAfter === null
       ? t('decide.section.lineDsrDescNoIncome', { line: percentLabel(limits.dsrLine) })
       : t('decide.section.lineDsrDesc', { pct: percentLabel(a.debtServiceRatioAfter), line: percentLabel(limits.dsrLine) });
+  const ratio = a.housingRatioAfter;
+  const housingDesc =
+    ratio === null
+      ? t('decide.section.lineHousingDescNoIncome', { line: percentLabel(limits.housingLine) })
+      : t('decide.section.lineHousingDesc', { pct: percentLabel(ratio) });
   const rows: LineRow[] = [
     {
       key: 'cash',
@@ -74,6 +80,9 @@ export function EveryLineRows(props: SectionProps) {
       desc: t('decide.section.lineMonthDesc', { left: fmt(a.left) }),
     },
     { key: 'dsr', label: t('decide.section.lineDsr'), ok: a.checks.dsr, fail: t('decide.section.lineOver'), desc: dsrDesc },
+    ...(inputs.kind === 'buy' && inputs.itemType === 'property'
+      ? [{ key: 'housing', label: t('decide.section.lineHousing'), ok: a.checks.housing, fail: t('decide.section.lineOver'), desc: housingDesc }]
+      : []),
     {
       key: 'owe',
       label: t('decide.section.lineOwe'),

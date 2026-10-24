@@ -67,10 +67,26 @@ describe('homeRowsModel', () => {
       investing_floor: null,
       saving_floor: null,
       dsr_line: 36,
+      housing_line: null,
       unsecured_multiple: null,
     } as unknown as DecideSettingsRow;
     expect(linesSetCount(base, 'USD')).toBe(2);
     expect(linesSetCount(base, 'EUR')).toBe(1);
     expect(linesSetCount({ ...base, reserve: null, dsr_line: null } as DecideSettingsRow, 'USD')).toBe(0);
+  });
+
+  it('D-103 linesSetCount counts housing_line and tops out at 6', () => {
+    const all = {
+      currency: 'USD',
+      reserve: 1,
+      investing_floor: 1,
+      saving_floor: 1,
+      dsr_line: '36',
+      housing_line: '28',
+      unsecured_multiple: 3,
+    } as unknown as DecideSettingsRow;
+    expect(linesSetCount(all, 'USD')).toBe(6);
+    expect(linesSetCount({ ...all, housing_line: null }, 'USD')).toBe(5);
+    expect(linesSetCount({ ...all, reserve: null, investing_floor: null, saving_floor: null, dsr_line: null, unsecured_multiple: null }, 'EUR')).toBe(1);
   });
 });

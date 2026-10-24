@@ -5,6 +5,7 @@ import * as textFit from '../../ui/textFit';
 import { LedgersBody } from '../sections/LedgersSection';
 import { MonthBody } from '../sections/MonthSection';
 import { AssumptionsBody } from '../sections/AssumptionsSection';
+import { EveryLineRows } from '../sections/LinesSection';
 import { ref } from '../../copy/types';
 import { TableRow, type SectionProps } from '../sections/sectionUi';
 import { buy, exact, stepProps, whole, wrap } from '../steps/__tests__/helpers/stepProps';
@@ -102,5 +103,17 @@ describe('Assumptions body', () => {
     expect(screen.getAllByLabelText(/^About /)).toHaveLength(1);
     await fireEvent.press(screen.getByLabelText(/^About /));
     expect(screen.getByText(/dated 2026-10-14/)).toBeTruthy();
+  });
+});
+
+describe('Every line body (D-103)', () => {
+  it('D-103 Every line shows a Housing costs row for property checks only', async () => {
+    await wrap(<EveryLineRows {...bodyProps({ ...FITS, itemType: 'property', itemTypeTouched: true })} />);
+    expect(screen.getByText('Housing costs')).toBeTruthy();
+    expect(screen.getByText(/of money in$/)).toBeTruthy();
+    expect(screen.getByLabelText('About Housing costs at most')).toBeTruthy();
+    await screen.unmount();
+    await wrap(<EveryLineRows {...bodyProps()} />);
+    expect(screen.queryByText('Housing costs')).toBeNull();
   });
 });

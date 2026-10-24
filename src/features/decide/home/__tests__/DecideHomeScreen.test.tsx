@@ -232,10 +232,10 @@ describe('DecideHomeScreen', () => {
   it('D-99 Open checks carries the changed line, and Lines counts what the user set', async () => {
     mockChecks = [row('o', { status: 'open' })];
     mockChangedCount.n = 2;
-    mockSettings = { currency: 'USD', reserve: 100_000, investing_floor: null, saving_floor: null, dsr_line: 36, unsecured_multiple: null } as unknown as DecideSettingsRow;
+    mockSettings = { currency: 'USD', reserve: 100_000, investing_floor: null, saving_floor: null, dsr_line: 36, housing_line: null, unsecured_multiple: null } as unknown as DecideSettingsRow;
     await renderScreen();
     expect(screen.getByText('2 changed since you looked')).toBeTruthy();
-    expect(screen.getByLabelText('Lines you will not cross, 2 of 5 set by you')).toBeTruthy();
+    expect(screen.getByLabelText('Lines you will not cross, 2 of 6 set by you')).toBeTruthy();
     mockChangedCount.n = 0;
     await renderScreen();
     expect(screen.queryByText(/changed since you looked/)).toBeNull();

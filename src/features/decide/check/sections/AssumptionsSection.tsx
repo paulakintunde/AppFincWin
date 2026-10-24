@@ -119,6 +119,10 @@ export function assumptionRows(props: AssumptionsBodyProps | AssumptionsSectionP
         value: t('decide.section.asRunningValue', { counted: running.countedCosts, total: running.totalCosts, ended: running.countedReplaced }),
       });
     }
+    // D-103: the housing cost the housing line is tested against, for property checks only.
+    if (props.inputs.kind === 'buy' && props.inputs.itemType === 'property') {
+      rows.push({ key: 'housingToday', label: t('decide.assumptions.housingToday'), value: t('decide.assumptions.housingTodayValue', { amount: fmt(a.housingBefore) }) });
+    }
   }
   // D-81: shown when the user named their own type; a built-in type is the default and adds no row.
   if (props.inputs.kind === 'buy' && props.inputs.customItemType !== null) {
