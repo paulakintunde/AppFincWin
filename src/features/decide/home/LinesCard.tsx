@@ -1,5 +1,5 @@
 /**
- * 05-27 (DCU-03, D-14, D-15): "Lines you will not cross". Five tappable rows showing the user's stored value, or the
+ * 05-27 (DCU-03, D-14, D-15): "Lines you will not cross". Six tappable rows showing the user's stored value, or the
  * engine default (prepareContext(snapshot).context.limits) with a 'default' tag while the setting is blank. Open checks
  * recompute from the same settings cache, so a saved limit reaches them in the same render cycle.
  */
@@ -28,11 +28,11 @@ export interface LinesCardProps {
   userId: string | null;
   currency: string;
   whole: Money;
-  /** 05-113 (D-99): the pushed Lines screen shows the sub-copy and the five rows with no fold. */
+  /** 05-113 (D-99): the pushed Lines screen shows the sub-copy and the six rows with no fold. */
   flat?: boolean;
 }
 
-const KEYS: readonly LimitKey[] = ['reserve', 'dsr', 'unsecured', 'investing', 'saving'];
+const KEYS: readonly LimitKey[] = ['reserve', 'dsr', 'housing', 'unsecured', 'investing', 'saving'];
 
 export function LinesCard({ source, settings, userId, currency, whole, flat = false }: LinesCardProps) {
   const t = useT();
@@ -88,7 +88,7 @@ export function LinesCard({ source, settings, userId, currency, whole, flat = fa
           pct: percentText(limits.dsrLine),
         });
       case 'housing':
-        return null; // the effective default arrives with the engine limits and the sixth row (05-126)
+        return t('decide.lines.housing.value', { pct: percentText(limits.housingLine) });
       case 'unsecured':
         return t('decide.lines.unsecured.value', {
           count: limits.unsecuredIncomeMultiple,
@@ -96,8 +96,13 @@ export function LinesCard({ source, settings, userId, currency, whole, flat = fa
     }
   };
 
+  const housing =
+    context === null || source === null || source.kind !== 'logged'
+      ? null
+      : { monthly: source.snapshot.housingMonthly, incomeBasis: context.money.incomeBasis };
+
   const setCount = KEYS.filter((key) => stored(key) !== null).length;
-  const preview = setCount === 0 ? t('decide.home.linesFold.allDefault') : t('decide.home.linesFold.preview', { count: setCount });
+  const preview = setCount === 0 ? t('decide.home.linesFold.allDefault') : t('decide.home.linesFold.previewSix', { count: setCount });
 
   const body = (
     <View style={{ gap: space.gapSm }}>
@@ -144,6 +149,7 @@ export function LinesCard({ source, settings, userId, currency, whole, flat = fa
         settings={settings}
         source={source}
         cushion={stored('reserve') === null ? cushion : null}
+        housing={housing}
         whole={whole}
         onClose={() => setEditing(null)}
       />

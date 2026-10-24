@@ -33,6 +33,9 @@ jest.mock('@/data/mutations/decideSettings', () => ({
     },
   }),
 }));
+jest.mock('@/data/mutations/debts', () => ({ useSetDebtHousing: () => ({ setHousing: jest.fn() }) }));
+jest.mock('@/data/queries/decide', () => ({ useDebts: () => ({ data: [] }) }));
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u1', householdId: 'h1' }) }));
 jest.mock('@/data/mutations/decideChecks', () => ({ useAbandonCheck: () => ({ abandon: jest.fn() }) }));
 jest.mock('expo-router', () => ({ router: { navigate: (...a: unknown[]) => mockNavigate(...a), push: jest.fn(), replace: jest.fn() } }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPush(...a) }));
@@ -235,10 +238,10 @@ describe('LinesCard', () => {
   it('shows the engine defaults with a default tag on every blank line', async () => {
     await wrapOpen(lines());
     expect(screen.getByText('Lines you will not cross')).toBeTruthy();
-    for (const name of ['Cash never below', 'Debt payments at most', 'Unsecured debt at most', 'Investing at least', 'Saving at least']) {
+    for (const name of ['Cash never below', 'Debt payments at most', 'Housing costs at most', 'Unsecured debt at most', 'Investing at least', 'Saving at least']) {
       expect(screen.getByText(name)).toBeTruthy();
     }
-    expect(screen.getAllByText('default')).toHaveLength(4);
+    expect(screen.getAllByText('default')).toHaveLength(5);
     expect(screen.getByText('default · 3 months')).toBeTruthy();
     expect(screen.getByText('36%')).toBeTruthy();
     expect(screen.getByText('12 ×')).toBeTruthy();
@@ -249,7 +252,7 @@ describe('LinesCard', () => {
     expect(screen.getByText('$2500')).toBeTruthy();
     expect(screen.getByText('30%')).toBeTruthy();
     expect(screen.getByText('6 ×')).toBeTruthy();
-    expect(screen.getAllByText('default')).toHaveLength(2);
+    expect(screen.getAllByText('default')).toHaveLength(3);
     expect(screen.queryByText(/^default · /)).toBeNull();
   });
 
@@ -360,10 +363,18 @@ describe('LinesCard', () => {
     expect(mockUpdate).toHaveBeenCalledWith({ housing_line: null });
   });
 
-  it('D-103 the Lines card still renders five rows', async () => {
+  it('D-103 housing is the third of six lines', async () => {
     await wrapOpen(lines(settingsRow({ housing_line: '30' })));
-    expect(screen.getAllByTestId(/^line-row-/)).toHaveLength(5);
-    expect(screen.queryByTestId('line-row-housing')).toBeNull();
+    const rows = screen.getAllByTestId(/^line-row-/).map((n) => n.props.testID);
+    expect(rows).toEqual(['line-row-reserve', 'line-row-dsr', 'line-row-housing', 'line-row-unsecured', 'line-row-investing', 'line-row-saving']);
+    expect(screen.getByText('Share of money in, rent or mortgage and home costs')).toBeTruthy();
+    expect(screen.getByLabelText('Housing costs at most, Share of money in, rent or mortgage and home costs, 30%')).toBeTruthy();
+    expect(screen.getByLabelText('About Housing costs at most')).toBeTruthy();
+  });
+
+  it('D-103 a blank housing line shows the 28% default with the default tag', async () => {
+    await wrapOpen(lines());
+    expect(screen.getByLabelText('Housing costs at most, Share of money in, rent or mortgage and home costs, 28%, default')).toBeTruthy();
   });
 
   it('a limit save recomputes an open check in the same render cycle (shared cache)', async () => {
@@ -426,17 +437,18 @@ describe('Lines fold and Your month (05-71)', () => {
     expect(screen.queryByTestId('line-row-reserve')).toBeNull();
     await screen.unmount();
     await wrap(linesUi(settingsRow({ reserve: 250_000, dsr_line: '30' })));
-    expect(screen.getByLabelText('Lines you will not cross, 2 of 5 set by you')).toBeTruthy();
+    expect(screen.getByLabelText('Lines you will not cross, 2 of 6 set by you')).toBeTruthy();
   });
 
-  it('D-78 opening the Lines fold shows five rows, each with its ⓘ', async () => {
+  it('D-78 opening the Lines fold shows six rows, each with its ⓘ', async () => {
     await wrap(linesUi());
     await fireEvent.press(screen.getByText('Lines you will not cross'));
-    for (const key of ['reserve', 'dsr', 'unsecured', 'investing', 'saving']) {
+    for (const key of ['reserve', 'dsr', 'housing', 'unsecured', 'investing', 'saving']) {
       expect(screen.getByTestId(`line-row-${key}`)).toBeTruthy();
     }
     expect(screen.getByLabelText('About Cash never below')).toBeTruthy();
     expect(screen.getByLabelText('About Debt payments at most')).toBeTruthy();
+    expect(screen.getByLabelText('About Housing costs at most')).toBeTruthy();
     expect(screen.getByLabelText('About Unsecured debt at most')).toBeTruthy();
     expect(screen.getByLabelText('About Investing at least')).toBeTruthy();
     expect(screen.getByLabelText('About Saving at least')).toBeTruthy();

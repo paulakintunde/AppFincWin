@@ -27,6 +27,8 @@ import type { SnapshotResult } from '../snapshot/types';
 import { MoneyInput } from '../ui/MoneyInput';
 import { useInfoSheet } from '../ui/useInfoSheet';
 import type { InfoKey } from '../copy/infoTerms';
+import { LoansCountedAsHousing } from './DebtHousingSwitch';
+import { housingShareLabel } from './housingShare';
 import { stampSettingsPatch } from './settingsPatch';
 import { RateInput } from '../ui/RateInput';
 
@@ -67,6 +69,8 @@ export interface LimitEditorSheetProps {
   whole: Money;
   /** D-25: the engine's cushion default in half-months with the steadiness behind it; null when the line is typed or unknown. */
   cushion?: { halfMonths: number; steadiness: Steadiness } | null;
+  /** D-103: my monthly housing cost and the money-in basis behind the housing editor's info line; null when unknown. */
+  housing?: { monthly: number; incomeBasis: number } | null;
   onClose: () => void;
 }
 
@@ -82,7 +86,7 @@ interface Fields {
 
 const validMoney = (n: number | null): n is number => n !== null && Number.isSafeInteger(n) && n >= 0 && n <= MAX_INPUT_MINOR;
 
-function LimitForm({ limit, userId, currency, settings, source, whole, cushion = null, onClose }: LimitEditorSheetProps & { limit: LimitKey }) {
+function LimitForm({ limit, userId, currency, settings, source, whole, cushion = null, housing = null, onClose }: LimitEditorSheetProps & { limit: LimitKey }) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const mutation = useUpdateDecideSettings(userId ?? '');
@@ -118,6 +122,8 @@ function LimitForm({ limit, userId, currency, settings, source, whole, cushion =
   } else if ((limit === 'investing' || limit === 'saving') && source !== null && source.kind === 'logged') {
     const amount = limit === 'investing' ? source.snapshot.monthlyInvesting : source.snapshot.monthlySaving;
     info = t(`decide.lines.${limit}.info` as const, { amount: whole(amount) });
+  } else if (limit === 'housing' && housing !== null && housing.incomeBasis > 0) {
+    info = t('decide.lines.housing.info', { amount: whole(housing.monthly), pct: housingShareLabel(housing.monthly, housing.incomeBasis) });
   } else {
     info = t(`decide.lines.${limit}.desc` as const);
   }
@@ -188,6 +194,7 @@ function LimitForm({ limit, userId, currency, settings, source, whole, cushion =
           <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.lines.useDefault')}</Text>
         </Pressable>
         <Pill label={t('decide.lines.save')} variant="primary" disabled={!canSave} onPress={save} />
+        {limit === 'housing' ? <LoansCountedAsHousing whole={whole} userId={userId} /> : null}
       </SheetScroll>
       {lineInfo.sheet}
     </Sheet>

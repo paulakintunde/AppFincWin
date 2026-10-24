@@ -23,16 +23,18 @@ export interface ToggleRowProps {
   onChange: (next: boolean) => void;
   disabled?: boolean;
   accessibilityHint?: string;
+  /** When the spoken label differs from the visible one (05-126: "This is for housing, {{name}}"). */
+  accessibilityLabel?: string;
 }
 
-export function ToggleRow({ label, value, onChange, disabled = false, accessibilityHint }: ToggleRowProps) {
+export function ToggleRow({ label, value, onChange, disabled = false, accessibilityHint, accessibilityLabel }: ToggleRowProps) {
   const { colors, pairing } = useTheme();
   const scoped = useReadOnlyScope();
   const inert = disabled || scoped;
   return (
     <Pressable
       accessibilityRole="switch"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ checked: value, disabled: inert }}
       disabled={inert}

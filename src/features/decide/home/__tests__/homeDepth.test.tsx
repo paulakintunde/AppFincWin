@@ -17,6 +17,9 @@ const mockUpdate = jest.fn();
 jest.mock('@/data/mutations/decideSettings', () => ({
   useUpdateDecideSettings: () => ({ update: (patch: DecideSettingsPatch) => mockUpdate(patch) }),
 }));
+jest.mock('@/data/mutations/debts', () => ({ useSetDebtHousing: () => ({ setHousing: jest.fn() }) }));
+jest.mock('@/data/queries/decide', () => ({ useDebts: () => ({ data: [] }) }));
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u1', householdId: 'h1' }) }));
 jest.mock('expo-router', () => ({ router: { navigate: jest.fn(), push: jest.fn(), replace: jest.fn() } }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn(), hapticSuccess: jest.fn(), hapticMedium: jest.fn() }));
@@ -78,8 +81,8 @@ describe('Lines card cushion months (D-25)', () => {
     expect(screen.queryByText(/The default is/)).toBeNull();
   });
 
-  it('the other four lines keep the plain default tag', async () => {
+  it('the other five lines keep the plain default tag', async () => {
     await wrapOpen(lines());
-    expect(screen.getAllByText('default')).toHaveLength(4);
+    expect(screen.getAllByText('default')).toHaveLength(5);
   });
 });
