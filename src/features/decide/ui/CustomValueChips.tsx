@@ -120,7 +120,7 @@ export function CustomValueField({ value, min, max, rangeText, unitWord, groupLa
         </View>
         <Text style={{ ...textRole(pairing, 'body'), color: dark ? colors.inkSoft1 : colors.inkDim, flexShrink: 1 }}>{unitWord}</Text>
       </View>
-      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: dark ? (warn ? colors.surface : colors.inkSoft1) : warn ? colors.warn1 : colors.inkFaint }}>{rangeText}</Text>
+      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: dark ? (warn ? colors.surface : colors.inkSoft1) : warn ? colors.warn1 : colors.inkFaint }}>{dark && warn ? t('decide.custom.outOfRange', { range: rangeText }) : rangeText}</Text>
     </View>
   );
   return reduced ? body : <Animated.View entering={FadeIn.duration(DURATION.entrance)}>{body}</Animated.View>;
@@ -195,7 +195,7 @@ export function CustomValueChips({
             tone={tone}
           />
         ) : storedAbove ? (
-          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: dark ? colors.surface : colors.warn1 }}>{rangeText}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: dark ? colors.surface : colors.warn1 }}>{dark ? t('decide.custom.outOfRange', { range: rangeText }) : rangeText}</Text>
         ) : null}
       </View>
     </ReadOnlyScope.Provider>

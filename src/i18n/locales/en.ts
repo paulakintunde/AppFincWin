@@ -1814,6 +1814,7 @@ const en = {
         months: '1 to 120 months', count: '1 to 120', horizon: '1 to 600 months', apr: '0 to 999.99% a year', aprUpTo: 'Up to 100% a year', percent: '0 to 100%',
         upToPrice: 'Up to the price, {{price}}', from: 'From {{min}} to {{max}}',
       },
+      outOfRange: 'Out of range: {{range}}',
       fieldA11y: '{{group}}, custom, {{unit}}',
     },
     clear: { button: 'Clear', a11y: 'Clear this check', hint: 'Discards this check and starts an empty one', toast: 'Check cleared. Nothing was written.' },

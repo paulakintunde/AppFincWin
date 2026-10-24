@@ -323,11 +323,28 @@ describe('CustomValueChips dark tone', () => {
     expect(flat(toggle.getByText('Credit')).color).toBe('#BFBEB4');
   });
 
-  it('D-95 the dark out-of-range line is surface text', async () => {
+  it('D-95 the dark out-of-range line is surface text with the prefix word (R17.13)', async () => {
     const view = await wrap(<DarkHarness initial={600} />);
-    expect(flat(view.getByText(RANGE)).color).toBe(SURFACE);
+    expect(flat(view.getByText(`Out of range: ${RANGE}`)).color).toBe(SURFACE);
     await fireEvent.press(view.getByText('600 months'));
     await fireEvent.changeText(view.getByLabelText(FIELD), '181');
-    expect(flat(view.getByText(RANGE)).color).toBe(SURFACE);
+    expect(flat(view.getByText(`Out of range: ${RANGE}`)).color).toBe(SURFACE);
+    // in range the hint stays the plain range line
+    await fireEvent.changeText(view.getByLabelText(FIELD), '12');
+    expect(view.getByText(RANGE)).toBeTruthy();
+    expect(view.queryByText(`Out of range: ${RANGE}`)).toBeNull();
+  });
+
+  it('R17.13 a refused dark rate keystroke shows the prefixed range line; light is unchanged', async () => {
+    const Rate = ({ tone }: { tone: 'light' | 'dark' }) => {
+      const [text, setText] = React.useState('');
+      return <RateInput tone={tone} value={text} onChange={setText} label="Rate" accessibilityLabel="APR" max="999.99" rangeText="0 to 999.99% a year" />;
+    };
+    const dark = await wrap(<Rate tone="dark" />);
+    await fireEvent.changeText(dark.getByLabelText('APR'), '1000');
+    expect(flat(dark.getByText('Out of range: 0 to 999.99% a year')).color).toBe(SURFACE);
+    const light = await wrap(<Rate tone="light" />);
+    await fireEvent.changeText(light.getByLabelText('APR'), '1000');
+    expect(light.getByText('0 to 999.99% a year')).toBeTruthy();
   });
 });

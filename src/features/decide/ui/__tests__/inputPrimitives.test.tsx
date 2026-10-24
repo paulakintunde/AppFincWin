@@ -269,7 +269,7 @@ describe('dark rate and money fields', () => {
   it('D-95 the dark out-of-range line is surface text', async () => {
     const rate = await wrap(<RateInput tone="dark" value="" onChange={jest.fn()} label="Rate" accessibilityLabel="APR" max="100" rangeText="0 to 100%" />);
     await fireEvent.changeText(rate.getByLabelText('APR'), '101');
-    expect(flat(rate.getByText('0 to 100%')).color).toBe(SURFACE);
+    expect(flat(rate.getByText('Out of range: 0 to 100%')).color).toBe(SURFACE);
     const money = await wrap(<MoneyInput tone="dark" value={null} currency="USD" onChange={jest.fn()} label="Fees" accessibilityLabel="Fees" />);
     await fireEvent.changeText(money.getByLabelText('Fees'), 'abc');
     await fireEvent(money.getByLabelText('Fees'), 'blur');

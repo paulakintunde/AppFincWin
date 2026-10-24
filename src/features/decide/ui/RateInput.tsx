@@ -13,6 +13,7 @@ import { typedRateAbove } from '../snapshot/checkInputs';
 import { TextInput } from '@/ui/TextInput';
 import { Text } from '@/ui/Text';
 import { SURFACE_ON_INK_OPACITY } from '@/ui/Chip';
+import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
@@ -57,6 +58,7 @@ const FOCUS_RING = 2; // D-95
 
 export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur, readOnly = false, max, rangeText, labelAccessory, amountField = false, tone = 'light' }: RateInputProps) {
   const { colors, pairing } = useTheme();
+  const t = useT();
   const dark = tone === 'dark' && !amountField;
   const [focused, setFocused] = useState(false);
   const labelColor = dark ? colors.inkSoft1 : colors.inkDim;
@@ -126,7 +128,7 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
         />
         <Text style={{ ...textRole(pairing, 'body'), color: labelColor }}>%</Text>
       </View>
-      {refused && rangeText ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: dark ? colors.surface : colors.warn1 }}>{rangeText}</Text> : null}
+      {refused && rangeText ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: dark ? colors.surface : colors.warn1 }}>{dark ? t('decide.custom.outOfRange', { range: rangeText }) : rangeText}</Text> : null}
       {hint ? <Text style={{ ...textRole(pairing, 'label'), color: labelColor }}>{hint}</Text> : null}
     </View>
   );
