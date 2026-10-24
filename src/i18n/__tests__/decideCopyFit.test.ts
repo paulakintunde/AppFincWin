@@ -141,7 +141,7 @@ describe('decide copy fit (R6)', () => {
   const FREQS = ['weekly', 'fortnightly', 'monthly', 'quarterly'];
 
   it('R17 home count strings have plural forms and read as plain statements', () => {
-    for (const base of ['decide.home.rows.linesSet', 'decide.home.notice.items', 'decide.home.notice.offlineWaiting']) {
+    for (const base of ['decide.home.rows.linesSetSix', 'decide.home.notice.items', 'decide.home.notice.offlineWaiting']) {
       expect(get(`${base}_one`)).toContain('{{count}}');
       expect(get(`${base}_other`)).toContain('{{count}}');
     }

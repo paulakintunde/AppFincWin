@@ -1916,16 +1916,13 @@ const en = {
       noFigures: { heading: 'Nothing to judge against yet', body: 'Rough figures for what comes in and goes out, or an imported statement, give every check something to rest on.', addRough: 'Add rough figures', import: 'Import a statement' },
       sources: '{{months}} months of logged income, {{lines}} expense lines this month, {{debts}} debts and {{accounts}} accounts. Every figure here rescores when they change in Activity.',
       sourcesRough: 'Rough figures you entered. A statement import or one full logged month replaces them.',
-      linesFold: { title: 'Lines you will not cross', preview_one: '{{count}} of 5 set by you', preview_other: '{{count}} of 5 set by you', allDefault: 'All at their defaults',
-        // 05-131 (D-103, R18.4): the six-line twins; the of-5 strings stay until 05-130
+      linesFold: { title: 'Lines you will not cross', allDefault: 'All at their defaults',
+        // 05-131 (D-103, R18.4): the six-line twins; the of-5 strings were retired in 05-130
         previewSix_one: '{{count}}\u00A0of 6 set by you', previewSix_other: '{{count}}\u00A0of 6 set by you' },
       // 05-110 (D-95..D-99, UI-SPEC R17.6): the redesigned home, built by 05-111..05-118. The old keys above stay until 05-118 retires them.
       header: 'Can I afford it',
       card: {
-        labelWorst: 'Your worst month', labelAverage: 'Your average month', labelTightest: 'Your tightest figures', labelFigures: 'Your figures', labelSwitched: 'Now from your logged months',
         details: 'Details', detailsA11y: 'Month details', detailsHint: 'Opens month details',
-        a11yLeft: '{{cardLabel}}: {{amount}} left after spending, debts and saving. In {{in}}, out {{out}}.',
-        a11yShort: '{{cardLabel}}: {{amount}} short after spending, debts and saving. In {{in}}, out {{out}}.',
         loading: 'Loading your figures',
         // 05-131 (D-100, R18.1): Net free cash flow twins of the basis-bearing label and a11y strings
         eyebrow: 'Net free cash flow',
@@ -1934,7 +1931,7 @@ const en = {
       },
       hero: {
         left: '{{amount}} left', short: '{{amount}} short', leftWord: 'left', shortWord: 'short',
-        sub: 'after spending, debts and saving', inOut: 'In {{in}} · Out {{out}}', summary: '{{amount}} left · In {{in}} · Out {{out}}', summaryShort: '{{amount}} short · In {{in}} · Out {{out}}',
+        inOut: 'In {{in}} · Out {{out}}', summary: '{{amount}} left · In {{in}} · Out {{out}}', summaryShort: '{{amount}} short · In {{in}} · Out {{out}}',
         // 05-131 (D-100, R18.1): the five sub-lines, by the basis the engine used
         subWorst: 'in your worst month, after spending, debts and everything set aside',
         subAverage: 'in your average month, after spending, debts and everything set aside',
@@ -1954,7 +1951,7 @@ const en = {
         open: 'Open checks', openChanged: '{{count}} changed since you looked',
         changes: 'Changes coming up', changesAdd: 'Add a change coming up',
         past: 'Past decisions',
-        lines: 'Lines you will not cross', linesSet_one: '{{count}} of 5 set by you', linesSet_other: '{{count}} of 5 set by you', linesDefault: 'All at their defaults',
+        lines: 'Lines you will not cross', linesDefault: 'All at their defaults',
         linesSetSix_one: '{{count}}\u00A0of 6 set by you', linesSetSix_other: '{{count}}\u00A0of 6 set by you', // 05-131 (D-103, R18.4)
         a11y: '{{label}}, {{value}}',
       },
@@ -1996,7 +1993,7 @@ const en = {
       },
     },
     month: {
-      activity: 'Activity', in: 'Comes in', out: 'Goes out', left: 'Left',
+      activity: 'Activity',
       steadyLine: '{{count}}\u00A0months of income within {{pct}} of each other, so the check uses the average.',
       variableLine: '{{count}}\u00A0months ranging {{worst}} to {{best}}. Affordability is judged on the worst month unless you say otherwise.',
       noIncomeLine: 'No money in is logged in these {{count}}\u00A0months, so every check is judged on that.', // D-50 (04 LO-01): every averaged month has 0 income (steadiness 'volatile', CV null)

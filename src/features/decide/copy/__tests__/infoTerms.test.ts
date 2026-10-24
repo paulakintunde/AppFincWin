@@ -67,9 +67,9 @@ describe('infoTerms', () => {
     expect(str('decide.home.rows.linesSetSix_other')).toBe(`{{count}}${NBSP}of 6 set by you`);
     expect(str('decide.warn.housingTitle')).toBe('Housing costs go over your line');
     expect(str('decide.verdict.titleHousingNoIncome')!.length).toBeLessThanOrEqual(64);
-    // the retired five-line and old-label strings are untouched until 05-130
-    expect(str('decide.home.rows.linesSet_other')).toContain('of 5 set by you');
-    expect(str('decide.home.hero.sub')).toBe('after spending, debts and saving');
+    // the retired five-line and old-label strings are gone (05-130, r18Retired.test.ts)
+    expect(str('decide.home.rows.linesSet_other')).toBeUndefined();
+    expect(str('decide.home.hero.sub')).toBeUndefined();
   });
 
   it('D-95 INFO_TERMS keeps tightestFigures at index 59', () => {
@@ -89,11 +89,11 @@ describe('infoTerms', () => {
   it('D-95 R17 strings resolve', () => {
     const NB = ' ';
     const keys = [
-      'header', 'card.labelWorst', 'card.labelAverage', 'card.labelTightest', 'card.labelFigures', 'card.labelSwitched', 'card.details', 'card.detailsA11y', 'card.detailsHint',
-      'card.a11yLeft', 'card.a11yShort', 'card.loading', 'hero.left', 'hero.short', 'hero.leftWord', 'hero.shortWord', 'hero.sub', 'hero.inOut', 'hero.summary', 'hero.summaryShort',
+      'header', 'card.eyebrow', 'card.details', 'card.detailsA11y', 'card.detailsHint',
+      'card.a11yNfcfLeft', 'card.a11yNfcfShort', 'card.loading', 'hero.left', 'hero.short', 'hero.leftWord', 'hero.shortWord', 'hero.subWorst', 'hero.inOut', 'hero.summary', 'hero.summaryShort',
       'unavailable.title', 'unavailable.noFigures', 'unavailable.rate', 'unavailable.addRough', 'unavailable.seeLines',
       'field.placeholder', 'field.placeholderShort', 'field.a11y', 'field.check', 'field.full', 'field.fullA11y',
-      'rows.open', 'rows.openChanged', 'rows.changes', 'rows.changesAdd', 'rows.past', 'rows.lines', 'rows.linesSet_one', 'rows.linesSet_other', 'rows.linesDefault', 'rows.a11y',
+      'rows.open', 'rows.openChanged', 'rows.changes', 'rows.changesAdd', 'rows.past', 'rows.lines', 'rows.linesSetSix_one', 'rows.linesSetSix_other', 'rows.linesDefault', 'rows.a11y',
       'notice.items_one', 'notice.items_other', 'notice.offline', 'notice.offlineWaiting_one', 'notice.offlineWaiting_other', 'notice.saving', 'notice.hint',
       'problems.title', 'problems.affects', 'problems.entryA11y', 'problems.close',
       'problems.noMonth.title', 'problems.noMonth.affects', 'problems.noMonth.action',
@@ -108,8 +108,8 @@ describe('infoTerms', () => {
     const h = (k: string) => str(`decide.home.${k}`);
     expect(h('hero.left')).toBe('{{amount}} left');
     expect(h('hero.short')).toBe('{{amount}} short');
-    expect(h('hero.sub')).toBe('after spending, debts and saving');
-    expect(h('card.a11yLeft')).toBe('{{cardLabel}}: {{amount}} left after spending, debts and saving. In {{in}}, out {{out}}.');
+    expect(h('hero.subWorst')).toBe('in your worst month, after spending, debts and everything set aside');
+    expect(h('card.a11yNfcfLeft')).toBe('Net free cash flow: {{amount}} left {{basis}}. In {{in}}, out {{out}}.');
     expect(h('field.check')).toBe('Check it');
     expect(h('field.full')).toBe('Full check');
     expect(h('problems.failedAction')).toBe('Review changes');
@@ -123,7 +123,7 @@ describe('infoTerms', () => {
     // every count is followed by a no-break space, never a plain one
     const counted = keys.map((k) => ({ k, v: h(k) ?? '' })).filter(({ v }) => v.includes('{{count}}'));
     expect(counted.length).toBeGreaterThan(10);
-    for (const { k, v } of counted.filter(({ k: kk }) => kk !== 'rows.linesSet_one' && kk !== 'rows.linesSet_other')) {
+    for (const { k, v } of counted.filter(({ k: kk }) => kk !== 'rows.linesSetSix_one' && kk !== 'rows.linesSetSix_other')) {
       expect({ k, ok: !/\{\{count\}\} /.test(v) }).toEqual({ k, ok: true });
     }
   });
@@ -223,7 +223,7 @@ describe('infoTerms', () => {
     'decide.custom.ratePercent', 'decide.custom.unit.months', 'decide.custom.unit.apr', 'decide.custom.unit.percent', 'decide.custom.range.months',
     'decide.custom.range.count', 'decide.custom.range.horizon', 'decide.custom.range.apr', 'decide.custom.range.aprUpTo', 'decide.custom.range.percent',
     'decide.custom.range.upToPrice', 'decide.custom.range.from', 'decide.custom.fieldA11y', 'decide.custom.outOfRange',
-    'decide.home.linesFold.title', 'decide.home.linesFold.preview', 'decide.home.linesFold.allDefault', 'decide.quick.clearText', 'decide.quick.clearA11y',
+    'decide.home.linesFold.title', 'decide.home.linesFold.previewSix', 'decide.home.linesFold.allDefault', 'decide.quick.clearText', 'decide.quick.clearA11y',
     'decide.quick.placeholderShort', 'decide.clear.button', 'decide.clear.a11y', 'decide.clear.hint', 'decide.clear.toast', 'decide.delete.word',
     'decide.delete.menuOpen', 'decide.delete.menuReopen', 'decide.delete.menuEdit', 'decide.delete.moreA11y', 'decide.delete.keep', 'decide.delete.confirm',
     'decide.delete.checkTitle', 'decide.delete.checkBody', 'decide.delete.decisionTitle', 'decide.delete.boughtBody', 'decide.delete.waitingBody',
