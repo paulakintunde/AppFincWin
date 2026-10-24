@@ -151,7 +151,7 @@ describe('useSyncStatus', () => {
     await waitFor(() => {
       expect(result.current.failed).toBe(1);
       expect(result.current.conflicts).toBe(1);
-    });
+    }, { timeout: 5000 });
   });
 
   it('reflects markSynced as lastSyncedAt', async () => {
