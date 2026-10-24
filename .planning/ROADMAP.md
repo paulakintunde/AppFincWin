@@ -816,7 +816,7 @@ Plans:
 - [x] 05-128-PLAN.md — Verdict rows: total cost and invested instead, ComputedCheck wiring, month-table pots row (D-102, D-104)
 
 **Wave 36** *(blocked on Wave 35 completion)*
-- [ ] 05-129-PLAN.md — Wait becomes a pot: copy and the own-pot test through computeCheck (D-101)
+- [x] 05-129-PLAN.md — Wait becomes a pot: copy and the own-pot test through computeCheck (D-101)
 - [x] 05-134-PLAN.md — You › Money Pots row and Needs a look pot entries (D-101)
 
 **Wave 37** *(blocked on Wave 36 completion)*
