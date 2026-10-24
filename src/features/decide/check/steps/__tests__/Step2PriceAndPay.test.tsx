@@ -310,10 +310,10 @@ describe('MethodPanels', () => {
       expect(screen.queryByText(/^Paid off in month/)).toBeNull();
     });
 
-    it('shows Interest saved against no deposit and the cash left after', async () => {
+    it('shows Interest saved by the deposit against no deposit and the cash left after', async () => {
       const base = buy({ method: 'loan' });
       await renderStep({ method: 'loan', loan: { ...base.loan, aprText: '10', termMonths: 24, deposit: 50_000 } });
-      expect(screen.getByText('Interest saved')).toBeTruthy();
+      expect(screen.getByText('Interest saved by the deposit')).toBeTruthy();
       expect(screen.getByText('Cash left after')).toBeTruthy();
     });
 

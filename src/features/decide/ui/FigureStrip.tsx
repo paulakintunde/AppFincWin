@@ -86,7 +86,8 @@ export function FigureStrip({ items, dark = false, group }: FigureStripProps) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: space.gapMd },
+  // D-86: columns align at the top, so a two-line caption never pushes its neighbour's figure out of line
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: space.gapMd },
   cell: { flex: 1, gap: CAPTION_GAP },
   captionRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm, flexShrink: 1 },
   stack: { gap: space.gapSm },

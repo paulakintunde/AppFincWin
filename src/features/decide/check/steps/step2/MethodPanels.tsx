@@ -133,6 +133,7 @@ function LoanPanel(props: Step2Props) {
   const depositInfo = useInfoSheet('deposit');
   const termInfo = useInfoSheet('loanTerm');
   const securedInfo = useInfoSheet('secured');
+  const savedInfo = useInfoSheet('interestSaved');
   const wholeFmt = moneyFn(whole, source.currency);
   const exactFmt = moneyFn(exact, source.currency);
   const loan = inputs.loan;
@@ -158,6 +159,16 @@ function LoanPanel(props: Step2Props) {
   const saved = plan !== null && noDeposit !== null && plan.interest !== null && noDeposit.interest !== null ? noDeposit.interest - plan.interest : null;
 
   const showStrip = canUse('payoffComparisons');
+  // D-86: the saving shows only with a deposit and a rate, so 0 or a missing figure hides the tile and the line.
+  const showSaved = deposit > 0 && saved !== null && saved > 0 && noDeposit !== null && plan !== null && term !== null && isValidAprText(loan.aprText);
+  const stripLabel =
+    plan === null || saved === null
+      ? ''
+      : [
+          `${t('decide.pay.loanInterestSavedByDeposit')}, ${wholeFmt(saved)}`,
+          ...(plan.interest === null ? [] : [`${t('decide.pay.loanInterestPaid')}, ${plan.interest === 0 ? t('decide.verdict.key.none') : wholeFmt(plan.interest)}`]),
+          `${t('decide.pay.loanCashLeft')}, ${wholeFmt(source.cash - plan.dayOne)}`,
+        ].join('. ');
   return (
     <View style={styles.panel}>
       <SliderWithField
@@ -240,12 +251,28 @@ function LoanPanel(props: Step2Props) {
           <PlanStrip plan={plan} whole={wholeFmt} exact={exactFmt} t={t} />
           {showStrip ? (
             <FigureStrip
+              {...(showSaved ? { group: { label: stripLabel } } : {})}
               items={[
-                ...(saved === null ? [] : [{ caption: t('decide.pay.loanInterestSaved'), value: wholeFmt(saved), tone: 'positive' as const }]),
+                ...(showSaved
+                  ? [{ caption: t('decide.pay.loanInterestSavedByDeposit'), value: wholeFmt(saved), tone: 'positive' as const, captionAccessory: savedInfo.button() }]
+                  : []),
+                ...(plan.interest === null ? [] : [{ caption: t('decide.pay.loanInterestPaid'), value: plan.interest === 0 ? t('decide.verdict.key.none') : wholeFmt(plan.interest) }]),
                 { caption: t('decide.pay.loanCashLeft'), value: wholeFmt(source.cash - plan.dayOne) },
               ]}
             />
           ) : null}
+          {showStrip && showSaved ? (
+            <Meta tone="muted">
+              {t('decide.pay.loanSavedLine', {
+                count: term,
+                saved: wholeFmt(saved),
+                financedNoDeposit: wholeFmt(noDeposit.financed),
+                financed: wholeFmt(plan.financed),
+                apr: percentText(percent(loan.aprText)),
+              })}
+            </Meta>
+          ) : null}
+          {savedInfo.sheet}
           {term !== null && plan.interest !== null ? (
             <Meta tone="muted">{t('decide.pay.loanTermNote', { count: term, payment: exactFmt(plan.monthly), interest: wholeFmt(plan.interest) })}</Meta>
           ) : null}
