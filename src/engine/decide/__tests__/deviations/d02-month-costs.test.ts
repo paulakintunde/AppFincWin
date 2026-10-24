@@ -17,6 +17,7 @@ function ctx(over: Partial<DecideSnapshot>): AssessContext {
 const noLimits = {
   reserve: null,
   dsrLine: null,
+  housingLine: null,
   unsecuredIncomeMultiple: null,
   investingFloor: null,
   savingFloor: null,

@@ -558,6 +558,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   const limits: DecideLimits = {
     reserve: reserve === null ? null : minorUnits(reserve),
     dsrLine,
+    housingLine: null, // D-103: 05-124 reads decide_settings.housing_line
     unsecuredIncomeMultiple: multiple,
     investingFloor: investingFloor === null ? null : minorUnits(investingFloor),
     savingFloor: savingFloor === null ? null : minorUnits(savingFloor),
@@ -652,6 +653,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       monthlyInvesting,
       scope: { kind: 'personal' },
       householdSpending: null, // D-18: household scope hidden until Phase 8
+      housingMonthly: minorUnits(0), // D-103: 05-124 fills this from the data
       limits,
       projectionReturn: null, // the per-check rate is applied by computeCheck (D-07)
       projectionRates: [],

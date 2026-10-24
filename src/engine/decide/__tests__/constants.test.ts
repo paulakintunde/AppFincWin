@@ -9,6 +9,7 @@ import {
   SIMULATION_MONTH_CAP,
   DEFAULT_RESERVE_MONTHS,
   DEFAULT_DSR_LINE,
+  DEFAULT_HOUSING_LINE,
   DEFAULT_UNSECURED_INCOME_MULTIPLE,
   BILLS_DUE_HORIZON_DAYS,
   WEEKS_PER_YEAR,
@@ -53,6 +54,7 @@ describe('decide behaviour constants', () => {
   it('limit defaults (D-01, D-04)', () => {
     expect(DEFAULT_RESERVE_MONTHS).toBe(3);
     expect(DEFAULT_DSR_LINE).toBe(percent('36'));
+    expect(DEFAULT_HOUSING_LINE).toBe(percent('28'));
     expect(DEFAULT_UNSECURED_INCOME_MULTIPLE).toBe(12);
   });
 
@@ -65,7 +67,7 @@ describe('decide behaviour constants', () => {
   });
 
   it('warning order', () => {
-    expect(WARNING_ORDER).toEqual(['month', 'cash', 'cash_dip', 'dsr', 'owe', 'inv']);
+    expect(WARNING_ORDER).toEqual(['month', 'cash', 'cash_dip', 'dsr', 'housing', 'owe', 'inv']);
   });
 
   it('default setbacks (prototype DSB, no currency amount)', () => {
@@ -156,6 +158,14 @@ describe('constants.ts citations', () => {
     expect(citeOf('DEFAULT_DSR_LINE')).toContain('take-home income');
     expect(citeOf('DEFAULT_DSR_LINE')).toContain('selling-guide.fanniemae.com');
     expect(citeOf('DEFAULT_UNSECURED_INCOME_MULTIPLE')).toContain(USER_CONFIRMED);
+  });
+
+  it('D-103 the housing line cites the 28/36 front-end ratio with a verified source', () => {
+    expect(citeOf('DEFAULT_HOUSING_LINE')).toContain('front-end');
+    expect(citeOf('DEFAULT_HOUSING_LINE')).toContain('28% of gross monthly income');
+    expect(citeOf('DEFAULT_HOUSING_LINE')).toContain('bankrate.com/mortgages/what-is-the-28-36-rule');
+    expect(citeOf('DEFAULT_HOUSING_LINE')).toContain('user-confirmed 2026-10-24');
+    expect(citeOf('DEFAULT_HOUSING_LINE')).toContain('take-home income');
   });
 
   it('cites the sources the research found', () => {

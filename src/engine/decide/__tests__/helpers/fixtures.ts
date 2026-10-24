@@ -131,11 +131,13 @@ export function snapshotOf(over: Partial<DecideSnapshot> = {}): DecideSnapshot {
     monthlySaving: minorUnits(0),
     monthlyInvesting: minorUnits(0),
     pots: [],
+    housingMonthly: minorUnits(0),
     scope: { kind: 'personal' },
     householdSpending: null,
     limits: {
       reserve: null,
       dsrLine: null,
+      housingLine: null,
       unsecuredIncomeMultiple: null,
       investingFloor: null,
       savingFloor: null,

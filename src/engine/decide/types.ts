@@ -115,6 +115,7 @@ export type Basis = 'average' | 'worst';
 export interface DecideLimits {
   readonly reserve: MinorUnits | null; // D-01, D-42 (amended): null → month's costs × RESERVE_HALF_MONTHS[steadiness] ÷ 2, one half-up rounding
   readonly dsrLine: Percent | null; // D-04: null → DEFAULT_DSR_LINE (36%)
+  readonly housingLine: Percent | null; // D-103: null → DEFAULT_HOUSING_LINE (28%)
   readonly unsecuredIncomeMultiple: number | null; // D-04: null → DEFAULT_UNSECURED_INCOME_MULTIPLE (12)
   readonly investingFloor: MinorUnits | null; // D-05: null → what the user invests now each month
   readonly savingFloor: MinorUnits | null; // D-05: null → what the user saves now each month
@@ -157,6 +158,7 @@ export interface DecideSnapshot {
   readonly monthlySaving: MinorUnits; // goal contributions; pausable (D-35)
   readonly monthlyInvesting: MinorUnits; // automatic investing incl. recorded monthly investments (D-32); pausable (D-35)
   readonly scope: ShareScope; // PURCHASE share: rule = the per-check resolved split (D-15, D-34)
+  readonly housingMonthly: MinorUnits; // D-103: my share of monthly housing costs (Housing-category spending plus payments on loans marked as housing), >= 0; the builder fills it
   readonly householdSpending: HouseholdSpendingRule | null; // EXISTING-spending share (D-34); required in household scope, ignored in personal scope
   readonly limits: DecideLimits;
   readonly projectionReturn: Percent | null; // D-06: null → 0%. The single rate behind the prototype-parity projection fields and the D-31 fact; the Phase 5 builder sets it to the first entered rate, or null
@@ -393,7 +395,7 @@ export interface BillDue {
 
 // ── Verdict (dassess) ──
 export type VerdictState = 'fits' | 'adjust' | 'no' | 'missing';
-export type WarningCode = 'month' | 'cash' | 'cash_dip' | 'dsr' | 'owe' | 'inv'; // cash_dip: D-44
+export type WarningCode = 'month' | 'cash' | 'cash_dip' | 'dsr' | 'housing' | 'owe' | 'inv'; // cash_dip: D-44
 export interface Warning {
   readonly code: WarningCode;
   readonly shortfall: MinorUnits;
@@ -425,6 +427,7 @@ export type BasisFact = DebtRateFact | CashTightFact;
 export interface ResolvedLimits {
   readonly reserve: MinorUnits;
   readonly dsrLine: Percent;
+  readonly housingLine: Percent; // D-103
   readonly unsecuredLine: MinorUnits;
   readonly investingFloor: MinorUnits;
   readonly savingFloor: MinorUnits;
@@ -439,6 +442,7 @@ export interface LimitChecks {
   readonly cash: boolean;
   readonly month: boolean;
   readonly dsr: boolean;
+  readonly housing: boolean; // D-103: true when the line does not apply to the check
   readonly owe: boolean;
   readonly inv: boolean;
   readonly save: boolean;
@@ -537,6 +541,10 @@ export interface Assessment {
   readonly unsecuredAfter: MinorUnits;
   readonly debtServiceRatioBefore: Percent | null; // half-up share of incomeBasis; null when incomeBasis is 0 ("{pct} of money in")
   readonly debtServiceRatioAfter: Percent | null;
+  readonly housingBefore: MinorUnits; // D-103: my monthly housing cost before the check (snapshot.housingMonthly)
+  readonly housingAfter: MinorUnits; // D-103: max(0, housingBefore + newMonthly) for a property check that adds housing; otherwise housingBefore
+  readonly housingRatioBefore: Percent | null; // half-up share of incomeBasis; null when incomeBasis is 0
+  readonly housingRatioAfter: Percent | null;
   readonly debtBalanceAfter: MinorUnits; // debtBalance + my share of plan.financed (buy only)
   readonly monthTable: MonthTable; // D-38
   readonly ledgers: readonly [Ledger, Ledger, Ledger, Ledger, Ledger]; // D-38: income, expenses, debt, cash, investments
@@ -960,7 +968,7 @@ export interface Confidence {
   readonly level: ConfidenceLevel;
   readonly reasons: readonly ConfidenceReason[];
 } // strong → reasons []
-export type MarginLine = 'month' | 'cash' | 'dsr' | 'owe' | 'inv' | 'cash_path';
+export type MarginLine = 'month' | 'cash' | 'dsr' | 'housing' | 'owe' | 'inv' | 'cash_path';
 export interface LineMargin {
   readonly line: MarginLine;
   readonly margin: MinorUnits; // signed (>= 0 passes)

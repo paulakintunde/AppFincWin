@@ -13,6 +13,7 @@ function ctxFor(cashOnHand: number, reserve: number): AssessContext {
       limits: {
         reserve: mu(reserve),
         dsrLine: null,
+        housingLine: null,
         unsecuredIncomeMultiple: null,
         investingFloor: null,
         savingFloor: null,

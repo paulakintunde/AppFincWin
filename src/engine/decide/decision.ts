@@ -62,6 +62,11 @@ export function lineMargins(a: Assessment, check: PurchaseCheck): readonly LineM
     // service fails it by its whole amount (assessPlan's dsr check agrees).
     const lineMoney = mi(divideHalfUp(limits.dsrLine * BigInt(ctx.money.incomeBasis), ONE_HUNDRED_PERCENT));
     out.push(edgeMargin('dsr', mi(BigInt(lineMoney) - BigInt(a.debtServiceAfter)), lineMoney, mc));
+    if (check.itemType === 'property') {
+      // D-103: property checks only; the line in money is 0 with no income, as for dsr.
+      const housingLineMoney = mi(divideHalfUp(limits.housingLine * BigInt(ctx.money.incomeBasis), ONE_HUNDRED_PERCENT));
+      out.push(edgeMargin('housing', mi(BigInt(housingLineMoney) - BigInt(a.housingAfter)), housingLineMoney, mc));
+    }
     out.push(
       edgeMargin(
         'owe',

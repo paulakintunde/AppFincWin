@@ -63,6 +63,7 @@ const BASE = {
     limits: {
       reserve: 100_000,
       dsrLine: percent('36'),
+      housingLine: null,
       investingFloor: 10_000,
       savingFloor: 10_000,
       unsecuredIncomeMultiple: 12,

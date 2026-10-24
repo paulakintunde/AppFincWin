@@ -385,6 +385,7 @@ describe('LinesCard', () => {
         limits: {
           reserve: s.reserve === null ? null : minorUnits(s.reserve),
           dsrLine: null,
+          housingLine: null,
           unsecuredIncomeMultiple: null,
           investingFloor: null,
           savingFloor: null,

@@ -24,6 +24,7 @@ import {
   BILLS_DUE_HORIZON_DAYS,
   CASH_PATH_DAYS,
   DEFAULT_DSR_LINE,
+  DEFAULT_HOUSING_LINE,
   MAX_PROJECTION_RATE,
   DEFAULT_UNSECURED_INCOME_MULTIPLE,
   MONTHS_PER_YEAR,
@@ -100,6 +101,7 @@ function validate(snapshot: DecideSnapshot): void {
   }
   assertNonNegative(snapshot.monthlySaving, 'monthlySaving');
   assertNonNegative(snapshot.monthlyInvesting, 'monthlyInvesting');
+  assertNonNegative(snapshot.housingMonthly, 'housingMonthly'); // D-103
   // 04-REVIEW LO-03: every user limit is checked up front (a negative reserve passed silently without a cash path).
   const { reserve, investingFloor, savingFloor, spareFloor, dsrLine } = snapshot.limits;
   if (reserve !== null) assertNonNegative(reserve, 'limits.reserve');
@@ -108,6 +110,9 @@ function validate(snapshot: DecideSnapshot): void {
   if (spareFloor !== null) assertNonNegative(spareFloor, 'limits.spareFloor');
   if (dsrLine !== null && dsrLine < 0n) {
     throw new RangeError(`${FN}: limits.dsrLine must be >= 0%`);
+  }
+  if (snapshot.limits.housingLine !== null && snapshot.limits.housingLine < 0n) {
+    throw new RangeError(`${FN}: limits.housingLine must be >= 0%`);
   }
   const multiple = snapshot.limits.unsecuredIncomeMultiple;
   if (multiple !== null && (!Number.isSafeInteger(multiple) || multiple < 0)) {
@@ -217,6 +222,7 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
   const resolved: ResolvedLimits = {
     reserve: limits.reserve ?? defaultReserve(monthCosts, money.steadiness),
     dsrLine: limits.dsrLine ?? DEFAULT_DSR_LINE,
+    housingLine: limits.housingLine ?? DEFAULT_HOUSING_LINE,
     unsecuredLine: mi(
       BigInt(money.incomeAverage) * BigInt(limits.unsecuredIncomeMultiple ?? DEFAULT_UNSECURED_INCOME_MULTIPLE)
     ),
@@ -308,7 +314,7 @@ function direction(worse: boolean, better: boolean): LedgerDirection {
  * reading recorded in 04-REPLAN-NOTES.md). Invest checks never emit `inv` or debt-line warnings; `month` carries the
  * whole shortfall.
  * D-24: the `cash` check reads cashAvailable; the deducted bills reach spare money through cashAfterBills.
- * Equal shortfalls are ordered by WARNING_ORDER (month, cash, cash_dip, dsr, owe, inv).
+ * Equal shortfalls are ordered by WARNING_ORDER (month, cash, cash_dip, dsr, housing, owe, inv).
  * D-38: the month table is pre-pause so its rows add up; the pause is reported through `inv`, investingAtRisk and
  * savingAtRisk. Cash Now is context.ledgerCash and Cash After ledgerCashAfterPurchase (D-38, D-24, D-61), not the
  * path-aware cashAvailable and not the spare-money cashAfterBills. D-21: the direction is a code.
@@ -341,6 +347,19 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
     (incomeBasis > 0
       ? BigInt(debtServiceAfter) * ONE_HUNDRED_PERCENT > dsrLine * BigInt(incomeBasis)
       : debtServiceAfter > 0);
+  // D-103: tested only when the check adds housing cost (a property check with a positive monthly effect). rent_bill and
+  // other purchases are never blamed for housing already over the line; invest checks are never tested. Equal is not a breach.
+  // The spec's max(0, ...) floor cannot bite here: newMonthly > 0 and housingMonthly >= 0 (validated), so the sum is positive;
+  // a property check whose replaced expenses net the effect to 0 or less is simply not tested (housingAfter = housingBefore).
+  const housingBefore = snapshot.housingMonthly;
+  const addsHousing = check.kind === 'buy' && check.itemType === 'property' && newMonthly > 0;
+  const housingAfter = addsHousing ? am(BigInt(housingBefore) + BigInt(newMonthly)) : housingBefore;
+  const housingLine = limits.housingLine;
+  const housingBreach =
+    addsHousing &&
+    (incomeBasis > 0
+      ? BigInt(housingAfter) * ONE_HUNDRED_PERCENT > housingLine * BigInt(incomeBasis)
+      : housingAfter > 0);
   const financedMine = isInvest ? 0n : BigInt(myPart(plan.financed, p));
   const unsecuredAfter = am(BigInt(context.unsecuredDebt) + financedMine);
   const oweBreach = !isInvest && unsecuredAfter > limits.unsecuredLine;
@@ -391,6 +410,10 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
     const line = divideHalfUp(dsrLine * BigInt(incomeBasis), ONE_HUNDRED_PERCENT);
     warnings.push({ code: 'dsr', shortfall: am(BigInt(debtServiceAfter) - line) });
   }
+  if (housingBreach) {
+    const line = divideHalfUp(housingLine * BigInt(incomeBasis), ONE_HUNDRED_PERCENT);
+    warnings.push({ code: 'housing', shortfall: am(BigInt(housingAfter) - line) });
+  }
   if (oweBreach) warnings.push({ code: 'owe', shortfall: am(BigInt(unsecuredAfter) - BigInt(limits.unsecuredLine)) });
   if (!isInvest && pauseNeeded > 0) warnings.push({ code: 'inv', shortfall: am(BigInt(pauseNeeded)) });
   warnings.sort(compareWarnings);
@@ -402,6 +425,7 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
     cash: cashAfter >= limits.reserve,
     month: remainingShortfall === 0,
     dsr: !dsrBreach,
+    housing: !housingBreach,
     owe: !oweBreach,
     inv: investingAfter >= limits.investingFloor,
     save: savingAfter >= limits.savingFloor,
@@ -506,6 +530,10 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
     unsecuredAfter,
     debtServiceRatioBefore: ratio(context.debtPayments),
     debtServiceRatioAfter: ratio(debtServiceAfter),
+    housingBefore,
+    housingAfter,
+    housingRatioBefore: ratio(housingBefore),
+    housingRatioAfter: ratio(housingAfter),
     debtBalanceAfter,
     monthTable,
     ledgers,

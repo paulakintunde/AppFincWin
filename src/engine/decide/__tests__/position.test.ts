@@ -43,6 +43,7 @@ const B = (over: Partial<DecideSnapshot> = {}): DecideSnapshot =>
 const LIMITS_BL: DecideLimits = {
   reserve: mu(600_000),
   dsrLine: percent('36'),
+  housingLine: null,
   unsecuredIncomeMultiple: 12,
   investingFloor: mu(40_000),
   savingFloor: mu(25_000),

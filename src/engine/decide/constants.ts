@@ -39,6 +39,11 @@ export const DEFAULT_RESERVE_MONTHS = 3; // D-01, D-11
 // https://files.consumerfinance.gov/f/documents/cfpb_your-money-your-goals_debt_income_calc_tool_2018-11_ADA.pdf
 export const DEFAULT_DSR_LINE: Percent = percent('36'); // D-04
 
+// Cite: the 28/36 rule's front-end ratio: housing costs (mortgage principal, interest, taxes and insurance) at most 28% of gross monthly income. Bankrate, "What Percentage Of Income Should Go To A Mortgage?" (fetched 2026-10-24): "a homebuyer's monthly mortgage payment shouldn't exceed 28% of their gross monthly income ... based on a borrower's front-end debt-to-income (DTI) ratio"; the 36% rule is the back-end ratio (DEFAULT_DSR_LINE above).
+// FincWin behaviour line (user-confirmed 2026-10-24, D-103); 28% applies to take-home income (logged money in), which is stricter than the lenders' gross-income test, deliberately. Editable.
+// https://www.bankrate.com/mortgages/what-is-the-28-36-rule/
+export const DEFAULT_HOUSING_LINE: Percent = percent('28'); // D-103
+
 // Cite: FincWin behaviour constant (no published source; see 04-RESEARCH addendum §A). Prototype behaviour constant (dlim). No authoritative stock threshold found. Closest heuristic: the "20/10 rule" (Experian, 2023) puts consumer debt under 20% of annual take-home pay. See 04-RESEARCH §A.2.
 // FincWin behaviour line (user-confirmed 2026-10-15, D-04 confirmed after research); not a published standard; editable; the 20/10 rule was considered and not adopted.
 // https://www.experian.com/blogs/ask-experian/what-is-the-20-10-rule/
@@ -59,8 +64,8 @@ export const MONTHS_PER_YEAR = 12; // D-23
 // Cite: D-23 monthly-equivalent conversion (calendar: 3 months in a quarter).
 export const MONTHS_PER_QUARTER = 3; // D-23
 
-// Cite: prototype push order of warnings (month, cash, dsr, owe, inv); cash_dip (D-44) sits after cash because both are cash causes. Used to break ties between equal shortfalls.
-export const WARNING_ORDER: readonly WarningCode[] = ['month', 'cash', 'cash_dip', 'dsr', 'owe', 'inv'];
+// Cite: prototype push order of warnings (month, cash, dsr, owe, inv); cash_dip (D-44) sits after cash because both are cash causes; housing (D-103) sits after dsr because both are income-share lines and housing is the narrower. Used to break ties between equal shortfalls.
+export const WARNING_ORDER: readonly WarningCode[] = ['month', 'cash', 'cash_dip', 'dsr', 'housing', 'owe', 'inv'];
 
 // Cite: prototype DSB setbacks (FincWin United.dc.html lines 3995-3999): once, drop 20% x 2 months, none x 8 months, late 30 days. The prototype's 1,200 unexpected-expense amount is a currency amount and is replaced by null, meaning one month's costs (D-05).
 export const DEFAULT_SETBACKS: readonly SetbackInput[] = [

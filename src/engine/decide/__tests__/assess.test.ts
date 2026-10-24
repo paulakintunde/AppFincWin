@@ -46,6 +46,7 @@ const B = (over: Partial<DecideSnapshot> = {}): DecideSnapshot =>
 const LIMITS_BL: DecideLimits = {
   reserve: mu(600_000),
   dsrLine: percent('36'),
+  housingLine: null,
   unsecuredIncomeMultiple: 12,
   investingFloor: mu(40_000),
   savingFloor: mu(25_000),
@@ -128,6 +129,7 @@ describe('prepareContext (DEC-06; D-01..D-06, D-23, D-24, D-32, D-34)', () => {
         limits: {
           reserve: mu(600_000),
           dsrLine: percent('40'),
+          housingLine: null,
           unsecuredIncomeMultiple: 6,
           investingFloor: mu(10_000),
           savingFloor: mu(0),
@@ -541,7 +543,7 @@ describe('assessPlan ledgers and one warning at a time (DEC-06)', () => {
     expect(a.left).toBe(125_000);
     expect(a.pauseNeeded).toBe(0);
     expect(a.remainingShortfall).toBe(0);
-    expect(a.checks).toEqual({ cash: true, month: true, dsr: true, owe: true, inv: true, save: true });
+    expect(a.checks).toEqual({ cash: true, month: true, dsr: true, housing: true, owe: true, inv: true, save: true });
     expect(a.facts).toEqual([]);
     expect(a.basisMarker).toBe('logged_months');
   });
