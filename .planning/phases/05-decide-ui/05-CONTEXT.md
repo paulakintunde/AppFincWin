@@ -413,12 +413,14 @@ UI-SPEC R17 carries the layout, budgets, states, copy and wireframes. It replace
   - Sinking-fund set-asides (D-101) are taken off with saving goals.
 - **D-101: Sinking funds are named pots, counted.**
   - A user creates a pot with a name, a target and a date ("Car service, $600 by March"). Its monthly set-aside comes off Net Free Cash Flow like saving goals and is protected in checks (a check never spends it).
-  - New table with RLS (household-of-one pattern) and a migration pushed to production with the usual explicit approval. Pots can be added, edited, marked done and deleted with Undo.
-  - Wait-and-save goals (D-10) become one kind of pot; the Wait plan's goal progress reads from the pot.
+  - Stored by extending the existing `savings_goals` table (user, 2026-10-24): a `kind` ('wait' | 'pot') and a done date, keeping its household RLS, tagged-transfer progress, soft delete and Undo. The migration is pushed to production with the usual explicit approval. Pots can be added, edited, marked done and deleted with Undo.
+  - Wait-and-save goals (D-10) become the 'wait' kind; the Wait plan's goal progress reads from the pot.
+  - Pots are reached from Month details ("Pots ›") and a You › Money "Pots" row (user, 2026-10-24); no fifth row on Decide home.
   - Phase 6 (Grow, Goals) builds on this table rather than a second one.
 - **D-102: Total cost of ownership is one total line.** A verdict row "Over {n} years: {total} in all": price + interest and fees + running costs × years − expected resale where loss of value is set. The years follow the check's horizon; computed in the engine from figures the check already has (integer minor units, 100% coverage). No new inputs.
-- **D-103: The 28/36 rule gets a housing line.** A sixth line under "Lines you will not cross": housing costs at most **28%** of income (changeable, default 28). Housing = housing-category spending plus housing debt payments (mortgage, rent). A check that pushes housing over it gets a warning, as the 36% debt-to-income line does. Order and wording follow the existing warning rules.
-- **D-104: Opportunity cost gets a verdict headline.** One verdict-summary row "Invested instead: {fv} after {n} years at {r}%", shown only when a rate is set (typed, or the market default the check already uses); never an invented rate. The "If it went into investing instead" fold stays.
+- **D-103: The 28/36 rule gets a housing line.** A sixth line under "Lines you will not cross": housing costs at most **28%** of income (changeable, default 28). Housing = housing-category spending plus payments on debts flagged as housing. A "This is for housing" switch on a debt (user, 2026-10-24) marks it; it defaults on for mortgage-type debts, and existing rows are backfilled from the automatic signals (Housing series, created from a property check). A check that pushes housing over it gets a warning, as the 36% debt-to-income line does. Order and wording follow the existing warning rules.
+- **D-104: Opportunity cost gets a verdict headline.** One verdict-summary row "Invested instead: {fv} after {n} years at {r}%", shown only when the user has typed a rate in the fold (no market-default rate exists, and D-06/D-07 forbid a defaulted one); never an invented rate. The "If it went into investing instead" fold stays.
+- **D-100 addendum:** the card's "In · Out" line counts everything that leaves (spending, debt payments, saving, investing and set-asides), so In − Out equals the hero; Month details shows the matching breakdown.
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
