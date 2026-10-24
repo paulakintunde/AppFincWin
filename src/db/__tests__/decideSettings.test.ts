@@ -1,5 +1,6 @@
 import { DbError } from '../errors';
 import {
+  DECIDE_SETTINGS_COLUMNS,
   DECIDE_SETTINGS_PATCH_KEYS,
   EMPTY_DECIDE_SETTINGS,
   fetchDecideSettings,
@@ -36,6 +37,24 @@ describe('upsertDecideSettings', () => {
       { user_id: 'u1', reserve: 5000 },
       { onConflict: 'user_id' },
     ]);
+  });
+
+  it('D-103 housing_line round-trips through the settings row and patch', async () => {
+    const client = createFakeSupabase();
+    const withLine: DecideSettingsRow = { ...ROW, housing_line: '28.5' };
+    client.respondWith({ data: withLine, error: null, status: 200 });
+    await expect(upsertDecideSettings(client, 'u1', { housing_line: '28.5' })).resolves.toEqual(withLine);
+    expect(client.calls.find((c) => c.method === 'upsert')?.args[0]).toEqual({ user_id: 'u1', housing_line: '28.5' });
+    expect(DECIDE_SETTINGS_PATCH_KEYS).toContain('housing_line');
+    expect(DECIDE_SETTINGS_COLUMNS).toContain('housing_line');
+    expect(EMPTY_DECIDE_SETTINGS.housing_line).toBeNull();
+  });
+
+  it('D-103 housing_line null clears the stored value', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: ROW, error: null, status: 200 });
+    await upsertDecideSettings(client, 'u1', { housing_line: null });
+    expect(client.calls.find((c) => c.method === 'upsert')?.args[0]).toEqual({ user_id: 'u1', housing_line: null });
   });
 
   it('rejects keys outside the patch list before any request', async () => {

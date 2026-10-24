@@ -72,6 +72,28 @@ describe('useUpdateDecideSettings', () => {
     expect(qc.getQueryData<DecideSettingsRow>(KEY)).toMatchObject({ rough_income: 500000, reserve: null });
   });
 
+  it('D-103 housing_line round-trips through the settings row and patch', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith({ data: row({ housing_line: '28.5', version: 2 }), error: null, status: 200 });
+    const { result } = await renderHook(() => useUpdateDecideSettings('user-1'), { wrapper: wrapper(qc) });
+    result.current.update({ housing_line: '28.5' });
+    await waitFor(() => expect(qc.getQueryData<DecideSettingsRow>(KEY)?.version).toBe(2));
+    expect(fake.calls.filter((c) => c.method === 'upsert')).toHaveLength(1);
+    expect(fake.calls.find((c) => c.method === 'upsert')?.args[0]).toEqual({ user_id: 'user-1', housing_line: '28.5' });
+    expect(qc.getQueryData<DecideSettingsRow>(KEY)?.housing_line).toBe('28.5');
+  });
+
+  it('D-103 housing_line null clears the stored value', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, row({ housing_line: '30' }));
+    fake.respondWith({ data: row({ housing_line: null, version: 2 }), error: null, status: 200 });
+    const { result } = await renderHook(() => useUpdateDecideSettings('user-1'), { wrapper: wrapper(qc) });
+    result.current.update({ housing_line: null });
+    await waitFor(() => expect(qc.getQueryData<DecideSettingsRow>(KEY)?.version).toBe(2));
+    expect(fake.calls.find((c) => c.method === 'upsert')?.args[0]).toEqual({ user_id: 'user-1', housing_line: null });
+    expect(qc.getQueryData<DecideSettingsRow>(KEY)?.housing_line).toBeNull();
+  });
+
   it('a blank line saves null', async () => {
     const { fake, qc } = setup();
     qc.setQueryData(KEY, row({ reserve: 200000 }));

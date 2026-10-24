@@ -11,6 +11,7 @@ export interface DecideSettingsRow {
   rough_spending: number | null;
   reserve: number | null;
   dsr_line: string | null;
+  housing_line: string | null;
   unsecured_multiple: number | null;
   investing_floor: number | null;
   saving_floor: number | null;
@@ -20,7 +21,7 @@ export interface DecideSettingsRow {
 }
 
 export const DECIDE_SETTINGS_COLUMNS =
-  'user_id, currency, rough_income, rough_spending, reserve, dsr_line, unsecured_multiple, investing_floor, saving_floor, basis_override, version, updated_at';
+  'user_id, currency, rough_income, rough_spending, reserve, dsr_line, housing_line, unsecured_multiple, investing_floor, saving_floor, basis_override, version, updated_at';
 
 export type DecideSettingsPatch = Partial<Omit<DecideSettingsRow, 'user_id' | 'version' | 'updated_at'>>;
 
@@ -30,6 +31,7 @@ export const DECIDE_SETTINGS_PATCH_KEYS = [
   'rough_spending',
   'reserve',
   'dsr_line',
+  'housing_line',
   'unsecured_multiple',
   'investing_floor',
   'saving_floor',
@@ -42,6 +44,7 @@ export const EMPTY_DECIDE_SETTINGS: Omit<DecideSettingsRow, 'user_id'> = {
   rough_spending: null,
   reserve: null,
   dsr_line: null,
+  housing_line: null,
   unsecured_multiple: null,
   investing_floor: null,
   saving_floor: null,
