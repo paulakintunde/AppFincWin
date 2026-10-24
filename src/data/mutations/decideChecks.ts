@@ -8,7 +8,7 @@
 // and field counts only, never the item name or any amount (privacy). Variables are plain JSON so a paused
 // mutation survives a restart.
 import * as Crypto from 'expo-crypto';
-import { useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { useMutation, useMutationState, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import {
@@ -156,6 +156,41 @@ export function useReopenRedirect(id: string): string | null {
   return useSyncExternalStore(subscribeRedirects, () => reopenRedirects.get(id) ?? null);
 }
 
+/** The row a create shows before the server has it. Also read by the check flow while the create waits in the write queue. */
+export function optimisticCheckRow(vars: CreateCheckVars): WithPending<DecideCheckRow> {
+  const now = new Date().toISOString();
+  return {
+    id: vars.id,
+    household_id: vars.householdId,
+    created_by: vars.userId,
+    kind: kindFollowingInputs(vars.kind, vars.inputs),
+    name: vars.name,
+    inputs: vars.inputs,
+    status: 'open',
+    furthest_step: vars.furthestStep,
+    last_seen_state: null,
+    last_seen_basis: null,
+    reopened_from: vars.reopenedFrom ?? null,
+    decided_at: null,
+    verdict_at_decision: null,
+    estimate_day_one: null,
+    estimate_monthly: null,
+    wait_monthly: null,
+    ready_by: null,
+    broke_line: false,
+    cooling_off_at: null,
+    estimate_monthly_payment: null,
+    estimate_running: null,
+    is_sample: false,
+    deleted_at: null,
+    version: 1,
+    updated_by: null,
+    created_at: now,
+    updated_at: now,
+    pending: true,
+  };
+}
+
 export function registerDecideCheckMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.createCheck, {
     mutationFn: (vars: CreateCheckVars) =>
@@ -177,37 +212,7 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
       markSession(vars);
       const cache = { userId: vars.userId, householdId: vars.householdId };
       await qc.cancelQueries({ queryKey: queryKeys.decideChecks(cache.userId, cache.householdId) });
-      const now = new Date().toISOString();
-      const optimistic: WithPending<DecideCheckRow> = {
-        id: vars.id,
-        household_id: vars.householdId,
-        created_by: vars.userId,
-        kind: kindFollowingInputs(vars.kind, vars.inputs),
-        name: vars.name,
-        inputs: vars.inputs,
-        status: 'open',
-        furthest_step: vars.furthestStep,
-        last_seen_state: null,
-        last_seen_basis: null,
-        reopened_from: vars.reopenedFrom ?? null,
-        decided_at: null,
-        verdict_at_decision: null,
-        estimate_day_one: null,
-        estimate_monthly: null,
-        wait_monthly: null,
-        ready_by: null,
-        broke_line: false,
-        cooling_off_at: null,
-        estimate_monthly_payment: null,
-        estimate_running: null,
-        is_sample: false,
-        deleted_at: null,
-        version: 1,
-        updated_by: null,
-        created_at: now,
-        updated_at: now,
-        pending: true,
-      };
+      const optimistic = optimisticCheckRow(vars);
       patchChecks(qc, cache, (rows) => upsertRow(rows, optimistic, 'start'));
     },
     onSuccess: (row: DecideCheckRow, vars: CreateCheckVars) => {
@@ -431,6 +436,8 @@ export function useCreateCheck(): {
   }): void;
   /** Ids of checks whose create is queued or in flight (from any screen). A check in this list is on its way, not missing. */
   pendingIds: readonly string[];
+  /** The optimistic rows of those creates, built from the queued variables (they survive a checks refetch). */
+  pendingRows: readonly WithPending<DecideCheckRow>[];
 } {
   const mutation = useMutation<DecideCheckRow, unknown, CreateCheckVars>({
     mutationKey: mutationKeys.createCheck,
@@ -440,11 +447,20 @@ export function useCreateCheck(): {
     filters: { mutationKey: mutationKeys.createCheck, status: 'pending' },
     select: (m) => (m.state.variables as CreateCheckVars | undefined)?.id ?? '',
   });
+  const pendingVars = useMutationState({
+    filters: { mutationKey: mutationKeys.createCheck, status: 'pending' },
+    select: (m) => m.state.variables as CreateCheckVars | undefined,
+  });
+  const pendingRows = useMemo(
+    () => pendingVars.filter((v): v is CreateCheckVars => v !== undefined).map(optimisticCheckRow),
+    [pendingVars]
+  );
   return {
     create(input) {
       mutation.mutate({ ...input });
     },
     pendingIds,
+    pendingRows,
   };
 }
 

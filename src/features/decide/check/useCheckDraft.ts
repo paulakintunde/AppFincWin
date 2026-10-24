@@ -15,6 +15,7 @@ import { emptyCheckInputs, parseCheckInputs } from '../snapshot/checkInputs';
 import type { CheckInputs } from '../snapshot/types';
 
 export const DRAFT_DEBOUNCE_MS = 600;
+const NO_ROWS: readonly never[] = [];
 
 export interface CheckDraft {
   status: 'loading' | 'ready' | 'not_found';
@@ -43,13 +44,18 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
   const rc = useRecordContext();
   const checks = useDecideChecks(rc.userId ?? undefined, rc.householdId ?? undefined);
   const snapshot = useDecideSnapshot();
-  const { create, pendingIds } = useCreateCheck();
+  const { create, pendingIds, pendingRows = NO_ROWS } = useCreateCheck();
   // A create queued from another screen (Run the full check) has no row for a moment, or loses its optimistic row to a refetch
   // while it waits its turn in the write queue. Either way the check is on its way, not missing.
   const creating = pendingIds.includes(id);
   const { save } = useSaveCheckDraft();
 
-  const row = useMemo(() => checks.data?.find((r) => r.id === id) ?? null, [checks.data, id]);
+  // The row comes from the list, or, while the create waits its turn in the write queue (it can be seconds), from the queued
+  // create itself: the flow renders from the optimistic row at once and never waits on the server.
+  const row = useMemo(
+    () => checks.data?.find((r) => r.id === id) ?? pendingRows.find((r) => r.id === id) ?? null,
+    [checks.data, pendingRows, id]
+  );
   const [edited, setEdited] = useState<CheckInputs | null>(null);
 
   const created = useRef(false);
@@ -135,7 +141,7 @@ export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string)
   );
 
   const decided = row !== null && row.status !== 'open';
-  const loaded = checks.data !== undefined && rc.ready;
+  const loaded = (checks.data !== undefined || row !== null) && rc.ready;
   const status: CheckDraft['status'] = !loaded
     ? 'loading'
     : row === null && creating && !createdState

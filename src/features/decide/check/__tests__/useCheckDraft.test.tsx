@@ -10,6 +10,7 @@ const mockSave = jest.fn();
 const mockTrack = jest.fn();
 let mockChecks: { data: DecideCheckRow[] | undefined } = { data: [] };
 let mockPendingIds: string[] = [];
+let mockPendingRows: unknown[] = [];
 let mockResult: { currency: string } | null = { currency: 'GBP' };
 
 let mockRc: { ready: boolean; userId: string | null; householdId: string | null; today: string } = {
@@ -26,7 +27,7 @@ jest.mock('@/data/queries/decide', () => ({
   useDecideSnapshot: () => ({ result: mockResult }),
 }));
 jest.mock('@/data/mutations/decideChecks', () => ({
-  useCreateCheck: () => ({ create: (...a: unknown[]) => mockCreate(...a), pendingIds: mockPendingIds }),
+  useCreateCheck: () => ({ create: (...a: unknown[]) => mockCreate(...a), pendingIds: mockPendingIds, pendingRows: mockPendingRows }),
   useSaveCheckDraft: () => ({ save: (...a: unknown[]) => mockSave(...a) }),
 }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...a: unknown[]) => mockTrack(...a) }) }));
@@ -53,6 +54,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockChecks = { data: [] };
   mockPendingIds = [];
+  mockPendingRows = [];
   mockResult = { currency: 'GBP' };
   mockRc = { ready: true, userId: 'u1', householdId: 'h1', today: '2026-10-17' };
 });
@@ -304,6 +306,21 @@ describe('useCheckDraft', () => {
     await rerender({});
     expect(result.current.status).toBe('ready');
     expect(result.current.row?.id).toBe('c1');
+  });
+
+  it('a pending create renders from the optimistic row without waiting for the server', async () => {
+    // the create waits in the write queue: the list has no row (and may not even have loaded), the queued create has one
+    mockPendingIds = ['c1'];
+    mockPendingRows = [row()];
+    mockChecks = { data: undefined };
+    const { result, rerender } = await renderHook(() => useCheckDraft('c1', 'buy', TODAY));
+    expect(result.current.status).toBe('ready');
+    expect(result.current.row?.id).toBe('c1');
+    expect(result.current.inputs.name).toBe('Sofa');
+    mockChecks = { data: [] };
+    await rerender({});
+    expect(result.current.status).toBe('ready');
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 
   it('a truly missing check still resolves to not_found once no create is pending for it', async () => {

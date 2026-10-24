@@ -58,6 +58,7 @@ import { computeCore, computeDetails, sameInputs, settledCoreFor } from '../snap
 import type { CheckCore } from '../snapshot/computeCheck';
 import { EMPTY_STACK } from '../snapshot/types';
 import type { CheckComputation, CheckInputs } from '../snapshot/types';
+import { CheckFlowLoading } from './CheckFlowLoading';
 import { CheckActionBar } from './CheckActionBar';
 import { CheckFlowHeader } from './CheckFlowHeader';
 import { InfoTitle } from './InfoTitle';
@@ -569,7 +570,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
   );
 
   if (draft.status === 'not_found') return <CheckNotFound />;
-  if (draft.status === 'loading' || step === null) return <View style={[styles.fill, { backgroundColor: colors.canvas }]} accessibilityState={{ busy: true }} />;
+  if (draft.status === 'loading' || step === null) return <CheckFlowLoading />;
 
   const stepProps = (c: CheckComputation, src: NonNullable<typeof source>): StepProps => ({
     inputs,
@@ -623,7 +624,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
           </View>
         );
       }
-      return <View accessibilityState={{ busy: true }} style={styles.fill} />;
+      return <CheckFlowLoading inFlow />;
     }
     const p = stepProps(computation, source);
     const currency = source.currency;

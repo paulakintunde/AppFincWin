@@ -629,6 +629,20 @@ describe('card terms (D-40)', () => {
 });
 
 describe('not found and bought', () => {
+  it('a pending create renders the loading treatment, never a blank page, then step 2 once the row is usable', async () => {
+    mockStatus = 'loading';
+    const view = await open({}, { initialStep: 2 });
+    expect(screen.getByTestId('check-flow-loading')).toBeTruthy();
+    expect(screen.getByLabelText('Loading your figures').props.accessibilityState).toEqual({ busy: true });
+    expect(screen.queryByText('This check isn’t here')).toBeNull();
+    // the draft turns ready from the optimistic row (no wait on the server): the flow shows step 2
+    mockStatus = 'ready';
+    mockRow = rowOf({ furthest_step: 2 });
+    await view.rerender(<CheckFlowScreen id="c1" initialStep={2} />);
+    expect(screen.queryByTestId('check-flow-loading')).toBeNull();
+    expect(screen.getByText(stepText(2))).toBeTruthy();
+  });
+
   it('shows the not-found state for a vanished check', async () => {
     mockStatus = 'not_found';
     await open();
