@@ -18,8 +18,10 @@ const FN = 'totalCost';
  * thrown) for an investment check, a missing verdict, a plan with no total (HI-02), or a figure past the safe range.
  */
 export function totalCost(check: PurchaseCheck, verdict: Verdict, input: TotalCostInput): TotalCost | null {
-  if (check.kind === 'invest' || verdict.state === 'missing' || verdict.plan.total === null) return null;
+  if (check.kind === 'invest' || verdict.state === 'missing') return null;
   const { plan } = verdict;
+  const planTotal = plan.total;
+  if (planTotal === null) return null;
   const chosen = input.horizonMonths;
   if (chosen !== null && (!Number.isInteger(chosen) || chosen < 1 || chosen > MAX_TERM_MONTHS)) {
     throw new RangeError(`${FN}: horizonMonths ${chosen} must be an integer between 1 and ${MAX_TERM_MONTHS}`);
@@ -27,7 +29,7 @@ export function totalCost(check: PurchaseCheck, verdict: Verdict, input: TotalCo
   const horizon = Math.max(chosen ?? (plan.months > 0 ? plan.months : DEFAULT_PROJECTION_HORIZON_MONTHS), plan.months);
 
   const share = verdict.context.purchaseShare;
-  const mineTotal = BigInt(myPart(plan.total, share));
+  const mineTotal = BigInt(myPart(planTotal, share));
   const price = BigInt(myPart(plan.price, share));
   const running = BigInt(Math.max(0, verdict.mineRunning)) * BigInt(horizon);
   let resale = 0n;

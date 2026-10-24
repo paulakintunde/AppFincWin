@@ -804,7 +804,7 @@ Plans:
 - [x] 05-133-PLAN.md — housing_line settings plumbing and the LimitKey records (D-103)
 
 **Wave 33** *(blocked on Wave 32 completion)*
-- [ ] 05-123-PLAN.md — Engine E7: total cost of ownership and the invested-instead headline (D-102, D-104)
+- [x] 05-123-PLAN.md — Engine E7: total cost of ownership and the invested-instead headline (D-102, D-104)
 - [ ] 05-124-PLAN.md — Snapshot builder and source: pots, tagged-leg and own-pot exclusion, housingMonthly, housingLine (D-100, D-101, D-103)
 
 **Wave 34** *(blocked on Wave 33 completion)*
