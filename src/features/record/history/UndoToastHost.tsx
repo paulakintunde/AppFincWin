@@ -41,12 +41,26 @@ const DECIDE_TOAST_LABEL: Readonly<Record<string, UndoLabelKey>> = {
   'decide.delete.toastDecision': 'decisionDeleted',
   'decide.delete.toastChange': 'changeDeleted',
   'decide.toast.unlinked': 'lineUnlinked',
+  // D-105: the Pots toasts keep their own words too. "Pot saved" is shared by add and edit, so PotSheet passes `undoLabel` in the
+  // toast params to say which step it recorded; the map entry is the fallback.
+  'decide.pots.toast.saved': 'potEdited',
+  'decide.pots.toast.deleted': 'potDeleted',
+  'decide.pots.toast.done': 'potDone',
+  'decide.pots.toast.reopened': 'potReopened',
+  'decide.depth.goal.tagged': 'transferTagged',
+  'decide.depth.goal.untagged': 'transferUntagged',
 };
 
 /** Derives the engine label key and params from a toast's `undo.label[Unnamed].<key>` text (or a Decide toast's own key). */
 function undoableLabel(toast: ToastState): { labelKey: UndoLabelKey; labelParams: UndoLabelParams } | null {
   const key = toast.text?.key;
-  const decideLabel = key ? DECIDE_TOAST_LABEL[key] : undefined;
+  const override = toast.text?.params?.undoLabel;
+  const decideLabel =
+    typeof override === 'string' && (UNDO_LABEL_KEYS as readonly string[]).includes(override)
+      ? (override as UndoLabelKey)
+      : key
+        ? DECIDE_TOAST_LABEL[key]
+        : undefined;
   const prefix = key ? labelPrefixOf(key) : undefined;
   if (!key || (prefix === undefined && decideLabel === undefined)) return null;
   const labelKey = decideLabel ?? key.slice(prefix?.length ?? 0);
