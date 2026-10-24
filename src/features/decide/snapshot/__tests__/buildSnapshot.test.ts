@@ -1350,3 +1350,67 @@ describe('current-month lines without a stored rate (D-106)', () => {
     expect(rough.monthUnconverted).toBeNull();
   });
 });
+
+describe('Judge on becomes the engine basis (D-107)', () => {
+  const missing = row({ id: 'e1', local_date: '2026-10-02', original_amount: -5_000, original_currency: 'EUR', home_currency: 'EUR' });
+  const stored = (basis: 'average' | 'worst' | null) => ({ settings: settings({ basis_override: basis }) });
+
+  it('D-107 judgeOn month sets basisOverride month', () => {
+    const r = logged(withExtra({ judgeOn: 'month' }));
+    expect(r.snapshot.basisOverride).toBe('month');
+    expect(r.judgeOn).toBe('month');
+    expect(r.monthFallback).toBeNull();
+    expect(ctxOf(r.snapshot).money.basis).toBe('month');
+  });
+
+  it('D-107 judgeOn worst or average overrides the stored settings basis', () => {
+    expect(logged(withExtra({ judgeOn: 'worst', ...stored('average') })).snapshot.basisOverride).toBe('worst');
+    expect(logged(withExtra({ judgeOn: 'average', ...stored('worst') })).snapshot.basisOverride).toBe('average');
+    expect(logged(withExtra({ judgeOn: 'month', ...stored('worst') })).snapshot.basisOverride).toBe('month');
+  });
+
+  it('D-107 judgeOn absent keeps the settings basis_override exactly as before', () => {
+    for (const basis of ['average', 'worst', null] as const) {
+      const r = logged(withExtra(stored(basis)));
+      expect(r.snapshot.basisOverride).toBe(basis);
+      expect(r.judgeOn).toBeNull();
+      expect(logged(withExtra({ ...stored(basis), judgeOn: null })).snapshot.basisOverride).toBe(basis);
+    }
+  });
+
+  it('D-107 judgeOn month with a current-month line missing a rate falls back to worst and reports monthFallback with the currencies', () => {
+    const r = logged(withExtra({ judgeOn: 'month', ...stored('average'), rows: [missing] }));
+    expect(r.snapshot.basisOverride).toBe('worst');
+    expect(r.monthFallback).toEqual({ currencies: ['EUR'] });
+    expect(ctxOf(r.snapshot).money.basis).toBe('worst');
+  });
+
+  it("D-107 the fallback leaves the history, unconverted and the checks' other figures unchanged", () => {
+    const fallback = logged(withExtra({ judgeOn: 'month', rows: [missing] }));
+    const worst = logged(withExtra({ judgeOn: 'worst' }));
+    expect(fallback.snapshot).toEqual(worst.snapshot);
+    expect(fallback.unconverted).toEqual(worst.unconverted);
+    expect(fallback.meta).toEqual(worst.meta);
+    expect(ctxOf(fallback.snapshot)).toEqual(ctxOf(worst.snapshot));
+  });
+
+  it('D-107 judgeOn is on the result even when the fallback applied', () => {
+    expect(logged(withExtra({ judgeOn: 'month', rows: [missing] })).judgeOn).toBe('month');
+  });
+
+  it('D-107 a missing rate does not move a worst or average choice', () => {
+    const r = logged(withExtra({ judgeOn: 'average', rows: [missing] }));
+    expect(r.snapshot.basisOverride).toBe('average');
+    expect(r.monthFallback).toBeNull();
+    expect(r.monthUnconverted?.currencies).toEqual(['EUR']);
+  });
+
+  it('D-107 rough and none results carry judgeOn and no monthFallback', () => {
+    const rough = buildDecideSnapshot(
+      sourceOf({ judgeOn: 'month', settings: settings({ rough_income: 400_000, rough_spending: 300_000 }), accounts: [account({ id: 'chk' })], balances: { chk: 1 } })
+    );
+    expect(rough).toMatchObject({ kind: 'rough', judgeOn: 'month', monthFallback: null });
+    expect(buildDecideSnapshot(sourceOf({ judgeOn: 'worst' }))).toMatchObject({ kind: 'none', judgeOn: 'worst', monthFallback: null });
+    expect(buildDecideSnapshot(sourceOf())).toMatchObject({ judgeOn: null, monthFallback: null });
+  });
+});

@@ -16,6 +16,7 @@ import {
   type CardMinimumTerms,
   type DebtRecord,
   type DecideLimits,
+  type Basis,
   type DecideSnapshot,
   type ExpenseLine,
   type FutureChange,
@@ -138,6 +139,7 @@ export interface SnapshotSource {
   changes: readonly ChangeSource[];
   paymentLinks: readonly { check_id: string; target_id: string; check_kind: 'buy' | 'invest' }[];
   writtenRowLinks: readonly { check_id: string; target_id: string }[];
+  judgeOn?: Basis | null; // D-107: the user's Judge-on choice (device view). Absent or null = the stored settings basis_override applies
 }
 
 const LOOKBACK_MONTHS = 12;
@@ -719,6 +721,11 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     loansWithoutPayment,
     limitsReset,
   };
+  // D-107: the user's Judge-on choice is the engine's basis, so the card and every check read one basis. A month line with no
+  // stored rate makes 'month' fall back to Worst for all of them (D-106 addendum); the result still carries the choice.
+  const judgeOn: Basis | null = source.judgeOn ?? null;
+  const monthFallback = judgeOn === 'month' && monthUnconverted !== null ? { currencies: monthUnconverted.currencies } : null;
+  const basisOverride: Basis | null = monthFallback !== null ? 'worst' : (judgeOn ?? st.basis_override);
   const base = {
     currency: cur,
     meta,
@@ -733,6 +740,8 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     conversions: converter.notes(),
     unconverted,
     monthUnconverted,
+    judgeOn,
+    monthFallback,
     provisional,
     fx: { rates: source.rates, customs: source.customCurrencies, today },
   };
@@ -743,7 +752,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       asOf: today,
       months,
       bills,
-      basisOverride: st.basis_override,
+      basisOverride,
       cashOnHand: minorUnits(cashOnHand),
       debts,
       monthlySaving,
