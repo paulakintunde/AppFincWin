@@ -794,7 +794,7 @@ Plans:
 - [x] 05-118-PLAN.md — Retire R17-replaced copy and components; guards over R17 (D-76, DCU-09)
 
 **Wave 31** *(Money concepts; blocked on Wave 30 completion)*
-- [ ] 05-119-PLAN.md — Migrations: pots on savings_goals, debts.is_housing, housing_line; pgTAP incl. account deletion (D-101, D-103)
+- [x] 05-119-PLAN.md — Migrations: pots on savings_goals, debts.is_housing, housing_line; pgTAP incl. account deletion (D-101, D-103)
 - [x] 05-120-PLAN.md — Engine E6: potSetAside, set-aside off net free cash flow, protected cash (D-100, D-101)
 - [x] 05-131-PLAN.md — R18 copy catalogue: new keys, INFO_KEYS 60 to 65, undo labels, copy-guard lists (D-100..D-104, DCU-09)
 
