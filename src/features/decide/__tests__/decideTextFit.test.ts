@@ -102,6 +102,7 @@ const GEOMETRY_HEIGHT: { path: string; count: number; reason: string }[] = [
   { path: 'check/sections/sectionUi.tsx', count: 1, reason: '6px dot' },
   { path: 'check/sections/SetbacksSection.tsx', count: 2, reason: 'checkbox glyph and 44 remove target (no text)' },
   { path: 'check/SplitOverrideSheet.tsx', count: 1, reason: 'radio dot' },
+  { path: 'check/steps/step2/AmountRow.tsx', count: 3, reason: 'R16.3 remove target (44) and its dash glyph (no text)' },
   { path: 'check/steps/step2/CardMinimumSheet.tsx', count: 1, reason: 'chevron glyph' },
   { path: 'check/steps/step2/MethodPanels.tsx', count: 1, reason: 'stepper button target (glyph only)' },
   { path: 'home/AddChangeRow.tsx', count: 2, reason: 'plus glyph bars' },
@@ -167,6 +168,23 @@ describe('D-76 static text-fit', () => {
     expectAllowlist(find(/\b(height|maxHeight)\s*:/), [
       { path: 'charts/CashPathChart.tsx', count: 0, reason: '' },
     ].filter((a) => a.count > 0).concat(GEOMETRY_HEIGHT));
+  });
+
+  it('R16 rows and the Amount field are inside the walk, with no line clamp', () => {
+    const r16 = [
+      'check/steps/step2/AmountRow.tsx',
+      'check/steps/step2/UserCostRow.tsx',
+      'check/steps/step2/RunningCostPrompts.tsx',
+      'check/steps/step2/MethodPanels.tsx',
+      'ui/MoneyInput.tsx',
+    ];
+    const walked = FILES.map((f) => f.path);
+    for (const path of r16) expect(walked).toContain(path);
+    // rule T: none of them clamps lines; rule O: none positions text absolutely or pulls a margin negative
+    const lineHitPaths = new Set(lineHits.map((h) => h.path));
+    for (const path of ['check/steps/step2/AmountRow.tsx', 'check/steps/step2/UserCostRow.tsx', 'check/steps/step2/RunningCostPrompts.tsx']) {
+      expect(lineHitPaths.has(path)).toBe(false);
+    }
   });
 
   it('D-76 rule O: no absolute text or negative margins outside the overlay allowlist', () => {

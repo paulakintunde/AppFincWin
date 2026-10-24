@@ -131,4 +131,50 @@ describe('decide copy fit (R6)', () => {
     expect(get('decide.alt.reasonTooLarge')).toHaveLength(33);
     expect(get('decide.depth.invest.tooLarge')).toHaveLength(33);
   });
+
+  // R16 (05-88, D-86, D-88, D-89, D-93): the count-bearing strings added by the device-walkthrough refinements, and the
+  // fold previews that must fit the 44-character cap.
+  const syncNode = en.sync as Record<string, unknown>;
+  const syncGet = (key: string): string => {
+    const v = syncNode[key];
+    if (typeof v !== 'string') throw new Error(`no sync leaf ${key}`);
+    return v;
+  };
+  const FREQS = ['weekly', 'fortnightly', 'monthly', 'quarterly'];
+
+  it('R16 count strings use a no-break space and have plural forms', () => {
+    // sync waiting (D-88): the count and its unit are one word to the eye
+    for (const key of ['waiting', 'offlineWaiting']) {
+      expect(syncGet(`${key}_one`)).toContain(`{{count}}${NBSP}change `);
+      expect(syncGet(`${key}_other`)).toContain(`{{count}}${NBSP}changes`);
+    }
+    // the deposit line (D-86): the term ends in a counted month(s)
+    expect(get('decide.pay.loanSavedLine_one')).toContain(`1${NBSP}month`);
+    expect(get('decide.pay.loanSavedLine_other')).toContain(`{{count}}${NBSP}months`);
+    // the frequency table (D-89, R16.16 M6): each frequency has _one and _other, and a count followed by a unit has the no-break space
+    for (const freq of FREQS) {
+      const one = get(`decide.pay.instRate.${freq}_one`);
+      const other = get(`decide.pay.instRate.${freq}_other`);
+      expect(one).toMatch(new RegExp(`^1${NBSP}`));
+      expect(other).toMatch(new RegExp(`^\{\{count\}\}${NBSP}`));
+      expect(get(`decide.pay.instSummary.${freq}_one`)).toBeTruthy(); // "{{count}} ×": the unit rule does not apply
+      expect(get(`decide.pay.instSummary.${freq}_other`)).toBeTruthy();
+    }
+    // no R16 count is followed by a plain space and a unit word
+    const plain = /(\{\{count\}\}|1) (changes?|payments?|weekly|monthly|quarterly|months?|years?)/;
+    const r16Leaves = leaves.filter((l) => /^decide\.pay\.(instRate|loanSavedLine)/.test(l.path));
+    expect(r16Leaves.length).toBeGreaterThan(8);
+    expect(r16Leaves.filter((l) => plain.test(l.value)).map((l) => l.path)).toEqual([]);
+    expect(Object.keys(syncNode).filter((k) => /^(waiting|offlineWaiting)_/.test(k) && plain.test(syncGet(k)))).toEqual([]);
+  });
+
+  it('R16 the fold previews fit the 44-character cap', () => {
+    expect(get('decide.fold.updating').length).toBeLessThanOrEqual(44);
+    expect(get('decide.section.setbacksSummaryOver50').length).toBeLessThanOrEqual(44);
+    expect(get('decide.fold.preview.setbacksOver50').length).toBeLessThanOrEqual(44);
+    expect(get('decide.fold.updating')).toBe('Updating');
+    expect(get('decide.section.setbacksSummaryOver50')).toBe('Runway over 50 years');
+    // the cushion key figure above 600 months reads in words, never as a count of months
+    expect(get('decide.verdict.key.over50Years')).toBe('Over 50 years');
+  });
 });
