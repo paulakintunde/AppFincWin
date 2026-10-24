@@ -76,6 +76,7 @@ export default function AppLayout() {
               <Stack.Screen name="decide/open" />
               <Stack.Screen name="decide/changes" />
               <Stack.Screen name="decide/lines" />
+              <Stack.Screen name="decide/pots" />
               <Stack.Screen name="you" />
               <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
             </Stack>
