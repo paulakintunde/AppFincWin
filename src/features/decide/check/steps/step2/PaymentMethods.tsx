@@ -13,7 +13,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { METHOD_LABEL } from '../../../copy/codeMaps';
-import type { InfoKey } from '../../../copy/infoTerms';
+import type { InfoDynamic, InfoKey } from '../../../copy/infoTerms';
 import { joinPreview } from '../../../copy/foldCopy';
 import { methodSummary, needsFields } from '../../../copy/methodCardCopy';
 import type { CopyRef } from '../../../copy/types';
@@ -61,6 +61,10 @@ export function PaymentMethods(props: Step2Props) {
   const exactFmt = moneyFn(exact, source.currency);
   const methods: readonly MethodKey[] = invest ? INVEST_METHODS : PAY_METHODS;
   const selected = effectiveMethod(inputs);
+  // R16.10: the On a card explanation names the converted check limit; with no limit (no USD rate) the body drops that sentence
+  const cardCap = source.cardMaxPurchase;
+  const cardInfo: InfoDynamic | undefined =
+    cardCap === undefined || cardCap === null ? undefined : { onCard: { cap: whole.formatMoney({ amount: cardCap, currency: source.currency }) } };
 
   // Which card is open. It starts as the selected method's and follows the selection when that changes elsewhere
   // (derived during render, no effect); tapping the open header folds it without changing the selection.
@@ -100,6 +104,7 @@ export function PaymentMethods(props: Step2Props) {
               testID={`method-${method}`}
               name={name}
               infoKey={METHOD_INFO[method]}
+              {...(method === 'card' && cardInfo !== undefined ? { infoDynamic: cardInfo } : {})}
               selected={selected === method}
               open={open === method}
               needs={needsFields(method, reasons, inputs)}

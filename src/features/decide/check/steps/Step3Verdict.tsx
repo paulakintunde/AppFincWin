@@ -43,7 +43,7 @@ export function Step3Verdict(props: Step3Props) {
     return new Intl.DateTimeFormat(whole.locale, { month: 'long', timeZone: 'UTC' }).format(Date.UTC(Number(y), Number(m) - 1, 1));
   };
   const basisItems = decision
-    ? basisDetailItems({ decision, conversions: source.conversions, provisional: source.provisional, cardsWithoutMinimum: source.meta.cardsWithoutMinimum, fmt, monthName, formatDate })
+    ? basisDetailItems({ decision, conversions: source.conversions, provisional: source.provisional, basisNotes: source.basisNotes, cardsWithoutMinimum: source.meta.cardsWithoutMinimum, fmt, monthName, formatDate })
     : [];
   const stackedApplied = decision ? decision.stacked.filter((s) => s.status === 'applied').length : 0;
   return (

@@ -641,6 +641,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
               decision,
               conversions: source.conversions,
               provisional: source.provisional,
+              basisNotes: source.basisNotes,
               cardsWithoutMinimum: source.meta.cardsWithoutMinimum,
               fmt: (n: number) => whole.formatMoney({ amount: minorUnits(n), currency }),
               monthName,

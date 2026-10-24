@@ -139,6 +139,14 @@ describe('basisDetailItems', () => {
     expect(many).toEqual([{ key: `${D}currency.basisMany`, params: { currencies: 'EUR, GBP', date: 'on 2026-10-01' } }]);
   });
 
+  it('D-91 an older USD rate adds only a basis item', () => {
+    const items = basisDetailItems({ ...base, decision: decisionOf(), basisNotes: [{ kind: 'card_limit_rate', date: '2026-10-01' }] });
+    expect(items).toEqual([{ key: 'decide.pay.cardLimitBasis', params: { date: 'on 2026-10-01' } }]);
+    expect(text(items[0]!)).toBe('Card limit converted at the on 2026-10-01 USD rate');
+    expect(basisDetailItems({ ...base, decision: decisionOf(), basisNotes: [] })).toEqual([]);
+    expect(basisDetailItems({ ...base, decision: decisionOf() })).toEqual([]); // no note, no item
+  });
+
   it('a missing verdict adds no engine basis items', () => {
     const decision = decisionOf({ verdict: { state: 'missing', reasons: [] } });
     expect(basisDetailItems({ ...base, decision })).toEqual([]);

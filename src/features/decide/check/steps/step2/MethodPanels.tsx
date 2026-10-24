@@ -6,8 +6,9 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { MAX_INSTALMENTS, ZERO_PERCENT, cardEligibility, percent, resolvePlan } from '@/engine/decide';
+import { CARD_MAX_PURCHASE_USD, MAX_INSTALMENTS, ZERO_PERCENT, cardEligibility, percent, resolvePlan } from '@/engine/decide';
 import type { InstalmentFreq, Plan } from '@/engine/decide';
+import { currencyCode, minorUnits } from '@/engine/money';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
@@ -20,7 +21,7 @@ import { canUse } from '../../../entitlements';
 import { cardCostsCopy } from '../../../copy/cardTermsCopy';
 import { instalmentNotes } from '../../../copy/instalmentCopy';
 import { percentText } from '../../../copy/percentText';
-import { isValidAprText, isValidProjectionRateText, toEngineCheck } from '../../../snapshot/checkInputs';
+import { engineCtxOf, isValidAprText, isValidProjectionRateText, toEngineCheck } from '../../../snapshot/checkInputs';
 import { LUMP_HORIZON_DEFAULT, expectedReturnProjection } from '../../../snapshot/expectedReturn';
 import type { CardNoteAnswer, CheckInputs, MethodKey } from '../../../snapshot/types';
 import { FigureStrip } from '../../../ui/FigureStrip';
@@ -143,11 +144,11 @@ function LoanPanel(props: Step2Props) {
 
   // What the same loan would cost with no deposit, so the deposit's saving is a comparison on the user's own terms.
   const noDeposit = useMemo(() => {
-    const check = toEngineCheck({ ...inputs, method: 'loan', loan: { ...inputs.loan, deposit: 0 } }, { currency: source.currency, cards: source.cards, dealerCap: source.dealerCap });
+    const check = toEngineCheck({ ...inputs, method: 'loan', loan: { ...inputs.loan, deposit: 0 } }, engineCtxOf(source));
     if (!check.ok) return null;
     const result = resolvePlan(check.check);
     return result.status === 'resolved' ? result.plan : null;
-  }, [inputs, source.currency, source.cards, source.dealerCap]);
+  }, [inputs, source]);
 
   const setLoan = (patch: Partial<CheckInputs['loan']>) => update({ loan: { ...loan, ...patch } });
   const setApr = (text: string) => {
@@ -459,7 +460,17 @@ function CardPanel(props: Step2Props) {
   const exactFmt = moneyFn(exact, source.currency);
   const card = inputs.card;
   const plan = resolvedPlan(props, 'card');
-  const eligibility = cardEligibility(inputs.itemType, null).eligibility; // D-92: the region (RD-02) is wired by the snapshot plan; null reads tax as permitted
+  const rule = cardEligibility(inputs.itemType, source.region ?? null); // D-92: tax is blocked only in GB (RD-02 region from the snapshot)
+  const limited = plan?.card?.capBy === 'check_limit'; // D-91: the check limit, not the dealer cap, bound the card part
+  const eligibility = limited ? 'capped' : rule.eligibility;
+  const cardMax = source.cardMaxPurchase ?? null;
+  const limitInfo = useInfoSheet('cardCheckLimit', {
+    cardCheckLimit: {
+      usdLimit: whole.formatMoney({ amount: minorUnits(CARD_MAX_PURCHASE_USD), currency: currencyCode('USD') }),
+      ...(cardMax !== null ? { cap: wholeFmt(cardMax) } : {}),
+      ...(source.currency === 'USD' ? { usdHome: true } : {}),
+    },
+  });
   const price = props.computation.resolvedPrice?.price ?? 0;
   const chosen = source.cards.find((c) => c.accountId === card.accountId);
   const recorded = chosen?.record.apr ? percentText(chosen.record.apr) : '';
@@ -473,6 +484,8 @@ function CardPanel(props: Step2Props) {
   const body =
     eligibility === 'permitted'
       ? t('decide.pay.cardOkBody')
+      : limited && plan?.card != null
+        ? t('decide.pay.cardLimitBody', { cap: wholeFmt(plan.card.onCard), rest: wholeFmt(plan.card.remainderOnDay) })
       : eligibility === 'capped'
         ? source.dealerCap === null
           ? null
@@ -513,8 +526,15 @@ function CardPanel(props: Step2Props) {
       <View style={[styles.eligibility, { backgroundColor: background }]}>
         <Text style={{ ...textRole(pairing, 'sheetTitle'), color: titleColor }}>{t(titleKey)}</Text>
         {body === null ? null : <Meta tone="muted">{body}</Meta>}
+        {limited ? (
+          <InfoTitle info={limitInfo} lineHeight={textRole(pairing, 'label').lineHeight}>
+            <Meta tone="muted">{t('decide.pay.cardLimitNote')}</Meta>
+          </InfoTitle>
+        ) : null}
+        {limitInfo.sheet}
         {eligibility === 'blocked' ? <Pill label={t('decide.pay.cardUseLoan')} variant="secondary" onPress={() => update({ method: 'loan' })} /> : null}
       </View>
+      {rule.note === null ? null : <Meta tone="muted">{t(`decide.pay.cardNote.${rule.note}`)}</Meta>}
 
       {eligibility === 'blocked' ? null : (
         <>

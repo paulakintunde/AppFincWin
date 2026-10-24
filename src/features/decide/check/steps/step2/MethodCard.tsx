@@ -14,7 +14,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { needsText, type Needs } from '../../../copy/methodCardCopy';
-import type { InfoKey } from '../../../copy/infoTerms';
+import type { InfoDynamic, InfoKey } from '../../../copy/infoTerms';
 import type { Translate } from '../../refText';
 import { useScrollIntoView } from '../../../ui/scrollIntoView';
 import { useInfoSheet } from '../../../ui/useInfoSheet';
@@ -29,6 +29,8 @@ const CHEVRON_DOWN = '135deg';
 export interface MethodCardProps {
   name: string;
   infoKey: InfoKey;
+  /** Figures the explanation needs (the On a card cap, R16.10). */
+  infoDynamic?: InfoDynamic;
   selected: boolean;
   open: boolean;
   needs: Needs | null;
@@ -45,11 +47,11 @@ export interface MethodCardProps {
   children?: React.ReactNode;
 }
 
-export function MethodCard({ name, infoKey, selected, open, needs, summary, chips, onHeaderPress, onEdit, readOnly, testID, children }: MethodCardProps) {
+export function MethodCard({ name, infoKey, infoDynamic, selected, open, needs, summary, chips, onHeaderPress, onEdit, readOnly, testID, children }: MethodCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const reduced = useReduceMotion();
-  const info = useInfoSheet(infoKey);
+  const info = useInfoSheet(infoKey, infoDynamic);
   const scrollIntoView = useScrollIntoView();
   const headerRef = useRef<View>(null);
   // Scroll once per opening, when the body first lays out; later layouts (typing grows the body) must not move the screen.

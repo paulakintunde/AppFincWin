@@ -5,7 +5,7 @@
  */
 import type { CashPathReport, CashTightFact, Confidence, Decision, LineMargin, Steadiness } from '@/engine/decide';
 import { displayRate } from '@/data/queries/fxConvert';
-import type { ConversionNote, ProvisionalNote } from '../snapshot/types';
+import type { CardLimitRateNote, ConversionNote, ProvisionalNote } from '../snapshot/types';
 import { ref } from './types';
 import type { CopyRef, Fmt } from './types';
 
@@ -57,6 +57,8 @@ export interface BasisArgs {
   conversions: readonly ConversionNote[];
   /** D-69: SnapshotResult.provisional; absent or null = none. */
   provisional?: ProvisionalNote | null;
+  /** D-91: SnapshotResult.basisNotes; the card-limit rate note adds an item and has no confidence effect. Absent = none. */
+  basisNotes?: readonly CardLimitRateNote[];
   cardsWithoutMinimum: number;
   fmt: Fmt;
   monthName: MonthName;
@@ -65,7 +67,7 @@ export interface BasisArgs {
 
 /** D-24/D-27/D-29/D-37/D-40/D-69: the one ' · '-joined basis detail row, in the UI-SPEC priority. */
 export function basisDetailItems(args: BasisArgs): CopyRef[] {
-  const { decision, conversions, provisional, cardsWithoutMinimum, fmt, monthName, formatDate } = args;
+  const { decision, conversions, provisional, basisNotes, cardsWithoutMinimum, fmt, monthName, formatDate } = args;
   const items: CopyRef[] = [];
   // the worst-month line moves here only when the combined line holds line one
   if (combinedLine(decision)) {
@@ -81,6 +83,8 @@ export function basisDetailItems(args: BasisArgs): CopyRef[] {
   if (conversion) items.push(conversion);
   const provisionalLine = provisionalItem(provisional, formatDate);
   if (provisionalLine) items.push(provisionalLine);
+  const limitNote = basisNotes?.find((n) => n.kind === 'card_limit_rate');
+  if (limitNote) items.push(ref('decide.pay.cardLimitBasis', { date: formatDate(limitNote.date) }));
   if (codes.includes('cash_path_unavailable')) items.push(ref(`${D}cashPath.basisUnavailable`));
   if (cardsWithoutMinimum > 0) items.push(ref(`${D}cardMin.basis`));
   return items;
