@@ -262,6 +262,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-37**: A purchase verdict shows the total cost over the check's years (price, interest and fees, running costs, less expected resale where loss of value is set) and, only when the user has typed a rate, what the same money would have become invested instead, labelled a projection (05 D-102, D-104)
 - [ ] **DCU-38**: User can set a housing line (default 28% of money in) that counts housing-category spending and payments on loans marked "This is for housing", and a property check that pushes housing over it gets a warning like the debt-to-income line (05 D-103)
 - [ ] **DCU-39**: Decide words a month figure as "{amount} free" or "{amount} overspent" (amount absolute, no minus, overspent in the danger tint) everywhere it appears, and the home card judges "This month (expected)" by default - the current month as it is expected to end, with pay and bills still due counted - while Month details lets the user judge on This month, Worst or Average (a missing rate falls back to the Worst figure with a stated reason); checks keep their own basis (05 D-106)
+- [ ] **DCU-40**: One Judge-on choice - This month (the default for everyone), Worst month or Average month, picked from a dropdown on the Decide card and the same choice in Month details - drives the card and every check, with 'month' a first-class basis in the engine; the verdict shows the outcome on each basis side by side; the FAB is back on Decide home (05 D-107)
 
 ### Grow
 
@@ -638,6 +639,7 @@ Populated during roadmap creation.
 | DCU-37 | Phase 5 - Decide UI | Pending |
 | DCU-38 | Phase 5 - Decide UI | Pending |
 | DCU-39 | Phase 5 - Decide UI | Pending |
+| DCU-40 | Phase 5 - Decide UI | Pending |
 | MON-15 | Phase 5 - Decide UI | Pending |
 | GRW-01 | Phase 6 - Grow | Pending |
 | GRW-02 | Phase 6 - Grow | Pending |
@@ -716,8 +718,8 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 291 total (100 ticked)
-- Mapped to phases: 257
+- v1 requirements: 292 total (100 ticked)
+- Mapped to phases: 258
 - Unmapped: 0 ✓
 
 ---
@@ -727,6 +729,8 @@ Populated during roadmap creation.
 *2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 
 *2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
+*2026-10-24 — One Judge-on choice: DCU-40 added (D-107, plans 05-142..05-145; the plans 05-135..05-141 deliver D-106); it also touches DCU-34 (the FAB returns on Decide home), DCU-35, DCU-39 and DCU-09; v1 total now 292.*
+
 *2026-10-24 — Free / overspent wording and the This-month card: DCU-39 added (D-106, plans 05-135..05-141); it also touches DCU-35 (the card basis), DCU-14 (the month figure and its basis) and DCU-09 (declarative wording); v1 total now 291.*
 
 *2026-10-24 — Money concepts R18: DCU-35 (Net free cash flow, D-100), DCU-36 (pots, D-101), DCU-37 (total cost and invested instead, D-102/D-104) and DCU-38 (housing line, D-103) added (plans 05-119..05-134); v1 total now 290.*
