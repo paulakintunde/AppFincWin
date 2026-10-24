@@ -310,9 +310,9 @@ describe('running costs', () => {
     expect(typed.note).toEqual({ key: `${D}running.notCash` });
     expect(text(typed.about!)).toBe('About $18125 a month. Shown here, not counted in your month.');
     const amount = lossOfValueCopy({ kind: 'amount', monthly: 5_000 }, 5_000, fmt);
-    expect(amount.placeholder).toEqual({ key: `${D}running.addAmount` });
+    expect(amount.placeholder).toEqual({ key: `${D}running.amountPlaceholder` });
     expect(lossOfValueCopy(null, 18_125, fmt).about).toBeNull();
-    expect(lossOfValueCopy(null, null, fmt).placeholder.key).toBe(`${D}running.addAmount`);
+    expect(lossOfValueCopy(null, null, fmt).placeholder.key).toBe(`${D}running.amountPlaceholder`);
     expect(lossOfValueCopy({ kind: 'amount', monthly: 0 }, 0, fmt).about).toBeNull();
     expect(lossOfValueCopy({ kind: 'amount', monthly: 1 }, null, fmt).about).toBeNull();
     expectDeclarative([typed.about, typed.note, ...typed.modes, typed.placeholder]);

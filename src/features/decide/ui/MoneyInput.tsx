@@ -12,6 +12,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { TextInput } from '@/ui/TextInput';
+import type { TextInput as TextInputInstance } from '@/ui/TextInput';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
@@ -37,11 +38,16 @@ export interface MoneyInputProps {
   onBlur?: () => void;
   /** 05-85 (D-70, rule I): a control after the label, as its next flex sibling (an info button). */
   labelAccessory?: React.ReactNode;
+  /** 05-101 (D-87, R16.3): the running-cost Amount field: no label, a 44-high pill, 1.5px dashed line4 while empty, solid line1 on fill6 with an amount. `width` undefined fills the row. */
+  amountField?: { width?: number };
+  /** 05-101: the input instance, so a row press can focus it. */
+  inputRef?: React.Ref<TextInputInstance>;
 }
 
 const COMPACT_MIN_WIDTH = 128;
+const AMOUNT_BORDER = 1.5; // R16.3
 
-export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false, compact = false, onBlur, labelAccessory }: MoneyInputProps) {
+export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
   const parser = useAmountParser();
   const speaker = useMoneyFormatter(false);
@@ -116,8 +122,8 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
   }
 
   return (
-    <View>
-      {compact ? null : labelAccessory ? (
+    <View style={amountField?.width === undefined ? undefined : { width: amountField.width }}>
+      {compact || amountField ? null : labelAccessory ? (
         <View style={styles.labelRow}>
           <View style={styles.labelText}>
             <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
@@ -127,9 +133,23 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
       ) : (
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
       )}
-      <View style={[styles.field, compact && styles.compact, { backgroundColor: colors.fill1 }]}>
+      <View
+        style={[
+          styles.field,
+          compact && styles.compact,
+          amountField
+            ? {
+                borderWidth: AMOUNT_BORDER,
+                borderStyle: value === null ? 'dashed' : 'solid',
+                borderColor: value === null ? colors.line4 : colors.line1,
+                backgroundColor: value === null ? 'transparent' : colors.fill6,
+              }
+            : { backgroundColor: colors.fill1 },
+        ]}
+      >
         {compact ? <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{currency}</Text> : null}
         <TextInput
+          ref={inputRef}
           value={text}
           onChangeText={onText}
           onBlur={handleBlur}

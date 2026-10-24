@@ -45,16 +45,20 @@ export interface RateInputProps {
   rangeText?: string;
   /** 05-67 (D-70, rule I): a control after the label, as its next flex sibling (an info button). */
   labelAccessory?: React.ReactNode;
+  /** 05-101 (D-87, R16.3): the same dashed Amount field as MoneyInput's: no label drawn, dashed line4 while empty, solid line1 on fill6 with a value. */
+  amountField?: boolean;
 }
 
-export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur, readOnly = false, max, rangeText, labelAccessory }: RateInputProps) {
+const AMOUNT_BORDER = 1.5; // R16.3
+
+export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur, readOnly = false, max, rangeText, labelAccessory, amountField = false }: RateInputProps) {
   const { colors, pairing } = useTheme();
   const { locale, separators } = useDeviceLocale();
   const decimal = (separators ?? localeSeparators(locale)).decimal;
   const [refused, setRefused] = useState(false);
   return (
     <View>
-      {labelAccessory ? (
+      {amountField ? null : labelAccessory ? (
         <View style={styles.labelRow}>
           <View style={styles.labelText}>
             <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
@@ -64,7 +68,19 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
       ) : (
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
       )}
-      <View style={[styles.field, { backgroundColor: colors.fill1 }]}>
+      <View
+        style={[
+          styles.field,
+          amountField
+            ? {
+                borderWidth: AMOUNT_BORDER,
+                borderStyle: value === '' ? 'dashed' : 'solid',
+                borderColor: value === '' ? colors.line4 : colors.line1,
+                backgroundColor: value === '' ? 'transparent' : colors.fill6,
+              }
+            : { backgroundColor: colors.fill1 },
+        ]}
+      >
         <TextInput
           value={decimal === '.' ? value : value.replace('.', decimal)}
           onChangeText={(typed) => {

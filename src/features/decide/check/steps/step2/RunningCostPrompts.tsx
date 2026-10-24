@@ -4,22 +4,25 @@
  * prompt ships with a figure. Loss of value (04 D-63) is the user's own entry in `inputs.lossOfValue` (never an InputLine): a
  * segmented 'A month' | '% a year' and one blank field, always 'Not a monthly cash cost', shown but never in the month.
  */
-import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { percent } from '@/engine/decide';
 import type { RunningCostCategory } from '@/engine/decide';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space } from '@/theme/layout';
+import { useFontScale } from '@/theme/FontScaleProvider';
+import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
+import type { TextInput } from '@/ui/TextInput';
+import { hapticSelection } from '@/ui/haptics';
 import { lossOfValueCopy, runningPromptCopy } from '../../../copy/depthInputsCopy';
 import { MAX_INPUT_MINOR, isValidRateText } from '../../../snapshot/checkInputs';
 import type { CheckInputs, InputLine, LossOfValueEntry } from '../../../snapshot/types';
-import { CheckRow } from '../../../ui/CheckRow';
 import { MoneyInput } from '../../../ui/MoneyInput';
 import { RateInput } from '../../../ui/RateInput';
 import { SegmentedToggle } from '../../../ui/SegmentedToggle';
+import { STACK_FONT_SCALE, useShouldStack } from '../../../ui/textFit';
 import { useInfoSheet } from '../../../ui/useInfoSheet';
 import { InfoTitle } from '../../InfoTitle';
 import { refText } from '../../refText';
@@ -32,6 +35,17 @@ type Props = Pick<Step2Props, 'inputs' | 'update' | 'computation' | 'source' | '
 const HUNDRED = percent('100');
 const LOSS_MAX = '100';
 const LOSS: RunningCostCategory = 'loss_of_value';
+const FIELD_WIDTH = 112; // R16.3: the Amount field at 1.0x, growing with the text scale
+const BOX_SIZE = 22;
+const BOX_BORDER = 1.5;
+const BOX_RADIUS = 6;
+
+/** R16.3: the Amount field's width, 112 at 1.0x and growing with the text scale; undefined (full width) once the row stacks. */
+function useFieldWidth(): number | undefined {
+  const stacked = useShouldStack();
+  const scale = useFontScale();
+  return stacked ? undefined : Math.round(FIELD_WIDTH * Math.min(Math.max(scale, 1), STACK_FONT_SCALE));
+}
 
 /** The cash categories shown as prompt rows (loss of value has its own row). */
 function cashPrompts(prompts: readonly RunningCostCategory[]): RunningCostCategory[] {
@@ -85,29 +99,65 @@ function PromptRow({ category, inputs, update, source, exact, readOnly }: Props 
     update({ runningCosts: inputs.runningCosts.map((l) => (l.id === line.id ? next : l)) });
   };
 
+  const { colors, pairing } = useTheme();
+  const fieldRef = useRef<TextInput>(null);
+  const stacked = useShouldStack();
+  const fieldWidth = useFieldWidth();
+  const counted = hasAmount && line.counted;
+  const amountText = hasAmount ? exactFmt(line.amount) : '';
+  const sub = !hasAmount ? t('decide.depth.running.typeToCount') : !line.counted ? t('decide.depth.running.notCounted') : line.note !== '' ? line.note : null;
+  const checkboxLabel = hasAmount
+    ? counted
+      ? t('decide.depth.running.rowA11yCounted', { name, amount: amountText })
+      : `${name}, ${amountText}, ${t('decide.depth.running.notCounted')}`
+    : undefined;
+
   return (
-    <View>
-      <CheckRow
-        checked={hasAmount && line.counted}
-        disabled={!hasAmount || readOnly}
-        onToggle={() => {
-          if (line !== null) update({ runningCosts: inputs.runningCosts.map((l) => (l.id === line.id ? { ...l, counted: !l.counted } : l)) });
-        }}
-        name={name}
-        source={hasAmount ? undefined : t('decide.depth.running.typeToCount')}
-        amount={hasAmount ? exactFmt(line.amount) : ''}
-        removeA11yLabel={t('decide.lineEditor.removeA11y', { name })}
-      />
+    // R16.3: a press anywhere on the row focuses the Amount field; the row itself is not a focus stop
+    <Pressable accessible={false} disabled={readOnly} onPress={() => fieldRef.current?.focus()} style={[styles.promptRow, stacked && styles.promptRowStacked]}>
+      <View style={styles.promptMain}>
+        <View style={styles.checkboxColumn}>
+          {hasAmount ? (
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: counted, disabled: readOnly }}
+              accessibilityLabel={checkboxLabel}
+              disabled={readOnly}
+              onPress={() => {
+                hapticSelection();
+                update({ runningCosts: inputs.runningCosts.map((l) => (l.id === line.id ? { ...l, counted: !l.counted } : l)) });
+              }}
+              style={({ pressed }) => [styles.checkboxTarget, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+            >
+              <View
+                style={[
+                  styles.box,
+                  { borderColor: counted ? colors.ink : colors.line4, backgroundColor: counted ? colors.ink : 'transparent' },
+                ]}
+              />
+            </Pressable>
+          ) : null}
+        </View>
+        <View
+          style={styles.nameBlock}
+          {...(hasAmount ? {} : { accessible: true, accessibilityLabel: t('decide.depth.running.rowA11yEmpty', { name }) })}
+        >
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>{name}</Text>
+          {sub ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{sub}</Text> : null}
+        </View>
+      </View>
       <MoneyInput
         value={hasAmount ? line.amount : null}
         currency={currency}
         onChange={setAmount}
         label={t('decide.costs.aMonth')}
-        accessibilityLabel={t('decide.depth.running.amountA11y', { name })}
-        placeholder={t('decide.depth.running.addAmount')}
+        accessibilityLabel={t('decide.depth.running.amountFieldA11y', { name })}
+        placeholder={t('decide.depth.running.amountPlaceholder')}
         readOnly={readOnly}
+        amountField={{ width: fieldWidth }}
+        inputRef={fieldRef}
       />
-    </View>
+    </Pressable>
   );
 }
 
@@ -132,6 +182,7 @@ function LossOfValueRow({ inputs, update, computation, source, whole, readOnly }
   const copy = lossOfValueCopy(entry, computation.running?.nonCash ?? null, wholeFmt);
   const name = refText(t, runningPromptCopy(LOSS).label);
   const info = useInfoSheet('lossOfValue');
+  const fieldWidth = useFieldWidth();
 
   const switchMode = (key: string) => {
     const next = key === 'percent_per_year' ? 'percent_per_year' : 'amount';
@@ -163,8 +214,10 @@ function LossOfValueRow({ inputs, update, computation, source, whole, readOnly }
         onChange={readOnly ? () => undefined : switchMode}
         accessibilityLabel={t('decide.depth.running.lossModeA11y')}
       />
+      <View style={fieldWidth === undefined ? undefined : styles.lossField}>
       {mode === 'amount' ? (
         <MoneyInput
+          amountField={{ width: fieldWidth }}
           value={entry?.kind === 'amount' ? entry.monthly : null}
           currency={currency}
           onChange={(minor) =>
@@ -177,6 +230,7 @@ function LossOfValueRow({ inputs, update, computation, source, whole, readOnly }
         />
       ) : (
         <RateInput
+          amountField
           value={percentText}
           onChange={typePercent}
           label={t('decide.depth.running.lossPercent')}
@@ -187,6 +241,7 @@ function LossOfValueRow({ inputs, update, computation, source, whole, readOnly }
           rangeText={t('decide.custom.range.percent')}
         />
       )}
+      </View>
       {copy.about ? <Meta tone="muted">{refText(t, copy.about)}</Meta> : null}
     </View>
   );
@@ -195,4 +250,12 @@ function LossOfValueRow({ inputs, update, computation, source, whole, readOnly }
 const styles = StyleSheet.create({
   column: { gap: space.gapMd },
   loss: { gap: space.gapSm },
+  lossField: { alignSelf: 'flex-end' },
+  promptRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
+  promptRowStacked: { flexDirection: 'column', alignItems: 'stretch', gap: space.gapSm },
+  promptMain: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  checkboxColumn: { width: space.touchMin, minHeight: space.touchMin },
+  checkboxTarget: { width: space.touchMin, minHeight: space.touchMin, alignItems: 'center', justifyContent: 'center' },
+  box: { width: BOX_SIZE, aspectRatio: 1, borderRadius: BOX_RADIUS, borderWidth: BOX_BORDER },
+  nameBlock: { flex: 1 },
 });

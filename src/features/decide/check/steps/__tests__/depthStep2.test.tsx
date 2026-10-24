@@ -44,51 +44,52 @@ describe('Step 2 running-cost prompts', () => {
   it('pre-lists a vehicle\'s categories as unchecked rows with blank amounts', async () => {
     await wrap(<Harness initial={buy({ itemType: 'vehicle' })} />);
     for (const name of ['Insurance', 'Fuel', 'Maintenance', 'Registration']) {
-      const row = screen.getByLabelText(`${name}, Counted once an amount is typed`);
-      expect(row.props.accessibilityState).toMatchObject({ checked: false });
+      expect(screen.getByLabelText(`${name}, not counted yet; counted once an amount is typed.`)).toBeTruthy();
+      expect(screen.queryByRole('checkbox', { name: new RegExp(`^${name}`) })).toBeNull(); // no checkbox until an amount exists
     }
-    expect(screen.getAllByPlaceholderText('Add amount').length).toBeGreaterThanOrEqual(5); // four rows and the loss-of-value field
+    expect(screen.getAllByPlaceholderText('Amount').length).toBeGreaterThanOrEqual(5); // four rows and the loss-of-value field
     expect(screen.getByText('Loss of value')).toBeTruthy();
-    expect(screen.queryByLabelText(/^Loss of value,.*(Type an amount|checkbox)/)).toBeNull();
+    expect(screen.queryByLabelText(/^Loss of value,.*(not counted yet|checkbox)/)).toBeNull();
     expect(screen.getByText('Not a monthly cash cost')).toBeTruthy();
   });
 
   it('lists insurance and maintenance for a general item and nothing for a bill', async () => {
     const view = await wrap(<Harness initial={buy({ itemType: 'general' })} />);
-    expect(screen.getByLabelText('Insurance, Counted once an amount is typed')).toBeTruthy();
-    expect(screen.getByLabelText('Maintenance, Counted once an amount is typed')).toBeTruthy();
-    expect(screen.queryByLabelText('Fuel, Counted once an amount is typed')).toBeNull();
+    expect(screen.getByLabelText('Insurance, not counted yet; counted once an amount is typed.')).toBeTruthy();
+    expect(screen.getByLabelText('Maintenance, not counted yet; counted once an amount is typed.')).toBeTruthy();
+    expect(screen.queryByLabelText('Fuel, not counted yet; counted once an amount is typed.')).toBeNull();
     await view.unmount();
     await wrap(<Harness initial={buy({ itemType: 'rent_bill' })} />);
-    expect(screen.queryByLabelText('Insurance, Counted once an amount is typed')).toBeNull();
+    expect(screen.queryByLabelText('Insurance, not counted yet; counted once an amount is typed.')).toBeNull();
     expect(screen.queryByText('Loss of value')).toBeNull();
   });
 
   it('counts a row only once an amount is typed, and clearing it marks the line not counted', async () => {
     const updates: Partial<CheckInputs>[] = [];
     await wrap(<Harness initial={buy({ itemType: 'vehicle' })} onUpdate={(p) => updates.push(p)} />);
-    await type('Insurance, amount a month', '120');
+    await type('Insurance amount', '120');
     expect(updates.at(-1)?.runningCosts).toEqual([
       { id: 'prompt-insurance', name: '', amount: 12_000, note: '', counted: true, seriesId: null, category: 'insurance' },
     ]);
-    expect(screen.getByLabelText('Insurance, $120.00').props.accessibilityState).toMatchObject({ checked: true });
-    await type('Insurance, amount a month', '');
+    expect(screen.getByLabelText('Insurance, $120.00 a month, counted').props.accessibilityState).toMatchObject({ checked: true });
+    await type('Insurance amount', '');
     expect(updates.at(-1)?.runningCosts).toEqual([
       { id: 'prompt-insurance', name: '', amount: 0, note: '', counted: false, seriesId: null, category: 'insurance' },
     ]);
-    expect(screen.getByLabelText('Insurance, Counted once an amount is typed').props.accessibilityState).toMatchObject({ checked: false });
+    expect(screen.getByLabelText('Insurance, not counted yet; counted once an amount is typed.')).toBeTruthy();
+    expect(screen.queryByRole('checkbox', { name: /^Insurance/ })).toBeNull();
   });
 
   it('does not list a category twice when a line for it already exists', async () => {
     const line = { id: 'x1', name: '', amount: 5_000, note: '', counted: true, seriesId: null, category: 'fuel' as const };
     await wrap(<Harness initial={buy({ itemType: 'vehicle', runningCosts: [line] })} />);
     expect(screen.getAllByLabelText(/^Fuel/)).toHaveLength(2); // the row's checkbox and its amount field, nothing more
-    expect(screen.getByLabelText('Fuel, $50.00')).toBeTruthy();
+    expect(screen.getByLabelText('Fuel, $50.00 a month, counted')).toBeTruthy();
   });
 
   it('a decided check cannot edit an amount', async () => {
     await wrap(<Harness initial={buy({ itemType: 'vehicle' })} readOnly />);
-    expect(screen.getByLabelText('Insurance, amount a month').props.editable).toBe(false);
+    expect(screen.getByLabelText('Insurance amount').props.editable).toBe(false);
     expect(screen.getByLabelText('Loss of value, amount a month').props.editable).toBe(false);
   });
 

@@ -218,7 +218,7 @@ export function lossOfValueCopy(
 ): { modes: CopyRef[]; placeholder: CopyRef; note: CopyRef; about: CopyRef | null } {
   return {
     modes: [ref(`${D}running.lossMonth`), ref(`${D}running.lossPercent`)],
-    placeholder: ref(entry?.kind === 'percent_per_year' ? `${D}running.lossPercentPlaceholder` : `${D}running.addAmount`),
+    placeholder: ref(entry?.kind === 'percent_per_year' ? `${D}running.lossPercentPlaceholder` : `${D}running.amountPlaceholder`),
     note: ref(`${D}running.notCash`),
     about: entry !== null && nonCash !== null && nonCash !== 0 ? ref(`${D}running.lossAbout`, { amount: fmt(nonCash) }) : null,
   };
