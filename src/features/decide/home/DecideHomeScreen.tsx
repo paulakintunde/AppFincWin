@@ -1,55 +1,108 @@
-// 05-21 (DCU-01, DCU-03, DCU-04): the Decide tab root. Order per UI-SPEC: the quick check first, then Open checks, the
-// Past decisions row and the sources note. 05-27 places Your month under the quick check and Lines you will not cross
-// under the Past decisions row. No pull-to-refresh on Decide (no refreshKeys).
-import React, { useCallback, useMemo, useState } from 'react';
+// 05-117 (D-95..D-99, UI-SPEC R17.2, R17.3, R17.8, R17.13 M1): the Decide tab root, dark card first.
+//   lean header (no eyebrow or subtitle, the header sync line suppressed) -> the notice row (only with counted problems)
+//   -> the dark card (HomeSummaryCard) -> 32 of space -> up to four quiet rows that open their own screens.
+// Month details, the problems sheet, RoughFiguresSheet and ChangeSheet are hosted here. No FAB on this screen
+// (`useRegisterFab(null)`): "Check it" and "Full check" start a check, and You > Add stays the always-reachable Add.
+// No pull-to-refresh on Decide (no refreshKeys).
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as Crypto from 'expo-crypto';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { useCreateCheck } from '@/data/mutations/decideChecks';
 import { useDecideChanges } from '@/data/queries/decide';
+import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
 import { useRegisterFab } from '@/shell/fab/FabProvider';
 import { pushOnce } from '@/shell/navigation/pushOnce';
-import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
-import { fontSize, textRole } from '@/theme/typography';
-import { Row } from '@/ui/Row';
-import { Text } from '@/ui/Text';
-import { Card } from '../check/steps/stepUi';
-import { QuickCheckForm } from '../quick/QuickCheckForm';
+import { loadHomeBasisSeen, markHomeBasisSeen } from '../hints/decideHints';
+import { perfMark } from '../perf/perfMarks';
+import { parseCheckInputs } from '../snapshot/checkInputs';
 import type { CheckInputs } from '../snapshot/types';
-import { AddChangeRow } from './AddChangeRow';
 import { ChangeSheet } from './ChangeSheet';
-import { ChangesCard } from './ChangesCard';
-import { checkHref, openNewCheck, PAST_HREF } from './checkHref';
-import { LinesCard } from './LinesCard';
-import { OpenChecksCard } from './OpenChecksCard';
+import { CHANGES_HREF, checkHref, LINES_HREF, OPEN_HREF, PAST_HREF } from './checkHref';
+import { homeCardModel } from './homeCardModel';
+import { HomeNoticeRow } from './HomeNoticeRow';
+import { homeProblems, noticeRowModel } from './homeProblems';
+import { HomeProblemsSheet } from './HomeProblemsSheet';
+import { HomeRow } from './HomeRow';
+import { changedOpenCount, linesSetCount, liveOpenChecks } from './homeRowsModel';
+import { HomeSummaryCard } from './HomeSummaryCard';
+import { MonthDetailsSheet } from './MonthDetailsSheet';
 import { RoughFiguresSheet } from './RoughFiguresSheet';
 import { useDecideHomeViewModel } from './useDecideHomeViewModel';
-import { YourMonthCard } from './YourMonthCard';
+import { useSyncNow } from './useSyncNow';
+
+/** R17.2: the gap between the card and the quiet rows. */
+const CARD_TO_ROWS_GAP = 32;
+
+const CARD_LABEL_KEY = {
+  worst: 'decide.home.card.labelWorst',
+  average: 'decide.home.card.labelAverage',
+  tightest: 'decide.home.card.labelTightest',
+  figures: 'decide.home.card.labelFigures',
+  switched: 'decide.home.card.labelSwitched',
+} as const;
+
+interface HomeRowSpec {
+  key: string;
+  label: string;
+  value?: string;
+  secondLine?: string;
+  onPress: () => void;
+}
 
 export function DecideHomeScreen() {
   const t = useT();
-  const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const vm = useDecideHomeViewModel();
   const { create } = useCreateCheck();
   const changes = useDecideChanges(rc.userId ?? undefined, rc.householdId ?? undefined).data;
+  const sync = useSyncStatus();
+  const now = useSyncNow(sync);
   const [roughOpen, setRoughOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const noChanges = (changes ?? []).length === 0;
-  const noLiveOpen = !vm.openChecks.some((c) => c.status === 'open' && c.deleted_at === null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [problemsOpen, setProblemsOpen] = useState(false);
 
-  const fab = useMemo(
-    () => ({
-      label: t('decide.fab.label'),
-      accessibilityLabel: t('decide.fab.a11y'),
-      onPress: () => openNewCheck('buy'),
-    }),
-    [t]
+  // R17.13 M1: no FAB on Decide home, actively.
+  useRegisterFab(null);
+
+  // D-95: the "Now from your logged months" label shows on the first visit after the switch only. The stored flag is read
+  // once per visit; until it has been read the normal label shows (a returning user never sees a flash of the switch label).
+  // `visitBasisSeen` is never updated by the write below, so the label holds for the rest of the visit.
+  const [visitBasisSeen, setVisitBasisSeen] = useState<boolean | null>(null);
+  const userId = rc.userId;
+  useEffect(() => {
+    if (userId === null) return undefined;
+    let live = true;
+    loadHomeBasisSeen(userId).then(
+      (seen) => {
+        if (live) setVisitBasisSeen(seen);
+      },
+      () => {
+        if (live) setVisitBasisSeen(false);
+      }
+    );
+    return () => {
+      live = false;
+    };
+  }, [userId]);
+  const homeBasisSeen = visitBasisSeen ?? true;
+
+  const card = useMemo(
+    () => homeCardModel(vm.source, vm.settings, { status: vm.status, homeBasisSeen }),
+    [vm.source, vm.settings, vm.status, homeBasisSeen]
   );
-  useRegisterFab(fab);
+  const markedRef = useRef(false);
+  const shouldMark = card.state === 'figure' && card.markBasisSeen && visitBasisSeen === false;
+  useEffect(() => {
+    // Storage only; no setState here.
+    if (!shouldMark || markedRef.current || userId === null) return;
+    markedRef.current = true;
+    markHomeBasisSeen(userId).catch(() => {});
+  }, [shouldMark, userId]);
 
   // D-23: "Run the full check" saves the quick-check fields as a new check and opens it at step 2.
   const runFull = useCallback(
@@ -70,9 +123,8 @@ export function DecideHomeScreen() {
     [create, rc.userId, rc.householdId]
   );
 
-  const pastCount = t('decide.home.pastCount', { count: vm.decidedCount });
   const meta = vm.source !== null && vm.source.kind === 'logged' ? vm.source.meta : null;
-  const sources =
+  const sourcesNote =
     meta !== null
       ? t('decide.home.sources', {
           months: meta.fullMonths,
@@ -84,57 +136,115 @@ export function DecideHomeScreen() {
         ? t('decide.home.sourcesRough')
         : null;
 
+  // D-96: the problems list, live; the notice row counts only what the card does not already show.
+  const entries = useMemo(
+    () =>
+      homeProblems({
+        source: vm.source,
+        openChecks: liveOpenChecks(vm.openChecks).map((row) => ({
+          inputs: parseCheckInputs(row.inputs, vm.today),
+          isSample: row.is_sample,
+        })),
+        sync,
+        today: vm.today,
+        now,
+      }),
+    [vm.source, vm.openChecks, vm.today, sync, now]
+  );
+  const notice = noticeRowModel(entries);
+
+  const cardLabel = card.state === 'figure' || card.state === 'unavailable' ? card.label : 'figures';
+  const detailsTitle = t(CARD_LABEL_KEY[cardLabel]);
+
+  // Quiet rows (R17.3).
+  const openCount = liveOpenChecks(vm.openChecks).length;
+  const changedCount = useMemo(() => changedOpenCount(vm.source, vm.openChecks, vm.today), [vm.source, vm.openChecks, vm.today]);
+  const changeCount = (changes ?? []).length;
+  const setCount = linesSetCount(vm.settings, vm.currency);
+  const rows: HomeRowSpec[] = [];
+  if (openCount > 0) {
+    rows.push({
+      key: 'open',
+      label: t('decide.home.rows.open'),
+      value: String(openCount),
+      secondLine: changedCount > 0 ? t('decide.home.rows.openChanged', { count: changedCount }) : undefined,
+      onPress: () => pushOnce(OPEN_HREF),
+    });
+  }
+  rows.push(
+    changeCount > 0
+      ? { key: 'changes', label: t('decide.home.rows.changes'), value: String(changeCount), onPress: () => pushOnce(CHANGES_HREF) }
+      : { key: 'changes', label: t('decide.home.rows.changesAdd'), onPress: () => setAddOpen(true) }
+  );
+  if (vm.decidedCount > 0) {
+    rows.push({ key: 'past', label: t('decide.home.rows.past'), value: String(vm.decidedCount), onPress: () => pushOnce(PAST_HREF) });
+  }
+  rows.push({
+    key: 'lines',
+    label: t('decide.home.rows.lines'),
+    value: setCount === 0 ? t('decide.home.rows.linesDefault') : t('decide.home.rows.linesSet', { count: setCount }),
+    onPress: () => pushOnce(LINES_HREF),
+  });
+
+  // R17.2 budget probe: the bottoms of the card and the rows in scroll-content coordinates. No-ops unless EXPO_PUBLIC_PERF=1.
+  const bodyY = useRef(0);
+  const onBodyLayout = (e: LayoutChangeEvent) => {
+    bodyY.current = e.nativeEvent.layout.y;
+  };
+  const onCardLayout = (e: LayoutChangeEvent) => {
+    const { y, height } = e.nativeEvent.layout;
+    perfMark('home.cardBottom', bodyY.current + y + height);
+  };
+  const onRowsLayout = (e: LayoutChangeEvent) => {
+    const { y, height } = e.nativeEvent.layout;
+    perfMark('home.rowsBottom', bodyY.current + y + height);
+  };
+
   return (
-    <TabRootScreen title={t('decide.tab.title')} eyebrow={t('decide.tab.eyebrow')}>
-      <View style={styles.body}>
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.tab.subtitle')}</Text>
-        <QuickCheckForm
-          surface="home"
-          source={vm.source}
-          sourceStatus={vm.status}
-          today={vm.today}
-          currency={vm.currency}
-          onRunFull={runFull}
-          onAddRough={() => setRoughOpen(true)}
-          onRetry={vm.retry}
-        />
-        <AddChangeRow
-          showAdd={noChanges}
-          showInvest={noLiveOpen}
-          onAdd={() => setAddOpen(true)}
-          onInvest={() => openNewCheck('invest')}
-        />
-        <YourMonthCard
-          source={vm.source}
-          settings={vm.settings}
-          userId={rc.userId}
-          whole={vm.whole}
-          onEditRough={() => setRoughOpen(true)}
-        />
-        <OpenChecksCard
-          source={vm.source}
-          checks={vm.openChecks}
-          today={vm.today}
-          whole={vm.whole}
-          currency={vm.currency}
-        />
-        <ChangesCard changes={changes ?? []} currency={vm.currency} whole={vm.whole} />
-        {vm.decidedCount > 0 ? (
-          <Card style={{ paddingVertical: 0 }}>
-            <Row
-              label={t('decide.home.pastRow')}
-              value={pastCount}
-              accessibilityLabel={`${t('decide.home.pastRow')}, ${pastCount}`}
-              chevron
-              onPress={() => pushOnce(PAST_HREF)}
-            />
-          </Card>
-        ) : null}
-        <LinesCard source={vm.source} settings={vm.settings} userId={rc.userId} currency={vm.currency} whole={vm.whole} />
-        {sources !== null ? (
-          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{sources}</Text>
-        ) : null}
+    <TabRootScreen title={t('decide.home.header')} hideSyncLine>
+      <View style={styles.body} onLayout={onBodyLayout}>
+        <HomeNoticeRow model={notice} onPress={() => setProblemsOpen(true)} />
+        <View testID="home-card-wrap" onLayout={onCardLayout}>
+          <HomeSummaryCard
+            source={vm.source}
+            settings={vm.settings}
+            status={vm.status}
+            homeBasisSeen={homeBasisSeen}
+            currency={vm.currency}
+            today={vm.today}
+            onOpenDetails={() => setDetailsOpen(true)}
+            onAddRough={() => setRoughOpen(true)}
+            onRetry={vm.retry}
+            onRunFull={runFull}
+          />
+        </View>
+        <View testID="home-rows" style={styles.rows} onLayout={onRowsLayout}>
+          {rows.map((r, i) => (
+            <HomeRow key={r.key} label={r.label} value={r.value} secondLine={r.secondLine} onPress={r.onPress} isLast={i === rows.length - 1} />
+          ))}
+        </View>
       </View>
+      <MonthDetailsSheet
+        visible={detailsOpen}
+        title={detailsTitle}
+        card={card}
+        source={vm.source}
+        settings={vm.settings}
+        userId={rc.userId}
+        whole={vm.whole}
+        currency={vm.currency}
+        sourcesNote={sourcesNote}
+        onClose={() => setDetailsOpen(false)}
+      />
+      <HomeProblemsSheet
+        entries={entries}
+        visible={problemsOpen}
+        onClose={() => setProblemsOpen(false)}
+        source={vm.source}
+        settings={vm.settings}
+        userId={rc.userId}
+        currency={vm.currency}
+      />
       <ChangeSheet visible={addOpen} row={null} onClose={() => setAddOpen(false)} />
       <RoughFiguresSheet
         visible={roughOpen}
@@ -149,4 +259,5 @@ export function DecideHomeScreen() {
 
 const styles = StyleSheet.create({
   body: { paddingHorizontal: space.screenH, gap: space.groupGap },
+  rows: { marginTop: CARD_TO_ROWS_GAP - space.groupGap },
 });

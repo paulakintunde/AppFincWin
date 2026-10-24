@@ -20,9 +20,19 @@ export function perfEnabled(): boolean {
   return process.env.EXPO_PUBLIC_PERF === '1';
 }
 
-/** `perfMark('verdict:start')` then `perfMark('verdict:end')` records one duration in milliseconds. */
-export function perfMark(mark: string): void {
+/**
+ * `perfMark('verdict:start')` then `perfMark('verdict:end')` records one duration in milliseconds.
+ * `perfMark('home.cardBottom', 450)` records a plain measured value (05-117: layout bottoms in px) under that name.
+ */
+export function perfMark(mark: string, value?: number): void {
   if (!perfEnabled()) return;
+  if (value !== undefined) {
+    const list = samples.get(mark) ?? [];
+    list.push(value);
+    if (list.length > PERF_WINDOW) list.shift();
+    samples.set(mark, list);
+    return;
+  }
   const now = performance.now();
   if (mark.endsWith(':start')) {
     starts.set(mark.slice(0, -':start'.length), now);

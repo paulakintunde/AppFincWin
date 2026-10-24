@@ -1,5 +1,8 @@
 import React from 'react';
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import type { DecideSettingsRow } from '@/db/decideSettings';
+import { perfReport, perfReset } from '../../perf/perfMarks';
+import { DecideShellHost } from '../../DecideShellHost';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { emptyCheckInputs } from '../../snapshot/checkInputs';
 import { TODAY, loggedSource, noneSource, roughSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
@@ -13,6 +16,12 @@ type Snap = { status: 'loading' | 'error' | 'ready'; result: SnapshotResult | nu
 let mockSnap: Snap;
 let mockChecks: DecideCheckRow[] | undefined;
 let mockChanges: unknown[] = [];
+let mockSettings: DecideSettingsRow | null = null;
+let mockSync = { isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null as number | null, inFlightOldestAt: null as number | null, oldestPendingAt: null as number | null };
+let mockBasisSeen = true;
+const mockMarkSeen = jest.fn((..._a: unknown[]) => Promise.resolve());
+const mockQuickAction = jest.fn();
+const mockChangedCount = { n: 0 };
 const mockRetry = jest.fn();
 const mockCreate = jest.fn();
 const mockPush = jest.fn();
@@ -31,8 +40,9 @@ jest.mock('@/data/queries/decide', () => ({
       ?.filter((c) => c.deleted_at == null && c.status === 'open')
       .sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0)),
   }),
-  useDecideSettings: () => ({ data: null }),
+  useDecideSettings: () => ({ data: mockSettings }),
   useDecideChanges: () => ({ data: mockChanges }),
+  useDebts: () => ({ data: [] }),
 }));
 jest.mock('@/data/mutations/decideChanges', () => ({
   useAddChange: () => ({ add: jest.fn() }),
@@ -42,24 +52,38 @@ jest.mock('@/data/mutations/decideChanges', () => ({
 const mockSettingsUpdate = jest.fn();
 jest.mock('@/data/mutations/decideSettings', () => ({ useUpdateDecideSettings: () => ({ update: mockSettingsUpdate }) }));
 jest.mock('@/data/mutations/decideChecks', () => ({ useCreateCheck: () => ({ create: mockCreate }) }));
+jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
+jest.mock('@/data/mutations/decideLinks', () => ({ useSaveCardTerms: () => ({ save: jest.fn() }) }));
 jest.mock('../../notifications/waitReminder', () => ({ reconcileWaitReminders: (...a: unknown[]) => mockReconcile(...a) }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPush(...a) }));
 jest.mock('@/shell/fab/FabProvider', () => ({
   useRegisterFab: (...a: unknown[]) => mockRegisterFab(...a),
+  useProvideQuickAction: (...a: unknown[]) => mockQuickAction(...a),
+}));
+jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => mockSync }));
+jest.mock('../../hints/decideHints', () => ({
+  loadHomeBasisSeen: () => Promise.resolve(mockBasisSeen),
+  markHomeBasisSeen: (...a: unknown[]) => mockMarkSeen(...a),
+}));
+jest.mock('../homeRowsModel', () => ({
+  ...jest.requireActual('../homeRowsModel'),
+  changedOpenCount: () => mockChangedCount.n,
 }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
 jest.mock('@/shell/screen/TabRootScreen', () => {
   const R = require('react');
   const { View, Text } = require('react-native');
   return {
-    TabRootScreen: (p: Record<string, unknown>) =>
-      R.createElement(
+    TabRootScreen: (p: Record<string, unknown>) => {
+      mockSeen.tab = p;
+      return R.createElement(
         View,
         { testID: 'tab-root', refreshKeys: p.refreshKeys },
         R.createElement(Text, null, p.eyebrow),
         R.createElement(Text, null, p.title),
         p.children
-      ),
+      );
+    },
   };
 });
 jest.mock('../../quick/QuickCheckForm', () => {
@@ -80,23 +104,6 @@ jest.mock('../../quick/QuickCheckForm', () => {
     },
   };
 });
-jest.mock('../OpenChecksCard', () => {
-  const R = require('react');
-  const { Text } = require('react-native');
-  return {
-    OpenChecksCard: (props: Record<string, unknown>) => {
-      mockSeen.open = props;
-      return R.createElement(Text, { testID: 'probe-open' }, 'open');
-    },
-  };
-});
-
-jest.mock('../ChangesCard', () => {
-  const R = require('react');
-  const { Text } = require('react-native');
-  return { ChangesCard: () => R.createElement(Text, { testID: 'probe-changes' }, 'changes') };
-});
-
 function row(id: string, over: Partial<DecideCheckRow> = {}): DecideCheckRow {
   return {
     id,
@@ -143,24 +150,194 @@ beforeEach(() => {
   mockSnap = ready(loggedSource());
   mockChecks = [];
   mockChanges = [];
+  mockSettings = null;
+  mockSync = { isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null, inFlightOldestAt: null, oldestPendingAt: null };
+  mockBasisSeen = true;
+  mockChangedCount.n = 0;
+  perfReset();
+  delete process.env.EXPO_PUBLIC_PERF;
 });
 
+
+const labelsOnScreen = (labels: string[]) => labels.filter((l) => screen.queryByLabelText(l) !== null);
+
 describe('DecideHomeScreen', () => {
-  it('D-78 Decide home follows the R2b order', async () => {
-    mockChecks = [row('a', { status: 'bought' })];
+  it('D-95 the home renders the dark card first', async () => {
+    mockChecks = [row('o', { status: 'open' }), row('d', { status: 'bought' })];
     mockChanges = [{ id: 'c1' }];
     await renderScreen();
     const tree = JSON.stringify(screen.toJSON());
-    const order = ['probe-quick', 'your-month-card', 'probe-open', 'probe-changes', 'Past decisions', 'lines-card', '4 months of logged income'].map((needle) => tree.indexOf(needle));
+    const order = ['probe-quick', 'Open checks', 'Changes coming up', 'Past decisions', 'Lines you will not cross'].map((n) => tree.indexOf(n));
     expect(order.every((i) => i >= 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(tree.indexOf('home-summary-card')).toBeLessThan(tree.indexOf('Open checks'));
+    // The old inline lists and the add row are gone from the home.
+    expect(screen.queryByText('Your month')).toBeNull();
+    expect(screen.queryByLabelText('Check an investment')).toBeNull();
+  });
+
+  it('D-95 the header is lean: no eyebrow or subtitle, the header sync line dropped, no pull to refresh', async () => {
+    await renderScreen();
+    expect(mockSeen.tab).toMatchObject({ title: 'Can I afford it', hideSyncLine: true });
+    expect((mockSeen.tab as Record<string, unknown>).eyebrow).toBeUndefined();
+    expect((mockSeen.tab as Record<string, unknown>).refreshKeys).toBeUndefined();
+    expect(screen.queryByText('Judged on your real accounts, not the price tag.')).toBeNull();
+  });
+
+  it('D-95 at most four rows show', async () => {
+    mockChecks = [row('o', { status: 'open' }), row('d', { status: 'bought' })];
+    mockChanges = [{ id: 'c1' }];
+    await renderScreen();
+    const all = ['Open checks, 1', 'Changes coming up, 1', 'Past decisions, 1', 'Lines you will not cross, All at their defaults'];
+    expect(labelsOnScreen(all)).toEqual(all);
+    expect(screen.getByTestId('home-rows').children).toHaveLength(4);
+  });
+
+  it('D-99 Open checks and Past decisions hide at zero; Changes reads as its add row', async () => {
+    await renderScreen();
+    expect(screen.getByTestId('home-rows').children).toHaveLength(2);
+    expect(screen.queryByLabelText(/^Open checks/)).toBeNull();
+    expect(screen.queryByLabelText(/^Past decisions/)).toBeNull();
+    expect(screen.queryByLabelText(/^Changes coming up/)).toBeNull();
+    expect(screen.getByLabelText('Add a change coming up')).toBeTruthy();
+    expect(screen.getByLabelText('Lines you will not cross, All at their defaults')).toBeTruthy();
+    // Deleted checks do not count as open.
+    mockChecks = [row('d', { status: 'open', deleted_at: '2026-10-02T00:00:00Z' })];
+    await renderScreen();
+    expect(screen.queryByLabelText(/^Open checks/)).toBeNull();
+  });
+
+  it('D-99 the add row opens the change sheet in add mode', async () => {
+    await renderScreen();
+    expect(screen.queryByText('Add a change')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Add a change coming up'));
+    expect(screen.getByText('Add a change')).toBeTruthy();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('D-99 the rows open their own screens', async () => {
+    mockChecks = [row('o', { status: 'open' }), row('a', { status: 'bought' }), row('b', { status: 'passed' })];
+    mockChanges = [{ id: 'c1' }, { id: 'c2' }];
+    await renderScreen();
+    await fireEvent.press(screen.getByLabelText('Open checks, 1'));
+    expect(mockPush).toHaveBeenLastCalledWith('/decide/open');
+    await fireEvent.press(screen.getByLabelText('Changes coming up, 2'));
+    expect(mockPush).toHaveBeenLastCalledWith('/decide/changes');
+    await fireEvent.press(screen.getByLabelText('Past decisions, 2'));
+    expect(mockPush).toHaveBeenLastCalledWith('/decide/past');
+    await fireEvent.press(screen.getByLabelText('Lines you will not cross, All at their defaults'));
+    expect(mockPush).toHaveBeenLastCalledWith('/decide/lines');
+  });
+
+  it('D-99 Open checks carries the changed line, and Lines counts what the user set', async () => {
+    mockChecks = [row('o', { status: 'open' })];
+    mockChangedCount.n = 2;
+    mockSettings = { currency: 'USD', reserve: 100_000, investing_floor: null, saving_floor: null, dsr_line: 36, unsecured_multiple: null } as unknown as DecideSettingsRow;
+    await renderScreen();
+    expect(screen.getByText('2 changed since you looked')).toBeTruthy();
+    expect(screen.getByLabelText('Lines you will not cross, 2 of 5 set by you')).toBeTruthy();
+    mockChangedCount.n = 0;
+    await renderScreen();
+    expect(screen.queryByText(/changed since you looked/)).toBeNull();
+  });
+
+  it('D-96 the notice row shows with counted problems, opens Needs a look, and is absent for a first-run user', async () => {
+    mockSnap = ready(noneSource());
+    await renderScreen();
+    expect(screen.queryByTestId('home-notice-row')).toBeNull();
+    mockSnap = ready(loggedSource());
+    mockSync = { ...mockSync, failed: 2 };
+    await renderScreen();
+    expect(screen.getByLabelText('1 item needs a look')).toBeTruthy();
+    expect(screen.queryByText('Needs a look')).toBeNull();
+    await fireEvent.press(screen.getByTestId('home-notice-row'));
+    expect(screen.getByText('Needs a look')).toBeTruthy();
+    expect(screen.getByText('2 changes didn’t save')).toBeTruthy();
+  });
+
+  it('D-96 offline with nothing else reads as its own text in the notice row', async () => {
+    mockSync = { ...mockSync, isOnline: false };
+    await renderScreen();
+    expect(screen.getByLabelText('Offline')).toBeTruthy();
+  });
+
+  it('D-95 Details opens Month details titled with the card label, with the sources note', async () => {
+    await renderScreen();
+    expect(screen.queryByText(/4 months of logged income/)).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Month details'));
+    expect(screen.getByText(/4 months of logged income/)).toBeTruthy();
+    expect(screen.getAllByText('Your average month').length).toBeGreaterThan(0);
+  });
+
+  it('D-95 the rough sources note shows in Month details for rough figures', async () => {
+    mockSnap = ready(roughSource());
+    await renderScreen();
+    await fireEvent.press(screen.getByLabelText('Month details'));
+    expect(screen.getByText(/Rough figures you entered/)).toBeTruthy();
+  });
+
+  it('D-95 the quick-check field gets the home screen-reader label', async () => {
+    await renderScreen();
+    expect(mockSeen.quick).toMatchObject({ surface: 'home', variant: 'dark', fieldA11yLabel: 'Quick check, something and a price' });
+  });
+
+  it('D-95 the switch label is marked seen once and holds for the rest of the visit', async () => {
+    mockBasisSeen = false;
+    mockSettings = { currency: 'USD', rough_income: 400_000, rough_spending: 250_000 } as unknown as DecideSettingsRow;
+    const view = await renderScreen();
+    await waitFor(() => expect(mockMarkSeen).toHaveBeenCalledTimes(1));
+    expect(mockMarkSeen).toHaveBeenCalledWith('u1');
+    expect(screen.getByLabelText(/^Now from your logged months:/)).toBeTruthy();
+    await view.rerender(<DecideHomeScreen />);
+    expect(mockMarkSeen).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText(/^Now from your logged months:/)).toBeTruthy();
+  });
+
+  it('D-95 a user who has seen the basis neither writes the flag nor sees the switch label', async () => {
+    mockBasisSeen = true;
+    mockSettings = { currency: 'USD', rough_income: 400_000, rough_spending: 250_000 } as unknown as DecideSettingsRow;
+    await renderScreen();
+    await act(async () => {});
+    expect(mockMarkSeen).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText(/^Now from your logged months:/)).toBeNull();
+  });
+
+  it('D-98 no FAB on Decide home', async () => {
+    await renderScreen();
+    expect(mockRegisterFab).toHaveBeenCalledWith(null);
+    expect(mockRegisterFab.mock.calls.every((c) => c[0] === null)).toBe(true);
+  });
+
+  // The "FAB still shows on another tab root" test is in src/shell/fab/__tests__/Fab.test.tsx against the real provider.
+  it('D-98 You Add still offers New check', async () => {
+    await act(async () => {
+      render(<DecideShellHost />);
+    });
+    const [id, run] = mockQuickAction.mock.calls[0] as [string, () => void];
+    expect(id).toBe('newCheck');
+    run();
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'buy' } });
+  });
+
+  it('D-95 the budget probe marks the card and rows bottoms only with EXPO_PUBLIC_PERF=1', async () => {
+    await renderScreen();
+    const layout = (y: number, height: number) => ({ nativeEvent: { layout: { x: 0, y, width: 358, height } } });
+    await fireEvent(screen.getByTestId('home-card-wrap'), 'layout', layout(100, 300));
+    await fireEvent(screen.getByTestId('home-rows'), 'layout', layout(432, 208));
+    expect(perfReport()).toEqual({});
+    process.env.EXPO_PUBLIC_PERF = '1';
+    await fireEvent(screen.getByTestId('home-card-wrap'), 'layout', layout(100, 300));
+    await fireEvent(screen.getByTestId('home-rows'), 'layout', layout(432, 208));
+    const report = perfReport();
+    expect(report['home.cardBottom']).toMatchObject({ count: 1, median: 400 });
+    expect(report['home.rowsBottom']).toMatchObject({ count: 1, median: 640 });
   });
 
   it('add rough figures opens the sheet', async () => {
     mockSnap = ready(noneSource());
-    await wrap(<DecideHomeScreen />); // the sheet needs the safe-area provider
+    await wrap(<DecideHomeScreen />);
     expect(screen.queryByText('Rough figures')).toBeNull();
-    await fireEvent.press(screen.getByText('Add rough figures'));
+    await fireEvent.press(screen.getByLabelText('Add rough figures'));
     expect(screen.getByText('Rough figures')).toBeTruthy();
     await fireEvent.press(screen.getByText('Cancel'));
     expect(screen.queryByText('Rough figures')).toBeNull();
@@ -178,85 +355,11 @@ describe('DecideHomeScreen', () => {
     expect(mockRetry).toHaveBeenCalledTimes(1);
   });
 
-  it('renders the header, the quick check first, then open checks, the past row and the sources note', async () => {
+  it('passes the retry through to the quick check', async () => {
+    mockSnap = { status: 'error', result: null, source: null, retry: mockRetry };
     await renderScreen();
-    expect(screen.getByText('Decide')).toBeTruthy();
-    expect(screen.getByText('Can I afford it')).toBeTruthy();
-    expect(screen.getByText('Judged on your real accounts, not the price tag.')).toBeTruthy();
-    expect(screen.getByTestId('probe-quick')).toBeTruthy();
-    expect(screen.getByTestId('probe-open')).toBeTruthy();
-    expect(screen.queryByText('Nothing decided yet')).toBeNull();
-    expect(screen.getByText(/4 months of logged income/)).toBeTruthy();
-    expect(mockSeen.quick).toMatchObject({ surface: 'home', sourceStatus: 'ready', today: '2026-10-15', currency: 'USD' });
-    expect(screen.getByTestId('tab-root').props.refreshKeys).toBeUndefined();
-  });
-
-  it('D-78 Past decisions is one row, hidden at zero', async () => {
-    await renderScreen();
-    expect(screen.queryByText('Past decisions')).toBeNull();
-    expect(screen.queryByText('Nothing decided yet')).toBeNull();
-    mockChecks = [row('a', { status: 'bought' })];
-    await renderScreen();
-    expect(screen.getByText('1 decision')).toBeTruthy();
-    expect(screen.getByLabelText('Past decisions, 1 decision')).toBeTruthy();
-  });
-
-  it('D-72 the add row shows only with no changes and opens the change sheet in add mode', async () => {
-    await wrap(<DecideHomeScreen />);
-    expect(screen.getByLabelText('Add a change coming up')).toBeTruthy();
-    expect(screen.queryByText('Add a change')).toBeNull();
-    await fireEvent.press(screen.getByLabelText('Add a change coming up'));
-    expect(screen.getByText('Add a change')).toBeTruthy();
-  });
-
-  it('D-72 the add row is gone once a change exists', async () => {
-    mockChanges = [{ id: 'c1' }];
-    await renderScreen();
-    expect(screen.queryByLabelText('Add a change coming up')).toBeNull();
-    expect(screen.getByLabelText('Check an investment')).toBeTruthy();
-  });
-
-  it('D-72 Check an investment shows while Open checks is hidden and opens an investment check', async () => {
-    await renderScreen();
-    await fireEvent.press(screen.getByLabelText('Check an investment'));
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'invest' } });
-  });
-
-  it('D-72 Check an investment is gone once a check is open', async () => {
-    mockChecks = [row('o', { status: 'open' })];
-    await renderScreen();
-    expect(screen.queryByLabelText('Check an investment')).toBeNull();
-    mockChecks = [row('d', { status: 'open', deleted_at: '2026-10-02T00:00:00Z' })];
-    await renderScreen();
-    expect(screen.getAllByLabelText('Check an investment').length).toBe(1);
-  });
-
-  it('says rough figures were entered when the snapshot is rough, and nothing when there are none', async () => {
-    mockSnap = ready(roughSource());
-    const view = await renderScreen();
-    expect(screen.getByText(/Rough figures you entered/)).toBeTruthy();
-    mockSnap = ready(noneSource());
-    await view.unmount();
-    await renderScreen();
-    expect(screen.queryByText(/Rough figures you entered/)).toBeNull();
-    expect(screen.queryByText(/months of logged income/)).toBeNull();
-  });
-
-  it('counts decided checks on the Past decisions row and opens the past list', async () => {
-    mockChecks = [row('a', { status: 'bought' }), row('b', { status: 'passed' }), row('c', { status: 'bought', deleted_at: '2026-10-02T00:00:00Z' })];
-    await renderScreen();
-    expect(screen.getByText('2 decisions')).toBeTruthy();
-    await fireEvent.press(screen.getByText('Past decisions'));
-    expect(mockPush).toHaveBeenCalledWith('/decide/past');
-  });
-
-  it('registers the New check FAB, which opens a new purchase check', async () => {
-    await renderScreen();
-    const config = mockRegisterFab.mock.calls[0]?.[0] as { label: string; accessibilityLabel: string; onPress: () => void };
-    expect(config.label).toBe('New check');
-    expect(config.accessibilityLabel).toBe('Start a new affordability check');
-    config.onPress();
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'buy' } });
+    (mockSeen.quick!.onRetry as () => void)();
+    expect(mockRetry).toHaveBeenCalled();
   });
 
   it('Run the full check saves the quick fields as a new check and opens it at step 2', async () => {
@@ -275,11 +378,10 @@ describe('DecideHomeScreen', () => {
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', step: '2' } });
   });
 
-  it('passes the retry through to the quick check', async () => {
-    mockSnap = { status: 'error', result: null, source: null, retry: mockRetry };
+  it('Full check starts a new purchase check', async () => {
     await renderScreen();
-    (mockSeen.quick!.onRetry as () => void)();
-    expect(mockRetry).toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText('Full check'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'buy' } });
   });
 
   it('reconciles reminders once with the waiting ready-by dates and the decided cooling-off dates', async () => {
@@ -314,7 +416,6 @@ describe('DecideHomeScreen', () => {
     ];
     const view = await renderScreen();
     expect(mockReconcile).toHaveBeenLastCalledWith([], '2026-10-15', []);
-    // The reopened child is soft-deleted (abandoned): the old decision's reminders are back.
     mockChecks = [
       row('old', { status: 'waiting', ready_by: '2026-11-01', cooling_off_at: '2026-10-20T09:00:00Z' }),
       row('child', { status: 'open', reopened_from: 'old', deleted_at: '2026-10-16T00:00:00Z' }),
