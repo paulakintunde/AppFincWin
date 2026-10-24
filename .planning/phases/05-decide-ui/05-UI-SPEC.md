@@ -2637,14 +2637,14 @@ Source: the 05-26 device walkthrough and the locked decisions **05-CONTEXT D-100
 
 | Engine basis (R17.13 M3) | Sub-line |
 |---|---|
-| Worst month | "in your worst month, after spending, debts and saving goals" |
-| Average month | "in your average month, after spending, debts and saving goals" |
-| Under 3 full months | "from your tightest figures, after spending, debts and saving goals" + ⓘ `tightestFigures` as the next flex sibling |
-| First read from rough figures | "from the figures you gave, after spending, debts and saving goals" |
-| First visit after real history replaced rough figures (`homeBasisSeen` unset) | "now from your logged months, after spending, debts and saving goals" |
+| Worst month | "in your worst month, after spending, debts and everything set aside" |
+| Average month | "in your average month, after spending, debts and everything set aside" |
+| Under 3 full months | "from your tightest figures, after spending, debts and everything set aside" + ⓘ `tightestFigures` as the next flex sibling |
+| First read from rough figures | "from the figures you gave, after spending, debts and everything set aside" |
+| First visit after real history replaced rough figures (`homeBasisSeen` unset) | "now from your logged months, after spending, debts and everything set aside" |
 
-- **Wording:** "saving goals" is D-100's wording. The ⓘ spells out that investing and pots are also taken off, so the sub-line is not read as the whole list.
-- **Rows grow:** the sub-line is 59 to 67 characters, about 370 to 420 wide, so it wraps to **two lines at 402 / 1.0x** (+17.5) and up to three at 320. It wraps at words (rule W), with no `numberOfLines`.
+- **Wording (user decision, popup 2026-10-24):** every variant ends "after spending, debts and everything set aside". This replaces D-100's "saving goals" ending, which left out investing and pots. The ⓘ still lists every part (saving, investing, pots).
+- **Rows grow:** the sub-line is 67 to 75 characters, about 420 to 470 wide against the 330 inner width, so it wraps to **two lines at 402 / 1.0x** (+17.5; two lines hold up to about 660) and up to three at 320. The budget figures below are unchanged. It wraps at words (rule W), with no `numberOfLines`.
 - **Selection:** the basis logic in `homeCardModel` is unchanged (`HomeCardLabel` stays as the basis key, and a rename is the plan's call). Only `LABEL_KEY` in `HomeSummaryCard.tsx` and its twin in `DecideHomeScreen.tsx` now point at the sub-line keys.
 
 **Second line "In {{in}} · Out {{out}}" (`s13_5`, `inkSoft2`): Out is now everything that leaves.**
@@ -2666,7 +2666,7 @@ Source: the 05-26 device walkthrough and the locked decisions **05-CONTEXT D-100
   - `decide.home.card.a11yLeft`: "Net free cash flow: {{amount}} left {{basis}}. In {{in}}, out {{out}}."
   - `a11yShort`: "Net free cash flow: {{amount}} short {{basis}}. In {{in}}, out {{out}}."
   - `{{basis}}` is the sub-line text as shown. Amounts use `formatMoneyA11y`. The hint is still "Opens month details".
-  - Example: "Net free cash flow: $1,240 left in your worst month, after spending, debts and saving goals. In $4,800, out $3,560."
+  - Example: "Net free cash flow: $1,240 left in your worst month, after spending, debts and everything set aside. In $4,800, out $3,560."
 - **Reading order:** header; notice row; summary group; the ⓘ "Net free cash flow"; Details; field; Check it; result group; Full check; rows.
 - The eyebrow Text stays hidden from the accessibility tree, since the summary group carries it.
 
@@ -2729,12 +2729,14 @@ Source: the 05-26 device walkthrough and the locked decisions **05-CONTEXT D-100
 
 **Sample data:** `seed_sample_data` seeds no pot, so the DCU-11 frames are unchanged. `clear_sample_data` is unaffected, since new rows are `is_sample = false`.
 
+**Account deletion (GDPR erasure):** nothing new is needed. `savings_goals.created_by` and `savings_goals.household_id` both cascade from `auth.users` and `households`, so pot rows (and Wait goals) are purged. `debts.created_by` is `on delete set null`, so `debts` (and the new `is_housing` column) are purged through `debts.household_id`, which cascades. The in-app purge test is extended to assert that **no `savings_goals` row with `kind = 'pot'` and no `debts` row remains** for the deleted household.
+
 **Engine input and maths (new `src/engine/decide/pots.ts`, pure, E6):**
 - **`DecideSnapshot.pots: readonly PotInput[]`** (live, not done, in the home currency). `PotInput` = `{ id, kind, target: MinorUnits|null, monthlyAmount: MinorUnits|null, readyBy: LocalDate|null, saved: MinorUnits }`. `saved` = `opening_saved` + tagged paid lines, as `savedSoFar` computes today.
 - **`potSetAside(pot, asOf): { monthly, months, state }`** with state `'active' | 'reached' | 'past_due'`. The rules, in order:
   1. `remaining` = target − saved. When `target` is null (a Wait goal without a target) and `monthlyAmount` is set, `monthly` = `monthlyAmount`, state `active`. With neither, `monthly` = 0.
   2. `remaining ≤ 0` → state `reached`, `monthly` 0.
-  3. **A Wait pot** (`monthlyAmount` set): `monthly` = min(`monthlyAmount`, `remaining`); `months` = ceil(`remaining` ÷ `monthly`).
+  3. **A Wait pot** (`kind = 'wait'`): if `monthlyAmount` is null or **0**, `monthly` = 0, `months` = null, state `active` (the column allows 0, and there is no division by zero). Otherwise `monthly` = min(`monthlyAmount`, `remaining`) and `months` = ceil(`remaining` ÷ `monthly`). A Wait pot with a target, no `monthlyAmount` and no `readyBy` therefore sets aside 0 and is `active` with `months` null; the Pots screen line 3 reads "From a check" with no amount or date.
   4. **A plain pot:** `readyBy ≤ asOf` → state `past_due`, `monthly` **0** (it is surfaced in Needs a look instead; a lump would swing the hero). Otherwise `m` = max(1, the **whole months from `asOf` to `readyBy`, rounded down**), measured as the largest k such that `occurrenceDate(asOf, 'monthly', k) ≤ readyBy`, capped at `SIMULATION_MONTH_CAP`. `monthly` = **`ceilDivide(remaining, m)`**, rounded **up** to the minor unit, in the same direction as `buildWaitPlan`. `months` = `m`.
   5. The total is the exact `bigint` sum of the per-pot amounts, converted with `minorFromBigInt`.
 - **Example:** $600 by 31 March 2027, $0 saved, today 24 October 2026: five whole months (24 Nov to 24 Mar), so $120 a month. $601 gives $121 (up).
@@ -2779,6 +2781,10 @@ Source: the 05-26 device walkthrough and the locked decisions **05-CONTEXT D-100
     | No stored rate | "Waiting for a {{currency}} rate" |
 
 - **Row press:** a plain pot opens `PotSheet` in edit mode; a Wait pot opens the decision detail sheet (its target, date and amount belong to the check).
+- **Wait-pot menu (decided):** a Wait pot's "⋯" offers **"Mark done" (or "Reopen") only**. Its target, date and amount belong to the check, so it has no Delete here and no swipe-to-delete. It is removed with the decision, through the decision's existing "Delete this decision?" confirm (which soft-deletes the pot in the same undo step).
+- **Loading:** a skeleton of three `fill1` bars at the name and caption sizes (`radii.pill`, no shimmer), with `accessibilityState.busy` and the label "Loading your pots". The "+ Pot" link is hidden until the list has loaded.
+- **List error:** the query fails with no cached rows: `meta` `inkMuted` "Your pots didn’t load." and a `Pill` secondary **"Try again"** (the shared retry pattern of "Your figures didn’t load"). With cached rows, they show and the problem is the sync line's.
+- **Pending and failed writes:** a pot saved offline or in flight shows no row chrome; the shared sync line and notice row report it (R16, R17.5 entries 3, 4 and 7). A failed save reaches "Review changes" (`FailedWritesSheet`) and the sheet's own save toast reads the shared "That change couldn’t be saved. Nothing was changed." line.
 - **"⋯" menu** (the Open checks pattern): **"Mark done"** (a done pot shows **"Reopen"**) and **"Delete"**. Swipe-left is the Delete shortcut.
 - **Done pots:** a closed `FoldRow` **"Done · {{count}}"** at the end of the list, hidden at 0. Its rows are dimmed (`inkMuted`) with line 3 "Done {{date}}".
 - **Empty (0 live pots):** `meta` "No pots yet. A pot keeps money for a cost with a set amount and a date, such as a car service in March." and one `Pill` primary **"Add a pot"**. The heading link is hidden then, so there is a single accent action.
@@ -2894,7 +2900,7 @@ resale   = 0                                            when no loss of value is
   - **Default for new rows:** `guard_debt()` on insert (and on update under `fincwin.decide_rpc` when `series_id` or `check_id` is set) turns `is_housing` **on, never off**, when the debt is not a card and is paid by a Housing-category series or comes from a `property` check. So Go ahead on a property loan arrives with the switch on. Nothing in `record_decide_go` is rewritten.
   - **Grants:** `grant update (is_housing) on public.debts`; no insert grant (the trigger sets it). `DebtRow`, `DEBT_COLUMNS` and `DEBT_PATCH_KEYS` gain `is_housing`.
   - **Where the switch lives:** **there is no debt editor in `src` today.** Loan debts are created only by Go ahead (`record_decide_go`), and the one debt sheet (the card terms sheet) edits cards. Until Phase 6 builds the debt editor, the switch sits in a **"Loans counted as housing" section of the housing-line editor** (`LimitEditorSheet`, housing mode) and nowhere else; Phase 6's editor reuses the same `DebtHousingSwitch` component. Each live non-card debt is a row: the name (`body`, user text under rule T), its payment (`meta`, `inkMuted`, "{{amount}} a month"), and a `ToggleRow` (the shipped `src/ui/ToggleRow`) labelled **"This is for housing"**. The section is hidden when there are no live loan debts, with the `meta` line "No loans recorded yet. A loan from a check appears here."
-  - **Copy and a11y:** switch label **"This is for housing"**; section heading **"Loans counted as housing"**; helper (`meta`, `inkMuted`) **"A loan with this on counts toward the housing line."** The switch is `accessibilityRole="switch"`, label "This is for housing, {{name}}", `accessibilityState.checked`, hint "Counts this loan toward the housing line". The row is at least 44 high; the name wraps (rule W) and, under rule S, the switch drops under the name.
+  - **Copy and a11y:** switch label **"This is for housing"**; section heading **"Loans counted as housing"** (`label` 600, `ink`, `accessibilityRole="header"`); helper (`meta`, `inkMuted`) **"A loan with this on counts toward the housing line."** The switch is `accessibilityRole="switch"`, label "This is for housing, {{name}}", `accessibilityState.checked`, hint "Counts this loan toward the housing line". The row is at least 44 high; the name wraps (rule W) and, under rule S, the switch drops under the name.
   - **Offline and undo:** `useSetDebtHousing` (`src/data/mutations/debts.ts`) is a paused-mutation write, version-conditional with the undo step id as the replay key, and updates the `debts` cache optimistically, so the hero and the Lines value change at once. It is one undo step (`apply_patches`, entity `debts`, label `debtHousingChanged`: "Housing setting changed"), with the toast "Housing setting changed" and Undo. A version conflict is the existing "edit changed on another device" entry.
   - **Sample data:** sample debts stay off.
 - `housingMonthly` is on the average of the used months whatever the Worst / Average basis. The ratio's denominator is `incomeBasis`.
@@ -2917,7 +2923,7 @@ resale   = 0                                            when no loss of value is
 - The `assertNever` sites in `warningCopy.ts` and `LinesSection.tsx` become exhaustive over the new code.
 
 **Warning copy** (`decide.warn.housing*`, in "What breaks", ordered by shortfall like the rest):
-- Title: **"Housing takes a large share of your income"**.
+- Title: **"Housing costs go over your line"**.
 - Value: **"{{pct}}"** (e.g. "31%").
 - Body: **"Your line is {{line}}. After this, {{housing}} of {{in}} a month goes to housing costs."**
 - No-income variant: value **"None in"**, body **"Your line is {{line}} of money in. None comes in on this basis, so {{housing}} a month of housing costs is over it."**
@@ -2942,7 +2948,7 @@ resale   = 0                                            when no loss of value is
 **The row** (verdict card, **row 4c**, directly under the total-cost row, or under the key figures when the total-cost row is hidden; always above the basis marker). One `meta` 600 `surface` Text with the ⓘ `investedInstead` as its next flex sibling. Keys `decide.verdict.invested.*`:
 - Whole years: **"Invested instead: {{fv}} after {{count}} year at {{rate}}%"** / **"… after {{count}} years at {{rate}}%"**.
 - Otherwise months: **"… after {{count}} month at …"** / **"… months at …"**.
-- With a holding fee typed (D-44 in the fold): **"Invested instead: {{fv}} after {{count}} years at {{rate}}%, less {{fee}}% fees"**, which is the net figure the fold already shows.
+- With a holding fee typed (D-44 in the fold): **"Invested instead: {{fv}} after {{count}} years at {{rate}}%, less {{fee}}% fees"**, which is the net figure the fold already shows. This variant is about 62 to 66 characters and **wraps to two lines at 402 / 1.0x** (+17.5 more).
 - Out of range (D-47): **"Invested instead: too large to project at {{rate}}%"**.
 - `{{rate}}` is the entered rate, one decimal at most, as typed. `{{fv}}` is whole currency units. The a11y label ends "A projection, not a forecast."
 
@@ -2962,7 +2968,7 @@ resale   = 0                                            when no loss of value is
 
 **Speed:** the headline comes from the same settled-core call as `investmentViews`, so it follows the D-88 contract (computed on the settled path; while it settles the row keeps its last value with the existing "Updating" treatment, never a half-computed figure).
 
-**Budget:** +25.5 when shown. The demo seed enters no rate, so **no DCU-11 frame shows it**. With both new rows and a difference line the second warning can end at about 746.5, which is 11.5 under the bar at 735. This is a scrolling state outside the store frames.
+**Budget:** +25.5 when shown, or +43 with a holding fee (two lines). The demo seed enters no rate, so **no DCU-11 frame shows it**. With both new rows and a difference line the second warning can end at about 746.5, which **overlaps the action bar (at 735) by 11.5**, and by about 29 with the fee variant. The page scrolls; this is a scrolling state outside the store frames.
 
 **ⓘ `investedInstead` (new):**
 - Term **"Invested instead"**.
@@ -2974,7 +2980,7 @@ resale   = 0                                            when no loss of value is
 | Today | R18 |
 |---|---|
 | Eyebrow = the basis label ("Your worst month" …) | "Net free cash flow" + ⓘ; the basis moves to the sub-line (R18.1) |
-| Sub-line "after spending, debts and saving" | The five basis variants ending "after spending, debts and saving goals" |
+| Sub-line "after spending, debts and saving" | The five basis variants ending "after spending, debts and everything set aside" |
 | "In … · Out …" with Out = spending | Out = everything that leaves, so In − Out = the hero |
 | Month details title = the card label; strip Comes in / Goes out / Left | Title "Net free cash flow"; a breakdown that adds up; a "Pots ›" link |
 | `leftBefore` = income − spending − debts − `pausable` | − `setAside` as well; `pausable` unchanged |
@@ -3005,7 +3011,7 @@ resale   = 0                                            when no loss of value is
 | Housing warning title, value, body, verdict titles; Lines name, description, info | "takes a large share", "would reach", "breaks your line": declarative, no advice. Pass. |
 | Pots screen: heading, sub-copy, summary, row states ("Target reached · nothing more to set aside", "Past its date · … still to save"), empty, sheet labels, preview lines | Facts about a pot. No reassurance. Pass. |
 | "This is for housing"; "Loans counted as housing"; the helper and empty line; toast "Housing setting changed" | Labels and facts. Pass. |
-| Buttons "Add a pot", "Save pot", "Mark done", "Reopen", "Delete", "Tag a transfer", "Pots ›", "+ Pot", "Cancel" | UI controls. **"Save pot" and "Add a pot" begin with Save or a verb, so they are added to the guard's keyed button list**, as "Check it" and "Review changes" were. |
+| Buttons "Add a pot", "Save pot", "Mark done", "Reopen", "Delete", "Tag a transfer", "Pots ›", "+ Pot", "Cancel" | UI controls. **Only "Save pot" begins with a guarded imperative (Save), so only it is added to the guard's keyed button list**; "Add" is not in `IMPERATIVE_LEAD`. |
 | Toasts "Pot saved", "Pot deleted · {{name}}", "Marked done · {{name}}", "Reopened · {{name}}"; undo labels | Past-tense facts. Pass. |
 | Wait copy changes (R18.2) | Declarative. Pass. |
 | Needs a look entry 8 and the pot rate variant | Facts with an action control. Pass. |
@@ -3015,7 +3021,7 @@ resale   = 0                                            when no loss of value is
 
 **Engine items at 100% branch coverage** (the CI gate; named tests "D-100", "D-101", "D-102", "D-103", "D-104"):
 - **E6 (`pots.ts` and the context changes):**
-  - `potSetAside`: target null with and without `monthlyAmount`; reached (equal and over); a Wait pot below and above remaining; a plain pot past due (equal to `asOf` and before); within the first month (`m` = 1); the exact-division and round-up cases ($600 / 5 and $601 / 5); the month-end clamp (31 Jan); the 600-month cap; the last-month residual.
+  - `potSetAside`: a Wait pot with `monthlyAmount` 0 and null (monthly 0, months null, no division), and with a target but no `monthlyAmount` and no `readyBy`; target null with and without `monthlyAmount`; reached (equal and over); a Wait pot below and above remaining; a plain pot past due (equal to `asOf` and before); within the first month (`m` = 1); the exact-division and round-up cases ($600 / 5 and $601 / 5); the month-end clamp (31 Jan); the 600-month cap; the last-month residual.
   - The `bigint` sum and its safe-range conversion; `protectedCash` (saved below, equal to and above cash; negative cash; no pots).
   - `leftBefore` with and without `setAside`; the identity income − out = `leftBefore`; `MonthColumn.setAside` and `outgoings`.
   - `pausable` unchanged and the pause never touching a set-aside (a shortfall beyond saving and investing is `month`).
@@ -3029,6 +3035,7 @@ resale   = 0                                            when no loss of value is
   - Builder (not engine, in the feature suite): Housing-category spending; payments of `is_housing` loans only (a card with the flag set is ignored); no double count with `coveredSeries`; an invalid `housing_line` counted in `limitsReset`.
   - Database (local, in 05-119): the backfill matches each old signal and nothing else; the `guard_debt()` insert default turns on for a Housing series and a property check, never turns off, never applies to a card; `apply_patches` accepts `is_housing`.
   - Feature: `useSetDebtHousing` optimistic update, undo and replay; the switch's a11y state.
+  - Account deletion: the in-app purge test asserts no `savings_goals` row with `kind = 'pot'` and no `debts` row remains (R18.2).
 - **Also tested outside the engine:** `buildSnapshot` leaves tagged legs out of saving; the own-pot exclusion for a reopened Waiting check; RNTL at 320 / 2.0x for the eyebrow row and the sub-line; the Month details breakdown sums to the hero; the Pots screen states; migrations applied to a local database (the guard cases, the shape constraint, `apply_patches` for each new column).
 
 #### R18.8 Plan split (waves continue from 30; plans 05-119 onward)
@@ -3039,12 +3046,12 @@ resale   = 0                                            when no loss of value is
 |---|---|---|---|
 | **05-119** | 31 | Both migrations (R18.2, including `debts.is_housing`, its backfill and the `guard_debt()` default); local DB tests of the guards, shape constraint, backfill and `apply_patches`; preflight; a **blocking checkpoint**: the user's explicit approval before `supabase:db:push` to production. | — |
 | **05-120** | 31 | E6 engine: `pots.ts`, `prepareContext` set-aside and `protectedCash`, `MonthColumn.setAside`, `cashPath` opening, `position` fixed outgoings, `investmentViews` surplus. 100% coverage and property tests. | — |
-| **05-121** | 32 | E8 engine: `DEFAULT_HOUSING_LINE`, `WARNING_ORDER`, `housing` code, `Assessment` fields, margins, limits. | 05-120 (shares `assess.ts`, `types.ts`) |
+| **05-121** | 32 | E8 engine: `DEFAULT_HOUSING_LINE`, `WARNING_ORDER`, `housing` code, `Assessment` fields, margins, limits. **It also owns the minimal exhaustive cases** that keep typecheck green in waves 32-33: a `housing` case in `warningCopy.ts` (a placeholder-free minimal card using the final keys with their English text), the `housing` row in `LinesSection.tsx`, and `housing` in the `LimitKey` records (`LIMIT_INFO_KEY` and the label maps). 05-126 fills in the real copy and UI. | 05-120 (shares `assess.ts`, `types.ts`) |
 | **05-122** | 32 | Data layer for pots: `SavingsGoalRow`/columns, `decidePots.ts` and `debts.ts` (`useSetDebtHousing`) mutations, queries and keys, undo labels and `savings_goals` patch keys, `housing_line` in the settings row and patch. | 05-119 |
 | **05-123** | 33 | E7 engine: `ownership.ts` (`totalCost`), the `investmentViews` headline. | 05-120, 05-121 |
 | **05-124** | 33 | Snapshot builder: `pots`, tagged-leg exclusion, own-pot exclusion, `housingMonthly`, `housingLine` (loans with `is_housing`), pot currency conversion, `base.pots`. | 05-120, 05-121, 05-122 |
 | **05-125** | 34 | D-100 card: eyebrow, sub-lines, Out figure, `homeCardModel`, Month details breakdown and "Pots ›" link, retired keys, ⓘ `netFreeCashFlow`, budget probes. | 05-124 |
-| **05-126** | 34 | D-103 UI: sixth Lines row and editor with the "Loans counted as housing" switches (`DebtHousingSwitch`), `linesSetCount`, "of 6", warning copy and verdict titles, Every line and Assumptions rows, ⓘ `housingLine`. | 05-124 |
+| **05-126** | 34 | D-103 UI (**owns the home Lines-row text**: `homeRowsModel.ts` `linesSetCount`, `DecideHomeScreen.tsx` L163-185 and the `decide.home.rows.linesSet*` and `linesFold.preview*` keys in `en.ts`, "of 5" to "of 6"; 05-125 must not touch those lines): sixth Lines row and editor with the "Loans counted as housing" switches (`DebtHousingSwitch`), `linesSetCount`, "of 6", warning copy and verdict titles, Every line and Assumptions rows, ⓘ `housingLine`. | 05-124, 05-125 |
 | **05-127** | 35 | Pots UI: `PotsScreen`, `PotSheet`, You › Money row, Month details wiring, Needs a look entries, ⓘ `pots`, undo and toasts. | 05-122, 05-124, 05-125 |
 | **05-128** | 35 | Verdict rows 4b and 4c on step 3: rendering, hiding rules, a11y group, budgets, ⓘ `totalCost` and `investedInstead`; the month table's pots row. | 05-123, 05-124 |
 | **05-129** | 36 | Wait → pot: copy changes (R18.2), the Wait panel and Past decisions wording, own-pot exclusion test through `computeCheck`. | 05-127, 05-128 |
@@ -3080,7 +3087,7 @@ resale   = 0                                            when no loss of value is
 7. **Housing line order:** third of six, beside the debt line.
 8. **Invested instead** is the future value of the amount on the day plus the payments and running costs, using the first non-zero typed rate.
 9. **Total-cost horizon** follows the investing views' horizon and is never below the plan term.
-10. **Sub-line wording** follows D-100 ("saving goals"); the ⓘ names investing and pots.
+10. **Sub-line wording** is the user's popup choice of 2026-10-24, "…after spending, debts and everything set aside", replacing D-100's "saving goals"; the ⓘ names saving, investing and pots.
 
 #### R18.10 Checklist
 
@@ -3099,3 +3106,18 @@ resale   = 0                                            when no loss of value is
 | Housing line and warning | `constants.ts`, `assess.ts`, `decision.ts`, `warningCopy.ts`, `LinesCard`, `LimitEditorSheet`, `LinesSection` |
 | Wait copy | step 5 Wait panel, Past decisions, `infoTerms` `waitGoal` |
 | Tests | R18.7 |
+
+#### R18.11 Re-approval fixes (UI checker, 2026-10-24)
+
+| # | Item | Where folded in |
+|---|---|---|
+| 1 | Typecheck red in waves 32-33: 05-121 owns the minimal exhaustive `housing` cases in `warningCopy.ts`, `LinesSection.tsx` and the `LimitKey` records | R18.8 (05-121) |
+| 2 | Home Lines-row text ("of 6", `linesSetCount`) given to 05-126 alone, which also depends on 05-125 | R18.8 (05-126) |
+| 3 | Wait pot with `monthlyAmount` 0 or null, and with no `readyBy`: monthly 0, months null, active; added to the coverage list | R18.2 rule 3, R18.7 |
+| 4 | Account deletion: cascades named; purge test asserts no pot rows and no debts rows | R18.2, R18.7 |
+| 5 | Pots screen loading, list error, pending and failed writes; Wait-pot menu is "Mark done" / "Reopen" only, deleted with the decision | R18.2 Pots screen |
+| 6 | Fee variant of "Invested instead" wraps to two lines (+17.5) | R18.5 |
+| 7 | 746.5 "overlaps the bar by 11.5", so the page scrolls | R18.5 Budget |
+| 8 | Sub-line ends "after spending, debts and everything set aside" (user popup); fit rechecked, budgets unchanged | R18.1, R18.6, R18.9 |
+| 9 | Housing warning title "Housing costs go over your line"; "Loans counted as housing" heading is `label` 600 | R18.4 |
+| 10 | Only "Save pot" joins the keyed button list | R18.7 |
