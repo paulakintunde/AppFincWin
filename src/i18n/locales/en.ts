@@ -112,6 +112,7 @@ const en = {
       accounts: 'Accounts',
       categories: 'Categories',
       history: 'History',
+      pots: 'Pots', // 05-131 (D-101, R18.2): navigation row to the Pots screen
     },
     // 05-88 (D-85, R16.1): the always-reachable Add group on the You screen
     add: {
@@ -1307,6 +1308,13 @@ const en = {
       checkDeleted: 'Check deleted · {{name}}',
       decisionDeleted: 'Decision deleted · {{name}}',
       changeDeleted: 'Change deleted',
+      // 05-131 (D-101, D-103, R18.2, R18.4): pots and the housing marker on a debt
+      potAdded: 'Pot added',
+      potEdited: 'Pot edited',
+      potDeleted: 'Pot deleted',
+      potDone: 'Pot marked done',
+      potReopened: 'Pot reopened',
+      debtHousingChanged: 'Housing setting changed',
     },
     // C-WR-06: shown instead of the matching `label` entry when the row has no name, so a
     // nameless row never renders a raw "{{name}}" (picked by src/i18n/undoLabel.ts).
@@ -1763,6 +1771,32 @@ const en = {
         body: 'Fewer than 3 full months are logged, so money in uses your lowest month and spending uses your highest. The figure combines the two, which can be tighter than any single month.',
         changes: 'Once 3 full months exist, the label follows your worst or average month.',
       },
+      // 05-131 (D-100..D-104, R18.1-R18.5)
+      netFreeCashFlow: {
+        term: 'Net free cash flow',
+        body: 'What is left of a month once everything planned has been taken off: money in, minus spending, minus debt payments, minus what goes to saving, to investing and to pots. It is worked out from your logged months, on the worst month or the average, as the line under it says. A pot is money kept for a set amount on a set date.',
+        changes: 'Every check starts from this figure. A purchase lowers it by its monthly cost, and only saving and investing can pause to cover a shortfall.',
+      },
+      pots: {
+        term: 'Pots',
+        body: 'A pot is money kept for a cost with a set amount and a date. Each month, what is still needed is spread over the whole months left, rounded up, and taken off net free cash flow. Money already in a pot is kept out of what a check can spend.',
+        changes: 'While a pot is open, checks start from a lower net free cash flow and a lower cash balance. A transfer tagged to a pot counts as the pot, not as saving. Marking it done releases both.',
+      },
+      totalCost: {
+        term: 'Total cost',
+        body: 'Everything this costs over the years shown: the price, the interest and fees on the plan, and the running costs for every month, less what it is expected to sell for where a loss of value is set. It adds up figures already in the check and assumes nothing new.',
+        changes: 'Nothing in the verdict.',
+      },
+      housingLine: {
+        term: 'Housing costs at most',
+        body: 'The share of money in each month that may go to housing: spending in the Housing category, plus the monthly payments on each loan marked as being for housing. Left blank, it is 28%. It is measured on the money in that you log, which is stricter than a test on gross income.',
+        changes: 'A property purchase that takes housing costs above this share needs adjustment. Other purchases are not tested against it. A loan paid from a Housing series or made from a property check starts marked, and with no money in, any housing cost is over the line.',
+      },
+      investedInstead: {
+        term: 'Invested instead',
+        body: 'What the money this check takes (the amount on the day, each payment and each month of running costs) would have grown to if it had gone into investing at the rate you entered, over the same months. A projection at that rate, not a forecast.',
+        changes: 'Nothing in the verdict.',
+      },
     },
     infoButton: { a11y: 'About {{term}}', hint: 'Opens an explanation', sheetChanges: 'What this changes', close: 'Close' },
     hint: { foldTap: 'Tap a row to see the detail' },
@@ -1882,7 +1916,9 @@ const en = {
       noFigures: { heading: 'Nothing to judge against yet', body: 'Rough figures for what comes in and goes out, or an imported statement, give every check something to rest on.', addRough: 'Add rough figures', import: 'Import a statement' },
       sources: '{{months}} months of logged income, {{lines}} expense lines this month, {{debts}} debts and {{accounts}} accounts. Every figure here rescores when they change in Activity.',
       sourcesRough: 'Rough figures you entered. A statement import or one full logged month replaces them.',
-      linesFold: { title: 'Lines you will not cross', preview_one: '{{count}} of 5 set by you', preview_other: '{{count}} of 5 set by you', allDefault: 'All at their defaults' },
+      linesFold: { title: 'Lines you will not cross', preview_one: '{{count}} of 5 set by you', preview_other: '{{count}} of 5 set by you', allDefault: 'All at their defaults',
+        // 05-131 (D-103, R18.4): the six-line twins; the of-5 strings stay until 05-130
+        previewSix_one: '{{count}}\u00A0of 6 set by you', previewSix_other: '{{count}}\u00A0of 6 set by you' },
       // 05-110 (D-95..D-99, UI-SPEC R17.6): the redesigned home, built by 05-111..05-118. The old keys above stay until 05-118 retires them.
       header: 'Can I afford it',
       card: {
@@ -1891,10 +1927,20 @@ const en = {
         a11yLeft: '{{cardLabel}}: {{amount}} left after spending, debts and saving. In {{in}}, out {{out}}.',
         a11yShort: '{{cardLabel}}: {{amount}} short after spending, debts and saving. In {{in}}, out {{out}}.',
         loading: 'Loading your figures',
+        // 05-131 (D-100, R18.1): Net free cash flow twins of the basis-bearing label and a11y strings
+        eyebrow: 'Net free cash flow',
+        a11yNfcfLeft: 'Net free cash flow: {{amount}} left {{basis}}. In {{in}}, out {{out}}.',
+        a11yNfcfShort: 'Net free cash flow: {{amount}} short {{basis}}. In {{in}}, out {{out}}.',
       },
       hero: {
         left: '{{amount}} left', short: '{{amount}} short', leftWord: 'left', shortWord: 'short',
         sub: 'after spending, debts and saving', inOut: 'In {{in}} · Out {{out}}', summary: '{{amount}} left · In {{in}} · Out {{out}}', summaryShort: '{{amount}} short · In {{in}} · Out {{out}}',
+        // 05-131 (D-100, R18.1): the five sub-lines, by the basis the engine used
+        subWorst: 'in your worst month, after spending, debts and everything set aside',
+        subAverage: 'in your average month, after spending, debts and everything set aside',
+        subTightest: 'from your tightest figures, after spending, debts and everything set aside',
+        subFigures: 'from the figures you gave, after spending, debts and everything set aside',
+        subSwitched: 'now from your logged months, after spending, debts and everything set aside',
       },
       unavailable: {
         title: 'Not worked out yet', noFigures: 'There is no full month or rough figure to work from.', rate: 'Lines in {{currency}} are waiting for an exchange rate.',
@@ -1909,6 +1955,7 @@ const en = {
         changes: 'Changes coming up', changesAdd: 'Add a change coming up',
         past: 'Past decisions',
         lines: 'Lines you will not cross', linesSet_one: '{{count}} of 5 set by you', linesSet_other: '{{count}} of 5 set by you', linesDefault: 'All at their defaults',
+        linesSetSix_one: '{{count}}\u00A0of 6 set by you', linesSetSix_other: '{{count}}\u00A0of 6 set by you', // 05-131 (D-103, R18.4)
         a11y: '{{label}}, {{value}}',
       },
       notice: {
@@ -1931,8 +1978,22 @@ const en = {
         cardMin: { title: 'Card minimum payment not set for {{card}}', affects: 'Monthly debt payments in every check', action: 'Card minimum payment' },
         stale: { title: 'The {{currency}} rate is from {{date}}', affects: 'Amounts converted from {{currency}}', action: 'Exchange rates' },
         offline: { offlineWaiting_one: 'Offline · {{count}} change waiting', offlineWaiting_other: 'Offline · {{count}} changes waiting', saving: 'Saving…', affects: 'Saves on this device', note: 'They send when the connection returns.' },
+        // 05-131 (D-101, R18.2): entry 8 and the pot variant of the rate entry
+        potPastDue_one: '{{count}} pot is past its date', potPastDue_other: '{{count}} pots are past their date',
+        potPastDueAffects: 'Net free cash flow', potPastDueAction: 'Pots',
+        affectsPots_one: '{{count}} pot and every check', affectsPots_other: '{{count}} pots and every check',
       },
-      monthDetails: { close: 'Close' },
+      monthDetails: {
+        close: 'Close',
+        // 05-131 (D-100, R18.1): the breakdown that adds up to the hero
+        title: 'Net free cash flow',
+        basisWorst: 'Worked out on your worst month.', basisAverage: 'Worked out on your average month.', basisTightest: 'Worked out on your tightest figures.',
+        basisFigures: 'Worked out from the figures you gave.', basisSwitched: 'Now worked out from your logged months.',
+        in: 'Money in', spending: 'Spending', debts: 'Debt payments', saving: 'Saving and investing', pots: 'Set aside for pots',
+        result: 'Net free cash flow', resultShort: 'Net free cash flow, short by {{amount}}',
+        potsLink: 'Pots', // the chevron is drawn by the component, as for card.details
+        rowA11y: '{{label}}, {{value}}',
+      },
     },
     month: {
       activity: 'Activity', in: 'Comes in', out: 'Goes out', left: 'Left',
@@ -1958,7 +2019,52 @@ const en = {
       unsecured: { name: 'Unsecured debt at most', desc: 'A multiple of your average monthly income', value: '{{count}} ×' },
       investing: { name: 'Investing at least', desc: 'A month, protected from purchases', info: 'Your automatic contributions come to {{amount}} a month.' },
       saving: { name: 'Saving at least', desc: 'A month, into goals', info: 'Your automatic contributions come to {{amount}} a month.' },
+      // 05-131 (D-103, R18.4): the sixth line
+      housing: { name: 'Housing costs at most', desc: 'Share of money in, rent or mortgage and home costs', value: '{{pct}}%', info: 'Your housing costs come to {{amount}} a month, {{pct}} of money in.' },
     },
+    // 05-131 (D-101, R18.2): the Pots screen, its sheet and toasts. "Try again" reuses decide.flow.retry.
+    pots: {
+      title: 'Pots',
+      sub: 'Money kept for a cost with a set amount and a date. What each pot needs a month comes off net free cash flow.',
+      add: '+ Pot', addA11y: 'Add a pot', limit: 'Up to 50 pots',
+      summary_one: '{{amount}} a month across {{count}} pot', summary_other: '{{amount}} a month across {{count}} pots',
+      loading: 'Loading your pots', loadError: 'Your pots didn’t load.',
+      empty: 'No pots yet. A pot keeps money for a cost with a set amount and a date, such as a car service in March.',
+      emptyAction: 'Add a pot',
+      doneFold_one: 'Done · {{count}}', doneFold_other: 'Done · {{count}}', doneLine: 'Done {{date}}',
+      caption: '{{saved}} of {{target}}', progressA11y: '{{pct}} percent',
+      stateActive: '{{amount}} a month · by {{month}}',
+      stateReached: 'Target reached · nothing more to set aside',
+      statePastDue: 'Past its date · {{remaining}} still to save',
+      stateWait: 'From a check · {{amount}} a month · ready {{date}}',
+      stateWaitBare: 'From a check',
+      stateNoRate: 'Waiting for a {{currency}} rate',
+      rowA11y: '{{name}}. {{saved}} of {{target}} saved. {{monthly}} a month, by {{month}}.',
+      rowA11yReached: '{{name}}. {{saved}} of {{target}} saved. Target reached, nothing more to set aside.',
+      rowA11yPastDue: '{{name}}. {{saved}} of {{target}} saved. Past its date, {{remaining}} still to save.',
+      rowA11yWait: '{{name}}. {{saved}} of {{target}} saved. From a check, {{monthly}} a month, ready {{date}}.',
+      rowA11yNoRate: '{{name}}. Waiting for a {{currency}} rate.',
+      rowA11yDone: '{{name}}. {{saved}} of {{target}} saved. Done {{date}}.',
+      rowHint: 'Opens the pot',
+      menu: { markDone: 'Mark done', reopen: 'Reopen', delete: 'Delete', moreFor: 'More for {{name}}' },
+      sheet: {
+        titleNew: 'New pot', titleEdit: 'Edit pot', cancel: 'Cancel',
+        name: 'Name', namePlaceholder: 'Car service', target: 'Target', by: 'By', byRange: 'Out of range: within 50 years', alreadySaved: 'Already saved',
+        previewActive_one: 'About {{amount}} a month for {{count}}\u00A0month.', previewActive_other: 'About {{amount}} a month for {{count}}\u00A0months.',
+        previewReached: 'Already at the target.', previewPast: 'That month has passed.',
+        savedNote: 'Saved so far is what you entered plus the transfers tagged to this pot.',
+        tagTransfer: 'Tag a transfer', save: 'Save pot',
+      },
+      toast: { saved: 'Pot saved', deleted: 'Pot deleted · {{name}}', done: 'Marked done · {{name}}', reopened: 'Reopened · {{name}}' },
+    },
+    // 05-131 (D-103, R18.4): "Loans counted as housing" in the housing-line editor
+    housing: {
+      heading: 'Loans counted as housing', helper: 'A loan with this on counts toward the housing line.',
+      switchLabel: 'This is for housing', switchA11y: 'This is for housing, {{name}}', switchHint: 'Counts this loan toward the housing line',
+      empty: 'No loans recorded yet. A loan from a check appears here.', payment: '{{amount}} a month',
+    },
+    // 05-131 (D-103, R18.4): the Assumptions in play row for property checks
+    assumptions: { housingToday: 'Housing costs today', housingTodayValue: '{{amount}} a month' },
     toast: {
       saved: 'Saved', written: 'Written to your records',
       writtenBroke: 'Logged. The record notes it breaks a line.', waitSaved: 'Saved. Reminder set for {{date}}',
@@ -2138,6 +2244,24 @@ const en = {
         over50Years: 'Over 50 years', over50YearsA11y: 'Cushion: over 50 years of costs', over50YearsSpoken: 'over 50 years', // 05-88 (D-93): runwayMonths above 600
         a11y: 'Left each month after this: {{left}}. Cushion: {{months}} of costs. Monthly cost: {{monthly}}.',
       },
+      // 05-131 (D-102, R18.3): the total-cost row 4b. {{total}} is whole currency units.
+      tco: {
+        year_one: 'Over {{count}}\u00A0year: {{total}} in all', year_other: 'Over {{count}}\u00A0years: {{total}} in all',
+        month_one: 'Over {{count}}\u00A0month: {{total}} in all', month_other: 'Over {{count}}\u00A0months: {{total}} in all',
+        a11y_year_one: 'Over {{count}}\u00A0year, {{total}} in all', a11y_year_other: 'Over {{count}}\u00A0years, {{total}} in all',
+        a11y_month_one: 'Over {{count}}\u00A0month, {{total}} in all', a11y_month_other: 'Over {{count}}\u00A0months, {{total}} in all',
+      },
+      // 05-131 (D-104, R18.5): the invested-instead row 4c. {{rate}} is the entered rate as typed.
+      invested: {
+        year_one: 'Invested instead: {{fv}} after {{count}}\u00A0year at {{rate}}%', year_other: 'Invested instead: {{fv}} after {{count}}\u00A0years at {{rate}}%',
+        month_one: 'Invested instead: {{fv}} after {{count}}\u00A0month at {{rate}}%', month_other: 'Invested instead: {{fv}} after {{count}}\u00A0months at {{rate}}%',
+        feeYear_one: 'Invested instead: {{fv}} after {{count}}\u00A0year at {{rate}}%, less {{fee}}% fees', feeYear_other: 'Invested instead: {{fv}} after {{count}}\u00A0years at {{rate}}%, less {{fee}}% fees',
+        feeMonth_one: 'Invested instead: {{fv}} after {{count}}\u00A0month at {{rate}}%, less {{fee}}% fees', feeMonth_other: 'Invested instead: {{fv}} after {{count}}\u00A0months at {{rate}}%, less {{fee}}% fees',
+        tooLarge: 'Invested instead: too large to project at {{rate}}%',
+        a11y: '{{text}}. A projection, not a forecast.', // {{text}} is the row sentence with formatMoneyA11y amounts
+      },
+      titleHousing: 'Housing costs would reach {{pct}} of money in.',
+      titleHousingNoIncome: 'With no money coming in, any housing cost breaks your line.',
       projection_one: 'At {{rate}}%\u00A0a year: about {{fv}} after 1\u00A0month. Not a forecast.',
       projection_other: 'At {{rate}}%\u00A0a year: about {{fv}} after {{count}}\u00A0months. Not a forecast.',
       titleNoAlreadyShort: 'Your {{basis}} month is already {{already}} short. This makes it {{short}}.',
@@ -2207,6 +2331,9 @@ const en = {
       cardMinimumNeverBody: 'At the minimum, interest matches what you pay, so the balance never reaches zero.',
       cardMinimumBody: 'It takes {{months}} months — {{years}} years — and {{interest}} in interest on a {{balance}} balance.',
       cardCapTitle: 'Not cleared within 50 years', cardCapValue: '{{amount}} left', cardCapBody: 'At the minimum, {{amount}} is still owed after 50 years on a {{balance}} balance.', // D-46 (04 HI-02): card.remainingAtCap
+      // 05-131 (D-103, R18.4): the housing warning
+      housingTitle: 'Housing costs go over your line', housingValue: '{{pct}}', housingBody: 'Your line is {{line}}. After this, {{housing}} of {{in}} a month goes to housing costs.',
+      housingValueNoIncome: 'None in', housingBodyNoIncome: 'Your line is {{line}} of money in. None comes in on this basis, so {{housing}} a month of housing costs is over it.',
       factTitle: 'Debt rate and return', factBody: 'Your highest unsecured debt charges {{apr}}% a year. The return used here is {{rate}}%.',
     },
     section: {
@@ -2228,6 +2355,9 @@ const en = {
       lineCash: 'Cash cushion', lineCashDesc: '{{cushion}} protected · {{cashAfter}} left on the day',
       lineMonth: 'Month closes', lineMonthDesc: '{{left}} left at month end',
       lineDsr: 'Debt service', lineDsrDesc: '{{pct}} against your {{line}} line', lineDsrDescNoIncome: 'No money in on this basis, against your {{line}} line', // D-50
+      // 05-131 (D-102, D-103, R18.2, R18.4)
+      monthPots: 'Set aside for pots',
+      lineHousing: 'Housing costs', lineHousingDesc: '{{pct}} of money in', lineHousingDescNoIncome: 'No money in on this basis, against your {{line}} line',
       lineOwe: 'Unsecured debt', lineOweDesc: '{{amount}} against your {{line}} line',
       lineInvesting: 'Investing floor', lineInvestingDesc: '{{after}} a month against your {{floor}} floor', lineInvestingNoFloor: '{{after}} a month, no floor set',
       lineSaving: 'Saving floor', lineSavingDesc: '{{after}} a month against your {{floor}} floor',

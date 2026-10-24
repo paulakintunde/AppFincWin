@@ -7,14 +7,78 @@ const str = (path: string): string | undefined => (typeof node(path) === 'string
 const sentences = (s: string): number => (s.match(/[.!?](?=\s|$)/g) ?? []).length;
 
 describe('infoTerms', () => {
-  it('D-95 INFO_TERMS has 60 keys with tightestFigures', () => {
-    expect(INFO_KEYS).toHaveLength(60);
-    expect(new Set(INFO_KEYS).size).toBe(60);
+  it('D-100 INFO_KEYS holds 65 terms and the five R18 terms resolve', () => {
+    expect(INFO_KEYS).toHaveLength(65);
+    expect(new Set(INFO_KEYS).size).toBe(65);
+    expect(INFO_KEYS.slice(60)).toEqual(['netFreeCashFlow', 'pots', 'totalCost', 'housingLine', 'investedInstead']);
+    for (const key of INFO_KEYS.slice(60)) {
+      const c = infoCopy(key);
+      expect(str(c.term.key)).toBeTruthy();
+      expect(str(c.changes.key)).toBeTruthy();
+      const body = c.body.map((b) => str(b.key)).join(' ');
+      expect(sentences(body)).toBeLessThanOrEqual(3);
+      expect(body).not.toMatch(/lender/i);
+    }
+    expect(str('decide.info.netFreeCashFlow.term')).toBe('Net free cash flow');
+    expect(str('decide.info.pots.changes')).toContain('Marking it done releases both.');
+    expect(str('decide.info.housingLine.body')).toContain('Left blank, it is 28%.');
+    expect(str('decide.info.investedInstead.body')).toContain('not a forecast');
+  });
+
+  it('D-100 the R18 catalogue keys resolve and the sub-lines end as the user worded them', () => {
+    const NBSP = ' ';
+    const keys = [
+      'home.card.eyebrow', 'home.card.a11yNfcfLeft', 'home.card.a11yNfcfShort',
+      'home.hero.subWorst', 'home.hero.subAverage', 'home.hero.subTightest', 'home.hero.subFigures', 'home.hero.subSwitched',
+      'home.monthDetails.title', 'home.monthDetails.basisWorst', 'home.monthDetails.basisAverage', 'home.monthDetails.basisTightest',
+      'home.monthDetails.basisFigures', 'home.monthDetails.basisSwitched', 'home.monthDetails.in', 'home.monthDetails.spending',
+      'home.monthDetails.debts', 'home.monthDetails.saving', 'home.monthDetails.pots', 'home.monthDetails.result',
+      'home.monthDetails.resultShort', 'home.monthDetails.potsLink', 'home.monthDetails.rowA11y',
+      'home.rows.linesSetSix', 'home.linesFold.previewSix', 'home.problems.potPastDue', 'home.problems.affectsPots',
+      'home.problems.potPastDueAffects', 'home.problems.potPastDueAction',
+      'pots.summary', 'pots.doneFold', 'pots.sheet.previewActive', 'verdict.tco.year', 'verdict.tco.month', 'verdict.tco.a11y_year',
+      'verdict.tco.a11y_month', 'verdict.invested.year', 'verdict.invested.month', 'verdict.invested.feeYear', 'verdict.invested.feeMonth',
+    ];
+    for (const k of keys) {
+      const hasPlural = !!str(`decide.${k}_one`) && !!str(`decide.${k}_other`);
+      expect({ k, ok: hasPlural || !!str(`decide.${k}`) }).toEqual({ k, ok: true });
+    }
+    const single = [
+      'pots.title', 'pots.sub', 'pots.add', 'pots.addA11y', 'pots.limit', 'pots.loading', 'pots.loadError', 'pots.empty', 'pots.emptyAction', 'pots.doneLine',
+      'pots.stateActive', 'pots.stateReached', 'pots.statePastDue', 'pots.stateWait', 'pots.stateNoRate', 'pots.rowA11y', 'pots.menu.markDone',
+      'pots.menu.reopen', 'pots.menu.delete', 'pots.menu.moreFor', 'pots.sheet.titleNew', 'pots.sheet.titleEdit', 'pots.sheet.cancel', 'pots.sheet.name',
+      'pots.sheet.namePlaceholder', 'pots.sheet.target', 'pots.sheet.by', 'pots.sheet.byRange', 'pots.sheet.alreadySaved', 'pots.sheet.previewReached',
+      'pots.sheet.previewPast', 'pots.sheet.savedNote', 'pots.sheet.tagTransfer', 'pots.sheet.save', 'pots.toast.saved', 'pots.toast.deleted',
+      'pots.toast.done', 'pots.toast.reopened', 'verdict.invested.tooLarge', 'verdict.invested.a11y', 'verdict.titleHousing', 'verdict.titleHousingNoIncome',
+      'section.monthPots', 'section.lineHousing', 'section.lineHousingDesc', 'section.lineHousingDescNoIncome', 'assumptions.housingToday',
+      'warn.housingTitle', 'warn.housingValue', 'warn.housingBody', 'warn.housingValueNoIncome', 'warn.housingBodyNoIncome',
+      'lines.housing.name', 'lines.housing.desc', 'lines.housing.value', 'lines.housing.info',
+      'housing.heading', 'housing.helper', 'housing.switchLabel', 'housing.switchA11y', 'housing.switchHint', 'housing.empty', 'housing.payment',
+    ];
+    for (const k of single) expect({ k, ok: !!str(`decide.${k}`) }).toEqual({ k, ok: true });
+    expect(str('you.record.pots')).toBe('Pots');
+    for (const k of ['subWorst', 'subAverage', 'subTightest', 'subFigures', 'subSwitched']) {
+      expect(str(`decide.home.hero.${k}`)).toMatch(/, after spending, debts and everything set aside$/);
+    }
+    expect(str('decide.home.monthDetails.basisTightest')).toBe('Worked out on your tightest figures.');
+    expect(str('decide.pots.sheet.previewActive_other')).toBe(`About {{amount}} a month for {{count}}${NBSP}months.`);
+    expect(str('decide.verdict.tco.year_other')).toBe(`Over {{count}}${NBSP}years: {{total}} in all`);
+    expect(str('decide.verdict.invested.feeYear_other')).toBe(`Invested instead: {{fv}} after {{count}}${NBSP}years at {{rate}}%, less {{fee}}% fees`);
+    expect(str('decide.home.rows.linesSetSix_other')).toBe(`{{count}}${NBSP}of 6 set by you`);
+    expect(str('decide.warn.housingTitle')).toBe('Housing costs go over your line');
+    expect(str('decide.verdict.titleHousingNoIncome')!.length).toBeLessThanOrEqual(64);
+    // the retired five-line and old-label strings are untouched until 05-130
+    expect(str('decide.home.rows.linesSet_other')).toContain('of 5 set by you');
+    expect(str('decide.home.hero.sub')).toBe('after spending, debts and saving');
+  });
+
+  it('D-95 INFO_TERMS keeps tightestFigures at index 59', () => {
+    expect(INFO_KEYS[59]).toBe('tightestFigures');
     expect(INFO_KEYS[0]).toBe('replaces');
     expect(INFO_KEYS[30]).toBe('whatGetsWritten');
     expect(INFO_KEYS[31]).toBe('price');
     expect(INFO_KEYS[54]).toBe('cardClearing');
-    expect(INFO_KEYS.slice(55)).toEqual(['interestSaved', 'instalmentFrequency', 'impliedApr', 'cardCheckLimit', 'tightestFigures']);
+    expect(INFO_KEYS.slice(55, 60)).toEqual(['interestSaved', 'instalmentFrequency', 'impliedApr', 'cardCheckLimit', 'tightestFigures']);
     expect(str('decide.info.tightestFigures.term')).toBe('Your tightest figures');
     expect(str('decide.info.tightestFigures.body')).toBe(
       'Fewer than 3 full months are logged, so money in uses your lowest month and spending uses your highest. The figure combines the two, which can be tighter than any single month.'

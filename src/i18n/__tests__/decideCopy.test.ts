@@ -1,6 +1,8 @@
 // DCU-09 and the UI-SPEC banned list: FincWin is not a lender and the card path never reads as an offer.
 import en from '../locales/en';
 import { DRAFT_COPY_KEYS } from '../copyStatus';
+import { UNDO_LABEL_KEYS } from '../../engine/undo/types';
+import { undoLabelText } from '../undoLabel';
 
 interface Leaf {
   path: string;
@@ -43,6 +45,7 @@ const ACTION_LABELS = new Set([
   'decide.onboarding.checkTitle', // invites the user to try the check itself, not a purchase
   'decide.delete.keep', // dialog choice: keep the record instead of deleting it
   'decide.verdict.key.putInCaption', // field caption: the key figure "Put in a month" (investing amount)
+  'decide.pots.sheet.save', // button: "Save pot" (05-131, R18.7); "Try again" reuses decide.flow.retry
 ]);
 // 2026-10-23 walkthrough: sentences, hints and placeholders are declarative ("A price comes first"), never an order to the
 // user ("Add a price to continue", "Type the rate"). Buttons, dialog titles and field captions that name an action in the
@@ -72,6 +75,9 @@ const CONTROL_LABELS = new Set([
   'decide.home.problems.rate.action', // action: "Exchange rates"
   'decide.home.problems.stale.action', // action: "Exchange rates"
   'decide.home.problems.cardMin.action', // action: "Card minimum payment"
+  // 05-131 (R18.7): the Pots screen controls
+  'decide.pots.emptyAction', // button: "Add a pot"
+  'decide.pots.addA11y', // accessibility label of the "+ Pot" link: "Add a pot"
 ]);
 const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
 
@@ -243,5 +249,54 @@ describe('decide depth copy (05-31, DCU-09)', () => {
     const because = depth.filter((l) => l.path.startsWith('decide.depth.cushion.because.'));
     expect(because.length).toBe(4);
     for (const l of because) expect(l.value.startsWith('because')).toBe(true);
+  });
+});
+
+describe('R18 money concepts copy (05-131, DCU-09)', () => {
+  const r18 = leaves.filter(
+    (l) =>
+      /^decide\.(pots|housing|verdict\.tco|verdict\.invested)\./.test(l.path) ||
+      /^decide\.warn\.housing/.test(l.path) ||
+      /^decide\.info\.(netFreeCashFlow|pots|totalCost|housingLine|investedInstead)\./.test(l.path) ||
+      /^decide\.(home\.hero\.sub(Worst|Average|Tightest|Figures|Switched)|home\.monthDetails\.|lines\.housing\.|verdict\.titleHousing)/.test(l.path)
+  );
+
+  it('D-101 the pot and housing undo labels exist and resolve', () => {
+    const expected: Record<string, string> = {
+      potAdded: 'Pot added', potEdited: 'Pot edited', potDeleted: 'Pot deleted', potDone: 'Pot marked done', potReopened: 'Pot reopened',
+      debtHousingChanged: 'Housing setting changed',
+    };
+    for (const [key, text] of Object.entries(expected)) {
+      expect((UNDO_LABEL_KEYS as readonly string[]).includes(key)).toBe(true);
+      expect((en.undo.label as Record<string, string>)[key]).toBe(text);
+      expect(undoLabelText(key, {})).toEqual({ key: `undo.label.${key}`, params: {} });
+    }
+  });
+
+  it('DCU-09 the R18 strings pass the guard apart from Save pot on the keyed list', () => {
+    expect(r18.length).toBeGreaterThan(100);
+    expect(get('decide.pots.sheet.save')).toBe('Save pot');
+    expect(ACTION_LABELS.has('decide.pots.sheet.save')).toBe(true);
+    expect(get('decide.pots.emptyAction')).toBe('Add a pot');
+    expect(get('decide.pots.addA11y')).toBe('Add a pot');
+    expect(CONTROL_LABELS.has('decide.pots.emptyAction') && CONTROL_LABELS.has('decide.pots.addA11y')).toBe(true);
+    // "Try again" reuses the shared retry key: no pots retry key exists
+    expect(() => get('decide.pots.retry')).toThrow();
+    const bad = r18.filter(
+      (l) =>
+        BANNED.some((re) => re.test(l.value)) ||
+        REASSURING.some((re) => re.test(l.value)) ||
+        (!ACTION_LABELS.has(l.path) && IMPERATIVE_LEAD.test(l.value)) ||
+        (!CONTROL_LABELS.has(l.path) && INSTRUCTION_LEAD.test(l.value))
+    );
+    expect(bad.map((l) => l.path)).toEqual([]);
+    for (const l of r18) expect(l.value).not.toMatch(/\b(lender|you should|advice|recommend)/i);
+  });
+
+  it('DCU-09 Invested instead is not an imperative lead', () => {
+    const row = get('decide.verdict.invested.year_other');
+    expect(row.startsWith('Invested instead:')).toBe(true);
+    expect(row).not.toMatch(IMPERATIVE_LEAD);
+    expect('Invest the difference').toMatch(IMPERATIVE_LEAD);
   });
 });

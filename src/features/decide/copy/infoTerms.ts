@@ -1,5 +1,5 @@
 /**
- * The 60 ⓘ explanations of the Decide UX refresh (31 from 05-54, D-70, UI-SPEC R3; 24 from 05-80, D-84, R15.8; 4 from 05-88, D-86..D-91, R16.10; 1 from 05-110, D-95, R17.13 M3). Pure: keys and params only, no t(), no React.
+ * The 65 ⓘ explanations of the Decide UX refresh (31 from 05-54, D-70, UI-SPEC R3; 24 from 05-80, D-84, R15.8; 4 from 05-88, D-86..D-91, R16.10; 1 from 05-110, D-95, R17.13 M3; 5 from 05-131, D-100..D-104, R18.7). Pure: keys and params only, no t(), no React.
  * Each key reads decide.info.{key}.term | body | changes from the catalogue.
  */
 import { ref, type CopyRef } from './types';
@@ -17,6 +17,8 @@ export const INFO_KEYS = [
   'interestSaved', 'instalmentFrequency', 'impliedApr', 'cardCheckLimit',
   // 05-110 (D-95, R17.13 M3)
   'tightestFigures',
+  // 05-131 (D-100..D-104, R18.7)
+  'netFreeCashFlow', 'pots', 'totalCost', 'housingLine', 'investedInstead',
 ] as const;
 
 export type InfoKey = (typeof INFO_KEYS)[number];
