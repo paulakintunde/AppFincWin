@@ -767,7 +767,7 @@ Plans:
 - [x] 05-106-PLAN.md — Speed, flow: settledCore reuse, selected method only, idle details with Updating, perf harness (D-88)
 
 **Wave 24** *(blocked on Wave 23 completion)*
-- [ ] 05-95-PLAN.md — Engine E5c: the snapshot converts the card limit (rational, floored) and passes it with the region (D-91)
+- [x] 05-95-PLAN.md — Engine E5c: the snapshot converts the card limit (rational, floored) and passes it with the region (D-91)
 - [ ] 05-101-PLAN.md — Interest saved by the deposit; running-cost rows with the dashed Amount field (D-86, D-87)
 
 **Wave 25** *(blocked on Wave 24 completion)*
