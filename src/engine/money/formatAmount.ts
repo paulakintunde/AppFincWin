@@ -110,7 +110,10 @@ export function formatAmount(money: Money, opts: FormatAmountOptions): string {
   let usedFallback = false;
   const joined = parts
     .map((part) => {
-      if (part.type !== 'currency' || isUsd || part.value !== '$') return part.value;
+      if (part.type !== 'currency') return part.value;
+      // Hermes on Android ignores `narrowSymbol` and gives "US$" in en-CA and other non-US locales; set "$" here.
+      if (isUsd) return '$';
+      if (part.value !== '$') return part.value;
       const marker = DOLLAR_MARKERS[money.currency];
       if (marker !== undefined) return marker;
       usedFallback = true;

@@ -86,6 +86,20 @@ describe('formatAmount: ambiguous dollar symbol disambiguation (D-23, D-94)', ()
     expect(fr).not.toContain('US');
   });
 
+  it('D-94 USD shows $ even where Intl ignores narrowSymbol (Hermes on Android gives "US$")', () => {
+    const RealNumberFormat = Intl.NumberFormat;
+    const spy = jest
+      .spyOn(Intl, 'NumberFormat')
+      .mockImplementation((locale, options) => new RealNumberFormat(locale, { ...options, currencyDisplay: 'symbol' }));
+    try {
+      expect(new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'USD' }).format(1)).toContain('US$');
+      expect(formatAmount(usd, { locale: 'en-CA', showCents: false })).toBe('$1,500');
+      expect(at('USD', 'en-CA', 587623)).toBe('$5,876.23');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it('D-94 other dollar currencies keep their marker', () => {
     expect(at('CAD', 'en-CA')).toBe('CA$1,500');
     expect(at('AUD', 'en-AU')).toBe('A$1,500');
