@@ -24,6 +24,7 @@ import { useConsent } from '@/features/consent/useConsent';
 import { requestSignOut, performSignOut } from '@/features/auth/signOut';
 import { useProfile } from './useProfile';
 import { SettingsGroup } from './components/SettingsGroup';
+import { POTS_HREF } from '@/features/decide/home/checkHref';
 import { ACTIVITY_HREF } from '@/features/auth/appHome';
 import { AccentSwitcher } from './components/AccentSwitcher';
 import { FontPairingSwitcher } from './components/FontPairingSwitcher';
@@ -36,13 +37,14 @@ import { DevSyncProbe } from './components/DevSyncProbe';
 // 02-30: Record entry points (D-32, D-39). Hrefs are cast once because generated route types may
 // lag the route files. The statement import lives in the Add group (D-85), not here.
 const MONEY_ROWS: readonly {
-  label: 'you.record.activity' | 'you.record.accounts' | 'you.record.categories' | 'you.record.history';
+  label: 'you.record.activity' | 'you.record.accounts' | 'you.record.categories' | 'you.record.history' | 'you.record.pots';
   href: Href;
 }[] = [
   { label: 'you.record.activity', href: ACTIVITY_HREF },
   { label: 'you.record.accounts', href: '/accounts' as Href },
   { label: 'you.record.categories', href: '/categories' as Href },
   { label: 'you.record.history', href: '/history' as Href },
+  { label: 'you.record.pots', href: POTS_HREF },
 ];
 
 // D-85 / R16.1: the Add group rows, in order. Each runs the FAB quick action with the same id.

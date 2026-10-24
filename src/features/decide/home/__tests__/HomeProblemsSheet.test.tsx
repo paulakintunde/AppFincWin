@@ -149,4 +149,17 @@ describe('HomeProblemsSheet', () => {
     expect(send).toHaveBeenCalledWith(expect.anything(), 'focus');
     expect(screen.getByText('Needs a look').props.accessibilityRole).toBe('header');
   });
+
+  it('D-101 the past-due pot entry opens the Pots screen', async () => {
+    const onClose = jest.fn();
+    const POT: ProblemEntry = { id: 'pot_past_due', count: 2, counted: true, action: { kind: 'pots' } };
+    const POT_RATE: ProblemEntry = { id: 'missing_rate', variant: 'pots', currency: 'EUR', potCount: 1, counted: false, action: { kind: 'exchange_rates' } };
+    await wrap(<HomeProblemsSheet {...props([POT, POT_RATE], { onClose })} />);
+    expect(screen.getByText('2 pots are past their date')).toBeTruthy();
+    expect(screen.getByText('Affects: Net free cash flow')).toBeTruthy();
+    expect(screen.getByText('Affects: 1 pot and every check')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Pots'));
+    expect(mockPush).toHaveBeenCalledWith('/decide/pots');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

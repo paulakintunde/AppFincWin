@@ -1,3 +1,4 @@
+import { minorUnits } from '@/engine/money';
 import type { SyncStatus } from '@/data/sync/useSyncStatus';
 import { emptyCheckInputs } from '../../snapshot/checkInputs';
 import type { SnapshotResult } from '../../snapshot/types';
@@ -133,5 +134,24 @@ describe('homeProblems', () => {
     expect(homeProblems(input({ openChecks: [{ inputs: home, isSample: false }] }))).toEqual([]);
     // an unstamped sample is USD (IN-A01)
     expect(homeProblems(input({ openChecks: [{ inputs: { ...emptyCheckInputs('buy', TODAY), currency: null }, isSample: true }] }))).toEqual([]);
+  });
+
+  // 05-134 (D-101)
+  const pot = (over: Partial<NonNullable<SnapshotResult['pots']>[number]> = {}) =>
+    ({ id: 'p1', kind: 'goal', target: minorUnits(100_000), monthlyAmount: null, readyBy: '2026-09-01', saved: minorUnits(10_000), ...over }) as NonNullable<SnapshotResult['pots']>[number];
+
+  it('D-101 a past-due pot adds Needs a look entry 8', () => {
+    const source = { ...loggedSource(), pots: [pot(), pot({ id: 'p2', readyBy: '2026-12-01' }), pot({ id: 'p3', readyBy: '2026-08-01' })] } as SnapshotResult;
+    const entries = homeProblems(input({ source }));
+    expect(entries).toEqual([{ id: 'pot_past_due', count: 2, counted: true, action: { kind: 'pots' } }]);
+    expect(noticeRowModel(entries)).toMatchObject({ visible: true, text: { kind: 'items', count: 1 }, dot: true });
+    const none = { ...loggedSource(), pots: [pot({ readyBy: '2026-12-01' }), pot({ id: 'p4', saved: minorUnits(100_000) })] } as SnapshotResult;
+    expect(ids(input({ source: none }))).toEqual([]);
+  });
+
+  it('D-101 the rate entry counts pots with no stored rate', () => {
+    const source = withMeta({ unconvertedPots: 2 }, { unconverted: { currencies: ['EUR'], rowCount: 2 } });
+    const entry = homeProblems(input({ source })).find((e) => e.id === 'missing_rate' && e.variant === 'pots');
+    expect(entry).toMatchObject({ currency: 'EUR', potCount: 2, counted: false, action: { kind: 'exchange_rates' } });
   });
 });

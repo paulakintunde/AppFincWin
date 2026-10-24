@@ -5,6 +5,7 @@
 // flow (silent when nothing pending, Alert-gated and only proceeding on confirm otherwise).
 import { AccessibilityInfo, Alert, AppState, Linking } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { QUICK_ACTION_ORDER } from '@/shell/fab/quickActions';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { YouScreen } from '../YouScreen';
 
@@ -376,6 +377,24 @@ describe('YouScreen Money section', () => {
       '/categories',
       '/history',
     ]);
+  });
+
+  it('D-101 You Money lists Pots after History', async () => {
+    const { getByText, getByRole, getAllByRole } = await renderScreen();
+    const at = (n: string) => getAllByRole('button').indexOf(getByRole('button', { name: n }));
+    expect(at('Pots')).toBe(at('History') + 1);
+    await act(async () => {
+      fireEvent.press(getByText('Pots'));
+    });
+    expect(mockRouterPush).toHaveBeenLastCalledWith('/decide/pots');
+  });
+
+  it('D-101 the Add group has no Pots action', async () => {
+    const { queryByRole } = await renderScreen();
+    expect(queryByRole('button', { name: 'Add pot' })).toBeNull();
+    expect(queryByRole('button', { name: 'Pots' })?.props.accessibilityHint).toBeUndefined();
+    
+    expect(QUICK_ACTION_ORDER).toEqual(['addExpense', 'addIncome', 'transfer', 'newCheck', 'importStatement']);
   });
 });
 

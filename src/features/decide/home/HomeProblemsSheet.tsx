@@ -21,6 +21,7 @@ import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { CardMinimumSheet } from '../check/steps/step2/CardMinimumSheet';
 import type { SnapshotResult } from '../snapshot/types';
+import { POTS_HREF } from './checkHref';
 import { syncLabelText } from './HomeNoticeRow';
 import type { ProblemAction, ProblemEntry } from './homeProblems';
 import { RoughFiguresSheet } from './RoughFiguresSheet';
@@ -64,7 +65,9 @@ function entryText(t: Translate, e: ProblemEntry): EntryText {
           ? t('decide.home.problems.rate.affectsLines', { count: e.rowCount })
           : e.variant === 'card_limit'
             ? t('decide.home.problems.rate.affectsCardLimit')
-            : t('decide.home.problems.rate.affectsChecks', { count: e.checkCount, currency: e.currency });
+            : e.variant === 'pots'
+              ? t('decide.home.problems.affectsPots', { count: e.potCount })
+              : t('decide.home.problems.rate.affectsChecks', { count: e.checkCount, currency: e.currency });
       // The card-limit gap is the USD rate to the home currency.
       const currency = e.variant === 'card_limit' ? 'USD' : e.currency;
       return { title: t('decide.home.problems.rate.title', { currency }), affects, actionLabel: t('decide.home.problems.rate.action') };
@@ -80,6 +83,12 @@ function entryText(t: Translate, e: ProblemEntry): EntryText {
         title: t('decide.home.problems.stale.title', { currency: e.currency, date: rateDateText(e.rateDate) }),
         affects: t('decide.home.problems.stale.affects', { currency: e.currency }),
         actionLabel: t('decide.home.problems.stale.action'),
+      };
+    case 'pot_past_due':
+      return {
+        title: t('decide.home.problems.potPastDue', { count: e.count }),
+        affects: t('decide.home.problems.potPastDueAffects'),
+        actionLabel: t('decide.home.problems.potPastDueAction'),
       };
     case 'sync':
       return { title: syncLabelText(t, e.label), affects: t('decide.home.problems.offline.affects'), actionLabel: null };
@@ -120,6 +129,10 @@ export function HomeProblemsSheet({ entries, visible, onClose, source, settings,
       case 'review_changes':
       case 'review_edits':
         setStack({ kind: 'failed' });
+        return;
+      case 'pots':
+        onClose();
+        pushOnce(POTS_HREF);
         return;
       case 'card_minimum':
         setStack({ kind: 'card', accountId: act.accountId });

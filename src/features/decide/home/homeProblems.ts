@@ -8,6 +8,7 @@
  */
 import type { SyncStatus } from '@/data/sync/useSyncStatus';
 import { syncStatusLabel, type SyncLabel } from '@/ui/syncStatusLabel';
+import { potSetAside } from '@/engine/decide';
 import { inHomeCurrency } from '../snapshot/checkCurrency';
 import type { CheckInputs, SnapshotResult } from '../snapshot/types';
 
@@ -19,6 +20,7 @@ export type ProblemAction =
   | { kind: 'exchange_rates' }
   | { kind: 'review_changes' }
   | { kind: 'review_edits' }
+  | { kind: 'pots' }
   | { kind: 'card_minimum'; accountId: string };
 
 export type ProblemEntry =
@@ -28,6 +30,8 @@ export type ProblemEntry =
   | { id: 'missing_rate'; variant: 'lines'; currency: string; rowCount: number; counted: false; action: ProblemAction }
   | { id: 'missing_rate'; variant: 'card_limit'; counted: true; action: ProblemAction }
   | { id: 'missing_rate'; variant: 'check'; currency: string; checkCount: number; counted: true; action: ProblemAction }
+  /** 2, pot variant (D-101): pots left out for want of a stored rate; the card shows the gap, so not counted (like 'lines'). `currency` lists the missing ones. */
+  | { id: 'missing_rate'; variant: 'pots'; currency: string; potCount: number; counted: false; action: ProblemAction }
   /** 3 and 4: failed saves and conflicts, both through FailedWritesSheet. */
   | { id: 'failed_saves'; count: number; counted: true; action: ProblemAction }
   | { id: 'conflicts'; count: number; counted: true; action: ProblemAction }
@@ -36,6 +40,8 @@ export type ProblemEntry =
   /** 6: a rate used in the figures is older than 30 days. `rateDate` is the stored 'YYYY-MM-DD'. */
   | { id: 'stale_rate'; currency: string; rateDate: string; counted: true; action: ProblemAction }
   /** 7: offline with writes waiting, or writes stuck over 5 s. No action: "They send when the connection returns." */
+  /** 8: pots past their ready-by date (D-101). */
+  | { id: 'pot_past_due'; count: number; counted: true; action: ProblemAction }
   | { id: 'sync'; label: SyncLabel; dot: boolean; counted: true; action: null };
 
 export interface OpenCheckForProblems {
@@ -88,6 +94,16 @@ export function homeProblems(input: HomeProblemsInput): ProblemEntry[] {
         });
       }
     }
+    if (source.meta.unconvertedPots > 0 && source.unconverted !== null) {
+      entries.push({
+        id: 'missing_rate',
+        variant: 'pots',
+        currency: source.unconverted.currencies.join(', '),
+        potCount: source.meta.unconvertedPots,
+        counted: false,
+        action: { kind: 'exchange_rates' },
+      });
+    }
     if (source.cardMaxPurchase === null) {
       entries.push({ id: 'missing_rate', variant: 'card_limit', counted: true, action: { kind: 'exchange_rates' } });
     }
@@ -121,6 +137,12 @@ export function homeProblems(input: HomeProblemsInput): ProblemEntry[] {
         entries.push({ id: 'stale_rate', currency: conversion.currency, rateDate: conversion.rateDate, counted: true, action: { kind: 'exchange_rates' } });
       }
     }
+  }
+
+  // 8 (listed before sync, which stays last): pots past their date
+  if (source !== null) {
+    const pastDue = (source.pots ?? []).filter((pot) => potSetAside(pot, today).state === 'past_due').length;
+    if (pastDue > 0) entries.push({ id: 'pot_past_due', count: pastDue, counted: true, action: { kind: 'pots' } });
   }
 
   // 7: offline or waiting writes (R16 sync rules). The dot is for offline with writes waiting only (M4).
