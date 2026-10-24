@@ -386,6 +386,27 @@ describe('insertTransaction', () => {
   });
 });
 
+describe('05-34 one_off / goal_id', () => {
+  it('are selected and in both write-key lists', () => {
+    expect(TRANSACTION_COLUMNS).toContain('is_automatic, one_off, goal_id');
+    for (const col of ['one_off', 'goal_id']) {
+      expect(TRANSACTION_INSERT_KEYS).toContain(col);
+      expect(TRANSACTION_PATCH_KEYS).toContain(col);
+    }
+  });
+
+  it('accepts one_off and goal_id patches; a non-boolean one_off is a type error', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [row({ one_off: true, version: 4 })], error: null, status: 200 });
+    await expect(updateTransaction(client, 't1', 3, { one_off: true })).resolves.toBeDefined();
+    client.respondWith({ data: [row({ goal_id: null, version: 5 })], error: null, status: 200 });
+    await expect(updateTransaction(client, 't1', 4, { goal_id: null })).resolves.toBeDefined();
+    // @ts-expect-error one_off is boolean only
+    const bad: TransactionPatch = { one_off: 'yes' };
+    expect(bad).toBeDefined();
+  });
+});
+
 describe('updateTransaction', () => {
   it('issues update(patch).eq(id).eq(version).select(COLUMNS) and returns the row when exactly one comes back', async () => {
     const client = createFakeSupabase();

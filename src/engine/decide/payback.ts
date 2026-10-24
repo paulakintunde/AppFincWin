@@ -3,6 +3,7 @@ import { minorFromBigInt } from '../payoff';
 import { isValidLocalDate, monthOf } from '../time/localDate';
 import { SIMULATION_MONTH_CAP } from './constants';
 import { monthAfter } from './futureChanges';
+import { monthlyStepsOf } from './plan';
 import { myPart, type ResolvedShare } from './share';
 import type { PaybackResult, PaymentStep, Plan, PurchaseIncomeChange } from './types';
 
@@ -50,7 +51,7 @@ export function paybackMonths(input: {
   let cost = BigInt(myPart(plan.dayOne, share));
   let income = 0n;
   for (let k = 1; k <= horizonMonths; k += 1) {
-    cost += BigInt(myPart(stepAmount(plan.paymentSteps, k), share)) + monthlyRunning;
+    cost += BigInt(myPart(stepAmount(monthlyStepsOf(plan), k), share)) + monthlyRunning;
     if (monthAfter(asOf, k) >= start) income += BigInt(change.monthlyAmount);
     if (income >= cost) {
       return {

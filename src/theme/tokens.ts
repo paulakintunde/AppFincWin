@@ -83,6 +83,13 @@ export const categoryTint = {
 
 export type CategoryKey = keyof typeof categoryColor;
 
+/**
+ * IN-D01: the ochre warning surface (Decide's chips, edge tag, warning card and the capped card panel). It is the §2
+ * ochre tint, which the Business category also uses; naming it here means a change to the Business colour cannot quietly
+ * recolour every warning, and a change to the warning tint is made in one place.
+ */
+export const warnTint = categoryTint.Business;
+
 /** D-35: the 7 distinct prototype swatch pairs, keyed by the colour key stored on
  * categories.color_key. Built only from existing values. */
 export const categorySwatch = {

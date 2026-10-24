@@ -2,6 +2,8 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { getAnimatedStyle } from 'react-native-reanimated';
+import en from '@/i18n/locales/en';
+import { useT } from '@/i18n';
 import { hapticLight, hapticMedium } from '@/ui/haptics';
 import { pushSheet } from '@/state/sheetStack';
 import { renderWithShellProviders, resetShellStores } from '@/shell/__tests__/testUtils';
@@ -12,21 +14,24 @@ import {
   useFab,
   useProvideDefaultFabAction,
   useProvideQuickAction,
+  useRegisterFab,
   type FabContextValue,
 } from '../FabProvider';
 
 jest.mock('@/ui/haptics');
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ status: 'signedIn' }) }));
 jest.mock('expo-router', () => ({
+  useSegments: () => [],
   useFocusEffect: (cb: () => void | (() => void)) => {
     const { useEffect } = jest.requireActual<typeof import('react')>('react');
     useEffect(cb, [cb]);
   },
 }));
 
-const holder: { fab: FabContextValue | null; setToast: ((h: number) => void) | null } = {
+const holder: { fab: FabContextValue | null; setToast: ((h: number) => void) | null; switchTo: ((s: string) => void) | null } = {
   fab: null,
   setToast: null,
+  switchTo: null,
 };
 
 function Wire({
@@ -129,5 +134,68 @@ describe('Fab', () => {
     await act(async () => jest.advanceTimersByTime(300));
     expect(getAnimatedStyle(wrapper!).transform).toEqual([{ translateY: 0 }]);
     jest.useRealTimers();
+  });
+
+  function Switcher({ screens, onDefault }: { screens: Record<string, React.ReactNode>; onDefault: () => void }): React.JSX.Element {
+    const [which, setWhich] = React.useState('first');
+    React.useEffect(() => {
+      holder.switchTo = setWhich;
+    }, []);
+    return (
+      <FabProvider>
+        <Wire onDefault={onDefault} />
+        {screens[which]}
+        <Fab />
+      </FabProvider>
+    );
+  }
+
+  it('D-98 a screen registering null hides the default FAB while it is shown', async () => {
+    function NoFabScreen(): null {
+      useRegisterFab(null);
+      return null;
+    }
+    await renderWithShellProviders(<Switcher onDefault={jest.fn()} screens={{ first: <NoFabScreen />, second: null }} />);
+    expect(screen.queryByRole('button')).toBeNull();
+    await act(async () => holder.switchTo?.('second'));
+    expect(screen.getByRole('button', { name: 'Add a transaction' })).toBeTruthy();
+  });
+
+  it('D-98 the FAB still shows on another tab root that registers one', async () => {
+    function NoFabScreen(): null {
+      useRegisterFab(null);
+      return null;
+    }
+    function Other(): null {
+      useRegisterFab(React.useMemo(() => ({ label: 'New thing', accessibilityLabel: 'Start a new thing', onPress: jest.fn() }), []));
+      return null;
+    }
+    await renderWithShellProviders(<Switcher onDefault={jest.fn()} screens={{ first: <NoFabScreen />, second: <Other /> }} />);
+    expect(screen.queryByRole('button')).toBeNull();
+    await act(async () => holder.switchTo?.('second'));
+    expect(screen.getByRole('button', { name: 'Start a new thing' })).toBeTruthy();
+  });
+
+  it('D-107 the FAB strings resolve and Decide home registers New check', async () => {
+    expect(en.decide.fab).toEqual({ label: 'New check', a11y: 'Starts a new affordability check' });
+    const onPress = jest.fn();
+    function DecideLike(): null {
+      const t = useT();
+      useRegisterFab(
+        React.useMemo(() => ({ label: t('decide.fab.label'), accessibilityLabel: t('decide.fab.a11y'), onPress }), [t])
+      );
+      return null;
+    }
+    function Other(): null {
+      return null;
+    }
+    await renderWithShellProviders(<Switcher onDefault={jest.fn()} screens={{ first: <DecideLike />, second: <Other /> }} />);
+    const button = screen.getByRole('button', { name: 'Starts a new affordability check' });
+    expect(screen.getByText('New check')).toBeTruthy();
+    await fireEvent.press(button);
+    expect(onPress).toHaveBeenCalledTimes(1);
+    // leaving Decide returns the default Add FAB
+    await act(async () => holder.switchTo?.('second'));
+    expect(screen.getByRole('button', { name: 'Add a transaction' })).toBeTruthy();
   });
 });

@@ -9,8 +9,10 @@ import {
   validateForm,
   validateTransfer,
   withDate,
+  withAccount,
   withAutomatic,
   withDirection,
+  withOneOff,
   withRefund,
   withStatus,
   type FormContext,
@@ -20,6 +22,8 @@ import {
 const ctx: FormContext = {
   today: '2026-09-25',
   defaultAccount: { id: 'a1', currency: 'GBP' },
+  homeCurrency: 'USD',
+  accountCurrency: (id) => (id === 'a1' ? 'GBP' : id === 'a2' ? 'EUR' : undefined),
   amountInputText: (minor, code) => toDecimalString(minorUnits(minor), resolveExponent(code)),
 };
 
@@ -55,13 +59,64 @@ describe('initialFormState', () => {
       name: '',
       categoryId: null,
       accountId: 'a1',
-      currency: 'GBP',
+      currency: 'USD',
       localDate: '2026-09-25',
       status: 'paid',
       statusTouched: false,
       paymentType: null,
       note: '',
     });
+  });
+
+  it('D-93 a new expense defaults to the home currency', () => {
+    expect(newOut().currency).toBe('USD');
+    expect(initialFormState({ kind: 'new', direction: 'in', accountId: 'a2' }, ctx).currency).toBe('USD');
+  });
+
+  it("D-93 changing the account keeps an expense's currency", () => {
+    expect(withAccount(newOut(), { id: 'a2', currency: 'EUR' })).toMatchObject({ accountId: 'a2', currency: 'USD' });
+    expect(withAccount({ ...newOut(), currency: 'JPY' }, { id: 'a2', currency: 'EUR' }).currency).toBe('JPY');
+  });
+
+  it('D-93 a transfer still follows its accounts', () => {
+    const t = initialFormState({ kind: 'new', direction: 'transfer' }, ctx);
+    expect(withAccount(t, { id: 'a2', currency: 'EUR' })).toMatchObject({ accountId: 'a2', currency: 'EUR' });
+  });
+
+  it('D-93 an edit keeps its stored currency', () => {
+    const s = initialFormState({ kind: 'edit', row: row({ original_currency: 'GBP' }) }, ctx);
+    expect(s.currency).toBe('GBP');
+  });
+
+  it('D-93 a prefill keeps its stored currency', () => {
+    const s = initialFormState(
+      {
+        kind: 'new',
+        direction: 'out',
+        prefill: {
+          amountMinor: 500,
+          currency: 'GBP',
+          name: 'Rent',
+          categoryId: null,
+          accountId: 'a1',
+          paymentType: null,
+          isAutomatic: false,
+          isRefund: false,
+        },
+      } as Parameters<typeof initialFormState>[0],
+      ctx
+    );
+    expect(s.currency).toBe('GBP');
+  });
+
+  it('D-93 transfer legs keep their account currencies', () => {
+    const s = initialFormState({ kind: 'new', direction: 'transfer', accountId: 'a2' }, ctx);
+    expect(s.currency).toBe('EUR');
+    const out = row({ id: 'o', original_currency: 'GBP', original_amount: -1000, transfer_id: 't' });
+    const inn = row({ id: 'i', account_id: 'a2', original_currency: 'EUR', original_amount: 1100, transfer_id: 't' });
+    const e = initialFormState({ kind: 'edit-transfer', out, in: inn }, ctx);
+    expect(e.currency).toBe('GBP');
+    expect(e.toCurrency).toBe('EUR');
   });
 
   it('takes every value from an edited row', () => {
@@ -162,7 +217,7 @@ describe('toAddInput', () => {
 
   it('signs by direction, trims the name and nulls an empty note', () => {
     const out = toAddInput({ ...newOut(), name: '  Tea ', amountText: '4.20' }, 420, c);
-    expect(out).toMatchObject({ amount: -420, name: 'Tea', note: null, accountId: 'a1', currency: 'GBP' });
+    expect(out).toMatchObject({ amount: -420, name: 'Tea', note: null, accountId: 'a1', currency: 'USD' });
     const inc = toAddInput({ ...withDirection(newOut(), 'in'), name: 'Pay', note: 'x' }, 420, c);
     expect(inc).toMatchObject({ amount: 420, note: 'x' });
   });
@@ -318,5 +373,35 @@ describe('refund, automatic and clone prefill (REC-20)', () => {
       automatic: true,
       refund: false,
     });
+  });
+});
+
+describe('one-off flag (05-50, D-29)', () => {
+  it('starts false, and opens true only for a one-off row', () => {
+    expect(newOut().oneOff).toBe(false);
+    expect(initialFormState({ kind: 'edit', row: row({ one_off: true }) }, ctx).oneOff).toBe(true);
+    expect(initialFormState({ kind: 'edit', row: row() }, ctx).oneOff).toBe(false);
+  });
+
+  it('sends isOneOff on the add input only for a non-transfer one-off line', () => {
+    const c = { householdId: 'h1', userId: 'u1', homeCurrency: 'GBP', timeZone: 'Europe/London' };
+    const on = withOneOff({ ...newOut(), accountId: 'a1' }, true);
+    expect(toAddInput(on, 500, c)).toMatchObject({ isOneOff: true });
+    expect(toAddInput({ ...on, oneOff: false }, 500, c)).not.toHaveProperty('isOneOff');
+    expect(toAddInput({ ...on, direction: 'transfer' }, 500, c)).not.toHaveProperty('isOneOff');
+  });
+
+  it('patches only one_off when only the toggle changed', () => {
+    const r = row();
+    const state = initialFormState({ kind: 'edit', row: r }, ctx);
+    expect(toPatch(r, withOneOff(state, true), Math.abs(r.original_amount))).toEqual({ one_off: true });
+    const r2 = row({ one_off: true });
+    const s2 = initialFormState({ kind: 'edit', row: r2 }, ctx);
+    expect(toPatch(r2, withOneOff(s2, false), Math.abs(r2.original_amount))).toEqual({ one_off: false });
+  });
+
+  it('resets on a move to transfer and refuses to turn on for a transfer', () => {
+    expect(withDirection(withOneOff(newOut(), true), 'transfer').oneOff).toBe(false);
+    expect(withOneOff({ ...newOut(), direction: 'transfer' }, true).oneOff).toBe(false);
   });
 });

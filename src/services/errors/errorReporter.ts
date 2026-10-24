@@ -15,7 +15,7 @@ export type ErrorArea = 'auth' | 'theme' | 'sync' | 'boot' | 'ui' | 'unknown';
 
 // The subset of the real Sentry module this file depends on, so tests can inject a fake
 // without calling the real SDK's global init.
-type SentryModule = Pick<typeof Sentry, 'init' | 'captureException'>;
+type SentryModule = Pick<typeof Sentry, 'init' | 'captureException'> & Partial<Pick<typeof Sentry, 'captureMessage'>>;
 
 const defaultSentryModule: SentryModule = Sentry;
 
@@ -257,4 +257,16 @@ export function captureError(error: unknown, context?: { area: ErrorArea }): voi
   if (!activeSentry) return;
   const err = error instanceof Error ? error : new Error(String(error));
   activeSentry.captureException(err, context ? { tags: { area: context.area } } : undefined);
+}
+
+/**
+ * Reports one parked failed write: its entity, kind and code only. No payload, id or name ever leaves the device, so the
+ * event holds no personal data. No-ops before initErrorReporting() has built a client.
+ */
+export function captureFailedWrite(failure: { entity: string; kind: string; code: string }): void {
+  if (!activeSentry?.captureMessage) return;
+  activeSentry.captureMessage('A write failed to save', {
+    level: 'warning',
+    tags: { area: 'sync', entity: failure.entity, kind: failure.kind, code: failure.code },
+  });
 }

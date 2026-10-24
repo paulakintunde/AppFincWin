@@ -1,4 +1,4 @@
-import { minorUnits } from '../../money/types';
+import { minorUnits, type MinorUnits } from '../../money/types';
 import { futureValue } from '../../payoff/futureValue';
 import { ZERO_PERCENT, percent } from '../../payoff/types';
 import { buildAlternatives } from '../alternatives';
@@ -42,6 +42,7 @@ const D2: DebtRecord = {
 const LIMITS_BL: DecideLimits = {
   reserve: mu(600_000),
   dsrLine: percent('36'),
+  housingLine: null,
   unsecuredIncomeMultiple: 12,
   investingFloor: mu(40_000),
   savingFloor: mu(25_000),
@@ -83,9 +84,14 @@ function ctxOf(s: DecideSnapshot): AssessContext {
   if (!r.ok) throw new Error(`expected ok, got ${r.reasons.join(',')}`);
   return r.context;
 }
-function altsOf(s: DecideSnapshot, check: PurchaseCheck, ratio?: number): Alternatives {
+function altsOf(s: DecideSnapshot, check: PurchaseCheck, cheaperPrice?: number): Alternatives {
   const ctx = ctxOf(s);
-  const a = buildAlternatives(ctx, check, assessPlan(ctx, check, resolvePlanStrict(check)), ratio);
+  const a = buildAlternatives(
+    ctx,
+    check,
+    assessPlan(ctx, check, resolvePlanStrict(check)),
+    cheaperPrice === undefined ? undefined : { price: cheaperPrice as MinorUnits }
+  );
   expect(a.rows.map((r) => r.code)).toEqual(CODES);
   return a;
 }
@@ -173,16 +179,16 @@ describe('buildAlternatives worked case B: everything spare (DEC-14)', () => {
     expect(r.contributed).toBe(assessment.mineDayOne + monthly * 48);
   });
 
-  it('ratio 100 leaves nothing unspent and nothing freed', () => {
-    const full = altsOf(B(), LOAN_B, 100);
+  it('a cheaper price equal to the price leaves nothing unspent and nothing freed', () => {
+    const full = altsOf(B(), LOAN_B, 1_450_000);
     expect(full.cheaper.notSpent).toBe(0);
     expect(full.cheaper.dayDiff).toBe(0);
     expect(full.cheaper.monthlyDiff).toBe(0);
     expect(rowOf(full, 'cheaper').suppression).toEqual({ code: 'nothing_freed', amount: null });
   });
 
-  it('rejects a ratio outside the integers 1..100', () => {
-    for (const bad of [0, 101, 65.5, -1]) {
+  it('rejects a cheaper price outside the whole amounts 1..price', () => {
+    for (const bad of [0, 1_450_001, 65.5, -1]) {
       expect(() => altsOf(B(), LOAN_B, bad)).toThrow(/^buildAlternatives: /);
     }
   });

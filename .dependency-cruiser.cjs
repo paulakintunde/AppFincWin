@@ -31,9 +31,16 @@ module.exports = {
       name: 'fx-fetch-never-from-reads',
       severity: 'error',
       comment:
-        '02-DECISION-fx-on-demand.md item 5: read hooks and the engine (incl. Phase 4 Decide) must not reach the fetch door, even through another module.',
-      from: { path: '^src/(data/queries|engine)/' },
+        '02-DECISION-fx-on-demand.md item 5: read hooks and the engine (incl. Phase 4 Decide) must not reach the fetch door, even through another module. 05-01: Decide snapshot builder and screens read stored rates only.',
+      from: { path: '^src/(data/queries|engine|features/decide)/' },
       to: { path: '^src/db/fxResolve', reachable: true },
+    },
+    {
+      name: 'decide-engine-barrel-only',
+      severity: 'error',
+      comment: '05-01 / DEC-12: Phase 5 reaches the Decide engine only through its public barrel (04-12).',
+      from: { path: '^src/', pathNot: '^src/engine/' },
+      to: { path: '^src/engine/(decide|payoff)/(?!index\\.ts$)' },
     },
     {
       name: 'no-circular',

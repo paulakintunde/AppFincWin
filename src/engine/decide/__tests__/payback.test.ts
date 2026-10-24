@@ -62,6 +62,25 @@ describe('paybackMonths', () => {
     expect(r.extraIncome).toBe(800_000);
   });
 
+  it('D-89 payback counts a fortnightly plan by its monthly equivalent', () => {
+    // 6 fortnightly payments of 100.00 after day one: 3 months, monthly equivalent 216.67, the last month the remainder
+    const fortnightly: Plan = {
+      ...plan(0, [{ fromMonth: 1, toMonth: 6, amount: m(10_000) }]),
+      freq: 'fortnightly',
+      monthly: m(21_667),
+      months: 3,
+    };
+    const asMonthly = plan(0, [
+      { fromMonth: 1, toMonth: 2, amount: m(21_667) },
+      { fromMonth: 3, toMonth: 3, amount: m(16_666) },
+    ]);
+    const over = { horizonMonths: 3 };
+    const r = paybackMonths(input(fortnightly, 0, gain(5_000), over));
+    expect(r).toEqual(paybackMonths(input(asMonthly, 0, gain(5_000), over)));
+    expect(r.totalCost).toBe(60_000);
+    expect(r.months).toBeNull();
+  });
+
   it('reports the figures at the horizon when it never pays back', () => {
     const r = paybackMonths(input(plan(1_200_000, []), 30_000, gain(20_000), { horizonMonths: 24 }));
     expect(r).toEqual({ months: null, totalCost: 1_200_000 + 30_000 * 24, extraIncome: 20_000 * 24, horizonMonths: 24 });

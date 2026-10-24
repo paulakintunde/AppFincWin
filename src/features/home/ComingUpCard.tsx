@@ -232,7 +232,7 @@ export function ComingUpCard({
                     {subText}
                   </Text>
                 </View>
-                <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{amountText}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{amountText}</Text>
               </Pressable>
               {isRow && row ? (
                 <Pressable

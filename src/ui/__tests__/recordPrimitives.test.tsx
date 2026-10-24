@@ -443,6 +443,13 @@ describe('AmountDisplay', () => {
     expect(style.some((s) => s.fontSize === 44)).toBe(true);
   });
 
+  it('D-94 a money figure reads its currency name', async () => {
+    const { getByText } = await renderWithTheme(
+      <AmountDisplay text="CA$1,500" a11yValue="1,500 Canadian dollars" />
+    );
+    expect(getByText('CA$1,500').props.accessibilityLabel).toBe('1,500 Canadian dollars');
+  });
+
   it('uses colors.danger when tone is danger', async () => {
     const { getByText } = await renderWithTheme(<AmountDisplay text="-£40.00" tone="danger" />);
     const style = flatStyle(getByText('-£40.00').props);

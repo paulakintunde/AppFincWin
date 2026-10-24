@@ -30,7 +30,12 @@ export function shouldHideFab(input: FabVisibilityInput): boolean {
   );
 }
 
-export function fabSurface(location: { area: 'tab' | 'outer' } | null): FabSurface {
-  if (location === null) return 'unknown';
+// D-85 / R16.1: a null location while the active segments include (tabs) is a tab root (the nav
+// state can lag the route); outside (tabs) it stays 'unknown'.
+export function fabSurface(
+  location: { area: 'tab' | 'outer' } | null,
+  segments: readonly string[] = [],
+): FabSurface {
+  if (location === null) return segments.includes('(tabs)') ? 'tabRoot' : 'unknown';
   return location.area === 'tab' ? 'tabRoot' : 'outer';
 }

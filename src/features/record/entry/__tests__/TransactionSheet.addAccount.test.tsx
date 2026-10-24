@@ -130,7 +130,7 @@ describe('TransactionSheet: Add account from the entry (02.3 D-13)', () => {
     expect(mockSheetProps?.mode).toEqual({ kind: 'new', context: 'later' });
   });
 
-  it('returns with the new account selected, its currency applied and the typed name kept', async () => {
+  it('returns with the new account selected, the line currency kept (D-93) and the typed name kept', async () => {
     const u = await render(ui({ kind: 'new', direction: 'out' }));
     await fireEvent.changeText(u.getByLabelText('What is it for?'), 'Taxi');
     await fireEvent.press(u.getByLabelText('Account'));
@@ -142,7 +142,8 @@ describe('TransactionSheet: Add account from the entry (02.3 D-13)', () => {
       mockSheetProps?.onClose();
     });
     await waitFor(() => expect(u.getByText('Travel')).toBeTruthy());
-    expect(u.getAllByText('EUR').length).toBeGreaterThanOrEqual(2);
+    // The line stays in its current (home) currency; the new EUR account does not switch it.
+    expect(u.queryAllByText('EUR')).toHaveLength(0);
     expect(u.getByDisplayValue('Taxi')).toBeTruthy();
   });
 

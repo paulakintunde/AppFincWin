@@ -16,6 +16,7 @@ import {
   seriesDatesInPath,
   spreadUndatedSpending,
 } from '../cashPath';
+import { occurrenceDate } from '../../recurring/schedule';
 import { SOLE_SHARE, type ResolvedShare } from '../share';
 import { addDays } from '../series';
 import type { CashDipInput, CashPathBase, MoneyBasis, Plan, SpendingShare } from '../types';
@@ -39,12 +40,17 @@ const PAY = income({
   latestAmount: 600_000,
 });
 
-function pathOf(over: Partial<Parameters<typeof cashPathForSnapshot>[0]['snapshot']> = {}, spending = SOLE_SPENDING) {
+function pathOf(
+  over: Partial<Parameters<typeof cashPathForSnapshot>[0]['snapshot']> = {},
+  spending = SOLE_SPENDING,
+  protectedCash = 0
+) {
   return cashPathForSnapshot({
     snapshot: snapshotOf({ incomeSeries: [PAY], ...over }),
     money: moneyOf(300_000),
     spendingShare: spending,
     debtPayments: m(20_000),
+    protectedCash: m(protectedCash),
   });
 }
 
@@ -173,8 +179,12 @@ describe('buildCashPath', () => {
 });
 
 describe('cashPathForSnapshot', () => {
+  it('D-101 protected cash is taken off the opening of the path', () => {
+    const open = pathOf({}, SOLE_SPENDING, 0)!.balances[0]!;
+    expect(pathOf({}, SOLE_SPENDING, 500_000)!.balances[0]).toBe(open - 500_000);
+  });
   it('returns null with no confirmed income series', () => {
-    const args = { money: moneyOf(300_000), spendingShare: SOLE_SPENDING, debtPayments: m(0) };
+    const args = { money: moneyOf(300_000), spendingShare: SOLE_SPENDING, debtPayments: m(0), protectedCash: m(0) };
     expect(cashPathForSnapshot({ ...args, snapshot: snapshotOf() })).toBeNull();
     expect(
       cashPathForSnapshot({ ...args, snapshot: snapshotOf({ incomeSeries: [{ ...PAY, confirmed: false }] }) })
@@ -231,6 +241,7 @@ describe('cashPathForSnapshot', () => {
       money: moneyOf(300_000),
       spendingShare: SOLE_SPENDING,
       debtPayments: m(0),
+      protectedCash: m(0),
     })!;
     expect(q.balances[0]).toBe(2_000_000);
     expect(q.balances[14]).toBe(2_000_000);
@@ -286,6 +297,7 @@ describe('cashPathForSnapshot', () => {
         money: moneyOf(0),
         spendingShare: SOLE_SPENDING,
         debtPayments: m(0),
+        protectedCash: m(0),
       })
     ).toBeNull();
   });
@@ -368,6 +380,45 @@ describe('purchaseFlows', () => {
       '2026-03-31',
       '2026-04-30',
     ]);
+  });
+  it('D-89 a weekly plan lands on its weekly dates in the cash path', () => {
+    const weekly = planOf({
+      freq: 'weekly',
+      dayOne: m(5_000),
+      paymentSteps: [{ fromMonth: 1, toMonth: 11, amount: m(5_000) }],
+    });
+    const flows = run(weekly);
+    expect(flows[0]).toEqual({ date: '2026-07-10', amount: 5_000 });
+    expect(flows.slice(1).map((f) => f.date)).toEqual(
+      [7, 14, 21, 28, 35, 42, 49, 56, 63, 70, 77].map((d) => addDays(ASOF, d))
+    );
+    expect(flows).toHaveLength(12);
+    // next_period: nothing on the day, the first payment a fortnight later; running costs stay on monthly dates
+    const next = planOf({ freq: 'fortnightly', paymentSteps: [{ fromMonth: 1, toMonth: 3, amount: m(4_000) }] });
+    expect(run(next, 100)).toEqual([
+      { date: '2026-07-24', amount: 4_000 },
+      { date: '2026-08-07', amount: 4_000 },
+      { date: '2026-08-21', amount: 4_000 },
+      { date: '2026-08-10', amount: 100 },
+      { date: '2026-09-10', amount: 100 },
+    ]);
+    expect(run(weekly, 0, EVEN2)[0]!.amount).toBe(2_500);
+    expect(run(next, 0, SOLE_SHARE, '2026-01-01').map((f) => f.date)).toEqual([
+      '2026-01-15',
+      '2026-01-29',
+      '2026-02-12',
+    ]);
+  });
+  it('D-89 quarterly payments roll like loan payments', () => {
+    const q = planOf({ freq: 'quarterly', paymentSteps: [{ fromMonth: 1, toMonth: 4, amount: m(9_000) }] });
+    const dates = run(q, 0, SOLE_SHARE, '2026-01-31').map((f) => f.date);
+    expect(dates).toEqual(['2026-04-30']);
+    expect(dates[0]).toBe(occurrenceDate('2026-01-31', 'quarterly', 1));
+  });
+  it('D-89 monthly flows are unchanged', () => {
+    const base = planOf({ dayOne: m(300_000), paymentSteps: [{ fromMonth: 1, toMonth: 47, amount: m(25_000) }] });
+    expect(run({ ...base, freq: 'monthly' }, 5_500)).toEqual(run(base, 5_500));
+    expect(run(base, 5_500)[1]).toEqual({ date: '2026-08-10', amount: 30_500 });
   });
   it('stops a step that ends early', () => {
     const p = planOf({ paymentSteps: [{ fromMonth: 1, toMonth: 1, amount: m(10_000) }] });

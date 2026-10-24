@@ -3,8 +3,9 @@
 // ring/indicator updates in the same render tree via the real ThemeProvider), the analytics
 // toggle reflecting/updating consent, ConnectionStatus's three states, and the D-15 sign-out
 // flow (silent when nothing pending, Alert-gated and only proceeding on confirm otherwise).
-import { Alert, AppState, Linking } from 'react-native';
+import { AccessibilityInfo, Alert, AppState, Linking } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { QUICK_ACTION_ORDER } from '@/shell/fab/quickActions';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { YouScreen } from '../YouScreen';
 
@@ -62,13 +63,32 @@ jest.mock('@/features/consent/useConsent', () => ({
 }));
 
 const mockGoBack = jest.fn();
+let mockHistory: { area: string; tab?: string; href: string }[] = [{ area: 'tab', tab: 'home', href: '/home' }];
 jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({
-  useBackHistory: () => ({ goBack: mockGoBack, canGoBack: true }),
+  useBackHistory: () => ({ goBack: mockGoBack, canGoBack: true, history: mockHistory }),
 }));
 
+// D-85: the FAB's registered quick actions, and You's navigation (transitionEnd).
+const mockRuns: Record<string, jest.Mock> = {};
+let mockQuickIds: string[] = [];
+jest.mock('@/shell/fab/FabProvider', () => ({
+  useFab: () => ({
+    quickActions: mockQuickIds.map((id) => ({ id, label: id, run: mockRuns[id] })),
+  }),
+}));
+let mockTransitionListener: ((e: { data: { closing: boolean } }) => void) | null = null;
+const mockRemoveTransition = jest.fn();
+const mockAddListener = jest.fn((_name: string, fn: (e: { data: { closing: boolean } }) => void) => {
+  mockTransitionListener = fn;
+  return mockRemoveTransition;
+});
+
 const mockRouterPush = jest.fn();
+let mockSearch: { focus?: string } = {};
 const mockRouterDismissTo = jest.fn();
 jest.mock('expo-router', () => ({
+  useLocalSearchParams: () => mockSearch,
+  useNavigation: () => ({ addListener: (...a: [string, never]) => mockAddListener(...a) }),
   router: {
     push: (...a: unknown[]) => mockRouterPush(...a),
     dismissTo: (...a: unknown[]) => mockRouterDismissTo(...a),
@@ -143,6 +163,11 @@ let appStateCallback: ((state: string) => void) | undefined;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockHistory = [{ area: 'tab', tab: 'home', href: '/home' }];
+  mockQuickIds = ['addExpense', 'addIncome', 'transfer', 'importStatement', 'newCheck'];
+  for (const id of mockQuickIds) mockRuns[id] = jest.fn();
+  mockTransitionListener = null;
+  mockSearch = {};
   mockProfile = {
     id: '11111111-1111-4111-8111-111111111111',
     full_name: 'Ada Lovelace',
@@ -317,9 +342,9 @@ describe('YouScreen sign out', () => {
 });
 
 describe('YouScreen sync status', () => {
-  it("shows 'offline · 3 changes queued' in the Connection section", async () => {
+  it("shows 'offline · 3 changes waiting' in the Connection section", async () => {
     const { getByText } = await renderScreen();
-    expect(getByText('offline · 3 changes queued')).toBeTruthy();
+    expect(getByText('offline · 3 changes waiting')).toBeTruthy();
   });
 });
 
@@ -335,36 +360,115 @@ describe('YouScreen back button', () => {
 
 // 02-30: the Money section links to every Record screen.
 describe('YouScreen Money section', () => {
-  it('lists the five Record entry points and navigates to each', async () => {
+  it('lists the four Record entry points and navigates to each', async () => {
     const { getByText, queryByText } = await renderScreen();
     expect(getByText('Money')).toBeTruthy();
-    expect(getByText('Import statement')).toBeTruthy();
     expect(queryByText('Import CSV')).toBeNull();
 
     await act(async () => {
       fireEvent.press(getByText('Activity'));
       fireEvent.press(getByText('Accounts'));
       fireEvent.press(getByText('Categories'));
-      fireEvent.press(getByText('Import statement'));
       fireEvent.press(getByText('History'));
     });
     expect(mockRouterDismissTo).toHaveBeenCalledWith('/activity');
     expect(mockRouterPush.mock.calls.map((c) => c[0])).toEqual([
       '/accounts',
       '/categories',
-      { pathname: '/import', params: { entry: 'you' } },
       '/history',
     ]);
+  });
+
+  it('D-101 You Money lists Pots after History', async () => {
+    const { getByText, getByRole, getAllByRole } = await renderScreen();
+    const at = (n: string) => getAllByRole('button').indexOf(getByRole('button', { name: n }));
+    expect(at('Pots')).toBe(at('History') + 1);
+    await act(async () => {
+      fireEvent.press(getByText('Pots'));
+    });
+    expect(mockRouterPush).toHaveBeenLastCalledWith('/decide/pots');
+  });
+
+  it('D-101 the Add group has no Pots action', async () => {
+    const { queryByRole } = await renderScreen();
+    expect(queryByRole('button', { name: 'Add pot' })).toBeNull();
+    expect(queryByRole('button', { name: 'Pots' })?.props.accessibilityHint).toBeUndefined();
+    
+    expect(QUICK_ACTION_ORDER).toEqual(['addExpense', 'addIncome', 'transfer', 'newCheck', 'importStatement']);
   });
 });
 
 describe('YouScreen Money rows are full-size touch targets (S-WR-14)', () => {
   it('each row is at least 44pt tall', async () => {
     const { getByRole } = await renderScreen();
-    for (const name of ['Activity', 'Accounts', 'Categories', 'Import statement', 'History']) {
+    for (const name of ['Activity', 'Accounts', 'Categories', 'History']) {
       const style = Object.assign({}, ...[].concat(getByRole('button', { name }).props.style ?? []));
       expect(style.minHeight).toBe(44);
     }
+  });
+});
+
+// 05-98 (D-85, R16.1): the always-reachable Add group.
+describe('YouScreen Add group (D-85)', () => {
+  it('D-85 the Add group is first with five rows', async () => {
+    const { getByText, getByRole, getAllByRole } = await renderScreen();
+    expect(getByText('Add')).toBeTruthy();
+    const hints = [
+      'Opens the entry sheet',
+      'Opens the entry sheet',
+      'Opens the transfer sheet',
+      'Opens statement import',
+      'Starts a new affordability check',
+    ];
+    const labels = ['Add expense', 'Add income', 'Transfer', 'Import statement', 'New check'];
+    labels.forEach((label, i) => {
+      expect(getByRole('button', { name: label }).props.accessibilityHint).toBe(hints[i]);
+    });
+    // Tree order: the Add rows come before the Money rows.
+    const order = getAllByRole('button').map((b) => b.props.accessibilityHint ?? '');
+    const first = order.findIndex((h) => h === hints[0]);
+    expect(order.slice(first, first + 5)).toEqual(hints);
+    expect(order[first + 5]).toBe('');
+  });
+
+  it('D-85 a row closes You, then runs the quick action after the transition', async () => {
+    mockHistory = [{ area: 'tab', tab: 'activity', href: '/activity' }];
+    const { getByText } = await renderScreen();
+    await act(async () => {
+      fireEvent.press(getByText('Add expense'));
+    });
+    expect(mockRouterDismissTo).toHaveBeenCalledWith('/activity');
+    expect(mockAddListener).toHaveBeenCalledWith('transitionEnd', expect.any(Function));
+    expect(mockRuns.addExpense).not.toHaveBeenCalled();
+
+    await act(async () => {
+      mockTransitionListener?.({ data: { closing: false } });
+    });
+    expect(mockRuns.addExpense).not.toHaveBeenCalled();
+
+    await act(async () => {
+      mockTransitionListener?.({ data: { closing: true } });
+    });
+    expect(mockRuns.addExpense).toHaveBeenCalledTimes(1);
+    expect(mockRemoveTransition).toHaveBeenCalled();
+  });
+
+  it('D-85 a row without a handler is hidden', async () => {
+    mockQuickIds = ['addExpense', 'transfer'];
+    const { queryByText, getByText } = await renderScreen();
+    expect(getByText('Add expense')).toBeTruthy();
+    expect(getByText('Transfer')).toBeTruthy();
+    expect(queryByText('Add income')).toBeNull();
+    expect(queryByText('Import statement')).toBeNull();
+    expect(queryByText('New check')).toBeNull();
+  });
+
+  it('D-85 the Money group has no import row', async () => {
+    mockQuickIds = [];
+    const { queryByText, getByText } = await renderScreen();
+    expect(getByText('Money')).toBeTruthy();
+    expect(queryByText('Import statement')).toBeNull();
+    expect(queryByText('Add')).toBeNull();
   });
 });
 
@@ -402,5 +506,35 @@ describe('YouScreen Money settings (02.2-32)', () => {
     const { getByText } = await renderScreen();
     expect(getByText('Home currency')).toBeTruthy();
     expect(getByText('GBP')).toBeTruthy();
+  });
+});
+
+describe('YouScreen focus param (05-116)', () => {
+  const layout = { nativeEvent: { layout: { x: 0, y: 600, width: 300, height: 44 } } };
+
+  it('D-96 Exchange rates opens You focused on the currency row', async () => {
+    mockSearch = { focus: 'currencies' };
+    const send = jest.spyOn(AccessibilityInfo, 'sendAccessibilityEvent').mockImplementation(() => {});
+    const { getByLabelText } = await renderScreen();
+    expect(send).not.toHaveBeenCalled();
+    await act(async () => {
+      fireEvent(getByLabelText('Home currency'), 'layout', layout);
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledWith(expect.anything(), 'focus');
+    // A second layout (a re-render) does not steal focus again.
+    await act(async () => {
+      fireEvent(getByLabelText('Home currency'), 'layout', layout);
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('D-96 without the focus param the currency row takes no focus', async () => {
+    const send = jest.spyOn(AccessibilityInfo, 'sendAccessibilityEvent').mockImplementation(() => {});
+    const { getByLabelText } = await renderScreen();
+    await act(async () => {
+      fireEvent(getByLabelText('Home currency'), 'layout', layout);
+    });
+    expect(send).not.toHaveBeenCalled();
   });
 });

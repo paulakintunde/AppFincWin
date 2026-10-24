@@ -1,0 +1,425 @@
+/**
+ * 05-07: PURE. JSON inputs in (no bigint stored), engine objects out (memory only, D-15). Barrel imports only.
+ *
+ * Everything a Decide screen shows is computed here from the stored inputs and the current snapshot, every time, and
+ * never stored (D-15). `decide()` is called once per computation; options, alternatives, setbacks and the wait plan read
+ * `decision.verdict` (the combined position) and its context, never a separate context call. The home list uses
+ * the cheaper `assess()` through computeChip. The quick check and the full check share one path, so their chips cannot
+ * disagree (D-01).
+ */
+import {
+  amortiseSchedule,
+  impliedApr,
+  simulateMinimumSchedule,
+} from '@/engine/payoff';
+import type { ImpliedAprResult } from '@/engine/payoff';
+import {
+  applySetbacks,
+  assess,
+  buildAlternatives,
+  buildOptions,
+  buildWaitPlan,
+  decide,
+  firstRead,
+  incomeAtRisk,
+  investmentViews,
+  percent,
+  rateScheduleFor,
+  resolvePlan,
+  runningCostPrompts,
+  totalCost,
+} from '@/engine/decide';
+import type {
+  Basis,
+  BuyCheck,
+  BuyPayment,
+  DecideSnapshot,
+  MinorUnits,
+  PlanResult,
+  PotInput,
+  PurchaseCheck,
+  ResolvedPrice,
+  RunningCosts,
+  SetbackInput,
+  StackedCheckInput,
+  Verdict,
+} from '@/engine/decide';
+import { minorUnits } from '@/engine/money';
+import { PAY_METHODS } from './types';
+import { perfMark } from '../perf/perfMarks';
+import { cheaperFinalPrice, effectiveMethod, engineCtxOf, quickToCheckInputs, toEngineCheck } from './checkInputs';
+import type { EngineCheckResult, EngineCtx } from './checkInputs';
+import type { BasisOutcome, BasisOutcomes, CheckComputation, CheckInputs, ChipComputation, MethodKey, QuickComputation, QuickInputs, SetbackLine, SnapshotResult } from './types';
+
+type EngineOk = Extract<EngineCheckResult, { ok: true }>;
+
+/** The computation before the slow detail figures: what the verdict card, warnings and step 2 read (D-56). */
+export type CheckCore = CheckComputation & { readonly inputs: CheckInputs; readonly engineRun?: EngineRun };
+
+/** D-107: what the idle pass needs to judge the same check on another basis. Memory only; computeDetails drops it. */
+export interface EngineRun {
+  readonly snapshot: DecideSnapshot;
+  readonly check: PurchaseCheck;
+  readonly others: readonly StackedCheckInput[];
+  readonly judgeOn: Basis | null;
+  readonly monthFallback: readonly string[] | null;
+}
+
+const ctxOf = (source: SnapshotResult): EngineCtx => engineCtxOf(source);
+
+// D-31 / 04 D-51: the check's one rate list is the engine's projectionRates; the first is the single projectionReturn.
+const ratedSnapshots = new WeakMap<DecideSnapshot, Map<string, DecideSnapshot>>();
+function snapshotWithRates(snapshot: DecideSnapshot, rates: readonly string[]): DecideSnapshot {
+  const key = rates.join('|');
+  let byKey = ratedSnapshots.get(snapshot);
+  if (byKey === undefined) {
+    byKey = new Map();
+    ratedSnapshots.set(snapshot, byKey);
+  }
+  let rated = byKey.get(key);
+  if (rated === undefined) {
+    const first = rates[0];
+    rated = { ...snapshot, projectionRates: rates.map(percent), projectionReturn: first === undefined ? null : percent(first) };
+    byKey.set(key, rated);
+  }
+  return rated;
+}
+
+function toSetbackInput(l: SetbackLine): SetbackInput {
+  switch (l.code) {
+    case 'unexpected_expense':
+      return { code: l.code, enabled: l.enabled, amount: l.amount === null ? null : minorUnits(l.amount) };
+    case 'income_drop':
+      return { code: l.code, enabled: l.enabled, percentDrop: l.percentDrop, months: l.months };
+    case 'job_loss':
+      return { code: l.code, enabled: l.enabled, months: l.months };
+    case 'late_invoice':
+      return { code: l.code, enabled: l.enabled, daysLate: l.daysLate };
+  }
+}
+
+const NO_FIGURES = {
+  check: null,
+  resolvedPrice: null,
+  running: null,
+  methodPlans: {},
+  decision: null,
+  verdict: null,
+  firstRead: null,
+  context: null,
+  options: [],
+  alternatives: null,
+  setbacks: null,
+  waitPlan: null,
+  unconverted: null,
+  investmentViews: null,
+  totalCost: null,
+  incomeAtRisk: null,
+  promoBalanceAtEnd: {},
+  impliedApr: null,
+} as const;
+
+// D-89: instalments per year of each frequency (the engine's own table is private to plan.ts).
+const PERIODS_PER_YEAR = { weekly: 52, fortnightly: 26, monthly: 12, quarterly: 4 } as const;
+
+/**
+ * D-90 (R16.6): the true APR of a no-rate instalment plan. Called from computeDetails only, so a keystroke never pays
+ * for it. The plan resolving without a rate means the typed amount and count are both present.
+ */
+function solveImpliedApr(core: CheckCore, inputs: CheckInputs): ImpliedAprResult {
+  const result = core.methodPlans.instalment;
+  const inst = inputs.instalment;
+  if (result?.status !== 'resolved' || inst.hasRate === true) return null;
+  perfMark('e4:start');
+  const solved = impliedApr({
+    financed: result.plan.financed,
+    payment: minorUnits(inst.amount!),
+    count: inst.count!,
+    periodsPerYear: PERIODS_PER_YEAR[inst.freq ?? 'monthly'],
+    timing: (inst.firstPayment ?? 'today') === 'today' ? 'due' : 'ordinary',
+  });
+  perfMark('e4:end');
+  return solved;
+}
+
+// D-52: "Left when it ends" has no engine field; it is read from the same schedule the engine's plan used.
+function promoBalances(
+  checks: Partial<Record<MethodKey, PurchaseCheck>>,
+  plans: Partial<Record<MethodKey, PlanResult>>,
+  carried: ReadonlySet<MethodKey>,
+  prior: CheckComputation['promoBalanceAtEnd']
+): CheckComputation['promoBalanceAtEnd'] {
+  const out: { loan?: MinorUnits; card?: MinorUnits } = {};
+  // D-88: a method whose plan was carried over from the settled core carries its balance too
+  if (carried.has('loan')) {
+    if (prior.loan !== undefined) out.loan = prior.loan;
+  } else {
+    promoLoan(checks, plans, out);
+  }
+  if (carried.has('card')) {
+    if (prior.card !== undefined) out.card = prior.card;
+  } else {
+    promoCard(checks, plans, out);
+  }
+  return out;
+}
+
+function promoLoan(checks: Partial<Record<MethodKey, PurchaseCheck>>, plans: Partial<Record<MethodKey, PlanResult>>, out: { loan?: MinorUnits; card?: MinorUnits }): void {
+  const loanPlan = plans.loan!;
+  if (loanPlan.status === 'resolved' && loanPlan.plan.promo !== null) {
+    const pay = (checks.loan as BuyCheck).payment as Extract<BuyPayment, { method: 'loan' }>;
+    out.loan = amortiseSchedule(loanPlan.plan.financed, rateScheduleFor(pay.apr!, pay.promo), pay.termMonths!).balanceAtPromoEnd;
+  }
+}
+
+function promoCard(checks: Partial<Record<MethodKey, PurchaseCheck>>, plans: Partial<Record<MethodKey, PlanResult>>, out: { loan?: MinorUnits; card?: MinorUnits }): void {
+  const cardPlan = plans.card!;
+  if (cardPlan.status === 'resolved' && cardPlan.plan.promo !== null) {
+    const pay = (checks.card as BuyCheck).payment as Extract<BuyPayment, { method: 'card' }>;
+    const onCard = cardPlan.plan.card!.onCard;
+    const schedule = rateScheduleFor(pay.card!.apr!, pay.promo);
+    if (pay.payoff.kind === 'months') {
+      out.card = amortiseSchedule(onCard, schedule, pay.payoff.months).balanceAtPromoEnd;
+    } else {
+      const s = simulateMinimumSchedule(onCard, schedule, pay.card!.minimumTerms!);
+      // the simulation stops early only when it clears (or never clears), so a missing month is 0 or what remains
+      out.card = s.balancesByMonth[cardPlan.plan.promo.promoMonths - 1] ?? (s.outcome === 'cleared' ? minorUnits(0) : s.remainingBalance);
+    }
+  }
+}
+
+/**
+ * D-101 (R18.2 "Own pot excluded"): when the check being judged has its own Wait pot (a reopened Waiting check), that pot
+ * is dropped from the pots the engine sees, the way withoutCheckWrites drops a check's own written rows; otherwise the
+ * Wait plan would count its own set-aside twice. Other checks' pots stay. Returns the same object when nothing is dropped.
+ */
+export function withoutOwnPot(source: SnapshotResult, checkId: string | null): SnapshotResult {
+  if (checkId === null || source.potChecks === undefined) return source;
+  const own = new Set(Object.entries(source.potChecks).filter(([, check]) => check === checkId).map(([potId]) => potId));
+  if (own.size === 0) return source;
+  const keep = (p: PotInput): boolean => !own.has(p.id);
+  const pots = (source.pots ?? []).filter(keep);
+  if (source.kind === 'logged') return { ...source, pots, snapshot: { ...source.snapshot, pots: source.snapshot.pots.filter(keep) } };
+  return { ...source, pots };
+}
+
+/** What a core carries over from the last settled computation for the methods that are not being typed on. */
+export interface CarriedPlans {
+  methodPlans: CheckComputation['methodPlans'];
+  promoBalanceAtEnd: CheckComputation['promoBalanceAtEnd'];
+}
+
+/**
+ * D-88 speed 4: with `detailFor` only that method's plan is resolved. Every other method reuses the plan in `prior` (the
+ * last settled computation), and resolves its own only when `prior` has none. The verdict never reads a method plan, so it
+ * is the same either way.
+ */
+export interface CoreOptions {
+  /** D-101: the id of the check being judged, so its own Wait pot is not counted against it (withoutOwnPot). */
+  ownCheckId?: string | null;
+  detailFor?: MethodKey | null;
+  prior?: CarriedPlans | null;
+}
+
+/** The core of a full check: status, the engine check, the method plans and the verdict. No options or projections. */
+export function computeCore(source: SnapshotResult, inputs: CheckInputs, otherChecks: readonly StackedCheckInput[] = [], opts: CoreOptions = {}): CheckCore {
+  const prompts = inputs.kind === 'buy' ? runningCostPrompts(inputs.itemType) : [];
+  const ctx = ctxOf(source);
+  const r = toEngineCheck(inputs, ctx);
+  if (!r.ok) return { ...NO_FIGURES, status: 'incomplete', missingInput: r.missing, runningCostPrompts: prompts, inputs };
+
+  const methods: readonly MethodKey[] = inputs.kind === 'buy' ? PAY_METHODS : ['lump', 'monthly'];
+  const checks: Partial<Record<MethodKey, PurchaseCheck>> = {};
+  const methodPlans: Partial<Record<MethodKey, PlanResult>> = {};
+  const carried = new Set<MethodKey>();
+  for (const m of methods) {
+    // each method is built from the same inputs and resolved on its own; the price is already known to be valid
+    checks[m] = (toEngineCheck({ ...inputs, method: m }, ctx) as EngineOk).check;
+    const earlier = opts.detailFor != null && m !== opts.detailFor ? opts.prior?.methodPlans[m] : undefined;
+    if (earlier === undefined) {
+      methodPlans[m] = resolvePlan(checks[m]);
+    } else {
+      methodPlans[m] = earlier;
+      carried.add(m);
+    }
+  }
+  const base = {
+    ...NO_FIGURES,
+    missingInput: null,
+    check: r.check,
+    resolvedPrice: r.resolvedPrice,
+    running: r.running,
+    methodPlans,
+    promoBalanceAtEnd: inputs.kind === 'buy' ? promoBalances(checks, methodPlans, carried, opts.prior?.promoBalanceAtEnd ?? {}) : {},
+    runningCostPrompts: prompts,
+    inputs,
+  };
+
+  // D-37: an amount with no stored rate gives no figure anywhere
+  if (source.unconverted !== null) return { ...base, status: 'unconverted', unconverted: source.unconverted };
+
+  const judged = withoutOwnPot(source, opts.ownCheckId ?? null);
+  switch (judged.kind) {
+    case 'logged': {
+      const rated = snapshotWithRates(judged.snapshot, inputs.projectionRates);
+      const others = inputs.combine === false ? [] : otherChecks;
+      const decision = decide(rated, r.check, others);
+      const verdict = decision.verdict;
+      const engineRun: EngineRun = { snapshot: rated, check: r.check, others, judgeOn: judged.judgeOn ?? null, monthFallback: judged.monthFallback?.currencies ?? null };
+      return { ...base, status: 'logged', decision, verdict, context: verdict.state === 'missing' ? null : verdict.context, engineRun };
+    }
+    case 'rough':
+      return { ...base, status: 'first_read', firstRead: firstRead(judged.figures, r.check) };
+    case 'none':
+      return { ...base, status: 'none' };
+  }
+}
+
+/** The same inputs, by reference or field by field (an edit that wrote back equal values). */
+export function sameInputs(a: CheckInputs, b: CheckInputs): boolean {
+  if (a === b) return true;
+  const keys = Object.keys(a) as (keyof CheckInputs)[];
+  return keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k]);
+}
+
+/**
+ * D-88 speed 3: the settled core. When the settled inputs equal the live ones it is the live `core` itself (no second
+ * pass of the engine); a live core that was narrowed with `detailFor` is not reused, since its other plans may be older.
+ */
+export function settledCoreFor(
+  source: SnapshotResult,
+  settled: CheckInputs,
+  otherChecks: readonly StackedCheckInput[],
+  live: { inputs: CheckInputs; core: CheckCore; narrowed: boolean },
+  ownCheckId: string | null = null
+): CheckCore {
+  if (!live.narrowed && sameInputs(live.inputs, settled)) return live.core;
+  return computeCore(source, settled, otherChecks, { ownCheckId });
+}
+
+function cheaperOf(inputs: CheckInputs, planPrice: MinorUnits): { price: MinorUnits } | undefined {
+  const price = cheaperFinalPrice(inputs, planPrice);
+  return price === null ? undefined : { price };
+}
+
+const BASIS_ORDER = ['month', 'worst', 'average'] as const;
+
+/**
+ * D-107: the verdict state and month figure of the same check under each basis. The row whose engine basis equals the
+ * snapshot's own (or the basis the verdict itself landed on) reuses the check's verdict; each other row is one decide() with only basisOverride changed. Idle time only.
+ */
+function basisOutcomesOf(run: EngineRun, verdict: Exclude<Verdict, { state: 'missing' }>): BasisOutcomes | null {
+  const chosenBasis = run.judgeOn ?? verdict.context.money.basis;
+  const rows: BasisOutcome[] = [];
+  for (const basis of BASIS_ORDER) {
+    const fellBack = basis === 'month' && run.monthFallback !== null;
+    const effective: Basis = fellBack ? 'worst' : basis;
+    const v = effective === run.snapshot.basisOverride || effective === verdict.context.money.basis ? verdict : decide({ ...run.snapshot, basisOverride: effective }, run.check, run.others).verdict;
+    if (v.state === 'missing') return null;
+    rows.push({ basis, state: v.state, left: v.left, chosen: basis === chosenBasis, waitingCurrencies: fellBack ? run.monthFallback : null });
+  }
+  return { rows: rows as unknown as BasisOutcomes['rows'] };
+}
+
+/** The slow figures, from the core's combined verdict and context: options, alternatives, setbacks, wait plan, views. */
+export function computeDetails(core: CheckCore, inputs: CheckInputs): CheckComputation {
+  const { inputs: _inputs, engineRun, ...rest } = core;
+  const base = { ...rest, impliedApr: solveImpliedApr(core, inputs), basisOutcomes: null };
+  const { verdict, check } = core;
+  if (verdict === null || verdict.state === 'missing' || check === null) return base;
+  const context = verdict.context;
+  const setbacks = inputs.setbacks.map(toSetbackInput);
+  const buyer = check.kind === 'buy';
+  return {
+    ...base,
+    options: buildOptions(context, check, verdict),
+    // D-83: the exact cheaper price, judged with the check's own tax, fee and trade-in lines.
+    alternatives: buildAlternatives(context, check, verdict, cheaperOf(inputs, verdict.plan.price)),
+    setbacks: applySetbacks(verdict, setbacks),
+    waitPlan: buildWaitPlan(context, check, inputs.wait.monthlyAmount === null ? null : minorUnits(inputs.wait.monthlyAmount)),
+    investmentViews: buyer
+      ? investmentViews(context, check, verdict, {
+          horizonMonths: inputs.investHorizonMonths,
+          holdingFee: inputs.investHoldingFeeText === null ? null : percent(inputs.investHoldingFeeText),
+        })
+      : null,
+    // D-102: the same horizon the views use; advertised and the non-cash loss come from the check's own resolved figures
+    // (a core with a check always carries both: computeCore sets them together with `check`)
+    totalCost: buyer
+      ? totalCost(check, verdict, {
+          horizonMonths: inputs.investHorizonMonths,
+          advertised: (core.resolvedPrice as ResolvedPrice).advertised,
+          lossMonthly: (core.running as RunningCosts).nonCash,
+        })
+      : null,
+    incomeAtRisk: buyer ? incomeAtRisk(context, verdict, setbacks) : null,
+    basisOutcomes: engineRun === undefined ? null : basisOutcomesOf(engineRun, verdict),
+  };
+}
+
+/** The full computation every Decide screen renders. */
+export function computeCheck(source: SnapshotResult, inputs: CheckInputs, otherChecks: readonly StackedCheckInput[] = [], ownCheckId: string | null = null): CheckComputation {
+  return computeDetails(computeCore(source, inputs, otherChecks, { ownCheckId }), inputs);
+}
+
+/** The quick check (home, onboarding): the same engine path as the full check for the same inputs (D-01). */
+export function computeQuick(
+  source: SnapshotResult,
+  q: QuickInputs,
+  opts: { allowCashOnly: boolean; otherChecks?: readonly StackedCheckInput[] }
+): QuickComputation {
+  const r = toEngineCheck(quickToCheckInputs(q, ''), ctxOf(source));
+  if (!r.ok) return { kind: 'incomplete' };
+  if (source.unconverted !== null) return { kind: 'unconverted', currencies: source.unconverted.currencies };
+  const check = r.check as BuyCheck;
+  const { resolvedPrice } = r;
+  switch (source.kind) {
+    case 'logged': {
+      const decision = decide(snapshotWithRates(source.snapshot, []), check, opts.otherChecks ?? []);
+      return { kind: 'logged', decision, verdict: decision.verdict, check, resolvedPrice };
+    }
+    case 'rough':
+      return { kind: 'first_read', firstRead: firstRead(source.figures, check), check, resolvedPrice };
+    case 'none': {
+      // D-03, D-04, DCU-10: no figures to judge against. Only the onboarding skip path shows the plain cash arithmetic,
+      // with no cushion, no state and no month claim.
+      if (!opts.allowCashOnly) return { kind: 'none' };
+      const resolved = resolvePlan(check);
+      if (resolved.status === 'missing') return { kind: 'none' };
+      const { plan } = resolved;
+      const credit = q.mode === 'credit';
+      return {
+        kind: 'cash_only',
+        check,
+        resolvedPrice,
+        dayOne: plan.dayOne,
+        cashAfter: minorUnits(source.cash - plan.dayOne),
+        monthly: credit ? plan.monthly : null,
+        termMonths: credit ? q.termMonths : null,
+        months: credit ? plan.months : null,
+      };
+    }
+  }
+}
+
+/** The home open-checks chip: the cheaper assess() entry, so it always agrees with the step-3 chip (D-24, 05-21). */
+export function computeChip(source: SnapshotResult, inputs: CheckInputs, otherChecks: readonly StackedCheckInput[] = [], ownCheckId: string | null = null): ChipComputation {
+  const r = toEngineCheck(inputs, ctxOf(source));
+  if (!r.ok) return { status: 'incomplete', missingInput: r.missing, price: inputs.advertised === null ? null : minorUnits(inputs.advertised) };
+  const method = effectiveMethod(inputs) as MethodKey;
+  const price = r.resolvedPrice.price;
+  if (source.unconverted !== null) return { status: 'unconverted', price, method };
+  const judged = withoutOwnPot(source, ownCheckId);
+  switch (judged.kind) {
+    case 'logged': {
+      const v = assess(snapshotWithRates(judged.snapshot, inputs.projectionRates), r.check, inputs.combine === false ? [] : otherChecks);
+      return { status: 'logged', state: v.state, price, method, left: v.state === 'missing' ? null : v.left };
+    }
+    case 'rough': {
+      const fr = firstRead(judged.figures, r.check);
+      return { status: 'first_read', state: fr.state, price, method, left: fr.state === 'missing' ? null : fr.leftAfter };
+    }
+    case 'none':
+      return { status: 'none', price, method };
+  }
+}

@@ -111,10 +111,14 @@ export interface ExpenseLine {
   readonly averageMonthly: MinorUnits;
   readonly cuttable: boolean;
 }
-export type Basis = 'average' | 'worst';
+/** D-107: 'month' judges on the current month as it is expected to end (expectedMonth); the others read the history. */
+export type Basis = 'average' | 'worst' | 'month';
+/** The bases the history alone can resolve; deriveMoney never sees 'month'. */
+export type HistoryBasis = Exclude<Basis, 'month'>;
 export interface DecideLimits {
   readonly reserve: MinorUnits | null; // D-01, D-42 (amended): null → month's costs × RESERVE_HALF_MONTHS[steadiness] ÷ 2, one half-up rounding
   readonly dsrLine: Percent | null; // D-04: null → DEFAULT_DSR_LINE (36%)
+  readonly housingLine: Percent | null; // D-103: null → DEFAULT_HOUSING_LINE (28%)
   readonly unsecuredIncomeMultiple: number | null; // D-04: null → DEFAULT_UNSECURED_INCOME_MULTIPLE (12)
   readonly investingFloor: MinorUnits | null; // D-05: null → what the user invests now each month
   readonly savingFloor: MinorUnits | null; // D-05: null → what the user saves now each month
@@ -128,6 +132,24 @@ export interface HouseholdSpendingRule {
   readonly rule: SplitRule;
   readonly byCategory: readonly CategoryShareRule[];
 } // D-34: existing spending only
+// ── Pots (D-101, R18.2) ──
+export type PotKind = 'wait' | 'pot';
+export interface PotInput {
+  readonly id: string;
+  readonly kind: PotKind;
+  readonly target: MinorUnits | null;
+  readonly monthlyAmount: MinorUnits | null;
+  readonly readyBy: string | null; // 'YYYY-MM-DD'
+  readonly saved: MinorUnits; // opening saved + tagged paid lines
+}
+export type PotState = 'active' | 'reached' | 'past_due';
+export interface PotLine {
+  readonly id: string;
+  readonly monthly: MinorUnits;
+  readonly months: number | null;
+  readonly state: PotState;
+}
+
 export interface DecideSnapshot {
   readonly currency: CurrencyCode; // D-16 clarified
   readonly asOf: string; // 'YYYY-MM-DD' check date; the engine has no clock (D-24 window)
@@ -139,6 +161,7 @@ export interface DecideSnapshot {
   readonly monthlySaving: MinorUnits; // goal contributions; pausable (D-35)
   readonly monthlyInvesting: MinorUnits; // automatic investing incl. recorded monthly investments (D-32); pausable (D-35)
   readonly scope: ShareScope; // PURCHASE share: rule = the per-check resolved split (D-15, D-34)
+  readonly housingMonthly: MinorUnits; // D-103: my share of monthly housing costs (Housing-category spending plus payments on loans marked as housing), >= 0; the builder fills it
   readonly householdSpending: HouseholdSpendingRule | null; // EXISTING-spending share (D-34); required in household scope, ignored in personal scope
   readonly limits: DecideLimits;
   readonly projectionReturn: Percent | null; // D-06: null → 0%. The single rate behind the prototype-parity projection fields and the D-31 fact; the Phase 5 builder sets it to the first entered rate, or null
@@ -148,6 +171,8 @@ export interface DecideSnapshot {
   readonly futureChanges: readonly FutureChange[]; // D-45: the user's dated income/spending changes; never inferred
   readonly investmentBalance: MinorUnits; // D-52(d): current value of my investments, >= 0, for the net-worth path
   readonly scheduledOutflows: readonly ScheduledOutflow[]; // D-61: dated pending one-off outflows; [] = none
+  readonly pots: readonly PotInput[]; // D-101: live, not-done pots in the home currency; [] = none. The builder drops a reopened check's own Wait pot
+  readonly provisionalRates?: boolean; // D-69: some line was converted at the latest stored rate while its own rate is pending; caps confidence at fair. Absent = false
 }
 
 // ── Check (in) ──
@@ -167,6 +192,14 @@ export type BuyPayment =
       readonly method: 'instalment';
       readonly instalmentAmount: MinorUnits | null;
       readonly instalmentCount: number | null;
+      // D-80: absent = the plan has no rate; null = a rate is expected but not given (instalment_rate_missing); a Percent
+      // works the payment out at APR / 12 over the count on the amount financed. A typed instalmentAmount is still the one scored.
+      readonly apr?: Percent | null;
+      // D-89 (R16.11 E3): how often the instalment falls; absent = 'monthly'. The payment is worked out at APR / periodsPerYear.
+      readonly freq?: InstalmentFreq;
+      // D-80 / D-49: absent = 'today' (an annuity-due: the first payment is on the day). D-89: 'next_period' is the first
+      // payment one period on.
+      readonly firstPayment?: 'today' | 'next_period';
       readonly lateFee?: MinorUnits;
       readonly lateFeeCapTotal?: MinorUnits; // D-50: user-entered fee per missed instalment and optional total cap; absent = none
     }
@@ -175,6 +208,10 @@ export type BuyPayment =
       readonly card: CardRecord | null;
       readonly payoff: CardPayoff;
       readonly dealerCap: MinorUnits | null; // D-18, defaulted from the market table by the builder
+      readonly region?: string | null; // D-92: the RD-02 country code; tax is blocked on a card in GB only
+      // D-91: the card check limit in the plan currency (CARD_MAX_PURCHASE_USD converted by the snapshot). Absent = no
+      // limit; null = no stored USD rate, so the card is `card_limit_rate_missing`.
+      readonly cardMaxPurchase?: MinorUnits | null;
       readonly promo?: PromoTerms;
       readonly variable?: boolean; // D-48 / D-49: card.apr is the standard rate after any promo
       // D-63: one-off card fees the user typed that are charged for this purchase (e.g. a transaction or balance-transfer fee),
@@ -254,16 +291,19 @@ export type PlanReason =
   | 'card_apr_missing'
   | 'card_minimum_terms_missing'
   | 'dealer_cap_missing'
+  | 'card_limit_rate_missing' // D-91: the card check limit has no stored USD rate to convert it
   | 'loan_term_missing'
   | 'loan_apr_missing'
   | 'instalment_amount_missing'
   | 'instalment_count_missing'
+  | 'instalment_rate_missing' // D-80: the plan is expected to carry a rate and has none
   | 'instalment_total_below_price' // 04-REVIEW LO-05: amount x count is less than the financed price (price − dayFees)
   | 'invest_term_missing';
 export interface CardPlanDetail {
   readonly eligibility: Exclude<CardEligibility, 'blocked'>;
   readonly onCard: MinorUnits; // prototype cardCap
   readonly remainderOnDay: MinorUnits; // D-18: part above the dealer cap, paid as day-one cash
+  readonly capBy: 'dealer' | 'check_limit' | null; // D-91: which cap bound the card part (R16.11 card_check_limit); null = none; a tie reports the dealer cap
   readonly payoff: CardPayoff['kind'];
   readonly payoffMonths: number | null; // null when the minimum never clears or is still open at the 600-month cap (HI-02)
   readonly minimumOutcome: MinimumOutcome | null; // only for payoff 'minimum'
@@ -289,8 +329,10 @@ export interface Plan {
   // every payment after day one, month k >= 1, household amounts, contiguous runs; [] for cash, invest lump and card full.
   // THE source of truth for writing recurring series (05 D-09): Σ amount × run length === total − dayOne, promo or not (D-48)
   readonly paymentSteps: readonly PaymentStep[];
+  readonly freq?: InstalmentFreq; // D-89: present on instalment plans; paymentSteps are then indexed by payment period (see PaymentStep)
   readonly promo: PromoOutcome | null; // D-48: present only for a loan or card-months/minimum plan with PromoTerms; then `monthly` = promo.highestMonthlyPayment
   readonly lateFees: LateFeeCost | null; // D-50: present only for an instalment plan with a user-entered lateFee; never changes any other figure
+  readonly computedPayment?: MinorUnits; // D-80: present only for an instalment plan with a rate: the worked-out payment (a typed amount, when given, is the one scored)
 }
 export type PlanResult =
   | { readonly status: 'resolved'; readonly plan: Plan }
@@ -316,7 +358,7 @@ export interface MoneyInput {
   readonly months: readonly MonthRecord[];
   readonly bills: readonly RecurringBill[];
   readonly incomeSeries: readonly RecurringIncome[]; // D-60: = snapshot.incomeSeries; confirmed weekly/fortnightly pay is smoothed (04-13)
-  readonly basisOverride: Basis | null;
+  readonly basisOverride: HistoryBasis | null;
   readonly spendingShare: SpendingShare;
 }
 export type Steadiness = 'steady' | 'variable' | 'volatile' | 'insufficient';
@@ -356,7 +398,7 @@ export interface BillDue {
 
 // ── Verdict (dassess) ──
 export type VerdictState = 'fits' | 'adjust' | 'no' | 'missing';
-export type WarningCode = 'month' | 'cash' | 'cash_dip' | 'dsr' | 'owe' | 'inv'; // cash_dip: D-44
+export type WarningCode = 'month' | 'cash' | 'cash_dip' | 'dsr' | 'housing' | 'owe' | 'inv'; // cash_dip: D-44
 export interface Warning {
   readonly code: WarningCode;
   readonly shortfall: MinorUnits;
@@ -388,6 +430,7 @@ export type BasisFact = DebtRateFact | CashTightFact;
 export interface ResolvedLimits {
   readonly reserve: MinorUnits;
   readonly dsrLine: Percent;
+  readonly housingLine: Percent; // D-103
   readonly unsecuredLine: MinorUnits;
   readonly investingFloor: MinorUnits;
   readonly savingFloor: MinorUnits;
@@ -402,6 +445,7 @@ export interface LimitChecks {
   readonly cash: boolean;
   readonly month: boolean;
   readonly dsr: boolean;
+  readonly housing: boolean; // D-103: true when the line does not apply to the check
   readonly owe: boolean;
   readonly inv: boolean;
   readonly save: boolean;
@@ -413,8 +457,9 @@ export interface MonthColumn {
   readonly living: MinorUnits;
   readonly debtPayments: MinorUnits;
   readonly savingInvesting: MinorUnits;
+  readonly setAside: MinorUnits; // D-101: the monthly set-aside for pots
   readonly thisPurchase: MinorUnits;
-  readonly outgoings: MinorUnits; // living + debtPayments + savingInvesting + thisPurchase
+  readonly outgoings: MinorUnits; // living + debtPayments + savingInvesting + setAside + thisPurchase
   readonly left: MinorUnits; // income − outgoings, exactly
 }
 export interface MonthTable {
@@ -443,6 +488,9 @@ export interface AssessContext {
   readonly debtBalance: MinorUnits; // D-38: total balance owed, secured included (prototype debtBal)
   readonly annualIncome: MinorUnits; // incomeAverage × MONTHS_PER_YEAR (the owe description's "annual income")
   readonly pausable: MinorUnits; // D-35: monthlySaving + monthlyInvesting (D-32)
+  readonly setAside: MinorUnits; // D-101: sum of the pots' monthly set-asides; never paused
+  readonly potLines: readonly PotLine[]; // D-101: per-pot result, one source of truth for the Pots screen
+  readonly protectedCash: MinorUnits; // D-101: min(sum of saved over live pots, max(0, cashOnHand)); a check never spends it
   readonly leftBefore: MinorUnits; // prototype M.left; after positionContext (04-18) the worst future month's (D-45)
   readonly leftThisMonth: MinorUnits; // D-36: this month's left over for the combined position — prepareContext's leftBefore, lowered by stacked checks (D-41), never moved by D-45 future changes; purchaseSize reads it
   readonly billsDue: MinorUnits; // D-24: my share of confirmed quarterly/yearly bills due within 90 days
@@ -496,6 +544,10 @@ export interface Assessment {
   readonly unsecuredAfter: MinorUnits;
   readonly debtServiceRatioBefore: Percent | null; // half-up share of incomeBasis; null when incomeBasis is 0 ("{pct} of money in")
   readonly debtServiceRatioAfter: Percent | null;
+  readonly housingBefore: MinorUnits; // D-103: my monthly housing cost before the check (snapshot.housingMonthly)
+  readonly housingAfter: MinorUnits; // D-103: max(0, housingBefore + newMonthly) for a property check that adds housing; otherwise housingBefore
+  readonly housingRatioBefore: Percent | null; // half-up share of incomeBasis; null when incomeBasis is 0
+  readonly housingRatioAfter: Percent | null;
   readonly debtBalanceAfter: MinorUnits; // debtBalance + my share of plan.financed (buy only)
   readonly monthTable: MonthTable; // D-38
   readonly ledgers: readonly [Ledger, Ledger, Ledger, Ledger, Ledger]; // D-38: income, expenses, debt, cash, investments
@@ -596,7 +648,7 @@ export interface AlternativeRow {
 }
 export interface CheaperDetail {
   // step 4 "Spend less" card and the trade line
-  readonly ratioPercent: number; // the slider value used
+  readonly ratioPercent: number; // cheaper over price, half-up whole percent, display only (D-83)
   readonly notSpent: MinorUnits; // plan.price − cheaperPrice
   readonly dayDiff: MinorUnits; // my day-one saving against as planned (>= 0)
   readonly monthlyDiff: MinorUnits; // my monthly saving against as planned (>= 0)
@@ -709,7 +761,9 @@ export type FirstRead =
     };
 
 // ── Running costs and one-offs (D-55, D-47) ──
-export type RunningCostCategory = 'insurance' | 'fuel' | 'maintenance' | 'registration' | 'loss_of_value'; // loss_of_value is non-cash (D-55)
+export type RunningCostCategory =
+  | 'insurance' | 'fuel' | 'maintenance' | 'registration' | 'loss_of_value'
+  | 'property_tax' | 'home_insurance' | 'utilities' | 'service_charge' | 'books_materials' | 'travel' | 'accommodation'; // D-92 adds the last seven; loss_of_value is non-cash (D-55)
 // D-47: paid, non-transfer lines marked oneOff in the averaged months; spending = my share of their money-out amounts,
 // income = their money-in (non-refund) amounts; a one-off refund counts only in `count`
 export interface OneOffsExcluded {
@@ -725,11 +779,18 @@ export interface PromoTerms {
   readonly months: number;
   readonly deferredInterest: boolean;
 } // user-entered, never defaulted (D-07); months integer 1..MAX_TERM_MONTHS; deferredInterest needs apr 0
+/**
+ * D-89: `fromMonth` / `toMonth` are payment-period indexes, inclusive, k >= 1 after day one; household amount. They are
+ * calendar months only when `Plan.freq` is 'monthly' or absent. A weekly, fortnightly or quarterly instalment plan counts
+ * periods (week 1, week 2, ...), so a month-indexed consumer must read `monthlyStepsOf(plan)`, never `plan.paymentSteps`.
+ */
 export interface PaymentStep {
   readonly fromMonth: number;
   readonly toMonth: number;
   readonly amount: MinorUnits;
-} // inclusive month range k >= 1 after day one; household amount
+}
+/** D-89: how often an instalment plan's payment falls. */
+export type InstalmentFreq = 'weekly' | 'fortnightly' | 'monthly' | 'quarterly';
 export interface PromoOutcome {
   readonly promoMonths: number;
   readonly promoApr: Percent;
@@ -899,17 +960,18 @@ export interface Position {
 // ── Confidence and margins (D-46, D-43) ──
 export type ConfidenceLevel = 'strong' | 'fair' | 'rough';
 export type ConfidenceReason =
-  'first_read' | 'under_3_full_months' | 'volatile_income' | 'under_6_full_months' | 'variable_income';
+  'first_read' | 'under_3_full_months' | 'volatile_income' | 'under_6_full_months' | 'variable_income' | 'provisional_rates';
 export interface ConfidenceInput {
   readonly fullMonths: number;
   readonly steadiness: Steadiness | null;
   readonly firstRead: boolean;
+  readonly provisionalRates?: boolean; // D-69: absent = false
 }
 export interface Confidence {
   readonly level: ConfidenceLevel;
   readonly reasons: readonly ConfidenceReason[];
 } // strong → reasons []
-export type MarginLine = 'month' | 'cash' | 'dsr' | 'owe' | 'inv' | 'cash_path';
+export type MarginLine = 'month' | 'cash' | 'dsr' | 'housing' | 'owe' | 'inv' | 'cash_path';
 export interface LineMargin {
   readonly line: MarginLine;
   readonly margin: MinorUnits; // signed (>= 0 passes)
@@ -971,6 +1033,13 @@ export interface NetWorthPath {
   readonly withPurchase: readonly (MinorUnits | null)[];
   readonly rangeCode: ProjectionRangeCode | null; // 'exceeds_range' when any point of either path is null
 } // index m = 0..horizonMonths
+// D-104: the verdict headline for the first non-zero typed rate; projected is null (with rangeCode) past the safe range
+export interface InvestmentHeadline {
+  readonly rate: Percent;
+  readonly contributed: MinorUnits; // mineDayOne + the payments figure's contributed
+  readonly projected: MinorUnits | null;
+  readonly rangeCode: ProjectionRangeCode | null;
+}
 export interface InvestmentViews {
   readonly horizonMonths: number;
   readonly horizonSource: HorizonSource;
@@ -987,6 +1056,7 @@ export interface InvestmentViews {
     readonly monthlyRunning: MinorUnits;
     readonly byRate: readonly RateFigure[];
   }; // (b)
+  readonly headline: InvestmentHeadline | null; // D-104: null with no non-zero typed rate or nothing contributed
   readonly pauseImpact: {
     readonly pausedMonthly: MinorUnits;
     readonly byRate: readonly RateFigure[];
@@ -1042,4 +1112,19 @@ export interface EstimateBias {
   readonly figure: EstimateFigure;
   readonly decisionsUsed: number;
   readonly biasBasisPoints: number | null; // signed; + means actuals came in higher; null below ESTIMATE_BIAS_MIN_DECISIONS
+}
+
+// ── Total cost of ownership (D-102) ──
+export interface TotalCostInput {
+  readonly horizonMonths: number | null; // the investing views' chosen horizon; null = the plan term, else DEFAULT_PROJECTION_HORIZON_MONTHS
+  readonly advertised: MinorUnits; // ResolvedPrice.advertised
+  readonly lossMonthly: MinorUnits; // RunningCosts.nonCash (D-63); 0 = no loss of value set
+}
+export interface TotalCost {
+  readonly horizonMonths: number; // never less than plan.months
+  readonly total: MinorUnits;
+  readonly interestAndFees: MinorUnits; // my part of plan.total less my part of the price
+  readonly running: MinorUnits; // max(0, mineRunning) x horizonMonths
+  readonly resale: MinorUnits; // expected value left after the loss of value; 0 when none is set
+  readonly trivial: boolean; // total equals my part of the price: nothing to add to the price
 }

@@ -56,7 +56,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **ANL-03**: Every event is drawn from a typed catalogue whose properties cannot carry amounts, payee names, account names or free text
 - [x] **ANL-04**: Session replay is excluded from production builds
 - [x] **ANL-05**: Drop-off from signup through first entry and first statement import is measurable
-- [ ] **ANL-06**: Checks started, completed, their verdict state and decisions recorded are measurable, with no amounts attached
+- [x] **ANL-06**: Checks started, completed, their verdict state and decisions recorded are measurable, with no amounts attached
 - [ ] **ANL-07**: Onboarding asks for analytics consent once, in plain language
 - [ ] **ANL-08**: The level onboarding assigns, and any later change the user makes to it, is measurable
 
@@ -93,12 +93,13 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **MON-12**: When Frankfurter cannot be reached, rates refresh from open.er-api instead, and its required attribution is shown in the app
 - [x] **MON-13**: Each currency's decimal places come from ISO 4217 — 0 for JPY, KRW and VND, 3 for KWD, BHD and OMR — and a custom currency declares its own
 - [x] **MON-14**: A transaction stores its local calendar date and time zone, so its month and any recurring schedule never shift across time zones or clock changes
+- [ ] **MON-15**: "$" always means the US dollar wherever money is shown; other dollar currencies keep their marker (CA$, A$ …), and screen readers read currency names (05 D-94)
 
 ### Offline & Sync
 
 - [x] **SYN-01**: User can browse previously loaded data with no network connection
 - [x] **SYN-02**: User can create and edit records with no network connection, and those writes flush automatically on reconnect
-- [ ] **SYN-03**: A queued write that is retried does not produce a duplicate record
+- [x] **SYN-03**: A queued write that is retried does not produce a duplicate record
 - [ ] **SYN-04**: The write queue survives a force-quit and resumes on next launch
 - [ ] **SYN-05**: The write queue is bounded, and the user is told when it cannot grow further
 - [x] **SYN-06**: User sees whether the app is offline and how many changes are waiting
@@ -222,30 +223,46 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 
 ### Decide — Experience
 
-- [ ] **DCU-01**: User can get a cash answer from an item and a price without entering a multi-step flow
-- [ ] **DCU-02**: User can work through the five steps — item, price and payment, impact, alternatives, decision
+- [x] **DCU-01**: User can get a cash answer from an item and a price without entering a multi-step flow
+- [x] **DCU-02**: User can work through the five steps — item, price and payment, impact, alternatives, decision
 - [ ] **DCU-03**: User can leave a check open and return to it with its verdict recomputed against current figures
 - [ ] **DCU-04**: User can abandon an open check
 - [ ] **DCU-05**: User sees four alternatives — as planned, cheaper, wait and save, skip entirely — each with its outcome
 - [ ] **DCU-06**: An alternative is suppressed and labelled when the money it assumes is not genuinely spare
 - [ ] **DCU-07**: User can record a decision and later compare what they estimated against what actually happened
 - [ ] **DCU-08**: Date selection refuses past dates and offers quick offsets
-- [ ] **DCU-09**: No verdict copy uses "advice", "recommendation" or "you should"
+- [x] **DCU-09**: No verdict copy uses "advice", "recommendation" or "you should"
 - [ ] **DCU-10**: A new user gets a first verdict in their first session, before any months are logged. It is labelled as a first read, says what it rests on, and is superseded by imported or logged history. Settled 2026-09-26 (04-CONTEXT D-11): rough figures give a cash-level first read only, computed by DEC-16; the full verdict needs one real full month
 - [ ] **DCU-11**: The verdict card, impact warnings and alternatives table stay legible when captured as phone store screenshots from the App Review demo account's sample scenario, with the verdict line visible without scrolling
-- [ ] **DCU-12**: Quick check takes amount, Cash or Credit, APR from 0% labelled "before any interest", a 12-60 month duration, and optional tax and fees, and shows a relative size label (05 D-21..D-23)
+- [ ] **DCU-12**: Quick check takes amount, Cash or Credit, APR from 0% labelled "before any interest", a 1-120 month duration (05 D-71), and optional tax and fees, and shows a relative size label (05 D-21..D-23)
 - [ ] **DCU-13**: User can see each check with and without their other open checks (05 D-24)
 - [ ] **DCU-14**: Verdict shows the cushion months and why, an on-the-edge tag, a confidence chip, and a 90-day day-by-day cash chart (05 D-25, D-26, D-28)
 - [ ] **DCU-15**: User can add, edit and remove dated income and spending changes that the verdict uses (05 D-27)
 - [ ] **DCU-16**: User can mark a Record line as a one-off that won't recur (05 D-29)
-- [ ] **DCU-17**: User can enter promotional rates with deferred interest, a variable-rate flag, and instalment late fees in the full check (05 D-30, D-42)
-- [ ] **DCU-18**: User sees what the price or payments would be worth invested instead, at 0% and up to three rates they enter, labelled as projections (05 D-31)
+- [x] **DCU-17**: User can enter promotional rates with deferred interest, a variable-rate flag, and instalment late fees in the full check (05 D-30, D-42)
+- [x] **DCU-18**: User sees what the price or payments would be worth invested instead, at 0% and up to three rates they enter, labelled as projections (05 D-31)
 - [ ] **DCU-19**: User can record how a purchase changes their income and see payback and runway lost (05 D-32)
-- [ ] **DCU-20**: User is prompted for running costs by item type with blank amounts, and sees their past estimate gap (05 D-33, D-36)
+- [x] **DCU-20**: User is prompted for running costs by item type with blank amounts, and sees their past estimate gap (05 D-33, D-36)
 - [ ] **DCU-21**: Wait and save creates a savings goal with progress (05 D-34)
 - [ ] **DCU-22**: User can set a 48-hour cooling-off reminder on a purchase that needs spreading (05 D-35)
 - [ ] **DCU-23**: Amounts in other currencies are converted at the stamped rate for past lines and the latest rate for balances, and the verdict says so (05 D-37, D-39)
 - [ ] **DCU-24**: User can record debts with minimum terms (pre-filled from the market table for cards) and imports can mark complete statement months (05 D-38, D-40)
+- [ ] **DCU-25**: User can tap an ⓘ beside a Decide term to read, in a small sheet, what it is and what it changes in the check (05 D-70)
+- [ ] **DCU-26**: User can type a custom value next to every preset chip row and amount slider in Decide, within stated bounds (durations 1-120 months, the investing horizon 1-600) (05 D-71)
+- [ ] **DCU-27**: Decide text never breaks mid-word, overlaps or cuts off system copy at 320-402 pt widths and 1.0-2.0x text size (05 D-76)
+- [x] **DCU-28**: A check saves itself as the user edits, including when the app is backgrounded, and shows its save status; Clear and Delete each undo in one step and never remove what Go ahead wrote (05 D-73, D-77)
+- [ ] **DCU-29**: User can see each way to pay as its own card holding its inputs and results, and give an instalment plan a rate and a first-payment date (05 D-79, D-80)
+- [ ] **DCU-30**: User can name a custom item type that follows a built-in type's rules, and add an optional expected return to an investment check, shown as a projection only (05 D-81, D-82)
+- [x] **DCU-31**: User can set an instalment plan's frequency (weekly, every 2 weeks, monthly or quarterly, up to 500 payments) and sees the true yearly rate implied by a plan with no quoted rate (05 D-89, D-90)
+- [ ] **DCU-32**: A check counts at most US$100,000 (converted at the latest stored rate) on a card, never counts property or cash-like purchases on a card, and treats tax and tuition by region with a fee note (05 D-91, D-92)
+- [ ] **DCU-33**: The check flow keeps the verdict within 50 ms of a keystroke and the details within 300 ms after typing stops on the test device (05 D-88)
+- [ ] **DCU-34**: Decide home leads with one dark card stating the month left after spending, debts and saving, with the quick check inside it, the lists one quiet row each, and problems gathered in one notice row with a fixing action per problem (05 D-95..D-99)
+- [ ] **DCU-35**: Decide home names its hero Net free cash flow, states the basis it used in the line under it (worst month, average month, tightest figures or rough figures, each "after spending, debts and everything set aside"), shows In and Out so that In minus Out equals the hero, and Month details lists the parts that add up to it (05 D-100)
+- [ ] **DCU-36**: User can keep named pots (a name, a target and a month) whose monthly set-aside comes off net free cash flow and is protected from every check, add, edit, mark done and delete them with Undo, offline, and see Wait-and-save goals as one kind of pot (05 D-101)
+- [ ] **DCU-37**: A purchase verdict shows the total cost over the check's years (price, interest and fees, running costs, less expected resale where loss of value is set) and, only when the user has typed a rate, what the same money would have become invested instead, labelled a projection (05 D-102, D-104)
+- [ ] **DCU-38**: User can set a housing line (default 28% of money in) that counts housing-category spending and payments on loans marked "This is for housing", and a property check that pushes housing over it gets a warning like the debt-to-income line (05 D-103)
+- [ ] **DCU-39**: Decide words a month figure as "{amount} free" or "{amount} overspent" (amount absolute, no minus, overspent in the danger tint) everywhere it appears, and the home card judges "This month (expected)" by default - the current month as it is expected to end, with pay and bills still due counted - while Month details lets the user judge on This month, Worst or Average (a missing rate falls back to the Worst figure with a stated reason); checks keep their own basis (05 D-106)
+- [ ] **DCU-40**: One Judge-on choice - This month (the default for everyone), Worst month or Average month, picked from a dropdown on the Decide card and the same choice in Month details - drives the card and every check, with 'month' a first-class basis in the engine; the verdict shows the outcome on each basis side by side; the FAB is back on Decide home, and switching the choice never marks checks changed (05 D-107)
 
 ### Grow
 
@@ -444,7 +461,7 @@ Populated during roadmap creation.
 | ANL-03 | Phase 0 - Foundation | Complete |
 | ANL-04 | Phase 0 - Foundation | Complete |
 | ANL-05 | Phase 2 - Record | Complete |
-| ANL-06 | Phase 5 - Decide UI | Pending |
+| ANL-06 | Phase 5 - Decide UI | Complete |
 | ANL-07 | Phase 9 - Tiers & Onboarding | Pending |
 | ANL-08 | Phase 9 - Tiers & Onboarding | Pending |
 | ACC-01 | Phase 0 - Foundation | Complete |
@@ -477,7 +494,7 @@ Populated during roadmap creation.
 | MON-14 | Phase 1 - Money Core | Complete |
 | SYN-01 | Phase 1 - Money Core | Complete |
 | SYN-02 | Phase 1 - Money Core | Complete |
-| SYN-03 | Phase 10 - System | Pending |
+| SYN-03 | Phase 10 - System | Complete |
 | SYN-04 | Phase 10 - System | Pending |
 | SYN-05 | Phase 10 - System | Pending |
 | SYN-06 | Phase 1 - Money Core | Complete |
@@ -583,15 +600,15 @@ Populated during roadmap creation.
 | DEC-35 | Phase 4 - Decide Engine | Complete |
 | DEC-36 | Phase 4 - Decide Engine | Complete |
 | DEC-37 | Phase 4 - Decide Engine | Complete |
-| DCU-01 | Phase 5 - Decide UI | Pending |
-| DCU-02 | Phase 5 - Decide UI | Pending |
+| DCU-01 | Phase 5 - Decide UI | Complete |
+| DCU-02 | Phase 5 - Decide UI | Complete |
 | DCU-03 | Phase 5 - Decide UI | Pending |
 | DCU-04 | Phase 5 - Decide UI | Pending |
 | DCU-05 | Phase 5 - Decide UI | Pending |
 | DCU-06 | Phase 5 - Decide UI | Pending |
 | DCU-07 | Phase 5 - Decide UI | Pending |
 | DCU-08 | Phase 5 - Decide UI | Pending |
-| DCU-09 | Phase 5 - Decide UI | Pending |
+| DCU-09 | Phase 5 - Decide UI | Complete |
 | DCU-10 | Phase 5 - Decide UI | Pending |
 | DCU-11 | Phase 5 - Decide UI | Pending |
 | DCU-12 | Phase 5 - Decide UI | Pending |
@@ -599,14 +616,31 @@ Populated during roadmap creation.
 | DCU-14 | Phase 5 - Decide UI | Pending |
 | DCU-15 | Phase 5 - Decide UI | Pending |
 | DCU-16 | Phase 5 - Decide UI | Pending |
-| DCU-17 | Phase 5 - Decide UI | Pending |
-| DCU-18 | Phase 5 - Decide UI | Pending |
+| DCU-17 | Phase 5 - Decide UI | Complete |
+| DCU-18 | Phase 5 - Decide UI | Complete |
 | DCU-19 | Phase 5 - Decide UI | Pending |
-| DCU-20 | Phase 5 - Decide UI | Pending |
+| DCU-20 | Phase 5 - Decide UI | Complete |
 | DCU-21 | Phase 5 - Decide UI | Pending |
 | DCU-22 | Phase 5 - Decide UI | Pending |
 | DCU-23 | Phase 5 - Decide UI | Pending |
 | DCU-24 | Phase 5 - Decide UI | Pending |
+| DCU-25 | Phase 5 - Decide UI | Pending |
+| DCU-26 | Phase 5 - Decide UI | Pending |
+| DCU-27 | Phase 5 - Decide UI | Pending |
+| DCU-28 | Phase 5 - Decide UI | Complete |
+| DCU-29 | Phase 5 - Decide UI | Pending |
+| DCU-30 | Phase 5 - Decide UI | Pending |
+| DCU-31 | Phase 5 - Decide UI | Complete |
+| DCU-32 | Phase 5 - Decide UI | Pending |
+| DCU-33 | Phase 5 - Decide UI | Pending |
+| DCU-34 | Phase 5 - Decide UI | Pending |
+| DCU-35 | Phase 5 - Decide UI | Pending |
+| DCU-36 | Phase 5 - Decide UI | Pending |
+| DCU-37 | Phase 5 - Decide UI | Pending |
+| DCU-38 | Phase 5 - Decide UI | Pending |
+| DCU-39 | Phase 5 - Decide UI | Pending |
+| DCU-40 | Phase 5 - Decide UI | Pending |
+| MON-15 | Phase 5 - Decide UI | Pending |
 | GRW-01 | Phase 6 - Grow | Pending |
 | GRW-02 | Phase 6 - Grow | Pending |
 | GRW-03 | Phase 6 - Grow | Pending |
@@ -684,8 +718,8 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 275 total (100 ticked)
-- Mapped to phases: 241
+- v1 requirements: 292 total (100 ticked)
+- Mapped to phases: 258
 - Unmapped: 0 ✓
 
 ---
@@ -695,6 +729,20 @@ Populated during roadmap creation.
 *2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 
 *2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
+*2026-10-24 — One Judge-on choice: DCU-40 added (D-107, plans 05-142..05-145; the plans 05-135..05-141 deliver D-106); it also touches DCU-34 (the FAB returns on Decide home), DCU-35, DCU-39 and DCU-09; v1 total now 292.*
+
+*2026-10-24 — Free / overspent wording and the This-month card: DCU-39 added (D-106, plans 05-135..05-141); it also touches DCU-35 (the card basis), DCU-14 (the month figure and its basis) and DCU-09 (declarative wording); v1 total now 291.*
+
+*2026-10-24 — Money concepts R18: DCU-35 (Net free cash flow, D-100), DCU-36 (pots, D-101), DCU-37 (total cost and invested instead, D-102/D-104) and DCU-38 (housing line, D-103) added (plans 05-119..05-134); v1 total now 290.*
+
+*2026-10-23 — Decide home redesign R17: DCU-34 added (D-95..D-99, plans 05-110..05-118); the redesign also maps to DCU-01 (quick check in the card), DCU-03 (open checks reachable), DCU-14 (the month figure and its basis), DCU-15 (changes coming up) and SYN-06 (the notice row); v1 total now 286.*
+
+*2026-10-23 — Device-walkthrough refinements R16: DCU-31 (instalment frequency and true APR, D-89/D-90), DCU-32 (card limit and card rules, D-91/D-92), DCU-33 (check-flow speed budget, D-88) and MON-15 ("$" means USD, D-94) added (plans 05-88..05-109); D-85 maps to NAV-05/REC-01/REC-02/REC-09, D-86/D-87 to DCU-29/DCU-20, D-88 sync to SYN-02/SYN-03/SYN-06, D-93 to NAV-02/DCU-14/REC-01; v1 total now 285.*
+
+*2026-10-22 — Decide UX refresh R15: DCU-29 (Step 2 method cards, instalment rate, D-79/D-80) and DCU-30 (custom item type, expected return, D-81/D-82) added (plans 05-80..05-87); D-83 maps to DCU-05 and D-84 to DCU-25; v1 total now 281.*
+
+*2026-10-22 — Decide UX refresh: DCU-25..DCU-28 added for 05-CONTEXT D-70, D-71, D-76 and D-73/D-77 (plans 05-54..05-79); D-72, D-74, D-75 and D-78 map to DCU-01, DCU-03, DCU-11 and DCU-14; v1 total now 279.*
+
 *2026-10-15 — Decide depth expansion: DEC-17..DEC-37 (Phase 4) and DCU-12..DCU-24 (Phase 5) added from 04-CONTEXT D-23..D-63 and 05-CONTEXT D-21..D-43; v1 total now 275.*
 
 *2026-10-09 — Phase 2.2 implemented: ACT-06..ACT-18 and REC-19..REC-25 marked "Implemented, awaiting device walkthrough and verification" (ticked only after 02.2-VERIFICATION.md, as for Phase 1); coverage recounted to 231/231 v1 requirements mapped.*

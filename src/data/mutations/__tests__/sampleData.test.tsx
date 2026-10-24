@@ -49,6 +49,10 @@ describe('useSampleData', () => {
       queryKeys.recurringSeries('h1'),
       queryKeys.categories('u1'),
       queryKeys.sampleExists('h1'),
+      // WR-A09
+      queryKeys.decideSettings('u1'),
+      queryKeys.savingsGoals('u1', 'h1'),
+      queryKeys.decideChanges('u1', 'h1'),
     ]) {
       expect(spy).toHaveBeenCalledWith({ queryKey: key });
     }
@@ -63,13 +67,14 @@ describe('useSampleData', () => {
   });
 
   it('clear removes the samples, marks the prompt answered and refreshes incl. the undo log', async () => {
-    mockClear.mockResolvedValue({ transactions: 1, series: 0, accounts: 0, categories: 0, kept: 0 });
+    mockClear.mockResolvedValue({ transactions: 1, series: 0, accounts: 0, categories: 0, checks: 0, debts: 0, kept: 0 });
     const spy = jest.spyOn(qc, 'invalidateQueries');
     expect(await call((h) => h.clear())).toBe(true);
     expect(mockClear).toHaveBeenCalledWith({ fake: true }, 'h1');
     expect(mockMark).toHaveBeenCalledTimes(1);
     expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.undoLog('u1') });
     expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.sampleExists('h1') });
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.decideSettings('u1') }); // WR-A09: the seeded row is deleted
   });
 
   it('clear failure resolves false and does not mark the prompt', async () => {

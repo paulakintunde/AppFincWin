@@ -17,6 +17,7 @@ jest.mock('../tabSlide', () => ({
   markBackStep: jest.fn(),
 }));
 
+const TWO = { home: true, activity: true, decide: false, grow: false, insights: false };
 const ALL = { home: true, activity: true, decide: true, grow: true, insights: true };
 
 function makeProps(names: string[], index: number, extra?: Record<string, unknown>) {
@@ -29,6 +30,7 @@ function makeProps(names: string[], index: number, extra?: Record<string, unknow
     descriptors: {},
     navigation,
     insets: { top: 0, bottom: 34, left: 0, right: 0 },
+    availability: TWO,
     ...extra,
   };
   return { props: props as unknown as BottomTabBarProps, navigation };
@@ -43,6 +45,13 @@ describe('TabBar', () => {
     expect(screen.getAllByRole('tab')).toHaveLength(2);
     expect(screen.getByLabelText('Home, tab, 1 of 2')).toBeTruthy();
     expect(screen.getByLabelText('Activity, tab, 2 of 2')).toBeTruthy();
+  });
+
+  it('ships Home, Activity and Decide by default (05-21)', async () => {
+    const { props } = makeProps(['home', 'activity', 'decide'], 2, { availability: undefined });
+    await renderWithShellProviders(<TabBar {...props} />);
+    expect(screen.getAllByRole('tab')).toHaveLength(3);
+    expect(screen.getByLabelText('Decide, tab, 3 of 3').props.accessibilityState.selected).toBe(true);
   });
 
   it('labels the centre Decide button 3 of 5 when all are available', async () => {

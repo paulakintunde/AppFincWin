@@ -13,9 +13,11 @@ export interface SheetHeaderProps {
   title: string;
   cancelLabel: string;
   onCancel: () => void;
+  /** An optional control drawn after the title (an info button). */
+  titleAccessory?: React.ReactNode;
 }
 
-export function SheetHeader({ title, cancelLabel, onCancel }: SheetHeaderProps) {
+export function SheetHeader({ title, cancelLabel, onCancel, titleAccessory }: SheetHeaderProps) {
   const { colors, pairing } = useTheme();
 
   const titleStyle = { ...textRole(pairing, 'sheetTitle'), color: colors.ink };
@@ -23,7 +25,14 @@ export function SheetHeader({ title, cancelLabel, onCancel }: SheetHeaderProps) 
 
   return (
     <View style={styles.row}>
-      <Text style={titleStyle}>{title}</Text>
+      {titleAccessory ? (
+        <View style={styles.titleGroup}>
+          <Text style={[titleStyle, styles.titleText]}>{title}</Text>
+          {titleAccessory}
+        </View>
+      ) : (
+        <Text style={titleStyle}>{title}</Text>
+      )}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={cancelLabel}
@@ -46,6 +55,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     minHeight: space.touchMin,
   },
+  titleGroup: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm, flexShrink: 1 },
+  titleText: { flexShrink: 1 },
   cancel: {
     minHeight: space.touchMin,
     justifyContent: 'center',

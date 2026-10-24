@@ -6,7 +6,8 @@
 // exponent counts as unconverted (null) rather than a guessed figure. Every rate is parsed
 // with engine/money's own BigInt parser, never a float-producing conversion.
 import { EUR_PER_EUR, convertMinor, minorUnits, parseRate, resolveExponent, type ScaledRate } from '@/engine/money';
-import type { FxLatestRow, TransactionRow } from '@/db/rows';
+import type { CustomCurrencyRow, FxLatestRow, TransactionRow } from '@/db/rows';
+import { convertLatest } from './fxConvert';
 
 /** `code`'s latest units-per-EUR rate from the cached FX table, or null when none is cached. */
 export function latestPerEur(rates: readonly FxLatestRow[], code: string): ScaledRate | null {
@@ -20,12 +21,35 @@ export function latestPerEur(rates: readonly FxLatestRow[], code: string): Scale
   }
 }
 
+/**
+ * A same-currency row (original_currency === the home currency it was stamped with) carries no orig_per_eur: its
+ * original amount is exact in its own currency. True when such a row (stamped, so with a home amount) is read under a
+ * different home currency.
+ */
+export function isOwnCurrencyRow(
+  row: Pick<TransactionRow, 'home_currency' | 'home_amount' | 'original_currency' | 'orig_per_eur'>,
+  homeCurrency: string
+): boolean {
+  // home_amount present = the same-currency stamp was written; a line still waiting for its stamp is not exact yet.
+  return (
+    row.orig_per_eur === null &&
+    row.home_amount !== null &&
+    row.original_currency === row.home_currency &&
+    row.home_currency !== homeCurrency
+  );
+}
+
 export function homeAmountFor(
   row: Pick<TransactionRow, 'home_currency' | 'home_amount' | 'original_amount' | 'original_currency' | 'orig_per_eur'>,
   homeCurrency: string,
-  rates: readonly FxLatestRow[]
+  rates: readonly FxLatestRow[],
+  customs: readonly CustomCurrencyRow[] = []
 ): number | null {
   if (row.home_currency === homeCurrency) return row.home_amount;
+  if (isOwnCurrencyRow(row, homeCurrency)) {
+    // The home currency changed after this row was saved in its own currency: convert the exact amount at the latest stored rate.
+    return convertLatest(row.original_amount, row.original_currency, homeCurrency, rates, customs, '')?.amount ?? null;
+  }
   if (row.orig_per_eur === null) return null;
 
   let origPerEur: ScaledRate;

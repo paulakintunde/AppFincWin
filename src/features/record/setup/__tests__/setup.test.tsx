@@ -14,6 +14,7 @@ jest.mock('@/data/sync/useSyncStatus', () => ({
 jest.mock('expo-router', () => {
   const R = require('react');
   return {
+    useSegments: () => [],
     router: { push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
     Redirect: ({ href }: { href: unknown }) => {
       mockRedirectHref = href;
@@ -73,6 +74,7 @@ jest.mock('@/shell/tabBar/TabBar', () => ({ TabBar: () => null }));
 jest.mock('@/shell/fab/Fab', () => ({ Fab: () => null }));
 jest.mock('@/shell/fab/FabQuickMenu', () => ({ FabQuickMenu: () => null }));
 jest.mock('@/features/record/entry/ShellEntryHost', () => ({ ShellEntryHost: () => null }));
+jest.mock('@/features/decide/DecideShellHost', () => ({ DecideShellHost: () => null }));
 jest.mock('@/shell/fab/FabProvider', () => ({ FabProvider: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('expo-router/js-tabs', () => ({ Tabs: Object.assign(() => null, { Screen: () => null }) }));
 
@@ -118,7 +120,7 @@ describe('SetupAccountScreen', () => {
     expect(getByText('Add the account you use most. More can be added later.')).toBeTruthy();
     expect(mockSheetProps!.mode).toEqual({ kind: 'new', context: 'onboarding' });
     fireEvent.press(getByText('sheet'));
-    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/setup/history', params: { accountId: 'acc-new' } });
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/setup/rough', params: { accountId: 'acc-new' } });
   });
 
   it('S-WR-11: Cancel closes the sheet and offers a way to You (sign out or delete) and back to the sheet', async () => {

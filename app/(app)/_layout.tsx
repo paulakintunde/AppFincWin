@@ -8,7 +8,9 @@ import { Platform, View } from 'react-native';
 import { SwipeBack } from '@/features/navigation/SwipeBack';
 import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
 import { useReduceMotion } from '@/theme/motion';
+import { useNotificationObserver } from '@/features/decide/notifications/useNotificationObserver';
 import { useConsent } from '@/features/consent/useConsent';
+import { consentAnswered } from '@/features/consent/consentAnswered';
 import { DeviceHomeCurrencyDefault } from '@/features/record/useDeviceHomeCurrencyDefault';
 import { SheetToastOverlay, UndoToastHost } from '@/features/record/history/UndoToastHost';
 import { SampleBanner } from '@/features/record/samples/SampleBanner';
@@ -20,11 +22,17 @@ import { SheetOverlayProvider } from '@/ui/sheetOverlay';
 import { RouteErrorBoundary } from '@/ui/RouteErrorBoundary';
 import { Screen } from '@/ui/Screen';
 
+// D-10: mounted after the consent redirect, so a reminder tap routes only after sign-in and consent.
+function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
+  useNotificationObserver(enabled);
+  return null;
+}
+
 // Expo Router picks this up as the group's error boundary.
 export { RouteErrorBoundary as ErrorBoundary };
 
 export default function AppLayout() {
-  const { loading, needsPrompt } = useConsent();
+  const { loading, needsPrompt, consent } = useConsent();
   const pathname = usePathname();
   const reduceMotion = useReduceMotion();
   const animation = Platform.OS === 'android' ? (reduceMotion ? 'none' : 'slide_from_right') : 'default';
@@ -61,11 +69,21 @@ export default function AppLayout() {
               <Stack.Screen name="import" />
               <Stack.Screen name="setup/account" />
               <Stack.Screen name="setup/history" />
+              <Stack.Screen name="setup/rough" />
+              <Stack.Screen name="setup/first-check" />
+              <Stack.Screen name="decide/check/[id]" />
+              <Stack.Screen name="decide/past" />
+              <Stack.Screen name="decide/open" />
+              <Stack.Screen name="decide/changes" />
+              <Stack.Screen name="decide/lines" />
+              <Stack.Screen name="decide/pots" />
               <Stack.Screen name="you" />
               <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
             </Stack>
             <SampleBanner />
             <UndoToastHost />
+            {/* WR-D13: a reminder tap routes only once consent is on record; a missing profile is not consent */}
+            <DecideNotificationObserver enabled={consentAnswered({ loading, consent })} />
             <SampleClearPrompts />
             <DeviceHomeCurrencyDefault />
           </View>

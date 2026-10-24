@@ -177,7 +177,7 @@ export function useMonthView(
   const totals = useMemo(
     () =>
       monthTotals(
-        mappedRows.map((r) => ({ amountHome: r.amountHome, status: r.status, isTransfer: r.transfer_id !== null, isRefund: r.is_refund })),
+        mappedRows.map((r) => ({ amountHome: r.amountHome, status: r.status, isTransfer: r.transfer_id !== null, isRefund: r.is_refund, ratePending: r.rate_pending })),
         projections
       ),
     [mappedRows, projections]

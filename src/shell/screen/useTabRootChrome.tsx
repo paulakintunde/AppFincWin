@@ -67,6 +67,8 @@ export interface TabRootChromeOptions {
   compactTitleRole?: 'heading' | 'sheetTitle';
   /** 03.1 D-58: compact-only trailing controls; when given, the compact header drops the avatar. */
   compactTrailing?: React.ReactNode | ((api: { scrollToTop: () => void }) => React.ReactNode);
+  /** 05-117 (D-96): Decide home folds the sync problem into its notice row, so this screen alone drops the header line. */
+  hideSyncLine?: boolean;
 }
 
 export interface TabRootChrome {
@@ -79,8 +81,13 @@ export interface TabRootChrome {
   refreshControl: React.ReactElement<RefreshControlProps> | undefined;
 }
 
+// D-93: every screen built from this hook is a tab root (under (tabs)). Whether to show the back
+// control follows that, never the app history or router.canGoBack(), which is non-empty after a
+// push and pop, a reload onto a tab or returning from Android Settings.
+const isTabRoot = true;
+
 export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
-  const { title, eyebrow, trailing, refreshKeys, compactTitle, compactTitleRole, compactTrailing } = options;
+  const { title, eyebrow, trailing, refreshKeys, compactTitle, compactTitleRole, compactTrailing, hideSyncLine = false } = options;
   const { colors } = useTheme();
   const insets = useScreenInsets();
 
@@ -153,8 +160,8 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
 
   const largeHeader = (
     <View onLayout={onLargeLayout}>
-      <TabHeader title={title} eyebrow={eyebrow} trailing={trailing} titleRef={largeTitleRef} />
-      <SyncProblemLine />
+      <TabHeader title={title} eyebrow={eyebrow} trailing={trailing} titleRef={largeTitleRef} showBack={!isTabRoot} />
+      {hideSyncLine ? null : <SyncProblemLine />}
     </View>
   );
   const compactHeader = (
@@ -163,6 +170,8 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
       titleRole={compactTitleRole}
       trailing={trailingNode}
       showAvatar={compactTrailing === undefined}
+      showBack={!isTabRoot}
+      hideSyncLine={hideSyncLine}
       visible={compactVisible}
       animatedStyle={opacityStyle as unknown as StyleProp<ViewStyle>}
       titleRef={compactTitleRef}

@@ -1,7 +1,7 @@
 # Phase 5: Decide UI - Context
 
 **Gathered:** 2026-10-15
-**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day. The UI-SPEC carries all of them.
+**Status:** Expanded 2026-10-15 with D-24…D-37; D-38…D-44 from the planning review; D-45…D-52 aligned 2026-10-16 to the executed Phase 4 (no new scope); D-53…D-56 user decisions the same day; D-66…D-69 user decisions 2026-10-21/22; D-70…D-78 the Decide UX refresh 2026-10-22; D-79…D-84 the Step 2, item and invest refresh the same day; D-85…D-94 the device-walkthrough refinements 2026-10-23; D-95…D-99 the Decide home redesign the same day; D-100…D-104 the money concepts (Net Free Cash Flow, sinking funds, total cost, 28/36, opportunity cost) 2026-10-24. The UI-SPEC carries all of them.
 
 <domain>
 ## Phase Boundary
@@ -50,7 +50,7 @@ Decision numbers are local to Phase 5. "04 D-xx" refers to `.planning/phases/04-
   - **Optional extras.** A collapsed "+ Tax, fees" row. Sales tax is a user-typed % with no default; fees are a user-typed amount. Both add to the day-one price.
   - Cash runs the paid-in-full plan. Credit runs the engine's loan plan (amortised at the entered APR, no deposit).
   - Both go through `assess()`, so the result is the full verdict chip plus one line, the D-22 size label, and the monthly amount for Credit.
-  - When Cash doesn't cover the purchase, the result still states the gap and offers a one-tap "Try on credit", which flips the toggle and keeps the amount.
+  - When Cash doesn't cover the purchase, the result still states the gap and offers a one-tap "See it on credit", which flips the toggle and keeps the amount.
   - "Run the full check" carries every field into steps 1–2. Credit maps to the loan method, taxes and fees to the step-2 adjustments.
   - The first read in onboarding uses the same inputs, assessed by `firstRead()`.
 - **D-21 (added 2026-10-15, amends D-02; superseded in part by D-23):** **When cash doesn't cover it, the quick check also shows an editable spread line.** It reads "Spread it: [APR 0%] over [12 / 24 / 36 / 48 / 60 months] → $x a month. The month closes / is $y short."
@@ -197,6 +197,248 @@ Phase 4 was executed, code-reviewed (`04-REVIEW.md`: 4 high, 5 medium, 5 low, al
 - **D-54: Monthly payments show cents.** Monthly payments, instalments and promotion payments show cents everywhere; large totals and balances stay whole units (amends UI-SPEC assumption 12). The fold budgets still hold.
 - **D-55: Every missing-state title is at most 64 characters**, like every other verdict title, so none clamps at 402 wide; the catalogue test asserts it.
 - **D-56: Live recompute is debounced for the details.** The verdict, warnings, step 2 method cards and quick-check result recompute on every keystroke; the step 3 sections, step 4 and the investing views recompute about 150 ms after typing stops. If the device check (05-26 step 13) still shows lag, step 4 and the investing views compute only while visible (05-30 Task 2, conditional).
+- **D-66 (user, 2026-10-21): Go ahead's day-one lump is a one-off** (amends D-09, applies D-29; review WR-A06). The pending line Go ahead writes for the day-one purchase (cash, a loan or instalment deposit, the amount put on the card and the card remainder or fees paid in cash) carries `one_off = true`, so once its month is a full month it stays out of the spending averages every later check uses. The investment lump written as a plain outflow (no tracked account to transfer into) is the same kind of one-time line and is flagged too. Running costs and payment series stay regular, as does a one-month payment row (role `payment`); a lump into a tracked investment account is a transfer, which the averages already leave out. Pinned by the builder test "D-66 (WR-A06)".
+- **D-67 (user, 2026-10-21): A check typed in a previous home currency is converted and noted** (amends D-37; review CR-C06, CR-B02; carries IN-A01). When a check's stamped `inputs.currency` differs from the snapshot (home) currency, every money amount in its inputs is converted at the latest STORED rate (the snapshot's own rates through `convertLatest`, never the FX fetch door) before anything is computed, and the check flow shows "Typed in {from}, shown in {to} at the latest stored rate." The flow shows and edits the converted amounts; each edit is converted back into the typed currency before it is saved, and an amount the edit did not change keeps its exact stored value. The stored stamp is never changed. A currency no stored rate converts gives the usual unconverted state (no figure, Go ahead and Wait unavailable, Missing terms on the home row, left out of other checks' stacks and counted). The same applies everywhere a check is computed: the check flow, the open-checks chips, the bought recompute and stacking. Seeded sample checks with no stamp read as USD (the demo seed's units), client-side, and are stamped USD on their first save. Pure helper `snapshot/checkCurrency.ts`; tests "D-67".
+- **D-68 (user, 2026-10-22): A Debt-category one-off payment is a debt's minimum only when it is a transfer into that card or loan** (review WR-B03 remainder; replaces the "any debt recorded" and then "any minimum counted" heuristics). A Debt-category payment outside a series is left out of spending only when it is a transfer whose other leg lands in a tracked credit or loan account whose debt has a counted minimum (a derived card or loan debt keyed by the account, or a recorded loan naming the account, with `minimumPayment > 0`): that minimum already carries it. Every other Debt-category one-off stays spending, in the month lines, the expense lines and, when pending, the scheduled outflows: a payment that is not a transfer went to an account the app does not track, and a transfer into a card or loan with no counted minimum (paid in full, no terms, a loan with no minimum) is the only place that payment shows. A transfer leg in the history is never spending anyway (D-28), so the history rule reduces to "not a transfer, so spending"; the target match decides the pending one-offs. Tests "WR-B03 (D-68)" in `buildSnapshot.test.ts`.
+- **D-69 (user, 2026-10-22): Provisional latest rate for a line whose own rate is pending** (amends D-37; builds on D-67). A past or pending transaction line saved while its rate was pending has no usable stamp (`orig_per_eur` null, `home_amount` null or in another home currency), so `homeAmountFor` returns null. Decide's snapshot builder no longer counts such a line as missing when a rate is stored: it converts it at the latest STORED rate for its original currency against home (`provisionalHomeAmount` in `snapshot/conversion.ts`, through `convertLatest`, so custom currencies resolve through their reference; never the FX fetch door) and flags it provisional. A currency with no stored rate at all is still missing (D-37 unchanged). The stamp always wins when it is usable; `homeAmountFor` is unchanged for Record, Activity and every other caller. The provisional figure is display and maths only and is never written anywhere; once the sweep stamps the real rate the next build reads the stamp. The snapshot carries `provisional { rowCount, rateDate }` (lines counted once, only when their month is used or the pending outflow is counted; rateDate is the earliest rate date used), shown as the declarative basis item "{{count}} line(s) converted at the {{date}} rate while its/their own rate(s) load" on Step 3 and in Assumptions. The engine gets a plain flag, `DecideSnapshot.provisionalRates`: `confidenceOf` then never returns strong (at most fair, "Medium"), adds the reason `provisional_rates`, and the confidence sheet lists "Some lines use the latest stored rate until their own rate arrives". Tests "D-69" (engine `deviations/d69-provisional-rates.test.ts`, `snapshot/__tests__/provisional.test.ts`, copy and Step 3).
+
+### Decide UX refresh (user, 2026-10-22)
+The UI-SPEC section "Decide UX refresh (2026-10-22)" carries the layouts, copy and checks; where it conflicts with an earlier UI-SPEC section, it wins.
+- **D-70: Explanations open a small sheet, never a bubble.** A small ⓘ after a term opens the app's `Sheet` with the term, 1–3 plain declarative sentences and a "What this changes" line (e.g. "Replaces: ends this bill from the purchase date. Your income is unchanged."). There are no floating tooltips. The term list (31 keys, `INFO_TERMS`) and every explanation's copy are in UI-SPEC R3. The ⓘ is labelled "About {term}" with a 44pt target, and stays active on decided checks.
+- **D-71: Variable inputs take a typed custom value.**
+  - Every preset chip row gains a last "Custom" chip that opens an inline typed field with a range line.
+  - **Every duration runs 1–120 months** (user, 2026-10-22): the quick-check duration, the loan term, the instalment count, card months, investment term, promotion length and the Wait period (new 3/6/12/24 chips). The old 600-month UI bound goes. A stored longer term shows under Custom with its range line until edited.
+  - The investing horizon alone runs 1–600 months, because it is a projection horizon, not a borrowing term.
+  - "Ready in N months" sets the Wait amount to target ÷ N, rounded up to the cent.
+  - The Wait amount can be typed from ceil(target ÷ 120), rounded up to the cent, up to the target. Its slider is capped at min(2 × spare, target).
+  - The Wait chip matching the derived months (3/6/12/24) is selected; otherwise Custom is selected and reads "{n} months".
+  - Rates have no preset chips (04 D-07). The typed field is the custom input, bounded at 0–999.99% for APRs and 0–100% for projection rates and fees (D-48).
+  - The deposit, Wait amount and cheaper-price sliders each get a tap-to-type money field beside them. A typed value is used exactly, never snapped.
+  - An invalid entry is not applied, and the range line shows the bounds.
+- **D-72: Empty Decide home cards stay hidden.** Open checks appears once a check is saved, and Changes coming up once a change exists. While there are no changes, one slim "+ Add a change coming up" row sits under the quick-check card. While Open checks is hidden, the same line carries a "Check an investment" link. Purchase checks start from the FAB, and investment checks from that link or the step 1 kind chip. The "No checks open" and "Nothing dated yet" empty blocks are retired.
+- **D-73: Clear and Delete, each with Undo; Go ahead's lines are never deleted.**
+  - "Clear" in the check header discards the current open check (a soft delete as one undo step, after flushing its pending edit), opens a fresh empty check, and toasts "Check cleared. Nothing was written." with Undo.
+  - Saved checks are deleted from Open checks and Past decisions by swipe or the ⋯ menu → Delete, then a confirm sheet, then an Undo toast. This replaces the no-confirm "x" abandon (DCU-04's intent holds) and the word "Remove".
+  - Deleting a decided check never removes or edits the lines Go ahead wrote or the transfers tagged to its goal, and the confirm sheet says so.
+  - Changes coming up rows follow the same pattern (amended 2026-10-22): swipe or ⋯ → Delete, then a confirm, then the Undo toast "Change deleted". The "x" and the word "removed" are retired.
+- **D-74: Step 3 is summary first.**
+  - **The verdict card holds:** the state words as the heading, the old title as a one-line reason, and three key figures: Left a month, Cushion (engine `runwayMonths`, in months) and A month (net monthly cost).
+  - **Below the card:** one list of folded rows, each a title, a one-line preview and a chevron, with only one open at a time. The rows are What breaks, The month, Cash path, Where it lands, Setbacks, Options, If invested (moved from step 4), With the expected income, Who pays what and Assumptions.
+  - **Warnings and "Against your lines"** move into What breaks. It opens by default when warnings exist, so DCU-11 frame 2 still shows two full warnings. When nothing breaks, it starts folded with the preview "Nothing breaks".
+  - "Left a month" is the amount left at month end after the purchase (user-confirmed).
+- **D-75: Tap-to-reveal is signalled four ways.**
+  - Every fold row has a chevron and a preview line.
+  - Hidden parts of a block use "Show details" / "Hide details" text links.
+  - A one-time hint, "Tap a row to see the detail", shows on the first verdict and is dismissed by the first fold or details tap. It is stored per user and per device in AsyncStorage (`fincwin:decide-hints:{userId}`).
+  - Each reveal has a pressed state and a `selectionAsync` haptic (amends the "no haptic on section toggles" rule; `impactAsync` and `selectionAsync` only). A full swipe on a delete row keeps the shipped `hapticLight` (`impactAsync` Light).
+- **D-76: No word ever breaks mid-word, overlaps, or is cut off in Decide.**
+  - Android text uses `textBreakStrategy="simple"` and `android_hyphenationFrequency="none"`, set **app-wide** as defaults in the shared `src/ui/Text` (user, 2026-10-22).
+  - Labels wrap at word boundaries, nothing that holds text has a fixed height, and rows grow with their content.
+  - Only one-line money and count figures use `numberOfLines={1}` with `adjustsFontSizeToFit` (minimum scale 0.8). Word values ("Under 1 month", "Not limited", "None") wrap.
+  - Chips wrap to new lines rather than squeezing.
+  - Side-by-side text stacks below 360 wide, above 1.3x text, or for a value longer than 16 characters. "Where it lands" and "What gets written" use stacked label-over-value rows.
+  - System-copy clamps are removed; the caps hold through copy length.
+  - Every Decide screen is checked at 402×874 and 320 wide, at text scale 1.0 and 2.0.
+- **D-77: The draft and save contract.**
+  - **Saving:** a new check is created on its first edit. Later edits debounce 600 ms into the write queue. Leaving, unmounting and app backgrounding flush at once, and leaving never prompts.
+  - **Indicator:** the header shows "Saved" / "Saving…" / "Offline, will save" / "Not saved" as its own small Text beside the "Step {n} of 5" eyebrow (never part of the eyebrow string). It is derived per check from the create and save mutations, the debounce and `useSyncStatus`.
+  - **Clear:** flushes, then deletes, then disarms the draft so no later save targets the cleared check.
+  - **Delete:** queued behind any save in `WRITE_SCOPE`. It never conflicts (WR-A03), and a save that arrives after it never undeletes and never records a failed write.
+  - **Verification:** `useCheckDraft`, `useCreateCheck`, `useSaveCheckDraft`, `useAbandonCheck`, `useRemoveDecision`, the `setMutationDefaults` registration, `useSyncStatus` and the undo stack are checked by tests named "D-77".
+
+- **D-78 (user, 2026-10-22): Decide home is trimmed too.** "The main page" means both step 3 (D-74) and Decide home. The home order is: quick check, the add-change row, Your month, Open checks, Changes coming up, Past decisions, Lines you will not cross, sources note.
+  - **Quick-check card while idle:** only the amount pill. The Cash / Credit toggle appears once there is a result.
+  - **Quick-check card with a result:** the size label is a plain line with an ⓘ. The "Worked out from the figures you entered." footer shows in Credit only, as the last line of the result block, so it never falls below the fold. One button row holds "Run the full check" and a "Clear" text button that resets the card with no toast.
+  - **Past decisions:** one row ("Past decisions · {n} decisions"), hidden while there are none.
+  - **Lines you will not cross:** one fold row with the preview "{n} of 5 set by you" or "All at their defaults".
+  - See UI-SPEC R2b.
+
+- **D-79 (user, 2026-10-22): Step 2 methods are an accordion in place.**
+  - Each method (Paid in full, Deposit and loan, Instalment plan, On a card; investments: Lump sum, Monthly contribution) is a white card whose inputs and outputs (strip, payment, interest, implied rate) open directly under its own header, with a chevron. The opened card scrolls into view.
+  - One card is open at a time. Tapping a folded card selects and opens it (user-confirmed). The selected card has an `ink` border and radio dot instead of an `ink` fill.
+  - A card that cannot be scored shows a "Needs: {fields}" line under its name (replacing "Rate needed"). A folded card shows a one-line summary, e.g. "$2,000 down · 36 months · 6.9%".
+  - The Price card and the "How you pay" header are rebuilt with ⓘ.
+  - See UI-SPEC R15.1-R15.2.
+- **D-80 (user, 2026-10-22): An instalment plan can carry a rate.**
+  - An optional "Has a rate?" segmented control. **No** is the default and keeps today's behaviour: amount × count, no interest, the implied-rate note, "Below the price".
+  - **Yes** takes the count (1–120) and a user-typed APR (0–999.99, never pre-filled, 04 D-07). The engine works out the payment: an annuity-due at APR ÷ 12 with the first payment on the day (D-49), rounded up to the cent, with the last payment adjusted.
+  - A typed "Payment as quoted" overrides it for scoring (user-confirmed), with the note "The rate works out to {x} a month; the quote is {y}."
+  - **"First payment: Today / In a month"** (user, 2026-10-22), default Today (D-49), with or without a rate. Today is an annuity-due with the first instalment on the day. In a month is an ordinary annuity: only on-the-day fees are paid on the day.
+  - A late-fee ⓘ is added.
+  - **Inputs:** `instalment { amount, count, lateFee, hasRate, aprText, firstPayment }`. Old checks default to `hasRate: false` and `'today'`. "Payment" and "Payment as quoted" share `amount`.
+  - **Engine outputs:** "Below the price" applies whenever the total paid is under the amount financed, with or without a rate. `Plan.computedPayment` is present only with a rate. The new missing code is `instalment_rate_missing`.
+  - **Needs Phase 4 engine change E1** (UI-SPEC R15.7: `amortise`, annuity-due = ordinary ÷ (1 + r), rounded up with a final-payment adjustment).
+- **D-81 (user, 2026-10-22): Custom item type.**
+  - Step 1's item type becomes chips with "Custom…", a typed name of 1–40 characters (e.g. "Drone") shown wherever the item type appears.
+  - It follows General ("Other") rules for card eligibility, the secured default and running-cost prompts, unless an optional "Treat like" picks a built-in type's rules.
+  - It is stored in the check inputs JSON as `customItemType { name, treatLike }`, with `itemType` holding the rules type. No migration and no engine change.
+- **D-82 (user, 2026-10-22): Optional expected return on investment checks.**
+  - "Expected return, % a year (optional)", 0–100, blank by default and never pre-filled, stored as `inputs.investReturnText`.
+  - When set, step 2, the verdict card and the Assumptions fold show the projected value at the horizon (the term, or 60 months by default for a lump sum), labelled "Not a forecast".
+  - It never changes whether the investment fits and does not feed the net-worth chart or the step 3 rate list. It uses the existing `futureValue`; no engine change.
+  - The lump-sum horizon defaults to 60 months, with chips 1 / 5 / 10 / 20 years plus Custom (1–600 months) (user, 2026-10-22).
+  - Step 3 fold 7 on investment checks is "What it could grow to": the projection when a return is set, otherwise the preview "No expected return set". The purchase views do not apply there (`investmentViews` is null).
+- **D-83 (user, earlier 2026-10-22): The cheaper price is exact.**
+  - A typed cheaper price on step 4 is applied as the exact amount, not the nearest whole percent. The slider still steps in 1%, and the percent shown is for display only.
+  - A worked-out instalment payment is recomputed on the cheaper financed amount. Only typed figures (deposit, no-rate payment, quoted payment) scale by cheaper ÷ price, rounded half up.
+  - The base is `advertised`, and the floor is ceil(30%) in minor units. `cheaperPrice` (minor units) replaces `cheaperRatioPercent`, with old percents converted on parse.
+  - **Needs Phase 4 engine change E2** (UI-SPEC R15.7).
+- **D-84 (user, 2026-10-22): Every Step 2 header and term has an ⓘ** (extends D-70). There are 24 new `INFO_TERMS` keys (UI-SPEC R15.8), and the existing promo, deferred-interest, variable-rate, card-minimum and running-cost keys are reused. All copy is declarative, at most 3 sentences, with "What this changes", and passes DCU-09 (no "offer", "apply", advice or reassurance).
+
+### Device-walkthrough refinements (user, 2026-10-23)
+UI-SPEC R16 carries the layouts, copy, ⓘ entries and engine notes (E3-E5).
+- **D-85: Add is always reachable.**
+  - The You screen gains a first "Add" group: Add expense, Add income, Transfer, Import statement, New check. It uses the shipped `SettingsGroup` and row styles.
+  - Each row closes You, then runs the same handler as the FAB quick action with that `QuickActionId`. A row with no registered handler is not shown.
+  - "Import statement" lives only in the Add group; the old Money-group import row is removed (user, 2026-10-23).
+  - **FAB root cause:**
+    - `fabSurface` treats a null navigation location under `(tabs)` as `tabRoot`;
+    - a sheet-stack watchdog drops sheet ids whose sheet is no longer mounted, and clears the stack when nothing is visible for more than 1 s, so a leaked id cannot hide the FAB.
+- **D-86: Interest saved by the deposit is explained.**
+  - The Loan tile caption becomes "Interest saved by the deposit". It is hidden at deposit 0 and shown beside "Interest paid".
+  - The inline line reads "{{saved}} less interest than borrowing the full {{price}} with no deposit. The deposit lowers the amount borrowed to {{financed}} over the same {{term}} months at {{apr}}%." (plural keys, no-break spaces).
+  - A new ⓘ `interestSaved` explains it; it changes nothing in the verdict.
+- **D-87: Running-cost rows show where the amount goes.** Every prompt row (insurance, maintenance, loss of value and the rest) has:
+  - a dashed `line4` "Amount" field on the right;
+  - "Counted once an amount is typed" under the name;
+  - tap-anywhere-to-focus;
+  - a checkbox only once an amount exists.
+
+  The screen-reader label is declarative: "{name}, not counted yet; counted once an amount is typed."
+- **D-88: Speed and sync.**
+  - **Speed:**
+    - one shared snapshot per source;
+    - autosave patches only its own row (no cache churn), and `settledCore` reuses `core`;
+    - full detail only for the selected method on a keystroke;
+    - `computeDetails` runs after interactions, with "Updating" on the detail folds;
+    - budgets on the Pixel: verdict under 50 ms, details under 300 ms.
+  - **Sync:**
+    - 15 s read and 20 s write timeouts through a custom fetch;
+    - backoff capped at 12 s while online;
+    - resume and retry on app focus and NetInfo change;
+    - one queued draft save per check;
+    - the post-restore invalidate does not wait for writes;
+    - NetInfo reachability checks the Supabase endpoint.
+  - **Sync line:** shown only for problems or writes older than 5 s: "Saving…" or "{{count}} changes waiting" ("offline · …" when offline). "queued" is retired.
+  - **Idempotent retries:** every retried mutation was checked (Go ahead, the outcome RPCs, `createCheck`, Record inserts, transfers, the series RPCs). All are already replay-safe through client ids or undo-step keys, so **no migration is needed**. Test: "D-88 timeout retry is idempotent".
+  - **Long operations** (import upload and storage, the account-deletion purge, long RPCs) use a 120 s timeout and no automatic retry after a timeout.
+  - **Draft coalescing:** a newer save removes the paused one from the `MutationCache`, then is added, keeping its `WRITE_SCOPE` order and WR-A03 chaining.
+  - **Measured** on the Pixel 9: median and p95 over 30 keystrokes, with the harness behind `EXPO_PUBLIC_PERF=1`. Named "D-88" tests.
+- **D-89: Instalments can be weekly, every 2 weeks, monthly or quarterly** (no semi-monthly), with up to 500 payments (amends D-71's 1–120 for instalments only).
+  - The verdict uses the monthly equivalent (×52/12, ×26/12, ×1/3), and the cash path uses the real dates.
+  - Go ahead writes the series with that `freq` (no migration).
+  - Copy: "{{count}} weekly payments of {{payment}}, about {{monthly}} a month".
+  - Loans stay monthly.
+  - **Engine change E3:** a periods-per-year `amortise`/`amortiseDue` (rate per period = APR ÷ 100 ÷ periods per year) and dated payment steps.
+  - `firstPayment` becomes `'today' | 'next_period'` (`'next_month'` parsed as an alias).
+  - `MAX_INSTALMENTS = 500` is split from `MAX_TERM` (120, loans).
+  - `monthlyEquivalent` keeps its single half-up rounding (D-23).
+  - One frequency × rate × timing copy table (UI-SPEC R16.16).
+- **D-90: The no-rate instalment note shows a true APR.**
+  - It is the nominal APR solved from the payments, count, frequency and timing by exact bigint bisection (no floats), labelled "worked out from the figures you typed".
+  - It replaces the flat-rate note. It is a read-out only: it never fills a field or feeds the verdict (04 D-07).
+  - **Engine change E4**, with full tests and 100% coverage.
+  - Edge cases: total < financed gives Below the price; total = financed gives 0%; one payment due today gives no rate line.
+  - The display is rounded up to one decimal. Powers use exponentiation by squaring.
+  - It runs on the settled path only, under 30 ms at n = 500 on the Pixel 9.
+  - financed is as defined in D-49.
+- **D-91: A card check limit.** `CARD_MAX_PURCHASE` = **US$100,000**, converted to the home currency at the latest stored rate and rounded down (about £78k or CA$137k) (user, 2026-10-23).
+  - The snapshot builder converts it; the engine receives `cardMaxPurchase`.
+  - With no stored USD rate, the On a card method is not scored ("Needs: USD rate", reason `card_limit_rate_missing`). That is the conservative choice. An older stored rate is used with a basis note naming its date and **no** confidence effect.
+  - The conversion is rational, then floored to the minor unit. The ⓘ shows `{{usdLimit}}` ("$100,000"), with a USD-home variant.
+  - Above it, the rest counts as cash on the day through the dealer-cap mechanism.
+  - Note: "Only {{cap}} of this goes on a card in checks. The other {{rest}} is counted as cash on the day.", stated as the app's limit, not the issuer's.
+  - **Engine change E5.**
+- **D-92: Card rules by item type and region.**
+  - New item types, all with suggest keywords, Step 1 chips, `treatLike` choices, running-cost prompts, copy and ⓘ updates:
+    - `property`: card blocked, "A property purchase or deposit is not paid by card.";
+    - `cash_equivalent`: card blocked;
+    - `tuition`: card permitted with a fee note.
+  - Tax is region-aware: blocked only in GB (HMRC, since 2018); permitted with a processing-fee note everywhere else (user, 2026-10-23).
+  - Research sources: Fannie Mae B3-4.3-16, HMRC, Experian / The Points Guy.
+  - **Suggestion keywords are phrases only** (checker M5): "house deposit", "down payment", "mortgage deposit", "buy a house", property, condo, "apartment purchase"; "wire transfer", "money order", "gift card", crypto, bitcoin, casino, gambling, betting. Vehicle signals win over a weak property keyword.
+  - **Negative tests**, none suggesting property or cash-like: "home gym", "home printer", "flat screen tv", "car deposit", "rental deposit", "wire fence", "lego land set", "board game bet".
+  - Property copy: "A property purchase or deposit is not counted on a card in these checks."
+  - **Engine change E5.**
+- **D-93: Walkthrough fixes.**
+  - A tab root never shows a back button.
+  - A cushion or runway above 600 months reads "Over 50 years" (a word value).
+  - A new expense or income line defaults to the **home (selected) currency**, not the account's currency (user, 2026-10-23). This is set in `initialFormState` in `src/features/record/entry/transactionForm.ts`. The currency stays changeable per line; prefilled and edited entries keep their stored currency.
+
+- **D-94 (user, 2026-10-23): "$" always means the US dollar, app-wide.**
+  - USD shows as "$1,500", never "US$". Other dollar currencies always keep their marker ("CA$", "A$", "NZ$", "HK$" …), whatever the home currency and the locale. Other currencies keep their usual symbol.
+  - It is implemented once in `formatAmount()` (`src/engine/money/formatAmount.ts`, reached through `useMoneyFormatter`): `narrowSymbol` for USD, and a fixed marker map for any other currency that would render as a bare "$".
+  - Screen readers get `formatMoneyA11y`: "dollars" for USD at USD home, "US dollars" otherwise, full names for the rest.
+  - Display tests and snapshots asserting "US$" are updated. The statement parser's "US$" input handling is unchanged. See UI-SPEC R16.15.
+
+### Decide home redesign (user, 2026-10-23)
+UI-SPEC R17 carries the layout, budgets, states, copy and wireframes. It replaces the home layout of R2b, the D-72 add row and the D-78 trim.
+- **D-95: Decide home is dark-card first (layout A).**
+  - A lean header ("Can I afford it" and the avatar; no eyebrow or subtitle).
+  - Then one `ink` card holding:
+    - the label following the basis the engine used: "Your average month" / "Your worst month" / "Your tightest figures" (under 3 full months, with an ⓘ) / "Your figures"; "Now from your logged months" on the first visit after the switch only;
+    - the hero "Left this month";
+    - "In · Out";
+    - the quick-check field with the only primary action, "Check it": a `surface` button with `ink` text, because every accent fails 3:1 on ink;
+    - the quick result, which appears inside the card;
+    - a quiet "Full check ›" link.
+  - Below, after 32 of space, up to four quiet rows: Open checks · N, Changes coming up, Past decisions · N, Lines you will not cross.
+  - Your month's details and the sources note move to a Month details sheet.
+- **D-96: Problems show as one quiet notice row.**
+  - "{n} items need a look ›" under the header opens a "Needs a look" sheet. Each entry has what it affects and one action: missing figures, a missing exchange rate, failed saves and conflicts (via `FailedWritesSheet`), a card minimum not set, a rate older than 30 days (user, 2026-10-23), and offline or waiting writes.
+  - It replaces the red sync text and the sync problem line on this screen.
+  - Problems already shown in the card are listed but not counted, so a first-run user sees no notice row.
+  - Slow saves show without the amber dot.
+  - Actions read "Review changes" / "Review edits". The missing-rate entry goes to You › Currencies. There is no red on the main screen unless a figure is wrong or unavailable.
+- **D-97: The hero figure is "Left this month"** for the judged month (worst or average), after bills and saving.
+  - It reads "{amount} left", or "{amount} short" (absolute value, no minus) with the amount in the danger family (`dangerTint2` on the ink card). The sub-line is "after spending, debts and saving".
+  - It is two Texts: the amount fits on one line (minimum 0.75) and the words wrap. It shrinks to the In/Out size while a quick result is open.
+  - When it can't be computed, the card shows a declarative "Not worked out yet" with its reason and the one fixing action, never a wrong number.
+  - It uses the Home net-worth size, `netWorth` 42 (user, 2026-10-23), on one line with fit-to-shrink (a hero-only minimum of 0.75, so a 10-character amount stays on one line at 320 wide and 2.0x). Budget: the card ends at y ≈ 450, the rows at y ≈ 690.
+- **D-98: Fewer entry points, same reach.**
+  - The FAB is removed on Decide home (user-confirmed), actively, with `useRegisterFab(null)` ("Check it" and "Full check" cover it; it stays on the other tabs and in You › Add, D-85).
+  - The "+ Add a change coming up" row is folded into the Changes coming up row at zero.
+  - "Check an investment" is folded into Full check, then the step 1 kind chip.
+  - This amends 03 D-09 and D-72.
+- **D-99: Lists move to their own screens.**
+  - Open checks, Changes coming up and Lines you will not cross open pushed screens (user-confirmed) that keep today's lists, swipe and ⋯ Delete, markers and editors.
+  - The hiding rules hold: Open checks and Past decisions are hidden at 0; Changes coming up shows as its add row at 0; Lines always shows.
+  - Calm comes from layout, never from reassuring words (DCU-09).
+
+**Money concepts (user, 2026-10-24, from the 05-26 device walkthrough):**
+- **D-100: The hero is Net Free Cash Flow.** The maths does not change: `leftBefore` already is monthly income − spending − debt payments − saving and investing (saving goals). All spending is taken off, not essentials only (user-chosen; no essential/non-essential split is added).
+  - The eyebrow reads **"NET FREE CASH FLOW"** (the full term), replacing "YOUR AVERAGE MONTH" / "YOUR WORST MONTH".
+  - Average/worst moves into the sub-line: "in your worst month, after spending, debts and everything set aside" (user, 2026-10-24; saving, investing and pots are all set aside) (and the average, tightest, rough-figures and switched variants).
+  - One figure, switchable in Month details, as today (user declined showing both). An ⓘ explains the formula.
+  - Sinking-fund set-asides (D-101) are taken off with saving goals.
+- **D-101: Sinking funds are named pots, counted.**
+  - A user creates a pot with a name, a target and a date ("Car service, $600 by March"). Its monthly set-aside comes off Net Free Cash Flow like saving goals and is protected in checks (a check never spends it).
+  - Stored by extending the existing `savings_goals` table (user, 2026-10-24): a `kind` ('wait' | 'pot') and a done date, keeping its household RLS, tagged-transfer progress, soft delete and Undo. The migration is pushed to production with the usual explicit approval. Pots can be added, edited, marked done and deleted with Undo.
+  - Wait-and-save goals (D-10) become the 'wait' kind; the Wait plan's goal progress reads from the pot.
+  - Pots are reached from Month details ("Pots ›") and a You › Money "Pots" row (user, 2026-10-24); no fifth row on Decide home.
+  - Phase 6 (Grow, Goals) builds on this table rather than a second one.
+- **D-102: Total cost of ownership is one total line.** A verdict row "Over {n} years: {total} in all": price + interest and fees + running costs × years − expected resale where loss of value is set. The years follow the check's horizon; computed in the engine from figures the check already has (integer minor units, 100% coverage). No new inputs.
+- **D-103: The 28/36 rule gets a housing line.** A sixth line under "Lines you will not cross": housing costs at most **28%** of income (changeable, default 28). Housing = housing-category spending plus payments on debts flagged as housing. A "This is for housing" switch on a debt (user, 2026-10-24) marks it; it defaults on for mortgage-type debts, and existing rows are backfilled from the automatic signals (Housing series, created from a property check). A check that pushes housing over it gets a warning, as the 36% debt-to-income line does. Order and wording follow the existing warning rules.
+- **D-104: Opportunity cost gets a verdict headline.** One verdict-summary row "Invested instead: {fv} after {n} years at {r}%", shown only when the user has typed a rate in the fold (no market-default rate exists, and D-06/D-07 forbid a defaulted one); never an invented rate. The "If it went into investing instead" fold stays.
+- **D-102/D-104 addendum (user, 2026-10-24):** both rows show only on a logged verdict, never on a first read (this amends R18.3's state table), and while inputs are being typed they keep their last value silently with `accessibilityState.busy`, like the key figures; no visible "Updating" word.
+- **D-105: Name the pause (user, 2026-10-24, from the R18 device walkthrough).** A month figure with saving and investing paused is never worded as plain "short". The headline and Left a month keep the full figure; the month warning, the quick result and What breaks name the pause, e.g. "Cash covers it. Even with saving paused, the month would end {{amount}} short." and "Still short with saving paused". So a purchase never reads as improving the month. The same walkthrough's fixes (Undo on pot toasts, a delete confirm, the false "This check isn't here" while a new check loads, the housing editor default and label, Pots copy and spacing, the pot target field and a month picker, the Month details alignment) are one fix round before the device re-check.
+- **D-106: "free" / "overspent", and the home card judges the expected current month (user, 2026-10-24).**
+  - Wording everywhere in Decide: a positive month figure reads "{{amount}} free" (replacing "left"), a negative one "{{amount}} overspent" (replacing "short"), the amount absolute with no minus, the overspent amount in the danger tint. This applies to the Net Free Cash Flow card, Month details, the verdict headline and key figures, What breaks, the quick result and the month warnings (e.g. "Still overspent with saving paused", "Cash covers it. Even with saving paused, the month would end {{amount}} overspent.", "Your worst month is already {{amount}} overspent either way."). DCU-09 holds (declarative); the D-105 pause naming and its no-pause variant stay.
+  - The home card's default basis becomes **This month (expected)**: the current calendar month as it is expected to end, money in and out logged so far plus the recurring pay, bills and other series still due before month end, minus debt minimum payments, saving and investing, and pot set-asides (the same Net Free Cash Flow formula). Its sub-line reads "this month, after spending, debts and everything set aside".
+  - Month details' Judge on control offers This month / Worst / Average, defaulting to This month for the card. The stored basis preference keeps working; an explicit Worst or Average choice still wins.
+  - Checks (verdicts) keep judging on the worst month by default (user chose card only); their basis setting is unchanged.
+- **D-106 addendum (user, 2026-10-24, popup):**
+- **D-107: One Judge-on choice drives the card and checks; a dropdown on the card; a three-basis comparison on the verdict; the FAB returns (user, 2026-10-24). Supersedes D-106's "card only" and D-98's FAB removal.**
+  - A compact dropdown in the card's top row ("This month ▾") offers This month / Worst month / Average month. Month details shows the same choice. Default: This month for everyone.
+  - The selected basis (default This month) is what checks are judged on too. The engine gains a 'month' basis (from expectedMonth) alongside 'worst' and 'average'. Stored on the device as the D-106 view preference; Worst/Average also keep writing basis_override so other devices and older code paths stay consistent.
+  - The verdict (step 3) gains a separate card showing the outcome under all three bases side by side (verdict state and month figure for This month, Worst, Average), computed in idle time like the other details, so the user sees how the answer changes without switching.
+  - The FAB returns on Decide home (D-98 removal reversed; its previous action and placement).
+  - Everyone starts on This month: the card opens on This month for every account, even one with a stored Worst or Average basis. The stored basis still governs checks. Only an explicit choice of Worst or Average in Month details (kept as a device view) keeps the card off This month.
+  - A current-month line with no stored rate does not blank the card: This month falls back to the Worst-month figure, the sub-line names Worst, a declarative line says "This month is waiting for a {{currency}} rate", and Needs a look lists the rate action. The card always shows a number.
+  - "spare" wordings stay as they are; only "left" and "short" for a month figure change.
+  - **Switching Judge-on does not mark checks changed (user, 2026-10-24, popup):** only data changes show "changed since you looked". On a switch, an open check whose state on the old basis still equals its stored last-seen state is re-baselined to its state on the new basis; a check that had really changed keeps showing as changed.
+  - **'month' is a first-class basis (user, 2026-10-24):** the judge engine's assessment treats this month's net free cash flow exactly like worst and average. It flows through everything a basis reaches: deriveMoney/prepareContext (incomeBasis, spendingBasis, leftBefore), the month warning and its shortfall, line margins and the on-the-edge flag, the cash path inputs, options and alternatives (Wait, cheaper, cut a line), stress and setbacks, confidence and basis notes, the verdict copy, the three-basis comparison card and the quick check. A parity suite proves it: for a snapshot where this month's expected figures equal the worst month's, assessing on 'month' gives the same verdict, warnings and margins as 'worst'. Verdict copy reads naturally on this basis ("This month is {{amount}} overspent"), not "your this month month".
+- **D-100 addendum:** the card's "In · Out" line counts everything that leaves (spending, debt payments, saving, investing and set-asides), so In − Out equals the hero; Month details shows the matching breakdown.
 
 ### Claude's Discretion
 - The snapshot builder's query shape and its TanStack Query keys, and how confirmed series, paid-only rows and refunds (04 D-23…D-28) are assembled.
@@ -284,6 +526,8 @@ Phase 4 was executed, code-reviewed (`04-REVIEW.md`: 4 high, 5 medium, 5 low, al
 - A custom month-grid date picker → not planned. Revisit only if the native picker fails design review.
 
 </deferred>
+
+**Note (2026-10-16):** 04 D-65 — a zero investing floor means not set, so the investing margin never shows the On the edge tag at a zero floor (the demo scenario has `investing_floor` 0).
 
 ---
 

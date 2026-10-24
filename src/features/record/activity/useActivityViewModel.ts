@@ -236,6 +236,7 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
               status: r.status,
               isTransfer: r.transfer_id !== null,
               isRefund: r.is_refund,
+              ratePending: r.rate_pending,
             })),
             unpaidProjections
           )

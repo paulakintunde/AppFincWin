@@ -13,6 +13,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { queryKeys } from '@/data/keys';
 import { wipeDeviceData } from '@/services/storage/wipe';
 import { useConsent, type UseConsentResult } from '../useConsent';
+import { consentAnswered } from '../consentAnswered';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -312,5 +313,15 @@ describe('useConsent cold start', () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.needsPrompt).toBe(false);
     expect(select).not.toHaveBeenCalled();
+  });
+});
+
+describe('consentAnswered (WR-D13)', () => {
+  it('is true only for a recorded answer, never for a missing profile or while loading', () => {
+    expect(consentAnswered({ loading: false, consent: 'granted' })).toBe(true);
+    expect(consentAnswered({ loading: false, consent: 'declined' })).toBe(true);
+    // a failed or empty profile fetch: no prompt, but no consent either
+    expect(consentAnswered({ loading: false, consent: null })).toBe(false);
+    expect(consentAnswered({ loading: true, consent: 'granted' })).toBe(false);
   });
 });

@@ -4,13 +4,14 @@ import { futureValueNetExact, futureValuePathExact } from '../payoff/futureValue
 import { amortiseSchedule, simulateMinimumSchedule } from '../payoff/rateSchedule';
 import { ONE_HUNDRED_PERCENT, ZERO_PERCENT, minorOrNull, type Percent } from '../payoff/types';
 import { DEFAULT_PROJECTION_HORIZON_MONTHS } from './constants';
-import { rateScheduleFor } from './plan';
+import { monthlyStepsOf, rateScheduleFor } from './plan';
 import { myPart } from './share';
 import type {
   Assessment,
   AssessContext,
   BuyCheck,
   HorizonSource,
+  InvestmentHeadline,
   InvestmentViews,
   InvestmentViewsInput,
   NetWorthPath,
@@ -87,6 +88,25 @@ function figure(rate: Percent, contributed: number, exact: bigint | null): RateF
 }
 
 /**
+ * D-104: what the money this check takes would be worth at the typed rate: the amount on the day grown from month 0
+ * (one rounding, D-20) plus the payments-and-running figure already computed for that rate, added exactly. Null when
+ * nothing is contributed; a sum past the safe range keeps the contribution and carries 'exceeds_range'.
+ */
+function headlineOf(
+  rate: Percent,
+  payments: RateFigure,
+  dayOne: MinorUnits,
+  horizon: number,
+  fee: Percent
+): InvestmentHeadline | null {
+  const contributed = minorUnits(dayOne + payments.contributed);
+  if (contributed === 0) return null;
+  const lump = futureValueNetExact(minorUnits(0), rate, horizon, dayOne, fee);
+  const projected = payments.projected === null ? null : minorOrNull(lump + BigInt(payments.projected));
+  return { rate, contributed, projected, rangeCode: projected === null ? 'exceeds_range' : null };
+}
+
+/**
  * The investment views (D-51, D-52): what the money would do if it went into investing instead. These are projections
  * of the user's own figures at rates the user typed, never a forecast and never advice (D-21).
  *
@@ -140,7 +160,7 @@ export function investmentViews(
   const zero = minorUnits(0);
 
   // My payment in each month 1..horizon, from the plan's own steps (household amounts, my part each).
-  const steps = plan.paymentSteps.map((s) => ({ ...s, mine: myPart(s.amount, share) }));
+  const steps = monthlyStepsOf(plan).map((s) => ({ ...s, mine: myPart(s.amount, share) }));
   const paymentAt = new Array<number>(horizon + 1).fill(0);
   for (const s of steps) {
     for (let k = s.fromMonth; k <= Math.min(s.toMonth, horizon); k += 1) {
@@ -178,6 +198,10 @@ export function investmentViews(
     }),
   };
 
+  // D-104: the invested-instead headline, for the first non-zero typed rate only (never a defaulted one, D-06/D-07)
+  const headlineAt = rates.findIndex((r) => r.rate !== ZERO_PERCENT);
+  const headline = headlineAt < 0 ? null : headlineOf(rates[headlineAt]!.rate, paymentsInvested.byRate[headlineAt]!, assessment.mineDayOne, horizon, fee);
+
   // (c)
   const paused = assessment.investingAtRisk;
   const pauseImpact =
@@ -193,7 +217,7 @@ export function investmentViews(
   // (d)
   const debt = debtScheduleOf(check, plan);
   const owedAfter = (m: number): number => (m === 0 ? debt.start : (debt.after[Math.min(m, debt.after.length) - 1] ?? 0));
-  const monthlySurplus = context.leftBefore + snapshot.monthlySaving;
+  const monthlySurplus = context.leftBefore + snapshot.monthlySaving + context.setAside; // D-101: pot money stays cash
   // 04-REVIEW ME-01: the invested part is exact (bigint); a point past the safe range is null and the path carries
   // 'exceeds_range' instead of throwing.
   const netWorth: NetWorthPath[] = rates.map((r) => {
@@ -201,8 +225,9 @@ export function investmentViews(
     const investedWith = futureValuePathExact(assessment.investingAfter, r.rate, horizon, snapshot.investmentBalance, fee);
     const withoutPurchase: (MinorUnits | null)[] = [];
     const withPurchase: (MinorUnits | null)[] = [];
-    let cashWithout: number = context.cashAfterBills;
-    let cashWith: number = context.cashAfterBills - assessment.mineDayOne;
+    // D-101: cashAfterBills starts below the pots' slice, but that money is still mine, so net worth adds it back
+    let cashWithout: number = context.cashAfterBills + context.protectedCash;
+    let cashWith: number = context.cashAfterBills + context.protectedCash - assessment.mineDayOne;
     for (let m = 0; m <= horizon; m += 1) {
       if (m > 0) {
         cashWithout += monthlySurplus;
@@ -225,6 +250,7 @@ export function investmentViews(
     netRates: rates.map((r) => ({ rate: r.rate, netRateScaled: r.rate - fee })),
     priceInvested,
     paymentsInvested,
+    headline,
     pauseImpact,
     netWorth,
   };

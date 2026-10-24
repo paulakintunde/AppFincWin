@@ -7,6 +7,7 @@
  */
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
@@ -26,6 +27,9 @@ export interface PillProps {
 
 export function Pill({ label, variant, selected = false, disabled = false, onPress, accessibilityLabel, accessibilityHint }: PillProps) {
   const { colors, pairing } = useTheme();
+  // a pill inside a read-only region is announced disabled and inert; the region already dims it
+  const scoped = useReadOnlyScope();
+  const inert = disabled || scoped;
 
   const backgroundColor =
     variant === 'primary' ? colors.accent : variant === 'danger' ? colors.dangerTint1 : colors.fill1;
@@ -37,8 +41,8 @@ export function Pill({ label, variant, selected = false, disabled = false, onPre
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled, selected }}
-      disabled={disabled}
+      accessibilityState={{ disabled: inert, selected }}
+      disabled={inert}
       onPress={onPress}
       style={[styles.pill, { backgroundColor, borderColor, opacity: disabled ? 0.5 : 1 }]}
     >

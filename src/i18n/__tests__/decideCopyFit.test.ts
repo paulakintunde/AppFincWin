@@ -1,0 +1,216 @@
+// UI-SPEC R6 (text fit) copy rules held by the catalogue itself: rule U (units), rule E (eyebrows), rule T (length
+// caps), and the R3 "Plural keys (F6)" table. The leaf helper is copied from decideCopy.test.ts on purpose: a test file
+// is not imported by another.
+import en from '../locales/en';
+
+interface Leaf {
+  path: string;
+  value: string;
+}
+
+function collectLeaves(node: unknown, prefix = ''): Leaf[] {
+  if (typeof node === 'string') return [{ path: prefix, value: node }];
+  if (node && typeof node === 'object') {
+    return Object.entries(node as Record<string, unknown>).flatMap(([key, value]) =>
+      collectLeaves(value, prefix ? `${prefix}.${key}` : key)
+    );
+  }
+  return [];
+}
+
+const leaves = collectLeaves(en.decide, 'decide');
+const NBSP = ' ';
+
+function get(path: string): string {
+  const found = leaves.find((l) => l.path === path);
+  if (!found) throw new Error(`no decide leaf ${path}`);
+  return found.value;
+}
+
+function fill(value: string, params: Record<string, string>): string {
+  return value.replace(/\{\{(\w+)\}\}/g, (_m, name: string) => params[name] ?? `{{${name}}}`);
+}
+
+describe('decide copy fit (R6)', () => {
+  it('D-76 rule U: counts and units are joined by a no-break space', () => {
+    // {{count}} + month(s) / mo / year(s), a literal 1 + month / year (the _one forms), and {{rate}}% + a year
+    const plainCount = /(\{\{count\}\}|\b1) (months?|mo|years?)\b/;
+    const plainRate = /\{\{rate\}\}% a year/;
+    const offenders = leaves.filter((l) => plainCount.test(l.value) || plainRate.test(l.value)).map((l) => l.path);
+    expect(offenders).toEqual([]);
+  });
+
+  it('D-76 rule U: the table strings carry the no-break space where the unit follows', () => {
+    expect(get('decide.quick.overMonths_other')).toBe(`Over {{count}}${NBSP}months`);
+    expect(get('decide.quick.overMonths_one')).toBe(`Over 1${NBSP}month`);
+    expect(get('decide.fold.investPreview_other')).toContain(`{{count}}${NBSP}months at {{rate}}%${NBSP}a year`);
+    expect(get('decide.pay.horizonYears_other')).toBe(`{{count}}${NBSP}years`);
+    expect(get('decide.depth.invest.axisMonths')).toBe(`{{count}}${NBSP}mo`);
+  });
+
+  // Every Decide string rendered through `Eyebrow` (check/steps/stepUi.tsx) or with textTransform 'uppercase', with the
+  // source file that renders it. Counts take the largest value (step 5; 120 months).
+  const EYEBROWS: { key: string; source: string; params?: Record<string, string> }[] = [
+    { key: 'decide.flow.stepOf', source: 'check/CheckFlowHeader.tsx', params: { n: '5' } },
+    { key: 'decide.pay.card.comesTo', source: 'check/steps/step2/MethodPanels.tsx' },
+    { key: 'decide.pay.howYouPay.head', source: 'check/steps/step2/PaymentMethods.tsx' },
+    { key: 'decide.pay.howYouPay.headInvest', source: 'check/steps/step2/PaymentMethods.tsx' },
+    { key: 'decide.pay.price.head', source: 'check/steps/Step2PriceAndPay.tsx' },
+    { key: 'decide.pay.price.amount', source: 'check/steps/Step2PriceAndPay.tsx' },
+    { key: 'decide.alt.heading', source: 'check/steps/Step4Alternatives.tsx', params: { count: '120' } },
+    { key: 'decide.alt.spendTitle', source: 'check/steps/Step4Alternatives.tsx' },
+    { key: 'decide.alt.tradeEyebrow', source: 'check/steps/Step4Alternatives.tsx' },
+    { key: 'decide.decision.plan', source: 'check/steps/Step5Decision.tsx' },
+    { key: 'decide.decision.account', source: 'check/steps/Step5Decision.tsx' },
+    { key: 'decide.decision.investInto', source: 'check/steps/Step5Decision.tsx' },
+    { key: 'decide.fold.everyLine', source: 'check/sections/WhatBreaksSection.tsx' },
+    { key: 'decide.size.from_spare_this_month', source: 'check/VerdictCard.tsx (size line)' },
+    { key: 'decide.size.from_savings', source: 'check/VerdictCard.tsx (size line)' },
+    { key: 'decide.size.needs_spreading', source: 'check/VerdictCard.tsx (size line)' },
+    { key: 'decide.verdict.key.freeCaption', source: 'ui/FigureStrip.tsx (caption)' },
+    { key: 'decide.verdict.key.overspentCaption', source: 'ui/FigureStrip.tsx (caption)' },
+    { key: 'decide.verdict.key.cushionCaption', source: 'ui/FigureStrip.tsx (caption)' },
+    { key: 'decide.verdict.key.monthlyCaption', source: 'ui/FigureStrip.tsx (caption)' },
+    { key: 'decide.verdict.key.putInCaption', source: 'ui/FigureStrip.tsx (caption)' },
+  ];
+  const EYEBROW_CAP = 32;
+
+  it('D-76 rule E: every Decide eyebrow is at most 32 characters', () => {
+    expect(EYEBROWS.length).toBeGreaterThan(15);
+    const tooLong = EYEBROWS.filter(({ key, params }) => fill(get(key), params ?? {}).toUpperCase().length > EYEBROW_CAP).map(
+      (e) => `${e.key} (${e.source})`
+    );
+    expect(tooLong).toEqual([]);
+  });
+
+  // R3 "Plural keys (F6)". decide.pay.monthsShort ("1 mo" / "{{count}} mo") is in the table but no screen renders it,
+  // so it is not in the catalogue (reported in the 05-77 summary); the short unit that exists is
+  // decide.depth.invest.axisMonths, which rule U covers.
+  const PLURAL_KEYS = [
+    'decide.quick.overMonths',
+    'decide.quick.monthlyCaption',
+    'decide.quick.monthlyCaptionZero',
+    'decide.quick.monthlyCaptionPaidOff',
+    'decide.pay.loanTermNote',
+    'decide.pay.summaryLoan',
+    'decide.pay.summaryCardMonths',
+    'decide.pay.summaryContribution',
+    'decide.pay.projection',
+    'decide.verdict.projection',
+    'decide.fold.investPreview',
+    'decide.pay.horizonYears',
+  ];
+
+  it('R3 F6: plural keys exist and caption caps hold at 120', () => {
+    for (const key of PLURAL_KEYS) {
+      expect(get(`${key}_one`)).toBeTruthy();
+      expect(get(`${key}_other`)).toBeTruthy();
+    }
+    const count = { count: '120' };
+    expect(fill(get('decide.quick.overMonths_other'), count).length).toBeLessThanOrEqual(15);
+    expect(fill(get('decide.quick.monthlyCaption_other'), count).length).toBeLessThanOrEqual(22);
+    expect(fill(get('decide.quick.monthlyCaptionZero_other'), count).length).toBeLessThanOrEqual(43);
+    expect(fill(get('decide.quick.monthlyCaptionPaidOff_other'), { ...count, paid: '119' }).length).toBeLessThanOrEqual(46);
+    expect(fill(get('decide.fold.investPreview_other'), { ...count, fv: '$1,234,567', rate: '12.5' }).length).toBeLessThanOrEqual(44);
+  });
+
+  it('D-76 rule T: copy caps hold by length', () => {
+    const amounts = { amount: '$1,234', short: '$1,234', already: '$412', left: '$1,234', pct: '41%', basis: 'average', count: '100', horizon: '60', payment: '$302.08' };
+    const titles = leaves.filter((l) => l.path.startsWith('decide.verdict.title'));
+    expect(titles.length).toBeGreaterThan(10);
+    for (const { path, value } of titles) {
+      const cap = path === 'decide.verdict.titleInvBoth' ? 72 : 64;
+      expect({ path, ok: fill(value, amounts).replace(/\{\{\w+\}\}/g, 'X').length <= cap }).toEqual({ path, ok: true });
+    }
+    const reasons = leaves.filter((l) => l.path.startsWith('decide.alt.reason'));
+    expect(reasons.length).toBeGreaterThan(3);
+    for (const { path, value } of reasons) {
+      expect({ path, ok: fill(value, amounts).replace(/\{\{\w+\}\}/g, 'X').length <= 44 }).toEqual({ path, ok: true });
+    }
+    expect(get('decide.alt.reasonTooLarge')).toHaveLength(33);
+    expect(get('decide.depth.invest.tooLarge')).toHaveLength(33);
+  });
+
+  it('D-106 the month verdict titles stay within 64 characters at the demo and the wide amounts', () => {
+    const demo = { basis: 'average', already: '$412', short: '$1,234' };
+    const wide = { basis: 'average', already: '$123,456.78', short: '$123,456.78' };
+    for (const key of ['titleNoAlreadyShort', 'titleNoAlreadyShortSame', 'titleNoAlreadyShortMonth', 'titleNoAlreadyShortSameMonth', 'titleNoMonthShort']) {
+      expect({ key, len: fill(get(`decide.verdict.${key}`), demo).length <= 64 }).toEqual({ key, len: true });
+    }
+    for (const key of ['titleNoAlreadyShortMonth', 'titleNoAlreadyShortSameMonth', 'titleNoMonthShort']) {
+      expect({ key, len: fill(get(`decide.verdict.${key}`), wide).length <= 64 }).toEqual({ key, len: true });
+    }
+    // none of the month figure strings says "short" any more
+    for (const key of ['titleNoAlreadyShort', 'titleNoAlreadyShortSame', 'titleNoMonthShort', 'titleNoAlreadyShortMonth', 'titleNoAlreadyShortSameMonth']) {
+      expect(get(`decide.verdict.${key}`)).toMatch(/overspent/);
+      expect(get(`decide.verdict.${key}`)).not.toMatch(/short/);
+    }
+  });
+
+  it('D-106 the month fold previews fit 44 characters at $123,456.78', () => {
+    const preview = fill(get('decide.fold.preview.month'), { after: fill(get('decide.fig.overspent'), { amount: '$123,456.78' }) });
+    expect(preview).toBe('Month end: $123,456.78 overspent');
+    expect(preview.length).toBeLessThanOrEqual(44);
+    expect(fill(get('decide.section.monthSummary'), { after: fill(get('decide.fig.overspent'), { amount: '$123,456.78' }) }).length).toBeLessThanOrEqual(44);
+    // the What breaks preview shows the month warning's title only
+    expect(get('decide.warn.monthTitle').length).toBeLessThanOrEqual(44);
+  });
+
+  // R16 (05-88, D-86, D-88, D-89, D-93): the count-bearing strings added by the device-walkthrough refinements, and the
+  // fold previews that must fit the 44-character cap.
+  const syncNode = en.sync as Record<string, unknown>;
+  const syncGet = (key: string): string => {
+    const v = syncNode[key];
+    if (typeof v !== 'string') throw new Error(`no sync leaf ${key}`);
+    return v;
+  };
+  const FREQS = ['weekly', 'fortnightly', 'monthly', 'quarterly'];
+
+  it('R17 home count strings have plural forms and read as plain statements', () => {
+    for (const base of ['decide.home.rows.linesSetSix', 'decide.home.notice.items', 'decide.home.notice.offlineWaiting']) {
+      expect(get(`${base}_one`)).toContain('{{count}}');
+      expect(get(`${base}_other`)).toContain('{{count}}');
+    }
+    expect(get('decide.home.rows.openChanged')).toContain('{{count}}');
+    // the retired pre-R17 keys stay gone
+    for (const gone of ['decide.home.pastRow', 'decide.home.pastCount_one', 'decide.home.addChange', 'decide.home.checkInvestment']) {
+      expect(() => get(gone)).toThrow();
+    }
+  });
+
+  it('R16 count strings use a no-break space and have plural forms', () => {
+    // sync waiting (D-88): the count and its unit are one word to the eye
+    for (const key of ['waiting', 'offlineWaiting']) {
+      expect(syncGet(`${key}_one`)).toContain(`{{count}}${NBSP}change `);
+      expect(syncGet(`${key}_other`)).toContain(`{{count}}${NBSP}changes`);
+    }
+    // the deposit line (D-86): the term ends in a counted month(s)
+    expect(get('decide.pay.loanSavedLine_one')).toContain(`1${NBSP}month`);
+    expect(get('decide.pay.loanSavedLine_other')).toContain(`{{count}}${NBSP}months`);
+    // the frequency table (D-89, R16.16 M6): each frequency has _one and _other, and a count followed by a unit has the no-break space
+    for (const freq of FREQS) {
+      const one = get(`decide.pay.instRate.${freq}_one`);
+      const other = get(`decide.pay.instRate.${freq}_other`);
+      expect(one).toMatch(new RegExp(`^1${NBSP}`));
+      expect(other.startsWith(`{{count}}${NBSP}`)).toBe(true);
+      expect(get(`decide.pay.instSummary.${freq}_one`)).toBeTruthy(); // "{{count}} ×": the unit rule does not apply
+      expect(get(`decide.pay.instSummary.${freq}_other`)).toBeTruthy();
+    }
+    // no R16 count is followed by a plain space and a unit word
+    const plain = /(\{\{count\}\}|\b1) (changes?|payments?|weekly|monthly|quarterly|months?|years?)\b/;
+    const r16Leaves = leaves.filter((l) => /^decide\.pay\.(instRate|loanSavedLine)/.test(l.path));
+    expect(r16Leaves.length).toBeGreaterThan(8);
+    expect(r16Leaves.filter((l) => plain.test(l.value)).map((l) => l.path)).toEqual([]);
+    expect(Object.keys(syncNode).filter((k) => /^(waiting|offlineWaiting)_/.test(k) && plain.test(syncGet(k)))).toEqual([]);
+  });
+
+  it('R16 the fold previews fit the 44-character cap', () => {
+    expect(get('decide.fold.updating').length).toBeLessThanOrEqual(44);
+    expect(get('decide.section.setbacksSummaryOver50').length).toBeLessThanOrEqual(44);
+    expect(get('decide.fold.preview.setbacksOver50').length).toBeLessThanOrEqual(44);
+    expect(get('decide.fold.updating')).toBe('Updating');
+    expect(get('decide.section.setbacksSummaryOver50')).toBe('Runway over 50 years');
+    // the cushion key figure above 600 months reads in words, never as a count of months
+    expect(get('decide.verdict.key.over50Years')).toBe('Over 50 years');
+  });
+});

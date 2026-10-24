@@ -43,6 +43,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-apple-authentication',
     'expo-web-browser',
     'expo-localization',
+    // 05-11 (D-10): local Wait-and-save reminders only. No SCHEDULE_EXACT_ALARM (inexact morning alarm is enough; Play restricts the permission). iOS needs the Push capability once Apple enrolment lands (00-20).
+    'expo-notifications',
     // D-19: wires the Hermes JS source-map upload into the native build (Gradle on Android) so
     // captureException()'s stack frames symbolicate back to real .ts/.tsx files and line
     // numbers. authToken is deliberately NOT passed here — the plugin falls back to reading

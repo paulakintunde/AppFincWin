@@ -1,0 +1,202 @@
+// 05-24 (DCU-02, DCU-03, ANL-06, D-15, D-20, D-37): loads a check and autosaves every edit through the write queue.
+// A new check is created on its FIRST edit, never on open; later edits debounce into the draft save. A decided
+// check is read-only. Leaving flushes a pending save and nothing here creates an undo step (A5).
+// Only the typed inputs (plain JSON) are stored or held here; nothing computed ever reaches the queue.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
+import { onlineManager } from '@tanstack/react-query';
+import { useCreateCheck, useSaveCheckDraft } from '@/data/mutations/decideChecks';
+import { useDecideChecks, useDecideSnapshot } from '@/data/queries/decide';
+import type { DecideCheckRow } from '@/db/decideChecks';
+import { useRecordContext } from '@/features/record/useRecordContext';
+import { getAnalytics } from '@/services/analytics';
+import { SAMPLE_CURRENCY } from '../snapshot/checkCurrency';
+import { emptyCheckInputs, parseCheckInputs } from '../snapshot/checkInputs';
+import type { CheckInputs } from '../snapshot/types';
+
+export const DRAFT_DEBOUNCE_MS = 600;
+
+export interface CheckDraft {
+  status: 'loading' | 'ready' | 'not_found';
+  row: DecideCheckRow | null;
+  inputs: CheckInputs;
+  update(patch: Partial<CheckInputs>, opts?: { step?: number }): void;
+  /**
+   * WR-C09: queues any pending edit now. 'saved': the check exists and every edit is written or queued; 'nothing': a new
+   * check that was never edited (nothing exists to save); 'waiting': the first edit is held until the account loads.
+   */
+  saveNow(): Promise<SaveResult>;
+  isNew: boolean;
+  /** D-77: Clear disarms the draft: no later update, flush, timer or unmount save writes to this id. */
+  discard(): void;
+  /** True while an edit waits on the debounce or on the account ids; false once flushed or discarded. */
+  pendingEdit: boolean;
+  /** True once an edit was made while the device was offline in this visit. */
+  editedOffline: boolean;
+}
+
+export type SaveResult = 'saved' | 'nothing' | 'waiting';
+
+const clampStep = (n: number): number => Math.min(5, Math.max(1, Math.trunc(n)));
+
+export function useCheckDraft(id: string, kind: 'buy' | 'invest', today: string): CheckDraft {
+  const rc = useRecordContext();
+  const checks = useDecideChecks(rc.userId ?? undefined, rc.householdId ?? undefined);
+  const snapshot = useDecideSnapshot();
+  const { create, pendingIds } = useCreateCheck();
+  // A create queued from another screen (Run the full check) has no row for a moment, or loses its optimistic row to a refetch
+  // while it waits its turn in the write queue. Either way the check is on its way, not missing.
+  const creating = pendingIds.includes(id);
+  const { save } = useSaveCheckDraft();
+
+  const row = useMemo(() => checks.data?.find((r) => r.id === id) ?? null, [checks.data, id]);
+  const [edited, setEdited] = useState<CheckInputs | null>(null);
+
+  const created = useRef(false);
+  const [seenRow, setSeenRow] = useState(false);
+  const [createdState, setCreatedState] = useState(false);
+  const started = useRef(false);
+  const furthest = useRef(1);
+  const pending = useRef<CheckInputs | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const disarmed = useRef(false);
+  const [pendingEdit, setPendingEdit] = useState(false);
+  const [editedOffline, setEditedOffline] = useState(false);
+  // Derived-state pattern: remember that the row existed, so its later disappearance reads as not_found.
+  if (row && !seenRow) setSeenRow(true);
+
+  const currency = snapshot.result?.currency ?? null;
+  const live = useRef({ rc, row, create, save, currency });
+  useEffect(() => {
+    live.current = { rc, row, create, save, currency };
+  });
+
+  const flush = useCallback((): SaveResult => {
+    if (disarmed.current) return 'nothing';
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    const inputs = pending.current;
+    if (!inputs) return live.current.row !== null || created.current ? 'saved' : 'nothing';
+    const { rc: ctx, row: current, create: doCreate, save: doSave, currency: homeCurrency } = live.current;
+    // D-37: a check records the currency its amounts were typed in once, on first save, and never changes it. An unstamped
+    // sample check is USD (IN-A01, D-67). CR-C06: the stamp is written back into the held inputs, so a later save in the
+    // same session re-uses it rather than stamping again from a home currency that may have changed since.
+    const typed = inputs.currency ?? (current?.is_sample === true ? SAMPLE_CURRENCY : homeCurrency);
+    const stamped: CheckInputs = inputs.currency === null && typed !== null ? { ...inputs, currency: typed } : inputs;
+    if (stamped !== inputs) setEdited((e) => (e !== null && e.currency === null ? { ...e, currency: stamped.currency } : e));
+    const step = Math.max(furthest.current, current?.furthest_step ?? 1);
+    const json = stamped as unknown as Record<string, unknown>;
+    if (!current && !created.current) {
+      if (!ctx.userId || !ctx.householdId) return 'waiting';
+      pending.current = null;
+      setPendingEdit(false);
+      created.current = true;
+      setCreatedState(true);
+      doCreate({
+        userId: ctx.userId,
+        id,
+        householdId: ctx.householdId,
+        kind: stamped.kind, // the column follows the inputs (kind_matches_inputs); a first edit may have switched Buy/Invest
+        name: stamped.name.slice(0, 80),
+        inputs: json,
+        furthestStep: step,
+      });
+      return 'saved';
+    }
+    pending.current = null;
+    setPendingEdit(false);
+    doSave({ id, name: stamped.name.slice(0, 80), inputs: json, furthestStep: step });
+    return 'saved';
+  }, [id]);
+
+  // A first edit made before the user and household ids resolve stays pending (flush returns early and keeps
+  // it); create it as soon as both ids arrive rather than waiting for a second edit.
+  useEffect(() => {
+    if (rc.userId && rc.householdId && pending.current && !row && !created.current) flush();
+  }, [rc.userId, rc.householdId, row, flush]);
+
+  // D-77 (R9): the app leaving the foreground flushes the pending edit at once, so the write is queued before the OS can
+  // kill the app. The persister flushes the queue to disk on the next tick (startPersistOnBackground).
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'background' || s === 'inactive') flush();
+    });
+    return () => sub.remove();
+  }, [flush]);
+
+  // Leaving never loses work: the pending save is flushed on unmount.
+  useEffect(
+    () => () => {
+      flush();
+    },
+    [flush]
+  );
+
+  const decided = row !== null && row.status !== 'open';
+  const loaded = checks.data !== undefined && rc.ready;
+  const status: CheckDraft['status'] = !loaded
+    ? 'loading'
+    : row === null && creating && !createdState
+      ? 'loading'
+      : row === null && seenRow && !createdState
+        ? 'not_found'
+        : 'ready';
+
+  const inputs = useMemo<CheckInputs>(() => {
+    if (edited) return edited;
+    return row ? parseCheckInputs(row.inputs, today) : emptyCheckInputs(kind, today);
+  }, [edited, row, kind, today]);
+
+  // CR-C01: every `update` closure, including one a toast's Undo kept from an earlier render, reads the latest inputs and
+  // guards from these refs, so an Undo never rebuilds the check from a stale render and never edits a decided check.
+  const latestInputs = useRef<CheckInputs>(inputs);
+  const guard = useRef({ status, decided, row });
+  useEffect(() => {
+    latestInputs.current = inputs;
+    guard.current = { status, decided, row };
+  });
+
+  const update = useCallback(
+    (patch: Partial<CheckInputs>, opts?: { step?: number }): void => {
+      if (disarmed.current) return;
+      const { status: nowStatus, decided: nowDecided, row: nowRow } = guard.current;
+      if (nowStatus !== 'ready' || nowDecided) return;
+      const base = pending.current ?? latestInputs.current;
+      const next: CheckInputs = { ...base, ...patch };
+      if (opts?.step !== undefined) furthest.current = Math.max(furthest.current, clampStep(opts.step));
+      setEdited(next);
+      setPendingEdit(true);
+      if (!onlineManager.isOnline()) setEditedOffline(true);
+      pending.current = next;
+      latestInputs.current = next;
+      if (!nowRow && !created.current) {
+        // First edit of a new check: create now (ANL-06, D-20).
+        if (!started.current) {
+          started.current = true;
+          getAnalytics().track('check_started', {});
+        }
+        flush();
+        return;
+      }
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(flush, DRAFT_DEBOUNCE_MS);
+    },
+    [flush]
+  );
+
+  const saveNow = useCallback(async (): Promise<SaveResult> => flush(), [flush]);
+
+  const discard = useCallback((): void => {
+    disarmed.current = true;
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    pending.current = null;
+    setPendingEdit(false);
+  }, []);
+
+  return { status, row, inputs, update, saveNow, isNew: row === null && !createdState, discard, pendingEdit, editedOffline };
+}

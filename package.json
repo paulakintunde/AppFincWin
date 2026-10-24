@@ -34,6 +34,7 @@
     "expo-haptics": "~57.0.3",
     "expo-linking": "~57.0.10",
     "expo-localization": "~57.0.2",
+    "expo-notifications": "~57.0.23",
     "expo-router": "~57.0.22",
     "expo-secure-store": "~57.0.4",
     "expo-splash-screen": "~57.0.9",
@@ -97,7 +98,8 @@
     "lint:migrations": "node scripts/check-migration-compat.mjs",
     "verify:migrations": "node scripts/verify-migration-gate.mjs",
     "check:money-mirror": "node scripts/gen-money-mirror-test.mjs --check",
-    "check:recurring-mirror": "node scripts/gen-recurring-mirror-test.mjs --check"
+    "check:recurring-mirror": "node scripts/gen-recurring-mirror-test.mjs --check",
+    "check:decide-demo-mirror": "node scripts/check-decide-demo-mirror.mjs --check"
   },
   "private": true
 }

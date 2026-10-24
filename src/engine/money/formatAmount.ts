@@ -24,6 +24,24 @@ export interface FormatAmountOptions {
   customSymbol?: string;
 }
 
+export interface FormatAmountA11yOptions extends FormatAmountOptions {
+  /** The user's home currency: USD reads "dollars" at a USD home, "US dollars" elsewhere. */
+  homeCurrency?: string;
+  /** A custom currency's own name, read aloud in place of its symbol. */
+  customName?: string;
+}
+
+/** D-94: the marker a non-USD dollar currency takes when Intl would show a bare "$". */
+const DOLLAR_MARKERS: Record<string, string> = {
+  CAD: 'CA$',
+  AUD: 'A$',
+  NZD: 'NZ$',
+  HKD: 'HK$',
+  SGD: 'S$',
+  TWD: 'NT$',
+  MXN: 'MX$',
+};
+
 /**
  * Pure string-maths conversion of a `MinorUnits` integer to a plain decimal
  * string -- no division, so no floating-point rounding can enter the
@@ -42,8 +60,9 @@ export function toDecimalString(amount: MinorUnits, exponent: number): string {
 /**
  * Formats a `Money` value for display, per D-23:
  *  - the currency's symbol, never its code, unless the symbol itself is
- *    ambiguous (`currencyDisplay: 'symbol'`, not `'narrowSymbol'`, is what
- *    makes Intl disambiguate CAD as "CA$" in en-US and USD as "US$" in en-CA)
+ *    ambiguous. D-94: "$" always means the US dollar -- USD uses
+ *    `narrowSymbol` ("$" in every locale), every other currency uses `symbol`
+ *    and a bare "$" is swapped for its marker (CA$, A$, ...).
  *  - a true minus sign (U+2212), never a hyphen, on outflows
  *  - decimals dropped on a whole amount unless `showCents` is on; a
  *    zero-exponent currency (JPY) never shows them, a three-exponent one
@@ -78,13 +97,64 @@ export function formatAmount(money: Money, opts: FormatAmountOptions): string {
   }
 
   const decimalString = toDecimalString(money.amount, exponent);
+  // D-94 / R16.15: "$" always means the US dollar. USD takes the narrow symbol; any other
+  // currency whose symbol part comes out as a bare "$" takes its marker instead.
+  const isUsd = money.currency === 'USD';
+  const parts = new Intl.NumberFormat(opts.locale, {
+    style: 'currency',
+    currency: money.currency,
+    currencyDisplay: isUsd ? 'narrowSymbol' : 'symbol',
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).formatToParts(decimalString as unknown as number);
+  let usedFallback = false;
+  const joined = parts
+    .map((part) => {
+      if (part.type !== 'currency') return part.value;
+      // Hermes on Android ignores `narrowSymbol` and gives "US$" in en-CA and other non-US locales; set "$" here.
+      if (isUsd) return '$';
+      if (part.value !== '$') return part.value;
+      const marker = DOLLAR_MARKERS[money.currency];
+      if (marker !== undefined) return marker;
+      usedFallback = true;
+      return `${money.currency} `;
+    })
+    .join('');
+  // The fallback's no-break space may meet a locale's own separator (es-AR "$ 1.500").
+  return (usedFallback ? joined.replace(/ [  ]/, ' ') : joined).replace(/-/g, '−');
+}
+
+/**
+ * Money as a screen reader should speak it (D-94 accessibility): the currency read by
+ * name, never by symbol, so "CA$1,500" reads "1,500 Canadian dollars". USD reads "dollars"
+ * when `homeCurrency` is USD and "US dollars" otherwise. A custom currency reads its own
+ * name (`customName`, falling back to its symbol). The true minus and the D-23 fraction
+ * rules match `formatAmount`.
+ */
+export function formatMoneyA11y(money: Money, opts: FormatAmountA11yOptions): string {
+  const exponent = opts.exponent ?? currencyExponent(money.currency);
+  const isWhole = money.amount % 10 ** exponent === 0;
+  const fractionDigits = exponent > 0 && (opts.showCents || !isWhole) ? exponent : 0;
+  const fractionOpts = { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits };
+
+  if (opts.customSymbol !== undefined) {
+    const absDecimalString = toDecimalString(minorUnits(Math.abs(money.amount)), exponent);
+    const plain = new Intl.NumberFormat(opts.locale, fractionOpts).format(
+      absDecimalString as unknown as number
+    );
+    const spoken = `${plain} ${opts.customName ?? opts.customSymbol}`;
+    return money.amount < 0 ? `−${spoken}` : spoken;
+  }
+
+  const stripUs = money.currency === 'USD' && opts.homeCurrency === 'USD';
   return new Intl.NumberFormat(opts.locale, {
     style: 'currency',
     currency: money.currency,
-    currencyDisplay: 'symbol',
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
+    currencyDisplay: 'name',
+    ...fractionOpts,
   })
-    .format(decimalString as unknown as number)
+    .formatToParts(toDecimalString(money.amount, exponent) as unknown as number)
+    .map((part) => (stripUs && part.type === 'currency' ? part.value.replace(/^US\s+/, '') : part.value))
+    .join('')
     .replace(/-/g, '−');
 }

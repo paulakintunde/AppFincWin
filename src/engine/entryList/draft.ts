@@ -37,6 +37,8 @@ export interface DraftForm {
   refund: boolean;
   /** H1: the Repeats choice for a new recurring entry. Optional so v2 drafts written before it still parse. */
   repeats?: ListRepeat;
+  /** WR-D01: "One-off, won't recur". Optional so drafts written before it still parse; a transfer is never one. */
+  oneOff?: boolean;
 }
 
 export interface EntryDraft {
@@ -165,11 +167,14 @@ function parseForm(x: unknown): DraftForm | null {
     const r = parseRepeat(x.repeats, localDate);
     repeats = r === null || (direction === 'transfer' && r.freq !== 'never') ? { freq: 'never' } : r;
   }
+  // WR-D01: only an explicit true on a non-transfer form is kept; anything else reads as not one-off.
+  const oneOff = x.oneOff === true && direction !== 'transfer';
   return {
     direction, amountText, name, categoryId, accountId, currency, localDate,
     status: status === 'skipped' ? 'paid' : status, // H4: a new entry only offers paid or pending
     statusTouched, paymentType, note, toAccountId, toCurrency, amountInText, automatic, refund,
     ...(repeats === undefined ? {} : { repeats }),
+    ...(oneOff ? { oneOff: true } : {}),
   };
 }
 

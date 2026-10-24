@@ -24,6 +24,7 @@ import {
   BILLS_DUE_HORIZON_DAYS,
   CASH_PATH_DAYS,
   DEFAULT_DSR_LINE,
+  DEFAULT_HOUSING_LINE,
   MAX_PROJECTION_RATE,
   DEFAULT_UNSECURED_INCOME_MULTIPLE,
   MONTHS_PER_YEAR,
@@ -39,11 +40,13 @@ import {
   purchaseFlows,
 } from './cashPath';
 import { confidenceOf } from './confidence';
+import { expectedMonthMoney } from './expectedMonth';
 import { deriveMoney, resolveSpendingShare, shareForCategory } from './money';
 import { resolveProjectionRates } from './projectionRates';
 import { defaultReserve, reserveHalfMonthsFor } from './reserve';
 import { resolvePlan } from './plan';
 import { positionContext } from './position';
+import { totalSetAside } from './pots';
 import { isSecured } from './secured';
 import { billsDueWithin, scheduledOutflowsDue } from './series';
 import { SOLE_SHARE, myPart, resolveShare } from './share';
@@ -99,6 +102,7 @@ function validate(snapshot: DecideSnapshot): void {
   }
   assertNonNegative(snapshot.monthlySaving, 'monthlySaving');
   assertNonNegative(snapshot.monthlyInvesting, 'monthlyInvesting');
+  assertNonNegative(snapshot.housingMonthly, 'housingMonthly'); // D-103
   // 04-REVIEW LO-03: every user limit is checked up front (a negative reserve passed silently without a cash path).
   const { reserve, investingFloor, savingFloor, spareFloor, dsrLine } = snapshot.limits;
   if (reserve !== null) assertNonNegative(reserve, 'limits.reserve');
@@ -107,6 +111,9 @@ function validate(snapshot: DecideSnapshot): void {
   if (spareFloor !== null) assertNonNegative(spareFloor, 'limits.spareFloor');
   if (dsrLine !== null && dsrLine < 0n) {
     throw new RangeError(`${FN}: limits.dsrLine must be >= 0%`);
+  }
+  if (snapshot.limits.housingLine !== null && snapshot.limits.housingLine < 0n) {
+    throw new RangeError(`${FN}: limits.housingLine must be >= 0%`);
   }
   const multiple = snapshot.limits.unsecuredIncomeMultiple;
   if (multiple !== null && (!Number.isSafeInteger(multiple) || multiple < 0)) {
@@ -135,12 +142,14 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
   const purchase = resolveShare(snapshot.scope);
   const spending = resolveSpendingShare(snapshot.scope, snapshot.householdSpending);
   const spendingShare: SpendingShare = spending.ok ? spending.share : { byDefault: SOLE_SHARE, byCategory: [] };
+  // D-107: deriveMoney reads the history only. 'month' asks it for the worst basis, then overlays the expected month's money.
+  const historyOverride = snapshot.basisOverride === 'month' ? 'worst' : snapshot.basisOverride;
   const moneyResult = deriveMoney({
     currency: snapshot.currency,
     months: snapshot.months,
     bills: snapshot.bills,
     incomeSeries: snapshot.incomeSeries,
-    basisOverride: snapshot.basisOverride,
+    basisOverride: historyOverride,
     spendingShare,
   });
 
@@ -164,11 +173,16 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
           fullMonths: moneyResult.money.fullMonthsUsed,
           steadiness: moneyResult.money.steadiness,
           firstRead: false,
+          provisionalRates: snapshot.provisionalRates,
         })
-      : confidenceOf({ fullMonths: 0, steadiness: null, firstRead: false });
+      : confidenceOf({ fullMonths: 0, steadiness: null, firstRead: false, provisionalRates: snapshot.provisionalRates });
     return { ok: false, reasons, confidence };
   }
-  const money = moneyResult.money;
+  let money = moneyResult.money;
+  if (snapshot.basisOverride === 'month') {
+    const expected = expectedMonthMoney(snapshot, spendingShare);
+    money = { ...money, basis: 'month', incomeBasis: expected.income, spendingBasis: expected.spending };
+  }
   const purchaseShare = purchase.share;
 
   let debtPayments = 0n;
@@ -182,15 +196,31 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
   const monthCosts = mi(BigInt(money.spendingAverage) + debtPayments); // D-02
   const pausable = mi(BigInt(snapshot.monthlySaving) + BigInt(snapshot.monthlyInvesting)); // D-35, D-32
   const monthIncome = money.incomeBasis;
-  const leftBefore = mi(BigInt(monthIncome) - BigInt(money.spendingBasis) - debtPayments - BigInt(pausable));
+  // D-101: pots are set aside each month like saving goals, but are never paused (pausable is unchanged), so a shortfall
+  // beyond saving and investing stays the month warning.
+  const pots = totalSetAside(snapshot.pots, snapshot.asOf);
+  const setAside = pots.total;
+  const leftBefore = mi(
+    BigInt(monthIncome) - BigInt(money.spendingBasis) - debtPayments - BigInt(pausable) - BigInt(setAside)
+  );
 
   let billsDue = 0n;
   for (const b of billsDueDetail) billsDue += BigInt(myPart(b.amount, shareForCategory(spendingShare, b.categoryId)));
-  const cashOnHand = BigInt(snapshot.cashOnHand);
+  // D-101: money saved in a pot cannot be spent by a check, so every cash figure starts from cash less that slice.
+  const rawCash = BigInt(snapshot.cashOnHand);
+  const positiveCash = rawCash > 0n ? rawCash : 0n;
+  const protectedCash = pots.saved < positiveCash ? pots.saved : positiveCash;
+  const cashOnHand = rawCash - protectedCash;
   const dueNow = BigInt(due.dueNow);
   const dueAhead = BigInt(due.dueAhead);
 
-  const cashPath = cashPathForSnapshot({ snapshot, money, spendingShare, debtPayments: mi(debtPayments) });
+  const cashPath = cashPathForSnapshot({
+    snapshot,
+    money,
+    spendingShare,
+    debtPayments: mi(debtPayments),
+    protectedCash: mi(protectedCash),
+  });
   const ledgerCash = cashOnHand - billsDue - dueNow;
   const cashAvailable = cashPath === null ? ledgerCash : cashOnHand - dueNow;
   const cashAfterBills = ledgerCash - dueAhead;
@@ -199,6 +229,7 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
   const resolved: ResolvedLimits = {
     reserve: limits.reserve ?? defaultReserve(monthCosts, money.steadiness),
     dsrLine: limits.dsrLine ?? DEFAULT_DSR_LINE,
+    housingLine: limits.housingLine ?? DEFAULT_HOUSING_LINE,
     unsecuredLine: mi(
       BigInt(money.incomeAverage) * BigInt(limits.unsecuredIncomeMultiple ?? DEFAULT_UNSECURED_INCOME_MULTIPLE)
     ),
@@ -226,6 +257,9 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
       debtBalance: mi(debtBalance),
       annualIncome: mi(BigInt(money.incomeAverage) * BigInt(MONTHS_PER_YEAR)),
       pausable,
+      setAside,
+      potLines: pots.lines,
+      protectedCash: mi(protectedCash),
       leftBefore,
       leftThisMonth: leftBefore,
       billsDue: mi(billsDue),
@@ -287,7 +321,7 @@ function direction(worse: boolean, better: boolean): LedgerDirection {
  * reading recorded in 04-REPLAN-NOTES.md). Invest checks never emit `inv` or debt-line warnings; `month` carries the
  * whole shortfall.
  * D-24: the `cash` check reads cashAvailable; the deducted bills reach spare money through cashAfterBills.
- * Equal shortfalls are ordered by WARNING_ORDER (month, cash, cash_dip, dsr, owe, inv).
+ * Equal shortfalls are ordered by WARNING_ORDER (month, cash, cash_dip, dsr, housing, owe, inv).
  * D-38: the month table is pre-pause so its rows add up; the pause is reported through `inv`, investingAtRisk and
  * savingAtRisk. Cash Now is context.ledgerCash and Cash After ledgerCashAfterPurchase (D-38, D-24, D-61), not the
  * path-aware cashAvailable and not the spare-money cashAfterBills. D-21: the direction is a code.
@@ -320,6 +354,19 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
     (incomeBasis > 0
       ? BigInt(debtServiceAfter) * ONE_HUNDRED_PERCENT > dsrLine * BigInt(incomeBasis)
       : debtServiceAfter > 0);
+  // D-103: tested only when the check adds housing cost (a property check with a positive monthly effect). rent_bill and
+  // other purchases are never blamed for housing already over the line; invest checks are never tested. Equal is not a breach.
+  // The spec's max(0, ...) floor cannot bite here: newMonthly > 0 and housingMonthly >= 0 (validated), so the sum is positive;
+  // a property check whose replaced expenses net the effect to 0 or less is simply not tested (housingAfter = housingBefore).
+  const housingBefore = snapshot.housingMonthly;
+  const addsHousing = check.kind === 'buy' && check.itemType === 'property' && newMonthly > 0;
+  const housingAfter = addsHousing ? am(BigInt(housingBefore) + BigInt(newMonthly)) : housingBefore;
+  const housingLine = limits.housingLine;
+  const housingBreach =
+    addsHousing &&
+    (incomeBasis > 0
+      ? BigInt(housingAfter) * ONE_HUNDRED_PERCENT > housingLine * BigInt(incomeBasis)
+      : housingAfter > 0);
   const financedMine = isInvest ? 0n : BigInt(myPart(plan.financed, p));
   const unsecuredAfter = am(BigInt(context.unsecuredDebt) + financedMine);
   const oweBreach = !isInvest && unsecuredAfter > limits.unsecuredLine;
@@ -370,6 +417,10 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
     const line = divideHalfUp(dsrLine * BigInt(incomeBasis), ONE_HUNDRED_PERCENT);
     warnings.push({ code: 'dsr', shortfall: am(BigInt(debtServiceAfter) - line) });
   }
+  if (housingBreach) {
+    const line = divideHalfUp(housingLine * BigInt(incomeBasis), ONE_HUNDRED_PERCENT);
+    warnings.push({ code: 'housing', shortfall: am(BigInt(housingAfter) - line) });
+  }
   if (oweBreach) warnings.push({ code: 'owe', shortfall: am(BigInt(unsecuredAfter) - BigInt(limits.unsecuredLine)) });
   if (!isInvest && pauseNeeded > 0) warnings.push({ code: 'inv', shortfall: am(BigInt(pauseNeeded)) });
   warnings.sort(compareWarnings);
@@ -381,6 +432,7 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
     cash: cashAfter >= limits.reserve,
     month: remainingShortfall === 0,
     dsr: !dsrBreach,
+    housing: !housingBreach,
     owe: !oweBreach,
     inv: investingAfter >= limits.investingFloor,
     save: savingAfter >= limits.savingFloor,
@@ -415,12 +467,18 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
 
   // D-38: the month line by line (pre-pause) and the five ledgers.
   const column = (debt: MinorUnits, thisPurchase: MinorUnits): MonthColumn => {
-    const outgoings = BigInt(context.mySpendingBasis) + BigInt(debt) + BigInt(context.pausable) + BigInt(thisPurchase);
+    const outgoings =
+      BigInt(context.mySpendingBasis) +
+      BigInt(debt) +
+      BigInt(context.pausable) +
+      BigInt(context.setAside) +
+      BigInt(thisPurchase);
     return {
       income: context.monthIncome,
       living: context.mySpendingBasis,
       debtPayments: debt,
       savingInvesting: context.pausable,
+      setAside: context.setAside,
       thisPurchase,
       outgoings: am(outgoings),
       left: am(BigInt(context.monthIncome) - outgoings),
@@ -479,6 +537,10 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
     unsecuredAfter,
     debtServiceRatioBefore: ratio(context.debtPayments),
     debtServiceRatioAfter: ratio(debtServiceAfter),
+    housingBefore,
+    housingAfter,
+    housingRatioBefore: ratio(housingBefore),
+    housingRatioAfter: ratio(housingAfter),
     debtBalanceAfter,
     monthTable,
     ledgers,
@@ -494,7 +556,7 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
     cashPath,
     cashDip,
     basisCodes,
-    confidence: confidenceOf({ fullMonths: money.fullMonthsUsed, steadiness: money.steadiness, firstRead: false }),
+    confidence: confidenceOf({ fullMonths: money.fullMonthsUsed, steadiness: money.steadiness, firstRead: false, provisionalRates: snapshot.provisionalRates }),
   };
 }
 
@@ -535,6 +597,7 @@ export function assess(
         fullMonths: combined.money.fullMonthsUsed,
         steadiness: combined.money.steadiness,
         firstRead: false,
+        provisionalRates: combined.snapshot.provisionalRates,
       }),
     };
   }

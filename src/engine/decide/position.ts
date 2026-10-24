@@ -85,8 +85,13 @@ export function stackCheck(
   const monthlyCost = monthly + running;
 
   const monthCosts = mi(BigInt(context.monthCosts) + (isBuy ? monthlyCost : 0n));
+  // D-103: housing is tested on the combined position, so another open property check that adds housing cost joins
+  // housingMonthly here, by the same rule assess() applies to the check under assessment (a positive net monthly effect).
+  const addsHousing = isBuy && check.itemType === 'property' && monthlyCost > 0n;
   const newSnapshot = isBuy
-    ? snapshot
+    ? addsHousing
+      ? { ...snapshot, housingMonthly: mi(BigInt(snapshot.housingMonthly) + monthlyCost) }
+      : snapshot
     : { ...snapshot, monthlyInvesting: mi(BigInt(snapshot.monthlyInvesting) + monthly) };
   const reserve = snapshot.limits.reserve === null ? defaultReserve(monthCosts, money.steadiness) : null;
 
@@ -144,7 +149,7 @@ export function applyChanges(
     currency: context.snapshot.currency,
     monthIncome: context.monthIncome,
     monthSpending: context.mySpendingBasis,
-    fixedOutgoings: mi(BigInt(context.debtPayments) + BigInt(context.pausable)),
+    fixedOutgoings: mi(BigInt(context.debtPayments) + BigInt(context.pausable) + BigInt(context.setAside)),
     changes,
   });
   return {

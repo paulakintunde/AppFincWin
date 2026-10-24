@@ -26,7 +26,7 @@ export function shouldSwipeBack(s: SwipeSample): boolean {
 
 // Tab roots (the (tabs) group: Home, Activity, later Decide/Grow/Insights), the consent prompt
 // and the linear setup flow never swipe back; detail screens do (D-07).
-const NO_SWIPE_BACK: ReadonlySet<string> = new Set(['(tabs)', 'consent', 'setup/account', 'setup/history']);
+const NO_SWIPE_BACK: ReadonlySet<string> = new Set(['(tabs)', 'consent', 'setup/account', 'setup/rough', 'setup/first-check', 'setup/history']);
 
 export function isSwipeBackRoute(routeName: string): boolean {
   return !NO_SWIPE_BACK.has(routeName);
@@ -36,4 +36,30 @@ export function isSwipeBackRoute(routeName: string): boolean {
 export function dragOffset(translationX: number, translationY: number): number {
   if (translationX <= 0 || Math.abs(translationY) > translationX) return 0;
   return translationX;
+}
+
+// WR-C08: the claims form a stack, newest on top. A screen that leaves releases only its own claim, so the screen still
+// underneath it keeps (or gets back) its claim.
+let claims: (() => boolean)[] = [];
+
+/**
+ * A screen (the Decide check flow) claims the edge swipe to step back before it leaves; null releases every claim.
+ * Returns the release for this claim.
+ */
+export function setSwipeBackInterceptor(fn: (() => boolean) | null): () => void {
+  if (fn === null) {
+    claims = [];
+    return () => undefined;
+  }
+  claims = [...claims, fn];
+  return () => {
+    const at = claims.lastIndexOf(fn);
+    if (at >= 0) claims = [...claims.slice(0, at), ...claims.slice(at + 1)];
+  };
+}
+
+/** True when the screen handled the swipe itself, so the route must not pop. */
+export function interceptSwipeBack(): boolean {
+  const top = claims[claims.length - 1];
+  return top ? top() : false;
 }

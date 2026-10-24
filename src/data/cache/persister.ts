@@ -1,7 +1,9 @@
 // SYN-01/SYN-07/D-15: the TanStack Query cache persists to AsyncStorage through
 // LargeSecureStore (Phase 0), so the on-disk blob is AES-CTR ciphertext with its key in
 // SecureStore (WHEN_UNLOCKED_THIS_DEVICE_ONLY) — no new crypto code, per Don't Hand-Roll.
+import { AppState } from 'react-native';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import type { PersistedClient, Persister, PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
 import type { Mutation, Query, QueryClient } from '@tanstack/react-query';
 import { LargeSecureStore } from '@/services/supabase/largeSecureStore';
@@ -96,17 +98,21 @@ export function carryQueuedWrites(
   return { timestamp: now, buster, clientState: { queries: [], mutations } };
 }
 
-export function createEncryptedPersister(storage: LargeSecureStore = new LargeSecureStore()): Persister {
-  // storage is typed as LargeSecureStore above only to give callers autocomplete/defaulting;
+function createBasePersister(storage: LargeSecureStore, throttleTime: number) {
+  // storage is typed as LargeSecureStore only to give callers autocomplete/defaulting;
   // createAsyncStoragePersister's storage param wants the AsyncStorage-shaped
   // getItem/setItem/removeItem interface, which LargeSecureStore already implements.
-  const base = createAsyncStoragePersister({
+  return createAsyncStoragePersister({
     storage,
     key: QUERY_CACHE_KEY,
-    throttleTime: 1000,
+    throttleTime,
     serialize: serializeWithFetchTimes,
     deserialize: deserializeWithFetchTimes,
   });
+}
+
+export function createEncryptedPersister(storage: LargeSecureStore = new LargeSecureStore()): Persister {
+  const base = createBasePersister(storage, 1000);
   return {
     persistClient: base.persistClient,
     removeClient: base.removeClient,
@@ -147,4 +153,36 @@ export function resumeRestoredMutations(queryClient: QueryClient): Promise<void>
     .getAll()
     .filter((m) => m.state.status === 'pending');
   return Promise.all(pending.map((m) => m.continue().catch(() => undefined))).then(() => undefined);
+}
+
+let immediate: Persister | null = null;
+
+/**
+ * D-77 (R9): the main persister throttles writes to once a second, so a write queued less than a second before the OS
+ * kills the app could be lost. This saves the client now, through an unthrottled persister over the same encrypted storage,
+ * key and serializer (no new store). Errors are swallowed: a failed flush leaves the throttled write to land as before.
+ */
+export async function flushPersistedClient(qc: QueryClient): Promise<void> {
+  try {
+    immediate ??= createBasePersister(new LargeSecureStore(), 0);
+    await persistQueryClientSave({
+      queryClient: qc,
+      persister: immediate,
+      buster: CACHE_SCHEMA_VERSION,
+      dehydrateOptions: persistOptions.dehydrateOptions,
+    });
+  } catch {
+    // The throttled persister remains the fallback.
+  }
+}
+
+/**
+ * Persists the write queue as the app leaves the foreground. The flush runs on the next tick, so a screen's own AppState
+ * handler (useCheckDraft, registered later) has queued its mutation first. Returns an unsubscribe.
+ */
+export function startPersistOnBackground(qc: QueryClient): () => void {
+  const sub = AppState.addEventListener('change', (state) => {
+    if (state === 'background' || state === 'inactive') setTimeout(() => void flushPersistedClient(qc), 0);
+  });
+  return () => sub.remove();
 }

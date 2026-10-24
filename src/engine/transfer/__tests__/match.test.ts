@@ -197,6 +197,20 @@ describe('matchTransfers', () => {
     expect(result).toEqual([{ kind: 'pair', importIndex: 0, existingId: 'b-near', score: expect.any(Number) }]);
   });
 
+  it('between equally scored candidates (2 and 3 days away both score 1), the nearer date wins before id order', () => {
+    // Deterministic cover for the deltaDays tie-break in compareCandidates; the permutation property reached it only by chance.
+    const result = matchTransfers({
+      imported: [imported({ index: 0, accountId: 'visa', localDate: '2026-09-05', amount: 50000, name: 'X' })],
+      existing: [
+        existing({ id: 'a-far', accountId: 'current', localDate: '2026-09-02', amount: -50000 }),
+        existing({ id: 'b-near', accountId: 'savings', localDate: '2026-09-03', amount: -50000 }),
+      ],
+      accounts: ACCOUNTS,
+      perEur: new Map<string, ScaledRate>(),
+    });
+    expect(result).toEqual([{ kind: 'pair', importIndex: 0, existingId: 'b-near', score: 2 }]);
+  });
+
   it('does not pair a cross-currency leg beyond the 5% tolerance', () => {
     const result = matchTransfers({
       imported: [

@@ -256,7 +256,7 @@ export function ActivityRow({
           onLongPress={onRowLongPress}
           style={styles.amountPress}
         >
-          <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: figureColor }}>{amountShown}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'body'), color: figureColor }}>{amountShown}</Text>
           {stmtText !== null ? (
             <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{stmtText}</Text>
           ) : null}

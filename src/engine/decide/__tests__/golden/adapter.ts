@@ -129,6 +129,7 @@ export function toSnapshot(scn: FixtureScenario): DecideSnapshot {
     limits: {
       reserve: mu(scn.limits.reserve),
       dsrLine: percent(scn.limits.dsr),
+      housingLine: null,
       unsecuredIncomeMultiple: 12,
       investingFloor: mu(scn.limits.investingFloor),
       savingFloor: mu(0),

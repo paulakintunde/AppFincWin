@@ -40,7 +40,8 @@ export function SetupAccountScreen() {
         visible={sheetOpen}
         mode={{ kind: 'new', context: 'onboarding' }}
         onClose={() => setSheetOpen(false)}
-        onSaved={(id) => router.replace({ pathname: '/setup/history', params: { accountId: id } })}
+        // 05-23 (D-03): rough figures and the first check come before "Bring your history".
+        onSaved={(id) => router.replace({ pathname: '/setup/rough', params: { accountId: id } })}
       />
     </Screen>
   );

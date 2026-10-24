@@ -39,6 +39,11 @@ export const DEFAULT_RESERVE_MONTHS = 3; // D-01, D-11
 // https://files.consumerfinance.gov/f/documents/cfpb_your-money-your-goals_debt_income_calc_tool_2018-11_ADA.pdf
 export const DEFAULT_DSR_LINE: Percent = percent('36'); // D-04
 
+// Cite: the 28/36 rule's front-end ratio: housing costs (mortgage principal, interest, taxes and insurance) at most 28% of gross monthly income. Bankrate, "What Percentage Of Income Should Go To A Mortgage?" (fetched 2026-10-24): "a homebuyer's monthly mortgage payment shouldn't exceed 28% of their gross monthly income ... based on a borrower's front-end debt-to-income (DTI) ratio"; the 36% rule is the back-end ratio (DEFAULT_DSR_LINE above).
+// FincWin behaviour line (user-confirmed 2026-10-24, D-103); 28% applies to take-home income (logged money in), which is stricter than the lenders' gross-income test, deliberately. Editable.
+// https://www.bankrate.com/mortgages/what-is-the-28-36-rule/
+export const DEFAULT_HOUSING_LINE: Percent = percent('28'); // D-103
+
 // Cite: FincWin behaviour constant (no published source; see 04-RESEARCH addendum §A). Prototype behaviour constant (dlim). No authoritative stock threshold found. Closest heuristic: the "20/10 rule" (Experian, 2023) puts consumer debt under 20% of annual take-home pay. See 04-RESEARCH §A.2.
 // FincWin behaviour line (user-confirmed 2026-10-15, D-04 confirmed after research); not a published standard; editable; the 20/10 rule was considered and not adopted.
 // https://www.experian.com/blogs/ask-experian/what-is-the-20-10-rule/
@@ -59,8 +64,8 @@ export const MONTHS_PER_YEAR = 12; // D-23
 // Cite: D-23 monthly-equivalent conversion (calendar: 3 months in a quarter).
 export const MONTHS_PER_QUARTER = 3; // D-23
 
-// Cite: prototype push order of warnings (month, cash, dsr, owe, inv); cash_dip (D-44) sits after cash because both are cash causes. Used to break ties between equal shortfalls.
-export const WARNING_ORDER: readonly WarningCode[] = ['month', 'cash', 'cash_dip', 'dsr', 'owe', 'inv'];
+// Cite: prototype push order of warnings (month, cash, dsr, owe, inv); cash_dip (D-44) sits after cash because both are cash causes; housing (D-103) sits after dsr because both are income-share lines and housing is the narrower. Used to break ties between equal shortfalls.
+export const WARNING_ORDER: readonly WarningCode[] = ['month', 'cash', 'cash_dip', 'dsr', 'housing', 'owe', 'inv'];
 
 // Cite: prototype DSB setbacks (FincWin United.dc.html lines 3995-3999): once, drop 20% x 2 months, none x 8 months, late 30 days. The prototype's 1,200 unexpected-expense amount is a currency amount and is replaced by null, meaning one month's costs (D-05).
 export const DEFAULT_SETBACKS: readonly SetbackInput[] = [
@@ -149,3 +154,18 @@ export const ESTIMATE_BIAS_MIN_DECISIONS = 3; // D-56
 
 // Cite: D-56: basis points are hundredths of a percent (10,000 to the unit).
 export const BASIS_POINTS_PER_UNIT = 10_000; // D-56
+
+// Cite: D-80 (UI-SPEC R15.7 E1.8): the largest annual rate an instalment plan accepts, 999.99% a year in the engine's Percent units. FincWin input bound (no published source); it matches the 0-999% range the level-payment maths is probed over (D-64).
+export const MAX_APR_PERCENT: Percent = percent('999.99'); // D-80
+
+// Cite: D-89 (UI-SPEC R16.16 M6): the most payments a new instalment plan accepts, split from the loan term cap (120). FincWin input bound (no published source); the engine still scores any stored count up to 600.
+export const MAX_INSTALMENTS = 500; // D-89
+
+// Cite: D-91 (R16.7): the most FincWin counts on a card in one check, US$100,000 in USD minor units. FincWin behaviour constant (no published source; a conservative single-purchase ceiling for card payments). The engine never converts currency: the snapshot converts it to the home currency (05-95) and passes it as `cardMaxPurchase`.
+export const CARD_MAX_PURCHASE_USD = 10_000_000; // D-91
+
+// Cite: D-101 / R18.2 FincWin's own bound: at most 50 live pots a user creates (the Pots screen cap). The engine's set-aside bound is MAX_SET_ASIDE_POTS below.
+export const MAX_POTS = 50;
+
+// Cite: D-101 / R18.2 FincWin's own bound on the set-aside sum: up to 500 pots (the 50 a user creates plus the Wait goals of open checks). With each pot's set-aside at most 10^13 minor units the sum is at most 5 x 10^15, inside the safe-integer range (2^53 is about 9 x 10^15), so it converts with a plain Number().
+export const MAX_SET_ASIDE_POTS = 500;
