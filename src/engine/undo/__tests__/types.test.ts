@@ -7,6 +7,17 @@ describe('undo vocabulary (05: Decide entities and labels)', () => {
     }
   });
 
+  it('D-101 the pot and housing undo labels exist and resolve', () => {
+    const expected: Record<string, string> = {
+      potAdded: 'Pot added', potEdited: 'Pot edited', potDeleted: 'Pot deleted', potDone: 'Pot marked done', potReopened: 'Pot reopened',
+      debtHousingChanged: 'Housing setting changed',
+    };
+    for (const [key, text] of Object.entries(expected)) {
+      expect(UNDO_LABEL_KEYS.filter((k) => k === key)).toHaveLength(1);
+      expect(text.length).toBeGreaterThan(0); // the catalogue strings are asserted in src/i18n/__tests__/decideCopy.test.ts (engine/ imports no i18n)
+    }
+  });
+
   it('has no duplicate label keys', () => {
     expect(new Set(UNDO_LABEL_KEYS).size).toBe(UNDO_LABEL_KEYS.length);
   });
