@@ -1,7 +1,11 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, screen } from '@testing-library/react-native';
+import { colors } from '@/theme/tokens';
 import type { DecideSettingsPatch } from '@/db/decideSettings';
-import { loggedSource, month, noneSource, roughSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
+import { totalSetAside, type PotInput } from '@/engine/decide';
+import { minorUnits } from '@/engine/money';
+import { TODAY, loggedSource, month, noneSource, roughSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { wrap } from '../../check/steps/__tests__/helpers/stepProps';
 import { homeCardModel } from '../homeCardModel';
 import { MonthDetailsSheet } from '../MonthDetailsSheet';
@@ -15,7 +19,8 @@ jest.mock('@/data/mutations/decideSettings', () => ({
   useUpdateDecideSettings: () => ({ update: (patch: DecideSettingsPatch) => mockUpdate(patch) }),
 }));
 jest.mock('expo-router', () => ({ router: { navigate: (...a: unknown[]) => mockNavigate(...a), push: jest.fn(), replace: jest.fn() } }));
-jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
+const mockPush = jest.fn();
+jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPush(...a) }));
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn(), hapticSuccess: jest.fn(), hapticMedium: jest.fn() }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: jest.fn() }) }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
@@ -23,14 +28,29 @@ jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 beforeEach(() => jest.clearAllMocks());
 
 const whole = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(Math.round(n / 100))}`;
+const pot = (over: Partial<PotInput> = {}): PotInput => ({
+  id: 'p1',
+  kind: 'pot',
+  target: minorUnits(120_000),
+  monthlyAmount: null,
+  readyBy: '2027-04-30',
+  saved: minorUnits(0),
+  ...over,
+});
+const withPots = (source: SnapshotResult, pots: readonly PotInput[]): SnapshotResult =>
+  source.kind === 'logged' ? { ...source, pots, snapshot: { ...source.snapshot, pots } } : { ...source, pots };
+const labelOf = (re: RegExp) => screen.queryByLabelText(re)?.props.accessibilityLabel as string | undefined;
+const amountOf = (label: string | undefined) => Number((label ?? '').split(', ')[1]?.replace(/[^0-9]/g, '')) * 100;
+
 const SOURCES = '4 months of logged income, 12 expense lines this month, 1 debts and 2 accounts.';
 
 function sheet(source: SnapshotResult | null, over: { onClose?: () => void; note?: string | null } = {}) {
-  const card = homeCardModel(source, null, { status: 'ready', homeBasisSeen: true });
+  const card = homeCardModel(source, null, { status: 'ready', homeBasisSeen: true, today: TODAY });
   return (
     <MonthDetailsSheet
       visible
-      title="Your worst month"
+      title="Net free cash flow"
+      today={TODAY}
       card={card}
       source={source}
       settings={null}
@@ -54,10 +74,11 @@ describe('MonthDetailsSheet', () => {
   it('D-99 Month details holds the basis control, the columns and the sources note', async () => {
     const onClose = jest.fn();
     await wrap(sheet(variable(), { onClose }));
-    expect(screen.getByText('Your worst month')).toBeTruthy();
-    expect(screen.getByLabelText('Comes in, $1000')).toBeTruthy();
-    expect(screen.getByLabelText('Goes out, $3000')).toBeTruthy();
-    expect(screen.getByLabelText(/^Left, /)).toBeTruthy();
+    expect(screen.getAllByText('Net free cash flow').length).toBeGreaterThan(0);
+    expect(screen.getByText('Worked out on your worst month.')).toBeTruthy();
+    expect(screen.getByLabelText('Money in, $1000')).toBeTruthy();
+    expect(screen.getByLabelText('Spending, $3000')).toBeTruthy();
+    expect(screen.getByLabelText('Net free cash flow, short by $2200')).toBeTruthy();
     expect(screen.getByText(/4 months ranging \$1000 to \$9000\./)).toBeTruthy();
     expect(screen.getByLabelText('Worst · $1000').props.accessibilityState.checked).toBe(true);
     await fireEvent.press(screen.getByLabelText('Average · $5500'));
@@ -75,7 +96,7 @@ describe('MonthDetailsSheet', () => {
     expect(screen.queryByText('Rough figures')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Edit rough figures'));
     expect(screen.getByText('Rough figures')).toBeTruthy();
-    expect(screen.getByText('Your worst month')).toBeTruthy(); // the parent sheet stays beneath
+    expect(screen.getAllByText('Net free cash flow').length).toBeGreaterThan(0); // the parent sheet stays beneath
   });
 
   it('D-97 unavailable Month details shows the reason and one action only', async () => {
@@ -84,7 +105,7 @@ describe('MonthDetailsSheet', () => {
     await wrap(sheet(unconverted));
     expect(screen.getByText('Lines in EUR are waiting for an exchange rate.')).toBeTruthy();
     expect(screen.getByText('See lines waiting for a rate')).toBeTruthy();
-    expect(screen.queryByLabelText(/^Comes in/)).toBeNull();
+    expect(screen.queryByLabelText(/^Money in/)).toBeNull();
     expect(screen.queryByLabelText('Judge on')).toBeNull();
     expect(screen.queryByText(SOURCES)).toBeNull();
     await fireEvent.press(screen.getByText('See lines waiting for a rate'));
@@ -94,8 +115,88 @@ describe('MonthDetailsSheet', () => {
   it('D-97 first run shows the reason and Add rough figures only', async () => {
     await wrap(sheet(noneSource(), { note: null }));
     expect(screen.getByText('There is no full month or rough figure to work from.')).toBeTruthy();
-    expect(screen.queryByLabelText(/^Comes in/)).toBeNull();
+    expect(screen.queryByLabelText(/^Money in/)).toBeNull();
     await fireEvent.press(screen.getByText('Add rough figures'));
     expect(screen.getByText('Rough figures')).toBeTruthy();
+  });
+
+  it('D-100 the month details rows add up to net free cash flow', async () => {
+    const source = withPots(loggedSource({ monthlySaving: minorUnits(30_000), monthlyInvesting: minorUnits(20_000) }), [pot()]);
+    await wrap(sheet(source));
+    const setAside = totalSetAside([pot()], TODAY).total;
+    expect(setAside).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Money in, $5000')).toBeTruthy();
+    expect(screen.getByLabelText('Spending, $3000')).toBeTruthy();
+    expect(screen.getByLabelText('Debt payments, $200')).toBeTruthy();
+    expect(screen.getByLabelText('Saving and investing, $500')).toBeTruthy();
+    expect(screen.getByLabelText(/^Set aside for pots, /)).toBeTruthy();
+    const sum =
+      amountOf(labelOf(/^Money in/)) -
+      amountOf(labelOf(/^Spending/)) -
+      amountOf(labelOf(/^Debt payments/)) -
+      amountOf(labelOf(/^Saving and investing/)) -
+      amountOf(labelOf(/^Set aside for pots/));
+    // each row is whole dollars in this test's formatter, so compare in dollars
+    const result = amountOf(labelOf(/^Net free cash flow, \$/));
+    expect(Math.round(sum / 100)).toBe(Math.round(result / 100));
+    expect(Math.round(result / 100)).toBe(Math.round((500_000 - 300_000 - 20_000 - 50_000 - setAside) / 100));
+    // the true minus on the deductions
+    expect(screen.getByText('\u2212$3000')).toBeTruthy();
+  });
+
+  it('D-100 rows hide at zero as specified and the result never hides', async () => {
+    await wrap(sheet(loggedSource({ debts: [] })));
+    expect(screen.getByLabelText('Money in, $5000')).toBeTruthy();
+    expect(screen.getByLabelText('Spending, $3000')).toBeTruthy();
+    expect(screen.queryByLabelText(/^Debt payments/)).toBeNull();
+    expect(screen.queryByLabelText(/^Saving and investing/)).toBeNull();
+    expect(screen.queryByLabelText(/^Set aside for pots/)).toBeNull();
+    expect(screen.getByLabelText('Net free cash flow, $2000')).toBeTruthy();
+  });
+
+  it('D-100 the rough source shows money in, spending, any set-aside and the result', async () => {
+    await wrap(sheet(roughSource(600_000, 400_000, 250_000)));
+    expect(screen.getByLabelText('Money in, $4000')).toBeTruthy();
+    expect(screen.getByLabelText('Spending, $2500')).toBeTruthy();
+    expect(screen.queryByLabelText(/^Debt payments|^Saving and investing|^Set aside for pots/)).toBeNull();
+    expect(screen.getByLabelText('Net free cash flow, $1500')).toBeTruthy();
+    expect(screen.getByText('Worked out from the figures you gave.')).toBeTruthy();
+    expect(screen.getByLabelText('Edit rough figures')).toBeTruthy();
+  });
+
+  it('D-100 the rough source takes the pots set-aside off the result', async () => {
+    const pots = [pot()];
+    const setAside = totalSetAside(pots, TODAY).total;
+    await wrap(sheet(withPots(roughSource(600_000, 400_000, 250_000), pots)));
+    expect(screen.getByLabelText(/^Set aside for pots, /)).toBeTruthy();
+    expect(screen.getByLabelText(`Net free cash flow, $${Math.round((150_000 - setAside) / 100)}`)).toBeTruthy();
+  });
+
+  it('D-101 the Pots link shows with no pots and pushes the pots route after closing', async () => {
+    const onClose = jest.fn();
+    await wrap(sheet(loggedSource(), { onClose }));
+    expect(screen.queryByLabelText(/^Set aside for pots/)).toBeNull();
+    const link = screen.getByLabelText('Pots');
+    expect(StyleSheet.flatten(link.props.style).minHeight).toBeGreaterThanOrEqual(44);
+    expect(screen.getByText('Pots \u203A')).toBeTruthy();
+    await fireEvent.press(link);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith('/decide/pots');
+    expect(onClose.mock.invocationCallOrder[0]).toBeLessThan(mockPush.mock.invocationCallOrder[0]!);
+  });
+
+  it('D-100 a negative result reads short by in the label and danger tone', async () => {
+    await wrap(sheet(variable()));
+    const result = screen.getByLabelText('Net free cash flow, short by $2200');
+    const value = screen.getByText('\u2212$2200');
+    expect(StyleSheet.flatten(value.props.style).color).toBe(colors.danger);
+    expect(result).toBeTruthy();
+  });
+
+  it('D-100 the tightest basis line carries its info button', async () => {
+    const source = loggedSource({ months: [month('2026-08', 500_000, 300_000), month('2026-09', 500_000, 300_000)] });
+    await wrap(sheet(source));
+    expect(screen.getByText('Worked out on your tightest figures.')).toBeTruthy();
+    expect(screen.getByLabelText('About Your tightest figures')).toBeTruthy();
   });
 });

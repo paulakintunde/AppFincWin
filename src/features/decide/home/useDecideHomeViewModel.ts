@@ -8,7 +8,7 @@ import type { DecideSettingsRow } from '@/db/decideSettings';
 import { currencyCode } from '@/engine/money';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
-import { moneyFn, type Money } from '../check/steps/stepUi';
+import { moneyA11yFn, moneyFn, type Money } from '../check/steps/stepUi';
 import { reconcileWaitReminders } from '../notifications/waitReminder';
 import type { SnapshotResult } from '../snapshot/types';
 
@@ -23,6 +23,8 @@ export interface DecideHomeViewModel {
   today: string;
   currency: string;
   whole: Money;
+  /** The same whole amounts as a screen reader speaks them (R18.1 Month details rows). */
+  wholeA11y: Money;
   exact: Money;
 }
 
@@ -63,6 +65,7 @@ export function useDecideHomeViewModel(): DecideHomeViewModel {
   }, [ready, signature]);
 
   const whole = useMemo(() => moneyFn(wholeFmt, currencyCode(currency)), [wholeFmt, currency]);
+  const wholeA11y = useMemo(() => moneyA11yFn(wholeFmt, currencyCode(currency)), [wholeFmt, currency]);
   const exact = useMemo(() => moneyFn(exactFmt, currencyCode(currency)), [exactFmt, currency]);
 
   return {
@@ -76,6 +79,7 @@ export function useDecideHomeViewModel(): DecideHomeViewModel {
     today: rc.today,
     currency,
     whole,
+    wholeA11y,
     exact,
   };
 }

@@ -261,12 +261,13 @@ describe('DecideHomeScreen', () => {
     expect(screen.getByLabelText('Offline')).toBeTruthy();
   });
 
-  it('D-95 Details opens Month details titled with the card label, with the sources note', async () => {
+  it('D-100 Details opens Month details titled Net free cash flow, with the basis and the sources note', async () => {
     await renderScreen();
     expect(screen.queryByText(/4 months of logged income/)).toBeNull();
     await fireEvent.press(screen.getByLabelText('Month details'));
     expect(screen.getByText(/4 months of logged income/)).toBeTruthy();
-    expect(screen.getAllByText('Your average month').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Net free cash flow').length).toBeGreaterThan(0);
+    expect(screen.getByText('Worked out on your average month.')).toBeTruthy();
   });
 
   it('D-95 the rough sources note shows in Month details for rough figures', async () => {
@@ -287,10 +288,10 @@ describe('DecideHomeScreen', () => {
     const view = await renderScreen();
     await waitFor(() => expect(mockMarkSeen).toHaveBeenCalledTimes(1));
     expect(mockMarkSeen).toHaveBeenCalledWith('u1');
-    expect(screen.getByLabelText(/^Now from your logged months:/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Net free cash flow: .* now from your logged months,/)).toBeTruthy();
     await view.rerender(<DecideHomeScreen />);
     expect(mockMarkSeen).toHaveBeenCalledTimes(1);
-    expect(screen.getByLabelText(/^Now from your logged months:/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Net free cash flow: .* now from your logged months,/)).toBeTruthy();
   });
 
   it('D-95 a user who has seen the basis neither writes the flag nor sees the switch label', async () => {
@@ -299,7 +300,7 @@ describe('DecideHomeScreen', () => {
     await renderScreen();
     await act(async () => {});
     expect(mockMarkSeen).not.toHaveBeenCalled();
-    expect(screen.queryByLabelText(/^Now from your logged months:/)).toBeNull();
+    expect(screen.queryByLabelText(/^Net free cash flow: .* now from your logged months,/)).toBeNull();
   });
 
   it('D-98 no FAB on Decide home', async () => {

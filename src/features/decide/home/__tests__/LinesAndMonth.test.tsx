@@ -71,7 +71,7 @@ function settingsRow(over: Partial<DecideSettingsRow> = {}): DecideSettingsRow {
 const monthsOf = (rows: [string, number, number][]) => rows.map(([m, i, o]) => month(m, i, o));
 
 function card(source: ReturnType<typeof loggedSource> | null, settings: DecideSettingsRow | null = null, onEditRough = jest.fn()) {
-  return <MonthDetailsBody source={source} settings={settings} userId="u1" whole={whole} onEditRough={onEditRough} dark />;
+  return <MonthDetailsBody source={source} settings={settings} userId="u1" whole={whole} today={TODAY} onEditRough={onEditRough} dark />;
 }
 
 /** The sheet and its field share a name, so pick the editable one. */
@@ -91,9 +91,10 @@ describe('MonthDetailsBody (dark, as on the home card before R17)', () => {
   it('shows the logged figures, the steadiness chip and the steady basis line', async () => {
     await wrap(card(loggedSource()));
     expect(screen.getByText('Steady')).toBeTruthy();
-    expect(screen.getByLabelText('Comes in, $5000')).toBeTruthy();
-    expect(screen.getByLabelText('Goes out, $3000')).toBeTruthy();
-    expect(screen.getByLabelText('Left, $1800')).toBeTruthy(); // 5000 - 3000 - 200 debt minimum
+    expect(screen.getByLabelText('Money in, $5000')).toBeTruthy();
+    expect(screen.getByLabelText('Spending, $3000')).toBeTruthy();
+    expect(screen.getByLabelText('Debt payments, $200')).toBeTruthy();
+    expect(screen.getByLabelText('Net free cash flow, $1800')).toBeTruthy(); // 5000 - 3000 - 200 debt minimum
     expect(screen.getByText('4 months of income within 0% of each other, so the check uses the average.')).toBeTruthy();
     expect(screen.getByLabelText('Worst · $5000')).toBeTruthy();
     expect(screen.getByLabelText('Average · $5000')).toBeTruthy();
@@ -102,7 +103,7 @@ describe('MonthDetailsBody (dark, as on the home card before R17)', () => {
   it('shows a negative Left with the minus sign', async () => {
     const source = loggedSource({ months: monthsOf([['2026-06', 300_000, 500_000], ['2026-07', 300_000, 500_000], ['2026-08', 300_000, 500_000], ['2026-09', 300_000, 500_000]]) });
     await wrap(card(source));
-    expect(screen.getByLabelText(/^Left, -\$/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Net free cash flow, short by \$/)).toBeTruthy();
   });
 
   it('says the range when income is not steady and writes the basis choice', async () => {
@@ -142,9 +143,9 @@ describe('MonthDetailsBody (dark, as on the home card before R17)', () => {
   it('shows the rough figures with Edit before a full month exists', async () => {
     const onEdit = jest.fn();
     await wrap(card(roughSource(600_000, 400_000, 250_000), null, onEdit));
-    expect(screen.getByLabelText('Comes in, $4000')).toBeTruthy();
-    expect(screen.getByLabelText('Goes out, $2500')).toBeTruthy();
-    expect(screen.getByLabelText('Left, $1500')).toBeTruthy();
+    expect(screen.getByLabelText('Money in, $4000')).toBeTruthy();
+    expect(screen.getByLabelText('Spending, $2500')).toBeTruthy();
+    expect(screen.getByLabelText('Net free cash flow, $1500')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Edit rough figures'));
     expect(onEdit).toHaveBeenCalledTimes(1);
   });
@@ -456,11 +457,12 @@ describe('Lines fold and Your month (05-71)', () => {
 
   it('D-76 Your month stacks below 360 wide', async () => {
     await wrap(card(loggedSource()));
-    expect(screen.getByLabelText('Comes in, $5000').props.style).toMatchObject({ flex: 1 });
+    // R18.1: the breakdown rows wrap their label and value, so they stack on their own at any width
+    expect(screen.getByLabelText('Money in, $5000').props.style).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap' });
+    expect(screen.queryAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(0);
     await screen.unmount();
     mockWidth = 320;
     await wrap(card(loggedSource()));
-    expect(screen.getByLabelText('Comes in, $5000').props.style).not.toMatchObject({ flex: 1 });
     // the Worst / Average control becomes a radio list with a dot in each row
     expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(2);
     expect(screen.getByLabelText('Average · $5000').props.accessibilityState.checked).toBe(true);
@@ -469,7 +471,7 @@ describe('Lines fold and Your month (05-71)', () => {
   it('D-76 Seg: a Worst / Average label past 16 characters stacks the control at 402 and 1.0x', async () => {
     const long = (n: number) => `$${(n / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     const source = loggedSource({ months: monthsOf([['2026-06', 715_666, 300_000], ['2026-07', 715_666, 300_000], ['2026-08', 715_666, 300_000], ['2026-09', 715_666, 300_000]]) });
-    await wrap(<MonthDetailsBody source={source} settings={null} userId="u1" whole={long} onEditRough={jest.fn()} dark />);
+    await wrap(<MonthDetailsBody source={source} settings={null} userId="u1" whole={long} today={TODAY} onEditRough={jest.fn()} dark />);
     expect(screen.getByLabelText('Average · $7,156.66').props.accessibilityState.checked).toBe(true);
     expect(screen.getAllByTestId('radio-dot', { includeHiddenElements: true }).length).toBe(2);
   });

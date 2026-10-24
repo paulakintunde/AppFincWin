@@ -13,6 +13,7 @@ import { router, type Href } from 'expo-router';
 import { useUpdateDecideSettings } from '@/data/mutations/decideSettings';
 import type { DecideSettingsRow } from '@/db/decideSettings';
 import { prepareContext, type MoneyBasis } from '@/engine/decide';
+import { monthBreakdown, type MonthBreakdown } from './homeCardModel';
 import { useT } from '@/i18n';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -22,7 +23,6 @@ import { Text } from '@/ui/Text';
 import { hapticSelection } from '@/ui/haptics';
 import { RadioDot } from '@/ui/RadioDot';
 import { STEADINESS_LABEL } from '../copy/codeMaps';
-import { FigureStrip } from '../ui/FigureStrip';
 import { InfoLabel } from '../ui/InfoLabel';
 import { useInfoSheet } from '../ui/useInfoSheet';
 import { useShouldStack } from '../ui/textFit';
@@ -35,6 +35,10 @@ export interface YourMonthCardProps {
   settings: DecideSettingsRow | null;
   userId: string | null;
   whole: Money;
+  /** The same amounts as a screen reader speaks them (formatMoneyA11y); falls back to `whole`. */
+  wholeA11y?: Money;
+  /** The local date the pots' set-asides are worked out from on a rough source (R18.1). */
+  today: string;
   /** Opens the shared RoughFiguresSheet (rendered once by the screen). */
   onEditRough: () => void;
 }
@@ -54,6 +58,8 @@ export interface MonthDetailsBodyProps extends YourMonthCardProps {
   dark?: boolean;
   /** Drawn first in the header row (the card's eyebrow). The sheet has its title instead. */
   eyebrow?: React.ReactNode;
+  /** The "Pots ›" link under the breakdown (D-101): the sheet closes itself, then pushes the Pots route. Omitted = no link. */
+  onPots?: () => void;
   /** The Activity link; defaults to navigating to Activity. The sheet closes itself first. */
   onActivity?: () => void;
 }
@@ -67,7 +73,18 @@ const goActivity = () => {
  * columns, the basis line and the Worst / Average control for a logged source; the columns and Edit for a rough one.
  * Renders nothing for the other sources (the card and the sheet each word those themselves).
  */
-export function MonthDetailsBody({ source, userId, whole, onEditRough, dark = false, eyebrow, onActivity = goActivity }: MonthDetailsBodyProps) {
+export function MonthDetailsBody({
+  source,
+  userId,
+  whole,
+  wholeA11y,
+  today,
+  onEditRough,
+  onPots,
+  dark = false,
+  eyebrow,
+  onActivity = goActivity,
+}: MonthDetailsBodyProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const settingsMutation = useUpdateDecideSettings(userId ?? '');
@@ -117,7 +134,7 @@ export function MonthDetailsBody({ source, userId, whole, onEditRough, dark = fa
         best: whole(m.incomeBest),
       });
     }
-    const left = context.leftBefore;
+    const breakdown = monthBreakdown(source, today);
     const steadinessLabel = t(STEADINESS_LABEL[m.steadiness]);
     const options = [
       { key: 'worst', label: basisLabels?.worst ?? '' },
@@ -136,14 +153,7 @@ export function MonthDetailsBody({ source, userId, whole, onEditRough, dark = fa
           <View style={styles.spacer} />
           <ActionPill dark={dark} label={t('decide.month.activity')} onPress={onActivity} />
         </View>
-        <FigureStrip
-          dark={dark}
-          items={[
-            { caption: t('decide.month.in'), value: whole(m.incomeBasis) },
-            { caption: t('decide.month.out'), value: whole(m.spendingBasis) },
-            { caption: t('decide.month.left'), value: whole(left), tone: left < 0 ? 'negative' : 'neutral' },
-          ]}
-        />
+        {breakdown === null ? null : <Breakdown b={breakdown} whole={whole} wholeA11y={wholeA11y ?? whole} dark={dark} onPots={onPots} />}
         <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: soft }}>{basisLine}</Text>
         {fewMonths ? null : (
           <>
@@ -207,8 +217,7 @@ export function MonthDetailsBody({ source, userId, whole, onEditRough, dark = fa
 
   // ── rough ──
   if (source.kind === 'rough') {
-    const { monthlyIncome, monthlySpending } = source.figures;
-    const left = monthlyIncome - monthlySpending;
+    const breakdown = monthBreakdown(source, today);
     return (
       <View style={styles.body}>
         <View style={styles.header}>
@@ -227,19 +236,85 @@ export function MonthDetailsBody({ source, userId, whole, onEditRough, dark = fa
             <Pill label={t('decide.month.edit')} accessibilityLabel={t('decide.month.editA11y')} variant="secondary" onPress={onEditRough} />
           )}
         </View>
-        <FigureStrip
-          dark={dark}
-          items={[
-            { caption: t('decide.month.in'), value: whole(monthlyIncome) },
-            { caption: t('decide.month.out'), value: whole(monthlySpending) },
-            { caption: t('decide.month.left'), value: whole(left), tone: left < 0 ? 'negative' : 'neutral' },
-          ]}
-        />
+        {breakdown === null ? null : <Breakdown b={breakdown} whole={whole} wholeA11y={wholeA11y ?? whole} dark={dark} onPots={onPots} />}
       </View>
     );
   }
 
   return null;
+}
+
+const MINUS = '−'; // a true minus for deductions (R18.1)
+
+/**
+ * D-100 / R18.1: the stacked breakdown that adds up to the hero. Rows with nothing in them hide (debts, saving and pots at
+ * 0), the result never does. A negative result reads in danger, and its a11y label says "short by". The "Pots ›" link is
+ * always shown (D-101): it is the way in for a user with no pots yet.
+ */
+function Breakdown({ b, whole, wholeA11y, dark, onPots }: { b: MonthBreakdown; whole: Money; wholeA11y: Money; dark: boolean; onPots?: () => void }) {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  const potsInfo = useInfoSheet('pots');
+  const ink = dark ? colors.surface : colors.ink;
+  const soft = dark ? colors.inkSoft2 : colors.inkMuted;
+  const label = textRole(pairing, 'label');
+  const rows: { key: string; caption: string; amount: number; sign: '' | typeof MINUS; info?: boolean }[] = [
+    { key: 'in', caption: t('decide.home.monthDetails.in'), amount: b.income, sign: '' },
+    { key: 'spending', caption: t('decide.home.monthDetails.spending'), amount: b.spending, sign: MINUS },
+  ];
+  if (b.debts !== 0) rows.push({ key: 'debts', caption: t('decide.home.monthDetails.debts'), amount: b.debts, sign: MINUS });
+  if (b.saving !== 0) rows.push({ key: 'saving', caption: t('decide.home.monthDetails.saving'), amount: b.saving, sign: MINUS });
+  if (b.setAside !== 0) rows.push({ key: 'pots', caption: t('decide.home.monthDetails.pots'), amount: b.setAside, sign: MINUS, info: true });
+  const short = b.result < 0;
+  const resultCaption = t('decide.home.monthDetails.result');
+  const resultValue = `${short ? MINUS : ''}${whole(short ? -b.result : b.result)}`;
+  return (
+    <View style={styles.breakdown}>
+      {rows.map((r) => {
+        const caption = <Text style={{ ...label, color: soft, flexShrink: 1 }}>{r.caption}</Text>;
+        return (
+          <View
+            key={r.key}
+            accessible
+            accessibilityLabel={t('decide.home.monthDetails.rowA11y', { label: r.caption, value: wholeA11y(r.amount) })}
+            style={styles.breakdownRow}
+          >
+            {r.info ? (
+              <InfoLabel term={potsInfo.term} onInfo={potsInfo.open} tone={dark ? 'dark' : 'light'} lineHeight={LABEL_LINE}>
+                {caption}
+              </InfoLabel>
+            ) : (
+              caption
+            )}
+            <Text style={{ ...label, color: ink }}>{`${r.sign}${whole(r.amount)}`}</Text>
+          </View>
+        );
+      })}
+      <View
+        accessible
+        accessibilityLabel={
+          short
+            ? t('decide.home.monthDetails.resultShort', { amount: wholeA11y(-b.result) })
+            : t('decide.home.monthDetails.rowA11y', { label: resultCaption, value: wholeA11y(b.result) })
+        }
+        style={[styles.breakdownRow, styles.resultRow, { borderTopColor: dark ? colors.inkSoft2 : colors.line2 }]}
+      >
+        <Text style={{ ...label, fontWeight: '600', color: ink, flexShrink: 1 }}>{resultCaption}</Text>
+        <Text style={{ ...label, fontWeight: '600', color: short ? colors.danger : ink }}>{resultValue}</Text>
+      </View>
+      {onPots === undefined ? null : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('decide.home.monthDetails.potsLink')}
+          onPress={onPots}
+          style={({ pressed }) => [styles.potsLink, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+        >
+          <Text style={{ ...label, color: colors.accent }}>{`${t('decide.home.monthDetails.potsLink')} ›`}</Text>
+        </Pressable>
+      )}
+      {potsInfo.sheet}
+    </View>
+  );
 }
 
 /** The ink-card pill on the card; the shared secondary Pill on the light sheet. */
@@ -291,4 +366,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
+  breakdown: { gap: space.gapSm },
+  breakdownRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', columnGap: space.gapMd },
+  resultRow: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space.gapSm },
+  potsLink: { alignSelf: 'flex-start', minHeight: space.touchMin, minWidth: space.touchMin, justifyContent: 'center' },
 });

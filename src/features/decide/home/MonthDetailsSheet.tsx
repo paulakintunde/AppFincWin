@@ -14,18 +14,35 @@ import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
-import type { HomeCardModel } from './homeCardModel';
+import { InfoLabel } from '../ui/InfoLabel';
+import { useInfoSheet } from '../ui/useInfoSheet';
+import { POTS_HREF } from './checkHref';
+import type { HomeCardLabel, HomeCardModel } from './homeCardModel';
 import { MonthDetailsBody, type YourMonthCardProps } from './YourMonthCard';
 import { RoughFiguresSheet } from './RoughFiguresSheet';
 
+/** R18.1: the basis the engine used, in the first meta line under the title. */
+const BASIS_KEY = {
+  worst: 'decide.home.monthDetails.basisWorst',
+  average: 'decide.home.monthDetails.basisAverage',
+  tightest: 'decide.home.monthDetails.basisTightest',
+  figures: 'decide.home.monthDetails.basisFigures',
+  switched: 'decide.home.monthDetails.basisSwitched',
+} as const satisfies Record<HomeCardLabel, string>;
+
 export interface MonthDetailsSheetProps extends Omit<YourMonthCardProps, 'onEditRough'> {
   visible: boolean;
-  /** The card label ("Your worst month" and the others). */
+  /** The sheet title: "Net free cash flow" on every state (R18.1). */
   title: string;
   card: HomeCardModel;
+  /** The local date the pots' set-asides are worked out from on a rough source. */
+  today: string;
+  /** The same amounts as a screen reader speaks them; falls back to `whole`. */
+  wholeA11y?: YourMonthCardProps['wholeA11y'];
   /** The home currency, for the stacked rough figures sheet. */
   currency: string;
   /** The sources note (built by the screen); null when there is none. */
@@ -33,27 +50,58 @@ export interface MonthDetailsSheetProps extends Omit<YourMonthCardProps, 'onEdit
   onClose: () => void;
 }
 
-export function MonthDetailsSheet({ visible, title, card, source, settings, userId, whole, currency, sourcesNote, onClose }: MonthDetailsSheetProps) {
+export function MonthDetailsSheet({
+  visible,
+  title,
+  card,
+  source,
+  settings,
+  userId,
+  whole,
+  wholeA11y,
+  today,
+  currency,
+  sourcesNote,
+  onClose,
+}: MonthDetailsSheetProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const [roughOpen, setRoughOpen] = useState(false);
+  const tightestInfo = useInfoSheet('tightestFigures');
 
   const openActivity = () => {
     onClose();
     router.navigate('/activity' as Href);
   };
 
+  // D-101: the sheet closes itself, then the Pots screen opens.
+  const openPots = () => {
+    onClose();
+    pushOnce(POTS_HREF);
+  };
+
   let content: React.ReactNode = null;
   if (card.state === 'figure') {
+    const basisText = t(BASIS_KEY[card.label]);
     content = (
       <>
+        {card.info === 'tightestFigures' ? (
+          <InfoLabel term={tightestInfo.term} onInfo={tightestInfo.open} tone="light" lineHeight={META_LINE}>
+            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{basisText}</Text>
+          </InfoLabel>
+        ) : (
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{basisText}</Text>
+        )}
         <MonthDetailsBody
           source={source}
           settings={settings}
           userId={userId}
           whole={whole}
+          wholeA11y={wholeA11y}
+          today={today}
           onEditRough={() => setRoughOpen(true)}
           onActivity={openActivity}
+          onPots={openPots}
         />
         {sourcesNote !== null ? (
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{sourcesNote}</Text>
@@ -90,10 +138,13 @@ export function MonthDetailsSheet({ visible, title, card, source, settings, user
           <Pill label={t('decide.home.monthDetails.close')} variant="secondary" onPress={onClose} />
         </View>
       </SheetScroll>
+      {tightestInfo.sheet}
       <RoughFiguresSheet visible={roughOpen} userId={userId} currency={currency} settings={settings} onClose={() => setRoughOpen(false)} />
     </Sheet>
   );
 }
+
+const META_LINE = 18;
 
 const styles = StyleSheet.create({
   column: { gap: space.gapMd, paddingTop: space.gapMd },

@@ -37,14 +37,6 @@ import { useSyncNow } from './useSyncNow';
 /** R17.2: the gap between the card and the quiet rows. */
 const CARD_TO_ROWS_GAP = 32;
 
-const CARD_LABEL_KEY = {
-  worst: 'decide.home.card.labelWorst',
-  average: 'decide.home.card.labelAverage',
-  tightest: 'decide.home.card.labelTightest',
-  figures: 'decide.home.card.labelFigures',
-  switched: 'decide.home.card.labelSwitched',
-} as const;
-
 interface HomeRowSpec {
   key: string;
   label: string;
@@ -92,8 +84,8 @@ export function DecideHomeScreen() {
   const homeBasisSeen = visitBasisSeen ?? true;
 
   const card = useMemo(
-    () => homeCardModel(vm.source, vm.settings, { status: vm.status, homeBasisSeen }),
-    [vm.source, vm.settings, vm.status, homeBasisSeen]
+    () => homeCardModel(vm.source, vm.settings, { status: vm.status, homeBasisSeen, today: vm.today }),
+    [vm.source, vm.settings, vm.status, homeBasisSeen, vm.today]
   );
   const markedRef = useRef(false);
   const shouldMark = card.state === 'figure' && card.markBasisSeen && visitBasisSeen === false;
@@ -153,8 +145,8 @@ export function DecideHomeScreen() {
   );
   const notice = noticeRowModel(entries);
 
-  const cardLabel = card.state === 'figure' || card.state === 'unavailable' ? card.label : 'figures';
-  const detailsTitle = t(CARD_LABEL_KEY[cardLabel]);
+  // R18.1: the sheet title is the constant term on every state; the basis sits in its first meta line.
+  const detailsTitle = t('decide.home.monthDetails.title');
 
   // Quiet rows (R17.3).
   const openCount = liveOpenChecks(vm.openChecks).length;
@@ -232,6 +224,8 @@ export function DecideHomeScreen() {
         settings={vm.settings}
         userId={rc.userId}
         whole={vm.whole}
+        wholeA11y={vm.wholeA11y}
+        today={vm.today}
         currency={vm.currency}
         sourcesNote={sourcesNote}
         onClose={() => setDetailsOpen(false)}

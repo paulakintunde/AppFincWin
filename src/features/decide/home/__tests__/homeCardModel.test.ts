@@ -1,6 +1,6 @@
 import type { DecideSettingsRow } from '@/db/decideSettings';
 import type { SnapshotResult } from '../../snapshot/types';
-import fc from 'fast-check';
+import { array, assert as fcAssert, integer, property } from 'fast-check';
 import { prepareContext, totalSetAside, type PotInput } from '@/engine/decide';
 import { minorUnits } from '@/engine/money';
 import { homeCardModel, type HomeCardFlags, type HomeCardModel } from '../homeCardModel';
@@ -173,13 +173,13 @@ describe('homeCardModel', () => {
     });
 
     it('D-100 In minus Out equals the hero for any logged figures, debts, saving and pots', () => {
-      fc.assert(
-        fc.property(
-          fc.integer({ min: 0, max: 2_000_000 }),
-          fc.integer({ min: 0, max: 2_000_000 }),
-          fc.integer({ min: 0, max: 100_000 }),
-          fc.integer({ min: 0, max: 100_000 }),
-          fc.array(fc.integer({ min: 1, max: 500_000 }), { maxLength: 4 }),
+      fcAssert(
+        property(
+          integer({ min: 0, max: 2_000_000 }),
+          integer({ min: 0, max: 2_000_000 }),
+          integer({ min: 0, max: 100_000 }),
+          integer({ min: 0, max: 100_000 }),
+          array(integer({ min: 1, max: 500_000 }), { maxLength: 4 }),
           (income, spending, saving, investing, targets) => {
             const pots = targets.map((target, i) => pot({ id: `p${i}`, target: minorUnits(target) }));
             const source = withPots(
