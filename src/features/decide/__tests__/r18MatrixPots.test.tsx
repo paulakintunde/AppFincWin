@@ -94,7 +94,7 @@ jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
 jest.mock('@/shell/screen/DetailScreen', () => {
   const R = require('react');
   const { View, Text } = require('react-native');
-  return { DetailScreen: (p: { title: string; children: React.ReactNode }) => R.createElement(View, null, R.createElement(Text, null, p.title), p.children) };
+  return { DetailScreen: (p: { title: string; right?: React.ReactNode; children: React.ReactNode }) => R.createElement(View, null, R.createElement(Text, null, p.title), p.right, p.children) };
 });
 jest.mock('@/ui/Sheet', () => {
   const R = require('react');

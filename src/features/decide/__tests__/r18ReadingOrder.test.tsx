@@ -102,7 +102,7 @@ jest.mock('@/shell/screen/TabRootScreen', () => {
 jest.mock('@/shell/screen/DetailScreen', () => {
   const R = require('react');
   const { View, Text } = require('react-native');
-  return { DetailScreen: (p: { title: string; children: React.ReactNode }) => R.createElement(View, null, R.createElement(Text, { accessibilityRole: 'header' }, p.title), p.children) };
+  return { DetailScreen: (p: { title: string; right?: React.ReactNode; children: React.ReactNode }) => R.createElement(View, null, R.createElement(Text, { accessibilityRole: 'header' }, p.title), p.right, p.children) };
 });
 jest.mock('@/ui/Sheet', () => {
   const R = require('react');
