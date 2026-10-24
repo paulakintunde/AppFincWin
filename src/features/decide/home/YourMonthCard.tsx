@@ -149,6 +149,7 @@ export function MonthDetailsBody({
         count: m.fullMonthsUsed,
         worst: whole(m.incomeWorst),
         best: whole(m.incomeBest),
+        basis: t(selected === 'average' ? 'decide.month.judgedOnAverage' : 'decide.month.judgedOnWorst'),
       });
     }
     const breakdown = monthBreakdown(source, today);

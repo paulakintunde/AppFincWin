@@ -2009,7 +2009,8 @@ const en = {
     month: {
       activity: 'Activity',
       steadyLine: '{{count}}\u00A0months of income within {{pct}} of each other, so the check uses the average.',
-      variableLine: '{{count}}\u00A0months ranging {{worst}} to {{best}}. Affordability is judged on the worst month unless you say otherwise.',
+      variableLine: '{{count}}\u00A0months ranging {{worst}} to {{best}}. Checks are judged on {{basis}}, the choice below.',
+      judgedOnWorst: 'the worst month', judgedOnAverage: 'the average month', // names the chosen basis in variableLine
       noIncomeLine: 'No money in is logged in these {{count}}\u00A0months, so every check is judged on that.', // D-50 (04 LO-01): every averaged month has 0 income (steadiness 'volatile', CV null)
       fewLine: 'Fewer than 3 full months so far, so this uses your lowest month for money in and your highest for spending.',
       thisMonthChip: 'This month · {{amount}}', worstChip: 'Worst · {{amount}}', averageChip: 'Average · {{amount}}', basisA11y: 'Judge on',

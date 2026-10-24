@@ -156,7 +156,7 @@ describe('MonthDetailsBody (dark, as on the home card before R17)', () => {
     expect(screen.queryByText(/4 months ranging/)).toBeNull();
     await screen.unmount();
     await wrap(card(source, null, jest.fn(), { selected: 'average' }));
-    expect(screen.getByText(/4 months ranging \$1000 to \$9000\./)).toBeTruthy();
+    expect(screen.getByText('4 months ranging $1000 to $9000. Checks are judged on the average month, the choice below.')).toBeTruthy();
   });
 
   it('D-107 the fallback leaves This month without an amount and still checked', async () => {
@@ -175,7 +175,7 @@ describe('MonthDetailsBody (dark, as on the home card before R17)', () => {
   it('says the range when income is not steady', async () => {
     const source = loggedSource({ months: monthsOf([['2026-06', 500_000, 300_000], ['2026-07', 900_000, 300_000], ['2026-08', 100_000, 300_000], ['2026-09', 700_000, 300_000]]) });
     await wrap(card(source));
-    expect(screen.getByText(/4 months ranging \$1000 to \$9000\./)).toBeTruthy();
+    expect(screen.getByText('4 months ranging $1000 to $9000. Checks are judged on the worst month, the choice below.')).toBeTruthy();
     expect(screen.getByLabelText('Worst · $1000').props.accessibilityState.checked).toBe(true);
   });
 

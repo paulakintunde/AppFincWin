@@ -81,7 +81,8 @@ describe('MonthDetailsSheet', () => {
     expect(screen.getByLabelText('Money in, $1000')).toBeTruthy();
     expect(screen.getByLabelText('Spending, $3000')).toBeTruthy();
     expect(screen.getByLabelText('Net free cash flow, $2200 overspent')).toBeTruthy();
-    expect(screen.getByText(/4 months ranging \$1000 to \$9000\./)).toBeTruthy();
+    expect(screen.getByText('4 months ranging $1000 to $9000. Checks are judged on the worst month, the choice below.')).toBeTruthy();
+    expect(screen.queryByText(/unless you say otherwise/)).toBeNull();
     expect(screen.getByLabelText('Worst · $1000').props.accessibilityState.checked).toBe(true);
     await fireEvent.press(screen.getByLabelText('Average · $5500'));
     expect(mockChoose).toHaveBeenCalledWith('average');
