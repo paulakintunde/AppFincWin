@@ -225,7 +225,7 @@ describe('buildGoAheadWrite', () => {
     expect(monthly.series[0]).toMatchObject({ freq: 'monthly', anchor_date: '2026-11-16', occurrence_count: 12 });
   });
 
-  it('D-80 Go ahead writes the next_month instalment schedule', () => {
+  it('D-80 Go ahead writes the next_period instalment schedule', () => {
     // In a month: the fees alone on the day, the first instalment one month after the start date
     const plan = makePlan({ dayOne: asMoney(2000), financed: asMoney(60000), monthly: asMoney(5000), months: 12, total: asMoney(62000), dayFees: asMoney(2000), paymentSteps: [step(1, 12, 5000)] });
     const next = build(buyInputs({ method: 'instalment' }), plan);

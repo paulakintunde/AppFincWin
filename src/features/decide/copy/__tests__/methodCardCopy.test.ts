@@ -75,7 +75,7 @@ describe('methodCardCopy', () => {
     expect(summary('instalment', inst({}))).toBe('12 × $50.00 a month · no rate');
     expect(summary('instalment', inst({ hasRate: true, aprText: '9' }))).toBe('12 × $50.00 a month · 9%');
     expect(summary('instalment', inst({ freq: 'weekly' }))).toBe('12 × $50.00 weekly · no rate');
-    expect(summary('instalment', inst({ firstPayment: 'next_month' }))).toBe('12 × $50.00 a month · no rate · first in a month');
+    expect(summary('instalment', inst({ firstPayment: 'next_period' }))).toBe('12 × $50.00 a month · no rate · first in a month');
     expect(summary('instalment', inst({ count: null }))).toBeNull();
     const card = (over: Partial<CheckInputs['card']>) => base({ card: { ...base().card, accountId: 'c1', ...over } });
     expect(summary('card', card({ payoff: 'full' }))).toBe('Visa · in full next statement');

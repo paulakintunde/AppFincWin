@@ -174,8 +174,8 @@ export type BuyPayment =
       // D-89 (R16.11 E3): how often the instalment falls; absent = 'monthly'. The payment is worked out at APR / periodsPerYear.
       readonly freq?: InstalmentFreq;
       // D-80 / D-49: absent = 'today' (an annuity-due: the first payment is on the day). D-89: 'next_period' is the first
-      // payment one period on; 'next_month' is its deprecated alias until 05-109.
-      readonly firstPayment?: 'today' | 'next_period' | 'next_month';
+      // payment one period on.
+      readonly firstPayment?: 'today' | 'next_period';
       readonly lateFee?: MinorUnits;
       readonly lateFeeCapTotal?: MinorUnits; // D-50: user-entered fee per missed instalment and optional total cap; absent = none
     }

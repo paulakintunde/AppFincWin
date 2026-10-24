@@ -334,14 +334,14 @@ describe('R15 inputs (D-80..D-83)', () => {
     expect(parseCheckInputs({ instalment: { count: 601 } }, TODAY).instalment.count).toBeNull();
   });
 
-  it('D-89 a stored next_month reads as next_period', () => {
+  it('D-89 a stored next_month still reads as next_period', () => {
     expect(parseCheckInputs({ instalment: { firstPayment: 'next_month' } }, TODAY).instalment.firstPayment).toBe('next_period');
     expect(parseCheckInputs({ instalment: { firstPayment: 'next_period' } }, TODAY).instalment.firstPayment).toBe('next_period');
   });
 
   it('D-89 freq reaches the engine', () => {
     const base = emptyCheckInputs('buy', TODAY).instalment;
-    const weekly = ok(buy({ method: 'instalment', instalment: { ...base, amount: 10_000, count: 26, freq: 'weekly', firstPayment: 'next_month' } })).check as BuyCheck;
+    const weekly = ok(buy({ method: 'instalment', instalment: { ...base, amount: 10_000, count: 26, freq: 'weekly', firstPayment: 'next_period' } })).check as BuyCheck;
     expect(weekly.payment).toMatchObject({ freq: 'weekly', firstPayment: 'next_period' });
     const plain = ok(buy({ method: 'instalment', instalment: { amount: 10_000, count: 26, lateFee: null } })).check as BuyCheck;
     expect(plain.payment).toMatchObject({ freq: 'monthly', firstPayment: 'today' });
@@ -349,7 +349,7 @@ describe('R15 inputs (D-80..D-83)', () => {
 
   it('D-80 a rate is mapped to apr; a blank rate is instalment_rate_missing', () => {
     const base = emptyCheckInputs('buy', TODAY).instalment;
-    const rated = ok(buy({ method: 'instalment', instalment: { ...base, amount: 150_000, count: 12, hasRate: true, aprText: '7.5', firstPayment: 'next_month' } })).check as BuyCheck;
+    const rated = ok(buy({ method: 'instalment', instalment: { ...base, amount: 150_000, count: 12, hasRate: true, aprText: '7.5', firstPayment: 'next_period' } })).check as BuyCheck;
     expect(rated.payment).toMatchObject({ apr: percent('7.5'), firstPayment: 'next_period', instalmentAmount: 150_000 });
     const blank = ok(buy({ method: 'instalment', instalment: { ...base, amount: 150_000, count: 12, hasRate: true } })).check as BuyCheck;
     expect((blank.payment as { apr: unknown }).apr).toBeNull();

@@ -77,8 +77,8 @@ describe('instalmentNotes', () => {
     }
   });
 
-  it('D-89 a stored next_month reads as the next period, and an absent freq is monthly', () => {
-    const legacy = instalmentNotes(inputs({ hasRate: true, aprText: '9.9', amount: null, count: 12, freq: undefined, firstPayment: 'next_month' }), plan({ computedPayment: 13_000, monthly: 13_000 }), [], fmt, null);
+  it('D-89 a stored next_period reads as the next period, and an absent freq is monthly', () => {
+    const legacy = instalmentNotes(inputs({ hasRate: true, aprText: '9.9', amount: null, count: 12, freq: undefined, firstPayment: 'next_period' }), plan({ computedPayment: 13_000, monthly: 13_000 }), [], fmt, null);
     expect(say(legacy[0]!)).toBe(`12${NB}monthly payments of E13000 at 9.9%, the first in a month. Interest over the plan is W6000.`);
     const bare = instalmentNotes({ ...inputs({ amount: 13_000, count: 12 }), instalment: { amount: 13_000, count: 12, lateFee: null } }, plan({ monthly: 13_000 }), [], fmt, null);
     expect(say(bare[0]!)).toBe(`12${NB}monthly payments of E13000.`);
@@ -198,8 +198,8 @@ describe('instalment summaries', () => {
     }
   });
 
-  it('D-89 a stored next_month still adds the first clause, and a rate that is not valid yet is left out', () => {
-    expect(summary({ amount: 5_000, count: 12, firstPayment: 'next_month' })).toBe('12 × E5000 a month · no rate · first in a month');
+  it('D-89 a stored next_period still adds the first clause, and a rate that is not valid yet is left out', () => {
+    expect(summary({ amount: 5_000, count: 12, firstPayment: 'next_period' })).toBe('12 × E5000 a month · no rate · first in a month');
     expect(summary({ amount: 5_000, count: 12, hasRate: true, aprText: '' })).toBe('12 × E5000 a month');
     expect(summary({ amount: 5_000, count: null })).toBeNull();
   });

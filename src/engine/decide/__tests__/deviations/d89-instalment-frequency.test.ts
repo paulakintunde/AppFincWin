@@ -100,14 +100,6 @@ describe('D-89 instalment frequency', () => {
     expect(() => resolvePlan(check(100, { instalmentAmount: m(100), instalmentCount: 601, freq: 'weekly' }))).toThrow(RangeError);
   });
 
-  it('D-89 next_month is read as next_period', () => {
-    const base = { instalmentAmount: m(10_000), instalmentCount: 12, freq: 'fortnightly' as const };
-    const a = plan(check(120_000, { ...base, firstPayment: 'next_month' }));
-    const b = plan(check(120_000, { ...base, firstPayment: 'next_period' }));
-    expect(a).toEqual(b);
-    expect(a.dayOne).toBe(0);
-  });
-
   it('D-89 monthlyStepsOf sums to the instalments after day one', () => {
     const cases: [number, Omit<Instalment, 'method'>][] = [
       [260_000, { instalmentAmount: m(10_000), instalmentCount: 26, freq: 'weekly', firstPayment: 'next_period' }],

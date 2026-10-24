@@ -1,6 +1,6 @@
 /**
  * D-80 (05-CONTEXT, UI-SPEC R15.7 E1): an instalment plan may carry an annual rate and a first-payment date. With a rate
- * the payment is worked out on the amount financed (an annuity-due for 'today', an ordinary annuity for 'next_month');
+ * the payment is worked out on the amount financed (an annuity-due for 'today', an ordinary annuity for 'next_period');
  * a typed amount is still the one scored; the new reason is instalment_rate_missing. Without a rate and with 'today',
  * every figure is the Phase 4 figure.
  */
@@ -56,10 +56,10 @@ describe('D-80 instalment plan with a rate', () => {
     expect(plan.total).toBe(plan.dayOne + stepSum(plan));
   });
 
-  it('D-80 next_month pays only the fees on the day and runs months 1 to count', () => {
+  it('D-80 next_period pays only the fees on the day and runs months 1 to count', () => {
     const ord = amortise(m(120_000), percent('12'), 12);
     const plan = resolved(
-      check(121_000, { instalmentAmount: null, instalmentCount: 12, apr: percent('12'), firstPayment: 'next_month' }, 1_000)
+      check(121_000, { instalmentAmount: null, instalmentCount: 12, apr: percent('12'), firstPayment: 'next_period' }, 1_000)
     );
     expect(plan.dayOne).toBe(1_000);
     expect(plan.computedPayment).toBe(ord.payment);
@@ -161,9 +161,9 @@ describe('D-80 instalment plan without a rate', () => {
     expect(plain.impliedAnnualRate).toBe(0n);
   });
 
-  it('D-80 without a rate next_month pays the fees on the day and months 1 to count', () => {
+  it('D-80 without a rate next_period pays the fees on the day and months 1 to count', () => {
     const plan = resolved(
-      check(125_000, { instalmentAmount: m(10_000), instalmentCount: 12, firstPayment: 'next_month' }, 5_000)
+      check(125_000, { instalmentAmount: m(10_000), instalmentCount: 12, firstPayment: 'next_period' }, 5_000)
     );
     expect(plan.dayOne).toBe(5_000);
     expect(plan.monthly).toBe(10_000);

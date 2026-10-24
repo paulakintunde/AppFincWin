@@ -66,9 +66,10 @@ const MAX_SETBACKS = 12;
 const MAX_TERM = 600;
 const INSTALMENT_FREQS = ['weekly', 'fortnightly', 'monthly', 'quarterly'] as const satisfies readonly InstalmentFreq[];
 
-/** D-89: 'next_month' is the deprecated alias of 'next_period' (removed in 05-109). */
-function normaliseFirstPayment(value: 'today' | 'next_period' | 'next_month'): 'today' | 'next_period' {
-  return value === 'next_month' ? 'next_period' : value;
+/** D-89: a stored 'next_month' (the retired name of 'next_period') is read as 'next_period'; the type no longer has it. */
+function readFirstPayment(value: unknown): 'today' | 'next_period' {
+  if (value === 'next_month') return 'next_period';
+  return oneOf(value, ['today', 'next_period'] as const) ?? 'today';
 }
 const CUSTOM_NAME_MAX = 40;
 const HUNDRED: Percent = percent('100');
@@ -380,7 +381,7 @@ export function parseCheckInputs(json: unknown, today: string): CheckInputs {
       aprText: typeof inst.aprText === 'string' && isValidAprText(inst.aprText) ? inst.aprText : '',
       // D-89: a stored 'next_month' reads as 'next_period'; an absent or unknown freq is 'monthly'. The count stays 1..600:
       // a stored count above the new input bound of 500 is kept and scored as stored (R16.16 M6).
-      firstPayment: normaliseFirstPayment(oneOf(inst.firstPayment, ['today', 'next_period', 'next_month'] as const) ?? 'today'),
+      firstPayment: readFirstPayment(inst.firstPayment),
       freq: oneOf(inst.freq, INSTALMENT_FREQS) ?? 'monthly',
     },
     card: {
@@ -574,7 +575,7 @@ function payment(inputs: CheckInputs, method: PayMethod, ctx: EngineCtx, price: 
         // D-80: no rate = apr absent; a rate = the typed APR, or null (instalment_rate_missing) when blank or invalid
         ...(inst.hasRate === true ? { apr: inst.aprText !== undefined && isValidAprText(inst.aprText) ? percent(inst.aprText) : null } : {}),
         freq: inst.freq ?? 'monthly',
-        firstPayment: normaliseFirstPayment(inst.firstPayment ?? 'today'),
+        firstPayment: inst.firstPayment ?? 'today',
         ...(inst.lateFee !== null && inst.lateFee > 0 ? { lateFee: minorUnits(inst.lateFee) } : {}),
       };
     }

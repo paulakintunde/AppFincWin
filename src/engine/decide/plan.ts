@@ -339,14 +339,14 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
   const count = p.instalmentCount!;
   const freq: InstalmentFreq = p.freq ?? 'monthly';
   const ppy = PERIODS_PER_YEAR[freq];
-  // D-89: 'next_month' is the deprecated alias of 'next_period'; either way the first payment is not on the day.
+  // D-89: 'next_period' is the first payment one period on, so not on the day.
   const today = (p.firstPayment ?? 'today') === 'today';
   // 04-REVIEW ME-02: the on-the-day fees inside the price are paid on the day, as on the loan path; the instalments
   // cover the rest (financed = price - dayFees, floored at 0). Before this the fees left cash nowhere: dayOne was the
   // first instalment alone and total was amount x count, so the cash check was understated by the fees.
   const financed = Math.max(0, check.price - check.dayFees);
   // D-80: with a rate the payment is worked out on the financed amount. 'today' is an annuity-due (first payment on the
-  // day), 'next_month' an ordinary annuity. A typed amount is always the one scored; computedPayment is the worked-out one.
+  // day), 'next_period' an ordinary annuity. A typed amount is always the one scored; computedPayment is the worked-out one.
   const computed =
     p.apr === undefined || p.apr === null ? null : (today ? amortiseDue : amortise)(m(financed), p.apr, count, ppy);
   const amounts: MinorUnits[] =
@@ -389,7 +389,7 @@ function planInstalment(check: BuyCheck, p: Extract<BuyPayment, { method: 'insta
       finalMonthly: p.instalmentAmount !== null ? m(p.instalmentAmount) : computed!.finalPayment,
       impliedAnnualRate,
       // 'today': the first instalment is paid on the day (dayOne), the rest follow in months 1..count-1.
-      // 'next_month': nothing but the fees on the day, payments in months 1..count.
+      // 'next_period': nothing but the fees on the day, payments in periods 1..count.
       paymentSteps: compressSteps(today ? amounts.slice(1) : amounts),
       promo: null,
       lateFees: lateFeesFor(p.lateFee, p.lateFeeCapTotal, count),

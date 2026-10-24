@@ -392,7 +392,7 @@ function InstalmentPanel(props: Step2Props) {
           { key: 'today', label: t('decide.pay.instalmentToday') },
           { key: 'next_period', label: t(`decide.pay.firstPayment.${freq}`) },
         ]}
-        value={(inst.firstPayment ?? 'today') === 'today' ? 'today' : 'next_period'} // a stored next_month is the same choice (D-89)
+        value={(inst.firstPayment ?? 'today') === 'today' ? 'today' : 'next_period'}
         onChange={(key) => setInst({ firstPayment: key === 'next_period' ? 'next_period' : 'today' })}
         accessibilityLabel={t('decide.pay.instalmentFirst')}
       />

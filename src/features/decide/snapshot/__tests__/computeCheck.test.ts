@@ -79,7 +79,7 @@ describe('D-90 the true APR of a no-rate instalment plan', () => {
     computeCheck(loggedSource(), inputs);
     expect(spy).toHaveBeenCalledWith(expect.objectContaining({ periodsPerYear: 52, timing: 'ordinary' }));
     spy.mockClear();
-    computeCheck(loggedSource(), noRate({ freq: 'quarterly', firstPayment: 'next_month' }));
+    computeCheck(loggedSource(), noRate({ freq: 'quarterly', firstPayment: 'next_period' }));
     expect(spy).toHaveBeenCalledWith(expect.objectContaining({ periodsPerYear: 4, timing: 'ordinary' }));
   });
 
@@ -472,7 +472,7 @@ const inputsArb = fc.record({
   replaces: fc.array(line, { maxLength: 2 }),
   lossOfValue: wrap(fc.constantFrom({ kind: 'amount', monthly: 10_000 }, { kind: 'percent_per_year', percentText: '15' }), fc.constant({ kind: 'percent_per_year', percentText: '250' })),
   loan: fc.record({ deposit: money, termMonths: months, aprText: rate, promo, variable: fc.boolean(), secured: fc.boolean() }),
-  instalment: fc.record({ amount: money, count: months, lateFee: money, hasRate: fc.boolean(), aprText: rate, firstPayment: fc.constantFrom('today', 'next_month', 'x') }),
+  instalment: fc.record({ amount: money, count: months, lateFee: money, hasRate: fc.boolean(), aprText: rate, firstPayment: fc.constantFrom('today', 'next_period', 'x') }),
   card: fc.record({ accountId: fc.constantFrom('acc-card', 'nope', null), payoff: fc.constantFrom('full', 'months', 'minimum', 'x'), months, promo, variable: fc.boolean(), fees: money }),
   investTermMonths: months,
   investHorizonMonths: months,
