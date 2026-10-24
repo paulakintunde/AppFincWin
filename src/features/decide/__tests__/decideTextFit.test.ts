@@ -92,6 +92,7 @@ const NUMBER_ALLOW: { path: string; kind: NumberKind; count: number; reason: str
   { path: 'check/sections/LedgersSection.tsx', kind: 'figure', count: 1, reason: 'rule N Now/After value' },
   { path: 'check/steps/Step2PriceAndPay.tsx', kind: 'figure', count: 2, reason: 'rule N Final price and committed figure' },
   { path: 'quick/QuickResult.tsx', kind: 'figure', count: 1, reason: 'rule N quick-check monthly figure' },
+  { path: 'home/HomeSummaryCard.tsx', kind: 'figure', count: 1, reason: 'R17.7 the hero amount: the declared hero-only minimumFontScale 0.75 exception to rule N' },
   { path: 'ui/FigureStrip.tsx', kind: 'figure', count: 1, reason: 'rule N strip figures' },
 ];
 
