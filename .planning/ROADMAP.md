@@ -831,7 +831,7 @@ Plans:
 
 **Wave 41** *(blocked on Wave 40 completion)*
 - [x] 05-137-PLAN.md — Free / overspent wording, part 2: alternatives, Step 5, expected-income row, worst-month line, open-check line (D-106)
-- [ ] 05-142-PLAN.md — Engine E10: a first-class 'month' basis in prepareContext, parity suite against worst, basis wording for all three bases (D-107)
+- [x] 05-142-PLAN.md — Engine E10: a first-class 'month' basis in prepareContext, parity suite against worst, basis wording for all three bases (D-107)
 
 **Wave 42** *(blocked on Wave 41 completion)*
 - [ ] 05-138-PLAN.md — Snapshot: judgeOn becomes the basis, current-month rows without a rate fall back to Worst, integration tests incl. currency conversion and the quick check (D-106, D-107)
