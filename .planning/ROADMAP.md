@@ -785,7 +785,7 @@ Plans:
 **Wave 28** *(blocked on Wave 27 completion)*
 - [ ] 05-114-PLAN.md — HomeSummaryCard: label, two-Text hero at 42, In/Out, quick check, states (D-95, D-97)
 - [x] 05-115-PLAN.md — Month details sheet and the quiet HomeRow (D-95, D-99)
-- [ ] 05-116-PLAN.md — Notice row and the Needs a look sheet (D-96)
+- [x] 05-116-PLAN.md — Notice row and the Needs a look sheet (D-96)
 
 **Wave 29** *(blocked on Wave 28 completion)*
 - [ ] 05-117-PLAN.md — Decide home composition: lean header, card, rows, no FAB (D-95, D-98, D-99)
