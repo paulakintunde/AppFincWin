@@ -244,6 +244,8 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
   const bought = row !== null && row.status === 'bought';
   const boughtState = useBoughtCheckComputation(row, row === null ? null : draft.inputs);
 
+  // D-101: a reopened Waiting check is judged without its own pot.
+  const ownCheckId = row?.id ?? null;
   // ── D-56: the verdict is live, the slow details follow the inputs 150 ms after they stop changing ──
   // D-88: the slow figures are stored once computed (in an idle callback) with the core they came from; they are what the
   // folds read until the next ones arrive.
@@ -257,16 +259,16 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
     () => {
       if (source === null || bought) return null;
       perfMark('verdict:start');
-      const next = computeCore(source, inputs, stack.otherChecks, typing ? { detailFor, prior } : {});
+      const next = computeCore(source, inputs, stack.otherChecks, typing ? { detailFor, prior, ownCheckId } : { ownCheckId });
       perfMark('verdict:end');
       return next;
     },
-    [source, inputs, stack, bought, typing, detailFor, prior]
+    [source, inputs, stack, bought, typing, detailFor, prior, ownCheckId]
   );
   // speed 3: settled and live inputs equal means one core, not two
   const settledCore = useMemo(
-    () => (source === null || core === null || typing ? null : settledCoreFor(source, settled, stack.otherChecks, { inputs, core, narrowed: false })),
-    [source, settled, stack, inputs, core, typing]
+    () => (source === null || core === null || typing ? null : settledCoreFor(source, settled, stack.otherChecks, { inputs, core, narrowed: false }, ownCheckId)),
+    [source, settled, stack, inputs, core, typing, ownCheckId]
   );
   if (shown === null) {
     // the first figures are computed in place (nothing is on screen to keep); later ones follow in idle time

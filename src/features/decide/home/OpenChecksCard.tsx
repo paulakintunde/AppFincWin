@@ -87,7 +87,7 @@ export function OpenChecksCard({ source, checks, today, whole, currency, showWhe
         const inputs = view === null ? stored : view.inputs;
         const method = effectiveMethod(inputs);
         const others = source === null || view === null ? [] : selectOtherChecks({ checks: open, excludeId: row.id, source, today }).otherChecks;
-        const chip = source === null || view === null ? null : computeChip(sourceFor(source, view), inputs, others);
+        const chip = source === null || view === null ? null : computeChip(sourceFor(source, view), inputs, others, row.id);
         const shown = view?.kind === 'missing' ? null : inputs.advertised;
         const withOthers = inputs.combine !== false && others.length > 0;
         return { row, chip, hasPriceAndMethod: inputs.advertised !== null && method !== null, price: shown, method, withOthers };

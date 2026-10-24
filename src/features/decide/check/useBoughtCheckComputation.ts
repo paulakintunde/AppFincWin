@@ -47,7 +47,7 @@ export function useBoughtCheckComputation(row: DecideCheckRow | null, inputs: Ch
     const built = buildDecideSnapshot(withoutCheckWrites(source, checkId, linkRows, replaced, decidedOn));
     // D-67: amounts typed in another currency are judged at the latest stored rate (or read unconverted without one).
     const view = inHomeCurrency(inputs, built, { isSample: row.is_sample });
-    return computeCheck(sourceFor(built, view), view.inputs, stack.otherChecks);
+    return computeCheck(sourceFor(built, view), view.inputs, stack.otherChecks, checkId);
   }, [bought, row, checkId, decidedAt, source, linkRows, inputs, stack, rc.today, rc.timeZone]);
 
   if (!bought) return IDLE;

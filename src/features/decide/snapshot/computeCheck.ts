@@ -276,10 +276,11 @@ export function settledCoreFor(
   source: SnapshotResult,
   settled: CheckInputs,
   otherChecks: readonly StackedCheckInput[],
-  live: { inputs: CheckInputs; core: CheckCore; narrowed: boolean }
+  live: { inputs: CheckInputs; core: CheckCore; narrowed: boolean },
+  ownCheckId: string | null = null
 ): CheckCore {
   if (!live.narrowed && sameInputs(live.inputs, settled)) return live.core;
-  return computeCore(source, settled, otherChecks);
+  return computeCore(source, settled, otherChecks, { ownCheckId });
 }
 
 function cheaperOf(inputs: CheckInputs, planPrice: MinorUnits): { price: MinorUnits } | undefined {

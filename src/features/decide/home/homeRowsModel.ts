@@ -25,7 +25,7 @@ export function changedOpenCount(source: SnapshotResult | null, checks: readonly
     if (row.last_seen_state === null) continue;
     const view = inHomeCurrency(parseCheckInputs(row.inputs, today), source, { isSample: row.is_sample });
     const others = selectOtherChecks({ checks: open, excludeId: row.id, source, today }).otherChecks;
-    const chip = computeChip(sourceFor(source, view), view.inputs, others);
+    const chip = computeChip(sourceFor(source, view), view.inputs, others, row.id);
     const seen: SeenState | null = chip.status === 'logged' || chip.status === 'first_read' ? chip.state : null;
     if (seen !== null && seen !== row.last_seen_state) changed += 1;
   }
