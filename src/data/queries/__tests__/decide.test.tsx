@@ -152,6 +152,7 @@ function resetMocks(): void {
   mockFetch.checks.mockResolvedValue([]);
   mockFetch.settings.mockResolvedValue(null);
   mockFetch.debts.mockResolvedValue([]);
+  mockFetch.goals.mockResolvedValue([]);
   mockFetch.periods.mockResolvedValue([]);
   mockFetch.changes.mockResolvedValue([]);
   mockFetch.payment.mockResolvedValue([]);
@@ -278,6 +279,25 @@ describe('useDecideSnapshot', () => {
     const { result } = await ready();
     expect(result.current.source?.paymentLinks).toEqual([{ check_id: 'k-inv', target_id: 's1', check_kind: 'invest' }]);
     expect(result.current.source?.writtenRowLinks).toEqual([{ check_id: 'k-inv', target_id: 't9' }]);
+  });
+
+  it('D-101 the snapshot source carries goals with kind and done_at, and debts with is_housing', async () => {
+    const pot = { id: 'g1', kind: 'pot', done_at: null, deleted_at: null, currency: 'USD', target: 60_000, monthly_amount: null, ready_by: '2027-03-31', opening_saved: 0, check_id: null };
+    const finished = { ...pot, id: 'g2', done_at: '2026-10-01T00:00:00Z' };
+    mockFetch.goals.mockResolvedValue([pot, finished]);
+    mockFetch.debts.mockResolvedValue([
+      { id: 'd1', kind: 'loan', is_housing: true, deleted_at: null, currency: 'USD', balance: 9_000_000, minimum_payment: 150_000, account_id: null, check_id: null, series_id: null, apr: null, secured: true, min_percent: null, min_interest_added: null, min_floor: null, paid_in_full: false, version: 1 },
+    ]);
+    const { result } = await ready();
+    expect(result.current.source?.goals).toEqual([pot, finished]);
+    expect(result.current.source?.goals.map((g) => [g.kind, g.done_at])).toEqual([['pot', null], ['pot', '2026-10-01T00:00:00Z']]);
+    expect(result.current.source?.debts.map((d) => d.is_housing)).toEqual([true]);
+    const res = result.current.result;
+    if (res?.kind !== 'logged') throw new Error('expected logged');
+    // the done pot is left out; the live one reaches the engine and the snapshot result
+    expect(res.snapshot.pots.map((p) => p.id)).toEqual(['g1']);
+    expect(res.pots?.map((p) => p.id)).toEqual(['g1']);
+    expect(res.snapshot.housingMonthly).toBe(100_000 + 150_000);
   });
 
   it('the market row follows the device region when no region is set', async () => {

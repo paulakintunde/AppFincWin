@@ -34,6 +34,7 @@ import type {
   DecideSnapshot,
   MinorUnits,
   PlanResult,
+  PotInput,
   PurchaseCheck,
   SetbackInput,
   StackedCheckInput,
@@ -172,6 +173,21 @@ function promoCard(checks: Partial<Record<MethodKey, PurchaseCheck>>, plans: Par
   }
 }
 
+/**
+ * D-101 (R18.2 "Own pot excluded"): when the check being judged has its own Wait pot (a reopened Waiting check), that pot
+ * is dropped from the pots the engine sees, the way withoutCheckWrites drops a check's own written rows; otherwise the
+ * Wait plan would count its own set-aside twice. Other checks' pots stay. Returns the same object when nothing is dropped.
+ */
+export function withoutOwnPot(source: SnapshotResult, checkId: string | null): SnapshotResult {
+  if (checkId === null || source.potChecks === undefined) return source;
+  const own = new Set(Object.entries(source.potChecks).filter(([, check]) => check === checkId).map(([potId]) => potId));
+  if (own.size === 0) return source;
+  const keep = (p: PotInput): boolean => !own.has(p.id);
+  const pots = (source.pots ?? []).filter(keep);
+  if (source.kind === 'logged') return { ...source, pots, snapshot: { ...source.snapshot, pots: source.snapshot.pots.filter(keep) } };
+  return { ...source, pots };
+}
+
 /** What a core carries over from the last settled computation for the methods that are not being typed on. */
 export interface CarriedPlans {
   methodPlans: CheckComputation['methodPlans'];
@@ -184,6 +200,8 @@ export interface CarriedPlans {
  * is the same either way.
  */
 export interface CoreOptions {
+  /** D-101: the id of the check being judged, so its own Wait pot is not counted against it (withoutOwnPot). */
+  ownCheckId?: string | null;
   detailFor?: MethodKey | null;
   prior?: CarriedPlans | null;
 }
@@ -225,14 +243,15 @@ export function computeCore(source: SnapshotResult, inputs: CheckInputs, otherCh
   // D-37: an amount with no stored rate gives no figure anywhere
   if (source.unconverted !== null) return { ...base, status: 'unconverted', unconverted: source.unconverted };
 
-  switch (source.kind) {
+  const judged = withoutOwnPot(source, opts.ownCheckId ?? null);
+  switch (judged.kind) {
     case 'logged': {
-      const decision = decide(snapshotWithRates(source.snapshot, inputs.projectionRates), r.check, inputs.combine === false ? [] : otherChecks);
+      const decision = decide(snapshotWithRates(judged.snapshot, inputs.projectionRates), r.check, inputs.combine === false ? [] : otherChecks);
       const verdict = decision.verdict;
       return { ...base, status: 'logged', decision, verdict, context: verdict.state === 'missing' ? null : verdict.context };
     }
     case 'rough':
-      return { ...base, status: 'first_read', firstRead: firstRead(source.figures, r.check) };
+      return { ...base, status: 'first_read', firstRead: firstRead(judged.figures, r.check) };
     case 'none':
       return { ...base, status: 'none' };
   }
@@ -291,8 +310,8 @@ export function computeDetails(core: CheckCore, inputs: CheckInputs): CheckCompu
 }
 
 /** The full computation every Decide screen renders. */
-export function computeCheck(source: SnapshotResult, inputs: CheckInputs, otherChecks: readonly StackedCheckInput[] = []): CheckComputation {
-  return computeDetails(computeCore(source, inputs, otherChecks), inputs);
+export function computeCheck(source: SnapshotResult, inputs: CheckInputs, otherChecks: readonly StackedCheckInput[] = [], ownCheckId: string | null = null): CheckComputation {
+  return computeDetails(computeCore(source, inputs, otherChecks, { ownCheckId }), inputs);
 }
 
 /** The quick check (home, onboarding): the same engine path as the full check for the same inputs (D-01). */
@@ -336,19 +355,20 @@ export function computeQuick(
 }
 
 /** The home open-checks chip: the cheaper assess() entry, so it always agrees with the step-3 chip (D-24, 05-21). */
-export function computeChip(source: SnapshotResult, inputs: CheckInputs, otherChecks: readonly StackedCheckInput[] = []): ChipComputation {
+export function computeChip(source: SnapshotResult, inputs: CheckInputs, otherChecks: readonly StackedCheckInput[] = [], ownCheckId: string | null = null): ChipComputation {
   const r = toEngineCheck(inputs, ctxOf(source));
   if (!r.ok) return { status: 'incomplete', missingInput: r.missing, price: inputs.advertised === null ? null : minorUnits(inputs.advertised) };
   const method = effectiveMethod(inputs) as MethodKey;
   const price = r.resolvedPrice.price;
   if (source.unconverted !== null) return { status: 'unconverted', price, method };
-  switch (source.kind) {
+  const judged = withoutOwnPot(source, ownCheckId);
+  switch (judged.kind) {
     case 'logged': {
-      const v = assess(snapshotWithRates(source.snapshot, inputs.projectionRates), r.check, inputs.combine === false ? [] : otherChecks);
+      const v = assess(snapshotWithRates(judged.snapshot, inputs.projectionRates), r.check, inputs.combine === false ? [] : otherChecks);
       return { status: 'logged', state: v.state, price, method, left: v.state === 'missing' ? null : v.left };
     }
     case 'rough': {
-      const fr = firstRead(source.figures, r.check);
+      const fr = firstRead(judged.figures, r.check);
       return { status: 'first_read', state: fr.state, price, method, left: fr.state === 'missing' ? null : fr.leftAfter };
     }
     case 'none':

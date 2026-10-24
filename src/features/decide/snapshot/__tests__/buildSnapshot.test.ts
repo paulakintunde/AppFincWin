@@ -4,6 +4,7 @@ import {
   MARKET_DEFAULTS,
   ZERO_PERCENT,
   decide,
+  totalSetAside,
   minimumTermsFromDefaults,
   percent,
   prepareContext,
@@ -23,6 +24,7 @@ import {
   change,
   customCurrency,
   debt,
+  goal,
   household,
   paymentLink,
   row,
@@ -147,7 +149,7 @@ describe('a four-month household', () => {
       monthlyInvesting: 0,
       scope: { kind: 'personal' },
       householdSpending: null,
-      housingMonthly: 0,
+      housingMonthly: 100_000, // D-103: the Housing-category rent
       limits: { reserve: null, dsrLine: null, housingLine: null, unsecuredIncomeMultiple: null, investingFloor: null, savingFloor: null, spareFloor: null },
       projectionReturn: null,
       projectionRates: [],
@@ -1011,6 +1013,7 @@ describe('property: the engine accepts what the builder builds', () => {
       rough_spending: fc.constant(null),
       reserve: money,
       dsr_line: fc.constantFrom<string | null>(null, '-5', 'abc', '30', '36.5', '999.9999', '1000'),
+      housing_line: fc.constantFrom<string | null>(null, '-5', 'abc', '28', '100', '100.0001', '999.9999'),
       unsecured_multiple: fc.oneof(fc.constant(null), fc.integer({ min: -5, max: 200 }), fc.double({ min: -5, max: 200, noNaN: true })),
       investing_floor: money,
       saving_floor: money,
@@ -1023,6 +1026,7 @@ describe('property: the engine accepts what the builder builds', () => {
       secured: fc.boolean(),
       apr: fc.constantFrom<string | null>(null, '0', '12.5', '29.99'),
       paid_in_full: fc.boolean(),
+      is_housing: fc.boolean(),
       min_percent: fc.constantFrom<string | null>(null, '1', '2.5'),
       min_interest_added: fc.constantFrom<boolean | null>(null, true, false),
       min_floor: fc.constantFrom<number | null>(null, 0, 2_500),
@@ -1059,5 +1063,219 @@ describe('property: the engine accepts what the builder builds', () => {
       }),
       { numRuns: 150 }
     );
+  });
+});
+
+describe('pots (D-101, R18.2)', () => {
+  const sav = (id: string, date: string, amount: number, extra = {}) =>
+    row({ id, local_date: date, original_amount: amount, account_id: 'sav', transfer_id: `t-${id}`, ...extra });
+
+  it('D-101 the builder passes live not-done pots to the engine', () => {
+    const r = logged(
+      withExtra({
+        goals: [
+          goal({ id: 'g-live', target: 60_000, opening_saved: 10_000 }),
+          goal({ id: 'g-done', done_at: '2026-10-01T00:00:00Z' }),
+          goal({ id: 'g-gone', deleted_at: '2026-10-02T00:00:00Z' }),
+          goal({ id: 'g-wait', kind: 'wait', check_id: 'chk-9', target: 30_000, monthly_amount: 5_000, ready_by: null }),
+          goal({ id: 'g-notarget', kind: 'wait', check_id: null, target: null, monthly_amount: 0, ready_by: null }),
+        ],
+      })
+    );
+    expect(r.snapshot.pots).toEqual([
+      { id: 'g-live', kind: 'pot', target: 60_000, monthlyAmount: null, readyBy: '2027-03-31', saved: 10_000 },
+      { id: 'g-wait', kind: 'wait', target: 30_000, monthlyAmount: 5_000, readyBy: null, saved: 0 },
+      { id: 'g-notarget', kind: 'wait', target: null, monthlyAmount: 0, readyBy: null, saved: 0 },
+    ]);
+    expect(r.pots).toBe(r.snapshot.pots); // 05-134 reads pots from the result base
+    expect(r.potChecks).toEqual({ 'g-wait': 'chk-9' });
+    // five whole months from 15 Oct to 31 Mar: 50,000 / 5 = 10,000, plus the Wait pot's 5,000
+    expect(ctxOf(r.snapshot).setAside).toBe(15_000);
+    expect(r.meta.unconvertedPots).toBe(0);
+  });
+
+  it('D-101 a pot counts the paid tagged lines as saved', () => {
+    const r = logged(
+      withExtra({
+        goals: [goal({ id: 'g1', target: 200_000, opening_saved: 5_000 })],
+        rows: [
+          sav('tag-1', '2026-09-03', 30_000, { goal_id: 'g1' }),
+          sav('tag-2', '2026-02-03', 20_000, { goal_id: 'g1' }),
+          sav('tag-pending', '2026-09-04', 99_999, { goal_id: 'g1', status: 'pending' }),
+          sav('tag-other', '2026-09-05', 77_777, { goal_id: 'someone-else' }),
+        ],
+      })
+    );
+    expect(r.snapshot.pots[0]!.saved).toBe(55_000);
+  });
+
+  it('D-101 a tagged transfer leg is not counted as saving', () => {
+    const inv = { id: 'i-plain', local_date: '2026-09-07', original_amount: 8_000, account_id: 'inv', transfer_id: 't-inv-plain' };
+    const base = withExtra({
+      accounts: [account({ id: 'inv', kind: 'investment' })],
+      rows: [sav('s-plain', '2026-09-03', 40_000), row(inv)],
+    });
+    const tagged = withExtra({
+      goals: [goal({ id: 'g1' })],
+      accounts: [account({ id: 'inv', kind: 'investment' })],
+      rows: [
+        sav('s-plain', '2026-09-03', 40_000),
+        sav('s-tagged', '2026-09-04', 60_000, { goal_id: 'g1' }),
+        row(inv),
+        row({ id: 'i-tagged', local_date: '2026-09-08', original_amount: 9_000, account_id: 'inv', transfer_id: 't-inv-tagged', goal_id: 'g1' }),
+      ],
+    });
+    const a = logged(base).snapshot;
+    const b = logged(tagged).snapshot;
+    expect(b.monthlySaving).toBe(a.monthlySaving);
+    expect(b.monthlyInvesting).toBe(a.monthlyInvesting);
+    expect(b.monthlySaving).toBe(10_000);
+    expect(b.monthlyInvesting).toBe(2_000);
+  });
+
+  it('D-101 an untagged Savings series still counts as saving', () => {
+    const r = logged(
+      withExtra({
+        goals: [goal({ id: 'g1' })],
+        series: [series({ id: 's-sav', amount: -25_000, category_id: 'c-sav' })],
+      })
+    );
+    expect(r.snapshot.monthlySaving).toBe(25_000);
+    expect(r.snapshot.pots).toHaveLength(1);
+  });
+
+  it('D-101 a pot in another currency converts at the latest stored rate and rounds up', () => {
+    // 1 EUR = 1.1 USD: 100,001 EUR cents is 110,001.1 USD cents (target up), 1 cent is 1.1 (opening down), 3 is 3.3 (Wait amount up)
+    const r = logged(
+      withExtra({
+        rates: [USD_RATE],
+        goals: [
+          goal({ id: 'g-eur', currency: 'EUR', target: 100_001, opening_saved: 1 }),
+          goal({ id: 'g-w', kind: 'wait', currency: 'EUR', target: 100_001, monthly_amount: 3, ready_by: null, opening_saved: 0 }),
+        ],
+      })
+    );
+    expect(r.snapshot.pots[0]).toMatchObject({ target: 110_002, saved: 1 });
+    expect(r.snapshot.pots[1]).toMatchObject({ target: 110_002, monthlyAmount: 4, saved: 0 });
+    expect(r.unconverted).toBeNull();
+  });
+
+  it('D-101 a pot whose amounts are zero needs no rate', () => {
+    const r = logged(withExtra({ goals: [goal({ id: 'g-eur', currency: 'EUR', target: null, monthly_amount: 0, kind: 'wait', ready_by: null, opening_saved: 0 })] }));
+    expect(r.snapshot.pots).toHaveLength(1);
+    expect(r.unconverted).toBeNull();
+  });
+
+  it('D-101 a pot with no stored rate makes the card unavailable', () => {
+    const r = logged(withExtra({ goals: [goal({ id: 'g-eur', currency: 'EUR' }), goal({ id: 'g-eur2', currency: 'EUR' }), goal({ id: 'g-usd' })] }));
+    expect(r.unconverted).toEqual({ currencies: ['EUR'], rowCount: 2 });
+    expect(r.meta.unconvertedPots).toBe(2);
+    expect(r.snapshot.pots.map((p) => p.id)).toEqual(['g-usd']);
+  });
+
+  it('D-101 a pot with a tagged line that has no rate counts as unconverted', () => {
+    const r = logged(
+      withExtra({
+        goals: [goal({ id: 'g1' })],
+        rows: [row({ id: 'tag-eur', local_date: '2026-05-10', original_amount: 5_000, original_currency: 'EUR', home_currency: 'EUR', account_id: 'sav', transfer_id: 't-eur', goal_id: 'g1' })],
+      })
+    );
+    expect(r.unconverted).toEqual({ currencies: ['USD'], rowCount: 1 });
+    expect(r.meta.unconvertedPots).toBe(1);
+  });
+
+  it('D-101 a pot converted beyond the money range counts as unconverted', () => {
+    const r = logged(withExtra({ rates: [USD_RATE], goals: [goal({ id: 'g-big', currency: 'EUR', target: 9_999_999_999_999 })] }));
+    expect(r.meta.unconvertedPots).toBe(1);
+  });
+
+  it('D-101 saved is capped at the money range', () => {
+    const r = logged(withExtra({ goals: [goal({ id: 'g1', target: 10_000_000_000_000, opening_saved: 10_000_000_000_000 })], rows: [sav('tag-1', '2026-09-03', 5, { goal_id: 'g1' })] }));
+    expect(r.snapshot.pots[0]!.saved).toBe(10_000_000_000_000);
+  });
+
+  it('D-101 rough hero takes the set-asides off', () => {
+    const rough = buildDecideSnapshot(
+      sourceOf({
+        settings: settings({ rough_income: 400_000, rough_spending: 300_000 }),
+        accounts: [account({ id: 'chk' })],
+        balances: { chk: 50_000 },
+        goals: [goal({ id: 'g1', target: 60_000 })],
+      })
+    );
+    if (rough.kind !== 'rough') throw new Error('expected rough');
+    expect(rough.pots).toHaveLength(1);
+    const setAside = totalSetAside(rough.pots ?? [], '2026-10-15').total; // the same potSetAside the engine uses
+    expect(setAside).toBe(12_000);
+    expect(rough.figures.monthlyIncome - rough.figures.monthlySpending - setAside).toBe(88_000);
+    const none = buildDecideSnapshot(sourceOf({ goals: [goal({ id: 'g1' })] }));
+    expect(none.kind).toBe('none');
+    expect(none.pots?.map((p) => p.id)).toEqual(['g1']);
+  });
+});
+
+describe('housing (D-103, R18.4)', () => {
+  it('D-103 housing counts Housing-category spending plus is_housing loan payments', () => {
+    expect(logged(household()).snapshot.housingMonthly).toBe(100_000);
+    const r = logged(withExtra({ debts: [debt({ is_housing: true, minimum_payment: 150_000 }), debt({ is_housing: false, minimum_payment: 9_000 })] }));
+    expect(r.snapshot.housingMonthly).toBe(250_000);
+    const other = logged(
+      withExtra({
+        rows: [
+          row({ id: 'custom', local_date: '2026-09-12', original_amount: -50_000, category_id: 'c-custom' }),
+          row({ id: 'oneoff', local_date: '2026-09-13', original_amount: -70_000, category_id: 'c-house', one_off: true }),
+          row({ id: 'plain', local_date: '2026-09-14', original_amount: -20_000 }),
+        ],
+      })
+    );
+    expect(other.snapshot.housingMonthly).toBe(100_000);
+  });
+
+  it('D-103 housing is the average of the used months whatever the basis', () => {
+    const rows = [row({ id: 'extra-rent', local_date: '2026-09-20', original_amount: -30_000, category_id: 'c-house' })];
+    const avg = logged(withExtra({ rows, settings: settings({ basis_override: 'average' }) })).snapshot.housingMonthly;
+    const worst = logged(withExtra({ rows, settings: settings({ basis_override: 'worst' }) })).snapshot.housingMonthly;
+    expect(avg).toBe(107_500); // (4 x 100,000 + 30,000) / 4 used months
+    expect(worst).toBe(avg);
+  });
+
+  it('D-103 a card with is_housing set is ignored', () => {
+    const r = logged(withExtra({ debts: [debt({ kind: 'card', account_id: null, is_housing: true, minimum_payment: 55_000 })] }));
+    expect(r.snapshot.housingMonthly).toBe(100_000);
+  });
+
+  it('D-103 a debt-covered series is counted once', () => {
+    const r = logged(
+      withExtra({
+        series: [series({ id: 's-mort', amount: -150_000, category_id: 'c-house' })],
+        rows: ['2026-07', '2026-08', '2026-09'].map((m) =>
+          row({ id: `mort-${m}`, local_date: `${m}-05`, original_amount: -150_000, category_id: 'c-house', recurring_series_id: 's-mort' })
+        ),
+        debts: [debt({ series_id: 's-mort', is_housing: true, minimum_payment: 150_000 })],
+      })
+    );
+    expect(r.snapshot.housingMonthly).toBe(250_000); // rent plus the mortgage minimum once, not 400,000
+  });
+
+  it('D-103 a housing loan in another currency converts at the stored rate', () => {
+    const r = logged(withExtra({ rates: [USD_RATE], debts: [debt({ currency: 'EUR', is_housing: true, minimum_payment: 100_000 })] }));
+    expect(r.snapshot.housingMonthly).toBe(210_000);
+  });
+
+  it('D-103 housing_line is parsed like the DSR line and passed on', () => {
+    for (const text of ['28', '31.5', '0', '100', '100.0000']) {
+      const r = logged(household({ settings: settings({ housing_line: text }) }));
+      expect(r.snapshot.limits.housingLine).toBe(percent(text));
+      expect(r.meta.limitsReset).toBe(0);
+    }
+  });
+
+  it('D-103 an invalid housing_line counts toward limitsReset', () => {
+    for (const text of ['abc', '-5', '100.0001', '101', '1.23456', '']) {
+      const r = logged(household({ settings: settings({ housing_line: text }) }));
+      expect(r.snapshot.limits.housingLine).toBeNull();
+      expect(r.meta.limitsReset).toBe(1);
+      expect(prepareContext(r.snapshot).ok).toBe(true);
+    }
   });
 });

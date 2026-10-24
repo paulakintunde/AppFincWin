@@ -37,25 +37,27 @@ export function provisionalHomeAmount(
   return result === null ? null : { amount: result.amount, rateDate: result.rateDate };
 }
 
-/** D-91: a conversion rounded DOWN to the minor unit, with the date of the older stored rate used. */
+/** D-91: a conversion rounded to the minor unit (DOWN for a limit, UP for a set-aside), with the date of the older stored rate used. */
 export interface FlooredConversion {
   amount: number;
   rateDate: string;
 }
 
 /**
- * D-91 (T-05-95-01): `amount` minor units of `from` in `home` at the latest stored rates, FLOORED to the home minor unit so a
- * limit is never rounded up. Exact rational maths in bigint (the same ratio as convertMinorExact, custom legs included),
- * one floor at the end, no float. Stored rates only (never the FX fetch door). Null on any missing rate, unusable exponent or
- * a result beyond a safe integer; never throws.
+ * Exact rational conversion of `amount` minor units (zero or positive) from `from` to `home` at the latest stored rates,
+ * rounded once at the end: DOWN (`up` false, a limit is never rounded up, T-05-95-01) or UP (`up` true, a set-aside is
+ * never rounded down, T-05-124-01). Same ratio as convertMinorExact, custom legs included; bigint only, no float. Stored
+ * rates only (never the FX fetch door). Null on any missing rate, unusable exponent or a result beyond a safe integer;
+ * never throws.
  */
-export function convertFloored(
+function convertRounded(
   amount: number,
   from: string,
   home: string,
   rates: readonly FxLatestRow[],
   customs: readonly CustomCurrencyRow[],
-  today: string
+  today: string,
+  up: boolean
 ): FlooredConversion | null {
   if (from === home) return { amount, rateDate: today };
   try {
@@ -68,12 +70,36 @@ export function convertFloored(
       BigInt(amount) * (dest.custom?.referencePerEur ?? dest.rate) * 10n ** BigInt(toExponent) * (orig.custom?.unitValue ?? EUR_PER_EUR);
     const denominator =
       (orig.custom?.referencePerEur ?? orig.rate) * 10n ** BigInt(fromExponent) * (dest.custom?.unitValue ?? EUR_PER_EUR);
-    const floored = numerator / denominator; // both positive: truncation is the floor
-    if (floored > BigInt(Number.MAX_SAFE_INTEGER)) return null;
-    return { amount: Number(floored), rateDate: earlierDate(orig.rateDate, dest.rateDate) };
+    const rounded = up ? (numerator + denominator - 1n) / denominator : numerator / denominator; // both positive: truncation is the floor
+    if (rounded > BigInt(Number.MAX_SAFE_INTEGER)) return null;
+    return { amount: Number(rounded), rateDate: earlierDate(orig.rateDate, dest.rateDate) };
   } catch {
     return null;
   }
+}
+
+/** D-91 (T-05-95-01): the amount in `home`, FLOORED to the minor unit. */
+export function convertFloored(
+  amount: number,
+  from: string,
+  home: string,
+  rates: readonly FxLatestRow[],
+  customs: readonly CustomCurrencyRow[],
+  today: string
+): FlooredConversion | null {
+  return convertRounded(amount, from, home, rates, customs, today, false);
+}
+
+/** D-101 (T-05-124-01): the amount in `home`, rounded UP to the minor unit, so a converted target never understates a set-aside. */
+export function convertCeiled(
+  amount: number,
+  from: string,
+  home: string,
+  rates: readonly FxLatestRow[],
+  customs: readonly CustomCurrencyRow[],
+  today: string
+): FlooredConversion | null {
+  return convertRounded(amount, from, home, rates, customs, today, true);
 }
 
 export interface Converter {

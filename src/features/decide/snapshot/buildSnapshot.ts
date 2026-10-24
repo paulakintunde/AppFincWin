@@ -22,6 +22,7 @@ import {
   type MarketKey,
   type MonthRecord,
   type Percent,
+  type PotInput,
   type RecordLine,
   type RecurringBill,
   type RecurringIncome,
@@ -29,12 +30,12 @@ import {
   type ScheduledOutflow,
 } from '@/engine/decide';
 import { PERCENT_SCALE, simulateMinimum } from '@/engine/payoff';
-import { currencyCode, divideHalfUp, minorUnits } from '@/engine/money';
+import { MAX_ABS_AMOUNT_MINOR, currencyCode, divideHalfUp, minorUnits } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import { convertLatest } from '@/data/queries/fxConvert';
 import { homeAmountFor, isOwnCurrencyRow } from '@/data/queries/homeAmount';
 import type { AccountRow, CustomCurrencyRow, FxLatestRow, RecurringSeriesRow, TransactionRow } from '@/db/rows';
-import { convertFloored, makeConverter, provisionalHomeAmount, type ProvisionalAmount } from './conversion';
+import { convertCeiled, convertFloored, makeConverter, provisionalHomeAmount, type ProvisionalAmount } from './conversion';
 import { fullMonthFlags } from './fullMonths';
 import type { CardChoice, CardLimitRateNote, CardTermsView, SnapshotMeta, SnapshotResult } from './types';
 
@@ -45,6 +46,7 @@ export interface SettingsSource {
   rough_spending: number | null;
   reserve: number | null;
   dsr_line: string | null;
+  housing_line: string | null; // D-103 (R18.4): the 28% housing line as a decimal string, parsed like dsr_line and capped at 100
   unsecured_multiple: number | null;
   investing_floor: number | null;
   saving_floor: number | null;
@@ -66,7 +68,22 @@ export interface DebtSource {
   min_interest_added: boolean | null;
   min_floor: number | null;
   paid_in_full: boolean;
+  is_housing: boolean; // D-103: a loan (never a card) whose minimum counts toward housingMonthly
   version: number;
+  deleted_at: string | null;
+}
+
+// structurally identical to the savings_goals rows (05-122): the pots and Wait goals (D-101). Done and deleted rows are left out by the builder.
+export interface GoalSource {
+  id: string;
+  kind: 'wait' | 'pot';
+  check_id: string | null;
+  currency: string;
+  target: number | null;
+  monthly_amount: number | null;
+  ready_by: string | null;
+  opening_saved: number;
+  done_at: string | null;
   deleted_at: string | null;
 }
 
@@ -97,7 +114,7 @@ type SnapshotRow = Pick<
   | 'recurring_series_id'
   | 'category_id'
   | 'deleted_at'
-> & { one_off?: boolean | null };
+> & { one_off?: boolean | null; goal_id?: string | null }; // goal_id: D-34/D-101, a transfer leg tagged to a savings goal or pot
 
 export interface SnapshotSource {
   today: string;
@@ -115,6 +132,7 @@ export interface SnapshotSource {
   categories: Readonly<Record<string, string | null>>; // category id → builtin_key (null for custom)
   settings: SettingsSource | null;
   debts: readonly DebtSource[];
+  goals: readonly GoalSource[]; // D-101: every savings_goals row (kind 'pot' | 'wait'); done and deleted ones are filtered here
   statementPeriods: readonly { account_id: string; period_start: string; period_end: string }[];
   customCurrencies: readonly CustomCurrencyRow[];
   changes: readonly ChangeSource[];
@@ -127,12 +145,14 @@ const UNCATEGORISED = 'uncategorised';
 const NOT_CUTTABLE = new Set(['Housing', 'Savings', 'Debt', 'Tax']);
 const DSR_PATTERN = /^\d{1,3}(\.\d{1,4})?$/;
 const MAX_UNSECURED_MULTIPLE = 120;
+const MAX_LINE_PERCENT = 100; // D-103: the housing line, like the column check
 const NO_SETTINGS: SettingsSource = {
   currency: null,
   rough_income: null,
   rough_spending: null,
   reserve: null,
   dsr_line: null,
+  housing_line: null,
   unsecured_multiple: null,
   investing_floor: null,
   saving_floor: null,
@@ -219,10 +239,12 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   const writtenTargets = new Set(source.writtenRowLinks.filter((l) => paymentChecks.has(l.check_id)).map((l) => l.target_id));
 
   const debts: DebtRecord[] = [];
+  let housingDebtMonthly = 0; // D-103: the minimums of the loans marked as housing (a card is never in loanDebts)
   for (const d of loanDebts) {
     const balance = need(d.balance, d.currency);
     const minimum = need(d.minimum_payment, d.currency);
     if (balance === null || minimum === null) continue;
+    if (d.is_housing) housingDebtMonthly += Math.max(0, minimum);
     debts.push({
       id: d.id,
       balance: minorUnits(Math.max(0, balance)),
@@ -304,7 +326,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     if (bucket) bucket.push(line);
     else linesByMonth.set(month, [line]);
     if (!paidUsed) continue;
-    if (!out && isTransfer) {
+    if (!out && isTransfer && (r.goal_id ?? null) === null) { // D-101: a leg tagged to a pot or goal is that pot's set-aside, not saving twice
       const kind = accountById.get(r.account_id)?.kind;
       if (kind === 'savings') savingTotal += BigInt(abs);
       else if (kind === 'investment') investingTotal += BigInt(abs);
@@ -418,6 +440,54 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       if (writtenTargets.has(r.id)) coveredByAccount.set(account.id, (coveredByAccount.get(account.id) ?? 0) - amt);
       pendingOneOffs += 1;
     }
+  }
+
+  // ── pots (D-101, R18.2): the live, not-done pots in the home currency ──
+  // A pot in another currency converts at the LATEST STORED rate, target and Wait amount rounded UP and the opening saved
+  // rounded DOWN, so the set-aside is never understated (T-05-124-01). No stored rate leaves the pot out and makes the
+  // whole result unconverted (D-37), counted once per pot. Stored rates only: the FX fetch door is never reached.
+  const pots: PotInput[] = [];
+  const potChecks: Record<string, string> = {};
+  let unconvertedPots = 0;
+  const taggedSaved = new Map<string, number>();
+  const taggedMissed = new Set<string>();
+  for (const r of allRows) {
+    const goalId = r.goal_id ?? null;
+    if (goalId === null || r.status !== 'paid') continue;
+    const conv = homeOf(r);
+    if (conv === null) {
+      taggedMissed.add(goalId);
+      continue;
+    }
+    markProvisional(r, conv);
+    taggedSaved.set(goalId, (taggedSaved.get(goalId) ?? 0) + Math.abs(conv.amount));
+  }
+  /** An amount in the home currency, rounded as asked; false = no stored rate (or out of range). Zero needs no rate. */
+  const toHomeRounded = (amount: number, currency: string, round: typeof convertCeiled): number | false => {
+    if (amount === 0) return 0;
+    const v = round(amount, currency, home, source.rates, source.customCurrencies, today);
+    return v === null || v.amount > MAX_ABS_AMOUNT_MINOR ? false : v.amount;
+  };
+  for (const g of source.goals) {
+    if (g.deleted_at !== null || g.done_at !== null) continue;
+    const target = g.target === null ? null : toHomeRounded(g.target, g.currency, convertCeiled);
+    const monthlyAmount = g.monthly_amount === null ? null : toHomeRounded(g.monthly_amount, g.currency, convertCeiled);
+    const opening = toHomeRounded(g.opening_saved, g.currency, convertFloored);
+    if (target === false || monthlyAmount === false || opening === false || taggedMissed.has(g.id)) {
+      converter.miss(g.currency);
+      unconvertedPots += 1;
+      continue;
+    }
+    const tagged = taggedSaved.get(g.id) ?? 0;
+    pots.push({
+      id: g.id,
+      kind: g.kind,
+      target: target === null ? null : minorUnits(target),
+      monthlyAmount: monthlyAmount === null ? null : minorUnits(monthlyAmount),
+      readyBy: g.ready_by,
+      saved: minorUnits(Math.min(opening + tagged, MAX_ABS_AMOUNT_MINOR)),
+    });
+    if (g.check_id !== null) potChecks[g.id] = g.check_id;
   }
 
   // ── cards and derived debts ──
@@ -552,13 +622,18 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     if (Number.isInteger(m) && m >= 0 && m <= MAX_UNSECURED_MULTIPLE) multiple = m;
     else limitsReset += 1;
   }
+  let housingLine: Percent | null = null; // D-103 (R18.4): the DSR pattern, capped at 100
+  if (st.housing_line !== null) {
+    if (DSR_PATTERN.test(st.housing_line) && Number(st.housing_line) <= MAX_LINE_PERCENT) housingLine = percent(st.housing_line);
+    else limitsReset += 1;
+  }
   const reserve = money(st.reserve);
   const investingFloor = money(st.investing_floor);
   const savingFloor = money(st.saving_floor);
   const limits: DecideLimits = {
     reserve: reserve === null ? null : minorUnits(reserve),
     dsrLine,
-    housingLine: null, // D-103: 05-124 reads decide_settings.housing_line
+    housingLine,
     unsecuredIncomeMultiple: multiple,
     investingFloor: investingFloor === null ? null : minorUnits(investingFloor),
     savingFloor: savingFloor === null ? null : minorUnits(savingFloor),
@@ -590,6 +665,13 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   const cardMaxPurchase = limit === null ? null : minorUnits(limit.amount);
   const basisNotes: CardLimitRateNote[] = limit !== null && limit.rateDate < today ? [{ kind: 'card_limit_rate', date: limit.rateDate }] : [];
 
+  // D-103 (R18.4): my monthly housing cost = the Housing-category spending (the same expenseTotals as the spending basis, so a
+  // debt-covered series is counted once, in the loan's minimum) averaged over the used months, plus the minimums of the loans
+  // marked as housing. The used-month average applies whatever the Worst / Average basis.
+  let housingSpending = 0n;
+  for (const [categoryId, total] of expenseTotals) if (keyOf(categoryId) === 'Housing') housingSpending += total;
+  const housingMonthly = average(housingSpending, usedCount) + housingDebtMonthly;
+
   const monthlySaving = minorUnits(average(savingTotal, usedCount) + seriesSaving);
   const monthlyInvesting = minorUnits(average(investingTotal, usedCount) + seriesInvesting);
 
@@ -617,6 +699,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     debtCount: debts.length,
     accountCount,
     unconvertedRows: unconverted === null ? 0 : unconverted.rowCount,
+    unconvertedPots,
     derivedDebts,
     pendingOneOffs,
     cardsWithoutMinimum,
@@ -628,6 +711,8 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   const base = {
     currency: cur,
     meta,
+    pots,
+    potChecks,
     cards,
     dealerCap: dealerCap === null ? null : minorUnits(dealerCap),
     cardMaxPurchase,
@@ -653,7 +738,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       monthlyInvesting,
       scope: { kind: 'personal' },
       householdSpending: null, // D-18: household scope hidden until Phase 8
-      housingMonthly: minorUnits(0), // D-103: 05-124 fills this from the data
+      housingMonthly: minorUnits(housingMonthly),
       limits,
       projectionReturn: null, // the per-check rate is applied by computeCheck (D-07)
       projectionRates: [],
@@ -662,7 +747,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       futureChanges,
       investmentBalance: minorUnits(investmentBalance),
       scheduledOutflows,
-      pots: [], // D-101: 05-124 fills this from the data
+      pots,
       ...(provisional === null ? {} : { provisionalRates: true }), // D-69: caps confidence at fair
     };
     return { kind: 'logged', ...base, snapshot };

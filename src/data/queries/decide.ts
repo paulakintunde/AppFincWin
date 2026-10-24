@@ -273,6 +273,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
   const customQuery = useCustomCurrencies(userKey);
   const settingsQuery = useDecideSettings(userKey);
   const debtsQuery = useDebts(hhId);
+  const goalsQuery = useSavingsGoals(userKey, hhId);
   const periodsQuery = useStatementPeriods(hhId);
   const changesQuery = useDecideChanges(userKey, hhId);
   const checksQuery = useDecideChecks(userKey, hhId);
@@ -298,6 +299,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
     customQuery,
     settingsQuery,
     debtsQuery,
+    goalsQuery,
     periodsQuery,
     changesQuery,
     checksQuery,
@@ -349,6 +351,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
       categories: categoryMap,
       settings: settingsQuery.data ?? null,
       debts: debtsQuery.data ?? [],
+      goals: goalsQuery.data ?? [], // D-101: pots and Wait goals (kind, done_at); the builder keeps the live, not-done ones
       statementPeriods: periodsQuery.data ?? [],
       customCurrencies: customQuery.data ?? [],
       changes: changesQuery.data ?? [],
@@ -370,6 +373,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
     categoryMap,
     settingsQuery.data,
     debtsQuery.data,
+    goalsQuery.data,
     periodsQuery.data,
     customQuery.data,
     changesQuery.data,

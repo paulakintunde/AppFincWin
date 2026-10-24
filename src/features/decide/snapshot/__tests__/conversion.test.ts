@@ -1,5 +1,5 @@
 import type { FxLatestRow } from '@/db/rows';
-import { convertFloored, makeConverter } from '../conversion';
+import { convertCeiled, convertFloored, makeConverter } from '../conversion';
 import { CAD_RATE, USD_RATE, customCurrency } from './helpers/sourceFixtures';
 
 const GBP_RATE: FxLatestRow = { quote: 'GBP', rate: '0.85', rate_date: '2026-10-12', source: 'open-er-api' };
@@ -102,5 +102,27 @@ describe('convertFloored (D-91)', () => {
 
   it('is null when the result is beyond a safe integer', () => {
     expect(convertFloored(10_000_000, 'USD', 'TOK', [USD_RATE], customs({ unit_value: '0.0000000001' }), TODAY)).toBeNull();
+  });
+});
+
+describe('convertCeiled (D-101, T-05-124-01)', () => {
+  const TODAY = '2026-10-15';
+  const rates: FxLatestRow[] = [{ ...USD_RATE, rate: '1.3' }];
+
+  it('D-101 rounds up where the floor rounds down', () => {
+    expect(convertFloored(10_000_000, 'USD', 'EUR', rates, [], TODAY)?.amount).toBe(7_692_307);
+    expect(convertCeiled(10_000_000, 'USD', 'EUR', rates, [], TODAY)).toEqual({ amount: 7_692_308, rateDate: '2026-10-14' });
+  });
+
+  it('D-101 an exact conversion is not bumped', () => {
+    // 1.3 USD per EUR: 13 USD cents is exactly 10 EUR cents
+    expect(convertCeiled(13, 'USD', 'EUR', rates, [], TODAY)?.amount).toBe(10);
+    expect(convertFloored(13, 'USD', 'EUR', rates, [], TODAY)?.amount).toBe(10);
+  });
+
+  it('is the amount itself when the currencies match, null with no stored rate or past a safe integer', () => {
+    expect(convertCeiled(500, 'USD', 'USD', [], [], TODAY)).toEqual({ amount: 500, rateDate: TODAY });
+    expect(convertCeiled(500, 'USD', 'GBP', [USD_RATE], [], TODAY)).toBeNull();
+    expect(convertCeiled(10_000_000, 'USD', 'TOK', [USD_RATE], [customCurrency({ unit_value: '0.0000000001' })], TODAY)).toBeNull();
   });
 });

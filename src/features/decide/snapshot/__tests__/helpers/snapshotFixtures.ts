@@ -40,6 +40,7 @@ export const META: SnapshotMeta = {
   cardsMinimumWithoutRate: 0,
   cardsWithoutMinimumIds: [],
   loansWithoutPayment: 0,
+  unconvertedPots: 0,
   limitsReset: 0,
 };
 

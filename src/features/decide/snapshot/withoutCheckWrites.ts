@@ -36,7 +36,7 @@ function endedByCheck(endDate: string | null, replaced: ReplacedEnd): boolean {
  * itself, for example the bank's paid row attached in place of the pending one Go ahead wrote. Other attached lines
  * and other checks' writes stay. A paid row dropped from the source is added back to its account's balance (same
  * currency only: Go ahead writes in the account's currency). A replaced series that Go ahead ended on `endedOn` is
- * open again. Every other field is passed through by reference; nothing is mutated.
+ * open again. The check's own Wait pot (savings_goals.check_id) is dropped too (D-101). Every other field is passed through by reference; nothing is mutated.
  */
 export function withoutCheckWrites(
   source: SnapshotSource,
@@ -85,5 +85,6 @@ export function withoutCheckWrites(
     debts: source.debts.filter((d) => !debtIds.has(d.id)),
     paymentLinks: source.paymentLinks.filter((l) => l.check_id !== checkId),
     writtenRowLinks: source.writtenRowLinks.filter((l) => l.check_id !== checkId),
+    goals: source.goals.filter((g) => g.check_id !== checkId), // D-101: the check's own Wait pot is not counted against itself
   };
 }

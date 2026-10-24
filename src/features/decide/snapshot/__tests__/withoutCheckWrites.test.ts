@@ -295,4 +295,14 @@ describe('withoutCheckWrites', () => {
     deepFreeze(after.links);
     expect(() => withoutCheckWrites(after.source, 'car', after.links, { seriesIds: ['x'], endedOn: TODAY })).not.toThrow();
   });
+
+  it('D-101 a check own Wait pot is dropped and other pots stay', () => {
+    const pot = (id: string, check_id: string | null) => ({
+      id, kind: 'wait' as const, check_id, currency: 'USD', target: 50_000, monthly_amount: 5_000, ready_by: null, opening_saved: 0, done_at: null, deleted_at: null,
+    });
+    const source = { ...demoSource(TODAY), goals: [pot('own', 'c1'), pot('theirs', 'c2'), pot('plain', null)] };
+    const out = withoutCheckWrites(source, 'c1', [], null);
+    expect(out.goals.map((g) => g.id)).toEqual(['theirs', 'plain']);
+    expect(source.goals).toHaveLength(3);
+  });
 });

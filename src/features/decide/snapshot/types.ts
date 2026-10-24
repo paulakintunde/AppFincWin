@@ -3,7 +3,7 @@
  * paused mutation variables), so: integer minor units as `number`, rates as decimal strings, never `Percent`/bigint
  * (RESEARCH Pitfall 8). Engine objects (Verdict, Percent) live only in memory, rebuilt on render (D-15).
  */
-import type { AlternativeRow, Alternatives, AssessContext, BuyCheck, CardRecord, CurrencyCode, Decision, DecideOption, DecideSnapshot, FirstRead, IncomeAtRiskReport, InstalmentFreq, InvestmentViews, ItemType, MinorUnits, PlanResult, PurchaseCheck, ResolvedPrice, RoughFigures, RunningCostCategory, RunningCosts, SetbackCode, SetbackReport, StackedCheckInput, Verdict, WaitPlan } from '@/engine/decide'; // CurrencyCode / MinorUnits re-exported per 04 D-62
+import type { AlternativeRow, Alternatives, AssessContext, BuyCheck, CardRecord, CurrencyCode, Decision, DecideOption, DecideSnapshot, FirstRead, IncomeAtRiskReport, InstalmentFreq, InvestmentViews, ItemType, MinorUnits, PlanResult, PotInput, PurchaseCheck, ResolvedPrice, RoughFigures, RunningCostCategory, RunningCosts, SetbackCode, SetbackReport, StackedCheckInput, Verdict, WaitPlan } from '@/engine/decide'; // CurrencyCode / MinorUnits re-exported per 04 D-62
 import type { ImpliedAprResult } from '@/engine/payoff';
 import type { CustomCurrencyRow, FxLatestRow } from '@/db/rows';
 
@@ -19,6 +19,7 @@ export interface SnapshotMeta {
   cardsMinimumWithoutRate: number; // cards whose minimum adds interest but have no rate: the minimum is counted without interest (D-40; Assumptions 05-15)
   cardsWithoutMinimumIds: string[]; // D-40: the accountIds counted in cardsWithoutMinimum, in account order (length === cardsWithoutMinimum); 05-30 opens CardMinimumSheet for the first from the basis row (05-41) and Assumptions (05-15)
   loansWithoutPayment: number;   // D-38 minimal reading for DCU-24: live loan accounts owing a balance with neither a loan|other debts row nor a live recurring series on the account; nothing is counted for them (Assumptions 'Loan payments', 05-15)
+  unconvertedPots: number;       // D-101 (R18.2 Currency): live pots left out because no stored rate converts them; each is also counted in unconvertedRows (05-134 reads it for the Needs a look rate entry)
   limitsReset: number;           // D-51 (04-REVIEW LO-03): stored limits the builder set to null because prepareContext would refuse them (negative, fractional, unparsable); internal, no UI (05-06)
 }
 // D-40 / D-38: what the step 2 'Minimum payment' row shows and the card terms sheet edits. Plain JSON; floor in the card debt's own currency for editing, percent as a decimal string.
@@ -33,8 +34,9 @@ export interface ProvisionalNote { rowCount: number; rateDate: string }
 export interface SnapshotFx { rates: readonly FxLatestRow[]; customs: readonly CustomCurrencyRow[]; today: string }
 // D-91 (05-95): a display-only basis note; never affects confidence (M4). date = the USD rate's date, shown when older than today.
 export interface CardLimitRateNote { kind: 'card_limit_rate'; date: string }
+// D-101 (R18.2): pots = the live, not-done pots in the home currency, on every source kind (05-134 reads them; the rough hero takes the same set-asides off); potChecks = pot id → check id for the pots a check made (its Wait pot), so a reopened Waiting check drops its own pot (withoutOwnPot). Absent (test fixtures) = none
 // D-91 / D-92: cardMaxPurchase = CARD_MAX_PURCHASE_USD in the home currency, floored (null = no stored USD rate; absent in test fixtures = no limit); region = the RD-02 country code the card rules read (absent in fixtures = unknown); basisNotes: see CardLimitRateNote (absent = none)
-interface SnapshotBase { currency: CurrencyCode; meta: SnapshotMeta; cards: readonly CardChoice[]; dealerCap: MinorUnits | null; cardMaxPurchase?: MinorUnits | null; region?: string | null; basisNotes?: readonly CardLimitRateNote[]; cash: MinorUnits; conversions: readonly ConversionNote[]; unconverted: UnconvertedNote | null; provisional?: ProvisionalNote | null; fx?: SnapshotFx } // provisional: D-69, absent (test fixtures) = none
+interface SnapshotBase { currency: CurrencyCode; meta: SnapshotMeta; pots?: readonly PotInput[]; potChecks?: Readonly<Record<string, string>>; cards: readonly CardChoice[]; dealerCap: MinorUnits | null; cardMaxPurchase?: MinorUnits | null; region?: string | null; basisNotes?: readonly CardLimitRateNote[]; cash: MinorUnits; conversions: readonly ConversionNote[]; unconverted: UnconvertedNote | null; provisional?: ProvisionalNote | null; fx?: SnapshotFx } // provisional: D-69, absent (test fixtures) = none
 export type SnapshotResult =
   | (SnapshotBase & { kind: 'logged'; snapshot: DecideSnapshot })
   | (SnapshotBase & { kind: 'rough'; figures: RoughFigures })

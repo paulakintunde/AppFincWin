@@ -8,7 +8,7 @@ import * as planModule from '@/engine/decide/plan';
 import * as impliedAprModule from '@/engine/payoff/impliedApr';
 import { minorUnits } from '@/engine/money';
 import { amortiseSchedule } from '@/engine/payoff';
-import { computeChip, computeCheck, computeCore, computeDetails, computeQuick, sameInputs, settledCoreFor } from '../computeCheck';
+import { computeChip, computeCheck, computeCore, computeDetails, computeQuick, sameInputs, settledCoreFor, withoutOwnPot } from '../computeCheck';
 import { defaultQuickInputs, emptyCheckInputs, parseCheckInputs, quickToCheckInputs, toEngineCheck } from '../checkInputs';
 import { CREDIT_TERMS } from '../types';
 import type { CardChoice, CheckInputs, QuickInputs, SnapshotResult } from '../types';
@@ -642,5 +642,70 @@ describe('D-88 the settled core and the selected method', () => {
     expect(cardCore.promoBalanceAtEnd.card).toBeGreaterThan(0);
     const onCash = computeCore(source, { ...cardInputs, method: 'cash' }, [], { detailFor: 'cash', prior: cardCore });
     expect(onCash.promoBalanceAtEnd.card).toBe(cardCore.promoBalanceAtEnd.card);
+  });
+});
+
+describe('D-101 a reopened Waiting check drops its own pot', () => {
+  const potOf = (id: string, kind: 'pot' | 'wait' = 'wait') => ({
+    id,
+    kind,
+    target: minorUnits(600_000),
+    monthlyAmount: kind === 'wait' ? minorUnits(50_000) : null,
+    readyBy: kind === 'wait' ? null : '2027-03-31',
+    saved: minorUnits(0),
+  });
+  const withPots = (): Extract<SnapshotResult, { kind: 'logged' }> => {
+    const base = loggedSource({ pots: [potOf('own'), potOf('other-wait'), potOf('plain', 'pot')] });
+    if (base.kind !== 'logged') throw new Error('logged');
+    return { ...base, pots: base.snapshot.pots, potChecks: { own: 'chk-1', 'other-wait': 'chk-2' } };
+  };
+
+  it('D-101 withoutOwnPot drops only the pot of that check from the result and the snapshot', () => {
+    const src = withPots();
+    const out = withoutOwnPot(src, 'chk-1');
+    if (out.kind !== 'logged') throw new Error('logged');
+    expect(out.snapshot.pots.map((p) => p.id)).toEqual(['other-wait', 'plain']);
+    expect(out.pots?.map((p) => p.id)).toEqual(['other-wait', 'plain']);
+    expect(src.snapshot.pots).toHaveLength(3);
+  });
+
+  it('D-101 withoutOwnPot returns the same object when there is nothing to drop', () => {
+    const src = withPots();
+    expect(withoutOwnPot(src, null)).toBe(src);
+    expect(withoutOwnPot(src, 'chk-9')).toBe(src);
+    expect(withoutOwnPot(loggedSource(), 'chk-1')).toBeTruthy();
+    const plain = loggedSource();
+    expect(withoutOwnPot(plain, 'chk-1')).toBe(plain);
+  });
+
+  it('D-101 withoutOwnPot also trims the pots a rough or empty source carries', () => {
+    const rough = { ...roughSource(), pots: [potOf('own'), potOf('x')], potChecks: { own: 'chk-1' } };
+    const out = withoutOwnPot(rough, 'chk-1');
+    expect(out.pots?.map((p) => p.id)).toEqual(['x']);
+    const bare = { ...noneSource(), potChecks: { own: 'chk-1' } };
+    expect(withoutOwnPot(bare, 'chk-1').pots).toEqual([]);
+  });
+
+  it('D-101 the verdict does not count its own set-aside, and other pots stay counted', () => {
+    const src = withPots();
+    const inputs = buy({ advertised: 150_000 });
+    const own = computeCore(src, inputs, [], { ownCheckId: 'chk-1' });
+    const none = computeCore({ ...src, snapshot: { ...src.snapshot, pots: [potOf('other-wait'), potOf('plain', 'pot')] } }, inputs);
+    expect(own.context?.setAside).toBe(none.context?.setAside);
+    const counted = computeCore(src, inputs);
+    expect(counted.context!.setAside).toBeGreaterThan(own.context!.setAside);
+    // the same through computeCheck and the home chip
+    expect(computeCheck(src, inputs, [], 'chk-1').context?.setAside).toBe(own.context?.setAside);
+    expect(computeCheck(src, inputs).context?.setAside).toBe(counted.context?.setAside);
+    const chipOwn = computeChip(src, inputs, [], 'chk-1');
+    const chipAll = computeChip(src, inputs);
+    if (chipOwn.status !== 'logged' || chipAll.status !== 'logged') throw new Error('logged chip');
+    expect(chipOwn.left!).toBeGreaterThan(chipAll.left!);
+  });
+
+  it('D-101 a rough source keeps working when an own check id is given', () => {
+    const rough = { ...roughSource(), pots: [potOf('own')], potChecks: { own: 'chk-1' } };
+    expect(computeCore(rough, buy(), [], { ownCheckId: 'chk-1' }).status).toBe('first_read');
+    expect(computeChip(rough, buy(), [], 'chk-1').status).toBe('first_read');
   });
 });
