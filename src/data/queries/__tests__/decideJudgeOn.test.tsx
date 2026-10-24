@@ -8,7 +8,7 @@ import { resetJudgeOnStoreForTest } from '@/features/decide/judgeOn/judgeOnStore
 import * as buildModule from '@/features/decide/snapshot/buildSnapshot';
 import { queryKeys } from '../../keys';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { saveJudgeOn } from '@/features/decide/hints/decideHints';
+import { markJudgeOnDefaulted, saveJudgeOn } from '@/features/decide/hints/decideHints';
 import { useJudgeOn } from '@/features/decide/judgeOn/judgeOnStore';
 import { clearSharedSnapshots, useDecideSnapshot } from '../decide';
 
@@ -177,6 +177,7 @@ describe('D-107 Judge-on in the snapshot', () => {
   });
 
   it('D-107 the snapshot is built on the chosen basis', async () => {
+    await markJudgeOnDefaulted('u1'); // the one-time default switch is done: nothing stored means This month
     const hook = await ready();
     expect(hook.result.current.result?.judgeOn).toBe('month');
     expect(hook.result.current.source?.judgeOn).toBe('month');
@@ -205,7 +206,15 @@ describe('D-107 Judge-on in the snapshot', () => {
     spy.mockRestore();
   });
 
+  it('D-107 while the default switch is pending the snapshot is built on the settings basis', async () => {
+    mockFetch.settings.mockResolvedValue({ user_id: 'u1', basis_override: 'worst' });
+    const hook = await ready();
+    await waitFor(() => expect(basisOf(hook.result.current.result)).toBe('worst'));
+    expect(hook.result.current.result?.judgeOn ?? null).toBeNull();
+  });
+
   it('D-107 a late settings load does not change the choice', async () => {
+    await markJudgeOnDefaulted('u1');
     mockFetch.settings.mockResolvedValue({ user_id: 'u1', basis_override: 'worst' });
     const hook = await ready();
     await waitFor(() => expect(mockFetch.settings).toHaveBeenCalled());
