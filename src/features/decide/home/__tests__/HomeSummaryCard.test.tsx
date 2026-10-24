@@ -164,7 +164,7 @@ describe('HomeSummaryCard', () => {
     expect(screen.getByText('left')).toBeTruthy();
     expect(screen.getByText('after spending, debts and saving')).toBeTruthy();
     expect(screen.getByText(`In ${usd(m.inAmount)} · Out ${usd(m.outAmount)}`)).toBeTruthy();
-    expect(screen.getByLabelText('Quick check')).toBeTruthy();
+    expect(screen.getByLabelText('Quick check, something and a price')).toBeTruthy();
     expect(screen.getByText('Check it')).toBeTruthy();
     expect(screen.getByText('Full check ›')).toBeTruthy();
     expect(screen.getByText('Details ›')).toBeTruthy();
@@ -178,7 +178,7 @@ describe('HomeSummaryCard', () => {
   it('D-97 the hero shrinks while a result is open', async () => {
     const m = figures();
     await renderCard();
-    await fireEvent.changeText(screen.getByLabelText('Quick check'), 'sofa 1800');
+    await fireEvent.changeText(screen.getByLabelText('Quick check, something and a price'), 'sofa 1800');
     await fireEvent.press(screen.getByText('Check it'));
     await screen.findByText('Run the full check');
     expect(screen.getByText(`${usd(m.amount)} left · In ${usd(m.inAmount)} · Out ${usd(m.outAmount)}`)).toBeTruthy();
@@ -211,7 +211,7 @@ describe('HomeSummaryCard', () => {
     await fireEvent.press(screen.getByText('See lines waiting for a rate'));
     expect(mockNavigate).toHaveBeenCalledWith('/activity');
     expect(p.onAddRough).not.toHaveBeenCalled();
-    await fireEvent.changeText(screen.getByLabelText('Quick check'), 'sofa 1800');
+    await fireEvent.changeText(screen.getByLabelText('Quick check, something and a price'), 'sofa 1800');
     await fireEvent.press(screen.getByText('Check it'));
     expect(await screen.findByText('Missing terms')).toBeTruthy();
   });
@@ -224,7 +224,7 @@ describe('HomeSummaryCard', () => {
     expect(screen.queryByText('Details ›')).toBeNull();
     await fireEvent.press(screen.getByText('Add rough figures'));
     expect(p.onAddRough).toHaveBeenCalledTimes(1);
-    await fireEvent.changeText(screen.getByLabelText('Quick check'), 'sofa 1800');
+    await fireEvent.changeText(screen.getByLabelText('Quick check, something and a price'), 'sofa 1800');
     await fireEvent.press(screen.getByText('Check it'));
     // the quick form's own no-figures result (nothing to judge against); a missing rate gives Missing terms (next test)
     expect(await screen.findByText('There is nothing to judge this against yet.')).toBeTruthy();

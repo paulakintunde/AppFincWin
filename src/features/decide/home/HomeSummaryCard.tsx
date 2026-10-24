@@ -138,6 +138,7 @@ export function HomeSummaryCard({
       onRetry={onRetry}
       placeholder={t('decide.home.field.placeholder')}
       placeholderShort={t('decide.home.field.placeholderShort')}
+      fieldA11yLabel={t('decide.home.field.a11y')}
       onResultOpenChange={setResultOpen}
     />
   );

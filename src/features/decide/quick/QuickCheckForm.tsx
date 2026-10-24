@@ -51,6 +51,8 @@ export interface QuickCheckFormProps {
   placeholderShort?: string;
   /** Reports whether a quick result is open, so the host can shrink the hero. */
   onResultOpenChange?: (open: boolean) => void;
+  /** 05-117: the resolved screen-reader label of the item and price field; without it the quick-check label shows (onboarding keeps it). */
+  fieldA11yLabel?: string;
 }
 
 const AMOUNT_HEIGHT = 56;
@@ -65,7 +67,7 @@ const CHECK_HEIGHT = 44;
 const PLACEHOLDER_SHORT_WIDTH = 360; // R6 rule P
 const PLACEHOLDER_SHORT_SCALE = 1.3;
 
-export function QuickCheckForm({ surface, source, sourceStatus, today, currency, onRunFull, onAddRough, onRetry, onResult, variant = 'light', placeholder, placeholderShort, onResultOpenChange }: QuickCheckFormProps) {
+export function QuickCheckForm({ surface, source, sourceStatus, today, currency, onRunFull, onAddRough, onRetry, onResult, variant = 'light', placeholder, placeholderShort, onResultOpenChange, fieldA11yLabel }: QuickCheckFormProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const dark = variant === 'dark';
@@ -228,7 +230,7 @@ export function QuickCheckForm({ surface, source, sourceStatus, today, currency,
               }}
               onSubmitEditing={check}
               returnKeyType="go"
-              accessibilityLabel={t('decide.quick.a11y')}
+              accessibilityLabel={fieldA11yLabel ?? t('decide.quick.a11y')}
               placeholder={fieldPlaceholder} // R6 rule P: the pill also holds "Check it"; the light form always uses the short text
               placeholderTextColor={dark ? colors.inkSoft2 : colors.inkFaint}
               style={[styles.amountInput, { ...textRole(pairing, 'body'), color: dark ? colors.surface : colors.ink }]}

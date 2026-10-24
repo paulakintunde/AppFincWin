@@ -67,6 +67,15 @@ describe('QuickCheckForm: home', () => {
     expect(screen.queryByText('Run the full check')).toBeNull();
   });
 
+  it('05-117 the field takes a custom screen-reader label and keeps the default without one', async () => {
+    const view = await renderForm({ fieldA11yLabel: 'Quick check, something and a price' });
+    expect(screen.getByLabelText('Quick check, something and a price').props.placeholder).toBeTruthy();
+    expect(screen.queryByLabelText('Quick check')).toBeNull();
+    await view.view.unmount();
+    await renderForm();
+    expect(screen.getByLabelText('Quick check')).toBeTruthy();
+  });
+
   it('D-78 the idle card is the pill only', async () => {
     await renderForm();
     expect(screen.getByText('Check it')).toBeTruthy();
