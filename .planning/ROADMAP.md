@@ -843,7 +843,7 @@ Plans:
 - [x] 05-144-PLAN.md — basisOutcomes: the verdict's outcome under This month, Worst and Average, computed in idle time (D-107)
 
 **Wave 44** *(blocked on Wave 43 completion)*
-- [ ] 05-140-PLAN.md — Judge-on dropdown on the card, the same choice in Month details, screen wiring, the quick-result fallback note, the FAB returns (D-107)
+- [x] 05-140-PLAN.md — Judge-on dropdown on the card, the same choice in Month details, screen wiring, the quick-result fallback note, the FAB returns (D-107)
 
 **Wave 45** *(blocked on Wave 44 completion)*
 - [ ] 05-145-PLAN.md — The 'outcome on each basis' card and the fallback note in Step 3 (D-107)
