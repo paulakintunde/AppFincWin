@@ -257,6 +257,10 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-32**: A check counts at most US$100,000 (converted at the latest stored rate) on a card, never counts property or cash-like purchases on a card, and treats tax and tuition by region with a fee note (05 D-91, D-92)
 - [ ] **DCU-33**: The check flow keeps the verdict within 50 ms of a keystroke and the details within 300 ms after typing stops on the test device (05 D-88)
 - [ ] **DCU-34**: Decide home leads with one dark card stating the month left after spending, debts and saving, with the quick check inside it, the lists one quiet row each, and problems gathered in one notice row with a fixing action per problem (05 D-95..D-99)
+- [ ] **DCU-35**: Decide home names its hero Net free cash flow, states the basis it used in the line under it (worst month, average month, tightest figures or rough figures, each "after spending, debts and everything set aside"), shows In and Out so that In minus Out equals the hero, and Month details lists the parts that add up to it (05 D-100)
+- [ ] **DCU-36**: User can keep named pots (a name, a target and a month) whose monthly set-aside comes off net free cash flow and is protected from every check, add, edit, mark done and delete them with Undo, offline, and see Wait-and-save goals as one kind of pot (05 D-101)
+- [ ] **DCU-37**: A purchase verdict shows the total cost over the check's years (price, interest and fees, running costs, less expected resale where loss of value is set) and, only when the user has typed a rate, what the same money would have become invested instead, labelled a projection (05 D-102, D-104)
+- [ ] **DCU-38**: User can set a housing line (default 28% of money in) that counts housing-category spending and payments on loans marked "This is for housing", and a property check that pushes housing over it gets a warning like the debt-to-income line (05 D-103)
 
 ### Grow
 
@@ -628,6 +632,10 @@ Populated during roadmap creation.
 | DCU-32 | Phase 5 - Decide UI | Pending |
 | DCU-33 | Phase 5 - Decide UI | Pending |
 | DCU-34 | Phase 5 - Decide UI | Pending |
+| DCU-35 | Phase 5 - Decide UI | Pending |
+| DCU-36 | Phase 5 - Decide UI | Pending |
+| DCU-37 | Phase 5 - Decide UI | Pending |
+| DCU-38 | Phase 5 - Decide UI | Pending |
 | MON-15 | Phase 5 - Decide UI | Pending |
 | GRW-01 | Phase 6 - Grow | Pending |
 | GRW-02 | Phase 6 - Grow | Pending |
@@ -706,8 +714,8 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 286 total (100 ticked)
-- Mapped to phases: 252
+- v1 requirements: 290 total (100 ticked)
+- Mapped to phases: 256
 - Unmapped: 0 ✓
 
 ---
@@ -717,6 +725,8 @@ Populated during roadmap creation.
 *2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 
 *2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
+*2026-10-24 — Money concepts R18: DCU-35 (Net free cash flow, D-100), DCU-36 (pots, D-101), DCU-37 (total cost and invested instead, D-102/D-104) and DCU-38 (housing line, D-103) added (plans 05-119..05-132); v1 total now 290.*
+
 *2026-10-23 — Decide home redesign R17: DCU-34 added (D-95..D-99, plans 05-110..05-118); the redesign also maps to DCU-01 (quick check in the card), DCU-03 (open checks reachable), DCU-14 (the month figure and its basis), DCU-15 (changes coming up) and SYN-06 (the notice row); v1 total now 286.*
 
 *2026-10-23 — Device-walkthrough refinements R16: DCU-31 (instalment frequency and true APR, D-89/D-90), DCU-32 (card limit and card rules, D-91/D-92), DCU-33 (check-flow speed budget, D-88) and MON-15 ("$" means USD, D-94) added (plans 05-88..05-109); D-85 maps to NAV-05/REC-01/REC-02/REC-09, D-86/D-87 to DCU-29/DCU-20, D-88 sync to SYN-02/SYN-03/SYN-06, D-93 to NAV-02/DCU-14/REC-01; v1 total now 285.*

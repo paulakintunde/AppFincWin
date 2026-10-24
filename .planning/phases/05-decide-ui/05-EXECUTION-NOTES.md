@@ -178,5 +178,24 @@ Planned 2026-10-22. "Text-fit matrix" means 402x874 and 320x568 (points), each a
 - [ ] 05-117 Decide home: no FAB on Decide, FAB on other tabs; rows hidden at 0 as specified; 32 space under the card; the header shows no sync line on Decide only.
 - [ ] 05-118 R17 close-out: no retired home string anywhere; the whole home at the text-fit matrix.
 
+## 05-26 device checklist additions (Money concepts R18, 05-119..05-132, D-100..D-104)
+
+Planned 2026-10-24. "Text-fit matrix" is as above: 402x874 and 320x568, each at text scale 1.0x and 2.0x, on the Pixel and a 320dp AVD; TalkBack reads every new control by its label. The R18 migrations must be on production (05-132) before these are walked.
+
+- [ ] 05-119 Migrations: after 05-132, `supabase migration list --linked` shows 20261024000100 and 20261024000200 on Remote; a new account can create a pot and save a housing line without a 42501.
+- [ ] 05-120 Engine (no UI): covered by 05-124/05-125 items below.
+- [ ] 05-121 Housing warning: on a property check that takes housing past the line, the 'Housing costs go over your line' card shows in What breaks, the state is Needs adjustment (never No on its own), and Every line shows 'Housing costs' · '{pct} of money in'; a laptop check never shows it.
+- [ ] 05-122 Offline: with airplane mode on, add a pot and flip a loan's 'This is for housing'; turn the network back on; both replay once, in order, and Undo reverses each.
+- [ ] 05-123 Total cost and invested rows (engine): verified through 05-128.
+- [ ] 05-124 Data: a tagged transfer to a pot no longer lowers net free cash flow twice; a reopened Waiting check does not count its own pot.
+- [ ] 05-125 Card: the eyebrow row at 320 / 2.0x ('NET FREE CASH' / 'FLOW', the ⓘ attached to FLOW, Details on its own line, all targets 44 or larger); the sub-line wraps to two lines at 402 / 1.0x; In minus Out equals the hero; Month details rows add up to the hero and 'Pots ›' shows even with no pots; probes (EXPO_PUBLIC_PERF=1) read card bottom about 470 (532 with the notice row) and rows bottom about 710 (772 with the notice row), tab bar at about 789; TalkBack reads the summary group first ('Net free cash flow: … left in your worst month, after spending, debts and everything set aside. In …, out ….').
+- [ ] 05-126 Housing line: six rows under 'Lines you will not cross' with housing third; Decide home reads 'of 6 set by you'; the editor rejects over 100%; each loan row's 'This is for housing' switch is announced as a switch with its state and drops under the name at 2.0x / 320; flipping it changes the Lines value and the hero at once and shows 'Housing setting changed' with Undo.
+- [ ] 05-127 Pots: create a pot ('Car service', $600, March) offline, reconnect, and see it replay once; the hero lowers by the monthly set-aside; progress bar and line 3 read correctly at the text-fit matrix; a past-due pot reads in the warn colour with a dot and appears as a Needs a look entry; Mark done / Reopen / Delete with Undo; a Wait pot's menu offers Mark done / Reopen only; empty state shows one primary 'Add a pot'; You › Money lists 'Pots' after History; TalkBack reads each pot row's label.
+- [ ] 05-128 Verdict rows: the car loan frame 2 shows 'Over 5 years: … in all' and the second warning still ends above the action bar (about 721 against the bar at 735); the sofa frame 1 shows no total-cost row; with a typed non-zero rate in the fold 'Invested instead: …' shows under it, the fee variant wraps to two lines, and the page scrolls when the rows push past the bar; TalkBack reads the figures, then the total cost, then the invested sentence ending 'A projection, not a forecast.'; the month table shows 'Set aside for pots' only with a pot.
+- [ ] 05-129 Wait: choose Wait and save; the written lines read 'A pot of …' and 'No balance moves. … comes off net free cash flow.'; the hero lowers by the Wait's monthly amount; reopening the waiting check does not double count it; the delete confirm reads 'It leaves Past decisions with its pot and reminder…'.
+- [ ] 05-130 R18 close-out: no retired string anywhere ('Your average month' labels, 'Comes in / Goes out / Left' in Month details, any 'of 5'); the whole R18 surface at the text-fit matrix.
+- [ ] 05-131 Copy: read every new ⓘ (Net free cash flow, Pots, Total cost, Housing costs at most, Invested instead) in context: nothing advises or reassures.
+- [ ] 05-132 Production: the push approved and applied; the preview build used for this pass was built after it.
+
 ## ROADMAP ticks for three-digit plans (05-100 onward)
 `gsd-sdk` tooling may mis-tick ROADMAP checkboxes for plans 05-100..05-109 (prefix overlap with 05-10/05-1x). After every `roadmap update-plan-progress`, open .planning/ROADMAP.md, confirm only the intended plan's checkbox changed, and untick any stray tick by hand. Do not patch the GSD tools.
