@@ -771,7 +771,7 @@ Plans:
 - [x] 05-101-PLAN.md — Interest saved by the deposit; running-cost rows with the dashed Amount field (D-86, D-87)
 
 **Wave 25** *(blocked on Wave 24 completion)*
-- [ ] 05-104-PLAN.md — Card limit box, fee and block notes, card-limit basis item; Step 1 new item types (D-91, D-92)
+- [x] 05-104-PLAN.md — Card limit box, fee and block notes, card-limit basis item; Step 1 new item types (D-91, D-92)
 
 **Wave 26** *(blocked on Wave 25 completion)*
 - [ ] 05-109-PLAN.md — Retire R16-replaced copy, drop the next_month alias, extend the copy and text-fit guards (D-76, DCU-09)
