@@ -1,4 +1,6 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
+import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { DecideSettingsRow } from '@/db/decideSettings';
 import { perfReport, perfReset } from '../../perf/perfMarks';
@@ -65,6 +67,7 @@ jest.mock('@/shell/fab/FabProvider', () => ({
 jest.mock('../../judgeOn/judgeOnStore', () => ({
   useJudgeOn: () => ({ judgeOn: mockJudgeOn, setJudgeOn: jest.fn() }),
 }));
+jest.mock('../../judgeOn/useResolveJudgeOnDefault', () => ({ useResolveJudgeOnDefault: jest.fn() }));
 jest.mock('../../judgeOn/useChooseJudgeOn', () => ({ useChooseJudgeOn: () => ({ choose: (...a: unknown[]) => mockChoose(...a) }) }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => mockSync }));
 jest.mock('../../hints/decideHints', () => ({
@@ -444,6 +447,12 @@ describe('DecideHomeScreen', () => {
         { id: 'b', coolingOffAt: '2026-10-17T09:00:00Z' },
       ]
     );
+  });
+
+  it('D-107 the home body keeps a bottom inset that clears the New check FAB (last row and an open result scroll clear)', async () => {
+    await renderScreen();
+    const body = screen.getByTestId('home-card-wrap').parent!;
+    expect(StyleSheet.flatten(body.props.style).paddingBottom).toBeGreaterThanOrEqual(FAB_CLEARANCE);
   });
 
   it('does not reconcile before the snapshot is ready', async () => {

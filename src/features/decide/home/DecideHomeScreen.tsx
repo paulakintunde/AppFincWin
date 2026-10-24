@@ -15,10 +15,12 @@ import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useChooseJudgeOn } from '../judgeOn/useChooseJudgeOn';
 import { useJudgeOn } from '../judgeOn/judgeOnStore';
+import { useResolveJudgeOnDefault } from '../judgeOn/useResolveJudgeOnDefault';
 import { useT } from '@/i18n';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
 import { useRegisterFab } from '@/shell/fab/FabProvider';
 import { pushOnce } from '@/shell/navigation/pushOnce';
+import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
 import { space } from '@/theme/layout';
 import { loadHomeBasisSeen, markHomeBasisSeen } from '../hints/decideHints';
 import { perfMark } from '../perf/perfMarks';
@@ -78,7 +80,10 @@ export function DecideHomeScreen() {
   // `visitBasisSeen` is never updated by the write below, so the label holds for the rest of the visit.
   const [visitBasisSeen, setVisitBasisSeen] = useState<boolean | null>(null);
   const userId = rc.userId;
-  const { judgeOn } = useJudgeOn(userId);
+  const { judgeOn: storedJudgeOn, pendingDefault } = useJudgeOn(userId);
+  // The update-time default switch resolves first (re-baselining the checks); the card waits for it.
+  useResolveJudgeOnDefault(userId);
+  const judgeOn = pendingDefault ? null : storedJudgeOn;
   const { choose } = useChooseJudgeOn(userId ?? '');
   const onChooseJudgeOn = useCallback(
     (v: HomeJudgeOn) => {
@@ -275,6 +280,7 @@ export function DecideHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  body: { paddingHorizontal: space.screenH, gap: space.groupGap },
+  // Walkthrough 2: on top of TabRootScreen's own FAB_CLEARANCE, so the last row and a tall open quick result scroll fully clear of the New check FAB.
+  body: { paddingHorizontal: space.screenH, gap: space.groupGap, paddingBottom: FAB_CLEARANCE },
   rows: { marginTop: CARD_TO_ROWS_GAP - space.groupGap },
 });

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { wipeDeviceData } from '@/services/storage/wipe';
-import { decideHintsKey, loadJudgeOn, saveJudgeOn } from '../../hints/decideHints';
+import { decideHintsKey, loadJudgeOn, loadJudgeOnDefaulted, markJudgeOnDefaulted, saveJudgeOn } from '../../hints/decideHints';
 import { resetJudgeOnStoreForTest, useJudgeOn } from '../judgeOnStore';
 
 beforeEach(async () => {
@@ -83,5 +83,35 @@ describe('judgeOnStore', () => {
     expect(result.current.judgeOn).toBe('month');
     await act(async () => result.current.setJudgeOn('worst'));
     expect(result.current.judgeOn).toBe('month');
+  });
+
+  it('D-107 the default switch is pending with nothing stored, and resolves once', async () => {
+    const { result } = await renderHook(() => useJudgeOn('u1'));
+    await waitFor(() => expect(result.current.judgeOn).toBe('month'));
+    expect(result.current.pendingDefault).toBe(true);
+    await act(async () => result.current.resolveDefault());
+    expect(result.current.pendingDefault).toBe(false);
+    await waitFor(async () => expect(await loadJudgeOnDefaulted('u1')).toBe(true));
+  });
+
+  it('D-107 the default switch is not pending once it is done', async () => {
+    await markJudgeOnDefaulted('u1');
+    const { result } = await renderHook(() => useJudgeOn('u1'));
+    await waitFor(() => expect(result.current.judgeOn).toBe('month'));
+    expect(result.current.pendingDefault).toBe(false);
+  });
+
+  it('D-107 the default switch is not pending when a choice is stored', async () => {
+    await saveJudgeOn('u2', 'worst');
+    const { result } = await renderHook(() => useJudgeOn('u2'));
+    await waitFor(() => expect(result.current.judgeOn).toBe('worst'));
+    expect(result.current.pendingDefault).toBe(false);
+  });
+
+  it('D-107 the user choosing, even This month, ends the pending default', async () => {
+    const { result } = await renderHook(() => useJudgeOn('u3'));
+    await waitFor(() => expect(result.current.pendingDefault).toBe(true));
+    await act(async () => result.current.setJudgeOn('month'));
+    expect(result.current.pendingDefault).toBe(false);
   });
 });

@@ -77,6 +77,7 @@ jest.mock('@/data/mutations/decideLinks', () => ({
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
 jest.mock('../notifications/waitReminder', () => ({ reconcileWaitReminders: () => Promise.resolve(), cancelCheckReminders: () => Promise.resolve() }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
+jest.mock('../judgeOn/useResolveJudgeOnDefault', () => ({ useResolveJudgeOnDefault: jest.fn() }));
 jest.mock('../judgeOn/judgeOnStore', () => ({ useJudgeOn: () => ({ judgeOn: 'month', setJudgeOn: jest.fn() }) }));
 jest.mock('../judgeOn/useChooseJudgeOn', () => ({ useChooseJudgeOn: () => ({ choose: jest.fn() }) }));
 jest.mock('@/shell/fab/FabProvider', () => ({ useRegisterFab: jest.fn(), useProvideQuickAction: jest.fn() }));

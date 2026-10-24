@@ -72,6 +72,8 @@ jest.mock('../../hints/decideHints', () => ({
   markHomeBasisSeen: () => Promise.resolve(),
   loadJudgeOn: () => Promise.resolve(mockStored),
   saveJudgeOn: () => Promise.resolve(),
+  loadJudgeOnDefaulted: () => Promise.resolve(true),
+  markJudgeOnDefaulted: () => Promise.resolve(),
 }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
 jest.mock('expo-router', () => ({ router: { navigate: jest.fn(), push: jest.fn(), replace: jest.fn() } }));

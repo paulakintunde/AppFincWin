@@ -22,6 +22,7 @@ interface HintsRecord {
   foldHintSeen?: true;
   homeBasisSeen?: true;
   judgeOn?: JudgeOn;
+  judgeOnDefaulted?: true;
 }
 
 /** The stored record, or an empty v1 record when it is missing, unreadable or another version. Never throws. */
@@ -29,19 +30,20 @@ async function readRecord(userId: string): Promise<HintsRecord> {
   try {
     const raw = await AsyncStorage.getItem(decideHintsKey(userId));
     if (!raw) return { v: 1 };
-    const parsed = JSON.parse(raw) as { v?: unknown; foldHintSeen?: unknown; homeBasisSeen?: unknown; judgeOn?: unknown } | null;
+    const parsed = JSON.parse(raw) as { v?: unknown; foldHintSeen?: unknown; homeBasisSeen?: unknown; judgeOn?: unknown; judgeOnDefaulted?: unknown } | null;
     if (parsed?.v !== 1) return { v: 1 };
     const record: HintsRecord = { v: 1 };
     if (parsed.foldHintSeen === true) record.foldHintSeen = true;
     if (parsed.homeBasisSeen === true) record.homeBasisSeen = true;
     if (isJudgeOn(parsed.judgeOn)) record.judgeOn = parsed.judgeOn;
+    if (parsed.judgeOnDefaulted === true) record.judgeOnDefaulted = true;
     return record;
   } catch {
     return { v: 1 };
   }
 }
 
-async function markFlag(userId: string, flag: 'foldHintSeen' | 'homeBasisSeen'): Promise<void> {
+async function markFlag(userId: string, flag: 'foldHintSeen' | 'homeBasisSeen' | 'judgeOnDefaulted'): Promise<void> {
   try {
     const record = await readRecord(userId);
     record[flag] = true;
@@ -81,4 +83,13 @@ export async function saveJudgeOn(userId: string, value: JudgeOn): Promise<void>
   } catch {
     // A preference that cannot be saved still holds for this session.
   }
+}
+
+/** D-107 (walkthrough round 2): true once the first resolution of the default Judge-on (the update-time switch to This month) is done. */
+export async function loadJudgeOnDefaulted(userId: string): Promise<boolean> {
+  return (await readRecord(userId)).judgeOnDefaulted === true;
+}
+
+export async function markJudgeOnDefaulted(userId: string): Promise<void> {
+  await markFlag(userId, 'judgeOnDefaulted');
 }

@@ -337,10 +337,14 @@ export function useDecideSnapshot(): DecideSnapshotState {
 
   const region = getDeviceRegion(rc.region) ?? null;
   // D-107: the Judge-on choice (device view). null until it has been read, so no verdict flashes on the wrong basis.
-  const { judgeOn } = useJudgeOn(userId);
+  const { judgeOn: storedJudgeOn, pendingDefault, applyingDefault } = useJudgeOn(userId);
+  // While the one-time default switch is unresolved the snapshot is built on the settings basis (judgeOn null), so the
+  // switch can re-baseline the checks before any render shows This month.
+  const judgeOn = storedJudgeOn !== null && pendingDefault ? null : storedJudgeOn;
+  const waitingForChoice = storedJudgeOn === null || applyingDefault;
 
   const source = useMemo<SnapshotSource | null>(() => {
-    if (!rc.ready || missing || judgeOn === null) return null;
+    if (!rc.ready || missing || waitingForChoice) return null;
     return {
       today: rc.today,
       homeCurrency: rc.homeCurrency,
@@ -384,6 +388,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
     paymentLinks,
     writtenQuery.data,
     judgeOn,
+    waitingForChoice,
   ]);
 
   const sourceKey = [hh ?? '', rc.today, rc.homeCurrency, region ?? '', judgeOn ?? ''].join('|');
