@@ -2006,8 +2006,8 @@ const en = {
     rough: { title: 'Rough figures', in: 'Money in each month', out: 'Money out each month', cancel: 'Cancel', save: 'Save figures' },
     open: {
       heading: 'Open checks', purchase: '+ Purchase', investment: '+ Investment',
-      sub: '{{price}} · {{method}} · leaves {{left}} a month',
-      subWithOthers: '{{price}} · {{method}} · with the other open checks, leaves {{left}} a month', subDraft: '{{price}} quoted · no payment method yet', saved: ' · saved',
+      sub: '{{price}} · {{method}} · {{left}} a month',
+      subWithOthers: '{{price}} · {{method}} · with the other open checks, {{left}} a month', subDraft: '{{price}} quoted · no payment method yet', saved: ' · saved',
       changed: 'Changed since you looked', was: ' · was {{state}}',
     },
     lines: {
@@ -2406,8 +2406,8 @@ const en = {
       row: { as_planned: 'As planned', cheaper: 'Cheaper one', wait_and_save: 'Wait and save', skip: 'Not buying it' },
       descPlanned: '{{price}} · {{method}}', descCheaper: '{{price}} · deposit scaled to match', descCheaperInstalments: '{{price}} · instalments scaled to match', descCheaperPlain: '{{price}} · {{method}}', reasonTooLarge: 'Too large to project at this rate', descWait: 'Bought at month {{count}}, then {{payment}} a month kept', descSkip: 'You own nothing',
       onDay: 'On the day', aMonth: 'A month', kept: 'Kept', keptRate: 'Kept, at {{rate}}%', dash: '—',
-      reasonMonthShortCheaper: 'Month still {{amount}} short on this plan', reasonMonthShort: 'Month is {{amount}} short — nothing spare',
-      reasonTooThin: 'Only {{amount}} a month left — too thin to count', reasonNothingFreed: 'Nothing freed against buying as planned',
+      reasonMonthShortCheaper: 'Month still {{amount}} overspent on this plan', reasonMonthShort: 'Month is {{amount}} overspent — nothing spare',
+      reasonTooThin: 'Only {{amount}} a month free — too thin to count', reasonNothingFreed: 'Nothing freed against buying as planned',
       reasonPastHorizon: 'Takes {{count}}\u00A0months — past the {{horizon}}-month horizon', reasonNothingSpare: 'No cash above cushion, no monthly surplus',
       footer: 'The last figure is money kept: the cash you keep on the day plus the payment you never make, capped at what is genuinely spare — {{spareCash}} above your cushion and {{spareMonth}} a month. Each row is measured against buying as planned — money set aside, plus growth only if you add a rate, no tax or fees, and no guarantee.',
       footerPlanned: 'Nothing is freed to save on the planned route.',
@@ -2418,21 +2418,21 @@ const en = {
       spendAllOnDay: 'All of it on the day', spendMonthOnly: '{{month}} a month, nothing on the day', spendNothing: 'Nothing changes on this plan',
       spendSliderA11y: 'Cheaper price', spendSliderValue: '{{pct}} percent of {{price}}', spendRatio: '{{pct}}% of {{price}}',
       tradeEyebrow: 'The trade, in one line', tradeIdle: 'The trade appears as the slider moves.',
-      tradeThin: 'Buying at {{cheaper}} lowers the payment from {{from}} to {{to}}, but the month still only leaves {{left}} — nothing you could reliably set aside.',
+      tradeThin: 'Buying at {{cheaper}} lowers the payment from {{from}} to {{to}}, but the month still only has {{left}} — nothing you could reliably set aside.',
       tradeKept: 'Buying at {{cheaper}} leaves {{today}} today and {{monthly}} a month kept. Kept up until month {{count}}, that is {{fv}} — {{own}} of your own money.',
       tradeKeptGrowth: 'Buying at {{cheaper}} leaves {{today}} today and {{monthly}} a month kept. Kept up until month {{count}}, that is {{fv}} — {{own}} of your own money and {{growth}} it earned.',
       tradeKeptTooLarge: 'Buying at {{cheaper}} leaves {{today}} today and {{monthly}} a month kept. Over {{count}}\u00A0months it is too large to project at this rate.', // D-47: the cheaper row's projected is null
       tradeUseCheaper: 'Use the cheaper price', tradeWait: 'Wait and save',
     },
     decision: {
-      plan: 'The plan on the table', planLine: '{{price}} · {{method}}', onDay: 'On the day', aMonth: 'A month', leftAfter: 'Left after',
+      plan: 'The plan on the table', planLine: '{{price}} · {{method}}', onDay: 'On the day', aMonth: 'A month', freeAfter: 'Free after', overspentAfter: 'Overspent after',
       goName: 'Go ahead', goDesc: 'Writes the expense, the schedule and the running costs into your records. Every payment appears in Activity against this check.',
-      goDescShort: 'Logs it anyway. The record will show the month was {{amount}} short when you signed.',
+      goDescShort: 'Logs it anyway. The record will show the month was {{amount}} overspent when you signed.',
       goFlagBreaks: 'Breaks a line', goFlagAgainst: 'Against your lines',
       waitName: 'Wait and save', waitDesc: 'Sets an amount and a date and starts a pot for this plan. A reminder opens this check on that day, recalculated. No balance moves until then.',
       waitPutAside: 'Set aside each month', waitReadyBy: 'Ready by', waitSliderA11y: 'Monthly saving', waitNoDate: 'No ready-by date at this amount.',
-      waitWithin: 'To cover {{target}} without touching your {{cushion}} cushion. Your month currently leaves {{left}}, so {{amount}} is within what you have spare.',
-      waitBeyond: 'To cover {{target}} without touching your {{cushion}} cushion. Your month currently leaves {{left}}, so {{amount}} is more than you actually have spare — something else has to give.',
+      waitWithin: 'To cover {{target}} without touching your {{cushion}} cushion. Your month currently has {{left}}, so {{amount}} is within what you have spare.',
+      waitBeyond: 'To cover {{target}} without touching your {{cushion}} cushion. Your month currently has {{left}}, so {{amount}} is more than you actually have spare — something else has to give.',
       passName: 'Pass', passDesc: 'Kept in Past decisions until you delete it. No reminders, and it can be reopened as a new check. Not spending is not saving, so no balance changes.',
       account: 'Paid from', investInto: 'Into', investIntoNone: 'Not into an account you track',
       writtenNone: 'Nothing is written yet', writtenHeading: 'What gets written',
@@ -2554,7 +2554,7 @@ const en = {
         rowFrom: '{{sign}}{{amount}} a month · from {{month}}', rowUntil: ' · until {{month}}',
         unnamedIncome: 'Income change', unnamedSpending: 'Spending change', // addition (a nameless row)
         endBeforeStart: 'The end month is before the start month.', // addition (05-48 inline refusal)
-        worstMonth: 'Fits now; from {{month}} the month is {{amount}} short.',
+        worstMonth: 'Fits now; from {{month}} the month is {{amount}} overspent.',
       },
       confidence: {
         strong: 'Strong basis', fair: 'Fair basis', rough: 'Rough basis', a11y: 'Basis: {{strength}}, tap for reasons',
@@ -2613,7 +2613,7 @@ const en = {
         line: 'With the expected {{amount}} a month ({{likelihood}}): {{state}}, pays for itself in {{months}} months.',
         lineNever: 'With the expected {{amount}} a month ({{likelihood}}): {{state}}, does not pay for itself within {{months}} months.',
         state: { fits: 'fits', adjust: 'needs adjustment', no: 'does not fit' }, likelihood: { likely: 'likely', uncertain: 'uncertain' },
-        rows: { income: 'Income with it', left: 'Month left', payback: 'Pays for itself', total: 'Total cost', state: 'State', sure: 'How sure' }, // addition
+        rows: { income: 'Income with it', month: 'Month end', payback: 'Pays for itself', total: 'Total cost', state: 'State', sure: 'How sure' }, // addition
         rowMonths_one: '{{count}}\u00A0month', rowMonths_other: '{{count}}\u00A0months', rowNever: 'Not within {{months}} months', // addition (05-42)
       },
       runway: { summary: 'Runway {{months}} months, {{lost}} less because of this', lost: 'Runway lost to this purchase: {{months}} months', met: 'New payments still met', notMet: 'New payments cannot be met' },

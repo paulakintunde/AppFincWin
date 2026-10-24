@@ -15,6 +15,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { CloseGlyph } from '@/ui/CloseGlyph';
 import { Text } from '@/ui/Text';
 import { cheaperDescriptor, keptHeader, suppressionReason } from '../../copy/alternativesCopy';
+import { monthFigure } from '../../copy/monthFigure';
 import { percentText } from '../../copy/percentText';
 import { cheaperPriceForPercent, isValidProjectionRateText, repriceInputs } from '../../snapshot/checkInputs';
 import { cheaperBounds, cheaperThumbPercent } from '../../snapshot/customValues';
@@ -156,11 +157,11 @@ export function Step4Alternatives(props: StepProps) {
     const floor = computation.context?.limits.spareFloor ?? 0;
     const common = { cheaper: fmt(alts.cheaperPrice), today: fmt(c.keptOnDay), monthly: cents(c.keptMonthly), count: alts.horizonMonths };
     if (c.leftAfter <= floor || c.keptMonthly === 0) {
-      return t('decide.alt.tradeThin', { cheaper: common.cheaper, from: cents(plannedMonthly), to: cents(c.monthlyPayment), left: fmt(c.leftAfter) });
+      return t('decide.alt.tradeThin', { cheaper: common.cheaper, from: cents(plannedMonthly), to: cents(c.monthlyPayment), left: refText(t, monthFigure(c.leftAfter, fmt)) });
     }
     if (cheaperRow.rangeCode === 'exceeds_range') return t('decide.alt.tradeKeptTooLarge', common);
     if (cheaperRow.projected === null || cheaperRow.contributed === null) {
-      return t('decide.alt.tradeThin', { cheaper: common.cheaper, from: cents(plannedMonthly), to: cents(c.monthlyPayment), left: fmt(c.leftAfter) });
+      return t('decide.alt.tradeThin', { cheaper: common.cheaper, from: cents(plannedMonthly), to: cents(c.monthlyPayment), left: refText(t, monthFigure(c.leftAfter, fmt)) });
     }
     return t(rateSet ? 'decide.alt.tradeKeptGrowth' : 'decide.alt.tradeKept', {
       ...common,

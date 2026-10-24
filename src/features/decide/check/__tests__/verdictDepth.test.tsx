@@ -40,7 +40,7 @@ describe('verdict depth: step 3 top', () => {
     expect(screen.getByText('Strong basis')).toBeTruthy();
     expect(screen.queryByText('On the edge')).toBeNull();
     expect(screen.queryByText(/on its own/)).toBeNull();
-    expect(screen.queryByText(/the month is .* short/)).toBeNull();
+    expect(screen.queryByText(/the month is .* overspent/)).toBeNull();
     expect(screen.queryByText(/left out/)).toBeNull();
     expect(screen.queryByText(/Cash path unavailable/)).toBeNull();
   });
@@ -62,10 +62,10 @@ describe('verdict depth: step 3 top', () => {
     expect(screen.queryByText(/Fits on its own/)).toBeNull();
   });
 
-  it('a worse future month leads the body when there is no combined difference', async () => {
+  it('D-106 the worst-month line says overspent (a worse future month leads the body when there is no combined difference)', async () => {
     const p = withDecision(propsFor(strongSource()), { worstMonth: { month: '2027-06', differsFromNow: true, shortfall: 9_000 } });
     await wrap(<Step3Verdict {...p} />);
-    expect(screen.getByText(/Fits now; from June the month is \$90 short\./)).toBeTruthy();
+    expect(screen.getByText(/Fits now; from June the month is \$90 overspent\./)).toBeTruthy();
   });
 
   it('with a combined line the worst month moves to the basis row', async () => {
@@ -78,7 +78,7 @@ describe('verdict depth: step 3 top', () => {
       worstMonth: { month: '2027-06', differsFromNow: true, shortfall: 9_000 },
     });
     await wrap(<Step3Verdict {...p} />);
-    expect(screen.getByText('Fits now; from June the month is $90 short.')).toBeTruthy();
+    expect(screen.getByText('Fits now; from June the month is $90 overspent.')).toBeTruthy();
   });
 
   it('the chip row shows the strength, and tapping it opens the reasons and closes again', async () => {

@@ -5,7 +5,8 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useT } from '@/i18n';
-import type { Translate } from '../refText';
+import { monthFigure } from '../../copy/monthFigure';
+import { refText, type Translate } from '../refText';
 import { TableRow, moneyOf, type SectionProps } from './sectionUi';
 
 export function ExpectedIncomeBody(props: SectionProps) {
@@ -20,7 +21,7 @@ export function ExpectedIncomeBody(props: SectionProps) {
       : t('decide.depth.income.rowMonths', { count: outcome.payback.months });
   const rows: { key: string; label: string; value: string }[] = [
     { key: 'income', label: t('decide.depth.income.rows.income'), value: fmt(outcome.assessment.context.money.incomeBasis) },
-    { key: 'left', label: t('decide.depth.income.rows.left'), value: fmt(outcome.assessment.left) },
+    { key: 'month', label: t('decide.depth.income.rows.month'), value: refText(t, monthFigure(outcome.assessment.left, fmt)) },
     { key: 'payback', label: t('decide.depth.income.rows.payback'), value: payback },
     { key: 'total', label: t('decide.depth.income.rows.total'), value: fmt(outcome.payback.totalCost) },
     { key: 'state', label: t('decide.depth.income.rows.state'), value: t(`decide.depth.income.state.${outcome.assessment.state}`) },

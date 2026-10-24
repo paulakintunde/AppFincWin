@@ -55,10 +55,28 @@ describe('Step5Decision', () => {
     expect(screen.getByText('Breaks a line')).toBeTruthy();
   });
 
+  it('D-106 the Go ahead description says overspent', async () => {
+    const p = props({ advertised: 3_000_000, method: 'loan', loan: { deposit: 0, termMonths: 12, aprText: '10', secured: false, securedTouched: true, aprFromQuick: false, promo: null, variable: false } });
+    await wrap(<Step5Decision {...p} />);
+    expect(screen.queryByText(/ short when/)).toBeNull();
+    expect(screen.getByText(/month was \$\d+ overspent when you signed/)).toBeTruthy();
+  });
+
+  it('D-106 Step 5 flips Free after / Overspent after with the sign', async () => {
+    const over = props({ advertised: 3_000_000, method: 'loan', loan: { deposit: 0, termMonths: 12, aprText: '10', secured: false, securedTouched: true, aprFromQuick: false, promo: null, variable: false } });
+    await wrap(<Step5Decision {...over} />);
+    expect(screen.getByText('Overspent after')).toBeTruthy();
+    expect(screen.queryByText('Free after')).toBeNull();
+    await screen.unmount();
+    await wrap(<Step5Decision {...props({ advertised: 20_000, method: 'cash' })} />);
+    expect(screen.getByText('Free after')).toBeTruthy();
+    expect(screen.queryByText('Overspent after')).toBeNull();
+  });
+
   it('a short month changes the Go ahead description', async () => {
     const p = props({ advertised: 3_000_000, method: 'loan', loan: { deposit: 0, termMonths: 12, aprText: '10', secured: false, securedTouched: true, aprFromQuick: false, promo: null, variable: false } });
     await wrap(<Step5Decision {...p} />);
-    expect(screen.getByText(/Logs it anyway\. The record will show the month was \$\d+ short when you signed\./)).toBeTruthy();
+    expect(screen.getByText(/Logs it anyway\. The record will show the month was \$\d+ overspent when you signed\./)).toBeTruthy();
   });
 
   it('D-101 the Wait outcome card describes a pot', async () => {
@@ -101,6 +119,15 @@ describe('Step5Decision', () => {
     expect(slider.props.accessibilityValue.now).toBe(55_000);
     await fireEvent(slider, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
     expect(p.update).toHaveBeenCalledWith({ wait: { monthlyAmount: 57_500 } });
+  });
+
+  it('D-106 Wait says the month has {{amount}} free', async () => {
+    const base = props({ outcome: 'wait', advertised: 2_000_000, method: 'cash' });
+    const spare = base.computation.waitPlan!.spareMonthly;
+    await wrap(<Step5Decision {...props({ outcome: 'wait', advertised: 2_000_000, method: 'cash', wait: { monthlyAmount: 100 } })} />);
+    expect(screen.queryByText(/currently leaves/)).toBeNull();
+    const word = spare < 0 ? 'overspent' : 'free';
+    expect(screen.getByText(new RegExp('Your month currently has [$][0-9]+ ' + word + ', so'))).toBeTruthy();
   });
 
   it('a Wait amount above what is spare is said plainly', async () => {

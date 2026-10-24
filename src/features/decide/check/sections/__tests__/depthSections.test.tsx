@@ -105,9 +105,9 @@ describe('DayByDayBody', () => {
 });
 
 describe('ExpectedIncomeBody', () => {
-  function raise(p: SectionProps): SectionProps {
+  function raise(p: SectionProps, left = 90_000): SectionProps {
     const verdict = p.computation.verdict as unknown as Loose & { context: Loose & { money: Loose } };
-    const assessment = { ...verdict, state: 'fits', left: 90_000, context: { ...verdict.context, money: { ...verdict.context.money, incomeBasis: 540_000 } } };
+    const assessment = { ...verdict, state: 'fits', left, context: { ...verdict.context, money: { ...verdict.context.money, incomeBasis: 540_000 } } };
     const outcome = {
       monthlyAmount: 40_000,
       likelihood: 'uncertain',
@@ -124,12 +124,18 @@ describe('ExpectedIncomeBody', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
+  it('D-106 the expected-income Month row prints free / overspent words', async () => {
+    await wrap(<ExpectedIncomeBody {...raise(sectionProps(), -4_500)} />);
+    expect(screen.getByText('$45 overspent')).toBeTruthy();
+  });
+
   it('shows the six figures', async () => {
     await wrap(<ExpectedIncomeBody {...raise(sectionProps())} />);
-    for (const label of ['Income with it', 'Month left', 'Pays for itself', 'Total cost', 'State', 'How sure']) {
+    for (const label of ['Income with it', 'Month end', 'Pays for itself', 'Total cost', 'State', 'How sure']) {
       expect(screen.getByText(label)).toBeTruthy();
     }
     expect(screen.getByText('31 months')).toBeTruthy();
+    expect(screen.getByText('$900 free')).toBeTruthy();
     expect(screen.getByText('$5400')).toBeTruthy();
   });
 

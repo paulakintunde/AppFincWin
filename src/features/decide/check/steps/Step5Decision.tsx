@@ -18,6 +18,7 @@ import { useFxLatest } from '@/data/queries/fxLatest';
 import { useGoalLines, useSavingsGoals } from '@/data/queries/decide';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { goalCopy } from '../../copy/depthInputsCopy';
+import { isOverspent, monthFigure } from '../../copy/monthFigure';
 import { savedSoFar } from '../../journal/goalProgress';
 import { GoalProgress } from '../../ui/GoalProgress';
 import { ChoiceCard } from '../../ui/ChoiceCard';
@@ -129,7 +130,7 @@ export function Step5Decision(props: Step5Props) {
   const typed = wait === null ? { min: 0, max: 0 } : waitTypedBounds(wait.target);
 
   const choose = (outcome: 'go' | 'wait' | 'pass') => update({ outcome });
-  const short = assessed !== null && assessed.left < 0;
+  const short = assessed !== null && isOverspent(assessed.left);
   const flag = assessed !== null && assessed.state !== 'fits' ? t('decide.decision.goFlagBreaks') : undefined;
   const left = assessed?.left ?? null;
 
@@ -172,7 +173,7 @@ export function Step5Decision(props: Step5Props) {
           items={[
             { caption: t('decide.decision.onDay'), value: dayOne === null ? dash : fmt(dayOne), a11yValue: dayOne === null ? undefined : fmtA11y(dayOne) },
             { caption: t('decide.decision.aMonth'), value: monthly === null ? dash : cents(monthly), a11yValue: monthly === null ? undefined : centsA11y(monthly) },
-            { caption: t('decide.decision.leftAfter'), value: left === null ? dash : fmt(left), a11yValue: left === null ? undefined : fmtA11y(left), tone: left !== null && left < 0 ? 'negative' : 'neutral' },
+            { caption: left !== null && isOverspent(left) ? t('decide.decision.overspentAfter') : t('decide.decision.freeAfter'), value: left === null ? dash : fmt(Math.abs(left)), a11yValue: left === null ? undefined : fmtA11y(Math.abs(left)), tone: left !== null && isOverspent(left) ? 'negative' : 'neutral' },
           ]}
         />
       </Card>
@@ -271,7 +272,7 @@ export function Step5Decision(props: Step5Props) {
             {t(wait.withinSpare ? 'decide.decision.waitWithin' : 'decide.decision.waitBeyond', {
               target: fmt(wait.target),
               cushion: fmt(computation.context?.limits.reserve ?? 0),
-              left: fmt(wait.spareMonthly),
+              left: refText(t, monthFigure(wait.spareMonthly, fmt)),
               amount: cents(wait.monthlyAmount),
             })}
           </Meta>

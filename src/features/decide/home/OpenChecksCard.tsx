@@ -15,8 +15,9 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { shadows } from '@/theme/tokens';
 import { Text } from '@/ui/Text';
 import { type Money } from '../check/steps/stepUi';
-import { type Translate } from '../check/refText';
+import { refText, type Translate } from '../check/refText';
 import { METHOD_LABEL } from '../copy/codeMaps';
+import { monthFigure } from '../copy/monthFigure';
 import { stateChip } from '../copy/verdictCopy';
 import { canUse } from '../entitlements';
 import { inHomeCurrency, sourceFor } from '../snapshot/checkCurrency';
@@ -143,7 +144,7 @@ export function OpenChecksCard({ source, checks, today, whole, currency, showWhe
           } else if (price !== null && methodText !== null) {
             sub =
               left !== null
-                ? t(v.withOthers ? 'decide.open.subWithOthers' : 'decide.open.sub', { price: whole(price), method: methodText, left: whole(left) })
+                ? t(v.withOthers ? 'decide.open.subWithOthers' : 'decide.open.sub', { price: whole(price), method: methodText, left: refText(t, monthFigure(left, whole)) })
                 : `${whole(price)} · ${methodText}`;
           } else if (price !== null) {
             sub = t('decide.open.subDraft', { price: whole(price) });

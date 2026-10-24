@@ -65,8 +65,8 @@ describe('Step4Alternatives', () => {
   });
 
   describe.each<[SuppressionCode, number | null, RegExp]>([
-    ['month_short', 5_000, /Month still \$50 short on this plan/],
-    ['too_thin', 5_000, /Only \$50 a month left — too thin to count/],
+    ['month_short', 5_000, /Month still \$50 overspent on this plan/],
+    ['too_thin', 5_000, /Only \$50 a month free — too thin to count/],
     ['nothing_freed', null, /Nothing freed against buying as planned/],
     ['past_horizon', null, /Takes 2 months — past the 12-month horizon/],
     ['nothing_spare', null, /No cash above cushion, no monthly surplus/],
@@ -79,10 +79,17 @@ describe('Step4Alternatives', () => {
     });
   });
 
+  it('D-106 the alternatives reasons say overspent and free', async () => {
+    const p = patchRow(props(), 2, { suppression: { code: 'too_thin', amount: 5_000 as never }, projected: null });
+    await wrap(<Step4Alternatives {...p} />);
+    expect(screen.getByText('Only $50 a month free — too thin to count')).toBeTruthy();
+    expect(screen.queryByText(/ short/)).toBeNull();
+  });
+
   it('a suppressed wait row uses the generic month-short wording', async () => {
     const p = patchRow(props(), 2, { suppression: { code: 'month_short', amount: 7_000 as never }, projected: null });
     await wrap(<Step4Alternatives {...p} />);
-    expect(screen.getByText('Month is $70 short — nothing spare')).toBeTruthy();
+    expect(screen.getByText('Month is $70 overspent — nothing spare')).toBeTruthy();
   });
 
   it('an out-of-range kept figure reads too large', async () => {
@@ -119,7 +126,7 @@ describe('Step4Alternatives', () => {
   it('a thin month reads the thin trade line', async () => {
     const p = patchRow(props({ cheaperPrice: 390_000 }), 1, {}, { cheaper: { ...props().computation.alternatives!.cheaper, keptMonthly: 0 as never } });
     await wrap(<Step4Alternatives {...p} />);
-    expect(screen.getByText(/lowers the payment from .* to .*, but the month still only leaves/)).toBeTruthy();
+    expect(screen.getByText(/lowers the payment from .* to .*, but the month still only has \$-?\d+ (free|overspent)/)).toBeTruthy();
   });
 
   it('the slider writes the cheaper ratio', async () => {
@@ -227,7 +234,7 @@ describe('Step4Alternatives', () => {
     const p = patchRow(props(), 1, { suppression: { code: 'month_short', amount: 5_000 as never }, projected: null, contributed: null, growth: null });
     await wrap(<Step4Alternatives {...p} />, 1.6);
     expect(screen.getByText('$3900 · deposit scaled to match').props.numberOfLines).toBeUndefined();
-    expect(screen.getByText(/Month still \$50 short on this plan/).props.numberOfLines).toBeUndefined();
+    expect(screen.getByText(/Month still \$50 overspent on this plan/).props.numberOfLines).toBeUndefined();
   });
 
   describe('D-83 the exact cheaper price', () => {

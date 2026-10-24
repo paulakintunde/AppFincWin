@@ -114,11 +114,17 @@ describe('OpenChecksCard', () => {
     expect(screen.queryByText('+ Purchase')).toBeNull();
   });
 
+  it('D-106 the open-check line reads free or overspent a month', async () => {
+    await renderCard([checkRow('a')]);
+    expect(screen.queryByText(/leaves/)).toBeNull();
+    expect(screen.getByText(/\$1500 · Paid in full · \$\d+ (free|overspent) a month/)).toBeTruthy();
+  });
+
   it('shows a row with its chip and sub-line recomputed from the snapshot', async () => {
     await renderCard([checkRow('a')]);
     expect(screen.getByText('Laptop')).toBeTruthy();
     expect(screen.getByText('It fits')).toBeTruthy();
-    expect(screen.getByText(/\$1500 · Paid in full · leaves \$\d+ a month/)).toBeTruthy();
+    expect(screen.getByText(/\$1500 · Paid in full · \$\d+ (free|overspent) a month/)).toBeTruthy();
     expect(screen.queryByText(/Changed since you looked/)).toBeNull();
   });
 
@@ -126,23 +132,23 @@ describe('OpenChecksCard', () => {
     const house = checkRow('house', { name: 'House' }, inputs({ name: 'House', advertised: 300_000, method: 'cash' }));
     const claude = checkRow('claude', { name: 'Claude', created_at: '2026-10-02T00:00:00Z' }, inputs({ name: 'Claude', advertised: 20_000, method: 'cash' }));
     await renderCard([house, claude]);
-    const lines = screen.getAllByText(/with the other open checks, leaves \$-?\d+ a month/);
+    const lines = screen.getAllByText(/with the other open checks, \$\d+ (free|overspent) a month/);
     expect(lines).toHaveLength(2);
-    const figures = lines.map((l) => String(l.props.children).match(/leaves (\$-?\d+)/)?.[1]);
+    const figures = lines.map((l) => String(l.props.children).match(/checks, (\$\d+ (?:free|overspent))/)?.[1]);
     expect(figures[0]).toBe(figures[1]);
-    expect(screen.queryByText(/Paid in full · leaves/)).toBeNull();
+    expect(screen.queryByText(/Paid in full · \$\d+ (free|overspent) a month/)).toBeNull();
   });
 
-  it('E: a check judged on its own (combine off) or alone keeps the plain leaves line', async () => {
+  it('E: a check judged on its own (combine off) or alone keeps the plain month line', async () => {
     const alone = inputs({ name: 'Alone', advertised: 20_000, method: 'cash' });
     await renderCard([checkRow('a', {}, alone)]);
-    expect(screen.getByText(/\$200 · Paid in full · leaves \$-?\d+ a month/)).toBeTruthy();
+    expect(screen.getByText(/\$200 · Paid in full · \$\d+ (free|overspent) a month/)).toBeTruthy();
     await screen.unmount();
     const own = checkRow('own', {}, inputs({ name: 'Own', advertised: 20_000, method: 'cash', combine: false }));
     const other = checkRow('other', { created_at: '2026-10-02T00:00:00Z' }, inputs({ name: 'Other', advertised: 30_000, method: 'cash' }));
     await renderCard([own, other]);
-    expect(screen.getAllByText(/with the other open checks, leaves/)).toHaveLength(1); // only the row that combines
-    expect(screen.getByText(/\$200 · Paid in full · leaves \$-?\d+ a month/)).toBeTruthy();
+    expect(screen.getAllByText(/with the other open checks, \$\d+ (free|overspent)/)).toHaveLength(1); // only the row that combines
+    expect(screen.getByText(/\$200 · Paid in full · \$\d+ (free|overspent) a month/)).toBeTruthy();
   });
 
   it('shows Draft and the quoted line when no payment method is chosen', async () => {
