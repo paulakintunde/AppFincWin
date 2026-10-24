@@ -425,6 +425,19 @@ describe('(d) net-worth path (D-52)', () => {
   });
 });
 
+describe('pots in the net-worth path (D-101)', () => {
+  it('D-101 pot money stays cash: the surplus adds the set-aside back and the opening adds the protected slice', () => {
+    const H12: InvestmentViewsInput = { horizonMonths: 12, holdingFee: null };
+    const pot = { id: 'w', kind: 'wait' as const, target: mu(1_000_000), monthlyAmount: mu(10_000), readyBy: null, saved: mu(100_000) };
+    const without = run(BL(), buyCash(300_000), H12).views.netWorth[0]!;
+    const withPot = run(BL({ pots: [pot] }), buyCash(300_000), H12);
+    expect(withPot.ctx.setAside).toBe(10_000);
+    expect(withPot.ctx.protectedCash).toBe(100_000);
+    expect(withPot.views.netWorth[0]!.withoutPurchase).toEqual(without.withoutPurchase);
+    expect(withPot.views.netWorth[0]!.withPurchase).toEqual(without.withPurchase);
+  });
+});
+
 describe('D-63 guards and scope', () => {
   it('rejects a holding fee above 100% and below 0', () => {
     expect(() =>

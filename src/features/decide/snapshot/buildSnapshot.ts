@@ -660,6 +660,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       futureChanges,
       investmentBalance: minorUnits(investmentBalance),
       scheduledOutflows,
+      pots: [], // D-101: 05-124 fills this from the data
       ...(provisional === null ? {} : { provisionalRates: true }), // D-69: caps confidence at fair
     };
     return { kind: 'logged', ...base, snapshot };

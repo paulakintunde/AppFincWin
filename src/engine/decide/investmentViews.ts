@@ -193,7 +193,7 @@ export function investmentViews(
   // (d)
   const debt = debtScheduleOf(check, plan);
   const owedAfter = (m: number): number => (m === 0 ? debt.start : (debt.after[Math.min(m, debt.after.length) - 1] ?? 0));
-  const monthlySurplus = context.leftBefore + snapshot.monthlySaving;
+  const monthlySurplus = context.leftBefore + snapshot.monthlySaving + context.setAside; // D-101: pot money stays cash
   // 04-REVIEW ME-01: the invested part is exact (bigint); a point past the safe range is null and the path carries
   // 'exceeds_range' instead of throwing.
   const netWorth: NetWorthPath[] = rates.map((r) => {
@@ -201,8 +201,9 @@ export function investmentViews(
     const investedWith = futureValuePathExact(assessment.investingAfter, r.rate, horizon, snapshot.investmentBalance, fee);
     const withoutPurchase: (MinorUnits | null)[] = [];
     const withPurchase: (MinorUnits | null)[] = [];
-    let cashWithout: number = context.cashAfterBills;
-    let cashWith: number = context.cashAfterBills - assessment.mineDayOne;
+    // D-101: cashAfterBills starts below the pots' slice, but that money is still mine, so net worth adds it back
+    let cashWithout: number = context.cashAfterBills + context.protectedCash;
+    let cashWith: number = context.cashAfterBills + context.protectedCash - assessment.mineDayOne;
     for (let m = 0; m <= horizon; m += 1) {
       if (m > 0) {
         cashWithout += monthlySurplus;

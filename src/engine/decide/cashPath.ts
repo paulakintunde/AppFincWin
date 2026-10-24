@@ -151,8 +151,9 @@ export function cashPathForSnapshot(input: {
   readonly money: MoneyBasis;
   readonly spendingShare: SpendingShare;
   readonly debtPayments: MinorUnits;
+  readonly protectedCash: MinorUnits; // D-101: the slice of cash held in pots; the path opens without it
 }): CashPathBase | null {
-  const { snapshot, money, spendingShare, debtPayments } = input;
+  const { snapshot, money, spendingShare, debtPayments, protectedCash } = input;
   const fn = 'cashPathForSnapshot';
   const pays = snapshot.incomeSeries.filter((s) => s.confirmed);
   if (pays.length === 0) return null;
@@ -185,7 +186,7 @@ export function cashPathForSnapshot(input: {
   return buildCashPath({
     asOf: snapshot.asOf,
     days: CASH_PATH_DAYS,
-    opening: snapshot.cashOnHand,
+    opening: minorFromBigInt(BigInt(snapshot.cashOnHand) - BigInt(protectedCash), fn),
     inflows,
     outflows,
     spreadMonthly,

@@ -44,6 +44,7 @@ import { resolveProjectionRates } from './projectionRates';
 import { defaultReserve, reserveHalfMonthsFor } from './reserve';
 import { resolvePlan } from './plan';
 import { positionContext } from './position';
+import { totalSetAside } from './pots';
 import { isSecured } from './secured';
 import { billsDueWithin, scheduledOutflowsDue } from './series';
 import { SOLE_SHARE, myPart, resolveShare } from './share';
@@ -183,15 +184,31 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
   const monthCosts = mi(BigInt(money.spendingAverage) + debtPayments); // D-02
   const pausable = mi(BigInt(snapshot.monthlySaving) + BigInt(snapshot.monthlyInvesting)); // D-35, D-32
   const monthIncome = money.incomeBasis;
-  const leftBefore = mi(BigInt(monthIncome) - BigInt(money.spendingBasis) - debtPayments - BigInt(pausable));
+  // D-101: pots are set aside each month like saving goals, but are never paused (pausable is unchanged), so a shortfall
+  // beyond saving and investing stays the month warning.
+  const pots = totalSetAside(snapshot.pots, snapshot.asOf);
+  const setAside = pots.total;
+  const leftBefore = mi(
+    BigInt(monthIncome) - BigInt(money.spendingBasis) - debtPayments - BigInt(pausable) - BigInt(setAside)
+  );
 
   let billsDue = 0n;
   for (const b of billsDueDetail) billsDue += BigInt(myPart(b.amount, shareForCategory(spendingShare, b.categoryId)));
-  const cashOnHand = BigInt(snapshot.cashOnHand);
+  // D-101: money saved in a pot cannot be spent by a check, so every cash figure starts from cash less that slice.
+  const rawCash = BigInt(snapshot.cashOnHand);
+  const positiveCash = rawCash > 0n ? rawCash : 0n;
+  const protectedCash = pots.saved < positiveCash ? pots.saved : positiveCash;
+  const cashOnHand = rawCash - protectedCash;
   const dueNow = BigInt(due.dueNow);
   const dueAhead = BigInt(due.dueAhead);
 
-  const cashPath = cashPathForSnapshot({ snapshot, money, spendingShare, debtPayments: mi(debtPayments) });
+  const cashPath = cashPathForSnapshot({
+    snapshot,
+    money,
+    spendingShare,
+    debtPayments: mi(debtPayments),
+    protectedCash: mi(protectedCash),
+  });
   const ledgerCash = cashOnHand - billsDue - dueNow;
   const cashAvailable = cashPath === null ? ledgerCash : cashOnHand - dueNow;
   const cashAfterBills = ledgerCash - dueAhead;
@@ -227,6 +244,9 @@ export function prepareContext(snapshot: DecideSnapshot): ContextResult {
       debtBalance: mi(debtBalance),
       annualIncome: mi(BigInt(money.incomeAverage) * BigInt(MONTHS_PER_YEAR)),
       pausable,
+      setAside,
+      potLines: pots.lines,
+      protectedCash: mi(protectedCash),
       leftBefore,
       leftThisMonth: leftBefore,
       billsDue: mi(billsDue),
@@ -416,12 +436,18 @@ export function assessPlan(context: AssessContext, check: PurchaseCheck, plan: P
 
   // D-38: the month line by line (pre-pause) and the five ledgers.
   const column = (debt: MinorUnits, thisPurchase: MinorUnits): MonthColumn => {
-    const outgoings = BigInt(context.mySpendingBasis) + BigInt(debt) + BigInt(context.pausable) + BigInt(thisPurchase);
+    const outgoings =
+      BigInt(context.mySpendingBasis) +
+      BigInt(debt) +
+      BigInt(context.pausable) +
+      BigInt(context.setAside) +
+      BigInt(thisPurchase);
     return {
       income: context.monthIncome,
       living: context.mySpendingBasis,
       debtPayments: debt,
       savingInvesting: context.pausable,
+      setAside: context.setAside,
       thisPurchase,
       outgoings: am(outgoings),
       left: am(BigInt(context.monthIncome) - outgoings),

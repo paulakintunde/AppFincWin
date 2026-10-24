@@ -65,6 +65,7 @@ export function snapshot(over: Partial<DecideSnapshot> = {}): DecideSnapshot {
     futureChanges: [],
     investmentBalance: minorUnits(0),
     scheduledOutflows: [],
+    pots: [],
     ...over,
   };
 }

@@ -364,6 +364,17 @@ describe('applyChanges (D-45)', () => {
   });
 });
 
+describe('applyChanges with pots (D-101)', () => {
+  it('D-101 fixedOutgoings includes setAside so the worst month keeps the set-aside', () => {
+    const pot = { id: 'w', kind: 'wait' as const, target: mu(1_000_000), monthlyAmount: mu(10_000), readyBy: null, saved: mu(0) };
+    const base = ctxOf(BL({ pots: [pot] }));
+    expect(base.setAside).toBe(10_000);
+    const c = applyChanges(base, [], [], false);
+    expect(c.leftBefore).toBe(base.leftBefore);
+    expect(c.leftBefore).toBe(115_000);
+  });
+});
+
 describe('positionContext (D-41, D-45, D-53)', () => {
   it('with no other checks the combined and standalone figures are equal', () => {
     const base = ctxOf(BL());

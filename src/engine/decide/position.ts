@@ -144,7 +144,7 @@ export function applyChanges(
     currency: context.snapshot.currency,
     monthIncome: context.monthIncome,
     monthSpending: context.mySpendingBasis,
-    fixedOutgoings: mi(BigInt(context.debtPayments) + BigInt(context.pausable)),
+    fixedOutgoings: mi(BigInt(context.debtPayments) + BigInt(context.pausable) + BigInt(context.setAside)),
     changes,
   });
   return {

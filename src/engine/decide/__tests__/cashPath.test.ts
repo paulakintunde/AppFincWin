@@ -40,12 +40,17 @@ const PAY = income({
   latestAmount: 600_000,
 });
 
-function pathOf(over: Partial<Parameters<typeof cashPathForSnapshot>[0]['snapshot']> = {}, spending = SOLE_SPENDING) {
+function pathOf(
+  over: Partial<Parameters<typeof cashPathForSnapshot>[0]['snapshot']> = {},
+  spending = SOLE_SPENDING,
+  protectedCash = 0
+) {
   return cashPathForSnapshot({
     snapshot: snapshotOf({ incomeSeries: [PAY], ...over }),
     money: moneyOf(300_000),
     spendingShare: spending,
     debtPayments: m(20_000),
+    protectedCash: m(protectedCash),
   });
 }
 
@@ -174,8 +179,12 @@ describe('buildCashPath', () => {
 });
 
 describe('cashPathForSnapshot', () => {
+  it('D-101 protected cash is taken off the opening of the path', () => {
+    const open = pathOf({}, SOLE_SPENDING, 0)!.balances[0]!;
+    expect(pathOf({}, SOLE_SPENDING, 500_000)!.balances[0]).toBe(open - 500_000);
+  });
   it('returns null with no confirmed income series', () => {
-    const args = { money: moneyOf(300_000), spendingShare: SOLE_SPENDING, debtPayments: m(0) };
+    const args = { money: moneyOf(300_000), spendingShare: SOLE_SPENDING, debtPayments: m(0), protectedCash: m(0) };
     expect(cashPathForSnapshot({ ...args, snapshot: snapshotOf() })).toBeNull();
     expect(
       cashPathForSnapshot({ ...args, snapshot: snapshotOf({ incomeSeries: [{ ...PAY, confirmed: false }] }) })
@@ -232,6 +241,7 @@ describe('cashPathForSnapshot', () => {
       money: moneyOf(300_000),
       spendingShare: SOLE_SPENDING,
       debtPayments: m(0),
+      protectedCash: m(0),
     })!;
     expect(q.balances[0]).toBe(2_000_000);
     expect(q.balances[14]).toBe(2_000_000);
@@ -287,6 +297,7 @@ describe('cashPathForSnapshot', () => {
         money: moneyOf(0),
         spendingShare: SOLE_SPENDING,
         debtPayments: m(0),
+        protectedCash: m(0),
       })
     ).toBeNull();
   });

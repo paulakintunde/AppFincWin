@@ -16,6 +16,7 @@ import type {
   DecideSnapshot,
   InvestCheck,
   MonthRecord,
+  PotInput,
   PurchaseCheck,
 } from '../types';
 import { USD, bill, buyCash, fullMonth, income, line, monthsOf, outflow, snapshotOf } from './helpers/fixtures';
@@ -357,7 +358,7 @@ describe('prepareContext (DEC-06; D-01..D-06, D-23, D-24, D-32, D-34)', () => {
     const c = ctxOf(s);
     expect(c.cashPath?.balances).toHaveLength(CASH_PATH_DAYS + 1);
     expect(c.cashPath).toEqual(
-      cashPathForSnapshot({ snapshot: s, money: c.money, spendingShare: c.spendingShare, debtPayments: c.debtPayments })
+      cashPathForSnapshot({ snapshot: s, money: c.money, spendingShare: c.spendingShare, debtPayments: c.debtPayments, protectedCash: c.protectedCash })
     );
   });
 
@@ -1271,6 +1272,7 @@ describe('month line by line (D-38, pre-pause)', () => {
     living,
     debtPayments: debt,
     savingInvesting: saving,
+    setAside: 0,
     thisPurchase: purchase,
     outgoings: living + debt + saving + purchase,
     left: income - living - debt - saving - purchase,
@@ -1405,5 +1407,89 @@ describe('five ledgers (D-38)', () => {
 
   it('shows no cash change for a plan with nothing due on the day', () => {
     expect(row(run(BL(), loanCheck(120_000, 12)), 'cash')?.direction).toBe('same');
+  });
+});
+
+describe('pots in the month and in cash (D-100, D-101)', () => {
+  const WAIT = (monthly: number, over: Partial<PotInput> = {}): PotInput => ({
+    id: 'w',
+    kind: 'wait',
+    target: mu(1_000_000),
+    monthlyAmount: mu(monthly),
+    readyBy: null,
+    saved: mu(0),
+    ...over,
+  });
+
+  it('D-100 leftBefore takes the set-aside off and income minus out equals it', () => {
+    const base = ctxOf(R());
+    const c = ctxOf(R({ pots: [WAIT(10_000), WAIT(5_000, { id: 'w2' })] }));
+    expect(c.setAside).toBe(15_000);
+    expect(c.potLines.map((l) => l.monthly)).toEqual([10_000, 5_000]);
+    expect(c.leftBefore).toBe(base.leftBefore - 15_000);
+    expect(c.monthIncome - (c.mySpendingBasis + c.debtPayments + c.pausable + c.setAside)).toBe(c.leftBefore);
+    expect(base.setAside).toBe(0);
+    expect(base.potLines).toEqual([]);
+  });
+
+  it('D-101 pausable is unchanged and a shortfall beyond saving and investing is the month warning', () => {
+    const a = run(R({ pots: [WAIT(50_000)] }), INST(200_000));
+    expect(ctxOf(R({ pots: [WAIT(50_000)] })).pausable).toBe(65_000);
+    expect(a).toMatchObject({ left: -125_000, pauseNeeded: 65_000, remainingShortfall: 60_000, state: 'no' });
+    expect(a.warnings).toEqual([w('inv', 65_000), w('month', 60_000)]);
+  });
+
+  it('D-101 protected cash is min(saved, max(0, cash)) and the path opens without it', () => {
+    const pot = (saved: number): PotInput => WAIT(0, { saved: mu(saved) });
+    const protectedOf = (cash: number, saved: number): number =>
+      ctxOf(PB({ cashOnHand: mu(cash), pots: [pot(saved)] })).protectedCash;
+    expect(protectedOf(2_000_000, 100_000)).toBe(100_000); // saved below cash
+    expect(protectedOf(50_000, 50_000)).toBe(50_000); // equal
+    expect(protectedOf(50_000, 80_000)).toBe(50_000); // above
+    expect(protectedOf(-10_000, 5_000)).toBe(0); // negative cash
+    expect(ctxOf(PB()).protectedCash).toBe(0); // no pots
+
+    const base = ctxOf(PB());
+    const c = ctxOf(PB({ pots: [pot(100_000)] }));
+    expect(c.cashAvailable).toBe(base.cashAvailable - 100_000);
+    expect(c.ledgerCash).toBe(base.ledgerCash - 100_000);
+    expect(c.cashAfterBills).toBe(base.cashAfterBills - 100_000);
+    expect(c.cashPath!.balances[0]).toBe(base.cashPath!.balances[0]! - 100_000);
+    const noPath = ctxOf(R({ pots: [pot(100_000)] }));
+    expect(noPath.cashAvailable).toBe(ctxOf(R()).cashAvailable - 100_000);
+  });
+
+  it('D-101 MonthColumn.outgoings includes setAside', () => {
+    const a = run(BL({ pots: [WAIT(10_000)] }), buyCash(100_000));
+    expect(a.monthTable.now).toEqual({
+      income: 600_000,
+      living: 300_000,
+      debtPayments: 110_000,
+      savingInvesting: 65_000,
+      setAside: 10_000,
+      thisPurchase: 0,
+      outgoings: 485_000,
+      left: 115_000,
+    });
+    expect(a.monthTable.now.left).toBe(a.left);
+    expect(a.monthTable.after.setAside).toBe(10_000);
+  });
+
+  it('D-101 a pot never makes leftBefore larger', () => {
+    const base = ctxOf(R()).leftBefore;
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 2_000_000 }),
+        fc.integer({ min: 1, max: 5_000_000 }),
+        fc.integer({ min: 0, max: 5_000_000 }),
+        fc.constantFrom('wait' as const, 'pot' as const),
+        (monthly, target, saved, kind) => {
+          const pot: PotInput = {
+            id: 'p', kind, target: mu(target), monthlyAmount: kind === 'wait' ? mu(monthly) : null, readyBy: '2027-03-31', saved: mu(saved),
+          };
+          return ctxOf(R({ pots: [pot] })).leftBefore <= base;
+        }
+      )
+    );
   });
 });

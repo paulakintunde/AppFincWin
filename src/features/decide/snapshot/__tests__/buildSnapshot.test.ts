@@ -160,6 +160,7 @@ describe('a four-month household', () => {
       futureChanges: [],
       investmentBalance: 0,
       scheduledOutflows: [],
+      pots: [],
     };
     expect(r.snapshot).toEqual(expected);
     expect(r.meta).toMatchObject({ fullMonths: 4, expenseLinesThisMonth: 0, debtCount: 0, accountCount: 2, unconvertedRows: 0 });

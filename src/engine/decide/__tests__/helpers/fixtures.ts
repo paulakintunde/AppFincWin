@@ -130,6 +130,7 @@ export function snapshotOf(over: Partial<DecideSnapshot> = {}): DecideSnapshot {
     debts: [],
     monthlySaving: minorUnits(0),
     monthlyInvesting: minorUnits(0),
+    pots: [],
     scope: { kind: 'personal' },
     householdSpending: null,
     limits: {
