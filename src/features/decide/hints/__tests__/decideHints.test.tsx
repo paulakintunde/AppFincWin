@@ -6,7 +6,7 @@ import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import * as motion from '@/theme/motion';
 import { STORAGE_PREFIX } from '@/services/storage/wipe';
 import { FoldHint } from '../../ui/FoldHint';
-import { decideHintsKey, loadFoldHintSeen, markFoldHintSeen } from '../decideHints';
+import { decideHintsKey, loadFoldHintSeen, loadHomeBasisSeen, markFoldHintSeen, markHomeBasisSeen } from '../decideHints';
 import { useFoldHint } from '../useFoldHint';
 
 jest.setTimeout(30000);
@@ -51,6 +51,47 @@ describe('decideHints store', () => {
   it('D-75 a write failure is swallowed', async () => {
     jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('write'));
     await expect(markFoldHintSeen(USER)).resolves.toBeUndefined();
+  });
+});
+
+describe('homeBasisSeen', () => {
+  it('D-95 homeBasisSeen shares the hints record without clearing the fold hint', async () => {
+    expect(await loadHomeBasisSeen(USER)).toBe(false);
+    await markFoldHintSeen(USER);
+    await markHomeBasisSeen(USER);
+    expect(await loadFoldHintSeen(USER)).toBe(true);
+    expect(await loadHomeBasisSeen(USER)).toBe(true);
+    expect(JSON.parse((await AsyncStorage.getItem(decideHintsKey(USER))) as string)).toEqual({ v: 1, foldHintSeen: true, homeBasisSeen: true });
+    // the other order, and one flag alone, keep the v1 shape
+    await AsyncStorage.clear();
+    await markHomeBasisSeen(USER);
+    expect(await AsyncStorage.getItem(decideHintsKey(USER))).toBe('{"v":1,"homeBasisSeen":true}');
+    expect(await loadFoldHintSeen(USER)).toBe(false);
+    await markFoldHintSeen(USER);
+    expect(await loadHomeBasisSeen(USER)).toBe(true);
+    expect(await loadFoldHintSeen(USER)).toBe(true);
+    // another user is untouched
+    expect(await loadHomeBasisSeen('user-2')).toBe(false);
+  });
+
+  it('D-95 a failed read counts as not seen', async () => {
+    expect(await loadHomeBasisSeen(USER)).toBe(false);
+    await AsyncStorage.setItem(decideHintsKey(USER), 'not json');
+    expect(await loadHomeBasisSeen(USER)).toBe(false);
+    await AsyncStorage.setItem(decideHintsKey(USER), JSON.stringify({ v: 2, homeBasisSeen: true }));
+    expect(await loadHomeBasisSeen(USER)).toBe(false);
+    await AsyncStorage.setItem(decideHintsKey(USER), JSON.stringify({ v: 1, homeBasisSeen: true }));
+    expect(await loadHomeBasisSeen(USER)).toBe(true);
+    jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('read'));
+    expect(await loadHomeBasisSeen(USER)).toBe(false);
+  });
+
+  it('D-95 marking over an unreadable record starts a fresh v1 record, and a write failure is swallowed', async () => {
+    await AsyncStorage.setItem(decideHintsKey(USER), 'not json');
+    await markHomeBasisSeen(USER);
+    expect(await AsyncStorage.getItem(decideHintsKey(USER))).toBe('{"v":1,"homeBasisSeen":true}');
+    jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('write'));
+    await expect(markHomeBasisSeen(USER)).resolves.toBeUndefined();
   });
 });
 
