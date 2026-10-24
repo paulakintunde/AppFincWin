@@ -4,14 +4,14 @@
  * per-pot amounts are bigint and the total is an exact bigint sum.
  *
  * Range: each pot is range-asserted on entry (target 1..10^13, saved and monthlyAmount 0..10^13), so every per-pot
- * amount is at most 10^13. With MAX_POTS = 50 the sum is at most 5 x 10^14, below 2^53, so it converts with a plain
+ * amount is at most 10^13. With MAX_SET_ASIDE_POTS = 500 (the 50 user pots plus Wait goals) the sum is at most 5 x 10^15, below 2^53, so it converts with a plain
  * Number() and needs no range branch.
  */
 import { MAX_ABS_AMOUNT_MINOR, minorUnits, type MinorUnits } from '../money/types';
 import { ceilDivide } from '../payoff/types';
 import { occurrenceDate } from '../recurring/schedule';
 import { isValidLocalDate } from '../time/localDate';
-import { MAX_POTS, SIMULATION_MONTH_CAP } from './constants';
+import { MAX_SET_ASIDE_POTS, SIMULATION_MONTH_CAP } from './constants';
 import type { PotInput, PotLine } from './types';
 
 const FN = 'potSetAside';
@@ -73,7 +73,7 @@ export function totalSetAside(
   pots: readonly PotInput[],
   asOf: string
 ): { readonly total: MinorUnits; readonly saved: bigint; readonly lines: readonly PotLine[] } {
-  if (pots.length > MAX_POTS) throw new RangeError(`totalSetAside: ${pots.length} pots is over the limit of ${MAX_POTS}`);
+  if (pots.length > MAX_SET_ASIDE_POTS) throw new RangeError(`totalSetAside: ${pots.length} pots is over the limit of ${MAX_SET_ASIDE_POTS}`);
   const lines = pots.map((p) => potSetAside(p, asOf));
   let total = 0n;
   for (const l of lines) total += BigInt(l.monthly);

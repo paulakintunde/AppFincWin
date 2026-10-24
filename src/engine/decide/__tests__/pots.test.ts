@@ -1,5 +1,5 @@
 import { minorUnits as mu } from '../../money/types';
-import { MAX_POTS, SIMULATION_MONTH_CAP } from '../constants';
+import { MAX_POTS, MAX_SET_ASIDE_POTS, SIMULATION_MONTH_CAP } from '../constants';
 import { potSetAside, totalSetAside } from '../pots';
 import type { PotInput } from '../types';
 
@@ -115,17 +115,18 @@ describe('totalSetAside', () => {
     expect(r.saved).toBe(100n);
   });
 
-  it('D-101 50 pots of 10^13 stay exact and inside the safe range', () => {
-    const big = Array.from({ length: MAX_POTS }, (_, i) =>
+  it('D-101 500 pots of 10^13 stay exact and inside the safe range', () => {
+    expect(MAX_SET_ASIDE_POTS).toBeGreaterThan(MAX_POTS); // the 50 user pots plus Wait goals never reach the engine bound
+    const big = Array.from({ length: MAX_SET_ASIDE_POTS }, (_, i) =>
       pot({ id: `p${i}`, kind: 'wait', target: mu(10_000_000_000_000), monthlyAmount: mu(10_000_000_000_000) })
     );
     const r = totalSetAside(big, ASOF);
-    expect(r.total).toBe(MAX_POTS * 10_000_000_000_000);
+    expect(r.total).toBe(MAX_SET_ASIDE_POTS * 10_000_000_000_000);
     expect(Number.isSafeInteger(r.total)).toBe(true);
   });
 
-  it('D-101 more than MAX_POTS is refused', () => {
-    const many = Array.from({ length: MAX_POTS + 1 }, (_, i) => pot({ id: `p${i}` }));
-    expect(() => totalSetAside(many, ASOF)).toThrow(/over the limit of 50/);
+  it('D-101 more than MAX_SET_ASIDE_POTS is refused', () => {
+    const many = Array.from({ length: MAX_SET_ASIDE_POTS + 1 }, (_, i) => pot({ id: `p${i}` }));
+    expect(() => totalSetAside(many, ASOF)).toThrow(/over the limit of 500/);
   });
 });
