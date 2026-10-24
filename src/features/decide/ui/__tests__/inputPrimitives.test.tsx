@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler/jestSetup';
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -237,5 +237,42 @@ describe('MoneyInput', () => {
     await fireEvent(input, 'blur');
     expect(onChange).toHaveBeenLastCalledWith(null);
     expect(getByText(/amount/i)).toBeTruthy();
+  });
+});
+
+describe('dark rate and money fields', () => {
+  const SURFACE = '#FFFFFF';
+  const flat = (node: { props: { style?: unknown } }) => StyleSheet.flatten(node.props.style as never) as Record<string, unknown>;
+
+  it('D-95 dark rate and money fields use the ink-card tokens and a surface focus ring', async () => {
+    const rate = await wrap(<RateInput tone="dark" value="4" onChange={jest.fn()} label="Rate" hint="a year" accessibilityLabel="APR" />);
+    const input = rate.getByLabelText('APR');
+    expect(flat(input).color).toBe(SURFACE);
+    expect(rate.getByText('a year')).toBeTruthy();
+    expect(flat(rate.getByText('a year')).color).toBe('#A8A79C');
+    const ring = (n: ReturnType<typeof rate.getByLabelText>) => flat(n.parent as never);
+    expect(ring(input).borderColor).toBe('transparent');
+    await fireEvent(input, 'focus');
+    expect(ring(input).borderColor).toBe(SURFACE);
+    expect(ring(input).borderWidth).toBe(2);
+    await fireEvent(input, 'blur');
+    expect(ring(input).borderColor).toBe('transparent');
+
+    const money = await wrap(<MoneyInput tone="dark" value={null} currency="USD" onChange={jest.fn()} label="Fees" accessibilityLabel="Fees" placeholder="0" />);
+    const field = money.getByLabelText('Fees');
+    expect(flat(field).color).toBe(SURFACE);
+    expect(field.props.placeholderTextColor).toBe('#BFBEB4');
+    await fireEvent(field, 'focus');
+    expect(flat(field.parent as never).borderColor).toBe(SURFACE);
+  });
+
+  it('D-95 the dark out-of-range line is surface text', async () => {
+    const rate = await wrap(<RateInput tone="dark" value="" onChange={jest.fn()} label="Rate" accessibilityLabel="APR" max="100" rangeText="0 to 100%" />);
+    await fireEvent.changeText(rate.getByLabelText('APR'), '101');
+    expect(flat(rate.getByText('0 to 100%')).color).toBe(SURFACE);
+    const money = await wrap(<MoneyInput tone="dark" value={null} currency="USD" onChange={jest.fn()} label="Fees" accessibilityLabel="Fees" />);
+    await fireEvent.changeText(money.getByLabelText('Fees'), 'abc');
+    await fireEvent(money.getByLabelText('Fees'), 'blur');
+    expect(flat(money.getByText(/amount/i)).color).toBe(SURFACE);
   });
 });

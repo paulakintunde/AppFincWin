@@ -7,6 +7,7 @@ import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
+import { SURFACE_ON_INK_OPACITY } from '@/ui/Chip';
 import { hapticSelection } from '@/ui/haptics';
 import { RadioDot } from '@/ui/RadioDot';
 import { useShouldStack } from './textFit';
@@ -29,7 +30,7 @@ export function SegmentedToggle({ options, value, onChange, accessibilityLabel, 
   const { colors, pairing } = useTheme();
   const selectedBg = dark ? colors.surface : colors.ink;
   const selectedText = dark ? colors.ink : colors.surface;
-  const idleText = dark ? colors.inkSoft1 : colors.inkDim;
+  const idleText = dark ? colors.inkSoft2 : colors.inkDim; // R17.3: unselected inkSoft2 on the ink card
   // Rule S by label length: an equal segment at 402 holds about 16 characters, so "Average · $7,156.66" stacks.
   const stacked = useShouldStack(Math.max(...options.map((option) => option.label.length)));
   const readOnly = useReadOnlyScope(); // a decided check shows the choice but cannot change it
@@ -64,7 +65,14 @@ export function SegmentedToggle({ options, value, onChange, accessibilityLabel, 
     );
   }
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel} style={[styles.row, { backgroundColor: dark ? colors.inkDim : colors.fill1 }]}>
+    <View accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel} style={[styles.row, { backgroundColor: dark ? 'transparent' : colors.fill1 }]}>
+      {dark ? (
+        <View
+          testID="dark-track"
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
+        />
+      ) : null}
       {options.map((option) => {
         const selected = option.key === value;
         return (

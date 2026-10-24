@@ -1,8 +1,9 @@
 import React from 'react';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { CustomValueChips } from '../CustomValueChips';
+import { SegmentedToggle } from '../SegmentedToggle';
 import { SliderWithField } from '../SliderWithField';
 import { RateInput } from '../RateInput';
 
@@ -294,5 +295,39 @@ describe('RateInput bounds', () => {
     const view = await wrap(<RateInput value="" onChange={onValue} label="Rate" accessibilityLabel="APR" />);
     await fireEvent.changeText(view.getByLabelText('APR'), '1000');
     expect(onValue).toHaveBeenCalledWith('1000');
+  });
+});
+
+describe('CustomValueChips dark tone', () => {
+  const SURFACE = '#FFFFFF';
+  const flat = (node: { props: { style?: unknown } }) => StyleSheet.flatten(node.props.style as never) as Record<string, unknown>;
+
+  function DarkHarness({ initial }: { initial: number | null }) {
+    const [value, setValue] = React.useState<number | null>(initial);
+    return (
+      <CustomValueChips tone="dark" presets={PRESETS} value={value} onChange={setValue} groupLabel="Over how many months" min={1} max={120} rangeText={RANGE} unitWord="months" />
+    );
+  }
+
+  it('D-95 dark chips and toggles use the ink-card tokens', async () => {
+    const view = await wrap(<DarkHarness initial={12} />);
+    expect(flat(view.getByLabelText('12 months')).backgroundColor).toBe(SURFACE);
+    expect(view.getAllByTestId('dark-tint').length).toBe(3); // 6, 24 and Custom
+    expect(view.queryByTestId('accent-tint')).toBeNull();
+    const toggle = await wrap(
+      <SegmentedToggle dark options={[{ key: 'cash', label: 'Cash' }, { key: 'credit', label: 'Credit' }]} value="cash" onChange={jest.fn()} accessibilityLabel="Pay with" />
+    );
+    expect(toggle.getByTestId('dark-track')).toBeTruthy();
+    expect(flat(toggle.getByLabelText('Cash')).backgroundColor).toBe(SURFACE);
+    expect(flat(toggle.getByText('Cash')).color).toBe('#14150F');
+    expect(flat(toggle.getByText('Credit')).color).toBe('#BFBEB4');
+  });
+
+  it('D-95 the dark out-of-range line is surface text', async () => {
+    const view = await wrap(<DarkHarness initial={600} />);
+    expect(flat(view.getByText(RANGE)).color).toBe(SURFACE);
+    await fireEvent.press(view.getByText('600 months'));
+    await fireEvent.changeText(view.getByLabelText(FIELD), '181');
+    expect(flat(view.getByText(RANGE)).color).toBe(SURFACE);
   });
 });

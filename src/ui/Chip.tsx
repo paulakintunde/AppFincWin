@@ -21,12 +21,18 @@ export interface ChipProps {
   pressableRef?: React.Ref<View>;
   /** User text under Decide rule T: wrap to this many lines, then a tail ellipsis. */
   numberOfLines?: number;
+  /** D-95 (R17.13): 'dark' sits on the ink card -- unselected surface at .12 with inkSoft1 text, selected a surface fill with ink text. */
+  tone?: 'light' | 'dark';
 }
 
-export function Chip({ label, selected = false, onPress, accessibilityLabel, pressableRef, numberOfLines }: ChipProps) {
+/** UI-SPEC Color: surface at .12 over the ink card (the same derivation as the card's own controls). */
+export const SURFACE_ON_INK_OPACITY = 0.12;
+
+export function Chip({ label, selected = false, onPress, accessibilityLabel, pressableRef, numberOfLines, tone = 'light' }: ChipProps) {
   const { colors, pairing } = useTheme();
   const readOnly = useReadOnlyScope();
-    const textColor = selected ? colors.accent : colors.ink;
+  const dark = tone === 'dark';
+  const textColor = dark ? (selected ? colors.ink : colors.inkSoft1) : selected ? colors.accent : colors.ink;
 
   return (
     <Pressable
@@ -36,9 +42,16 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, pre
       accessibilityLabel={accessibilityLabel ?? label}
       disabled={readOnly}
       onPress={onPress}
-      style={[styles.chip, { backgroundColor: colors.fill1 }]}
+      style={[styles.chip, { backgroundColor: dark ? (selected ? colors.surface : 'transparent') : colors.fill1 }]}
     >
-      {selected ? (
+      {dark && !selected ? (
+        <View
+          testID="dark-tint"
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
+        />
+      ) : null}
+      {!dark && selected ? (
         <View
           testID="accent-tint"
           pointerEvents="none"

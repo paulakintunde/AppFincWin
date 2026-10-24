@@ -12,6 +12,7 @@ import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { typedRateAbove } from '../snapshot/checkInputs';
 import { TextInput } from '@/ui/TextInput';
 import { Text } from '@/ui/Text';
+import { SURFACE_ON_INK_OPACITY } from '@/ui/Chip';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
@@ -47,12 +48,18 @@ export interface RateInputProps {
   labelAccessory?: React.ReactNode;
   /** 05-101 (D-87, R16.3): the same dashed Amount field as MoneyInput's: no label drawn, dashed line4 while empty, solid line1 on fill6 with a value. */
   amountField?: boolean;
+  /** D-95: 'dark' sits on the ink card -- surface at .12 fill, surface text, inkSoft2 placeholder, inkSoft1 hints, a 2px surface focus ring, the range line in surface text. */
+  tone?: 'light' | 'dark';
 }
 
 const AMOUNT_BORDER = 1.5; // R16.3
+const FOCUS_RING = 2; // D-95
 
-export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur, readOnly = false, max, rangeText, labelAccessory, amountField = false }: RateInputProps) {
+export function RateInput({ value, onChange, label, hint, accessibilityLabel, placeholder, onBlur, readOnly = false, max, rangeText, labelAccessory, amountField = false, tone = 'light' }: RateInputProps) {
   const { colors, pairing } = useTheme();
+  const dark = tone === 'dark' && !amountField;
+  const [focused, setFocused] = useState(false);
+  const labelColor = dark ? colors.inkSoft1 : colors.inkDim;
   const { locale, separators } = useDeviceLocale();
   const decimal = (separators ?? localeSeparators(locale)).decimal;
   const [refused, setRefused] = useState(false);
@@ -61,12 +68,12 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
       {amountField ? null : labelAccessory ? (
         <View style={styles.labelRow}>
           <View style={styles.labelText}>
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
+            <Text style={{ ...textRole(pairing, 'label'), color: labelColor }}>{label}</Text>
           </View>
           {labelAccessory}
         </View>
       ) : (
-        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
+        <Text style={{ ...textRole(pairing, 'label'), color: labelColor }}>{label}</Text>
       )}
       <View
         style={[
@@ -78,9 +85,17 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
                 borderColor: value === '' ? colors.line4 : colors.line1,
                 backgroundColor: value === '' ? 'transparent' : colors.fill6,
               }
-            : { backgroundColor: colors.fill1 },
+            : dark
+              ? { borderWidth: FOCUS_RING, borderColor: focused ? colors.surface : 'transparent', overflow: 'hidden' }
+              : { backgroundColor: colors.fill1 },
         ]}
       >
+        {dark ? (
+          <View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
+          />
+        ) : null}
         <TextInput
           value={decimal === '.' ? value : value.replace('.', decimal)}
           onChangeText={(typed) => {
@@ -94,7 +109,11 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
             setRefused(false);
             onChange(text);
           }}
-          onBlur={onBlur}
+          onFocus={() => setFocused(true)}
+          onBlur={() => {
+            setFocused(false);
+            onBlur?.();
+          }}
           // WR-C04: Done commits the rate the same way leaving the field does
           onSubmitEditing={onBlur}
           returnKeyType="done"
@@ -102,13 +121,13 @@ export function RateInput({ value, onChange, label, hint, accessibilityLabel, pl
           accessibilityLabel={accessibilityLabel}
           placeholder={placeholder}
           editable={!readOnly}
-          placeholderTextColor={colors.inkFaint}
-          style={[styles.input, { ...textRole(pairing, 'body'), color: colors.ink }]}
+          placeholderTextColor={dark ? colors.inkSoft2 : colors.inkFaint}
+          style={[styles.input, { ...textRole(pairing, 'body'), color: dark ? colors.surface : colors.ink }]}
         />
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>%</Text>
+        <Text style={{ ...textRole(pairing, 'body'), color: labelColor }}>%</Text>
       </View>
-      {refused && rangeText ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{rangeText}</Text> : null}
-      {hint ? <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{hint}</Text> : null}
+      {refused && rangeText ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: dark ? colors.surface : colors.warn1 }}>{rangeText}</Text> : null}
+      {hint ? <Text style={{ ...textRole(pairing, 'label'), color: labelColor }}>{hint}</Text> : null}
     </View>
   );
 }

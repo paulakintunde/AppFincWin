@@ -10,18 +10,19 @@
 import React, { useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { Chip } from '@/ui/Chip';
+import { Chip, SURFACE_ON_INK_OPACITY } from '@/ui/Chip';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { ReadOnlyScope, useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { DURATION, useReduceMotion } from '@/theme/motion';
-import { space } from '@/theme/layout';
+import { radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { acceptsMonthsKeystroke, parseWholeInRange, presetFor } from '../snapshot/customValues';
 
 const FIELD_WIDTH = 96;
+const FOCUS_RING = 2; // D-95: a surface ring, not the accent (every accent fails 3:1 on ink)
 
 export interface CustomValueFieldProps {
   value: number | null;
@@ -35,16 +36,20 @@ export interface CustomValueFieldProps {
   /** Blur or Done. */
   onClose?: () => void;
   autoFocus?: boolean;
+  /** D-95: 'dark' sits on the ink card (surface at .12 fill, surface text, a 2px surface focus ring, the range line in surface text). */
+  tone?: 'light' | 'dark';
 }
 
 const textOf = (value: number | null): string => (value === null ? '' : String(value));
 
-export function CustomValueField({ value, min, max, rangeText, unitWord, groupLabel, onChange, onClose, autoFocus = false }: CustomValueFieldProps) {
+export function CustomValueField({ value, min, max, rangeText, unitWord, groupLabel, onChange, onClose, autoFocus = false, tone = 'light' }: CustomValueFieldProps) {
+  const dark = tone === 'dark';
   const { colors, pairing } = useTheme();
   const t = useT();
   const reduced = useReduceMotion();
   const [draft, setDraft] = useState(() => textOf(value));
   const [refused, setRefused] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [seen, setSeen] = useState(value);
   if (seen !== value) {
     setSeen(value);
@@ -88,24 +93,34 @@ export function CustomValueField({ value, min, max, rangeText, unitWord, groupLa
   const body = (
     <View style={styles.field}>
       <View style={styles.entry}>
-        <View style={[styles.box, { backgroundColor: colors.fill6 }]}>
+        <View style={[styles.box, dark ? { borderWidth: FOCUS_RING, borderColor: focused ? colors.surface : 'transparent' } : { backgroundColor: colors.fill6 }]}>
+          {dark ? (
+            <View
+              pointerEvents="none"
+              style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
+            />
+          ) : null}
           <TextInput
             value={draft}
             onChangeText={onText}
-            onBlur={close}
+            onFocus={() => setFocused(true)}
+            onBlur={() => {
+              setFocused(false);
+              close();
+            }}
             onSubmitEditing={close}
             returnKeyType="done"
             inputMode="numeric"
             autoFocus={autoFocus}
             accessibilityLabel={t('decide.custom.fieldA11y', { group: groupLabel, unit: unitWord })}
             accessibilityHint={rangeText}
-            placeholderTextColor={colors.inkFaint}
-            style={[styles.input, { ...textRole(pairing, 'body'), color: colors.ink }]}
+            placeholderTextColor={dark ? colors.inkSoft2 : colors.inkFaint}
+            style={[styles.input, { ...textRole(pairing, 'body'), color: dark ? colors.surface : colors.ink }]}
           />
         </View>
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim, flexShrink: 1 }}>{unitWord}</Text>
+        <Text style={{ ...textRole(pairing, 'body'), color: dark ? colors.inkSoft1 : colors.inkDim, flexShrink: 1 }}>{unitWord}</Text>
       </View>
-      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: warn ? colors.warn1 : colors.inkFaint }}>{rangeText}</Text>
+      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: dark ? (warn ? colors.surface : colors.inkSoft1) : warn ? colors.warn1 : colors.inkFaint }}>{rangeText}</Text>
     </View>
   );
   return reduced ? body : <Animated.View entering={FadeIn.duration(DURATION.entrance)}>{body}</Animated.View>;
@@ -125,6 +140,8 @@ export interface CustomValueChipsProps {
   /** The Custom chip's accessibility label; "Custom, {value}" by default. */
   chipA11y?: (value: string) => string;
   readOnly?: boolean;
+  /** D-95: 'dark' sits on the ink card. */
+  tone?: 'light' | 'dark';
 }
 
 export function CustomValueChips({
@@ -139,7 +156,9 @@ export function CustomValueChips({
   formatPreset,
   chipA11y,
   readOnly: readOnlyProp = false,
+  tone = 'light',
 }: CustomValueChipsProps) {
+  const dark = tone === 'dark';
   const outer = useReadOnlyScope();
   const readOnly = readOnlyProp || outer; // inside a decided check's region the chips stay read-only
   const { colors, pairing } = useTheme();
@@ -158,9 +177,9 @@ export function CustomValueChips({
       <View>
         <View accessibilityRole="radiogroup" accessibilityLabel={groupLabel} style={styles.row}>
           {presets.map((p) => (
-            <Chip key={p} label={format(p)} selected={matched === p} onPress={() => onChange(p)} />
+            <Chip key={p} tone={tone} label={format(p)} selected={matched === p} onPress={() => onChange(p)} />
           ))}
-          <Chip label={customLabel} accessibilityLabel={customA11y} selected={custom} onPress={() => setOpen(true)} />
+          <Chip tone={tone} label={customLabel} accessibilityLabel={customA11y} selected={custom} onPress={() => setOpen(true)} />
         </View>
         {showField ? (
           <CustomValueField
@@ -173,9 +192,10 @@ export function CustomValueChips({
             onChange={onChange}
             onClose={() => setOpen(false)}
             autoFocus
+            tone={tone}
           />
         ) : storedAbove ? (
-          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{rangeText}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: dark ? colors.surface : colors.warn1 }}>{rangeText}</Text>
         ) : null}
       </View>
     </ReadOnlyScope.Provider>
@@ -186,6 +206,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
   field: { gap: space.gapSm / 2, paddingTop: space.gapSm },
   entry: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
-  box: { minWidth: FIELD_WIDTH, minHeight: space.touchMin, borderRadius: space.cardPad, paddingHorizontal: space.cardPad, justifyContent: 'center' },
+  box: { minWidth: FIELD_WIDTH, minHeight: space.touchMin, borderRadius: space.cardPad, overflow: 'hidden', paddingHorizontal: space.cardPad, justifyContent: 'center' },
   input: { minHeight: space.touchMin, padding: 0 },
 });

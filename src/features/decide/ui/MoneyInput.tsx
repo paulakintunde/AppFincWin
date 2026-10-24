@@ -14,6 +14,7 @@ import { StyleSheet, View } from 'react-native';
 import { TextInput } from '@/ui/TextInput';
 import type { TextInput as TextInputInstance } from '@/ui/TextInput';
 import { Text } from '@/ui/Text';
+import { SURFACE_ON_INK_OPACITY } from '@/ui/Chip';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
@@ -42,13 +43,19 @@ export interface MoneyInputProps {
   amountField?: { width?: number };
   /** 05-101: the input instance, so a row press can focus it. */
   inputRef?: React.Ref<TextInputInstance>;
+  /** D-95: 'dark' sits on the ink card -- surface at .12 fill, surface text, inkSoft2 placeholder, inkSoft1 labels, a 2px surface focus ring, the parser error in surface text (never danger on ink). */
+  tone?: 'light' | 'dark';
 }
 
 const COMPACT_MIN_WIDTH = 128;
 const AMOUNT_BORDER = 1.5; // R16.3
+const FOCUS_RING = 2; // D-95
 
-export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef }: MoneyInputProps) {
+export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef, tone = 'light' }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
+  const dark = tone === 'dark' && !amountField;
+  const [focused, setFocused] = useState(false);
+  const labelColor = dark ? colors.inkSoft1 : colors.inkDim;
   const parser = useAmountParser();
   const speaker = useMoneyFormatter(false);
   const [text, setText] = useState(() => (value === null ? '' : parser.toInputText(value, currency)));
@@ -126,12 +133,12 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
       {compact || amountField ? null : labelAccessory ? (
         <View style={styles.labelRow}>
           <View style={styles.labelText}>
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
+            <Text style={{ ...textRole(pairing, 'label'), color: labelColor }}>{label}</Text>
           </View>
           {labelAccessory}
         </View>
       ) : (
-        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{label}</Text>
+        <Text style={{ ...textRole(pairing, 'label'), color: labelColor }}>{label}</Text>
       )}
       <View
         style={[
@@ -144,15 +151,27 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
                 borderColor: value === null ? colors.line4 : colors.line1,
                 backgroundColor: value === null ? 'transparent' : colors.fill6,
               }
-            : { backgroundColor: colors.fill1 },
+            : dark
+              ? { borderWidth: FOCUS_RING, borderColor: focused ? colors.surface : 'transparent', overflow: 'hidden' }
+              : { backgroundColor: colors.fill1 },
         ]}
       >
-        {compact ? <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{currency}</Text> : null}
+        {dark ? (
+          <View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
+          />
+        ) : null}
+        {compact ? <Text style={{ ...textRole(pairing, 'body'), color: labelColor }}>{currency}</Text> : null}
         <TextInput
           ref={inputRef}
           value={text}
           onChangeText={onText}
-          onBlur={handleBlur}
+          onFocus={() => setFocused(true)}
+          onBlur={() => {
+            setFocused(false);
+            handleBlur();
+          }}
           onSubmitEditing={commit}
           returnKeyType="done"
           inputMode="decimal"
@@ -160,11 +179,11 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
           accessibilityValue={spoken === undefined ? undefined : { text: spoken }}
           placeholder={placeholder}
           editable={!readOnly}
-          placeholderTextColor={colors.inkFaint}
-          style={[styles.input, compact && styles.compactInput, { ...textRole(pairing, large || compact ? 'body' : 'label'), color: colors.ink }]}
+          placeholderTextColor={dark ? colors.inkSoft2 : colors.inkFaint}
+          style={[styles.input, compact && styles.compactInput, { ...textRole(pairing, large || compact ? 'body' : 'label'), color: dark ? colors.surface : colors.ink }]}
         />
       </View>
-      {error ? <Text style={{ ...textRole(pairing, 'label'), color: colors.danger }}>{error}</Text> : null}
+      {error ? <Text style={{ ...textRole(pairing, 'label'), color: dark ? colors.surface : colors.danger }}>{error}</Text> : null}
     </View>
   );
 }
