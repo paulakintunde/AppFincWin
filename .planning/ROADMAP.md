@@ -830,7 +830,7 @@ Plans:
 - [x] 05-136-PLAN.md — Free / overspent wording, part 1: verdict headline, key figures, What breaks, quick result, month table, and the month-basis strings (D-106, D-107, D-105 kept)
 
 **Wave 41** *(blocked on Wave 40 completion)*
-- [ ] 05-137-PLAN.md — Free / overspent wording, part 2: alternatives, Step 5, expected-income row, worst-month line, open-check line (D-106)
+- [x] 05-137-PLAN.md — Free / overspent wording, part 2: alternatives, Step 5, expected-income row, worst-month line, open-check line (D-106)
 - [ ] 05-142-PLAN.md — Engine E10: a first-class 'month' basis in prepareContext, parity suite against worst, basis wording for all three bases (D-107)
 
 **Wave 42** *(blocked on Wave 41 completion)*
