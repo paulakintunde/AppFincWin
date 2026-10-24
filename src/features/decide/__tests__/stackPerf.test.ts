@@ -50,9 +50,8 @@ describe('stacking performance', () => {
     const elapsed = Date.now() - start;
     console.log(`stackPerf: 10 chips with 9 stacked checks each took ${elapsed} ms (A14 target < 100 ms, not gated)`);
     expect(chips).toHaveLength(10);
-    // Coverage instrumentation across parallel workers slows this many times over (18–22 ms alone, over 1 s under
-    // `test:coverage --maxWorkers=4`), so the bound widens only when coverage is being collected.
-    const instrumented = (globalThis as { __coverage__?: unknown }).__coverage__ !== undefined;
-    expect(elapsed).toBeLessThan(instrumented ? 5000 : 1000);
+    // A regression guard, not the A14 target: 18–22 ms alone, but past 1 s on a loaded machine running the full suite in
+    // parallel (with or without coverage), so the bound is wide enough never to flake and still catches a pathological slowdown.
+    expect(elapsed).toBeLessThan(5000);
   });
 });
