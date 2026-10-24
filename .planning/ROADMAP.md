@@ -777,7 +777,7 @@ Plans:
 - [x] 05-109-PLAN.md — Retire R16-replaced copy, drop the next_month alias, extend the copy and text-fit guards (D-76, DCU-09)
 
 **Wave 27** *(Decide home redesign; blocked on Wave 26 completion)*
-- [ ] 05-110-PLAN.md — R17 copy, the tightestFigures ⓘ and the homeBasisSeen flag (D-95..D-99)
+- [x] 05-110-PLAN.md — R17 copy, the tightestFigures ⓘ and the homeBasisSeen flag (D-95..D-99)
 - [ ] 05-111-PLAN.md — Pure home models: card state by engine basis, problems list and notice row counts (D-96, D-97)
 - [ ] 05-112-PLAN.md — Dark variants: quick check, toggle and chips for the ink card (D-95)
 - [ ] 05-113-PLAN.md — Pushed Open checks, Changes coming up and Lines screens (D-99)
