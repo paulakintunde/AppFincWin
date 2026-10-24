@@ -10,10 +10,18 @@ export function decideHintsKey(userId: string): string {
   return `${STORAGE_PREFIX}decide-hints:${userId}`;
 }
 
+/** D-107: the Judge-on choice, a device view that drives the home card and every check. */
+export type JudgeOn = 'month' | 'worst' | 'average';
+
+function isJudgeOn(v: unknown): v is JudgeOn {
+  return v === 'month' || v === 'worst' || v === 'average';
+}
+
 interface HintsRecord {
   v: 1;
   foldHintSeen?: true;
   homeBasisSeen?: true;
+  judgeOn?: JudgeOn;
 }
 
 /** The stored record, or an empty v1 record when it is missing, unreadable or another version. Never throws. */
@@ -21,11 +29,12 @@ async function readRecord(userId: string): Promise<HintsRecord> {
   try {
     const raw = await AsyncStorage.getItem(decideHintsKey(userId));
     if (!raw) return { v: 1 };
-    const parsed = JSON.parse(raw) as { v?: unknown; foldHintSeen?: unknown; homeBasisSeen?: unknown } | null;
+    const parsed = JSON.parse(raw) as { v?: unknown; foldHintSeen?: unknown; homeBasisSeen?: unknown; judgeOn?: unknown } | null;
     if (parsed?.v !== 1) return { v: 1 };
     const record: HintsRecord = { v: 1 };
     if (parsed.foldHintSeen === true) record.foldHintSeen = true;
     if (parsed.homeBasisSeen === true) record.homeBasisSeen = true;
+    if (isJudgeOn(parsed.judgeOn)) record.judgeOn = parsed.judgeOn;
     return record;
   } catch {
     return { v: 1 };
@@ -57,4 +66,19 @@ export async function loadHomeBasisSeen(userId: string): Promise<boolean> {
 
 export async function markHomeBasisSeen(userId: string): Promise<void> {
   await markFlag(userId, 'homeBasisSeen');
+}
+
+/** D-107: the stored Judge-on choice, or null when none is stored or it cannot be read. Never throws. */
+export async function loadJudgeOn(userId: string): Promise<JudgeOn | null> {
+  return (await readRecord(userId)).judgeOn ?? null;
+}
+
+export async function saveJudgeOn(userId: string, value: JudgeOn): Promise<void> {
+  try {
+    const record = await readRecord(userId);
+    record.judgeOn = value;
+    await AsyncStorage.setItem(decideHintsKey(userId), JSON.stringify(record));
+  } catch {
+    // A preference that cannot be saved still holds for this session.
+  }
 }
