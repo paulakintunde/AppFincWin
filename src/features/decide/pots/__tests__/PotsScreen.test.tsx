@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -189,6 +190,9 @@ describe('PotsScreen', () => {
     await renderScreen();
     await fireEvent.press(screen.getByLabelText('More for Car service'));
     await fireEvent.press(screen.getByText('Delete'));
+    expect(mockRemove).not.toHaveBeenCalled(); // D-105: the confirm comes first
+    expect(screen.getByText('Delete Car service?')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Delete'));
     expect(mockRemove).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }));
     // one undo step: the toast carries the step id the mutation recorded; Undo replays it, which restores the row
     expect(mockToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.pots.toast.deleted', params: { name: 'Car service' } }, stepId: 'step-del' });
@@ -199,7 +203,39 @@ describe('PotsScreen', () => {
     await renderScreen();
     expect(mockSwipe.props.enabled).toBe(true);
     await act(async () => mockSwipe.props.onSwipeableOpen('left'));
+    expect(mockRemove).not.toHaveBeenCalled();
+    expect(screen.getByText('Delete Car service?')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Delete'));
     expect(mockRemove).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }));
+  });
+
+  it('D-105 cancelling the delete confirm keeps the pot and writes nothing', async () => {
+    mockGoals = [pot('a', { name: 'Car service' })];
+    await renderScreen();
+    await fireEvent.press(screen.getByLabelText('More for Car service'));
+    await fireEvent.press(screen.getByText('Delete'));
+    await fireEvent.press(screen.getByLabelText('Cancel'));
+    expect(mockRemove).not.toHaveBeenCalled();
+    expect(mockToast).not.toHaveBeenCalled();
+    expect(screen.queryByText('Delete Car service?')).toBeNull();
+  });
+
+  it('D-105 the screen title is not repeated as a body heading, and the summary sits a gap below the description', async () => {
+    mockGoals = [pot('a', { name: 'Car service' })];
+    await renderScreen();
+    expect(screen.queryByTestId('pots-heading')).toBeNull();
+    expect(screen.getAllByText('Pots')).toHaveLength(1); // the header title only
+    const gapOf = (text: string | RegExp) => {
+      let node = screen.getByText(text).parent;
+      while (node) {
+        const flat = StyleSheet.flatten(node.props?.style);
+        if (flat && flat.gap !== undefined) return flat.gap;
+        node = node.parent;
+      }
+      return undefined;
+    };
+    expect(gapOf('$120 a month across 1 pot')).toBeGreaterThan(0);
+    expect(gapOf('$120 a month across 1 pot')).toBe(gapOf(/^Money kept for a cost/));
   });
 
   it('D-101 loading shows three skeleton bars, a busy label and no add link', async () => {

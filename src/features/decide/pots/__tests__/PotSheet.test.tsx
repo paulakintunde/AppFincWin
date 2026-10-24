@@ -1,5 +1,6 @@
 import React from 'react';
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { wrap } from '../../check/steps/__tests__/helpers/stepProps';
 import { goal } from '../../past/__tests__/helpers/pastFixtures';
@@ -10,7 +11,6 @@ jest.setTimeout(30000);
 const mockAdd = jest.fn(() => ({ id: 'new', stepId: 's-add' }));
 const mockEdit = jest.fn(() => 's-edit');
 const mockToast = jest.fn();
-let mockPicker: ((e: { type: string }, d?: Date) => void) | undefined;
 
 jest.mock('@/data/mutations/decidePots', () => ({
   useAddPot: () => ({ add: (...a: unknown[]) => (mockAdd as (...x: unknown[]) => unknown)(...a) }),
@@ -29,20 +29,11 @@ jest.mock('@/features/record/useRecordContext', () => ({
 }));
 jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockToast(...a) }));
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn(), hapticSuccess: jest.fn(), hapticMedium: jest.fn() }));
-jest.mock('@react-native-community/datetimepicker', () => ({
-  __esModule: true,
-  default: (props: { onChange: (e: { type: string }, d?: Date) => void }) => {
-    mockPicker = props.onChange;
-    return null;
-  },
-}));
-
 beforeEach(() => {
   jest.clearAllMocks();
-  mockPicker = undefined;
 });
 
-const noon = (y: number, m: number, d: number) => new Date(y, m - 1, d, 12, 0, 0);
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function pot(over: Partial<SavingsGoalRow> = {}): SavingsGoalRow {
   return goal('', { id: 'p1', check_id: null, kind: 'pot', name: 'Car service', target: 60_000, monthly_amount: null, ready_by: '2027-03-31', ...over });
@@ -54,9 +45,14 @@ async function typeMoney(label: string, text: string) {
   await fireEvent(field, 'blur');
 }
 
-async function pickMonth(y: number, m: number) {
+// D-105 (R18.2): By is a month list, not a calendar.
+const monthText = (y: number, m: number) => `${MONTHS[m - 1]} ${y}`;
+async function openBy() {
   await fireEvent.press(screen.getByText('By'));
-  await act(async () => mockPicker!({ type: 'set' }, noon(y, m, 9)));
+}
+async function pickMonth(y: number, m: number) {
+  await openBy();
+  await fireEvent.press(screen.getAllByText(monthText(y, m)).at(-1)!);
 }
 
 describe('PotSheet', () => {
@@ -87,7 +83,7 @@ describe('PotSheet', () => {
       ownerId: 'u1',
       pot: { name: 'Car service', currency: 'USD', target: 60_000, ready_by: '2028-02-29', opening_saved: 0 },
     });
-    expect(mockToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.pots.toast.saved' }, stepId: 's-add' });
+    expect(mockToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.pots.toast.saved', params: { undoLabel: 'potAdded', name: 'Car service' } }, stepId: 's-add' });
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -101,13 +97,51 @@ describe('PotSheet', () => {
     expect(screen.getByTestId('pot-preview').props.children).toBe('Already at the target.');
   });
 
-  it('D-101 a month beyond 50 years shows the range line and blocks Save', async () => {
+  it('D-105 By is a month list that starts this month and ends 50 years out, with no calendar', async () => {
     await wrap(<PotSheet visible pot={null} onClose={jest.fn()} />);
-    await fireEvent.changeText(screen.getByLabelText('Name'), 'Far');
-    await typeMoney('Target', '600');
-    await pickMonth(2080, 1);
-    expect(screen.getByText('Out of range: within 50 years')).toBeTruthy();
-    expect(screen.getByLabelText('Save pot').props.accessibilityState?.disabled).toBe(true);
+    await openBy();
+    expect(screen.queryByTestId('date-picker')).toBeNull();
+    expect(screen.getAllByText('Oct 2026').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Sep 2026')).toBeNull();
+    expect(screen.getAllByText('Oct 2076').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Nov 2076')).toBeNull();
+  });
+
+  it('D-105 By starts empty and shows the chosen month after a pick', async () => {
+    await wrap(<PotSheet visible pot={null} onClose={jest.fn()} />);
+    expect(screen.getByText('—')).toBeTruthy();
+    await pickMonth(2027, 3);
+    expect(screen.getByText('Mar 2027')).toBeTruthy();
+    expect(screen.queryByText('Sep 2026')).toBeNull(); // the list closed on the pick
+  });
+
+  it('D-105 an existing pot keeps its own past month on the list', async () => {
+    await wrap(<PotSheet visible pot={pot({ ready_by: '2026-06-30' })} onClose={jest.fn()} />);
+    await openBy();
+    expect(screen.getAllByText('Jun 2026').length).toBeGreaterThan(0);
+    expect(screen.queryByText('May 2026')).toBeNull();
+  });
+
+  it('D-105 Target and Already saved match the Name field: body type, card padding, and the home currency symbol', async () => {
+    await wrap(<PotSheet visible pot={null} onClose={jest.fn()} />);
+    const input = (label: string) => StyleSheet.flatten(screen.getByLabelText(label).props.style);
+    expect(input('Target').fontSize).toBe(input('Name').fontSize);
+    expect(input('Already saved').fontSize).toBe(input('Name').fontSize);
+    const box = (label: string) => {
+      let node = screen.getByLabelText(label).parent;
+      while (node) {
+        const flat = StyleSheet.flatten(node.props?.style);
+        if (flat && flat.paddingHorizontal !== undefined) return flat;
+        node = node.parent;
+      }
+      throw new Error('no box');
+    };
+    expect(box('Target').paddingHorizontal).toBe(box('Name').paddingHorizontal);
+    expect(box('Already saved').paddingHorizontal).toBe(box('Name').paddingHorizontal);
+    expect(box('Target').borderRadius).toBe(box('Name').borderRadius);
+    const symbols = screen.getAllByTestId('money-symbol');
+    expect(symbols).toHaveLength(2);
+    expect(symbols.map((n) => n.props.children)).toEqual(['$', '$']);
   });
 
   it('D-101 a dirty cancel asks to discard', async () => {
@@ -133,6 +167,6 @@ describe('PotSheet', () => {
     await fireEvent.changeText(screen.getByLabelText('Name'), 'Car service and MOT');
     await fireEvent.press(screen.getByLabelText('Save pot'));
     expect(mockEdit).toHaveBeenCalledWith(row, { name: 'Car service and MOT' });
-    expect(mockToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.pots.toast.saved' }, stepId: 's-edit' });
+    expect(mockToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.pots.toast.saved', params: { undoLabel: 'potEdited', name: 'Car service and MOT' } }, stepId: 's-edit' });
   });
 });

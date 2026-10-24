@@ -14,7 +14,6 @@ import type { SavingsGoalPatch, SavingsGoalRow } from '@/db/savingsGoals';
 import type { TransactionRow } from '@/db/rows';
 import { currencyCode, minorUnits } from '@/engine/money';
 import { monthOf } from '@/engine/time';
-import { DateField } from '@/features/record/entry/pickers/DateField';
 import { useT } from '@/i18n';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -36,7 +35,8 @@ import { useGoalTagEdit } from '../past/goalTagEdit';
 import { usePastContext } from '../past/usePastDecisions';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
 import { MoneyInput } from '../ui/MoneyInput';
-import { checkPotMonth, lastDayOfMonth, potLineFor } from './potsModel';
+import { MonthField } from './MonthField';
+import { checkPotMonth, lastDayOfMonth, maxPotMonth, potLineFor } from './potsModel';
 
 const NAME_MAX = 80;
 const SETTLE_MS = 150;
@@ -143,7 +143,7 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
     if (pot === null) {
       if (userId === null || householdId === null) return;
       const { stepId } = add({ householdId, ownerId: userId, pot: { name: trimmed, currency, target: value.target, ready_by: readyBy, opening_saved: opening } });
-      showToast({ kind: 'destructive', text: { key: 'decide.pots.toast.saved' }, stepId });
+      showToast({ kind: 'destructive', text: { key: 'decide.pots.toast.saved', params: { undoLabel: 'potAdded', name: trimmed } }, stepId });
     } else {
       const patch: SavingsGoalPatch = {};
       if (trimmed !== pot.name) patch.name = trimmed;
@@ -152,7 +152,7 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
       if (opening !== pot.opening_saved) patch.opening_saved = opening;
       if (Object.keys(patch).length > 0) {
         const stepId = edit(pot, patch);
-        showToast({ kind: 'destructive', text: { key: 'decide.pots.toast.saved' }, stepId });
+        showToast({ kind: 'destructive', text: { key: 'decide.pots.toast.saved', params: { undoLabel: 'potEdited', name: trimmed } }, stepId });
       }
     }
     onClose();
@@ -181,7 +181,8 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
 
   const cancel = () => (dirty ? setAsking(true) : onClose());
   const title = t(pot === null ? 'decide.pots.sheet.titleNew' : 'decide.pots.sheet.titleEdit');
-  const minDate = ownMonth !== undefined && ownMonth < today.slice(0, 7) ? firstOfMonth(ownMonth) : firstOfMonth(today.slice(0, 7));
+  // R18.2: a month choice starting no earlier than this month (an existing pot keeps its own earlier month on the list).
+  const minMonth = ownMonth !== undefined && ownMonth < today.slice(0, 7) ? ownMonth : today.slice(0, 7);
 
   return (
     <>
@@ -197,21 +198,25 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
             maxLength={NAME_MAX}
           />
           <MoneyInput
+            boxed
             value={value.target}
             currency={currency}
             onChange={(target) => set({ target })}
             label={t('decide.pots.sheet.target')}
             accessibilityLabel={t('decide.pots.sheet.target')}
           />
-          <DateField
+          <MonthField
             label={t('decide.pots.sheet.by')}
-            value={value.by ?? minDate}
-            display={monthKey === null ? DASH : monthLabel(fmt.locale, monthKey)}
-            minDate={minDate}
-            onChange={(by) => set({ by: firstOfMonth(toMonthKey(by)) })}
+            value={monthKey}
+            empty={DASH}
+            minMonth={minMonth}
+            maxMonth={maxPotMonth(today)}
+            format={(m) => monthLabel(fmt.locale, m)}
+            onChange={(m) => set({ by: firstOfMonth(m) })}
           />
           {monthState !== null && monthState !== 'ok' ? <Meta tone="danger">{t('decide.pots.sheet.byRange')}</Meta> : null}
           <MoneyInput
+            boxed
             value={value.saved}
             currency={currency}
             onChange={(saved) => set({ saved })}

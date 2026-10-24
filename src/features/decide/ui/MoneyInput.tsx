@@ -45,13 +45,15 @@ export interface MoneyInputProps {
   inputRef?: React.Ref<TextInputInstance>;
   /** D-95: 'dark' sits on the ink card -- surface at .12 fill, surface text, inkSoft2 placeholder, inkSoft1 labels, a 2px surface focus ring, the parser error in surface text (never danger on ink). */
   tone?: 'light' | 'dark';
+  /** D-105: sit like a sheet text Box -- fill6, the card radius and padding, body type -- and lead the text with the currency symbol or marker. */
+  boxed?: boolean;
 }
 
 const COMPACT_MIN_WIDTH = 128;
 const AMOUNT_BORDER = 1.5; // R16.3
 const FOCUS_RING = 2; // D-95
 
-export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef, tone = 'light' }: MoneyInputProps) {
+export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef, tone = 'light', boxed = false }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
   const dark = tone === 'dark' && !amountField;
   const [focused, setFocused] = useState(false);
@@ -128,6 +130,16 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
     }
   }
 
+  // formatAmount's rules ("$" is USD only; other dollars keep their marker), read off a zero so the field never decides one itself.
+  let symbol = '';
+  if (boxed) {
+    try {
+      symbol = speaker.formatMoney({ amount: minorUnits(0), currency: currencyCode(currency) }).replace(/[^\p{L}\p{S}]/gu, '');
+    } catch {
+      symbol = currency;
+    }
+  }
+
   return (
     <View style={amountField?.width === undefined ? undefined : { width: amountField.width }}>
       {compact || amountField ? null : labelAccessory ? (
@@ -144,6 +156,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
         style={[
           styles.field,
           compact && styles.compact,
+          boxed && styles.boxed,
           amountField
             ? {
                 borderWidth: AMOUNT_BORDER,
@@ -153,7 +166,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
               }
             : dark
               ? { borderWidth: FOCUS_RING, borderColor: focused ? colors.surface : 'transparent', overflow: 'hidden' }
-              : { backgroundColor: colors.fill1 },
+              : { backgroundColor: boxed ? colors.fill6 : colors.fill1 },
         ]}
       >
         {dark ? (
@@ -161,6 +174,11 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
             pointerEvents="none"
             style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
           />
+        ) : null}
+        {boxed && symbol !== '' ? (
+          <Text testID="money-symbol" style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
+            {symbol}
+          </Text>
         ) : null}
         {compact ? <Text style={{ ...textRole(pairing, 'body'), color: labelColor }}>{currency}</Text> : null}
         <TextInput
@@ -180,7 +198,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
           placeholder={placeholder}
           editable={!readOnly}
           placeholderTextColor={dark ? colors.inkSoft2 : colors.inkFaint}
-          style={[styles.input, compact && styles.compactInput, { ...textRole(pairing, large || compact ? 'body' : 'label'), color: dark ? colors.surface : colors.ink }]}
+          style={[styles.input, (compact || boxed) && styles.compactInput, { ...textRole(pairing, large || compact || boxed ? 'body' : 'label'), color: dark ? colors.surface : colors.ink }]}
         />
       </View>
       {error ? <Text style={{ ...textRole(pairing, 'label'), color: dark ? colors.surface : colors.danger }}>{error}</Text> : null}
@@ -200,4 +218,5 @@ const styles = StyleSheet.create({
   input: { minHeight: space.touchMin, padding: 0 },
   compact: { minWidth: COMPACT_MIN_WIDTH, flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
   compactInput: { flex: 1 },
+  boxed: { borderRadius: space.cardPad, paddingHorizontal: space.cardPad, flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
 });
