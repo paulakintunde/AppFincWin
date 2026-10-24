@@ -33,6 +33,26 @@ const withAssessment = (p: SectionProps, patch: Partial<Assessment>): SectionPro
 });
 const metaWith = (over: Partial<SnapshotMeta>): SnapshotMeta => ({ ...META, ...over });
 
+const onMonthBasis = (p: SectionProps): SectionProps => {
+  const ctx = assessment(p).context;
+  return withAssessment(p, { context: { ...ctx, money: { ...ctx.money, basis: 'month' } } });
+};
+
+describe('D-107 the month basis in the sections', () => {
+  it('D-107 the month table note and closing line name this month', async () => {
+    await wrap(<MonthBody {...onMonthBasis(sectionProps(FITS, loggedSource()))} />);
+    expect(screen.getByText('Money in this month, against everything that leaves.')).toBeTruthy();
+    expect(screen.getByText(/The month still closes with \$1800\.00 spare, as this month is expected to end\./)).toBeTruthy();
+    expect(screen.queryByText(/your average month|your worst month/i)).toBeNull();
+  });
+
+  it('D-107 the Assumptions income row says judged on this month', async () => {
+    const p = { ...onMonthBasis(sectionProps(FITS, loggedSource())), meta: META };
+    await wrap(<AssumptionsBody {...p} />);
+    expect(screen.getByText(/months? logged · .* · judged on this month$/)).toBeTruthy();
+  });
+});
+
 describe('MonthBody', () => {
   it('D-106 the month table result row prints free / overspent words; rows are exact and add up for both columns', async () => {
     const p = sectionProps(FITS, loggedSource());

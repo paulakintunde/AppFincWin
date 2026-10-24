@@ -17,6 +17,7 @@ import { LabelValueRow } from '../../ui/LabelValueRow';
 import { useInfoSheet } from '../../ui/useInfoSheet';
 import { InfoTitle } from '../InfoTitle';
 import { STEADINESS_LABEL } from '../../copy/codeMaps';
+import { basisVariantKey, basisWordKey } from '../../copy/basisKey';
 import { percentText } from '../../copy/percentText';
 import { conversionBasisCopy } from '../../copy/depthVerdictCopy';
 import { itemTypeDisplay } from '../../copy/itemTypeCopy';
@@ -93,10 +94,10 @@ export function assumptionRows(props: AssumptionsBodyProps | AssumptionsSectionP
     rows.push({
       key: 'income',
       label: t('decide.section.asIncome'),
-      value: t('decide.section.asIncomeValue', {
+      value: tr(basisVariantKey('decide.section.asIncomeValue', m.basis), {
         count: m.fullMonthsUsed,
         steadiness: t(STEADINESS_LABEL[m.steadiness]),
-        basis: t(m.basis === 'worst' ? 'decide.verdict.basisWorst' : 'decide.verdict.basisAverage'),
+        basis: m.basis === 'month' ? '' : tr(basisWordKey(m.basis)),
       }),
     });
     rows.push({ key: 'expenses', label: t('decide.section.asExpenses'), value: t('decide.section.asExpensesValue', { amount: fmt(m.spendingBasis) }) });

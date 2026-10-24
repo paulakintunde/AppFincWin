@@ -12,6 +12,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import type { MonthColumn } from '@/engine/decide';
 import { useShouldStack } from '../../ui/textFit';
 import { monthFigure } from '../../copy/monthFigure';
+import { basisVariantKey, basisWordKey, monthClosesKey } from '../../copy/basisKey';
 import { refText, type Translate } from '../refText';
 import { Note, Tile, assessmentOf, moneyOf, type SectionProps } from './sectionUi';
 
@@ -41,14 +42,16 @@ export function MonthBody(props: SectionProps) {
     { key: 'rowThis', label: inputs.kind === 'invest' ? t('decide.section.rowContribution') : t('decide.section.rowRunning'), pick: (c) => c.thisPurchase },
     { key: 'rowLeft', label: t('decide.section.rowLeft'), pick: (c) => c.left, emphasis: true },
   ];
-  const basis = t(a.context.money.basis === 'worst' ? 'decide.verdict.basisWorst' : 'decide.verdict.basisAverage');
+  const mb = a.context.money.basis;
+  const tr = t as Translate;
+  const basis = mb === 'month' ? '' : tr(basisWordKey(mb));
   const closing =
     after.left < 0
       ? t('decide.section.monthShort', { amount: fmtExact(-after.left) })
-      : t(a.context.money.basis === 'worst' ? 'decide.section.monthClosesWorst' : 'decide.section.monthClosesAverage', { amount: fmtExact(after.left) });
+      : tr(monthClosesKey(mb), { amount: fmtExact(after.left) });
   return (
     <View>
-      <Note>{t('decide.section.monthNote', { basis })}</Note>
+      <Note>{tr(basisVariantKey('decide.section.monthNote', mb), { basis })}</Note>
       {stacked ? null : (
         <View style={styles.head}>
           <Text style={[styles.cell, styles.first, { ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkMuted }]}>
