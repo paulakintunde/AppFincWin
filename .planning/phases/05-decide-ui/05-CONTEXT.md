@@ -428,6 +428,11 @@ UI-SPEC R17 carries the layout, budgets, states, copy and wireframes. It replace
   - Month details' Judge on control offers This month / Worst / Average, defaulting to This month for the card. The stored basis preference keeps working; an explicit Worst or Average choice still wins.
   - Checks (verdicts) keep judging on the worst month by default (user chose card only); their basis setting is unchanged.
 - **D-106 addendum (user, 2026-10-24, popup):**
+- **D-107: One Judge-on choice drives the card and checks; a dropdown on the card; a three-basis comparison on the verdict; the FAB returns (user, 2026-10-24). Supersedes D-106's "card only" and D-98's FAB removal.**
+  - A compact dropdown in the card's top row ("This month ▾") offers This month / Worst month / Average month. Month details shows the same choice. Default: This month for everyone.
+  - The selected basis (default This month) is what checks are judged on too. The engine gains a 'month' basis (from expectedMonth) alongside 'worst' and 'average'. Stored on the device as the D-106 view preference; Worst/Average also keep writing basis_override so other devices and older code paths stay consistent.
+  - The verdict (step 3) gains a separate card showing the outcome under all three bases side by side (verdict state and month figure for This month, Worst, Average), computed in idle time like the other details, so the user sees how the answer changes without switching.
+  - The FAB returns on Decide home (D-98 removal reversed; its previous action and placement).
   - Everyone starts on This month: the card opens on This month for every account, even one with a stored Worst or Average basis. The stored basis still governs checks. Only an explicit choice of Worst or Average in Month details (kept as a device view) keeps the card off This month.
   - A current-month line with no stored rate does not blank the card: This month falls back to the Worst-month figure, the sub-line names Worst, a declarative line says "This month is waiting for a {{currency}} rate", and Needs a look lists the rate action. The card always shows a number.
   - "spare" wordings stay as they are; only "left" and "short" for a month figure change.
