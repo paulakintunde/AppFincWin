@@ -799,7 +799,7 @@ Plans:
 - [x] 05-131-PLAN.md — R18 copy catalogue: new keys, INFO_KEYS 60 to 65, undo labels, copy-guard lists (D-100..D-104, DCU-09)
 
 **Wave 32** *(blocked on Wave 31 completion)*
-- [ ] 05-121-PLAN.md — Engine E8: housing line and warning with every exhaustive WarningCode site (D-103)
+- [x] 05-121-PLAN.md — Engine E8: housing line and warning with every exhaustive WarningCode site (D-103)
 - [x] 05-122-PLAN.md — Data layer: pot and debt-housing columns, queries, pot and housing mutations with undo (D-101, D-103)
 - [x] 05-133-PLAN.md — housing_line settings plumbing and the LimitKey records (D-103)
 
