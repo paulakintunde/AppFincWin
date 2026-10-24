@@ -3,7 +3,7 @@ phase: 5
 slug: 05-decide-ui
 status: approved
 reviewed_at: 2026-10-23
-amended: 2026-10-22
+amended: 2026-10-24
 shadcn_initialized: false
 preset: none
 created: 2026-10-15
@@ -17,7 +17,7 @@ created: 2026-10-15
 
 **Platform note:** React Native / Expo SDK 57. No shadcn, no CSS. Styling is `StyleSheet` plus the typed theme (`useTheme()`, `textRole()`, `src/theme/*`). The CLAUDE.md fidelity rule holds: **no new colour, gradient, shadow, type size or icon set.** The prototype's Decide screens use about a dozen hex values outside the §2 palette; every one is mapped to an existing token below (Color, Deviations Register). Colours are cited by token name only; `noRawColours.test.ts` must keep passing.
 
-**Amended 2026-10-22 and 2026-10-23 (D-70..D-99):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Re-approved by the UI checker on 2026-10-22, with its recommendations folded in (R14). R15 (Step 2, item and invest refresh, D-79..D-84) was re-approved the same day with its must-fix items folded in (R15.13). R16 (device-walkthrough refinements, D-85..D-94, 2026-10-23) was re-approved on 2026-10-23 with its must-fix items folded in (R16.16). R17 (Decide home redesign, D-95..D-99) was re-approved on 2026-10-23 with its must-fix items folded in (R17.13).
+**Amended 2026-10-22 and 2026-10-23 (D-70..D-99):** see "Decide UX refresh (2026-10-22)" at the end of this file. Where it conflicts with an earlier section, the refresh wins; the conflicts are listed in its R12. Re-approved by the UI checker on 2026-10-22, with its recommendations folded in (R14). R15 (Step 2, item and invest refresh, D-79..D-84) was re-approved the same day with its must-fix items folded in (R15.13). R16 (device-walkthrough refinements, D-85..D-94, 2026-10-23) was re-approved on 2026-10-23 with its must-fix items folded in (R16.16). R17 (Decide home redesign, D-95..D-99) was re-approved on 2026-10-23 with its must-fix items folded in (R17.13). R18 (money concepts: Net Free Cash Flow, pots, total cost, housing line, invested instead; D-100..D-104, 2026-10-24) was written on 2026-10-24 from the 05-26 device walkthrough and has not yet been through the UI checker; where it conflicts with an earlier section, R18 wins (R18.9).
 
 **Surface in this phase:**
 1. Decide tab root (quick check, Your month, Open checks, Past decisions link, Lines you will not cross).
@@ -2605,3 +2605,485 @@ None open. Answered 2026-10-23:
   12. "Check it" is `surface`/`ink` on the dark card for every accent;
   13. the hero shrinks while a result is open;
   14. the device-step budget (05-26).
+
+### R18. Money concepts (2026-10-24)
+
+Source: the 05-26 device walkthrough and the locked decisions **05-CONTEXT D-100..D-104** (user popups, 2026-10-24). Grounded in the code at the head of `phase/05-decide-ui`: `src/engine/decide/assess.ts`, `constants.ts`, `types.ts`, `investmentViews.ts`, `plan.ts`, `wait.ts`; `src/features/decide/snapshot/buildSnapshot.ts`; `src/features/decide/home/*`; `supabase/migrations/20261016000100_decide_tables.sql` and `20261016000110_decide_depth_tables.sql`. **R18 amends R17 (the card's eyebrow, sub-line, Out figure, Month details, Lines) and the R2/R8 verdict summary (two new rows).** Where it conflicts with an earlier section, R18 wins (R18.9).
+
+**Constraints (unchanged):** tokens, roles, motion and haptics are the existing ones only; no new colour, size, shadow or icon. All copy is declarative (DCU-09): no "advice", "recommendation" or "you should", no reassurance, no opening money imperative outside the keyed button list. Every count-bearing string has `_one`/`_other` keys with U+00A0 between the count and its unit (rule U). Money is integer minor units; every new engine item is at 100% branch coverage (R18.7).
+
+**Vocabulary (fixed here so the plans do not drift):**
+- **Net free cash flow** is the hero figure, the engine's `context.leftBefore`. The maths is unchanged except that pot set-asides are taken off (R18.2).
+- A **pot** is one row of `savings_goals` (D-101).
+- **Set-aside** is what a pot needs this month.
+- The **housing line** is D-103.
+
+#### R18.1 Net Free Cash Flow on the card (D-100)
+
+**The figure is not changed in kind.** `leftBefore` = money in on the judged basis − spending on that basis − debt payments − saving and investing − pot set-asides. All spending is taken off, with no essential split (D-100). One figure, switched in Month details as today (user declined showing both).
+
+**Eyebrow row (replaces the R17.3 "Eyebrow row" label):**
+- Left: **"Net free cash flow"**, upper-cased by `textTransform` (`eyebrow`, `inkSoft1`, letterSpacing 1.2, as shipped). It is a constant on every basis. It is followed by the ⓘ `netFreeCashFlow` as the next flex sibling (rule I, `InfoLabel`, tone dark). The old basis-bearing label no longer sits here.
+- Right: the **"Details ›"** button, unchanged (44 × 44).
+- The eyebrow is 18 characters upper-cased, under rule E's 32. The row stays `flexWrap: 'wrap'`, `justifyContent: 'space-between'`.
+
+**Fit, checked** (eyebrow 11.5, caps about 8.8 each with spacing, spaces about 4.7; the ⓘ block is taken as about 44 wide plus an 8 gap; "Details ›" about 52 in a 44-minimum target):
+- **402, 1.0x (inner 330):** the label is about 146, ⓘ block 52, Details 52, one gap 8: about 258. It fits on one row.
+- **320, 1.0x (inner 248):** about 258 against 248. It wraps **without code change**: "Details ›" drops to its own right-aligned 44 line under the label and ⓘ. This is accepted, because budgets apply at 402 and 1.0x.
+- **402 and 320, 2.0x:** the label breaks at words ("NET FREE CASH" / "FLOW" at 320, about 195 and 150 plus the ⓘ), the ⓘ stays attached to the last word, and Details takes its own line. At most two label lines and one Details line.
+- A render test at 320 / 2.0x asserts no overlap, ⓘ and Details both at least 44 high, and the label whole at word breaks.
+
+**Sub-line (replaces `decide.home.hero.sub`; `meta`, `inkSoft1`).** It carries the basis the engine actually used, by the R17.13 M3 table. It is the same for left and short. Keys `decide.home.hero.sub*`:
+
+| Engine basis (R17.13 M3) | Sub-line |
+|---|---|
+| Worst month | "in your worst month, after spending, debts and saving goals" |
+| Average month | "in your average month, after spending, debts and saving goals" |
+| Under 3 full months | "from your tightest figures, after spending, debts and saving goals" + ⓘ `tightestFigures` as the next flex sibling |
+| First read from rough figures | "from the figures you gave, after spending, debts and saving goals" |
+| First visit after real history replaced rough figures (`homeBasisSeen` unset) | "now from your logged months, after spending, debts and saving goals" |
+
+- **Wording:** "saving goals" is D-100's wording. The ⓘ spells out that investing and pots are also taken off, so the sub-line is not read as the whole list.
+- **Rows grow:** the sub-line is 59 to 67 characters, about 370 to 420 wide, so it wraps to **two lines at 402 / 1.0x** (+17.5) and up to three at 320. It wraps at words (rule W), with no `numberOfLines`.
+- **Selection:** the basis logic in `homeCardModel` is unchanged (`HomeCardLabel` stays as the basis key, and a rename is the plan's call). Only `LABEL_KEY` in `HomeSummaryCard.tsx` and its twin in `DecideHomeScreen.tsx` now point at the sub-line keys.
+
+**Second line "In {{in}} · Out {{out}}" (`s13_5`, `inkSoft2`): Out is now everything that leaves.**
+- **Why:** today Out is `spendingBasis` only, so In − Out does not equal the hero whenever there are debt payments, saving or pots (the Month details strip had the same gap: Left was `leftBefore` beside an Out of spending alone). With the hero named Net free cash flow, the three figures must reconcile.
+- **Rule:** `outAmount` = money in − `leftBefore` = spending + debt payments + saving and investing + pot set-asides. In − Out equals the hero exactly.
+- **Rough source:** Out = rough spending + set-asides, and the hero = rough income − rough spending − set-asides.
+- **Copy:** unchanged "In {{in}} · Out {{out}}". The summary line while a result is open is unchanged.
+
+**Hero and states:** the hero words, "{{amount}} short", the unavailable states, the loading skeleton and the error state are unchanged (R17.3, R17.4, R17.13 M5). The unavailable state also covers a pot in a currency with no stored rate to the home currency, using the same reason line "Lines in {{currency}} are waiting for an exchange rate." (R18.2).
+
+**Budget at 402 × 874, 1.0x (replaces the R17.2 numbers; the order is unchanged):**
+- **Card:** was ≤ 299.5. With the two-line sub-line it is **≤ 317**, so it ends at **y = 470**, or 532 with the notice row.
+- **Rows:** 32 gap, then four rows of 52 (208). They end at **y = 710**, or **772 with the notice row**, both above the tab bar at about 789 (17 spare in the worst case).
+- **With a quick-check result** (hero shrinks to the summary line, sub-line hidden): every R17.2 number is unchanged, so **the R17.9 alternate frame 1 is unaffected**.
+- **Verified on device (05-26)** by the existing `onLayout` probe, with two new reads: the card bottom with a two-line sub-line, and the rows' bottom with the notice row.
+
+**Accessibility:**
+- **Summary group (replaces the R17.3 "Card a11y" strings):**
+  - `decide.home.card.a11yLeft`: "Net free cash flow: {{amount}} left {{basis}}. In {{in}}, out {{out}}."
+  - `a11yShort`: "Net free cash flow: {{amount}} short {{basis}}. In {{in}}, out {{out}}."
+  - `{{basis}}` is the sub-line text as shown. Amounts use `formatMoneyA11y`. The hint is still "Opens month details".
+  - Example: "Net free cash flow: $1,240 left in your worst month, after spending, debts and saving goals. In $4,800, out $3,560."
+- **Reading order:** header; notice row; summary group; the ⓘ "Net free cash flow"; Details; field; Check it; result group; Full check; rows.
+- The eyebrow Text stays hidden from the accessibility tree, since the summary group carries it.
+
+**ⓘ `netFreeCashFlow` (new; counts toward R18.7's 65 keys):**
+- Term: **"Net free cash flow"**.
+- Body: **"What is left of a month once everything planned has been taken off: money in, minus spending, minus debt payments, minus what goes to saving, to investing and to pots. It is worked out from your logged months, on the worst month or the average, as the line under it says. A pot is money kept for a set amount on a set date."**
+- What this changes: **"Every check starts from this figure. A purchase lowers it by its monthly cost, and only saving and investing can pause to cover a shortfall."**
+
+**Month details wording (`MonthDetailsSheet`, replaces the R17.3 sheet title and the Comes in / Goes out / Left strip):**
+- **Title:** **"Net free cash flow"** on every state. The basis now sits in the first `meta` line (`inkMuted`): "Worked out on your worst month." / "Worked out on your average month." / "Worked out on your tightest figures." (+ ⓘ `tightestFigures`) / "Worked out from the figures you gave." / "Now worked out from your logged months." (keys `decide.home.monthDetails.basis*`).
+- **Unchanged:** the steadiness chip, the Activity pill, the existing basis line (steady, varies, under 3 months, no money in), the Worst / Average control (from 3 full months), the sources note and "Close".
+- **The strip becomes a breakdown** of stacked label/value rows that add up to the hero. It is `meta`/`body` rows on the sheet with rule S stacking. Values carry a true minus (U+2212) for deductions.
+
+| Row (logged source) | Value | Hidden when |
+|---|---|---|
+| "Money in" | `incomeBasis` | never |
+| "Spending" | −`spendingBasis` | never |
+| "Debt payments" | −`debtPayments` | 0 |
+| "Saving and investing" | −`pausable` | 0 |
+| "Set aside for pots" (ⓘ `pots`) | −`setAside` | 0 |
+| **"Net free cash flow"** (`body` 600, a rule above it) | `leftBefore`; negative reads "−$420" in `danger`, and the a11y label says "short by $420" | never |
+
+- **Pots link:** under the rows, always shown (even at 0 pots): the text link **"Pots ›"** (`label`, `accent`, 44 hit), which closes the sheet and pushes the Pots screen (R18.2). It is the way in for a user with no pots yet.
+- **Rough source:** only "Money in", "Spending", "Set aside for pots" (if any) and "Net free cash flow", with Edit as today.
+- **Unavailable / first run:** the reason and its one action only (R17.13 M5, unchanged).
+- Row a11y: "{{label}}, {{value}}".
+- Row keys: `decide.home.monthDetails.in`, `.spending`, `.debts`, `.saving`, `.pots`, `.result`, `.potsLink`.
+
+**Retired keys:**
+- `decide.home.card.labelWorst`, `labelAverage`, `labelTightest`, `labelFigures` and `labelSwitched`: replaced by `hero.sub*` for the basis and the constant `card.eyebrow` ("Net free cash flow").
+- `decide.home.hero.sub` ("after spending, debts and saving").
+- The R17 sheet-title use of the card label.
+- `decide.month.in` ("Comes in"), `decide.month.out` ("Goes out") and `decide.month.left` ("Left") **in Month details only**. The plan greps for other users before deleting them. On 2026-10-24 the only users are `YourMonthCard.tsx` lines 142-144 and 233-235.
+- `src/features/decide/copy/__tests__/infoTerms.test.ts` L28-29 and L47 (it lists the old keys and asserts the old sub-line) are rewritten.
+
+#### R18.2 Pots: named sinking funds, counted (D-101)
+
+**Data model: one table, `savings_goals`, extended.**
+- **Reading of D-101:** the user's words are "new table", but `public.savings_goals` already exists (migration `20261016000110`). It already has the household-of-one RLS policy "own savings goals" (`created_by = auth.uid()` and `household_id in user_household_ids()`), a computed saved-so-far from tagged transfers (`transactions.goal_id`, no stored balance), soft delete, `check_id` provenance for the Wait goal, and the undo entity. Its own comment says Phase 6 builds on it.
+- **Why not a second table:** D-101 asks that Wait goals become a kind of pot and that Phase 6 builds on "this table rather than a second one". A second table would put `goal_id` behind a polymorphic foreign key and duplicate the saved-so-far, undo and sample-data wiring. So D-101 is met by **new columns, constraints and grants on `savings_goals`**.
+- **Fallback if the user wants a literally new table:** `sinking_funds` plus a data move, a retargeted `transactions.goal_id` foreign key and a rewritten `record_decide_outcome` (about six more files). Flagged in the report, not built.
+
+**Migration `supabase/migrations/20261024000100_savings_goals_pots.sql`** (the date-prefix pattern of the existing files; additive; every statement idempotent where Postgres allows):
+
+| Change | Precisely |
+|---|---|
+| `kind` | `text not null default 'wait' check (kind in ('wait','pot'))`. Existing rows backfill to `'wait'`. Phase 6 adds a kind by replacing this check. |
+| `done_at` | `timestamptz null`. A done pot stops counting and stops protecting cash. |
+| Shape constraint | `check (kind <> 'pot' or (target is not null and ready_by is not null and monthly_amount is null and check_id is null))` |
+| Index | `savings_goals_live_idx on (household_id) where deleted_at is null and done_at is null` |
+| RLS | The existing policy "own savings goals" is kept (owner-private, household-of-one). No new policy. `revoke all … from anon` is unchanged. |
+| Grants | `grant insert (id, household_id, kind, name, currency, target, ready_by, opening_saved)` and `grant update (name, target, ready_by, opening_saved, done_at, deleted_at)` to `authenticated`. |
+| `guard_savings_goal()` | **Insert:** `kind` is forced to `'pot'` unless `fincwin.decide_rpc` is `on` (the Wait RPC). `created_by` is filled as now. **Update, kind `'wait'`:** unchanged freezing of `check_id`, `name`, `currency`, `target`, `monthly_amount`, `ready_by` and `opening_saved` outside the RPC, but `done_at` and `deleted_at` may change. **Update, kind `'pot'`:** `kind`, `check_id`, `currency` and `monthly_amount` are frozen; `name`, `target`, `ready_by`, `opening_saved`, `done_at` and `deleted_at` may change. |
+| `apply_patches` allow-list | `savings_goals` widens from `['deleted_at']` to `name`, `target`, `ready_by`, `opening_saved`, `done_at`, `deleted_at`, with the type-map rows (text, bigint, date, bigint, timestamptz, timestamptz). The function is re-created from its **latest** definition (`20261016000200_decide_patches.sql` or any later revision), not copied from memory. |
+
+**Second migration `supabase/migrations/20261024000200_decide_settings_housing_line.sql`** (D-103): `alter table public.decide_settings add column housing_line text check (housing_line is null or (housing_line ~ '^\d{1,3}(\.\d{1,4})?$' and housing_line::numeric <= 100))`, plus the column added to both the `insert` and `update` column grants.
+
+**Production:** the project has one Supabase project, which is production. The plan runs `npm run supabase:preflight` and pushes with `npm run supabase:db:push` **only after the user's explicit approval in a checkpoint**. It does not use the Supabase MCP connector (CLAUDE.md).
+
+**Sample data:** `seed_sample_data` seeds no pot, so the DCU-11 frames are unchanged. `clear_sample_data` is unaffected, since new rows are `is_sample = false`.
+
+**Engine input and maths (new `src/engine/decide/pots.ts`, pure, E6):**
+- **`DecideSnapshot.pots: readonly PotInput[]`** (live, not done, in the home currency). `PotInput` = `{ id, kind, target: MinorUnits|null, monthlyAmount: MinorUnits|null, readyBy: LocalDate|null, saved: MinorUnits }`. `saved` = `opening_saved` + tagged paid lines, as `savedSoFar` computes today.
+- **`potSetAside(pot, asOf): { monthly, months, state }`** with state `'active' | 'reached' | 'past_due'`. The rules, in order:
+  1. `remaining` = target − saved. When `target` is null (a Wait goal without a target) and `monthlyAmount` is set, `monthly` = `monthlyAmount`, state `active`. With neither, `monthly` = 0.
+  2. `remaining ≤ 0` → state `reached`, `monthly` 0.
+  3. **A Wait pot** (`monthlyAmount` set): `monthly` = min(`monthlyAmount`, `remaining`); `months` = ceil(`remaining` ÷ `monthly`).
+  4. **A plain pot:** `readyBy ≤ asOf` → state `past_due`, `monthly` **0** (it is surfaced in Needs a look instead; a lump would swing the hero). Otherwise `m` = max(1, the **whole months from `asOf` to `readyBy`, rounded down**), measured as the largest k such that `occurrenceDate(asOf, 'monthly', k) ≤ readyBy`, capped at `SIMULATION_MONTH_CAP`. `monthly` = **`ceilDivide(remaining, m)`**, rounded **up** to the minor unit, in the same direction as `buildWaitPlan`. `months` = `m`.
+  5. The total is the exact `bigint` sum of the per-pot amounts, converted with `minorFromBigInt`.
+- **Example:** $600 by 31 March 2027, $0 saved, today 24 October 2026: five whole months (24 Nov to 24 Mar), so $120 a month. $601 gives $121 (up).
+- **Month-end clamp** follows `occurrenceDate` (31 January + 1 month is the last day of February).
+- **The last month is a residual:** each month recomputes from what remains, so the pot converges with no leftover.
+- **Bounds:** `target` 1 to 10^13 (the existing check). The sheet limits live pots to **50** (`MAX_POTS`, "Up to 50 pots"), which keeps the sum inside the safe range.
+- **`prepareContext` adds:** `setAside` = Σ monthly; `potLines` (per-pot result, for the Pots screen: one source of truth); `protectedCash` = min(Σ `saved` over live, not-done pots, max(0, `cashOnHand`)).
+
+**How set-asides enter the engine (E6):**
+- **`leftBefore`** = income − spending − debt payments − `pausable` − `setAside`. **`pausable` is unchanged** (saving + investing only), so a set-aside is never paused: the pause rule (D-35) can only cover a shortfall from saving and investing, and any rest is the `month` warning. This is what "a check never spends it" means for the month.
+- **Cash:** `cashOnHand` is read through `protectedCash`. `cashAvailable`, `ledgerCash`, `cashAfterBills` and the `opening` of `cashPathForSnapshot` (`cashPath.ts` L188) all start from `cashOnHand − protectedCash`. Money saved in a pot therefore cannot be spent by a check on the day, and the 90-day path starts without it.
+- **`MonthColumn`** gains `setAside`, and `outgoings` includes it, so the month table's rows still add up. Fold 2 gets one row, **"Set aside for pots"** (hidden at 0), between "Saving and investing" and "This purchase".
+- **Other readers:** `position.ts` L115 and L147 (`fixedOutgoings` adds `setAside`); `investmentViews.ts` L196 (`monthlySurplus` = `leftBefore + monthlySaving + setAside`, because pot money stays cash in the net-worth path); `wait.ts` and `alternatives.ts` read `leftBefore` and need no edit.
+- **Own pot excluded:** when the check being judged has its own Wait pot (a reopened Waiting check), the builder drops that pot from `snapshot.pots`, the way `withoutCheckWrites.ts` drops a check's own written rows. Otherwise the Wait plan would count its own set-aside twice.
+- **No double counting of saving:** `buildSnapshot` leaves out of `savingTotal` and `investingTotal` any transfer leg with `goal_id` set (add `goal_id` to `SnapshotRow`). The pot's set-aside stands for it. The ⓘ says so. A recurring Savings-category series that is not tagged still counts as saving.
+- **Rough and none sources:** `SnapshotResult.base` carries `pots`. The rough hero is income − spending − Σ set-asides (computed by the same `potSetAside`).
+- **Currency:** a pot is created in the home currency. If the home currency has since changed and a pot's currency differs, the builder converts target and opening at the **latest stored rate** (set-aside rounds up). With no stored rate the card is unavailable (R18.1), and the Needs a look rate entry (R17.5 entry 2) counts the pot ("{{count}} pot and every check", `affectsPots_one/_other`).
+
+**Where pots live (no fifth home row):**
+- **Why not a home row:** R17.1 allows up to four rows below the card. A pots row would be a fifth, and with the notice row the stack would end at y = 824, below the tab bar at about 789 (R18.1 budget). So **no row is added to Decide home.**
+- **Entry points:**
+  1. **Month details › "Pots ›"** (R18.1), which is also where the hero's deduction is explained.
+  2. **You › Money** gets a navigation row **"Pots"** (`you.record.pots`, appended to `MONEY_ROWS` after History, `href: '/decide/pots'`, the shipped `moneyRow` style). It is **not** an Add quick action, so the FAB menu and the Add group are untouched.
+  3. A Wait goal's row in Past decisions keeps its progress bar and opens the decision as today.
+- **The screen** is `app/(app)/decide/pots.tsx` (`PotsScreen`, a `DetailScreen`, pushed). The back control is the shipped one.
+
+**Pots screen:**
+- **Heading** "Pots" (`sheetTitle`), with the ⓘ `pots` as the next flex sibling. Sub-copy (`meta`, `inkMuted`): **"Money kept for a cost with a set amount and a date. What each pot needs a month comes off net free cash flow."**
+- **Heading link** "+ Pot" (`label`, `accent`, 44 hit, a11y "Add a pot"), the same treatment as "+ Purchase" on Open checks. It is disabled at 50 live pots, with the `meta` line "Up to 50 pots".
+- **Summary line** (`body` 500, `ink`, hidden at 0 pots): "{{amount}} a month across {{count}} pot" / "pots".
+- **List:** one white `radii.card` list (padding 15/18, 1px `fill2` separators), as in Past decisions. **Pot row**, in this order:
+  - **Line 1:** the name (`body` 500, `ink`, user text under rule T: `numberOfLines={2}`, tail ellipsis, full name in the a11y label), then the 44 × 44 "⋯" menu button.
+  - **Line 2:** the progress bar (`size.homeBarHeight` 8, `radii.pill`, track `fill1`, fill `accent`, animated with `DURATION.progress`; reduced motion: none) and the caption `meta` `inkMuted` "{{saved}} of {{target}}". `accessibilityValue` is "{{pct}} percent".
+  - **Line 3** (`meta` `inkMuted`, wraps under rule W):
+
+    | State | Line 3 |
+    |---|---|
+    | Active | "{{amount}} a month · by {{month}}" |
+    | Reached | "Target reached · nothing more to set aside" |
+    | Past its date (`warn1` text, with a dot, never red) | "Past its date · {{remaining}} still to save" |
+    | Wait pot | "From a check · {{amount}} a month · ready {{date}}" |
+    | No stored rate | "Waiting for a {{currency}} rate" |
+
+- **Row press:** a plain pot opens `PotSheet` in edit mode; a Wait pot opens the decision detail sheet (its target, date and amount belong to the check).
+- **"⋯" menu** (the Open checks pattern): **"Mark done"** (a done pot shows **"Reopen"**) and **"Delete"**. Swipe-left is the Delete shortcut.
+- **Done pots:** a closed `FoldRow` **"Done · {{count}}"** at the end of the list, hidden at 0. Its rows are dimmed (`inkMuted`) with line 3 "Done {{date}}".
+- **Empty (0 live pots):** `meta` "No pots yet. A pot keeps money for a cost with a set amount and a date, such as a car service in March." and one `Pill` primary **"Add a pot"**. The heading link is hidden then, so there is a single accent action.
+- **Row a11y:** "{{name}}. {{saved}} of {{target}} saved. {{monthly}} a month, by {{month}}." (per-state variants follow line 3), role button, hint "Opens the pot".
+
+**Pot sheet (`PotSheet`, the app `Sheet`, modelled on `ChangeSheet`):**
+- **Header:** `SheetHeader` with the title "New pot" / "Edit pot" and "Cancel". Cancel with edits asks the 03 D-26 discard question (`useIsDirty`, `ConfirmSheet`); without edits it closes.
+- **Fields, in order:**
+  1. **"Name"** (`Box`, 1 to 80 characters, placeholder "Car service").
+  2. **"Target"** (`MoneyInput`, home currency, 1 to `MAX_INPUT_MINOR`).
+  3. **"By"** (`DateField` at month granularity, shown as "Mar 2027" through `monthLabel`, as in `ChangeSheet`). The stored `ready_by` is the **last day of the chosen month**. The month must be this month or later and within 50 years; an out-of-range month shows the range line "Out of range: within 50 years" in the invalid style.
+  4. **"Already saved"** (`MoneyInput`, optional; blank is 0). This is `opening_saved`.
+- **Preview line** (`meta`, `inkMuted`, polite live region, the D-56 debounce): "About {{amount}} a month for {{count}} month." / "months." It reads "Already at the target." when `reached`, and "That month has passed." when `past_due`. It is computed by `potSetAside`, not re-derived in the component.
+- **Edit mode adds**, below the preview: the caption "Saved so far is what you entered plus the transfers tagged to this pot." and **"Tag a transfer"** (secondary `Pill`), which opens `AttachLineSheet` in transfer mode. This is the same mechanism as the Wait goal, so the tagged transfers list with the 44 px "×" untag and the same toasts.
+- **Primary action:** one `Pill` primary **"Save pot"**, disabled until the name, target and month are valid.
+- **Fit:** all rows grow (rules F, G); the sheet scrolls in `SheetScroll` and has no fixed height.
+
+**ⓘ `pots` (new):**
+- Term **"Pots"**.
+- Body: **"A pot is money kept for a cost with a set amount and a date. Each month, what is still needed is spread over the whole months left and taken off net free cash flow, rounded up. Money already in a pot is kept out of what a check can spend. A transfer tagged to a pot counts as the pot, not as saving."**
+- What this changes: **"While a pot is open, checks start from a lower net free cash flow and a lower cash balance. Marking it done releases both."**
+
+**Wait-and-save goals become one kind of pot (D-101):**
+- A Wait goal is a `savings_goals` row with `kind = 'wait'` (the default backfills every existing row). It keeps `check_id`, `monthly_amount` and `ready_by`, and the Wait RPC still inserts it. Its set-aside is min(`monthly_amount`, remaining) (rule 3 above).
+- **"Wait plan's goal progress reads from the pot"** is already true of the data. `savedSoFar` and the Wait panel, the decided check's step 5, the Past decisions row and the decision detail sheet read the same row, and the same row now also feeds the engine.
+- **Copy that must change** (it said a Wait changes nothing but a reminder):
+  - Step 5 "What gets written" Wait bullet: **"A pot of {{target}}, {{amt}} a month, ready {{date}}."** (was "A savings goal of …").
+  - Its third bullet: **"No balance moves. {{amt}} a month comes off net free cash flow."** (was "Nothing else changes: no balance or limit moves until you reopen it.")
+  - The Wait outcome card description: "Sets an amount and a date and starts a pot for this plan. A reminder opens this check on that day, recalculated. No balance moves until then." The ⓘ `waitGoal` body says "starts a pot", and its What-this-changes line is "Creates one pot and one reminder. Balances stay as they are; the monthly amount comes off net free cash flow."
+  - The waiting-decision delete confirm body: "It leaves Past decisions with its pot and reminder. Transfers tagged to the pot stay in Activity."
+- **A Wait pot's set-aside is protected too.** This is a behaviour change: a Wait contribution is no longer pausable.
+
+**Undo, offline and sync:**
+- **Mutations** (`src/data/mutations/decidePots.ts`, patterned on `decideChanges.ts`): `useAddPot`, `useEditPot`, `useDeletePot`, `useSetPotDone`.
+  - **Insert** carries a client-generated id (MON-08); a duplicate 23505 is read back as landed.
+  - **Edit and done** are version-conditional, with the undo step id as the replay key; a landed replay is accepted.
+  - **Delete** is a soft delete (`deleted_at`).
+- **Undo:** every action is one undo step through `apply_patches` on the `savings_goals` entity. Labels `potAdded`, `potEdited`, `potDeleted`, `potDone`, `potReopened` are added to `UNDO_LABEL_KEYS`, with catalogue strings "Pot added", "Pot edited", "Pot deleted", "Pot marked done", "Pot reopened".
+- **Toasts** (destructive timing about 6 s with Undo): "Pot saved"; "Pot deleted · {{name}}" (Undo); "Marked done · {{name}}" (Undo); "Reopened · {{name}}" (Undo).
+- **Offline:** the mutations pause and replay in order (the TanStack paused-mutation write queue). The optimistic cache row feeds `buildSnapshot`, so the hero changes at once. The sync line and the notice row report waiting writes as for any write (R16, R17.5 entries 3, 4 and 7). A version conflict is the existing "edit changed on another device" entry.
+- **Query:** `fetchSavingsGoals` already returns live rows; it gains `kind`, `done_at` and the new columns in `SAVINGS_GOAL_COLUMNS` and `SavingsGoalRow`. `updateSavingsGoal`'s patch keys widen to match the grant.
+
+**Needs a look additions (R17.5; counted by the M4 rule):**
+- Entry 2 gains the pot variant above.
+- **New entry 8:** "{{count}} pot is past its date" / "pots are past their date". Affects: "Net free cash flow". Action: **"Pots"** → the Pots screen. The dot is `warn1`.
+
+**Phase 6 hand-off (Grow, Goals):** Phase 6 adds goals as **new `kind` values on this same table** (replace the `kind` check and extend `guard_savings_goal`), not a second table. The engine's `potSetAside` is the single place a kind becomes a monthly amount, so a new kind adds one branch there and nothing in `assess.ts`. `snapshot.pots` is source-agnostic. The Pots screen becomes a section of Goals. Nothing in Phase 5 reads `kind` beyond `'wait'` and `'pot'`.
+
+#### R18.3 Total cost of ownership row (D-102; engine change E7)
+
+**Formula** (engine `totalCost`, new `src/engine/decide/ownership.ts`; every figure is a figure the check already holds, so there are **no new inputs**):
+
+```
+H        = the check's horizon in months
+total    = myPart(plan.total) + max(0, mineRunning) × H − resale
+resale   = 0                                            when no loss of value is set
+         = myPart(advertised) − min(myPart(advertised), myPart(lossMonthly) × H)   when it is set
+```
+
+- **`plan.total`** already is price + interest + fees (`plan.ts`: loan and instalment `total` includes the day fees and the interest; card `total` = price + interest + fees; cash = price). It is `null` when a card minimum never clears or is still open at the cap (HI-02).
+- **Running costs:** `mineRunning` is the net running cost (counted costs less the expenses the purchase replaces). Negative net contributes 0, as `investmentViews` does.
+- **Loss of value:** `lossMonthly` is the non-cash amount from D-63 (`RunningCosts.nonCash`, from `lossOfValueMonthly`). `advertised` is `ResolvedPrice.advertised`. Resale is never below 0.
+- **Horizon `H`:** the investing views' horizon (the user's chosen horizon, else the plan term, else 60), **never less than `plan.months`**. So a 36-month loan with a 12-month horizon chosen reads "Over 3 years". A cash purchase with no term reads "Over 5 years".
+- **Rounding:** each component passes through `myPart` once (half-up, D-20) and the rest is exact `bigint`; a total outside the safe range returns `null` (the row is hidden, never thrown).
+- **Result:** `TotalCost = { horizonMonths, total, interestAndFees, running, resale, trivial }`, where `trivial` means `total` equals the share of the price.
+
+**Placement** (the verdict card, R2 "Verdict card (rebuilt)"): a new **row 4b**, 8 below the key figures and above the basis marker.
+- **Look:** one `meta` 600 `surface` Text, followed by the ⓘ `totalCost` as its next flex sibling (rule I). It wraps at words and has no `numberOfLines`.
+- **Copy (keys `decide.verdict.tco.*`):**
+  - Whole years (`H` divisible by 12): **"Over {{count}} year: {{total}} in all"** / **"Over {{count}} years: {{total}} in all"**.
+  - Otherwise: **"Over {{count}} month: {{total}} in all"** / **"Over {{count}} months: {{total}} in all"**.
+  - `{{total}}` is whole currency units (rule 12, large totals). The a11y label uses `formatMoneyA11y` ("Over 3 years, 23,412 dollars in all").
+- **Why a row and not a fourth key figure:** the three key figures are a fixed R2 strip (38 high) and a monthly, comparable set. A total over years is a different unit, so it is a sentence row beneath them.
+
+**Budget (402 × 874, 1.0x):**
+- The row adds 8 + 17.5 = **25.5**. The card is 259 (ends y = 415), or 284 with the difference line (ends y = 440).
+- **Frame 2 (car, loan):** the second warning row now ends at **695.5 + 25.5 = 721**, against the action bar at 735 (14 spare). Frame 1 (sofa, cash, no running costs, no interest) is **unchanged**, because the row is hidden there.
+- The worst case in the old budget (difference line and the 25 + 8 basis detail row, 728.5) is not a store frame, and there the second warning's last line can sit under the bar. The page scrolls.
+- Verified in 05-26.
+
+**States:**
+
+| State | Row |
+|---|---|
+| Purchase check, plan has a total, total ≠ price | shown |
+| Cash, no running costs, no loss of value | **hidden** (`trivial`: total = price) |
+| Loss of value set, nothing else | shown (price − resale; "in all" is then below the price) |
+| Card minimum never clears or is open at the cap (`plan.total` null) | **hidden** (the card-minimum note already says so) |
+| Investment check | **hidden** (the verdict card has its own projection line, R15.5) |
+| Missing verdict | **hidden** |
+| First read (rough figures) | shown |
+| Decided (bought) check | recalculated from the stored check, like the key figures |
+| Out of range | **hidden** |
+
+**ⓘ `totalCost` (new):**
+- Term **"Total cost"**.
+- Body: **"Everything this costs over the years shown: the price, the interest and fees on the plan, and the running costs for every month, less what it is expected to sell for where a loss of value is set. It adds up figures already in the check and assumes nothing new."**
+- What this changes: **"Nothing in the verdict."**
+
+**Accessibility:** the row joins the key-figures group (below), which gains "Over 3 years, 23,412 dollars in all." The group label order is: "Left each month after this: …. Cushion: …. Monthly cost: …. {tco}. {invested}."
+
+#### R18.4 Housing line (D-103; engine change E8)
+
+**The line:** housing costs at most **28%** of money in (changeable, default 28). `DEFAULT_HOUSING_LINE: Percent = percent('28')` goes in `constants.ts` under a `Cite:` comment (`constants.test.ts` enforces it). The citation follows `DEFAULT_DSR_LINE`: the 28/36 rule's front-end ratio. The plan's first task **verifies the 28% source before the constant merges**; none is invented here. As with the 36% line, it is measured on logged take-home money in, which is stricter than a lender's gross-income test.
+
+**What counts as housing** (the builder, `buildSnapshot.ts`; the engine sees one number, `DecideSnapshot.housingMonthly`, my share, ≥ 0):
+- **Housing spending:** the average, over the used months, of paid, non-one-off outflows in categories whose built-in key is **`Housing`** (the key `NOT_CUTTABLE` already names). It is the same `expenseTotals` that feed the spending basis, so rent logged as spending counts. Custom categories do not count, and the ⓘ names the Housing category.
+- **Housing debt payments:** `minimumPayment` of live loan debts (`kind` is not `card`) that are housing by either of two signals. A debt has no housing flag today, so no schema change is made:
+  1. its paying series (`debts.series_id`) is in a Housing-category series; or
+  2. it was created from a check whose item type is `property` (`debts.check_id` in `propertyCheckIds`, ids of the user's checks with `itemType = 'property'`, passed to the builder by the data layer from the checks it already holds).
+- **No double count:** a debt-covered series is already left out of spending (`coveredSeries`), so a mortgage counts once.
+- **Limitation (disclosed in the ⓘ):** a hand-recorded mortgage with neither signal is not counted as housing until Phase 6's debt editor adds a flag.
+- `housingMonthly` is on the average of the used months whatever the Worst / Average basis. The ratio's denominator is `incomeBasis`.
+
+**When it is tested.** A purchase check is tested only when it **adds** housing cost: `itemType` is `property` (including a custom type treated like Property) and `mineMonthly + mineRunning > 0`.
+- **`rent_bill`:** it is not tested, because it covers bills as well as rent. This is a stated limit.
+- **Other purchases:** they never raise the housing warning, even when housing is already over the line. A laptop is not blamed for the rent.
+- `housingAfter` = max(0, `housingMonthly` + `mineMonthly` + `mineRunning`). `mineRunning` is net of replaced expenses, so moving from rent to a mortgage nets out.
+- `housingBreach` = `housingAfter × 100 > housingLine × incomeBasis` (a bigint cross-multiply, as `dsr`), or `housingAfter > 0` when `incomeBasis` is 0. **Equal is not a breach.**
+- `shortfall` = `housingAfter` − half-up(`housingLine × incomeBasis` ÷ 100).
+- Invest checks are never tested.
+- The warning is soft: `state` becomes `adjust`, never `no` on its own, as for `dsr` and `owe`.
+
+**Warning code `housing`:**
+- `WarningCode` gains `'housing'`.
+- **`WARNING_ORDER`** becomes `['month', 'cash', 'cash_dip', 'dsr', 'housing', 'owe', 'inv']`. It breaks ties between equal shortfalls only, and sits after `dsr` because both are income-share lines and `housing` is the narrower. The citation comment is updated.
+- `Assessment` gains `housingBefore`, `housingAfter`, `housingRatioBefore` and `housingRatioAfter` (Percent or null) and `checks.housing` (true when not applicable).
+- `MarginLine` gains `'housing'`. `lineMargins` pushes it for property checks only, so the "On the edge" flag works for it.
+- `ResolvedLimits.housingLine` is `limits.housingLine ?? DEFAULT_HOUSING_LINE`. `DecideLimits.housingLine: Percent | null`.
+- The `assertNever` sites in `warningCopy.ts` and `LinesSection.tsx` become exhaustive over the new code.
+
+**Warning copy** (`decide.warn.housing*`, in "What breaks", ordered by shortfall like the rest):
+- Title: **"Housing takes a large share of your income"**.
+- Value: **"{{pct}}"** (e.g. "31%").
+- Body: **"Your line is {{line}}. After this, {{housing}} of {{in}} a month goes to housing costs."**
+- No-income variant: value **"None in"**, body **"Your line is {{line}} of money in. None comes in on this basis, so {{housing}} a month of housing costs is over it."**
+- Verdict title when `housing` leads an `adjust` (`decide.verdict.titleHousing`, ≤ 64 characters): **"Housing costs would reach {{pct}} of money in."**; no income: **"With no money coming in, any housing cost breaks your line."** (58).
+- The row layout is R2's warning row, with rule S stacking. It carries no ⓘ of its own, and the ⓘ `housingLine` sits on its Lines row.
+
+**The sixth Lines row** (`LinesCard.tsx`, `LimitKey` gains `'housing'`; the order is reserve, dsr, **housing**, unsecured, investing, saving, so the two income-share lines sit together). Keys `decide.lines.housing.*`:
+- Name **"Housing costs at most"**; description **"Share of money in, rent or mortgage and home costs"**; value **"{{pct}}%"**; the stored or default value and the "default" tag as the other rows.
+- **Editor** (`LimitEditorSheet.tsx`): the `RateInput` as for `dsr`, with the range line "Out of range: 0 to 100%". "Use the default" and "Save limit" are unchanged. The info line (`meta`, `inkMuted`) is **"Your housing costs come to {{amount}} a month, {{pct}} of money in."**, using `housingMonthly`.
+- **Settings plumbing:** `decide_settings.housing_line` (the second migration); `DecideSettingsRow`, the patch keys and `settingsPatch.ts` gain `housing_line`; the builder parses it with the DSR pattern, capped at 100, and a bad value counts toward `limitsReset`. `LimitEditorSheet`'s pre-flight regex mirrors the column check.
+- **Counts:** the Lines row on Decide home reads **"{{count}} of 6 set by you"** (was of 5), and "All at their defaults" is unchanged. `linesSetCount` adds `housing_line`. R17.3, R17.6 and the pushed screen's sub-copy say "of 6".
+- **Every line** (step 3 What breaks) gets a row **"Housing costs"** · "{{pct}} of money in", with its margin, for property checks only. Assumptions in play gains **"Housing costs today"** · "{{amount}} a month" for property checks.
+
+**ⓘ `housingLine` (new):**
+- Term **"Housing costs at most"**.
+- Body: **"The share of money in each month that may go to housing: spending in the Housing category, plus the payments on loans that pay for a home. Left blank, it is 28%. It is measured on the money in that you log, which is stricter than a lender's test on gross income. A mortgage recorded without a link to a Housing series or a property check is not counted. With no money in, any housing cost is over the line."**
+- What this changes: **"A property purchase that takes housing costs above this share needs adjustment. Other purchases are not tested against it."**
+- The same key serves the Lines row and the editor sheet (`LIMIT_INFO_KEY.housing = 'housingLine'`).
+
+#### R18.5 Opportunity cost headline row (D-104)
+
+**The row** (verdict card, **row 4c**, directly under the total-cost row, or under the key figures when the total-cost row is hidden; always above the basis marker). One `meta` 600 `surface` Text with the ⓘ `investedInstead` as its next flex sibling. Keys `decide.verdict.invested.*`:
+- Whole years: **"Invested instead: {{fv}} after {{count}} year at {{rate}}%"** / **"… after {{count}} years at {{rate}}%"**.
+- Otherwise months: **"… after {{count}} month at …"** / **"… months at …"**.
+- With a holding fee typed (D-44 in the fold): **"Invested instead: {{fv}} after {{count}} years at {{rate}}%, less {{fee}}% fees"**, which is the net figure the fold already shows.
+- Out of range (D-47): **"Invested instead: too large to project at {{rate}}%"**.
+- `{{rate}}` is the entered rate, one decimal at most, as typed. `{{fv}}` is whole currency units. The a11y label ends "A projection, not a forecast."
+
+**Rate source rule: typed only. Never invented.**
+- The row uses the **first non-zero rate the user entered** in the "If it went into investing instead" fold, in entry order (`context.limits.projectionRates[1]`; index 0 is the always-present 0%).
+- It is **hidden** when no non-zero rate is entered.
+- **There is no market-default investing return in the code.** `MARKET_DEFAULTS` holds card minimum terms and the dealer cap only, and D-06/D-07 forbid a defaulted rate. D-104's "or the market default the check already uses" therefore has nothing to bind to, and this spec reads it as "typed". The sentence is flagged in the report.
+- The fold keeps all its rates, the horizon chips, the holding fee and the four views (D-82, D-47 unchanged).
+
+**Value `fv`** (engine, in `investmentViews`, E7): `headline = { rate, contributed, projected | null, rangeCode }`, computed for the headline rate.
+- It is the future value of **what this check takes from the user**: the amount on the day (`mineDayOne`) invested at month 0, **plus** the existing `paymentsInvested` figure for that rate (each payment and each month of running costs, grown to the horizon).
+- The two parts are each rounded once (D-20) and added exactly. The holding fee applies as in the views. `contributed` is `mineDayOne` plus `paymentsInvested`'s contributed amount.
+- **Why not the fold's "price as a lump":** that view assumes the whole price was in hand on day one. For a loan or a card plan, the user's real outflows are the deposit now and the payments later.
+- **Horizon `n`:** the views' horizon (`horizonMonths`), so it follows the fold's chips. It can differ from the total-cost row's `n` only when the user picks a horizon shorter than the plan term, and then each row states its own `n`.
+
+**Hidden states:** investment checks (they have R15.5's line; `investmentViews` is null for them); a missing verdict; no non-zero rate; `contributed` = 0; a fee that makes the net rate invalid.
+
+**Speed:** the headline comes from the same settled-core call as `investmentViews`, so it follows the D-88 contract (computed on the settled path; while it settles the row keeps its last value with the existing "Updating" treatment, never a half-computed figure).
+
+**Budget:** +25.5 when shown. The demo seed enters no rate, so **no DCU-11 frame shows it**. With both new rows and a difference line the second warning can end at about 746.5, which is 11.5 under the bar at 735. This is a scrolling state outside the store frames.
+
+**ⓘ `investedInstead` (new):**
+- Term **"Invested instead"**.
+- Body: **"What the money this check takes (the amount on the day, each payment and each month of running costs) would have grown to if it had gone into investing at the rate you entered, over the same months. A projection at that rate, not a forecast."**
+- What this changes: **"Nothing in the verdict."**
+
+#### R18.6 Element mapping
+
+| Today | R18 |
+|---|---|
+| Eyebrow = the basis label ("Your worst month" …) | "Net free cash flow" + ⓘ; the basis moves to the sub-line (R18.1) |
+| Sub-line "after spending, debts and saving" | The five basis variants ending "after spending, debts and saving goals" |
+| "In … · Out …" with Out = spending | Out = everything that leaves, so In − Out = the hero |
+| Month details title = the card label; strip Comes in / Goes out / Left | Title "Net free cash flow"; a breakdown that adds up; a "Pots ›" link |
+| `leftBefore` = income − spending − debts − `pausable` | − `setAside` as well; `pausable` unchanged |
+| Cash and the 90-day path start from `cashOnHand` | Start from `cashOnHand − protectedCash` |
+| Saving counted from transfers into savings and investing accounts | Transfers tagged to a pot are left out (the set-aside stands for them) |
+| Wait goal: `savings_goals` row, contributions pausable | A `kind = 'wait'` pot; its set-aside is protected; copy says "pot" |
+| Month table: Saving and investing | Adds "Set aside for pots" (hidden at 0) |
+| Five lines; "of 5 set by you" | Six lines (housing third); "of 6 set by you" |
+| `WARNING_ORDER` of six codes | Seven, `housing` after `dsr` |
+| Verdict card: three key figures then the basis marker | Rows 4b (total cost) and 4c (invested instead) between them, both conditional |
+| "If it went into investing instead" fold | Unchanged; the headline row reads its first non-zero rate |
+| You › Money rows | Adds "Pots" (navigation) |
+| Decide home rows | Unchanged: four rows, no pots row |
+| FAB menu, You › Add | Unchanged |
+
+**Keeps working unchanged:** the quick check and its in-card result (the hero still shrinks to the summary line while a result is open); the notice row and Needs a look sheet (two entries added); Open checks, Changes and Past decisions rows and screens; the basis control and steadiness chip; the card hierarchy and "Check it" as the one primary action; the unavailable, first-run and loading states; the hero's two-Text fit; the DCU-11 primary frame 1 (step 3 of the sofa check), and frames 2 and 3 apart from the 25.5 budgeted above.
+
+#### R18.7 Compliance (DCU-09), ⓘ count and engine coverage
+
+**DCU-09 check of every new string.** The guard (`src/i18n/__tests__/decideCopy.test.ts`) fails "advice", "recommendation", "you should", reassurance ("safe to", "don't worry", "no problem", "go for it", "you can afford", "worth it", "safely") and an opening money imperative (Spend, Save, Try, Keep, Buy, Borrow, Skip, Put, Cut, Pay, Invest, Sell, Stop) outside the keyed button list. All new keys are scanned.
+
+| Strings | Verdict |
+|---|---|
+| Eyebrow "Net free cash flow"; the five sub-lines; Month details basis lines and breakdown labels | Declarative descriptions of a figure. Pass. |
+| ⓘ `netFreeCashFlow`, `pots`, `totalCost`, `housingLine`, `investedInstead` (term, body, what this changes) | Declarative; no second-person instruction. "Marking it done releases both" describes the effect. Pass. |
+| Total cost row; Invested instead row | A figure and its basis. The projection is stated as a projection in the ⓘ and the a11y label, and the row begins "Invested" (past tense, not the imperative "Invest"). The plan confirms the guard matches on the whole word `Invest`; a guard test covers it. Pass. |
+| Housing warning title, value, body, verdict titles; Lines name, description, info | "takes a large share", "would reach", "breaks your line": declarative, no advice. Pass. |
+| Pots screen: heading, sub-copy, summary, row states ("Target reached · nothing more to set aside", "Past its date · … still to save"), empty, sheet labels, preview lines | Facts about a pot. No reassurance. Pass. |
+| Buttons "Add a pot", "Save pot", "Mark done", "Reopen", "Delete", "Tag a transfer", "Pots ›", "+ Pot", "Cancel" | UI controls. **"Save pot" and "Add a pot" begin with Save or a verb, so they are added to the guard's keyed button list**, as "Check it" and "Review changes" were. |
+| Toasts "Pot saved", "Pot deleted · {{name}}", "Marked done · {{name}}", "Reopened · {{name}}"; undo labels | Past-tense facts. Pass. |
+| Wait copy changes (R18.2) | Declarative. Pass. |
+| Needs a look entry 8 and the pot rate variant | Facts with an action control. Pass. |
+| Notice for the first-run user, or any new calm wording | None added. Calm comes from layout (D-99). |
+
+**ⓘ count:** `INFO_KEYS` goes from 60 to **65** (`netFreeCashFlow`, `pots`, `totalCost`, `housingLine`, `investedInstead`); the existing `waitGoal` body and changes are rewritten (R18.2). The comment on the list and `infoTerms.test.ts` are updated.
+
+**Engine items at 100% branch coverage** (the CI gate; named tests "D-100", "D-101", "D-102", "D-103", "D-104"):
+- **E6 (`pots.ts` and the context changes):**
+  - `potSetAside`: target null with and without `monthlyAmount`; reached (equal and over); a Wait pot below and above remaining; a plain pot past due (equal to `asOf` and before); within the first month (`m` = 1); the exact-division and round-up cases ($600 / 5 and $601 / 5); the month-end clamp (31 Jan); the 600-month cap; the last-month residual.
+  - The `bigint` sum and its safe-range conversion; `protectedCash` (saved below, equal to and above cash; negative cash; no pots).
+  - `leftBefore` with and without `setAside`; the identity income − out = `leftBefore`; `MonthColumn.setAside` and `outgoings`.
+  - `pausable` unchanged and the pause never touching a set-aside (a shortfall beyond saving and investing is `month`).
+  - `cashPathForSnapshot` opening; `position.ts` `fixedOutgoings`; `investmentViews` surplus.
+  - Property tests (fast-check): `setAside × m ≥ remaining` and `setAside × (m − 1) < remaining`; monotonic in remaining and in `m`; the sum equals the per-pot amounts; a pot never makes `leftBefore` larger.
+- **E7 (`ownership.ts`, the headline):**
+  - `totalCost`: `plan.total` null; cash, loan, instalment and card plans; `trivial`; loss of value set, unset and capped at the price; negative running clamped to 0; horizon taken as max(chosen, `plan.months`); out-of-range null; household share rounding.
+  - Headline: no non-zero rate; the first non-zero rate chosen; a holding fee; out of range; zero `contributed`; the lump and payments parts rounded once each.
+- **E8 (housing):**
+  - Boundary at exactly 28.00% (not a breach) and one minor unit over; `incomeBasis` 0; a non-property check with housing already over (no warning); a property check with `mineMonthly + mineRunning` ≤ 0 (no warning); `housingAfter` floored at 0 by replaced expenses; shortfall half-up; the `WARNING_ORDER` tie-break against `dsr` and `owe`; `lineMargins` and the edge flag; a custom type treated like Property; invest checks.
+  - Builder (not engine, in the feature suite): Housing-category spending; the series signal; the property-check signal; no double count with `coveredSeries`; an invalid `housing_line` counted in `limitsReset`.
+- **Also tested outside the engine:** `buildSnapshot` leaves tagged legs out of saving; the own-pot exclusion for a reopened Waiting check; RNTL at 320 / 2.0x for the eyebrow row and the sub-line; the Month details breakdown sums to the hero; the Pots screen states; migrations applied to a local database (the guard cases, the shape constraint, `apply_patches` for each new column).
+
+#### R18.8 Plan split (waves continue from 30; plans 05-119 onward)
+
+05-118 is wave 30. **05-26 (the device checks) moves from wave 31 to the last wave, 38**, and gains the R18 device items (below). `en.ts`, `types.ts` and `infoTerms.ts` are shared files, so a plan adds only its own namespace block and `INFO_KEYS` entries. Plans in one wave own disjoint source files.
+
+| Plan | Wave | Content | Depends on |
+|---|---|---|---|
+| **05-119** | 31 | Both migrations (R18.2); local DB tests of the guard, shape constraint and `apply_patches`; preflight; a **blocking checkpoint**: the user's explicit approval before `supabase:db:push` to production. | — |
+| **05-120** | 31 | E6 engine: `pots.ts`, `prepareContext` set-aside and `protectedCash`, `MonthColumn.setAside`, `cashPath` opening, `position` fixed outgoings, `investmentViews` surplus. 100% coverage and property tests. | — |
+| **05-121** | 32 | E8 engine: `DEFAULT_HOUSING_LINE`, `WARNING_ORDER`, `housing` code, `Assessment` fields, margins, limits. | 05-120 (shares `assess.ts`, `types.ts`) |
+| **05-122** | 32 | Data layer for pots: `SavingsGoalRow`/columns, `decidePots.ts` mutations, queries and keys, undo labels and `savings_goals` patch keys, `housing_line` in the settings row and patch. | 05-119 |
+| **05-123** | 33 | E7 engine: `ownership.ts` (`totalCost`), the `investmentViews` headline. | 05-120, 05-121 |
+| **05-124** | 33 | Snapshot builder: `pots`, tagged-leg exclusion, own-pot exclusion, `housingMonthly`, `housingLine`, `propertyCheckIds`, pot currency conversion, `base.pots`. | 05-120, 05-121, 05-122 |
+| **05-125** | 34 | D-100 card: eyebrow, sub-lines, Out figure, `homeCardModel`, Month details breakdown and "Pots ›" link, retired keys, ⓘ `netFreeCashFlow`, budget probes. | 05-124 |
+| **05-126** | 34 | D-103 UI: sixth Lines row and editor, `linesSetCount`, "of 6", warning copy and verdict titles, Every line and Assumptions rows, ⓘ `housingLine`. | 05-124 |
+| **05-127** | 35 | Pots UI: `PotsScreen`, `PotSheet`, You › Money row, Month details wiring, Needs a look entries, ⓘ `pots`, undo and toasts. | 05-122, 05-124, 05-125 |
+| **05-128** | 35 | Verdict rows 4b and 4c on step 3: rendering, hiding rules, a11y group, budgets, ⓘ `totalCost` and `investedInstead`; the month table's pots row. | 05-123, 05-124 |
+| **05-129** | 36 | Wait → pot: copy changes (R18.2), the Wait panel and Past decisions wording, own-pot exclusion test through `computeCheck`. | 05-127, 05-128 |
+| **05-130** | 37 | Guards and matrices: DCU-09 keyed list and scans, `INFO_KEYS` = 65, `noRawColours`, the R6 matrix (320/402 × 1.0/2.0) for the new surfaces, the a11y order tests. | 05-125..05-129 |
+| **05-26** | **38** | Device checks, now last. Adds: the eyebrow row at 320 / 2.0x; the card and rows `onLayout` reads (470 / 710, with the notice row 532 / 772); frame 2 at 721; a pot created offline then replayed; a Wait pot lowering the hero; a property check raising the housing warning; the production migrations applied. | 05-130 |
+
+#### R18.9 Conflicts resolved and decisions worth a second look
+
+| Earlier | Now | How |
+|---|---|---|
+| R17.3 eyebrow label = the basis; sub-line "after spending, debts and saving" | Constant "Net free cash flow"; the basis in the sub-line | D-100 |
+| R17.3 hero second line, Out = spending | Out = everything that leaves | R18.1 (so the figures reconcile) |
+| R17.2 card ≤ 299.5, rows end y = 692.5 / 754.5 | Card ≤ 317, rows end 710 / 772 | the two-line sub-line |
+| R17.3 Month details title = card label; Comes in / Goes out / Left | Title "Net free cash flow"; a breakdown | D-100 |
+| R17.1 up to four rows | Held: no pots row on Decide home | R18.2 |
+| "Of 5 set by you" (R17.3, R17.6) | "Of 6" | D-103 |
+| Wait copy "A savings goal …", "no balance or limit moves until you reopen it" (R5, D-34) | "A pot …", "{{amt}} a month comes off net free cash flow" | D-101 |
+| Wait contributions pausable (D-35 via monthlySaving) | A Wait pot's set-aside is protected | D-101 |
+| D-101 "new table" | Extend `savings_goals` | R18.2 (fallback described) |
+| D-104 "or the market default" | No such default exists; typed only | R18.5 |
+| `WARNING_ORDER` (six codes) | Seven | D-103 |
+| `INFO_TERMS` 60 keys | 65 | R18.7 |
+| `decide.month.in` / `.out` / `.left` | Retired from Month details | R18.1 |
+| 05-26 wave 31 | Wave 38, last | R18.8 |
+
+**Decisions taken here, not made by the user:** each one has the call and its alternative.
+1. **Table:** extend `savings_goals` (alternative: a new `sinking_funds` table plus a move).
+2. **Out figure:** it now includes debts, saving and set-asides (alternative: keep spending-only and show the breakdown only in Month details).
+3. **Pots entry points:** Month details link and You › Money (alternative: a fifth Decide row, shown from the first pot; it ends the stack at y = 762, or 824 with the notice row).
+4. **Past-due pots** set aside 0 and surface in Needs a look (alternative: the whole remainder in one month).
+5. **Rounding:** set-asides round up, whole months rounded down.
+6. **Housing:** only the Housing category and loans with a Housing series or a property check count; only `property` checks are tested (alternative: a `housing` flag on `debts` in Phase 6, and rent-type checks tested).
+7. **Housing line order:** third of six, beside the debt line.
+8. **Invested instead** is the future value of the amount on the day plus the payments and running costs, using the first non-zero typed rate.
+9. **Total-cost horizon** follows the investing views' horizon and is never below the plan term.
+10. **Sub-line wording** follows D-100 ("saving goals"); the ⓘ names investing and pots.
+
+#### R18.10 Checklist
+
+| Item | Where |
+|---|---|
+| Eyebrow, ⓘ, sub-lines, Out figure, a11y | `HomeSummaryCard`, `homeCardModel`, `DecideHomeScreen` |
+| Month details breakdown and Pots link | `MonthDetailsSheet`, `YourMonthCard` (`MonthDetailsBody`) |
+| Pots schema, guard, grants, patches | migration `20261024000100_savings_goals_pots.sql` |
+| Housing setting | migration `20261024000200_decide_settings_housing_line.sql` |
+| Set-aside, protected cash, month column | `src/engine/decide/pots.ts`, `assess.ts`, `cashPath.ts`, `position.ts`, `investmentViews.ts`, `types.ts` |
+| Pot builder inputs; tagged-leg exclusion | `buildSnapshot.ts`, `snapshot/types.ts`, `withoutCheckWrites.ts` |
+| Pots screen and sheet; You row | `PotsScreen`, `PotSheet`, `app/(app)/decide/pots.tsx`, `YouScreen.tsx` |
+| Pot mutations and undo | `src/data/mutations/decidePots.ts`, `src/db/savingsGoals.ts`, `engine/undo/types.ts` |
+| Total cost and invested rows | `src/engine/decide/ownership.ts`, `investmentViews.ts`, step 3 verdict card components |
+| Housing line and warning | `constants.ts`, `assess.ts`, `decision.ts`, `warningCopy.ts`, `LinesCard`, `LimitEditorSheet`, `LinesSection` |
+| Wait copy | step 5 Wait panel, Past decisions, `infoTerms` `waitGoal` |
+| Tests | R18.7 |
