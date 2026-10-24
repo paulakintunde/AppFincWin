@@ -835,7 +835,7 @@ Plans:
 
 **Wave 42** *(blocked on Wave 41 completion)*
 - [x] 05-138-PLAN.md — Snapshot: judgeOn becomes the basis, current-month rows without a rate fall back to Worst, integration tests incl. currency conversion and the quick check (D-106, D-107)
-- [ ] 05-141-PLAN.md — Free / overspent wording, part 3: home card and Month details, the Judge-on and outcome-card strings and the wording guard (D-106, D-107)
+- [x] 05-141-PLAN.md — Free / overspent wording, part 3: home card and Month details, the Judge-on and outcome-card strings and the wording guard (D-106, D-107)
 
 **Wave 43** *(blocked on Wave 42 completion)*
 - [ ] 05-139-PLAN.md — Card model: month label, selected choice, rate fallback, Needs a look rate entry (D-106, D-107)
