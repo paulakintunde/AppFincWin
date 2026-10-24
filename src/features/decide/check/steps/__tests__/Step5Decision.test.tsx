@@ -61,6 +61,11 @@ describe('Step5Decision', () => {
     expect(screen.getByText(/Logs it anyway\. The record will show the month was \$\d+ short when you signed\./)).toBeTruthy();
   });
 
+  it('D-101 the Wait outcome card describes a pot', async () => {
+    await wrap(<Step5Decision {...props({ outcome: null })} />);
+    expect(screen.getByText('Sets an amount and a date and starts a pot for this plan. A reminder opens this check on that day, recalculated. No balance moves until then.')).toBeTruthy();
+  });
+
   it('Pass lists its three lines', async () => {
     await wrap(<Step5Decision {...props({ outcome: 'pass' })} />);
     expect(screen.getByText('What gets written')).toBeTruthy();
@@ -68,13 +73,14 @@ describe('Step5Decision', () => {
     expect(screen.getByText('No reminders. It stays until you delete it.')).toBeTruthy();
   });
 
-  it('Wait shows the amount, the ready-by date and the closing line about nothing else changing', async () => {
+  it('D-101 the Wait bullets say pot and net free cash flow', async () => {
     const p = props({ outcome: 'wait', advertised: 2_000_000, method: 'cash' });
     await wrap(<Step5Decision {...p} />);
     expect(screen.getByText('Set aside each month')).toBeTruthy();
     expect(screen.getByText('Ready by')).toBeTruthy();
     expect(screen.getByLabelText('Monthly saving')).toBeTruthy();
-    expect(screen.getByText('Nothing else changes: no balance or limit moves until you reopen it.')).toBeTruthy();
+    expect(screen.getByText(/^No balance moves\. .+ a month comes off net free cash flow\.$/)).toBeTruthy();
+    expect(screen.queryByText(/savings goal/)).toBeNull();
     expect(screen.queryByText(/twelve months/)).toBeNull();
   });
 

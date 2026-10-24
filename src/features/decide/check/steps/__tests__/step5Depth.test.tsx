@@ -70,7 +70,7 @@ describe('Step5Decision cooling-off and Wait goal (05-46)', () => {
     const p = props({ ...SPREAD, outcome: 'wait' });
     expect(p.computation.waitPlan?.target ?? 0).toBeGreaterThan(0);
     await wrap(<Step5Decision {...p} />);
-    expect(screen.getAllByText(/A savings goal of \$\d+/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/A pot of \$\d+/).length).toBeGreaterThan(0);
     expect(screen.getByText(/\$0 of \$\d+ saved/)).toBeTruthy();
   });
 

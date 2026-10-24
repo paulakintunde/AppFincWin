@@ -1612,12 +1612,12 @@ const en = {
       },
       waitGoal: {
         term: 'Wait and save',
-        body: 'Recording Wait sets a monthly amount and a ready-by date and starts a savings goal for this purchase. On the ready-by date a reminder reopens the check, recalculated.',
-        changes: 'Creates one savings goal and one reminder. Balances and limits stay as they are.',
+        body: 'Recording Wait sets a monthly amount and a ready-by date and starts a pot for this purchase. On the ready-by date a reminder reopens the check, recalculated.',
+        changes: 'Creates one pot and one reminder. Balances stay as they are; the monthly amount comes off net free cash flow.',
       },
       whatGetsWritten: {
         term: 'What gets written',
-        body: 'The lines Go ahead adds to your records, listed before anything is saved. Each appears in Activity linked to this check. Wait creates a savings goal and a reminder, and Pass writes nothing.',
+        body: 'The lines Go ahead adds to your records, listed before anything is saved. Each appears in Activity linked to this check. Wait creates a pot and a reminder, and Pass writes nothing.',
         changes: 'Nothing is written until Go ahead is confirmed, and Undo removes the whole set in one step.',
       },
       // 05-80 (D-84, R15.8): the 24 Step 2, item and investment terms.
@@ -1856,7 +1856,7 @@ const en = {
       decisionTitle: 'Delete this decision?',
       boughtBody_one: 'It leaves Past decisions. The line Go ahead wrote stays in Activity, and every figure that uses it stays the same.',
       boughtBody_other: 'It leaves Past decisions. The {{count}} lines Go ahead wrote stay in Activity, and every figure that uses them stays the same.',
-      waitingBody: 'It leaves Past decisions with its savings goal and reminder. Transfers tagged to the goal stay in Activity.',
+      waitingBody: 'It leaves Past decisions with its pot and reminder. Transfers tagged to the pot stay in Activity.',
       passedBody: 'It leaves Past decisions. Nothing else changes.',
       changeTitle: 'Delete this change?', changeBody: 'It leaves Changes coming up, and checks stop counting it.',
       toastCheck: 'Check deleted. Nothing was written.', toastDecision: 'Decision deleted', toastChange: 'Change deleted',
@@ -2417,7 +2417,7 @@ const en = {
       goName: 'Go ahead', goDesc: 'Writes the expense, the schedule and the running costs into your records. Every payment appears in Activity against this check.',
       goDescShort: 'Logs it anyway. The record will show the month was {{amount}} short when you signed.',
       goFlagBreaks: 'Breaks a line', goFlagAgainst: 'Against your lines',
-      waitName: 'Wait and save', waitDesc: 'Sets an amount and a date. A reminder opens this check on that day, recalculated. Nothing in your balances moves until then.',
+      waitName: 'Wait and save', waitDesc: 'Sets an amount and a date and starts a pot for this plan. A reminder opens this check on that day, recalculated. No balance moves until then.',
       waitPutAside: 'Set aside each month', waitReadyBy: 'Ready by', waitSliderA11y: 'Monthly saving', waitNoDate: 'No ready-by date at this amount.',
       waitWithin: 'To cover {{target}} without touching your {{cushion}} cushion. Your month currently leaves {{left}}, so {{amount}} is within what you have spare.',
       waitBeyond: 'To cover {{target}} without touching your {{cushion}} cushion. Your month currently leaves {{left}}, so {{amount}} is more than you actually have spare — something else has to give.',
@@ -2453,7 +2453,7 @@ const en = {
       writtenInvestingDrops: 'Your investing drops to {{amount}} a month while this runs.',
       writtenWaitTarget: 'A target of {{target}} at {{amount}} a month, ready {{date}}.',
       writtenWaitReminder: 'A reminder on {{date}} that opens this check, recalculated.',
-      writtenWaitNoChange: 'Nothing else changes: no balance or limit moves until you reopen it.',
+      writtenWaitNoChange: 'No balance moves. {{amt}} a month comes off net free cash flow.',
       writtenWaitKept: 'The quote and every assumption are kept exactly as they are now.',
       writtenPassKept: 'Kept in Past decisions with the price and your reason.',
       writtenPassNotSaving: 'Nothing added to savings or net worth. Not spending is not saving.',
@@ -2617,10 +2617,10 @@ const en = {
         higher: 'higher', lower: 'lower',
       },
       goal: {
-        caption: '{{saved}} of {{target}} saved', captionNoTarget: '{{saved}} saved', a11y: '{{pct}} percent', preview: 'A savings goal of {{target}}, {{amount}} a month, ready {{date}}.',
-        previewNoDate: 'A savings goal of {{target}}, {{amount}} a month.', // addition
+        caption: '{{saved}} of {{target}} saved', captionNoTarget: '{{saved}} saved', a11y: '{{pct}} percent', preview: 'A pot of {{target}}, {{amount}} a month, ready {{date}}.',
+        previewNoDate: 'A pot of {{target}}, {{amount}} a month.', // addition
         tag: 'Tag a transfer', tagTitle: 'Tag a transfer', tagEmpty: 'No transfers in the last 90 days.', untagA11y: 'Untag {{name}}', tagged: 'Transfer tagged', untagged: 'Transfer untagged',
-        waitingRate: 'Waiting for a rate', written: 'A savings goal of {{target}}, {{amount}} a month, ready {{date}}.', writtenNoDate: 'A savings goal of {{target}}, {{amount}} a month.',
+        waitingRate: 'Waiting for a rate', written: 'A pot of {{target}}, {{amount}} a month, ready {{date}}.', writtenNoDate: 'A pot of {{target}}, {{amount}} a month.',
       },
       cooling: { toggle: 'Check again in 48 hours', sub: 'Reopens this check, recalculated. Off unless you turn it on.', written: 'A reminder in 48 hours that reopens this check, recalculated.' },
       currency: {

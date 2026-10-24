@@ -183,7 +183,7 @@ function outcomeLines(inputs: CheckInputs, computation: CheckComputation, ctx: W
       if (wait !== null && wait.readyBy !== null) {
         out.push(ref('decide.decision.writtenWaitReminder', { date: ctx.formatDate(wait.readyBy) }));
       }
-      out.push(ref('decide.decision.writtenWaitNoChange'), ref('decide.decision.writtenWaitKept'));
+      out.push(ref('decide.decision.writtenWaitNoChange', { amt: ctx.fmtExact(wait?.monthlyAmount ?? 0) }), ref('decide.decision.writtenWaitKept'));
       return out;
     }
     case 'go': {

@@ -199,6 +199,12 @@ describe('writtenLines', () => {
     expect(keys(lines)).toEqual(['writtenWaitTarget', 'depth.goal.written', 'writtenWaitReminder', 'writtenWaitNoChange', 'writtenWaitKept']);
     expect(lines[0]!.params).toEqual({ target: 'E90000', amount: 'E30000', date: 'on 2027-01-15' });
     expect(lines[1]!.params).toEqual({ target: 'E90000', amount: 'E30000', date: 'on 2027-01-15' });
+    expect(lines[3]!.params).toEqual({ amt: 'E30000' });
+  });
+
+  it('D-101 the Wait closing line carries the monthly amount that comes off net free cash flow', () => {
+    const computation = { ...withPlan('cash', {}), waitPlan: null } as unknown as CheckComputation;
+    expect(writtenLines(base({ outcome: 'wait' }), computation, ctx)[0]!.params).toEqual({ amt: 'E0' });
   });
 
   it('wait with no ready-by date lists the dateless goal but no target or reminder line', () => {

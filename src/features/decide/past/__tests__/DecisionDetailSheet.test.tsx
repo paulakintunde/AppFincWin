@@ -173,7 +173,7 @@ describe('DecisionDetailSheet', () => {
     expect(screen.getByText('No lines in the last 90 days.')).toBeTruthy();
   });
 
-  it('D-73 the detail sheet deletes through the per-outcome confirm', async () => {
+  it('D-101 the waiting-decision delete confirm names the pot (D-73 the detail sheet deletes through the per-outcome confirm)', async () => {
     mockGoals = [goal('w')];
     const d = decision('w', { status: 'waiting', wait_monthly: 20_000, ready_by: '2027-01-15' });
     await renderSheet(d);
@@ -181,7 +181,7 @@ describe('DecisionDetailSheet', () => {
     await fireEvent.press(screen.getByText('Delete'));
     expect(mockRemove).not.toHaveBeenCalled();
     expect(screen.getByText('Delete this decision?')).toBeTruthy();
-    expect(screen.getByText(/with its savings goal and reminder/)).toBeTruthy();
+    expect(screen.getByText(/with its pot and reminder\. Transfers tagged to the pot stay in Activity/)).toBeTruthy();
     await fireEvent.press(screen.getByText('Keep it'));
     expect(mockRemove).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByText('Delete'));

@@ -232,7 +232,7 @@ describe('PastDecisionsScreen', () => {
     expect(screen.getByText(/The line Go ahead wrote stays in Activity/)).toBeTruthy();
   });
 
-  it('D-73 Waiting and Passed confirms use their own copy', async () => {
+  it('D-101 the waiting-decision delete confirm names the pot (D-73 Waiting and Passed confirms use their own copy)', async () => {
     mockChecks = [
       decision('w', { name: 'Sofa', status: 'waiting', decided_at: '2026-10-10T12:00:00Z', wait_monthly: 20_000, ready_by: '2027-01-15' }),
       decision('p', { name: 'Watch', status: 'passed', decided_at: '2026-09-01T12:00:00Z' }),
@@ -243,7 +243,7 @@ describe('PastDecisionsScreen', () => {
     expect(screen.getByText('It leaves Past decisions. Nothing else changes.')).toBeTruthy();
     await fireEvent.press(screen.getByText('Keep it'));
     await pressMenu('Sofa', 'Delete');
-    expect(screen.getByText(/with its savings goal and reminder/)).toBeTruthy();
+    expect(screen.getByText(/with its pot and reminder\. Transfers tagged to the pot stay in Activity/)).toBeTruthy();
   });
 
   it('D-73 deleting a Waiting decision deletes its goal in one step and cancels its reminders', async () => {
