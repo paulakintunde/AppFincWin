@@ -8,7 +8,9 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { FONT_PAIRINGS, type FontPairingKey } from '@/theme/fonts';
 import { colors } from '@/theme/tokens';
-import { TODAY, loggedSource, month, noneSource, unconvertedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
+import en from '@/i18n/locales/en';
+import type { DecideSettingsRow } from '@/db/decideSettings';
+import { TODAY, loggedSource, month, noneSource, roughSource, unconvertedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { homeCardModel } from '../homeCardModel';
 import { HomeHero, HomeSummaryCard, heroAmountText, type HomeSummaryCardProps } from '../HomeSummaryCard';
 import { heroOneLineMax } from '../heroAmountText';
@@ -31,6 +33,22 @@ jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 
 const months = (n: number, income = 500_000, spending = 300_000) =>
   ['2026-06', '2026-07', '2026-08', '2026-09'].slice(4 - n).map((m) => month(m, income, spending));
+
+const roughSettings = {
+  user_id: 'u1',
+  currency: 'USD',
+  rough_income: 400_000,
+  rough_spending: 250_000,
+  reserve: null,
+  dsr_line: null,
+  housing_line: null,
+  unsecured_multiple: null,
+  investing_floor: null,
+  saving_floor: null,
+  basis_override: null,
+  version: 1,
+  updated_at: '2026-10-15T00:00:00Z',
+} as DecideSettingsRow;
 
 const METRICS = { frame: { x: 0, y: 0, width: 320, height: 640 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 
@@ -128,6 +146,15 @@ describe('HomeHero', () => {
   });
 });
 
+const SUB_END = 'after spending, debts and everything set aside';
+const SUB = {
+  worst: `in your worst month, ${SUB_END}`,
+  average: `in your average month, ${SUB_END}`,
+  tightest: `from your tightest figures, ${SUB_END}`,
+  figures: `from the figures you gave, ${SUB_END}`,
+  switched: `now from your logged months, ${SUB_END}`,
+};
+
 describe('HomeSummaryCard', () => {
   const props = (over: Partial<HomeSummaryCardProps> = {}): HomeSummaryCardProps => ({
     source: loggedSource({ months: months(4), basisOverride: 'worst' }),
@@ -160,7 +187,7 @@ describe('HomeSummaryCard', () => {
   }
   const figures = (over: Partial<HomeSummaryCardProps> = {}) => {
     const p = props(over);
-    const model = homeCardModel(p.source, p.settings, { status: p.status, homeBasisSeen: p.homeBasisSeen });
+    const model = homeCardModel(p.source, p.settings, { status: p.status, homeBasisSeen: p.homeBasisSeen, today: TODAY });
     if (model.state !== 'figure') throw new Error('fixture is not a figure');
     return model;
   };
@@ -173,10 +200,10 @@ describe('HomeSummaryCard', () => {
   it('D-95 the card reads label, hero, In and Out, then the quick check', async () => {
     const m = figures();
     await renderCard();
-    expect(screen.getByText('Your worst month', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByText('Net free cash flow', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByText(usd(m.amount))).toBeTruthy();
     expect(screen.getByText('left')).toBeTruthy();
-    expect(screen.getByText('after spending, debts and saving')).toBeTruthy();
+    expect(screen.getByText(SUB.worst)).toBeTruthy();
     expect(screen.getByText(`In ${usd(m.inAmount)} · Out ${usd(m.outAmount)}`)).toBeTruthy();
     expect(screen.getByLabelText('Quick check, something and a price')).toBeTruthy();
     expect(screen.getByText('Check it')).toBeTruthy();
@@ -196,13 +223,13 @@ describe('HomeSummaryCard', () => {
     await fireEvent.press(screen.getByText('Check it'));
     await screen.findByText('Run the full check');
     expect(screen.getByText(`${usd(m.amount)} left · In ${usd(m.inAmount)} · Out ${usd(m.outAmount)}`)).toBeTruthy();
-    expect(screen.queryByText('after spending, debts and saving')).toBeNull();
+    expect(screen.queryByText(SUB.worst)).toBeNull();
     expect(screen.queryByText('left')).toBeNull();
     // Full check is hidden while a result shows: "Run the full check" carries the fields then
     expect(screen.queryByText('Full check ›')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Clear the quick check'));
     await screen.findByText('Full check ›');
-    expect(screen.getByText('after spending, debts and saving')).toBeTruthy();
+    expect(screen.getByText(SUB.worst)).toBeTruthy();
   });
 
   it('D-97 the short month says short in words and shows the absolute amount', async () => {
@@ -212,7 +239,7 @@ describe('HomeSummaryCard', () => {
     await renderCard({ source });
     expect(screen.getByText(usd(m.amount))).toBeTruthy();
     expect(screen.getByText('short')).toBeTruthy();
-    expect(screen.getByLabelText(/short after spending, debts and saving/)).toBeTruthy();
+    expect(screen.getByLabelText(new RegExp(`short ${SUB.worst}`))).toBeTruthy();
   });
 
   it('D-97 the unavailable state shows no figure and one action', async () => {
@@ -220,7 +247,7 @@ describe('HomeSummaryCard', () => {
     expect(screen.getByText('Not worked out yet')).toBeTruthy();
     expect(screen.getByText('Lines in EUR are waiting for an exchange rate.')).toBeTruthy();
     expect(screen.queryByText('left')).toBeNull();
-    expect(screen.queryByText('after spending, debts and saving')).toBeNull();
+    expect(screen.queryByText(SUB.worst)).toBeNull();
     expect(screen.queryByText(/^\$/)).toBeNull();
     await fireEvent.press(screen.getByText('See lines waiting for a rate'));
     expect(mockNavigate).toHaveBeenCalledWith('/activity');
@@ -232,7 +259,7 @@ describe('HomeSummaryCard', () => {
 
   it('D-95 a quick check on first run returns Missing terms', async () => {
     const p = await renderCard({ source: noneSource() });
-    expect(screen.getByText('Your figures', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByText('Net free cash flow', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByText('Not worked out yet')).toBeTruthy();
     expect(screen.getByText('There is no full month or rough figure to work from.')).toBeTruthy();
     expect(screen.queryByText('Details ›')).toBeNull();
@@ -247,7 +274,7 @@ describe('HomeSummaryCard', () => {
   it('R17.7 the card offers the summary group first', async () => {
     const p = await renderCard();
     // formatMoneyA11y speaks the amount by currency name, so the label is matched by its shape
-    const group = screen.getByLabelText(/^Your worst month: .* left after spending, debts and saving\. In .*, out .*\.$/);
+    const group = screen.getByLabelText(/^Net free cash flow: .* left in your worst month, after spending, debts and everything set aside\. In .*, out .*\.$/);
     expect(group.props.accessibilityHint).toBe('Opens month details');
     await fireEvent.press(group);
     expect(p.onOpenDetails).toHaveBeenCalledTimes(1);
@@ -268,10 +295,94 @@ describe('HomeSummaryCard', () => {
     expect(mockOpenNewCheck).toHaveBeenCalledWith('buy');
   });
 
-  it('D-97 the tightest label carries the info button', async () => {
+  it('D-97 the tightest sub-line carries the info button', async () => {
     await renderCard({ source: loggedSource({ months: months(2) }) });
-    expect(screen.getByText('Your tightest figures', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByText(SUB.tightest)).toBeTruthy();
     expect(screen.getByLabelText('About Your tightest figures')).toBeTruthy();
+    // the eyebrow keeps its own, different, info button
+    expect(screen.getByLabelText('About Net free cash flow')).toBeTruthy();
+  });
+
+  it('D-100 the eyebrow is constant and the basis sits in the sub-line', async () => {
+    const cases: [string, Partial<HomeSummaryCardProps>][] = [
+      [SUB.worst, {}],
+      [SUB.average, { source: loggedSource({ months: months(4), basisOverride: 'average' }) }],
+      [SUB.tightest, { source: loggedSource({ months: months(2) }) }],
+      [SUB.figures, { source: roughSource() }],
+      [SUB.switched, { homeBasisSeen: false, settings: roughSettings }],
+    ];
+    for (const [sub, over] of cases) {
+      await renderCard(over);
+      expect(screen.getByText('Net free cash flow', { includeHiddenElements: true })).toBeTruthy();
+      expect(screen.getByText(sub)).toBeTruthy();
+      expect(screen.queryByText(/^Your (worst|average|tightest) month$|^Your figures$/, { includeHiddenElements: true })).toBeNull();
+      screen.unmount();
+    }
+  });
+
+  it('D-100 every sub-line ends after spending, debts and everything set aside', () => {
+    for (const sub of Object.values(SUB)) expect(sub.endsWith(SUB_END)).toBe(true);
+    const hero = en.decide.home.hero;
+    for (const key of ['subWorst', 'subAverage', 'subTightest', 'subFigures', 'subSwitched'] as const) {
+      expect(hero[key].endsWith(SUB_END)).toBe(true);
+    }
+  });
+
+  it('D-100 the summary group reads net free cash flow, the basis and in/out', async () => {
+    const m = figures();
+    await renderCard();
+    // the sub-line wraps at words: no line limit
+    expect(screen.getByText(SUB.worst).props.numberOfLines).toBeUndefined();
+    const group = screen.getByLabelText(/^Net free cash flow: /);
+    expect(group.props.accessibilityLabel).toContain(`left ${SUB.worst}. In `);
+    expect(group.props.accessibilityLabel).toMatch(/, out .*\.$/);
+    expect(m.inAmount - m.outAmount).toBe(m.short ? -m.amount : m.amount);
+    // the eyebrow Text stays out of the accessibility tree: the group carries it
+    const eyebrow = screen.getByText('Net free cash flow', { includeHiddenElements: true });
+    expect(eyebrow.props.accessibilityElementsHidden).toBe(true);
+    expect(eyebrow.props.importantForAccessibility).toBe('no');
+  });
+
+  it('D-100 a short month reads short by name in the summary group', async () => {
+    const source = loggedSource({ months: months(4, 300_000, 360_000), basisOverride: 'worst' });
+    await renderCard({ source });
+    expect(screen.getByLabelText(new RegExp(`^Net free cash flow: .* short ${SUB.worst}\\. In `))).toBeTruthy();
+  });
+
+  it('D-100 the eyebrow row at 320 and 2.0x has no overlap and 44 targets', async () => {
+    mockDims = { width: 320, fontScale: 2 };
+    await AsyncStorage.setItem(THEME_CACHE_KEY, JSON.stringify({ accent: 'green', pairing: 'bold' }));
+    const p = props();
+    await render(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <ThemeProvider>
+          <FontScaleProvider value={2}>
+            <HomeSummaryCard {...p} />
+          </FontScaleProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+    const label = screen.getByText('Net free cash flow', { includeHiddenElements: true });
+    // whole at word breaks: no line limit and no shrink, so it wraps between words and never mid-word
+    expect(label.props.numberOfLines).toBeUndefined();
+    expect(label.props.adjustsFontSizeToFit).toBeFalsy();
+    expect(StyleSheet.flatten(label.props.style).textTransform).toBe('uppercase');
+    // the info button is the next flex sibling of the label (rule I)
+    const infoRow = label.parent!.parent!;
+    expect(StyleSheet.flatten(infoRow.props.style)).toMatchObject({ flexDirection: 'row' });
+    // the row wraps, so Details drops under the label and the info button rather than overlapping
+    const left = infoRow.parent!;
+    expect(StyleSheet.flatten(left.props.style)).toMatchObject({ flexShrink: 1 });
+    expect(StyleSheet.flatten(left.parent!.props.style)).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' });
+    // 44 x 44 targets: Details by its box, the info button by its 16 glyph and 14 slop
+    const details = StyleSheet.flatten(screen.getByLabelText('Month details').props.style);
+    expect(details.minHeight).toBeGreaterThanOrEqual(44);
+    expect(details.minWidth).toBeGreaterThanOrEqual(44);
+    const info = screen.getByLabelText('About Net free cash flow');
+    const infoStyle = StyleSheet.flatten(info.props.style);
+    expect(infoStyle.width + 2 * info.props.hitSlop).toBeGreaterThanOrEqual(44);
+    expect(infoStyle.height + 2 * info.props.hitSlop).toBeGreaterThanOrEqual(44);
+    expect(infoStyle.position).toBeUndefined();
   });
 
   it('D-97 loading is a busy skeleton with no figure', async () => {

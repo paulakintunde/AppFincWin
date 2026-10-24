@@ -6,7 +6,7 @@
  * Your month card used), a rough source reads the figures the user gave. A needed rate that is missing makes the card
  * 'unavailable', never a guessed number (D-37, T-05-111-01).
  */
-import { prepareContext } from '@/engine/decide';
+import { prepareContext, totalSetAside } from '@/engine/decide';
 import type { DecideSettingsRow } from '@/db/decideSettings';
 import type { SnapshotResult } from '../snapshot/types';
 
@@ -38,15 +38,69 @@ export type HomeCardModel =
       amount: number;
       /** True = "{amount} short"; false = "{amount} left". */
       short: boolean;
-      /** Money in and money out of the judged month, minor units. */
+      /** Money in and everything that leaves (D-100 addendum), minor units: inAmount - outAmount is the signed hero. */
       inAmount: number;
       outAmount: number;
+      /** The rows of Month details, adding up to the hero. */
+      breakdown: MonthBreakdown;
       /** True when the home rendered with the logged basis: the caller then sets `homeBasisSeen`. */
       markBasisSeen: boolean;
     };
 
+/**
+ * 05-125 (D-100, R18.1): the Month details breakdown. Every row is read from the engine's own derivation (logged) or
+ * from the same formula over the rough figures, so `income - spending - debts - saving - setAside === result` always.
+ */
+export interface MonthBreakdown {
+  source: 'logged' | 'rough';
+  income: number;
+  spending: number;
+  /** Debt payments; 0 on a rough source (no debts are known). */
+  debts: number;
+  /** Saving and investing (pausable); 0 on a rough source. */
+  saving: number;
+  /** The pots' monthly set-asides (D-101). */
+  setAside: number;
+  /** Net free cash flow, signed. */
+  result: number;
+}
+
+/** Everything that leaves in the breakdown: money in minus the result, so In - Out equals the hero (D-100 addendum). */
+export function breakdownOut(b: MonthBreakdown): number {
+  return b.income - b.result;
+}
+
+/**
+ * The breakdown for a source; null when there is none to show. A rough source takes the pots' set-asides off its
+ * rough spending exactly as a logged month does (`totalSetAside`, the engine's own sum), so both follow one formula.
+ */
+export function monthBreakdown(source: SnapshotResult, today: string): MonthBreakdown | null {
+  if (source.kind === 'logged') {
+    const ctx = prepareContext(source.snapshot);
+    if (!ctx.ok) return null;
+    const c = ctx.context;
+    return {
+      source: 'logged',
+      income: c.money.incomeBasis,
+      spending: c.money.spendingBasis,
+      debts: c.debtPayments,
+      saving: c.pausable,
+      setAside: c.setAside,
+      result: c.leftBefore,
+    };
+  }
+  if (source.kind === 'rough') {
+    const setAside = totalSetAside(source.pots ?? [], today).total;
+    const { monthlyIncome, monthlySpending } = source.figures;
+    return { source: 'rough', income: monthlyIncome, spending: monthlySpending, debts: 0, saving: 0, setAside, result: monthlyIncome - monthlySpending - setAside };
+  }
+  return null;
+}
+
 export interface HomeCardFlags {
   status: 'loading' | 'error' | 'ready';
+  /** The local date the pots' set-asides are worked out from (rough source only; a logged source uses its snapshot's asOf). */
+  today: string;
   /** The per-user `homeBasisSeen` flag (05-110); a failed read counts as not seen. */
   homeBasisSeen: boolean;
 }
@@ -85,33 +139,25 @@ export function homeCardModel(source: SnapshotResult | null, settings: DecideSet
     return { state: 'first_run', label: 'figures', unavailable: { reason: 'first_run', action: 'add_rough' } };
   }
 
-  if (source.kind === 'rough') {
-    const { monthlyIncome, monthlySpending } = source.figures;
-    return figure('figures', null, monthlyIncome - monthlySpending, monthlyIncome, monthlySpending, false);
-  }
-
-  if (loggedContext === null || !loggedContext.ok || money === null) {
+  const breakdown = monthBreakdown(source, flags.today);
+  if (breakdown === null) {
     return { state: 'unavailable', label: 'figures', unavailable: { reason: 'no_basis', action: 'add_rough' } };
   }
-  return figure(label, label === 'tightest' ? 'tightestFigures' : null, loggedContext.context.leftBefore, money.incomeBasis, money.spendingBasis, true);
+  if (source.kind === 'rough') return figure('figures', null, breakdown);
+  return figure(label, label === 'tightest' ? 'tightestFigures' : null, breakdown);
 }
 
-function figure(
-  label: HomeCardLabel,
-  info: 'tightestFigures' | null,
-  left: number,
-  inAmount: number,
-  outAmount: number,
-  logged: boolean
-): HomeCardModel {
+function figure(label: HomeCardLabel, info: 'tightestFigures' | null, breakdown: MonthBreakdown): HomeCardModel {
+  const left = breakdown.result;
   return {
     state: 'figure',
     label,
     info,
     amount: left < 0 ? -left : left,
     short: left < 0,
-    inAmount,
-    outAmount,
-    markBasisSeen: logged,
+    inAmount: breakdown.income,
+    outAmount: breakdownOut(breakdown),
+    breakdown,
+    markBasisSeen: breakdown.source === 'logged',
   };
 }

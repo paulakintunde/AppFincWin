@@ -1,9 +1,12 @@
 import type { DecideSettingsRow } from '@/db/decideSettings';
-import { prepareContext } from '@/engine/decide';
-import { homeCardModel, type HomeCardFlags } from '../homeCardModel';
-import { loggedSource, month, noneSource, roughSource, snapshot, unconvertedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
+import type { SnapshotResult } from '../../snapshot/types';
+import fc from 'fast-check';
+import { prepareContext, totalSetAside, type PotInput } from '@/engine/decide';
+import { minorUnits } from '@/engine/money';
+import { homeCardModel, type HomeCardFlags, type HomeCardModel } from '../homeCardModel';
+import { TODAY, loggedSource, month, noneSource, roughSource, snapshot, unconvertedSource } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 
-const READY: HomeCardFlags = { status: 'ready', homeBasisSeen: true };
+const READY: HomeCardFlags = { status: 'ready', homeBasisSeen: true, today: TODAY };
 
 function settings(over: Partial<DecideSettingsRow> = {}): DecideSettingsRow {
   return {
@@ -54,7 +57,8 @@ describe('homeCardModel', () => {
     if (model.state !== 'figure') throw new Error('expected a figure');
     expect(model.amount).toBe(Math.abs(ctx.context.leftBefore));
     expect(model.inAmount).toBe(ctx.context.money.incomeBasis);
-    expect(model.outAmount).toBe(ctx.context.money.spendingBasis);
+    // D-100 addendum: Out is everything that leaves (spending plus the fixture's 200.00 debt payment), so In - Out is the hero
+    expect(model.outAmount).toBe(ctx.context.money.spendingBasis + ctx.context.debtPayments);
     expect(Number.isInteger(model.amount)).toBe(true);
     expect(model.markBasisSeen).toBe(true);
   });
@@ -99,8 +103,8 @@ describe('homeCardModel', () => {
   });
 
   it('D-97 loading, error and a missing source never show a figure', () => {
-    expect(homeCardModel(null, null, { status: 'loading', homeBasisSeen: true })).toEqual({ state: 'loading' });
-    expect(homeCardModel(loggedSource(), null, { status: 'error', homeBasisSeen: true })).toEqual({ state: 'error' });
+    expect(homeCardModel(null, null, { status: 'loading', homeBasisSeen: true, today: TODAY })).toEqual({ state: 'loading' });
+    expect(homeCardModel(loggedSource(), null, { status: 'error', homeBasisSeen: true, today: TODAY })).toEqual({ state: 'error' });
     expect(homeCardModel(null, null, READY)).toEqual({ state: 'loading' });
   });
 
@@ -108,22 +112,117 @@ describe('homeCardModel', () => {
     const source = loggedSource({ months: months(4), basisOverride: 'worst' });
     const fromRough = settings({ rough_income: 400_000, rough_spending: 250_000 });
 
-    const first = homeCardModel(source, fromRough, { status: 'ready', homeBasisSeen: false });
+    const first = homeCardModel(source, fromRough, { status: 'ready', homeBasisSeen: false, today: TODAY });
     expect(first).toMatchObject({ state: 'figure', label: 'switched', markBasisSeen: true });
 
-    const next = homeCardModel(source, fromRough, { status: 'ready', homeBasisSeen: true });
+    const next = homeCardModel(source, fromRough, { status: 'ready', homeBasisSeen: true, today: TODAY });
     expect(next).toMatchObject({ state: 'figure', label: 'worst' });
 
     // a user who never gave rough figures has no basis to switch from
-    expect(homeCardModel(source, settings(), { status: 'ready', homeBasisSeen: false })).toMatchObject({ label: 'worst' });
+    expect(homeCardModel(source, settings(), { status: 'ready', homeBasisSeen: false, today: TODAY })).toMatchObject({ label: 'worst' });
 
     // rough figures never show the switch label
-    expect(homeCardModel(roughSource(), fromRough, { status: 'ready', homeBasisSeen: false })).toMatchObject({ label: 'figures', markBasisSeen: false });
+    expect(homeCardModel(roughSource(), fromRough, { status: 'ready', homeBasisSeen: false, today: TODAY })).toMatchObject({ label: 'figures', markBasisSeen: false });
   });
 
   it('D-95 the unavailable state keeps the basis label when a logged month exists', () => {
     const model = homeCardModel({ ...loggedSource({ months: months(4), basisOverride: 'worst' }), unconverted: { currencies: ['EUR', 'GBP'], rowCount: 3 } }, settings(), READY);
     expect(model).toMatchObject({ state: 'unavailable', label: 'worst', unavailable: { currencies: ['EUR', 'GBP'] } });
     expect(snapshot().months).toHaveLength(4);
+  });
+
+  describe('D-100 net free cash flow', () => {
+    const signed = (m: HomeCardModel) => {
+      if (m.state !== 'figure') throw new Error('expected a figure');
+      return m.short ? -m.amount : m.amount;
+    };
+    const inOut = (m: HomeCardModel) => {
+      if (m.state !== 'figure') throw new Error('expected a figure');
+      return m.inAmount - m.outAmount;
+    };
+    const pot = (over: Partial<PotInput> = {}): PotInput => ({
+      id: 'p1',
+      kind: 'pot',
+      target: minorUnits(120_000),
+      monthlyAmount: null,
+      readyBy: '2027-04-30',
+      saved: minorUnits(0),
+      ...over,
+    });
+    const POTS = [pot(), pot({ id: 'p2', target: minorUnits(60_000), saved: minorUnits(10_000), readyBy: '2027-01-31' })];
+    const withPots = (source: SnapshotResult, pots: readonly PotInput[]): SnapshotResult =>
+      source.kind === 'logged' ? { ...source, pots, snapshot: { ...source.snapshot, pots } } : { ...source, pots };
+
+    it('D-100 In minus Out equals the hero on every basis and on rough figures', () => {
+      const switched = settings({ rough_income: 400_000, rough_spending: 250_000 });
+      const cases: [string, HomeCardModel][] = [
+        ['worst', homeCardModel(withPots(loggedSource({ months: months(4), basisOverride: 'worst', monthlySaving: minorUnits(15_000) }), POTS), settings(), READY)],
+        ['average', homeCardModel(withPots(loggedSource({ months: months(4), basisOverride: 'average', monthlyInvesting: minorUnits(9_000) }), POTS), settings(), READY)],
+        ['tightest', homeCardModel(withPots(loggedSource({ months: months(2) }), POTS), settings(), READY)],
+        ['switched', homeCardModel(withPots(loggedSource({ months: months(4), basisOverride: 'worst' }), POTS), switched, { ...READY, homeBasisSeen: false })],
+        ['rough', homeCardModel(roughSource(600_000, 400_000, 250_000), settings(), READY)],
+        ['rough with pots', homeCardModel(withPots(roughSource(600_000, 400_000, 250_000), POTS), settings(), READY)],
+        ['short month', homeCardModel(withPots(roughSource(600_000, 320_000, 362_000), POTS), settings(), READY)],
+      ];
+      for (const [name, model] of cases) {
+        expect([name, model.state]).toEqual([name, 'figure']);
+        expect([name, inOut(model)]).toEqual([name, signed(model)]);
+      }
+      // the label still follows the basis the engine used
+      expect(cases.map(([, m]) => (m.state === 'figure' ? m.label : null))).toEqual(['worst', 'average', 'tightest', 'switched', 'figures', 'figures', 'figures']);
+    });
+
+    it('D-100 In minus Out equals the hero for any logged figures, debts, saving and pots', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 0, max: 2_000_000 }),
+          fc.integer({ min: 0, max: 2_000_000 }),
+          fc.integer({ min: 0, max: 100_000 }),
+          fc.integer({ min: 0, max: 100_000 }),
+          fc.array(fc.integer({ min: 1, max: 500_000 }), { maxLength: 4 }),
+          (income, spending, saving, investing, targets) => {
+            const pots = targets.map((target, i) => pot({ id: `p${i}`, target: minorUnits(target) }));
+            const source = withPots(
+              loggedSource({ months: months(4, income, spending), basisOverride: 'worst', monthlySaving: minorUnits(saving), monthlyInvesting: minorUnits(investing) }),
+              pots
+            );
+            const m = homeCardModel(source, settings(), READY);
+            if (m.state !== 'figure') return false;
+            const b = m.breakdown;
+            const rowsAddUp = b.income - b.spending - b.debts - b.saving - b.setAside === b.result;
+            return rowsAddUp && inOut(m) === signed(m) && Number.isInteger(m.outAmount);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('D-100 rough figures take the pots set-asides off, like the logged formula', () => {
+      const source = withPots(roughSource(600_000, 400_000, 250_000), POTS);
+      const setAside = totalSetAside(POTS, TODAY).total;
+      expect(setAside).toBeGreaterThan(0);
+      const model = homeCardModel(source, settings(), READY);
+      if (model.state !== 'figure') throw new Error('expected a figure');
+      expect(signed(model)).toBe(400_000 - 250_000 - setAside);
+      // Out is the rough spending plus the set-asides
+      expect(model.outAmount).toBe(250_000 + setAside);
+      expect(model.breakdown).toMatchObject({ source: 'rough', spending: 250_000, debts: 0, saving: 0, setAside });
+      // the same pots in a logged month come off the same way
+      const logged = homeCardModel(withPots(loggedSource({ months: months(4), basisOverride: 'worst' }), POTS), settings(), READY);
+      const none = homeCardModel(loggedSource({ months: months(4), basisOverride: 'worst' }), settings(), READY);
+      expect(signed(none) - signed(logged)).toBe(totalSetAside(POTS, TODAY).total);
+    });
+
+    it('D-100 the breakdown rows add up to the hero', () => {
+      const m = homeCardModel(
+        withPots(loggedSource({ months: months(4), basisOverride: 'worst', monthlySaving: minorUnits(15_000), monthlyInvesting: minorUnits(5_000) }), POTS),
+        settings(),
+        READY
+      );
+      if (m.state !== 'figure') throw new Error('expected a figure');
+      const b = m.breakdown;
+      expect(b.income - b.spending - b.debts - b.saving - b.setAside).toBe(b.result);
+      expect(b).toMatchObject({ debts: 20_000, saving: 20_000 });
+    });
   });
 });

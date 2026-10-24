@@ -63,13 +63,15 @@ export function HomeHero({ amount, word, short }: HomeHeroProps) {
   );
 }
 
+/** R18.1: the basis moves from the eyebrow (now the constant card.eyebrow) to the sub-line, one key per engine basis. */
 const LABEL_KEY = {
-  worst: 'decide.home.card.labelWorst',
-  average: 'decide.home.card.labelAverage',
-  tightest: 'decide.home.card.labelTightest',
-  figures: 'decide.home.card.labelFigures',
-  switched: 'decide.home.card.labelSwitched',
+  worst: 'decide.home.hero.subWorst',
+  average: 'decide.home.hero.subAverage',
+  tightest: 'decide.home.hero.subTightest',
+  figures: 'decide.home.hero.subFigures',
+  switched: 'decide.home.hero.subSwitched',
 } as const satisfies Record<HomeCardLabel, string>;
+const SUB_LINE = 18; // the label role's line height (13 x 1.4 rounded), to centre the sub-line's info glyph
 const EYEBROW_LINE = 20;
 const HERO_SKELETON = 46;
 const INOUT_SKELETON = 20;
@@ -112,9 +114,10 @@ export function HomeSummaryCard({
   const whole = moneyFn(fmt, currencyCode(currency));
   const wholeA11y = moneyA11yFn(fmt, currencyCode(currency));
   const tightestInfo = useInfoSheet('tightestFigures');
+  const nfcfInfo = useInfoSheet('netFreeCashFlow');
   const [resultOpen, setResultOpen] = useState(false);
 
-  const model: HomeCardModel = homeCardModel(source, settings, { status, homeBasisSeen });
+  const model: HomeCardModel = homeCardModel(source, settings, { status, homeBasisSeen, today });
 
   const eyebrowStyle = {
     ...textRole(pairing, 'label'),
@@ -165,24 +168,19 @@ export function HomeSummaryCard({
     );
   }
 
-  const labelText = t(LABEL_KEY[model.label]);
+  const subText = t(LABEL_KEY[model.label]);
   const infoShown = model.state === 'figure' && model.info === 'tightestFigures';
   const detailsShown = model.state !== 'first_run';
 
+  // R18.1: the constant eyebrow, then the ⓘ as the next flex sibling (rule I); "Details ›" stays at the right.
   const eyebrow = (
     <View style={styles.eyebrowRow}>
       <View style={styles.eyebrowLeft}>
-        {infoShown ? (
-          <InfoLabel term={tightestInfo.term} onInfo={tightestInfo.open} tone="dark" lineHeight={EYEBROW_LINE}>
-            <Text style={eyebrowStyle} accessibilityElementsHidden importantForAccessibility="no">
-              {labelText}
-            </Text>
-          </InfoLabel>
-        ) : (
+        <InfoLabel term={nfcfInfo.term} onInfo={nfcfInfo.open} tone="dark" lineHeight={EYEBROW_LINE}>
           <Text style={eyebrowStyle} accessibilityElementsHidden importantForAccessibility="no">
-            {labelText}
+            {t('decide.home.card.eyebrow')}
           </Text>
-        )}
+        </InfoLabel>
       </View>
       {detailsShown ? (
         <Pressable
@@ -200,11 +198,11 @@ export function HomeSummaryCard({
   let summary: React.ReactNode;
   if (model.state === 'figure') {
     const params = { amount: whole(model.amount), in: whole(model.inAmount), out: whole(model.outAmount) };
-    const a11yParams = { cardLabel: labelText, amount: wholeA11y(model.amount), in: wholeA11y(model.inAmount), out: wholeA11y(model.outAmount) };
+    const a11yParams = { basis: subText, amount: wholeA11y(model.amount), in: wholeA11y(model.inAmount), out: wholeA11y(model.outAmount) };
     summary = (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={t(model.short ? 'decide.home.card.a11yShort' : 'decide.home.card.a11yLeft', a11yParams)}
+        accessibilityLabel={t(model.short ? 'decide.home.card.a11yNfcfShort' : 'decide.home.card.a11yNfcfLeft', a11yParams)}
         accessibilityHint={t('decide.home.card.detailsHint')}
         onPress={onOpenDetails}
         style={({ pressed }) => [styles.summary, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
@@ -217,7 +215,13 @@ export function HomeSummaryCard({
         ) : (
           <>
             <HomeHero amount={params.amount} word={t(model.short ? 'decide.home.hero.shortWord' : 'decide.home.hero.leftWord')} short={model.short} />
-            <Text style={{ ...metaStyle, color: colors.inkSoft1 }}>{t('decide.home.hero.sub')}</Text>
+            {infoShown ? (
+              <InfoLabel term={tightestInfo.term} onInfo={tightestInfo.open} tone="dark" lineHeight={SUB_LINE}>
+                <Text style={{ ...metaStyle, color: colors.inkSoft1 }}>{subText}</Text>
+              </InfoLabel>
+            ) : (
+              <Text style={{ ...metaStyle, color: colors.inkSoft1 }}>{subText}</Text>
+            )}
             <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.inkSoft2 }}>
               {t('decide.home.hero.inOut', { in: params.in, out: params.out })}
             </Text>
@@ -265,6 +269,7 @@ export function HomeSummaryCard({
         </Pressable>
       )}
       {tightestInfo.sheet}
+      {nfcfInfo.sheet}
     </View>
   );
 }
