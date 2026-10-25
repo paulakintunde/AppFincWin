@@ -9,6 +9,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { router } from 'expo-router';
 import { AccountSheet } from '@/features/record/accounts/AccountSheet';
+import { DECIDE_OPEN } from '@/features/decide/availability';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
@@ -41,7 +42,12 @@ export function SetupAccountScreen() {
         mode={{ kind: 'new', context: 'onboarding' }}
         onClose={() => setSheetOpen(false)}
         // 05-23 (D-03): rough figures and the first check come before "Bring your history".
-        onSaved={(id) => router.replace({ pathname: '/setup/rough', params: { accountId: id } })}
+        // quick-261025-f46: while DECIDE_OPEN is false the coming-soon switch skips rough figures and the first check.
+        onSaved={(id) =>
+          router.replace(
+            DECIDE_OPEN ? { pathname: '/setup/rough', params: { accountId: id } } : { pathname: '/setup/history', params: { accountId: id } },
+          )
+        }
       />
     </Screen>
   );

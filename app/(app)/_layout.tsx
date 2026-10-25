@@ -8,6 +8,7 @@ import { Platform, View } from 'react-native';
 import { SwipeBack } from '@/features/navigation/SwipeBack';
 import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
 import { useReduceMotion } from '@/theme/motion';
+import { DECIDE_OPEN } from '@/features/decide/availability';
 import { useNotificationObserver } from '@/features/decide/notifications/useNotificationObserver';
 import { useConsent } from '@/features/consent/useConsent';
 import { consentAnswered } from '@/features/consent/consentAnswered';
@@ -69,21 +70,25 @@ export default function AppLayout() {
               <Stack.Screen name="import" />
               <Stack.Screen name="setup/account" />
               <Stack.Screen name="setup/history" />
-              <Stack.Screen name="setup/rough" />
-              <Stack.Screen name="setup/first-check" />
-              <Stack.Screen name="decide/check/[id]" />
-              <Stack.Screen name="decide/past" />
-              <Stack.Screen name="decide/open" />
-              <Stack.Screen name="decide/changes" />
-              <Stack.Screen name="decide/lines" />
-              <Stack.Screen name="decide/pots" />
+              {/* quick-261025-f46: today's Decide screens stay unreachable, deep links included, while DECIDE_OPEN is false. */}
+              <Stack.Protected guard={DECIDE_OPEN}>
+                <Stack.Screen name="setup/rough" />
+                <Stack.Screen name="setup/first-check" />
+                <Stack.Screen name="decide/check/[id]" />
+                <Stack.Screen name="decide/past" />
+                <Stack.Screen name="decide/open" />
+                <Stack.Screen name="decide/changes" />
+                <Stack.Screen name="decide/lines" />
+                <Stack.Screen name="decide/pots" />
+              </Stack.Protected>
               <Stack.Screen name="you" />
               <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
             </Stack>
             <SampleBanner />
             <UndoToastHost />
-            {/* WR-D13: a reminder tap routes only once consent is on record; a missing profile is not consent */}
-            <DecideNotificationObserver enabled={consentAnswered({ loading, consent })} />
+            {/* WR-D13: a reminder tap routes only once consent is on record; a missing profile is not consent.
+                quick-261025-f46: while Decide is closed a reminder tap must not push /decide/check/[id]. */}
+            <DecideNotificationObserver enabled={DECIDE_OPEN && consentAnswered({ loading, consent })} />
             <SampleClearPrompts />
             <DeviceHomeCurrencyDefault />
           </View>
