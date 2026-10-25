@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 5: Decide UX refresh built (05-54..05-87 all done, last build plan 05-79 complete 2026-10-23); next 05-26 device checks with the user (new dev build needed)"
-last_updated: "2026-10-21T01:13:18.035Z"
-last_activity: 2026-10-21
+stopped_at: "Phase 5: 144/145 plans built; 05-26 device checks left. Decide v3 planned (Decision Research, 2026-10-25): phases 05.1 engine, 05.2 data and setup, 05.3 screens inserted; PR #82 to merge with Decide hidden behind 'Coming soon'"
+last_updated: "2026-10-25T17:53:49.644Z"
+last_activity: 2026-10-25
 progress:
-  total_phases: 21
+  total_phases: 24
   completed_phases: 8
   total_plans: 286
   completed_plans: 282
@@ -82,6 +82,9 @@ Last activity: 2026-10-21
 - Phase 2.1 inserted after Phase 2: PDF statement import: text PDFs, generic parser with balance reconciliation, server worker and privacy decision (split from Record's import extension, 2026-09-25)
 - Phase 2.2 inserted 2026-10-07: Record polish (prototype depth for Activity and Record, ACT-06..18, REC-19..25). Runs before 2.1 because it changes the import commit path (decided 2026-10-09).
 - Phase 03.1 inserted after Phase 3: Activity header redesign (approved proposal 2026-10-15)
+- Phase 05.1 inserted after Phase 5: Decide engine v3 (owner Decision Research, 2026-10-25)
+- Phase 05.2 inserted after Phase 05.1: Decide data and setup
+- Phase 05.3 inserted after Phase 05.2: Decide screens v3
 
 ### Decisions
 

@@ -6,7 +6,7 @@ Method: I read the decision record (05-CONTEXT D-01..D-107), the engine and snap
 
 Test-data caveat: the test account has a $150M month, 22 unsynced changes and duplicate checks. I judge design, not the numbers. Where the odd data exposes a real design weakness (outlier sensitivity), I say so.
 
-Screenshots live in `C:\Users\harki\AppData\Local\Temp\claude\c--dev-fincwin\67272e04-2e02-4556-af3d-8b736ebb1d84\scratchpad\` (names only below).
+Screenshots live in `.planning/Decision Research/screenshots/` (names only below).
 
 ---
 

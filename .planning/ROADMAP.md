@@ -22,6 +22,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [x] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3) (completed 2026-10-16)
 - [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
+- [ ] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine
+- [ ] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations
+- [ ] **Phase 05.3: Decide screens v3** (INSERTED) - The Calm Ledger screens in the current theme; old Decide screens removed at cutover
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
@@ -852,6 +855,68 @@ Plans:
 - [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots (R8 frames, R18 alternate frame 1 with the onLayout/Maestro budget), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist, the D-88 speed budgets, the per-pairing hero check and the Money concepts (R18) and Wording and This month (D-106) checklists
 **UI hint**: yes — this phase should carry the deepest testing and design-iteration budget in the roadmap; it is the product's actual moat.
 
+### Phase 05.1: Decide engine v3 (INSERTED)
+
+**Goal:** A rule-based engine (no AI) answers "If I buy this, am I still OK this month and after?":
+- it starts from confirmed recurring income and bills;
+- it compares money in with money out;
+- it judges a purchase against this month, the user's unspent money (rolled forward) and the typical month;
+- it keeps the emergency fund out of every check that isn't marked an emergency.
+
+It is built beside the Phase 4/5 engine behind a `decideV3` switch, and compared against it before anything is removed.
+**Requirements**: TBD (from `.planning/Decision Research/panel/00-REBUILD-PLAN-v3.md` and `00-UPGRADE-PLAN.md` section 5)
+**Depends on:** Phase 5 (merged with Decide hidden behind "Coming soon")
+**Success Criteria** (what must be TRUE):
+  1. Recurring candidates are detected, confirmed and checked for drift. Pay on two fixed dates each month (1st and 15th) counts as 24 payments a year, not 26.
+  2. This month projects to month end and never assumes zero everyday spending. The typical month is a median, so one bad month can't move it.
+  3. Unspent money is user-confirmed, rolls forward with money in and out, and is re-asked on drift. The emergency fund never changes an ordinary answer.
+  4. Payment plans (weekly, every 2 weeks, monthly) work from a rate or APR and fees, with an optional quoted payment.
+  5. One judge gives six codes with one sentence each, and its funding split. "What could I do instead?" compares the payment stream, with a fixed-rate deposit at the user's own rate.
+  6. Invariants I1–I43 pass, branch coverage stays at 100%, and the shadow run against the old engine is reviewed.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.1 to break down)
+
+### Phase 05.2: Decide data and setup (INSERTED)
+
+**Goal:** Everything the new Decide needs is stored, editable and asked once:
+- the income profile (a shared component, reused by Phase 9 onboarding);
+- the Decide setup stepper and Decide settings;
+- income tagging and prompts in Activity;
+- the unspent-money and emergency-fund sheets;
+- the additive migrations, plus purge and export coverage.
+**Requirements**: TBD (from `00-UPGRADE-PLAN.md` section 4 and `00-DECIDE-SETUP.md`)
+**Depends on:** Phase 05.1 (engine types fixed after slice S2; can overlap with later 05.1 slices)
+**Success Criteria** (what must be TRUE):
+  1. A first-time user completes Decide setup (5 needed steps, about 3 minutes), and every answer can be edited alone from Decide settings.
+  2. The income questions are one shared component. Activity shows a "How are you paid?" card when the profile is missing, lets any income be tagged (type, and spent or kept), and asks once when a new kind of income appears.
+  3. Every new piece of data has add, edit, delete and undo through the write queue, works offline, and is covered by account deletion and data export.
+  4. Migrations are additive. Each one is applied to production only after preflight and the owner's approval.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.2 to break down)
+
+### Phase 05.3: Decide screens v3 (INSERTED)
+
+**Goal:** The Calm Ledger mockup ("Can I Afford It — Decide mockup") is built in the current theme (Bold pairing, green accent, 26 px cards, the five-tab bar):
+- home, the layered check (15 bands, item-type questions, payment plan), the answer ladder;
+- the whole plan, "What could I do instead?", how it was worked out, "Help me check this", and the record sheets.
+
+The old Decide screens are removed after cutover.
+**Requirements**: TBD (from `00-UPGRADE-PLAN.md` section 6)
+**Depends on:** Phase 05.1, Phase 05.2
+**Success Criteria** (what must be TRUE):
+  1. Quick, full and home surfaces show the same answer code, and no screen holds contradictory claims.
+  2. Every screen passes 320 and 402 px at 1.0 and 2.0 font scale and TalkBack, with no numbers breaking across lines.
+  3. A 5-person reading test passes before and after, with at least 2 people who have irregular income or low savings.
+  4. `decideV3` is on for everyone, and the old engine paths and screens are deleted with coverage kept at 100%.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.3 to break down)
+
 ### Phase 6: Grow
 **Goal**: A user can track savings goals, investments and debt payoff against their real numbers.
 **Depends on**: Phase 3 (Shell provides the navigation these screens live in)
@@ -896,7 +961,8 @@ Plans:
 
 ### Phase 9: Tiers & Onboarding
 **Goal**: The app reveals its depth gradually and converts to a paid subscription cleanly.
-**Depends on**: Phase 3 (Shell), Phase 0 (RevenueCat identity anchors to the Supabase user id from first sign-in)
+**Note (2026-10-25):** the main onboarding includes the shared income-profile questions (`IncomeProfileSteps`) built in Phase 05.2. Whichever runs first, Decide setup or main onboarding, saves the answers, and the other skips them.
+**Depends on**: Phase 3 (Shell), Phase 0 (RevenueCat identity anchors to the Supabase user id from first sign-in), Phase 05.2 (shared income-profile component)
 **Requirements**: TIER-01, TIER-02, TIER-03, TIER-04, TIER-05, TIER-06, TIER-07, TIER-08, TIER-09, TIER-10, ENV-12, ANL-07, ANL-08
 **Success Criteria** (what must be TRUE):
   1. A new user answers an 11-question flow that sets a starting feature level, and features appear or stay hidden according to the current level.
@@ -985,7 +1051,10 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 133/145 | Executing (R18 money concepts and D-106 planned 2026-10-24) | - |
+| 5. Decide UI | 144/145 | Executing (05-26 device checks left; merges with Decide hidden behind "Coming soon") | - |
+| 05.1 Decide engine v3 | 0/TBD | Not started | - |
+| 05.2 Decide data and setup | 0/TBD | Not started | - |
+| 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |
