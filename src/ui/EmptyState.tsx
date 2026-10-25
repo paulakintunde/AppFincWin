@@ -16,8 +16,9 @@ export interface EmptyStateProps {
 
 export function EmptyState({ heading, body }: EmptyStateProps) {
   const { colors, pairing } = useTheme();
-  const headingStyle = { ...textRole(pairing, 'body'), color: colors.ink };
-  const bodyStyle = { ...textRole(pairing, 'label'), color: colors.inkMuted };
+  // A body that wraps stays centred under the heading.
+  const headingStyle = { ...textRole(pairing, 'body'), color: colors.ink, textAlign: 'center' as const };
+  const bodyStyle = { ...textRole(pairing, 'label'), color: colors.inkMuted, textAlign: 'center' as const };
 
   return (
     <View style={styles.container}>
