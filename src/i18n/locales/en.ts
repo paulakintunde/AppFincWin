@@ -1925,6 +1925,8 @@ const en = {
         previewSix_one: '{{count}}\u00A0of 6 set by you', previewSix_other: '{{count}}\u00A0of 6 set by you' },
       // 05-110 (D-95..D-99, UI-SPEC R17.6): the redesigned home, built by 05-111..05-118. The old keys above stay until 05-118 retires them.
       header: 'Can I afford it',
+      // quick-261025-f46: shown while DECIDE_OPEN is false (00-MAJOR-CHANGES.md §16)
+      comingSoon: { heading: 'A better Decide is on its way', body: 'We’re rebuilding Decide so its answers can be trusted. Your records and past checks are kept.' },
       card: {
         details: 'Details', detailsA11y: 'Month details', detailsHint: 'Opens month details',
         loading: 'Loading your figures',
