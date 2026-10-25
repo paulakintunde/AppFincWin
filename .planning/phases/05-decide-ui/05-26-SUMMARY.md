@@ -28,7 +28,7 @@ The owner decided on 2026-10-25 that PR #82 merges with today's Decide hidden (`
 ## Results (docs/acceptance/phase-05-decide-ui.md)
 
 - A1 Coming soon at about 402 dp and 320 dp, 1.0x and 2.0x: PASS (four frames saved).
-- A1b TalkBack: PASS for landing focus and the accessibility tree; a spoken swipe pass by hand is still open, because adb cannot drive TalkBack gestures on this build.
+- A1b TalkBack at 320 / 2.0x: PASS. Landing focus is on the title, and swiping right then left reads every item by its label, in order. The swipes came from a uinput virtual touchscreen.
 - A2 "New check" gone from Quick add and You > Add: PASS.
 - A3 Android back and the edge swipe: PASS.
 - A4 Hidden routes and onboarding: covered by jest.

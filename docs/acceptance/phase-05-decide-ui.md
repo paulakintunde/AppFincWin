@@ -36,11 +36,13 @@ Found and fixed on the way: the body sat left-aligned under the centred heading 
 ## A1b TalkBack
 
 1. Turn TalkBack on at 320 / 2.0x and open the Decide tab.
-2. Read the accessibility tree TalkBack traverses (uiautomator dump with TalkBack on).
+2. Swipe right through every item, then swipe left back through them, reading TalkBack's spoken caption at each stop.
 
-Expected: focus lands on the title; the order is title, Profile, heading, body, the Add button, the three tabs, each with a label.
+Expected: focus lands on the title; the order is title, Profile, heading, body, the Add button, the three tabs, each read by its label.
 
-Result: PASS for landing focus (the green focus box sits on "Can I afford it" on arrival) and for the tree: "Can I afford it", "Profile" (button), "A better Decide is on its way", the body, "Add a transaction" (button), "Home, tab, 1 of 3", "Activity, tab, 2 of 3", "Decide, tab, 3 of 3". Swipe-to-next could not be driven from adb (TalkBack ignores injected gestures and key combinations on this build), so a spoken swipe pass by hand is still open; it adds nothing the tree does not already show.
+Result: PASS. Focus lands on "Can I afford it" on arrival. Swiping right reads "Can I afford it. Heading", then Profile ("Double-tap to activate"), "A better Decide is on its way", the body in full, the Add button ("Double-tap to activate. Actions available…"), "Home, tab, 1 of 3", "Activity, tab, 2 of 3", "selected. Decide, tab, 3 of 3". Swiping left reads the same items in reverse. The only extra stop is "Tools. Image", the development client's own button, which release builds don't have.
+
+How the swipes were made: `adb shell input` gestures and key combinations don't reach TalkBack's gesture detector, and the real touchscreen is closed to the shell by SELinux. The swipes therefore came from a virtual touchscreen created with Android's `uinput` shell command, whose events TalkBack treats as a finger. Its spoken captions were read from screenshots.
 
 ## A2 "New check" is gone everywhere
 
