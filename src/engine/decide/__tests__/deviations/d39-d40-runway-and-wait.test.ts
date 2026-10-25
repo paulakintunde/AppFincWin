@@ -33,6 +33,7 @@ const BL = (): DecideSnapshot =>
     limits: {
       reserve: mu(600_000),
       dsrLine: null,
+      housingLine: null,
       unsecuredIncomeMultiple: null,
       investingFloor: null,
       savingFloor: null,

@@ -27,6 +27,12 @@ describe('shouldHideFab (D-10)', () => {
 });
 
 describe('fabSurface', () => {
+  it('D-85 a null location inside tabs is a tab root', () => {
+    expect(fabSurface(null, ['(app)', '(tabs)', 'index'])).toBe('tabRoot');
+    expect(fabSurface(null, ['(app)', 'settings'])).toBe('unknown');
+    expect(fabSurface(null, [])).toBe('unknown');
+  });
+
   it('maps locations', () => {
     expect(fabSurface(null)).toBe('unknown');
     expect(fabSurface({ area: 'tab' })).toBe('tabRoot');

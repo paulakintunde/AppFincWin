@@ -59,26 +59,38 @@ export function buildAlternatives(
   context: AssessContext,
   check: PurchaseCheck,
   assessment: Assessment,
-  cheaperRatioPercent: number = DEFAULT_CHEAPER_RATIO_PERCENT
+  cheaper?: { readonly price: MinorUnits }
 ): Alternatives {
-  if (!Number.isInteger(cheaperRatioPercent) || cheaperRatioPercent < 1 || cheaperRatioPercent > 100) {
-    throw new RangeError(`${FN}: cheaper ratio ${cheaperRatioPercent} must be a whole number from 1 to 100`);
-  }
   const share = context.purchaseShare;
   const { limits } = context;
   const ret = limits.projectionReturn;
   const rates = limits.projectionRates;
   const plan = resolvePlanStrict(check);
+  // D-83: the cheaper row is judged at an exact final price; absent, the engine default share of the price applies.
+  const cheaperPrice =
+    cheaper === undefined ? mu(divideHalfUp(BigInt(plan.price) * BigInt(DEFAULT_CHEAPER_RATIO_PERCENT), 100n)) : cheaper.price;
+  // A zero price (nothing to pay) has only itself as a cheaper version.
+  const lowest = plan.price === 0 ? 0 : 1;
+  if (!Number.isSafeInteger(cheaperPrice) || cheaperPrice < lowest || cheaperPrice > plan.price) {
+    throw new RangeError(`${FN}: cheaper price ${cheaperPrice} must be a whole amount from ${lowest} to ${plan.price}`);
+  }
+  // Display only; the figures below all use the exact amount.
+  const ratioPercent = plan.price === 0 ? 100 : Number(divideHalfUp(BigInt(cheaperPrice) * 100n, BigInt(plan.price)));
 
   const termMonths = plan.months > 0 ? plan.months : ALTERNATIVES_HORIZON_FALLBACK;
   const n = Math.min(ALTERNATIVES_HORIZON_MAX, Math.max(ALTERNATIVES_HORIZON_MIN, termMonths));
 
-  const scale = (value: MinorUnits): MinorUnits => mu(divideHalfUp(BigInt(value) * BigInt(cheaperRatioPercent), 100n));
-  const cheaperPrice = scale(plan.price);
   const priced = withPrice(check, cheaperPrice);
+  // M4: a loan deposit scales half up by cheaper over price (a zero price leaves it alone).
   const cheapCheck: PurchaseCheck =
-    priced.kind === 'buy' && priced.payment.method === 'loan'
-      ? { ...priced, payment: { ...priced.payment, deposit: scale(priced.payment.deposit) } }
+    priced.kind === 'buy' && priced.payment.method === 'loan' && plan.price > 0
+      ? {
+          ...priced,
+          payment: {
+            ...priced.payment,
+            deposit: mu(divideHalfUp(BigInt(priced.payment.deposit) * BigInt(cheaperPrice), BigInt(plan.price))),
+          },
+        }
       : priced;
   const cheapPlan = resolvePlanStrict(cheapCheck);
   const cheapLeft = assessPlan(context, cheapCheck, cheapPlan).left;
@@ -186,7 +198,7 @@ export function buildAlternatives(
     cheaperPrice,
     rates,
     cheaper: {
-      ratioPercent: cheaperRatioPercent,
+      ratioPercent,
       notSpent: minorUnits(plan.price - cheaperPrice),
       dayDiff,
       monthlyDiff: moDiff,

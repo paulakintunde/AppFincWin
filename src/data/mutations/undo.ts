@@ -33,7 +33,7 @@ export interface UndoVars {
 
 export type RollbackVars = Omit<UndoVars, 'labelKey' | 'labelParams'>;
 
-/** An undo can touch transactions, accounts, categories and series: refresh every one. */
+/** An undo can touch transactions, accounts, categories, series and Decide rows: refresh every one. */
 function invalidateAfterUndo(qc: QueryClient, vars: { householdId: string; ownerId: string }): void {
   // Not awaited: query-core holds WRITE_SCOPE while onSuccess is awaited (WR-A15).
   void qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
@@ -41,6 +41,13 @@ function invalidateAfterUndo(qc: QueryClient, vars: { householdId: string; owner
   void qc.invalidateQueries({ queryKey: queryKeys.recurringSeries(vars.householdId) });
   void qc.invalidateQueries({ queryKey: queryKeys.categories(vars.ownerId) });
   void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
+  // Decide rows are undoable too (checks, links, changes, debts, pots). Without these the cache kept the pot an Undo had just
+  // soft-deleted (walkthrough 2): the server reverted, the screen did not.
+  void qc.invalidateQueries({ queryKey: queryKeys.savingsGoals(vars.ownerId, vars.householdId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.decideChecks(vars.ownerId, vars.householdId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.decideLinks(vars.ownerId, vars.householdId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.decideChanges(vars.ownerId, vars.householdId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.debts(vars.householdId) });
 }
 
 async function recordRefusal(entityId: string, conflict: UndoConflict | null, stepId: string): Promise<void> {

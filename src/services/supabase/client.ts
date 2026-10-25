@@ -7,6 +7,7 @@ import { AppState } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import { getEnv } from '@/config/env';
 import { LargeSecureStore } from './largeSecureStore';
+import { timeoutFetch } from './timeoutFetch';
 
 const env = getEnv();
 
@@ -23,6 +24,8 @@ export const supabase = createClient(env.supabaseUrl, env.supabasePublishableKey
     detectSessionInUrl: false,
     flowType: 'pkce', // Apple-on-Android web OAuth (D-11) uses exchangeCodeForSession
   },
+  global: { fetch: timeoutFetch }, // D-88: 15 s reads, 20 s writes, 120 s long operations
+  // Realtime uses a websocket, not fetch, so it is untouched.
 });
 
 AppState.addEventListener('change', (state) => {

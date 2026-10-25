@@ -17,6 +17,11 @@ export interface TotalsInput {
   status: TxStatus;
   isTransfer: boolean; // row.transfer_id !== null
   isRefund?: boolean;
+  /**
+   * rate_pending on the row. A row with no home amount counts as "waiting for a rate" only when its rate is actually
+   * pending; omitted means pending. A false value leaves the row out of the unconverted count.
+   */
+  ratePending?: boolean;
 }
 
 export interface MonthTotals {
@@ -55,7 +60,7 @@ export function monthTotals(
     }
     count++;
     if (row.amountHome === null) {
-      unconvertedCount++;
+      if (row.ratePending !== false) unconvertedCount++;
       continue;
     }
     if (row.status === 'paid') {

@@ -21,7 +21,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content (completed 2026-10-14)
 - [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [x] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3) (completed 2026-10-16)
-- [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
+- [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged with Decide hidden behind "Coming soon" until 05.1-05.3)
+- [ ] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine
+- [ ] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations
+- [ ] **Phase 05.3: Decide screens v3** (INSERTED) - The Calm Ledger screens in the current theme; old Decide screens removed at cutover
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
@@ -604,7 +607,7 @@ Plans:
 ### Phase 5: Decide UI
 **Goal**: A user gets a trustworthy, explained affordability verdict computed from their own logged months.
 **Depends on**: Phase 4 (engine), Phase 1 (data layer to source the snapshot)
-**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09, DCU-10, DCU-11, DCU-12, DCU-13, DCU-14, DCU-15, DCU-16, DCU-17, DCU-18, DCU-19, DCU-20, DCU-21, DCU-22, DCU-23, DCU-24, ANL-06
+**Requirements**: DCU-01, DCU-02, DCU-03, DCU-04, DCU-05, DCU-06, DCU-07, DCU-08, DCU-09, DCU-10, DCU-11, DCU-12, DCU-13, DCU-14, DCU-15, DCU-16, DCU-17, DCU-18, DCU-19, DCU-20, DCU-21, DCU-22, DCU-23, DCU-24, DCU-25, DCU-26, DCU-27, DCU-28, DCU-29, DCU-30, DCU-31, DCU-32, DCU-33, DCU-34, DCU-35, DCU-36, DCU-37, DCU-38, DCU-39, DCU-40, MON-15, ANL-06
 **Success Criteria** (what must be TRUE):
   1. A user can get a cash answer from just an item and a price without entering the multi-step flow, and can work through the five steps — item, price and payment, impact, alternatives, decision — for the full picture.
   2. A user can leave a check open, return to it later and see its verdict recomputed against current figures, or abandon it.
@@ -614,81 +617,305 @@ Plans:
   6. A brand-new user reaches a first verdict within their first session, in roughly a minute, without having logged or imported a month, and the verdict says plainly what it rests on and how an import sharpens it.
   7. Store screenshots 1–3 (verdict, what breaks, alternatives) can be captured from the App Review demo account's sample scenario with nothing staged outside the real app.
 **Launch inputs** (from `research/LAUNCH-POSITIONING.md`, 2026-09-26): the store name is *FincWin: Can I Afford It?*, so the quick check is the product's public promise and stays in the free tier (see `research/PRICING.md`). The first-read question is settled (04-CONTEXT D-11: rough figures give a cash-level answer only, via DEC-16). Discuss-phase must still settle the demo-account scenario (sofa $1,800 in a household of two; car $14,500 on a loan). Onboarding order — welcome, consent, one account, rough month, first check, then "Bring your history" — is shared with Phase 2 (02-30) and Phase 9, where the level questions move after the first verdict.
-**Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate).
+**Plans**: 53 plans in 10 waves (planned 2026-10-15, revised 2026-10-16 against 05-CONTEXT D-01..D-44, DCU-01..DCU-24 and the final 22-plan Phase 4 `decide()` API; plan checker passed (0 blockers, 0 warnings); defaults in 05-PLANNING-NOTES.md). **Execution is blocked until Phase 4 is executed and verified** (every plan runs the Phase 4 gate). **Decide UX refresh (2026-10-22):** 34 more plans, 05-54..05-87 in waves 10-19, for 05-CONTEXT D-70..D-84 (UI-SPEC "Decide UX refresh" R1-R15; DCU-25..DCU-30 added; engine changes E1/E2 in 05-81/05-82, user decisions D-80/D-83); revised 2026-10-22 for the plan-check findings (6 blockers, 12 warnings); 05-26 moves to wave 20 so the device pass covers the refresh. Total 87 plans in 20 waves. **Device-walkthrough refinements (2026-10-23):** 22 more plans, 05-88..05-109 in waves 20-26, for 05-CONTEXT D-85..D-94 (UI-SPEC R16; engine changes E3-E5 in 05-89/05-91/05-92, 05-90, 05-93..05-95; DCU-31..DCU-33 and MON-15 added); 05-26 moves to wave 27. Total 109 plans in 27 waves. **Decide home redesign (2026-10-23):** 9 more plans, 05-110..05-118 in waves 27-30, for 05-CONTEXT D-95..D-99 (UI-SPEC R17; DCU-34 added); 05-26 moves to wave 31. Total 118 plans in 31 waves. **Money concepts (2026-10-24):** 16 more plans, 05-119..05-134 in waves 31-38, for 05-CONTEXT D-100..D-104 (UI-SPEC R18; DCU-35..DCU-38 added; engine changes E6/E7/E8 in 05-120, 05-123, 05-121; migrations 20261024000100/200 in 05-119 pushed to production only by the human-gated 05-132 in wave 38); 05-26 moves to wave 39. Total 134 plans in 39 waves. **Free / overspent wording, the This-month card and one Judge-on choice (2026-10-24):** 11 more plans, 05-135..05-145 in waves 40-44, for 05-CONTEXT D-106, its addendum and D-107 (DCU-39 and DCU-40 added; engine changes E9 in 05-135 and E10 in 05-142, a first-class 'month' basis with a parity suite; no migration; the choice is a device-local preference that also drives the checks; the FAB returns on Decide home); 05-26 moves to wave 46. Total 145 plans in 46 waves.
 Plans:
 **Wave 1**
-- [ ] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
-- [ ] 05-02-PLAN.md — Decide copy catalogue, DCU-09 guard, undo vocabulary
-- [ ] 05-03-PLAN.md — Decide tables (checks, settings, debts, links, statement periods), RLS, grants, pgTAP
-- [ ] 05-33-PLAN.md — fxConvert read-side module (custom-currency aware) for D-37
-- [ ] 05-34-PLAN.md — Record data layer: one_off and goal_id fields
-- [ ] 05-38-PLAN.md — db modules for decide_changes and savings_goals
+- [x] 05-01-PLAN.md — Phase 4 gate, shared contracts, jest/depcruise guards, ANL-06 events
+- [x] 05-02-PLAN.md — Decide copy catalogue, DCU-09 guard, undo vocabulary
+- [x] 05-03-PLAN.md — Decide tables (checks, settings, debts, links, statement periods), RLS, grants, pgTAP
+- [x] 05-33-PLAN.md — fxConvert read-side module (custom-currency aware) for D-37
+- [x] 05-34-PLAN.md — Record data layer: one_off and goal_id fields
+- [x] 05-38-PLAN.md — db modules for decide_changes and savings_goals
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 05-05-PLAN.md — db modules and RPC wrappers for the Decide tables
-- [ ] 05-06-PLAN.md — Pure snapshot builder: full months, pending one-offs, payments counted once, FX, one-offs, changes (100% coverage)
-- [ ] 05-07-PLAN.md — Check inputs, quick-to-full carry, computeQuick/computeCheck/computeChip over decide()
-- [ ] 05-08-PLAN.md — parseQuick, date offsets, estimate-vs-actual, canUse, DateField past-date guard
-- [ ] 05-09-PLAN.md — Exhaustive code-to-copy maps (verdict, warnings, quick line, suppression, options)
-- [ ] 05-10-PLAN.md — Display and choice primitives (StateChip, WarningCard, StepBar, ...)
-- [ ] 05-11-PLAN.md — expo-notifications ~57, Wait and cooling-off reminders, tap observer
-- [ ] 05-28-PLAN.md — Input primitives (StepSlider, RateInput, MoneyInput)
-- [ ] 05-31-PLAN.md — Depth copy catalogue (D-24..D-37) and extended DCU-09 guard
-- [ ] 05-32-PLAN.md — Depth migrations: decide_changes, savings_goals, cooling_off_at, split estimates, link roles, transactions.one_off/goal_id
+- [x] 05-05-PLAN.md — db modules and RPC wrappers for the Decide tables
+- [x] 05-06-PLAN.md — Pure snapshot builder: full months, pending one-offs, payments counted once, FX, one-offs, changes (100% coverage)
+- [x] 05-07-PLAN.md — Check inputs, quick-to-full carry, computeQuick/computeCheck/computeChip over decide()
+- [x] 05-08-PLAN.md — parseQuick, date offsets, estimate-vs-actual, canUse, DateField past-date guard
+- [x] 05-09-PLAN.md — Exhaustive code-to-copy maps (verdict, warnings, quick line, suppression, options)
+- [x] 05-10-PLAN.md — Display and choice primitives (StateChip, WarningCard, StepBar, ...)
+- [x] 05-11-PLAN.md — expo-notifications ~57, Wait and cooling-off reminders, tap observer
+- [x] 05-28-PLAN.md — Input primitives (StepSlider, RateInput, MoneyInput)
+- [x] 05-31-PLAN.md — Depth copy catalogue (D-24..D-37) and extended DCU-09 guard
+- [x] 05-32-PLAN.md — Depth migrations: decide_changes, savings_goals, cooling_off_at, split estimates, link roles, transactions.one_off/goal_id
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 05-04-PLAN.md — apply_patches allow-list, record_decide_go / record_decide_outcome RPCs, pgTAP
-- [ ] 05-12-PLAN.md — Query keys, read hooks, useDecideSnapshot, other open checks
-- [ ] 05-14-PLAN.md — Steps 1 and 2, line editor
-- [ ] 05-15-PLAN.md — Step 3 verdict card, warnings, core sections, Assumptions
-- [ ] 05-17-PLAN.md — Step 4 alternatives, step 5 decision, written lines
-- [ ] 05-18-PLAN.md — Demo fixture (6 steady months) and engine-backed demo-outcome test
-- [ ] 05-35-PLAN.md — Chart geometry, cash-path chart, net-worth chart
-- [ ] 05-36-PLAN.md — ConfidenceChip, EdgeTag, CombineToggle, GoalProgress
-- [ ] 05-37-PLAN.md — Depth copy maps (verdict and input sides)
-- [ ] 05-39-PLAN.md — Journal helpers: past decisions, attach roles, saved so far
-- [ ] 05-50-PLAN.md — Record one-off toggle
+- [x] 05-04-PLAN.md — apply_patches allow-list, record_decide_go / record_decide_outcome RPCs, pgTAP
+- [x] 05-12-PLAN.md — Query keys, read hooks, useDecideSnapshot, other open checks
+- [x] 05-14-PLAN.md — Steps 1 and 2, line editor
+- [x] 05-15-PLAN.md — Step 3 verdict card, warnings, core sections, Assumptions
+- [x] 05-17-PLAN.md — Step 4 alternatives, step 5 decision, written lines
+- [x] 05-18-PLAN.md — Demo fixture (6 steady months) and engine-backed demo-outcome test
+- [x] 05-35-PLAN.md — Chart geometry, cash-path chart, net-worth chart
+- [x] 05-36-PLAN.md — ConfidenceChip, EdgeTag, CombineToggle, GoalProgress
+- [x] 05-37-PLAN.md — Depth copy maps (verdict and input sides)
+- [x] 05-39-PLAN.md — Journal helpers: past decisions, attach roles, saved so far
+- [x] 05-50-PLAN.md — Record one-off toggle
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 05-13-PLAN.md — Quick-check form and result (home and first-read variants)
-- [ ] 05-16-PLAN.md — Step 3 setbacks and options, household scope toggle (hidden)
-- [ ] 05-19-PLAN.md — Queued mutations: checks, settings, links, card rate, statement periods
-- [ ] 05-41-PLAN.md — Step 3 verdict depth: combined line, worst month, confidence, edge, D-59 fact, warnings
-- [ ] 05-43-PLAN.md — Step 1 income change; step 2 promo, variable-rate stress, late fee
-- [ ] 05-44-PLAN.md — Step 2 running-cost prompts and estimate-gap notes
-- [ ] 05-45-PLAN.md — Step 4 "If it went into investing instead"
-- [ ] 05-46-PLAN.md — Step 5 cooling-off toggle, Wait goal preview, written lines
-- [ ] 05-51-PLAN.md — Demo seed v2 SQL, pgTAP, samples.ts, mirror check in CI
+- [x] 05-13-PLAN.md — Quick-check form and result (home and first-read variants)
+- [x] 05-16-PLAN.md — Step 3 setbacks and options, household scope toggle (hidden)
+- [x] 05-19-PLAN.md — Queued mutations: checks, settings, links, card rate, statement periods
+- [x] 05-41-PLAN.md — Step 3 verdict depth: combined line, worst month, confidence, edge, D-59 fact, warnings
+- [x] 05-43-PLAN.md — Step 1 income change; step 2 promo, variable-rate stress, late fee
+- [x] 05-44-PLAN.md — Step 2 running-cost prompts and estimate-gap notes
+- [x] 05-45-PLAN.md — Step 4 "If it went into investing instead"
+- [x] 05-46-PLAN.md — Step 5 cooling-off toggle, Wait goal preview, written lines
+- [x] 05-51-PLAN.md — Demo seed v2 SQL, pgTAP, samples.ts, mirror check in CI
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 05-20-PLAN.md — Go ahead (one undo step, incl. investment and card payoff), Wait (+goal, reminder), Pass
-- [ ] 05-21-PLAN.md — Decide tab root, FAB, open checks with stacked chips, reminder reconcile
-- [ ] 05-22-PLAN.md — Past decisions and detail sheet (estimate vs actual, attach/unlink)
-- [ ] 05-23-PLAN.md — Onboarding rough figures and first check (cash-only skip path)
-- [ ] 05-42-PLAN.md — Step 3 depth sections: day by day, expected income, cushion and margins, runway
-- [ ] 05-53-PLAN.md — Step 2 card terms: card minimum pre-fill, paid in full, card fees and costs (D-40, D-44)
+- [x] 05-20-PLAN.md — Go ahead (one undo step, incl. investment and card payoff), Wait (+goal, reminder), Pass
+- [x] 05-21-PLAN.md — Decide tab root, FAB, open checks with stacked chips, reminder reconcile
+- [x] 05-22-PLAN.md — Past decisions and detail sheet (estimate vs actual, attach/unlink)
+- [x] 05-23-PLAN.md — Onboarding rough figures and first check (cash-only skip path)
+- [x] 05-42-PLAN.md — Step 3 depth sections: day by day, expected income, cushion and margins, runway
+- [x] 05-53-PLAN.md — Step 2 card terms: card minimum pre-fill, paid in full, card fees and costs (D-40, D-44)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 05-24-PLAN.md — Check flow layout, swipe interceptor, useCheckDraft
-- [ ] 05-27-PLAN.md — Your month, Lines, limit and rough-figure sheets, home order
-- [ ] 05-40-PLAN.md — Change mutations (add, edit, remove with undo)
-- [ ] 05-47-PLAN.md — Past decisions goal progress; tag and untag transfers to a goal
-- [ ] 05-52-PLAN.md — withoutCheckWrites and useBoughtCheckComputation
+- [x] 05-24-PLAN.md — Check flow layout, swipe interceptor, useCheckDraft
+- [x] 05-27-PLAN.md — Your month, Lines, limit and rough-figure sheets, home order
+- [x] 05-40-PLAN.md — Change mutations (add, edit, remove with undo)
+- [x] 05-47-PLAN.md — Past decisions goal progress; tag and untag transfers to a goal
+- [x] 05-52-PLAN.md — withoutCheckWrites and useBoughtCheckComputation
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 05-30-PLAN.md — Check flow route, screen, header, action bar, step 3 section order
-- [ ] 05-48-PLAN.md — Changes coming up card and sheet on Decide home
-- [ ] 05-49-PLAN.md — Cushion months on Lines; missing-rate state in Your month
+- [x] 05-30-PLAN.md — Check flow route, screen, header, action bar, step 3 section order
+- [x] 05-48-PLAN.md — Changes coming up card and sheet on Decide home
+- [x] 05-49-PLAN.md — Cushion months on Lines; missing-rate state in Your month
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 05-29-PLAN.md — Commit a decision; decided checks (bought checks recalculated without their own writes)
+- [x] 05-29-PLAN.md — Commit a decision; decided checks (bought checks recalculated without their own writes)
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 05-25-PLAN.md — Full local gate and [BLOCKING] human-gated production push (npm run supabase:db:push)
+- [x] 05-25-PLAN.md — Full local gate and [BLOCKING] human-gated production push (npm run supabase:db:push)
 
-**Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots at 402x874, 60 s first read, reminders, haptics, back
+**Wave 10** *(Decide UX refresh; blocked on Wave 9 completion)*
+- [x] 05-54-PLAN.md — Refresh copy catalogue: 31 ⓘ entries (INFO_TERMS), folds, custom values, Clear/Delete, save status, plural keys, undo vocabulary (D-70..D-78)
+- [x] 05-55-PLAN.md — Text fit foundation: app-wide no-hyphenation Text, shouldStack, LabelValueRow, Seg radio list, one-line figures (D-76)
+- [x] 05-81-PLAN.md — Engine E1: instalment plan with an optional APR and a first-payment date, amortiseDue (D-80)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [x] 05-56-PLAN.md — Draft save never touches a deleted check (silent); Clear/Delete undo labels; queue order tests (D-73, D-77; no migration)
+- [x] 05-57-PLAN.md — Draft contract: AppState flush, discard(), unthrottled persist on background, per-check save status (D-77)
+- [x] 05-58-PLAN.md — InfoButton, InfoSheet, useInfoSheet, InfoLabel (D-70)
+- [x] 05-59-PLAN.md — FoldRow, FoldList, DetailsToggle, reveal-tap and scroll-into-view contexts, CollapsibleSection restyle (D-74, D-75)
+- [x] 05-60-PLAN.md — First-run fold hint: AsyncStorage store, hook, tile (D-75)
+- [x] 05-61-PLAN.md — Custom values: pure bounds, Wait and cheaper maths, Custom chips and field, slider field, bounded RateInput (D-71, D-83)
+- [x] 05-62-PLAN.md — Delete pattern: Dropdown glyph trigger, ConfirmSheet body, DeletableRow (D-73)
+- [x] 05-80-PLAN.md — R15 copy: 24 new ⓘ entries, R15.9 strings, R15 plural keys (D-79..D-84)
+- [x] 05-82-PLAN.md — Engine E2: exact cheaper price in the alternatives (D-83)
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [x] 05-63-PLAN.md — Verdict card summary-first: state words, reason, three key figures, ⓘ, three focus stops (D-74)
+- [x] 05-64-PLAN.md — What breaks fold (warning rows, Every line) and the fold previews incl. investment fold 7 (D-74, D-82)
+- [x] 05-67-PLAN.md — Step 2 method panels: Custom 1-120 terms, deposit slider field, bounded rates, credit-term ⓘ (D-71, D-70)
+- [x] 05-68-PLAN.md — Steps 1-2 price card ⓘ, stacking chips, ChoiceCard wrap, bounded loss of value (D-70, D-76)
+- [x] 05-70-PLAN.md — Step 5: Wait period chips and typed amount, WrittenList (D-71, D-76)
+- [x] 05-71-PLAN.md — Decide home trimmed: order, add-change row, Check an investment, Past decisions row, Lines fold (D-72, D-78)
+- [x] 05-72-PLAN.md — Open checks and Changes coming up: hidden when empty, swipe/⋯ Delete with confirm and Undo (D-72, D-73)
+- [x] 05-73-PLAN.md — Past decisions: Delete with per-outcome confirm, detail sheet reveal and stacking (D-73)
+- [x] 05-83-PLAN.md — R15 inputs and snapshot: instalment rate fields, exact cheaper price, custom item type, expected return projection (D-80..D-83)
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [x] 05-65-PLAN.md — Fold bodies: month, Where it lands (stacked rows), Assumptions (D-74, D-76)
+- [x] 05-69-PLAN.md — Step 4: exact cheaper price field, Kept ⓘ, no clamps; investing body with Custom horizon (D-83, D-74)
+- [x] 05-76-PLAN.md — Quick check trimmed: pill-only idle card, Custom duration 1-120, bounded APR and tax, Clear text button (D-78, D-71)
+- [x] 05-84-PLAN.md — Step 2 accordion of method cards and the rebuilt Price card (D-79, D-84)
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [x] 05-66-PLAN.md — Fold bodies: cash path, setbacks, options, expected income, who pays (D-74)
+- [x] 05-85-PLAN.md — Instalment card: Has a rate?, APR, first payment, quote note; written lines follow the schedule (D-80)
+- [x] 05-86-PLAN.md — Custom item type with Treat like; name in Assumptions and the decision detail (D-81)
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [x] 05-74-PLAN.md — Step 3 composition: FoldList, default open fold, scroll-on-open, hint, investment fold 7; investing moves from step 4 (D-74, D-75, D-82)
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [x] 05-75-PLAN.md — Check header: Clear with Undo route-back, save status, wrapping title; Go ahead confirm as a list (D-73, D-77)
+- [x] 05-87-PLAN.md — Expected return on investment checks: step 2 field and horizon, verdict line, Assumptions row (D-82)
+
+**Wave 17** *(blocked on Wave 16 completion)*
+- [x] 05-77-PLAN.md — Retire replaced copy; rules U and E, plural keys and caps tests (D-76, DCU-09)
+
+**Wave 18** *(blocked on Wave 17 completion)*
+- [x] 05-78-PLAN.md — Delete the transitional step 3 section wrappers (D-74)
+
+**Wave 19** *(blocked on Wave 18 completion)*
+- [x] 05-79-PLAN.md — Static text-fit guards (rules T, F, N, O) and fontScale-2 render guard; full gate (D-76)
+
+**Wave 20** *(device-walkthrough refinements; blocked on Wave 19 completion)*
+- [x] 05-88-PLAN.md — R16 copy: 4 new and 2 updated ⓘ entries, the M6 instalment table, card, tax and tuition notes, sync line strings (D-85..D-93)
+- [x] 05-89-PLAN.md — Engine E3a: amortise and amortiseDue take periods per year (D-89)
+- [x] 05-90-PLAN.md — Engine E4: impliedApr true-APR solver, bigint bisection (D-90)
+- [x] 05-96-PLAN.md — "$" always means USD: formatAmount markers, formatMoneyA11y, a11y labels (D-94)
+- [x] 05-97-PLAN.md — FAB root cause: null-in-tabs surface rule and the sheet-stack watchdog (D-85)
+- [x] 05-100-PLAN.md — Record entry: new lines default to the home currency (D-93)
+- [x] 05-107-PLAN.md — Sync transport: request timeouts, 12 s backoff cap, resume, Supabase reachability, post-restore refetch (D-88)
+
+**Wave 21** *(blocked on Wave 20 completion)*
+- [x] 05-91-PLAN.md — Engine E3b: instalment frequency, next_period, MAX_INSTALMENTS, monthly equivalent; inputs carry freq (D-89)
+- [x] 05-98-PLAN.md — You: the "Add" group, run after dismiss on transitionEnd; old import row removed (D-85)
+- [x] 05-99-PLAN.md — No back on a tab root; cushion and runway "Over 50 years" (D-93)
+- [x] 05-108-PLAN.md — Draft-save coalescing, age-aware sync line, idempotent replay test (D-88)
+
+**Wave 22** *(blocked on Wave 21 completion)*
+- [x] 05-92-PLAN.md — Engine E3c: cash path real dates by frequency; payback and investing views by monthly equivalent (D-89)
+- [x] 05-93-PLAN.md — Engine E5a: property, cash-like, tuition; region-aware card rules; phrase suggestions; new prompts (D-92)
+- [x] 05-102-PLAN.md — Instalment copy table (frequency x rate x timing) and the true APR on the settled path (D-89, D-90)
+- [x] 05-105-PLAN.md — Speed, data: one snapshot per source; autosave keeps other rows stable (D-88)
+
+**Wave 23** *(blocked on Wave 22 completion)*
+- [x] 05-94-PLAN.md — Engine E5b: card check limit in plan building, card_limit_rate_missing (D-91)
+- [x] 05-103-PLAN.md — Instalment card: How often, 1-500, first-payment labels; written lines and Go ahead by frequency (D-89)
+- [x] 05-106-PLAN.md — Speed, flow: settledCore reuse, selected method only, idle details with Updating, perf harness (D-88)
+
+**Wave 24** *(blocked on Wave 23 completion)*
+- [x] 05-95-PLAN.md — Engine E5c: the snapshot converts the card limit (rational, floored) and passes it with the region (D-91)
+- [x] 05-101-PLAN.md — Interest saved by the deposit; running-cost rows with the dashed Amount field (D-86, D-87)
+
+**Wave 25** *(blocked on Wave 24 completion)*
+- [x] 05-104-PLAN.md — Card limit box, fee and block notes, card-limit basis item; Step 1 new item types (D-91, D-92)
+
+**Wave 26** *(blocked on Wave 25 completion)*
+- [x] 05-109-PLAN.md — Retire R16-replaced copy, drop the next_month alias, extend the copy and text-fit guards (D-76, DCU-09)
+
+**Wave 27** *(Decide home redesign; blocked on Wave 26 completion)*
+- [x] 05-110-PLAN.md — R17 copy, the tightestFigures ⓘ and the homeBasisSeen flag (D-95..D-99)
+- [x] 05-111-PLAN.md — Pure home models: card state by engine basis, problems list and notice row counts (D-96, D-97)
+- [x] 05-112-PLAN.md — Dark variants: quick check, toggle and chips for the ink card (D-95)
+- [x] 05-113-PLAN.md — Pushed Open checks, Changes coming up and Lines screens (D-99)
+
+**Wave 28** *(blocked on Wave 27 completion)*
+- [x] 05-114-PLAN.md — HomeSummaryCard: label, two-Text hero at 42, In/Out, quick check, states (D-95, D-97)
+- [x] 05-115-PLAN.md — Month details sheet and the quiet HomeRow (D-95, D-99)
+- [x] 05-116-PLAN.md — Notice row and the Needs a look sheet (D-96)
+
+**Wave 29** *(blocked on Wave 28 completion)*
+- [x] 05-117-PLAN.md — Decide home composition: lean header, card, rows, no FAB (D-95, D-98, D-99)
+
+**Wave 30** *(blocked on Wave 29 completion)*
+- [x] 05-118-PLAN.md — Retire R17-replaced copy and components; guards over R17 (D-76, DCU-09)
+
+**Wave 31** *(Money concepts; blocked on Wave 30 completion)*
+- [x] 05-119-PLAN.md — Migrations: pots on savings_goals, debts.is_housing, housing_line; pgTAP incl. account deletion (D-101, D-103)
+- [x] 05-120-PLAN.md — Engine E6: potSetAside, set-aside off net free cash flow, protected cash (D-100, D-101)
+- [x] 05-131-PLAN.md — R18 copy catalogue: new keys, INFO_KEYS 60 to 65, undo labels, copy-guard lists (D-100..D-104, DCU-09)
+
+**Wave 32** *(blocked on Wave 31 completion)*
+- [x] 05-121-PLAN.md — Engine E8: housing line and warning with every exhaustive WarningCode site (D-103)
+- [x] 05-122-PLAN.md — Data layer: pot and debt-housing columns, queries, pot and housing mutations with undo (D-101, D-103)
+- [x] 05-133-PLAN.md — housing_line settings plumbing and the LimitKey records (D-103)
+
+**Wave 33** *(blocked on Wave 32 completion)*
+- [x] 05-123-PLAN.md — Engine E7: total cost of ownership and the invested-instead headline (D-102, D-104)
+- [x] 05-124-PLAN.md — Snapshot builder and source: pots, tagged-leg and own-pot exclusion, housingMonthly, housingLine (D-100, D-101, D-103)
+
+**Wave 34** *(blocked on Wave 33 completion)*
+- [x] 05-125-PLAN.md — Net free cash flow card: eyebrow, sub-lines, Out figure, Month details breakdown, Pots link (D-100)
+
+**Wave 35** *(blocked on Wave 34 completion)*
+- [x] 05-126-PLAN.md — Housing line UI: sixth Lines row, editor, loan switches, Every-line row, "of 6" (D-103)
+- [x] 05-127-PLAN.md — Pots UI: Pots screen, sheet and route (D-101)
+- [x] 05-128-PLAN.md — Verdict rows: total cost and invested instead, ComputedCheck wiring, month-table pots row (D-102, D-104)
+
+**Wave 36** *(blocked on Wave 35 completion)*
+- [x] 05-129-PLAN.md — Wait becomes a pot: copy and the own-pot test through computeCheck (D-101)
+- [x] 05-134-PLAN.md — You › Money Pots row and Needs a look pot entries (D-101)
+
+**Wave 37** *(blocked on Wave 36 completion)*
+- [x] 05-130-PLAN.md — Retire R18-replaced copy; R6 matrix, reading-order and copy guards (D-100..D-104, DCU-09)
+
+**Wave 38** *(blocked on Wave 37 completion)*
+- [x] 05-132-PLAN.md — Local gate, then the human-gated production push of the R18 migrations (D-101, D-103)
+
+**Wave 40** *(D-106/D-107 wording and This month; blocked on Wave 38 completion)*
+- [x] 05-135-PLAN.md — Engine E9: expectedMonth and expectedMonthMoney, the current month as it is expected to end (D-106, D-107)
+- [x] 05-136-PLAN.md — Free / overspent wording, part 1: verdict headline, key figures, What breaks, quick result, month table, and the month-basis strings (D-106, D-107, D-105 kept)
+
+**Wave 41** *(blocked on Wave 40 completion)*
+- [x] 05-137-PLAN.md — Free / overspent wording, part 2: alternatives, Step 5, expected-income row, worst-month line, open-check line (D-106)
+- [x] 05-142-PLAN.md — Engine E10: a first-class 'month' basis in prepareContext, parity suite against worst, basis wording for all three bases (D-107)
+
+**Wave 42** *(blocked on Wave 41 completion)*
+- [x] 05-138-PLAN.md — Snapshot: judgeOn becomes the basis, current-month rows without a rate fall back to Worst, integration tests incl. currency conversion and the quick check (D-106, D-107)
+- [x] 05-141-PLAN.md — Free / overspent wording, part 3: home card and Month details, the Judge-on and outcome-card strings and the wording guard (D-106, D-107)
+
+**Wave 43** *(blocked on Wave 42 completion)*
+- [x] 05-139-PLAN.md — Card model: month label, selected choice, rate fallback, Needs a look rate entry (D-106, D-107)
+- [x] 05-143-PLAN.md — Judge-on choice: device record, shared store, snapshot plumbing, Worst/Average still write basis_override, a switch never marks checks changed (D-107)
+- [x] 05-144-PLAN.md — basisOutcomes: the verdict's outcome under This month, Worst and Average, computed in idle time (D-107)
+
+**Wave 44** *(blocked on Wave 43 completion)*
+- [x] 05-140-PLAN.md — Judge-on dropdown on the card, the same choice in Month details, screen wiring, the quick-result fallback note, the FAB returns (D-107)
+
+**Wave 45** *(blocked on Wave 44 completion)*
+- [x] 05-145-PLAN.md — The 'outcome on each basis' card and the fallback note in Step 3 (D-107)
+
+**Wave 46** *(blocked on Wave 45 completion)*
+- [x] 05-26-PLAN.md — Device verification: DCU-11 screenshots (R8 frames, R18 alternate frame 1 with the onLayout/Maestro budget), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist, the D-88 speed budgets, the per-pairing hero check and the Money concepts (R18) and Wording and This month (D-106) checklists
 **UI hint**: yes — this phase should carry the deepest testing and design-iteration budget in the roadmap; it is the product's actual moat.
+
+### Phase 05.1: Decide engine v3 (INSERTED)
+
+**Goal:** A rule-based engine (no AI) answers "If I buy this, am I still OK this month and after?":
+- it starts from confirmed recurring income and bills;
+- it compares money in with money out;
+- it judges a purchase against this month, the user's unspent money (rolled forward) and the typical month;
+- it keeps the emergency fund out of every check that isn't marked an emergency.
+
+It is built beside the Phase 4/5 engine behind a `decideV3` switch, and compared against it before anything is removed.
+**Requirements**: TBD (from `.planning/Decision Research/panel/00-REBUILD-PLAN-v3.md` and `00-UPGRADE-PLAN.md` section 5)
+**Depends on:** Phase 5 (merged with Decide hidden behind "Coming soon")
+**Success Criteria** (what must be TRUE):
+  1. Recurring candidates are detected, confirmed and checked for drift. Pay on two fixed dates each month (1st and 15th) counts as 24 payments a year, not 26.
+  2. This month projects to month end and never assumes zero everyday spending. The typical month is a median, so one bad month can't move it.
+  3. Unspent money is user-confirmed, rolls forward with money in and out, and is re-asked on drift. The emergency fund never changes an ordinary answer.
+  4. Payment plans (weekly, every 2 weeks, monthly) work from a rate or APR and fees, with an optional quoted payment.
+  5. One judge gives six codes with one sentence each, and its funding split. "What could I do instead?" compares the payment stream, with a fixed-rate deposit at the user's own rate.
+  6. Invariants I1–I43 pass, branch coverage stays at 100%, and the shadow run against the old engine is reviewed.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.1 to break down)
+
+### Phase 05.2: Decide data and setup (INSERTED)
+
+**Goal:** Everything the new Decide needs is stored, editable and asked once:
+- the income profile (a shared component, reused by Phase 9 onboarding);
+- the Decide setup stepper and Decide settings;
+- income tagging and prompts in Activity;
+- the unspent-money and emergency-fund sheets;
+- the additive migrations, plus purge and export coverage.
+**Requirements**: TBD (from `00-UPGRADE-PLAN.md` section 4 and `00-DECIDE-SETUP.md`)
+**Depends on:** Phase 05.1 (engine types fixed after slice S2; can overlap with later 05.1 slices)
+**Success Criteria** (what must be TRUE):
+  1. A first-time user completes Decide setup (5 needed steps, about 3 minutes), and every answer can be edited alone from Decide settings.
+  2. The income questions are one shared component. Activity shows a "How are you paid?" card when the profile is missing, lets any income be tagged (type, and spent or kept), and asks once when a new kind of income appears.
+  3. Every new piece of data has add, edit, delete and undo through the write queue, works offline, and is covered by account deletion and data export.
+  4. Migrations are additive. Each one is applied to production only after preflight and the owner's approval.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.2 to break down)
+
+### Phase 05.3: Decide screens v3 (INSERTED)
+
+**Goal:** The Calm Ledger mockup ("Can I Afford It — Decide mockup") is built in the current theme (Bold pairing, green accent, 26 px cards, the five-tab bar):
+- home, the layered check (15 bands, item-type questions, payment plan), the answer ladder;
+- the whole plan, "What could I do instead?", how it was worked out, "Help me check this", and the record sheets.
+
+The old Decide screens are removed after cutover.
+**Requirements**: TBD (from `00-UPGRADE-PLAN.md` section 6)
+**Depends on:** Phase 05.1, Phase 05.2
+**Success Criteria** (what must be TRUE):
+  1. Quick, full and home surfaces show the same answer code, and no screen holds contradictory claims.
+  2. Every screen passes 320 and 402 px at 1.0 and 2.0 font scale and TalkBack, with no numbers breaking across lines.
+  3. A 5-person reading test passes before and after, with at least 2 people who have irregular income or low savings.
+  4. `decideV3` is on for everyone, and the old engine paths and screens are deleted with coverage kept at 100%.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.3 to break down)
 
 ### Phase 6: Grow
 **Goal**: A user can track savings goals, investments and debt payoff against their real numbers.
@@ -734,7 +961,8 @@ Plans:
 
 ### Phase 9: Tiers & Onboarding
 **Goal**: The app reveals its depth gradually and converts to a paid subscription cleanly.
-**Depends on**: Phase 3 (Shell), Phase 0 (RevenueCat identity anchors to the Supabase user id from first sign-in)
+**Note (2026-10-25):** the main onboarding includes the shared income-profile questions (`IncomeProfileSteps`) built in Phase 05.2. Whichever runs first, Decide setup or main onboarding, saves the answers, and the other skips them.
+**Depends on**: Phase 3 (Shell), Phase 0 (RevenueCat identity anchors to the Supabase user id from first sign-in), Phase 05.2 (shared income-profile component)
 **Requirements**: TIER-01, TIER-02, TIER-03, TIER-04, TIER-05, TIER-06, TIER-07, TIER-08, TIER-09, TIER-10, ENV-12, ANL-07, ANL-08
 **Success Criteria** (what must be TRUE):
   1. A new user answers an 11-question flow that sets a starting feature level, and features appear or stay hidden according to the current level.
@@ -823,7 +1051,10 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 0/53 | Planned | - |
+| 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
+| 05.1 Decide engine v3 | 0/TBD | Not started | - |
+| 05.2 Decide data and setup | 0/TBD | Not started | - |
+| 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |

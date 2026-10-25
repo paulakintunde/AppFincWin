@@ -342,7 +342,7 @@ describe('resolvePlan: card', () => {
     expect(p.card!.remainingAtCap).toBeGreaterThan(0);
   });
 
-  it.each<ItemType>(['rent_bill', 'loan_repayment', 'tax', 'insurance_premium'])('blocks %s (D-18)', (itemType) => {
+  it.each<ItemType>(['rent_bill', 'loan_repayment', 'insurance_premium', 'property', 'cash_equivalent'])('blocks %s (D-18)', (itemType) => {
     expect(reasonsOf(card({ kind: 'full' }, {}, { itemType }))).toEqual(['card_not_accepted']);
   });
 

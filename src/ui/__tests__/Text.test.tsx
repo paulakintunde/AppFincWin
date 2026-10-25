@@ -94,6 +94,36 @@ describe('Text without an explicit fontSize (M9)', () => {
   });
 });
 
+describe('D-76 rule H', () => {
+  it('D-76 rule H: Text defaults to simple breaks and no hyphenation', async () => {
+    await render(
+      <>
+        <Text testID="a">{'x'}</Text>
+        <Text testID="b" allowFontScaling={false}>{'x'}</Text>
+        <TextInput testID="c" />
+      </>,
+    );
+    for (const id of ['a', 'b']) {
+      expect(screen.getByTestId(id).props.textBreakStrategy).toBe('simple');
+      expect(screen.getByTestId(id).props.android_hyphenationFrequency).toBe('none');
+    }
+    expect(screen.getByTestId('c').props.textBreakStrategy).toBe('simple');
+  });
+  it('D-76 rule H: a caller may override the break strategy', async () => {
+    await render(
+      <>
+        <Text testID="a" textBreakStrategy="highQuality" android_hyphenationFrequency="normal">{'x'}</Text>
+        <Text testID="b" allowFontScaling={false} textBreakStrategy="balanced">{'x'}</Text>
+        <TextInput testID="c" textBreakStrategy="highQuality" />
+      </>,
+    );
+    expect(screen.getByTestId('a').props.textBreakStrategy).toBe('highQuality');
+    expect(screen.getByTestId('a').props.android_hyphenationFrequency).toBe('normal');
+    expect(screen.getByTestId('b').props.textBreakStrategy).toBe('balanced');
+    expect(screen.getByTestId('c').props.textBreakStrategy).toBe('highQuality');
+  });
+});
+
 describe('TextInput', () => {
   it('defaults the cap to 2 and keeps a caller value', async () => {
     await render(

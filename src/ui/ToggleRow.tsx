@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
@@ -22,17 +23,21 @@ export interface ToggleRowProps {
   onChange: (next: boolean) => void;
   disabled?: boolean;
   accessibilityHint?: string;
+  /** When the spoken label differs from the visible one (05-126: "This is for housing, {{name}}"). */
+  accessibilityLabel?: string;
 }
 
-export function ToggleRow({ label, value, onChange, disabled = false, accessibilityHint }: ToggleRowProps) {
+export function ToggleRow({ label, value, onChange, disabled = false, accessibilityHint, accessibilityLabel }: ToggleRowProps) {
   const { colors, pairing } = useTheme();
+  const scoped = useReadOnlyScope();
+  const inert = disabled || scoped;
   return (
     <Pressable
       accessibilityRole="switch"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ checked: value, disabled }}
-      disabled={disabled}
+      accessibilityState={{ checked: value, disabled: inert }}
+      disabled={inert}
       onPress={() => onChange(!value)}
       style={[styles.row, { opacity: disabled ? 0.5 : 1 }]}
     >

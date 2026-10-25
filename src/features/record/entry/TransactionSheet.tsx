@@ -94,6 +94,7 @@ import {
   withAutomatic,
   withDate,
   withDirection,
+  withOneOff,
   withRefund,
   withStatus,
   withToAccount,
@@ -190,6 +191,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const formCtx: FormContext = {
     today: rc.today,
     defaultAccount: activeAccounts[0] ? { id: activeAccounts[0].id, currency: activeAccounts[0].currency } : null,
+    homeCurrency: rc.homeCurrency,
     amountInputText: (minor, code) => parser.toInputText(minor, code, exponentFor(code)),
     accountCurrency: (id) => accounts.find((a) => a.id === id)?.currency,
   };
@@ -970,6 +972,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                 onChange={(v) => {
                   closePad();
                   setRepeats(v);
+                  if (v.freq !== 'never') setState((s) => withOneOff(s, false));
                 }}
                 formatDate={(d) => formatter.formatDate(d)}
                 today={rc.today}
@@ -994,6 +997,19 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                   setState((s) => withRefund(s, on));
                 }}
               />
+            ) : null}
+            {state.direction !== 'transfer' && !editRow?.recurring_series_id && repeats.freq === 'never' ? (
+              <>
+                <ToggleRow
+                  label={t('record.sheet.toggle.oneOff')}
+                  value={state.oneOff}
+                  onChange={(on) => {
+                    closePad();
+                    setState((s) => withOneOff(s, on));
+                  }}
+                />
+                <Text style={noteStyle}>{t('record.sheet.note.oneOff')}</Text>
+              </>
             ) : null}
           </>
         )}

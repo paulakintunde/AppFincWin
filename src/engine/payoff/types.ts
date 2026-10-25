@@ -14,7 +14,13 @@ export type Percent = bigint & { readonly __brand: 'Percent' };
 export const PERCENT_SCALE: bigint = 10n ** BigInt(RATE_SCALE);
 export const ONE_HUNDRED_PERCENT: bigint = 100n * PERCENT_SCALE;
 /** Monthly rate r = apr / MONTHLY_RATE_DENOMINATOR (apr is a percentage, 12 months, /100). */
-export const MONTHLY_RATE_DENOMINATOR: bigint = 1200n * PERCENT_SCALE;
+/** D-89: instalments per year the payoff maths supports: monthly, every 2 weeks, weekly, quarterly. */
+export type PeriodsPerYear = 12 | 26 | 52 | 4;
+/** D-89: the per-period rate is apr / rateDenominator(ppy) = apr / (100 x ppy x PERCENT_SCALE). */
+export function rateDenominator(periodsPerYear: PeriodsPerYear): bigint {
+  return 100n * BigInt(periodsPerYear) * PERCENT_SCALE;
+}
+export const MONTHLY_RATE_DENOMINATOR: bigint = rateDenominator(12);
 export const ZERO_PERCENT = 0n as Percent;
 
 const PERCENT_PATTERN = /^(\d{1,4})(?:\.(\d{1,10}))?$/;

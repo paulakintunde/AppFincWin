@@ -70,6 +70,15 @@ describe('detailRowsFor', () => {
     expect(rows[1]?.labelKey).toBe('activity.detail.paidFrom');
   });
 
+  it('adds a One-off row only when the flag is set', () => {
+    const on = detailRowsFor({ ...base, row: tx({ one_off: true }) });
+    expect(on.find((r) => r.key === 'oneOff')).toMatchObject({
+      labelKey: 'activity.detail.oneOff',
+      value: 'activity.detail.oneOffValue',
+    });
+    expect(detailRowsFor({ ...base, row: tx({}) }).find((r) => r.key === 'oneOff')).toBeUndefined();
+  });
+
   it('shows Repeats and Automatic without changing Status', () => {
     const rows = detailRowsFor({
       ...base,

@@ -5,6 +5,7 @@ import { clearedAfterAdd, formFromItem, formHasContent, itemFromForm } from '../
 const ctx: FormContext = {
   today: '2026-09-25',
   defaultAccount: { id: 'a1', currency: 'GBP' },
+  homeCurrency: 'GBP',
   amountInputText: (minor, code) => toDecimalString(minorUnits(minor), resolveExponent(code)),
 };
 const parse = (text: string, currency: string): ParseAmountResult =>

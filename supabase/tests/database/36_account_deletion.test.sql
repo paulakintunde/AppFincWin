@@ -17,7 +17,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(17);
+select extensions.plan(19);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -84,6 +84,16 @@ select public.edit_recurring_series_from(
 insert into public.import_profiles (id, account_id, layout_signature, profile)
 values ('f0000000-0000-0000-0000-0000000000f1', 'a1000000-0000-0000-0000-000000000001', 'sig-1', '{"sign":"positive-is-in"}'::jsonb);
 reset role;
+
+-- 05-119 (R18.2, R18.4): a pot and a loan debt for A's household, written as the table owner (debts has no insert
+-- grant for loans' check_id and the pot arrives through the client grant path in production).
+select set_config('request.jwt.claims', '', true);
+insert into public.savings_goals (id, household_id, created_by, kind, name, currency, target, ready_by)
+values ('b1000000-0000-0000-0000-0000000000b1', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+        '11111111-1111-1111-1111-111111111111', 'pot', 'Car service', 'USD', 60000, current_date + 90);
+insert into public.debts (id, household_id, created_by, name, kind, currency, is_housing)
+values ('d1000000-0000-0000-0000-0000000000d1', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+        '11111111-1111-1111-1111-111111111111', 'Mortgage', 'loan', 'USD', true);
 
 -- B (a non-owner member) also authors a series and a row in A's household.
 set local role authenticated;
@@ -160,6 +170,8 @@ select extensions.is((select count(*)::int from public.undo_log), 0, 'no undo st
 select extensions.is((select count(*)::int from public.import_profiles), 0, 'no import profile remains');
 select extensions.is((select count(*)::int from public.category_rules), 0, 'no category rule remains');
 select extensions.is((select count(*)::int from public.profiles), 0, 'no profile remains');
+select extensions.is((select count(*)::int from public.savings_goals where kind = 'pot'), 0, 'no pot remains');
+select extensions.is((select count(*)::int from public.debts), 0, 'no debt remains');
 
 select * from extensions.finish();
 rollback;

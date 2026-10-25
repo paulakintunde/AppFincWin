@@ -37,6 +37,12 @@ function insertInversePatch(entity: UndoEntity): Readonly<Record<string, PatchVa
     case 'recurring_series':
     // D-24: rules are soft-deleted so Undo and History work (02.3 RESEARCH Pitfall 8).
     case 'category_rules':
+    // 05: Decide rows are soft-deleted (apply_patches allows deleted_at on each, 05-04).
+    case 'decide_checks':
+    case 'debts':
+    case 'decide_links':
+    case 'decide_changes':
+    case 'savings_goals':
       return { deleted_at: NOW_SENTINEL };
     case 'categories':
     case 'accounts':

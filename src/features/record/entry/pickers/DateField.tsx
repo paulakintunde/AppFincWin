@@ -8,6 +8,7 @@ import { Row } from '@/ui/Row';
 import { Sheet } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useT } from '@/i18n';
+import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 
 export interface DateFieldProps {
   label: string;
@@ -32,15 +33,31 @@ function fromLocalDateString(value: string): Date {
 
 export function DateField({ label, value, display, onChange, minDate }: DateFieldProps) {
   const t = useT();
+  const readOnly = useReadOnlyScope(); // a date inside a decided Decide check is shown, not opened
   const [open, setOpen] = useState(false);
+  // WR-D12: bumped on a refused day so the iOS picker remounts on the stored date instead of showing the refused one.
+  const [resets, setResets] = useState(0);
 
   const handle = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === 'android') setOpen(false);
-    if (event.type === 'set' && date) onChange(toLocalDateString(date));
+    // DCU-08 (05-08): minimumDate is only a picker hint; refuse an earlier day here (Pitfall 3).
+    // 'YYYY-MM-DD' compares lexically.
+    if (event.type === 'set' && date) {
+      const picked = toLocalDateString(date);
+      if (minDate !== undefined && picked < minDate) {
+        // WR-D12: an earlier day is not silently dropped: the field moves to the earliest day allowed, so the row and
+        // the picker show the same date.
+        onChange(minDate);
+        setResets((n) => n + 1);
+        return;
+      }
+      onChange(picked);
+    }
   };
 
   const picker = open ? (
     <DateTimePicker
+      key={resets}
       testID="date-picker"
       value={fromLocalDateString(value)}
       mode="date"
@@ -52,7 +69,7 @@ export function DateField({ label, value, display, onChange, minDate }: DateFiel
 
   return (
     <>
-      <Row label={label} value={display} dense chevron onPress={() => setOpen(true)} />
+      <Row label={label} value={display} dense chevron disabled={readOnly} onPress={() => setOpen(true)} />
       {Platform.OS === 'ios' ? (
         <Sheet visible={open} onDismiss={() => setOpen(false)} accessibilityLabel={label}>
           <SheetHeader title={label} cancelLabel={t('record.sheet.cancel')} onCancel={() => setOpen(false)} />

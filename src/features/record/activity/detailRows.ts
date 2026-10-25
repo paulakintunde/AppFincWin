@@ -59,6 +59,9 @@ export function detailRowsFor(input: DetailRowsInput): DetailRowSpec[] {
       tone: 'accent',
     });
   }
+  if (row.one_off === true) {
+    rows.push({ key: 'oneOff', labelKey: 'activity.detail.oneOff', value: t('activity.detail.oneOffValue') });
+  }
   rows.push({ key: 'paymentType', labelKey: 'activity.detail.paymentType', value: paymentTypeLabel });
   rows.push({ key: 'repeats', labelKey: 'activity.detail.repeats', value: repeatsLabel });
   rows.push({

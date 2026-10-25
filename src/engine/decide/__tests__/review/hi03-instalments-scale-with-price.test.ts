@@ -98,6 +98,7 @@ describe('04-REVIEW HI-03: instalment plans scale with the price', () => {
         limits: {
           reserve: null,
           dsrLine: null,
+          housingLine: null,
           unsecuredIncomeMultiple: 1,
           investingFloor: null,
           savingFloor: null,

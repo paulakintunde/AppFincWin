@@ -15,6 +15,10 @@ jest.mock('expo-router', () => {
   Stack.Screen = function StackScreen() {
     return null;
   };
+  // quick-261025-f46: the Decide screens sit in a Stack.Protected group.
+  Stack.Protected = function StackProtected({ children }: { guard: boolean; children?: React.ReactNode }) {
+    return R.createElement(R.Fragment, null, children);
+  };
   return {
     router: { canDismiss: () => false, dismissTo: jest.fn(), push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
     useLocalSearchParams: () => mockParams,
@@ -42,9 +46,16 @@ jest.mock('@/features/record/history/UndoToastHost', () => {
   const { View } = require('react-native');
   return { UndoToastHost: () => R.createElement(View, { testID: 'undo-toast-host' }), SheetToastOverlay: () => null };
 });
+// 05-24: the layout mounts the Decide reminder observer, which needs a real router; wiring only here.
+jest.mock('@/features/decide/notifications/useNotificationObserver', () => ({ useNotificationObserver: () => undefined }));
 jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({ BackHistoryProvider: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('@/shell/backHistory/useAndroidBackHandler', () => ({ AndroidBackHandler: () => null }));
 jest.mock('@/shell/layout/ShellLayoutProvider', () => ({ ShellLayoutProvider: ({ children }: { children: React.ReactNode }) => children }));
+jest.mock('@/shell/fab/FabProvider', () => {
+  const R = require('react');
+  const { View } = require('react-native');
+  return { FabProvider: ({ children }: { children: React.ReactNode }) => R.createElement(View, { testID: 'fab-provider' }, children) };
+});
 jest.mock('@/features/record/useDeviceHomeCurrencyDefault', () => ({ DeviceHomeCurrencyDefault: () => null }));
 jest.mock('@/features/record/samples/SampleBanner', () => ({ SampleBanner: () => null }));
 jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPrompts: () => null }));
@@ -119,5 +130,11 @@ describe('signed-in layout', () => {
   it('mounts exactly one UndoToastHost', async () => {
     const { getAllByTestId } = await render(<AppLayout />);
     expect(getAllByTestId('undo-toast-host')).toHaveLength(1);
+  });
+
+  // You is an outer-stack screen whose Add group reads useFab (05-98); the provider must sit above the Stack, not in (tabs).
+  it('wraps the outer stack in one FabProvider', async () => {
+    const { getAllByTestId } = await render(<AppLayout />);
+    expect(getAllByTestId('fab-provider')).toHaveLength(1);
   });
 });

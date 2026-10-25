@@ -7,6 +7,7 @@ import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-han
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { DURATION } from '@/theme/motion';
 import { SwipeBack } from '../SwipeBack';
+import { setSwipeBackInterceptor } from '../swipeBackGesture';
 
 let mockReduced = false;
 jest.mock('@/theme/motion', () => ({
@@ -95,6 +96,23 @@ describe('SwipeBack', () => {
       jest.advanceTimersByTime(DURATION.push);
     });
     expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+  it('does not go back when a screen intercepts the swipe (A8)', async () => {
+    setSwipeBackInterceptor(() => true);
+    try {
+      await render(
+        <Wrap enabled>
+          <Text>{'x'}</Text>
+        </Wrap>
+      );
+      await swipe(120);
+      await act(async () => {
+        jest.advanceTimersByTime(DURATION.push * 2);
+      });
+      expect(mockBack).not.toHaveBeenCalled();
+    } finally {
+      setSwipeBackInterceptor(null);
+    }
   });
   it('does not go back if unmounted during the completion slide', async () => {
     const u = await render(

@@ -227,6 +227,7 @@ These decisions widen Phase 4. Where one amends an earlier decision, the later o
 
 #### Execution-review decisions (user, 2026-10-16)
 - **D-64: The level payment rounds up** (amends D-20). An amortised level payment is rounded **up** to the minor unit (ceiling), so it never undershoots. The final payment is the remaining balance plus interest, which is never more than the level payment. This removes the compounding residual on extreme terms (e.g. 1,000.00 at 22.9% over 600 months). Golden figures and the D-57 reference vectors are re-checked, and any changed case becomes a named deviation.
+- **D-65: A zero investing floor means not set** (amends D-43, D-05). User decision 2026-10-16. A floor of 0, or a null floor that resolves to a month's investing of 0, is not a real floor. The `inv` margin is still reported, but it never carries the `on_edge` flag by itself; the flag fires only for a thin margin above a real, non-zero floor. A non-zero floor behaves as before. Built in `lineMargins` (`invMargin`) in `src/engine/decide/decision.ts`.
 - **Bisection tolerance accepted:** the prototype-parity comparison (04-11) tolerates `ceil(0.5 × price / monthly) + 1` because of float vs integer rounding. The engine's own bisection tests stay exact to the minor unit.
 - **`withExpectedIncome` confirmed:** its month income is base + the expected gain (e.g. 10,000 + 4,000 = 14,000). The plan's example (base only) was wrong.
 - **Per-setback `runwayWith` confirmed:** counted from the cash left after the setback hits.

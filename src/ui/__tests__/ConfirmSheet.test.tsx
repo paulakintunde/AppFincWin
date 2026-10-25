@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { ConfirmSheet } from '../ConfirmSheet';
@@ -36,6 +37,31 @@ async function setup(extra: { onDismiss?: () => void } = {}) {
   );
   return { ...utils, onCancel, onConfirm };
 }
+
+describe('ConfirmSheet component body (D-73)', () => {
+  it('ConfirmSheet renders a component body under the text', async () => {
+    const { getByText, toJSON } = await render(
+      <ThemeProvider>
+        <ConfirmSheet visible body="Body" cancelLabel="No" confirmLabel="Yes" onConfirm={jest.fn()} onCancel={jest.fn()}>
+          <Text>{'LIST'}</Text>
+        </ConfirmSheet>
+      </ThemeProvider>,
+    );
+    expect(getByText('LIST')).toBeTruthy();
+    const json = JSON.stringify(toJSON());
+    expect(json.indexOf('Body')).toBeLessThan(json.indexOf('LIST'));
+    expect(json.indexOf('LIST')).toBeLessThan(json.indexOf('Yes'));
+  });
+
+  it('ConfirmSheet title is a header', async () => {
+    const { getByRole } = await render(
+      <ThemeProvider>
+        <ConfirmSheet visible title="Heading" cancelLabel="No" confirmLabel="Yes" onConfirm={jest.fn()} onCancel={jest.fn()} />
+      </ThemeProvider>,
+    );
+    expect(getByRole('header', { name: 'Heading' })).toBeTruthy();
+  });
+});
 
 describe('ConfirmSheet dismissal', () => {
   it('defaults a sheet dismissal to onCancel', async () => {

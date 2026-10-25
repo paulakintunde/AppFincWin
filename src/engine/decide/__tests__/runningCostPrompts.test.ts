@@ -16,7 +16,7 @@ describe('running-cost prompts (D-55)', () => {
     expect(RUNNING_COST_PROMPTS.general).toEqual(['insurance', 'maintenance', 'loss_of_value']);
   });
 
-  it.each(['rent_bill', 'loan_repayment', 'tax', 'insurance_premium'] as const)('%s has no prompts', (t) => {
+  it.each(['rent_bill', 'loan_repayment', 'tax', 'insurance_premium', 'cash_equivalent'] as const)('%s has no prompts', (t) => {
     expect(RUNNING_COST_PROMPTS[t]).toEqual([]);
   });
 
@@ -34,7 +34,7 @@ describe('running-cost prompts (D-55)', () => {
 
   it('only loss_of_value is non-cash', () => {
     expect(isNonCashCategory('loss_of_value')).toBe(true);
-    for (const c of ['insurance', 'fuel', 'maintenance', 'registration'] as const) {
+    for (const c of ['insurance', 'fuel', 'maintenance', 'registration', 'property_tax', 'home_insurance', 'utilities', 'service_charge', 'books_materials', 'travel', 'accommodation'] as const) {
       expect(isNonCashCategory(c)).toBe(false);
     }
   });

@@ -67,6 +67,7 @@ describe('public barrel: entry points', () => {
     expect(typeof decide.paybackMonths).toBe('function');
     expect(typeof decide.investmentViews).toBe('function');
     expect(typeof decide.incomeAtRisk).toBe('function');
+    expect(typeof decide.totalCost).toBe('function');
     expect(typeof decide.runningCostPrompts).toBe('function');
     expect(typeof decide.estimateBias).toBe('function');
     expect(typeof decide.confidenceOf).toBe('function');
@@ -240,6 +241,7 @@ const VERDICT_PATH_FILES = [
   'decision.ts',
   'investmentViews.ts',
   'incomeAtRisk.ts',
+  'ownership.ts',
 ];
 
 // Comments may name the helpers they avoid; only code can reach them.

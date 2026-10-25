@@ -15,14 +15,30 @@ export interface TextProps extends RNTextProps {
 }
 
 export const Text = forwardRef<RNText, TextProps>(function Text(
-  { scale = 'body', style, allowFontScaling, children, ...rest },
+  {
+    scale = 'body',
+    style,
+    allowFontScaling,
+    children,
+    // D-76 rule H: no mid-word hyphenation anywhere; a caller may override.
+    textBreakStrategy = 'simple',
+    android_hyphenationFrequency = 'none',
+    ...rest
+  },
   ref,
 ) {
   const os = useFontScale();
   const nested = useContext(TextNestingContext);
   if (allowFontScaling === false) {
     return (
-      <RNText ref={ref} {...rest} allowFontScaling={false} style={style}>
+      <RNText
+        ref={ref}
+        {...rest}
+        textBreakStrategy={textBreakStrategy}
+        android_hyphenationFrequency={android_hyphenationFrequency}
+        allowFontScaling={false}
+        style={style}
+      >
         {withNesting(children)}
       </RNText>
     );
@@ -33,7 +49,14 @@ export const Text = forwardRef<RNText, TextProps>(function Text(
   // At scale 1 the caller style passes through untouched (same reference).
   const merged = Object.keys(scaled).length > 0 ? [style, scaled] : style;
   return (
-    <RNText ref={ref} {...rest} allowFontScaling={false} style={merged}>
+    <RNText
+      ref={ref}
+      {...rest}
+      textBreakStrategy={textBreakStrategy}
+      android_hyphenationFrequency={android_hyphenationFrequency}
+      allowFontScaling={false}
+      style={merged}
+    >
       {withNesting(children)}
     </RNText>
   );

@@ -11,7 +11,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { DURATION, EASING, useReduceMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { SWIPE_BACK_EDGE_WIDTH, dragOffset, shouldSwipeBack } from './swipeBackGesture';
+import { SWIPE_BACK_EDGE_WIDTH, dragOffset, interceptSwipeBack, shouldSwipeBack } from './swipeBackGesture';
 
 export interface SwipeBackProps {
   enabled: boolean;
@@ -60,6 +60,11 @@ export function SwipeBack({ enabled, children }: SwipeBackProps) {
               translationY: e.translationY,
               velocityX: e.velocityX,
             }) && router.canGoBack();
+          // A8: a screen may take the swipe (the check flow steps back first); the layer snaps home.
+          if (go && interceptSwipeBack()) {
+            translateX.set(reduced ? 0 : withTiming(0, { duration: DURATION.sheetDrag, easing: EASING }));
+            return;
+          }
           if (!go) {
             translateX.set(reduced ? 0 : withTiming(0, { duration: DURATION.sheetDrag, easing: EASING }));
             return;

@@ -24,6 +24,7 @@ function bl(over: Partial<DecideSnapshot> = {}): DecideSnapshot {
     limits: {
       reserve: m(600_000),
       dsrLine: percent('36'),
+      housingLine: null,
       unsecuredIncomeMultiple: 12,
       investingFloor: m(40_000),
       savingFloor: m(25_000),

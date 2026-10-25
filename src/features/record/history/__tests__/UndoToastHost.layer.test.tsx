@@ -184,6 +184,31 @@ describe('UndoToastHost layers (D-16)', () => {
     expect(screen.getByText('Sheet body', { hidden: true })).toBeTruthy();
   });
 
+  it.each([
+    ['decide.delete.toastCheck', 'checkDeleted', 'Check deleted. Nothing was written.'],
+    ['decide.clear.toast', 'checkCleared', 'Check cleared. Nothing was written.'],
+    ['decide.delete.toastDecision', 'decisionDeleted', 'Decision deleted'],
+    ['decide.delete.toastChange', 'changeDeleted', 'Change deleted'],
+    ['decide.toast.unlinked', 'lineUnlinked', 'Line unlinked'],
+  ])('D-73 the Decide toast %s keeps its words and offers Undo for its step', async (key, labelKey, words) => {
+    await mount(false);
+    await show({ kind: 'destructive', text: { key, params: { name: 'Test chair' } }, stepId: 'step-9' });
+    expect(screen.getByText(words, { hidden: true })).toBeTruthy();
+    const undo = screen.queryAllByLabelText('Undo', { hidden: true });
+    expect(undo).toHaveLength(1);
+    await fireEvent.press(undo[0]!);
+    expect(mockUndo).toHaveBeenCalledWith(
+      expect.objectContaining({ stepId: 'step-9', labelKey, labelParams: expect.objectContaining({ name: 'Test chair' }) })
+    );
+    expect(getToast()).toBeNull();
+  });
+
+  it('a Decide toast with no step id offers no Undo', async () => {
+    await mount(false);
+    await show({ kind: 'destructive', text: { key: 'decide.delete.toastCheck' } });
+    expect(screen.queryAllByLabelText('Undo', { hidden: true })).toHaveLength(0);
+  });
+
   it('announces politely in both placements', async () => {
     const m = await mount(false);
     await show(ORDINARY);

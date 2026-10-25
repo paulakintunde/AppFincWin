@@ -7,9 +7,11 @@ import type { Confidence, ConfidenceInput, ConfidenceReason } from './types';
  * Precedence: rough, then strong, then fair. "8 months and Volatile" meets both fair and rough, so rough is
  * evaluated first (04-RESEARCH addendum §E). Rough: a first read, under 3 full months, or Volatile income. Strong: 6 or
  * more full months and Steady income. Everything else is fair, with every reason that applies.
+ * D-69: a read that uses a line converted at a provisional rate is never strong; 'provisional_rates' joins the reasons.
  */
 export function confidenceOf(input: ConfidenceInput): Confidence {
   const { fullMonths, steadiness, firstRead } = input;
+  const provisional = input.provisionalRates === true;
   if (!Number.isSafeInteger(fullMonths) || fullMonths < 0) {
     throw new RangeError(`confidenceOf: fullMonths ${fullMonths} must be a non-negative integer`);
   }
@@ -21,10 +23,11 @@ export function confidenceOf(input: ConfidenceInput): Confidence {
   const rough: ConfidenceReason[] = [];
   if (short) rough.push('under_3_full_months');
   if (steadiness === 'volatile') rough.push('volatile_income');
-  if (rough.length > 0) return { level: 'rough', reasons: rough };
-  if (fullMonths >= CONFIDENCE_STRONG_MIN_MONTHS && steadiness === 'steady') return { level: 'strong', reasons: [] };
+  if (rough.length > 0) return { level: 'rough', reasons: provisional ? [...rough, 'provisional_rates'] : rough };
+  if (fullMonths >= CONFIDENCE_STRONG_MIN_MONTHS && steadiness === 'steady' && !provisional) return { level: 'strong', reasons: [] };
   const fair: ConfidenceReason[] = [];
   if (fullMonths < CONFIDENCE_STRONG_MIN_MONTHS) fair.push('under_6_full_months');
   if (steadiness === 'variable') fair.push('variable_income');
+  if (provisional) fair.push('provisional_rates');
   return { level: 'fair', reasons: fair };
 }

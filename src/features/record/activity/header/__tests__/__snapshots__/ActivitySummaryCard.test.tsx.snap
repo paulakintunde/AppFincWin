@@ -44,7 +44,12 @@ exports[`ActivitySummaryCard matches snapshots: default 1`] = `
   >
     <View>
       <Text
+        adjustsFontSizeToFit={true}
         allowFontScaling={false}
+        android_hyphenationFrequency="none"
+        maxFontSizeMultiplier={1.3}
+        minimumFontScale={0.8}
+        numberOfLines={1}
         style={
           {
             "color": "#1B4D3E",
@@ -54,11 +59,13 @@ exports[`ActivitySummaryCard matches snapshots: default 1`] = `
             "lineHeight": 30.159999999999997,
           }
         }
+        textBreakStrategy="simple"
       >
         +£1,234.00
       </Text>
       <Text
         allowFontScaling={false}
+        android_hyphenationFrequency="none"
         style={
           {
             "color": "#6E6A5E",
@@ -68,12 +75,14 @@ exports[`ActivitySummaryCard matches snapshots: default 1`] = `
             "lineHeight": 18.2,
           }
         }
+        textBreakStrategy="simple"
       >
         left after everything · 48 entries
       </Text>
     </View>
     <Text
       allowFontScaling={false}
+      android_hyphenationFrequency="none"
       style={
         {
           "color": "#8A5A1B",
@@ -84,12 +93,14 @@ exports[`ActivitySummaryCard matches snapshots: default 1`] = `
         }
       }
       testID="activity-summary-still"
+      textBreakStrategy="simple"
     >
       £612.00 still to come
     </Text>
   </View>
   <Text
     allowFontScaling={false}
+    android_hyphenationFrequency="none"
     style={
       [
         {
@@ -105,16 +116,19 @@ exports[`ActivitySummaryCard matches snapshots: default 1`] = `
       ]
     }
     testID="activity-summary-inout"
+    textBreakStrategy="simple"
   >
     In
      
     <Text
       allowFontScaling={false}
+      android_hyphenationFrequency="none"
       style={
         {
           "color": "#14150F",
         }
       }
+      textBreakStrategy="simple"
     >
       £2,000.00
     </Text>
@@ -123,11 +137,13 @@ exports[`ActivitySummaryCard matches snapshots: default 1`] = `
      
     <Text
       allowFontScaling={false}
+      android_hyphenationFrequency="none"
       style={
         {
           "color": "#14150F",
         }
       }
+      textBreakStrategy="simple"
     >
       £765.00
     </Text>
@@ -243,7 +259,12 @@ exports[`ActivitySummaryCard matches snapshots: running-balance 1`] = `
   >
     <View>
       <Text
+        adjustsFontSizeToFit={true}
         allowFontScaling={false}
+        android_hyphenationFrequency="none"
+        maxFontSizeMultiplier={1.3}
+        minimumFontScale={0.8}
+        numberOfLines={1}
         style={
           {
             "color": "#1B4D3E",
@@ -253,11 +274,13 @@ exports[`ActivitySummaryCard matches snapshots: running-balance 1`] = `
             "lineHeight": 30.159999999999997,
           }
         }
+        textBreakStrategy="simple"
       >
         +£1,234.00
       </Text>
       <Text
         allowFontScaling={false}
+        android_hyphenationFrequency="none"
         style={
           {
             "color": "#6E6A5E",
@@ -267,12 +290,14 @@ exports[`ActivitySummaryCard matches snapshots: running-balance 1`] = `
             "lineHeight": 18.2,
           }
         }
+        textBreakStrategy="simple"
       >
         left after everything · 48 entries
       </Text>
     </View>
     <Text
       allowFontScaling={false}
+      android_hyphenationFrequency="none"
       style={
         {
           "color": "#8A5A1B",
@@ -283,12 +308,14 @@ exports[`ActivitySummaryCard matches snapshots: running-balance 1`] = `
         }
       }
       testID="activity-summary-still"
+      textBreakStrategy="simple"
     >
       £612.00 still to come
     </Text>
   </View>
   <Text
     allowFontScaling={false}
+    android_hyphenationFrequency="none"
     style={
       {
         "color": "#6E6A5E",
@@ -300,6 +327,7 @@ exports[`ActivitySummaryCard matches snapshots: running-balance 1`] = `
       }
     }
     testID="activity-summary-note"
+    textBreakStrategy="simple"
   >
     Balance across all accounts
   </Text>

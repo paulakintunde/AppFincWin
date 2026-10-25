@@ -138,6 +138,19 @@ describe('monthTotals', () => {
     });
   });
 
+  it('counts a row with no home amount as waiting for a rate only when its rate is pending', () => {
+    const t = monthTotals(
+      [
+        { amountHome: null, status: 'paid', isTransfer: false, ratePending: true },
+        { amountHome: null, status: 'paid', isTransfer: false, ratePending: false },
+        { amountHome: null, status: 'paid', isTransfer: false },
+      ],
+      []
+    );
+    expect(t.unconvertedCount).toBe(2);
+    expect(t.count).toBe(3);
+  });
+
   it('ignores a skipped row entirely, even with no home-currency amount', () => {
     expect(monthTotals([{ amountHome: null, status: 'skipped', isTransfer: false }], [])).toEqual({
       paidIn: 0,

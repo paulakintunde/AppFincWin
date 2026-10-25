@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { colors } from '@/theme/tokens';
 import { BACKDROP_OPACITY } from '../sheetDrag';
@@ -74,6 +74,41 @@ describe('Dropdown backdrop (D-37)', () => {
     expect(fill.props.pointerEvents).toBe('none');
     await fireEvent.press(getByLabelText('Close'));
     expect(queryByText('Pick')).toBeNull();
+  });
+});
+
+describe('Dropdown glyph variant and danger option (D-73)', () => {
+  async function setupGlyph() {
+    const onSelect = jest.fn();
+    const utils = await render(
+      <ThemeProvider>
+        <Dropdown
+          title="Row"
+          variant="glyph"
+          glyph={<Text>{'GLYPH'}</Text>}
+          options={[{ key: 'open', label: 'Open' }, { key: 'delete', label: 'Delete', tone: 'danger' }]}
+          onSelect={onSelect}
+          triggerA11yLabel="More for Row"
+        />
+      </ThemeProvider>,
+    );
+    return { ...utils, onSelect };
+  }
+
+  it('glyph variant renders a 44 trigger with only the glyph', async () => {
+    const { getByLabelText, getByText, queryByText } = await setupGlyph();
+    const style = StyleSheet.flatten(getByLabelText('More for Row').props.style);
+    expect(style.width).toBe(44);
+    expect(style.height).toBe(44);
+    expect(getByText('GLYPH')).toBeTruthy();
+    expect(queryByText('Row')).toBeNull();
+  });
+
+  it('a danger option renders in the danger colour', async () => {
+    const { getByLabelText, getByText } = await setupGlyph();
+    await fireEvent.press(getByLabelText('More for Row'));
+    expect(StyleSheet.flatten(getByText('Delete').props.style).color).toBe(colors.danger);
+    expect(StyleSheet.flatten(getByText('Open').props.style).color).toBe(colors.ink);
   });
 });
 

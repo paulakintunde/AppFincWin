@@ -12,6 +12,7 @@ import { snapshotOf } from '../helpers/fixtures';
 const BASE: DecideLimits = {
   reserve: null,
   dsrLine: null,
+  housingLine: null,
   unsecuredIncomeMultiple: null,
   investingFloor: null,
   savingFloor: null,
@@ -40,6 +41,7 @@ describe('04-REVIEW LO-03: snapshot limits are validated', () => {
       savingFloor: zero,
       spareFloor: zero,
       dsrLine: percentFromScaled(0n),
+      housingLine: null,
     };
     expect(prepareContext(snapshotOf({ limits })).ok).toBe(true);
   });

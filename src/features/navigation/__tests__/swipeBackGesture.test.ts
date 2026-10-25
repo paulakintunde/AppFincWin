@@ -1,4 +1,11 @@
-import { SWIPE_BACK_EDGE_WIDTH, dragOffset, isSwipeBackRoute, shouldSwipeBack } from '../swipeBackGesture';
+import {
+  SWIPE_BACK_EDGE_WIDTH,
+  dragOffset,
+  interceptSwipeBack,
+  isSwipeBackRoute,
+  setSwipeBackInterceptor,
+  shouldSwipeBack,
+} from '../swipeBackGesture';
 
 const s = (o: Partial<Parameters<typeof shouldSwipeBack>[0]> = {}) => ({
   startX: 5,
@@ -32,8 +39,42 @@ describe('D-40 edge zone and drag offset', () => {
 });
 
 describe('isSwipeBackRoute', () => {
-  it.each(['(tabs)', 'consent', 'setup/account', 'setup/history'])('is off for %s', (r) => expect(isSwipeBackRoute(r)).toBe(false));
+  it.each(['(tabs)', 'consent', 'setup/account', 'setup/rough', 'setup/first-check', 'setup/history'])('is off for %s', (r) => expect(isSwipeBackRoute(r)).toBe(false));
   it.each(['accounts/index', 'accounts/[id]', 'categories', 'history', 'import', 'you'])('is on for %s', (r) =>
     expect(isSwipeBackRoute(r)).toBe(true)
   );
+});
+
+describe('swipe-back interceptor (A8)', () => {
+  afterEach(() => setSwipeBackInterceptor(null));
+  it('is false when none is set', () => expect(interceptSwipeBack()).toBe(false));
+  it('returns the interceptor result', () => {
+    setSwipeBackInterceptor(() => true);
+    expect(interceptSwipeBack()).toBe(true);
+    setSwipeBackInterceptor(() => false);
+    expect(interceptSwipeBack()).toBe(false);
+  });
+  it('is false again once cleared', () => {
+    setSwipeBackInterceptor(() => true);
+    setSwipeBackInterceptor(null);
+    expect(interceptSwipeBack()).toBe(false);
+  });
+  it('WR-C08: a screen leaving gives the claim back to the screen underneath, and releases only its own claim', () => {
+    const lower = jest.fn(() => true);
+    const upper = jest.fn(() => true);
+    const releaseLower = setSwipeBackInterceptor(lower);
+    const releaseUpper = setSwipeBackInterceptor(upper);
+    expect(interceptSwipeBack()).toBe(true);
+    expect(upper).toHaveBeenCalledTimes(1);
+    releaseUpper();
+    expect(interceptSwipeBack()).toBe(true);
+    expect(lower).toHaveBeenCalledTimes(1);
+    releaseUpper(); // twice is harmless
+    releaseLower();
+    expect(interceptSwipeBack()).toBe(false);
+    const again = setSwipeBackInterceptor(upper);
+    setSwipeBackInterceptor(null)();
+    expect(interceptSwipeBack()).toBe(false);
+    again();
+  });
 });

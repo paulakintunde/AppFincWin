@@ -6,13 +6,16 @@ globalThis.crypto = require('crypto').webcrypto;
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { QueryClient } from '@tanstack/react-query';
+import { AppState } from 'react-native';
+import { QueryClient, onlineManager } from '@tanstack/react-query';
+import { mutationKeys } from '../keys';
 import { persistQueryClientRestore, persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import {
   CACHE_MAX_AGE_MS,
   CACHE_SCHEMA_VERSION,
   clearServerFetchTimes,
   createEncryptedPersister,
+  startPersistOnBackground,
   deserializeWithFetchTimes,
   lastServerFetchAt,
   persistOptions,
@@ -22,6 +25,8 @@ import {
 import { queryClient } from '../queryClient';
 import { wipeDeviceData } from '@/services/storage/wipe';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
+
+jest.mock('@/services/supabase', () => ({ supabase: {} }));
 
 jest.mock('expo-secure-store', () => {
   const store = new Map<string, string>();
@@ -239,5 +244,48 @@ describe('encrypted query cache persister', () => {
 
     expect(await AsyncStorage.getItem(QUERY_CACHE_KEY)).toBeNull();
     expect(queryClient.getQueryCache().getAll()).toHaveLength(0);
+  });
+
+  describe('D-77 write queue on background', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+      jest.restoreAllMocks();
+      onlineManager.setOnline(true);
+    });
+
+    it('D-77 a write queued just before backgrounding is persisted at once', async () => {
+      jest.useFakeTimers();
+      const handlers: ((s: string) => void)[] = [];
+      jest.spyOn(AppState, 'addEventListener').mockImplementation(((_t: string, h: (s: string) => void) => {
+        handlers.push(h);
+        return { remove: jest.fn() };
+      }) as never);
+      const client = new QueryClient();
+      const stop = startPersistOnBackground(client);
+      onlineManager.setOnline(false);
+      void client
+        .getMutationCache()
+        .build(client, { mutationKey: mutationKeys.saveCheckDraft, mutationFn: () => new Promise(() => undefined) })
+        .execute({ id: 'c1', name: 'Sofa' })
+        .catch(() => undefined);
+      await jest.advanceTimersByTimeAsync(10);
+      handlers.forEach((h) => h('background'));
+      await jest.advanceTimersByTimeAsync(0);
+      jest.useRealTimers();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const restored = await createEncryptedPersister().restoreClient();
+      expect(restored?.clientState.mutations).toHaveLength(1);
+      expect(restored?.clientState.mutations[0]?.mutationKey).toEqual([...mutationKeys.saveCheckDraft]);
+      stop();
+      client.clear();
+    });
+
+    it('D-77 mutation defaults for createCheck, saveCheckDraft and editCheck exist before restore', () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('../QueryProvider');
+      for (const key of [mutationKeys.createCheck, mutationKeys.saveCheckDraft, mutationKeys.editCheck]) {
+        expect(queryClient.getMutationDefaults(key).mutationFn).toBeDefined();
+      }
+    });
   });
 });

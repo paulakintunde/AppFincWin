@@ -66,6 +66,7 @@ export function formFromItem(
         : '',
     automatic: item.automatic,
     refund: item.refund,
+    oneOff: false,
   };
   return { state, repeats: item.repeat };
 }
@@ -82,6 +83,7 @@ export function clearedAfterAdd(state: FormState): FormState {
     paymentType: null,
     automatic: false,
     refund: false,
+    oneOff: false,
   };
 }
 

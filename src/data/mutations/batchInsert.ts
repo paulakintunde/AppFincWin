@@ -132,6 +132,8 @@ export function optimisticTransactionRow(
     transfer_id: row.transfer_id ?? null,
     is_refund: row.is_refund ?? false,
     is_automatic: row.is_automatic ?? false,
+    one_off: row.one_off ?? false,
+    goal_id: row.goal_id ?? null,
     is_sample: false,
     version: 1,
     created_at: now,

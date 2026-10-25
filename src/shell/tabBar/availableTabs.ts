@@ -11,7 +11,7 @@ import { TAB_ORDER, type TabId } from './tabs';
 export const TAB_AVAILABILITY: Readonly<Record<TabId, boolean>> = {
   home: true,
   activity: true,
-  decide: false,
+  decide: true, // 05-21: Decide lands (Phase 5)
   grow: false,
   insights: false,
 };

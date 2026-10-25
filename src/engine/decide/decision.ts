@@ -62,6 +62,11 @@ export function lineMargins(a: Assessment, check: PurchaseCheck): readonly LineM
     // service fails it by its whole amount (assessPlan's dsr check agrees).
     const lineMoney = mi(divideHalfUp(limits.dsrLine * BigInt(ctx.money.incomeBasis), ONE_HUNDRED_PERCENT));
     out.push(edgeMargin('dsr', mi(BigInt(lineMoney) - BigInt(a.debtServiceAfter)), lineMoney, mc));
+    if (check.itemType === 'property') {
+      // D-103: property checks only; the line in money is 0 with no income, as for dsr.
+      const housingLineMoney = mi(divideHalfUp(limits.housingLine * BigInt(ctx.money.incomeBasis), ONE_HUNDRED_PERCENT));
+      out.push(edgeMargin('housing', mi(BigInt(housingLineMoney) - BigInt(a.housingAfter)), housingLineMoney, mc));
+    }
     out.push(
       edgeMargin(
         'owe',
@@ -69,12 +74,7 @@ export function lineMargins(a: Assessment, check: PurchaseCheck): readonly LineM
         limits.unsecuredLine,
         mc
       ),
-      edgeMargin(
-        'inv',
-        mi(BigInt(a.investingAfter) - BigInt(limits.investingFloor)),
-        limits.investingFloor,
-        mc
-      )
+      invMargin(a, limits.investingFloor, mc)
     );
   }
   if (a.cashPath.status === 'available') {
@@ -90,6 +90,16 @@ export function lineMargins(a: Assessment, check: PurchaseCheck): readonly LineM
   return out;
 }
 
+/**
+ * D-65 (user decision 2026-10-16): a zero investing floor means "not set". The margin is still reported, but a floor of
+ * 0 (including a null floor resolved to a month's investing of 0) never flags the line on the edge by itself; the flag
+ * fires only for a thin margin above a real, non-zero floor.
+ */
+function invMargin(a: Assessment, floor: MinorUnits, monthCosts: MinorUnits): LineMargin {
+  const m = edgeMargin('inv', mi(BigInt(a.investingAfter) - BigInt(floor)), floor, monthCosts);
+  return floor > 0 ? m : { ...m, flag: null };
+}
+
 function missingVerdict(
   reasons: readonly MissingReason[],
   context: AssessContext,
@@ -103,6 +113,7 @@ function missingVerdict(
       fullMonths: context.money.fullMonthsUsed,
       steadiness: context.money.steadiness,
       firstRead: false,
+      provisionalRates: context.snapshot.provisionalRates,
     }),
   };
 }

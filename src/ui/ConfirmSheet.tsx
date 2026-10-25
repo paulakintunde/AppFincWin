@@ -15,7 +15,9 @@ import { Pill } from './Pill';
 export interface ConfirmSheetProps {
   visible: boolean;
   title?: string;
-  body: string;
+  body?: string;
+  /** 05 D-73: a component body (e.g. a list) rendered after the body text. */
+  children?: React.ReactNode;
   cancelLabel: string;
   confirmLabel: string;
   destructive?: boolean;
@@ -29,6 +31,7 @@ export function ConfirmSheet({
   visible,
   title,
   body,
+  children,
   cancelLabel,
   confirmLabel,
   destructive = false,
@@ -42,8 +45,13 @@ export function ConfirmSheet({
   return (
     <Sheet visible={visible} onDismiss={onDismiss ?? onCancel}>
       <View style={styles.column}>
-        {title ? <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{title}</Text> : null}
-        <Text style={bodyStyle}>{body}</Text>
+        {title ? (
+          <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+            {title}
+          </Text>
+        ) : null}
+        {body !== undefined ? <Text style={bodyStyle}>{body}</Text> : null}
+        {children}
         <View style={styles.actions}>
           <Pill label={cancelLabel} variant="secondary" onPress={onCancel} />
           <Pill label={confirmLabel} variant={destructive ? 'danger' : 'primary'} onPress={onConfirm} />

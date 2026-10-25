@@ -45,6 +45,8 @@ export function toDraftForm(state: FormState, repeats: RepeatsValue): DraftForm 
     automatic: state.automatic,
     refund: state.refund,
     repeats: state.direction === 'transfer' ? NEVER : normaliseRepeats(repeats),
+    // WR-D01: the one-off choice survives a restore; a transfer is never one.
+    oneOff: state.direction === 'transfer' ? false : state.oneOff,
   };
 }
 
@@ -71,6 +73,7 @@ export function fromDraftForm(
     ...rest,
     ...(currency !== undefined ? { currency } : {}),
     status,
+    oneOff: form.oneOff === true,
     accountId,
     toAccountId,
     toCurrency,

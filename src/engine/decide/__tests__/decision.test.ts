@@ -43,6 +43,7 @@ const D2: DebtRecord = {
 const LIMITS_BL: DecideLimits = {
   reserve: mu(600_000),
   dsrLine: percent('36'),
+  housingLine: null,
   unsecuredIncomeMultiple: 12,
   investingFloor: mu(40_000),
   savingFloor: mu(25_000),
@@ -368,5 +369,42 @@ describe('decide (DEC-06)', () => {
     const expected = assessPlan(pos.combined, c, resolvePlanStrict(c));
     expect(decide(BL(), c, others).verdict).toEqual(expected);
     expect(myPart(c.price, pos.combined.purchaseShare)).toBe(100_000);
+  });
+});
+
+describe('D-103 housing margin', () => {
+  const property = (running: number): BuyCheck => buyCash(1_000, { itemType: 'property', runningCostsNet: mu(running) });
+  const HOUSED = (): DecideSnapshot => BL({ housingMonthly: mu(100_000) });
+
+  it('D-103 lineMargins adds a housing margin for property checks only and flags the edge', () => {
+    // income basis 600_000, so the 28% line is 168_000; housing after = 100_000 + 67_000 = 167_000
+    const c = property(67_000);
+    const a = run(HOUSED(), c);
+    const ms = lineMargins(a, c);
+    expect(ms.map((m) => m.line)).toEqual(['month', 'cash', 'dsr', 'housing', 'owe', 'inv']);
+    // 1_000 of room against a 168_000 line is 0.6%: inside the 5% edge
+    expect(ms.find((m) => m.line === 'housing')).toEqual({
+      line: 'housing',
+      margin: 1_000,
+      threshold: 168_000,
+      base: 168_000,
+      flag: 'on_edge',
+    });
+    const roomy = property(10_000);
+    expect(marginOf(run(HOUSED(), roomy), roomy, 'housing')).toMatchObject({ margin: 58_000, flag: null });
+    const over = property(70_000);
+    expect(marginOf(run(HOUSED(), over), over, 'housing')).toMatchObject({ margin: -2_000, flag: 'on_edge' });
+    // other buy checks and invest checks carry no housing margin
+    const general = buyCash(100_000);
+    expect(lineMargins(run(HOUSED(), general), general).some((m) => m.line === 'housing')).toBe(false);
+    const inv: InvestCheck = { kind: 'invest', currency: USD, amount: mu(100_000), payment: { method: 'lump' } };
+    expect(lineMargins(run(HOUSED(), inv), inv).some((m) => m.line === 'housing')).toBe(false);
+  });
+
+  it('D-103 with no income the housing line in money is 0 and housing fails it by its whole amount', () => {
+    const s = BL({ housingMonthly: mu(100_000), months: monthsOf([[0, 300_000], [0, 300_000], [0, 300_000]], '2026-04') });
+    const c = property(5_000);
+    const a = run(s, c);
+    expect(marginOf(a, c, 'housing')).toMatchObject({ threshold: 0, margin: -105_000 });
   });
 });

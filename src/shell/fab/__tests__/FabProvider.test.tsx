@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { act, render } from '@testing-library/react-native';
-import { pushSheet, removeSheet } from '@/state/sheetStack';
+import { markMounted, markUnmounted, pushSheet, removeSheet } from '@/state/sheetStack';
 import {
   ShellTestProviders,
   renderWithShellProviders,
@@ -20,7 +20,13 @@ let mockAuthStatus = 'signedIn';
 jest.mock('@/features/auth/AuthProvider', () => ({
   useAuth: () => ({ status: mockAuthStatus }),
 }));
+const mockAddBreadcrumb = jest.fn();
+jest.mock('@sentry/react-native', () => ({
+  addBreadcrumb: (...a: unknown[]) => mockAddBreadcrumb(...a),
+}));
+let mockSegments: string[] = [];
 jest.mock('expo-router', () => ({
+  useSegments: () => mockSegments,
   // Runs the focus callback on mount and its cleanup on unmount, like a focused screen.
   useFocusEffect: (cb: () => void | (() => void)) => {
     const { useEffect } = jest.requireActual<typeof import('react')>('react');
@@ -251,5 +257,70 @@ describe('FabProvider', () => {
     expect(cur().quickMenuOpen).toBe(true);
     await act(async () => cur().closeQuickMenu());
     expect(cur().quickMenuOpen).toBe(false);
+  });
+
+  describe('D-85 sheet-stack watchdog', () => {
+    // A sheet whose close animation never finished: the id leaks, only the unmount is seen.
+    function LeakySheet(): null {
+      useEffect(() => {
+        pushSheet('leak');
+        markMounted('leak');
+        return () => markUnmounted('leak');
+      }, []);
+      return null;
+    }
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      mockAddBreadcrumb.mockClear();
+    });
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('D-85 an unmounted sheet no longer hides the FAB', async () => {
+      const fn = jest.fn();
+      const view = await setup(
+        <>
+          <Default fn={fn} />
+          <LeakySheet />
+        </>,
+      );
+      expect(cur().hidden).toBe(true);
+      await view.rerender(tree(<Default fn={fn} />));
+      expect(cur().hidden).toBe(true);
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+      expect(cur().hidden).toBe(false);
+    });
+
+    it('D-85 the breadcrumb carries counts only', async () => {
+      const fn = jest.fn();
+      const view = await setup(
+        <>
+          <Default fn={fn} />
+          <LeakySheet />
+        </>,
+      );
+      await view.rerender(tree(<Default fn={fn} />));
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+      expect(mockAddBreadcrumb).toHaveBeenCalledTimes(1);
+      const crumb = mockAddBreadcrumb.mock.calls[0][0] as { data: Record<string, unknown> };
+      expect(crumb.data).toEqual({ dropped: 1, cleared: 0 });
+      expect(JSON.stringify(crumb)).not.toContain('leak');
+    });
+
+    it('D-85 a null location inside tabs shows the FAB', async () => {
+      mockSegments = ['(app)', '(tabs)'];
+      try {
+        await setup(<Default fn={jest.fn()} />, { backHistory: { current: null } });
+        expect(cur().hidden).toBe(false);
+      } finally {
+        mockSegments = [];
+      }
+    });
   });
 });

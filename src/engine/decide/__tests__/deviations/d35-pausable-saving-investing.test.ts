@@ -27,6 +27,7 @@ function r(floors: { inv: number; sav: number } = { inv: 40_000, sav: 25_000 }):
     limits: {
       reserve: m(600_000),
       dsrLine: percent('36'),
+      housingLine: null,
       unsecuredIncomeMultiple: 12,
       investingFloor: m(floors.inv),
       savingFloor: m(floors.sav),

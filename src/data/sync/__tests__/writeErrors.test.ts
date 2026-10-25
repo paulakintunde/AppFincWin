@@ -8,6 +8,7 @@ import {
   shouldRetryWrite,
   writeRetryDelay,
 } from '../writeErrors';
+import { RequestTimeoutError } from '@/services/supabase/timeoutFetch';
 
 describe('classifyWriteError', () => {
   it('classifies a VersionConflictError as conflict (D-18: never retried, never last-write-wins)', () => {
@@ -130,9 +131,27 @@ describe('classifySettledWriteError / settledWriteErrorCode (WR-A02)', () => {
 });
 
 describe('writeRetryDelay', () => {
-  it('computes exponential backoff capped at 60 seconds', () => {
+  it('D-88 online backoff caps at 12 s', () => {
     expect(writeRetryDelay(0)).toBe(1000);
     expect(writeRetryDelay(3)).toBe(8000);
-    expect(writeRetryDelay(10)).toBe(60_000);
+    expect(writeRetryDelay(4)).toBe(12_000);
+    expect(writeRetryDelay(10)).toBe(12_000);
+  });
+});
+
+describe('request timeouts (D-88)', () => {
+  it('a timed-out read or write is a network error and is retried', () => {
+    const err = new RequestTimeoutError(15_000, false);
+    expect(classifyWriteError(err)).toBe('transient');
+    expect(shouldRetryWrite(0, err)).toBe(true);
+    expect(shouldRetryWrite(50, err)).toBe(true);
+  });
+
+  it('D-88 a long operation is not retried after a timeout', () => {
+    expect(shouldRetryWrite(0, new RequestTimeoutError(120_000, true))).toBe(false);
+    // postgrest-js flattens the failure to a status-0 DbError carrying the message
+    const flattened = new DbError(`RequestTimeoutError: ${new RequestTimeoutError(120_000, true).message}`, '', 0);
+    expect(shouldRetryWrite(0, flattened)).toBe(false);
+    expect(shouldRetryWrite(0, new DbError('TypeError: Network request failed', '', 0))).toBe(true);
   });
 });

@@ -24,9 +24,11 @@ export interface RowProps {
   /** REC-22: an optional second line under the label (meta size), e.g. a category's usage. */
   sublabel?: string;
   sublabelTone?: 'inkMuted' | 'warn1';
+  /** A row that shows its value but cannot be opened (announced disabled). */
+  disabled?: boolean;
 }
 
-export function Row({ label, value, leading, chevron = false, dense = false, onPress, accessibilityLabel, selected, sublabel, sublabelTone = 'inkMuted' }: RowProps) {
+export function Row({ label, value, leading, chevron = false, dense = false, onPress, accessibilityLabel, selected, sublabel, sublabelTone = 'inkMuted', disabled = false }: RowProps) {
   const { colors, pairing } = useTheme();
   const labelStyle = { ...textRole(pairing, 'body'), color: colors.ink };
   const valueStyle = { ...textRole(pairing, 'body'), color: colors.inkMuted };
@@ -61,7 +63,8 @@ export function Row({ label, value, leading, chevron = false, dense = false, onP
         // C-WR-08: the label above overrides the child text, so the current selection would
         // otherwise never be announced ("Category, button"). Expose it as the value instead.
         accessibilityValue={value ? { text: value } : undefined}
-        accessibilityState={selected === undefined ? undefined : { selected }}
+        accessibilityState={selected === undefined && !disabled ? undefined : { ...(selected === undefined ? {} : { selected }), ...(disabled ? { disabled: true } : {}) }}
+        disabled={disabled ? true : undefined}
         onPress={onPress}
         style={styles.minHeight}
       >

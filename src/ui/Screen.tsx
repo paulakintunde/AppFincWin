@@ -1,4 +1,4 @@
-import React, { type ReactNode } from 'react';
+import React, { type ReactNode, type Ref } from 'react';
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space, useScreenInsets } from '@/theme/layout';
@@ -7,7 +7,14 @@ export interface ScreenProps {
   children: ReactNode;
   /** Renders inside a ScrollView instead of a plain View. Defaults to false. */
   scroll?: boolean;
+  /**
+   * CR-D01: a scrolling form screen. Taps on buttons land while a field keeps focus, and the content moves above the
+   * keyboard (iOS insets; Android resizes the window). Only applies with `scroll`.
+   */
+  form?: boolean;
   style?: StyleProp<ViewStyle>;
+  /** The scroll view, for a screen that scrolls itself to a row (05-116). Only applies with `scroll`. */
+  scrollRef?: Ref<ScrollView>;
 }
 
 /**
@@ -19,7 +26,7 @@ export interface ScreenProps {
  * clipped there rather than drawn beneath it (Android forced edge-to-edge). Only `headerExtra`
  * stays as content padding, so the resting layout is identical to the non-scroll case.
  */
-export function Screen({ children, scroll = false, style }: ScreenProps) {
+export function Screen({ children, scroll = false, form = false, style, scrollRef }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useScreenInsets();
 
@@ -27,7 +34,10 @@ export function Screen({ children, scroll = false, style }: ScreenProps) {
     return (
       <View style={[styles.base, { backgroundColor: colors.canvas, paddingTop: insets.top }]}>
         <ScrollView
+          ref={scrollRef}
           style={[styles.base, { backgroundColor: colors.canvas }]}
+          keyboardShouldPersistTaps={form ? 'handled' : undefined}
+          automaticallyAdjustKeyboardInsets={form}
           contentContainerStyle={[
             { paddingTop: space.headerExtra, paddingBottom: insets.bottom, paddingHorizontal: space.screenH },
             style,

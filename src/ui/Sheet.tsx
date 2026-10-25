@@ -57,7 +57,7 @@ import { textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { Pill } from './Pill';
 import { DURATION, EASING, useMotion } from '@/theme/motion';
-import { pushSheet, removeSheet, useIsTopSheet } from '@/state/sheetStack';
+import { markMounted, markUnmounted, pushSheet, removeSheet, useIsTopSheet } from '@/state/sheetStack';
 import { SheetOverlaySlot, useSheetOverlay } from './sheetOverlay';
 import { hapticSelection } from './haptics';
 import {
@@ -192,7 +192,12 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   useEffect(() => {
     if (!visible) return undefined;
     pushSheet(id);
-    return () => removeSheet(id);
+    markMounted(id);
+    // D-85: released in the cleanup, whether or not the close animation ever finishes.
+    return () => {
+      removeSheet(id);
+      markUnmounted(id);
+    };
   }, [visible, id]);
 
   const requestDismiss = useCallback((_source: SheetDismissSource) => {

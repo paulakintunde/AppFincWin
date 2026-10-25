@@ -92,6 +92,23 @@ describe('useUndo', () => {
     expect(recordFailedWrite).not.toHaveBeenCalled();
   });
 
+  it('walkthrough 2: undoing a pot add marks the pots cache stale, so the screen refetches and drops the pot', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: { status: 'undone' }, error: null, status: 200 });
+    const qc = newClient();
+    const potsKey = queryKeys.savingsGoals('user-1', 'h1');
+    qc.setQueryData(potsKey, [{ id: 'p-new', name: 'Car service' }]);
+    expect(qc.getQueryState(potsKey)?.isInvalidated).toBe(false);
+    const { result } = await renderHook(() => useUndo(), { wrapper: wrapper(qc) });
+
+    result.current.undo({ ...vars, labelKey: 'potAdded', labelParams: { name: 'Car service' } });
+
+    await waitFor(() => expect(getToast()?.text?.key).toBe('undo.reverted'));
+    expect(rpc(fake)[0]?.args).toEqual(['apply_undo_step', { p_step_id: 'step-1' }]);
+    expect(qc.getQueryState(potsKey)?.isInvalidated).toBe(true);
+  });
+
   it('treats already-undone like undone', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;

@@ -1,0 +1,94 @@
+// 05-23 (DCU-10, D-03): onboarding step 3, rough monthly in and out. Next saves the figures through the 05-19 settings
+// mutation (never `seeded`, which is server-managed); Skip goes on, and with no figures the first check answers cash-only.
+// CR-D01: the fields report as the user types and the screen scrolls with the keyboard, so Next never waits on a blur
+// the iOS decimal pad cannot give. Skip saves whichever figure is already valid rather than dropping it unseen.
+import React, { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
+import { useUpdateDecideSettings } from '@/data/mutations/decideSettings';
+import { useDecideSettings } from '@/data/queries/decide';
+import { useRecordContext } from '@/features/record/useRecordContext';
+import { useT } from '@/i18n';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
+import { space } from '@/theme/layout';
+import { useTheme } from '@/theme/ThemeProvider';
+import { textRole } from '@/theme/typography';
+import { Pill } from '@/ui/Pill';
+import { Screen } from '@/ui/Screen';
+import { Text } from '@/ui/Text';
+import { MoneyInput } from '../ui/MoneyInput';
+import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
+import { stampSettingsPatch } from '../home/settingsPatch';
+
+export interface RoughFiguresScreenProps {
+  accountId: string | null;
+}
+
+export function RoughFiguresScreen({ accountId }: RoughFiguresScreenProps) {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  const rc = useRecordContext();
+  const settings = useUpdateDecideSettings(rc.userId ?? '');
+  // CR-B01: figures typed in a currency other than the stored one clear the other money columns in the same patch.
+  const stored = useDecideSettings(rc.userId ?? undefined).data ?? null;
+  const [income, setIncome] = useState<number | null>(null);
+  const [spending, setSpending] = useState<number | null>(null);
+  const valid = (n: number | null): n is number => n !== null && Number.isSafeInteger(n) && n > 0 && n <= MAX_INPUT_MINOR;
+  // IN-B08: no current income is a real answer; spending stays above zero.
+  const validIncome = (n: number | null): n is number => n !== null && Number.isSafeInteger(n) && n >= 0 && n <= MAX_INPUT_MINOR;
+  const canNext = validIncome(income) && valid(spending) && rc.userId !== null;
+
+  const go = () => router.replace({ pathname: '/setup/first-check', params: accountId ? { accountId } : {} });
+  const next = () => {
+    if (!validIncome(income) || !valid(spending) || rc.userId === null) return;
+    settings.update(stampSettingsPatch({ rough_income: income, rough_spending: spending }, stored, rc.homeCurrency));
+    go();
+  };
+  const skip = () => {
+    if (rc.userId !== null && (validIncome(income) || valid(spending))) {
+      settings.update(
+        stampSettingsPatch(
+          { ...(validIncome(income) ? { rough_income: income } : {}), ...(valid(spending) ? { rough_spending: spending } : {}) },
+          stored,
+          rc.homeCurrency,
+        ),
+      );
+    }
+    go();
+  };
+
+  return (
+    <Screen scroll form>
+      <SyncProblemLine inset={false} />
+      <View style={styles.block}>
+        <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
+          {t('decide.onboarding.roughTitle')}
+        </Text>
+        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>{t('decide.onboarding.roughBody')}</Text>
+        <MoneyInput
+          value={income}
+          currency={rc.homeCurrency}
+          onChange={setIncome}
+          label={t('decide.onboarding.roughIn')}
+          accessibilityLabel={t('decide.onboarding.roughIn')}
+        />
+        <MoneyInput
+          value={spending}
+          currency={rc.homeCurrency}
+          onChange={setSpending}
+          label={t('decide.onboarding.roughOut')}
+          accessibilityLabel={t('decide.onboarding.roughOut')}
+        />
+      </View>
+      <View style={styles.actions}>
+        <Pill label={t('decide.onboarding.next')} variant="primary" disabled={!canNext} onPress={next} />
+        <Pill label={t('decide.onboarding.skip')} variant="secondary" onPress={skip} />
+      </View>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  block: { gap: space.gapSm },
+  actions: { marginTop: space.groupGap, gap: space.gapSm },
+});

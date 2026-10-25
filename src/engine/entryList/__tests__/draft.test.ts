@@ -145,6 +145,13 @@ describe('draft v2 form snapshot', () => {
   it('a v1 payload ignores any form key', () => {
     expect(parseEntryDraft(JSON.stringify({ v: 1, items: [], form: FORM }))).toEqual({ items: [], form: null });
   });
+  it('WR-D01 keeps a one-off flag, never on a transfer, and reads anything but true as not one-off', () => {
+    expect(parseEntryDraft(serialiseDraft([], AT, { ...FORM, oneOff: true })).form).toEqual({ ...FORM, oneOff: true });
+    expect(parseEntryDraft(serialiseDraft([], AT, { ...FORM, oneOff: false })).form).toEqual(FORM);
+    expect(parseEntryDraft(JSON.stringify({ v: 2, items: [], form: { ...FORM, oneOff: 'yes' } })).form).toEqual(FORM);
+    const t: DraftForm = { ...FORM, direction: 'transfer', toAccountId: 'a2', paymentType: null, categoryId: null };
+    expect(parseEntryDraft(serialiseDraft([], AT, { ...t, oneOff: true })).form).toEqual(t);
+  });
   it('form-only draft survives', () => {
     expect(parseEntryDraft(JSON.stringify({ v: 2, items: [], form: FORM }))).toEqual({ items: [], form: FORM });
   });

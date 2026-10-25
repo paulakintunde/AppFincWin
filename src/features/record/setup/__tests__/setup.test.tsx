@@ -14,6 +14,7 @@ jest.mock('@/data/sync/useSyncStatus', () => ({
 jest.mock('expo-router', () => {
   const R = require('react');
   return {
+    useSegments: () => [],
     router: { push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
     Redirect: ({ href }: { href: unknown }) => {
       mockRedirectHref = href;
@@ -73,6 +74,7 @@ jest.mock('@/shell/tabBar/TabBar', () => ({ TabBar: () => null }));
 jest.mock('@/shell/fab/Fab', () => ({ Fab: () => null }));
 jest.mock('@/shell/fab/FabQuickMenu', () => ({ FabQuickMenu: () => null }));
 jest.mock('@/features/record/entry/ShellEntryHost', () => ({ ShellEntryHost: () => null }));
+jest.mock('@/features/decide/DecideShellHost', () => ({ DecideShellHost: () => null }));
 jest.mock('@/shell/fab/FabProvider', () => ({ FabProvider: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('expo-router/js-tabs', () => ({ Tabs: Object.assign(() => null, { Screen: () => null }) }));
 

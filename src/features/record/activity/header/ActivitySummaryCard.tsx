@@ -9,14 +9,15 @@ import type { MonthPosition } from '@/engine/activity';
 import { money } from '@/engine/money';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { useFontScale } from '@/theme/FontScaleProvider';
+import { useShouldStack } from '@/features/decide/ui/textFit';
 import { radii, space } from '@/theme/layout';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { paidOutText } from '../monthFigureInputs';
 
-const FIGURE_STACK_ABOVE = 1.3;
+const FIGURE_MIN_FONT_SCALE = 0.8; // D-76 rule N
+const FIGURE_MAX_SCALE = 1.3;
 // final-size placeholder (UI-SPEC Loading)
 const PLACEHOLDER_FIGURE_HEIGHT = 30;
 const PLACEHOLDER_FIGURE_WIDTH = 160;
@@ -48,8 +49,7 @@ export function ActivitySummaryCard({
 }: ActivitySummaryCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const fontScale = useFontScale();
-  const stacked = fontScale > FIGURE_STACK_ABOVE;
+  const stacked = useShouldStack();
   const fmt = (amount: number) => formatter.formatMoney(money(amount, homeCurrency));
   const container = [styles.card, { backgroundColor: colors.surface }, shadows.card];
 
@@ -124,7 +124,14 @@ export function ActivitySummaryCard({
     <View testID="activity-summary-card" accessible accessibilityLabel={label} style={container}>
       <View style={[styles.top, { flexDirection: stacked ? 'column' : 'row' }]}>
         <View>
-          <Text scale="capped" style={{ ...textRole(pairing, 'heading'), color: figureColor }}>
+          <Text
+            scale="capped"
+            maxFontSizeMultiplier={FIGURE_MAX_SCALE}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={FIGURE_MIN_FONT_SCALE}
+            style={{ ...textRole(pairing, 'heading'), color: figureColor }}
+          >
             {figure}
           </Text>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{caption}</Text>
