@@ -15,6 +15,10 @@ jest.mock('expo-router', () => {
   Stack.Screen = function StackScreen() {
     return null;
   };
+  // quick-261025-f46: the Decide screens sit in a Stack.Protected group.
+  Stack.Protected = function StackProtected({ children }: { guard: boolean; children?: React.ReactNode }) {
+    return R.createElement(R.Fragment, null, children);
+  };
   return {
     router: { canDismiss: () => false, dismissTo: jest.fn(), push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
     useLocalSearchParams: () => mockParams,
