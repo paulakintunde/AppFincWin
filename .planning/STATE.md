@@ -34,7 +34,7 @@ Phase 02.1 (PDF statement import): COMPLETE 2026-10-11 — 17/17 plans (PR #60 m
 Phase 05 (decide-ui): planned 2026-10-15, revised 2026-10-16 for the planning-review decisions D-38..D-44, DCU-12..DCU-24 and the final Phase 4 API (D-61..D-63) — 53 plans in 10 waves, plan checker passed (3 iterations, final 0 blockers, 0 warnings); originally against 05-CONTEXT D-01..D-37 (incl. the depth expansion D-24..D-37 and the amended D-24) and the 22-plan Phase 4 `decide()` API; research with a depth addendum, pattern map, VALIDATION.md (nyquist_compliant); plan checker passed after the scope expansion (3 iterations, final 0 blockers; earlier 29-plan set had 2 iterations), decision coverage D-01..D-37 and DCU-01..DCU-11, ANL-06 verified; defaults and items for user review in 05-PLANNING-NOTES.md (OQ1/OQ3 debts table and full-month rule, OQ-A1 FX stamps, OQ-A2/A3/A9 UI-SPEC touch-ups, card minimum gap R4-W2, A19/A21). Execution unblocked once the Phase 4 PR merges; migrations ship via the human-gated `npm run supabase:db:push` in 05-25.
 Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
 Status: Phase 5 executing — all Decide UX refresh plans (05-54..05-87) built; code review fixed; production at 20261021000100; 05-26 device checks are next, with the user (new dev build needed; refresh device items are in 05-EXECUTION-NOTES)
-Last activity: 2026-10-21
+Last activity: 2026-10-25 - Completed quick task 261025-f46: Decide coming-soon switch
 
 ## Performance Metrics
 
@@ -187,6 +187,7 @@ Recent decisions affecting current work:
 | 261013-izi | Phase 02.3 walkthrough: cross-currency transfer prefills Amount received from stored rates while untouched; dim scrim token behind every sheet, fixed while the sheet slides | 2026-10-13 | 9bf7b56 | [261013-izi-transfer-received-amount-prefill-and-she](./quick/261013-izi-transfer-received-amount-prefill-and-she/) |
 | 261013-kf4 | Phase 02.3 walkthrough: Undo toast ("Removed · {name}") when removing an entry-list item; optional local onUndo on the undo toast | 2026-10-13 | 6918c34 | [261013-kf4-local-undo-toast-for-removing-an-entry-l](./quick/261013-kf4-local-undo-toast-for-removing-an-entry-l/) |
 | 261013-l8i | EAS build profiles set the expo-updates check through eas.json env (APP_UPDATES_CHECK), not EAS_BUILD_PROFILE, so local and EAS fingerprints match; unblocks preview and production builds broken since 261009-uuw | 2026-10-13 | 51ac7b8 | [261013-l8i-eas-build-profiles-set-the-updates-check](./quick/261013-l8i-eas-build-profiles-set-the-updates-check/) |
+| 261025-f46 | Decide "Coming soon" switch: DECIDE_OPEN=false hides today's Decide (tab shows "A better Decide is on its way"; New check, decide/* routes, rough/first-check onboarding and reminder taps off) until v3 | 2026-10-25 | fdb39ea | [261025-f46-decide-coming-soon-switch](./quick/261025-f46-decide-coming-soon-switch/) |
 
 ## Deferred Items
 
