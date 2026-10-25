@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content (completed 2026-10-14)
 - [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [x] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3) (completed 2026-10-16)
-- [ ] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal
+- [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged with Decide hidden behind "Coming soon" until 05.1-05.3)
 - [ ] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine
 - [ ] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - The Calm Ledger screens in the current theme; old Decide screens removed at cutover
@@ -852,7 +852,7 @@ Plans:
 - [x] 05-145-PLAN.md — The 'outcome on each basis' card and the fallback note in Step 3 (D-107)
 
 **Wave 46** *(blocked on Wave 45 completion)*
-- [ ] 05-26-PLAN.md — Device verification: DCU-11 screenshots (R8 frames, R18 alternate frame 1 with the onLayout/Maestro budget), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist, the D-88 speed budgets, the per-pairing hero check and the Money concepts (R18) and Wording and This month (D-106) checklists
+- [x] 05-26-PLAN.md — Device verification: DCU-11 screenshots (R8 frames, R18 alternate frame 1 with the onLayout/Maestro budget), 60 s first read, reminders, haptics, back, the refresh text-fit/TalkBack checklist, the D-88 speed budgets, the per-pairing hero check and the Money concepts (R18) and Wording and This month (D-106) checklists
 **UI hint**: yes — this phase should carry the deepest testing and design-iteration budget in the roadmap; it is the product's actual moat.
 
 ### Phase 05.1: Decide engine v3 (INSERTED)
@@ -1051,7 +1051,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 144/145 | Executing (05-26 device checks left; merges with Decide hidden behind "Coming soon") | - |
+| 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 0/TBD | Not started | - |
 | 05.2 Decide data and setup | 0/TBD | Not started | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
