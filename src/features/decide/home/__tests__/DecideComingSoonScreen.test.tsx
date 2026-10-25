@@ -8,8 +8,9 @@ import { DecideComingSoonScreen } from '../DecideComingSoonScreen';
 import DecideRoute from '../../../../../app/(app)/(tabs)/decide';
 
 jest.mock('@/features/decide/home/DecideHomeScreen', () => {
+  const R = jest.requireActual('react');
   const { Text: RNText } = jest.requireActual('react-native');
-  return { DecideHomeScreen: () => <RNText>old-decide</RNText> };
+  return { DecideHomeScreen: () => R.createElement(RNText, null, 'old-decide') };
 });
 // The real scaffold pulls in the avatar's Supabase client; the title and children are what matter here.
 const mockTabProps: Record<string, unknown>[] = [];
