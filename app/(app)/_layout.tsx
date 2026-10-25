@@ -18,6 +18,7 @@ import { SampleBanner } from '@/features/record/samples/SampleBanner';
 import { SampleClearPrompts } from '@/features/record/samples/SampleClearPrompts';
 import { BackHistoryProvider } from '@/shell/backHistory/BackHistoryProvider';
 import { AndroidBackHandler } from '@/shell/backHistory/useAndroidBackHandler';
+import { FabProvider } from '@/shell/fab/FabProvider';
 import { ShellLayoutProvider } from '@/shell/layout/ShellLayoutProvider';
 import { SheetOverlayProvider } from '@/ui/sheetOverlay';
 import { RouteErrorBoundary } from '@/ui/RouteErrorBoundary';
@@ -56,42 +57,45 @@ export default function AppLayout() {
       <ShellLayoutProvider>
         <SheetOverlayProvider overlay={SheetToastOverlay}>
           <AndroidBackHandler />
-          <View style={{ flex: 1 }}>
-            <Stack
-              screenOptions={{ headerShown: false, animation }}
-              screenLayout={({ children, route }) => <SwipeBack enabled={isSwipeBackRoute(route.name)}>{children}</SwipeBack>}
-            >
-              <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
-              <Stack.Screen name="accounts/index" />
-              <Stack.Screen name="accounts/[id]" />
-              <Stack.Screen name="categories" />
-              <Stack.Screen name="category-rules" />
-              <Stack.Screen name="history" />
-              <Stack.Screen name="import" />
-              <Stack.Screen name="setup/account" />
-              <Stack.Screen name="setup/history" />
-              {/* quick-261025-f46: today's Decide screens stay unreachable, deep links included, while DECIDE_OPEN is false. */}
-              <Stack.Protected guard={DECIDE_OPEN}>
-                <Stack.Screen name="setup/rough" />
-                <Stack.Screen name="setup/first-check" />
-                <Stack.Screen name="decide/check/[id]" />
-                <Stack.Screen name="decide/past" />
-                <Stack.Screen name="decide/open" />
-                <Stack.Screen name="decide/changes" />
-                <Stack.Screen name="decide/lines" />
-                <Stack.Screen name="decide/pots" />
-              </Stack.Protected>
-              <Stack.Screen name="you" />
-              <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
-            </Stack>
-            <SampleBanner />
-            <UndoToastHost />
-            {/* WR-D13: a reminder tap routes only once consent is on record; a missing profile is not consent.
-                quick-261025-f46: while Decide is closed a reminder tap must not push /decide/check/[id]. */}
-            <DecideNotificationObserver enabled={DECIDE_OPEN && consentAnswered({ loading, consent })} />
-            <SampleClearPrompts />
-            <DeviceHomeCurrencyDefault />
-          </View>
+          {/* One FAB registry for the tabs and the outer stack: You > Add runs the quick actions the tabs register (05-98). */}
+          <FabProvider>
+            <View style={{ flex: 1 }}>
+              <Stack
+                screenOptions={{ headerShown: false, animation }}
+                screenLayout={({ children, route }) => <SwipeBack enabled={isSwipeBackRoute(route.name)}>{children}</SwipeBack>}
+              >
+                <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+                <Stack.Screen name="accounts/index" />
+                <Stack.Screen name="accounts/[id]" />
+                <Stack.Screen name="categories" />
+                <Stack.Screen name="category-rules" />
+                <Stack.Screen name="history" />
+                <Stack.Screen name="import" />
+                <Stack.Screen name="setup/account" />
+                <Stack.Screen name="setup/history" />
+                {/* quick-261025-f46: today's Decide screens stay unreachable, deep links included, while DECIDE_OPEN is false. */}
+                <Stack.Protected guard={DECIDE_OPEN}>
+                  <Stack.Screen name="setup/rough" />
+                  <Stack.Screen name="setup/first-check" />
+                  <Stack.Screen name="decide/check/[id]" />
+                  <Stack.Screen name="decide/past" />
+                  <Stack.Screen name="decide/open" />
+                  <Stack.Screen name="decide/changes" />
+                  <Stack.Screen name="decide/lines" />
+                  <Stack.Screen name="decide/pots" />
+                </Stack.Protected>
+                <Stack.Screen name="you" />
+                <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
+              </Stack>
+              <SampleBanner />
+              <UndoToastHost />
+              {/* WR-D13: a reminder tap routes only once consent is on record; a missing profile is not consent.
+                  quick-261025-f46: while Decide is closed a reminder tap must not push /decide/check/[id]. */}
+              <DecideNotificationObserver enabled={DECIDE_OPEN && consentAnswered({ loading, consent })} />
+              <SampleClearPrompts />
+              <DeviceHomeCurrencyDefault />
+            </View>
+          </FabProvider>
         </SheetOverlayProvider>
       </ShellLayoutProvider>
     </BackHistoryProvider>

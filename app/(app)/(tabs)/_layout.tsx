@@ -12,7 +12,6 @@ import { DecideShellHost } from '@/features/decide/DecideShellHost';
 import { ShellEntryHost } from '@/features/record/entry/ShellEntryHost';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { Fab } from '@/shell/fab/Fab';
-import { FabProvider } from '@/shell/fab/FabProvider';
 import { FabQuickMenu } from '@/shell/fab/FabQuickMenu';
 import { TabBar } from '@/shell/tabBar/TabBar';
 import { TabSlideIn } from '@/shell/tabBar/TabSlideIn';
@@ -28,34 +27,33 @@ export default function TabsLayout() {
     accounts: accounts.data,
   });
   if (gate) return <Redirect href="/setup/account" />;
+  // FabProvider is mounted in app/(app)/_layout.tsx so You, an outer-stack screen, reads the same quick actions.
   return (
-    <FabProvider>
-      <View style={styles.fill}>
-        <Tabs
-          backBehavior="none"
-          tabBar={(props) => <TabBar {...props} />}
-          screenOptions={{ headerShown: false, animation: 'none' }}
-          screenLayout={({ children, route, navigation }) =>
-            isTabId(route.name) ? (
-              <TabSlideIn tab={route.name} navigation={navigation}>
-                {children}
-              </TabSlideIn>
-            ) : (
-              children
-            )
-          }
-        >
-          {availableTabs().map((id) => (
-            <Tabs.Screen key={id} name={id} />
-          ))}
-        </Tabs>
-        <Fab />
-        <FabQuickMenu />
-        <ShellEntryHost />
-        {/* quick-261025-f46: its 'newCheck' registration feeds both the FAB quick menu and You > Add, so hiding it removes "New check" everywhere. */}
-        {DECIDE_OPEN ? <DecideShellHost /> : null}
-      </View>
-    </FabProvider>
+    <View style={styles.fill}>
+      <Tabs
+        backBehavior="none"
+        tabBar={(props) => <TabBar {...props} />}
+        screenOptions={{ headerShown: false, animation: 'none' }}
+        screenLayout={({ children, route, navigation }) =>
+          isTabId(route.name) ? (
+            <TabSlideIn tab={route.name} navigation={navigation}>
+              {children}
+            </TabSlideIn>
+          ) : (
+            children
+          )
+        }
+      >
+        {availableTabs().map((id) => (
+          <Tabs.Screen key={id} name={id} />
+        ))}
+      </Tabs>
+      <Fab />
+      <FabQuickMenu />
+      <ShellEntryHost />
+      {/* quick-261025-f46: its 'newCheck' registration feeds both the FAB quick menu and You > Add, so hiding it removes "New check" everywhere. */}
+      {DECIDE_OPEN ? <DecideShellHost /> : null}
+    </View>
   );
 }
 
