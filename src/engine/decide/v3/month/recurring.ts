@@ -196,7 +196,12 @@ export function detectCandidates(rows: readonly DetectRow[], ctx: DetectContext)
     if (x.rowIds.length !== y.rowIds.length) return y.rowIds.length - x.rowIds.length;
     if (x.name !== y.name) return x.name < y.name ? -1 : 1;
     if (x.key !== y.key) return x.key < y.key ? -1 : 1;
-    return x.anchorDate < y.anchorDate ? -1 : x.anchorDate > y.anchorDate ? 1 : 0;
+    if (x.anchorDate !== y.anchorDate) return x.anchorDate < y.anchorDate ? -1 : 1;
+    // Same payee on two accounts can tie on everything above: break it on the first row id so the order never
+    // depends on input order (I16).
+    const xr = x.rowIds[0] as string;
+    const yr = y.rowIds[0] as string;
+    return xr < yr ? -1 : xr > yr ? 1 : 0;
   });
   return out;
 }
