@@ -189,6 +189,10 @@ describe('thisMonth', () => {
       input({ current: month([line({ id: 'a', amount: mu(10) }), line({ id: 'b', amount: mu(10), categoryId: 'a' })]) })
     );
     expect(nul.largestLine?.categoryId).toBeNull();
+    const nullLater = thisMonth(
+      input({ current: month([line({ id: 'a', amount: mu(10), categoryId: 'a' }), line({ id: 'b', amount: mu(10) })]) })
+    );
+    expect(nullLater.largestLine?.categoryId).toBeNull();
   });
 
   it('e unknown: rough expenses fill in, otherwise flagged', () => {

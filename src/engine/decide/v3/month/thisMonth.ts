@@ -74,6 +74,7 @@ export function thisMonth(input: ThisMonthInput): ThisMonthResult {
     switch (classifyLine(l, index)) {
       case 'recurring_bill':
         billsPaid += amount;
+        /* istanbul ignore else -- reason: classifyLine only returns recurring_bill for a line that has a seriesId; the check narrows the type */
         if (l.seriesId !== null) paidBillLines.push({ seriesId: l.seriesId, date: l.date });
         break;
       case 'everyday':
