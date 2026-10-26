@@ -75,6 +75,8 @@ describe('bands', () => {
     const l: Layer = layerOfAnswerKey('L1p.x');
     expect(l).toBe('L1p');
     expect(() => layerOfAnswerKey('zzz')).toThrow(RangeError);
+    expect(() => layerOfAnswerKey('')).toThrow(RangeError);
+    expect(layerOfAnswerKey('L1p')).toBe('L1p');
   });
 
   it('instead link and staged', () => {

@@ -108,7 +108,39 @@ describe('detectCandidates', () => {
   });
 });
 
+describe('detectCandidates edge cases', () => {
+  it('gaps that fit no cadence window offer nothing', () => {
+    expect(detectCandidates(everyDays('2025-01-03', 20, 4), EMPTY)).toEqual([]);
+  });
+
+  it('a payee seen once, with no account, is not offered', () => {
+    expect(detectCandidates([row('2025-01-03', -1500, { accountId: null })], EMPTY)).toEqual([]);
+  });
+
+  it('two fixed days with an off-tolerance amount in one cluster fall back to the single-series check', () => {
+    const dates = ['2026-01-01', '2026-01-15', '2026-02-01', '2026-02-15', '2026-03-01', '2026-03-15'];
+    const amounts = [-1000, -1000, -1000, -1000, -3000, -1000];
+    const rows = dates.map((d, i) => row(d, amounts[i]!, { name: 'Mixed' }));
+    expect(detectCandidates(rows, EMPTY)).toEqual([]);
+  });
+
+  it('rows on the same day are ordered by id, identical rows keep their order', () => {
+    const rows = [
+      row('2025-01-03', -1500, { id: 'b' }),
+      row('2025-01-03', -1500, { id: 'a' }),
+      row('2025-01-03', -1500, { id: 'a' }),
+      row('2025-01-03', -1500, { id: 'c' }),
+    ];
+    expect(detectCandidates(rows, EMPTY)).toEqual([]);
+  });
+});
+
 describe('twoDateClusters', () => {
+  it('returns null when a cluster is not monthly', () => {
+    const dates = ['2026-01-01', '2026-02-01', '2026-04-01', '2026-01-15', '2026-02-15', '2026-03-15'];
+    expect(twoDateClusters(dates)).toBeNull();
+  });
+
   it('splits 1st and 15th', () => {
     const dates = ['2026-01-01', '2026-01-15', '2026-02-01', '2026-02-15', '2026-03-01', '2026-03-15'];
     const c = twoDateClusters(dates);

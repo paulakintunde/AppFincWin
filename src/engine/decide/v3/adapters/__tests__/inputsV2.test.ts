@@ -102,6 +102,20 @@ describe('parseCheckV2', () => {
     expect(c.extras).toEqual({ a: 0 });
   });
 
+  it('an unknown split rule resets the share to personal', () => {
+    const c = parseCheckV2({ v: 2, share: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'bogus' } } })!;
+    expect(c.share).toEqual({ kind: 'personal' });
+  });
+
+  it('bad ids, cadences and split lists reset to their defaults', () => {
+    expect(parseCheckV2({ v: 2, itemType: { kind: 'custom', id: '' } })!.itemType).toEqual({ kind: 'preset', value: 'general' });
+    expect(parseCheckV2({ v: 2, purpose: { kind: 'custom', id: '' } })!.purpose).toBeNull();
+    expect(parseCheckV2({ v: 2, pay: { mode: 'plan', cadence: 5 } })!.pay).toMatchObject({ cadence: { unit: 'month', every: 1 } });
+    const hh = (rule: unknown) => parseCheckV2({ v: 2, share: { kind: 'household', memberCount: 2, myIndex: 0, rule } })!.share;
+    expect(hh({ kind: 'weight', weights: [1, 'x'] })).toEqual({ kind: 'personal' });
+    expect(hh({ kind: 'amount', amounts: [1, 'x'] })).toEqual({ kind: 'personal' });
+  });
+
   it('readStoredCheck uses v2 as stored and upgrades the rest', () => {
     expect(readStoredCheck({ v: 2, price: 5 })).toMatchObject({ check: { price: 5 }, reasons: [] });
     expect(readStoredCheck({ method: 'cash', advertised: 5 }).reasons).toContain('legacy_upgraded');

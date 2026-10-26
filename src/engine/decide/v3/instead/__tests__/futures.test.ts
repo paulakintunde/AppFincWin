@@ -122,7 +122,43 @@ describe('insteadFutures', () => {
   });
 });
 
+describe('insteadFutures edge cases', () => {
+  const noUnspent = { unspent: null } as unknown as Funds;
+
+  test('no confirmed unspent figure leaves unspent-based futures null', () => {
+    const f = insteadFutures({ result, month, funds: noUnspent, purchase: purchase(), userRate: null, years: 1 });
+    expect(f.buyNow.unspentAfter).toBeNull();
+    expect(f.keep.unspentKept).toBeNull();
+    expect(f.buyLater).toEqual({ months: null, readyBy: null, monthlyAmount: null });
+  });
+
+  test('a deposit figure past the safe range is left out, never shown wrong', () => {
+    const f = insteadFutures({
+      result, month, funds,
+      purchase: purchase({ dayOne: mu(9_000_000_000_000) }),
+      userRate: percent('9000'),
+      years: 30,
+    });
+    expect(f.deposit.views.map((v) => v.rate)).toEqual([ZERO_PERCENT]);
+  });
+
+  test('an error that is not a range error is rethrown', () => {
+    expect(() =>
+      insteadFutures({
+        result, month, funds,
+        purchase: purchase({ dayOne: undefined as unknown as ReturnType<typeof mu> }),
+        userRate: null,
+        years: 1,
+      })
+    ).toThrow(TypeError);
+  });
+});
+
 describe('buyLater', () => {
+  test('no unspent figure gives nothing', () => {
+    expect(buyLater({ price: mu(1000), unspent: null, typicalLeft: mu(500), month: '2026-10' })).toEqual({ months: null, readyBy: null, monthlyAmount: null });
+  });
+
   test('v3 section 12 #16 buy later', () => {
     expect(buyLater({ price: mu(300000), unspent: mu(240000), typicalLeft: mu(42500), month: '2026-10' })).toEqual({
       months: 2,

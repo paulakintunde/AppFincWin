@@ -47,6 +47,12 @@ describe('changeSinceLooked', () => {
     expect(changeSinceLooked(base, result({ code: 'not_yet', readyBy: date('2026-12-01'), facts: [after(10_000), line('housing_share')] })).reasons).toEqual(['line_changed']);
   });
 
+  it('a stored record with unreadable lineFacts counts as no lines', () => {
+    const bad = { ...seenOf(result()), lineFacts: 'x' } as never;
+    expect(changeSinceLooked(bad, result())).toMatchObject({ changed: false, reasons: [] });
+    expect(changeSinceLooked(bad, result({ facts: [line('debt_share')] })).reasons).toEqual(['line_changed']);
+  });
+
   it('seenOf sorts line ids and reads the after value', () => {
     expect(seenOf(result({ facts: [line('b'), line('a'), after(7)] }))).toMatchObject({ v: 3, unspentAfter: 7, lineFacts: ['a', 'b'] });
     expect(seenOf(result({ facts: [{ code: 'unspent_before_after', values: { after: 'x' } }, { code: 'line_crossed', values: {} }] }))).toMatchObject({ unspentAfter: null, lineFacts: [] });

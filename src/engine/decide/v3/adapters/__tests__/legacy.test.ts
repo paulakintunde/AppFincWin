@@ -116,6 +116,36 @@ describe('upgradeInputs', () => {
     expect(upgradeInputs({ scope: 'household', split: { kind: 'other' } }).check.share).toEqual({ kind: 'personal' });
   });
 
+  it('adjustment, loan, instalment and running-cost edge shapes', () => {
+    const adj = upgradeInputs({
+      advertised: 1000,
+      adjustments: [
+        { effect: 'adds', onDay: true, counted: true, taxPercentText: null },
+        { amount: 300, effect: 'adds', onDay: true, taxPercentText: '5' },
+        { amount: 300, effect: 'adds', onDay: true, taxPercentText: '7' },
+      ],
+    }).check;
+    expect(adj.price).toBe(1000);
+    expect(adj.taxPercent).toBe(percent('5'));
+    expect(upgradeInputs({ method: 'loan' }).check.pay).toMatchObject({ mode: 'plan', deposit: 0, termMonths: null });
+    expect(upgradeInputs({ method: 'loan', loan: { termMonths: 12, deposit: 500 } }).check.pay).toMatchObject({ termMonths: 12, deposit: 500 });
+    expect(upgradeInputs({ method: 'instalment' }).check.pay).toMatchObject({ cadence: { unit: 'month', every: 1 }, apr: 0n });
+    expect(upgradeInputs({ method: 'instalment', instalment: { freq: 'yearly' } }).check.pay).toMatchObject({ cadence: { unit: 'month', every: 1 } });
+    const extras = upgradeInputs({
+      runningCosts: [
+        { amount: 100, category: 'fuel' },
+        { amount: 50, category: 'fuel' },
+        { amount: 70, category: 7 },
+        { amount: 80, category: '' },
+        { amount: 90, category: 'x'.repeat(60) },
+        { amount: 500, category: 'skip', counted: false },
+        { amount: 0, category: 'zero' },
+        { category: 'none' },
+      ],
+    }).check.extras;
+    expect(extras).toEqual({ 'legacy:fuel': 150, 'legacy:other': 150, [`legacy:${'x'.repeat(40)}`]: 90 });
+  });
+
   it('clamps hostile amounts', () => {
     const c = upgradeInputs({ advertised: 1e30, cheaperPrice: -5 }).check;
     expect(c.price).toBe(1_000_000_000_000);
@@ -139,6 +169,9 @@ describe('legacyLimits', () => {
     expect(l.every((x) => !x.on)).toBe(true);
     expect(l[0]!.spec).toEqual({ kind: 'debt_share', pct: percent('36') });
     expect(l[2]!.spec).toEqual({ kind: 'unsecured_multiple', times: 12 });
+    expect(legacyLimits({ dsr_line: null, housing_line: '30', unsecured_multiple: null }).lines.map((x) => [x.on, x.source])).toEqual([
+      [false, 'builtin'], [true, 'legacy'], [false, 'builtin'],
+    ]);
     expect(legacyLimits(null).lines.every((x) => !x.on)).toBe(true);
   });
 });

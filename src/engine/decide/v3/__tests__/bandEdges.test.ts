@@ -14,6 +14,15 @@ describe('bandEdges', () => {
     expect(BAND_TABLE.NGN!.unspentDrift).toBe(30000000);
   });
 
+  it('clamps a tidy figure at the money ceiling', () => {
+    expect(tidyFromUsd(MAX_ABS_AMOUNT_MINOR, { num: 1530n, den: 1n }, 2)).toBe(MAX_ABS_AMOUNT_MINOR);
+  });
+
+  it('a value under one minor unit tidies to zero', () => {
+    expect(tidyFromUsd(0, { num: 1n, den: 1n }, 2)).toBe(0);
+    expect(tidyFromUsd(1, { num: 1n, den: 200n }, 2)).toBe(0);
+  });
+
   it('D-07 JPY edges are tidy', () => {
     expect([...BAND_TABLE.JPY!.edges]).toEqual([
       8000, 20000, 80000, 200000, 800000, 2000000, 3000000, 8000000, 20000000, 30000000, 80000000, 200000000, 300000000, 800000000,

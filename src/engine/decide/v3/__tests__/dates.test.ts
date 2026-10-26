@@ -2,9 +2,14 @@ import fc from 'fast-check';
 import { occurrenceDate, type RecurringFreq } from '../../../recurring/schedule';
 import {
   addDays,
+  addMonthsClamped,
   addYearMonths,
+  assertEvery,
   cadenceDate,
   cadenceDatesBetween,
+  compareDates,
+  dayOfMonth,
+  firstOfMonth,
   daysBetween,
   daysInYearMonth,
   yearMonthOf,
@@ -50,6 +55,7 @@ describe('v3 dates', () => {
     const dates = cadenceDatesBetween('2026-01-01', c, '2026-01-01', '2026-03-01', '2026-01-15');
     expect(dates).toEqual(['2026-01-01', '2026-01-08', '2026-01-15']);
     expect(cadenceDatesBetween('2026-01-01', c, '2026-03-01', '2026-01-01', null)).toEqual([]);
+    expect(cadenceDatesBetween('2026-01-01', c, '2026-02-01', '2026-03-01', '2026-01-15')).toEqual([]);
   });
 
   it('day and month arithmetic', () => {
@@ -69,5 +75,27 @@ describe('v3 dates', () => {
     expect(() =>
       cadenceDatesBetween('2026-01-01', { unit: 'week', every: 1 }, '2026-01-01', '2056-01-01', null)
     ).toThrow(RangeError);
+  });
+
+  it('compares dates, reads the day and first of month', () => {
+    expect([compareDates('2026-01-01', '2026-01-02'), compareDates('2026-01-02', '2026-01-01'), compareDates('2026-01-01', '2026-01-01')]).toEqual([-1, 1, 0]);
+    expect(dayOfMonth('2026-07-19')).toBe(19);
+    expect(firstOfMonth('2026-07')).toBe('2026-07-01');
+    expect(addMonthsClamped('2026-01-31', -1)).toBe('2025-12-31');
+  });
+
+  it('rejects non-integers, bad units and bad months', () => {
+    expect(() => addDays('2026-01-01', 1.5)).toThrow(RangeError);
+    expect(() => addMonthsClamped('2026-01-01', 0.5)).toThrow(RangeError);
+    expect(() => assertEvery({ unit: 'day' as never, every: 1 }, 'x')).toThrow(RangeError);
+    expect(() => addYearMonths('2026-03', 1.5)).toThrow(RangeError);
+    expect(() => addYearMonths('2026-13', 1)).toThrow(RangeError);
+    expect(() => firstOfMonth('2026-00')).toThrow(RangeError);
+  });
+
+  it('a window too far from the anchor throws before the occurrence cap', () => {
+    expect(() =>
+      cadenceDatesBetween('2000-01-01', { unit: 'week', every: 1 }, '2900-01-01', '2901-01-01', null)
+    ).toThrow('window too far');
   });
 });

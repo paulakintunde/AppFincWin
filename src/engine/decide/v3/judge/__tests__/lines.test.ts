@@ -122,6 +122,16 @@ describe('lines', () => {
     expect(evaluateLines({ lines: [own('e', { kind: 'unspent_floor', floor: mu(1) })] }, ctx({ unspentAfter: null }))).toEqual([]);
   });
 
+  it('category lines for another category, an unlisted category and duplicate ids', () => {
+    const c = ctx({ purchase: purchase({ categoryId: 'food', monthly: mu(30_000) }) });
+    expect(evaluateLines({ lines: [own('d', { kind: 'category_income_share', categoryId: 'other', pct: percent('1') })] }, c)).toEqual([]);
+    // food is not in categoryMonthly: its typical spend counts as zero
+    const facts = evaluateLines({ lines: [own('d', { kind: 'category_income_share', categoryId: 'food', pct: percent('1') })] }, c);
+    expect(facts[0]!.values).toMatchObject({ value: 6, line: '1' });
+    const same = evaluateLines({ lines: [own('x', { kind: 'single_purchase_cap', cap: mu(1) }), own('x', { kind: 'single_purchase_cap', cap: mu(2) })] }, c);
+    expect(same).toHaveLength(2);
+  });
+
   it('housing_share counts M only when the purchase is housing', () => {
     const line: LimitLine = { id: 'h', on: true, source: 'builtin', spec: { kind: 'housing_share', pct: percent('28') } };
     const m = month({ housingMonthly: mu(120_000) });

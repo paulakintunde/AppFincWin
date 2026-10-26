@@ -54,7 +54,9 @@ export const REFERENCE_USD_RATES: Readonly<Record<string, string>> = Object.free
 
 /** Exact decimal string ('3.6725') to a fraction. No floats. */
 function parseRate(s: string): UsdRate {
-  const [whole = '0', frac = ''] = s.split('.');
+  const dot = s.indexOf('.');
+  const whole = dot < 0 ? s : s.slice(0, dot);
+  const frac = dot < 0 ? '' : s.slice(dot + 1);
   return { num: BigInt(whole + frac), den: 10n ** BigInt(frac.length) };
 }
 

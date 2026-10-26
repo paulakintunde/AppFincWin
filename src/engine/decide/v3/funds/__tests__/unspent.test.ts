@@ -123,6 +123,19 @@ describe('rollForward', () => {
     expect(r.value).toBe(90000);
   });
 
+  test('D-22 an anchor-month bill with no matching due date moves it', () => {
+    const extra = ser({ id: 'extra', anchorDate: '2026-01-01' });
+    const r = roll({ series: [extra], lines: [line({ id: 'x', date: '2026-10-25', seriesId: 'extra', amount: mu(150000) })] });
+    expect(r.breakdown.bills).toBe(150000);
+    expect(r.value).toBe(90000);
+  });
+
+  test('same-day lines are ordered by id, equal ids keep their order', () => {
+    const lines = ['c', 'a', 'b', 'a'].map((id, i) => line({ id, date: '2026-11-05', amount: mu(1000 + i) }));
+    const r = roll({ lines });
+    expect(r.breakdown.everyday).toBe(1000 + 1001 + 1002 + 1003);
+  });
+
   test('D-22 planned everyday: only the excess over Erest-at-anchor moves it', () => {
     const e = mu(300000);
     const planned = erestOf(e, mu(0), 3, 31);
@@ -214,6 +227,12 @@ describe('unspentState', () => {
   test('threshold 0 flags any difference', () => {
     expect(st({ value: 100000_00, suggested: 100000_00 - 1, thr: 0 })?.drifted).toBe(true);
     expect(st({ value: 100000_00, suggested: 100000_00, thr: 0 })?.drifted).toBe(false);
+  });
+
+  test('no roll falls back to the anchor amount, not rolled', () => {
+    const s = unspentState({ anchor: anchor(300000, '2026-10-01'), asOf: '2026-10-01', roll: null, suggested: mu(300000), driftThreshold: mu(20000) });
+    expect(s?.value).toBe(300000);
+    expect(s?.rolled).toBe(false);
   });
 
   test('null anchor gives null', () => {

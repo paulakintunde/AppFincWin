@@ -157,6 +157,19 @@ describe('buildSchedule', () => {
     expect(BigInt(s.totalPaid)).toBe(240000n + BigInt(s.totalInterest));
   });
 
+  it('rejects bad fees, a negative financed amount or rate, and a deferral that is too long', () => {
+    const neg = (n: number): MinorUnits => n as MinorUnits;
+    expect(() => buildSchedule(input({ fees: { ...NO_FEES, end: neg(-1) } }))).toThrow(RangeError);
+    expect(() => buildSchedule(input({ fees: { ...NO_FEES, perPeriod: neg(1.5) } }))).toThrow(RangeError);
+    expect(() => buildSchedule(input({ financed: neg(-1) }))).toThrow(RangeError);
+    expect(() => buildSchedule(input({ apr: -1n as ReturnType<typeof percent> }))).toThrow(RangeError);
+    expect(() =>
+      buildSchedule(
+        input({ cadence: WEEKLY, apr: percent('10'), firstPayment: { kind: 'deferred', firstDate: '2070-01-01', interestDuringPause: true } })
+      )
+    ).toThrow('deferral spans');
+  });
+
   it('D-24 not answered', () => {
     expect(
       buildSchedule(input({ firstPayment: { kind: 'deferred', firstDate: '2027-04-26', interestDuringPause: null } }))
