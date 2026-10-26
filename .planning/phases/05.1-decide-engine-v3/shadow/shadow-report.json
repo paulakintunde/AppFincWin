@@ -1,0 +1,5224 @@
+{
+  "changes": [
+    {
+      "key": "generated:gen-000:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1011,
+        "dayOne": 0,
+        "monthLeft": 316487,
+        "erest": 271285,
+        "e": 292799,
+        "typicalLeft": 316487,
+        "unspent": null,
+        "emergency": 1235076,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-001:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2000020,
+        "dayOne": 2000020,
+        "monthLeft": -924011,
+        "erest": 449992,
+        "e": 449992,
+        "typicalLeft": -924011,
+        "unspent": 606186,
+        "emergency": 0,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-004:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 685387,
+        "dayOne": 76155,
+        "monthLeft": 130184,
+        "erest": 235889,
+        "e": 235889,
+        "typicalLeft": 130184,
+        "unspent": 800000,
+        "emergency": 1889297,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-005:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1378884,
+        "dayOne": 1489195,
+        "monthLeft": -618371,
+        "erest": 433599,
+        "e": 449927,
+        "typicalLeft": -618371,
+        "unspent": null,
+        "emergency": 2,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-005:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 240048,
+        "dayOne": 0,
+        "monthLeft": -618371,
+        "erest": 433599,
+        "e": 449927,
+        "typicalLeft": -618371,
+        "unspent": null,
+        "emergency": 2,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-005:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2951878,
+        "dayOne": 2951878,
+        "monthLeft": -618371,
+        "erest": 433599,
+        "e": 449927,
+        "typicalLeft": -618371,
+        "unspent": null,
+        "emergency": 2,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-005:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 3448341,
+        "dayOne": 3448341,
+        "monthLeft": -618371,
+        "erest": 433599,
+        "e": 449927,
+        "typicalLeft": -618371,
+        "unspent": null,
+        "emergency": 2,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-010:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1204750,
+        "dayOne": 1204750,
+        "monthLeft": -522902,
+        "erest": 412032,
+        "e": 445658,
+        "typicalLeft": -522902,
+        "unspent": null,
+        "emergency": 450687,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-012:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4409617,
+        "dayOne": 280141,
+        "monthLeft": -630832,
+        "erest": 388442,
+        "e": 414766,
+        "typicalLeft": -630832,
+        "unspent": 799984,
+        "emergency": 5,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-014:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4480402,
+        "dayOne": 746734,
+        "monthLeft": -437917,
+        "erest": 449992,
+        "e": 449992,
+        "typicalLeft": -437917,
+        "unspent": 7,
+        "emergency": 1005730,
+        "variant": null,
+        "oldWarnings": "month,cash,dsr,owe",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-015:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1656007,
+        "dayOne": 1656007,
+        "monthLeft": -893858,
+        "erest": 223136,
+        "e": 239652,
+        "typicalLeft": -893858,
+        "unspent": null,
+        "emergency": 1381219,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-016:1",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1005,
+        "dayOne": 1085,
+        "monthLeft": 171724,
+        "erest": 296689,
+        "e": 313907,
+        "typicalLeft": 171724,
+        "unspent": 19,
+        "emergency": 19,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-016:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "other",
+      "detail": {
+        "price": 4424441,
+        "dayOne": 0,
+        "monthLeft": 171724,
+        "erest": 296689,
+        "e": 313907,
+        "typicalLeft": 171724,
+        "unspent": 19,
+        "emergency": 19,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-018:3",
+      "source": "generated",
+      "old": "missing",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "median_ignores_outlier",
+      "detail": {
+        "price": 1008956,
+        "dayOne": 0,
+        "monthLeft": -268438,
+        "erest": 295591,
+        "e": 295591,
+        "typicalLeft": -268438,
+        "unspent": 12,
+        "emergency": 1951166,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-022:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4999996,
+        "dayOne": 0,
+        "monthLeft": 59438,
+        "erest": 232198,
+        "e": 255749,
+        "typicalLeft": 59438,
+        "unspent": null,
+        "emergency": 8,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-022:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2338346,
+        "dayOne": 2338346,
+        "monthLeft": 59438,
+        "erest": 232198,
+        "e": 255749,
+        "typicalLeft": 59438,
+        "unspent": null,
+        "emergency": 8,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-022:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4999978,
+        "dayOne": 1265442,
+        "monthLeft": 59438,
+        "erest": 232198,
+        "e": 255749,
+        "typicalLeft": 59438,
+        "unspent": null,
+        "emergency": 8,
+        "variant": null,
+        "oldWarnings": "cash_dip,dsr,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-023:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3038414,
+        "dayOne": 0,
+        "monthLeft": -604854,
+        "erest": 443209,
+        "e": 443209,
+        "typicalLeft": -604854,
+        "unspent": 349334,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-028:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2300661,
+        "dayOne": 461867,
+        "monthLeft": 190017,
+        "erest": 124157,
+        "e": 137460,
+        "typicalLeft": 190830,
+        "unspent": 73860,
+        "emergency": 405875,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-029:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1424102,
+        "dayOne": 1538030,
+        "monthLeft": 80109,
+        "erest": 332250,
+        "e": 357145,
+        "typicalLeft": 80109,
+        "unspent": null,
+        "emergency": 414779,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-029:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 3168252,
+        "dayOne": 1710856,
+        "monthLeft": 80109,
+        "erest": 332250,
+        "e": 357145,
+        "typicalLeft": 80109,
+        "unspent": null,
+        "emergency": 414779,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-031:1",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4999994,
+        "dayOne": 0,
+        "monthLeft": 427206,
+        "erest": 220740,
+        "e": 229529,
+        "typicalLeft": 427206,
+        "unspent": 324946,
+        "emergency": 332717,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-032:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 542255,
+        "dayOne": 585635,
+        "monthLeft": -279318,
+        "erest": 215260,
+        "e": 230928,
+        "typicalLeft": -279318,
+        "unspent": null,
+        "emergency": 1269745,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-032:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 279329,
+        "dayOne": 15675,
+        "monthLeft": -279318,
+        "erest": 215260,
+        "e": 230928,
+        "typicalLeft": -279318,
+        "unspent": null,
+        "emergency": 1269745,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-032:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2415039,
+        "dayOne": 237550,
+        "monthLeft": -279318,
+        "erest": 215260,
+        "e": 230928,
+        "typicalLeft": -279318,
+        "unspent": null,
+        "emergency": 1269745,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-032:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 183464,
+        "dayOne": 11926,
+        "monthLeft": -279318,
+        "erest": 215260,
+        "e": 230928,
+        "typicalLeft": -279318,
+        "unspent": null,
+        "emergency": 1269745,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-034:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 3118267,
+        "dayOne": 3367728,
+        "monthLeft": -30727,
+        "erest": 368652,
+        "e": 390150,
+        "typicalLeft": -30727,
+        "unspent": null,
+        "emergency": 527390,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-037:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 739416,
+        "dayOne": 56879,
+        "monthLeft": -737124,
+        "erest": 218496,
+        "e": 237108,
+        "typicalLeft": -737124,
+        "unspent": 724114,
+        "emergency": 8,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-037:3",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3097496,
+        "dayOne": 0,
+        "monthLeft": -737124,
+        "erest": 218496,
+        "e": 237108,
+        "typicalLeft": -737124,
+        "unspent": 724114,
+        "emergency": 8,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-038:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "low_month_clause",
+      "detail": {
+        "price": 3075614,
+        "dayOne": 174825,
+        "monthLeft": 355844,
+        "erest": 198831,
+        "e": 198831,
+        "typicalLeft": 355844,
+        "unspent": 679179,
+        "emergency": 1471378,
+        "variant": "low_month",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-043:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2129918,
+        "dayOne": 2129918,
+        "monthLeft": -271680,
+        "erest": 361913,
+        "e": 361913,
+        "typicalLeft": -271680,
+        "unspent": 407016,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-043:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4728144,
+        "dayOne": 5106396,
+        "monthLeft": -271680,
+        "erest": 361913,
+        "e": 361913,
+        "typicalLeft": -271680,
+        "unspent": 407016,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-043:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1049529,
+        "dayOne": 1133491,
+        "monthLeft": -271680,
+        "erest": 361913,
+        "e": 361913,
+        "typicalLeft": -271680,
+        "unspent": 407016,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-046:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4826703,
+        "dayOne": 5212839,
+        "monthLeft": -650576,
+        "erest": 359630,
+        "e": 382941,
+        "typicalLeft": -650576,
+        "unspent": null,
+        "emergency": 1548850,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-047:1",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 3428759,
+        "dayOne": 428595,
+        "monthLeft": 427347,
+        "erest": 355324,
+        "e": 386905,
+        "typicalLeft": 427347,
+        "unspent": 177811,
+        "emergency": 1126316,
+        "variant": "not_covered",
+        "oldWarnings": "cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-049:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 724552,
+        "dayOne": 0,
+        "monthLeft": -908020,
+        "erest": 370759,
+        "e": 397812,
+        "typicalLeft": -908020,
+        "unspent": 35248,
+        "emergency": 10,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-050:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1744040,
+        "dayOne": 0,
+        "monthLeft": 212768,
+        "erest": 287153,
+        "e": 287153,
+        "typicalLeft": 212768,
+        "unspent": 619677,
+        "emergency": 1274202,
+        "variant": null,
+        "oldWarnings": "dsr,month,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-052:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 353530,
+        "dayOne": 381812,
+        "monthLeft": -151339,
+        "erest": 357450,
+        "e": 385880,
+        "typicalLeft": -151339,
+        "unspent": 485076,
+        "emergency": 65097,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-056:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1440006,
+        "dayOne": 0,
+        "monthLeft": -1096468,
+        "erest": 415690,
+        "e": 440096,
+        "typicalLeft": -1096468,
+        "unspent": 1,
+        "emergency": 15,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-057:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1642472,
+        "dayOne": 1642472,
+        "monthLeft": -226083,
+        "erest": 124679,
+        "e": 124679,
+        "typicalLeft": -226083,
+        "unspent": null,
+        "emergency": 9,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-057:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2607608,
+        "dayOne": 0,
+        "monthLeft": -226083,
+        "erest": 124679,
+        "e": 124679,
+        "typicalLeft": -226083,
+        "unspent": null,
+        "emergency": 9,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-058:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 551217,
+        "dayOne": 0,
+        "monthLeft": 454033,
+        "erest": 242018,
+        "e": 261755,
+        "typicalLeft": 454033,
+        "unspent": 449192,
+        "emergency": 542158,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-063:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1596691,
+        "dayOne": 69422,
+        "monthLeft": 18628,
+        "erest": 204724,
+        "e": 217871,
+        "typicalLeft": 18628,
+        "unspent": 3,
+        "emergency": 1666844,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-064:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1213695,
+        "dayOne": 0,
+        "monthLeft": -450611,
+        "erest": 187315,
+        "e": 187315,
+        "typicalLeft": -450611,
+        "unspent": 417352,
+        "emergency": 1507086,
+        "variant": null,
+        "oldWarnings": "owe,cash,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-064:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1662047,
+        "dayOne": 0,
+        "monthLeft": -450611,
+        "erest": 187315,
+        "e": 187315,
+        "typicalLeft": -450611,
+        "unspent": 417352,
+        "emergency": 1507086,
+        "variant": null,
+        "oldWarnings": "owe,cash,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-068:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 565481,
+        "dayOne": 565481,
+        "monthLeft": 266649,
+        "erest": 310025,
+        "e": 333052,
+        "typicalLeft": 266649,
+        "unspent": 472680,
+        "emergency": 980061,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-074:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2463761,
+        "dayOne": 0,
+        "monthLeft": -421396,
+        "erest": 424279,
+        "e": 449985,
+        "typicalLeft": -421396,
+        "unspent": 610206,
+        "emergency": 1801472,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-076:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4826757,
+        "dayOne": 4826757,
+        "monthLeft": 28751,
+        "erest": 62906,
+        "e": 62906,
+        "typicalLeft": 28751,
+        "unspent": 716451,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-076:1",
+      "source": "generated",
+      "old": "fits",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1235858,
+        "dayOne": 1235858,
+        "monthLeft": 28751,
+        "erest": 62906,
+        "e": 62906,
+        "typicalLeft": 28751,
+        "unspent": 716451,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-076:3",
+      "source": "generated",
+      "old": "fits",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 246800,
+        "dayOne": 246800,
+        "monthLeft": 28751,
+        "erest": 62906,
+        "e": 62906,
+        "typicalLeft": 28751,
+        "unspent": 716451,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-078:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 1002,
+        "dayOne": 1082,
+        "monthLeft": -341042,
+        "erest": 327990,
+        "e": 342219,
+        "typicalLeft": -341042,
+        "unspent": 57649,
+        "emergency": 1295781,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-079:3",
+      "source": "generated",
+      "old": "missing",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "median_ignores_outlier",
+      "detail": {
+        "price": 3959917,
+        "dayOne": 305480,
+        "monthLeft": 17730,
+        "erest": 214545,
+        "e": 235875,
+        "typicalLeft": 17730,
+        "unspent": 799986,
+        "emergency": 19,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-080:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3720231,
+        "dayOne": 276704,
+        "monthLeft": 324278,
+        "erest": 324301,
+        "e": 338248,
+        "typicalLeft": 324278,
+        "unspent": 48135,
+        "emergency": 1947072,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-082:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2657776,
+        "dayOne": 0,
+        "monthLeft": 456222,
+        "erest": 329770,
+        "e": 346974,
+        "typicalLeft": 456222,
+        "unspent": 799984,
+        "emergency": 6,
+        "variant": null,
+        "oldWarnings": "dsr,month,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-085:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3697907,
+        "dayOne": 287679,
+        "monthLeft": 234806,
+        "erest": 28623,
+        "e": 28623,
+        "typicalLeft": 234806,
+        "unspent": 799998,
+        "emergency": 20,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-089:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1176514,
+        "dayOne": 70550,
+        "monthLeft": -651655,
+        "erest": 337208,
+        "e": 356563,
+        "typicalLeft": -651655,
+        "unspent": null,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-090:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1892768,
+        "dayOne": 120247,
+        "monthLeft": 49109,
+        "erest": 255365,
+        "e": 274185,
+        "typicalLeft": 49109,
+        "unspent": 619634,
+        "emergency": 2,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-093:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3407278,
+        "dayOne": 0,
+        "monthLeft": -286992,
+        "erest": 335416,
+        "e": 352602,
+        "typicalLeft": -286992,
+        "unspent": 736326,
+        "emergency": 1956147,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-094:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4999986,
+        "dayOne": 5399985,
+        "monthLeft": 285826,
+        "erest": 209910,
+        "e": 220845,
+        "typicalLeft": 285826,
+        "unspent": null,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-095:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1294796,
+        "dayOne": 215800,
+        "monthLeft": 259539,
+        "erest": 361505,
+        "e": 361505,
+        "typicalLeft": 259539,
+        "unspent": 24814,
+        "emergency": 1293367,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-098:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 465089,
+        "dayOne": 35879,
+        "monthLeft": -1035230,
+        "erest": 337126,
+        "e": 357027,
+        "typicalLeft": -1035230,
+        "unspent": 377455,
+        "emergency": 648230,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-098:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1425697,
+        "dayOne": 87667,
+        "monthLeft": -1035230,
+        "erest": 337126,
+        "e": 357027,
+        "typicalLeft": -1035230,
+        "unspent": 377455,
+        "emergency": 648230,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-101:2",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 1361919,
+        "dayOne": 249843,
+        "monthLeft": 209744,
+        "erest": 385862,
+        "e": 407560,
+        "typicalLeft": 209744,
+        "unspent": 46030,
+        "emergency": 1746773,
+        "variant": "not_covered",
+        "oldWarnings": "dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-101:3",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 1686706,
+        "dayOne": 1686706,
+        "monthLeft": 209744,
+        "erest": 385862,
+        "e": 407560,
+        "typicalLeft": 209744,
+        "unspent": 46030,
+        "emergency": 1746773,
+        "variant": "not_covered",
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-103:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1016,
+        "dayOne": 0,
+        "monthLeft": -530422,
+        "erest": 248239,
+        "e": 269652,
+        "typicalLeft": -530422,
+        "unspent": 624891,
+        "emergency": 331768,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-104:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 3261889,
+        "dayOne": 3261889,
+        "monthLeft": -518879,
+        "erest": 401920,
+        "e": 414986,
+        "typicalLeft": -518879,
+        "unspent": null,
+        "emergency": 2,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-104:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4123799,
+        "dayOne": 4123799,
+        "monthLeft": -518879,
+        "erest": 401920,
+        "e": 414986,
+        "typicalLeft": -518879,
+        "unspent": null,
+        "emergency": 2,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-104:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 637098,
+        "dayOne": 36231,
+        "monthLeft": -518879,
+        "erest": 401920,
+        "e": 414986,
+        "typicalLeft": -518879,
+        "unspent": null,
+        "emergency": 2,
+        "variant": null,
+        "oldWarnings": "month,cash_dip",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-105:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4832321,
+        "dayOne": 253275,
+        "monthLeft": -1234744,
+        "erest": 300889,
+        "e": 323294,
+        "typicalLeft": -1234744,
+        "unspent": 762849,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-108:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3502779,
+        "dayOne": 0,
+        "monthLeft": -714969,
+        "erest": 414917,
+        "e": 440268,
+        "typicalLeft": -714969,
+        "unspent": 226600,
+        "emergency": 8,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-110:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 711416,
+        "dayOne": 768329,
+        "monthLeft": -339593,
+        "erest": 323145,
+        "e": 323145,
+        "typicalLeft": -339593,
+        "unspent": null,
+        "emergency": 1283555,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-115:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4999985,
+        "dayOne": 262013,
+        "monthLeft": -278390,
+        "erest": 403197,
+        "e": 429512,
+        "typicalLeft": -278390,
+        "unspent": 3363,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-116:1",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4608076,
+        "dayOne": 0,
+        "monthLeft": 871683,
+        "erest": 234253,
+        "e": 234253,
+        "typicalLeft": 871683,
+        "unspent": 449075,
+        "emergency": 0,
+        "variant": "payday",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-118:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4184083,
+        "dayOne": 0,
+        "monthLeft": -391442,
+        "erest": 301521,
+        "e": 325991,
+        "typicalLeft": -391442,
+        "unspent": 644490,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-118:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4240291,
+        "dayOne": 471144,
+        "monthLeft": -391442,
+        "erest": 301521,
+        "e": 325991,
+        "typicalLeft": -391442,
+        "unspent": 644490,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-119:1",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1755958,
+        "dayOne": 0,
+        "monthLeft": 595666,
+        "erest": 84731,
+        "e": 93809,
+        "typicalLeft": 598351,
+        "unspent": 504299,
+        "emergency": 7,
+        "variant": "payday",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-121:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "low_month_clause",
+      "detail": {
+        "price": 1022,
+        "dayOne": 0,
+        "monthLeft": 47135,
+        "erest": 381090,
+        "e": 411230,
+        "typicalLeft": 47135,
+        "unspent": 526238,
+        "emergency": 10,
+        "variant": "low_month",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-122:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2064401,
+        "dayOne": 0,
+        "monthLeft": -935189,
+        "erest": 279845,
+        "e": 300962,
+        "typicalLeft": -935189,
+        "unspent": 110857,
+        "emergency": 1205126,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-123:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 354852,
+        "dayOne": 383240,
+        "monthLeft": 283915,
+        "erest": 323586,
+        "e": 347652,
+        "typicalLeft": 283915,
+        "unspent": 724072,
+        "emergency": 1331017,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-125:2",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "erest_not_zero_spend",
+      "detail": {
+        "price": 1746390,
+        "dayOne": 0,
+        "monthLeft": -24619,
+        "erest": 369082,
+        "e": 390914,
+        "typicalLeft": -24619,
+        "unspent": 18488,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-126:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "erest_not_zero_spend",
+      "detail": {
+        "price": 2418208,
+        "dayOne": 0,
+        "monthLeft": -113465,
+        "erest": 316324,
+        "e": 340004,
+        "typicalLeft": -113465,
+        "unspent": 281470,
+        "emergency": 1767693,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-127:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2296483,
+        "dayOne": 0,
+        "monthLeft": -618162,
+        "erest": 204218,
+        "e": 224273,
+        "typicalLeft": -618162,
+        "unspent": 768518,
+        "emergency": 1570024,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-127:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4580432,
+        "dayOne": 0,
+        "monthLeft": -618162,
+        "erest": 204218,
+        "e": 224273,
+        "typicalLeft": -618162,
+        "unspent": 768518,
+        "emergency": 1570024,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-129:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1135012,
+        "dayOne": 0,
+        "monthLeft": -1084070,
+        "erest": 324462,
+        "e": 343523,
+        "typicalLeft": -1084070,
+        "unspent": 691738,
+        "emergency": 16,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-129:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4047609,
+        "dayOne": 1457140,
+        "monthLeft": -1084070,
+        "erest": 324462,
+        "e": 343523,
+        "typicalLeft": -1084070,
+        "unspent": 691738,
+        "emergency": 16,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-130:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4333307,
+        "dayOne": 4333307,
+        "monthLeft": -600096,
+        "erest": 277360,
+        "e": 296901,
+        "typicalLeft": -600096,
+        "unspent": null,
+        "emergency": 351830,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-130:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 235552,
+        "dayOne": 235552,
+        "monthLeft": -600096,
+        "erest": 277360,
+        "e": 296901,
+        "typicalLeft": -600096,
+        "unspent": null,
+        "emergency": 351830,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-130:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 47912,
+        "dayOne": 47912,
+        "monthLeft": -600096,
+        "erest": 277360,
+        "e": 296901,
+        "typicalLeft": -600096,
+        "unspent": null,
+        "emergency": 351830,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-130:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4152465,
+        "dayOne": 5000,
+        "monthLeft": -600096,
+        "erest": 277360,
+        "e": 296901,
+        "typicalLeft": -600096,
+        "unspent": null,
+        "emergency": 351830,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-131:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 5281,
+        "dayOne": 5065,
+        "monthLeft": 155822,
+        "erest": 317888,
+        "e": 343822,
+        "typicalLeft": 155822,
+        "unspent": 2,
+        "emergency": 10,
+        "variant": null,
+        "oldWarnings": "cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-134:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 1961297,
+        "dayOne": 178007,
+        "monthLeft": 11934,
+        "erest": 346587,
+        "e": 370284,
+        "typicalLeft": 11934,
+        "unspent": 13,
+        "emergency": 1177558,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-137:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 83923,
+        "dayOne": 83923,
+        "monthLeft": -545520,
+        "erest": 172619,
+        "e": 188733,
+        "typicalLeft": -545520,
+        "unspent": 513041,
+        "emergency": 1920245,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-137:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 92029,
+        "dayOne": 92029,
+        "monthLeft": -545520,
+        "erest": 172619,
+        "e": 188733,
+        "typicalLeft": -545520,
+        "unspent": 513041,
+        "emergency": 1920245,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-139:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 1007,
+        "dayOne": 5000,
+        "monthLeft": -736808,
+        "erest": 308901,
+        "e": 320217,
+        "typicalLeft": -736808,
+        "unspent": 693269,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-142:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1232924,
+        "dayOne": 0,
+        "monthLeft": -662322,
+        "erest": 402424,
+        "e": 429837,
+        "typicalLeft": -662322,
+        "unspent": 165210,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-143:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 833920,
+        "dayOne": 900634,
+        "monthLeft": -49292,
+        "erest": 267273,
+        "e": 267273,
+        "typicalLeft": -49292,
+        "unspent": 654258,
+        "emergency": 75983,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-143:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1807551,
+        "dayOne": 150166,
+        "monthLeft": -49292,
+        "erest": 267273,
+        "e": 267273,
+        "typicalLeft": -49292,
+        "unspent": 654258,
+        "emergency": 75983,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-147:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2666702,
+        "dayOne": 140353,
+        "monthLeft": -107694,
+        "erest": 180991,
+        "e": 198312,
+        "typicalLeft": -107694,
+        "unspent": 409496,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-150:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 3600842,
+        "dayOne": 3888909,
+        "monthLeft": -403726,
+        "erest": 279646,
+        "e": 292603,
+        "typicalLeft": -403726,
+        "unspent": null,
+        "emergency": 863372,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-152:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 979449,
+        "dayOne": 979449,
+        "monthLeft": 253637,
+        "erest": 218939,
+        "e": 238443,
+        "typicalLeft": 253637,
+        "unspent": 221867,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-154:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 1019,
+        "dayOne": 1019,
+        "monthLeft": -596186,
+        "erest": 235985,
+        "e": 255962,
+        "typicalLeft": -596186,
+        "unspent": 353358,
+        "emergency": 5,
+        "variant": null,
+        "oldWarnings": "month,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-154:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1005,
+        "dayOne": 368,
+        "monthLeft": -596186,
+        "erest": 235985,
+        "e": 255962,
+        "typicalLeft": -596186,
+        "unspent": 353358,
+        "emergency": 5,
+        "variant": null,
+        "oldWarnings": "month,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-156:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3462210,
+        "dayOne": 0,
+        "monthLeft": -1074939,
+        "erest": 393553,
+        "e": 417563,
+        "typicalLeft": -1074939,
+        "unspent": 431392,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-156:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1632436,
+        "dayOne": 149567,
+        "monthLeft": -1074939,
+        "erest": 393553,
+        "e": 417563,
+        "typicalLeft": -1074939,
+        "unspent": 431392,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-160:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2263181,
+        "dayOne": 2444235,
+        "monthLeft": -55536,
+        "erest": 369655,
+        "e": 369655,
+        "typicalLeft": -55536,
+        "unspent": 342414,
+        "emergency": 1631661,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-160:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4527874,
+        "dayOne": 4527874,
+        "monthLeft": -55536,
+        "erest": 369655,
+        "e": 369655,
+        "typicalLeft": -55536,
+        "unspent": 342414,
+        "emergency": 1631661,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-160:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 716757,
+        "dayOne": 716757,
+        "monthLeft": -55536,
+        "erest": 369655,
+        "e": 369655,
+        "typicalLeft": -55536,
+        "unspent": 342414,
+        "emergency": 1631661,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-161:1",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 533004,
+        "dayOne": 29002,
+        "monthLeft": -18472,
+        "erest": 393982,
+        "e": 393982,
+        "typicalLeft": -18472,
+        "unspent": 0,
+        "emergency": 1092866,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-161:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4460466,
+        "dayOne": 0,
+        "monthLeft": -18472,
+        "erest": 393982,
+        "e": 393982,
+        "typicalLeft": -18472,
+        "unspent": 0,
+        "emergency": 1092866,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-163:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "erest_not_zero_spend",
+      "detail": {
+        "price": 2768486,
+        "dayOne": 0,
+        "monthLeft": -52045,
+        "erest": 534997,
+        "e": 534997,
+        "typicalLeft": -52045,
+        "unspent": 493331,
+        "emergency": 3,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-166:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3071009,
+        "dayOne": 258604,
+        "monthLeft": -562998,
+        "erest": 301510,
+        "e": 330149,
+        "typicalLeft": -562998,
+        "unspent": 514007,
+        "emergency": 1999998,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-167:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4860449,
+        "dayOne": 1753058,
+        "monthLeft": -518092,
+        "erest": 357211,
+        "e": 374752,
+        "typicalLeft": -518092,
+        "unspent": null,
+        "emergency": 1670946,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr,cash_dip,owe",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-172:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1200865,
+        "dayOne": 0,
+        "monthLeft": -861725,
+        "erest": 473305,
+        "e": 491240,
+        "typicalLeft": -861725,
+        "unspent": 750658,
+        "emergency": 859229,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-173:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3846944,
+        "dayOne": 167259,
+        "monthLeft": -858442,
+        "erest": 357787,
+        "e": 375718,
+        "typicalLeft": -858442,
+        "unspent": 799991,
+        "emergency": 1257663,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-181:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4156666,
+        "dayOne": 0,
+        "monthLeft": -315392,
+        "erest": 358456,
+        "e": 376814,
+        "typicalLeft": -315392,
+        "unspent": 563880,
+        "emergency": 1497184,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-187:1",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 18801,
+        "dayOne": 0,
+        "monthLeft": 323749,
+        "erest": 136999,
+        "e": 147032,
+        "typicalLeft": 323749,
+        "unspent": 410023,
+        "emergency": 1959745,
+        "variant": null,
+        "oldWarnings": "cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-193:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 258221,
+        "dayOne": 0,
+        "monthLeft": -586986,
+        "erest": 324717,
+        "e": 352233,
+        "typicalLeft": -586986,
+        "unspent": 773637,
+        "emergency": 843600,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-196:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "low_month_clause",
+      "detail": {
+        "price": 2948670,
+        "dayOne": 128204,
+        "monthLeft": 209645,
+        "erest": 351109,
+        "e": 375633,
+        "typicalLeft": 209645,
+        "unspent": 617343,
+        "emergency": 1131118,
+        "variant": "low_month",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-198:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3778644,
+        "dayOne": 188933,
+        "monthLeft": -885270,
+        "erest": 304413,
+        "e": 337029,
+        "typicalLeft": -884467,
+        "unspent": 729240,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-199:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 97084,
+        "dayOne": 0,
+        "monthLeft": -372325,
+        "erest": 241588,
+        "e": 256539,
+        "typicalLeft": -372325,
+        "unspent": 10,
+        "emergency": 85112,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-200:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 145380,
+        "dayOne": 20000,
+        "monthLeft": -769584,
+        "erest": 453891,
+        "e": 472315,
+        "typicalLeft": -769584,
+        "unspent": 259707,
+        "emergency": 511266,
+        "variant": null,
+        "oldWarnings": "month,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-206:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4999984,
+        "dayOne": 599999,
+        "monthLeft": 528394,
+        "erest": 344871,
+        "e": 367437,
+        "typicalLeft": 528394,
+        "unspent": 288053,
+        "emergency": 527388,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-208:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4667934,
+        "dayOne": 4667934,
+        "monthLeft": -395305,
+        "erest": 283253,
+        "e": 307952,
+        "typicalLeft": -395305,
+        "unspent": null,
+        "emergency": 1439207,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-208:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4906965,
+        "dayOne": 5299522,
+        "monthLeft": -395305,
+        "erest": 283253,
+        "e": 307952,
+        "typicalLeft": -395305,
+        "unspent": null,
+        "emergency": 1439207,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-208:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1501342,
+        "dayOne": 0,
+        "monthLeft": -395305,
+        "erest": 283253,
+        "e": 307952,
+        "typicalLeft": -395305,
+        "unspent": null,
+        "emergency": 1439207,
+        "variant": null,
+        "oldWarnings": "cash_dip,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-208:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1128855,
+        "dayOne": 1128855,
+        "monthLeft": -395305,
+        "erest": 283253,
+        "e": 307952,
+        "typicalLeft": -395305,
+        "unspent": null,
+        "emergency": 1439207,
+        "variant": null,
+        "oldWarnings": "cash,month,cash_dip",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-209:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1092530,
+        "dayOne": 283230,
+        "monthLeft": 17477,
+        "erest": 335867,
+        "e": 359999,
+        "typicalLeft": 17477,
+        "unspent": 399340,
+        "emergency": 4,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-211:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1010,
+        "dayOne": 0,
+        "monthLeft": -654462,
+        "erest": 158032,
+        "e": 172888,
+        "typicalLeft": -654462,
+        "unspent": 512468,
+        "emergency": 3,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-212:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 3402108,
+        "dayOne": 0,
+        "monthLeft": -261663,
+        "erest": 442785,
+        "e": 442785,
+        "typicalLeft": -261663,
+        "unspent": 42138,
+        "emergency": 16,
+        "variant": null,
+        "oldWarnings": "cash_dip,month,dsr,cash",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-212:1",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "erest_not_zero_spend",
+      "detail": {
+        "price": 65578,
+        "dayOne": 70824,
+        "monthLeft": -261663,
+        "erest": 442785,
+        "e": 442785,
+        "typicalLeft": -261663,
+        "unspent": 42138,
+        "emergency": 16,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-212:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4999982,
+        "dayOne": 1012661,
+        "monthLeft": -261663,
+        "erest": 442785,
+        "e": 442785,
+        "typicalLeft": -261663,
+        "unspent": 42138,
+        "emergency": 16,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-215:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1002384,
+        "dayOne": 1002384,
+        "monthLeft": -753739,
+        "erest": 367287,
+        "e": 385663,
+        "typicalLeft": -753739,
+        "unspent": null,
+        "emergency": 1306250,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-215:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2877895,
+        "dayOne": 2877895,
+        "monthLeft": -753739,
+        "erest": 367287,
+        "e": 385663,
+        "typicalLeft": -753739,
+        "unspent": null,
+        "emergency": 1306250,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-215:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1407310,
+        "dayOne": 506632,
+        "monthLeft": -753739,
+        "erest": 367287,
+        "e": 385663,
+        "typicalLeft": -753739,
+        "unspent": null,
+        "emergency": 1306250,
+        "variant": null,
+        "oldWarnings": "month,cash,dsr,cash_dip",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-216:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3130003,
+        "dayOne": 0,
+        "monthLeft": -266088,
+        "erest": 281607,
+        "e": 305214,
+        "typicalLeft": -266088,
+        "unspent": 186247,
+        "emergency": 1620605,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-216:3",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4857006,
+        "dayOne": 1053068,
+        "monthLeft": -266088,
+        "erest": 281607,
+        "e": 305214,
+        "typicalLeft": -266088,
+        "unspent": 186247,
+        "emergency": 1620605,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-217:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4999982,
+        "dayOne": 1187329,
+        "monthLeft": -290393,
+        "erest": 297948,
+        "e": 297948,
+        "typicalLeft": -290393,
+        "unspent": 459022,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-218:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1000,
+        "dayOne": 1080,
+        "monthLeft": -616520,
+        "erest": 337774,
+        "e": 365048,
+        "typicalLeft": -616520,
+        "unspent": null,
+        "emergency": 461088,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-220:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 227653,
+        "dayOne": 0,
+        "monthLeft": 466278,
+        "erest": 232531,
+        "e": 242970,
+        "typicalLeft": 466278,
+        "unspent": null,
+        "emergency": 158569,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-220:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4992854,
+        "dayOne": 4992854,
+        "monthLeft": 466278,
+        "erest": 232531,
+        "e": 242970,
+        "typicalLeft": 466278,
+        "unspent": null,
+        "emergency": 158569,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-223:2",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "erest_not_zero_spend",
+      "detail": {
+        "price": 1729315,
+        "dayOne": 159151,
+        "monthLeft": 109640,
+        "erest": 381751,
+        "e": 406510,
+        "typicalLeft": 109640,
+        "unspent": 19435,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-225:2",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 215220,
+        "dayOne": 232438,
+        "monthLeft": -143272,
+        "erest": 332023,
+        "e": 353606,
+        "typicalLeft": -143272,
+        "unspent": 353679,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-225:3",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2881626,
+        "dayOne": 0,
+        "monthLeft": -143272,
+        "erest": 332023,
+        "e": 353606,
+        "typicalLeft": -143272,
+        "unspent": 353679,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-226:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 940112,
+        "dayOne": 240858,
+        "monthLeft": 139336,
+        "erest": 264994,
+        "e": 286398,
+        "typicalLeft": 139336,
+        "unspent": 644977,
+        "emergency": 1999993,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-230:2",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4761565,
+        "dayOne": 273794,
+        "monthLeft": 790136,
+        "erest": 260692,
+        "e": 260692,
+        "typicalLeft": 790136,
+        "unspent": 793045,
+        "emergency": 759100,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-237:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3925473,
+        "dayOne": 301960,
+        "monthLeft": 52792,
+        "erest": 180494,
+        "e": 180494,
+        "typicalLeft": 52792,
+        "unspent": 620830,
+        "emergency": 589885,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-237:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2130685,
+        "dayOne": 255683,
+        "monthLeft": 52792,
+        "erest": 180494,
+        "e": 180494,
+        "typicalLeft": 52792,
+        "unspent": 620830,
+        "emergency": 589885,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-239:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "erest_not_zero_spend",
+      "detail": {
+        "price": 599943,
+        "dayOne": 647938,
+        "monthLeft": 545633,
+        "erest": 151943,
+        "e": 167235,
+        "typicalLeft": 545633,
+        "unspent": 567165,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-239:1",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2083179,
+        "dayOne": 122540,
+        "monthLeft": 545633,
+        "erest": 151943,
+        "e": 167235,
+        "typicalLeft": 545633,
+        "unspent": 567165,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-239:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "other",
+      "detail": {
+        "price": 1366969,
+        "dayOne": 151886,
+        "monthLeft": 545633,
+        "erest": 151943,
+        "e": 167235,
+        "typicalLeft": 545633,
+        "unspent": 567165,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-239:3",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4807894,
+        "dayOne": 213397,
+        "monthLeft": 545633,
+        "erest": 151943,
+        "e": 167235,
+        "typicalLeft": 545633,
+        "unspent": 567165,
+        "emergency": null,
+        "variant": "low_month",
+        "oldWarnings": "cash,cash_dip,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-242:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2423495,
+        "dayOne": 2617375,
+        "monthLeft": -736390,
+        "erest": 141307,
+        "e": 154079,
+        "typicalLeft": -736390,
+        "unspent": null,
+        "emergency": 5,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-242:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1004,
+        "dayOne": 1084,
+        "monthLeft": -736390,
+        "erest": 141307,
+        "e": 154079,
+        "typicalLeft": -736390,
+        "unspent": null,
+        "emergency": 5,
+        "variant": null,
+        "oldWarnings": "cash,month,cash_dip",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-243:3",
+      "source": "generated",
+      "old": "missing",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "typical_month_short",
+      "detail": {
+        "price": 3140177,
+        "dayOne": 300834,
+        "monthLeft": -353312,
+        "erest": 303906,
+        "e": 323989,
+        "typicalLeft": -353312,
+        "unspent": 573289,
+        "emergency": 1318376,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-244:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1703536,
+        "dayOne": 167257,
+        "monthLeft": 331247,
+        "erest": 303201,
+        "e": 324154,
+        "typicalLeft": 331247,
+        "unspent": 366577,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-248:3",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4593380,
+        "dayOne": 0,
+        "monthLeft": -608360,
+        "erest": 285393,
+        "e": 306829,
+        "typicalLeft": -608360,
+        "unspent": 799988,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-251:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2272085,
+        "dayOne": 0,
+        "monthLeft": -422249,
+        "erest": 282993,
+        "e": 302616,
+        "typicalLeft": -422249,
+        "unspent": 17,
+        "emergency": 516744,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-252:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2199849,
+        "dayOne": 109993,
+        "monthLeft": -645342,
+        "erest": 108737,
+        "e": 120387,
+        "typicalLeft": -642176,
+        "unspent": 259212,
+        "emergency": 1999993,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-252:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "median_ignores_outlier",
+      "detail": {
+        "price": 412234,
+        "dayOne": 35836,
+        "monthLeft": -645342,
+        "erest": 108737,
+        "e": 120387,
+        "typicalLeft": -642176,
+        "unspent": 259212,
+        "emergency": 1999993,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-253:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 748929,
+        "dayOne": 0,
+        "monthLeft": -339672,
+        "erest": 360936,
+        "e": 380648,
+        "typicalLeft": -339672,
+        "unspent": 42939,
+        "emergency": 73540,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-254:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 3208822,
+        "dayOne": 3465528,
+        "monthLeft": 57948,
+        "erest": 449993,
+        "e": 449993,
+        "typicalLeft": 57948,
+        "unspent": null,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-254:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2855331,
+        "dayOne": 2855331,
+        "monthLeft": 57948,
+        "erest": 449993,
+        "e": 449993,
+        "typicalLeft": 57948,
+        "unspent": null,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-254:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 788055,
+        "dayOne": 788055,
+        "monthLeft": 57948,
+        "erest": 449993,
+        "e": 449993,
+        "typicalLeft": 57948,
+        "unspent": null,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-254:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1494671,
+        "dayOne": 118548,
+        "monthLeft": 57948,
+        "erest": 449993,
+        "e": 449993,
+        "typicalLeft": 57948,
+        "unspent": null,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-256:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2386652,
+        "dayOne": 2386652,
+        "monthLeft": 224423,
+        "erest": 299718,
+        "e": 319524,
+        "typicalLeft": 224423,
+        "unspent": null,
+        "emergency": 99281,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-256:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4999989,
+        "dayOne": 4999989,
+        "monthLeft": 224423,
+        "erest": 299718,
+        "e": 319524,
+        "typicalLeft": 224423,
+        "unspent": null,
+        "emergency": 99281,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-257:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "median_ignores_outlier",
+      "detail": {
+        "price": 2507842,
+        "dayOne": 0,
+        "monthLeft": -186095,
+        "erest": 157614,
+        "e": 174501,
+        "typicalLeft": -185497,
+        "unspent": 316403,
+        "emergency": 77443,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-259:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3502058,
+        "dayOne": 165618,
+        "monthLeft": -482664,
+        "erest": 254776,
+        "e": 271960,
+        "typicalLeft": -482664,
+        "unspent": 189002,
+        "emergency": 19,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-261:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1015,
+        "dayOne": 1096,
+        "monthLeft": 50894,
+        "erest": 411606,
+        "e": 436889,
+        "typicalLeft": 50894,
+        "unspent": 799996,
+        "emergency": 532174,
+        "variant": null,
+        "oldWarnings": "cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-261:1",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1004,
+        "dayOne": 1004,
+        "monthLeft": 50894,
+        "erest": 411606,
+        "e": 436889,
+        "typicalLeft": 50894,
+        "unspent": 799996,
+        "emergency": 532174,
+        "variant": null,
+        "oldWarnings": "cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-264:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1018,
+        "dayOne": 1099,
+        "monthLeft": -421069,
+        "erest": 417265,
+        "e": 448560,
+        "typicalLeft": -421069,
+        "unspent": null,
+        "emergency": 1447420,
+        "variant": null,
+        "oldWarnings": "cash,month",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-271:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2717880,
+        "dayOne": 2935310,
+        "monthLeft": -714127,
+        "erest": 239691,
+        "e": 259435,
+        "typicalLeft": -714127,
+        "unspent": null,
+        "emergency": 910105,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-271:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 615467,
+        "dayOne": 664704,
+        "monthLeft": -714127,
+        "erest": 239691,
+        "e": 259435,
+        "typicalLeft": -714127,
+        "unspent": null,
+        "emergency": 910105,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-271:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4657537,
+        "dayOne": 445547,
+        "monthLeft": -714127,
+        "erest": 239691,
+        "e": 259435,
+        "typicalLeft": -714127,
+        "unspent": null,
+        "emergency": 910105,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-273:2",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 836623,
+        "dayOne": 0,
+        "monthLeft": 915572,
+        "erest": 140182,
+        "e": 155021,
+        "typicalLeft": 915572,
+        "unspent": 242654,
+        "emergency": 1279924,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-274:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 1020,
+        "dayOne": 1102,
+        "monthLeft": -473375,
+        "erest": 154611,
+        "e": 154611,
+        "typicalLeft": -473375,
+        "unspent": 386808,
+        "emergency": 1211604,
+        "variant": null,
+        "oldWarnings": "month,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-274:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 5000000,
+        "dayOne": 5000000,
+        "monthLeft": -473375,
+        "erest": 154611,
+        "e": 154611,
+        "typicalLeft": -473375,
+        "unspent": 386808,
+        "emergency": 1211604,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-281:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 305288,
+        "dayOne": 65943,
+        "monthLeft": -631852,
+        "erest": 376644,
+        "e": 406891,
+        "typicalLeft": -631852,
+        "unspent": 48580,
+        "emergency": 7,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-282:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2475823,
+        "dayOne": 0,
+        "monthLeft": -476672,
+        "erest": 272193,
+        "e": 299287,
+        "typicalLeft": -476672,
+        "unspent": 19,
+        "emergency": 1738644,
+        "variant": null,
+        "oldWarnings": "owe,cash,month,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-283:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 869818,
+        "dayOne": 57988,
+        "monthLeft": 53144,
+        "erest": 388337,
+        "e": 410637,
+        "typicalLeft": 53144,
+        "unspent": null,
+        "emergency": 295983,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-284:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 134155,
+        "dayOne": 0,
+        "monthLeft": 119081,
+        "erest": 301705,
+        "e": 320232,
+        "typicalLeft": 119081,
+        "unspent": 249802,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-287:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1802906,
+        "dayOne": 0,
+        "monthLeft": -399867,
+        "erest": 302731,
+        "e": 320756,
+        "typicalLeft": -399867,
+        "unspent": 261501,
+        "emergency": 678026,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-288:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2411049,
+        "dayOne": 137050,
+        "monthLeft": -443974,
+        "erest": 250982,
+        "e": 272816,
+        "typicalLeft": -443974,
+        "unspent": 14,
+        "emergency": 882727,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-292:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2332293,
+        "dayOne": 0,
+        "monthLeft": -634430,
+        "erest": 224026,
+        "e": 243171,
+        "typicalLeft": -634430,
+        "unspent": null,
+        "emergency": 11,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-293:2",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2291521,
+        "dayOne": 210287,
+        "monthLeft": -482677,
+        "erest": 343345,
+        "e": 343345,
+        "typicalLeft": -482677,
+        "unspent": 799998,
+        "emergency": 1396293,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-294:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2476127,
+        "dayOne": 2476127,
+        "monthLeft": -700088,
+        "erest": 430998,
+        "e": 430998,
+        "typicalLeft": -700088,
+        "unspent": 799984,
+        "emergency": 1770125,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-294:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2210672,
+        "dayOne": 123895,
+        "monthLeft": -700088,
+        "erest": 430998,
+        "e": 430998,
+        "typicalLeft": -700088,
+        "unspent": 799984,
+        "emergency": 1770125,
+        "variant": null,
+        "oldWarnings": "cash,owe,month,dsr",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-294:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2404131,
+        "dayOne": 2404131,
+        "monthLeft": -700088,
+        "erest": 430998,
+        "e": 430998,
+        "typicalLeft": -700088,
+        "unspent": 799984,
+        "emergency": 1770125,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "records_look_behind"
+      }
+    },
+    {
+      "key": "generated:gen-296:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1866465,
+        "dayOne": 0,
+        "monthLeft": 53830,
+        "erest": 428383,
+        "e": 449988,
+        "typicalLeft": 53830,
+        "unspent": 349518,
+        "emergency": 1468209,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generated:gen-298:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4990450,
+        "dayOne": 332697,
+        "monthLeft": -734488,
+        "erest": 410020,
+        "e": 425453,
+        "typicalLeft": -734488,
+        "unspent": null,
+        "emergency": 23163,
+        "variant": null,
+        "oldWarnings": "cash,owe,month,dsr",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generated:gen-299:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2347399,
+        "dayOne": 0,
+        "monthLeft": -398759,
+        "erest": 274280,
+        "e": 297987,
+        "typicalLeft": -398759,
+        "unspent": 564377,
+        "emergency": 1999989,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "persona:maya:0",
+      "source": "persona",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 100,
+        "dayOne": 100,
+        "monthLeft": 80000,
+        "erest": 75000,
+        "e": 80000,
+        "typicalLeft": 80000,
+        "unspent": 150000,
+        "emergency": 300000,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "persona:riley:0",
+      "source": "persona",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 100,
+        "dayOne": 100,
+        "monthLeft": -30000,
+        "erest": 100000,
+        "e": 110000,
+        "typicalLeft": -30000,
+        "unspent": 0,
+        "emergency": 200000,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "persona:leo:0",
+      "source": "persona",
+      "old": "adjust",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 100,
+        "dayOne": 100,
+        "monthLeft": -19484,
+        "erest": 79484,
+        "e": 88000,
+        "typicalLeft": 12000,
+        "unspent": 10000,
+        "emergency": 300000,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "persona:tia:0",
+      "source": "persona",
+      "old": "no",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 100,
+        "dayOne": 100,
+        "monthLeft": 23613,
+        "erest": 28387,
+        "e": 80000,
+        "typicalLeft": 32000,
+        "unspent": 50000,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "persona:dana:0",
+      "source": "persona",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 100,
+        "dayOne": 100,
+        "monthLeft": 83710,
+        "erest": 81290,
+        "e": 90000,
+        "typicalLeft": 90000,
+        "unspent": 200000,
+        "emergency": 300000,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "persona:kim:0",
+      "source": "persona",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 100,
+        "dayOne": 100,
+        "monthLeft": 90000,
+        "erest": 65000,
+        "e": 70000,
+        "typicalLeft": 90000,
+        "unspent": 350000,
+        "emergency": 200000,
+        "variant": null,
+        "oldWarnings": "cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "persona:priya:0",
+      "source": "persona",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 100,
+        "dayOne": 100,
+        "monthLeft": 120000,
+        "erest": 55000,
+        "e": 60000,
+        "typicalLeft": 120000,
+        "unspent": 100000,
+        "emergency": 150000,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "scenario:02:0",
+      "source": "scenario",
+      "old": "adjust",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 120000,
+        "dayOne": 120000,
+        "monthLeft": 42500,
+        "erest": 137500,
+        "e": 147500,
+        "typicalLeft": 42500,
+        "unspent": 240000,
+        "emergency": 900000,
+        "variant": null,
+        "oldWarnings": "cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "scenario:04:0",
+      "source": "scenario",
+      "old": "adjust",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 500,
+        "dayOne": 500,
+        "monthLeft": -53226,
+        "erest": 133226,
+        "e": 147500,
+        "typicalLeft": 42500,
+        "unspent": 240000,
+        "emergency": 900000,
+        "variant": null,
+        "oldWarnings": "cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "scenario:05:0",
+      "source": "scenario",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 6000,
+        "dayOne": 6000,
+        "monthLeft": -30000,
+        "erest": 100000,
+        "e": 110000,
+        "typicalLeft": -30000,
+        "unspent": 0,
+        "emergency": 200000,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "scenario:06:0",
+      "source": "scenario",
+      "old": "fits",
+      "v3": "monthly_short",
+      "v3Legacy": "adjust",
+      "newFits": false,
+      "cause": "median_ignores_outlier",
+      "detail": {
+        "price": 1620000,
+        "dayOne": 0,
+        "monthLeft": 42500,
+        "erest": 137500,
+        "e": 147500,
+        "typicalLeft": 42500,
+        "unspent": 240000,
+        "emergency": 900000,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "scenario:08:0",
+      "source": "scenario",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 72000,
+        "dayOne": 6000,
+        "monthLeft": 80000,
+        "erest": 75000,
+        "e": 80000,
+        "typicalLeft": 80000,
+        "unspent": 150000,
+        "emergency": 300000,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "scenario:10:0",
+      "source": "scenario",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 400000,
+        "dayOne": 400000,
+        "monthLeft": 42500,
+        "erest": 137500,
+        "e": 147500,
+        "typicalLeft": 42500,
+        "unspent": 240000,
+        "emergency": 900000,
+        "variant": "not_covered",
+        "oldWarnings": "cash_dip,cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "scenario:14:0",
+      "source": "scenario",
+      "old": "no",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 15000,
+        "dayOne": 15000,
+        "monthLeft": 40000,
+        "erest": 100000,
+        "e": 110000,
+        "typicalLeft": 40000,
+        "unspent": null,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "scenario:16:0",
+      "source": "scenario",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 300000,
+        "dayOne": 300000,
+        "monthLeft": 42500,
+        "erest": 137500,
+        "e": 147500,
+        "typicalLeft": 42500,
+        "unspent": 240000,
+        "emergency": 900000,
+        "variant": "not_covered",
+        "oldWarnings": "cash_dip,cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "scenario:17:0",
+      "source": "scenario",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2400000,
+        "dayOne": 0,
+        "monthLeft": 83710,
+        "erest": 81290,
+        "e": 90000,
+        "typicalLeft": 90000,
+        "unspent": 200000,
+        "emergency": 300000,
+        "variant": null,
+        "oldWarnings": "cash,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "scenario:18:0",
+      "source": "scenario",
+      "old": "adjust",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 120000,
+        "dayOne": 120000,
+        "monthLeft": 90000,
+        "erest": 65000,
+        "e": 70000,
+        "typicalLeft": 90000,
+        "unspent": 350000,
+        "emergency": 200000,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "scenario:21:0",
+      "source": "scenario",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "other",
+      "detail": {
+        "price": 160000,
+        "dayOne": 80000,
+        "monthLeft": 120000,
+        "erest": 55000,
+        "e": 60000,
+        "typicalLeft": 120000,
+        "unspent": 100000,
+        "emergency": 150000,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "d18:d18-return-refund:0",
+      "source": "d18",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 5000,
+        "dayOne": 5000,
+        "monthLeft": 42500,
+        "erest": 137500,
+        "e": 147500,
+        "typicalLeft": 42500,
+        "unspent": 240000,
+        "emergency": 900000,
+        "variant": null,
+        "oldWarnings": "cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "d18:d18-shared-50-50:0",
+      "source": "d18",
+      "old": "adjust",
+      "v3": "fits_month",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "other",
+      "detail": {
+        "price": 100000,
+        "dayOne": 50000,
+        "monthLeft": 120000,
+        "erest": 55000,
+        "e": 60000,
+        "typicalLeft": 120000,
+        "unspent": 100000,
+        "emergency": 150000,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "d18:d18-job-loss:0",
+      "source": "d18",
+      "old": "no",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 15000,
+        "dayOne": 15000,
+        "monthLeft": -357500,
+        "erest": 137500,
+        "e": 147500,
+        "typicalLeft": -357500,
+        "unspent": 240000,
+        "emergency": 900000,
+        "variant": null,
+        "oldWarnings": "month,inv,cash_dip",
+        "missing": null
+      }
+    }
+  ],
+  "unsupported": [
+    {
+      "key": "generated:gen-001:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-001:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-003:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-011:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-011:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-019:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-019:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-023:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-024:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-030:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-031:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-034:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-035:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-037:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-038:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-039:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-047:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-048:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-048:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-050:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-051:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-053:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-055:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-065:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-069:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-070:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-071:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-081:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-081:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-087:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-090:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-093:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-095:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-096:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-105:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-106:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-107:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-112:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-113:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-115:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-117:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-120:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-120:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-123:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-124:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-128:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-134:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-137:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-144:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-145:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-148:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-150:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-150:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-152:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-152:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-153:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-156:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-158:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-164:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-164:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-165:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-166:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-169:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-170:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-170:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-171:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-171:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-172:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-172:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-174:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-175:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-175:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-177:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-178:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-182:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-183:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-185:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-188:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-189:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-191:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-191:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-194:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-197:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-197:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-198:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-199:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-203:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-205:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-207:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-211:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-211:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-212:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-215:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-219:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-222:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-222:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-222:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-223:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-226:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-230:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-231:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-233:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-233:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-235:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-236:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-236:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-237:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-238:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-238:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-241:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-242:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-243:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-244:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-249:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-251:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-258:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-258:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-259:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-266:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-267:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-272:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-272:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-273:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-273:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-274:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-274:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-277:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-277:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-277:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-280:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-281:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-293:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-295:3",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generated:gen-299:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "scenario:22:0",
+      "reason": "extras_not_in_v1"
+    },
+    {
+      "key": "d18:d18-deferred-6-then-24:0",
+      "reason": "cadence_or_start_not_in_v1"
+    },
+    {
+      "key": "d18:d18-deferred-unanswered:0",
+      "reason": "cadence_or_start_not_in_v1"
+    },
+    {
+      "key": "d18:d18-foreign:0",
+      "reason": "foreign_currency_not_in_v1"
+    }
+  ],
+  "total": 780,
+  "agreed": 430
+}
