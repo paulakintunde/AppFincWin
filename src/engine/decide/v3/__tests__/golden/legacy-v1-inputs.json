@@ -1,0 +1,622 @@
+{
+ "inputs": [
+  {
+   "source": "supabase/migrations/20261016000400_decide_demo_seed.sql:253",
+   "shape": "cash",
+   "note": "Stored by the seed without v and with only some fields; v: 1 added so the corpus is uniform.",
+   "json": {
+    "v": 1,
+    "name": "Sofa",
+    "itemType": "general",
+    "advertised": 180000,
+    "method": "cash",
+    "combine": false
+   }
+  },
+  {
+   "source": "supabase/migrations/20261016000400_decide_demo_seed.sql:259",
+   "shape": "loan",
+   "note": "Stored by the seed without v and with only some fields; v: 1 added. Loan with a deposit, running costs and a replaced line.",
+   "json": {
+    "v": 1,
+    "name": "Car",
+    "itemType": "vehicle",
+    "advertised": 1450000,
+    "method": "loan",
+    "combine": true,
+    "loan": {
+     "deposit": 700000,
+     "termMonths": 24,
+     "aprText": "6.9",
+     "secured": true
+    },
+    "runningCosts": [
+     {
+      "name": "Insurance",
+      "amount": 16000,
+      "category": "insurance"
+     },
+     {
+      "name": "Fuel",
+      "amount": 14000,
+      "category": "fuel"
+     },
+     {
+      "name": "Parking",
+      "amount": 6000,
+      "category": null
+     }
+    ],
+    "replaces": [
+     {
+      "name": "Bus pass",
+      "amount": 12000,
+      "category": null
+     }
+    ]
+   }
+  },
+  {
+   "source": "src/features/decide/snapshot/__tests__/checkInputs.test.ts:323",
+   "shape": "instalment",
+   "note": "Older instalment: no freq, no firstPayment, no hasRate.",
+   "json": {
+    "v": 1,
+    "currency": null,
+    "kind": "buy",
+    "name": "",
+    "source": "",
+    "itemType": "general",
+    "itemTypeTouched": false,
+    "advertised": null,
+    "needBy": null,
+    "why": "",
+    "adjustments": [],
+    "runningCosts": [],
+    "lossOfValue": null,
+    "replaces": [],
+    "method": "instalment",
+    "loan": {
+     "deposit": 0,
+     "termMonths": 48,
+     "aprText": "",
+     "secured": false,
+     "securedTouched": false,
+     "aprFromQuick": false,
+     "promo": null,
+     "variable": false
+    },
+    "instalment": {
+     "amount": 150000,
+     "count": 12,
+     "lateFee": null
+    },
+    "card": {
+     "accountId": null,
+     "payoff": "months",
+     "months": 12,
+     "promo": null,
+     "variable": false,
+     "fees": null
+    },
+    "investTermMonths": null,
+    "setbacks": [
+     {
+      "id": "sb-1",
+      "code": "unexpected_expense",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 0,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-2",
+      "code": "income_drop",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 20,
+      "months": 2,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-3",
+      "code": "job_loss",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 8,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-4",
+      "code": "late_invoice",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 0,
+      "daysLate": 30
+     }
+    ],
+    "projectionRates": [],
+    "investHorizonMonths": null,
+    "investHoldingFeeText": null,
+    "combine": true,
+    "coolingOff": false,
+    "incomeChange": null,
+    "cheaperPrice": null,
+    "customItemType": null,
+    "investReturnText": null,
+    "lumpHorizonMonths": null,
+    "wait": {
+     "monthlyAmount": null
+    },
+    "outcome": null,
+    "goAccountId": null,
+    "investAccountId": null,
+    "scope": "personal",
+    "split": null,
+    "cardNotes": {
+     "incomeStops": null,
+     "noNewSpending": null,
+     "jobLossCover": null
+    }
+   }
+  },
+  {
+   "source": "src/features/decide/snapshot/__tests__/checkInputs.test.ts:344",
+   "shape": "instalment",
+   "note": "Weekly instalment with freq and firstPayment next_period.",
+   "json": {
+    "v": 1,
+    "currency": null,
+    "kind": "buy",
+    "name": "",
+    "source": "",
+    "itemType": "general",
+    "itemTypeTouched": false,
+    "advertised": null,
+    "needBy": null,
+    "why": "",
+    "adjustments": [],
+    "runningCosts": [],
+    "lossOfValue": null,
+    "replaces": [],
+    "method": "instalment",
+    "loan": {
+     "deposit": 0,
+     "termMonths": 48,
+     "aprText": "",
+     "secured": false,
+     "securedTouched": false,
+     "aprFromQuick": false,
+     "promo": null,
+     "variable": false
+    },
+    "instalment": {
+     "amount": 10000,
+     "count": 26,
+     "lateFee": null,
+     "hasRate": false,
+     "aprText": "",
+     "firstPayment": "next_period",
+     "freq": "weekly"
+    },
+    "card": {
+     "accountId": null,
+     "payoff": "months",
+     "months": 12,
+     "promo": null,
+     "variable": false,
+     "fees": null
+    },
+    "investTermMonths": null,
+    "setbacks": [
+     {
+      "id": "sb-1",
+      "code": "unexpected_expense",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 0,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-2",
+      "code": "income_drop",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 20,
+      "months": 2,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-3",
+      "code": "job_loss",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 8,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-4",
+      "code": "late_invoice",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 0,
+      "daysLate": 30
+     }
+    ],
+    "projectionRates": [],
+    "investHorizonMonths": null,
+    "investHoldingFeeText": null,
+    "combine": true,
+    "coolingOff": false,
+    "incomeChange": null,
+    "cheaperPrice": null,
+    "customItemType": null,
+    "investReturnText": null,
+    "lumpHorizonMonths": null,
+    "wait": {
+     "monthlyAmount": null
+    },
+    "outcome": null,
+    "goAccountId": null,
+    "investAccountId": null,
+    "scope": "personal",
+    "split": null,
+    "cardNotes": {
+     "incomeStops": null,
+     "noNewSpending": null,
+     "jobLossCover": null
+    }
+   }
+  },
+  {
+   "source": "src/features/decide/snapshot/__tests__/checkInputs.test.ts:338",
+   "shape": "instalment",
+   "note": "Partial draft carrying the legacy next_month firstPayment value (read as next_period).",
+   "json": {
+    "v": 1,
+    "instalment": {
+     "firstPayment": "next_month"
+    }
+   }
+  },
+  {
+   "source": "src/features/decide/snapshot/__tests__/checkInputs.test.ts:457",
+   "shape": "card",
+   "note": "Card paid in full.",
+   "json": {
+    "v": 1,
+    "currency": null,
+    "kind": "buy",
+    "name": "",
+    "source": "",
+    "itemType": "general",
+    "itemTypeTouched": false,
+    "advertised": null,
+    "needBy": null,
+    "why": "",
+    "adjustments": [],
+    "runningCosts": [],
+    "lossOfValue": null,
+    "replaces": [],
+    "method": "card",
+    "loan": {
+     "deposit": 0,
+     "termMonths": 48,
+     "aprText": "",
+     "secured": false,
+     "securedTouched": false,
+     "aprFromQuick": false,
+     "promo": null,
+     "variable": false
+    },
+    "instalment": {
+     "amount": null,
+     "count": null,
+     "lateFee": null,
+     "hasRate": false,
+     "aprText": "",
+     "firstPayment": "today",
+     "freq": "monthly"
+    },
+    "card": {
+     "accountId": "acc-card",
+     "payoff": "full",
+     "months": 12,
+     "promo": null,
+     "variable": false,
+     "fees": null
+    },
+    "investTermMonths": null,
+    "setbacks": [
+     {
+      "id": "sb-1",
+      "code": "unexpected_expense",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 0,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-2",
+      "code": "income_drop",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 20,
+      "months": 2,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-3",
+      "code": "job_loss",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 8,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-4",
+      "code": "late_invoice",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 0,
+      "daysLate": 30
+     }
+    ],
+    "projectionRates": [],
+    "investHorizonMonths": null,
+    "investHoldingFeeText": null,
+    "combine": true,
+    "coolingOff": false,
+    "incomeChange": null,
+    "cheaperPrice": null,
+    "customItemType": null,
+    "investReturnText": null,
+    "lumpHorizonMonths": null,
+    "wait": {
+     "monthlyAmount": null
+    },
+    "outcome": null,
+    "goAccountId": null,
+    "investAccountId": null,
+    "scope": "personal",
+    "split": null,
+    "cardNotes": {
+     "incomeStops": null,
+     "noNewSpending": null,
+     "jobLossCover": null
+    }
+   }
+  },
+  {
+   "source": "src/features/decide/snapshot/__tests__/checkInputs.test.ts:485",
+   "shape": "invest",
+   "note": "Invest check, lump.",
+   "json": {
+    "v": 1,
+    "currency": null,
+    "kind": "invest",
+    "name": "",
+    "source": "",
+    "itemType": "general",
+    "itemTypeTouched": false,
+    "advertised": 500000,
+    "needBy": null,
+    "why": "",
+    "adjustments": [],
+    "runningCosts": [],
+    "lossOfValue": null,
+    "replaces": [],
+    "method": null,
+    "loan": {
+     "deposit": 0,
+     "termMonths": 48,
+     "aprText": "",
+     "secured": false,
+     "securedTouched": false,
+     "aprFromQuick": false,
+     "promo": null,
+     "variable": false
+    },
+    "instalment": {
+     "amount": null,
+     "count": null,
+     "lateFee": null,
+     "hasRate": false,
+     "aprText": "",
+     "firstPayment": "today",
+     "freq": "monthly"
+    },
+    "card": {
+     "accountId": null,
+     "payoff": "months",
+     "months": 12,
+     "promo": null,
+     "variable": false,
+     "fees": null
+    },
+    "investTermMonths": null,
+    "setbacks": [
+     {
+      "id": "sb-1",
+      "code": "unexpected_expense",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 0,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-2",
+      "code": "income_drop",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 20,
+      "months": 2,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-3",
+      "code": "job_loss",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 8,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-4",
+      "code": "late_invoice",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 0,
+      "daysLate": 30
+     }
+    ],
+    "projectionRates": [],
+    "investHorizonMonths": null,
+    "investHoldingFeeText": null,
+    "combine": true,
+    "coolingOff": false,
+    "incomeChange": null,
+    "cheaperPrice": null,
+    "customItemType": null,
+    "investReturnText": null,
+    "lumpHorizonMonths": null,
+    "wait": {
+     "monthlyAmount": null
+    },
+    "outcome": null,
+    "goAccountId": null,
+    "investAccountId": null,
+    "scope": "personal",
+    "split": null,
+    "cardNotes": {
+     "incomeStops": null,
+     "noNewSpending": null,
+     "jobLossCover": null
+    }
+   }
+  },
+  {
+   "source": "src/features/decide/snapshot/__tests__/checkInputs.test.ts:82",
+   "shape": "draft",
+   "note": "Empty buy draft with advertised null.",
+   "json": {
+    "v": 1,
+    "currency": null,
+    "kind": "buy",
+    "name": "",
+    "source": "",
+    "itemType": "general",
+    "itemTypeTouched": false,
+    "advertised": null,
+    "needBy": null,
+    "why": "",
+    "adjustments": [],
+    "runningCosts": [],
+    "lossOfValue": null,
+    "replaces": [],
+    "method": null,
+    "loan": {
+     "deposit": 0,
+     "termMonths": 48,
+     "aprText": "",
+     "secured": false,
+     "securedTouched": false,
+     "aprFromQuick": false,
+     "promo": null,
+     "variable": false
+    },
+    "instalment": {
+     "amount": null,
+     "count": null,
+     "lateFee": null,
+     "hasRate": false,
+     "aprText": "",
+     "firstPayment": "today",
+     "freq": "monthly"
+    },
+    "card": {
+     "accountId": null,
+     "payoff": "months",
+     "months": 12,
+     "promo": null,
+     "variable": false,
+     "fees": null
+    },
+    "investTermMonths": null,
+    "setbacks": [
+     {
+      "id": "sb-1",
+      "code": "unexpected_expense",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 0,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-2",
+      "code": "income_drop",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 20,
+      "months": 2,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-3",
+      "code": "job_loss",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 8,
+      "daysLate": 0
+     },
+     {
+      "id": "sb-4",
+      "code": "late_invoice",
+      "enabled": false,
+      "amount": null,
+      "percentDrop": 0,
+      "months": 0,
+      "daysLate": 30
+     }
+    ],
+    "projectionRates": [],
+    "investHorizonMonths": null,
+    "investHoldingFeeText": null,
+    "combine": true,
+    "coolingOff": false,
+    "incomeChange": null,
+    "cheaperPrice": null,
+    "customItemType": null,
+    "investReturnText": null,
+    "lumpHorizonMonths": null,
+    "wait": {
+     "monthlyAmount": null
+    },
+    "outcome": null,
+    "goAccountId": null,
+    "investAccountId": null,
+    "scope": "personal",
+    "split": null,
+    "cardNotes": {
+     "incomeStops": null,
+     "noNewSpending": null,
+     "jobLossCover": null
+    }
+   }
+  }
+ ]
+}

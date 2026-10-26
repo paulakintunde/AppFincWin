@@ -1,6 +1,9 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { LEGACY_STATE_OF_CODE } from '../constants';
 import type { ReasonCode } from '../types';
 import extraFile from './golden/extra-d18.json';
+import legacyFile from './golden/legacy-v1-inputs.json';
 import {
   personById,
   resolveScenarioPerson,
@@ -50,5 +53,23 @@ describe('D-18 extra fixtures', () => {
     const s = EXTRAS.find((x) => x.id === 'd18-deferred-unanswered')!;
     expect(s.expect.code).toBe('needs_input');
     expect(s.expect.missing).toEqual(['pause_interest_not_answered']);
+  });
+});
+
+describe('I42 corpus', () => {
+  const corpus = (legacyFile as unknown as { inputs: { source: string; shape: string; json: { v: number } }[] }).inputs;
+
+  it('I42 corpus present', () => {
+    expect(corpus.length).toBeGreaterThanOrEqual(6);
+    for (const e of corpus) {
+      expect(e.json.v).toBe(1);
+      const file = e.source.slice(0, e.source.lastIndexOf(':'));
+      expect(fs.existsSync(path.resolve(__dirname, '../../../../../', file))).toBe(true);
+    }
+  });
+
+  it('covers cash, loan, instalment, card, invest and draft', () => {
+    const shapes = new Set(corpus.map((e) => e.shape));
+    for (const s of ['cash', 'loan', 'instalment', 'card', 'invest', 'draft']) expect(shapes.has(s)).toBe(true);
   });
 });
