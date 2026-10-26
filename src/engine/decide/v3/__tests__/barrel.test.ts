@@ -15,7 +15,7 @@ import type {
   QuotedCheck,
 } from '../index';
 
-// Later plans (05.1-30) extend this list; nobody else edits it.
+// Final surface (05.1-30). Extend here when the barrel grows.
 export const V3_RUNTIME_EXPORTS = [
   'AMOUNT_TOLERANCE_DIVISOR',
   'BAND_EDGES_USD',
@@ -26,6 +26,9 @@ export const V3_RUNTIME_EXPORTS = [
   'CONFIDENCE_FIRM_MIN_DAY',
   'CONFIDENCE_MIN_MONTHS',
   'EMERGENCY_PURPOSES',
+  'FACT_KEYS',
+  'FOOTER_KEY',
+  'FUTURE_ORDER',
   'LEGACY_STATE_OF_CODE',
   'LOW_MONTH_RANK',
   'MAX_BUILTIN_LINES',
@@ -34,8 +37,10 @@ export const V3_RUNTIME_EXPORTS = [
   'MAX_OWN_QUESTIONS',
   'MAX_PLAN_PERIODS',
   'MISSED_PAY_GRACE_DAYS',
+  'MISSING_KEYS',
   'NEEDS_INPUT_ENTRY_AGE_DAYS',
   'NEEDS_INPUT_MIN_BAND',
+  'NOTICE_KEYS',
   'PRESET_QUESTIONS',
   'QUESTION_LIBRARY',
   'QUOTED_TOLERANCE_USD',
@@ -50,18 +55,33 @@ export const V3_RUNTIME_EXPORTS = [
   'UNSPENT_STALE_DAYS',
   'V3_HISTORY_MONTHS',
   'V3_ITEM_TYPES',
+  'VERDICT_TABLE',
   'bandOf',
   'buildMonthModel',
   'buildSchedule',
+  'builtinLines',
+  'cadenceOfFreq',
   'canUseEmergency',
+  'changeSinceLooked',
   'checkQuoted',
   'detectCandidates',
+  'evaluate',
+  'explore',
   'homeThresholds',
+  'insteadFutures',
   'layersFor',
+  'legacyLimits',
+  'legacyStateOf',
   'monthlyEquivalentOf',
+  'parseCheckV2',
   'planCard',
+  'readStoredCheck',
+  'seenOf',
   'seriesDrift',
+  'toStoredV2',
+  'upgradeInputs',
   'validateCustomOptions',
+  'verdictRowFor',
 ] as const;
 
 // Compile-only: tsc fails if any of these types leaves the barrel.
