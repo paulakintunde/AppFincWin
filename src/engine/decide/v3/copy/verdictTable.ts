@@ -3,7 +3,7 @@
  *
  * One code, one sentence: every code and variant maps to exactly one chip key, one title key and one body key.
  */
-import type { Code, FactCode, MissingCode, NoticeCode, Variant } from '../types';
+import type { Code, FactCode, MissingCode, NoticeCode, ReadinessCode, Variant } from '../types';
 
 export interface VerdictRow {
   readonly chipKey: string;
@@ -64,6 +64,17 @@ export const NOTICE_KEYS = Object.freeze({
   month_looks_under_logged: 'decide.v3.notice.month_looks_under_logged',
   income_kind_unmarked: 'decide.v3.notice.income_kind_unmarked',
   from_your_figures: 'decide.v3.notice.from_your_figures',
+  income_from_expected: 'decide.v3.notice.income_from_expected',
+  pay_capped_expected: 'decide.v3.notice.pay_capped_expected',
+  same_season_compared: 'decide.v3.notice.same_season_compared',
+  history_window_12: 'decide.v3.notice.history_window_12',
+  income_volatile: 'decide.v3.notice.income_volatile',
+  envelope_location_assumed: 'decide.v3.notice.envelope_location_assumed',
+  unexplained_money: 'decide.v3.notice.unexplained_money',
+  account_use_unknown: 'decide.v3.notice.account_use_unknown',
+  pay_not_seen: 'decide.v3.notice.pay_not_seen',
+  pay_counted_missed: 'decide.v3.notice.pay_counted_missed',
+  fund_account_unknown: 'decide.v3.notice.fund_account_unknown',
 } as const satisfies Record<NoticeCode, string>);
 
 export const FACT_KEYS = Object.freeze({
@@ -73,12 +84,16 @@ export const FACT_KEYS = Object.freeze({
   emergency_used: 'decide.v3.fact.emergency_used',
   envelope_used: 'decide.v3.fact.envelope_used',
   line_crossed: 'decide.v3.fact.line_crossed',
-  plan_total: 'decide.v3.fact.plan_total',
   quoted_differs: 'decide.v3.fact.quoted_differs',
   implied_rate: 'decide.v3.fact.implied_rate',
   deferred_interest_term: 'decide.v3.fact.deferred_interest_term',
   at_todays_rate: 'decide.v3.fact.at_todays_rate',
   low_month: 'decide.v3.fact.low_month',
+  lean_bridge: 'decide.v3.fact.lean_bridge',
+  unspent_held_back: 'decide.v3.fact.unspent_held_back',
+  lean_months_judged: 'decide.v3.fact.lean_months_judged',
+  low_month_judged: 'decide.v3.fact.low_month_judged',
+  rests_on_your_answer: 'decide.v3.fact.rests_on_your_answer',
 } as const satisfies Record<FactCode, string>);
 
 export const MISSING_KEYS = Object.freeze({
@@ -93,7 +108,20 @@ export const MISSING_KEYS = Object.freeze({
   everyday_unknown: 'decide.v3.missing.everyday_unknown',
   legacy_invest_check: 'decide.v3.missing.legacy_invest_check',
   share_invalid: 'decide.v3.missing.share_invalid',
+  income_pattern_unconfirmed: 'decide.v3.missing.income_pattern_unconfirmed',
+  expected_income_needed: 'decide.v3.missing.expected_income_needed',
+  first_payment_passed: 'decide.v3.missing.first_payment_passed',
+  volatile_cover_question: 'decide.v3.missing.volatile_cover_question',
+  unexplained_money_question: 'decide.v3.missing.unexplained_money_question',
+  account_use_question: 'decide.v3.missing.account_use_question',
+  pay_arrival_question: 'decide.v3.missing.pay_arrival_question',
 } as const satisfies Record<MissingCode, string>);
+
+export const READINESS_KEYS = Object.freeze({
+  past_month_missing: 'decide.v3.readiness.past_month_missing',
+  activity_not_current: 'decide.v3.readiness.activity_not_current',
+  envelopes_unconfirmed: 'decide.v3.readiness.envelopes_unconfirmed',
+} as const satisfies Record<ReadinessCode, string>);
 
 /** The footer sits outside en.decide on purpose (owner wording, 2026-10-26). */
 export const FOOTER_KEY = 'legal.decideFooter';

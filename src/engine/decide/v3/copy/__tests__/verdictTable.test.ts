@@ -1,4 +1,5 @@
-import { FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NOTICE_KEYS, VERDICT_TABLE, verdictRowFor } from '../verdictTable';
+import en from '../../../../../i18n/locales/en';
+import { FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NOTICE_KEYS, READINESS_KEYS, VERDICT_TABLE, verdictRowFor } from '../verdictTable';
 
 describe('verdict table (I22 one code one text)', () => {
   it('I22 one code one text: nine rows, no shared title key', () => {
@@ -38,5 +39,39 @@ describe('verdict table (I22 one code one text)', () => {
     ];
     for (const k of keys) expect(k.startsWith('decide.v3.')).toBe(true);
     expect(FOOTER_KEY).toBe('legal.decideFooter');
+  });
+
+  it('one key per missing and fact code, plan_total gone', () => {
+    expect(Object.keys(MISSING_KEYS).sort()).toEqual(
+      [
+        'no_income_figures', 'unspent_not_confirmed', 'records_look_behind', 'no_price', 'plan_count_missing',
+        'first_payment_not_chosen', 'pause_interest_not_answered', 'plan_rate_missing', 'everyday_unknown',
+        'legacy_invest_check', 'share_invalid', 'income_pattern_unconfirmed', 'expected_income_needed',
+        'first_payment_passed', 'volatile_cover_question', 'unexplained_money_question', 'account_use_question',
+        'pay_arrival_question',
+      ].sort()
+    );
+    expect(Object.keys(FACT_KEYS).sort()).toEqual(
+      [
+        'month_left_after', 'unspent_before_after', 'emergency_untouched', 'emergency_used', 'envelope_used',
+        'line_crossed', 'quoted_differs', 'implied_rate', 'deferred_interest_term', 'at_todays_rate', 'low_month',
+        'lean_bridge', 'unspent_held_back', 'lean_months_judged', 'low_month_judged', 'rests_on_your_answer',
+      ].sort()
+    );
+    expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');
+  });
+
+  it('every key resolves to a string in en.ts', () => {
+    const keys = [
+      ...Object.values(NOTICE_KEYS),
+      ...Object.values(FACT_KEYS),
+      ...Object.values(MISSING_KEYS),
+      ...Object.values(READINESS_KEYS),
+    ];
+    for (const k of keys) {
+      let node: unknown = en;
+      for (const part of k.split('.')) node = (node as Record<string, unknown> | undefined)?.[part];
+      expect({ key: k, type: typeof node }).toEqual({ key: k, type: 'string' });
+    }
   });
 });
