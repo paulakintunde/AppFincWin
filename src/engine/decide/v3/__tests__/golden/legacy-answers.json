@@ -1,0 +1,314 @@
+{
+  "answers": {
+    "10": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "11": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "12": {
+      "month": {
+        "state": "no",
+        "basis": "month"
+      },
+      "average": {
+        "state": "no",
+        "basis": "average"
+      }
+    },
+    "13": {
+      "month": {
+        "state": "missing",
+        "basis": "month"
+      },
+      "average": {
+        "state": "missing",
+        "basis": "average"
+      }
+    },
+    "14": {
+      "month": {
+        "state": "no",
+        "basis": "month"
+      },
+      "average": {
+        "state": "no",
+        "basis": "average"
+      }
+    },
+    "15": {
+      "month": {
+        "state": "fits",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "16": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "17": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "18": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "19": {
+      "month": {
+        "state": "fits",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "20": {
+      "month": {
+        "state": "fits",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "21": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "22": {
+      "month": {
+        "state": "unsupported",
+        "reason": "extras_not_in_v1"
+      },
+      "average": {
+        "state": "unsupported",
+        "reason": "extras_not_in_v1"
+      }
+    },
+    "01": {
+      "month": {
+        "state": "fits",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "02": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "03": {
+      "month": {
+        "state": "fits",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "04": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "05": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "no",
+        "basis": "average"
+      }
+    },
+    "06": {
+      "month": {
+        "state": "fits",
+        "basis": "month"
+      },
+      "average": {
+        "state": "no",
+        "basis": "average"
+      }
+    },
+    "07": {
+      "month": {
+        "state": "fits",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "08": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "09": {
+      "month": {
+        "state": "fits",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "d18-deferred-6-then-24": {
+      "month": {
+        "state": "unsupported",
+        "reason": "cadence_or_start_not_in_v1"
+      },
+      "average": {
+        "state": "unsupported",
+        "reason": "cadence_or_start_not_in_v1"
+      }
+    },
+    "d18-deferred-unanswered": {
+      "month": {
+        "state": "unsupported",
+        "reason": "cadence_or_start_not_in_v1"
+      },
+      "average": {
+        "state": "unsupported",
+        "reason": "cadence_or_start_not_in_v1"
+      }
+    },
+    "d18-foreign": {
+      "month": {
+        "state": "unsupported",
+        "reason": "foreign_currency_not_in_v1"
+      },
+      "average": {
+        "state": "unsupported",
+        "reason": "foreign_currency_not_in_v1"
+      }
+    },
+    "d18-job-loss": {
+      "month": {
+        "state": "no",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "d18-missed-paycheque": {
+      "month": {
+        "state": "fits",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "d18-pay-in-4": {
+      "month": {
+        "state": "fits",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "d18-raise": {
+      "month": {
+        "state": "fits",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "d18-return-refund": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    },
+    "d18-shared-50-50": {
+      "month": {
+        "state": "adjust",
+        "basis": "month"
+      },
+      "average": {
+        "state": "adjust",
+        "basis": "average"
+      }
+    }
+  }
+}
