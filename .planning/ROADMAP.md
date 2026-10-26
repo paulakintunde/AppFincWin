@@ -873,7 +873,7 @@ It is built beside the Phase 4/5 engine behind a `decideV3` switch, and compared
   4. Payment plans (weekly, every 2 weeks, monthly) work from a rate or APR and fees, with an optional quoted payment.
   5. One judge gives six codes with one sentence each, and its funding split. "What could I do instead?" compares the payment stream, with a fixed-rate deposit at the user's own rate.
   6. Invariants I1–I43 pass, branch coverage stays at 100%, and the shadow run against the old engine is reviewed.
-**Plans:** 32/32 plans executed; owner review done 2026-10-26; gap closure pending (variable income + per-family I28 gate, ended series, partial thinning, drift vs fund)
+**Plans:** 49 plans (32/32 executed; owner review done 2026-10-26; 17 gap-closure plans 05.1-33..49 in 9 waves planned 2026-10-26)
 
 Plans:
 - [x] 05.1-01-PLAN.md — v3 contract types, cited constants, own barrel, isolation and depcruise gates (S0)
@@ -908,6 +908,25 @@ Plans:
 - [x] 05.1-30-PLAN.md — Snapshot wiring: buildV3Inputs, computeV3, final barrel (S9)
 - [x] 05.1-31-PLAN.md — Dev-only owner export, local shadow tier, switch guard (D-27)
 - [x] 05.1-32-PLAN.md — Owner shadow review and sign-off (D-14, checkpoint)
+
+Gap closure (planned 2026-10-26 against 05.1-CONTEXT D-33..D-45, 05.1-VERIFICATION gaps 1-6 and 05.1-REVIEW H-01..H-03, M-01..M-09, L-01..L-09): 17 plans in 9 waves.
+- [ ] 05.1-33-PLAN.md — Contract reopened: income pattern, expected income, held-back bridges, new codes, cited constants, copy keys (wave 1)
+- [ ] 05.1-34-PLAN.md — Ended with no end date = ended as of today, one rule for the month and needsInput (D-41, M-01) (wave 2)
+- [ ] 05.1-35-PLAN.md — Drift ignores the emergency fund, savings moves are not drift, I31 strict; owner decision on the drift basis (D-43, M-06, checkpoint) (wave 3)
+- [ ] 05.1-36-PLAN.md — Instead screen agrees with the verdict, explorer clamp, month-end anchors (H-03, L-04, L-05, L-07) (wave 2)
+- [ ] 05.1-37-PLAN.md — Question roles, total stored-check parsing, passed deferral (M-08, L-01, L-02) (wave 2)
+- [ ] 05.1-38-PLAN.md — One settling module: logged pay not counted twice, symmetric pay window (H-01, H-02, M-02) (wave 4)
+- [ ] 05.1-39-PLAN.md — Snapshot: signed unspent anchor, per-entry custom options, total transfer roles, new inputs mapped (M-07, M-09, L-08, L-09) (wave 4)
+- [ ] 05.1-40-PLAN.md — Fact and notice keys match the copy, contract test, total line evaluator (M-03, M-05, L-07) (wave 3)
+- [ ] 05.1-41-PLAN.md — I13 not_covered vs a late payday, readyMonth cap, late-pay arbitrary (gap 6, M-04) (wave 5)
+- [ ] 05.1-42-PLAN.md — Partial thinning never helps; I1 it.failing becomes a passing test (D-42) (wave 5)
+- [ ] 05.1-43-PLAN.md — Variable and seasonal month: pattern, 12-month window, swings, expected income, lean months, same-season spending (D-33..D-37, D-39) (wave 5)
+- [ ] 05.1-44-PLAN.md — Ask to confirm the pattern and expected income; cash path capped at expected income (D-34, D-35) (wave 6)
+- [ ] 05.1-45-PLAN.md — Held-back bridges subtracted from available unspent, breakdown line (D-38) (wave 6)
+- [ ] 05.1-46-PLAN.md — Judge: lean months then the unspent bridge, gig low month, available unspent, new facts (D-36..D-38) (wave 7)
+- [ ] 05.1-47-PLAN.md — Back-test: honest gig and seasonal histories, per-family I28 gate (D-40) (wave 8)
+- [ ] 05.1-48-PLAN.md — Seasonal and gig golden fixtures with the working shown (D-33..D-39) (wave 8)
+- [ ] 05.1-49-PLAN.md — Shadow and back-test re-run, owner re-review of changed entries, sign-off, full gate (D-45, checkpoint) (wave 9)
 
 ### Phase 05.2: Decide data and setup (INSERTED)
 
