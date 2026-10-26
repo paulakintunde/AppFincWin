@@ -2668,6 +2668,100 @@ const en = {
         provisional_other: '{{count}} lines converted at the {{date}} rate while their own rates load', // D-69
       },
     },
+    // 05.1 v3 verdict copy: drafted from v3 §4.6, marked draft in copyStatus.ts, 05.3 rewrites. The engine emits codes only
+    // (verdictTable.ts maps each to these keys). Forecasts say "could" or "based on your records" (I26).
+    v3: {
+      verdict: {
+        fitsMonth: {
+          chip: 'Fits this month',
+          title: 'This fits in {{month}}’s money.',
+          body: '{{month}} is on track to leave about {{left}}, including the everyday spending still to come.',
+        },
+        fitsMonthLowMonth: {
+          chip: 'Fits, a low month is tight',
+          title: 'This fits in {{month}}, though a low month could be tight.',
+          body: '{{month}} is on track to leave about {{left}}, including the everyday spending still to come. In a low month like {{lowMonth}}, this could leave the month {{short}} overspent.',
+        },
+        fitsUnspent: {
+          chip: 'Fits from unspent money',
+          title: 'This fits from your unspent money.',
+          body: '{{month}}’s money covers {{fromMonth}} of it. {{after}} of unspent money stays. Your emergency fund is untouched.',
+        },
+        fitsUnspentLowMonth: {
+          chip: 'Fits, a low month is tight',
+          title: 'This fits from unspent money, though a low month could be tight.',
+          body: '{{month}}’s money covers {{fromMonth}} of it. {{after}} of unspent money stays. In a low month like {{lowMonth}}, this could leave the month {{short}} overspent.',
+        },
+        notYetPayday: {
+          chip: 'Cash tight until payday',
+          title: 'Cash could fall under the price until payday.',
+          body: 'Based on your records, cash is {{short}} less than the price until {{date}}.',
+        },
+        notYetNotCovered: {
+          chip: 'Not yet',
+          title: 'Not yet. Your unspent money doesn’t cover this.',
+          body: 'Based on your typical pace, it could be covered in about {{months}} months ({{readyMonth}}).',
+        },
+        monthlyShort: {
+          chip: 'Overspent each month',
+          title: 'This payment could overspend the month each time.',
+          body: 'Based on your records, a typical month leaves {{left}}; this adds {{monthly}}.',
+        },
+        emergencyUse: {
+          chip: 'Uses emergency fund',
+          title: 'This uses {{used}} of your emergency fund.',
+          body: 'Marked as an emergency. Based on your records, it could be rebuilt in about {{months}} months.',
+        },
+        needsInput: {
+          chip: 'More needed',
+          title: 'A little more is needed to check this properly.',
+          body: 'Here’s what’s missing.',
+        },
+      },
+      notice: {
+        typical_short: 'Your typical month is already overspent by {{short}}.',
+        month_heading_short: '{{month}} is heading about {{short}} overspent, mostly {{line}}.',
+        unspent_stale: 'Your unspent money was confirmed {{days}} days ago.',
+        unspent_drifted: 'Your unspent money may be out of date. The app’s sum is {{suggested}}.',
+        emergency_not_set: 'An emergency fund goal isn’t set yet.',
+        unsaved_changes: '{{count}} changes not saved yet.',
+        yearly_bill_choice_needed: 'A yearly bill is waiting on a choice about how it’s counted.',
+        month_looks_under_logged: '{{month}} looks lightly logged, so its figures could be low.',
+        income_kind_unmarked: 'Some income isn’t marked as regular or one-off yet.',
+        from_your_figures: 'Worked out from the figures you gave.',
+      },
+      fact: {
+        month_left_after: '{{month}} would have about {{left}} to spare after this.',
+        unspent_before_after: 'Unspent money goes from {{before}} to {{after}}.',
+        emergency_untouched: 'Your emergency fund is untouched.',
+        emergency_used: '{{used}} comes from your emergency fund.',
+        envelope_used: '{{used}} comes from the {{name}} envelope.',
+        line_crossed: 'This brings your {{line}} to {{value}} of your income; your line is {{limit}}.',
+        plan_total: 'Over the whole plan, the total comes to {{total}}.',
+        quoted_differs: 'The quoted payment of {{quoted}} differs from the {{worked}} worked out here.',
+        implied_rate: 'The figures given imply about {{rate}} a year.',
+        deferred_interest_term: 'If the balance isn’t cleared within {{months}} months, interest back to the start could apply.',
+        at_todays_rate: 'Converted at today’s rate of {{rate}}.',
+        low_month: 'In {{month}}, a low month, about {{left}} remains.',
+      },
+      missing: {
+        no_income_figures: 'No regular income is set up yet.',
+        unspent_not_confirmed: 'Your unspent money hasn’t been confirmed yet.',
+        records_look_behind: 'Your records look behind this month.',
+        no_price: 'A price is needed first.',
+        plan_count_missing: 'The number of payments isn’t set yet.',
+        first_payment_not_chosen: 'The first payment date isn’t chosen yet.',
+        pause_interest_not_answered: 'Whether interest builds during a pause isn’t answered yet.',
+        plan_rate_missing: 'The plan’s rate isn’t entered yet.',
+        everyday_unknown: 'Everyday spending isn’t known yet.',
+        legacy_invest_check: 'This older investing check needs its figures entered again.',
+        share_invalid: 'The share given isn’t a valid amount.',
+      },
+    },
+  },
+  // Owner wording, 2026-10-26. Top-level so it sits outside en.decide; it contains none of the banned voice words.
+  legal: {
+    decideFooter: 'Worked out from your own records and what you told us. FincWin is a record-keeping and planning tool.',
   },
   a11y: {
     close: 'Close',

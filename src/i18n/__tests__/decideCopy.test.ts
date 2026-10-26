@@ -3,6 +3,7 @@ import en from '../locales/en';
 import { DRAFT_COPY_KEYS } from '../copyStatus';
 import { UNDO_LABEL_KEYS } from '../../engine/undo/types';
 import { undoLabelText } from '../undoLabel';
+import { FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NOTICE_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
 
 interface Leaf {
   path: string;
@@ -249,6 +250,67 @@ describe('decide depth copy (05-31, DCU-09)', () => {
     const because = depth.filter((l) => l.path.startsWith('decide.depth.cushion.because.'));
     expect(because.length).toBe(4);
     for (const l of because) expect(l.value.startsWith('because')).toBe(true);
+  });
+});
+
+describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
+  const v3 = leaves.filter((l) => l.path.startsWith('decide.v3.'));
+  const V3_BANNED = [/\bshould\b/i, /\bapprove/i, /\bdecline/i, /\bgo ahead\b/i, /\byou can\b/i, /\bsafe\b/i, /\bfree\b/i, /\bbest\b/i, /\bbetter\b/i, /\bworth it\b/i, /\bwill run out\b/i];
+  // Demo-scale values for the v3 placeholders, kept apart from DEMO_VALUES so the existing length checks are unchanged.
+  const V3_DEMO: Record<string, string> = { month: 'September', lowMonth: 'February', fromMonth: '$1,234', after: '$1,234', date: '12 Sep', months: '14', readyMonth: 'March 2027', monthly: '$1,234', used: '$1,234', suggested: '$1,234', days: '45', line: 'housing' };
+
+  function resolve(path: string): string | undefined {
+    let node: unknown = en;
+    for (const part of path.split('.')) {
+      if (!node || typeof node !== 'object') return undefined;
+      node = (node as Record<string, unknown>)[part];
+    }
+    return typeof node === 'string' ? node : undefined;
+  }
+
+  it('I22 every v3 key exists', () => {
+    const keys = [
+      ...Object.values(VERDICT_TABLE).flatMap((r) => [r.chipKey, r.titleKey, r.bodyKey]),
+      ...Object.values(NOTICE_KEYS),
+      ...Object.values(FACT_KEYS),
+      ...Object.values(MISSING_KEYS),
+      FOOTER_KEY,
+    ];
+    expect(keys.filter((k) => resolve(k) === undefined)).toEqual([]);
+    // and the other way: every v3 leaf is reachable from a table
+    const reachable = new Set<string>(keys);
+    expect(v3.filter((l) => !reachable.has(l.path)).map((l) => l.path)).toEqual([]);
+  });
+
+  it('I26 v3 banned words', () => {
+    expect(v3.length).toBeGreaterThan(40);
+    for (const l of v3) for (const re of V3_BANNED) expect({ path: l.path, hit: re.test(l.value) }).toEqual({ path: l.path, hit: false });
+  });
+
+  it('v3 4.6 forecasts say could, based on your records or on track', () => {
+    const forecastBodies = ['fitsMonth', 'fitsMonthLowMonth', 'fitsUnspentLowMonth', 'notYetPayday', 'notYetNotCovered', 'monthlyShort', 'emergencyUse'];
+    for (const name of forecastBodies) {
+      expect(get(`decide.v3.verdict.${name}.body`)).toMatch(/\bcould\b|based on your records|on track/i);
+    }
+  });
+
+  it('v3 verdict titles fit three lines', () => {
+    for (const l of v3.filter((x) => /^decide\.v3\.verdict\.\w+\.title$/.test(x.path))) {
+      expect(interpolate(l.value, V3_DEMO).length).toBeLessThanOrEqual(TITLE_CAP);
+    }
+  });
+
+  it('v3 leaves are draft copy and the footer reads as the owner worded it', () => {
+    const drafts = new Set<string>(DRAFT_COPY_KEYS);
+    expect(v3.filter((l) => !drafts.has(l.path)).map((l) => l.path)).toEqual([]);
+    expect(drafts.has('legal.decideFooter')).toBe(true);
+    expect(en.legal.decideFooter).toBe('Worked out from your own records and what you told us. FincWin is a record-keeping and planning tool.');
+    expect(en.legal.decideFooter).not.toMatch(/\badvice\b|recommend|you should/i);
+  });
+
+  it('D-30 and D-32 notices exist', () => {
+    expect(get('decide.v3.notice.unspent_drifted')).toContain('{{suggested}}');
+    expect(get('decide.v3.notice.from_your_figures')).toBe('Worked out from the figures you gave.');
   });
 });
 
