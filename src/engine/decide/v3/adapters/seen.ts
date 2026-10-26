@@ -22,7 +22,7 @@ export function seenOf(r: Result): SeenV3 {
       const a = f.values.after;
       if (typeof a === 'number') unspentAfter = a;
     } else if (f.code === 'line_crossed') {
-      const id = f.values.id;
+      const id = f.values.lineId; // key emitted by judge/lines.ts fact()
       if (id !== undefined && id !== null) lines.push(String(id));
     }
   }

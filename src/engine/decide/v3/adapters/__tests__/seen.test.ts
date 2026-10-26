@@ -10,7 +10,7 @@ function result(over: Partial<Result> = {}): Result {
   };
 }
 const after = (n: number): Fact => ({ code: 'unspent_before_after', values: { before: 0, after: n } });
-const line = (id: string): Fact => ({ code: 'line_crossed', values: { id } });
+const line = (id: string): Fact => ({ code: 'line_crossed', values: { lineId: id, kind: 'housing_share', value: 40, line: '36' } }); // same shape as judge/lines.ts
 
 describe('changeSinceLooked', () => {
   it('C7 re-baseline once', () => {
