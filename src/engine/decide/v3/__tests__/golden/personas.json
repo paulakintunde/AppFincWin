@@ -1,0 +1,2625 @@
+{
+ "persons": [
+  {
+   "id": "sam",
+   "currency": "USD",
+   "asOf": "2026-10-03",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "sam-pay-04",
+       "date": "2026-04-01",
+       "amount": 400000,
+       "role": "income",
+       "seriesId": "sam-pay"
+      },
+      {
+       "id": "sam-rent-04",
+       "date": "2026-04-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "sam-rent"
+      },
+      {
+       "id": "sam-utils-04",
+       "date": "2026-04-15",
+       "amount": 30000,
+       "role": "spending",
+       "seriesId": "sam-utils"
+      },
+      {
+       "id": "sam-save-04",
+       "date": "2026-04-05",
+       "amount": 30000,
+       "role": "saved_invested",
+       "seriesId": "sam-save"
+      },
+      {
+       "id": "sam-e-04-1",
+       "date": "2026-04-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-04-2",
+       "date": "2026-04-09",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-04-3",
+       "date": "2026-04-12",
+       "amount": 25000,
+       "role": "spending",
+       "name": "Jacket"
+      },
+      {
+       "id": "sam-e-04-4",
+       "date": "2026-04-20",
+       "amount": 25000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "sam-pay-05",
+       "date": "2026-05-01",
+       "amount": 400000,
+       "role": "income",
+       "seriesId": "sam-pay"
+      },
+      {
+       "id": "sam-rent-05",
+       "date": "2026-05-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "sam-rent"
+      },
+      {
+       "id": "sam-utils-05",
+       "date": "2026-05-15",
+       "amount": 30000,
+       "role": "spending",
+       "seriesId": "sam-utils"
+      },
+      {
+       "id": "sam-save-05",
+       "date": "2026-05-05",
+       "amount": 30000,
+       "role": "saved_invested",
+       "seriesId": "sam-save"
+      },
+      {
+       "id": "sam-e-05-1",
+       "date": "2026-05-06",
+       "amount": 50000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-05-2",
+       "date": "2026-05-14",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-05-3",
+       "date": "2026-05-19",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-05-4",
+       "date": "2026-05-27",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "sam-pay-06",
+       "date": "2026-06-01",
+       "amount": 400000,
+       "role": "income",
+       "seriesId": "sam-pay"
+      },
+      {
+       "id": "sam-rent-06",
+       "date": "2026-06-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "sam-rent"
+      },
+      {
+       "id": "sam-utils-06",
+       "date": "2026-06-15",
+       "amount": 30000,
+       "role": "spending",
+       "seriesId": "sam-utils"
+      },
+      {
+       "id": "sam-save-06",
+       "date": "2026-06-05",
+       "amount": 30000,
+       "role": "saved_invested",
+       "seriesId": "sam-save"
+      },
+      {
+       "id": "sam-e-06-1",
+       "date": "2026-06-07",
+       "amount": 25000,
+       "role": "spending",
+       "name": "Jacket"
+      },
+      {
+       "id": "sam-e-06-2",
+       "date": "2026-06-10",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-06-3",
+       "date": "2026-06-18",
+       "amount": 240000,
+       "role": "spending",
+       "name": "Vet"
+      },
+      {
+       "id": "sam-e-06-4",
+       "date": "2026-06-25",
+       "amount": 50000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "sam-pay-07",
+       "date": "2026-07-01",
+       "amount": 370000,
+       "role": "income",
+       "seriesId": "sam-pay"
+      },
+      {
+       "id": "sam-rent-07",
+       "date": "2026-07-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "sam-rent"
+      },
+      {
+       "id": "sam-utils-07",
+       "date": "2026-07-15",
+       "amount": 30000,
+       "role": "spending",
+       "seriesId": "sam-utils"
+      },
+      {
+       "id": "sam-save-07",
+       "date": "2026-07-05",
+       "amount": 30000,
+       "role": "saved_invested",
+       "seriesId": "sam-save"
+      },
+      {
+       "id": "sam-e-07-1",
+       "date": "2026-07-04",
+       "amount": 50000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-07-2",
+       "date": "2026-07-13",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-07-3",
+       "date": "2026-07-22",
+       "amount": 35000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "sam-pay-08",
+       "date": "2026-08-01",
+       "amount": 400000,
+       "role": "income",
+       "seriesId": "sam-pay"
+      },
+      {
+       "id": "sam-rent-08",
+       "date": "2026-08-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "sam-rent"
+      },
+      {
+       "id": "sam-utils-08",
+       "date": "2026-08-15",
+       "amount": 30000,
+       "role": "spending",
+       "seriesId": "sam-utils"
+      },
+      {
+       "id": "sam-save-08",
+       "date": "2026-08-05",
+       "amount": 30000,
+       "role": "saved_invested",
+       "seriesId": "sam-save"
+      },
+      {
+       "id": "sam-e-08-1",
+       "date": "2026-08-10",
+       "amount": 25000,
+       "role": "spending",
+       "name": "Jacket"
+      },
+      {
+       "id": "sam-e-08-2",
+       "date": "2026-08-15",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-08-3",
+       "date": "2026-08-20",
+       "amount": 50000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-08-4",
+       "date": "2026-08-28",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "sam-pay-09",
+       "date": "2026-09-01",
+       "amount": 400000,
+       "role": "income",
+       "seriesId": "sam-pay"
+      },
+      {
+       "id": "sam-rent-09",
+       "date": "2026-09-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "sam-rent"
+      },
+      {
+       "id": "sam-utils-09",
+       "date": "2026-09-15",
+       "amount": 30000,
+       "role": "spending",
+       "seriesId": "sam-utils"
+      },
+      {
+       "id": "sam-save-09",
+       "date": "2026-09-05",
+       "amount": 30000,
+       "role": "saved_invested",
+       "seriesId": "sam-save"
+      },
+      {
+       "id": "sam-e-09-1",
+       "date": "2026-09-05",
+       "amount": 65000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-09-2",
+       "date": "2026-09-12",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "sam-e-09-3",
+       "date": "2026-09-24",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "sam-pay-10",
+       "date": "2026-10-01",
+       "amount": 400000,
+       "role": "income",
+       "seriesId": "sam-pay"
+      },
+      {
+       "id": "sam-rent-10",
+       "date": "2026-10-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "sam-rent"
+      },
+      {
+       "id": "sam-e-10-1",
+       "date": "2026-10-02",
+       "amount": 10000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "sam-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 400000
+    },
+    {
+     "id": "sam-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 150000,
+     "isHousing": true
+    },
+    {
+     "id": "sam-utils",
+     "name": "Utilities",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-15",
+     "amount": 30000
+    },
+    {
+     "id": "sam-save",
+     "name": "Saving",
+     "role": "saving",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-05",
+     "amount": 30000,
+     "savingMode": "fixed"
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 1307500,
+   "unspent": {
+    "amount": 240000,
+    "at": "2026-10-03"
+   },
+   "emergency": 900000,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "C15 yardstick: pay 4,000, bills 1,800, saving 300, everyday 1,100/1,600/3,600/1,300/1,350/1,850; E 1,475; typical 425; low 50 (Sep); balance 13,075 so the suggested sum is exactly 2,400."
+  },
+  {
+   "id": "maya",
+   "currency": "USD",
+   "asOf": "2026-10-03",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "maya-inc-04",
+       "date": "2026-04-05",
+       "amount": 310000,
+       "role": "income"
+      },
+      {
+       "id": "maya-rent-04",
+       "date": "2026-04-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "maya-rent"
+      },
+      {
+       "id": "maya-phone-04",
+       "date": "2026-04-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "maya-phone"
+      },
+      {
+       "id": "maya-save-04",
+       "date": "2026-04-06",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "maya-save"
+      },
+      {
+       "id": "maya-e-04-1",
+       "date": "2026-04-10",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "maya-inc-05",
+       "date": "2026-05-05",
+       "amount": 290000,
+       "role": "income"
+      },
+      {
+       "id": "maya-rent-05",
+       "date": "2026-05-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "maya-rent"
+      },
+      {
+       "id": "maya-phone-05",
+       "date": "2026-05-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "maya-phone"
+      },
+      {
+       "id": "maya-save-05",
+       "date": "2026-05-06",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "maya-save"
+      },
+      {
+       "id": "maya-e-05-1",
+       "date": "2026-05-10",
+       "amount": 90000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "maya-inc-06",
+       "date": "2026-06-05",
+       "amount": 300000,
+       "role": "income"
+      },
+      {
+       "id": "maya-rent-06",
+       "date": "2026-06-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "maya-rent"
+      },
+      {
+       "id": "maya-phone-06",
+       "date": "2026-06-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "maya-phone"
+      },
+      {
+       "id": "maya-save-06",
+       "date": "2026-06-06",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "maya-save"
+      },
+      {
+       "id": "maya-e-06-1",
+       "date": "2026-06-10",
+       "amount": 80000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "maya-inc-07",
+       "date": "2026-07-05",
+       "amount": 320000,
+       "role": "income"
+      },
+      {
+       "id": "maya-rent-07",
+       "date": "2026-07-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "maya-rent"
+      },
+      {
+       "id": "maya-phone-07",
+       "date": "2026-07-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "maya-phone"
+      },
+      {
+       "id": "maya-save-07",
+       "date": "2026-07-06",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "maya-save"
+      },
+      {
+       "id": "maya-e-07-1",
+       "date": "2026-07-10",
+       "amount": 85000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "maya-inc-08",
+       "date": "2026-08-05",
+       "amount": 280000,
+       "role": "income"
+      },
+      {
+       "id": "maya-rent-08",
+       "date": "2026-08-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "maya-rent"
+      },
+      {
+       "id": "maya-phone-08",
+       "date": "2026-08-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "maya-phone"
+      },
+      {
+       "id": "maya-save-08",
+       "date": "2026-08-06",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "maya-save"
+      },
+      {
+       "id": "maya-e-08-1",
+       "date": "2026-08-10",
+       "amount": 75000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "maya-inc-09",
+       "date": "2026-09-05",
+       "amount": 300000,
+       "role": "income"
+      },
+      {
+       "id": "maya-rent-09",
+       "date": "2026-09-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "maya-rent"
+      },
+      {
+       "id": "maya-phone-09",
+       "date": "2026-09-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "maya-phone"
+      },
+      {
+       "id": "maya-save-09",
+       "date": "2026-09-06",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "maya-save"
+      },
+      {
+       "id": "maya-e-09-1",
+       "date": "2026-09-10",
+       "amount": 80000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "maya-inc-10",
+       "date": "2026-10-01",
+       "amount": 300000,
+       "role": "income"
+      },
+      {
+       "id": "maya-rent-10",
+       "date": "2026-10-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "maya-rent"
+      },
+      {
+       "id": "maya-phone-10",
+       "date": "2026-10-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "maya-phone"
+      },
+      {
+       "id": "maya-e-10-1",
+       "date": "2026-10-02",
+       "amount": 5000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "maya-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 100000,
+     "isHousing": true
+    },
+    {
+     "id": "maya-phone",
+     "name": "Phone",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-02",
+     "amount": 20000
+    },
+    {
+     "id": "maya-save",
+     "name": "Saving",
+     "role": "saving",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-06",
+     "amount": 20000,
+     "savingMode": "fixed"
+    }
+   ],
+   "profile": {
+    "types": [
+     "freelance"
+    ],
+    "variable": "steady",
+    "steady": 300000,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 525000,
+   "unspent": {
+    "amount": 150000,
+    "at": "2026-10-03"
+   },
+   "emergency": 300000,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Freelance, steady amount 3,000 chosen at setup. Real months vary 2,800 to 3,200."
+  },
+  {
+   "id": "riley",
+   "currency": "USD",
+   "asOf": "2026-10-03",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "riley-pay-04",
+       "date": "2026-04-01",
+       "amount": 280000,
+       "role": "income",
+       "seriesId": "riley-pay"
+      },
+      {
+       "id": "riley-rent-04",
+       "date": "2026-04-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "riley-rent"
+      },
+      {
+       "id": "riley-utils-04",
+       "date": "2026-04-02",
+       "amount": 50000,
+       "role": "spending",
+       "seriesId": "riley-utils"
+      },
+      {
+       "id": "riley-e-04-1",
+       "date": "2026-04-10",
+       "amount": 100000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "riley-pay-05",
+       "date": "2026-05-01",
+       "amount": 280000,
+       "role": "income",
+       "seriesId": "riley-pay"
+      },
+      {
+       "id": "riley-rent-05",
+       "date": "2026-05-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "riley-rent"
+      },
+      {
+       "id": "riley-utils-05",
+       "date": "2026-05-02",
+       "amount": 50000,
+       "role": "spending",
+       "seriesId": "riley-utils"
+      },
+      {
+       "id": "riley-e-05-1",
+       "date": "2026-05-10",
+       "amount": 105000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "riley-pay-06",
+       "date": "2026-06-01",
+       "amount": 280000,
+       "role": "income",
+       "seriesId": "riley-pay"
+      },
+      {
+       "id": "riley-rent-06",
+       "date": "2026-06-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "riley-rent"
+      },
+      {
+       "id": "riley-utils-06",
+       "date": "2026-06-02",
+       "amount": 50000,
+       "role": "spending",
+       "seriesId": "riley-utils"
+      },
+      {
+       "id": "riley-e-06-1",
+       "date": "2026-06-10",
+       "amount": 110000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "riley-pay-07",
+       "date": "2026-07-01",
+       "amount": 280000,
+       "role": "income",
+       "seriesId": "riley-pay"
+      },
+      {
+       "id": "riley-rent-07",
+       "date": "2026-07-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "riley-rent"
+      },
+      {
+       "id": "riley-utils-07",
+       "date": "2026-07-02",
+       "amount": 50000,
+       "role": "spending",
+       "seriesId": "riley-utils"
+      },
+      {
+       "id": "riley-e-07-1",
+       "date": "2026-07-10",
+       "amount": 115000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "riley-pay-08",
+       "date": "2026-08-01",
+       "amount": 280000,
+       "role": "income",
+       "seriesId": "riley-pay"
+      },
+      {
+       "id": "riley-rent-08",
+       "date": "2026-08-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "riley-rent"
+      },
+      {
+       "id": "riley-utils-08",
+       "date": "2026-08-02",
+       "amount": 50000,
+       "role": "spending",
+       "seriesId": "riley-utils"
+      },
+      {
+       "id": "riley-e-08-1",
+       "date": "2026-08-10",
+       "amount": 120000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "riley-pay-09",
+       "date": "2026-09-01",
+       "amount": 280000,
+       "role": "income",
+       "seriesId": "riley-pay"
+      },
+      {
+       "id": "riley-rent-09",
+       "date": "2026-09-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "riley-rent"
+      },
+      {
+       "id": "riley-utils-09",
+       "date": "2026-09-02",
+       "amount": 50000,
+       "role": "spending",
+       "seriesId": "riley-utils"
+      },
+      {
+       "id": "riley-e-09-1",
+       "date": "2026-09-10",
+       "amount": 110000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "riley-pay-10",
+       "date": "2026-10-01",
+       "amount": 280000,
+       "role": "income",
+       "seriesId": "riley-pay"
+      },
+      {
+       "id": "riley-rent-10",
+       "date": "2026-10-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "riley-rent"
+      },
+      {
+       "id": "riley-utils-10",
+       "date": "2026-10-02",
+       "amount": 50000,
+       "role": "spending",
+       "seriesId": "riley-utils"
+      },
+      {
+       "id": "riley-e-10-1",
+       "date": "2026-10-02",
+       "amount": 10000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "riley-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 280000
+    },
+    {
+     "id": "riley-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 150000,
+     "isHousing": true
+    },
+    {
+     "id": "riley-utils",
+     "name": "Utilities",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-02",
+     "amount": 50000
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 300000,
+   "unspent": {
+    "amount": 0,
+    "at": "2026-10-03"
+   },
+   "emergency": 200000,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Typical month already short: 2,800 pay - 2,000 bills - 1,100 everyday = -300. Unspent confirmed 0; emergency fund 2,000."
+  },
+  {
+   "id": "leo",
+   "currency": "USD",
+   "asOf": "2026-10-03",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "leo-pay-04",
+       "date": "2026-04-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "leo-pay"
+      },
+      {
+       "id": "leo-rent-04",
+       "date": "2026-04-01",
+       "amount": 130000,
+       "role": "spending",
+       "seriesId": "leo-rent"
+      },
+      {
+       "id": "leo-phone-04",
+       "date": "2026-04-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "leo-phone"
+      },
+      {
+       "id": "leo-e-04-1",
+       "date": "2026-04-10",
+       "amount": 88000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "leo-pay-05",
+       "date": "2026-05-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "leo-pay"
+      },
+      {
+       "id": "leo-rent-05",
+       "date": "2026-05-01",
+       "amount": 130000,
+       "role": "spending",
+       "seriesId": "leo-rent"
+      },
+      {
+       "id": "leo-phone-05",
+       "date": "2026-05-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "leo-phone"
+      },
+      {
+       "id": "leo-e-05-1",
+       "date": "2026-05-10",
+       "amount": 88000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "leo-pay-06",
+       "date": "2026-06-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "leo-pay"
+      },
+      {
+       "id": "leo-rent-06",
+       "date": "2026-06-01",
+       "amount": 130000,
+       "role": "spending",
+       "seriesId": "leo-rent"
+      },
+      {
+       "id": "leo-phone-06",
+       "date": "2026-06-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "leo-phone"
+      },
+      {
+       "id": "leo-e-06-1",
+       "date": "2026-06-10",
+       "amount": 88000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "leo-pay-07",
+       "date": "2026-07-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "leo-pay"
+      },
+      {
+       "id": "leo-rent-07",
+       "date": "2026-07-01",
+       "amount": 130000,
+       "role": "spending",
+       "seriesId": "leo-rent"
+      },
+      {
+       "id": "leo-phone-07",
+       "date": "2026-07-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "leo-phone"
+      },
+      {
+       "id": "leo-e-07-1",
+       "date": "2026-07-10",
+       "amount": 88000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "leo-pay-08",
+       "date": "2026-08-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "leo-pay"
+      },
+      {
+       "id": "leo-rent-08",
+       "date": "2026-08-01",
+       "amount": 130000,
+       "role": "spending",
+       "seriesId": "leo-rent"
+      },
+      {
+       "id": "leo-phone-08",
+       "date": "2026-08-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "leo-phone"
+      },
+      {
+       "id": "leo-e-08-1",
+       "date": "2026-08-10",
+       "amount": 88000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "leo-pay-09",
+       "date": "2026-09-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "leo-pay"
+      },
+      {
+       "id": "leo-rent-09",
+       "date": "2026-09-01",
+       "amount": 130000,
+       "role": "spending",
+       "seriesId": "leo-rent"
+      },
+      {
+       "id": "leo-phone-09",
+       "date": "2026-09-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "leo-phone"
+      },
+      {
+       "id": "leo-e-09-1",
+       "date": "2026-09-10",
+       "amount": 88000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "leo-pay-10",
+       "date": "2026-10-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "leo-pay"
+      },
+      {
+       "id": "leo-rent-10",
+       "date": "2026-10-01",
+       "amount": 130000,
+       "role": "spending",
+       "seriesId": "leo-rent"
+      },
+      {
+       "id": "leo-phone-10",
+       "date": "2026-10-02",
+       "amount": 20000,
+       "role": "spending",
+       "seriesId": "leo-phone"
+      },
+      {
+       "id": "leo-e-10-1",
+       "date": "2026-10-02",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "leo-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 250000
+    },
+    {
+     "id": "leo-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 130000,
+     "isHousing": true
+    },
+    {
+     "id": "leo-phone",
+     "name": "Phone",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-02",
+     "amount": 20000
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 389484,
+   "unspent": {
+    "amount": 10000,
+    "at": "2026-10-03"
+   },
+   "emergency": 300000,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Typical left 120. October has already spent 400 of everyday by day 3, so the month is under water."
+  },
+  {
+   "id": "tia",
+   "currency": "USD",
+   "asOf": "2026-10-20",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "tia-pay-04",
+       "date": "2026-04-28",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "tia-pay"
+      },
+      {
+       "id": "tia-rent-04",
+       "date": "2026-04-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "tia-rent"
+      },
+      {
+       "id": "tia-phone-04",
+       "date": "2026-04-05",
+       "amount": 8000,
+       "role": "spending",
+       "seriesId": "tia-phone"
+      },
+      {
+       "id": "tia-e-04-1",
+       "date": "2026-04-10",
+       "amount": 80000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "tia-pay-05",
+       "date": "2026-05-28",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "tia-pay"
+      },
+      {
+       "id": "tia-rent-05",
+       "date": "2026-05-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "tia-rent"
+      },
+      {
+       "id": "tia-phone-05",
+       "date": "2026-05-05",
+       "amount": 8000,
+       "role": "spending",
+       "seriesId": "tia-phone"
+      },
+      {
+       "id": "tia-e-05-1",
+       "date": "2026-05-10",
+       "amount": 80000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "tia-pay-06",
+       "date": "2026-06-28",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "tia-pay"
+      },
+      {
+       "id": "tia-rent-06",
+       "date": "2026-06-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "tia-rent"
+      },
+      {
+       "id": "tia-phone-06",
+       "date": "2026-06-05",
+       "amount": 8000,
+       "role": "spending",
+       "seriesId": "tia-phone"
+      },
+      {
+       "id": "tia-e-06-1",
+       "date": "2026-06-10",
+       "amount": 80000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "tia-pay-07",
+       "date": "2026-07-28",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "tia-pay"
+      },
+      {
+       "id": "tia-rent-07",
+       "date": "2026-07-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "tia-rent"
+      },
+      {
+       "id": "tia-phone-07",
+       "date": "2026-07-05",
+       "amount": 8000,
+       "role": "spending",
+       "seriesId": "tia-phone"
+      },
+      {
+       "id": "tia-e-07-1",
+       "date": "2026-07-10",
+       "amount": 80000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "tia-pay-08",
+       "date": "2026-08-28",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "tia-pay"
+      },
+      {
+       "id": "tia-rent-08",
+       "date": "2026-08-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "tia-rent"
+      },
+      {
+       "id": "tia-phone-08",
+       "date": "2026-08-05",
+       "amount": 8000,
+       "role": "spending",
+       "seriesId": "tia-phone"
+      },
+      {
+       "id": "tia-e-08-1",
+       "date": "2026-08-10",
+       "amount": 80000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "tia-pay-09",
+       "date": "2026-09-28",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "tia-pay"
+      },
+      {
+       "id": "tia-rent-09",
+       "date": "2026-09-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "tia-rent"
+      },
+      {
+       "id": "tia-phone-09",
+       "date": "2026-09-05",
+       "amount": 8000,
+       "role": "spending",
+       "seriesId": "tia-phone"
+      },
+      {
+       "id": "tia-e-09-1",
+       "date": "2026-09-10",
+       "amount": 80000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "tia-rent-10",
+       "date": "2026-10-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "tia-rent"
+      },
+      {
+       "id": "tia-phone-10",
+       "date": "2026-10-05",
+       "amount": 8000,
+       "role": "spending",
+       "seriesId": "tia-phone"
+      },
+      {
+       "id": "tia-e-10-1",
+       "date": "2026-10-10",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "tia-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-28",
+     "amount": 260000
+    },
+    {
+     "id": "tia-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 140000,
+     "isHousing": true
+    },
+    {
+     "id": "tia-phone",
+     "name": "Phone",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-05",
+     "amount": 8000
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 20000,
+   "unspent": {
+    "amount": 50000,
+    "at": "2026-10-18"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Pays on the 28th. Unspent was confirmed on the 18th; the balance has since fallen to 200, which is the point of the cash check."
+  },
+  {
+   "id": "dana",
+   "currency": "USD",
+   "asOf": "2026-10-03",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "dana-pay-04",
+       "date": "2026-04-01",
+       "amount": 500000,
+       "role": "income",
+       "seriesId": "dana-pay"
+      },
+      {
+       "id": "dana-rent-04",
+       "date": "2026-04-01",
+       "amount": 180000,
+       "role": "spending",
+       "seriesId": "dana-rent"
+      },
+      {
+       "id": "dana-card-04",
+       "date": "2026-04-03",
+       "amount": 40000,
+       "role": "debt_payment",
+       "seriesId": "dana-card"
+      },
+      {
+       "id": "dana-loan-04",
+       "date": "2026-04-03",
+       "amount": 100000,
+       "role": "debt_payment",
+       "seriesId": "dana-loan"
+      },
+      {
+       "id": "dana-e-04-1",
+       "date": "2026-04-10",
+       "amount": 90000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "dana-pay-05",
+       "date": "2026-05-01",
+       "amount": 500000,
+       "role": "income",
+       "seriesId": "dana-pay"
+      },
+      {
+       "id": "dana-rent-05",
+       "date": "2026-05-01",
+       "amount": 180000,
+       "role": "spending",
+       "seriesId": "dana-rent"
+      },
+      {
+       "id": "dana-card-05",
+       "date": "2026-05-03",
+       "amount": 40000,
+       "role": "debt_payment",
+       "seriesId": "dana-card"
+      },
+      {
+       "id": "dana-loan-05",
+       "date": "2026-05-03",
+       "amount": 100000,
+       "role": "debt_payment",
+       "seriesId": "dana-loan"
+      },
+      {
+       "id": "dana-e-05-1",
+       "date": "2026-05-10",
+       "amount": 90000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "dana-pay-06",
+       "date": "2026-06-01",
+       "amount": 500000,
+       "role": "income",
+       "seriesId": "dana-pay"
+      },
+      {
+       "id": "dana-rent-06",
+       "date": "2026-06-01",
+       "amount": 180000,
+       "role": "spending",
+       "seriesId": "dana-rent"
+      },
+      {
+       "id": "dana-card-06",
+       "date": "2026-06-03",
+       "amount": 40000,
+       "role": "debt_payment",
+       "seriesId": "dana-card"
+      },
+      {
+       "id": "dana-loan-06",
+       "date": "2026-06-03",
+       "amount": 100000,
+       "role": "debt_payment",
+       "seriesId": "dana-loan"
+      },
+      {
+       "id": "dana-e-06-1",
+       "date": "2026-06-10",
+       "amount": 90000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "dana-pay-07",
+       "date": "2026-07-01",
+       "amount": 500000,
+       "role": "income",
+       "seriesId": "dana-pay"
+      },
+      {
+       "id": "dana-rent-07",
+       "date": "2026-07-01",
+       "amount": 180000,
+       "role": "spending",
+       "seriesId": "dana-rent"
+      },
+      {
+       "id": "dana-card-07",
+       "date": "2026-07-03",
+       "amount": 40000,
+       "role": "debt_payment",
+       "seriesId": "dana-card"
+      },
+      {
+       "id": "dana-loan-07",
+       "date": "2026-07-03",
+       "amount": 100000,
+       "role": "debt_payment",
+       "seriesId": "dana-loan"
+      },
+      {
+       "id": "dana-e-07-1",
+       "date": "2026-07-10",
+       "amount": 90000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "dana-pay-08",
+       "date": "2026-08-01",
+       "amount": 500000,
+       "role": "income",
+       "seriesId": "dana-pay"
+      },
+      {
+       "id": "dana-rent-08",
+       "date": "2026-08-01",
+       "amount": 180000,
+       "role": "spending",
+       "seriesId": "dana-rent"
+      },
+      {
+       "id": "dana-card-08",
+       "date": "2026-08-03",
+       "amount": 40000,
+       "role": "debt_payment",
+       "seriesId": "dana-card"
+      },
+      {
+       "id": "dana-loan-08",
+       "date": "2026-08-03",
+       "amount": 100000,
+       "role": "debt_payment",
+       "seriesId": "dana-loan"
+      },
+      {
+       "id": "dana-e-08-1",
+       "date": "2026-08-10",
+       "amount": 90000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "dana-pay-09",
+       "date": "2026-09-01",
+       "amount": 500000,
+       "role": "income",
+       "seriesId": "dana-pay"
+      },
+      {
+       "id": "dana-rent-09",
+       "date": "2026-09-01",
+       "amount": 180000,
+       "role": "spending",
+       "seriesId": "dana-rent"
+      },
+      {
+       "id": "dana-card-09",
+       "date": "2026-09-03",
+       "amount": 40000,
+       "role": "debt_payment",
+       "seriesId": "dana-card"
+      },
+      {
+       "id": "dana-loan-09",
+       "date": "2026-09-03",
+       "amount": 100000,
+       "role": "debt_payment",
+       "seriesId": "dana-loan"
+      },
+      {
+       "id": "dana-e-09-1",
+       "date": "2026-09-10",
+       "amount": 90000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "dana-pay-10",
+       "date": "2026-10-01",
+       "amount": 500000,
+       "role": "income",
+       "seriesId": "dana-pay"
+      },
+      {
+       "id": "dana-rent-10",
+       "date": "2026-10-01",
+       "amount": 180000,
+       "role": "spending",
+       "seriesId": "dana-rent"
+      },
+      {
+       "id": "dana-e-10-1",
+       "date": "2026-10-02",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "dana-card-10",
+       "date": "2026-10-03",
+       "amount": 40000,
+       "role": "debt_payment",
+       "seriesId": "dana-card"
+      },
+      {
+       "id": "dana-loan-10",
+       "date": "2026-10-03",
+       "amount": 100000,
+       "role": "debt_payment",
+       "seriesId": "dana-loan"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "dana-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 500000
+    },
+    {
+     "id": "dana-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 180000,
+     "isHousing": true
+    },
+    {
+     "id": "dana-card",
+     "name": "Card minimum",
+     "role": "debt_payment",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-03",
+     "amount": 40000
+    },
+    {
+     "id": "dana-loan",
+     "name": "Loan payment",
+     "role": "debt_payment",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-03",
+     "amount": 100000
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 581290,
+   "unspent": {
+    "amount": 200000,
+    "at": "2026-10-03"
+   },
+   "emergency": 300000,
+   "envelopes": [],
+   "debts": [
+    {
+     "id": "dana-card",
+     "kind": "card",
+     "balance": 600000,
+     "minimum": 40000,
+     "aprText": "21.9",
+     "secured": false,
+     "isHousing": false
+    },
+    {
+     "id": "dana-loan",
+     "kind": "loan",
+     "balance": 1500000,
+     "minimum": 100000,
+     "aprText": "6.5",
+     "secured": false,
+     "isHousing": false
+    }
+   ],
+   "everydayOverride": null,
+   "limits": [
+    {
+     "id": "dana-debt-line",
+     "on": true,
+     "source": "builtin",
+     "spec": {
+      "kind": "debt_share",
+      "pctText": "36"
+     }
+    }
+   ],
+   "note": "Income 5,000; debt minimums 1,400 (28%); she set a 36% debt line."
+  },
+  {
+   "id": "kim",
+   "currency": "USD",
+   "asOf": "2026-10-03",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "kim-pay-04",
+       "date": "2026-04-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "kim-pay"
+      },
+      {
+       "id": "kim-rent-04",
+       "date": "2026-04-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "kim-rent"
+      },
+      {
+       "id": "kim-save-04",
+       "date": "2026-04-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "kim-save"
+      },
+      {
+       "id": "kim-e-04-1",
+       "date": "2026-04-10",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "kim-pay-05",
+       "date": "2026-05-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "kim-pay"
+      },
+      {
+       "id": "kim-rent-05",
+       "date": "2026-05-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "kim-rent"
+      },
+      {
+       "id": "kim-save-05",
+       "date": "2026-05-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "kim-save"
+      },
+      {
+       "id": "kim-e-05-1",
+       "date": "2026-05-10",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "kim-pay-06",
+       "date": "2026-06-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "kim-pay"
+      },
+      {
+       "id": "kim-rent-06",
+       "date": "2026-06-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "kim-rent"
+      },
+      {
+       "id": "kim-save-06",
+       "date": "2026-06-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "kim-save"
+      },
+      {
+       "id": "kim-e-06-1",
+       "date": "2026-06-10",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "kim-pay-07",
+       "date": "2026-07-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "kim-pay"
+      },
+      {
+       "id": "kim-rent-07",
+       "date": "2026-07-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "kim-rent"
+      },
+      {
+       "id": "kim-save-07",
+       "date": "2026-07-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "kim-save"
+      },
+      {
+       "id": "kim-e-07-1",
+       "date": "2026-07-10",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "kim-pay-08",
+       "date": "2026-08-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "kim-pay"
+      },
+      {
+       "id": "kim-rent-08",
+       "date": "2026-08-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "kim-rent"
+      },
+      {
+       "id": "kim-save-08",
+       "date": "2026-08-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "kim-save"
+      },
+      {
+       "id": "kim-e-08-1",
+       "date": "2026-08-10",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "kim-pay-09",
+       "date": "2026-09-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "kim-pay"
+      },
+      {
+       "id": "kim-rent-09",
+       "date": "2026-09-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "kim-rent"
+      },
+      {
+       "id": "kim-save-09",
+       "date": "2026-09-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "kim-save"
+      },
+      {
+       "id": "kim-e-09-1",
+       "date": "2026-09-10",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "kim-pay-10",
+       "date": "2026-10-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "kim-pay"
+      },
+      {
+       "id": "kim-rent-10",
+       "date": "2026-10-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "kim-rent"
+      },
+      {
+       "id": "kim-refund-10",
+       "date": "2026-10-02",
+       "amount": 80000,
+       "role": "other_in",
+       "name": "Tax refund"
+      },
+      {
+       "id": "kim-e-10-1",
+       "date": "2026-10-02",
+       "amount": 5000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "kim-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 300000
+    },
+    {
+     "id": "kim-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 120000,
+     "isHousing": true
+    },
+    {
+     "id": "kim-save",
+     "name": "Saving",
+     "role": "saving",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-03",
+     "amount": 20000,
+     "savingMode": "fixed"
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 615000,
+   "unspent": {
+    "amount": 350000,
+    "at": "2026-10-03"
+   },
+   "emergency": 200000,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "A tax refund of 800 landed on Oct 2. She re-confirmed her unspent money after it landed."
+  },
+  {
+   "id": "priya",
+   "currency": "USD",
+   "asOf": "2026-10-03",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "priya-pay-04",
+       "date": "2026-04-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "priya-pay"
+      },
+      {
+       "id": "priya-rent-04",
+       "date": "2026-04-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "priya-rent"
+      },
+      {
+       "id": "priya-save-04",
+       "date": "2026-04-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "priya-save"
+      },
+      {
+       "id": "priya-e-04-1",
+       "date": "2026-04-10",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "priya-pay-05",
+       "date": "2026-05-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "priya-pay"
+      },
+      {
+       "id": "priya-rent-05",
+       "date": "2026-05-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "priya-rent"
+      },
+      {
+       "id": "priya-save-05",
+       "date": "2026-05-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "priya-save"
+      },
+      {
+       "id": "priya-e-05-1",
+       "date": "2026-05-10",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "priya-pay-06",
+       "date": "2026-06-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "priya-pay"
+      },
+      {
+       "id": "priya-rent-06",
+       "date": "2026-06-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "priya-rent"
+      },
+      {
+       "id": "priya-save-06",
+       "date": "2026-06-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "priya-save"
+      },
+      {
+       "id": "priya-e-06-1",
+       "date": "2026-06-10",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "priya-pay-07",
+       "date": "2026-07-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "priya-pay"
+      },
+      {
+       "id": "priya-rent-07",
+       "date": "2026-07-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "priya-rent"
+      },
+      {
+       "id": "priya-save-07",
+       "date": "2026-07-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "priya-save"
+      },
+      {
+       "id": "priya-e-07-1",
+       "date": "2026-07-10",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "priya-pay-08",
+       "date": "2026-08-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "priya-pay"
+      },
+      {
+       "id": "priya-rent-08",
+       "date": "2026-08-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "priya-rent"
+      },
+      {
+       "id": "priya-save-08",
+       "date": "2026-08-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "priya-save"
+      },
+      {
+       "id": "priya-e-08-1",
+       "date": "2026-08-10",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "priya-pay-09",
+       "date": "2026-09-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "priya-pay"
+      },
+      {
+       "id": "priya-rent-09",
+       "date": "2026-09-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "priya-rent"
+      },
+      {
+       "id": "priya-save-09",
+       "date": "2026-09-03",
+       "amount": 20000,
+       "role": "saved_invested",
+       "seriesId": "priya-save"
+      },
+      {
+       "id": "priya-e-09-1",
+       "date": "2026-09-10",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "priya-pay-10",
+       "date": "2026-10-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "priya-pay"
+      },
+      {
+       "id": "priya-rent-10",
+       "date": "2026-10-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "priya-rent"
+      },
+      {
+       "id": "priya-e-10-1",
+       "date": "2026-10-02",
+       "amount": 5000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "priya-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 300000
+    },
+    {
+     "id": "priya-rent",
+     "name": "Rent (her half)",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 100000,
+     "isHousing": true
+    },
+    {
+     "id": "priya-save",
+     "name": "Saving",
+     "role": "saving",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-03",
+     "amount": 20000,
+     "savingMode": "fixed"
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 305000,
+   "unspent": {
+    "amount": 100000,
+    "at": "2026-10-03"
+   },
+   "emergency": 150000,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Household of 2, even split of big purchases. Her figures are her own share."
+  },
+  {
+   "id": "jordan",
+   "currency": "USD",
+   "asOf": "2026-10-03",
+   "months": [],
+   "series": [],
+   "profile": null,
+   "rough": null,
+   "balance": 100000,
+   "unspent": null,
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "New user: no records, no profile, no rough figures."
+  }
+ ]
+}
