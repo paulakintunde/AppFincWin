@@ -12,6 +12,8 @@ jest.mock('@/features/decide/home/DecideHomeScreen', () => {
   const { Text: RNText } = jest.requireActual('react-native');
   return { DecideHomeScreen: () => R.createElement(RNText, null, 'old-decide') };
 });
+// D-27: the dev-only shadow export reads Supabase data; this test is about the visible screen only.
+jest.mock('@/features/decide/dev/ShadowExportDevMenu', () => ({ ShadowExportDevMenu: () => null }));
 // The real scaffold pulls in the avatar's Supabase client; the title and children are what matter here.
 const mockTabProps: Record<string, unknown>[] = [];
 jest.mock('@/shell/screen/TabRootScreen', () => {
