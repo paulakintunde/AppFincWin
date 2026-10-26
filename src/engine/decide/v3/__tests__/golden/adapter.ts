@@ -8,6 +8,7 @@
 import { minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import type {
+  AccountUse,
   Cadence,
   Code,
   CheckV2,
@@ -115,6 +116,10 @@ export interface FixturePerson {
   debts: FixtureDebt[];
   everydayOverride: number | null;
   limits?: FixtureLimit[];
+  expectedIncome?: { month: string; amount: number; at: string }[];
+  heldBridges?: { id: string; amount: number }[];
+  payArrivals?: { seriesId: string; date: string; arrived: boolean }[];
+  accounts?: { id: string; balance: number; use: AccountUse | null }[];
   note: string;
 }
 export interface FixturePlanPay {
@@ -305,6 +310,12 @@ export function toV3Inputs(person: FixturePerson, overrides: Partial<V3Inputs> =
     debts,
     everydayOverride: person.everydayOverride === null ? null : mu(person.everydayOverride),
     limits: { lines: (person.limits ?? []).map((l) => ({ id: l.id, on: l.on, source: l.source, spec: limitSpec(l.spec) })) },
+    ...(person.expectedIncome
+      ? { expectedIncome: person.expectedIncome.map((e) => ({ month: e.month, amount: mu(e.amount), at: e.at })) }
+      : {}),
+    ...(person.heldBridges ? { heldBridges: person.heldBridges.map((b) => ({ id: b.id, amount: mu(b.amount) })) } : {}),
+    ...(person.payArrivals ? { payArrivals: person.payArrivals } : {}),
+    ...(person.accounts ? { accounts: person.accounts.map((a) => ({ id: a.id, balance: mu(a.balance), use: a.use })) } : {}),
     ...overrides,
   });
 }

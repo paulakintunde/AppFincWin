@@ -3,7 +3,7 @@
  * threshold, the $1 quoted tolerance), each converted per currency through the fixed table in bandEdges.ts (D-07, D-26).
  * Every export has a `// Cite:` line (I27).
  */
-import type { Code, LegacyState } from './types';
+import type { Code, LegacyState, MissingCode } from './types';
 
 // Cite: v3 §4.4 "last <=6 full months" (REBUILD-PLAN-v3). FincWin behaviour constant, in line with the 6-month window in 04-CONTEXT D-09.
 export const V3_HISTORY_MONTHS = 6; // v3 §4.4
@@ -110,3 +110,49 @@ export const CADENCE_EVERY_MAX = 12; // D-19
 
 // Cite: payoff MAX_TERM_MONTHS cap (600 months, 50 years) in ../../payoff/types. A plan never has more periods than the payoff engine can simulate.
 export const MAX_PLAN_PERIODS = 600; // payoff MAX_TERM_MONTHS
+
+// Cite: D-33 (05.1-CONTEXT): variable or seasonal earners use up to 12 months so a whole year of seasons is seen. FincWin choice.
+export const V3_VARIABLE_HISTORY_MONTHS = 12; // D-33
+
+// Cite: D-34; the Phase 4 variable cut-off VARIABLE_CV_BELOW (22%, ../constants.ts, D-12): recorded monthly income with a coefficient of variation at or above 22% swings a lot. FincWin choice.
+export const INCOME_SWING_CV_PERCENT = 22; // D-34, D-12
+
+// Cite: D-34; Phase 4 D-12: a CV needs at least 3 full months of income. FincWin choice.
+export const INCOME_SWING_MIN_MONTHS = 3; // D-34, D-12
+
+// Cite: D-35 (a): fewer than 12 full months of records cannot show a year of seasons. FincWin choice.
+export const RECONFIRM_MIN_MONTHS = 12; // D-35
+
+// Cite: D-37: a season cycle is 12 months; lean runs and the months a purchase depends on look at most 12 months ahead. FincWin choice.
+export const SEASON_CYCLE_MONTHS = 12; // D-37
+
+// Cite: M-02 (05.1-REVIEW), C2/v3 §4.1: a paid line within 3 days of a due date settles that occurrence (bills, debt payments, saving). FincWin choice.
+export const MATCH_DAYS = 3; // M-02, C2
+
+// Cite: D-48 (05.1-CONTEXT); the same coefficient-of-variation measure as D-34 (INCOME_SWING_CV_PERCENT) at a higher limit: JPMorgan Chase Institute (2019, "Weathering Volatility 2.0") reports a median household monthly-income CV of about 0.38 (2013–2018, Chase checking-account families); the limit is set at that reported median. Treating records above it as too volatile to judge a monthly payment alone is a FincWin choice, not a finding of the report.
+export const INCOME_VOLATILE_CV_PERCENT = 38; // D-48
+
+// Cite: H-02 (05.1-REVIEW), MISSED_PAY_GRACE_DAYS (D-18, A7): pay up to 7 days early (banks pay before weekends and holidays) or 7 days late settles its due date. FincWin choice.
+export const PAY_MATCH_DAYS = 7; // H-02, D-18
+
+// Cite: D-59 (05.1-CONTEXT): one question at a time, most important first; the check's own fields follow in the order the check form asks them. FincWin choice.
+export const MISSING_PRIORITY = [
+  'account_use_question',
+  'pay_arrival_question',
+  'unspent_not_confirmed',
+  'income_pattern_unconfirmed',
+  'expected_income_needed',
+  'unexplained_money_question',
+  'volatile_cover_question',
+  'no_income_figures',
+  'everyday_unknown',
+  'records_look_behind',
+  'no_price',
+  'share_invalid',
+  'legacy_invest_check',
+  'plan_count_missing',
+  'first_payment_not_chosen',
+  'first_payment_passed',
+  'pause_interest_not_answered',
+  'plan_rate_missing',
+] as const satisfies readonly MissingCode[]; // D-59
