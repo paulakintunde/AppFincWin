@@ -72,4 +72,10 @@ describe('cadence', () => {
     expect(() => assertCadence(bad(1.5), 't')).toThrow(RangeError);
     expect(() => assertCadence(bad(12), 't')).not.toThrow();
   });
+
+  it('rejects an unknown unit and a bad term', () => {
+    expect(() => assertCadence({ unit: 'day', every: 1 } as unknown as Cadence, 'x')).toThrow(RangeError);
+    expect(() => countFromTerm(MONTHLY, -1)).toThrow(RangeError);
+    expect(() => countFromTerm(MONTHLY, 1.5)).toThrow(RangeError);
+  });
 });
