@@ -232,13 +232,13 @@
       "amount": 5000
      }
     ],
-    "unspentAfter": 240000,
+    "unspentAfter": 235000,
     "month": {
      "moneyIn": 400000,
      "moneyOut": 357500,
      "monthLeft": 42500
     },
-    "working": "Sam bought a 120,000 laptop on 2026-10-02 on a plan, cancelled on return (series ended 2026-10-03). The unspent anchor of 2026-10-02 was 120,000 (after the purchase). The 120,000 refund (other_in, no countsAs, so not income) lands 2026-10-03, after the anchor, so unspent is 120,000+120,000 = 240,000, the pre-purchase figure. breakdown.other nets the returned purchase out of the month: moneyOut stays 150,000+30,000+10,000+137,500+30,000 = 357,500, moneyIn 400,000, monthLeft 42,500. A 5,000 check <= 42,500 -> fits_month; the plan pins unspentAfter = 240,000 (the pre-purchase figure). Band 2 (5,000 is not < 5,000)."
+    "working": "Sam bought a 120,000 laptop on 2026-10-02 on a plan, cancelled on return (series ended 2026-10-03). The unspent anchor of 2026-10-02 was 120,000 (after the purchase). The 120,000 refund (other_in, no countsAs, so not income) lands 2026-10-03, after the anchor, so unspent is 120,000+120,000 = 240,000, the pre-purchase figure. breakdown.other nets the returned purchase out of the month: moneyOut stays 150,000+30,000+10,000+137,500+30,000 = 357,500, moneyIn 400,000, monthLeft 42,500. A 5,000 check <= 42,500 -> fits_month; the plan pins unspentAfter = 240,000 (the pre-purchase figure). Band 2 (5,000 is not < 5,000). CORRECTION (05.1-25): the rolled unspent (funds.unspent.value) is 240,000, the pre-purchase figure, and the golden pins that separately. The unspent_before_after fact is for the 5,000 check being asked now: 240,000-5,000 = 235,000 (the same subtraction as situation 02), so unspentAfter is 235,000, not 240,000."
    },
    "source": "D-18"
   },
