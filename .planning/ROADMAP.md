@@ -873,7 +873,7 @@ It is built beside the Phase 4/5 engine behind a `decideV3` switch, and compared
   4. Payment plans (weekly, every 2 weeks, monthly) work from a rate or APR and fees, with an optional quoted payment.
   5. One judge gives six codes with one sentence each, and its funding split. "What could I do instead?" compares the payment stream, with a fixed-rate deposit at the user's own rate.
   6. Invariants I1–I43 pass, branch coverage stays at 100%, and the shadow run against the old engine is reviewed.
-**Plans:** 16/32 plans executed
+**Plans:** 22/32 plans executed
 
 Plans:
 - [x] 05.1-01-PLAN.md — v3 contract types, cited constants, own barrel, isolation and depcruise gates (S0)
@@ -892,13 +892,13 @@ Plans:
 - [x] 05.1-14-PLAN.md — Quoted-payment check and the plan card (S5)
 - [x] 05.1-15-PLAN.md — Legacy answers baseline from today's engine (S0)
 - [x] 05.1-16-PLAN.md — buildMonthModel, Sam's month, types fixed and published (S2 exit)
-- [ ] 05.1-17-PLAN.md — Cash path without zero spend and the payday variant (S3)
-- [ ] 05.1-18-PLAN.md — Unspent suggested sum, D-22 roll-forward, stale and drift (S4)
-- [ ] 05.1-19-PLAN.md — Emergency fund lock and envelopes (S4)
-- [ ] 05.1-20-PLAN.md — Adapters: v1 to v2, legacy lines, legacyState, seen states (S8)
+- [x] 05.1-17-PLAN.md — Cash path without zero spend and the payday variant (S3)
+- [x] 05.1-18-PLAN.md — Unspent suggested sum, D-22 roll-forward, stale and drift (S4)
+- [x] 05.1-19-PLAN.md — Emergency fund lock and envelopes (S4)
+- [x] 05.1-20-PLAN.md — Adapters: v1 to v2, legacy lines, legacyState, seen states (S8)
 - [ ] 05.1-21-PLAN.md — buildPurchase and buildFunds (S6b)
-- [ ] 05.1-22-PLAN.md — Lines as facts and the needs-input rules (S6b)
-- [ ] 05.1-23-PLAN.md — Verdict table keys and draft v3 copy with banned-word guards (S6b)
+- [x] 05.1-22-PLAN.md — Lines as facts and the needs-input rules (S6b)
+- [x] 05.1-23-PLAN.md — Verdict table keys and draft v3 copy with banned-word guards (S6b)
 - [ ] 05.1-24-PLAN.md — The one judge: six codes, split, notices (S6b)
 - [ ] 05.1-25-PLAN.md — evaluate() and the golden run, I42 end to end
 - [ ] 05.1-26-PLAN.md — What could I do instead: futures with the payment stream, explorer (S7)
@@ -1083,7 +1083,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
-| 05.1 Decide engine v3 | 16/32 | In Progress|  |
+| 05.1 Decide engine v3 | 22/32 | In Progress|  |
 | 05.2 Decide data and setup | 0/TBD | Not started | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
