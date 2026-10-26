@@ -3,7 +3,8 @@
  * The only place a code is decided. Notices and lines never change it: lines become facts, notices are fixed text keys.
  *
  * Ladder (one-off part, cash check first):
- *   cash payday / not covered                       -> not_yet
+ *   cash payday / not covered                       -> not_yet (payday only when the ladder below would pass by then;
+ *                                                      otherwise the later of payday and the ladder month)
  *   P <= max(0, monthLeft)                          -> fits_month
  *   P <= unspent (this month's room counted once)   -> fits_unspent
  *   unspent unknown and P above this month's room   -> needs_input
@@ -81,7 +82,7 @@ function notYet(variant: Variant, readyBy: ReadyBy | null): OneOffPart {
 }
 
 /** Months until the typical month could cover what unspent does not. null when the typical month leaves nothing. */
-function readyMonth(month: MonthModel, price: number, unspent: number | null): ReadyBy | null {
+function readyMonth(month: MonthModel, price: number, unspent: number | null): Extract<ReadyBy, { kind: 'month' }> | null {
   const tl = month.typicalLeft;
   if (tl === null || tl <= 0) return null;
   const gap = Math.max(0, price - Math.max(0, unspent ?? 0));
@@ -89,20 +90,14 @@ function readyMonth(month: MonthModel, price: number, unspent: number | null): R
   return { kind: 'month', month: addYearMonths(month.month, n) };
 }
 
-export function oneOffPart(
+/** The one-off ladder on its own: month, own envelope, earlier unspent, emergency, else not covered. No cash check. */
+function ladder(
   j: JudgeInput,
+  p: Purchase,
   available: { readonly unspent: MinorUnits | null; readonly envelope: MinorUnits }
 ): OneOffPart {
-  const p = j.purchase;
-  if (p === null) {
-    return { code: 'needs_input', variant: null, split: [], readyBy: null, emergencyUsed: mu(0), rebuildMonths: null };
-  }
   const P = p.dayOne;
   const { month } = j;
-
-  if (j.cash.kind === 'payday') return notYet('payday', { kind: 'date', date: j.cash.until });
-  if (j.cash.kind === 'not_covered') return notYet('not_covered', readyMonth(month, P, available.unspent));
-
   const room = Math.max(0, month.monthLeft);
   const B = Math.min(P, room);
   const A = Math.min(P - B, Math.max(0, available.envelope));
@@ -137,6 +132,30 @@ export function oneOffPart(
   }
 
   return notYet('not_covered', readyMonth(month, P, unspent));
+}
+
+/**
+ * Cash check first, then the ladder. A dip until payday is not_yet, but "ready on payday" is only true when the ladder
+ * would pass by then. When the ladder holds the price back too, the answer is the later of the two: the ladder's
+ * month (not covered), or payday when payday falls after the start of that month. Without this a dearer price that
+ * dips before payday was told "payday" while a cheaper one held back by the ladder alone got a later month (I13).
+ */
+export function oneOffPart(
+  j: JudgeInput,
+  available: { readonly unspent: MinorUnits | null; readonly envelope: MinorUnits }
+): OneOffPart {
+  const p = j.purchase;
+  if (p === null) {
+    return { code: 'needs_input', variant: null, split: [], readyBy: null, emergencyUsed: mu(0), rebuildMonths: null };
+  }
+  if (j.cash.kind === 'not_covered') return notYet('not_covered', readyMonth(j.month, p.dayOne, available.unspent));
+  const part = ladder(j, p, available);
+  if (j.cash.kind === 'ok') return part;
+  const until = j.cash.until;
+  const onPayday = notYet('payday', { kind: 'date', date: until });
+  if (part.code !== 'not_yet') return onPayday; // the ladder passes (or cannot tell): payday is the only wait
+  const ready = readyMonth(j.month, p.dayOne, available.unspent);
+  return ready !== null && until > `${ready.month}-01` ? onPayday : part;
 }
 
 export function monthlyPart(

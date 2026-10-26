@@ -206,6 +206,53 @@ describe('judge: one-off ladder (v3 §12)', () => {
     expect(r.readyBy).toEqual({ kind: 'date', date: '2026-10-28' });
   });
 
+  describe('payday when the ladder also holds the price back (I13 regression)', () => {
+    const cash: CashCheck = { kind: 'payday', until: '2026-10-28', shortBy: mu(5_000) };
+
+    it('is not covered with the ladder month, not ready on payday', () => {
+      // gap 120000 - 10000 = 110000 over typicalLeft 42500 = 3 months.
+      const r = judge(input({ cash, funds: funds(10_000) }));
+      expect(r.code).toBe('not_yet');
+      expect(r.variant).toBe('not_covered');
+      expect(r.readyBy).toEqual({ kind: 'month', month: '2027-01' });
+      expect(r.split).toEqual([]);
+    });
+
+    it('a dearer price that dips before payday is never ready before a cheaper one the ladder alone holds back', () => {
+      const lo = judge(input({ funds: funds(10_000), purchase: purchase({ dayOne: mu(90_000), whole: mu(90_000) }) }));
+      const hi = judge(input({ cash, funds: funds(10_000) }));
+      expect(lo.variant).toBe('not_covered');
+      expect(lo.readyBy).toEqual({ kind: 'month', month: '2026-12' });
+      expect(hi.readyBy).toEqual({ kind: 'month', month: '2027-01' });
+    });
+
+    it('keeps payday when payday falls after the start of the ladder month', () => {
+      const late: CashCheck = { kind: 'payday', until: '2026-11-20', shortBy: mu(5_000) };
+      const r = judge(input({ cash: late, funds: funds(10_000), month: month({ typicalLeft: mu(1_000_000) }) }));
+      expect(r.variant).toBe('payday');
+      expect(r.readyBy).toEqual({ kind: 'date', date: '2026-11-20' });
+    });
+
+    it('payday on the first of the ladder month gives the ladder month', () => {
+      const first: CashCheck = { kind: 'payday', until: '2026-11-01', shortBy: mu(5_000) };
+      const r = judge(input({ cash: first, funds: funds(10_000), month: month({ typicalLeft: mu(1_000_000) }) }));
+      expect(r.variant).toBe('not_covered');
+      expect(r.readyBy).toEqual({ kind: 'month', month: '2026-11' });
+    });
+
+    it('is not covered with no ready date when the typical month leaves nothing', () => {
+      const r = judge(input({ cash, funds: funds(10_000), month: month({ typicalLeft: mu(0) }) }));
+      expect(r.variant).toBe('not_covered');
+      expect(r.readyBy).toBeNull();
+    });
+
+    it('payday stands when unspent is unknown and the price is above this month', () => {
+      const r = oneOffPart(input({ cash, funds: funds(null) }), { unspent: null, envelope: mu(0) });
+      expect(r.variant).toBe('payday');
+      expect(r.readyBy).toEqual({ kind: 'date', date: '2026-10-28' });
+    });
+  });
+
   it('cash not covered is not_yet not_covered with a month', () => {
     const r = judge(input({ cash: { kind: 'not_covered', shortBy: mu(1) } }));
     expect(r.code).toBe('not_yet');
