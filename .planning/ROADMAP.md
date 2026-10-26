@@ -873,7 +873,7 @@ It is built beside the Phase 4/5 engine behind a `decideV3` switch, and compared
   4. Payment plans (weekly, every 2 weeks, monthly) work from a rate or APR and fees, with an optional quoted payment.
   5. One judge gives six codes with one sentence each, and its funding split. "What could I do instead?" compares the payment stream, with a fixed-rate deposit at the user's own rate.
   6. Invariants I1–I43 pass, branch coverage stays at 100%, and the shadow run against the old engine is reviewed.
-**Plans:** 14/32 plans executed
+**Plans:** 16/32 plans executed
 
 Plans:
 - [x] 05.1-01-PLAN.md — v3 contract types, cited constants, own barrel, isolation and depcruise gates (S0)
@@ -890,8 +890,8 @@ Plans:
 - [x] 05.1-12-PLAN.md — This month: Erest, money in vs out on the real schedule (S2)
 - [x] 05.1-13-PLAN.md — Typical month median, low month, marks, confidence (S2)
 - [x] 05.1-14-PLAN.md — Quoted-payment check and the plan card (S5)
-- [ ] 05.1-15-PLAN.md — Legacy answers baseline from today's engine (S0)
-- [ ] 05.1-16-PLAN.md — buildMonthModel, Sam's month, types fixed and published (S2 exit)
+- [x] 05.1-15-PLAN.md — Legacy answers baseline from today's engine (S0)
+- [x] 05.1-16-PLAN.md — buildMonthModel, Sam's month, types fixed and published (S2 exit)
 - [ ] 05.1-17-PLAN.md — Cash path without zero spend and the payday variant (S3)
 - [ ] 05.1-18-PLAN.md — Unspent suggested sum, D-22 roll-forward, stale and drift (S4)
 - [ ] 05.1-19-PLAN.md — Emergency fund lock and envelopes (S4)
@@ -1083,7 +1083,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
-| 05.1 Decide engine v3 | 14/32 | In Progress|  |
+| 05.1 Decide engine v3 | 16/32 | In Progress|  |
 | 05.2 Decide data and setup | 0/TBD | Not started | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
