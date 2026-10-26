@@ -18,6 +18,7 @@ import type { CurrencyCode, MinorUnits } from '../money/types';
 import type { Percent, CardMinimumTerms, MinimumOutcome } from '../payoff/types';
 import type { RecurringFreq } from '../recurring/schedule';
 import type { ItemType, CardEligibility } from './cardRule';
+import type { PotInput, PotLine } from './potTypes';
 import type { ShareScope, SplitRule, ResolvedShare } from './share';
 export type {
   Percent,
@@ -133,22 +134,7 @@ export interface HouseholdSpendingRule {
   readonly byCategory: readonly CategoryShareRule[];
 } // D-34: existing spending only
 // ── Pots (D-101, R18.2) ──
-export type PotKind = 'wait' | 'pot';
-export interface PotInput {
-  readonly id: string;
-  readonly kind: PotKind;
-  readonly target: MinorUnits | null;
-  readonly monthlyAmount: MinorUnits | null;
-  readonly readyBy: string | null; // 'YYYY-MM-DD'
-  readonly saved: MinorUnits; // opening saved + tagged paid lines
-}
-export type PotState = 'active' | 'reached' | 'past_due';
-export interface PotLine {
-  readonly id: string;
-  readonly monthly: MinorUnits;
-  readonly months: number | null;
-  readonly state: PotState;
-}
+export type { PotKind, PotInput, PotState, PotLine } from './potTypes';
 
 export interface DecideSnapshot {
   readonly currency: CurrencyCode; // D-16 clarified

@@ -11,8 +11,8 @@ import { MAX_ABS_AMOUNT_MINOR, minorUnits, type MinorUnits } from '../money/type
 import { ceilDivide } from '../payoff/types';
 import { occurrenceDate } from '../recurring/schedule';
 import { isValidLocalDate } from '../time/localDate';
-import { MAX_SET_ASIDE_POTS, SIMULATION_MONTH_CAP } from './constants';
-import type { PotInput, PotLine } from './types';
+import { SIMULATION_MONTH_CAP } from '../payoff/constants';
+import { MAX_SET_ASIDE_POTS, type PotInput, type PotLine } from './potTypes';
 
 const FN = 'potSetAside';
 const ZERO = minorUnits(0);
