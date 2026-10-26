@@ -31,3 +31,8 @@ supabase/.branches/
 
 # Agent worktrees (Claude Code isolation)
 .claude/worktrees/
+
+# 05.1 D-17 / D-27: owner-local shadow data never leaves the owner's machine
+*.local.json
+shadow-source*.json
+.planning/phases/05.1-decide-engine-v3/shadow/*.local.*
