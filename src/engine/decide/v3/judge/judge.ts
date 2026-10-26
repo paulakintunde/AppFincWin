@@ -217,7 +217,7 @@ export function judge(j: JudgeInput): Result {
         : null;
   const readyBy = code === 'not_yet' ? one.readyBy : null;
 
-  // Facts (fixed order): month, unspent, emergency, envelope, plan, lines.
+  // Facts (fixed order): month, unspent, emergency, envelope, plan, low month, lines.
   const fromMonth = one.split.find((s) => s.source === 'month')?.amount ?? 0;
   const fromEarlier = one.split.find((s) => s.source === 'unspent_earlier')?.amount ?? 0;
   const fromEnvelope = one.split.find((s) => s.source === 'envelope')?.amount ?? 0;
@@ -237,6 +237,10 @@ export function judge(j: JudgeInput): Result {
   }
   if (fromEnvelope > 0) facts.push({ code: 'envelope_used', values: { amount: fromEnvelope } });
   facts.push(...j.purchaseFacts);
+  if (variant === 'low_month' && month.low !== null) {
+    // The low-month clause as a fact (v3 §12 #7, #22): the tight month, its leftover, and the monthly cost it cannot carry.
+    facts.push({ code: 'low_month', values: { month: month.low.month, left: month.low.left, monthly: purchase.monthly } });
+  }
   facts.push(
     ...evaluateLines(j.inputs.limits, {
       month,

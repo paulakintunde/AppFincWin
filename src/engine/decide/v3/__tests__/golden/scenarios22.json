@@ -355,9 +355,9 @@
     "month": {
      "e": 80000,
      "typicalLeft": 80000,
-     "lowLeft": 65000
+     "lowLeft": 75000
     },
-    "working": "Profile (c) steady: typicalIncome = steady 300,000 (not the real months 2,800-3,200). E = median(70k,90k,80k,85k,75k,80k): sorted 70,75,80,80,85,90 -> 80,000. typicalLeft = 300,000-120,000 bills-20,000 saving-80,000 = 80,000. M = 6,000 -> 74,000 >= 0. Real monthly left: 100k,60k,80k,95k,65k,80k; second-lowest 65,000; 65,000-6,000 >= 0. October: monthLeft = 300,000-(120,000+5,000+75,000 Erest+20,000) = 80,000 >= P 6,000 -> fits_month. Band 4 (whole 72,000: 10,000 and 50,000 below)."
+    "working": "Profile (c) steady: typicalIncome = steady 300,000 (not the real months 2,800-3,200). E = median(70k,90k,80k,85k,75k,80k): sorted 70,75,80,80,85,90 -> 80,000. typicalLeft = 300,000-120,000 bills-20,000 saving-80,000 = 80,000. M = 6,000 -> 74,000 >= 0. Real monthly left: 100k,60k,80k,95k,65k,80k; second-lowest 65,000; 65,000-6,000 >= 0. October: monthLeft = 300,000-(120,000+5,000+75,000 Erest+20,000) = 80,000 >= P 6,000 -> fits_month. Band 4 (whole 72,000: 10,000 and 50,000 below). CORRECTION (05.1-25): the low month is judged at today's steady pay (RESEARCH Pitfall 3, \"leftovers at today's pay\"), the same basis as typicalLeft, not at each month's real pay. At 300,000 steady: 300,000-120,000-20,000-everyday (70k,90k,80k,85k,75k,80k) = 90k,70k,80k,75k,85k,80k; sorted 70k,75k,80k,80k,85k,90k; second-lowest 75,000 (August). 75,000-6,000 >= 0 so no low-month clause."
    },
    "source": "v3 §12 #08"
   },
@@ -506,9 +506,12 @@
      "kind": "date",
      "date": "2026-10-28"
     },
-    "working": "Oct 20: cash available before next pay = balance 20,000 < P 35,000 -> cash check fails even though the confirmed unspent figure (50,000) is larger. Next pay lands Oct 28 -> not_yet, payday variant, readyBy 2026-10-28. Band 3."
+    "working": "Oct 20: cash available before next pay = balance 20,000 < P 35,000 -> cash check fails even though the confirmed unspent figure (50,000) is larger. Next pay lands Oct 28 -> not_yet, payday variant, readyBy 2026-10-28. Band 3. CORRECTION (05.1-25): the payday variant needs the shortfall to end at payday AND stay ended over the 90 days (v3 section 4.5: \"the 90-day low point < 0 -> not covered\"). Tia as first written has 23,613 left this month, so after 35,000 she dips below zero again before Nov 28 and the answer is not_covered. Her everyday figure is set to 60,000 (everydayOverride): Erest 21,290, balance on Oct 27 = 20,000-35,000-21,290 < 0, pay Oct 28 +260,000, then every later month nets +52,000, lowest after Oct 28 = 15,710 >= 0 -> payday."
    },
-   "source": "v3 §12 #12"
+   "source": "v3 §12 #12",
+   "personOverrides": {
+    "everydayOverride": 60000
+   }
   },
   {
    "id": "13",
@@ -687,7 +690,7 @@
      "erest": 100000,
      "monthLeft": 40000
     },
-    "working": "Two full months (Aug 100,000, Sep 120,000 everyday): E = mean of the middle two = 110,000. typicalLeft = 300,000-150,000-110,000 = 40,000. October: Erest = max(round(110,000*28/31)=99,355, 100,000) = 100,000; out = 150,000+10,000+100,000 = 260,000; monthLeft 40,000 >= 15,000 -> fits_month. Fewer than 3 full months -> confidence rough."
+    "working": "Two full months (Aug 100,000, Sep 120,000 everyday): E = mean of the middle two = 110,000. typicalLeft = 300,000-150,000-110,000 = 40,000. October: Erest = max(round(110,000*28/31)=99,355, 100,000) = 100,000; out = 150,000+10,000+100,000 = 260,000; monthLeft 40,000 >= 15,000 -> fits_month. Fewer than 3 full months -> confidence rough. NOTE (05.1-25): Jordan's persona balance (100,000) is less than the rest of October needs (Erest 100,000 + 15,000 = 115,000 until the Nov 1 pay), so the v3 cash check answers payday before the month does; golden.test.ts runs this situation with balance 300,000. The fixture is left as is because the D-14 legacy baseline is recorded against it."
    },
    "source": "v3 §12 #14"
   },
