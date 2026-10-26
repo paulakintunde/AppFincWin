@@ -69,7 +69,8 @@ export function stagedRequired(band: Band): boolean {
 
 /** Answer keys are prefixed with their layer: 'L2.worth', 'L6.closing'. */
 export function layerOfAnswerKey(key: string): Layer {
-  const prefix = key.split('.')[0] ?? '';
+  const dot = key.indexOf('.');
+  const prefix = dot < 0 ? key : key.slice(0, dot);
   const found = CANONICAL.find((l) => l === prefix);
   if (found === undefined) throw new RangeError(`layerOfAnswerKey: "${key}" has no layer prefix`);
   return found;
