@@ -864,7 +864,7 @@ Plans:
 - it keeps the emergency fund out of every check that isn't marked an emergency.
 
 It is built beside the Phase 4/5 engine behind a `decideV3` switch, and compared against it before anything is removed.
-**Requirements**: TBD (from `.planning/Decision Research/panel/00-REBUILD-PLAN-v3.md` and `00-UPGRADE-PLAN.md` section 5)
+**Requirements**: SC-1..SC-6 and 05.1-CONTEXT D-01..D-29 (no REQUIREMENTS.md IDs; from `.planning/Decision Research/panel/00-REBUILD-PLAN-v3.md` and `00-UPGRADE-PLAN.md` section 5)
 **Depends on:** Phase 5 (merged with Decide hidden behind "Coming soon")
 **Success Criteria** (what must be TRUE):
   1. Recurring candidates are detected, confirmed and checked for drift. Pay on two fixed dates each month (1st and 15th) counts as 24 payments a year, not 26.
@@ -873,10 +873,41 @@ It is built beside the Phase 4/5 engine behind a `decideV3` switch, and compared
   4. Payment plans (weekly, every 2 weeks, monthly) work from a rate or APR and fees, with an optional quoted payment.
   5. One judge gives six codes with one sentence each, and its funding split. "What could I do instead?" compares the payment stream, with a fixed-rate deposit at the user's own rate.
   6. Invariants I1–I43 pass, branch coverage stays at 100%, and the shadow run against the old engine is reviewed.
-**Plans:** 0 plans
+**Plans:** 32 plans in 11 waves (planned 2026-10-26 against 05.1-CONTEXT D-01..D-29 and SC-1..SC-6)
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 05.1 to break down)
+- [ ] 05.1-01-PLAN.md — v3 contract types, cited constants, own barrel, isolation and depcruise gates (S0)
+- [ ] 05.1-02-PLAN.md — Leaf moves (bisectLargest, pot types, D-11 line defaults) and v3 calendar helpers (S0)
+- [ ] 05.1-03-PLAN.md — DECIDE_V3 switch with one reader; gitignore owner-local shadow files (D-15)
+- [ ] 05.1-04-PLAN.md — Golden personas and the 22 situations with v3 §12 expectations (S0, D-28)
+- [ ] 05.1-05-PLAN.md — Recurring candidates, two-date pay group, dismissals (S1)
+- [ ] 05.1-06-PLAN.md — Confirmed series: line classes, occurrences, ended/dismissed, drift (S1)
+- [ ] 05.1-07-PLAN.md — Plan cadences, scaled APR, first payment and deferral, exact final payment (S5)
+- [ ] 05.1-08-PLAN.md — Per-currency band table and bands to layers (S6a)
+- [ ] 05.1-09-PLAN.md — Preset question library and custom options (S6a, D-19)
+- [ ] 05.1-10-PLAN.md — D-18 extra fixtures and the v1 inputs corpus (S0)
+- [ ] 05.1-11-PLAN.md — Income this month by profile (S2)
+- [ ] 05.1-12-PLAN.md — This month: Erest, money in vs out on the real schedule (S2)
+- [ ] 05.1-13-PLAN.md — Typical month median, low month, marks, confidence (S2)
+- [ ] 05.1-14-PLAN.md — Quoted-payment check and the plan card (S5)
+- [ ] 05.1-15-PLAN.md — Legacy answers baseline from today's engine (S0)
+- [ ] 05.1-16-PLAN.md — buildMonthModel, Sam's month, types fixed and published (S2 exit)
+- [ ] 05.1-17-PLAN.md — Cash path without zero spend and the payday variant (S3)
+- [ ] 05.1-18-PLAN.md — Unspent suggested sum, D-22 roll-forward, stale and drift (S4)
+- [ ] 05.1-19-PLAN.md — Emergency fund lock and envelopes (S4)
+- [ ] 05.1-20-PLAN.md — Adapters: v1 to v2, legacy lines, legacyState, seen states (S8)
+- [ ] 05.1-21-PLAN.md — buildPurchase and buildFunds (S6b)
+- [ ] 05.1-22-PLAN.md — Lines as facts and the needs-input rules (S6b)
+- [ ] 05.1-23-PLAN.md — Verdict table keys and draft v3 copy with banned-word guards (S6b)
+- [ ] 05.1-24-PLAN.md — The one judge: six codes, split, notices (S6b)
+- [ ] 05.1-25-PLAN.md — evaluate() and the golden run, I42 end to end
+- [ ] 05.1-26-PLAN.md — What could I do instead: futures with the payment stream, explorer (S7)
+- [ ] 05.1-27-PLAN.md — End-to-end invariant suite and the I1-I43 index
+- [ ] 05.1-28-PLAN.md — Shadow run with the D-14 gate and drafted reasons (S8)
+- [ ] 05.1-29-PLAN.md — I28 back-test (S8)
+- [ ] 05.1-30-PLAN.md — Snapshot wiring: buildV3Inputs, computeV3, final barrel (S9)
+- [ ] 05.1-31-PLAN.md — Dev-only owner export, local shadow tier, switch guard (D-27)
+- [ ] 05.1-32-PLAN.md — Owner shadow review and sign-off (D-14, checkpoint)
 
 ### Phase 05.2: Decide data and setup (INSERTED)
 
