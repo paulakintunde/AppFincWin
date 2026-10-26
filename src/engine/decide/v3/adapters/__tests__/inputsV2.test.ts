@@ -102,6 +102,11 @@ describe('parseCheckV2', () => {
     expect(c.extras).toEqual({ a: 0 });
   });
 
+  it('an unknown split rule resets the share to personal', () => {
+    const c = parseCheckV2({ v: 2, share: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'bogus' } } })!;
+    expect(c.share).toEqual({ kind: 'personal' });
+  });
+
   it('readStoredCheck uses v2 as stored and upgrades the rest', () => {
     expect(readStoredCheck({ v: 2, price: 5 })).toMatchObject({ check: { price: 5 }, reasons: [] });
     expect(readStoredCheck({ method: 'cash', advertised: 5 }).reasons).toContain('legacy_upgraded');
