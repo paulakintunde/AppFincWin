@@ -1,7 +1,21 @@
 import * as v3 from '../index';
-import type { V3Inputs, CheckV2, Result, MonthModel, Funds, Purchase, Schedule, Limits, HomeThresholds } from '../index';
+import type {
+  V3Inputs,
+  CheckV2,
+  Result,
+  MonthModel,
+  Funds,
+  Purchase,
+  Schedule,
+  Limits,
+  HomeThresholds,
+  RecurringCandidate,
+  SeriesDrift,
+  PlanCard,
+  QuotedCheck,
+} from '../index';
 
-// Later plans (05.1-16, 05.1-30) extend this list; nobody else edits it.
+// Later plans (05.1-30) extend this list; nobody else edits it.
 export const V3_RUNTIME_EXPORTS = [
   'AMOUNT_TOLERANCE_DIVISOR',
   'BAND_EDGES_USD',
@@ -22,6 +36,8 @@ export const V3_RUNTIME_EXPORTS = [
   'MISSED_PAY_GRACE_DAYS',
   'NEEDS_INPUT_ENTRY_AGE_DAYS',
   'NEEDS_INPUT_MIN_BAND',
+  'PRESET_QUESTIONS',
+  'QUESTION_LIBRARY',
   'QUOTED_TOLERANCE_USD',
   'RECURRING_MIN_REPEATS',
   'RECURRING_WINDOWS',
@@ -33,10 +49,37 @@ export const V3_RUNTIME_EXPORTS = [
   'UNSPENT_DRIFT_USD',
   'UNSPENT_STALE_DAYS',
   'V3_HISTORY_MONTHS',
+  'V3_ITEM_TYPES',
+  'bandOf',
+  'buildMonthModel',
+  'buildSchedule',
+  'canUseEmergency',
+  'checkQuoted',
+  'detectCandidates',
+  'homeThresholds',
+  'layersFor',
+  'monthlyEquivalentOf',
+  'planCard',
+  'seriesDrift',
+  'validateCustomOptions',
 ] as const;
 
 // Compile-only: tsc fails if any of these types leaves the barrel.
-type _Gate = [V3Inputs, CheckV2, Result, MonthModel, Funds, Purchase, Schedule, Limits, HomeThresholds];
+type _Gate = [
+  V3Inputs,
+  CheckV2,
+  Result,
+  MonthModel,
+  Funds,
+  Purchase,
+  Schedule,
+  Limits,
+  HomeThresholds,
+  RecurringCandidate,
+  SeriesDrift,
+  PlanCard,
+  QuotedCheck,
+];
 export type { _Gate };
 
 const surface = (m: object): string[] => Object.keys(m).filter((k) => k !== 'default' && k !== '__esModule').sort();

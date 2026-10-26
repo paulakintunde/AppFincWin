@@ -1,5 +1,6 @@
 /**
- * v3 Decide contract (05.1). Interface-first: later slices implement against these shapes.
+ * v3 Decide contract (05.1). FIXED after 05.1-16 (UP §7.1). Changes after this point need a note in the plan SUMMARY
+ * and a 05.2/05.3 heads-up. Interface-first: later slices implement against these shapes.
  * Money is MinorUnits (a branded safe-integer number); arithmetic is bigint inside functions, back through
  * minorFromBigInt. Engine emits codes only, never English.
  *
