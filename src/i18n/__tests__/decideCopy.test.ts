@@ -3,7 +3,7 @@ import en from '../locales/en';
 import { DRAFT_COPY_KEYS } from '../copyStatus';
 import { UNDO_LABEL_KEYS } from '../../engine/undo/types';
 import { undoLabelText } from '../undoLabel';
-import { FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NOTICE_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
+import { FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NOTICE_KEYS, READINESS_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
 
 interface Leaf {
   path: string;
@@ -274,6 +274,12 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       ...Object.values(NOTICE_KEYS),
       ...Object.values(FACT_KEYS),
       ...Object.values(MISSING_KEYS),
+      ...Object.values(READINESS_KEYS),
+      // Context variants chosen by the UI (05.1-33): not engine codes, so no table maps them.
+      'decide.v3.notice.income_from_expected_confirmed',
+      'decide.v3.notice.income_from_expected_last_year',
+      'decide.v3.notice.income_from_expected_low',
+      'decide.v3.missing.account_use_question_fund',
       FOOTER_KEY,
     ];
     expect(keys.filter((k) => resolve(k) === undefined)).toEqual([]);

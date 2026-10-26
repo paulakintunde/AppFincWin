@@ -36,7 +36,7 @@ export type { SeenV3, ChangeReason } from './adapters/seen';
 export { insteadFutures, FUTURE_ORDER } from './instead/futures';
 export type { Futures } from './instead/futures';
 export { explore } from './instead/explorer';
-export { VERDICT_TABLE, verdictRowFor, NOTICE_KEYS, FACT_KEYS, MISSING_KEYS, FOOTER_KEY } from './copy/verdictTable';
+export { VERDICT_TABLE, verdictRowFor, NOTICE_KEYS, FACT_KEYS, MISSING_KEYS, READINESS_KEYS, FOOTER_KEY } from './copy/verdictTable';
 export type { VerdictRow } from './copy/verdictTable';
 export { builtinLines } from './judge/lines';
 export { cadenceOfFreq } from './plan/cadence';
