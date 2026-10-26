@@ -178,6 +178,35 @@ describe('buildPurchase', () => {
     });
   });
 
+  it('a household of zero members cannot resolve; an unknown scope kind is a bug, not a reason', () => {
+    const zero = checkOnce(1000, { share: { kind: 'household', memberCount: 0, myIndex: 0, rule: { kind: 'even' } } });
+    expect(build(zero).missing).toEqual(['share_invalid']);
+    expect(() => build(checkOnce(1000, { share: { kind: 'bogus' } as never }))).toThrow('Unhandled shareScope');
+  });
+
+  it('an error that is not a range error is rethrown, not turned into a reason', () => {
+    const broken = checkOnce(1000, { itemType: { kind: 'preset', value: 'vehicle' }, extras: null as never });
+    expect(() => build(broken)).toThrow(TypeError);
+  });
+
+  it('a quote that cannot cover the financed amount is not scoreable', () => {
+    const b = build(checkPlan(204000, { count: 24, apr: null, firstPayment: { kind: 'one_period' }, quotedPayment: mu(100) }));
+    expect(b.purchase).toBeNull();
+    expect(b.missing).toEqual(['plan_rate_missing']);
+    expect(b.reasons).toContain('quote_used_no_rate');
+  });
+
+  it('a quote implying a rate above the maximum is reported as above_max', () => {
+    const b = must(checkPlan(204000, { count: 24, apr: null, firstPayment: { kind: 'one_period' }, quotedPayment: mu(1_000_000) }));
+    expect(b.facts.find((f) => f.code === 'implied_rate')?.values).toEqual({ apr: 'above_max' });
+  });
+
+  it('a quote within tolerance of the worked-out payment matches and adds no fact', () => {
+    const b = must(checkPlan(204000, { count: 24, apr: percent('0'), firstPayment: { kind: 'one_period' }, quotedPayment: mu(8500) }));
+    expect(b.quoted.kind).toBe('matches');
+    expect(b.facts.some((f) => f.code === 'quoted_differs')).toBe(false);
+  });
+
   it('overflow gives exceeds_range, not a throw', () => {
     const b = build(checkOnce(Number.MAX_SAFE_INTEGER, { oneOffFees: mu(Number.MAX_SAFE_INTEGER) }));
     expect(b.purchase).toBeNull();
@@ -225,6 +254,11 @@ describe('buildPurchase', () => {
       const b = must(checkPlan(240000, { count: 12, apr: percent('0'), firstPayment: today }, { share: even2 }));
       const flows = purchaseCashFlows(b.purchase, ASOF, 400);
       expect(flows.reduce((a, f) => a + f.amount, 0)).toBe(120000);
+    });
+    it('a day one smaller than the payment due today is held at zero, not negative', () => {
+      const b = must(checkPlan(250000, { count: 10, apr: percent('0'), firstPayment: today }));
+      const flows = purchaseCashFlows({ dayOne: mu(0), schedule: b.purchase.schedule, share: b.purchase.share }, ASOF, 400);
+      expect(flows.filter((f) => f.date === ASOF).reduce((a, f) => a + f.amount, 0)).toBe(25000);
     });
     it('a plan starting a period on has dayOne only from fees and deposit', () => {
       const b = must(checkPlan(120000, { count: 12, apr: percent('0'), firstPayment: { kind: 'one_period' } }));
