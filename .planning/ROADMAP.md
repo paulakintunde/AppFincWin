@@ -912,7 +912,7 @@ Plans:
 Gap closure (planned 2026-10-26 against 05.1-CONTEXT D-33..D-45, 05.1-VERIFICATION gaps 1-6 and 05.1-REVIEW H-01..H-03, M-01..M-09, L-01..L-09): 17 plans in 9 waves.
 - [ ] 05.1-33-PLAN.md — Contract reopened: income pattern, expected income, held-back bridges, new codes, cited constants, copy keys (wave 1)
 - [ ] 05.1-34-PLAN.md — Ended with no end date = ended as of today, one rule for the month and needsInput (D-41, M-01) (wave 2)
-- [ ] 05.1-35-PLAN.md — Drift ignores the emergency fund, savings moves are not drift, I31 strict; owner decision on the drift basis (D-43, M-06, checkpoint) (wave 3)
+- [ ] 05.1-35-PLAN.md — Balance is spending accounts only; drift ignores the fund, savings moves are not drift, I31 strict (D-43, D-43a, M-06) (wave 3)
 - [ ] 05.1-36-PLAN.md — Instead screen agrees with the verdict, explorer clamp, month-end anchors (H-03, L-04, L-05, L-07) (wave 2)
 - [ ] 05.1-37-PLAN.md — Question roles, total stored-check parsing, passed deferral (M-08, L-01, L-02) (wave 2)
 - [ ] 05.1-38-PLAN.md — One settling module: logged pay not counted twice, symmetric pay window (H-01, H-02, M-02) (wave 4)
@@ -921,7 +921,7 @@ Gap closure (planned 2026-10-26 against 05.1-CONTEXT D-33..D-45, 05.1-VERIFICATI
 - [ ] 05.1-41-PLAN.md — I13 not_covered vs a late payday, readyMonth cap, late-pay arbitrary (gap 6, M-04) (wave 5)
 - [ ] 05.1-42-PLAN.md — Partial thinning never helps; I1 it.failing becomes a passing test (D-42) (wave 5)
 - [ ] 05.1-43-PLAN.md — Variable and seasonal month: pattern, 12-month window, swings, expected income, lean months, same-season spending (D-33..D-37, D-39) (wave 5)
-- [ ] 05.1-44-PLAN.md — Ask to confirm the pattern and expected income; cash path capped at expected income (D-34, D-35) (wave 6)
+- [ ] 05.1-44-PLAN.md — Ask to confirm the pattern and expected income; cash path capped at expected income, with its why notice (D-34, D-35, D-46) (wave 6)
 - [ ] 05.1-45-PLAN.md — Held-back bridges subtracted from available unspent, breakdown line (D-38) (wave 6)
 - [ ] 05.1-46-PLAN.md — Judge: lean months then the unspent bridge, gig low month, available unspent, new facts (D-36..D-38) (wave 7)
 - [ ] 05.1-47-PLAN.md — Back-test: honest gig and seasonal histories, per-family I28 gate (D-40) (wave 8)
