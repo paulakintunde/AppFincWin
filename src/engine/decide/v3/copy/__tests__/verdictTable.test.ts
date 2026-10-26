@@ -18,6 +18,7 @@ describe('verdict table (I22 one code one text)', () => {
 
   it('verdictRowFor resolves variants', () => {
     expect(verdictRowFor('fits_month', null)).toBe(VERDICT_TABLE.fits_month);
+    expect(verdictRowFor('fits_unspent', null)).toBe(VERDICT_TABLE.fits_unspent);
     expect(verdictRowFor('fits_month', 'low_month')).toBe(VERDICT_TABLE['fits_month.low_month']);
     expect(verdictRowFor('fits_unspent', 'low_month')).toBe(VERDICT_TABLE['fits_unspent.low_month']);
     expect(verdictRowFor('not_yet', null)).toBe(VERDICT_TABLE['not_yet.not_covered']);
