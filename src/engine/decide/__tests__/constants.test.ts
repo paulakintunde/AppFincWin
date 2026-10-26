@@ -138,6 +138,17 @@ describe('constants.ts citations', () => {
     expect(index).toBeGreaterThanOrEqual(0);
     return blockAbove(index).join(' ');
   }
+  // 05.1 (D-16): the three D-11 line defaults moved to the leaf lineDefaults.ts with their citations.
+  const lineDefaultLines = readFileSync(join(__dirname, '..', 'lineDefaults.ts'), 'utf8')
+    .replace(/\r\n/g, '\n')
+    .split('\n');
+  function citeOfLineDefault(name: string): string {
+    const index = lineDefaultLines.findIndex((l) => l.startsWith(`export const ${name}`));
+    expect(index).toBeGreaterThanOrEqual(0);
+    const block: string[] = [];
+    for (let i = index - 1; i >= 0 && lineDefaultLines[i]!.startsWith('//'); i -= 1) block.unshift(lineDefaultLines[i]!);
+    return block.join(' ');
+  }
   const BEHAVIOUR_LABEL = 'FincWin behaviour constant (no published source; see 04-RESEARCH addendum §A)';
   const USER_CONFIRMED = 'FincWin behaviour line (user-confirmed 2026-10-15, D-04 confirmed after research)';
 
@@ -154,18 +165,18 @@ describe('constants.ts citations', () => {
   });
 
   it('names the user-confirmed behaviour lines (D-04 confirmed)', () => {
-    expect(citeOf('DEFAULT_DSR_LINE')).toContain(USER_CONFIRMED);
-    expect(citeOf('DEFAULT_DSR_LINE')).toContain('take-home income');
-    expect(citeOf('DEFAULT_DSR_LINE')).toContain('selling-guide.fanniemae.com');
-    expect(citeOf('DEFAULT_UNSECURED_INCOME_MULTIPLE')).toContain(USER_CONFIRMED);
+    expect(citeOfLineDefault('DEFAULT_DSR_LINE')).toContain(USER_CONFIRMED);
+    expect(citeOfLineDefault('DEFAULT_DSR_LINE')).toContain('take-home income');
+    expect(citeOfLineDefault('DEFAULT_DSR_LINE')).toContain('selling-guide.fanniemae.com');
+    expect(citeOfLineDefault('DEFAULT_UNSECURED_INCOME_MULTIPLE')).toContain(USER_CONFIRMED);
   });
 
   it('D-103 the housing line cites the 28/36 front-end ratio with a verified source', () => {
-    expect(citeOf('DEFAULT_HOUSING_LINE')).toContain('front-end');
-    expect(citeOf('DEFAULT_HOUSING_LINE')).toContain('28% of gross monthly income');
-    expect(citeOf('DEFAULT_HOUSING_LINE')).toContain('bankrate.com/mortgages/what-is-the-28-36-rule');
-    expect(citeOf('DEFAULT_HOUSING_LINE')).toContain('user-confirmed 2026-10-24');
-    expect(citeOf('DEFAULT_HOUSING_LINE')).toContain('take-home income');
+    expect(citeOfLineDefault('DEFAULT_HOUSING_LINE')).toContain('front-end');
+    expect(citeOfLineDefault('DEFAULT_HOUSING_LINE')).toContain('28% of gross monthly income');
+    expect(citeOfLineDefault('DEFAULT_HOUSING_LINE')).toContain('bankrate.com/mortgages/what-is-the-28-36-rule');
+    expect(citeOfLineDefault('DEFAULT_HOUSING_LINE')).toContain('user-confirmed 2026-10-24');
+    expect(citeOfLineDefault('DEFAULT_HOUSING_LINE')).toContain('take-home income');
   });
 
   it('cites the sources the research found', () => {
@@ -178,12 +189,8 @@ describe('constants.ts citations', () => {
   });
 
   it('labels the unsourced values as behaviour constants rather than standards', () => {
-    for (const name of [
-      'DEFAULT_UNSECURED_INCOME_MULTIPLE',
-      'BILLS_DUE_HORIZON_DAYS',
-      'EDGE_MARGIN_PERCENT',
-      'DEFAULT_PROJECTION_HORIZON_MONTHS',
-    ]) {
+    expect(citeOfLineDefault('DEFAULT_UNSECURED_INCOME_MULTIPLE')).toContain(BEHAVIOUR_LABEL);
+    for (const name of ['BILLS_DUE_HORIZON_DAYS', 'EDGE_MARGIN_PERCENT', 'DEFAULT_PROJECTION_HORIZON_MONTHS']) {
       expect(citeOf(name)).toContain(BEHAVIOUR_LABEL);
     }
   });
