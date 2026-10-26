@@ -135,6 +135,9 @@ export const DRAFT_COPY_KEYS = [
   ...leafPaths('you.record', en.you.record),
   ...leafPaths('you.add', en.you.add),
   ...leafPaths('decide', en.decide),
+  // 05.1: v3 verdict copy drafted from v3 §4.6; 05.3 rewrites
+  ...leafPaths('decide.v3', en.decide.v3),
+  'legal.decideFooter',
   'a11y.toastUndo',
   'a11y.selectRow',
   'a11y.swatch',
