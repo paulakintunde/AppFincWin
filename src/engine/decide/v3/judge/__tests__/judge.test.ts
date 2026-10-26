@@ -173,6 +173,18 @@ describe('judge: one-off ladder (v3 §12)', () => {
     expect(r.legacyState).toBe('adjust');
   });
 
+  it('an emergency need with no fund figure at all is not met from the fund', () => {
+    const r = judge(
+      input({
+        month: month({ monthLeft: mu(-2_000), typicalLeft: mu(12_000) }),
+        funds: funds(10_000, { emergency: null as unknown as MinorUnits }),
+        purchase: purchase({ dayOne: mu(70_000), whole: mu(70_000), emergency: true, purpose: work, canUseEmergency: true }),
+      })
+    );
+    expect(r.code).toBe('not_yet');
+    expect(r.split).toEqual([]);
+  });
+
   it('I38: emergency marked with a nice-to-have or custom purpose never uses the fund', () => {
     for (const purpose of [nice, { kind: 'custom', id: 'x' } as Purpose]) {
       const r = judge(
