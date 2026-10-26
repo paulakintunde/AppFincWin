@@ -38,9 +38,10 @@ module.exports = {
     {
       name: 'decide-engine-barrel-only',
       severity: 'error',
-      comment: '05-01 / DEC-12: Phase 5 reaches the Decide engine only through its public barrel (04-12).',
+      comment:
+        '05-01 / DEC-12: Phase 5 reaches the Decide engine only through its public barrel (04-12). 05.1 (D-15): the v3 engine has its own barrel, v3/index.ts.',
       from: { path: '^src/', pathNot: '^src/engine/' },
-      to: { path: '^src/engine/(decide|payoff)/(?!index\\.ts$)' },
+      to: { path: '^src/engine/(decide|payoff)/(?!index\\.ts$|v3/index\\.ts$)' },
     },
     {
       name: 'no-circular',
