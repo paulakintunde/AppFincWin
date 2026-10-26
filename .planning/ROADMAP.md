@@ -873,7 +873,7 @@ It is built beside the Phase 4/5 engine behind a `decideV3` switch, and compared
   4. Payment plans (weekly, every 2 weeks, monthly) work from a rate or APR and fees, with an optional quoted payment.
   5. One judge gives six codes with one sentence each, and its funding split. "What could I do instead?" compares the payment stream, with a fixed-rate deposit at the user's own rate.
   6. Invariants I1–I43 pass, branch coverage stays at 100%, and the shadow run against the old engine is reviewed.
-**Plans:** 26/32 plans executed
+**Plans:** 30/32 plans executed
 
 Plans:
 - [x] 05.1-01-PLAN.md — v3 contract types, cited constants, own barrel, isolation and depcruise gates (S0)
@@ -902,10 +902,10 @@ Plans:
 - [x] 05.1-24-PLAN.md — The one judge: six codes, split, notices (S6b)
 - [x] 05.1-25-PLAN.md — evaluate() and the golden run, I42 end to end
 - [x] 05.1-26-PLAN.md — What could I do instead: futures with the payment stream, explorer (S7)
-- [ ] 05.1-27-PLAN.md — End-to-end invariant suite and the I1-I43 index
-- [ ] 05.1-28-PLAN.md — Shadow run with the D-14 gate and drafted reasons (S8)
-- [ ] 05.1-29-PLAN.md — I28 back-test (S8)
-- [ ] 05.1-30-PLAN.md — Snapshot wiring: buildV3Inputs, computeV3, final barrel (S9)
+- [x] 05.1-27-PLAN.md — End-to-end invariant suite and the I1-I43 index
+- [x] 05.1-28-PLAN.md — Shadow run with the D-14 gate and drafted reasons (S8)
+- [x] 05.1-29-PLAN.md — I28 back-test (S8)
+- [x] 05.1-30-PLAN.md — Snapshot wiring: buildV3Inputs, computeV3, final barrel (S9)
 - [ ] 05.1-31-PLAN.md — Dev-only owner export, local shadow tier, switch guard (D-27)
 - [ ] 05.1-32-PLAN.md — Owner shadow review and sign-off (D-14, checkpoint)
 
@@ -1083,7 +1083,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
-| 05.1 Decide engine v3 | 26/32 | In Progress|  |
+| 05.1 Decide engine v3 | 30/32 | In Progress|  |
 | 05.2 Decide data and setup | 0/TBD | Not started | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
