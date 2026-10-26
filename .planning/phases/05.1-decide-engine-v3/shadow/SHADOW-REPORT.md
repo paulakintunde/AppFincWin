@@ -1,5 +1,49 @@
 # Shadow report: today's engine against v3 (05.1-28)
 
+## For review (05.1-32, refreshed 2026-10-26 after the I13 and candidate-ordering fixes; answers unchanged)
+
+**Totals:** 780 comparisons. 430 same answer, 212 changed, 138 unsupported by the old engine (134 of them deposit-with-instalment, so plan purchases are thinly covered). **39 new fits**: cash_path_spread 19, unspent_confirmed 13, low_month_clause 3, other 4. Every new fit has a drafted reason in `approved-changes.json`; none are approved yet.
+
+**Cause groups (changed answers):**
+- `cash_path_spread` (100): the old engine raised its own cash/cash_dip warning and v3's 90-day cash path raises none, even on tiny purchases (for example 1,011 against a 316,487 month left).
+- `needs_input_rules` (69): v3 asks for unspent money or up-to-date records where the old engine answered without them (66 of these were "no").
+- `unspent_confirmed` (13): v3 counts unspent money the person confirmed (D-22).
+- `emergency_locked` (11): v3 keeps the emergency fund out of reach (D-09); the old engine counted it toward the cushion.
+- `erest_not_zero_spend` (6): v3 carries the rest of the month's everyday spending instead of treating it as zero.
+- `median_ignores_outlier` (5): the typical month is a median, so one unusual month no longer moves it.
+- `low_month_clause` (3): the low-month variant applies.
+- `typical_month_short` (1): the typical month runs short.
+- `other` (4): no named rule matched; the drafted reasons say so.
+
+**Back-test I28** (seed 0x0128, 957 origin months; false fits / fits):
+
+| Family | v3 | Old engine | Held-out month below the low month |
+|---|---|---|---|
+| salaried | 76/356 (21.3%) | 363/723 (50.2%) | 51/150 |
+| gig | 225/746 (30.2%) | 20/35 (57.1%) | 43/150 |
+| **seasonal** | **342/825 (41.5%)** | 19/80 (23.8%) | 12/165 |
+| partial logger | 86/395 (21.8%) | 399/762 (52.4%) | 58/153 |
+| couple | 42/532 (7.9%) | 100/825 (12.1%) | 50/165 |
+| new user | 14/52 (26.9%) | 45/92 (48.9%) | 13/20 |
+| large month | 47/304 (15.5%) | 248/470 (52.8%) | 42/154 |
+| **overall** | **832/3210 (25.9%)** | 1194/2987 (40.0%) | 269/957 (28.1%, band 10–30%) |
+
+The gate passes on the overall rate. Seasonal earners are worse under v3 than under the old engine, although the old engine says "fits" far less often there (80 fits against 825). The generator states gig and seasonal pay as a lean-month series at 60% and 62% of mean income; at 80% the low-month band failed (41.6%).
+
+**Fixture corrections made in 05.1-25** (each has a CORRECTION line in its `working` field):
+1. #08 Maya: `lowLeft` 65,000 → 75,000. The low month is judged at today's steady pay (300,000), so the second-lowest leftover is 75,000 (August); the old figure used each month's real pay.
+2. #12 Tia: `everydayOverride: 60000` added. As written she dips below zero again before the Nov 28 pay, so the engine correctly says `not_covered`. With the override the answer is `payday`, ready by 2026-10-28. The as-written Tia is kept as a test asserting `not_covered`.
+3. d18-return-refund: `unspentAfter` 240,000 → 235,000. The rolled unspent is 240,000; the check's own 5,000 leaves 235,000, the same subtraction as #02.
+4. #14 Jordan, in `golden.test.ts` only: run with a balance of 300,000, because 100,000 cannot carry the rest of the month's spending to the Nov 1 pay.
+5. #22 Dog, in `golden.test.ts` only: `food` is not a library question, so the test uses an own item type `pet` with one monthly own question `food`.
+
+**Engine fixes since 05.1-28:**
+- The judge no longer says "ready on payday" when the funding ladder would still fail by then (I13).
+- Recurring candidates now come out in a stable order (I16). This affects setup offers only, not verdicts.
+
+---
+
+
 Synthetic data only (D-17): 300 seeded histories, the 9 personas, the 22 scenarios and the D-18 extras. Old engine on the `month` basis.
 
 | Figure | Count |
