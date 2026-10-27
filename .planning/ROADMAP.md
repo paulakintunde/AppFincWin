@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [x] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3) (completed 2026-10-16)
 - [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged with Decide hidden behind "Coming soon" until 05.1-05.3)
-- [ ] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine
+- [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (50/50 plans: 32 on 2026-10-26, gap closure 05.1-33..50 on 2026-10-27; owner shadow sign-off and re-verification 6/6 passed 2026-10-27) (completed 2026-10-27)
 - [ ] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - The Calm Ledger screens in the current theme; old Decide screens removed at cutover
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
@@ -864,7 +864,7 @@ Plans:
 - it keeps the emergency fund out of every check that isn't marked an emergency.
 
 It is built beside the Phase 4/5 engine behind a `decideV3` switch, and compared against it before anything is removed.
-**Requirements**: TBD (from `.planning/Decision Research/panel/00-REBUILD-PLAN-v3.md` and `00-UPGRADE-PLAN.md` section 5)
+**Requirements**: SC-1..SC-6 and 05.1-CONTEXT D-01..D-29 (no REQUIREMENTS.md IDs; from `.planning/Decision Research/panel/00-REBUILD-PLAN-v3.md` and `00-UPGRADE-PLAN.md` section 5)
 **Depends on:** Phase 5 (merged with Decide hidden behind "Coming soon")
 **Success Criteria** (what must be TRUE):
   1. Recurring candidates are detected, confirmed and checked for drift. Pay on two fixed dates each month (1st and 15th) counts as 24 payments a year, not 26.
@@ -873,10 +873,61 @@ It is built beside the Phase 4/5 engine behind a `decideV3` switch, and compared
   4. Payment plans (weekly, every 2 weeks, monthly) work from a rate or APR and fees, with an optional quoted payment.
   5. One judge gives six codes with one sentence each, and its funding split. "What could I do instead?" compares the payment stream, with a fixed-rate deposit at the user's own rate.
   6. Invariants I1–I43 pass, branch coverage stays at 100%, and the shadow run against the old engine is reviewed.
-**Plans:** 0 plans
+**Plans:** 50/50 plans complete
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 05.1 to break down)
+- [x] 05.1-01-PLAN.md — v3 contract types, cited constants, own barrel, isolation and depcruise gates (S0)
+- [x] 05.1-02-PLAN.md — Leaf moves (bisectLargest, pot types, D-11 line defaults) and v3 calendar helpers (S0)
+- [x] 05.1-03-PLAN.md — DECIDE_V3 switch with one reader; gitignore owner-local shadow files (D-15)
+- [x] 05.1-04-PLAN.md — Golden personas and the 22 situations with v3 §12 expectations (S0, D-28)
+- [x] 05.1-05-PLAN.md — Recurring candidates, two-date pay group, dismissals (S1)
+- [x] 05.1-06-PLAN.md — Confirmed series: line classes, occurrences, ended/dismissed, drift (S1)
+- [x] 05.1-07-PLAN.md — Plan cadences, scaled APR, first payment and deferral, exact final payment (S5)
+- [x] 05.1-08-PLAN.md — Per-currency band table and bands to layers (S6a)
+- [x] 05.1-09-PLAN.md — Preset question library and custom options (S6a, D-19)
+- [x] 05.1-10-PLAN.md — D-18 extra fixtures and the v1 inputs corpus (S0)
+- [x] 05.1-11-PLAN.md — Income this month by profile (S2)
+- [x] 05.1-12-PLAN.md — This month: Erest, money in vs out on the real schedule (S2)
+- [x] 05.1-13-PLAN.md — Typical month median, low month, marks, confidence (S2)
+- [x] 05.1-14-PLAN.md — Quoted-payment check and the plan card (S5)
+- [x] 05.1-15-PLAN.md — Legacy answers baseline from today's engine (S0)
+- [x] 05.1-16-PLAN.md — buildMonthModel, Sam's month, types fixed and published (S2 exit)
+- [x] 05.1-17-PLAN.md — Cash path without zero spend and the payday variant (S3)
+- [x] 05.1-18-PLAN.md — Unspent suggested sum, D-22 roll-forward, stale and drift (S4)
+- [x] 05.1-19-PLAN.md — Emergency fund lock and envelopes (S4)
+- [x] 05.1-20-PLAN.md — Adapters: v1 to v2, legacy lines, legacyState, seen states (S8)
+- [x] 05.1-21-PLAN.md — buildPurchase and buildFunds (S6b)
+- [x] 05.1-22-PLAN.md — Lines as facts and the needs-input rules (S6b)
+- [x] 05.1-23-PLAN.md — Verdict table keys and draft v3 copy with banned-word guards (S6b)
+- [x] 05.1-24-PLAN.md — The one judge: six codes, split, notices (S6b)
+- [x] 05.1-25-PLAN.md — evaluate() and the golden run, I42 end to end
+- [x] 05.1-26-PLAN.md — What could I do instead: futures with the payment stream, explorer (S7)
+- [x] 05.1-27-PLAN.md — End-to-end invariant suite and the I1-I43 index
+- [x] 05.1-28-PLAN.md — Shadow run with the D-14 gate and drafted reasons (S8)
+- [x] 05.1-29-PLAN.md — I28 back-test (S8)
+- [x] 05.1-30-PLAN.md — Snapshot wiring: buildV3Inputs, computeV3, final barrel (S9)
+- [x] 05.1-31-PLAN.md — Dev-only owner export, local shadow tier, switch guard (D-27)
+- [x] 05.1-32-PLAN.md — Owner shadow review and sign-off (D-14, checkpoint)
+
+Gap closure (planned 2026-10-26 against 05.1-CONTEXT D-33..D-45, 05.1-VERIFICATION gaps 1-6 and 05.1-REVIEW H-01..H-03, M-01..M-09, L-01..L-09): 18 plans in 10 waves (revised for D-43a, D-46, D-47, D-48 and the plan-checker warnings).
+- [x] 05.1-33-PLAN.md — Contract reopened: income pattern, expected income, held-back bridges, new codes, cited constants, copy keys; D-54..D-59 contract (wave 1)
+- [x] 05.1-34-PLAN.md — Ended with no end date = ended as of today, one rule for the month and needsInput (D-41, M-01) (wave 2)
+- [x] 05.1-35-PLAN.md — Balance is spending accounts only; drift ignores the fund, savings moves are not drift, I31 strict (D-43, D-43a, M-06); D-49 envelope ring-fence; D-54/D-55 stated account uses (wave 3)
+- [x] 05.1-36-PLAN.md — Instead screen agrees with the verdict, explorer clamp, month-end anchors (H-03, L-04, L-05, L-07) (wave 2)
+- [x] 05.1-37-PLAN.md — Question roles, total stored-check parsing, passed deferral (M-08, L-01, L-02) (wave 2)
+- [x] 05.1-38-PLAN.md — One settling module: logged pay not counted twice, symmetric pay window (H-01, H-02, M-02); D-51 paid rule; D-56 typed payments (wave 4)
+- [x] 05.1-39-PLAN.md — Snapshot: signed unspent anchor, per-entry custom options, total transfer roles, new inputs mapped (M-07, M-09, L-08, L-09); D-49/D-51 mapping, D-53 one-source check; D-54 accounts mapped (wave 4)
+- [x] 05.1-40-PLAN.md — Fact and notice keys match the copy, contract test, total line evaluator (M-03, M-05, L-07) (wave 3)
+- [x] 05.1-41-PLAN.md — I13 not_covered vs a late payday, readyMonth cap, late-pay arbitrary (gap 6, M-04) (wave 5)
+- [x] 05.1-42-PLAN.md — Partial thinning never helps; I1 it.failing becomes a passing test (D-42); D-52 readiness result; D-57 rough users (wave 5)
+- [x] 05.1-43-PLAN.md — Variable and seasonal month: pattern, 12-month window, swings, expected income, lean months, same-season spending (D-33..D-37, D-39); D-58 unseen pay (wave 5)
+- [x] 05.1-44-PLAN.md — Ask to confirm the pattern and expected income; cash path capped at expected income, with its why notice (D-34, D-35, D-46); D-50 unexplained-money question; D-54/D-58 questions, D-59 order (wave 6)
+- [x] 05.1-45-PLAN.md — Held-back bridges subtracted from available unspent, breakdown line (D-38); D-50 unexplained money (wave 5)
+- [x] 05.1-46-PLAN.md — Judge: lean months then the unspent bridge, gig low month, available unspent, new facts (D-36..D-38); D-49/D-50 notices; D-60 seasonal ready-by, D-59 (wave 7)
+- [x] 05.1-47-PLAN.md — Back-test: honest gig and seasonal histories, per-family I28 gate, D-48 ask rate (D-40, D-47, D-48); D-50/D-52 rates; D-61 (wave 9)
+- [x] 05.1-48-PLAN.md — Seasonal, gig and volatile golden fixtures with the working shown (D-33..D-39, D-46, D-48); D-49/D-50/D-52 cases; D-54..D-60 cases (wave 9)
+- [x] 05.1-50-PLAN.md — Volatile income: say so and ask; yes fits on the user's word, no is not_yet with futures (D-48) (wave 8)
+- [x] 05.1-49-PLAN.md — Shadow and back-test re-run, owner re-review of changed entries, sign-off, full gate (D-45, checkpoint); D-49..D-53 effects, not-ready shadow bucket; D-54..D-61 review (wave 10)
 
 ### Phase 05.2: Decide data and setup (INSERTED)
 
@@ -1052,7 +1103,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
-| 05.1 Decide engine v3 | 0/TBD | Not started | - |
+| 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 0/TBD | Not started | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |

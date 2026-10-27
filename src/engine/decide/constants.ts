@@ -33,21 +33,8 @@ export { SIMULATION_MONTH_CAP } from '../payoff/constants';
 // https://www.consumerprotectionbc.ca/2025/07/9545/ ; https://www.nsandi.com/guide/emergency-fund
 export const DEFAULT_RESERVE_MONTHS = 3; // D-01, D-11
 
-// Cite: Fannie Mae Selling Guide B3-6-02 (2025-04-02): max total DTI 36% of stable monthly income for manually underwritten loans; CFPB DTI tool: keep all-debt DTI at 36% or less. Lenders use gross income; FincWin uses logged income, so this line is stricter.
-// FincWin behaviour line (user-confirmed 2026-10-15, D-04 confirmed after research); 36% applies to take-home income (logged money in), which is stricter than lenders' gross-income test, deliberately.
-// https://selling-guide.fanniemae.com/sel/b3-6-02/debt-income-ratios
-// https://files.consumerfinance.gov/f/documents/cfpb_your-money-your-goals_debt_income_calc_tool_2018-11_ADA.pdf
-export const DEFAULT_DSR_LINE: Percent = percent('36'); // D-04
-
-// Cite: the 28/36 rule's front-end ratio: housing costs (mortgage principal, interest, taxes and insurance) at most 28% of gross monthly income. Bankrate, "What Percentage Of Income Should Go To A Mortgage?" (fetched 2026-10-24): "a homebuyer's monthly mortgage payment shouldn't exceed 28% of their gross monthly income ... based on a borrower's front-end debt-to-income (DTI) ratio"; the 36% rule is the back-end ratio (DEFAULT_DSR_LINE above).
-// FincWin behaviour line (user-confirmed 2026-10-24, D-103); 28% applies to take-home income (logged money in), which is stricter than the lenders' gross-income test, deliberately. Editable.
-// https://www.bankrate.com/mortgages/what-is-the-28-36-rule/
-export const DEFAULT_HOUSING_LINE: Percent = percent('28'); // D-103
-
-// Cite: FincWin behaviour constant (no published source; see 04-RESEARCH addendum §A). Prototype behaviour constant (dlim). No authoritative stock threshold found. Closest heuristic: the "20/10 rule" (Experian, 2023) puts consumer debt under 20% of annual take-home pay. See 04-RESEARCH §A.2.
-// FincWin behaviour line (user-confirmed 2026-10-15, D-04 confirmed after research); not a published standard; editable; the 20/10 rule was considered and not adopted.
-// https://www.experian.com/blogs/ask-experian/what-is-the-20-10-rule/
-export const DEFAULT_UNSECURED_INCOME_MULTIPLE = 12; // D-04
+// Cite: D-04 / D-11 / D-103 line defaults (36% DSR, 28% housing, 12x unsecured), with their full citations, now live in the leaf lineDefaults.ts (05.1, D-16) and are re-exported here unchanged.
+export { DEFAULT_DSR_LINE, DEFAULT_HOUSING_LINE, DEFAULT_UNSECURED_INCOME_MULTIPLE } from './lineDefaults';
 
 // Cite: FincWin behaviour constant (no published source; see 04-RESEARCH addendum §A). Product behaviour constant: covers one quarterly billing cycle ahead of the check date and matches the D-44 cash path. No regulatory "upcoming bills" window found.
 export const BILLS_DUE_HORIZON_DAYS = 90; // D-24: non-monthly bills due within 90 days of the check date are deducted from cash
@@ -167,5 +154,5 @@ export const CARD_MAX_PURCHASE_USD = 10_000_000; // D-91
 // Cite: D-101 / R18.2 FincWin's own bound: at most 50 live pots a user creates (the Pots screen cap). The engine's set-aside bound is MAX_SET_ASIDE_POTS below.
 export const MAX_POTS = 50;
 
-// Cite: D-101 / R18.2 FincWin's own bound on the set-aside sum: up to 500 pots (the 50 a user creates plus the Wait goals of open checks). With each pot's set-aside at most 10^13 minor units the sum is at most 5 x 10^15, inside the safe-integer range (2^53 is about 9 x 10^15), so it converts with a plain Number().
-export const MAX_SET_ASIDE_POTS = 500;
+// Cite: D-101 / R18.2 the set-aside pot bound (500) now lives in the leaf potTypes.ts with its full citation (05.1, D-16) and is re-exported here unchanged.
+export { MAX_SET_ASIDE_POTS } from './potTypes';

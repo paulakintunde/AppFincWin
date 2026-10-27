@@ -1,0 +1,1062 @@
+{
+ "scenarios": [
+  {
+   "id": "01",
+   "title": "Headphones $150 (cash)",
+   "person": "sam",
+   "purchase": {
+    "price": 15000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": "treat",
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 3,
+    "split": [
+     {
+      "source": "month",
+      "amount": 15000
+     }
+    ],
+    "working": "Sam Oct 3: monthLeft 42,500 (in 400,000 - out 357,500). 15,000 <= 42,500 -> fits_month. Band: edges strictly below 15,000 among [100..]: 10,000 -> 1, band 2+1 = 3."
+   },
+   "source": "v3 §12 #01"
+  },
+  {
+   "id": "02",
+   "title": "Laptop $1,200 on Oct 3",
+   "person": "sam",
+   "purchase": {
+    "price": 120000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "electronics",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "legacyState": "fits",
+    "band": 5,
+    "split": [
+     {
+      "source": "month",
+      "amount": 42500
+     },
+     {
+      "source": "unspent_earlier",
+      "amount": 77500
+     }
+    ],
+    "facts": [
+     "emergency_untouched"
+    ],
+    "unspentAfter": 120000,
+    "working": "monthLeft 42,500 < P 120,000 <= unspent 240,000 -> fits_unspent. Of P, October covers 42,500, unspent earlier covers 77,500. Unspent includes October once (I19), so the whole P comes off it: 240,000 - 120,000 = 120,000 stays. Band: edges below 120,000 are 10,000, 50,000, 100,000 -> 2+3 = 5."
+   },
+   "source": "v3 §12 #02"
+  },
+  {
+   "id": "03",
+   "title": "$250 jacket every other month",
+   "person": "sam",
+   "purchase": {
+    "price": 25000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 3,
+    "month": {
+     "e": 147500
+    },
+    "working": "Sam bought a 25,000 jacket in Apr, Jun and Aug. Everyday by month 110,000 130,000 135,000 160,000 185,000 360,000 when sorted; the middle two are 135,000 and 160,000 -> E = 147,500 (half-up mean). The habit is already inside E. 25,000 <= monthLeft 42,500 -> fits_month. Band 3 (10,000 below)."
+   },
+   "source": "v3 §12 #03"
+  },
+  {
+   "id": "04",
+   "title": "$5 coffee after a $1,000 repair",
+   "person": "sam",
+   "addLines": [
+    {
+     "month": "2026-10",
+     "line": {
+      "id": "sam-repair-10",
+      "date": "2026-10-02",
+      "amount": 100000,
+      "role": "spending",
+      "name": "Repair"
+     }
+    }
+   ],
+   "purchase": {
+    "price": 500,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "legacyState": "fits",
+    "band": 1,
+    "notices": [
+     "month_heading_short"
+    ],
+    "split": [
+     {
+      "source": "unspent_earlier",
+      "amount": 500
+     }
+    ],
+    "month": {
+     "monthLeft": -53226,
+     "erest": 133226
+    },
+    "unspentAfter": 239500,
+    "working": "Repair 100,000 on Oct 2 makes everyday logged 110,000. Erest = max(round(147,500*28/31)=133,226, max(0,147,500-110,000)=37,500) = 133,226. moneyOut = 150,000+30,000+110,000+133,226+30,000 = 453,226; monthLeft = 400,000-453,226 = -53,226 (heading short). P 500 > max(0,monthLeft)=0 and <= unspent 240,000 -> fits_unspent; 239,500 stays. Band 1 (500 < 5,000)."
+   },
+   "source": "v3 §12 #04"
+  },
+  {
+   "id": "05",
+   "title": "Riley, $60 shoes, typical month short",
+   "person": "riley",
+   "purchase": {
+    "price": 6000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "legacyState": "no",
+    "band": 2,
+    "readyBy": null,
+    "notices": [
+     "typical_short",
+     "month_heading_short"
+    ],
+    "facts": [
+     "emergency_untouched"
+    ],
+    "split": [],
+    "month": {
+     "e": 110000,
+     "typicalLeft": -30000
+    },
+    "working": "E = median(100k,105k,110k,115k,120k,110k) -> sorted middle 110k,110k -> 110,000. typicalLeft = 280,000-200,000-110,000 = -30,000 (typical short). October: Erest = max(round(110,000*28/31)=99,355, 100,000) = 100,000; out = 200,000+10,000+100,000 = 310,000; monthLeft -30,000. Unspent confirmed 0 -> P 6,000 > 0 -> not_yet, never covered (typicalLeft <= 0) so readyBy null. Emergency fund 200,000 untouched. Band 2."
+   },
+   "source": "v3 §12 #05"
+  },
+  {
+   "id": "06",
+   "title": "Lease $450 a month for 36 months",
+   "person": "sam",
+   "purchase": {
+    "price": 1620000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "vehicle",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 36,
+     "termMonths": 36,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "one_period"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "monthly_short",
+    "legacyState": "adjust",
+    "band": 7,
+    "month": {
+     "typicalLeft": 42500
+    },
+    "working": "Whole value 450*36 = 1,620,000 at 0% (band: 5 edges 100..10,000 below 1,620,000 -> 2+5 = 7). M = 45,000/month. typicalLeft 42,500 - 45,000 = -2,500 < 0 -> monthly_short. First payment is one period away so P = 0 and the one-off part is fits_month; the stricter part leads."
+   },
+   "source": "v3 §12 #06"
+  },
+  {
+   "id": "07",
+   "title": "Phone $85 x 24",
+   "person": "sam",
+   "purchase": {
+    "price": 204000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "electronics",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 24,
+     "termMonths": 24,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "one_period"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "variant": "low_month",
+    "legacyState": "fits",
+    "band": 5,
+    "facts": [
+     "low_month"
+    ],
+    "month": {
+     "typicalLeft": 42500,
+     "lowLeft": 5000,
+     "lowMonth": "2026-09"
+    },
+    "working": "Whole 85*24 = 2,040 -> 204,000 (edges 100, 500, 1,000 below -> band 5). M = 8,500. typicalLeft 42,500-8,500 = 34,000 >= 0. Low month: monthly left Apr 80,000, May 30,000, Jun -170,000, Jul 30,000, Aug 55,000, Sep 5,000; sorted -170k,5k,30k,30k,55k,80k; second-lowest 5,000 (September, $50). 5,000-8,500 < 0 -> fits with low-month clause. P = 0."
+   },
+   "source": "v3 §12 #07"
+  },
+  {
+   "id": "08",
+   "title": "Maya gym $60 a month",
+   "person": "maya",
+   "purchase": {
+    "price": 72000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "subscription",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 12,
+     "termMonths": 12,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "today"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "legacyState": "no",
+    "band": 4,
+    "readyBy": {
+     "kind": "month",
+     "month": "2026-11"
+    },
+    "month": {
+     "e": 80000,
+     "typicalLeft": 80000,
+     "lowLeft": 75000
+    },
+    "working": "Profile (c) steady: typicalIncome = steady 300,000 (not the real months 2,800-3,200). E = median(70k,90k,80k,85k,75k,80k): sorted 70,75,80,80,85,90 -> 80,000. typicalLeft = 300,000-120,000 bills-20,000 saving-80,000 = 80,000. M = 6,000 -> 74,000 >= 0. Real monthly left: 100k,60k,80k,95k,65k,80k; second-lowest 65,000; 65,000-6,000 >= 0. October: monthLeft = 300,000-(120,000+5,000+75,000 Erest+20,000) = 80,000 >= P 6,000 -> fits_month. Band 4 (whole 72,000: 10,000 and 50,000 below). CORRECTION (05.1-25): the low month is judged at today's steady pay (RESEARCH Pitfall 3, \"leftovers at today's pay\"), the same basis as typicalLeft, not at each month's real pay. At 300,000 steady: 300,000-120,000-20,000-everyday (70k,90k,80k,85k,75k,80k) = 90k,70k,80k,75k,85k,80k; sorted 70k,75k,80k,80k,85k,90k; second-lowest 75,000 (August). 75,000-6,000 >= 0 so no low-month clause. RE-BASELINED (05.1-35, D-43a, D-54): the cash check now opens at the spending balance only. Maya has no dated pay series (steady profile, no pay line), so the 90-day path takes no pay (I3). Spending balance = 525,000 total - 300,000 emergency fund (dedicated account, out of spending) = 225,000. Outflows over 90 days: bills 120,000 x 3 + Erest/E spread (to 80,000 a month) leave the path 268,000 below zero and it never recovers -> not_yet / not_covered; ready month 2026-11 (the first month whose left covers the price). The fund used to carry this path (opening 525,000)."
+   },
+   "source": "v3 §12 #08"
+  },
+  {
+   "id": "09",
+   "title": "Vet bill in June",
+   "person": "sam",
+   "purchase": {
+    "price": 5000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 2,
+    "month": {
+     "e": 147500
+    },
+    "working": "Everyday by month 110,000 160,000 360,000 130,000 135,000 185,000. Sorted 110k,130k,135k,160k,185k,360k -> middle two 135k and 160k -> mean 147,500 (half-up). The plain mean would be 1,080,000/6 = 180,000, so the 240,000 vet line does not move E. P 5,000 <= 42,500 -> fits_month. Band 2 (5,000 is not < 5,000)."
+   },
+   "source": "v3 §12 #09"
+  },
+  {
+   "id": "10",
+   "title": "Sofa $4,000",
+   "person": "sam",
+   "purchase": {
+    "price": 400000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "legacyState": "no",
+    "band": 5,
+    "readyBy": {
+     "kind": "month",
+     "month": "2027-02"
+    },
+    "facts": [
+     "emergency_untouched"
+    ],
+    "split": [],
+    "working": "P 400,000 > unspent 240,000 -> not_yet. Months to cover = ceilDiv(400,000-240,000, 42,500) = ceilDiv(160,000, 42,500) = 4 -> Oct + 4 = February 2027. Emergency fund untouched. Band 5."
+   },
+   "source": "v3 §12 #10"
+  },
+  {
+   "id": "11",
+   "title": "Leo, broken work laptop $700, emergency",
+   "person": "leo",
+   "purchase": {
+    "price": 70000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "electronics",
+    "purpose": "for_work",
+    "emergency": true,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "emergency_use",
+    "legacyState": "adjust",
+    "band": 4,
+    "facts": [
+     "emergency_used"
+    ],
+    "split": [
+     {
+      "source": "unspent_earlier",
+      "amount": 10000
+     },
+     {
+      "source": "emergency",
+      "amount": 60000
+     }
+    ],
+    "unspentAfter": 0,
+    "month": {
+     "e": 88000,
+     "typicalLeft": 12000,
+     "erest": 79484,
+     "monthLeft": -19484
+    },
+    "working": "Leo: E 88,000, typicalLeft = 250,000-150,000-88,000 = 12,000. October: Erest = max(round(88,000*28/31)=79,484, 88,000-40,000=48,000) = 79,484; out = 150,000+40,000+79,484 = 269,484; monthLeft = -19,484 (<0). P 70,000 > unspent 10,000, marked emergency and for_work, 70,000 <= 10,000+300,000 -> emergency_use. Fund use Z = 70,000-10,000 = 60,000; rebuild ceilDiv(60,000, 12,000) = 5 months. Band 4. RESTORED (05.1-44, D-63): 05.1-35 moved this to not_yet / not_covered because the cash check stopped seeing the fund (D-43a, D-54). The purchase is marked an emergency and its purpose (for_work) may use the fund (mayUseEmergency), so the cash check opens with the fund included: spending 389,484 - 300,000 (fund, dedicated account) = 89,484, + 300,000 fund = 389,484. The 90-day path (Erest 79,484 to month end, rent 130,000 and phone 20,000 against pay 250,000 on their dates, then E 88,000 a month, less the 70,000 purchase on day one) never goes below zero, so the cash check is ok and the ladder decides: 70,000 > unspent 10,000, emergency-marked, for_work, 70,000 <= 10,000 + 300,000 -> emergency_use, as before 05.1-35. Fund use 60,000, unspentAfter 0, rebuild 5 months."
+   },
+   "source": "v3 §12 #11"
+  },
+  {
+   "id": "12",
+   "title": "Tia, $350 tickets before payday",
+   "person": "tia",
+   "purchase": {
+    "price": 35000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "payday",
+    "legacyState": "no",
+    "band": 3,
+    "readyBy": {
+     "kind": "date",
+     "date": "2026-10-28"
+    },
+    "working": "Oct 20: cash available before next pay = balance 20,000 < P 35,000 -> cash check fails even though the confirmed unspent figure (50,000) is larger. Next pay lands Oct 28 -> not_yet, payday variant, readyBy 2026-10-28. Band 3. CORRECTION (05.1-25): the payday variant needs the shortfall to end at payday AND stay ended over the 90 days (v3 section 4.5: \"the 90-day low point < 0 -> not covered\"). Tia as first written has 23,613 left this month, so after 35,000 she dips below zero again before Nov 28 and the answer is not_covered. Her everyday figure is set to 60,000 (everydayOverride): Erest 21,290, balance on Oct 27 = 20,000-35,000-21,290 < 0, pay Oct 28 +260,000, then every later month nets +52,000, lowest after Oct 28 = 15,710 >= 0 -> payday."
+   },
+   "source": "v3 §12 #12",
+   "personOverrides": {
+    "everydayOverride": 60000
+   }
+  },
+  {
+   "id": "13",
+   "title": "New user, no figures",
+   "person": "jordan",
+   "purchase": {
+    "price": 15000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "needs_input",
+    "legacyState": "missing",
+    "band": 3,
+    "missing": [
+     "no_income_figures"
+    ],
+    "working": "No confirmed recurring income and no rough figures typed -> needs_input with no_income_figures (\"Help me check this\"). Band 3."
+   },
+   "source": "v3 §12 #13"
+  },
+  {
+   "id": "14",
+   "title": "Two months logged",
+   "person": "jordan",
+   "personOverrides": {
+    "profile": {
+     "types": [
+      "salary"
+     ],
+     "variable": null,
+     "steady": null,
+     "billsHorizonMonths": null
+    },
+    "series": [
+     {
+      "id": "jordan-pay",
+      "name": "Pay",
+      "role": "pay",
+      "cadence": {
+       "unit": "month",
+       "every": 1
+      },
+      "anchorDate": "2026-04-01",
+      "amount": 300000
+     },
+     {
+      "id": "jordan-rent",
+      "name": "Rent",
+      "role": "bill",
+      "cadence": {
+       "unit": "month",
+       "every": 1
+      },
+      "anchorDate": "2026-04-01",
+      "amount": 150000,
+      "isHousing": true
+     }
+    ],
+    "months": [
+     {
+      "month": "2026-08",
+      "full": true,
+      "lines": [
+       {
+        "id": "j-pay-08",
+        "date": "2026-08-01",
+        "amount": 300000,
+        "role": "income",
+        "seriesId": "jordan-pay"
+       },
+       {
+        "id": "j-rent-08",
+        "date": "2026-08-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "jordan-rent"
+       },
+       {
+        "id": "j-e-08",
+        "date": "2026-08-12",
+        "amount": 100000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-09",
+      "full": true,
+      "lines": [
+       {
+        "id": "j-pay-09",
+        "date": "2026-09-01",
+        "amount": 300000,
+        "role": "income",
+        "seriesId": "jordan-pay"
+       },
+       {
+        "id": "j-rent-09",
+        "date": "2026-09-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "jordan-rent"
+       },
+       {
+        "id": "j-e-09",
+        "date": "2026-09-12",
+        "amount": 120000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-10",
+      "full": false,
+      "lines": [
+       {
+        "id": "j-pay-10",
+        "date": "2026-10-01",
+        "amount": 300000,
+        "role": "income",
+        "seriesId": "jordan-pay"
+       },
+       {
+        "id": "j-rent-10",
+        "date": "2026-10-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "jordan-rent"
+       },
+       {
+        "id": "j-e-10",
+        "date": "2026-10-02",
+        "amount": 10000,
+        "role": "spending"
+       }
+      ]
+     }
+    ]
+   },
+   "purchase": {
+    "price": 15000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 3,
+    "confidence": "rough",
+    "month": {
+     "e": 110000,
+     "typicalLeft": 40000,
+     "erest": 100000,
+     "monthLeft": 40000
+    },
+    "working": "Two full months (Aug 100,000, Sep 120,000 everyday): E = mean of the middle two = 110,000. typicalLeft = 300,000-150,000-110,000 = 40,000. October: Erest = max(round(110,000*28/31)=99,355, 100,000) = 100,000; out = 150,000+10,000+100,000 = 260,000; monthLeft 40,000 >= 15,000 -> fits_month. Fewer than 3 full months -> confidence rough. NOTE (05.1-25): Jordan's persona balance (100,000) is less than the rest of October needs (Erest 100,000 + 15,000 = 115,000 until the Nov 1 pay), so the v3 cash check answers payday before the month does; golden.test.ts runs this situation with balance 300,000. The fixture is left as is because the D-14 legacy baseline is recorded against it."
+   },
+   "source": "v3 §12 #14"
+  },
+  {
+   "id": "15",
+   "title": "Under-logged August",
+   "person": "sam",
+   "replaceSpending": [
+    {
+     "month": "2026-08",
+     "mark": null,
+     "lines": [
+      {
+       "id": "sam-e-08-x",
+       "date": "2026-08-10",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "purchase": {
+    "price": 15000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 3,
+    "notices": [
+     "month_looks_under_logged"
+    ],
+    "month": {
+     "e": 160000,
+     "erest": 150000,
+     "monthLeft": 30000,
+     "typicalLeft": 30000
+    },
+    "working": "August everyday cut to 40,000 and not marked: it is set aside (under-logged) and a question asked. E from the other five months: sorted 110k,130k,160k,185k,360k -> median 160,000. Erest = max(round(160,000*28/31)=144,516, 160,000-10,000=150,000) = 150,000. out = 150,000+30,000+10,000+150,000+30,000 = 370,000; monthLeft 30,000 >= 15,000 -> fits_month. typicalLeft = 400,000-180,000-160,000-30,000 = 30,000."
+   },
+   "source": "v3 §12 #15"
+  },
+  {
+   "id": "16",
+   "title": "Holiday $3,000",
+   "person": "sam",
+   "purchase": {
+    "price": 300000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "legacyState": "no",
+    "band": 5,
+    "readyBy": {
+     "kind": "month",
+     "month": "2026-12"
+    },
+    "split": [],
+    "working": "P 300,000 > unspent 240,000 -> not_yet. ceilDiv(300,000-240,000, 42,500) = ceilDiv(60,000, 42,500) = 2 -> December 2026. Band 5 (10,000, 50,000, 100,000 below 300,000)."
+   },
+   "source": "v3 §12 #16"
+  },
+  {
+   "id": "17",
+   "title": "Dana's car loan",
+   "person": "dana",
+   "purchase": {
+    "price": 2400000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "vehicle",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 48,
+     "termMonths": 48,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "one_period"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 8,
+    "facts": [
+     "line_crossed"
+    ],
+    "working": "Car 2,400,000 over 48 months at 0% = 50,000 a month. Her debt line is 36% of income 500,000 = 180,000. Existing minimums 140,000 (28%) + 50,000 = 190,000 = 38% > 36% -> line_crossed. Typical left = 500,000-180,000-90,000-140,000 = 90,000; 90,000-50,000 >= 0 and the low month is the same -> fits_month with the line on or off (the line is a fact, never a code). P = 0 (first payment one period away). Band 8 (6 edges below 2,400,000)."
+   },
+   "source": "v3 §12 #17"
+  },
+  {
+   "id": "18",
+   "title": "Kim's tax refund and a treat",
+   "person": "kim",
+   "purchase": {
+    "price": 120000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": "treat",
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "legacyState": "fits",
+    "band": 5,
+    "split": [
+     {
+      "source": "month",
+      "amount": 90000
+     },
+     {
+      "source": "unspent_earlier",
+      "amount": 30000
+     }
+    ],
+    "facts": [
+     "emergency_untouched"
+    ],
+    "unspentAfter": 230000,
+    "month": {
+     "moneyIn": 300000,
+     "erest": 65000,
+     "monthLeft": 90000
+    },
+    "working": "The 80,000 refund is other_in with no countsAs: it lands in the balance, not in money in. moneyIn 300,000. Erest = max(round(70,000*28/31)=63,226, 70,000-5,000=65,000) = 65,000. out = 120,000+5,000+65,000+20,000 = 210,000; monthLeft 90,000. Suggested sum = 615,000-65,000-200,000 = 350,000, which she confirmed. P 120,000 > 90,000, <= 350,000 -> fits_unspent: month covers 90,000, unspent earlier 30,000; 350,000-120,000 = 230,000 stays. Band 5."
+   },
+   "source": "v3 §12 #18"
+  },
+  {
+   "id": "19",
+   "title": "Yearly insurance confirmed",
+   "person": "sam",
+   "addSeries": [
+    {
+     "id": "sam-ins",
+     "name": "Insurance",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 12
+     },
+     "anchorDate": "2026-03-15",
+     "amount": 120000,
+     "typicalChoice": "monthly"
+    }
+   ],
+   "purchase": {
+    "price": 500,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 1,
+    "month": {
+     "typicalLeft": 32500,
+     "monthLeft": 42500
+    },
+    "working": "Insurance 120,000 a year, confirmed, typicalChoice monthly -> 10,000 a month in recurring bills: 180,000+10,000 = 190,000. typicalLeft = 400,000-190,000-147,500-30,000 = 32,500 (recurring bills + 10,000 versus the base 42,500). It was paid in March so October monthLeft stays 42,500. 500 <= 42,500 -> fits_month. Band 1."
+   },
+   "source": "v3 §12 #19"
+  },
+  {
+   "id": "20",
+   "title": "A raise: pay series 4,300",
+   "person": "sam",
+   "setSeriesAmount": [
+    {
+     "id": "sam-pay",
+     "amount": 430000
+    }
+   ],
+   "purchase": {
+    "price": 500,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 1,
+    "month": {
+     "typicalLeft": 72500,
+     "monthLeft": 42500
+    },
+    "working": "Today's pay amount 430,000 moves the typical month at once: 430,000-180,000-147,500-30,000 = 72,500. October's received pay is still the logged 400,000, so monthLeft stays 42,500. 500 <= 42,500 -> fits_month. Band 1."
+   },
+   "source": "v3 §12 #20"
+  },
+  {
+   "id": "21",
+   "title": "Priya's half of a fridge",
+   "person": "priya",
+   "purchase": {
+    "price": 160000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": {
+     "kind": "household",
+     "members": 2,
+     "rule": "even"
+    },
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 4,
+    "split": [
+     {
+      "source": "month",
+      "amount": 80000
+     }
+    ],
+    "month": {
+     "e": 60000,
+     "erest": 55000,
+     "monthLeft": 120000,
+     "typicalLeft": 120000
+    },
+    "working": "Even split of 160,000 between 2 members -> her share 80,000. E 60,000; Erest = max(round(60,000*28/31)=54,194, 60,000-5,000=55,000) = 55,000. out = 100,000+5,000+55,000+20,000 = 180,000; monthLeft = 300,000-180,000 = 120,000 >= 80,000 -> fits_month. Band from her share 80,000: 10,000 and 50,000 below -> 4."
+   },
+   "source": "v3 §12 #21"
+  },
+  {
+   "id": "22",
+   "title": "Dog $800 plus $120 a month food",
+   "person": "sam",
+   "purchase": {
+    "price": 80000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {
+     "food": 12000
+    },
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "variant": "low_month",
+    "legacyState": "fits",
+    "band": 4,
+    "facts": [
+     "low_month"
+    ],
+    "split": [
+     {
+      "source": "month",
+      "amount": 42500
+     },
+     {
+      "source": "unspent_earlier",
+      "amount": 37500
+     }
+    ],
+    "unspentAfter": 160000,
+    "month": {
+     "typicalLeft": 42500,
+     "lowLeft": 5000
+    },
+    "working": "One-off: P 80,000 > monthLeft 42,500, <= unspent 240,000 -> fits_unspent (month 42,500 + unspent earlier 37,500; unspent after = 240,000-80,000 = 160,000). Monthly: M = 12,000; typicalLeft 42,500-12,000 = 30,500 >= 0 passes; lowLeft 5,000-12,000 = -7,000 < 0 -> low-month clause (variant low_month). Band 4."
+   },
+   "source": "v3 §12 #22"
+  }
+ ]
+}

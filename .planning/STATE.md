@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: "Phase 5 complete (145/145): PR #82 merges with Decide hidden behind 'Coming soon' (DECIDE_OPEN=false). Next: /gsd-discuss-phase 05.1 (Decide engine v3)"
-last_updated: "2026-10-25T17:53:49.644Z"
-last_activity: 2026-10-25
+status: phase-complete
+stopped_at: Phase 05.1 complete (50/50 plans, re-verification passed 6/6, owner shadow sign-off 2026-10-27); next /gsd-discuss-phase 05.2
+last_updated: "2026-10-27T20:00:00.000Z"
+last_activity: 2026-10-27 -- Phase 05.1 complete, verification passed
 progress:
   total_phases: 24
-  completed_phases: 8
-  total_plans: 286
-  completed_plans: 282
+  completed_phases: 10
+  total_plans: 413
+  completed_plans: 411
   percent: 99
 ---
 
@@ -21,20 +21,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 05 — decide-ui
+**Current focus:** Phase 05.2 — decide-data-and-setup (next)
 
 ## Current Position
 
-Phase: 05 (decide-ui) — COMPLETE
-Plan: 52 of 53
+Phase: 05.1 (decide-engine-v3) — COMPLETE 2026-10-27
+Plan: 50 of 50 (32 original + gap closure 05.1-33..50). 05.1-VERIFICATION.md re-verification passed 6/6 success criteria, all 6 earlier gaps and H-01..H-03, M-01..M-09 closed; owner signed off the shadow review (reviewed: true, 2026-10-27; D-64 added). DECIDE_V3 and DECIDE_OPEN stay false. Deferrals: 05.2-OWNER-NOTES.md and 05.1-CONTEXT.md <deferred> (05.3). Branch phase/05.1-decide-engine-v3 in C:/dev/fincwin-p5, not pushed.
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
 Phase 02.1 (PDF statement import): COMPLETE 2026-10-11 — 17/17 plans (PR #60 main 22f8f57, walkthrough fixes PR #62 main ef8bbfa), production at 20261011000300 with read-pdf-statement and purge-statement-uploads deployed, preview APK d7f35c19; 02.1-VERIFICATION.md 5/5 criteria, IMP-01..IMP-05 satisfied, status human_needed (1 item in 02.1-HUMAN-UAT.md: iOS walkthrough; privacy paragraph published 2026-10-11). Phase 02.2 (record-polish): COMPLETE 2026-10-10 — 35/35 plans, 02.2-VERIFICATION.md 8/8 criteria and 20/20 requirements (ACT-06..ACT-18, REC-19..REC-25), status human_needed (1 item in 02.2-HUMAN-UAT.md: iOS walkthrough, blocked on Apple enrolment). Phase 02.3 (record follow-ups): planned 2026-10-12 — 20 plans in 5 waves, checker passed (1 revision); next /gsd-execute-phase 02.3. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): replanned 2026-10-15 against D-23..D-58 (engine depth expansion D-41..D-58 plus the user's consistency amendments to D-41/D-42/D-24-D-44) — 22 plans in 8 waves (04-01..04-04 unchanged, 04-05..04-13 amended, new 04-14..04-22), research addendum for D-58 thresholds and D-57 reference tables appended to 04-RESEARCH.md, plan checker passed (3 iterations, 0 blockers), decision coverage 35/35 plus D-41..D-58 verified by script; judgment calls in 04-REPLAN-NOTES.md ; user decisions D-59 (cash_dip only when the purchase lowers the 90-day low; cash_tight_before_payday fact) and D-60 (confirmed weekly/fortnightly pay smoothed for CV and income averages) folded in, re-check passed (3 iterations, 0 blockers); open for user review: D-60 partial-month reading and cash_path margin definition (04-REPLAN-NOTES); EXECUTED 2026-10-16 — 22/22 plans on branch phase/04-decide-engine; 04-VERIFICATION.md 6/6 success criteria, DEC-01..DEC-37 complete; code review 14 findings (4 high, 5 medium, 5 low) all fixed with regression tests (D-64 level payment rounds up); engine/decide and engine/payoff at 100% coverage; golden parity holds.
 Phase 05 (decide-ui): planned 2026-10-15, revised 2026-10-16 for the planning-review decisions D-38..D-44, DCU-12..DCU-24 and the final Phase 4 API (D-61..D-63) — 53 plans in 10 waves, plan checker passed (3 iterations, final 0 blockers, 0 warnings); originally against 05-CONTEXT D-01..D-37 (incl. the depth expansion D-24..D-37 and the amended D-24) and the 22-plan Phase 4 `decide()` API; research with a depth addendum, pattern map, VALIDATION.md (nyquist_compliant); plan checker passed after the scope expansion (3 iterations, final 0 blockers; earlier 29-plan set had 2 iterations), decision coverage D-01..D-37 and DCU-01..DCU-11, ANL-06 verified; defaults and items for user review in 05-PLANNING-NOTES.md (OQ1/OQ3 debts table and full-month rule, OQ-A1 FX stamps, OQ-A2/A3/A9 UI-SPEC touch-ups, card minimum gap R4-W2, A19/A21). Execution unblocked once the Phase 4 PR merges; migrations ship via the human-gated `npm run supabase:db:push` in 05-25.
 Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
-Status: Phase 5 complete — 05-26 run against Decide hidden (docs/acceptance/phase-05-decide-ui.md); next is 05.1 Decide engine v3
-Last activity: 2026-10-25 - Completed quick task 261025-f46: Decide coming-soon switch
+Status: Phase complete; next /gsd-discuss-phase 05.2
+Last activity: 2026-10-27 -- Phase 05.1 complete, verification passed
 
 ## Performance Metrics
 
@@ -199,6 +199,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-16T22:49:08.355Z
-Stopped at: Completed 05-21-PLAN.md (wave 5 in progress)
-Resume file: None
+Last session: 2026-10-25T22:31:55.556Z
+Stopped at: Phase 05.1 complete
+Resume file: .planning/phases/05.1-decide-engine-v3/05.1-CONTEXT.md

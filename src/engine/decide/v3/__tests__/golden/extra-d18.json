@@ -1,0 +1,1601 @@
+{
+ "scenarios": [
+  {
+   "id": "d18-pay-in-4",
+   "title": "Pay in 4, every 2 weeks, $400",
+   "person": "sam",
+   "purchase": {
+    "price": 40000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "electronics",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "week",
+      "every": 2
+     },
+     "count": 4,
+     "termMonths": null,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "today"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "variant": "low_month",
+    "legacyState": "fits",
+    "band": 3,
+    "month": {
+     "typicalLeft": 42500,
+     "lowLeft": 5000
+    },
+    "working": "Price 40,000 in 4 payments of 10,000 every 2 weeks at 0%, first payment today: day one 10,000, schedule 4 x 10,000. Monthly equivalent = divideHalfUp(10,000*52, 24) = 21,667 (26 fortnights a year over 12 months). October monthLeft 42,500 >= 10,000 on day one. Typical left 42,500-21,667 >= 0, but the low month (September, 5,000) - 21,667 < 0 -> fits_month with variant low_month. Band: 10,000 is below 40,000 -> 2+1 = 3."
+   },
+   "source": "D-18"
+  },
+  {
+   "id": "d18-deferred-6-then-24",
+   "title": "Nothing to pay for 6 months, then 24 payments of $100",
+   "person": "sam",
+   "purchase": {
+    "price": 240000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "electronics",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 24,
+     "termMonths": null,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "deferred",
+      "firstDate": "2027-04-03",
+      "interestDuringPause": false
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "variant": "low_month",
+    "legacyState": "fits",
+    "band": 5,
+    "month": {
+     "typicalLeft": 42500,
+     "lowLeft": 5000
+    },
+    "working": "Price 240,000 = 24 x 10,000 monthly at 0%, first payment 2027-04-03 (deferred, interest during the pause: no). Day one is 0 and nothing falls due before 2027-04-03, so October needs 0 (monthLeft 42,500 >= 0). Once running, typical left 42,500-10,000 = 32,500 >= 0, but the low month 5,000-10,000 < 0 -> fits_month, variant low_month. Band 5 per the plan."
+   },
+   "source": "D-18"
+  },
+  {
+   "id": "d18-deferred-unanswered",
+   "title": "Deferred 6 months, interest during the pause not answered",
+   "person": "sam",
+   "purchase": {
+    "price": 240000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "electronics",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 24,
+     "termMonths": null,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "deferred",
+      "firstDate": "2027-04-03",
+      "interestDuringPause": null
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "needs_input",
+    "variant": null,
+    "legacyState": "missing",
+    "missing": [
+     "pause_interest_not_answered"
+    ],
+    "working": "Same plan as d18-deferred-6-then-24 but interestDuringPause is null: whether interest runs during the pause changes the total, so no honest answer exists -> needs_input with missing pause_interest_not_answered."
+   },
+   "source": "D-18"
+  },
+  {
+   "id": "d18-return-refund",
+   "title": "Returned laptop: plan cancelled, money restored",
+   "person": "sam",
+   "personOverrides": {
+    "unspent": {
+     "amount": 120000,
+     "at": "2026-10-02"
+    }
+   },
+   "addSeries": [
+    {
+     "id": "laptop-plan",
+     "name": "Laptop plan",
+     "role": "debt_payment",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-10-02",
+     "endDate": "2026-10-03",
+     "amount": 120000,
+     "status": "ended"
+    }
+   ],
+   "addLines": [
+    {
+     "month": "2026-10",
+     "line": {
+      "id": "sam-laptop-10",
+      "date": "2026-10-02",
+      "amount": 120000,
+      "role": "spending",
+      "seriesId": "laptop-plan",
+      "name": "Laptop"
+     }
+    },
+    {
+     "month": "2026-10",
+     "line": {
+      "id": "sam-refund-10",
+      "date": "2026-10-03",
+      "amount": 120000,
+      "role": "other_in",
+      "name": "Laptop refund"
+     }
+    }
+   ],
+   "purchase": {
+    "price": 5000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 2,
+    "split": [
+     {
+      "source": "month",
+      "amount": 5000
+     }
+    ],
+    "unspentAfter": 235000,
+    "month": {
+     "moneyIn": 400000,
+     "moneyOut": 357500,
+     "monthLeft": 42500
+    },
+    "working": "Sam bought a 120,000 laptop on 2026-10-02 on a plan, cancelled on return (series ended 2026-10-03). The unspent anchor of 2026-10-02 was 120,000 (after the purchase). The 120,000 refund (other_in, no countsAs, so not income) lands 2026-10-03, after the anchor, so unspent is 120,000+120,000 = 240,000, the pre-purchase figure. breakdown.other nets the returned purchase out of the month: moneyOut stays 150,000+30,000+10,000+137,500+30,000 = 357,500, moneyIn 400,000, monthLeft 42,500. A 5,000 check <= 42,500 -> fits_month; the plan pins unspentAfter = 240,000 (the pre-purchase figure). Band 2 (5,000 is not < 5,000). CORRECTION (05.1-25): the rolled unspent (funds.unspent.value) is 240,000, the pre-purchase figure, and the golden pins that separately. The unspent_before_after fact is for the 5,000 check being asked now: 240,000-5,000 = 235,000 (the same subtraction as situation 02), so unspentAfter is 235,000, not 240,000."
+   },
+   "source": "D-18"
+  },
+  {
+   "id": "d18-shared-50-50",
+   "title": "Household purchase split 50/50",
+   "person": "priya",
+   "purchase": {
+    "price": 100000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": {
+     "kind": "household",
+     "members": 2,
+     "rule": "even"
+    },
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 3,
+    "split": [
+     {
+      "source": "month",
+      "amount": 50000
+     }
+    ],
+    "working": "Price 100,000 shared evenly by 2 -> her share 50,000. Priya October (as scenario 21): E 60,000, Erest 55,000, out 180,000, monthLeft 120,000 >= 50,000 -> fits_month, split month 50,000. Band from her share: 10,000 below, 50,000 not below -> 3."
+   },
+   "source": "D-18"
+  },
+  {
+   "id": "d18-foreign",
+   "title": "Purchase in euros, converted at today rate",
+   "person": "sam",
+   "purchase": {
+    "price": 108000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "electronics",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": {
+     "currency": "EUR"
+    }
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "legacyState": "fits",
+    "band": 5,
+    "split": [
+     {
+      "source": "month",
+      "amount": 42500
+     },
+     {
+      "source": "unspent_earlier",
+      "amount": 65500
+     }
+    ],
+    "facts": [
+     "at_todays_rate",
+     "emergency_untouched"
+    ],
+    "unspentAfter": 132000,
+    "working": "EUR 1,000 converts at today rate to 108,000 home minor units (the snapshot supplies the figure). monthLeft 42,500 < 108,000 <= unspent 240,000 -> fits_unspent: October covers 42,500, unspent earlier 65,500; unspent 240,000-108,000 = 132,000 stays. Band: edges 10,000, 50,000, 100,000 below -> 2+3 = 5. The conversion carries the at_todays_rate fact."
+   },
+   "source": "D-18"
+  },
+  {
+   "id": "d18-raise",
+   "title": "A raise: pay goes to 4,300",
+   "person": "sam",
+   "personOverrides": {
+    "months": [
+     {
+      "month": "2026-04",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-04",
+        "date": "2026-04-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-04",
+        "date": "2026-04-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-04",
+        "date": "2026-04-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-04",
+        "date": "2026-04-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-04-1",
+        "date": "2026-04-03",
+        "amount": 30000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-04-2",
+        "date": "2026-04-09",
+        "amount": 30000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-04-3",
+        "date": "2026-04-12",
+        "amount": 25000,
+        "role": "spending",
+        "name": "Jacket"
+       },
+       {
+        "id": "sam-e-04-4",
+        "date": "2026-04-20",
+        "amount": 25000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-05",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-05",
+        "date": "2026-05-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-05",
+        "date": "2026-05-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-05",
+        "date": "2026-05-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-05",
+        "date": "2026-05-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-05-1",
+        "date": "2026-05-06",
+        "amount": 50000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-05-2",
+        "date": "2026-05-14",
+        "amount": 40000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-05-3",
+        "date": "2026-05-19",
+        "amount": 40000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-05-4",
+        "date": "2026-05-27",
+        "amount": 30000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-06",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-06",
+        "date": "2026-06-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-06",
+        "date": "2026-06-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-06",
+        "date": "2026-06-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-06",
+        "date": "2026-06-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-06-1",
+        "date": "2026-06-07",
+        "amount": 25000,
+        "role": "spending",
+        "name": "Jacket"
+       },
+       {
+        "id": "sam-e-06-2",
+        "date": "2026-06-10",
+        "amount": 45000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-06-3",
+        "date": "2026-06-18",
+        "amount": 240000,
+        "role": "spending",
+        "name": "Vet"
+       },
+       {
+        "id": "sam-e-06-4",
+        "date": "2026-06-25",
+        "amount": 50000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-07",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-07",
+        "date": "2026-07-01",
+        "amount": 370000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-07",
+        "date": "2026-07-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-07",
+        "date": "2026-07-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-07",
+        "date": "2026-07-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-07-1",
+        "date": "2026-07-04",
+        "amount": 50000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-07-2",
+        "date": "2026-07-13",
+        "amount": 45000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-07-3",
+        "date": "2026-07-22",
+        "amount": 35000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-08",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-08",
+        "date": "2026-08-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-08",
+        "date": "2026-08-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-08",
+        "date": "2026-08-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-08",
+        "date": "2026-08-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-08-1",
+        "date": "2026-08-10",
+        "amount": 25000,
+        "role": "spending",
+        "name": "Jacket"
+       },
+       {
+        "id": "sam-e-08-2",
+        "date": "2026-08-15",
+        "amount": 20000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-08-3",
+        "date": "2026-08-20",
+        "amount": 50000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-08-4",
+        "date": "2026-08-28",
+        "amount": 40000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-09",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-09",
+        "date": "2026-09-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-09",
+        "date": "2026-09-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-09",
+        "date": "2026-09-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-09",
+        "date": "2026-09-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-09-1",
+        "date": "2026-09-05",
+        "amount": 65000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-09-2",
+        "date": "2026-09-12",
+        "amount": 60000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-09-3",
+        "date": "2026-09-24",
+        "amount": 60000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-10",
+      "full": false,
+      "lines": [
+       {
+        "id": "sam-pay-10",
+        "date": "2026-10-01",
+        "amount": 430000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-10",
+        "date": "2026-10-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-e-10-1",
+        "date": "2026-10-02",
+        "amount": 10000,
+        "role": "spending"
+       }
+      ]
+     }
+    ]
+   },
+   "setSeriesAmount": [
+    {
+     "id": "sam-pay",
+     "amount": 430000
+    }
+   ],
+   "purchase": {
+    "price": 5000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "band": 2,
+    "month": {
+     "moneyIn": 430000,
+     "typicalLeft": 72500,
+     "monthLeft": 72500
+    },
+    "working": "Pay series amount 430,000 effective this month, October pay logged at 430,000. moneyIn 430,000. Typical left = 430,000-180,000 bills-147,500 E-30,000 saving = 72,500. monthLeft = 430,000-357,500 = 72,500 >= 5,000 -> fits_month. Band 2."
+   },
+   "source": "D-18"
+  },
+  {
+   "id": "d18-job-loss",
+   "title": "Job loss: pay ended in September",
+   "person": "sam",
+   "personOverrides": {
+    "months": [
+     {
+      "month": "2026-04",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-04",
+        "date": "2026-04-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-04",
+        "date": "2026-04-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-04",
+        "date": "2026-04-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-04",
+        "date": "2026-04-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-04-1",
+        "date": "2026-04-03",
+        "amount": 30000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-04-2",
+        "date": "2026-04-09",
+        "amount": 30000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-04-3",
+        "date": "2026-04-12",
+        "amount": 25000,
+        "role": "spending",
+        "name": "Jacket"
+       },
+       {
+        "id": "sam-e-04-4",
+        "date": "2026-04-20",
+        "amount": 25000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-05",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-05",
+        "date": "2026-05-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-05",
+        "date": "2026-05-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-05",
+        "date": "2026-05-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-05",
+        "date": "2026-05-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-05-1",
+        "date": "2026-05-06",
+        "amount": 50000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-05-2",
+        "date": "2026-05-14",
+        "amount": 40000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-05-3",
+        "date": "2026-05-19",
+        "amount": 40000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-05-4",
+        "date": "2026-05-27",
+        "amount": 30000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-06",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-06",
+        "date": "2026-06-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-06",
+        "date": "2026-06-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-06",
+        "date": "2026-06-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-06",
+        "date": "2026-06-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-06-1",
+        "date": "2026-06-07",
+        "amount": 25000,
+        "role": "spending",
+        "name": "Jacket"
+       },
+       {
+        "id": "sam-e-06-2",
+        "date": "2026-06-10",
+        "amount": 45000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-06-3",
+        "date": "2026-06-18",
+        "amount": 240000,
+        "role": "spending",
+        "name": "Vet"
+       },
+       {
+        "id": "sam-e-06-4",
+        "date": "2026-06-25",
+        "amount": 50000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-07",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-07",
+        "date": "2026-07-01",
+        "amount": 370000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-07",
+        "date": "2026-07-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-07",
+        "date": "2026-07-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-07",
+        "date": "2026-07-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-07-1",
+        "date": "2026-07-04",
+        "amount": 50000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-07-2",
+        "date": "2026-07-13",
+        "amount": 45000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-07-3",
+        "date": "2026-07-22",
+        "amount": 35000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-08",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-08",
+        "date": "2026-08-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-08",
+        "date": "2026-08-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-08",
+        "date": "2026-08-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-08",
+        "date": "2026-08-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-08-1",
+        "date": "2026-08-10",
+        "amount": 25000,
+        "role": "spending",
+        "name": "Jacket"
+       },
+       {
+        "id": "sam-e-08-2",
+        "date": "2026-08-15",
+        "amount": 20000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-08-3",
+        "date": "2026-08-20",
+        "amount": 50000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-08-4",
+        "date": "2026-08-28",
+        "amount": 40000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-09",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-09",
+        "date": "2026-09-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-09",
+        "date": "2026-09-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-09",
+        "date": "2026-09-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-09",
+        "date": "2026-09-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-09-1",
+        "date": "2026-09-05",
+        "amount": 65000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-09-2",
+        "date": "2026-09-12",
+        "amount": 60000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-09-3",
+        "date": "2026-09-24",
+        "amount": 60000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-10",
+      "full": false,
+      "lines": [
+       {
+        "id": "sam-rent-10",
+        "date": "2026-10-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-e-10-1",
+        "date": "2026-10-02",
+        "amount": 10000,
+        "role": "spending"
+       }
+      ]
+     }
+    ],
+    "series": [
+     {
+      "id": "sam-pay",
+      "name": "Pay",
+      "role": "pay",
+      "cadence": {
+       "unit": "month",
+       "every": 1
+      },
+      "anchorDate": "2026-04-01",
+      "amount": 400000,
+      "endDate": "2026-09-30"
+     },
+     {
+      "id": "sam-rent",
+      "name": "Rent",
+      "role": "bill",
+      "cadence": {
+       "unit": "month",
+       "every": 1
+      },
+      "anchorDate": "2026-04-01",
+      "amount": 150000,
+      "isHousing": true
+     },
+     {
+      "id": "sam-utils",
+      "name": "Utilities",
+      "role": "bill",
+      "cadence": {
+       "unit": "month",
+       "every": 1
+      },
+      "anchorDate": "2026-04-15",
+      "amount": 30000
+     },
+     {
+      "id": "sam-save",
+      "name": "Saving",
+      "role": "saving",
+      "cadence": {
+       "unit": "month",
+       "every": 1
+      },
+      "anchorDate": "2026-04-05",
+      "amount": 30000,
+      "savingMode": "fixed"
+     }
+    ]
+   },
+   "purchase": {
+    "price": 15000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "legacyState": "no",
+    "band": 3,
+    "readyBy": null,
+    "facts": [
+     "emergency_untouched"
+    ],
+    "notices": [
+     "typical_short",
+     "month_heading_short"
+    ],
+    "month": {
+     "moneyIn": 0,
+     "moneyOut": 357500,
+     "monthLeft": -357500,
+     "typicalLeft": -357500,
+     "e": 147500,
+     "erest": 137500
+    },
+    "working": "Pay series ended 2026-09-30, no 2026-10-01 pay line; balance stays 1,307,500 (the final pay landed in September); profile unchanged (salary); unspent still 240,000 at 2026-10-03. moneyIn 0; moneyOut 357,500 (150,000 rent paid + 30,000 utilities due + 10,000 logged + Erest 137,500 + setAside 30,000); monthLeft -357,500; typicalIncome 0 so typicalLeft = 0-180,000-147,500-30,000 = -357,500. 5.4.1 does not fire (a profile is present); 5.4.2 does not fire (unspent is confirmed); 5.4.3 does not fire (band 3). Cash path: opening 1,307,500, no pay, 90-day outflows about 540,000 bills + 437,258 spread + 15,000 stay >= 0 at every point -> cash ok. One-off: 15,000 > max(0,-357,500) = 0 and 15,000 <= 240,000 -> fits_unspent, variant null, legacyState fits, split [unspent_earlier 15,000]; notices typical_short and month_heading_short; fact emergency_untouched. Band 3 (10,000 below). RE-BASELINED (05.1-35, D-43a, D-54): the cash path now opens at the spending balance, 1,307,500 - 900,000 fund (dedicated account) = 407,500, not 1,307,500. With no pay the 90-day outflows (about 540,000 bills + 437,258 spread + 15,000 purchase) put the path 430,000 below zero and nothing recovers it, so the answer is not_yet / not_covered with no ready date (no pay to wait for). The fund no longer cushions the cash check (D-09). The emergency fund fact stays."
+   },
+   "source": "D-18"
+  },
+  {
+   "id": "d18-missed-paycheque",
+   "title": "October 1st pay never arrived, asked on the 13th",
+   "person": "sam",
+   "personOverrides": {
+    "asOf": "2026-10-13",
+    "payArrivals": [
+     {
+      "seriesId": "sam-pay",
+      "date": "2026-10-01",
+      "arrived": false
+     }
+    ],
+    "unspent": {
+     "amount": 240000,
+     "at": "2026-10-13"
+    },
+    "months": [
+     {
+      "month": "2026-04",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-04",
+        "date": "2026-04-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-04",
+        "date": "2026-04-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-04",
+        "date": "2026-04-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-04",
+        "date": "2026-04-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-04-1",
+        "date": "2026-04-03",
+        "amount": 30000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-04-2",
+        "date": "2026-04-09",
+        "amount": 30000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-04-3",
+        "date": "2026-04-12",
+        "amount": 25000,
+        "role": "spending",
+        "name": "Jacket"
+       },
+       {
+        "id": "sam-e-04-4",
+        "date": "2026-04-20",
+        "amount": 25000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-05",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-05",
+        "date": "2026-05-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-05",
+        "date": "2026-05-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-05",
+        "date": "2026-05-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-05",
+        "date": "2026-05-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-05-1",
+        "date": "2026-05-06",
+        "amount": 50000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-05-2",
+        "date": "2026-05-14",
+        "amount": 40000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-05-3",
+        "date": "2026-05-19",
+        "amount": 40000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-05-4",
+        "date": "2026-05-27",
+        "amount": 30000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-06",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-06",
+        "date": "2026-06-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-06",
+        "date": "2026-06-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-06",
+        "date": "2026-06-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-06",
+        "date": "2026-06-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-06-1",
+        "date": "2026-06-07",
+        "amount": 25000,
+        "role": "spending",
+        "name": "Jacket"
+       },
+       {
+        "id": "sam-e-06-2",
+        "date": "2026-06-10",
+        "amount": 45000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-06-3",
+        "date": "2026-06-18",
+        "amount": 240000,
+        "role": "spending",
+        "name": "Vet"
+       },
+       {
+        "id": "sam-e-06-4",
+        "date": "2026-06-25",
+        "amount": 50000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-07",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-07",
+        "date": "2026-07-01",
+        "amount": 370000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-07",
+        "date": "2026-07-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-07",
+        "date": "2026-07-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-07",
+        "date": "2026-07-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-07-1",
+        "date": "2026-07-04",
+        "amount": 50000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-07-2",
+        "date": "2026-07-13",
+        "amount": 45000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-07-3",
+        "date": "2026-07-22",
+        "amount": 35000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-08",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-08",
+        "date": "2026-08-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-08",
+        "date": "2026-08-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-08",
+        "date": "2026-08-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-08",
+        "date": "2026-08-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-08-1",
+        "date": "2026-08-10",
+        "amount": 25000,
+        "role": "spending",
+        "name": "Jacket"
+       },
+       {
+        "id": "sam-e-08-2",
+        "date": "2026-08-15",
+        "amount": 20000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-08-3",
+        "date": "2026-08-20",
+        "amount": 50000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-08-4",
+        "date": "2026-08-28",
+        "amount": 40000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-09",
+      "full": true,
+      "lines": [
+       {
+        "id": "sam-pay-09",
+        "date": "2026-09-01",
+        "amount": 400000,
+        "role": "income",
+        "seriesId": "sam-pay"
+       },
+       {
+        "id": "sam-rent-09",
+        "date": "2026-09-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-utils-09",
+        "date": "2026-09-15",
+        "amount": 30000,
+        "role": "spending",
+        "seriesId": "sam-utils"
+       },
+       {
+        "id": "sam-save-09",
+        "date": "2026-09-05",
+        "amount": 30000,
+        "role": "saved_invested",
+        "seriesId": "sam-save"
+       },
+       {
+        "id": "sam-e-09-1",
+        "date": "2026-09-05",
+        "amount": 65000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-09-2",
+        "date": "2026-09-12",
+        "amount": 60000,
+        "role": "spending"
+       },
+       {
+        "id": "sam-e-09-3",
+        "date": "2026-09-24",
+        "amount": 60000,
+        "role": "spending"
+       }
+      ]
+     },
+     {
+      "month": "2026-10",
+      "full": false,
+      "lines": [
+       {
+        "id": "sam-rent-10",
+        "date": "2026-10-01",
+        "amount": 150000,
+        "role": "spending",
+        "seriesId": "sam-rent"
+       },
+       {
+        "id": "sam-e-10-1",
+        "date": "2026-10-02",
+        "amount": 10000,
+        "role": "spending"
+       }
+      ]
+     }
+    ]
+   },
+   "purchase": {
+    "price": 5000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "legacyState": "fits",
+    "band": 2,
+    "month": {
+     "moneyIn": 0
+    },
+    "working": "asOf 2026-10-13, the 2026-10-01 pay line is missing. D-58: a confirmed pay dated before asOf with no matching line is asked about, never guessed; with no answer yet it is neither received nor due: moneyIn 0. The user answers not yet (payArrivals: arrived false), so the pay is counted as missed: moneyIn 0 and reasons include missed_pay_excluded, and the answer is a careful one, never needs_input (the pay_arrival_question is gone). Unspent re-confirmed 2026-10-13 at 240,000. moneyOut 357,500 (rent 150,000, utilities 30,000 due on the 15th, logged 10,000, Erest max(round(147,500*18/31)=85,645, 147,500-10,000=137,500)=137,500, setAside 30,000), monthLeft -357,500 < 5,000 <= 240,000 -> fits_unspent. Band 2."
+   },
+   "source": "D-18"
+  }
+ ]
+}

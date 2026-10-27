@@ -1,0 +1,135 @@
+{
+  "reviewed": true,
+  "reviewedBy": "owner",
+  "reviewedAt": "2026-10-27",
+  "newFits": [
+    {
+      "key": "generated:gen-220:0",
+      "cause": "cash_path_spread",
+      "reason": "Old engine said adjust; v3 says fits_month. Today's engine raised its own cash warning (cash,cash_dip); v3's cash path raises none and no payday or low-balance variant applies. v3's month left is 466,278 against 0 due on day one of a 227,653 purchase.",
+      "approved": true
+    },
+    {
+      "key": "persona:leo:0",
+      "cause": "unspent_confirmed",
+      "reason": "Old engine said adjust; v3 says fits_unspent. v3 counts the 10,000 unspent money the person confirmed, which covers the 100 due on day one of a 100 purchase. Today's engine judged only the month's free figure (-19,484) and has no confirmed unspent figure.",
+      "approved": true
+    },
+    {
+      "key": "persona:tia:0",
+      "cause": "cash_path_spread",
+      "reason": "Old engine said no; v3 says fits_month. Today's engine raised its own cash warning (cash,cash_dip); v3's cash path raises none and no payday or low-balance variant applies. v3's month left is 23,613 against 100 due on day one of a 100 purchase.",
+      "approved": true
+    },
+    {
+      "key": "persona:dana:0",
+      "cause": "cash_path_spread",
+      "reason": "Old engine said adjust; v3 says fits_month. Today's engine raised its own cash warning (cash); v3's cash path raises none and no payday or low-balance variant applies. v3's month left is 83,710 against 100 due on day one of a 100 purchase.",
+      "approved": true
+    },
+    {
+      "key": "persona:kim:0",
+      "cause": "cash_path_spread",
+      "reason": "Old engine said adjust; v3 says fits_month. Today's engine raised its own cash warning (cash_dip); v3's cash path raises none and no payday or low-balance variant applies. v3's month left is 90,000 against 100 due on day one of a 100 purchase.",
+      "approved": true
+    },
+    {
+      "key": "persona:priya:0",
+      "cause": "cash_path_spread",
+      "reason": "Old engine said adjust; v3 says fits_month. Today's engine raised its own cash warning (cash); v3's cash path raises none and no payday or low-balance variant applies. v3's month left is 120,000 against 100 due on day one of a 100 purchase.",
+      "approved": true
+    },
+    {
+      "key": "scenario:02:0",
+      "cause": "unspent_confirmed",
+      "reason": "Old engine said adjust; v3 says fits_unspent. v3 counts the 240,000 unspent money the person confirmed, which covers the 120,000 due on day one of a 120,000 purchase. Today's engine judged only the month's free figure (42,500) and has no confirmed unspent figure.",
+      "approved": true
+    },
+    {
+      "key": "scenario:04:0",
+      "cause": "unspent_confirmed",
+      "reason": "Old engine said adjust; v3 says fits_unspent. v3 counts the 240,000 unspent money the person confirmed, which covers the 500 due on day one of a 500 purchase. Today's engine judged only the month's free figure (-53,226) and has no confirmed unspent figure.",
+      "approved": true
+    },
+    {
+      "key": "scenario:14:0",
+      "cause": "cash_path_spread",
+      "reason": "Old engine said no; v3 says fits_month. Today's engine raised its own cash warning (cash,cash_dip); v3's cash path raises none and no payday or low-balance variant applies. v3's month left is 40,000 against 15,000 due on day one of a 15,000 purchase.",
+      "approved": true
+    },
+    {
+      "key": "scenario:17:0",
+      "cause": "cash_path_spread",
+      "reason": "Old engine said adjust; v3 says fits_month. Today's engine raised its own cash warning (cash,dsr); v3's cash path raises none and no payday or low-balance variant applies. v3's month left is 83,710 against 0 due on day one of a 2,400,000 purchase.",
+      "approved": true
+    },
+    {
+      "key": "scenario:18:0",
+      "cause": "unspent_confirmed",
+      "reason": "Old engine said adjust; v3 says fits_unspent. v3 counts the 350,000 unspent money the person confirmed, which covers the 120,000 due on day one of a 120,000 purchase. Today's engine judged only the month's free figure (90,000) and has no confirmed unspent figure.",
+      "approved": true
+    },
+    {
+      "key": "scenario:21:0",
+      "cause": "other",
+      "reason": "Old engine said adjust; v3 says fits_month. v3 finds month left 120,000 covering the 80,000 due on day one of a 160,000 purchase, typical month left 120,000, and raises nothing else. The change was not tied to one named rule; the old engine's answer for this history was adjust, which the owner should look at directly.",
+      "approved": true
+    },
+    {
+      "key": "d18:d18-return-refund:0",
+      "cause": "cash_path_spread",
+      "reason": "Old engine said adjust; v3 says fits_month. Today's engine raised its own cash warning (cash_dip); v3's cash path raises none and no payday or low-balance variant applies. v3's month left is 42,500 against 5,000 due on day one of a 5,000 purchase.",
+      "approved": true
+    },
+    {
+      "key": "d18:d18-shared-50-50:0",
+      "cause": "other",
+      "reason": "Old engine said adjust; v3 says fits_month. v3 finds month left 120,000 covering the 50,000 due on day one of a 100,000 purchase, typical month left 120,000, and raises nothing else. The change was not tied to one named rule; the old engine's answer for this history was adjust, which the owner should look at directly.",
+      "approved": true
+    }
+  ],
+  "groups": [
+    {
+      "cause": "needs_input_rules",
+      "count": 288,
+      "note": "v3 asks for a figure (unspent money or up-to-date records) where the old engine answered without it (UP 5.4). Count 288 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "accepted": true
+    },
+    {
+      "cause": "unspent_confirmed",
+      "count": 4,
+      "note": "v3 counts unspent money the person confirmed; the old engine had no such figure (D-22). Count 4 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "accepted": true
+    },
+    {
+      "cause": "emergency_locked",
+      "count": 10,
+      "note": "v3 keeps the emergency fund out of reach (D-09); the old engine counted it toward the cushion. Count 10 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "accepted": true
+    },
+    {
+      "cause": "erest_not_zero_spend",
+      "count": 2,
+      "note": "v3 carries the rest of the month's everyday spending (Erest) instead of treating it as zero. Count 2 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "accepted": true
+    },
+    {
+      "cause": "cash_path_spread",
+      "count": 46,
+      "note": "v3 judges the cash path with the real pay and bill dates; the old engine raised its own cash warnings. Count 46 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "accepted": true
+    },
+    {
+      "cause": "median_ignores_outlier",
+      "count": 1,
+      "note": "v3 uses the median everyday spend, so a one-off heavy month no longer sets the typical figure. Count 1 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "accepted": true
+    },
+    {
+      "cause": "other",
+      "count": 2,
+      "note": "No named rule matched; each entry needs a direct look. Count 2 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "accepted": true
+    }
+  ]
+}

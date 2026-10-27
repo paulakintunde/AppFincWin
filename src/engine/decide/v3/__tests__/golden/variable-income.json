@@ -1,0 +1,4957 @@
+{
+ "persons": [
+  {
+   "id": "ines",
+   "currency": "USD",
+   "asOf": "2026-11-03",
+   "months": [
+    {
+     "month": "2025-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2025-09",
+       "date": "2025-09-05",
+       "amount": 450000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2025-09",
+       "date": "2025-09-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2025-09",
+       "date": "2025-09-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2025-09",
+       "date": "2025-09-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2025-09-1",
+       "date": "2025-09-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-09-2",
+       "date": "2025-09-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-09-3",
+       "date": "2025-09-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-09-4",
+       "date": "2025-09-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-10",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2025-10",
+       "date": "2025-10-05",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2025-10",
+       "date": "2025-10-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2025-10",
+       "date": "2025-10-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2025-10",
+       "date": "2025-10-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2025-10-1",
+       "date": "2025-10-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-10-2",
+       "date": "2025-10-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-10-3",
+       "date": "2025-10-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-10-4",
+       "date": "2025-10-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-11",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2025-11",
+       "date": "2025-11-05",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2025-11",
+       "date": "2025-11-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2025-11",
+       "date": "2025-11-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2025-11",
+       "date": "2025-11-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2025-11-1",
+       "date": "2025-11-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-11-2",
+       "date": "2025-11-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-11-3",
+       "date": "2025-11-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-11-4",
+       "date": "2025-11-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-12",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2025-12",
+       "date": "2025-12-05",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2025-12",
+       "date": "2025-12-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2025-12",
+       "date": "2025-12-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2025-12",
+       "date": "2025-12-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2025-12-1",
+       "date": "2025-12-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-12-2",
+       "date": "2025-12-10",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-12-3",
+       "date": "2025-12-17",
+       "amount": 35000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2025-12-4",
+       "date": "2025-12-24",
+       "amount": 35000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-01",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2026-01",
+       "date": "2026-01-05",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2026-01",
+       "date": "2026-01-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2026-01",
+       "date": "2026-01-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2026-01",
+       "date": "2026-01-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2026-01-1",
+       "date": "2026-01-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-01-2",
+       "date": "2026-01-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-01-3",
+       "date": "2026-01-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-01-4",
+       "date": "2026-01-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-02",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2026-02",
+       "date": "2026-02-05",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2026-02",
+       "date": "2026-02-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2026-02",
+       "date": "2026-02-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2026-02",
+       "date": "2026-02-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2026-02-1",
+       "date": "2026-02-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-02-2",
+       "date": "2026-02-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-02-3",
+       "date": "2026-02-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-02-4",
+       "date": "2026-02-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-03",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2026-03",
+       "date": "2026-03-05",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2026-03",
+       "date": "2026-03-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2026-03",
+       "date": "2026-03-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2026-03",
+       "date": "2026-03-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2026-03-1",
+       "date": "2026-03-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-03-2",
+       "date": "2026-03-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-03-3",
+       "date": "2026-03-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-03-4",
+       "date": "2026-03-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2026-04",
+       "date": "2026-04-05",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2026-04",
+       "date": "2026-04-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2026-04",
+       "date": "2026-04-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2026-04",
+       "date": "2026-04-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2026-04-1",
+       "date": "2026-04-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-04-2",
+       "date": "2026-04-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-04-3",
+       "date": "2026-04-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-04-4",
+       "date": "2026-04-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2026-05",
+       "date": "2026-05-05",
+       "amount": 450000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2026-05",
+       "date": "2026-05-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2026-05",
+       "date": "2026-05-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2026-05",
+       "date": "2026-05-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2026-05-1",
+       "date": "2026-05-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-05-2",
+       "date": "2026-05-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-05-3",
+       "date": "2026-05-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-05-4",
+       "date": "2026-05-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2026-06",
+       "date": "2026-06-05",
+       "amount": 450000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2026-06",
+       "date": "2026-06-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2026-06",
+       "date": "2026-06-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2026-06",
+       "date": "2026-06-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2026-06-1",
+       "date": "2026-06-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-06-2",
+       "date": "2026-06-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-06-3",
+       "date": "2026-06-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-06-4",
+       "date": "2026-06-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2026-07",
+       "date": "2026-07-05",
+       "amount": 450000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2026-07",
+       "date": "2026-07-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2026-07",
+       "date": "2026-07-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2026-07",
+       "date": "2026-07-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2026-07-1",
+       "date": "2026-07-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-07-2",
+       "date": "2026-07-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-07-3",
+       "date": "2026-07-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-07-4",
+       "date": "2026-07-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2026-08",
+       "date": "2026-08-05",
+       "amount": 450000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2026-08",
+       "date": "2026-08-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2026-08",
+       "date": "2026-08-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2026-08",
+       "date": "2026-08-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2026-08-1",
+       "date": "2026-08-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-08-2",
+       "date": "2026-08-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-08-3",
+       "date": "2026-08-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-08-4",
+       "date": "2026-08-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2026-09",
+       "date": "2026-09-05",
+       "amount": 450000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2026-09",
+       "date": "2026-09-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2026-09",
+       "date": "2026-09-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2026-09",
+       "date": "2026-09-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2026-09-1",
+       "date": "2026-09-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-09-2",
+       "date": "2026-09-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-09-3",
+       "date": "2026-09-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-09-4",
+       "date": "2026-09-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": true,
+     "lines": [
+      {
+       "id": "ines-pay-2026-10",
+       "date": "2026-10-05",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "ines-pay"
+      },
+      {
+       "id": "ines-rent-2026-10",
+       "date": "2026-10-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-utils-2026-10",
+       "date": "2026-10-15",
+       "amount": 15000,
+       "role": "spending",
+       "seriesId": "ines-utils"
+      },
+      {
+       "id": "ines-save-2026-10",
+       "date": "2026-10-05",
+       "amount": 10000,
+       "role": "saved_invested",
+       "seriesId": "ines-save"
+      },
+      {
+       "id": "ines-e-2026-10-1",
+       "date": "2026-10-03",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-10-2",
+       "date": "2026-10-10",
+       "amount": 25000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-10-3",
+       "date": "2026-10-17",
+       "amount": 20000,
+       "role": "spending"
+      },
+      {
+       "id": "ines-e-2026-10-4",
+       "date": "2026-10-24",
+       "amount": 20000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-11",
+     "full": false,
+     "lines": [
+      {
+       "id": "ines-rent-2026-11",
+       "date": "2026-11-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-e-2026-11-1",
+       "date": "2026-11-02",
+       "amount": 10000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "ines-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2025-09-05",
+     "amount": 260000
+    },
+    {
+     "id": "ines-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2025-09-01",
+     "amount": 120000,
+     "isHousing": true
+    },
+    {
+     "id": "ines-utils",
+     "name": "Utilities",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2025-09-15",
+     "amount": 15000
+    },
+    {
+     "id": "ines-save",
+     "name": "Saving",
+     "role": "saving",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2025-09-05",
+     "amount": 10000,
+     "savingMode": "fixed"
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null,
+    "pattern": "seasonal"
+   },
+   "rough": null,
+   "balance": 1000000,
+   "unspent": {
+    "amount": 304000,
+    "at": "2026-11-03"
+   },
+   "emergency": 600000,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Seasonal tour guide. Pay on the 5th: 450,000 May to Sep, 260,000 Oct to Apr. Rent 120,000 (1st), utilities 15,000 (15th), fixed saving 10,000, everyday 90,000 a month and 150,000 in December. Window (12 months to 2026-10): 7 months of 260,000 and 5 of 450,000, total 4,070,000, mean 339,167. Window CV: n*sum(x^2) - S^2 = 12*1,485,700,000,000 - 4,070,000^2 = 1,263,500,000,000; times 10,000 = 1.2635e16 against 22^2 * S^2 = 8.02e15 (swings, yes) and 38^2 * S^2 = 2.39e16 (volatile, no): CV about 27.6%, so ines is never volatile under D-48. Balance 1,000,000 total less fund 600,000 = spending 400,000. At 2026-11-03: Erest 81,000 and utilities 15,000 still due, so suggested = 400,000 - 15,000 - 81,000 = 304,000, and the confirmed unspent is set to exactly that."
+  },
+  {
+   "id": "gabe",
+   "currency": "USD",
+   "asOf": "2026-10-03",
+   "months": [
+    {
+     "month": "2025-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2025-08",
+       "date": "2025-08-20",
+       "amount": 310000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2025-08",
+       "date": "2025-08-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2025-08-1",
+       "date": "2025-08-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-08-2",
+       "date": "2025-08-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-08-3",
+       "date": "2025-08-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-08-4",
+       "date": "2025-08-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2025-09",
+       "date": "2025-09-20",
+       "amount": 180000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2025-09",
+       "date": "2025-09-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2025-09-1",
+       "date": "2025-09-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-09-2",
+       "date": "2025-09-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-09-3",
+       "date": "2025-09-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-09-4",
+       "date": "2025-09-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-10",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2025-10",
+       "date": "2025-10-20",
+       "amount": 420000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2025-10",
+       "date": "2025-10-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2025-10-1",
+       "date": "2025-10-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-10-2",
+       "date": "2025-10-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-10-3",
+       "date": "2025-10-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-10-4",
+       "date": "2025-10-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-11",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2025-11",
+       "date": "2025-11-20",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2025-11",
+       "date": "2025-11-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2025-11-1",
+       "date": "2025-11-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-11-2",
+       "date": "2025-11-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-11-3",
+       "date": "2025-11-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-11-4",
+       "date": "2025-11-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-12",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2025-12",
+       "date": "2025-12-20",
+       "amount": 150000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2025-12",
+       "date": "2025-12-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2025-12-1",
+       "date": "2025-12-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-12-2",
+       "date": "2025-12-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-12-3",
+       "date": "2025-12-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2025-12-4",
+       "date": "2025-12-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-01",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2026-01",
+       "date": "2026-01-20",
+       "amount": 390000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2026-01",
+       "date": "2026-01-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2026-01-1",
+       "date": "2026-01-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-01-2",
+       "date": "2026-01-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-01-3",
+       "date": "2026-01-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-01-4",
+       "date": "2026-01-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-02",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2026-02",
+       "date": "2026-02-20",
+       "amount": 280000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2026-02",
+       "date": "2026-02-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2026-02-1",
+       "date": "2026-02-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-02-2",
+       "date": "2026-02-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-02-3",
+       "date": "2026-02-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-02-4",
+       "date": "2026-02-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-03",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2026-03",
+       "date": "2026-03-20",
+       "amount": 220000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2026-03",
+       "date": "2026-03-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2026-03-1",
+       "date": "2026-03-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-03-2",
+       "date": "2026-03-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-03-3",
+       "date": "2026-03-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-03-4",
+       "date": "2026-03-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2026-04",
+       "date": "2026-04-20",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2026-04",
+       "date": "2026-04-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2026-04-1",
+       "date": "2026-04-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-04-2",
+       "date": "2026-04-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-04-3",
+       "date": "2026-04-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-04-4",
+       "date": "2026-04-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2026-05",
+       "date": "2026-05-20",
+       "amount": 170000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2026-05",
+       "date": "2026-05-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2026-05-1",
+       "date": "2026-05-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-05-2",
+       "date": "2026-05-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-05-3",
+       "date": "2026-05-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-05-4",
+       "date": "2026-05-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2026-06",
+       "date": "2026-06-20",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2026-06",
+       "date": "2026-06-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2026-06-1",
+       "date": "2026-06-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-06-2",
+       "date": "2026-06-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-06-3",
+       "date": "2026-06-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-06-4",
+       "date": "2026-06-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2026-07",
+       "date": "2026-07-20",
+       "amount": 240000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2026-07",
+       "date": "2026-07-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2026-07-1",
+       "date": "2026-07-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-07-2",
+       "date": "2026-07-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-07-3",
+       "date": "2026-07-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-07-4",
+       "date": "2026-07-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2026-08",
+       "date": "2026-08-20",
+       "amount": 330000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2026-08",
+       "date": "2026-08-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2026-08-1",
+       "date": "2026-08-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-08-2",
+       "date": "2026-08-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-08-3",
+       "date": "2026-08-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-08-4",
+       "date": "2026-08-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "gabe-pay-2026-09",
+       "date": "2026-09-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "gabe-pay"
+      },
+      {
+       "id": "gabe-rent-2026-09",
+       "date": "2026-09-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-e-2026-09-1",
+       "date": "2026-09-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-09-2",
+       "date": "2026-09-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-09-3",
+       "date": "2026-09-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "gabe-e-2026-09-4",
+       "date": "2026-09-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "gabe-rent-2026-10",
+       "date": "2026-10-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "gabe-rent"
+      },
+      {
+       "id": "gabe-inc-2026-10",
+       "date": "2026-10-02",
+       "amount": 80000,
+       "role": "income"
+      },
+      {
+       "id": "gabe-e-2026-10-1",
+       "date": "2026-10-02",
+       "amount": 6000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "gabe-pay",
+     "name": "Gig pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2025-08-20",
+     "amount": 170000
+    },
+    {
+     "id": "gabe-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2025-08-01",
+     "amount": 95000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "freelance"
+    ],
+    "variable": "match",
+    "steady": null,
+    "billsHorizonMonths": null,
+    "pattern": "variable"
+   },
+   "rough": null,
+   "balance": 800000,
+   "unspent": {
+    "amount": 244000,
+    "at": "2026-10-03"
+   },
+   "emergency": 500000,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Gig driver. 14 months of income (000s): 310, 180, 420, 260, 150, 390, 280, 220, 350, 170, 300, 240, 330, 200 (2025-08 to 2026-09). Window = the newest 12 (2025-10 to 2026-09): total 3,310,000; n*sum(x^2) - S^2 = 12*993,300 - 3,310^2 = 963,500 (thousands squared); CV about 29.7%: at least 22% (swings) and below 38% (not volatile). Rent 95,000, everyday 62,000 a month, no saving. Pay series 170,000 on the 20th (lands only up to the expected income). October so far: 80,000 income, 6,000 everyday. Spending 800,000 - 500,000 = 300,000; suggested = 300,000 - 56,000 Erest = 244,000."
+  },
+  {
+   "id": "vic",
+   "currency": "USD",
+   "asOf": "2026-10-03",
+   "months": [
+    {
+     "month": "2025-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2025-08",
+       "date": "2025-08-20",
+       "amount": 450000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2025-08",
+       "date": "2025-08-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2025-08-1",
+       "date": "2025-08-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-08-2",
+       "date": "2025-08-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-08-3",
+       "date": "2025-08-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-08-4",
+       "date": "2025-08-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2025-09",
+       "date": "2025-09-20",
+       "amount": 90000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2025-09",
+       "date": "2025-09-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2025-09-1",
+       "date": "2025-09-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-09-2",
+       "date": "2025-09-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-09-3",
+       "date": "2025-09-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-09-4",
+       "date": "2025-09-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-10",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2025-10",
+       "date": "2025-10-20",
+       "amount": 380000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2025-10",
+       "date": "2025-10-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2025-10-1",
+       "date": "2025-10-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-10-2",
+       "date": "2025-10-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-10-3",
+       "date": "2025-10-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-10-4",
+       "date": "2025-10-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-11",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2025-11",
+       "date": "2025-11-20",
+       "amount": 60000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2025-11",
+       "date": "2025-11-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2025-11-1",
+       "date": "2025-11-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-11-2",
+       "date": "2025-11-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-11-3",
+       "date": "2025-11-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-11-4",
+       "date": "2025-11-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-12",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2025-12",
+       "date": "2025-12-20",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2025-12",
+       "date": "2025-12-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2025-12-1",
+       "date": "2025-12-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-12-2",
+       "date": "2025-12-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-12-3",
+       "date": "2025-12-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2025-12-4",
+       "date": "2025-12-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-01",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2026-01",
+       "date": "2026-01-20",
+       "amount": 520000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2026-01",
+       "date": "2026-01-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2026-01-1",
+       "date": "2026-01-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-01-2",
+       "date": "2026-01-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-01-3",
+       "date": "2026-01-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-01-4",
+       "date": "2026-01-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-02",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2026-02",
+       "date": "2026-02-20",
+       "amount": 110000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2026-02",
+       "date": "2026-02-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2026-02-1",
+       "date": "2026-02-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-02-2",
+       "date": "2026-02-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-02-3",
+       "date": "2026-02-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-02-4",
+       "date": "2026-02-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-03",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2026-03",
+       "date": "2026-03-20",
+       "amount": 260000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2026-03",
+       "date": "2026-03-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2026-03-1",
+       "date": "2026-03-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-03-2",
+       "date": "2026-03-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-03-3",
+       "date": "2026-03-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-03-4",
+       "date": "2026-03-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2026-04",
+       "date": "2026-04-20",
+       "amount": 410000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2026-04",
+       "date": "2026-04-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2026-04-1",
+       "date": "2026-04-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-04-2",
+       "date": "2026-04-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-04-3",
+       "date": "2026-04-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-04-4",
+       "date": "2026-04-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2026-05",
+       "date": "2026-05-20",
+       "amount": 70000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2026-05",
+       "date": "2026-05-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2026-05-1",
+       "date": "2026-05-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-05-2",
+       "date": "2026-05-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-05-3",
+       "date": "2026-05-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-05-4",
+       "date": "2026-05-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2026-06",
+       "date": "2026-06-20",
+       "amount": 340000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2026-06",
+       "date": "2026-06-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2026-06-1",
+       "date": "2026-06-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-06-2",
+       "date": "2026-06-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-06-3",
+       "date": "2026-06-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-06-4",
+       "date": "2026-06-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2026-07",
+       "date": "2026-07-20",
+       "amount": 150000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2026-07",
+       "date": "2026-07-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2026-07-1",
+       "date": "2026-07-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-07-2",
+       "date": "2026-07-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-07-3",
+       "date": "2026-07-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-07-4",
+       "date": "2026-07-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2026-08",
+       "date": "2026-08-20",
+       "amount": 480000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2026-08",
+       "date": "2026-08-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2026-08-1",
+       "date": "2026-08-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-08-2",
+       "date": "2026-08-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-08-3",
+       "date": "2026-08-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-08-4",
+       "date": "2026-08-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "vic-pay-2026-09",
+       "date": "2026-09-20",
+       "amount": 100000,
+       "role": "income",
+       "seriesId": "vic-pay"
+      },
+      {
+       "id": "vic-rent-2026-09",
+       "date": "2026-09-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-e-2026-09-1",
+       "date": "2026-09-05",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-09-2",
+       "date": "2026-09-12",
+       "amount": 15000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-09-3",
+       "date": "2026-09-19",
+       "amount": 16000,
+       "role": "spending"
+      },
+      {
+       "id": "vic-e-2026-09-4",
+       "date": "2026-09-26",
+       "amount": 16000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "vic-rent-2026-10",
+       "date": "2026-10-01",
+       "amount": 95000,
+       "role": "spending",
+       "seriesId": "vic-rent"
+      },
+      {
+       "id": "vic-inc-2026-10",
+       "date": "2026-10-02",
+       "amount": 80000,
+       "role": "income"
+      },
+      {
+       "id": "vic-e-2026-10-1",
+       "date": "2026-10-02",
+       "amount": 6000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "vic-pay",
+     "name": "Gig pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2025-08-20",
+     "amount": 170000
+    },
+    {
+     "id": "vic-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2025-08-01",
+     "amount": 95000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "freelance"
+    ],
+    "variable": "match",
+    "steady": null,
+    "billsHorizonMonths": null,
+    "pattern": "variable"
+   },
+   "rough": null,
+   "balance": 900000,
+   "unspent": {
+    "amount": 344000,
+    "at": "2026-10-03"
+   },
+   "emergency": 500000,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Very volatile gig earner. 14 months of income (000s): 450, 90, 380, 60, 300, 520, 110, 260, 410, 70, 340, 150, 480, 100. Window = newest 12 (2025-10 to 2026-09): total 3,180,000; n*sum(x^2) - S^2 = 12*1,139,600 - 3,180^2 = 3,562,800 (thousands squared); CV about 59.4%, at or above 38% (volatile, D-48). Rent 95,000, everyday 62,000 a month. Pay series 170,000 on the 20th. October so far: 80,000 income, 6,000 everyday. Spending 900,000 - 500,000 = 400,000; suggested = 400,000 - 56,000 = 344,000."
+  },
+  {
+   "id": "dee",
+   "currency": "USD",
+   "asOf": "2026-10-20",
+   "months": [
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "dee-pay-07",
+       "date": "2026-07-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "dee-pay"
+      },
+      {
+       "id": "dee-rent-07",
+       "date": "2026-07-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "dee-rent"
+      },
+      {
+       "id": "dee-e-07-1",
+       "date": "2026-07-03",
+       "amount": 23250,
+       "role": "spending"
+      },
+      {
+       "id": "dee-e-07-2",
+       "date": "2026-07-10",
+       "amount": 23250,
+       "role": "spending"
+      },
+      {
+       "id": "dee-e-07-3",
+       "date": "2026-07-17",
+       "amount": 23250,
+       "role": "spending"
+      },
+      {
+       "id": "dee-e-07-4",
+       "date": "2026-07-24",
+       "amount": 23250,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "dee-pay-08",
+       "date": "2026-08-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "dee-pay"
+      },
+      {
+       "id": "dee-rent-08",
+       "date": "2026-08-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "dee-rent"
+      },
+      {
+       "id": "dee-e-08-1",
+       "date": "2026-08-03",
+       "amount": 23250,
+       "role": "spending"
+      },
+      {
+       "id": "dee-e-08-2",
+       "date": "2026-08-10",
+       "amount": 23250,
+       "role": "spending"
+      },
+      {
+       "id": "dee-e-08-3",
+       "date": "2026-08-17",
+       "amount": 23250,
+       "role": "spending"
+      },
+      {
+       "id": "dee-e-08-4",
+       "date": "2026-08-24",
+       "amount": 23250,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "dee-pay-09",
+       "date": "2026-09-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "dee-pay"
+      },
+      {
+       "id": "dee-rent-09",
+       "date": "2026-09-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "dee-rent"
+      },
+      {
+       "id": "dee-e-09-1",
+       "date": "2026-09-03",
+       "amount": 23250,
+       "role": "spending"
+      },
+      {
+       "id": "dee-e-09-2",
+       "date": "2026-09-10",
+       "amount": 23250,
+       "role": "spending"
+      },
+      {
+       "id": "dee-e-09-3",
+       "date": "2026-09-17",
+       "amount": 23250,
+       "role": "spending"
+      },
+      {
+       "id": "dee-e-09-4",
+       "date": "2026-09-24",
+       "amount": 23250,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "dee-pay-10",
+       "date": "2026-10-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "dee-pay"
+      },
+      {
+       "id": "dee-rent-10",
+       "date": "2026-10-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "dee-rent"
+      },
+      {
+       "id": "dee-e-10-1",
+       "date": "2026-10-03",
+       "amount": 23250,
+       "role": "spending"
+      },
+      {
+       "id": "dee-e-10-2",
+       "date": "2026-10-10",
+       "amount": 23250,
+       "role": "spending"
+      },
+      {
+       "id": "dee-e-10-3",
+       "date": "2026-10-17",
+       "amount": 23250,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "dee-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-07-01",
+     "amount": 300000
+    },
+    {
+     "id": "dee-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-07-01",
+     "amount": 100000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 1240000,
+   "unspent": {
+    "amount": 287000,
+    "at": "2026-10-20"
+   },
+   "emergency": 300000,
+   "envelopes": [
+    {
+     "id": "holiday",
+     "kind": "pot",
+     "target": null,
+     "monthlyAmount": null,
+     "readyBy": null,
+     "saved": 60000,
+     "purposeId": null,
+     "accountId": "dee-checking"
+    },
+    {
+     "id": "car",
+     "kind": "pot",
+     "target": null,
+     "monthlyAmount": null,
+     "readyBy": null,
+     "saved": 40000,
+     "purposeId": null,
+     "accountId": "dee-car"
+    }
+   ],
+   "accounts": [
+    {
+     "id": "dee-checking",
+     "balance": 400000,
+     "use": {
+      "kind": "mixed",
+      "extraSetAside": 20000
+     }
+    },
+    {
+     "id": "dee-savings",
+     "balance": 500000,
+     "use": {
+      "kind": "untouched"
+     }
+    },
+    {
+     "id": "dee-fund",
+     "balance": 300000,
+     "use": {
+      "kind": "dedicated",
+      "purpose": {
+       "kind": "emergency"
+      }
+     }
+    },
+    {
+     "id": "dee-car",
+     "balance": 40000,
+     "use": {
+      "kind": "dedicated",
+      "purpose": {
+       "kind": "envelope",
+       "envelopeId": "car"
+      }
+     }
+    }
+   ],
+   "fundAccountId": "dee-fund",
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Steady salaried, accounts stated (D-54). Pay 300,000 and rent 100,000 on the 1st, everyday 93,000 a month in four weekly lines of 23,250 (October to the 17th: 69,750). Accounts: checking 400,000 mixed (holiday envelope 60,000 linked to it, plus 20,000 the user says is set aside), savings 500,000 untouched, fund 300,000 dedicated emergency, car 40,000 dedicated to envelope car. Spending = 400,000 - 60,000 - 20,000 = 320,000. At 2026-10-20 (day 20 of 31): E 93,000; Erest = max(round(93,000*11/31) = 33,000, 93,000 - 69,750 = 23,250) = 33,000; monthLeft = 300,000 - 100,000 - 69,750 - 33,000 = 97,250; typicalLeft 107,000. Suggested = 320,000 - 33,000 = 287,000, the confirmed unspent. Confidence firm (3 months, day 20, logged 69,750 against E 93,000)."
+  },
+  {
+   "id": "rae",
+   "currency": "USD",
+   "asOf": "2026-10-03",
+   "months": [],
+   "series": [],
+   "profile": null,
+   "rough": {
+    "income": 250000,
+    "expenses": 150000,
+    "saving": 0,
+    "debt": 0,
+    "invest": 0,
+    "asOf": "2026-10-03"
+   },
+   "balance": 600000,
+   "unspent": null,
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "New user with rough figures only (D-57): income 250,000, expenses 150,000, nothing saved or owed. No records, no confirmed unspent figure, no fund. Balance 600,000 in one everyday account."
+  }
+ ],
+ "cases": [
+  {
+   "id": "ines-lean-fits",
+   "person": "ines",
+   "purchase": {
+    "price": 60000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 3,
+     "termMonths": 3,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "deferred",
+      "firstDate": "2027-01-03",
+      "interestDuringPause": false
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "confidence": "fair",
+    "readiness": {
+     "ready": true,
+     "missing": []
+    },
+    "facts": [
+     {
+      "code": "lean_months_judged",
+      "values": {
+       "from": "2027-01",
+       "to": "2027-03",
+       "leanLeft": 25000
+      }
+     },
+     {
+      "code": "emergency_untouched",
+      "values": {
+       "amount": 600000
+      }
+     }
+    ],
+    "notices": [
+     {
+      "code": "history_window_12",
+      "values": {
+       "months": 12
+      }
+     },
+     {
+      "code": "income_from_expected",
+      "values": {
+       "month": "2026-11",
+       "amount": 260000,
+       "source": "last_year",
+       "sameMonth": "2025-11"
+      }
+     },
+     {
+      "code": "same_season_compared",
+      "values": {
+       "lastYear": "2025-11",
+       "everyday": 90000
+      }
+     }
+    ],
+    "figures": {
+     "monthLeft": 24000,
+     "typicalIncome": 260000,
+     "leanLeft": -35000,
+     "lowLeft": 25000,
+     "erest": 81000
+    },
+    "reasons": [
+     "lean_months_used",
+     "long_history_window",
+     "same_season_spending"
+    ]
+   },
+   "working": "Window 2025-11..2026-10. E = median everyday = 90,000 (11 months of 90,000 and one of 150,000). Nov 2025 was a 260,000 month, so expected income for 2026-11 = 260,000 (last year, source last_year), pay due on the 5th so nothing received yet and the expected figure is used. Erest = max(round(90,000*27/30) = 81,000, 90,000 - 10,000 = 80,000) = 81,000; out = rent 120,000 + utilities 15,000 + logged 10,000 + Erest 81,000 + saving 10,000 = 236,000; monthLeft = 260,000 - 236,000 = 24,000. Plan: 60,000 at 0% over 3, first payment 2027-01-03, so 20,000 a month and day one 0. It touches Jan, Feb and Mar 2027. Each is a lean month (260,000 last year) with left = 260,000 - 135,000 bills - 90,000 everyday - 10,000 saving = 25,000. Step 1: 25,000 - 20,000 >= 0, so the payment fits the lean months; why = lean_months_judged from 2027-01 to 2027-03, leanLeft 25,000. Day one 0 fits the month. Spending 400,000 so the cash check holds. Both parts fit_month, no bridge."
+  },
+  {
+   "id": "ines-bridge",
+   "person": "ines",
+   "purchase": {
+    "price": 120000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 3,
+     "termMonths": 3,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "deferred",
+      "firstDate": "2027-01-03",
+      "interestDuringPause": false
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "confidence": "fair",
+    "facts": [
+     {
+      "code": "lean_months_judged",
+      "values": {
+       "from": "2027-01",
+       "to": "2027-03",
+       "leanLeft": 25000
+      }
+     },
+     {
+      "code": "lean_bridge",
+      "values": {
+       "monthly": 40000,
+       "leanLeft": 25000,
+       "shortfall": 15000,
+       "months": 3,
+       "until": "2027-03",
+       "bridge": 45000,
+       "after": 259000
+      }
+     }
+    ],
+    "notices": [
+     {
+      "code": "history_window_12",
+      "values": {
+       "months": 12
+      }
+     },
+     {
+      "code": "income_from_expected",
+      "values": {
+       "month": "2026-11",
+       "amount": 260000,
+       "source": "last_year",
+       "sameMonth": "2025-11"
+      }
+     },
+     {
+      "code": "same_season_compared",
+      "values": {
+       "lastYear": "2025-11",
+       "everyday": 90000
+      }
+     }
+    ],
+    "figures": {
+     "monthLeft": 24000,
+     "typicalIncome": 260000,
+     "leanLeft": -35000,
+     "lowLeft": 25000,
+     "erest": 81000
+    }
+   },
+   "working": "Same plan shape, 120,000 over 3 from 2027-01-03: 40,000 a month. Lean left in Jan, Feb, Mar is 25,000 each, so step 1 fails by 15,000 a month. Lean run: Jan, Feb, Mar are all lean last year (3 months). Bridge = 15,000 x 3 = 45,000. Available unspent 304,000, day one 0 so nothing taken: 304,000 >= 45,000, fits on unspent with 304,000 - 45,000 = 259,000 left. The one-off part (day one 0) fits the month; fits_unspent is the stricter part."
+  },
+  {
+   "id": "ines-bridge-short",
+   "person": "ines",
+   "balanceDelta": -264000,
+   "unspentPatch": {
+    "amount": 40000,
+    "at": "2026-11-03"
+   },
+   "purchase": {
+    "price": 120000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 3,
+     "termMonths": 3,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "deferred",
+      "firstDate": "2027-01-03",
+      "interestDuringPause": false
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "readyBy": {
+     "kind": "month",
+     "month": "2027-01"
+    },
+    "confidence": "fair",
+    "facts": [
+     {
+      "code": "lean_months_judged",
+      "values": {
+       "from": "2027-01",
+       "to": "2027-03",
+       "leanLeft": 25000
+      }
+     }
+    ],
+    "notices": [
+     {
+      "code": "history_window_12",
+      "values": {
+       "months": 12
+      }
+     },
+     {
+      "code": "income_from_expected",
+      "values": {
+       "month": "2026-11",
+       "amount": 260000,
+       "source": "last_year",
+       "sameMonth": "2025-11"
+      }
+     },
+     {
+      "code": "same_season_compared",
+      "values": {
+       "lastYear": "2025-11",
+       "everyday": 90000
+      }
+     }
+    ],
+    "funds": {
+     "suggested": 40000,
+     "unexplained": 0,
+     "spending": 136000
+    }
+   },
+   "working": "Same 40,000-a-month plan, but the balance is 264,000 lower (spending 136,000), so suggested = 136,000 - 15,000 - 81,000 = 40,000 and the confirmed unspent is 40,000. Bridge need is 45,000 (15,000 x 3), unspent only 40,000: step 3, not yet. Ready-by is the season walk (D-60) for a gap of 45,000 - 40,000 = 5,000: December saves 0 (last December left -35,000, never below zero), January saves 25,000 >= 5,000 so the month is 2027-01. The monthly leads, so the variant is not_covered. The cash check holds (spending 136,000 plus the 5 Nov pay)."
+  },
+  {
+   "id": "ines-held-back",
+   "person": "ines",
+   "heldBridges": [
+    {
+     "id": "earlier-plan",
+     "amount": 270000
+    }
+   ],
+   "purchase": {
+    "price": 120000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 3,
+     "termMonths": 3,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "deferred",
+      "firstDate": "2027-01-03",
+      "interestDuringPause": false
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "readyBy": {
+     "kind": "month",
+     "month": "2027-01"
+    },
+    "facts": [
+     {
+      "code": "unspent_held_back",
+      "values": {
+       "amount": 270000
+      }
+     },
+     {
+      "code": "lean_months_judged",
+      "values": {
+       "from": "2027-01",
+       "to": "2027-03",
+       "leanLeft": 25000
+      }
+     }
+    ],
+    "notices": [
+     {
+      "code": "history_window_12",
+      "values": {
+       "months": 12
+      }
+     },
+     {
+      "code": "income_from_expected",
+      "values": {
+       "month": "2026-11",
+       "amount": 260000,
+       "source": "last_year",
+       "sameMonth": "2025-11"
+      }
+     },
+     {
+      "code": "same_season_compared",
+      "values": {
+       "lastYear": "2025-11",
+       "everyday": 90000
+      }
+     }
+    ]
+   },
+   "working": "Case ines-bridge with 270,000 of unspent held back for an earlier plan (D-38). Available unspent = 304,000 - 270,000 = 34,000, below the 45,000 bridge, so the fit flips to not yet. Fact unspent_held_back 270,000. Drift and staleness still read the confirmed 304,000, so no drift notice. Ready-by: gap 45,000 - 34,000 = 11,000; December 0, January 25,000 >= 11,000, so 2027-01."
+  },
+  {
+   "id": "ines-few-months",
+   "person": "ines",
+   "dropMonthsBefore": "2026-03",
+   "purchase": {
+    "price": 120000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 3,
+     "termMonths": 3,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "deferred",
+      "firstDate": "2027-01-03",
+      "interestDuringPause": false
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "needs_input",
+    "missing": [
+     "expected_income_needed"
+    ],
+    "notices": [
+     {
+      "code": "history_window_12",
+      "values": {
+       "months": 12
+      }
+     }
+    ]
+   },
+   "working": "History cut to 8 full months (2026-03..2026-10), fewer than the 12 needed to show a year of seasons (D-35a). Ines says she is seasonal, so the engine cannot take last year as expected income for Nov, Jan, Feb or Mar and asks for expected income. Nothing else is missing: suggested is unchanged at 304,000 (E 90,000 still) so there is no unexplained money."
+  },
+  {
+   "id": "ines-confirmed",
+   "person": "ines",
+   "dropMonthsBefore": "2026-03",
+   "expectedIncome": [
+    {
+     "month": "2026-11",
+     "amount": 260000,
+     "at": "2026-11-03"
+    },
+    {
+     "month": "2027-01",
+     "amount": 260000,
+     "at": "2026-11-03"
+    },
+    {
+     "month": "2027-02",
+     "amount": 260000,
+     "at": "2026-11-03"
+    },
+    {
+     "month": "2027-03",
+     "amount": 260000,
+     "at": "2026-11-03"
+    }
+   ],
+   "purchase": {
+    "price": 120000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 3,
+     "termMonths": 3,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "deferred",
+      "firstDate": "2027-01-03",
+      "interestDuringPause": false
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "facts": [
+     {
+      "code": "lean_bridge",
+      "values": {
+       "monthly": 40000,
+       "leanLeft": 25000,
+       "shortfall": 15000,
+       "months": 3,
+       "until": "2027-03",
+       "bridge": 45000,
+       "after": 259000
+      }
+     }
+    ],
+    "notices": [
+     {
+      "code": "income_from_expected",
+      "values": {
+       "month": "2026-11",
+       "amount": 260000,
+       "source": "confirmed"
+      }
+     },
+     {
+      "code": "pay_capped_expected",
+      "values": {
+       "capped": 260000
+      }
+     }
+    ],
+    "reasons": [
+     "expected_income_used"
+    ],
+    "figures": {
+     "monthLeft": 24000,
+     "erest": 81000
+    }
+   },
+   "working": "Eight months of records, but the user confirmed 260,000 for Nov 2026 and for Jan, Feb and Mar 2027 (D-35). Those are used as given. Nov: received 0 so far, confirmed 260,000 is used as money in (source confirmed): monthLeft = 260,000 - 236,000 = 24,000 as before (E 90,000, Erest 81,000). Plan months Jan to Mar: left = 260,000 - 135,000 - 90,000 - 10,000 = 25,000 each (eight months, so no same-month-last-year E). Under 12 months the lean months are those where left is below the payment: all 3; shortfall 15,000 x 3 = 45,000; unspent 304,000 covers it, 259,000 left. Cash path caps: December has no confirmed figure and only 8 months of records, so its cap is 0 and the 260,000 December pay is withheld: pay_capped_expected 260,000 (Nov, Jan and Feb caps are 260,000 and Feb 5 is outside the 90 days)."
+  },
+  {
+   "id": "ines-december",
+   "person": "ines",
+   "asOf": "2026-12-03",
+   "unspentPatch": {
+    "amount": 245000,
+    "at": "2026-12-03"
+   },
+   "monthsPatch": [
+    {
+     "month": "2026-11",
+     "drop": true
+    }
+   ],
+   "extraMonths": [
+    {
+     "month": "2026-12",
+     "full": false,
+     "lines": [
+      {
+       "id": "ines-rent-2026-12",
+       "date": "2026-12-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "ines-rent"
+      },
+      {
+       "id": "ines-e-2026-12-1",
+       "date": "2026-12-02",
+       "amount": 10000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "purchase": {
+    "price": 100000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "facts": [
+     {
+      "code": "month_left_after",
+      "values": {
+       "month": "2026-12",
+       "left": -35000
+      }
+     },
+     {
+      "code": "unspent_before_after",
+      "values": {
+       "before": 245000,
+       "after": 145000
+      }
+     }
+    ],
+    "notices": [
+     {
+      "code": "same_season_compared",
+      "values": {
+       "lastYear": "2025-12",
+       "everyday": 150000
+      }
+     },
+     {
+      "code": "income_from_expected",
+      "values": {
+       "month": "2026-12",
+       "amount": 260000,
+       "source": "last_year",
+       "sameMonth": "2025-12"
+      }
+     },
+     {
+      "code": "month_heading_short",
+      "values": {
+       "month": "2026-12",
+       "short": 35000
+      }
+     }
+    ],
+    "figures": {
+     "monthLeft": -35000,
+     "erest": 140000
+    },
+    "reasons": [
+     "same_season_spending"
+    ]
+   },
+   "working": "December 2026, 3rd. E is judged against last December, 150,000 (not the 90,000 median): sameCalendarMonth of 2026-12 is 2025-12. Logged so far 10,000. Erest = max(round(150,000*28/31) = 135,484, 150,000 - 10,000 = 140,000) = 140,000. Expected income = last December, 260,000; the pay lands on the 5th so none received yet. out = rent 120,000 + utilities 15,000 + logged 10,000 + Erest 140,000 + saving 10,000 = 295,000; monthLeft = 260,000 - 295,000 = -35,000. Suggested = 400,000 - 15,000 - 140,000 = 245,000 (confirmed). One-off 100,000: month room 0, so all 100,000 comes from earlier unspent (245,000 >= 100,000): fits_unspent, 145,000 left. Cash holds: 400,000 - 100,000 opening, December pay 260,000 on the 5th."
+  },
+  {
+   "id": "ines-pay-capped",
+   "person": "ines",
+   "seriesPatch": [
+    {
+     "id": "ines-pay",
+     "amount": 450000
+    }
+   ],
+   "purchase": {
+    "price": 20000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "facts": [
+     {
+      "code": "month_left_after",
+      "values": {
+       "month": "2026-11",
+       "left": 4000
+      }
+     },
+     {
+      "code": "unspent_before_after",
+      "values": {
+       "before": 304000,
+       "after": 284000
+      }
+     }
+    ],
+    "notices": [
+     {
+      "code": "pay_capped_expected",
+      "values": {
+       "capped": 570000
+      }
+     },
+     {
+      "code": "history_window_12",
+      "values": {
+       "months": 12
+      }
+     },
+     {
+      "code": "income_from_expected",
+      "values": {
+       "month": "2026-11",
+       "amount": 260000,
+       "source": "last_year",
+       "sameMonth": "2025-11"
+      }
+     },
+     {
+      "code": "same_season_compared",
+      "values": {
+       "lastYear": "2025-11",
+       "everyday": 90000
+      }
+     }
+    ],
+    "figures": {
+     "monthLeft": 24000,
+     "erest": 81000
+    }
+   },
+   "working": "The pay series carries the high-season 450,000. Expected income per month is last year: Nov, Dec and Jan are 260,000 each (lean). The cash path lets a pay land only up to that month's expected income: 5 Nov 450,000 -> 260,000 (190,000 withheld), 5 Dec 450,000 -> 260,000 (190,000), 5 Jan 450,000 -> 260,000 (190,000); 5 Feb is outside the 90 days. Withheld = 3 x 190,000 = 570,000. The month itself is unchanged: expected 260,000 replaces the due pay (received 0), monthLeft = 24,000. One-off 20,000 fits the month: 4,000 left, unspent 304,000 -> 284,000."
+  },
+  {
+   "id": "ines-ready-by",
+   "person": "ines",
+   "purchase": {
+    "price": 340000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "readyBy": {
+     "kind": "month",
+     "month": "2027-02"
+    },
+    "notices": [
+     {
+      "code": "history_window_12",
+      "values": {
+       "months": 12
+      }
+     },
+     {
+      "code": "income_from_expected",
+      "values": {
+       "month": "2026-11",
+       "amount": 260000,
+       "source": "last_year",
+       "sameMonth": "2025-11"
+      }
+     },
+     {
+      "code": "same_season_compared",
+      "values": {
+       "lastYear": "2025-11",
+       "everyday": 90000
+      }
+     }
+    ],
+    "figures": {
+     "monthLeft": 24000,
+     "typicalIncome": 260000,
+     "leanLeft": -35000,
+     "lowLeft": 25000,
+     "erest": 81000
+    }
+   },
+   "working": "One-off 340,000 against unspent 304,000 and monthLeft 24,000: the month gives 24,000, earlier unspent has room 304,000 - 24,000 = 280,000, rest 316,000 > 280,000, so not covered; the gap is 340,000 - 304,000 = 36,000. The cash check holds (opening 400,000 - 340,000 = 60,000, pay on the 5th). Season walk (D-60), each month saves last year's leftover for that calendar month, never below zero: 2026-12 saves 0 (Dec 2025 left -35,000), 2027-01 saves 25,000 (total 25,000 < 36,000), 2027-02 saves 25,000 (total 50,000 >= 36,000). Ready 2027-02. The typical-month answer would be ceil(36,000 / 25,000) = 2 months = 2027-01, which differs."
+  },
+  {
+   "id": "gabe-low-fits",
+   "person": "gabe",
+   "purchase": {
+    "price": 60000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 6,
+     "termMonths": 6,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "one_period"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "figures": {
+     "monthLeft": 13000,
+     "typicalIncome": 270000,
+     "lowLeft": 13000,
+     "erest": 56000
+    },
+    "facts": [
+     {
+      "code": "low_month_judged",
+      "values": {
+       "month": "2026-05",
+       "left": 13000
+      }
+     },
+     {
+      "code": "emergency_untouched",
+      "values": {
+       "amount": 500000
+      }
+     }
+    ],
+    "notices": [
+     {
+      "code": "income_from_expected",
+      "values": {
+       "month": "2026-10",
+       "amount": 170000,
+       "source": "low"
+      }
+     },
+     {
+      "code": "same_season_compared",
+      "values": {
+       "lastYear": "2025-10",
+       "everyday": 62000
+      }
+     },
+     {
+      "code": "history_window_12",
+      "values": {
+       "months": 12
+      }
+     },
+     {
+      "code": "pay_capped_expected",
+      "values": {
+       "capped": 80000
+      }
+     }
+    ],
+    "reasons": [
+     "long_history_window"
+    ]
+   },
+   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 rent - 62,000 everyday (000s): 263, 103, -7, 233, 123, 63, 193, 13, 143, 83, 173, 43. Second-lowest = 13,000 (2026-05); typical income = median of the window incomes = (260,000 + 280,000)/2 = 270,000, typicalLeft 113,000. Expected income for October = the second-lowest income, 170,000 (source low); received 80,000 so far, so 170,000 is used. Erest = max(round(62,000*28/31) = 56,000, 62,000 - 6,000 = 56,000) = 56,000; monthLeft = 170,000 - (95,000 + 6,000 + 56,000) = 13,000. Pay series 170,000 on the 20th: October room = 170,000 - 80,000 = 90,000, so 80,000 of the 20 Oct pay is withheld (pay_capped_expected 80,000); Nov and Dec are capped at 170,000, so nothing more. Plan: 60,000 at 0% over 6, first payment a month from today: 10,000 a month, day one 0. Step 1 for a gig earner: the low month leftover 13,000 - 10,000 >= 0, so the payment fits; why = low_month_judged (2026-05, 13,000). Cash holds with the capped pay."
+  },
+  {
+   "id": "gabe-bridge",
+   "person": "gabe",
+   "purchase": {
+    "price": 150000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 6,
+     "termMonths": 6,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "one_period"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "figures": {
+     "monthLeft": 13000,
+     "typicalIncome": 270000,
+     "lowLeft": 13000,
+     "erest": 56000
+    },
+    "facts": [
+     {
+      "code": "low_month_judged",
+      "values": {
+       "month": "2026-05",
+       "left": 13000
+      }
+     },
+     {
+      "code": "lean_bridge",
+      "values": {
+       "monthly": 25000,
+       "leanLeft": 13000,
+       "shortfall": 12000,
+       "months": 2,
+       "until": "2026-12",
+       "bridge": 24000,
+       "after": 220000
+      }
+     }
+    ],
+    "notices": [
+     {
+      "code": "income_from_expected",
+      "values": {
+       "month": "2026-10",
+       "amount": 170000,
+       "source": "low"
+      }
+     },
+     {
+      "code": "same_season_compared",
+      "values": {
+       "lastYear": "2025-10",
+       "everyday": 62000
+      }
+     },
+     {
+      "code": "history_window_12",
+      "values": {
+       "months": 12
+      }
+     },
+     {
+      "code": "pay_capped_expected",
+      "values": {
+       "capped": 80000
+      }
+     }
+    ]
+   },
+   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 rent - 62,000 everyday (000s): 263, 103, -7, 233, 123, 63, 193, 13, 143, 83, 173, 43. Second-lowest = 13,000 (2026-05); typical income = median of the window incomes = (260,000 + 280,000)/2 = 270,000, typicalLeft 113,000. Expected income for October = the second-lowest income, 170,000 (source low); received 80,000 so far, so 170,000 is used. Erest = max(round(62,000*28/31) = 56,000, 62,000 - 6,000 = 56,000) = 56,000; monthLeft = 170,000 - (95,000 + 6,000 + 56,000) = 13,000. Pay series 170,000 on the 20th: October room = 170,000 - 80,000 = 90,000, so 80,000 of the 20 Oct pay is withheld (pay_capped_expected 80,000); Nov and Dec are capped at 170,000, so nothing more. Plan: 150,000 over 6 = 25,000 a month from 2026-11. Low leftover 13,000 < 25,000: shortfall 12,000. Months to carry = window months whose left is below the payment: -7 and 13 (thousands) = 2, capped at the plan length 6, so 2 months, Nov and Dec 2026. Bridge = 12,000 x 2 = 24,000; unspent 244,000 covers it with 220,000 left. Cash: 300,000 opening, pays of 90,000 (Oct), 170,000 (Nov), 170,000 (Dec), rent 95,000 and E 62,000 a month: the lowest point stays positive."
+  },
+  {
+   "id": "gabe-unstated",
+   "person": "gabe",
+   "profilePatch": {
+    "pattern": null
+   },
+   "purchase": {
+    "price": 60000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 6,
+     "termMonths": 6,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "one_period"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "needs_input",
+    "missing": [
+     "income_pattern_unconfirmed"
+    ]
+   },
+   "working": "Same records, but the user has not said whether income is steady, variable or seasonal. The window CV is about 29.7% (n*sum(x^2) - S^2 = 963,500 against S^2 = 10,956,100, thousands squared), at least 22%, so the engine treats her as variable and asks her to confirm (D-34). It never relabels silently. Nothing else is missing."
+  },
+  {
+   "id": "gabe-confirmed-steady",
+   "person": "gabe",
+   "profilePatch": {
+    "pattern": "steady",
+    "patternConfirmed": true
+   },
+   "purchase": {
+    "price": 60000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 6,
+     "termMonths": 6,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "one_period"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "figures": {
+     "monthLeft": -77000,
+     "typicalIncome": 170000,
+     "lowLeft": 13000,
+     "erest": 56000
+    },
+    "notices": [
+     {
+      "code": "month_heading_short",
+      "values": {
+       "month": "2026-10",
+       "short": 77000
+      }
+     }
+    ]
+   },
+   "working": "The user confirmed steady, so the steady rules apply (D-34): six-month window, typical income = the confirmed pay series 170,000, E = 62,000, typicalLeft = 170,000 - 95,000 - 62,000 = 13,000, low month 13,000. The October money in is just what has arrived, 80,000 (no expected-income raise for a steady earner): monthLeft = 80,000 - 95,000 - 6,000 - 56,000 = -77,000 (month_heading_short 77,000). The 10,000 plan: 13,000 - 10,000 >= 0 and the low month 13,000 - 10,000 >= 0, so fits_month; day one 0 fits the month. The pay lands in full on the cash path."
+  },
+  {
+   "id": "vic-ask",
+   "person": "vic",
+   "purchase": {
+    "price": 120000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 6,
+     "termMonths": 6,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "one_period"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "needs_input",
+    "missing": [
+     "volatile_cover_question"
+    ],
+    "notices": [
+     {
+      "code": "income_volatile",
+      "values": {
+       "payment": 20000,
+       "periods": 6,
+       "monthly": 20000,
+       "months": 6,
+       "leanFrom": "2026-05",
+       "leanTo": "2026-05",
+       "leanLeft": -87000
+      }
+     }
+    ],
+    "figures": {
+     "monthLeft": -77000,
+     "typicalIncome": 280000,
+     "lowLeft": -87000,
+     "erest": 56000
+    }
+   },
+   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 - 62,000 (000s): 223, -97, 143, 363, -47, 103, 253, -87, 183, -7, 323, -57. Second-lowest = -87,000 (2026-05). Typical income = median of the window incomes = (260,000 + 300,000)/2 = 280,000. CV about 59.4%, volatile. Expected October income = second-lowest income 70,000; the 80,000 received is already above it, so no raise: monthLeft = 80,000 - 157,000 = -77,000. Plan: 120,000 over 6 = 20,000 a month from 2026-11, day one 0. Step 1: -87,000 - 20,000 < 0, so the lean months do not cover it. Income is volatile, so no verdict from history: the engine asks \"can you cover 20,000 a month for 6 months, even in your low months?\" with the income_volatile notice (payment 20,000, periods 6, monthly 20,000, months 6, lean month 2026-05, leanLeft -87,000)."
+  },
+  {
+   "id": "vic-yes",
+   "person": "vic",
+   "purchase": {
+    "price": 120000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 6,
+     "termMonths": 6,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "one_period"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null,
+    "volatileCover": true
+   },
+   "expect": {
+    "code": "fits_month",
+    "confidence": "rough",
+    "figures": {
+     "monthLeft": -77000,
+     "typicalIncome": 280000,
+     "lowLeft": -87000,
+     "erest": 56000
+    },
+    "facts": [
+     {
+      "code": "low_month_judged",
+      "values": {
+       "month": "2026-05",
+       "left": -87000
+      }
+     },
+     {
+      "code": "rests_on_your_answer",
+      "values": {
+       "monthly": 20000,
+       "months": 6
+      }
+     }
+    ],
+    "notices": [
+     {
+      "code": "income_volatile",
+      "values": {
+       "payment": 20000,
+       "periods": 6,
+       "monthly": 20000,
+       "months": 6,
+       "leanFrom": "2026-05",
+       "leanTo": "2026-05",
+       "leanLeft": -87000
+      }
+     }
+    ]
+   },
+   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 - 62,000 (000s): 223, -97, 143, 363, -47, 103, 253, -87, 183, -7, 323, -57. Second-lowest = -87,000 (2026-05). Typical income = median of the window incomes = (260,000 + 300,000)/2 = 280,000. CV about 59.4%, volatile. Expected October income = second-lowest income 70,000; the 80,000 received is already above it, so no raise: monthLeft = 80,000 - 157,000 = -77,000. Plan: 120,000 over 6 = 20,000 a month from 2026-11, day one 0. Step 1: -87,000 - 20,000 < 0, so the lean months do not cover it. The user answers yes: the monthly part fits on her word. Fact rests_on_your_answer (monthly 20,000, months 6), confidence capped at rough (user_said_cover), notice income_volatile still shown. Day one 0 fits the month, cash holds (opening 400,000, pay capped at 70,000 a month, lowest point about 84,000 on 19 Dec)."
+  },
+  {
+   "id": "vic-no",
+   "person": "vic",
+   "purchase": {
+    "price": 120000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "plan",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "count": 6,
+     "termMonths": 6,
+     "aprText": "0",
+     "fees": {
+      "setup": 0,
+      "perPeriod": 0,
+      "end": 0
+     },
+     "deposit": 0,
+     "tradeIn": 0,
+     "quotedPayment": null,
+     "firstPayment": {
+      "kind": "one_period"
+     },
+     "deferredInterestTerm": false
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null,
+    "volatileCover": false
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "futures": true,
+    "readyBy": {
+     "kind": "month",
+     "month": "2026-12"
+    },
+    "reasons": [
+     "volatile_cover_declined"
+    ],
+    "facts": [
+     {
+      "code": "low_month_judged",
+      "values": {
+       "month": "2026-05",
+       "left": -87000
+      }
+     }
+    ],
+    "notices": [
+     {
+      "code": "income_volatile",
+      "values": {
+       "payment": 20000,
+       "periods": 6,
+       "monthly": 20000,
+       "months": 6,
+       "leanFrom": "2026-05",
+       "leanTo": "2026-05",
+       "leanLeft": -87000
+      }
+     }
+    ],
+    "figures": {
+     "monthLeft": -77000,
+     "typicalIncome": 280000,
+     "lowLeft": -87000,
+     "erest": 56000
+    }
+   },
+   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 - 62,000 (000s): 223, -97, 143, 363, -47, 103, 253, -87, 183, -7, 323, -57. Second-lowest = -87,000 (2026-05). Typical income = median of the window incomes = (260,000 + 300,000)/2 = 280,000. CV about 59.4%, volatile. Expected October income = second-lowest income 70,000; the 80,000 received is already above it, so no raise: monthLeft = 80,000 - 157,000 = -77,000. Plan: 120,000 over 6 = 20,000 a month from 2026-11, day one 0. Step 1: -87,000 - 20,000 < 0, so the lean months do not cover it. The user answers no: not yet, with the futures attached (D-48). Ready-by as step 3: shortfall 20,000 + 87,000 = 107,000; months to carry = window months with left below 20,000: -97, -47, -87, -7, -57 = 5; bridge 107,000 x 5 = 535,000; gap over unspent 344,000 = 191,000; ceil(191,000 / typicalLeft 123,000) = 2 months from October = 2026-12."
+  },
+  {
+   "id": "dee-mixed",
+   "person": "dee",
+   "purchase": {
+    "price": 300000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "readyBy": {
+     "kind": "month",
+     "month": "2026-11"
+    },
+    "confidence": "firm",
+    "readiness": {
+     "ready": true,
+     "missing": []
+    },
+    "funds": {
+     "suggested": 287000,
+     "unexplained": 0,
+     "ringFenced": 80000,
+     "spending": 320000
+    },
+    "figures": {
+     "monthLeft": 97250,
+     "typicalIncome": 300000,
+     "lowLeft": 107000,
+     "erest": 33000
+    }
+   },
+   "working": "Mixed checking: 400,000 - holiday envelope 60,000 - stated extra 20,000 = spending 320,000 (D-55); fund, savings and car money are in dedicated or untouched accounts and do not count. Suggested = 320,000 - Erest 33,000 = 287,000 = confirmed unspent. One-off 300,000: month room 97,250, earlier unspent room 287,000 - 97,250 = 189,750, rest 202,750 > 189,750, so not covered; gap = 300,000 - 287,000 = 13,000, ceil(13,000 / 107,000) = 1 month, 2026-11 (the cash dip before the 1 Nov pay does not push it later). It would fit only if the 80,000 put aside were spare (spending 400,000, unspent 367,000). Readiness: September fully recorded, October up to date, envelopes linked: ready."
+  },
+  {
+   "id": "dee-everyday",
+   "person": "dee",
+   "accountsPatch": [
+    {
+     "id": "dee-checking",
+     "use": {
+      "kind": "everyday"
+     }
+    }
+   ],
+   "envelopesPatch": [
+    {
+     "id": "holiday",
+     "accountId": "dee-savings"
+    }
+   ],
+   "unspentPatch": {
+    "amount": 367000,
+    "at": "2026-10-20"
+   },
+   "purchase": {
+    "price": 300000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "confidence": "firm",
+    "funds": {
+     "suggested": 367000,
+     "unexplained": 0,
+     "ringFenced": 0,
+     "spending": 400000
+    },
+    "facts": [
+     {
+      "code": "month_left_after",
+      "values": {
+       "month": "2026-10",
+       "left": 0
+      }
+     },
+     {
+      "code": "unspent_before_after",
+      "values": {
+       "before": 367000,
+       "after": 67000
+      }
+     }
+    ],
+    "split": [
+     {
+      "source": "month",
+      "amount": 97250
+     },
+     {
+      "source": "unspent_earlier",
+      "amount": 202750
+     }
+    ]
+   },
+   "working": "Checking is everyday and the holiday envelope now sits in the untouched savings account, so nothing is put aside inside checking: spending = the whole 400,000. Suggested = 400,000 - 33,000 = 367,000 (confirmed set to match). One-off 300,000: month 97,250, earlier unspent 202,750 <= 367,000 - 97,250 = 269,750: fits_unspent, unspent left 367,000 - 300,000 = 67,000. Cash: 400,000 - 300,000 - 33,000 = 67,000 >= 0."
+  },
+  {
+   "id": "dee-untouched",
+   "person": "dee",
+   "purchase": {
+    "price": 450000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "readyBy": {
+     "kind": "month",
+     "month": "2026-12"
+    },
+    "funds": {
+     "spending": 320000
+    }
+   },
+   "working": "The savings account (500,000) is untouched: it never counts toward a purchase. 450,000 is above spending 320,000 and unspent 287,000 but far below spending + savings (820,000); it is not a fits. Cash path: 320,000 - 450,000 - 33,000 = -163,000 and still short after the 1 Nov pay (-56,000 on 30 Nov), so not covered. Ready-by = ladder month: gap 450,000 - 287,000 = 163,000, ceil(163,000 / 107,000) = 2, so 2026-12 (payday 2026-11-01 is earlier)."
+  },
+  {
+   "id": "dee-dedicated-emergency",
+   "person": "dee",
+   "purchase": {
+    "price": 550000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": "necessity",
+    "emergency": true,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "emergency_use",
+    "funds": {
+     "spending": 320000
+    },
+    "split": [
+     {
+      "source": "month",
+      "amount": 97250
+     },
+     {
+      "source": "unspent_earlier",
+      "amount": 189750
+     },
+     {
+      "source": "emergency",
+      "amount": 263000
+     }
+    ],
+    "facts": [
+     {
+      "code": "month_left_after",
+      "values": {
+       "month": "2026-10",
+       "left": 0
+      }
+     },
+     {
+      "code": "unspent_before_after",
+      "values": {
+       "before": 287000,
+       "after": 0
+      }
+     },
+     {
+      "code": "emergency_used",
+      "values": {
+       "used": 263000,
+       "months": 3
+      }
+     }
+    ]
+   },
+   "working": "Marked an emergency, purpose necessity, so the fund (300,000, in its own dedicated account) is in the cash path (D-63): opening 320,000 + 300,000 = 620,000; 620,000 - 550,000 - 33,000 = 37,000 >= 0. Ladder: month 97,250, earlier unspent 189,750, rest 452,750 - 189,750 = 263,000 comes from the fund (<= 300,000). Rebuild at the typical 107,000 a month: ceil(263,000 / 107,000) = 3 months."
+  },
+  {
+   "id": "dee-dedicated-emergency-unmarked",
+   "person": "dee",
+   "purchase": {
+    "price": 550000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": "necessity",
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "readyBy": {
+     "kind": "month",
+     "month": "2027-01"
+    },
+    "facts": [
+     {
+      "code": "emergency_untouched",
+      "values": {
+       "amount": 300000
+      }
+     }
+    ]
+   },
+   "working": "The same 550,000 not marked an emergency: the fund never cushions it. Cash: 320,000 - 550,000 - 33,000 = -263,000 and still negative after the 1 Nov pay (-156,000 on 30 Nov): not covered. Ready-by: gap 550,000 - 287,000 = 263,000, ceil(263,000 / 107,000) = 3, so 2027-01. The fund stays untouched at 300,000."
+  },
+  {
+   "id": "dee-dedicated-envelope",
+   "person": "dee",
+   "purchase": {
+    "price": 320000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": "car",
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "funds": {
+     "spending": 320000
+    },
+    "split": [
+     {
+      "source": "month",
+      "amount": 97250
+     },
+     {
+      "source": "envelope",
+      "amount": 40000
+     },
+     {
+      "source": "unspent_earlier",
+      "amount": 182750
+     }
+    ],
+    "facts": [
+     {
+      "code": "month_left_after",
+      "values": {
+       "month": "2026-10",
+       "left": 0
+      }
+     },
+     {
+      "code": "unspent_before_after",
+      "values": {
+       "before": 287000,
+       "after": 7000
+      }
+     },
+     {
+      "code": "envelope_used",
+      "values": {
+       "used": 40000,
+       "envelopeId": "car"
+      }
+     }
+    ]
+   },
+   "working": "The car envelope (40,000) sits in a dedicated account and counts only for a purchase linked to it. 320,000 with envelopeId car: opening 320,000 + 40,000 = 360,000; 360,000 - 320,000 - 33,000 = 7,000 >= 0. Ladder: month 97,250, the envelope pays 40,000, earlier unspent 182,750 <= 287,000 - 97,250 = 189,750: fits_unspent; unspent left 287,000 - 97,250 - 182,750 = 7,000."
+  },
+  {
+   "id": "dee-dedicated-envelope-unlinked-purchase",
+   "person": "dee",
+   "purchase": {
+    "price": 320000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "readyBy": {
+     "kind": "month",
+     "month": "2026-11"
+    },
+    "facts": [
+     {
+      "code": "emergency_untouched",
+      "values": {
+       "amount": 300000
+      }
+     }
+    ]
+   },
+   "working": "The same 320,000 without envelopeId: the car money does not count. Cash dips to 320,000 - 320,000 - 33,000 = -33,000 before payday and recovers after the 1 Nov pay. Ladder: month 97,250, earlier room 189,750, rest 222,750 > 189,750: not covered, gap 320,000 - 287,000 = 33,000, 1 month: 2026-11."
+  },
+  {
+   "id": "dee-account-unstated",
+   "person": "dee",
+   "accountsPatch": [
+    {
+     "id": "dee-savings",
+     "use": null
+    }
+   ],
+   "purchase": {
+    "price": 50000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "needs_input",
+    "missing": [
+     "account_use_question"
+    ],
+    "notices": [
+     {
+      "code": "account_use_unknown",
+      "values": {
+       "accountId": "dee-savings",
+       "count": 1
+      }
+     }
+    ],
+    "noticesAbsent": [
+     "fund_account_unknown"
+    ]
+   },
+   "working": "The savings account has no stated use: it is not counted and its use is the first question asked (D-54, D-59). One account is unstated, so the notice carries accountId dee-savings and count 1. Spending is unchanged at 320,000, so nothing else is missing."
+  },
+  {
+   "id": "dee-fund-unlinked",
+   "person": "dee",
+   "fundAccountId": null,
+   "accountsPatch": [
+    {
+     "id": "dee-checking",
+     "use": {
+      "kind": "everyday"
+     },
+     "balance": 700000
+    },
+    {
+     "id": "dee-fund",
+     "remove": true
+    }
+   ],
+   "unspentPatch": {
+    "amount": 307000,
+    "at": "2026-10-20"
+   },
+   "purchase": {
+    "price": 50000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "needs_input",
+    "missing": [
+     "account_use_question"
+    ],
+    "questionKey": "account_use_question_fund",
+    "notices": [
+     {
+      "code": "fund_account_unknown",
+      "values": {
+       "amount": 300000
+      }
+     }
+    ],
+    "noticesAbsent": [
+     "account_use_unknown"
+    ],
+    "funds": {
+     "spending": 340000,
+     "suggested": 307000,
+     "unexplained": 0,
+     "ringFenced": 360000
+    }
+   },
+   "working": "The fund (300,000) now sits in the everyday checking account (700,000) and is linked to no account (D-62). Spending = 700,000 - holiday envelope 60,000 - the unlinked fund 300,000 = 340,000. Suggested = 340,000 - 33,000 = 307,000 (confirmed set to match, so no unexplained money). The only open question is which account holds the fund: missing[0] account_use_question, shown with the fund wording because fund_account_unknown is present and account_use_unknown is not. Ring-fenced = 60,000 + 300,000 = 360,000."
+  },
+  {
+   "id": "dee-fund-and-account",
+   "person": "dee",
+   "fundAccountId": null,
+   "accountsPatch": [
+    {
+     "id": "dee-checking",
+     "use": {
+      "kind": "everyday"
+     },
+     "balance": 700000
+    },
+    {
+     "id": "dee-fund",
+     "remove": true
+    },
+    {
+     "id": "dee-savings",
+     "use": null
+    }
+   ],
+   "unspentPatch": {
+    "amount": 307000,
+    "at": "2026-10-20"
+   },
+   "purchase": {
+    "price": 50000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "needs_input",
+    "missing": [
+     "account_use_question"
+    ],
+    "questionKey": "account_use_question",
+    "notices": [
+     {
+      "code": "account_use_unknown",
+      "values": {
+       "accountId": "dee-savings",
+       "count": 1
+      }
+     }
+    ],
+    "noticesAbsent": [
+     "fund_account_unknown"
+    ]
+   },
+   "working": "The unlinked fund as above, and the savings account also has no stated use. The account question comes first (D-59, D-62): account_use_unknown is present with accountId dee-savings and count 1, fund_account_unknown is absent, and the ordinary wording of the question is used. Both gaps share the one missing code."
+  },
+  {
+   "id": "dee-unlinked-envelope",
+   "person": "dee",
+   "envelopesPatch": [
+    {
+     "id": "holiday",
+     "accountId": null
+    }
+   ],
+   "purchase": {
+    "price": 50000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "readiness": {
+     "ready": false,
+     "missing": [
+      "envelopes_unconfirmed"
+     ]
+    },
+    "notices": [
+     {
+      "code": "envelope_location_assumed",
+      "values": {
+       "count": 1
+      }
+     }
+    ],
+    "funds": {
+     "spending": 320000
+    }
+   },
+   "working": "The holiday envelope is linked to no account: its 60,000 is taken to sit inside the spending money and is subtracted (D-62): checking 400,000 - extra 20,000 = 380,000, less the unlinked 60,000 = 320,000, the same spending as before. Notice envelope_location_assumed (1 envelope); readiness lists envelopes_unconfirmed (D-52). The 50,000 one-off fits the month room 97,250. Readiness never changes the code."
+  },
+  {
+   "id": "dee-unexplained-ask",
+   "person": "dee",
+   "balanceDelta": 50000,
+   "purchase": {
+    "price": 330000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "needs_input",
+    "missing": [
+     "unexplained_money_question"
+    ],
+    "notices": [
+     {
+      "code": "unexplained_money",
+      "values": {
+       "amount": 50000
+      }
+     }
+    ],
+    "funds": {
+     "spending": 370000,
+     "suggested": 337000,
+     "unexplained": 50000,
+     "ringFenced": 80000
+    }
+   },
+   "working": "Checking holds 50,000 more than the records explain. Spending = 450,000 - 60,000 - 20,000 = 370,000; suggested = 370,000 - 33,000 = 337,000 against the confirmed 287,000: 50,000 unexplained, above the 20,000 threshold (D-26 table). The engine asks what the money is for (D-50) with notice unexplained_money 50,000."
+  },
+  {
+   "id": "dee-unexplained-spare",
+   "person": "dee",
+   "balanceDelta": 50000,
+   "unexplainedAnswer": {
+    "amount": 50000,
+    "use": "spare"
+   },
+   "purchase": {
+    "price": 330000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "funds": {
+     "unexplained": 0,
+     "ringFenced": 80000
+    },
+    "split": [
+     {
+      "source": "month",
+      "amount": 97250
+     },
+     {
+      "source": "unspent_earlier",
+      "amount": 232750
+     }
+    ],
+    "facts": [
+     {
+      "code": "unspent_before_after",
+      "values": {
+       "before": 337000,
+       "after": 7000
+      }
+     }
+    ]
+   },
+   "working": "The user says the 50,000 is spare. It counts: available unspent = 287,000 + 50,000 = 337,000. One-off 330,000: month 97,250, earlier 232,750 <= 337,000 - 97,250 = 239,750: fits_unspent, 7,000 left. Without the answer 232,750 would exceed the 189,750 room. Cash: 370,000 - 330,000 - 33,000 = 7,000 >= 0."
+  },
+  {
+   "id": "dee-unexplained-someone",
+   "person": "dee",
+   "balanceDelta": 50000,
+   "unexplainedAnswer": {
+    "amount": 50000,
+    "use": "someone_elses"
+   },
+   "purchase": {
+    "price": 330000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "readyBy": {
+     "kind": "month",
+     "month": "2026-11"
+    },
+    "funds": {
+     "unexplained": 0,
+     "ringFenced": 130000
+    }
+   },
+   "working": "The user says the 50,000 is someone else's money. It is ring-fenced: 80,000 + 50,000 = 130,000, and does not count. Available unspent stays 287,000: month 97,250, earlier room 189,750 < 232,750, not covered; gap 330,000 - 287,000 = 43,000, 1 month: 2026-11. Cash holds (370,000 - 330,000 - 33,000 = 7,000)."
+  },
+  {
+   "id": "dee-past-month-missing",
+   "person": "dee",
+   "monthsPatch": [
+    {
+     "month": "2026-09",
+     "full": false
+    }
+   ],
+   "purchase": {
+    "price": 50000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "confidence": "rough",
+    "readiness": {
+     "ready": false,
+     "missing": [
+      "past_month_missing"
+     ]
+    }
+   },
+   "working": "September is not fully recorded, so readiness lists past_month_missing (D-52) and nothing else (October is current). The answer is still computed and is the stricter of the two readings (D-42): as given there are only 2 full months, below the 3 confidence needs, so confidence is rough. The 50,000 fits the 97,250 room either way."
+  },
+  {
+   "id": "dee-current-not-current",
+   "person": "dee",
+   "removeLines": [
+    "dee-e-10-1",
+    "dee-e-10-2",
+    "dee-e-10-3"
+   ],
+   "unspentPatch": {
+    "amount": 227000,
+    "at": "2026-10-20"
+   },
+   "purchase": {
+    "price": 50000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "readiness": {
+     "ready": false,
+     "missing": [
+      "activity_not_current"
+     ]
+    },
+    "figures": {
+     "monthLeft": 107000,
+     "erest": 93000
+    }
+   },
+   "working": "No October everyday spending is logged: the newest everyday line is 2026-09-24, 26 days before 2026-10-20 (over 10), and 0 logged is below half the usual pace, so the records look behind: activity_not_current (D-52). With nothing logged Erest = max(33,000, 93,000 - 0) = 93,000 and monthLeft = 300,000 - 100,000 - 93,000 = 107,000; suggested 320,000 - 93,000 = 227,000 (confirmed set to match). The 50,000 fits."
+  },
+  {
+   "id": "dee-pay-unseen",
+   "person": "dee",
+   "removeLines": [
+    "dee-pay-10"
+   ],
+   "purchase": {
+    "price": 50000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "needs_input",
+    "missing": [
+     "pay_arrival_question"
+    ],
+    "readiness": {
+     "ready": true,
+     "missing": []
+    },
+    "notices": [
+     {
+      "code": "pay_not_seen",
+      "values": {
+       "amount": 300000,
+       "date": "2026-10-01"
+      }
+     }
+    ]
+   },
+   "working": "The 1 Oct pay is past its date with no matching line and no answer. Readiness is ready (a missed pay is never a readiness item, D-58); the engine asks \"did your pay arrive?\" and counts nothing for it until answered (D-62): notice pay_not_seen 300,000 dated 2026-10-01."
+  },
+  {
+   "id": "dee-pay-arrived",
+   "person": "dee",
+   "removeLines": [
+    "dee-pay-10"
+   ],
+   "payArrivals": [
+    {
+     "seriesId": "dee-pay",
+     "date": "2026-10-01",
+     "arrived": true
+    }
+   ],
+   "purchase": {
+    "price": 50000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "figures": {
+     "monthLeft": 97250
+    },
+    "noticesAbsent": [
+     "pay_not_seen",
+     "pay_counted_missed"
+    ],
+    "split": [
+     {
+      "source": "month",
+      "amount": 50000
+     }
+    ]
+   },
+   "working": "The user says the 1 Oct pay arrived. It counts as received (300,000) even with no line, so the month is as with the line: monthLeft = 300,000 - 100,000 - 69,750 - 33,000 = 97,250. The 50,000 fits the month (47,250 left). No pay question remains."
+  },
+  {
+   "id": "dee-pay-not-yet",
+   "person": "dee",
+   "removeLines": [
+    "dee-pay-10"
+   ],
+   "payArrivals": [
+    {
+     "seriesId": "dee-pay",
+     "date": "2026-10-01",
+     "arrived": false
+    }
+   ],
+   "purchase": {
+    "price": 50000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_unspent",
+    "confidence": "rough",
+    "figures": {
+     "monthLeft": -202750
+    },
+    "notices": [
+     {
+      "code": "pay_counted_missed",
+      "values": {
+       "amount": 300000,
+       "date": "2026-10-01"
+      }
+     }
+    ],
+    "reasons": [
+     "missed_pay_excluded"
+    ],
+    "split": [
+     {
+      "source": "unspent_earlier",
+      "amount": 50000
+     }
+    ],
+    "facts": [
+     {
+      "code": "month_left_after",
+      "values": {
+       "month": "2026-10",
+       "left": -202750
+      }
+     },
+     {
+      "code": "unspent_before_after",
+      "values": {
+       "before": 287000,
+       "after": 237000
+      }
+     }
+    ]
+   },
+   "working": "The user says the pay has not arrived: it is counted as missed, so no October income. monthLeft = 0 - (100,000 + 69,750 + 33,000) = -202,750 and the month gives nothing. The careful answer: the 50,000 comes wholly from earlier unspent 287,000 (237,000 left): fits_unspent. Notice pay_counted_missed 300,000 on 2026-10-01; confidence capped at rough (pay_missed)."
+  },
+  {
+   "id": "dee-two-questions",
+   "person": "dee",
+   "removeLines": [
+    "dee-pay-10"
+   ],
+   "accountsPatch": [
+    {
+     "id": "dee-savings",
+     "use": null
+    }
+   ],
+   "purchase": {
+    "price": 50000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "needs_input",
+    "missing": [
+     "account_use_question",
+     "pay_arrival_question"
+    ]
+   },
+   "working": "The savings account has no stated use and the 1 Oct pay is unseen. Two questions are open; they come back in the fixed D-59 order, accounts first: [account_use_question, pay_arrival_question]."
+  },
+  {
+   "id": "rae-rough",
+   "person": "rae",
+   "purchase": {
+    "price": 40000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "confidence": "rough",
+    "readiness": {
+     "ready": true,
+     "missing": []
+    },
+    "notices": [
+     {
+      "code": "from_your_figures",
+      "values": {}
+     }
+    ],
+    "figures": {
+     "monthLeft": 100000,
+     "erest": 150000
+    }
+   },
+   "working": "No records, rough figures only (D-57). Money in = rough income 250,000. E = rough expenses 150,000; Erest = max(round(150,000*28/31) = 135,484, 150,000 - 0) = 150,000, so monthLeft = 250,000 - 150,000 = 100,000. The 40,000 fits the month. Notice from_your_figures, confidence rough, readiness ready with nothing missing. Cash: 600,000 - 40,000 - 150,000 - 150,000 - 150,000 >= 0."
+  }
+ ]
+}
