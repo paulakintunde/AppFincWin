@@ -7,7 +7,7 @@
 import fc from 'fast-check';
 import { evaluate } from '../../evaluate';
 import type { CheckV2, ReadyBy, Result, V3Inputs, V3Line } from '../../types';
-import { checkOf, codeRank, checkArb, inputsArb, mu, priceArb, shapeArb } from './arbitraries';
+import { checkOf, codeRank, checkArb, inputsArb, latePayInputsArb, mu, priceArb, shapeArb } from './arbitraries';
 import { v3Line } from '../helpers/fixtures';
 
 const RUNS = { numRuns: 60 };
@@ -132,7 +132,20 @@ describe('end-to-end monotonicity through evaluate()', () => {
         fc.pre(hi.code === 'not_yet' && lo.code === 'not_yet');
         expect(readyKey(hi.readyBy) >= readyKey(lo.readyBy)).toBe(true);
       }),
-      RUNS
+      { numRuns: 60, seed: 0x0413 }
+    );
+  });
+
+  it('I13 late-month pay dates: a higher price never makes ready-by earlier', () => {
+    fc.assert(
+      fc.property(latePayInputsArb, shapeArb, priceArb, fc.integer({ min: 1, max: 99 }), (inputs, shape, price, pct) => {
+        const cheaper = Math.max(100, Math.floor((price * pct) / 100));
+        const hi = run(inputs, checkOf(price, shape));
+        const lo = run(inputs, checkOf(cheaper, shape));
+        fc.pre(hi.code === 'not_yet' && lo.code === 'not_yet');
+        expect(readyKey(hi.readyBy) >= readyKey(lo.readyBy)).toBe(true);
+      }),
+      { numRuns: 200, seed: 0x0513 }
     );
   });
 

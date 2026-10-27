@@ -14,6 +14,7 @@ import type {
   MonthModel,
   Purchase,
   Purpose,
+  ReadyBy,
   UnspentState,
   V3Inputs,
 } from '../../types';
