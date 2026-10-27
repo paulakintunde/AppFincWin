@@ -940,7 +940,7 @@ Gap closure (planned 2026-10-26 against 05.1-CONTEXT D-33..D-45, 05.1-VERIFICATI
 **Requirements**: TBD (from `00-UPGRADE-PLAN.md` section 4 and `00-DECIDE-SETUP.md`)
 **Depends on:** Phase 05.1 (engine types fixed after slice S2; can overlap with later 05.1 slices)
 **Success Criteria** (what must be TRUE):
-  1. A first-time user completes Decide setup (5 needed steps, about 3 minutes), and every answer can be edited alone from Decide settings.
+  1. A first-time user completes Decide setup (6 needed steps, about 3–4 minutes; 05.2-CONTEXT D-03), and every answer can be edited alone from Decide settings.
   2. The income questions are one shared component. Activity shows a "How are you paid?" card when the profile is missing, lets any income be tagged (type, and spent or kept), and asks once when a new kind of income appears.
   3. Every new piece of data has add, edit, delete and undo through the write queue, works offline, and is covered by account deletion and data export.
   4. Migrations are additive. Each one is applied to production only after preflight and the owner's approval.
