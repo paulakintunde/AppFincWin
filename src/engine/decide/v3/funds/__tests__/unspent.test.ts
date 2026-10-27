@@ -113,6 +113,31 @@ describe('rollForward', () => {
     expect(r.rolled).toBe(false);
   });
 
+  test('D-41 an ended series keeps its occurrences from before today in the anchor list', () => {
+    const ended = ser({ id: 'rent', anchorDate: '2026-01-10', status: 'ended' });
+    const r = roll({ series: [ended], lines: [line({ id: 'r', date: '2026-10-10', seriesId: 'rent', amount: mu(150000) })] });
+    expect(r.breakdown.bills).toBe(0);
+    expect(r.value).toBe(240000);
+  });
+
+  test('D-56 a typed or statement line of the right amount settles a bill due at the anchor, and is not everyday', () => {
+    for (const source of [undefined, 'statement'] as const) {
+      const r = roll({ series: [rent], e: mu(0), lines: [line({ id: 't', date: '2026-10-11', amount: mu(150000), source })] });
+      expect(r.breakdown.bills).toBe(0);
+      expect(r.breakdown.everyday).toBe(0);
+      expect(r.value).toBe(240000);
+    }
+    const off = roll({ series: [rent], e: mu(0), lines: [line({ id: 't', date: '2026-10-11', amount: mu(100000) })] });
+    expect(off.breakdown.everyday).toBe(100000);
+  });
+
+  test('M-02 an unmatched linked bill subtracts, line order does not matter', () => {
+    const a = line({ id: 'a', date: '2026-10-10', seriesId: 'rent', amount: mu(150000) });
+    const b = line({ id: 'b', date: '2026-10-12', seriesId: 'rent', amount: mu(150000) });
+    expect(roll({ series: [rent], lines: [a, b] }).breakdown.bills).toBe(150000);
+    expect(roll({ series: [rent], lines: [b, a] }).breakdown.bills).toBe(150000);
+  });
+
   test('D-22 a bill not due at the anchor moves it', () => {
     const extra = ser({ id: 'extra', anchorDate: '2026-01-01' }); // due on the 1st, before the anchor
     const r = roll({ series: [extra], lines: [line({ id: 'x', date: '2026-11-01', seriesId: 'extra', amount: mu(150000) })] });

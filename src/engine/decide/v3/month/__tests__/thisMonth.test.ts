@@ -122,9 +122,55 @@ describe('thisMonth', () => {
     expect(thisMonth(input({ series: [inst] })).billsDue).toBe(2000);
   });
 
+  it('D-51 past due stays due: an unpaid bill dated before asOf is still counted', () => {
+    const r = thisMonth(input({ asOf: '2026-10-20', series: [rent], current: month([]) }));
+    expect(r.billsDue).toBe(150000);
+  });
+
+  it('D-51 a bill settled in an earlier part of the month is paid, not due', () => {
+    const r = thisMonth(
+      input({ asOf: '2026-10-20', series: [rent], current: month([line({ id: 'r', date: '2026-10-02', amount: mu(150000), seriesId: 'rent' })]) })
+    );
+    expect(r.billsDue).toBe(0);
+    expect(r.billsPaid).toBe(150000);
+  });
+
+  it('D-56 a typed or statement line of the right amount settles the bill and is counted once, as that bill', () => {
+    for (const source of [undefined, 'statement'] as const) {
+      const r = thisMonth(
+        input({
+          asOf: '2026-10-20',
+          series: [rent],
+          current: month([line({ id: 't', date: '2026-10-03', amount: mu(150000), source })]),
+        })
+      );
+      expect(r.billsDue).toBe(0);
+      expect(r.billsPaid).toBe(150000);
+      expect(r.everydayLogged).toBe(0);
+    }
+    const off = thisMonth(
+      input({ asOf: '2026-10-20', series: [rent], current: month([line({ id: 't', date: '2026-10-03', amount: mu(100000) })]) })
+    );
+    expect(off.billsDue).toBe(150000);
+    expect(off.everydayLogged).toBe(100000);
+  });
+
+  it('M-02 two occurrences of one series 5 days apart: line order does not change billsDue', () => {
+    const w = ser({ id: 'w', amount: mu(500), cadence: { unit: 'week', every: 1 }, anchorDate: '2026-10-01' });
+    const a = line({ id: 'a', date: '2026-10-06', amount: mu(500), seriesId: 'w' });
+    const b = line({ id: 'b', date: '2026-10-13', amount: mu(500), seriesId: 'w' });
+    const fwd = thisMonth(input({ asOf: '2026-10-14', series: [w], current: month([a, b]) }));
+    const rev = thisMonth(input({ asOf: '2026-10-14', series: [w], current: month([b, a]) }));
+    expect(rev.billsDue).toBe(fwd.billsDue);
+  });
+
   it('a paid occurrence is not counted again as due', () => {
     const r = thisMonth(
-      input({ asOf: '2026-10-16', current: month([line({ id: 'u', date: '2026-10-14', amount: mu(30000), seriesId: 'util' })]) })
+      input({
+        asOf: '2026-10-16',
+        series: [utilities],
+        current: month([line({ id: 'u', date: '2026-10-14', amount: mu(30000), seriesId: 'util' })]),
+      })
     );
     expect(r.billsPaid).toBe(30000);
     expect(r.billsDue).toBe(0);
@@ -132,7 +178,11 @@ describe('thisMonth', () => {
 
   it('a paid line far from the occurrence does not settle it; each line matches once', () => {
     const far = thisMonth(
-      input({ asOf: '2026-10-03', current: month([line({ id: 'u', date: '2026-10-03', amount: mu(30000), seriesId: 'util' })]) })
+      input({
+        asOf: '2026-10-03',
+        series: [utilities],
+        current: month([line({ id: 'u', date: '2026-10-03', amount: mu(30000), seriesId: 'util' })]),
+      })
     );
     expect(far.billsDue).toBe(30000);
     const twice = ser({ id: 'w', amount: mu(500), cadence: { unit: 'week', every: 1 }, anchorDate: '2026-10-05' });
@@ -219,7 +269,7 @@ describe('thisMonth', () => {
         integer({ min: 0, max: 400_000 }),
         (d, e, base, extra) => {
           const asOf = `2026-10-${String(d).padStart(2, '0')}`;
-          const mk = (lines: V3Line[]) => thisMonth(input({ asOf, e: mu(e), current: month(lines) })).monthLeft;
+          const mk = (lines: V3Line[]) => thisMonth(input({ asOf, e: mu(e), series: [], current: month(lines) })).monthLeft; // no bills: a line near a bill's amount would settle it (D-56)
           const l1 = line({ id: 'a', date: '2026-10-01', amount: mu(base) });
           const l2 = line({ id: 'b', date: '2026-10-01', amount: mu(extra) });
           expect(mk([l1, l2])).toBeLessThanOrEqual(mk([l1]));

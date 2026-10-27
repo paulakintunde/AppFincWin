@@ -5,20 +5,18 @@
  * is already inside dayOne and would land twice.
  */
 import { minorUnits } from '../../money/types';
-import { CASH_PATH_DAYS_V3 } from './constants';
+import { CASH_PATH_DAYS_V3, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { buildCashPathV3, cashCheck, nextPayDate, type CashCheck } from './cash/path';
-import { addYearMonths, daysBetween, yearMonthOf } from './dates';
+import { addDays, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
 import { judge } from './judge/judge';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
 import { buildMonthModel } from './month/model';
 import { liveSeriesOf, seriesOccurrences } from './month/series';
+import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
 import type { PlanCard } from './plan/planCard';
 import type { QuotedCheck } from './plan/quoted';
 import type { CheckV2, Funds, MonthModel, Purchase, Result, V3Inputs } from './types';
-
-/** A paid line within this many days of a due date settles that occurrence (same window as thisMonth). */
-const MATCH_DAYS = 3;
 
 export interface Evaluation {
   readonly result: Result;
@@ -30,27 +28,42 @@ export interface Evaluation {
   readonly cash: CashCheck;
 }
 
-/** "seriesId|dueDate" of bill and debt occurrences from asOf to month end that a paid line already settled. */
+/**
+ * "seriesId|dueDate" of bill, debt and pay occurrences that a paid line already settled (H-01, H-02, M-02, D-51, D-56).
+ * The cash path skips these, so a logged pay or bill is never counted a second time. Occurrences run from the first of
+ * the month (the same set thisMonth uses), so a line pairs with the same due date in both places. Pay also looks across
+ * the month boundary (W4): next month's occurrences that fall within PAY_MATCH_DAYS of the first of next month, and
+ * last month's paid pay lines dated within PAY_MATCH_DAYS before this month's first day.
+ */
 function paidOccurrences(inputs: V3Inputs): ReadonlySet<string> {
   const ym = yearMonthOf(inputs.asOf);
   const current = inputs.months.find((m) => m.month === ym);
-  const out = new Set<string>();
-  if (current === undefined) return out;
-  const paid = current.lines.filter((l) => l.status === 'paid' && l.seriesId !== null && yearMonthOf(l.date) === ym);
-  const used = new Array<boolean>(paid.length).fill(false);
+  const start = `${ym}-01`;
   const nextFirst = `${addYearMonths(ym, 1)}-01`;
-  for (const role of ['bill', 'debt_payment'] as const) {
+  const lastMonth = inputs.months.find((m) => m.month === addYearMonths(ym, -1));
+  const lines: PaidLine[] = (current?.lines ?? []).filter((l) => l.status === 'paid' && yearMonthOf(l.date) === ym).map(toPaidLine);
+  const due: Due[] = [];
+  const maxOf = new Map<string, { readonly cadence: V3Inputs['series'][number]['cadence']; readonly max: number }>();
+  const paySeries = new Set<string>();
+  for (const role of ['bill', 'debt_payment', 'pay'] as const) {
+    const pay = role === 'pay';
+    const to = pay ? addDays(nextFirst, PAY_MATCH_DAYS) : nextFirst;
     for (const s of liveSeriesOf(inputs.series, inputs.asOf, role)) {
-      for (const d of seriesOccurrences(s, inputs.asOf, nextFirst)) {
-        const hit = paid.findIndex((l, i) => !used[i] && l.seriesId === s.id && Math.abs(daysBetween(l.date, d)) <= MATCH_DAYS);
-        if (hit >= 0) {
-          used[hit] = true;
-          out.add(`${s.id}|${d}`);
-        }
-      }
+      maxOf.set(s.id, { cadence: s.cadence, max: pay ? PAY_MATCH_DAYS : MATCH_DAYS });
+      if (pay) paySeries.add(s.id);
+      for (const d of seriesOccurrences(s, pay ? addDays(start, -PAY_MATCH_DAYS) : start, to, inputs.asOf)) due.push({ seriesId: s.id, date: d, amount: s.amount });
     }
   }
-  return out;
+  for (const l of lastMonth?.lines ?? []) {
+    if (l.status === 'paid' && l.seriesId !== null && paySeries.has(l.seriesId) && l.date >= addDays(start, -PAY_MATCH_DAYS)) {
+      lines.push(toPaidLine(l));
+    }
+  }
+  const { settled } = settle(due, lines, (id) => {
+    const m = maxOf.get(id) as { readonly cadence: V3Inputs['series'][number]['cadence']; readonly max: number };
+    return matchWindowDays(m.cadence, m.max);
+  });
+  return settled;
 }
 
 export function evaluate(inputs: V3Inputs, check: CheckV2): Evaluation {

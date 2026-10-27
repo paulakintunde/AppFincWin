@@ -11,15 +11,14 @@
  */
 import { minorUnits, type MinorUnits } from '../../../money/types';
 import { minorFromBigInt } from '../../../payoff/types';
-import { UNSPENT_DRIFT_PERCENT_DIVISOR, UNSPENT_STALE_DAYS } from '../constants';
+import { MATCH_DAYS, UNSPENT_DRIFT_PERCENT_DIVISOR, UNSPENT_STALE_DAYS } from '../constants';
 import { addDays, addMonthsClamped, addYearMonths, dayOfMonth, daysBetween, daysInYearMonth, yearMonthOf } from '../dates';
 import { classifyLine, liveSeriesOf, seriesIndex, seriesOccurrences } from '../month/series';
+import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from '../month/settle';
 import { erestOf } from '../month/thisMonth';
 import type { IncomeProfile, UnspentAnchor, UnspentBreakdown, UnspentState, V3Line, V3Month, V3Series } from '../types';
 
 const FN = 'unspent';
-/** A paid line this close to a due date settles that occurrence (same window as thisMonth). */
-const MATCH_DAYS = 3;
 
 /** D-43, D-54: spending balance - bills still due - Erest; the fund and envelopes are already out of the spending balance. Profile (d): the bills over the horizon, no Erest (I39). May be negative. */
 export function suggestedUnspent(input: {
@@ -74,13 +73,25 @@ export function rollForward(input: {
       ? 0n
       : BigInt(erestOf(input.e, minorFromBigInt(loggedAtAnchor, FN), dayOfMonth(anchor.at), daysInYearMonth(anchorMonth)));
 
-  // Bills still due at the anchor: occurrences dated after it in the anchor month.
-  const dueAtAnchor: { readonly seriesId: string; readonly date: string; used: boolean }[] = [];
-  for (const s of liveSeriesOf(input.series, anchor.at, 'bill')) {
-    for (const date of seriesOccurrences(s, addDays(anchor.at, 1), nextFirst)) {
-      dueAtAnchor.push({ seriesId: s.id, date, used: false });
+  // Bills still due at the anchor: occurrences dated after it in the anchor month. `today = asOf` keeps an ended series'
+  // occurrences from before today (D-41 end rule). Settled by the one matcher in month/settle.ts (M-02, D-51, D-56).
+  const dueAtAnchor: Due[] = [];
+  const bySeries = new Map<string, V3Series>();
+  for (const s of liveSeriesOf(input.series, anchor.at, 'bill', asOf)) {
+    bySeries.set(s.id, s);
+    for (const date of seriesOccurrences(s, addDays(anchor.at, 1), nextFirst, asOf)) {
+      dueAtAnchor.push({ seriesId: s.id, date, amount: s.amount });
     }
   }
+  const candidates: PaidLine[] = [];
+  for (const l of all) {
+    if (l.date <= anchor.at || l.date > asOf || yearMonthOf(l.date) !== anchorMonth) continue;
+    const c = classifyLine(l, index);
+    if (c === 'recurring_bill' || (c === 'everyday' && l.seriesId === null)) candidates.push(toPaidLine(l));
+  }
+  const { usedLines } = settle(dueAtAnchor, candidates, (id) =>
+    matchWindowDays((bySeries.get(id) as V3Series).cadence, MATCH_DAYS),
+  );
 
   let inn = 0n;
   let bills = 0n;
@@ -94,6 +105,7 @@ export function rollForward(input: {
     if (l.date <= anchor.at || l.date > asOf) continue;
     const amt = BigInt(Math.abs(l.amount));
     const inAnchorMonth = yearMonthOf(l.date) === anchorMonth;
+    if (usedLines.has(l.id)) continue; // already held back as a bill still due at the anchor
     switch (classifyLine(l, index)) {
       case 'recurring_income':
       case 'other_income_unconfirmed':
@@ -107,19 +119,9 @@ export function rollForward(input: {
         if (inAnchorMonth) anchorMonthEveryday -= amt;
         else laterEveryday -= amt;
         break;
-      case 'recurring_bill': {
-        if (inAnchorMonth && l.seriesId !== null) {
-          const hit = dueAtAnchor.find(
-            (d) => !d.used && d.seriesId === l.seriesId && Math.abs(daysBetween(d.date, l.date)) <= MATCH_DAYS
-          );
-          if (hit !== undefined) {
-            hit.used = true;
-            break;
-          }
-        }
+      case 'recurring_bill':
         bills += amt;
         break;
-      }
       case 'debt_payment':
         loans += amt;
         break;
