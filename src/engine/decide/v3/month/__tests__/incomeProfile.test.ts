@@ -15,7 +15,9 @@ import type {
   V3Series,
 } from "../../types";
 import {
+  eligibility,
   incomeThisMonth,
+  planOf,
   typicalIncome,
   type IncomeInput,
 } from "../incomeProfile";
@@ -153,7 +155,9 @@ describe("incomeThisMonth", () => {
     ]);
     const r = incomeThisMonth(inp({ asOf: "2026-10-16", current: cur, series: [p] }));
     expect(r.received).toBe(100000);
-    expect(r.reasons).toContain("missed_pay_excluded");
+    // D-58 asks instead of counting: the unmatched 10-01 pay is listed unanswered, with no reason code until the user says
+    expect(r.reasons).not.toContain("missed_pay_excluded");
+    expect(r.unseenPay).toEqual([{ seriesId: "pay", date: "2026-10-01", amount: 100000, arrived: null }]);
     // 10-29, the third occurrence, is still to come: the total is two pays (10-15 and 10-29), not three
     expect(r.dueConfirmed).toBe(100000);
     expect(r.total).toBe(200000);
@@ -175,7 +179,9 @@ describe("incomeThisMonth", () => {
       line({ id: "l", date: "2026-10-05", seriesId: "pay" }),
     ]);
     const r = incomeThisMonth(inp({ asOf: "2026-10-06", current: cur, series: [PAY, other] }));
-    expect(r.dueConfirmed).toBe(1000);
+    // D-58 asks instead of counting: pay2's 10-05 occurrence is before asOf with no line, so it is unseen, not due
+    expect(r.dueConfirmed).toBe(0);
+    expect(r.unseenPay).toEqual([{ seriesId: "pay2", date: "2026-10-05", amount: 1000, arrived: null }]);
   });
 
   it("W4 boundary: pay due Sun 11-01 received Fri 10-30 belongs to November", () => {
@@ -224,29 +230,95 @@ describe("incomeThisMonth", () => {
       expect(r.dueConfirmed).toBe(0);
       expect(r.reasons).not.toContain("missed_pay_excluded");
     }
-    // 15% off: not the pay, so the 10-01 occurrence goes missed after the grace
+    // 15% off: not the pay, so the 10-01 occurrence is unseen (D-58 asks instead of counting)
     const off = month("2026-10", [line({ id: "t", date: "2026-10-02", amount: mu(340000), seriesId: null })]);
     const r = incomeThisMonth(inp({ asOf: "2026-10-12", current: off, series: [PAY] }));
-    expect(r.reasons).toContain("missed_pay_excluded");
+    expect(r.unseenPay).toEqual([{ seriesId: "pay", date: "2026-10-01", amount: 400000, arrived: null }]);
   });
 
   it("works with no current month at all", () => {
     const r = incomeThisMonth(inp({ series: [PAY], profile: null }));
-    expect(r.total).toBe(400000); // due 10-01 is 2 days overdue: inside the grace, so still counted
+    // D-58 asks instead of counting: 10-01 is before asOf with no line, so it is not counted until answered
+    expect(r.total).toBe(0);
+    expect(r.unseenPay).toEqual([{ seriesId: "pay", date: "2026-10-01", amount: 400000, arrived: null }]);
   });
 
-  it("I3 missed paycheque stops counting after 7 days", () => {
+  it("I3 missed paycheque is never counted; D-58 asks instead of counting by a grace window", () => {
     const cur = month("2026-10", []);
-    const late = incomeThisMonth(
-      inp({ asOf: "2026-10-13", current: cur, series: [PAY] }),
+    for (const asOf of ["2026-10-08", "2026-10-13"]) {
+      const r = incomeThisMonth(inp({ asOf, current: cur, series: [PAY] }));
+      expect(r.total).toBe(0);
+      expect(r.dueConfirmed).toBe(0);
+      expect(r.reasons).not.toContain("missed_pay_excluded");
+      expect(r.unseenPay).toHaveLength(1);
+    }
+    // a pay dated on asOf is still due
+    const today = incomeThisMonth(inp({ asOf: "2026-10-01", current: cur, series: [PAY] }));
+    expect(today.dueConfirmed).toBe(400000);
+    expect(today.unseenPay).toBeUndefined();
+  });
+
+  it("D-58 answered arrived: the unseen pay counts as received for that occurrence", () => {
+    const r = incomeThisMonth(
+      inp({
+        asOf: "2026-10-13",
+        current: month("2026-10", []),
+        series: [PAY],
+        payArrivals: [{ seriesId: "pay", date: "2026-10-01", arrived: true }],
+      }),
     );
-    expect(late.total).toBe(0);
-    expect(late.reasons).toContain("missed_pay_excluded");
-    const ok = incomeThisMonth(
-      inp({ asOf: "2026-10-08", current: cur, series: [PAY] }),
+    expect(r.received).toBe(400000);
+    expect(r.total).toBe(400000);
+    expect(r.unseenPay).toEqual([{ seriesId: "pay", date: "2026-10-01", amount: 400000, arrived: true }]);
+    expect(r.reasons).not.toContain("missed_pay_excluded");
+  });
+
+  it("D-58 answered arrived for a non-salary series counts in the variable bucket", () => {
+    const side = ser({
+      id: "side",
+      role: "other_income",
+      countsAs: "available",
+      incomeKind: { kind: "preset", value: "rent" },
+      amount: mu(50000),
+    });
+    const r = incomeThisMonth(
+      inp({
+        asOf: "2026-10-13",
+        current: month("2026-10", []),
+        series: [side],
+        profile: prof({ types: ["salary"] }),
+        payArrivals: [{ seriesId: "side", date: "2026-10-01", arrived: true }],
+      }),
     );
-    expect(ok.dueConfirmed).toBe(400000);
-    expect(ok.reasons).not.toContain("missed_pay_excluded");
+    expect(r.received).toBe(50000);
+    expect(r.unseenPay).toHaveLength(1);
+  });
+
+  it("D-58 answered not yet: missed, no income, reason missed_pay_excluded", () => {
+    const r = incomeThisMonth(
+      inp({
+        asOf: "2026-10-13",
+        current: month("2026-10", []),
+        series: [PAY],
+        payArrivals: [{ seriesId: "pay", date: "2026-10-01", arrived: false }],
+      }),
+    );
+    expect(r.total).toBe(0);
+    expect(r.reasons).toContain("missed_pay_excluded");
+    expect(r.unseenPay).toEqual([{ seriesId: "pay", date: "2026-10-01", amount: 400000, arrived: false }]);
+  });
+
+  it("D-58 unanswered: neither received nor due, listed with arrived null; an answer for another date does not apply", () => {
+    const r = incomeThisMonth(
+      inp({
+        asOf: "2026-10-13",
+        current: month("2026-10", []),
+        series: [PAY],
+        payArrivals: [{ seriesId: "pay", date: "2026-09-01", arrived: true }],
+      }),
+    );
+    expect(r.total).toBe(0);
+    expect(r.unseenPay).toEqual([{ seriesId: "pay", date: "2026-10-01", amount: 400000, arrived: null }]);
   });
 
   it("a line paid up to 3 days early satisfies the occurrence", () => {
@@ -280,7 +352,7 @@ describe("incomeThisMonth", () => {
       inp({ asOf: "2026-10-10", current: cur, series: [p] }),
     );
     expect(r.received).toBe(10000);
-    expect(r.dueConfirmed).toBe(40000); // 10-09 (1 day overdue), 10-16, 10-23, 10-30
+    expect(r.dueConfirmed).toBe(30000); // 10-16, 10-23, 10-30; 10-09 is before asOf with no line, so D-58 asks instead of counting
   });
 
   it("D-18 raise: the series amount is used before the October line exists", () => {
@@ -829,8 +901,9 @@ describe("incomeThisMonth", () => {
       inp({ asOf: "2026-10-03", current: cur, series: [PAY], profile }),
     );
     expect(r.received).toBe(25000);
-    expect(r.dueConfirmed).toBe(405000);
-    expect(r.total).toBe(430000);
+    expect(r.dueConfirmed).toBe(5000); // the 10-01 pay is before asOf with no line: D-58 asks instead of counting
+    expect(r.total).toBe(30000);
+    expect(r.unseenPay).toEqual([{ seriesId: "pay", date: "2026-10-01", amount: 400000, arrived: null }]);
   });
 
   it("rough income is not used when a profile-less user has logged income", () => {
@@ -930,5 +1003,20 @@ describe("typicalIncome", () => {
       reasons: ["rough_figures_used"],
     });
     expect(typicalIncome(inp({})).amount).toBe(0);
+  });
+});
+
+describe("exports used by the income pattern (05.1-43)", () => {
+  it("planOf and eligibility behave as before", () => {
+    expect(planOf(null)).toEqual({ paySalary: true, hasVariable: false, rule: "series" });
+    expect(planOf(prof({ types: ["freelance"], variable: "spread" }))).toEqual({
+      paySalary: false,
+      hasVariable: true,
+      rule: "spread",
+    });
+    const idx = new Map([["pay", PAY]]);
+    const ok = eligibility(line({ id: "a", seriesId: "pay" }), idx, planOf(null), NO_CUSTOM);
+    expect(ok).toEqual({ ok: true, salary: true, reasons: [] });
+    expect(eligibility(line({ id: "b", role: "spending" }), idx, planOf(null), NO_CUSTOM).ok).toBe(false);
   });
 });

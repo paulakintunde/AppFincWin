@@ -25,6 +25,8 @@ import type {
   RoughFigures,
   V3Line,
   V3Month,
+  PayArrival,
+  UnseenPay,
   V3Series,
   VariableMethod,
 } from "../types";
@@ -45,17 +47,18 @@ export interface IncomeInput {
   readonly profile: IncomeProfile | null;
   readonly rough: RoughFigures | null;
   readonly custom: CustomOptions;
+  readonly payArrivals?: readonly PayArrival[]; // D-58: the user's answers about pay dated before asOf with no matching line
 }
 
 type Rule = VariableMethod | "series";
 
-interface Plan {
+export interface Plan {
   readonly paySalary: boolean;
   readonly hasVariable: boolean;
   readonly rule: Rule;
 }
 
-function planOf(profile: IncomeProfile | null): Plan {
+export function planOf(profile: IncomeProfile | null): Plan {
   if (profile === null)
     return { paySalary: true, hasVariable: false, rule: "series" };
   const types = profile.types;
@@ -84,7 +87,7 @@ function monthBounds(asOf: string): {
   return { ym, start: `${ym}-01`, next: `${addYearMonths(ym, 1)}-01` };
 }
 
-interface Eligibility {
+export interface Eligibility {
   readonly ok: boolean;
   readonly salary: boolean;
   readonly reasons: readonly ReasonCode[];
@@ -92,7 +95,7 @@ interface Eligibility {
 
 const NOT_INCOME: Eligibility = { ok: false, salary: false, reasons: [] };
 
-function eligibility(
+export function eligibility(
   line: V3Line,
   idx: ReadonlyMap<string, V3Series>,
   plan: Plan,
@@ -149,6 +152,8 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
   const { ym, start, next } = monthBounds(asOf);
   const cutoff = addDays(asOf, -MISSED_PAY_GRACE_DAYS);
   const reasons = new Set<ReasonCode>();
+  const arrivals = input.payArrivals ?? [];
+  const unseenPay: UnseenPay[] = [];
 
   const curLines = current === null ? [] : current.lines;
   let salaryReceived = 0n;
@@ -281,8 +286,21 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
       }
       continue;
     }
-    if (d.date < cutoff) {
-      reasons.add("missed_pay_excluded");
+    if (d.date < asOf) {
+      // D-58: a past pay with no matching line is asked about, never guessed. Arrived counts as received for that
+      // occurrence; not yet is missed; no answer counts as neither received nor due.
+      const answer = arrivals.find((a) => a.seriesId === d.seriesId && a.date === d.date);
+      const arrived = answer === undefined ? null : answer.arrived;
+      unseenPay.push({
+        seriesId: d.seriesId,
+        date: d.date,
+        amount: minorFromBigInt(big(d.amount), "incomeThisMonth"),
+        arrived,
+      });
+      if (arrived === true) {
+        if (salary) salaryReceived += big(d.amount);
+        else varReceived += big(d.amount);
+      } else if (arrived === false) reasons.add("missed_pay_excluded");
       continue;
     }
     if (salary) salaryDue += big(d.amount);
@@ -330,6 +348,7 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
     dueConfirmed: minorFromBigInt(dueConfirmed, "incomeThisMonth"),
     total: minorFromBigInt(total, "incomeThisMonth"),
     reasons: [...reasons],
+    ...(unseenPay.length > 0 ? { unseenPay } : {}),
   };
 }
 

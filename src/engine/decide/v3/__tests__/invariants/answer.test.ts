@@ -293,10 +293,11 @@ describe('end-to-end invariants through evaluate()', () => {
     expect(has(defaulted.notices, 'yearly_bill_choice_needed')).toBe(true);
     const chosen = evaluate({ ...sam, series: [...sam.series, { ...yearly, typicalChoice: 'monthly' }] }, checkOnce(15_000)).result;
     expect(chosen.reasons).not.toContain('typical_choice_defaulted');
-    // missed pay: this month's pay is more than the grace window overdue and no line was paid
+    // missed pay: this month's pay has no line and the user answered not yet (D-58)
     const late: V3Inputs = {
       ...sam,
       asOf: '2026-10-20',
+      payArrivals: [{ seriesId: 'sam-pay', date: '2026-10-01', arrived: false }], // D-58: the reason appears once the user says not yet
       months: sam.months.map((m) => (m.month === '2026-10' ? { ...m, lines: m.lines.filter((l) => l.id !== 'sam-pay-10') } : m)),
     };
     const missed = evaluate(late, checkOnce(15_000)).result;

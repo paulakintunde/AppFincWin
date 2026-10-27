@@ -1583,13 +1583,10 @@
     "code": "fits_unspent",
     "legacyState": "fits",
     "band": 2,
-    "reasons": [
-     "missed_pay_excluded"
-    ],
     "month": {
      "moneyIn": 0
     },
-    "working": "asOf 2026-10-13, the 2026-10-01 pay line is missing. The pay is 12 days overdue, more than MISSED_PAY_GRACE_DAYS (7), so by I3 it is not counted: moneyIn 0 and reasons include missed_pay_excluded. Unspent re-confirmed 2026-10-13 at 240,000. moneyOut 357,500 (rent 150,000, utilities 30,000 due on the 15th, logged 10,000, Erest max(round(147,500*18/31)=85,645, 147,500-10,000=137,500)=137,500, setAside 30,000), monthLeft -357,500 < 5,000 <= 240,000 -> fits_unspent. Band 2."
+    "working": "asOf 2026-10-13, the 2026-10-01 pay line is missing. D-58: a confirmed pay dated before asOf with no matching line is asked about, never guessed; with no answer yet it is neither received nor due: moneyIn 0. The reason missed_pay_excluded now appears only once the user answers not yet, so the expectation no longer lists it. Unspent re-confirmed 2026-10-13 at 240,000. moneyOut 357,500 (rent 150,000, utilities 30,000 due on the 15th, logged 10,000, Erest max(round(147,500*18/31)=85,645, 147,500-10,000=137,500)=137,500, setAside 30,000), monthLeft -357,500 < 5,000 <= 240,000 -> fits_unspent. Band 2."
    },
    "source": "D-18"
   }

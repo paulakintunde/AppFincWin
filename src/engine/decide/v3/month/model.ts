@@ -5,11 +5,25 @@
 import type { MinorUnits } from '../../../money/types';
 import { minorFromBigInt } from '../../../payoff/types';
 import { totalSetAside } from '../../pots';
+import { V3_VARIABLE_HISTORY_MONTHS } from '../constants';
 import { yearMonthOf } from '../dates';
 import { monthlyEquivalentOf } from '../plan/cadence';
-import type { MonthModel, Notice, NoticeCode, ReasonCode, V3Inputs } from '../types';
+import type { IncomePicture, MonthModel, Notice, NoticeCode, ReasonCode, V3Inputs } from '../types';
 import { confidenceOf } from './confidence';
 import { incomeThisMonth, typicalIncome, type IncomeInput } from './incomeProfile';
+import {
+  buildIncomeMonths,
+  expectedFor,
+  incomeSwings,
+  isVolatile,
+  leanLeftOf,
+  newestIncomes,
+  recordedIncomeByMonth,
+  resolvePattern,
+  sameCalendarMonth,
+  seasonEveryday,
+  windowMonthsOf,
+} from './incomePattern';
 import { liveSeriesOf } from './series';
 import { thisMonth } from './thisMonth';
 import { typicalOf } from './typical';
@@ -36,6 +50,9 @@ const NOTICE_ORDER: readonly NoticeCode[] = [
   'month_looks_under_logged',
   'income_kind_unmarked',
   'from_your_figures',
+  'history_window_12',
+  'income_from_expected',
+  'same_season_compared',
   'unsaved_changes',
 ];
 
@@ -51,10 +68,23 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     profile: inputs.profile,
     rough: inputs.rough,
     custom: inputs.custom,
+    payArrivals: inputs.payArrivals ?? [],
   };
   const income = incomeThisMonth(incomeInput);
   const ti = typicalIncome(incomeInput);
   const setAside = setAsideOf(inputs);
+
+  // D-33 to D-36: the income pattern decides the window and whether the typical month comes from recorded income.
+  const incomeByMonth = recordedIncomeByMonth({
+    asOf: inputs.asOf,
+    history,
+    series: inputs.series,
+    profile: inputs.profile,
+    custom: inputs.custom,
+  });
+  const swings = incomeSwings(newestIncomes(incomeByMonth, V3_VARIABLE_HISTORY_MONTHS)); // D-34
+  const pattern = resolvePattern(inputs.profile, swings);
+  const windowMonths = windowMonthsOf(pattern.treated);
   const typical = typicalOf({
     asOf: inputs.asOf,
     history,
@@ -63,18 +93,47 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     setAside,
     everydayOverride: inputs.everydayOverride,
     rough: inputs.rough,
+    windowMonths,
+    incomeByMonth: pattern.treated === 'steady' ? null : incomeByMonth,
   });
+  const months =
+    pattern.treated === 'steady'
+      ? []
+      : buildIncomeMonths(typical.used, incomeByMonth, BigInt(typical.recurringBills), BigInt(setAside));
+  const base = {
+    stated: pattern.stated,
+    treated: pattern.treated,
+    swings,
+    volatile: isVolatile(pattern.treated, months),
+    confirmNeeded: pattern.confirmNeeded,
+    windowMonths,
+    fullMonths: incomeByMonth.size,
+    months,
+    leanLeft: pattern.treated === 'seasonal' ? leanLeftOf(months) : null,
+  };
+  const expected = expectedFor({ ...base }, inputs.expectedIncome ?? [], currentYm);
+  const incomePicture: IncomePicture = { ...base, expectedThisMonth: expected === null ? null : expected.amount };
+
+  // D-35: this month's money in is the larger of what has arrived and the expected figure (variable or seasonal only).
+  const raised = expected !== null && BigInt(expected.amount) > BigInt(income.received);
+  const incomeUsed = expected === null ? income : { ...income, total: raised ? expected.amount : income.received };
+  const seasonE = seasonEveryday(incomePicture, currentYm); // D-39
+  const seasonMonth = seasonE === null ? null : sameCalendarMonth(months, currentYm);
+
   const tm = thisMonth({
     asOf: inputs.asOf,
     current,
     series: inputs.series,
-    income,
-    e: typical.e,
+    income: incomeUsed,
+    e: seasonE ?? typical.e,
     roughExpenses: inputs.rough?.expenses ?? null,
     setAside,
   });
 
   const reasonSet = new Set<ReasonCode>([...income.reasons, ...ti.reasons, ...typical.reasons]);
+  if (windowMonths === V3_VARIABLE_HISTORY_MONTHS) reasonSet.add('long_history_window'); // D-33
+  if (seasonE !== null) reasonSet.add('same_season_spending'); // D-39
+  if (raised && expected.source === 'confirmed') reasonSet.add('expected_income_used'); // D-35
   const confidence = confidenceOf({
     monthsUsed: typical.monthsUsed.length,
     day: tm.day,
@@ -99,6 +158,19 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
           : { month: tm.month, short: -tm.monthLeft, categoryId: tm.largestLine.categoryId, largest: tm.largestLine.amount },
     });
   }
+  // D-46: say which basis set this month's figures.
+  if (windowMonths === V3_VARIABLE_HISTORY_MONTHS) raw.push({ code: 'history_window_12', values: { months: windowMonths } });
+  if (raised) {
+    const source = expected.source === 'confirmed' ? 'confirmed' : pattern.treated === 'seasonal' ? 'last_year' : 'low';
+    const sameMonth = source === 'last_year' ? (sameCalendarMonth(months, currentYm) as { month: string }).month : null;
+    raw.push({
+      code: 'income_from_expected',
+      values: { month: currentYm, amount: expected.amount, source, ...(sameMonth === null ? {} : { sameMonth }) },
+    });
+  }
+  if (seasonMonth !== null) {
+    raw.push({ code: 'same_season_compared', values: { lastYear: seasonMonth.month, everyday: seasonMonth.everyday } });
+  }
   if (reasonSet.has('income_kind_unmarked')) raw.push({ code: 'income_kind_unmarked', values: {} });
   if (inputs.unsavedWrites > 0) raw.push({ code: 'unsaved_changes', values: { count: inputs.unsavedWrites } });
   const notices = NOTICE_ORDER.flatMap((code) => raw.filter((n) => n.code === code));
@@ -116,7 +188,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     setAside: tm.setAside,
     monthLeft: tm.monthLeft,
     e: typical.e,
-    typicalIncome: ti.amount,
+    typicalIncome: typical.typicalIncome,
     recurringBills: typical.recurringBills,
     typicalLeft: typical.typicalLeft,
     low: typical.low,
@@ -127,5 +199,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     confidence,
     notices,
     reasons: [...reasonSet].sort(),
+    incomePicture,
+    ...(income.unseenPay === undefined ? {} : { unseenPay: income.unseenPay }), // D-58
   };
 }
