@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [x] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3) (completed 2026-10-16)
 - [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged with Decide hidden behind "Coming soon" until 05.1-05.3)
-- [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (32/32 plans executed 2026-10-26; gap closure pending) (completed 2026-10-27)
+- [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (50/50 plans executed: 32 on 2026-10-26, gap closure 05.1-33..50 on 2026-10-27; owner sign-off 2026-10-27; phase verification pending)
 - [ ] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - The Calm Ledger screens in the current theme; old Decide screens removed at cutover
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
@@ -927,7 +927,7 @@ Gap closure (planned 2026-10-26 against 05.1-CONTEXT D-33..D-45, 05.1-VERIFICATI
 - [x] 05.1-47-PLAN.md — Back-test: honest gig and seasonal histories, per-family I28 gate, D-48 ask rate (D-40, D-47, D-48); D-50/D-52 rates; D-61 (wave 9)
 - [x] 05.1-48-PLAN.md — Seasonal, gig and volatile golden fixtures with the working shown (D-33..D-39, D-46, D-48); D-49/D-50/D-52 cases; D-54..D-60 cases (wave 9)
 - [x] 05.1-50-PLAN.md — Volatile income: say so and ask; yes fits on the user's word, no is not_yet with futures (D-48) (wave 8)
-- [ ] 05.1-49-PLAN.md — Shadow and back-test re-run, owner re-review of changed entries, sign-off, full gate (D-45, checkpoint); D-49..D-53 effects, not-ready shadow bucket; D-54..D-61 review (wave 10)
+- [x] 05.1-49-PLAN.md — Shadow and back-test re-run, owner re-review of changed entries, sign-off, full gate (D-45, checkpoint); D-49..D-53 effects, not-ready shadow bucket; D-54..D-61 review (wave 10)
 
 ### Phase 05.2: Decide data and setup (INSERTED)
 
