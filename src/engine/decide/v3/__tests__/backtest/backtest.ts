@@ -4,8 +4,18 @@
  * At each origin month the person is cut off at the 3rd of that month, a price ladder is judged by v3 (evaluate) and by
  * today's engine (oldAnswer, 'month' basis), and the held-out month's true leftover says whether a "fits" was false.
  * Test-only. Synthetic data only (T-05.1-61): nothing here reads a real person or a real log.
+ *
+ * D-40: variable earners state their pattern, carry 24-30 months, and their pay series is the latest logged pay. No figure
+ * is tuned to a band.
+ * D-52: each origin carries the held-out month's own lines dated on or before the cut-off as the current, not-full month,
+ * the way a user who keeps records current would, so a well-kept record is ready. Identical for every family.
+ * D-50: each origin's unspent anchor is the engine's own suggested figure at the cut-off (the user confirms the app's sum),
+ * so a well-kept record has no unexplained money. Identical for every family.
+ * D-54: persons are built through toV3Inputs, so every account states a use by the adapter rule (05.1-35); no account
+ * with an unstated use is added.
  */
 import * as fc from 'fast-check';
+import type { IncomeProfile } from '../../types';
 import { addYearMonths } from '../../dates';
 import { evaluate } from '../../evaluate';
 import { buildMonthModel } from '../../month/model';
@@ -57,7 +67,7 @@ function build(family: Family, index: number, s: Spec): History {
   let k = 0;
   const draw = (): number => (s.noise[k++ % s.noise.length] ?? 0) / 10_000; // 0..1
   const spread = (centre: number, pct: number): number => Math.round(centre * (1 + ((draw() * 2 - 1) * pct) / 100));
-  const n = family === 'new_user' ? 4 : s.n;
+  const n = family === 'new_user' ? 4 : variable ? s.n + 12 : s.n; // D-40: 24..30 months for variable earners
   const pay = family === 'couple' ? s.pay + Math.round(s.pay * 0.7) : s.pay;
   const rent = Math.round((pay * s.rentPct) / 100);
   const utils = Math.round((pay * s.utilsPct) / 100);
@@ -65,14 +75,11 @@ function build(family: Family, index: number, s: Spec): History {
   const everydayBase = Math.round((pay * s.everydayPct) / 100);
   const id = `bt-${family}-${index}`;
   const variable = family === 'gig' || family === 'seasonal';
-  const payFigure = variable ? Math.round(pay * (family === 'gig' ? 0.6 : 0.62)) : pay; // a variable earner states a lean-month expected pay
   const series: FixtureSeries[] = [
     { id: `${id}-rent`, name: 'Rent', role: 'bill', cadence: { unit: 'month', every: 1 }, anchorDate: `${BASE}-01`, amount: rent, isHousing: true },
     { id: `${id}-utils`, name: 'Utilities', role: 'bill', cadence: { unit: 'month', every: 1 }, anchorDate: `${BASE}-15`, amount: utils },
     { id: `${id}-save`, name: 'Saving', role: 'saving', cadence: { unit: 'month', every: 1 }, anchorDate: `${BASE}-05`, amount: save, savingMode: 'fixed' },
   ];
-  series.unshift({ id: `${id}-pay`, name: 'Pay', role: 'pay', cadence: { unit: 'month', every: 1 }, anchorDate: `${BASE}-01`, amount: payFigure });
-
   const months: FixtureMonth[] = [];
   const truth: { month: string; left: number }[] = [];
   for (let i = 0; i < n; i++) {
@@ -107,13 +114,22 @@ function build(family: Family, index: number, s: Spec): History {
     months.push({ month: ym, full: true, mark: null, lines });
     truth.push({ month: ym, left: income - rent - utils - save - everyday - big });
   }
+  // D-40: the pay series amount is the latest logged pay (the snapshot's latestAmount rule).
+  const lastIncome = months[months.length - 1]?.lines.find((l) => l.role === 'income')?.amount ?? pay;
+  series.unshift({ id: `${id}-pay`, name: 'Pay', role: 'pay', cadence: { unit: 'month', every: 1 }, anchorDate: `${BASE}-01`, amount: variable ? lastIncome : pay });
+  const profile: IncomeProfile | null =
+    family === 'gig'
+      ? { types: ['freelance'], variable: 'match', steady: null, billsHorizonMonths: null, pattern: 'variable' }
+      : family === 'seasonal'
+        ? { types: ['salary'], variable: null, steady: null, billsHorizonMonths: null, pattern: 'seasonal' }
+        : null;
   const person: FixturePerson = {
     id,
     currency: 'USD',
     asOf: `${addYearMonths(BASE, n)}-03`,
     months,
     series,
-    profile: null,
+    profile,
     rough: null,
     balance: pay * 3,
     unspent: null,
@@ -136,20 +152,26 @@ export function histories(): readonly History[] {
   return out;
 }
 
-/** The person as of the 3rd of month `origin` (months before it only), with an unspent anchor of a tenth of a typical income. */
+/**
+ * The person as of the 3rd of month `origin`. D-52: the held-out month's own lines dated on or before the cut-off are
+ * carried as the current, not-full month. D-50: the unspent anchor is the engine's own suggested figure at the cut-off.
+ */
 export function heldOut(h: History, origin: number): { person: FixturePerson; actualLeft: number } {
-  const month = h.person.months[origin]?.month ?? '';
+  const cur = h.person.months[origin];
+  const month = cur?.month ?? '';
   const at = `${month}-03`;
   const prior = h.person.months.slice(0, origin);
-  const income = prior.reduce((a, m) => a + m.lines.filter((l) => l.role === 'income').reduce((x, l) => x + l.amount, 0), 0) / Math.max(1, prior.length);
+  const months: FixtureMonth[] = [...prior, { month, full: false, mark: null, lines: (cur?.lines ?? []).filter((l) => l.date <= at) }];
+  const bare: FixturePerson = { ...h.person, asOf: at, months, unspent: null };
+  const suggested = Number(evaluate(toV3Inputs(bare), toCheckV2(purchaseOf(1000, h.share))).funds.suggested);
   return {
-    person: { ...h.person, asOf: at, months: prior, unspent: { amount: Math.round(income * 0.1), at } },
+    person: { ...bare, unspent: { amount: suggested, at } },
     actualLeft: h.truth[origin]?.left ?? 0,
   };
 }
 
 export function originsOf(h: History): number[] {
-  const first = h.family === 'new_user' ? 3 : 7;
+  const first = h.family === 'new_user' ? 3 : h.family === 'gig' || h.family === 'seasonal' ? 12 : 7;
   const out: number[] = [];
   for (let o = first; o <= h.person.months.length - 1; o++) out.push(o);
   return out;
@@ -163,8 +185,15 @@ export interface Counts {
   months: number;
   belowLow: number;
   withLow: number;
+  evaluations: number;
+  notReady: number;
+  unexplainedAsked: number;
+  accountAsked: number;
+  payAsked: number;
+  probes: number;
+  asked: number;
 }
-const zero = (): Counts => ({ fitsV3: 0, falseV3: 0, fitsOld: 0, falseOld: 0, months: 0, belowLow: 0, withLow: 0 });
+const zero = (): Counts => ({ fitsV3: 0, falseV3: 0, fitsOld: 0, falseOld: 0, months: 0, belowLow: 0, withLow: 0, evaluations: 0, notReady: 0, unexplainedAsked: 0, accountAsked: 0, payAsked: 0, probes: 0, asked: 0 });
 
 function purchaseOf(price: number, share: FixturePurchase['share']): FixturePurchase {
   return {
@@ -205,7 +234,14 @@ export function runBacktest(): { overall: Counts; byFamily: Record<Family, Count
         const purchase = purchaseOf(price, h.share);
         const ev = evaluate(inputs, toCheckV2(purchase));
         const code = ev.result.code;
-        if (code === 'fits_month' || code === 'fits_unspent') {
+        c.evaluations += 1;
+        if (ev.result.readiness?.ready === false) c.notReady += 1;
+        if (ev.result.missing.includes('unexplained_money_question')) c.unexplainedAsked += 1;
+        if (ev.result.missing.includes('account_use_question')) c.accountAsked += 1;
+        if (ev.result.missing.includes('pay_arrival_question')) c.payAsked += 1;
+        // D-52: a not-ready result is never a fits, so it can never be a false fit.
+        const ready = ev.result.readiness?.ready !== false;
+        if (ready && (code === 'fits_month' || code === 'fits_unspent')) {
           c.fitsV3 += 1;
           const unspent = code === 'fits_unspent' ? Number(ev.funds.unspent?.value ?? 0) : 0;
           if (actualLeft + unspent - mine < 0) c.falseV3 += 1;
@@ -216,6 +252,27 @@ export function runBacktest(): { overall: Counts; byFamily: Record<Family, Count
           if (actualLeft - mine < 0) c.falseOld += 1;
         }
       }
+      // D-48: a question is not a fits; asking is reported, not gated. One 12-month monthly plan at 50% of the base.
+      const payment = Math.round(base / 2);
+      const planPurchase: FixturePurchase = {
+        ...purchaseOf(payment * 12, h.share),
+        pay: {
+          mode: 'plan',
+          cadence: { unit: 'month', every: 1 },
+          count: 12,
+          termMonths: null,
+          aprText: '0',
+          fees: { setup: 0, perPeriod: 0, end: 0 },
+          deposit: 0,
+          tradeIn: 0,
+          quotedPayment: null,
+          firstPayment: { kind: 'one_period' },
+          deferredInterestTerm: false,
+        },
+      };
+      const planEv = evaluate(inputs, toCheckV2(planPurchase));
+      c.probes += 1;
+      if (planEv.result.missing.includes('volatile_cover_question')) c.asked += 1;
     }
   }
   const overall = zero();
