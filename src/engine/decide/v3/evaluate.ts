@@ -9,6 +9,7 @@ import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from '
 import { buildCashPathV3, cashCheck, nextPayDate, type CashCheck } from './cash/path';
 import { addDays, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
+import { readinessOf } from './readiness';
 import { judge } from './judge/judge';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
 import { buildMonthModel } from './month/model';
@@ -126,11 +127,17 @@ export function stricterOf(a: Evaluation, b: Evaluation): Evaluation {
   return { ...pick, result: { ...pick.result, reasons, confidence: { level: lowest.level, reasons: confidenceReasons } } };
 }
 
+/**
+ * D-52: a not-ready result is not a verdict; consumers check readiness first. Readiness is read from the inputs as
+ * given (never from the all-full reading) and never changes the code, the split or any figure.
+ */
 export function evaluate(inputs: V3Inputs, check: CheckV2): Evaluation {
   const ym = yearMonthOf(inputs.asOf);
   const thin = inputs.months.some((m) => m.month < ym && !m.full);
-  if (!thin) return evaluateOnce(inputs, check);
   const a = evaluateOnce(inputs, check);
-  const b = evaluateOnce({ ...inputs, months: inputs.months.map((m) => (m.month < ym ? { ...m, full: true } : m)) }, check);
-  return stricterOf(a, b);
+  const readiness = readinessOf(inputs, a.month);
+  const chosen = thin
+    ? stricterOf(a, evaluateOnce({ ...inputs, months: inputs.months.map((m) => (m.month < ym ? { ...m, full: true } : m)) }, check))
+    : a;
+  return { ...chosen, result: { ...chosen.result, readiness } };
 }
