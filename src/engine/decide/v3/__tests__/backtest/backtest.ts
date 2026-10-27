@@ -67,6 +67,7 @@ function build(family: Family, index: number, s: Spec): History {
   let k = 0;
   const draw = (): number => (s.noise[k++ % s.noise.length] ?? 0) / 10_000; // 0..1
   const spread = (centre: number, pct: number): number => Math.round(centre * (1 + ((draw() * 2 - 1) * pct) / 100));
+  const variable = family === 'gig' || family === 'seasonal';
   const n = family === 'new_user' ? 4 : variable ? s.n + 12 : s.n; // D-40: 24..30 months for variable earners
   const pay = family === 'couple' ? s.pay + Math.round(s.pay * 0.7) : s.pay;
   const rent = Math.round((pay * s.rentPct) / 100);
@@ -74,7 +75,6 @@ function build(family: Family, index: number, s: Spec): History {
   const save = Math.round((pay * s.savePct) / 100);
   const everydayBase = Math.round((pay * s.everydayPct) / 100);
   const id = `bt-${family}-${index}`;
-  const variable = family === 'gig' || family === 'seasonal';
   const series: FixtureSeries[] = [
     { id: `${id}-rent`, name: 'Rent', role: 'bill', cadence: { unit: 'month', every: 1 }, anchorDate: `${BASE}-01`, amount: rent, isHousing: true },
     { id: `${id}-utils`, name: 'Utilities', role: 'bill', cadence: { unit: 'month', every: 1 }, anchorDate: `${BASE}-15`, amount: utils },
