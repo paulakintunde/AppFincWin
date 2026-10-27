@@ -3,7 +3,7 @@
  * Never imports recurring/detect: a series reaches here only after the user confirmed it.
  */
 import { minorUnits, type MinorUnits } from '../../../money/types';
-import { addYearMonths, cadenceDatesBetween, yearMonthOf } from '../dates';
+import { addDays, addYearMonths, cadenceDatesBetween, yearMonthOf } from '../dates';
 import { SERIES_DRIFT_DIVISOR, SERIES_DRIFT_LAST } from '../constants';
 import type { Cadence, SeriesRole, V3Line, V3Month, V3Series, YearMonth } from '../types';
 
@@ -27,7 +27,19 @@ export function seriesIndex(series: readonly V3Series[]): ReadonlyMap<string, V3
   return map;
 }
 
-/** Confirmed, not dismissed, and not past its end date on `onDate` (D-21, D-25, I34). */
+/**
+ * D-41: ended with no end date = ended as of today. Nothing from today on counts; logged payments before it stay in history.
+ * An explicit end date always wins.
+ */
+export function effectiveEnd(s: V3Series, today: string): string | null {
+  return s.status === 'ended' && s.endDate === null ? addDays(today, -1) : s.endDate;
+}
+
+/**
+ * Confirmed, not dismissed, and not past its end date on `onDate` (D-21, D-25, I34).
+ * This classifies logged lines, which stay in history. Future occurrences must go through
+ * liveSeriesOf / seriesOccurrences with `today` (D-41).
+ */
 export function isCounting(s: V3Series, onDate: string): boolean {
   return s.confirmed && s.status !== 'dismissed' && (s.endDate === null || onDate <= s.endDate);
 }
@@ -71,15 +83,33 @@ export function classifyLine(line: V3Line, index: ReadonlyMap<string, V3Series>)
   }
 }
 
-/** Dates of a series in [fromInclusive, toExclusive); none for unconfirmed or dismissed; capped at endDate. */
-export function seriesOccurrences(s: V3Series, fromInclusive: string, toExclusive: string): readonly string[] {
+/**
+ * Dates of a series in [fromInclusive, toExclusive); none for unconfirmed or dismissed; capped at endDate.
+ * With `today`, an ended series with no end date is capped at the day before today (D-41).
+ */
+export function seriesOccurrences(
+  s: V3Series,
+  fromInclusive: string,
+  toExclusive: string,
+  today?: string,
+): readonly string[] {
   if (!s.confirmed || s.status === 'dismissed') return [];
-  return cadenceDatesBetween(s.anchorDate, s.cadence, fromInclusive, toExclusive, s.endDate);
+  const end = today === undefined ? s.endDate : effectiveEnd(s, today);
+  return cadenceDatesBetween(s.anchorDate, s.cadence, fromInclusive, toExclusive, end);
 }
 
-/** Series of one role that still run on asOf. */
-export function liveSeriesOf(series: readonly V3Series[], asOf: string, role: SeriesRole): readonly V3Series[] {
-  return series.filter((s) => s.role === role && isCounting(s, asOf));
+/** Series of one role that still run on `onDate` (D-41: `today` decides when an open-ended 'ended' series stopped). */
+export function liveSeriesOf(
+  series: readonly V3Series[],
+  onDate: string,
+  role: SeriesRole,
+  today: string = onDate,
+): readonly V3Series[] {
+  return series.filter((s) => {
+    if (s.role !== role || !s.confirmed || s.status === 'dismissed') return false;
+    const end = effectiveEnd(s, today);
+    return end === null || onDate <= end;
+  });
 }
 
 /** Payments a year as a fraction num/den: week 52/every, month 12/every. */
@@ -108,7 +138,7 @@ export function seriesDrift(series: readonly V3Series[], months: readonly V3Mont
   const out: SeriesDrift[] = [];
   for (const s of series) {
     if (!s.confirmed || s.status === 'dismissed') continue;
-    const lines = (paid.get(s.id) ?? []).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+    const lines = (paid.get(s.id) ?? []).slice().sort((a, b) => (a.date !== b.date ? (a.date < b.date ? -1 : 1) : a.id < b.id ? -1 : 1));
     if (lines.length < SERIES_DRIFT_LAST) continue;
     const last = lines.slice(-SERIES_DRIFT_LAST);
     const baseAbs = BigInt(Math.abs(s.amount));
