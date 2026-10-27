@@ -11,9 +11,23 @@ const month = {
   recurringBills: mu(120000),
   setAside: mu(30000),
   billsDue: mu(80000),
+  e: mu(40000),
 } as unknown as MonthModel;
 
 describe('explore', () => {
+  test('L-04 everydayCut is clamped to E and sets clamped', () => {
+    const r = explore({ month, flexibleSaving: mu(0), levers: { everydayCut: mu(999999), flexibleSavingCut: mu(0) }, price: mu(1000), unspent: mu(0) });
+    expect(r.typicalLeft).toBe(82500);
+    expect(r.clamped).toBe(true);
+  });
+
+  test('L-04 unknown E gives no everyday lever', () => {
+    const noE = { ...month, e: null } as unknown as MonthModel;
+    const r = explore({ month: noE, flexibleSaving: mu(0), levers: { everydayCut: mu(500), flexibleSavingCut: mu(0) }, price: mu(1000), unspent: mu(0) });
+    expect(r.typicalLeft).toBe(42500);
+    expect(r.clamped).toBe(true);
+  });
+
   test('everydayCut raises typicalLeft by exactly the cut and moves buyLater earlier or equal', () => {
     const base = explore({
       month,

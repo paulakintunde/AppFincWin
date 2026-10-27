@@ -108,6 +108,15 @@ describe('detectCandidates', () => {
   });
 });
 
+describe('L-05 month-end anchor', () => {
+  test('L-05 rows on 31 Dec, 31 Jan, 28 Feb anchor on the 31st', () => {
+    const rows = ['2025-12-31', '2026-01-31', '2026-02-28'].map((d) => row(d, -5000, { name: 'Rent' }));
+    const out = detectCandidates(rows, EMPTY);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.anchorDate).toBe('2026-01-31');
+  });
+});
+
 describe('detectCandidates edge cases', () => {
   it('gaps that fit no cadence window offer nothing', () => {
     expect(detectCandidates(everyDays('2025-01-03', 20, 4), EMPTY)).toEqual([]);

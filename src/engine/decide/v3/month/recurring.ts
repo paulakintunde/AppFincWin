@@ -141,12 +141,18 @@ function candidateFrom(
   const median = lowerMedian(amounts);
   if (!amountsWithinTolerance(amounts, median)) return null;
   const last = rows[rows.length - 1] as DetectRow;
+  // L-05: month-end bills keep their day (31 Dec, 31 Jan, 28 Feb anchor on the 31st, not the 28th)
+  let anchorDate = last.date;
+  if (cadence.unit === 'month') {
+    const maxDay = Math.max(...rows.map((r) => dayOfMonth(r.date)));
+    anchorDate = (rows.filter((r) => dayOfMonth(r.date) === maxDay).pop() as DetectRow).date;
+  }
   return {
     key: group.key,
     name: last.name,
     direction: group.direction,
     cadence,
-    anchorDate: last.date,
+    anchorDate,
     amount: minorUnits(Math.abs(median)),
     rowIds: rows.map((r) => r.id),
     payGroupKey,
