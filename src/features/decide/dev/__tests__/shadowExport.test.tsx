@@ -2,7 +2,7 @@ import { render } from '@testing-library/react-native';
 import { DevSettings } from 'react-native';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { SnapshotSource } from '../../snapshot/buildSnapshot';
-import { ShadowExportDevMenu } from '../ShadowExportDevMenu';
+import { ShadowExportDevMenu, resetDevMenuRegistration } from '../ShadowExportDevMenu';
 import { parseShadowSource, serializeShadowSource } from '../shadowExport';
 
 jest.mock('expo-file-system', () => ({ File: jest.fn(), Paths: { document: 'doc' } }));
@@ -59,6 +59,7 @@ describe('shadowExport', () => {
 describe('ShadowExportDevMenu', () => {
   const g = globalThis as unknown as { __DEV__: boolean };
   const original = g.__DEV__;
+  beforeEach(() => resetDevMenuRegistration());
   afterEach(() => {
     g.__DEV__ = original;
     jest.restoreAllMocks();
@@ -77,5 +78,18 @@ describe('ShadowExportDevMenu', () => {
     const add = jest.spyOn(DevSettings, 'addMenuItem').mockImplementation(() => undefined);
     await render(<ShadowExportDevMenu />);
     expect(add).toHaveBeenCalledTimes(1);
+  });
+
+  it('L-08: mounting twice registers the menu item once, and the handler logs when the snapshot is not ready', async () => {
+    g.__DEV__ = true;
+    const add = jest.spyOn(DevSettings, 'addMenuItem').mockImplementation(() => undefined);
+    const log = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    const first = await render(<ShadowExportDevMenu />);
+    await first.unmount();
+    await render(<ShadowExportDevMenu />);
+    expect(add).toHaveBeenCalledTimes(1);
+    const handler = add.mock.calls[0]![1] as () => void;
+    handler();
+    expect(log).toHaveBeenCalledWith('Decide shadow export: the snapshot is not ready yet');
   });
 });

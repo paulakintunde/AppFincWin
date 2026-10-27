@@ -13,6 +13,8 @@ import {
   validateCustomOptions,
   V3_ITEM_TYPES,
   MAX_OWN_LINES,
+  MAX_CUSTOM_OPTIONS,
+  type AccountUse,
   type Cadence,
   type CountsAs,
   type CustomOptions,
@@ -29,6 +31,7 @@ import {
   type RoughFigures,
   type SeriesRole,
   type UsdRate,
+  type V3Account,
   type V3Debt,
   type V3Inputs,
   type V3Line,
@@ -48,6 +51,7 @@ import type { V3SeriesExtra, V3SettingsSource } from './types';
 type Obj = Record<string, unknown>;
 
 const NO_EXTRA: V3SeriesExtra = { pay_group: null, counts_as: null, income_kind: null, saving_mode: null, typical_choice: null, status: null };
+const EMPTY_LISTS = { itemTypes: [], purposes: [], cadences: [], incomeKinds: [] } as const satisfies CustomOptions;
 const EMPTY_CUSTOM: CustomOptions = { itemTypes: [], purposes: [], cadences: [], incomeKinds: [] };
 const INCOME_TYPES: readonly string[] = ['salary', 'commission', 'freelance', 'none', 'mix'];
 const VARIABLE_METHODS: readonly string[] = ['match', 'spread', 'steady', 'balance'];
@@ -69,6 +73,8 @@ const isRec = (x: unknown): x is Obj => typeof x === 'object' && x !== null && !
 const list = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
 const str = (x: unknown): string | null => (typeof x === 'string' && x !== '' ? x : null);
 const moneyOf = (x: unknown): number | null => (typeof x === 'number' && Number.isSafeInteger(x) && x >= 0 && x <= MAX_ABS_AMOUNT_MINOR ? x : null);
+/** M-07: the unspent figure is signed (overdrawn, card owed). Only the bounds apply. */
+const signedMoneyOf = (x: unknown): number | null => (typeof x === 'number' && Number.isSafeInteger(x) && Math.abs(x) <= MAX_ABS_AMOUNT_MINOR ? x : null);
 const dateOf = (x: unknown): string | null => (typeof x === 'string' && DATE_PATTERN.test(x) ? x : null);
 const pctOf = (x: unknown) => (typeof x === 'string' && DSR_PATTERN.test(x) && Number(x) <= MAX_LINE_PERCENT ? percent(x) : null);
 const inList = (xs: readonly string[], x: unknown): x is string => typeof x === 'string' && xs.includes(x);
@@ -126,33 +132,46 @@ function cadenceOf(x: unknown): Cadence | null {
   return (unit === 'week' || unit === 'month') && typeof every === 'number' && Number.isInteger(every) ? { unit, every } : null;
 }
 
+/** M-09: keep an entry only when the list so far plus the entry validates; so one bad entry drops itself, a duplicate id drops the later one, and each list stops at MAX_CUSTOM_OPTIONS. */
+function keepValid<T>(candidates: readonly T[], wrap: (xs: readonly T[]) => CustomOptions): T[] {
+  const kept: T[] = [];
+  for (const c of candidates) {
+    if (kept.length >= MAX_CUSTOM_OPTIONS) break;
+    if (validateCustomOptions(wrap([...kept, c])).length === 0) kept.push(c);
+  }
+  return kept;
+}
+
 function customOf(x: unknown): CustomOptions {
   if (!isRec(x)) return EMPTY_CUSTOM;
-  const out: CustomOptions = {
-    itemTypes: list(x.itemTypes).flatMap((t) => {
-      if (!isRec(t)) return [];
-      const id = str(t.id);
-      if (id === null || !inList(V3_ITEM_TYPES, t.base)) return [];
-      const ownQuestions = list(t.ownQuestions).flatMap((q) => {
-        const qid = isRec(q) ? str(q.id) : null;
-        const label = isRec(q) && typeof q.label === 'string' ? q.label : null;
-        if (qid === null || label === null || !isRec(q) || !inList(OWN_CADENCES, q.cadence) || typeof q.cash !== 'boolean') return [];
-        return [{ id: qid, label, cadence: q.cadence as 'monthly' | 'yearly' | 'one_off', cash: q.cash }];
-      });
-      return [{ id, base: t.base as V3PresetItemType, questionIds: list(t.questionIds).filter((q): q is string => typeof q === 'string'), ownQuestions }];
-    }),
-    purposes: list(x.purposes).flatMap((p) => (isRec(p) && str(p.id) !== null ? [{ id: p.id as string }] : [])),
-    cadences: list(x.cadences).flatMap((c) => {
-      const cad = cadenceOf(c);
-      return cad === null ? [] : [cad];
-    }),
-    incomeKinds: list(x.incomeKinds).flatMap((k) => {
-      if (!isRec(k) || str(k.id) === null) return [];
-      const countsAs: CountsAs = k.countsAs === 'available' || k.countsAs === 'kept' ? k.countsAs : null;
-      return [{ id: k.id as string, countsAs }];
-    }),
+  const itemTypes: CustomOptions['itemTypes'][number][] = list(x.itemTypes).flatMap((t) => {
+    if (!isRec(t)) return [];
+    const id = str(t.id);
+    if (id === null || !inList(V3_ITEM_TYPES, t.base)) return [];
+    const ownQuestions = list(t.ownQuestions).flatMap((q) => {
+      const qid = isRec(q) ? str(q.id) : null;
+      const label = isRec(q) && typeof q.label === 'string' ? q.label : null;
+      if (qid === null || label === null || !isRec(q) || !inList(OWN_CADENCES, q.cadence) || typeof q.cash !== 'boolean') return [];
+      return [{ id: qid, label, cadence: q.cadence as 'monthly' | 'yearly' | 'one_off', cash: q.cash }];
+    });
+    return [{ id, base: t.base as V3PresetItemType, questionIds: list(t.questionIds).filter((q): q is string => typeof q === 'string'), ownQuestions }];
+  });
+  const purposes = list(x.purposes).flatMap((p) => (isRec(p) && str(p.id) !== null ? [{ id: p.id as string }] : []));
+  const cadences = list(x.cadences).flatMap((c) => {
+    const cad = cadenceOf(c);
+    return cad === null ? [] : [cad];
+  });
+  const incomeKinds = list(x.incomeKinds).flatMap((k) => {
+    if (!isRec(k) || str(k.id) === null) return [];
+    const countsAs: CountsAs = k.countsAs === 'available' || k.countsAs === 'kept' ? k.countsAs : null;
+    return [{ id: k.id as string, countsAs }];
+  });
+  return {
+    itemTypes: keepValid(itemTypes, (xs) => ({ ...EMPTY_LISTS, itemTypes: xs })),
+    purposes: keepValid(purposes, (xs) => ({ ...EMPTY_LISTS, purposes: xs })),
+    cadences: keepValid(cadences, (xs) => ({ ...EMPTY_LISTS, cadences: xs })),
+    incomeKinds: keepValid(incomeKinds, (xs) => ({ ...EMPTY_LISTS, incomeKinds: xs })),
   };
-  return validateCustomOptions(out).length === 0 ? out : EMPTY_CUSTOM;
 }
 
 function profileOf(v3: V3SettingsSource | null): IncomeProfile | null {
@@ -164,6 +183,8 @@ function profileOf(v3: V3SettingsSource | null): IncomeProfile | null {
     variable: inList(VARIABLE_METHODS, v3.variable_method) ? (v3.variable_method as VariableMethod) : null,
     steady: steady === null ? null : minorUnits(steady),
     billsHorizonMonths: hold === 1 || hold === 2 || hold === 3 ? hold : null,
+    pattern: null, // 05.2 stores this (05.2-OWNER-NOTES, D-34)
+    patternConfirmed: false, // 05.2 stores this (D-34)
   };
 }
 
@@ -192,7 +213,12 @@ function usdRateOf(source: SnapshotSource, home: string): UsdRate | null {
  * Builds the v3 engine inputs from today's snapshot source. `v3` null = nothing set up yet (the v3 defaults and the
  * needs-input rules apply, S9). `built` lets computeV3 pass a snapshot it already built (one parse, one conversion).
  */
-export function buildV3Inputs(source: SnapshotSource, v3: V3SettingsSource | null, built: SnapshotResult = buildDecideSnapshot(source)): V3Inputs {
+export function buildV3Inputs(
+  source: SnapshotSource,
+  v3: V3SettingsSource | null,
+  built: SnapshotResult = buildDecideSnapshot(source),
+  uses: Readonly<Record<string, AccountUse>> = {} // D-54: no stored account use exists yet (05.2 stores it); until then every use is null
+): V3Inputs {
   const { today, homeCurrency: home } = source;
   const thresholds: HomeThresholds = homeThresholds(home, usdRateOf(source, home));
   const accountKind = new Map(source.accounts.map((a) => [a.id, a.kind as string]));
@@ -247,7 +273,20 @@ export function buildV3Inputs(source: SnapshotSource, v3: V3SettingsSource | nul
 
   let months: V3Month[] = [];
   let debts: V3Debt[] = [];
-  const envelopes: Envelope[] = (built.pots ?? []).map((p) => ({ ...p, purposeId: null }));
+  // D-54: the account an envelope's latest goal-tagged leg lands in; null when it has none.
+  const landing = new Map<string, Row>();
+  for (const r of source.rows) {
+    if (r.deleted_at !== null || r.transfer_id === null || r.goal_id == null || r.original_amount <= 0) continue;
+    const prev = landing.get(r.goal_id);
+    if (prev === undefined || r.local_date >= prev.local_date) landing.set(r.goal_id, r);
+  }
+  const envelopes: Envelope[] = (built.pots ?? []).map((p) => ({ ...p, purposeId: null, accountId: landing.get(p.id)?.account_id ?? null }));
+  const toHome = makeConverter({ home, rates: source.rates, customs: source.customCurrencies, today }).toHome;
+  const accounts: V3Account[] = source.accounts.flatMap((a) => {
+    if (a.deleted_at !== null || a.archived_at !== null) return [];
+    const balance = toHome(source.balances[a.id] ?? 0, a.currency);
+    return balance === null ? [] : [{ id: a.id, balance: minorUnits(balance), use: uses[a.id] ?? null }];
+  });
   let rough: RoughFigures | null = null;
   let provisionalRates = (built.provisional ?? null) !== null;
 
@@ -274,22 +313,32 @@ export function buildV3Inputs(source: SnapshotSource, v3: V3SettingsSource | nul
     }
 
     // ── lines ──
+    const anyUse = Object.keys(uses).length > 0;
+    const counts = (id: string | undefined): boolean => {
+      const u = id === undefined ? undefined : uses[id];
+      return u !== undefined && (u.kind === 'everyday' || u.kind === 'mixed');
+    };
     const roleOf = (line: (typeof snap.months)[number]['lines'][number]): LineRole => {
       if (line.transferId === null) return line.direction === 'out' ? 'spending' : line.isRefund ? 'refund' : 'income';
-      const row = rowById.get(line.id) as NonNullable<ReturnType<typeof rowById.get>>;
-      const partner = (legsOf.get(line.transferId) as Row[]).find((r) => r.id !== row.id);
+      const row = rowById.get(line.id);
+      if (row === undefined) return 'own_transfer'; // L-09: a leg whose row is gone is ignored
+      const partner = (legsOf.get(line.transferId) ?? []).find((r) => r.id !== row.id);
       const out = line.direction === 'out';
       const mine = kindOf(row.account_id);
       const theirs = partner === undefined ? '' : kindOf(partner.account_id);
       const fromKind = out ? mine : theirs;
       const toKind = out ? theirs : mine;
+      const fromId = out ? row.account_id : partner?.account_id;
+      const toId = out ? partner?.account_id : row.account_id;
       const tagged = isLiveGoal(row.goal_id) || isLiveGoal(partner?.goal_id);
-      const fromSpending = SPENDING_KINDS.includes(fromKind);
-      const toSpending = SPENDING_KINDS.includes(toKind);
+      // M-06: stated uses decide what counts; with none stated the account kinds do.
+      const fromSpending = anyUse ? counts(fromId) : SPENDING_KINDS.includes(fromKind);
+      const toSpending = anyUse ? counts(toId) : SPENDING_KINDS.includes(toKind);
       if (out && fromSpending && !toSpending) {
         if (tagged) return 'envelope_deposit'; // D-22 stand-in: money into a pot or goal
-        if (SAVED_KINDS.includes(toKind)) return 'saved_invested';
-        return DEBT_KINDS.includes(toKind) ? 'debt_payment' : 'other_out';
+        if (DEBT_KINDS.includes(toKind)) return 'debt_payment';
+        if ((anyUse && partner !== undefined) || SAVED_KINDS.includes(toKind)) return 'saved_invested';
+        return 'other_out';
       }
       if (!out && toSpending && !fromSpending) return tagged ? 'envelope_withdrawal' : 'other_in';
       return 'own_transfer';
@@ -316,6 +365,7 @@ export function buildV3Inputs(source: SnapshotSource, v3: V3SettingsSource | nul
               seriesId: l.seriesId,
               categoryId: l.categoryId,
               coversMonths: null,
+              source: rowById.get(l.id)?.import_batch_id ? 'statement' : 'manual', // D-51
               expected: false,
               incomeKind: null,
               countsAs: role === 'income' && s !== undefined ? s.countsAs : null,
@@ -355,7 +405,7 @@ export function buildV3Inputs(source: SnapshotSource, v3: V3SettingsSource | nul
   // ── funds ──
   const st = source.settings;
   const reserve = st === null || (st.currency !== null && st.currency !== home) ? null : moneyOf(st.reserve);
-  const anchorAmount = moneyOf(v3?.unspent_anchor);
+  const anchorAmount = signedMoneyOf(v3?.unspent_anchor);
   const anchorAt = dateOf(v3?.unspent_anchor_at);
   const everyday = moneyOf(v3?.everyday_override);
 
@@ -370,13 +420,18 @@ export function buildV3Inputs(source: SnapshotSource, v3: V3SettingsSource | nul
     rough,
     balance: built.cash,
     unspent: anchorAmount === null || anchorAt === null ? null : { amount: minorUnits(anchorAmount), at: anchorAt },
-    emergency: reserve === null ? null : { amount: minorUnits(reserve) },
+    emergency: reserve === null ? null : { amount: minorUnits(reserve), accountId: v3?.reserve_account_id ?? null },
     envelopes,
     debts,
     everydayOverride: everyday === null ? null : minorUnits(everyday),
     limits: limitsOf(v3, legacyLimits(st)),
     custom: customOf(v3?.custom_options),
     thresholds,
+    accounts,
+    unexplainedAnswer: null, // 05.2 stores the D-50 answer
+    payArrivals: [], // 05.2 stores this (D-58)
+    expectedIncome: [], // 05.2 stores this (05.2-OWNER-NOTES, D-35)
+    heldBridges: [], // 05.2 stores this (05.2-OWNER-NOTES, D-38)
     unsavedWrites: 0,
     provisionalRates,
   };

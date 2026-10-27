@@ -3,6 +3,7 @@
 // stay false and the switch is read only in decideEngine() (D-15). Barrel imports only (the v3 engine barrel).
 import {
   changeSinceLooked,
+  type AccountUse,
   evaluate,
   readStoredCheck,
   type ChangeReason,
@@ -38,9 +39,9 @@ function checkOf(storedInputs: unknown, source: SnapshotSource, built: SnapshotR
   return { ...check, price: null, foreign: { currency: currencyCode(view.unconverted.currencies[0] as string), atTodaysRate: true } };
 }
 
-export function computeV3(source: SnapshotSource, v3: V3SettingsSource | null, storedInputs: unknown): Evaluation {
+export function computeV3(source: SnapshotSource, v3: V3SettingsSource | null, storedInputs: unknown, uses?: Readonly<Record<string, AccountUse>>): Evaluation {
   const built = buildDecideSnapshot(source);
-  return evaluate(buildV3Inputs(source, v3, built), checkOf(storedInputs, source, built));
+  return evaluate(buildV3Inputs(source, v3, built, uses), checkOf(storedInputs, source, built));
 }
 
 // S9: three thin names for 05.3 to call; each is the same function, so the same check gives the same Result everywhere.

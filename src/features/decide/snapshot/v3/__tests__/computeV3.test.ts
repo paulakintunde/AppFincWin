@@ -1,8 +1,9 @@
 import type { FxLatestRow } from '@/db/rows';
-import { readStoredCheck, seenOf, toStoredV2 } from '@/engine/decide/v3';
+import { readStoredCheck, seenOf, toStoredV2, type AccountUse } from '@/engine/decide/v3';
 import { carInputs, demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
 import { emptyCheckInputs } from '../../checkInputs';
 import type { SnapshotSource } from '../../buildSnapshot';
+import { buildV3Inputs } from '../buildV3Inputs';
 import { computeV3, reanswerSaved, resultForCheck, resultForHome, resultForSavedPlan } from '../computeV3';
 import { v3s } from './v3Fixtures';
 
@@ -36,8 +37,21 @@ describe('computeV3 (S9: one Result)', () => {
     expect(fromV2.reasons).not.toContain('legacy_upgraded');
   });
 
-  it('with nothing set up the demo sofa needs input (S9 defaults) and never throws', () => {
-    expect(computeV3(source(), null, sofaInputs).result.code).toBe('needs_input');
+  it('D-54: with nothing set up the demo sofa needs input and every account use is null (D-54, D-59)', () => {
+    const r = computeV3(source(), null, sofaInputs).result;
+    expect(r.code).toBe('needs_input');
+    // The engine emits account_use_question from 05.1-44 (it is not in evaluate yet). Until then the snapshot's side of D-54 is
+    // checked: every account reaches the engine with use null, so none is counted.
+    expect(buildV3Inputs(source(), null).accounts!.every((a) => a.use === null)).toBe(true);
+  });
+
+  it('D-54: once every account use is stated that question is gone', () => {
+    const uses: Record<string, AccountUse> = Object.fromEntries(source().accounts.map((a) => [a.id, { kind: 'everyday' } as AccountUse]));
+    const settings = v3s({ income_types: ['salary'], unspent_anchor: 300000, unspent_anchor_at: '2026-10-01' });
+    const r = computeV3(source(), settings, sofaInputs, uses).result;
+    expect(r.missing).not.toContain('account_use_question');
+    expect(r.missing[0]).not.toBe('account_use_question');
+    expect(typeof r.code).toBe('string');
   });
 
   it('D-22 stand-in: a post-anchor goal deposit lowers unspent money by exactly the amount, a withdrawal restores it', () => {
