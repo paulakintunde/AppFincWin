@@ -39,6 +39,14 @@ describe('presetQuestions', () => {
     expect(questionSpec('fuel_monthly')?.cash).toBe(true);
   });
 
+  it('M-08 roles: trade_in credits, sales_tax and deposit are modelled elsewhere, the rest cost', () => {
+    expect(questionSpec('trade_in')?.role).toBe('credit');
+    expect(questionSpec('sales_tax')?.role).toBe('modelled_elsewhere');
+    expect(questionSpec('deposit')?.role).toBe('modelled_elsewhere');
+    expect(questionSpec('dealer_fees')?.role).toBe('cost');
+    expect(QUESTION_LIBRARY.filter((s) => s.role !== 'cost')).toHaveLength(3);
+  });
+
   it('is frozen', () => {
     expect(Object.isFrozen(PRESET_QUESTIONS)).toBe(true);
     expect(Object.isFrozen(PRESET_QUESTIONS.vehicle)).toBe(true);

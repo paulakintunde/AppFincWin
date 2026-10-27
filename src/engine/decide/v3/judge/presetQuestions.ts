@@ -13,10 +13,17 @@ export interface QuestionSpec {
   readonly cadence: 'monthly' | 'yearly' | 'one_off' | 'none';
   readonly cash: boolean;
   readonly answer: 'amount' | 'yes_no' | 'date';
+  /** M-08: 'cost' adds to day one, 'credit' lowers it, 'modelled_elsewhere' is never added (another field models it). */
+  readonly role: 'cost' | 'credit' | 'modelled_elsewhere';
 }
 
-const q = (id: string, cadence: QuestionSpec['cadence'], answer: QuestionSpec['answer'] = 'amount', cash = true): QuestionSpec =>
-  Object.freeze({ id, cadence, cash, answer });
+const q = (
+  id: string,
+  cadence: QuestionSpec['cadence'],
+  answer: QuestionSpec['answer'] = 'amount',
+  cash = true,
+  role: QuestionSpec['role'] = 'cost'
+): QuestionSpec => Object.freeze({ id, cadence, cash, answer, role });
 
 // Cite: v3 §5.3 table (REBUILD-PLAN-v3). Categories only; loss_of_value is the one non-cash question (seeded from runningCostPrompts.ts).
 export const QUESTION_LIBRARY: readonly QuestionSpec[] = Object.freeze([
@@ -25,10 +32,11 @@ export const QUESTION_LIBRARY: readonly QuestionSpec[] = Object.freeze([
   q('maintenance_yearly', 'yearly'),
   q('registration_yearly', 'yearly'),
   q('loss_of_value', 'yearly', 'amount', false),
-  q('sales_tax', 'one_off'),
+  // Cite: M-08: modelled by CheckV2.taxPercent and PayV2.deposit; the UI routes these answers there (I36).
+  q('sales_tax', 'one_off', 'amount', true, 'modelled_elsewhere'),
   q('dealer_fees', 'one_off'),
-  q('trade_in', 'one_off'),
-  q('deposit', 'one_off'),
+  q('trade_in', 'one_off', 'amount', true, 'credit'),
+  q('deposit', 'one_off', 'amount', true, 'modelled_elsewhere'),
   q('property_tax_yearly', 'yearly'),
   q('home_insurance', 'yearly'),
   q('utilities_change', 'monthly'),

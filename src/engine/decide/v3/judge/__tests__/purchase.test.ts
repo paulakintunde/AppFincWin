@@ -90,6 +90,42 @@ describe('buildPurchase', () => {
       expect(p.dayOne - base.dayOne).toBe(30000);
       expect(p.whole).toBe(base.whole);
     });
+    describe('M-08 question roles', () => {
+      const vehicle = { kind: 'preset', value: 'vehicle' } as const;
+      const planPay = { count: 12, apr: percent('0'), firstPayment: { kind: 'one_period' } } as const;
+      it('M-08 a typed trade-in lowers day one (once)', () => {
+        const p = must(checkOnce(2_000_000, { itemType: vehicle, extras: { trade_in: mu(500_000) } })).purchase;
+        expect(p.dayOne).toBe(1_500_000);
+      });
+      it('M-08 a trade-in larger than the price floors day one at 0 (once)', () => {
+        const p = must(checkOnce(100_000, { itemType: vehicle, extras: { trade_in: mu(500_000) } })).purchase;
+        expect(p.dayOne).toBe(0);
+      });
+      it('M-08 a typed trade-in lowers upfront on a plan without pay.tradeIn, flooring at 0', () => {
+        const base = must(checkPlan(1_200_000, { ...planPay, deposit: mu(300_000) }, { itemType: vehicle })).purchase;
+        const less = must(checkPlan(1_200_000, { ...planPay, deposit: mu(300_000) }, { itemType: vehicle, extras: { trade_in: mu(100_000) } })).purchase;
+        expect(base.dayOne - less.dayOne).toBe(100_000);
+        const floor = must(checkPlan(1_200_000, { ...planPay, deposit: mu(300_000) }, { itemType: vehicle, extras: { trade_in: mu(9_000_000) } })).purchase;
+        expect(floor.dayOne).toBe(0);
+      });
+      it('M-08 a typed trade-in is ignored when the plan already carries pay.tradeIn', () => {
+        const pay = { ...planPay, deposit: mu(300_000), tradeIn: mu(500_000) };
+        const base = must(checkPlan(2_000_000, pay, { itemType: vehicle })).purchase;
+        const withExtra = must(checkPlan(2_000_000, pay, { itemType: vehicle, extras: { trade_in: mu(500_000) } })).purchase;
+        expect(withExtra.dayOne).toBe(base.dayOne);
+        expect(withExtra.schedule?.financed).toBe(base.schedule?.financed);
+      });
+      it('M-08 a plan deposit and trade-in larger than the whole value finance nothing', () => {
+        const b = build(checkPlan(100_000, { ...planPay, deposit: mu(80_000), tradeIn: mu(80_000) }, { itemType: vehicle }));
+        expect(b.purchase?.schedule?.financed ?? 0).toBe(0);
+      });
+      it('M-08 sales_tax and deposit answers change nothing (modelled elsewhere)', () => {
+        const base = must(checkOnce(2_000_000, { itemType: vehicle })).purchase;
+        const p = must(checkOnce(2_000_000, { itemType: vehicle, extras: { sales_tax: mu(100), deposit: mu(100) } })).purchase;
+        expect(p.dayOne).toBe(base.dayOne);
+        expect(p.monthly).toBe(base.monthly);
+      });
+    });
     it('unknown ids are ignored; nothing is invented', () => {
       const base = must(checkOnce(50000)).purchase;
       const p = must(checkOnce(50000, { extras: { nonsense: mu(5000) } })).purchase;
@@ -141,6 +177,12 @@ describe('buildPurchase', () => {
   });
 
   describe('D-04 / D-24 missing facts', () => {
+    it('L-01 a deferred first payment before asOf asks for a new date, not exceeds_range', () => {
+      const b = build(checkPlan(120000, { count: 12, apr: percent('9.9'), firstPayment: { kind: 'deferred', firstDate: '2026-09-01', interestDuringPause: false } }));
+      expect(b.purchase).toBeNull();
+      expect(b.missing).toEqual(['first_payment_passed']);
+      expect(b.reasons).not.toContain('exceeds_range');
+    });
     const ok = { count: 12, apr: percent('0'), firstPayment: today };
     it('no first payment', () => {
       expect(build(checkPlan(120000, { ...ok, firstPayment: null })).missing).toEqual(['first_payment_not_chosen']);

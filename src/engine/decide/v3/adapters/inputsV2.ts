@@ -5,13 +5,14 @@
 import { minorUnits, type CurrencyCode, type MinorUnits } from '../../../money/types';
 import { RATE_SCALE } from '../../../money/rates';
 import { PERCENT_SCALE, type Percent } from '../../../payoff/types';
+import { isValidLocalDate } from '../dates';
+import { layerOfAnswerKey } from '../judge/bands';
 import { V3_ITEM_TYPES } from '../judge/presetQuestions';
 import type { Cadence, CheckV2, FirstPayment, ItemTypeRef, PayV2, PresetPurpose, Purpose, ReasonCode, V3PresetItemType } from '../types';
 import type { ShareScope, SplitRule } from '../../share';
 import { intIn, isRecord, minorOf, percentOf, upgradeInputs } from './legacy';
 
 const PURPOSES: readonly PresetPurpose[] = ['invest_in_me', 'for_work', 'necessity', 'nice_to_have', 'treat', 'luxury'];
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const CURRENCY = /^[A-Z0-9]{2,4}$/;
 const MAX_ID = 80;
 const MAX_EXTRAS = 50;
@@ -60,10 +61,25 @@ function firstPaymentOf(x: unknown): FirstPayment | null {
   if (!isRecord(x)) return null;
   if (x.kind === 'today') return { kind: 'today' };
   if (x.kind === 'one_period') return { kind: 'one_period' };
-  if (x.kind === 'deferred' && typeof x.firstDate === 'string' && DATE.test(x.firstDate)) {
+  if (x.kind === 'deferred' && typeof x.firstDate === 'string' && isValidLocalDate(x.firstDate)) {
     return { kind: 'deferred', firstDate: x.firstDate, interestDuringPause: typeof x.interestDuringPause === 'boolean' ? x.interestDuringPause : null };
   }
   return null;
+}
+
+/** L-02: keep only keys that carry a layer prefix, so a stray stored key never crashes a reader. */
+function layerAnswersOf(x: unknown): Readonly<Record<string, unknown>> {
+  if (!isRecord(x)) return {};
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(x)) {
+    try {
+      layerOfAnswerKey(k);
+    } catch {
+      continue; // layerOfAnswerKey throws only RangeError, for a key with no layer prefix
+    }
+    out[k] = v;
+  }
+  return out;
 }
 
 function payOf(x: unknown): PayV2 {
@@ -136,7 +152,8 @@ export function parseCheckV2(json: unknown): CheckV2 | null {
     },
     share: shareOf(json.share),
     foreign,
-    layerAnswers: isRecord(json.layerAnswers) ? json.layerAnswers : {},
+    layerAnswers: layerAnswersOf(json.layerAnswers),
+    volatileCover: typeof json.volatileCover === 'boolean' ? json.volatileCover : null,
   };
 }
 
