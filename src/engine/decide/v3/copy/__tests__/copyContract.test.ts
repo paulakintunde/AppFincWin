@@ -34,21 +34,8 @@ import {
 
 const mu = minorUnits;
 
-/** Codes whose emitter has not landed yet. Each owning plan removes its codes (05.1-43, -46, -50); the list ends empty. emergency_used left in 05.1-44 (D-63): golden #11 Leo, an emergency-marked work purchase, is in the corpus and emits it. */
-const NOT_YET_EMITTED: readonly string[] = [
-  'lean_bridge',
-  'unspent_held_back',
-  'lean_months_judged',
-  'low_month_judged',
-  'income_volatile',
-  'rests_on_your_answer',
-  'envelope_location_assumed',
-  'unexplained_money',
-  'account_use_unknown',
-  'pay_not_seen',
-  'pay_counted_missed',
-  'fund_account_unknown',
-];
+/** Codes whose emitter has not landed yet. Only the two D-48 codes remain; 05.1-50 removes them and the list ends empty. emergency_used left in 05.1-44 (D-63): golden #11 Leo, an emergency-marked work purchase, is in the corpus and emits it. */
+const NOT_YET_EMITTED: readonly string[] = ['income_volatile', 'rests_on_your_answer'];
 
 interface Emitted {
   readonly group: 'fact' | 'notice';
@@ -194,6 +181,35 @@ function buildCorpus(): Emitted[] {
   // D-46: the pay series is set at the high-season amount; asOf is in a lean month, so January's pay is capped at the expected 70,000.
   const highPay = v3Series({ id: 'gig', role: 'pay', cadence: { unit: 'month', every: 1 }, anchorDate: '2025-01-01', amount: 145_000 });
   collect(out, gig('seasonal', { series: [highPay] }), checkOnce(10_000)); // pay_capped_expected
+  // D-46: a payment the lean months cannot carry on their own, paid for from unspent money (lean_bridge, lean_months_judged),
+  // and the same for a variable earner against the low month (low_month_judged).
+  // The current month has its pay and a month of spending logged, so nothing else is asked first.
+  const decMonth = monthOf(
+    '2026-12',
+    [
+      v3Line({ id: 'gp-2026-12', date: '2026-12-01', amount: 70_000, role: 'income', seriesId: 'gig' }),
+      v3Line({ id: 'ge-2026-12', date: '2026-12-08', amount: 30_000 }),
+    ],
+    { full: false }
+  );
+  const rich = { unspent: { amount: mu(5_000_000), at: '2026-12-10' }, months: [...gigMonths, decMonth] } as const;
+  const bigPlan = checkPlan(600_000, { count: 12, apr: percent('0'), firstPayment: { kind: 'one_period' } });
+  collect(out, gig('seasonal', rich), bigPlan);
+  collect(out, gig('variable', { ...rich, months: [...gigMonths.slice(2), decMonth] }), bigPlan);
+  // D-38, D-46: money held back for an earlier plan.
+  collect(out, { ...sam, heldBridges: [{ id: 'bridge-1', amount: mu(50_000) }] }, checkOnce(10_000));
+  // D-54, D-62: an account with no stated use; a fund linked to no account.
+  collect(out, { ...sam, accounts: [{ id: 'acc-1', balance: mu(1_307_500), use: null }] }, checkOnce(10_000));
+  collect(out, { ...sam, accounts: [{ id: 'acc-1', balance: mu(1_307_500), use: { kind: 'everyday' } }], emergency: { amount: mu(900_000) } }, checkOnce(10_000));
+  // D-50: more money than the records explain (the confirmed figure sits far below the suggested one).
+  collect(out, { ...sam, unspent: { amount: mu(1_000), at: '2026-10-03' } }, checkOnce(10_000));
+  // D-58: this month's pay has not shown up; then the answer "not yet".
+  const noPay = (b: V3Inputs): V3Inputs => ({
+    ...b,
+    months: b.months.map((m): V3Month => (m.month === '2026-10' ? { ...m, lines: m.lines.filter((l) => l.role !== 'income') } : m)),
+  });
+  collect(out, noPay(sam), checkOnce(10_000));
+  collect(out, { ...noPay(sam), payArrivals: [{ seriesId: 'sam-pay', date: '2026-10-01', arrived: false }] }, checkOnce(10_000));
   return out;
 }
 
