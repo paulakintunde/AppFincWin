@@ -1,5 +1,6 @@
 import type { FxLatestRow } from '@/db/rows';
-import { MAX_OWN_LINES } from '@/engine/decide/v3';
+import { MAX_OWN_LINES, type AccountUse } from '@/engine/decide/v3';
+import { MAX_ABS_AMOUNT_MINOR } from '@/engine/money';
 import { demoSource } from '../../../__tests__/helpers/demoScenario';
 import type { SnapshotSource } from '../../buildSnapshot';
 import { buildDecideSnapshot } from '../../buildSnapshot';
@@ -130,7 +131,7 @@ describe('buildV3Inputs: line roles', () => {
     expect(lineOf(src, 'dep-in')!.role).toBe('own_transfer');
     expect(lineOf(src, 'wd-in')!.role).toBe('envelope_withdrawal');
     expect(lineOf(src, 'old-out')!.role).toBe('saved_invested'); // a done goal counts as saving again
-    expect(inputs.envelopes).toEqual([{ id: 'g1', kind: 'pot', target: 90000, monthlyAmount: 5000, readyBy: '2027-03-01', saved: 17000, purposeId: null }]);
+    expect(inputs.envelopes).toEqual([{ id: 'g1', kind: 'pot', target: 90000, monthlyAmount: 5000, readyBy: '2027-03-01', saved: 17000, purposeId: null, accountId: SAVINGS }]);
   });
 });
 
@@ -205,14 +206,14 @@ describe('buildV3Inputs: v3 settings', () => {
       src,
       v3s({ income_types: ['salary', 'bogus'], variable_method: 'spread', steady_amount: 300000, hold_months: 2, unspent_anchor: 120000, unspent_anchor_at: '2026-10-01', everyday_override: 50000, month_marks: { [month]: 'half', '2020-01': 'x' } })
     );
-    expect(good.profile).toEqual({ types: ['salary'], variable: 'spread', steady: 300000, billsHorizonMonths: 2 });
+    expect(good.profile).toEqual({ types: ['salary'], variable: 'spread', steady: 300000, billsHorizonMonths: 2, pattern: null, patternConfirmed: false });
     expect(good.unspent).toEqual({ amount: 120000, at: '2026-10-01' });
     expect(good.everydayOverride).toBe(50000);
     expect(good.months.find((m) => m.month === month)!.mark).toBe('half');
     expect(good.months.filter((m) => m.mark !== null)).toHaveLength(1);
 
     const bad = buildV3Inputs(src, v3s({ income_types: [], variable_method: 'x', steady_amount: -1, hold_months: 7, unspent_anchor: 1.5, unspent_anchor_at: 'soon', everyday_override: Number.NaN, month_marks: { [month]: 'weird' } }));
-    expect(bad.profile).toEqual({ types: [], variable: null, steady: null, billsHorizonMonths: null });
+    expect(bad.profile).toEqual({ types: [], variable: null, steady: null, billsHorizonMonths: null, pattern: null, patternConfirmed: false });
     expect(bad.unspent).toBeNull();
     expect(bad.everydayOverride).toBeNull();
     expect(bad.months.every((m) => m.mark === null)).toBe(true);
@@ -222,8 +223,9 @@ describe('buildV3Inputs: v3 settings', () => {
 
   it('emergency comes from the reserve, only in the home currency and only when valid', () => {
     const withReserve = (reserve: number | null, currency: string | null) => ({ ...src, settings: { ...src.settings!, reserve, currency } });
-    expect(buildV3Inputs(withReserve(500000, null), null).emergency).toEqual({ amount: 500000 });
-    expect(buildV3Inputs(withReserve(500000, 'USD'), null).emergency).toEqual({ amount: 500000 });
+    expect(buildV3Inputs(withReserve(500000, null), null).emergency).toEqual({ amount: 500000, accountId: null });
+    expect(buildV3Inputs(withReserve(500000, 'USD'), null).emergency).toEqual({ amount: 500000, accountId: null });
+    expect(buildV3Inputs(withReserve(500000, 'USD'), v3s({ reserve_account_id: SAVINGS })).emergency).toEqual({ amount: 500000, accountId: SAVINGS }); // D-54
     expect(buildV3Inputs(withReserve(500000, 'EUR'), null).emergency).toBeNull();
     expect(buildV3Inputs(withReserve(-5, null), null).emergency).toBeNull();
     expect(buildV3Inputs({ ...src, settings: null }, null).emergency).toBeNull();
@@ -292,7 +294,7 @@ describe('buildV3Inputs: v3 settings', () => {
     for (const q of [{ id: '', label: 'a', cadence: 'yearly', cash: true }, { id: 'a', label: 3, cadence: 'yearly', cash: true }, { id: 'a', label: 'a', cadence: 'daily', cash: true }, { id: 'a', label: 'a', cadence: 'yearly', cash: 'yes' }, 'junk']) {
       expect(buildV3Inputs(src, v3s({ custom_options: own(q) })).custom.itemTypes[0]!.ownQuestions).toEqual([]);
     }
-    expect(buildV3Inputs(src, v3s({ custom_options: { purposes: [{ id: 'dup' }, { id: 'dup' }] } })).custom.purposes).toEqual([]);
+    expect(buildV3Inputs(src, v3s({ custom_options: { purposes: [{ id: 'dup' }, { id: 'dup' }] } })).custom.purposes).toEqual([{ id: 'dup' }]);
     expect(buildV3Inputs(src, v3s({ custom_options: 'nope' })).custom.purposes).toEqual([]);
   });
 });
@@ -357,5 +359,115 @@ describe('buildV3Inputs: thresholds and other snapshot kinds', () => {
     const base = demoSource(TODAY);
     const src = { ...base, debts: base.debts.map((d) => (d.id === 'demo-debt-0' ? { ...d, is_housing: true } : d)) };
     expect(buildV3Inputs(src, null).debts.find((d) => d.id === 'demo-debt-0')!.isHousing).toBe(true);
+  });
+});
+
+describe('buildV3Inputs: M-07 signed unspent anchor', () => {
+  const src = demoSource(TODAY);
+  const anchor = (n: number) => buildV3Inputs(src, v3s({ unspent_anchor: n, unspent_anchor_at: '2026-10-01' })).unspent;
+  it('M-07: an overdrawn figure reaches the engine; out-of-range and fractional ones do not', () => {
+    expect(anchor(-150000)).toEqual({ amount: -150000, at: '2026-10-01' });
+    expect(anchor(-MAX_ABS_AMOUNT_MINOR - 1)).toBeNull();
+    expect(anchor(1.5)).toBeNull();
+  });
+});
+
+describe('buildV3Inputs: M-09 one bad custom option drops only itself', () => {
+  const src = demoSource(TODAY);
+  const custom = (o: unknown) => buildV3Inputs(src, v3s({ custom_options: o })).custom;
+  it('M-09: a bad item type leaves the other item types, purposes, cadences and income kinds', () => {
+    const good = { id: 'a', base: 'general', questionIds: [], ownQuestions: [] };
+    const bad = { id: 'b', base: 'general', questionIds: [], ownQuestions: [{ id: 'q', label: '  ', cadence: 'yearly', cash: true }] };
+    const c = custom({ itemTypes: [good, bad, { ...good, id: 'c' }], purposes: [{ id: 'p' }], cadences: [{ unit: 'week', every: 2 }], incomeKinds: [{ id: 'k', countsAs: 'kept' }] });
+    expect(c.itemTypes.map((t) => t.id)).toEqual(['a', 'c']);
+    expect(c.purposes).toEqual([{ id: 'p' }]);
+    expect(c.cadences).toHaveLength(1);
+    expect(c.incomeKinds).toHaveLength(1);
+  });
+  it('M-09: each list is cut to ten; an out-of-range cadence and a later duplicate id are dropped alone', () => {
+    const twelve = Array.from({ length: 12 }, (_, i) => ({ id: `p${i}` }));
+    expect(custom({ purposes: twelve }).purposes.map((p) => p.id)).toEqual(twelve.slice(0, 10).map((p) => p.id));
+    expect(custom({ cadences: [{ unit: 'month', every: 13 }, { unit: 'month', every: 2 }] }).cadences).toEqual([{ unit: 'month', every: 2 }]);
+    expect(custom({ incomeKinds: [{ id: 'k', countsAs: 'kept' }, { id: 'k', countsAs: 'available' }] }).incomeKinds).toEqual([{ id: 'k', countsAs: 'kept' }]);
+  });
+});
+
+describe('buildV3Inputs: L-09 transfer lines never throw', () => {
+  it('L-09: a transfer line whose row is missing is an own transfer', () => {
+    const src = withRows(pair('t-gone', EVERYDAY, SAVINGS, 1000));
+    const built = buildDecideSnapshot(src);
+    const lost = { ...src, rows: src.rows.filter((r) => !String(r.id).startsWith('t-gone')) };
+    const lines = buildV3Inputs(lost, null, built).months.flatMap((m) => m.lines);
+    expect(lines.find((l) => l.id === 't-gone-out')!.role).toBe('own_transfer');
+  });
+  it('L-09: a leg with no transfer legs entry does not throw and reads as an unpaired leg', () => {
+    const src = withRows(pair('t-del', EVERYDAY, SAVINGS, 1000));
+    const built = buildDecideSnapshot(src);
+    const dead = { ...src, rows: src.rows.map((r) => (String(r.id).startsWith('t-del') ? { ...r, deleted_at: '2026-10-02T00:00:00Z' } : r)) };
+    const lines = buildV3Inputs(dead, null, built).months.flatMap((m) => m.lines);
+    expect(lines.find((l) => l.id === 't-del-out')!.role).toBe('other_out');
+  });
+});
+
+describe('buildV3Inputs: new inputs, accounts and sources (D-54, D-51, M-06)', () => {
+  const src = demoSource(TODAY);
+  it('maps the new engine inputs explicitly', () => {
+    const inputs = buildV3Inputs(src, null);
+    expect(inputs.expectedIncome).toEqual([]);
+    expect(inputs.heldBridges).toEqual([]);
+    expect(inputs.payArrivals).toEqual([]);
+    expect(inputs.unexplainedAnswer).toBeNull();
+    expect(buildV3Inputs(src, v3s({ income_types: ['salary'] })).profile).toMatchObject({ pattern: null, patternConfirmed: false });
+  });
+
+  it('D-54: every live account is listed with its home balance and use null; archived and deleted ones are not', () => {
+    const base = demoSource(TODAY);
+    const archived = { ...base.accounts[0]!, id: 'zz-arch', archived_at: '2026-01-01T00:00:00Z' };
+    const deleted = { ...base.accounts[0]!, id: 'zz-del', deleted_at: '2026-01-01T00:00:00Z' };
+    const foreign = { ...base.accounts[0]!, id: 'zz-xyz', currency: 'XYZ' };
+    const inputs = buildV3Inputs({ ...base, accounts: [...base.accounts, archived, deleted, foreign], balances: { ...base.balances, 'zz-xyz': 5 } }, null);
+    expect(inputs.accounts!.map((a) => a.id)).toEqual(base.accounts.map((a) => a.id));
+    expect(inputs.accounts!.every((a) => a.use === null)).toBe(true);
+    expect(inputs.accounts!.find((a) => a.id === SAVINGS)!.balance).toBe(base.balances[SAVINGS]);
+    expect(buildV3Inputs({ ...base, balances: {} }, null).accounts!.every((a) => a.balance === 0)).toBe(true);
+  });
+
+  it('D-54: an envelope with no tagged leg has accountId null; the latest tagged leg decides', () => {
+    const goal = (id: string): SnapshotSource['goals'][number] => ({ id, kind: 'pot', check_id: null, currency: 'USD', target: 90000, monthly_amount: 5000, ready_by: '2027-03-01', opening_saved: 0, done_at: null, deleted_at: null });
+    const s = withRows(
+      [
+        ...pair('d1', EVERYDAY, SAVINGS, 100, { in: { goal_id: 'g1', local_date: '2026-09-02' } }),
+        ...pair('d2', EVERYDAY, CASH, 100, { in: { goal_id: 'g1', local_date: '2026-10-02' } }),
+        ...pair('d3', SAVINGS, CASH, 100, { out: { goal_id: 'g1' } }),
+      ],
+      { ...demoSource(TODAY), goals: [goal('g1'), goal('g2')] }
+    );
+    const env = buildV3Inputs(s, null).envelopes;
+    expect(env.find((e) => e.id === 'g1')!.accountId).toBe(CASH);
+    expect(env.find((e) => e.id === 'g2')!.accountId).toBeNull();
+  });
+
+  it('M-06: with stated uses, counted to counted is an own transfer; counted to untouched is saved; tagged is a deposit; back is other_in', () => {
+    const goals: SnapshotSource['goals'] = [{ id: 'g1', kind: 'pot', check_id: null, currency: 'USD', target: null, monthly_amount: null, ready_by: null, opening_saved: 0, done_at: null, deleted_at: null }];
+    const src2 = withRows([...pair('u1', EVERYDAY, CASH, 1000), ...pair('u2', EVERYDAY, SAVINGS, 2000), ...pair('u3', SAVINGS, EVERYDAY, 500), ...pair('u4', EVERYDAY, CARD, 700), ...pair('u5', EVERYDAY, SAVINGS, 300, { in: { goal_id: 'g1' } })], { ...demoSource(TODAY), goals });
+    const uses = { [EVERYDAY]: { kind: 'everyday' as const }, [CASH]: { kind: 'mixed' as const, extraSetAside: null }, [SAVINGS]: { kind: 'untouched' as const } };
+    const rolesWith = (u: Record<string, AccountUse>) => buildV3Inputs(src2, null, undefined, u).months.flatMap((m) => m.lines);
+    const role = (u: Record<string, AccountUse>, id: string) => rolesWith(u).find((l) => l.id === id)!.role;
+    expect(role(uses, 'u1-out')).toBe('own_transfer');
+    expect(role(uses, 'u2-out')).toBe('saved_invested');
+    expect(role(uses, 'u3-in')).toBe('other_in');
+    expect(role(uses, 'u4-out')).toBe('debt_payment');
+    expect(role(uses, 'u5-out')).toBe('envelope_deposit');
+    expect(buildV3Inputs(src2, null, undefined, uses).accounts!.find((a) => a.id === SAVINGS)!.use).toEqual({ kind: 'untouched' });
+    expect(role({ [EVERYDAY]: { kind: 'everyday' }, [SAVINGS]: { kind: 'everyday' } }, 'u2-out')).toBe('own_transfer');
+    expect(role({ [EVERYDAY]: { kind: 'everyday' } }, 'u2-out')).toBe('saved_invested');
+    expect(role({ [EVERYDAY]: { kind: 'everyday' }, [SAVINGS]: { kind: 'dedicated', purpose: { kind: 'emergency' } } }, 'u3-in')).toBe('other_in');
+  });
+
+  it('D-51: a line is a statement line when its row has an import batch, else manual', () => {
+    const s = withRows([mk('imp', EVERYDAY, -100, { import_batch_id: 'b1' }), mk('man', EVERYDAY, -100), mk('nul', EVERYDAY, -100, { import_batch_id: null })]);
+    expect(lineOf(s, 'imp')!.source).toBe('statement');
+    expect(lineOf(s, 'man')!.source).toBe('manual');
+    expect(lineOf(s, 'nul')!.source).toBe('manual');
   });
 });
