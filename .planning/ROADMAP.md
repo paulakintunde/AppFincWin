@@ -961,8 +961,8 @@ The old Decide screens are removed after cutover.
 **Success Criteria** (what must be TRUE):
   1. Quick, full and home surfaces show the same answer code, and no screen holds contradictory claims.
   2. Every screen passes 320 and 402 px at 1.0 and 2.0 font scale and TalkBack, with no numbers breaking across lines.
-  3. A 5-person reading test passes before and after, with at least 2 people who have irregular income or low savings.
-  4. `decideV3` is on for everyone, and the old engine paths and screens are deleted with coverage kept at 100%.
+  3. `decideV3` is on for everyone (after the owner signs off a Pixel walkthrough on the test accounts); switching back shows "Coming soon" (05.3-CONTEXT D-02, D-04). The reading test was skipped by the owner (D-05).
+  4. The old engine paths and screens stay unused for 2 weeks, then a follow-up change deletes them with coverage kept at 100% (D-01, D-03).
 **Plans:** 0 plans
 
 Plans:
