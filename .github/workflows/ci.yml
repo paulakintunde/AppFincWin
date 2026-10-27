@@ -54,8 +54,12 @@ jobs:
       # same CLI and Postgres image locally and in CI. Bump both together.
       - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v1.7.3 (v1)
         with: { version: 2.117.0 }
+      # setup-cli points image pulls at ghcr.io, which rate-limits shared
+      # runners ("toomanyrequests"); pull from the CLI's default public ECR instead.
       - run: supabase db start
+        env: { SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws }
       - run: supabase test db
+        env: { SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws }
   deno:
     name: deno
     runs-on: ubuntu-latest
