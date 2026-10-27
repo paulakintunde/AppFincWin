@@ -228,6 +228,7 @@ describe('unspentState', () => {
       roll: { value: mu(over.value ?? 100000), breakdown: zero, rolled: false },
       suggested: mu(over.suggested ?? 100000),
       driftThreshold: mu(over.thr ?? 20000),
+      heldBridges: [],
     });
 
   test('I35 stale', () => {
@@ -252,13 +253,53 @@ describe('unspentState', () => {
   });
 
   test('no roll falls back to the anchor amount, not rolled', () => {
-    const s = unspentState({ anchor: anchor(300000, '2026-10-01'), asOf: '2026-10-01', roll: null, suggested: mu(300000), driftThreshold: mu(20000) });
+    const s = unspentState({ anchor: anchor(300000, '2026-10-01'), asOf: '2026-10-01', roll: null, suggested: mu(300000), driftThreshold: mu(20000), heldBridges: [] });
     expect(s?.value).toBe(300000);
     expect(s?.rolled).toBe(false);
   });
 
   test('null anchor gives null', () => {
-    expect(unspentState({ anchor: null, asOf: '2026-10-01', roll: null, suggested: mu(0), driftThreshold: mu(0) })).toBeNull();
+    expect(unspentState({ anchor: null, asOf: '2026-10-01', roll: null, suggested: mu(0), driftThreshold: mu(0), heldBridges: [] })).toBeNull();
+  });
+
+  describe('held-back bridges (D-38)', () => {
+    const bridged = (list: { id: string; amount: number }[], value = 240000, suggested = 240000) =>
+      unspentState({
+        anchor: anchor(value, '2026-10-01'),
+        asOf: '2026-10-01',
+        roll: { value: mu(value), breakdown: zero, rolled: false },
+        suggested: mu(suggested),
+        driftThreshold: mu(20000),
+        heldBridges: list.map((b) => ({ id: b.id, amount: b.amount as never })), // raw numbers: some are deliberately invalid
+      });
+
+    test('D-38 no bridges: available equals value and heldBack is 0', () => {
+      const s = bridged([]);
+      expect(s?.available).toBe(240000);
+      expect(s?.breakdown.heldBack).toBe(0);
+      expect(s?.drifted).toBe(false);
+    });
+
+    test('D-38 bridges are subtracted and shown as their own line', () => {
+      const s = bridged([{ id: 'a', amount: 30000 }, { id: 'b', amount: 20000 }]);
+      expect(s?.available).toBe(190000);
+      expect(s?.breakdown.heldBack).toBe(50000);
+      expect(s?.value).toBe(240000);
+    });
+
+    test('D-38 bridges larger than the value give a negative available', () => {
+      expect(bridged([{ id: 'a', amount: 300000 }])?.available).toBe(-60000);
+    });
+
+    test('D-38 invalid amounts are ignored and duplicate ids count once', () => {
+      const s = bridged([{ id: 'a', amount: -5 }, { id: 'b', amount: 1.5 }, { id: 'c', amount: 10000 }, { id: 'c', amount: 99999 }]);
+      expect(s?.breakdown.heldBack).toBe(10000);
+      expect(s?.available).toBe(230000);
+    });
+
+    test('D-38 drift reads the confirmed figure, not the available one', () => {
+      expect(bridged([{ id: 'a', amount: 200000 }])?.drifted).toBe(false);
+    });
   });
 
   test('D-30 value never replaced; typed above suggested is used as given', () => {

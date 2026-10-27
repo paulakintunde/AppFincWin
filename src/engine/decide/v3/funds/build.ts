@@ -90,6 +90,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
     roll,
     suggested,
     driftThreshold: inputs.thresholds.unspentDrift,
+    heldBridges: inputs.heldBridges ?? [],
   });
   return {
     balance: inputs.balance,
