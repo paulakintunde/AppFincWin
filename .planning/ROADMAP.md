@@ -873,7 +873,7 @@ It is built beside the Phase 4/5 engine behind a `decideV3` switch, and compared
   4. Payment plans (weekly, every 2 weeks, monthly) work from a rate or APR and fees, with an optional quoted payment.
   5. One judge gives six codes with one sentence each, and its funding split. "What could I do instead?" compares the payment stream, with a fixed-rate deposit at the user's own rate.
   6. Invariants I1–I43 pass, branch coverage stays at 100%, and the shadow run against the old engine is reviewed.
-**Plans:** 34/50 plans executed
+**Plans:** 37/50 plans executed
 
 Plans:
 - [x] 05.1-01-PLAN.md — v3 contract types, cited constants, own barrel, isolation and depcruise gates (S0)
@@ -911,10 +911,10 @@ Plans:
 
 Gap closure (planned 2026-10-26 against 05.1-CONTEXT D-33..D-45, 05.1-VERIFICATION gaps 1-6 and 05.1-REVIEW H-01..H-03, M-01..M-09, L-01..L-09): 18 plans in 10 waves (revised for D-43a, D-46, D-47, D-48 and the plan-checker warnings).
 - [x] 05.1-33-PLAN.md — Contract reopened: income pattern, expected income, held-back bridges, new codes, cited constants, copy keys; D-54..D-59 contract (wave 1)
-- [ ] 05.1-34-PLAN.md — Ended with no end date = ended as of today, one rule for the month and needsInput (D-41, M-01) (wave 2)
+- [x] 05.1-34-PLAN.md — Ended with no end date = ended as of today, one rule for the month and needsInput (D-41, M-01) (wave 2)
 - [ ] 05.1-35-PLAN.md — Balance is spending accounts only; drift ignores the fund, savings moves are not drift, I31 strict (D-43, D-43a, M-06); D-49 envelope ring-fence; D-54/D-55 stated account uses (wave 3)
-- [ ] 05.1-36-PLAN.md — Instead screen agrees with the verdict, explorer clamp, month-end anchors (H-03, L-04, L-05, L-07) (wave 2)
-- [ ] 05.1-37-PLAN.md — Question roles, total stored-check parsing, passed deferral (M-08, L-01, L-02) (wave 2)
+- [x] 05.1-36-PLAN.md — Instead screen agrees with the verdict, explorer clamp, month-end anchors (H-03, L-04, L-05, L-07) (wave 2)
+- [x] 05.1-37-PLAN.md — Question roles, total stored-check parsing, passed deferral (M-08, L-01, L-02) (wave 2)
 - [ ] 05.1-38-PLAN.md — One settling module: logged pay not counted twice, symmetric pay window (H-01, H-02, M-02); D-51 paid rule; D-56 typed payments (wave 4)
 - [ ] 05.1-39-PLAN.md — Snapshot: signed unspent anchor, per-entry custom options, total transfer roles, new inputs mapped (M-07, M-09, L-08, L-09); D-49/D-51 mapping, D-53 one-source check; D-54 accounts mapped (wave 4)
 - [ ] 05.1-40-PLAN.md — Fact and notice keys match the copy, contract test, total line evaluator (M-03, M-05, L-07) (wave 3)
@@ -1103,7 +1103,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
-| 05.1 Decide engine v3 | 34/50 | In Progress|  |
+| 05.1 Decide engine v3 | 37/50 | In Progress|  |
 | 05.2 Decide data and setup | 0/TBD | Not started | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
