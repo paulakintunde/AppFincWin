@@ -3,7 +3,8 @@ import { minorUnits } from '../../../../money/types';
 import { futureValueExact } from '../../../../payoff/futureValue';
 import { percent, ZERO_PERCENT } from '../../../../payoff/types';
 import { SOLE_SHARE } from '../../../share';
-import type { Funds, MonthModel, Purchase, Result, Schedule } from '../../types';
+import { addYearMonths } from '../../dates';
+import type { Funds, IncomeMonth, MonthModel, Purchase, Result, Schedule } from '../../types';
 import { buyLater, depositOfStream, FUTURE_ORDER, insteadFutures } from '../futures';
 
 const mu = minorUnits;
@@ -229,5 +230,65 @@ describe('H-03 one figure per screen', () => {
     const f = insteadFutures({ result, month, funds, purchase: purchase(), userRate: null, years: 3 });
     expect(Number.isInteger(f.deposit.months)).toBe(true);
     expect('years' in f.deposit).toBe(false);
+  });
+});
+
+describe('buyLater: a seasonal earner (D-60)', () => {
+  // Last year, November to October: Nov..Apr 20,000 left each, May..Sep 150,000, Oct 20,000.
+  const months: readonly IncomeMonth[] = Array.from({ length: 12 }, (_, i): IncomeMonth => {
+    const ym = addYearMonths('2025-11', i);
+    const busy = ['05', '06', '07', '08', '09'].includes(ym.slice(5));
+    return { month: ym, income: mu(0), everyday: mu(0), left: mu(busy ? 150_000 : 20_000), lean: !busy };
+  });
+  const picture = { treated: 'seasonal', months } as const;
+
+  test('D-60 walks last year month by month, never the typical month', () => {
+    // 300,000 over 0 unspent from November: ready in June (7 months), where 42,500 a month would say 8 months and different.
+    expect(buyLater({ price: mu(300_000), unspent: mu(0), typicalLeft: mu(42_500), month: '2026-11', picture })).toEqual({
+      months: 7,
+      readyBy: '2027-06',
+      monthlyAmount: 42_500,
+    });
+  });
+
+  test('D-60 a seasonal earner with the price already covered is ready now', () => {
+    expect(buyLater({ price: mu(100), unspent: mu(240_000), typicalLeft: mu(42_500), month: '2026-11', picture }).months).toBe(0);
+  });
+
+  test('D-60 a year that saves nothing gives no date but keeps the monthly amount', () => {
+    const none = { treated: 'seasonal', months: months.map((m) => ({ ...m, left: mu(0) })) } as const;
+    expect(buyLater({ price: mu(300_000), unspent: mu(0), typicalLeft: mu(42_500), month: '2026-11', picture: none })).toEqual({
+      months: null,
+      readyBy: null,
+      monthlyAmount: 42_500,
+    });
+  });
+
+  test('D-60 another earner keeps the typical month', () => {
+    const variable = { treated: 'variable', months } as const;
+    expect(buyLater({ price: mu(300_000), unspent: mu(240_000), typicalLeft: mu(42_500), month: '2026-10', picture: variable }).months).toBe(2);
+  });
+
+  test('I13 D-60 a dearer price is never ready sooner', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 1, max: 3_000_000 }), fc.integer({ min: 0, max: 3_000_000 }), (price, extra) => {
+        const a = buyLater({ price: mu(price), unspent: mu(0), typicalLeft: mu(42_500), month: '2026-11', picture });
+        const b = buyLater({ price: mu(price + extra), unspent: mu(0), typicalLeft: mu(42_500), month: '2026-11', picture });
+        expect(b.months === null || (a.months !== null && a.months <= b.months)).toBe(true);
+      })
+    );
+  });
+
+  test('insteadFutures passes the month\'s income picture to buy later', () => {
+    const seasonalMonth = { month: '2026-11', typicalLeft: mu(42_500), incomePicture: picture } as unknown as MonthModel;
+    const f = insteadFutures({
+      result,
+      month: seasonalMonth,
+      funds: { unspent: { value: mu(0) } } as unknown as Funds,
+      purchase: purchase({ whole: mu(300_000), dayOne: mu(300_000) }),
+      userRate: null,
+      years: 1,
+    });
+    expect(f.buyLater).toEqual({ months: 7, readyBy: '2027-06', monthlyAmount: 42_500 });
   });
 });

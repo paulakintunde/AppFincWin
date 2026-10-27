@@ -8,16 +8,22 @@ import type { CashCheck } from '../../cash/path';
 import { inputsOf } from '../../__tests__/helpers/fixtures';
 import type {
   Code,
+  ExpectedMonthIncome,
   Funds,
+  IncomeMonth,
+  IncomePicture,
   LimitLine,
   LineSpec,
+  MissingCode,
   MonthModel,
   Purchase,
   Purpose,
   ReadyBy,
+  Schedule,
   UnspentState,
   V3Inputs,
 } from '../../types';
+import { addYearMonths } from '../../dates';
 import { judge, monthlyPart, oneOffPart, type JudgeInput } from '../judge';
 
 const mu = (n: number): MinorUnits => minorUnits(n);
@@ -630,5 +636,413 @@ describe('judge: properties', () => {
       }),
       { numRuns: 200 }
     );
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// 05.1-46: the monthly part for variable and seasonal earners (D-36, D-37, D-46), available unspent (D-38), the notices
+// (D-49, D-50, D-54, D-58, D-62) and the missing order (D-59).
+// ---------------------------------------------------------------------------------------------------------------------
+
+const LEAN_MM = ['10', '11', '12', '01', '02', '03', '04'];
+
+function windowMonths(over: (ym: string, i: number) => Partial<IncomeMonth> = () => ({})): IncomeMonth[] {
+  return Array.from({ length: 12 }, (_, i) => {
+    const ym = addYearMonths('2025-10', i);
+    const lean = LEAN_MM.includes(ym.slice(5));
+    const income = lean ? 40_000 : 200_000;
+    return { month: ym, income: mu(income), everyday: mu(30_000), left: mu(income - 30_000), lean, ...over(ym, i) };
+  });
+}
+
+function picture(over: Partial<IncomePicture> = {}): IncomePicture {
+  return {
+    stated: 'seasonal',
+    treated: 'seasonal',
+    swings: false,
+    volatile: false,
+    confirmNeeded: false,
+    windowMonths: 12,
+    fullMonths: 14,
+    months: windowMonths(),
+    leanLeft: mu(10_000),
+    expectedThisMonth: mu(40_000),
+    ...over,
+  };
+}
+
+function leanMonth(over: Partial<MonthModel> = {}, pic: Partial<IncomePicture> = {}): MonthModel {
+  return month({ e: mu(30_000), recurringBills: mu(0), setAside: mu(0), incomePicture: picture(pic), ...over });
+}
+
+/** A monthly cost of m with no one-off part. */
+const monthlyOnly = (m: number, over: Partial<Purchase> = {}): Purchase =>
+  purchase({ dayOne: mu(0), whole: mu(m), monthly: mu(m), runningMonthly: mu(m), ...over });
+
+function sched(firstDate: string): Schedule {
+  return {
+    cadence: { unit: 'month', every: 1 },
+    count: 6,
+    payment: mu(25_000),
+    finalPayment: mu(25_000),
+    lastPaying: 6,
+    firstDate,
+    financed: mu(150_000),
+    pauseInterest: mu(0),
+    totalPaid: mu(150_000),
+    totalInterest: mu(0),
+    fees: { setup: mu(0), perPeriod: mu(0), end: mu(0) },
+    monthlyEquivalent: mu(25_000),
+    source: 'computed',
+  };
+}
+
+function expectedAll(amountOf: (i: number) => number): ExpectedMonthIncome[] {
+  return Array.from({ length: 12 }, (_, i) => ({ month: addYearMonths('2026-10', i), amount: mu(amountOf(i)), at: '2026-10-01' }));
+}
+
+const factOf = (r: { facts: readonly { code: string; values: unknown }[] }, code: string) => r.facts.find((f) => f.code === code)?.values;
+const readyKeyOf = (r: ReadyBy | null): string => (r === null ? '9999-99-99' : r.kind === 'date' ? r.date : `${r.month}-01`);
+
+describe('D-36 / D-37 seasonal earner, monthly part', () => {
+  it('D-36 every lean month covers the payment: fits_month, reason lean_months_used, lean months judged', () => {
+    const r = judge(input({ month: leanMonth({}, { months: windowMonths((_, i) => ({ income: mu(60_000), left: mu(30_000), lean: i < 7 })) }), purchase: monthlyOnly(25_000), funds: funds(120_000) }));
+    // 60,000 income - 30,000 everyday = 30,000 left in each lean month; the payment is 25,000.
+    expect(r.code).toBe('fits_month');
+    expect(r.reasons).toContain('lean_months_used');
+    expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'fits_month' });
+    expect(factOf(r, 'lean_months_judged')).toEqual({ from: '2026-10', to: '2027-04', leanLeft: 30_000 });
+    expect(r.facts.map((f) => f.code)).not.toContain('lean_bridge');
+  });
+
+  it('D-37 and D-46 shortfall x lean months to carry is the bridge, paid from unspent money', () => {
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(120_000) }));
+    // Lean months Oct to Apr: 40,000 - 30,000 = 10,000 left. Shortfall 15,000 x 7 months = 105,000; unspent 120,000 leaves 15,000.
+    expect(r.code).toBe('fits_unspent');
+    expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'fits_unspent' });
+    expect(factOf(r, 'lean_bridge')).toEqual({ monthly: 25_000, leanLeft: 10_000, shortfall: 15_000, months: 7, until: '2027-04', bridge: 105_000, after: 15_000 });
+    expect(factOf(r, 'lean_months_judged')).toEqual({ from: '2026-10', to: '2027-04', leanLeft: 10_000 });
+  });
+
+  it('D-37 unspent short of the bridge: not_yet, not_covered, ready in a month', () => {
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(100_000) }));
+    expect(r.code).toBe('not_yet');
+    expect(r.variant).toBe('not_covered');
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2026-11' }); // 105,000 - 100,000 = 5,000 against a typical 42,500
+    expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'not_yet' });
+  });
+
+  it('D-37 unspent not confirmed: needs_input with unspent_not_confirmed', () => {
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(null) }));
+    expect(r.code).toBe('needs_input');
+    expect(r.missing).toEqual(['unspent_not_confirmed']);
+    expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'needs_input' });
+  });
+
+  it('D-37 the one-off part is taken off the unspent money before the bridge', () => {
+    // One-off 120,000: this month 42,500 and 77,500 from earlier unspent; 240,000 - 120,000 = 120,000 after, bridge 105,000.
+    const r = judge(input({ month: leanMonth(), purchase: purchase({ dayOne: mu(120_000), whole: mu(120_000), monthly: mu(25_000), runningMonthly: mu(25_000) }), funds: funds(240_000) }));
+    expect(r.code).toBe('fits_unspent');
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ bridge: 105_000, after: 15_000 });
+  });
+
+  it('D-37 months with no lean flag at all: every month with less than the payment is carried', () => {
+    const r = judge(input({ month: leanMonth({}, { months: windowMonths(() => ({ lean: false, income: mu(40_000), left: mu(10_000) })) }), purchase: monthlyOnly(25_000), funds: funds(200_000) }));
+    expect(r.code).toBe('fits_unspent');
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ months: 12, until: '2027-09', bridge: 180_000, after: 20_000 });
+    expect(factOf(r, 'lean_months_judged')).toEqual({ from: '2026-10', to: '2027-09', leanLeft: 10_000 });
+  });
+
+  it('D-37 a schedule starts the walk at the first payment: Feb to Apr are the lean run', () => {
+    const r = judge(input({ month: leanMonth(), purchase: purchase({ dayOne: mu(0), whole: mu(150_000), monthly: mu(25_000), schedule: sched('2027-02-05') }), funds: funds(120_000) }));
+    expect(r.code).toBe('fits_unspent');
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ months: 3, until: '2027-04', bridge: 45_000 });
+    expect(factOf(r, 'lean_months_judged')).toEqual({ from: '2027-02', to: '2027-04', leanLeft: 10_000 });
+  });
+
+  it('D-37 a schedule that starts beyond the year ahead judges the current month', () => {
+    const r = judge(input({ month: leanMonth(), purchase: purchase({ dayOne: mu(0), whole: mu(150_000), monthly: mu(25_000), schedule: sched('2029-01-01') }), funds: funds(120_000) }));
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ months: 1, until: '2026-10', bridge: 15_000 });
+  });
+
+  it('D-37 confirmed expected income (under 12 months of records): months with less left than the payment are carried', () => {
+    const expected = expectedAll((i) => (i < 6 ? 40_000 : 200_000)); // Oct to Mar lean
+    const r = judge(
+      input({ month: leanMonth({}, { fullMonths: 6, months: [] }), purchase: monthlyOnly(25_000), funds: funds(100_000), inputsOver: { expectedIncome: expected } })
+    );
+    // Everyday is the typical 30,000: 40,000 - 30,000 = 10,000 left; shortfall 15,000 x 6 = 90,000; 100,000 leaves 10,000.
+    expect(r.code).toBe('fits_unspent');
+    expect(factOf(r, 'lean_bridge')).toEqual({ monthly: 25_000, leanLeft: 10_000, shortfall: 15_000, months: 6, until: '2027-03', bridge: 90_000, after: 10_000 });
+    expect(factOf(r, 'lean_months_judged')).toEqual({ from: '2026-10', to: '2027-03', leanLeft: 10_000 });
+  });
+
+  it('D-37 confirmed income that covers every month: fits_month', () => {
+    const r = judge(input({ month: leanMonth({}, { fullMonths: 6, months: [] }), purchase: monthlyOnly(25_000), funds: funds(100_000), inputsOver: { expectedIncome: expectedAll(() => 100_000) } }));
+    expect(r.code).toBe('fits_month');
+    expect(factOf(r, 'lean_months_judged')).toEqual({ from: '2026-10', to: '2027-09', leanLeft: 70_000 });
+  });
+
+  it('monthlyPart: no expected income for a month, or no everyday figure, asks for input', () => {
+    const ctx = { asOf: '2026-10-03', purchase: monthlyOnly(25_000), available: mu(100_000), takenByOneOff: mu(0), expected: [] as ExpectedMonthIncome[] };
+    expect(monthlyPart(leanMonth({}, { fullMonths: 6, months: [] }), mu(25_000), ctx)?.code).toBe('needs_input');
+    expect(monthlyPart(leanMonth({ e: null }, { fullMonths: 6, months: [] }), mu(25_000), { ...ctx, expected: expectedAll(() => 40_000) })?.code).toBe('needs_input');
+  });
+
+  it('a steady earner is judged as before, with or without a picture', () => {
+    const steady = picture({ treated: 'steady', stated: 'steady', months: [] });
+    const a = judge(input({ month: month({ incomePicture: steady }), purchase: monthlyOnly(25_000) }));
+    const b = judge(input({ month: month(), purchase: monthlyOnly(25_000) }));
+    expect(a).toEqual(b);
+    expect(a.facts.map((f) => f.code)).not.toEqual(expect.arrayContaining(['lean_months_judged']));
+    expect(a.facts.map((f) => f.code)).not.toEqual(expect.arrayContaining(['low_month_judged']));
+    expect(monthlyPart(month({ incomePicture: picture() }), mu(25_000))?.code).toBeDefined(); // no ctx: the steady rule
+  });
+});
+
+describe('D-36 / D-37 gig and other variable earners', () => {
+  const low = { left: mu(20_000), month: '2026-02', reason: 'second_lowest' } as const;
+  const gigPic = (over: Partial<IncomePicture> = {}): IncomePicture =>
+    picture({ stated: 'variable', treated: 'variable', fullMonths: 12, months: windowMonths((_, i) => ({ left: mu(i < 4 ? 20_000 : 60_000) })), ...over });
+  const gig = (avail: number | null) => judge(input({ month: leanMonth({ low, incomePicture: gigPic() }), purchase: monthlyOnly(25_000), funds: funds(avail) }));
+
+  it('D-36 the low month covers the payment: fits_month, low month judged, no bridge', () => {
+    const r = judge(input({ month: leanMonth({ low: { ...low, left: mu(40_000) }, incomePicture: gigPic() }), purchase: monthlyOnly(25_000), funds: funds(50_000) }));
+    expect(r.code).toBe('fits_month');
+    expect(r.reasons).not.toContain('lean_months_used');
+    expect(factOf(r, 'low_month_judged')).toEqual({ month: '2026-02', left: 40_000 });
+  });
+
+  it('D-37 the low month falls short: 4 months below the payment make the bridge; unspent covers it', () => {
+    const r = gig(50_000);
+    // Shortfall 25,000 - 20,000 = 5,000 x 4 months below 25,000 = 20,000; 50,000 leaves 30,000.
+    expect(r.code).toBe('fits_unspent');
+    expect(factOf(r, 'lean_bridge')).toEqual({ monthly: 25_000, leanLeft: 20_000, shortfall: 5_000, months: 4, until: '2027-01', bridge: 20_000, after: 30_000 });
+    expect(factOf(r, 'low_month_judged')).toEqual({ month: '2026-02', left: 20_000 });
+    expect(r.facts.map((f) => f.code)).not.toContain('lean_months_judged');
+  });
+
+  it('D-37 not enough unspent: not_yet', () => {
+    const r = gig(15_000);
+    expect(r.code).toBe('not_yet');
+    expect(r.variant).toBe('not_covered');
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2026-11' });
+  });
+
+  it('D-37 unspent unknown: needs_input', () => {
+    expect(gig(null).missing).toEqual(['unspent_not_confirmed']);
+  });
+
+  it('D-36 no low month recorded: the steady rule', () => {
+    const r = judge(input({ month: leanMonth({ low: null, incomePicture: gigPic() }), purchase: monthlyOnly(25_000), funds: funds(50_000) }));
+    expect(r.code).toBe('fits_month');
+    expect(r.facts.map((f) => f.code)).not.toContain('low_month_judged');
+  });
+
+  it('D-37 a plan shorter than the run of low months limits the months carried', () => {
+    const r = judge(input({ month: leanMonth({ low, incomePicture: gigPic() }), purchase: purchase({ dayOne: mu(0), whole: mu(50_000), monthly: mu(25_000), schedule: sched('2029-01-01') }), funds: funds(50_000) }));
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ months: 1, until: '2026-10', bridge: 5_000 });
+  });
+});
+
+describe('D-36 / D-37 / D-46 monthly rules, together with the one-off part', () => {
+  it('a not_yet monthly part leads over a one-off part that is covered', () => {
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(100_000) }));
+    expect(r.parts.oneOff).toBe('fits_month');
+    expect(r.parts.monthly).toBe('not_yet');
+  });
+
+  it('when both parts are not yet, the one-off part leads when its ready-by is the later', () => {
+    // One-off 300,000 not covered by 100,000 unspent (typical 42,500): ready in 5 months. Plus bridge 105,000: ready later.
+    const base = { month: leanMonth(), funds: funds(100_000) };
+    const both = judge(input({ ...base, purchase: purchase({ dayOne: mu(300_000), whole: mu(300_000), monthly: mu(25_000), runningMonthly: mu(25_000) }) }));
+    expect(both.code).toBe('not_yet');
+    expect(both.parts).toEqual({ oneOff: 'not_yet', monthly: 'not_yet' });
+    const oneOnly = judge(input({ month: month(), funds: funds(100_000), purchase: purchase({ dayOne: mu(300_000), whole: mu(300_000) }) }));
+    expect(readyKeyOf(both.readyBy) >= readyKeyOf(oneOnly.readyBy)).toBe(true);
+  });
+
+  it("the monthly part leads when its ready-by is later than the one-off part's", () => {
+    const r = judge(input({ month: leanMonth(), funds: funds(0), purchase: purchase({ dayOne: mu(60_000), whole: mu(60_000), monthly: mu(25_000), runningMonthly: mu(25_000) }) }));
+    expect(r.parts).toEqual({ oneOff: 'not_yet', monthly: 'not_yet' });
+    expect(r.variant).toBe('not_covered');
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-05' }); // D-60: one-off 60,000 by April, bridge 105,000 only in May
+  });
+
+  it('D-36 the lean leftover is the lowest of the lean months', () => {
+    const incomes = [50_000, 35_000, 45_000, 40_000, 40_000, 40_000, 40_000];
+    const months = windowMonths((_, i) => (i < 7 ? { income: mu(incomes[i] as number), left: mu((incomes[i] as number) - 30_000) } : {}));
+    const r = judge(input({ month: leanMonth({}, { months }), purchase: monthlyOnly(25_000), funds: funds(200_000) }));
+    expect(factOf(r, 'lean_months_judged')).toMatchObject({ leanLeft: 5_000 });
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ shortfall: 20_000, months: 7, bridge: 140_000, after: 60_000 });
+  });
+
+  it('a payday one-off part and a monthly part: the later of the two leads', () => {
+    const payday: CashCheck = { kind: 'payday', until: '2099-01-01', shortBy: mu(5_000) };
+    const far = judge(input({ cash: payday, month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(100_000) }));
+    expect(far.variant).toBe('payday');
+    expect(far.readyBy).toEqual({ kind: 'date', date: '2099-01-01' });
+    // The monthly part is never (a year that saves nothing): it leads, with no date.
+    const never = judge(input({ cash: payday, month: leanMonth({}, { months: windowMonths(() => ({ income: mu(30_000), left: mu(0), lean: true })) }), purchase: monthlyOnly(25_000), funds: funds(100_000) }));
+    expect(never.variant).toBe('not_covered');
+    expect(never.readyBy).toBeNull();
+    // Both never: the one-off part leads, still no date.
+    const both = judge(input({ month: leanMonth({ monthLeft: mu(0) }, { months: windowMonths(() => ({ income: mu(30_000), left: mu(0), lean: true })) }), funds: funds(0), purchase: purchase({ dayOne: mu(60_000), whole: mu(60_000), monthly: mu(25_000), runningMonthly: mu(25_000) }) }));
+    expect(both.parts).toEqual({ oneOff: 'not_yet', monthly: 'not_yet' });
+    expect(both.readyBy).toBeNull();
+  });
+
+  it('D-60 a seasonal earner is ready in the month the season brings it, not after typical months', () => {
+    // Bridge 105,000 against no unspent: lean months leave 10,000 each, busy months 170,000. From October the walk adds
+    // Nov..Apr at 10,000 (60,000), then May at 170,000. The typical month (42,500) would say January.
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(0) }));
+    expect(r.code).toBe('not_yet');
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-05' });
+  });
+
+  it('a monthly not_yet with the one-off part covered carries its own ready-by', () => {
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(0) }));
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-05' }); // D-60: Nov to Apr save 10,000 each (60,000), May saves 170,000
+  });
+
+  it('I9/I13 a cheaper payment is never worse and a dearer one is never ready sooner (seasonal)', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 1_000, max: 60_000 }), fc.integer({ min: 0, max: 40_000 }), fc.integer({ min: 0, max: 400_000 }), (m, d, avail) => {
+        const lo = judge(input({ month: leanMonth(), purchase: monthlyOnly(m), funds: funds(avail) }));
+        const hi = judge(input({ month: leanMonth(), purchase: monthlyOnly(m + d), funds: funds(avail) }));
+        if (lo.code === 'needs_input' || hi.code === 'needs_input') return;
+        expect(rankOf(lo.code)).toBeGreaterThanOrEqual(rankOf(hi.code));
+        if (lo.code === 'not_yet' && hi.code === 'not_yet') expect(readyKeyOf(lo.readyBy) <= readyKeyOf(hi.readyBy)).toBe(true);
+      }),
+      { numRuns: 200, seed: 0x0546 }
+    );
+  });
+});
+
+describe('D-38 available unspent money', () => {
+  const held = (value: number, available: number, heldBack: number): Funds =>
+    funds(value, {
+      unspent: unspentState(value, {
+        available: mu(available),
+        breakdown: { in: mu(0), everyday: mu(0), bills: mu(0), loans: mu(0), investedSaved: mu(0), other: mu(0), heldBack: mu(heldBack) },
+      }),
+    });
+
+  it('D-38 and D-46 the ladder judges available money and says what is held back, right after the unspent figure', () => {
+    const r = judge(input({ funds: held(240_000, 190_000, 50_000) }));
+    expect(r.code).toBe('fits_unspent');
+    // Room this month 42,500; 77,500 from earlier unspent; 190,000 - 42,500 - 77,500 = 70,000 left.
+    expect(factOf(r, 'unspent_before_after')).toEqual({ before: 190_000, after: 70_000 });
+    expect(factOf(r, 'unspent_held_back')).toEqual({ amount: 50_000 });
+    const codes = r.facts.map((f) => f.code);
+    expect(codes.indexOf('unspent_held_back')).toBe(codes.indexOf('unspent_before_after') + 1);
+  });
+
+  it('D-38 held back money is no longer there to cover the price', () => {
+    const r = judge(input({ funds: held(240_000, 100_000, 140_000) }));
+    expect(r.code).toBe('not_yet');
+  });
+
+  it('D-38 nothing held back: no unspent_held_back fact; steady answers are as before', () => {
+    const r = judge(input());
+    expect(r.facts.map((f) => f.code)).not.toContain('unspent_held_back');
+  });
+
+  it('D-38 drift reads the confirmed figure, not the available one', () => {
+    const r = judge(input({ funds: held(240_000, 190_000, 50_000) }));
+    expect(r.notices.map((n) => n.code)).not.toContain('unspent_drifted');
+  });
+
+  it('D-46 the bridge is judged against available money, with held back money said', () => {
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: held(150_000, 100_000, 50_000) }));
+    expect(r.code).toBe('not_yet'); // 105,000 bridge against 100,000 available
+    expect(factOf(r, 'unspent_held_back')).toEqual({ amount: 50_000 });
+  });
+
+  it('D-46 fact order: month, unspent, held back, emergency, purchase, low month, why months, bridge', () => {
+    const r = judge(
+      input({
+        month: leanMonth(),
+        purchase: purchase({ dayOne: mu(120_000), whole: mu(120_000), monthly: mu(25_000), runningMonthly: mu(25_000) }),
+        funds: held(400_000, 350_000, 50_000),
+      })
+    );
+    expect(r.facts.map((f) => f.code)).toEqual([
+      'month_left_after',
+      'unspent_before_after',
+      'unspent_held_back',
+      'emergency_untouched',
+      'lean_months_judged',
+      'lean_bridge',
+    ]);
+  });
+});
+
+describe('D-49 D-50 D-54 D-58 D-62 notices', () => {
+  it('D-49 envelopes linked to no account are said, with the count', () => {
+    const r = judge(input({ funds: funds(240_000, { envelopesAssumedInside: 2 }) }));
+    expect(r.notices).toContainEqual({ code: 'envelope_location_assumed', values: { count: 2 } });
+    expect(judge(input()).notices.map((n) => n.code)).not.toContain('envelope_location_assumed');
+  });
+
+  it('D-50 money above what the records explain is asked about and said, with the amount', () => {
+    const r = judge(input({ funds: funds(240_000, { unexplained: mu(50_000) }) }));
+    expect(r.code).toBe('needs_input');
+    expect(r.missing).toContain('unexplained_money_question');
+    expect(r.notices).toContainEqual({ code: 'unexplained_money', values: { amount: 50_000 } });
+    const small = judge(input({ funds: funds(240_000, { unexplained: mu(100) }) }));
+    expect(small.notices.map((n) => n.code)).not.toContain('unexplained_money');
+  });
+
+  it('D-54 an account with no stated use: the first one and the count', () => {
+    const r = judge(input({ funds: funds(240_000, { unstatedAccounts: ['a1', 'a2'] }) }));
+    expect(r.missing).toContain('account_use_question');
+    expect(r.notices).toContainEqual({ code: 'account_use_unknown', values: { accountId: 'a1', count: 2 } });
+  });
+
+  it('D-62 only the fund is unlinked: fund_account_unknown with the stated fund, no account_use_unknown', () => {
+    const r = judge(input({ funds: funds(240_000, { fundUnlinked: true }) }));
+    expect(r.missing).toContain('account_use_question');
+    expect(r.notices).toContainEqual({ code: 'fund_account_unknown', values: { amount: 300_000 } });
+    expect(r.notices.map((n) => n.code)).not.toContain('account_use_unknown');
+    const none = judge(input({ funds: funds(240_000, { fundUnlinked: true, emergency: null }) }));
+    expect(none.notices).toContainEqual({ code: 'fund_account_unknown', values: { amount: 0 } });
+  });
+
+  it('D-62 both apply: the account question comes first and the fund waits', () => {
+    const r = judge(input({ funds: funds(240_000, { unstatedAccounts: ['a1'], fundUnlinked: true }) }));
+    expect(r.notices.map((n) => n.code)).toContain('account_use_unknown');
+    expect(r.notices.map((n) => n.code)).not.toContain('fund_account_unknown');
+  });
+
+  const unseen = (arrived: boolean | null, date = '2026-10-01') => ({ seriesId: 'p', date, amount: mu(70_000), arrived });
+
+  it('D-58 the first unanswered pay is asked about; an answered "not yet" is counted missed and caps confidence at rough', () => {
+    const r = judge(input({ month: month({ unseenPay: [unseen(false, '2026-09-15'), unseen(null)] }) }));
+    expect(r.missing).toContain('pay_arrival_question');
+    expect(r.notices).toContainEqual({ code: 'pay_not_seen', values: { amount: 70_000, date: '2026-10-01' } });
+    expect(r.notices).toContainEqual({ code: 'pay_counted_missed', values: { amount: 70_000, date: '2026-09-15' } });
+    expect(r.confidence.level).toBe('rough');
+    expect(r.confidence.reasons).toContain('pay_missed');
+  });
+
+  it('D-58 only "not yet" answers: a careful answer that still works, at rough confidence', () => {
+    const r = judge(input({ month: month({ unseenPay: [unseen(false)] }) }));
+    expect(r.code).not.toBe('needs_input');
+    expect(r.notices.map((n) => n.code)).toContain('pay_counted_missed');
+    expect(r.notices.map((n) => n.code)).not.toContain('pay_not_seen');
+    expect(r.confidence).toEqual({ level: 'rough', reasons: ['pay_missed'] });
+  });
+
+  it('D-58 a pay that arrived adds no notice and no cap', () => {
+    const r = judge(input({ month: month({ unseenPay: [unseen(true)] }) }));
+    expect(r.notices.map((n) => n.code)).not.toContain('pay_counted_missed');
+    expect(r.confidence.reasons).not.toContain('pay_missed');
+  });
+});
+
+describe('D-59 missing in priority order', () => {
+  it('D-59 the judge sorts what the purchase and needsInput ask for by MISSING_PRIORITY', () => {
+    const r = judge(input({ purchase: purchase(), purchaseMissing: ['plan_rate_missing', 'no_price'] as MissingCode[], funds: funds(240_000, { unstatedAccounts: ['a1'] }) }));
+    expect(r.missing).toEqual(['account_use_question', 'no_price', 'plan_rate_missing']);
   });
 });
