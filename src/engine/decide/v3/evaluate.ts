@@ -60,7 +60,8 @@ export function evaluate(inputs: V3Inputs, check: CheckV2): Evaluation {
   const path = buildCashPathV3({
     asOf: inputs.asOf,
     days: CASH_PATH_DAYS_V3,
-    opening: inputs.balance,
+    // D-54: spending money plus the purchase's own envelope; the fund and other put-aside money never cushion the check.
+    opening: minorUnits(funds.spending + funds.ownEnvelope),
     series: inputs.series,
     paidThisMonth: paidOccurrences(inputs),
     erest: month.erest,

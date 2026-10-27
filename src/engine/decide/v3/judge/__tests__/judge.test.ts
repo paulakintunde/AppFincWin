@@ -71,6 +71,7 @@ function funds(unspent: number | null, over: Partial<Funds> = {}): Funds {
     envelopesSaved: mu(0),
     envelopesMonthly: mu(0),
     ownEnvelope: mu(0),
+    spending: mu(0),
     ...over,
   };
 }

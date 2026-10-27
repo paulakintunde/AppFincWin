@@ -349,15 +349,20 @@
     "foreign": null
    },
    "expect": {
-    "code": "fits_month",
-    "legacyState": "fits",
+    "code": "not_yet",
+    "variant": "not_covered",
+    "legacyState": "no",
     "band": 4,
+    "readyBy": {
+     "kind": "month",
+     "month": "2026-11"
+    },
     "month": {
      "e": 80000,
      "typicalLeft": 80000,
      "lowLeft": 75000
     },
-    "working": "Profile (c) steady: typicalIncome = steady 300,000 (not the real months 2,800-3,200). E = median(70k,90k,80k,85k,75k,80k): sorted 70,75,80,80,85,90 -> 80,000. typicalLeft = 300,000-120,000 bills-20,000 saving-80,000 = 80,000. M = 6,000 -> 74,000 >= 0. Real monthly left: 100k,60k,80k,95k,65k,80k; second-lowest 65,000; 65,000-6,000 >= 0. October: monthLeft = 300,000-(120,000+5,000+75,000 Erest+20,000) = 80,000 >= P 6,000 -> fits_month. Band 4 (whole 72,000: 10,000 and 50,000 below). CORRECTION (05.1-25): the low month is judged at today's steady pay (RESEARCH Pitfall 3, \"leftovers at today's pay\"), the same basis as typicalLeft, not at each month's real pay. At 300,000 steady: 300,000-120,000-20,000-everyday (70k,90k,80k,85k,75k,80k) = 90k,70k,80k,75k,85k,80k; sorted 70k,75k,80k,80k,85k,90k; second-lowest 75,000 (August). 75,000-6,000 >= 0 so no low-month clause."
+    "working": "Profile (c) steady: typicalIncome = steady 300,000 (not the real months 2,800-3,200). E = median(70k,90k,80k,85k,75k,80k): sorted 70,75,80,80,85,90 -> 80,000. typicalLeft = 300,000-120,000 bills-20,000 saving-80,000 = 80,000. M = 6,000 -> 74,000 >= 0. Real monthly left: 100k,60k,80k,95k,65k,80k; second-lowest 65,000; 65,000-6,000 >= 0. October: monthLeft = 300,000-(120,000+5,000+75,000 Erest+20,000) = 80,000 >= P 6,000 -> fits_month. Band 4 (whole 72,000: 10,000 and 50,000 below). CORRECTION (05.1-25): the low month is judged at today's steady pay (RESEARCH Pitfall 3, \"leftovers at today's pay\"), the same basis as typicalLeft, not at each month's real pay. At 300,000 steady: 300,000-120,000-20,000-everyday (70k,90k,80k,85k,75k,80k) = 90k,70k,80k,75k,85k,80k; sorted 70k,75k,80k,80k,85k,90k; second-lowest 75,000 (August). 75,000-6,000 >= 0 so no low-month clause. RE-BASELINED (05.1-35, D-43a, D-54): the cash check now opens at the spending balance only. Maya has no dated pay series (steady profile, no pay line), so the 90-day path takes no pay (I3). Spending balance = 525,000 total - 300,000 emergency fund (dedicated account, out of spending) = 225,000. Outflows over 90 days: bills 120,000 x 3 + Erest/E spread (to 80,000 a month) leave the path 268,000 below zero and it never recovers -> not_yet / not_covered; ready month 2026-11 (the first month whose left covers the price). The fund used to carry this path (opening 525,000)."
    },
    "source": "v3 §12 #08"
   },
@@ -450,30 +455,21 @@
     "foreign": null
    },
    "expect": {
-    "code": "emergency_use",
-    "legacyState": "adjust",
+    "code": "not_yet",
+    "variant": "not_covered",
+    "legacyState": "no",
     "band": 4,
-    "facts": [
-     "emergency_used"
-    ],
-    "split": [
-     {
-      "source": "unspent_earlier",
-      "amount": 10000
-     },
-     {
-      "source": "emergency",
-      "amount": 60000
-     }
-    ],
-    "unspentAfter": 0,
+    "readyBy": {
+     "kind": "month",
+     "month": "2027-03"
+    },
     "month": {
      "e": 88000,
      "typicalLeft": 12000,
      "erest": 79484,
      "monthLeft": -19484
     },
-    "working": "Leo: E 88,000, typicalLeft = 250,000-150,000-88,000 = 12,000. October: Erest = max(round(88,000*28/31)=79,484, 88,000-40,000=48,000) = 79,484; out = 150,000+40,000+79,484 = 269,484; monthLeft = -19,484 (<0). P 70,000 > unspent 10,000, marked emergency and for_work, 70,000 <= 10,000+300,000 -> emergency_use. Fund use Z = 70,000-10,000 = 60,000; rebuild ceilDiv(60,000, 12,000) = 5 months. Band 4."
+    "working": "Leo: E 88,000, typicalLeft = 250,000-150,000-88,000 = 12,000. October: Erest = max(round(88,000*28/31)=79,484, 88,000-40,000=48,000) = 79,484; out = 150,000+40,000+79,484 = 269,484; monthLeft = -19,484 (<0). P 70,000 > unspent 10,000, marked emergency and for_work, 70,000 <= 10,000+300,000 -> emergency_use. Fund use Z = 70,000-10,000 = 60,000; rebuild ceilDiv(60,000, 12,000) = 5 months. Band 4. RE-BASELINED (05.1-35, D-43a, D-54): the cash check now opens at the spending balance only, 389,484 total - 300,000 fund (dedicated account) = 89,484, and the fund no longer cushions it (D-09). With the 70,000 purchase on day one the 90-day path (Erest 79,484 to month end, rent 130,000 and phone 20,000 against pay 250,000 on its dates, then E 88,000 a month) is 60,000 below zero and does not recover, so the answer is not_yet / not_covered, ready month 2027-03, ahead of the emergency ladder (the ladder would otherwise give emergency_use: 70,000 > unspent 10,000, for_work, 70,000 <= 10,000 + 300,000)."
    },
    "source": "v3 §12 #11"
   },

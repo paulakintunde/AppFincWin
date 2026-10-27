@@ -14,6 +14,7 @@ import type {
   CheckV2,
   ConfidenceLevel,
   CountsAs,
+  EmergencyFund,
   Envelope,
   FactCode,
   FirstPayment,
@@ -33,6 +34,7 @@ import type {
   SeriesRole,
   SeriesStatus,
   TypicalChoice,
+  V3Account,
   V3Debt,
   V3Inputs,
   V3PresetItemType,
@@ -252,7 +254,41 @@ function limitSpec(spec: FixtureLimit['spec']): LineSpec {
   }
 }
 
+/**
+ * D-54: fixtures state every account's use; the back-test and shadow generators inherit this rule, the same for every
+ * family. Without stated accounts: a main account (everyday, or mixed when the person has envelopes, with the envelopes
+ * linked to it) holding total - fund, and a dedicated emergency account holding the fund. The suggested figure and the
+ * cash-path opening are then what they were with the total balance and the fund taken out.
+ */
+export function statedAccounts(person: FixturePerson): {
+  accounts: V3Account[];
+  envelopes: Envelope[];
+  emergency: EmergencyFund | null;
+  balance: MinorUnits;
+} {
+  const fund = person.emergency ?? 0;
+  const main = Math.max(0, person.balance - fund);
+  const mainId = `${person.id}-main`;
+  const fundId = `${person.id}-fund`;
+  const accounts: V3Account[] = [
+    { id: mainId, balance: mu(main), use: person.envelopes.length > 0 ? { kind: 'mixed', extraSetAside: null } : { kind: 'everyday' } },
+  ];
+  if (person.emergency !== null) accounts.push({ id: fundId, balance: mu(fund), use: { kind: 'dedicated', purpose: { kind: 'emergency' } } });
+  return {
+    accounts,
+    envelopes: person.envelopes.map((e) => ({ ...e, accountId: mainId })),
+    emergency: person.emergency === null ? null : { amount: mu(fund), accountId: fundId },
+    balance: mu(main),
+  };
+}
+
+/** D-54: a scenario that states the engine's spending balance directly (situation 14) sets the main account to it; the fund stays in its dedicated account. */
+export function withMainBalance(person: FixturePerson, main: number): FixturePerson {
+  return { ...person, balance: main + (person.emergency ?? 0) };
+}
+
 export function toV3Inputs(person: FixturePerson, overrides: Partial<V3Inputs> = {}): V3Inputs {
+  const stated = person.accounts ? null : statedAccounts(person);
   const debts: V3Debt[] = person.debts.map((d) => ({
     id: d.id,
     kind: d.kind,
@@ -303,10 +339,10 @@ export function toV3Inputs(person: FixturePerson, overrides: Partial<V3Inputs> =
     ),
     profile: person.profile,
     rough: person.rough,
-    balance: mu(person.balance),
+    balance: stated ? stated.balance : mu(person.balance),
     unspent: person.unspent ? { amount: mu(person.unspent.amount), at: person.unspent.at } : null,
-    emergency: person.emergency === null ? null : { amount: mu(person.emergency) },
-    envelopes: person.envelopes,
+    emergency: stated ? stated.emergency : person.emergency === null ? null : { amount: mu(person.emergency) },
+    envelopes: stated ? stated.envelopes : person.envelopes,
     debts,
     everydayOverride: person.everydayOverride === null ? null : mu(person.everydayOverride),
     limits: { lines: (person.limits ?? []).map((l) => ({ id: l.id, on: l.on, source: l.source, spec: limitSpec(l.spec) })) },
@@ -315,7 +351,7 @@ export function toV3Inputs(person: FixturePerson, overrides: Partial<V3Inputs> =
       : {}),
     ...(person.heldBridges ? { heldBridges: person.heldBridges.map((b) => ({ id: b.id, amount: mu(b.amount) })) } : {}),
     ...(person.payArrivals ? { payArrivals: person.payArrivals } : {}),
-    ...(person.accounts ? { accounts: person.accounts.map((a) => ({ id: a.id, balance: mu(a.balance), use: a.use })) } : {}),
+    accounts: stated ? stated.accounts : (person.accounts ?? []).map((a) => ({ id: a.id, balance: mu(a.balance), use: a.use })),
     ...overrides,
   });
 }

@@ -4,10 +4,12 @@ import type { CustomOptions, ReasonCode, V3Inputs } from '../types';
 import extraFile from './golden/extra-d18.json';
 import scenariosFile from './golden/scenarios22.json';
 import {
+  loadPersons,
   personById,
   resolveScenarioPerson,
   toCheckV2,
   toV3Inputs,
+  withMainBalance,
   type FixtureExpect,
   type FixtureScenario,
 } from './golden/adapter';
@@ -36,8 +38,9 @@ function run(s: Scenario) {
   // Situation 14: Jordan's persona balance (100,000) cannot carry the rest of October (Erest 100,000 + 15,000), so the cash
   // check would answer payday before the month does. The month is under test: run it with a balance that carries it.
   // Not in the fixture JSON because the D-14 legacy baseline is recorded against that fixture.
-  const over: Partial<V3Inputs> = own ? { custom: OWN_PET } : s.id === '14' ? { balance: minorUnits(300000) } : {};
-  const inputs = toV3Inputs(person, over);
+  // D-54: the override is the engine's spending balance, so it is stated as the main account (same rule as the adapter).
+  const over: Partial<V3Inputs> = own ? { custom: OWN_PET } : {};
+  const inputs = toV3Inputs(s.id === '14' ? withMainBalance(person, 300000) : person, over);
   const check = toCheckV2(s.purchase);
   return evaluate(inputs, own ? { ...check, itemType: { kind: 'custom', id: 'pet' } } : check);
 }
@@ -135,5 +138,70 @@ describe('settled golden questions (05.1-25)', () => {
     const codes = run(byId('05')).result.notices.map((n) => n.code);
     expect(codes).toContain('typical_short');
     expect(codes).toContain('month_heading_short');
+  });
+});
+
+describe('D-43a the fund never cushions the cash check (D-54)', () => {
+  const sam = () => toV3Inputs(personById('sam'));
+  const base = () => (SCENARIOS.find((x) => x.id === '01') as Scenario).purchase;
+  // Sam: spending 407,500 (total 1,307,500 less the 900,000 fund); the fund is in its own dedicated account.
+  it('D-43a a purchase the spending money cannot carry is not_yet although the total balance would cover it', () => {
+    const ev = evaluate(sam(), toCheckV2({ ...base(), price: 600_000 }));
+    expect(ev.funds.spending).toBe(407_500);
+    expect(ev.result.code).toBe('not_yet');
+    expect(ev.cash.kind).not.toBe('ok');
+  });
+
+  it('D-43a even marked an emergency, a price the spending money cannot carry stays not_yet (the cash check comes first)', () => {
+    const ev = evaluate(sam(), toCheckV2({ ...base(), price: 600_000, emergency: true, purpose: 'necessity' }));
+    expect(ev.result.code).toBe('not_yet');
+  });
+
+  it('D-43a the fund is reached only through the ladder: 200,000 with unspent 10,000 is not covered unmarked, emergency_use when marked a necessity', () => {
+    const low: V3Inputs = { ...sam(), unspent: { amount: minorUnits(10_000), at: '2026-10-03' } };
+    const unmarked = evaluate(low, toCheckV2({ ...base(), price: 200_000 }));
+    expect(unmarked.cash.kind).toBe('ok'); // 407,500 spending carries it: lowest point 240,000 - 200,000
+    expect(unmarked.result.code).toBe('not_yet');
+    const marked = evaluate(low, toCheckV2({ ...base(), price: 200_000, emergency: true, purpose: 'necessity' }));
+    expect(marked.result.code).toBe('emergency_use');
+  });
+});
+
+describe('fixtures state a balance that holds their fund and envelopes (no adapter clamp)', () => {
+  it('every fixture has balance >= fund + envelopes saved', () => {
+    const people = [...loadPersons(), ...[...SCENARIOS, ...EXTRAS].map((s) => resolveScenarioPerson(s as FixtureScenario))];
+    for (const p of people) {
+      const saved = p.envelopes.reduce((t, e) => t + e.saved, 0);
+      expect(p.balance).toBeGreaterThanOrEqual((p.emergency ?? 0) + saved);
+    }
+  });
+});
+
+describe('D-54 stated account uses through evaluate', () => {
+  it('Sam with an everyday, a mixed (envelope + 20,000 stated), an untouched, an unstated and a dedicated fund account', () => {
+    const base = toV3Inputs(personById('sam'));
+    const inputs: V3Inputs = {
+      ...base,
+      emergency: { amount: minorUnits(900_000), accountId: 'fund' },
+      envelopes: [
+        { id: 'car', kind: 'pot', target: null, monthlyAmount: null, readyBy: null, saved: minorUnits(50_000), purposeId: null, accountId: 'mix' },
+      ],
+      accounts: [
+        { id: 'main', balance: minorUnits(400_000), use: { kind: 'everyday' } },
+        { id: 'mix', balance: minorUnits(200_000), use: { kind: 'mixed', extraSetAside: minorUnits(20_000) } },
+        { id: 'sav', balance: minorUnits(5_000_000), use: { kind: 'untouched' } },
+        { id: 'old', balance: minorUnits(70_000), use: null },
+        { id: 'fund', balance: minorUnits(900_000), use: { kind: 'dedicated', purpose: { kind: 'emergency' } } },
+      ],
+    };
+    const purchase = (SCENARIOS.find((x) => x.id === '01') as Scenario).purchase;
+    const ev = evaluate(inputs, toCheckV2({ ...purchase, price: 100 }));
+    // spending = 400,000 + (200,000 - 50,000 - 20,000) = 530,000; Sam's bills still due + Erest = 167,500 (407,500 - 240,000)
+    expect(ev.funds.spending).toBe(530_000);
+    expect(ev.funds.unstatedAccounts).toEqual(['old']);
+    expect(ev.funds.suggested).toBe(530_000 - 167_500);
+    const withCar = evaluate(inputs, toCheckV2({ ...purchase, price: 100, envelopeId: 'car' }));
+    expect(withCar.funds.ownEnvelope).toBe(50_000);
+    expect(withCar.cash.kind).toBe('ok');
   });
 });
