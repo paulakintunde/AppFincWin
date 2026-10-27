@@ -282,6 +282,11 @@ export function statedAccounts(person: FixturePerson): {
   };
 }
 
+/** D-54: a scenario that states the engine's spending balance directly (situation 14) sets the main account to it; the fund stays in its dedicated account. */
+export function withMainBalance(person: FixturePerson, main: number): FixturePerson {
+  return { ...person, balance: main + (person.emergency ?? 0) };
+}
+
 export function toV3Inputs(person: FixturePerson, overrides: Partial<V3Inputs> = {}): V3Inputs {
   const stated = person.accounts ? null : statedAccounts(person);
   const debts: V3Debt[] = person.debts.map((d) => ({

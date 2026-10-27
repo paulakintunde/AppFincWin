@@ -8,7 +8,6 @@
  * an instalment, plan fees) as 'unsupported'. Those are listed apart: never counted as agreement, never as a change.
  * Old engine runs on the 'month' basis, the live default (D-107).
  */
-import { minorUnits } from '../../../../money/types';
 import { USD } from '../../../__tests__/helpers/fixtures';
 import { evaluate } from '../../evaluate';
 import { legacyStateOf } from '../../adapters/legacy';
@@ -20,6 +19,7 @@ import {
   resolveScenarioPerson,
   toCheckV2,
   toV3Inputs,
+  withMainBalance,
   type FixturePerson,
   type FixturePurchase,
   type FixtureScenario,
@@ -69,6 +69,8 @@ interface Case {
   purchase: FixturePurchase;
   over: Partial<V3Inputs>;
   own: boolean;
+  /** D-54: situation 14 states the engine spending balance as its main account; the old engine keeps the persona as is. */
+  v3Person?: FixturePerson;
 }
 
 const ZERO_IMPACT: FixturePurchase = {
@@ -96,8 +98,9 @@ function cases(): Case[] {
   }
   for (const s of SCENARIOS) {
     const own = s.id === '22';
-    const over: Partial<V3Inputs> = own ? { custom: OWN_PET } : s.id === '14' ? { balance: minorUnits(300000) } : {};
-    out.push({ key: `scenario:${s.id}:0`, source: 'scenario', person: resolveScenarioPerson(s as FixtureScenario), purchase: s.purchase, over, own });
+    const over: Partial<V3Inputs> = own ? { custom: OWN_PET } : {};
+    const person = resolveScenarioPerson(s as FixtureScenario);
+    out.push({ key: `scenario:${s.id}:0`, source: 'scenario', person, purchase: s.purchase, over, own, ...(s.id === '14' ? { v3Person: withMainBalance(person, 300000) } : {}) });
   }
   for (const s of EXTRAS) {
     out.push({ key: `d18:${s.id}:0`, source: 'd18', person: resolveScenarioPerson(s as FixtureScenario), purchase: s.purchase, over: {}, own: false });
@@ -126,7 +129,7 @@ export function runShadow(): ShadowRun {
       continue;
     }
     const check = toCheckV2(c.purchase);
-    const ev = evaluate(toV3Inputs(c.person, c.over), c.own ? { ...check, itemType: { kind: 'custom', id: 'pet' } } : check);
+    const ev = evaluate(toV3Inputs(c.v3Person ?? c.person, c.over), c.own ? { ...check, itemType: { kind: 'custom', id: 'pet' } } : check);
     const code = ev.result.code;
     const v3Legacy = legacyStateOf(code);
     if (v3Legacy === old.state) {

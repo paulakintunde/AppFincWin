@@ -24,6 +24,17 @@ import {
 
 const RUNS = { numRuns: 60 };
 
+/** D-54: the fund sits in its own dedicated emergency account, so its amount never touches the spending balance (I31, D-43). */
+function withFund(inputs: V3Inputs, amount: number | null): V3Inputs {
+  const accounts = (inputs.accounts ?? []).filter((a) => !(a.use !== null && a.use.kind === 'dedicated' && a.use.purpose.kind === 'emergency'));
+  if (amount === null) return { ...inputs, accounts, emergency: null };
+  return {
+    ...inputs,
+    accounts: [...accounts, { id: 'fund-acct', balance: mu(amount), use: { kind: 'dedicated', purpose: { kind: 'emergency' } } }],
+    emergency: { amount: mu(amount), accountId: 'fund-acct' },
+  };
+}
+
 const has = (ns: readonly Notice[], code: string): boolean => ns.some((n) => n.code === code);
 const noticesOf = (r: Result): readonly Notice[] => r.notices;
 
@@ -307,23 +318,18 @@ describe('end-to-end invariants through evaluate()', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
         const off: CheckV2 = { ...check, emergency: false };
-        const zero = evaluate({ ...inputs, emergency: { amount: mu(0) } }, off).result;
-        const million = evaluate({ ...inputs, emergency: { amount: mu(100_000_000) } }, off).result;
-        // The suggested unspent sum subtracts the fund (I17), so the drift notice's figure and the confidence cap it adds
-        // can differ (finding, reported in the SUMMARY). Everything that answers the check must be identical.
-        const norm = (r: Result): Omit<Result, 'confidence'> => {
-          const { confidence: _c, ...rest } = r;
-          void _c;
-          return {
-            ...rest,
-            notices: r.notices.filter((n) => n.code !== 'unspent_drifted'),
-            facts: r.facts.map((f) => (f.code === 'emergency_untouched' ? { ...f, values: { amount: 0 } } : f)),
-          };
-        };
+        const zero = evaluate(withFund(inputs, 0), off).result;
+        const million = evaluate(withFund(inputs, 100_000_000), off).result;
+        // D-43, D-54: the fund is out of the spending balance, so the suggested figure, drift, notices and confidence do not
+        // move with it. Only the fund's own line (emergency_untouched) carries its amount.
+        const norm = (r: Result): Result => ({
+          ...r,
+          facts: r.facts.map((f) => (f.code === 'emergency_untouched' ? { ...f, values: { amount: 0 } } : f)),
+        });
         expect(norm(million)).toEqual(norm(zero));
         expect(million.code).not.toBe('emergency_use');
       }),
-      RUNS
+      { numRuns: 60, seed: 0x0543 }
     );
   });
 
@@ -331,15 +337,30 @@ describe('end-to-end invariants through evaluate()', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
         const off: CheckV2 = { ...check, emergency: false };
-        const none = evaluate({ ...inputs, emergency: null }, off).result;
-        const set = evaluate({ ...inputs, emergency: { amount: mu(500_000) } }, off).result;
+        const none = evaluate(withFund(inputs, null), off).result;
+        const set = evaluate(withFund(inputs, 500_000), off).result;
         expect(none.code).toBe(set.code);
         expect(none.split).toEqual(set.split);
         expect(none.readyBy).toEqual(set.readyBy);
         expect(none.variant).toEqual(set.variant);
+        expect(none.confidence).toEqual(set.confidence);
+        const rest = (r: Result) => r.notices.filter((n) => n.code !== 'emergency_not_set');
+        expect(rest(none)).toEqual(rest(set));
       }),
-      RUNS
+      { numRuns: 60, seed: 0x0544 }
     );
+  });
+
+  it('D-62 exception: an unlinked fund is subtracted, so its amount may move drift', () => {
+    const sam = toV3Inputs(personById('sam'));
+    const unlinked = (amount: number): V3Inputs => ({
+      ...sam,
+      emergency: { amount: mu(amount), accountId: null },
+    });
+    const none = evaluate(unlinked(0), checkOnce(1000)).funds;
+    const big = evaluate(unlinked(300_000), checkOnce(1000)).funds;
+    expect(big.fundUnlinked).toBe(true);
+    expect(none.suggested - big.suggested).toBe(300_000);
   });
 
   it('I38 purpose never changes the maths when the check is not an emergency', () => {
