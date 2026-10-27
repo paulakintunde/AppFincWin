@@ -1,7 +1,8 @@
 import { minorUnits } from '../../../money/types';
 import { percent } from '../../../payoff/types';
 import { purchaseCashFlows } from '../judge/purchase';
-import { evaluate } from '../evaluate';
+import { evaluate, stricterOf, type Evaluation } from '../evaluate';
+import type { Code, ConfidenceLevel, ReadyBy } from '../types';
 import { personById, toV3Inputs } from './golden/adapter';
 import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series } from './helpers/fixtures';
 
@@ -136,5 +137,61 @@ describe('evaluate', () => {
       expect(unpaid.cash.kind).not.toBe('ok');
       expect(paid.cash.kind).toBe('ok');
     });
+  });
+});
+
+describe('D-42 the stricter of the as-given and the all-full reading', () => {
+  const base = evaluate(sam(), checkOnce(15000));
+  const fake = (code: Code, level: ConfidenceLevel, extra: { readyBy?: ReadyBy | null; reasons?: Evaluation['result']['reasons']; cReasons?: Evaluation['result']['confidence']['reasons'] } = {}): Evaluation => ({
+    ...base,
+    result: {
+      ...base.result,
+      code,
+      readyBy: extra.readyBy ?? null,
+      reasons: extra.reasons ?? [],
+      confidence: { level, reasons: extra.cReasons ?? [] },
+    },
+  });
+
+  it('D-42 no thin history month: evaluated once, deep-equal to a repeat', () => {
+    expect(evaluate(sam(), checkOnce(15000))).toEqual(base);
+    expect(base.result.reasons).not.toContain('thin_history_stricter');
+  });
+
+  it('D-42 a thin history month never gives a better code than reading it as full', () => {
+    const s = sam();
+    const rank = (c: Code): number => ['needs_input', 'not_yet', 'monthly_short', 'emergency_use', 'fits_unspent', 'fits_month'].indexOf(c);
+    for (const price of [106, 15000, 42500, 300000, 5000000]) {
+      const thin = { ...s, months: s.months.map((m) => (m.month < '2026-10' && m.month !== '2026-07' && m.month !== '2026-08' ? { ...m, full: false } : m)) };
+      const full = { ...s, months: s.months.map((m) => ({ ...m, full: true })) };
+      const a = evaluate(thin, checkOnce(price)).result;
+      expect(rank(a.code)).toBeLessThanOrEqual(rank(evaluate(full, checkOnce(price)).result.code));
+    }
+  });
+
+  it('D-42 the all-full reading is stricter: it wins, and the answer says so', () => {
+    const out = stricterOf(fake('fits_month', 'firm', { reasons: ['rough_figures_used'] }), fake('fits_unspent', 'fair', { cReasons: ['few_months'] }));
+    expect(out.result.code).toBe('fits_unspent');
+    expect(out.result.reasons).toEqual(['rough_figures_used', 'thin_history_stricter']);
+    expect(out.result.confidence).toEqual({ level: 'fair', reasons: ['few_months'] });
+  });
+
+  it('D-42 the as-given reading is stricter or equal: it wins, no thin_history_stricter, confidence is the lower', () => {
+    const out = stricterOf(fake('fits_unspent', 'rough', { cReasons: ['under_logged'] }), fake('fits_month', 'firm', { cReasons: ['few_months'] }));
+    expect(out.result.code).toBe('fits_unspent');
+    expect(out.result.reasons).toEqual([]);
+    expect(out.result.confidence).toEqual({ level: 'rough', reasons: ['few_months', 'under_logged'] });
+    const same = stricterOf(fake('fits_month', 'fair'), fake('fits_month', 'firm'));
+    expect(same.result.confidence.level).toBe('fair');
+  });
+
+  it('D-42 both not_yet: the later readyBy wins, null (never) last, ties keep the as-given reading', () => {
+    const d = (date: string): ReadyBy => ({ kind: 'date', date });
+    const m = (month: string): ReadyBy => ({ kind: 'month', month });
+    expect(stricterOf(fake('not_yet', 'fair', { readyBy: d('2026-11-01') }), fake('not_yet', 'fair', { readyBy: m('2026-12') })).result.readyBy).toEqual(m('2026-12'));
+    expect(stricterOf(fake('not_yet', 'fair', { readyBy: m('2026-12') }), fake('not_yet', 'fair', { readyBy: d('2026-11-01') })).result.readyBy).toEqual(m('2026-12'));
+    expect(stricterOf(fake('not_yet', 'fair', { readyBy: d('2026-11-01') }), fake('not_yet', 'fair', { readyBy: null })).result.readyBy).toBeNull();
+    const tie = stricterOf(fake('not_yet', 'fair', { readyBy: d('2026-11-01'), reasons: ['exceeds_range'] }), fake('not_yet', 'fair', { readyBy: d('2026-11-01') }));
+    expect(tie.result.reasons).toEqual(['exceeds_range']);
   });
 });

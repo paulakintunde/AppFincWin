@@ -5,10 +5,11 @@
  * is already inside dayOne and would land twice.
  */
 import { minorUnits } from '../../money/types';
-import { CASH_PATH_DAYS_V3, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
+import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { buildCashPathV3, cashCheck, nextPayDate, type CashCheck } from './cash/path';
 import { addDays, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
+import { readinessOf } from './readiness';
 import { judge } from './judge/judge';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
 import { buildMonthModel } from './month/model';
@@ -16,7 +17,7 @@ import { liveSeriesOf, seriesOccurrences } from './month/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
 import type { PlanCard } from './plan/planCard';
 import type { QuotedCheck } from './plan/quoted';
-import type { CheckV2, Funds, MonthModel, Purchase, Result, V3Inputs } from './types';
+import type { CheckV2, ConfidenceLevel, Funds, MonthModel, Purchase, ReadyBy, ReasonCode, Result, V3Inputs } from './types';
 
 export interface Evaluation {
   readonly result: Result;
@@ -66,7 +67,7 @@ function paidOccurrences(inputs: V3Inputs): ReadonlySet<string> {
   return settled;
 }
 
-export function evaluate(inputs: V3Inputs, check: CheckV2): Evaluation {
+function evaluateOnce(inputs: V3Inputs, check: CheckV2): Evaluation {
   const month = buildMonthModel(inputs);
   const pb = buildPurchase(check, { asOf: inputs.asOf, thresholds: inputs.thresholds, custom: inputs.custom });
   const funds = buildFunds(inputs, month, check.envelopeId);
@@ -93,4 +94,50 @@ export function evaluate(inputs: V3Inputs, check: CheckV2): Evaluation {
     cash,
   });
   return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash };
+}
+
+const LEVEL_RANK: Readonly<Record<ConfidenceLevel, number>> = { rough: 0, fair: 1, firm: 2 };
+
+/** A comparable key: a date, or the first of a month; null (never) sorts last. */
+function readyKey(r: ReadyBy | null): string {
+  if (r === null) return '9999-99-99';
+  return r.kind === 'date' ? r.date : `${r.month}-01`;
+}
+
+/**
+ * D-42: partially thin history never improves on reading the thin months as full; the stricter reading wins (I1).
+ * The code, the split and every figure come from the stricter reading. The confidence is the lower of the two and the
+ * reasons are the sorted union, so a thin month can never raise either.
+ */
+export function stricterOf(a: Evaluation, b: Evaluation): Evaluation {
+  const ra = CODE_PRECEDENCE.indexOf(a.result.code);
+  const rb = CODE_PRECEDENCE.indexOf(b.result.code);
+  let pick = a;
+  let bStricter = false;
+  if (rb < ra) {
+    pick = b;
+    bStricter = true;
+  } else if (rb === ra && a.result.code === 'not_yet' && readyKey(b.result.readyBy) > readyKey(a.result.readyBy)) {
+    pick = b;
+    bStricter = true;
+  }
+  const lowest = LEVEL_RANK[b.result.confidence.level] < LEVEL_RANK[a.result.confidence.level] ? b.result.confidence : a.result.confidence;
+  const confidenceReasons = [...new Set([...a.result.confidence.reasons, ...b.result.confidence.reasons])].sort();
+  const reasons: ReasonCode[] = [...new Set([...a.result.reasons, ...b.result.reasons, ...(bStricter ? (['thin_history_stricter'] as const) : [])])].sort();
+  return { ...pick, result: { ...pick.result, reasons, confidence: { level: lowest.level, reasons: confidenceReasons } } };
+}
+
+/**
+ * D-52: a not-ready result is not a verdict; consumers check readiness first. Readiness is read from the inputs as
+ * given (never from the all-full reading) and never changes the code, the split or any figure.
+ */
+export function evaluate(inputs: V3Inputs, check: CheckV2): Evaluation {
+  const ym = yearMonthOf(inputs.asOf);
+  const thin = inputs.months.some((m) => m.month < ym && !m.full);
+  const a = evaluateOnce(inputs, check);
+  const readiness = readinessOf(inputs, a.month);
+  const chosen = thin
+    ? stricterOf(a, evaluateOnce({ ...inputs, months: inputs.months.map((m) => (m.month < ym ? { ...m, full: true } : m)) }, check))
+    : a;
+  return { ...chosen, result: { ...chosen.result, readiness } };
 }

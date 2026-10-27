@@ -53,7 +53,7 @@ describe('end-to-end invariants through evaluate()', () => {
         const b = evaluate(treatedFull, check).result;
         expect(codeRank(a.code)).toBeLessThanOrEqual(codeRank(b.code));
       }),
-      RUNS
+      { ...RUNS, seed: 0x0540 }
     );
   });
 
@@ -67,26 +67,31 @@ describe('end-to-end invariants through evaluate()', () => {
         const b = evaluate(treatedFull, check).result.confidence.level;
         expect(LEVEL[a]).toBeLessThanOrEqual(LEVEL[b]);
       }),
-      RUNS
+      { ...RUNS, seed: 0x0541 }
     );
   });
 
-  // FINDING (05.1-27): thinning only SOME months changes which months the median E and the leftovers are taken from, so
-  // the figures can move either way and the code can improve (Sam, price $1.06, months Jul and Aug kept full: E falls and
-  // fits_month replaces fits_unspent). The engine has no "treat thin as worse" step beyond excluding the month and capping
-  // confidence. it.failing records the gap: it turns red when the engine closes it, which is the cue to make this a plain it().
-  it.failing('I1 thin data is never better: PARTIAL thinning, code only (open finding, owner decision)', () => {
+  // D-42: evaluate() takes the stricter of the as-given and the all-full reading, so partial thinning can never help.
+  const LEVELS = { rough: 0, fair: 1, firm: 2 } as const;
+  const partialThinning = (inputs: V3Inputs, check: Parameters<typeof evaluate>[1], mask: readonly boolean[]): void => {
+    const treatedFull: V3Inputs = { ...inputs, months: inputs.months.map((m) => ({ ...m, full: true })) };
+    const thin: V3Inputs = { ...inputs, months: inputs.months.map((m, i) => ({ ...m, full: mask[i % mask.length]! })) };
+    const a = evaluate(thin, check).result;
+    const b = evaluate(treatedFull, check).result;
+    expect(codeRank(a.code)).toBeLessThanOrEqual(codeRank(b.code));
+    expect(LEVELS[a.confidence.level]).toBeLessThanOrEqual(LEVELS[b.confidence.level]);
+  };
+
+  it('I1 thin data is never better: PARTIAL thinning, recorded counterexample (D-42)', () => {
     fc.assert(
-      fc.property(inputsArb, checkArb, fc.array(fc.boolean(), { minLength: 7, maxLength: 7 }), (inputs, check, mask) => {
-        const treatedFull: V3Inputs = { ...inputs, months: inputs.months.map((m) => ({ ...m, full: true })) };
-        const thin: V3Inputs = { ...inputs, months: inputs.months.map((m, i) => ({ ...m, full: mask[i % mask.length]! })) };
-        const a = evaluate(thin, check).result;
-        const b = evaluate(treatedFull, check).result;
-        expect(codeRank(a.code)).toBeLessThanOrEqual(codeRank(b.code));
-      }),
-      // Replays the recorded counterexample (seed and path from the failing run) so the finding is deterministic.
+      fc.property(inputsArb, checkArb, fc.array(fc.boolean(), { minLength: 7, maxLength: 7 }), partialThinning),
+      // Replays the recorded counterexample (seed and path from the failing run) so the finding stays a regression.
       { seed: 88886437, path: '54:3:1:0:1:1:1:1:2:10:3:6:3:4:4:4:2:2:11:7:4:4:4:6:4', endOnFailure: true }
     );
+  });
+
+  it('I1 thin data is never better: PARTIAL thinning, any mask (D-42)', () => {
+    fc.assert(fc.property(inputsArb, checkArb, fc.array(fc.boolean(), { minLength: 7, maxLength: 7 }), partialThinning), { numRuns: 100, seed: 0x0542 });
   });
 
   it('I3 uncertain income is not cash: removing pending income never improves the code', () => {
