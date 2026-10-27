@@ -1167,16 +1167,11 @@
     "foreign": null
    },
    "expect": {
-    "code": "fits_unspent",
-    "variant": null,
-    "legacyState": "fits",
+    "code": "not_yet",
+    "variant": "not_covered",
+    "legacyState": "no",
     "band": 3,
-    "split": [
-     {
-      "source": "unspent_earlier",
-      "amount": 15000
-     }
-    ],
+    "readyBy": null,
     "facts": [
      "emergency_untouched"
     ],
@@ -1184,7 +1179,6 @@
      "typical_short",
      "month_heading_short"
     ],
-    "unspentAfter": 225000,
     "month": {
      "moneyIn": 0,
      "moneyOut": 357500,
@@ -1193,7 +1187,7 @@
      "e": 147500,
      "erest": 137500
     },
-    "working": "Pay series ended 2026-09-30, no 2026-10-01 pay line; balance stays 1,307,500 (the final pay landed in September); profile unchanged (salary); unspent still 240,000 at 2026-10-03. moneyIn 0; moneyOut 357,500 (150,000 rent paid + 30,000 utilities due + 10,000 logged + Erest 137,500 + setAside 30,000); monthLeft -357,500; typicalIncome 0 so typicalLeft = 0-180,000-147,500-30,000 = -357,500. 5.4.1 does not fire (a profile is present); 5.4.2 does not fire (unspent is confirmed); 5.4.3 does not fire (band 3). Cash path: opening 1,307,500, no pay, 90-day outflows about 540,000 bills + 437,258 spread + 15,000 stay >= 0 at every point -> cash ok. One-off: 15,000 > max(0,-357,500) = 0 and 15,000 <= 240,000 -> fits_unspent, variant null, legacyState fits, split [unspent_earlier 15,000]; notices typical_short and month_heading_short; fact emergency_untouched. Band 3 (10,000 below)."
+    "working": "Pay series ended 2026-09-30, no 2026-10-01 pay line; balance stays 1,307,500 (the final pay landed in September); profile unchanged (salary); unspent still 240,000 at 2026-10-03. moneyIn 0; moneyOut 357,500 (150,000 rent paid + 30,000 utilities due + 10,000 logged + Erest 137,500 + setAside 30,000); monthLeft -357,500; typicalIncome 0 so typicalLeft = 0-180,000-147,500-30,000 = -357,500. 5.4.1 does not fire (a profile is present); 5.4.2 does not fire (unspent is confirmed); 5.4.3 does not fire (band 3). Cash path: opening 1,307,500, no pay, 90-day outflows about 540,000 bills + 437,258 spread + 15,000 stay >= 0 at every point -> cash ok. One-off: 15,000 > max(0,-357,500) = 0 and 15,000 <= 240,000 -> fits_unspent, variant null, legacyState fits, split [unspent_earlier 15,000]; notices typical_short and month_heading_short; fact emergency_untouched. Band 3 (10,000 below). RE-BASELINED (05.1-35, D-43a, D-54): the cash path now opens at the spending balance, 1,307,500 - 900,000 fund (dedicated account) = 407,500, not 1,307,500. With no pay the 90-day outflows (about 540,000 bills + 437,258 spread + 15,000 purchase) put the path 430,000 below zero and nothing recovers it, so the answer is not_yet / not_covered with no ready date (no pay to wait for). The fund no longer cushions the cash check (D-09). The emergency fund fact stays."
    },
    "source": "D-18"
   },
