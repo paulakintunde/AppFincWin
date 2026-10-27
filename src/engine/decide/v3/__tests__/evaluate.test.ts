@@ -3,7 +3,7 @@ import { percent } from '../../../payoff/types';
 import { purchaseCashFlows } from '../judge/purchase';
 import { evaluate } from '../evaluate';
 import { personById, toV3Inputs } from './golden/adapter';
-import { checkOnce, checkPlan, inputsOf, v3Series } from './helpers/fixtures';
+import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series } from './helpers/fixtures';
 
 const mu = minorUnits;
 const sam = (): ReturnType<typeof toV3Inputs> => toV3Inputs(personById('sam'));
@@ -91,5 +91,50 @@ describe('evaluate', () => {
     // With the end date set before today the 30,000 bill stops being due: October has 30,000 more room.
     const stopped = evaluate(ended('2026-09-30'), checkOnce(15000));
     expect(stopped.month.monthLeft).toBe(42500 + 30000);
+  });
+
+  describe('logged pay is not landed again in the cash path (H-01, H-02, W4)', () => {
+    const MONTHLY = { unit: 'month', every: 1 } as const;
+    const payOn = (anchorDate: string) => v3Series({ id: 'pay', role: 'pay', cadence: MONTHLY, anchorDate, amount: 400000 });
+    const payLine = (date: string) => v3Line({ id: `p-${date}`, date, amount: 400000, role: 'income', seriesId: 'pay' });
+    const buy = checkOnce(150000);
+
+    it('H-01 pay due and logged on asOf is not added a second time', () => {
+      const logged = evaluate(
+        inputsOf({ asOf: '2026-10-03', balance: mu(100000), series: [payOn('2026-01-03')], months: [monthOf('2026-10', [payLine('2026-10-03')])] }),
+        buy
+      );
+      expect(logged.cash.kind).toBe('not_covered');
+      const unlogged = evaluate(inputsOf({ asOf: '2026-10-03', balance: mu(100000), series: [payOn('2026-01-03')] }), buy);
+      expect(unlogged.cash.kind).toBe('ok');
+    });
+
+    it('H-01 pay received 2026-10-26 for a due date 2026-10-31 does not land on 10-31', () => {
+      const ev = evaluate(
+        inputsOf({ asOf: '2026-10-28', balance: mu(100000), series: [payOn('2026-01-31')], months: [monthOf('2026-10', [payLine('2026-10-26')])] }),
+        buy
+      );
+      expect(ev.cash.kind).toBe('not_covered');
+    });
+
+    it('W4 pay due Sun 11-01 received Fri 10-30: not added on asOf 10-31 or on asOf 11-01', () => {
+      const oct = monthOf('2026-10', [payLine('2026-10-30')]);
+      const a = evaluate(inputsOf({ asOf: '2026-10-31', balance: mu(100000), series: [payOn('2026-01-01')], months: [oct] }), buy);
+      expect(a.cash.kind).toBe('not_covered');
+      const b = evaluate(
+        inputsOf({ asOf: '2026-11-01', balance: mu(100000), series: [payOn('2026-01-01')], months: [oct, monthOf('2026-11', [])] }),
+        buy
+      );
+      expect(b.cash.kind).toBe('not_covered');
+    });
+
+    it('M-02 a typed bill payment of the right amount takes the bill off the cash path (D-56)', () => {
+      const rent = v3Series({ id: 'rent', role: 'bill', cadence: MONTHLY, anchorDate: '2026-01-10', amount: 80000 });
+      const base = { asOf: '2026-10-08', balance: mu(215000), series: [rent] }; // three rents in 90 days: paying one leaves just enough
+      const paid = evaluate(inputsOf({ ...base, months: [monthOf('2026-10', [v3Line({ id: 't', date: '2026-10-09', amount: 80000 })])] }), checkOnce(50000));
+      const unpaid = evaluate(inputsOf(base), checkOnce(50000));
+      expect(unpaid.cash.kind).not.toBe('ok');
+      expect(paid.cash.kind).toBe('ok');
+    });
   });
 });

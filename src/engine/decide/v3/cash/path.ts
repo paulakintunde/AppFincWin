@@ -77,7 +77,10 @@ export function buildCashPathV3(input: {
     net[idx] = (net[idx] as bigint) + amount;
   };
   for (const s of liveSeriesOf(input.series, asOf, 'pay')) {
-    for (const d of seriesOccurrences(s, asOf, end)) put(d, BigInt(s.amount));
+    for (const d of seriesOccurrences(s, asOf, end)) {
+      if (input.paidThisMonth.has(`${s.id}|${d}`)) continue; // H-01: a pay already logged is in the opening balance
+      put(d, BigInt(s.amount));
+    }
   }
   for (const role of ['bill', 'debt_payment'] as const) {
     for (const s of liveSeriesOf(input.series, asOf, role)) {

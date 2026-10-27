@@ -14,7 +14,7 @@
 import { divideHalfUp } from "../../../money/rounding";
 import type { MinorUnits } from "../../../money/types";
 import { minorFromBigInt } from "../../../payoff/types";
-import { MISSED_PAY_GRACE_DAYS, TWO_DATE_TOLERANCE_DAYS } from "../constants";
+import { MISSED_PAY_GRACE_DAYS, PAY_MATCH_DAYS } from "../constants";
 import { addDays, addYearMonths, yearMonthOf } from "../dates";
 import { resolveIncomeKind } from "../judge/options";
 import type {
@@ -35,6 +35,7 @@ import {
   seriesIndex,
   seriesOccurrences,
 } from "./series";
+import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from "./settle";
 
 export interface IncomeInput {
   readonly asOf: string;
@@ -155,12 +156,84 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
   let varDue = 0n;
   let salaryDue = 0n;
 
+  // Which due dates did a paid line settle? One matcher for every caller (M-02); D-51/D-56: a line linked to the series,
+  // or a typed/statement income line with no link and the right amount. The window is symmetric and nearest-first (H-02).
+  // Income belongs to its due month (W4): the due set also holds the neighbouring months' occurrences within the window,
+  // so a line near a month boundary is claimed by the occurrence it is closest to, and last month's lines count here
+  // only when they settle one of this month's occurrences.
+  const datedSeries: V3Series[] = [];
+  for (const s of series) {
+    const salary = s.role === "pay" && plan.paySalary;
+    if (!(salary || (s.role === "other_income" && plan.rule === "series")))
+      continue;
+    if (!seriesCounts(s, custom)) {
+      const r = resolveIncomeKind(s.incomeKind, s.countsAs, custom); // only other income can fail: pay always counts
+      for (const x of r.reasons) reasons.add(x);
+      if (r.countsAs === null) reasons.add("income_kind_unmarked");
+      continue;
+    }
+    datedSeries.push(s);
+  }
+  const datedIds = new Set(datedSeries.map((s) => s.id));
+  const prevMonth = addYearMonths(ym, -1);
+  const prevFrom = addDays(start, -PAY_MATCH_DAYS);
+  const nextTo = addDays(next, PAY_MATCH_DAYS);
+  const due: Due[] = [];
+  for (const s of datedSeries) {
+    for (const date of seriesOccurrences(s, prevFrom, nextTo, asOf)) {
+      due.push({ seriesId: s.id, date, amount: s.amount });
+    }
+  }
+  const paid: PaidLine[] = [];
+  const fromLastMonth = new Set<string>();
+  for (const l of curLines) {
+    if (l.status !== "paid") continue;
+    if (l.seriesId !== null ? datedIds.has(l.seriesId) : l.role === "income")
+      paid.push(toPaidLine(l));
+  }
+  for (const m of history) {
+    if (m.month !== prevMonth) continue;
+    for (const l of m.lines) {
+      if (
+        l.status === "paid" &&
+        l.seriesId !== null &&
+        datedIds.has(l.seriesId) &&
+        l.date >= prevFrom &&
+        !fromLastMonth.has(l.id)
+      ) {
+        fromLastMonth.add(l.id);
+        paid.push(toPaidLine(l));
+      }
+    }
+  }
+  const cadenceOf = new Map(datedSeries.map((s) => [s.id, s.cadence]));
+  const { settled, usedLines, lineFor } = settle(due, paid, (id) =>
+    matchWindowDays(cadenceOf.get(id) as V3Series["cadence"], PAY_MATCH_DAYS),
+  );
+  const isSalary = (seriesId: string): boolean =>
+    (idx.get(seriesId) as V3Series).role === "pay" && plan.paySalary;
+  // Lines of this month that the due loop accounts for itself: typed/statement lines (no series link) that settled a
+  // due date, and linked lines that settled an occurrence of another month.
+  const accounted = new Set<string>();
+  for (const d of due) {
+    const id = lineFor.get(`${d.seriesId}|${d.date}`);
+    if (id === undefined) continue;
+    const thisMonthDue = d.date >= start && d.date < next;
+    if (!thisMonthDue) accounted.add(id);
+  }
+  const curById = new Map(curLines.map((l) => [l.id, l]));
+  const paidById = new Map(paid.map((l) => [l.id, l]));
+  for (const id of usedLines) {
+    const l = curById.get(id);
+    if (l !== undefined && l.seriesId === null) accounted.add(id);
+  }
+
   // Received this month.
   for (const l of curLines) {
     if (l.status !== "paid") continue;
     const e = eligibility(l, idx, plan, custom);
     for (const r of e.reasons) reasons.add(r);
-    if (!e.ok) continue;
+    if (!e.ok || accounted.has(l.id)) continue;
     if (e.salary) salaryReceived += big(l.amount);
     else if (
       plan.rule === "spread" &&
@@ -191,45 +264,29 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
     }
   }
 
-  // Confirmed series due in the rest of the month (the salary rule, and other income by dates under a salary profile).
-  const paidBySeries = new Map<string, V3Line[]>();
-  for (const l of curLines) {
-    if (l.status !== "paid" || l.seriesId === null) continue;
-    const list = paidBySeries.get(l.seriesId);
-    if (list === undefined) paidBySeries.set(l.seriesId, [l]);
-    else list.push(l);
-  }
-  for (const s of series) {
-    const salary = s.role === "pay" && plan.paySalary;
-    const dated =
-      salary || (s.role === "other_income" && plan.rule === "series");
-    if (!dated) continue;
-    if (!seriesCounts(s, custom)) {
-      const r = resolveIncomeKind(s.incomeKind, s.countsAs, custom); // only other income can fail: pay always counts
-      for (const x of r.reasons) reasons.add(x);
-      if (r.countsAs === null) reasons.add("income_kind_unmarked");
+  // Confirmed series due this month (the salary rule, and other income by dates under a salary profile).
+  for (const d of due) {
+    if (d.date < start || d.date >= next) continue;
+    const key = `${d.seriesId}|${d.date}`;
+    const salary = isSalary(d.seriesId);
+    if (settled.has(key)) {
+      const id = lineFor.get(key) as string;
+      const line = paidById.get(id) as PaidLine;
+      // Counted as received here: a typed/statement line (D-56) or a line from last month that settles this month's
+      // date (W4). A linked line of this month is already counted in "Received this month".
+      if (line.seriesId === null || fromLastMonth.has(id)) {
+        const amount = big(line.amount);
+        if (salary) salaryReceived += amount;
+        else varReceived += amount;
+      }
       continue;
     }
-    const lines = (paidBySeries.get(s.id) ?? [])
-      .slice()
-      .sort((a, b) => a.date.localeCompare(b.date));
-    const used = new Set<string>();
-    for (const occ of seriesOccurrences(s, start, next, asOf)) {
-      const match = lines.find(
-        (l) =>
-          !used.has(l.id) && l.date >= addDays(occ, -TWO_DATE_TOLERANCE_DAYS),
-      );
-      if (match !== undefined) {
-        used.add(match.id);
-        continue;
-      }
-      if (occ < cutoff) {
-        reasons.add("missed_pay_excluded");
-        continue;
-      }
-      if (salary) salaryDue += big(s.amount);
-      else varDue += big(s.amount);
+    if (d.date < cutoff) {
+      reasons.add("missed_pay_excluded");
+      continue;
     }
+    if (salary) salaryDue += big(d.amount);
+    else varDue += big(d.amount);
   }
 
   // (a) match: pending lines the user marked expected, due by month end.
